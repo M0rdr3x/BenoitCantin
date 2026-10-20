@@ -1,0 +1,535 @@
+{
+  "schema_version": "P52M-1",
+  "jalon": "P52M",
+  "date_reference": "2026-10-19",
+  "projet": "Projet Nova",
+  "statut": "MANDATS_ET_RISQUES_PROPOSES_NON_ADOPTES",
+  "objet": "Comites fictifs de test; cadre institutionnel candidat sans membres mandatés ni avis authentifiés",
+  "sources": {
+    "p52a": "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json",
+    "p52l": "projets/projet-nova/etudes/P52L_MATRICE_REVUES_INDEPENDANTES.json",
+    "p52k": "projets/projet-nova/etudes/P52K_REGISTRE_PROVENANCE_BUDGET.json",
+    "seances": "projets/projet-nova/etudes/P52M_SEANCES_FICTIVES_VIDES.json"
+  },
+  "comites": [
+    {
+      "id": "CJF",
+      "titre": "Juridique et fiscal",
+      "preuves_pilotees": [
+        "F01",
+        "F02",
+        "F03",
+        "F05",
+        "F06",
+        "F07"
+      ],
+      "sieges": [
+        "PRESIDENCE",
+        "RAPPORTEUR",
+        "EXPERT_METHODE",
+        "EXPERT_DROITS",
+        "MEMBRE_INDEPENDANT"
+      ],
+      "quorum_simule": 3,
+      "voix_minimum_critique": 4,
+      "voix_minimum_eleve": 3,
+      "majorite_qualifiee": "DEUX_TIERS_DES_SUFFRAGES_EXPRIMES",
+      "membres_reels_nommes": 0,
+      "mandat_adopte": false
+    },
+    {
+      "id": "CFP",
+      "titre": "Finances publiques",
+      "preuves_pilotees": [
+        "F04",
+        "F08",
+        "F09",
+        "F10",
+        "F13",
+        "F18"
+      ],
+      "sieges": [
+        "PRESIDENCE",
+        "RAPPORTEUR",
+        "EXPERT_METHODE",
+        "EXPERT_DROITS",
+        "MEMBRE_INDEPENDANT"
+      ],
+      "quorum_simule": 3,
+      "voix_minimum_critique": 4,
+      "voix_minimum_eleve": 3,
+      "majorite_qualifiee": "DEUX_TIERS_DES_SUFFRAGES_EXPRIMES",
+      "membres_reels_nommes": 0,
+      "mandat_adopte": false
+    },
+    {
+      "id": "CSD",
+      "titre": "Services, distribution et droits",
+      "preuves_pilotees": [
+        "F11",
+        "F12",
+        "F14",
+        "F20"
+      ],
+      "sieges": [
+        "PRESIDENCE",
+        "RAPPORTEUR",
+        "EXPERT_METHODE",
+        "EXPERT_DROITS",
+        "MEMBRE_INDEPENDANT"
+      ],
+      "quorum_simule": 3,
+      "voix_minimum_critique": 4,
+      "voix_minimum_eleve": 3,
+      "majorite_qualifiee": "DEUX_TIERS_DES_SUFFRAGES_EXPRIMES",
+      "membres_reels_nommes": 0,
+      "mandat_adopte": false
+    },
+    {
+      "id": "CTE",
+      "titre": "Transition et relations extérieures",
+      "preuves_pilotees": [
+        "F15",
+        "F16",
+        "F17"
+      ],
+      "sieges": [
+        "PRESIDENCE",
+        "RAPPORTEUR",
+        "EXPERT_METHODE",
+        "EXPERT_DROITS",
+        "MEMBRE_INDEPENDANT"
+      ],
+      "quorum_simule": 3,
+      "voix_minimum_critique": 4,
+      "voix_minimum_eleve": 3,
+      "majorite_qualifiee": "DEUX_TIERS_DES_SUFFRAGES_EXPRIMES",
+      "membres_reels_nommes": 0,
+      "mandat_adopte": false
+    },
+    {
+      "id": "CDE",
+      "titre": "Démocratie et éthique",
+      "preuves_pilotees": [
+        "F19"
+      ],
+      "sieges": [
+        "PRESIDENCE",
+        "RAPPORTEUR",
+        "EXPERT_METHODE",
+        "EXPERT_DROITS",
+        "MEMBRE_INDEPENDANT"
+      ],
+      "quorum_simule": 3,
+      "voix_minimum_critique": 4,
+      "voix_minimum_eleve": 3,
+      "majorite_qualifiee": "DEUX_TIERS_DES_SUFFRAGES_EXPRIMES",
+      "membres_reels_nommes": 0,
+      "mandat_adopte": false
+    }
+  ],
+  "grille_de_risques": {
+    "nature": "TRI_QUALITATIF_PRELIMINAIRE_NON_EMPIRIQUE",
+    "dimensions": [
+      "impact",
+      "incertitude",
+      "irreversibilite"
+    ],
+    "echelle": [
+      1,
+      4
+    ],
+    "seuil_eleve": 7,
+    "seuil_critique": 10,
+    "tous_blocages_p52a_maintenus": true,
+    "classification_officiellement_adoptee": false
+  },
+  "cartographie": [
+    {
+      "id": "F01",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "Compétence de modifier la TVQ et autres impôts québécois",
+      "priorite_p52a": "BLOQUANT",
+      "comite_pilote": "CJF",
+      "comites_consultes": [
+        "CDE"
+      ],
+      "impact": 4,
+      "incertitude": 4,
+      "irreversibilite": 3,
+      "score_indicatif": 11,
+      "niveau_risque": "CRITIQUE",
+      "statut_preuve": "NON_VALIDE",
+      "relecture_humaine_authentifiee": false,
+      "autorisation_adoption": false
+    },
+    {
+      "id": "F02",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "TPS et impôt fédéral demeurent distincts",
+      "priorite_p52a": "BLOQUANT",
+      "comite_pilote": "CJF",
+      "comites_consultes": [
+        "CTE"
+      ],
+      "impact": 4,
+      "incertitude": 4,
+      "irreversibilite": 3,
+      "score_indicatif": 11,
+      "niveau_risque": "CRITIQUE",
+      "statut_preuve": "NON_VALIDE",
+      "relecture_humaine_authentifiee": false,
+      "autorisation_adoption": false
+    },
+    {
+      "id": "F03",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "Tarifs douaniers et contre-tarifs fédéraux",
+      "priorite_p52a": "BLOQUANT",
+      "comite_pilote": "CJF",
+      "comites_consultes": [
+        "CTE"
+      ],
+      "impact": 3,
+      "incertitude": 3,
+      "irreversibilite": 2,
+      "score_indicatif": 8,
+      "niveau_risque": "ELEVE",
+      "statut_preuve": "NON_VALIDE",
+      "relecture_humaine_authentifiee": false,
+      "autorisation_adoption": false
+    },
+    {
+      "id": "F04",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "Fiscalité municipale et taxes scolaires et foncières",
+      "priorite_p52a": "BLOQUANT",
+      "comite_pilote": "CFP",
+      "comites_consultes": [
+        "CSD"
+      ],
+      "impact": 4,
+      "incertitude": 4,
+      "irreversibilite": 3,
+      "score_indicatif": 11,
+      "niveau_risque": "CRITIQUE",
+      "statut_preuve": "NON_VALIDE",
+      "relecture_humaine_authentifiee": false,
+      "autorisation_adoption": false
+    },
+    {
+      "id": "F05",
+      "regime": "TOUS",
+      "theme": "Définition du prélèvement sur les revenus",
+      "priorite_p52a": "BLOQUANT",
+      "comite_pilote": "CJF",
+      "comites_consultes": [
+        "CSD"
+      ],
+      "impact": 4,
+      "incertitude": 4,
+      "irreversibilite": 3,
+      "score_indicatif": 11,
+      "niveau_risque": "CRITIQUE",
+      "statut_preuve": "NON_VALIDE",
+      "relecture_humaine_authentifiee": false,
+      "autorisation_adoption": false
+    },
+    {
+      "id": "F06",
+      "regime": "TOUS",
+      "theme": "Définition du prélèvement anti-paradis fiscaux",
+      "priorite_p52a": "BLOQUANT",
+      "comite_pilote": "CJF",
+      "comites_consultes": [
+        "CTE"
+      ],
+      "impact": 4,
+      "incertitude": 4,
+      "irreversibilite": 3,
+      "score_indicatif": 11,
+      "niveau_risque": "CRITIQUE",
+      "statut_preuve": "NON_VALIDE",
+      "relecture_humaine_authentifiee": false,
+      "autorisation_adoption": false
+    },
+    {
+      "id": "F07",
+      "regime": "TOUS",
+      "theme": "Inventaire de tous les prélèvements obligatoires",
+      "priorite_p52a": "BLOQUANT",
+      "comite_pilote": "CJF",
+      "comites_consultes": [
+        "CFP"
+      ],
+      "impact": 3,
+      "incertitude": 3,
+      "irreversibilite": 2,
+      "score_indicatif": 8,
+      "niveau_risque": "ELEVE",
+      "statut_preuve": "NON_VALIDE",
+      "relecture_humaine_authentifiee": false,
+      "autorisation_adoption": false
+    },
+    {
+      "id": "F08",
+      "regime": "TOUS",
+      "theme": "Rendement d'impôt anti-évasion",
+      "priorite_p52a": "BLOQUANT",
+      "comite_pilote": "CFP",
+      "comites_consultes": [
+        "CJF"
+      ],
+      "impact": 4,
+      "incertitude": 4,
+      "irreversibilite": 3,
+      "score_indicatif": 11,
+      "niveau_risque": "CRITIQUE",
+      "statut_preuve": "NON_VALIDE",
+      "relecture_humaine_authentifiee": false,
+      "autorisation_adoption": false
+    },
+    {
+      "id": "F09",
+      "regime": "TOUS",
+      "theme": "Sources budgétaires et réconciliation",
+      "priorite_p52a": "BLOQUANT",
+      "comite_pilote": "CFP",
+      "comites_consultes": [
+        "CDE"
+      ],
+      "impact": 4,
+      "incertitude": 4,
+      "irreversibilite": 3,
+      "score_indicatif": 11,
+      "niveau_risque": "CRITIQUE",
+      "statut_preuve": "NON_VALIDE",
+      "relecture_humaine_authentifiee": false,
+      "autorisation_adoption": false
+    },
+    {
+      "id": "F10",
+      "regime": "TOUS",
+      "theme": "Modèle décennal et scénarios",
+      "priorite_p52a": "BLOQUANT",
+      "comite_pilote": "CFP",
+      "comites_consultes": [
+        "CSD"
+      ],
+      "impact": 4,
+      "incertitude": 4,
+      "irreversibilite": 3,
+      "score_indicatif": 11,
+      "niveau_risque": "CRITIQUE",
+      "statut_preuve": "NON_VALIDE",
+      "relecture_humaine_authentifiee": false,
+      "autorisation_adoption": false
+    },
+    {
+      "id": "F11",
+      "regime": "TOUS",
+      "theme": "Équité et pouvoir d'achat",
+      "priorite_p52a": "BLOQUANT",
+      "comite_pilote": "CSD",
+      "comites_consultes": [
+        "CFP"
+      ],
+      "impact": 4,
+      "incertitude": 4,
+      "irreversibilite": 3,
+      "score_indicatif": 11,
+      "niveau_risque": "CRITIQUE",
+      "statut_preuve": "NON_VALIDE",
+      "relecture_humaine_authentifiee": false,
+      "autorisation_adoption": false
+    },
+    {
+      "id": "F12",
+      "regime": "TOUS",
+      "theme": "Emploi, services et économies réelles",
+      "priorite_p52a": "BLOQUANT",
+      "comite_pilote": "CSD",
+      "comites_consultes": [
+        "CFP"
+      ],
+      "impact": 4,
+      "incertitude": 4,
+      "irreversibilite": 3,
+      "score_indicatif": 11,
+      "niveau_risque": "CRITIQUE",
+      "statut_preuve": "NON_VALIDE",
+      "relecture_humaine_authentifiee": false,
+      "autorisation_adoption": false
+    },
+    {
+      "id": "F13",
+      "regime": "TOUS",
+      "theme": "Aides aux entreprises limitées dans le temps",
+      "priorite_p52a": "BLOQUANT",
+      "comite_pilote": "CFP",
+      "comites_consultes": [
+        "CSD"
+      ],
+      "impact": 3,
+      "incertitude": 3,
+      "irreversibilite": 2,
+      "score_indicatif": 8,
+      "niveau_risque": "ELEVE",
+      "statut_preuve": "NON_VALIDE",
+      "relecture_humaine_authentifiee": false,
+      "autorisation_adoption": false
+    },
+    {
+      "id": "F14",
+      "regime": "TRANSITION_CONSTITUTIONNELLE",
+      "theme": "Continuité des services et droits",
+      "priorite_p52a": "BLOQUANT",
+      "comite_pilote": "CSD",
+      "comites_consultes": [
+        "CTE"
+      ],
+      "impact": 4,
+      "incertitude": 4,
+      "irreversibilite": 3,
+      "score_indicatif": 11,
+      "niveau_risque": "CRITIQUE",
+      "statut_preuve": "NON_VALIDE",
+      "relecture_humaine_authentifiee": false,
+      "autorisation_adoption": false
+    },
+    {
+      "id": "F15",
+      "regime": "QUEBEC_SOUVERAIN",
+      "theme": "Partage de dette et actifs",
+      "priorite_p52a": "BLOQUANT",
+      "comite_pilote": "CTE",
+      "comites_consultes": [
+        "CFP"
+      ],
+      "impact": 4,
+      "incertitude": 4,
+      "irreversibilite": 3,
+      "score_indicatif": 11,
+      "niveau_risque": "CRITIQUE",
+      "statut_preuve": "NON_VALIDE",
+      "relecture_humaine_authentifiee": false,
+      "autorisation_adoption": false
+    },
+    {
+      "id": "F16",
+      "regime": "QUEBEC_SOUVERAIN",
+      "theme": "Reprise fonctions fédérales",
+      "priorite_p52a": "BLOQUANT",
+      "comite_pilote": "CTE",
+      "comites_consultes": [
+        "CFP",
+        "CSD"
+      ],
+      "impact": 4,
+      "incertitude": 4,
+      "irreversibilite": 3,
+      "score_indicatif": 11,
+      "niveau_risque": "CRITIQUE",
+      "statut_preuve": "NON_VALIDE",
+      "relecture_humaine_authentifiee": false,
+      "autorisation_adoption": false
+    },
+    {
+      "id": "F17",
+      "regime": "QUEBEC_SOUVERAIN",
+      "theme": "Monnaie, fiscalité transfrontalière et traités",
+      "priorite_p52a": "BLOQUANT",
+      "comite_pilote": "CTE",
+      "comites_consultes": [
+        "CJF"
+      ],
+      "impact": 4,
+      "incertitude": 4,
+      "irreversibilite": 3,
+      "score_indicatif": 11,
+      "niveau_risque": "CRITIQUE",
+      "statut_preuve": "NON_VALIDE",
+      "relecture_humaine_authentifiee": false,
+      "autorisation_adoption": false
+    },
+    {
+      "id": "F18",
+      "regime": "TOUS",
+      "theme": "Discipline avant abolition de prélèvements",
+      "priorite_p52a": "BLOQUANT",
+      "comite_pilote": "CFP",
+      "comites_consultes": [
+        "CSD"
+      ],
+      "impact": 4,
+      "incertitude": 4,
+      "irreversibilite": 3,
+      "score_indicatif": 11,
+      "niveau_risque": "CRITIQUE",
+      "statut_preuve": "NON_VALIDE",
+      "relecture_humaine_authentifiee": false,
+      "autorisation_adoption": false
+    },
+    {
+      "id": "F19",
+      "regime": "TOUS",
+      "theme": "Décision et adoption démocratiques",
+      "priorite_p52a": "BLOQUANT",
+      "comite_pilote": "CDE",
+      "comites_consultes": [
+        "CJF"
+      ],
+      "impact": 4,
+      "incertitude": 4,
+      "irreversibilite": 3,
+      "score_indicatif": 11,
+      "niveau_risque": "CRITIQUE",
+      "statut_preuve": "NON_VALIDE",
+      "relecture_humaine_authentifiee": false,
+      "autorisation_adoption": false
+    },
+    {
+      "id": "F20",
+      "regime": "TOUS",
+      "theme": "Vie privée et droits de recours fiscaux",
+      "priorite_p52a": "BLOQUANT",
+      "comite_pilote": "CSD",
+      "comites_consultes": [
+        "CJF",
+        "CDE"
+      ],
+      "impact": 4,
+      "incertitude": 4,
+      "irreversibilite": 3,
+      "score_indicatif": 11,
+      "niveau_risque": "CRITIQUE",
+      "statut_preuve": "NON_VALIDE",
+      "relecture_humaine_authentifiee": false,
+      "autorisation_adoption": false
+    }
+  ],
+  "regles": {
+    "separation_deposant_et_votants": true,
+    "recusation_en_cas_de_conflit": true,
+    "quorum_avec_presidence_et_rapporteur": true,
+    "majorite_deux_tiers": true,
+    "avis_croises_exiges": true,
+    "absence_reserve_majeure_ouverte": true,
+    "proces_verbaux_et_dissidences_exiges_hors_depot": true,
+    "recours_humain_independant_exige": true,
+    "simulations_jamais_autorisation": true
+  },
+  "etat_reel": {
+    "comites_constitues": 0,
+    "membres_nommes": 0,
+    "avis_authentifies": 0,
+    "conflits_verifies_par_tiers": false,
+    "mandats_signes": false,
+    "proces_verbaux_authentifies": 0,
+    "consultation_democratique_terminee": false,
+    "adoption_autorisee": false,
+    "publication_autorisee": false,
+    "fusion_autorisee": false,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
