@@ -91,8 +91,8 @@ def verify(documents):
       r.get("offres")==[] and r.get("evenements")==[] and
       r.get("etat")=={"receptions_authentifiees":0,
                      "offres_admissibles":0,
-                     "dossiers_examens_humainement":0,
-                     "decisions_approuvees":0} and
+                     "avis_humains_verifies":0,
+                     "contrats":0} and
       r.get("documents_confidentiels_dans_git") is False and
       r.get("identites_ou_devis_publies") is False and
       r.get("decision")=="NO_GO_AUTOMATIQUE","RECEPTION_FICTIVE")
