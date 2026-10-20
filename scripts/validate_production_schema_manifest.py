@@ -46,7 +46,10 @@ PLANNED_LOCAL_TABLES={
 'market_listings','market_favorites','token_ledger',
 'codex_entities','codex_relationships','content_versions',
 'security_push_receipt_queue',
-'social_live_rooms','social_live_room_members','social_live_messages','social_live_room_invites','social_live_room_share_codes'
+'social_live_rooms','social_live_room_members','social_live_messages','social_live_room_invites','social_live_room_share_codes',
+# Consultations Projet Nova 18+ : DDL local proposé, jamais revendiqué comme production.
+'nova_consultation40_aggregate_counts','nova_consultation40_participants',
+'nova_survey_aggregate_counts','nova_survey_participants'
 }
 
 CREATE_RE=re.compile(r'create\s+table\s+(?:if\s+not\s+exists\s+)?(?:(?:public|private)\.)?([a-zA-Z_][a-zA-Z0-9_]*)',re.I)
