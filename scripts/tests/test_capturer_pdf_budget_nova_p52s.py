@@ -142,7 +142,7 @@ class SourceReception(unittest.TestCase):
     def test_38_no_url_in_aggregate_bilan(self):
         out=json.dumps(m.run(docs()),ensure_ascii=False)
         self.assertNotIn("https://",out)
-        self.assertNotIn("F09",out)
+        self.assertNotIn('"preuve_id":',out)
     def test_39_attempt_timestamp_not_handwritten(self):
         out=m.run(docs(),"sonde",FakeOpener(raise_error=TimeoutError()))
         self.assertTrue(all(x["date_utc_tentative"] for x in out["reçus_techniques"]))
