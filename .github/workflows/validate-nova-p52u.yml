@@ -30,7 +30,7 @@ jobs:
           python-version: "3.11"
       - name: Analyseur PDF version fixee
         run: |
-          python -m pip install --disable-pip-version-check --no-input --only-binary=:all: pypdf==5.9.0
+          python -m pip install --disable-pip-version-check --no-input --only-binary=:all: pypdf==5.9.0 cryptography==46.0.4
       - name: Trente-huit tests de structure, montants et fausses attestations
         run: |
           python -m py_compile scripts/valider_pages_budget_nova_p52u.py
