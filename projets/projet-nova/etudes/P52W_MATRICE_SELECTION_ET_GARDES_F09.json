@@ -1,0 +1,221 @@
+{
+  "schema_version": "P52W-1",
+  "jalon": "P52W",
+  "date_reference": "2026-10-20",
+  "statut": "PROCEDURE_PROPOSEE_NON_ADOPTEE_SANS_OFFRE",
+  "preuve": "F09",
+  "references": {
+    "p52v": "projets/projet-nova/etudes/P52V_REGISTRE_MISSION_F09.json",
+    "p52n": "projets/projet-nova/etudes/P52N_CAHIER_MANDATS_ET_CONSULTATION.json",
+    "p52q": "projets/projet-nova/etudes/P52Q_DOSSIERS_INSTRUCTION_VAGUE1.json",
+    "p52u": "projets/projet-nova/etudes/P52U_INSTRUCTION_HUMAINE_F09.json",
+    "p52a": "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json",
+    "reception": "projets/projet-nova/etudes/P52W_REGISTRE_RECEPTION_OFFRES_VIDE.json"
+  },
+  "conditions": [
+    {
+      "id": "G01",
+      "libelle": "Autorité juridique du mandant et capacité de signer",
+      "nature": "PREREQUIS",
+      "statut": "NON_VERIFIE",
+      "verification_humaine": false,
+      "reference_preuve_privee": null
+    },
+    {
+      "id": "G02",
+      "libelle": "Qualification du régime contractuel privé ou public",
+      "nature": "PREREQUIS",
+      "statut": "NON_VERIFIE",
+      "verification_humaine": false,
+      "reference_preuve_privee": null
+    },
+    {
+      "id": "G03",
+      "libelle": "Budget réel et provenance licite des fonds autorisés",
+      "nature": "PREREQUIS",
+      "statut": "NON_VERIFIE",
+      "verification_humaine": false,
+      "reference_preuve_privee": null
+    },
+    {
+      "id": "G04",
+      "libelle": "Description de mission P52V et méthode de relecture",
+      "nature": "OBLIGATOIRE",
+      "statut": "NON_VERIFIE",
+      "verification_humaine": false,
+      "reference_preuve_privee": null
+    },
+    {
+      "id": "G05",
+      "libelle": "Identité et droit d'exercice professionnel vérifiés",
+      "nature": "OBLIGATOIRE",
+      "statut": "NON_VERIFIE",
+      "verification_humaine": false,
+      "reference_preuve_privee": null
+    },
+    {
+      "id": "G06",
+      "libelle": "Compétence prouvée en finances publiques du Québec",
+      "nature": "OBLIGATOIRE",
+      "statut": "NON_VERIFIE",
+      "verification_humaine": false,
+      "reference_preuve_privee": null
+    },
+    {
+      "id": "G07",
+      "libelle": "Indépendance vis-à-vis des auteurs et financeurs",
+      "nature": "BLOQUANT",
+      "statut": "NON_VERIFIE",
+      "verification_humaine": false,
+      "reference_preuve_privee": null
+    },
+    {
+      "id": "G08",
+      "libelle": "Pas d'auto-évaluation des chiffres produits",
+      "nature": "BLOQUANT",
+      "statut": "NON_VERIFIE",
+      "verification_humaine": false,
+      "reference_preuve_privee": null
+    },
+    {
+      "id": "G09",
+      "libelle": "Confidentialité, collecte minimale et conservation",
+      "nature": "OBLIGATOIRE",
+      "statut": "NON_VERIFIE",
+      "verification_humaine": false,
+      "reference_preuve_privee": null
+    },
+    {
+      "id": "G10",
+      "libelle": "Devis écrit avec coût global et conditions",
+      "nature": "OBLIGATOIRE",
+      "statut": "NON_VERIFIE",
+      "verification_humaine": false,
+      "reference_preuve_privee": null
+    },
+    {
+      "id": "G11",
+      "libelle": "Possibilité d'avis négatif motivé et de réserves",
+      "nature": "BLOQUANT",
+      "statut": "NON_VERIFIE",
+      "verification_humaine": false,
+      "reference_preuve_privee": null
+    },
+    {
+      "id": "G12",
+      "libelle": "Séparation humaine entre contrôle et décision",
+      "nature": "BLOQUANT",
+      "statut": "NON_VERIFIE",
+      "verification_humaine": false,
+      "reference_preuve_privee": null
+    }
+  ],
+  "axes_proposes": [
+    {
+      "id": "S01",
+      "libelle": "Expérience démontrée en finances publiques québécoises",
+      "poids": 30,
+      "adopte": false,
+      "score_reel": null
+    },
+    {
+      "id": "S02",
+      "libelle": "Méthodologie de relecture des 39 positions et concordances",
+      "poids": 25,
+      "adopte": false,
+      "score_reel": null
+    },
+    {
+      "id": "S03",
+      "libelle": "Capacité de contradiction, indépendance et réserves",
+      "poids": 20,
+      "adopte": false,
+      "score_reel": null
+    },
+    {
+      "id": "S04",
+      "libelle": "Qualité des livrables, méthode et confidentialité",
+      "poids": 15,
+      "adopte": false,
+      "score_reel": null
+    },
+    {
+      "id": "S05",
+      "libelle": "Coût total et échéance à périmètre comparable",
+      "poids": 10,
+      "adopte": false,
+      "score_reel": null
+    }
+  ],
+  "ordre_processus": [
+    "QUALIFIER_MANDANT",
+    "AUTORISER_BUDGET",
+    "APPROUVER_CRITERES",
+    "PREPARER_INVITATION",
+    "RECEPTION_CONFIDENTIELLE",
+    "VERIFIER_INDEPENDANCE_ET_COMPETENCES",
+    "CONTRE_EVALUER",
+    "DECISION_HUMAINE_MOTIVEE",
+    "CONTRAT_EVENTUEL"
+  ],
+  "sources": [
+    {
+      "id": "CPA",
+      "url": "https://cpaquebec.ca/fr/trouver-un-cpa/tableau-de-lordre/intro/",
+      "utilite": "Vérifier un membre identifié; ne prouve ni l'expérience F09 ni l'absence d'antécents disciplinaires",
+      "verification_reelle_effectuee": false
+    },
+    {
+      "id": "LCOP",
+      "url": "https://www.legisquebec.gouv.qc.ca/fr/document/lc/c-65.1",
+      "utilite": "Déterminer son applicabilité seulement après qualification du mandant",
+      "verification_reelle_effectuee": false
+    },
+    {
+      "id": "PRIVE",
+      "url": "https://www.legisquebec.gouv.qc.ca/fr/document/lc/p-39.1",
+      "utilite": "Cadre potentiel des données recueillies selon le statut juridique réel",
+      "verification_reelle_effectuee": false
+    },
+    {
+      "id": "CAI",
+      "url": "https://www.cai.gouv.qc.ca/protection-renseignements-personnels/sujets-et-domaines-dinteret/principaux-changements-loi-25",
+      "utilite": "Obligations éventuelles, y compris règles particulières aux partis politiques",
+      "verification_reelle_effectuee": false
+    }
+  ],
+  "donnees_confidentielles": {
+    "noms_et_coordonnees_non_dans_git": true,
+    "devis_et_cv_non_dans_git": true,
+    "conflits_d_interets_detaille_hors_git": true,
+    "aucune_prospection_par_extraction_du_registre_CPA": true,
+    "aucune_sortie_de_personnes_dans_CI": true,
+    "mode_reception_securise_a_definir": true
+  },
+  "parametres_non_adoptes": {
+    "ponderations_proposees_non_autorisees": true,
+    "seuil_score_requis": null,
+    "nombre_candidats_minimum_legalement_requis": null,
+    "budget_max_autorise_cad": null,
+    "organisme_mandant_legalement_identifie": false,
+    "regime_contractuel_valide": false,
+    "criteres_adoptes": false,
+    "appels_offres_ou_invitation_emis": false,
+    "responsables_humains_nommes": false
+  },
+  "garde": {
+    "candidats_reels_recus": 0,
+    "devis_reels_recus": 0,
+    "contrats_signes": 0,
+    "fonds_engages_cad": 0,
+    "experts_F09_mandates": 0,
+    "analyses_F09_reellement_signees": 0,
+    "positions_relecture_humaines_certifiees": 0,
+    "preuves_F01_F20_certifiees": 0,
+    "valeurs_financieres_manquantes": 1320,
+    "publication_autorisee": false,
+    "fusion_autorisee": false,
+    "adoption_autorisee": false,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
