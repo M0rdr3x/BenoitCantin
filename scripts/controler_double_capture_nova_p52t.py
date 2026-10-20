@@ -254,8 +254,11 @@ def main(argv=None):
         args.operation=="comparer" and result["integrite_binaire_triple_confirmee"])
        else 0)
  except (OSError,ValueError,TypeError,UnicodeError,KeyError) as e:
+  diagnostic=str(e) if type(e) is ValueError and re.fullmatch(
+      r"[A-Z0-9_]{4,90}",str(e)) else type(e).__name__
   result={"jalon":"P52T","statut":"CONTROLE_REJETE",
           "categorie_erreur":type(e).__name__,
+          "diagnostic_controle":diagnostic,
           "publication_autorisee":False,"fusion_autorisee":False,
           "adoption_autorisee":False,"decision":"NO_GO_AUTOMATIQUE"}
   code=2

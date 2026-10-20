@@ -31,7 +31,7 @@ jobs:
       - name: Capturer les octets des deux PDF - tache A
         run: |
           python scripts/capturer_pdf_budget_nova_p52s.py --mode sonde --rapport capture-a.json
-          python scripts/controler_double_capture_nova_p52t.py envelopper --role A --capture capture-a.json --sortie receipt-a.json
+          python scripts/controler_double_capture_nova_p52t.py envelopper --role A --capture capture-a.json --sortie receipt-a.json || { cat receipt-a.json; exit 2; }
       - name: Seulement le recu A
         uses: actions/upload-artifact@v4
         with:
@@ -54,7 +54,7 @@ jobs:
       - name: Capturer les octets des deux PDF - tache B
         run: |
           python scripts/capturer_pdf_budget_nova_p52s.py --mode sonde --rapport capture-b.json
-          python scripts/controler_double_capture_nova_p52t.py envelopper --role B --capture capture-b.json --sortie receipt-b.json
+          python scripts/controler_double_capture_nova_p52t.py envelopper --role B --capture capture-b.json --sortie receipt-b.json || { cat receipt-b.json; exit 2; }
       - name: Seulement le recu B
         uses: actions/upload-artifact@v4
         with:
