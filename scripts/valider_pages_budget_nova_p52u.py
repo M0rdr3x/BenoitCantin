@@ -166,14 +166,19 @@ def audit(data,network=False,downloader=fetch_pdf):
  if network:
   for doc in docs:
    ok=False
+   last_reason="INCONNUE"
    for idx in range(3):
     try:
      results.append(inspect_octets(downloader(doc["url"]),doc))
      ok=True
      break
-    except (OSError,TimeoutError,ValueError):
+    except (OSError,TimeoutError,ValueError) as exc:
+     if type(exc) is ValueError and re.fullmatch(r"[A-Z0-9_]{4,80}",str(exc)):
+      last_reason=str(exc)
+     else:
+      last_reason=type(exc).__name__
      if idx<2:time.sleep(3)
-   need(ok,"RECUPERATION_OU_PAGES_NON_VERIFIEES")
+   need(ok,"PDF_"+doc["id"]+"_"+last_reason)
  return {"jalon":"P52U","decision":"NO_GO_AUTOMATIQUE",
          "mode":"pages_PDF_reellement_verifiees" if network else "schema_seul",
          "documents_controles":len(results),
@@ -194,8 +199,10 @@ def main(argv=None):
   out=audit({k:read_json(getattr(args,k)) for k in FILES},args.reseau)
   code=3 if args.exiger_expertise else 0
  except (OSError,ValueError,KeyError,TypeError,UnicodeError) as e:
+  diagnostic=str(e) if type(e) is ValueError and re.fullmatch(r"[A-Z0-9_]{4,120}",str(e)) else type(e).__name__
   out={"jalon":"P52U","decision":"NO_GO_AUTOMATIQUE",
        "etat":"CONTROLE_REJETE","categorie_erreur":type(e).__name__,
+       "diagnostic_controle":diagnostic,
        "publication_autorisee":False,"fusion_autorisee":False,
        "adoption_autorisee":False}
   code=2

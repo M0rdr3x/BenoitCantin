@@ -54,7 +54,7 @@ jobs:
           PY
       - name: Verifier les octets et 39 valeurs directement dans les pages des PDF
         run: |
-          python scripts/valider_pages_budget_nova_p52u.py --reseau --rapport p52u_pdf_pages_agregat.json
+          python scripts/valider_pages_budget_nova_p52u.py --reseau --rapport p52u_pdf_pages_agregat.json || { cat p52u_pdf_pages_agregat.json; exit 2; }
           python - <<'PY'
           import json
           from pathlib import Path
