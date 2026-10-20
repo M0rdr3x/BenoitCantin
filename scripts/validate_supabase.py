@@ -96,13 +96,10 @@ def main()->int:
             fail(errors,f'RPC Nova candidate absente du dépôt: {name}')
             continue
         candidate_text=read(candidate_path)
-        candidate_def=re.search(
-            rf'\\bcreate\\s+(?:or\\s+replace\\s+)?function\\s+public\\.{re.escape(name)}\\s*\\(',
-            candidate_text, re.I)
-        if not candidate_def:
+        if f'create or replace function public.{name}(' not in candidate_text.lower():
             fail(errors,f'RPC Nova candidate sans définition SQL figée: {name}')
             continue
-        expected_call=re.compile(r"\\.rpc\\(\\s*['\\\"]"+re.escape(name)+r"['\\\"]")
+        expected_call=re.compile(r"\.rpc\(\s*['\"]"+re.escape(name)+r"['\"]")
         callers={p for p in source if expected_call.search(read(p))}
         edge_code=read(authorized_caller)
         if callers!={authorized_caller} or (
