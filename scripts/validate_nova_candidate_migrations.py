@@ -24,7 +24,7 @@ def check(contents,active,reviewed,builder):
             errors.append('Contenu candidat changé sans revue de version: '+name)
         if name in active:errors.append('Candidat actif dans Supabase migrations: '+name)
         if name[:14] in reviewed:errors.append('Candidat dans lot de production revu: '+name)
-    if "ignore=shutil.ignore_patterns('migrations', 'candidate-migrations', '.temp')" not in builder:
+    if "ignore=shutil.ignore_patterns('migrations', 'candidate-migrations', 'nova-survey-submit', 'nova-consultation40-submit', '.temp')" not in builder:
         errors.append('Builder de production copie peut-être les fichiers candidats')
     return errors
 

@@ -115,3 +115,8 @@ Les deux pages 18+ informent désormais clairement que le modèle d’agrégatio
 ## Migrations candidates strictement isolées
 
 Les DDL des consultations Nova 40 et 64 sont stockés **sans modification** sous `supabase/candidate-migrations/` et non plus sous le répertoire normal `supabase/migrations/` utilisé pour les déploiements. Le builder production exclut expressément les fichiers candidats de son workspace. Leurs empreintes Git sont contrôlées par `scripts/validate_nova_candidate_migrations.py` (incluant le refus de leur inscription prématurée au lot de migrations production). Les tests SQL locaux appliquent les deux DDL dans une base PostgreSQL jetable ; le schéma de production reste vérifié séparément. Les questions, la collecte désactivée, les migrations historiques et le ledger ont été conservés. La promotion devra être approuvée explicitement après résolution des enjeux de confidentialité (#675) et de publication Pages (#450).
+
+
+### Protection supplémentaire des Edge Functions candidates
+
+Le workspace Supabase lié exclut maintenant les répertoires Edge `nova-survey-submit` et `nova-consultation40-submit` en plus des deux fichiers SQL candidats. Le validateur de plateforme `scripts/validate_supabase.py` accepte uniquement ces deux RPC *précisément identifiées* comme candidates si et seulement si leur DDL figé reste présent dans la zone isolée, si les appels proviennent exclusivement de leur Edge Function dédiée et si chaque fonction garde son drapeau serveur de collecte verrouillé. Toute RPC de production manquante ou tout appel supplémentaire continue de faire échouer la CI. Le déploiement des fonctions Nova nécessite encore une revue et une approbation distinctes; les validations locales ne l'autorisent pas.
