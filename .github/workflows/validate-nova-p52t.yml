@@ -87,14 +87,14 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: "3.11"
-      - name: Cinquante tests de source, contexte et divergence
+      - name: Cinquante-et-un tests de source, contexte et divergence
         run: |
           python -m py_compile scripts/controler_double_capture_nova_p52t.py
           python - <<'PY'
           import unittest
           suite=unittest.defaultTestLoader.discover(
               "scripts/tests",pattern="test_controler_double_capture_nova_p52t.py")
-          assert suite.countTestCases()==50,suite.countTestCases()
+          assert suite.countTestCases()==51,suite.countTestCases()
           out=unittest.TextTestRunner(verbosity=2).run(suite)
           assert out.wasSuccessful()
           PY

@@ -46,8 +46,7 @@ def env(role="A",run="1234",sha="a"*40):
          "NOVA_SHA":sha,"NOVA_JOB":f"capture-{role.lower()}",
          "NOVA_RUNNER_OS":"Linux"}
 def wraps():
- cap=captured()
- return m.wrap("A",cap,env("A")),m.wrap("B",cap,env("B"))
+ return m.wrap("A",captured(),env("A")),m.wrap("B",captured(),env("B"))
 class DoubleCaptureTest(unittest.TestCase):
  def rejects_plan(self,edit):
   d=source();edit(d)
@@ -205,5 +204,8 @@ class DoubleCaptureTest(unittest.TestCase):
    cap=Path(tmp)/"raw.json";cap.write_text(json.dumps(captured()))
    self.assertEqual(m.main(["envelopper","--role","A","--capture",str(cap),
                             "--sortie",str(Path(tmp)/"a.json")]),2)
+ def test_51_fixture_independent_memory(self):
+  a,b=wraps()
+  self.assertIsNot(a["capture"],b["capture"])
 if __name__=="__main__":
  unittest.main()
