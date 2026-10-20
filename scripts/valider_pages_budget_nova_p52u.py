@@ -129,7 +129,7 @@ def inspect_octets(data,doc):
       "EMPREINTE_PDF_DIFFERENTE")
  need(PdfReader is not None,"MODULE_PDF_ABSENT")
  pdf=PdfReader(BytesIO(data),strict=False)
- need(not pdf.is_encrypted and len(pdf.pages)==doc["pages_attendues"],
+ need(len(pdf.pages)==doc["pages_attendues"],
       "COMPTE_PAGES_INCONCORDANT")
  details=check_text(pdf.pages[doc["page_tableau_pdf_zero"]].extract_text() or "",doc)
  need(not details["lignes_absentes"],"MONTANTS_PDF_ABSENTS")
