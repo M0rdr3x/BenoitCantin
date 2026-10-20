@@ -715,3 +715,8 @@ chemins de développement, y compris `/supabase/config.toml`,
 
 **Ces étapes ne constituent pas une autorisation de traitement de données
 politiques :** #675 demeure bloquante avant toute activation de collecte.
+
+
+## Guide court pour publier les deux sondages Nova
+
+Un guide opérateur dédié, sans confusion entre préparation et mise en ligne, est disponible dans [NOVA_SONDAGES_PUBLICATION_GUIDE.md](NOVA_SONDAGES_PUBLICATION_GUIDE.md). La CI et le futur workflow DRY_RUN/PUBLISH vérifient désormais les deux accueils, leurs deux liens 40/64, l'icône choisie et l'état de collecte désactivée via `scripts/validate_nova_public_access.py`, avec autotests de disparition et d'altération.
