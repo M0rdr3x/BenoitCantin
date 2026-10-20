@@ -260,7 +260,7 @@ def self_test() -> None:
         with redirect_stdout(StringIO()):
             assert live() == 0
         assert calls == list((*PUBLIC_ROUTES, *TECHNICAL_ROUTES))
-        assert len(calls) == 35 and len(set(calls)) == 35
+        assert len(calls) == len(set(calls)) == len(PUBLIC_ROUTES) + len(TECHNICAL_ROUTES)
 
         for broken in ("/projets/sinjira/romans/", "/projets/projet-nova/boussole-electorale.html"):
             calls.clear()
