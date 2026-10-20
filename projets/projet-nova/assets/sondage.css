@@ -23,3 +23,17 @@
 .nova-survey-choices label:last-child{border-style:dashed}
 @media(max-width:560px){.nova-survey-actions{flex-direction:column}.nova-survey-actions .btn{width:100%}.nova-survey-card{padding:18px}}
 @media(prefers-reduced-motion:reduce){.nova-survey-card *{scroll-behavior:auto!important}}
+
+/* Questionnaire consultatif : relecture détaillée, progression et purge volontaire. */
+.nova-survey-progress-count{margin:8px 0 0;color:#425b71;font-size:.94rem;font-weight:650}
+.nova-survey-question-context{padding:11px 14px;border-left:4px solid #1384a8;border-radius:3px;background:#edf6fa;color:#25475d}
+.nova-survey-secondary-actions{margin-top:18px;display:flex;justify-content:flex-start}
+.nova-survey-secondary-actions .btn{font-size:.92rem}
+.nova-survey-review-list{list-style:decimal;margin:20px 0 24px;padding-left:1.6rem;display:grid;gap:12px}
+.nova-survey-review-list li{padding:15px;border:1px solid #c6d6e0;border-radius:12px;background:#f8fbfe}
+.nova-survey-review-list li::marker{font-weight:750;color:#164e67}
+.nova-survey-review-list li>div{overflow-wrap:anywhere}
+.nova-survey-review-list li p{margin:6px 0;line-height:1.5}
+.nova-survey-review-choice{font-weight:750;color:#17465f}
+.nova-survey-review-edit{margin-top:7px;min-width:100px}
+@media(max-width:560px){.nova-survey-secondary-actions .btn{width:100%}.nova-survey-review-list{padding-left:1.35rem}}

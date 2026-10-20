@@ -91,3 +91,12 @@ représentative ou une marge d'erreur scientifique.
 Validation : `scripts/validate_nova_consultation40.py` et
 `tests/e2e/test_nova_consultation40_visual.py`, lancés sur les PR
 pour les trois moteurs navigateur et sans service externe.
+
+
+## Parcours finalisé de la consultation référendaire — 19 octobre 2026
+
+La consultation comporte **40 questions** dans l'ordre immuable approuvé. La question 1 concerne une éventuelle souveraineté du Québec; les 39 questions suivantes portent sur des orientations publiques. Un intitulé visible précise explicitement qu'il ne s'agit **pas d'un référendum officiel** ni d'une décision légalement contraignante. Les choix restent « Pour », « Contre » et « Sans opinion » (sans assimilation de « Sans opinion » à une abstention officielle ou à un vote valide). Aucune formulation du corpus source n'a été changée.
+
+**Parcours de qualité sondage :** attestation volontaire 18+ et consentement séparé avant l'accès; chargement contrôlé des questions; un seul énoncé à la fois; sélection obligatoire d'un des trois choix pour avancer (y compris « Sans opinion »); retour possible; progression question courante et nombre de choix; récapitulatif des 40 réponses **personnelles et non publiques**, avec bouton « Modifier » pour chaque question; retour libre en relecture; commande explicite et confirmée « Effacer mes choix et recommencer » qui purge toutes les réponses en mémoire, décoche l'âge et le consentement et restaure les portes d'entrée. Aucun stockage local, aucun résultat simulé, aucun envoi en mode aperçu.
+
+**Périmètre des résultats :** il s'agit d'un outil de consultation volontaire et non probabiliste. Aucune déduction de volonté populaire, aucune extrapolation référendaire, aucune marge d'erreur probabiliste ou statistique de soutien n'est autorisée sur la base de ce dispositif sans protocole méthodologique distinct. L'éventuelle collecte reste désactivée à la fois dans le client et par les drapeaux serveur tant que les obligations de confidentialité, le cadre juridique, le processus de collecte, la sécurisation Pages et la revue des migrations ne sont pas approuvés. Les tests navigateurs vérifient le parcours, la relecture, la purge et l'absence d'envoi.
