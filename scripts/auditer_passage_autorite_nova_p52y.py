@@ -86,7 +86,9 @@ def validate(docs):
             "DOSSIER_DECISIONS_HUMAINES_PRET_A_INSTRUIRE_NON_APPROUVE",
          "P52Y_MATRICE_INVALIDE")
  require(m.get("references")=={
-   key:str(FILES[key].relative_to(ROOT)) for key in FILES if key!="plan"
+   **{key:str(FILES[key].relative_to(ROOT)) for key in
+      ("p52x","p52w","p52v","p52n","p52a")},
+   "registre":str(FILES["journal"].relative_to(ROOT))
  },"SOURCE_LINK_NON_CONFORME")
  require(x.get("schema_version")=="P52X-1" and
          x.get("decision_precontractuelle",{}).get("decision")==
