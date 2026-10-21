@@ -44,6 +44,8 @@ jobs:
           python3 scripts/audit_pages_jekyll.py --source .
           python3 scripts/validate_nova_public_access.py --self-test
           python3 scripts/validate_nova_public_access.py --source .
+          python3 scripts/validate_nova_public_results.py --self-test
+          python3 scripts/validate_nova_public_results.py --source .
           python3 scripts/verify_pages_live.py --self-test
           python3 scripts/verify_pages_integrity.py --self-test
           python3 scripts/attest_pages_production.py --self-test
@@ -93,6 +95,7 @@ jobs:
           set -euo pipefail
           python3 scripts/audit_pages_jekyll.py --source . --built _site
           python3 scripts/validate_nova_public_access.py --source . --built _site
+          python3 scripts/validate_nova_public_results.py --source . --built _site
           python3 scripts/validate_sinjira_catalogues_metadata.py --built _site
           python3 scripts/validate_boussole_home_visual.py --built _site
           python3 scripts/audit_public_documents.py --source . --built _site
@@ -114,6 +117,7 @@ jobs:
           python3 scripts/pages_release_proof.py --write _site --sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"
           python3 scripts/audit_pages_jekyll.py --source . --built _site
           python3 scripts/validate_nova_public_access.py --source . --built _site
+          python3 scripts/validate_nova_public_results.py --source . --built _site
           python3 scripts/audit_public_json.py --source . --built _site --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID"
           python3 scripts/audit_public_surface.py --source . --built _site --release-sha "$GITHUB_SHA" --release-run-id "$GITHUB_RUN_ID"
           python3 scripts/pages_release_proof.py --verify _site --sha "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID"

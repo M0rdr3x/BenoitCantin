@@ -248,6 +248,24 @@ def run() -> None:
             page.locator('a[href="boussole-electorale.html"]').count() >= 3,
             f"{BROWSER_NAME}: la Boussole doit avoir au moins trois accès depuis l’accueil Nova",
         )
+        assert_true(page.locator("#nova-public-results-link").count() == 1,
+                    f"{BROWSER_NAME}: bouton des résultats anonymisés absent de l'accueil Nova")
+        page.locator("#nova-public-results-link").click()
+        assert_true(page.url.endswith("/projets/projet-nova/resultats-sondages.html"),
+                    f"{BROWSER_NAME}: page publique de résultats inaccessible")
+        page.locator("#results-question-list li").first.wait_for(timeout=15000)
+        assert_true(page.locator("#results-question-list li").count() == 40,
+                    f"{BROWSER_NAME}: 40 questions absentes des résultats")
+        assert_true("Aucun résultat publié" in page.locator("#results-state").inner_text(),
+                    f"{BROWSER_NAME}: résultat fictif annoncé")
+        assert_true(page.locator(".nova-results-bar-item").count() == 0,
+                    f"{BROWSER_NAME}: pourcentages non approuvés visibles")
+        page.locator("#results-show-64").click()
+        assert_true(page.locator("#results-question-list li").count() == 64,
+                    f"{BROWSER_NAME}: 64 questions absentes des résultats")
+        assert_true(page.locator(".nova-results-bar-item").count() == 0,
+                    f"{BROWSER_NAME}: agrégat inventé affiché")
+        page.goto(urljoin(BASE_URL, "projets/projet-nova/"), wait_until="domcontentloaded", timeout=30_000)
         nova_compass_entry = page.locator(".nova-compass-entry .nova-compass-entry-link")
         assert_true(nova_compass_entry.count() == 1, f"{BROWSER_NAME}: accès prioritaire Boussole absent en haut de Nova")
         assert_true(nova_compass_entry.is_visible(), f"{BROWSER_NAME}: accès prioritaire Boussole non visible")

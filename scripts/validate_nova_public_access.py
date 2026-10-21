@@ -11,7 +11,10 @@ from tempfile import TemporaryDirectory
 
 ROOT=Path(__file__).resolve().parents[1]
 PAGES=("index.html","projets/projet-nova/index.html")
-RESOURCES=("projets/projet-nova/consultation-40.html",
+RESOURCES=("projets/projet-nova/resultats-sondages.html",
+           "projets/projet-nova/assets/resultats-sondages.js",
+           "projets/projet-nova/data/resultats-sondages-publics-v1.json",
+           "projets/projet-nova/consultation-40.html",
            "projets/projet-nova/sondage.html",
            "projets/projet-nova/assets/nova-sondage-icone.webp")
 ICON="/projets/projet-nova/assets/nova-sondage-icone.webp"
@@ -70,6 +73,8 @@ def check_text(pages):
                 errors.append(f"Icône Nova non cliquable: {page} → {url}")
         if disclosure not in source.lower():
             errors.append(f"Collecte désactivée non annoncée: {page}")
+    if PAGES[1] in pages and 'id="nova-public-results-link"' not in pages[PAGES[1]]:
+        errors.append("Accès aux résultats anonymisés absent de l'accueil Nova")
     if PAGES[0] in pages and "non officiel et non représentatif" not in pages[PAGES[0]].lower():
         errors.append("Caractère consultatif non officiel absent de l'accueil général")
     return errors
@@ -103,6 +108,7 @@ def self_test():
        (PAGES[1],'id="nova-survey-directory-64"','id="erreur-64"'),
        (PAGES[1],'assets/nova-sondage-icone.webp','assets/image-inconnue.webp'),
        (PAGES[1],'collecte fermée','collecte active'),
+       (PAGES[1],'id="nova-public-results-link"','id="resultats-absents"'),
     )
     for p,needle,replacement in mutations:
         assert needle in original[p],(p,needle)

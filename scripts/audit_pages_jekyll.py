@@ -30,6 +30,9 @@ REQUIRED_PUBLIC = {
     'assets/media/sinjira-logiciels-banniere-2026.webp',
     'assets/media/nova-boussole-electorale-v2.webp',
     # Pages Nova doivent figurer dans l'artefact isolé avant toute publication.
+    'projets/projet-nova/resultats-sondages.html',
+    'projets/projet-nova/assets/resultats-sondages.js',
+    'projets/projet-nova/data/resultats-sondages-publics-v1.json',
     'projets/projet-nova/consultation-40.html',
     'projets/projet-nova/sondage.html',
     'projets/projet-nova/assets/nova-sondage-icone.webp',
@@ -296,7 +299,10 @@ def self_test() -> None:
         assert not audit_output(root, out), audit_output(root, out)
         # Les nouvelles routes Nova ne peuvent pas être omises silencieusement du build.
         for nova_public in (
-            'projets/projet-nova/consultation-40.html',
+            'projets/projet-nova/resultats-sondages.html',
+    'projets/projet-nova/assets/resultats-sondages.js',
+    'projets/projet-nova/data/resultats-sondages-publics-v1.json',
+    'projets/projet-nova/consultation-40.html',
             'projets/projet-nova/sondage.html',
             'projets/projet-nova/assets/nova-sondage-icone.webp',
         ):

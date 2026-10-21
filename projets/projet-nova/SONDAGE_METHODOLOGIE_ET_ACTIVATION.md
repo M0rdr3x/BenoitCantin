@@ -160,3 +160,8 @@ l'activation du nouveau service worker. Les autres applications
 conservent leurs propres caches. Les tests Node vérifient les
 sept routes réseau, et l'audit Jekyll refuse leur précache.
 Cette modification reste en préparation dans la PR #639, sans déploiement.
+
+
+## Résultats publics, accès depuis l'accueil et confidentialité
+
+La section « Sondages et consultations » de Projet Nova présente désormais un lien visible vers `resultats-sondages.html`, qui permet de parcourir **40 et 64 questions**, la politique de calcul et les distributions collectives **après approbation**. Le snapshot public est initialement `not_open`, sans aucune réponse enregistrée ni chiffre simulé. Les futures répartitions doivent porter sur **30 répondants ou plus**, sans catégorie non nulle inférieure à **10**; toute question révélant une petite catégorie doit être intégralement masquée. La page ne montre aucune réponse individuelle ni identité. Ce seuil réduit le risque de réidentification sans fournir de garantie d'anonymat absolu. Le validateur indépendant `scripts/validate_nova_public_results.py` impose la fermeture, le schéma, les seuils et les exclusions de données personnelles; il est exécuté sur le dépôt et l'artefact Jekyll dans la CI et le futur déploiement contrôlé. Les tests Chromium/Firefox/WebKit vérifient l'accès, les 40/64 textes et l'absence de faux pourcentages. L'ouverture réelle reste bloquée par #675; l'affichage sur le domaine attend #450 et l'approbation de la bascule Pages.
