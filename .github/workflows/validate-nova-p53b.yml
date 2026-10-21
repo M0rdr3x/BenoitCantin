@@ -1,0 +1,77 @@
+name: Projet Nova P53B - Sources federales municipales et taux de cotisations
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p53b.yml"
+      - "scripts/valider_sources_recettes_nova_p53b.py"
+      - "scripts/tests/test_valider_sources_recettes_nova_p53b.py"
+      - "projets/projet-nova/etudes/P53B_*"
+      - "projets/projet-nova/etudes/P53A_*"
+      - "projets/projet-nova/etudes/P52Z_MATRICE_FISCALITE_JURIDICTIONS.json"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controles-baremes-sans-fausse-recette:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Sources en lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: 64 tests de taux historiques et de fausses recettes
+        run: |
+          python -m py_compile scripts/valider_sources_recettes_nova_p53b.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+             "scripts/tests",pattern="test_valider_sources_recettes_nova_p53b.py")
+          assert suite.countTestCases()==64,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Verifier les neuf lacunes et les neuf baremes officiels 2026
+        run: |
+          python scripts/valider_sources_recettes_nova_p53b.py --rapport p53b_bilan.json --export-csv p53b_lacunes_vierges.csv --export-baremes-csv p53b_baremes_2026.csv
+          python - <<'PY'
+          import csv,json
+          from pathlib import Path
+          d=json.loads(Path("p53b_bilan.json").read_text(encoding="utf-8"))
+          assert d["sources_officielles_reperees"]==9
+          assert d["taux_contributifs_2026_releves"]==9
+          assert d["lacunes_hors_budget_chiffrees"]==0
+          assert d["barèmes_convertis_en_recettes_fiscales"]==0
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          with Path("p53b_lacunes_vierges.csv").open(encoding="utf-8") as f:
+            lines=list(csv.reader(f))
+          assert len(lines)==10 and all(x[4]=="" for x in lines[1:])
+          with Path("p53b_baremes_2026.csv").open(encoding="utf-8") as f:
+            lines=list(csv.reader(f))
+          assert len(lines)==10 and all(x[-1]=="" for x in lines[1:])
+          PY
+      - name: Refus explicite de consolider des donnees absentes
+        run: |
+          set +e
+          python scripts/valider_sources_recettes_nova_p53b.py --exiger-consolidation --rapport p53b_refus_consolidation.json
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Rapports agreges sans donnees confidentielles
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p53b-sources-baremes-et-lacunes-no-go
+          path: |
+            p53b_bilan.json
+            p53b_lacunes_vierges.csv
+            p53b_baremes_2026.csv
+            p53b_refus_consolidation.json
+          retention-days: 7
+          if-no-files-found: ignore
