@@ -1,0 +1,131 @@
+{
+  "schema": "P53F-1",
+  "date": "2026-10-21",
+  "annee": 2024,
+  "statut": "OBSERVATIONS_NON_CONSOLIDEES",
+  "ref": {
+    "p53e": "projets/projet-nova/etudes/P53E_PREUVES_HISTORIQUES_MUNICIPALES.json",
+    "p53d": "projets/projet-nova/etudes/P53D_ACQUISITION_MUNICIPALE_2024.json",
+    "p53a": "projets/projet-nova/etudes/P53A_REGISTRE_RECETTES_ET_COMPETENCES.json",
+    "lacunes": "projets/projet-nova/etudes/P53A_LACUNES_HORS_PERIMETRE.json",
+    "p52a": "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json",
+    "csv": "projets/projet-nova/etudes/sources/P53E_MAMH_2024_MUNICIPALITES_LOCALES_SELECTION.csv"
+  },
+  "périmètre": {
+    "organismes": "Municipalité locale",
+    "nombre": 1094,
+    "unite": "CAD",
+    "source_sha256": "11f940092a6a7eb54bf7dc39c6e5b4b44e73c82e9bb34ce7aae2e7278269aa5e"
+  },
+  "postes": [
+    {
+      "code": "CRIIX00406",
+      "classe": "taxes",
+      "montant_cad": "17337284213",
+      "observations": 1093,
+      "blancs": 1,
+      "negatifs": 0,
+      "zeros": 0,
+      "positifs": 1093,
+      "contrepartie_certifiee": false,
+      "montant_elimine_cad": null
+    },
+    {
+      "code": "CRIIX00408",
+      "classe": "quotes_parts",
+      "montant_cad": "846987123",
+      "observations": 467,
+      "blancs": 627,
+      "negatifs": 39,
+      "zeros": 298,
+      "positifs": 130,
+      "contrepartie_certifiee": false,
+      "montant_elimine_cad": null
+    },
+    {
+      "code": "CRIIX00409",
+      "classe": "transferts",
+      "montant_cad": "5376508934",
+      "observations": 1085,
+      "blancs": 9,
+      "negatifs": 1,
+      "zeros": 0,
+      "positifs": 1084,
+      "contrepartie_certifiee": false,
+      "montant_elimine_cad": null
+    },
+    {
+      "code": "CRIIX00407",
+      "classe": "compensations",
+      "montant_cad": "1001301216",
+      "observations": 1011,
+      "blancs": 83,
+      "negatifs": 0,
+      "zeros": 0,
+      "positifs": 1011,
+      "contrepartie_certifiee": false,
+      "montant_elimine_cad": null
+    },
+    {
+      "code": "CRIIX00410",
+      "classe": "services",
+      "montant_cad": "4241481713",
+      "observations": 1073,
+      "blancs": 21,
+      "negatifs": 0,
+      "zeros": 0,
+      "positifs": 1073,
+      "contrepartie_certifiee": false,
+      "montant_elimine_cad": null
+    }
+  ],
+  "totaux": {
+    "taxes": "17337284213",
+    "quotes_parts": "846987123",
+    "transferts": "5376508934",
+    "reste_non_taxes_ni_quotes_ni_transferts": "8806843291",
+    "revenus": "32367623561",
+    "foncier_deja_dans_taxes": "15085531572",
+    "candidats_a_appariement_non_eliminables": "6223496057",
+    "compensations_dans_reste": "1001301216",
+    "services_dans_reste": "4241481713",
+    "montant_eliminations_certifiees": null,
+    "revenus_consolides": null,
+    "revenus_2026_2027": null
+  },
+  "appariement": {
+    "pieces_a_obtenir": [
+      "payeur",
+      "beneficiaire",
+      "periode",
+      "ecriture_reciproque",
+      "montant_et_signe",
+      "perimetre",
+      "preuve_originale",
+      "audit_independant"
+    ],
+    "transactions_appariees": 0,
+    "montant_net_justifie": null,
+    "publication_autorisee": false
+  },
+  "regles": {
+    "pas_eliminer_candidats_sans_appariement": true,
+    "preserver_negatifs_et_blancs": true,
+    "taxes_foncieres_incluses_dans_taxes": true,
+    "revenus_incluent_transferts_et_quotes_parts": true,
+    "services_compensations_a_verifier": true,
+    "exclure_mrc_regies_transports": true,
+    "2024_non_assimilable_budget_2026_2027": true,
+    "pas_de_taux_nova_derive": true
+  },
+  "bilan": {
+    "comptes": 1094,
+    "preuves_F01_F20": 0,
+    "inconnues_nova": 1320,
+    "publication_autorisee": false,
+    "fusion_autorisee": false,
+    "adoption_autorisee": false,
+    "decision": "NO_GO_AUTOMATIQUE",
+    "appariements_confirmes": 0
+  }
+}
