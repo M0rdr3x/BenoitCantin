@@ -60,6 +60,8 @@ def check_text(payload: dict[str, str]) -> list[str]:
            "editingReview = true", "choiceNames.get(selections.get(question.id))",
            "list.replaceChildren()", "step = 0;",
            "input.autocomplete = 'off'",
+           "function clearLocalDemo()", "window.addEventListener('pageshow'",
+           "if (!COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED) clearLocalDemo()",
            "L'accord de démonstration ne vaut PAS consentement à la collecte")
     demand("page", 'id="sondage-reset-question"', 'id="sondage-reset-finish"',
            'id="sondage-privacy-warning"', "Une fois une contribution agrégée")
@@ -147,6 +149,9 @@ def self_test() -> None:
          'Cette case permet toute collecte future.'),
         ("page", 'autocomplete="off"', 'autocomplete="on"'),
         ("client", "input.autocomplete = 'off'", "input.autocomplete = 'on'"),
+        ("client", "window.addEventListener('pageshow'", "window.addEventListener('pagehide'"),
+        ("client", "if (!COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED) clearLocalDemo()",
+         "if (false) clearLocalDemo()"),
         ("client", "editingReview = true", "editingReview = false"),
         ("client", "choiceNames.get(selections.get(question.id))", "null"),
         ("page", 'id="sondage-privacy-warning"', 'id="avis-absent"'),

@@ -116,8 +116,8 @@
     $('sondage-finish-heading').setAttribute('tabindex', '-1');
     $('sondage-finish-heading').focus({ preventScroll: true });
   }
-  function resetSurvey() {
-    if (!window.confirm('Effacer tous vos choix et recommencer ce questionnaire?')) return;
+  function clearLocalDemo() {
+    // Même un retour depuis le cache arrière/avant ne rétablit ni âge ni opinions.
     answers.clear();
     step = 0;
     editingReview = false;
@@ -128,10 +128,21 @@
     $('sondage-status').textContent = '';
     $('sondage-submit-status').textContent = '';
     show('introduction');
+    $('sondage-choices').replaceChildren();
+    $('sondage-next').disabled = true;
     refresh();
+  }
+  function resetSurvey() {
+    if (!window.confirm('Effacer tous vos choix et recommencer ce questionnaire?')) return;
+    clearLocalDemo();
     $('sondage-titre').focus();
   }
   function init() {
+    clearLocalDemo();
+    // pageshow se déclenche même lorsqu'un navigateur restaure un formulaire après DOMContentLoaded.
+    window.addEventListener('pageshow', () => {
+      if (!COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED) clearLocalDemo();
+    });
     for (const id of ['sondage-age', 'sondage-consent']) {
       $(id).addEventListener('change', refresh);
     }

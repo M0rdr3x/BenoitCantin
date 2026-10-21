@@ -133,6 +133,24 @@ def main():
             require(not page.locator("#sondage-choices input[value='1']").is_checked(),
                     "Ancienne réponse retrouvée après purge")
             require(sent == [], f"Des réponses ont été envoyées malgré la collecte fermée : {sent}")
+            page.locator("#sondage-choices input[value='1']").check()
+            page.goto("http://127.0.0.1:4173/projets/projet-nova/", wait_until="domcontentloaded")
+            page.go_back(wait_until="domcontentloaded")
+            require(not page.locator("#sondage-introduction").is_hidden(),
+                    "Retour historique : le sondage ne revient pas à l'introduction")
+            require(not page.locator("#sondage-age").is_checked()
+                    and not page.locator("#sondage-consent").is_checked(),
+                    "Retour historique : attestation 18+ ou accord de démonstration conservé")
+            require(page.locator("#sondage-start").is_disabled(),
+                    "Retour historique : démarrage sans nouvelle attestation")
+            page.reload(wait_until="domcontentloaded")
+            require(not page.locator("#sondage-introduction").is_hidden()
+                    and not page.locator("#sondage-age").is_checked()
+                    and not page.locator("#sondage-consent").is_checked(),
+                    "Rechargement : confirmation d'âge ou accord restauré")
+            require(page.locator("#sondage-start").is_disabled(),
+                    "Rechargement : questionnaire lancé sans attestation")
+            require(sent == [], "Historique/rechargement : requête de collecte non autorisée")
             page.set_viewport_size({"width": 1440, "height": 900})
             require(page.evaluate("document.documentElement.scrollWidth <= innerWidth + 2"),
                     "Débordement horizontal sur ordinateur")

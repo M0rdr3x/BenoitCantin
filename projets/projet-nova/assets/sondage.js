@@ -205,10 +205,8 @@
       $('sondage-submit').disabled = recorded || !COLLECTION_OPEN || !LIVE_OPINION_CONSENT_GRANTED || !eligible();
     }
   }
-  function resetSurvey() {
-    // L'effacement local n'est pas un retrait des agrégats d'une soumission déjà enregistrée.
-    if (submitting) return;
-    if (!window.confirm('Effacer toutes les réponses locales et retirer votre consentement pour cette visite?')) return;
+  function clearLocalDemo() {
+    // Ne conserver ni opinions ni confirmation 18+ après retour d'historique/rechargement.
     selections.clear();
     step = 0;
     editingReview = false;
@@ -223,9 +221,20 @@
     setStatus('');
     setStatus('', 'sondage-submit-status');
     refreshStart();
+  }
+  function resetSurvey() {
+    // Effacer les choix locaux ne retire pas une contribution déjà agrégée.
+    if (submitting) return;
+    if (!window.confirm('Effacer toutes les réponses locales et retirer votre consentement pour cette visite?')) return;
+    clearLocalDemo();
     $('sondage-titre').focus();
   }
   async function init() {
+    clearLocalDemo();
+    // Les navigateurs peuvent restaurer des cases cochées après DOMContentLoaded.
+    window.addEventListener('pageshow', () => {
+      if (!COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED) clearLocalDemo();
+    });
     for (const id of ['sondage-age', 'sondage-consent']) {
       $(id).addEventListener('change', refreshStart);
     }

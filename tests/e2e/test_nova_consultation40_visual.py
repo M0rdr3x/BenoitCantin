@@ -115,6 +115,24 @@ with sync_playwright() as p:
         check(not page.locator("input[value=contre]").is_checked(),
               "opinion personnelle encore présente après effacement")
         check(not calls, "un envoi politique s'est déclenché en aperçu")
-        print(f"OK {BROWSER}: 40 questions 18+, navigation, révision, effacement et collecte fermée")
+        page.locator("input[value=pour]").check()
+        page.goto("http://127.0.0.1:4173/projets/projet-nova/", wait_until="domcontentloaded")
+        page.go_back(wait_until="domcontentloaded")
+        check(page.locator("#sondage-introduction").is_visible(),
+              "retour historique : la consultation doit redémarrer à l'introduction")
+        check(not page.locator("#sondage-age").is_checked()
+              and not page.locator("#sondage-consent").is_checked(),
+              "retour historique : attestation 18+ ou accord de démonstration conservé")
+        check(page.locator("#sondage-start").is_disabled(),
+              "retour historique : démarrage encore autorisé")
+        page.reload(wait_until="domcontentloaded")
+        check(page.locator("#sondage-introduction").is_visible()
+              and not page.locator("#sondage-age").is_checked()
+              and not page.locator("#sondage-consent").is_checked(),
+              "rechargement : préférences politiques ou consentement restaurés")
+        check(page.locator("#sondage-start").is_disabled(),
+              "rechargement : démarrage autorisé sans nouvelle attestation")
+        check(not calls, "rechargement ou historique ont déclenché une transmission")
+        print(f"OK {BROWSER}: 40 questions 18+, historique, rechargement, révision, purge et collecte fermée")
     finally:
         browser.close()
