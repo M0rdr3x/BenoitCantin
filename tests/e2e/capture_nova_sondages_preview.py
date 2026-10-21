@@ -70,7 +70,13 @@ def capture(output: Path) -> None:
                         raise AssertionError("Résultats de démonstration faussement annoncés")
                     if page.locator(".nova-results-bar-item").count():
                         raise AssertionError("Chiffres fictifs visibles dans les résultats")
-                element.screenshot(path=str(output / filename), animations="disabled", timeout=15000)
+                if route.endswith("resultats-sondages.html"):
+                    # Capturer l'interface complète visible, et pas uniquement le statut.
+                    page.screenshot(path=str(output / filename), full_page=False,
+                                    animations="disabled", timeout=15000)
+                else:
+                    element.screenshot(path=str(output / filename),
+                                       animations="disabled", timeout=15000)
                 print(f"APERÇU vérifié : {filename}")
             if seen:
                 raise AssertionError("Requête de collecte des opinions lors des captures")
