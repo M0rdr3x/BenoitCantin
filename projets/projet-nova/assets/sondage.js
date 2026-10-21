@@ -10,6 +10,9 @@
   // L'accord de démonstration ne vaut PAS consentement à la collecte d'opinions.
   // Avant toute activation : nouvel avis, nouveau consentement et revue #675.
   const COLLECTION_OPEN = false;
+  // Verrou indépendant : la case de démonstration ne vaut aucun consentement à la collecte.
+  // Ne modifier qu'après ajout et revue d'un consentement réel et distinct (#675).
+  const LIVE_OPINION_CONSENT_GRANTED = false;
   const ANSWERS = [
     ['-3', 'Tout à fait en désaccord'],
     ['-2', 'En désaccord'],
@@ -130,8 +133,8 @@
       li.append(detail, edit);
       list.append(li);
     });
-    $('sondage-submit').disabled = !COLLECTION_OPEN || recorded;
-    setStatus(COLLECTION_OPEN ?
+    $('sondage-submit').disabled = !COLLECTION_OPEN || !LIVE_OPINION_CONSENT_GRANTED || recorded;
+    setStatus(COLLECTION_OPEN && LIVE_OPINION_CONSENT_GRANTED ?
       'Si vous souhaitez participer, confirmez l’envoi avec votre compte connecté.' :
       'Collecte non ouverte : aucune réponse n’a été envoyée. La publication attend la validation de confidentialité.',
       'sondage-submit-status');
@@ -140,6 +143,7 @@
   }
   function payload() {
     if (!eligible() || selections.size !== 64) throw new Error('INCOMPLETE');
+    if (!LIVE_OPINION_CONSENT_GRANTED) throw new Error('LIVE_CONSENT_REQUIRED');
     const answers = Object.create(null);
     for (const question of questions) {
       const value = selections.get(question.id);
@@ -149,12 +153,12 @@
     return {
       survey: SURVEY_ID,
       age18Confirmed: true,
-      explicitConsent: true,
+      explicitConsent: LIVE_OPINION_CONSENT_GRANTED,
       answers
     };
   }
   async function submit() {
-    if (!COLLECTION_OPEN || recorded || submitting || !eligible()) return;
+    if (!COLLECTION_OPEN || !LIVE_OPINION_CONSENT_GRANTED || recorded || submitting || !eligible()) return;
     let request;
     try { request = payload(); }
     catch { setStatus('Questionnaire incomplet ou admissibilité non confirmée.', 'sondage-submit-status'); return; }
@@ -198,7 +202,7 @@
         'sondage-submit-status');
     } finally {
       submitting = false;
-      $('sondage-submit').disabled = recorded || !COLLECTION_OPEN || !eligible();
+      $('sondage-submit').disabled = recorded || !COLLECTION_OPEN || !LIVE_OPINION_CONSENT_GRANTED || !eligible();
     }
   }
   function resetSurvey() {

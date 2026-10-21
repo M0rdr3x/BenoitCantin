@@ -135,3 +135,8 @@ La page principale `/index.html` de `www.benoitcantin.com` possède en version d
 ## Relecture détaillée de 64 propositions
 
 Le sondage citoyen 64 dispose désormais, comme la consultation 40, d'une liste complète des formulations et de chaque réponse (y compris Sans opinion), avec un bouton **Modifier** par question, correction puis retour au récapitulatif, reprise depuis le début, compteur de progression et purge totale des choix locaux et du consentement. Aucun contenu de question n'a changé; la collecte reste **fermée**. Tests Playwright sur les trois moteurs ajoutés.
+
+
+## Double verrou avant toute collecte réelle (préparation 40/64)
+
+Les deux parcours clients disposent maintenant de **deux verrous distincts** : `COLLECTION_OPEN = false` et `LIVE_OPINION_CONSENT_GRANTED = false`. La case cochée pour démarrer une démonstration locale n'est jamais convertie en `explicitConsent: true` dans un payload. Le bouton d'envoi, l'entrée de la procédure d'envoi et la valeur `explicitConsent` sont tous bloqués par le second verrou. Le formulaire 64 refuse en plus de construire un payload si ce consentement dédié n'a pas été mis en œuvre. Cette mesure n'est pas une simple préférence : les validateurs 40 et 64 échouent si un des verrous est modifié ou neutralisé. Une évolution de l'envoi exigera un nouveau composant UI de consentement au traitement des opinions, les preuves de sa revue et le feu vert #675; **basculer un simple drapeau de collecte ne suffit pas**. Le verrou serveur reste également fermé et les migrations SQL candidates sont isolées de la production.

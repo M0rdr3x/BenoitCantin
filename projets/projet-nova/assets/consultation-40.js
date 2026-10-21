@@ -7,6 +7,9 @@
   // La case d'accord de démonstration n'autorise PAS une collecte future.
   // Avant toute activation : nouvel avis, nouveau consentement explicite et revue #675.
   const COLLECTION_OPEN = false;
+  // Verrou indépendant : l'accord de démonstration ne constitue pas le consentement au traitement.
+  // Une activation future exige un parcours de consentement nouveau, dédié et approuvé (#675).
+  const LIVE_OPINION_CONSENT_GRANTED = false;
   const SURVEY_ID = 'nova-orientations-40-v1';
   const $ = id => document.getElementById(id);
   const answers = new Map();
@@ -157,9 +160,9 @@
     }
     $('sondage-form').addEventListener('submit', e => e.preventDefault());
     $('sondage-submit').addEventListener('click', async () => {
-      if (!COLLECTION_OPEN || !eligible() || answers.size!==40 || submitting || recorded) return;
+      if (!COLLECTION_OPEN || !LIVE_OPINION_CONSENT_GRANTED || !eligible() || answers.size!==40 || submitting || recorded) return;
       const payload = { survey: SURVEY_ID, age18Confirmed:true,
-        explicitConsent:true, answers:Object.fromEntries(answers) };
+        explicitConsent:LIVE_OPINION_CONSENT_GRANTED, answers:Object.fromEntries(answers) };
       if (Object.keys(payload.answers).length !== 40 ||
           !Object.values(payload.answers).every(value => allowed.has(value))) return;
       submitting = true;
@@ -191,7 +194,7 @@
         $('sondage-submit-status').textContent = 'Service temporairement indisponible.';
       } finally {
         submitting = false;
-        $('sondage-submit').disabled = recorded || !COLLECTION_OPEN || !eligible();
+        $('sondage-submit').disabled = recorded || !COLLECTION_OPEN || !LIVE_OPINION_CONSENT_GRANTED || !eligible();
       }
     });
     fetch('data/consultation-40-v1.json', { cache:'no-store', credentials:'omit' })
