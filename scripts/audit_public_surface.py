@@ -18,7 +18,7 @@ from pages_release_proof import MARKER, render
 
 MANIFEST = Path(__file__).with_name("pages_public_inventory.txt")
 GENERATED_MANIFEST = Path(__file__).with_name("pages_generated_inventory.txt")
-EXPECTED_COUNT = 626
+EXPECTED_COUNT = 629
 GENERATED_COUNT = 31
 
 

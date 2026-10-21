@@ -1,6 +1,6 @@
-# SINJIRA / Projet Nova — inventaire exact de l'artefact Pages
-# Provenance : main 790b1424b20e98ef31ec6597e98c5c8f6b4aa23d ; intégration PR #637/#458 13-10-2026 ; Jekyll _config.yml de la PR #458
 # Chaque nouveau fichier public exige une mise à jour explicite de cet inventaire et une revue.
+# Provenance : main 790b1424b20e98ef31ec6597e98c5c8f6b4aa23d ; intégration PR #637/#458 13-10-2026 ; Jekyll _config.yml de la PR #458
+# SINJIRA / Projet Nova — inventaire exact de l'artefact Pages
 404.html
 Admin/sinjira-analytics.html
 Admin/sinjira/index.html
@@ -362,6 +362,7 @@ projets/projet-nova/assets/nova-institutionnel.css
 projets/projet-nova/assets/nova-maturite.css
 projets/projet-nova/assets/nova-sondage-icone.webp
 projets/projet-nova/assets/portal-return.css
+projets/projet-nova/assets/resultats-sondages.js
 projets/projet-nova/assets/script.js
 projets/projet-nova/assets/sondage.css
 projets/projet-nova/assets/sondage.js
@@ -390,6 +391,7 @@ projets/projet-nova/data/documents.json
 projets/projet-nova/data/modele_comptabilite.csv
 projets/projet-nova/data/modele_rencontres.csv
 projets/projet-nova/data/rencontres.json
+projets/projet-nova/data/resultats-sondages-publics-v1.json
 projets/projet-nova/data/sondage-questions-v1.json
 projets/projet-nova/data/sources.json
 projets/projet-nova/document.html
@@ -557,6 +559,7 @@ projets/projet-nova/recrutement.html
 projets/projet-nova/registre-conformite.html
 projets/projet-nova/registre-rencontres.html
 projets/projet-nova/reglements.html
+projets/projet-nova/resultats-sondages.html
 projets/projet-nova/robots.txt
 projets/projet-nova/script.js
 projets/projet-nova/sinjira.css

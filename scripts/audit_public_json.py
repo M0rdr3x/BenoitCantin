@@ -29,6 +29,7 @@ PUBLIC_JSON = frozenset({
     "projets/projet-nova/data/boussole-sources-partis-2026.json",
     "projets/projet-nova/data/comptabilite.json",
     "projets/projet-nova/data/consultation-40-v1.json",
+    "projets/projet-nova/data/resultats-sondages-publics-v1.json",
     "projets/projet-nova/data/documents-word-only.json",
     "projets/projet-nova/data/documents.json",
     "projets/projet-nova/data/rencontres.json",
@@ -105,7 +106,7 @@ INTERNAL_JSON = frozenset({
     "projets/sinjira/codex/livre-i-delivery-contract.json",
 })
 
-REQUIRED_PUBLIC_COUNT = 52
+REQUIRED_PUBLIC_COUNT = 53
 REQUIRED_INTERNAL_COUNT = 28
 
 
