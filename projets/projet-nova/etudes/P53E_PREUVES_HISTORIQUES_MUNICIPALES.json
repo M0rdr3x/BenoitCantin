@@ -1,0 +1,239 @@
+{
+  "schema_version": "P53E-1",
+  "jalon": "P53E",
+  "date_reference": "2026-10-21",
+  "statut": "OBSERVATIONS_MUNICIPALES_HISTORIQUES_2024_SANS_CONSOLIDATION_INTERGOUVERNEMENTALE",
+  "objet": "Acquisition des fichiers financiers réels MAMH 2024, correspondance des codes et calculs réconciliés sur municipalités locales.",
+  "sources": {
+    "donnees": {
+      "organisme": "Ministère des Affaires municipales et de l'Habitation",
+      "titre": "Données réelles 2024 Simple occurrence",
+      "url": "https://mamh.gouv.qc.ca/fichiersdonneesouvertes/Données-réelles-2024-SimpleOccurrence.csv",
+      "resource_id": "f36db61a-86ea-405c-9fd5-c1453c68bd60",
+      "license": "CC-BY 4.0",
+      "telechargement_date": "2026-10-21",
+      "metadata_resource_modification": "2026-10-21T08:20:28",
+      "taille_octets_original": "20254172",
+      "sha256_original_telecharge": "151c0a2b1fc0dfac8c8cc3dba04b74f5c49fbb98fdfd78251925959d1ad35fff",
+      "original_brut_entier_archive_dans_depot": false,
+      "annee_comptable": "2024",
+      "fichier_derive_local": "projets/projet-nova/etudes/sources/P53E_MAMH_2024_MUNICIPALITES_LOCALES_SELECTION.csv",
+      "taille_derive_octets": "136871",
+      "sha256_derive": "11f940092a6a7eb54bf7dc39c6e5b4b44e73c82e9bb34ce7aae2e7278269aa5e",
+      "blob_git_derive": "420df2642a6d96174477f5ead9501070dc491f3c",
+      "statut_provenance": "SOURCE_TELECHARGEE_SHA256_OBSERVE_ARCHIVE_DERIVEE_VERIFIABLE_DANS_GIT",
+      "avis_expert_independant_authentifie": false
+    },
+    "dictionnaire": {
+      "titre": "Données réelles 2024 Description poste",
+      "url": "https://mamh.gouv.qc.ca/fichiersdonneesouvertes/Données-réelles-2024-DescriptionPoste.csv",
+      "resource_id": "b2d411ac-2a30-4e97-8188-9a112042e383",
+      "taille_octets_original": "1749357",
+      "sha256_original_telecharge": "23cd037a93d0ea7a8acd21a768838df8b6cd6a88d827778be68ee82f5186f542",
+      "original_brut_entier_archive_dans_depot": false,
+      "description_retenue": "projets/projet-nova/etudes/sources/P53E_MAMH_2024_DICTIONNAIRE_SELECTION.json",
+      "sha256_description_retenue": "4b895a835dbe2d1090a6c576f013b88bc43843ab512de1b4a97c3deab35caedb",
+      "blob_git_description_retenue": "ee5f8d85adb370b9f1f55406e3dc4896a4b9bd5e",
+      "avis_expert_independant_authentifie": false
+    }
+  },
+  "references": {
+    "p53d": "projets/projet-nova/etudes/P53D_ACQUISITION_MUNICIPALE_2024.json",
+    "p53c": "projets/projet-nova/etudes/P53C_SOURCE_PRIMAIRE_ARC_ET_LACUNES_MUNICIPALES.json",
+    "lacunes": "projets/projet-nova/etudes/P53A_LACUNES_HORS_PERIMETRE.json",
+    "p53a": "projets/projet-nova/etudes/P53A_REGISTRE_RECETTES_ET_COMPETENCES.json",
+    "p52a": "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+  },
+  "methode": {
+    "annee": 2024,
+    "fichier_brut_lignes_organismes": 1343,
+    "fichier_brut_colonnes": 7336,
+    "dictionnaire_lignes": 8003,
+    "filtre_type_org_egal": "Municipalité locale",
+    "municipalites_locales_retenues": 1094,
+    "codes_geo_distincts": 1094,
+    "organismes_hors_filtre": 249,
+    "champ_territorial": "cod_geo",
+    "colonnes_derivees": [
+      "cod_geo",
+      "nom_organisme",
+      "type_org",
+      "CRIIX00016",
+      "CRIIX00018",
+      "CRIIX00405",
+      "CRIIX00406",
+      "CRIIX00407",
+      "CRIIX00408",
+      "CRIIX00409",
+      "CRIIX00410",
+      "CRIIX00411",
+      "CRIIX00412",
+      "CRIIX00413",
+      "CRIIX00414",
+      "CRIIX00415",
+      "CRIIX00416",
+      "CRIIX00417"
+    ],
+    "absence_doublons_codes_geo_verifiee": true,
+    "somme_en_dollars_CAD": true,
+    "champs_vides_ne_signifient_pas_zero_declaration": true,
+    "nombres_decimal_non_arrondis_avant_sommation": true,
+    "rapprochement_categories_CRIIX00406_a_CRIIX00417_vers_CRIIX00405": true,
+    "ecarts_de_rapprochement_individuels": 0,
+    "valeurs_absentes_comptees_comme_0_uniquement_dans_controle_additif": true,
+    "inclusion_périmetre": "MUNICIPALITES_LOCALES_SEULEMENT",
+    "n_inclut_pas_MRC_regies_organismes_transport": false
+  },
+  "champs_reconciliation": [
+    {
+      "code": "CRIIX00016",
+      "observations_non_vides": 1093,
+      "blancs": 1,
+      "total_cad": "15085531572",
+      "provenance": "MAMH_2024_MUNICIPALITES_LOCALES"
+    },
+    {
+      "code": "CRIIX00018",
+      "observations_non_vides": 1093,
+      "blancs": 1,
+      "total_cad": "13325713274",
+      "provenance": "MAMH_2024_MUNICIPALITES_LOCALES"
+    },
+    {
+      "code": "CRIIX00405",
+      "observations_non_vides": 1094,
+      "blancs": 0,
+      "total_cad": "32367623561",
+      "provenance": "MAMH_2024_MUNICIPALITES_LOCALES"
+    },
+    {
+      "code": "CRIIX00406",
+      "observations_non_vides": 1093,
+      "blancs": 1,
+      "total_cad": "17337284213",
+      "provenance": "MAMH_2024_MUNICIPALITES_LOCALES"
+    },
+    {
+      "code": "CRIIX00407",
+      "observations_non_vides": 1011,
+      "blancs": 83,
+      "total_cad": "1001301216",
+      "provenance": "MAMH_2024_MUNICIPALITES_LOCALES"
+    },
+    {
+      "code": "CRIIX00408",
+      "observations_non_vides": 467,
+      "blancs": 627,
+      "total_cad": "846987123",
+      "provenance": "MAMH_2024_MUNICIPALITES_LOCALES"
+    },
+    {
+      "code": "CRIIX00409",
+      "observations_non_vides": 1085,
+      "blancs": 9,
+      "total_cad": "5376508934",
+      "provenance": "MAMH_2024_MUNICIPALITES_LOCALES"
+    },
+    {
+      "code": "CRIIX00410",
+      "observations_non_vides": 1073,
+      "blancs": 21,
+      "total_cad": "4241481713",
+      "provenance": "MAMH_2024_MUNICIPALITES_LOCALES"
+    },
+    {
+      "code": "CRIIX00411",
+      "observations_non_vides": 1092,
+      "blancs": 2,
+      "total_cad": "1570344297",
+      "provenance": "MAMH_2024_MUNICIPALITES_LOCALES"
+    },
+    {
+      "code": "CRIIX00412",
+      "observations_non_vides": 922,
+      "blancs": 172,
+      "total_cad": "406458649",
+      "provenance": "MAMH_2024_MUNICIPALITES_LOCALES"
+    },
+    {
+      "code": "CRIIX00413",
+      "observations_non_vides": 315,
+      "blancs": 779,
+      "total_cad": "297962354",
+      "provenance": "MAMH_2024_MUNICIPALITES_LOCALES"
+    },
+    {
+      "code": "CRIIX00414",
+      "observations_non_vides": 1089,
+      "blancs": 5,
+      "total_cad": "372348360",
+      "provenance": "MAMH_2024_MUNICIPALITES_LOCALES"
+    },
+    {
+      "code": "CRIIX00415",
+      "observations_non_vides": 1064,
+      "blancs": 30,
+      "total_cad": "907643296",
+      "provenance": "MAMH_2024_MUNICIPALITES_LOCALES"
+    },
+    {
+      "code": "CRIIX00416",
+      "observations_non_vides": 25,
+      "blancs": 1069,
+      "total_cad": "1135268",
+      "provenance": "MAMH_2024_MUNICIPALITES_LOCALES"
+    },
+    {
+      "code": "CRIIX00417",
+      "observations_non_vides": 16,
+      "blancs": 1078,
+      "total_cad": "8168138",
+      "provenance": "MAMH_2024_MUNICIPALITES_LOCALES"
+    }
+  ],
+  "observations_de_reference": {
+    "taxes_foncieres_toutes_categories_2024_cad": "15085531572",
+    "taxe_fonciere_generale_sous_categorie_2024_cad": "13325713274",
+    "taxes_municipales_totales_2024_cad": "17337284213",
+    "revenus_totaux_municipalites_locales_2024_cad": "32367623561",
+    "transferts_municipalites_locales_2024_cad": "5376508934",
+    "autres_revenus_hors_taxes_et_transferts_2024_cad": "9653830414",
+    "montant_net_sans_doublon_tous_paliers_2024_cad": null,
+    "montant_comparable_budget_2026_2027_mcad": null,
+    "revenus_du_systeme_nova_mcad": null,
+    "codes_taxation_fonciere_sans_valeur": [
+      "45080"
+    ],
+    "annee": 2024
+  },
+  "périmètre_et_risques": {
+    "taxes_foncieres_incluses_dans_taxes_totales": true,
+    "total_revenus_inclut_taxes_et_transferts": true,
+    "autres_revenus_hors_taxes_et_transferts_inclut_possiblement_quotes_parts_interadmin": true,
+    "transfer_comptable_pas_a_additionner_aux_comptes_provinciaux": true,
+    "filtre_municipalites_locales_ne_vaut_pas_tout_secteur_municipal": true,
+    "source_extraite_et_filtre_intermediaire_pas_archive_integrale": true,
+    "fichier_brut_modifiable_journalierement_retelecharger_et_empreinter": true,
+    "taux_taxe_Nova_non_derivable_des_comptes_2024": true,
+    "exercice_2024_pas_exercice_2026_2027": true,
+    "aucune_certification_externe_des_totaux": true,
+    "blanc_foncier_pas_recette_zero": true
+  },
+  "bilan": {
+    "originaux_sources_telecharges_sha256_observes": 2,
+    "originaux_complets_dans_git": 0,
+    "snapshots_derives_verifiables_dans_git": 2,
+    "municipalites_locales_retenues": 1094,
+    "champs_numeriques_reconcilies": 15,
+    "categories_historique_E04_E05_documentees": 2,
+    "reconcilations_individuelles_sans_ecart": 1094,
+    "budget_2026_2027_municipal_certifie": 0,
+    "consolidation_tous_gouvernements_certifiee": false,
+    "preuves_F01_F20_validees": 0,
+    "valeurs_nova_inconnues": 1320,
+    "publication_autorisee": false,
+    "fusion_autorisee": false,
+    "adoption_autorisee": false,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
