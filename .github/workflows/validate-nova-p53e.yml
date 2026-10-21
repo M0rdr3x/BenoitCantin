@@ -1,0 +1,77 @@
+name: Projet Nova P53E - Recettes municipales reelles 2024
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p53e.yml"
+      - "scripts/valider_recettes_municipales_nova_p53e.py"
+      - "scripts/tests/test_valider_recettes_municipales_nova_p53e.py"
+      - "projets/projet-nova/etudes/P53E_*"
+      - "projets/projet-nova/etudes/sources/P53E_*"
+      - "projets/projet-nova/etudes/P53D_ACQUISITION_MUNICIPALE_2024.json"
+      - "projets/projet-nova/etudes/P53C_SOURCE_PRIMAIRE_ARC_ET_LACUNES_MUNICIPALES.json"
+      - "projets/projet-nova/etudes/P53A_*"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  postes-reels-historiques-sans-go:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Sources du depot en lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: 79 tests de provenance et de doubles comptes municipaux
+        run: |
+          python -m py_compile scripts/valider_recettes_municipales_nova_p53e.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+             "scripts/tests",pattern="test_valider_recettes_municipales_nova_p53e.py")
+          assert suite.countTestCases()==79,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Recalculer en dollars depuis les 1094 comptes municipaux
+        run: |
+          python scripts/valider_recettes_municipales_nova_p53e.py --rapport p53e_bilan.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p53e_bilan.json").read_text(encoding="utf-8"))
+          assert d["municipalites_locales_analysees"]==1094
+          assert d["municipalites_avec_taxe_fonciere_renseignee"]==1093
+          assert d["ecarts_rapprochements"]==0
+          assert d["taxes_foncieres_2024_observees_cad"]=="15085531572"
+          assert d["taxes_municipales_totales_2024_cad"]=="17337284213"
+          assert d["revenus_municipaux_locaux_totaux_2024_cad"]=="32367623561"
+          assert d["transferts_municipaux_2024_cad"]=="5376508934"
+          assert d["revenus_hors_taxes_et_transferts_2024_cad"]=="9653830414"
+          assert d["consolidation_interadministrations_certifiee"] is False
+          assert d["montants_municipaux_2026_2027_certifies"] is False
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Refus explicite de certifier la consolidation interadministrations
+        run: |
+          set +e
+          python scripts/valider_recettes_municipales_nova_p53e.py --exiger-consolidation --rapport p53e_rejet_consolidation.json
+          status=$?
+          set -e
+          test "$status" -eq 3
+      - name: Rapports agrégés uniquement
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p53e-mamh-2024-1094-comptes-municipaux-no-go
+          path: |
+            p53e_bilan.json
+            p53e_rejet_consolidation.json
+          if-no-files-found: ignore
+          retention-days: 7
