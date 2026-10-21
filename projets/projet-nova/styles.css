@@ -1215,3 +1215,8 @@ html{scroll-padding-top:120px}body{overflow-x:hidden}.container{width:min(1180px
 .nova-survey-crosslink p{padding:14px 18px;border:1px solid #cbdbe4;background:#f8fbfe;border-radius:12px;line-height:1.6}
 .nova-survey-crosslink a{font-weight:700}
 @media(max-width:720px){.nova-survey-directory-grid{grid-template-columns:1fr}.nova-survey-directory-card>.btn{width:100%}.nova-survey-directory{padding:18px 0}.nova-survey-crosslink p{padding:12px}}
+
+/* Correctif mobile : le bouton public des résultats ne doit jamais élargir Nova. */
+.nova-survey-directory-results{min-width:0;max-width:100%;margin:18px 0 0}
+.nova-survey-directory-results>.btn{box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;max-width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere;text-align:center;line-height:1.4}
+@media(max-width:720px){.nova-survey-directory-results>.btn{display:flex;width:100%}}

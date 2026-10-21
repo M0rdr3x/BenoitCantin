@@ -37,6 +37,11 @@ with sync_playwright() as p:
               "lien 64 propositions incorrect")
         check("collecte fermée" in page.locator("#consultations").inner_text().lower(),
               "état réel de la collecte non affiché")
+        check(page.locator("#nova-public-results-link").is_visible(),
+              "Accès aux résultats publics masqué sur mobile")
+        check(page.locator("#nova-public-results-link").evaluate(
+              "(el) => el.getBoundingClientRect().right <= innerWidth + 2"),
+              "Bouton des résultats trop large sur mobile")
         check(page.evaluate("document.documentElement.scrollWidth <= innerWidth + 2"),
               "débordement horizontal sur l'accueil mobile")
         page.locator("#nova-survey-directory-40").click()
