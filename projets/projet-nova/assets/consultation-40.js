@@ -4,6 +4,8 @@
  */
 (() => {
   'use strict';
+  // La case d'accord de démonstration n'autorise PAS une collecte future.
+  // Avant toute activation : nouvel avis, nouveau consentement explicite et revue #675.
   const COLLECTION_OPEN = false;
   const SURVEY_ID = 'nova-orientations-40-v1';
   const $ = id => document.getElementById(id);
@@ -48,6 +50,7 @@
       const radio = document.createElement('input');
       radio.type = 'radio';
       radio.name = 'nova40-response';
+      radio.autocomplete = 'off';
       radio.value = choice;
       radio.checked = answers.get(item.id) === choice;
       radio.addEventListener('change', () => {

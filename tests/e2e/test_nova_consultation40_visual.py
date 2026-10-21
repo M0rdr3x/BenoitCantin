@@ -47,7 +47,14 @@ with sync_playwright() as p:
               "statut consultatif et non officiel absent")
         check("Une fois une contribution agrégée" in page.locator("#sondage-privacy-warning").inner_text(),
               "avis sur la limite de retrait absent")
-        check(page.locator("#sondage-start").is_disabled(), "verrou 18+ et consentement absent")
+        check(page.locator("#sondage-start").is_disabled(), "verrou 18+ et accord de démonstration absent")
+        check("Cette case ne constitue pas un consentement à une future collecte." in
+              page.locator("label:has(#sondage-consent)").inner_text(),
+              "l'accord de démonstration doit être séparé d'un consentement futur")
+        check(page.locator("#sondage-form").get_attribute("autocomplete") == "off",
+              "persistance navigateur du formulaire non désactivée")
+        check(page.locator("#sondage-consent").get_attribute("autocomplete") == "off",
+              "restauration automatique de l'accord de démonstration non désactivée")
         page.locator("#sondage-age").check()
         check(page.locator("#sondage-start").is_disabled(), "consentement distinct absent")
         page.locator("#sondage-consent").check()
@@ -55,6 +62,8 @@ with sync_playwright() as p:
         page.locator("#sondage-start").click()
         check(page.locator("#sondage-position").inner_text().startswith("Question 1 sur 40"),
               "première question manquante")
+        check(page.locator("input[name='nova40-response']").first.get_attribute("autocomplete") == "off",
+              "réponses politiques exposées à l'autocomplétion du navigateur")
         check("Québec" in page.locator("#sondage-question-heading").inner_text(),
               "question référendaire initiale absente")
         check(page.locator("#sondage-next").is_disabled(), "réponse vide franchit une étape")

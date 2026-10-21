@@ -27,6 +27,13 @@ def main():
             response = page.goto(URL, wait_until="domcontentloaded", timeout=30_000)
             require(response is not None and response.status in (200, 304),
                     "page de sondage non disponible localement")
+            require("Cette case ne constitue pas un consentement à une future collecte." in
+                    page.locator("label:has(#sondage-consent)").inner_text(),
+                    "La démonstration exige un nouvel accord de collecte pour une future activation")
+            require(page.locator("#sondage-form").get_attribute("autocomplete") == "off",
+                    "Autocomplétion du questionnaire non désactivée")
+            require(page.locator("#sondage-consent").get_attribute("autocomplete") == "off",
+                    "Autocomplétion de l'accord de démonstration non désactivée")
             # Les réponses ne doivent être saisissables qu'une fois le
             # manifeste chargé et les deux cases vérifiées.
             require("Une fois une contribution agrégée" in page.locator("#sondage-privacy-warning").inner_text(),
@@ -48,6 +55,8 @@ def main():
             page.locator("#sondage-start").click()
             require(not page.locator("#sondage-questionnaire").is_hidden(),
                     "Première question non affichée")
+            require(page.locator("#sondage-choices input[type=radio]").first.get_attribute("autocomplete") == "off",
+                    "Le navigateur ne doit pas mémoriser automatiquement les choix politiques")
             require(page.locator("#sondage-choices input[type=radio]").count() == 8,
                     "Échelle -3..+3 et Sans opinion non disponible")
             page.locator("#sondage-choices input[value='1']").check()

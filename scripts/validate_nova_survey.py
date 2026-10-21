@@ -40,7 +40,11 @@ def check_text(payload: dict[str, str]) -> list[str]:
            'id="sondage-back"', 'id="sondage-next"',
            'id="sondage-question-heading"', 'noindex,follow',
            'non représentative', '64 propositions',
-           'id="sondage-review-list"', 'id="sondage-answered"')
+           'id="sondage-review-list"', 'id="sondage-answered"',
+           'id="sondage-consent" type="checkbox" autocomplete="off"',
+           'id="sondage-form" novalidate autocomplete="off"',
+           'Cette case ne constitue pas un consentement à une future collecte.',
+           'Toute collecte future exigera un consentement distinct')
     demand("client", "const COLLECTION_OPEN = false;",
            "function eligible()", "$('sondage-age').checked",
            "$('sondage-consent').checked",
@@ -52,7 +56,9 @@ def check_text(payload: dict[str, str]) -> list[str]:
            "if (!COLLECTION_OPEN || recorded || submitting || !eligible()) return",
            "if (recorded) return", "text.textContent = label",
            "editingReview = true", "choiceNames.get(selections.get(question.id))",
-           "list.replaceChildren()", "step = 0;")
+           "list.replaceChildren()", "step = 0;",
+           "input.autocomplete = 'off'",
+           "L'accord de démonstration ne vaut PAS consentement à la collecte")
     demand("page", 'id="sondage-reset-question"', 'id="sondage-reset-finish"',
            'id="sondage-privacy-warning"', "Une fois une contribution agrégée")
     demand("client", "selections.clear()", "'sondage-consent').checked = false",
@@ -133,6 +139,10 @@ def self_test() -> None:
         ("client", "const COLLECTION_OPEN = false;", "const COLLECTION_OPEN = true;"),
         ("client", "selections.clear()", "/* purge neutralisée */"),
         ("page", 'id="sondage-review-list"', 'id="récapitulatif-perdu"'),
+        ("page", 'Cette case ne constitue pas un consentement à une future collecte.',
+         'Cette case permet toute collecte future.'),
+        ("page", 'autocomplete="off"', 'autocomplete="on"'),
+        ("client", "input.autocomplete = 'off'", "input.autocomplete = 'on'"),
         ("client", "editingReview = true", "editingReview = false"),
         ("client", "choiceNames.get(selections.get(question.id))", "null"),
         ("page", 'id="sondage-privacy-warning"', 'id="avis-absent"'),

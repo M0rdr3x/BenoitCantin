@@ -27,18 +27,18 @@
 <h2 id="sondage-titre" tabindex="-1">Avant de commencer</h2>
 <p><strong>Information essentielle :</strong> cette consultation référendaire non officielle de Projet Nova n’est ni un référendum organisé par une autorité électorale, ni un scrutin ayant une valeur juridique. Les questions n’ont pas été validées comme bulletin référendaire par une autorité électorale. La participation n’a aucun effet sur les décisions publiques.</p>
 <p>Ce sondage est réservé aux personnes de <strong>18 ans ou plus</strong>. La vérification repose sur votre déclaration : aucune date de naissance ni pièce d’identité n’est demandée. Pour l’envoi final, un compte connecté sera nécessaire afin de limiter les doublons.</p>
-<p>La participation est volontaire. Les questions abordent des opinions politiques potentiellement sensibles. Aucun choix ne sera transmis automatiquement : un consentement explicite et une confirmation d’envoi sont nécessaires. En cas d’ouverture autorisée, seuls des décomptes agrégés et un identifiant pseudonyme anti-doublon seront prévus, sans stockage des réponses individuelles. <a href="confidentialite.html">Lire la politique de confidentialité</a>.</p>
+<p>La participation est volontaire. Les questions abordent des opinions politiques potentiellement sensibles. Dans cette démonstration, aucun choix n’est transmis. Toute collecte future exigera un consentement distinct et éclairé sur le traitement des opinions politiques, ainsi qu’une confirmation d’envoi. En cas d’ouverture autorisée, seuls des décomptes agrégés et un identifiant pseudonyme anti-doublon seront prévus, sans stockage des réponses individuelles. <a href="confidentialite.html">Lire la politique de confidentialité</a>.</p>
 <p><strong>Méthodologie :</strong> cette consultation non représentative repose sur un recrutement par participation volontaire, sans tirage aléatoire ni pondération représentative; ces réponses ne permettent pas d’estimer l’opinion de l’ensemble des Québécois avec une marge d’erreur probabiliste. Les 40 formulations proviennent de la banque de travail fournie pour Projet Nova et ne sont pas des questions référendaires officiellement validées.</p>
 <p id="sondage-privacy-warning"><strong>Limite importante avant toute collecte :</strong> le modèle technique prévu additionne les réponses aux totaux sans conserver de bulletin individuel. Une fois une contribution agrégée, ce modèle ne permet pas de la retrouver ni de la retrancher individuellement. Le protocole de retrait et de conservation doit être approuvé avant toute ouverture. <a href="confidentialite.html#nova-sondages-confidentialite">Comprendre le traitement prévu</a>.</p>
 <div class="nova-survey-eligibility">
-<label><input id="sondage-age" type="checkbox"> Je confirme avoir 18 ans ou plus.</label>
-<label><input id="sondage-consent" type="checkbox"> Je consens librement à la transmission et à l’agrégation de mes réponses au moment de l’envoi final, si la collecte est activée.</label>
+<label><input id="sondage-age" type="checkbox" autocomplete="off"> Je confirme avoir 18 ans ou plus.</label>
+<label><input id="sondage-consent" type="checkbox" autocomplete="off"> Je souhaite parcourir cette démonstration. Mes choix restent sur cette page pendant ma visite et ne sont pas transmis. Cette case ne constitue pas un consentement à une future collecte.</label>
 </div>
 <button class="btn btn-primary" id="sondage-start" type="button" disabled>Commencer le sondage</button>
 </div>
 <section class="content-card nova-survey-card" id="sondage-questionnaire" aria-labelledby="sondage-question-heading" hidden>
 <div class="nova-survey-progress"><p id="sondage-position" aria-live="polite">Question 1 sur 40</p><progress id="sondage-progress" value="0" max="40" aria-label="Progression du questionnaire">0 sur 40</progress><p id="sondage-answered" class="nova-survey-progress-count">0 question avec un choix sur 40</p></div>
-<form id="sondage-form" novalidate><fieldset class="nova-survey-question">
+<form id="sondage-form" novalidate autocomplete="off"><fieldset class="nova-survey-question">
 <legend id="sondage-question-heading">Chargement de la question…</legend>
 <p class="nova-survey-hint">Êtes-vous pour ou contre cette proposition? « Sans opinion » est un choix distinct, sans effet sur un scrutin officiel.</p>
 <p id="sondage-context" class="nova-survey-question-context"></p>

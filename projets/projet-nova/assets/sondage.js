@@ -7,6 +7,8 @@
   const SURVEY_ID = 'nova-consultation-64-v1';
   // L'activation nécessite une décision distincte de confidentialité,
   // la migration SQL, l'Edge Function et une validation HTTPS de bout en bout.
+  // L'accord de démonstration ne vaut PAS consentement à la collecte d'opinions.
+  // Avant toute activation : nouvel avis, nouveau consentement et revue #675.
   const COLLECTION_OPEN = false;
   const ANSWERS = [
     ['-3', 'Tout à fait en désaccord'],
@@ -65,6 +67,7 @@
       const input = document.createElement('input');
       input.type = 'radio';
       input.name = 'sondage-reponse';
+      input.autocomplete = 'off';
       input.value = value;
       input.checked = existing === value;
       input.addEventListener('change', () => {
