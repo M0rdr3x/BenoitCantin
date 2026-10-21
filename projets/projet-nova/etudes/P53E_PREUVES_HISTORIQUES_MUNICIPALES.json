@@ -82,7 +82,7 @@
     "ecarts_de_rapprochement_individuels": 0,
     "valeurs_absentes_comptees_comme_0_uniquement_dans_controle_additif": true,
     "inclusion_périmetre": "MUNICIPALITES_LOCALES_SEULEMENT",
-    "n_inclut_pas_MRC_regies_organismes_transport": false
+    "n_inclut_pas_MRC_regies_organismes_transport": true
   },
   "champs_reconciliation": [
     {

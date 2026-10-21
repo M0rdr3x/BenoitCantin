@@ -220,7 +220,7 @@ def audit(docs,rows,dictionary):
          meth.get("ecarts_de_rapprochement_individuels")==0 and
          meth.get("valeurs_absentes_comptees_comme_0_uniquement_dans_controle_additif") is True and
          meth.get("inclusion_périmetre")=="MUNICIPALITES_LOCALES_SEULEMENT" and
-         meth.get("n_inclut_pas_MRC_regies_organismes_transport") is False,
+         meth.get("n_inclut_pas_MRC_regies_organismes_transport") is True,
          "METHODE_SOURCES_NON_VERIFIEE")
  stats,results=compute(rows)
  captured=m.get("champs_reconciliation")
