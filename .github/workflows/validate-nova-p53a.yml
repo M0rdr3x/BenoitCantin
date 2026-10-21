@@ -1,0 +1,78 @@
+name: Projet Nova P53A - Comptabilite des recettes et perimetres manquants
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p53a.yml"
+      - "scripts/auditer_inventaire_recettes_nova_p53a.py"
+      - "scripts/tests/test_auditer_inventaire_recettes_nova_p53a.py"
+      - "projets/projet-nova/etudes/P53A_*"
+      - "projets/projet-nova/etudes/P52C_REFERENTIEL_BUDGET_QUEBEC_2026_2027.json"
+      - "projets/projet-nova/etudes/P52J_RELECTURE_PRIMAIRE_BUDGET_2026_2027.json"
+      - "projets/projet-nova/etudes/P52Z_MATRICE_FISCALITE_JURIDICTIONS.json"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controle-recettes-sans-approbation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout en lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: 75 tests de rapprochement et de donnees fictives
+        run: |
+          python -m py_compile scripts/auditer_inventaire_recettes_nova_p53a.py
+          python - <<'PY'
+          import unittest
+          tests=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_auditer_inventaire_recettes_nova_p53a.py")
+          assert tests.countTestCases()==75,tests.countTestCases()
+          r=unittest.TextTestRunner(verbosity=2).run(tests)
+          assert r.wasSuccessful()
+          PY
+      - name: Calculs budgetaires et export des 30 postes
+        run: |
+          python scripts/auditer_inventaire_recettes_nova_p53a.py --rapport p53a_bilan.json --export-csv p53a_inventaire_30_postes.csv
+          python - <<'PY'
+          import csv,json
+          from pathlib import Path
+          r=json.loads(Path("p53a_bilan.json").read_text("utf-8"))
+          assert r["recettes_gouvernement_quebec_mcad"]==166492
+          assert r["recettes_autonomes_quebec_mcad"]==134361
+          assert r["impots_revenu_existant_quebec_mcad"]==65327
+          assert r["autres_prelevements_a_instruire_mcad"]==40731
+          assert r["revenus_entreprises_droits_divers_mcad"]==28303
+          assert r["transferts_federaux_dans_budget_mcad"]==32131
+          assert r["solde_loi_equilibre_mcad"]==-8612
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          with Path("p53a_inventaire_30_postes.csv").open(encoding="utf-8") as f:
+            items=list(csv.reader(f))
+          assert len(items)==31
+          assert all(row[4]=="" for row in items[22:])
+          PY
+      - name: Exiger le refus de completude non obtenue
+        run: |
+          set +e
+          python scripts/auditer_inventaire_recettes_nova_p53a.py --exiger-completude --rapport p53a_incomplet.json
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Rapports et grille sans autres montants inventes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p53a-inventaire-budget-et-lacunes-no-go
+          path: |
+            p53a_bilan.json
+            p53a_inventaire_30_postes.csv
+            p53a_incomplet.json
+          if-no-files-found: ignore
+          retention-days: 7
