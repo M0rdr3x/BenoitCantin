@@ -19,6 +19,9 @@ PUBLIC_ROUTES = (
     "/projets/sinjira/logiciels/",
     "/projets/projet-nova/",
     "/projets/projet-nova/boussole-electorale.html",
+    "/projets/projet-nova/resultats-sondages.html",
+    "/projets/projet-nova/assets/resultats-sondages.js",
+    "/projets/projet-nova/data/resultats-sondages-publics-v1.json",
     "/projets/projet-nova/consultation-40.html",
     "/projets/projet-nova/sondage.html",
     "/projets/projet-nova/assets/nova-sondage-icone.webp",
@@ -66,6 +69,9 @@ MIME_HINTS = {
     "/assets/media/nova-boussole-electorale.webp": ("image/webp",),
     "/assets/media/nova-boussole-electorale-v2.webp": ("image/webp",),
     "/projets/projet-nova/boussole-electorale.html": ("text/html",),
+    "/projets/projet-nova/resultats-sondages.html": ("text/html",),
+    "/projets/projet-nova/assets/resultats-sondages.js": ("application/javascript", "text/javascript", "application/x-javascript"),
+    "/projets/projet-nova/data/resultats-sondages-publics-v1.json": ("application/json",),
     "/projets/projet-nova/consultation-40.html": ("text/html",),
     "/projets/projet-nova/sondage.html": ("text/html",),
     "/projets/projet-nova/assets/nova-sondage-icone.webp": ("image/webp",),
@@ -231,6 +237,9 @@ def self_test() -> None:
             "/assets/media/sinjira-jeux-banniere-2026.webp": "image/webp",
             "/assets/media/sinjira-logiciels-banniere-2026.webp": "image/webp",
             "/projets/projet-nova/assets/nova-sondage-icone.webp": "image/webp",
+            "/projets/projet-nova/resultats-sondages.html": "text/html",
+            "/projets/projet-nova/assets/resultats-sondages.js": "text/javascript",
+            "/projets/projet-nova/data/resultats-sondages-publics-v1.json": "application/json",
         }.get(path, "text/plain")
         return Reply(200, content_type=mime)
     assert not verify(BASE, fixture), verify(BASE, fixture)
@@ -296,7 +305,10 @@ def self_test() -> None:
         "/assets/media/nova-boussole-electorale.webp",
         "/assets/media/nova-boussole-electorale-v2.webp",
         "/projets/projet-nova/boussole-electorale.html",
-        "/projets/projet-nova/consultation-40.html",
+        "/projets/projet-nova/resultats-sondages.html",
+    "/projets/projet-nova/assets/resultats-sondages.js",
+    "/projets/projet-nova/data/resultats-sondages-publics-v1.json",
+    "/projets/projet-nova/consultation-40.html",
         "/projets/projet-nova/sondage.html",
         "/projets/projet-nova/assets/nova-sondage-icone.webp",
     ):

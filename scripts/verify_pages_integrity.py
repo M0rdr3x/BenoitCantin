@@ -3,7 +3,7 @@
 
 Exécution après le reçu SHA/run (verify_pages_live.py). Le reçu peut être à
 jour alors qu'un CDN conserve des fichiers statiques périmés. Ce contrôle
-compare 25 ressources réelles au checkout exact du commit approuvé.
+compare 28 ressources réelles au checkout exact du commit approuvé.
 Aucun PUT/POST, aucune donnée privée, aucun fichier de session.
 """
 from __future__ import annotations
@@ -25,7 +25,7 @@ SHA_PATTERN = re.compile(r"[0-9a-f]{40}\Z")
 MAX_BYTES = 4 * 1024 * 1024
 MAX_ATTEMPTS = 4
 PAUSE_SECONDS = 8
-MAX_AUDIT_SECONDS = 420  # 7 minutes pour les 25 ressources, fail-closed.
+MAX_AUDIT_SECONDS = 420  # 7 minutes pour les 28 ressources, fail-closed.
 # Source repository-relative path -> MIME acceptable on the real domain.
 CRITICAL_RESOURCES = {
     "sw.js": ("application/javascript", "text/javascript", "application/x-javascript"),
@@ -46,6 +46,9 @@ CRITICAL_RESOURCES = {
     "assets/media/sinjira-logiciels-banniere-2026.webp": ("image/webp",),
     "index.html": ("text/html",),
     "projets/projet-nova/boussole-electorale.html": ("text/html",),
+    "projets/projet-nova/resultats-sondages.html": ("text/html",),
+    "projets/projet-nova/assets/resultats-sondages.js": ("application/javascript", "text/javascript", "application/x-javascript"),
+    "projets/projet-nova/data/resultats-sondages-publics-v1.json": ("application/json",),
     "projets/projet-nova/consultation-40.html": ("text/html",),
     "projets/projet-nova/sondage.html": ("text/html",),
     "projets/projet-nova/assets/nova-sondage-icone.webp": ("image/webp",),
@@ -268,6 +271,9 @@ def self_test() -> None:
         for protected in (
             "index.html",
             "projets/projet-nova/boussole-electorale.html",
+            "projets/projet-nova/resultats-sondages.html",
+            "projets/projet-nova/assets/resultats-sondages.js",
+            "projets/projet-nova/data/resultats-sondages-publics-v1.json",
             "projets/projet-nova/consultation-40.html",
             "projets/projet-nova/sondage.html",
             "projets/projet-nova/assets/nova-sondage-icone.webp",
@@ -395,7 +401,7 @@ def main() -> int:
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--self-test", action="store_true")
     mode.add_argument("--check", action="store_true",
-                      help="25 ressources HTTPS avec budget global de 7 minutes, après reçu SHA/run")
+                      help="28 ressources HTTPS avec budget global de 7 minutes, après reçu SHA/run")
     parser.add_argument("--expected-sha")
     args = parser.parse_args()
     if args.self_test:

@@ -112,7 +112,7 @@ def failures(workflow: str) -> list[str]:
         if re.search(r"(?m)^\s+(?:if|continue-on-error):", pieces[2]):
             issues.append(name + ": commande conditionnelle ou erreurs ignorées")
         if name == "live" and "    timeout-minutes: 10\n" not in body:
-            issues.append("Le budget des 38 sondes est insuffisant")
+            issues.append("Le budget des 41 sondes est insuffisant")
     for forbidden in ("upload-pages-artifact@", "deploy-pages@", "pages: write",
                       "id-token: write", "curl ", "wget ", "|| true",
                       "if: false", "continue-on-error: true"):

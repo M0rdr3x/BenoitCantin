@@ -76,3 +76,10 @@ navigation réussis, n'envoie aucune opinion et ne charge aucun compte.
 Le workflow ne téléverse que les quatre PNG et le fichier d'explication,
 avec des permissions GitHub `contents: read`, et **jamais**
 l'artefact entier du dépôt, les fichiers techniques ou le site compilé.
+
+
+### Répartition collective publiquement vérifiable
+
+Le portail Nova possède dans la PR #639 `resultats-sondages.html` et son registre public `data/resultats-sondages-publics-v1.json`. Aucune donnée réelle n'existe encore : le fichier est fermé (`not_open`). Les résultats ne peuvent être débloqués simplement en modifiant l'interface : la CI refuse toute statistique avant une approbation indépendante de #675, impose un total de 30 participants au minimum et une suppression de chaque répartition qui risquerait de divulguer un effectif entre 1 et 9. Une réponse individuelle n'est jamais exportable par le registre public.
+
+La publication contrôlée vérifie maintenant **27 routes publiques** (dont la page résultats et ses deux fichiers) en HTTP 200 direct et au MIME attendu, **14 routes techniques** en HTTP 404/410, puis les octets SHA des **28 ressources CDN critiques**. Ces contrôles ne sont exécutés en production qu'après un PUBLISH réellement autorisé; `main` et la configuration Pages restent inchangés ici.
