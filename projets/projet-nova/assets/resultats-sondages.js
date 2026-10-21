@@ -56,8 +56,13 @@
         const allKeys = cfg.options.map(item => item[0]);
         for (let i=0; i<cfg.length; i++) {
           const row = entry.questions[i];
-          if (!noIdentityFields(row) || row.id !== 'q'+String(i+1).padStart(2,'0') ||
-              !noIdentityFields(row.counts) || !Number.isSafeInteger(row.total) ||
+          if (!noIdentityFields(row) || row.id !== 'q'+String(i+1).padStart(2,'0')) return false;
+          if (row.status === 'suppressed') {
+            if (Object.keys(row).sort().join('|') !== 'id|status') return false;
+            continue;
+          }
+          if (row.status !== 'published' || !noIdentityFields(row.counts) ||
+              !Number.isSafeInteger(row.total) ||
               row.total !== entry.respondents || row.total < 30 ||
               Object.keys(row.counts).sort().join('|') !== [...allKeys].sort().join('|')) return false;
           const counts=Object.values(row.counts);
@@ -111,6 +116,12 @@
         li.append(element('p','nova-results-unavailable','Aucun résultat publié.'));
       } else {
         const row=results.questions[index];
+        if (row.status === 'suppressed') {
+          li.append(element('p','nova-results-unavailable',
+            'Répartition masquée : effectif insuffisant pour protéger les répondants.'));
+          list.append(li);
+          return;
+        }
         cfg.options.forEach(([key,label])=>{
           const value=row.counts[key];
           const percentage=100*value/row.total;

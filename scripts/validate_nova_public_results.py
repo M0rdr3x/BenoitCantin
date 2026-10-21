@@ -54,9 +54,15 @@ def validate(obj, review=False):
             if type(n)!=int or n<30 or not isinstance(rows,list) or len(rows)!=length:
                 bad.append("Échantillon public insuffisant");continue
             for index,row in enumerate(rows):
-                if (not isinstance(row,dict) or set(row)!={"id","total","counts"} or
-                    row.get("id")!="q"+str(index+1).zfill(2) or row.get("total")!=n or
-                    not isinstance(row.get("counts"),dict) or set(row["counts"])!=set(choices)):
+                if not isinstance(row,dict) or row.get("id")!="q"+str(index+1).zfill(2):
+                    bad.append("Identifiant de question incorrect");continue
+                if row.get("status")=="suppressed":
+                    if set(row)!={"id","status"}:bad.append("Cellule masquée révélant des nombres")
+                    continue
+                if (row.get("status")!="published" or
+                    set(row)!={"id","status","total","counts"} or
+                    row.get("total")!=n or not isinstance(row.get("counts"),dict) or
+                    set(row["counts"])!=set(choices)):
                     bad.append("Comptes erronés q"+str(index+1));continue
                 values=list(row["counts"].values())
                 if (not all(type(v)==int and (v==0 or v>=10) for v in values)
@@ -91,12 +97,18 @@ def self_test():
                   privacyReviewApproved=True,publishedOn="2026-10-21")
     a=sample["surveys"]["nova-orientations-40-v1"]
     a.update(status="approved_aggregate",respondents=30,questions=[
-      {"id":"q"+str(i+1).zfill(2),"total":30,
+      {"id":"q"+str(i+1).zfill(2),"status":"published","total":30,
        "counts":{"pour":20,"contre":10,"sans_opinion":0}} for i in range(40)])
     assert validate(sample), "Ne jamais approuver une publication réelle en CI"
     assert not validate(sample,review=True), "Agrégation synthétique valide refusée"
     a["questions"][0]["counts"]={"pour":24,"contre":6,"sans_opinion":0}
     assert validate(sample,review=True), "Petite cellule publiée"
+    a["questions"][0]={"id":"q01","status":"suppressed"}
+    assert not validate(sample,review=True), "Suppression sûre d'une question refusée"
+    a["questions"][0]["counts"]={"pour":24,"contre":6,"sans_opinion":0}
+    assert validate(sample,review=True), "Comptes divulgués dans une question masquée"
+    a["questions"][0]={"id":"q01","status":"published","total":30,
+                        "counts":{"pour":20,"contre":10,"sans_opinion":0}}
     with TemporaryDirectory() as name:
         out=Path(name)/REL;out.parent.mkdir(parents=True)
         out.write_bytes((ROOT/REL).read_bytes())
