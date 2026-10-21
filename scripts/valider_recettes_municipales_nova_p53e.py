@@ -116,7 +116,7 @@ def load_snapshots(csv_path=CSV_SOURCE,desc_path=DESC_SOURCE):
           entry["Sous-section"]==("S27" if code.startswith("CRIIX000") else "S7") and
           "Exercice en cours - Réalisations - Intégral - Intégral" in
            entry["Facettes (exercice - type de données - consolidation - compétences - spécifique)"] and
-          type(entry["Sujet"]) is str and len(entry["Sujet"])>28,
+          type(entry["Sujet"]) is str and len(entry["Sujet"])>=28,
           "CODE_COMPTABLE_NON_VERIFIE")
   desc_by[code]=entry
  require(list(sorted(desc_by))==sorted(METRICS),"DICTIONNAIRE_INCOMPLET")
