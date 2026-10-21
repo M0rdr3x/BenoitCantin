@@ -161,7 +161,7 @@ jobs:
         env:
           BROWSER: ${{ matrix.browser }}
         run: python tests/e2e/test_nova_consultation40_visual.py
-      - name: Capturer quatre aperçus des sondages (Chromium uniquement, sans publication)
+      - name: Capturer cinq aperçus des sondages (Chromium uniquement, sans publication)
         if: ${{ matrix.browser == 'chromium' }}
         run: python tests/e2e/capture_nova_sondages_preview.py --output artifacts/nova-apercu
       - name: Déposer les seuls PNG de préproduction pour revue du propriétaire

@@ -17,6 +17,7 @@ CAPTURES = (
     ("/projets/projet-nova/", "#consultations", "02-accueil-projet-nova.png"),
     ("/projets/projet-nova/consultation-40.html", "#sondage-introduction", "03-sondage-referendaire-40.png"),
     ("/projets/projet-nova/sondage.html", "#sondage-introduction", "04-sondage-citoyen-64.png"),
+    ("/projets/projet-nova/resultats-sondages.html", "#results-state", "05-resultats-publics.png"),
 )
 ICON = "nova-sondage-icone.webp"
 
@@ -61,6 +62,14 @@ def capture(output: Path) -> None:
                         raise AssertionError("Questionnaire sans attestation 18+ ou consentement")
                     if not page.locator("#sondage-introduction").is_visible():
                         raise AssertionError("Introduction au sondage invisible")
+                if route.endswith("resultats-sondages.html"):
+                    page.locator("#results-question-list li").first.wait_for(timeout=15000)
+                    if page.locator("#results-question-list li").count() != 40:
+                        raise AssertionError("Résultats : 40 formulations non affichées")
+                    if "Aucun résultat publié" not in element.inner_text():
+                        raise AssertionError("Résultats de démonstration faussement annoncés")
+                    if page.locator(".nova-results-bar-item").count():
+                        raise AssertionError("Chiffres fictifs visibles dans les résultats")
                 element.screenshot(path=str(output / filename), animations="disabled", timeout=15000)
                 print(f"APERÇU vérifié : {filename}")
             if seen:
@@ -69,7 +78,7 @@ def capture(output: Path) -> None:
             browser.close()
     (output / "LISEZ-MOI.txt").write_text(
         "PROJET NOVA — APERÇUS DE PRÉPRODUCTION, NON PUBLIÉS\n"
-        "Cette archive contient quatre captures d'interfaces locales de test.\n"
+        "Cette archive contient cinq captures d'interfaces locales de test.\n"
         "Ce ne sont pas des captures du site www.benoitcantin.com en production.\n"
         "Aucune réponse réelle n'a été soumise ou enregistrée.\n"
         "Les deux consultations sont non représentatives ; le sondage\n"

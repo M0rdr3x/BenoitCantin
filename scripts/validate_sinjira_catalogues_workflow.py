@@ -166,7 +166,7 @@ def validate(source: str) -> list[str]:
     if visual.count(f"uses: actions/checkout@{CHECKOUT}") != 1:
         errors.append("Checkout des navigateurs non épinglé")
     # L'aperçu destiné à la revue ne doit jamais devenir un déploiement.
-    preview = "      - name: Capturer quatre aperçus des sondages (Chromium uniquement, sans publication)\n        if: ${{ matrix.browser == 'chromium' }}\n        run: python tests/e2e/capture_nova_sondages_preview.py --output artifacts/nova-apercu\n      - name: Déposer les seuls PNG de préproduction pour revue du propriétaire\n        if: ${{ matrix.browser == 'chromium' && success() }}\n        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02\n        with:\n          name: nova-sondages-apercu-pr-${{ github.event.pull_request.number }}-${{ github.sha }}\n          path: |\n            artifacts/nova-apercu/*.png\n            artifacts/nova-apercu/LISEZ-MOI.txt\n          if-no-files-found: error\n          retention-days: 7\n          compression-level: 6\n"
+    preview = "      - name: Capturer cinq aperçus des sondages (Chromium uniquement, sans publication)\n        if: ${{ matrix.browser == 'chromium' }}\n        run: python tests/e2e/capture_nova_sondages_preview.py --output artifacts/nova-apercu\n      - name: Déposer les seuls PNG de préproduction pour revue du propriétaire\n        if: ${{ matrix.browser == 'chromium' && success() }}\n        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02\n        with:\n          name: nova-sondages-apercu-pr-${{ github.event.pull_request.number }}-${{ github.sha }}\n          path: |\n            artifacts/nova-apercu/*.png\n            artifacts/nova-apercu/LISEZ-MOI.txt\n          if-no-files-found: error\n          retention-days: 7\n          compression-level: 6\n"
     if visual.count(preview) != 1:
         errors.append("Preuve visuelle non publique absente ou contrôles d'upload modifiés")
     if visual.count(f"uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02") != 1:
@@ -276,7 +276,7 @@ def self_test(source: str) -> None:
             "    if: false\n",
         ),
         "captures de revue supprimées": (
-            "      - name: Capturer quatre aperçus des sondages (Chromium uniquement, sans publication)\n",
+            "      - name: Capturer cinq aperçus des sondages (Chromium uniquement, sans publication)\n",
             "      - name: APERÇUS_CACHÉS\n",
         ),
         "artefact limité à des PNG élargi à la racine": (
