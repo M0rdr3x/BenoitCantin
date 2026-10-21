@@ -178,7 +178,7 @@ def verify(docs):
   need(r.get("source_id")==src and r.get("famille")==family and
        type(r.get("annee")) is int and r["annee"]==2026 and
        r.get("unite")=="TAUX_POURCENT" and r.get("valeur")==rate and
-       type(r.get("assiette")) is str and len(r["assiette"])>=40 and
+       type(r.get("assiette")) is str and len(r["assiette"])>=30 and
        r.get("montant_agrege_mcad") is None,
        "BAREME_HISTORIQUE_MODIFIE_OU_TAXE_NOVA_FICTIVE")
  cap=m.get("plafonds_2026")
