@@ -1,4 +1,4 @@
-const CACHE='benoitcantin-v24-4-95-public-4';
+const CACHE='benoitcantin-v24-4-95-public-5';
 const CACHE_PREFIX='benoitcantin-v24-4-95-public-';
 const CORE=[
   '/','/offline.html','/manifest.webmanifest','/transparence-ia.html',
@@ -10,6 +10,18 @@ const CORE=[
 // Seules les ressources statiques publiques connues peuvent entrer dans ce cache.
 // Les requêtes privées, authentifiées et les reçus de publication restent réseau seul.
 const PUBLIC_PATHS=new Set(CORE);
+// Les questionnaires et leurs données publiques ne doivent pas être
+// servis hors ligne : exige toujours la version réseau, jamais un cache PWA.
+const NOVA_SURVEY_NETWORK_ONLY=new Set([
+  '/projets/projet-nova/consultation-40.html',
+  '/projets/projet-nova/sondage.html',
+  '/projets/projet-nova/assets/consultation-40.js',
+  '/projets/projet-nova/assets/sondage.js',
+  '/projets/projet-nova/assets/sondage.css',
+  '/projets/projet-nova/data/consultation-40-v1.json',
+  '/projets/projet-nova/data/sondage-questions-v1.json'
+]);
+function surveyNetworkOnly(path){return NOVA_SURVEY_NETWORK_ONLY.has(path)}
 const PRIVATE_ROOTS=[
   '/app','/compte','/Admin','/admin','/histoire-de-vie','/supabase',
   '/api','/auth','/rest','/storage','/functions','/edge',
@@ -22,7 +34,7 @@ function privatePath(path){
     under(path,'/projets/sinjira/codex/livre-i-delivery-contract.json');
 }
 function publicRequest(r,u){
-  return PUBLIC_PATHS.has(u.pathname)&&!privatePath(u.pathname)&&
+  return PUBLIC_PATHS.has(u.pathname)&&!privatePath(u.pathname)&&!surveyNetworkOnly(u.pathname)&&
     !u.search&&!r.headers.has('Authorization')&&!r.headers.has('Cookie')&&
     (r.credentials==='omit'||r.credentials==='same-origin')&&
     (r.destination!=='document'||r.mode!=='no-cors');
@@ -38,7 +50,7 @@ function cacheableResponse(resp){
 function safePrecache(path){
   const u=new URL(path,location.origin);
   return path.startsWith('/')&&u.origin===location.origin&&u.pathname===path&&
-    !u.search&&!u.hash&&!privatePath(u.pathname);
+    !u.search&&!u.hash&&!privatePath(u.pathname)&&!surveyNetworkOnly(u.pathname);
 }
 self.addEventListener('install',e=>e.waitUntil((async()=>{
   if(!CORE.every(safePrecache))throw Error('Chemin privé interdit dans le precache PWA');
@@ -65,7 +77,7 @@ function matchPublicCache(request){
 self.addEventListener('fetch',e=>{
   const r=e.request,u=new URL(r.url);
   if(r.method!=='GET'||u.origin!==location.origin)return;
-  if(privatePath(u.pathname)||!publicRequest(r,u)){
+  if(privatePath(u.pathname)||surveyNetworkOnly(u.pathname)||!publicRequest(r,u)){
     // Aucun cache, aucune réponse hors ligne de session, aucun fallback de reçu SHA.
     e.respondWith(fetch(new Request(r,{cache:'no-store'})));
     return;

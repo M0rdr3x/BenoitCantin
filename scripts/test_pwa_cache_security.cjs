@@ -42,7 +42,7 @@ const storage = {
     globalLookups += 1;
     return new Response('DONNEE PRIVEE CACHE TIERS', { status: 200 });
   },
-  async keys() { return ['benoitcantin-v24-4-95-public-3', 'other-product-cache', currentCache]; },
+  async keys() { return ['benoitcantin-v24-4-95-public-4', 'other-product-cache', currentCache]; },
   async delete(key) { deletes.push(key); return true; },
 };
 const environment = {
@@ -99,7 +99,7 @@ async function test() {
   writes.length = 0;
   requests.length = 0;
   await event('activate');
-  assert.ok(deletes.includes('benoitcantin-v24-4-95-public-3'));
+  assert.ok(deletes.includes('benoitcantin-v24-4-95-public-4'));
   assert.ok(!deletes.includes('other-product-cache'), 'Foreign caches must survive');
 
   // Refus de précacher une nouvelle route privée même si quelqu'un l'ajoute à CORE.
@@ -138,6 +138,29 @@ async function test() {
   networkFails = true;
   await assert.rejects(request('/.well-known/sinjira-pages-release.json'));
   networkFails = false;
+
+  // Les questionnaires et leurs données exigent le réseau, jamais un écran
+  // obsolète depuis le cache PWA après une mise à jour de publication.
+  const surveyRoutes = [
+    '/projets/projet-nova/consultation-40.html',
+    '/projets/projet-nova/sondage.html',
+    '/projets/projet-nova/assets/consultation-40.js',
+    '/projets/projet-nova/assets/sondage.js',
+    '/projets/projet-nova/assets/sondage.css',
+    '/projets/projet-nova/data/consultation-40-v1.json',
+    '/projets/projet-nova/data/sondage-questions-v1.json',
+  ];
+  for (const url of surveyRoutes) {
+    const beforeWrites = writes.length, beforeMatches = matches.length;
+    const destination = url.endsWith('.html') ? 'document' : '';
+    assert.equal((await request(url, {}, destination)).status, 200);
+    assert.equal(requests.at(-1).cache, 'no-store', url + ' must be network only');
+    assert.equal(writes.length, beforeWrites, url + ' should never enter PWA cache');
+    assert.equal(matches.length, beforeMatches, url + ' should never read stale cache');
+    networkFails = true;
+    await assert.rejects(request(url, {}, destination));
+    networkFails = false;
+  }
 
   // Assets from the pinned public set are cached, but not credentials or tokens.
   await request('/assets/js/site.js');
@@ -201,7 +224,7 @@ async function test() {
   assert.equal(handled, false);
 
   assert.equal(globalLookups, 0, 'No cross-application cache lookup is allowed');
-  assert.ok(/-public-4/.test(currentCache), 'Cache version must rotate');
+  assert.ok(/-public-5/.test(currentCache), 'Cache version must rotate');
   console.log('OK PWA: réseaux privés et release non cachés, allowlist statique, protections Cookie/Auth/Vary et isolation des caches.');
 }
 test().catch(error => { console.error(error); process.exitCode = 1; });

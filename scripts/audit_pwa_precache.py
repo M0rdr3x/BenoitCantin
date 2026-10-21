@@ -17,6 +17,15 @@ EXPECTED_COUNT = 46
 CORE_START = re.compile(r"\bconst\s+CORE\s*=\s*\[([\s\S]*?)\]\s*;")
 CORE_TOKEN = re.compile(r"'([^'\\]*)'")
 ALLOWED_URL = re.compile(r"/[a-zA-Z0-9_./-]*\Z")
+NOVA_SURVEY_NETWORK_ONLY = (
+    "/projets/projet-nova/consultation-40.html",
+    "/projets/projet-nova/sondage.html",
+    "/projets/projet-nova/assets/consultation-40.js",
+    "/projets/projet-nova/assets/sondage.js",
+    "/projets/projet-nova/assets/sondage.css",
+    "/projets/projet-nova/data/consultation-40-v1.json",
+    "/projets/projet-nova/data/sondage-questions-v1.json",
+)
 PRIVATE_PREFIXES = (
     "/app", "/compte", "/Admin", "/admin", "/histoire-de-vie",
     "/supabase", "/api", "/auth", "/rest", "/storage", "/functions",
@@ -45,6 +54,7 @@ def extract_core(source: str) -> tuple[list[str], list[str]]:
         if (not ALLOWED_URL.fullmatch(route) or route.startswith("//")
                 or any(p in {".", ".."} for p in parts) or
                 route.endswith("//") or
+                route in NOVA_SURVEY_NETWORK_ONLY or
                 any(route == private or route.startswith(private + "/")
                     for private in PRIVATE_PREFIXES)):
             problems.append(f"Route privée ou non canonique dans CORE: {route}")
@@ -73,6 +83,12 @@ def audit(source: Path, built: Path | None) -> list[str]:
     if built is not None and not built.is_dir():
         errors.append("Artefact Jekyll PWA manquant")
         return errors
+    for path in NOVA_SURVEY_NETWORK_ONLY:
+        if ("'" + path + "'") not in script.read_text("utf-8"):
+            errors.append(f"Chemin Nova sans exclusion PWA explicite : {path}")
+    for marker in ("!surveyNetworkOnly(u.pathname)", "||surveyNetworkOnly(u.pathname)||"):
+        if marker not in script.read_text("utf-8"):
+            errors.append(f"Garde PWA des sondages supprimée : {marker}")
     for route in paths:
         rel = built_path(route)
         source_target = source / rel
@@ -126,6 +142,10 @@ def self_test() -> None:
         sw_file.write_text(modified, "utf-8")
         assert any("introuvable.html" in e for e in audit(root, built)), (
             "Nouvelle route sans fichier acceptée"
+        )
+        sw_file.write_text(real_sw.replace("||surveyNetworkOnly(u.pathname)||", "||", 1), "utf-8")
+        assert any("Garde PWA" in e for e in audit(root, built)), (
+            "Neutralisation de la lecture réseau Nova non détectée"
         )
         sw_file.write_text(real_sw, "utf-8")
         assert not audit(root, built), audit(root, built)

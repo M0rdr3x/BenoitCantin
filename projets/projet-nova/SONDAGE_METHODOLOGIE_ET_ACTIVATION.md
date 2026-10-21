@@ -145,3 +145,18 @@ Les deux parcours clients disposent maintenant de **deux verrous distincts** : `
 ## Confidentialité lors des retours depuis l'historique ou d'un rechargement
 
 Dans les deux démonstrations, un retour via les boutons **Précédent/Suivant du navigateur** ou un rechargement ne doit plus restaurer une attestation « 18 ans et plus », un accord d'essai ni les choix d'opinion dans l'interface. Le code efface explicitement la session locale dans `init()` puis au signal `pageshow` du navigateur (y compris lorsque le document est récupéré depuis le cache de navigation arrière/avant). Il revient à l'introduction et oblige la personne à confirmer de nouveau les conditions avant de démarrer. Des tests Playwright de retour historique et rechargement ont été ajoutés à Chromium, Firefox et WebKit; aucun envoi n'est possible. Cela réduit les risques de visibilité des opinions sur un appareil partagé, sans prétendre contrôler les captures d'écran, le stockage externe ou le cache du navigateur. Les deux verrous de collecte et de consentement réel restent fermés.
+
+
+## Cache PWA : confidentialité et fraîcheur des sondages
+
+Le service worker `sw.js` interdit explicitement de précacher et de
+servir depuis le cache les deux pages de questionnaires, leurs
+scripts, leurs deux manifestes JSON de questions et leur feuille CSS.
+Ces ressources sont **réseau uniquement**, avec `no-store` et sans
+fallback hors connexion. Aucune réponse politique n'est stockée par la PWA.
+Le cache de la coque publique passe de `public-4` à `public-5`,
+afin d'écarter les anciennes versions anonymes des accueils lors de
+l'activation du nouveau service worker. Les autres applications
+conservent leurs propres caches. Les tests Node vérifient les
+sept routes réseau, et l'audit Jekyll refuse leur précache.
+Cette modification reste en préparation dans la PR #639, sans déploiement.
