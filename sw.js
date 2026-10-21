@@ -20,6 +20,9 @@ const NOVA_SURVEY_NETWORK_ONLY=new Set([
   '/projets/projet-nova/assets/sondage.css',
   '/projets/projet-nova/data/consultation-40-v1.json',
   '/projets/projet-nova/data/sondage-questions-v1.json'
+  ,'/projets/projet-nova/resultats-sondages.html'
+  ,'/projets/projet-nova/assets/resultats-sondages.js'
+  ,'/projets/projet-nova/data/resultats-sondages-publics-v1.json'
 ]);
 function surveyNetworkOnly(path){return NOVA_SURVEY_NETWORK_ONLY.has(path)}
 const PRIVATE_ROOTS=[
