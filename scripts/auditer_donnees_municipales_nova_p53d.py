@@ -21,6 +21,7 @@ FILES={
 }
 SOURCE=D/"sources"/"P53D_MAMH_PROFIL_2024_AGREGAT_QUEBEC_CAPTURE.csv"
 SHA="6acff78c6fd6122d6630f0a8f8eea7e59e265946"
+CODE=re.compile(r"(?:CIALC|CIAIC|CIIIC)\d{5}")
 FLAGS=[
  "code_PROV_ne_demontre_pas_recettes_consolidees",
  "champs_CIALC_CIAIC_CIIIC_sans_dictionnaire_pas_taxes",
