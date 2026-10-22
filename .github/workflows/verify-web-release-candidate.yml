@@ -1,0 +1,214 @@
+name: Web release — preuve isolée du candidat #449
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '.github/workflows/verify-web-release-candidate.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verify-web-release-candidate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-release-proof-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  candidate-build:
+    name: Valider la construction sans fusion ni publication
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      SINJIRA_RELEASE_SHA: af30c04456e5f1a3d1405d5a2f90672442d9c7e9
+    steps:
+      - name: Récupérer le candidat exact dans un dossier isolé
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          repository: M0rdr3x/BenoitCantin
+          ref: af30c04456e5f1a3d1405d5a2f90672442d9c7e9
+          path: candidate
+          persist-credentials: false
+
+      - name: Vérifier que le checkout est le SHA candidat approuvé
+        shell: bash
+        run: |
+          set -euo pipefail
+          observed="$(git -C candidate rev-parse HEAD)"
+          test "$observed" = "$SINJIRA_RELEASE_SHA"
+          echo "CANDIDATE_SOURCE_SHA=$observed" >> "$GITHUB_ENV"
+
+      - name: Configurer Python pour les vérifications du candidat
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Tester le validateur candidat et ses auto-tests de non-regression
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_site.py
+
+      - name: Garantir les règles jeunesse et le formulaire personnel désactivé
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          legal = Path("avis-legal.html").read_text(encoding="utf-8")
+          privacy = Path("confidentialite.html").read_text(encoding="utf-8")
+          contact = Path("contact.html").read_text(encoding="utf-8")
+
+          assert "L’inscription libre-service est 13+" in legal, "Avis légal jeunesse obsolète"
+          assert "13 ans et plus" in privacy, "Politique jeunesse 13+ manquante"
+          for name, page in (("avis légal", legal), ("confidentialité", privacy)):
+              assert "11–12 ans" not in page, f"Ancien parcours 11–12 sur {name}"
+
+          assert '<fieldset id="contact-personal-fields" disabled' in contact, (
+              "La saisie du formulaire personnel doit être désactivée côté HTML"
+          )
+          assert "PERSONAL_ENDPOINT=''" in contact, (
+              "Le formulaire personnel ne doit contenir aucun endpoint actif"
+          )
+          assert 'data-personal-formspree-state="pending-separate-endpoint"' in contact
+          assert 'href="/.well-known/security.txt"' in contact
+          assert "Sécurité / vulnérabilité" in contact
+          assert "BubblaV" in privacy
+          assert "Le widget fournisseur est actuellement désactivé." in privacy
+          assert "https://formspree.io/f/xdenkzrv" not in contact
+          print("PASS: 13+, 11–12 exclus, formulaire désactivé, security.txt, déclaration BubblaV.")
+          PY
+
+      - name: Verifier la syntaxe et les interactions du menu mobile et de l'assistant local
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check assets/js/site.js
+          node --check scripts/test_site_navigation_release.cjs
+          node scripts/test_site_navigation_release.cjs
+
+      - name: Auto-tester les sorties de build et les symlinks
+        working-directory: candidate
+        run: python3 scripts/build_netlify_public.py --self-test-security
+
+      - name: Construire et auditer les quatre contextes Netlify
+        working-directory: candidate
+        run: python3 scripts/build_netlify_public.py --check
+
+      - name: Construire et auditer le confinement Pages
+        working-directory: candidate
+        run: python3 scripts/build_netlify_public.py --check --security-containment
+
+      - name: Produire le confinement CI
+        working-directory: candidate
+        run: python3 scripts/build_netlify_public.py --output _containment_site --security-containment
+
+      - name: Produire le paquet Netlify production autonome
+        working-directory: candidate
+        run: python3 scripts/build_netlify_public.py --output _site --standalone-netlify
+
+      - name: Produire le paquet Netlify preview autonome
+        working-directory: candidate
+        env:
+          CONTEXT: deploy-preview
+        run: python3 scripts/build_netlify_public.py --output _preview_site --standalone-netlify
+
+      - name: Produire le paquet Pages isolé sans configuration Netlify
+        working-directory: candidate
+        run: python3 scripts/build_netlify_public.py --output _pages_site
+
+      - name: Vérifier les sorties et marqueurs exacts sans déploiement
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          sha = os.environ["SINJIRA_RELEASE_SHA"]
+          expected = {
+              "_site": ("production", True),
+              "_preview_site": ("preview", True),
+              "_pages_site": ("production", False),
+              "_containment_site": ("production", False),
+          }
+          for name, (context, netlify) in expected.items():
+              directory = Path(name)
+              assert directory.is_dir(), f"Artefact absent: {name}"
+              metadata = json.loads((directory / ".well-known/release.json").read_text())
+              assert metadata["source_sha"] == sha, f"SHA divergent: {name}"
+              assert metadata["context"] == context, f"Contexte divergent: {name}"
+              for technical in (".github", "docs", "scripts", "supabase", "tests", "mobile-native"):
+                  assert not (directory / technical).exists(), f"Surface exposée: {name}/{technical}"
+              for config in ("_headers", "_redirects"):
+                  assert (directory / config).exists() == netlify, f"Configuration incorrecte: {name}/{config}"
+              assert (directory / ".well-known/security.txt").is_file(), f"security.txt absent: {name}"
+              count = sum(1 for p in directory.rglob("*") if p.is_file())
+              assert count > 0
+              print(f"VALIDÉ {name}: {count} fichiers, SHA exact, aucun dossier technique")
+          PY
+
+      - name: Controler la compatibilite des 32 anciennes URL et 404 techniques
+        working-directory: candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import tomllib
+          from pathlib import Path
+          from scripts.build_netlify_public import REQUIRED_NOVA_LEGACY_ALIASES, REQUIRED_TECHNICAL_404S
+
+          config = tomllib.loads(Path("netlify.toml").read_text(encoding="utf-8"))
+          assert config["build"]["publish"] == "_site", "Un build Netlify ne doit jamais publier la racine"
+          routes = config["redirects"]
+          assert {r["from"] for r in routes[:6]} == REQUIRED_TECHNICAL_404S, "404 non prioritaires"
+          assert len(REQUIRED_NOVA_LEGACY_ALIASES) == 30, "Inventaire historique Nova incomplet"
+          expected = {
+              f"/{name}": f"/projets/projet-nova/{name}"
+              for name in REQUIRED_NOVA_LEGACY_ALIASES
+          }
+          expected.update({
+              "/administration": "/admin/sinjira/",
+              "/administration.html": "/admin/sinjira/",
+          })
+          actual = {r["from"]: r for r in routes}
+          assert len(actual) == len(routes), "Une redirection est definie plusieurs fois"
+          for source, target in expected.items():
+              entry = actual[source]
+              assert entry["to"] == target and entry["status"] == 301, source
+              if source.endswith(".html") and source != "/administration.html":
+                  assert Path(target.lstrip("/")).is_file(), f"Cible historique manquante: {source}"
+
+          for directory in ("_site", "_preview_site"):
+              rules = (Path(directory) / "_redirects").read_text(encoding="utf-8")
+              headers = (Path(directory) / "_headers").read_text(encoding="utf-8")
+              for source, target in expected.items():
+                  assert f"{source} {target} 301" in rules.splitlines(), f"Alias absent: {directory}: {source}"
+              for source in REQUIRED_TECHNICAL_404S:
+                  assert f"{source} /404.html 404!" in rules.splitlines(), f"404 absent: {directory}: {source}"
+              assert "/administration.html\n  Cache-Control: no-store" in headers, "Cache admin ancien non protege"
+              assert "/administration.html\n  Cache-Control: no-store\n  X-Robots-Tag: noindex, nofollow, noarchive" in headers, "Robots admin ancien non proteges"
+              print(f"PASS: {directory}, 30 alias Nova, 2 alias admin, 6 404 et no-store.")
+          PY
+
+      - name: Tracer explicitement les limites de cette preuve
+        shell: bash
+        run: |
+          {
+            echo "### Candidat web-only #449 — preuve de build isolé"
+            echo "- Source Git candidate exacte : \`$CANDIDATE_SOURCE_SHA\`"
+            echo "- Quatre builds contrôlés + self-tests sécurité + sorties CI vérifiées"
+            echo "- Aucun upload ni déploiement; aucun DNS, Netlify ou Pages modifié"
+            echo "- Cette preuve ne résout pas les conflits de merge ni le verrou #450"
+          } >> "$GITHUB_STEP_SUMMARY"
