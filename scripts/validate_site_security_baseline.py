@@ -32,7 +32,7 @@ def inspect_netlify(raw: str, label: str, root_site: bool) -> list[str]:
         cfg = tomllib.loads(raw)
     except tomllib.TOMLDecodeError as exc:
         return [f"{label}: TOML invalide : {exc}"]
-    headers = {item.get("for"): item.get("headers", {}).get("values", {}) for item in cfg.get("headers", [])}
+    headers = {item.get("for"): item.get("values", {}) for item in cfg.get("headers", [])}
     global_headers = headers.get("/*", {})
     for name in ("X-Content-Type-Options", "Strict-Transport-Security",
                  "Referrer-Policy", "Permissions-Policy", "Cross-Origin-Opener-Policy",
