@@ -99,5 +99,46 @@ jobs:
           print(f"OK Boussole: {len(expected)} blobs main identiques; CSS, navigation, SEO, confidentialité et artefacts vérifiés.")
           PY
 
+      - name: Vérifier la continuité hors ligne du questionnaire sans données privées
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          from scripts.build_netlify_public import relative_path_allowed
+
+          worker = Path('sw.js').read_text(encoding='utf-8')
+          assert "benoitcantin-v24-4-95-public-9-compass" in worker
+          assert "const releaseMarker=u.pathname==='/.well-known/release.json';" in worker
+          assert "if(releaseMarker){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}" in worker
+          assert "if(privatePath){e.respondWith(fetch(new Request(r,{cache:'no-store'}))" in worker
+          assert "function cacheableResponse(resp)" in worker
+
+          precache = worker.split("const CORE=[", 1)[1].split("];", 1)[0]
+          entries = re.findall(r"'(/[^']+)'", precache)
+          assert len(entries) == len(set(entries)), "Entrées PWA en double"
+          expected = {
+              '/projets/projet-nova/boussole-electorale.html',
+              '/projets/projet-nova/assets/boussole-electorale.js',
+              '/projets/projet-nova/assets/boussole-electorale.css',
+              '/projets/projet-nova/data/boussole-electorale-v2.json',
+              '/projets/projet-nova/data/boussole-partis-2026.json',
+              '/projets/projet-nova/data/boussole-sources-partis-2026.json',
+              '/projets/projet-nova/data/boussole-preuves-2026.json',
+              '/assets/media/nova-boussole-electorale.webp',
+              '/assets/media/nova-boussole-electorale-v2.webp',
+          }
+          assert expected <= set(entries), "Fichiers publics Boussole absents du précache PWA"
+          forbidden = ('/compte/', '/admin/', '/Admin/', '/app/', '/histoire-de-vie/',
+                       '/supabase/', '/docs/', '/scripts/', '/tests/', '/mobile-native/')
+          for uri in entries:
+              assert not uri.startswith(forbidden), "Fichier privé précaché: " + uri
+              rel = Path(uri.lstrip('/'))
+              assert rel.is_file(), "Fichier PWA absent: " + uri
+              assert relative_path_allowed(rel), "Fichier non publiable précaché: " + uri
+          print(f"OK PWA: {len(entries)} fichiers publics; Boussole complète et routes privées exclues.")
+          PY
+
       - name: Vérifier les fichiers, routes et liens de l’ensemble du site
         run: python3 scripts/validate_site.py
