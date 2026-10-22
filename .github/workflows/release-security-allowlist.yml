@@ -1,0 +1,45 @@
+name: Release candidate — confinement public et confidentialité
+
+on:
+  pull_request:
+    branches:
+      - a1/web-release-transparency
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-security-allowlist-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-allowlist:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Source exacte du candidat, sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Python reproductible
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Tester symlinks, fichiers cachés et sorties dangereuses
+        run: python3 scripts/build_netlify_public.py --self-test-security
+
+      - name: Contrôler la construction publique Netlify/preview
+        run: python3 scripts/build_netlify_public.py --check
+
+      - name: Contrôler le confinement GitHub Pages
+        run: python3 scripts/build_netlify_public.py --check --security-containment
+
+      - name: Tester les en-têtes, les parcours privés et les refus HTTP
+        run: python3 scripts/validate_web_release_http.py --self-test
+
+      - name: Vérifier les fichiers, routes et liens de l’ensemble du site
+        run: python3 scripts/validate_site.py
