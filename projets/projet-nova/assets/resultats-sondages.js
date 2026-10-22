@@ -20,6 +20,13 @@
   let current = '40';
   let catalog = null;
   let snapshot = null;
+  let loadFailed = false;
+  // Pas de nouveaux champs publiés sans révision explicite du contrat.
+  function exactKeys(obj, keys) {
+    return obj !== null && typeof obj === 'object' && !Array.isArray(obj) &&
+      Object.keys(obj).length === keys.length &&
+      keys.every(key => Object.prototype.hasOwnProperty.call(obj, key));
+  }
 
   function noIdentityFields(obj) {
     const forbidden = /user|person|email|ipaddress|ip_address|hash|token|session|account|identit|device|timestamp|raw.?vote|individual|participant_id/i;
@@ -33,22 +40,38 @@
         'q'+String(i+1).padStart(2,'0') && typeof q.text === 'string' && q.text.length >= 20);
   }
   function validSnapshot(data) {
-    if (!noIdentityFields(data) || data.schema !== 'nova-public-results-v1' ||
+    if (!exactKeys(data, ['schema','publicationStatus','publicationApproved',
+        'privacyReviewApproved','surveys','rules','publishedOn','source','notes']) ||
+        !noIdentityFields(data) || data.schema !== 'nova-public-results-v1' ||
         !['not_open','approved_aggregate'].includes(data.publicationStatus) ||
         typeof data.publicationApproved !== 'boolean' ||
         typeof data.privacyReviewApproved !== 'boolean' ||
-        !noIdentityFields(data.surveys) || !noIdentityFields(data.rules) ||
+        !exactKeys(data.surveys, Object.values(CONFIG).map(cfg => cfg.id)) ||
+        !exactKeys(data.rules, ['minimumParticipants','minimumNonzeroCell','suppression']) ||
         data.rules.minimumParticipants !== 30 ||
         data.rules.minimumNonzeroCell !== 10 ||
-        data.rules.suppression !== 'entire-question') return false;
+        data.rules.suppression !== 'entire-question' ||
+        typeof data.source !== 'string' || !data.source.trim() ||
+        data.source.length > 400 || typeof data.notes !== 'string' ||
+        !data.notes.trim() || data.notes.length > 400) return false;
+    if (data.publicationStatus === 'approved_aggregate') {
+      if (!data.publicationApproved || !data.privacyReviewApproved ||
+          typeof data.publishedOn !== 'string' ||
+          !/^\d{4}-\d{2}-\d{2}$/.test(data.publishedOn) ||
+          Number.isNaN(Date.parse(data.publishedOn)) ||
+          new Date(data.publishedOn).toISOString().slice(0,10) !== data.publishedOn) return false;
+    }
+    let publishedSurveys = 0;
     for (const cfg of Object.values(CONFIG)) {
       const entry = data.surveys[cfg.id];
-      if (!noIdentityFields(entry) || entry.questionCount !== cfg.length ||
+      if (!exactKeys(entry, ['status','questionCount','respondents','questions']) ||
+          !noIdentityFields(entry) || entry.questionCount !== cfg.length ||
           !['not_open','approved_aggregate'].includes(entry.status) ||
           !Array.isArray(entry.questions)) return false;
       if (entry.status === 'not_open') {
         if (entry.respondents !== null || entry.questions.length !== 0) return false;
       } else {
+        publishedSurveys++;
         if (!data.publicationApproved || !data.privacyReviewApproved ||
             data.publicationStatus !== 'approved_aggregate' ||
             !Number.isSafeInteger(entry.respondents) ||
@@ -58,13 +81,14 @@
           const row = entry.questions[i];
           if (!noIdentityFields(row) || row.id !== 'q'+String(i+1).padStart(2,'0')) return false;
           if (row.status === 'suppressed') {
-            if (Object.keys(row).sort().join('|') !== 'id|status') return false;
+            if (!exactKeys(row, ['id','status'])) return false;
             continue;
           }
-          if (row.status !== 'published' || !noIdentityFields(row.counts) ||
+          if (row.status !== 'published' ||
+              !exactKeys(row, ['id','status','total','counts']) ||
+              !exactKeys(row.counts, allKeys) || !noIdentityFields(row.counts) ||
               !Number.isSafeInteger(row.total) ||
-              row.total !== entry.respondents || row.total < 30 ||
-              Object.keys(row.counts).sort().join('|') !== [...allKeys].sort().join('|')) return false;
+              row.total !== entry.respondents || row.total < 30) return false;
           const counts=Object.values(row.counts);
           if (!counts.every(n => Number.isSafeInteger(n) && n >= 0 &&
               (n === 0 || n >= 10)) ||
@@ -74,7 +98,8 @@
     }
     if (data.publicationStatus === 'not_open' &&
         (data.publicationApproved || data.privacyReviewApproved ||
-         data.publishedOn !== null)) return false;
+         data.publishedOn !== null || publishedSurveys !== 0)) return false;
+    if (data.publicationStatus === 'approved_aggregate' && publishedSurveys === 0) return false;
     return true;
   }
   async function fetchJSON(path) {
@@ -97,6 +122,15 @@
     $('results-show-64').setAttribute('aria-pressed',String(current==='64'));
     const questions=catalog?.[current]?.questions;
     const results=snapshot?.surveys?.[cfg.id];
+    if (loadFailed) {
+      $('results-state').textContent =
+        'Données publiques indisponibles ou non validées. Aucun résultat affiché.';
+      $('results-explainer').textContent =
+        'La vérification a échoué : aucun chiffre ne sera présenté tant que les fichiers publics ne sont pas conformes.';
+      list.append(element('li','nova-results-unavailable',
+        'Résultats et formulations indisponibles pour le moment.'));
+      return;
+    }
     const approved=!!(snapshot && snapshot.publicationApproved &&
       snapshot.privacyReviewApproved && results?.status === 'approved_aggregate');
     $('results-state').textContent=approved
@@ -151,7 +185,9 @@
       catalog={'40':a,'64':b};
       snapshot=publicData;
     } catch {
-      $('results-state').textContent='Données publiques indisponibles ou non validées. Aucun résultat affiché.';
+      loadFailed = true;
+      catalog = null;
+      snapshot = null;
     }
     render();
   }
