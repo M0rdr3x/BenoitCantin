@@ -42,7 +42,7 @@ const storage = {
     globalLookups += 1;
     return new Response('DONNEE PRIVEE CACHE TIERS', { status: 200 });
   },
-  async keys() { return ['benoitcantin-v24-4-95-public-4', 'other-product-cache', currentCache]; },
+  async keys() { return ['benoitcantin-v24-4-95-public-4', 'benoitcantin-v24-4-95-public-5', 'other-product-cache', currentCache]; },
   async delete(key) { deletes.push(key); return true; },
 };
 const environment = {
@@ -106,6 +106,8 @@ async function test() {
   requests.length = 0;
   await event('activate');
   assert.ok(deletes.includes('benoitcantin-v24-4-95-public-4'));
+  assert.ok(deletes.includes('benoitcantin-v24-4-95-public-5'),
+    'The prior weaker Vary-policy cache must be evicted on activation');
   assert.ok(!deletes.includes('other-product-cache'), 'Foreign caches must survive');
 
   // Refus de précacher une nouvelle route privée même si quelqu'un l'ajoute à CORE.
@@ -245,7 +247,7 @@ async function test() {
   assert.equal(handled, false);
 
   assert.equal(globalLookups, 0, 'No cross-application cache lookup is allowed');
-  assert.ok(/-public-5/.test(currentCache), 'Cache version must rotate');
+  assert.ok(/-public-6/.test(currentCache), 'Cache version must rotate');
   console.log('OK PWA: réseaux privés et release non cachés, allowlist statique, protections Cookie/Auth/Vary et isolation des caches.');
 }
 test().catch(error => { console.error(error); process.exitCode = 1; });
