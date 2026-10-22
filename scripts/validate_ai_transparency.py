@@ -371,6 +371,19 @@ def sitemap_file_for_url(url: str) -> Path:
         rel += "index.html"
     return ROOT / rel
 
+def sinjira_site_js_cache_allowed(html_raw: str) -> bool:
+    """Accepter le contrat release historique et la version main plus récente.
+
+    Vérification bornée à deux numéros connus, pour éviter d'admettre une
+    version arbitraire ou un cache périmé pendant la réconciliation.
+    """
+    versions = re.findall(r"site\\.js\\?v=([^\\\"'<>\\s]+)", html_raw)
+    return bool(versions) and all(
+        version in {"24.4.23", "24.4.23-sinjira", "24.4.100", "24.4.100-sinjira"}
+        for version in versions
+    )
+
+
 def validate_public_pages(sitemap: str) -> None:
     urls = re.findall(r"<loc>(https://www\.benoitcantin\.com/[^<]*)</loc>", sitemap)
     if "https://www.benoitcantin.com/transparence-ia.html" not in urls:
@@ -389,9 +402,9 @@ def validate_public_pages(sitemap: str) -> None:
         html = compact(html_raw)
         rel = path.relative_to(ROOT).as_posix()
         if rel.startswith("projets/sinjira/") and "site.js?v=" in html_raw:
-            if "site.js?v=24.4.23" not in html_raw:
+            if not sinjira_site_js_cache_allowed(html_raw):
                 fail(
-                    f"surface SINJIRA avec cache site.js obsolète: {rel}"
+                    f"surface SINJIRA avec version site.js non approuvée: {rel}"
                 )
 
         if rel == "transparence-ia.html":
@@ -453,6 +466,11 @@ def validate_all_html_surfaces() -> None:
         )
 
 def self_test(contents: dict[str, str]) -> None:
+    for version in ("24.4.23", "24.4.23-sinjira", "24.4.100", "24.4.100-sinjira"):
+        assert sinjira_site_js_cache_allowed('<script src="/assets/js/site.js?v=' + version + '"></script>')
+    for version in ("7.2-sinjira", "24.4.22", "24.4.101", "latest"):
+        assert not sinjira_site_js_cache_allowed('<script src="/assets/js/site.js?v=' + version + '"></script>')
+    assert not sinjira_site_js_cache_allowed('<script src="/assets/js/site.js?v=24.4.100"></script><script src="/assets/js/site.js?v=old"></script>')
     # La baseline doit être valide avant toute mutation; sinon une erreur
     # préexistante pourrait faire passer artificiellement tous les cas négatifs.
     validate_core(contents)
