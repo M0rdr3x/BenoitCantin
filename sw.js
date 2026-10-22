@@ -39,6 +39,7 @@ function privatePath(path){
 function publicRequest(r,u){
   return PUBLIC_PATHS.has(u.pathname)&&!privatePath(u.pathname)&&!surveyNetworkOnly(u.pathname)&&
     !u.search&&!r.headers.has('Authorization')&&!r.headers.has('Cookie')&&
+    !r.headers.has('Range')&&!r.headers.has('If-Range')&&
     (r.credentials==='omit'||r.credentials==='same-origin')&&
     (r.destination!=='document'||r.mode!=='no-cors');
 }
