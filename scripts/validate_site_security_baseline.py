@@ -110,11 +110,26 @@ def inspect_nova_workflow(raw: str) -> list[str]:
     return errors
 
 
+def inspect_robots(raw: str) -> list[str]:
+    """Hygiène d'indexation seulement : robots.txt ne remplace JAMAIS un contrôle d'accès."""
+    required = {
+        "/app/", "/compte/", "/admin/", "/Admin/", "/histoire-de-vie/",
+        "/supabase/", "/.github/", "/.git/", "/scripts/", "/docs/",
+        "/tests/", "/mobile-native/",
+    }
+    directives = {line.strip().split(":", 1)[1].strip()
+                  for line in raw.splitlines()
+                  if line.strip().lower().startswith("disallow:") and ":" in line}
+    return [f"robots.txt: exclusion indexation absente: {x}"
+            for x in sorted(required - directives)]
+
+
 def inspect_sources() -> list[str]:
     return (
         inspect_netlify((ROOT / "netlify.toml").read_text("utf-8"), "netlify.toml", True)
         + inspect_netlify((ROOT / "projets/projet-nova/netlify.toml").read_text("utf-8"),
                           "projets/projet-nova/netlify.toml", False)
+        + inspect_robots((ROOT / "robots.txt").read_text("utf-8"))
         + inspect_supabase_config((ROOT / "supabase/config.toml").read_text("utf-8"))
         + inspect_nova_workflow((ROOT / ".github/workflows/validate-nova-participation.yml").read_text("utf-8"))
     )
@@ -124,6 +139,7 @@ def self_test() -> None:
     root = (ROOT / "netlify.toml").read_text("utf-8")
     edge = (ROOT / "supabase/config.toml").read_text("utf-8")
     workflow = (ROOT / ".github/workflows/validate-nova-participation.yml").read_text("utf-8")
+    robots = (ROOT / "robots.txt").read_text("utf-8")
     failures = (
         inspect_netlify(root.replace("Strict-Transport-Security", "Disabled-HSTS", 1), "test", True),
         inspect_netlify(root.replace(PROJECT_ORIGIN, "https://other.invalid", 1), "test", True),
@@ -132,6 +148,7 @@ def self_test() -> None:
                                              "[functions.admin-console]\nverify_jwt = false", 1)),
         inspect_nova_workflow(workflow.replace("actions/checkout@", "actions/checkout@v6 # ", 1)),
         inspect_nova_workflow(workflow.replace("persist-credentials: false", "persist-credentials: true", 1)),
+        inspect_robots(robots.replace("Disallow: /scripts/", "Disallow: /scri-pt/", 1)),
     )
     for i, issues in enumerate(failures, start=1):
         if not issues:
@@ -151,7 +168,8 @@ def main() -> int:
         print("ÉCHEC:", error)
     if errors:
         return 1
-    print("OK contrat de sécurité : en-têtes, chemins internes, cache privé, CSP Supabase, JWT Edge et CI Nova.")
+    print("OK contrat de sécurité : en-têtes, chemins internes, cache privé, robots, CSP Supabase, JWT Edge et CI Nova.")
+    print("robots.txt est une instruction aux robots, et NON un mécanisme de contrôle d'accès.")
     print("L'hôte public, les réglages Supabase Auth et la protection GitHub doivent être vérifiés séparément.")
     return 0
 
