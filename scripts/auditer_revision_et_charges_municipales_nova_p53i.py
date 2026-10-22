@@ -245,7 +245,7 @@ def audit(docs,old,newest,desc):
       drift.get("nombre_local_nouveau")==1095 and
       drift.get("nombre_complementaire_inchange")==249 and
       drift.get("différences_de_recettes_attribuables_a_nouvelle_ligne_seulement") is True and
-      drift.get("exhaustivite_revision_autres_colonnes_non_extraite") is False,
+      drift.get("exhaustivite_revision_autres_colonnes_non_extraite") is True,
       "DRIFT_SOURCE_PSEUDO_VALIDÉ")
  n=m.get("nouvelle_ligne_municipale",{})
  must(n=={

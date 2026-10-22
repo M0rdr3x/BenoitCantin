@@ -52,7 +52,7 @@
     "date_de_revision_observee": "2026-10-22",
     "champ_comparaison": "18 colonnes de l'extraction P53E/P53G",
     "différences_de_recettes_attribuables_a_nouvelle_ligne_seulement": true,
-    "exhaustivite_revision_autres_colonnes_non_extraite": false
+    "exhaustivite_revision_autres_colonnes_non_extraite": true
   },
   "nouvelle_ligne_municipale": {
     "code": "39135",
