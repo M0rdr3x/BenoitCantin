@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - a1/web-release-transparency
+  push:
+    branches:
+      - a1/web-release-transparency
   workflow_dispatch:
 
 permissions:
@@ -153,6 +156,21 @@ jobs:
 
       - name: Contrôler les pages publiques réconciliées sans navigateur
         run: python3 scripts/validate_release_offline_a11y.py
+
+      - name: Vérifier la syntaxe JavaScript de la navigation et du service worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --version
+          node --check assets/js/site.js
+          node --check projets/projet-nova/script.js
+          node --check sw.js
+
+      - name: Auto-tester le contrat de navigation sensible
+        run: python3 scripts/validate_release_navigation_runtime.py --self-test
+
+      - name: Garantir l'accessibilité du menu et les frontières public/privé
+        run: python3 scripts/validate_release_navigation_runtime.py
 
       - name: Vérifier les fichiers, routes et liens de l’ensemble du site
         run: python3 scripts/validate_site.py
