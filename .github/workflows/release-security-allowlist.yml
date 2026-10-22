@@ -79,7 +79,14 @@ jobs:
           nova_css = Path("projets/projet-nova/styles.css").read_text()
           route = "/projets/projet-nova/boussole-electorale.html"
           assert home.count(route) >= 4, "Boussole non accessible partout depuis l'accueil"
-          assert 'class="node-boussole-home"' in home, "Porte orbitale Boussole absente"
+          import re
+          compass_link = re.search(
+              r'<a\\b[^>]*class="[^"]*\\bnode-boussole-home\\b[^"]*"[^>]*>',
+              home,
+          )
+          assert compass_link and 'href="' + route + '"' in compass_link.group(), (
+              "Porte orbitale Boussole absente ou mal liée"
+          )
           assert 'class="nova-compass-entry"' in nova, "Entrée Boussole Nova absente"
           assert nova.count("boussole-electorale.html") >= 4, "Navigation Nova incomplète"
           assert "boussole-electorale.html" in nova_js, "Menu Nova reconstruit sans Boussole"
