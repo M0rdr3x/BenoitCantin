@@ -51,6 +51,11 @@ PRIVATE_ROUTES = (
     "/projets/projet-nova/UPLOAD_GITHUB.md",
     "/projets/projet-nova/SECURITY.md",
     "/projets/sinjira/codex/livre-i-delivery-contract.json",
+    # Sources serveur/Supabase et dépendances mobiles : jamais servies par Pages.
+    "/supabase/migrations/20260808090000_sinjira_players.sql",
+    "/supabase/functions/get-private-book-url/index.ts",
+    "/supabase/tests/license_redemption_security_a1.test.sql",
+    "/mobile-native/package.json",
     # Ancien chemin technique Netlify : même refus strict après PUBLISH.
     "/scripts/build_netlify_public.py",
 )
@@ -216,10 +221,14 @@ def verify(base: str, getter: Callable[[str], Reply],
 
 
 def self_test() -> None:
-    # La frontière post-PUBLISH doit couvrir tous les 14 chemins techniques,
+    # La frontière post-PUBLISH doit couvrir les 18 chemins techniques,
     # y compris le script historique Netlify, sans en oublier un.
-    assert len(PRIVATE_ROUTES) == len(set(PRIVATE_ROUTES)) == 14
+    assert len(PRIVATE_ROUTES) == len(set(PRIVATE_ROUTES)) == 18
     assert "/scripts/build_netlify_public.py" in PRIVATE_ROUTES
+    assert "/supabase/migrations/20260808090000_sinjira_players.sql" in PRIVATE_ROUTES
+    assert "/supabase/functions/get-private-book-url/index.ts" in PRIVATE_ROUTES
+    assert "/supabase/tests/license_redemption_security_a1.test.sql" in PRIVATE_ROUTES
+    assert "/mobile-native/package.json" in PRIVATE_ROUTES
     def fixture(url: str) -> Reply:
         path = urlparse(url).path
         if path in PRIVATE_ROUTES:
