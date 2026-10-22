@@ -1,13 +1,15 @@
 # GitHub Pages — bascule contrôlée et procédure de repli
 
-> **Actualisation du 22 octobre 2026 — couverture renforcée.** Les relevés
-> historiques dans ce document portent sur **14 chemins techniques**. La
-> version courante de la PR #639 contrôle **18 chemins**, avec quatre nouvelles
-> cibles : une migration SQL Supabase, la fonction `get-private-book-url`,
-> un test SQL de licence et `mobile-native/package.json`. L'hébergement de
-> production n'est **pas** attesté conforme; le nouveau prévol doit mesurer
-> séparément ces quatre URL avant toute conclusion. Ne pas extrapoler les
-> résultats historiques de 9/14 au nouvel inventaire.
+> **Diagnostic actualisé — 22 octobre 2026 à 22:24 UTC.**
+> [Prévol GitHub Pages #39864258004](https://github.com/M0rdr3x/BenoitCantin/actions/runs/39864258004) :
+> **13 URL techniques sur 18 répondent HTTP GET 200**, dont les quatre nouveaux
+> sentinelles (migration SQL, fonction `get-private-book-url`, test SQL de
+> licence et `mobile-native/package.json`). Les **5 autres répondent 404**.
+> La source Pages demeure `build_type=legacy` : **blocage #450 confirmé**.
+> Les anciennes mesures **9/14** du 15 octobre restent des historiques;
+> les deux inventaires ne doivent pas être confondus. Le GET est effectué
+> sans lecture du corps; HTTP 200 indique l'accessibilité du chemin, pas
+> nécessairement la présence de secrets. Aucune publication autorisée.
 
 
 **Statut : préparation uniquement. NE PAS PUBLIER depuis cette PR.**  
@@ -15,10 +17,19 @@ Référence de sécurité : issue [#450](https://github.com/M0rdr3x/BenoitCantin
 
 ## 1. État réel, prouvé
 
-**Dernier diagnostic validé : 15 octobre 2026 UTC** (soir du 14 octobre
-au Québec), [workflow de pré-bascule #38664343729](https://github.com/M0rdr3x/BenoitCantin/actions/runs/38664343729).
+**Dernier diagnostic validé : 22 octobre 2026 à 22:24 UTC**,
+[workflow de pré-bascule #39864258004](https://github.com/M0rdr3x/BenoitCantin/actions/runs/39864258004).
 La source GitHub Pages demeure **`build_type=legacy`** alors que le
 domaine `www.benoitcantin.com` et HTTPS sont configurés.
+
+**Résultat courant : 13/18 URL techniques renvoient GET HTTP 200**.
+Les quatre sentinelles additionnelles (migration SQL Supabase, fonction
+serveur de livraison privée, test SQL des licences, configuration mobile)
+sont également accessibles. Elles sont désormais vérifiées par les audits
+pré-bascule (statuts seulement), le contrat HTTP post-PUBLISH et
+l'audit de sortie Jekyll, sur **un inventaire commun de 18 routes**.
+
+**Historique :**
 
 Le rapport HEAD **et**, pour la première fois, un diagnostic indépendant
 de **statuts GET sans lecture des corps** montrent les mêmes résultats :
@@ -62,7 +73,7 @@ Le job de promotion déclare aussi `needs: pages-preflight` : il attend
 la fin réussie des autotests et des rapports Source, HEAD et GET
 (lecture seule). Si le diagnostic échoue ou n'est pas exécuté, la
 garde de promotion ne peut pas réussir. Cela ne signifie **pas** que
-les 14 chemins techniques sont déjà confinés : leurs statuts restent
+les 18 chemins techniques sont déjà confinés : leurs statuts restent
 un signal informatif jusqu'à la publication contrôlée, puis les
 contrôles HTTP et CDN stricts deviennent bloquants. La CI de diagnostic s'exécute sur **toutes les PR** (aucun filtre
 `paths`) afin que son résultat ne reste pas indéfiniment en attente
