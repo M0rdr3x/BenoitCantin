@@ -9,15 +9,13 @@ import sys
 import tempfile
 from pathlib import Path
 
+from verify_pages_live import PRIVATE_ROUTES
+
 FORBIDDEN_DIRS = {'.github', 'docs', 'mobile-native', 'scripts', 'supabase', 'tests'}
-FORBIDDEN_PATHS = {
-    'supabase/config.toml',
-    'tests/e2e/test_public_site.py',
-    'mobile-native/App.tsx',
-    'scripts/validate_site.py',
-    '.github/workflows/validate-site.yml',
-    'projets/sinjira/codex/livre-i-delivery-contract.json',
-}
+# La liste des URL privées est partagée avec les sondes HEAD/GET de production.
+# Une nouvelle route interdite est donc vérifiée dans l'artefact Jekyll aussi.
+FORBIDDEN_PATHS = frozenset(path.removeprefix('/') for path in PRIVATE_ROUTES)
+
 REQUIRED_PUBLIC = {
     'index.html', '404.html', 'CNAME', 'robots.txt', 'sitemap.xml',
     'assets/js/site.js', 'compte/index.html', 'projets/projet-nova/index.html',
@@ -258,6 +256,10 @@ def self_test() -> None:
                 reference.write_text('document vérifié', 'utf-8')
         assert not audit_source(root), audit_source(root)
         assert not audit_output(root, out), audit_output(root, out)
+        assert len(FORBIDDEN_PATHS) == len(PRIVATE_ROUTES) == 18
+        assert FORBIDDEN_PATHS == {route.lstrip('/') for route in PRIVATE_ROUTES}
+        # Chaque chemin refusé en HTTP doit aussi être refusé dans le tar Pages.
+        # Les tests de mutation vérifient l'inventaire complet, pas des exemples.
         for bad in FORBIDDEN_PATHS:
             target = out / bad
             target.parent.mkdir(parents=True, exist_ok=True)
