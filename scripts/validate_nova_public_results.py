@@ -14,61 +14,109 @@ FORBIDDEN=("person","user","email","ip_address","ipaddress","address","hash",
            "respondent_id","participant_id","ballot","raw_vote","demograph")
 
 def validate(obj, review=False):
+    """Fail closed: only the reviewed public aggregate schema is permitted.
+
+    review=True is for local synthetic contract tests or a future independent
+    human review. Production CI deliberately calls this with review=False.
+    """
     bad=[]
-    if not isinstance(obj,dict):return ["Snapshot non objet"]
-    def sensitive(value):
-        if isinstance(value,dict):
-            return any(any(w in k.lower() for w in FORBIDDEN) or sensitive(v)
-                       for k,v in value.items())
-        if isinstance(value,list):return any(sensitive(v) for v in value)
-        return False
-    if sensitive(obj):bad.append("Renseignements individuels interdits")
-    if obj.get("schema")!="nova-public-results-v1":bad.append("Version de snapshot inconnue")
-    if obj.get("rules")!={"minimumParticipants":30,"minimumNonzeroCell":10,"suppression":"entire-question"}:
+    if not isinstance(obj,dict):
+        return ["Snapshot non objet"]
+
+    public_keys={"schema","publicationStatus","publicationApproved",
+                 "privacyReviewApproved","surveys","rules","publishedOn",
+                 "source","notes"}
+    survey_keys={"status","questionCount","respondents","questions"}
+    if set(obj)!=public_keys:
+        bad.append("Champs publics manquants ou non approuvés")
+    if obj.get("schema")!="nova-public-results-v1":
+        bad.append("Version de snapshot inconnue")
+    if (obj.get("rules")!=
+            {"minimumParticipants":30,"minimumNonzeroCell":10,
+             "suppression":"entire-question"}):
         bad.append("Seuils de confidentialité erronés")
-    if obj.get("publicationStatus") not in ("not_open","approved_aggregate"):
+    if (type(obj.get("publicationApproved"))!=bool or
+            type(obj.get("privacyReviewApproved"))!=bool):
+        bad.append("Drapeaux de publication invalides")
+    for key in ("source","notes"):
+        value=obj.get(key)
+        if not isinstance(value,str) or not value.strip() or len(value)>400:
+            bad.append("Métadonnée publique absente/invalide: "+key)
+
+    status=obj.get("publicationStatus")
+    if status not in ("not_open","approved_aggregate"):
         bad.append("Statut de publication incorrect")
-    if not review and (obj.get("publicationStatus")!="not_open" or
-                       obj.get("publicationApproved") is not False or
-                       obj.get("privacyReviewApproved") is not False or
-                       obj.get("publishedOn") is not None):
-        bad.append("Les données réelles ne sont pas autorisées (#675)")
+    elif status=="not_open":
+        if (obj.get("publicationApproved") is not False or
+                obj.get("privacyReviewApproved") is not False or
+                obj.get("publishedOn") is not None):
+            bad.append("Un snapshot fermé ne peut afficher une approbation ou une date")
+    else:
+        if not review:
+            bad.append("Les données réelles ne sont pas autorisées (#675)")
+        if (obj.get("publicationApproved") is not True or
+                obj.get("privacyReviewApproved") is not True):
+            bad.append("Publication sans double approbation")
+        published=obj.get("publishedOn")
+        try:
+            from datetime import date
+            if type(published)!=str or date.fromisoformat(published).isoformat()!=published:
+                raise ValueError("Format non canonique")
+        except (ValueError, TypeError):
+            bad.append("Date de publication invalide")
+
     surveys=obj.get("surveys")
     if not isinstance(surveys,dict) or set(surveys)!=set(SURVEYS):
         return bad+["Inventaire des deux sondages divergent"]
+    approved_count=0
     for sid,(length,choices) in SURVEYS.items():
         entry=surveys[sid]
-        if not isinstance(entry,dict) or entry.get("questionCount")!=length:
-            bad.append("Questionnaire divergent : "+sid);continue
-        status=entry.get("status")
+        if not isinstance(entry,dict) or set(entry)!=survey_keys:
+            bad.append("Champs du questionnaire non approuvés: "+sid)
+            continue
+        if type(entry.get("questionCount"))!=int or entry["questionCount"]!=length:
+            bad.append("Questionnaire divergent : "+sid)
+            continue
+        entry_status=entry.get("status")
         rows=entry.get("questions")
-        if status=="not_open":
+        if entry_status=="not_open":
             if entry.get("respondents") is not None or rows!=[]:
                 bad.append("Chiffres présents sur consultation fermée")
-        elif status=="approved_aggregate":
-            if (obj.get("publicationStatus")!="approved_aggregate" or
-                obj.get("publicationApproved") is not True or
-                obj.get("privacyReviewApproved") is not True):
-                bad.append("Publication non approuvée");continue
+        elif entry_status=="approved_aggregate":
+            approved_count+=1
+            if status!="approved_aggregate":
+                bad.append("Agrégats publiés sous statut global fermé")
+            if (obj.get("publicationApproved") is not True or
+                    obj.get("privacyReviewApproved") is not True):
+                bad.append("Publication non approuvée")
+                continue
             n=entry.get("respondents")
             if type(n)!=int or n<30 or not isinstance(rows,list) or len(rows)!=length:
-                bad.append("Échantillon public insuffisant");continue
+                bad.append("Échantillon public insuffisant")
+                continue
             for index,row in enumerate(rows):
                 if not isinstance(row,dict) or row.get("id")!="q"+str(index+1).zfill(2):
-                    bad.append("Identifiant de question incorrect");continue
+                    bad.append("Identifiant de question incorrect")
+                    continue
                 if row.get("status")=="suppressed":
-                    if set(row)!={"id","status"}:bad.append("Cellule masquée révélant des nombres")
+                    if set(row)!={"id","status"}:
+                        bad.append("Question masquée révélant des champs additionnels")
                     continue
                 if (row.get("status")!="published" or
                     set(row)!={"id","status","total","counts"} or
-                    row.get("total")!=n or not isinstance(row.get("counts"),dict) or
+                    type(row.get("total"))!=int or row["total"]!=n or
+                    not isinstance(row.get("counts"),dict) or
                     set(row["counts"])!=set(choices)):
-                    bad.append("Comptes erronés q"+str(index+1));continue
+                    bad.append("Comptes erronés q"+str(index+1))
+                    continue
                 values=list(row["counts"].values())
                 if (not all(type(v)==int and (v==0 or v>=10) for v in values)
                     or sum(values)!=n):
                     bad.append("Petite cellule ou total incohérent")
-        else:bad.append("Statut inconnu pour "+sid)
+        else:
+            bad.append("Statut inconnu pour "+sid)
+    if status=="approved_aggregate" and not approved_count:
+        bad.append("Publication annoncée sans questionnaire publié")
     return bad
 
 def check(root,built=None):
@@ -100,6 +148,22 @@ def self_test():
       {"id":"q"+str(i+1).zfill(2),"status":"published","total":30,
        "counts":{"pour":20,"contre":10,"sans_opinion":0}} for i in range(40)])
     assert validate(sample), "Ne jamais approuver une publication réelle en CI"
+    # Les vérifications négatives s'appliquent même au mode revue.
+    mutation=json.loads(json.dumps(source))
+    mutation["publicationStatus"]="approved_aggregate"
+    assert validate(mutation,review=True), "Statut global incohérent accepté"
+    mutation=json.loads(json.dumps(source))
+    mutation["surveys"]["nova-orientations-40-v1"]["individualResponses"]=[]
+    assert validate(mutation,review=True), "Champ individuel imprévu accepté"
+    mutation=json.loads(json.dumps(source))
+    mutation["source"]={"extra":"identité"}
+    assert validate(mutation,review=True), "Métadonnée imbriquée acceptée"
+    mutation=json.loads(json.dumps(source))
+    mutation["privacyReviewApproved"]=0
+    assert validate(mutation,review=True), "Faux booléen accepté"
+    mutation=json.loads(json.dumps(source))
+    mutation["publishedOn"]="2026-10-22"
+    assert validate(mutation,review=True), "Date non approuvée acceptée"
     assert not validate(sample,review=True), "Agrégation synthétique valide refusée"
     a["questions"][0]["counts"]={"pour":24,"contre":6,"sans_opinion":0}
     assert validate(sample,review=True), "Petite cellule publiée"
