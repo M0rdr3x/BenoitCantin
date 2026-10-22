@@ -44,9 +44,13 @@ function publicRequest(r,u){
 }
 function cacheableResponse(resp){
   const cc=String(resp.headers.get('Cache-Control')||'').toLowerCase();
-  const vary=String(resp.headers.get('Vary')||'').toLowerCase();
+  // Vary: * interdit la réutilisation. Cookie et Authorization rendent
+  // une réponse inadaptée au cache, y compris avec espaces autour du jeton.
+  const vary=String(resp.headers.get('Vary')||'').toLowerCase()
+    .split(',').map(token=>token.trim());
   return resp.ok&&!resp.redirected&&!/(?:^|[,\s])(?:no-store|private)(?:$|[,\s=])/.test(cc)&&
-    !resp.headers.has('Set-Cookie')&&!/(?:^|,\s*)(?:cookie|authorization)(?:,|$)/.test(vary);
+    !resp.headers.has('Set-Cookie')&&
+    !vary.some(token=>token==='*'||token==='cookie'||token==='authorization');
 }
 // La précharge est anonyme et soumise aux MÊMES protections que les accès réseau.
 // Ne jamais précharger une réponse personnalisée, un token ni un reçu de release.
