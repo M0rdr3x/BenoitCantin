@@ -3,7 +3,7 @@
 
 Preuve de risque, PAS attestation de publication : un HEAD 404 ne prouve
 pas qu'un GET est refusé, qu'un secret a été effacé, ni que le bon SHA est
-déployé. Exécution read-only sur un domaine/14 chemins fixés dans le code.
+déployé. Exécution read-only sur un domaine/18 chemins fixés dans le code.
 """
 from __future__ import annotations
 
@@ -83,7 +83,7 @@ def classify(statuses: Mapping[str, int | None]) -> tuple[str, tuple[str, ...]]:
             for route in unknown
         )
     return "REFUS_HEAD_OBSERVÉ", (
-        "14 réponses HEAD 404/410 observées; contrôle GET et reçu SHA/run encore requis",
+        "18 réponses HEAD 404/410 observées; contrôle GET et reçu SHA/run encore requis",
     )
 
 
@@ -98,7 +98,7 @@ def report(statuses: Mapping[str, int | None]) -> str:
         "",
         f"**Verdict HEAD : {outcome}**",
         "",
-        f"Domaine fixé : {BASE_URL} (14 chemins, requêtes HEAD uniquement)",
+        f"Domaine fixé : {BASE_URL} (18 chemins, requêtes HEAD uniquement)",
         "",
         "| Chemin technique | Code HEAD |",
         "| --- | --- |",
@@ -122,7 +122,7 @@ def report(statuses: Mapping[str, int | None]) -> str:
 
 def self_test() -> None:
     healthy = {route: 404 for route in TECHNICAL_ROUTES}
-    assert len(healthy) == 14
+    assert len(healthy) == 18
     assert classify(healthy)[0] == "REFUS_HEAD_OBSERVÉ"
     for route in TECHNICAL_ROUTES:
         allowed = dict(healthy)
@@ -143,7 +143,7 @@ def self_test() -> None:
     assert run_checks(lambda _: 410) == dict.fromkeys(TECHNICAL_ROUTES, 410)
     assert "HEAD peut différer de GET" in report(healthy)
     assert "contenu de fichier technique" in report(healthy)
-    print("OK: 14 HEAD techniques, exposition, redirections, erreurs et refus exacts")
+    print("OK: 18 HEAD techniques, exposition, redirections, erreurs et refus exacts")
 
 
 def main() -> int:
