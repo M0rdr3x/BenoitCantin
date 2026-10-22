@@ -208,6 +208,18 @@ async function test() {
   responseHeaders.set('/assets/js/site.js', { 'Vary': 'Cookie, Accept-Encoding' });
   await request('/assets/js/site.js');
   assert.equal(writes.length, n1, 'Vary: Cookie must block cache');
+  for (const vary of [
+    'Cookie , Accept-Encoding',
+    'Accept-Encoding, Authorization ',
+    '*',
+    'Accept-Encoding, * ',
+  ]) {
+    responseHeaders.set('/assets/js/site.js', { 'Vary': vary });
+    const before = writes.length;
+    await request('/assets/js/site.js');
+    assert.equal(writes.length, before,
+      'Vary header forbids response caching: ' + vary);
+  }
   responseHeaders.set('/assets/js/site.js', { 'Set-Cookie': 's=foo' });
   await request('/assets/js/site.js');
   assert.equal(writes.length, n1, 'Set-Cookie must block cache');
