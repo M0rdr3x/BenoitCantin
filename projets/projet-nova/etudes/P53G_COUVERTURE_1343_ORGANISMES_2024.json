@@ -112,6 +112,7 @@
     "publication_autorisee": false,
     "fusion_autorisee": false,
     "adoption_autorisee": false,
-    "decision": "NO_GO_AUTOMATIQUE"
+    "decision": "NO_GO_AUTOMATIQUE",
+    "taux_Nova_adoptes": 0
   }
 }
