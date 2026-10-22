@@ -41,5 +41,56 @@ jobs:
       - name: Tester les en-têtes, les parcours privés et les refus HTTP
         run: python3 scripts/validate_web_release_http.py --self-test
 
+      - name: Valider l'intégrité de la Boussole et ses routes publiques
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          from hashlib import sha1
+          from scripts.build_netlify_public import relative_path_allowed
+
+          expected = {
+              "assets/media/nova-boussole-electorale-v2.webp": "b4725fec0cccb1e0ec7df3797929ce105ea30c3a",
+              "assets/media/nova-boussole-electorale.webp": "0478c0ab322cfd854f249c6e964a7c52d3c65d48",
+              "projets/projet-nova/METHODOLOGIE_BOUSSOLE.md": "60df5d5a246b6b0d1a1feaa0241d4aa37fb755ed",
+              "projets/projet-nova/assets/boussole-electorale.css": "524f8f15c4d35f82c787a2dd32e130c3341f06e7",
+              "projets/projet-nova/assets/boussole-electorale.js": "fba4873665faa1f5deb67319a5ecbfcd2625ba0e",
+              "projets/projet-nova/boussole-electorale.html": "03f6d5c77d61c6c2858f6c43bdbb1430c7514684",
+              "projets/projet-nova/data/boussole-electorale-v1.json": "3929b31063093252a397aa921a1f0b1608de284e",
+              "projets/projet-nova/data/boussole-electorale-v2.json": "77786171dad3fc902f1376312b8547b9f1684ff9",
+              "projets/projet-nova/data/boussole-partis-2026.json": "a27b0dfee3321bb49b7ee339eccf50a691a3ebbd",
+              "projets/projet-nova/data/boussole-preuves-2026.json": "50ec372f75b8ae4a81dd2f6d3fc54f0bfe25fbf6",
+              "projets/projet-nova/data/boussole-sources-partis-2026.json": "a1a2dbab3036c3716286a3c420e38137fe612389",
+          }
+          for path, digest in expected.items():
+              source = Path(path)
+              data = source.read_bytes()
+              observed = sha1(b"blob " + str(len(data)).encode() + b"\\0" + data).hexdigest()
+              assert observed == digest, f"Fichier Boussole changé sans revue: {path}"
+              expected_public = not path.endswith(".md")
+              assert relative_path_allowed(source) == expected_public, f"Allowlist incorrecte: {path}"
+
+          home = Path("index.html").read_text()
+          nova = Path("projets/projet-nova/index.html").read_text()
+          nova_js = Path("projets/projet-nova/script.js").read_text()
+          sitemap = Path("sitemap.xml").read_text()
+          home_css = Path("assets/css/home-v24-4-12.css").read_text()
+          nova_css = Path("projets/projet-nova/styles.css").read_text()
+          route = "/projets/projet-nova/boussole-electorale.html"
+          assert home.count(route) >= 4, "Boussole non accessible partout depuis l'accueil"
+          assert 'class="node-boussole-home"' in home, "Porte orbitale Boussole absente"
+          assert 'class="nova-compass-entry"' in nova, "Entrée Boussole Nova absente"
+          assert nova.count("boussole-electorale.html") >= 4, "Navigation Nova incomplète"
+          assert "boussole-electorale.html" in nova_js, "Menu Nova reconstruit sans Boussole"
+          assert "<loc>https://www.benoitcantin.com" + route + "</loc>" in sitemap
+          assert ".node-boussole-home" in home_css
+          assert ".nova-compass-entry-link" in nova_css
+          assert "data-ai-transparency" in home
+          assert "/transparence-ia.html" in nova
+          assert "if(isOfficialHost&&!isNoindexSurface)return;" in nova_js
+          print(f"OK Boussole: {len(expected)} blobs main identiques; CSS, navigation, SEO, confidentialité et artefacts vérifiés.")
+          PY
+
       - name: Vérifier les fichiers, routes et liens de l’ensemble du site
         run: python3 scripts/validate_site.py
