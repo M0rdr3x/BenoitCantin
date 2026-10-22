@@ -10,7 +10,7 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 
-from scripts.build_netlify_public import relative_path_allowed
+from build_netlify_public import relative_path_allowed
 
 ROOT = Path(__file__).resolve().parents[1]
 
