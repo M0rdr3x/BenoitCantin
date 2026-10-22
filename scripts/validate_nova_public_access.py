@@ -73,6 +73,11 @@ def check_text(pages):
                 errors.append(f"Icône Nova non cliquable: {page} → {url}")
         if disclosure not in source.lower():
             errors.append(f"Collecte désactivée non annoncée: {page}")
+    if PAGES[0] in pages:
+        main=pages[PAGES[0]]
+        if ('id="home-sondages-resultats"' not in main or
+                'href="/projets/projet-nova/resultats-sondages.html"' not in main):
+            errors.append("Accueil général : accès direct aux résultats publics absent")
     if PAGES[1] in pages and 'id="nova-public-results-link"' not in pages[PAGES[1]]:
         errors.append("Accès aux résultats anonymisés absent de l'accueil Nova")
     if PAGES[0] in pages and "non officiel et non représentatif" not in pages[PAGES[0]].lower():
@@ -109,6 +114,7 @@ def self_test():
        (PAGES[1],'assets/nova-sondage-icone.webp','assets/image-inconnue.webp'),
        (PAGES[1],'collecte fermée','collecte active'),
        (PAGES[1],'id="nova-public-results-link"','id="resultats-absents"'),
+       (PAGES[0],'id="home-sondages-resultats"','id="resultats-masques"'),
     )
     for p,needle,replacement in mutations:
         assert needle in original[p],(p,needle)
