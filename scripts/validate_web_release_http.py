@@ -46,6 +46,12 @@ TECHNICAL_404_PATHS = (
     "/.github/workflows/validate-site.yml",
     "/tests/e2e/test_public_site.py",
     "/mobile-native/App.tsx",
+    "/netlify.toml",
+    "/.gitignore",
+    "/projets/projet-nova/.gitignore",
+    "/projets/projet-nova/.nojekyll",
+    "/.env.production",
+    "/assets/js/main.js.map",
 )
 REQUIRED_ROBOTS_DISALLOWS = (
     "/app/",
@@ -287,6 +293,8 @@ def validate_headers(headers: object, context: str) -> list[str]:
         errors.append("En-tête réseau X-Content-Type-Options=nosniff absent.")
     if str(get("X-Permitted-Cross-Domain-Policies") or "").lower() != "none":
         errors.append("En-tête réseau X-Permitted-Cross-Domain-Policies=none absent.")
+    if str(get("Cross-Origin-Opener-Policy") or "").lower() != "same-origin-allow-popups":
+        errors.append("En-tête réseau COOP same-origin-allow-popups absent.")
     if str(get("X-Frame-Options") or "").upper() != "SAMEORIGIN":
         errors.append("En-tête réseau X-Frame-Options=SAMEORIGIN absent.")
     if str(get("Referrer-Policy") or "").lower() != "strict-origin-when-cross-origin":
@@ -346,6 +354,10 @@ def validate_private_headers(headers: object, path: str) -> list[str]:
     cache_control = str(get("Cache-Control") or "").lower()
     if "no-store" not in cache_control:
         errors.append(f"{path}: Cache-Control no-store absent.")
+    if str(get("Referrer-Policy") or "").lower() != "no-referrer":
+        errors.append(f"{path}: Referrer-Policy no-referrer absent.")
+    if str(get("Pragma") or "").lower() != "no-cache":
+        errors.append(f"{path}: Pragma no-cache absent.")
 
     robots = str(get("X-Robots-Tag") or "").lower()
     for token in ("noindex", "nofollow", "noarchive"):
@@ -499,8 +511,11 @@ class FixtureHandler(BaseHTTPRequestHandler):
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Strict-Transport-Security", "max-age=31536000")
         self.send_header("X-Permitted-Cross-Domain-Policies", "none")
+        self.send_header("Cross-Origin-Opener-Policy", "same-origin-allow-popups")
         self.send_header("X-Frame-Options", "SAMEORIGIN")
-        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        self.send_header("Referrer-Policy", "no-referrer" if private_runtime else "strict-origin-when-cross-origin")
+        if private_runtime:
+            self.send_header("Pragma", "no-cache")
         self.send_header(
             "Permissions-Policy",
             "camera=(), microphone=(), geolocation=(), payment=()",
@@ -681,6 +696,21 @@ def self_test() -> None:
     )
     if not private_broken:
         raise SystemExit("ERREUR auto-test smoke HTTP: en-têtes privés affaiblis non détectés.")
+    private_referrer_broken = validate_private_headers(
+        {"Cache-Control": "no-store",
+         "X-Robots-Tag": "noindex, nofollow, noarchive",
+         "Referrer-Policy": "strict-origin-when-cross-origin",
+         "Pragma": "no-cache"},
+        "/compte/",
+    )
+    if not any("Referrer-Policy" in issue for issue in private_referrer_broken):
+        raise SystemExit("ERREUR auto-test smoke HTTP: fuite referrer privé non détectée.")
+    coop_broken = validate_headers(
+        {"Cross-Origin-Opener-Policy": "unsafe-none"},
+        "production",
+    )
+    if not any("COOP" in issue for issue in coop_broken):
+        raise SystemExit("ERREUR auto-test smoke HTTP: COOP affaibli non détecté.")
 
     release_headers_broken = validate_release_headers(
         {"X-Robots-Tag": "noindex, nofollow, noarchive"}

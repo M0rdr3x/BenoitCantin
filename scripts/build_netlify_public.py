@@ -34,6 +34,14 @@ REQUIRED_TECHNICAL_404S = {
     "/tests/*",
     "/mobile-native/*",
 }
+SUPPLEMENTAL_404S = {
+    "/.git/*",
+    "/.env*",
+    "/.gitignore",
+    "/netlify.toml",
+    "/projets/projet-nova/.gitignore",
+    "/projets/projet-nova/.nojekyll",
+}
 PRIVATE_RUNTIME_HEADER_PATHS = {
     "/compte/*",
     "/administration.html",
@@ -180,6 +188,18 @@ PUBLIC_ROOT_EXACT = {
 PUBLIC_ROOT_DENY = {
     "script.js",  # legacy racine inutilisé; contenait encore un routage Formspree Nova.
 }
+
+# Réduction de surface : un nouveau fichier caché ou fichier de configuration
+# ajouté dans un dossier destiné au Web ne doit jamais devenir public par défaut.
+# Les documents de logiciels téléchargeables (dont ZIP) restent autorisés par
+# leurs règles métier existantes; on ne bloque que les formats de secrets et
+# de maintenance dont le navigateur n'a pas besoin.
+FORBIDDEN_NESTED_WEB_SUFFIXES = frozenset({
+    ".pem", ".key", ".p12", ".pfx", ".jks", ".env",
+    ".sql", ".sqlite", ".sqlite3", ".db",
+    ".bak", ".backup", ".log", ".toml", ".yaml", ".yml",
+    ".py", ".pyc", ".map",
+})
 
 PROJECT_NOVA_STRUCTURED_SUFFIXES = {
     ".md",
@@ -347,9 +367,20 @@ def relative_path_allowed(rel: Path) -> bool:
     parts = rel.parts
     if not parts:
         return False
+
+    # Ne pas permettre aux dotfiles de sous-arbres publics de contourner les
+    # règles de publication simplement parce que leur extension est vide.
+    # Seul security.txt est lu depuis .well-known ; release.json est généré
+    # par le builder après la sélection des fichiers.
+    if parts[0] == ".well-known":
+        return rel == Path(".well-known/security.txt")
     if len(parts) == 1:
         return root_file_allowed(ROOT / rel)
+    if any(part.startswith(".") for part in parts):
+        return False
     if parts[0] not in PUBLIC_DIRS:
+        return False
+    if rel.suffix.lower() in FORBIDDEN_NESTED_WEB_SUFFIXES:
         return False
 
     # Les surfaces privées/runtime doivent rester publiables sans jamais
@@ -503,6 +534,8 @@ def validate_vercel_config() -> list[str]:
                 errors.append(f"Preview Vercel: X-Robots-Tag sans {token}.")
         if global_values.get("X-Content-Type-Options", "").lower() != "nosniff":
             errors.append("Preview Vercel: X-Content-Type-Options=nosniff requis.")
+        if global_values.get("Cross-Origin-Opener-Policy") != "same-origin-allow-popups":
+            errors.append("Preview Vercel: COOP same-origin-allow-popups requis.")
         csp = global_values.get("Content-Security-Policy", "")
         for directive in (
             "default-src 'self'",
@@ -532,6 +565,11 @@ def validate_vercel_config() -> list[str]:
             continue
         if values.get("Cache-Control", "").lower() != "no-store":
             errors.append(f"Preview Vercel: Cache-Control no-store requis: {source}")
+        if source != "/.well-known/release.json":
+            if values.get("Referrer-Policy") != "no-referrer":
+                errors.append(f"Preview Vercel: Referrer-Policy no-referrer requis: {source}")
+            if values.get("Pragma") != "no-cache":
+                errors.append(f"Preview Vercel: Pragma no-cache requis: {source}")
 
     redirects = {
         (str(rule.get("source") or ""), str(rule.get("destination") or ""), bool(rule.get("permanent")))
@@ -659,6 +697,8 @@ def validate_netlify_config() -> list[str]:
                 errors.append(f"CSP Netlify: directive requise absente: {directive}.")
         if global_values.get("X-Content-Type-Options") != "nosniff":
             errors.append("En-tête X-Content-Type-Options=nosniff requis.")
+        if global_values.get("Cross-Origin-Opener-Policy") != "same-origin-allow-popups":
+            errors.append("Netlify: COOP same-origin-allow-popups obligatoire.")
 
     header_rules = {
         rule.get("for"): (rule.get("values") or {})
@@ -683,6 +723,10 @@ def validate_netlify_config() -> list[str]:
             continue
         if str(values.get("Cache-Control") or "").lower() != "no-store":
             errors.append(f"Cache-Control no-store requis: {private_path}")
+        if values.get("Referrer-Policy") != "no-referrer":
+            errors.append(f"Netlify: Referrer-Policy no-referrer obligatoire: {private_path}")
+        if values.get("Pragma") != "no-cache":
+            errors.append(f"Netlify: Pragma no-cache obligatoire: {private_path}")
         robots = str(values.get("X-Robots-Tag") or "").lower()
         for token in ("noindex", "nofollow", "noarchive"):
             if token not in robots:
@@ -731,7 +775,7 @@ def validate_netlify_config() -> list[str]:
         and rule.get("status") == 404
         and rule.get("force") is True
     }
-    missing = sorted(REQUIRED_TECHNICAL_404S - observed)
+    missing = sorted((REQUIRED_TECHNICAL_404S | SUPPLEMENTAL_404S) - observed)
     if missing:
         errors.append("Redirections 404 techniques absentes: " + ", ".join(missing))
 
@@ -805,8 +849,41 @@ def output_location_error(output: Path) -> str | None:
 
 
 def self_test_public_filesystem_boundary() -> list[str]:
-    """Fixtures autonomes : fuite symlink + suppression de source refusées."""
+    """Fixtures autonomes : fuite symlink, dotfiles, secrets et sortie sûre."""
     errors: list[str] = []
+
+    rejected = (
+        "projets/projet-nova/.gitignore",
+        "projets/projet-nova/.nojekyll",
+        "projets/projet-nova/assets/.env",
+        "projets/sinjira/.private/settings.json",
+        "projets/sinjira/jeux/backup.sql",
+        "projets/sinjira/logiciels/debug.log",
+        "assets/js/main.js.map",
+        "assets/private.key",
+        "compte/config.toml",
+        "admin/.env.production",
+        "app/keys.pem",
+        ".well-known/.secrets",
+        ".well-known/admin.json",
+    )
+    accepted = (
+        ".well-known/security.txt",
+        ".nojekyll",
+        "CNAME",
+        "assets/js/site.js",
+        "compte/index.html",
+        "projets/projet-nova/index.html",
+        "projets/sinjira/romans/index.html",
+        "projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf",
+    )
+    for rel in rejected:
+        if relative_path_allowed(Path(rel)):
+            errors.append(f"Auto-test publication : chemin technique accepté: {rel}")
+    for rel in accepted:
+        if not relative_path_allowed(Path(rel)):
+            errors.append(f"Auto-test publication : chemin public refusé: {rel}")
+
     with tempfile.TemporaryDirectory(prefix="sinjira-public-boundary-") as tmp:
         base = Path(tmp)
         root = base / "source"
@@ -1257,7 +1334,7 @@ def main() -> int:
             print("ECHEC: " + error)
         if errors:
             return 1
-        print("OK: auto-tests symlinks publics et répertoires de sortie destructifs.")
+        print("OK: auto-tests chemins publics, fichiers cachés, symlinks et sorties destructives.")
         return 0
 
     if args.security_containment and args.standalone_netlify:
