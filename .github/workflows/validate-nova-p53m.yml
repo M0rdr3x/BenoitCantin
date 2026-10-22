@@ -1,0 +1,76 @@
+name: Projet Nova P53M - Registre des couts evitables
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p53m.yml"
+      - "scripts/construire_registre_couts_evitables_nova_p53m.py"
+      - "scripts/tests/test_construire_registre_couts_evitables_nova_p53m.py"
+      - "scripts/evaluer_hypotheses_economies_nova_p53l.py"
+      - "scripts/preparer_controles_probatoires_nova_p53k.py"
+      - "scripts/auditer_appariements_municipaux_nova_p53j.py"
+      - "projets/projet-nova/etudes/P53M_*"
+      - "projets/projet-nova/etudes/P53L_CADRE_EVALUATION_ECONOMIES.json"
+      - "projets/projet-nova/etudes/P53K_EXIGENCES_PROBATOIRES.json"
+      - "projets/projet-nova/etudes/P53I_SOURCES_REVISION_ET_CHARGES_2024.json"
+      - "projets/projet-nova/etudes/P53H_PRIORITES_VERIFICATION_2024.json"
+      - "projets/projet-nova/etudes/sources/P53I_MAMH_2024_1344_RECETTES_CHARGES_SELECTION.csv"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  etude-non-certifiee:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Sources en lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Executer les 39 tests P53M
+        run: |
+          python -m py_compile scripts/construire_registre_couts_evitables_nova_p53m.py
+          python - <<'PY'
+          import unittest
+          s=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_construire_registre_couts_evitables_nova_p53m.py")
+          assert s.countTestCases()==39,s.countTestCases()
+          r=unittest.TextTestRunner(verbosity=2).run(s)
+          assert r.wasSuccessful()
+          PY
+      - name: Generer 12 fiches et assurer le refus de certification
+        run: |
+          python scripts/construire_registre_couts_evitables_nova_p53m.py --bilan p53m_bilan.json --registre p53m_registre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          b=json.loads(Path("p53m_bilan.json").read_text("utf-8"))
+          r=json.loads(Path("p53m_registre.json").read_text("utf-8"))
+          assert b["organismes_2024"]==1344
+          assert b["dossiers_probatoires_p53k"]==26
+          assert b["regimes"]==2 and b["fiches_standards"]==12
+          assert b["economies_totales_certifiees_cad"] is None
+          assert b["preuves_authentifiees"]==0
+          assert b["decision"]=="NO_GO_AUTOMATIQUE"
+          assert len(r["fiches"])==12
+          PY
+          set +e
+          python scripts/construire_registre_couts_evitables_nova_p53m.py --exiger-certification --bilan p53m_refus.json
+          statut=$?
+          set -e
+          test "$statut" -eq 3
+      - name: Conserver seulement les rapports non sensibles
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p53m-registre-non-certifie
+          path: |
+            p53m_bilan.json
+            p53m_refus.json
+            p53m_registre.json
+          if-no-files-found: ignore
+          retention-days: 7
