@@ -1,5 +1,15 @@
 # GitHub Pages — bascule contrôlée et procédure de repli
 
+> **Actualisation du 22 octobre 2026 — couverture renforcée.** Les relevés
+> historiques dans ce document portent sur **14 chemins techniques**. La
+> version courante de la PR #639 contrôle **18 chemins**, avec quatre nouvelles
+> cibles : une migration SQL Supabase, la fonction `get-private-book-url`,
+> un test SQL de licence et `mobile-native/package.json`. L'hébergement de
+> production n'est **pas** attesté conforme; le nouveau prévol doit mesurer
+> séparément ces quatre URL avant toute conclusion. Ne pas extrapoler les
+> résultats historiques de 9/14 au nouvel inventaire.
+
+
 **Statut : préparation uniquement. NE PAS PUBLIER depuis cette PR.**  
 Référence de sécurité : issue [#450](https://github.com/M0rdr3x/BenoitCantin/issues/450), intégration actuelle [#639](https://github.com/M0rdr3x/BenoitCantin/pull/639) (DRAFT), réunissant les travaux de [#458](https://github.com/M0rdr3x/BenoitCantin/pull/458) et [#637](https://github.com/M0rdr3x/BenoitCantin/pull/637).
 
