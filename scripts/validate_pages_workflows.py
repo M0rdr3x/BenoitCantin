@@ -108,7 +108,7 @@ def validate_jekyll_ci(source: str) -> list[str]:
     # l'exécution d'un audit. Chaque commande doit occuper sa propre ligne
     # exécutable, avec l'indentation stricte du bloc shell YAML.
     executable_lines = re.findall(
-        r"(?m)^ {10}((?:python3 |node --test )[^\\n]+)$", jobs
+        r"(?m)^ {10}((?:python3 |node --test )[^\n]+)$", jobs
     )
     for command, times in (
         ("python3 scripts/audit_pages_jekyll.py --source . --built _site", 2),
