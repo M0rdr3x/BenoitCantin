@@ -630,12 +630,16 @@ def self_test(workflow: str) -> None:
             "          # python3 scripts/validate_nova_public_results.py --source . --built _site", 1,
         ),
         "Test réel du rendu Nova retiré": workflow.replace(
-            "          node --test tests/test_nova_public_results.cjs",
-            "          echo TEST_NOVA_NON_EXECUTE", 1,
+            "          node --test tests/test_nova_public_results.cjs\n"
+            "          python3 scripts/validate_boussole_home_visual.py --built _site",
+            "          echo TEST_NOVA_NON_EXECUTE\n"
+            "          python3 scripts/validate_boussole_home_visual.py --built _site", 1,
         ),
         "Test réel Nova seulement affiché": workflow.replace(
-            "          node --test tests/test_nova_public_results.cjs",
-            "          echo node --test tests/test_nova_public_results.cjs", 1,
+            "          node --test tests/test_nova_public_results.cjs\n"
+            "          python3 scripts/validate_boussole_home_visual.py --built _site",
+            "          echo node --test tests/test_nova_public_results.cjs\n"
+            "          python3 scripts/validate_boussole_home_visual.py --built _site", 1,
         ),
         "Contrôle SEO des catalogues neutralisé": workflow.replace(
             "          python3 scripts/validate_sinjira_catalogues_metadata.py --built _site",
