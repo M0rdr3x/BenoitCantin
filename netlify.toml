@@ -1,14 +1,61 @@
 [build]
   publish = "."
 
+# Ne jamais servir les sources et paramètres internes comme fichiers Web.
+# ATTENTION : ces règles exigent un hébergeur Netlify ; GitHub Pages les ignore.
+[[redirects]]
+  from = "/.github/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/supabase/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/scripts/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/mobile-native/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/.env*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/.gitignore"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/netlify.toml"
+  to = "/404.html"
+  status = 404
+  force = true
+
 [[headers]]
   for = "/*"
   [headers.values]
     X-Content-Type-Options = "nosniff"
+    Strict-Transport-Security = "max-age=31536000"
+    X-Permitted-Cross-Domain-Policies = "none"
+    Cross-Origin-Opener-Policy = "same-origin-allow-popups"
     X-Frame-Options = "SAMEORIGIN"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
-    Content-Security-Policy = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self'; form-action 'self' https://formspree.io; base-uri 'self'; frame-ancestors 'self'; object-src 'self'"
+    Content-Security-Policy = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self' https://gpvivleexywljowcqkru.supabase.co wss://gpvivleexywljowcqkru.supabase.co; form-action 'self' https://formspree.io; base-uri 'self'; frame-ancestors 'self'; object-src 'self'"
 
 [[headers]]
   for = "/projets/sinjira/documents/*.pdf"
@@ -23,6 +70,7 @@
     Cache-Control = "private, no-store, max-age=0"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
 
 
 [[headers]]
@@ -31,6 +79,7 @@
     Cache-Control = "private, no-store, max-age=0"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
 
 [[headers]]
   for = "/admin/*"
@@ -38,6 +87,7 @@
     Cache-Control = "private, no-store, max-age=0"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
 
 [[headers]]
   for = "/Admin/*"
@@ -45,6 +95,7 @@
     Cache-Control = "private, no-store, max-age=0"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
 
 [[headers]]
   for = "/app/*"
@@ -52,6 +103,7 @@
     Cache-Control = "private, no-store, max-age=0"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
 
 [[headers]]
   for = "/supabase/*"
@@ -59,6 +111,7 @@
     Cache-Control = "private, no-store, max-age=0"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
 
 
 [[redirects]]
