@@ -34,6 +34,14 @@ REQUIRED_TECHNICAL_404S = {
     "/tests/*",
     "/mobile-native/*",
 }
+SUPPLEMENTAL_404S = {
+    "/.git/*",
+    "/.env*",
+    "/.gitignore",
+    "/netlify.toml",
+    "/projets/projet-nova/.gitignore",
+    "/projets/projet-nova/.nojekyll",
+}
 PRIVATE_RUNTIME_HEADER_PATHS = {
     "/compte/*",
     "/administration.html",
@@ -526,6 +534,8 @@ def validate_vercel_config() -> list[str]:
                 errors.append(f"Preview Vercel: X-Robots-Tag sans {token}.")
         if global_values.get("X-Content-Type-Options", "").lower() != "nosniff":
             errors.append("Preview Vercel: X-Content-Type-Options=nosniff requis.")
+        if global_values.get("Cross-Origin-Opener-Policy") != "same-origin-allow-popups":
+            errors.append("Preview Vercel: COOP same-origin-allow-popups requis.")
         csp = global_values.get("Content-Security-Policy", "")
         for directive in (
             "default-src 'self'",
@@ -555,6 +565,11 @@ def validate_vercel_config() -> list[str]:
             continue
         if values.get("Cache-Control", "").lower() != "no-store":
             errors.append(f"Preview Vercel: Cache-Control no-store requis: {source}")
+        if source != "/.well-known/release.json":
+            if values.get("Referrer-Policy") != "no-referrer":
+                errors.append(f"Preview Vercel: Referrer-Policy no-referrer requis: {source}")
+            if values.get("Pragma") != "no-cache":
+                errors.append(f"Preview Vercel: Pragma no-cache requis: {source}")
 
     redirects = {
         (str(rule.get("source") or ""), str(rule.get("destination") or ""), bool(rule.get("permanent")))
@@ -682,6 +697,8 @@ def validate_netlify_config() -> list[str]:
                 errors.append(f"CSP Netlify: directive requise absente: {directive}.")
         if global_values.get("X-Content-Type-Options") != "nosniff":
             errors.append("En-tête X-Content-Type-Options=nosniff requis.")
+        if global_values.get("Cross-Origin-Opener-Policy") != "same-origin-allow-popups":
+            errors.append("Netlify: COOP same-origin-allow-popups obligatoire.")
 
     header_rules = {
         rule.get("for"): (rule.get("values") or {})
@@ -706,6 +723,10 @@ def validate_netlify_config() -> list[str]:
             continue
         if str(values.get("Cache-Control") or "").lower() != "no-store":
             errors.append(f"Cache-Control no-store requis: {private_path}")
+        if values.get("Referrer-Policy") != "no-referrer":
+            errors.append(f"Netlify: Referrer-Policy no-referrer obligatoire: {private_path}")
+        if values.get("Pragma") != "no-cache":
+            errors.append(f"Netlify: Pragma no-cache obligatoire: {private_path}")
         robots = str(values.get("X-Robots-Tag") or "").lower()
         for token in ("noindex", "nofollow", "noarchive"):
             if token not in robots:
@@ -754,7 +775,7 @@ def validate_netlify_config() -> list[str]:
         and rule.get("status") == 404
         and rule.get("force") is True
     }
-    missing = sorted(REQUIRED_TECHNICAL_404S - observed)
+    missing = sorted((REQUIRED_TECHNICAL_404S | SUPPLEMENTAL_404S) - observed)
     if missing:
         errors.append("Redirections 404 techniques absentes: " + ", ".join(missing))
 
