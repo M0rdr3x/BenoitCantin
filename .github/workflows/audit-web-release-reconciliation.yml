@@ -1,0 +1,112 @@
+name: Web release — conflits reels avant fusion main
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: web-release-merge-reconciliation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  reconciliation:
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'a1/web-release-transparency'
+    name: Diagnostic Git des conflits — lecture seule
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout sans jeton Git persistant
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Python figé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Lire les deux références officielles, sans les modifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -c fetch.fsckObjects=true fetch --no-tags origin \
+            '+refs/heads/main:refs/remotes/origin/main' \
+            '+refs/heads/a1/web-release-transparency:refs/remotes/origin/a1/web-release-transparency'
+          git rev-parse --verify 'refs/remotes/origin/main^{commit}'
+          git rev-parse --verify 'refs/remotes/origin/a1/web-release-transparency^{commit}'
+
+      - name: Calculer les divergences et les conflits du moteur Git
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          import subprocess
+          from pathlib import Path
+
+          MAIN = 'refs/remotes/origin/main'
+          RELEASE = 'refs/remotes/origin/a1/web-release-transparency'
+
+          def run(*args, expected=(0,)):
+              p = subprocess.run(['git', *args], capture_output=True, text=True, check=False)
+              if p.returncode not in expected:
+                  raise RuntimeError(f"git {' '.join(args)}: code={p.returncode}, stderr={p.stderr[:500]}")
+              return p
+
+          main = run('rev-parse', MAIN).stdout.strip()
+          release = run('rev-parse', RELEASE).stdout.strip()
+          base = run('merge-base', main, release).stdout.strip()
+
+          def changed(target):
+              return set(run('diff', '--name-only', '--no-renames', base, target).stdout.splitlines())
+
+          both = changed(main) & changed(release)
+          def blobs(target):
+              out = run('ls-tree', '-r', '-z', target).stdout
+              result = {}
+              for entry in out.split('\0'):
+                  if entry:
+                      meta, name = entry.split('\t', 1)
+                      result[name] = meta
+              return result
+
+          left, right = blobs(main), blobs(release)
+          identical = sorted(p for p in both if left.get(p) == right.get(p))
+          divergent = sorted(both - set(identical))
+          merge = run('merge-tree', '--write-tree', '--name-only', main, release, expected=(0, 1))
+          conflicts = merge.returncode == 1
+          summary = [
+              '## Audit de fusion du candidat #449',
+              f'- Base commune : `{base}`',
+              f'- main : `{main}`',
+              f'- release : `{release}`',
+              f'- Fichiers modifiés sur les deux branches : **{len(both)}**',
+              f'- Déjà identiques : **{len(identical)}**',
+              f'- Différents : **{len(divergent)}**',
+              '- Fusion Git : **CONFLITS À RÉSOUDRE**' if conflicts else '- Fusion Git : **TECHNIQUEMENT POSSIBLE**',
+              '',
+              '### Fichiers divergents (décision métier ou revue nécessaire)',
+              *[f'- `{name}`' for name in divergent],
+              '',
+              '### Diagnostic natif git merge-tree',
+              '```text',
+              *merge.stdout.splitlines()[:150],
+              '```',
+              '',
+              '> Audit en lecture seule. Aucun merge, commit, changement DNS, déploiement ou migration.',
+          ]
+          report = '\n'.join(summary) + '\n'
+          print(report)
+          dest = os.environ.get('GITHUB_STEP_SUMMARY')
+          if dest:
+              with open(dest, 'a', encoding='utf-8') as f:
+                  f.write(report)
+          # Ne pas assimiler un diagnostic Git à une autorisation de publication.
+          # La fusion reste refusée tant que les conflits ne sont pas résolus.
+          PY
