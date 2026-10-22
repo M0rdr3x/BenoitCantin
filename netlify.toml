@@ -8,6 +8,7 @@
     X-Content-Type-Options = "nosniff"
     Strict-Transport-Security = "max-age=31536000"
     X-Permitted-Cross-Domain-Policies = "none"
+    Cross-Origin-Opener-Policy = "same-origin-allow-popups"
     X-Frame-Options = "SAMEORIGIN"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
@@ -24,36 +25,48 @@
   [headers.values]
     Cache-Control = "no-store"
     X-Robots-Tag = "noindex, nofollow, noarchive"
+    Pragma = "no-cache"
+    Referrer-Policy = "no-referrer"
 
 [[headers]]
   for = "/administration.html"
   [headers.values]
     Cache-Control = "no-store"
     X-Robots-Tag = "noindex, nofollow, noarchive"
+    Pragma = "no-cache"
+    Referrer-Policy = "no-referrer"
 
 [[headers]]
   for = "/admin/*"
   [headers.values]
     Cache-Control = "no-store"
     X-Robots-Tag = "noindex, nofollow, noarchive"
+    Pragma = "no-cache"
+    Referrer-Policy = "no-referrer"
 
 [[headers]]
   for = "/Admin/*"
   [headers.values]
     Cache-Control = "no-store"
     X-Robots-Tag = "noindex, nofollow, noarchive"
+    Pragma = "no-cache"
+    Referrer-Policy = "no-referrer"
 
 [[headers]]
   for = "/app/*"
   [headers.values]
     Cache-Control = "no-store"
     X-Robots-Tag = "noindex, nofollow, noarchive"
+    Pragma = "no-cache"
+    Referrer-Policy = "no-referrer"
 
 [[headers]]
   for = "/histoire-de-vie/*"
   [headers.values]
     Cache-Control = "no-store"
     X-Robots-Tag = "noindex, nofollow, noarchive"
+    Pragma = "no-cache"
+    Referrer-Policy = "no-referrer"
 
 [[headers]]
   for = "/projets/sinjira/documents/*.pdf"
@@ -103,6 +116,44 @@
 
 [[redirects]]
   from = "/mobile-native/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+# Défense en profondeur : les fichiers cachés/sources sont aussi exclus
+# de l'artefact isolé par scripts/build_netlify_public.py.
+[[redirects]]
+  from = "/.git/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/.env*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/.gitignore"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/netlify.toml"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/projets/projet-nova/.gitignore"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/projets/projet-nova/.nojekyll"
   to = "/404.html"
   status = 404
   force = true
