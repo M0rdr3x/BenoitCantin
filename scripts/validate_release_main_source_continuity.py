@@ -43,7 +43,6 @@ MAIN_ONLY_BLOBS = {
     "scripts/validate_public_root_shell.py": "4dd0e81b95c2fc8f4d2972296c23e2e1a07a1093",
     "scripts/validate_publication_live_boundary.py": "95895130538ee9ace56dc15d76ff587d0cccaa9c",
     "scripts/validate_sinjira_public_shell.py": "9f25f279accde6c3d4e6535525f14e0541eaf71d",
-    "supabase/functions/get-novel-file-url/index.ts": "255004178c053fcaf5fe1f5ad7e8ba789b54d914",
 }
 
 
@@ -54,8 +53,8 @@ def git_blob_sha(raw: bytes) -> str:
 
 def validate() -> list[str]:
     errors: list[str] = []
-    if len(MAIN_ONLY_BLOBS) != 29:
-        errors.append("Inventaire main-only incomplet: 29 blobs attendus")
+    if len(MAIN_ONLY_BLOBS) != 28:
+        errors.append("Inventaire main-only incomplet: 28 blobs attendus")
     for rel, expected in sorted(MAIN_ONLY_BLOBS.items()):
         path = ROOT / rel
         if not path.is_file():
@@ -71,6 +70,8 @@ def validate() -> list[str]:
         "scripts/validate_publication_live_boundary.py",
         ".github/workflows/verify-web-release-candidate.yml",
     ]
+    if (ROOT / "supabase/functions/get-novel-file-url/index.ts").exists():
+        errors.append("Fonction Edge non canonique get-novel-file-url présente dans le candidat")
     for rel in strictly_private:
         if relative_path_allowed(Path(rel)):
             errors.append(f"Fuite d'artefact: {rel} aurait été publié")
@@ -87,8 +88,8 @@ def self_test() -> list[str]:
     for raw, known in cases:
         if git_blob_sha(raw) != known:
             errors.append("Calcul du SHA Git blob incorrect")
-    if not MAIN_ONLY_BLOBS.get("supabase/functions/get-novel-file-url/index.ts"):
-        errors.append("Source backend du roman hors inventaire")
+    if "supabase/functions/get-novel-file-url/index.ts" in MAIN_ONLY_BLOBS:
+        errors.append("Fonction Edge non canonique admise dans le manifeste")
     return errors
 
 
