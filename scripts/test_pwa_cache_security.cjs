@@ -225,6 +225,26 @@ async function test() {
   assert.equal(writes.length, n1, 'Authorized responses must not be cached');
   await request('/assets/js/site.js', { headers: { Cookie: 'session=dummy' } });
   assert.equal(writes.length, n1, 'Cookie-bearing requests must not be cached');
+  // Une requête Range/If-Range ne doit pas réutiliser ni écraser
+  // l'entrée de cache du fichier entier, même si le serveur répond 200.
+  for (const headers of [
+    { Range: 'bytes=0-5' },
+    { 'If-Range': '"synthetic-etag"' },
+  ]) {
+    const beforeWrites = writes.length, beforeLookups = matches.length;
+    const result = await request('/assets/js/site.js', { headers });
+    assert.equal(result.status, 200);
+    assert.equal(requests.at(-1).cache, 'no-store',
+      'Range requests must bypass browser cache');
+    assert.equal(writes.length, beforeWrites,
+      'Partial request must not write an offline cache entry');
+    assert.equal(matches.length, beforeLookups,
+      'Partial request must not read an offline cache entry');
+    networkFails = true;
+    await assert.rejects(request('/assets/js/site.js', { headers }),
+      'Partial request must not fall back to a full cached asset');
+    networkFails = false;
+  }
 
   responseHeaders.set('/assets/js/site.js', { 'Cache-Control': 'private, max-age=60' });
   await request('/assets/js/site.js');
