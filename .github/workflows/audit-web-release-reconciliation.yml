@@ -4,6 +4,10 @@ on:
   pull_request:
     branches: [main]
     types: [opened, reopened, synchronize, ready_for_review]
+  push:
+    branches: [a1/web-release-transparency]
+    paths:
+      - '.github/workflows/audit-web-release-reconciliation.yml'
   workflow_dispatch:
 
 permissions:
@@ -15,7 +19,7 @@ concurrency:
 
 jobs:
   reconciliation:
-    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'a1/web-release-transparency'
+    if: github.ref == 'refs/heads/a1/web-release-transparency' || github.head_ref == 'a1/web-release-transparency'
     name: Diagnostic Git des conflits — lecture seule
     runs-on: ubuntu-24.04
     timeout-minutes: 8
