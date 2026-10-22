@@ -43,7 +43,7 @@ résultats comme représentatifs ou comme ceux d'un référendum légal.
    `ACTIONS_ONLY` et le même SHA exact. Le changement reste soumis aux
    autorisations d'environnement et aux attestations de Pages.
 6. Vérifier sur le domaine réel les deux accueils, les deux questionnaires et
-   l'icône (200, MIME correct et octets du SHA), ainsi que **14 chemins
+   l'icône (200, MIME correct et octets du SHA), ainsi que **18 chemins
    techniques** en 404/410, notamment `/supabase/config.toml`,
    `/tests/e2e/test_public_site.py` et `/mobile-native/App.tsx`.
    Toute anomalie bloque la clôture; ne jamais rétablir `path: .`.
@@ -83,9 +83,23 @@ l'artefact entier du dépôt, les fichiers techniques ou le site compilé.
 
 Le portail Nova possède dans la PR #639 `resultats-sondages.html` et son registre public `data/resultats-sondages-publics-v1.json`. Aucune donnée réelle n'existe encore : le fichier est fermé (`not_open`). Les résultats ne peuvent être débloqués simplement en modifiant l'interface : la CI refuse toute statistique avant une approbation indépendante de #675, impose un total de 30 participants au minimum et une suppression de chaque répartition qui risquerait de divulguer un effectif entre 1 et 9. Une réponse individuelle n'est jamais exportable par le registre public.
 
-La publication contrôlée vérifie maintenant **27 routes publiques** (dont la page résultats et ses deux fichiers) en HTTP 200 direct et au MIME attendu, **14 routes techniques** en HTTP 404/410, puis les octets SHA des **28 ressources CDN critiques**. Ces contrôles ne sont exécutés en production qu'après un PUBLISH réellement autorisé; `main` et la configuration Pages restent inchangés ici.
+La publication contrôlée vérifie maintenant **27 routes publiques** (dont la page résultats et ses deux fichiers) en HTTP 200 direct et au MIME attendu, **18 routes techniques** en HTTP 404/410, puis les octets SHA des **28 ressources CDN critiques**. Ces contrôles ne sont exécutés en production qu'après un PUBLISH réellement autorisé; `main` et la configuration Pages restent inchangés ici.
 
 
 ## Accès aux résultats publics sur les deux accueils
 
 L'accueil général propose désormais un troisième bouton dédié aux **résultats publics et à la méthode**, à côté des questionnaires 40 et 64. L'accueil Projet Nova affiche ce lien immédiatement sous les deux cartes et explique que les réponses individuelles, les identités et les votes de démonstration ne sont pas publiés. Le contrôle `validate_nova_public_access.py` exige le lien sur **les deux accueils**. La page de résultats affiche pour l'instant « Aucun résultat publié » : aucun décompte ne peut être inventé et le protocole de collecte d'opinions politiques reste bloqué par #675. Les interfaces restent sur la PR #639 tant que le cutover Pages #450 n'est pas approuvé.
+
+
+## Renforcement du périmètre technique — 22 octobre 2026
+
+L'inventaire de contrôle HTTP est porté de **14 à 18 chemins exacts**
+(prévol HEAD/GET sans lire le corps, contrôle post-publication 404/410).
+Quatre chemins de l'arborescence du dépôt sont maintenant couverts :
+`/supabase/migrations/20260808090000_sinjira_players.sql`,
+`/supabase/functions/get-private-book-url/index.ts`,
+`/supabase/tests/license_redemption_security_a1.test.sql` et
+`/mobile-native/package.json`. La présence d'un chemin en HTTP 200/206
+signale l'accessibilité de l'URL, **sans démontrer que son contenu contient
+un secret**. Un diagnostic vert ne remplace pas les contrôles du reçu SHA/run,
+de l'artefact isolé et du CDN après un PUBLISH autorisé.
