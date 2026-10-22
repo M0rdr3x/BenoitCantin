@@ -16,6 +16,7 @@ PROJECT_ORIGIN = "https://gpvivleexywljowcqkru.supabase.co"
 PROJECT_WSS = "wss://gpvivleexywljowcqkru.supabase.co"
 DENIED_PATHS = {
     "/.github/*", "/supabase/*", "/scripts/*", "/mobile-native/*",
+    "/docs/*", "/tests/*", "/.git/*",
     "/.env*", "/.gitignore", "/netlify.toml",
 }
 PUBLIC_EDGE_FUNCTIONS = {
@@ -62,7 +63,7 @@ def inspect_netlify(raw: str, label: str, root_site: bool) -> list[str]:
             errors.append(f"{label}: source interne non bloquée sur Netlify: {path}")
     if root_site:
         for protected in ("/compte/*", "/app/*", "/admin/*", "/Admin/*",
-                          "/administration.html", "/supabase/*"):
+                          "/administration.html", "/supabase/*", "/histoire-de-vie/*"):
             policy = headers.get(protected, {})
             if "no-store" not in policy.get("Cache-Control", ""):
                 errors.append(f"{label}: cache privé non interdit: {protected}")
