@@ -1,0 +1,43 @@
+name: Compte SINJIRA — outils personnels
+
+on:
+  pull_request:
+    paths:
+      - 'compte/registre-personnel.html'
+      - 'compte/histoire-de-vie.html'
+      - 'compte/mon-ia.html'
+      - 'compte/contributions.html'
+      - 'compte/playtests.html'
+      - 'compte/regles-communaute.html'
+      - 'scripts/validate_account_personal_tools_shell.py'
+      - '.github/workflows/validate-account-personal-tools-shell.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'compte/registre-personnel.html'
+      - 'compte/histoire-de-vie.html'
+      - 'compte/mon-ia.html'
+      - 'compte/contributions.html'
+      - 'compte/playtests.html'
+      - 'compte/regles-communaute.html'
+      - 'scripts/validate_account_personal_tools_shell.py'
+      - '.github/workflows/validate-account-personal-tools-shell.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Vérifier le shell des outils personnels
+        run: python scripts/validate_account_personal_tools_shell.py

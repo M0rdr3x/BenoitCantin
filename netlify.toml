@@ -23,7 +23,7 @@
 [[headers]]
   for = "/compte/*"
   [headers.values]
-    Cache-Control = "no-store"
+    Cache-Control = "private, no-store, max-age=0"
     X-Robots-Tag = "noindex, nofollow, noarchive"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
@@ -31,7 +31,7 @@
 [[headers]]
   for = "/administration.html"
   [headers.values]
-    Cache-Control = "no-store"
+    Cache-Control = "private, no-store, max-age=0"
     X-Robots-Tag = "noindex, nofollow, noarchive"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
@@ -39,7 +39,7 @@
 [[headers]]
   for = "/admin/*"
   [headers.values]
-    Cache-Control = "no-store"
+    Cache-Control = "private, no-store, max-age=0"
     X-Robots-Tag = "noindex, nofollow, noarchive"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
@@ -47,7 +47,7 @@
 [[headers]]
   for = "/Admin/*"
   [headers.values]
-    Cache-Control = "no-store"
+    Cache-Control = "private, no-store, max-age=0"
     X-Robots-Tag = "noindex, nofollow, noarchive"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
@@ -55,7 +55,7 @@
 [[headers]]
   for = "/app/*"
   [headers.values]
-    Cache-Control = "no-store"
+    Cache-Control = "private, no-store, max-age=0"
     X-Robots-Tag = "noindex, nofollow, noarchive"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
@@ -63,7 +63,7 @@
 [[headers]]
   for = "/histoire-de-vie/*"
   [headers.values]
-    Cache-Control = "no-store"
+    Cache-Control = "private, no-store, max-age=0"
     X-Robots-Tag = "noindex, nofollow, noarchive"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
@@ -83,6 +83,14 @@
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
 
+
+[[headers]]
+  for = "/supabase/*"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+    Pragma = "no-cache"
+    Referrer-Policy = "no-referrer"
 
 [[redirects]]
   from = "/supabase/*"

@@ -142,5 +142,11 @@ jobs:
           print(f"OK PWA: {len(entries)} fichiers publics; Boussole complète et routes privées exclues.")
           PY
 
+      - name: Auto-tester la continuité des sources de main
+        run: python3 scripts/validate_release_main_source_continuity.py --self-test
+
+      - name: Vérifier les 28 sources approuvées et refuser les fonctions Edge non canoniques
+        run: python3 scripts/validate_release_main_source_continuity.py
+
       - name: Vérifier les fichiers, routes et liens de l’ensemble du site
         run: python3 scripts/validate_site.py

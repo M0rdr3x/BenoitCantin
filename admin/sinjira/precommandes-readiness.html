@@ -15,8 +15,10 @@
 </style>
 </head>
 <body class="admin-sinjira-page preorder-admin-page">
-<header class="site-header"><div class="container nav-shell"><a class="brand" href="/"><img alt="" height="47" src="/assets/media/sinjira-emblem.webp" width="47"/><span class="brand-text"><strong>SINJIRA™</strong><span>Administration</span></span></a><nav class="main-nav"><a href="/admin/sinjira/">Administration</a><a href="/admin/sinjira/precommandes.html">Précommandes</a><a href="/projets/sinjira/romans/precommande.html">Page publique</a></nav></div></header>
-<main class="readiness-main">
+<a class="skip-link" href="#contenu">Aller au contenu</a>
+<header class="site-header"><div class="container nav-shell"><a class="brand" href="/admin/sinjira/" aria-label="Administration SINJIRA™"><img alt="" height="47" src="/assets/media/sinjira-emblem.webp" width="47"/><span class="brand-text"><strong>SINJIRA™</strong><span>Administration</span></span></a><button aria-controls="navigation-principale" aria-expanded="false" aria-label="Ouvrir le menu" class="menu-toggle" data-menu-toggle type="button"><span></span></button><nav class="main-nav" id="navigation-principale" data-main-nav aria-label="Navigation principale"><a href="/">Accueil</a><a href="/projets/sinjira/">SINJIRA™</a><a href="/projets/projet-nova/">Projet Nova</a><a href="/a-propos.html">À propos</a><a class="nav-cta" href="/compte/">Compte</a></nav></div></header>
+<nav aria-label="Navigation administration" class="universe-subnav"><div class="container"><a href="/admin/sinjira/">Console</a><a href="/admin/sinjira/licences.html">Licences</a><a href="/admin/sinjira/precommandes.html">Précommandes</a><a aria-current="page" href="/admin/sinjira/precommandes-readiness.html">Préparation vente</a><a href="/admin/sinjira/heritage.html">Héritage numérique</a></div></nav>
+<main id="contenu" class="readiness-main">
 <section class="preorder-admin-hero"><div class="container"><a class="project-back" href="/admin/sinjira/precommandes.html">← Retour aux précommandes</a><span class="eyebrow">V24.5.41 · lecture seule · MFA/AAL2</span><h1>Préparation à une future ouverture de vente</h1><p>Cette page montre uniquement si les informations nécessaires sont prêtes. Elle ne peut pas ouvrir une vente, créer un checkout, activer un paiement, convertir une réservation ou activer un fournisseur externe.</p><div class="preorder-admin-safety"><strong>Ouverture manuelle obligatoire</strong><span>Même lorsque tous les indicateurs sont prêts, une décision humaine séparée reste requise. Aucun état « prêt » n’autorise automatiquement une transaction.</span></div><div class="account-status" data-readiness-status hidden></div></div></section>
 <section class="section section-tight"><div class="container">
 <article class="account-card preorder-admin-card"><div class="preorder-admin-card-head"><div><span class="eyebrow">État global</span><h2 data-readiness-title>Chargement…</h2><p data-readiness-summary>Vérification des prérequis techniques et commerciaux.</p></div><button class="btn btn-secondary" data-readiness-refresh type="button">Actualiser</button></div><div class="readiness-grid" data-readiness-grid></div></article>
@@ -27,6 +29,6 @@
 </div></div></section>
 <section class="section section-tight"><div class="container"><article class="account-card preorder-admin-card"><span class="eyebrow">Actions permises</span><h2>Lecture et préparation seulement</h2><div class="readiness-actions"><a class="btn btn-secondary" href="/admin/sinjira/precommandes.html">Modifier les informations préparatoires</a><a class="btn btn-secondary" href="/projets/sinjira/romans/precommande.html">Voir la page publique</a></div><p><small>Aucun bouton « ouvrir les ventes », « activer le paiement » ou « convertir les réservations » n’existe sur cette page.</small></p></article></div></section>
 </main>
-<script type="module" src="/assets/js/sinjira-admin-preorder-readiness-v24-5-41.js"></script>
+<script defer src="/assets/js/site.js?v=7.6-sinjira-admin"></script><script type="module" src="/assets/js/sinjira-admin-preorder-readiness-v24-5-41.js"></script>
 </body>
 </html>
