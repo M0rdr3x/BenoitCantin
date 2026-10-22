@@ -17,6 +17,7 @@ const matches = [];
 const publicEntries = new Map();
 let globalLookups = 0;
 const responseHeaders = new Map();
+const responseStatuses = new Map();
 let networkFails = false;
 let currentCache;
 
@@ -59,7 +60,7 @@ const environment = {
     if (networkFails) throw new Error('network offline');
     const uri = new URL(r.url);
     const headers = responseHeaders.get(uri.pathname) || {};
-    return new Response('public test', { status: 200, headers });
+    return new Response('public test', { status: responseStatuses.get(uri.pathname) || 200, headers });
   },
 };
 vm.runInNewContext(source, environment, { filename: SW_PATH, timeout: 2500 });
@@ -102,6 +103,12 @@ async function test() {
   await assert.rejects(event('install'), /non publique interdite/,
     'Vary: * must invalidate the complete pre-cache installation');
   responseHeaders.delete('/');
+  // Un serveur/CDN qui renvoie un morceau HTTP 206 au lieu d'un fichier
+  // complet doit faire échouer toute installation du cache public.
+  responseStatuses.set('/', 206);
+  await assert.rejects(event('install'), /non publique interdite/,
+    'The offline pre-cache must reject partial 206 responses');
+  responseStatuses.delete('/');
   writes.length = 0;
   requests.length = 0;
   await event('activate');
@@ -172,6 +179,15 @@ async function test() {
     await assert.rejects(request(url, {}, destination));
     networkFails = false;
   }
+
+  // Un chargement partiel réussi au sens HTTP ne doit PAS remplacer le
+  // fichier complet du cache par un fragment de contenu.
+  responseStatuses.set('/assets/js/site.js', 206);
+  const writesBeforePartial = writes.length;
+  assert.equal((await request('/assets/js/site.js')).status, 206);
+  assert.equal(writes.length, writesBeforePartial,
+    'Partial content must never be stored as a complete JS asset');
+  responseStatuses.delete('/assets/js/site.js');
 
   // Assets from the pinned public set are cached, but not credentials or tokens.
   await request('/assets/js/site.js');
