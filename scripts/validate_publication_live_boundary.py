@@ -112,8 +112,8 @@ def validate_receipt_payload(
 
 
 def self_test() -> None:
-    assert len(TECHNICAL_ROUTES) == len(set(TECHNICAL_ROUTES)) == 14, (
-        "Les diagnostics et la publication doivent tester exactement 14 routes"
+    assert len(TECHNICAL_ROUTES) == len(set(TECHNICAL_ROUTES)) == 18, (
+        "Les diagnostics et la publication doivent tester exactement 18 routes"
     )
     assert TECHNICAL_ROUTES is PRIVATE_ROUTES, (
         "La liste des chemins ne doit plus diverger des tests post-PUBLISH"
