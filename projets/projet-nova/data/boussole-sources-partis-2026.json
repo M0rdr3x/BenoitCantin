@@ -1,0 +1,438 @@
+{
+  "version": "1.59.0",
+  "updated": "2026-10-08",
+  "jurisdiction": "Québec",
+  "purpose": "Inventaire neutre de sources publiques servant à préparer le codage futur de la boussole. Aucun URL ou niveau de documentation ne produit un score politique.",
+  "authority": {
+    "name": "Élections Québec",
+    "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/"
+  },
+  "equalityRules": {
+    "sameSourceFieldsForEveryParty": true,
+    "registrySourceRequiredForAuthorizedParties": true,
+    "missingOfficialSiteDoesNotCreatePoliticalPosition": true,
+    "documentationVolumeDoesNotIncreaseSimilarity": true,
+    "sourceCountDoesNotIncreaseWeight": true,
+    "sourceQualityAffectsConfidenceOnly": true,
+    "futurePartyUsesSameEvidenceFields": true
+  },
+  "parties": [
+    {
+      "id": "party-01",
+      "name": "Bloc pot",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://www.blocpot.qc.ca/",
+      "platformUrls": [
+        "https://www.blocpot.qc.ca/fr"
+      ],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site_and_2026_platform",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": true,
+      "notes": null
+    },
+    {
+      "id": "party-02",
+      "name": "Climat Québec - Équipe Martine Ouellet",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://climat.quebec/",
+      "platformUrls": [
+        "https://climat.quebec/2026/08/28/communique-climat-quebec-lance-sa-plateforme-electorale-et-presente-26-nouvelles-candidatures-de-partout-au-quebec/"
+      ],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site_and_2026_platform",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": true,
+      "notes": null
+    },
+    {
+      "id": "party-03",
+      "name": "Démocratie directe",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://democratiedirectequebec.com/",
+      "platformUrls": [
+        "https://democratiedirectequebec.com/",
+        "https://democratiedirectequebec.com/Prevost.aspx"
+      ],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site_and_2026_program",
+      "lastVerified": "2026-10-07",
+      "usableForPositionCoding": true,
+      "notes": "Programme public 2026 revérifié le 7 octobre : référendum d’initiative citoyenne, vote de l’élu lié à une consultation tranchée et rappel d’un député avant la fin du mandat. Ces éléments sont utilisés séparément pour q34, q35 et q36 selon la précision de chaque formulation."
+    },
+    {
+      "id": "party-04",
+      "name": "Équipe autonomiste",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://equipeautonomiste.ca/",
+      "platformUrls": [
+        "https://equipeautonomiste.ca/LeParti"
+      ],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": true,
+      "notes": null
+    },
+    {
+      "id": "party-05",
+      "name": "Équipe Christine Fréchette - Coalition avenir Québec",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://coalitionavenirquebec.org/fr/",
+      "platformUrls": [],
+      "pressReleaseUrls": [
+        "https://coalitionavenirquebec.org/fr/blog/2026/09/02/lequipe-christine-frechette-veut-renverser-la-tendance-en-itinerance/",
+        "https://coalitionavenirquebec.org/fr/blog/2026/09/04/construire-plus-plus-vite-et-a-moindre-cout-le-plan-de-lequipe-christine-frechette/",
+        "https://coalitionavenirquebec.org/fr/blog/2026/04/01/le-gouvernement-souhaite-moderniser-les-decrets-de-convention-collective-et-adapte-les-regles-de-lindustrie-de-la-construction-aux-realites-actuelles/",
+        "https://coalitionavenirquebec.org/fr/blog/2026/06/11/plan-de-mise-en-oeuvre-2026-2031-du-plan-pour-une-economie-verte-2030-quebec-renforce-son-soutien-direct-aux-citoyens/",
+        "https://coalitionavenirquebec.org/fr/blog/2025/04/23/un-nouveau-regime-de-negociation-au-service-des-quebecois/",
+        "https://coalitionavenirquebec.org/fr/blog/2026/09/21/lequipe-frechette-mise-sur-les-forces-du-quebec-pour-batir-une-nation-plus-autonome-et-plus-forte/",
+        "https://coalitionavenirquebec.org/fr/blog/2026/08/31/lequipe-frechette-accelerera-lacces-aux-soins-pour-reduire-les-listes-dattente/",
+        "https://coalitionavenirquebec.org/fr/blog/2026/06/02/la-ministre-champagne-jourdain-lance-un-service-daccompagnement-pour-accelerer-les-projets-miniers-au-quebec/",
+        "https://coalitionavenirquebec.org/fr/blog/2023/08/08/cout-de-la-vie-le-gouvernement-de-la-caq-est-il-celui-qui-en-fait-le-plus/",
+        "https://coalitionavenirquebec.org/fr/blog/2025/09/02/mise-a-lessai-du-nouveau-programme-de-francais-un-programme-modernise-enracine-dans-la-culture-quebecoise-pour-faire-aimer-notre-langue/",
+        "https://coalitionavenirquebec.org/fr/blog/2026/01/22/le-taux-general-du-salaire-minimum-passera-a-1660-lheure-le-1er-mai-2026/"
+      ],
+      "legislativeRecordUrls": [
+        "https://www.quebec.ca/premiere-ministre/actualites/detail/le-gouvernement-du-quebec-interdit-tout-rassemblement-interieur-ou-exterieur",
+        "https://www.quebec.ca/nouvelles/actualites/details/le-gouvernement-du-quebec-declare-l-etat-d-urgence-sanitaire-interdit-les-visites-dans-les-centres-hospitaliers-et-les-chsld-et-prend-des-mesures-speciales-pour-offrir-des-services-de-sante-a-distance",
+        "https://www.assnat.qc.ca/Media/Process.aspx?MediaId=ANQ.Vigie.Bll.DocumentGenerique_184557&process=Original&token=ZyMoxNwUn8ikQ+TRKYwPCjWrKwg+vIv9rjij7p3xLGTZDmLVSmJLoqe%2FvG7%2FYWzz",
+        "https://www.assnat.qc.ca/fr/travaux-parlementaires/projets-loi/projet-loi-64-42-1.html",
+        "https://www.quebec.ca/gouvernement/travailler-gouvernement/normes-gouvernance-pratiques-internes/protection-des-renseignements-personnels/utilisation-autre-fin/consentement-personne"
+      ],
+      "verificationStatus": "verified_official_site_and_2026_engagements",
+      "lastVerified": "2026-10-08",
+      "usableForPositionCoding": true,
+      "notes": "Sources officielles revérifiées le 8 octobre 2026. q01/q04 utilisent le plan économique 2026; q06 le bilan de la baisse d’impôt des particuliers; q12 le plan santé; q13 le nouveau programme de français commun; q24 l’annonce Filon; q32 le bilan de l’urgence sanitaire; q58 le régime de négociation et l’organisation du travail; q59 l’annonce officielle du salaire minimum 2026, qui documente une progression cumulative supérieure à l’inflation depuis 2018 sans promettre explicitement la même cadence pour toutes les prochaines années; q63 s’appuie sur la Loi 25 et le cadre public actuel de protection des renseignements personnels. q60 : réforme 2026 des décrets de convention collective; la source concerne la négociation collective, pas directement la négociation individuelle."
+    },
+    {
+      "id": "party-06",
+      "name": "Osons Québec",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://osons.quebec/",
+      "platformUrls": [
+        "https://osons.quebec/",
+        "https://osons.quebec/?profil=housing",
+        "https://osons.quebec/?profil=regions",
+        "https://osons.quebec/?profil=quebec"
+      ],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site_and_2026_program",
+      "lastVerified": "2026-10-08",
+      "usableForPositionCoding": true,
+      "notes": "Programme électoral final 2026 revérifié le 8 octobre. Le profil Québec documente q45/q46; le profil régions est utilisé prudemment pour q49; le profil logement documente q27 de façon mixte/conditionnelle. La proposition « Identité numérique libre et IA responsable » documente q62 de façon ambiguë : elle impose des évaluations d’impact, projets pilotes, tests indépendants et réversibilité avant les grands déploiements, sans exiger explicitement qu’un cadre réglementaire spécifique soit adopté avant toute utilisation."
+    },
+    {
+      "id": "party-07",
+      "name": "Parti accès propriété et équité - Équipe Québec debout",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://www.pape.quebec/",
+      "platformUrls": [
+        "https://www.pape.quebec/"
+      ],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": true,
+      "notes": null
+    },
+    {
+      "id": "party-08",
+      "name": "Parti canadien du Québec / Canadian Party of Québec",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://www.particanadienquebec.ca/fr",
+      "platformUrls": [
+        "https://www.particanadienquebec.ca/fr",
+        "https://www.particanadienquebec.ca/fr/politiques/quebec-housing-growth-act",
+        "https://www.canadianpartyquebec.ca/fr/politiques/fully-costed-platform"
+      ],
+      "pressReleaseUrls": [
+        "https://www.particanadienquebec.ca/fr/communiques/sept25followup"
+      ],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site_and_2026_platform",
+      "lastVerified": "2026-10-08",
+      "usableForPositionCoding": true,
+      "notes": "Sources officielles revérifiées le 8 octobre 2026. q05 utilise la plateforme entièrement chiffrée 2026, qui propose de réduire les quatre taux d’impôt sur le revenu, dont le taux supérieur, ce qui constitue l’inverse direct d’une hausse du taux applicable aux revenus les plus élevés. La politique du 25 septembre reste utilisée prudemment pour q31 sur la protection des débats politiques légitimes et des manifestations pacifiques."
+    },
+    {
+      "id": "party-09",
+      "name": "Parti communiste du Québec",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://particommunisteduquebec.ca/",
+      "platformUrls": [
+        "https://particommunisteduquebec.ca/plateforme-2026/",
+        "https://particommunisteduquebec.ca/programme-ch5/"
+      ],
+      "pressReleaseUrls": [
+        "https://particommunisteduquebec.ca/une-campagne-electorale-silencieuse-sur-les-droits-des-peuples-autochtones/"
+      ],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site_and_2026_platform",
+      "lastVerified": "2026-10-07",
+      "usableForPositionCoding": true,
+      "notes": "Sources officielles revérifiées le 7 octobre 2026 : plateforme électorale 2026, programme général et déclaration autochtone. Le chapitre 5 demande explicitement l’extension des domaines couverts par la convention collective et davantage de contrôle syndical sur les changements touchant le travail; il est utilisé pour q60. La plateforme 2026 corrobore l’expansion des droits syndicaux."
+    },
+    {
+      "id": "party-10",
+      "name": "Parti conservateur du Québec",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://conservateur.quebec/",
+      "platformUrls": [
+        "https://conservateur.quebec/documents-officiels/",
+        "https://conservateur.quebec/wp-content/uploads/2024/11/PROPOSITIONS-ADOPTEES-Revise-28-oct-2024.pdf",
+        "https://conservateur.quebec/wp-content/uploads/2026/09/Plate-forme_Regions_V2_corrigee-2-1.pdf",
+        "https://conservateur.quebec/wp-content/uploads/2026/09/Autochtones_Plateforme.pdf",
+        "https://conservateur.quebec/wp-content/uploads/2026/09/Sortie_2B_SPEDE_mise_en_page_PCQ.pdf",
+        "https://www.conservateur.quebec/wp-content/uploads/2024/11/Cahier-des-resolutions-final.pdf",
+        "https://conservateur.quebec/wp-content/uploads/2026/09/Plateforme_ImmigrationV4pdf-1.pdf",
+        "https://conservateur.quebec/wp-content/uploads/2026/09/Plateforme_numerique_mise_en_page_PCQ.pdf"
+      ],
+      "pressReleaseUrls": [
+        "https://conservateur.quebec/blog/ressources/un-nouveau-modele-detat-axe-sur-les-gouvernements-de-proximite-pour-rapprocher-les-decisions-du-citoyen/",
+        "https://conservateur.quebec/blog/ressources/eric-duhaime-veut-collaborer-avec-les-nations-autochtones-aux-projets-de-developpement-economique/",
+        "https://conservateur.quebec/blog/ressources/le-pcq-veut-redonner-du-pouvoir-aux-travailleurs-syndiques/",
+        "https://conservateur.quebec/blog/ressources/le-pcq-veut-offrir-a-chaque-eleve-un-parcours-qui-lui-ressemble/",
+        "https://conservateur.quebec/blog/ressources/le-pcq-sengage-a-faire-un-grand-menage-dans-les-depenses-publiques-sans-couper-dans-les-services-publics/",
+        "https://conservateur.quebec/blog/ressources/le-pcq-veut-renforcer-la-protection-des-femmes-et-les-droits-des-victimes/",
+        "https://conservateur.quebec/blog/ressources/plan-pcq-anti-tarifs-le-quebec-doit-cesser-detre-le-champion-des-exceptions-au-commerce-interprovincial/",
+        "https://conservateur.quebec/blog/ressources/les-conservateurs-proposent-deux-mesures-pour-faire-baisser-le-prix-de-lessence/"
+      ],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site_and_2026_platform",
+      "lastVerified": "2026-10-08",
+      "usableForPositionCoding": true,
+      "notes": "Sources officielles revérifiées le 8 octobre 2026, incluant les plateformes 2026, les propositions adoptées et le cahier officiel de résolutions. q02 utilise le plan anti-tarifs; q01/q04 la baisse générale de l’impôt des sociétés; q21 le SPEDE; q28 le libre choix du mode de transport; q30 la surveillance électronique ciblée; q39 le plan immigration 2026; q50/q52 la plateforme régionale; q55 les redevances territoriales. q62 utilise la plateforme numérique 2026 de façon ambiguë : elle prévoit des projets pilotes IA et la définition d’un cadre de gouvernance dans la même année de préparation, sans ordre juridique explicite entre les deux. q22 : pétition officielle de mai 2026 sur la taxe carbone et le coût des biens essentiels; la source ne traite ni de l’adoption d’une nouvelle norme ni du critère d’analyse d’impact."
+    },
+    {
+      "id": "party-11",
+      "name": "Parti culinaire du Québec",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://www.particulinaireduquebec.org/",
+      "platformUrls": [],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": false,
+      "notes": null
+    },
+    {
+      "id": "party-12",
+      "name": "Parti libéral du Québec/Quebec Liberal Party",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://plq.org/",
+      "platformUrls": [
+        "https://plq.org/",
+        "https://plq.org/engagements/"
+      ],
+      "pressReleaseUrls": [
+        "https://plq.org/communique/plan-habitation-du-parti-liberal-du-quebec-15-g-dinvestissements-pour-40-000-logements-sociaux-et-abordables-supplementaires/",
+        "https://plq.org/communique/objectif-ambitieux-100-000-logements-par-annee/",
+        "https://plq.org/communique/un-changement-majeur-dans-la-gestion-de-la-transformation-numerique/",
+        "https://plq.org/communique/la-telesante-au-coeur-dune-premiere-ligne-plus-accessible/",
+        "https://plq.org/communique/un-cadre-financier-realiste-pour-reparer-les-finances-publiques-et-batir-lavenir-economique-du-quebec/"
+      ],
+      "legislativeRecordUrls": [
+        "https://www.assnat.qc.ca/Media/Process.aspx?MediaId=ANQ.Vigie.Bll.DocumentGenerique_141939&process=Original&token=ZyMoxNwUn8ikQ+TRKYwPCjWrKwg+vIv9rjij7p3xLGTZDmLVSmJLoqe%2FvG7%2FYWzz",
+        "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/muni_express/PL_122_version_administrative.pdf",
+        "https://www.quebec.ca/habitation-territoire/amenagement-developpement-territoires/amenagement-territoire/guide-prise-decision-urbanisme/reglementation/reglement-logement-abordable-social-familial",
+        "https://www.assnat.qc.ca/fr/deputes/coiteux-martin-15443/biographie.html"
+      ],
+      "verificationStatus": "verified_official_site_and_2026_engagements",
+      "lastVerified": "2026-10-07",
+      "usableForPositionCoding": true,
+      "notes": "Sources officielles revérifiées le 7 octobre 2026, incluant les engagements électoraux 2026 et des dossiers législatifs historiques directement attribuables au gouvernement libéral. q19 utilise le projet de loi 122 : Martin Coiteux, député libéral et ministre des Affaires municipales, a introduit le pouvoir municipal d’exiger une contribution en logement abordable ou familial comme condition au permis; le guide gouvernemental actuel confirme que l’exigence peut être formulée en pourcentage. q07 et q08 utilisent le cadre financier 2026; q50 conserve le noyau commun de services avec asymétrie réglementaire régionale."
+    },
+    {
+      "id": "party-13",
+      "name": "Parti libertarien du Québec",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": null,
+      "platformUrls": [],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "registry_only_pending_official_site_verification",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": false,
+      "notes": "Site officiel non encore vérifié; seules les données du registre officiel peuvent être utilisées pour l’identité du parti."
+    },
+    {
+      "id": "party-14",
+      "name": "Parti marxiste-léniniste du Québec",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": null,
+      "platformUrls": [],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "registry_only_pending_official_site_verification",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": false,
+      "notes": "Site officiel non encore vérifié; seules les données du registre officiel peuvent être utilisées pour l’identité du parti."
+    },
+    {
+      "id": "party-15",
+      "name": "Parti nul",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://partinul.net/",
+      "platformUrls": [],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": false,
+      "notes": "Site officiel vérifié; aucune plateforme générale n’a encore été ajoutée à l’inventaire de codage."
+    },
+    {
+      "id": "party-16",
+      "name": "Parti populaire du Québec",
+      "entityType": "authorization_withdrawn_2026",
+      "registryUrl": "https://www.electionsquebec.qc.ca/communiques/elections-provinciales-de-2026-908-candidatures-acceptees/",
+      "officialSite": null,
+      "platformUrls": [],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "authorization_withdrawn_official_source",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": false,
+      "notes": "Élections Québec a annoncé le retrait de l’autorisation le 17 septembre 2026. Le parti demeure dans l’inventaire historique, sans être présenté comme actuellement autorisé."
+    },
+    {
+      "id": "party-17",
+      "name": "Parti québécois",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://www.pq.org/",
+      "platformUrls": [
+        "https://www.pq.org/",
+        "https://pq.org/wp-content/uploads/2024/08/cahier-projet-nationalv2-1.pdf",
+        "https://pq.org/wp-content/uploads/2026/08/PQ-plateforme-enviro-V_FINALE.pdf",
+        "https://pq.org/independance/plan-immigration/"
+      ],
+      "pressReleaseUrls": [
+        "https://pq.org/nouvelles/visite-du-parti-quebecois-en-abitibi-temiscamingue-20-000-logements-sociaux-et-hors-marche/",
+        "https://pq.org/nouvelles/declaration-du-chef-du-parti-quebecois-le-panier-depicerie-coutera-t-il-encore-plus-cher-dans-quelques-mois/",
+        "https://pq.org/nouvelles/sante-et-service-sociaux-investir-en-prevention-et-faire-des-clsc-la-veritable-porte-dentree-du-reseau/",
+        "https://pq.org/nouvelles/un-projet-structurant-pour-lest-et-lentretien-du-metro-le-parti-quebecois-presente-ses-priorites-en-transport-collectif-pour-montreal/",
+        "https://pq.org/nouvelles/le-parti-quebecois-presente-ses-engagements-pour-la-capitale-nationale/"
+      ],
+      "legislativeRecordUrls": [
+        "https://www.assnat.qc.ca/fr/travaux-parlementaires/assemblee-nationale/43-1/journal-debats/20250527/408891.html"
+      ],
+      "verificationStatus": "verified_official_site_and_2026_engagements",
+      "lastVerified": "2026-10-08",
+      "usableForPositionCoding": true,
+      "notes": "Sources officielles revérifiées le 8 octobre 2026, incluant le Projet national, le plan immigration et le plan environnemental 2026-2034. q31 utilise la section du Projet national qui définit la liberté d’expression comme couvrant les idées qui dérangent ou peuvent choquer et attribue à l’État québécois un rôle de préservation de cette liberté. Pour q39, le plan immigration demeure ambigu sur l’augmentation de la part relative des catégories humanitaires et familiales. q25 : deux communiqués urbains de septembre 2026 documentent des projets de transport collectif à Montréal et Québec, mais aucune part majoritaire des nouveaux investissements provinciaux n’est établie. q44 : le journal de l’Assemblée nationale du 27 mai 2025 contient l’appui explicite du PQ au PL84 sur l’intégration nationale; codage mixte/conditionnel, la définition légale de culture commune ne constituant pas une définition exhaustive de l’identité québécoise."
+    },
+    {
+      "id": "party-18",
+      "name": "Parti vert du Québec/Green Party of Québec",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://www.pvq.qc.ca/",
+      "platformUrls": [
+        "https://www.pvq.qc.ca/"
+      ],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site_and_2026_program",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": true,
+      "notes": null
+    },
+    {
+      "id": "party-19",
+      "name": "Présence Québec",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://www.presencequebec.com/",
+      "platformUrls": [],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": false,
+      "notes": null
+    },
+    {
+      "id": "party-20",
+      "name": "Québec innovant",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://www.quebecinnovant.org/",
+      "platformUrls": [
+        "https://www.quebecinnovant.org/",
+        "https://www.quebecinnovant.org/chantiers/"
+      ],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": true,
+      "notes": null
+    },
+    {
+      "id": "party-21",
+      "name": "Québec solidaire",
+      "entityType": "authorized_provincial_party",
+      "registryUrl": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/partis-politiques/",
+      "officialSite": "https://site.quebecsolidaire.net/",
+      "platformUrls": [
+        "https://quebecsolidaire.net/",
+        "https://quebecsolidaire.net/theme/environnement",
+        "https://api-wp.quebecsolidaire.net/wp-content/uploads/2024/02/programmeqs-2019.pdf",
+        "https://api-wp.quebecsolidaire.net/wp-content/uploads/2018/09/maintenant_ou_jamais.pdf",
+        "https://quebecsolidaire.net/theme/independance",
+        "https://api-wp.quebecsolidaire.net/wp-content/uploads/2024/05/declarationsaguenay-v1.pdf"
+      ],
+      "pressReleaseUrls": [
+        "https://quebecsolidaire.net/nouvelle/elections-2026-quebec-solidaire-presente-un-cadre-financier-qui-nous-donne-les-moyens-de-nos-ambitions",
+        "https://quebecsolidaire.net/nouvelle/quebec-solidaire-va-refaire-des-clsc-la-porte-dentree-du-systeme-de-sante",
+        "https://quebecsolidaire.net/nouvelle/elections-2026-quebec-solidaire-tend-la-main-aux-premieres-nations",
+        "https://quebecsolidaire.net/nouvelle/quebec-solidaire-veut-redonner-du-pouvoir-aux-peuples-quebecois"
+      ],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "verified_official_site_and_2026_platform",
+      "lastVerified": "2026-10-08",
+      "usableForPositionCoding": true,
+      "notes": "Sources officielles revérifiées le 8 octobre 2026, incluant la plateforme électorale 2026, le programme officiel, le plan de transition et la Déclaration du Saguenay. q03 documente la participation majoritaire de l’État dans les entreprises énergétiques; q15 davantage d’orthopédagogues; q16 le modèle de financement scolaire; q19 l’inclusion obligatoire de logement social; q23 l’engagement BAPE; q34 le droit d’initiative populaire; q42 la plateforme culturelle; q49 la fiscalité municipale fondée sur des points d’impôt sur le revenu avec contrôle partagé; q52 la décentralisation décisionnelle; q53 les relations de nation à nation; q54 les ententes formelles; q56 le consentement autochtone."
+    },
+    {
+      "id": "party-nova",
+      "name": "Parti Nova",
+      "entityType": "future_party_project",
+      "registryUrl": null,
+      "officialSite": "https://www.benoitcantin.com/projets/projet-nova/",
+      "platformUrls": [
+        "https://www.benoitcantin.com/projets/projet-nova/programme.html"
+      ],
+      "pressReleaseUrls": [],
+      "legislativeRecordUrls": [],
+      "verificationStatus": "future_project_source_not_official_party",
+      "lastVerified": "2026-10-06",
+      "usableForPositionCoding": true,
+      "notes": "Parti Nova est un futur parti. Cette source décrit le projet politique actuel et ne vaut pas autorisation par Élections Québec."
+    }
+  ]
+}
