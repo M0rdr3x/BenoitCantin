@@ -104,20 +104,26 @@ def validate_jekyll_ci(source: str) -> list[str]:
     ):
         if token not in jobs:
             errors.append("Étape Jekyll absente : " + description)
+    # Un commentaire, une chaîne echo ou une annotation ne constitue pas
+    # l'exécution d'un audit. Chaque commande doit occuper sa propre ligne
+    # exécutable, avec l'indentation stricte du bloc shell YAML.
+    executable_lines = re.findall(
+        r"(?m)^ {10}((?:python3 |node --test )[^\\n]+)$", jobs
+    )
     for command, times in (
         ("python3 scripts/audit_pages_jekyll.py --source . --built _site", 2),
         ("python3 scripts/audit_pages_secrets.py --built _site", 2),
         ("python3 scripts/validate_nova_public_access.py --source . --built _site", 2),
         ("python3 scripts/validate_nova_public_results.py --source . --built _site", 2),
         ("python3 scripts/validate_nova_public_access.py --self-test", 1),
-        ("python3 scripts/validate_nova_public_access.py --source .", 3),
+        ("python3 scripts/validate_nova_public_access.py --source .", 1),
         ("python3 scripts/validate_nova_public_results.py --self-test", 1),
-        ("python3 scripts/validate_nova_public_results.py --source .", 3),
+        ("python3 scripts/validate_nova_public_results.py --source .", 1),
         ("node --test tests/test_nova_public_results.cjs", 1),
     ):
-        if jobs.count(command) != times:
+        if executable_lines.count(command) != times:
             errors.append(
-                "Audits Jekyll de source et secrets requis avant et après le reçu : " + command
+                "Commande réelle Jekyll manquante, dupliquée ou non exécutable : " + command
             )
     for command in (
         "          python3 scripts/validate_pages_workflows.py --self-test\n",
@@ -235,6 +241,14 @@ def self_test_jekyll_ci() -> None:
         "test DOM Nova non exécuté": (
             "          node --test tests/test_nova_public_results.cjs\n",
             "          echo TEST_DOM_NOVA_NON_EXECUTE\n",
+        ),
+        "test DOM Nova simplement affiché": (
+            "          node --test tests/test_nova_public_results.cjs\n",
+            "          echo node --test tests/test_nova_public_results.cjs\n",
+        ),
+        "registre Nova simplement affiché": (
+            "          python3 scripts/validate_nova_public_results.py --source . --built _site\n",
+            "          echo python3 scripts/validate_nova_public_results.py --source . --built _site\n",
         ),
     }
     for label, (old, replacement) in mutations.items():
