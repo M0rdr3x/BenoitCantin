@@ -81,7 +81,7 @@ jobs:
           assert home.count(route) >= 4, "Boussole non accessible partout depuis l'accueil"
           import re
           compass_link = re.search(
-              r'<a\\b[^>]*class="[^"]*\\bnode-boussole-home\\b[^"]*"[^>]*>',
+              r'<a\b[^>]*class="[^"]*\bnode-boussole-home\b[^"]*"[^>]*>',
               home,
           )
           assert compass_link and 'href="' + route + '"' in compass_link.group(), (
