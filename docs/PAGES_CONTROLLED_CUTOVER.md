@@ -514,9 +514,17 @@ privés, URL non canoniques et ajouts non explicitement révisés. Ce contrôle
 s'exécute dans la CI PR et dans le workflow de publication manuelle avant
 l'upload : un seul fichier manquant empêche le déploiement et évite un
 service worker impossible à installer malgré un build Jekyll réussi.
-La version du cache a été augmentée pour que les caches obsolètes soient
-éliminés à l'activation du nouveau service worker, sans supprimer ceux
-d'autres applications du même domaine.
+La version du cache est désormais `benoitcantin-v24-4-95-public-6` :
+les caches `public-4` et `public-5` doivent être supprimés à l'activation
+du nouveau service worker, sans toucher aux caches d'autres applications
+du même domaine. La mise à jour de la politique refuse aussi les en-têtes
+`Vary: *` et les variations `Cookie` / `Authorization` avec espaces
+additionnels; elle n'utilise pas l'ancienne règle du cache `public-5`.
+Une réponse partielle **HTTP 206** ne doit jamais être mise en cache comme
+si elle contenait tout le fichier. Les requêtes avec `Range` ou
+`If-Range` restent réseau seul, sans lecture ni écriture hors ligne,
+même lorsque le serveur répond HTTP 200. Ces cas sont exercés dans
+`scripts/test_pwa_cache_security.cjs` sans collecter de données privées.
 
 Seuls les chemins explicitement préapprouvés dans `CORE` peuvent être
 enregistrés dans le cache PWA. La précharge utilise `credentials: omit`,
