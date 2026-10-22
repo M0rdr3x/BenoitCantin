@@ -83,6 +83,17 @@ def validate_public_consistency() -> list[str]:
         if marker not in privacy:
             errors.append(f"Gouvernance vie privée : contrat de main perdu : {marker}")
 
+    ai = (ROOT / "transparence-ia.html").read_text(encoding="utf-8")
+    for marker in (
+        'href="/projets/sinjira/"',
+        'href="/assistant.html"',
+        'href="/a-propos.html"',
+        'data-sinjira-browser-compat',
+        'src="/assets/js/v19-session.js?v=25.0.0"',
+    ):
+        if marker not in ai:
+            errors.append(f"Transparence IA : fonctionnalité main ou release absente : {marker}")
+
     contact = (ROOT / "contact.html").read_text(encoding="utf-8")
     for marker in (
         '<fieldset id="contact-personal-fields" disabled',
