@@ -85,6 +85,11 @@ jobs:
           divergent = sorted(both - set(identical))
           merge = run('merge-tree', '--write-tree', '--name-only', main, release, expected=(0, 1))
           conflicts = merge.returncode == 1
+          conflict_paths = [
+              line.split('Merge conflict in ', 1)[1]
+              for line in merge.stdout.splitlines()
+              if 'Merge conflict in ' in line
+          ]
           summary = [
               '## Audit de fusion du candidat #449',
               f'- Base commune : `{base}`',
@@ -93,6 +98,7 @@ jobs:
               f'- Fichiers modifiés sur les deux branches : **{len(both)}**',
               f'- Déjà identiques : **{len(identical)}**',
               f'- Différents : **{len(divergent)}**',
+              f'- Conflits natifs du moteur Git : **{len(conflict_paths)}**',
               '- Fusion Git : **CONFLITS À RÉSOUDRE**' if conflicts else '- Fusion Git : **TECHNIQUEMENT POSSIBLE**',
               '',
               '### Fichiers divergents (décision métier ou revue nécessaire)',
@@ -111,6 +117,9 @@ jobs:
           if dest:
               with open(dest, 'a', encoding='utf-8') as f:
                   f.write(report)
-          # Ne pas assimiler un diagnostic Git à une autorisation de publication.
-          # La fusion reste refusée tant que les conflits ne sont pas résolus.
+          # Une CI verte n'est pas une preuve de fusion si le moteur Git refuse.
+          # Le résumé ci-dessus est conservé même lorsque le check échoue.
+          if conflicts:
+              raise SystemExit("NO_GO : conflits de fusion Git actifs, intégration interdite.")
+          print("PASS : aucune incompatibilité Git détectée (smokes et revue encore requis).")
           PY
