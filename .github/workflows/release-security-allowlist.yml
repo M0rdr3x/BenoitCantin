@@ -135,6 +135,8 @@ jobs:
           for uri in entries:
               assert not uri.startswith(forbidden), "Fichier privé précaché: " + uri
               rel = Path(uri.lstrip('/'))
+              if uri.endswith('/'):
+                  rel = rel / 'index.html'
               assert rel.is_file(), "Fichier PWA absent: " + uri
               assert relative_path_allowed(rel), "Fichier non publiable précaché: " + uri
           print(f"OK PWA: {len(entries)} fichiers publics; Boussole complète et routes privées exclues.")
