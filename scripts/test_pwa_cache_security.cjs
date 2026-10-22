@@ -96,6 +96,12 @@ async function test() {
   responseHeaders.set('/', { 'Cache-Control': 'private, no-store' });
   await assert.rejects(event('install'), /non publique interdite/);
   responseHeaders.delete('/');
+  // Le chargement initial doit aussi être refusé si une seule ressource
+  // publique n'autorise pas une réutilisation déterministe du cache.
+  responseHeaders.set('/', { 'Vary': '*' });
+  await assert.rejects(event('install'), /non publique interdite/,
+    'Vary: * must invalidate the complete pre-cache installation');
+  responseHeaders.delete('/');
   writes.length = 0;
   requests.length = 0;
   await event('activate');
