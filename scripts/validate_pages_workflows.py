@@ -286,6 +286,9 @@ def executable_guards(workflow: str) -> list[str]:
     integrity_commands = active_audit_commands(integrity_step)
     required_build = (
         "python3 scripts/audit_pages_jekyll.py --source . --built _site",
+        "python3 scripts/validate_nova_public_access.py --source . --built _site",
+        "python3 scripts/validate_nova_public_results.py --source . --built _site",
+        "node --test tests/test_nova_public_results.cjs",
         "python3 scripts/validate_sinjira_public_links.py --check",
         "python3 scripts/validate_sinjira_catalogues_metadata.py --built _site",
         "node --test tests/test_sinjira_library_access.cjs",
@@ -609,6 +612,30 @@ def self_test(workflow: str) -> None:
             "          node --test tests/test_sinjira_library_access.cjs",
             "          python3 scripts/validate_sinjira_catalogues_metadata.py --built _site\n"
             "          echo TEST_ACCES_NON_EXECUTE", 1,
+        ),
+        "Navigation Nova post-build neutralisée": workflow.replace(
+            "          python3 scripts/validate_nova_public_access.py --source . --built _site",
+            "          echo NOVA_NAVIGATION_NON_AUDITEE", 1,
+        ),
+        "Navigation Nova seulement imprimée": workflow.replace(
+            "          python3 scripts/validate_nova_public_access.py --source . --built _site",
+            "          echo python3 scripts/validate_nova_public_access.py --source . --built _site", 1,
+        ),
+        "Confidentialité Nova post-build neutralisée": workflow.replace(
+            "          python3 scripts/validate_nova_public_results.py --source . --built _site",
+            "          echo NOVA_CONFIDENTIALITE_NON_AUDITEE", 1,
+        ),
+        "Confidentialité Nova commentée": workflow.replace(
+            "          python3 scripts/validate_nova_public_results.py --source . --built _site",
+            "          # python3 scripts/validate_nova_public_results.py --source . --built _site", 1,
+        ),
+        "Test réel du rendu Nova retiré": workflow.replace(
+            "          node --test tests/test_nova_public_results.cjs",
+            "          echo TEST_NOVA_NON_EXECUTE", 1,
+        ),
+        "Test réel Nova seulement affiché": workflow.replace(
+            "          node --test tests/test_nova_public_results.cjs",
+            "          echo node --test tests/test_nova_public_results.cjs", 1,
         ),
         "Contrôle SEO des catalogues neutralisé": workflow.replace(
             "          python3 scripts/validate_sinjira_catalogues_metadata.py --built _site",
