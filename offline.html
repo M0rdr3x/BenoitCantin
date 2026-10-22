@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Hors ligne | Benoit Cantin</title>
 <meta name="description" content="Écran hors ligne du portail Benoit Cantin et de SINJIRA™ avec accès aux principales sections publiques conservées localement.">
-<meta name="robots" content="noindex,nofollow">
+<meta name="robots" content="noindex,nofollow,noarchive">
 <link rel="icon" href="/assets/icons/sinjira-favicon.png">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="stylesheet" href="/assets/css/site.css?v=25.0.0">
@@ -28,11 +28,13 @@
     <article class="account-card">
       <span class="eyebrow">Connexion indisponible</span>
       <h1>Vous êtes hors ligne.</h1>
-      <p>Les fonctions de compte, les sauvegardes et les envois nécessitent une connexion. Les principales sections publiques de SINJIRA™ restent toutefois disponibles lorsqu’elles ont été préparées dans le cache de l’application.</p>
+      <p>Les fonctions de compte, l’administration, les sauvegardes, les commentaires et les envois nécessitent une connexion active. Les principales sections publiques de SINJIRA™ restent toutefois disponibles lorsqu’elles ont été préparées dans le cache de l’application.</p>
       <div class="hero-actions">
-        <a class="btn btn-primary" href="/">Accueil</a>
+        <button class="btn btn-primary" type="button" onclick="location.reload()">Réessayer la connexion</button>
+        <a class="btn btn-secondary" href="/">Accueil</a>
         <a class="btn btn-secondary" href="/projets/sinjira/">SINJIRA™</a>
       </div>
+      <p role="status" aria-live="polite">Dès que votre connexion revient, utilisez « Réessayer la connexion » pour reprendre normalement.</p>
     </article>
     <section class="content-card prose" aria-labelledby="offline-sinjira">
       <span class="eyebrow">Continuer à explorer</span>
@@ -53,7 +55,7 @@
   <div class="container">
     <div class="footer-bottom">
       <span>© Benoit Cantin.</span>
-      <span>Mode hors ligne · L’humain avant tout.</span>
+      <span>Mode hors ligne · Aucune donnée privée n’est chargée depuis cette page.</span>
     </div>
   </div>
 </footer>

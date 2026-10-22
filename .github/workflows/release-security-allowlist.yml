@@ -148,5 +148,11 @@ jobs:
       - name: Vérifier les 28 sources approuvées et refuser les fonctions Edge non canoniques
         run: python3 scripts/validate_release_main_source_continuity.py
 
+      - name: Tester les refus SEO, le secours hors ligne et les formulaires
+        run: python3 scripts/validate_release_offline_a11y.py --self-test
+
+      - name: Contrôler les pages publiques réconciliées sans navigateur
+        run: python3 scripts/validate_release_offline_a11y.py
+
       - name: Vérifier les fichiers, routes et liens de l’ensemble du site
         run: python3 scripts/validate_site.py
