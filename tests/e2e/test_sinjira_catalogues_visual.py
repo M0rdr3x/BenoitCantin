@@ -148,13 +148,21 @@ def software_anchor_navigation(page) -> None:
     for viewport in (1440, 390):
         page.set_viewport_size({"width": viewport, "height": 844})
         for fragment in ("outils", "avenir"):
+            # Chaque scénario doit imposer une vraie navigation HTTP.
+            # En WebKit, quitter #outils/#avenir sur la même page est
+            # parfois traité comme une navigation *same-document* :
+            # page.goto() renvoie alors None, sans erreur du serveur.
+            # Une requête distincte empêche ce faux négatif sans
+            # dispenser le test d'exiger la réponse HTTP 200.
+            probe = f"projets/sinjira/logiciels/?anchor-probe={viewport}-{fragment}"
             response = page.goto(
-                urljoin(BASE_URL, "projets/sinjira/logiciels/"),
+                urljoin(BASE_URL, probe),
                 wait_until="domcontentloaded",
                 timeout=30_000,
             )
             require(response is not None and response.status == 200,
-                    f"Logiciels: HTTP non 200 sur {viewport}px")
+                    f"Logiciels: HTTP non 200 sur {viewport}px "
+                    f"(statut: {response.status if response else 'sans réponse'})")
             page.locator(
                 f'.hero-actions a[href="#{fragment}"]'
             ).click()
