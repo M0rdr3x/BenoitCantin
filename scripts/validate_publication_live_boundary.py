@@ -360,7 +360,7 @@ def live() -> int:
     observations: dict[str, int] = {}
     public: dict[str, StatusObservation] = {}
     is_netlify = is_pages = False
-    # 27 routes publiques + 14 chemins interdits : une seule visite par URL.
+    # 27 routes publiques + 18 chemins interdits : une seule visite par URL.
     # Les corps publics/techniques restent tous fermés sans lecture.
     for route in (*PUBLIC_ROUTES, *TECHNICAL_ROUTES):
         try:
