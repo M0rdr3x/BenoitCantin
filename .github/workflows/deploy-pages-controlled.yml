@@ -108,6 +108,7 @@ jobs:
           node --test tests/test_sinjira_library_access.cjs
           node --test tests/test_document_url_authorization.cjs
           node --test tests/test_novel_file_authorization.cjs
+          node --test tests/test_nova_public_results.cjs
           python3 scripts/validate_get_private_book_url_security.py --self-test
           node --test tests/test_private_book_authorization.cjs
           python3 scripts/validate_boussole_home_visual.py --self-test
@@ -147,6 +148,7 @@ jobs:
           node --test tests/test_sinjira_library_access.cjs
           node --test tests/test_document_url_authorization.cjs
           node --test tests/test_novel_file_authorization.cjs
+          node --test tests/test_nova_public_results.cjs
           python3 scripts/validate_get_private_book_url_security.py
           node --test tests/test_private_book_authorization.cjs
           python3 scripts/validate_boussole_home_visual.py --built _site
