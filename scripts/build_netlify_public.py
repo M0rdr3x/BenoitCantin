@@ -366,10 +366,10 @@ def relative_path_allowed(rel: Path) -> bool:
     # par le builder après la sélection des fichiers.
     if parts[0] == ".well-known":
         return rel == Path(".well-known/security.txt")
-    if any(part.startswith(".") for part in parts):
-        return False
     if len(parts) == 1:
         return root_file_allowed(ROOT / rel)
+    if any(part.startswith(".") for part in parts):
+        return False
     if parts[0] not in PUBLIC_DIRS:
         return False
     if rel.suffix.lower() in FORBIDDEN_NESTED_WEB_SUFFIXES:
@@ -848,6 +848,8 @@ def self_test_public_filesystem_boundary() -> list[str]:
     )
     accepted = (
         ".well-known/security.txt",
+        ".nojekyll",
+        "CNAME",
         "assets/js/site.js",
         "compte/index.html",
         "projets/projet-nova/index.html",
