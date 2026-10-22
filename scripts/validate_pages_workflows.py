@@ -91,12 +91,29 @@ def validate_jekyll_ci(source: str) -> list[str]:
          "Autotests des renseignements politiques et majorité Nova"),
         ("python3 scripts/validate_nova_survey.py",
          "Garde du sondage Nova 18+"),
+        ("python3 scripts/validate_nova_public_access.py --self-test",
+         "Autotests de navigation publique Nova"),
+        ("python3 scripts/validate_nova_public_access.py --source . --built _site",
+         "Double preuve source/artefact de la navigation Nova"),
+        ("python3 scripts/validate_nova_public_results.py --self-test",
+         "Autotests de confidentialité du registre Nova"),
+        ("python3 scripts/validate_nova_public_results.py --source . --built _site",
+         "Double preuve source/artefact du registre Nova"),
+        ("node --test tests/test_nova_public_results.cjs",
+         "Test DOM des résultats Nova sans vote réel"),
     ):
         if token not in jobs:
             errors.append("Étape Jekyll absente : " + description)
     for command, times in (
         ("python3 scripts/audit_pages_jekyll.py --source . --built _site", 2),
         ("python3 scripts/audit_pages_secrets.py --built _site", 2),
+        ("python3 scripts/validate_nova_public_access.py --source . --built _site", 2),
+        ("python3 scripts/validate_nova_public_results.py --source . --built _site", 2),
+        ("python3 scripts/validate_nova_public_access.py --self-test", 1),
+        ("python3 scripts/validate_nova_public_access.py --source .", 3),
+        ("python3 scripts/validate_nova_public_results.py --self-test", 1),
+        ("python3 scripts/validate_nova_public_results.py --source .", 3),
+        ("node --test tests/test_nova_public_results.cjs", 1),
     ):
         if jobs.count(command) != times:
             errors.append(
@@ -202,6 +219,22 @@ def self_test_jekyll_ci() -> None:
         "contrôle questionnaire Nova retiré": (
             "          python3 scripts/validate_nova_survey.py\n",
             "          echo NOVA_SANS_VALIDATION\n",
+        ),
+        "autotests de confidentialité Nova retirés": (
+            "          python3 scripts/validate_nova_public_results.py --self-test\n",
+            "          echo NOVA_RESULTATS_SANS_AUTOTEST\n",
+        ),
+        "navigation Nova post-build neutralisée": (
+            "          python3 scripts/validate_nova_public_access.py --source . --built _site\n",
+            "          echo NAVIGATION_NOVA_NON_VERIFIEE\n",
+        ),
+        "résultats Nova post-build neutralisés": (
+            "          python3 scripts/validate_nova_public_results.py --source . --built _site\n",
+            "          echo RESULTATS_NOVA_NON_VERIFIES\n",
+        ),
+        "test DOM Nova non exécuté": (
+            "          node --test tests/test_nova_public_results.cjs\n",
+            "          echo TEST_DOM_NOVA_NON_EXECUTE\n",
         ),
     }
     for label, (old, replacement) in mutations.items():
