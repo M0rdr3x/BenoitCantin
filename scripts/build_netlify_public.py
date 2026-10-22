@@ -721,8 +721,12 @@ def validate_netlify_config() -> list[str]:
         if values is None:
             errors.append(f"En-têtes privés Netlify absents: {private_path}")
             continue
-        if str(values.get("Cache-Control") or "").lower() != "no-store":
-            errors.append(f"Cache-Control no-store requis: {private_path}")
+        cache_tokens = {
+            item.strip().lower()
+            for item in str(values.get("Cache-Control") or "").split(",")
+        }
+        if not {"private", "no-store"} <= cache_tokens:
+            errors.append(f"Cache-Control private, no-store requis: {private_path}")
         if values.get("Referrer-Policy") != "no-referrer":
             errors.append(f"Netlify: Referrer-Policy no-referrer obligatoire: {private_path}")
         if values.get("Pragma") != "no-cache":
