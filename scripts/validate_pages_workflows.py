@@ -488,7 +488,7 @@ def validate(workflow: str) -> list[str]:
     need("python3 scripts/audit_pwa_precache.py --source ." in workflow,
          "Contrôle des ressources PWA sources manquant")
     need("python3 scripts/audit_pwa_precache.py --source . --built _site" in workflow,
-         "Contrôle des 46 ressources PWA compilées manquant")
+         "Contrôle des 48 ressources PWA compilées manquant")
     need("python3 scripts/audit_pages_secrets.py --self-test" in workflow,
          "Autotests des secrets du build manquants")
     need("python3 scripts/audit_pages_secrets.py --built _site" in workflow,
