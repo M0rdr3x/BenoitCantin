@@ -89,19 +89,30 @@
     });
 
     if(toggle&&nav){
+      // Conserver les améliorations d'accessibilité de main et la navigation
+      // globale du candidat ; le menu ne doit jamais rester ouvert au resize.
+      if(!nav.id)nav.id='navigation-nova';
+      toggle.setAttribute('aria-controls',nav.id);
       const setMenuState=(open,{restoreFocus=false}={})=>{
         nav.classList.toggle('open',open);
         toggle.setAttribute('aria-expanded',open?'true':'false');
         toggle.setAttribute('aria-label',open?'Fermer le menu':'Ouvrir le menu');
         if(!open&&restoreFocus)toggle.focus();
       };
+      setMenuState(false);
       toggle.addEventListener('click',()=>setMenuState(!nav.classList.contains('open')));
       document.addEventListener('keydown',event=>{
         if(event.key==='Escape'&&nav.classList.contains('open'))setMenuState(false,{restoreFocus:true});
       });
-      document.addEventListener('click',event=>{
-        if(window.innerWidth>1100)return;
-        if(!nav.contains(event.target)&&!toggle.contains(event.target)&&nav.classList.contains('open'))setMenuState(false);
+      // pointerdown couvre Safari/tactile, click les activations clavier.
+      const closeOnOutside=event=>{
+        if(window.innerWidth>1100||!nav.classList.contains('open'))return;
+        if(!nav.contains(event.target)&&!toggle.contains(event.target))setMenuState(false);
+      };
+      document.addEventListener('pointerdown',closeOnOutside);
+      document.addEventListener('click',closeOnOutside);
+      window.addEventListener('resize',()=>{
+        if(window.innerWidth>1100&&nav.classList.contains('open'))setMenuState(false);
       });
       nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>setMenuState(false)));
     }
@@ -115,7 +126,7 @@
       if(list){
         list.innerHTML=[
           ['index.html','Accueil'],['comprendre-nova.html','Comprendre Nova'],['programme.html','Programme'],
-          ['constitution.html','Constitution'],['documents.html','Documents'],['transparence.html','Transparence'],
+          ['boussole-electorale.html','Boussole électorale'],['constitution.html','Constitution'],['documents.html','Documents'],['transparence.html','Transparence'],
           ['recrutement.html','Participer'],['equipe.html','Organisation et équipe'],['actualites.html','Actualités'],
           ['presse.html','Centre médias'],['faq.html','FAQ'],['contact.html','Contact']
         ].map(([href,label])=>`<li><a href="${href}">${label}</a></li>`).join('');
