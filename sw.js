@@ -68,6 +68,10 @@ function cacheableResponse(resp,path){
   const directives=String(resp.headers.get('Cache-Control')||'').toLowerCase()
     .split(',').map(token=>token.trim().split('=')[0].trim());
   const forbid=['no-store','private','no-cache','must-revalidate','proxy-revalidate'];
+  // max-age=0/s-maxage=0 : ressource expirée dès réception, donc aucune
+  // réutilisation hors ligne sans revalidation de sa version serveur.
+  const expiresImmediately=String(resp.headers.get('Cache-Control')||'')
+    .split(',').some(part=>/^(?:s-maxage|max-age)\s*=\s*"?0"?\s*$/i.test(part.trim()));
   // Cache API conserve les réponses sans appliquer les règles HTTP 1.0.
   // Pragma: no-cache requiert le réseau même sans Cache-Control explicite.
   const pragma=String(resp.headers.get('Pragma')||'').toLowerCase()
@@ -78,7 +82,7 @@ function cacheableResponse(resp,path){
   const vary=String(resp.headers.get('Vary')||'').toLowerCase()
     .split(',').map(token=>token.trim()).filter(Boolean);
   // HTTP 206 est un fragment, jamais un objet public complet à conserver.
-  return resp.status===200&&!resp.redirected&&!pragma&&
+  return resp.status===200&&!resp.redirected&&!pragma&&!expiresImmediately&&
     !directives.some(directive=>forbid.includes(directive))&&
     !resp.headers.has('Set-Cookie')&&
     vary.every(token=>token==='accept-encoding');
