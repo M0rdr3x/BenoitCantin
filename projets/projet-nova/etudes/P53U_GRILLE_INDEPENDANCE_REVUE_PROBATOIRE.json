@@ -1,0 +1,119 @@
+{
+  "schema_version": "P53U-1",
+  "jalon": "P53U",
+  "date_reference": "2026-10-22",
+  "statut": "GRILLE_CONTROLES_INDEPENDANCE_SANS_AVIS_SIGNE",
+  "exercice_comptable": 2024,
+  "codes": [
+    "66023",
+    "T1025",
+    "23027",
+    "T0081",
+    "T0088",
+    "39135"
+  ],
+  "controles": [
+    "ORIGINE_ET_IDENTITE_EMETTEUR",
+    "INTEGRITE_ET_CHAINE_CONSERVATION",
+    "DROIT_ACCES_CONFIDENTIALITE",
+    "CONTREPARTIES_ET_CONSOLIDATION_2024",
+    "EMPLOIS_CONDITIONS_ET_CONTINUITE_SERVICES",
+    "COUTS_COMPLETS_TRANSFERTS_ET_DOUBLE_COMPTE",
+    "EXAMEN_JURIDIQUE_SEPARE",
+    "AVIS_COMPTABLE_INDEPENDANT"
+  ],
+  "pilotage_par_controle": {
+    "ORIGINE_ET_IDENTITE_EMETTEUR": "COLLECTE_DOCUMENTAIRE",
+    "INTEGRITE_ET_CHAINE_CONSERVATION": "CONTROLE_TECHNIQUE",
+    "DROIT_ACCES_CONFIDENTIALITE": "EXAMEN_JURIDIQUE",
+    "CONTREPARTIES_ET_CONSOLIDATION_2024": "EXAMEN_COMPTABLE",
+    "EMPLOIS_CONDITIONS_ET_CONTINUITE_SERVICES": "EXAMEN_COMPTABLE",
+    "COUTS_COMPLETS_TRANSFERTS_ET_DOUBLE_COMPTE": "EXAMEN_COMPTABLE",
+    "EXAMEN_JURIDIQUE_SEPARE": "EXAMEN_JURIDIQUE",
+    "AVIS_COMPTABLE_INDEPENDANT": "EXAMEN_COMPTABLE"
+  },
+  "role_relecture": "REVUE_QUALITE_INDEPENDANTE",
+  "exigences_par_controle": {
+    "ORIGINE_ET_IDENTITE_EMETTEUR": [
+      "organisme_emetteur_confirme",
+      "version_originale_et_periodicite_verifiees",
+      "preuve_communication_archivée_hors_git"
+    ],
+    "INTEGRITE_ET_CHAINE_CONSERVATION": [
+      "hash_octets_reference_sure",
+      "journaux_authentifies_et_controles",
+      "acces_dossiers_restraints"
+    ],
+    "DROIT_ACCES_CONFIDENTIALITE": [
+      "base_legale_et_detenteur",
+      "caviardage_droits_tiers",
+      "finalite_et_autorisation_consultation"
+    ],
+    "CONTREPARTIES_ET_CONSOLIDATION_2024": [
+      "grand_livre_payeur",
+      "grand_livre_beneficiaire",
+      "ecritures_reciproques_et_perimetre",
+      "eliminations_anterieures"
+    ],
+    "EMPLOIS_CONDITIONS_ET_CONTINUITE_SERVICES": [
+      "effectifs_et_conditions_maintenus",
+      "continuite_et_accessibilite_service",
+      "droit_des_usagers_et_recours"
+    ],
+    "COUTS_COMPLETS_TRANSFERTS_ET_DOUBLE_COMPTE": [
+      "couts_transition_et_recurrents",
+      "absence_transferts_aux_tiers",
+      "benefices_financiers_a_produire_separement",
+      "absence_de_double_compte"
+    ],
+    "EXAMEN_JURIDIQUE_SEPARE": [
+      "independance_effective_evaluee",
+      "competence_juridique_et_conflits_interets",
+      "avis_original_signe_et_conserve_hors_git"
+    ],
+    "AVIS_COMPTABLE_INDEPENDANT": [
+      "independance_effective_evaluee",
+      "methodologie_comptable_appropriee",
+      "avis_original_signe_et_conserve_hors_git",
+      "soutien_conclusions_par_pieces_primaires"
+    ]
+  },
+  "criteres_de_blocage": [
+    "ABSENCE_PREUVES_PRIMAIRES",
+    "CONFLIT_INTERETS",
+    "ACCES_INTERDIT",
+    "VIOLATION_GARANTIES_EMPLOIS_SERVICES",
+    "RISQUE_DOUBLE_COMPTE",
+    "ABSENCE_AVIS_ORIGINAUX_SIGNES"
+  ],
+  "sources_methodologiques": [
+    "https://www.theiia.org/en/standards/2024-standards/global-internal-audit-standards/",
+    "https://csrc.nist.gov/glossary/term/chain_of_custody",
+    "https://www.legisquebec.gouv.qc.ca/fr/document/lc/A-2.1"
+  ],
+  "verrous": {
+    "roles_distincts_ne_prouvent_pas_personnes_independantes": true,
+    "aucune_attestation_signée_publiée": true,
+    "aucun_document_original_dans_git": true,
+    "aucune_signature_acceptée_en_entree": true,
+    "aucun_avis_independant_auto_certifié": true,
+    "aucun_montant_financier_utilisé": true,
+    "aucune_économie_non_vérifiée": true,
+    "deux_regimes_séparés": true,
+    "double_élimination_quebec_rtc_interdite": true,
+    "emplois_conditions_services_essentiels_protégés": true,
+    "aucune_déclaration_d_adoption": true,
+    "aucune_fusion_automatique": true
+  },
+  "etat_initial": {
+    "organismes": 6,
+    "pieces_en_suspens": 102,
+    "positions_de_controle": 48,
+    "points_a_examiner": 162,
+    "avis_independants_signes": 0,
+    "preuves_de_provenance_authentifiees": 0,
+    "demandes_externes_envoyees": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
