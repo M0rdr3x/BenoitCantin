@@ -126,7 +126,7 @@ jobs:
           from scripts.build_netlify_public import relative_path_allowed
 
           worker = Path('sw.js').read_text(encoding='utf-8')
-          assert "benoitcantin-v24-4-95-public-9-compass" in worker
+          assert "benoitcantin-v24-4-95-public-10-private-cache" in worker
           assert "const releaseMarker=u.pathname==='/.well-known/release.json';" in worker
           assert "if(releaseMarker){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}" in worker
           assert "if(privatePath){e.respondWith(fetch(new Request(r,{cache:'no-store'}))" in worker
