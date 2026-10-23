@@ -330,6 +330,31 @@ async function test() {
     networkFails = false;
   }
 
+  // En-têtes envoyés par le client : un rafraîchissement explicite ou
+  // une requête conditionnelle ne doit ni lire ni écrire le cache hors ligne.
+  for (const headers of [
+    { 'Cache-Control': 'no-cache' },
+    { 'Cache-Control': 'max-age=0' },
+    { 'Pragma': 'no-cache' },
+    { 'If-None-Match': '"synthetic-etag"' },
+    { 'If-Modified-Since': 'Wed, 21 Oct 2026 15:00:00 GMT' },
+    { 'If-Match': '"synthetic-etag"' },
+    { 'If-Unmodified-Since': 'Wed, 21 Oct 2026 15:00:00 GMT' },
+  ]) {
+    const beforeWrites = writes.length, beforeLookups = matches.length;
+    assert.equal((await request('/assets/js/site.js', { headers })).status, 200);
+    assert.equal(requests.at(-1).cache, 'no-store',
+      'Forced revalidation must use the network');
+    assert.equal(writes.length, beforeWrites,
+      'Forced revalidation must never update the offline cache');
+    assert.equal(matches.length, beforeLookups,
+      'Forced revalidation must never reuse a cached response');
+    networkFails = true;
+    await assert.rejects(request('/assets/js/site.js', { headers }),
+      'Offline cache must not satisfy a conditional request');
+    networkFails = false;
+  }
+
   responseHeaders.set('/assets/js/site.js', { 'Cache-Control': 'private, max-age=60' });
   await request('/assets/js/site.js');
   assert.equal(writes.length, n1, 'Cache-Control private must be honored');
