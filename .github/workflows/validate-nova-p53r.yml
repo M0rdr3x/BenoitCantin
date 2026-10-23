@@ -1,0 +1,87 @@
+name: Projet Nova P53R - Brouillons demandes acces sans envoi
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p53r.yml"
+      - "scripts/preparer_demandes_acces_nova_p53r.py"
+      - "scripts/tests/test_preparer_demandes_acces_nova_p53r.py"
+      - "scripts/inventorier_pieces_primaires_nova_p53q.py"
+      - "scripts/constituer_dossiers_institutionnels_nova_p53p.py"
+      - "scripts/prioriser_sources_officielles_nova_p53o.py"
+      - "scripts/preparer_acquisition_preuves_nova_p53n.py"
+      - "scripts/construire_registre_couts_evitables_nova_p53m.py"
+      - "scripts/evaluer_hypotheses_economies_nova_p53l.py"
+      - "scripts/preparer_controles_probatoires_nova_p53k.py"
+      - "scripts/auditer_appariements_municipaux_nova_p53j.py"
+      - "projets/projet-nova/etudes/P53R_*"
+      - "projets/projet-nova/etudes/P53Q_INVENTAIRE_PIECES_ET_CONTREPARTIES.json"
+      - "projets/projet-nova/etudes/P53P_DOSSIERS_INSTITUTIONNELS_2024.json"
+      - "projets/projet-nova/etudes/P53O_MATRICE_SOURCES_OFFICIELLES.json"
+      - "projets/projet-nova/etudes/P53N_PLAN_ACQUISITION_PREUVES.json"
+      - "projets/projet-nova/etudes/P53M_CRITERES_COUTS_EVITABLES.json"
+      - "projets/projet-nova/etudes/P53L_CADRE_EVALUATION_ECONOMIES.json"
+      - "projets/projet-nova/etudes/P53K_EXIGENCES_PROBATOIRES.json"
+      - "projets/projet-nova/etudes/P53I_SOURCES_REVISION_ET_CHARGES_2024.json"
+      - "projets/projet-nova/etudes/P53H_PRIORITES_VERIFICATION_2024.json"
+      - "projets/projet-nova/etudes/sources/P53I_MAMH_2024_1344_RECETTES_CHARGES_SELECTION.csv"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  six-lettres-sans-envoi:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Depot sans credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Lancer les 48 tests de preparation sans envoi
+        run: |
+          python -m py_compile scripts/preparer_demandes_acces_nova_p53r.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_preparer_demandes_acces_nova_p53r.py")
+          assert suite.countTestCases()==48,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Produire bilans et brouillons uniquement dans espace ephemere
+        run: |
+          python scripts/preparer_demandes_acces_nova_p53r.py --bilan p53r_bilan.json --courriers p53r_courriers.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          b=json.loads(Path("p53r_bilan.json").read_text("utf-8"))
+          d=json.loads(Path("p53r_courriers.json").read_text("utf-8"))["courriers"]
+          assert len(d)==6 and b["descriptions_precises_documents"]==18
+          assert b["emplacements_p53q_encore_a_documenter"]==102
+          assert b["demandes_effectivement_envoyees"]==0
+          assert b["delais_legaux_effectivement_declenches"]==0
+          assert b["economies_certifiees_cad"] is None
+          assert b["decision"]=="NO_GO_AUTOMATIQUE"
+          assert all(x["statut"]=="PROJET_NON_TRANSMIS" and
+                     x["date_depot_reel"] is None and
+                     x["destinataire_nominatif"] is None for x in d)
+          PY
+          set +e
+          python scripts/preparer_demandes_acces_nova_p53r.py --exiger-depot-confirme --bilan p53r_refus.json
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Conserver rapport de non envoi uniquement
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p53r-no-go-sans-courriers-personnels
+          path: |
+            p53r_bilan.json
+            p53r_refus.json
+          if-no-files-found: ignore
+          retention-days: 7
