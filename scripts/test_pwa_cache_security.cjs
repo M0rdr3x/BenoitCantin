@@ -138,6 +138,9 @@ async function test() {
   responseHeaders.set('/', { 'Cache-Control': 'public, no-cache' });
   await assertFailedInstall(/non publique interdite/);
   responseHeaders.delete('/');
+  responseHeaders.set('/', { 'Cache-Control': 'public, max-age=0' });
+  await assertFailedInstall(/non publique interdite/);
+  responseHeaders.delete('/');
   responseHeaders.set('/', { 'Pragma': 'no-cache' });
   await assertFailedInstall(/non publique interdite/);
   responseHeaders.delete('/');
@@ -361,6 +364,10 @@ async function test() {
   for (const cacheControl of [
     'no-cache',
     'public, no-cache',
+    'public, max-age=0',
+    'public, s-maxage=0',
+    'max-age = "0"',
+    'max-age=60, s-maxage=0',
     'max-age=60, must-revalidate',
     'public, proxy-revalidate',
     'private = "Authorization"',
