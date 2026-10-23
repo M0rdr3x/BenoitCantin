@@ -16,6 +16,18 @@ OFFICIAL_PRODUCTION_HOSTS = {"www.benoitcantin.com", "benoitcantin.com"}
 RELEASE_METADATA_PATH = "/.well-known/release.json"
 SELF_TEST_RELEASE_SHA = "a" * 40
 
+# Routes critiques vérifiées sur chaque preview et publication réelle :
+# une page HTML 200 ne prouve pas à elle seule que le questionnaire fonctionne.
+COMPASS_ASSET_PATHS = {
+    "/projets/projet-nova/boussole-electorale.html": "compass-html",
+    "/projets/projet-nova/assets/boussole-electorale.js": "javascript",
+    "/projets/projet-nova/assets/boussole-electorale.css": "stylesheet",
+    "/projets/projet-nova/data/boussole-electorale-v2.json": "questions",
+    "/projets/projet-nova/data/boussole-partis-2026.json": "parties",
+    "/projets/projet-nova/data/boussole-preuves-2026.json": "evidence",
+    "/projets/projet-nova/data/boussole-sources-partis-2026.json": "sources",
+}
+
 PRIVATE_RUNTIME_PATHS = (
     "/compte/",
     "/admin/",
@@ -30,6 +42,7 @@ PUBLIC_PATHS = (
     "/assistant.html",
     "/transparence-ia.html",
     "/projets/projet-nova/",
+    *COMPASS_ASSET_PATHS,
     "/compte/",
     "/admin/",
     "/app/",
@@ -233,6 +246,72 @@ def validate_home(body: str) -> list[str]:
         errors.append("Bandeau Transparence IA absent de l’accueil.")
     if "/transparence-ia.html" not in body:
         errors.append("Lien Transparence IA absent de l’accueil.")
+    return errors
+
+
+def validate_compass_asset(path: str, headers: object, body: str) -> list[str]:
+    """Refuser une page d'erreur HTML renvoyée comme JS, CSS ou JSON.
+
+    Le navigateur ne peut pas charger une boussole électorale dont une des
+    données factuelles est absente ou servie avec un type inattendu.
+    """
+    kind = COMPASS_ASSET_PATHS.get(path)
+    if kind is None:
+        return [f"Boussole: route inconnue vérifiée: {path}"]
+    get = getattr(headers, "get")
+    content_type = str(get("Content-Type") or "").lower().split(";", 1)[0].strip()
+    mime = {
+        "compass-html": ("text/html",),
+        "javascript": ("text/javascript", "application/javascript"),
+        "stylesheet": ("text/css",),
+        "questions": ("application/json",),
+        "parties": ("application/json",),
+        "evidence": ("application/json",),
+        "sources": ("application/json",),
+    }
+    errors: list[str] = []
+    if content_type not in mime[kind]:
+        errors.append(f"{path}: Content-Type {content_type!r}, attendu {mime[kind]}.")
+    if not body.strip():
+        errors.append(f"{path}: corps public vide.")
+        return errors
+    if kind == "compass-html":
+        for expected in (
+            "Boussole électorale",
+            "64 questions",
+            "assets/boussole-electorale.js",
+            "assets/boussole-electorale.css",
+        ):
+            if expected not in body:
+                errors.append(f"{path}: questionnaire incomplet: {expected}")
+    elif kind in {"questions", "parties", "evidence", "sources"}:
+        try:
+            data = json.loads(body)
+        except json.JSONDecodeError:
+            return errors + [f"{path}: JSON invalide ou page HTML de substitution."]
+        if not isinstance(data, dict):
+            return errors + [f"{path}: objet JSON attendu."]
+        if data.get("jurisdiction") != "Québec":
+            errors.append(f"{path}: juridiction Québec manquante.")
+        if kind == "questions":
+            if data.get("locale") != "fr-CA":
+                errors.append(f"{path}: locale fr-CA absente.")
+            for field, amount in (("axes", 16), ("questions", 64)):
+                val = data.get(field)
+                if not isinstance(val, list) or len(val) != amount:
+                    errors.append(f"{path}: {amount} éléments requis dans {field}.")
+        elif kind in {"parties", "sources"}:
+            val = data.get("parties")
+            if not isinstance(val, list) or len(val) != 22:
+                errors.append(f"{path}: 22 formations documentaires attendues.")
+        elif kind == "evidence":
+            for field, amount in (("questions", 64), ("partyIds", 22)):
+                val = data.get(field)
+                if not isinstance(val, list) or len(val) != amount:
+                    errors.append(f"{path}: {amount} entrées attendues dans {field}.")
+            records = data.get("evidenceRecords")
+            if not isinstance(records, (list, dict)) or not records:
+                errors.append(f"{path}: preuves documentaires absentes.")
     return errors
 
 
@@ -461,6 +540,11 @@ def validate_release(
             errors.extend(validate_netlify_hosting_headers(headers))
         errors.extend(validate_home(body))
 
+    for compass_path in COMPASS_ASSET_PATHS:
+        compass_response = responses.get(compass_path)
+        if compass_response and compass_response[0] == 200:
+            errors.extend(validate_compass_asset(compass_path, compass_response[1], compass_response[2]))
+
     for private_path in PRIVATE_RUNTIME_PATHS:
         response = responses.get(private_path)
         if response:
@@ -507,7 +591,14 @@ class FixtureHandler(BaseHTTPRequestHandler):
         private_runtime = self.path in PRIVATE_RUNTIME_PATHS
         release_metadata = self.path == RELEASE_METADATA_PATH
         self.send_response(404 if technical else 200)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
+        asset_kind = COMPASS_ASSET_PATHS.get(self.path)
+        content_type = (
+            "application/json" if asset_kind in {"questions", "parties", "evidence", "sources"}
+            else "text/css" if asset_kind == "stylesheet"
+            else "application/javascript" if asset_kind == "javascript"
+            else "text/html; charset=utf-8"
+        )
+        self.send_header("Content-Type", content_type)
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Strict-Transport-Security", "max-age=31536000")
         self.send_header("X-Permitted-Cross-Domain-Policies", "none")
@@ -552,6 +643,31 @@ class FixtureHandler(BaseHTTPRequestHandler):
 <a href="/compte/">Compte</a></nav>
 <aside data-ai-transparency>Transparence IA <a href="/transparence-ia.html">Lire</a></aside>
 </body></html>"""
+        elif self.path in COMPASS_ASSET_PATHS:
+            kind = COMPASS_ASSET_PATHS[self.path]
+            if kind == "compass-html":
+                body = (
+                    "<html><title>Boussole électorale</title><body>64 questions"
+                    "<link href='assets/boussole-electorale.css'>"
+                    "<script src='assets/boussole-electorale.js'></script></body></html>"
+                )
+            elif kind == "javascript":
+                body = "const compassReady = true;"
+            elif kind == "stylesheet":
+                body = ".compass{display:block}"
+            else:
+                data = {"jurisdiction": "Québec"}
+                if kind == "questions":
+                    data.update({"locale": "fr-CA", "axes": [{}] * 16, "questions": [{}] * 64})
+                elif kind in {"parties", "sources"}:
+                    data["parties"] = [{}] * 22
+                else:
+                    data.update({
+                        "questions": [{}] * 64,
+                        "partyIds": [f"p{i}" for i in range(22)],
+                        "evidenceRecords": [{"source": "official"}],
+                    })
+                body = json.dumps(data, ensure_ascii=False)
         elif self.path == "/assistant.html":
             body = "<html><body>Assistant Nova</body></html>"
         elif self.path == "/transparence-ia.html":
@@ -609,6 +725,32 @@ def self_test() -> None:
     run_fixture("preview-vercel")
     run_fixture("production-candidate")
     run_fixture("production")
+
+    compass = "/projets/projet-nova/boussole-electorale.html"
+    broken_compass = validate_compass_asset(
+        compass, {"Content-Type": "text/html"}, "<html>OK</html>"
+    )
+    if not any("questionnaire incomplet" in issue for issue in broken_compass):
+        raise SystemExit("ERREUR auto-test HTTP : disparition questionnaire non détectée.")
+    js_path = "/projets/projet-nova/assets/boussole-electorale.js"
+    broken_js = validate_compass_asset(
+        js_path, {"Content-Type": "text/html"}, "<html>404</html>"
+    )
+    if not any("Content-Type" in issue for issue in broken_js):
+        raise SystemExit("ERREUR auto-test HTTP : JS substitué par HTML non détecté.")
+    json_path = "/projets/projet-nova/data/boussole-electorale-v2.json"
+    broken_json = validate_compass_asset(
+        json_path, {"Content-Type": "application/json"}, "<html>Erreur</html>"
+    )
+    if not any("JSON invalide" in issue for issue in broken_json):
+        raise SystemExit("ERREUR auto-test HTTP : données JSON absentes non détectées.")
+    wrong_count = validate_compass_asset(
+        json_path, {"Content-Type": "application/json"},
+        json.dumps({"jurisdiction": "Québec", "locale": "fr-CA", "axes": [{}] * 16,
+                    "questions": [{}] * 63}, ensure_ascii=False),
+    )
+    if not any("64 éléments" in issue for issue in wrong_count):
+        raise SystemExit("ERREUR auto-test HTTP : questionnaire tronqué non détecté.")
 
     broken = validate_headers(
         {
@@ -857,7 +999,7 @@ def self_test() -> None:
     print(
         "OK auto-tests smoke HTTP: redirection apex canonique Netlify, signature hébergeur Netlify, paire Netlify même site, permalink atomique preview/production-candidate, preview Vercel, production, cibles autorisées, "
         "CSP complète, HSTS, en-têtes défensifs, noindex, no-store privé/release, "
-        "robots privés et 404 techniques vérifiés."
+        "Boussole et ses sept routes, données JSON et MIME, robots privés et 404 techniques vérifiés."
     )
 
 
