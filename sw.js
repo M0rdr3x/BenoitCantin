@@ -40,6 +40,11 @@ function publicRequest(r,u){
   return PUBLIC_PATHS.has(u.pathname)&&!privatePath(u.pathname)&&!surveyNetworkOnly(u.pathname)&&
     !u.search&&!r.headers.has('Authorization')&&!r.headers.has('Cookie')&&
     !r.headers.has('Range')&&!r.headers.has('If-Range')&&
+    // Rechargements explicites et requêtes conditionnelles doivent atteindre
+    // le serveur : une réponse PWA 200 ne doit pas masquer un 304 attendu.
+    !r.headers.has('Cache-Control')&&!r.headers.has('Pragma')&&
+    !r.headers.has('If-None-Match')&&!r.headers.has('If-Modified-Since')&&
+    !r.headers.has('If-Match')&&!r.headers.has('If-Unmodified-Since')&&
     (r.credentials==='omit'||r.credentials==='same-origin')&&
     (r.destination!=='document'||r.mode!=='no-cors');
 }
