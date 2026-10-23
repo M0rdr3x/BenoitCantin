@@ -1,4 +1,4 @@
-const CACHE='benoitcantin-v24-4-95-public-8';
+const CACHE='benoitcantin-v24-4-95-public-9';
 const CACHE_PREFIX='benoitcantin-v24-4-95-public-';
 const CORE=[
   '/','/offline.html','/manifest.webmanifest','/transparence-ia.html',
@@ -43,7 +43,21 @@ function publicRequest(r,u){
     (r.credentials==='omit'||r.credentials==='same-origin')&&
     (r.destination!=='document'||r.mode!=='no-cors');
 }
-function cacheableResponse(resp){
+// Les 200 HTML de fallback (404 réécrits en accueil) ne doivent jamais
+// devenir des JS/CSS/images dans le cache public hors ligne.
+function expectedMime(path){
+  if(path==='/'||path.endsWith('/')||path.endsWith('.html'))return ['text/html'];
+  if(path.endsWith('.js'))return ['application/javascript','text/javascript','application/x-javascript'];
+  if(path.endsWith('.css'))return ['text/css'];
+  if(path.endsWith('.svg'))return ['image/svg+xml'];
+  if(path.endsWith('.webp'))return ['image/webp'];
+  if(path.endsWith('.png'))return ['image/png'];
+  if(path.endsWith('.webmanifest'))return ['application/manifest+json','application/json'];
+  return [];
+}
+function cacheableResponse(resp,path){
+  const mime=String(resp.headers.get('Content-Type')||'').split(';',1)[0].trim().toLowerCase();
+  if(!expectedMime(path).includes(mime))return false;
   // Cache API ne revalide pas automatiquement les copies hors ligne :
   // refuser aussi no-cache / must-revalidate, en plus des réponses privées.
   const directives=String(resp.headers.get('Cache-Control')||'').toLowerCase()
@@ -74,7 +88,7 @@ self.addEventListener('install',e=>e.waitUntil((async()=>{
     const request=new Request(new URL(path,location.origin).href,
       {cache:'no-store',credentials:'omit'});
     const response=await fetch(request);
-    if(!cacheableResponse(response))throw Error('Réponse non publique interdite dans le precache');
+    if(!cacheableResponse(response,path))throw Error('Réponse non publique interdite dans le precache');
     await store.put(request,response);
   }));
   const failed=results.find(result=>result.status==='rejected');
@@ -116,7 +130,7 @@ self.addEventListener('fetch',e=>{
   const liveAsset=/^\/assets\/(?:js|css)\//.test(u.pathname);
   if(liveAsset){
     e.respondWith(fetch(anonymous).then(resp=>{
-      if(cacheableResponse(resp)){
+      if(cacheableResponse(resp,u.pathname)){
         const store=caches.open(CACHE).then(c=>c.put(r,resp.clone()));
         e.waitUntil(store);
       }
@@ -125,7 +139,7 @@ self.addEventListener('fetch',e=>{
     return;
   }
   e.respondWith(matchPublicCache(r).then(cached=>cached||fetch(anonymous).then(resp=>{
-    if(cacheableResponse(resp)){
+    if(cacheableResponse(resp,u.pathname)){
       const store=caches.open(CACHE).then(c=>c.put(r,resp.clone()));
       e.waitUntil(store);
     }
