@@ -203,5 +203,13 @@ jobs:
       - name: Préserver la redirection exacte de main vers les règles officielles
         run: python3 scripts/validate_release_fracture_redirect.py
 
+      - name: Tester en exécution la confidentialité des réponses PWA
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check sw.js
+          node --check scripts/test_service_worker_privacy_runtime.mjs
+          node scripts/test_service_worker_privacy_runtime.mjs
+
       - name: Vérifier les fichiers, routes et liens de l’ensemble du site
         run: python3 scripts/validate_site.py
