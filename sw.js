@@ -1,4 +1,4 @@
-const CACHE='benoitcantin-v24-4-95-public-9';
+const CACHE='benoitcantin-v24-4-95-public-10';
 const CACHE_PREFIX='benoitcantin-v24-4-95-public-';
 const CORE=[
   '/','/offline.html','/manifest.webmanifest','/transparence-ia.html',
@@ -63,14 +63,20 @@ function cacheableResponse(resp,path){
   const directives=String(resp.headers.get('Cache-Control')||'').toLowerCase()
     .split(',').map(token=>token.trim().split('=')[0].trim());
   const forbid=['no-store','private','no-cache','must-revalidate','proxy-revalidate'];
-  // Vary: * interdit la réutilisation. Cookie et Authorization rendent
-  // une réponse inadaptée au cache, y compris avec espaces autour du jeton.
+  // Cache API conserve les réponses sans appliquer les règles HTTP 1.0.
+  // Pragma: no-cache requiert le réseau même sans Cache-Control explicite.
+  const pragma=String(resp.headers.get('Pragma')||'').toLowerCase()
+    .split(',').some(token=>token.trim()==='no-cache');
+  // Politique de réutilisation fermée : Accept-Encoding est la seule
+  // variation technique tolérée. Langue, origine, User-Agent et en-têtes
+  // inconnus peuvent faire dépendre la réponse du contexte de l'utilisateur.
   const vary=String(resp.headers.get('Vary')||'').toLowerCase()
-    .split(',').map(token=>token.trim());
+    .split(',').map(token=>token.trim()).filter(Boolean);
   // HTTP 206 est un fragment, jamais un objet public complet à conserver.
-  return resp.status===200&&!resp.redirected&&!directives.some(directive=>forbid.includes(directive))&&
+  return resp.status===200&&!resp.redirected&&!pragma&&
+    !directives.some(directive=>forbid.includes(directive))&&
     !resp.headers.has('Set-Cookie')&&
-    !vary.some(token=>token==='*'||token==='cookie'||token==='authorization');
+    vary.every(token=>token==='accept-encoding');
 }
 // La précharge est anonyme et soumise aux MÊMES protections que les accès réseau.
 // Ne jamais précharger une réponse personnalisée, un token ni un reçu de release.
