@@ -79,12 +79,12 @@
     ]
   },
   "criteres_de_blocage": [
+    "ABSENCE_AVIS_ORIGINAUX_SIGNES",
     "ABSENCE_PREUVES_PRIMAIRES",
-    "CONFLIT_INTERETS",
     "ACCES_INTERDIT",
-    "VIOLATION_GARANTIES_EMPLOIS_SERVICES",
+    "CONFLIT_INTERETS",
     "RISQUE_DOUBLE_COMPTE",
-    "ABSENCE_AVIS_ORIGINAUX_SIGNES"
+    "VIOLATION_GARANTIES_EMPLOIS_SERVICES"
   ],
   "sources_methodologiques": [
     "https://www.theiia.org/en/standards/2024-standards/global-internal-audit-standards/",
