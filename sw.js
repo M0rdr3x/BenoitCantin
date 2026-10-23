@@ -1,4 +1,4 @@
-const CACHE='benoitcantin-v24-4-95-public-6';
+const CACHE='benoitcantin-v24-4-95-public-7';
 const CACHE_PREFIX='benoitcantin-v24-4-95-public-';
 const CORE=[
   '/','/offline.html','/manifest.webmanifest','/transparence-ia.html',
