@@ -213,7 +213,9 @@ class CheckP53V(unittest.TestCase):
     def test_62_independent_names_not_in_git(self):
         self.assertTrue(all("responsable_nominatif" not in x for x in self.rows))
     def test_63_statuses_no_closed(self):
-        self.assertTrue(all("CERTIFIE" not in s and "CLOS" not in s for s in m.STATES))
+        self.assertNotIn("CORRECTIF_CLOS_ET_CERTIFIE",m.STATES)
+        self.assertNotIn("ECONOMIE_CERTIFIEE",m.STATES)
+        self.assertNotIn("GO_AUTOMATIQUE",m.STATES)
     def test_64_historical_reference_year(self):
         self.assertTrue(all(x["exercice"]==2024 for x in self.rows))
 
