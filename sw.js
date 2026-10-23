@@ -1,4 +1,4 @@
-const CACHE='benoitcantin-v24-4-95-public-9-compass';
+const CACHE='benoitcantin-v24-4-95-public-10-private-cache';
 const CORE=[
   '/','/offline.html','/manifest.webmanifest','/a-propos.html','/contact.html','/transparence-ia.html',
   '/assistant.html','/confidentialite.html','/gouvernance-vie-privee.html','/avis-legal.html',
