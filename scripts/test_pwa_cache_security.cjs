@@ -58,7 +58,7 @@ const storage = {
     globalLookups += 1;
     return new Response('DONNEE PRIVEE CACHE TIERS', { status: 200 });
   },
-  async keys() { return ['benoitcantin-v24-4-95-public-4', 'benoitcantin-v24-4-95-public-5', 'benoitcantin-v24-4-95-public-6', 'benoitcantin-v24-4-95-public-7', 'benoitcantin-v24-4-95-public-8', 'other-product-cache', currentCache]; },
+  async keys() { return ['benoitcantin-v24-4-95-public-4', 'benoitcantin-v24-4-95-public-5', 'benoitcantin-v24-4-95-public-6', 'benoitcantin-v24-4-95-public-7', 'benoitcantin-v24-4-95-public-8', 'benoitcantin-v24-4-95-public-9', 'other-product-cache', currentCache]; },
   async delete(key) {
     deletes.push(key);
     if (key === currentCache) publicEntries.clear();
@@ -138,6 +138,12 @@ async function test() {
   responseHeaders.set('/', { 'Cache-Control': 'public, no-cache' });
   await assertFailedInstall(/non publique interdite/);
   responseHeaders.delete('/');
+  responseHeaders.set('/', { 'Pragma': 'no-cache' });
+  await assertFailedInstall(/non publique interdite/);
+  responseHeaders.delete('/');
+  responseHeaders.set('/', { 'Vary': 'Accept-Language' });
+  await assertFailedInstall(/non publique interdite/);
+  responseHeaders.delete('/');
   // Un serveur/CDN qui renvoie un morceau HTTP 206 au lieu d'un fichier
   // complet doit faire échouer toute installation du cache public.
   responseStatuses.set('/', 206);
@@ -169,6 +175,8 @@ async function test() {
     'Incomplete cache isolation must purge the previous deployed namespace');
   assert.ok(deletes.includes('benoitcantin-v24-4-95-public-8'),
     'The old cache with weaker MIME checks must be purged');
+  assert.ok(deletes.includes('benoitcantin-v24-4-95-public-9'),
+    'The old cache with contextual Vary/Pragma weaknesses must be purged');
   assert.ok(deletes.includes('benoitcantin-v24-4-95-public-7'),
     'Previous public shell must be evicted before adding Jeux/Logiciels');
   assert.ok(!deletes.includes('other-product-cache'), 'Foreign caches must survive');
@@ -338,6 +346,13 @@ async function test() {
     assert.equal(writes.length, before,
       'A response requiring revalidation or private storage was cached: ' + cacheControl);
   }
+  for (const pragma of ['no-cache', 'No-Cache', 'public, no-cache']) {
+    responseHeaders.set('/assets/js/site.js', { Pragma: pragma });
+    const before = writes.length;
+    await request('/assets/js/site.js');
+    assert.equal(writes.length, before,
+      'Pragma no-cache response must not enter offline storage: ' + pragma);
+  }
   responseHeaders.set('/assets/js/site.js', { 'Vary': 'Cookie, Accept-Encoding' });
   await request('/assets/js/site.js');
   assert.equal(writes.length, n1, 'Vary: Cookie must block cache');
@@ -346,6 +361,10 @@ async function test() {
     'Accept-Encoding, Authorization ',
     '*',
     'Accept-Encoding, * ',
+    'Accept-Language',
+    'Origin',
+    'User-Agent',
+    'Accept-Encoding, X-User-Identity',
   ]) {
     responseHeaders.set('/assets/js/site.js', { 'Vary': vary });
     const before = writes.length;
@@ -353,6 +372,14 @@ async function test() {
     assert.equal(writes.length, before,
       'Vary header forbids response caching: ' + vary);
   }
+  // Preserve caching for ordinary public resources where only transport
+  // compression varies; do not accidentally disable offline availability.
+  responseHeaders.set('/assets/js/site.js', { 'Vary': 'Accept-Encoding' });
+  const beforeEncoding = writes.length;
+  await request('/assets/js/site.js');
+  assert.equal(writes.length, beforeEncoding + 1,
+    'Public assets with only Accept-Encoding must remain cacheable');
+  writes.length = beforeEncoding;
   responseHeaders.set('/assets/js/site.js', { 'Set-Cookie': 's=foo' });
   await request('/assets/js/site.js');
   assert.equal(writes.length, n1, 'Set-Cookie must block cache');
@@ -372,7 +399,7 @@ async function test() {
   assert.equal(handled, false);
 
   assert.equal(globalLookups, 0, 'No cross-application cache lookup is allowed');
-  assert.ok(/-public-9/.test(currentCache), 'Cache version must rotate');
+  assert.ok(/-public-10/.test(currentCache), 'Cache version must rotate');
   console.log('OK PWA: réseaux privés et release non cachés, allowlist statique, protections Cookie/Auth/Vary et isolation des caches.');
 }
 test().catch(error => { console.error(error); process.exitCode = 1; });
