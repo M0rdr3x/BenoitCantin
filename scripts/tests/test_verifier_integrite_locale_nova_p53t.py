@@ -9,7 +9,7 @@ import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import verifier_integrite_locale_nova_p53t as m
 
-BODY=b"jeu synthétique sans information gouvernementale\n"
+BODY="jeu synthétique sans information gouvernementale\n".encode("utf-8")
 HASH=hashlib.sha256(BODY).hexdigest()
 
 def evidence(code="66023",typ=None,rel="synthetique.txt"):
