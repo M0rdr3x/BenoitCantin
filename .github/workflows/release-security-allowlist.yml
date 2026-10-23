@@ -179,6 +179,8 @@ jobs:
           node --check assets/js/site.js
           node --check projets/projet-nova/script.js
           node --check sw.js
+          node --check assets/js/sinjira-reader.js
+          node --check scripts/test_sinjira_reader_offline.mjs
 
       - name: Auto-tester le contrat de navigation sensible
         run: python3 scripts/validate_release_navigation_runtime.py --self-test
@@ -191,6 +193,9 @@ jobs:
 
       - name: Protéger le référencement, les menus et le contrat privé Livre I
         run: python3 scripts/validate_release_sinjira_hubs.py
+
+      - name: Tester le lecteur PDF public en mode anonyme et sans réseau
+        run: node scripts/test_sinjira_reader_offline.mjs
 
       - name: Vérifier les fichiers, routes et liens de l’ensemble du site
         run: python3 scripts/validate_site.py
