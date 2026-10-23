@@ -22,10 +22,10 @@ self.addEventListener('fetch',e=>{
   if(privatePath){e.respondWith(fetch(new Request(r,{cache:'no-store'})).catch(()=>caches.match('/offline.html')));return}
   // Ne jamais écrire en Cache Storage des appels API, de session, de paiement
   // ou des réponses JSON dynamiques non explicitement précachées comme publiques.
-  const sensitiveSegments=/(?:^|\\/)(?:api|auth|oauth|graphql|functions|session|sessions|token|tokens|password|billing|checkout|payments|webhook|webhooks|\\.netlify|\\.vercel|\\.well-known|_next|_nuxt)(?:\\/|$)/i.test(u.pathname);
+  const sensitiveSegments=/(?:^|\/)(?:api|auth|oauth|graphql|functions|session|sessions|token|tokens|password|billing|checkout|payments|webhook|webhooks|\.netlify|\.vercel|\.well-known|_next|_nuxt)(?:\/|$)/i.test(u.pathname);
   const sensitiveQuery=[...u.searchParams.keys()].some(key=>/^(?:access_token|refresh_token|token|code|state|session|auth|api_key|key|jwt|signature|secret|user_id|download)$/i.test(key));
   const sensitiveHeaders=Boolean(r.headers.get('Authorization')||r.headers.get('X-Api-Key'));
-  const unknownJSON=/\\.json$/i.test(u.pathname)&&CORE.indexOf(u.pathname)===-1;
+  const unknownJSON=/\.json$/i.test(u.pathname)&&CORE.indexOf(u.pathname)===-1;
   const sensitiveRuntimePath=sensitiveSegments||sensitiveQuery||sensitiveHeaders||unknownJSON;
   if(sensitiveRuntimePath){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}
 
