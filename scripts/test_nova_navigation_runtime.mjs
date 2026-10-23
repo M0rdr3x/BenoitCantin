@@ -21,6 +21,7 @@ const makeElement=()=>{
   const classes=new Set();
   return {
     listeners:new Map(),
+    addEventListener(name,fn){bind(this,name,fn);},
     classList:{
       toggle(name,on){
         if(on===undefined){on=!classes.has(name);}
