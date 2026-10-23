@@ -70,32 +70,88 @@ async function comments(){
 async function demo(){
   const frame=document.querySelector('[data-pdf-reader]');
   if(!frame)return;
-  const user=await getCurrentUser(),novel=await getNovel(),input=document.querySelector('[data-reader-page-number]'),bar=document.querySelector('[data-reader-progress-bar]'),progress=document.querySelector('[data-reader-progress-native]'),resume=document.querySelector('[data-reader-resume]');
-  let saved=Number(localStorage.getItem(`sinjira-reader-${slug}`)||1);
-  if(user){
-    const {data}=await getSupabase().from('reader_library').select('last_page').eq('user_id',user.id).eq('novel_id',novel.id).maybeSingle();
-    if(data?.last_page)saved=Number(data.last_page);
+  const input=document.querySelector('[data-reader-page-number]');
+  const bar=document.querySelector('[data-reader-progress-bar]');
+  const progress=document.querySelector('[data-reader-progress-native]');
+  const resume=document.querySelector('[data-reader-resume]');
+  const storageKey=`sinjira-reader-${slug}`;
+  const clampPage=(value)=>{
+    const number=Number(value);
+    return Number.isFinite(number)?Math.min(totalPages,Math.max(1,Math.floor(number))):1;
+  };
+
+  // Le PDF démo est public : ne pas bloquer la lecture sur le réseau Supabase.
+  let saved=1;
+  try{saved=clampPage(localStorage.getItem(storageKey)||1);}
+  catch(_storageError){setStatus('Lecture disponible; mémorisation locale indisponible.','info');}
+
+  let user=null,novel=null;
+  try{
+    user=await getCurrentUser();
+    if(user)novel=await getNovel();
+  }catch(_networkError){
+    user=null;
+    novel=null;
+    setStatus('Lecture gratuite disponible sans connexion au compte.','info');
   }
-  let current=Math.min(totalPages,Math.max(1,saved));
+  if(user&&novel){
+    try{
+      const {data}=await getSupabase().from('reader_library').select('last_page')
+        .eq('user_id',user.id).eq('novel_id',novel.id).maybeSingle();
+      if(data?.last_page)saved=clampPage(data.last_page);
+    }catch(_networkError){
+      setStatus('Progression distante indisponible; reprise locale utilisée.','info');
+    }
+  }
+
+  let current=clampPage(saved);
   const render=()=>{
     const percent=Math.round(current/totalPages*100);
     if(input){input.max=String(totalPages);input.value=current;}
     if(bar)bar.style.width=`${percent}%`;
-    if(progress){progress.max=totalPages;progress.value=current;progress.textContent=`${current} sur ${totalPages}`;}
+    if(progress){
+      progress.max=totalPages;
+      progress.value=current;
+      progress.textContent=`${current} sur ${totalPages}`;
+    }
     if(resume)resume.textContent=`Page mémorisée : ${current} · ${percent} %`;
     frame.src=`../documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf#page=${current}&zoom=page-width&view=FitH`;
   };
   const save=async()=>{
-    localStorage.setItem(`sinjira-reader-${slug}`,String(current));
-    if(user)await markReading(user,novel,current);
-    if(resume)resume.textContent=`Page ${current} sauvegardée.`;
+    let localSaved=false;
+    try{
+      localStorage.setItem(storageKey,String(current));
+      localSaved=true;
+    }catch(_storageError){
+      setStatus('Mémorisation locale indisponible dans ce navigateur.','info');
+    }
+    if(user&&novel){
+      try{await markReading(user,novel,current);}
+      catch(_networkError){
+        setStatus('Progression distante indisponible; lecture maintenue.','info');
+      }
+    }
+    if(localSaved&&resume)resume.textContent=`Page ${current} sauvegardée.`;
   };
-  document.querySelector('[data-reader-prev]')?.addEventListener('click',()=>{current=Math.max(1,current-1);render();});
-  document.querySelector('[data-reader-next]')?.addEventListener('click',()=>{current=Math.min(totalPages,current+1);render();});
-  input?.addEventListener('change',()=>{current=Math.min(totalPages,Math.max(1,Number(input.value)||1));render();});
-  document.querySelector('[data-reader-bookmark]')?.addEventListener('click',()=>save().catch(()=>{}));
+  document.querySelector('[data-reader-prev]')?.addEventListener('click',()=>{
+    current=clampPage(current-1);render();
+  });
+  document.querySelector('[data-reader-next]')?.addEventListener('click',()=>{
+    current=clampPage(current+1);render();
+  });
+  input?.addEventListener('change',()=>{
+    current=clampPage(input.value);render();
+  });
+  document.querySelector('[data-reader-bookmark]')?.addEventListener('click',()=>{
+    save().catch(()=>setStatus('Sauvegarde indisponible; lecture maintenue.','info'));
+  });
   render();
-  await markReading(user,novel,current);
+  if(user&&novel){
+    try{await markReading(user,novel,current);}
+    catch(_networkError){
+      setStatus('Progression distante indisponible; lecture maintenue.','info');
+    }
+  }
 }
 
 (async()=>{
