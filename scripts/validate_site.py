@@ -564,11 +564,13 @@ def validate_livre_i_demo_reader_text(demo_html: str, reader_js: str, progress_j
         'const configuredTotalPages=Number(document.body.dataset.readerTotalPages||84);',
         'const totalPages=Number.isFinite(configuredTotalPages)&&configuredTotalPages>0?Math.floor(configuredTotalPages):84;',
         'Math.round((safePage/totalPages)*100)',
-        'Math.min(totalPages,Math.max(1,saved))',
+        'const clampPage=(value)=>',
+        'Number.isFinite(number)?Math.min(totalPages,Math.max(1,Math.floor(number))):1;',
+        'let current=clampPage(saved);',
         'Math.round(current/totalPages*100)',
         '${current} sur ${totalPages}',
-        'Math.min(totalPages,current+1)',
-        'Math.min(totalPages,Math.max(1,Number(input.value)||1))',
+        'current=clampPage(current+1);render();',
+        'current=clampPage(input.value);render();',
     )
     for marker in required_reader:
         if marker not in reader_js:
@@ -593,11 +595,13 @@ def self_test_livre_i_demo_reader() -> None:
         'const configuredTotalPages=Number(document.body.dataset.readerTotalPages||84);'
         'const totalPages=Number.isFinite(configuredTotalPages)&&configuredTotalPages>0?Math.floor(configuredTotalPages):84;'
         'Math.round((safePage/totalPages)*100);'
-        'Math.min(totalPages,Math.max(1,saved));'
+        'const clampPage=(value)=>'
+        'Number.isFinite(number)?Math.min(totalPages,Math.max(1,Math.floor(number))):1;'
+        'let current=clampPage(saved);'
         'Math.round(current/totalPages*100);'
         '${current} sur ${totalPages};'
-        'Math.min(totalPages,current+1);'
-        'Math.min(totalPages,Math.max(1,Number(input.value)||1));'
+        'current=clampPage(current+1);render();'
+        'current=clampPage(input.value);render();'
     )
     progress = 'Math.round((pageValue/84)*100)'
     clean = validate_livre_i_demo_reader_text(demo, reader, progress)
@@ -607,9 +611,11 @@ def self_test_livre_i_demo_reader() -> None:
     cases = {
         'HTML 83 pages': (demo.replace('max="84"', 'max="83"', 1), reader, progress),
         'lecteur 83 pages': (demo, reader.replace('current/totalPages', 'current/83', 1), progress),
-        'plafond de lecture 83': (demo, reader.replace('Math.min(totalPages,current+1)', 'Math.min(83,current+1)'), progress),
+        'plafond de lecture 83': (demo, reader.replace('current=clampPage(current+1)', 'current=Math.min(83,current+1)'), progress),
         'attribut du lecteur 83': (demo.replace('data-reader-total-pages="84"', 'data-reader-total-pages="83"'), reader, progress),
         'progression 83 pages': (demo, reader, progress.replace('pageValue/84', 'pageValue/83')),
+        'saisie sans bornes': (demo, reader.replace('current=clampPage(input.value)', 'current=Number(input.value)'), progress),
+        'borne globale réduite': (demo, reader.replace('Math.min(totalPages,Math.max(1,Math.floor(number)))', 'Math.min(83,Math.max(1,Math.floor(number)))'), progress),
     }
     for label, values in cases.items():
         if not validate_livre_i_demo_reader_text(*values):
