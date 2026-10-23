@@ -10,7 +10,7 @@ const CORE=[
   '/assets/icons/benoit-sigil.svg','/android-chrome-192x192.png','/android-chrome-512x512.png','/assets/media/sinjira-emblem.webp','/assets/media/sinjira-registre.webp','/assets/media/nova-logo.webp','/assets/media/sinjira-livre-1-cover-480.webp','/assets/media/fracture-card-back.webp',
   '/projets/sinjira/','/projets/sinjira/romans/','/projets/sinjira/romans/lire-demo.html','/projets/sinjira/jeux/','/projets/sinjira/registre/','/projets/sinjira/communaute/','/projets/sinjira/codex/','/projets/sinjira/monde-parallele/','/projets/sinjira/marche/','/projets/sinjira/jeux/fracture-du-reseau-mere/','/projets/projet-nova/','/projets/projet-nova/boussole-electorale.html'
 ];
-function cacheableResponse(resp){const cc=String(resp.headers.get('Cache-Control')||'').toLowerCase();return resp.ok&&cc.indexOf('no-store')===-1}
+function cacheableResponse(resp){const cc=String(resp.headers.get('Cache-Control')||'').toLowerCase();return resp.ok&&cc.indexOf('no-store')===-1&&cc.indexOf('private')===-1&&cc.indexOf('no-cache')===-1}
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{
@@ -20,6 +20,15 @@ self.addEventListener('fetch',e=>{
   const releaseMarker=u.pathname==='/.well-known/release.json';
   if(releaseMarker){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}
   if(privatePath){e.respondWith(fetch(new Request(r,{cache:'no-store'})).catch(()=>caches.match('/offline.html')));return}
+  // Ne jamais écrire en Cache Storage des appels API, de session, de paiement
+  // ou des réponses JSON dynamiques non explicitement précachées comme publiques.
+  const sensitiveSegments=/(?:^|\\/)(?:api|auth|oauth|graphql|functions|session|sessions|token|tokens|password|billing|checkout|payments|webhook|webhooks|\\.netlify|\\.vercel|\\.well-known|_next|_nuxt)(?:\\/|$)/i.test(u.pathname);
+  const sensitiveQuery=[...u.searchParams.keys()].some(key=>/^(?:access_token|refresh_token|token|code|state|session|auth|api_key|key|jwt|signature|secret|user_id|download)$/i.test(key));
+  const sensitiveHeaders=Boolean(r.headers.get('Authorization')||r.headers.get('X-Api-Key'));
+  const unknownJSON=/\\.json$/i.test(u.pathname)&&CORE.indexOf(u.pathname)===-1;
+  const sensitiveRuntimePath=sensitiveSegments||sensitiveQuery||sensitiveHeaders||unknownJSON;
+  if(sensitiveRuntimePath){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}
+
   if(r.destination==='document'){
     e.respondWith(fetch(new Request(r,{cache:'no-store'})).then(resp=>{if(cacheableResponse(resp)){const cp=resp.clone();caches.open(CACHE).then(c=>c.put(r,cp))}return resp}).catch(()=>caches.match(r).then(x=>x||caches.match('/offline.html'))));return;
   }
