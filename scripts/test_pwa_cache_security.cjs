@@ -103,6 +103,10 @@ async function test() {
   await assert.rejects(event('install'), /non publique interdite/,
     'Vary: * must invalidate the complete pre-cache installation');
   responseHeaders.delete('/');
+  responseHeaders.set('/', { 'Cache-Control': 'public, no-cache' });
+  await assert.rejects(event('install'), /non publique interdite/,
+    'An asset requiring HTTP revalidation must not be installed offline');
+  responseHeaders.delete('/');
   // Un serveur/CDN qui renvoie un morceau HTTP 206 au lieu d'un fichier
   // complet doit faire échouer toute installation du cache public.
   responseStatuses.set('/', 206);
@@ -249,6 +253,19 @@ async function test() {
   responseHeaders.set('/assets/js/site.js', { 'Cache-Control': 'private, max-age=60' });
   await request('/assets/js/site.js');
   assert.equal(writes.length, n1, 'Cache-Control private must be honored');
+  for (const cacheControl of [
+    'no-cache',
+    'public, no-cache',
+    'max-age=60, must-revalidate',
+    'public, proxy-revalidate',
+    'private = "Authorization"',
+  ]) {
+    responseHeaders.set('/assets/js/site.js', { 'Cache-Control': cacheControl });
+    const before = writes.length;
+    await request('/assets/js/site.js');
+    assert.equal(writes.length, before,
+      'A response requiring revalidation or private storage was cached: ' + cacheControl);
+  }
   responseHeaders.set('/assets/js/site.js', { 'Vary': 'Cookie, Accept-Encoding' });
   await request('/assets/js/site.js');
   assert.equal(writes.length, n1, 'Vary: Cookie must block cache');
