@@ -46,7 +46,7 @@ const storage = {
     globalLookups += 1;
     return new Response('DONNEE PRIVEE CACHE TIERS', { status: 200 });
   },
-  async keys() { return ['benoitcantin-v24-4-95-public-4', 'benoitcantin-v24-4-95-public-5', 'benoitcantin-v24-4-95-public-6', 'other-product-cache', currentCache]; },
+  async keys() { return ['benoitcantin-v24-4-95-public-4', 'benoitcantin-v24-4-95-public-5', 'benoitcantin-v24-4-95-public-6', 'benoitcantin-v24-4-95-public-7', 'other-product-cache', currentCache]; },
   async delete(key) {
     deletes.push(key);
     if (key === currentCache) publicEntries.clear();
@@ -131,7 +131,7 @@ async function test() {
   await assertFailedInstall(/non publique interdite/);
   responseStatuses.delete('/');
 
-  // Prouver aussi une panne réseau et un échec Cache.put pendant les 46
+  // Prouver aussi une panne réseau et un échec Cache.put pendant les 48
   // précharges parallèles : la suppression ne peut pas courir avant les writes.
   networkFails = true;
   await assertFailedInstall(/network offline/);
@@ -140,9 +140,9 @@ async function test() {
   await assertFailedInstall(/mock cache write failed/);
   failedCacheWrites.clear();
 
-  // Reprise d'installation : seules les 46 ressources complètes réapparaissent.
+  // Reprise d'installation : seules les 48 ressources complètes réapparaissent.
   await event('install');
-  assert.equal(publicEntries.size, 46, 'Recovery left missing or partial CORE resources');
+  assert.equal(publicEntries.size, 48, 'Recovery left missing or partial CORE resources');
   writes.length = 0;
   requests.length = 0;
   await event('activate');
@@ -151,6 +151,8 @@ async function test() {
     'The prior weaker Vary-policy cache must be evicted on activation');
   assert.ok(deletes.includes('benoitcantin-v24-4-95-public-6'),
     'Incomplete cache isolation must purge the previous deployed namespace');
+  assert.ok(deletes.includes('benoitcantin-v24-4-95-public-7'),
+    'Previous public shell must be evicted before adding Jeux/Logiciels');
   assert.ok(!deletes.includes('other-product-cache'), 'Foreign caches must survive');
 
   // Refus de précacher une nouvelle route privée même si quelqu'un l'ajoute à CORE.
@@ -244,6 +246,20 @@ async function test() {
   const offlineNavigation = await request('/projets/sinjira/', {}, 'document');
   assert.equal(await offlineNavigation.text(), 'public test',
     'Offline navigation must come from this PWA public cache, never another app');
+  // Les trois pages publiques de catalogue doivent rester accessibles en
+  // navigation hors ligne sans accès au cache d'un autre projet du domaine.
+  for (const catalog of [
+    '/projets/sinjira/romans/',
+    '/projets/sinjira/jeux/',
+    '/projets/sinjira/logiciels/',
+  ]) {
+    assert.ok(publicEntries.has(catalog), 'Missing public offline catalogue: ' + catalog);
+    const result = await request(catalog, {}, 'document');
+    assert.equal(await result.text(), 'public test',
+      'Catalogue navigation should use this PWA public cache: ' + catalog);
+    assert.equal(requests.at(-1).credentials, 'same-origin',
+      'Public offline fallback must not change session policy');
+  }
   const ownPublicAsset = await request('/assets/js/site.js');
   assert.equal(await ownPublicAsset.text(), 'public test',
     'Offline JS must come exclusively from the active cache');
@@ -332,7 +348,7 @@ async function test() {
   assert.equal(handled, false);
 
   assert.equal(globalLookups, 0, 'No cross-application cache lookup is allowed');
-  assert.ok(/-public-7/.test(currentCache), 'Cache version must rotate');
+  assert.ok(/-public-8/.test(currentCache), 'Cache version must rotate');
   console.log('OK PWA: réseaux privés et release non cachés, allowlist statique, protections Cookie/Auth/Vary et isolation des caches.');
 }
 test().catch(error => { console.error(error); process.exitCode = 1; });
