@@ -197,5 +197,11 @@ jobs:
       - name: Tester le lecteur PDF public en mode anonyme et sans réseau
         run: node scripts/test_sinjira_reader_offline.mjs
 
+      - name: Tester le refus des anciennes fiches joueur actives
+        run: python3 scripts/validate_release_fracture_redirect.py --self-test
+
+      - name: Préserver la redirection exacte de main vers les règles officielles
+        run: python3 scripts/validate_release_fracture_redirect.py
+
       - name: Vérifier les fichiers, routes et liens de l’ensemble du site
         run: python3 scripts/validate_site.py
