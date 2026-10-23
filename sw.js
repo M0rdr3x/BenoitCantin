@@ -68,13 +68,21 @@ function safePrecache(path){
 self.addEventListener('install',e=>e.waitUntil((async()=>{
   if(!CORE.every(safePrecache))throw Error('Chemin privé interdit dans le precache PWA');
   const store=await caches.open(CACHE);
-  await Promise.all(CORE.map(async path=>{
+  // Attendre toutes les opérations, y compris celles qui échouent : sinon
+  // une écriture encore en vol pourrait recréer un cache après sa suppression.
+  const results=await Promise.allSettled(CORE.map(async path=>{
     const request=new Request(new URL(path,location.origin).href,
       {cache:'no-store',credentials:'omit'});
     const response=await fetch(request);
     if(!cacheableResponse(response))throw Error('Réponse non publique interdite dans le precache');
     await store.put(request,response);
   }));
+  const failed=results.find(result=>result.status==='rejected');
+  if(failed){
+    // Aucun demi-precache ne doit survivre à une installation refusée.
+    await caches.delete(CACHE);
+    throw failed.reason;
+  }
   await self.skipWaiting();
 })()));
 
