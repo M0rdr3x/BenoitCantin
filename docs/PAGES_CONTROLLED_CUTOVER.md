@@ -547,6 +547,13 @@ refuse les chemins privés, les redirections ainsi que les réponses comportant
 `Cache-Control: no-store/private`, `Set-Cookie` ou
 `Vary: Cookie/Authorization`. Les requêtes avec identifiants, en-têtes
 d'authentification ou paramètres d'URL ne sont pas mémorisées.
+Une requête **du navigateur** contenant `Cache-Control`, `Pragma`,
+`If-None-Match`, `If-Modified-Since`, `If-Match` ou
+`If-Unmodified-Since` contourne totalement le cache PWA : elle
+reste réseau seul et ne peut pas être satisfaite par un ancien HTTP 200
+lorsque le client demande explicitement un rechargement ou un résultat
+conditionnel. Les tests négatifs reproduisent aussi la panne réseau
+pour prouver l'absence de secours hors ligne dans ces cas.
 Les navigations vers les pages publiques restent accessibles au serveur avec
 leur session normale, mais **leurs réponses ne sont jamais ajoutées au
 cache**, puisqu'une page pourrait être personnalisée. Le mode hors ligne
