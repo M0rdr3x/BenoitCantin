@@ -15,6 +15,8 @@ const writes = [];
 const deletes = [];
 const matches = [];
 const publicEntries = new Map();
+const failedCacheWrites = new Set();
+let skipWaitingCalls = 0;
 let globalLookups = 0;
 const responseHeaders = new Map();
 const responseStatuses = new Map();
@@ -26,6 +28,7 @@ const cache = {
   async put(r, response) {
     assert.ok(response.ok, 'Only successful responses are cached');
     const pathname = new URL(r.url).pathname;
+    if (failedCacheWrites.has(pathname)) throw Error('mock cache write failed');
     writes.push(pathname);
     publicEntries.set(pathname, response.clone());
   },
@@ -44,7 +47,11 @@ const storage = {
     return new Response('DONNEE PRIVEE CACHE TIERS', { status: 200 });
   },
   async keys() { return ['benoitcantin-v24-4-95-public-4', 'benoitcantin-v24-4-95-public-5', 'other-product-cache', currentCache]; },
-  async delete(key) { deletes.push(key); return true; },
+  async delete(key) {
+    deletes.push(key);
+    if (key === currentCache) publicEntries.clear();
+    return true;
+  },
 };
 const environment = {
   URL, Request, Response, Set, Promise, console,
@@ -52,7 +59,7 @@ const environment = {
   caches: storage,
   self: {
     addEventListener(type, fn) { listeners.set(type, fn); },
-    skipWaiting: async () => {},
+    skipWaiting: async () => { skipWaitingCalls++; },
     clients: { claim: async () => {} },
   },
   async fetch(r) {
@@ -87,6 +94,19 @@ async function request(uri, options = {}, destination = '') {
   await Promise.all(background);
   return response;
 }
+async function assertFailedInstall(expected) {
+  const priorDeletes = deletes.length, priorActivations = skipWaitingCalls;
+  await assert.rejects(event('install'), expected);
+  assert.equal(deletes.length, priorDeletes + 1,
+    'Failed precache install must delete exactly the incomplete current cache');
+  assert.equal(deletes.at(-1), currentCache,
+    'Failed precache install deleted a wrong cache namespace');
+  assert.equal(publicEntries.size, 0,
+    'Failed precache install left partial files available offline');
+  assert.equal(skipWaitingCalls, priorActivations,
+    'Failed precache install must not activate a new worker');
+}
+
 async function test() {
   await event('install');
   assert.ok(requests.length >= 35, 'Expected the real public CORE resources to be prefetched');
@@ -95,24 +115,34 @@ async function test() {
   assert.equal(writes.length, requests.length, 'Only vetted public responses were precached');
   // Une seule réponse privée doit invalider l'installation au lieu d'être cachée.
   responseHeaders.set('/', { 'Cache-Control': 'private, no-store' });
-  await assert.rejects(event('install'), /non publique interdite/);
+  await assertFailedInstall(/non publique interdite/);
   responseHeaders.delete('/');
   // Le chargement initial doit aussi être refusé si une seule ressource
   // publique n'autorise pas une réutilisation déterministe du cache.
   responseHeaders.set('/', { 'Vary': '*' });
-  await assert.rejects(event('install'), /non publique interdite/,
-    'Vary: * must invalidate the complete pre-cache installation');
+  await assertFailedInstall(/non publique interdite/);
   responseHeaders.delete('/');
   responseHeaders.set('/', { 'Cache-Control': 'public, no-cache' });
-  await assert.rejects(event('install'), /non publique interdite/,
-    'An asset requiring HTTP revalidation must not be installed offline');
+  await assertFailedInstall(/non publique interdite/);
   responseHeaders.delete('/');
   // Un serveur/CDN qui renvoie un morceau HTTP 206 au lieu d'un fichier
   // complet doit faire échouer toute installation du cache public.
   responseStatuses.set('/', 206);
-  await assert.rejects(event('install'), /non publique interdite/,
-    'The offline pre-cache must reject partial 206 responses');
+  await assertFailedInstall(/non publique interdite/);
   responseStatuses.delete('/');
+
+  // Prouver aussi une panne réseau et un échec Cache.put pendant les 46
+  // précharges parallèles : la suppression ne peut pas courir avant les writes.
+  networkFails = true;
+  await assertFailedInstall(/network offline/);
+  networkFails = false;
+  failedCacheWrites.add('/assets/js/site.js');
+  await assertFailedInstall(/mock cache write failed/);
+  failedCacheWrites.clear();
+
+  // Reprise d'installation : seules les 46 ressources complètes réapparaissent.
+  await event('install');
+  assert.equal(publicEntries.size, 46, 'Recovery left missing or partial CORE resources');
   writes.length = 0;
   requests.length = 0;
   await event('activate');
