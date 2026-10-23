@@ -44,13 +44,17 @@ function publicRequest(r,u){
     (r.destination!=='document'||r.mode!=='no-cors');
 }
 function cacheableResponse(resp){
-  const cc=String(resp.headers.get('Cache-Control')||'').toLowerCase();
+  // Cache API ne revalide pas automatiquement les copies hors ligne :
+  // refuser aussi no-cache / must-revalidate, en plus des réponses privées.
+  const directives=String(resp.headers.get('Cache-Control')||'').toLowerCase()
+    .split(',').map(token=>token.trim().split('=')[0].trim());
+  const forbid=['no-store','private','no-cache','must-revalidate','proxy-revalidate'];
   // Vary: * interdit la réutilisation. Cookie et Authorization rendent
   // une réponse inadaptée au cache, y compris avec espaces autour du jeton.
   const vary=String(resp.headers.get('Vary')||'').toLowerCase()
     .split(',').map(token=>token.trim());
   // HTTP 206 est un fragment, jamais un objet public complet à conserver.
-  return resp.status===200&&!resp.redirected&&!/(?:^|[,\s])(?:no-store|private)(?:$|[,\s=])/.test(cc)&&
+  return resp.status===200&&!resp.redirected&&!directives.some(directive=>forbid.includes(directive))&&
     !resp.headers.has('Set-Cookie')&&
     !vary.some(token=>token==='*'||token==='cookie'||token==='authorization');
 }
