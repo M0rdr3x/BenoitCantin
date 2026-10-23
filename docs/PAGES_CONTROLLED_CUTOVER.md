@@ -514,10 +514,10 @@ privés, URL non canoniques et ajouts non explicitement révisés. Ce contrôle
 s'exécute dans la CI PR et dans le workflow de publication manuelle avant
 l'upload : un seul fichier manquant empêche le déploiement et évite un
 service worker impossible à installer malgré un build Jekyll réussi.
-La version du cache est désormais `benoitcantin-v24-4-95-public-6` :
-les caches `public-4` et `public-5` doivent être supprimés à l'activation
-du nouveau service worker, sans toucher aux caches d'autres applications
-du même domaine. La mise à jour de la politique refuse aussi les en-têtes
+La version du cache est désormais `benoitcantin-v24-4-95-public-7` :
+les caches `public-4`, `public-5` et `public-6` doivent être supprimés
+à l'activation du nouveau service worker, sans toucher aux caches d'autres
+applications du même domaine. La mise à jour de la politique refuse aussi les en-têtes
 `Vary: *` et les variations `Cookie` / `Authorization` avec espaces
 additionnels; elle n'utilise pas l'ancienne règle du cache `public-5`.
 Une réponse partielle **HTTP 206** ne doit jamais être mise en cache comme
@@ -525,6 +525,16 @@ si elle contenait tout le fichier. Les requêtes avec `Range` ou
 `If-Range` restent réseau seul, sans lecture ni écriture hors ligne,
 même lorsque le serveur répond HTTP 200. Ces cas sont exercés dans
 `scripts/test_pwa_cache_security.cjs` sans collecter de données privées.
+
+**Installation atomique (nouvelle version `public-7`) :** si une seule
+précharge échoue (réseau, réponse interdite ou écriture `Cache.put`), le
+service worker attend la fin de **toutes** les opérations concurrentes,
+supprime le cache inachevé et refuse son activation. Cette attente avant
+suppression empêche qu'une écriture tardive recrée une entrée après le
+nettoyage. Des tests négatifs simulent les trois échecs, vérifient
+l'absence d'entrées partielles et prouvent qu'une nouvelle tentative saine
+reconstitue les 46 ressources. La suppression vise uniquement le cache
+public de SINJIRA, pas ceux des applications tierces.
 
 Seuls les chemins explicitement préapprouvés dans `CORE` peuvent être
 enregistrés dans le cache PWA. La précharge utilise `credentials: omit`,
