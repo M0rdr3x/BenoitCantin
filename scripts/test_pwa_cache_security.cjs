@@ -31,7 +31,8 @@ function publicMime(path) {
   if(path.endsWith('.webp'))return 'image/webp';
   if(path.endsWith('.png'))return 'image/png';
   if(path.endsWith('.webmanifest'))return 'application/manifest+json';
-  throw Error('MIME fixture absent: '+path);
+  // Les chemins privés/non-CORE restent réseau seul, quel que soit leur MIME.
+  return 'application/octet-stream';
 }
 
 const cache = {
