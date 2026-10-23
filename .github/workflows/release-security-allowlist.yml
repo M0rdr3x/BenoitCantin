@@ -32,6 +32,20 @@ jobs:
         with:
           python-version: '3.12.14'
 
+      - name: Récupérer main pour comparer les redirections historiques, sans écriture
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -c fetch.fsckObjects=true fetch --no-tags --depth=1 origin \
+            '+refs/heads/main:refs/remotes/origin/main'
+          git rev-parse --verify 'refs/remotes/origin/main^{commit}'
+
+      - name: Auto-tester le garde Netlify de non-régression historique
+        run: python3 scripts/validate_release_main_redirects.py --self-test
+
+      - name: Préserver les alias de main, 404 prioritaires et confinement _site
+        run: python3 scripts/validate_release_main_redirects.py
+
       - name: Tester symlinks, fichiers cachés et sorties dangereuses
         run: python3 scripts/build_netlify_public.py --self-test-security
 
