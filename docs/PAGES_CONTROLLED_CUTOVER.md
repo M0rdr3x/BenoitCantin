@@ -506,7 +506,7 @@ et l'approbation explicite du propriétaire restent obligatoires.
 Le service worker `sw.js` est audité avec le **vrai code JavaScript exécuté**
 dans Node 22 par `scripts/test_pwa_cache_security.cjs` dans la CI de la PR.
 Un contrôle statique indépendant, `scripts/audit_pwa_precache.py`,
-lit la liste `CORE` du véritable service worker et exige que ses **46
+lit la liste `CORE` du véritable service worker et exige que ses **48
 routes de préchargement** existent comme fichiers concrets dans la source
 et après compilation Jekyll (les chemins terminés par `/` doivent
 fournir leur `index.html`). Il interdit également les doublons, chemins
@@ -514,8 +514,8 @@ privés, URL non canoniques et ajouts non explicitement révisés. Ce contrôle
 s'exécute dans la CI PR et dans le workflow de publication manuelle avant
 l'upload : un seul fichier manquant empêche le déploiement et évite un
 service worker impossible à installer malgré un build Jekyll réussi.
-La version du cache est désormais `benoitcantin-v24-4-95-public-7` :
-les caches `public-4`, `public-5` et `public-6` doivent être supprimés
+La version du cache est désormais `benoitcantin-v24-4-95-public-8` :
+les caches `public-4`, `public-5`, `public-6` et `public-7` doivent être supprimés
 à l'activation du nouveau service worker, sans toucher aux caches d'autres
 applications du même domaine. La mise à jour de la politique refuse aussi les en-têtes
 `Vary: *` et les variations `Cookie` / `Authorization` avec espaces
@@ -526,14 +526,14 @@ si elle contenait tout le fichier. Les requêtes avec `Range` ou
 même lorsque le serveur répond HTTP 200. Ces cas sont exercés dans
 `scripts/test_pwa_cache_security.cjs` sans collecter de données privées.
 
-**Installation atomique (nouvelle version `public-7`) :** si une seule
+**Installation atomique (nouvelle version `public-8`) :** si une seule
 précharge échoue (réseau, réponse interdite ou écriture `Cache.put`), le
 service worker attend la fin de **toutes** les opérations concurrentes,
 supprime le cache inachevé et refuse son activation. Cette attente avant
 suppression empêche qu'une écriture tardive recrée une entrée après le
 nettoyage. Des tests négatifs simulent les trois échecs, vérifient
 l'absence d'entrées partielles et prouvent qu'une nouvelle tentative saine
-reconstitue les 46 ressources. La suppression vise uniquement le cache
+reconstitue les 48 ressources. La suppression vise uniquement le cache
 public de SINJIRA, pas ceux des applications tierces.
 
 Seuls les chemins explicitement préapprouvés dans `CORE` peuvent être
@@ -557,6 +557,14 @@ Les tests Node simulent expressément une réponse privée dans un cache
 tiers : même hors ligne, le service worker ne doit jamais la lire ou
 la servir. Une ressource absente du cache public courant reste absente,
 plutôt que d'être remplacée par une ancienne copie de source inconnue.
+
+**Couverture des catalogues SINJIRA :** les pages statiques publiques
+`/projets/sinjira/romans/`, `/projets/sinjira/jeux/` et
+`/projets/sinjira/logiciels/` sont toutes préchargées de manière anonyme.
+En navigation hors ligne, seule leur copie publique contrôlée peut servir de
+secours. Les tests exécutent le vrai service worker et vérifient l'accès
+hors ligne aux trois pages; aucune réponse de navigation personnalisée
+n'entre dans le cache. Leur disparition de `_site` fait échouer la CI.
 
 Les chemins `/app`, `/compte`, `/admin`, `/Admin`,
 `/histoire-de-vie`, `/supabase`, `/api`, `/auth`, `/rest`,
