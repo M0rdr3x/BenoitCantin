@@ -22,6 +22,17 @@ const responseHeaders = new Map();
 const responseStatuses = new Map();
 let networkFails = false;
 let currentCache;
+// Fixtures MIME conformes aux pages, styles et images du site public.
+function publicMime(path) {
+  if(path==='/'||path.endsWith('/')||path.endsWith('.html'))return 'text/html';
+  if(path.endsWith('.js'))return 'text/javascript';
+  if(path.endsWith('.css'))return 'text/css';
+  if(path.endsWith('.svg'))return 'image/svg+xml';
+  if(path.endsWith('.webp'))return 'image/webp';
+  if(path.endsWith('.png'))return 'image/png';
+  if(path.endsWith('.webmanifest'))return 'application/manifest+json';
+  throw Error('MIME fixture absent: '+path);
+}
 
 const cache = {
   async addAll(paths) { for (const p of paths) assert.ok(p.startsWith('/')); },
@@ -46,7 +57,7 @@ const storage = {
     globalLookups += 1;
     return new Response('DONNEE PRIVEE CACHE TIERS', { status: 200 });
   },
-  async keys() { return ['benoitcantin-v24-4-95-public-4', 'benoitcantin-v24-4-95-public-5', 'benoitcantin-v24-4-95-public-6', 'benoitcantin-v24-4-95-public-7', 'other-product-cache', currentCache]; },
+  async keys() { return ['benoitcantin-v24-4-95-public-4', 'benoitcantin-v24-4-95-public-5', 'benoitcantin-v24-4-95-public-6', 'benoitcantin-v24-4-95-public-7', 'benoitcantin-v24-4-95-public-8', 'other-product-cache', currentCache]; },
   async delete(key) {
     deletes.push(key);
     if (key === currentCache) publicEntries.clear();
@@ -66,7 +77,8 @@ const environment = {
     requests.push({ path: new URL(r.url).pathname, cache: r.cache, credentials: r.credentials });
     if (networkFails) throw new Error('network offline');
     const uri = new URL(r.url);
-    const headers = responseHeaders.get(uri.pathname) || {};
+    const headers = { 'Content-Type': publicMime(uri.pathname),
+      ...(responseHeaders.get(uri.pathname) || {}) };
     return new Response('public test', { status: responseStatuses.get(uri.pathname) || 200, headers });
   },
 };
@@ -130,6 +142,9 @@ async function test() {
   responseStatuses.set('/', 206);
   await assertFailedInstall(/non publique interdite/);
   responseStatuses.delete('/');
+  responseHeaders.set('/assets/js/site.js', { 'Content-Type': 'text/html' });
+  await assertFailedInstall(/non publique interdite/);
+  responseHeaders.delete('/assets/js/site.js');
 
   // Prouver aussi une panne réseau et un échec Cache.put pendant les 48
   // précharges parallèles : la suppression ne peut pas courir avant les writes.
@@ -151,6 +166,8 @@ async function test() {
     'The prior weaker Vary-policy cache must be evicted on activation');
   assert.ok(deletes.includes('benoitcantin-v24-4-95-public-6'),
     'Incomplete cache isolation must purge the previous deployed namespace');
+  assert.ok(deletes.includes('benoitcantin-v24-4-95-public-8'),
+    'The old cache with weaker MIME checks must be purged');
   assert.ok(deletes.includes('benoitcantin-v24-4-95-public-7'),
     'Previous public shell must be evicted before adding Jeux/Logiciels');
   assert.ok(!deletes.includes('other-product-cache'), 'Foreign caches must survive');
@@ -271,6 +288,12 @@ async function test() {
   networkFails = false;
 
   const n1 = writes.length;
+  // Un HTTP 200 HTML pour un fichier JS (fallback de serveur) ne doit pas
+  // empoisonner le cache de l'application.
+  responseHeaders.set('/assets/js/site.js', { 'Content-Type': 'text/html' });
+  await request('/assets/js/site.js');
+  assert.equal(writes.length, n1, 'HTML fallback disguised as JS was cached');
+  responseHeaders.delete('/assets/js/site.js');
   await request('/assets/js/site.js?token=private');
   assert.equal(writes.length, n1, 'URLs carrying tokens must not be cached');
   await request('/assets/js/site.js', { headers: { Authorization: 'Bearer fake' } });
@@ -348,7 +371,7 @@ async function test() {
   assert.equal(handled, false);
 
   assert.equal(globalLookups, 0, 'No cross-application cache lookup is allowed');
-  assert.ok(/-public-8/.test(currentCache), 'Cache version must rotate');
+  assert.ok(/-public-9/.test(currentCache), 'Cache version must rotate');
   console.log('OK PWA: réseaux privés et release non cachés, allowlist statique, protections Cookie/Auth/Vary et isolation des caches.');
 }
 test().catch(error => { console.error(error); process.exitCode = 1; });
