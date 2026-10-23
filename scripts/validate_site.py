@@ -504,6 +504,14 @@ def validate_service_worker_privacy(sw_text: str) -> list[str]:
         "function cacheableResponse(resp)",
         "resp.headers.get('Cache-Control')",
         "cc.indexOf('no-store')===-1",
+        "cc.indexOf('private')===-1",
+        "cc.indexOf('no-cache')===-1",
+        "const sensitiveSegments=",
+        "const sensitiveQuery=",
+        "const sensitiveHeaders=",
+        "const unknownJSON=",
+        "const sensitiveRuntimePath=sensitiveSegments||sensitiveQuery||sensitiveHeaders||unknownJSON;",
+        "if(sensitiveRuntimePath){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}",
         "if(cacheableResponse(resp)){const cp=resp.clone();",
         "if(cacheableResponse(resp))caches.open(CACHE)",
         "u.pathname.indexOf('/documents/')===-1",
@@ -535,6 +543,16 @@ def self_test_service_worker_privacy(sw_text: str) -> None:
             1,
         ),
         'réponses no-store recachables': sw_text.replace("cc.indexOf('no-store')===-1", "true", 1),
+        'réponses private recachables': sw_text.replace("cc.indexOf('private')===-1", "true", 1),
+        'réponses no-cache recachables': sw_text.replace("cc.indexOf('no-cache')===-1", "true", 1),
+        'API et jetons recachables': sw_text.replace(
+            "const sensitiveRuntimePath=sensitiveSegments||sensitiveQuery||sensitiveHeaders||unknownJSON;",
+            "const sensitiveRuntimePath=false;", 1
+        ),
+        'réponses sensibles sans no-store': sw_text.replace(
+            "if(sensitiveRuntimePath){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}",
+            "if(sensitiveRuntimePath){e.respondWith(fetch(r));return}", 1
+        ),
         'documents recachables': sw_text.replace("u.pathname.indexOf('/documents/')===-1", "true", 1),
     }
     for label, mutated in mutations.items():
