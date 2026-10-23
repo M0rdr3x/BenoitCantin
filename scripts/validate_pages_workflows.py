@@ -101,6 +101,10 @@ def validate_jekyll_ci(source: str) -> list[str]:
          "Double preuve source/artefact du registre Nova"),
         ("node --test tests/test_nova_public_results.cjs",
          "Test DOM des résultats Nova sans vote réel"),
+        ("node scripts/test_pwa_cache_security.cjs",
+         "Test réel du cache PWA et des en-têtes HTTP de confidentialité"),
+        ("python3 scripts/audit_pwa_precache.py --source . --built _site",
+         "Audit de toutes les ressources PWA réelles après Jekyll"),
     ):
         if token not in jobs:
             errors.append("Étape Jekyll absente : " + description)
@@ -108,7 +112,7 @@ def validate_jekyll_ci(source: str) -> list[str]:
     # l'exécution d'un audit. Chaque commande doit occuper sa propre ligne
     # exécutable, avec l'indentation stricte du bloc shell YAML.
     executable_lines = re.findall(
-        r"(?m)^ {10}((?:python3 |node --test )[^\n]+)$", jobs
+        r"(?m)^ {10}((?:python3 |node --test |node )[^\n]+)$", jobs
     )
     for command, times in (
         ("python3 scripts/audit_pages_jekyll.py --source . --built _site", 2),
@@ -120,6 +124,10 @@ def validate_jekyll_ci(source: str) -> list[str]:
         ("python3 scripts/validate_nova_public_results.py --self-test", 1),
         ("python3 scripts/validate_nova_public_results.py --source .", 1),
         ("node --test tests/test_nova_public_results.cjs", 1),
+        ("node scripts/test_pwa_cache_security.cjs", 1),
+        ("python3 scripts/audit_pwa_precache.py --self-test", 1),
+        ("python3 scripts/audit_pwa_precache.py --source .", 1),
+        ("python3 scripts/audit_pwa_precache.py --source . --built _site", 1),
     ):
         if executable_lines.count(command) != times:
             errors.append(
@@ -241,6 +249,26 @@ def self_test_jekyll_ci() -> None:
         "test DOM Nova non exécuté": (
             "          node --test tests/test_nova_public_results.cjs\n",
             "          echo TEST_DOM_NOVA_NON_EXECUTE\n",
+        ),
+        "PWA test HTTP neutralisé": (
+            "          node scripts/test_pwa_cache_security.cjs\n",
+            "          echo TEST_CACHE_PWA_NON_EXECUTE\n",
+        ),
+        "PWA test seulement affiché": (
+            "          node scripts/test_pwa_cache_security.cjs\n",
+            "          echo node scripts/test_pwa_cache_security.cjs\n",
+        ),
+        "PWA test commenté": (
+            "          node scripts/test_pwa_cache_security.cjs\n",
+            "          # node scripts/test_pwa_cache_security.cjs\n",
+        ),
+        "PWA précharge post-build retirée": (
+            "          python3 scripts/audit_pwa_precache.py --source . --built _site\n",
+            "          echo PWA_FICHIERS_NON_AUDITES\n",
+        ),
+        "PWA précharge post-build affichée": (
+            "          python3 scripts/audit_pwa_precache.py --source . --built _site\n",
+            "          echo python3 scripts/audit_pwa_precache.py --source . --built _site\n",
         ),
         "test DOM Nova simplement affiché": (
             "          node --test tests/test_nova_public_results.cjs\n",
