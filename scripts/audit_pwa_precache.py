@@ -13,7 +13,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-EXPECTED_COUNT = 46
+EXPECTED_COUNT = 48
 CORE_START = re.compile(r"\bconst\s+CORE\s*=\s*\[([\s\S]*?)\]\s*;")
 CORE_TOKEN = re.compile(r"'([^'\\]*)'")
 ALLOWED_URL = re.compile(r"/[a-zA-Z0-9_./-]*\Z")
@@ -61,7 +61,11 @@ def extract_core(source: str) -> tuple[list[str], list[str]]:
                 any(route == private or route.startswith(private + "/")
                     for private in PRIVATE_PREFIXES)):
             problems.append(f"Route privée ou non canonique dans CORE: {route}")
-    for required in ("/", "/offline.html", "/manifest.webmanifest"):
+    for required in (
+        "/", "/offline.html", "/manifest.webmanifest",
+        "/projets/sinjira/romans/", "/projets/sinjira/jeux/",
+        "/projets/sinjira/logiciels/",
+    ):
         if required not in paths:
             problems.append(f"Coquille PWA indispensable absente de CORE: {required}")
     return paths, problems
@@ -121,15 +125,21 @@ def self_test() -> None:
                 file.parent.mkdir(parents=True, exist_ok=True)
                 file.write_bytes(b"public-core-fixture")
         assert not audit(root, built), audit(root, built)
-        for parent, fragment in (
-            (root, "absente de la source"),
-            (built, "absente de _site"),
-        ):
-            missing = parent / built_path("/offline.html")
-            missing.unlink()
-            assert any(fragment in error and "/offline.html" in error
-                       for error in audit(root, built)), "CORE manquant non détecté"
-            missing.write_bytes(b"public-core-fixture")
+        # Des trois catalogues, aucun ne peut disparaître de l'artefact
+        # Jekyll sans casser la disponibilité hors ligne.
+        for route in ("/offline.html", "/projets/sinjira/romans/",
+                      "/projets/sinjira/jeux/", "/projets/sinjira/logiciels/"):
+            for parent, fragment in (
+                (root, "absente de la source"),
+                (built, "absente de _site"),
+            ):
+                missing = parent / built_path(route)
+                missing.unlink()
+                assert any(fragment in error and route in error
+                           for error in audit(root, built)), (
+                    f"CORE manquant non détecté : {route}"
+                )
+                missing.write_bytes(b"public-core-fixture")
         sw_file = root / "sw.js"
         modified = real_sw.replace("'/offline.html'", "'/api/private'", 1)
         assert modified != real_sw
@@ -152,7 +162,7 @@ def self_test() -> None:
         )
         sw_file.write_text(real_sw, "utf-8")
         assert not audit(root, built), audit(root, built)
-    print("OK PWA : 46 chemins CORE, source+Jekyll présents, "
+    print("OK PWA : 48 chemins CORE, dont Romans/Jeux/Logiciels, source+Jekyll présents, "
           "routes privées, doublons et 404 futures bloqués")
 
 
