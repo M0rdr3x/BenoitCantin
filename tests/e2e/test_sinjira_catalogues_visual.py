@@ -81,7 +81,7 @@ def mobile_current_category_visible(page) -> None:
         page.set_viewport_size({"width": 390, "height": 844})
         response = page.goto(
             urljoin(BASE_URL, f"projets/sinjira/{category}/"),
-            wait_until="load", timeout=30_000,
+            wait_until="domcontentloaded", timeout=30_000,
         )
         require(response is not None and response.status in (200, 304),
                 f"{category}: HTTP inattendu à 390 px : "
@@ -256,7 +256,19 @@ def main() -> None:
                     proportions(page, selector, category, viewport)
                 page.set_viewport_size({"width": 1440, "height": 960})
 
-            mobile_current_category_visible(page)
+            # Les passages 1440/390px de la boucle d'affiches peuvent
+            # laisser des chargements média en cours sous WebKit. Isoler
+            # le scénario mobile dans une page neuve évite une course de
+            # navigation interne, sans désactiver le contrôle HTTP réel.
+            mobile_page = browser.new_page(
+                viewport={"width": 390, "height": 844},
+                locale="fr-CA",
+                reduced_motion="reduce",
+            )
+            try:
+                mobile_current_category_visible(mobile_page)
+            finally:
+                mobile_page.close()
             software_anchor_navigation(page)
 
             response = page.goto(
