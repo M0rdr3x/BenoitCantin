@@ -203,5 +203,13 @@ jobs:
       - name: Préserver la redirection exacte de main vers les règles officielles
         run: python3 scripts/validate_release_fracture_redirect.py
 
+      - name: Vérifier la navigation mobile Projet Nova dans un DOM simulé
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check projets/projet-nova/script.js
+          node --check scripts/test_nova_navigation_runtime.mjs
+          node scripts/test_nova_navigation_runtime.mjs
+
       - name: Vérifier les fichiers, routes et liens de l’ensemble du site
         run: python3 scripts/validate_site.py
