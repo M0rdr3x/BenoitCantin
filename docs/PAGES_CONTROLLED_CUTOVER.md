@@ -514,19 +514,24 @@ privés, URL non canoniques et ajouts non explicitement révisés. Ce contrôle
 s'exécute dans la CI PR et dans le workflow de publication manuelle avant
 l'upload : un seul fichier manquant empêche le déploiement et évite un
 service worker impossible à installer malgré un build Jekyll réussi.
-La version du cache est désormais `benoitcantin-v24-4-95-public-9` :
-les caches `public-4` à `public-8` doivent être supprimés
+La version du cache est désormais `benoitcantin-v24-4-95-public-10` :
+les caches `public-4` à `public-9` doivent être supprimés
 à l'activation du nouveau service worker, sans toucher aux caches d'autres
-applications du même domaine. La mise à jour de la politique refuse aussi les en-têtes
-`Vary: *` et les variations `Cookie` / `Authorization` avec espaces
-additionnels; elle n'utilise pas l'ancienne règle du cache `public-5`.
+applications du même domaine. La nouvelle politique interdit toutes les
+variations de réponse `Vary` sauf `Accept-Encoding` (transport uniquement).
+Ainsi, `Vary: *`, `Cookie`, `Authorization`, `Origin`, `User-Agent` ou
+`Accept-Language` ne peuvent pas produire une réponse hors ligne réutilisée
+dans un autre contexte. Le service worker refuse aussi `Pragma: no-cache`,
+y compris sans directive moderne `Cache-Control`. Les tests vérifient
+ces refus, le préchargement atomique et la conservation du cache pour
+`Vary: Accept-Encoding` seul.
 Une réponse partielle **HTTP 206** ne doit jamais être mise en cache comme
 si elle contenait tout le fichier. Les requêtes avec `Range` ou
 `If-Range` restent réseau seul, sans lecture ni écriture hors ligne,
 même lorsque le serveur répond HTTP 200. Ces cas sont exercés dans
 `scripts/test_pwa_cache_security.cjs` sans collecter de données privées.
 
-**Installation atomique (nouvelle version `public-9`) :** si une seule
+**Installation atomique (version `public-10`) :** si une seule
 précharge échoue (réseau, réponse interdite ou écriture `Cache.put`), le
 service worker attend la fin de **toutes** les opérations concurrentes,
 supprime le cache inachevé et refuse son activation. Cette attente avant
@@ -554,7 +559,7 @@ correspond pas à la ressource attendue : une page HTML de fallback ne doit
 pas remplacer un JavaScript, un style CSS, une image SVG/PNG/WebP ou le
 manifeste PWA dans l'installation hors ligne. Le test Node couvre le refus
 pendant la précharge atomique et l'absence d'écriture sur une réponse JS
-incorrectement typée; le cache `public-8` est purgé à l'activation.
+incorrectement typée; les anciennes versions de cache `public-4` à `public-9` sont purgées à l'activation.
 Les scripts,
 styles et images figurant dans la liste approuvée sont récupérés avec
 `credentials: omit` avant toute mise en cache.
