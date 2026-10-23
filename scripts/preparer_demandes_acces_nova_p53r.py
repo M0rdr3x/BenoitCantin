@@ -125,6 +125,8 @@ def generate(cfg,parents):
         ]
         for i,item in enumerate(req,1):
             lines.append(str(i)+". "+item["description"])
+        if code in ("23027","T0088"):
+            lines.append("Note spécifique Québec–RTC : vérifier les écritures réciproques déjà éliminées dans le périmètre consolidé avant toute analyse; ne demander que les pièces existantes et détenues par cet organisme.")
         lines.extend([
             "",
             "Merci de préciser, lorsque possible, les versions ou annexes concernées. Si un document est déjà diffusé, une référence à sa publication suffira.",
