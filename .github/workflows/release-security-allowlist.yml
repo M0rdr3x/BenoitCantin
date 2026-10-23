@@ -186,5 +186,11 @@ jobs:
       - name: Garantir l'accessibilité du menu et les frontières public/privé
         run: python3 scripts/validate_release_navigation_runtime.py
 
+      - name: Vérifier les tests négatifs des pages de l'univers SINJIRA
+        run: python3 scripts/validate_release_sinjira_hubs.py --self-test
+
+      - name: Protéger le référencement, les menus et le contrat privé Livre I
+        run: python3 scripts/validate_release_sinjira_hubs.py
+
       - name: Vérifier les fichiers, routes et liens de l’ensemble du site
         run: python3 scripts/validate_site.py
