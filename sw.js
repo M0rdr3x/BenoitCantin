@@ -49,7 +49,8 @@ function cacheableResponse(resp){
   // une réponse inadaptée au cache, y compris avec espaces autour du jeton.
   const vary=String(resp.headers.get('Vary')||'').toLowerCase()
     .split(',').map(token=>token.trim());
-  // HTTP 206 est un fragment, jamais un objet public complet à conserver.\n  return resp.status===200&&!resp.redirected&&!/(?:^|[,\s])(?:no-store|private)(?:$|[,\s=])/.test(cc)&&
+  // HTTP 206 est un fragment, jamais un objet public complet à conserver.
+  return resp.status===200&&!resp.redirected&&!/(?:^|[,\s])(?:no-store|private)(?:$|[,\s=])/.test(cc)&&
     !resp.headers.has('Set-Cookie')&&
     !vary.some(token=>token==='*'||token==='cookie'||token==='authorization');
 }
