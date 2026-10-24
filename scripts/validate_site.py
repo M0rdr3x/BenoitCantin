@@ -511,6 +511,8 @@ def validate_service_worker_privacy(sw_text: str) -> list[str]:
         "const sensitiveHeaders=",
         "const unknownJSON=",
         "const sensitiveRuntimePath=sensitiveSegments||sensitiveQuery||sensitiveHeaders||unknownJSON;",
+        "const PUBLIC_PRECACHE_REQUESTS=CORE.map(path=>new Request(path,{credentials:'omit',cache:'no-store'}));",
+        "c.addAll(PUBLIC_PRECACHE_REQUESTS)",
         "const publicCachePath=CORE.indexOf(u.pathname)!==-1;",
         "const versionOnly=",
         "const versionableAsset=",
@@ -586,6 +588,13 @@ def self_test_service_worker_privacy(sw_text: str) -> None:
         'cache autorisé hors liste positive': sw_text.replace(
             "const publicCachePath=CORE.indexOf(u.pathname)!==-1;",
             "const publicCachePath=true;", 1
+        ),
+        'précache avec cookies': sw_text.replace(
+            "credentials:'omit'", "credentials:'same-origin'", 1
+        ),
+        'précache sans discipline no-store': sw_text.replace(
+            "const PUBLIC_PRECACHE_REQUESTS=CORE.map(path=>new Request(path,{credentials:'omit',cache:'no-store'}));",
+            "const PUBLIC_PRECACHE_REQUESTS=CORE.map(path=>new Request(path,{credentials:'omit'}));", 1
         ),
         'versions de fichiers non contrôlées': sw_text.replace(
             "const publicCacheRequest=publicCachePath&&(!u.search||(versionOnly&&versionableAsset));",
