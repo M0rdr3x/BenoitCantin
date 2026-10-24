@@ -17,6 +17,27 @@
   const PARTY_DATA_URL = "data/boussole-partis-2026.json";
   const PARTY_SOURCE_DATA_URL = "data/boussole-sources-partis-2026.json";
   const EVIDENCE_DATA_URL = "data/boussole-preuves-2026.json";
+  // Refuser les positions documentaires modifiées en cache/CDN, même lorsque
+  // les questions de la Boussole restent identiques.
+  const APPROVED_DOCUMENTARY_SHA256 = Object.freeze({
+    [PARTY_DATA_URL]: "69ca01c66e54586a809a151fb73ff383aeb6bf80dccab8036eba365d9d4e8784",
+    [PARTY_SOURCE_DATA_URL]: "2b3b226cc02375f51458dcd24588346b2574338ea91b592d8414926ce010113a",
+    [EVIDENCE_DATA_URL]: "09503ddd60aaed5f3aa6e03058d218a83f80361556f8e6431211ee84ac08ad79"
+  });
+  async function fetchApprovedDocumentary(url){
+    const approved=APPROVED_DOCUMENTARY_SHA256[url];
+    if(!approved || !globalThis.crypto?.subtle) throw new Error("DOCUMENTARY_UNAVAILABLE");
+    const response=await fetch(url,{cache:"no-store",credentials:"omit"});
+    if(!response.ok) throw new Error("DOCUMENTARY_HTTP");
+    const bytes=await response.arrayBuffer();
+    const maxBytes=url===EVIDENCE_DATA_URL ? 524288 : 65536;
+    if(!bytes.byteLength || bytes.byteLength>maxBytes) throw new Error("DOCUMENTARY_SIZE");
+    const digest=await globalThis.crypto.subtle.digest("SHA-256",bytes);
+    const observed=Array.from(new Uint8Array(digest),
+      value=>value.toString(16).padStart(2,"0")).join("");
+    if(observed!==approved) throw new Error("DOCUMENTARY_INTEGRITY");
+    return JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(bytes));
+  }
   const RESPONSES = [
     {value:-3,label:"Tout à fait en désaccord"},
     {value:-2,label:"En désaccord"},
@@ -855,17 +876,11 @@
     }
     if(status) status.textContent = "Chargement des données documentaires…";
     try{
-      const [partyResponse,sourceResponse,evidenceResponse,questionCorpus] = await Promise.all([
-        fetch(PARTY_DATA_URL,{cache:"no-store"}),
-        fetch(PARTY_SOURCE_DATA_URL,{cache:"no-store"}),
-        fetch(EVIDENCE_DATA_URL,{cache:"no-store"}),
+      const [partyCorpus,sourceCorpus,evidenceCorpus,questionCorpus] = await Promise.all([
+        fetchApprovedDocumentary(PARTY_DATA_URL),
+        fetchApprovedDocumentary(PARTY_SOURCE_DATA_URL),
+        fetchApprovedDocumentary(EVIDENCE_DATA_URL),
         fetchApprovedQuestionCorpus()
-      ]);
-      for(const response of [partyResponse,sourceResponse,evidenceResponse]){
-        if(!response.ok) throw new Error("HTTP " + response.status);
-      }
-      const [partyCorpus,sourceCorpus,evidenceCorpus] = await Promise.all([
-        partyResponse.json(),sourceResponse.json(),evidenceResponse.json()
       ]);
       validateDocumentaryCorpora(questionCorpus,partyCorpus,sourceCorpus,evidenceCorpus);
       renderPartyRegistry(partyCorpus,evidenceCorpus);

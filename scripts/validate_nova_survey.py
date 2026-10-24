@@ -15,10 +15,18 @@ NOVA = ROOT / "projets/projet-nova"
 # Empreinte du manifeste figé; sa modification exige une nouvelle vague/version.
 APPROVED_MANIFEST_SHA256 = "67df5052a3a09f23ecfa43e2882dcf7a0b6f1a85f1aad4e2f4159aab06570738"
 APPROVED_COMPASS_SHA256 = "5d65a6067142fbba59a81edeaac49dc1befd82aa281c6e11e2f2509a1aee9109"
+APPROVED_DOCUMENTARY_SHA256 = {
+    "documentary_parties": "69ca01c66e54586a809a151fb73ff383aeb6bf80dccab8036eba365d9d4e8784",
+    "documentary_sources": "2b3b226cc02375f51458dcd24588346b2574338ea91b592d8414926ce010113a",
+    "documentary_evidence": "09503ddd60aaed5f3aa6e03058d218a83f80361556f8e6431211ee84ac08ad79",
+}
 FILES = {
     "page": NOVA / "sondage.html",
     "client": NOVA / "assets/sondage.js",
     "compass_client": NOVA / "assets/boussole-electorale.js",
+    "documentary_parties": NOVA / "data/boussole-partis-2026.json",
+    "documentary_sources": NOVA / "data/boussole-sources-partis-2026.json",
+    "documentary_evidence": NOVA / "data/boussole-preuves-2026.json",
     "style": NOVA / "assets/sondage.css",
     "manifest": NOVA / "data/sondage-questions-v1.json",
     "source": NOVA / "data/boussole-electorale-v2.json",
@@ -64,6 +72,20 @@ def check_text(payload: dict[str, str]) -> list[str]:
            'new TextDecoder("utf-8",{fatal:true})')
     if hashlib.sha256(payload["source"].encode("utf-8")).hexdigest() != APPROVED_COMPASS_SHA256:
         issues.append("Questionnaire Boussole modifié sans revue de version")
+    demand("compass_client", "const APPROVED_DOCUMENTARY_SHA256 = Object.freeze({",
+           "fetchApprovedDocumentary(PARTY_DATA_URL)",
+           "fetchApprovedDocumentary(PARTY_SOURCE_DATA_URL)",
+           "fetchApprovedDocumentary(EVIDENCE_DATA_URL)",
+           'globalThis.crypto.subtle.digest("SHA-256",bytes)',
+           "observed!==approved", "bytes.byteLength>maxBytes")
+    for key, digest in APPROVED_DOCUMENTARY_SHA256.items():
+        size = len(payload[key].encode("utf-8"))
+        if size > (524288 if key == "documentary_evidence" else 65536) or not size:
+            issues.append(key + " : taille documentaire interdite")
+        if hashlib.sha256(payload[key].encode("utf-8")).hexdigest() != digest:
+            issues.append(key + " : corpus documentaire modifié sans revue")
+        if payload["compass_client"].count('"'+digest+'"') != 1:
+            issues.append(key + " : empreinte documentaire absente du navigateur")
     demand("client", "const COLLECTION_OPEN = false;",
            "const LIVE_OPINION_CONSENT_GRANTED = false;",
            "function eligible()", "$('sondage-age').checked",
@@ -167,6 +189,10 @@ def self_test() -> None:
     assert not check_text(payload), check_text(payload)
     assert not check_questions(payload["manifest"], payload["source"])
     assert not check_manifest_integrity(FILES["manifest"].read_bytes())
+    for key in APPROVED_DOCUMENTARY_SHA256:
+        mutated = dict(payload)
+        mutated[key] += " "
+        assert check_text(mutated), key + " : altération d'un octet acceptée"
     assert check_manifest_integrity(FILES["manifest"].read_bytes() + b" ")
     assert check_manifest_integrity(b"")
     mutations = [
@@ -176,6 +202,8 @@ def self_test() -> None:
         ("client", "hex(compassDigest)!==APPROVED_COMPASS_SHA256", "false"),
         ("compass_client", 'globalThis.crypto.subtle.digest("SHA-256",bytes)', "Promise.resolve(new ArrayBuffer(32))"),
         ("compass_client", "actual!==APPROVED_COMPASS_SHA256", "false"),
+        ("compass_client", "observed!==approved", "false"),
+        ("compass_client", "fetchApprovedDocumentary(EVIDENCE_DATA_URL)", "Promise.resolve({})"),
         ("client", "if (!LIVE_OPINION_CONSENT_GRANTED) throw new Error('LIVE_CONSENT_REQUIRED')", "if (false) throw new Error('LIVE_CONSENT_REQUIRED')"),
         ("client", "selections.clear()", "/* purge neutralisée */"),
         ("page", 'id="sondage-review-list"', 'id="récapitulatif-perdu"'),

@@ -342,6 +342,32 @@ def main():
                 state="visible", timeout=10_000)
             require(compass.locator("#compass-evidence-parties .compass-evidence-card").count() == 22,
                     "Reprise de l'explorateur documentaire incomplète")
+            # Une modification de registre ou de sources qui conserve la
+            # structure JSON doit bloquer l'explorateur entier (échec fermé).
+            for file_name in ("boussole-partis-2026.json",
+                              "boussole-sources-partis-2026.json"):
+                altered_document = browser.new_page(locale="fr-CA")
+                pattern = "**/" + file_name
+                def mutate_document(route):
+                    document = json.loads(route.fetch().body())
+                    document["version"] = "NON_APPROUVEE"
+                    route.fulfill(status=200, content_type="application/json",
+                                  body=json.dumps(document, ensure_ascii=False))
+                altered_document.route(pattern, mutate_document)
+                altered_document.goto(
+                    "http://127.0.0.1:4173/projets/projet-nova/boussole-electorale.html",
+                    wait_until="domcontentloaded", timeout=30_000)
+                altered_document.locator("#compass-evidence-retry").wait_for(
+                    state="visible", timeout=10_000)
+                require(altered_document.locator(
+                    "#compass-evidence-parties .compass-evidence-card").count() == 0,
+                    "Corpus documentaire falsifié présenté : " + file_name)
+                altered_document.unroute(pattern, mutate_document)
+                altered_document.locator("#compass-evidence-retry").click()
+                altered_document.locator(
+                    "#compass-evidence-parties .compass-evidence-card").first.wait_for(
+                        state="visible", timeout=10_000)
+                altered_document.close()
             compass.wait_for_function("!document.getElementById('compass-start').disabled")
             compass.locator("#compass-start").click()
             full = compass.evaluate("""() => {
