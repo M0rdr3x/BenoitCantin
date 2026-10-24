@@ -17,8 +17,8 @@ import classer_ecarts_numeriques_nova_p54d as m
 HEADER=("Rapport des auditeurs independants sur la ventilation des "
         "depenses mixtes, competences locales et d'agglomeration. ")
 COMMON=["2024","1435","100","200","300","400","500","600","700"]
-VILLE=HEADER+" ".join(COMMON)+" Page 103"
-MAMH=HEADER+" ".join(COMMON)+" Page 163 reference reglement 42 tel 75. Date 2025"
+VILLE=HEADER+"; ".join(COMMON)+"; Page 103"
+MAMH=HEADER+"; ".join(COMMON)+"; Page 163; reference reglement 42; tel 75; Date 2025"
 def fake_capture(src):
     data=b"SYNTHESE_VILLE" if src=="ville" else b"SYNTHESE_MAMH"
     return data,{"source_id":src,"taille_octets":len(data),
