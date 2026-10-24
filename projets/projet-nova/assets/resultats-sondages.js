@@ -207,9 +207,17 @@
       list.append(li);
     });
   }
-  async function init() {
-    $('results-show-40').addEventListener('click',()=>{current='40';render()});
-    $('results-show-64').addEventListener('click',()=>{current='64';render()});
+  async function loadResults() {
+    const retry=$('results-retry');
+    retry.hidden=true;
+    retry.disabled=true;
+    // Effacer les anciens totaux AVANT toute nouvelle tentative.
+    catalog=null;
+    snapshot=null;
+    loadFailed=true;
+    $('results-question-list').replaceChildren();
+    $('results-state').textContent='Vérification de l’état des résultats publics…';
+    $('results-explainer').textContent='Contrôle des questions et du registre public en cours.';
     try {
       const [a,b,publicData]=await Promise.all([
         fetchJSON(CONFIG['40'].file),fetchJSON(CONFIG['64'].file),fetchJSON(SNAPSHOT)]);
@@ -217,12 +225,23 @@
           !validSnapshot(publicData)) throw Error('INVALID_PUBLICATION');
       catalog={'40':a,'64':b};
       snapshot=publicData;
+      loadFailed=false;
     } catch {
-      loadFailed = true;
-      catalog = null;
-      snapshot = null;
+      // Un retry échoué ne peut jamais conserver un bilan précédent en mémoire.
+      catalog=null;
+      snapshot=null;
+      loadFailed=true;
+    } finally {
+      render();
+      retry.hidden=!loadFailed;
+      retry.disabled=false;
     }
-    render();
+  }
+  function init() {
+    $('results-show-40').addEventListener('click',()=>{current='40';render()});
+    $('results-show-64').addEventListener('click',()=>{current='64';render()});
+    $('results-retry').addEventListener('click',()=>{void loadResults()});
+    void loadResults();
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
   else init();
