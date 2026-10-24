@@ -1,0 +1,84 @@
+name: Projet Nova P54J - Qualification des avis et des contradictions
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54j.yml"
+      - "scripts/qualifier_contradictions_avis_nova_p54j.py"
+      - "scripts/tests/test_qualifier_contradictions_avis_nova_p54j.py"
+      - "scripts/recevoir_mandats_et_avis_nova_p54i.py"
+      - "projets/projet-nova/etudes/P54J_*"
+      - "projets/projet-nova/etudes/P54I_REGISTRE_RECEPTION_AVIS_2024.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  qualification-davis-sans-certification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Dépendance PDF épinglée
+        run: python -m pip install pypdf==5.9.0
+      - name: Executer 67 tests avec pièces synthétiques uniquement
+        run: |
+          python -m py_compile scripts/qualifier_contradictions_avis_nova_p54j.py
+          python - <<'PY'
+          import unittest
+          tests=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_qualifier_contradictions_avis_nova_p54j.py")
+          assert tests.countTestCases()==67,tests.countTestCases()
+          r=unittest.TextTestRunner(verbosity=2).run(tests)
+          assert r.wasSuccessful()
+          PY
+      - name: Bilan neutre quatre dossiers, zéro authentification
+        run: |
+          python scripts/qualifier_contradictions_avis_nova_p54j.py --bilan p54j_bilan_neutre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p54j_bilan_neutre.json").read_text("utf-8"))
+          assert len(d["dossiers"])==4
+          assert d["situations"]=={"AUCUN_AVIS_LOCAL":4}
+          assert d["conclusions_locales_declares"]==0
+          assert d["avis_professionnels_authentifies"]==0
+          assert d["signatures_professionnelles_verifiees"]==0
+          assert d["dossiers_clos"]==0
+          assert d["controles_p54b_restants"]==96
+          assert d["controles_p54c_restants"]==8
+          assert d["economies_certifiees_cad"] is None
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Modèle privé jetable dans le runner
+        run: |
+          python scripts/qualifier_contradictions_avis_nova_p54j.py --modele-prive "$RUNNER_TEMP/p54j_prive.json"
+          python - <<'PY'
+          import os,json
+          from pathlib import Path
+          f=Path(os.environ["RUNNER_TEMP"])/"p54j_prive.json"
+          assert f.exists() and (f.stat().st_mode & 0o777)==0o600
+          assert json.loads(f.read_text("utf-8"))["conclusions"]==[]
+          f.unlink()
+          PY
+      - name: Refuser un GO artificiel
+        run: |
+          set +e
+          python scripts/qualifier_contradictions_avis_nova_p54j.py --exiger-go
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Ne publier que le bilan agrégé
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54j-conclusions-contradictoires-non-authentifiees
+          path: p54j_bilan_neutre.json
+          if-no-files-found: ignore
+          retention-days: 7
