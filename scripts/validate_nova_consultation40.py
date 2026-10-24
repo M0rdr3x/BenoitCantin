@@ -10,6 +10,7 @@ NOVA=ROOT/"projets/projet-nova"
 # SHA du blob Git approuvé : toute modification du corpus exige une revue et une nouvelle version.
 # Ceci détecte une dérive accidentelle, sans prétendre valoir signature cryptographique indépendante.
 APPROVED_MANIFEST_GIT_SHA = "97f0d3ad2b13be728356bba7a1831b91fd047070"
+APPROVED_MANIFEST_SHA256 = "5eece3aacaff678fd6f514d2ca5c4a158da9afb2dd3c5d6fb3c7849ac2cecfac"
 
 def manifest_git_sha(text):
     data = text.encode("utf-8")
@@ -32,6 +33,10 @@ def validate(text):
     issues=[]
     if manifest_git_sha(text["manifest"]) != APPROVED_MANIFEST_GIT_SHA:
         issues.append("Corpus Nova 40 modifié sans revue de version")
+    if hashlib.sha256(text["manifest"].encode("utf-8")).hexdigest() != APPROVED_MANIFEST_SHA256:
+        issues.append("Empreinte SHA-256 du corpus Nova 40 divergente")
+    if text["client"].count("const APPROVED_MANIFEST_SHA256 = '"+APPROVED_MANIFEST_SHA256+"';")!=1:
+        issues.append("Empreinte navigateur du questionnaire 40 absente ou incohérente")
     required={
         "page":["sondage-age","sondage-consent","sondage-start","sondage-submit",
                 'id="sondage-privacy-warning"', "Une fois une contribution agrégée",
@@ -50,7 +55,12 @@ def validate(text):
                   "function clearLocalDemo()", "window.addEventListener('pageshow'",
                   "if (!COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED) clearLocalDemo()",
                   "!COLLECTION_OPEN || !LIVE_OPINION_CONSENT_GRANTED",
-                  "La case d'accord de démonstration n'autorise PAS une collecte future."],
+                  "La case d'accord de démonstration n'autorise PAS une collecte future.",
+                  "crypto.subtle.digest('SHA-256', manifestBytes)",
+                  "r.arrayBuffer()", "actual !== APPROVED_MANIFEST_SHA256",
+                  "new TextDecoder('utf-8', {fatal:true})",
+                  "data.version !== '1.0.0'",
+                  "data.choices.join(',') !== 'pour,contre,sans_opinion'"],
         "sql":["enable row level security","revoke all on public.nova_consultation40_participants",
                "revoke all on public.nova_consultation40_aggregate_counts",
                "primary key (survey_version, participant_hash)",
@@ -140,6 +150,8 @@ def main():
             ("client","explicitConsent:LIVE_OPINION_CONSENT_GRANTED","explicitConsent:true"),
             ("client","textContent = item.text","innerHTML = item.text"),
             ("client","data.code === 'RECORDED'","true"),
+            ("client","crypto.subtle.digest('SHA-256', manifestBytes)","Promise.resolve(new ArrayBuffer(32))"),
+            ("client","actual !== APPROVED_MANIFEST_SHA256","false"),
             ("client","data.survey === SURVEY_ID","true"),
             ("sql","enable row level security","disable row level security"),
             ("sql","!= 40","!= 39"),

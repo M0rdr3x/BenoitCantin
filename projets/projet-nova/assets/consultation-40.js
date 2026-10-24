@@ -4,6 +4,9 @@
  */
 (() => {
   'use strict';
+  // Empreinte SHA-256 du questionnaire officiel figé 40 questions.
+  // Empêche un CDN/cache modifié d'afficher une autre formulation aux visiteurs.
+  const APPROVED_MANIFEST_SHA256 = '5eece3aacaff678fd6f514d2ca5c4a158da9afb2dd3c5d6fb3c7849ac2cecfac';
   // La case d'accord de démonstration n'autorise PAS une collecte future.
   // Avant toute activation : nouvel avis, nouveau consentement explicite et revue #675.
   const COLLECTION_OPEN = false;
@@ -209,9 +212,23 @@
       }
     });
     fetch('data/consultation-40-v1.json', { cache:'no-store', credentials:'omit' })
-      .then(r => { if (!r.ok) throw Error('HTTP'); return r.json(); })
+      .then(async r => {
+        if (!r.ok) throw Error('HTTP');
+        // La vérification est faite sur les octets bruts, AVANT JSON.parse.
+        // Le mode non sécurisé (crypto.subtle absent) doit échouer fermé.
+        if (!globalThis.crypto?.subtle) throw Error('NO_CRYPTO');
+        const manifestBytes = await r.arrayBuffer();
+        if (!manifestBytes.byteLength || manifestBytes.byteLength > 65536) throw Error('SIZE');
+        const hash = await crypto.subtle.digest('SHA-256', manifestBytes);
+        const actual = Array.from(new Uint8Array(hash),
+          value => value.toString(16).padStart(2, '0')).join('');
+        if (actual !== APPROVED_MANIFEST_SHA256) throw Error('MANIFEST_INTEGRITY');
+        return JSON.parse(new TextDecoder('utf-8', {fatal:true}).decode(manifestBytes));
+      })
       .then(data => {
-        if (data.id !== SURVEY_ID || data.minimumAge !== 18 ||
+        if (data.id !== SURVEY_ID || data.version !== '1.0.0' ||
+            data.type !== 'consultation_volontaire_non_representative' ||
+            data.minimumAge !== 18 ||
             !Array.isArray(data.questions) || data.questions.length!==40 ||
             data.collectionOpen !== false) throw Error('MANIFEST');
         const ids = new Set();
@@ -223,7 +240,7 @@
           ids.add(q.id);
         }
         if (!Array.isArray(data.choices) || data.choices.length !== 3 ||
-            !data.choices.every(value => allowed.has(value))) throw Error('CHOIX');
+            data.choices.join(',') !== 'pour,contre,sans_opinion') throw Error('CHOIX');
         questions = data.questions;
         refresh();
       }).catch(() => {

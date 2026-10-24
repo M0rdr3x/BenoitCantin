@@ -150,6 +150,30 @@ with sync_playwright() as p:
         check(page.locator("#sondage-start").is_disabled(),
               "rechargement : démarrage autorisé sans nouvelle attestation")
         check(not calls, "rechargement ou historique ont déclenché une transmission")
-        print(f"OK {BROWSER}: 40 questions 18+, historique, rechargement, révision, purge et collecte fermée")
+        # Modification malveillante d'une question centrale (le début/fin restent
+        # identiques) : refus complet avant le démarrage, même avec 18+ et accord.
+        compromised = browser.new_page(viewport={"width": 390, "height": 844},
+                                       locale="fr-CA")
+        compromised_posts = []
+        compromised.on("request", lambda req: compromised_posts.append(req.url)
+                       if req.method == "POST" else None)
+        def altered_questions(route):
+            import json
+            upstream = json.loads(route.fetch().body())
+            upstream["questions"][19]["text"] += " MODIFICATION NON APPROUVÉE"
+            route.fulfill(status=200, content_type="application/json",
+                          body=json.dumps(upstream, ensure_ascii=False))
+        compromised.route("**/consultation-40-v1.json", altered_questions)
+        compromised.goto(URL, wait_until="domcontentloaded", timeout=30000)
+        compromised.locator("#sondage-introduction [role=alert]").wait_for(
+            state="visible", timeout=15000)
+        compromised.locator("#sondage-age").check()
+        compromised.locator("#sondage-consent").check()
+        check(compromised.locator("#sondage-start").is_disabled(),
+              "Question centrale modifiée sans preuve SHA-256 approuvée")
+        check(not compromised_posts, "Question compromise transmise au serveur")
+        compromised.close()
+        print(f"OK {BROWSER}: 40 questions 18+, corpus SHA-256 intègre, "
+              "historique, rechargement, révision, purge et collecte fermée")
     finally:
         browser.close()
