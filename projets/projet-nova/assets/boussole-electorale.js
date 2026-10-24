@@ -3,11 +3,28 @@
 
   const DATA_URL = "data/boussole-electorale-v2.json";
   const APPROVED_COMPASS_SHA256 = "5d65a6067142fbba59a81edeaac49dc1befd82aa281c6e11e2f2509a1aee9109";
+  // Une connexion silencieusement bloquée doit aboutir à un bouton Réessayer,
+  // au lieu de maintenir indéfiniment l'interface sur « Chargement… ».
+  async function fetchLimitedBytes(url,maxBytes){
+    const controller=new AbortController();
+    const timeoutId=setTimeout(()=>controller.abort(),20000);
+    try{
+      const response=await fetch(url,{cache:"no-store",credentials:"omit",signal:controller.signal});
+      if(!response.ok) throw new Error("CORPUS_HTTP");
+      const declared=response.headers.get("content-length");
+      if(declared && (!/^[0-9]+$/.test(declared) || Number(declared)>maxBytes)){
+        throw new Error("CORPUS_SIZE");
+      }
+      const bytes=await response.arrayBuffer();
+      if(!bytes.byteLength || bytes.byteLength>maxBytes) throw new Error("CORPUS_SIZE");
+      return bytes;
+    }finally{
+      clearTimeout(timeoutId);
+    }
+  }
   async function fetchApprovedQuestionCorpus(){
-    const response=await fetch(DATA_URL,{cache:"no-store",credentials:"omit"});
-    if(!response.ok || !globalThis.crypto?.subtle) throw new Error("CORPUS_UNAVAILABLE");
-    const bytes=await response.arrayBuffer();
-    if(!bytes.byteLength || bytes.byteLength>65536) throw new Error("CORPUS_SIZE");
+    if(!globalThis.crypto?.subtle) throw new Error("CORPUS_UNAVAILABLE");
+    const bytes=await fetchLimitedBytes(DATA_URL,65536);
     const digest=await globalThis.crypto.subtle.digest("SHA-256",bytes);
     const actual=Array.from(new Uint8Array(digest),
       byte=>byte.toString(16).padStart(2,"0")).join("");
@@ -27,11 +44,8 @@
   async function fetchApprovedDocumentary(url){
     const approved=APPROVED_DOCUMENTARY_SHA256[url];
     if(!approved || !globalThis.crypto?.subtle) throw new Error("DOCUMENTARY_UNAVAILABLE");
-    const response=await fetch(url,{cache:"no-store",credentials:"omit"});
-    if(!response.ok) throw new Error("DOCUMENTARY_HTTP");
-    const bytes=await response.arrayBuffer();
     const maxBytes=url===EVIDENCE_DATA_URL ? 524288 : 65536;
-    if(!bytes.byteLength || bytes.byteLength>maxBytes) throw new Error("DOCUMENTARY_SIZE");
+    const bytes=await fetchLimitedBytes(url,maxBytes);
     const digest=await globalThis.crypto.subtle.digest("SHA-256",bytes);
     const observed=Array.from(new Uint8Array(digest),
       value=>value.toString(16).padStart(2,"0")).join("");

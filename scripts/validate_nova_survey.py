@@ -73,6 +73,13 @@ def check_text(payload: dict[str, str]) -> list[str]:
     if hashlib.sha256(payload["source"].encode("utf-8")).hexdigest() != APPROVED_COMPASS_SHA256:
         issues.append("Questionnaire Boussole modifié sans revue de version")
     demand("compass_client", "const APPROVED_DOCUMENTARY_SHA256 = Object.freeze({",
+           "fetchLimitedBytes(DATA_URL,65536)",
+           "fetchLimitedBytes(url,maxBytes)",
+           "signal:controller.signal",
+           "setTimeout(()=>controller.abort(),20000)",
+           "clearTimeout(timeoutId)",
+           "response.arrayBuffer()",
+           "Number(declared)>maxBytes",
            "fetchApprovedDocumentary(PARTY_DATA_URL)",
            "fetchApprovedDocumentary(PARTY_SOURCE_DATA_URL)",
            "fetchApprovedDocumentary(EVIDENCE_DATA_URL)",
@@ -204,6 +211,8 @@ def self_test() -> None:
         ("compass_client", 'globalThis.crypto.subtle.digest("SHA-256",bytes)', "Promise.resolve(new ArrayBuffer(32))"),
         ("compass_client", "actual!==APPROVED_COMPASS_SHA256", "false"),
         ("compass_client", "observed!==approved", "false"),
+        ("compass_client", "signal:controller.signal", "signal:undefined"),
+        ("compass_client", "clearTimeout(timeoutId)", "/* arrêt du délai perdu */"),
         ("compass_client", "fetchApprovedDocumentary(EVIDENCE_DATA_URL)", "Promise.resolve({})"),
         ("client", "if (!LIVE_OPINION_CONSENT_GRANTED) throw new Error('LIVE_CONSENT_REQUIRED')", "if (false) throw new Error('LIVE_CONSENT_REQUIRED')"),
         ("client", "selections.clear()", "/* purge neutralisée */"),
