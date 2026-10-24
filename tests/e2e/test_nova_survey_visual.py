@@ -199,6 +199,23 @@ def main():
             page.set_viewport_size({"width": 1440, "height": 900})
             require(page.evaluate("document.documentElement.scrollWidth <= innerWidth + 2"),
                     "Débordement horizontal sur ordinateur")
+            # Test négatif réel : le manifeste 64 conserve 64 questions et un
+            # JSON valide, mais sa première formulation est modifiée en transit.
+            # L'empreinte SHA-256 doit bloquer le parcours avant toute saisie.
+            tampered = browser.new_page(locale="fr-CA")
+            def modified_survey(route):
+                import json
+                corpus = json.loads(route.fetch().body())
+                corpus["questions"][0]["text"] += " (texte non approuvé)"
+                route.fulfill(status=200, content_type="application/json",
+                              body=json.dumps(corpus, ensure_ascii=False))
+            tampered.route("**/sondage-questions-v1.json", modified_survey)
+            tampered.goto(URL, wait_until="domcontentloaded", timeout=30_000)
+            tampered.locator("#sondage-introduction [role='alert']").wait_for(
+                state="visible", timeout=10_000)
+            require(tampered.locator("#sondage-start").is_disabled(),
+                    "Sondage 64 démarrable malgré un manifeste falsifié")
+            tampered.close()
             # Un cache/CDN désynchronisé entre le sondage et sa source 64
             # doit bloquer le démarrage, pas poser une question altérée.
             altered = browser.new_page(locale="fr-CA")
