@@ -43,6 +43,15 @@ jobs:
           git rev-parse --verify 'refs/remotes/origin/main^{commit}'
           git rev-parse --verify 'refs/remotes/origin/a1/web-release-transparency^{commit}'
 
+      - name: Tester la classification conservatrice et la 404 Nova
+        run: python3 scripts/audit_release_conflict_categories.py --self-test
+
+      - name: Distinguer les divergences de version des vrais écarts de contenu
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/audit_release_conflict_categories.py --audit
+
       - name: Calculer les divergences et les conflits du moteur Git
         shell: bash
         run: |
