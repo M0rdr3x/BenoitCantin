@@ -159,6 +159,8 @@ def self_test() -> None:
         ("client", "$('sondage-age').checked", "true"),
         ("client", "$('sondage-consent').checked", "true"),
         ("client", "client.auth.getUser()", "null"),
+        ("client", "data.code !== 'RECORDED'", "false"),
+        ("client", "data.survey !== SURVEY_ID", "false"),
         ("client", "explicitConsent: LIVE_OPINION_CONSENT_GRANTED", "explicitConsent: true"),
         ("page", 'id="sondage-submit" type="button" disabled',
          'id="sondage-submit" type="button"'),
@@ -183,7 +185,7 @@ def self_test() -> None:
     obj = json.loads(payload["manifest"])
     obj["minimumAge"] = 16
     assert check_questions(json.dumps(obj), payload["source"])
-    print("OK sondage Nova : 17 mutations de consentement, âge, droits et corpus refusées")
+    print(f"OK sondage Nova : {len(mutations)} mutations de consentement, réception, âge, droits et corpus refusées")
 
 
 if __name__ == "__main__":
