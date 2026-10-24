@@ -511,6 +511,9 @@ def validate_service_worker_privacy(sw_text: str) -> list[str]:
         "const sensitiveHeaders=",
         "const unknownJSON=",
         "const sensitiveRuntimePath=sensitiveSegments||sensitiveQuery||sensitiveHeaders||unknownJSON;",
+        "const liveAsset=",
+        "u.pathname==='/projets/projet-nova/script.js'",
+        "u.pathname==='/projets/projet-nova/styles.css'",
         "if(sensitiveRuntimePath){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}",
         "if(cacheableResponse(resp)){const cp=resp.clone();",
         "if(cacheableResponse(resp))caches.open(CACHE)",
@@ -552,6 +555,12 @@ def self_test_service_worker_privacy(sw_text: str) -> None:
         'réponses sensibles sans no-store': sw_text.replace(
             "if(sensitiveRuntimePath){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}",
             "if(sensitiveRuntimePath){e.respondWith(fetch(r));return}", 1
+        ),
+        'script Nova mis en cache prioritaire': sw_text.replace(
+            "u.pathname==='/projets/projet-nova/script.js'", "false", 1
+        ),
+        'CSS Nova mis en cache prioritaire': sw_text.replace(
+            "u.pathname==='/projets/projet-nova/styles.css'", "false", 1
         ),
         'documents recachables': sw_text.replace("u.pathname.indexOf('/documents/')===-1", "true", 1),
     }
