@@ -4,6 +4,31 @@
  */
 (() => {
   'use strict';
+  // Appliquer la borne avant d'allouer le JSON complet; SHA-256 reste sur les octets exacts.
+  async function readBoundedManifest(response,controller){
+    const declared=response.headers.get('content-length');
+    if(declared!==null && (!/^[0-9]+$/.test(declared) || Number(declared)>65536)) throw Error('SIZE');
+    if(!response.body?.getReader) throw Error('STREAM');
+    const reader=response.body.getReader();
+    const chunks=[];
+    let total=0;
+    try{
+      for(;;){
+        const {done,value}=await reader.read();
+        if(done) break;
+        if(!ArrayBuffer.isView(value)||value.BYTES_PER_ELEMENT!==1) throw Error('STREAM');
+        total+=value.byteLength;
+        if(total>65536){controller.abort();throw Error('SIZE');}
+        chunks.push(value);
+      }
+    }finally{reader.releaseLock();}
+    if(!total) throw Error('SIZE');
+    const result=new Uint8Array(total);
+    let offset=0;
+    for(const part of chunks){result.set(part,offset);offset+=part.byteLength;}
+    return result.buffer;
+  }
+
   const SURVEY_ID = 'nova-consultation-64-v1';
   // Empreinte approuvée des octets du questionnaire 64 questions (UTF-8).
   // Un JSON modifié dans un cache/CDN est refusé avant tout affichage.
@@ -296,10 +321,9 @@
       // Aucune tolérance silencieuse si Web Crypto n'est pas disponible.
       if (!globalThis.crypto?.subtle) throw new Error('NO_CRYPTO');
       const [manifestBytes,compassBytes] = await Promise.all([
-        response.arrayBuffer(),compassResponse.arrayBuffer()
+        readBoundedManifest(response,controller),
+        readBoundedManifest(compassResponse,controller)
       ]);
-      if(!manifestBytes.byteLength || manifestBytes.byteLength > 65536 ||
-         !compassBytes.byteLength || compassBytes.byteLength>65536) throw new Error('SIZE');
       const [digest,compassDigest]=await Promise.all([
         globalThis.crypto.subtle.digest('SHA-256', manifestBytes),
         globalThis.crypto.subtle.digest('SHA-256',compassBytes)

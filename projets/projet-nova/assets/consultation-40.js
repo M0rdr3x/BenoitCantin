@@ -4,6 +4,31 @@
  */
 (() => {
   'use strict';
+  // Appliquer la borne avant d'allouer le JSON complet; SHA-256 reste sur les octets exacts.
+  async function readBoundedManifest(response,controller){
+    const declared=response.headers.get('content-length');
+    if(declared!==null && (!/^[0-9]+$/.test(declared) || Number(declared)>65536)) throw Error('SIZE');
+    if(!response.body?.getReader) throw Error('STREAM');
+    const reader=response.body.getReader();
+    const chunks=[];
+    let total=0;
+    try{
+      for(;;){
+        const {done,value}=await reader.read();
+        if(done) break;
+        if(!ArrayBuffer.isView(value)||value.BYTES_PER_ELEMENT!==1) throw Error('STREAM');
+        total+=value.byteLength;
+        if(total>65536){controller.abort();throw Error('SIZE');}
+        chunks.push(value);
+      }
+    }finally{reader.releaseLock();}
+    if(!total) throw Error('SIZE');
+    const result=new Uint8Array(total);
+    let offset=0;
+    for(const part of chunks){result.set(part,offset);offset+=part.byteLength;}
+    return result.buffer;
+  }
+
   // Empreinte SHA-256 du questionnaire officiel figé 40 questions.
   // Empêche un CDN/cache modifié d'afficher une autre formulation aux visiteurs.
   const APPROVED_MANIFEST_SHA256 = '5eece3aacaff678fd6f514d2ca5c4a158da9afb2dd3c5d6fb3c7849ac2cecfac';
@@ -227,8 +252,7 @@
         // La vérification est faite sur les octets bruts, AVANT JSON.parse.
         // Le mode non sécurisé (crypto.subtle absent) doit échouer fermé.
         if (!globalThis.crypto?.subtle) throw Error('NO_CRYPTO');
-        const manifestBytes = await r.arrayBuffer();
-        if (!manifestBytes.byteLength || manifestBytes.byteLength > 65536) throw Error('SIZE');
+        const manifestBytes = await readBoundedManifest(r,controller);
         const hash = await crypto.subtle.digest('SHA-256', manifestBytes);
         const actual = Array.from(new Uint8Array(hash),
           value => value.toString(16).padStart(2, '0')).join('');
