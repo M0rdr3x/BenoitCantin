@@ -54,6 +54,7 @@ def check_text(payload: dict[str, str]) -> list[str]:
            "validManifest(manifest)", "question.id",
            "value !== 'skip'", "const answers = Object.create(null)",
            "client.auth.getUser()", "client.functions.invoke('nova-survey-submit'",
+            "data.code !== 'RECORDED'", "data.survey !== SURVEY_ID",
            "if (!COLLECTION_OPEN || !LIVE_OPINION_CONSENT_GRANTED || recorded || submitting || !eligible()) return",
            "if (!LIVE_OPINION_CONSENT_GRANTED) throw new Error('LIVE_CONSENT_REQUIRED')",
            "if (recorded) return", "text.textContent = label",
