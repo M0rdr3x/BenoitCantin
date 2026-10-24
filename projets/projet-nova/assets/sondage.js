@@ -5,6 +5,9 @@
 (() => {
   'use strict';
   const SURVEY_ID = 'nova-consultation-64-v1';
+  // Empreinte approuvée des octets du questionnaire 64 questions (UTF-8).
+  // Un JSON modifié dans un cache/CDN est refusé avant tout affichage.
+  const APPROVED_MANIFEST_SHA256 = '67df5052a3a09f23ecfa43e2882dcf7a0b6f1a85f1aad4e2f4159aab06570738';
   // L'activation nécessite une décision distincte de confidentialité,
   // la migration SQL, l'Edge Function et une validation HTTPS de bout en bout.
   // L'accord de démonstration ne vaut PAS consentement à la collecte d'opinions.
@@ -280,7 +283,15 @@
         fetch('data/boussole-electorale-v2.json', { cache: 'no-store', credentials: 'omit' }),
       ]);
       if (!response.ok || !compassResponse.ok) throw new Error('HTTP');
-      const [manifest, compass] = await Promise.all([response.json(), compassResponse.json()]);
+      // Même exigence d'intégrité que la consultation de 40 questions.
+      // Aucune tolérance silencieuse si Web Crypto n'est pas disponible.
+      if (!globalThis.crypto?.subtle) throw new Error('NO_CRYPTO');
+      const [manifestBytes, compass] = await Promise.all([response.arrayBuffer(), compassResponse.json()]);
+      if (!manifestBytes.byteLength || manifestBytes.byteLength > 65536) throw new Error('SIZE');
+      const digest = await globalThis.crypto.subtle.digest('SHA-256', manifestBytes);
+      const observed = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+      if (observed !== APPROVED_MANIFEST_SHA256) throw new Error('MANIFEST_INTEGRITY');
+      const manifest = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(manifestBytes));
       if (!validManifest(manifest) || !sameSourceQuestions(manifest,compass)) throw new Error('CONTRACT');
       questions = manifest.questions;
       refreshStart();
