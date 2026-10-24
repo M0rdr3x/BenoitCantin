@@ -1,0 +1,66 @@
+name: Projet Nova P54A - Verifier resultat public de rapprochement
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54a-results.yml"
+      - "scripts/verifier_resultats_observes_nova_p54a.py"
+      - "scripts/tests/test_verifier_resultats_observes_nova_p54a.py"
+      - "scripts/analyser_ecarts_publications_nova_p54a.py"
+      - "scripts/acquerir_publications_nova_p53z.py"
+      - "projets/projet-nova/etudes/P54A_*"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  observed-results-are-not-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout sans credential durable
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Parser PDF requis pour chaine de scripts
+        run: python -m pip install pypdf==5.9.0
+      - name: 30 tests P54A de provenance de resultats
+        run: |
+          python -m py_compile scripts/verifier_resultats_observes_nova_p54a.py
+          python - <<'PY'
+          import unittest
+          s=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_verifier_resultats_observes_nova_p54a.py")
+          assert s.countTestCases()==30,s.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(s)
+          assert result.wasSuccessful()
+          PY
+      - name: Bilan inchangeable sans conclure a economie
+        run: |
+          python scripts/verifier_resultats_observes_nova_p54a.py --bilan p54a_resultats_verifies.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p54a_resultats_verifies.json").read_text("utf-8"))
+          assert r["candidats_affiches"]==12
+          assert r["captures_reréussies"]==2
+          assert r["empreintes_stables_sur_deux_runs"] is True
+          assert r["economies_certifiees_cad"] is None
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+          set +e
+          python scripts/verifier_resultats_observes_nova_p54a.py --exiger-comparabilite-comptable
+          status=$?
+          set -e
+          test "$status" -eq 3
+      - name: Publier la synthese uniquement
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54a-verification-candidats-sans-gain
+          path: p54a_resultats_verifies.json
+          if-no-files-found: ignore
+          retention-days: 7
