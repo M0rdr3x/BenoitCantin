@@ -5,6 +5,12 @@
   'use strict';
   const ROOT = 'data/';
   const SNAPSHOT = ROOT + 'resultats-sondages-publics-v1.json';
+  // Les formulations publiques doivent correspondre aux questionnaires approuvés.
+  // Les chiffres futurs seraient trompeurs avec une question modifiée en cache/CDN.
+  const APPROVED_MANIFEST_SHA256 = Object.freeze({
+    'data/consultation-40-v1.json': '5eece3aacaff678fd6f514d2ca5c4a158da9afb2dd3c5d6fb3c7849ac2cecfac',
+    'data/sondage-questions-v1.json': '67df5052a3a09f23ecfa43e2882dcf7a0b6f1a85f1aad4e2f4159aab06570738'
+  });
   // Double verrou indépendant du JSON public : avant approbation humaine #675,
   // même un fichier externe portant deux drapeaux "approved" ne publie rien.
   // L'activation demande une révision explicite de ce code ET du garde CI.
@@ -114,7 +120,15 @@
   async function fetchJSON(path) {
     const response=await fetch(path,{cache:'no-store',credentials:'omit'});
     if (!response.ok) throw Error('UNAVAILABLE');
-    return response.json();
+    const approvedDigest=APPROVED_MANIFEST_SHA256[path];
+    if (!approvedDigest) return response.json();
+    if (!globalThis.crypto?.subtle) throw Error('NO_CRYPTO');
+    const bytes=await response.arrayBuffer();
+    if (!bytes.byteLength || bytes.byteLength > 65536) throw Error('MANIFEST_SIZE');
+    const hash=await globalThis.crypto.subtle.digest('SHA-256',bytes);
+    const observed=Array.from(new Uint8Array(hash),n=>n.toString(16).padStart(2,'0')).join('');
+    if (observed !== approvedDigest) throw Error('MANIFEST_INTEGRITY');
+    return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
   }
   function element(tag, className, value) {
     const item=document.createElement(tag);
