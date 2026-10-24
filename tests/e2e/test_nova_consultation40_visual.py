@@ -23,10 +23,19 @@ with sync_playwright() as p:
               "accueil Projet Nova inaccessible")
         check(page.locator("#consultations").is_visible(),
               "annuaire des consultations invisible depuis l'accueil")
-        icons = page.locator(".nova-survey-directory-icon-link img")
+        icons = page.locator(
+            '.nova-survey-directory-icon-link img[src="assets/nova-sondage-icone.webp"]'
+        )
         check(icons.count() == 2, "Icônes des deux cartes de sondage absentes")
         for icon in icons.all():
             expect(icon).to_have_js_property("naturalWidth", 256, timeout=15000)
+        compass_icon = page.locator(
+            '.nova-survey-directory-card-compass img[src="../../assets/media/nova-boussole-electorale-v2.webp"]'
+        )
+        check(compass_icon.count() == 1, "Visuel officiel de la Boussole absent")
+        compass_icon.scroll_into_view_if_needed()
+        check(compass_icon.evaluate("(img) => img.complete && img.naturalWidth > 0"),
+              "Visuel Boussole non décodé")
         check(page.locator(".nova-survey-directory-icon-link").first.get_attribute("href") == "consultation-40.html",
               "L'icône du sondage référendaire ne donne pas accès aux 40 questions")
         check(page.locator(".nova-survey-directory-icon-link").nth(1).get_attribute("href") == "sondage.html",
@@ -35,6 +44,9 @@ with sync_playwright() as p:
               "lien 40 questions incorrect")
         check(page.locator("#nova-survey-directory-64").get_attribute("href") == "sondage.html",
               "lien 64 propositions incorrect")
+        check(page.locator("#nova-survey-directory-compass").get_attribute("href") ==
+              "boussole-electorale.html",
+              "lien de la Boussole incorrect")
         check("collecte fermée" in page.locator("#consultations").inner_text().lower(),
               "état réel de la collecte non affiché")
         check(page.locator("#nova-public-results-link").is_visible(),
