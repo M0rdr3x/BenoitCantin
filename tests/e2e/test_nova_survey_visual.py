@@ -2,6 +2,7 @@
 """Parcours réel 18+ Projet Nova, Chromium/Firefox/WebKit, aucun envoi live."""
 import os
 from playwright.sync_api import sync_playwright
+from nova_network_stall_helpers import check_stalled_fetch
 
 BROWSER = os.environ.get("BROWSER", "chromium")
 URL = "http://127.0.0.1:4173/projets/projet-nova/sondage.html"
@@ -105,6 +106,13 @@ def main():
                     "Débordement mobile sur les résultats anonymisés")
             require(result_posts == [], "Le registre public a envoyé une opinion")
             results.close()
+            # Contrats navigateur : une source figée est interrompue, et
+            # aucun chiffre fictif ni démarrage de sondage n'est possible.
+            check_stalled_fetch(browser,
+                "http://127.0.0.1:4173/projets/projet-nova/resultats-sondages.html",
+                "resultats-sondages-publics-v1.json", "results", "Registre public bloqué")
+            check_stalled_fetch(browser, URL,
+                "sondage-questions-v1.json", "survey", "Questionnaire 64 bloqué")
             entry.close()
             response = page.goto(URL, wait_until="domcontentloaded", timeout=30_000)
             require(response is not None and response.status in (200, 304),
