@@ -238,5 +238,11 @@ jobs:
       - name: Tester la classification des conflits et la 404 Projet Nova
         run: python3 scripts/audit_release_conflict_categories.py --self-test
 
+      - name: Bloquer les anciens formulaires politiques et les confirmations trompeuses
+        run: python3 scripts/validate_nova_form_decommission.py
+
+      - name: Vérifier les scénarios de régression des canaux Projet Nova
+        run: python3 scripts/test_nova_form_decommission.py
+
       - name: Vérifier les fichiers, routes et liens de l’ensemble du site
         run: python3 scripts/validate_site.py
