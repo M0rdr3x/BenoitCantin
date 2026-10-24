@@ -216,7 +216,12 @@
         $('sondage-submit').disabled = recorded || !COLLECTION_OPEN || !LIVE_OPINION_CONSENT_GRANTED || !eligible();
       }
     });
-    fetch('data/consultation-40-v1.json', { cache:'no-store', credentials:'omit' })
+    // Une connexion qui ne répond jamais doit revenir à un état bloqué lisible.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    fetch('data/consultation-40-v1.json', {
+      cache:'no-store', credentials:'omit', signal:controller.signal
+    })
       .then(async r => {
         if (!r.ok) throw Error('HTTP');
         // La vérification est faite sur les octets bruts, AVANT JSON.parse.
@@ -254,7 +259,7 @@
         message.setAttribute('role', 'alert');
         message.textContent = 'Questions indisponibles : le sondage ne peut pas démarrer.';
         $('sondage-introduction').append(message);
-      });
+      }).finally(() => clearTimeout(timeoutId));
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
