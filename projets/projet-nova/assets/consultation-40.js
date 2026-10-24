@@ -188,7 +188,7 @@
           return;
         }
         const { data, error } = await client.functions.invoke('nova-consultation40-submit', { body:payload });
-        if (data?.ok === true && data.code === 'RECORDED') {
+        if (!error && data?.ok === true && data.code === 'RECORDED' && data.survey === SURVEY_ID) {
           recorded = true;
           $('sondage-submit-status').textContent = 'Participation enregistrée. Merci.';
         } else {
