@@ -516,6 +516,10 @@ def validate_service_worker_privacy(sw_text: str) -> list[str]:
         "if(!verifiedPublicPrecacheResponse(request,response))return;",
         "return cache.put(request,response);",
         "fetch(request).then(response=>{",
+        "const CACHE_PREFIX='benoitcantin-';",
+        "Promise.allSettled(PUBLIC_PRECACHE_REQUESTS.map(request=>",
+        "caches.delete(CACHE).then(()=>{throw error;})",
+        "keys.filter(k=>k.startsWith(CACHE_PREFIX)&&k!==CACHE)",
         "resp.status===200",
         "!resp.redirected",
         "actual.origin===location.origin",
@@ -598,6 +602,18 @@ def self_test_service_worker_privacy(sw_text: str) -> None:
         ),
         'précache avec cookies': sw_text.replace(
             "credentials:'omit'", "credentials:'same-origin'", 1
+        ),
+        'effacement des caches étrangers': sw_text.replace(
+            "keys.filter(k=>k.startsWith(CACHE_PREFIX)&&k!==CACHE)",
+            "keys.filter(k=>k!==CACHE)", 1
+        ),
+        'échec install non nettoyé': sw_text.replace(
+            "caches.delete(CACHE).then(()=>{throw error;})",
+            "Promise.reject(error)", 1
+        ),
+        'échec partiel non attendu': sw_text.replace(
+            "Promise.allSettled(PUBLIC_PRECACHE_REQUESTS.map(request=>",
+            "Promise.all(PUBLIC_PRECACHE_REQUESTS.map(request=>", 1
         ),
         'réponse privée enregistrée à installation': sw_text.replace(
             "if(!verifiedPublicPrecacheResponse(request,response))return;",

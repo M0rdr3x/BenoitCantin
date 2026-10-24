@@ -5,19 +5,20 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 
 const worker=readFileSync('sw.js','utf8');
-assert.match(worker,/public-13-verified-install/);
+assert.match(worker,/public-14-owned-lifecycle/);
 assert.ok(worker.includes("'/projets/projet-nova/script.js'"));
 assert.ok(worker.includes("'/projets/projet-nova/styles.css'"));
 
-function testHarness({installCC='public, max-age=300',installVary='',installRedirected=false,installStatus=200,installResponsePath=''}={}) {
+function testHarness({installCC='public, max-age=300',installVary='',installRedirected=false,installStatus=200,installResponsePath='',installOffline=false}={}) {
   const listeners=new Map();
-  const requests=[], stored=[], lookups=[];
+  const requests=[], stored=[], lookups=[], deleted=[];
+  let skipWaitingCount=0,claimCount=0;
   let cacheControl=installCC;
   let varyHeader=installVary;
   let redirected=installRedirected;
   let status=installStatus;
   let responseUrl=installResponsePath?new URL(installResponsePath,'https://www.benoitcantin.com').href:'';
-  let networkOffline=false;
+  let networkOffline=installOffline;
   let storedFallbackPath=null;
   const response=()=>({
     ok:status>=200&&status<300,
@@ -32,12 +33,18 @@ function testHarness({installCC='public, max-age=300',installVary='',installRedi
   const caches={
     open(){return Promise.resolve(cache);},
     match(request){const key=typeof request==='string'?request:request.url;lookups.push(key);return Promise.resolve(key===storedFallbackPath?response():undefined);},
-    keys(){return Promise.resolve([]);},
-    delete(){return Promise.resolve(true);},
+    keys(){return Promise.resolve([
+      'benoitcantin-v24-4-95-public-14-owned-lifecycle',
+      'benoitcantin-v24-4-95-public-13-verified-install',
+      'benoitcantin-old-release',
+      'sinjira-account-private-cache',
+      'other-project-cache',
+    ]);},
+    delete(key){deleted.push(key);return Promise.resolve(true);},
   };
   const self={
     addEventListener(name,handler){listeners.set(name,handler);},
-    skipWaiting(){},clients:{claim(){return Promise.resolve();}},
+    skipWaiting(){skipWaitingCount++;},clients:{claim(){claimCount++;return Promise.resolve();}},
   };
   class Request {
     constructor(original,settings={}) {
@@ -54,10 +61,18 @@ function testHarness({installCC='public, max-age=300',installVary='',installRedi
   const handler=listeners.get('fetch');
   assert.equal(typeof handler,'function');
   return {
-    async verifyInstall({expectedCache=true}={}) {
+    async verifyInstall({expectedCache=true,expectFailure=false}={}) {
       let pending;
       listeners.get('install')({waitUntil(p){pending=p;}});
+      if(expectFailure) {
+        await assert.rejects(pending,/offline/,'Une installation réseau incomplète doit échouer');
+        assert.ok(deleted.includes('benoitcantin-v24-4-95-public-14-owned-lifecycle'),
+          'Le cache partiel de cette installation doit être nettoyé');
+        assert.equal(skipWaitingCount,0,'Un worker incomplet ne doit pas devenir actif');
+        return;
+      }
       await pending;
+      assert.equal(skipWaitingCount,1,'Seule une installation valide peut activer le nouveau worker');
       assert.ok(requests.length>=60,'Les chemins publics doivent être téléchargés anonymement');
       assert.equal(stored.length,expectedCache?requests.length:0,
         'Seules les réponses publiques validées peuvent entrer dans le précache');
@@ -68,6 +83,16 @@ function testHarness({installCC='public, max-age=300',installVary='',installRedi
         assert.ok(!/\/(?:compte|admin|Admin|app|supabase|histoire-de-vie)\//.test(request.url),
           'Aucun espace privé admis dans le précache');
       }
+    },
+    async verifyActivate() {
+      let pending;
+      listeners.get('activate')({waitUntil(p){pending=p;}});
+      await pending;
+      assert.equal(claimCount,1,'Le nouveau worker doit prendre le contrôle après nettoyage');
+      assert.deepEqual(deleted.sort(),[
+        'benoitcantin-old-release',
+        'benoitcantin-v24-4-95-public-13-verified-install',
+      ].sort(),'Ne supprimer que les anciennes versions du cache BenoitCantin');
     },
     async run(path,{authorization='',key='',cc='public, max-age=300',vary='',destination='',offline=false,cachedPath=null,redirectedResponse=false,responseStatus=200,responsePath=''}={}) {
       cacheControl=cc;
@@ -96,6 +121,8 @@ function testHarness({installCC='public, max-age=300',installVary='',installRedi
 
 const h=testHarness();
 await h.verifyInstall();
+await h.verifyActivate();
+await testHarness({installOffline:true}).verifyInstall({expectFailure:true});
 for(const scenario of [
   {installCC:'private, max-age=300'},
   {installCC:'no-store'},
