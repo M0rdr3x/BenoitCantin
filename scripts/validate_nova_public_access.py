@@ -15,10 +15,19 @@ RESOURCES=("projets/projet-nova/resultats-sondages.html",
            "projets/projet-nova/assets/resultats-sondages.js",
            "projets/projet-nova/data/resultats-sondages-publics-v1.json",
            "projets/projet-nova/consultation-40.html",
+           "projets/projet-nova/assets/consultation-40.js",
+           "projets/projet-nova/data/consultation-40-v1.json",
            "projets/projet-nova/sondage.html",
+           "projets/projet-nova/assets/sondage.js",
+           "projets/projet-nova/assets/sondage.css",
+           "projets/projet-nova/data/sondage-questions-v1.json",
            "projets/projet-nova/boussole-electorale.html",
            "projets/projet-nova/assets/boussole-electorale.js",
+           "projets/projet-nova/assets/boussole-electorale.css",
            "projets/projet-nova/data/boussole-electorale-v2.json",
+           "projets/projet-nova/data/boussole-partis-2026.json",
+           "projets/projet-nova/data/boussole-sources-partis-2026.json",
+           "projets/projet-nova/data/boussole-preuves-2026.json",
            "assets/media/nova-boussole-electorale-v2.webp",
            "projets/projet-nova/assets/nova-sondage-icone.webp")
 ICON="/projets/projet-nova/assets/nova-sondage-icone.webp"
@@ -138,7 +147,7 @@ def self_test():
             dest=built/p;content=dest.read_bytes();dest.unlink()
             assert audit(ROOT,built),p
             dest.write_bytes(content)
-    print("OK : navigation 40/64/Boussole, mutations de liens/icônes et pertes d’artefacts rejetées")
+    print(f"OK : navigation 40/64/Boussole, mutations et pertes des {len(RESOURCES)} ressources essentielles rejetées")
 
 def main():
     parser=argparse.ArgumentParser()
@@ -150,6 +159,6 @@ def main():
     errors=audit(args.source,args.built)
     for err in errors:print("ECHEC : "+err)
     if errors:return 1
-    print("OK : accès Nova 40/64 et Boussole, ressources et icônes validés sur les deux portails")
+    print(f"OK : accès Nova 40/64 et Boussole, {len(RESOURCES)} ressources intégrales source/build validées sur les deux portails")
     return 0
 if __name__=="__main__":raise SystemExit(main())
