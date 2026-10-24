@@ -133,6 +133,18 @@ with sync_playwright() as p:
               "opinion personnelle encore présente après effacement")
         check(not calls, "un envoi politique s'est déclenché en aperçu")
         page.locator("input[value=pour]").check()
+        # Page quittée : supprimer aussitôt la saisie et le consentement
+        # sans compter seulement sur pageshow après un retour d'historique.
+        page.evaluate("window.dispatchEvent(new Event('pagehide'))")
+        check(page.locator("#sondage-introduction").is_visible() and
+              page.locator("#sondage-questionnaire").is_hidden(),
+              "pagehide : questionnaire privé encore visible")
+        check(not page.locator("#sondage-age").is_checked() and
+              not page.locator("#sondage-consent").is_checked() and
+              page.locator("#sondage-choices input").count() == 0,
+              "pagehide : âge, consentement ou opinions conservés")
+        check(page.locator("#sondage-start").is_disabled(),
+              "pagehide : démarrage sans nouvel accord")
         page.goto("http://127.0.0.1:4173/projets/projet-nova/", wait_until="domcontentloaded")
         page.go_back(wait_until="domcontentloaded")
         check(page.locator("#sondage-introduction").is_visible(),
