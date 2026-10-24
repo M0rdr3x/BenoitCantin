@@ -154,8 +154,8 @@ def validate_private(doc,location,cfg):
           "signature_avis_authentifiee","independance_verifiee",
           "montant_financier_certifie")),
           "AUTHENTICITE_OU_CERTIFICATION_FICTIVE")
-        if not docs:state="FICHIER_LOCAL_NON_RECU"
-        elif rec["reserve_declaree"]=="SUSPENSION_EXPLICITE":state="SUSPENDU"
+        if rec["reserve_declaree"]=="SUSPENSION_EXPLICITE":state="SUSPENDU"
+        elif not docs:state="FICHIER_LOCAL_NON_RECU"
         elif rec["reserve_declaree"]!="AUCUNE_DECLAREE_NON_VERIFIEE":
             state="RESERVE_OUVERTE"
         else:state="FICHIER_LOCAL_INTEGRE_NON_AUTHENTIFIE"
