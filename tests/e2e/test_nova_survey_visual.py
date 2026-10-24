@@ -255,7 +255,7 @@ def main():
             """), "La navigation conserve un profil sensible dans la page")
             require(compass_posts == [], "La Boussole a transmis des réponses politiques")
             compass_context.close()
-            print(f"OK {BROWSER}: Nova 18+, consentement, 64 questions, 
+            print(f"OK {BROWSER}: Nova 18+, consentement, 64 questions, "
                   "relecture, aucun POST et collecte désactivée")
         finally:
             browser.close()
