@@ -418,14 +418,12 @@
     if(summary) summary.textContent = "";
     const recipient = $("#compass-email-recipient");
     if(recipient) recipient.value = "";
-    for(const [id,href] of [
-      ["compass-share-email","mailto:"],
-      ["compass-share-facebook","https://www.facebook.com/sharer/sharer.php"],
-      ["compass-share-x","https://x.com/intent/post"],
-      ["compass-share-linkedin","https://www.linkedin.com/sharing/share-offsite/"]
-    ]){
+    const email = $("#compass-share-email");
+    if(email) email.setAttribute("href","mailto:");
+    // Réutiliser les bases déjà déclarées dans le HTML approuvé.
+    for(const id of ["compass-share-facebook","compass-share-x","compass-share-linkedin"]){
       const link = $("#"+id);
-      if(link) link.setAttribute("href",href);
+      if(link) link.setAttribute("href",(link.getAttribute("href") || "").split("?")[0]);
     }
     $("#compass-results").hidden = true;
     $("#compass-stepper").hidden = true;
@@ -759,8 +757,8 @@
   }
 
   function safeDocumentSource(raw){
-    if(typeof raw !== "string" || raw.length > 2048 || !raw.startsWith("https://") ||
-       /[\\u0000-\\u001f\\u007f\\s]/.test(raw)) return false;
+    if(typeof raw !== "string" || raw.length > 2048 ||
+       /[\u0000-\u001f\u007f\s]/.test(raw)) return false;
     try{
       const uri = new URL(raw);
       return uri.protocol === "https:" && !!uri.hostname && !uri.username &&
