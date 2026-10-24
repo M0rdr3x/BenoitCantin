@@ -128,6 +128,9 @@ def main():
                 wait_until="domcontentloaded", timeout=30_000)
             retry = temporary.locator("#results-retry")
             retry.wait_for(state="visible", timeout=15_000)
+            require(temporary.evaluate(
+                "document.documentElement.scrollWidth <= innerWidth + 2"),
+                "Le bouton Réessayer déborde de l'écran mobile")
             require("indisponibles ou non validées" in
                     temporary.locator("#results-state").inner_text(),
                     "Registre en panne : état de vérification trompeur")
