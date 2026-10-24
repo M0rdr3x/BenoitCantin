@@ -233,7 +233,8 @@ def public_report(cfg,observed=None,validated=None,scope_by_mandate=None):
       "schema_version":"P54J-BILAN-1",
       "exercice":2024,"source_p54d_run":40120462237,
       "dossiers":cases,"situations":count,
-      "conclusions_locales_declares":len(observed or {}),
+      "conclusions_locales_declares":sum(1 for v in (observed or {}).values()
+          if v["conclusion_declaree"]!="AUCUNE_CONCLUSION"),
       "avis_professionnels_authentifies":0,
       "signatures_professionnelles_verifiees":0,
       "dossiers_clos":0,
