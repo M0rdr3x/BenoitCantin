@@ -179,6 +179,17 @@ def check(root,built=None):
             browser_code.count("signal:controller.signal")!=1 or
             browser_code.count("clearTimeout(timer)")!=1):
         bad.append("Expiration réseau obligatoire des résultats publics neutralisée")
+    # Une reprise ne doit ni conserver un bilan périmé ni réactiver une
+    # diffusion d'agrégats non revue lors d'une nouvelle requête.
+    if (browser_code.count("retry.hidden=!loadFailed")!=1 or
+            browser_code.count("retry.disabled=true")!=1 or
+            browser_code.count("retry.disabled=false")!=1 or
+            browser_code.count("catalog=null;")!=2 or
+            browser_code.count("snapshot=null;")!=2 or
+            browser_code.count("loadFailed=true;")!=2 or
+            browser_code.count("loadFailed=false;")!=1 or
+            browser_code.count("'results-retry').addEventListener('click'")!=1):
+        bad.append("Reprise sécurisée du registre des résultats absente ou neutralisée")
     for rel, approved_hash in QUESTION_MANIFESTS.items():
         if browser_code.count(approved_hash)!=1:
             bad.append("Empreinte des questions absente du client : "+rel)
@@ -317,6 +328,23 @@ def self_test():
             browser.write_text(altered, "utf-8")
             assert any("Expiration réseau" in err for err in check(Path(name))), (
                 "Le navigateur pourrait attendre sans fin : "+original_gate
+            )
+        browser.write_text(original_client, "utf-8")
+        assert not check(Path(name))
+        for original_gate, bypass in (
+            ("retry.hidden=!loadFailed", "retry.hidden=true"),
+            ("retry.disabled=true", "retry.disabled=false"),
+            ("catalog=null;", "catalog=undefined;"),
+            ("snapshot=null;", "snapshot=undefined;"),
+            ("loadFailed=true;", "loadFailed=false;"),
+            ("'results-retry').addEventListener('click'",
+             "'results-retry').removeEventListener('click'"),
+        ):
+            altered=original_client.replace(original_gate,bypass,1)
+            assert altered!=original_client, "Mutation de reprise inactive"
+            browser.write_text(altered, "utf-8")
+            assert any("Reprise sécurisée" in err for err in check(Path(name))), (
+                "Le client accepte un contournement de la reprise: "+original_gate
             )
         browser.write_text(original_client, "utf-8")
         assert not check(Path(name))
