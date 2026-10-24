@@ -146,6 +146,8 @@ jobs:
           entries = re.findall(r"'(/[^']+)'", precache)
           assert len(entries) == len(set(entries)), "Entrées PWA en double"
           expected = {
+              '/projets/projet-nova/script.js',
+              '/projets/projet-nova/styles.css',
               '/projets/projet-nova/boussole-electorale.html',
               '/projets/projet-nova/assets/boussole-electorale.js',
               '/projets/projet-nova/assets/boussole-electorale.css',
