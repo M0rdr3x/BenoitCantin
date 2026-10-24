@@ -68,6 +68,43 @@ def main():
                 entry.goto("http://127.0.0.1:4173/projets/projet-nova/",
                            wait_until="domcontentloaded")
             require(entry_posts == [], "La navigation d'accueil envoie des opinions")
+            # Le registre public doit rester visible et contrôlable sans
+            # révéler le moindre bulletin, même quand la collecte est fermée.
+            results_link = directory.locator("#nova-public-results-link")
+            require(results_link.count() == 1 and
+                    results_link.get_attribute("href") == "resultats-sondages.html",
+                    "Accès aux résultats anonymisés absent de l'accueil Nova")
+            results = browser.new_page(
+                locale="fr-CA", viewport={"width": 390, "height": 844},
+                reduced_motion="reduce",
+            )
+            result_posts = []
+            results.on("request", lambda req: result_posts.append(req.url)
+                       if req.method == "POST" else None)
+            results.goto(
+                "http://127.0.0.1:4173/projets/projet-nova/resultats-sondages.html",
+                wait_until="domcontentloaded", timeout=30_000)
+            results.wait_for_function(
+                "() => document.querySelectorAll('#results-question-list li').length === 40",
+                timeout=15_000,
+            )
+            require("Aucun résultat publié" in results.locator("#results-state").inner_text(),
+                    "Faux résultats ou état de collecte trompeur sur 40 questions")
+            require(results.locator(".nova-results-bar-item").count() == 0,
+                    "Des décomptes figurent dans l'état public fermé")
+            results.locator("#results-show-64").click()
+            results.wait_for_function(
+                "() => document.querySelectorAll('#results-question-list li').length === 64",
+                timeout=15_000,
+            )
+            require(results.locator("#results-show-64").get_attribute("aria-pressed") == "true",
+                    "Basculement accessible vers les 64 propositions indisponible")
+            require(results.locator(".nova-results-bar-item").count() == 0,
+                    "La page des 64 questions affiche des résultats non autorisés")
+            require(results.evaluate("document.documentElement.scrollWidth <= innerWidth + 2"),
+                    "Débordement mobile sur les résultats anonymisés")
+            require(result_posts == [], "Le registre public a envoyé une opinion")
+            results.close()
             entry.close()
             response = page.goto(URL, wait_until="domcontentloaded", timeout=30_000)
             require(response is not None and response.status in (200, 304),
