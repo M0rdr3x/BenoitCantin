@@ -283,10 +283,13 @@
     for (const id of ['sondage-reset-question', 'sondage-reset-finish']) {
       $(id).addEventListener('click', resetSurvey);
     }
+    // Éviter un écran de démarrage bloqué si l'un des deux corpus n'arrive pas.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     try {
       const [response, compassResponse] = await Promise.all([
-        fetch('data/sondage-questions-v1.json', { cache: 'no-store', credentials: 'omit' }),
-        fetch('data/boussole-electorale-v2.json', { cache: 'no-store', credentials: 'omit' }),
+        fetch('data/sondage-questions-v1.json', { cache: 'no-store', credentials: 'omit', signal: controller.signal }),
+        fetch('data/boussole-electorale-v2.json', { cache: 'no-store', credentials: 'omit', signal: controller.signal }),
       ]);
       if (!response.ok || !compassResponse.ok) throw new Error('HTTP');
       // Même exigence d'intégrité que la consultation de 40 questions.
@@ -318,6 +321,8 @@
       warning.setAttribute('role','alert');
       warning.textContent = 'Les questions ne sont pas disponibles actuellement. Aucun renseignement n’a été envoyé.';
       $('sondage-introduction').append(warning);
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
