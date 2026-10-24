@@ -145,7 +145,8 @@ def validate_evidence(doc,file,raw_i,raw_j,raw_k,reviewed):
             "mandat":mandate,"categorie":category,
             "qualification":qualif,"piece_locale":ref is not None,
         })
-    return {"par_dossier":by_case,"pieces_verifiees":len(verified_ids),
+    need(used_pieces==verified_ids,"PIECE_NON_RATTACHEE_A_UN_DOSSIER")
+    return {"par_dossier":by_case,"pieces_verifiees":len(used_pieces),
             "observations_recues":len(observed),
             "pieces_referencees":len(used_pieces)}
 
