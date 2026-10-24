@@ -87,7 +87,8 @@ def check_text(payload: dict[str, str]) -> list[str]:
            "fetchApprovedDocumentary(PARTY_SOURCE_DATA_URL)",
            "fetchApprovedDocumentary(EVIDENCE_DATA_URL)",
            'globalThis.crypto.subtle.digest("SHA-256",bytes)',
-           "observed!==approved", "bytes.byteLength>maxBytes")
+           "observed!==approved", "ArrayBuffer.isView(value)",
+           "value.BYTES_PER_ELEMENT!==1", "total+=value.byteLength")
     for key, digest in APPROVED_DOCUMENTARY_SHA256.items():
         size = len(payload[key].encode("utf-8"))
         if size > (524288 if key == "documentary_evidence" else 65536) or not size:
@@ -220,6 +221,9 @@ def self_test() -> None:
         ("compass_client", "signal:controller.signal", "signal:undefined"),
         ("compass_client", "response.body.getReader()", "response.arrayBuffer()"),
         ("compass_client", "total>maxBytes", "false"),
+        ("compass_client", "ArrayBuffer.isView(value)", "true"),
+        ("compass_client", "value.BYTES_PER_ELEMENT!==1", "false"),
+        ("compass_client", "total+=value.byteLength", "total+=0"),
         ("compass_client", "reader.releaseLock()", "void reader"),
         ("compass_client", "clearTimeout(timeoutId)", "/* arrêt du délai perdu */"),
         ("compass_client", "fetchApprovedDocumentary(EVIDENCE_DATA_URL)", "Promise.resolve({})"),
