@@ -6,11 +6,15 @@ import vm from 'node:vm';
 
 const worker=readFileSync('sw.js','utf8');
 assert.match(worker,/public-11-nova-assets/);
+assert.ok(worker.includes("'/projets/projet-nova/script.js'"));
+assert.ok(worker.includes("'/projets/projet-nova/styles.css'"));
 
 function testHarness() {
   const listeners=new Map();
   const requests=[], stored=[], lookups=[];
   let cacheControl='public, max-age=300';
+  let networkOffline=false;
+  let storedFallbackPath=null;
   const response=()=>({
     ok:true,
     headers:{get(name){return name.toLowerCase()==='cache-control'?cacheControl:null;}},
@@ -22,7 +26,7 @@ function testHarness() {
   };
   const caches={
     open(){return Promise.resolve(cache);},
-    match(request){lookups.push(typeof request==='string'?request:request.url);return Promise.resolve(undefined);},
+    match(request){const key=typeof request==='string'?request:request.url;lookups.push(key);return Promise.resolve(key===storedFallbackPath?response():undefined);},
     keys(){return Promise.resolve([]);},
     delete(){return Promise.resolve(true);},
   };
@@ -39,13 +43,15 @@ function testHarness() {
       this.cache=settings.cache||original.cache;
     }
   }
-  async function fetch(request){requests.push(request);return response();}
+  async function fetch(request){requests.push(request);if(networkOffline)throw new Error('offline');return response();}
   vm.runInNewContext(worker,{self,caches,fetch,Request,location:{origin:'https://www.benoitcantin.com'},URL,console},{filename:'sw.js',timeout:2000});
   const handler=listeners.get('fetch');
   assert.equal(typeof handler,'function');
   return {
-    async run(path,{authorization='',key='',cc='public, max-age=300',destination=''}={}) {
+    async run(path,{authorization='',key='',cc='public, max-age=300',destination='',offline=false,cachedPath=null}={}) {
       cacheControl=cc;
+      networkOffline=offline;
+      storedFallbackPath=cachedPath;
       requests.length=0;stored.length=0;lookups.length=0;
       const headers={get(name){
         if(name.toLowerCase()==='authorization')return authorization||null;
@@ -56,9 +62,9 @@ function testHarness() {
       let result;
       handler({request,respondWith(p){result=p;}});
       assert.ok(result,'La requête doit recevoir une stratégie de service worker');
-      await result;
+      const outcome=await result;
       await new Promise(resolve=>setImmediate(resolve));
-      return {requests:[...requests],stored:[...stored],lookups:[...lookups]};
+      return {requests:[...requests],stored:[...stored],lookups:[...lookups],outcome};
     },
   };
 }
@@ -108,6 +114,15 @@ for(const path of [
   assert.equal(fresh.requests[0].cache,'no-store',path+' doit ignorer le cache HTTP local');
   assert.deepEqual(fresh.lookups,[],path+' ne doit pas charger en priorité une vieille version');
   assert.equal(fresh.stored.length,1,path+' peut garder un repli public');
+  if(path.startsWith('/projets/projet-nova/')){
+    const offline=await h.run(path,{offline:true,cachedPath:path.split('?')[0]});
+    assert.equal(offline.requests.length,1,'Une requête réseau doit être tentée avant le repli');
+    assert.equal(offline.requests[0].cache,'no-store');
+    assert.equal(offline.lookups[0],'https://www.benoitcantin.com'+path);
+    assert.ok(offline.lookups.includes(path.split('?')[0]),
+      'En cas de panne réseau, rechercher la ressource Nova précachée sans version');
+    assert.ok(offline.outcome,'La ressource statique Nova doit rester disponible hors ligne');
+  }
   const privateAsset=await h.run(path,{cc:'private, no-store'});
   assert.equal(privateAsset.stored.length,0,path+' ne doit jamais sauvegarder une réponse privée');
 }
