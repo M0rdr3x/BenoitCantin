@@ -114,7 +114,7 @@ def self_test() -> list[str]:
     errors: list[str] = []
     if not cache_only_nova_conflict(path, main, release):
         errors.append("Cas positif : simple version Nova non reconnue")
-    malicious = release.replace(b"<p>FAQ</p>", b"<p>Questions modifiées</p>")
+    malicious = release.replace(b"<p>FAQ</p>", b"<p>Questions differentes</p>")
     if cache_only_nova_conflict(path, main, malicious):
         errors.append("Changement de contenu masqué comme une simple version")
     if cache_only_nova_conflict("projets/projet-nova/data/evidence.json", main, release):
