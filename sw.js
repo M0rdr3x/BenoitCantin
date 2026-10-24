@@ -1,4 +1,4 @@
-const CACHE='benoitcantin-v24-4-95-public-12-allowlisted';
+const CACHE='benoitcantin-v24-4-95-public-13-verified-install';
 const CORE=[
   '/','/offline.html','/manifest.webmanifest','/a-propos.html','/contact.html','/transparence-ia.html',
   '/assistant.html','/confidentialite.html','/gouvernance-vie-privee.html','/avis-legal.html',
@@ -11,11 +11,26 @@ const CORE=[
   '/assets/icons/benoit-sigil.svg','/android-chrome-192x192.png','/android-chrome-512x512.png','/assets/media/sinjira-emblem.webp','/assets/media/sinjira-registre.webp','/assets/media/nova-logo.webp','/assets/media/sinjira-livre-1-cover-480.webp','/assets/media/fracture-card-back.webp',
   '/projets/sinjira/','/projets/sinjira/romans/','/projets/sinjira/romans/lire-demo.html','/projets/sinjira/jeux/','/projets/sinjira/registre/','/projets/sinjira/communaute/','/projets/sinjira/codex/','/projets/sinjira/monde-parallele/','/projets/sinjira/marche/','/projets/sinjira/jeux/fracture-du-reseau-mere/','/projets/projet-nova/','/projets/projet-nova/boussole-electorale.html'
 ];
-function cacheableResponse(resp){const cc=String(resp.headers.get('Cache-Control')||'').toLowerCase();const vary=String(resp.headers.get('Vary')||'').toLowerCase();return resp.ok&&cc.indexOf('no-store')===-1&&cc.indexOf('private')===-1&&cc.indexOf('no-cache')===-1&&!/(?:^|,)\s*(?:cookie|authorization|\*)\s*(?:,|$)/.test(vary)}
+function cacheableResponse(resp){const cc=String(resp.headers.get('Cache-Control')||'').toLowerCase();const vary=String(resp.headers.get('Vary')||'').toLowerCase();return resp.ok&&resp.status===200&&!resp.redirected&&cc.indexOf('no-store')===-1&&cc.indexOf('private')===-1&&cc.indexOf('no-cache')===-1&&!/(?:^|,)\s*(?:cookie|authorization|\*)\s*(?:,|$)/.test(vary)}
 // Initialiser le précache avec des requêtes anonymes : ne jamais conserver
 // par accident une variante de l'accueil liée à une session utilisateur.
 const PUBLIC_PRECACHE_REQUESTS=CORE.map(path=>new Request(path,{credentials:'omit',cache:'no-store'}));
-self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(PUBLIC_PRECACHE_REQUESTS)).then(()=>self.skipWaiting())));
+// addAll() n'évalue pas nos règles no-store/private/Vary et peut mémoriser
+// une redirection vers l'authentification. Tout précache est filtré en amont.
+function verifiedPublicPrecacheResponse(request,response){
+  if(!cacheableResponse(response))return false;
+  const expected=new URL(request.url,location.origin);
+  const actual=new URL(response.url||request.url,location.origin);
+  return expected.origin===location.origin&&actual.origin===location.origin&&actual.pathname===expected.pathname&&actual.search===expected.search;
+}
+self.addEventListener('install',e=>e.waitUntil(
+  caches.open(CACHE).then(cache=>Promise.all(PUBLIC_PRECACHE_REQUESTS.map(request=>
+    fetch(request).then(response=>{
+      if(!verifiedPublicPrecacheResponse(request,response))return;
+      return cache.put(request,response);
+    })
+  ))).then(()=>self.skipWaiting())
+));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{
   const r=e.request,u=new URL(r.url);
