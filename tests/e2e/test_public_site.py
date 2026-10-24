@@ -551,6 +551,36 @@ def run() -> None:
             parcours_64_questions["valid"],
             f"{BROWSER_NAME}: parcours guidé ou focus des résultats incorrect: {parcours_64_questions}",
         )
+        # Partage répétable, puis purge effective (pas seulement un élément hidden).
+        repeated_copy = page.evaluate("""async () => {
+            const copied = [];
+            Object.defineProperty(navigator, 'clipboard', {
+                configurable:true,
+                value:{writeText: async value => { copied.push(value); }}
+            });
+            const button = document.querySelector('#compass-copy-result');
+            button.click();
+            await Promise.resolve();
+            button.click();
+            await Promise.resolve();
+            return {count:copied.length, same:copied[0] === copied[1],
+                    reported:document.querySelector('#compass-status').textContent};
+        }""")
+        assert_true(repeated_copy["count"] == 2 and repeated_copy["same"]
+                    and "Résumé copié" in repeated_copy["reported"],
+                    f"{BROWSER_NAME}: partage local répété de la Boussole incorrect: {repeated_copy}")
+        page.locator("#compass-reset").click()
+        purged = page.evaluate("""() => {
+            const q = document.querySelector('#compass-question-stage');
+            const cards = document.querySelector('#compass-results-grid');
+            const svg = document.querySelector('#compass-radar');
+            return !q.childElementCount && !cards.childElementCount && !svg.childElementCount &&
+                !document.querySelector('#compass-results').hidden === false &&
+                !document.querySelector('#compass-email-recipient').value &&
+                document.querySelector('#compass-share-email').getAttribute('href') === 'mailto:';
+        }""")
+        assert_true(purged, f"{BROWSER_NAME}: réponses de la Boussole conservées après effacement")
+
         home_text = page.locator("main").inner_text().lower()
         for retired_name in ("lumina", "futurax", "chroniques de l’ombre", "chroniques de l'ombre"):
             assert_true(retired_name not in home_text, f"Accueil: univers secondaire remis au premier plan: {retired_name}")
@@ -849,6 +879,26 @@ def run() -> None:
             )
             assert_true(mismatch_retry.is_hidden(), f"{BROWSER_NAME}: reprise documentaire encore visible")
             assert_true(not mismatch_errors, f"{BROWSER_NAME}: erreur JS lors du contrôle d'intégrité")
+            # Une URL de preuve scriptable est refusée même si la matrice
+            # affiche encore une fiche finalisée : échec fermé de l'explorateur.
+            def corrupt_official_url(route):
+                upstream = route.fetch()
+                payload = json.loads(upstream.body())
+                payload["evidenceRecords"][0]["sourceUrl"] = "javascript:alert(1)"
+                route.fulfill(status=200, content_type="application/json",
+                              body=json.dumps(payload, ensure_ascii=False))
+
+            mismatch_page.route(mismatch_pattern, corrupt_official_url)
+            mismatch_page.reload(wait_until="domcontentloaded")
+            mismatch_retry.wait_for(state="visible", timeout=10_000)
+            assert_true(mismatch_page.locator("#compass-evidence-parties .compass-evidence-card").count() == 0,
+                        f"{BROWSER_NAME}: URL documentaire dangereuse non rejetée")
+            mismatch_page.unroute(mismatch_pattern, corrupt_official_url)
+            mismatch_retry.click()
+            mismatch_page.locator("#compass-evidence-parties .compass-evidence-card").first.wait_for(
+                state="visible", timeout=10_000
+            )
+            assert_true(not mismatch_errors, f"{BROWSER_NAME}: erreur JS de contrôle d'URL documentaire")
             mismatch_context.close()
 
         mobile = browser.new_context(

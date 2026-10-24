@@ -48,6 +48,13 @@
       return true;
     });
   }
+  function sameSourceQuestions(survey, compass) {
+    return compass && compass.version === survey.sourceVersion &&
+      Array.isArray(compass.questions) && compass.questions.length === 64 &&
+      survey.questions.every((q,i) => q.id === compass.questions[i]?.id &&
+        q.axis === compass.questions[i]?.axis &&
+        q.text === compass.questions[i]?.text);
+  }
   function setStatus(text, target = 'sondage-status') {
     $(target).textContent = text;
   }
@@ -268,11 +275,13 @@
       $(id).addEventListener('click', resetSurvey);
     }
     try {
-      const response = await fetch('data/sondage-questions-v1.json',
-        { cache: 'no-store', credentials: 'omit' });
-      if (!response.ok) throw new Error('HTTP');
-      const manifest = await response.json();
-      if (!validManifest(manifest)) throw new Error('CONTRACT');
+      const [response, compassResponse] = await Promise.all([
+        fetch('data/sondage-questions-v1.json', { cache: 'no-store', credentials: 'omit' }),
+        fetch('data/boussole-electorale-v2.json', { cache: 'no-store', credentials: 'omit' }),
+      ]);
+      if (!response.ok || !compassResponse.ok) throw new Error('HTTP');
+      const [manifest, compass] = await Promise.all([response.json(), compassResponse.json()]);
+      if (!validManifest(manifest) || !sameSourceQuestions(manifest,compass)) throw new Error('CONTRACT');
       questions = manifest.questions;
       refreshStart();
     } catch {

@@ -331,7 +331,8 @@
       linkedin.href = `${base}?url=${encodeURIComponent(pageUrl)}`;
     }
 
-    $("#compass-share-native")?.addEventListener("click", async () => {
+    const nativeButton = $("#compass-share-native");
+    if(nativeButton) nativeButton.onclick = async () => {
       if(navigator.share){
         try{
           await navigator.share({title:subject,text:compact,url:pageUrl});
@@ -340,21 +341,26 @@
           if(error?.name !== "AbortError") $("#compass-status").textContent = "Le partage n’a pas pu être ouvert. Vous pouvez copier le résumé.";
         }
       }else{
-        await copyText(compact + "\n" + pageUrl);
-        $("#compass-status").textContent = "Le partage natif n’est pas disponible; le résumé a été copié.";
+        const copied = await copyText(compact + "\n" + pageUrl);
+        $("#compass-status").textContent = copied
+          ? "Le partage natif n’est pas disponible; le résumé a été copié."
+          : "Le partage natif et la copie sont indisponibles. Utilisez le courriel.";
       }
-    }, {once:true});
+    };
 
-    $("#compass-copy-result")?.addEventListener("click", async () => {
-      await copyText(full + "\n\n" + pageUrl);
-      $("#compass-status").textContent = "Résumé copié dans le presse-papiers.";
-    }, {once:true});
+    const copyButton = $("#compass-copy-result");
+    if(copyButton) copyButton.onclick = async () => {
+      const copied = await copyText(full + "\n\n" + pageUrl);
+      $("#compass-status").textContent = copied
+        ? "Résumé copié dans le presse-papiers."
+        : "Copie non autorisée ou indisponible. Utilisez le courriel.";
+    };
   }
 
   async function copyText(text){
     if(navigator.clipboard?.writeText){
-      await navigator.clipboard.writeText(text);
-      return;
+      try{ await navigator.clipboard.writeText(text); return true; }
+      catch{ /* Repli manuel, sans transmettre le résultat. */ }
     }
     const area = document.createElement("textarea");
     area.value = text;
@@ -362,9 +368,11 @@
     area.style.position = "fixed";
     area.style.opacity = "0";
     document.body.appendChild(area);
-    area.select();
-    document.execCommand("copy");
-    area.remove();
+    try{
+      area.select();
+      return document.execCommand("copy") === true;
+    }catch{ return false; }
+    finally{ area.remove(); }
   }
 
   function showResults(){
@@ -395,18 +403,36 @@
     scrollToSection($("#compass-results"));
   }
 
-  function reset(){
+  function reset(focusStart=true){
     state.answers.clear();
     state.importance.clear();
     state.currentIndex = 0;
     state.started = false;
     state.results = null;
+    // Ne conserver aucune opinion ou destination de partage dans le DOM caché
+    // après réinitialisation, navigation ou restauration d'historique.
+    $("#compass-question-stage")?.replaceChildren();
+    $("#compass-results-grid")?.replaceChildren();
+    $("#compass-radar")?.replaceChildren();
+    const summary = $("#compass-summary");
+    if(summary) summary.textContent = "";
+    const recipient = $("#compass-email-recipient");
+    if(recipient) recipient.value = "";
+    for(const [id,href] of [
+      ["compass-share-email","mailto:"],
+      ["compass-share-facebook","https://www.facebook.com/sharer/sharer.php"],
+      ["compass-share-x","https://x.com/intent/post"],
+      ["compass-share-linkedin","https://www.linkedin.com/sharing/share-offsite/"]
+    ]){
+      const link = $("#"+id);
+      if(link) link.setAttribute("href",href);
+    }
     $("#compass-results").hidden = true;
     $("#compass-stepper").hidden = true;
     $("#compass-start-panel").hidden = false;
     $("#compass-status").textContent = "Questionnaire réinitialisé. Vous pouvez recommencer quand vous voulez.";
     updateProgress();
-    $("#compass-start")?.focus();
+    if(focusStart) $("#compass-start")?.focus();
   }
 
   function renderPartyRegistry(corpus,evidenceCorpus){
@@ -732,6 +758,16 @@
       );
   }
 
+  function safeDocumentSource(raw){
+    if(typeof raw !== "string" || raw.length > 2048 || !raw.startsWith("https://") ||
+       /[\\u0000-\\u001f\\u007f\\s]/.test(raw)) return false;
+    try{
+      const uri = new URL(raw);
+      return uri.protocol === "https:" && !!uri.hostname && !uri.username &&
+        !uri.password && !uri.port;
+    }catch { return false; }
+  }
+
   function validateDocumentaryCorpora(questionCorpus,partyCorpus,sourceCorpus,evidenceCorpus){
     const questions = questionCorpus?.questions;
     const parties = partyCorpus?.parties;
@@ -777,7 +813,8 @@
       const key = record.questionId+"::"+record.partyId;
       if(!matrixByKey.has(key) || validatedRecords.has(key) ||
          record.proposedStatus === "unknown" ||
-         matrixByKey.get(key) !== record.proposedStatus){
+         matrixByKey.get(key) !== record.proposedStatus ||
+         !safeDocumentSource(record.sourceUrl)) {
         throw new Error("Fiche de preuve non synchronisée avec la matrice");
       }
       validatedRecords.set(key,record);
@@ -886,6 +923,10 @@
     $("#compass-reset")?.addEventListener("click",reset);
     $("#compass-questionnaire-retry")?.addEventListener("click",init);
     $("#compass-evidence-retry")?.addEventListener("click",loadPoliticalRegistryAndEvidence);
+    // Page cachée ou restaurée par le cache de navigation : aucun profil
+    // politique précédent ne peut réapparaître sur un appareil partagé.
+    window.addEventListener("pagehide",()=>reset(false));
+    window.addEventListener("pageshow",event=>{ if(event.persisted) reset(false); });
     init();
     loadPoliticalRegistryAndEvidence();
   });

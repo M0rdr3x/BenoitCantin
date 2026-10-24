@@ -154,6 +154,22 @@ def main():
             page.set_viewport_size({"width": 1440, "height": 900})
             require(page.evaluate("document.documentElement.scrollWidth <= innerWidth + 2"),
                     "Débordement horizontal sur ordinateur")
+            # Un cache/CDN désynchronisé entre le sondage et sa source 64
+            # doit bloquer le démarrage, pas poser une question altérée.
+            altered = browser.new_page(locale="fr-CA")
+            def modified_compass(route):
+                upstream = route.fetch()
+                import json
+                corpus = json.loads(upstream.body())
+                corpus["questions"][0]["text"] += " VERSION ALTÉRÉE"
+                route.fulfill(status=200, content_type="application/json",
+                              body=json.dumps(corpus, ensure_ascii=False))
+            altered.route("**/boussole-electorale-v2.json", modified_compass)
+            altered.goto(URL, wait_until="domcontentloaded", timeout=30_000)
+            altered.locator("#sondage-introduction [role='alert']").wait_for(state="visible", timeout=10_000)
+            require(altered.locator("#sondage-start").is_disabled(),
+                    "Sondage 64 démarrable malgré une question divergente de la Boussole")
+            altered.close()
             print(f"OK {BROWSER}: Nova 18+, consentement, 64 questions, "
                   "relecture, aucun POST et collecte désactivée")
         finally:
