@@ -219,5 +219,11 @@ jobs:
           node --check scripts/test_service_worker_privacy_runtime.mjs
           node scripts/test_service_worker_privacy_runtime.mjs
 
+      - name: Tester la détection des anciens caches JavaScript de Projet Nova
+        run: python3 scripts/validate_nova_script_cache.py --self-test
+
+      - name: Exiger le script de navigation actuel sur chaque page Nova
+        run: python3 scripts/validate_nova_script_cache.py
+
       - name: Vérifier les fichiers, routes et liens de l’ensemble du site
         run: python3 scripts/validate_site.py
