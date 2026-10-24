@@ -106,6 +106,51 @@ def main():
                     "Débordement mobile sur les résultats anonymisés")
             require(result_posts == [], "Le registre public a envoyé une opinion")
             results.close()
+            # Premier chargement en panne puis récupération via bouton accessible :
+            # aucune réponse réelle ni chiffre ne peut être reconstitué.
+            temporary = browser.new_page(
+                locale="fr-CA", viewport={"width": 390, "height": 844},
+                reduced_motion="reduce",
+            )
+            temporary_posts = []
+            temporary.on("request", lambda req: temporary_posts.append(req.url)
+                         if req.method == "POST" else None)
+            intercepted = {"count": 0}
+            def interrupt_first_registry(route):
+                intercepted["count"] += 1
+                if intercepted["count"] == 1:
+                    route.abort("failed")
+                else:
+                    route.continue_()
+            temporary.route("**/resultats-sondages-publics-v1.json", interrupt_first_registry)
+            temporary.goto(
+                "http://127.0.0.1:4173/projets/projet-nova/resultats-sondages.html",
+                wait_until="domcontentloaded", timeout=30_000)
+            retry = temporary.locator("#results-retry")
+            retry.wait_for(state="visible", timeout=15_000)
+            require("indisponibles ou non validées" in
+                    temporary.locator("#results-state").inner_text(),
+                    "Registre en panne : état de vérification trompeur")
+            require(temporary.locator(".nova-results-bar-item").count() == 0,
+                    "Registre en panne : des comptes ont été affichés")
+            temporary.locator("#results-show-64").click()
+            retry.click()
+            temporary.wait_for_function(
+                "() => document.querySelectorAll('#results-question-list li').length === 64"
+                " && document.querySelector('#results-retry').hidden",
+                timeout=15_000)
+            require(intercepted["count"] == 2,
+                    "Le bouton Réessayer n'a pas relancé le registre public")
+            require("Aucun résultat publié" in
+                    temporary.locator("#results-state").inner_text(),
+                    "Après reprise, le registre fermé affiche de faux résultats")
+            require(temporary.locator("#results-show-64").get_attribute(
+                    "aria-pressed") == "true",
+                    "La reprise a perdu la sélection des 64 propositions")
+            require(temporary.locator(".nova-results-bar-item").count() == 0,
+                    "Une reprise réseau a révélé des statistiques interdites")
+            require(temporary_posts == [], "Une reprise réseau a envoyé une opinion")
+            temporary.close()
             # Contrats navigateur : une source figée est interrompue, et
             # aucun chiffre fictif ni démarrage de sondage n'est possible.
             check_stalled_fetch(browser,
