@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 """Nova: le public ne voit jamais de votes individuels ou petites cellules."""
 import argparse
+import hashlib
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 ROOT=Path(__file__).resolve().parents[1]
 REL="projets/projet-nova/data/resultats-sondages-publics-v1.json"
+# Empreinte du snapshot fermé public, approuvée avant ouverture de #675.
+# Toute modification, même limitée aux espaces, requiert une revue explicite.
+CLOSED_PUBLIC_SHA256="d439e45481f0319d522b7fd0d70c592b40dd6b2368b31b3c5214dbf958e3cf2e"
+MAX_PUBLIC_BYTES=65536
 CLOSED_SOURCE="aucune enquête enregistrée ou publiée"
 CLOSED_NOTES="Aucun résultat de participation réelle n'est disponible. Les choix de démonstration ne sont ni envoyés ni comptabilisés."
 SURVEYS={"nova-orientations-40-v1":(40,("pour","contre","sans_opinion")),
@@ -147,13 +152,26 @@ def parse_public_snapshot(text):
 def check(root,built=None):
     target=root/REL
     if not target.is_file() or target.is_symlink():return ["Snapshot absent ou symbolique"]
-    try:data=parse_public_snapshot(target.read_text("utf-8"))
-    except (OSError,ValueError,UnicodeError):return ["Snapshot illisible"]
+    try:
+        if target.stat().st_size > MAX_PUBLIC_BYTES:
+            return ["Snapshot public trop volumineux"]
+        source_bytes=target.read_bytes()
+        if len(source_bytes)>MAX_PUBLIC_BYTES:
+            return ["Snapshot public trop volumineux"]
+        data=parse_public_snapshot(source_bytes.decode("utf-8"))
+    except (OSError,ValueError,UnicodeError):
+        return ["Snapshot illisible"]
     bad=validate(data)
+    # Un schéma formellement valide ne suffit pas à approuver les octets
+    # destinés au site public : bloquer même une version reformattée.
+    if hashlib.sha256(source_bytes).hexdigest()!=CLOSED_PUBLIC_SHA256:
+        bad.append("Snapshot fermé différent de la version approuvée (#675)")
     if built is not None:
         dest=built/REL
-        if not dest.is_file() or dest.is_symlink():bad.append("Snapshot absent du build")
-        elif dest.read_bytes()!=target.read_bytes():bad.append("Snapshot altéré dans Jekyll")
+        if not dest.is_file() or dest.is_symlink():
+            bad.append("Snapshot absent du build")
+        elif dest.read_bytes()!=source_bytes:
+            bad.append("Snapshot altéré dans Jekyll")
     return bad
 
 def self_test():
@@ -225,6 +243,19 @@ def self_test():
             assert any("Snapshot illisible" in error for error in check(Path(name))), (
                 "JSON ambigu ou non standard accepté par la validation publique"
             )
+        out.write_bytes((ROOT/REL).read_bytes())
+        assert not check(Path(name))
+        # Régression : un JSON structurellement identique, mais différent
+        # octet par octet, ne peut être publié sans révision du snapshot.
+        out.write_text(original + " ", "utf-8")
+        assert not validate(parse_public_snapshot(out.read_text("utf-8")))
+        assert any("version approuvée" in e for e in check(Path(name))), (
+            "Modification silencieuse des octets publics acceptée"
+        )
+        out.write_text(original + " " * MAX_PUBLIC_BYTES, "utf-8")
+        assert any("trop volumineux" in e for e in check(Path(name))), (
+            "Snapshot public non borné accepté"
+        )
         out.write_bytes((ROOT/REL).read_bytes())
         assert not check(Path(name))
         out.write_text("{}","utf-8")
