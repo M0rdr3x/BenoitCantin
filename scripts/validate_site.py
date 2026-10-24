@@ -529,9 +529,29 @@ def validate_service_worker_privacy(sw_text: str) -> list[str]:
     for marker in required_markers:
         if marker not in sw_text:
             errors.append(f'Service worker: garde privée/no-store absente: {marker}')
+    live_asset_line = next(
+        (line for line in sw_text.splitlines() if line.strip().startswith("const liveAsset=")),
+        "",
+    )
+    for asset in (
+        "u.pathname==='/projets/projet-nova/script.js'",
+        "u.pathname==='/projets/projet-nova/styles.css'",
+    ):
+        if asset not in live_asset_line:
+            errors.append(f"Service worker: priorité réseau perdue pour {asset}")
     if "caches.open(CACHE).then(c=>c.put(r,cp))" not in sw_text:
         errors.append('Service worker: stratégie document publique attendue absente.')
     return errors
+
+
+def _mutate_live_asset(sw_text: str, needle: str) -> str:
+    """Muter le vrai prédicat réseau-first, pas une autre déclaration CORE."""
+    anchor = "const liveAsset="
+    if anchor not in sw_text:
+        return sw_text
+    prefix, rest = sw_text.split(anchor, 1)
+    expression, separator, tail = rest.partition("\n")
+    return prefix + anchor + expression.replace(needle, "false", 1) + separator + tail
 
 
 def self_test_service_worker_privacy(sw_text: str) -> None:
@@ -574,11 +594,11 @@ def self_test_service_worker_privacy(sw_text: str) -> None:
         'réponses variant selon Cookie recachables': sw_text.replace(
             "cookie|authorization", "accept-language", 1
         ),
-        'script Nova mis en cache prioritaire': sw_text.replace(
-            "u.pathname==='/projets/projet-nova/script.js'", "false", 1
+        'script Nova mis en cache prioritaire': _mutate_live_asset(
+            sw_text, "u.pathname==='/projets/projet-nova/script.js'"
         ),
-        'CSS Nova mis en cache prioritaire': sw_text.replace(
-            "u.pathname==='/projets/projet-nova/styles.css'", "false", 1
+        'CSS Nova mis en cache prioritaire': _mutate_live_asset(
+            sw_text, "u.pathname==='/projets/projet-nova/styles.css'"
         ),
         'documents recachables': sw_text.replace("u.pathname.indexOf('/documents/')===-1", "true", 1),
     }
