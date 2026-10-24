@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 
 const worker=readFileSync('sw.js','utf8');
-assert.match(worker,/public-10-private-cache/);
+assert.match(worker,/public-11-nova-assets/);
 
 function testHarness() {
   const listeners=new Map();
@@ -96,4 +96,20 @@ assert.equal(noCache.stored.length,0,'Les réponses sans cache ne sont jamais st
 const noStore=await h.run(publicJson,{cc:'no-store'});
 assert.equal(noStore.stored.length,0,'Les réponses no-store ne sont jamais stockées');
 
-console.log('OK PWA : routes API, sessions, jetons, données JSON non approuvées et réponses privées jamais cachées.');
+// Les scripts/CSS Nova sont servis réseau d'abord, même si une ancienne
+// version pourrait déjà se trouver en Cache Storage.
+for(const path of [
+  '/projets/projet-nova/script.js?v=26.2.0',
+  '/projets/projet-nova/styles.css?v=25',
+  '/assets/js/site.js?v=24.4.100',
+]){
+  const fresh=await h.run(path);
+  assert.equal(fresh.requests.length,1,path+' doit consulter le réseau avant le cache');
+  assert.equal(fresh.requests[0].cache,'no-store',path+' doit ignorer le cache HTTP local');
+  assert.deepEqual(fresh.lookups,[],path+' ne doit pas charger en priorité une vieille version');
+  assert.equal(fresh.stored.length,1,path+' peut garder un repli public');
+  const privateAsset=await h.run(path,{cc:'private, no-store'});
+  assert.equal(privateAsset.stored.length,0,path+' ne doit jamais sauvegarder une réponse privée');
+}
+
+console.log('OK PWA : routes API, sessions, jetons, données JSON non approuvées, assets Nova frais et réponses privées jamais cachées.');
