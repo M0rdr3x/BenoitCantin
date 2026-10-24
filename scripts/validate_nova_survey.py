@@ -55,6 +55,9 @@ def check_text(payload: dict[str, str]) -> list[str]:
            "manifestBytes.byteLength > 65536", "crypto.subtle.digest('SHA-256', manifestBytes)",
            "observed !== APPROVED_MANIFEST_SHA256",
            "TextDecoder('utf-8', { fatal: true })")
+    demand("client", "const APPROVED_COMPASS_SHA256 = '"+APPROVED_COMPASS_SHA256+"';",
+           "globalThis.crypto.subtle.digest('SHA-256',compassBytes)",
+           "hex(compassDigest)!==APPROVED_COMPASS_SHA256")
     demand("compass_client", 'const APPROVED_COMPASS_SHA256 = "'+APPROVED_COMPASS_SHA256+'";',
            'globalThis.crypto.subtle.digest("SHA-256",bytes)',
            "fetchApprovedQuestionCorpus()", "actual!==APPROVED_COMPASS_SHA256",
@@ -169,6 +172,8 @@ def self_test() -> None:
     mutations = [
         ("client", "const COLLECTION_OPEN = false;", "const COLLECTION_OPEN = true;"),
         ("client", "const LIVE_OPINION_CONSENT_GRANTED = false;", "const LIVE_OPINION_CONSENT_GRANTED = true;"),
+        ("client", "globalThis.crypto.subtle.digest('SHA-256',compassBytes)", "Promise.resolve(new ArrayBuffer(32))"),
+        ("client", "hex(compassDigest)!==APPROVED_COMPASS_SHA256", "false"),
         ("compass_client", 'globalThis.crypto.subtle.digest("SHA-256",bytes)', "Promise.resolve(new ArrayBuffer(32))"),
         ("compass_client", "actual!==APPROVED_COMPASS_SHA256", "false"),
         ("client", "if (!LIVE_OPINION_CONSENT_GRANTED) throw new Error('LIVE_CONSENT_REQUIRED')", "if (false) throw new Error('LIVE_CONSENT_REQUIRED')"),

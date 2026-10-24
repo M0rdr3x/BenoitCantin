@@ -8,6 +8,7 @@
   // Empreinte approuvée des octets du questionnaire 64 questions (UTF-8).
   // Un JSON modifié dans un cache/CDN est refusé avant tout affichage.
   const APPROVED_MANIFEST_SHA256 = '67df5052a3a09f23ecfa43e2882dcf7a0b6f1a85f1aad4e2f4159aab06570738';
+  const APPROVED_COMPASS_SHA256 = '5d65a6067142fbba59a81edeaac49dc1befd82aa281c6e11e2f2509a1aee9109';
   // L'activation nécessite une décision distincte de confidentialité,
   // la migration SQL, l'Edge Function et une validation HTTPS de bout en bout.
   // L'accord de démonstration ne vaut PAS consentement à la collecte d'opinions.
@@ -286,12 +287,22 @@
       // Même exigence d'intégrité que la consultation de 40 questions.
       // Aucune tolérance silencieuse si Web Crypto n'est pas disponible.
       if (!globalThis.crypto?.subtle) throw new Error('NO_CRYPTO');
-      const [manifestBytes, compass] = await Promise.all([response.arrayBuffer(), compassResponse.json()]);
-      if (!manifestBytes.byteLength || manifestBytes.byteLength > 65536) throw new Error('SIZE');
-      const digest = await globalThis.crypto.subtle.digest('SHA-256', manifestBytes);
-      const observed = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
-      if (observed !== APPROVED_MANIFEST_SHA256) throw new Error('MANIFEST_INTEGRITY');
-      const manifest = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(manifestBytes));
+      const [manifestBytes,compassBytes] = await Promise.all([
+        response.arrayBuffer(),compassResponse.arrayBuffer()
+      ]);
+      if(!manifestBytes.byteLength || manifestBytes.byteLength>65536 ||
+         !compassBytes.byteLength || compassBytes.byteLength>65536) throw new Error('SIZE');
+      const [digest,compassDigest]=await Promise.all([
+        globalThis.crypto.subtle.digest('SHA-256',manifestBytes),
+        globalThis.crypto.subtle.digest('SHA-256',compassBytes)
+      ]);
+      const hex = bytes => Array.from(new Uint8Array(bytes),
+        byte=>byte.toString(16).padStart(2,'0')).join('');
+      if(hex(digest)!==APPROVED_MANIFEST_SHA256 ||
+         hex(compassDigest)!==APPROVED_COMPASS_SHA256) throw new Error('CORPUS_INTEGRITY');
+      const decoder=new TextDecoder('utf-8',{fatal:true});
+      const manifest=JSON.parse(decoder.decode(manifestBytes));
+      const compass=JSON.parse(decoder.decode(compassBytes));
       if (!validManifest(manifest) || !sameSourceQuestions(manifest,compass)) throw new Error('CONTRACT');
       questions = manifest.questions;
       refreshStart();

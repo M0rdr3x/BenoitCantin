@@ -232,6 +232,22 @@ def main():
             require(altered.locator("#sondage-start").is_disabled(),
                     "Sondage 64 démarrable malgré une question divergente de la Boussole")
             altered.close()
+            # Métadonnées modifiées mais textes strictement identiques :
+            # le questionnaire citoyen doit refuser le fichier source.
+            altered_metadata=browser.new_page(locale="fr-CA")
+            def wrong_source_metadata(route):
+                import json
+                corpus=json.loads(route.fetch().body())
+                corpus["published"]="2026-10-07"
+                route.fulfill(status=200,content_type="application/json",
+                              body=json.dumps(corpus,ensure_ascii=False))
+            altered_metadata.route("**/boussole-electorale-v2.json",wrong_source_metadata)
+            altered_metadata.goto(URL,wait_until="domcontentloaded",timeout=30_000)
+            altered_metadata.locator("#sondage-introduction [role='alert']").wait_for(
+                state="visible",timeout=10_000)
+            require(altered_metadata.locator("#sondage-start").is_disabled(),
+                    "Les métadonnées Boussole ont changé sans nouvelle empreinte")
+            altered_metadata.close()
             # L'empreinte Boussole verrouille AUSSI les métadonnées : des
             # formulations identiques ne suffisent pas.
             def corrupt_compass_metadata(route):
