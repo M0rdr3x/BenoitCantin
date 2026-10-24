@@ -144,6 +144,13 @@ class TestsP54J(unittest.TestCase):
             mf,man,ver,doc=bundle(d,[])
             doc["conclusions"]=[opinion(conclusion="AUCUNE_CONCLUSION")]
             self.assertEqual(len(m.validate_locals(doc,mf.read_bytes(),man,ver)),1)
+    def test_24b_no_conclusion_is_not_an_opinion(self):
+        with tempfile.TemporaryDirectory() as d:
+            mf,man,ver,doc=bundle(d,[])
+            doc["conclusions"]=[opinion(conclusion="AUCUNE_CONCLUSION")]
+            parsed=m.validate_locals(doc,mf.read_bytes(),man,ver)
+            r=m.public_report(self.cfg,parsed,ver)
+            self.assertEqual(r["situations"],{"AUCUN_AVIS_LOCAL":4})
     def test_25_corrupted_manifest_digest_denied(self):
         with tempfile.TemporaryDirectory() as d:
             mf,man,ver,doc=bundle(d)
