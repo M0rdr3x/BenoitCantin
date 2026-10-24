@@ -188,15 +188,16 @@ def validate_locals(doc,manifest_blob,manifest,validated):
         results[key]=row
     return results
 
-def review_grid(observed,validated):
+def review_grid(observed,validated,scope_by_mandate=None):
     indexed=observed or {}
+    scope_by_mandate=scope_by_mandate or {}
     upstream={x["mandat"]:x for x in validated["mandats"]} if validated else {}
     items=[];distribution={}
     for cid in CASES:
         entries=[indexed[(cid,m)] for m in MANDATES if (cid,m) in indexed]
         file_states=[
            upstream.get(m,{}).get("etat_technique","FICHIER_LOCAL_NON_RECU")
-           for m in MANDATES]
+           for m in MANDATES if cid in scope_by_mandate.get(m,set())]
         kept=[r["reserve_maintenue"] for r in entries]
         explicit_conflict=any(r["contradiction_declaree"]!="NON_SIGNALEE"
                               for r in entries)
@@ -224,8 +225,8 @@ def review_grid(observed,validated):
          sum(distribution.values())==4,"BILAN_DOSSIERS_INCOMPLET")
     return items,dict(sorted(distribution.items()))
 
-def public_report(cfg,observed=None,validated=None):
-    cases,count=review_grid(observed,validated)
+def public_report(cfg,observed=None,validated=None,scope_by_mandate=None):
+    cases,count=review_grid(observed,validated,scope_by_mandate)
     return {
       "schema_version":"P54J-BILAN-1",
       "exercice":2024,"source_p54d_run":40120462237,
@@ -279,7 +280,8 @@ def main(argv=None):
             digest=hashlib.sha256(raw).hexdigest() if raw else None
             private.write_new(opts.modele_prive,local_template(cfg,digest),
                               private=True)
-        result=public_report(cfg,observed,check)
+        scope={r['mandat']:set(r['portee_dossiers']) for r in manifest['receptions']} if manifest else {}
+        result=public_report(cfg,observed,check,scope)
         if opts.bilan:private.write_new(opts.bilan,result)
         print(json.dumps(result,ensure_ascii=False,sort_keys=True))
         return 3 if opts.exiger_go else 0
