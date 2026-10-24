@@ -16,6 +16,10 @@ RESOURCES=("projets/projet-nova/resultats-sondages.html",
            "projets/projet-nova/data/resultats-sondages-publics-v1.json",
            "projets/projet-nova/consultation-40.html",
            "projets/projet-nova/sondage.html",
+           "projets/projet-nova/boussole-electorale.html",
+           "projets/projet-nova/assets/boussole-electorale.js",
+           "projets/projet-nova/data/boussole-electorale-v2.json",
+           "assets/media/nova-boussole-electorale-v2.webp",
            "projets/projet-nova/assets/nova-sondage-icone.webp")
 ICON="/projets/projet-nova/assets/nova-sondage-icone.webp"
 
@@ -49,9 +53,11 @@ def check_text(pages):
       PAGES[1]:(
         "consultations",
         (("nova-survey-directory-40","consultation-40.html"),
-         ("nova-survey-directory-64","sondage.html")),
+         ("nova-survey-directory-64","sondage.html"),
+         ("nova-survey-directory-compass","boussole-electorale.html")),
         (("consultation-40.html","assets/nova-sondage-icone.webp"),
-         ("sondage.html","assets/nova-sondage-icone.webp")),
+         ("sondage.html","assets/nova-sondage-icone.webp"),
+         ("boussole-electorale.html","../../assets/media/nova-boussole-electorale-v2.webp")),
         "collecte fermée",
       ),
     }
@@ -111,6 +117,8 @@ def self_test():
        (PAGES[1],'id="consultations"','id="section-absente"'),
        (PAGES[1],'id="nova-survey-directory-40"','id="erreur-40"'),
        (PAGES[1],'id="nova-survey-directory-64"','id="erreur-64"'),
+       (PAGES[1],'id="nova-survey-directory-compass"','id="boussole-absente"'),
+       (PAGES[1],'../../assets/media/nova-boussole-electorale-v2.webp','../assets/image-inconnue.webp'),
        (PAGES[1],'assets/nova-sondage-icone.webp','assets/image-inconnue.webp'),
        (PAGES[1],'collecte fermée','collecte active'),
        (PAGES[1],'id="nova-public-results-link"','id="resultats-absents"'),
@@ -130,7 +138,7 @@ def self_test():
             dest=built/p;content=dest.read_bytes();dest.unlink()
             assert audit(ROOT,built),p
             dest.write_bytes(content)
-    print("OK : 10 mutations de navigation et 3 pertes d'artefacts rejetées")
+    print("OK : navigation 40/64/Boussole, mutations de liens/icônes et pertes d’artefacts rejetées")
 
 def main():
     parser=argparse.ArgumentParser()
@@ -142,6 +150,6 @@ def main():
     errors=audit(args.source,args.built)
     for err in errors:print("ECHEC : "+err)
     if errors:return 1
-    print("OK : double accès Nova 40/64 et icône validés sur les deux portails")
+    print("OK : accès Nova 40/64 et Boussole, ressources et icônes validés sur les deux portails")
     return 0
 if __name__=="__main__":raise SystemExit(main())

@@ -24,6 +24,51 @@ def main():
         page.on("request", lambda request:
                 sent.append(request.url) if request.method == "POST" else None)
         try:
+            # L'accueil Nova doit exposer les trois parcours dans une section
+            # unique, y compris sur mobile, sans renvoyer vers une URL cassée.
+            entry = browser.new_page(
+                locale="fr-CA", viewport={"width": 390, "height": 844},
+                reduced_motion="reduce",
+            )
+            entry_posts = []
+            entry.on("request", lambda req: entry_posts.append(req.url)
+                     if req.method == "POST" else None)
+            entry.goto("http://127.0.0.1:4173/projets/projet-nova/",
+                       wait_until="domcontentloaded", timeout=30_000)
+            directory = entry.locator("#consultations")
+            require(directory.is_visible(), "Annuaire Nova des trois parcours invisible")
+            cards = directory.locator(".nova-survey-directory-card")
+            require(cards.count() == 3, "Trois cartes attendues sur l'accueil Nova")
+            require(entry.evaluate(
+                "document.documentElement.scrollWidth <= innerWidth + 2"
+            ), "Débordement mobile de l'annuaire des sondages/Boussole")
+            for button_id, route, heading, image in [
+                ("nova-survey-directory-40", "consultation-40.html", "#sondage-titre",
+                 "assets/nova-sondage-icone.webp"),
+                ("nova-survey-directory-64", "sondage.html", "#sondage-titre",
+                 "assets/nova-sondage-icone.webp"),
+                ("nova-survey-directory-compass", "boussole-electorale.html",
+                 "#compass-start", "../../assets/media/nova-boussole-electorale-v2.webp"),
+            ]:
+                link = directory.locator("#" + button_id)
+                require(link.is_visible(), "Bouton d'accès masqué : " + button_id)
+                require(link.get_attribute("href") == route, "URL incorrecte : " + button_id)
+                icon = directory.locator(
+                    'a[href="' + route + '"] img[src="' + image + '"]'
+                )
+                require(icon.count() == 1, "Image officielle absente : " + button_id)
+                icon.scroll_into_view_if_needed()
+                require(icon.evaluate(
+                    "(img) => img.complete && img.naturalWidth > 0"
+                ), "Image officielle non chargée : " + button_id)
+                link.click()
+                require(entry.url.endswith("/projets/projet-nova/" + route),
+                        "Navigation d'accueil incorrecte : " + button_id)
+                entry.locator(heading).wait_for(state="visible", timeout=15_000)
+                entry.goto("http://127.0.0.1:4173/projets/projet-nova/",
+                           wait_until="domcontentloaded")
+            require(entry_posts == [], "La navigation d'accueil envoie des opinions")
+            entry.close()
             response = page.goto(URL, wait_until="domcontentloaded", timeout=30_000)
             require(response is not None and response.status in (200, 304),
                     "page de sondage non disponible localement")

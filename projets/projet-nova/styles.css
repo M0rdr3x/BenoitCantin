@@ -1196,15 +1196,19 @@ html{scroll-padding-top:120px}body{overflow-x:hidden}.container{width:min(1180px
 .hero-side-link-boussole>span{min-width:0}
 @media(max-width:760px){.nova-compass-entry{padding-top:12px}.nova-compass-entry-link{grid-template-columns:70px minmax(0,1fr);gap:14px;padding:14px 16px}.nova-compass-entry-link>img{width:70px;height:70px;border-radius:16px}.nova-compass-entry-cta{grid-column:1/-1;width:100%}.nav-link-boussole::before{margin-right:.3rem}}
 
-/* Annuaire des deux consultations Nova — visible dès l'accueil, distinct de la Boussole. */
+/* Accès centralisé à deux consultations et à la Boussole sur l’accueil Nova. */
 .nova-survey-directory{padding:26px 0 22px;scroll-margin-top:135px}
 .nova-survey-directory-heading{max-width:850px;margin-bottom:22px}
 .nova-survey-directory-heading h2{margin:6px 0 12px;font-size:clamp(1.7rem,3vw,2.45rem);line-height:1.16}
 .nova-survey-directory-heading>p{line-height:1.65;max-width:850px}
-.nova-survey-directory-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:stretch}
+.nova-survey-directory-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;align-items:stretch}
 .nova-survey-directory-card{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:12px;background:#f7fbff;border:1px solid #ccdce7;border-radius:18px;padding:clamp(20px,3vw,32px);box-shadow:0 8px 26px rgba(24,55,83,.06)}
 .nova-survey-directory-card:first-child{border-top:4px solid #0c6a92}
 .nova-survey-directory-card:nth-child(2){border-top:4px solid #287b75}
+.nova-survey-directory-card:nth-child(3){border-top:4px solid #4d5689}
+.nova-survey-directory-icon-link{display:inline-flex;align-items:center;justify-content:center;width:96px;height:96px;border-radius:18px;overflow:hidden;background:#e9f3fa}
+.nova-survey-directory-icon{display:block;width:96px;height:96px;object-fit:contain}
+.nova-survey-directory-icon-link:focus-visible{outline:3px solid #d08021;outline-offset:4px}
 .nova-survey-directory-card h3{margin:0;font-size:clamp(1.35rem,2.4vw,1.8rem);line-height:1.22;color:#173d5a}
 .nova-survey-directory-card>p{margin:0;line-height:1.6}
 .nova-survey-directory-card .nova-survey-directory-type{color:#315773;font-size:.92rem;font-weight:750}
@@ -1214,7 +1218,8 @@ html{scroll-padding-top:120px}body{overflow-x:hidden}.container{width:min(1180px
 .nova-survey-crosslink{margin-top:18px}
 .nova-survey-crosslink p{padding:14px 18px;border:1px solid #cbdbe4;background:#f8fbfe;border-radius:12px;line-height:1.6}
 .nova-survey-crosslink a{font-weight:700}
-@media(max-width:720px){.nova-survey-directory-grid{grid-template-columns:1fr}.nova-survey-directory-card>.btn{width:100%}.nova-survey-directory{padding:18px 0}.nova-survey-crosslink p{padding:12px}}
+@media(max-width:1050px){.nova-survey-directory-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.nova-survey-directory-card:nth-child(3){grid-column:1/-1}}
+@media(max-width:720px){.nova-survey-directory-grid{grid-template-columns:1fr}.nova-survey-directory-card:nth-child(3){grid-column:auto}.nova-survey-directory-card>.btn{width:100%}.nova-survey-directory{padding:18px 0}.nova-survey-crosslink p{padding:12px}}
 
 /* Correctif mobile : le bouton public des résultats ne doit jamais élargir Nova. */
 .nova-survey-directory-results{min-width:0;max-width:100%;margin:18px 0 0}
