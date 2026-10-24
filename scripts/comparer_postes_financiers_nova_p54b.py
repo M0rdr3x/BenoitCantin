@@ -7,6 +7,7 @@ peuvent être des années, pages, codes, pourcentages ou montants : INDETERMINES
 import argparse
 from collections import Counter
 from io import BytesIO
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -167,7 +168,10 @@ def actualize(rows,fetcher=acquisition.capture):
     for src in ("ville","mamh"):
         try:
             binary,obs=fetcher(src)
-            valid=(obs["sha256_fichier_copie_publique"]==p54a.COPIES[src][2]
+            valid=(type(binary) is bytes
+                   and hashlib.sha256(binary).hexdigest()==p54a.COPIES[src][2]
+                   and len(binary)==p54a.COPIES[src][1]
+                   and obs["sha256_fichier_copie_publique"]==p54a.COPIES[src][2]
                    and obs["taille_octets"]==p54a.COPIES[src][1]
                    and obs["source_id"]==src)
             facts[src]={
