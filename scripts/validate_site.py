@@ -511,6 +511,13 @@ def validate_service_worker_privacy(sw_text: str) -> list[str]:
         "const sensitiveHeaders=",
         "const unknownJSON=",
         "const sensitiveRuntimePath=sensitiveSegments||sensitiveQuery||sensitiveHeaders||unknownJSON;",
+        "const publicCachePath=CORE.indexOf(u.pathname)!==-1;",
+        "const versionOnly=",
+        "const versionableAsset=",
+        "const publicCacheRequest=publicCachePath&&(!u.search||(versionOnly&&versionableAsset));",
+        "if(!publicCacheRequest){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}",
+        "resp.headers.get('Vary')",
+        "cookie|authorization",
         "const liveAsset=",
         "u.pathname==='/projets/projet-nova/script.js'",
         "u.pathname==='/projets/projet-nova/styles.css'",
@@ -555,6 +562,17 @@ def self_test_service_worker_privacy(sw_text: str) -> None:
         'réponses sensibles sans no-store': sw_text.replace(
             "if(sensitiveRuntimePath){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}",
             "if(sensitiveRuntimePath){e.respondWith(fetch(r));return}", 1
+        ),
+        'cache autorisé hors liste positive': sw_text.replace(
+            "const publicCachePath=CORE.indexOf(u.pathname)!==-1;",
+            "const publicCachePath=true;", 1
+        ),
+        'versions de fichiers non contrôlées': sw_text.replace(
+            "const publicCacheRequest=publicCachePath&&(!u.search||(versionOnly&&versionableAsset));",
+            "const publicCacheRequest=publicCachePath;", 1
+        ),
+        'réponses variant selon Cookie recachables': sw_text.replace(
+            "cookie|authorization", "accept-language", 1
         ),
         'script Nova mis en cache prioritaire': sw_text.replace(
             "u.pathname==='/projets/projet-nova/script.js'", "false", 1
