@@ -120,6 +120,29 @@ SINJIRA_PUBLIC_DOCUMENTS = {
     Path("projets/sinjira/documents/Questionnaire_SINJIRA_Registre_des_Consciences.pdf"),
     Path("projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"),
 }
+# PDF publies : liste positive sur TOUT le site, pas uniquement les
+# documents de roman. Un nouveau manuscrit, reçu ou document interne ne doit
+# jamais devenir public par son extension ou son emplacement.
+PUBLIC_APPROVED_PDFS = SINJIRA_PUBLIC_DOCUMENTS | {
+    Path("projets/projet-nova/documents/01_Resume_Officiel_1_Page_Projet_Nova.pdf"),
+    Path("projets/projet-nova/documents/02_Depliant_Public_4_Pages_Projet_Nova.pdf"),
+    Path("projets/projet-nova/documents/03_Livre_Nova_Version_Courte.pdf"),
+    Path("projets/projet-nova/documents/04_Livre_Nova_Complet.pdf"),
+    Path("projets/projet-nova/documents/04_Livre_Nova_Complet_V1_8.pdf"),
+    Path("projets/projet-nova/documents/05_Manifeste_Officiel_Projet_Nova.pdf"),
+    Path("projets/projet-nova/documents/06_FAQ_Citoyenne_Officielle_Projet_Nova.pdf"),
+    Path("projets/projet-nova/documents/07_Programme_Electoral_Complet_Projet_Nova.pdf"),
+    Path("projets/projet-nova/documents/08_Code_de_Conduite_Gouvernance_Nova.pdf"),
+    Path("projets/projet-nova/documents/09_Dossier_de_Presse_Projet_Nova.pdf"),
+    Path("projets/projet-nova/documents/11_Charte_Visuelle_Projet_Nova.pdf"),
+    Path("projets/projet-nova/documents/12_Resume_Executif_Officiel_Systeme_Nova.pdf"),
+    Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Feuille_de_fin_de_partie_Interactive.pdf"),
+    Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Fiche_Joueur_1_Copie_Interactive.pdf"),
+    Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Fiche_Joueur_Interactive.pdf"),
+    Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Fracture_du_Reseau_Mere_Fiche_Joueur_Web.pdf"),
+    Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Mode_Solo_3_Joueurs_Interactive.pdf"),
+}
+
 SINJIRA_DOCUMENTS_DIR = Path("projets/sinjira/documents")
 SINJIRA_PRIVATE_RELEASE_METADATA = {
     Path("projets/sinjira/romans/livre-1-release.json"),
@@ -165,7 +188,6 @@ RUNTIME_WEB_SUFFIXES = {
     ".ico",
     ".webmanifest",
     ".xml",
-    ".pdf",
     ".mp4",
     ".webm",
     ".mp3",
@@ -278,7 +300,6 @@ PUBLIC_ROOT_SUFFIXES = {
     ".ico",
     ".webmanifest",
     ".xml",
-    ".pdf",
     ".mp4",
     ".webm",
     ".mp3",
@@ -367,6 +388,11 @@ def relative_path_allowed(rel: Path) -> bool:
     parts = rel.parts
     if not parts:
         return False
+
+    # Defense globale, aussi pour le repertoire racine, assets, jeux, comptes
+    # et tout futur dossier de manuscrits. Une extension .pdf n'accorde rien.
+    if rel.suffix.lower() == ".pdf":
+        return rel in PUBLIC_APPROVED_PDFS
 
     # Ne pas permettre aux dotfiles de sous-arbres publics de contourner les
     # règles de publication simplement parce que leur extension est vide.

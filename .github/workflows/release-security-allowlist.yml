@@ -246,5 +246,11 @@ jobs:
       - name: Vérifier les scénarios de régression des canaux Projet Nova
         run: python3 scripts/test_nova_form_decommission.py
 
+      - name: Auto-tester la liste positive des PDF publics
+        run: python3 scripts/validate_release_public_pdfs.py --self-test
+
+      - name: Refuser tout PDF non autorisé dans l'artefact Web
+        run: python3 scripts/validate_release_public_pdfs.py
+
       - name: Vérifier les fichiers, routes et liens de l’ensemble du site
         run: python3 scripts/validate_site.py
