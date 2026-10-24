@@ -194,7 +194,9 @@ def review_grid(observed,validated,scope_by_mandate=None):
     upstream={x["mandat"]:x for x in validated["mandats"]} if validated else {}
     items=[];distribution={}
     for cid in CASES:
-        entries=[indexed[(cid,m)] for m in MANDATES if (cid,m) in indexed]
+        entries=[indexed[(cid,m)] for m in MANDATES
+                 if (cid,m) in indexed and
+                 indexed[(cid,m)]["conclusion_declaree"]!="AUCUNE_CONCLUSION"]
         file_states=[
            upstream.get(m,{}).get("etat_technique","FICHIER_LOCAL_NON_RECU")
            for m in MANDATES if cid in scope_by_mandate.get(m,set())]
