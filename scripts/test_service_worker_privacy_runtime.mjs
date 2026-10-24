@@ -11,7 +11,7 @@ assert.ok(worker.includes("'/projets/projet-nova/styles.css'"));
 
 function testHarness() {
   const listeners=new Map();
-  const requests=[], stored=[], lookups=[];
+  const requests=[], stored=[], lookups=[], precached=[];
   let cacheControl='public, max-age=300';
   let varyHeader='';
   let networkOffline=false;
@@ -23,7 +23,7 @@ function testHarness() {
   });
   const cache={
     put(request){stored.push(request.url);return Promise.resolve();},
-    addAll(){return Promise.resolve();},
+    addAll(entries){precached.push(...entries);return Promise.resolve();},
   };
   const caches={
     open(){return Promise.resolve(cache);},
@@ -37,11 +37,12 @@ function testHarness() {
   };
   class Request {
     constructor(original,settings={}) {
-      this.url=original.url;
-      this.method=original.method;
-      this.destination=original.destination;
-      this.headers=original.headers;
+      this.url=typeof original==='string'?new URL(original,'https://www.benoitcantin.com').href:original.url;
+      this.method=typeof original==='string'?'GET':original.method;
+      this.destination=typeof original==='string'?'':original.destination;
+      this.headers=typeof original==='string'?{get(){return null;}}:original.headers;
       this.cache=settings.cache||original.cache;
+      this.credentials=settings.credentials||original.credentials;
     }
   }
   async function fetch(request){requests.push(request);if(networkOffline)throw new Error('offline');return response();}
@@ -49,6 +50,19 @@ function testHarness() {
   const handler=listeners.get('fetch');
   assert.equal(typeof handler,'function');
   return {
+    async verifyInstall() {
+      let pending;
+      listeners.get('install')({waitUntil(p){pending=p;}});
+      await pending;
+      assert.ok(precached.length>=60,'Le précache public doit rester complet');
+      for(const request of precached){
+        assert.equal(request.credentials,'omit','Aucun cookie utilisateur dans le précache');
+        assert.equal(request.cache,'no-store','Le précache initial doit ignorer le cache HTTP');
+        assert.ok(request.url.startsWith('https://www.benoitcantin.com/'));
+        assert.ok(!/\\/(?:compte|admin|Admin|app|supabase|histoire-de-vie)\\//.test(request.url),
+          'Aucun espace privé admis dans le précache');
+      }
+    },
     async run(path,{authorization='',key='',cc='public, max-age=300',vary='',destination='',offline=false,cachedPath=null}={}) {
       cacheControl=cc;
       varyHeader=vary;
@@ -72,6 +86,7 @@ function testHarness() {
 }
 
 const h=testHarness();
+await h.verifyInstall();
 async function expectedNoStore(path,opts={}) {
   const r=await h.run(path,opts);
   assert.equal(r.requests.length,1,path+' : une seule requête réseau attendue');
