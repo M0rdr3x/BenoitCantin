@@ -6,11 +6,14 @@ Aucune connexion réseau; aucun compte ni réponse de personne réelle.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 NOVA = ROOT / "projets/projet-nova"
+# Empreinte du manifeste figé; sa modification exige une nouvelle vague/version.
+APPROVED_MANIFEST_SHA256 = "67df5052a3a09f23ecfa43e2882dcf7a0b6f1a85f1aad4e2f4159aab06570738"
 FILES = {
     "page": NOVA / "sondage.html",
     "client": NOVA / "assets/sondage.js",
@@ -45,6 +48,11 @@ def check_text(payload: dict[str, str]) -> list[str]:
            'id="sondage-form" novalidate autocomplete="off"',
            'Cette case ne constitue pas un consentement à une future collecte.',
            'Toute collecte future exigera un consentement distinct')
+    demand("client", "const APPROVED_MANIFEST_SHA256 = '" + APPROVED_MANIFEST_SHA256 + "';",
+           "globalThis.crypto?.subtle", "response.arrayBuffer()",
+           "manifestBytes.byteLength > 65536", "crypto.subtle.digest('SHA-256', manifestBytes)",
+           "observed !== APPROVED_MANIFEST_SHA256",
+           "TextDecoder('utf-8', { fatal: true })")
     demand("client", "const COLLECTION_OPEN = false;",
            "const LIVE_OPINION_CONSENT_GRANTED = false;",
            "function eligible()", "$('sondage-age').checked",
@@ -128,18 +136,28 @@ def check_questions(snapshot: str, original: str) -> list[str]:
     return issues
 
 
+def check_manifest_integrity(raw: bytes) -> list[str]:
+    if hashlib.sha256(raw).hexdigest() != APPROVED_MANIFEST_SHA256:
+        return ["Manifeste 64 questions : empreinte SHA-256 modifiée sans revue"]
+    return []
+
+
 def validate() -> list[str]:
     missing = [key for key, path in FILES.items() if not path.is_file()]
     if missing:
         return ["Fichiers de sondage manquants : " + ", ".join(missing)]
     data = {key: path.read_text("utf-8") for key, path in FILES.items()}
-    return check_text(data) + check_questions(data["manifest"], data["source"])
+    return (check_text(data) + check_questions(data["manifest"], data["source"])
+            + check_manifest_integrity(FILES["manifest"].read_bytes()))
 
 
 def self_test() -> None:
     payload = {key: path.read_text("utf-8") for key, path in FILES.items()}
     assert not check_text(payload), check_text(payload)
     assert not check_questions(payload["manifest"], payload["source"])
+    assert not check_manifest_integrity(FILES["manifest"].read_bytes())
+    assert check_manifest_integrity(FILES["manifest"].read_bytes() + b" ")
+    assert check_manifest_integrity(b"")
     mutations = [
         ("client", "const COLLECTION_OPEN = false;", "const COLLECTION_OPEN = true;"),
         ("client", "const LIVE_OPINION_CONSENT_GRANTED = false;", "const LIVE_OPINION_CONSENT_GRANTED = true;"),
@@ -159,6 +177,9 @@ def self_test() -> None:
         ("client", "$('sondage-age').checked", "true"),
         ("client", "$('sondage-consent').checked", "true"),
         ("client", "client.auth.getUser()", "null"),
+        ("client", "globalThis.crypto?.subtle", "true"),
+        ("client", "response.arrayBuffer()", "response.json()"),
+        ("client", "observed !== APPROVED_MANIFEST_SHA256", "false"),
         ("client", "data.code !== 'RECORDED'", "false"),
         ("client", "data.survey !== SURVEY_ID", "false"),
         ("client", "explicitConsent: LIVE_OPINION_CONSENT_GRANTED", "explicitConsent: true"),
