@@ -1,0 +1,82 @@
+name: Projet Nova P53X - Comparaison locale PDF sans certification
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p53x.yml"
+      - "scripts/comparer_versions_pdf_nova_p53x.py"
+      - "scripts/tests/test_comparer_versions_pdf_nova_p53x.py"
+      - "scripts/constituer_dossier_pilote_nova_p53w.py"
+      - "scripts/reconcilier_ecarts_nova_p53v.py"
+      - "scripts/verifier_separation_controles_nova_p53u.py"
+      - "scripts/verifier_integrite_locale_nova_p53t.py"
+      - "scripts/suivre_demandes_acces_nova_p53s.py"
+      - "scripts/preparer_demandes_acces_nova_p53r.py"
+      - "scripts/inventorier_pieces_primaires_nova_p53q.py"
+      - "scripts/constituer_dossiers_institutionnels_nova_p53p.py"
+      - "projets/projet-nova/etudes/P53X_*"
+      - "projets/projet-nova/etudes/P53W_DOSSIER_PUBLIC_QUEBEC_RTC.json"
+      - "projets/projet-nova/etudes/P53V_REGISTRE_ECARTS_ET_CORRECTIFS.json"
+      - "projets/projet-nova/etudes/P53U_GRILLE_INDEPENDANCE_REVUE_PROBATOIRE.json"
+      - "projets/projet-nova/etudes/P53T_PROTOCOLE_INTEGRITE_PROVENANCE.json"
+      - "projets/projet-nova/etudes/P53S_REGISTRE_SUIVI_ET_RECOURS.json"
+      - "projets/projet-nova/etudes/P53R_PROJETS_DEMANDES_ACCES_2024.json"
+      - "projets/projet-nova/etudes/P53Q_INVENTAIRE_PIECES_ET_CONTREPARTIES.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  local-pdf-synthetic-control:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout source only
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Pin local PDF parser
+        run: python -m pip install pypdf==5.9.0
+      - name: Run 56 synthetic-only safety and comparison tests
+        run: |
+          python -m py_compile scripts/comparer_versions_pdf_nova_p53x.py
+          python - <<'PY'
+          import unittest
+          tests=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_comparer_versions_pdf_nova_p53x.py")
+          assert tests.countTestCases()==56,tests.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(tests)
+          assert result.wasSuccessful()
+          PY
+      - name: Check no real PDF, no hash and no certified economy
+        run: |
+          python scripts/comparer_versions_pdf_nova_p53x.py --bilan p53x_bilan.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          s=json.loads(Path("p53x_bilan.json").read_text("utf-8"))
+          assert s["comparaison_pdf_effectuee_localement"] is False
+          assert s["octets_strictement_identiques"] is None
+          assert s["nombre_pages_mamh_mesure"] is None
+          assert s["avis_comptables_independants_signes"]==0
+          assert s["economie_certifiee_cad"] is None
+          assert s["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+          set +e
+          python scripts/comparer_versions_pdf_nova_p53x.py --exiger-certification --bilan p53x_refus.json
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Upload aggregate non-sensitive reports only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p53x-no-go-synthetic-pdf-comparator
+          path: |
+            p53x_bilan.json
+            p53x_refus.json
+          if-no-files-found: ignore
+          retention-days: 7

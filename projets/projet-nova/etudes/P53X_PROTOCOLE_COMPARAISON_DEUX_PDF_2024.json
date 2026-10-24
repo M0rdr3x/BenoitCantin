@@ -1,0 +1,58 @@
+{
+  "schema_version": "P53X-1",
+  "jalon": "P53X",
+  "date_reference": "2026-10-24",
+  "statut": "COMPARATEUR_PDF_LOCAL_SANS_ACQUISITION_OFFICIELLE",
+  "exercice_reference": 2024,
+  "ville_code": "23027",
+  "rtc_code": "T0088",
+  "sources_p53w": {
+    "ville": "https://www.ville.quebec.qc.ca/publications/docs_ville/Rapport_financier_2024.pdf",
+    "mamh": "https://www.mamh.gouv.qc.ca/documentsfinanciersweb/Rapport-financier-2024-et-autres-23027.pdf"
+  },
+  "controle_pages_ville": [
+    0,
+    34,
+    196
+  ],
+  "operations": [
+    "COMPARAISON_SHA256_OCTETS",
+    "COMPARAISON_NOMBRES_PAGES",
+    "CORRESPONDANCE_TEXTUELLE_NORMALISEE",
+    "REPERAGE_ANCRAGES_P53W"
+  ],
+  "plafonds": {
+    "taille_pdf_octets": 67108864,
+    "pages_pdf": 1200,
+    "caracteres_page_min": 8
+  },
+  "doctrine": {
+    "pdf_mamh_possiblement_assemble_de_plusieurs_documents": true,
+    "comparaison_pas_preuve_d_identite_de_l_emetteur": true,
+    "metadonnees_de_fichiers_pas_attestation_edition": true,
+    "extraction_texte_egale_pas_audit_comptable": true,
+    "absence_texte_extractible_pas_differend_comptable": true,
+    "aucun_pdf_ni_detail_prive_dans_git": true,
+    "suppression_infos_identifiantes_du_bilan_commun": true,
+    "documents_officiels_pas_telecharges_par_ci": true,
+    "version_officielle_pas_attestee_par_le_seul_hash": true,
+    "deux_grands_livres_non_confrontes": true,
+    "eliminations_deja_effectuees_non_recuperees": true,
+    "maintien_emplois_services": true,
+    "deux_regimes_constitutionnels_separes": true,
+    "aucun_gain_certifie_et_aucune_fusion": true
+  },
+  "etat_initial": {
+    "organismes_lies": 2,
+    "publications_cibles": 2,
+    "pages_ville_ancres_documentaires": 3,
+    "originaux_octets_disponibles_dans_git": 0,
+    "controles_octets_effectues_sur_originaux_officiels": 0,
+    "preuves_de_versions_identiques": null,
+    "provenance_authentifiee": 0,
+    "differences_comptables_certifiees": 0,
+    "differences_de_pagination_certifiees": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
