@@ -8,6 +8,8 @@ from tempfile import TemporaryDirectory
 
 ROOT=Path(__file__).resolve().parents[1]
 REL="projets/projet-nova/data/resultats-sondages-publics-v1.json"
+CLIENT_REL="projets/projet-nova/assets/resultats-sondages.js"
+CLOSED_CLIENT_GATE="const PUBLIC_AGGREGATES_ENABLED = false;"
 # Empreinte du snapshot fermé public, approuvée avant ouverture de #675.
 # Toute modification, même limitée aux espaces, requiert une revue explicite.
 CLOSED_PUBLIC_SHA256="d439e45481f0319d522b7fd0d70c592b40dd6b2368b31b3c5214dbf958e3cf2e"
@@ -151,7 +153,18 @@ def parse_public_snapshot(text):
 
 def check(root,built=None):
     target=root/REL
+    browser=root/CLIENT_REL
     if not target.is_file() or target.is_symlink():return ["Snapshot absent ou symbolique"]
+    if not browser.is_file() or browser.is_symlink():
+        return ["Client résultats absent ou symbolique"]
+    try:
+        browser_bytes=browser.read_bytes()
+        browser_code=browser_bytes.decode("utf-8")
+    except (OSError,UnicodeError):
+        return ["Client résultats illisible"]
+    bad=[]
+    if browser_code.count(CLOSED_CLIENT_GATE)!=1:
+        bad.append("Verrou navigateur de publication désactivé (#675)")
     try:
         if target.stat().st_size > MAX_PUBLIC_BYTES:
             return ["Snapshot public trop volumineux"]
@@ -161,7 +174,7 @@ def check(root,built=None):
         data=parse_public_snapshot(source_bytes.decode("utf-8"))
     except (OSError,ValueError,UnicodeError):
         return ["Snapshot illisible"]
-    bad=validate(data)
+    bad+=validate(data)
     # Un schéma formellement valide ne suffit pas à approuver les octets
     # destinés au site public : bloquer même une version reformattée.
     if hashlib.sha256(source_bytes).hexdigest()!=CLOSED_PUBLIC_SHA256:
@@ -172,6 +185,11 @@ def check(root,built=None):
             bad.append("Snapshot absent du build")
         elif dest.read_bytes()!=source_bytes:
             bad.append("Snapshot altéré dans Jekyll")
+        client_dest=built/CLIENT_REL
+        if not client_dest.is_file() or client_dest.is_symlink():
+            bad.append("Client résultats absent du build Jekyll")
+        elif client_dest.read_bytes()!=browser_bytes:
+            bad.append("Client résultats altéré dans Jekyll")
     return bad
 
 def self_test():
@@ -224,7 +242,18 @@ def self_test():
     with TemporaryDirectory() as name:
         out=Path(name)/REL;out.parent.mkdir(parents=True)
         out.write_bytes((ROOT/REL).read_bytes())
+        browser=Path(name)/CLIENT_REL
+        browser.parent.mkdir(parents=True,exist_ok=True)
+        browser.write_bytes((ROOT/CLIENT_REL).read_bytes())
         assert not check(ROOT,Path(name))
+        assert not check(Path(name))
+        original_client=browser.read_text("utf-8")
+        browser.write_text(original_client.replace(CLOSED_CLIENT_GATE,
+                           "const PUBLIC_AGGREGATES_ENABLED = true;"), "utf-8")
+        assert any("Verrou navigateur" in e for e in check(Path(name))), (
+            "Le client a affiché un agrégat avant la revue #675"
+        )
+        browser.write_text(original_client, "utf-8")
         assert not check(Path(name))
         # Le parseur JSON standard perd la première valeur d'une clé dupliquée.
         # Or les octets de cette première valeur resteraient publiquement lisibles.

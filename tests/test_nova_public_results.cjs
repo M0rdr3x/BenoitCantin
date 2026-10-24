@@ -8,6 +8,9 @@ const vm = require('node:vm');
 
 const NOVA = path.resolve(__dirname, '../projets/projet-nova');
 const script = fs.readFileSync(path.join(NOVA, 'assets/resultats-sondages.js'), 'utf8');
+const CLOSED_GATE = 'const PUBLIC_AGGREGATES_ENABLED = false;';
+assert.equal(script.split(CLOSED_GATE).length, 2,
+  'Le verrou explicite de diffusion doit rester fermé dans le JS livré');
 const read = name => JSON.parse(fs.readFileSync(path.join(NOVA, 'data', name), 'utf8'));
 const original = read('resultats-sondages-publics-v1.json');
 const copy = value => JSON.parse(JSON.stringify(value));
@@ -28,7 +31,9 @@ class FakeElement {
   click() { if (this.handlers.click) this.handlers.click(); }
 }
 
-async function mount(snapshot, {badManifest = false, fetchFailure = false} = {}) {
+async function mount(snapshot, {
+  badManifest = false, fetchFailure = false, syntheticRelease = false,
+} = {}) {
   const elements = new Map();
   const document = {
     readyState: 'complete',
@@ -52,7 +57,12 @@ async function mount(snapshot, {badManifest = false, fetchFailure = false} = {})
       return {ok: true, json: async () => copy(fixtures[url])};
     },
   };
-  vm.runInNewContext(script, context, {filename:'resultats-sondages.js',timeout:1500});
+  // Le seul déverrouillage autorisé est dans cette VM et avec des fixtures
+  // de test : aucun octet de la page publiée ni du JSON réel n'est changé.
+  const candidate = syntheticRelease
+    ? script.replace(CLOSED_GATE, 'const PUBLIC_AGGREGATES_ENABLED = true;')
+    : script;
+  vm.runInNewContext(candidate, context, {filename:'resultats-sondages.js',timeout:1500});
   await new Promise(resolve => setImmediate(resolve));
   return id => document.getElementById(id);
 }
@@ -116,8 +126,12 @@ test('date non autorisée sur état fermé bloquée',async()=>{
   const data=copy(original);data.publishedOn='2026-10-22';
   await assertUnavailable(data);
 });
+test('un JSON approuvé ne peut pas ouvrir la publication tant que le verrou JS est fermé',async()=>{
+  await assertUnavailable(syntheticApproved());
+});
+
 test('agrégats exclusivement synthétiques : affichage des comptes sûrs',async()=>{
-  const el=await mount(syntheticApproved());
+  const el=await mount(syntheticApproved(), {syntheticRelease:true});
   assert.match(el('results-state').textContent,/Résultats agrégés approuvés/);
   assert.equal(el('results-question-list').children.length,40);
   assert.equal(el('results-question-list').children[0].children.length,4);
@@ -126,14 +140,14 @@ test('petite cellule bloque tous les résultats, sans affichage partiel',async()
   const data=syntheticApproved();
   data.surveys['nova-orientations-40-v1'].questions[0].counts=
     {pour:25,contre:5,sans_opinion:0};
-  await assertUnavailable(data);
+  await assertUnavailable(data,{syntheticRelease:true});
 });
 test('question masquée : aucun total résiduel dans sa ligne',async()=>{
   const data=syntheticApproved();
   const row=data.surveys['nova-orientations-40-v1'].questions[0];
   row.status='suppressed';
-  await assertUnavailable(data);
+  await assertUnavailable(data,{syntheticRelease:true});
   delete row.total;delete row.counts;
-  const el=await mount(data);
+  const el=await mount(data,{syntheticRelease:true});
   assert.match(el('results-question-list').children[0].children[1].textContent,/Répartition masquée/);
 });

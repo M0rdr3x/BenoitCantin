@@ -5,6 +5,10 @@
   'use strict';
   const ROOT = 'data/';
   const SNAPSHOT = ROOT + 'resultats-sondages-publics-v1.json';
+  // Double verrou indépendant du JSON public : avant approbation humaine #675,
+  // même un fichier externe portant deux drapeaux "approved" ne publie rien.
+  // L'activation demande une révision explicite de ce code ET du garde CI.
+  const PUBLIC_AGGREGATES_ENABLED = false;
   // Ces mentions sont gelées tant qu'aucune revue #675 n'autorise la collecte.
   const CLOSED_SOURCE = "aucune enquête enregistrée ou publiée";
   const CLOSED_NOTES = "Aucun résultat de participation réelle n'est disponible. Les choix de démonstration ne sont ni envoyés ni comptabilisés.";
@@ -58,6 +62,7 @@
         data.source.length > 400 || typeof data.notes !== 'string' ||
         !data.notes.trim() || data.notes.length > 400) return false;
     if (data.publicationStatus === 'approved_aggregate') {
+      if (!PUBLIC_AGGREGATES_ENABLED) return false;
       if (!data.publicationApproved || !data.privacyReviewApproved ||
           typeof data.publishedOn !== 'string' ||
           !/^\d{4}-\d{2}-\d{2}$/.test(data.publishedOn) ||
@@ -135,7 +140,7 @@
         'Résultats et formulations indisponibles pour le moment.'));
       return;
     }
-    const approved=!!(snapshot && snapshot.publicationApproved &&
+    const approved=!!(PUBLIC_AGGREGATES_ENABLED && snapshot && snapshot.publicationApproved &&
       snapshot.privacyReviewApproved && results?.status === 'approved_aggregate');
     $('results-state').textContent=approved
       ? 'Résultats agrégés approuvés — aucune réponse individuelle publiée.'
