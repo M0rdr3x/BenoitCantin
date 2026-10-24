@@ -59,7 +59,7 @@ function testHarness() {
         assert.equal(request.credentials,'omit','Aucun cookie utilisateur dans le précache');
         assert.equal(request.cache,'no-store','Le précache initial doit ignorer le cache HTTP');
         assert.ok(request.url.startsWith('https://www.benoitcantin.com/'));
-        assert.ok(!/\\/(?:compte|admin|Admin|app|supabase|histoire-de-vie)\\//.test(request.url),
+        assert.ok(!/\/(?:compte|admin|Admin|app|supabase|histoire-de-vie)\//.test(request.url),
           'Aucun espace privé admis dans le précache');
       }
     },
