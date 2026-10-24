@@ -235,5 +235,8 @@ jobs:
       - name: Exiger le script de navigation actuel sur chaque page Nova
         run: python3 scripts/validate_nova_script_cache.py
 
+      - name: Tester la classification des conflits et la 404 Projet Nova
+        run: python3 scripts/audit_release_conflict_categories.py --self-test
+
       - name: Vérifier les fichiers, routes et liens de l’ensemble du site
         run: python3 scripts/validate_site.py
