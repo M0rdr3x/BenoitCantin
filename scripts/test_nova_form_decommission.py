@@ -20,6 +20,13 @@ def evaluate(overrides: dict[str, str]) -> tuple[int, str]:
     with patch.object(guard, "read", side_effect=fixture):
         with contextlib.redirect_stdout(output):
             result = guard.main()
+            # Contrôle supplémentaire distinct du validateur de main verrouillé
+            # par empreinte Git ; vérifie les deux canaux publics séparés.
+            contact = guard.read("contact.html")
+            for required in ("Canaux séparés", 'href="../../contact.html"', "/compte/"):
+                if required not in contact:
+                    print("ECHEC: séparation des canaux Projet Nova: " + required)
+                    result = 1
     return result, output.getvalue()
 
 
