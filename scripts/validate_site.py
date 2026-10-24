@@ -512,7 +512,14 @@ def validate_service_worker_privacy(sw_text: str) -> list[str]:
         "const unknownJSON=",
         "const sensitiveRuntimePath=sensitiveSegments||sensitiveQuery||sensitiveHeaders||unknownJSON;",
         "const PUBLIC_PRECACHE_REQUESTS=CORE.map(path=>new Request(path,{credentials:'omit',cache:'no-store'}));",
-        "c.addAll(PUBLIC_PRECACHE_REQUESTS)",
+        "function verifiedPublicPrecacheResponse(request,response)",
+        "if(!verifiedPublicPrecacheResponse(request,response))return;",
+        "return cache.put(request,response);",
+        "fetch(request).then(response=>{",
+        "resp.status===200",
+        "!resp.redirected",
+        "actual.origin===location.origin",
+        "actual.pathname===expected.pathname",
         "const publicCachePath=CORE.indexOf(u.pathname)!==-1;",
         "const versionOnly=",
         "const versionableAsset=",
@@ -591,6 +598,22 @@ def self_test_service_worker_privacy(sw_text: str) -> None:
         ),
         'précache avec cookies': sw_text.replace(
             "credentials:'omit'", "credentials:'same-origin'", 1
+        ),
+        'réponse privée enregistrée à installation': sw_text.replace(
+            "if(!verifiedPublicPrecacheResponse(request,response))return;",
+            "if(false)return;", 1
+        ),
+        'HTTP redirigé conservé en cache': sw_text.replace(
+            "resp.status===200&&!resp.redirected",
+            "resp.status===200", 1
+        ),
+        'réponse 206 partielle conservée en cache': sw_text.replace(
+            "resp.status===200",
+            "resp.ok", 1
+        ),
+        'redirection vers autre chemin conservée en cache': sw_text.replace(
+            "actual.pathname===expected.pathname",
+            "true", 1
         ),
         'précache sans discipline no-store': sw_text.replace(
             "const PUBLIC_PRECACHE_REQUESTS=CORE.map(path=>new Request(path,{credentials:'omit',cache:'no-store'}));",

@@ -5,25 +5,29 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 
 const worker=readFileSync('sw.js','utf8');
-assert.match(worker,/public-12-allowlisted/);
+assert.match(worker,/public-13-verified-install/);
 assert.ok(worker.includes("'/projets/projet-nova/script.js'"));
 assert.ok(worker.includes("'/projets/projet-nova/styles.css'"));
 
-function testHarness() {
+function testHarness({installCC='public, max-age=300',installVary='',installRedirected=false,installStatus=200,installResponsePath=''}={}) {
   const listeners=new Map();
-  const requests=[], stored=[], lookups=[], precached=[];
-  let cacheControl='public, max-age=300';
-  let varyHeader='';
+  const requests=[], stored=[], lookups=[];
+  let cacheControl=installCC;
+  let varyHeader=installVary;
+  let redirected=installRedirected;
+  let status=installStatus;
+  let responseUrl=installResponsePath?new URL(installResponsePath,'https://www.benoitcantin.com').href:'';
   let networkOffline=false;
   let storedFallbackPath=null;
   const response=()=>({
-    ok:true,
+    ok:status>=200&&status<300,
+    status,redirected,url:responseUrl,
     headers:{get(name){return name.toLowerCase()==='cache-control'?cacheControl:name.toLowerCase()==='vary'?varyHeader:null;}},
     clone(){return this;},
   });
   const cache={
     put(request){stored.push(request.url);return Promise.resolve();},
-    addAll(entries){precached.push(...entries);return Promise.resolve();},
+    addAll(){throw new Error('addAll sans validation est interdit pour le précache');},
   };
   const caches={
     open(){return Promise.resolve(cache);},
@@ -50,12 +54,14 @@ function testHarness() {
   const handler=listeners.get('fetch');
   assert.equal(typeof handler,'function');
   return {
-    async verifyInstall() {
+    async verifyInstall({expectedCache=true}={}) {
       let pending;
       listeners.get('install')({waitUntil(p){pending=p;}});
       await pending;
-      assert.ok(precached.length>=60,'Le précache public doit rester complet');
-      for(const request of precached){
+      assert.ok(requests.length>=60,'Les chemins publics doivent être téléchargés anonymement');
+      assert.equal(stored.length,expectedCache?requests.length:0,
+        'Seules les réponses publiques validées peuvent entrer dans le précache');
+      for(const request of requests){
         assert.equal(request.credentials,'omit','Aucun cookie utilisateur dans le précache');
         assert.equal(request.cache,'no-store','Le précache initial doit ignorer le cache HTTP');
         assert.ok(request.url.startsWith('https://www.benoitcantin.com/'));
@@ -63,9 +69,12 @@ function testHarness() {
           'Aucun espace privé admis dans le précache');
       }
     },
-    async run(path,{authorization='',key='',cc='public, max-age=300',vary='',destination='',offline=false,cachedPath=null}={}) {
+    async run(path,{authorization='',key='',cc='public, max-age=300',vary='',destination='',offline=false,cachedPath=null,redirectedResponse=false,responseStatus=200,responsePath=''}={}) {
       cacheControl=cc;
       varyHeader=vary;
+      redirected=redirectedResponse;
+      status=responseStatus;
+      responseUrl=responsePath?new URL(responsePath,'https://www.benoitcantin.com').href:'';
       networkOffline=offline;
       storedFallbackPath=cachedPath;
       requests.length=0;stored.length=0;lookups.length=0;
@@ -87,6 +96,21 @@ function testHarness() {
 
 const h=testHarness();
 await h.verifyInstall();
+for(const scenario of [
+  {installCC:'private, max-age=300'},
+  {installCC:'no-store'},
+  {installCC:'no-cache'},
+  {installVary:'Cookie'},
+  {installVary:'Authorization'},
+  {installVary:'*'},
+  {installRedirected:true},
+  {installStatus:206},
+  {installResponsePath:'/auth/session'},
+  {installResponsePath:'https://evil.invalid/fallback'},
+]){
+  const isolated=testHarness(scenario);
+  await isolated.verifyInstall({expectedCache:false});
+}
 async function expectedNoStore(path,opts={}) {
   const r=await h.run(path,opts);
   assert.equal(r.requests.length,1,path+' : une seule requête réseau attendue');
@@ -128,6 +152,11 @@ const noCache=await h.run(publicJson,{cc:'no-cache, max-age=0'});
 assert.equal(noCache.stored.length,0,'Les réponses sans cache ne sont jamais stockées');
 const noStore=await h.run(publicJson,{cc:'no-store'});
 assert.equal(noStore.stored.length,0,'Les réponses no-store ne sont jamais stockées');
+const redirectedPublic=await h.run(publicJson,{redirectedResponse:true,responsePath:'/auth/session'});
+assert.equal(redirectedPublic.stored.length,0,'Une redirection vers la connexion ne doit jamais entrer dans le cache');
+const partialPublic=await h.run(publicJson,{responseStatus:206});
+assert.equal(partialPublic.stored.length,0,'Une réponse HTTP 206 partielle ne doit jamais entrer dans le cache');
+
 for(const vary of ['Cookie','Authorization','Accept-Language, Cookie','*']){
   const result=await h.run(publicJson,{vary});
   assert.equal(result.stored.length,0,'La réponse variant selon '+vary+' ne doit pas être cachée');
