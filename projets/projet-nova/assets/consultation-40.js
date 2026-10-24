@@ -143,6 +143,11 @@
   function init() {
     clearLocalDemo();
     // pageshow se déclenche même lorsqu'un navigateur restaure un formulaire après DOMContentLoaded.
+    // Supprimer immédiatement les opinions lorsqu'on quitte la page :
+    // un onglet placé en cache arrière/avant ne doit pas conserver la démo.
+    window.addEventListener('pagehide', () => {
+      if (!COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED) clearLocalDemo();
+    });
     window.addEventListener('pageshow', () => {
       if (!COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED) clearLocalDemo();
     });
