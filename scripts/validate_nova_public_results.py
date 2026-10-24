@@ -119,10 +119,31 @@ def validate(obj, review=False):
         bad.append("Publication annoncée sans questionnaire publié")
     return bad
 
+def parse_public_snapshot(text):
+    """Refuser les clés dupliquées et valeurs hors JSON, même ignorées par JSON.parse.
+
+    Le fichier brut est public : une valeur écrasée à la lecture reste lisible
+    par un visiteur. Les validateurs d'objets ne doivent pas la masquer.
+    """
+    def unique_keys(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("Clé JSON dupliquée")
+            result[key] = value
+        return result
+
+    def reject_nonfinite(_value):
+        raise ValueError("Valeur numérique JSON non standard")
+
+    return json.loads(text, object_pairs_hook=unique_keys,
+                      parse_constant=reject_nonfinite)
+
+
 def check(root,built=None):
     target=root/REL
     if not target.is_file() or target.is_symlink():return ["Snapshot absent ou symbolique"]
-    try:data=json.loads(target.read_text("utf-8"))
+    try:data=parse_public_snapshot(target.read_text("utf-8"))
     except (OSError,ValueError,UnicodeError):return ["Snapshot illisible"]
     bad=validate(data)
     if built is not None:
@@ -177,6 +198,26 @@ def self_test():
         out=Path(name)/REL;out.parent.mkdir(parents=True)
         out.write_bytes((ROOT/REL).read_bytes())
         assert not check(ROOT,Path(name))
+        assert not check(Path(name))
+        # Le parseur JSON standard perd la première valeur d'une clé dupliquée.
+        # Or les octets de cette première valeur resteraient publiquement lisibles.
+        original = (ROOT/REL).read_text("utf-8")
+        mutations = (
+            original.replace('"publicationApproved": false,',
+                '"publicationApproved": true, "publicationApproved": false,', 1),
+            original.replace('"status": "not_open",',
+                '"status": "approved_aggregate", "status": "not_open",', 1),
+            original.replace('"respondents": null,',
+                '"respondents": NaN, "respondents": null,', 1),
+        )
+        for altered in mutations:
+            assert altered != original, "Mutation de test inactive"
+            out.write_text(altered, "utf-8")
+            assert any("Snapshot illisible" in error for error in check(Path(name))), (
+                "JSON ambigu ou non standard accepté par la validation publique"
+            )
+        out.write_bytes((ROOT/REL).read_bytes())
+        assert not check(Path(name))
         out.write_text("{}","utf-8")
         assert check(ROOT,Path(name))
     print("OK : aucune donnée individuelle, aucun petit groupe, aucune diffusion non approuvée")
