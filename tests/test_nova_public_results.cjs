@@ -33,7 +33,8 @@ class FakeElement {
 }
 
 async function mount(snapshot, {
-  badManifest = false, badManifest64 = false, fetchFailure = false, syntheticRelease = false,
+  badManifest = false, badManifest64 = false, fetchFailure = false,
+  stallFetch = false, syntheticRelease = false,
 } = {}) {
   const elements = new Map();
   const document = {
@@ -55,7 +56,18 @@ async function mount(snapshot, {
     document,
     crypto: webcrypto,
     TextDecoder,
-    fetch: async url => {
+    AbortController,
+    setTimeout: (fn, ms) => setTimeout(fn, stallFetch ? 10 : ms),
+    clearTimeout,
+    fetch: async (url, options = {}) => {
+      if (stallFetch && url === 'data/resultats-sondages-publics-v1.json') {
+        // Une connexion réellement bloquée ne résout la promesse qu'au signal
+        // abort du navigateur; minuterie abrégée exclusivement pour ce test.
+        return await new Promise((resolve, reject) => {
+          options.signal?.addEventListener('abort',
+            () => reject(new Error('REQUEST_ABORTED')), {once:true});
+        });
+      }
       if (fetchFailure) throw Error('network unavailable');
       if (!Object.hasOwn(fixtures, url)) throw Error('unexpected fixture: '+url);
       return {
@@ -131,6 +143,9 @@ test('registre fermé : 40 et 64 formulations sans résultats inventés',async()
 
 test('erreur réseau ne devient pas un état fermé faussement validé',async()=>{
   await assertUnavailable(copy(original),{fetchFailure:true});
+});
+test('connexion bloquée : timeout, annulation et indisponibilité sans résultats',async()=>{
+  await assertUnavailable(copy(original),{stallFetch:true});
 });
 test('manifestation d’une question altérée rejetée',async()=>{
   await assertUnavailable(copy(original),{badManifest:true});
