@@ -170,7 +170,92 @@ def main():
             require(altered.locator("#sondage-start").is_disabled(),
                     "Sondage 64 démarrable malgré une question divergente de la Boussole")
             altered.close()
-            print(f"OK {BROWSER}: Nova 18+, consentement, 64 questions, "
+            # Recette Boussole indépendante de la CI générale (souvent ignorée
+            # sur PR brouillon) : exécuter chaque navigateur de l'aperçu Nova.
+            compass_context = browser.new_context(
+                locale="fr-CA", viewport={"width": 390, "height": 844},
+                reduced_motion="reduce", service_workers="block",
+            )
+            compass = compass_context.new_page()
+            import json
+            compass_posts = []
+            compass.on("request", lambda request:
+                       compass_posts.append(request.url) if request.method == "POST" else None)
+            evidence_pattern = "**/boussole-preuves-2026.json"
+            def unsafe_evidence(route):
+                source = json.loads(route.fetch().body())
+                source["evidenceRecords"][0]["sourceUrl"] = "javascript:alert(1)"
+                route.fulfill(status=200, content_type="application/json",
+                              body=json.dumps(source, ensure_ascii=False))
+            compass.route(evidence_pattern, unsafe_evidence)
+            compass.goto("http://127.0.0.1:4173/projets/projet-nova/boussole-electorale.html",
+                         wait_until="domcontentloaded", timeout=30_000)
+            compass.locator("#compass-evidence-retry").wait_for(state="visible", timeout=10_000)
+            require(compass.locator("#compass-evidence-parties .compass-evidence-card").count() == 0,
+                    "Lien documentaire non HTTPS accepté par la Boussole")
+            compass.unroute(evidence_pattern, unsafe_evidence)
+            compass.locator("#compass-evidence-retry").click()
+            compass.locator("#compass-evidence-parties .compass-evidence-card").first.wait_for(
+                state="visible", timeout=10_000)
+            require(compass.locator("#compass-evidence-parties .compass-evidence-card").count() == 22,
+                    "Reprise de l'explorateur documentaire incomplète")
+            compass.wait_for_function("!document.getElementById('compass-start').disabled")
+            compass.locator("#compass-start").click()
+            full = compass.evaluate("""() => {
+                for(let i=0;i<64;i++){
+                    const radio=document.querySelector('#compass-question-stage input[type=radio]');
+                    if(!radio) return false;
+                    radio.click();
+                    document.querySelector('#compass-next').click();
+                }
+                return !document.querySelector('#compass-results').hidden &&
+                    document.querySelectorAll('#compass-results-grid .compass-result-card').length === 16;
+            }""")
+            require(full, "Parcours complet de la Boussole (64 propositions) non terminé")
+            share = compass.evaluate("""async () => {
+                const calls=[];
+                Object.defineProperty(navigator,'clipboard',{
+                    configurable:true,value:{writeText:async value=>calls.push(value)}
+                });
+                const b=document.querySelector('#compass-copy-result');
+                b.click();await Promise.resolve();b.click();await Promise.resolve();
+                return calls.length===2 && calls[0]===calls[1] &&
+                    document.querySelector('#compass-status').textContent.includes('Résumé copié');
+            }""")
+            require(share, "Le partage répété de la Boussole est en échec")
+            compass.locator("#compass-reset").click()
+            cleared = compass.evaluate("""() =>
+                document.querySelector('#compass-results').hidden &&
+                !document.querySelector('#compass-question-stage').childElementCount &&
+                !document.querySelector('#compass-results-grid').childElementCount &&
+                !document.querySelector('#compass-radar').childElementCount &&
+                !document.querySelector('#compass-summary').textContent &&
+                document.querySelector('#compass-share-email').getAttribute('href')==='mailto:'
+            """)
+            require(cleared, "La réinitialisation de la Boussole laisse des opinions dans le DOM")
+            compass.locator("#compass-start").click()
+            partial = compass.evaluate("""() => {
+                for(let i=0;i<64;i++){
+                    const radio=document.querySelector(
+                        '#compass-question-stage input[value="'+(i===0?'-3':'skip')+'"]');
+                    if(!radio) return false;
+                    radio.click();document.querySelector('#compass-next').click();
+                }
+                return !document.querySelector('#compass-results').hidden &&
+                    [...document.querySelectorAll('#compass-results-grid .compass-result-head strong')]
+                      .every(x=>x.textContent.trim()==='—') &&
+                    document.querySelector('#compass-radar').textContent.includes('pas encore assez');
+            }""")
+            require(partial, "Axe avec une seule réponse présenté comme un score fiable")
+            compass.evaluate("window.dispatchEvent(new Event('pagehide'))")
+            require(compass.evaluate("""() =>
+                document.querySelector('#compass-results').hidden &&
+                !document.querySelector('#compass-results-grid').childElementCount &&
+                !document.querySelector('#compass-question-stage').childElementCount
+            """), "La navigation conserve un profil sensible dans la page")
+            require(compass_posts == [], "La Boussole a transmis des réponses politiques")
+            compass_context.close()
+            print(f"OK {BROWSER}: Nova 18+, consentement, 64 questions, 
                   "relecture, aucun POST et collecte désactivée")
         finally:
             browser.close()

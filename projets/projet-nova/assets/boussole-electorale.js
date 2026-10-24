@@ -176,6 +176,7 @@
 
   function calculate(){
     const weightMap = state.data.methodology?.importanceWeights || {faible:0.5,normal:1,forte:1.5};
+    const axisMin = Number(state.data.methodology?.axisMinimumAnswered) || 2;
     const axes = new Map(state.data.axes.map(axis => [axis.id, {
       axis, sum:0, max:0, primaryAnswered:0, primaryTotal:0, evidenceWeight:0
     }]));
@@ -206,7 +207,8 @@
 
     return Array.from(axes.values()).map(bucket => ({
       ...bucket.axis,
-      score: bucket.max ? Math.round((bucket.sum / bucket.max) * 100) : null,
+      score: bucket.max && bucket.primaryAnswered >= axisMin
+        ? Math.round((bucket.sum / bucket.max) * 100) : null,
       answered: bucket.primaryAnswered,
       total: bucket.primaryTotal,
       coverage: bucket.primaryTotal ? Math.round(bucket.primaryAnswered / bucket.primaryTotal * 100) : 0,
