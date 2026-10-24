@@ -2,6 +2,7 @@
 """Parcours navigateur : opinion référendaire non officielle, 40 questions et aucune collecte."""
 import os
 from playwright.sync_api import expect, sync_playwright
+from nova_network_stall_helpers import check_stalled_fetch
 
 BROWSER = os.environ.get("BROWSER", "chromium")
 URL = "http://127.0.0.1:4173/projets/projet-nova/consultation-40.html"
@@ -185,6 +186,9 @@ with sync_playwright() as p:
               "Question centrale modifiée sans preuve SHA-256 approuvée")
         check(not compromised_posts, "Question compromise transmise au serveur")
         compromised.close()
+        # Panne réseau simulée, vérification explicite du délai et de l'AbortSignal.
+        check_stalled_fetch(browser, URL,
+            "consultation-40-v1.json", "survey", "Questionnaire 40 bloqué")
         print(f"OK {BROWSER}: 40 questions 18+, corpus SHA-256 intègre, "
               "historique, rechargement, révision, purge et collecte fermée")
     finally:
