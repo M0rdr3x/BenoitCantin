@@ -1,0 +1,100 @@
+name: Projet Nova P54C - Examen du rapport auditeurs depenses mixtes
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54c.yml"
+      - "scripts/analyser_contexte_audit_depenses_nova_p54c.py"
+      - "scripts/tests/test_analyser_contexte_audit_depenses_nova_p54c.py"
+      - "scripts/comparer_postes_financiers_nova_p54b.py"
+      - "scripts/analyser_ecarts_publications_nova_p54a.py"
+      - "scripts/acquerir_publications_nova_p53z.py"
+      - "projets/projet-nova/etudes/P54C_*"
+      - "projets/projet-nova/etudes/P54B_GRILLE_COMPARABILITE_POSTES_2024.json"
+      - "projets/projet-nova/etudes/P54B_OBSERVATIONS_NUMERIQUES_2026_10_24.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controle-qualitatif-pair-102-162:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - name: Checkout without stored credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Install pinned PDF tool
+        run: python -m pip install pypdf==5.9.0
+      - name: 40 synthetic-only tests on specialized audit context
+        run: |
+          python -m py_compile scripts/analyser_contexte_audit_depenses_nova_p54c.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_analyser_contexte_audit_depenses_nova_p54c.py")
+          assert suite.countTestCases()==40,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Ensure neutral report has no unsupported conclusion
+        run: |
+          python scripts/analyser_contexte_audit_depenses_nova_p54c.py --bilan p54c_neutre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p54c_neutre.json").read_text("utf-8"))
+          assert d["contexte_examine"] is False
+          assert d["montants_certifies"]==0
+          assert d["economie_certifiee_cad"] is None
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Check live official PDF pages with byte identity
+        shell: bash
+        run: |
+          set +e
+          python scripts/analyser_contexte_audit_depenses_nova_p54c.py --reanalyser-copies --bilan p54c_analyse_effective.json
+          status=$?
+          set -e
+          echo "Acquisition des deux publications P54C: $status" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$status" -ne 0 ] && [ "$status" -ne 4 ]; then
+            echo "Echec technique imprevu" >&2
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p54c_analyse_effective.json").read_text("utf-8"))
+          assert r["concordance_comptable_certifiee"] is False
+          assert r["expertise_independante_Nova_signature_valide"] is False
+          assert r["economie_certifiee_cad"] is None
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          print("Contexte des deux pages effectivement examiné:",r["contexte_examine"])
+          if r["contexte"] is not None:
+            print("Les deux sections semblent concerner le meme rapport:",
+                  r["contexte"]["sections_se_rapportent_probablement_au_meme_audit"])
+            print("Marqueurs détectés:",r["contexte"]["marqueurs_detectes"])
+            print("Recouvrement numérique descriptif:",
+                  r["contexte"]["comparaison_lexicale"]["recouvrement_dice"])
+          PY
+      - name: Refuse fictitious financial certification
+        run: |
+          set +e
+          python scripts/analyser_contexte_audit_depenses_nova_p54c.py --exiger-audit-certifie
+          status=$?
+          set -e
+          test "$status" -eq 3
+      - name: Only derived non-sensitive indicators
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54c-audit-contextualisation-102-162
+          path: |
+            p54c_neutre.json
+            p54c_analyse_effective.json
+          if-no-files-found: ignore
+          retention-days: 7
