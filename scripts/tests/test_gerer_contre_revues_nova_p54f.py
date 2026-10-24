@@ -123,6 +123,13 @@ class TestP54F(unittest.TestCase):
             p["revues"]=[reviewer(status="SUSPENDU"),
                          reviewer("CONTRE_REVISEUR","REV002")]
             self.assertEqual(m.validate_local(p,f,self.cfg)["statuts"]["SUSPENDU"],1)
+    def test_20a_single_reviewer_suspends_immediately(self):
+        with tempfile.TemporaryDirectory() as t:
+            f,p=package(t,proof=False)
+            p["revues"]=[reviewer(status="SUSPENDU")]
+            result=m.validate_local(p,f,self.cfg)
+            self.assertEqual(result["statuts"]["SUSPENDU"],1)
+            self.assertEqual(m.summary(self.cfg,result)["dossiers_clos_et_certifies"],0)
     def test_21_same_role_twice_denied(self):
         x=[reviewer(),reviewer(identity="REV002")]
         with self.assertRaises(ValueError):m.classify_reviews(x,set(),self.cfg)

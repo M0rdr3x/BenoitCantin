@@ -181,6 +181,8 @@ def classify_reviews(rows,proof_ids,cfg):
     checked=sum(len(row["controles_declares"]) for row in rows)
     for cid,rec in by_case.items():
         if not rec:state="EN_ATTENTE"
+        elif any(x["statut"]=="SUSPENDU" for x in rec.values()):
+            state="SUSPENDU"
         elif len(rec)==1:state="EXAMEN_UNIQUE"
         else:
             a,b=rec[ROLES[0]],rec[ROLES[1]]

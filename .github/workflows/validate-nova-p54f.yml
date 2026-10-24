@@ -28,14 +28,14 @@ jobs:
           python-version: "3.11"
       - name: Installer parseur PDF des ancrages
         run: python -m pip install pypdf==5.9.0
-      - name: Executer 62 tests synthetiques et garde-fous
+      - name: Executer 63 tests synthetiques et garde-fous
         run: |
           python -m py_compile scripts/gerer_contre_revues_nova_p54f.py
           python - <<'PY'
           import unittest
           suite=unittest.defaultTestLoader.discover(
             "scripts/tests",pattern="test_gerer_contre_revues_nova_p54f.py")
-          assert suite.countTestCases()==62,suite.countTestCases()
+          assert suite.countTestCases()==63,suite.countTestCases()
           result=unittest.TextTestRunner(verbosity=2).run(suite)
           assert result.wasSuccessful()
           PY
