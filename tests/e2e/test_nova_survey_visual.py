@@ -216,6 +216,18 @@ def main():
                     "Ancienne réponse retrouvée après purge")
             require(sent == [], f"Des réponses ont été envoyées malgré la collecte fermée : {sent}")
             page.locator("#sondage-choices input[value='1']").check()
+            # La purge doit être immédiate sur pagehide, avant même une
+            # restauration d'historique (bfcache) ou un nouveau pageshow.
+            page.evaluate("window.dispatchEvent(new Event('pagehide'))")
+            require(page.locator("#sondage-introduction").is_visible() and
+                    page.locator("#sondage-questionnaire").is_hidden(),
+                    "Départ de page : questionnaire personnel encore visible")
+            require(not page.locator("#sondage-age").is_checked() and
+                    not page.locator("#sondage-consent").is_checked() and
+                    page.locator("#sondage-choices").locator("input").count() == 0,
+                    "Départ de page : réponses personnelles ou consentement conservés")
+            require(page.locator("#sondage-start").is_disabled(),
+                    "Départ de page : parcours réactivable sans accord")
             page.goto("http://127.0.0.1:4173/projets/projet-nova/", wait_until="domcontentloaded")
             page.go_back(wait_until="domcontentloaded")
             require(not page.locator("#sondage-introduction").is_hidden(),
