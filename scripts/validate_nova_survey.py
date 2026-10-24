@@ -103,6 +103,7 @@ def check_text(payload: dict[str, str]) -> list[str]:
            "list.replaceChildren()", "step = 0;",
            "input.autocomplete = 'off'",
            "function clearLocalDemo()", "window.addEventListener('pageshow'",
+           "window.addEventListener('pagehide'",
            "if (!COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED) clearLocalDemo()",
            "L'accord de démonstration ne vaut PAS consentement à la collecte")
     demand("page", 'id="sondage-reset-question"', 'id="sondage-reset-finish"',
@@ -212,6 +213,7 @@ def self_test() -> None:
         ("page", 'autocomplete="off"', 'autocomplete="on"'),
         ("client", "input.autocomplete = 'off'", "input.autocomplete = 'on'"),
         ("client", "window.addEventListener('pageshow'", "window.addEventListener('pagehide'"),
+        ("client", "window.addEventListener('pagehide'", "window.addEventListener('visibilitychange'"),
         ("client", "if (!COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED) clearLocalDemo()",
          "if (false) clearLocalDemo()"),
         ("client", "editingReview = true", "editingReview = false"),
