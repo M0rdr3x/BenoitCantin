@@ -93,10 +93,10 @@ def audit() -> list[str]:
         "La qualification ne résout pas la fusion et ne valide aucun déploiement.",
         "",
         "### Versions de cache uniquement (contenu HTML autrement identique)",
-        *[f"- \`{name}\`" for name in cache],
+        *[f"- `{name}`" for name in cache],
         "",
         "### Revue du contenu, de la sécurité ou des données nécessaire",
-        *[f"- \`{name}\`" for name in substantive],
+        *[f"- `{name}`" for name in substantive],
     ]
     result = "\n".join(report) + "\n"
     print(result)
