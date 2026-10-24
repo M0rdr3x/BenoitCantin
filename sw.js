@@ -1,4 +1,4 @@
-const CACHE='benoitcantin-v24-4-95-public-10-private-cache';
+const CACHE='benoitcantin-v24-4-95-public-11-nova-assets';
 const CORE=[
   '/','/offline.html','/manifest.webmanifest','/a-propos.html','/contact.html','/transparence-ia.html',
   '/assistant.html','/confidentialite.html','/gouvernance-vie-privee.html','/avis-legal.html',
@@ -32,7 +32,7 @@ self.addEventListener('fetch',e=>{
   if(r.destination==='document'){
     e.respondWith(fetch(new Request(r,{cache:'no-store'})).then(resp=>{if(cacheableResponse(resp)){const cp=resp.clone();caches.open(CACHE).then(c=>c.put(r,cp))}return resp}).catch(()=>caches.match(r).then(x=>x||caches.match('/offline.html'))));return;
   }
-  const liveAsset=/\/assets\/(?:js|css)\//.test(u.pathname);
+  const liveAsset=/\/assets\/(?:js|css)\//.test(u.pathname)||u.pathname==='/projets/projet-nova/script.js'||u.pathname==='/projets/projet-nova/styles.css';
   if(liveAsset){e.respondWith(fetch(new Request(r,{cache:'no-store'})).then(resp=>{if(cacheableResponse(resp))caches.open(CACHE).then(c=>c.put(r,resp.clone()));return resp}).catch(()=>caches.match(r).then(x=>x||caches.match(u.pathname))));return}
   e.respondWith(caches.match(r).then(cached=>cached||fetch(r).then(resp=>{if(cacheableResponse(resp)&&u.pathname.indexOf('/documents/')===-1)caches.open(CACHE).then(c=>c.put(r,resp.clone()));return resp})));
 });
