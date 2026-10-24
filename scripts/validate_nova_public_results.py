@@ -9,6 +9,10 @@ from tempfile import TemporaryDirectory
 ROOT=Path(__file__).resolve().parents[1]
 REL="projets/projet-nova/data/resultats-sondages-publics-v1.json"
 CLIENT_REL="projets/projet-nova/assets/resultats-sondages.js"
+QUESTION_MANIFESTS={
+    "projets/projet-nova/data/consultation-40-v1.json":"5eece3aacaff678fd6f514d2ca5c4a158da9afb2dd3c5d6fb3c7849ac2cecfac",
+    "projets/projet-nova/data/sondage-questions-v1.json":"67df5052a3a09f23ecfa43e2882dcf7a0b6f1a85f1aad4e2f4159aab06570738",
+}
 CLOSED_CLIENT_GATE="const PUBLIC_AGGREGATES_ENABLED = false;"
 # Empreinte du snapshot fermé public, approuvée avant ouverture de #675.
 # Toute modification, même limitée aux espaces, requiert une revue explicite.
@@ -165,6 +169,27 @@ def check(root,built=None):
     bad=[]
     if browser_code.count(CLOSED_CLIENT_GATE)!=1:
         bad.append("Verrou navigateur de publication désactivé (#675)")
+    if browser_code.count("const APPROVED_MANIFEST_SHA256 = Object.freeze({")!=1 or (
+            "observed !== approvedDigest" not in browser_code or
+            "globalThis.crypto?.subtle" not in browser_code or
+            "response.arrayBuffer()" not in browser_code):
+        bad.append("Contrôle d'intégrité des questions publiques absent ou neutralisé")
+    for rel, approved_hash in QUESTION_MANIFESTS.items():
+        if browser_code.count(approved_hash)!=1:
+            bad.append("Empreinte des questions absente du client : "+rel)
+        file=root/rel
+        if not file.is_file() or file.is_symlink():
+            bad.append("Questions publiques manquantes : "+rel)
+            continue
+        raw=file.read_bytes()
+        if not raw or len(raw)>MAX_PUBLIC_BYTES or hashlib.sha256(raw).hexdigest()!=approved_hash:
+            bad.append("Questions publiques différentes du corpus approuvé : "+rel)
+        if built is not None:
+            deployed=built/rel
+            if not deployed.is_file() or deployed.is_symlink():
+                bad.append("Questions publiques absentes de Jekyll : "+rel)
+            elif deployed.read_bytes()!=raw:
+                bad.append("Questions publiques divergentes dans Jekyll : "+rel)
     try:
         if target.stat().st_size > MAX_PUBLIC_BYTES:
             return ["Snapshot public trop volumineux"]
@@ -245,6 +270,11 @@ def self_test():
         browser=Path(name)/CLIENT_REL
         browser.parent.mkdir(parents=True,exist_ok=True)
         browser.write_bytes((ROOT/CLIENT_REL).read_bytes())
+        for relative in QUESTION_MANIFESTS:
+            source=ROOT/relative
+            dest=Path(name)/relative
+            dest.parent.mkdir(parents=True,exist_ok=True)
+            dest.write_bytes(source.read_bytes())
         assert not check(ROOT,Path(name))
         assert not check(Path(name))
         original_client=browser.read_text("utf-8")
@@ -252,6 +282,22 @@ def self_test():
                            "const PUBLIC_AGGREGATES_ENABLED = true;"), "utf-8")
         assert any("Verrou navigateur" in e for e in check(Path(name))), (
             "Le client a affiché un agrégat avant la revue #675"
+        )
+        browser.write_text(original_client, "utf-8")
+        assert not check(Path(name))
+        for relative in QUESTION_MANIFESTS:
+            dest=Path(name)/relative
+            original_manifest=dest.read_bytes()
+            dest.write_bytes(original_manifest+b" ")
+            assert any("Questions publiques différentes" in err for err in check(Path(name))), (
+                "Questionnaire modifié, mais publication encore acceptée: "+relative
+            )
+            dest.write_bytes(original_manifest)
+        assert not check(Path(name))
+        browser.write_text(original_client.replace(
+            "observed !== approvedDigest", "false"), "utf-8")
+        assert any("Contrôle d'intégrité" in err for err in check(Path(name))), (
+            "L'inactivation de SHA-256 n'est pas bloquée"
         )
         browser.write_text(original_client, "utf-8")
         assert not check(Path(name))
