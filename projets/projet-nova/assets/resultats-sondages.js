@@ -5,6 +5,9 @@
   'use strict';
   const ROOT = 'data/';
   const SNAPSHOT = ROOT + 'resultats-sondages-publics-v1.json';
+  // Ces mentions sont gelées tant qu'aucune revue #675 n'autorise la collecte.
+  const CLOSED_SOURCE = "aucune enquête enregistrée ou publiée";
+  const CLOSED_NOTES = "Aucun résultat de participation réelle n'est disponible. Les choix de démonstration ne sont ni envoyés ni comptabilisés.";
   const CONFIG = {
     '40': {id:'nova-orientations-40-v1', file:ROOT+'consultation-40-v1.json',
       length:40, name:'Sondage référendaire consultatif — 40 questions',
@@ -98,7 +101,8 @@
     }
     if (data.publicationStatus === 'not_open' &&
         (data.publicationApproved || data.privacyReviewApproved ||
-         data.publishedOn !== null || publishedSurveys !== 0)) return false;
+         data.publishedOn !== null || publishedSurveys !== 0 ||
+         data.source !== CLOSED_SOURCE || data.notes !== CLOSED_NOTES)) return false;
     if (data.publicationStatus === 'approved_aggregate' && publishedSurveys === 0) return false;
     return true;
   }

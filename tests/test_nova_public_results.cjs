@@ -104,6 +104,14 @@ test('champ public inconnu bloqué, même sans identité visible',async()=>{
   data.surveys['nova-orientations-40-v1'].statisticsByNeighborhood=[];
   await assertUnavailable(data);
 });
+test('mentions publiques non approuvées sur état fermé : aucun résultat affiché',async()=>{
+  for (const field of ['source','notes']) {
+    const data=copy(original);
+    data[field]='contact de participant fictif: test@example.invalid';
+    await assertUnavailable(data);
+  }
+});
+
 test('date non autorisée sur état fermé bloquée',async()=>{
   const data=copy(original);data.publishedOn='2026-10-22';
   await assertUnavailable(data);

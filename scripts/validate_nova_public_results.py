@@ -7,6 +7,8 @@ from tempfile import TemporaryDirectory
 
 ROOT=Path(__file__).resolve().parents[1]
 REL="projets/projet-nova/data/resultats-sondages-publics-v1.json"
+CLOSED_SOURCE="aucune enquête enregistrée ou publiée"
+CLOSED_NOTES="Aucun résultat de participation réelle n'est disponible. Les choix de démonstration ne sont ni envoyés ni comptabilisés."
 SURVEYS={"nova-orientations-40-v1":(40,("pour","contre","sans_opinion")),
          "nova-consultation-64-v1":(64,("-3","-2","-1","0","1","2","3","skip"))}
 FORBIDDEN=("person","user","email","ip_address","ipaddress","address","hash",
@@ -51,6 +53,8 @@ def validate(obj, review=False):
                 obj.get("privacyReviewApproved") is not False or
                 obj.get("publishedOn") is not None):
             bad.append("Un snapshot fermé ne peut afficher une approbation ou une date")
+        if obj.get("source") != CLOSED_SOURCE or obj.get("notes") != CLOSED_NOTES:
+            bad.append("Mentions publiques du statut fermé modifiées sans revue")
     else:
         if not review:
             bad.append("Les données réelles ne sont pas autorisées (#675)")
@@ -182,6 +186,11 @@ def self_test():
     mutation=json.loads(json.dumps(source))
     mutation["privacyReviewApproved"]=0
     assert validate(mutation,review=True), "Faux booléen accepté"
+    for field in ("source", "notes"):
+        mutation=json.loads(json.dumps(source))
+        mutation[field]="contact de participant fictif: test@example.invalid"
+        assert validate(mutation), "Texte non approuvé accepté sur état fermé"
+        assert validate(mutation,review=True), "Revue synthétique a contourné le verrou des mentions"
     mutation=json.loads(json.dumps(source))
     mutation["publishedOn"]="2026-10-22"
     assert validate(mutation,review=True), "Date non approuvée acceptée"
