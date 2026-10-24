@@ -103,3 +103,30 @@ Quatre chemins de l'arborescence du dépôt sont maintenant couverts :
 signale l'accessibilité de l'URL, **sans démontrer que son contenu contient
 un secret**. Un diagnostic vert ne remplace pas les contrôles du reçu SHA/run,
 de l'artefact isolé et du CDN après un PUBLISH autorisé.
+
+## Prévol entre deux versions de résultats — 24 octobre 2026
+
+Un contrôle supplémentaire protège contre la **réidentification par comparaison** de deux bilans pourtant agrégés. Le script hors ligne
+`scripts/validate_nova_results_release_delta.py` compare le **dernier bilan réellement diffusé** au bilan proposé. Il refuse notamment :
+
+- une vague de moins de 30 répondants supplémentaires pour un questionnaire déjà publié ;
+- une hausse de 1 à 9 réponses dans n'importe quelle modalité visible, détectable en soustrayant les deux bilans ;
+- la diminution de comptes, les modifications du statut « répartition masquée », les dates non progressives, le retour à un état non ouvert et les incohérences de sommes ;
+- les JSON mal formés, champs non approuvés, identités ou petits effectifs déjà refusés par le contrat public.
+
+Exécuter la recette **sur des fixtures entièrement synthétiques** :
+
+```bash
+python3 scripts/validate_nova_results_release_delta.py --self-test
+```
+
+Avant **toute** republication envisagée, utiliser uniquement des fichiers locaux contrôlés par une personne autorisée :
+
+```bash
+python3 scripts/validate_nova_results_release_delta.py \
+  --previous /chemin/vers/dernier-bilan-publie.json \
+  --candidate /chemin/vers/nouveau-bilan-a-revoir.json
+```
+
+Le bilan précédent doit impérativement être le **plus récent**, avec preuve de son empreinte et de sa date de diffusion : choisir un ancien bilan rendrait le contrôle de différenciation incomplet. Les snapshots supprimés, les versions externes mises en cache et les révisions déjà visibles doivent aussi être pris en compte dans la revue de divulgation. **Un succès technique n'autorise jamais la publication.** La première publication doit être examinée séparément ; la comparaison ne garantit pas un anonymat absolu. Aucun résultat réel n'est présent ni activé dans la PR #639. L'issue #675, le droit de retrait après agrégation, la décision du responsable de la confidentialité et le verrou Pages #450 demeurent bloquants.
+
