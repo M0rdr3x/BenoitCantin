@@ -290,17 +290,18 @@
       const [manifestBytes,compassBytes] = await Promise.all([
         response.arrayBuffer(),compassResponse.arrayBuffer()
       ]);
-      if(!manifestBytes.byteLength || manifestBytes.byteLength>65536 ||
+      if(!manifestBytes.byteLength || manifestBytes.byteLength > 65536 ||
          !compassBytes.byteLength || compassBytes.byteLength>65536) throw new Error('SIZE');
       const [digest,compassDigest]=await Promise.all([
-        globalThis.crypto.subtle.digest('SHA-256',manifestBytes),
+        globalThis.crypto.subtle.digest('SHA-256', manifestBytes),
         globalThis.crypto.subtle.digest('SHA-256',compassBytes)
       ]);
       const hex = bytes => Array.from(new Uint8Array(bytes),
         byte=>byte.toString(16).padStart(2,'0')).join('');
-      if(hex(digest)!==APPROVED_MANIFEST_SHA256 ||
+      const observed=hex(digest);
+      if(observed !== APPROVED_MANIFEST_SHA256 ||
          hex(compassDigest)!==APPROVED_COMPASS_SHA256) throw new Error('CORPUS_INTEGRITY');
-      const decoder=new TextDecoder('utf-8',{fatal:true});
+      const decoder=new TextDecoder('utf-8', { fatal: true });
       const manifest=JSON.parse(decoder.decode(manifestBytes));
       const compass=JSON.parse(decoder.decode(compassBytes));
       if (!validManifest(manifest) || !sameSourceQuestions(manifest,compass)) throw new Error('CONTRACT');
