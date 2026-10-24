@@ -1,4 +1,5 @@
-const CACHE='benoitcantin-v24-4-95-public-13-verified-install';
+const CACHE='benoitcantin-v24-4-95-public-14-owned-lifecycle';
+const CACHE_PREFIX='benoitcantin-';
 const CORE=[
   '/','/offline.html','/manifest.webmanifest','/a-propos.html','/contact.html','/transparence-ia.html',
   '/assistant.html','/confidentialite.html','/gouvernance-vie-privee.html','/avis-legal.html',
@@ -24,14 +25,23 @@ function verifiedPublicPrecacheResponse(request,response){
   return expected.origin===location.origin&&actual.origin===location.origin&&actual.pathname===expected.pathname&&actual.search===expected.search;
 }
 self.addEventListener('install',e=>e.waitUntil(
-  caches.open(CACHE).then(cache=>Promise.all(PUBLIC_PRECACHE_REQUESTS.map(request=>
+  caches.open(CACHE).then(cache=>Promise.allSettled(PUBLIC_PRECACHE_REQUESTS.map(request=>
     fetch(request).then(response=>{
       if(!verifiedPublicPrecacheResponse(request,response))return;
       return cache.put(request,response);
     })
-  ))).then(()=>self.skipWaiting())
+  )).then(results=>{
+    const failure=results.find(result=>result.status==='rejected');
+    if(failure)throw failure.reason;
+  })).then(()=>self.skipWaiting()).catch(error=>
+    caches.delete(CACHE).then(()=>{throw error;})
+  )
 ));
-self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
+// Un service worker de la racine ne doit jamais effacer les caches d'autres
+// applications partageant le domaine (comptes, jeux, futures PWAs).
+self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>
+  Promise.all(keys.filter(k=>k.startsWith(CACHE_PREFIX)&&k!==CACHE).map(k=>caches.delete(k)))
+).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{
   const r=e.request,u=new URL(r.url);
   if(r.method!=='GET'||u.origin!==location.origin)return;
