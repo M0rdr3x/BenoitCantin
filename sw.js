@@ -12,7 +12,10 @@ const CORE=[
   '/projets/sinjira/','/projets/sinjira/romans/','/projets/sinjira/romans/lire-demo.html','/projets/sinjira/jeux/','/projets/sinjira/registre/','/projets/sinjira/communaute/','/projets/sinjira/codex/','/projets/sinjira/monde-parallele/','/projets/sinjira/marche/','/projets/sinjira/jeux/fracture-du-reseau-mere/','/projets/projet-nova/','/projets/projet-nova/boussole-electorale.html'
 ];
 function cacheableResponse(resp){const cc=String(resp.headers.get('Cache-Control')||'').toLowerCase();const vary=String(resp.headers.get('Vary')||'').toLowerCase();return resp.ok&&cc.indexOf('no-store')===-1&&cc.indexOf('private')===-1&&cc.indexOf('no-cache')===-1&&!/(?:^|,)\s*(?:cookie|authorization|\*)\s*(?:,|$)/.test(vary)}
-self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
+// Initialiser le précache avec des requêtes anonymes : ne jamais conserver
+// par accident une variante de l'accueil liée à une session utilisateur.
+const PUBLIC_PRECACHE_REQUESTS=CORE.map(path=>new Request(path,{credentials:'omit',cache:'no-store'}));
+self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(PUBLIC_PRECACHE_REQUESTS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{
   const r=e.request,u=new URL(r.url);
