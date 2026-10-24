@@ -139,6 +139,8 @@ def main():
             ("client","age18Confirmed:true","age18Confirmed:false"),
             ("client","explicitConsent:LIVE_OPINION_CONSENT_GRANTED","explicitConsent:true"),
             ("client","textContent = item.text","innerHTML = item.text"),
+            ("client","data.code === 'RECORDED'","true"),
+            ("client","data.survey === SURVEY_ID","true"),
             ("sql","enable row level security","disable row level security"),
             ("sql","!= 40","!= 39"),
             ("edge","NOVA40_COLLECTION_ENABLED","ENABLE_ALL"),
