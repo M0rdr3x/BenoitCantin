@@ -136,7 +136,7 @@ jobs:
           from scripts.build_netlify_public import relative_path_allowed
 
           worker = Path('sw.js').read_text(encoding='utf-8')
-          assert "benoitcantin-v24-4-95-public-10-private-cache" in worker
+          assert "benoitcantin-v24-4-95-public-11-nova-assets" in worker
           assert "const releaseMarker=u.pathname==='/.well-known/release.json';" in worker
           assert "if(releaseMarker){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}" in worker
           assert "if(privatePath){e.respondWith(fetch(new Request(r,{cache:'no-store'}))" in worker
@@ -146,6 +146,8 @@ jobs:
           entries = re.findall(r"'(/[^']+)'", precache)
           assert len(entries) == len(set(entries)), "Entrées PWA en double"
           expected = {
+              '/projets/projet-nova/script.js',
+              '/projets/projet-nova/styles.css',
               '/projets/projet-nova/boussole-electorale.html',
               '/projets/projet-nova/assets/boussole-electorale.js',
               '/projets/projet-nova/assets/boussole-electorale.css',
