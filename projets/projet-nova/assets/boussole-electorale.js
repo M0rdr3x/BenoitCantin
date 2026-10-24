@@ -32,6 +32,16 @@
   const $ = (sel, root=document) => root.querySelector(sel);
   const esc = value => String(value).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
 
+  // Rejeter toute source non HTTPS et les URL intégrant des identifiants.
+  function verifiedDocumentUrl(raw){
+    if(typeof raw !== "string") return null;
+    try{
+      const url = new URL(raw);
+      if(url.protocol !== "https:" || !url.hostname || url.username || url.password) return null;
+      return url.href;
+    }catch{ return null; }
+  }
+
   function currentQuestion(){
     return state.data?.questions?.[state.currentIndex] || null;
   }
@@ -583,6 +593,7 @@
         const secondReviewDate = record.secondIndependentReview?.reviewedAt || "Date de révision non indiquée";
         const label = DOCUMENTARY_STATUS_LABELS[record.proposedStatus] || record.proposedStatus;
         const confidence = CONFIDENCE_LABELS[record.confidence] || record.confidence;
+        const sourceUrl = verifiedDocumentUrl(record.sourceUrl);
         return `
           <article class="compass-evidence-record">
             <h4>${esc(party.name)}</h4>
@@ -595,7 +606,7 @@
             </dl>
             <p><strong>Éléments retenus :</strong> ${esc(record.evidenceSummary)}</p>
             <p><strong>Justification du codage :</strong> ${esc(record.rationale)}</p>
-            <p><a href="${esc(record.sourceUrl)}" target="_blank" rel="noopener noreferrer">Consulter la source officielle ↗</a></p>
+            ${sourceUrl ? `<p><a href="${esc(sourceUrl)}" target="_blank" rel="noopener noreferrer">Consulter la source officielle ↗</a></p>` : `<p>Adresse de la source indisponible : vérification requise.</p>`}
           </article>
         `;
       }).join("");
@@ -780,7 +791,8 @@
          matrixByKey.get(key) !== record.proposedStatus){
         throw new Error("Fiche de preuve non synchronisée avec la matrice");
       }
-      validatedRecords.set(key,record);
+      if(!verifiedDocumentUrl(record.sourceUrl)) throw new Error("Adresse HTTPS de preuve invalide");
+       validatedRecords.set(key,record);
     }
     for(const [key,status] of matrixByKey){
       if(status !== "unknown" && !validatedRecords.has(key)){
