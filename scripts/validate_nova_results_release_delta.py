@@ -116,24 +116,63 @@ def self_test() -> None:
         row["counts"]["pour"] += 30
     assert not compare(first, later), compare(first, later)
 
-    def rejected(mutator) -> None:
-        case = deepcopy(later)
-        mutator(case)
-        assert compare(first, case), "Une différence divulguante a été acceptée"
+    def assert_reason(case: dict, phrase: str) -> None:
+        problems = compare(first, case)
+        assert any(phrase in p for p in problems), (phrase, problems)
 
-    rejected(lambda x: x["surveys"]["nova-orientations-40-v1"].update(respondents=61))
-    rejected(lambda x: x["surveys"]["nova-orientations-40-v1"]["questions"][0][
-        "counts"].update(pour=51, contre=39))
-    rejected(lambda x: x["surveys"]["nova-orientations-40-v1"]["questions"][0][
-        "counts"].update(pour=49, contre=41))
-    rejected(lambda x: x["surveys"]["nova-orientations-40-v1"]["questions"][0][
-        "counts"].update(pour=29, contre=61))
-    rejected(lambda x: x["surveys"]["nova-orientations-40-v1"]["questions"][0].update(
-        status="suppressed", **{"counts": None}))
-    rejected(lambda x: x.update(publishedOn="2026-10-24"))
-    rejected(lambda x: x["surveys"]["nova-orientations-40-v1"].update(status="not_open"))
-    assert compare(first, first), "Republication sans nouvelle vague acceptée"
-    assert compare(closed, closed), "L'état fermé présenté comme publication"
+    # Chaque mutation conserve un schéma VALIDÉ : seuls les seuils de
+    # différence (et non un JSON mal formé) doivent faire échouer le prévol.
+    tiny_batch = deepcopy(first)
+    tiny_batch["publishedOn"] = "2026-10-25"
+    tiny = tiny_batch["surveys"]["nova-orientations-40-v1"]
+    tiny["respondents"] = 61
+    for row in tiny["questions"]:
+        row["total"] = 61
+        row["counts"]["pour"] += 1
+    assert not validate(tiny_batch, review=True)
+    assert_reason(tiny_batch, "moins de 30 personnes")
+    assert_reason(tiny_batch, "petite cellule")
+
+    tiny_cell = deepcopy(first)
+    tiny_cell["publishedOn"] = "2026-10-25"
+    broken = tiny_cell["surveys"]["nova-orientations-40-v1"]
+    broken["respondents"] = 90
+    for row in broken["questions"]:
+        row["total"] = 90
+        row["counts"].update(pour=59, contre=31)
+    assert not validate(tiny_cell, review=True)
+    assert_reason(tiny_cell, "petite cellule")
+
+    subtraction = deepcopy(first)
+    subtraction["publishedOn"] = "2026-10-25"
+    moved = subtraction["surveys"]["nova-orientations-40-v1"]
+    moved["respondents"] = 90
+    for row in moved["questions"]:
+        row["total"] = 90
+        row["counts"].update(pour=29, contre=61)
+    assert not validate(subtraction, review=True)
+    assert_reason(subtraction, "diminution de modalité")
+
+    changed_mask = deepcopy(later)
+    changed_mask["surveys"]["nova-orientations-40-v1"]["questions"][0] = {
+        "id": "q01", "status": "suppressed"
+    }
+    assert not validate(changed_mask, review=True)
+    assert_reason(changed_mask, "changement de suppression")
+
+    stale_date = deepcopy(later)
+    stale_date["publishedOn"] = "2026-10-24"
+    assert_reason(stale_date, "nouvelle date")
+    repeated = deepcopy(first)
+    repeated["publishedOn"] = "2026-10-25"
+    assert_reason(repeated, "Aucune nouvelle vague")
+    assert compare(first, first), "Republication identique acceptée"
+    assert compare(closed, closed), "État fermé présenté comme publication"
+    reopened = deepcopy(later)
+    reopened["surveys"]["nova-orientations-40-v1"].update(
+        status="not_open", respondents=None, questions=[])
+    assert compare(first, reopened), "Retrait d'un bilan ancien accepté"
+
     fake64 = deepcopy(first)
     fake64["surveys"]["nova-consultation-64-v1"].update(
         status="approved_aggregate", respondents=60,
