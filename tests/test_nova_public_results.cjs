@@ -82,7 +82,14 @@ async function mount(snapshot, {
     ? script.replace(CLOSED_GATE, 'const PUBLIC_AGGREGATES_ENABLED = true;')
     : script;
   vm.runInNewContext(candidate, context, {filename:'resultats-sondages.js',timeout:1500});
-  await new Promise(resolve => setImmediate(resolve));
+  // Les digests Web Crypto des deux manifestes sont asynchrones : attendre
+  // l'affichage effectif, et non un seul cycle d'événements non déterministe.
+  const ready = () => Boolean(elements.get('results-state')?.textContent) &&
+    (elements.get('results-question-list')?.children.length ?? 0) > 0;
+  for (let attempt = 0; attempt < 200 && !ready(); attempt++) {
+    await new Promise(resolve => setTimeout(resolve, 10));
+  }
+  assert.ok(ready(), 'Résultats Nova : rendu DOM non terminé ou erreur asynchrone');
   return id => document.getElementById(id);
 }
 
