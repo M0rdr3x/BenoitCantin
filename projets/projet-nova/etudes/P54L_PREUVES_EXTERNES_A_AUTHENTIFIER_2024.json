@@ -1,0 +1,75 @@
+{
+  "schema_version": "P54L-1",
+  "date_reference": "2026-10-24",
+  "exercice": 2024,
+  "source_jalon": "P54K",
+  "ancrage_p54d_run": 40120462237,
+  "mandats": [
+    "MANDAT-COMPTABLE-2024",
+    "MANDAT-JURIDIQUE-2024"
+  ],
+  "dossiers": [
+    "P54E-V-001",
+    "P54E-M-001",
+    "P54E-M-002",
+    "P54E-M-003"
+  ],
+  "categories": [
+    "TABLEAU_PROFESSIONNEL",
+    "AUTHENTICITE_SIGNATURE",
+    "CONFLITS_D_INTERETS",
+    "VALIDITE_MANDAT"
+  ],
+  "qualifications_declaratives": [
+    "A_VERIFIER",
+    "PIECE_LOCALE_NON_AUTHENTIFIEE",
+    "RESERVE_EXPLICITE",
+    "SUSPENSION_EXPLICITE"
+  ],
+  "etats_dossier": [
+    "AUCUNE_PIECE_LOCALE",
+    "PIECES_LOCALES_A_AUTHENTIFIER",
+    "RESERVE_OUVERTE",
+    "CONTRADICTION_OUVERTE",
+    "SUSPENSION_PRIORITAIRE"
+  ],
+  "limites": {
+    "taille_fiche_octets": 32768,
+    "nombre_pieces": 12,
+    "nombre_observations": 16
+  },
+  "protections": {
+    "ne_jamais_inferer_une_authentification_des_octets": true,
+    "aucune_consultation_ordre_professionnel_effectuee": true,
+    "aucun_professionnel_contacte_par_ci": true,
+    "aucune_signature_certifiee": true,
+    "aucun_permis_authentifie": true,
+    "aucun_conflit_legalement_resolu": true,
+    "aucune_decision_institutionnelle": true,
+    "aucune_piece_originale_sur_github": true,
+    "sha_prives_et_identites_hors_bilan": true,
+    "chaîne_p54i_p54j_p54k_ancree": true,
+    "relecture_p54k_obligatoire": true,
+    "suspension_prioritaire": true,
+    "contradictions_non_effacees": true,
+    "reserves_non_effacees": true,
+    "comptabilite_droit_distincts": true,
+    "pas_de_double_compte_ville_rtc": true,
+    "emploi_services_proteges": true,
+    "regimes_quebec_separes": true,
+    "sinjira_inchange": true,
+    "main_non_fusionnee": true
+  },
+  "etat_initial": {
+    "dossiers": 4,
+    "mandats": 2,
+    "categories_par_mandat": 4,
+    "verifications_officielles_executees": 0,
+    "avis_authentifies": 0,
+    "signatures_authentifiees": 0,
+    "experts_contactes": 0,
+    "dossiers_clos": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
