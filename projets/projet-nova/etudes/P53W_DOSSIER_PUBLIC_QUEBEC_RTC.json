@@ -1,0 +1,152 @@
+{
+  "schema_version": "P53W-1",
+  "jalon": "P53W",
+  "date_reference": "2026-10-24",
+  "exercice": 2024,
+  "statut": "CONSTATS_PUBLICS_PAGE_PAR_PAGE_SANS_AUDIT_TRANSACTIONNEL",
+  "code_ville": "23027",
+  "code_rtc": "T0088",
+  "sources": {
+    "ville": {
+      "url": "https://www.ville.quebec.qc.ca/publications/docs_ville/Rapport_financier_2024.pdf",
+      "nature": "PDF_PUBLIC_MUNICIPAL",
+      "pages_pdf_observees": 230,
+      "sha256_fichier": null,
+      "octets_locaux_verifies": false
+    },
+    "catalogue": {
+      "url": "https://www.ville.quebec.qc.ca/apropos/profil-financier/rapport-financier.aspx",
+      "nature": "CATALOGUE_MUNICIPAL"
+    },
+    "mamh": {
+      "url": "https://www.mamh.gouv.qc.ca/documentsfinanciersweb/Rapport-financier-2024-et-autres-23027.pdf",
+      "nature": "PDF_MAMH_REPERE_NON_COMPARE",
+      "sha256_fichier": null,
+      "versions_confrontees": false
+    }
+  },
+  "constats": [
+    {
+      "id": "F01_EXERCICE_2024",
+      "source": "ville",
+      "index_pdf": 0,
+      "page_imprimee": null,
+      "classe": "COUVERTURE",
+      "observation": "Rapport financier de la Ville de Québec pour l'exercice terminé le 31 décembre 2024."
+    },
+    {
+      "id": "F02_RTC_SOMHAC",
+      "source": "ville",
+      "index_pdf": 34,
+      "page_imprimee": 35,
+      "classe": "NOTE_COMPTABLE",
+      "observation": "Le périmètre comptable comprend le RTC et la Société municipale d'habitation Champlain (SOMHAC)."
+    },
+    {
+      "id": "F03_CONSOLIDATION_LIGNE",
+      "source": "ville",
+      "index_pdf": 34,
+      "page_imprimee": 35,
+      "classe": "NOTE_COMPTABLE",
+      "observation": "Les comptes de la Ville et des organismes contrôlés sont consolidés ligne par ligne."
+    },
+    {
+      "id": "F04_RECIPROQUES_ELIMINEES",
+      "source": "ville",
+      "index_pdf": 34,
+      "page_imprimee": 35,
+      "classe": "NOTE_COMPTABLE",
+      "observation": "Les opérations interorganismes et les soldes réciproques sont indiqués comme déjà éliminés."
+    },
+    {
+      "id": "F05_NOTE_NON_AUDITEE",
+      "source": "ville",
+      "index_pdf": 196,
+      "page_imprimee": 197,
+      "classe": "BUDGET_NON_AUDITE",
+      "observation": "La page de rapprochement des prévisions budgétaires porte la mention Non audité."
+    },
+    {
+      "id": "F06_ELIMINATIONS_BUDGET",
+      "source": "ville",
+      "index_pdf": 196,
+      "page_imprimee": 197,
+      "classe": "BUDGET_NON_AUDITE",
+      "observation": "La note sur le périmètre budgétaire décrit des éliminations entre compétences d'agglomération, compétences locales et organismes contrôlés."
+    },
+    {
+      "id": "F07_RESOLUTION_CITEE",
+      "source": "ville",
+      "index_pdf": 196,
+      "page_imprimee": 197,
+      "classe": "REFERENCE_NON_AUTHENTIFIEE",
+      "observation": "La résolution CA-2023-0771 est citée pour le budget 2024 du RTC; son original n'a pas été vérifié."
+    },
+    {
+      "id": "F08_CATALOGUE",
+      "source": "catalogue",
+      "index_pdf": null,
+      "page_imprimee": null,
+      "classe": "INDEX_HTML",
+      "observation": "La Ville présente un lien vers son rapport financier 2024 parmi les publications antérieures."
+    }
+  ],
+  "questions": [
+    {
+      "id": "ORIGINAL_ET_SHA256",
+      "objet": "Acquérir légalement la version exacte du PDF et comparer son empreinte à une référence fiable.",
+      "statut": "NON_RESOLUE_BLOQUANTE"
+    },
+    {
+      "id": "COMPARAISON_VILLE_MAMH",
+      "objet": "Comparer réellement les octets et versions de la Ville et du MAMH avant de déclarer leur équivalence.",
+      "statut": "NON_RESOLUE_BLOQUANTE"
+    },
+    {
+      "id": "DEUX_GRANDS_LIVRES",
+      "objet": "Réconcilier les journaux du payeur et du bénéficiaire avec factures et paiements.",
+      "statut": "NON_RESOLUE_BLOQUANTE"
+    },
+    {
+      "id": "ELIMINATIONS",
+      "objet": "Identifier et exclure les écritures réciproques déjà éliminées dans la consolidation.",
+      "statut": "NON_RESOLUE_BLOQUANTE"
+    },
+    {
+      "id": "EMPLOIS_SERVICES",
+      "objet": "Documenter le maintien des emplois, conditions de travail, accès et qualité des services.",
+      "statut": "NON_RESOLUE_BLOQUANTE"
+    },
+    {
+      "id": "EXPERTISE_INDEPENDANTE",
+      "objet": "Obtenir les avis juridiques et comptables indépendants, originaux et signés, hors Git.",
+      "statut": "NON_RESOLUE_BLOQUANTE"
+    }
+  ],
+  "verrous": {
+    "pas_de_document_original_dans_git": true,
+    "absence_sha256_pdf_explicite": true,
+    "hachage_et_audit_non_simules": true,
+    "sources_ville_mamh_non_presumees_identiques": true,
+    "statut_non_audite_197_non_generalise": true,
+    "RTC_SOMHAC_consolides_pas_economies": true,
+    "elimination_reciproque_pas_second_gain": true,
+    "resolution_citee_pas_original_verifie": true,
+    "controles_P53V_restent_non_certifies": true,
+    "aucun_taux_fiscal_adopte": true,
+    "aucune_baisse_emplois_services": true,
+    "pas_de_fusion_automatique": true
+  },
+  "etat_initial": {
+    "preuves_de_publication_reperees": 3,
+    "constats_avec_ancrage": 8,
+    "pages_pdf_distinctes": 3,
+    "questions_bloquantes": 6,
+    "pieces_transactionnelles_authentifiees": 0,
+    "bilans_comptables_apparies": 0,
+    "versions_pdf_confrontees": 0,
+    "avis_independants_signes": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
