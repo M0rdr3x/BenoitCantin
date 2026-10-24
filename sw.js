@@ -35,7 +35,7 @@ self.addEventListener('fetch',e=>{
   // connues publiques ; seul ?v= peut varier sur un script/CSS de CORE.
   const publicCachePath=CORE.indexOf(u.pathname)!==-1;
   const versionOnly=u.searchParams.has('v')&&[...u.searchParams.keys()].length===1&&/^[A-Za-z0-9._-]{1,64}$/.test(u.searchParams.get('v')||'');
-  const versionableAsset=/(?:^|\\/)assets\\/(?:js|css)\\//.test(u.pathname)||u.pathname==='/projets/projet-nova/script.js'||u.pathname==='/projets/projet-nova/styles.css';
+  const versionableAsset=/(?:^|\/)assets\/(?:js|css)\//.test(u.pathname)||u.pathname==='/projets/projet-nova/script.js'||u.pathname==='/projets/projet-nova/styles.css';
   const publicCacheRequest=publicCachePath&&(!u.search||(versionOnly&&versionableAsset));
   if(!publicCacheRequest){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}
 
