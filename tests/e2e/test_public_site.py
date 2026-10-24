@@ -83,6 +83,85 @@ def run() -> None:
             assert_true(page.locator("h1").count() >= 1, f"H1 absent: {url}")
             assert_true(bool(page.title().strip()), f"Titre absent: {url}")
 
+        # Trois catalogues = trois bannières originales vérifiées dans
+        # chaque moteur navigateur, sur desktop puis sur petit écran.
+        # Une simple URL valide ne suffit pas : le fichier doit décoder,
+        # être visible et rester affiché sans coupure de l'image source.
+        for category in ("romans", "jeux", "logiciels"):
+            catalogue_url = urljoin(BASE_URL, f"projets/sinjira/{category}/")
+            response = page.goto(
+                catalogue_url, wait_until="domcontentloaded", timeout=30_000
+            )
+            assert_true(
+                response is not None and response.status == 200,
+                f"{BROWSER_NAME}: catalogue {category} inaccessible",
+            )
+            banner = page.locator(
+                ".sinjira-category-poster--banner img"
+                "[src='/assets/media/sinjira-" + category + "-banniere-2026.webp']"
+            )
+            assert_true(
+                banner.count() == 1,
+                f"{BROWSER_NAME}: bannière officielle absente dans {category}",
+            )
+            banner.scroll_into_view_if_needed()
+            page.wait_for_function(
+                """selector => {
+                    const img = document.querySelector(selector);
+                    return img && img.complete && img.naturalWidth > 1000
+                        && img.naturalHeight > 700;
+                }""",
+                arg=".sinjira-category-poster--banner img",
+                timeout=15_000,
+            )
+            main_nav = page.locator(
+                'nav.main-nav a[href="/projets/sinjira/"]'
+            )
+            subnav = page.locator(
+                "nav.universe-subnav a[aria-current='page']"
+            )
+            assert_true(
+                main_nav.count() == 1
+                and main_nav.get_attribute("aria-current") == "location"
+                and subnav.count() == 1
+                and urljoin(
+                    catalogue_url, subnav.get_attribute("href") or ""
+                ).rstrip("/").removesuffix("/index.html") == catalogue_url.rstrip("/"),
+                f"{BROWSER_NAME}: état de navigation accessible incohérent ({category})",
+            )
+            for width in (1440, 390):
+                page.set_viewport_size({"width": width, "height": 844})
+                geometry = banner.evaluate("""img => {
+                    const bounds = img.getBoundingClientRect();
+                    return {
+                        naturalWidth: img.naturalWidth,
+                        naturalHeight: img.naturalHeight,
+                        width: bounds.width,
+                        height: bounds.height,
+                        objectFit: getComputedStyle(img).objectFit,
+                        overflow: document.documentElement.scrollWidth - innerWidth
+                    };
+                }""")
+                assert_true(
+                    geometry["width"] > 250
+                    and geometry["height"] > 0
+                    and geometry["naturalWidth"] > 1000
+                    and geometry["objectFit"] == "contain"
+                    and abs(
+                        geometry["height"]
+                        - geometry["width"] * geometry["naturalHeight"]
+                          / geometry["naturalWidth"]
+                    ) < 3,
+                    f"{BROWSER_NAME}: affiche {category} déformée ou rognée "
+                    f"en {width}px: {geometry}",
+                )
+                assert_true(
+                    geometry["overflow"] <= 2,
+                    f"{BROWSER_NAME}: débordement horizontal {category} "
+                    f"en {width}px: {geometry['overflow']}px",
+                )
+            page.set_viewport_size({"width": 1440, "height": 1000})
+
         page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30_000)
         page.wait_for_function(
             "document.querySelector('link[data-sinjira-browser-compat]') !== null",
@@ -98,6 +177,31 @@ def run() -> None:
         assert_true(cards.count() == 4, f"Accueil: 4 accès attendus, trouvé {cards.count()}")
         hrefs = {cards.nth(i).get_attribute("href") for i in range(cards.count())}
         assert_true(hrefs == EXPECTED_DOORS, f"Accueil: portes inattendues: {hrefs}")
+        survey_section = page.locator("#sondages-nova")
+        assert_true(survey_section.count() == 1 and survey_section.is_visible(),
+                    f"{BROWSER_NAME}: section Sondages Nova absente de l'accueil général")
+        assert_true(page.locator("#home-sondage-40").get_attribute("href") ==
+                    "/projets/projet-nova/consultation-40.html",
+                    f"{BROWSER_NAME}: lien sondage référendaire absent sur l'accueil général")
+        assert_true(page.locator("#home-sondage-64").get_attribute("href") ==
+                    "/projets/projet-nova/sondage.html",
+                    f"{BROWSER_NAME}: lien sondage citoyen absent sur l'accueil général")
+        assert_true("collecte des réponses désactivée" in survey_section.inner_text().lower(),
+                    f"{BROWSER_NAME}: collecte fermée non déclarée sur l'accueil général")
+        image = survey_section.locator('img[src="/projets/projet-nova/assets/nova-sondage-icone.webp"]')
+        assert_true(image.count() == 1,
+                    f"{BROWSER_NAME}: icône du sondage choisie absente de l'accueil général")
+        image.scroll_into_view_if_needed()
+        page.wait_for_function(
+            "(() => {const a=document.querySelector('#sondages-nova img'); return a && a.complete && a.naturalWidth===256 && a.naturalHeight===256})()",
+            timeout=15_000,
+        )
+        page.locator("#home-sondage-40").click()
+        assert_true(page.url.endswith("/projets/projet-nova/consultation-40.html"),
+                    f"{BROWSER_NAME}: accès depuis l'accueil ne mène pas au référendaire")
+        assert_true(page.locator("#sondage-introduction").is_visible(),
+                    f"{BROWSER_NAME}: questionnaire 40 inaccessible depuis l'accueil")
+        page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30_000)
         orbit_nodes = page.locator(".home-cosmos a.orbit-node")
         assert_true(orbit_nodes.count() == 4, f"Accueil: 4 portes orbitales attendues, trouvé {orbit_nodes.count()}")
         compass_orbit = page.locator(".home-cosmos .node-boussole-home")
@@ -144,6 +248,24 @@ def run() -> None:
             page.locator('a[href="boussole-electorale.html"]').count() >= 3,
             f"{BROWSER_NAME}: la Boussole doit avoir au moins trois accès depuis l’accueil Nova",
         )
+        assert_true(page.locator("#nova-public-results-link").count() == 1,
+                    f"{BROWSER_NAME}: bouton des résultats anonymisés absent de l'accueil Nova")
+        page.locator("#nova-public-results-link").click()
+        assert_true(page.url.endswith("/projets/projet-nova/resultats-sondages.html"),
+                    f"{BROWSER_NAME}: page publique de résultats inaccessible")
+        page.locator("#results-question-list li").first.wait_for(timeout=15000)
+        assert_true(page.locator("#results-question-list li").count() == 40,
+                    f"{BROWSER_NAME}: 40 questions absentes des résultats")
+        assert_true("Aucun résultat publié" in page.locator("#results-state").inner_text(),
+                    f"{BROWSER_NAME}: résultat fictif annoncé")
+        assert_true(page.locator(".nova-results-bar-item").count() == 0,
+                    f"{BROWSER_NAME}: pourcentages non approuvés visibles")
+        page.locator("#results-show-64").click()
+        assert_true(page.locator("#results-question-list li").count() == 64,
+                    f"{BROWSER_NAME}: 64 questions absentes des résultats")
+        assert_true(page.locator(".nova-results-bar-item").count() == 0,
+                    f"{BROWSER_NAME}: agrégat inventé affiché")
+        page.goto(urljoin(BASE_URL, "projets/projet-nova/"), wait_until="domcontentloaded", timeout=30_000)
         nova_compass_entry = page.locator(".nova-compass-entry .nova-compass-entry-link")
         assert_true(nova_compass_entry.count() == 1, f"{BROWSER_NAME}: accès prioritaire Boussole absent en haut de Nova")
         assert_true(nova_compass_entry.is_visible(), f"{BROWSER_NAME}: accès prioritaire Boussole non visible")
@@ -429,6 +551,36 @@ def run() -> None:
             parcours_64_questions["valid"],
             f"{BROWSER_NAME}: parcours guidé ou focus des résultats incorrect: {parcours_64_questions}",
         )
+        # Partage répétable, puis purge effective (pas seulement un élément hidden).
+        repeated_copy = page.evaluate("""async () => {
+            const copied = [];
+            Object.defineProperty(navigator, 'clipboard', {
+                configurable:true,
+                value:{writeText: async value => { copied.push(value); }}
+            });
+            const button = document.querySelector('#compass-copy-result');
+            button.click();
+            await Promise.resolve();
+            button.click();
+            await Promise.resolve();
+            return {count:copied.length, same:copied[0] === copied[1],
+                    reported:document.querySelector('#compass-status').textContent};
+        }""")
+        assert_true(repeated_copy["count"] == 2 and repeated_copy["same"]
+                    and "Résumé copié" in repeated_copy["reported"],
+                    f"{BROWSER_NAME}: partage local répété de la Boussole incorrect: {repeated_copy}")
+        page.locator("#compass-reset").click()
+        purged = page.evaluate("""() => {
+            const q = document.querySelector('#compass-question-stage');
+            const cards = document.querySelector('#compass-results-grid');
+            const svg = document.querySelector('#compass-radar');
+            return !q.childElementCount && !cards.childElementCount && !svg.childElementCount &&
+                !document.querySelector('#compass-results').hidden === false &&
+                !document.querySelector('#compass-email-recipient').value &&
+                document.querySelector('#compass-share-email').getAttribute('href') === 'mailto:';
+        }""")
+        assert_true(purged, f"{BROWSER_NAME}: réponses de la Boussole conservées après effacement")
+
         home_text = page.locator("main").inner_text().lower()
         for retired_name in ("lumina", "futurax", "chroniques de l’ombre", "chroniques de l'ombre"):
             assert_true(retired_name not in home_text, f"Accueil: univers secondaire remis au premier plan: {retired_name}")
@@ -727,6 +879,26 @@ def run() -> None:
             )
             assert_true(mismatch_retry.is_hidden(), f"{BROWSER_NAME}: reprise documentaire encore visible")
             assert_true(not mismatch_errors, f"{BROWSER_NAME}: erreur JS lors du contrôle d'intégrité")
+            # Une URL de preuve scriptable est refusée même si la matrice
+            # affiche encore une fiche finalisée : échec fermé de l'explorateur.
+            def corrupt_official_url(route):
+                upstream = route.fetch()
+                payload = json.loads(upstream.body())
+                payload["evidenceRecords"][0]["sourceUrl"] = "javascript:alert(1)"
+                route.fulfill(status=200, content_type="application/json",
+                              body=json.dumps(payload, ensure_ascii=False))
+
+            mismatch_page.route(mismatch_pattern, corrupt_official_url)
+            mismatch_page.reload(wait_until="domcontentloaded")
+            mismatch_retry.wait_for(state="visible", timeout=10_000)
+            assert_true(mismatch_page.locator("#compass-evidence-parties .compass-evidence-card").count() == 0,
+                        f"{BROWSER_NAME}: URL documentaire dangereuse non rejetée")
+            mismatch_page.unroute(mismatch_pattern, corrupt_official_url)
+            mismatch_retry.click()
+            mismatch_page.locator("#compass-evidence-parties .compass-evidence-card").first.wait_for(
+                state="visible", timeout=10_000
+            )
+            assert_true(not mismatch_errors, f"{BROWSER_NAME}: erreur JS de contrôle d'URL documentaire")
             mismatch_context.close()
 
         mobile = browser.new_context(
@@ -741,6 +913,17 @@ def run() -> None:
         response = mobile_page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30_000)
         assert_true(response is not None and response.status < 400, f"{BROWSER_NAME}: accueil mobile inaccessible")
 
+        mobile_surveys = mobile_page.locator("#sondages-nova")
+        assert_true(mobile_surveys.is_visible(),
+                    f"{BROWSER_NAME}: accès aux sondages masqué sur mobile")
+        assert_true(mobile_surveys.locator("a[href='/projets/projet-nova/consultation-40.html']").count() >= 2,
+                    f"{BROWSER_NAME}: sondage référendaire non accessible sur mobile")
+        mobile_surveys.locator("#home-sondage-64").tap()
+        assert_true(mobile_page.url.endswith("/projets/projet-nova/sondage.html"),
+                    f"{BROWSER_NAME}: bouton mobile des 64 propositions incorrect")
+        assert_true(mobile_page.locator("#sondage-introduction").is_visible(),
+                    f"{BROWSER_NAME}: sondage citoyen inaccessible après navigation mobile")
+        mobile_page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30_000)
         overflow = mobile_page.evaluate("document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2")
         assert_true(overflow, f"{BROWSER_NAME}: débordement horizontal détecté en 390 px")
 

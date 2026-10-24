@@ -1,19 +1,47 @@
-import {getSupabase,requireUser,escapeHtml,setStatus,projectStatusLabel} from './sinjira-supabase.js';
+import {getSupabase,requireUser,escapeHtml,setStatus,projectStatusLabel,prepareDocumentWindow,closeDocumentWindow,navigateDocumentWindow,safeLibraryRoute,safeLibraryCover,submitLibraryRequest} from './sinjira-supabase.js';
 
 const status=document.querySelector('[data-library-status]');
 const rows=value=>Array.isArray(value)?value:[];
 const BOOK_ONE_SLUG='sinjira-livre-01-la-cendre-du-jugement';
 
 function cover(project){
-  if(project.cover_url)return project.cover_url;
-  if(project.slug==='fracture-du-reseau-mere')return '/assets/media/sinjira-fracture-du-reseau-mere-officiel.webp';
-  if(project.slug==='reseau-mere-resistance')return '/assets/media/sinjira-reseau-mere-resistance-officiel.webp';
-  return '/assets/media/sinjira-emblem.webp';
+  const fallback=project.slug==='fracture-du-reseau-mere'
+    ?'/assets/media/sinjira-fracture-du-reseau-mere-officiel.webp'
+    :project.slug==='reseau-mere-resistance'
+      ?'/assets/media/sinjira-reseau-mere-resistance-officiel.webp'
+      :'/assets/media/sinjira-emblem.webp';
+  return safeLibraryCover(project.cover_url,fallback);
 }
 
 function setCount(selector,value){
   const node=document.querySelector(selector);
-  if(node)node.textContent=String(value);
+  if(!node)return;
+  node.textContent=String(value);
+  if(value==='—')node.setAttribute('aria-label','Information momentanément indisponible');
+  else node.removeAttribute('aria-label');
+}
+
+// Un accès expiré, mal daté ou absent n'ouvre jamais un projet restreint.
+// Cette distinction guide seulement l'interface : chaque action sensible
+// reste validée indépendamment par les règles du serveur Supabase.
+function activeProjectAccess(accessRows,now=Date.now()){
+  const verified=rows(accessRows).filter(row=>{
+    if(!row?.project_id||!['player','tester'].includes(row.access_level))return false;
+    if(!row.expires_at)return true;
+    const deadline=Date.parse(row.expires_at);
+    return Number.isFinite(deadline)&&deadline>now;
+  });
+  return new Map(verified.map(row=>[row.project_id,row]));
+}
+
+function canOpenProject(project,activeAccess,isOwner,isAdmin){
+  if(isOwner||isAdmin)return true;
+  if(project?.visibility==='public'||project?.visibility==='account')return true;
+  return Boolean(activeAccess.get(project?.id)?.access_level);
+}
+
+function safeProjectPlayPath(value){
+  return safeLibraryRoute(value);
 }
 
 function accessLabel(project,access,isOwner,isAdmin){
@@ -28,25 +56,25 @@ function accessLabel(project,access,isOwner,isAdmin){
 function renderProjects(projects,documents,accessRows,pendingRows,isOwner,isAdmin){
   const box=document.querySelector('[data-project-library]');
   if(!box)return;
-  const access=new Map(accessRows.map(row=>[row.project_id,row]));
   const pending=new Map(pendingRows.map(row=>[row.project_id,row]));
-  const now=Date.now();
-  const activeAccess=new Map([...access.entries()].filter(([,row])=>!row.expires_at||new Date(row.expires_at).getTime()>now));
+  const activeAccess=activeProjectAccess(accessRows);
 
   box.innerHTML=projects.map(project=>{
     const right=activeAccess.get(project.id);
-    const docCount=documents.filter(document=>document.project_id===project.id).length;
+    const isAvailable=canOpenProject(project,activeAccess,isOwner,isAdmin);
+    const docCount=isAvailable?documents.filter(document=>document.project_id===project.id).length:0;
+    const playPath=isAvailable?safeProjectPlayPath(project.play_path):'';
     const waiting=pending.has(project.id);
     const tester=isOwner||isAdmin||right?.access_level==='tester';
     const canRequest=!isOwner&&!isAdmin&&!tester&&project.allow_tester_requests;
     return `<article class="library-project-card">
       <div class="library-project-art"><img src="${escapeHtml(cover(project))}" alt=""></div>
       <div class="library-project-body">
-        <div class="library-project-meta"><span class="status-badge">${escapeHtml(projectStatusLabel(project.status))}</span><span class="role-chip">${escapeHtml(accessLabel(project,right,isOwner,isAdmin))}</span></div>
+        <div class="library-project-meta"><span class="status-badge">${escapeHtml(projectStatusLabel(project.status))}</span><span class="role-chip">${escapeHtml(isAvailable?accessLabel(project,right,isOwner,isAdmin):'Accès restreint · non attribué')}</span></div>
         <h2>${escapeHtml(project.name)}</h2>
         <p>${escapeHtml(project.description||'')}</p>
-        <div class="library-project-stats"><span>${docCount} document${docCount===1?'':'s'} accessible${docCount===1?'':'s'}</span><span>${escapeHtml(project.visibility==='restricted'?'Accès restreint':project.visibility==='account'?'Compte requis':'Page publique')}</span></div>
-        <div class="hero-actions"><a class="btn btn-primary" href="/compte/projet.html?slug=${encodeURIComponent(project.slug)}">Ouvrir l’espace</a>${project.play_path?`<a class="btn btn-secondary" href="${escapeHtml(project.play_path)}">Jouer</a>`:''}${canRequest?`<button class="btn btn-secondary" type="button" data-v2461-request-tester="${project.id}" ${waiting?'disabled':''}>${waiting?'Demande testeur en attente':'Demander accès testeur'}</button>`:''}</div>
+        <div class="library-project-stats"><span>${isAvailable?`${docCount} document${docCount===1?'':'s'} accessible${docCount===1?'':'s'}`:'Documents sur autorisation'}</span><span>${escapeHtml(project.visibility==='restricted'?'Accès restreint':project.visibility==='account'?'Compte requis':'Page publique')}</span></div>
+        <div class="hero-actions">${isAvailable?`<a class="btn btn-primary" href="/compte/projet.html?slug=${encodeURIComponent(project.slug)}">Ouvrir l’espace</a>`:'<span class="role-chip">Autorisation nécessaire pour ouvrir le projet</span>'}${playPath?`<a class="btn btn-secondary" href="${escapeHtml(playPath)}">Jouer</a>`:''}${canRequest?`<button class="btn btn-secondary" type="button" data-v2461-request-tester="${escapeHtml(project.id)}" ${waiting?'disabled':''}>${waiting?'Demande testeur en attente':'Demander accès testeur'}</button>`:''}</div>
       </div>
     </article>`;
   }).join('')||'<div class="notice"><strong>Aucun espace disponible pour ce compte.</strong></div>';
@@ -58,30 +86,49 @@ function renderReads(libraryRows){
   box.innerHTML=libraryRows.map(row=>{
     const novel=row.sinjira_novels;
     if(!novel)return '';
-    const progress=Math.max(0,Math.min(100,Number(row.progress_percent||0)));
+    // Ne jamais afficher NaN%, Infinity%, des pages négatives ou des
+    // nombres imprécis si le registre retourne une lecture malformée.
+    const rawProgress=Number(row.progress_percent);
+    const progress=Number.isFinite(rawProgress)
+      ?Math.round(Math.max(0,Math.min(100,rawProgress))):0;
+    const rawPage=Number(row.last_page);
+    const lastPage=Number.isSafeInteger(rawPage)&&rawPage>0?rawPage:null;
+    const demoPath=safeLibraryRoute(novel.demo_path);
+    const publicPath=safeLibraryRoute(novel.public_path)||'/projets/sinjira/romans/';
     return `<article class="reader-book-card">
       <span class="eyebrow">Lecture suivie</span>
       <h2>${escapeHtml(novel.title||'Roman SINJIRA™')}</h2>
       <p>${escapeHtml(novel.description||'')}</p>
       <div class="v19-progress-track"><span style="width:${progress}%"></span></div>
-      <p>Progression : ${progress}%${row.last_page?` · page ${Number(row.last_page)}`:''}</p>
-      <div class="hero-actions">${novel.demo_path?`<a class="btn btn-primary" href="${escapeHtml(novel.demo_path)}">${progress>0?'Continuer la lecture':'Lire la démo'}</a>`:''}<a class="btn btn-secondary" href="${escapeHtml(novel.public_path||'/projets/sinjira/romans/')}">Page du roman</a></div>
+      <p>Progression : ${progress}%${lastPage?` · page ${lastPage}`:''}</p>
+      <div class="hero-actions">${demoPath?`<a class="btn btn-primary" href="${escapeHtml(demoPath)}">${progress>0?'Continuer la lecture':'Lire la démo'}</a>`:''}<a class="btn btn-secondary" href="${escapeHtml(publicPath)}">Page du roman</a></div>
     </article>`;
   }).join('')||'<div class="notice"><strong>Aucun roman suivi.</strong><p>Les romans ajoutés à votre bibliothèque apparaîtront ici avec leur progression.</p></div>';
 }
 
 async function openFullNovel(button){
+  if(button?.disabled)return;
   if(button)button.disabled=true;
-  setStatus(status,'Préparation de l’édition intégrale sécurisée…','info');
+  // L'onglet est créé durant le clic, avant toute requête Supabase.
+  // Aucun lien intégral ne sera affiché si le serveur refuse les droits.
+  const tab=prepareDocumentWindow();
+  setStatus(status,'Vérification des droits de lecture du Livre I…','info');
   try{
     const {data,error}=await getSupabase().functions.invoke('get-novel-file-url',{body:{slug:'la-cendre-du-jugement'}});
     if(error||!data?.ok||!data?.url){
+      closeDocumentWindow(tab);
       const message=data?.error||error?.message||'Accès au roman impossible.';
       setStatus(status,message,data?.code==='FILE_NOT_READY'?'info':'error');
       return;
     }
-    window.open(data.url,'_blank','noopener');
+    if(!navigateDocumentWindow(tab,data.url)){
+      setStatus(status,'Le serveur a fourni un lien de roman invalide.','error');
+      return;
+    }
     setStatus(status,'Édition intégrale ouverte avec un lien privé temporaire de 10 minutes.','success');
+  }catch{
+    closeDocumentWindow(tab);
+    setStatus(status,'Accès au roman impossible pour le moment.','error');
   }finally{
     if(button)button.disabled=false;
   }
@@ -106,13 +153,31 @@ function entitlementCard(row){
   return `<article class="account-card"><span class="eyebrow">Droit numérique</span><h2>${name}</h2><p>${escapeHtml(product.product_type||'Accès')} · source ${source}</p><div class="hero-actions"><a class="btn btn-secondary" href="licences.html">Voir mes licences</a></div></article>`;
 }
 
-function renderEntitlements(entitlements,isOwner){
+function renderEntitlements(entitlements,isOwner,entitlementsVerified){
   const box=document.querySelector('[data-library-entitlements]');
   if(!box)return;
   const cards=entitlements.map(entitlementCard).join('');
   const ownerBook=isOwner?`<article class="account-card"><span class="eyebrow">Accès propriétaire</span><h2>SINJIRA™ — Livre I : La Cendre du Jugement</h2><p>Le rôle propriétaire donne accès à l’édition intégrale privée sans créer artificiellement une licence d’achat. Le fichier est délivré uniquement par un lien temporaire signé.</p><div class="hero-actions"><button class="btn btn-primary" type="button" data-open-full-novel>Ouvrir l’édition intégrale</button><a class="btn btn-secondary" href="/projets/sinjira/romans/">Page du roman</a></div></article>`:'';
-  box.innerHTML=(ownerBook+cards)||`<article class="account-card"><span class="eyebrow">Droits numériques</span><h2>Aucune licence numérique explicite</h2><p>Les produits activés ou attribués à votre compte apparaîtront ici.</p><div class="hero-actions"><a class="btn btn-secondary" href="licences.html">Gérer mes licences</a></div></article>`;
+  if(!entitlementsVerified){
+    box.innerHTML=ownerBook+`<article class="account-card"><span class="eyebrow">Droits numériques</span><h2>Vérification temporairement indisponible</h2><p>Nous ne pouvons pas confirmer toutes les licences de ce compte. Aucun achat ni absence d’achat n’est déduit de cette erreur.</p></article>`;
+  }else{
+    box.innerHTML=(ownerBook+cards)||`<article class="account-card"><span class="eyebrow">Droits numériques</span><h2>Aucune licence numérique explicite confirmée</h2><p>Les produits activés ou attribués à votre compte apparaîtront ici.</p><div class="hero-actions"><a class="btn btn-secondary" href="licences.html">Gérer mes licences</a></div></article>`;
+  }
   bindFullNovelButtons(box);
+}
+
+function bindTesterRequestButtons(s,currentUser){
+  document.querySelectorAll('[data-v2461-request-tester]').forEach(button=>button.addEventListener('click',()=>submitLibraryRequest(
+    button,
+    ()=>prompt('Court message pour votre demande (facultatif).'),
+    message=>s.from('access_requests').insert({user_id:currentUser.id,project_id:button.dataset.v2461RequestTester,requested_level:'tester',message}),
+    duplicate=>{
+      button.textContent='Demande testeur en attente';
+      setStatus(status,duplicate?'Une demande testeur est déjà en attente.':'Demande testeur transmise.',duplicate?'info':'success');
+    },
+    ()=>setStatus(status,'La demande n’a pas pu être transmise. Veuillez réessayer.','error'),
+    'access_requests_one_pending_idx'
+  )));
 }
 
 async function init(){
@@ -139,31 +204,49 @@ async function init(){
   const libraryRows=rows(readsResult.data);
   const entitlements=rows(entitlementsResult.data).filter(row=>row.products?.active!==false);
 
-  setCount('[data-library-project-count]',projects.length);
-  setCount('[data-library-read-count]',libraryRows.length);
-  setCount('[data-library-entitlement-count]',entitlements.length);
-  setCount('[data-library-request-count]',pendingRows.length);
+  const rolesVerified=!ownerResult.error&&!adminResult.error;
+  const entitlementsVerified=!entitlementsResult.error;
+  const activeAccess=activeProjectAccess(accessRows);
+  const availableProjects=projects.filter(project=>canOpenProject(project,activeAccess,isOwner,isAdmin));
+  setCount('[data-library-project-count]',
+    projectsResult.error||accessResult.error||!rolesVerified?'—':availableProjects.length);
+  setCount('[data-library-read-count]',readsResult.error?'—':libraryRows.length);
+  setCount('[data-library-entitlement-count]',entitlementsVerified?entitlements.length:'—');
+  setCount('[data-library-request-count]',pendingResult.error?'—':pendingRows.length);
 
   const role=document.querySelector('[data-library-role]');
-  if(role)role.textContent=isOwner?'Propriétaire SINJIRA™':isAdmin?'Administrateur SINJIRA™':'Compte SINJIRA™';
+  if(role)role.textContent=isOwner?'Propriétaire SINJIRA™':isAdmin?'Administrateur SINJIRA™':rolesVerified?'Compte SINJIRA™':'Rôle non vérifié';
+  const summary=document.querySelector('[data-library-summary]');
+  if(summary){
+    summary.textContent=!rolesVerified||!entitlementsVerified
+      ?'Certains droits ne peuvent pas être vérifiés pour le moment. Aucun accès supplémentaire n’est accordé sans confirmation.'
+      :isOwner
+        ?`Propriétaire confirmé · ${entitlements.length} licence${entitlements.length===1?'':'s'} numérique${entitlements.length===1?'':'s'} explicite${entitlements.length===1?'':'s'}.`
+        :entitlements.length>0
+          ?`${entitlements.length} droit${entitlements.length===1?'':'s'} numérique${entitlements.length===1?'':'s'} confirmé${entitlements.length===1?'':'s'} pour ce compte.`
+          :'Aucun droit numérique explicite confirmé pour ce compte.';
+  }
 
-  renderProjects(projects,documents,accessRows,pendingRows,isOwner,isAdmin);
-  renderReads(libraryRows);
-  renderEntitlements(entitlements,isOwner);
+  if(projectsResult.error||documentsResult.error||accessResult.error){
+    const box=document.querySelector('[data-project-library]');
+    if(box)box.innerHTML='<div class="notice"><strong>Espaces non vérifiables.</strong><p>La bibliothèque des projets est temporairement indisponible.</p></div>';
+  }else{
+    renderProjects(projects,documents,accessRows,pendingRows,isOwner,isAdmin);
+  }
+  if(readsResult.error){
+    const box=document.querySelector('[data-library-reads]');
+    if(box)box.innerHTML='<div class="notice"><strong>Lectures non vérifiables.</strong><p>La progression de lecture ne peut pas être chargée pour le moment.</p></div>';
+  }else{
+    renderReads(libraryRows);
+  }
+  renderEntitlements(entitlements,isOwner,entitlementsVerified);
 
-  const errors=[projectsResult,accessResult,documentsResult,pendingResult,readsResult,entitlementsResult].filter(result=>result.error);
+  const errors=[adminResult,ownerResult,projectsResult,accessResult,documentsResult,pendingResult,readsResult,entitlementsResult].filter(result=>result.error);
   if(errors.length){
     setStatus(status,'Certaines sections privées n’ont pas pu être chargées. Les données disponibles restent protégées par les règles du compte.','error');
   }
 
-  document.querySelectorAll('[data-v2461-request-tester]').forEach(button=>button.addEventListener('click',async()=>{
-    const message=prompt('Court message pour votre demande (facultatif).')||'';
-    const {error}=await s.from('access_requests').insert({user_id:user.id,project_id:button.dataset.v2461RequestTester,requested_level:'tester',message:message.slice(0,1500)});
-    if(error){setStatus(status,'La demande n’a pas pu être transmise.','error');return;}
-    button.disabled=true;
-    button.textContent='Demande testeur en attente';
-    setStatus(status,'Demande testeur transmise.','success');
-  }));
+  bindTesterRequestButtons(s,user);
 }
 
 init().catch(error=>{

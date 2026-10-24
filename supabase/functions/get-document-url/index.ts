@@ -17,28 +17,71 @@ function privateJson(data:unknown,status=200){
   return new Response(JSON.stringify(data),{status,headers:PRIVATE_JSON_HEADERS});
 }
 
+const OFFICIAL_ORIGIN='https://www.benoitcantin.com';
 function externalUrlAllowed(value:string){
-  if(value.startsWith('/')&&!value.startsWith('//'))return true;
-  try{return new URL(value).protocol==='https:'}catch{return false}
+  // Les URL de documents proviennent du registre approuvé, mais doivent
+  // rester non ambiguës au moment de leur ouverture par le navigateur.
+  // Une URL commençant par /\\ peut sinon changer d'hôte silencieusement.
+  if(!value||value.trim()!==value||/[\\\u0000-\u001f\u007f]/.test(value))return false;
+  if(value.startsWith('/')&&!value.startsWith('//')){
+    // Refuser aussi les séparateurs et caractères de contrôle encodés.
+    if(/%(?:2f|5c|0[0-9a-f]|1[0-9a-f]|7f)/i.test(value))return false;
+    try{
+      const url=new URL(value,OFFICIAL_ORIGIN);
+      return url.origin===OFFICIAL_ORIGIN&&!url.username&&!url.password;
+    }catch{return false}
+  }
+  // Les fournisseurs HTTPS externes restent permis, mais sans
+  // identifiants intégrés ni URL dont le schéma est écrit ambiguëment.
+  if(!/^https:\/\/[^/]/i.test(value))return false;
+  try{
+    const url=new URL(value);
+    return url.protocol==='https:'&&!!url.hostname&&!url.username&&!url.password;
+  }catch{return false}
 }
 
 async function readLimitedJson(req:Request):Promise<{body?:any;response?:Response}>{
-  const contentType=(req.headers.get('content-type')||'').toLowerCase();
-  if(!contentType.startsWith('application/json')){
+  // Lecture bornée pendant le flux, jamais en mémoire via req.text().
+  const contentType=(req.headers.get('content-type')||'').toLowerCase().split(';',1)[0].trim();
+  if(contentType!=='application/json'){
     return {response:privateJson({ok:false,error:'Type de contenu non autorisé.'},415)};
   }
   const rawLength=req.headers.get('content-length');
-  if(rawLength){
+  if(rawLength!==null){
     const declared=Number(rawLength);
-    if(!Number.isFinite(declared)||declared<0||declared>MAX_REQUEST_BYTES){
+    if(!Number.isSafeInteger(declared)||declared<0||declared>MAX_REQUEST_BYTES){
       return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
     }
   }
-  const raw=await req.text();
-  if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES){
-    return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
+  if(!req.body)return {body:{}};
+  const reader=req.body.getReader();
+  const chunks:Uint8Array[]=[];
+  let total=0;
+  try{
+    while(true){
+      const {done,value}=await reader.read();
+      if(done)break;
+      if(value){
+        total+=value.byteLength;
+        if(total>MAX_REQUEST_BYTES){
+          await reader.cancel().catch(()=>{});
+          return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
+        }
+        chunks.push(value);
+      }
+    }
+  }finally{
+    reader.releaseLock();
   }
-  try{return {body:JSON.parse(raw||'{}')}}catch{return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)}}
+  const bytes=new Uint8Array(total);
+  let offset=0;
+  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+  try{
+    const raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes);
+    return {body:JSON.parse(raw||'{}')};
+  }catch{
+    return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)};
+  }
 }
 
 Deno.serve(async(req)=>{
@@ -60,22 +103,38 @@ Deno.serve(async(req)=>{
       return privateJson({ok:false,error:'Document introuvable ou non approuvé.'},404);
     }
 
-    let userRank=0;
-    if(user){
-      const {data:isAdmin}=await service.rpc('is_sinjira_admin',{p_user_id:user.id});
-      if(isAdmin)userRank=100;
+    // Un niveau inconnu doit être refusé explicitement, AVANT les RPC de
+    // rôle, la comparaison de rang et toute émission de lien. Un seuil
+    // de repli (p. ex. 999) pourrait être atteint par un rang serveur
+    // anormalement élevé. Object.hasOwn exclut les propriétés héritées.
+    if(typeof doc.access_level!=='string'||!Object.hasOwn(ranks,doc.access_level)){
+      return privateJson({ok:false,error:'Votre compte ne possède pas le niveau d’accès requis.'},403);
+    }
+    // Une connexion ne doit pas réduire les droits réellement publics.
+    const requiredRank=ranks[doc.access_level];
+    let userRank=doc.projects?.visibility==='public'?ranks.public:0;
+    if(user&&userRank<requiredRank){
+      // Le propriétaire SINJIRA et les administrateurs constituent deux
+      // rôles distincts. Ne jamais déduire le rôle propriétaire du courriel.
+      const [{data:isOwner,error:ownerError},{data:isAdmin,error:adminError}]=await Promise.all([
+        service.rpc('is_sinjira_owner',{p_user_id:user.id}),
+        service.rpc('is_sinjira_admin',{p_user_id:user.id})
+      ]);
+      if((!ownerError&&isOwner===true)||(!adminError&&isAdmin===true))userRank=100;
       else{
-        const {data:accessRank}=await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user.id});
-        userRank=Number(accessRank||0);
+        const {data:accessRank,error:rankError}=await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user.id});
+        if(rankError)return privateJson({ok:false,error:'Droits du compte temporairement indisponibles.'},503);
+        const memberRank=Number.isFinite(Number(accessRank))?Number(accessRank):0;
+        userRank=Math.max(userRank,memberRank);
       }
-    }else if(doc.projects?.visibility==='public')userRank=1;
+    }
 
-    if(userRank<(ranks[doc.access_level]||999)){
+    if(userRank<requiredRank){
       return privateJson({ok:false,error:'Votre compte ne possède pas le niveau d’accès requis.'},403);
     }
 
     if(doc.external_url){
-      const url=String(doc.external_url).trim();
+      const url=String(doc.external_url);
       if(!externalUrlAllowed(url))return privateJson({ok:false,error:'URL de document non autorisée.'},500);
       return privateJson({ok:true,url,protected:false,expires_in:null});
     }

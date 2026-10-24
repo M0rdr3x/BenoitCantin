@@ -14,7 +14,7 @@ CANONICAL = {
     "get-novel-file-url", "get-private-book-url", "life-story-delivery", "life-story-export", "personal-ai",
     "redeem-license-code", "revoke-my-contributions", "security-context", "send-game-report",
     "send-player-sheet", "submit-character-questionnaire", "submit-fracture-endgame",
-    "submit-game-contribution",
+    "submit-game-contribution", "nova-survey-submit", "nova-consultation40-submit",
 }
 
 RETIRED = {
@@ -26,7 +26,7 @@ CUSTOM_AUTH = {
     "get-document-url": (
         "optionalUser", "project_access_rank", "doc.status!=='approved'",
         "doc.projects?.status!=='active'", "createSignedUrl", "MAX_REQUEST_BYTES", "UUID_RE",
-        "externalUrlAllowed", "TextEncoder", "Cache-Control", "no-store", "Referrer-Policy",
+        "externalUrlAllowed", "req.body.getReader()", "reader.cancel()", "TextDecoder", "Cache-Control", "no-store", "Referrer-Policy",
     ),
     "send-game-report": (
         "optionalUser", "!user?.email", "to: [user.email]", "MAX_REQUEST_BYTES", "TextEncoder",
@@ -45,6 +45,24 @@ CUSTOM_AUTH = {
 }
 
 JWT_SENSITIVE_GUARDS = {
+    "nova-survey-submit": (
+        "req.method !== 'POST'", "requiredUser(req)",
+        "NOVA_SURVEY_COLLECTION_ENABLED", "!== 'true'",
+        "NOVA_SURVEY_PEPPER", "crypto.subtle.sign('HMAC'",
+        "age18Confirmed !== true", "explicitConsent !== true",
+        "validAnswers(body.answers)", "readBoundedJson(req)", "MAX_REQUEST_BYTES", "REQUEST_TOO_LARGE",
+        "service.rpc('nova_survey_submit_v1'",
+        "Cache-Control", "private, no-store", "ORIGIN_NOT_ALLOWED",
+    ),
+    "nova-consultation40-submit": (
+        "req.method !== 'POST'", "requiredUser(req)",
+        "NOVA40_COLLECTION_ENABLED", "!== 'true'",
+        "NOVA40_SURVEY_PEPPER", "crypto.subtle.sign('HMAC'",
+        "age18Confirmed !== true", "explicitConsent !== true",
+        "validAnswers(body.answers)", "readBoundedJson(req)", "MAX_REQUEST_BYTES", "REQUEST_TOO_LARGE",
+        "service.rpc('nova_consultation40_submit_v1'",
+        "Cache-Control", "private, no-store", "ORIGIN_NOT_ALLOWED",
+    ),
     "conscience-vault": (
         "req.method !== 'POST'", "MAX_REQUEST_BYTES", "readBoundedJson", "req.body.getReader()",
         "REQUEST_TOO_LARGE", "INVALID_JSON", "requiredVaultUser", "service_conscience_evaluate_access",
@@ -67,7 +85,8 @@ JWT_SENSITIVE_GUARDS = {
         "Referrer-Policy", "no-referrer",
     ),
     "get-private-book-url": (
-        "req.method!=='POST'", "requiredUser(req)", "user_entitlements",
+        "req.method!=='POST'", "requiredUser(req)", "is_sinjira_owner", "is_sinjira_admin",
+        "ownerResult.data===true", "adminResult.data===true", "user_entitlements",
         ".eq('user_id',user.id)", ".eq('product_id',product.id)",
         "SINJIRA_LIVRE_I_PRIVATE_DELIVERY_ENABLED", "SINJIRA_LIVRE_I_PRIVATE_BUCKET",
         "SINJIRA_LIVRE_I_PRIVATE_PATH", "SIGNED_URL_SECONDS=300", "createSignedUrl",
@@ -233,7 +252,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 24 fonctions canoniques, JWT/custom auth cohérents, portes Livre I entitlement privées, actions sensibles bornées/no-store, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 26 fonctions canoniques, JWT/custom auth cohérents, portes Livre I entitlement privées, actions sensibles bornées/no-store, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
     return 0
 
 

@@ -163,6 +163,11 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         )
         self.assertRejected(bad, "prévols local et distant")
 
+    def test_post_environment_revalidation_checks_remote_history_again(self):
+        marker = "python scripts/verify_supabase_remote_history.py --supabase-list /tmp/sinjira-migrations-approval.txt"
+        bad = self.valid.replace(marker, "echo HISTORIQUE_APRES_APPROBATION_IGNORE", 1)
+        self.assertRejected(bad, "historique distant")
+
     def test_post_environment_revalidation_requires_dry_run(self):
         marker = '(cd .prod-workspace && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-dry-run-approval.txt'
         bad = self.valid.replace(marker, "echo dry-run-retire", 1)

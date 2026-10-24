@@ -9,6 +9,160 @@ export function getSupabase() {
 }
 export async function getCurrentUser() {if (!isSinjiraBackendConfigured()) return null;const {data,error}=await getSupabase().auth.getUser();return error ? null : (data.user || null)}
 
+// BEGIN SINJIRA_LIBRARY_SUBMISSION
+// La fermeture de l'invite signifie Annuler, jamais « envoyer un message vide ».
+// Verrouiller AVANT la requête empêche un double clic de créer deux demandes.
+function isKnownLibraryDuplicate(error,constraint){
+  // 23505 seul pourrait signaler une autre contrainte : ne jamais
+  // transformer une erreur inconnue en succès de candidature.
+  return error?.code==='23505'
+    && ['access_requests_one_pending_idx','playtest_participants_pkey'].includes(constraint)
+    && typeof error.message==='string'
+    && error.message.includes('"'+constraint+'"');
+}
+export async function submitLibraryRequest(button,askMessage,write,accept,reject,duplicateConstraint=''){
+  if(!button||button.disabled)return false;
+  let message;
+  try{message=askMessage()}catch{return false}
+  if(typeof message!=='string')return false;
+  button.disabled=true;
+  let accepted=false;
+  try{
+    const result=await write(message.slice(0,1500));
+    if(!result||result.error){
+      if(isKnownLibraryDuplicate(result?.error,duplicateConstraint)){
+        accept(true); // Déjà enregistré côté base, ne pas reproposer l'envoi.
+        accepted=true;
+        return true;
+      }
+      reject(result?.error);
+      return false;
+    }
+    accept(false);
+    accepted=true;
+    return true;
+  }catch(error){
+    reject(error);
+    return false;
+  }finally{
+    // Laisser le bouton verrouillé après succès ; permettre un nouvel
+    // essai après un échec réseau ou une réponse serveur négative.
+    if(!accepted)button.disabled=false;
+  }
+}
+// END SINJIRA_LIBRARY_SUBMISSION
+
+// BEGIN SINJIRA_DOCUMENT_WINDOW
+// Ouvrir la fenêtre pendant le geste utilisateur, AVANT tout await Supabase.
+// Une nouvelle fenêtre créée après une réponse réseau est souvent bloquée
+// par les navigateurs, même pour un lecteur autorisé.
+export function prepareDocumentWindow(){
+  let tab=null;
+  try{
+    tab=window.open('about:blank','_blank');
+    if(!tab)return null;
+    // La fenêtre n'a pas le droit de piloter l'onglet de bibliothèque.
+    tab.opener=null;
+  }catch{
+    try{tab?.close()}catch{}
+    return null;
+  }
+  try{
+    tab.document.title='SINJIRA™ — document sécurisé';
+    tab.document.body.textContent='Vérification des droits de lecture en cours…';
+  }catch{} // Certains navigateurs isolent le contexte après opener=null.
+  return tab;
+}
+export function closeDocumentWindow(tab){
+  try{tab?.close()}catch{}
+}
+export function navigateDocumentWindow(tab,raw){
+  const url=typeof raw==='string'?raw:'';
+  if(!url||url!==url.trim()||/[\\\u0000-\u001f\u007f]/.test(url)){
+    closeDocumentWindow(tab);
+    return false;
+  }
+  const local=url.startsWith('/')&&!url.startsWith('//');
+  if(!local&&!/^https:\/\/[^/]/i.test(url)){
+    closeDocumentWindow(tab);
+    return false;
+  }
+  try{
+    if(local&&/%(?:2f|5c|0[0-9a-f]|1[0-9a-f]|7f)/i.test(url)){
+      closeDocumentWindow(tab);
+      return false;
+    }
+    const destination=new URL(url,location.origin);
+    if(destination.protocol!=='https:'||!destination.hostname
+       ||destination.username||destination.password
+       ||(local&&destination.origin!==location.origin)){
+      closeDocumentWindow(tab);
+      return false;
+    }
+    if(tab&&!tab.closed){
+      try{
+        tab.location.replace(url);
+        return true;
+      }catch{
+        closeDocumentWindow(tab);
+      }
+    }
+    // Popup bloquée : ouvrir dans l'onglet actuel plutôt que perdre
+    // l'accès à un lien signé temporaire après l'authentification.
+    location.assign(url);
+    return true;
+  }catch{
+    closeDocumentWindow(tab);
+    return false;
+  }
+}
+// END SINJIRA_DOCUMENT_WINDOW
+
+// BEGIN SINJIRA_LIBRARY_ROUTE
+// Les champs de navigation issus du registre de projets/romans ne sont
+// jamais des autorisations. Le client n'affiche que des routes locales
+// non ambiguës : échapper le HTML ne valide pas un attribut href.
+export function safeLibraryRoute(value){
+  if(typeof value!=='string'||!value||value!==value.trim())return '';
+  if(!value.startsWith('/')||value.startsWith('//')||/[\\\u0000-\u001f\u007f]/.test(value))return '';
+  if(/%(?:2f|5c|2e|0[0-9a-f]|1[0-9a-f]|7f)/i.test(value))return '';
+  if(/%(?![0-9a-f]{2})/i.test(value))return '';
+  try{
+    const url=new URL(value,location.origin);
+    const pathname=value.split(/[?#]/,1)[0];
+    if(url.origin!==location.origin||url.username||url.password||url.pathname!==pathname)return '';
+    // Les chemins encodés ne font pas partie des routes de catalogue :
+    // /%73upabase/... se résout côté serveur en /supabase/... et
+    // contournerait le refus des répertoires techniques ci-dessous.
+    // Un paramètre de requête/fragment peut rester encodé.
+    if(pathname.includes('%'))return '';
+    // Un chemin de source technique n'est jamais une destination de lecture
+    // ou de jeu, même si GitHub Pages legacy le sert accidentellement en 200.
+    // Ne pas élargir ce filtre aux routes /compte et /projets légitimes.
+    if(/^\/(?:\.github|\.git|supabase|scripts|tests|docs|mobile-native|node_modules|_site)(?:\/|$)/i.test(pathname))return '';
+    if(/\/(?:codex|\.git)(?:\/|$)/i.test(pathname))return '';
+    if(/\/(?:netlify\.toml|_config\.yml|security\.md|upload_github\.md|readme\.md)$/i.test(pathname))return '';
+    if(/\.(?:py|sql|toml|ya?ml|md|tsx?|jsx?|sh|env|lock)$/i.test(pathname))return '';
+    return value;
+  }catch{return ''}
+}
+// END SINJIRA_LIBRARY_ROUTE
+
+// BEGIN SINJIRA_LIBRARY_COVER
+// Les images du registre ne sont pas des URLs arbitraires. Charger des
+// origines distantes divulguerait l'accès à la bibliothèque à un tiers.
+// Le dépôt publie les couvertures approuvées sous /assets/media/.
+export function safeLibraryCover(value,fallback='/assets/media/sinjira-emblem.webp'){
+  const safe=safeLibraryRoute(value);
+  return safe.startsWith('/assets/media/')
+    && !/[?#]/.test(safe)
+    && /\.(?:webp|png|jpe?g|avif)$/i.test(safe)
+    ?safe:fallback;
+}
+// END SINJIRA_LIBRARY_COVER
+
+
+
 export function safeInternalDestination(value,fallback='/compte/index.html'){
   const raw=String(value||'').trim();
   if(!raw.startsWith('/')||raw.startsWith('//')||raw.includes('\\')||/[\u0000-\u001f\u007f]/.test(raw))return fallback;

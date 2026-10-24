@@ -18,6 +18,11 @@ REQUIRED = {
     'chemin privé serveur': 'SINJIRA_LIVRE_I_PRIVATE_PATH',
     'slug Livre I exact': "const PRODUCT_SLUG='sinjira-livre-01-la-cendre-du-jugement';",
     'TTL signé exact': 'const SIGNED_URL_SECONDS=300;',
+    'RPC propriétaire sur UID': "service.rpc('is_sinjira_owner',{p_user_id:user.id})",
+    'RPC administrateur sur UID': "service.rpc('is_sinjira_admin',{p_user_id:user.id})",
+    'rôle strict': "ownerResult.data===true",
+    'administrateur strict': "adminResult.data===true",
+    'absence de contournement': 'if(!privileged){',
     'entitlement compte': ".eq('user_id',user.id)",
     'entitlement produit': ".eq('product_id',product.id)",
     'URL signée': '.createSignedUrl(storage.storagePath,SIGNED_URL_SECONDS',
@@ -70,9 +75,10 @@ def validate_text(source: str, config: str) -> list[str]:
     require(errors, service_pos > storage_pos,
             'Le client service ne doit être construit qu’après auth et validation du stockage privé.')
 
+    privileged_pos = source.find('const privileged=(')
     entitlement_pos = source.find(".from('user_entitlements')")
     signed_pos = source.find('.createSignedUrl(storage.storagePath,SIGNED_URL_SECONDS')
-    require(errors, entitlement_pos > service_pos and signed_pos > entitlement_pos,
+    require(errors, privileged_pos > service_pos and entitlement_pos > privileged_pos and signed_pos > entitlement_pos,
             'L’URL signée doit être créée seulement après validation de l’entitlement du compte.')
 
     console_lines = [line.strip() for line in source.splitlines() if 'console.' in line]
@@ -125,7 +131,10 @@ def self_test() -> None:
         'no-store retiré': source.replace("  'Cache-Control':'private, no-store, max-age=0',\n", '', 1),
         'TTL élargi': source.replace('SIGNED_URL_SECONDS=300', 'SIGNED_URL_SECONDS=3600', 1),
         'filtre utilisateur retiré': source.replace("      .eq('user_id',user.id)\n", '', 1),
-        'filtre produit retiré': source.replace("      .eq('product_id',product.id)\n", '', 1),
+        'filtre produit retiré': source.replace("        .eq('product_id',product.id)\n", '', 1),
+        'RPC propriétaire retirée': source.replace("service.rpc('is_sinjira_owner',{p_user_id:user.id})", "Promise.resolve({data:false,error:null})", 1),
+        'rôle propriétaire truthy sans confirmation': source.replace("ownerResult.data===true", "Boolean(ownerResult.data)", 1),
+        'bypass général pour tous': source.replace('if(!privileged){', 'if(false){', 1),
         'activation privée retirée': source.replace("  const enabled=Deno.env.get('SINJIRA_LIVRE_I_PRIVATE_DELIVERY_ENABLED')==='true';\n", "  const enabled=true;\n", 1),
         'repli public ajouté': source.replace('    return privateJson({\n      ok:true,', "    service.storage.from(storage.bucket).getPublicUrl(storage.storagePath);\n    return privateJson({\n      ok:true,", 1),
         'log entitlement brut': source.replace("console.error('[get-private-book-url]',{code:'BOOK_ENTITLEMENT_CHECK_FAILED'});", "console.error(entitlementError);", 1),
@@ -181,7 +190,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK Livre I privé: auth avant état du stockage, entitlement compte/produit, URL signée 300 s, aucun repli public et logs sanitizés.')
+    print('OK Livre I privé: propriétaire/admin attestés RPC, droits actifs des membres, signature 300 s, sans URL publique ni logs sensibles.')
     return 0
 
 
