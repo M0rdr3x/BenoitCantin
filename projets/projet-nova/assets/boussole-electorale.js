@@ -15,9 +15,37 @@
       if(declared && (!/^[0-9]+$/.test(declared) || Number(declared)>maxBytes)){
         throw new Error("CORPUS_SIZE");
       }
-      const bytes=await response.arrayBuffer();
-      if(!bytes.byteLength || bytes.byteLength>maxBytes) throw new Error("CORPUS_SIZE");
-      return bytes;
+      // Ne jamais allouer un corps de taille arbitraire : interrompre la
+      // lecture en continu dès que la borne est atteinte, même sans en-tête.
+      if(!response.body?.getReader) throw new Error("CORPUS_STREAM");
+      const reader=response.body.getReader();
+      const chunks=[];
+      let total=0;
+      try{
+        for(;;){
+          const {done,value}=await reader.read();
+          if(done) break;
+          if(!ArrayBuffer.isView(value) || value.BYTES_PER_ELEMENT!==1){
+            throw new Error("CORPUS_STREAM");
+          }
+          total+=value.byteLength;
+          if(total>maxBytes){
+            controller.abort();
+            throw new Error("CORPUS_SIZE");
+          }
+          chunks.push(value);
+        }
+      }finally{
+        reader.releaseLock();
+      }
+      if(!total) throw new Error("CORPUS_SIZE");
+      const bytes=new Uint8Array(total);
+      let offset=0;
+      for(const part of chunks){
+        bytes.set(part,offset);
+        offset+=part.byteLength;
+      }
+      return bytes.buffer;
     }finally{
       clearTimeout(timeoutId);
     }
