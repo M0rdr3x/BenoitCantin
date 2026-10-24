@@ -184,6 +184,7 @@ class TestsP54J(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             mf,man,ver,doc=bundle(d)
             man["receptions"][0]["nature_declaree"]="DOCUMENT_MANDAT_DECLARATIF"
+            doc["conclusions"]=[opinion()]
             doc["sha256_manifest_p54i"]=hashlib.sha256(json.dumps(man).encode()).hexdigest()
             with self.assertRaises(ValueError):m.validate_locals(doc,json.dumps(man).encode(),man,ver)
     def test_32_refuse_clear_reserve(self):
