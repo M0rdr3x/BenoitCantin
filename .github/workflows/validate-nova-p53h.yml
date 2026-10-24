@@ -1,0 +1,80 @@
+name: Projet Nova P53H - Priorites de controles financiers entre organismes
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p53h.yml"
+      - "scripts/valider_priorites_rapprochement_nova_p53h.py"
+      - "scripts/tests/test_valider_priorites_rapprochement_nova_p53h.py"
+      - "projets/projet-nova/etudes/P53H_*"
+      - "projets/projet-nova/etudes/P53G_COUVERTURE_1343_ORGANISMES_2024.json"
+      - "projets/projet-nova/etudes/P53F_FLUX_INTERADMIN_2024.json"
+      - "projets/projet-nova/etudes/P53E_PREUVES_HISTORIQUES_MUNICIPALES.json"
+      - "projets/projet-nova/etudes/sources/P53E_MAMH_2024_MUNICIPALITES_LOCALES_SELECTION.csv"
+      - "projets/projet-nova/etudes/sources/P53G_MAMH_2024_249_ORGANISMES_COMPLEMENTAIRES.csv"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  auditer-les-priorites-sans-appariements-fictifs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Lire le code sans credentiels persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: 88 tests de classement signe et refus de doubles comptes fictifs
+        run: |
+          python -m py_compile scripts/valider_priorites_rapprochement_nova_p53h.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_valider_priorites_rapprochement_nova_p53h.py")
+          assert suite.countTestCases()==88,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Produire liste complete des 1343 candidats sans elimination
+        run: |
+          python scripts/valider_priorites_rapprochement_nova_p53h.py --rapport p53h_bilan.json --export-csv p53h_1343_organismes_a_verifier.csv
+          python - <<'PY'
+          import csv,json
+          from pathlib import Path
+          r=json.loads(Path("p53h_bilan.json").read_text(encoding="utf-8"))
+          assert r["organismes_2024_controles"]==1343
+          assert r["organismes_priorises"]==25
+          assert r["exposition_brute_signee_a_etudier_CAD"]==10864282201
+          assert r["exposition_signee_top25_CAD"]==7069371200
+          assert r["appariements_reciproques_documentes"]==0
+          assert r["eliminations_certifiees_CAD"] is None
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          with Path("p53h_1343_organismes_a_verifier.csv").open(encoding="utf-8") as f:
+              lines=list(csv.reader(f))
+          assert len(lines)==1344
+          assert lines[1][1]=="66023"
+          assert all(line[-4:]==["","","",""] for line in lines[1:])
+          PY
+      - name: Refuser la consolidation sans piece d'appariement
+        run: |
+          set +e
+          python scripts/valider_priorites_rapprochement_nova_p53h.py --exiger-appariement --rapport p53h_refus_appariement.json
+          status=$?
+          set -e
+          test "$status" -eq 3
+      - name: Rendre disponibles les rapports de recherche uniquement
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p53h-1343-priorites-a-verifier-no-go
+          path: |
+            p53h_bilan.json
+            p53h_1343_organismes_a_verifier.csv
+            p53h_refus_appariement.json
+          if-no-files-found: ignore
+          retention-days: 7

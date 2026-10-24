@@ -1,0 +1,98 @@
+name: Projet Nova P54D - Typologie non certifiante des cinq jetons
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54d.yml"
+      - "scripts/classer_ecarts_numeriques_nova_p54d.py"
+      - "scripts/tests/test_classer_ecarts_numeriques_nova_p54d.py"
+      - "scripts/analyser_contexte_audit_depenses_nova_p54c.py"
+      - "scripts/verifier_observations_audit_nova_p54c.py"
+      - "scripts/comparer_postes_financiers_nova_p54b.py"
+      - "scripts/acquerir_publications_nova_p53z.py"
+      - "projets/projet-nova/etudes/P54D_*"
+      - "projets/projet-nova/etudes/P54C_EXAMEN_AUDIT_DEPENSES_MIXTES_2024.json"
+      - "projets/projet-nova/etudes/P54C_OBSERVATIONS_AUDIT_2026_10_24.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  five-numeric-tokens-not-five-audit-findings:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 17
+    steps:
+      - name: Checkout sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Lecteur PDF épinglé
+        run: python -m pip install pypdf==5.9.0
+      - name: 52 tests uniquement sur documents fictifs
+        run: |
+          python -m py_compile scripts/classer_ecarts_numeriques_nova_p54d.py
+          python - <<'PY'
+          import unittest
+          s=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_classer_ecarts_numeriques_nova_p54d.py")
+          assert s.countTestCases()==52,s.countTestCases()
+          r=unittest.TextTestRunner(verbosity=2).run(s)
+          assert r.wasSuccessful()
+          PY
+      - name: Refus des rapports incomplets ou des économies certifiées
+        run: |
+          python scripts/classer_ecarts_numeriques_nova_p54d.py --bilan p54d_neutre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p54d_neutre.json").read_text("utf-8"))
+          assert r["cinq_occurrences_verifiees"] is False
+          assert r["econom ie_certifiee_cad".replace(" ","")] is None
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+          set +e
+          python scripts/classer_ecarts_numeriques_nova_p54d.py --exiger-preuve-comptable
+          ret=$?
+          set -e
+          test "$ret" -eq 3
+      - name: Relecture des seules pages publiques 102 et 162
+        shell: bash
+        run: |
+          set +e
+          python scripts/classer_ecarts_numeriques_nova_p54d.py --reanalyser-copies --bilan p54d_classes_non_certifiees.json
+          status=$?
+          set -e
+          echo "Code de capture et classement P54D: $status" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$status" -ne 0 ] && [ "$status" -ne 4 ]; then
+            echo "Erreur technique imprevue" >&2
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p54d_classes_non_certifiees.json").read_text("utf-8"))
+          assert r["ecarts_de_montants_comptables_authentifies"]==0
+          assert r["economie_certifiee_cad"] is None
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          if r["cinq_occurrences_verifiees"]:
+            assert sum(r["categories_observees"].values())==5
+            assert len(r["observations_individuelles_sans_jets_bruts"])==5
+            serialized=json.dumps(r)
+            assert "token_brut" not in serialized
+            assert "contexte_local" not in serialized
+          print("Cinq jetons reclasses après capture:",r["cinq_occurrences_verifiees"])
+          print("Catégories indicatives:",r["categories_observees"])
+          PY
+      - name: Artefacts limités aux indicateurs non identifiants
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54d-cinq-jetons-classes-non-certifies
+          path: |
+            p54d_neutre.json
+            p54d_classes_non_certifiees.json
+          if-no-files-found: ignore
+          retention-days: 7

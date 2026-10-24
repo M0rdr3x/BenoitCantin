@@ -1,0 +1,813 @@
+{
+  "schema_version": "P52Z-1",
+  "jalon": "P52Z",
+  "date_reference": "2026-10-20",
+  "statut": "INSTRUCTION_PRIMAIRE_PROVISOIRE_NON_CERTIFIEE",
+  "objet": "Comparer le champ légal des recettes et engagements fiscaux du Projet Nova dans le Canada et sous hypothèse souveraine.",
+  "notes_methode": {
+    "pages_officielles_reperees_et_relues": true,
+    "absence_archives_sources_authentifiees": true,
+    "citations_pas_conclusions_de_jurisprudence_exhaustives": true,
+    "consultation_2026_instantanee_non_garantie_futur": true,
+    "aucune_inference_sur_legislation_future": true,
+    "aucun_taux_de_reforme_fixe": true,
+    "aucune_preuve_F01_F20_approuvee": true
+  },
+  "references": {
+    "p52a": "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json",
+    "p52x": "projets/projet-nova/etudes/P52X_PRECONDITIONS_AUTORITE_ET_CONFIDENTIALITE.json",
+    "p52y": "projets/projet-nova/etudes/P52Y_PLAN_ACTIONS_HUMAINES_ET_GITHUB.json",
+    "p52v": "projets/projet-nova/etudes/P52V_REGISTRE_MISSION_F09.json"
+  },
+  "sources_primaires": [
+    {
+      "id": "S01",
+      "code": "CONSTITUTION_FEDERALE_91_3",
+      "url": "https://laws-lois.justice.gc.ca/fra/const/section-91.html",
+      "fondement": "Loi constitutionnelle de 1867, art. 91(3)",
+      "constat_primaire": "Le Parlement peut prélever des deniers par tous modes ou systèmes de taxation.",
+      "f_prioritaire": "F02",
+      "juridiction": "CANADA",
+      "consultation_page_officielle": "REPEREE_EN_LIGNE_LE_2026_10_20",
+      "copie_integrale_archivee_et_hash_certifie": false,
+      "avis_juridique_externe_independant_obtenu": false,
+      "date_version_authentifiee_par_expert": null
+    },
+    {
+      "id": "S02",
+      "code": "CONSTITUTION_PROVINCIALE_92_2_8_9",
+      "url": "https://laws-lois.justice.gc.ca/fra/const/section-92.html",
+      "fondement": "Loi constitutionnelle de 1867, art. 92(2), (8), (9)",
+      "constat_primaire": "Taxation directe provinciale, institutions municipales et certaines licences.",
+      "f_prioritaire": "F01",
+      "juridiction": "CANADA",
+      "consultation_page_officielle": "REPEREE_EN_LIGNE_LE_2026_10_20",
+      "copie_integrale_archivee_et_hash_certifie": false,
+      "avis_juridique_externe_independant_obtenu": false,
+      "date_version_authentifiee_par_expert": null
+    },
+    {
+      "id": "S03",
+      "code": "CONSTITUTION_RESSOURCES_92A_4",
+      "url": "https://laws-lois.justice.gc.ca/fra/const/section-92A.html",
+      "fondement": "Loi constitutionnelle de 1867, art. 92A(4)",
+      "constat_primaire": "Cas spécifique de taxation des ressources et de la production électrique, avec limites.",
+      "f_prioritaire": "F01",
+      "juridiction": "CANADA",
+      "consultation_page_officielle": "REPEREE_EN_LIGNE_LE_2026_10_20",
+      "copie_integrale_archivee_et_hash_certifie": false,
+      "avis_juridique_externe_independant_obtenu": false,
+      "date_version_authentifiee_par_expert": null
+    },
+    {
+      "id": "S04",
+      "code": "IMPOT_QUEBEC_I3",
+      "url": "https://www.legisquebec.gouv.qc.ca/fr/document/lc/I-3",
+      "fondement": "Loi sur les impôts (Québec, I-3)",
+      "constat_primaire": "Loi québécoise régissant des impôts sur le revenu et des règles connexes.",
+      "f_prioritaire": "F01",
+      "juridiction": "QUEBEC",
+      "consultation_page_officielle": "REPEREE_EN_LIGNE_LE_2026_10_20",
+      "copie_integrale_archivee_et_hash_certifie": false,
+      "avis_juridique_externe_independant_obtenu": false,
+      "date_version_authentifiee_par_expert": null
+    },
+    {
+      "id": "S05",
+      "code": "IMPOT_FEDERAL_I33",
+      "url": "https://laws-lois.justice.gc.ca/fra/lois/I-3.3/section-2.html",
+      "fondement": "Loi de l'impôt sur le revenu (Canada), art. 2",
+      "constat_primaire": "Assujettissement des personnes au revenu imposable fédéral.",
+      "f_prioritaire": "F02",
+      "juridiction": "CANADA",
+      "consultation_page_officielle": "REPEREE_EN_LIGNE_LE_2026_10_20",
+      "copie_integrale_archivee_et_hash_certifie": false,
+      "avis_juridique_externe_independant_obtenu": false,
+      "date_version_authentifiee_par_expert": null
+    },
+    {
+      "id": "S06",
+      "code": "TVQ_T01",
+      "url": "https://www.legisquebec.gouv.qc.ca/fr/document/lc/T-0.1",
+      "fondement": "Loi sur la taxe de vente du Québec (T-0.1)",
+      "constat_primaire": "Taxe de vente imposée par une loi québécoise.",
+      "f_prioritaire": "F07",
+      "juridiction": "QUEBEC",
+      "consultation_page_officielle": "REPEREE_EN_LIGNE_LE_2026_10_20",
+      "copie_integrale_archivee_et_hash_certifie": false,
+      "avis_juridique_externe_independant_obtenu": false,
+      "date_version_authentifiee_par_expert": null
+    },
+    {
+      "id": "S07",
+      "code": "TPS_E15_165",
+      "url": "https://laws-lois.justice.gc.ca/fra/lois/E-15/section-165.html",
+      "fondement": "Loi sur la taxe d'accise (Canada), art. 165",
+      "constat_primaire": "TPS fédérale sur les fournitures taxables et dispositions connexes.",
+      "f_prioritaire": "F02",
+      "juridiction": "CANADA",
+      "consultation_page_officielle": "REPEREE_EN_LIGNE_LE_2026_10_20",
+      "copie_integrale_archivee_et_hash_certifie": false,
+      "avis_juridique_externe_independant_obtenu": false,
+      "date_version_authentifiee_par_expert": null
+    },
+    {
+      "id": "S08",
+      "code": "DOUANES_C54011_20",
+      "url": "https://laws-lois.justice.gc.ca/fra/lois/C-54.011/section-20.html",
+      "fondement": "Tarif des douanes (Canada), art. 20",
+      "constat_primaire": "Droits de douane fédéraux perçus à l'importation.",
+      "f_prioritaire": "F03",
+      "juridiction": "CANADA",
+      "consultation_page_officielle": "REPEREE_EN_LIGNE_LE_2026_10_20",
+      "copie_integrale_archivee_et_hash_certifie": false,
+      "avis_juridique_externe_independant_obtenu": false,
+      "date_version_authentifiee_par_expert": null
+    },
+    {
+      "id": "S09",
+      "code": "FISCALITE_MUNICIPALE_F21",
+      "url": "https://www.legisquebec.gouv.qc.ca/fr/document/lc/F-2.1",
+      "fondement": "Loi sur la fiscalité municipale (Québec, F-2.1)",
+      "constat_primaire": "Cadre de l'évaluation et des taxes municipales, à examiner avant toute suppression.",
+      "f_prioritaire": "F04",
+      "juridiction": "QUEBEC",
+      "consultation_page_officielle": "REPEREE_EN_LIGNE_LE_2026_10_20",
+      "copie_integrale_archivee_et_hash_certifie": false,
+      "avis_juridique_externe_independant_obtenu": false,
+      "date_version_authentifiee_par_expert": null
+    },
+    {
+      "id": "S10",
+      "code": "TAXE_SCOLAIRE_I133_303",
+      "url": "https://www.legisquebec.gouv.qc.ca/fr/document/lc/I-13.3",
+      "fondement": "Loi sur l'instruction publique (Québec, I-13.3), art. 303 et suiv.",
+      "constat_primaire": "La taxe scolaire est établie par une loi distincte.",
+      "f_prioritaire": "F04",
+      "juridiction": "QUEBEC",
+      "consultation_page_officielle": "REPEREE_EN_LIGNE_LE_2026_10_20",
+      "copie_integrale_archivee_et_hash_certifie": false,
+      "avis_juridique_externe_independant_obtenu": false,
+      "date_version_authentifiee_par_expert": null
+    },
+    {
+      "id": "S11",
+      "code": "CLARTE_REFERENDUM_C318",
+      "url": "https://laws-lois.justice.gc.ca/fra/lois/C-31.8/section-3.html",
+      "fondement": "Loi sur la clarté (Canada), art. 3",
+      "constat_primaire": "La sécession légale d'une province requiert modification constitutionnelle et négociations.",
+      "f_prioritaire": "F19",
+      "juridiction": "CANADA",
+      "consultation_page_officielle": "REPEREE_EN_LIGNE_LE_2026_10_20",
+      "copie_integrale_archivee_et_hash_certifie": false,
+      "avis_juridique_externe_independant_obtenu": false,
+      "date_version_authentifiee_par_expert": null
+    }
+  ],
+  "questions": [
+    {
+      "id": "T01",
+      "theme": "Impôt québécois sur le revenu",
+      "f_prioritaire": "F01",
+      "sources": [
+        "S02",
+        "S04"
+      ]
+    },
+    {
+      "id": "T02",
+      "theme": "Impôt fédéral sur le revenu",
+      "f_prioritaire": "F02",
+      "sources": [
+        "S01",
+        "S05"
+      ]
+    },
+    {
+      "id": "T03",
+      "theme": "Taxe de vente du Québec (TVQ)",
+      "f_prioritaire": "F07",
+      "sources": [
+        "S02",
+        "S06"
+      ]
+    },
+    {
+      "id": "T04",
+      "theme": "Taxe fédérale sur les produits et services (TPS)",
+      "f_prioritaire": "F02",
+      "sources": [
+        "S01",
+        "S07"
+      ]
+    },
+    {
+      "id": "T05",
+      "theme": "Prélèvement contre les paradis fiscaux",
+      "f_prioritaire": "F06",
+      "sources": [
+        "S02",
+        "S04",
+        "S05"
+      ]
+    },
+    {
+      "id": "T06",
+      "theme": "Droits de douane et contre-tarifs",
+      "f_prioritaire": "F03",
+      "sources": [
+        "S01",
+        "S08"
+      ]
+    },
+    {
+      "id": "T07",
+      "theme": "Taxes foncières municipales",
+      "f_prioritaire": "F04",
+      "sources": [
+        "S02",
+        "S09"
+      ]
+    },
+    {
+      "id": "T08",
+      "theme": "Taxe scolaire et financement des écoles",
+      "f_prioritaire": "F04",
+      "sources": [
+        "S09",
+        "S10"
+      ]
+    },
+    {
+      "id": "T09",
+      "theme": "Deux prélèvements uniques et financement des services",
+      "f_prioritaire": "F07",
+      "sources": [
+        "S01",
+        "S02",
+        "S04",
+        "S05",
+        "S09",
+        "S10"
+      ]
+    },
+    {
+      "id": "T10",
+      "theme": "Taxation des ressources et de l'énergie",
+      "f_prioritaire": "F01",
+      "sources": [
+        "S02",
+        "S03"
+      ]
+    },
+    {
+      "id": "T11",
+      "theme": "Transition constitutionnelle et fiscalité souveraine",
+      "f_prioritaire": "F19",
+      "sources": [
+        "S01",
+        "S02",
+        "S11"
+      ]
+    },
+    {
+      "id": "T12",
+      "theme": "Pas de contre-tarifs, continuité du commerce et des droits",
+      "f_prioritaire": "F17",
+      "sources": [
+        "S08",
+        "S11"
+      ]
+    }
+  ],
+  "evaluations": [
+    {
+      "id": "T01-QC-CA",
+      "theme": "Impôt québécois sur le revenu",
+      "scenario": "QUEBEC_DANS_CANADA",
+      "f_prioritaire": "F01",
+      "sources": [
+        "S02",
+        "S04"
+      ],
+      "categorie_initiale": "PROVINCIAL_REFORM_TO_VALIDATE",
+      "conclusion_preliminaire": "Le Québec peut envisager de modifier sa propre loi fiscale, sous réserve de légalité, de financement et de droits des contribuables.",
+      "travail_juridique_requis": "Définir assiette, personnes, entreprises, crédits, équité et administration, sans taux inventé.",
+      "risque_d_interpretation": "Aucune continuité automatique des lois, traités, recettes ou compétences.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T01-QC-SOUV",
+      "theme": "Impôt québécois sur le revenu",
+      "scenario": "QUEBEC_SOUVERAIN_HYPOTHETIQUE",
+      "f_prioritaire": "F01",
+      "sources": [
+        "S02",
+        "S04",
+        "S11"
+      ],
+      "categorie_initiale": "TRANSITION_CONDITIONNELLE_NON_ACQUISE",
+      "conclusion_preliminaire": "Les compétences d'un État hypothétique ne sont pas acquises : transition, reconnaissance, législation, droits, accords et obligations à instruire.",
+      "travail_juridique_requis": "La souveraineté est hypothétique : concevoir un régime complet seulement après étude du processus légal.",
+      "risque_d_interpretation": "Aucune continuité automatique des lois, traités, recettes ou compétences.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T02-QC-CA",
+      "theme": "Impôt fédéral sur le revenu",
+      "scenario": "QUEBEC_DANS_CANADA",
+      "f_prioritaire": "F02",
+      "sources": [
+        "S01",
+        "S05"
+      ],
+      "categorie_initiale": "FEDERAL_OUTSIDE_PROVINCIAL_UNILATERAL",
+      "conclusion_preliminaire": "Une loi québécoise ne supprime pas l'impôt fédéral sur le revenu établi par le Parlement.",
+      "travail_juridique_requis": "Distinguer économies provinciales et prélèvements fédéraux dans les simulations.",
+      "risque_d_interpretation": "Ne pas annoncer que l'impôt fédéral disparaîtra dès une déclaration politique.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T02-QC-SOUV",
+      "theme": "Impôt fédéral sur le revenu",
+      "scenario": "QUEBEC_SOUVERAIN_HYPOTHETIQUE",
+      "f_prioritaire": "F02",
+      "sources": [
+        "S01",
+        "S05",
+        "S11"
+      ],
+      "categorie_initiale": "TRANSITION_CONDITIONNELLE_NON_ACQUISE",
+      "conclusion_preliminaire": "Les compétences d'un État hypothétique ne sont pas acquises : transition, reconnaissance, législation, droits, accords et obligations à instruire.",
+      "travail_juridique_requis": "Toute fiscalité d'un futur État exige une transition légalement aboutie et des accords à examiner.",
+      "risque_d_interpretation": "Ne pas annoncer que l'impôt fédéral disparaîtra dès une déclaration politique.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T03-QC-CA",
+      "theme": "Taxe de vente du Québec (TVQ)",
+      "scenario": "QUEBEC_DANS_CANADA",
+      "f_prioritaire": "F07",
+      "sources": [
+        "S02",
+        "S06"
+      ],
+      "categorie_initiale": "PROVINCIAL_REFORM_TO_VALIDATE",
+      "conclusion_preliminaire": "La TVQ relève d'une loi du Québec; une réforme de celle-ci demande une loi et un remplacement budgétaire crédible.",
+      "travail_juridique_requis": "Mesurer pertes de recettes, remboursements, effets et impacts sur services.",
+      "risque_d_interpretation": "Ne pas assimiler disparition de TVQ et suppression de la TPS.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T03-QC-SOUV",
+      "theme": "Taxe de vente du Québec (TVQ)",
+      "scenario": "QUEBEC_SOUVERAIN_HYPOTHETIQUE",
+      "f_prioritaire": "F07",
+      "sources": [
+        "S02",
+        "S06",
+        "S11"
+      ],
+      "categorie_initiale": "TRANSITION_CONDITIONNELLE_NON_ACQUISE",
+      "conclusion_preliminaire": "Les compétences d'un État hypothétique ne sont pas acquises : transition, reconnaissance, législation, droits, accords et obligations à instruire.",
+      "travail_juridique_requis": "Élaborer une législation fiscale distincte dans un ordre juridique réellement établi.",
+      "risque_d_interpretation": "Ne pas assimiler disparition de TVQ et suppression de la TPS.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T04-QC-CA",
+      "theme": "Taxe fédérale sur les produits et services (TPS)",
+      "scenario": "QUEBEC_DANS_CANADA",
+      "f_prioritaire": "F02",
+      "sources": [
+        "S01",
+        "S07"
+      ],
+      "categorie_initiale": "FEDERAL_OUTSIDE_PROVINCIAL_UNILATERAL",
+      "conclusion_preliminaire": "Le Parlement impose la TPS; la province ne peut la retirer unilatéralement.",
+      "travail_juridique_requis": "Afficher séparément TPS et TVQ dans les prix et revenus, malgré l'objectif de deux prélèvements.",
+      "risque_d_interpretation": "Une taxe fédérale n'est pas supprimée par un changement de taux provincial.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T04-QC-SOUV",
+      "theme": "Taxe fédérale sur les produits et services (TPS)",
+      "scenario": "QUEBEC_SOUVERAIN_HYPOTHETIQUE",
+      "f_prioritaire": "F02",
+      "sources": [
+        "S01",
+        "S07",
+        "S11"
+      ],
+      "categorie_initiale": "TRANSITION_CONDITIONNELLE_NON_ACQUISE",
+      "conclusion_preliminaire": "Les compétences d'un État hypothétique ne sont pas acquises : transition, reconnaissance, législation, droits, accords et obligations à instruire.",
+      "travail_juridique_requis": "Ne pas présumer des effets automatiques sur taxes, commerce et transitions légales.",
+      "risque_d_interpretation": "Une taxe fédérale n'est pas supprimée par un changement de taux provincial.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T05-QC-CA",
+      "theme": "Prélèvement contre les paradis fiscaux",
+      "scenario": "QUEBEC_DANS_CANADA",
+      "f_prioritaire": "F06",
+      "sources": [
+        "S02",
+        "S04",
+        "S05"
+      ],
+      "categorie_initiale": "LEGAL_QUALIFICATION_OPEN",
+      "conclusion_preliminaire": "Qualification juridique à établir : véritable impôt, majoration, règle anti-évitement, mécanisme d'assiette, conventions et double imposition.",
+      "travail_juridique_requis": "Demander une analyse de compétence, preuve de revenu taxable et droits de recours pour sociétés et personnes.",
+      "risque_d_interpretation": "Aucun rendement net garanti ni assiette mondiale universelle présumée.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T05-QC-SOUV",
+      "theme": "Prélèvement contre les paradis fiscaux",
+      "scenario": "QUEBEC_SOUVERAIN_HYPOTHETIQUE",
+      "f_prioritaire": "F06",
+      "sources": [
+        "S02",
+        "S04",
+        "S05",
+        "S11"
+      ],
+      "categorie_initiale": "TRANSITION_CONDITIONNELLE_NON_ACQUISE",
+      "conclusion_preliminaire": "Les compétences d'un État hypothétique ne sont pas acquises : transition, reconnaissance, législation, droits, accords et obligations à instruire.",
+      "travail_juridique_requis": "Définir éventuellement son architecture avec conventions, administrations et obligations internationales.",
+      "risque_d_interpretation": "Aucun rendement net garanti ni assiette mondiale universelle présumée.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T06-QC-CA",
+      "theme": "Droits de douane et contre-tarifs",
+      "scenario": "QUEBEC_DANS_CANADA",
+      "f_prioritaire": "F03",
+      "sources": [
+        "S01",
+        "S08"
+      ],
+      "categorie_initiale": "FEDERAL_OUTSIDE_PROVINCIAL_UNILATERAL",
+      "conclusion_preliminaire": "Le régime douanier canadien est fédéral; Québec ne peut imposer ni abolir seul des droits de douane fédéraux.",
+      "travail_juridique_requis": "Définir le principe politique de ne pas proposer de contre-tarifs provinciaux illégaux, et le distinguer des tarifs fédéraux.",
+      "risque_d_interpretation": "Aucun droit automatique de fixer des tarifs nationaux avant une transition aboutie.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T06-QC-SOUV",
+      "theme": "Droits de douane et contre-tarifs",
+      "scenario": "QUEBEC_SOUVERAIN_HYPOTHETIQUE",
+      "f_prioritaire": "F03",
+      "sources": [
+        "S01",
+        "S08",
+        "S11"
+      ],
+      "categorie_initiale": "TRANSITION_CONDITIONNELLE_NON_ACQUISE",
+      "conclusion_preliminaire": "Les compétences d'un État hypothétique ne sont pas acquises : transition, reconnaissance, législation, droits, accords et obligations à instruire.",
+      "travail_juridique_requis": "Une absence volontaire de contre-tarifs doit être examinée avec souveraineté, engagements commerciaux, sécurité et recettes.",
+      "risque_d_interpretation": "Aucun droit automatique de fixer des tarifs nationaux avant une transition aboutie.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T07-QC-CA",
+      "theme": "Taxes foncières municipales",
+      "scenario": "QUEBEC_DANS_CANADA",
+      "f_prioritaire": "F04",
+      "sources": [
+        "S02",
+        "S09"
+      ],
+      "categorie_initiale": "PROVINCIAL_REFORM_TO_VALIDATE",
+      "conclusion_preliminaire": "La fiscalité municipale et les institutions locales reposent sur des lois et des responsabilités spécifiques.",
+      "travail_juridique_requis": "Calculer les financements de substitution avant toute proposition de suppression de taxes foncières.",
+      "risque_d_interpretation": "Ne pas promettre les services municipaux sans source de financement de remplacement.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T07-QC-SOUV",
+      "theme": "Taxes foncières municipales",
+      "scenario": "QUEBEC_SOUVERAIN_HYPOTHETIQUE",
+      "f_prioritaire": "F04",
+      "sources": [
+        "S02",
+        "S09",
+        "S11"
+      ],
+      "categorie_initiale": "TRANSITION_CONDITIONNELLE_NON_ACQUISE",
+      "conclusion_preliminaire": "Les compétences d'un État hypothétique ne sont pas acquises : transition, reconnaissance, législation, droits, accords et obligations à instruire.",
+      "travail_juridique_requis": "Maintenir ou réformer la fonction municipale et ses recettes dans un scénario non encore réalisé.",
+      "risque_d_interpretation": "Ne pas promettre les services municipaux sans source de financement de remplacement.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T08-QC-CA",
+      "theme": "Taxe scolaire et financement des écoles",
+      "scenario": "QUEBEC_DANS_CANADA",
+      "f_prioritaire": "F04",
+      "sources": [
+        "S09",
+        "S10"
+      ],
+      "categorie_initiale": "PROVINCIAL_REFORM_TO_VALIDATE",
+      "conclusion_preliminaire": "La taxe scolaire relève d'un régime légal et finance des besoins locaux du réseau scolaire.",
+      "travail_juridique_requis": "Garantir les besoins scolaires, l'entretien et les transports dans toute réforme de taxe scolaire.",
+      "risque_d_interpretation": "Le principe de deux prélèvements n'efface pas le coût des écoles.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T08-QC-SOUV",
+      "theme": "Taxe scolaire et financement des écoles",
+      "scenario": "QUEBEC_SOUVERAIN_HYPOTHETIQUE",
+      "f_prioritaire": "F04",
+      "sources": [
+        "S09",
+        "S10",
+        "S11"
+      ],
+      "categorie_initiale": "TRANSITION_CONDITIONNELLE_NON_ACQUISE",
+      "conclusion_preliminaire": "Les compétences d'un État hypothétique ne sont pas acquises : transition, reconnaissance, législation, droits, accords et obligations à instruire.",
+      "travail_juridique_requis": "Prévoir les droits et fonctions des réseaux scolaires après une éventuelle transition.",
+      "risque_d_interpretation": "Le principe de deux prélèvements n'efface pas le coût des écoles.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T09-QC-CA",
+      "theme": "Deux prélèvements uniques et financement des services",
+      "scenario": "QUEBEC_DANS_CANADA",
+      "f_prioritaire": "F07",
+      "sources": [
+        "S01",
+        "S02",
+        "S04",
+        "S05",
+        "S09",
+        "S10"
+      ],
+      "categorie_initiale": "LEGAL_QUALIFICATION_OPEN",
+      "conclusion_preliminaire": "L'objectif de deux prélèvements ne se confond pas avec deux prélèvements obligatoires pour toutes les administrations du Canada.",
+      "travail_juridique_requis": "Produire un inventaire multi-administrations et une étude de remplacement de recettes avant annonces.",
+      "risque_d_interpretation": "Ni recettes supplémentaires, ni taux, ni économies budgétaires ne sont certifiés.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T09-QC-SOUV",
+      "theme": "Deux prélèvements uniques et financement des services",
+      "scenario": "QUEBEC_SOUVERAIN_HYPOTHETIQUE",
+      "f_prioritaire": "F07",
+      "sources": [
+        "S01",
+        "S02",
+        "S04",
+        "S05",
+        "S09",
+        "S10",
+        "S11"
+      ],
+      "categorie_initiale": "TRANSITION_CONDITIONNELLE_NON_ACQUISE",
+      "conclusion_preliminaire": "Les compétences d'un État hypothétique ne sont pas acquises : transition, reconnaissance, législation, droits, accords et obligations à instruire.",
+      "travail_juridique_requis": "Élaborer une assiette et une couverture budgétaire complètes après étude constitutionnelle.",
+      "risque_d_interpretation": "Ni recettes supplémentaires, ni taux, ni économies budgétaires ne sont certifiés.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T10-QC-CA",
+      "theme": "Taxation des ressources et de l'énergie",
+      "scenario": "QUEBEC_DANS_CANADA",
+      "f_prioritaire": "F01",
+      "sources": [
+        "S02",
+        "S03"
+      ],
+      "categorie_initiale": "PROVINCIAL_REFORM_TO_VALIDATE",
+      "conclusion_preliminaire": "La Constitution prévoit une compétence provinciale spécifique pour certaines taxations de ressources et d'électricité.",
+      "travail_juridique_requis": "Distinguer ressources, redevances, impôts et limitation de non-discrimination des exportations.",
+      "risque_d_interpretation": "Ne pas conclure que les redevances ou tarifs seraient couverts automatiquement par deux taxes.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T10-QC-SOUV",
+      "theme": "Taxation des ressources et de l'énergie",
+      "scenario": "QUEBEC_SOUVERAIN_HYPOTHETIQUE",
+      "f_prioritaire": "F01",
+      "sources": [
+        "S02",
+        "S03",
+        "S11"
+      ],
+      "categorie_initiale": "TRANSITION_CONDITIONNELLE_NON_ACQUISE",
+      "conclusion_preliminaire": "Les compétences d'un État hypothétique ne sont pas acquises : transition, reconnaissance, législation, droits, accords et obligations à instruire.",
+      "travail_juridique_requis": "Analyser la continuité des titres et droits des ressources après une transition négociée.",
+      "risque_d_interpretation": "Ne pas conclure que les redevances ou tarifs seraient couverts automatiquement par deux taxes.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T11-QC-CA",
+      "theme": "Transition constitutionnelle et fiscalité souveraine",
+      "scenario": "QUEBEC_DANS_CANADA",
+      "f_prioritaire": "F19",
+      "sources": [
+        "S01",
+        "S02",
+        "S11"
+      ],
+      "categorie_initiale": "FEDERAL_OUTSIDE_PROVINCIAL_UNILATERAL",
+      "conclusion_preliminaire": "Une province ne peut acquérir unilatéralement les pouvoirs d'un nouvel État par simple loi fiscale.",
+      "travail_juridique_requis": "Traiter la fiscalité de souveraineté comme scénario soumis à négociations et changements constitutionnels.",
+      "risque_d_interpretation": "Ne pas considérer les transferts fédéraux, accords, frontières ou dettes comme automatiquement résolus.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T11-QC-SOUV",
+      "theme": "Transition constitutionnelle et fiscalité souveraine",
+      "scenario": "QUEBEC_SOUVERAIN_HYPOTHETIQUE",
+      "f_prioritaire": "F19",
+      "sources": [
+        "S01",
+        "S02",
+        "S11"
+      ],
+      "categorie_initiale": "TRANSITION_CONDITIONNELLE_NON_ACQUISE",
+      "conclusion_preliminaire": "Les compétences d'un État hypothétique ne sont pas acquises : transition, reconnaissance, législation, droits, accords et obligations à instruire.",
+      "travail_juridique_requis": "Exiger des conclusions juridiques et démocratiques avant d'inférer des compétences d'État.",
+      "risque_d_interpretation": "Ne pas considérer les transferts fédéraux, accords, frontières ou dettes comme automatiquement résolus.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T12-QC-CA",
+      "theme": "Pas de contre-tarifs, continuité du commerce et des droits",
+      "scenario": "QUEBEC_DANS_CANADA",
+      "f_prioritaire": "F17",
+      "sources": [
+        "S08",
+        "S11"
+      ],
+      "categorie_initiale": "LEGAL_QUALIFICATION_OPEN",
+      "conclusion_preliminaire": "L'engagement politique à ne pas riposter par contre-tarifs ne vaut pas droit de défaire des mesures fédérales.",
+      "travail_juridique_requis": "Distinguer tarif fédéral existant, absence d'une mesure québécoise et position politique future.",
+      "risque_d_interpretation": "Ni reconnaissance, ni régime commercial autonome, ni neutralité sur les droits n'est acquis.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    },
+    {
+      "id": "T12-QC-SOUV",
+      "theme": "Pas de contre-tarifs, continuité du commerce et des droits",
+      "scenario": "QUEBEC_SOUVERAIN_HYPOTHETIQUE",
+      "f_prioritaire": "F17",
+      "sources": [
+        "S08",
+        "S11"
+      ],
+      "categorie_initiale": "TRANSITION_CONDITIONNELLE_NON_ACQUISE",
+      "conclusion_preliminaire": "Les compétences d'un État hypothétique ne sont pas acquises : transition, reconnaissance, législation, droits, accords et obligations à instruire.",
+      "travail_juridique_requis": "Prévoir une étude des échanges, traités, approvisionnement et recours pour une éventuelle politique douanière autonome.",
+      "risque_d_interpretation": "Ni reconnaissance, ni régime commercial autonome, ni neutralité sur les droits n'est acquis.",
+      "avis_juridique_independant": null,
+      "revue_humaine_signee": false,
+      "acquis_sans_reserve": false,
+      "conclusion_fiscale_approuvee": false,
+      "statut": "ANALYSE_PRELIMINAIRE_A_REVOIR"
+    }
+  ],
+  "consequences_directes": [
+    {
+      "id": "K01",
+      "nature": "IMPOT_FEDERAL",
+      "regime": "QUEBEC_DANS_CANADA",
+      "constat": "Le provincial ne peut abolir seul l'impôt fédéral ou la TPS.",
+      "avis_externe_obtenu": false
+    },
+    {
+      "id": "K02",
+      "nature": "COUT_SERVICES",
+      "regime": "TOUS",
+      "constat": "Municipalités et écoles doivent garder un financement suffisant et mesurable.",
+      "avis_externe_obtenu": false
+    },
+    {
+      "id": "K03",
+      "nature": "PARADIS_FISCAUX",
+      "regime": "TOUS",
+      "constat": "Une règle anti-évitement et un impôt nouveau ne sont pas nécessairement deux objets équivalents.",
+      "avis_externe_obtenu": false
+    },
+    {
+      "id": "K04",
+      "nature": "DOUANES",
+      "regime": "QUEBEC_DANS_CANADA",
+      "constat": "Les droits de douane canadiens restent de compétence fédérale.",
+      "avis_externe_obtenu": false
+    },
+    {
+      "id": "K05",
+      "nature": "TRANSITION",
+      "regime": "QUEBEC_SOUVERAIN_HYPOTHETIQUE",
+      "constat": "La souveraineté et ses recettes ne sont pas des états juridiques déjà constitués.",
+      "avis_externe_obtenu": false
+    }
+  ],
+  "bilan": {
+    "sources_officielles_reperes": 11,
+    "questions_de_faisabilite": 12,
+    "evaluations_comparatives": 24,
+    "conclusions_humaines_independantes": 0,
+    "preuves_F01_F20_validees": 0,
+    "montants_financiers_nova_inconnus": 1320,
+    "taux_fiscaux_fixes": 0,
+    "publication_autorisee": false,
+    "fusion_autorisee": false,
+    "adoption_autorisee": false,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

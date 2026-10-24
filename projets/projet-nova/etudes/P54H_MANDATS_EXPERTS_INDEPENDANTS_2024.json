@@ -1,0 +1,97 @@
+{
+  "schema_version": "P54H-1",
+  "date_reference": "2026-10-24",
+  "exercice_source": 2024,
+  "source": "P54G_REGISTRE_DECISIONS_PROCEDURALES_2024.json",
+  "source_p54d_run": 40120462237,
+  "mandats": [
+    {
+      "code": "MANDAT-COMPTABLE-2024",
+      "specialite": "COMPTABILITE_MUNICIPALE_2024",
+      "objet": "REVUE_DOCUMENTAIRE_COMPTABLE_DES_DEPENSES_MIXTES_ET_DE_LA_CONSOLIDATION",
+      "dossiers": [
+        "P54E-V-001",
+        "P54E-M-001",
+        "P54E-M-002",
+        "P54E-M-003"
+      ]
+    },
+    {
+      "code": "MANDAT-JURIDIQUE-2024",
+      "specialite": "DROIT_MUNICIPAL_ET_MANDAT_D_AUDIT",
+      "objet": "PORTEE_JURIDIQUE_RAVQ_1435_ET_LIMITE_AVIS_AUDIT",
+      "dossiers": [
+        "P54E-V-001",
+        "P54E-M-001",
+        "P54E-M-002",
+        "P54E-M-003"
+      ]
+    }
+  ],
+  "controles_qualification": [
+    "COMPETENCE_PERTINENTE_DOCUMENTEE",
+    "ORDRE_PROFESSIONNEL_ET_PERMIS_EXAMINES",
+    "INDEPENDANCE_ET_CONFLITS_DECLARÉS",
+    "LIENS_CLIENTS_CABINET_ANTERIEURS_EXAMINES",
+    "REMUNERATION_ET_INCITATIONS_VERIFIEES",
+    "CONFIDENTIALITE_ET_SECRET_PROFESSIONNEL",
+    "MANDAT_ECRIT_PORTEE_LIMITES_LIVRABLES",
+    "SOURCES_PRIMAIRES_ET_HACHAGES_DOCUMENTES",
+    "DROITS_ACCES_AUX_GRANDS_LIVRES_VERIFIES",
+    "REGLES_CONSOLIDATION_ET_PARTIES_LIEES",
+    "IMPACT_EMPLOIS_ET_SERVICES_PUBLICS",
+    "AVIS_DATE_SIGNE_ET_AUTHENTIFIE_MANUELLEMENT"
+  ],
+  "risques_conflit": [
+    "NON_EXAMINE",
+    "ABSENCE_DECLAREE_NON_VERIFIEE",
+    "POTENTIEL",
+    "APPARENT",
+    "REEL"
+  ],
+  "etat_remuneration": [
+    "NON_EXAMINE",
+    "MODALITES_DECLAREES_SANS_INTERET_AU_RESULTAT",
+    "INCITATION_AU_RESULTAT_A_EVALUER"
+  ],
+  "etapes": [
+    "NON_DECLARÉ",
+    "EXAMINÉ_SANS_ATTESTATION"
+  ],
+  "sources_deontologiques": [
+    "https://cpaquebec.ca/fr/membres-cpa/deontologie/devoirs-generaux/conflit-dinterets/le-conflit-dinterets/",
+    "https://cpaquebec.ca/fr/trouver-un-cpa/tableau-de-lordre/",
+    "https://www.legisquebec.gouv.qc.ca/fr/document/rc/B-1,%20r.%203.1/"
+  ],
+  "garde_fous": {
+    "aucun_expert_recrute_ou_contacte": true,
+    "absence_conflit_declaree_pas_verifiee": true,
+    "inscription_professionnelle_non_authentifiee": true,
+    "aucune_signature_authentifiee": true,
+    "aucun_avis_independant_recu": true,
+    "aucun_frais_ni_honoraire_engage": true,
+    "pas_de_transmission_vers_un_tiers": true,
+    "identites_reelles_et_pieces_confidentielles_hors_git": true,
+    "ne_pas_diffuser_candidats_ou_num_permis": true,
+    "aucune_economie_financiere_certifiee": true,
+    "aucun_chiffre_financier_invente": true,
+    "aucune_fermeture_des_dossiers_p54e": true,
+    "protections_emploi_et_services": true,
+    "aucune_double_elimination_ville_rtc": true,
+    "scenarios_quebec_canada_souverain_distincts": true,
+    "aucune_fusion_main": true,
+    "aucun_changement_sinjira": true
+  },
+  "etat_initial": {
+    "mandats_a_preparer": 2,
+    "controles_de_qualification_non_attestes": 24,
+    "experts_engages": 0,
+    "ordres_professionnels_verifies": 0,
+    "avis_originaux_signes_recus": 0,
+    "dossiers_p54e_restants": 4,
+    "controles_p54b_restants": 96,
+    "controles_p54c_restants": 8,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

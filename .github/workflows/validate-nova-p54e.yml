@@ -1,0 +1,75 @@
+name: Projet Nova P54E - Dossiers de revue humaine non certifiants
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54e.yml"
+      - "scripts/preparer_revue_humaine_nova_p54e.py"
+      - "scripts/tests/test_preparer_revue_humaine_nova_p54e.py"
+      - "scripts/verifier_observations_numeriques_nova_p54d.py"
+      - "scripts/classer_ecarts_numeriques_nova_p54d.py"
+      - "projets/projet-nova/etudes/P54E_*"
+      - "projets/projet-nova/etudes/P54D_OBSERVATIONS_REELLES_2026_10_24.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  quatre-dossiers-non-attestes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Installer la dependance PDF de la chaine P54D
+        run: python -m pip install pypdf==5.9.0
+      - name: Tester les 50 protections de saisie et de provenance
+        run: |
+          python -m py_compile scripts/preparer_revue_humaine_nova_p54e.py
+          python - <<'PY'
+          import unittest
+          tests=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_preparer_revue_humaine_nova_p54e.py")
+          assert tests.countTestCases()==50,tests.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(tests)
+          assert result.wasSuccessful()
+          PY
+      - name: Verifier quatre dossiers et 40 controles non attestes
+        run: |
+          python scripts/preparer_revue_humaine_nova_p54e.py --dossiers p54e_dossiers.json --rapport p54e_bilan.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p54e_bilan.json").read_text("utf-8"))
+          d=json.loads(Path("p54e_dossiers.json").read_text("utf-8"))
+          assert len(d["dossiers"])==4
+          assert sum(len(x["points"]) for x in d["dossiers"])==40
+          assert r["dossiers_certifies"]==0
+          assert r["controles_effectivement_attestes"]==0
+          assert r["controles_p54b_restant"]==96
+          assert r["controles_p54c_restant"]==8
+          assert r["economies_certifiees_cad"] is None
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Refuser toute attestation automatique
+        run: |
+          set +e
+          python scripts/preparer_revue_humaine_nova_p54e.py --exiger-avis-signe
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Conserver uniquement les dossiers vierges et le bilan
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54e-quatre-dossiers-40-controles-non-attestes
+          path: |
+            p54e_dossiers.json
+            p54e_bilan.json
+          if-no-files-found: ignore
+          retention-days: 7

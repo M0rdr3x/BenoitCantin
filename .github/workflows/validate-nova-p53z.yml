@@ -1,0 +1,85 @@
+name: Projet Nova P53Z - Acquisition de deux PDF officiels publics
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p53z.yml"
+      - "scripts/acquerir_publications_nova_p53z.py"
+      - "scripts/tests/test_acquerir_publications_nova_p53z.py"
+      - "scripts/comparer_versions_pdf_nova_p53x.py"
+      - "scripts/constituer_dossier_pilote_nova_p53w.py"
+      - "scripts/reconcilier_ecarts_nova_p53v.py"
+      - "scripts/verifier_separation_controles_nova_p53u.py"
+      - "scripts/verifier_integrite_locale_nova_p53t.py"
+      - "scripts/suivre_demandes_acces_nova_p53s.py"
+      - "projets/projet-nova/etudes/P53Z_*"
+      - "projets/projet-nova/etudes/P53X_PROTOCOLE_COMPARAISON_DEUX_PDF_2024.json"
+      - "projets/projet-nova/etudes/P53W_DOSSIER_PUBLIC_QUEBEC_RTC.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-source-acquisition-no-certification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout read only
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Install pinned PDF library
+        run: python -m pip install pypdf==5.9.0
+      - name: Run 52 synthetic-only security and comparison tests
+        run: |
+          python -m py_compile scripts/acquerir_publications_nova_p53z.py
+          python - <<'PY'
+          import unittest
+          s=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_acquerir_publications_nova_p53z.py")
+          assert s.countTestCases()==52,s.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(s)
+          assert result.wasSuccessful()
+          PY
+      - name: Attempt real HTTPS acquisition from official public domains
+        shell: bash
+        run: |
+          set +e
+          python scripts/acquerir_publications_nova_p53z.py --acquerir --bilan p53z_captures_publiques.json
+          result=$?
+          set -e
+          echo "Resultat acquisition : $result" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$result" -ne 0 ] && [ "$result" -ne 4 ]; then
+            echo "Unexpected technical failure $result" >&2
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p53z_captures_publiques.json").read_text("utf-8"))
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          assert d["preuve_authenticite_emetteur"] is False
+          assert d["economies_certifiees_cad"] is None
+          print("Captures observées",d["copies_https_observees"],"/2")
+          print("Comparaison effectuée",d["comparaison_octets_officiels_effectuee"])
+          PY
+      - name: Refuse fictitious certification
+        run: |
+          set +e
+          python scripts/acquerir_publications_nova_p53z.py --exiger-authenticite --bilan p53z_refus.json
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Publish only summaries not actual PDFs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p53z-captures-publications-2024
+          path: |
+            p53z_captures_publiques.json
+            p53z_refus.json
+          if-no-files-found: ignore
+          retention-days: 7

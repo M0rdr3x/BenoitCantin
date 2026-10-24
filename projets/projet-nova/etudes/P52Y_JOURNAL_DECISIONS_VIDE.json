@@ -1,0 +1,16 @@
+{
+  "schema_version": "P52Y-JOURNAL-1",
+  "jalon": "P52Y",
+  "statut": "AUCUN_ACTE_AUTHENTIFIE",
+  "evenements": [],
+  "decisions_humaines": [],
+  "relectures_github": [],
+  "depenses": [],
+  "identites_et_pieces_privees_enregistrees_dans_git": false,
+  "signatures_reelles_authentifiees": 0,
+  "actions_autorisees": 0,
+  "publication_autorisee": false,
+  "fusion_autorisee": false,
+  "adoption_autorisee": false,
+  "decision": "NO_GO_AUTOMATIQUE"
+}

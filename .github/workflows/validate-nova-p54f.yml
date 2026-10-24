@@ -1,0 +1,84 @@
+name: Projet Nova P54F - Contre revue et integrite des preuves privees
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54f.yml"
+      - "scripts/gerer_contre_revues_nova_p54f.py"
+      - "scripts/tests/test_gerer_contre_revues_nova_p54f.py"
+      - "scripts/preparer_revue_humaine_nova_p54e.py"
+      - "scripts/verifier_observations_numeriques_nova_p54d.py"
+      - "projets/projet-nova/etudes/P54F_*"
+      - "projets/projet-nova/etudes/P54E_PLAN_REVUE_HUMAINE_2024.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  revue-contradictoire-sans-attestation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Installer parseur PDF des ancrages
+        run: python -m pip install pypdf==5.9.0
+      - name: Executer 63 tests synthetiques et garde-fous
+        run: |
+          python -m py_compile scripts/gerer_contre_revues_nova_p54f.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_gerer_contre_revues_nova_p54f.py")
+          assert suite.countTestCases()==63,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Valider bilan initial non certifiant
+        run: |
+          python scripts/gerer_contre_revues_nova_p54f.py --bilan p54f_bilan_vierge.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p54f_bilan_vierge.json").read_text("utf-8"))
+          assert d["dossiers_attendus"]==4
+          assert d["positions_role"]==8
+          assert d["positions_controle_qualitatif_2_roles"]==80
+          assert d["declarations_recues"]==0
+          assert d["statuts_de_revues"]=={"EN_ATTENTE":4}
+          assert d["avis_independants_signes"]==0
+          assert d["economies_certifiees_cad"] is None
+          assert d["fusion_main_autorisee"] is False
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Fiche privee locale jamais archivee
+        run: |
+          python scripts/gerer_contre_revues_nova_p54f.py --modele-prive "$RUNNER_TEMP/p54f_prive.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          f=Path(os.environ["RUNNER_TEMP"])/"p54f_prive.json"
+          assert f.exists() and (f.stat().st_mode & 0o777)==0o600
+          assert json.loads(f.read_text("utf-8"))["revues"]==[]
+          f.unlink()
+          PY
+      - name: Refuser certification declaree
+        run: |
+          set +e
+          python scripts/gerer_contre_revues_nova_p54f.py --exiger-certification
+          result=$?
+          set -e
+          test "$result" -eq 3
+      - name: Archiver uniquement un rapport agrege
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54f-quatre-dossiers-contre-revue-non-certifiee
+          path: p54f_bilan_vierge.json
+          if-no-files-found: ignore
+          retention-days: 7

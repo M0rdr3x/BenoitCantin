@@ -1,0 +1,88 @@
+name: Projet Nova P54H - Mandats et conflits experts independants
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54h.yml"
+      - "scripts/preparer_mandats_experts_nova_p54h.py"
+      - "scripts/tests/test_preparer_mandats_experts_nova_p54h.py"
+      - "scripts/controler_decisions_procedurales_nova_p54g.py"
+      - "scripts/gerer_contre_revues_nova_p54f.py"
+      - "projets/projet-nova/etudes/P54H_*"
+      - "projets/projet-nova/etudes/P54G_REGISTRE_DECISIONS_PROCEDURALES_2024.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mandats-dexpertise-non-transmis:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Installer dependance parser documentaire
+        run: python -m pip install pypdf==5.9.0
+      - name: Executer 72 tests sans identites ni documents reels
+        run: |
+          python -m py_compile scripts/preparer_mandats_experts_nova_p54h.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_preparer_mandats_experts_nova_p54h.py")
+          assert suite.countTestCases()==72,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Generer et verifier deux projets de mandat et 24 controles
+        run: |
+          python scripts/preparer_mandats_experts_nova_p54h.py --mandats p54h_mandats.json --bilan p54h_bilan.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path("p54h_mandats.json").read_text("utf-8"))
+          b=json.loads(Path("p54h_bilan.json").read_text("utf-8"))
+          assert len(a["mandats"])==2
+          assert sum(len(x["controles"]) for x in a["mandats"])==24
+          assert all(x["statut"]=="PROJET_NON_TRANSMIS" for x in a["mandats"])
+          assert b["mandats_transmis_et_acceptes_authentifies"]==0
+          assert b["appartenances_ordre_verifiees_par_procedure_independante"]==0
+          assert b["avis_independants_originaux_signes_reçus"]==0
+          assert b["controles_p54b_en_attente"]==96
+          assert b["controles_p54c_en_attente"]==8
+          assert b["economies_certifiees_cad"] is None
+          assert b["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Creer modele confidentiel temporaire, puis detruire
+        run: |
+          python scripts/preparer_mandats_experts_nova_p54h.py --modele-prive "$RUNNER_TEMP/p54h_prive.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          f=Path(os.environ["RUNNER_TEMP"])/"p54h_prive.json"
+          assert f.exists() and (f.stat().st_mode & 0o777)==0o600
+          assert json.loads(f.read_text("utf-8"))["declarations"]==[]
+          f.unlink()
+          PY
+      - name: Bloquer pretendue certification automatique
+        run: |
+          set +e
+          python scripts/preparer_mandats_experts_nova_p54h.py --exiger-avis-certifie
+          result=$?
+          set -e
+          test "$result" -eq 3
+      - name: Archiver seulement mandats vierges et bilan neutre
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54h-mandats-cpa-juridique-non-transmis
+          path: |
+            p54h_mandats.json
+            p54h_bilan.json
+          if-no-files-found: ignore
+          retention-days: 7

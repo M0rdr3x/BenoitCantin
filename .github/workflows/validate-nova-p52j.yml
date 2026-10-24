@@ -1,0 +1,69 @@
+name: Projet Nova P52J - Relecture du budget 2026-2027
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p52j.yml"
+      - "scripts/controler_relecture_budget_nova_p52j.py"
+      - "scripts/tests/test_controler_relecture_budget_nova_p52j.py"
+      - "projets/projet-nova/etudes/P52J_*"
+      - "projets/projet-nova/etudes/P52C_REFERENTIEL_BUDGET_QUEBEC_2026_2027.json"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+      - "projets/projet-nova/etudes/P52I_SOURCES_ET_ATTESTATIONS.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  relecture-primaire-sans-certification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Vingt-quatre tests contradictoires
+        run: |
+          python -m py_compile scripts/controler_relecture_budget_nova_p52j.py
+          python - <<'PY'
+          import unittest
+          s=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_controler_relecture_budget_nova_p52j.py")
+          assert s.countTestCases()==24, s.countTestCases()
+          r=unittest.TextTestRunner(verbosity=2).run(s)
+          assert r.wasSuccessful()
+          PY
+      - name: Rapprochement local de trente-neuf montants
+        run: |
+          python scripts/controler_relecture_budget_nova_p52j.py --rapport p52j_relecture_agregee.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          x=json.loads(Path("p52j_relecture_agregee.json").read_text("utf-8"))
+          assert x["recoupements_numeriques_locaux"]==39
+          assert x["preuves_P52A_encore_non_attestees"]==20
+          assert x["champs_financiers_P52H_encore_inconnus"]==1320
+          assert x["f09_preuve_independante_obtenue"] is False
+          assert x["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Refus strict de l'attestation automatique
+        run: |
+          set +e
+          python scripts/controler_relecture_budget_nova_p52j.py --exiger-attestation --rapport p52j_refus.json
+          res=$?
+          set -e
+          test "$res" -eq 3
+      - name: Rapport agrege non nominatif seulement
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52j-budget-2026-2027-no-go
+          path: |
+            p52j_relecture_agregee.json
+            p52j_refus.json
+          retention-days: 7
+          if-no-files-found: ignore

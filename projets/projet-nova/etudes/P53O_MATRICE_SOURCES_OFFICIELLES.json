@@ -1,0 +1,134 @@
+{
+  "schema_version": "P53O-1",
+  "jalon": "P53O",
+  "date_reference": "2026-10-22",
+  "statut": "MATRICE_DE_REPERAGE_NON_AUTHENTIFIEE",
+  "regimes": [
+    "QUEBEC_DANS_LE_CANADA",
+    "QUEBEC_SOUVERAIN_HYPOTHETIQUE"
+  ],
+  "categories": [
+    "ACHATS_REGROUPES_SANS_EXCLUSION",
+    "SIMPLIFICATION_FORMALITES",
+    "ENERGIE_ET_BATIMENTS",
+    "ENTRETIEN_PREVENTIF",
+    "LOGICIELS_ET_LICENCES",
+    "RENOUVELLEMENT_CONTRATS"
+  ],
+  "phases": [
+    "P0_IDENTIFIER_ORGANISME_COMPETENCE_PERIMETRE",
+    "P1_CONSULTER_PUBLICATIONS_EXISTANTES",
+    "P2_IDENTIFIER_PIECES_PRIMAIRES_LACUNAIRES",
+    "P3_EXAMINER_ACCES_ET_CONFIDENTIALITE",
+    "P4_EVALUER_SERVICES_EMPLOIS_COUTS_COMPLETS",
+    "P5_REVUE_INDEPENDANTE_ET_DECISION_HABILITEE"
+  ],
+  "sources": [
+    {
+      "id": "SEAO_DONNEES",
+      "url": "https://www.donneesquebec.ca/recherche/dataset/systeme-electronique-dappel-doffres-seao",
+      "portee": "CONTRATS_PUBLICS_SOUS_RESERVE_CHAMP_PUBLICATION",
+      "statut": "PAGE_INSTITUTIONNELLE_REPEREE",
+      "pieces_transactionnelles_authentifiees": 0
+    },
+    {
+      "id": "SEAO_QUEBEC",
+      "url": "https://www.quebec.ca/gouvernement/services-organisations-publiques/services-transformation-numerique/systeme-electronique-dappel-doffres-seao",
+      "portee": "CADRE_ET_PUBLICATION_MARCHES",
+      "statut": "PAGE_INSTITUTIONNELLE_REPEREE",
+      "pieces_transactionnelles_authentifiees": 0
+    },
+    {
+      "id": "MAMH_FINANCES",
+      "url": "https://www.quebec.ca/gouvernement/gestion-municipale/finances-fiscalite-municipales/information-financiere/publications-financieres/rapport-financier",
+      "portee": "ORGANISMES_MUNICIPAUX_SEULEMENT",
+      "statut": "PAGE_INSTITUTIONNELLE_REPEREE",
+      "pieces_transactionnelles_authentifiees": 0
+    },
+    {
+      "id": "SCT_PERFORMANCE",
+      "url": "https://www.tresor.gouv.qc.ca/performance-de-letat",
+      "portee": "REFERENTIEL_PERFORMANCE_NON_GRAND_LIVRE",
+      "statut": "PAGE_INSTITUTIONNELLE_REPEREE",
+      "pieces_transactionnelles_authentifiees": 0
+    },
+    {
+      "id": "CMQ_AUDIT",
+      "url": "https://www.cmq.gouv.qc.ca/fr/verification-municipale/questions-frequentes",
+      "portee": "METHODES_AUDIT_MUNICIPAL_NON_CERTIFICATION_DOSSIER",
+      "statut": "PAGE_INSTITUTIONNELLE_REPEREE",
+      "pieces_transactionnelles_authentifiees": 0
+    },
+    {
+      "id": "CAI_ACCES",
+      "url": "https://www.cai.gouv.qc.ca/acces-documents-organismes-publics/citoyens-acces-documents-publics/comment-acceder-documents-organismes-publics",
+      "portee": "DROITS_ACCES_ET_RESTRICTIONS",
+      "statut": "PAGE_INSTITUTIONNELLE_REPEREE",
+      "pieces_transactionnelles_authentifiees": 0
+    },
+    {
+      "id": "QUEBEC_ACCES",
+      "url": "https://www.quebec.ca/acces-information",
+      "portee": "PROCEDURE_DEMANDE_ORGANISME_DETENTEUR",
+      "statut": "PAGE_INSTITUTIONNELLE_REPEREE",
+      "pieces_transactionnelles_authentifiees": 0
+    }
+  ],
+  "sources_par_categorie": {
+    "ACHATS_REGROUPES_SANS_EXCLUSION": [
+      "SEAO_DONNEES",
+      "SEAO_QUEBEC",
+      "SCT_PERFORMANCE",
+      "CAI_ACCES"
+    ],
+    "SIMPLIFICATION_FORMALITES": [
+      "SCT_PERFORMANCE",
+      "CMQ_AUDIT",
+      "QUEBEC_ACCES"
+    ],
+    "ENERGIE_ET_BATIMENTS": [
+      "SEAO_DONNEES",
+      "MAMH_FINANCES",
+      "SCT_PERFORMANCE",
+      "CMQ_AUDIT"
+    ],
+    "ENTRETIEN_PREVENTIF": [
+      "SEAO_DONNEES",
+      "MAMH_FINANCES",
+      "SCT_PERFORMANCE",
+      "CMQ_AUDIT"
+    ],
+    "LOGICIELS_ET_LICENCES": [
+      "SEAO_DONNEES",
+      "SEAO_QUEBEC",
+      "SCT_PERFORMANCE",
+      "CAI_ACCES"
+    ],
+    "RENOUVELLEMENT_CONTRATS": [
+      "SEAO_DONNEES",
+      "SEAO_QUEBEC",
+      "SCT_PERFORMANCE",
+      "CAI_ACCES"
+    ]
+  },
+  "verrous": {
+    "sources_officielles_non_equivalentes_pieces_primaires": true,
+    "pays_hypothetique_ne_recoit_pas_competence_automatique": true,
+    "organisme_detenteur_et_droit_acces_a_etablir": true,
+    "mamH_seulement_pour_organismes_municipaux": true,
+    "aucun_comptage_double_economies": true,
+    "aucune_demande_ou_capture_reelle": true,
+    "aucune_exposition_documents_prives": true,
+    "aucun_taux_fiscal_adopte": true,
+    "maintien_travailleurs_et_services_essentiels": true,
+    "aucune_fusion_automatique": true
+  },
+  "etat_initial": {
+    "matrice_dossiers": 12,
+    "pages_institutionnelles_repertoiriees": 7,
+    "documents_primaires_authentifies": 0,
+    "demandes_envoyees": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

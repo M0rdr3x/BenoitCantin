@@ -1,0 +1,334 @@
+{
+  "schema_version": "P52Y-1",
+  "jalon": "P52Y",
+  "date_reference": "2026-10-20",
+  "statut": "DOSSIER_DECISIONS_HUMAINES_PRET_A_INSTRUIRE_NON_APPROUVE",
+  "references": {
+    "p52x": "projets/projet-nova/etudes/P52X_PRECONDITIONS_AUTORITE_ET_CONFIDENTIALITE.json",
+    "p52w": "projets/projet-nova/etudes/P52W_MATRICE_SELECTION_ET_GARDES_F09.json",
+    "p52v": "projets/projet-nova/etudes/P52V_REGISTRE_MISSION_F09.json",
+    "p52n": "projets/projet-nova/etudes/P52N_CAHIER_MANDATS_ET_CONSULTATION.json",
+    "p52a": "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json",
+    "registre": "projets/projet-nova/etudes/P52Y_JOURNAL_DECISIONS_VIDE.json"
+  },
+  "github_snapshot": {
+    "repository": "M0rdr3x/BenoitCantin",
+    "date_constat": "2026-10-20",
+    "main_sha": "9ed5f70cbe7022f25a679346a1288701f3b09067",
+    "main_protegee": false,
+    "rulesets_nombre": 0,
+    "pr_numero": 673,
+    "pr_branche": "review/p52a-deux-regimes-fiscalite-transition-2026-10-18",
+    "pr_brouillon": true,
+    "pr_fusionnee": false,
+    "pr_relectures_humaines": 0,
+    "issue_securite": {
+      "numero": 135,
+      "etat": "open",
+      "url": "https://github.com/M0rdr3x/BenoitCantin/issues/135"
+    },
+    "issue_relectures": {
+      "numero": 662,
+      "etat": "open",
+      "url": "https://github.com/M0rdr3x/BenoitCantin/issues/662"
+    },
+    "statut": "CAPTURE_PONCTUELLE_NON_ATTESTATION_FUTURE",
+    "revalidation_live_apres_configuration_requise": true
+  },
+  "actions": [
+    {
+      "id": "A01",
+      "piste": "MANDAT",
+      "objet": "Identifier légalement le mandant et vérifier son statut",
+      "role_fonctionnel_requis": "PERSONNE_JURIDIQUE_HABILITEE",
+      "preconditions_p52x": [
+        "X01",
+        "X03"
+      ],
+      "dependances": [],
+      "phase": 1,
+      "priorite": "BLOQUANT",
+      "statut": "ATTENTE_AUTORITE_HUMAINE",
+      "responsable_reel_designe": false,
+      "piece_officielle_verifiee": false,
+      "preuve_confidentielle_stockee_hors_git": null,
+      "date_validation_externe": null,
+      "signature_humaine_authentifiee": false
+    },
+    {
+      "id": "A02",
+      "piste": "MANDAT",
+      "objet": "Authentifier la délégation de pouvoir et séparer les responsables",
+      "role_fonctionnel_requis": "AUTORITE_CONTRACTANTE_VERIFIEE",
+      "preconditions_p52x": [
+        "X02",
+        "X07"
+      ],
+      "dependances": [
+        "A01"
+      ],
+      "phase": 1,
+      "priorite": "BLOQUANT",
+      "statut": "ATTENTE_AUTORITE_HUMAINE",
+      "responsable_reel_designe": false,
+      "piece_officielle_verifiee": false,
+      "preuve_confidentielle_stockee_hors_git": null,
+      "date_validation_externe": null,
+      "signature_humaine_authentifiee": false
+    },
+    {
+      "id": "A03",
+      "piste": "MANDAT",
+      "objet": "Obtenir la qualification écrite du régime contractuel et électoral applicable",
+      "role_fonctionnel_requis": "CONSEIL_JURIDIQUE_COMPETENT",
+      "preconditions_p52x": [
+        "X04"
+      ],
+      "dependances": [
+        "A01",
+        "A02"
+      ],
+      "phase": 2,
+      "priorite": "BLOQUANT",
+      "statut": "ATTENTE_AUTORITE_HUMAINE",
+      "responsable_reel_designe": false,
+      "piece_officielle_verifiee": false,
+      "preuve_confidentielle_stockee_hors_git": null,
+      "date_validation_externe": null,
+      "signature_humaine_authentifiee": false
+    },
+    {
+      "id": "A04",
+      "piste": "MANDAT",
+      "objet": "Autoriser budget réel et provenance licite des fonds avant toute dépense",
+      "role_fonctionnel_requis": "RESPONSABLE_FINANCIER_HABILITE",
+      "preconditions_p52x": [
+        "X05",
+        "X06"
+      ],
+      "dependances": [
+        "A02",
+        "A03"
+      ],
+      "phase": 2,
+      "priorite": "BLOQUANT",
+      "statut": "ATTENTE_AUTORITE_HUMAINE",
+      "responsable_reel_designe": false,
+      "piece_officielle_verifiee": false,
+      "preuve_confidentielle_stockee_hors_git": null,
+      "date_validation_externe": null,
+      "signature_humaine_authentifiee": false
+    },
+    {
+      "id": "A05",
+      "piste": "MANDAT",
+      "objet": "Qualifier confidentialité, hébergement, accès, conservation et transferts",
+      "role_fonctionnel_requis": "RESPONSABLE_PROTECTION_DONNEES_HABILITE",
+      "preconditions_p52x": [
+        "X09",
+        "X10",
+        "X11"
+      ],
+      "dependances": [
+        "A02",
+        "A03"
+      ],
+      "phase": 2,
+      "priorite": "BLOQUANT",
+      "statut": "ATTENTE_AUTORITE_HUMAINE",
+      "responsable_reel_designe": false,
+      "piece_officielle_verifiee": false,
+      "preuve_confidentielle_stockee_hors_git": null,
+      "date_validation_externe": null,
+      "signature_humaine_authentifiee": false
+    },
+    {
+      "id": "A06",
+      "piste": "MANDAT",
+      "objet": "Faire approuver les critères, mécanismes de contestation et conflits",
+      "role_fonctionnel_requis": "COMITE_DE_SELECTION_HABILITE",
+      "preconditions_p52x": [
+        "X08",
+        "X12"
+      ],
+      "dependances": [
+        "A03",
+        "A04",
+        "A05"
+      ],
+      "phase": 3,
+      "priorite": "BLOQUANT",
+      "statut": "ATTENTE_AUTORITE_HUMAINE",
+      "responsable_reel_designe": false,
+      "piece_officielle_verifiee": false,
+      "preuve_confidentielle_stockee_hors_git": null,
+      "date_validation_externe": null,
+      "signature_humaine_authentifiee": false
+    },
+    {
+      "id": "A07",
+      "piste": "GITHUB",
+      "objet": "Activer et vérifier une protection obligatoire de main, sans contournement",
+      "role_fonctionnel_requis": "ADMINISTRATEUR_GITHUB_HABILITE",
+      "preconditions_p52x": [],
+      "dependances": [],
+      "phase": 1,
+      "priorite": "BLOQUANT",
+      "statut": "ATTENTE_AUTORITE_HUMAINE",
+      "responsable_reel_designe": false,
+      "piece_officielle_verifiee": false,
+      "preuve_confidentielle_stockee_hors_git": null,
+      "date_validation_externe": null,
+      "signature_humaine_authentifiee": false
+    },
+    {
+      "id": "A08",
+      "piste": "GITHUB",
+      "objet": "Désigner une revue humaine indépendante et rendre son approbation obligatoire",
+      "role_fonctionnel_requis": "RESPONSABLE_REVUE_GITHUB_HABILITE",
+      "preconditions_p52x": [],
+      "dependances": [
+        "A07"
+      ],
+      "phase": 2,
+      "priorite": "BLOQUANT",
+      "statut": "ATTENTE_AUTORITE_HUMAINE",
+      "responsable_reel_designe": false,
+      "piece_officielle_verifiee": false,
+      "preuve_confidentielle_stockee_hors_git": null,
+      "date_validation_externe": null,
+      "signature_humaine_authentifiee": false
+    },
+    {
+      "id": "A09",
+      "piste": "MANDAT",
+      "objet": "Décider explicitement si et comment ouvrir un appel à candidatures sécurisé",
+      "role_fonctionnel_requis": "AUTORITE_CONTRACTANTE_HABILITEE",
+      "preconditions_p52x": [],
+      "dependances": [
+        "A01",
+        "A02",
+        "A03",
+        "A04",
+        "A05",
+        "A06"
+      ],
+      "phase": 4,
+      "priorite": "BLOQUANT",
+      "statut": "ATTENTE_AUTORITE_HUMAINE",
+      "responsable_reel_designe": false,
+      "piece_officielle_verifiee": false,
+      "preuve_confidentielle_stockee_hors_git": null,
+      "date_validation_externe": null,
+      "signature_humaine_authentifiee": false
+    },
+    {
+      "id": "A10",
+      "piste": "MANDAT",
+      "objet": "Contrôler la réception réelle, la qualification et l'avis indépendant F09",
+      "role_fonctionnel_requis": "REVISEUR_DISTINCT_ET_AUTORITE_COMPETENTE",
+      "preconditions_p52x": [],
+      "dependances": [
+        "A09"
+      ],
+      "phase": 5,
+      "priorite": "BLOQUANT",
+      "statut": "ATTENTE_AUTORITE_HUMAINE",
+      "responsable_reel_designe": false,
+      "piece_officielle_verifiee": false,
+      "preuve_confidentielle_stockee_hors_git": null,
+      "date_validation_externe": null,
+      "signature_humaine_authentifiee": false
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D01",
+      "theme": "STATUT_ET_POUVOIRS",
+      "objet": "Qualifier le mandant, le droit électoral et contractuel, les signataires",
+      "actions_requises": [
+        "A01",
+        "A02",
+        "A03"
+      ],
+      "decision_authentifiee": false,
+      "reference_piece_confidentielle": null,
+      "date_decision_verifiee": null,
+      "autorite_reelle_identifiee": false,
+      "statut": "NON_PRESENTE_A_DECIDEUR"
+    },
+    {
+      "id": "D02",
+      "theme": "FINANCEMENT",
+      "objet": "Fixer budget effectif, source licite, approbation et contrôle des dépenses",
+      "actions_requises": [
+        "A04"
+      ],
+      "decision_authentifiee": false,
+      "reference_piece_confidentielle": null,
+      "date_decision_verifiee": null,
+      "autorite_reelle_identifiee": false,
+      "statut": "NON_PRESENTE_A_DECIDEUR"
+    },
+    {
+      "id": "D03",
+      "theme": "DONNEES_ET_SELECTION",
+      "objet": "Valider confidentialité, canal, grille, conflits, contestation",
+      "actions_requises": [
+        "A05",
+        "A06",
+        "A09"
+      ],
+      "decision_authentifiee": false,
+      "reference_piece_confidentielle": null,
+      "date_decision_verifiee": null,
+      "autorite_reelle_identifiee": false,
+      "statut": "NON_PRESENTE_A_DECIDEUR"
+    },
+    {
+      "id": "D04",
+      "theme": "GITHUB_ET_REVUE",
+      "objet": "Règles serveur main, relecteur qualifié et traces d'approbation",
+      "actions_requises": [
+        "A07",
+        "A08"
+      ],
+      "decision_authentifiee": false,
+      "reference_piece_confidentielle": null,
+      "date_decision_verifiee": null,
+      "autorite_reelle_identifiee": false,
+      "statut": "NON_PRESENTE_A_DECIDEUR"
+    }
+  ],
+  "points_non_delegables": {
+    "instance_mandante_legalement_qualifiee": false,
+    "delegation_ecrite_authentifiee": false,
+    "budget_cad_veritablement_accorde": null,
+    "responsable_protection_donnees_designe": false,
+    "canal_protege_existant": false,
+    "candidatures_confidentielles_reellement_recues": 0,
+    "contrat_effectif_signe": false,
+    "main_protegee_via_github": false,
+    "minimum_une_revue_reelle_requise_et_obtenue": false,
+    "f09_avis_professionnel_independant_signe": false,
+    "aucun_autorisation_par_execution_CI": true,
+    "aucune_ecriture_github_par_workflow": true,
+    "aucun_document_personnel_dans_depot": true
+  },
+  "bilan": {
+    "actions_total": 10,
+    "actions_humaines_non_executees": 10,
+    "actions_mandat_non_executees": 8,
+    "actions_github_non_executees": 2,
+    "decisions_humaines_non_presentees": 4,
+    "preconditions_p52x_toujours_non_documentees": 12,
+    "preuves_fiscales_independantes_F01_F20_obtenues": 0,
+    "valeurs_financieres_nova_inconnues": 1320,
+    "contrats_signes": 0,
+    "montant_engage_cad": 0,
+    "fusion_autorisee": false,
+    "publication_autorisee": false,
+    "adoption_autorisee": false,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

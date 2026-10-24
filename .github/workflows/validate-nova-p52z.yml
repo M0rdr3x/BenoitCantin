@@ -1,0 +1,77 @@
+name: Projet Nova P52Z - Verification juridique des deux regimes fiscaux
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p52z.yml"
+      - "scripts/auditer_juridictions_fiscales_nova_p52z.py"
+      - "scripts/tests/test_auditer_juridictions_fiscales_nova_p52z.py"
+      - "projets/projet-nova/etudes/P52Z_*"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+      - "projets/projet-nova/etudes/P52X_PRECONDITIONS_AUTORITE_ET_CONFIDENTIALITE.json"
+      - "projets/projet-nova/etudes/P52Y_PLAN_ACTIONS_HUMAINES_ET_GITHUB.json"
+      - "projets/projet-nova/etudes/P52V_REGISTRE_MISSION_F09.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  analyse-fiscale-juridique-non-certifiee:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Lecture seule sans jeton GitHub persistant
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: 78 contre-tests de competence et d'avis inventes
+        run: |
+          python -m py_compile scripts/auditer_juridictions_fiscales_nova_p52z.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_auditer_juridictions_fiscales_nova_p52z.py")
+          assert suite.countTestCases()==78,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Produire matrice comparative vierge pour revue juridique humaine
+        run: |
+          python scripts/auditer_juridictions_fiscales_nova_p52z.py --rapport p52z_bilan_agrege.json --export-csv p52z_24_questions_relecture.csv
+          python - <<'PY'
+          import csv,json
+          from pathlib import Path
+          r=json.loads(Path("p52z_bilan_agrege.json").read_text("utf-8"))
+          assert r["sources_primaires_reperes"]==11
+          assert r["questions_comparees"]==12
+          assert r["scenarios_examens"]==24
+          assert r["pouvoirs_federaux_ineliminables_unilateralement"]==4
+          assert r["analyses_fiscales_legalement_certifiees"]==0
+          assert r["droits_souverains_reellement_acquis"]==0
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          with Path("p52z_24_questions_relecture.csv").open(encoding="utf-8") as f:
+            rows=list(csv.reader(f))
+          assert len(rows)==25
+          assert all(row[6:]==["","","",""] for row in rows[1:])
+          PY
+      - name: Exiger refusal explicite sans avis constitutionnaliste
+        run: |
+          set +e
+          python scripts/auditer_juridictions_fiscales_nova_p52z.py --exiger-avis-juridique --rapport p52z_aucun_avis_reel.json
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Uniquement statistiques et matrice de questions a faire valider
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52z-legalite-fiscale-avis-non-obtenu
+          path: |
+            p52z_bilan_agrege.json
+            p52z_24_questions_relecture.csv
+            p52z_aucun_avis_reel.json
+          retention-days: 7
+          if-no-files-found: ignore
