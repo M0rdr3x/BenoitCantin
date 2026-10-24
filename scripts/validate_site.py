@@ -754,7 +754,7 @@ def main() -> int:
     }
     for rel, version, script_path in (
         *((rel, '24.4.100', 'assets/js/site.js') for rel in sorted(expected_site_script)),
-        *((rel, '26.1.0', 'script.js') for rel in sorted(expected_nova_script)),
+        *((rel, '26.2.0', 'script.js') for rel in sorted(expected_nova_script)),
     ):
         page = ROOT / rel
         if not page.is_file():
