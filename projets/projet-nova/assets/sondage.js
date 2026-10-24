@@ -183,7 +183,7 @@
       }
       const { data, error } = await client.functions.invoke('nova-survey-submit',
         { body: request });
-      if (error || data?.ok !== true) {
+      if (error || data?.ok !== true || data.code !== 'RECORDED' || data.survey !== SURVEY_ID) {
         let code = data?.code;
         if (error?.context && typeof error.context.json === 'function') {
           try { code = (await error.context.json()).code; } catch { /* réponse réseau indisponible */ }
