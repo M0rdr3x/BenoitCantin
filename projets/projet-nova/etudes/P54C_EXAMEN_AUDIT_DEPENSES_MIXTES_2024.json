@@ -55,10 +55,10 @@
   "etat_initial": {
     "pages_ciblees": 2,
     "analyses_contextuelles_effectuees": 0,
-    "contrôles_pros_a_instruire": 8,
     "examen_professionnel_independant_signe": 0,
     "montants_certifies": 0,
     "economies_certifiees_cad": null,
-    "conclusion": "NO_GO_AUTOMATIQUE"
+    "conclusion": "NO_GO_AUTOMATIQUE",
+    "controles_pros_a_instruire": 8
   }
 }
