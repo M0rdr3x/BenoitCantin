@@ -14,9 +14,11 @@ ROOT = Path(__file__).resolve().parents[1]
 NOVA = ROOT / "projets/projet-nova"
 # Empreinte du manifeste figé; sa modification exige une nouvelle vague/version.
 APPROVED_MANIFEST_SHA256 = "67df5052a3a09f23ecfa43e2882dcf7a0b6f1a85f1aad4e2f4159aab06570738"
+APPROVED_COMPASS_SHA256 = "5d65a6067142fbba59a81edeaac49dc1befd82aa281c6e11e2f2509a1aee9109"
 FILES = {
     "page": NOVA / "sondage.html",
     "client": NOVA / "assets/sondage.js",
+    "compass_client": NOVA / "assets/boussole-electorale.js",
     "style": NOVA / "assets/sondage.css",
     "manifest": NOVA / "data/sondage-questions-v1.json",
     "source": NOVA / "data/boussole-electorale-v2.json",
@@ -53,6 +55,12 @@ def check_text(payload: dict[str, str]) -> list[str]:
            "manifestBytes.byteLength > 65536", "crypto.subtle.digest('SHA-256', manifestBytes)",
            "observed !== APPROVED_MANIFEST_SHA256",
            "TextDecoder('utf-8', { fatal: true })")
+    demand("compass_client", 'const APPROVED_COMPASS_SHA256 = "'+APPROVED_COMPASS_SHA256+'";',
+           'globalThis.crypto.subtle.digest("SHA-256",bytes)',
+           "fetchApprovedQuestionCorpus()", "actual!==APPROVED_COMPASS_SHA256",
+           'new TextDecoder("utf-8",{fatal:true})')
+    if hashlib.sha256(payload["source"].encode("utf-8")).hexdigest() != APPROVED_COMPASS_SHA256:
+        issues.append("Questionnaire Boussole modifié sans revue de version")
     demand("client", "const COLLECTION_OPEN = false;",
            "const LIVE_OPINION_CONSENT_GRANTED = false;",
            "function eligible()", "$('sondage-age').checked",
@@ -161,6 +169,8 @@ def self_test() -> None:
     mutations = [
         ("client", "const COLLECTION_OPEN = false;", "const COLLECTION_OPEN = true;"),
         ("client", "const LIVE_OPINION_CONSENT_GRANTED = false;", "const LIVE_OPINION_CONSENT_GRANTED = true;"),
+        ("compass_client", 'globalThis.crypto.subtle.digest("SHA-256",bytes)', "Promise.resolve(new ArrayBuffer(32))"),
+        ("compass_client", "actual!==APPROVED_COMPASS_SHA256", "false"),
         ("client", "if (!LIVE_OPINION_CONSENT_GRANTED) throw new Error('LIVE_CONSENT_REQUIRED')", "if (false) throw new Error('LIVE_CONSENT_REQUIRED')"),
         ("client", "selections.clear()", "/* purge neutralisée */"),
         ("page", 'id="sondage-review-list"', 'id="récapitulatif-perdu"'),

@@ -2,6 +2,18 @@
   "use strict";
 
   const DATA_URL = "data/boussole-electorale-v2.json";
+  const APPROVED_COMPASS_SHA256 = "5d65a6067142fbba59a81edeaac49dc1befd82aa281c6e11e2f2509a1aee9109";
+  async function fetchApprovedQuestionCorpus(){
+    const response=await fetch(DATA_URL,{cache:"no-store",credentials:"omit"});
+    if(!response.ok || !globalThis.crypto?.subtle) throw new Error("CORPUS_UNAVAILABLE");
+    const bytes=await response.arrayBuffer();
+    if(!bytes.byteLength || bytes.byteLength>65536) throw new Error("CORPUS_SIZE");
+    const digest=await globalThis.crypto.subtle.digest("SHA-256",bytes);
+    const actual=Array.from(new Uint8Array(digest),
+      byte=>byte.toString(16).padStart(2,"0")).join("");
+    if(actual!==APPROVED_COMPASS_SHA256) throw new Error("CORPUS_INTEGRITY");
+    return JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(bytes));
+  }
   const PARTY_DATA_URL = "data/boussole-partis-2026.json";
   const PARTY_SOURCE_DATA_URL = "data/boussole-sources-partis-2026.json";
   const EVIDENCE_DATA_URL = "data/boussole-preuves-2026.json";
@@ -843,17 +855,17 @@
     }
     if(status) status.textContent = "Chargement des données documentaires…";
     try{
-      const [partyResponse,sourceResponse,evidenceResponse,questionResponse] = await Promise.all([
+      const [partyResponse,sourceResponse,evidenceResponse,questionCorpus] = await Promise.all([
         fetch(PARTY_DATA_URL,{cache:"no-store"}),
         fetch(PARTY_SOURCE_DATA_URL,{cache:"no-store"}),
         fetch(EVIDENCE_DATA_URL,{cache:"no-store"}),
-        fetch(DATA_URL,{cache:"no-store"})
+        fetchApprovedQuestionCorpus()
       ]);
-      for(const response of [partyResponse,sourceResponse,evidenceResponse,questionResponse]){
+      for(const response of [partyResponse,sourceResponse,evidenceResponse]){
         if(!response.ok) throw new Error("HTTP " + response.status);
       }
-      const [partyCorpus,sourceCorpus,evidenceCorpus,questionCorpus] = await Promise.all([
-        partyResponse.json(),sourceResponse.json(),evidenceResponse.json(),questionResponse.json()
+      const [partyCorpus,sourceCorpus,evidenceCorpus] = await Promise.all([
+        partyResponse.json(),sourceResponse.json(),evidenceResponse.json()
       ]);
       validateDocumentaryCorpora(questionCorpus,partyCorpus,sourceCorpus,evidenceCorpus);
       renderPartyRegistry(partyCorpus,evidenceCorpus);
@@ -891,9 +903,7 @@
     if(start) start.disabled = true;
     if(status) status.textContent = "Chargement du questionnaire local…";
     try{
-      const response = await fetch(DATA_URL,{cache:"no-store"});
-      if(!response.ok) throw new Error("HTTP " + response.status);
-      const corpus = await response.json();
+      const corpus = await fetchApprovedQuestionCorpus();
       if(!Array.isArray(corpus.axes) || corpus.axes.length !== 16 ||
          !Array.isArray(corpus.questions) || corpus.questions.length !== 64){
         throw new Error("Questionnaire incomplet");

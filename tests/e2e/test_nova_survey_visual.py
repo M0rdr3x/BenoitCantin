@@ -232,6 +232,34 @@ def main():
             require(altered.locator("#sondage-start").is_disabled(),
                     "Sondage 64 démarrable malgré une question divergente de la Boussole")
             altered.close()
+            # L'empreinte Boussole verrouille AUSSI les métadonnées : des
+            # formulations identiques ne suffisent pas.
+            def corrupt_compass_metadata(route):
+                import json
+                source=json.loads(route.fetch().body())
+                source["published"]="2026-10-07"
+                route.fulfill(status=200,content_type="application/json",
+                              body=json.dumps(source,ensure_ascii=False))
+            tampered=browser.new_page(locale="fr-CA")
+            tampered.route("**/boussole-electorale-v2.json",corrupt_compass_metadata)
+            tampered.goto(
+                "http://127.0.0.1:4173/projets/projet-nova/boussole-electorale.html",
+                wait_until="domcontentloaded",timeout=30_000)
+            tampered.locator("#compass-questionnaire-retry").wait_for(
+                state="visible",timeout=10_000)
+            require(tampered.locator("#compass-start").is_disabled(),
+                    "Boussole démarrable malgré un corpus modifié")
+            tampered.locator("#compass-evidence-retry").wait_for(
+                state="visible",timeout=10_000)
+            tampered.unroute("**/boussole-electorale-v2.json",corrupt_compass_metadata)
+            tampered.locator("#compass-questionnaire-retry").click()
+            tampered.wait_for_function(
+                "!document.querySelector('#compass-start').disabled")
+            tampered.locator("#compass-evidence-retry").click()
+            tampered.locator(
+                "#compass-evidence-parties .compass-evidence-card").first.wait_for(
+                state="visible",timeout=10_000)
+            tampered.close()
             # Recette Boussole indépendante de la CI générale (souvent ignorée
             # sur PR brouillon) : exécuter chaque navigateur de l'aperçu Nova.
             compass_context = browser.new_context(
