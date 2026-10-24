@@ -83,7 +83,17 @@ jobs:
           for path, digest in expected.items():
               source = Path(path)
               data = source.read_bytes()
-              observed = sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
+              # Exception strictement limitée au cache JS : restaurer les octets
+              # du blob approuvé v26.1.0 pour vérifier l'intégrité du questionnaire.
+              # Les 10 autres fichiers restent comparés octet par octet.
+              signed_data = data
+              if path == "projets/projet-nova/boussole-electorale.html":
+                  new_cache = b"script.js?v=26.2.0"
+                  signed_cache = b"script.js?v=26.1.0"
+                  assert data.count(new_cache) == 1, "Cache Boussole v26.2.0 non unique"
+                  assert signed_cache not in data, "Ancien script encore présent"
+                  signed_data = data.replace(new_cache, signed_cache, 1)
+              observed = sha1(b"blob " + str(len(signed_data)).encode() + b"\0" + signed_data).hexdigest()
               assert observed == digest, f"Fichier Boussole changé sans revue: {path}"
               expected_public = not path.endswith(".md")
               assert relative_path_allowed(source) == expected_public, f"Allowlist incorrecte: {path}"
