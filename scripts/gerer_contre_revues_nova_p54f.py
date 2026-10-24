@@ -18,7 +18,7 @@ import sys
 import preparer_revue_humaine_nova_p54e as p54e
 
 ROOT=Path(__file__).resolve().parents[1]
-CONFIG=ROOT/"projets/projet-nova/etudes/P54F_CONTRE_REVUE_QUATRE_DOSSIERS_2024.json"
+CONFIG=ROOT/"projets/projet-nova/etudes/P54F_REGISTRE_CONTRE_REVUE_2024.json"
 NO_GO="NO_GO_AUTOMATIQUE"
 ROLES=("EXAMINATEUR","CONTRE_REVISEUR")
 TYPES=("PUBLICATION_PDF","NOTE_ANALYSE_PRIVEE",
