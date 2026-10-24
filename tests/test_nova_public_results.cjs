@@ -375,3 +375,60 @@ test('Boussole flux : erreur réseau et libération du minuteur',async()=>{
   await assert.rejects(h.run(),/hors ligne/);
   assert.equal(h.cleaned,1);
 });
+
+
+// Corpus des sondages 40 et 64 : exécuter la vraie lecture incrémentale
+// et démontrer qu'aucun corps JSON massif n'est alloué avant la limite.
+function novaSurveyManifestHarness(file,chunks,header=null){
+  const client=fs.readFileSync(path.join(NOVA,'assets',file),'utf8');
+  const start=client.indexOf('  async function readBoundedManifest(response,controller){');
+  const end=client.indexOf('\n  }\n',start);
+  assert.ok(start>=0 && end>start,file+': fonction de lecture bornée absente');
+  const context={};
+  vm.runInNewContext(client.slice(start,end+5)+'\nthis.readBoundedManifest=readBoundedManifest;',
+    context,{filename:file,timeout:1000});
+  let readCount=0,released=0,aborted=false;
+  const response={headers:{get:key=>key==='content-length'?header:null},
+    body:{getReader(){return {
+      async read(){
+        readCount++;
+        if(readCount>chunks.length) return {done:true};
+        return {done:false,value:new TextEncoder().encode(chunks[readCount-1])};
+      },
+      releaseLock(){released++;},
+    };}}};
+  return {
+    run:()=>context.readBoundedManifest(response,{abort(){aborted=true;}}),
+    get readCount(){return readCount;},
+    get released(){return released;},
+    get aborted(){return aborted;},
+  };
+}
+for(const file of ['consultation-40.js','sondage.js']){
+  test(file+' : téléchargement fragmenté reconstitué sans altération',async()=>{
+    const fixture=novaSurveyManifestHarness(file,['{"id":','"nova"}'],'13');
+    const bytes=await fixture.run();
+    assert.equal(Buffer.from(new Uint8Array(bytes)).toString('utf8'),'{"id":"nova"}');
+    assert.equal(fixture.released,1);
+    assert.equal(fixture.aborted,false);
+  });
+  test(file+' : dépassement au troisième segment, sans quatrième lecture',async()=>{
+    const fixture=novaSurveyManifestHarness(file,
+      ['x'.repeat(65000),'y'.repeat(500),'z'.repeat(2000),'NE JAMAIS LIRE']);
+    await assert.rejects(fixture.run(),/SIZE/);
+    assert.equal(fixture.readCount,3);
+    assert.equal(fixture.released,1);
+    assert.equal(fixture.aborted,true);
+  });
+  test(file+' : en-tête Content-Length excessif refusé sans lecture',async()=>{
+    const fixture=novaSurveyManifestHarness(file,['INATTEIGNABLE'],'65537');
+    await assert.rejects(fixture.run(),/SIZE/);
+    assert.equal(fixture.readCount,0);
+    assert.equal(fixture.released,0);
+  });
+  test(file+' : fichier vide refusé, lecteur libéré',async()=>{
+    const fixture=novaSurveyManifestHarness(file,[]);
+    await assert.rejects(fixture.run(),/SIZE/);
+    assert.equal(fixture.released,1);
+  });
+}
