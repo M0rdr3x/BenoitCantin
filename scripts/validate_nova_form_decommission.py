@@ -39,6 +39,14 @@ def main() -> int:
             errors.append(f"{name}: endpoint Formspree encore exposé.")
         if PUBLIC_EMAIL not in html:
             errors.append(f"{name}: canal public direct Projet Nova absent.")
+        if name == "contact.html":
+            for required in (
+                "Canaux séparés",
+                'href="../../contact.html"',
+                "/compte/",
+            ):
+                if required not in html:
+                    errors.append(f"{name}: séparation des canaux manquante: {required}")
 
     support = read("formulaire-soutien.html")
     for marker in ("noindex", "nofollow", "noarchive"):
