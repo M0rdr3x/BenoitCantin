@@ -5,24 +5,25 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 
 const worker=readFileSync('sw.js','utf8');
-assert.match(worker,/public-11-nova-assets/);
+assert.match(worker,/public-12-allowlisted/);
 assert.ok(worker.includes("'/projets/projet-nova/script.js'"));
 assert.ok(worker.includes("'/projets/projet-nova/styles.css'"));
 
 function testHarness() {
   const listeners=new Map();
-  const requests=[], stored=[], lookups=[];
+  const requests=[], stored=[], lookups=[], precached=[];
   let cacheControl='public, max-age=300';
+  let varyHeader='';
   let networkOffline=false;
   let storedFallbackPath=null;
   const response=()=>({
     ok:true,
-    headers:{get(name){return name.toLowerCase()==='cache-control'?cacheControl:null;}},
+    headers:{get(name){return name.toLowerCase()==='cache-control'?cacheControl:name.toLowerCase()==='vary'?varyHeader:null;}},
     clone(){return this;},
   });
   const cache={
     put(request){stored.push(request.url);return Promise.resolve();},
-    addAll(){return Promise.resolve();},
+    addAll(entries){precached.push(...entries);return Promise.resolve();},
   };
   const caches={
     open(){return Promise.resolve(cache);},
@@ -36,11 +37,12 @@ function testHarness() {
   };
   class Request {
     constructor(original,settings={}) {
-      this.url=original.url;
-      this.method=original.method;
-      this.destination=original.destination;
-      this.headers=original.headers;
+      this.url=typeof original==='string'?new URL(original,'https://www.benoitcantin.com').href:original.url;
+      this.method=typeof original==='string'?'GET':original.method;
+      this.destination=typeof original==='string'?'':original.destination;
+      this.headers=typeof original==='string'?{get(){return null;}}:original.headers;
       this.cache=settings.cache||original.cache;
+      this.credentials=settings.credentials||original.credentials;
     }
   }
   async function fetch(request){requests.push(request);if(networkOffline)throw new Error('offline');return response();}
@@ -48,8 +50,22 @@ function testHarness() {
   const handler=listeners.get('fetch');
   assert.equal(typeof handler,'function');
   return {
-    async run(path,{authorization='',key='',cc='public, max-age=300',destination='',offline=false,cachedPath=null}={}) {
+    async verifyInstall() {
+      let pending;
+      listeners.get('install')({waitUntil(p){pending=p;}});
+      await pending;
+      assert.ok(precached.length>=60,'Le précache public doit rester complet');
+      for(const request of precached){
+        assert.equal(request.credentials,'omit','Aucun cookie utilisateur dans le précache');
+        assert.equal(request.cache,'no-store','Le précache initial doit ignorer le cache HTTP');
+        assert.ok(request.url.startsWith('https://www.benoitcantin.com/'));
+        assert.ok(!/\/(?:compte|admin|Admin|app|supabase|histoire-de-vie)\//.test(request.url),
+          'Aucun espace privé admis dans le précache');
+      }
+    },
+    async run(path,{authorization='',key='',cc='public, max-age=300',vary='',destination='',offline=false,cachedPath=null}={}) {
       cacheControl=cc;
+      varyHeader=vary;
       networkOffline=offline;
       storedFallbackPath=cachedPath;
       requests.length=0;stored.length=0;lookups.length=0;
@@ -70,6 +86,7 @@ function testHarness() {
 }
 
 const h=testHarness();
+await h.verifyInstall();
 async function expectedNoStore(path,opts={}) {
   const r=await h.run(path,opts);
   assert.equal(r.requests.length,1,path+' : une seule requête réseau attendue');
@@ -89,6 +106,16 @@ await expectedNoStore('/a-propos.html',{key:'secret-key'});
 await expectedNoStore('/.well-known/release.json');
 await expectedNoStore('/compte/');
 await expectedNoStore('/supabase/config.toml');
+// Nouvelle règle positive : futures routes publiques apparentes ne sont
+// JAMAIS retenues dans le cache tant qu'elles ne sont pas en liste CORE.
+await expectedNoStore('/projets/projet-nova/registre-dynamique.html');
+await expectedNoStore('/assets/js/nouveau-module.js');
+await expectedNoStore('/projets/sinjira/nouveau-rapport.json');
+await expectedNoStore('/projets/projet-nova/?section=privee');
+await expectedNoStore('/?mode=personnalise');
+await expectedNoStore('/a-propos.html?v=42');
+await expectedNoStore('/assets/js/site.js?v=26.2.0&mode=session');
+
 
 const publicJson='/projets/projet-nova/data/boussole-electorale-v2.json';
 const allowed=await h.run(publicJson);
@@ -101,6 +128,11 @@ const noCache=await h.run(publicJson,{cc:'no-cache, max-age=0'});
 assert.equal(noCache.stored.length,0,'Les réponses sans cache ne sont jamais stockées');
 const noStore=await h.run(publicJson,{cc:'no-store'});
 assert.equal(noStore.stored.length,0,'Les réponses no-store ne sont jamais stockées');
+for(const vary of ['Cookie','Authorization','Accept-Language, Cookie','*']){
+  const result=await h.run(publicJson,{vary});
+  assert.equal(result.stored.length,0,'La réponse variant selon '+vary+' ne doit pas être cachée');
+}
+
 
 // Les scripts/CSS Nova sont servis réseau d'abord, même si une ancienne
 // version pourrait déjà se trouver en Cache Storage.
@@ -127,4 +159,4 @@ for(const path of [
   assert.equal(privateAsset.stored.length,0,path+' ne doit jamais sauvegarder une réponse privée');
 }
 
-console.log('OK PWA : routes API, sessions, jetons, données JSON non approuvées, assets Nova frais et réponses privées jamais cachées.');
+console.log('OK PWA : précache public uniquement, requêtes à paramètres non conservées, Vary Cookie/auth, API et assets Nova frais.');

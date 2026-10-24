@@ -1,4 +1,4 @@
-const CACHE='benoitcantin-v24-4-95-public-11-nova-assets';
+const CACHE='benoitcantin-v24-4-95-public-12-allowlisted';
 const CORE=[
   '/','/offline.html','/manifest.webmanifest','/a-propos.html','/contact.html','/transparence-ia.html',
   '/assistant.html','/confidentialite.html','/gouvernance-vie-privee.html','/avis-legal.html',
@@ -11,8 +11,11 @@ const CORE=[
   '/assets/icons/benoit-sigil.svg','/android-chrome-192x192.png','/android-chrome-512x512.png','/assets/media/sinjira-emblem.webp','/assets/media/sinjira-registre.webp','/assets/media/nova-logo.webp','/assets/media/sinjira-livre-1-cover-480.webp','/assets/media/fracture-card-back.webp',
   '/projets/sinjira/','/projets/sinjira/romans/','/projets/sinjira/romans/lire-demo.html','/projets/sinjira/jeux/','/projets/sinjira/registre/','/projets/sinjira/communaute/','/projets/sinjira/codex/','/projets/sinjira/monde-parallele/','/projets/sinjira/marche/','/projets/sinjira/jeux/fracture-du-reseau-mere/','/projets/projet-nova/','/projets/projet-nova/boussole-electorale.html'
 ];
-function cacheableResponse(resp){const cc=String(resp.headers.get('Cache-Control')||'').toLowerCase();return resp.ok&&cc.indexOf('no-store')===-1&&cc.indexOf('private')===-1&&cc.indexOf('no-cache')===-1}
-self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
+function cacheableResponse(resp){const cc=String(resp.headers.get('Cache-Control')||'').toLowerCase();const vary=String(resp.headers.get('Vary')||'').toLowerCase();return resp.ok&&cc.indexOf('no-store')===-1&&cc.indexOf('private')===-1&&cc.indexOf('no-cache')===-1&&!/(?:^|,)\s*(?:cookie|authorization|\*)\s*(?:,|$)/.test(vary)}
+// Initialiser le précache avec des requêtes anonymes : ne jamais conserver
+// par accident une variante de l'accueil liée à une session utilisateur.
+const PUBLIC_PRECACHE_REQUESTS=CORE.map(path=>new Request(path,{credentials:'omit',cache:'no-store'}));
+self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(PUBLIC_PRECACHE_REQUESTS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{
   const r=e.request,u=new URL(r.url);
@@ -29,6 +32,15 @@ self.addEventListener('fetch',e=>{
   const unknownJSON=/\.json$/i.test(u.pathname)&&CORE.indexOf(u.pathname)===-1;
   const sensitiveRuntimePath=sensitiveSegments||sensitiveQuery||sensitiveHeaders||unknownJSON;
   if(sensitiveRuntimePath){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}
+
+  // Liste positive : aucune future URL HTML, API ou réponse dynamique ne doit
+  // entrer implicitement dans Cache Storage. Seules les ressources CORE sont
+  // connues publiques ; seul ?v= peut varier sur un script/CSS de CORE.
+  const publicCachePath=CORE.indexOf(u.pathname)!==-1;
+  const versionOnly=u.searchParams.has('v')&&[...u.searchParams.keys()].length===1&&/^[A-Za-z0-9._-]{1,64}$/.test(u.searchParams.get('v')||'');
+  const versionableAsset=/(?:^|\/)assets\/(?:js|css)\//.test(u.pathname)||u.pathname==='/projets/projet-nova/script.js'||u.pathname==='/projets/projet-nova/styles.css';
+  const publicCacheRequest=publicCachePath&&(!u.search||(versionOnly&&versionableAsset));
+  if(!publicCacheRequest){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}
 
   if(r.destination==='document'){
     e.respondWith(fetch(new Request(r,{cache:'no-store'})).then(resp=>{if(cacheableResponse(resp)){const cp=resp.clone();caches.open(CACHE).then(c=>c.put(r,cp))}return resp}).catch(()=>caches.match(r).then(x=>x||caches.match('/offline.html'))));return;
