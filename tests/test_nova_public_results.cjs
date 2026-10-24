@@ -34,13 +34,18 @@ class FakeElement {
 
 async function mount(snapshot, {
   badManifest = false, badManifest64 = false, fetchFailure = false,
-  stallFetch = false, syntheticRelease = false,
+  stallFetch = false, syntheticRelease = false, failFirstFetch = false,
 } = {}) {
   const elements = new Map();
+  let rejectedOnce = false;
   const document = {
     readyState: 'complete',
     getElementById(id) {
-      if (!elements.has(id)) elements.set(id, new FakeElement(id));
+      if (!elements.has(id)) {
+        const element = new FakeElement(id);
+        if (id === 'results-retry') element.hidden = true;
+        elements.set(id, element);
+      }
       return elements.get(id);
     },
     createElement(tag) { return new FakeElement(tag); },
@@ -60,6 +65,11 @@ async function mount(snapshot, {
     setTimeout: (fn, ms) => setTimeout(fn, stallFetch ? 10 : ms),
     clearTimeout,
     fetch: async (url, options = {}) => {
+      if (failFirstFetch && !rejectedOnce &&
+          url === 'data/resultats-sondages-publics-v1.json') {
+        rejectedOnce = true;
+        throw Error('initial network problem');
+      }
       if (stallFetch && url === 'data/resultats-sondages-publics-v1.json') {
         // Une connexion réellement bloquée ne résout la promesse qu'au signal
         // abort du navigateur; minuterie abrégée exclusivement pour ce test.
@@ -143,6 +153,35 @@ test('registre fermé : 40 et 64 formulations sans résultats inventés',async()
 
 test('erreur réseau ne devient pas un état fermé faussement validé',async()=>{
   await assertUnavailable(copy(original),{fetchFailure:true});
+});
+test('réessayer après panne : aucune fuite, restauration 40/64 sans faux chiffres',async()=>{
+  const el=await mount(copy(original),{failFirstFetch:true});
+  assert.equal(el('results-retry').hidden,false);
+  assert.equal(el('results-retry').disabled,false);
+  assert.match(el('results-state').textContent,/indisponibles ou non validées/);
+  assert.equal(el('results-question-list').children.length,1);
+  el('results-show-64').click();
+  el('results-retry').click();
+  assert.equal(el('results-retry').disabled,true);
+  for (let n=0;n<200 && el('results-retry').disabled;n++) {
+    await new Promise(resolve=>setTimeout(resolve,10));
+  }
+  assert.equal(el('results-retry').disabled,false,'Le second chargement reste figé');
+  assert.equal(el('results-retry').hidden,true);
+  assert.equal(el('results-question-list').children.length,64);
+  assert.match(el('results-state').textContent,/Aucun résultat publié/);
+  assert.equal(el('results-show-64').attributes['aria-pressed'],'true');
+  assert.ok(el('results-question-list').children.every(item=>item.children.length===2));
+});
+test('réessai d’une panne persistante : bouton maintenu et zéro résultat',async()=>{
+  const el=await mount(copy(original),{fetchFailure:true});
+  el('results-retry').click();
+  for (let n=0;n<200 && el('results-retry').disabled;n++) {
+    await new Promise(resolve=>setTimeout(resolve,10));
+  }
+  assert.equal(el('results-retry').hidden,false);
+  assert.equal(el('results-question-list').children.length,1);
+  assert.match(el('results-state').textContent,/indisponibles ou non validées/);
 });
 test('connexion bloquée : timeout, annulation et indisponibilité sans résultats',async()=>{
   await assertUnavailable(copy(original),{stallFetch:true});
