@@ -12,7 +12,7 @@ P54M autorise seulement **huit positions de dossier × mandat** à évaluer, et 
 
 ## Quatre catégories documentaires nécessaires à un examen formel déclaratif
 
-Une déclaration EXAMEN_FORMEL_NON_ATTESTE n'est acceptée que si, pour le **même dossier et le même mandat**, P54L possède une pièce locale distincte et SHA-256 contrôlée pour chacune des quatre catégories :
+Une déclaration EXAMEN_FORMEL_NON_ATTESTE n'est acceptée que si, pour le **même dossier et le même mandat**, P54L possède une pièce locale de SHA-256 distinct et vérifié pour chacune des quatre catégories; quatre IDs renvoyant aux mêmes octets sont insuffisants :
 
 1. Tableau professionnel;
 2. Authenticité de signature;

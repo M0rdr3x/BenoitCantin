@@ -106,13 +106,14 @@ def local_template(raw_l=None):
     }
 
 def available_categories(manifest):
-    """Only category-specific local bytes actually validated by P54L qualify."""
+    """Distinct types and distinct byte digests for each required category."""
+    digests={p["id"]:p["sha256"] for p in manifest["pieces"]}
     found={}
     for item in manifest["observations"]:
         if (item["piece_referencee"] is not None and
             item["qualification_declaree"]=="PIECE_LOCALE_NON_AUTHENTIFIEE"):
             key=(item["dossier_id"],item["mandat"])
-            found.setdefault(key,set()).add(item["categorie"])
+            found.setdefault(key,{})[item["categorie"]]=digests[item["piece_referencee"]]
     return found
 
 def validate_local(doc,raw_l,source_manifest,verified_l,upstream_status):
@@ -156,11 +157,12 @@ def validate_local(doc,raw_l,source_manifest,verified_l,upstream_status):
              "CONTROLES_DUPLIQUES_OU_INCONNUS")
         need(all(row[f] is False for f in AUTH_FLAGS),
              "AUTHENTIFICATION_INSTITUTIONNELLE_FICTIVE")
-        supported=covered.get(key,set())
+        supported=covered.get(key,{})
         prior=upstream_status.get(case,"AUCUNE_PIECE_LOCALE")
         if outcome=="EXAMEN_FORMEL_NON_ATTESTE":
             need(set(checklist)==set(GATES)
-                 and supported==set(CATEGORIES)
+                 and set(supported)==set(CATEGORIES)
+                 and len(set(supported.values()))==len(CATEGORIES)
                  and reason=="AUCUNE_DECLAREE_NON_VERIFIEE"
                  and prior not in (
                     "SUSPENSION_PRIORITAIRE","CONTRADICTION_OUVERTE",

@@ -25,7 +25,10 @@ def context(folder,number=0):
     for i,cat in enumerate(m.CATEGORIES[:number]):
         ident="PIECE-%03d"%(i+2)
         filename="attestation%d.bin"%(i+2)
-        add_proof(folder,prior,name=filename,ident=ident)
+        written=add_proof(folder,prior,name=filename,ident=ident)
+        unique_data=written.read_bytes()+("-%d"%i).encode()
+        written.write_bytes(unique_data)
+        prior["pieces"][-1]["sha256"]=hashlib.sha256(unique_data).hexdigest()
         prior["observations"].append(add_observation(
           category=cat,proof=ident))
     file.write_text(json.dumps(prior),encoding="utf-8")
@@ -77,7 +80,7 @@ class TestsP54M(unittest.TestCase):
     def test_19_four_evidence_categories(self):
         with tempfile.TemporaryDirectory() as d:
             paths,raw,man,validated,states,doc=context(d,4)
-            self.assertEqual(m.available_categories(man)[(CITY,CPA)],set(m.CATEGORIES))
+            self.assertEqual(set(m.available_categories(man)[(CITY,CPA)]),set(m.CATEGORIES))
             self.assertEqual(validated["pieces_verifiees"],4)
     def test_20_preparatory_formal_complete_not_certified(self):
         with tempfile.TemporaryDirectory() as d:
@@ -92,6 +95,23 @@ class TestsP54M(unittest.TestCase):
                              {"EXAMEN_FORMEL_DECLARATIF_NON_ATTESTE":1,"NON_INSTRUIT":3})
             self.assertEqual(public["authentifications_officielles_executees"],0)
             self.assertEqual(public["avis_independants_certifies"],0)
+    def test_20b_same_bytes_four_categories_do_not_count_as_four_proofs(self):
+        with tempfile.TemporaryDirectory() as d:
+            (paths,p_l),raw,man,validated,states,doc=context(d,4)
+            original=(Path(d)/"preuves/attestation2.bin").read_bytes()
+            for i in range(3,6):
+                p=Path(d)/("preuves/attestation%d.bin"%i)
+                p.write_bytes(original)
+                man["pieces"][i-2]["sha256"]=hashlib.sha256(original).hexdigest()
+            p_l.write_text(json.dumps(man),encoding="utf-8")
+            newraw,newman,newvalid,newstates=m.load_chain(
+                *[str(p) for p in paths],str(p_l))
+            declaration=m.local_template(newraw)
+            declaration["evaluations"]=[evaluation(
+                "EXAMEN_FORMEL_NON_ATTESTE",
+                "AUCUNE_DECLAREE_NON_VERIFIEE",m.GATES)]
+            with self.assertRaises(ValueError):
+                m.validate_local(declaration,newraw,newman,newvalid,newstates)
     def test_21_formal_without_categories_blocked(self):
         with tempfile.TemporaryDirectory() as d:
             paths,raw,man,validated,states,doc=context(d,3)

@@ -31,14 +31,14 @@ jobs:
           python-version: "3.11"
       - name: Dependances de la chaine PDF
         run: python -m pip install pypdf==5.9.0
-      - name: 71 tests P54M - preuves 100 pour cent synthetiques
+      - name: 72 tests P54M - preuves 100 pour cent synthetiques
         run: |
           python -m py_compile scripts/evaluer_recevabilite_authentifications_nova_p54m.py
           python - <<'PY'
           import unittest
           suite=unittest.defaultTestLoader.discover(
             "scripts/tests",pattern="test_evaluer_recevabilite_authentifications_nova_p54m.py")
-          assert suite.countTestCases()==71,suite.countTestCases()
+          assert suite.countTestCases()==72,suite.countTestCases()
           result=unittest.TextTestRunner(verbosity=2).run(suite)
           assert result.wasSuccessful()
           PY
