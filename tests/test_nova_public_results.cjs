@@ -276,7 +276,7 @@ test('Boussole flux : longueur malformée et corps vide refusés',async()=>{
   assert.equal(noData.cleaned,1);
 });
 test('Boussole flux : sans Content-Length, dépassement arrêté avant segment suivant',async()=>{
-  const fixture=novaResponse(['x'.repeat(65000),'x'.repeat(540),'x'.repeat(2000),'jamais lu']);
+  const fixture=novaResponse(['x'.repeat(65000),'x'.repeat(500),'x'.repeat(2000),'jamais lu']);
   const h=novaNetworkHarness(async()=>fixture.response);
   await assert.rejects(h.run(),/CORPUS_SIZE/);
   assert.equal(fixture.readCount,3);
