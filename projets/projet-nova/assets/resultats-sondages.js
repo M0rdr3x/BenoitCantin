@@ -118,17 +118,27 @@
     return true;
   }
   async function fetchJSON(path) {
-    const response=await fetch(path,{cache:'no-store',credentials:'omit'});
-    if (!response.ok) throw Error('UNAVAILABLE');
-    const approvedDigest=APPROVED_MANIFEST_SHA256[path];
-    if (!approvedDigest) return response.json();
-    if (!globalThis.crypto?.subtle) throw Error('NO_CRYPTO');
-    const bytes=await response.arrayBuffer();
-    if (!bytes.byteLength || bytes.byteLength > 65536) throw Error('MANIFEST_SIZE');
-    const hash=await globalThis.crypto.subtle.digest('SHA-256',bytes);
-    const observed=Array.from(new Uint8Array(hash),n=>n.toString(16).padStart(2,'0')).join('');
-    if (observed !== approvedDigest) throw Error('MANIFEST_INTEGRITY');
-    return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
+    // Sans expiration, une connexion bloquée laisse la page sur « Vérification… ».
+    // En cas de délai dépassé, tout affichage de résultats échoue fermé.
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),15000);
+    try {
+      const response=await fetch(path,{
+        cache:'no-store',credentials:'omit',signal:controller.signal
+      });
+      if (!response.ok) throw Error('UNAVAILABLE');
+      const approvedDigest=APPROVED_MANIFEST_SHA256[path];
+      if (!approvedDigest) return await response.json();
+      if (!globalThis.crypto?.subtle) throw Error('NO_CRYPTO');
+      const bytes=await response.arrayBuffer();
+      if (!bytes.byteLength || bytes.byteLength > 65536) throw Error('MANIFEST_SIZE');
+      const hash=await globalThis.crypto.subtle.digest('SHA-256',bytes);
+      const observed=Array.from(new Uint8Array(hash),n=>n.toString(16).padStart(2,'0')).join('');
+      if (observed !== approvedDigest) throw Error('MANIFEST_INTEGRITY');
+      return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
+    } finally {
+      clearTimeout(timer);
+    }
   }
   function element(tag, className, value) {
     const item=document.createElement(tag);
