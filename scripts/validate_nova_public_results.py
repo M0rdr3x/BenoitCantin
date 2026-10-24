@@ -174,6 +174,11 @@ def check(root,built=None):
             "globalThis.crypto?.subtle" not in browser_code or
             "response.arrayBuffer()" not in browser_code):
         bad.append("Contrôle d'intégrité des questions publiques absent ou neutralisé")
+    if (browser_code.count("new AbortController()")!=1 or
+            browser_code.count("setTimeout(()=>controller.abort(),15000)")!=1 or
+            browser_code.count("signal:controller.signal")!=1 or
+            browser_code.count("clearTimeout(timer)")!=1):
+        bad.append("Expiration réseau obligatoire des résultats publics neutralisée")
     for rel, approved_hash in QUESTION_MANIFESTS.items():
         if browser_code.count(approved_hash)!=1:
             bad.append("Empreinte des questions absente du client : "+rel)
@@ -299,6 +304,20 @@ def self_test():
         assert any("Contrôle d'intégrité" in err for err in check(Path(name))), (
             "L'inactivation de SHA-256 n'est pas bloquée"
         )
+        browser.write_text(original_client, "utf-8")
+        assert not check(Path(name))
+        for original_gate, bypass in (
+            ("new AbortController()", "({signal:undefined,abort(){}})"),
+            ("setTimeout(()=>controller.abort(),15000)", "null"),
+            ("signal:controller.signal", "signal:undefined"),
+            ("clearTimeout(timer)", "void timer"),
+        ):
+            altered=original_client.replace(original_gate,bypass,1)
+            assert altered!=original_client, "Mutation de test réseau inactive"
+            browser.write_text(altered, "utf-8")
+            assert any("Expiration réseau" in err for err in check(Path(name))), (
+                "Le navigateur pourrait attendre sans fin : "+original_gate
+            )
         browser.write_text(original_client, "utf-8")
         assert not check(Path(name))
         # Le parseur JSON standard perd la première valeur d'une clé dupliquée.
