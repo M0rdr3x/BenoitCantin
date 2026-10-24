@@ -1,0 +1,93 @@
+{
+  "schema_version": "P54G-1",
+  "exercice": 2024,
+  "date_reference": "2026-10-24",
+  "jalon_precedent": "P54F",
+  "source_run_p54d": 40120462237,
+  "dossiers": [
+    "P54E-V-001",
+    "P54E-M-001",
+    "P54E-M-002",
+    "P54E-M-003"
+  ],
+  "actions_de_suivi": [
+    "AJOURNER",
+    "DEMANDER_PIECES",
+    "DEMANDER_CONTRE_REVUE",
+    "SAISIR_EXPERT_INDEPENDANT",
+    "MAINTENIR_SUSPENSION"
+  ],
+  "motifs": [
+    "PIECES_INCOMPLETES",
+    "REVUE_UNILATERALE",
+    "DESACCORD_OUVERT",
+    "EXPERTISE_MANQUANTE",
+    "CONFIDENTIALITE_OU_ACCES",
+    "PERIMETRE_OU_UNITE_INDETERMINE",
+    "PREUVE_NON_CORROBOREE"
+  ],
+  "pieces_a_demander": [
+    "PDF_PUBLIC_ORIGINAL",
+    "PAGE_ET_FOLIO",
+    "PERIMETRE_ET_PERIODE",
+    "ECRITURES_RECIPROQUES",
+    "JUSTIFICATIF_ET_UNITE",
+    "EVALUATION_EMPLOIS_SERVICES",
+    "AVIS_JURIDIQUE_OU_COMPTABLE_INDEPENDANT"
+  ],
+  "transitions_procedurales_autorisees": {
+    "EN_ATTENTE": [
+      "AJOURNER",
+      "DEMANDER_PIECES"
+    ],
+    "EXAMEN_UNIQUE": [
+      "AJOURNER",
+      "DEMANDER_CONTRE_REVUE"
+    ],
+    "DESACCORD": [
+      "AJOURNER",
+      "DEMANDER_PIECES",
+      "SAISIR_EXPERT_INDEPENDANT"
+    ],
+    "SUSPENDU": [
+      "AJOURNER",
+      "MAINTENIR_SUSPENSION"
+    ],
+    "CONCORDANCE_DECLARATIVE_INCOMPLETE": [
+      "AJOURNER",
+      "DEMANDER_PIECES",
+      "DEMANDER_CONTRE_REVUE"
+    ],
+    "CONCORDANCE_DECLARATIVE_DOCUMENTEE_NON_ATTESTEE": [
+      "AJOURNER",
+      "SAISIR_EXPERT_INDEPENDANT"
+    ]
+  },
+  "guardrails": {
+    "aucune_decision_certifiante_auto": true,
+    "aucune_fermeture_de_dossier": true,
+    "aucune_identite_ou_signature_authentifiee": true,
+    "decision_humaine_declarative_uniquement": true,
+    "desaccord_conserve": true,
+    "suspension_conservee": true,
+    "pieces_et_identites_reelles_hors_git": true,
+    "aucun_montant_source_publique_extrait": true,
+    "aucune_economie_certifiee": true,
+    "aucun_go_politique_ou_fiscal": true,
+    "protections_emplois_services": true,
+    "pas_de_double_compte_ville_rtc": true,
+    "regimes_constitutionnels_separes": true,
+    "sinjira_separe": true,
+    "aucune_fusion_main": true
+  },
+  "etat_initial": {
+    "dossiers_ouverts": 4,
+    "declarations_revue_recues": 0,
+    "decisions_suivi_recues": 0,
+    "desaccords_attestes": 0,
+    "avis_independants_signes": 0,
+    "decisions_definitives_authentifiees": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
