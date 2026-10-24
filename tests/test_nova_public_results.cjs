@@ -3,6 +3,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const { webcrypto } = require('node:crypto');
 const path = require('node:path');
 const vm = require('node:vm');
 
@@ -32,7 +33,7 @@ class FakeElement {
 }
 
 async function mount(snapshot, {
-  badManifest = false, fetchFailure = false, syntheticRelease = false,
+  badManifest = false, badManifest64 = false, fetchFailure = false, syntheticRelease = false,
 } = {}) {
   const elements = new Map();
   const document = {
@@ -49,12 +50,30 @@ async function mount(snapshot, {
     'data/resultats-sondages-publics-v1.json': snapshot,
   };
   if (badManifest) fixtures['data/consultation-40-v1.json'].questions[0].text = 'X';
+  if (badManifest64) fixtures['data/sondage-questions-v1.json'].questions[0].text = 'X';
   const context = {
     document,
+    crypto: webcrypto,
+    TextDecoder,
     fetch: async url => {
       if (fetchFailure) throw Error('network unavailable');
       if (!Object.hasOwn(fixtures, url)) throw Error('unexpected fixture: '+url);
-      return {ok: true, json: async () => copy(fixtures[url])};
+      return {
+        ok: true,
+        json: async () => copy(fixtures[url]),
+        // Les manifests sont servis dans leurs octets originaux, sauf mutation
+        // intentionnelle : le test exerce la vraie vérification SHA-256 du client.
+        arrayBuffer: async () => {
+          const name = url.startsWith('data/') ? url.slice(5) : '';
+          const data = (name === 'consultation-40-v1.json' ||
+              name === 'sondage-questions-v1.json') &&
+              !((badManifest && name === 'consultation-40-v1.json') ||
+                (badManifest64 && name === 'sondage-questions-v1.json'))
+            ? fs.readFileSync(path.join(NOVA, 'data', name))
+            : Buffer.from(JSON.stringify(fixtures[url]), 'utf8');
+          return Uint8Array.from(data).buffer;
+        },
+      };
     },
   };
   // Le seul déverrouillage autorisé est dans cette VM et avec des fixtures
@@ -108,6 +127,9 @@ test('erreur réseau ne devient pas un état fermé faussement validé',async()=
 });
 test('manifestation d’une question altérée rejetée',async()=>{
   await assertUnavailable(copy(original),{badManifest:true});
+});
+test('manifeste 64 falsifié refusé même avec 64 questions et JSON valide',async()=>{
+  await assertUnavailable(copy(original),{badManifest64:true});
 });
 test('champ public inconnu bloqué, même sans identité visible',async()=>{
   const data=copy(original);
