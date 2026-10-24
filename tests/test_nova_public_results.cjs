@@ -195,3 +195,104 @@ test('question masquée : aucun total résiduel dans sa ligne',async()=>{
   const el=await mount(data,{syntheticRelease:true});
   assert.match(el('results-question-list').children[0].children[1].textContent,/Répartition masquée/);
 });
+
+
+// Tests sans réseau du véritable chargeur de corpus de la Boussole, exécutés
+// par la CI Nova/Jekyll en plus des contrôles SHA-256 du questionnaire.
+const boussoleSource = fs.readFileSync(path.join(NOVA, 'assets/boussole-electorale.js'), 'utf8');
+const networkStart=boussoleSource.indexOf('  async function fetchLimitedBytes(url,maxBytes){');
+const networkEnd=boussoleSource.indexOf('  async function fetchApprovedQuestionCorpus(){',networkStart);
+assert.ok(networkStart>=0 && networkEnd>networkStart, 'Chargeur Boussole de production introuvable');
+const realNetworkRoutine=boussoleSource.slice(networkStart,networkEnd);
+
+function novaNetworkHarness(mockFetch) {
+  let fire=null, cleaned=0, signal=null;
+  const context={
+    AbortController,
+    setTimeout(fn,ms){ assert.equal(ms,20000); fire=fn; return 7; },
+    clearTimeout(id){ assert.equal(id,7); cleaned++; },
+    fetch(url,options){
+      assert.equal(options.cache,'no-store');
+      assert.equal(options.credentials,'omit');
+      assert.ok(options.signal instanceof AbortSignal);
+      signal=options.signal;
+      return mockFetch(url,options);
+    },
+  };
+  vm.runInNewContext(realNetworkRoutine+'\nthis.fetchLimitedBytes=fetchLimitedBytes;',context,
+    {filename:'boussole-electorale.js',timeout:1000});
+  return {
+    run:(url='data/boussole-electorale-v2.json',max=65536)=>context.fetchLimitedBytes(url,max),
+    expire(){assert.ok(fire,'temporisation non armée');fire();},
+    get cleaned(){return cleaned;},
+    get signal(){return signal;}
+  };
+}
+function novaResponse(content,length=null){
+  const bytes=new TextEncoder().encode(content).buffer;
+  return {ok:true,headers:{get:()=>length},arrayBuffer:async()=>bytes};
+}
+test('Boussole réseau : réponse intègre et temporisation correctement libérée',async()=>{
+  const h=novaNetworkHarness(async()=>novaResponse('abc','3'));
+  assert.equal(new TextDecoder().decode(await h.run()),'abc');
+  assert.equal(h.cleaned,1);
+  assert.equal(h.signal.aborted,false);
+});
+test('Boussole réseau : Content-Length dangereux, refus avant lecture',async()=>{
+  let bodyRead=false;
+  const h=novaNetworkHarness(async()=>({ok:true,headers:{get:()=>String(65537)},
+    arrayBuffer:async()=>{bodyRead=true;return new ArrayBuffer(3);}}));
+  await assert.rejects(h.run(),/CORPUS_SIZE/);
+  assert.equal(bodyRead,false);
+  assert.equal(h.cleaned,1);
+});
+test('Boussole réseau : longueur malformée et corps vide refusés',async()=>{
+  const bad=novaNetworkHarness(async()=>novaResponse('abc','3, 5'));
+  await assert.rejects(bad.run(),/CORPUS_SIZE/);
+  assert.equal(bad.cleaned,1);
+  const empty=novaNetworkHarness(async()=>novaResponse(''));
+  await assert.rejects(empty.run(),/CORPUS_SIZE/);
+  assert.equal(empty.cleaned,1);
+});
+test('Boussole réseau : rejet après lecture de trop nombreux octets',async()=>{
+  const h=novaNetworkHarness(async()=>novaResponse('x'.repeat(65537),'9'));
+  await assert.rejects(h.run(),/CORPUS_SIZE/);
+  assert.equal(h.cleaned,1);
+});
+test('Boussole réseau : limite exacte de 512 Kio pour les preuves',async()=>{
+  const h=novaNetworkHarness(async()=>novaResponse('x'.repeat(524288)));
+  assert.equal((await h.run('data/boussole-preuves-2026.json',524288)).byteLength,524288);
+  assert.equal(h.cleaned,1);
+});
+test('Boussole réseau : erreur HTTP, nettoyage sans lecture du corps',async()=>{
+  const h=novaNetworkHarness(async()=>({ok:false,headers:{get:()=>null},
+    arrayBuffer:async()=>{throw Error('lecture interdite')}}));
+  await assert.rejects(h.run(),/CORPUS_HTTP/);
+  assert.equal(h.cleaned,1);
+});
+test('Boussole réseau : AbortController interrompt une connexion figée',async()=>{
+  const h=novaNetworkHarness((_url,{signal})=>new Promise((_resolve,reject)=>{
+    signal.addEventListener('abort',()=>reject(Object.assign(
+      new Error('annulé'),{name:'AbortError'})),{once:true});
+  }));
+  const running=h.run();
+  h.expire();
+  await assert.rejects(running,e=>e.name==='AbortError');
+  assert.equal(h.signal.aborted,true);
+  assert.equal(h.cleaned,1);
+});
+test('Boussole réseau : AbortController interrompt aussi la lecture du corps',async()=>{
+  const h=novaNetworkHarness(async(_url,{signal})=>({ok:true,headers:{get:()=>null},
+    arrayBuffer:()=>new Promise((_resolve,reject)=>signal.addEventListener(
+      'abort',()=>reject(Object.assign(new Error('annulé'),{name:'AbortError'})),{once:true}))}));
+  const running=h.run();
+  await new Promise(resolve=>setImmediate(resolve));
+  h.expire();
+  await assert.rejects(running,e=>e.name==='AbortError');
+  assert.equal(h.cleaned,1);
+});
+test('Boussole réseau : nettoyage en cas de panne immédiate',async()=>{
+  const h=novaNetworkHarness(async()=>{throw Error('hors ligne')});
+  await assert.rejects(h.run(),/hors ligne/);
+  assert.equal(h.cleaned,1);
+});
