@@ -581,6 +581,54 @@ def run() -> None:
         }""")
         assert_true(purged, f"{BROWSER_NAME}: réponses de la Boussole conservées après effacement")
 
+        # Deuxième parcours complet, avec 64 réponses explicitement neutres.
+        # Le premier parcours teste l'avancement; celui-ci vérifie les valeurs
+        # des 16 scores (0), leur couverture 4/4 et l'absence de profil conservé.
+        neutral_profile = page.evaluate("""() => {
+            const start = document.querySelector("#compass-start");
+            if (!start || start.disabled) return {valid:false,reason:"démarrage indisponible"};
+            start.click();
+            for (let index = 1; index <= 64; index++) {
+                const fieldset = document.querySelector("#compass-question-stage fieldset");
+                const label = fieldset?.querySelector(".compass-question-counter")?.textContent || "";
+                const radio = fieldset?.querySelector('input[type="radio"][value="0"]');
+                const next = document.querySelector("#compass-next");
+                if (!fieldset || !label.includes("Question " + index + " sur 64") ||
+                    !radio || !next || !document.querySelector("#compass-results").hidden) {
+                    return {valid:false,step:index,reason:"question ou choix neutre manquant"};
+                }
+                radio.click();
+                if (next.disabled) return {valid:false,step:index,reason:"bouton suivant inactif"};
+                next.click();
+            }
+            const cards = [...document.querySelectorAll("#compass-results-grid .compass-result-card")];
+            const neutral = cards.every(card => {
+                const score = card.querySelector(".compass-result-head strong")?.textContent?.trim();
+                const coverage = card.querySelector(".compass-result-meta")?.textContent || "";
+                return score === "0" && coverage.includes("4/4 réponses (100 %)");
+            });
+            const summary = document.querySelector("#compass-summary")?.textContent || "";
+            return {
+                valid:cards.length === 16 && neutral &&
+                    !document.querySelector("#compass-results").hidden &&
+                    summary.includes("100 %"),
+                cards:cards.length,
+                neutral,
+                summary
+            };
+        }""")
+        assert_true(
+            neutral_profile["valid"],
+            f"{BROWSER_NAME}: scores neutres, 16 dimensions ou couverture 4/4 incorrects : {neutral_profile}",
+        )
+        page.locator("#compass-reset").click()
+        assert_true(
+            page.locator("#compass-results").is_hidden()
+            and page.locator("#compass-results-grid .compass-result-card").count() == 0
+            and page.locator("#compass-start").is_visible(),
+            f"{BROWSER_NAME}: profil politique neutre conservé après nouvelle réinitialisation",
+        )
+
         home_text = page.locator("main").inner_text().lower()
         for retired_name in ("lumina", "futurax", "chroniques de l’ombre", "chroniques de l'ombre"):
             assert_true(retired_name not in home_text, f"Accueil: univers secondaire remis au premier plan: {retired_name}")
