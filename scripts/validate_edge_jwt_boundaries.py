@@ -80,8 +80,7 @@ def verify_gates(name: str, code: str) -> list[str]:
     return errors
 
 
-def self_test(config: dict, source: dict[str, str]) -> None:
-    names = set(source)
+def self_test(config: dict, source: dict[str, str], names: set[str]) -> None:
     assert not verify_config(config, names), verify_config(config, names)
     for name, code in source.items():
         assert not verify_gates(name, code), name
@@ -100,7 +99,9 @@ def self_test(config: dict, source: dict[str, str]) -> None:
     changed["functions"].pop("admin-console")
     assert verify_config(changed, names)
     for name, code in source.items():
-        assert verify_gates(name, code.replace("req.method", "request.method"))
+        bad = code.replace("req.method!=='POST'", "req.method!=='GET'", 1)
+        bad = bad.replace("req.method !== 'POST'", "req.method !== 'GET'", 1)
+        assert bad != code and verify_gates(name, bad)
         assert verify_gates(name, code + "\nawait req.text();")
     print("OK : toutes les mutations JWT, lecteur, méthode et garde refusées.")
 
@@ -133,7 +134,7 @@ def main() -> int:
             print("ECHEC sécurité JWT Edge:", e)
         return 1
     if args.self_test:
-        self_test(config, source)
+        self_test(config, source, discovered)
     print(f"OK : {len(discovered)} fonctions déclarées ; "
           "3 exceptions JWT munies de gardes applicatifs, aucune nouvelle exception.")
     return 0
