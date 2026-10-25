@@ -94,3 +94,32 @@ test('les six fonctions admin utilisent la borne AVANT req.text()',()=>{
     assert.match(source,/await requiredAdmin\(req\)/,name+': MFA admin indispensable');
   }
 });
+
+test('les 12 routes privées supplémentaires lisent le corps en flux borné',()=>{
+  const sensitive=[
+    'delete-player-account','fracture-engine-gateway',
+    'life-story-delivery','life-story-export','redeem-license-code',
+    'revoke-my-contributions','security-context','send-game-report',
+    'send-player-sheet','submit-character-questionnaire',
+    'submit-fracture-endgame','submit-game-contribution'
+  ];
+  for(const name of sensitive) {
+    const source=fs.readFileSync(path.join(
+      ROOT,'supabase/functions',name,'index.ts'),'utf8');
+    assert.match(source,/import \{ readBoundedRequestText \} from '\.\.\/_shared\/bounded-request\.mjs'/,
+      name+': lecteur commun absent');
+    const cap=name==='fracture-engine-gateway'?'MAX_BODY_BYTES':'MAX_REQUEST_BYTES';
+    assert.ok(source.includes('await readBoundedRequestText(req, '+cap+')'),
+      name+': limite de corps non appliquée');
+    assert.doesNotMatch(source,/await req\.(?:text|json|arrayBuffer)\(\)/,
+      name+': lecture HTTP brute non bornée');
+  }
+});
+test('la limite existante de 2 Mio pour le questionnaire sensible reste supportée',async()=>{
+  const {readBoundedRequestText}=await readerPromise;
+  const cap=2*1024*1024;
+  const body=bytes('x'.repeat(cap));
+  assert.equal((await readBoundedRequestText(request([body]),cap)).length,cap);
+  await assert.rejects(readBoundedRequestText(request([body,bytes('z')]),cap),
+    /REQUEST_TOO_LARGE/);
+});
