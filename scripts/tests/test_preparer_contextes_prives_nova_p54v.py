@@ -35,7 +35,7 @@ def files_fixture(folder):
     raws={}
     refs={}
     for key in m.p54q.NAMES:
-        raw=("%PDF-1.4\nTEST LOCAL %s\n"%key).encode()
+        raw=("%%PDF-1.4\nTEST LOCAL %s\n"%key).encode()
         file=Path(folder)/(key+".pdf")
         file.write_bytes(raw)
         paths[key]=file;raws[key]=raw

@@ -19,7 +19,7 @@ from test_reproduire_localisations_pdf_nova_p54p import synthetic_texts
 def setup(folder):
     paths={};blobs={};refs={}
     for name in m.NAMES:
-        data=("%PDF-1.4\nSYNTHETIQUE-SANS-AVIS-%s\n"%name).encode()
+        data=("%%PDF-1.4\nSYNTHETIQUE-SANS-AVIS-%s\n"%name).encode()
         file=Path(folder)/(name+".pdf")
         file.write_bytes(data)
         paths[name]=file
