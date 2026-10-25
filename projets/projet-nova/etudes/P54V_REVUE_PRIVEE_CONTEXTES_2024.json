@@ -1,0 +1,66 @@
+{
+  "schema_version": "P54V-1",
+  "date_reference": "2026-10-24",
+  "exercice": 2024,
+  "source_jalons": [
+    "P54Q",
+    "P54T",
+    "P54U"
+  ],
+  "reference_p54p_run": 40151185184,
+  "reference_p54p_artifact": 12583661231,
+  "mode": "LOCAL_PRIVE_HORS_GIT_SANS_RESEAU",
+  "observations": 5,
+  "indices_pdf_zero_based": {
+    "ville": 102,
+    "mamh": 162
+  },
+  "controle_humain": [
+    "IDENTIFIER_SOURCE_ORIGINALE",
+    "RETROUVER_OCCURRENCE_NFKC",
+    "COMPARER_SUR_PAGE_VISUELLE",
+    "QUALIFIER_NATURE_SUR_PIECE",
+    "DISTINGUER_DATE_FOLIO_REFERENCE_VALEUR",
+    "VALIDER_UNITE_EXERCICE_COLONNE_SI_PERTINENT",
+    "CONSERVER_RESERVES_ET_DESACCORDS",
+    "CONTRE_REVUE_INDEPENDANTE"
+  ],
+  "protections": {
+    "double_pdf_hors_git_obligatoire": true,
+    "empreintes_historiques_exactes": true,
+    "relecture_bilans_figes_sha256": true,
+    "cinq_offsets_p54p_identiques": true,
+    "analyse_complete_ou_refus": true,
+    "aucune_requete_reseau": true,
+    "original_pdfs_non_archives": true,
+    "extraits_prives_mode_0600": true,
+    "liens_symboliques_et_sorties_repo_interdits": true,
+    "aucun_jeton_dans_bilan_public": true,
+    "aucune_sortie_privee_console": true,
+    "anomalie_monetaire_non_inferable": true,
+    "date_probable_non_certifiee": true,
+    "quatre_dossiers_p54e_ouverts": true,
+    "qualification_et_contre_revues_humaines": true,
+    "emplois_services_proteges": true,
+    "pas_double_compte_ville_rtc_somhac": true,
+    "scenarios_constitutionnels_separes": true,
+    "aucun_contact_externe": true,
+    "aucun_merge_main": true,
+    "sinjira_inchange": true
+  },
+  "etat_initial": {
+    "documents_locaux_examines": 0,
+    "offsets_reproduits": 0,
+    "extraits_prives_ecrits": 0,
+    "occurrences_qualifiees_humainement": 0,
+    "avis_independants_authentifies": 0,
+    "dossiers_p54e_ouverts": 4,
+    "observation_date_probable_non_certifiee": 1,
+    "taches_p54n_non_attestees": 40,
+    "blocages_p54o_non_leves": 10,
+    "controles_p54b_restants": 96,
+    "controles_p54c_restants": 8,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
