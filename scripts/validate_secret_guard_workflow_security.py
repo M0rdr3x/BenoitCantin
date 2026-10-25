@@ -61,6 +61,10 @@ def validate_text(text: str) -> list[str]:
             'audit des workflows GitHub absent/dupliqué')
     require(errors, text.count('        run: python scripts/validate_no_committed_secrets.py --self-test\n') == 1,
             'autotest exhaustif du garde secrets absent/dupliqué')
+    require(errors, text.count('          python scripts/validate_admin_mfa_v24_4_67.py\n') == 1,
+            'validation MFA administrateur obligatoire absente')
+    require(errors, text.count('          node --test tests/test_admin_mfa_policy.cjs\n') == 1,
+            'tests AAL2 serveur absents')
     require(errors, text.count('        run: node --test tests/test_admin_request_body_bounds.cjs\n') == 1,
             'tests du lecteur borné des six API administrateur absents')
     require(errors, text.count('        run: python scripts/validate_no_committed_secrets.py\n') == 1,
