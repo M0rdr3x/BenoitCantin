@@ -66,7 +66,7 @@ test('les 7 endpoints admin restent dans le garde d’accès',()=>{
 });
 
 test('aucune erreur de fournisseur ou fragment de secret dans les logs serveur',()=>{
-  assert.doesNotMatch(source,/console\\.(?:warn|error)\\([^;]*,\\s*error\\)/,
+  assert.doesNotMatch(source,/console\.(?:warn|error)\([^;]*,\s*error\)/,
     'Ne jamais journaliser un objet Error venant du fournisseur');
-  assert.match(source,/throw new Error\\('MFA_STATE_UNAVAILABLE'\\)/);
+  assert.match(source,/throw new Error\('MFA_STATE_UNAVAILABLE'\)/);
 });
