@@ -54,7 +54,8 @@ FORBIDDEN = {
     'coercition arbitraire document_id': "String(parsed.body?.document_id",
     'objet erreur brut': 'console.error(e)',
     'objet error brut': 'console.error(error)',
-    'message erreur brut': 'error.message',
+    'message erreur brut journalisé': 'console.error(error.message)',
+    'message erreur brut exposé': 'error:error.message',
     'stack erreur brute': 'error.stack',
 }
 
