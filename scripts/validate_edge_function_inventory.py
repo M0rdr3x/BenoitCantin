@@ -33,7 +33,7 @@ CUSTOM_AUTH = {
         "PAID_EXTERNAL_SERVICES_ENABLED=false", "MAX_TEMPLATE_BYTES=15*1024*1024",
         "TEMPLATE_ORIGIN='https://www.benoitcantin.com'",
         "TEMPLATE_PATH_PREFIX='/projets/sinjira/jeux/fracture-du-reseau-mere/documents/'",
-        "redirect:'error'", "REPORT_TEMPLATE_TOO_LARGE", "%PDF-", "Cache-Control", "no-store",
+        "fetchBoundedPdf(reportTemplateUrl(),MAX_TEMPLATE_BYTES)", "Cache-Control", "no-store",
         "Referrer-Policy",
     ),
     "life-story-delivery": (
