@@ -1,3 +1,4 @@
+import { readBoundedRequestText } from '../_shared/bounded-request.mjs';
 import {corsHeaders} from '../_shared/cors.ts';
 import {requiredUser,serviceClient} from '../_shared/auth.ts';
 
@@ -26,7 +27,7 @@ async function readLimitedJson(req:Request):Promise<{body?:any;response?:Respons
       return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
     }
   }
-  const raw=await req.text();
+  const raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);
   if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES){
     return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
   }
