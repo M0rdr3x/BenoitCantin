@@ -25,9 +25,9 @@ REQUIRED = {
     'taille texte bornée': 'const MAX_TEXT=6000;',
     'origine modèle fixe': "const TEMPLATE_ORIGIN='https://www.benoitcantin.com';",
     'préfixe modèle fixe': "const TEMPLATE_PATH_PREFIX='/projets/sinjira/jeux/fracture-du-reseau-mere/documents/';",
-    'redirections modèle refusées': "fetch(templateUrl(mode),{cache:'no-store',redirect:'error'})",
+    'téléchargement PDF borné': 'fetchBoundedPdf(templateUrl(mode),MAX_TEMPLATE_BYTES)',
     'redirections fournisseur refusées': "const sent=await fetch('https://api.resend.com/emails',{\n      method:'POST',\n      redirect:'error',",
-    'signature PDF vérifiée': "!=='%PDF-'",
+    'lecteur PDF importé': "import { fetchBoundedPdf } from '../_shared/bounded-pdf-fetch.mjs';",
     'destinataire compte': 'to:[user.email]',
     'log fournisseur fixe': "console.error('[send-player-sheet]',{code:'PLAYER_SHEET_EMAIL_PROVIDER_FAILED',status:sent.status});",
     'log global fixe': "console.error('[send-player-sheet]',{code:'SEND_PLAYER_SHEET_FAILED'});",
@@ -39,6 +39,7 @@ FORBIDDEN = {
     'JSON direct non borné': 'await req.json()',
     'texte direct non borné': 'await req.text()',
     'lecture réponse fournisseur': 'await sent.text()',
+    'téléchargement PDF entier avant contrôle': 'response.arrayBuffer()',
     'log erreur brute court': 'console.error(e)',
     'log objet erreur brut': 'console.error(error)',
     'destination fournie par le client': 'body.email',
@@ -92,14 +93,10 @@ def validate_text(source: str, config: str) -> list[str]:
     require(errors, raw_pos >= 0 and utf8_pos > raw_pos and json_pos > utf8_pos,
             'Le corps doit être mesuré en octets UTF-8 avant le parsing JSON.')
 
-    fetch_template_pos = source.find("fetch(templateUrl(mode),{cache:'no-store',redirect:'error'})")
-    declared_template_pos = source.find("response.headers.get('content-length')")
-    actual_template_pos = source.find('bytes.byteLength===0||bytes.byteLength>MAX_TEMPLATE_BYTES')
-    signature_pos = source.find("String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-'")
-    require(errors,
-            fetch_template_pos >= 0 and declared_template_pos > fetch_template_pos and
-            actual_template_pos > declared_template_pos and signature_pos > actual_template_pos,
-            'Le modèle PDF doit refuser les redirections puis être borné et signé avant chargement.')
+    fetch_template_pos = source.find('fetchBoundedPdf(templateUrl(mode),MAX_TEMPLATE_BYTES)')
+    loader_pos = source.find("async function fetchTemplateBytes(mode:'solo'|'standard'){")
+    require(errors, fetch_template_pos > loader_pos >= 0,
+            'Le modèle PDF doit être téléchargé exclusivement via le lecteur sécurisé.')
 
     origin_checks = [
         "url.protocol!=='https:'",
@@ -176,10 +173,10 @@ def self_test() -> None:
         'limite requête augmentée': source.replace('MAX_REQUEST_BYTES=220_000;', 'MAX_REQUEST_BYTES=2_200_000;', 1),
         'mesure UTF-8 retirée': source.replace('new TextEncoder().encode(raw).byteLength', 'raw.length', 1),
         'no-store retiré': source.replace("  'Cache-Control':'private, no-store, max-age=0',\n", '', 1),
-        'redirections modèle autorisées': source.replace("fetch(templateUrl(mode),{cache:'no-store',redirect:'error'})", "fetch(templateUrl(mode),{cache:'no-store',redirect:'follow'})", 1),
+        'lecteur PDF contourné': source.replace('fetchBoundedPdf(templateUrl(mode),MAX_TEMPLATE_BYTES)', "fetch(templateUrl(mode),{cache:'no-store',redirect:'follow'})", 1),
         'redirections fournisseur autorisées': source.replace("      redirect:'error',", "      redirect:'follow',", 1),
         'limite modèle augmentée': source.replace('MAX_TEMPLATE_BYTES=15*1024*1024;', 'MAX_TEMPLATE_BYTES=150*1024*1024;', 1),
-        'signature PDF retirée': source.replace("  if(bytes.length<5||String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-')throw new Error('PLAYER_SHEET_TEMPLATE_NOT_PDF');\n", '', 1),
+        'lecteur PDF importé retiré': source.replace("import { fetchBoundedPdf } from '../_shared/bounded-pdf-fetch.mjs';\n", '', 1),
         'origine modèle relâchée': source.replace('url.origin!==TEMPLATE_ORIGIN', 'false', 1),
         'destination arbitraire': source.replace('to:[user.email]', 'to:[String(body.email||user.email)]', 1),
         'réponse fournisseur lue': source.replace(
