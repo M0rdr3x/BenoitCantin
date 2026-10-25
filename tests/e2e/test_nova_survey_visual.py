@@ -154,6 +154,34 @@ def main():
                     "Une reprise réseau a révélé des statistiques interdites")
             require(temporary_posts == [], "Une reprise réseau a envoyé une opinion")
             temporary.close()
+            # CDN ou registre mal configuré : une réponse de plus de 64 Kio
+            # doit être rejetée avant toute répartition, sur chaque moteur.
+            oversized = browser.new_page(
+                locale="fr-CA", viewport={"width": 390, "height": 844},
+                reduced_motion="reduce",
+            )
+            oversized_posts = []
+            oversized.on("request", lambda req: oversized_posts.append(req.url)
+                         if req.method == "POST" else None)
+            oversized.route("**/resultats-sondages-publics-v1.json",
+                            lambda route: route.fulfill(
+                                status=200, content_type="application/json",
+                                body=" " * 65537 + "{}"))
+            oversized.goto(
+                "http://127.0.0.1:4173/projets/projet-nova/resultats-sondages.html",
+                wait_until="domcontentloaded", timeout=30_000)
+            oversized.locator("#results-retry").wait_for(
+                state="visible", timeout=15_000)
+            require("indisponibles ou non validées" in
+                    oversized.locator("#results-state").inner_text(),
+                    "Snapshot public excessif accepté sans contrôle de taille")
+            require(oversized.locator(".nova-results-bar-item").count() == 0,
+                    "Snapshot public excessif a révélé des chiffres")
+            oversized.locator("#results-show-64").click()
+            require(oversized.locator("#results-question-list li").count() == 1
+                    and oversized_posts == [],
+                    "Snapshot excessif : bascule 64 ou absence de POST non conforme")
+            oversized.close()
             # Contrats navigateur : une source figée est interrompue, et
             # aucun chiffre fictif ni démarrage de sondage n'est possible.
             check_stalled_fetch(browser,
