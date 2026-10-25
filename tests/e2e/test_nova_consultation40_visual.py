@@ -86,6 +86,28 @@ with sync_playwright() as p:
               "question référendaire initiale absente")
         check(page.locator("#sondage-next").is_disabled(), "réponse vide franchit une étape")
         page.locator("input[value=pour]").check()
+        # Révocation explicite en cours de parcours : le script doit effacer
+        # tout choix politique et toute attestation, sans clic supplémentaire.
+        page.evaluate("""() => {
+            const consent = document.querySelector("#sondage-consent");
+            consent.checked = false;
+            consent.dispatchEvent(new Event("change", {bubbles:true}));
+        }""")
+        check(page.locator("#sondage-introduction").is_visible()
+              and page.locator("#sondage-questionnaire").is_hidden(),
+              "Retrait du consentement : retour immédiat à l'introduction absent")
+        check(page.locator("#sondage-choices input").count() == 0
+              and not page.locator("#sondage-consent").is_checked()
+              and not page.locator("#sondage-age").is_checked(),
+              "Retrait du consentement : opinions ou attestation encore en mémoire")
+        check(page.locator("#sondage-start").is_disabled() and not calls,
+              "Retrait du consentement : démarrage ou transmission non bloqués")
+        page.locator("#sondage-age").check()
+        page.locator("#sondage-consent").check()
+        page.locator("#sondage-start").click()
+        check(page.locator("#sondage-next").is_disabled(),
+              "Retrait du consentement : ancienne réponse réutilisée")
+        page.locator("input[value=pour]").check()
         page.locator("#sondage-next").click()
         check("Question 2 sur 40" in page.locator("#sondage-position").inner_text(),
               "progression cassée")
