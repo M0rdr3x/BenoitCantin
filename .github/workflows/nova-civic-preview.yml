@@ -20,9 +20,11 @@ on:
 permissions:
   contents: read
 
+# Ne pas interrompre une preuve 40/64/Boussole déjà en exécution :
+# cette très grande PR peut recevoir plusieurs autres commits pendant l'audit.
 concurrency:
   group: nova-civic-preview-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   civic-preview:
