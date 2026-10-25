@@ -92,6 +92,8 @@ def validate_text(text: str) -> list[str]:
             'tests PDF distants bornés obligatoires absents')
     require(errors, text.count('        run: node --test tests/test_admin_request_body_bounds.cjs\n') == 1,
             'tests du lecteur borné des six API administrateur absents')
+    require(errors, text.count('        run: node --test tests/test_sensitive_edge_stream_limits.cjs\n') == 1,
+            'tests anti-DoS des API AAL2 absents')
     require(errors, text.count('        run: python scripts/validate_no_committed_secrets.py\n') == 1,
             'scan bloquant des secrets absent/dupliqué')
     return errors
@@ -115,6 +117,7 @@ def run_self_tests(text: str) -> None:
         'contrat PDF public retiré': text.replace('          python scripts/validate_send_game_report_security.py --self-test\n', '', 1),
         'contrat PDF privé retiré': text.replace('          python scripts/validate_send_player_sheet_security.py --self-test\n', '', 1),
         'inventaire Edge retiré': text.replace('          python scripts/validate_edge_function_inventory.py\n', '', 1),
+        'tests lecteurs AAL2 retirés': text.replace('        run: node --test tests/test_sensitive_edge_stream_limits.cjs\n', '', 1),
         'scan avec filtre de chemins': text.replace('  pull_request:\n', '  pull_request:\n    paths: ["docs/**"]\n', 1),
         'scan non bloquant': text.replace('    timeout-minutes: 10\n', '    timeout-minutes: 10\n    continue-on-error: true\n', 1),
         'limite de temps supprimée': text.replace('    timeout-minutes: 10\n', '', 1),

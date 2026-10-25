@@ -2,6 +2,8 @@ import { corsHeaders } from '../_shared/cors.ts';
 import { requiredPersonalAiUser } from '../_shared/auth.ts';
 
 const MAX_REQUEST_BYTES = 16 * 1024;
+const MAX_REQUEST_CHUNKS = 4096;
+const REQUEST_READ_TIMEOUT_MS = 15000;
 // Le scope est fixé dans service_personal_ai_evaluate_access; l'Edge ne peut pas le réduire.
 const RISK_SCOPE = 'ai_private';
 // Contrat de fondation : conversation_enabled=false; source_retrieval_enabled=false.
@@ -21,33 +23,50 @@ function privateJson(data: unknown, status = 200) {
 async function readBoundedJson(req: Request) {
   const type = (req.headers.get('content-type') || '').split(';', 1)[0].trim().toLowerCase();
   if (type !== 'application/json') throw new Error('JSON_REQUIRED');
-  const declared = Number(req.headers.get('content-length') || 0);
-  if (Number.isFinite(declared) && declared > MAX_REQUEST_BYTES) throw new Error('REQUEST_TOO_LARGE');
-  if (!req.body) throw new Error('INVALID_JSON');
-  const reader = req.body.getReader();
+  const declared = req.headers.get('content-length');
+  if (declared !== null && (!/^[0-9]+$/.test(declared) ||
+      !Number.isSafeInteger(Number(declared)) || Number(declared) > MAX_REQUEST_BYTES))
+    throw new Error('REQUEST_TOO_LARGE');
+  if (!req.body || typeof req.body.getReader !== 'function') throw new Error('INVALID_JSON');
+  const stream = req.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
+  let count = 0;
+  let timer;
+  const deadline = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error('REQUEST_TIMEOUT')), REQUEST_READ_TIMEOUT_MS);
+  });
   try {
-    while (true) {
-      const { value, done } = await reader.read();
+    for (;;) {
+      const { value, done } = await Promise.race([stream.read(), deadline]);
       if (done) break;
-      if (!value) continue;
+      if (!(value instanceof Uint8Array)) throw new Error('INVALID_JSON');
+      if (++count > MAX_REQUEST_CHUNKS) throw new Error('REQUEST_TOO_LARGE');
       total += value.byteLength;
-      if (total > MAX_REQUEST_BYTES) {
-        await reader.cancel('REQUEST_TOO_LARGE').catch(() => undefined);
-        throw new Error('REQUEST_TOO_LARGE');
-      }
+      if (total > MAX_REQUEST_BYTES) throw new Error('REQUEST_TOO_LARGE');
       chunks.push(value);
     }
-  } finally { reader.releaseLock(); }
+  } catch (error) {
+    // Ne pas attendre une annulation de flux hostile qui pourrait rester bloquée.
+    try { Promise.resolve(stream.cancel()).catch(() => {}); } catch {}
+    throw error;
+  } finally {
+    clearTimeout(timer);
+    stream.releaseLock();
+  }
   const bytes = new Uint8Array(total);
   let offset = 0;
-  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
   try {
     const parsed = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error();
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('INVALID_JSON');
     return parsed as Record<string, unknown>;
-  } catch { throw new Error('INVALID_JSON'); }
+  } catch {
+    throw new Error('INVALID_JSON');
+  }
 }
 
 function safeText(value: unknown, max: number) {
@@ -88,7 +107,7 @@ function assertDecision(value: any) {
 function errorCode(error: unknown) {
   const code = error instanceof Error ? error.message : '';
   return new Set(['AUTH_REQUIRED','MFA_SETUP_REQUIRED','MFA_REQUIRED','MFA_STATE_UNAVAILABLE','JSON_REQUIRED',
-    'REQUEST_TOO_LARGE','INVALID_JSON','CLIENT_IDENTITY_FORBIDDEN','SECURITY_DECISION_INVALID',
+    'REQUEST_TOO_LARGE','REQUEST_TIMEOUT','INVALID_JSON','CLIENT_IDENTITY_FORBIDDEN','SECURITY_DECISION_INVALID',
     'PERSONAL_AI_SOURCE_FORBIDDEN','PERSONAL_AI_LANGUAGE_INVALID']).has(code)
     ? code : 'PERSONAL_AI_OPERATION_REFUSED';
 }
@@ -160,6 +179,7 @@ Deno.serve(async (req) => {
     if (code==='MFA_STATE_UNAVAILABLE'||code==='SECURITY_DECISION_INVALID') return privateJson({ok:false,code,error:'La protection de Mon IA est temporairement indisponible.'},503);
     if (code==='JSON_REQUIRED') return privateJson({ok:false,code,error:'Corps JSON requis.'},415);
     if (code==='REQUEST_TOO_LARGE') return privateJson({ok:false,code,error:'Requête trop volumineuse.'},413);
+    if (code==='REQUEST_TIMEOUT') return privateJson({ok:false,code,error:'Lecture de requête expirée.'},408);
     if (['INVALID_JSON','CLIENT_IDENTITY_FORBIDDEN','PERSONAL_AI_SOURCE_FORBIDDEN','PERSONAL_AI_LANGUAGE_INVALID'].includes(code)) return privateJson({ok:false,code,error:'Requête Mon IA invalide.'},400);
     return privateJson({ok:false,code,error:'Opération Mon IA refusée.'},403);
   }
