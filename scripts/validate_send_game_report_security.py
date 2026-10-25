@@ -12,7 +12,7 @@ EDGE = ROOT / 'supabase/functions/send-game-report/index.ts'
 REQUIRED = {
     'POST uniquement': "req.method !== 'POST'",
     'JSON explicite': "contentType.startsWith('application/json')",
-    'lecture corps par texte': 'const raw = await req.text();',
+    'lecture corps par flux borné': 'const raw = await readBoundedRequestText(req, MAX_REQUEST_BYTES);',
     'mesure UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
     'réponse privée': "'Cache-Control': 'private, no-store, max-age=0'",
     'protection MIME': "'X-Content-Type-Options': 'nosniff'",
@@ -36,6 +36,7 @@ REQUIRED_PATTERNS = {
 
 FORBIDDEN = {
     'JSON direct non borné': 'await req.json()',
+    'texte direct non borné': 'await req.text()',
     'message erreur backend brut': 'error.message',
     'stack erreur brute': 'error.stack',
     'objet erreur brut console.error': 'console.error(error)',
@@ -110,7 +111,7 @@ async function fetchTemplateBytes(){
 async function readLimitedJson(req){
  const contentType=(req.headers.get('content-type')||'').toLowerCase();
  if(!contentType.startsWith('application/json')) return {response:new Response('',{status:415})};
- const raw = await req.text();
+ const raw = await readBoundedRequestText(req, MAX_REQUEST_BYTES);
  if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES) return {response:new Response('',{status:413})};
  return {body:JSON.parse(raw||'{}')};
 }
@@ -149,7 +150,8 @@ Deno.serve(async(req)=>{
 
         mutations = {
             'content-type retiré': safe.replace(" if(!contentType.startsWith('application/json')) return {response:new Response('',{status:415})};\n", ''),
-            'req.json direct': safe.replace(' const raw = await req.text();', ' const bodyDirect = await req.json();'),
+            'req.json direct': safe.replace(' const raw = await readBoundedRequestText(req, MAX_REQUEST_BYTES);', ' const bodyDirect = await req.json();'),
+            'req.text direct': safe.replace(' const raw = await readBoundedRequestText(req, MAX_REQUEST_BYTES);', ' const raw = await req.text();'),
             'no-store retiré': safe.replace("  'Cache-Control': 'private, no-store, max-age=0',\n", ''),
             'services payants activés': safe.replace('PAID_EXTERNAL_SERVICES_ENABLED=false', 'PAID_EXTERNAL_SERVICES_ENABLED=true'),
             'log livraison brut': safe.replace("console.warn('[SINJIRA report]', { code:'REPORT_DELIVERY_RECORD_FAILED' });", "console.warn('[SINJIRA report]', error.message);"),
