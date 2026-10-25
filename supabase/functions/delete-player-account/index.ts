@@ -42,7 +42,7 @@ async function removeStoragePaths(service:any,bucket:string,paths:(string|null|u
   for(let i=0;i<unique.length;i+=100){
     const {error}=await service.storage.from(bucket).remove(unique.slice(i,i+100));
     if(error){
-      console.error(`[SINJIRA delete] storage ${bucket}`,error);
+      console.error('[SINJIRA delete]', 'STORAGE_DELETE_FAILED');
       throw new Error('STORAGE_DELETE_FAILED');
     }
   }
@@ -98,12 +98,21 @@ Deno.serve(async (req) => {
 
     const { error } = await service.auth.admin.deleteUser(user.id);
     if (error){
-      console.error('[SINJIRA delete] auth delete',error);
+      console.error('[SINJIRA delete]', 'AUTH_DELETE_FAILED');
       return privateJson({ok:false,error:'Suppression du compte impossible après la préparation des données.',code:'AUTH_DELETE_FAILED'},500);
     }
     return privateJson({ok:true,deleted:true,storage_cleaned:true,contributions_revoked:true});
   } catch (error) {
-    console.error('[delete-player-account]',error);
+    // Ne pas exposer dans les logs les erreurs Supabase, les chemins privés
+    // ni les renseignements contenus dans les exceptions réseau.
+    const safeLogCode = new Set([
+      'AUTH_REQUIRED', 'JSON_REQUIRED', 'REQUEST_TOO_LARGE', 'INVALID_JSON',
+      'ADMIN_CHECK_FAILED', 'LEGAL_HOLD_CHECK_FAILED', 'STORAGE_DELETE_FAILED',
+      'STORAGE_PATH_LOOKUP_FAILED', 'CONTRIBUTION_REVOKE_FAILED'
+    ]);
+    console.error('[delete-player-account]',
+      error instanceof Error && safeLogCode.has(error.message)
+        ? error.message : 'DELETE_FAILED');
     if(error?.message==='AUTH_REQUIRED')return privateJson({ok:false,error:'Connexion requise.',code:'AUTH_REQUIRED'},401);
     if(error?.message==='JSON_REQUIRED')return privateJson({ok:false,error:'Corps JSON requis.',code:'JSON_REQUIRED'},415);
     if(error?.message==='REQUEST_TOO_LARGE')return privateJson({ok:false,error:'Requête trop volumineuse.',code:'REQUEST_TOO_LARGE'},413);
