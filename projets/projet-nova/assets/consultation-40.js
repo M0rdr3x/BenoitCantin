@@ -61,6 +61,14 @@
     $('sondage-finish').hidden = which !== 'finish';
   }
   function refresh() {
+    // Un retrait de l'accord ou de l'attestation d'âge en cours de parcours
+    // efface aussitôt toute opinion locale, sans attendre la navigation.
+    if (!eligible() && !COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED &&
+        (!$('sondage-questionnaire').hidden || !$('sondage-finish').hidden)) {
+      clearLocalDemo();
+      $('sondage-titre').focus({preventScroll:true});
+      return;
+    }
     $('sondage-start').disabled = !eligible() || questions.length !== 40;
   }
   function render() {
