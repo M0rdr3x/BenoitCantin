@@ -1,3 +1,4 @@
+import { readBoundedRequestText } from '../_shared/bounded-request.mjs';
 import { corsHeaders } from '../_shared/cors.ts';
 import { optionalUser, serviceClient } from '../_shared/auth.ts';
 
@@ -46,40 +47,21 @@ async function readLimitedJson(req:Request):Promise<{body?:any;response?:Respons
   if(contentType!=='application/json'){
     return {response:privateJson({ok:false,error:'Type de contenu non autorisé.'},415)};
   }
-  const rawLength=req.headers.get('content-length');
-  if(rawLength!==null){
-    const declared=Number(rawLength);
-    if(!Number.isSafeInteger(declared)||declared<0||declared>MAX_REQUEST_BYTES){
+  // Borne effective pendant le flux : taille, fragments, UTF-8 et durée.
+  // La route sans JWT conserve un JSON de requête minimal (512 octets).
+  let raw:string;
+  try {
+    raw=await readBoundedRequestText(req,MAX_REQUEST_BYTES);
+  } catch(error) {
+    if(error instanceof Error && error.message==='REQUEST_TIMEOUT')
+      return {response:privateJson({ok:false,error:'Lecture de requête expirée.'},408)};
+    if(error instanceof Error && error.message==='REQUEST_TOO_LARGE')
       return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
-    }
+    return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)};
   }
-  if(!req.body)return {body:{}};
-  const reader=req.body.getReader();
-  const chunks:Uint8Array[]=[];
-  let total=0;
-  try{
-    while(true){
-      const {done,value}=await reader.read();
-      if(done)break;
-      if(value){
-        total+=value.byteLength;
-        if(total>MAX_REQUEST_BYTES){
-          await reader.cancel().catch(()=>{});
-          return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
-        }
-        chunks.push(value);
-      }
-    }
-  }finally{
-    reader.releaseLock();
-  }
-  const bytes=new Uint8Array(total);
-  let offset=0;
-  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
-  try{
-    const raw=new TextDecoder('utf-8',{fatal:true}).decode(bytes);
+  try {
     return {body:JSON.parse(raw||'{}')};
-  }catch{
+  } catch {
     return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)};
   }
 }
