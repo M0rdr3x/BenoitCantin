@@ -1,0 +1,94 @@
+name: Projet Nova P54W - Qualification humaine declarative privee
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54w.yml"
+      - "scripts/qualifier_occurrences_privees_nova_p54w.py"
+      - "scripts/tests/test_qualifier_occurrences_privees_nova_p54w.py"
+      - "scripts/preparer_contextes_prives_nova_p54v.py"
+      - "scripts/verifier_archive_publique_figee_nova_p54t.py"
+      - "projets/projet-nova/etudes/P54W_*"
+      - "projets/projet-nova/etudes/P54V_REVUE_PRIVEE_CONTEXTES_2024.json"
+      - "projets/projet-nova/etudes/p54t_archive_durable_p54p/**"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  revue-privee-non-certifiante:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Dependances historiques epinglees
+        run: python -m pip install pypdf==5.9.0
+      - name: 70 tests P54W sur contexte purement synthetique
+        run: |
+          python -m py_compile scripts/qualifier_occurrences_privees_nova_p54w.py
+          python - <<'PY'
+          import unittest
+          tests=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_qualifier_occurrences_privees_nova_p54w.py")
+          assert tests.countTestCases()==70,tests.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(tests)
+          assert result.wasSuccessful()
+          PY
+      - name: Rapport neutre et aucune qualification fictive
+        run: |
+          python scripts/qualifier_occurrences_privees_nova_p54w.py \
+            --bilan-public p54w_bilan_neutre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p54w_bilan_neutre.json").read_text("utf-8"))
+          assert len(d["occurrences"])==5
+          assert d["statuts"]=={"NON_EXAMINE":5}
+          assert d["declarations_locales_non_authentifiees"]==0
+          assert d["contextes_bruts_ou_jetons_publies"]==0
+          assert d["signatures_authentifiees"]==0
+          assert d["qualifications_definitives"]==0
+          assert d["valeurs_monetaires_certifiees"]==0
+          assert d["dossiers_p54e_ouverts"]==4
+          assert d["controles_p54b_non_attestes"]==96
+          assert d["controles_p54c_non_attestes"]==8
+          assert d["taches_p54n_non_attestees"]==40
+          assert d["blocages_p54o_non_leves"]==10
+          assert d["economies_certifiees_cad"] is None
+          assert d["transmission_autorisee"] is False
+          assert d["fusion_main_autorisee"] is False
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Modele prive factice hors depot et detruit
+        run: |
+          python scripts/qualifier_occurrences_privees_nova_p54w.py \
+            --modele-prive "$RUNNER_TEMP/p54w_modele_prive.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          f=Path(os.environ["RUNNER_TEMP"])/"p54w_modele_prive.json"
+          assert f.exists() and (f.stat().st_mode & 0o777)==0o600
+          assert json.loads(f.read_text("utf-8"))["declarations"]==[]
+          f.unlink()
+          PY
+      - name: Refuser une cloture pretendue automatique
+        run: |
+          set +e
+          python scripts/qualifier_occurrences_privees_nova_p54w.py --exiger-cloture
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Artefact public exclusivement agrege
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54w-qualifications-declaratives-non-attestees
+          path: p54w_bilan_neutre.json
+          if-no-files-found: ignore
+          retention-days: 7
