@@ -48,7 +48,8 @@ def validate_text(text: str) -> list[str]:
 
     require(errors, 'python scripts/validate_secret_guard_workflow_security.py --self-test' in text, 'auto-tests du contrat absents')
     require(errors, 'python scripts/validate_secret_guard_workflow_security.py\n' in text, 'validation du contrat absente')
-    require(errors, 'python scripts/validate_no_committed_secrets.py' in text, 'scan des secrets absent')
+    require(errors, 'run: python scripts/validate_no_committed_secrets.py --self-test\n' in text, 'autotest exhaustif du garde secrets absent')
+    require(errors, 'run: python scripts/validate_no_committed_secrets.py\n' in text, 'scan des secrets absent')
     return errors
 
 
