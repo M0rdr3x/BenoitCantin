@@ -117,6 +117,41 @@
     if (data.publicationStatus === 'approved_aggregate' && publishedSurveys === 0) return false;
     return true;
   }
+  // Lire au plus 64 Kio avant toute allocation globale ou analyse JSON.
+  // Une réponse modifiée, surdimensionnée ou tronquée échoue sans publier de chiffre.
+  async function readLimitedBytes(response,controller) {
+    const declared=response.headers.get('content-length');
+    if(declared!==null && (!/^[0-9]+$/.test(declared) || Number(declared)>65536))
+      throw Error('PUBLIC_SIZE');
+    if(!response.body?.getReader) throw Error('PUBLIC_STREAM');
+    const reader=response.body.getReader();
+    const parts=[];
+    let total=0;
+    try {
+      for(;;) {
+        const {done,value}=await reader.read();
+        if(done) break;
+        if(!ArrayBuffer.isView(value) || value.BYTES_PER_ELEMENT!==1)
+          throw Error('PUBLIC_STREAM');
+        total+=value.byteLength;
+        if(total>65536) {
+          controller.abort();
+          throw Error('PUBLIC_SIZE');
+        }
+        parts.push(value);
+      }
+    } finally {
+      reader.releaseLock();
+    }
+    if(!total) throw Error('PUBLIC_SIZE');
+    const bytes=new Uint8Array(total);
+    let offset=0;
+    for(const part of parts) {
+      bytes.set(part,offset);
+      offset+=part.byteLength;
+    }
+    return bytes.buffer;
+  }
   async function fetchJSON(path) {
     // Sans expiration, une connexion bloquée laisse la page sur « Vérification… ».
     // En cas de délai dépassé, tout affichage de résultats échoue fermé.
@@ -128,13 +163,15 @@
       });
       if (!response.ok) throw Error('UNAVAILABLE');
       const approvedDigest=APPROVED_MANIFEST_SHA256[path];
-      if (!approvedDigest) return await response.json();
-      if (!globalThis.crypto?.subtle) throw Error('NO_CRYPTO');
-      const bytes=await response.arrayBuffer();
-      if (!bytes.byteLength || bytes.byteLength > 65536) throw Error('MANIFEST_SIZE');
-      const hash=await globalThis.crypto.subtle.digest('SHA-256',bytes);
-      const observed=Array.from(new Uint8Array(hash),n=>n.toString(16).padStart(2,'0')).join('');
-      if (observed !== approvedDigest) throw Error('MANIFEST_INTEGRITY');
+      // Même borne pour le snapshot et les deux corpus : aucune réponse
+      // réseau arbitraire ne peut déclencher un response.json() sans limite.
+      const bytes=await readLimitedBytes(response,controller);
+      if(approvedDigest) {
+        if (!globalThis.crypto?.subtle) throw Error('NO_CRYPTO');
+        const hash=await globalThis.crypto.subtle.digest('SHA-256',bytes);
+        const observed=Array.from(new Uint8Array(hash),n=>n.toString(16).padStart(2,'0')).join('');
+        if (observed !== approvedDigest) throw Error('MANIFEST_INTEGRITY');
+      }
       return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
     } finally {
       clearTimeout(timer);
