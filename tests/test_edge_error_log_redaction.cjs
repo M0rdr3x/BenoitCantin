@@ -23,11 +23,23 @@ function unsafeLogs(source){
     .filter(statement=>/,\s*(?:error|e|err)\s*\)/.test(statement)||
       /,\s*\{\s*(?:error|e|err)\s*\}\s*\)/.test(statement));
 }
-test('les 26 Edge Functions ne publient plus d’erreurs fournisseur brutes',()=>{
-  assert.equal(new Set(FUNCTIONS).size,26,'Inventaire explicite des 26 routes requis');
-  for(const fn of FUNCTIONS){
+test('toutes les Edge Functions actuelles et futures expurgent leurs erreurs',()=>{
+  assert.equal(new Set(FUNCTIONS).size,26,'Inventaire des 26 routes de référence');
+  const discovered=fs.readdirSync(ROOT,{withFileTypes:true})
+    .filter(dir=>dir.isDirectory() && fs.existsSync(path.join(ROOT,dir.name,'index.ts')))
+    .map(dir=>dir.name).sort();
+  assert.ok(discovered.length>=FUNCTIONS.length,'Routes Edge manquantes');
+  for(const fn of FUNCTIONS)assert.ok(discovered.includes(fn),fn+': route disparue');
+  // Parcourir la liste réelle permet de couvrir automatiquement une 27e fonction.
+  for(const fn of discovered){
     const src=fs.readFileSync(path.join(ROOT,fn,'index.ts'),'utf8');
     assert.deepEqual(unsafeLogs(src),[],fn+': journaux de fournisseur non expurgés');
+  }
+  const sharedDir=path.join(ROOT,'_shared');
+  for(const entry of fs.readdirSync(sharedDir)){
+    if(!/\\.(?:ts|mjs)$/.test(entry))continue;
+    const src=fs.readFileSync(path.join(sharedDir,entry),'utf8');
+    assert.deepEqual(unsafeLogs(src),[],'_shared/'+entry+': erreur brute journalisée');
   }
 });
 test('le garde détecte les fuites artificielles et ignore les codes fixes',()=>{
