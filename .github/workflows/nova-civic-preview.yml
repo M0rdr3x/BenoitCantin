@@ -11,6 +11,7 @@ on:
       - 'tests/e2e/test_nova_survey_visual.py'
       - 'tests/e2e/test_nova_consultation40_visual.py'
       - 'tests/e2e/test_nova_compass_full_preview.py'
+      - 'tests/test_nova_compass_scores.cjs'
       - 'scripts/validate_nova_consultation40.py'
       - 'scripts/validate_nova_survey.py'
       - 'scripts/validate_nova_public_access.py'
@@ -29,6 +30,24 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  score-contract:
+    # Calcul mathématique local, aucune interface / aucun accès réseau.
+    name: Boussole — sept contrats des 16 dimensions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sans identifiants persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Épingler la version Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+          package-manager-cache: false
+      - name: Tester le vrai calcul de la Boussole
+        run: node --test tests/test_nova_compass_scores.cjs
+
   civic-preview:
     # IMPORTANT: exécuter sur les PR DRAFT. Aucun droit de publication.
     name: Nova 40/64/Boussole — ${{ matrix.browser }}
