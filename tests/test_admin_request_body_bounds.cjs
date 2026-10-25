@@ -139,3 +139,49 @@ test('4096 fragments légitimes restent autorisés à la taille prévue',async()
   const text=await readBoundedRequestText(request(chunks),2*1024*1024);
   assert.equal(text.length,4096);
 });
+
+test('une lecture HTTP suspendue expire et annule le flux',async()=>{
+  const {readBoundedRequestText}=await readerPromise;
+  let cancelled=0;
+  const req={
+    headers:new Headers(),
+    body:new ReadableStream({
+      start(controller){controller.enqueue(bytes('{"incomplet":'));},
+      cancel(){cancelled++;}
+    })
+  };
+  const start=Date.now();
+  await assert.rejects(readBoundedRequestText(req,4096,25),/REQUEST_TIMEOUT/);
+  assert.equal(cancelled,1,'La requête bloquée doit être annulée');
+  assert.ok(Date.now()-start<1500,'Le timeout ne doit pas bloquer le worker');
+});
+test('le délai de lecture est global, pas relancé par les fragments',async()=>{
+  const {readBoundedRequestText}=await readerPromise;
+  let cancelled=0;
+  let count=0;
+  const req={
+    headers:new Headers(),
+    body:new ReadableStream({
+      async pull(controller){
+        await new Promise(resolve=>setTimeout(resolve,12));
+        controller.enqueue(Uint8Array.of(65));
+        count++;
+      },
+      cancel(){cancelled++;}
+    })
+  };
+  const start=Date.now();
+  await assert.rejects(readBoundedRequestText(req,4096,65),/REQUEST_TIMEOUT/);
+  assert.ok(count>0 && count<40,'Le flux a dû progresser puis expirer');
+  assert.ok(Date.now()-start<1500,'La lecture au compte-gouttes ne doit pas durer');
+  assert.equal(cancelled,1);
+});
+test('un délai invalide échoue sans démarrer la lecture',async()=>{
+  const {readBoundedRequestText}=await readerPromise;
+  for(const ms of [0,-1,30001,Infinity,1.5]){
+    let readerStarted=false;
+    const req={headers:new Headers(),body:{getReader(){readerStarted=true;}}};
+    await assert.rejects(readBoundedRequestText(req,4096,ms),/REQUEST_TIMEOUT/);
+    assert.equal(readerStarted,false);
+  }
+});
