@@ -12,11 +12,10 @@ EDGE = ROOT / 'supabase/functions/get-document-url/index.ts'
 REQUIRED = {
     'POST uniquement': "req.method!=='POST'",
     'JSON explicite': "contentType!=='application/json'",
-    'lecture par flux': 'const reader=req.body.getReader();',
-    'limite pendant le flux': 'if(total>MAX_REQUEST_BYTES){',
-    'annulation sur dépassement': 'reader.cancel().catch',
-    'assemblage après validation': 'const bytes=new Uint8Array(total);',
-    'UTF-8 strict': "new TextDecoder('utf-8',{fatal:true}).decode(bytes)",
+    'lecteur borné partagé': "import { readBoundedRequestText } from '../_shared/bounded-request.mjs';",
+    'limite appliquée pendant le flux': 'readBoundedRequestText(req,MAX_REQUEST_BYTES)',
+    'refus du flux expiré': "error.message==='REQUEST_TIMEOUT'",
+    'refus de dépassement': "error.message==='REQUEST_TOO_LARGE'",
     'UUID strict': 'const UUID_RE=',
     'document_id chaîne uniquement': "typeof parsed.body?.document_id==='string'",
     'réponse privée': "'Cache-Control':'private, no-store, max-age=0'",
@@ -108,6 +107,7 @@ def validate(path: Path) -> list[str]:
 
 def self_test() -> None:
     safe = """
+import { readBoundedRequestText } from '../_shared/bounded-request.mjs';
 const MAX_REQUEST_BYTES=512;
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const PRIVATE_JSON_HEADERS={
@@ -130,20 +130,14 @@ function externalUrlAllowed(value){
 async function readLimitedJson(req){
   const contentType=(req.headers.get('content-type')||'').toLowerCase();
   if(contentType!=='application/json')return {response:privateJson({},415)};
-  const reader=req.body.getReader();
-  const chunks=[];let total=0;
-  while(true){
-    const {done,value}=await reader.read();
-    if(done)break;
-    total+=value.byteLength;
-    if(total>MAX_REQUEST_BYTES){
-      await reader.cancel().catch(()=>{});
-      return {response:privateJson({},413)};
-    }
-    chunks.push(value);
+  let raw;
+  try{raw=await readBoundedRequestText(req,MAX_REQUEST_BYTES);}
+  catch(error){
+    if(error instanceof Error && error.message==='REQUEST_TIMEOUT')return {response:privateJson({},408)};
+    if(error instanceof Error && error.message==='REQUEST_TOO_LARGE')return {response:privateJson({},413)};
+    return {response:privateJson({},400)};
   }
-  const bytes=new Uint8Array(total);
-  return {body:JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes))};
+  return {body:JSON.parse(raw||'{}')};
 }
 Deno.serve(async(req)=>{
  if(req.method!=='POST')return privateJson({},405);
@@ -184,11 +178,11 @@ Deno.serve(async(req)=>{
         mutations = {
             'limite augmentée': safe.replace('MAX_REQUEST_BYTES=512;', 'MAX_REQUEST_BYTES=8192;'),
             'type JSON retiré': safe.replace("if(contentType!=='application/json')return {response:privateJson({},415)};", ''),
-            'req.json direct': safe.replace('const reader=req.body.getReader();', 'const body=await req.json();'),
-            'req.text direct': safe.replace('const reader=req.body.getReader();', 'const body=await req.text();'),
-            'contrôle de taille retiré': safe.replace('if(total>MAX_REQUEST_BYTES){', 'if(false){'),
-            'annulation retirée': safe.replace('await reader.cancel().catch(()=>{});', ''),
-            'UTF-8 non strict': safe.replace("new TextDecoder('utf-8',{fatal:true}).decode(bytes)", 'new TextDecoder().decode(bytes)'),
+            'req.json direct': safe.replace('raw=await readBoundedRequestText(req,MAX_REQUEST_BYTES);', 'raw=await req.json();'),
+            'req.text direct': safe.replace('raw=await readBoundedRequestText(req,MAX_REQUEST_BYTES);', 'raw=await req.text();'),
+            'contrôle de taille retiré': safe.replace("error.message==='REQUEST_TOO_LARGE'", 'false'),
+            'lecteur partagé retiré': safe.replace('raw=await readBoundedRequestText(req,MAX_REQUEST_BYTES);', "raw='{}';"),
+            'expiration neutralisée': safe.replace("error.message==='REQUEST_TIMEOUT'", 'false'),
             'coercition document_id': safe.replace("typeof parsed.body?.document_id==='string'?parsed.body.document_id.trim():''", "String(parsed.body?.document_id||'').trim()"),
             'no-store retiré': safe.replace(" 'Cache-Control':'private, no-store, max-age=0',\n", ''),
             'TTL signé augmenté': safe.replace('createSignedUrl(doc.storage_path,600)', 'createSignedUrl(doc.storage_path,3600)'),
@@ -252,7 +246,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK get-document-url: POST JSON borné à 512 octets pendant le flux, UUID typé, refus no-store et liens signés 600 s.')
+    print('OK get-document-url: POST JSON borné à 512 octets avec timeout et limite de fragments, UUID typé, refus no-store et liens signés 600 s.')
     return 0
 
 
