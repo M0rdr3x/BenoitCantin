@@ -84,7 +84,10 @@ async function assertAdminMfa(context: Awaited<ReturnType<typeof authenticatedCo
     console.error('[SINJIRA admin auth] état MFA indisponible', error);
     throw error;
   });
-  if (aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') {
+  // Sécurité des 7 fonctions admin : AAL2 obligatoire, même si la
+  // personne n'a pas encore enregistré de facteur MFA (aucun repli AAL1).
+  // En cas d'état d'assurance inconnu ou incohérent, refuser également.
+  if (aal.nextLevel !== 'aal2' || aal.currentLevel !== 'aal2') {
     throw new Error('MFA_REQUIRED');
   }
   return aal;
@@ -200,10 +203,11 @@ export async function requiredSensitiveUser(req: Request) {
 /**
  * Contexte administrateur V24.4.67.
  *
- * Politique MFA progressive :
- * - aucun facteur MFA vérifié -> la session aal1 reste permise;
- * - un facteur vérifié existe et la session peut monter à aal2 -> aal2 devient obligatoire;
- * - état MFA impossible à vérifier -> refus fermé pour une opération administrative.
+ * Politique MFA stricte : toutes les opérations administrateur exigent
+ * un second facteur inscrit ET une session courante AAL2 vérifiée.
+ * Aucun compte administrateur sans facteur ne peut accéder aux API :
+ * il doit d'abord terminer l'inscription MFA via le parcours de sécurité.
+ * État MFA absent, ambigu ou indisponible : refus fermé.
  */
 export async function requiredAdmin(req: Request) {
   const context = await authenticatedContext(req);
