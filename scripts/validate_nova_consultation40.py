@@ -52,7 +52,7 @@ def validate(text):
                   "data.survey === SURVEY_ID", "data.code === 'RECORDED'",
                   "textContent = item.text",
                   "cache:'no-store'", "radio.autocomplete = 'off'",
-                  "function clearLocalDemo()", "window.addEventListener('pageshow'",
+                  "function clearLocalDemo()", "(!$('sondage-questionnaire').hidden || !$('sondage-finish').hidden)", "window.addEventListener('pageshow'",
                   "'sondage-retry'", "window.location.reload()",
                    "window.addEventListener('pagehide'",
                   "new AbortController()", "setTimeout(() => controller.abort(), 15000)",
