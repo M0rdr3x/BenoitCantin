@@ -53,6 +53,7 @@ def validate(text):
                   "textContent = item.text",
                   "cache:'no-store'", "radio.autocomplete = 'off'",
                   "function clearLocalDemo()", "window.addEventListener('pageshow'",
+                  "'sondage-retry'", "window.location.reload()",
                    "window.addEventListener('pagehide'",
                   "new AbortController()", "setTimeout(() => controller.abort(), 15000)",
                    "signal:controller.signal", "clearTimeout(timeoutId)",
