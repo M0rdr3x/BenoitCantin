@@ -101,7 +101,7 @@ Deno.serve(async(req)=>{
 
     return privateJson({ok:true,submitted:true,source:'endgame_only'});
   }catch(e){
-    console.error('[submit-game-contribution]',e);
+    console.error('[submit-game-contribution]',e instanceof Error && ['AUTH_REQUIRED','JSON_REQUIRED','REQUEST_TOO_LARGE','INVALID_JSON'].includes(e.message) ? e.message : 'SUBMISSION_FAILED');
     if(e?.message==='AUTH_REQUIRED')return privateJson({ok:false,error:'Connexion requise.',code:'AUTH_REQUIRED'},401);
     if(e?.message==='JSON_REQUIRED')return privateJson({ok:false,error:'Corps JSON requis.',code:'JSON_REQUIRED'},415);
     if(e?.message==='REQUEST_TOO_LARGE')return privateJson({ok:false,error:'Requête trop volumineuse.',code:'REQUEST_TOO_LARGE'},413);
