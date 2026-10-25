@@ -269,7 +269,7 @@ Deno.serve(async (req) => {
       }
     });
   } catch (error) {
-    console.error('[security-context]', error);
+    console.error('[security-context]', error instanceof Error && error.message==='AUTH_REQUIRED' ? 'AUTH_REQUIRED' : 'SECURITY_CONTEXT_FAILED');
     if (error?.message === 'AUTH_REQUIRED') return privateJson({ ok: false, error: 'Connexion requise.', code: 'AUTH_REQUIRED' }, 401);
     return privateJson({ ok: false, error: 'Le contexte de sécurité est temporairement indisponible.' }, 500);
   }
