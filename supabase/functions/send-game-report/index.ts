@@ -1,3 +1,4 @@
+import { fetchBoundedPdf } from '../_shared/bounded-pdf-fetch.mjs';
 import { readBoundedRequestText } from '../_shared/bounded-request.mjs';
 import { PDFDocument, StandardFonts } from 'npm:pdf-lib@1.17.1';
 import { corsHeaders } from '../_shared/cors.ts';
@@ -41,14 +42,8 @@ function reportTemplateUrl(){
 }
 
 async function fetchTemplateBytes(){
-  const response=await fetch(reportTemplateUrl(),{cache:'no-store',redirect:'error'});
-  if(!response.ok)throw new Error('REPORT_TEMPLATE_FETCH_FAILED');
-  const declared=Number(response.headers.get('content-length')||'0');
-  if(Number.isFinite(declared)&&declared>MAX_TEMPLATE_BYTES)throw new Error('REPORT_TEMPLATE_TOO_LARGE');
-  const bytes=new Uint8Array(await response.arrayBuffer());
-  if(bytes.byteLength===0||bytes.byteLength>MAX_TEMPLATE_BYTES)throw new Error('REPORT_TEMPLATE_TOO_LARGE');
-  if(bytes.length<5||String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-')throw new Error('REPORT_TEMPLATE_NOT_PDF');
-  return bytes;
+  // L'URL est verrouillée sur l'origine officielle avant tout accès réseau.
+  return await fetchBoundedPdf(reportTemplateUrl(),MAX_TEMPLATE_BYTES);
 }
 
 async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }> {
