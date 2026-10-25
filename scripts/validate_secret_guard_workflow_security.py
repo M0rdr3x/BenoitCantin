@@ -71,6 +71,16 @@ def validate_text(text: str) -> list[str]:
             'validation MFA administrateur obligatoire absente')
     require(errors, text.count('          node --test tests/test_admin_mfa_policy.cjs\n') == 1,
             'tests AAL2 serveur absents')
+    for gate in (
+        'python scripts/validate_send_game_report_security.py --self-test',
+        'python scripts/validate_send_game_report_security.py',
+        'python scripts/validate_send_player_sheet_security.py --self-test',
+        'python scripts/validate_send_player_sheet_security.py',
+        'python scripts/validate_edge_template_fetch_v24_5_49.py',
+        'python scripts/validate_edge_function_inventory.py',
+    ):
+        require(errors, text.count('          ' + gate + '\n') == 1,
+                'contrat de sécurité PDF/Edge non exécuté: ' + gate)
     require(errors, text.count('        run: node --test tests/test_edge_remote_pdf_stream.cjs\n') == 1,
             'tests PDF distants bornés obligatoires absents')
     require(errors, text.count('        run: node --test tests/test_admin_request_body_bounds.cjs\n') == 1,
