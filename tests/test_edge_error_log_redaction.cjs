@@ -18,10 +18,16 @@ const FUNCTIONS=[
 ];
 function unsafeLogs(source){
   // Ne jamais enregistrer un objet Error Supabase/Storage/fournisseur brut.
-  return [...source.matchAll(/console\.(?:error|warn|log|info|debug)\s*\(([^;\n]{0,1400})\)/g)]
+  // Toute forme console.error(error), console.error('tag',error),
+  // console.warn({error}) ou argument sur plusieurs lignes est interdite.
+  // Ne pas limiter la recherche à une ligne : les anciens endpoints
+  // journalisaient parfois directement console.error(error).
+  return [...source.matchAll(/console\.(?:error|warn|log|info|debug)\s*\(([\s\S]{0,1400}?)\)\s*;/g)]
     .map(m=>m[0])
-    .filter(statement=>/,\s*(?:error|e|err)\s*\)/.test(statement)||
-      /,\s*\{\s*(?:error|e|err)\s*\}\s*\)/.test(statement));
+    .filter(statement=>
+      /\(\s*(?:error|e|err|details)\s*\)\s*;/.test(statement)||
+      /,\s*(?:error|e|err|details)\s*\)\s*;/.test(statement)||
+      /(?:\(|,)\s*\{\s*(?:error|e|err|details)\s*\}\s*\)\s*;/.test(statement));
 }
 test('toutes les Edge Functions actuelles et futures expurgent leurs erreurs',()=>{
   assert.equal(new Set(FUNCTIONS).size,26,'Inventaire des 26 routes de référence');
@@ -46,7 +52,12 @@ test('le garde détecte les fuites artificielles et ignore les codes fixes',()=>
   for(const bad of [
     "console.error('[delete]', error);",
     "console.warn('[redeem]',e);",
-    "console.log('oops', {error});"
+    "console.log('oops', {error});",
+    "console.error(error);",
+    "console.warn(e);",
+    "console.error(details);",
+    "console.error({error});",
+    "console.error(\n   error\n);"
   ])assert.notEqual(unsafeLogs(bad).length,0,bad);
   assert.deepEqual(unsafeLogs("console.error('[delete]','DELETE_FAILED');"),[]);
 });
