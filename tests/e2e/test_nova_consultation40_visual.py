@@ -185,6 +185,19 @@ with sync_playwright() as p:
         check(compromised.locator("#sondage-start").is_disabled(),
               "Question centrale modifiée sans preuve SHA-256 approuvée")
         check(not compromised_posts, "Question compromise transmise au serveur")
+        retry = compromised.locator("#sondage-retry")
+        check(retry.is_visible() and retry.is_enabled(),
+              "Aucune possibilité de réessayer après échec du corpus 40")
+        compromised.unroute("**/consultation-40-v1.json", altered_questions)
+        retry.click()
+        compromised.wait_for_load_state("domcontentloaded")
+        check(compromised.locator("#sondage-retry").count() == 0
+              and compromised.locator("#sondage-introduction [role=alert]").count() == 0,
+              "Le rechargement du sondage 40 laisse une alerte de chargement")
+        compromised.locator("#sondage-age").check()
+        compromised.locator("#sondage-consent").check()
+        expect(compromised.locator("#sondage-start")).to_be_enabled(timeout=15000)
+        check(not compromised_posts, "Réessai du sondage 40 a envoyé des opinions")
         compromised.close()
         # Panne réseau simulée, vérification explicite du délai et de l'AbortSignal.
         check_stalled_fetch(browser, URL,
