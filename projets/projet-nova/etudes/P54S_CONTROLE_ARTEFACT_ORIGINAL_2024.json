@@ -1,0 +1,40 @@
+{
+  "schema_version": "P54S-1",
+  "date_reference": "2026-10-24",
+  "source_run_p54p": 40151185184,
+  "source_artifact": 12583661231,
+  "source_job_p54p": 121042887853,
+  "archive_octets": 1533,
+  "archive_sha256": "d87562662c4c82176e02bdcb28035bb704f2734eb998e0161ef17a21e268c42e",
+  "membres": {
+    "p54p_avant_acquisition.json": {
+      "octets": 795,
+      "sha256": "73856ddd9284acec7a0a5edcf538ff5f7c387ab28429e736cfeb85a1c92914dd"
+    },
+    "p54p_reproduction_conditionnelle.json": {
+      "octets": 2631,
+      "sha256": "ebfae307f375519b5921358af70b624991f9a3f6a383eb91139d64c399620fb1"
+    }
+  },
+  "controle_effectue_dans_session": {
+    "archive_telechargee_et_hachee": true,
+    "deux_membres_relus_et_haches": true,
+    "positions_cinq_verifiees_dans_bilan": true,
+    "pdf_physiquement_relus": false
+  },
+  "positions_de_reference": [
+    2359,
+    18,
+    2420,
+    2430,
+    2436
+  ],
+  "blocages": {
+    "avis_authentifies": 0,
+    "dossiers_p54e_ouverts": 4,
+    "controles_p54b_non_attestes": 96,
+    "controles_p54c_non_attestes": 8,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
