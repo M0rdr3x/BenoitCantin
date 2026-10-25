@@ -20,9 +20,9 @@ REQUIRED = {
     'champs fiche allowlistés': 'const TEXT_FIELDS = new Set([',
     'texte fiche borné': 'const MAX_TEXT = 6000;',
     'modèle PDF origine fixe': "const TEMPLATE_ORIGIN='https://www.benoitcantin.com';",
-    'redirections modèle refusées': "redirect:'error'",
+    'modèle PDF récupéré par lecteur borné': 'fetchBoundedPdf(reportTemplateUrl(),MAX_TEMPLATE_BYTES)',
     'taille modèle bornée': 'const MAX_TEMPLATE_BYTES=15*1024*1024;',
-    'signature PDF vérifiée': "!=='%PDF-'",
+    'lecteur PDF importé': "import { fetchBoundedPdf } from '../_shared/bounded-pdf-fetch.mjs';",
     'services payants désactivés': 'const PAID_EXTERNAL_SERVICES_ENABLED=false;',
     'courriel uniquement au compte': 'to: [user.email]',
     'log livraison fixe': "console.warn('[SINJIRA report]', { code:'REPORT_DELIVERY_RECORD_FAILED' });",
@@ -91,6 +91,7 @@ def validate(path: Path) -> list[str]:
 def self_test() -> None:
     safe = """
 const FUNCTION_VERSION='24.5.2';
+import { fetchBoundedPdf } from '../_shared/bounded-pdf-fetch.mjs';
 const MAX_REQUEST_BYTES=220_000;
 const MAX_TEMPLATE_BYTES=15*1024*1024;
 const MAX_TEXT = 6000;
@@ -103,10 +104,7 @@ const PRIVATE_JSON_HEADERS = {
   'Referrer-Policy': 'no-referrer'
 };
 async function fetchTemplateBytes(){
- const response=await fetch('https://www.benoitcantin.com/x.pdf',{cache:'no-store',redirect:'error'});
- const bytes=new Uint8Array(await response.arrayBuffer());
- if(bytes.length<5||String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-') throw new Error('REPORT_TEMPLATE_NOT_PDF');
- return bytes;
+ return await fetchBoundedPdf(reportTemplateUrl(),MAX_TEMPLATE_BYTES);
 }
 async function readLimitedJson(req){
  const contentType=(req.headers.get('content-type')||'').toLowerCase();
@@ -152,6 +150,7 @@ Deno.serve(async(req)=>{
             'content-type retiré': safe.replace(" if(!contentType.startsWith('application/json')) return {response:new Response('',{status:415})};\n", ''),
             'req.json direct': safe.replace(' const raw = await readBoundedRequestText(req, MAX_REQUEST_BYTES);', ' const bodyDirect = await req.json();'),
             'req.text direct': safe.replace(' const raw = await readBoundedRequestText(req, MAX_REQUEST_BYTES);', ' const raw = await req.text();'),
+            'lecteur PDF contourné': safe.replace('fetchBoundedPdf(reportTemplateUrl(),MAX_TEMPLATE_BYTES)', 'fetch(reportTemplateUrl())'),
             'no-store retiré': safe.replace("  'Cache-Control': 'private, no-store, max-age=0',\n", ''),
             'services payants activés': safe.replace('PAID_EXTERNAL_SERVICES_ENABLED=false', 'PAID_EXTERNAL_SERVICES_ENABLED=true'),
             'log livraison brut': safe.replace("console.warn('[SINJIRA report]', { code:'REPORT_DELIVERY_RECORD_FAILED' });", "console.warn('[SINJIRA report]', error.message);"),
