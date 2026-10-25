@@ -123,3 +123,19 @@ test('la limite existante de 2 Mio pour le questionnaire sensible reste support�
   await assert.rejects(readBoundedRequestText(request([body,bytes('z')]),cap),
     /REQUEST_TOO_LARGE/);
 });
+
+test('plus de 4096 fragments minuscules sont rejetés sans dépasser les octets',async()=>{
+  const {readBoundedRequestText}=await readerPromise;
+  let cancelled=0;
+  const many=Array.from({length:4097},()=>Uint8Array.of(65));
+  await assert.rejects(
+    readBoundedRequestText(request(many,null,()=>cancelled++),2*1024*1024),
+    /REQUEST_TOO_LARGE/);
+  assert.equal(cancelled,1,'Annulation immédiate au-delà du nombre de fragments');
+});
+test('4096 fragments légitimes restent autorisés à la taille prévue',async()=>{
+  const {readBoundedRequestText}=await readerPromise;
+  const chunks=Array.from({length:4096},()=>Uint8Array.of(65));
+  const text=await readBoundedRequestText(request(chunks),2*1024*1024);
+  assert.equal(text.length,4096);
+});
