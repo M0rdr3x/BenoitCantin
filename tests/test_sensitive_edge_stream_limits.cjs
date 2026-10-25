@@ -16,15 +16,18 @@ function reader(name, timeoutMs = 1500) {
   assert.match(code, /const MAX_REQUEST_CHUNKS = 4096;/);
   assert.match(code, /const REQUEST_READ_TIMEOUT_MS = 15000;/);
   assert.match(code, /'REQUEST_TIMEOUT'/);
-  assert.match(code, /if\s*\(\s*code\s*===\s*'REQUEST_TIMEOUT'\s*\)[\s\S]{0,180}408/);
-  const start = code.indexOf('async function readBoundedJson(req: Request) {');
-  const end = code.indexOf('\nfunction safeText(', start);
+  assert.match(code, name === 'get-novel-file-url'
+    ? /if\s*\(\s*message\s*===\s*'REQUEST_TIMEOUT'\s*\)[\s\S]{0,180}408/
+    : /if\s*\(\s*code\s*===\s*'REQUEST_TIMEOUT'\s*\)[\s\S]{0,180}408/);
+  const novel = name === 'get-novel-file-url';
+  const start = code.indexOf(novel ? 'async function readBoundedJson(req:Request){' : 'async function readBoundedJson(req: Request) {');
+  const end = code.indexOf(novel ? '\nDeno.serve(' : '\nfunction safeText(', start);
   assert.ok(start >= 0 && end > start, name + ': lecteur TS introuvable');
   const js = code.slice(start, end)
-    .replace('req: Request', 'req')
-    .replace('const chunks: Uint8Array[] = [];', 'const chunks = [];')
+    .replace(/req:\s*Request/, 'req')
+    .replace(/const chunks:\s*Uint8Array\[\]\s*=\s*\[\];/, 'const chunks = [];')
     .replace('return parsed as Record<string, unknown>;', 'return parsed;');
-  const cap = name === 'conscience-vault' ? 6 * 1024 * 1024 + 64 * 1024 : 16 * 1024;
+  const cap = name === 'conscience-vault' ? 6 * 1024 * 1024 + 64 * 1024 : name === 'get-novel-file-url' ? 2048 : 16 * 1024;
   return new Function('MAX_REQUEST_BYTES', 'MAX_REQUEST_CHUNKS',
     'REQUEST_READ_TIMEOUT_MS', js + '\nreturn readBoundedJson;')(
       cap, 4096, timeoutMs);
@@ -54,7 +57,7 @@ function request(chunks, { length = null, hang = false, type = 'application/json
   };
 }
 
-for (const name of ['conscience-vault', 'personal-ai']) {
+for (const name of ['conscience-vault', 'personal-ai', 'get-novel-file-url']) {
   test(name + ' : JSON UTF-8 fragmenté légitime accepté', async () => {
     const value = encode('{"nom":"Élève","ok":true}');
     const input = request([value.slice(0, 9), value.slice(9, 10), value.slice(10)]);
@@ -62,7 +65,7 @@ for (const name of ['conscience-vault', 'personal-ai']) {
   });
 
   test(name + ' : un corps au-delà de la borne est annulé', async () => {
-    const cap = name === 'conscience-vault' ? 6 * 1024 * 1024 + 64 * 1024 : 16 * 1024;
+    const cap = name === 'conscience-vault' ? 6 * 1024 * 1024 + 64 * 1024 : name === 'get-novel-file-url' ? 2048 : 16 * 1024;
     const input = request([encode('{"a":"'), encode('x'.repeat(cap)), encode('"}')]);
     await assert.rejects(reader(name)(input.req), /REQUEST_TOO_LARGE/);
     assert.equal(input.cancelled, 1);

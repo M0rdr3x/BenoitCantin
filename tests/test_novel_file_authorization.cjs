@@ -77,7 +77,7 @@ function fixture(options={}){
   let handler;
   const environment={
     Deno:{serve(fn){handler=fn}},
-    Response,Request,TextDecoder,Uint8Array,Number,URL,console:{
+    Response,Request,TextDecoder,Uint8Array,Number,URL,setTimeout,clearTimeout,console:{
       error(...args){state.errors.push(args)}
     },
     corsHeaders:{'Access-Control-Allow-Origin':'https://www.benoitcantin.com'},

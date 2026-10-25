@@ -3,32 +3,40 @@ import { requiredUser, serviceClient } from '../_shared/auth.ts';
 
 const HEADERS={...corsHeaders,'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store, max-age=0','Pragma':'no-cache','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'};
 const MAX_REQUEST_BYTES=2048;
+const MAX_REQUEST_CHUNKS = 4096;
+const REQUEST_READ_TIMEOUT_MS = 15000;
 function json(data:unknown,status=200){return new Response(JSON.stringify(data),{status,headers:HEADERS});}
 
 async function readBoundedJson(req:Request){
   const mime=(req.headers.get('content-type')||'').toLowerCase().split(';',1)[0].trim();
   if(mime!=='application/json')throw new Error('JSON_REQUIRED');
-  const rawLength=req.headers.get('content-length');
-  if(rawLength!==null){
-    const declared=Number(rawLength);
-    if(!Number.isSafeInteger(declared)||declared<0||declared>MAX_REQUEST_BYTES)
-      throw new Error('REQUEST_TOO_LARGE');
-  }
+  const declaredRaw=req.headers.get('content-length');
+  if(declaredRaw!==null && (!/^[0-9]+$/.test(declaredRaw) ||
+      !Number.isSafeInteger(Number(declaredRaw)) || Number(declaredRaw)>MAX_REQUEST_BYTES))
+    throw new Error('REQUEST_TOO_LARGE');
   if(!req.body)return {};
   const reader=req.body.getReader();
   const chunks:Uint8Array[]=[];
-  let total=0;
-  while(true){
-    const {done,value}=await reader.read();
-    if(done)break;
-    if(value){
+  let total=0,count=0,timer;
+  const deadline=new Promise((_,reject)=>{
+    timer=setTimeout(()=>reject(new Error('REQUEST_TIMEOUT')),REQUEST_READ_TIMEOUT_MS);
+  });
+  try{
+    for(;;){
+      const {done,value}=await Promise.race([reader.read(),deadline]);
+      if(done)break;
+      if(!(value instanceof Uint8Array))throw new Error('INVALID_JSON');
+      if(++count>MAX_REQUEST_CHUNKS)throw new Error('REQUEST_TOO_LARGE');
       total+=value.byteLength;
-      if(total>MAX_REQUEST_BYTES){
-        try{await reader.cancel();}catch{}
-        throw new Error('REQUEST_TOO_LARGE');
-      }
+      if(total>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
       chunks.push(value);
     }
+  }catch(error){
+    try{Promise.resolve(reader.cancel()).catch(()=>{});}catch{}
+    throw error;
+  }finally{
+    clearTimeout(timer);
+    reader.releaseLock();
   }
   const bytes=new Uint8Array(total);
   let offset=0;
@@ -82,6 +90,7 @@ Deno.serve(async(req)=>{
     const message=String(error?.message||'');
     if(message==='AUTH_REQUIRED')return json({ok:false,error:'Connexion requise.'},401);
     if(message==='REQUEST_TOO_LARGE')return json({ok:false,error:'Requête trop volumineuse.'},413);
+    if(message==='REQUEST_TIMEOUT')return json({ok:false,error:'Lecture de requête expirée.'},408);
     if(message==='INVALID_JSON')return json({ok:false,error:'Corps JSON invalide.'},400);
     if(message==='JSON_REQUIRED')return json({ok:false,error:'Type de contenu non autorisé.'},415);
     console.error('[get-novel-file-url]',{code:'NOVEL_FILE_URL_FAILED'});
