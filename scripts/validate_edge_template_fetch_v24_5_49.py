@@ -45,8 +45,6 @@ def main()->int:
         "import { fetchBoundedPdf } from '../_shared/bounded-pdf-fetch.mjs';",
         "fetchBoundedPdf(reportTemplateUrl(),MAX_TEMPLATE_BYTES)",
         'REPORT_TEMPLATE_URL_NOT_ALLOWED',
-        'REPORT_TEMPLATE_TOO_LARGE',
-        'REPORT_TEMPLATE_NOT_PDF',
         'PAID_EXTERNAL_SERVICES_ENABLED=false',
         "'Cache-Control': 'private, no-store, max-age=0'",
         "'Referrer-Policy': 'no-referrer'",
