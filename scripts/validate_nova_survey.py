@@ -119,6 +119,7 @@ def check_text(payload: dict[str, str]) -> list[str]:
            "list.replaceChildren()", "step = 0;",
            "input.autocomplete = 'off'",
            "function clearLocalDemo()", "window.addEventListener('pageshow'",
+                  "'sondage-retry'", "window.location.reload()",
            "window.addEventListener('pagehide'",
            "new AbortController()",
            "setTimeout(() => controller.abort(), 15000)",
