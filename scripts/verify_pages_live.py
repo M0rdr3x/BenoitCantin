@@ -120,6 +120,48 @@ NOVA_ICONS = {
 }
 
 
+
+# Contrat minimal du HTML REEL servi aux visiteurs, distinct du simple HTTP 200.
+# La fonction reste en lecture seule et ne transmet aucune opinion politique.
+NOVA_TOOL_MARKERS = {
+    "/projets/projet-nova/consultation-40.html": (
+        b'id="sondage-privacy-warning"',
+        b'id="sondage-age"',
+        b'id="sondage-consent"',
+        b'id="sondage-start"',
+        b'id="sondage-next"',
+        b'id="sondage-review-list"',
+        b'id="sondage-submit"',
+        b'assets/consultation-40.js',
+    ),
+    "/projets/projet-nova/sondage.html": (
+        b'id="sondage-privacy-warning"',
+        b'id="sondage-age"',
+        b'id="sondage-consent"',
+        b'id="sondage-start"',
+        b'id="sondage-next"',
+        b'id="sondage-review-list"',
+        b'id="sondage-submit"',
+        b'assets/sondage.js',
+    ),
+    "/projets/projet-nova/boussole-electorale.html": (
+        b'id="compass-start"',
+        b'id="compass-next"',
+        b'id="compass-results"',
+        b'id="compass-results-grid"',
+        b'id="compass-evidence-question-results"',
+        b'assets/boussole-electorale.js',
+    ),
+    "/projets/projet-nova/resultats-sondages.html": (
+        b'id="results-state"',
+        b'id="results-retry"',
+        b'id="results-show-40"',
+        b'id="results-show-64"',
+        b'id="results-question-list"',
+        b'assets/resultats-sondages.js',
+    ),
+}
+
 class NovaHomepage(HTMLParser):
     def __init__(self) -> None:
         super().__init__()
@@ -163,6 +205,18 @@ def verify_nova_home(body: bytes) -> list[str]:
 
 
 
+
+def verify_nova_tool_page(path: str, body: bytes) -> list[str]:
+    """Détecte une page ancienne ou tronquée même si le serveur répond 200."""
+    if not body or len(body) > NOVA_MAX_HTML_BYTES:
+        return [f"Parcours public {path}: HTML absent ou excessif"]
+    try:
+        body.decode("utf-8", errors="strict")
+    except UnicodeError:
+        return [f"Parcours public {path}: HTML UTF-8 non valide"]
+    return [f"Parcours public {path}: composant manquant {marker.decode('ascii')}"
+            for marker in NOVA_TOOL_MARKERS[path] if body.count(marker) != 1]
+
 @dataclass(frozen=True)
 class Reply:
     status: int
@@ -193,8 +247,8 @@ def fetch(url: str) -> Reply:
         path = urlparse(url).path
         if path == "/" + MARKER:
             body = response.read(2049)
-        elif path == NOVA_HOME:
-            # Lire uniquement la page PUBLIQUE, jamais les chemins techniques.
+        elif path == NOVA_HOME or path in NOVA_TOOL_MARKERS:
+            # Lire uniquement les pages PUBLIQUES Nova, jamais les chemins techniques.
             body = response.read(NOVA_MAX_HTML_BYTES + 1)
         else:
             body = b""
@@ -275,6 +329,8 @@ def verify(base: str, getter: Callable[[str], Reply],
             errors.append(f"Parcours public {path}: type MIME non conforme ({content_type or 'absent'})")
         if path == NOVA_HOME and content_type == "text/html":
             errors.extend(verify_nova_home(result.body))
+        if path in NOVA_TOOL_MARKERS and content_type == "text/html":
+            errors.extend(verify_nova_tool_page(path, result.body))
     if release is not None:
         marker_url = base + "/" + MARKER
         try:
@@ -327,6 +383,9 @@ def self_test() -> None:
         path = urlparse(url).path
         if path == NOVA_HOME:
             return Reply(200, content_type="text/html", body=nova_home)
+        if path in NOVA_TOOL_MARKERS:
+            return Reply(200, content_type="text/html",
+                         body=b"<html>" + b"\n".join(NOVA_TOOL_MARKERS[path]) + b"</html>")
         if path in PRIVATE_ROUTES:
             return Reply(404, content_type="text/html")
         mime = "text/html" if path.endswith(("/", ".html")) else {
@@ -357,6 +416,23 @@ def self_test() -> None:
         }.get(path, "text/plain")
         return Reply(200, content_type=mime)
     assert not verify(BASE, fixture), verify(BASE, fixture)
+    # Une page HTTP 200 sans formulaire ou script reste non publiable.
+    for route, markers in NOVA_TOOL_MARKERS.items():
+        for marker in markers:
+            def missing_tool_control(url: str, expected=route, missing=marker) -> Reply:
+                response = fixture(url)
+                if url == BASE + expected:
+                    return Reply(200, content_type="text/html",
+                                 body=response.body.replace(missing, b"MISSING", 1))
+                return response
+            assert any(route in error and "composant manquant" in error
+                       for error in verify(BASE, missing_tool_control)), (
+                "Rupture de page Nova non détectée : " + route
+            )
+        assert verify_nova_tool_page(route, b""), "HTML Nova absent accepté"
+        assert verify_nova_tool_page(route, b"x" * (NOVA_MAX_HTML_BYTES + 1)), (
+            "HTML Nova excessif accepté"
+        )
     # Une page renvoyant 200 sans l'un des trois liens reste NON publiable.
     for marker in ("nova-survey-directory-40", "nova-survey-directory-64",
                    "nova-survey-directory-compass", 'id="consultations"',
