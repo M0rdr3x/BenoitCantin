@@ -92,12 +92,12 @@ class TestsP54P(unittest.TestCase):
         self.assertIsNone(r[2]["dossier"])
     def test_22_localization_synthetic_offsets(self):
         r=self.synthetic_localize()
-        self.assertTrue(all(0<=x["offset_texte_extrait"]<x["longueur_texte_extrait"] for x in r))
+        self.assertTrue(all(0<=x["offset_texte_extrait"]<x["longueur_texte_normalise_nfkc"] for x in r))
     def test_23_no_raw_token_or_context(self):
         r=self.synthetic_localize()
         self.assertTrue(all(set(item)=={
           "index_observation_p54d","source","dossier","pdf_index_zero",
-          "offset_texte_extrait","longueur_texte_extrait",
+          "offset_texte_extrait","longueur_texte_normalise_nfkc",
           "zone_confirmee_par_parseur","classification_indicative",
           "aucune_conclusion_financiere"} for item in r))
     def test_24_wrong_token_count_rejected(self):

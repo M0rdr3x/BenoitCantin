@@ -8,6 +8,7 @@ Sans les deux PDF de hachage P54D identique, aucune position n'est retenue.
 import argparse
 import hashlib
 import json
+import unicodedata
 from pathlib import Path
 import sys
 
@@ -106,6 +107,8 @@ def localize(texts,audit_checker=None):
          and all(type(x) is str and 0<len(x)<=1000000
                  for x in texts.values()),
          "TEXTE_PDF_INVALIDE")
+    normalised={k:unicodedata.normalize("NFKC",v).replace("\u202f"," ")
+                for k,v in texts.items()}
     audit_checker=audit_checker or (
       lambda a,b:context.analyze_text(a,b)[
         "sections_se_rapportent_probablement_au_meme_audit"])
@@ -122,7 +125,7 @@ def localize(texts,audit_checker=None):
                  and item["zone"]==expected["zone"]
                  and p54d.classify(item)==expected["classe"]
                  and type(item["pos"]) is int
-                 and 0<=item["pos"]<len(texts[source]),
+                 and 0<=item["pos"]<len(normalised[source]),
                  "OCCURRENCE_INCOMPATIBLE_AVEC_P54D")
             found.append({
               "index_observation_p54d":idx,
@@ -130,7 +133,7 @@ def localize(texts,audit_checker=None):
               "dossier":expected["dossier"],
               "pdf_index_zero":p54d.PAGES[source],
               "offset_texte_extrait":item["pos"],
-              "longueur_texte_extrait":len(texts[source]),
+              "longueur_texte_normalise_nfkc":len(normalised[source]),
               "zone_confirmee_par_parseur":item["zone"],
               "classification_indicative":expected["classe"],
               "aucune_conclusion_financiere":True,
@@ -213,7 +216,7 @@ def report(cfg,attempt=None):
       "copies_exactes_verifiees":obs["copies_verifiees_par_hachage"],
       "occurrences_localisees_automatiquement":5 if is_confirmed else 0,
       "positions_caracteres_sur_texte_extrait":locations,
-      "limite_offsets":"CHARACTERES_DU_TEXTE_PYPDF_NON_COORDONNEES_VISUELLES",
+      "limite_offsets":"CARACTERES_TEXTE_PYPDF_NORMALISE_NFKC_NON_COORDONNEES_VISUELLES",
       "pdf_sources_deja_attestes_par_emetteur":False,
       "dossiers_p54e_ouverts":4,
       "occurrence_date_probable_non_certifiee":1,
