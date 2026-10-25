@@ -104,11 +104,17 @@ def run_self_tests(text: str) -> None:
         'scan secrets retiré': text.replace('        run: python scripts/validate_no_committed_secrets.py\n', '', 1),
         'audit workflows retiré': text.replace('        run: python scripts/validate_repo_workflow_security.py\n', '', 1),
         'autotest workflows retiré': text.replace('        run: python scripts/validate_repo_workflow_security.py --self-test\n', '', 1),
+        'tests PDF distant retirés': text.replace('        run: node --test tests/test_edge_remote_pdf_stream.cjs\n', '', 1),
+        'contrat PDF public retiré': text.replace('          python scripts/validate_send_game_report_security.py --self-test\n', '', 1),
+        'contrat PDF privé retiré': text.replace('          python scripts/validate_send_player_sheet_security.py --self-test\n', '', 1),
+        'inventaire Edge retiré': text.replace('          python scripts/validate_edge_function_inventory.py\n', '', 1),
         'scan avec filtre de chemins': text.replace('  pull_request:\n', '  pull_request:\n    paths: ["docs/**"]\n', 1),
         'scan non bloquant': text.replace('    timeout-minutes: 10\n', '    timeout-minutes: 10\n    continue-on-error: true\n', 1),
         'limite de temps supprimée': text.replace('    timeout-minutes: 10\n', '', 1),
     }
     for name, mutated in cases.items():
+        if mutated == text:
+            raise SystemExit(f'ERREUR auto-test sans effet: {name}')
         if not validate_text(mutated):
             raise SystemExit(f'ERREUR auto-test garde secrets: mutation non détectée: {name}')
     print(f'OK auto-tests garde secrets: {len(cases)} affaiblissements critiques détectés.')
