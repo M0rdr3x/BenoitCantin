@@ -320,6 +320,21 @@ def main():
                 state="visible", timeout=10_000)
             require(tampered.locator("#sondage-start").is_disabled(),
                     "Sondage 64 démarrable malgré un manifeste falsifié")
+            retry = tampered.locator("#sondage-retry")
+            require(retry.is_visible() and retry.is_enabled(),
+                    "Réessai du corpus 64 introuvable après erreur")
+            tampered.unroute("**/sondage-questions-v1.json", modified_survey)
+            retry.click()
+            tampered.wait_for_load_state("domcontentloaded")
+            require(tampered.locator("#sondage-retry").count() == 0
+                    and tampered.locator("#sondage-introduction [role='alert']").count() == 0,
+                    "Alerte conservée après réessai du corpus 64")
+            tampered.locator("#sondage-age").check()
+            tampered.locator("#sondage-consent").check()
+            tampered.locator("#sondage-start").wait_for(state="visible")
+            tampered.wait_for_function(
+                "() => !document.getElementById('sondage-start').disabled",
+                timeout=15000)
             tampered.close()
             # Un cache/CDN désynchronisé entre le sondage et sa source 64
             # doit bloquer le démarrage, pas poser une question altérée.
