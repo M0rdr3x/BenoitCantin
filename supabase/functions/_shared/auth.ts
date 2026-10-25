@@ -25,8 +25,9 @@ function serverSecretKey() {
         (value) => typeof value === 'string' && value.length > 20
       );
       if (typeof fallback === 'string') return fallback;
-    } catch (error) {
-      console.warn('[SINJIRA auth] SUPABASE_SECRET_KEYS illisible, repli sur la clé legacy.', error);
+    } catch {
+      // L'exception JSON peut inclure un fragment de la valeur secrète.
+      console.warn('[SINJIRA auth] Configuration des clés illisible; repli contrôlé.');
     }
   }
   return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
@@ -80,9 +81,9 @@ async function assertAdminMfa(context: Awaited<ReturnType<typeof authenticatedCo
   });
   if (adminError || !isAdmin) throw new Error('ADMIN_REQUIRED');
 
-  const aal = await assuranceLevel(context).catch((error) => {
-    console.error('[SINJIRA admin auth] état MFA indisponible', error);
-    throw error;
+  const aal = await assuranceLevel(context).catch(() => {
+    // Aucun détail fournisseur ou jeton d'authentification dans les logs.
+    throw new Error('MFA_STATE_UNAVAILABLE');
   });
   // Sécurité des 7 fonctions admin : AAL2 obligatoire, même si la
   // personne n'a pas encore enregistré de facteur MFA (aucun repli AAL1).
@@ -101,7 +102,7 @@ async function sensitiveStepUpEnabled(context: Awaited<ReturnType<typeof authent
     .eq('user_id', user.id)
     .maybeSingle();
   if (error) {
-    console.error('[SINJIRA sensitive auth] préférences de sécurité indisponibles', error);
+    console.error('[SINJIRA sensitive auth] préférences de sécurité indisponibles');
     throw new Error('SECURITY_STATE_UNAVAILABLE');
   }
   return data?.sensitive_step_up !== false;
@@ -110,9 +111,8 @@ async function sensitiveStepUpEnabled(context: Awaited<ReturnType<typeof authent
 async function assertSensitiveMfa(context: Awaited<ReturnType<typeof authenticatedContext>>) {
   if (!(await sensitiveStepUpEnabled(context))) return null;
 
-  const aal = await assuranceLevel(context).catch((error) => {
-    console.error('[SINJIRA sensitive auth] état MFA indisponible', error);
-    throw error;
+  const aal = await assuranceLevel(context).catch(() => {
+    throw new Error('MFA_STATE_UNAVAILABLE');
   });
   if (aal.nextLevel !== 'aal2') throw new Error('MFA_SETUP_REQUIRED');
   if (aal.currentLevel !== 'aal2') throw new Error('MFA_REQUIRED');
