@@ -78,6 +78,8 @@ def run_self_tests(text: str) -> None:
         'auto-test retiré': text.replace('        run: python scripts/validate_secret_guard_workflow_security.py --self-test\n', '', 1),
         'auto-test secrets retiré': text.replace('        run: python scripts/validate_no_committed_secrets.py --self-test\n', '', 1),
         'scan secrets retiré': text.replace('        run: python scripts/validate_no_committed_secrets.py\n', '', 1),
+        'audit workflows retiré': text.replace('        run: python scripts/validate_repo_workflow_security.py\n', '', 1),
+        'autotest workflows retiré': text.replace('        run: python scripts/validate_repo_workflow_security.py --self-test\n', '', 1),
         'scan avec filtre de chemins': text.replace('  pull_request:\n', '  pull_request:\n    paths: ["docs/**"]\n', 1),
         'scan non bloquant': text.replace('    timeout-minutes: 10\n', '    timeout-minutes: 10\n    continue-on-error: true\n', 1),
         'limite de temps supprimée': text.replace('    timeout-minutes: 10\n', '', 1),
