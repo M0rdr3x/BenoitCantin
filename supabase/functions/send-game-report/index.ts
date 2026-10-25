@@ -7,6 +7,8 @@ import { optionalUser, serviceClient } from '../_shared/auth.ts';
 const FUNCTION_VERSION='24.5.2';
 const MAX_REQUEST_BYTES=220_000;
 const MAX_TEMPLATE_BYTES=15*1024*1024;
+// Limiter aussi l'artefact APRÈS sérialisation du PDF, avant Base64/réponse.
+const MAX_GENERATED_PDF_BYTES=20*1024*1024;
 // Intégration préparée, jamais activée implicitement. Une future activation exige
 // une décision explicite distincte sur le fournisseur et les coûts.
 const PAID_EXTERNAL_SERVICES_ENABLED=false;
@@ -138,7 +140,10 @@ async function buildPdf(sheet: Record<string, string | boolean>) {
     // Certaines versions de lecteurs gèrent les apparences elles-mêmes.
   }
 
-  return await pdf.save();
+  const output=new Uint8Array(await pdf.save());
+  if(output.byteLength===0||output.byteLength>MAX_GENERATED_PDF_BYTES)
+    throw new Error('REPORT_OUTPUT_TOO_LARGE');
+  return output;
 }
 
 async function recordDelivery(userId: string, sessionId: unknown, delivery: 'download' | 'email') {
@@ -168,6 +173,11 @@ Deno.serve(async (req) => {
     if (parsed.response) return parsed.response;
     const body = parsed.body || {};
     const mode = body?.mode === 'email' ? 'email' : 'download';
+    // Ne JAMAIS récupérer le modèle PDF ni lancer pdf-lib si l'envoi est désactivé.
+    // Ce mode public était refusé seulement après les opérations coûteuses.
+    if (mode === 'email' && !PAID_EXTERNAL_SERVICES_ENABLED) {
+      return privateJson({ ok:false, error:'Le transport courriel externe est préparé mais désactivé. Téléchargez le PDF directement.', code:'PAID_EXTERNAL_SERVICE_DISABLED', function_version:FUNCTION_VERSION }, 503);
+    }
     const user = await optionalUser(req);
     const sheet = sanitizeSheet(body?.sheet_data || {});
     const pdfBytes = await buildPdf(sheet);
