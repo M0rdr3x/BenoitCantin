@@ -16,7 +16,7 @@ REQUIRED = {
     'mode gratuit compilé': 'const PAID_EXTERNAL_SERVICES_ENABLED=false;',
     'code mode gratuit': "code:'PAID_EXTERNAL_SERVICE_DISABLED'",
     'JSON explicite': "contentType.startsWith('application/json')",
-    'lecture corps texte': 'const raw=await req.text();',
+    'lecture corps en flux borné': 'const raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);',
     'mesure UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
     'réponse privée': "'Cache-Control':'private, no-store, max-age=0'",
     'pragma no-cache': "'Pragma':'no-cache'",
@@ -37,6 +37,7 @@ FORBIDDEN = {
     'client Supabase local': 'createClient(',
     'auth artisanale': 'function userFrom(',
     'JSON direct non borné': 'await req.json()',
+    'texte direct non borné': 'await req.text()',
     'lecture réponse fournisseur': 'await sent.text()',
     'log erreur brute court': 'console.error(e)',
     'log objet erreur brut': 'console.error(error)',
@@ -85,7 +86,7 @@ def validate_text(source: str, config: str) -> list[str]:
     require(errors, provider_pos > parse_pos,
             'Le fournisseur externe doit rester derrière auth, garde payant et validation du corps.')
 
-    raw_pos = source.find('const raw=await req.text();')
+    raw_pos = source.find('const raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);')
     utf8_pos = source.find('new TextEncoder().encode(raw).byteLength')
     json_pos = source.find("JSON.parse(raw||'{}')")
     require(errors, raw_pos >= 0 and utf8_pos > raw_pos and json_pos > utf8_pos,
@@ -169,7 +170,8 @@ def self_test() -> None:
         'service payant activé': source.replace('PAID_EXTERNAL_SERVICES_ENABLED=false', 'PAID_EXTERNAL_SERVICES_ENABLED=true', 1),
         'garde payant après corps': source.replace(paid_block, moved_paid_block, 1),
         'requiredUser retiré': source.replace('const user=await requiredUser(req);', "const user={email:'bypass@example.test'};", 1),
-        'req.json direct': source.replace('const raw=await req.text();', 'const raw=JSON.stringify(await req.json());', 1),
+        'req.json direct': source.replace('const raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);', 'const raw=JSON.stringify(await req.json());', 1),
+        'req.text direct': source.replace('const raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);', 'const raw=await req.text();', 1),
         'content-type affaibli': source.replace("contentType.startsWith('application/json')", "contentType.startsWith('text/plain')", 1),
         'limite requête augmentée': source.replace('MAX_REQUEST_BYTES=220_000;', 'MAX_REQUEST_BYTES=2_200_000;', 1),
         'mesure UTF-8 retirée': source.replace('new TextEncoder().encode(raw).byteLength', 'raw.length', 1),
