@@ -7,6 +7,7 @@ import { requiredUser } from '../_shared/auth.ts';
 const FUNCTION_VERSION='24.5.54';
 const MAX_REQUEST_BYTES=220_000;
 const MAX_TEMPLATE_BYTES=15*1024*1024;
+const MAX_GENERATED_PDF_BYTES=20*1024*1024;
 const MAX_TEXT=6000;
 const PAID_EXTERNAL_SERVICES_ENABLED=false;
 const TEMPLATE_ORIGIN='https://www.benoitcantin.com';
@@ -102,7 +103,10 @@ async function buildPlayerSheet(mode:'solo'|'standard',fields:Record<string,unkn
     // Certains lecteurs PDF régénèrent eux-mêmes les apparences.
   }
 
-  return await pdf.save();
+  const output=new Uint8Array(await pdf.save());
+  if(output.byteLength===0||output.byteLength>MAX_GENERATED_PDF_BYTES)
+    throw new Error('PLAYER_SHEET_OUTPUT_TOO_LARGE');
+  return output;
 }
 
 Deno.serve(async(req)=>{
