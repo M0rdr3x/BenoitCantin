@@ -180,6 +180,9 @@ def check(root,built=None):
             browser_code.count("signal:controller.signal")!=1 or
             browser_code.count("clearTimeout(timer)")!=1):
         bad.append("Expiration réseau obligatoire des résultats publics neutralisée")
+    if (browser_code.count("async function readLimitedBytes(response,controller) {")!=1 or
+            browser_code.count("const bytes=await readLimitedBytes(response,controller);")!=1):
+        bad.append("Lecteur réseau public borné absent ou non utilisé")
     if (browser_code.count("response.body.getReader()")!=1 or
             browser_code.count("reader.read()")!=1 or
             browser_code.count("reader.releaseLock()")!=1 or
@@ -344,7 +347,10 @@ def self_test():
         browser.write_text(original_client, "utf-8")
         assert not check(Path(name))
         for original_gate, bypass in (
-            ("readLimitedBytes(response,controller)", "response.json()"),
+            ("async function readLimitedBytes(response,controller) {",
+             "async function readUnboundedBytes(response,controller) {"),
+            ("const bytes=await readLimitedBytes(response,controller);",
+             "const bytes=await response.arrayBuffer();"),
             ("response.body.getReader()", "response.arrayBuffer()"),
             ("reader.read()", "Promise.resolve({done:true})"),
             ("reader.releaseLock()", "void reader"),
@@ -358,8 +364,8 @@ def self_test():
             altered=original_client.replace(original_gate,bypass,1)
             assert altered!=original_client, "Mutation de flux public inactive"
             browser.write_text(altered, "utf-8")
-            assert any(("Borne réseau" in err or "Contrôle d'intégrité" in err)
-                       for err in check(Path(name))), (
+            assert any(("Borne réseau" in err or "Contrôle d'intégrité" in err
+                        or "Lecteur réseau" in err) for err in check(Path(name))), (
                 "Flux public devenu non borné : "+original_gate
             )
         browser.write_text(original_client, "utf-8")
