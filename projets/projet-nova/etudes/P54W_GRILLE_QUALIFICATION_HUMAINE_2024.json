@@ -1,0 +1,100 @@
+{
+  "schema_version": "P54W-1",
+  "date_reference": "2026-10-25",
+  "exercice": 2024,
+  "source_jalons": [
+    "P54T",
+    "P54U",
+    "P54V"
+  ],
+  "source_p54p_run": 40151185184,
+  "source_p54p_artifact": 12583661231,
+  "refs": [
+    "P54E-V-001",
+    "P54E-M-001",
+    "P54O-DATE-001",
+    "P54E-M-002",
+    "P54E-M-003"
+  ],
+  "roles": [
+    "LECTEUR_DECLARE",
+    "CONTRE_LECTEUR_DECLARE"
+  ],
+  "nature_possible": [
+    "INDETERMINE",
+    "ANNEE_DATE_POSSIBLE",
+    "FOLIO_PAGINATION_POSSIBLE",
+    "REFERENCE_NORMATIVE_POSSIBLE",
+    "IDENTIFIANT_POSSIBLE",
+    "VALEUR_NON_MONETAIRE_POSSIBLE",
+    "MONTANT_POTENTIEL_NON_ATTESTE"
+  ],
+  "etats_revue": [
+    "NON_EXAMINE",
+    "EXAMINE_SUR_PIECE_NON_ATTESTE",
+    "SUSPENDU"
+  ],
+  "reserves": [
+    "AUCUNE_DECLAREE_NON_VERIFIEE",
+    "CONTEXTE_INSUFFISANT",
+    "ORIGINAL_ABSENT",
+    "UNITE_COLONNE_A_VERIFIER",
+    "CONTRADICTION_OUVERTE",
+    "SUSPENSION_DEMANDEE"
+  ],
+  "statuts_suivi": [
+    "NON_EXAMINE",
+    "REVUE_PARTIELLE_NON_ATTESTEE",
+    "DEUX_REVUES_DECLARATIVES_NON_ATTESTEES",
+    "RESERVE_OUVERTE",
+    "CONTRADICTION_DECLAREE_NON_RESOLUE",
+    "SUSPENSION_MAINTENUE"
+  ],
+  "controles_reference": [
+    "IDENTIFIER_SOURCE_ORIGINALE",
+    "RETROUVER_OCCURRENCE_NFKC",
+    "COMPARER_SUR_PAGE_VISUELLE",
+    "QUALIFIER_NATURE_SUR_PIECE",
+    "DISTINGUER_DATE_FOLIO_REFERENCE_VALEUR",
+    "VALIDER_UNITE_EXERCICE_COLONNE_SI_PERTINENT",
+    "CONSERVER_RESERVES_ET_DESACCORDS",
+    "CONTRE_REVUE_INDEPENDANTE"
+  ],
+  "protections": {
+    "contextes_et_jetons_prives_hors_git": true,
+    "aucun_texte_brut_dans_bilan_public": true,
+    "empreinte_de_fiche_p54v_recalculee": true,
+    "positions_publiques_p54t_verifiees": true,
+    "identites_pseudonymes_non_authentifiees": true,
+    "double_revue_declarative_seulement": true,
+    "desaccords_non_resolus_automatiquement": true,
+    "suspensions_prioritaires": true,
+    "date_probable_non_finalisee": true,
+    "qualification_monetaires_non_certifiante": true,
+    "aucune_economie_fiscale_certifiee": true,
+    "consolidation_ville_rtc_somhac_sans_double_compte": true,
+    "emploi_et_services_proteges": true,
+    "quebec_canada_et_souverain_hypothetique_separes": true,
+    "aucun_contact_avec_autorites": true,
+    "aucun_deploiement_ni_transmission": true,
+    "aucune_fusion_main": true,
+    "sinjira_inchange": true,
+    "dossiers_p54e_non_clos": true,
+    "no_go_automatique": true
+  },
+  "etat_initial": {
+    "occurrences": 5,
+    "dossiers_p54e_ouverts": 4,
+    "occurrence_date_probable_non_certifiee": 1,
+    "positions_role_potentielles": 10,
+    "revues_humaines_authentifiees": 0,
+    "signatures_professionnelles_authentifiees": 0,
+    "conclusions_financieres_certifiees": 0,
+    "controles_p54b_non_attestes": 96,
+    "controles_p54c_non_attestes": 8,
+    "taches_p54n_non_attestees": 40,
+    "blocages_p54o_non_leves": 10,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
