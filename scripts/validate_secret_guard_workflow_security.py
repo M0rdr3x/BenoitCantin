@@ -81,6 +81,13 @@ def validate_text(text: str) -> list[str]:
     ):
         require(errors, text.count('          ' + gate + '\n') == 1,
                 'contrat de sécurité PDF/Edge non exécuté: ' + gate)
+    for gate in (
+        'python scripts/validate_edge_pdf_output_budget.py --self-test',
+        'python scripts/validate_edge_pdf_output_budget.py',
+        'node --test tests/test_edge_pdf_output_budget.cjs',
+    ):
+        require(errors, text.count('          ' + gate + '\n') == 1,
+                'garde PDF sortant / mode courriel non exécuté: ' + gate)
     require(errors, text.count('        run: node --test tests/test_edge_remote_pdf_stream.cjs\n') == 1,
             'tests PDF distants bornés obligatoires absents')
     require(errors, text.count('        run: node --test tests/test_admin_request_body_bounds.cjs\n') == 1,
