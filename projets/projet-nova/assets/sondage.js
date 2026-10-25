@@ -88,6 +88,14 @@
     $(target).textContent = text;
   }
   function refreshStart() {
+    // Retirer l'accord ou l'attestation 18+ pendant une démonstration
+    // supprime immédiatement les choix sensibles encore en mémoire.
+    if (!eligible() && !COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED &&
+        (!$('sondage-questionnaire').hidden || !$('sondage-finish').hidden)) {
+      clearLocalDemo();
+      $('sondage-titre').focus({preventScroll:true});
+      return;
+    }
     $('sondage-start').disabled = !eligible() || questions.length !== 64;
   }
   function renderQuestion() {
