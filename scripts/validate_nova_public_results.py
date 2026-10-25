@@ -172,13 +172,25 @@ def check(root,built=None):
     if browser_code.count("const APPROVED_MANIFEST_SHA256 = Object.freeze({")!=1 or (
             "observed !== approvedDigest" not in browser_code or
             "globalThis.crypto?.subtle" not in browser_code or
-            "response.arrayBuffer()" not in browser_code):
+            "readLimitedBytes(response,controller)" not in browser_code or
+            "new TextDecoder('utf-8',{fatal:true}).decode(bytes)" not in browser_code):
         bad.append("Contrôle d'intégrité des questions publiques absent ou neutralisé")
     if (browser_code.count("new AbortController()")!=1 or
             browser_code.count("setTimeout(()=>controller.abort(),15000)")!=1 or
             browser_code.count("signal:controller.signal")!=1 or
             browser_code.count("clearTimeout(timer)")!=1):
         bad.append("Expiration réseau obligatoire des résultats publics neutralisée")
+    if (browser_code.count("response.body.getReader()")!=1 or
+            browser_code.count("reader.read()")!=1 or
+            browser_code.count("reader.releaseLock()")!=1 or
+            browser_code.count("ArrayBuffer.isView(value)")!=1 or
+            browser_code.count("value.BYTES_PER_ELEMENT!==1")!=1 or
+            browser_code.count("total+=value.byteLength")!=1 or
+            browser_code.count("total>65536")!=1 or
+            browser_code.count("Number(declared)>65536")!=1 or
+            browser_code.count("controller.abort()")!=2 or
+            browser_code.count("bytes.set(part,offset)")!=1):
+        bad.append("Borne réseau publique ou contrôle des fragments neutralisé")
     # Une reprise ne doit ni conserver un bilan périmé ni réactiver une
     # diffusion d'agrégats non revue lors d'une nouvelle requête.
     if (browser_code.count("retry.hidden=!loadFailed")!=1 or
@@ -328,6 +340,27 @@ def self_test():
             browser.write_text(altered, "utf-8")
             assert any("Expiration réseau" in err for err in check(Path(name))), (
                 "Le navigateur pourrait attendre sans fin : "+original_gate
+            )
+        browser.write_text(original_client, "utf-8")
+        assert not check(Path(name))
+        for original_gate, bypass in (
+            ("readLimitedBytes(response,controller)", "response.json()"),
+            ("response.body.getReader()", "response.arrayBuffer()"),
+            ("reader.read()", "Promise.resolve({done:true})"),
+            ("reader.releaseLock()", "void reader"),
+            ("ArrayBuffer.isView(value)", "true"),
+            ("value.BYTES_PER_ELEMENT!==1", "false"),
+            ("total+=value.byteLength", "total+=0"),
+            ("total>65536", "false"),
+            ("Number(declared)>65536", "false"),
+            ("bytes.set(part,offset)", "void part"),
+        ):
+            altered=original_client.replace(original_gate,bypass,1)
+            assert altered!=original_client, "Mutation de flux public inactive"
+            browser.write_text(altered, "utf-8")
+            assert any(("Borne réseau" in err or "Contrôle d'intégrité" in err)
+                       for err in check(Path(name))), (
+                "Flux public devenu non borné : "+original_gate
             )
         browser.write_text(original_client, "utf-8")
         assert not check(Path(name))
