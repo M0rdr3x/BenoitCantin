@@ -59,6 +59,8 @@ def validate_text(text: str) -> list[str]:
             'autotest des workflows GitHub absent/dupliqué')
     require(errors, text.count('        run: python scripts/validate_repo_workflow_security.py\n') == 1,
             'audit des workflows GitHub absent/dupliqué')
+    require(errors, text.count('        run: node --test tests/test_edge_error_log_redaction.cjs\n') == 1,
+            'audit de confidentialité des journaux Edge absent')
     require(errors, text.count('        run: python scripts/validate_no_committed_secrets.py --self-test\n') == 1,
             'autotest exhaustif du garde secrets absent/dupliqué')
     require(errors, text.count('          python scripts/validate_admin_mfa_v24_4_67.py\n') == 1,
