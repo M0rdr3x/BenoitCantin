@@ -5,7 +5,7 @@ on:
   # Sur une PR très volumineuse, pull_request.synchronize verrait sinon tout
   # le diff de la PR et relancerait les tests pour des changements non Nova.
   push:
-    branches: [integration/sinjira-catalogues-pages-securisees-2026-10-13]
+    branches: [integration/sinjira-catalogues-pages-securisees-2026-10-13, audit/nova-40-64-boussole-2026-10-25]
     paths:
       - 'projets/projet-nova/**'
       - 'tests/e2e/test_nova_survey_visual.py'
@@ -23,7 +23,7 @@ permissions:
   contents: read
 
 # Ne pas interrompre une preuve 40/64/Boussole déjà en exécution :
-# cette très grande PR peut recevoir plusieurs autres commits pendant l'audit.
+# la branche d'audit reste figée et la PR d'intégration évolue en parallèle.
 concurrency:
   group: nova-civic-preview-${{ github.sha }}
   cancel-in-progress: false
