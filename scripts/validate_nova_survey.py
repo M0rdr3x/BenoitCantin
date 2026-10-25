@@ -62,7 +62,9 @@ def check_text(payload: dict[str, str]) -> list[str]:
            "globalThis.crypto?.subtle", "readBoundedManifest(response,controller)",
            "readBoundedManifest(compassResponse,controller)",
            "response.body.getReader()", "reader.read()", "reader.releaseLock()",
-           "total>65536", "controller.abort()", "result.set(part,offset)",
+           "ArrayBuffer.isView(value)", "value.BYTES_PER_ELEMENT!==1",
+           "total+=value.byteLength", "total>65536",
+           "controller.abort()", "result.set(part,offset)",
            "Number(declared)>65536", "crypto.subtle.digest('SHA-256', manifestBytes)",
            "observed !== APPROVED_MANIFEST_SHA256",
            "TextDecoder('utf-8', { fatal: true })")
