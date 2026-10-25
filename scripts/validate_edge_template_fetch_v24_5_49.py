@@ -9,6 +9,7 @@ CONFIG=ROOT/'supabase/config.toml'
 LEDGER=ROOT/'supabase/production-migration-ledger.txt'
 DOC=ROOT/'EDGE_TEMPLATE_FETCH_HARDENING_V24_5_49.md'
 INVENTORY=ROOT/'scripts/validate_edge_function_inventory.py'
+PDF_READER=ROOT/'supabase/functions/_shared/bounded-pdf-fetch.mjs'
 
 
 def read(path:Path)->str:
@@ -17,7 +18,7 @@ def read(path:Path)->str:
 
 def main()->int:
     errors=[]
-    for path in (REPORT,CONFIG,LEDGER,DOC,INVENTORY):
+    for path in (REPORT,CONFIG,LEDGER,DOC,INVENTORY,PDF_READER):
         if not path.exists(): errors.append(f'Fichier absent: {path.relative_to(ROOT)}')
     if errors:
         for error in errors: print('- '+error)
@@ -26,6 +27,7 @@ def main()->int:
     report=read(REPORT)
     doc=read(DOC).lower()
     inventory=read(INVENTORY)
+    pdf_reader=read(PDF_READER)
     config=tomllib.loads(read(CONFIG))
     ledger_rows=[x.strip() for x in read(LEDGER).splitlines() if x.strip() and not x.startswith('#')]
 
@@ -40,11 +42,8 @@ def main()->int:
         '!url.pathname.startsWith(TEMPLATE_PATH_PREFIX)',
         "!url.pathname.toLowerCase().endsWith('.pdf')",
         'url.username || url.password || url.search || url.hash',
-        "redirect:'error'",
-        "cache:'no-store'",
-        'declared>MAX_TEMPLATE_BYTES',
-        'bytes.byteLength===0||bytes.byteLength>MAX_TEMPLATE_BYTES',
-        "String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-'",
+        "import { fetchBoundedPdf } from '../_shared/bounded-pdf-fetch.mjs';",
+        "fetchBoundedPdf(reportTemplateUrl(),MAX_TEMPLATE_BYTES)",
         'REPORT_TEMPLATE_URL_NOT_ALLOWED',
         'REPORT_TEMPLATE_TOO_LARGE',
         'REPORT_TEMPLATE_NOT_PDF',
@@ -67,12 +66,19 @@ def main()->int:
     inventory_markers=[
         'MAX_TEMPLATE_BYTES=15*1024*1024',
         "TEMPLATE_ORIGIN='https://www.benoitcantin.com'",
-        "redirect:'error'",
-        'REPORT_TEMPLATE_TOO_LARGE',
-        '%PDF-',
+        "fetchBoundedPdf(reportTemplateUrl(),MAX_TEMPLATE_BYTES)",
     ]
     for marker in inventory_markers:
         if marker not in inventory: errors.append(f'Inventaire Edge non aligné V24.5.49: {marker}')
+
+    # La lecture à distance doit être bornée avant le chargement en mémoire.
+    for marker in (
+        "redirect:'error'", "cache:'no-store'", "Number(declared)>maxBytes",
+        "total>maxBytes", "chunks>4096", "Promise.race", "controller.abort()",
+        "String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-'",
+    ):
+        if marker not in pdf_reader:
+            errors.append(f'Lecteur PDF distant non borné ou détourné: {marker}')
 
     # V24.5.49 est un durcissement Edge historique sans migration SQL propre.
     baseline='20260831004411 sinjira_v24_5_46_preorder_uuid_output_hardening'
