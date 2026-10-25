@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import sys
 import time
+from html.parser import HTMLParser
 from dataclasses import dataclass
 from typing import Callable, Mapping
 from urllib.error import HTTPError, URLError
@@ -87,6 +88,61 @@ MIME_HINTS = {
 USER_AGENT = "SINJIRA-Pages-Publication-Audit/1.0"
 RELEASE_ATTEMPTS = 13
 RELEASE_PAUSE_SECONDS = 10
+# Contrôler le HTML Nova réellement en production, et pas seulement ses URLs.
+NOVA_HOME = "/projets/projet-nova/"
+NOVA_MAX_HTML_BYTES = 196608
+NOVA_NAV = {
+    "nova-survey-directory-40": "consultation-40.html",
+    "nova-survey-directory-64": "sondage.html",
+    "nova-survey-directory-compass": "boussole-electorale.html",
+}
+NOVA_ICONS = {
+    "assets/nova-sondage-icone.webp": 2,
+    "../../assets/media/nova-boussole-electorale-v2.webp": 1,
+}
+
+
+class NovaHomepage(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.ids: list[str] = []
+        self.links: list[tuple[str, str | None]] = []
+        self.images: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attr = dict(attrs)
+        if attr.get("id"):
+            self.ids.append(attr["id"])
+        if tag == "a" and attr.get("id"):
+            self.links.append((attr["id"], attr.get("href")))
+        if tag == "img" and attr.get("src"):
+            self.images.append(attr["src"])
+
+
+def verify_nova_home(body: bytes) -> list[str]:
+    if not body or len(body) > NOVA_MAX_HTML_BYTES:
+        return ["Accueil Nova : réponse HTML absente ou trop volumineuse"]
+    try:
+        source = body.decode("utf-8", errors="strict")
+        html = NovaHomepage()
+        html.feed(source)
+        html.close()
+    except (UnicodeError, ValueError) as exc:
+        return ["Accueil Nova : HTML non valide (" + type(exc).__name__ + ")"]
+    errors: list[str] = []
+    if html.ids.count("consultations") != 1:
+        errors.append("Accueil Nova : section #consultations absente ou dupliquée")
+    for control, destination in NOVA_NAV.items():
+        links = [href for name, href in html.links if name == control]
+        if links != [destination]:
+            errors.append("Accueil Nova : bouton " + control + " absent ou mal orienté")
+    for icon, count in NOVA_ICONS.items():
+        if html.images.count(icon) < count:
+            errors.append("Accueil Nova : illustration manquante " + icon)
+    if "collecte fermée" not in source:
+        errors.append("Accueil Nova : avertissement sur la collecte fermée absent")
+    return errors
+
 
 
 @dataclass(frozen=True)
@@ -116,7 +172,14 @@ def fetch(url: str) -> Reply:
         return Reply(exc.code, exc.headers.get("Location", ""),
                      exc.headers.get("Content-Type", ""))
     with response:
-        body = response.read(2049) if urlparse(url).path == "/" + MARKER else b""
+        path = urlparse(url).path
+        if path == "/" + MARKER:
+            body = response.read(2049)
+        elif path == NOVA_HOME:
+            # Lire uniquement la page PUBLIQUE, jamais les chemins techniques.
+            body = response.read(NOVA_MAX_HTML_BYTES + 1)
+        else:
+            body = b""
         return Reply(response.status, response.headers.get("Location", ""),
                      response.headers.get("Content-Type", ""), body)
 
@@ -192,6 +255,8 @@ def verify(base: str, getter: Callable[[str], Reply],
             errors.append(f"Parcours public {path}: type MIME HTML inattendu")
         if path in MIME_HINTS and content_type not in MIME_HINTS[path]:
             errors.append(f"Parcours public {path}: type MIME non conforme ({content_type or 'absent'})")
+        if path == NOVA_HOME and content_type == "text/html":
+            errors.extend(verify_nova_home(result.body))
     if release is not None:
         marker_url = base + "/" + MARKER
         try:
@@ -229,8 +294,21 @@ def self_test() -> None:
     assert "/supabase/functions/get-private-book-url/index.ts" in PRIVATE_ROUTES
     assert "/supabase/tests/license_redemption_security_a1.test.sql" in PRIVATE_ROUTES
     assert "/mobile-native/package.json" in PRIVATE_ROUTES
+    nova_home = (
+        '<section id="consultations">'
+        '<a id="nova-survey-directory-40" href="consultation-40.html">40</a>'
+        '<a id="nova-survey-directory-64" href="sondage.html">64</a>'
+        '<a id="nova-survey-directory-compass" href="boussole-electorale.html">Boussole</a>'
+        '<img src="assets/nova-sondage-icone.webp">'
+        '<img src="assets/nova-sondage-icone.webp">'
+        '<img src="../../assets/media/nova-boussole-electorale-v2.webp">'
+        '<p>collecte fermée</p></section>'
+    ).encode("utf-8")
+    assert not verify_nova_home(nova_home)
     def fixture(url: str) -> Reply:
         path = urlparse(url).path
+        if path == NOVA_HOME:
+            return Reply(200, content_type="text/html", body=nova_home)
         if path in PRIVATE_ROUTES:
             return Reply(404, content_type="text/html")
         mime = "text/html" if path.endswith(("/", ".html")) else {
@@ -252,6 +330,29 @@ def self_test() -> None:
         }.get(path, "text/plain")
         return Reply(200, content_type=mime)
     assert not verify(BASE, fixture), verify(BASE, fixture)
+    # Une page renvoyant 200 sans l'un des trois liens reste NON publiable.
+    for marker in ("nova-survey-directory-40", "nova-survey-directory-64",
+                   "nova-survey-directory-compass", 'id="consultations"',
+                   "collecte fermée", "../../assets/media/nova-boussole-electorale-v2.webp"):
+        def missing_on_home(url: str, target=marker) -> Reply:
+            if url == BASE + NOVA_HOME:
+                body = nova_home.replace(target.encode("utf-8"), b"REMOVED")
+                return Reply(200, content_type="text/html", body=body)
+            return fixture(url)
+        assert any("Accueil Nova" in issue for issue in verify(BASE, missing_on_home)), (
+            "Régression non détectée sur l'accueil Nova : " + marker
+        )
+    def misleading_link(url: str) -> Reply:
+        if url == BASE + NOVA_HOME:
+            return Reply(200, content_type="text/html", body=nova_home.replace(
+                b'href="sondage.html"', b'href="consultation-40.html"'))
+        return fixture(url)
+    assert any("nova-survey-directory-64" in issue
+               for issue in verify(BASE, misleading_link)), "Lien du sondage 64 erroné"
+    assert verify_nova_home(b""), "Page Nova absente acceptée"
+    assert verify_nova_home(b"x" * (NOVA_MAX_HTML_BYTES + 1)), (
+        "Page Nova excessivement grande acceptée"
+    )
     def leak(url: str) -> Reply:
         if url.endswith(PRIVATE_ROUTES[0]):
             return Reply(200, content_type="text/plain")
