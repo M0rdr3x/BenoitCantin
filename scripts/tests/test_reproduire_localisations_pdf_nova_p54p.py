@@ -178,6 +178,9 @@ class TestsP54P(unittest.TestCase):
         r=self.synthetic_verify()
         self.assertEqual(m.report(self.config,r)["occurrences_localisees_automatiquement"],5)
         r["cinq_positions_reproduites"]=False
+        r["statut"]="NON_REPRODUIT"
+        r["positions"]=None
+        r["sources"]["ville"]="CONTEXTE_OU_EXTRACTION_INCOHERENTE"
         self.assertEqual(m.report(self.config,r)["occurrences_localisees_automatiquement"],0)
         self.assertIsNone(m.report(self.config,r)["positions_caracteres_sur_texte_extrait"])
     def test_38_cli_baseline_neutral(self):
@@ -207,6 +210,40 @@ class TestsP54P(unittest.TestCase):
         self.assertFalse(m.report(self.config)["pdf_sources_deja_attestes_par_emetteur"])
     def test_44_false_client_saving_denied(self):
         self.assertIsNone(m.report(self.config)["economies_certifiees_cad"])
+
+    def test_44a_public_report_extra_raw_token_refused(self):
+        r=self.synthetic_verify()
+        r["positions"][0]["token_brut"]="SENSITIVE"
+        with self.assertRaises(ValueError):m.report(self.config,r)
+    def test_44b_public_report_extra_context_refused(self):
+        r=self.synthetic_verify()
+        r["positions"][0]["contexte_local"]="SENSITIVE"
+        with self.assertRaises(ValueError):m.report(self.config,r)
+    def test_44c_public_report_wrong_page_refused(self):
+        r=self.synthetic_verify()
+        r["positions"][0]["pdf_index_zero"]=777
+        with self.assertRaises(ValueError):m.report(self.config,r)
+    def test_44d_public_report_duplicate_offset_refused(self):
+        r=self.synthetic_verify()
+        r["positions"][4]["offset_texte_extrait"]=r["positions"][3]["offset_texte_extrait"]
+        with self.assertRaises(ValueError):m.report(self.config,r)
+    def test_44e_public_report_incomplete_positions_refused(self):
+        r=self.synthetic_verify()
+        r["positions"].pop()
+        with self.assertRaises(ValueError):m.report(self.config,r)
+    def test_44f_public_report_falsely_verified_refused(self):
+        r=self.synthetic_verify()
+        r["copies_verifiees_par_hachage"]=1
+        with self.assertRaises(ValueError):m.report(self.config,r)
+    def test_44g_public_report_forged_success_without_positions_refused(self):
+        r=m.baseline()
+        r["statut"]="REPRODUCTION_TECHNIQUE_SANS_ATTESTATION"
+        r["cinq_positions_reproduites"]=True
+        with self.assertRaises(ValueError):m.report(self.config,r)
+    def test_44h_public_report_bare_secret_field_refused(self):
+        r=m.baseline()
+        r["nom_professionnel"]="SENSITIVE"
+        with self.assertRaises(ValueError):m.report(self.config,r)
 
 def guard(key):
     def run(self):self.assertTrue(self.config["protections"][key])

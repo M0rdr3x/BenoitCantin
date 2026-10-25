@@ -204,8 +204,73 @@ def baseline():
        "positions":None,
     }
 
+def validated_public_attempt(obs):
+    """Enforce a closed schema so raw tokens can never enter public reports."""
+    need(type(obs) is dict and set(obs)=={
+       "statut","sources","copies_verifiees_par_hachage",
+       "cinq_positions_reproduites","positions",
+    },"BILAN_SOURCE_CHAMPS_NON_ADMIS")
+    states=obs["sources"]
+    need(type(states) is dict and set(states)==set(NAMES)
+         and all(type(states[k]) is str and states[k] in STATE
+                 for k in NAMES),
+         "STATUT_SOURCE_NON_ADMISSIBLE")
+    count=obs["copies_verifiees_par_hachage"]
+    yes=obs["cinq_positions_reproduites"]
+    need(type(count) is int and 0<=count<=2
+         and type(yes) is bool
+         and type(obs["statut"]) is str,
+         "COMPTE_COPIES_OU_REPRODUCTION_INVALIDE")
+    if yes:
+        need(obs["statut"]=="REPRODUCTION_TECHNIQUE_SANS_ATTESTATION"
+             and count==2
+             and all(states[k]=="REPRODUCTION_TECHNIQUE_SANS_ATTESTATION"
+                     for k in NAMES),
+             "REPRODUCTION_SANS_DEUX_SOURCES_CONFIRMEES")
+        rows=obs["positions"]
+        need(type(rows) is list and len(rows)==5,
+             "CINQ_POSITIONS_EXIGEES")
+        allowed={
+           "index_observation_p54d","source","dossier","pdf_index_zero",
+           "offset_texte_extrait","longueur_texte_normalise_nfkc",
+           "zone_confirmee_par_parseur","classification_indicative",
+           "aucune_conclusion_financiere",
+        }
+        seen=set()
+        for index,(row,expected) in enumerate(zip(rows,EXPECTED_ROWS)):
+            need(type(row) is dict and set(row)==allowed
+                 and type(row["index_observation_p54d"]) is int
+                 and row["index_observation_p54d"]==index
+                 and row["source"]==expected["source"]
+                 and row["dossier"]==expected["dossier"]
+                 and type(row["pdf_index_zero"]) is int
+                 and row["pdf_index_zero"]==p54d.PAGES[expected["source"]]
+                 and row["zone_confirmee_par_parseur"]==expected["zone"]
+                 and row["classification_indicative"]==expected["classe"]
+                 and row["aucune_conclusion_financiere"] is True
+                 and type(row["offset_texte_extrait"]) is int
+                 and type(row["longueur_texte_normalise_nfkc"]) is int
+                 and 0<=row["offset_texte_extrait"]<
+                        row["longueur_texte_normalise_nfkc"]<=1000000,
+                 "POSITION_OU_CHAMP_SENSIBLE_NON_RECEVABLE")
+            key=(row["source"],row["offset_texte_extrait"])
+            need(key not in seen,"POSITION_DUPLIQUEE")
+            seen.add(key)
+    else:
+        need(obs["statut"] in ("NON_TENTE","NON_REPRODUIT")
+             and obs["positions"] is None,
+             "LOCALISATION_PARTIELLE_NON_PUBLIABLE")
+        if obs["statut"]=="NON_TENTE":
+            need(count==0 and all(states[k]=="NON_TENTE" for k in NAMES),
+                 "ACQUISITION_NON_TENTEE_INCOHERENTE")
+        else:
+            need(any(states[k]!="REPRODUCTION_TECHNIQUE_SANS_ATTESTATION"
+                     for k in NAMES),
+                 "SOURCE_POURTANT_COMPLETE_SANS_POSITIONS")
+    return obs
+
 def report(cfg,attempt=None):
-    obs=attempt or baseline()
+    obs=validated_public_attempt(baseline() if attempt is None else attempt)
     is_confirmed=obs["cinq_positions_reproduites"] is True
     locations=obs["positions"] if is_confirmed else None
     return {

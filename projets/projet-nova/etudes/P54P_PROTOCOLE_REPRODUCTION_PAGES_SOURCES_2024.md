@@ -23,7 +23,7 @@ P54P recalcule avec la même version de pypdf (5.9.0) les jetons numériques lex
 | 3 | P54E-M-002 | MAMH | 162 | Indéterminée, FIN |
 | 4 | P54E-M-003 | MAMH | 162 | Indéterminée, FIN |
 
-Il ne publie que **des indices de caractères dans le texte pypdf normalisé en Unicode NFKC (espaces fines normalisées)**, leur longueur de page et le rattachement au dossier. Les jetons, montants éventuels et passages voisins restent hors des rapports publics. Ces indices ne sont ni des coordonnées géométriques sur la page, ni des preuves d'une divergence comptable, ni des signatures d'audit.
+Il ne publie que **des indices de caractères dans le texte pypdf normalisé en Unicode NFKC (espaces fines normalisées)**, leur longueur de page et le rattachement au dossier. La sortie suit un schéma fermé : tout champ de jeton ou contexte ajouté, position dupliquée, compteur falsifié ou faux succès de capture est refusé. Les jetons, montants éventuels et passages voisins restent hors des rapports publics. Ces indices ne sont ni des coordonnées géométriques sur la page, ni des preuves d'une divergence comptable, ni des signatures d'audit.
 
 La page Ville 102 contient un rapport des auditeurs indépendants sur la ventilation des dépenses mixtes suivant le R.A.V.Q. 1435. Cet audit porte sur son tableau réglementaire et **ne constitue pas** un audit des propositions budgétaires Nova. La correspondance de deux pages n'établit ni l'existence d'un double paiement, ni un montant économisable.
 

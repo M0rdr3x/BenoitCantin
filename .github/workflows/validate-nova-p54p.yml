@@ -30,14 +30,14 @@ jobs:
           python-version: "3.11"
       - name: Pypdf epingle a la version des observations P54D
         run: python -m pip install pypdf==5.9.0
-      - name: 62 tests offline de provenance, parsing et refus securise
+      - name: 70 tests offline de provenance, parsing et refus securise
         run: |
           python -m py_compile scripts/reproduire_localisations_pdf_nova_p54p.py
           python - <<'PY'
           import unittest
           suite=unittest.defaultTestLoader.discover(
             "scripts/tests",pattern="test_reproduire_localisations_pdf_nova_p54p.py")
-          assert suite.countTestCases()==62,suite.countTestCases()
+          assert suite.countTestCases()==70,suite.countTestCases()
           result=unittest.TextTestRunner(verbosity=2).run(suite)
           assert result.wasSuccessful()
           PY
