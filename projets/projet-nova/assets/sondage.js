@@ -344,7 +344,13 @@
       const warning = document.createElement('p');
       warning.setAttribute('role','alert');
       warning.textContent = 'Les questions ne sont pas disponibles actuellement. Aucun renseignement n’a été envoyé.';
-      $('sondage-introduction').append(warning);
+      const retry = document.createElement('button');
+      retry.type = 'button';
+      retry.className = 'btn btn-outline';
+      retry.id = 'sondage-retry';
+      retry.textContent = 'Réessayer le chargement des questions';
+      retry.addEventListener('click', () => window.location.reload());
+      $('sondage-introduction').append(warning, retry);
     } finally {
       clearTimeout(timeoutId);
     }
