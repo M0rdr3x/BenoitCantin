@@ -73,8 +73,8 @@ def is_forbidden_env_file(path: Path) -> bool:
 def scan_file(path: Path) -> list[tuple[int, str]]:
     """Lire tout fichier suivi par Git, même > 2 Mio, sans charger son corps.
 
-    latin-1 conserve exactement les octets ASCII des formats de clés; les
-    séquences NUL/UTF-8 invalides ne peuvent donc pas contourner l'audit.
+    Un décodage ASCII à remplacement garde un caractère par octet; les
+    octets binaires ne masquent donc pas les frontières des identifiants.
     Le chevauchement détecte les clés coupées entre deux blocs. Rien de
     secret (ni fragment du match) n'est imprimé dans les logs Actions.
     """
@@ -85,7 +85,9 @@ def scan_file(path: Path) -> list[tuple[int, str]]:
     with path.open('rb') as file:
         while chunk := file.read(CHUNK_BYTES):
             window = tail + chunk
-            text = window.decode('latin-1')
+            # Latin-1 seul interprète \xff comme une lettre (\b Unicode),
+            # masquant une clé ASCII contiguë à des octets binaires.
+            text = window.decode('ascii', errors='replace')
             for label, expression in SECRET_PATTERNS:
                 if label in seen:
                     continue
