@@ -35,6 +35,8 @@ class FakeElement {
 async function mount(snapshot, {
   badManifest = false, badManifest64 = false, fetchFailure = false,
   stallFetch = false, syntheticRelease = false, failFirstFetch = false,
+  oversizedSnapshot = false, oversizedManifest = false, invalidChunk = false,
+  malformedLength = false,
 } = {}) {
   const elements = new Map();
   let rejectedOnce = false;
@@ -80,21 +82,36 @@ async function mount(snapshot, {
       }
       if (fetchFailure) throw Error('network unavailable');
       if (!Object.hasOwn(fixtures, url)) throw Error('unexpected fixture: '+url);
+      // Le client lit volontairement par flux : ne surtout pas fournir un
+      // arrayBuffer()/json() facile qui contournerait le contrat de sécurité.
+      const name = url.startsWith('data/') ? url.slice(5) : '';
+      const body = (name === 'consultation-40-v1.json' ||
+          name === 'sondage-questions-v1.json') &&
+          !((badManifest && name === 'consultation-40-v1.json') ||
+            (badManifest64 && name === 'sondage-questions-v1.json'))
+        ? fs.readFileSync(path.join(NOVA,'data',name))
+        : Buffer.from(JSON.stringify(fixtures[url]),'utf8');
+      const isSnapshot = name === 'resultats-sondages-publics-v1.json';
+      const isManifest = name === 'consultation-40-v1.json';
+      const oversized = (isSnapshot && oversizedSnapshot) ||
+                        (isManifest && oversizedManifest);
+      const parts=oversized
+        ? [Buffer.alloc(65530),Buffer.alloc(20),Buffer.from('should-not-read')]
+        : [body.subarray(0,Math.floor(body.length/2)),
+           body.subarray(Math.floor(body.length))];
+      let cursor=0;
       return {
-        ok: true,
-        json: async () => copy(fixtures[url]),
-        // Les manifests sont servis dans leurs octets originaux, sauf mutation
-        // intentionnelle : le test exerce la vraie vérification SHA-256 du client.
-        arrayBuffer: async () => {
-          const name = url.startsWith('data/') ? url.slice(5) : '';
-          const data = (name === 'consultation-40-v1.json' ||
-              name === 'sondage-questions-v1.json') &&
-              !((badManifest && name === 'consultation-40-v1.json') ||
-                (badManifest64 && name === 'sondage-questions-v1.json'))
-            ? fs.readFileSync(path.join(NOVA, 'data', name))
-            : Buffer.from(JSON.stringify(fixtures[url]), 'utf8');
-          return Uint8Array.from(data).buffer;
-        },
+        ok:true,
+        headers:{get: key => key.toLowerCase()==='content-length'
+          ? (malformedLength && isSnapshot ? '12, 20' : null) : null},
+        body:{getReader(){return {
+          async read(){
+            if(cursor>=parts.length)return {done:true};
+            if(invalidChunk && isSnapshot)return {done:false,value:new Int16Array([42])};
+            return {done:false,value:parts[cursor++]};
+          },
+          releaseLock(){}
+        };}},
       };
     },
   };
@@ -185,6 +202,16 @@ test('réessai d’une panne persistante : bouton maintenu et zéro résultat',a
 });
 test('connexion bloquée : timeout, annulation et indisponibilité sans résultats',async()=>{
   await assertUnavailable(copy(original),{stallFetch:true});
+});
+test('snapshot surdimensionné interrompu avant décodage ou publication',async()=>{
+  await assertUnavailable(copy(original),{oversizedSnapshot:true});
+});
+test('manifeste surdimensionné interrompu avant vérification SHA-256',async()=>{
+  await assertUnavailable(copy(original),{oversizedManifest:true});
+});
+test('en-tête Content-Length ambigu et segment non octet refusés',async()=>{
+  await assertUnavailable(copy(original),{malformedLength:true});
+  await assertUnavailable(copy(original),{invalidChunk:true});
 });
 test('manifestation d’une question altérée rejetée',async()=>{
   await assertUnavailable(copy(original),{badManifest:true});
