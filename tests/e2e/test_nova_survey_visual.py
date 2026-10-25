@@ -226,6 +226,28 @@ def main():
             require(page.locator("#sondage-choices input[type=radio]").count() == 8,
                     "Échelle -3..+3 et Sans opinion non disponible")
             page.locator("#sondage-choices input[value='1']").check()
+            # Ne pas conserver d'opinions si l'accord de démonstration est
+            # retiré en cours de route, avant un reset explicite ou pagehide.
+            page.evaluate("""() => {
+                const consent = document.querySelector("#sondage-consent");
+                consent.checked = false;
+                consent.dispatchEvent(new Event("change", {bubbles:true}));
+            }""")
+            require(page.locator("#sondage-introduction").is_visible()
+                    and page.locator("#sondage-questionnaire").is_hidden(),
+                    "Retrait du consentement : questionnaire encore visible")
+            require(page.locator("#sondage-choices input").count() == 0
+                    and not page.locator("#sondage-consent").is_checked()
+                    and not page.locator("#sondage-age").is_checked(),
+                    "Retrait du consentement : opinions ou attestation conservées")
+            require(page.locator("#sondage-start").is_disabled() and sent == [],
+                    "Retrait du consentement : collecte ou redémarrage autorisés")
+            page.locator("#sondage-age").check()
+            page.locator("#sondage-consent").check()
+            page.locator("#sondage-start").click()
+            require(page.locator("#sondage-next").is_disabled(),
+                    "Retrait du consentement : réponse antérieure réapparue")
+            page.locator("#sondage-choices input[value='1']").check()
             page.locator("#sondage-next").click()
             require("Question 2 sur 64" in page.locator("#sondage-position").inner_text(),
                     "Progression de la question 2 incorrecte")
