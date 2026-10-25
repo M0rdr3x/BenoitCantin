@@ -14,12 +14,17 @@ export async function readBoundedRequestText(req, maxBytes) {
   if (!req.body) return '';
   if (typeof req.body.getReader !== 'function') throw new Error('INVALID_JSON');
   const reader = req.body.getReader();
+  // Limiter aussi le nombre de fragments : 1 octet par trame ne doit pas
+  // provoquer des millions de références et d'itérations pour un corps de 2 Mio.
+  const MAX_CHUNKS = 4096;
   const parts = [];
   let total = 0;
+  let count = 0;
   try {
     for (;;) {
       const {done, value} = await reader.read();
       if (done) break;
+      if (++count > MAX_CHUNKS) throw new Error('REQUEST_TOO_LARGE');
       if (!(value instanceof Uint8Array)) throw new Error('INVALID_JSON');
       total += value.byteLength;
       if (total > maxBytes) throw new Error('REQUEST_TOO_LARGE');
