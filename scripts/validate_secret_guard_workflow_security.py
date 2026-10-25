@@ -71,6 +71,8 @@ def validate_text(text: str) -> list[str]:
             'validation MFA administrateur obligatoire absente')
     require(errors, text.count('          node --test tests/test_admin_mfa_policy.cjs\n') == 1,
             'tests AAL2 serveur absents')
+    require(errors, text.count('        run: node --test tests/test_edge_remote_pdf_stream.cjs\n') == 1,
+            'tests PDF distants bornés obligatoires absents')
     require(errors, text.count('        run: node --test tests/test_admin_request_body_bounds.cjs\n') == 1,
             'tests du lecteur borné des six API administrateur absents')
     require(errors, text.count('        run: python scripts/validate_no_committed_secrets.py\n') == 1,
