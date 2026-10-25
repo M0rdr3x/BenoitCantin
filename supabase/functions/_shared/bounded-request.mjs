@@ -1,7 +1,10 @@
 /* Lecture HTTP bornée AVANT allocation/décodage d'un corps JSON administrateur.
  * Compatible Supabase Edge Runtime (Deno) et Node (tests sans réseau).
  */
-export async function readBoundedRequestText(req, maxBytes) {
+export async function readBoundedRequestText(req, maxBytes, timeoutMs = 15000) {
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30000) {
+    throw new Error('REQUEST_TIMEOUT');
+  }
   if (!Number.isSafeInteger(maxBytes) || maxBytes < 1 || maxBytes > 2 * 1024 * 1024) {
     throw new Error('REQUEST_TOO_LARGE');
   }
@@ -20,9 +23,15 @@ export async function readBoundedRequestText(req, maxBytes) {
   const parts = [];
   let total = 0;
   let count = 0;
+  // Un délai absolu, et non réinitialisé pour chaque fragment : l'envoi au
+  // compte-gouttes ne peut pas garder une fonction ouverte indéfiniment.
+  let deadlineTimer;
+  const deadline = new Promise((_, reject) => {
+    deadlineTimer = setTimeout(() => reject(new Error('REQUEST_TIMEOUT')), timeoutMs);
+  });
   try {
     for (;;) {
-      const {done, value} = await reader.read();
+      const {done, value} = await Promise.race([reader.read(), deadline]);
       if (done) break;
       if (++count > MAX_CHUNKS) throw new Error('REQUEST_TOO_LARGE');
       if (!(value instanceof Uint8Array)) throw new Error('INVALID_JSON');
@@ -31,9 +40,12 @@ export async function readBoundedRequestText(req, maxBytes) {
       parts.push(value);
     }
   } catch (error) {
-    await reader.cancel().catch(() => {});
+    // Ne pas attendre un cancel() lui-même bloqué par la connexion hostile.
+    // Le flux est annulé, et l'exception conserve sa nature pour la réponse.
+    try { Promise.resolve(reader.cancel()).catch(() => {}); } catch {}
     throw error;
   } finally {
+    clearTimeout(deadlineTimer);
     reader.releaseLock();
   }
   const output = new Uint8Array(total);
