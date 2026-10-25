@@ -37,7 +37,7 @@ test('toutes les Edge Functions actuelles et futures expurgent leurs erreurs',()
   }
   const sharedDir=path.join(ROOT,'_shared');
   for(const entry of fs.readdirSync(sharedDir)){
-    if(!/\\.(?:ts|mjs)$/.test(entry))continue;
+    if(!entry.endsWith('.ts') && !entry.endsWith('.mjs'))continue;
     const src=fs.readFileSync(path.join(sharedDir,entry),'utf8');
     assert.deepEqual(unsafeLogs(src),[],'_shared/'+entry+': erreur brute journalisée');
   }
