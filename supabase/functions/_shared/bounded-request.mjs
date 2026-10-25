@@ -2,7 +2,7 @@
  * Compatible Supabase Edge Runtime (Deno) et Node (tests sans réseau).
  */
 export async function readBoundedRequestText(req, maxBytes) {
-  if (!Number.isSafeInteger(maxBytes) || maxBytes < 1 || maxBytes > 1024 * 1024) {
+  if (!Number.isSafeInteger(maxBytes) || maxBytes < 1 || maxBytes > 2 * 1024 * 1024) {
     throw new Error('REQUEST_TOO_LARGE');
   }
   const declared = req.headers.get('content-length');
