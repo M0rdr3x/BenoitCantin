@@ -1,0 +1,85 @@
+name: Projet Nova P54N - Dossier de passation documentaire non transmis
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54n.yml"
+      - "scripts/preparer_passation_humaine_nova_p54n.py"
+      - "scripts/tests/test_preparer_passation_humaine_nova_p54n.py"
+      - "scripts/evaluer_recevabilite_authentifications_nova_p54m.py"
+      - "projets/projet-nova/etudes/P54N_*"
+      - "projets/projet-nova/etudes/P54E_PLAN_REVUE_HUMAINE_2024.json"
+      - "projets/projet-nova/etudes/P54M_MATRICE_RECEVABILITE_AUTHENTIFICATIONS_2024.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  passation-non-transmise:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Dependances documentaires de la chaine P54E-M
+        run: python -m pip install pypdf==5.9.0
+      - name: 64 tests P54N sans donnees confidentielles
+        run: |
+          python -m py_compile scripts/preparer_passation_humaine_nova_p54n.py
+          python - <<'PY'
+          import unittest
+          tests=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_preparer_passation_humaine_nova_p54n.py")
+          assert tests.countTestCases()==64,tests.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(tests)
+          assert result.wasSuccessful()
+          PY
+      - name: Generer quatre fiches, quarante taches et un bilan neutre
+        run: |
+          python scripts/preparer_passation_humaine_nova_p54n.py \
+            --dossier p54n_dossier_passation.json \
+            --instructions p54n_instructions_verificateurs.md \
+            --bilan p54n_bilan_neutre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p54n_dossier_passation.json").read_text("utf-8"))
+          b=json.loads(Path("p54n_bilan_neutre.json").read_text("utf-8"))
+          assert len(d["dossiers"])==4
+          assert sum(len(x["instructions"]) for x in d["dossiers"])==40
+          assert all(x["classification_initiale"]=="INDETERMINE" for x in d["dossiers"])
+          assert all(not x["cloture_autorisee"] for x in d["dossiers"])
+          assert d["observation_distincte_date_probable"]["qualif_definitive"] is False
+          assert b["sources_privees_reçues"]==0
+          assert b["mandats_effectifs_attribues"]==0
+          assert b["avis_authentifies"]==0
+          assert b["controles_p54b_non_attestes"]==96
+          assert b["controles_p54c_non_attestes"]==8
+          assert b["economies_certifiees_cad"] is None
+          assert b["decision"]=="NO_GO_AUTOMATIQUE"
+          assert "NO_GO_AUTOMATIQUE" in Path(
+             "p54n_instructions_verificateurs.md").read_text("utf-8")
+          PY
+      - name: Interdire toute transmission pretendument automatique
+        run: |
+          set +e
+          python scripts/preparer_passation_humaine_nova_p54n.py --exiger-transmission
+          result=$?
+          set -e
+          test "$result" -eq 3
+      - name: Publier uniquement le paquet de travail sans originaux
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54n-passation-humaine-quatre-dossiers
+          path: |
+            p54n_dossier_passation.json
+            p54n_instructions_verificateurs.md
+            p54n_bilan_neutre.json
+          if-no-files-found: ignore
+          retention-days: 7
