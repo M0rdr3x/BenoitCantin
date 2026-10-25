@@ -281,8 +281,14 @@
         $('sondage-start').disabled = true;
         const message = document.createElement('p');
         message.setAttribute('role', 'alert');
-        message.textContent = 'Questions indisponibles : le sondage ne peut pas démarrer.';
-        $('sondage-introduction').append(message);
+        message.textContent = 'Questions indisponibles : le sondage ne peut pas démarrer. Aucun choix n’a été transmis.';
+        const retry = document.createElement('button');
+        retry.type = 'button';
+        retry.className = 'btn btn-outline';
+        retry.id = 'sondage-retry';
+        retry.textContent = 'Réessayer le chargement des questions';
+        retry.addEventListener('click', () => window.location.reload());
+        $('sondage-introduction').append(message, retry);
       }).finally(() => clearTimeout(timeoutId));
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
