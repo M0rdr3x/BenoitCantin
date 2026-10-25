@@ -51,7 +51,7 @@ test('admin : authentification requise indépendamment de MFA',async()=>{
   await assert.rejects(createCheck({dbError:new Error('offline')})(),/ADMIN_REQUIRED/);
 });
 test('admin : serveur MFA indisponible ou sans réponse refuse fermé',async()=>{
-  await assert.rejects(createCheck({aalError:new Error('unavailable')})(),/unavailable/);
+  await assert.rejects(createCheck({aalError:new Error('provider_detail_must_not_leak')})(),/MFA_STATE_UNAVAILABLE/);
   await assert.rejects(createCheck({assurance:null})(),/TypeError/);
 });
 test('les 7 endpoints admin restent dans le garde d’accès',()=>{
@@ -63,4 +63,10 @@ test('les 7 endpoints admin restent dans le garde d’accès',()=>{
   assert.match(source,/return \{ \.\.\.context, aal \}/);
   assert.match(source,/if \(aal\.nextLevel !== 'aal2' \|\| aal\.currentLevel !== 'aal2'\)/);
   assert.doesNotMatch(source,/aal\.nextLevel === 'aal2' && aal\.currentLevel !== 'aal2'/);
+});
+
+test('aucune erreur de fournisseur ou fragment de secret dans les logs serveur',()=>{
+  assert.doesNotMatch(source,/console\\.(?:warn|error)\\([^;]*,\\s*error\\)/,
+    'Ne jamais journaliser un objet Error venant du fournisseur');
+  assert.match(source,/throw new Error\\('MFA_STATE_UNAVAILABLE'\\)/);
 });
