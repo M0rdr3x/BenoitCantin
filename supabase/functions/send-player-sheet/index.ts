@@ -1,3 +1,4 @@
+import { readBoundedRequestText } from '../_shared/bounded-request.mjs';
 import { PDFDocument, StandardFonts } from 'npm:pdf-lib@1.17.1';
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredUser } from '../_shared/auth.ts';
@@ -47,7 +48,7 @@ async function readLimitedJson(req:Request):Promise<{body?:Record<string,unknown
     }
   }
 
-  const raw=await req.text();
+  const raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);
   if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES){
     return {response:privateJson({ok:false,error:'Requête trop volumineuse.',code:'REQUEST_TOO_LARGE',function_version:FUNCTION_VERSION},413)};
   }
