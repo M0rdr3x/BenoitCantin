@@ -102,8 +102,10 @@ class TestsP54V(unittest.TestCase):
     def test_24_no_raw_in_public(self):
         doc=sheet()
         s=json.dumps(m.public_summary(True))
-        for item in doc["occurrences"]:
-            self.assertNotIn(item["jeton_brut_STRICTEMENT_PRIVE"],s)
+        self.assertNotIn("jeton_brut_STRICTEMENT_PRIVE",s)
+        self.assertNotIn("extrait_contextuel_STRICTEMENT_PRIVE",s)
+        self.assertTrue(all(item["extrait_contextuel_STRICTEMENT_PRIVE"] not in s
+                            for item in doc["occurrences"]))
     def test_25_one_bad_offset_refused(self):
         t,p=fixture()
         p[0]["offset_texte_extrait"]+=1
