@@ -31,6 +31,13 @@ def validate_text(text: str) -> list[str]:
     require(errors, 'permissions:\n  contents: read' in text, 'permissions.contents doit rester read')
     require(errors, 'contents: write' not in text, 'permission contents:write interdite')
     require(errors, re.search(r'\$\{\{\s*secrets\.', text) is None, 'le garde secrets ne doit référencer aucun secret GitHub')
+    require(errors, 'on:\n  pull_request:\n' in text, 'garde secrets obligatoire sur toutes les PR')
+    require(errors, '    branches:\n      - main\n' in text, 'garde secrets obligatoire sur main')
+    require(errors, re.search(r'(?m)^\s+paths(?:-ignore)?:', text) is None,
+            'aucune exclusion de chemin permise')
+    require(errors, 'pull_request_target:' not in text, 'aucun contexte PR privilégié permis')
+    require(errors, 'continue-on-error:' not in text, 'le garde secrets doit bloquer')
+    require(errors, '    timeout-minutes: 10\n' in text, 'durée maximale du garde secrets absente')
     require(errors, 'runs-on: ubuntu-24.04' in text, 'runner Ubuntu 24.04 explicite requis')
     require(errors, 'ubuntu-latest' not in text, 'ubuntu-latest interdit pour ce garde critique')
 
@@ -48,8 +55,10 @@ def validate_text(text: str) -> list[str]:
 
     require(errors, 'python scripts/validate_secret_guard_workflow_security.py --self-test' in text, 'auto-tests du contrat absents')
     require(errors, 'python scripts/validate_secret_guard_workflow_security.py\n' in text, 'validation du contrat absente')
-    require(errors, 'run: python scripts/validate_no_committed_secrets.py --self-test\n' in text, 'autotest exhaustif du garde secrets absent')
-    require(errors, 'run: python scripts/validate_no_committed_secrets.py\n' in text, 'scan des secrets absent')
+    require(errors, text.count('        run: python scripts/validate_no_committed_secrets.py --self-test\n') == 1,
+            'autotest exhaustif du garde secrets absent/dupliqué')
+    require(errors, text.count('        run: python scripts/validate_no_committed_secrets.py\n') == 1,
+            'scan bloquant des secrets absent/dupliqué')
     return errors
 
 
@@ -63,6 +72,11 @@ def run_self_tests(text: str) -> None:
         'runner mobile': text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-latest', 1),
         'python large': text.replace(f"python-version: '{PYTHON_VERSION}'", "python-version: '3.12'", 1),
         'auto-test retiré': text.replace('        run: python scripts/validate_secret_guard_workflow_security.py --self-test\n', '', 1),
+        'auto-test secrets retiré': text.replace('        run: python scripts/validate_no_committed_secrets.py --self-test\n', '', 1),
+        'scan secrets retiré': text.replace('        run: python scripts/validate_no_committed_secrets.py\n', '', 1),
+        'scan avec filtre de chemins': text.replace('  pull_request:\n', '  pull_request:\n    paths: ["docs/**"]\n', 1),
+        'scan non bloquant': text.replace('    timeout-minutes: 10\n', '    timeout-minutes: 10\n    continue-on-error: true\n', 1),
+        'limite de temps supprimée': text.replace('    timeout-minutes: 10\n', '', 1),
     }
     for name, mutated in cases.items():
         if not validate_text(mutated):
