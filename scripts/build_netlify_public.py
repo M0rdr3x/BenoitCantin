@@ -1250,6 +1250,7 @@ def validate_output(
     redirects_path = output / "_redirects"
     release_path = output / RELEASE_METADATA_PATH
     expected_release_metadata = release_metadata(context)
+    verified_release_marker = False
 
     if expected_release_metadata is None:
         if release_path.exists():
@@ -1266,6 +1267,8 @@ def validate_output(
         else:
             if observed_release_metadata != expected_release_metadata:
                 errors.append("Marqueur release.json incohérent avec le SHA/contexte de build.")
+            else:
+                verified_release_marker = True
 
     expected_headers: str | None = None
     if standalone_netlify:
@@ -1304,6 +1307,10 @@ def validate_output(
         if not published.is_file():
             continue
         rel = published.relative_to(output)
+        # Ne pas élargir l'allowlist des dotfiles : seule la preuve générée
+        # par build() et vérifiée exactement juste au-dessus est admise.
+        if rel == RELEASE_METADATA_PATH and verified_release_marker:
+            continue
         if rel.as_posix() in GENERATED_NETLIFY_FILES:
             if rel == Path("_headers") and expected_headers is not None:
                 continue
