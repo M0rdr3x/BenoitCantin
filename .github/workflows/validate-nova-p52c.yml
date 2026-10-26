@@ -1,0 +1,93 @@
+name: Projet Nova P52C - Budget Quebec 2026-2027 et perimetres
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p52c.yml"
+      - "scripts/rapprocher_budget_quebec_nova_p52c.py"
+      - "scripts/tests/test_rapprocher_budget_quebec_nova_p52c.py"
+      - "projets/projet-nova/etudes/P52C_*"
+      - "projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verifier-ventilation-officielle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Lire la proposition sans droit GitHub ecriture
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Configurer Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Compiler et executer exactement 30 tests
+        run: |
+          python -m py_compile scripts/rapprocher_budget_quebec_nova_p52c.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_rapprocher_budget_quebec_nova_p52c.py")
+          assert suite.countTestCases()==30,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          print("P52C : 30 tests budget officiel 2026-2027 et NO_GO")
+          PY
+      - name: Recalculer les 21 postes et les trois soldes
+        run: |
+          python scripts/rapprocher_budget_quebec_nova_p52c.py \
+            --referentiel projets/projet-nova/etudes/P52C_REFERENTIEL_BUDGET_QUEBEC_2026_2027.json \
+            --gabarit projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json \
+            --rapport p52c_rapprochement.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p52c_rapprochement.json").read_text(encoding="utf-8"))
+          assert r["nombre_postes_officiels_reconcilies"]==21,r
+          assert r["revenus_totaux"]=="166.492",r
+          assert r["revenus_autonomes"]=="134.361",r
+          assert r["transferts_federaux"]=="32.131",r
+          assert r["impots_revenus_existants_particuliers_societes"]=="65.327",r
+          assert r["depenses_totales"]=="170.757",r
+          assert r["ecart_arithmetique_avant_ajustements"]=="-4.265",r
+          assert r["deficit_comptable_prevu"]=="-6.265",r
+          assert r["solde_budgetaire_prevu_selon_loi"]=="-8.612",r
+          assert r["annees_scenarios_2027_2036_renseignees_par_ce_controle"]==0,r
+          assert r["decision"]=="NO_GO_AUTOMATIQUE" and not r["publication_autorisee"],r
+          print("P52C : 21 postes reconcilies, 3 soldes differencies, 0 projection financiere produite")
+          PY
+      - name: Verifier que le budget existant ne finance PAS deux nouvelles taxes
+        run: |
+          set +e
+          python scripts/rapprocher_budget_quebec_nova_p52c.py \
+            --referentiel projets/projet-nova/etudes/P52C_REFERENTIEL_BUDGET_QUEBEC_2026_2027.json \
+            --gabarit projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json \
+            --exiger-financement --rapport p52c_refus_financement.json
+          code=$?
+          set -e
+          if [ "$code" -ne 3 ]; then
+            echo "ERREUR : attendu code 3 sans financement de la reforme; obtenu $code" >&2
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p52c_refus_financement.json").read_text(encoding="utf-8"))
+          assert r["decision"]=="NO_GO_AUTOMATIQUE" and not r["deux_taxes_financees"],r
+          print("P52C : refus technique attendu code 3; aucun GO de reforme")
+          PY
+      - name: Conserver les rapports non nominatifs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52c-budget-2026-2027-no-go
+          path: |
+            p52c_rapprochement.json
+            p52c_refus_financement.json
+          if-no-files-found: ignore
+          retention-days: 7

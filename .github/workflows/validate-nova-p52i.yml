@@ -1,0 +1,68 @@
+name: Projet Nova P52I - Inventaire des sources fiscales
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p52i.yml"
+      - "scripts/auditer_sources_fiscales_nova_p52i.py"
+      - "scripts/tests/test_auditer_sources_fiscales_nova_p52i.py"
+      - "projets/projet-nova/etudes/P52I_*"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  p52i-sources-et-refus:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Recuperation lecture seule sans jetons persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Dix-huit tests contradictoires obligatoires
+        run: |
+          python -m py_compile scripts/auditer_sources_fiscales_nova_p52i.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_auditer_sources_fiscales_nova_p52i.py")
+          assert suite.countTestCases()==18, suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Controle d'inventaire uniquement
+        run: |
+          python scripts/auditer_sources_fiscales_nova_p52i.py --rapport p52i_agregat.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          v=json.loads(Path("p52i_agregat.json").read_text("utf-8"))
+          assert v["decision"]=="NO_GO_AUTOMATIQUE"
+          assert v["preuves_P52A_requises"]==20
+          assert v["preuves_independantes_attestees"]==0
+          assert v["inconnues_financieres_P52H_encore_a_documenter"]==1320
+          assert v["perimetres_budgetaires_concilies"]==0
+          assert not v["fusion_autorisee"]
+          PY
+      - name: Porte stricte - preuve insuffisante attendue
+        run: |
+          set +e
+          python scripts/auditer_sources_fiscales_nova_p52i.py --exiger-preuves --rapport p52i_refus.json
+          status=$?
+          set -e
+          test "$status" -eq 3
+      - name: Deux syntheses non nominatives, sans microdonnees
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52i-inventaire-sources-no-go
+          path: |
+            p52i_agregat.json
+            p52i_refus.json
+          if-no-files-found: ignore
+          retention-days: 7

@@ -1,0 +1,56 @@
+{
+  "schema_version": "P52S-RECU-1",
+  "jalon": "P52S",
+  "date_observation": "2026-10-20",
+  "statut": "DEUX_RECEPTION_HTTPS_NON_ATTESTEES_NON_ARCHIVEES",
+  "preuve_technique": "Empreintes SHA-256 calculées par le processus GitHub Actions sur les octets reçus depuis les URL gouvernementales listées; pas une signature officielle",
+  "repo": "M0rdr3x/BenoitCantin",
+  "run_id": 39491881661,
+  "run_url": "https://github.com/M0rdr3x/BenoitCantin/actions/runs/39491881661",
+  "run_sha": "3e8e713183931d90dbcb4a851430a9c6b6a294d2",
+  "sources": [
+    {
+      "id": "DISC2026_T3",
+      "sha256_octets_recus": "cf89d3d8d448cfa4155e2370be8226a904d393205f64962d23f45a40749acbfa",
+      "taille_octets": 2109269,
+      "date_utc_tentative": "2026-10-20T20:25:52+00:00",
+      "statut": "OCTETS_PDF_RECUS_HTTPS_NON_AUTHENTIFIES",
+      "type_mime_recu": "application/pdf",
+      "validation_tls_client_standard": true,
+      "authenticite_ministerielle_attestee": false,
+      "archivage_permanent_obtenu": false,
+      "preuve_independante_F09_obtenue": false
+    },
+    {
+      "id": "PLAN2026_F2",
+      "sha256_octets_recus": "a0efb80f1a75984d7f0933d7dd6630bc3306e91410a8cfbaa9005e72f788e0e0",
+      "taille_octets": 5341975,
+      "date_utc_tentative": "2026-10-20T20:25:53+00:00",
+      "statut": "OCTETS_PDF_RECUS_HTTPS_NON_AUTHENTIFIES",
+      "type_mime_recu": "application/pdf",
+      "validation_tls_client_standard": true,
+      "authenticite_ministerielle_attestee": false,
+      "archivage_permanent_obtenu": false,
+      "preuve_independante_F09_obtenue": false
+    }
+  ],
+  "limitations": {
+    "identification_binaire_reçue_ne_prouve_pas_identite_editeur": true,
+    "aucune_copie_originale_permanente_entreposee": true,
+    "empreintes_de_capture_pas_sha_officiellement_publies": true,
+    "integrite_pdf_interne_non_certifiee": true,
+    "aucune_signature_cryptographique_editeur_verifiee": true,
+    "pas_de_double_relecture_humaine": true,
+    "lecture_budgetaire_2026_2027_previsionnelle": true,
+    "controles_github_ne_remplacent_pas_revision_independante": true
+  },
+  "gouvernance": {
+    "total_sources_lues_au_moment_du_run": 2,
+    "pdf_originaux_archives_authentifies": 0,
+    "preuves_F01_F20_independantes_obtenues": 0,
+    "publication_autorisee": false,
+    "fusion_autorisee": false,
+    "adoption_autorisee": false,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

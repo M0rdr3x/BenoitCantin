@@ -1,0 +1,111 @@
+{
+  "schema_version": "P54K-1",
+  "date_reference": "2026-10-24",
+  "exercice_source": 2024,
+  "chaine": [
+    "P54I",
+    "P54J"
+  ],
+  "source_run_p54d": 40120462237,
+  "mandats": [
+    "MANDAT-COMPTABLE-2024",
+    "MANDAT-JURIDIQUE-2024"
+  ],
+  "dossiers": [
+    "P54E-V-001",
+    "P54E-M-001",
+    "P54E-M-002",
+    "P54E-M-003"
+  ],
+  "roles": [
+    "VERIFICATEUR_DECLARE",
+    "CONTRE_REVISEUR_DECLARE"
+  ],
+  "controles": [
+    "STATUT_TABLEAU_PROFESSIONNEL_A_VERIFIER",
+    "PERMIS_EXERCICE_ET_LIMITES",
+    "IDENTITE_SOURCE_ORIGINALE",
+    "CONTROLE_SIGNATURE_VIA_ORDRE",
+    "CONSENTEMENT_MANDAT_ECRIT",
+    "INDEPENDANCE_ET_CONFLITS",
+    "PROVENANCE_CHAINE_SHA256",
+    "CORRESPONDANCE_AVIS_ET_PORTEE",
+    "RESERVES_ET_CONTRADICTIONS",
+    "COLONNES_EXERCICE_UNITES",
+    "CONTROLE_DOUBLE_COMPTE_RTC",
+    "CONTINUITE_EMPLOIS_SERVICES"
+  ],
+  "statuts_revue": [
+    "NON_EXAMINE",
+    "EXAMINE_NON_ATTESTE",
+    "SUSPENDU"
+  ],
+  "anomalies": [
+    "AUCUNE_DECLAREE_NON_VERIFIEE",
+    "INSCRIPTION_A_VERIFIER",
+    "SIGNATURE_A_VERIFIER",
+    "CONFLIT_POTENTIEL",
+    "CONFLIT_APPARENT",
+    "CONFLIT_REEL",
+    "PIECE_ORIGINALE_MANQUANTE",
+    "PORTEE_HORS_MANDAT",
+    "DESACCORD_DOCUMENTAIRE",
+    "SUSPENSION_DEMANDEE"
+  ],
+  "etats_dossier": [
+    "AUCUNE_REVUE_PROFESSIONNELLE",
+    "REVUE_PARTIELLE_NON_AUTHENTIFIEE",
+    "DEUX_REVUES_DECLAREES_NON_AUTHENTIFIEES",
+    "ALERTE_VERIFICATION",
+    "RESERVE_OUVERTE",
+    "CONTRADICTION_OUVERTE",
+    "SUSPENSION_PRIORITAIRE"
+  ],
+  "referents_institutionnels": [
+    {
+      "metier": "DROIT",
+      "source": "https://www.barreau.qc.ca/fr/grand-public/faire-affaire-avec-un-avocat/verification-statut-avocat/"
+    },
+    {
+      "metier": "COMPTABILITE",
+      "source": "https://cpaquebec.ca/fr/trouver-un-cpa/tableau-de-lordre/"
+    },
+    {
+      "metier": "DEONTOLOGIE",
+      "source": "https://cpaquebec.ca/fr/membres-cpa/deontologie/devoirs-generaux/conflit-dinterets/le-conflit-dinterets/"
+    }
+  ],
+  "protections": {
+    "aucun_controle_officiel_execute": true,
+    "aucune_identite_authentifiee": true,
+    "aucune_signature_certifiee": true,
+    "codes_pseudonymes_non_preuves_identite": true,
+    "controles_examines_non_attestes": true,
+    "relecture_distincte_declarative": true,
+    "empreintes_privees_hors_bilan": true,
+    "originaux_et_avis_hors_git": true,
+    "aucune_inference_economie": true,
+    "aucune_cloture_dossier": true,
+    "reserves_p54i_j_preservees": true,
+    "suspension_prioritaire": true,
+    "comptabilite_et_droit_distincts": true,
+    "pas_de_double_compte_ville_rtc": true,
+    "emplois_services_maintenus": true,
+    "aucune_transmission_a_un_ordre": true,
+    "aucune_decision_institutionnelle": true,
+    "deux_scenarios_constitutionnels_separes": true,
+    "sinjira_sans_changement": true,
+    "main_non_fusionnee": true
+  },
+  "etat_initial": {
+    "dossiers": 4,
+    "mandats": 2,
+    "roles_possibles": 16,
+    "controles_de_reference": 12,
+    "avis_authentifies": 0,
+    "identites_professionnelles_authentifiees": 0,
+    "signatures_certifiees": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

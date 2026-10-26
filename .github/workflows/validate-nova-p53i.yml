@@ -1,0 +1,76 @@
+name: Projet Nova P53I - Revision du fichier municipal et controles de charges
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p53i.yml"
+      - "scripts/auditer_revision_et_charges_municipales_nova_p53i.py"
+      - "scripts/tests/test_auditer_revision_et_charges_municipales_nova_p53i.py"
+      - "projets/projet-nova/etudes/P53I_*"
+      - "projets/projet-nova/etudes/sources/P53I_*"
+      - "projets/projet-nova/etudes/P53G_COUVERTURE_1343_ORGANISMES_2024.json"
+      - "projets/projet-nova/etudes/P53H_PRIORITES_VERIFICATION_2024.json"
+      - "projets/projet-nova/etudes/P53E_PREUVES_HISTORIQUES_MUNICIPALES.json"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-revisee-et-charges-sans-appariement:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Copier le depot en lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: 81 tests de versions, codes et faux comptes consolides
+        run: |
+          python -m py_compile scripts/auditer_revision_et_charges_municipales_nova_p53i.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_auditer_revision_et_charges_municipales_nova_p53i.py")
+          assert suite.countTestCases()==81,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Recalculer les donnees 2024 des 1344 organismes
+        run: |
+          python scripts/auditer_revision_et_charges_municipales_nova_p53i.py --rapport p53i_bilan.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p53i_bilan.json").read_text("utf-8"))
+          assert d["ancienne_version_organismes"]==1343
+          assert d["nouvelle_version_organismes"]==1344
+          assert d["organisme_ajoute"]=="39135"
+          assert d["anciens_organismes_modifies_sur_18_champs"]==0
+          assert d["revenus_bruts_nouvelle_version_cad"]==41666627807
+          assert d["quotes_parts_recues_cad"]==3148209097
+          assert d["charges_quotes_parts_organismes_municipaux_cad"]==2526339827
+          assert d["ecart_quotes_recues_moins_charges_cad"]==621869270
+          assert d["eliminations_certifiees_cad"] is None
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Exiger refus de certification sans pieces reciproques
+        run: |
+          set +e
+          python scripts/auditer_revision_et_charges_municipales_nova_p53i.py --exiger-appariements --rapport p53i_non_apparie.json
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Rapport historique agrege uniquement
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p53i-source-mamh-revisee-1344-charges-no-go
+          path: |
+            p53i_bilan.json
+            p53i_non_apparie.json
+          if-no-files-found: ignore
+          retention-days: 7

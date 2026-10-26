@@ -1,0 +1,77 @@
+name: Projet Nova P52X - Habilitation mandant budget et confidentialite
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p52x.yml"
+      - "scripts/controler_habilitation_mandat_nova_p52x.py"
+      - "scripts/tests/test_controler_habilitation_mandat_nova_p52x.py"
+      - "projets/projet-nova/etudes/P52X_*"
+      - "projets/projet-nova/etudes/P52W_*"
+      - "projets/projet-nova/etudes/P52V_REGISTRE_MISSION_F09.json"
+      - "projets/projet-nova/etudes/P52N_CAHIER_MANDATS_ET_CONSULTATION.json"
+      - "projets/projet-nova/etudes/P52Q_DOSSIERS_INSTRUCTION_VAGUE1.json"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  habilitation-non-recue:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Lecture seule du code et de la grille
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Soixante-douze tests adversariaux d'habilitation
+        run: |
+          python -m py_compile scripts/controler_habilitation_mandat_nova_p52x.py
+          python - <<'PY'
+          import unittest
+          cases=unittest.defaultTestLoader.discover(
+             "scripts/tests",pattern="test_controler_habilitation_mandat_nova_p52x.py")
+          assert cases.countTestCases()==72,cases.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(cases)
+          assert result.wasSuccessful()
+          PY
+      - name: Vérifier douze préconditions et exporter une grille anonyme
+        run: |
+          python scripts/controler_habilitation_mandat_nova_p52x.py --rapport p52x_bilan.json --export-csv p52x_questions_vierges.csv
+          python - <<'PY'
+          import csv,json
+          from pathlib import Path
+          data=json.loads(Path("p52x_bilan.json").read_text(encoding="utf-8"))
+          assert data["preconditions_sans_decision_humaine"]==12
+          assert data["regimes_non_qualifies"]==4
+          assert data["budget_autorise"] is False
+          assert data["canaux_confidentiels_actifs"]==0
+          assert data["candidatures_recues"]==0
+          assert data["decision"]=="NO_GO_AUTOMATIQUE"
+          with Path("p52x_questions_vierges.csv").open(encoding="utf-8") as f:
+            rows=list(csv.reader(f))
+          assert len(rows)==13
+          assert all(row[5:]==["","","","",""] for row in rows[1:])
+          PY
+      - name: Refus d'une délégation inexistante
+        run: |
+          set +e
+          python scripts/controler_habilitation_mandat_nova_p52x.py --exiger-habilitation --rapport p52x_absence_autorite.json
+          status=$?
+          set -e
+          test "$status" -eq 3
+      - name: Seulement bilans sans données privées
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52x-habilitation-vierge-no-go
+          path: |
+            p52x_bilan.json
+            p52x_questions_vierges.csv
+            p52x_absence_autorite.json
+          if-no-files-found: ignore
+          retention-days: 7

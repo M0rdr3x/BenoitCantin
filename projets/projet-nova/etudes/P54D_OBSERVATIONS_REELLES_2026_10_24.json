@@ -1,0 +1,81 @@
+{
+  "schema_version": "P54D-OBSERVATIONS-CI-1",
+  "exercice": 2024,
+  "run_id": 40120462237,
+  "job_id": 120950677964,
+  "artifact_id": 12570359704,
+  "artifact_sha256": "0ca689bb9769954b44b0db0014266ec3daf774032d13913685bfb89af061bbd5",
+  "date_observation": "2026-10-24",
+  "provenance": "CAPTURE_HTTPS_PDF_ET_COMPARAISON_P54B_NON_ATTESTATION_EMETTEUR",
+  "source_documents": {
+    "ville": "b3ee3e671f7bf98e56c7d42b5e8b6c34de02a96c9dc1c96469819fa4dbfa7399",
+    "mamh": "4323c87d2114b58cf7a093c08f3b30327e949db91b9beb46a627eac1ecb4fc00"
+  },
+  "pages": {
+    "ville": 102,
+    "mamh": 162
+  },
+  "source_version_originale_compatible": true,
+  "occurrences": {
+    "ville": 1,
+    "mamh": 4,
+    "total": 5
+  },
+  "classifications": {
+    "ANNEE_DATE_PROBABLE": 1,
+    "INDETERMINE": 4
+  },
+  "observations": [
+    {
+      "source": "ville",
+      "categorie_indicative": "INDETERMINE",
+      "zone_approximative": "FIN",
+      "qualification": "NON_CERTIFIEE"
+    },
+    {
+      "source": "mamh",
+      "categorie_indicative": "INDETERMINE",
+      "zone_approximative": "DEBUT",
+      "qualification": "NON_CERTIFIEE"
+    },
+    {
+      "source": "mamh",
+      "categorie_indicative": "ANNEE_DATE_PROBABLE",
+      "zone_approximative": "FIN",
+      "qualification": "NON_CERTIFIEE"
+    },
+    {
+      "source": "mamh",
+      "categorie_indicative": "INDETERMINE",
+      "zone_approximative": "FIN",
+      "qualification": "NON_CERTIFIEE"
+    },
+    {
+      "source": "mamh",
+      "categorie_indicative": "INDETERMINE",
+      "zone_approximative": "FIN",
+      "qualification": "NON_CERTIFIEE"
+    }
+  ],
+  "etat": {
+    "categories_documentaires_definitivement_etablies": 0,
+    "quatre_occurrences_indeterminees": 4,
+    "causes_de_differences_demontrees": 0,
+    "ecarts_monetaires_comptables_certifies": 0,
+    "avis_independants_signes": 0,
+    "economies_certifiees_cad": null,
+    "controles_comptables_p54b_en_attente": 96,
+    "controles_contexte_p54c_en_attente": 8,
+    "decision": "NO_GO_AUTOMATIQUE"
+  },
+  "limites": {
+    "classification_date_est_probable_pas_certaine": true,
+    "aucun_token_numerique_brut_publie": true,
+    "aucun_contexte_nominatif_publie": true,
+    "absence_de_preuve_ne_signifie_pas_identite": true,
+    "aucune_economie_calculee": true,
+    "protection_emploi_services": true,
+    "operation_reciproque_deja_eliminee_non_gain": true,
+    "pas_de_fusion_main": true
+  }
+}

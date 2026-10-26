@@ -1,0 +1,116 @@
+{
+  "schema_version": "P53S-1",
+  "jalon": "P53S",
+  "date_reference": "2026-10-22",
+  "statut": "REGISTRE_DECLARATIF_SANS_EVENEMENT_AUTHENTIFIE",
+  "exercice_documentaire": 2024,
+  "codes": [
+    "66023",
+    "T1025",
+    "23027",
+    "T0081",
+    "T0088",
+    "39135"
+  ],
+  "phases": [
+    "PREPARATION_SANS_DEPOT",
+    "IDENTIFICATION_RESPONSABLE_DECLAREE",
+    "ENVOI_DECLARE_NON_VERIFIE",
+    "RECEPTION_DECLAREE_NON_VERIFIEE",
+    "PROLONGATION_DECLAREE_NON_VERIFIEE",
+    "REPONSE_PARTIELLE_DECLAREE_NON_VERIFIEE",
+    "REPONSE_COMPLETE_DECLAREE_NON_VERIFIEE",
+    "REFUS_DECLARE_NON_VERIFIE",
+    "SILENCE_DECLARE_SANS_DELAI_VERIFIE",
+    "RECOURS_DECLARE_NON_VERIFIE",
+    "ARCHIVAGE_DECLARE_NON_VERIFIE"
+  ],
+  "justificatif_attendu_par_phase": {
+    "PREPARATION_SANS_DEPOT": "AUCUN",
+    "IDENTIFICATION_RESPONSABLE_DECLAREE": "PUBLICATION_PROCEDURE",
+    "ENVOI_DECLARE_NON_VERIFIE": "TRACE_ENVOI",
+    "RECEPTION_DECLAREE_NON_VERIFIEE": "ACCUSE_RECEPTION",
+    "PROLONGATION_DECLAREE_NON_VERIFIEE": "AVIS_PROLONGATION",
+    "REPONSE_PARTIELLE_DECLAREE_NON_VERIFIEE": "DECISION_COMMUNICATION",
+    "REPONSE_COMPLETE_DECLAREE_NON_VERIFIEE": "DECISION_COMMUNICATION",
+    "REFUS_DECLARE_NON_VERIFIE": "DECISION_REFUS",
+    "SILENCE_DECLARE_SANS_DELAI_VERIFIE": "CONSTAT_MANUEL_NON_VALIDÉ",
+    "RECOURS_DECLARE_NON_VERIFIE": "PREUVE_RECOURS",
+    "ARCHIVAGE_DECLARE_NON_VERIFIE": "BORDEREAU_ARCHIVAGE"
+  },
+  "prerequis_par_phase": {
+    "PREPARATION_SANS_DEPOT": [],
+    "IDENTIFICATION_RESPONSABLE_DECLAREE": [
+      "PREPARATION_SANS_DEPOT"
+    ],
+    "ENVOI_DECLARE_NON_VERIFIE": [
+      "IDENTIFICATION_RESPONSABLE_DECLAREE"
+    ],
+    "RECEPTION_DECLAREE_NON_VERIFIEE": [
+      "ENVOI_DECLARE_NON_VERIFIE"
+    ],
+    "PROLONGATION_DECLAREE_NON_VERIFIEE": [
+      "RECEPTION_DECLAREE_NON_VERIFIEE"
+    ],
+    "REPONSE_PARTIELLE_DECLAREE_NON_VERIFIEE": [
+      "RECEPTION_DECLAREE_NON_VERIFIEE"
+    ],
+    "REPONSE_COMPLETE_DECLAREE_NON_VERIFIEE": [
+      "RECEPTION_DECLAREE_NON_VERIFIEE"
+    ],
+    "REFUS_DECLARE_NON_VERIFIE": [
+      "RECEPTION_DECLAREE_NON_VERIFIEE"
+    ],
+    "SILENCE_DECLARE_SANS_DELAI_VERIFIE": [
+      "RECEPTION_DECLAREE_NON_VERIFIEE"
+    ],
+    "RECOURS_DECLARE_NON_VERIFIE": [
+      "REPONSE_PARTIELLE_DECLAREE_NON_VERIFIEE",
+      "REPONSE_COMPLETE_DECLAREE_NON_VERIFIEE",
+      "REFUS_DECLARE_NON_VERIFIE",
+      "SILENCE_DECLARE_SANS_DELAI_VERIFIE"
+    ],
+    "ARCHIVAGE_DECLARE_NON_VERIFIE": [
+      "REPONSE_PARTIELLE_DECLAREE_NON_VERIFIEE",
+      "REPONSE_COMPLETE_DECLAREE_NON_VERIFIEE",
+      "REFUS_DECLARE_NON_VERIFIE",
+      "RECOURS_DECLARE_NON_VERIFIE"
+    ]
+  },
+  "base_legale": {
+    "loi": "https://www.legisquebec.gouv.qc.ca/fr/document/lc/A-2.1",
+    "info": "https://www.cai.gouv.qc.ca/acces-documents-organismes-publics/citoyens-acces-documents-publics/comment-acceder-documents-organismes-publics",
+    "delai_initial_jours_civils": 20,
+    "prolongation_max_jours": 10,
+    "recours_indicatif_jours": 30,
+    "debut_compte_a_la_reception_reelle": true
+  },
+  "verrous": {
+    "aucune_transmission_par_le_programme": true,
+    "preuve_hors_git_obligatoire_pour_actes_declares": true,
+    "empreinte_sha256_n_est_pas_authentification": true,
+    "ordre_et_dates_declares_ne_certifient_pas_evenements": true,
+    "aucune_date_limite_legale_depuis_metadonnees_non_validees": true,
+    "recours_pas_declenche_sans_examen_juridique": true,
+    "aucun_renseignement_personnel_en_sortie": true,
+    "documents_originaux_jamais_dans_git": true,
+    "maintien_emploi_et_services": true,
+    "consolidation_quebec_rtc_protegee": true,
+    "deux_regimes_nons_additifs": true,
+    "aucune_fusion_automatique": true
+  },
+  "etat_initial": {
+    "dossiers": 6,
+    "projets_lettres_p53r": 6,
+    "descriptions_ciblees_p53r": 18,
+    "positions_suivi": 66,
+    "evenements_declares": 0,
+    "evenements_authentifies": 0,
+    "envois_verifies": 0,
+    "receptions_verifiees": 0,
+    "recours_verifies": 0,
+    "avis_independants_signes": 0,
+    "economie_certifiee_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

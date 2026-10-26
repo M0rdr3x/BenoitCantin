@@ -1,0 +1,76 @@
+name: Projet Nova P53F - rapprochement transferts et quotes-parts
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p53f.yml"
+      - "scripts/auditer_flux_interadministrations_nova_p53f.py"
+      - "scripts/tests/test_auditer_flux_interadministrations_nova_p53f.py"
+      - "projets/projet-nova/etudes/P53F_*"
+      - "projets/projet-nova/etudes/P53E_*"
+      - "projets/projet-nova/etudes/sources/P53E_MAMH_2024_MUNICIPALITES_LOCALES_SELECTION.csv"
+      - "projets/projet-nova/etudes/P53A_*"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verifier-flux-sans-eliminations-inventees:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Sources du depot en lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: 73 tests de provenance, signes, scenarios et refus de doubles comptes
+        run: |
+          python -m py_compile scripts/auditer_flux_interadministrations_nova_p53f.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_auditer_flux_interadministrations_nova_p53f.py")
+          assert suite.countTestCases()==73,suite.countTestCases()
+          results=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert results.wasSuccessful()
+          PY
+      - name: Rapports 1094 comptes historiques et file de rapprochement
+        run: |
+          python scripts/auditer_flux_interadministrations_nova_p53f.py --rapport p53f_bilan.json --export-csv p53f_journal_non_apparie.csv
+          python - <<'PY'
+          import csv,json
+          from pathlib import Path
+          d=json.loads(Path("p53f_bilan.json").read_text(encoding="utf-8"))
+          assert d["revenus_bruts_CAD"]==32367623561
+          assert d["exposition_susceptible_appariement_CAD"]==6223496057
+          assert d["transactions_appariees"]==0
+          assert d["eliminations_confirmees_CAD"] is None
+          assert d["consolidation_interadministrations_certifiee"] is False
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          with Path("p53f_journal_non_apparie.csv").open(encoding="utf-8") as f:
+            rows=list(csv.reader(f))
+          assert len(rows)==1095
+          assert all(x[-3:]==["","","NON"] for x in rows[1:])
+          PY
+      - name: Refuser une consolidation non prouvee
+        run: |
+          set +e
+          python scripts/auditer_flux_interadministrations_nova_p53f.py --exiger-appariements --rapport p53f_refus.json
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Rapports controles agreges sans suppression
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p53f-candidats-2024-sans-eliminations-no-go
+          path: |
+            p53f_bilan.json
+            p53f_journal_non_apparie.csv
+            p53f_refus.json
+          retention-days: 7
+          if-no-files-found: ignore

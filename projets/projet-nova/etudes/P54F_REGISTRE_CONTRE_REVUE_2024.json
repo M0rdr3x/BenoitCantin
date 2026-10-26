@@ -1,0 +1,85 @@
+{
+  "schema_version": "P54F-1",
+  "date_reference": "2026-10-24",
+  "source_jalon": "P54E",
+  "source_run_p54d": 40120462237,
+  "source_config": "P54E_PLAN_REVUE_HUMAINE_2024.json",
+  "exercice": 2024,
+  "dossiers": [
+    "P54E-V-001",
+    "P54E-M-001",
+    "P54E-M-002",
+    "P54E-M-003"
+  ],
+  "roles": [
+    "EXAMINATEUR",
+    "CONTRE_REVISEUR"
+  ],
+  "statuts": [
+    "EN_EXAMEN",
+    "DOCUMENTE_NON_ATTESTE",
+    "CONTRADICTOIRE",
+    "SUSPENDU"
+  ],
+  "contradictions": [
+    "NON_EVALUE",
+    "QUESTION_OUVERTE",
+    "EXAMEN_CONTRADICTOIRE_REQUIS"
+  ],
+  "hypotheses": [
+    "INDETERMINE",
+    "DATE_PROBABLE",
+    "FOLIO_PROBABLE",
+    "REFERENCE_NORMATIVE_PROBABLE",
+    "IDENTIFIANT_PROBABLE",
+    "VALEUR_A_EXAMINER"
+  ],
+  "types_pieces": [
+    "PUBLICATION_PDF",
+    "NOTE_ANALYSE_PRIVEE",
+    "PIECE_JUSTIFICATIVE_PRIVEE",
+    "AVIS_PROFESSIONNEL_NON_ATTESTE"
+  ],
+  "etats_dossier": [
+    "EN_ATTENTE",
+    "EXAMEN_UNIQUE",
+    "DESACCORD",
+    "SUSPENDU",
+    "CONCORDANCE_DECLARATIVE_INCOMPLETE",
+    "CONCORDANCE_DECLARATIVE_DOCUMENTEE_NON_ATTESTEE"
+  ],
+  "limites_techniques": {
+    "taille_fiche_max_octets": 65536,
+    "taille_piece_max_octets": 33554432,
+    "nombre_pieces_max": 12,
+    "taille_toutes_pieces_max_octets": 134217728
+  },
+  "protections": {
+    "aucune_identite_reelle_publique": true,
+    "pieces_privees_jamais_televersees": true,
+    "empreintes_recalculees_sur_fichiers_locaux": true,
+    "deux_roles_distincts_declaratifs": true,
+    "absence_verification_identite_professionnelle": true,
+    "desaccords_jamais_clos_automatiquement": true,
+    "concordance_n_est_pas_attestation": true,
+    "aucun_montant_brut_dans_bilan": true,
+    "traces_originales_hors_git": true,
+    "aucune_suppression_emplois_services": true,
+    "aucune_nouvelle_economie_operations_deja_eliminees": true,
+    "deux_regimes_constitutionnels_distincts": true,
+    "maintien_no_go": true,
+    "aucune_fusion_main_ou_action_sinjira": true
+  },
+  "etat_initial": {
+    "dossiers": 4,
+    "roles_attendus": 8,
+    "positions_controle_2_roles": 80,
+    "preuves_reelles_p54f": 0,
+    "examens_humains_recus": 0,
+    "contre_revues_recues": 0,
+    "avis_independants_signes": 0,
+    "conclusions_comptables_certifiees": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

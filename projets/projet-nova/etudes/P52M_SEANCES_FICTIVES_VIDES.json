@@ -1,0 +1,12 @@
+{
+  "schema_version": "P52M-SIM-1",
+  "jalon": "P52M",
+  "statut": "SIMULATIONS_SANS_AUTORITE_REELLE",
+  "date_reference": "2026-10-19",
+  "simulations": [],
+  "avis_externes_authentifies": false,
+  "membres_reels_identifies": false,
+  "publication_autorisee": false,
+  "adoption_autorisee": false,
+  "decision": "NO_GO_AUTOMATIQUE"
+}

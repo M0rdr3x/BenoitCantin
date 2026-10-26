@@ -1,0 +1,88 @@
+name: Projet Nova P54K - Habilitations et signatures sans authentification fictive
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54k.yml"
+      - "scripts/verifier_habilitations_signatures_nova_p54k.py"
+      - "scripts/tests/test_verifier_habilitations_signatures_nova_p54k.py"
+      - "scripts/qualifier_contradictions_avis_nova_p54j.py"
+      - "scripts/recevoir_mandats_et_avis_nova_p54i.py"
+      - "projets/projet-nova/etudes/P54K_*"
+      - "projets/projet-nova/etudes/P54J_GRILLE_CONTRADICTIONS_AVIS_2024.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  habiltitations-et-signatures-non-authentifiees:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 16
+    steps:
+      - name: Checkout lecture seule sans credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Dépendance PDF épinglée pour ancrage P54D
+        run: python -m pip install pypdf==5.9.0
+      - name: Tests P54K sur documents 100 pour cent fictifs
+        run: |
+          python -m py_compile scripts/verifier_habilitations_signatures_nova_p54k.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_verifier_habilitations_signatures_nova_p54k.py")
+          assert suite.countTestCases()==75,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Bilan public vide et protections institutionnelles
+        run: |
+          python scripts/verifier_habilitations_signatures_nova_p54k.py --bilan p54k_bilan_neutre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p54k_bilan_neutre.json").read_text("utf-8"))
+          assert len(r["dossiers"])==4
+          assert r["etats"]=={"AUCUNE_REVUE_PROFESSIONNELLE":4}
+          assert r["declarations_humaines_non_attestees"]==0
+          assert r["avis_professionnels_authentifies"]==0
+          assert r["statuts_professionnels_certifies"]==0
+          assert r["signatures_verifiees_par_ordre"]==0
+          assert r["dossiers_clos"]==0
+          assert r["avis_externes_officiels_sollicites"]==0
+          assert r["economies_certifiees_cad"] is None
+          assert r["controles_p54b_restants"]==96
+          assert r["controles_p54c_restants"]==8
+          assert r["fusion_main_autorisee"] is False
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Créer puis supprimer un modèle local fictif, hors artefacts
+        run: |
+          python scripts/verifier_habilitations_signatures_nova_p54k.py --modele-prive "$RUNNER_TEMP/p54k_fiche_privee.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path(os.environ["RUNNER_TEMP"])/"p54k_fiche_privee.json"
+          assert p.exists() and (p.stat().st_mode & 0o777)==0o600
+          assert json.loads(p.read_text("utf-8"))["declarations"]==[]
+          p.unlink()
+          PY
+      - name: Interdire toute authentification automatique
+        run: |
+          set +e
+          python scripts/verifier_habilitations_signatures_nova_p54k.py --exiger-authenticite
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Publier seulement le bilan neutre
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54k-habilitations-et-signatures-non-authentifiees
+          path: p54k_bilan_neutre.json
+          if-no-files-found: ignore
+          retention-days: 7

@@ -1,0 +1,44 @@
+{
+  "schema_version": "P53K-1",
+  "jalon": "P53K",
+  "date_reference": "2026-10-22",
+  "statut": "DOSSIERS_A_DOCUMENTER_SANS_ACQUISITION_EFFECTIVE",
+  "exercice": 2024,
+  "source_sha256": "cef644e3f16ebea6bc727b009037638fa70443fe66fbeb55e4ac1e3cb1071213",
+  "priorites_historiques": 25,
+  "dossiers_revision_complementaire": [
+    "39135"
+  ],
+  "modes_admis": [
+    "QUOTE_PART_MUNICIPALE",
+    "TRANSFERT_MUNICIPAL"
+  ],
+  "documents_requis": [
+    "grand_livre_payeur_sha256",
+    "grand_livre_beneficiaire_sha256",
+    "entente_ou_resolution_sha256",
+    "facture_ou_appel_sha256",
+    "paiement_sha256",
+    "perimetre_comptable_sha256",
+    "controle_elimination_anterieure_sha256"
+  ],
+  "verrous": {
+    "metadonnees_non_authentification": true,
+    "rapprochement_arithmetique_non_certification": true,
+    "elimination_comptable_non_economie": true,
+    "aucun_document_primaire_dans_git": true,
+    "aucun_taux_fiscal_deduit": true,
+    "aucune_revue_independante_presumee": true,
+    "journal_public_ne_contient_pas_de_references_de_pieces": true,
+    "fonds_et_services_essentiels_intacts": true
+  },
+  "premier_etat_de_preuves": {
+    "documents_originaux_dedies_aux_transactions_recus": 0,
+    "revisions_independantes_signees": 0,
+    "appariements_transactionnels_certifies": 0,
+    "economies_reelles_certifiees_cad": null,
+    "preuves_F01_F20_validees": 0,
+    "montants_Nova_inconnus": 1320,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

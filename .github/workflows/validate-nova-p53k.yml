@@ -1,0 +1,75 @@
+name: Projet Nova P53K - Chaine de preuve et acquisitions non certifiees
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p53k.yml"
+      - "scripts/preparer_controles_probatoires_nova_p53k.py"
+      - "scripts/tests/test_preparer_controles_probatoires_nova_p53k.py"
+      - "scripts/auditer_appariements_municipaux_nova_p53j.py"
+      - "projets/projet-nova/etudes/P53K_*"
+      - "projets/projet-nova/etudes/P53I_SOURCES_REVISION_ET_CHARGES_2024.json"
+      - "projets/projet-nova/etudes/P53H_PRIORITES_VERIFICATION_2024.json"
+      - "projets/projet-nova/etudes/sources/P53I_MAMH_2024_1344_RECETTES_CHARGES_SELECTION.csv"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preuve-bilaterale-et-refus:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Acceder au depot en lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Compilation et tests de preuves bloquees
+        run: |
+          python -m py_compile scripts/preparer_controles_probatoires_nova_p53k.py
+          python - <<'PY'
+          import unittest
+          suite = unittest.defaultTestLoader.discover(
+            "scripts/tests", pattern="test_preparer_controles_probatoires_nova_p53k.py")
+          assert suite.countTestCases() == 30, suite.countTestCases()
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Controle 26 dossiers sans fausse acquisition
+        run: |
+          python scripts/preparer_controles_probatoires_nova_p53k.py --rapport p53k_bilan.json --export-registre p53k_registre_26.csv
+          python - <<'PY'
+          import csv, json
+          from pathlib import Path
+          rapport=json.loads(Path("p53k_bilan.json").read_text("utf-8"))
+          with Path("p53k_registre_26.csv").open(encoding="utf-8",newline="") as f:
+            cases=list(csv.DictReader(f))
+          assert rapport["organismes_source"]==1344
+          assert rapport["dossiers_a_documenter"]==26
+          assert rapport["appariements_certifies"]==0
+          assert rapport["eliminations_certifiees_cad"] is None
+          assert rapport["economies_budgetaires_demontrees_cad"] is None
+          assert rapport["decision"]=="NO_GO_AUTOMATIQUE"
+          assert len(cases)==26 and cases[-1]["code_organisme"]=="39135"
+          assert all(x["avis_independant_signe"]=="non" for x in cases)
+          PY
+      - name: Verifier le refus strict de certification
+        run: |
+          set +e
+          python scripts/preparer_controles_probatoires_nova_p53k.py --exiger-certification --rapport p53k_blocage.json
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Publier bilan de controle non nominatif uniquement
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p53k-preuves-non-recue-no-go
+          path: |
+            p53k_bilan.json
+            p53k_blocage.json
+          if-no-files-found: ignore
+          retention-days: 7

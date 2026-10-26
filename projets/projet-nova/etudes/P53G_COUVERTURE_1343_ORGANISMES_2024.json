@@ -1,0 +1,118 @@
+{
+  "schema_version": "P53G-1",
+  "jalon": "P53G",
+  "date_reference": "2026-10-21",
+  "statut": "DONNEES_REELLES_2024_POUR_1343_ORGANISMES_SANS_CONSOLIDATION_INTERORGANISMES",
+  "sources": {
+    "p53e": "projets/projet-nova/etudes/P53E_PREUVES_HISTORIQUES_MUNICIPALES.json",
+    "p53f": "projets/projet-nova/etudes/P53F_FLUX_INTERADMIN_2024.json",
+    "p52a": "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json",
+    "locale": "projets/projet-nova/etudes/sources/P53E_MAMH_2024_MUNICIPALITES_LOCALES_SELECTION.csv",
+    "complementaire": "projets/projet-nova/etudes/sources/P53G_MAMH_2024_249_ORGANISMES_COMPLEMENTAIRES.csv"
+  },
+  "provenance": {
+    "titre": "Données réelles 2024 — Simple occurrence",
+    "producteur": "Ministère des Affaires municipales et de l'Habitation",
+    "url": "https://mamh.gouv.qc.ca/fichiersdonneesouvertes/Données-réelles-2024-SimpleOccurrence.csv",
+    "licence_affichee": "CC-BY 4.0",
+    "annee": 2024,
+    "original_octets_observes": 20254172,
+    "original_sha256_observe": "151c0a2b1fc0dfac8c8cc3dba04b74f5c49fbb98fdfd78251925959d1ad35fff",
+    "original_integral_archive_dans_git": false,
+    "colonnes_originales": 7336,
+    "lignes_originales": 1343,
+    "selection_locale_sha256": "11f940092a6a7eb54bf7dc39c6e5b4b44e73c82e9bb34ce7aae2e7278269aa5e",
+    "selection_complementaire_sha256": "65e3bb97fd9a8bb3bfb16eef77f35036e60cb53a0796cdd491894ad7267db9b0",
+    "selection_complementaire_git_blob": "1bc877c5f85384ad6538c30df66093483b0bed85",
+    "selection_complementaire_octets": 32233,
+    "selection_colonnes": 18,
+    "contre_avis_comptable_independant_obtenu": false
+  },
+  "types_organismes": [
+    {
+      "type_org": "Municipalité locale",
+      "effectif": 1094,
+      "revenus": "32367623561",
+      "taxes": "17337284213",
+      "quotes_parts": "846987123",
+      "transferts": "5376508934",
+      "services": "4241481713"
+    },
+    {
+      "type_org": "Communauté métropolitaine",
+      "effectif": 2,
+      "revenus": "120512321",
+      "taxes": "0",
+      "quotes_parts": "103069005",
+      "transferts": "7270072",
+      "services": "39292"
+    },
+    {
+      "type_org": "Municipalité régionale de comté",
+      "effectif": 85,
+      "revenus": "1417481157",
+      "taxes": "0",
+      "quotes_parts": "524693431",
+      "transferts": "505120735",
+      "services": "232058279"
+    },
+    {
+      "type_org": "Organisme public de transport",
+      "effectif": 12,
+      "revenus": "7122045861",
+      "taxes": "0",
+      "quotes_parts": "1291408741",
+      "transferts": "1751297223",
+      "services": "3670417807"
+    },
+    {
+      "type_org": "Régie intermunicipale",
+      "effectif": 150,
+      "revenus": "636013686",
+      "taxes": "0",
+      "quotes_parts": "382050797",
+      "transferts": "75876140",
+      "services": "108472472"
+    }
+  ],
+  "totaux_bruts_cad": {
+    "revenus": "41663676586",
+    "taxes": "17337284213",
+    "quotes_parts": "3148209097",
+    "transferts": "7716073104",
+    "services": "8252469563"
+  },
+  "total_complementaire_cad": "9296053025",
+  "addition_brute_quotes_et_transferts_cad": "10864282201",
+  "eliminations_interorganismes_certifiees_cad": null,
+  "recettes_consolidees_tous_organismes_cad": null,
+  "recettes_equivalentes_budget_2026_2027_mcad": null,
+  "reforme_Nova_rendement_mcad": null,
+  "controles": {
+    "categories_405_406_a_417_reconciliees_ligne_par_ligne": true,
+    "identifiants_geo_distincts_1343": true,
+    "aucun_appariement_payeurs_beneficiaires_etabli": true,
+    "les_sommes_de_recettes_sont_brutes_non_consolidees": true,
+    "certains_organismes_deja_consolides_dans_leurs_rapports": true,
+    "blancs_non_equivalents_a_recettes_nulles": true,
+    "valeurs_negatives_conservees": true,
+    "transferts_non_ajoutes_au_budget_quebec": true,
+    "annees_2024_et_2026_2027_non_assimilables": true,
+    "pas_d_elimination_sans_preuve_transactionnelle": true,
+    "aucun_taux_Nova_calcule": true
+  },
+  "bilan": {
+    "organismes_recenses": 1343,
+    "organismes_complementaires_ajoutes": 249,
+    "types_distincts": 5,
+    "appariements_reciproques_recus": 0,
+    "eliminations_certifiees": 0,
+    "preuves_F01_F20_validees": 0,
+    "valeurs_Nova_inconnues": 1320,
+    "publication_autorisee": false,
+    "fusion_autorisee": false,
+    "adoption_autorisee": false,
+    "decision": "NO_GO_AUTOMATIQUE",
+    "taux_Nova_adoptes": 0
+  }
+}

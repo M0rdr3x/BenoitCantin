@@ -1,0 +1,119 @@
+{
+  "schema_version": "P54O-1",
+  "date_reference": "2026-10-24",
+  "source_jalon": "P54N",
+  "source_p54d_run": 40120462237,
+  "exercice": 2024,
+  "comparaison": {
+    "ville_pdf_index": 102,
+    "mamh_pdf_index": 162,
+    "occurrences_totales": 5,
+    "occurrences_indeterminees": 4,
+    "date_probable_non_finale": 1
+  },
+  "observation_date_probable": {
+    "id": "P54O-DATE-001",
+    "source": "mamh",
+    "pdf_index": 162,
+    "observation_index": 2,
+    "zone": "FIN",
+    "classification": "ANNEE_DATE_PROBABLE",
+    "dossier_p54e": false
+  },
+  "conditions_pre_passation": [
+    {
+      "code": "AUTORISATION_HUMAINE_DE_PASSATION",
+      "responsable_cible": "GOUVERNANCE_A_DESIGNER",
+      "phase": "AVANT_REMISE",
+      "critere_humain": "AUTORISATION_EXPLICITE_DESTINATAIRE_ET_PORTEE"
+    },
+    {
+      "code": "IDENTIFICATION_DESTINATAIRE_HABILITE",
+      "responsable_cible": "GOUVERNANCE_A_DESIGNER",
+      "phase": "AVANT_REMISE",
+      "critere_humain": "QUALIFICATION_DESTINATAIRE_ET_GESTION_DES_CONFLITS"
+    },
+    {
+      "code": "ACCES_ORIGINAUX_HORS_GIT",
+      "responsable_cible": "RESPONSABLE_DONNEES_A_DESIGNER",
+      "phase": "AVANT_EXAMEN",
+      "critere_humain": "CONTROLE_DES_ACCES_ET_PROVENANCE_COPIES_SOURCE"
+    },
+    {
+      "code": "LOCALISATION_CINQ_OCCURRENCES",
+      "responsable_cible": "EXAMINATEUR_DOCUMENTAIRE_A_DESIGNER",
+      "phase": "EXAMEN_INITIAL",
+      "critere_humain": "REPERE_INDIVIDUEL_SUR_PAGES_ET_DIAGNOSTIC_PRIVE"
+    },
+    {
+      "code": "QUALIFICATION_DOCUMENTAIRE_CINQ_OCCURRENCES",
+      "responsable_cible": "EXAMINATEUR_DOCUMENTAIRE_A_DESIGNER",
+      "phase": "EXAMEN_INITIAL",
+      "critere_humain": "CATEGORIE_CONFIRME_PAR_PIECE_PAS_PAR_HEURISTIQUE"
+    },
+    {
+      "code": "REVUE_CONTRADICTOIRE_DISTINCTE",
+      "responsable_cible": "CONTRE_REVISEUR_A_MANDATER",
+      "phase": "APRES_EXAMEN",
+      "critere_humain": "RESERVES_DESACCORDS_ET_SUSPENSIONS_EXPRESSES"
+    },
+    {
+      "code": "AVIS_JURIDIQUE_CIBLE_SI_NECESSAIRE",
+      "responsable_cible": "JURISTE_A_MANDATER",
+      "phase": "SI_PERTINENT",
+      "critere_humain": "PORTEE_RAVQ_1435_ET_MANDAT_SPECIALISE"
+    },
+    {
+      "code": "CONTROLE_COMPTABLE_CIBLE_SI_MONETAIRE",
+      "responsable_cible": "CPA_A_MANDATER",
+      "phase": "SI_PERTINENT",
+      "critere_humain": "UNITE_SIGNE_PERIMETRE_ET_ELIMINATIONS_RECIPROQUES"
+    },
+    {
+      "code": "AUTHENTIFICATION_DES_AVIS_ET_PERMIS",
+      "responsable_cible": "AUTORITE_HUMAINE_HABILITEE",
+      "phase": "AVANT_TOUTE_CONCLUSION",
+      "critere_humain": "ORIGINAUX_SIGNATURES_STATUTS_CONFLITS_VERIFIES"
+    },
+    {
+      "code": "DECISION_INSTITUTIONNELLE_DISTINCTE",
+      "responsable_cible": "AUTORITE_COMPETENTE",
+      "phase": "HORS_LOGICIEL",
+      "critere_humain": "RESOLUTION_ECRITE_ET_AUTORISATIONS_REELLES"
+    }
+  ],
+  "protections": {
+    "aucune_transmission_automatique": true,
+    "aucune_solicitation_automatique": true,
+    "aucun_original_prive_dans_ci": true,
+    "aucun_identifiant_personne_dans_bilan": true,
+    "aucun_token_numerique_brut": true,
+    "cinq_occurrences_distinctes": true,
+    "date_probable_non_resolue": true,
+    "quatre_dossiers_p54e_non_clos": true,
+    "quarante_taches_p54n_non_attestees": true,
+    "comparabilite_p54b_p54c_ouverte": true,
+    "preuve_hachage_non_certifiante": true,
+    "authenticite_humaine_exigee": true,
+    "avis_reglementaire_specialise_non_audit_nova": true,
+    "pas_de_double_compte_ville_rtc_somhac": true,
+    "aucune_reduction_emploi_ou_service": true,
+    "scenarios_constitutionnels_separes": true,
+    "interdiction_GO_automatique": true,
+    "main_non_fusionnee": true,
+    "sinjira_inchange": true
+  },
+  "etat_initial": {
+    "dossiers_p54e_ouverts": 4,
+    "occurrences_a_qualifier": 5,
+    "taches_p54n_non_attestees": 40,
+    "controles_p54b_restants": 96,
+    "controles_p54c_restants": 8,
+    "conditions_non_levees": 10,
+    "autorisations_effectives_reçues": 0,
+    "mandats_reels_signes": 0,
+    "avis_originaux_authentifies": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

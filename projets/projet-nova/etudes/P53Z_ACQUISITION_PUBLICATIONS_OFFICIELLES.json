@@ -1,0 +1,56 @@
+{
+  "schema_version": "P53Z-1",
+  "jalon": "P53Z",
+  "date_reference": "2026-10-24",
+  "statut": "ACQUISITION_PUBLICATIONS_OFFICIELLES_CONDITIONNELLE_SANS_CERTIFICATION",
+  "exercice": 2024,
+  "organismes": [
+    "23027",
+    "T0088"
+  ],
+  "sources": {
+    "ville": "https://www.ville.quebec.qc.ca/publications/docs_ville/Rapport_financier_2024.pdf",
+    "mamh": "https://www.mamh.gouv.qc.ca/documentsfinanciersweb/Rapport-financier-2024-et-autres-23027.pdf"
+  },
+  "plafonds": {
+    "octets_par_pdf": 67108864,
+    "secondes_par_source": 25,
+    "extraction_pages_max": 1200
+  },
+  "controles": [
+    "TELECHARGEMENT_TLS_DOMAINES_OFFICIELS",
+    "REJET_REDIRECTIONS_HORS_HOTES_ADMIS",
+    "CONTROLE_OCTETS_PDF",
+    "SHA256_DES_OCTETS_REELLEMENT_ACQUIS",
+    "COMPARAISON_P53X_SANS_PREUVE_JURIDIQUE",
+    "CITATION_ET_DATE_ACQUISITION",
+    "BILAN_SANS_ORIGINAL_PDF",
+    "ERREUR_RESEAU_SANS_FAUSSE_PREUVE"
+  ],
+  "gardes": {
+    "aucune_piece_originale_dans_git": true,
+    "aucune_image_ocr_extraction_texte_en_sortie": true,
+    "aucun_telechargement_confidentiel": true,
+    "aucun_url_personnalise_accepte": true,
+    "domaines_de_redirection_restreints": true,
+    "original_fichier_non_conserve_par_ci": true,
+    "hachage_fichier_public_pas_preuve_identite_emetteur": true,
+    "divergences_pdf_pas_anomalies_financieres": true,
+    "date_observation_pas_date_creation_officielle": true,
+    "rapprochement_grands_livres_non_realise": true,
+    "elimination_reciproque_rtc_deja_effectuee": true,
+    "emplois_et_services_maintenus": true,
+    "regimes_constitutionnels_separes": true,
+    "pas_de_fusion_automatique": true
+  },
+  "etat_initial": {
+    "publications_a_acquerir": 2,
+    "octets_officiels_acquis_dans_ce_jalon": 0,
+    "empreintes_publiees_par_organisme_emetteur_connues": 0,
+    "equivalences_pdf_constatees": null,
+    "rapprochements_comptables_certifies": 0,
+    "avis_independants_signes": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

@@ -1,0 +1,155 @@
+{
+  "schema_version": "P54N-1",
+  "date_reference": "2026-10-24",
+  "source_jalons": [
+    "P54D",
+    "P54E",
+    "P54M"
+  ],
+  "source_exercice": 2024,
+  "source_p54d_run": 40120462237,
+  "dossiers": [
+    {
+      "id": "P54E-V-001",
+      "source": "ville",
+      "pdf_index": 102,
+      "observation_index": 0,
+      "zone": "FIN",
+      "classification": "INDETERMINE"
+    },
+    {
+      "id": "P54E-M-001",
+      "source": "mamh",
+      "pdf_index": 162,
+      "observation_index": 1,
+      "zone": "DEBUT",
+      "classification": "INDETERMINE"
+    },
+    {
+      "id": "P54E-M-002",
+      "source": "mamh",
+      "pdf_index": 162,
+      "observation_index": 3,
+      "zone": "FIN",
+      "classification": "INDETERMINE"
+    },
+    {
+      "id": "P54E-M-003",
+      "source": "mamh",
+      "pdf_index": 162,
+      "observation_index": 4,
+      "zone": "FIN",
+      "classification": "INDETERMINE"
+    }
+  ],
+  "taches": [
+    {
+      "code": "ORIGINAUX_ET_IDENTIFICATION",
+      "responsable": "EXAMINATEUR_DOCUMENTAIRE",
+      "livrable": "COPIES_SOURCES_DATEES_ET_EMPREINTES",
+      "condition": "VALIDER_LES_DEUX_PDF_SOURCES_ET_RETROUVER_L_OCCURRENCE_EXACTE"
+    },
+    {
+      "code": "CONCORDANCE_FOLIO_PAGE",
+      "responsable": "EXAMINATEUR_DOCUMENTAIRE",
+      "livrable": "TABLE_CORRESPONDANCE_PAGES_FOLIOS",
+      "condition": "IDENTIFIER_PAGINATION_ET_ZONE_SANS_PREJUGER_DE_LA_NATURE_DU_JETON"
+    },
+    {
+      "code": "CONTEXTE_ET_CATEGORIE",
+      "responsable": "EXAMINATEUR_DOCUMENTAIRE",
+      "livrable": "QUALIFICATION_INDIVIDUELLE_DOCUMENTEE",
+      "condition": "DISTINGUER_DATE_FOLIO_REFERENCE_IDENTIFIANT_OU_VALEUR_A_EXAMINER"
+    },
+    {
+      "code": "EXERCICE_UNITE_ET_COLONNE",
+      "responsable": "EXPERT_COMPTABLE_A_MANDATER",
+      "livrable": "NOTE_UNITES_COLONNES_SIGNES",
+      "condition": "VERIFIER_EXERCICE_2024_ET_NATURE_MONETAIRE_AVANT_TOUTE_QUANTIFICATION"
+    },
+    {
+      "code": "PERIMETRE_REGLEMENTAIRE",
+      "responsable": "EXPERT_JURIDIQUE_A_MANDATER",
+      "livrable": "AVIS_PORTEE_RAVQ_1435",
+      "condition": "DISTINGUER_AUDIT_DEPENSES_MIXTES_ET_AUDIT_HYPOTHETIQUE_NOVA"
+    },
+    {
+      "code": "OPERATIONS_RECIPROQUES",
+      "responsable": "EXPERT_COMPTABLE_A_MANDATER",
+      "livrable": "TABLE_RAPPROCHEMENT_CONSOLIDATION",
+      "condition": "VERIFIER_VILLE_RTC_SOMHAC_ET_ELIMINATIONS_AVANT_TOUT_GAIN"
+    },
+    {
+      "code": "REGLES_CONFIDENTIALITE",
+      "responsable": "RESPONSABLE_DONNEES_HABILITE",
+      "livrable": "AUTORISATIONS_ET_CONSERVATION_HORS_GIT",
+      "condition": "NE_PAS_PUBLIER_ORIGINAUX_PROTEGES_IDENTITES_JETONS"
+    },
+    {
+      "code": "CONTRE_EXAMEN",
+      "responsable": "CONTRE_REVISEUR_INDEPENDANT_A_MANDATER",
+      "livrable": "EXAMEN_CONTRADICTOIRE_TRACE",
+      "condition": "MAINTENIR_DESACCORD_ET_SUSPENSION_NON_RESOLUS"
+    },
+    {
+      "code": "GARANTIES_SOCIALES",
+      "responsable": "RESPONSABLE_POLITIQUES_PUBLIQUES_A_MANDATER",
+      "livrable": "EVALUATION_CONTINUITE_SERVICES_EMPLOIS",
+      "condition": "AUCUNE_REDUCTION_SUR_HYPOTHESE_NON_ETAYEE"
+    },
+    {
+      "code": "AUTHENTIFICATION_ET_DECISION",
+      "responsable": "AUTORITE_HUMAINE_COMPETENTE",
+      "livrable": "AVIS_ORIGINAL_DATE_SIGNE_ET_AUTHENTIFIE_MANUELLEMENT",
+      "condition": "DECISION_INSTITUTIONNELLE_HORS_LOGICIEL_APRES_EXPERTISE"
+    }
+  ],
+  "categorie_adjacente": {
+    "type": "DATE_PROBABLE_NON_RESOLUE",
+    "nombre": 1,
+    "exiger_confirmation_humaine": true
+  },
+  "roles_mandat": [
+    "EXPERT_COMPTABLE_A_MANDATER",
+    "EXPERT_JURIDIQUE_A_MANDATER",
+    "CONTRE_REVISEUR_INDEPENDANT_A_MANDATER"
+  ],
+  "exigences_sortie": [
+    "ORIGINAUX_DOCUMENTES",
+    "OBSERVATIONS_QUALIFIEES",
+    "CONTRE_REVUE_RESOLUE",
+    "AVIS_COMPTABLE_INDEPENDANT_SI_PERTINENT",
+    "AVIS_JURIDIQUE_INDEPENDANT_SI_PERTINENT",
+    "SIGNATURES_AUTHENTIFIEES_PAR_PROCEDURE_HUMAINE",
+    "PERIMETRE_UNITES_CONSOLIDATION_VERIFIES",
+    "GARANTIES_EMPLOIS_SERVICES",
+    "DECISION_AUTORITE_COMPETENTE_EXTERNE_AU_CODE"
+  ],
+  "protections": {
+    "aucune_anomalie_financiere_demontree": true,
+    "aucune_economie_certifiee": true,
+    "quatre_dossiers_non_clos": true,
+    "une_date_probable_non_resolue": true,
+    "deux_audits_specialises_ne_certifient_pas_nova": true,
+    "aucune_pression_sur_emploi_ou_services": true,
+    "aucun_double_compte_consolidation_ville_rtc_somhac": true,
+    "aucun_contact_avec_un_tiers_par_le_logiciel": true,
+    "aucune_signature_ou_qualification_authentifiee": true,
+    "originaux_proteges_hors_git": true,
+    "aucun_merge_main": true,
+    "aucun_changement_sinjira": true,
+    "quebec_dans_canada_et_souverain_hypothetique_distincts": true,
+    "no_go_automatique": true
+  },
+  "etat_initial": {
+    "dossiers_ouverts": 4,
+    "taches_par_dossier": 10,
+    "positions_a_instruire": 40,
+    "verifications_p54b_non_attestees": 96,
+    "verifications_p54c_non_attestees": 8,
+    "expertises_reelles_obtenues": 0,
+    "decisions_financieres_certifiees": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

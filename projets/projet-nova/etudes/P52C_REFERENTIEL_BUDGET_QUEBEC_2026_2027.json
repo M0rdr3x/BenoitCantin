@@ -1,0 +1,241 @@
+{
+  "schema_version": "P52C-1",
+  "statut": "REFERENCE_OFFICIELLE_MARS_2026_PREVISION_NON_REALISEE",
+  "periode": "2026-2027",
+  "unite": "M_CAD",
+  "sources": [
+    {
+      "id": "DISC2026_T3",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_Discours.pdf",
+      "source": "Discours sur le budget 2026-2027",
+      "tableau": "Tableau 3",
+      "page_imprimee": "27",
+      "nature": "prévisions de recettes du gouvernement du Québec"
+    },
+    {
+      "id": "PLAN2026_F2",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_PlanBudgetaire.pdf",
+      "source": "Plan budgétaire 2026-2027",
+      "tableau": "Tableau F.2",
+      "page_imprimee": "F.9",
+      "nature": "prévisions de recettes, dépenses et ajustements"
+    }
+  ],
+  "lignes_revenus": [
+    {
+      "id": "impot_particuliers",
+      "libelle": "Impôt des particuliers",
+      "groupe": "impots_sur_revenu_et_biens",
+      "nature": "impot_revenu_actuel",
+      "valeur_mcad": "50800",
+      "source_id": "DISC2026_T3"
+    },
+    {
+      "id": "cotisations_sante",
+      "libelle": "Cotisations pour les services de santé",
+      "groupe": "impots_sur_revenu_et_biens",
+      "nature": "prelevement_distinct",
+      "valeur_mcad": "9412",
+      "source_id": "DISC2026_T3"
+    },
+    {
+      "id": "impot_societes",
+      "libelle": "Impôts des sociétés",
+      "groupe": "impots_sur_revenu_et_biens",
+      "nature": "impot_revenu_actuel",
+      "valeur_mcad": "14527",
+      "source_id": "DISC2026_T3"
+    },
+    {
+      "id": "foncier_scolaire",
+      "libelle": "Impôt foncier scolaire",
+      "groupe": "impots_sur_revenu_et_biens",
+      "nature": "prelevement_distinct",
+      "valeur_mcad": "1311",
+      "source_id": "DISC2026_T3"
+    },
+    {
+      "id": "taxes_vente",
+      "libelle": "Taxes de vente (agrégat, PAS TVQ seule)",
+      "groupe": "taxes_consommation",
+      "nature": "prelevement_distinct",
+      "valeur_mcad": "26349",
+      "source_id": "DISC2026_T3"
+    },
+    {
+      "id": "carburants",
+      "libelle": "Carburants",
+      "groupe": "taxes_consommation",
+      "nature": "prelevement_distinct",
+      "valeur_mcad": "2097",
+      "source_id": "DISC2026_T3"
+    },
+    {
+      "id": "tabac",
+      "libelle": "Produits du tabac",
+      "groupe": "taxes_consommation",
+      "nature": "prelevement_distinct",
+      "valeur_mcad": "830",
+      "source_id": "DISC2026_T3"
+    },
+    {
+      "id": "alcool",
+      "libelle": "Boissons alcooliques",
+      "groupe": "taxes_consommation",
+      "nature": "prelevement_distinct",
+      "valeur_mcad": "574",
+      "source_id": "DISC2026_T3"
+    },
+    {
+      "id": "consommation_autres",
+      "libelle": "Autres taxes à la consommation",
+      "groupe": "taxes_consommation",
+      "nature": "prelevement_distinct",
+      "valeur_mcad": "158",
+      "source_id": "DISC2026_T3"
+    },
+    {
+      "id": "hydro",
+      "libelle": "Hydro-Québec",
+      "groupe": "entreprises_gouvernement",
+      "nature": "revenu_non_fiscal",
+      "valeur_mcad": "2445",
+      "source_id": "DISC2026_T3"
+    },
+    {
+      "id": "loto",
+      "libelle": "Loto-Québec",
+      "groupe": "entreprises_gouvernement",
+      "nature": "revenu_non_fiscal",
+      "valeur_mcad": "1557",
+      "source_id": "DISC2026_T3"
+    },
+    {
+      "id": "saq",
+      "libelle": "Société des alcools du Québec",
+      "groupe": "entreprises_gouvernement",
+      "nature": "revenu_non_fiscal",
+      "valeur_mcad": "1406",
+      "source_id": "DISC2026_T3"
+    },
+    {
+      "id": "iq",
+      "libelle": "Investissement Québec",
+      "groupe": "entreprises_gouvernement",
+      "nature": "revenu_non_fiscal",
+      "valeur_mcad": "292",
+      "source_id": "DISC2026_T3"
+    },
+    {
+      "id": "sqdc",
+      "libelle": "Société québécoise du cannabis",
+      "groupe": "entreprises_gouvernement",
+      "nature": "revenu_non_fiscal",
+      "valeur_mcad": "146",
+      "source_id": "DISC2026_T3"
+    },
+    {
+      "id": "entreprises_autres",
+      "libelle": "Autres entreprises du gouvernement",
+      "groupe": "entreprises_gouvernement",
+      "nature": "revenu_non_fiscal",
+      "valeur_mcad": "7",
+      "source_id": "DISC2026_T3"
+    },
+    {
+      "id": "droits_redevances",
+      "libelle": "Droits, permis et redevances",
+      "groupe": "droits_permis_redevances",
+      "nature": "revenu_non_fiscal_non_assimile",
+      "valeur_mcad": "6542",
+      "source_id": "DISC2026_T3"
+    },
+    {
+      "id": "revenus_divers",
+      "libelle": "Revenus divers",
+      "groupe": "revenus_divers",
+      "nature": "revenu_non_fiscal_non_assimile",
+      "valeur_mcad": "15908",
+      "source_id": "DISC2026_T3"
+    },
+    {
+      "id": "perequation",
+      "libelle": "Péréquation",
+      "groupe": "transferts_federaux",
+      "nature": "transfert_federal",
+      "valeur_mcad": "13907",
+      "source_id": "DISC2026_T3"
+    },
+    {
+      "id": "sante_federal",
+      "libelle": "Transferts pour la santé",
+      "groupe": "transferts_federaux",
+      "nature": "transfert_federal",
+      "valeur_mcad": "9265",
+      "source_id": "DISC2026_T3"
+    },
+    {
+      "id": "social_federal",
+      "libelle": "Postsecondaire et autres programmes sociaux",
+      "groupe": "transferts_federaux",
+      "nature": "transfert_federal",
+      "valeur_mcad": "1392",
+      "source_id": "DISC2026_T3"
+    },
+    {
+      "id": "autres_federaux",
+      "libelle": "Autres programmes fédéraux",
+      "groupe": "transferts_federaux",
+      "nature": "transfert_federal",
+      "valeur_mcad": "7567",
+      "source_id": "DISC2026_T3"
+    }
+  ],
+  "sous_totaux_officiels_mcad": {
+    "impots_sur_revenu_et_biens": "76050",
+    "taxes_consommation": "30008",
+    "entreprises_gouvernement": "5853",
+    "droits_permis_redevances": "6542",
+    "revenus_divers": "15908",
+    "transferts_federaux": "32131",
+    "revenus_autonomes": "134361",
+    "revenus_totaux": "166492"
+  },
+  "depenses_et_ajustements_officiels_mcad": {
+    "depenses_portefeuilles": "160489",
+    "service_dette": "10268",
+    "depenses_totales": "170757",
+    "provision_eventualites": "2000",
+    "versements_fonds_generations": "2347",
+    "deficit_comptable": "-6265",
+    "solde_budgetaire_loi_equilibre": "-8612"
+  },
+  "concordance_referentiel_nova": {
+    "chemin": "projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json",
+    "modele_annee": "2026-2027",
+    "montants_en_gcad": {
+      "revenus_consolides": "166.492",
+      "depenses_consolidees": "170.757",
+      "service_dette_indicatif": "10.268"
+    },
+    "rapprochement_attendu": "EXACT_POUR_CES_3_AGREGATS",
+    "autres_champs_de_modele_non_certifies": true
+  },
+  "tests_de_perimetre": {
+    "taxes_de_vente_aggregat_inclut_autres_taxations": true,
+    "les_revenus_non_fiscaux_ne_sont_pas_des_impots_sur_le_revenu": true,
+    "les_transferts_federaux_ne_sont_pas_des_taxes_provinciales": true,
+    "ne_pas_ajouter_deux_fois_le_service_dette": true,
+    "provision_et_fonds_generation_non_inclus_dans_total_depenses": true,
+    "ce_n_est_pas_un_bilan_de_quebec_souverain": true,
+    "ne_pas_injecter_automatiquement_dans_projections_2027_2036": true
+  },
+  "donnees_validees_comme_sources_publiees": true,
+  "hypotheses_nova_certifiees": false,
+  "recettes_anti_evasion_nouvelles_certifiees": false,
+  "taux_adoptes": false,
+  "adoption_programmatique": false,
+  "fusion_autorisee": false,
+  "publication_autorisee": false,
+  "decision": "NO_GO_AUTOMATIQUE"
+}

@@ -1,0 +1,58 @@
+{
+  "schema_version": "P54U-1",
+  "date_reference": "2026-10-24",
+  "source_jalons": [
+    "P54P",
+    "P54T",
+    "P54O",
+    "P54N"
+  ],
+  "reference_run_p54p": 40151185184,
+  "reference_artifact_p54p": 12583661231,
+  "exercice": 2024,
+  "observations_historiques": 5,
+  "dossiers_p54e": 4,
+  "observation_date_probable": 1,
+  "controles_humains_par_observation": [
+    "VERIFIER_VERSION_PDF",
+    "REPRODUIRE_EXTRACTION_NFKC",
+    "REPERER_SUR_PAGE_VISUELLE",
+    "QUALIFIER_NATURE_JETON",
+    "CONTRE_REVUE_INDEPENDANTE"
+  ],
+  "protections": {
+    "bilans_p54t_sha256_obligatoires_pour_fiches": true,
+    "aucun_pdf_relu_par_p54u": true,
+    "aucun_zip_relu_par_p54u": true,
+    "offsets_nonsimilaires_aux_coordonnees_visuelles": true,
+    "aucune_valeur_numerique_brute_publiee": true,
+    "aucun_avis_authentifie": true,
+    "aucune_occurrence_classee_comme_economie": true,
+    "date_probable_non_close": true,
+    "quatre_dossiers_p54e_non_clos": true,
+    "p54o_blocages_non_leves": true,
+    "quarante_taches_p54n_non_attestees": true,
+    "controles_p54b_p54c_ouverts": true,
+    "pas_de_double_compte_consolidation": true,
+    "continuite_emplois_services": true,
+    "deux_scenarios_constitutionnels_distincts": true,
+    "aucune_transmission_externe": true,
+    "no_go_automatique": true,
+    "main_non_fusionnee": true,
+    "sinjira_inchange": true
+  },
+  "etat_initial": {
+    "bilans_figes_relus_dans_ce_jalon": 0,
+    "pdf_reacquis": 0,
+    "positions_reextraites": 0,
+    "offsets_historique_exploites": 0,
+    "verifications_humaines_effectuees": 0,
+    "controles_p54b_non_attestes": 96,
+    "controles_p54c_non_attestes": 8,
+    "actions_p54n_non_attestees": 40,
+    "blocages_p54o_non_leves": 10,
+    "avis_professionnels_authentifies": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

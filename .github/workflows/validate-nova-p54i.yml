@@ -1,0 +1,86 @@
+name: Projet Nova P54I - Reception technique de mandats et avis non authentifies
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54i.yml"
+      - "scripts/recevoir_mandats_et_avis_nova_p54i.py"
+      - "scripts/tests/test_recevoir_mandats_et_avis_nova_p54i.py"
+      - "scripts/preparer_mandats_experts_nova_p54h.py"
+      - "scripts/gerer_contre_revues_nova_p54f.py"
+      - "projets/projet-nova/etudes/P54I_*"
+      - "projets/projet-nova/etudes/P54H_MANDATS_EXPERTS_INDEPENDANTS_2024.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reception-sans-certification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Installer parseur PDF épinglé pour la chaîne P54D
+        run: python -m pip install pypdf==5.9.0
+      - name: Executer 68 tests synthétiques
+        run: |
+          python -m py_compile scripts/recevoir_mandats_et_avis_nova_p54i.py
+          python - <<'PY'
+          import unittest
+          s=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_recevoir_mandats_et_avis_nova_p54i.py")
+          assert s.countTestCases()==68,s.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(s)
+          assert result.wasSuccessful()
+          PY
+      - name: Vérifier deux mandats sans réception ni certificat
+        run: |
+          python scripts/recevoir_mandats_et_avis_nova_p54i.py --bilan p54i_bilan_neutre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p54i_bilan_neutre.json").read_text("utf-8"))
+          assert len(d["mandats"])==2
+          assert d["statuts_locaux"]=={"FICHIER_LOCAL_NON_RECU":2}
+          assert d["pieces_locales_integrite_seulement"]==0
+          assert d["mandats_reellement_authentifies"]==0
+          assert d["experts_independants_authentifies"]==0
+          assert d["avis_independants_signes_authentifies"]==0
+          assert d["controles_p54b_en_attente"]==96
+          assert d["controles_p54c_en_attente"]==8
+          assert d["economies_certifiees_cad"] is None
+          assert d["fusion_main_autorisee"] is False
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Modèle privé temporaire effacé avant archivage
+        run: |
+          python scripts/recevoir_mandats_et_avis_nova_p54i.py --modele-prive "$RUNNER_TEMP/p54i_prive.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path(os.environ["RUNNER_TEMP"])/"p54i_prive.json"
+          assert p.exists() and (p.stat().st_mode & 0o777)==0o600
+          assert json.loads(p.read_text("utf-8"))["receptions"]==[]
+          p.unlink()
+          PY
+      - name: Refuser authentification automatique
+        run: |
+          set +e
+          python scripts/recevoir_mandats_et_avis_nova_p54i.py --exiger-authenticite-certifiee
+          result=$?
+          set -e
+          test "$result" -eq 3
+      - name: Archiver uniquement le bilan neutre
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54i-reception-locale-avis-non-authentifies
+          path: p54i_bilan_neutre.json
+          if-no-files-found: ignore
+          retention-days: 7

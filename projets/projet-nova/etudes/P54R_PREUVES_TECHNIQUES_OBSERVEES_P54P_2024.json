@@ -1,0 +1,105 @@
+{
+  "schema_version": "P54R-1",
+  "date_reference": "2026-10-24",
+  "source_jalon": "P54P",
+  "source_run_id": 40151185184,
+  "source_job_id": 121042887853,
+  "artifact_id": 12583661231,
+  "artifact_sha256": "d87562662c4c82176e02bdcb28035bb704f2734eb998e0161ef17a21e268c42e",
+  "archive_size_octets": 1533,
+  "pieces_archive": {
+    "p54p_avant_acquisition.json": {
+      "sha256": "73856ddd9284acec7a0a5edcf538ff5f7c387ab28429e736cfeb85a1c92914dd",
+      "taille_octets": 795
+    },
+    "p54p_reproduction_conditionnelle.json": {
+      "sha256": "ebfae307f375519b5921358af70b624991f9a3f6a383eb91139d64c399620fb1",
+      "taille_octets": 2631
+    }
+  },
+  "sha256_sources_p54d": {
+    "ville": "b3ee3e671f7bf98e56c7d42b5e8b6c34de02a96c9dc1c96469819fa4dbfa7399",
+    "mamh": "4323c87d2114b58cf7a093c08f3b30327e949db91b9beb46a627eac1ecb4fc00"
+  },
+  "positions_historiques": [
+    {
+      "source": "ville",
+      "index_observation_p54d": 0,
+      "dossier": "P54E-V-001",
+      "classification_indicative": "INDETERMINE",
+      "zone_confirmee_par_parseur": "FIN",
+      "pdf_index_zero": 102,
+      "offset_texte_extrait": 2359,
+      "longueur_texte_normalise_nfkc": 2364,
+      "aucune_conclusion_financiere": true
+    },
+    {
+      "source": "mamh",
+      "index_observation_p54d": 1,
+      "dossier": "P54E-M-001",
+      "classification_indicative": "INDETERMINE",
+      "zone_confirmee_par_parseur": "DEBUT",
+      "pdf_index_zero": 162,
+      "offset_texte_extrait": 18,
+      "longueur_texte_normalise_nfkc": 2439,
+      "aucune_conclusion_financiere": true
+    },
+    {
+      "source": "mamh",
+      "index_observation_p54d": 2,
+      "dossier": null,
+      "classification_indicative": "ANNEE_DATE_PROBABLE",
+      "zone_confirmee_par_parseur": "FIN",
+      "pdf_index_zero": 162,
+      "offset_texte_extrait": 2420,
+      "longueur_texte_normalise_nfkc": 2439,
+      "aucune_conclusion_financiere": true
+    },
+    {
+      "source": "mamh",
+      "index_observation_p54d": 3,
+      "dossier": "P54E-M-002",
+      "classification_indicative": "INDETERMINE",
+      "zone_confirmee_par_parseur": "FIN",
+      "pdf_index_zero": 162,
+      "offset_texte_extrait": 2430,
+      "longueur_texte_normalise_nfkc": 2439,
+      "aucune_conclusion_financiere": true
+    },
+    {
+      "source": "mamh",
+      "index_observation_p54d": 4,
+      "dossier": "P54E-M-003",
+      "classification_indicative": "INDETERMINE",
+      "zone_confirmee_par_parseur": "FIN",
+      "pdf_index_zero": 162,
+      "offset_texte_extrait": 2436,
+      "longueur_texte_normalise_nfkc": 2439,
+      "aucune_conclusion_financiere": true
+    }
+  ],
+  "protections": {
+    "aucune_attestation_professionnelle": true,
+    "aucun_montant_infere": true,
+    "fichiers_zips_sans_extraction": true,
+    "archive_epinglee_sha256": true,
+    "fichiers_internes_epingles_sha256": true,
+    "aucun_texte_source_publie": true,
+    "aucun_pdf_original_publie": true,
+    "pas_de_zip_traversal": true,
+    "pas_de_zip_bomb": true,
+    "aucune_sortie_certifiante": true,
+    "offsets_nfkc_non_visuels": true,
+    "aucun_echec_acquisition_transforme_en_succes": true,
+    "preuve_technique_ne_authentifie_pas_emetteur": true,
+    "historique_ci_distinct_de_reverification": true,
+    "quatre_dossiers_p54e_ouverts": true,
+    "une_date_probable_non_certifiee": true,
+    "pas_de_double_compte_ville_rtc_somhac": true,
+    "emplois_services_proteges": true,
+    "deux_scenarios_constitutionnels_separes": true,
+    "main_non_fusionnee": true,
+    "sinjira_inchange": true
+  },
+  "decision": "NO_GO_AUTOMATIQUE"
+}

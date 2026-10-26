@@ -1,0 +1,168 @@
+{
+  "schema_version": "P52J-1",
+  "jalon": "P52J",
+  "date_lecture": "2026-10-19",
+  "statut": "RELECTURE_PRIMAIRE_ASSISTEE_NON_CERTIFIEE",
+  "unite": "M_CAD",
+  "periode": "2026-2027",
+  "objectif": "Recoupement exact de deux tableaux publics avec la transcription locale P52C; pas une analyse de soutenabilité de la réforme.",
+  "source_primaires": [
+    {
+      "id": "DISC2026_T3",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_Discours.pdf",
+      "tableau": "Tableau 3",
+      "page_imprimee": "27",
+      "page_pdf_index_zero": 29,
+      "nature": "PREVISION_BUDGET_MARS_2026",
+      "empreinte_sha256_pdf": null,
+      "archivage_original_pdf_atteste": false,
+      "relecture_humaine_independante": false
+    },
+    {
+      "id": "PLAN2026_F2",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_PlanBudgetaire.pdf",
+      "tableau": "Tableau F.2",
+      "page_imprimee": "F.9",
+      "page_pdf_index_zero": 277,
+      "nature": "PREVISION_BUDGET_MARS_2026",
+      "empreinte_sha256_pdf": null,
+      "archivage_original_pdf_atteste": false,
+      "relecture_humaine_independante": false
+    }
+  ],
+  "transcription_discours_tableau3": {
+    "lignes_revenus": [
+      {
+        "id": "impot_particuliers",
+        "valeur_mcad": "50800"
+      },
+      {
+        "id": "cotisations_sante",
+        "valeur_mcad": "9412"
+      },
+      {
+        "id": "impot_societes",
+        "valeur_mcad": "14527"
+      },
+      {
+        "id": "foncier_scolaire",
+        "valeur_mcad": "1311"
+      },
+      {
+        "id": "taxes_vente",
+        "valeur_mcad": "26349"
+      },
+      {
+        "id": "carburants",
+        "valeur_mcad": "2097"
+      },
+      {
+        "id": "tabac",
+        "valeur_mcad": "830"
+      },
+      {
+        "id": "alcool",
+        "valeur_mcad": "574"
+      },
+      {
+        "id": "consommation_autres",
+        "valeur_mcad": "158"
+      },
+      {
+        "id": "hydro",
+        "valeur_mcad": "2445"
+      },
+      {
+        "id": "loto",
+        "valeur_mcad": "1557"
+      },
+      {
+        "id": "saq",
+        "valeur_mcad": "1406"
+      },
+      {
+        "id": "iq",
+        "valeur_mcad": "292"
+      },
+      {
+        "id": "sqdc",
+        "valeur_mcad": "146"
+      },
+      {
+        "id": "entreprises_autres",
+        "valeur_mcad": "7"
+      },
+      {
+        "id": "droits_redevances",
+        "valeur_mcad": "6542"
+      },
+      {
+        "id": "revenus_divers",
+        "valeur_mcad": "15908"
+      },
+      {
+        "id": "perequation",
+        "valeur_mcad": "13907"
+      },
+      {
+        "id": "sante_federal",
+        "valeur_mcad": "9265"
+      },
+      {
+        "id": "social_federal",
+        "valeur_mcad": "1392"
+      },
+      {
+        "id": "autres_federaux",
+        "valeur_mcad": "7567"
+      }
+    ],
+    "sous_totaux_officiels_mcad": {
+      "impots_sur_revenu_et_biens": "76050",
+      "taxes_consommation": "30008",
+      "entreprises_gouvernement": "5853",
+      "droits_permis_redevances": "6542",
+      "revenus_divers": "15908",
+      "transferts_federaux": "32131",
+      "revenus_autonomes": "134361",
+      "revenus_totaux": "166492"
+    },
+    "note_taxes_de_vente": "Categorie agrégée qui comprend entre autres TVQ, taxe sur les primes d'assurance, taxe sur l'hébergement et droit spécifique sur les pneus neufs; ne pas assimiler à TVQ seule."
+  },
+  "transcription_plan_budgetaire_f2": {
+    "montants_signes_comme_affiches_mcad": {
+      "revenus_autonomes": "134361",
+      "transferts_federaux": "32131",
+      "revenus_totaux": "166492",
+      "depenses_portefeuilles": "-160489",
+      "service_dette": "-10268",
+      "depenses_totales": "-170757",
+      "provision_eventualites": "-2000",
+      "deficit_comptable": "-6265",
+      "versements_fonds_generations": "-2347",
+      "solde_budgetaire_loi_equilibre": "-8612"
+    },
+    "note_signes": "Le tableau F.2 affiche les dépenses, la provision et les versements au Fonds des générations avec un signe négatif; P52C range les charges positives avant calcul. Les signes doivent être convertis explicitement."
+  },
+  "validation_de_nature": {
+    "reference_p52c": "projets/projet-nova/etudes/P52C_REFERENTIEL_BUDGET_QUEBEC_2026_2027.json",
+    "reference_p52a": "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json",
+    "reference_p52i": "projets/projet-nova/etudes/P52I_SOURCES_ET_ATTESTATIONS.json",
+    "transcription_visuelle_assistee": true,
+    "validation_par_expert_independant": false,
+    "preuve_F09_independamment_attestee": false,
+    "verification_hash_pdf_original": false,
+    "verification_mise_a_jour_ulterieure": false,
+    "preuve_provenance_document_archives": false,
+    "prevision_non_resultat_realise": true,
+    "statut_non_appauvrissement_demonstre": false,
+    "recettes_anti_evasion_certifiees": false,
+    "taux_impot_proposes_ou_adoptes": false,
+    "consolidation_tous_niveaux_gouvernementaux": false,
+    "reforme_souveraine_financee": false,
+    "publication_autorisee": false,
+    "fusion_autorisee": false,
+    "adoption_autorisee": false,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
