@@ -18,6 +18,12 @@ CREDENTIAL_PERSIST = re.compile(
     r"""(?mi)^[ \t]*(?:-[ \t]*)?persist-credentials:[ \t]*(?:true|'true'|"true")[ \t]*(?:\#.*)?$"""
 )
 
+CHECKOUT_PINNED = re.compile(
+    r"^[ \t]*(?:-\s*)?uses:[ \t]*actions/checkout@[0-9a-fA-F]{40}[ \t]*(?:#.*)?$"
+)
+CHECKOUT_SAFE = re.compile(
+    r"""(?mi)^[ \t]*persist-credentials:[ \t]*(?:false|'false'|"false")[ \t]*(?:#.*)?$"""
+)
 def validate_workflow(source: str) -> list[str]:
     clean = "\n".join(
         line for line in source.splitlines()
@@ -36,6 +42,21 @@ def validate_workflow(source: str) -> list[str]:
         problems.append("jeton GitHub avec permission write-all")
     if CREDENTIAL_PERSIST.search(clean):
         problems.append("credentials Git persistants")
+    lines = clean.splitlines()
+    for index, line in enumerate(lines):
+        if CHECKOUT_PINNED.match(line) is None:
+            continue
+        indent = len(line) - len(line.lstrip(' \t'))
+        end = index + 1
+        while end < len(lines):
+            next_line = lines[end]
+            if next_line.strip():
+                next_indent = len(next_line) - len(next_line.lstrip(' \t'))
+                if next_indent < indent or (next_indent == indent and next_line.lstrip().startswith('- ')):
+                    break
+            end += 1
+        if not CHECKOUT_SAFE.search('\n'.join(lines[index + 1:end])):
+            problems.append('checkout sans persist-credentials: false')
     if CURL_PIPE.search(clean):
         problems.append("script distant exécuté directement dans un shell")
     if SHELL_INTERPOLATION.search(clean):
@@ -47,11 +68,14 @@ def self_test() -> None:
         "on:\n  pull_request:\npermissions:\n  contents: read\njobs:\n"
         "  test:\n    steps:\n"
         "      - uses: actions/checkout@" + "a" * 40 + "\n"
+        "        with:\n"
+        "          persist-credentials: false\n"
         "      - uses: ./.github/actions/local\n"
     )
     assert not validate_workflow(good)
     changes = (
         ("actions/checkout@" + "a" * 40, "actions/checkout@v4"),
+        ("          persist-credentials: false\n", ""),
         ("  pull_request:", "  pull_request_target:"),
         ("  pull_request:", "  workflow_run:"),
         ("  contents: read", "  permissions: write-all"),
@@ -68,10 +92,11 @@ def self_test() -> None:
     assert validate_workflow("on: [pull_request_target]\n")
     assert not validate_workflow(good + "      - persist-credentials: false\n")
     assert not validate_workflow(good + "      - persist-credentials: 'false'\n")
+    assert not validate_workflow(good.replace("persist-credentials: false", 'persist-credentials: "false"', 1))
     assert not validate_workflow(
         good + "\n# uses: actions/unpinned@main\n# pull_request_target:\n"
     )
-    print("OK Actions : 11 mutations négatives rejetées, y compris credentials YAML cités.")
+    print("OK Actions : 12 mutations négatives rejetées, y compris checkout non protégé.")
 
 def main() -> int:
     parser = argparse.ArgumentParser()
