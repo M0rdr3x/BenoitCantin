@@ -10,9 +10,16 @@ const vm=require('node:vm');
 const source=fs.readFileSync(path.join(__dirname,
   '../supabase/functions/get-document-url/index.ts'),'utf8');
 function buildHandler(mock){
+  const boundedReaderSource=fs.readFileSync(path.join(__dirname,
+    '../supabase/functions/_shared/bounded-request.mjs'),'utf8');
+  assert.match(boundedReaderSource,/export async function readBoundedRequestText\(/);
+  const boundedReader=boundedReaderSource.replace(
+    'export async function readBoundedRequestText',
+    'async function readBoundedRequestText');
   let transformed=source.replace(/^import[^\n]*\n/gm,'')
     .replace('const ranks:Record<string,number>','const ranks')
     .replace('const chunks:Uint8Array[]=[];','const chunks=[];')
+    .replace('let raw:string;','let raw;')
     .replace('function privateJson(data:unknown,status=200)','function privateJson(data,status=200)')
     .replace('function externalUrlAllowed(value:string)','function externalUrlAllowed(value)')
     .replace('async function readLimitedJson(req:Request):Promise<{body?:any;response?:Response}>',
@@ -20,14 +27,14 @@ function buildHandler(mock){
   assert.doesNotMatch(transformed,/\bimport\s+.*from/);
   let handler;
   const context={
-    Response,Request,TextEncoder,TextDecoder,URL,console,
+    Response,Request,TextEncoder,TextDecoder,Uint8Array,URL,console,setTimeout,clearTimeout,
     corsHeaders:{'Access-Control-Allow-Origin':'*'},
     optionalUser:async(req)=>req.headers.get('Authorization')==='Bearer anonymous'
       ?null:{id:'test-member'},
     serviceClient:()=>mock,
     Deno:{serve(callback){handler=callback}}
   };
-  vm.runInNewContext(transformed,context,{filename:'get-document-url/index.ts'});
+  vm.runInNewContext(boundedReader+'\n'+transformed,context,{filename:'get-document-url/index.ts'});
   assert.equal(typeof handler,'function');
   return handler;
 }

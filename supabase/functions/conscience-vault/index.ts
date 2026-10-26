@@ -22,8 +22,8 @@ function privateJson(data: unknown, status = 200) {
 }
 
 async function readBoundedJson(req: Request) {
-  const type = (req.headers.get('content-type') || '').split(';', 1)[0].trim().toLowerCase();
-  if (type !== 'application/json') throw new Error('JSON_REQUIRED');
+  const contentType = (req.headers.get('content-type') || '').split(';', 1)[0].trim().toLowerCase();
+  if (contentType !== 'application/json') throw new Error('JSON_REQUIRED');
   const declared = req.headers.get('content-length');
   if (declared !== null && (!/^[0-9]+$/.test(declared) ||
       !Number.isSafeInteger(Number(declared)) || Number(declared) > MAX_REQUEST_BYTES))

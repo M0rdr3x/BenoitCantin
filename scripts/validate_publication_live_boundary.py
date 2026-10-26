@@ -40,10 +40,10 @@ class StatusObservation:
 
 
 def validate_public_routes(observed: Mapping[str, StatusObservation]) -> list[str]:
-    """Même 27 routes et mêmes MIME que le post-PUBLISH, sans lire de corps."""
+    """Même 36 routes et mêmes MIME que le post-PUBLISH, sans lire de corps."""
     errors: list[str] = []
     if set(observed) != set(PUBLIC_ROUTES):
-        errors.append("Inventaire quotidien incomplet des 27 routes publiques.")
+        errors.append("Inventaire quotidien incomplet des 36 routes publiques.")
     for route in PUBLIC_ROUTES:
         result = observed.get(route)
         if result is None:
@@ -120,7 +120,7 @@ def self_test() -> None:
     )
     good: dict[str, int] = {"/": 200}
     good.update({route: 404 for route in TECHNICAL_ROUTES})
-    assert len(PUBLIC_ROUTES) == len(set(PUBLIC_ROUTES)) == 27
+    assert len(PUBLIC_ROUTES) == len(set(PUBLIC_ROUTES)) == 36
     assert not set(PUBLIC_ROUTES) & set(TECHNICAL_ROUTES)
     public = {
         route: StatusObservation(
@@ -360,7 +360,7 @@ def live() -> int:
     observations: dict[str, int] = {}
     public: dict[str, StatusObservation] = {}
     is_netlify = is_pages = False
-    # 27 routes publiques + 18 chemins interdits : une seule visite par URL.
+    # 36 routes publiques + 18 chemins interdits : une seule visite par URL.
     # Les corps publics/techniques restent tous fermés sans lecture.
     for route in (*PUBLIC_ROUTES, *TECHNICAL_ROUTES):
         try:

@@ -31,7 +31,7 @@ def validate_workflow(source: str) -> list[str]:
         problems.append("déclencheur GitHub privilégié interdit")
     if re.search(r"(?m)^\s*permissions:\s*write-all\s*$", clean):
         problems.append("jeton GitHub avec permission write-all")
-    if re.search(r"(?m)^\s*persist-credentials:\s*true\s*$", clean):
+    if re.search(r"(?m)^\s*(?:-\s*)?persist-credentials:\s*true\s*$", clean):
         problems.append("credentials Git persistants")
     if CURL_PIPE.search(clean):
         problems.append("script distant exécuté directement dans un shell")
