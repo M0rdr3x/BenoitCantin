@@ -256,7 +256,7 @@ def self_test() -> None:
                 reference.write_text('document vérifié', 'utf-8')
         assert not audit_source(root), audit_source(root)
         assert not audit_output(root, out), audit_output(root, out)
-        assert len(FORBIDDEN_PATHS) == len(PRIVATE_ROUTES) == 18
+        assert len(FORBIDDEN_PATHS) == len(PRIVATE_ROUTES) == 26
         assert FORBIDDEN_PATHS == {route.lstrip('/') for route in PRIVATE_ROUTES}
         # Chaque chemin refusé en HTTP doit aussi être refusé dans le tar Pages.
         # Les tests de mutation vérifient l'inventaire complet, pas des exemples.
