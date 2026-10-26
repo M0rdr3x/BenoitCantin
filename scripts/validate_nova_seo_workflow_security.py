@@ -98,7 +98,8 @@ def validate_text(text: str) -> None:
     require('timeout-minutes: 5' in commit, 'Le timeout commit doit rester à 5 minutes.')
     require(f'uses: {CHECKOUT}' in commit, 'Checkout commit doit rester épinglé.')
     require(f'ref: {TARGET_BRANCH}' in commit, 'Le checkout d’écriture doit viser uniquement la branche Nova dédiée.')
-    require('persist-credentials: true' in commit, 'Le checkout d’écriture doit rendre explicite son unique exception de credentials persistés.')
+    require('persist-credentials: false' in commit, 'Le checkout d’écriture doit exclure toute persistance de credentials Git.')
+    require('GH_TOKEN: ${{ github.token }}' in commit, 'Le token éphémère du job write est absent.')
     require('NOVA_SEO_PATCH_B64: ${{ needs.normalize.outputs.patch_b64 }}' in commit, 'Le job commit doit recevoir uniquement le patch du job read-only.')
 
     for forbidden in (
@@ -132,9 +133,19 @@ def validate_text(text: str) -> None:
     ):
         require(marker in commit, f'Frontière d’écriture SEO absente: {marker}')
 
+    for marker in (
+        'test -n "$GH_TOKEN"',
+        "auth_header=\"$(printf 'x-access-token:%s' \"$GH_TOKEN\" | base64 -w0)\"",
+        'GIT_CONFIG_COUNT=1',
+        'GIT_CONFIG_KEY_0=http.https://github.com/.extraheader',
+        'GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${auth_header}"',
+        'unset auth_header',
+    ):
+        require(marker in commit, f'Authentification Git éphémère absente: {marker}')
     require(commit.count('git push') == 1, 'Un seul push Git est autorisé dans le job commit.')
-    require(commit.count('persist-credentials: true') == 1, 'Une seule persistance de credentials est autorisée dans le job commit.')
-    require(text.count('persist-credentials: false') == 1, 'Le job read-only doit être l’unique checkout sans credentials persistés.')
+    require(commit.count('persist-credentials: false') == 1, 'Le job commit doit contenir un seul checkout sans credentials persistés.')
+    require(text.count('persist-credentials: false') == 2, 'Les deux checkouts doivent refuser les credentials persistés.')
+    require('persist-credentials: true' not in active, 'Aucun checkout du workflow ne doit persister de token.')
 
     expected_actions = [CHECKOUT, SETUP_PYTHON, CHECKOUT]
     require(action_targets(text) == expected_actions, f'Actions autorisées inattendues: {action_targets(text)}')
@@ -187,7 +198,9 @@ def mutation_cases(text: str) -> tuple[tuple[str, str], ...]:
         ('condition changed retirée', text.replace("needs.normalize.outputs.changed == 'true' && ", '', 1)),
         ('permission commit read', text.replace('    permissions:\n      contents: write', '    permissions:\n      contents: read', 1)),
         ('runner commit mobile', text.replace('    runs-on: ubuntu-24.04\n    timeout-minutes: 5', '    runs-on: ubuntu-latest\n    timeout-minutes: 5', 1)),
-        ('credentials commit retirés', text.replace('persist-credentials: true', 'persist-credentials: false', 1)),
+        ('credentials commit persistés', text.replace('ref: nova-a1-reference-documents\n          persist-credentials: false', 'ref: nova-a1-reference-documents\n          persist-credentials: true', 1)),
+        ('token éphémère supprimé', text.replace('GH_TOKEN: ${{ github.token }}', 'GH_TOKEN: DUMMY', 1)),
+        ('authentification Git perdue', text.replace('GIT_CONFIG_COUNT=1', 'GIT_CONFIG_COUNT=0', 1)),
         ('code dépôt exécuté en write', text.replace('      - name: Appliquer le correctif borné sans exécuter de code du dépôt\n', '      - run: python3 scripts/normalize_nova_seo.py\n\n      - name: Appliquer le correctif borné sans exécuter de code du dépôt\n', 1)),
         ('git apply check retiré', text.replace('          git apply --check /tmp/nova-seo.patch\n', '', 1)),
         ('symlink commit non vérifié', text.replace('            test ! -L "$path"\n', '', 1).replace('            test ! -L "$path"\n', '', 1)),
