@@ -6,6 +6,13 @@ on:
     paths:
       - 'projets/projet-nova/**'
       - 'scripts/build_netlify_public.py'
+      - 'tests/e2e/test_nova_consultation40_visual.py'
+      - 'tests/e2e/test_nova_survey_visual.py'
+      - 'tests/e2e/test_nova_compass_full_preview.py'
+      - 'tests/e2e/nova_network_stall_helpers.py'
+      - 'tests/test_nova_compass_scores.cjs'
+      - 'tests/test_nova_survey_privacy.cjs'
+      - 'tests/test_nova_public_results.cjs'
       - '.github/workflows/nova-web-public-staging.yml'
   workflow_dispatch:
 
@@ -17,6 +24,73 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  score-contract:
+    name: Nova — 54 contrats JS sur le candidat Web
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+          package-manager-cache: false
+      - name: Calcul et confidentialité — tests Node du code réel
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test tests/test_nova_compass_scores.cjs
+          node --test tests/test_nova_survey_privacy.cjs
+          node --test tests/test_nova_public_results.cjs
+
+  civic-preview:
+    name: Nova — parcours Web candidat ${{ matrix.browser }}
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.61.0-noble@sha256:a9731514f24121d1dcd25d58d0a38146646d290a5998fd80d3e533e7b5e21c69
+      options: --user 1001
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Playwright version épinglée
+        run: python -m pip install --disable-pip-version-check 'playwright==1.61.0'
+      - name: Serveur HTTP local sans collecte
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m http.server 4173 --bind 127.0.0.1 >/tmp/nova-public-http.log 2>&1 &
+          echo $! >/tmp/nova-public-http.pid
+          for attempt in $(seq 1 20); do
+            if python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4173/projets/projet-nova/', timeout=1).read(1)" >/dev/null 2>&1; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/nova-public-http.log
+          exit 1
+      - name: Tester la consultation 40, le sondage 64 et la Boussole
+        env:
+          BROWSER: ${{ matrix.browser }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tests/e2e/test_nova_consultation40_visual.py
+          python tests/e2e/test_nova_survey_visual.py
+          python tests/e2e/test_nova_compass_full_preview.py
+      - name: Fermer le serveur local
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/nova-public-http.pid ]; then kill "$(cat /tmp/nova-public-http.pid)" || true; fi
+
   isolate-and-audit:
     name: Construire deux paquets Nova sans déployer
     runs-on: ubuntu-24.04
