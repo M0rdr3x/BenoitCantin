@@ -38,10 +38,10 @@ jobs:
           python3 scripts/validate_publication_watch_workflow.py --check
 
   live:
-    name: Vérifier 24 routes publiques, 14 chemins interdits et le reçu Pages
+    name: Vérifier 36 routes publiques, 26 chemins interdits et le reçu Pages
     needs: contract
     # Pas de trafic de surveillance vers la production sur les PR ou pushes.
-    # L'exécution quotidienne et le lancement manuel contrôlent les 38 routes.
+    # L'exécution quotidienne et le lancement manuel contrôlent les 62 routes.
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 10

@@ -66,6 +66,15 @@ PRIVATE_ROUTES = (
     "/supabase/functions/get-private-book-url/index.ts",
     "/supabase/tests/license_redemption_security_a1.test.sql",
     "/mobile-native/package.json",
+    # API privées, migrations et contrats de sécurité : jamais un actif Pages.
+    "/supabase/functions/get-novel-file-url/index.ts",
+    "/supabase/functions/conscience-vault/index.ts",
+    "/supabase/functions/personal-ai/index.ts",
+    "/supabase/production-migration-ledger.txt",
+    "/.github/workflows/sinjira-secret-guard.yml",
+    "/package.json",
+    "/tests/test_sensitive_edge_stream_limits.cjs",
+    "/docs/SUPABASE_PRODUCTION_RUNBOOK.md",
     # Ancien chemin technique Netlify : même refus strict après PUBLISH.
     "/scripts/build_netlify_public.py",
 )
@@ -362,7 +371,7 @@ def verify(base: str, getter: Callable[[str], Reply],
 def self_test() -> None:
     # La frontière post-PUBLISH doit couvrir les 18 chemins techniques,
     # y compris le script historique Netlify, sans en oublier un.
-    assert len(PRIVATE_ROUTES) == len(set(PRIVATE_ROUTES)) == 18
+    assert len(PRIVATE_ROUTES) == len(set(PRIVATE_ROUTES)) == 26
     assert "/scripts/build_netlify_public.py" in PRIVATE_ROUTES
     assert "/supabase/migrations/20260808090000_sinjira_players.sql" in PRIVATE_ROUTES
     assert "/supabase/functions/get-private-book-url/index.ts" in PRIVATE_ROUTES

@@ -112,7 +112,7 @@ def validate_receipt_payload(
 
 
 def self_test() -> None:
-    assert len(TECHNICAL_ROUTES) == len(set(TECHNICAL_ROUTES)) == 18, (
+    assert len(TECHNICAL_ROUTES) == len(set(TECHNICAL_ROUTES)) == 26, (
         "Les diagnostics et la publication doivent tester exactement 18 routes"
     )
     assert TECHNICAL_ROUTES is PRIVATE_ROUTES, (
@@ -122,6 +122,20 @@ def self_test() -> None:
     good.update({route: 404 for route in TECHNICAL_ROUTES})
     assert len(PUBLIC_ROUTES) == len(set(PUBLIC_ROUTES)) == 36
     assert not set(PUBLIC_ROUTES) & set(TECHNICAL_ROUTES)
+    critical_technical = {
+        "/supabase/functions/get-novel-file-url/index.ts",
+        "/supabase/functions/conscience-vault/index.ts",
+        "/supabase/functions/personal-ai/index.ts",
+        "/supabase/production-migration-ledger.txt",
+        "/.github/workflows/sinjira-secret-guard.yml",
+        "/package.json",
+        "/tests/test_sensitive_edge_stream_limits.cjs",
+        "/docs/SUPABASE_PRODUCTION_RUNBOOK.md",
+    }
+    assert critical_technical <= set(TECHNICAL_ROUTES), (
+        "Les chemins techniques récents doivent être refusés sur Pages"
+    )
+
     public = {
         route: StatusObservation(
             200, "text/html; charset=utf-8"
@@ -360,7 +374,7 @@ def live() -> int:
     observations: dict[str, int] = {}
     public: dict[str, StatusObservation] = {}
     is_netlify = is_pages = False
-    # 36 routes publiques + 18 chemins interdits : une seule visite par URL.
+    # 36 routes publiques + 26 chemins interdits : une seule visite par URL.
     # Les corps publics/techniques restent tous fermés sans lecture.
     for route in (*PUBLIC_ROUTES, *TECHNICAL_ROUTES):
         try:
