@@ -98,7 +98,9 @@ async function mount(snapshot, {
       const parts=oversized
         ? [Buffer.alloc(65530),Buffer.alloc(20),Buffer.from('should-not-read')]
         : [body.subarray(0,Math.floor(body.length/2)),
-           body.subarray(Math.floor(body.length))];
+           body.subarray(Math.floor(body.length/2))];
+      if(!oversized) assert.ok(Buffer.concat(parts).equals(body),
+        'Fixture de flux Nova tronquée: les deux segments doivent reconstituer le fichier.');
       let cursor=0;
       return {
         ok:true,
