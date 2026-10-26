@@ -1,0 +1,111 @@
+name: Nova — candidat Web isolé, sans publication
+
+on:
+  push:
+    branches: [staging/nova-public-40-64-boussole-2026-10-26]
+    paths:
+      - 'projets/projet-nova/**'
+      - '.github/workflows/nova-web-public-staging.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nova-public-staging-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  isolate-and-audit:
+    name: Construire deux paquets Nova sans déployer
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      SINJIRA_RELEASE_SHA: ${{ github.sha }}
+    steps:
+      - name: Checkout du commit exact sans jeton persistant
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python figé pour l'audit
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Audit des entrées Netlify et des frontières de sécurité
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/build_netlify_public.py --self-test-security
+          python3 scripts/build_netlify_public.py --check
+      - name: Construire le paquet preview autonome
+        shell: bash
+        env:
+          CONTEXT: deploy-preview
+        run: |
+          set -euo pipefail
+          python3 scripts/build_netlify_public.py --output _nova_preview --standalone-netlify
+      - name: Construire le paquet production-candidate autonome
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/build_netlify_public.py --output _nova_candidate --standalone-netlify
+      - name: Vérifier les trois parcours et bloquer les sources techniques
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          routes = (
+              "index.html", "consultation-40.html", "sondage.html",
+              "boussole-electorale.html", "resultats-sondages.html",
+              "assets/consultation-40.js", "assets/sondage.js",
+              "assets/boussole-electorale.js", "assets/resultats-sondages.js",
+              "assets/sondage.css", "assets/nova-sondage-icone.webp",
+              "data/consultation-40-v1.json", "data/sondage-questions-v1.json",
+              "data/boussole-electorale-v2.json",
+              "data/resultats-sondages-publics-v1.json"
+          )
+          forbidden = (
+              "supabase/config.toml", "scripts/build_netlify_public.py",
+              ".github/workflows/nova-web-public-staging.yml",
+              "tests/test_nova_public_results.cjs",
+              "mobile-native/App.tsx",
+          )
+          for target in (Path("_nova_preview"), Path("_nova_candidate")):
+              root = target / "projets/projet-nova"
+              for route in routes:
+                  file = root / route
+                  assert file.is_file() and not file.is_symlink() and file.stat().st_size > 0, f"Manquant : {file}"
+              for route in forbidden:
+                  assert not (target / route).exists(), f"Source technique exposée: {route}"
+              home = (root / "index.html").read_text(encoding="utf-8")
+              for address in ("consultation-40.html", "sondage.html", "boussole-electorale.html"):
+                  assert address in home, f"Accueil sans lien {address}"
+              for path, count in (("consultation-40-v1.json",40),
+                                  ("sondage-questions-v1.json",64),
+                                  ("boussole-electorale-v2.json",64)):
+                  data = json.loads((root/"data"/path).read_text(encoding="utf-8"))
+                  assert len(data["questions"]) == count, f"Corpus tronqué: {path}"
+              for path in ("assets/consultation-40.js", "assets/sondage.js"):
+                  script = (root/path).read_text(encoding="utf-8")
+                  assert "const COLLECTION_OPEN = false;" in script
+                  assert "const LIVE_OPINION_CONSENT_GRANTED = false;" in script
+              assert "const PUBLIC_AGGREGATES_ENABLED = false;" in (root/"assets/resultats-sondages.js").read_text(encoding="utf-8")
+              assert (root/"assets/nova-sondage-icone.webp").read_bytes().startswith(b"RIFF")
+              print("PASS paquet isolé sans collecte :",target)
+          PY
+      - name: Rendre l'aperçu testable sans publier
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: nova-preview-isole-${{ github.sha }}
+          path: _nova_preview/
+          retention-days: 7
+          if-no-files-found: error
+      - name: Rendre le candidat production inspectable sans déployer
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: nova-production-candidate-${{ github.sha }}
+          path: _nova_candidate/
+          retention-days: 7
+          if-no-files-found: error
