@@ -1,0 +1,67 @@
+{
+  "schema_version": "P54X-1",
+  "date_reference": "2026-10-26",
+  "source_jalons": [
+    "P54Q",
+    "P54T",
+    "P54V",
+    "P54W"
+  ],
+  "source_exercice": 2024,
+  "source_run_p54p": 40151185184,
+  "references": [
+    "P54E-V-001",
+    "P54E-M-001",
+    "P54O-DATE-001",
+    "P54E-M-002",
+    "P54E-M-003"
+  ],
+  "roles": [
+    "LECTEUR_DECLARE",
+    "CONTRE_LECTEUR_DECLARE"
+  ],
+  "revue_privée_exige_quatre_fichiers": true,
+  "protections": {
+    "deux_pdfs_locaux_exiges_pour_revues": true,
+    "copies_pdf_sha256_historiques_imposees": true,
+    "fiche_p54v_reconstruite_des_originaux": true,
+    "fiche_p54v_privée_identique_requise": true,
+    "revues_p54w_liees_par_sha256": true,
+    "aucun_fichier_prive_dans_git": true,
+    "permissions_privees_0600": true,
+    "symlinks_sources_interdits": true,
+    "aucun_texte_jeton_et_extrait_sur_stdout": true,
+    "aucun_texte_jeton_et_extrait_dans_artifacts": true,
+    "aucun_certificat_ou_signature_presume": true,
+    "revue_declarative_non_assimilee_independance": true,
+    "contradictions_et_suspensions_prioritaires": true,
+    "date_probable_non_finalisee": true,
+    "quatre_dossiers_p54e_ouverts": true,
+    "quarante_taches_p54n_non_attestees": true,
+    "dix_blocages_p54o_non_leves": true,
+    "comparabilites_p54b_et_p54c_ouvertes": true,
+    "pas_de_double_compte_ville_rtc_somhac": true,
+    "maintien_emplois_et_services": true,
+    "regimes_constitutionnels_separes": true,
+    "pas_de_contact_externe": true,
+    "pas_de_merge_main": true,
+    "sinjira_non_modifie": true,
+    "no_go_automatique": true
+  },
+  "etat_initial": {
+    "originaux_pdf_locaux_revus": 0,
+    "fiches_p54v_reconstruites": 0,
+    "declarations_p54w_acceptees": 0,
+    "revues_professionnelles_authentifiees": 0,
+    "signatures_authentifiees": 0,
+    "qualifications_definitives": 0,
+    "dossiers_p54e_ouverts": 4,
+    "date_probable_non_certifiee": 1,
+    "taches_p54n_non_attestees": 40,
+    "blocages_p54o_non_leves": 10,
+    "controles_p54b_non_attestes": 96,
+    "controles_p54c_non_attestes": 8,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
