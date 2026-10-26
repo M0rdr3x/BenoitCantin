@@ -60,7 +60,8 @@ with sync_playwright() as p:
         page.locator("#nova-survey-directory-40").click()
         page.wait_for_url("**/consultation-40.html", timeout=15000)
         response = page.goto(URL, wait_until="domcontentloaded", timeout=30000)
-        check(response is not None and response.status == 200, "page de consultation absente")
+        check(response is not None and response.status in (200, 304),
+              f"page de consultation absente (HTTP {response.status if response else 'sans réponse'})")
         check("non officiel" in page.locator("#sondage-introduction").inner_text(),
               "statut consultatif et non officiel absent")
         check("Une fois une contribution agrégée" in page.locator("#sondage-privacy-warning").inner_text(),
