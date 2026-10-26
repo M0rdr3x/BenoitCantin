@@ -13,6 +13,7 @@ on:
       - 'tests/e2e/test_nova_compass_full_preview.py'
       - 'tests/test_nova_compass_scores.cjs'
       - 'tests/test_nova_survey_privacy.cjs'
+      - 'tests/test_nova_public_results.cjs'
       - 'scripts/validate_nova_consultation40.py'
       - 'scripts/validate_nova_survey.py'
       - 'scripts/validate_nova_public_access.py'
@@ -50,6 +51,7 @@ jobs:
         run: |
           node --test tests/test_nova_compass_scores.cjs
           node --test tests/test_nova_survey_privacy.cjs
+          node --test tests/test_nova_public_results.cjs
 
   civic-preview:
     # IMPORTANT: exécuter sur les PR DRAFT. Aucun droit de publication.
