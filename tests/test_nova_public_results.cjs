@@ -98,7 +98,7 @@ async function mount(snapshot, {
       const parts=oversized
         ? [Buffer.alloc(65530),Buffer.alloc(20),Buffer.from('should-not-read')]
         : [body.subarray(0,Math.floor(body.length/2)),
-           body.subarray(Math.floor(body.length))];
+           body.subarray(Math.floor(body.length/2))];
       let cursor=0;
       return {
         ok:true,
@@ -120,12 +120,7 @@ async function mount(snapshot, {
   const candidate = syntheticRelease
     ? script.replace(CLOSED_GATE, 'const PUBLIC_AGGREGATES_ENABLED = true;')
     : script;
-  // Instrumentation de diagnostic uniquement dans ce banc de test isolé.
-  const diagnosed = candidate.replace(
-    "    } catch {\n      // Un retry échoué",
-    "    } catch(error) {\n      globalThis.__novaDiagnostic = String(error);\n      // Un retry échoué"
-  );
-  vm.runInNewContext(diagnosed, context, {filename:'resultats-sondages.js',timeout:1500});
+  vm.runInNewContext(candidate, context, {filename:'resultats-sondages.js',timeout:1500});
   // Les digests Web Crypto des deux manifestes sont asynchrones : attendre
   // l'affichage effectif, et non un seul cycle d'événements non déterministe.
   const ready = () => Boolean(elements.get('results-state')?.textContent) &&
@@ -134,9 +129,6 @@ async function mount(snapshot, {
     await new Promise(resolve => setTimeout(resolve, 10));
   }
   assert.ok(ready(), 'Résultats Nova : rendu DOM non terminé ou erreur asynchrone');
-  if (context.__novaDiagnostic) {
-    console.error('NOVA_RESULTS_TEST_DIAGNOSTIC', context.__novaDiagnostic);
-  }
   return id => document.getElementById(id);
 }
 
