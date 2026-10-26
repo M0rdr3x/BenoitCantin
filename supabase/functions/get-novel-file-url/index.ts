@@ -14,7 +14,7 @@ async function readBoundedJson(req:Request){
   if(declaredRaw!==null && (!/^[0-9]+$/.test(declaredRaw) ||
       !Number.isSafeInteger(Number(declaredRaw)) || Number(declaredRaw)>MAX_REQUEST_BYTES))
     throw new Error('REQUEST_TOO_LARGE');
-  if(!req.body)return {};
+  if(!req.body||typeof req.body.getReader!=='function')throw new Error('INVALID_JSON');
   const reader=req.body.getReader();
   const chunks:Uint8Array[]=[];
   let total=0,count=0,timer;
@@ -41,9 +41,12 @@ async function readBoundedJson(req:Request){
   const bytes=new Uint8Array(total);
   let offset=0;
   for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
-  if(!bytes.length)return {};
-  try{return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));}
-  catch{throw new Error('INVALID_JSON');}
+  if(!bytes.length)throw new Error('INVALID_JSON');
+  try{
+    const parsed=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
+    if(!parsed||typeof parsed!=='object'||Array.isArray(parsed))throw new Error('INVALID_JSON');
+    return parsed;
+  }catch{throw new Error('INVALID_JSON');}
 }
 
 Deno.serve(async(req)=>{
