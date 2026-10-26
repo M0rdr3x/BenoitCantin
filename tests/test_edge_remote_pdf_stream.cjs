@@ -55,7 +55,7 @@ test('absence de Content-Length ne supprime pas la limite',async()=>{
   const {fetchBoundedPdf}=await helperPromise;
   let cancelled=0;
   await withFetch(async()=>mockPdf(
-    [bytes('%PDF-'),bytes('x'.repeat(1020))],null,()=>cancelled++),async()=>{
+    [bytes('%PDF-'),bytes('x'.repeat(1020)),bytes('unread-after-overflow')],null,()=>cancelled++),async()=>{
     await assert.rejects(fetchBoundedPdf('https://example.invalid/test.pdf',1024),
       /REMOTE_PDF_TOO_LARGE/);
   });
@@ -83,7 +83,7 @@ test('corps non PDF, vide, invalide ou sans stream est refusé',async()=>{
 });
 test('4097 micro-fragments sont bloqués même sous 15 Mio',async()=>{
   const {fetchBoundedPdf}=await helperPromise;
-  const many=[bytes('%PDF-'),...Array.from({length:4096},()=>bytes('x'))];
+  const many=[bytes('%PDF-'),...Array.from({length:4098},()=>bytes('x'))];
   let cancelled=0;
   await withFetch(async()=>mockPdf(many,null,()=>cancelled++),async()=>{
     await assert.rejects(fetchBoundedPdf('https://example.invalid/a',15*1024*1024),
