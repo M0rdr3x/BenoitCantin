@@ -2,6 +2,26 @@
 
 **État du 26 octobre 2026 (Québec).** Ce document est une attestation technique de l'aperçu, **pas** une approbation de mise en production ni de collecte d'opinions politiques.
 
+## Actualisation du 26 octobre 2026 — dernière qualification confirmée
+
+**NOUVELLE PREUVE (remplace la preuve historique pour le parcours testé).** Le [run GitHub Actions #40415698831](https://github.com/M0rdr3x/BenoitCantin/actions/runs/40415698831) s'est terminé avec `conclusion=success` sur le **SHA d'audit exact** `a42f105b2fc6e7fdd8c9b48d701fecef1ed88a81`. Les **quatre jobs sur quatre** sont `completed/success` :
+
+- `Nova 40/64/Boussole — chromium` : succès.
+- `Nova 40/64/Boussole — firefox` : succès.
+- `Nova 40/64/Boussole — webkit` : succès.
+- `Nova — contrats JS des trois parcours` : succès. Les journaux de ce dernier job confirment **7/7 tests de calcul Boussole + 12/12 tests de confidentialité locale + 35/35 tests du registre public et des flux bornés**, soit **54/54** tests Node.
+
+**Traçabilité interbranches contrôlée** : les blobs Git de **21 fichiers sur 22**, dont **les 12 fichiers applicatifs publics** (accueil, trois pages, scripts, corpus et état des résultats), les parcours E2E et les validations de contrats, étaient **identiques** entre ce SHA d'audit et la PR d'intégration au SHA `15cc9d01b2da7aad10bb3db4b1805a0a5af3b759`. Le seul écart dans le groupe comparé est `tests/test_nova_public_results.cjs` : la PR ajoute une assertion de reconstruction intégrale des deux fragments du JSON de test, tandis que l'audit vert contient déjà la correction essentielle de la seconde tranche `body.subarray(Math.floor(body.length/2))`. Le code public du registre (`assets/resultats-sondages.js`) demeure **identique** et sa diffusion réelle est verrouillée.
+
+**Portée stricte** : cette réussite qualifie les parcours locaux et les tests cités, **pas** l'ensemble des workflows GitHub (grande PR avec des changements SINJIRA concomitants), ni la configuration d'hébergement ou l'avis juridique. Les vérifications des 18 routes techniques, de la publication par SHA, des en-têtes HTTP et de la collecte politique n'ont pas encore de PASS de production. Les tickets **#450** et **#675** restent ouverts; ces deux conditions empêchent respectivement le déploiement final non isolé et l'ouverture de la collecte.
+
+### Décision technique au 26 octobre
+- Parcours des trois outils en prévisualisation : **GO technique limité à cet audit**.
+- Publication de l'accueil et des deux sondages sur le domaine officiel : **NO-GO tant que #450 n'est pas résolu et approuvé**.
+- Enregistrement ou diffusion de réponses réelles : **NO-GO tant que #675 n'est pas résolu et approuvé**.
+
+---
+
 ## 1. Identité exacte du code qualifié
 
 - Dépôt : `M0rdr3x/BenoitCantin`.
