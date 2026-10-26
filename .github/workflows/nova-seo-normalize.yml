@@ -91,7 +91,7 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           ref: nova-a1-reference-documents
-          persist-credentials: true
+          persist-credentials: false
 
       - name: Appliquer le correctif borné sans exécuter de code du dépôt
         shell: bash
@@ -122,6 +122,8 @@ jobs:
 
       - name: Enregistrer uniquement les corrections HTML Nova
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -132,4 +134,13 @@ jobs:
             exit 0
           fi
           git commit -m "Projet Nova A1 — normalise les métadonnées SEO [seo-autofix]"
-          git push origin HEAD:nova-a1-reference-documents
+          # Le token n'est ni persiste dans .git/config ni ecrit dans un fichier.
+          # Git recoit l'en-tete d'authentification via variables d'environnement
+          # pour cette seule invocation, sans echo ni argument avec secret.
+          test -n "$GH_TOKEN"
+          auth_header="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          GIT_CONFIG_COUNT=1 \
+          GIT_CONFIG_KEY_0=http.https://github.com/.extraheader \
+          GIT_CONFIG_VALUE_0="AUTHORIZATION: basic ${auth_header}" \
+            git push origin HEAD:nova-a1-reference-documents
+          unset auth_header
