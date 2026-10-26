@@ -170,7 +170,9 @@ class TestsP54V(unittest.TestCase):
     def test_42_verify_synthetic_exact_pair(self):
         with tempfile.TemporaryDirectory() as d:
             t,p,paths,raw,refs,ex=files_fixture(d)
+            real_t_config=m.p54t.configuration()
             with patch.object(m.p54q,"configuration",return_value={"copies":refs}), \
+                 patch.object(m.p54t,"configuration",return_value=real_t_config), \
                  patch.object(m.p54t,"verify_frozen",return_value={
                   "bilans_figes_verifies":2,"positions_historiques_hachees":5,
                   "positions_de_reference":p}), \
@@ -204,7 +206,9 @@ class TestsP54V(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             t,p,paths,raw,refs,ex=files_fixture(d)
             bad=copy.deepcopy(p);bad[0]["offset_texte_extrait"]+=2
+            real_t_config=m.p54t.configuration()
             with patch.object(m.p54q,"configuration",return_value={"copies":refs}), \
+                 patch.object(m.p54t,"configuration",return_value=real_t_config), \
                  patch.object(m.p54t,"verify_frozen",return_value={
                     "bilans_figes_verifies":2,"positions_historiques_hachees":5,
                     "positions_de_reference":bad}), \
