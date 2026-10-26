@@ -123,20 +123,12 @@ function entryType(value: unknown) {
 }
 
 /**
- * La localisation n'est jamais acceptée depuis le JSON client.
- * Elle reste désactivée par défaut et n'est utilisée que si un proxy contrôlé par
- * SINJIRA fournit des en-têtes approximatifs et que SINJIRA_TRUST_GEO_HEADERS=true.
- * Aucune IP brute ni donnée GPS n'est lue ou stockée par cette fonction.
+ * Les en-têtes géographiques ne sont pas une identité proxy vérifiée :
+ * un appel Edge direct pourrait imiter cf-ipcountry / x-sinjira-region.
+ * Jusqu'à signature cryptographique du proxy : pas de géosignal de requête.
  */
-function trustedGeo(req: Request) {
-  if (Deno.env.get('SINJIRA_TRUST_GEO_HEADERS') !== 'true') {
-    return { country: null, region: null };
-  }
-  const countryRaw = req.headers.get('cf-ipcountry') || '';
-  const country = /^[A-Za-z]{2}$/.test(countryRaw) ? countryRaw.toUpperCase() : null;
-  const regionRaw = req.headers.get('x-sinjira-region') || '';
-  const region = regionRaw ? regionRaw.slice(0, 80) : null;
-  return { country, region };
+function trustedGeo(_req: Request) {
+  return { country: null, region: null };
 }
 
 function rejectClientIdentity(body: Record<string, unknown>) {

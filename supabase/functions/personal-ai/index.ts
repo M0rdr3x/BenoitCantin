@@ -81,12 +81,9 @@ function rejectClientIdentity(body: Record<string, unknown>) {
     if (Object.prototype.hasOwnProperty.call(body, key)) throw new Error('CLIENT_IDENTITY_FORBIDDEN');
   }
 }
-function trustedGeo(req: Request) {
-  if (Deno.env.get('SINJIRA_TRUST_GEO_HEADERS') !== 'true') return { country: null, region: null };
-  const raw = req.headers.get('cf-ipcountry') || '';
-  const country = /^[A-Za-z]{2}$/.test(raw) ? raw.toUpperCase() : null;
-  const regionRaw = req.headers.get('x-sinjira-region') || '';
-  return { country, region: regionRaw ? regionRaw.slice(0, 80) : null };
+// Requête cliente = en-têtes géographiques falsifiables. Échec fermé.
+function trustedGeo(_req: Request) {
+  return { country: null, region: null };
 }
 function publicDecision(value: any) {
   return {
