@@ -5,6 +5,7 @@ on:
     branches: [staging/nova-public-40-64-boussole-2026-10-26]
     paths:
       - 'projets/projet-nova/**'
+      - 'scripts/build_netlify_public.py'
       - '.github/workflows/nova-web-public-staging.yml'
   workflow_dispatch:
 
