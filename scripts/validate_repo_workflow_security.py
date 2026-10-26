@@ -14,6 +14,9 @@ CURL_PIPE = re.compile(r"\b(?:curl|wget)\b[^\n]{0,240}\|\s*(?:bash|sh)\b")
 SHELL_INTERPOLATION = re.compile(
     r"\$\{\{\s*github\.event\.pull_request\.(?:title|body|head\.ref)\s*\}\}"
 )
+CREDENTIAL_PERSIST = re.compile(
+    r"""(?mi)^[ \t]*(?:-[ \t]*)?persist-credentials:[ \t]*(?:true|'true'|"true")[ \t]*(?:\#.*)?$"""
+)
 
 def validate_workflow(source: str) -> list[str]:
     clean = "\n".join(
@@ -31,7 +34,7 @@ def validate_workflow(source: str) -> list[str]:
         problems.append("déclencheur GitHub privilégié interdit")
     if re.search(r"(?m)^\s*permissions:\s*write-all\s*$", clean):
         problems.append("jeton GitHub avec permission write-all")
-    if re.search(r"(?m)^\s*(?:-\s*)?persist-credentials:\s*true\s*$", clean):
+    if CREDENTIAL_PERSIST.search(clean):
         problems.append("credentials Git persistants")
     if CURL_PIPE.search(clean):
         problems.append("script distant exécuté directement dans un shell")
@@ -53,6 +56,9 @@ def self_test() -> None:
         ("  pull_request:", "  workflow_run:"),
         ("  contents: read", "  permissions: write-all"),
         ("      - uses:", "      - persist-credentials: true\n      - uses:"),
+        ("      - uses:", "      - persist-credentials: 'true'\n      - uses:"),
+        ("      - uses:", '      - persist-credentials: "true" # refuse aussi les commentaires YAML\n      - uses:'),
+        ("      - uses:", "      - persist-credentials: true # commentaires YAML\n      - uses:"),
         ("      - uses:", "      - run: curl https://example.invalid/setup.sh | bash\n      - uses:"),
         ("      - uses:", "      - run: echo $" + "{{ github.event.pull_request.title }}\n      - uses:"),
     )
@@ -60,10 +66,12 @@ def self_test() -> None:
         bad = good.replace(before, after, 1)
         assert bad != good and validate_workflow(bad), before
     assert validate_workflow("on: [pull_request_target]\n")
+    assert not validate_workflow(good + "      - persist-credentials: false\n")
+    assert not validate_workflow(good + "      - persist-credentials: 'false'\n")
     assert not validate_workflow(
         good + "\n# uses: actions/unpinned@main\n# pull_request_target:\n"
     )
-    print("OK Actions : 8 mutations négatives rejetées.")
+    print("OK Actions : 11 mutations négatives rejetées, y compris credentials YAML cités.")
 
 def main() -> int:
     parser = argparse.ArgumentParser()
