@@ -118,12 +118,12 @@ jobs:
           CONTEXT: deploy-preview
         run: |
           set -euo pipefail
-          python3 scripts/build_netlify_public.py --output _nova_preview --standalone-netlify
+          python3 scripts/build_netlify_public.py --output _preview_site --standalone-netlify
       - name: Construire le paquet production-candidate autonome
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/build_netlify_public.py --output _nova_candidate --standalone-netlify
+          python3 scripts/build_netlify_public.py --output _site --standalone-netlify
       - name: Vérifier les trois parcours et bloquer les sources techniques
         shell: bash
         run: |
@@ -147,7 +147,7 @@ jobs:
               "tests/test_nova_public_results.cjs",
               "mobile-native/App.tsx",
           )
-          for target in (Path("_nova_preview"), Path("_nova_candidate")):
+          for target in (Path("_preview_site"), Path("_site")):
               root = target / "projets/projet-nova"
               for route in routes:
                   file = root / route
@@ -174,13 +174,13 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: nova-preview-isole-${{ github.sha }}
-          path: _nova_preview/
+          path: _preview_site/
           retention-days: 7
           if-no-files-found: error
       - name: Rendre le candidat production inspectable sans déployer
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: nova-production-candidate-${{ github.sha }}
-          path: _nova_candidate/
+          path: _site/
           retention-days: 7
           if-no-files-found: error
