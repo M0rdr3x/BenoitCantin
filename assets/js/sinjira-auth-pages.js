@@ -104,7 +104,13 @@ async function login(){
         return;
       }
 
-      const outcome=String(evaluated.security?.outcome||'allow');
+      const outcome=String(evaluated.security?.outcome||'');
+      // Une réponse incomplète, inattendue ou altérée n'est JAMAIS un "allow".
+      if(!['allow','challenge','block'].includes(outcome)){
+        await getSupabase().auth.signOut({scope:'local'}).catch(()=>{});
+        setStatus(status,'Impossible de confirmer la sécurité de cette connexion. Réessayez ultérieurement.','error');
+        return;
+      }
       if(outcome==='block'){
         await getSupabase().auth.signOut({scope:'local'}).catch(()=>{});
         setStatus(status,'Connexion refusée : cet appareil a été révoqué dans Ma sécurité. Utilisez un appareil fiable pour vérifier votre compte.','error');

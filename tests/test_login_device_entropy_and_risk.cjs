@@ -41,6 +41,18 @@ function loginShieldIsFailClosed(source){
     !failureBranch.includes('location.replace(') &&
     failureBranch.includes('return;');
 }
+test('connexion: seuls allow, challenge et block sont des décisions valides',()=>{
+  assert.match(auth,/const outcome=String\(evaluated\.security\?\.outcome\|\|''\)/);
+  assert.match(auth,/if\(!\['allow','challenge','block'\]\.includes\(outcome\)\)/);
+  const branch=auth.slice(auth.indexOf("if(!['allow','challenge','block'].includes(outcome))"),
+    auth.indexOf("if(outcome==='block')"));
+  assert.ok(branch.includes("auth.signOut({scope:'local'})"));
+  assert.ok(branch.includes('return;'));
+  const mut=auth.replace("outcome||''","outcome||'allow'");
+  assert.notEqual(mut,auth,'Mutation ignorée');
+  assert.doesNotMatch(mut,/const outcome=String\(evaluated\.security\?\.outcome\|\|''\)/,
+    'Le retour permissif par défaut doit être rejeté');
+});
 test('connexion: panne du contexte interdit une session utilisable',()=>{
   assert.ok(loginShieldIsFailClosed(auth),'Le risque doit échouer fermé');
   const weakened=auth.replace("await getSupabase().auth.signOut({scope:'local'}).catch(()=>{});",
