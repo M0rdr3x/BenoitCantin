@@ -3,7 +3,7 @@
 
 Aucun corps de fichier n'est lu, enregistré ou imprimé. Ce diagnostic
 complète HEAD; il ne prouve ni l'absence passée de fuite ni le bon SHA.
-Le site visé et les 18 chemins sont des constantes, sans entrée libre.
+Le site visé et les 26 chemins sont des constantes, sans entrée libre.
 """
 from __future__ import annotations
 
@@ -56,7 +56,7 @@ def observe_get_status(route: str, opener=None) -> int | None:
 
 def classify(statuses: Mapping[str, int | None]) -> tuple[str, tuple[str, ...]]:
     if set(statuses) != set(TECHNICAL_ROUTES):
-        return "INCONNU", ("Inventaire GET des 18 routes incomplet",)
+        return "INCONNU", ("Inventaire GET des 26 routes incomplet",)
     exposed = sorted(route for route, code in statuses.items() if code in EXPOSED)
     if exposed:
         return "EXPOSÉ_GET", tuple(
@@ -84,7 +84,7 @@ def classify(statuses: Mapping[str, int | None]) -> tuple[str, tuple[str, ...]]:
             for route in unknown
         )
     return "REFUS_GET_OBSERVÉ", (
-        "18 statuts GET 404/410; vérifier aussi Source GitHub Actions, reçu SHA/run et CDN",
+        f"{len(TECHNICAL_ROUTES)} statuts GET 404/410; vérifier aussi Source GitHub Actions, reçu SHA/run et CDN",
     )
 
 
@@ -99,7 +99,7 @@ def markdown(statuses: Mapping[str, int | None]) -> str:
         "",
         f"**Verdict GET (codes uniquement) : {status}**",
         "",
-        f"Domaine fixe : {BASE_URL}; 18 chemins techniques; pas de lecture du corps.",
+        f"Domaine fixe : {BASE_URL}; {len(TECHNICAL_ROUTES)} chemins techniques; pas de lecture du corps.",
         "",
         "| Route technique | Statut GET |",
         "| --- | --- |",
@@ -115,7 +115,7 @@ def markdown(statuses: Mapping[str, int | None]) -> str:
         "révèle aucun contenu technique, jeton ou donnée privée.",
         "Un GET 200/206 confirme l'accessibilité HTTP du chemin,",
         "mais ne démontre pas la présence de secrets ni la nature du corps.",
-        "Même 18 GET 404/410 ne prouvent pas la source de publication",
+        "Même 26 GET 404/410 ne prouvent pas la source de publication",
         "ou le SHA : seul un PUBLISH approuvé, reçu SHA/run et contrôle CDN",
         "avec tests complets peut permettre de conclure au confinement.",
         "",
@@ -125,7 +125,7 @@ def markdown(statuses: Mapping[str, int | None]) -> str:
 
 def self_test() -> None:
     good = dict.fromkeys(TECHNICAL_ROUTES, 404)
-    assert len(good) == 18
+    assert len(good) == 26
     assert classify(good)[0] == "REFUS_GET_OBSERVÉ"
     for route in TECHNICAL_ROUTES:
         for code, expected in (
@@ -172,7 +172,7 @@ def self_test() -> None:
         else:
             raise AssertionError("GET de route hors inventaire autorisé")
     assert len(opener.requests) == 1
-    print("OK : 18 statuts GET, aucun corps lu, erreurs, redirections et refus")
+    print(f"OK : {len(TECHNICAL_ROUTES)} statuts GET, aucun corps lu, erreurs, redirections et refus")
 
 
 def main() -> int:
