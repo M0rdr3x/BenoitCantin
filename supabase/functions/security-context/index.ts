@@ -84,22 +84,12 @@ function sessionIdFromVerifiedRequest(req: Request) {
 }
 
 /**
- * La localisation de sécurité est désactivée par défaut.
- * Elle ne peut être alimentée que lorsqu'un proxy contrôlé par SINJIRA ajoute
- * des en-têtes de géolocalisation approximative et que l'environnement active
- * explicitement SINJIRA_TRUST_GEO_HEADERS=true.
- *
- * On ne lit jamais l'IP du visiteur et aucune donnée GPS n'est demandée.
+ * Les en-têtes de localisation transmis par une requête HTTP ne prouvent
+ * jamais son origine proxy : les clients directs peuvent les falsifier.
+ * Faute de proxy authentifié, le risque géographique reste inconnu.
  */
-function trustedGeo(req: Request) {
-  if (Deno.env.get('SINJIRA_TRUST_GEO_HEADERS') !== 'true') {
-    return { country: null, region: null };
-  }
-  const countryRaw = req.headers.get('cf-ipcountry') || '';
-  const country = /^[A-Za-z]{2}$/.test(countryRaw) ? countryRaw.toUpperCase() : null;
-  const regionRaw = req.headers.get('x-sinjira-region') || '';
-  const region = regionRaw ? regionRaw.slice(0, 80) : null;
-  return { country, region };
+function trustedGeo(_req: Request) {
+  return { country: null, region: null };
 }
 
 async function processSecurityPushReceipts(service: ReturnType<typeof serviceClient>) {

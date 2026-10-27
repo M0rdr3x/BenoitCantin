@@ -18,9 +18,8 @@ REQUIRED = {
     'réponse privée': "'Cache-Control': 'private, no-store, max-age=0'",
     'protection MIME': "'X-Content-Type-Options': 'nosniff'",
     'référent masqué': "'Referrer-Policy': 'no-referrer'",
-    'géolocalisation explicite opt-in infrastructure': "Deno.env.get('SINJIRA_TRUST_GEO_HEADERS') !== 'true'",
-    'pays approximatif seulement': "req.headers.get('cf-ipcountry')",
-    'région approximative seulement': "req.headers.get('x-sinjira-region')",
+    'géolocalisation de requête jamais tenue pour fiable': 'function trustedGeo(_req: Request)',
+    'géolocalisation inconnue jusqu’au proxy authentifié': 'return { country: null, region: null };',
     'RPC contexte session canonique': "service.rpc('service_security_evaluate_context_session'",
     'session imposée au RPC': 'p_session_id: sessionId',
     'réponse succès privée': 'return privateJson({\n      ok: true,',
@@ -34,6 +33,10 @@ REQUIRED_PATTERNS = {
 
 FORBIDDEN = {
     'lecture JSON directe non bornée': 'await req.json()',
+    'lecture texte directe non bornée': 'await req.text()',
+    'paramètre infra géographique non signé': 'sinjira_trust_geo_headers',
+    'pays géographique client non signé': "req.headers.get('cf-ipcountry')",
+    'région géographique client non signée': "req.headers.get('x-sinjira-region')",
     'lecture JSON directe non bornée espacée': 'await req.json (',
     'lecture IP brute Cloudflare': 'cf-connecting-ip',
     'lecture IP brute proxy': 'x-forwarded-for',
@@ -82,16 +85,13 @@ const PRIVATE_HEADERS = {
 function privateJson(data, status=200){return new Response(JSON.stringify(data),{status,headers:PRIVATE_HEADERS})}
 async function readLimitedJson(req){
  const rawLength=req.headers.get('content-length');
- const raw=await req.text();
+ const raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);
  new TextEncoder().encode(raw).byteLength;
  return {body:{}};
 }
 function sessionIdFromVerifiedRequest(req){return req}
-function trustedGeo(req){
- if (Deno.env.get('SINJIRA_TRUST_GEO_HEADERS') !== 'true') return {country:null,region:null};
- const country=req.headers.get('cf-ipcountry');
- const region=req.headers.get('x-sinjira-region');
- return {country,region};
+function trustedGeo(_req: Request){
+ return { country: null, region: null };
 }
 Deno.serve(async (req) => {
  if (req.method !== 'POST') return privateJson({},405);
@@ -134,10 +134,22 @@ privateJson({});
         if not any('4096 octets' in item for item in body_size):
             raise AssertionError('Une limite de corps affaiblie doit être bloquée.')
 
-        path.write_text(safe.replace("const country=req.headers.get('cf-ipcountry');", "const country=req.headers.get('cf-connecting-ip');"), encoding='utf-8')
+        path.write_text(safe.replace("return { country: null, region: null };",
+            "const country=req.headers.get('cf-connecting-ip'); return { country, region: null };", 1), encoding='utf-8')
         raw_ip = validate(path)
         if not any('IP brute' in item for item in raw_ip):
             raise AssertionError('La lecture d’une IP brute doit être bloquée.')
+        path.write_text(safe.replace("return { country: null, region: null };",
+            "return { country: req.headers.get('cf-ipcountry'), region: null };", 1), encoding='utf-8')
+        spoofable_geo = validate(path)
+        if not any('client non signé' in item for item in spoofable_geo):
+            raise AssertionError('Un en-tête géographique manipulable doit être rejeté.')
+
+        path.write_text(safe.replace('await readBoundedRequestText(req, MAX_REQUEST_BYTES)',
+            'await req.text()', 1), encoding='utf-8')
+        unbounded = validate(path)
+        if not any('texte directe non bornée' in item for item in unbounded):
+            raise AssertionError('La lecture texte non bornée doit être bloquée.')
 
         path.write_text(safe.replace('const user = await requiredUser(req);\n const sessionId', 'const parsed = await readLimitedJson(req);\n const user = await requiredUser(req);\n const sessionId').replace(' const parsed = await readLimitedJson(req);\n if (parsed.response)', ' if (parsed.response)'), encoding='utf-8')
         auth_order = validate(path)

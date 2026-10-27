@@ -5,7 +5,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const root=path.join(__dirname,'..','supabase','functions');
-for (const name of ['conscience-vault','personal-ai']) {
+for (const name of ['conscience-vault','personal-ai','security-context']) {
   test(name+': aucun signal géographique issu d’un en-tête client',()=>{
     const code=fs.readFileSync(path.join(root,name,'index.ts'),'utf8');
     const start=code.indexOf('function trustedGeo(_req: Request) {');
