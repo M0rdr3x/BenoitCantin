@@ -8,9 +8,13 @@ function qsa(sel){return [...document.querySelectorAll(sel)]}
 function status(message,type='info'){setStatus(qs('[data-security-center-status]'),message,type)}
 
 function randomDeviceKey(){
-  if(globalThis.crypto?.randomUUID)return globalThis.crypto.randomUUID();
-  const bytes=new Uint8Array(24);globalThis.crypto?.getRandomValues?.(bytes);
-  return `sinjira-${Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}-${Date.now().toString(36)}`;
+  const source=globalThis.crypto;
+  if(typeof source?.randomUUID==='function')return source.randomUUID();
+  // Aucun identifiant de confiance calculé avec une horloge ou sans entropie.
+  if(typeof source?.getRandomValues!=='function')throw new Error('SECURE_RANDOM_UNAVAILABLE');
+  const bytes=new Uint8Array(24);
+  source.getRandomValues(bytes);
+  return `sinjira-${Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}`;
 }
 
 function deviceKey(){

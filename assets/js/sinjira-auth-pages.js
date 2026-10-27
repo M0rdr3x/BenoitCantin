@@ -26,9 +26,13 @@ function reportInvalid(form){
   return true;
 }
 function randomDeviceKey(){
-  if(globalThis.crypto?.randomUUID)return globalThis.crypto.randomUUID();
-  const bytes=new Uint8Array(24);globalThis.crypto?.getRandomValues?.(bytes);
-  return `sinjira-${Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}-${Date.now().toString(36)}`;
+  const source=globalThis.crypto;
+  if(typeof source?.randomUUID==='function')return source.randomUUID();
+  // Aucun identifiant de confiance calculé avec une horloge ou sans entropie.
+  if(typeof source?.getRandomValues!=='function')throw new Error('SECURE_RANDOM_UNAVAILABLE');
+  const bytes=new Uint8Array(24);
+  source.getRandomValues(bytes);
+  return `sinjira-${Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}`;
 }
 function securityDeviceKey(){
   try{
@@ -92,11 +96,11 @@ async function login(){
       try{
         evaluated=await evaluateLoginSecurity();
       }catch(securityError){
-        console.warn('[SINJIRA login shield unavailable]',securityError);
-        // Le moteur contextuel est une couche supplémentaire. Une panne de cette
-        // couche ne doit pas verrouiller tout le compte; les zones extrêmement
-        // sensibles conservent leur propre contrôle MFA côté serveur.
-        location.replace(next);
+        // Sans vérification de sécurité, aucune session de connexion ne progresse.
+        // Les pages sensibles conservent en parallèle leurs gardes serveur AAL2.
+        console.warn('[SINJIRA login shield unavailable]','SECURITY_CONTEXT_UNAVAILABLE');
+        await getSupabase().auth.signOut({scope:'local'}).catch(()=>{});
+        setStatus(status,'La vérification de sécurité est indisponible. La connexion a été interrompue. Réessayez ultérieurement.','error');
         return;
       }
 
