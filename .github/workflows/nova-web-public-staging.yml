@@ -64,11 +64,22 @@ jobs:
           python-version: '3.12.14'
       - name: Playwright version épinglée
         run: python -m pip install --disable-pip-version-check 'playwright==1.61.0'
-      - name: Serveur HTTP local sans collecte
+      - name: Construire le vrai paquet Web public testé par le navigateur
+        shell: bash
+        env:
+          SINJIRA_RELEASE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          python3 scripts/build_netlify_public.py --output _site --standalone-netlify
+          test -f _site/projets/projet-nova/consultation-40.html
+          test -f _site/projets/projet-nova/sondage.html
+          test -f _site/projets/projet-nova/boussole-electorale.html
+          test ! -e _site/supabase/config.toml
+      - name: Serveur HTTP de l'artefact Web isolé, sans collecte
         shell: bash
         run: |
           set -euo pipefail
-          python -m http.server 4173 --bind 127.0.0.1 >/tmp/nova-public-http.log 2>&1 &
+          python -m http.server 4173 --bind 127.0.0.1 --directory _site >/tmp/nova-public-http.log 2>&1 &
           echo $! >/tmp/nova-public-http.pid
           for attempt in $(seq 1 20); do
             if python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4173/projets/projet-nova/', timeout=1).read(1)" >/dev/null 2>&1; then exit 0; fi
@@ -76,6 +87,23 @@ jobs:
           done
           cat /tmp/nova-public-http.log
           exit 1
+      - name: Refuser l'accès HTTP aux sources techniques même en test
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import urllib.error
+          import urllib.request
+          for route in ("supabase/config.toml", "scripts/build_netlify_public.py",
+                        "tests/test_nova_public_results.cjs"):
+              try:
+                  urllib.request.urlopen("http://127.0.0.1:4173/" + route, timeout=5)
+              except urllib.error.HTTPError as error:
+                  assert error.code == 404, (route, error.code)
+              else:
+                  raise AssertionError(f"Source technique exposée par HTTP : {route}")
+          print("PASS 3/3 chemins techniques en HTTP 404")
+          PY
       - name: Tester la consultation 40, le sondage 64 et la Boussole
         env:
           BROWSER: ${{ matrix.browser }}
