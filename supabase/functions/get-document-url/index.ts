@@ -3,6 +3,7 @@ import { corsHeaders } from '../_shared/cors.ts';
 import { optionalUser, serviceClient } from '../_shared/auth.ts';
 
 const MAX_REQUEST_BYTES=512;
+const PRIVATE_DOCUMENT_BUCKET='sinjira-private-documents';
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ranks:Record<string,number>={public:1,account:10,player:20,tester:30,admin:100};
 const PRIVATE_JSON_HEADERS={
@@ -39,6 +40,12 @@ function externalUrlAllowed(value:string){
     const url=new URL(value);
     return url.protocol==='https:'&&!!url.hostname&&!url.username&&!url.password;
   }catch{return false}
+}
+
+function safeDocumentStoragePath(value:unknown):value is string{
+  if(typeof value!=='string'||!value||value.length>1024||value!==value.trim()||
+     /[\\\u0000-\u001f\u007f%]/.test(value))return false;
+  return value.split('/').every(segment=>segment.length>0&&segment!=='.'&&segment!=='..');
 }
 
 async function readLimitedJson(req:Request):Promise<{body?:any;response?:Response}>{
@@ -128,9 +135,13 @@ Deno.serve(async(req)=>{
       if(!externalUrlAllowed(url))return privateJson({ok:false,error:'URL de document non autorisée.'},500);
       return privateJson({ok:true,url,protected:false,expires_in:null});
     }
-    if(!doc.storage_bucket||!doc.storage_path)return privateJson({ok:false,error:'Fichier non configuré.'},500);
+    // Une entrée approuvée ne peut JAMAIS signer une ressource d'un autre
+    // coffre privé (histoires de vie, personnages, soumissions), même en cas
+    // de registre mal configuré. Le chemin objet doit être canonique.
+    if(doc.storage_bucket!==PRIVATE_DOCUMENT_BUCKET||!safeDocumentStoragePath(doc.storage_path))
+      return privateJson({ok:false,error:'Fichier non configuré.'},500);
 
-    const {data:signed,error:signedError}=await service.storage.from(doc.storage_bucket).createSignedUrl(doc.storage_path,600);
+    const {data:signed,error:signedError}=await service.storage.from(PRIVATE_DOCUMENT_BUCKET).createSignedUrl(doc.storage_path,600);
     if(signedError||!signed?.signedUrl)return privateJson({ok:false,error:'Impossible de créer le lien sécurisé.'},500);
     return privateJson({ok:true,url:signed.signedUrl,protected:true,expires_in:600});
   }catch{

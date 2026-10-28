@@ -42,7 +42,7 @@ const DOCUMENT_ID='11111111-1111-4111-8111-111111111111';
 const doc={
   project_id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',status:'approved',
   access_level:'tester',external_url:null,
-  storage_bucket:'private-documents',storage_path:'test.pdf',
+  storage_bucket:'sinjira-private-documents',storage_path:'test.pdf',
   projects:{id:'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',status:'active',visibility:'restricted'}
 };
 function fixture({owner=false,admin=false,rank=0,rankError=null,ownerError=null,
@@ -64,7 +64,7 @@ function fixture({owner=false,admin=false,rank=0,rankError=null,ownerError=null,
       }
       throw Error('Unexpected RPC '+name);
     },
-    storage:{from(name){assert.equal(name,'private-documents');
+    storage:{from(name){assert.equal(name,'sinjira-private-documents');
       return {createSignedUrl:async(path,ttl)=>{
         assert.equal(path,'test.pdf');assert.equal(ttl,600);stats.signed++;
         return {data:{signedUrl:'https://private.example/signed'},error:null};
@@ -349,5 +349,32 @@ test('Content-Type trompeur: 415 avant toute requête SQL',async()=>{
       body:JSON.stringify({document_id:DOCUMENT_ID})
     }));
     assert.equal(response.status,415);assert.equal(f.stats.signed,0);
+  }
+});
+
+test('aucun lien signé depuis les compartiments privés des autres fonctionnalités',async()=>{
+  for(const bucket of [
+    'sinjira-life-story-exports','sinjira-character-sources',
+    'sinjira-character-submissions','sinjira-avatars','private-documents',
+    null,undefined,''
+  ]){
+    const x=await attempt({document:{...publicDoc,storage_bucket:bucket}},'anonymous');
+    assert.equal(x.status,500,'Compartiment interdit : '+String(bucket));
+    assert.equal(x.stats.signed,0);
+    assert.equal(x.body.url,undefined);
+    assert.deepEqual(x.calls,[]);
+  }
+});
+test('chemins objets non canoniques refusés même pour un document public approuvé',async()=>{
+  for(const path of [
+    '../private.pdf','a/../private.pdf','a/./private.pdf','a//private.pdf',
+    '/absolute.pdf','a/%2e%2e/private.pdf','a\\\\private.pdf',
+    'private.pdf%00','private.pdf\u0000',' private.pdf','private.pdf ',
+    'a'.repeat(1025),null,undefined,0
+  ]){
+    const x=await attempt({document:{...publicDoc,storage_path:path}},'anonymous');
+    assert.equal(x.status,500,'Objet refusé : '+String(path));
+    assert.equal(x.stats.signed,0);
+    assert.deepEqual(x.calls,[]);
   }
 });

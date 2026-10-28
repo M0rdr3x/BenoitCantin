@@ -42,6 +42,10 @@ REQUIRED = {
     'refus des identifiants intégrés': '!url.username&&!url.password',
     'protocole HTTPS externe explicite': "url.protocol==='https:'&&!!url.hostname",
     'lien signé 600 secondes': 'createSignedUrl(doc.storage_path,600)',
+    'bucket privé documents unique': "const PRIVATE_DOCUMENT_BUCKET='sinjira-private-documents';",
+    'interdiction de signer autre bucket': 'doc.storage_bucket!==PRIVATE_DOCUMENT_BUCKET',
+    'chemin objet canonique': 'safeDocumentStoragePath(doc.storage_path)',
+    'signature sur bucket constant': "service.storage.from(PRIVATE_DOCUMENT_BUCKET).createSignedUrl",
     'TTL réponse 600 secondes': 'expires_in:600',
     'log à code fixe': "console.error('[get-document-url]',{code:'GET_DOCUMENT_URL_FAILED'});",
 }
@@ -101,7 +105,10 @@ def validate(path: Path) -> list[str]:
         errors.append(
             'Le niveau inconnu doit renvoyer HTTP 403 avant calcul du rang et toute RPC.'
         )
+    bucket_pos = source.find('if(doc.storage_bucket!==PRIVATE_DOCUMENT_BUCKET||!safeDocumentStoragePath(doc.storage_path))')
     signed_pos = source.find('createSignedUrl(doc.storage_path,600)' )
+    if not (guard_pos >= 0 and bucket_pos > guard_pos and signed_pos > bucket_pos):
+        errors.append('Le bucket de signature et le chemin doivent être validés après les droits et avant le lien signé.')
     response_ttl_pos = source.find('expires_in:600', signed_pos)
     if signed_pos < 0 or response_ttl_pos < signed_pos:
         errors.append('Le lien privé doit rester signé 600 secondes et annoncer le même TTL.')
@@ -113,6 +120,7 @@ def self_test() -> None:
     safe = """
 import { readBoundedRequestText } from '../_shared/bounded-request.mjs';
 const MAX_REQUEST_BYTES=512;
+const PRIVATE_DOCUMENT_BUCKET='sinjira-private-documents';
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const PRIVATE_JSON_HEADERS={
  'Cache-Control':'private, no-store, max-age=0',
@@ -120,6 +128,9 @@ const PRIVATE_JSON_HEADERS={
  'Referrer-Policy':'no-referrer'
 };
 function privateJson(data,status=200){return new Response(JSON.stringify(data),{status,headers:PRIVATE_JSON_HEADERS});}
+function safeDocumentStoragePath(value){
+ return typeof value==='string'&&value.length>0&&!value.includes('%');
+}
 const OFFICIAL_ORIGIN='https://www.benoitcantin.com';
 function externalUrlAllowed(value){
   if(!value||value.trim()!==value)return false;
@@ -168,7 +179,9 @@ Deno.serve(async(req)=>{
   }
   if(userRank<requiredRank){return privateJson({},403);}
   const url=String(doc.external_url); if(!externalUrlAllowed(url))return privateJson({},500);
-  const signed=await service.storage.from('x').createSignedUrl(doc.storage_path,600);
+  if(doc.storage_bucket!==PRIVATE_DOCUMENT_BUCKET||!safeDocumentStoragePath(doc.storage_path))
+    return privateJson({},500);
+  const signed=await service.storage.from(PRIVATE_DOCUMENT_BUCKET).createSignedUrl(doc.storage_path,600);
   return privateJson({ok:true,url:signed.signedUrl,expires_in:600});
  }catch{
   console.error('[get-document-url]',{code:'GET_DOCUMENT_URL_FAILED'});
@@ -197,6 +210,15 @@ Deno.serve(async(req)=>{
             'coercition document_id': safe.replace("typeof parsed.body?.document_id==='string'?parsed.body.document_id.trim():''", "String(parsed.body?.document_id||'').trim()"),
             'no-store retiré': safe.replace(" 'Cache-Control':'private, no-store, max-age=0',\n", ''),
             'TTL signé augmenté': safe.replace('createSignedUrl(doc.storage_path,600)', 'createSignedUrl(doc.storage_path,3600)'),
+            'bucket de signature détourné': safe.replace(
+                "service.storage.from(PRIVATE_DOCUMENT_BUCKET).createSignedUrl",
+                "service.storage.from(doc.storage_bucket).createSignedUrl"),
+            'garde de bucket supprimé': safe.replace(
+                'if(doc.storage_bucket!==PRIVATE_DOCUMENT_BUCKET||!safeDocumentStoragePath(doc.storage_path))',
+                'if(false)'),
+            'garde chemin supprimé': safe.replace(
+                'if(doc.storage_bucket!==PRIVATE_DOCUMENT_BUCKET||!safeDocumentStoragePath(doc.storage_path))',
+                'if(doc.storage_bucket!==PRIVATE_DOCUMENT_BUCKET)'),
             'log brut': safe.replace("}catch{\n  console.error('[get-document-url]',{code:'GET_DOCUMENT_URL_FAILED'});", "}catch(error){\n  console.error(error);"),
             'origine locale retirée': safe.replace('url.origin===OFFICIAL_ORIGIN', 'true'),
             'séparateurs encodés acceptés': safe.replace(
