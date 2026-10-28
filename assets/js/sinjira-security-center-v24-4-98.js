@@ -86,8 +86,9 @@ function renderDevices(devices){
   if(!devices.length){node.innerHTML=empty('Aucun appareil enregistré.');return}
   node.innerHTML=devices.map(d=>{
     const current=d.is_current===true;
+    const deviceId=escapeHtml(d.id);
     const badges=[current&&pill('Cet appareil','good'),d.is_primary&&pill('Principal','good'),d.is_trusted&&pill('Fiable','good'),d.revoked_at&&pill('Révoqué','danger')].filter(Boolean).join(' ');
-    return `<article class="security-item" data-device-id="${d.id}"><div class="security-item-head"><div><h3>${escapeHtml(d.display_name||'Appareil SINJIRA')}</h3><div>${badges}</div></div><small>Dernière activité : ${escapeHtml(formatDate(d.last_seen_at))}</small></div><p><small>${escapeHtml(d.device_type||'appareil')} · ${escapeHtml(d.platform||'plateforme non précisée')}</small></p>${d.last_country_code?`<p><small>Dernière région de sécurité : ${escapeHtml(d.last_country_code)}${d.last_region_code?` · ${escapeHtml(d.last_region_code)}`:''}</small></p>`:''}<div class="security-actions">${!d.revoked_at&&!d.is_trusted&&current?`<button class="btn btn-secondary" type="button" data-device-trust="${d.id}">Marquer cet appareil fiable</button>`:''}${!d.revoked_at&&d.is_trusted&&!d.is_primary?`<button class="btn btn-secondary" type="button" data-device-primary="${d.id}">Définir principal</button>`:''}${!d.revoked_at&&d.is_trusted?`<button class="btn btn-secondary" type="button" data-device-untrust="${d.id}">Retirer la confiance</button>`:''}${!d.revoked_at&&!current?`<button class="btn btn-secondary" type="button" data-device-revoke="${d.id}">Révoquer</button>`:''}</div></article>`;
+    return `<article class="security-item" data-device-id="${deviceId}"><div class="security-item-head"><div><h3>${escapeHtml(d.display_name||'Appareil SINJIRA')}</h3><div>${badges}</div></div><small>Dernière activité : ${escapeHtml(formatDate(d.last_seen_at))}</small></div><p><small>${escapeHtml(d.device_type||'appareil')} · ${escapeHtml(d.platform||'plateforme non précisée')}</small></p>${d.last_country_code?`<p><small>Dernière région de sécurité : ${escapeHtml(d.last_country_code)}${d.last_region_code?` · ${escapeHtml(d.last_region_code)}`:''}</small></p>`:''}<div class="security-actions">${!d.revoked_at&&!d.is_trusted&&current?`<button class="btn btn-secondary" type="button" data-device-trust="${deviceId}">Marquer cet appareil fiable</button>`:''}${!d.revoked_at&&d.is_trusted&&!d.is_primary?`<button class="btn btn-secondary" type="button" data-device-primary="${deviceId}">Définir principal</button>`:''}${!d.revoked_at&&d.is_trusted?`<button class="btn btn-secondary" type="button" data-device-untrust="${deviceId}">Retirer la confiance</button>`:''}${!d.revoked_at&&!current?`<button class="btn btn-secondary" type="button" data-device-revoke="${deviceId}">Révoquer</button>`:''}</div></article>`;
   }).join('');
 }
 
@@ -117,7 +118,7 @@ function renderSecurityEvents(rows){
 function renderTravel(rows){
   const node=qs('[data-security-travel-list]');if(!node)return;
   if(!rows.length){node.innerHTML=empty('Aucun voyage enregistré.');return}
-  node.innerHTML=rows.map(r=>`<article class="security-item"><div class="security-item-head"><div><h3>${escapeHtml((r.destinations||[]).join(' → '))}</h3>${pill(r.status,r.status==='active'?'good':'')}</div><small>${escapeHtml(formatDate(r.starts_at))} → ${escapeHtml(formatDate(r.ends_at))}</small></div><p><small>Suppression prévue : ${escapeHtml(formatDate(r.delete_after))}</small></p>${r.status==='active'?`<div class="security-actions"><button class="btn btn-secondary" type="button" data-travel-cancel="${r.id}">Annuler ce voyage</button></div>`:''}</article>`).join('');
+  node.innerHTML=rows.map(r=>`<article class="security-item"><div class="security-item-head"><div><h3>${escapeHtml((r.destinations||[]).join(' → '))}</h3>${pill(r.status,r.status==='active'?'good':'')}</div><small>${escapeHtml(formatDate(r.starts_at))} → ${escapeHtml(formatDate(r.ends_at))}</small></div><p><small>Suppression prévue : ${escapeHtml(formatDate(r.delete_after))}</small></p>${r.status==='active'?`<div class="security-actions"><button class="btn btn-secondary" type="button" data-travel-cancel="${escapeHtml(r.id)}">Annuler ce voyage</button></div>`:''}</article>`).join('');
 }
 
 function renderChallenges(rows,devices){
@@ -129,7 +130,7 @@ function renderChallenges(rows,devices){
     const sameRequestDevice=Boolean(currentDevice&&currentDevice.id===r.request_device_id);
     const canResolve=Boolean(currentDevice&&currentDevice.is_trusted&&!sameRequestDevice);
     const controls=canResolve
-      ? `<div class="security-actions"><button class="btn btn-primary" type="button" data-challenge-approve="${r.id}">Autoriser</button><button class="btn btn-secondary" type="button" data-challenge-deny="${r.id}">Refuser</button></div>`
+      ? `<div class="security-actions"><button class="btn btn-primary" type="button" data-challenge-approve="${escapeHtml(r.id)}">Autoriser</button><button class="btn btn-secondary" type="button" data-challenge-deny="${escapeHtml(r.id)}">Refuser</button></div>`
       : sameRequestDevice
         ? '<p><small>Cette tentative provient de cet appareil. Elle doit être confirmée depuis un autre appareil déjà fiable.</small></p>'
         : '<p><small>Pour autoriser ou refuser cette tentative, utilisez un autre appareil déjà marqué comme fiable.</small></p>';
