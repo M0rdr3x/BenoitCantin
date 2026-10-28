@@ -36,7 +36,10 @@ def survey(browser, filename, count):
         res = page.goto(BASE + filename, wait_until="domcontentloaded", timeout=30_000)
         check(res is not None and res.status in (200, 304),
               f"{filename}: page absente")
-        page.locator("#sondage-start").wait_for(state="visible", timeout=25_000)
+        # Ne pas cocher des cases avant l'initialisation asynchrone du corpus
+        # (manifestes + SHA-256), surtout avec WebKit et cache froid.
+        page.locator('#sondage-start[data-ready="true"]').wait_for(
+            state="visible", timeout=25_000)
         check(page.locator("#sondage-start").is_disabled(),
               f"{filename}: démarrage sans attestation ni accord")
         for field in ("#sondage-age", "#sondage-consent"):
@@ -77,6 +80,10 @@ def survey(browser, filename, count):
         page.keyboard.press("Enter")
         check("Question 2 sur " + str(count) in page.locator("#sondage-position").inner_text(),
               f"{filename}: progression par Entrée impossible")
+        page.wait_for_function("""() => {
+            const title=document.querySelector('[data-sondage-question-focus]');
+            return title && document.activeElement===title;
+        }""", timeout=5_000)
         check(heading.locator("[data-sondage-question-focus]").evaluate("el => el === document.activeElement"),
               f"{filename}: focus non déplacé après navigation")
         check(not posted, f"{filename}: transmission réseau pendant parcours clavier")
