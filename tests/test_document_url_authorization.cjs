@@ -22,6 +22,8 @@ function buildHandler(mock){
     .replace('let raw:string;','let raw;')
     .replace('function privateJson(data:unknown,status=200)','function privateJson(data,status=200)')
     .replace('function externalUrlAllowed(value:string)','function externalUrlAllowed(value)')
+    .replace('function safeDocumentStoragePath(value:unknown):value is string',
+      'function safeDocumentStoragePath(value)')
     .replace('async function readLimitedJson(req:Request):Promise<{body?:any;response?:Response}>',
       'async function readLimitedJson(req)');
   assert.doesNotMatch(transformed,/\bimport\s+.*from/);
