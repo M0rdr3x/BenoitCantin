@@ -115,7 +115,6 @@ test('chemin Storage lié au sujet, dossier et export : refuse toute autre resso
   ])assert.equal(check({...valid,storage_path},exportId),false,storage_path);
   assert.equal(check({...valid,subject_user_id:'../other'},exportId),false);
   assert.equal(check({...valid,case_id:null},exportId),false);
-  const lookup=production.indexOf("'.select('status,storage_bucket,storage_path,audience,subject_user_id,case_id')");
   const guarded=production.indexOf('canonicalExportPath(record,link.export_id)');
   const download=production.indexOf(".download(record.storage_path)");
   assert.ok(guarded>0&&guarded<download,'La lecture Storage doit suivre le contrôle de chemin');
