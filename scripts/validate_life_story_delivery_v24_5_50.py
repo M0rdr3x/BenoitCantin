@@ -97,6 +97,8 @@ def main() -> int:
         'max_downloads',
         'download_count',
         "record.storage_bucket!=='sinjira-life-story-exports'",
+        "canonicalExportPath(record,link.export_id)",
+        "'subject_user_id,case_id'",
         'hasPdfSignature(bytes)',
         "String.fromCharCode(...head)==='%PDF-'",
         "service.rpc('service_life_story_register_download'",

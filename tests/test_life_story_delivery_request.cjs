@@ -91,6 +91,37 @@ test('délai absolu du reader devient HTTP 408 non cachable',async()=>{
   const r=await fn(request(good));
   assert.equal(r.response?.status,408);
 });
+test('chemin Storage lié au sujet, dossier et export : refuse toute autre ressource',()=>{
+  const a=production.indexOf('function canonicalExportPath(');
+  const b=production.indexOf('\n}\n\nasync function readDeliveryToken',a);
+  assert.ok(a>=0&&b>a,'Garde Storage absente');
+  const helper=production.slice(a,b+2)
+    .replace('function canonicalExportPath(record: Record<string,unknown>, exportId:unknown): boolean {',
+             'function canonicalExportPath(record, exportId) {');
+  const check=new Function(helper+'\nreturn canonicalExportPath;')();
+  const subject='11111111-1111-4111-8111-111111111111';
+  const caseId='22222222-2222-4222-8222-222222222222';
+  const exportId='33333333-3333-4333-8333-333333333333';
+  const valid={subject_user_id:subject,case_id:caseId,
+    storage_path:subject+'/'+caseId+'/'+exportId+'.pdf'};
+  assert.equal(check(valid,exportId),true);
+  for(const storage_path of [
+    subject+'/'+caseId+'/44444444-4444-4444-8444-444444444444.pdf',
+    '66666666-6666-4666-8666-666666666666/'+caseId+'/'+exportId+'.pdf',
+    subject+'/../'+exportId+'.pdf',
+    subject+'/%2e%2e/'+exportId+'.pdf',
+    subject+'//'+exportId+'.pdf',
+    subject+'/'+caseId+'/'+exportId+'.PDF',
+  ])assert.equal(check({...valid,storage_path},exportId),false,storage_path);
+  assert.equal(check({...valid,subject_user_id:'../other'},exportId),false);
+  assert.equal(check({...valid,case_id:null},exportId),false);
+  const lookup=production.indexOf("'.select('status,storage_bucket,storage_path,audience,subject_user_id,case_id')");
+  const guarded=production.indexOf('canonicalExportPath(record,link.export_id)');
+  const download=production.indexOf(".download(record.storage_path)");
+  assert.ok(guarded>0&&guarded<download,'La lecture Storage doit suivre le contrôle de chemin');
+  assert.match(production,/\.select\('status,storage_bucket,storage_path,audience,subject_user_id,case_id'\)/);
+});
+
 test('autorisation de remise après parsing et avant lecture Storage',()=>{
   const parserCall=production.indexOf('const parsed=await readDeliveryToken(req);');
   const tokenHash=production.indexOf('const hash = await sha256Hex(token);');

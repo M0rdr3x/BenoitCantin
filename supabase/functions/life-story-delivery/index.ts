@@ -69,6 +69,17 @@ function hasPdfSignature(bytes: ArrayBuffer) {
   return String.fromCharCode(...head) === '%PDF-';
 }
 
+function canonicalExportPath(record: Record<string,unknown>, exportId:unknown): boolean {
+  // Même avec un registre erroné, un lien ne doit pas ouvrir un AUTRE export
+  // du même compartiment. Le service d'export écrit exactement ce chemin.
+  const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if(typeof record.subject_user_id!=='string'||typeof record.case_id!=='string'||
+     typeof record.storage_path!=='string'||typeof exportId!=='string')return false;
+  if(!uuid.test(record.subject_user_id)||!uuid.test(record.case_id)||!uuid.test(exportId))
+    return false;
+  return record.storage_path===`${record.subject_user_id}/${record.case_id}/${exportId}.pdf`;
+}
+
 async function readDeliveryToken(req: Request): Promise<{ token?: string; response?: Response }> {
   // Une fonction publique doit refuser le MIME et la taille AVANT la lecture.
   const type=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
@@ -124,10 +135,12 @@ Deno.serve(async (req) => {
 
     const { data: record, error: exportError } = await service
       .from('life_story_exports')
-      .select('status,storage_bucket,storage_path,audience')
+      .select('status,storage_bucket,storage_path,audience,subject_user_id,case_id')
       .eq('id', link.export_id)
       .maybeSingle();
-    if (exportError || !record || !['generated', 'delivered'].includes(record.status) || record.storage_bucket !== 'sinjira-life-story-exports' || !record.storage_path) return errorResponse(req);
+    if (exportError || !record || !['generated', 'delivered'].includes(record.status) ||
+        record.storage_bucket !== 'sinjira-life-story-exports' ||
+        !canonicalExportPath(record,link.export_id)) return errorResponse(req);
 
     const { data: file, error: downloadError } = await service.storage.from('sinjira-life-story-exports').download(record.storage_path);
     if (downloadError || !file) return errorResponse(req, 410);
