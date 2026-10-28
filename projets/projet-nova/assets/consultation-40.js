@@ -78,7 +78,7 @@
     $('sondage-answered').textContent = answers.size + ' question(s) avec un choix sur 40';
     $('sondage-progress').value = step + 1;
     $('sondage-progress').max = 40;
-    $('sondage-question-heading').textContent = item.text;
+    $('sondage-question-heading').querySelector('[data-sondage-question-focus]').textContent = item.text;
     $('sondage-context').textContent = step === 0
       ? 'Question de consultation sur une éventuelle indépendance : cette réponse ne constitue pas un vote référendaire officiel.'
       : 'Proposition de politique publique : choisissez librement, y compris « Sans opinion ».';
@@ -108,8 +108,8 @@
     $('sondage-next').disabled = !answers.has(item.id);
     $('sondage-next').textContent = editingReview ? 'Enregistrer la modification'
       : (step === 39 ? 'Voir le récapitulatif' : 'Suivant');
-    $('sondage-question-heading').setAttribute('tabindex', '-1');
-    $('sondage-question-heading').focus({ preventScroll: true });
+    // Firefox ne garantit pas focus() sur <legend> : cibler l'enfant focalisable.
+    $('sondage-question-heading').querySelector('[data-sondage-question-focus]').focus({ preventScroll: true });
   }
   function complete() {
     if (!eligible() || questions.length !== 40 || answers.size!==40) return;
