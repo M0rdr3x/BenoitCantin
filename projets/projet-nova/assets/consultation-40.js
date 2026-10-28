@@ -284,6 +284,9 @@
         if (!Array.isArray(data.choices) || data.choices.length !== 3 ||
             data.choices.join(',') !== 'pour,contre,sans_opinion') throw Error('CHOIX');
         questions = data.questions;
+        // Le banc d'accessibilité attend le chargement ET l'intégrité vérifiée
+        // avant de cocher les attestations, sans conserver d'opinions.
+        $('sondage-start').dataset.ready = 'true';
         refresh();
       }).catch(() => {
         $('sondage-start').disabled = true;
