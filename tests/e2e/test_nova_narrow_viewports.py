@@ -29,8 +29,20 @@ def check(condition, message):
 def check_width(page, label):
     metrics = page.evaluate("""() => ({
         viewport: innerWidth,
+        rootClient: document.documentElement.clientWidth,
+        bodyClient: document.body.clientWidth,
+        bodyRect: Math.round(document.body.getBoundingClientRect().width),
         document: document.documentElement.scrollWidth,
         body: document.body.scrollWidth,
+        overflowingChildren: [...document.querySelectorAll('body *')]
+          .filter(el => el.scrollWidth - el.clientWidth > 3)
+          .slice(0, 12).map(el => ({
+              name: el.tagName.toLowerCase(), id: el.id,
+              css: (el.className && typeof el.className === 'string')
+                ? el.className.slice(0, 85) : '',
+              client: el.clientWidth, scroll: el.scrollWidth,
+              width: Math.round(el.getBoundingClientRect().width)
+          })),
         offenders: [...document.querySelectorAll('body *')]
           .map(el => ({name: el.tagName.toLowerCase(), id: el.id,
                         right: Math.round(el.getBoundingClientRect().right)}))
