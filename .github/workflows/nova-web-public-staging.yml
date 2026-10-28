@@ -14,6 +14,10 @@ on:
       - 'tests/test_nova_compass_scores.cjs'
       - 'tests/test_nova_survey_privacy.cjs'
       - 'tests/test_nova_public_results.cjs'
+      - 'tests/test_nova_release_gates.cjs'
+      - '.github/workflows/deploy-netlify-staging.yml'
+      - '.github/workflows/validate-netlify-preview.yml'
+      - '.github/workflows/validate-netlify-pre-dns.yml'
       - 'scripts/validate_nova_public_access.py'
       - 'scripts/validate_nova_public_results.py'
       - 'index.html'
@@ -48,6 +52,7 @@ jobs:
           node --test tests/test_nova_compass_scores.cjs
           node --test tests/test_nova_survey_privacy.cjs
           node --test tests/test_nova_public_results.cjs
+          node --test tests/test_nova_release_gates.cjs
 
   civic-preview:
     name: Nova — parcours Web candidat ${{ matrix.browser }}
