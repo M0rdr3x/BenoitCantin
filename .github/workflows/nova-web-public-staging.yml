@@ -15,6 +15,7 @@ on:
       - 'tests/test_nova_survey_privacy.cjs'
       - 'tests/test_nova_public_results.cjs'
       - 'tests/test_nova_release_gates.cjs'
+      - 'scripts/test_nova_navigation_runtime.mjs'
       - '.github/workflows/deploy-netlify-staging.yml'
       - '.github/workflows/validate-netlify-preview.yml'
       - '.github/workflows/validate-netlify-pre-dns.yml'
@@ -53,6 +54,7 @@ jobs:
           node --test tests/test_nova_survey_privacy.cjs
           node --test tests/test_nova_public_results.cjs
           node --test tests/test_nova_release_gates.cjs
+          node scripts/test_nova_navigation_runtime.mjs
 
   civic-preview:
     name: Nova — parcours Web candidat ${{ matrix.browser }}
