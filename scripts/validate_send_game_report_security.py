@@ -185,8 +185,8 @@ Deno.serve(async(req)=>{
             'message backend renvoyé': safe.replace(
                 "error.message==='REQUEST_TOO_LARGE'",
                 "error:error.message"),
-            'req.json direct': safe.replace(' raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);', ' const bodyDirect = await req.json();'),
-            'req.text direct': safe.replace(' raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);', ' const raw = await req.text();'),
+            'req.json direct': safe.replace('raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);', ' const bodyDirect = await req.json();'),
+            'req.text direct': safe.replace('raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);', ' const raw = await req.text();'),
             'lecteur PDF contourné': safe.replace('fetchBoundedPdf(reportTemplateUrl(),MAX_TEMPLATE_BYTES)', 'fetch(reportTemplateUrl())'),
             'no-store retiré': safe.replace("  'Cache-Control': 'private, no-store, max-age=0',\n", ''),
             'services payants activés': safe.replace('PAID_EXTERNAL_SERVICES_ENABLED=false', 'PAID_EXTERNAL_SERVICES_ENABLED=true'),
