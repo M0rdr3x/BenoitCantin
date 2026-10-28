@@ -105,7 +105,7 @@
     $('sondage-progress').value = step + 1;
     $('sondage-progress').max = questions.length;
     $('sondage-answered').textContent = selections.size + ' question(s) avec un choix sur 64';
-    $('sondage-question-heading').textContent = question.text;
+    $('sondage-question-heading').querySelector('[data-sondage-question-focus]').textContent = question.text;
     const area = $('sondage-choices');
     area.replaceChildren();
     const existing = selections.get(question.id);
@@ -134,8 +134,8 @@
     $('sondage-next').textContent = editingReview ? 'Enregistrer la modification' :
       (step === questions.length - 1 ? 'Voir le récapitulatif' : 'Suivant');
     setStatus('');
-    $('sondage-question-heading').setAttribute('tabindex', '-1');
-    $('sondage-question-heading').focus({ preventScroll: true });
+    // Firefox ne garantit pas focus() sur <legend> : cibler l'enfant focalisable.
+    $('sondage-question-heading').querySelector('[data-sondage-question-focus]').focus({ preventScroll: true });
   }
   function finish() {
     if (selections.size !== questions.length || !eligible()) {
