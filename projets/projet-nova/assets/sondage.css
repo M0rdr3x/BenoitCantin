@@ -28,7 +28,10 @@
 .nova-survey-progress-count{margin:8px 0 0;color:#425b71;font-size:.94rem;font-weight:650}
 .nova-survey-question-context{padding:11px 14px;border-left:4px solid #1384a8;border-radius:3px;background:#edf6fa;color:#25475d}
 .nova-survey-secondary-actions{margin-top:18px;display:flex;justify-content:flex-start}
-.nova-survey-secondary-actions .btn{font-size:.92rem}
+/* Les libellés longs du bouton de retrait doivent rester dans la carte à 320 px.
+   width:100% seul ne suffit pas si .btn force white-space:nowrap ou un min-width. */
+.nova-survey-secondary-actions{min-width:0;max-width:100%}
+.nova-survey-secondary-actions .btn{box-sizing:border-box;min-width:0;max-width:100%;font-size:.92rem;white-space:normal;overflow-wrap:anywhere;line-height:1.4;text-align:center}
 .nova-survey-review-list{list-style:decimal;margin:20px 0 24px;padding-left:1.6rem;display:grid;gap:12px}
 .nova-survey-review-list li{padding:15px;border:1px solid #c6d6e0;border-radius:12px;background:#f8fbfe}
 .nova-survey-review-list li::marker{font-weight:750;color:#164e67}
