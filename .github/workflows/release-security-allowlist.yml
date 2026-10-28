@@ -72,8 +72,8 @@ jobs:
               "assets/media/nova-boussole-electorale.webp": "0478c0ab322cfd854f249c6e964a7c52d3c65d48",
               "projets/projet-nova/METHODOLOGIE_BOUSSOLE.md": "60df5d5a246b6b0d1a1feaa0241d4aa37fb755ed",
               "projets/projet-nova/assets/boussole-electorale.css": "524f8f15c4d35f82c787a2dd32e130c3341f06e7",
-              "projets/projet-nova/assets/boussole-electorale.js": "fba4873665faa1f5deb67319a5ecbfcd2625ba0e",
-              "projets/projet-nova/boussole-electorale.html": "03f6d5c77d61c6c2858f6c43bdbb1430c7514684",
+              "projets/projet-nova/assets/boussole-electorale.js": "7681e03217773678a5bb4fa6b25ba2fb2ab7230c",
+              "projets/projet-nova/boussole-electorale.html": "2be0aec4b970559c89debf68c3e50b4efebd927a",
               "projets/projet-nova/data/boussole-electorale-v1.json": "3929b31063093252a397aa921a1f0b1608de284e",
               "projets/projet-nova/data/boussole-electorale-v2.json": "77786171dad3fc902f1376312b8547b9f1684ff9",
               "projets/projet-nova/data/boussole-partis-2026.json": "a27b0dfee3321bb49b7ee339eccf50a691a3ebbd",
@@ -83,17 +83,12 @@ jobs:
           for path, digest in expected.items():
               source = Path(path)
               data = source.read_bytes()
-              # Exception strictement limitée au cache JS : restaurer les octets
-              # du blob approuvé v26.1.0 pour vérifier l'intégrité du questionnaire.
-              # Les 10 autres fichiers restent comparés octet par octet.
-              signed_data = data
+              # Les onze blobs sont ceux du candidat Nova qualifié dans 3 navigateurs.
+              # Vérification directe octet pour octet, sans normalisation qui
+              # permettrait de masquer une modification non revue.
               if path == "projets/projet-nova/boussole-electorale.html":
-                  new_cache = b"script.js?v=26.2.0"
-                  signed_cache = b"script.js?v=26.1.0"
-                  assert data.count(new_cache) == 1, "Cache Boussole v26.2.0 non unique"
-                  assert signed_cache not in data, "Ancien script encore présent"
-                  signed_data = data.replace(new_cache, signed_cache, 1)
-              observed = sha1(b"blob " + str(len(signed_data)).encode() + b"\0" + signed_data).hexdigest()
+                  assert data.count(b"script.js?v=26.1.0") == 1, "Version de navigation Boussole inattendue"
+              observed = sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
               assert observed == digest, f"Fichier Boussole changé sans revue: {path}"
               expected_public = not path.endswith(".md")
               assert relative_path_allowed(source) == expected_public, f"Allowlist incorrecte: {path}"
