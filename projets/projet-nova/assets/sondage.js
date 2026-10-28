@@ -281,8 +281,13 @@
     window.addEventListener('pagehide', () => {
       if (!COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED) clearLocalDemo();
     });
-    window.addEventListener('pageshow', () => {
-      if (!COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED) clearLocalDemo();
+    window.addEventListener('pageshow', event => {
+      // init() purge déjà toute visite neuve. Une pageshow initiale peut se
+      // déclencher après l'accord de démonstration (surtout sur WebKit) :
+      // ne jamais effacer une interaction valable lors de ce premier affichage.
+      // La restauration réelle depuis le cache arrière/avant est signalée
+      // par persisted=true et impose la purge immédiate des opinions locales.
+      if (event.persisted && !COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED) clearLocalDemo();
     });
     for (const id of ['sondage-age', 'sondage-consent']) {
       $(id).addEventListener('change', refreshStart);
