@@ -6,7 +6,7 @@ import vm from 'node:vm';
 
 const source=readFileSync('projets/projet-nova/script.js','utf8');
 const html=readFileSync('projets/projet-nova/index.html','utf8');
-assert.match(html,/script\.js\?v=26\.2\.0/);
+assert.match(html,/script\.js\?v=26\.1\.0/);
 assert.match(html,/boussole-electorale\.html/);
 assert.match(html,/href="\/transparence-ia\.html"/);
 const callbacks=new Map();
