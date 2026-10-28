@@ -14,6 +14,9 @@ REQUIRED = {
     'JSON explicite': "contentType!=='application/json'",
     'lecteur borné partagé': "import { readBoundedRequestText } from '../_shared/bounded-request.mjs';",
     'limite appliquée pendant le flux': 'readBoundedRequestText(req,MAX_REQUEST_BYTES)',
+    'longueur déclarée canonique': 'Number.isSafeInteger(Number(rawLength))',
+    'racine JSON objet': 'Array.isArray(body)',
+    'JSON sans valeur par défaut': 'JSON.parse(raw)',
     'refus du flux expiré': "error.message==='REQUEST_TIMEOUT'",
     'refus de dépassement': "error.message==='REQUEST_TOO_LARGE'",
     'UUID strict': 'const UUID_RE=',
@@ -131,6 +134,8 @@ function externalUrlAllowed(value){
 async function readLimitedJson(req){
   const contentType=(req.headers.get('content-type')||'').toLowerCase();
   if(contentType!=='application/json')return {response:privateJson({},415)};
+  const rawLength=req.headers.get('content-length');
+  if(rawLength!==null&&!Number.isSafeInteger(Number(rawLength)))return {response:privateJson({},413)};
   let raw;
   try{raw=await readBoundedRequestText(req,MAX_REQUEST_BYTES);}
   catch(error){
@@ -138,7 +143,9 @@ async function readLimitedJson(req){
     if(error instanceof Error && error.message==='REQUEST_TOO_LARGE')return {response:privateJson({},413)};
     return {response:privateJson({},400)};
   }
-  return {body:JSON.parse(raw||'{}')};
+  const body=JSON.parse(raw);
+  if(!body||typeof body!=='object'||Array.isArray(body))return {response:privateJson({},400)};
+  return {body};
 }
 Deno.serve(async(req)=>{
  if(req.method!=='POST')return privateJson({},405);
@@ -179,6 +186,9 @@ Deno.serve(async(req)=>{
         mutations = {
             'limite augmentée': safe.replace('MAX_REQUEST_BYTES=512;', 'MAX_REQUEST_BYTES=8192;'),
             'type JSON retiré': safe.replace("if(contentType!=='application/json')return {response:privateJson({},415)};", ''),
+            'longueur forgée acceptée': safe.replace("Number.isSafeInteger(Number(rawLength))", "true"),
+            'racine tableau acceptée': safe.replace("Array.isArray(body)", "false"),
+            'JSON vide réintroduit': safe.replace("JSON.parse(raw)", "JSON.parse(raw||'{}')"),
             'req.json direct': safe.replace('raw=await readBoundedRequestText(req,MAX_REQUEST_BYTES);', 'raw=await req.json();'),
             'req.text direct': safe.replace('raw=await readBoundedRequestText(req,MAX_REQUEST_BYTES);', 'raw=await req.text();'),
             'contrôle de taille retiré': safe.replace("error.message==='REQUEST_TOO_LARGE'", 'false'),

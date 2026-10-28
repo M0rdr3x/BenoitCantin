@@ -49,6 +49,12 @@ async function readLimitedJson(req:Request):Promise<{body?:any;response?:Respons
   }
   // Borne effective pendant le flux : taille, fragments, UTF-8 et durée.
   // La route sans JWT conserve un JSON de requête minimal (512 octets).
+  const rawLength=req.headers.get('content-length');
+  if(rawLength!==null&&
+     (!/^[0-9]+$/.test(rawLength)||!Number.isSafeInteger(Number(rawLength))||
+      Number(rawLength)>MAX_REQUEST_BYTES)){
+    return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
+  }
   let raw:string;
   try {
     raw=await readBoundedRequestText(req,MAX_REQUEST_BYTES);
@@ -60,7 +66,9 @@ async function readLimitedJson(req:Request):Promise<{body?:any;response?:Respons
     return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)};
   }
   try {
-    return {body:JSON.parse(raw||'{}')};
+    const body=JSON.parse(raw);
+    if(!body||typeof body!=='object'||Array.isArray(body))throw new Error('INVALID_JSON');
+    return {body};
   } catch {
     return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)};
   }
