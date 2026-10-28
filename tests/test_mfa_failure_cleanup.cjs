@@ -36,7 +36,7 @@ test('exception MFA de l’initialisation : passer par le nettoyage sécurisé',
   assert.ok(events.includes('cleaned'));
 });
 test('exception TOTP : nettoyage, pas de navigation',async()=>{
-  const handler=extract("  form.addEventListener('submit',async event=>{", '\n  });\n}');
+  const handler=extract("  form.addEventListener('submit',async event=>{", '\n  });\n}')+'\n  });';
   const events=[],button={disabled:false};
   let onSubmit;
   const form={querySelector:()=>button,addEventListener:(_evt,fn)=>{onSubmit=fn;}};
@@ -54,7 +54,7 @@ test('exception TOTP : nettoyage, pas de navigation',async()=>{
   assert.ok(!events.includes('navigated'));
 });
 test('erreur de code TOTP ordinaire : permettre une nouvelle saisie',async()=>{
-  const handler=extract("  form.addEventListener('submit',async event=>{", '\n  });\n}');
+  const handler=extract("  form.addEventListener('submit',async event=>{", '\n  });\n}')+'\n  });';
   let cb;const events=[],button={disabled:false};
   const sandbox={
     form:{querySelector:()=>button,addEventListener:(_type,fn)=>{cb=fn;}},
