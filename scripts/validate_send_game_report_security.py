@@ -44,7 +44,6 @@ REQUIRED_PATTERNS = {
 FORBIDDEN = {
     'JSON direct non borné': 'await req.json()',
     'texte direct non borné': 'await req.text()',
-    'message erreur backend brut': 'error.message',
     'stack erreur brute': 'error.stack',
     'objet erreur brut console.error': 'console.error(error)',
     'objet erreur court brut': 'console.error(e)',
@@ -71,6 +70,15 @@ def validate(path: Path) -> list[str]:
     for label, marker in FORBIDDEN.items():
         if marker.lower() in lowered:
             errors.append(f'Garde send-game-report violé: {label}.')
+
+    # Seule l'identification de deux erreurs de lecture HTTP à codes fixes
+    # peut consulter error.message. Aucun log, réponse ou autre chemin ne doit
+    # relayer le texte d'une exception Supabase / PDF / fournisseur.
+    for match in re.finditer(r'\berror\.message\b', source):
+        following = source[match.end():]
+        if not re.match(r"\s*===\s*'(?:REQUEST_TIMEOUT|REQUEST_TOO_LARGE)'", following):
+            errors.append('Garde send-game-report violé: message erreur backend brut.')
+            break
 
     paid_pos = source.find('if (!PAID_EXTERNAL_SERVICES_ENABLED)')
     resend_pos = source.find("fetch('https://api.resend.com/emails'")
@@ -171,6 +179,12 @@ Deno.serve(async(req)=>{
             'tableau JSON accepté': safe.replace("Array.isArray(body)", "false"),
             'mode arbitraire accepté': safe.replace("body.mode !== 'download' && body.mode !== 'email'", "false"),
             'tableau de fiche accepté': safe.replace("Array.isArray(body.sheet_data)", "false"),
+            'erreur interne exposée dans les logs': safe.replace(
+                "error.message==='REQUEST_TIMEOUT'",
+                "console.error(error.message)"),
+            'message backend renvoyé': safe.replace(
+                "error.message==='REQUEST_TOO_LARGE'",
+                "error:error.message"),
             'req.json direct': safe.replace(' raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);', ' const bodyDirect = await req.json();'),
             'req.text direct': safe.replace(' raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);', ' const raw = await req.text();'),
             'lecteur PDF contourné': safe.replace('fetchBoundedPdf(reportTemplateUrl(),MAX_TEMPLATE_BYTES)', 'fetch(reportTemplateUrl())'),
