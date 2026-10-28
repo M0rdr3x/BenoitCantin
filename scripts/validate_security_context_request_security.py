@@ -14,6 +14,11 @@ REQUIRED = {
     'authentification obligatoire': 'requiredUser(req)',
     'session issue du JWT validé': 'sessionIdFromVerifiedRequest(req)',
     'lecture JSON bornée': 'readLimitedJson(req)',
+    'MIME JSON obligatoire': "contentType !== 'application/json'",
+    'longueur canonique': 'Number.isSafeInteger(Number(rawLength))',
+    'JSON racine objet': 'Array.isArray(body)',
+    'corps trop grand': "error.message === 'REQUEST_TOO_LARGE'",
+    'lecture lente HTTP': "error.message === 'REQUEST_TIMEOUT'",
     'mesure UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
     'réponse privée': "'Cache-Control': 'private, no-store, max-age=0'",
     'protection MIME': "'X-Content-Type-Options': 'nosniff'",
@@ -84,10 +89,21 @@ const PRIVATE_HEADERS = {
 };
 function privateJson(data, status=200){return new Response(JSON.stringify(data),{status,headers:PRIVATE_HEADERS})}
 async function readLimitedJson(req){
+ const contentType=req.headers.get('content-type');
+ if (contentType !== 'application/json') return {response:privateJson({},415)};
  const rawLength=req.headers.get('content-length');
- const raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);
+ if (rawLength !== null && !Number.isSafeInteger(Number(rawLength))) return {response:privateJson({},413)};
+ let raw;
+ try { raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES); }
+ catch(error) {
+   if (error.message === 'REQUEST_TOO_LARGE') return {response:privateJson({},413)};
+   if (error.message === 'REQUEST_TIMEOUT') return {response:privateJson({},408)};
+   throw error;
+ }
  new TextEncoder().encode(raw).byteLength;
- return {body:{}};
+ const body=JSON.parse(raw);
+ if (!body || typeof body !== 'object' || Array.isArray(body)) return {response:privateJson({},400)};
+ return {body};
 }
 function sessionIdFromVerifiedRequest(req){return req}
 function trustedGeo(_req: Request){
@@ -133,6 +149,17 @@ privateJson({});
         body_size = validate(path)
         if not any('4096 octets' in item for item in body_size):
             raise AssertionError('Une limite de corps affaiblie doit être bloquée.')
+
+        path.write_text(safe.replace('Array.isArray(body)', 'false', 1), encoding='utf-8')
+        shape = validate(path)
+        if not any('JSON racine objet' in item for item in shape):
+            raise AssertionError('Tableaux JSON non rejetés.')
+
+        path.write_text(safe.replace("contentType !== 'application/json'",
+            "contentType === 'application/json'", 1), encoding='utf-8')
+        mime = validate(path)
+        if not any('MIME JSON obligatoire' in item for item in mime):
+            raise AssertionError('MIME JSON non obligatoire.')
 
         path.write_text(safe.replace("return { country: null, region: null };",
             "const country=req.headers.get('cf-connecting-ip'); return { country, region: null };", 1), encoding='utf-8')

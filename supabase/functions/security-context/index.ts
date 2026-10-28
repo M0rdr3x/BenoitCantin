@@ -31,21 +31,38 @@ function privateJson(data: unknown, status = 200) {
 }
 
 async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }> {
-  const rawLength = req.headers.get('content-length');
-  if (rawLength) {
-    const declared = Number(rawLength);
-    if (!Number.isFinite(declared) || declared < 0 || declared > MAX_REQUEST_BYTES) {
-      return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
-    }
+  const contentType = (req.headers.get('content-type') || '').split(';', 1)[0].trim().toLowerCase();
+  if (contentType !== 'application/json') {
+    return { response: privateJson({ ok: false, error: 'Content-Type JSON requis.' }, 415) };
   }
 
-  const raw = await readBoundedRequestText(req, MAX_REQUEST_BYTES);
+  const rawLength = req.headers.get('content-length');
+  if (rawLength !== null &&
+      (!/^[0-9]+$/.test(rawLength) || !Number.isSafeInteger(Number(rawLength)) ||
+       Number(rawLength) > MAX_REQUEST_BYTES)) {
+    return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
+  }
+
+  let raw: string;
+  try {
+    raw = await readBoundedRequestText(req, MAX_REQUEST_BYTES);
+  } catch (error) {
+    if (error instanceof Error && error.message === 'REQUEST_TOO_LARGE') {
+      return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
+    }
+    if (error instanceof Error && error.message === 'REQUEST_TIMEOUT') {
+      return { response: privateJson({ ok: false, error: 'Lecture de requête expirée.' }, 408) };
+    }
+    return { response: privateJson({ ok: false, error: 'Corps JSON invalide.' }, 400) };
+  }
   if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
     return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
   }
 
   try {
-    return { body: JSON.parse(raw || '{}') };
+    const body = JSON.parse(raw);
+    if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('INVALID_JSON');
+    return { body };
   } catch {
     return { response: privateJson({ ok: false, error: 'Corps JSON invalide.' }, 400) };
   }
