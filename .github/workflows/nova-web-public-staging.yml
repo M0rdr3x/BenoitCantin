@@ -13,6 +13,10 @@ on:
       - 'tests/test_nova_compass_scores.cjs'
       - 'tests/test_nova_survey_privacy.cjs'
       - 'tests/test_nova_public_results.cjs'
+      - 'scripts/validate_nova_public_access.py'
+      - 'scripts/validate_nova_public_results.py'
+      - 'index.html'
+      - 'assets/css/home-v24-4-12.css'
       - '.github/workflows/nova-web-public-staging.yml'
   workflow_dispatch:
 
@@ -94,15 +98,17 @@ jobs:
           python3 - <<'PY'
           import urllib.error
           import urllib.request
-          for route in ("supabase/config.toml", "scripts/build_netlify_public.py",
-                        "tests/test_nova_public_results.cjs"):
+          for route in ("supabase/config.toml", "supabase/functions/fracture-engine-gateway/index.ts", "supabase/migrations/20261019170000_nova_adult_opinion_survey_v1.sql", "scripts/build_netlify_public.py",
+                        "scripts/validate_nova_public_access.py", "scripts/validate_nova_public_results.py", "docs/PAGES_CONTROLLED_CUTOVER.md", "docs/NOVA_QUALIFICATION_ET_MISE_EN_SERVICE_2026-10-26.md", ".github/workflows/deploy-pages-controlled.yml",
+                        ".github/workflows/nova-web-public-staging.yml", "tests/test_nova_public_results.cjs", "tests/e2e/test_nova_compass_full_preview.py", "mobile-native/App.tsx", ".git/config",
+                        ".gitignore", ".env", "netlify.toml", "projets/projet-nova/.gitignore", "projets/projet-nova/.nojekyll"):
               try:
                   urllib.request.urlopen("http://127.0.0.1:4173/" + route, timeout=5)
               except urllib.error.HTTPError as error:
                   assert error.code == 404, (route, error.code)
               else:
                   raise AssertionError(f"Source technique exposée par HTTP : {route}")
-          print("PASS 3/3 chemins techniques en HTTP 404")
+          print("PASS 19/19 chemins techniques en HTTP 404")
           PY
       - name: Tester la consultation 40, le sondage 64 et la Boussole
         env:
@@ -156,6 +162,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 scripts/validate_nova_public_access.py --source . --built _preview_site
+          python3 scripts/validate_nova_public_access.py --source . --built _site
+          python3 scripts/validate_nova_public_results.py --source . --built _preview_site
+          python3 scripts/validate_nova_public_results.py --source . --built _site
           python3 - <<'PY'
           from pathlib import Path
           import json
@@ -198,6 +208,12 @@ jobs:
               assert (root/"assets/nova-sondage-icone.webp").read_bytes().startswith(b"RIFF")
               print("PASS paquet isolé sans collecte :",target)
           PY
+      - name: Auto-tests négatifs des contrats Nova
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_nova_public_access.py --self-test
+          python3 scripts/validate_nova_public_results.py --self-test
       - name: Rendre l'aperçu testable sans publier
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
