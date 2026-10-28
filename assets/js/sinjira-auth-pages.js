@@ -88,9 +88,11 @@ async function login(){
     const next=destination();
     setBusy(form,true);
     clearPendingChallenge();
+    let authenticated=false;
     try{
       const {error}=await getSupabase().auth.signInWithPassword({email:String(d.get('email')||'').trim(),password:String(d.get('password')||'')});
       if(error)return setStatus(status,'Connexion impossible. Vérifiez vos informations et la confirmation du courriel.','error');
+      authenticated=true;
 
       let evaluated=null;
       try{
@@ -140,7 +142,13 @@ async function login(){
 
       location.replace(next);
     }catch(err){
-      console.warn('[SINJIRA auth login]',err);
+      // Une exception MFA (ou un échec de navigation) après le mot de passe
+      // ne doit jamais laisser la session nouvellement créée utilisable.
+      if(authenticated){
+        clearPendingChallenge();
+        try{await getSupabase().auth.signOut({scope:'local'});}catch{}
+      }
+      console.warn('[SINJIRA auth login]','AUTH_FLOW_FAILED');
       setStatus(status,'Connexion impossible pour le moment. Réessayez dans quelques instants.','error');
     }finally{setBusy(form,false)}
   });
