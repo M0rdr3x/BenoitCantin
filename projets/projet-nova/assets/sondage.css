@@ -60,3 +60,11 @@
 
 /* Le point d'annonce des questions reste visible au clavier sur Firefox, WebKit et Chromium. */
 .nova-survey-question [data-sondage-question-focus]:focus{outline:3px solid #c76c16;outline-offset:5px;border-radius:3px}
+
+/* Petite largeur : pas de contrainte intrinsèque due au texte politique. */
+@media(max-width:360px){
+  .nova-survey-shell,.nova-survey-card,.nova-survey-question{min-width:0}
+  .nova-survey-choices{min-width:0;grid-template-columns:minmax(0,1fr)}
+  .nova-survey-choices label{min-width:0;overflow-wrap:anywhere}
+  .nova-survey-question legend{max-width:100%;overflow-wrap:anywhere}
+}
