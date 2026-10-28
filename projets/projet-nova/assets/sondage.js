@@ -346,6 +346,8 @@
       const compass=JSON.parse(decoder.decode(compassBytes));
       if (!validManifest(manifest) || !sameSourceQuestions(manifest,compass)) throw new Error('CONTRACT');
       questions = manifest.questions;
+      // Le chargement des deux corpus et leurs empreintes sont confirmés.
+      $('sondage-start').dataset.ready = 'true';
       refreshStart();
     } catch {
       $('sondage-start').disabled = true;
