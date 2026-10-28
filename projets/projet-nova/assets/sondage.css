@@ -57,3 +57,6 @@
 .nova-results-meter{width:100%;height:12px;background:#e5edf3;border-radius:12px;overflow:hidden;margin-top:6px}
 .nova-results-fill{display:block;height:100%;background:#137f99}
 @media(max-width:580px){.nova-results-shell{padding:16px}.nova-results-nav button{width:100%}.nova-results-item{padding:13px}}
+
+/* Le point d'annonce des questions reste visible au clavier sur Firefox, WebKit et Chromium. */
+.nova-survey-question [data-sondage-question-focus]:focus{outline:3px solid #c76c16;outline-offset:5px;border-radius:3px}
