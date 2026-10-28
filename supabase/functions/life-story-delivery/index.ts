@@ -80,7 +80,7 @@ async function readDeliveryToken(req: Request): Promise<{ token?: string; respon
 
   let rawBody:string;
   try{
-    rawBody=await readBoundedRequestText(req,MAX_REQUEST_BYTES);
+    rawBody=await readBoundedRequestText(req, MAX_REQUEST_BYTES);
   }catch(error){
     if(error instanceof Error && error.message==='REQUEST_TIMEOUT')
       return {response:errorResponse(req,408)};
