@@ -49,25 +49,33 @@ async function fetchTemplateBytes(){
 }
 
 async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }> {
-  const contentType=(req.headers.get('content-type')||'').toLowerCase();
-  if(!contentType.startsWith('application/json')){
+  const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
+  if(contentType!=='application/json'){
     return { response: privateJson({ ok:false, error:'Type de contenu non autorisé.', function_version:FUNCTION_VERSION }, 415) };
   }
-  const rawLength = req.headers.get('content-length');
-  if (rawLength) {
-    const declaredLength = Number(rawLength);
-    if (!Number.isFinite(declaredLength) || declaredLength < 0 || declaredLength > MAX_REQUEST_BYTES) {
-      return { response: privateJson({ ok:false, error:'Requête trop volumineuse.', function_version:FUNCTION_VERSION }, 413) };
-    }
-  }
-
-  const raw = await readBoundedRequestText(req, MAX_REQUEST_BYTES);
-  if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
+  const rawLength=req.headers.get('content-length');
+  if(rawLength!==null &&
+    (!/^[0-9]+$/.test(rawLength) || !Number.isSafeInteger(Number(rawLength)) ||
+     Number(rawLength)>MAX_REQUEST_BYTES)){
     return { response: privateJson({ ok:false, error:'Requête trop volumineuse.', function_version:FUNCTION_VERSION }, 413) };
   }
-
+  let raw:string;
   try {
-    return { body: JSON.parse(raw || '{}') };
+    raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);
+  } catch(error) {
+    if(error instanceof Error && error.message==='REQUEST_TIMEOUT')
+      return { response: privateJson({ ok:false, error:'Lecture de requête expirée.', function_version:FUNCTION_VERSION }, 408) };
+    if(error instanceof Error && error.message==='REQUEST_TOO_LARGE')
+      return { response: privateJson({ ok:false, error:'Requête trop volumineuse.', function_version:FUNCTION_VERSION }, 413) };
+    return { response: privateJson({ ok:false, error:'Corps JSON invalide.', function_version:FUNCTION_VERSION }, 400) };
+  }
+  if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES){
+    return { response: privateJson({ ok:false, error:'Requête trop volumineuse.', function_version:FUNCTION_VERSION }, 413) };
+  }
+  try {
+    const body=JSON.parse(raw);
+    if(!body || typeof body!=='object' || Array.isArray(body))throw new Error('INVALID_JSON');
+    return { body };
   } catch {
     return { response: privateJson({ ok:false, error:'Corps JSON invalide.', function_version:FUNCTION_VERSION }, 400) };
   }
@@ -171,7 +179,13 @@ Deno.serve(async (req) => {
   try {
     const parsed = await readLimitedJson(req);
     if (parsed.response) return parsed.response;
-    const body = parsed.body || {};
+    const body = parsed.body;
+    // Contrôler les commandes et la fiche avant tout téléchargement et travail PDF.
+    if(body?.mode !== undefined && body.mode !== 'download' && body.mode !== 'email')
+      return privateJson({ok:false,error:'Mode de livraison invalide.',function_version:FUNCTION_VERSION},400);
+    if(body?.sheet_data !== undefined &&
+      (!body.sheet_data || typeof body.sheet_data !== 'object' || Array.isArray(body.sheet_data)))
+      return privateJson({ok:false,error:'Fiche joueur invalide.',function_version:FUNCTION_VERSION},400);
     const mode = body?.mode === 'email' ? 'email' : 'download';
     // Ne JAMAIS récupérer le modèle PDF ni lancer pdf-lib si l'envoi est désactivé.
     // Ce mode public était refusé seulement après les opérations coûteuses.

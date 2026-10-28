@@ -11,8 +11,15 @@ EDGE = ROOT / 'supabase/functions/send-game-report/index.ts'
 
 REQUIRED = {
     'POST uniquement': "req.method !== 'POST'",
-    'JSON explicite': "contentType.startsWith('application/json')",
-    'lecture corps par flux borné': 'const raw = await readBoundedRequestText(req, MAX_REQUEST_BYTES);',
+    'JSON explicite': "contentType!=='application/json'",
+    'MIME application/json exact': "split(';',1)[0].trim().toLowerCase()",
+    'longueur déclarée canonique': 'Number.isSafeInteger(Number(rawLength))',
+    'flux dépassé géré': "error.message==='REQUEST_TOO_LARGE'",
+    'délai borné géré': "error.message==='REQUEST_TIMEOUT'",
+    'racine JSON objet': 'Array.isArray(body)',
+    'mode explicitement validé': "body.mode !== 'download' && body.mode !== 'email'",
+    'fiche non tableau': 'Array.isArray(body.sheet_data)',
+    'lecture corps par flux borné': 'raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);',
     'mesure UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
     'réponse privée': "'Cache-Control': 'private, no-store, max-age=0'",
     'protection MIME': "'X-Content-Type-Options': 'nosniff'",
@@ -107,11 +114,21 @@ async function fetchTemplateBytes(){
  return await fetchBoundedPdf(reportTemplateUrl(),MAX_TEMPLATE_BYTES);
 }
 async function readLimitedJson(req){
- const contentType=(req.headers.get('content-type')||'').toLowerCase();
- if(!contentType.startsWith('application/json')) return {response:new Response('',{status:415})};
- const raw = await readBoundedRequestText(req, MAX_REQUEST_BYTES);
- if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES) return {response:new Response('',{status:413})};
- return {body:JSON.parse(raw||'{}')};
+ const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
+ if(contentType!=='application/json') return {response:new Response('',{status:415})};
+ const rawLength=req.headers.get('content-length');
+ if(rawLength!==null && !Number.isSafeInteger(Number(rawLength)))return {response:new Response('',{status:413})};
+ let raw;
+ try{raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);}
+ catch(error){
+  if(error.message==='REQUEST_TOO_LARGE')return {response:new Response('',{status:413})};
+  if(error.message==='REQUEST_TIMEOUT')return {response:new Response('',{status:408})};
+  throw error;
+ }
+ if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES)return {response:new Response('',{status:413})};
+ const body=JSON.parse(raw);
+ if(!body || typeof body!=='object' || Array.isArray(body))return {response:new Response('',{status:400})};
+ return {body};
 }
 async function recordDelivery(){
  const error=false;
@@ -122,6 +139,8 @@ Deno.serve(async(req)=>{
  try {
   const parsed = await readLimitedJson(req);
   const body=parsed.body||{};
+  if(body.mode !== 'download' && body.mode !== 'email')return new Response('',{status:400});
+  if(Array.isArray(body.sheet_data))return new Response('',{status:400});
   const user={email:'x@example.test'};
   const sheet={};
   const pdfBytes = await buildPdf(sheet);
@@ -147,9 +166,13 @@ Deno.serve(async(req)=>{
             raise AssertionError('Le cas sain doit passer: ' + ' | '.join(clean))
 
         mutations = {
-            'content-type retiré': safe.replace(" if(!contentType.startsWith('application/json')) return {response:new Response('',{status:415})};\n", ''),
-            'req.json direct': safe.replace(' const raw = await readBoundedRequestText(req, MAX_REQUEST_BYTES);', ' const bodyDirect = await req.json();'),
-            'req.text direct': safe.replace(' const raw = await readBoundedRequestText(req, MAX_REQUEST_BYTES);', ' const raw = await req.text();'),
+            'content-type retiré': safe.replace(" if(contentType!=='application/json') return {response:new Response('',{status:415})};\n", ''),
+            'MIME approximatif': safe.replace("contentType!=='application/json'", "contentType.startsWith('application/json')"),
+            'tableau JSON accepté': safe.replace("Array.isArray(body)", "false"),
+            'mode arbitraire accepté': safe.replace("body.mode !== 'download' && body.mode !== 'email'", "false"),
+            'tableau de fiche accepté': safe.replace("Array.isArray(body.sheet_data)", "false"),
+            'req.json direct': safe.replace(' raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);', ' const bodyDirect = await req.json();'),
+            'req.text direct': safe.replace(' raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);', ' const raw = await req.text();'),
             'lecteur PDF contourné': safe.replace('fetchBoundedPdf(reportTemplateUrl(),MAX_TEMPLATE_BYTES)', 'fetch(reportTemplateUrl())'),
             'no-store retiré': safe.replace("  'Cache-Control': 'private, no-store, max-age=0',\n", ''),
             'services payants activés': safe.replace('PAID_EXTERNAL_SERVICES_ENABLED=false', 'PAID_EXTERNAL_SERVICES_ENABLED=true'),
