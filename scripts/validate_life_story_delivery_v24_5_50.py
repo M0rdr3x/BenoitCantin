@@ -87,7 +87,7 @@ def main() -> int:
         'requestUrl.search',
         'MAX_REQUEST_BYTES=256',
         'MAX_PDF_BYTES=15*1024*1024',
-        "type.startsWith('application/json')",
+        "type!=='application/json'",
         'Object.keys(body).length!==1',
         '/^[a-f0-9]{64}$/',
         'sha256Hex(token)',
