@@ -67,4 +67,6 @@
   .nova-survey-choices{min-width:0;grid-template-columns:minmax(0,1fr)}
   .nova-survey-choices label{min-width:0;overflow-wrap:anywhere}
   .nova-survey-question legend{max-width:100%;overflow-wrap:anywhere}
+  /* Garder le contour de focus 3px visible à l'intérieur du texte à 320px. */
+  .nova-survey-question [data-sondage-question-focus]:focus{outline-offset:-3px}
 }
