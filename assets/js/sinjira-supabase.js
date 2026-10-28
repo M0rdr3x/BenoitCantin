@@ -177,7 +177,7 @@ export function safeInternalDestination(value,fallback='/compte/index.html'){
     if(/^\/(?:\.git|\.github|\.well-known|supabase|scripts|tests|docs|mobile-native|node_modules|_site)(?:\/|$)/i.test(path)||
        /\/(?:codex|\.git)(?:\/|$)/i.test(path)||
        /\/(?:netlify\.toml|_config\.yml|security\.md|upload_github\.md|readme\.md)$/i.test(path)||
-       /\.(?:py|sql|toml|ya?ml|md|tsx?|jsx?|sh|env|lock)$/i.test(path))return fallback;
+       /\.(?:py|sql|toml|ya?ml|md|tsx?|jsx?|sh|env|lock|css|json|txt|xml|svg|map|webmanifest)$/i.test(path))return fallback;
     return `${url.pathname}${url.search}${url.hash}`;
   }catch{return fallback}
 }

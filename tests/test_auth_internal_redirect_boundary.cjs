@@ -59,6 +59,7 @@ const bad=[
   '/compte/../../docs/runbook.html','/compte/./../scripts/internal.html',
   '/admin/config.sql','/compte/suspicious.tsx','/compte/backup.env',
   '/compte/private.lock','/assets/js/site.js','/assets/css/file.css?x=1',
+  '/compte/private.json','/compte/config.xml','/compte/other.map',
   '/compte/index.html ',' /compte/index.html','/compte/connexion.html\nadmin',
   '/compte/invalid%zz','/%00secret',
 ];
