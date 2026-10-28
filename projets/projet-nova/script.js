@@ -88,7 +88,6 @@
       }
     });
 
-    const toggle=document.querySelector('[data-menu-toggle]');
     if(toggle&&nav){
       // Un même contrat d'accessibilité pour les pages Nova et le portail.
       // Conserver le menu utilisable sans souris, y compris après un resize.
