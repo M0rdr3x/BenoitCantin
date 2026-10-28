@@ -86,8 +86,27 @@ def survey(browser, filename, count):
         }""", timeout=5_000)
         check(heading.locator("[data-sondage-question-focus]").evaluate("el => el === document.activeElement"),
               f"{filename}: focus non déplacé après navigation")
+        # pageshow(false) peut arriver après la saisie initiale : ne pas
+        # effacer un accord valide tant qu'il n'y a PAS de restauration bfcache.
+        page.evaluate("""() => window.dispatchEvent(
+          new PageTransitionEvent('pageshow', {persisted:false}))""")
+        check(page.locator("#sondage-questionnaire").is_visible()
+              and page.locator("#sondage-age").is_checked()
+              and page.locator("#sondage-consent").is_checked()
+              and "Question 2 sur " + str(count) in page.locator("#sondage-position").inner_text(),
+              f"{filename}: pageshow initial a effacé une démonstration légitime")
+        # À l'inverse, restored BFCache DOIT purger les réponses locales.
+        page.evaluate("""() => window.dispatchEvent(
+          new PageTransitionEvent('pageshow', {persisted:true}))""")
+        check(page.locator("#sondage-introduction").is_visible()
+              and page.locator("#sondage-questionnaire").is_hidden()
+              and not page.locator("#sondage-age").is_checked()
+              and not page.locator("#sondage-consent").is_checked()
+              and page.locator("#sondage-choices input").count() == 0
+              and page.locator("#sondage-start").is_disabled(),
+              f"{filename}: restauration BFCache ne purge pas les opinions")
         check(not posted, f"{filename}: transmission réseau pendant parcours clavier")
-        print(f"PASS accessibilité clavier {filename}: consentement, noms, réponse, progression, 0 POST")
+        print(f"PASS accessibilité clavier {filename}: accord intact sur pageshow neuf, purge BFCache, navigation, 0 POST")
     finally:
         page.close()
 
