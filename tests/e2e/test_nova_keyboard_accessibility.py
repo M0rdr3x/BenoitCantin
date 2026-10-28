@@ -65,7 +65,7 @@ def survey(browser, filename, count):
               f"{filename}: avancer sans réponse")
         # Le focus sur la légende est volontairement programmatique. Tab doit
         # atteindre un contrôle de réponse, y compris dans WebKit mobile.
-        check(heading.evaluate("el => el === document.activeElement"),
+        check(heading.locator("[data-sondage-question-focus]").evaluate("el => el === document.activeElement"),
               f"{filename}: focus non transmis à la nouvelle question")
         page.keyboard.press("Tab")
         check(radios.first.evaluate("el => el === document.activeElement"),
@@ -77,7 +77,7 @@ def survey(browser, filename, count):
         page.keyboard.press("Enter")
         check("Question 2 sur " + str(count) in page.locator("#sondage-position").inner_text(),
               f"{filename}: progression par Entrée impossible")
-        check(heading.evaluate("el => el === document.activeElement"),
+        check(heading.locator("[data-sondage-question-focus]").evaluate("el => el === document.activeElement"),
               f"{filename}: focus non déplacé après navigation")
         check(not posted, f"{filename}: transmission réseau pendant parcours clavier")
         print(f"PASS accessibilité clavier {filename}: consentement, noms, réponse, progression, 0 POST")
