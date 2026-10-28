@@ -181,8 +181,12 @@
     window.addEventListener('pagehide', () => {
       if (!COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED) clearLocalDemo();
     });
-    window.addEventListener('pageshow', () => {
-      if (!COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED) clearLocalDemo();
+    window.addEventListener('pageshow', event => {
+      // init() purge une visite fraîche, sans attendre pageshow. Le premier
+      // pageshow peut survenir après la validation 18+/accord sur WebKit ;
+      // effacer alors les cases et l'état bloquait indûment le démarrage.
+      // Une restauration bfcache est identifiée par persisted=true : purge.
+      if (event.persisted && !COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED) clearLocalDemo();
     });
     for (const id of ['sondage-age', 'sondage-consent']) {
       $(id).addEventListener('change', refresh);
