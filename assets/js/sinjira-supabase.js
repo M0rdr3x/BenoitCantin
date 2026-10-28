@@ -164,11 +164,20 @@ export function safeLibraryCover(value,fallback='/assets/media/sinjira-emblem.we
 
 
 export function safeInternalDestination(value,fallback='/compte/index.html'){
-  const raw=String(value||'').trim();
-  if(!raw.startsWith('/')||raw.startsWith('//')||raw.includes('\\')||/[\u0000-\u001f\u007f]/.test(raw))return fallback;
+  // Conserver une frontière identique aux redirections du formulaire de connexion.
+  // Un "next" n'est ni une autorisation ni un lien vers les sources du dépôt.
+  if(typeof value!=='string'||!value||value!==value.trim()||
+     !value.startsWith('/')||value.startsWith('//')||
+     /[\\\u0000-\u001f\u007f]/.test(value))return fallback;
   try{
-    const url=new URL(raw,location.origin);
-    if(url.origin!==location.origin||url.username||url.password)return fallback;
+    const url=new URL(value,location.origin);
+    const path=value.split(/[?#]/,1)[0];
+    if(url.origin!==location.origin||url.username||url.password||
+       url.pathname!==path||path.includes('%'))return fallback;
+    if(/^\/(?:\.git|\.github|\.well-known|supabase|scripts|tests|docs|mobile-native|node_modules|_site)(?:\/|$)/i.test(path)||
+       /\/(?:codex|\.git)(?:\/|$)/i.test(path)||
+       /\/(?:netlify\.toml|_config\.yml|security\.md|upload_github\.md|readme\.md)$/i.test(path)||
+       /\.(?:py|sql|toml|ya?ml|md|tsx?|jsx?|sh|env|lock)$/i.test(path))return fallback;
     return `${url.pathname}${url.search}${url.hash}`;
   }catch{return fallback}
 }

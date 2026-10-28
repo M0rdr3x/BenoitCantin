@@ -3,17 +3,22 @@
 
   const DEFAULT_DESTINATION = '/compte/index.html';
 
+  // Les redirections après authentification sont réservées aux pages, jamais
+  // aux sources techniques qu'une publication GitHub Pages legacy peut servir.
   function safeLocalDestination(value, fallback = DEFAULT_DESTINATION) {
-    const raw = String(value || '').trim();
-    const safeFallback = String(fallback || DEFAULT_DESTINATION);
-    if (!raw) return safeFallback;
-    if (!raw.startsWith('/') || raw.startsWith('//') || raw.includes('\\') || /[\u0000-\u001f\u007f]/.test(raw)) {
-      return safeFallback;
-    }
+    const safeFallback = fallback === '' ? '' : String(fallback || DEFAULT_DESTINATION);
+    if (typeof value !== 'string' || !value || value !== value.trim()) return safeFallback;
+    if (!value.startsWith('/') || value.startsWith('//') ||
+        /[\\\u0000-\u001f\u007f]/.test(value)) return safeFallback;
     try {
-      const url = new URL(raw, location.origin);
-      if (url.origin !== location.origin) return safeFallback;
-      if (!url.pathname.startsWith('/') || url.username || url.password) return safeFallback;
+      const url = new URL(value, location.origin);
+      const path = value.split(/[?#]/, 1)[0];
+      if (url.origin !== location.origin || url.username || url.password ||
+          url.pathname !== path || path.includes('%')) return safeFallback;
+      if (/^\/(?:\.git|\.github|\.well-known|supabase|scripts|tests|docs|mobile-native|node_modules|_site)(?:\/|$)/i.test(path) ||
+          /\/(?:codex|\.git)(?:\/|$)/i.test(path) ||
+          /\/(?:netlify\.toml|_config\.yml|security\.md|upload_github\.md|readme\.md)$/i.test(path) ||
+          /\.(?:py|sql|toml|ya?ml|md|tsx?|jsx?|sh|env|lock)(?:$)/i.test(path)) return safeFallback;
       return `${url.pathname}${url.search}${url.hash}`;
     } catch {
       return safeFallback;

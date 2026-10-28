@@ -32,7 +32,7 @@ def main():
     elif module>=0 and guard>module: errors.append(f'Garde auth chargé après le module dans {rel}')
 
   helper=text('assets/js/sinjira-auth-route.js')
-  for required in ["raw.startsWith('//')","raw.includes('\\\\')","url.origin !== location.origin"]:
+  for required in ["value.startsWith('//')","/[\\\\\\u0000-\\u001f\\u007f]/","url.origin !== location.origin", "path.includes('%')", "netlify\\.toml"]:
     if required not in helper: errors.append(f'Garde anti-open-redirect incomplet: {required}')
 
   signup_html=text('compte/inscription.html')
