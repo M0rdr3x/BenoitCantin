@@ -143,7 +143,7 @@ jobs:
           expected = {
               '/projets/projet-nova/script.js',
               '/projets/projet-nova/styles.css',
-              '/projets/projet-nova/boussole-electorale.html',
+
               '/projets/projet-nova/assets/boussole-electorale.js',
               '/projets/projet-nova/assets/boussole-electorale.css',
               '/projets/projet-nova/data/boussole-electorale-v2.json',
@@ -154,6 +154,25 @@ jobs:
               '/assets/media/nova-boussole-electorale-v2.webp',
           }
           assert expected <= set(entries), "Fichiers publics Boussole absents du précache PWA"
+          # Les quatre pages civiques (y compris le sondage 40/64 et le
+          # profil Boussole) sont du HTML dynamique de consentement :
+          # ne jamais les conserver en Cache Storage.
+          civic_pages = (
+              '/projets/projet-nova/consultation-40.html',
+              '/projets/projet-nova/sondage.html',
+              '/projets/projet-nova/boussole-electorale.html',
+              '/projets/projet-nova/resultats-sondages.html',
+          )
+          assert all(uri not in entries for uri in civic_pages), (
+              "Pages civiques personnelles précachées dans la PWA"
+          )
+          assert "const privateCivicPage=(" in worker
+          for uri in civic_pages:
+              assert f"u.pathname==='{uri}'" in worker, f"Garde réseau absente pour {uri}"
+          assert "if(privateCivicPage){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}" in worker, (
+              "Réponses civiques susceptibles d'être enregistrées par la PWA"
+          )
+
           forbidden = ('/compte/', '/admin/', '/Admin/', '/app/', '/histoire-de-vie/',
                        '/supabase/', '/docs/', '/scripts/', '/tests/', '/mobile-native/')
           for uri in entries:
@@ -163,7 +182,7 @@ jobs:
                   rel = rel / 'index.html'
               assert rel.is_file(), "Fichier PWA absent: " + uri
               assert relative_path_allowed(rel), "Fichier non publiable précaché: " + uri
-          print(f"OK PWA: {len(entries)} fichiers publics; Boussole complète et routes privées exclues.")
+          print(f"OK PWA: {len(entries)} assets publics; les 4 pages civiques exclues du cache et réseau no-store.")
           PY
 
       - name: Auto-tester la continuité des sources de main
