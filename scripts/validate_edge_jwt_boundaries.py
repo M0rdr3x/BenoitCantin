@@ -40,7 +40,7 @@ REQUIRED_GATES = {
     "life-story-delivery": (
         "readBoundedRequestText(req, MAX_REQUEST_BYTES)",
         "if (!allowedOrigin(req))",
-        "if (!/^[a-f0-9]{64}$/.test(token))",
+        "if(!/^[a-f0-9]{64}$/.test(body.token))",
         "sha256Hex(token)",
         ".eq('token_hash', hash)",
         "link.revoked_at",
