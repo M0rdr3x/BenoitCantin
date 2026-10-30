@@ -16,6 +16,7 @@ on:
       - 'tests/test_nova_survey_privacy.cjs'
       - 'tests/test_nova_public_results.cjs'
       - 'tests/test_nova_release_gates.cjs'
+      - 'netlify.toml'
       - 'scripts/test_nova_navigation_runtime.mjs'
       - '.github/workflows/deploy-netlify-staging.yml'
       - '.github/workflows/validate-netlify-preview.yml'
@@ -36,7 +37,7 @@ concurrency:
 
 jobs:
   score-contract:
-    name: Nova — 54 contrats JS sur le candidat Web
+    name: Nova — contrats JS et en-têtes de confidentialité
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
