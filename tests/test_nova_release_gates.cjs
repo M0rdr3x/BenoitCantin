@@ -73,50 +73,36 @@ const civicPages=[
   "boussole-electorale.html",
   "resultats-sondages.html"
 ];
-function checkCivicPrivacyHeaders(config, page) {
+function checkCivicPrivacyHeaders(config,page) {
   const url="/projets/projet-nova/"+page;
   const rules=config.split(/^\[\[headers\]\]\s*$/m).slice(1)
-    .filter(block=>new RegExp('^\\s*for\\s*=\\s*"'+url.replace(/[.*+?^${}()|[\]\\]/g,"\\test("Build autorisé isolé et collecte Nova toujours fermée",()=>{")+'"\\s*
-  const netlify=read("netlify.toml");
-  assert.match(netlify,/^\s*publish\s*=\s*"_site"\s*$/m);
-  assert.match(netlify,/^\s*command\s*=\s*"python3 scripts\/build_netlify_public\.py"\s*$/m);
-  assert.doesNotMatch(netlify,/^\s*publish\s*=\s*"\."\s*$/m);
-  const nova="projets/projet-nova/assets/";
-  for(const file of ["consultation-40.js","sondage.js"]){
-    const client=read(nova+file);
-    assert.match(client,/const COLLECTION_OPEN = false;/,file);
-    assert.match(client,/const LIVE_OPINION_CONSENT_GRANTED = false;/,file);
-  }
-  assert.match(read(nova+"resultats-sondages.js"),/const PUBLIC_AGGREGATES_ENABLED = false;/);
-});
-,"m").test(block));
+    .filter(block=>block.split("\n").some(line=>line.trim()==='for = "'+url+'"'));
   assert.equal(rules.length,1,"Règle Netlify unique requise pour "+url);
   assert.match(rules[0],/^\s*Cache-Control\s*=\s*"private, no-store, max-age=0"\s*$/m,url);
   assert.match(rules[0],/^\s*Referrer-Policy\s*=\s*"no-referrer"\s*$/m,url);
 }
-
 test("En-têtes stricts des quatre pages civiques Nova",()=>{
   const netlify=read("netlify.toml");
   for(const page of civicPages) checkCivicPrivacyHeaders(netlify,page);
 });
-
-test("Mutation négative : un cache public ou une fuite Referer est refusé",()=>{
+test("Mutation négative : cache public et fuite Referer refusés",()=>{
   const netlify=read("netlify.toml");
   for(const page of civicPages){
     const url="/projets/projet-nova/"+page;
-    const before='for = "'+url+'"';
-    assert.ok(netlify.includes(before),page);
-    const mutatedNoRule=netlify.replace(before,'for = "/missing-civic-page"');
-    assert.throws(()=>checkCivicPrivacyHeaders(mutatedNoRule,page),page);
+    const mutated=netlify.replace('for = "'+url+'"','for = "/missing-civic-page"');
+    assert.notEqual(mutated,netlify);
+    assert.throws(()=>checkCivicPrivacyHeaders(mutated,page));
   }
-  const wrongCache=netlify.replace('for = "/projets/projet-nova/sondage.html"\n  [headers.values]\n    Cache-Control = "private, no-store, max-age=0"',
-    'for = "/projets/projet-nova/sondage.html"\n  [headers.values]\n    Cache-Control = "public, max-age=3600"');
-  assert.notEqual(wrongCache,netlify);
-  assert.throws(()=>checkCivicPrivacyHeaders(wrongCache,"sondage.html"));
-  const wrongReferrer=netlify.replace('for = "/projets/projet-nova/sondage.html"\n  [headers.values]\n    Cache-Control = "private, no-store, max-age=0"\n    Referrer-Policy = "no-referrer"',
-    'for = "/projets/projet-nova/sondage.html"\n  [headers.values]\n    Cache-Control = "private, no-store, max-age=0"\n    Referrer-Policy = "unsafe-url"');
-  assert.notEqual(wrongReferrer,netlify);
-  assert.throws(()=>checkCivicPrivacyHeaders(wrongReferrer,"sondage.html"));
+  const valid='for = "/projets/projet-nova/sondage.html"\n  [headers.values]\n    Cache-Control = "private, no-store, max-age=0"\n    Referrer-Policy = "no-referrer"';
+  assert.ok(netlify.includes(valid));
+  for(const [from,to] of [
+    ['Cache-Control = "private, no-store, max-age=0"','Cache-Control = "public, max-age=3600"'],
+    ['Referrer-Policy = "no-referrer"','Referrer-Policy = "unsafe-url"']
+  ]) {
+    const corrupted=netlify.replace(valid,valid.replace(from,to));
+    assert.notEqual(corrupted,netlify);
+    assert.throws(()=>checkCivicPrivacyHeaders(corrupted,"sondage.html"));
+  }
 });
 
 test("Build autorisé isolé et collecte Nova toujours fermée",()=>{
