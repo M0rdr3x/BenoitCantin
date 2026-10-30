@@ -6,6 +6,7 @@ on:
     paths:
       - 'projets/projet-nova/**'
       - 'scripts/build_netlify_public.py'
+      - 'scripts/validate_web_release_http.py'
       - 'tests/e2e/test_nova_consultation40_visual.py'
       - 'tests/e2e/test_nova_survey_visual.py'
       - 'tests/e2e/test_nova_compass_full_preview.py'
@@ -160,6 +161,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/build_netlify_public.py --self-test-security
+          python3 scripts/validate_web_release_http.py --self-test
           python3 scripts/build_netlify_public.py --check
       - name: Construire le paquet preview autonome
         shell: bash
