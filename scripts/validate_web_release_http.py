@@ -731,7 +731,10 @@ class FixtureHandler(BaseHTTPRequestHandler):
             "frame-ancestors 'self'; object-src 'self'; base-uri 'self'",
         )
         if private_runtime or release_metadata or civic_page:
-            self.send_header("Cache-Control", "no-store")
+            self.send_header(
+                "Cache-Control",
+                "private, no-store, max-age=0" if civic_page else "no-store",
+            )
         if getattr(self.server, "preview", False) or private_runtime or release_metadata:
             self.send_header("X-Robots-Tag", "noindex, nofollow, noarchive")
         self.end_headers()
