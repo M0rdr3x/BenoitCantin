@@ -238,3 +238,23 @@ test("Liens de preuve Boussole : protocoles actifs et URL trompeuses refusés", 
     "x".repeat(2100)
   ]) assert.equal(inspect(url), false, "URL non sûre acceptée : " + String(url).slice(0,60));
 });
+
+
+test("La page Boussole prévient du partage des opinions sensibles",()=>{
+  const html=fs.readFileSync(path.join(nova,"boussole-electorale.html"),"utf8");
+  assert.ok(html.includes("Confidentialité du partage :"),
+    "L'information préalable au partage doit être affichée à côté des actions");
+  assert.ok(html.includes("opinions politiques sensibles"),
+    "Le profil doit être présenté comme une information sensible");
+  assert.ok(html.includes("le destinataire et, selon le service, son fournisseur"),
+    "La divulgation aux tiers doit être explicitement annoncée");
+  assert.ok(html.includes("Sans partage, il demeure local."),
+    "La FAQ doit distinguer calcul local et transmission volontaire");
+  for(const id of ["compass-share-facebook","compass-share-x","compass-share-linkedin"]){
+    const pos=html.indexOf('id="'+id+'"');
+    assert.ok(pos>=0,id+" : lien externe absent");
+    const tag=html.slice(html.lastIndexOf("<a ",pos),html.indexOf("</a>",pos));
+    assert.match(tag,/target="_blank"/);
+    assert.match(tag,/rel="noopener noreferrer"/,id+" : protection des liens externes absente");
+  }
+});
