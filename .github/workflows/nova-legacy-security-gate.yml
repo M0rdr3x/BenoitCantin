@@ -1,0 +1,38 @@
+name: Sécurité — branche historique SEO NOVA
+
+on:
+  pull_request:
+    branches: [nova-a1-reference-documents]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [nova-a1-reference-documents]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nova-legacy-security-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  legacy-nova-security:
+    name: Jeton d'écriture isolé et JSON-LD NOVA sûr
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout du commit avec permissions lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python épinglé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+      - name: Vérifier le contrat de sécurité du workflow d'écriture
+        run: |
+          python3 scripts/validate_nova_seo_workflow_security.py
+          python3 scripts/validate_nova_seo_workflow_security.py --self-test
+      - name: Tester les sorties de balise script et la sérialisation JSON-LD
+        run: python3 scripts/test_nova_jsonld_script_boundary.py
