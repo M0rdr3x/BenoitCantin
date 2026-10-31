@@ -308,3 +308,28 @@ test("Radar : la notice HTML explique les dimensions non calculées", () => {
   assert.match(html,/Chaque rayon correspond toujours à la même dimension/);
   assert.match(html,/aucun trait ne traverse une dimension manquante/);
 });
+
+
+// « Sans opinion » et dimension insuffisamment renseignée ne doivent pas
+// placer un faux marqueur de neutralité au centre de l'échelle.
+test("Carte détaillée Boussole : aucune position affichée pour un score non calculé",()=>{
+  const startCard=source.indexOf("  function resultCard(result){");
+  const endCard=source.indexOf("\n  function renderRadar(results){",startCard);
+  assert.ok(startCard>=0 && endCard>startCard);
+  const program=new vm.Script(source.slice(startCard,endCard)+"\nresultCard(input);",
+    {filename:"boussole-electorale.js:resultCard"});
+  const card=score=>program.runInNewContext({
+    input:{title:"Dimension fictive",negative:"Pôle A",positive:"Pôle B",
+      score,answered:score===null?0:4,total:4,coverage:score===null?0:100},
+    esc:value=>String(value)
+  },{timeout:1000});
+  const missing=card(null);
+  const neutral=card(0);
+  assert.match(missing,/Données insuffisantes/);
+  assert.match(missing,/Couverture : 0\/4/);
+  assert.doesNotMatch(missing,/<i /,"Un score inconnu ne doit pas figurer à 50 %");
+  assert.match(neutral,/Équilibre/);
+  assert.match(neutral,/<i style="left:50%">/,"Un vrai choix neutre se place à 50 %");
+  assert.match(card(-100),/<i style="left:0%">/);
+  assert.match(card(100),/<i style="left:100%">/);
+});

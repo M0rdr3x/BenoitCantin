@@ -303,7 +303,7 @@
           <strong aria-label="Score ${signed} sur une échelle de moins 100 à plus 100">${signed}</strong>
         </div>
         <div class="compass-axis-labels"><span>${esc(result.negative)}</span><span>${esc(result.positive)}</span></div>
-        <div class="compass-axis-track" aria-hidden="true"><span class="compass-axis-mid"></span><i style="left:${position}%"></i></div>
+        <div class="compass-axis-track" aria-hidden="true"><span class="compass-axis-mid"></span>${score === null ? "" : `<i style="left:${position}%"></i>`}</div>
         <div class="compass-result-meta">Couverture : ${result.answered}/${result.total} réponses (${result.coverage} %)</div>
       </article>
     `;
