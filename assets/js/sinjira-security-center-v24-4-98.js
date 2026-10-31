@@ -8,20 +8,29 @@ function qsa(sel){return [...document.querySelectorAll(sel)]}
 function status(message,type='info'){setStatus(qs('[data-security-center-status]'),message,type)}
 
 function randomDeviceKey(){
-  if(globalThis.crypto?.randomUUID)return globalThis.crypto.randomUUID();
-  const bytes=new Uint8Array(24);globalThis.crypto?.getRandomValues?.(bytes);
+  const cryptoApi=globalThis.crypto;
+  if(typeof cryptoApi?.randomUUID==='function')return cryptoApi.randomUUID();
+  if(typeof cryptoApi?.getRandomValues!=='function')throw new Error('SECURE_RANDOM_UNAVAILABLE');
+  const bytes=new Uint8Array(24);
+  cryptoApi.getRandomValues(bytes);
+  if(bytes.every(byte=>byte===0))throw new Error('SECURE_RANDOM_UNAVAILABLE');
   return `sinjira-${Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}-${Date.now().toString(36)}`;
+}
+
+function unusableDeviceKey(value){
+  const key=String(value||'');
+  return !key||key.length<16||key.length>128||/^sinjira-0{48}(?:-|$)/i.test(key);
 }
 
 function deviceKey(){
   try{
     let value=localStorage.getItem(DEVICE_KEY_STORAGE);
-    if(!value){value=randomDeviceKey();localStorage.setItem(DEVICE_KEY_STORAGE,value)}
+    if(unusableDeviceKey(value)){value=randomDeviceKey();localStorage.setItem(DEVICE_KEY_STORAGE,value)}
     return value;
   }catch{
     try{
       let value=sessionStorage.getItem(DEVICE_KEY_STORAGE);
-      if(!value){value=randomDeviceKey();sessionStorage.setItem(DEVICE_KEY_STORAGE,value)}
+      if(unusableDeviceKey(value)){value=randomDeviceKey();sessionStorage.setItem(DEVICE_KEY_STORAGE,value)}
       return value;
     }catch{return randomDeviceKey()}
   }
