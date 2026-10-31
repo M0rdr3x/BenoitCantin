@@ -190,20 +190,26 @@ function liveSubmissionFixture(spec) {
     ? source.indexOf("\n    });",scriptStart) + "\n    });".length
     : source.indexOf("\n  function clearLocalDemo()",scriptStart);
   assert.ok(scriptStart >= 0 && scriptEnd > scriptStart, "Soumission officielle introuvable");
-  const program = source.slice(scriptStart,scriptEnd)
+  const purgeHelper = spec.count === 40
+    ? sliceFunction(source,"clearRecordedOpinions","clearLocalDemo") : "";
+  const program = purgeHelper + source.slice(scriptStart,scriptEnd)
     .replace("await import('../../../assets/js/sinjira-supabase.js')", "await loadApi()")
     + (spec.count === 64 ? "\nthis.liveSubmit = submit;" : "");
   assert.ok(!program.includes("await import("), "Module réel interdit dans le test");
 
   const nodes = Object.create(null);
   for(const id of ["sondage-age","sondage-consent","sondage-submit",
-                   "sondage-submit-status"]) {
-    nodes[id] = {checked:id !== "sondage-submit" && id !== "sondage-submit-status",
-                 disabled:false,textContent:"",
+                   "sondage-submit-status","sondage-review-list",
+                   "sondage-choices","sondage-recap","sondage-next"]) {
+    nodes[id] = {checked:id === "sondage-age" || id === "sondage-consent",
+                 disabled:false,textContent:"",cleared:false,
+                 replaceChildren(){this.cleared=true;this.textContent="";},
                  addEventListener(event,handler) {
                    if(event === "click") this.callback = handler;
                  }};
   }
+  nodes["sondage-review-list"].textContent="Bulletin fictif encore visible";
+  nodes["sondage-choices"].textContent="Choix fictif encore visible";
   const choices = Array.from({length:spec.count},(_,i) =>
     ["q"+String(i+1).padStart(2,"0"),spec.count===40?"pour":"skip"]);
   let resolveAuth;
@@ -242,6 +248,9 @@ function liveSubmissionFixture(spec) {
     resolveAuth:()=>resolveAuth({data:{user:{id:"compte-fictif"}},error:null}),
     resolveInvoke:()=>resolveInvoke({
       data:{ok:true,code:"RECORDED",survey:state.SURVEY_ID},error:null
+    }),
+    resolveDuplicate:()=>resolveInvoke({
+      data:{ok:false,code:"ALREADY_SUBMITTED",survey:state.SURVEY_ID},error:null
     }),
     revoke:()=>{
       nodes["sondage-consent"].checked=false;
@@ -302,5 +311,32 @@ for(const spec of cases) {
     assert.equal(f.state.recorded,true);
     assert.equal(f.state.submitting,false);
     assert.match(f.nodes["sondage-submit-status"].textContent,/enregistrée/i);
+    const answers = spec.count === 40 ? f.state.answers : f.state.selections;
+    assert.equal(answers.size,0,"Le bulletin confirmé doit être purgé en mémoire");
+    assert.equal(f.nodes["sondage-age"].checked,false);
+    assert.equal(f.nodes["sondage-consent"].checked,false);
+    assert.equal(f.nodes["sondage-review-list"].cleared,true);
+    assert.equal(f.nodes["sondage-choices"].cleared,true);
+    assert.match(f.nodes["sondage-recap"].textContent,/effacés de cette page/);
+    assert.equal(f.nodes["sondage-next"].disabled,true);
+  });
+
+  test(spec.id+" : participation déjà existante ne conserve aucun choix local",async()=>{
+    const f=liveSubmissionFixture(spec);
+    const done=f.submit();
+    await awaitMicrotaskCondition(()=>f.authRequested===1);
+    f.resolveAuth();
+    await awaitMicrotaskCondition(()=>f.requests===1);
+    f.resolveDuplicate();
+    await done;
+    assert.equal(f.requests,1);
+    assert.equal(f.state.recorded,true);
+    assert.equal(f.state.submitting,false);
+    assert.equal((spec.count===40?f.state.answers:f.state.selections).size,0);
+    assert.equal(f.nodes["sondage-review-list"].cleared,true);
+    assert.equal(f.nodes["sondage-choices"].cleared,true);
+    assert.equal(f.nodes["sondage-age"].checked,false);
+    assert.equal(f.nodes["sondage-consent"].checked,false);
+    assert.match(f.nodes["sondage-submit-status"].textContent,/déjà|existe/);
   });
 }
