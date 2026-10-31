@@ -141,6 +141,19 @@ for (const spec of cases) {
   });
 }
 
+for (const spec of cases) {
+  test(spec.id + " : retrait du consentement pendant un envoi garde le verrou réseau", () => {
+    const {elements:e,selections,sandbox:s} =
+      makeFixture(spec, "questionnaire", null);
+    s.submitting = true;
+    e["sondage-consent"].checked = false;
+    s[spec.refresh]();
+    assert.equal(selections.size, 0, "l'opinion locale doit être effacée");
+    assert.equal(s.submitting, true, "l'absence de données locales ne clôt pas une requête en cours");
+    assert.equal(e["sondage-introduction"].hidden, false);
+  });
+}
+
 test("consultation-40 : aucun reset concurrent pendant une transmission", () => {
   const source = fs.readFileSync(path.join(nova, "assets", "consultation-40.js"), "utf8");
   const reset = sliceFunction(source, "resetSurvey", "init");
