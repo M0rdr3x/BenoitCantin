@@ -111,6 +111,46 @@ def main():
             }""")
             require(skipped["ok"], "64 choix Sans opinion ont produit un faux profil: " + repr(skipped))
             page.locator("#compass-reset").click()
+
+            # Profil PARTIEL : trois dimensions adjacentes à deux réponses
+            # chacune. Les treize autres restent non calculées, sans faux
+            # marqueur neutre, sans polygone traversant leurs positions.
+            partial = page.evaluate("""() => {
+                document.querySelector("#compass-start").click();
+                const answered = new Set([1,2,5,6,9,10]);
+                for (let step = 1; step <= 64; step++) {
+                    const radio = document.querySelector(
+                        '#compass-question-stage input[type="radio"][value="' +
+                        (answered.has(step) ? '2' : 'skip') + '"]'
+                    );
+                    const next = document.querySelector("#compass-next");
+                    if (!radio || !next) return {ok:false,step,reason:"question manquante"};
+                    radio.click();
+                    next.click();
+                }
+                const cards = [...document.querySelectorAll(
+                    "#compass-results-grid .compass-result-card")];
+                const chart = document.querySelector("#compass-radar svg");
+                return {
+                    ok: !document.querySelector("#compass-results").hidden &&
+                        cards.length === 16 &&
+                        cards.filter(card => card.querySelector(
+                            ".compass-axis-track i")).length === 3 &&
+                        document.querySelectorAll("#compass-radar text").length === 16 &&
+                        document.querySelectorAll(
+                            "#compass-radar .compass-radar-point").length === 3 &&
+                        document.querySelectorAll(
+                            "#compass-radar .compass-radar-segment").length === 2 &&
+                        document.querySelectorAll("#compass-radar polygon").length === 0 &&
+                        chart?.querySelector("desc")?.textContent.includes(
+                            "3 dimensions calculées sur 16") &&
+                        document.querySelector("#compass-summary").textContent.includes(
+                            "Profil partiel"),
+                    charts: !!chart, step:64
+                };
+            }""")
+            require(partial["ok"], "carte partielle trompeuse: " + repr(partial))
+            page.locator("#compass-reset").click()
             require(not submitted, "POST interdit détecté pendant la Boussole")
             print(f"PASS {BROWSER}: 64 questions, 16 scores neutres à zéro, "
                   "couverture 4/4, Sans opinion distinct, réinitialisation, zéro POST")
