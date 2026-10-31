@@ -252,6 +252,9 @@ function liveSubmissionFixture(spec) {
     resolveDuplicate:()=>resolveInvoke({
       data:{ok:false,code:"ALREADY_SUBMITTED",survey:state.SURVEY_ID},error:null
     }),
+    resolvePermanentAccountRequired:()=>resolveInvoke({
+      data:{ok:false,code:"PERMANENT_ACCOUNT_REQUIRED",survey:state.SURVEY_ID},error:null
+    }),
     revoke:()=>{
       nodes["sondage-consent"].checked=false;
       nodes["sondage-age"].checked=false;
@@ -418,5 +421,23 @@ for(const spec of cases) {
     assert.match(html,/Les comptes anonymes Supabase et les sessions temporaires seront refusés/);
     assert.match(html,/ne prouve pas qu’une personne ne possède qu’un seul compte/);
     assert.match(html,/La collecte est actuellement fermée/);
+  });
+}
+
+for(const spec of cases) {
+  test(spec.id+" : refus Edge du compte temporaire est lisible sans purger les réponses",async()=>{
+    const f=liveSubmissionFixture(spec);
+    const done=f.submit();
+    await awaitMicrotaskCondition(()=>f.authRequested===1);
+    f.resolveAuth();
+    await awaitMicrotaskCondition(()=>f.requests===1);
+    f.resolvePermanentAccountRequired();
+    await done;
+    assert.equal(f.requests,1);
+    assert.equal(f.state.recorded,false,"Un refus ne confirme pas un enregistrement");
+    assert.equal(f.state.submitting,false);
+    const answers=spec.count===40?f.state.answers:f.state.selections;
+    assert.equal(answers.size,spec.count,"Un refus réseau ne détruit pas le récapitulatif");
+    assert.match(f.nodes["sondage-submit-status"].textContent,/compte permanent connecté/i);
   });
 }
