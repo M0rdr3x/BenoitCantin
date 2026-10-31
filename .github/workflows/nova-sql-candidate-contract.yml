@@ -1,0 +1,68 @@
+name: Nova — sondages 40/64, contrats SQL locaux sans collecte
+
+on:
+  push:
+    branches: [integration/sinjira-catalogues-pages-securisees-2026-10-13]
+    paths:
+      - 'supabase/candidate-migrations/20261019170000_nova_adult_opinion_survey_v1.sql'
+      - 'supabase/candidate-migrations/20261019190000_nova_foundations_40_survey_v1.sql'
+      - 'scripts/validate_nova_candidate_migrations.py'
+      - 'tests/sql/test_nova_survey_migrations.sql'
+      - 'supabase/functions/_shared/nova_survey_body.mjs'
+      - 'tests/test_nova_survey_body.mjs'
+      - '.github/workflows/nova-sql-candidate-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  nova-sql-isolated:
+    name: Nova — PostgreSQL jetable, RLS et types JSON stricts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16-bookworm
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: nova_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d nova_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - name: Checkout du seul commit candidat sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Contrôler que les migrations candidates restent hors production
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_nova_candidate_migrations.py --self-test
+          python3 scripts/validate_nova_candidate_migrations.py
+      - name: Utiliser le runtime Node épinglé
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+          package-manager-cache: false
+      - name: Valider la limite de taille et l'UTF-8 des requêtes sans réseau
+        run: node --test tests/test_nova_survey_body.mjs
+      - name: Installer le seul client PostgreSQL local si nécessaire
+        run: |
+          set -euo pipefail
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client
+          fi
+      - name: Valider les deux migrations dans une base jetable, jamais dans Supabase
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '5432'
+          PGUSER: postgres
+          PGDATABASE: nova_ci
+        run: psql -X -v ON_ERROR_STOP=1 -f tests/sql/test_nova_survey_migrations.sql
