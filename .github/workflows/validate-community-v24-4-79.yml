@@ -28,7 +28,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Configurer Node
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
           node-version: '22'
           package-manager-cache: false
