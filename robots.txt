@@ -2,7 +2,13 @@ User-agent: *
 Allow: /
 Disallow: /app/
 Disallow: /compte/
+Disallow: /histoire-de-vie/
 Disallow: /Admin/
 Disallow: /admin/
 Disallow: /supabase/
+Disallow: /.github/
+Disallow: /mobile-native/
+Disallow: /tests/
+Disallow: /docs/
+Disallow: /scripts/
 Sitemap: https://www.benoitcantin.com/sitemap.xml
