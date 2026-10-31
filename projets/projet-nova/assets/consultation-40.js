@@ -46,6 +46,8 @@
   let editingReview = false;
   let submitting = false;
   let recorded = false;
+  // Invalider tout envoi en attente après retrait d'accord ou sortie de page.
+  let consentEpoch = 0;
   const options = [
     ['pour', 'Pour'],
     ['contre', 'Contre'],
@@ -154,6 +156,7 @@
     $('sondage-finish-heading').focus({ preventScroll: true });
   }
   function clearLocalDemo() {
+    consentEpoch += 1;
     // Même un retour depuis le cache arrière/avant ne rétablit ni âge ni opinions.
     answers.clear();
     step = 0;
@@ -227,23 +230,29 @@
       if (Object.keys(payload.answers).length !== 40 ||
           !Object.values(payload.answers).every(value => allowed.has(value))) return;
       submitting = true;
+      const submissionConsentEpoch = consentEpoch;
       $('sondage-submit').disabled = true;
       $('sondage-submit-status').textContent = 'Transmission en cours…';
       try {
         const { getSupabase } = await import('../../../assets/js/sinjira-supabase.js');
         const client = getSupabase();
+        if (submissionConsentEpoch !== consentEpoch || !eligible()) return;
         const { data:auth, error:authError } = await client.auth.getUser();
+        // Ne jamais envoyer une opinion si l'accord a été retiré pendant l'attente.
+        if (submissionConsentEpoch !== consentEpoch || !eligible()) return;
         if (authError || !auth?.user) {
           $('sondage-submit-status').textContent = 'Un compte connecté est nécessaire.';
           return;
         }
         const { data, error } = await client.functions.invoke('nova-consultation40-submit', { body:payload });
+        if (submissionConsentEpoch !== consentEpoch || !eligible()) return;
         if (!error && data?.ok === true && data.code === 'RECORDED' && data.survey === SURVEY_ID) {
           recorded = true;
           $('sondage-submit-status').textContent = 'Participation enregistrée. Merci.';
         } else {
           let code = data?.code;
           if (error?.context?.json) { try { code = (await error.context.json()).code; } catch {} }
+          if (submissionConsentEpoch !== consentEpoch || !eligible()) return;
           if (code === 'ALREADY_SUBMITTED') {
             recorded = true;
             $('sondage-submit-status').textContent = 'Une participation existe déjà pour ce compte.';
@@ -252,6 +261,7 @@
           }
         }
       } catch {
+        if (submissionConsentEpoch !== consentEpoch || !eligible()) return;
         $('sondage-submit-status').textContent = 'Service temporairement indisponible.';
       } finally {
         submitting = false;
