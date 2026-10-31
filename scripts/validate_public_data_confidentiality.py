@@ -118,7 +118,9 @@ def check_repo(root: Path) -> list[str]:
     sinjira = root / SINJIRA_DIR
     if not sinjira.is_dir() or sinjira.is_symlink():
         return errors + ["Répertoire SINJIRA absent ou symbolique."]
-    for file in sorted(sinjira.rglob("*.json")):
+    for file in sorted(sinjira.rglob("*")):
+        if file.suffix.lower() != ".json":
+            continue
         rel = file.relative_to(root)
         if rel not in SINJIRA_EXISTING_JSON:
             errors.append(f"Nouvel export JSON SINJIRA non revu: {rel.as_posix()}")
