@@ -45,7 +45,8 @@ function makeFixture(spec, stage, revoked, futureCollectionOpen = false) {
     "sondage-introduction","sondage-questionnaire","sondage-finish",
     "sondage-age","sondage-consent","sondage-review-list",
     "sondage-status","sondage-submit-status","sondage-choices",
-    "sondage-next","sondage-start","sondage-titre"
+    "sondage-next","sondage-start","sondage-titre",
+    "sondage-recap","sondage-answered","sondage-position","sondage-progress"
   ]) {
     elements[id] = {
       hidden: false, disabled: false, checked: false,
@@ -91,6 +92,10 @@ for (const spec of cases) {
         assert.equal(e["sondage-choices"].cleared,true);
         assert.equal(e["sondage-start"].disabled,true);
         assert.equal(e["sondage-next"].disabled,true);
+        for (const id of ["sondage-recap","sondage-answered","sondage-position"]) {
+          assert.equal(e[id].textContent,"",id+" conserve des données après retrait");
+        }
+        assert.equal(e["sondage-progress"].value,0);
         assert.equal(e["sondage-titre"].focused,true);
       });
     }
@@ -439,5 +444,29 @@ for(const spec of cases) {
     const answers=spec.count===40?f.state.answers:f.state.selections;
     assert.equal(answers.size,spec.count,"Un refus réseau ne détruit pas le récapitulatif");
     assert.match(f.nodes["sondage-submit-status"].textContent,/compte permanent connecté/i);
+  });
+}
+
+for (const spec of cases) {
+  test(spec.id+" : purge répétée sans écran actif efface le récapitulatif privé",()=>{
+    const f=makeFixture(spec,"questionnaire",null);
+    f.elements["sondage-introduction"].hidden=true;
+    f.elements["sondage-questionnaire"].hidden=true;
+    f.elements["sondage-finish"].hidden=true;
+    f.elements["sondage-recap"].textContent="28 choix personnels sur "+spec.count;
+    f.elements["sondage-answered"].textContent="28 réponses";
+    f.elements["sondage-position"].textContent="Question 28";
+    f.elements["sondage-progress"].value=28;
+    f.sandbox.clearLocalDemo();
+    assert.equal(f.elements["sondage-recap"].textContent,"");
+    assert.equal(f.elements["sondage-answered"].textContent,"");
+    assert.equal(f.elements["sondage-position"].textContent,"");
+    assert.equal(f.elements["sondage-progress"].value,0);
+    assert.equal(f.selections.size,0);
+  });
+  test(spec.id+" : script public mis en cache invalidé après la purge de confidentialité",()=>{
+    const html=fs.readFileSync(path.join(nova,spec.count===40?
+      "consultation-40.html":"sondage.html"),"utf8");
+    assert.ok(html.includes('assets/'+spec.filename+'?v=1.1.3'));
   });
 }

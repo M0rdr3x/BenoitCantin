@@ -180,6 +180,12 @@
     $('sondage-age').checked = false;
     $('sondage-consent').checked = false;
     $('sondage-review-list').replaceChildren();
+    // Ne pas conserver de synthèse personnelle ou de progression dans le DOM caché
+    // après retrait d'accord, pagehide ou restauration bfcache.
+    $('sondage-recap').textContent = '';
+    $('sondage-answered').textContent = '';
+    $('sondage-position').textContent = '';
+    $('sondage-progress').value = 0;
     $('sondage-status').textContent = '';
     $('sondage-submit-status').textContent = '';
     show('introduction');
