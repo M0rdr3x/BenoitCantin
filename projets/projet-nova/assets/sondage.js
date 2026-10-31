@@ -90,7 +90,7 @@
   function refreshStart() {
     // Retirer l'accord ou l'attestation 18+ pendant une démonstration
     // supprime immédiatement les choix sensibles encore en mémoire.
-    if (!eligible() && !COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED &&
+    if (!eligible() &&
         (!$('sondage-questionnaire').hidden || !$('sondage-finish').hidden)) {
       clearLocalDemo();
       $('sondage-titre').focus({preventScroll:true});
@@ -167,7 +167,7 @@
       edit.textContent = 'Modifier';
       edit.setAttribute('aria-label', 'Modifier la réponse à la question ' + (index + 1));
       edit.addEventListener('click', () => {
-        if (recorded || !eligible()) return;
+        if (recorded || submitting || !eligible()) return;
         step = index;
         editingReview = true;
         $('sondage-finish').hidden = true;
@@ -277,9 +277,10 @@
     clearLocalDemo();
     // Les navigateurs peuvent restaurer des cases cochées après DOMContentLoaded.
     // Supprimer immédiatement les opinions lorsqu'on quitte la page :
-    // un onglet placé en cache arrière/avant ne doit pas conserver la démo.
+    // un onglet placé en cache arrière/avant ne doit jamais conserver les opinions,
+    // y compris après une éventuelle ouverture de la collecte.
     window.addEventListener('pagehide', () => {
-      if (!COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED) clearLocalDemo();
+      clearLocalDemo();
     });
     window.addEventListener('pageshow', event => {
       // init() purge déjà toute visite neuve. Une pageshow initiale peut se
@@ -287,7 +288,7 @@
       // ne jamais effacer une interaction valable lors de ce premier affichage.
       // La restauration réelle depuis le cache arrière/avant est signalée
       // par persisted=true et impose la purge immédiate des opinions locales.
-      if (event.persisted && !COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED) clearLocalDemo();
+      if (event.persisted) clearLocalDemo();
     });
     for (const id of ['sondage-age', 'sondage-consent']) {
       $(id).addEventListener('change', refreshStart);
@@ -309,8 +310,7 @@
     });
     $('sondage-form').addEventListener('submit', e => e.preventDefault());
     $('sondage-review').addEventListener('click', () => {
-      if (recorded) return;
-      if (!eligible()) return;
+      if (recorded || submitting || !eligible()) return;
       step = 0;
       editingReview = false;
       $('sondage-finish').hidden = true;
