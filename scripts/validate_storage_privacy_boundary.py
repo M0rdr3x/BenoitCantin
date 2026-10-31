@@ -23,6 +23,10 @@ PRIVATE = frozenset({
 })
 PUBLIC = frozenset({"sinjira-avatars"})
 ALL_EXPECTED = PRIVATE | PUBLIC
+# Écart documenté en production : bucket privé effectivement présent et borné
+# par RLS, mais absent du dépôt de migrations (voir issue de sécurité #716).
+# Exception de TRAÇABILITÉ uniquement, jamais autorisation de le rendre public.
+PRODUCTION_ONLY_BUCKETS = frozenset({"sinjira-character-submissions"})
 
 # Une seule ligne, aucun nom d'objet; le serveur répond uniquement par booléens.
 QUERY = """
@@ -73,7 +77,7 @@ def migration_errors(files: dict[str, str]) -> list[str]:
     if not files:
         return ["Aucune migration SQL à inspecter."]
     corpus = "\n".join(strip_sql_comments(content) for content in files.values())
-    for bucket in sorted(ALL_EXPECTED):
+    for bucket in sorted(ALL_EXPECTED - PRODUCTION_ONLY_BUCKETS):
         if "'" + bucket + "'" not in corpus:
             errors.append(f"Bucket SINJIRA historique absent : {bucket}")
     statements = re.findall(
