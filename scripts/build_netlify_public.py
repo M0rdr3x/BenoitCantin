@@ -279,6 +279,35 @@ PROJECT_NOVA_PUBLIC_STRUCTURED_EXACT = {
     Path("projets/projet-nova/PROPOSITIONS_PUBLIQUES.md"),
     Path("projets/projet-nova/documents.json"),
     Path("projets/projet-nova/documents-word-only.json"),
+    Path("projets/projet-nova/data/consultation-40-v1.json"),
+    Path("projets/projet-nova/data/sondage-questions-v1.json"),
+    Path("projets/projet-nova/data/resultats-sondages-publics-v1.json"),
+}
+
+PROJECT_NOVA_PUBLIC_DATA_JSON = {
+    Path("projets/projet-nova/data/actualites.json"),
+    Path("projets/projet-nova/data/boussole-electorale-v1.json"),
+    Path("projets/projet-nova/data/boussole-electorale-v2.json"),
+    Path("projets/projet-nova/data/boussole-partis-2026.json"),
+    Path("projets/projet-nova/data/boussole-preuves-2026.json"),
+    Path("projets/projet-nova/data/boussole-sources-partis-2026.json"),
+    Path("projets/projet-nova/data/comptabilite.json"),
+    Path("projets/projet-nova/data/documents-word-only.json"),
+    Path("projets/projet-nova/data/documents.json"),
+    Path("projets/projet-nova/data/rencontres.json"),
+    Path("projets/projet-nova/data/sources.json"),
+}
+
+# Les documents de référence publiés sont eux aussi approuvés un par un.
+# Un brouillon interne ajouté dans official/reference ne doit pas sortir.
+PROJECT_NOVA_PUBLIC_REFERENCE_MARKDOWN = {
+    Path("projets/projet-nova/official/reference/architecture-numerique-interoperabilite-reversibilite.md"),
+    Path("projets/projet-nova/official/reference/corpus.md"),
+    Path("projets/projet-nova/official/reference/cybersecurite-resilience-continuite.md"),
+    Path("projets/projet-nova/official/reference/finances.md"),
+    Path("projets/projet-nova/official/reference/identite-numerique-vie-privee.md"),
+    Path("projets/projet-nova/official/reference/programme.md"),
+    Path("projets/projet-nova/official/reference/statuts.md"),
 }
 
 PROJECT_NOVA_PUBLIC_STRUCTURED_PREFIXES = (
@@ -378,9 +407,9 @@ def project_nova_structured_allowed(rel: Path) -> bool:
         if not nested.parts:
             return False
         if prefix.name == "data":
-            return rel.suffix.lower() == ".json"
+            return rel in PROJECT_NOVA_PUBLIC_DATA_JSON
         if prefix.name == "reference":
-            return rel.suffix.lower() == ".md"
+            return rel in PROJECT_NOVA_PUBLIC_REFERENCE_MARKDOWN
     return False
 
 
