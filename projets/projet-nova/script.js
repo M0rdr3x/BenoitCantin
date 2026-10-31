@@ -1,3 +1,18 @@
+// Toute insertion de données publiques dans innerHTML doit échapper les valeurs.
+// Les liens d'archives et du journal sont limités aux routes publiques attendues.
+function novaEscapeHtml(value){
+  return String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;')
+    .replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
+}
+function novaSafeDocumentHref(value){
+  const raw=String(value??'').trim();
+  return /^documents\/[A-Za-z0-9_.-]+\.pdf$/i.test(raw)?raw:'';
+}
+function novaSafeJournalHref(value){
+  const raw=String(value??'').trim();
+  return /^[a-z0-9][a-z0-9-]*\.html(?:#[a-z0-9_-]+)?$/i.test(raw)?raw:'';
+}
+
 (function(){
   if(!document.querySelector('link[data-nova-institutionnel]')){
     const polish=document.createElement('link');
@@ -110,7 +125,9 @@
         sections.forEach(section=>{const option=document.createElement('option');option.value=section;option.textContent=section;filterEl.appendChild(option);});
       }
       function card(d){
-        return `<article class="doc-card"><span class="pill">${d.section}</span><h3>${d.title}</h3><p>${d.description}</p><div class="card-actions"><a class="btn btn-primary" href="visionneuse.html?doc=${encodeURIComponent(d.id)}">Visionner l’archive</a><a class="btn btn-outline" href="${d.path}" download>Télécharger le PDF</a></div></article>`;
+        const documentUrl=novaSafeDocumentHref(d.path);
+        const downloadLink=documentUrl?`<a class="btn btn-outline" href="${novaEscapeHtml(documentUrl)}" download>Télécharger le PDF</a>`:'';
+        return `<article class="doc-card"><span class="pill">${novaEscapeHtml(d.section)}</span><h3>${novaEscapeHtml(d.title)}</h3><p>${novaEscapeHtml(d.description)}</p><div class="card-actions"><a class="btn btn-primary" href="visionneuse.html?doc=${encodeURIComponent(String(d.id||''))}">Visionner l’archive</a>${downloadLink}</div></article>`;
       }
       function render(){
         const term=((searchEl&&searchEl.value)||'').toLowerCase().trim();
@@ -128,11 +145,11 @@
 (function(){
   function ready(fn){document.readyState !== 'loading' ? fn() : document.addEventListener('DOMContentLoaded', fn);}
   function money(n){return new Intl.NumberFormat('fr-CA',{style:'currency',currency:'CAD'}).format(Number(n||0));}
-  function text(v){return(v===undefined||v===null||v==='')?'—':String(v);}
+  function text(v){return(v===undefined||v===null||v==='')?'—':novaEscapeHtml(v);}
   function formatDate(value){
     if(!value)return '—';
     const d=new Date(value+'T12:00:00');
-    return Number.isNaN(d.getTime())?value:new Intl.DateTimeFormat('fr-CA',{year:'numeric',month:'long',day:'numeric'}).format(d);
+    return Number.isNaN(d.getTime())?text(value):new Intl.DateTimeFormat('fr-CA',{year:'numeric',month:'long',day:'numeric'}).format(d);
   }
   ready(function(){
     const financeBody=document.querySelector('[data-finance-table]');
@@ -168,7 +185,7 @@
         const stamp=document.querySelector('[data-updates-date]');
         if(stamp)stamp.textContent=data.updated?formatDate(data.updated):'—';
         if(!entries.length){updates.innerHTML='<article class="timeline-entry"><h2>Aucune mise à jour publiée</h2><p>Le journal public sera complété au fil des changements significatifs.</p></article>';return;}
-        updates.innerHTML=entries.map(e=>`<article class="timeline-entry"><div class="timeline-meta"><time datetime="${text(e.date)}">${formatDate(e.date)}</time><span>${text(e.type)}</span></div><h2>${text(e.title)}</h2><p>${text(e.summary)}</p>${e.link?`<a class="text-link" href="${e.link}">${text(e.link_label||'Consulter')}</a>`:''}</article>`).join('');
+        updates.innerHTML=entries.map(e=>`<article class="timeline-entry"><div class="timeline-meta"><time datetime="${text(e.date)}">${formatDate(e.date)}</time><span>${text(e.type)}</span></div><h2>${text(e.title)}</h2><p>${text(e.summary)}</p>${novaSafeJournalHref(e.link)?`<a class="text-link" href="${novaEscapeHtml(novaSafeJournalHref(e.link))}">${text(e.link_label||'Consulter')}</a>`:''}</article>`).join('');
       }).catch(()=>{updates.innerHTML='<article class="timeline-entry"><h2>Journal temporairement indisponible</h2><p>Les autres pages publiques demeurent accessibles.</p></article>';});
     }
   });
