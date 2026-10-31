@@ -10,7 +10,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-MIGRATION = ROOT / "supabase/migrations/20261031094000_sinjira_private_trigger_execute_acl_hardening.sql"
+MIGRATION = ROOT / "supabase/candidate-migrations/20261031094000_sinjira_private_trigger_execute_acl_hardening.sql"
 TAP = ROOT / "supabase/tests/private_trigger_execute_acl_hardening.test.sql"
 FUNCTIONS = (
     "private.privacy_incident_retention_guard()",
