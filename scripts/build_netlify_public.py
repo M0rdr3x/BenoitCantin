@@ -281,6 +281,23 @@ PROJECT_NOVA_PUBLIC_STRUCTURED_EXACT = {
     Path("projets/projet-nova/documents-word-only.json"),
 }
 
+# Frontière anti-divulgation NOVA: seuls les jeux de données explicitement
+# déclarés publics sont copiés. Ne jamais publier automatiquement un futur
+# export de sondage, de bulletins, d'utilisateurs ou de résultats bruts.
+PROJECT_NOVA_PUBLIC_DATA_JSON = {
+    Path("projets/projet-nova/data/actualites.json"),
+    Path("projets/projet-nova/data/boussole-electorale-v1.json"),
+    Path("projets/projet-nova/data/boussole-electorale-v2.json"),
+    Path("projets/projet-nova/data/boussole-partis-2026.json"),
+    Path("projets/projet-nova/data/boussole-preuves-2026.json"),
+    Path("projets/projet-nova/data/boussole-sources-partis-2026.json"),
+    Path("projets/projet-nova/data/comptabilite.json"),
+    Path("projets/projet-nova/data/documents-word-only.json"),
+    Path("projets/projet-nova/data/documents.json"),
+    Path("projets/projet-nova/data/rencontres.json"),
+    Path("projets/projet-nova/data/sources.json"),
+}
+
 PROJECT_NOVA_PUBLIC_STRUCTURED_PREFIXES = (
     Path("projets/projet-nova/data"),
     Path("projets/projet-nova/official/reference"),
@@ -378,7 +395,7 @@ def project_nova_structured_allowed(rel: Path) -> bool:
         if not nested.parts:
             return False
         if prefix.name == "data":
-            return rel.suffix.lower() == ".json"
+            return rel in PROJECT_NOVA_PUBLIC_DATA_JSON
         if prefix.name == "reference":
             return rel.suffix.lower() == ".md"
     return False
@@ -884,6 +901,10 @@ def self_test_public_filesystem_boundary() -> list[str]:
 
     rejected = (
         "projets/projet-nova/.gitignore",
+        "projets/projet-nova/data/sondage-reponses.json",
+        "projets/projet-nova/data/votes-individuels.json",
+        "projets/projet-nova/data/export-utilisateurs.json",
+        "projets/projet-nova/data/nouveau-fichier-non-revu.json",
         "projets/projet-nova/.nojekyll",
         "projets/projet-nova/assets/.env",
         "projets/sinjira/.private/settings.json",
@@ -904,6 +925,9 @@ def self_test_public_filesystem_boundary() -> list[str]:
         "assets/js/site.js",
         "compte/index.html",
         "projets/projet-nova/index.html",
+        "projets/projet-nova/data/boussole-partis-2026.json",
+        "projets/projet-nova/data/actualites.json",
+        "projets/projet-nova/data/sources.json",
         "projets/sinjira/romans/index.html",
         "projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf",
     )
