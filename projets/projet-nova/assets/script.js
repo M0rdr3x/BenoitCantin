@@ -1,3 +1,13 @@
+// Compatibilité archive NOVA : une ancienne page ne doit pas contourner
+// l'échappement des données et l'autorisation des liens de téléchargement.
+function novaLegacyEscapeHtml(value){
+  return String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;')
+    .replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
+}
+function novaLegacySafeDocumentHref(value){
+  const raw=String(value??'').trim();
+  return /^documents\/[A-Za-z0-9_.-]+\.pdf$/i.test(raw)?raw:'';
+}
 (function(){
   function ready(fn){document.readyState !== 'loading' ? fn() : document.addEventListener('DOMContentLoaded', fn);}
   ready(function(){
@@ -22,7 +32,7 @@
       const filterEl=document.querySelector('[data-doc-filter]');
       const sections=[...new Set(docs.map(d=>d.section))];
       if(filterEl){if(!filterEl.innerHTML.includes('Toutes les sections'))filterEl.innerHTML='<option value="">Toutes les sections</option>';sections.forEach(section=>{const option=document.createElement('option');option.value=section;option.textContent=section;filterEl.appendChild(option);});}
-      const card=d=>`<article class="doc-card"><span class="pill">${d.section}</span><h3>${d.title}</h3><p>${d.description}</p><div class="card-actions"><a class="btn btn-primary" href="visionneuse.html?doc=${encodeURIComponent(d.id)}">Visionner l’archive</a><a class="btn btn-outline" href="${d.path}" download>Télécharger le PDF</a></div></article>`;
+      const card=d=>{const documentUrl=novaLegacySafeDocumentHref(d.path);const downloadLink=documentUrl?`<a class="btn btn-outline" href="${novaLegacyEscapeHtml(documentUrl)}" download>Télécharger le PDF</a>`:'';return `<article class="doc-card"><span class="pill">${novaLegacyEscapeHtml(d.section)}</span><h3>${novaLegacyEscapeHtml(d.title)}</h3><p>${novaLegacyEscapeHtml(d.description)}</p><div class="card-actions"><a class="btn btn-primary" href="visionneuse.html?doc=${encodeURIComponent(String(d.id||''))}">Visionner l’archive</a>${downloadLink}</div></article>`;};
       function render(){const term=((searchEl&&searchEl.value)||'').toLowerCase().trim();const filter=(filterEl&&filterEl.value)||'';const filtered=docs.filter(d=>{const hay=[d.order,d.title,d.section,d.description].join(' ').toLowerCase();return(!term||hay.includes(term))&&(!filter||d.section===filter);});listEl.innerHTML=filtered.length?filtered.map(card).join(''):'<article class="doc-card"><h3>Aucun résultat</h3><p>Aucun document ne correspond à votre recherche.</p></article>';}
       if(searchEl)searchEl.addEventListener('input',render);if(filterEl)filterEl.addEventListener('change',render);render();
     }
@@ -32,7 +42,7 @@
 (function(){
   function ready(fn){document.readyState !== 'loading' ? fn() : document.addEventListener('DOMContentLoaded', fn);}
   function money(n){return new Intl.NumberFormat('fr-CA',{style:'currency',currency:'CAD'}).format(Number(n||0));}
-  function text(v){return(v===undefined||v===null||v==='')?'—':String(v);}
+  function text(v){return(v===undefined||v===null||v==='')?'—':novaLegacyEscapeHtml(v);}
   ready(function(){
     const financeBody=document.querySelector('[data-finance-table]');
     if(financeBody){fetch('data/comptabilite.json',{cache:'no-store'}).then(r=>r.json()).then(data=>{const entries=Array.isArray(data.entries)?data.entries:[];const income=entries.filter(e=>e.type==='revenu').reduce((s,e)=>s+Number(e.montant||0),0);const expense=entries.filter(e=>e.type==='depense').reduce((s,e)=>s+Number(e.montant||0),0);document.querySelectorAll('[data-finance-total="income"]').forEach(el=>el.textContent=money(income));document.querySelectorAll('[data-finance-total="expense"]').forEach(el=>el.textContent=money(expense));document.querySelectorAll('[data-finance-total="balance"]').forEach(el=>el.textContent=money(income-expense));if(!entries.length){financeBody.innerHTML='<tr><td colspan="7">Aucune entrée publique publiée pour le moment.</td></tr>';return;}financeBody.innerHTML=entries.map(e=>`<tr><td>${text(e.date)}</td><td>${text(e.type)}</td><td>${text(e.categorie)}</td><td>${text(e.description)}</td><td>${text(e.fournisseur_ou_source)}</td><td>${money(e.montant)}</td><td>${text(e.statut)}</td></tr>`).join('');}).catch(()=>{financeBody.innerHTML='<tr><td colspan="7">Registre temporairement indisponible.</td></tr>';});}
