@@ -412,7 +412,7 @@ NOVA_PRIVATE_DATA_KEYS = frozenset({
 NOVA_PUBLIC_JSON_MAX_BYTES = 1_500_000
 NOVA_PUBLIC_JSON_MAX_NODES = 50_000
 NOVA_PUBLIC_JSON_MAX_DEPTH = 32
-NOVA_EMAIL_PATTERN = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}")
+NOVA_EMAIL_PATTERN = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 
 
 def public_data_payload_violations(data: object) -> list[str]:
