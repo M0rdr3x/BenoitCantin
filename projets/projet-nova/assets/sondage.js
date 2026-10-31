@@ -60,6 +60,8 @@
   let editingReview = false;
   let submitting = false;
   let recorded = false;
+  // Chaque purge invalide les envois en attente de vérification de compte.
+  let consentEpoch = 0;
 
   function eligible() {
     return $('sondage-age').checked && $('sondage-consent').checked;
@@ -207,12 +209,16 @@
     try { request = payload(); }
     catch { setStatus('Questionnaire incomplet ou admissibilité non confirmée.', 'sondage-submit-status'); return; }
     submitting = true;
+    const submissionConsentEpoch = consentEpoch;
     $('sondage-submit').disabled = true;
     setStatus('Transmission sécurisée en cours…', 'sondage-submit-status');
     try {
       const { getSupabase } = await import('../../../assets/js/sinjira-supabase.js');
       const client = getSupabase();
+      if (submissionConsentEpoch !== consentEpoch || !eligible()) return;
       const { data: profile, error: authError } = await client.auth.getUser();
+      // L'accord peut être retiré pendant l'attente asynchrone d'authentification.
+      if (submissionConsentEpoch !== consentEpoch || !eligible()) return;
       if (authError || !profile?.user) {
         setStatus('Connectez-vous à votre compte avant de transmettre votre participation.',
           'sondage-submit-status');
@@ -220,10 +226,13 @@
       }
       const { data, error } = await client.functions.invoke('nova-survey-submit',
         { body: request });
+      // Une réponse réseau tardive ne doit pas restaurer d'état après un retrait.
+      if (submissionConsentEpoch !== consentEpoch || !eligible()) return;
       if (error || data?.ok !== true || data.code !== 'RECORDED' || data.survey !== SURVEY_ID) {
         let code = data?.code;
         if (error?.context && typeof error.context.json === 'function') {
           try { code = (await error.context.json()).code; } catch { /* réponse réseau indisponible */ }
+          if (submissionConsentEpoch !== consentEpoch || !eligible()) return;
         }
         if (code === 'ALREADY_SUBMITTED') {
           recorded = true;
@@ -242,6 +251,7 @@
       setStatus('Participation enregistrée. Merci! Les résultats ne seront diffusés que sous forme agrégée et accompagnés de la méthode.',
         'sondage-submit-status');
     } catch {
+      if (submissionConsentEpoch !== consentEpoch || !eligible()) return;
       setStatus('Service indisponible : aucune confirmation d’enregistrement. Les réponses restent sur cette page.',
         'sondage-submit-status');
     } finally {
@@ -250,6 +260,7 @@
     }
   }
   function clearLocalDemo() {
+    consentEpoch += 1;
     // Ne conserver ni opinions ni confirmation 18+ après retour d'historique/rechargement.
     selections.clear();
     step = 0;
