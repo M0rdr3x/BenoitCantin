@@ -1,0 +1,66 @@
+name: Sécurité — construire uniquement le site public isolé
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: isolated-web-boundary-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  public-artifact-boundary:
+    name: Refuser la publication des fichiers techniques et privés
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Configurer Python épinglé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+      - name: Contrôler la syntaxe du constructeur
+        run: python3 -m py_compile scripts/build_netlify_public.py scripts/validate_web_release_http.py
+      - name: Simuler les fichiers cachés les symlinks et les documents privés
+        run: python3 scripts/build_netlify_public.py --self-test-security
+      - name: Construire et auditer tous les contextes sans déployer
+        run: python3 scripts/build_netlify_public.py --check
+      - name: Auditer le confinement GitHub Pages
+        run: python3 scripts/build_netlify_public.py --check --security-containment
+      - name: Construire l'artefact netlify autonome
+        run: python3 scripts/build_netlify_public.py --output _site --standalone-netlify
+      - name: Refuser les dossiers techniques et les fichiers non publics
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f _site/index.html
+          test -f _site/projets/projet-nova/index.html
+          test -f _site/_headers
+          test -f _site/_redirects
+          test ! -e _site/netlify.toml
+          test ! -e _site/vercel.json
+          test ! -e _site/.env
+          test ! -e _site/script.js
+          for directory in supabase scripts docs tests mobile-native .github .git; do
+            test ! -e "_site/$directory"
+          done
+          find _site -type l -print -quit | grep -q . && exit 1 || true
+          python3 - <<'PY'
+          import pathlib
+          import tomllib
+          settings = tomllib.loads(pathlib.Path('netlify.toml').read_text('utf-8'))
+          assert settings['build']['publish'] == '_site'
+          assert settings['build']['command'] == 'python3 scripts/build_netlify_public.py'
+          print('PASS: hébergement Netlify configuré pour publier uniquement _site.')
+          PY
