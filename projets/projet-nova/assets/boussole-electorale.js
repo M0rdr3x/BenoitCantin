@@ -518,7 +518,17 @@
     const summary = $("#compass-summary");
     if(summary) summary.textContent = "";
     const recipient = $("#compass-email-recipient");
-    if(recipient) recipient.value = "";
+    if(recipient){
+      recipient.value = "";
+      // Le listener conserve sinon une fermeture sur l'ancien résumé politique.
+      recipient.oninput = null;
+    }
+    // Ne laisser aucun résultat sensible dans des callbacks cachés après reset,
+    // pagehide ou restauration d'historique (même si le DOM visuel est vidé).
+    const nativeShare = $("#compass-share-native");
+    if(nativeShare) nativeShare.onclick = null;
+    const copyResult = $("#compass-copy-result");
+    if(copyResult) copyResult.onclick = null;
     const email = $("#compass-share-email");
     if(email) email.setAttribute("href","mailto:");
     // Réutiliser les bases déjà déclarées dans le HTML approuvé.

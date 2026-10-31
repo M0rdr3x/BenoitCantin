@@ -356,3 +356,70 @@ test("Registre Boussole : provenance datée et aucune exhaustivité temps réel 
   assert.match(page,/statut actuel doit être vérifié auprès d’Élections Québec/);
   assert.doesNotMatch(page,/Les 20 partis actuellement autorisés/);
 });
+
+
+test("Réinitialisation Boussole : aucune fermeture de partage ne retient le profil",()=>{
+  const beginShare=source.indexOf("  function configureSharing(results){");
+  const endShare=source.indexOf("\n  async function copyText(",beginShare);
+  const beginReset=source.indexOf("  function reset(focusStart=true){");
+  const endReset=source.indexOf("\n  function renderPartyRegistry",beginReset);
+  assert.ok(beginShare>=0 && endShare>beginShare && beginReset>=0 && endReset>beginReset);
+  const nodes = Object.create(null);
+  function node(id) {
+    if(!nodes[id]) {
+      nodes[id] = {
+        href:id==="#compass-share-facebook"?"https://www.facebook.com/sharer/sharer.php":
+          id==="#compass-share-x"?"https://x.com/intent/post":
+          id==="#compass-share-linkedin"?"https://www.linkedin.com/sharing/share-offsite/":
+          id==="#compass-share-email"?"mailto:":"",
+        value:"",hidden:false,textContent:"",onclick:null,oninput:null,
+        getAttribute(key){return key==="href"?this.href:null;},
+        setAttribute(key,value){if(key==="href")this.href=value;},
+        replaceChildren(){this.children=[];},focus(){}
+      };
+    }
+    return nodes[id];
+  }
+  const ctx={
+    $:node,
+    state:{
+      answers:new Map([["q01",{value:3,importance:"forte"}]]),
+      importance:new Map([["q01","forte"]]),currentIndex:42,
+      started:true,results:[{title:"Profil sensible de démonstration"}]
+    },
+    buildResultText:()=>"PROFIL_PERSONNEL_SECRET_TEST",
+    window:{location:{origin:"https://exemple.test",pathname:"/projets/projet-nova/boussole-electorale.html"}},
+    navigator:{},encodeURIComponent,updateProgress(){},
+    copyText:async()=>true
+  };
+  const action=new vm.Script(source.slice(beginShare,endShare)+
+    "\n"+source.slice(beginReset,endReset)+
+    "\nconfigureSharing([]);",{filename:"boussole-electorale.js:sharing-and-reset"});
+  action.runInNewContext(ctx,{timeout:1000});
+  const email=node("#compass-email-recipient");
+  const link=node("#compass-share-email");
+  email.value="personne@example.test";
+  email.oninput();
+  assert.match(link.href,/PROFIL_PERSONNEL_SECRET_TEST/);
+  assert.equal(typeof node("#compass-share-native").onclick,"function");
+  assert.equal(typeof node("#compass-copy-result").onclick,"function");
+  ctx.reset(false);
+  assert.equal(email.value,"");
+  assert.equal(email.oninput,null,"la fermeture email contient encore le résumé");
+  assert.equal(node("#compass-share-native").onclick,null,"le partage natif garde la fermeture");
+  assert.equal(node("#compass-copy-result").onclick,null,"la copie garde la fermeture");
+  for(const name of ["#compass-share-email","#compass-share-facebook",
+                     "#compass-share-x","#compass-share-linkedin"]) {
+    assert.doesNotMatch(node(name).href,/PROFIL_PERSONNEL_SECRET_TEST/);
+  }
+  assert.equal(link.href,"mailto:");
+  assert.equal(ctx.state.answers.size,0);
+  assert.equal(ctx.state.importance.size,0);
+  assert.equal(ctx.state.results,null);
+  assert.equal(node("#compass-results").hidden,true);
+  assert.equal(node("#compass-summary").textContent,"");
+  // Le navigateur ne peut plus recréer l'ancien mailto depuis le même champ.
+  email.value="autre@example.test";
+  assert.equal(email.oninput,null);
+  assert.equal(link.href,"mailto:");
+});

@@ -84,11 +84,29 @@ def main():
             require(neutral["ok"], "profil neutre incomplet: " + repr(neutral))
             require(not submitted, "une opinion politique a été transmise pendant le test")
 
+            # Les callbacks de partage retiennent le résumé et doivent
+            # également disparaître après reset, pas seulement les cartes SVG.
+            require(page.evaluate("""() =>
+                typeof document.querySelector("#compass-share-native").onclick === "function" &&
+                typeof document.querySelector("#compass-copy-result").onclick === "function" &&
+                typeof document.querySelector("#compass-email-recipient").oninput === "function"
+            """), "partage local non configuré après résultats")
             page.locator("#compass-reset").click()
             require(page.locator("#compass-results").is_hidden()
                     and page.locator("#compass-results-grid .compass-result-card").count() == 0
                     and page.locator("#compass-start").is_visible(),
                     "le résultat subsiste après réinitialisation")
+            require(page.evaluate("""() => {
+                const input = document.querySelector("#compass-email-recipient");
+                input.value = "autre@example.test";
+                input.dispatchEvent(new Event("input",{bubbles:true}));
+                return document.querySelector("#compass-share-native").onclick === null &&
+                    document.querySelector("#compass-copy-result").onclick === null &&
+                    input.oninput === null &&
+                    document.querySelector("#compass-share-email").getAttribute("href") === "mailto:" &&
+                    document.querySelector("#compass-summary").textContent === "" &&
+                    document.querySelector("#compass-radar").children.length === 0;
+            }"""), "profil conservé dans les callbacks de partage après reset")
 
             # 64 choix « Sans opinion » ne doivent pas fabriquer de scores.
             skipped = page.evaluate("""() => {
