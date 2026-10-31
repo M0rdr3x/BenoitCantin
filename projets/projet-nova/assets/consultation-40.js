@@ -63,7 +63,7 @@
   function refresh() {
     // Un retrait de l'accord ou de l'attestation d'âge en cours de parcours
     // efface aussitôt toute opinion locale, sans attendre la navigation.
-    if (!eligible() && !COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED &&
+    if (!eligible() &&
         (!$('sondage-questionnaire').hidden || !$('sondage-finish').hidden)) {
       clearLocalDemo();
       $('sondage-titre').focus({preventScroll:true});
@@ -138,6 +138,7 @@
       modify.textContent = 'Modifier';
       modify.setAttribute('aria-label', 'Modifier la réponse à la question ' + (i + 1));
       modify.addEventListener('click', () => {
+        if (recorded || submitting || !eligible()) return;
         step = i;
         editingReview = true;
         show('questionnaire');
@@ -169,6 +170,7 @@
     refresh();
   }
   function resetSurvey() {
+    if (submitting) return;
     if (!window.confirm('Effacer tous vos choix et recommencer ce questionnaire?')) return;
     clearLocalDemo();
     $('sondage-titre').focus();
@@ -177,16 +179,17 @@
     clearLocalDemo();
     // pageshow se déclenche même lorsqu'un navigateur restaure un formulaire après DOMContentLoaded.
     // Supprimer immédiatement les opinions lorsqu'on quitte la page :
-    // un onglet placé en cache arrière/avant ne doit pas conserver la démo.
+    // un onglet placé en cache arrière/avant ne doit jamais conserver les opinions,
+    // y compris après une éventuelle ouverture de la collecte.
     window.addEventListener('pagehide', () => {
-      if (!COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED) clearLocalDemo();
+      clearLocalDemo();
     });
     window.addEventListener('pageshow', event => {
       // init() purge une visite fraîche, sans attendre pageshow. Le premier
       // pageshow peut survenir après la validation 18+/accord sur WebKit ;
       // effacer alors les cases et l'état bloquait indûment le démarrage.
       // Une restauration bfcache est identifiée par persisted=true : purge.
-      if (event.persisted && !COLLECTION_OPEN && !LIVE_OPINION_CONSENT_GRANTED) clearLocalDemo();
+      if (event.persisted) clearLocalDemo();
     });
     for (const id of ['sondage-age', 'sondage-consent']) {
       $(id).addEventListener('change', refresh);
@@ -206,6 +209,7 @@
       else if (step > 0) { step--; render(); }
     });
     $('sondage-review').addEventListener('click', () => {
+      if (recorded || submitting || !eligible()) return;
       step = 0;
       editingReview = false;
       show('questionnaire');
