@@ -340,3 +340,23 @@ for(const spec of cases) {
     assert.match(f.nodes["sondage-submit-status"].textContent,/déjà|existe/);
   });
 }
+
+
+for(const spec of cases) {
+  test(spec.id+" : la page n'affiche aucun statut statique contradictoire après envoi",()=>{
+    const file=path.join(nova,spec.count===40?"consultation-40.html":"sondage.html");
+    const html=fs.readFileSync(file,"utf8");
+    assert.ok(html.includes('id="sondage-submit-status"'),
+      "Le statut du serveur doit rester visible et annoncé");
+    assert.ok(html.includes("Récapitulatif et suivi de votre participation"),
+      "Le récapitulatif doit convenir avant et après transmission");
+    assert.ok(html.includes("les réponses locales sont effacées de cette page"),
+      "La purge des opinions doit être expliquée au participant");
+    assert.ok(html.includes("Le message de statut ci-dessous précise"),
+      "Le suivi du vrai envoi ne doit pas reposer sur une phrase statique");
+    assert.ok(!html.includes("Votre participation n’est pas encore enregistrée."),
+      "Après une réponse enregistrée, cette affirmation devient fausse");
+    assert.ok(html.includes("La collecte est actuellement fermée."),
+      "Le candidat ne doit pas laisser croire à une collecte déjà ouverte");
+  });
+}
