@@ -103,6 +103,27 @@ class WorkflowTrustBoundaryTests(unittest.TestCase):
             "permissions:\n  contents: read\n", ""
         )))
 
+    def test_inline_yaml_events_are_refused(self):
+        self.assertTrue(violations("audit.yml", BASE.replace(
+            "on:\\n  pull_request:\\n    branches: [main]",
+            "on: [pull_request_target]"
+        )))
+        self.assertTrue(violations("audit.yml", BASE.replace(
+            "on:\\n  pull_request:\\n    branches: [main]",
+            "on: {workflow_run: {workflows: [deploy]}}"
+        )))
+
+    def test_inline_job_permission_cannot_escape_parser(self):
+        self.assertTrue(violations("audit.yml", BASE.replace(
+            "    runs-on:", "    permissions: {contents: write}\\n    runs-on:"
+        )))
+
+    def test_duplicate_global_permissions_are_refused(self):
+        self.assertTrue(violations("audit.yml", BASE.replace(
+            "permissions:\\n  contents: read",
+            "permissions:\\n  contents: read\\npermissions:\\n  contents: write"
+        )))
+
     def test_symlink_is_refused(self):
         with tempfile.TemporaryDirectory() as root:
             path = Path(root)
