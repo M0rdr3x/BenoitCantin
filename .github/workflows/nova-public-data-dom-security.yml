@@ -33,6 +33,7 @@ jobs:
       - name: Vérifier la syntaxe des fichiers JS
         run: |
           node --check projets/projet-nova/script.js
+          node --check projets/projet-nova/assets/script.js
           node --check scripts/test_nova_public_data_xss.cjs
       - name: Tester les données HTML malicieuses et URL externes
         run: node scripts/test_nova_public_data_xss.cjs
