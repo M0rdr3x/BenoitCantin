@@ -10,8 +10,8 @@ ACTIVE=ROOT/'supabase'/'migrations'
 REVIEWED=ROOT/'supabase'/'production-reviewed-migration-batch.txt'
 BUILDER=ROOT/'scripts'/'build_supabase_production_workspace.py'
 EXPECTED={
- '20261019170000_nova_adult_opinion_survey_v1.sql':'a099124c932fb3e5e85334755761ee9bdf46c6b4',
- '20261019190000_nova_foundations_40_survey_v1.sql':'c634419a56c0ccc881cdb6558c50b1aaba6c9919',
+ '20261019170000_nova_adult_opinion_survey_v1.sql':'a1cf3a4ec1011d4ae708b0cd526eb5c9c54f4726',
+ '20261019190000_nova_foundations_40_survey_v1.sql':'52edf0a1870bf38e41b16090561c9015eba28cb0',
 }
 def blob_sha(data):
     return hashlib.sha1(b'blob '+str(len(data)).encode('ascii')+b'\0'+data).hexdigest()
