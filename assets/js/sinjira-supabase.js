@@ -1,4 +1,4 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/+esm';
 import { SINJIRA_CONFIG, isSinjiraBackendConfigured } from './sinjira-supabase-config.js';
 
 let client = null;
