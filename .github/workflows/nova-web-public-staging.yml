@@ -7,6 +7,7 @@ on:
       - 'projets/projet-nova/**'
       - 'scripts/build_netlify_public.py'
       - 'scripts/validate_web_release_http.py'
+      - 'scripts/validate_nova_script_cache.py'
       - 'tests/e2e/test_nova_consultation40_visual.py'
       - 'tests/e2e/test_nova_survey_visual.py'
       - 'tests/e2e/test_nova_compass_full_preview.py'
@@ -28,6 +29,7 @@ on:
       - 'scripts/validate_nova_public_results.py'
       - 'index.html'
       - 'assets/css/home-v24-4-12.css'
+      - '.github/workflows/release-security-allowlist.yml'
       - '.github/workflows/nova-web-public-staging.yml'
   workflow_dispatch:
 
@@ -163,6 +165,8 @@ jobs:
           python3 scripts/build_netlify_public.py --self-test-security
           python3 scripts/validate_web_release_http.py --self-test
           python3 scripts/build_netlify_public.py --check
+          python3 scripts/validate_nova_script_cache.py
+          python3 scripts/validate_nova_script_cache.py --self-test
       - name: Construire le paquet preview autonome
         shell: bash
         env:
