@@ -59,6 +59,25 @@ def esc_attr(value: str) -> str:
     return html.escape(value, quote=True)
 
 
+def json_for_html_script(value: object) -> str:
+    """Sérialiser un JSON-LD sans permettre de fermer sa balise <script>.
+
+    Les métadonnées peuvent contenir des entités HTML décodées par
+    meta_content()/title_of(). json.dumps seul n'échappe pas '<' :
+    une valeur '</script>' terminerait le bloc avant sa fermeture légitime.
+    Ces substitutions restent du JSON valide et conservent la valeur après
+    json.loads(), sans interprétation HTML.
+    """
+    payload = json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+    return (
+        payload.replace("&", "\\u0026")
+        .replace("<", "\\u003c")
+        .replace(">", "\\u003e")
+        .replace("\u2028", "\\u2028")
+        .replace("\u2029", "\\u2029")
+    )
+
+
 def normalize(path: Path) -> bool:
     original = path.read_text(encoding="utf-8", errors="strict")
     title = title_of(original)
@@ -97,7 +116,7 @@ def normalize(path: Path) -> bool:
         f'<meta name="twitter:title" content="{esc_attr(title)}">',
         f'<meta name="twitter:description" content="{esc_attr(description)}">',
         f'<meta name="twitter:image" content="{DEFAULT_IMAGE}">',
-        '<script type="application/ld+json" data-seo-v24-4-46>' + json.dumps(schema, ensure_ascii=False, separators=(",", ":")) + '</script>',
+        '<script type="application/ld+json" data-seo-v24-4-46>' + json_for_html_script(schema) + '</script>',
     ])
     text = text.replace("</head>", block + "\n</head>", 1)
     if text != original:
