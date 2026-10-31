@@ -313,6 +313,14 @@ def main():
                     "Consentement non réinitialisé")
             require(page.locator("#sondage-start").is_disabled(),
                     "Démarrage encore autorisé après retrait du consentement")
+
+            # Vérifier aussi le DOM caché : un compteur ou récapitulatif
+            # de réponses est une trace sensible même lorsque l'écran est fermé.
+            require(page.evaluate("""() =>
+                ['sondage-recap','sondage-answered','sondage-position']
+                  .every(id => document.getElementById(id).textContent === '') &&
+                Number(document.getElementById('sondage-progress').value) === 0
+            """), "La purge conserve une synthèse ou une progression dans le DOM masqué")
             page.locator("#sondage-age").check()
             page.locator("#sondage-consent").check()
             page.locator("#sondage-start").click()
@@ -334,6 +342,14 @@ def main():
                     "Départ de page : réponses personnelles ou consentement conservés")
             require(page.locator("#sondage-start").is_disabled(),
                     "Départ de page : parcours réactivable sans accord")
+
+            # Vérifier aussi le DOM caché : un compteur ou récapitulatif
+            # de réponses est une trace sensible même lorsque l'écran est fermé.
+            require(page.evaluate("""() =>
+                ['sondage-recap','sondage-answered','sondage-position']
+                  .every(id => document.getElementById(id).textContent === '') &&
+                Number(document.getElementById('sondage-progress').value) === 0
+            """), "La purge conserve une synthèse ou une progression dans le DOM masqué")
             page.goto("http://127.0.0.1:4173/projets/projet-nova/", wait_until="domcontentloaded")
             page.go_back(wait_until="domcontentloaded")
             require(not page.locator("#sondage-introduction").is_hidden(),

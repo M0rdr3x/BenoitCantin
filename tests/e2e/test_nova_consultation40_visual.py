@@ -148,6 +148,14 @@ with sync_playwright() as p:
         check(not page.locator("#sondage-consent").is_checked(),
               "consentement conservé après effacement")
         check(page.locator("#sondage-start").is_disabled(), "démarrage non verrouillé après effacement")
+
+        # Les opinions ne doivent pas laisser de synthèse de réponse dans le
+        # DOM masqué après purge, y compris sur retour arrière du navigateur.
+        check(page.evaluate("""() =>
+            ['sondage-recap','sondage-answered','sondage-position']
+              .every(id => document.getElementById(id).textContent === '') &&
+            Number(document.getElementById('sondage-progress').value) === 0
+        """), "Le DOM caché contient un ancien récapitulatif ou une progression")
         page.locator("#sondage-age").check()
         page.locator("#sondage-consent").check()
         page.locator("#sondage-start").click()
@@ -169,6 +177,14 @@ with sync_playwright() as p:
               "pagehide : âge, consentement ou opinions conservés")
         check(page.locator("#sondage-start").is_disabled(),
               "pagehide : démarrage sans nouvel accord")
+
+        # Les opinions ne doivent pas laisser de synthèse de réponse dans le
+        # DOM masqué après purge, y compris sur retour arrière du navigateur.
+        check(page.evaluate("""() =>
+            ['sondage-recap','sondage-answered','sondage-position']
+              .every(id => document.getElementById(id).textContent === '') &&
+            Number(document.getElementById('sondage-progress').value) === 0
+        """), "Le DOM caché contient un ancien récapitulatif ou une progression")
         page.goto("http://127.0.0.1:4173/projets/projet-nova/", wait_until="domcontentloaded")
         page.go_back(wait_until="domcontentloaded")
         check(page.locator("#sondage-introduction").is_visible(),
