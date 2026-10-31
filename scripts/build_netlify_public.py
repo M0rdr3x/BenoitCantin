@@ -151,9 +151,9 @@ SINJIRA_PRIVATE_RELEASE_METADATA = {
 LIVRE1_DEMO_PUBLIC_PATH = Path(
     "projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"
 )
-LIVRE1_DEMO_MASTER_SIZE_BYTES = 941_065
+LIVRE1_DEMO_MASTER_SIZE_BYTES = 1_244_667
 LIVRE1_DEMO_MASTER_SHA256 = (
-    "d0668a7b07a07321ef1e02cfceb826d3881330bb36417d53e5ff5bd32635628e"
+    "0851852f586ea619ee7435a1b70c38087a7997ab6809bb10fdad0ed4bd0c352b"
 )
 
 FORBIDDEN_DIRS = (
@@ -346,9 +346,7 @@ REQUIRED_PUBLIC_PATHS = (
     "sw.js",
     "manifest.webmanifest",
     "assets/js/site.js",
-    "assets/js/ai-transparency.js",
     "assets/css/ai-transparency.css",
-    "assistant.html",
     "transparence-ia.html",
     "projets/projet-nova/index.html",
     "projets/projet-nova/script.js",
@@ -1148,6 +1146,18 @@ def validate_plan() -> list[str]:
                 errors.append(
                     f"Document SINJIRA non allowlisté publiable par erreur: {rel.as_posix()}"
                 )
+
+    # Le master valide de main (octobre 2026) est également déclaré dans
+    # le manifeste de release ; aucune constante obsolète ne peut autoriser
+    # par erreur une autre démonstration publique.
+    manifest_path = ROOT / "projets/sinjira/romans/livre-1-release.json"
+    try:
+        release = json.loads(manifest_path.read_text(encoding="utf-8", errors="strict"))
+        expected_manifest_hash = release.get("demo", {}).get("sha256")
+        if expected_manifest_hash != LIVRE1_DEMO_MASTER_SHA256:
+            errors.append("Démo Livre I: SHA-256 différent du manifeste de publication main.")
+    except (OSError, UnicodeError, json.JSONDecodeError, AttributeError, TypeError):
+        errors.append("Démo Livre I: manifeste de publication illisible.")
 
     demo_master = ROOT / LIVRE1_DEMO_PUBLIC_PATH
     if demo_master.is_file():
