@@ -360,3 +360,28 @@ for(const spec of cases) {
       "Le candidat ne doit pas laisser croire à une collecte déjà ouverte");
   });
 }
+
+// Information sincère : le résultat public est collectif, mais un envoi
+// authentifié d'opinions ne peut pas être présenté comme anonyme à la réception.
+for (const spec of cases) {
+  test(spec.id + " : transparence sur la réception authentifiée des opinions", () => {
+    const html = fs.readFileSync(path.join(nova,
+      spec.count === 40 ? "consultation-40.html" : "sondage.html"), "utf8");
+    assert.match(html, /id="sondage-authentication-warning"/);
+    assert.match(html, /session de compte authentifiée/);
+    assert.match(html, /la transmission elle-même ne serait pas anonyme/);
+    assert.match(html, /Dans cette démonstration, aucun choix n’est transmis/);
+    assert.match(html, /Résultats collectifs et méthode/);
+    assert.doesNotMatch(html, /Résultats publics anonymisés et méthode/);
+  });
+}
+test("avis et page des résultats : pas de promesse d'anonymat de la transmission", () => {
+  const policy = fs.readFileSync(path.join(nova, "confidentialite.html"), "utf8");
+  const results = fs.readFileSync(path.join(nova, "resultats-sondages.html"), "utf8");
+  assert.match(policy, /Traitement à la réception/);
+  assert.match(policy, /La non-conservation des bulletins individuels/);
+  assert.match(policy, /Aucun envoi de réponses n’est actuellement activé/);
+  assert.match(results, /limitation des risques de réidentification/);
+  assert.match(results, /Le fait de ne publier aucun identifiant ne rend pas la transmission anonyme/);
+  assert.match(results, /Aucun sondage n'a encore été ouvert à la collecte/);
+});
