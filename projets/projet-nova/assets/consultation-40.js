@@ -158,7 +158,8 @@
     answers.clear();
     step = 0;
     editingReview = false;
-    submitting = false;
+    // Ne jamais débloquer une soumission HTTP encore en cours lors d'une purge locale.
+    // submit() remet le verrou à false uniquement dans finally.
     $('sondage-age').checked = false;
     $('sondage-consent').checked = false;
     $('sondage-review-list').replaceChildren();
