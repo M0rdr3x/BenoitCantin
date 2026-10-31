@@ -48,13 +48,15 @@ begin
     raise exception 'INVALID_SURVEY_PAYLOAD' using errcode='22023';
   end if;
 
+  -- Type JSON strict : un nombre 1 ne vaut jamais la réponse texte « 1 ».
   -- 64 clés q01..q64 et valeur explicite même pour « Sans opinion » :
   -- une soumission partielle ou une question injectée n'est jamais agrégée.
-  if (select count(*) from pg_catalog.jsonb_each_text(p_answers)) != 64
+  if (select count(*) from pg_catalog.jsonb_each(p_answers)) != 64
      or exists (
-       select 1 from pg_catalog.jsonb_each_text(p_answers) as a(key,value)
-       where a.key !~ '^q(0[1-9]|[1-5][0-9]|6[0-4])$'
-          or a.value not in ('-3','-2','-1','0','1','2','3','skip')
+       select 1 from pg_catalog.jsonb_each(p_answers) as a(key,value)
+       where pg_catalog.jsonb_typeof(a.value) is distinct from 'string'
+          or a.key !~ '^q(0[1-9]|[1-5][0-9]|6[0-4])$'
+          or (a.value #>> '{}') not in ('-3','-2','-1','0','1','2','3','skip')
      )
   then
     raise exception 'INVALID_SURVEY_ANSWERS' using errcode='22023';
