@@ -155,6 +155,20 @@
     $('sondage-finish-heading').setAttribute('tabindex', '-1');
     $('sondage-finish-heading').focus({ preventScroll: true });
   }
+  function clearRecordedOpinions() {
+    // Une réponse confirmée ne doit pas laisser un bulletin lisible en mémoire
+    // ni dans la liste de révision, même si l'onglet reste ouvert longtemps.
+    consentEpoch += 1;
+    answers.clear();
+    step = 0;
+    editingReview = false;
+    $('sondage-review-list').replaceChildren();
+    $('sondage-choices').replaceChildren();
+    $('sondage-age').checked = false;
+    $('sondage-consent').checked = false;
+    $('sondage-recap').textContent = 'Les choix de ce questionnaire ont été effacés de cette page après la réponse du serveur.';
+    $('sondage-next').disabled = true;
+  }
   function clearLocalDemo() {
     consentEpoch += 1;
     // Même un retour depuis le cache arrière/avant ne rétablit ni âge ni opinions.
@@ -248,6 +262,7 @@
         if (submissionConsentEpoch !== consentEpoch || !eligible()) return;
         if (!error && data?.ok === true && data.code === 'RECORDED' && data.survey === SURVEY_ID) {
           recorded = true;
+          clearRecordedOpinions();
           $('sondage-submit-status').textContent = 'Participation enregistrée. Merci.';
         } else {
           let code = data?.code;
@@ -255,6 +270,7 @@
           if (submissionConsentEpoch !== consentEpoch || !eligible()) return;
           if (code === 'ALREADY_SUBMITTED') {
             recorded = true;
+            clearRecordedOpinions();
             $('sondage-submit-status').textContent = 'Une participation existe déjà pour ce compte.';
           } else {
             $('sondage-submit-status').textContent = 'Enregistrement non confirmé. Aucun résultat affiché.';
