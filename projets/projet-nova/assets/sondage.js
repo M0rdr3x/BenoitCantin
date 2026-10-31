@@ -236,6 +236,7 @@
         }
         if (code === 'ALREADY_SUBMITTED') {
           recorded = true;
+          clearRecordedOpinions();
           setStatus('Une participation est déjà enregistrée pour ce compte. Aucun doublon ajouté.',
             'sondage-submit-status');
         } else if (code === 'COLLECTION_NOT_ENABLED') {
@@ -248,6 +249,7 @@
         return;
       }
       recorded = true;
+      clearRecordedOpinions();
       setStatus('Participation enregistrée. Merci! Les résultats ne seront diffusés que sous forme agrégée et accompagnés de la méthode.',
         'sondage-submit-status');
     } catch {
@@ -258,6 +260,20 @@
       submitting = false;
       $('sondage-submit').disabled = recorded || !COLLECTION_OPEN || !LIVE_OPINION_CONSENT_GRANTED || !eligible();
     }
+  }
+  function clearRecordedOpinions() {
+    // Ne conserver après la réponse serveur ni opinions sensibles ni
+    // bulletin individuel dans le récapitulatif visible ou le DOM caché.
+    consentEpoch += 1;
+    selections.clear();
+    step = 0;
+    editingReview = false;
+    $('sondage-review-list').replaceChildren();
+    $('sondage-choices').replaceChildren();
+    $('sondage-age').checked = false;
+    $('sondage-consent').checked = false;
+    $('sondage-recap').textContent = 'Les choix de ce questionnaire ont été effacés de cette page après la réponse du serveur.';
+    $('sondage-next').disabled = true;
   }
   function clearLocalDemo() {
     consentEpoch += 1;
