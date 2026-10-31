@@ -270,7 +270,7 @@ function renderRealRadar(data) {
   new vm.Script(source.slice(startRadar,endRadar)+"\nrenderRadar(input);",
     {filename:"boussole-electorale.js:renderRadar"})
     .runInNewContext({input:data,$:selector=>selector==="#compass-radar"?host:null,
-      esc:value=>String(value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;","'":"&#39;"}[ch]))},
+      esc:value=>String(value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")},
       {timeout:1000});
   return host.innerHTML;
 }
