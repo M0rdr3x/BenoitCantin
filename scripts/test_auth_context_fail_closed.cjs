@@ -27,7 +27,7 @@ function storage(seed) {
 function runKeyTests(source, keyFnName, nextName) {
   const code = section(source, 'function randomDeviceKey(){', '\nfunction '+nextName+'(){');
   const sandbox = {Uint8Array, Date, localStorage:storage(), sessionStorage:storage()};
-  vm.runInNewContext(code + '\nglobalThis.keys = {randomDeviceKey, unusableDeviceKey, '+keyFnName+'};', sandbox, {timeout:2000});
+  vm.runInNewContext("const DEVICE_KEY_STORAGE='sinjira.security.device_key.v1';\n" + code + '\nglobalThis.keys = {randomDeviceKey, unusableDeviceKey, '+keyFnName+'};', sandbox, {timeout:2000});
   const tests = sandbox.keys;
   const exampleUuid='e765f89d-bca1-4e11-9ef7-cc9511a4af11';
 
