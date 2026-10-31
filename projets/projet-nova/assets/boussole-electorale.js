@@ -374,7 +374,9 @@
   }
 
   function configureSharing(results){
-    const pageUrl = window.location.href.split("#")[0];
+    // Partager exclusivement la page publique : jamais les paramètres d'URL
+    // (ex. tokens temporaires, identifiants de session ou codes de suivi).
+    const pageUrl = new URL(window.location.pathname, window.location.origin).href;
     const compact = buildResultText(results,true);
     const full = buildResultText(results,false);
     const subject = "Mon résultat — Boussole électorale Nova";
