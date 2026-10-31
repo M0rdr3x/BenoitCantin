@@ -31,6 +31,30 @@ on:
       - 'assets/css/home-v24-4-12.css'
       - '.github/workflows/release-security-allowlist.yml'
       - '.github/workflows/nova-web-public-staging.yml'
+  pull_request:
+    branches: [a1/web-release-transparency]
+    paths:
+      - 'projets/projet-nova/**'
+      - 'tests/test_nova_compass_scores.cjs'
+      - 'tests/test_nova_survey_privacy.cjs'
+      - 'tests/test_nova_public_results.cjs'
+      - 'tests/test_nova_release_gates.cjs'
+      - 'tests/e2e/test_nova_*'
+      - 'tests/e2e/nova_network_stall_helpers.py'
+      - 'scripts/build_netlify_public.py'
+      - 'scripts/validate_nova_*'
+      - 'scripts/validate_web_release_http.py'
+      - 'scripts/test_service_worker_privacy_runtime.mjs'
+      - 'scripts/test_nova_navigation_runtime.mjs'
+      - 'assets/css/home-v24-4-12.css'
+      - 'index.html'
+      - 'netlify.toml'
+      - 'sw.js'
+      - '.github/workflows/nova-web-public-staging.yml'
+      - '.github/workflows/release-security-allowlist.yml'
+      - '.github/workflows/deploy-netlify-staging.yml'
+      - '.github/workflows/validate-netlify-preview.yml'
+      - '.github/workflows/validate-netlify-pre-dns.yml'
   workflow_dispatch:
 
 permissions:
@@ -43,6 +67,7 @@ concurrency:
 jobs:
   score-contract:
     name: Nova — contrats JS et en-têtes de confidentialité
+    if: github.event_name != 'pull_request' || (github.event.pull_request.head.ref == 'staging/nova-public-40-64-boussole-2026-10-26' && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
@@ -66,6 +91,7 @@ jobs:
 
   civic-preview:
     name: Nova — parcours Web candidat ${{ matrix.browser }}
+    if: github.event_name != 'pull_request' || (github.event.pull_request.head.ref == 'staging/nova-public-40-64-boussole-2026-10-26' && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-24.04
     container:
       image: mcr.microsoft.com/playwright/python:v1.61.0-noble@sha256:a9731514f24121d1dcd25d58d0a38146646d290a5998fd80d3e533e7b5e21c69
@@ -145,6 +171,7 @@ jobs:
 
   isolate-and-audit:
     name: Construire deux paquets Nova sans déployer
+    if: github.event_name != 'pull_request' || (github.event.pull_request.head.ref == 'staging/nova-public-40-64-boussole-2026-10-26' && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
