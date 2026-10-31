@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr-CA">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Résultats publics et méthode | Sondages Projet Nova</title>
+<meta name="description" content="Consultez le statut des sondages Nova, les questions, la méthode et, lorsqu'ils seront disponibles, des résultats collectifs sans identité individuelle.">
+<link rel="canonical" href="https://www.benoitcantin.com/projets/projet-nova/resultats-sondages.html">
+<link rel="stylesheet" href="styles.css?v=26"><link rel="stylesheet" href="assets/sondage.css?v=20261028-mobile320">
+<script defer src="assets/resultats-sondages.js?v=20261025-bounded"></script>
+</head>
+<body class="nova-survey-results-page">
+<a class="skip-link" href="#contenu">Aller au contenu</a>
+<header class="site-header"><div class="container"><p><a href="index.html">← Projet Nova</a></p><h1>Résultats publics des sondages</h1>
+<p>Opinions collectives, méthode accessible à tous et aucune réponse individuelle publiée.</p></div></header>
+<main id="contenu" class="container nova-survey-shell nova-results-shell">
+<section class="content-card nova-survey-card" aria-labelledby="results-heading">
+<h2 id="results-heading">Ce que les participants pensent</h2>
+<p class="nova-results-principle">Les résultats seront présentés par question, sous forme de <strong>totaux et pourcentages agrégés</strong>. Aucun nom, compte, adresse IP, identifiant, choix individuel ou historique d'une personne ne sera affiché.</p>
+<p><strong>Important :</strong> il s'agit de consultations volontaires, non représentatives; le questionnaire de 40 questions ne constitue pas un référendum officiel. Aucun sondage n'a encore été ouvert à la collecte.</p>
+<p id="results-state" class="nova-results-state" role="status" aria-live="polite">Vérification de l'état des résultats publics…</p>
+<p><button type="button" id="results-retry" class="btn btn-outline" hidden aria-controls="results-question-list">Réessayer le chargement des résultats publics</button></p>
+<nav class="nova-results-nav" aria-label="Choisir le questionnaire">
+<button type="button" id="results-show-40" aria-pressed="true">Référendaire consultatif · 40 questions</button>
+<button type="button" id="results-show-64" aria-pressed="false">Citoyen · 64 propositions</button>
+</nav>
+<h3 id="results-survey-title">Questions et résultats</h3>
+<p id="results-explainer">Les questions seront affichées avec l'état de publication de chaque résultat.</p>
+<ol id="results-question-list" class="nova-results-list" aria-label="Résultats par question"></ol>
+</section>
+<section class="content-card nova-survey-card" aria-labelledby="results-method-title">
+<h2 id="results-method-title">Transparence et limitation des risques de réidentification</h2>
+<p>Le registre public doit permettre de vérifier les formulations exactes, le nombre de réponses admissibles, les choix possibles, la date de publication et les règles de calcul. Les pourcentages, lorsqu'ils seront publiés, auront pour dénominateur le nombre de réponses admissibles à chaque question, y compris « Sans opinion ».</p>
+<ul>
+<li><strong>Seuil collectif :</strong> aucun résultat chiffré n'est publié avant au moins 30 participants admissibles pour un questionnaire.</li>
+<li><strong>Petits groupes :</strong> si une modalité a entre 1 et 9 réponses, seule la répartition de cette question est remplacée par « répartition masquée ». Aucun total de cette question ni pourcentage n'est affiché, pour éviter une déduction par soustraction.</li>
+<li><strong>Aucune identité :</strong> aucune liste de votants, aucun profil, aucune réponse individuelle, aucun segment démographique ou chronologique n'est publié.</li>
+<li><strong>Protection contre les déductions :</strong> les mises à jour publiques ne seront pas effectuées vote par vote. Chaque nouvelle version d'un agrégat devra être examinée avec les versions précédentes, car la comparaison de deux bilans peut révéler de petits groupes malgré les seuils.</li>
+<li><strong>Erreur de vérification :</strong> si les questions ou les données publiées sont incomplètes, modifiées ou indisponibles, aucun chiffre ne sera affiché et un message d'indisponibilité sera présenté.</li>
+<li><strong>Pas de chiffres fictifs :</strong> tant que la collecte est fermée ou qu'un bilan n'a pas été validé, l'interface indique « Aucun résultat publié ».</li>
+<li><strong>Collecte future :</strong> les réponses seraient envoyées à un service avec une session de compte authentifiée avant agrégation. Le fait de ne publier aucun identifiant ne rend pas la transmission anonyme; les risques de rapprochement et les journaux doivent être contrôlés avant toute ouverture.</li>
+<li><strong>Limite :</strong> ces règles réduisent les risques de réidentification mais ne garantissent pas un anonymat absolu. Le dispositif de collecte et de retrait doit être évalué avant toute ouverture.</li>
+</ul>
+<p><a href="confidentialite.html#nova-sondages-confidentialite">Confidentialité des consultations</a> · <a href="consultation-40.html">Voir les 40 questions</a> · <a href="sondage.html">Voir les 64 propositions</a> · <a href="index.html#consultations">Retour aux sondages</a></p>
+</section>
+</main>
+<footer class="footer"><div class="container"><p>Projet Nova — résultats consultatifs, non officiels et non représentatifs. Aucune donnée personnelle publique.</p></div></footer>
+</body></html>

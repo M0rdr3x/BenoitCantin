@@ -2,9 +2,84 @@
   "use strict";
 
   const DATA_URL = "data/boussole-electorale-v2.json";
+  const APPROVED_COMPASS_SHA256 = "5d65a6067142fbba59a81edeaac49dc1befd82aa281c6e11e2f2509a1aee9109";
+  // Une connexion silencieusement bloquée doit aboutir à un bouton Réessayer,
+  // au lieu de maintenir indéfiniment l'interface sur « Chargement… ».
+  async function fetchLimitedBytes(url,maxBytes){
+    const controller=new AbortController();
+    const timeoutId=setTimeout(()=>controller.abort(),20000);
+    try{
+      const response=await fetch(url,{cache:"no-store",credentials:"omit",signal:controller.signal});
+      if(!response.ok) throw new Error("CORPUS_HTTP");
+      const declared=response.headers.get("content-length");
+      if(declared && (!/^[0-9]+$/.test(declared) || Number(declared)>maxBytes)){
+        throw new Error("CORPUS_SIZE");
+      }
+      // Ne jamais allouer un corps de taille arbitraire : interrompre la
+      // lecture en continu dès que la borne est atteinte, même sans en-tête.
+      if(!response.body?.getReader) throw new Error("CORPUS_STREAM");
+      const reader=response.body.getReader();
+      const chunks=[];
+      let total=0;
+      try{
+        for(;;){
+          const {done,value}=await reader.read();
+          if(done) break;
+          if(!ArrayBuffer.isView(value) || value.BYTES_PER_ELEMENT!==1){
+            throw new Error("CORPUS_STREAM");
+          }
+          total+=value.byteLength;
+          if(total>maxBytes){
+            controller.abort();
+            throw new Error("CORPUS_SIZE");
+          }
+          chunks.push(value);
+        }
+      }finally{
+        reader.releaseLock();
+      }
+      if(!total) throw new Error("CORPUS_SIZE");
+      const bytes=new Uint8Array(total);
+      let offset=0;
+      for(const part of chunks){
+        bytes.set(part,offset);
+        offset+=part.byteLength;
+      }
+      return bytes.buffer;
+    }finally{
+      clearTimeout(timeoutId);
+    }
+  }
+  async function fetchApprovedQuestionCorpus(){
+    if(!globalThis.crypto?.subtle) throw new Error("CORPUS_UNAVAILABLE");
+    const bytes=await fetchLimitedBytes(DATA_URL,65536);
+    const digest=await globalThis.crypto.subtle.digest("SHA-256",bytes);
+    const actual=Array.from(new Uint8Array(digest),
+      byte=>byte.toString(16).padStart(2,"0")).join("");
+    if(actual!==APPROVED_COMPASS_SHA256) throw new Error("CORPUS_INTEGRITY");
+    return JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(bytes));
+  }
   const PARTY_DATA_URL = "data/boussole-partis-2026.json";
   const PARTY_SOURCE_DATA_URL = "data/boussole-sources-partis-2026.json";
   const EVIDENCE_DATA_URL = "data/boussole-preuves-2026.json";
+  // Refuser les positions documentaires modifiées en cache/CDN, même lorsque
+  // les questions de la Boussole restent identiques.
+  const APPROVED_DOCUMENTARY_SHA256 = Object.freeze({
+    [PARTY_DATA_URL]: "69ca01c66e54586a809a151fb73ff383aeb6bf80dccab8036eba365d9d4e8784",
+    [PARTY_SOURCE_DATA_URL]: "2b3b226cc02375f51458dcd24588346b2574338ea91b592d8414926ce010113a",
+    [EVIDENCE_DATA_URL]: "09503ddd60aaed5f3aa6e03058d218a83f80361556f8e6431211ee84ac08ad79"
+  });
+  async function fetchApprovedDocumentary(url){
+    const approved=APPROVED_DOCUMENTARY_SHA256[url];
+    if(!approved || !globalThis.crypto?.subtle) throw new Error("DOCUMENTARY_UNAVAILABLE");
+    const maxBytes=url===EVIDENCE_DATA_URL ? 524288 : 65536;
+    const bytes=await fetchLimitedBytes(url,maxBytes);
+    const digest=await globalThis.crypto.subtle.digest("SHA-256",bytes);
+    const observed=Array.from(new Uint8Array(digest),
+      value=>value.toString(16).padStart(2,"0")).join("");
+    if(observed!==approved) throw new Error("DOCUMENTARY_INTEGRITY");
+    return JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(bytes));
+  }
   const RESPONSES = [
     {value:-3,label:"Tout à fait en désaccord"},
     {value:-2,label:"En désaccord"},
@@ -176,6 +251,7 @@
 
   function calculate(){
     const weightMap = state.data.methodology?.importanceWeights || {faible:0.5,normal:1,forte:1.5};
+    const axisMin = Number(state.data.methodology?.axisMinimumAnswered) || 2;
     const axes = new Map(state.data.axes.map(axis => [axis.id, {
       axis, sum:0, max:0, primaryAnswered:0, primaryTotal:0, evidenceWeight:0
     }]));
@@ -206,7 +282,8 @@
 
     return Array.from(axes.values()).map(bucket => ({
       ...bucket.axis,
-      score: bucket.max ? Math.round((bucket.sum / bucket.max) * 100) : null,
+      score: bucket.max && bucket.primaryAnswered >= axisMin
+        ? Math.round((bucket.sum / bucket.max) * 100) : null,
       answered: bucket.primaryAnswered,
       total: bucket.primaryTotal,
       coverage: bucket.primaryTotal ? Math.round(bucket.primaryAnswered / bucket.primaryTotal * 100) : 0,
@@ -297,7 +374,11 @@
   }
 
   function configureSharing(results){
-    const pageUrl = window.location.href.split("#")[0];
+    // Partager exclusivement la page publique : jamais les paramètres d'URL
+    // (ex. tokens temporaires, identifiants de session ou codes de suivi).
+    // Ne pas reparcourir pathname comme une URL relative : //domaine-tiers
+    // serait alors interprété comme une nouvelle origine (URL network-path).
+    const pageUrl = window.location.origin + window.location.pathname;
     const compact = buildResultText(results,true);
     const full = buildResultText(results,false);
     const subject = "Mon résultat — Boussole électorale Nova";
@@ -331,7 +412,8 @@
       linkedin.href = `${base}?url=${encodeURIComponent(pageUrl)}`;
     }
 
-    $("#compass-share-native")?.addEventListener("click", async () => {
+    const nativeButton = $("#compass-share-native");
+    if(nativeButton) nativeButton.onclick = async () => {
       if(navigator.share){
         try{
           await navigator.share({title:subject,text:compact,url:pageUrl});
@@ -340,21 +422,26 @@
           if(error?.name !== "AbortError") $("#compass-status").textContent = "Le partage n’a pas pu être ouvert. Vous pouvez copier le résumé.";
         }
       }else{
-        await copyText(compact + "\n" + pageUrl);
-        $("#compass-status").textContent = "Le partage natif n’est pas disponible; le résumé a été copié.";
+        const copied = await copyText(compact + "\n" + pageUrl);
+        $("#compass-status").textContent = copied
+          ? "Le partage natif n’est pas disponible; le résumé a été copié."
+          : "Le partage natif et la copie sont indisponibles. Utilisez le courriel.";
       }
-    }, {once:true});
+    };
 
-    $("#compass-copy-result")?.addEventListener("click", async () => {
-      await copyText(full + "\n\n" + pageUrl);
-      $("#compass-status").textContent = "Résumé copié dans le presse-papiers.";
-    }, {once:true});
+    const copyButton = $("#compass-copy-result");
+    if(copyButton) copyButton.onclick = async () => {
+      const copied = await copyText(full + "\n\n" + pageUrl);
+      $("#compass-status").textContent = copied
+        ? "Résumé copié dans le presse-papiers."
+        : "Copie non autorisée ou indisponible. Utilisez le courriel.";
+    };
   }
 
   async function copyText(text){
     if(navigator.clipboard?.writeText){
-      await navigator.clipboard.writeText(text);
-      return;
+      try{ await navigator.clipboard.writeText(text); return true; }
+      catch{ /* Repli manuel, sans transmettre le résultat. */ }
     }
     const area = document.createElement("textarea");
     area.value = text;
@@ -362,9 +449,11 @@
     area.style.position = "fixed";
     area.style.opacity = "0";
     document.body.appendChild(area);
-    area.select();
-    document.execCommand("copy");
-    area.remove();
+    try{
+      area.select();
+      return document.execCommand("copy") === true;
+    }catch{ return false; }
+    finally{ area.remove(); }
   }
 
   function showResults(){
@@ -395,18 +484,34 @@
     scrollToSection($("#compass-results"));
   }
 
-  function reset(){
+  function reset(focusStart=true){
     state.answers.clear();
     state.importance.clear();
     state.currentIndex = 0;
     state.started = false;
     state.results = null;
+    // Ne conserver aucune opinion ou destination de partage dans le DOM caché
+    // après réinitialisation, navigation ou restauration d'historique.
+    $("#compass-question-stage")?.replaceChildren();
+    $("#compass-results-grid")?.replaceChildren();
+    $("#compass-radar")?.replaceChildren();
+    const summary = $("#compass-summary");
+    if(summary) summary.textContent = "";
+    const recipient = $("#compass-email-recipient");
+    if(recipient) recipient.value = "";
+    const email = $("#compass-share-email");
+    if(email) email.setAttribute("href","mailto:");
+    // Réutiliser les bases déjà déclarées dans le HTML approuvé.
+    for(const id of ["compass-share-facebook","compass-share-x","compass-share-linkedin"]){
+      const link = $("#"+id);
+      if(link) link.setAttribute("href",(link.getAttribute("href") || "").split("?")[0]);
+    }
     $("#compass-results").hidden = true;
     $("#compass-stepper").hidden = true;
     $("#compass-start-panel").hidden = false;
     $("#compass-status").textContent = "Questionnaire réinitialisé. Vous pouvez recommencer quand vous voulez.";
     updateProgress();
-    $("#compass-start")?.focus();
+    if(focusStart) $("#compass-start")?.focus();
   }
 
   function renderPartyRegistry(corpus,evidenceCorpus){
@@ -732,6 +837,16 @@
       );
   }
 
+  function safeDocumentSource(raw){
+    if(typeof raw !== "string" || raw.length > 2048 ||
+       /[\u0000-\u001f\u007f\s]/.test(raw)) return false;
+    try{
+      const uri = new URL(raw);
+      return uri.protocol === "https:" && !!uri.hostname && !uri.username &&
+        !uri.password && !uri.port;
+    }catch { return false; }
+  }
+
   function validateDocumentaryCorpora(questionCorpus,partyCorpus,sourceCorpus,evidenceCorpus){
     const questions = questionCorpus?.questions;
     const parties = partyCorpus?.parties;
@@ -777,7 +892,8 @@
       const key = record.questionId+"::"+record.partyId;
       if(!matrixByKey.has(key) || validatedRecords.has(key) ||
          record.proposedStatus === "unknown" ||
-         matrixByKey.get(key) !== record.proposedStatus){
+         matrixByKey.get(key) !== record.proposedStatus ||
+         !safeDocumentSource(record.sourceUrl)) {
         throw new Error("Fiche de preuve non synchronisée avec la matrice");
       }
       validatedRecords.set(key,record);
@@ -806,17 +922,11 @@
     }
     if(status) status.textContent = "Chargement des données documentaires…";
     try{
-      const [partyResponse,sourceResponse,evidenceResponse,questionResponse] = await Promise.all([
-        fetch(PARTY_DATA_URL,{cache:"no-store"}),
-        fetch(PARTY_SOURCE_DATA_URL,{cache:"no-store"}),
-        fetch(EVIDENCE_DATA_URL,{cache:"no-store"}),
-        fetch(DATA_URL,{cache:"no-store"})
-      ]);
-      for(const response of [partyResponse,sourceResponse,evidenceResponse,questionResponse]){
-        if(!response.ok) throw new Error("HTTP " + response.status);
-      }
       const [partyCorpus,sourceCorpus,evidenceCorpus,questionCorpus] = await Promise.all([
-        partyResponse.json(),sourceResponse.json(),evidenceResponse.json(),questionResponse.json()
+        fetchApprovedDocumentary(PARTY_DATA_URL),
+        fetchApprovedDocumentary(PARTY_SOURCE_DATA_URL),
+        fetchApprovedDocumentary(EVIDENCE_DATA_URL),
+        fetchApprovedQuestionCorpus()
       ]);
       validateDocumentaryCorpora(questionCorpus,partyCorpus,sourceCorpus,evidenceCorpus);
       renderPartyRegistry(partyCorpus,evidenceCorpus);
@@ -854,9 +964,7 @@
     if(start) start.disabled = true;
     if(status) status.textContent = "Chargement du questionnaire local…";
     try{
-      const response = await fetch(DATA_URL,{cache:"no-store"});
-      if(!response.ok) throw new Error("HTTP " + response.status);
-      const corpus = await response.json();
+      const corpus = await fetchApprovedQuestionCorpus();
       if(!Array.isArray(corpus.axes) || corpus.axes.length !== 16 ||
          !Array.isArray(corpus.questions) || corpus.questions.length !== 64){
         throw new Error("Questionnaire incomplet");
@@ -886,6 +994,10 @@
     $("#compass-reset")?.addEventListener("click",reset);
     $("#compass-questionnaire-retry")?.addEventListener("click",init);
     $("#compass-evidence-retry")?.addEventListener("click",loadPoliticalRegistryAndEvidence);
+    // Page cachée ou restaurée par le cache de navigation : aucun profil
+    // politique précédent ne peut réapparaître sur un appareil partagé.
+    window.addEventListener("pagehide",()=>reset(false));
+    window.addEventListener("pageshow",event=>{ if(event.persisted) reset(false); });
     init();
     loadPoliticalRegistryAndEvidence();
   });

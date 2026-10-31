@@ -28,6 +28,32 @@ COMPASS_ASSET_PATHS = {
     "/projets/projet-nova/data/boussole-sources-partis-2026.json": "sources",
 }
 
+# Le smoke réel doit vérifier les deux sondages et les résultats, pas
+# uniquement la Boussole. Ce jeu de routes reste consultatif/collecte fermée.
+CIVIC_HTML_MARKERS = {
+    "/projets/projet-nova/consultation-40.html": (
+        'id="sondage-start"', 'id="sondage-questionnaire"', 'id="sondage-consent"'
+    ),
+    "/projets/projet-nova/sondage.html": (
+        'id="sondage-start"', 'id="sondage-questionnaire"', 'id="sondage-consent"'
+    ),
+    "/projets/projet-nova/boussole-electorale.html": (
+        "boussole-electorale.js",
+    ),
+    "/projets/projet-nova/resultats-sondages.html": (
+        'id="results-heading"', 'id="results-question-list"'
+    ),
+}
+CIVIC_RESOURCE_KINDS = {
+    "/projets/projet-nova/assets/consultation-40.js": "script-40",
+    "/projets/projet-nova/assets/sondage.js": "script-64",
+    "/projets/projet-nova/assets/resultats-sondages.js": "script-results",
+    "/projets/projet-nova/assets/sondage.css": "stylesheet",
+    "/projets/projet-nova/data/consultation-40-v1.json": "questions-40",
+    "/projets/projet-nova/data/sondage-questions-v1.json": "questions-64",
+    "/projets/projet-nova/data/resultats-sondages-publics-v1.json": "results-closed",
+}
+
 PRIVATE_RUNTIME_PATHS = (
     "/compte/",
     "/admin/",
@@ -43,6 +69,8 @@ PUBLIC_PATHS = (
     "/transparence-ia.html",
     "/projets/projet-nova/",
     *COMPASS_ASSET_PATHS,
+    *(route for route in CIVIC_HTML_MARKERS if route not in COMPASS_ASSET_PATHS),
+    *CIVIC_RESOURCE_KINDS,
     "/compte/",
     "/admin/",
     "/app/",
@@ -426,6 +454,70 @@ def validate_official_apex_redirect_response(status: int, headers: object) -> li
     return errors
 
 
+def validate_civic_headers(headers: object, path: str) -> list[str]:
+    """Aucun cache HTTP ni Referer d'opinions sur les quatre pages civiques."""
+    errors: list[str] = []
+    get = getattr(headers, "get")
+    cache = {
+        item.strip().lower()
+        for item in str(get("Cache-Control") or "").split(",")
+    }
+    if not {"private", "no-store"}.issubset(cache):
+        errors.append(f"{path}: Cache-Control private, no-store requis.")
+    if str(get("Referrer-Policy") or "").lower() != "no-referrer":
+        errors.append(f"{path}: Referrer-Policy no-referrer requis.")
+    return errors
+
+
+def validate_civic_content(path: str, headers: object, body: str) -> list[str]:
+    """Empêcher qu'une réponse HTTP 200 soit une coquille ou un fichier substitué."""
+    errors: list[str] = []
+    media_type = str(getattr(headers, "get")("Content-Type") or "").lower()
+    if path in CIVIC_HTML_MARKERS:
+        if "text/html" not in media_type:
+            errors.append(f"{path}: Content-Type HTML requis.")
+        for marker in CIVIC_HTML_MARKERS[path]:
+            if marker not in body:
+                errors.append(f"{path}: marqueur HTML absent: {marker}")
+    kind = CIVIC_RESOURCE_KINDS.get(path)
+    if not kind:
+        return errors
+    if kind.startswith("script-"):
+        if "javascript" not in media_type:
+            errors.append(f"{path}: Content-Type JavaScript requis.")
+        flags = (
+            ("const PUBLIC_AGGREGATES_ENABLED = false;",)
+            if kind == "script-results" else (
+                "const COLLECTION_OPEN = false;",
+                "const LIVE_OPINION_CONSENT_GRANTED = false;",
+            )
+        )
+        for flag in flags:
+            if flag not in body:
+                errors.append(f"{path}: verrou de collecte absent: {flag}")
+    elif kind == "stylesheet":
+        if "text/css" not in media_type:
+            errors.append(f"{path}: Content-Type CSS requis.")
+    else:
+        if "application/json" not in media_type:
+            errors.append(f"{path}: Content-Type JSON requis.")
+        try:
+            document = json.loads(body)
+        except (ValueError, TypeError):
+            return errors + [f"{path}: JSON illisible."]
+        if not isinstance(document, dict):
+            return errors + [f"{path}: objet JSON requis."]
+        if kind.startswith("questions-"):
+            expected = 40 if kind == "questions-40" else 64
+            questions = document.get("questions")
+            if not isinstance(questions, list) or len(questions) != expected:
+                errors.append(f"{path}: corpus incomplet (attendu {expected}).")
+        elif kind == "results-closed":
+            if document.get("publicationApproved") is not False or document.get("privacyReviewApproved") is not False:
+                errors.append(f"{path}: publication des réponses non approuvée.")
+    return errors
+
+
 def validate_private_headers(headers: object, path: str) -> list[str]:
     errors: list[str] = []
     get = getattr(headers, "get")
@@ -545,6 +637,17 @@ def validate_release(
         if compass_response and compass_response[0] == 200:
             errors.extend(validate_compass_asset(compass_path, compass_response[1], compass_response[2]))
 
+    for civic_path in CIVIC_HTML_MARKERS:
+        civic_response = responses.get(civic_path)
+        if civic_response and civic_response[0] == 200:
+            errors.extend(validate_civic_headers(civic_response[1], civic_path))
+            errors.extend(validate_civic_content(civic_path, civic_response[1], civic_response[2]))
+
+    for civic_path in CIVIC_RESOURCE_KINDS:
+        civic_response = responses.get(civic_path)
+        if civic_response and civic_response[0] == 200:
+            errors.extend(validate_civic_content(civic_path, civic_response[1], civic_response[2]))
+
     for private_path in PRIVATE_RUNTIME_PATHS:
         response = responses.get(private_path)
         if response:
@@ -589,13 +692,15 @@ class FixtureHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         technical = self.path in TECHNICAL_404_PATHS
         private_runtime = self.path in PRIVATE_RUNTIME_PATHS
+        civic_page = self.path in CIVIC_HTML_MARKERS
         release_metadata = self.path == RELEASE_METADATA_PATH
         self.send_response(404 if technical else 200)
         asset_kind = COMPASS_ASSET_PATHS.get(self.path)
+        civic_kind = CIVIC_RESOURCE_KINDS.get(self.path)
         content_type = (
-            "application/json" if asset_kind in {"questions", "parties", "evidence", "sources"}
-            else "text/css" if asset_kind == "stylesheet"
-            else "application/javascript" if asset_kind == "javascript"
+            "application/json" if civic_kind in {"questions-40", "questions-64", "results-closed"} or asset_kind in {"questions", "parties", "evidence", "sources"}
+            else "text/css" if asset_kind == "stylesheet" or civic_kind == "stylesheet"
+            else "application/javascript" if asset_kind == "javascript" or (civic_kind or "").startswith("script-")
             else "text/html; charset=utf-8"
         )
         self.send_header("Content-Type", content_type)
@@ -604,7 +709,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
         self.send_header("X-Permitted-Cross-Domain-Policies", "none")
         self.send_header("Cross-Origin-Opener-Policy", "same-origin-allow-popups")
         self.send_header("X-Frame-Options", "SAMEORIGIN")
-        self.send_header("Referrer-Policy", "no-referrer" if private_runtime else "strict-origin-when-cross-origin")
+        self.send_header("Referrer-Policy", "no-referrer" if private_runtime or civic_page else "strict-origin-when-cross-origin")
         if private_runtime:
             self.send_header("Pragma", "no-cache")
         self.send_header(
@@ -625,8 +730,11 @@ class FixtureHandler(BaseHTTPRequestHandler):
             "form-action 'self' https://formspree.io; "
             "frame-ancestors 'self'; object-src 'self'; base-uri 'self'",
         )
-        if private_runtime or release_metadata:
-            self.send_header("Cache-Control", "no-store")
+        if private_runtime or release_metadata or civic_page:
+            self.send_header(
+                "Cache-Control",
+                "private, no-store, max-age=0" if civic_page else "no-store",
+            )
         if getattr(self.server, "preview", False) or private_runtime or release_metadata:
             self.send_header("X-Robots-Tag", "noindex, nofollow, noarchive")
         self.end_headers()
@@ -668,6 +776,25 @@ class FixtureHandler(BaseHTTPRequestHandler):
                         "evidenceRecords": [{"source": "official"}],
                     })
                 body = json.dumps(data, ensure_ascii=False)
+        elif self.path in CIVIC_HTML_MARKERS:
+            if self.path.endswith("consultation-40.html") or self.path.endswith("sondage.html"):
+                body = '<html><div id="sondage-start"></div><div id="sondage-questionnaire"></div><div id="sondage-consent"></div></html>'
+            else:
+                body = '<html><div id="results-heading"></div><div id="results-question-list"></div></html>'
+        elif self.path in CIVIC_RESOURCE_KINDS:
+            if civic_kind.startswith("script-"):
+                body = (
+                    "const PUBLIC_AGGREGATES_ENABLED = false;"
+                    if civic_kind == "script-results"
+                    else "const COLLECTION_OPEN = false; const LIVE_OPINION_CONSENT_GRANTED = false;"
+                )
+            elif civic_kind == "stylesheet":
+                body = ".sondage{display:block}"
+            elif civic_kind.startswith("questions-"):
+                quantity = 40 if civic_kind == "questions-40" else 64
+                body = json.dumps({"questions": [{"id": f"q{i+1}"} for i in range(quantity)]})
+            else:
+                body = json.dumps({"publicationApproved": False, "privacyReviewApproved": False})
         elif self.path == "/assistant.html":
             body = "<html><body>Assistant Nova</body></html>"
         elif self.path == "/transparence-ia.html":
@@ -831,6 +958,24 @@ def self_test() -> None:
     unknown_hosting_errors = validate_netlify_hosting_headers({})
     if not any("signature Netlify absente" in error for error in unknown_hosting_errors):
         raise SystemExit("ERREUR auto-test smoke HTTP: absence de signature Netlify non détectée.")
+
+    for route in CIVIC_HTML_MARKERS:
+        valid = validate_civic_headers(
+            {"Cache-Control": "private, no-store, max-age=0",
+             "Referrer-Policy": "no-referrer"}, route
+        )
+        if valid:
+            raise SystemExit("ERREUR auto-test civique: en-têtes légitimes refusés.")
+        for unsafe in (
+            {"Cache-Control": "public, max-age=300", "Referrer-Policy": "no-referrer"},
+            {"Cache-Control": "private, no-store", "Referrer-Policy": "unsafe-url"},
+        ):
+            if not validate_civic_headers(unsafe, route):
+                raise SystemExit("ERREUR auto-test civique: cache ou Referer dangereux accepté.")
+
+    for path in CIVIC_RESOURCE_KINDS:
+        if not validate_civic_content(path, {"Content-Type": "text/html"}, "placeholder"):
+            raise SystemExit("ERREUR auto-test civique: ressource substituée acceptée.")
 
     private_broken = validate_private_headers(
         {"X-Robots-Tag": "noindex"},

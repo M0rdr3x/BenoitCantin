@@ -22,7 +22,7 @@ concurrency:
 jobs:
   gate:
     name: Gate Netlify pré-DNS combiné
-    if: startsWith(github.ref, 'refs/heads/a1/web-release-')
+    if: startsWith(github.ref, 'refs/heads/a1/web-release-') || github.ref == 'refs/heads/staging/nova-public-40-64-boussole-2026-10-26'
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     env:
