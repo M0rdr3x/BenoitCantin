@@ -5,6 +5,7 @@ import argparse
 import json
 import hashlib
 import os
+import re
 import shutil
 import tempfile
 import tomllib
@@ -394,6 +395,69 @@ def release_metadata(deploy_context: str | None) -> dict[str, object] | None:
         "source_sha": source_sha,
         "context": "preview" if context == DEPLOY_PREVIEW_CONTEXT else "production",
     }
+
+
+# Analyse des fichiers de données explicitement publics : les réponses
+# individuelles ne doivent jamais se retrouver dans un JSON public par erreur.
+# Rapport non sensible : seul le chemin et le type d'écart sont imprimés.
+NOVA_PRIVATE_DATA_KEYS = frozenset({
+    "email", "e_mail", "mail", "phone", "telephone", "mobile",
+    "user_id", "voter_id", "person_id", "respondent_id", "respondent",
+    "votant_id", "participant_id", "ip", "ip_address", "date_of_birth",
+    "adresse", "address", "password", "mot_de_passe", "secret",
+    "access_token", "refresh_token", "auth_token", "jwt", "session_id",
+    "ballot", "vote", "votes", "choice", "choix", "reponses",
+    "responses", "raw_responses",
+})
+NOVA_PUBLIC_JSON_MAX_BYTES = 1_500_000
+NOVA_PUBLIC_JSON_MAX_NODES = 50_000
+NOVA_PUBLIC_JSON_MAX_DEPTH = 32
+NOVA_EMAIL_PATTERN = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}")
+
+
+def public_data_payload_violations(data: object) -> list[str]:
+    errors: list[str] = []
+    stack = [(data, 0)]
+    visited = 0
+    while stack:
+        node, depth = stack.pop()
+        visited += 1
+        if visited > NOVA_PUBLIC_JSON_MAX_NODES or depth > NOVA_PUBLIC_JSON_MAX_DEPTH:
+            errors.append("données publiques hors limite de structure")
+            break
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if not isinstance(key, str):
+                    errors.append("clé de données publiques non textuelle")
+                    continue
+                if key.casefold() in NOVA_PRIVATE_DATA_KEYS:
+                    errors.append("clé de donnée individuelle interdite")
+                stack.append((value, depth + 1))
+        elif isinstance(node, list):
+            stack.extend((value, depth + 1) for value in node)
+        elif isinstance(node, str) and NOVA_EMAIL_PATTERN.search(node):
+            errors.append("adresse courriel dans une donnée publique")
+    return sorted(set(errors))
+
+
+def public_data_json_errors(root: Path = ROOT) -> list[str]:
+    errors: list[str] = []
+    for rel in sorted(PROJECT_NOVA_PUBLIC_DATA_JSON):
+        file = root / rel
+        if not file.is_file():
+            errors.append(f"JSON public approuvé absent: {rel.as_posix()}")
+            continue
+        try:
+            if file.stat().st_size > NOVA_PUBLIC_JSON_MAX_BYTES:
+                errors.append(f"JSON public trop volumineux: {rel.as_posix()}")
+                continue
+            data = json.loads(file.read_text(encoding="utf-8", errors="strict"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as error:
+            errors.append(f"JSON public illisible: {rel.as_posix()} ({type(error).__name__})")
+            continue
+        for violation in public_data_payload_violations(data):
+            errors.append(f"JSON public non conforme: {rel.as_posix()} ({violation})")
+    return errors
 
 
 def project_nova_structured_allowed(rel: Path) -> bool:
@@ -917,6 +981,21 @@ def self_test_public_filesystem_boundary() -> list[str]:
     """Fixtures autonomes : fuite symlink, dotfiles, secrets et sortie sûre."""
     errors: list[str] = []
 
+    # Tester aussi la confidentialité des données publiques sans données réelles.
+    safe_payload = {"version": "2", "questions": [{"responseScale": ["oui", "non"]}]}
+    if public_data_payload_violations(safe_payload):
+        errors.append("Auto-test JSON: questionnaire public légitime refusé")
+    forbidden_payloads = (
+        {"entries": [{"email": "essai@example.org"}]},
+        {"entries": [{"user_id": "exemple", "choix": "oui"}]},
+        {"entries": [{"vote": "choix-A"}]},
+        {"source": "contact@exemple.org"},
+        {"nested": {"responses": [{"anonymous": False}]}},
+    )
+    for index, fixture in enumerate(forbidden_payloads, 1):
+        if not public_data_payload_violations(fixture):
+            errors.append(f"Auto-test JSON: divulgation synthétique non refusée #{index}")
+
     rejected = (
         "projets/projet-nova/.gitignore",
         "projets/projet-nova/data/sondage-reponses.json",
@@ -1019,6 +1098,7 @@ def validate_plan() -> list[str]:
     errors.extend(validate_vercel_config())
     errors.extend(validate_netlify_staging_workflow())
     errors.extend(public_symlink_errors())
+    errors.extend(public_data_json_errors())
 
     robots_path = ROOT / "robots.txt"
     if not robots_path.is_file():
