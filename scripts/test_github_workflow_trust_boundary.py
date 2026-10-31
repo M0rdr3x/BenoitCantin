@@ -163,13 +163,13 @@ class WorkflowTrustBoundaryTests(unittest.TestCase):
     def test_pages_refuses_executing_code_under_deploy_token(self):
         self.assertTrue(violations("deploy-github-pages-isolated.yml",
             PAGES_SAFE.replace("    environment:",
-                               "    steps:\\n      - run: curl https://example.invalid\\n    environment:")))
+                               "    steps:\n      - run: curl https://example.invalid\n    environment:")))
         self.assertTrue(violations("deploy-github-pages-isolated.yml",
             PAGES_SAFE.replace("    needs: build", "    needs: other")))
 
     def test_pages_refuses_extra_oidc_and_unpinned_deploy_action(self):
         self.assertTrue(violations("deploy-github-pages-isolated.yml",
-            PAGES_SAFE.replace("      id-token: write", "      id-token: write\\n      id-token: write")))
+            PAGES_SAFE.replace("      id-token: write", "      id-token: write\n      id-token: write")))
         self.assertTrue(violations("deploy-github-pages-isolated.yml",
             PAGES_SAFE.replace("actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346",
                                "actions/deploy-pages@v4")))
