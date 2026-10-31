@@ -65,6 +65,13 @@ BEGIN
     IF SQLERRM NOT LIKE '%INVALID_SURVEY_ANSWERS%' THEN RAISE; END IF;
   END;
   BEGIN
+    PERFORM public.nova_consultation40_submit_v1('nova-orientations-40-v1',pg_catalog.repeat('b',64),
+      pg_catalog.jsonb_set(a40,'{q15}','null'::jsonb));
+    RAISE EXCEPTION 'JSON_NULL_40_ACCEPTED';
+  EXCEPTION WHEN invalid_parameter_value THEN
+    IF SQLERRM NOT LIKE '%INVALID_SURVEY_ANSWERS%' THEN RAISE; END IF;
+  END;
+  BEGIN
     PERFORM public.nova_consultation40_submit_v1('wrong-version',pg_catalog.repeat('b',64),a40);
     RAISE EXCEPTION 'WRONG_VERSION_40_ACCEPTED';
   EXCEPTION WHEN invalid_parameter_value THEN
@@ -89,6 +96,21 @@ BEGIN
     PERFORM public.nova_survey_submit_v1('nova-consultation-64-v1',pg_catalog.repeat('b',64),
       pg_catalog.jsonb_set(a64,'{q08}','"invalid"'::jsonb));
     RAISE EXCEPTION 'BAD_VALUE_64_ACCEPTED';
+  EXCEPTION WHEN invalid_parameter_value THEN
+    IF SQLERRM NOT LIKE '%INVALID_SURVEY_ANSWERS%' THEN RAISE; END IF;
+  END;
+  -- La représentation JSON compte : 1 (nombre) n'est pas « 1 » (texte).
+  BEGIN
+    PERFORM public.nova_survey_submit_v1('nova-consultation-64-v1',pg_catalog.repeat('b',64),
+      pg_catalog.jsonb_set(a64,'{q08}','1'::jsonb));
+    RAISE EXCEPTION 'JSON_NUMBER_64_ACCEPTED';
+  EXCEPTION WHEN invalid_parameter_value THEN
+    IF SQLERRM NOT LIKE '%INVALID_SURVEY_ANSWERS%' THEN RAISE; END IF;
+  END;
+  BEGIN
+    PERFORM public.nova_survey_submit_v1('nova-consultation-64-v1',pg_catalog.repeat('b',64),
+      pg_catalog.jsonb_set(a64,'{q08}','null'::jsonb));
+    RAISE EXCEPTION 'JSON_NULL_64_ACCEPTED';
   EXCEPTION WHEN invalid_parameter_value THEN
     IF SQLERRM NOT LIKE '%INVALID_SURVEY_ANSWERS%' THEN RAISE; END IF;
   END;
