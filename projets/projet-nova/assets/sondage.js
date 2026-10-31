@@ -219,8 +219,8 @@
       const { data: profile, error: authError } = await client.auth.getUser();
       // L'accord peut être retiré pendant l'attente asynchrone d'authentification.
       if (submissionConsentEpoch !== consentEpoch || !eligible()) return;
-      if (authError || !profile?.user) {
-        setStatus('Connectez-vous à votre compte avant de transmettre votre participation.',
+      if (authError || !profile?.user || profile.user.is_anonymous !== false) {
+        setStatus('Un compte permanent connecté est nécessaire : les comptes anonymes ou temporaires ne peuvent pas participer.',
           'sondage-submit-status');
         return;
       }
@@ -238,6 +238,9 @@
           recorded = true;
           clearRecordedOpinions();
           setStatus('Une participation est déjà enregistrée pour ce compte. Aucun doublon ajouté.',
+            'sondage-submit-status');
+        } else if (code === 'PERMANENT_ACCOUNT_REQUIRED') {
+          setStatus('Un compte permanent connecté est nécessaire; les comptes temporaires ne peuvent pas participer.',
             'sondage-submit-status');
         } else if (code === 'COLLECTION_NOT_ENABLED') {
           setStatus('La collecte n’est pas encore ouverte. Rien n’a été enregistré.',

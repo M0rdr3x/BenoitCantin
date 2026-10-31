@@ -254,8 +254,8 @@
         const { data:auth, error:authError } = await client.auth.getUser();
         // Ne jamais envoyer une opinion si l'accord a été retiré pendant l'attente.
         if (submissionConsentEpoch !== consentEpoch || !eligible()) return;
-        if (authError || !auth?.user) {
-          $('sondage-submit-status').textContent = 'Un compte connecté est nécessaire.';
+        if (authError || !auth?.user || auth.user.is_anonymous !== false) {
+          $('sondage-submit-status').textContent = 'Un compte permanent connecté est nécessaire; les comptes anonymes ne peuvent pas participer.';
           return;
         }
         const { data, error } = await client.functions.invoke('nova-consultation40-submit', { body:payload });
@@ -272,6 +272,8 @@
             recorded = true;
             clearRecordedOpinions();
             $('sondage-submit-status').textContent = 'Une participation existe déjà pour ce compte.';
+          } else if (code === 'PERMANENT_ACCOUNT_REQUIRED') {
+            $('sondage-submit-status').textContent = 'Un compte permanent connecté est nécessaire; les comptes temporaires sont refusés.';
           } else {
             $('sondage-submit-status').textContent = 'Enregistrement non confirmé. Aucun résultat affiché.';
           }

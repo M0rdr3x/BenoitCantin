@@ -245,7 +245,7 @@ function liveSubmissionFixture(spec) {
     state,nodes,submit,
     get authRequested(){return authRequested;},
     get requests(){return requests;},
-    resolveAuth:()=>resolveAuth({data:{user:{id:"compte-fictif"}},error:null}),
+    resolveAuth:(user={id:"compte-fictif",is_anonymous:false})=>resolveAuth({data:{user},error:null}),
     resolveInvoke:()=>resolveInvoke({
       data:{ok:true,code:"RECORDED",survey:state.SURVEY_ID},error:null
     }),
@@ -385,3 +385,38 @@ test("avis et page des résultats : pas de promesse d'anonymat de la transmissio
   assert.match(results, /Le fait de ne publier aucun identifiant ne rend pas la transmission anonyme/);
   assert.match(results, /Aucun sondage n'a encore été ouvert à la collecte/);
 });
+
+
+// Les comptes anonymes Supabase possèdent eux aussi une session « authenticated ».
+// Les handlers réels doivent refuser avant l'appel à functions.invoke.
+for(const spec of cases) {
+  test(spec.id+" : compte anonyme ne déclenche aucun POST en mode futur simulé",async()=>{
+    const f=liveSubmissionFixture(spec);
+    const done=f.submit();
+    await awaitMicrotaskCondition(()=>f.authRequested===1);
+    f.resolveAuth({id:"compte-anonyme-fictif",is_anonymous:true});
+    await done;
+    assert.equal(f.requests,0);
+    assert.equal(f.state.recorded,false);
+    assert.equal(f.state.submitting,false);
+    assert.match(f.nodes["sondage-submit-status"].textContent,/compte permanent connecté/i);
+  });
+  test(spec.id+" : statut Auth inconnu refuse la collecte",async()=>{
+    const f=liveSubmissionFixture(spec);
+    const done=f.submit();
+    await awaitMicrotaskCondition(()=>f.authRequested===1);
+    f.resolveAuth({id:"compte-sans-statut-fictif"});
+    await done;
+    assert.equal(f.requests,0);
+    assert.equal(f.state.recorded,false);
+    assert.match(f.nodes["sondage-submit-status"].textContent,/compte permanent connecté/i);
+  });
+  test(spec.id+" : information publique sur la limite d'un compte",()=>{
+    const html=fs.readFileSync(path.join(nova,
+      spec.count===40?"consultation-40.html":"sondage.html"),"utf8");
+    assert.match(html,/compte permanent connecté/);
+    assert.match(html,/Les comptes anonymes Supabase et les sessions temporaires seront refusés/);
+    assert.match(html,/ne prouve pas qu’une personne ne possède qu’un seul compte/);
+    assert.match(html,/La collecte est actuellement fermée/);
+  });
+}
