@@ -20,7 +20,6 @@ REQUIRED = {
 }
 
 FORBIDDEN = {
-    'message d’exception brut': 'error.message',
     'conversion brute de l’erreur': 'String(error)',
     'sérialisation brute de l’erreur': 'JSON.stringify(error)',
     'objet erreur brut journalisé': "console.error('[life-story-delivery]', error)",
@@ -44,6 +43,15 @@ def validate(path: Path) -> list[str]:
     for label, marker in FORBIDDEN.items():
         if marker.lower() in lowered:
             errors.append(f'Garde life-story-delivery violé: {label}.')
+
+    # Seules deux comparaisons à codes fixes sont permises ; aucun détail
+    # d'exception ne doit être renvoyé ou inscrit dans un journal.
+    import re
+    for match in re.finditer(r'\berror\.message\b', source):
+        if not re.match(r"\s*===\s*'(?:REQUEST_TIMEOUT|REQUEST_TOO_LARGE)'",
+                        source[match.end():]):
+            errors.append('Garde life-story-delivery violé: message d’exception brut.')
+            break
 
     delivery_logs = [
         line.strip()
@@ -115,6 +123,10 @@ Deno.serve(async (req) => {
             'code fixe retiré': safe.replace(FIXED_LOG, "console.error('[life-story-delivery]');"),
             'réponse 500 retirée': safe.replace('return errorResponse(req, 500);', 'return errorResponse(req, 400);'),
             'no-store retiré': safe.replace("  'Cache-Control': 'private, no-store, max-age=0',\n", ''),
+            'exception non reconnue transmise': safe.replace(
+                'return errorResponse(req, 500);',
+                'return new Response(error.message);'),
+
         }
 
         for label, mutated in mutations.items():

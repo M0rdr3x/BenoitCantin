@@ -1,0 +1,183 @@
+name: SINJIRA — catalogues Romans Jeux Logiciels
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    # Aucun paths : un module JS/CSS partagé ou une image peut modifier les catalogues.
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-catalogues-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Contrôler les trois catalogues et les routes publiques
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout sans persister les permissions GitHub
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Prouver que la CI des catalogues se déclenche sur tout changement PR
+        run: |
+          python3 scripts/validate_sinjira_catalogues_workflow.py --self-test
+          python3 scripts/validate_sinjira_catalogues_workflow.py
+      - name: Tester les limites des requêtes des sondages Nova, sans réseau
+        run: node --test tests/test_nova_survey_body.mjs
+      - name: Vérifier les migrations Nova candidates avant les tests
+        run: |
+          python3 scripts/validate_nova_candidate_migrations.py --self-test
+          python3 scripts/validate_nova_candidate_migrations.py
+      - name: Vérifier le sondage adulte Nova sans aucun envoi
+        run: |
+          python3 scripts/validate_nova_survey.py --self-test
+          python3 scripts/validate_nova_survey.py
+      - name: Vérifier la consultation Nova des 40 questions sans collecte
+        run: |
+          python3 scripts/validate_nova_consultation40.py --self-test
+          python3 scripts/validate_nova_consultation40.py
+      - name: Vérifier les scénarios négatifs
+        run: python3 scripts/validate_sinjira_catalogues.py --self-test
+      - name: Vérifier les liens, les pages et les permissions publiques
+        run: python3 scripts/validate_sinjira_catalogues.py
+      - name: Refuser les liens des catalogues vers des fichiers exclus de Pages
+        run: |
+          python3 scripts/validate_sinjira_public_links.py --self-test
+          python3 scripts/validate_sinjira_public_links.py --check
+      - name: Vérifier que la bibliothèque ne présume pas des achats
+        run: python3 scripts/validate_sinjira_library_status.py --self-test
+      - name: Tester les rôles, les expirations et les liens de jeux sans compte réel
+        run: node --test tests/test_sinjira_library_access.cjs
+      - name: Tester l'autorisation de signature documentaire sans secrets
+        run: node --test tests/test_document_url_authorization.cjs
+      - name: Tester les droits de lecture intégrale des romans sans secrets
+        run: node --test tests/test_novel_file_authorization.cjs
+      - name: Vérifier la porte privée du Livre I et les droits propriétaire/membres
+        run: |
+          python3 scripts/validate_get_private_book_url_security.py --self-test
+          python3 scripts/validate_get_private_book_url_security.py
+          node --test tests/test_private_book_authorization.cjs
+      - name: Vérifier les liens du site et les ressources statiques
+        run: python3 scripts/validate_site.py
+      - name: Vérifier les liens canoniques, données structurées et aperçus sociaux
+        run: |
+          python3 scripts/validate_sinjira_catalogues_metadata.py --self-test
+          python3 scripts/validate_sinjira_catalogues_metadata.py
+
+  nova-sql-contract:
+    name: Sondages Nova — contrats SQL PostgreSQL local, sans Supabase distant
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16-bookworm
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: nova_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d nova_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - name: Checkout sans credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Vérifier PostgreSQL client local
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client
+          fi
+      - name: Tester les migrations Nova sur une base jetable
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '5432'
+          PGUSER: postgres
+          PGDATABASE: nova_ci
+        run: psql -X -v ON_ERROR_STOP=1 -f tests/sql/test_nova_survey_migrations.sql
+
+  visual-browser:
+    name: Affiches réelles ${{ matrix.browser }} (PR sans secrets)
+    needs: verify
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.61.0-noble@sha256:a9731514f24121d1dcd25d58d0a38146646d290a5998fd80d3e533e7b5e21c69
+      options: --user 1001
+    steps:
+      - name: Récupérer les fichiers de la PR sans credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Utiliser Python déterministe
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Installer Playwright épinglé
+        run: python -m pip install --disable-pip-version-check "playwright==1.61.0"
+      - name: Démarrer le serveur statique local sans exposer la production
+        run: |
+          python -m http.server 4173 --bind 127.0.0.1 >/tmp/sinjira-catalogue-browser.log 2>&1 &
+          echo $! >/tmp/sinjira-catalogue-browser.pid
+          for i in $(seq 1 20); do
+            if python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4173/projets/sinjira/', timeout=1).read(1)" >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/sinjira-catalogue-browser.log
+          exit 1
+      - name: Vérifier les trois bannières sur navigateur réel
+        env:
+          BROWSER: ${{ matrix.browser }}
+        run: python tests/e2e/test_sinjira_catalogues_visual.py
+      - name: Parcours réel du sondage Nova 18+ sans collecte
+        env:
+          BROWSER: ${{ matrix.browser }}
+        run: python tests/e2e/test_nova_survey_visual.py
+      - name: Parcours des 40 questions Nova, majeur et sans collecte
+        env:
+          BROWSER: ${{ matrix.browser }}
+        run: python tests/e2e/test_nova_consultation40_visual.py
+      - name: Capturer cinq aperçus des sondages (Chromium uniquement, sans publication)
+        if: ${{ matrix.browser == 'chromium' }}
+        run: python tests/e2e/capture_nova_sondages_preview.py --output artifacts/nova-apercu
+      - name: Déposer les seuls PNG de préproduction pour revue du propriétaire
+        if: ${{ matrix.browser == 'chromium' && success() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: nova-sondages-apercu-pr-${{ github.event.pull_request.number }}-${{ github.sha }}
+          path: |
+            artifacts/nova-apercu/*.png
+            artifacts/nova-apercu/LISEZ-MOI.txt
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 6
+      - name: Arrêter le serveur de test
+        if: always()
+        run: |
+          if [ -f /tmp/sinjira-catalogue-browser.pid ]; then
+            kill "$(cat /tmp/sinjira-catalogue-browser.pid)" || true
+          fi

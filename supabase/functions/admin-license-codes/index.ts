@@ -1,3 +1,4 @@
+import { readBoundedRequestText } from '../_shared/bounded-request.mjs';
 import {corsHeaders} from '../_shared/cors.ts';
 import {requiredAdmin} from '../_shared/auth.ts';
 
@@ -36,7 +37,7 @@ async function readLimitedJson(req:Request){
   }
   const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
   if(contentType!=='application/json')throw new Error('JSON_REQUIRED');
-  const raw=await req.text();
+  const raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);
   if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
   let body:any;
   try{body=JSON.parse(raw||'{}');}

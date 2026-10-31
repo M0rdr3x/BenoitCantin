@@ -1,3 +1,4 @@
+import { readBoundedRequestText } from '../_shared/bounded-request.mjs';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
 
@@ -105,7 +106,7 @@ async function readLimitedJson(req:Request):Promise<{body?:JsonRecord;response?:
     }
   }
 
-  const raw=await req.text();
+  const raw=await readBoundedRequestText(req, MAX_BODY_BYTES);
   if(new TextEncoder().encode(raw).byteLength>MAX_BODY_BYTES){
     return {response:privateJson({ok:false,error:'Requête trop volumineuse.',gateway_version:GATEWAY_VERSION},413)};
   }

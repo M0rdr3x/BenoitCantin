@@ -149,6 +149,8 @@ def validate_production_workflow(errors):
             '(cd .prod-workspace && supabase link --project-ref',
             '(cd .prod-workspace && supabase db lint --linked',
             '(cd .prod-workspace && supabase migration list --linked',
+            'python scripts/verify_supabase_remote_history.py --supabase-list /tmp/sinjira-migrations-before.txt',
+            'python scripts/verify_supabase_remote_history.py --supabase-list /tmp/sinjira-migrations-approval.txt',
             '(cd .prod-workspace && supabase db push --linked --dry-run',
             '(cd .prod-workspace && supabase db push --linked --password',
             '(cd .prod-workspace && supabase functions deploy --project-ref',

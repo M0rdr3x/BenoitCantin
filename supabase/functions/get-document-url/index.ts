@@ -1,7 +1,9 @@
+import { readBoundedRequestText } from '../_shared/bounded-request.mjs';
 import { corsHeaders } from '../_shared/cors.ts';
 import { optionalUser, serviceClient } from '../_shared/auth.ts';
 
 const MAX_REQUEST_BYTES=512;
+const PRIVATE_DOCUMENT_BUCKET='sinjira-private-documents';
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ranks:Record<string,number>={public:1,account:10,player:20,tester:30,admin:100};
 const PRIVATE_JSON_HEADERS={
@@ -17,28 +19,66 @@ function privateJson(data:unknown,status=200){
   return new Response(JSON.stringify(data),{status,headers:PRIVATE_JSON_HEADERS});
 }
 
+const OFFICIAL_ORIGIN='https://www.benoitcantin.com';
 function externalUrlAllowed(value:string){
-  if(value.startsWith('/')&&!value.startsWith('//'))return true;
-  try{return new URL(value).protocol==='https:'}catch{return false}
+  // Les URL de documents proviennent du registre approuvé, mais doivent
+  // rester non ambiguës au moment de leur ouverture par le navigateur.
+  // Une URL commençant par /\\ peut sinon changer d'hôte silencieusement.
+  if(!value||value.trim()!==value||/[\\\u0000-\u001f\u007f]/.test(value))return false;
+  if(value.startsWith('/')&&!value.startsWith('//')){
+    // Refuser aussi les séparateurs et caractères de contrôle encodés.
+    if(/%(?:2f|5c|0[0-9a-f]|1[0-9a-f]|7f)/i.test(value))return false;
+    try{
+      const url=new URL(value,OFFICIAL_ORIGIN);
+      return url.origin===OFFICIAL_ORIGIN&&!url.username&&!url.password;
+    }catch{return false}
+  }
+  // Les fournisseurs HTTPS externes restent permis, mais sans
+  // identifiants intégrés ni URL dont le schéma est écrit ambiguëment.
+  if(!/^https:\/\/[^/]/i.test(value))return false;
+  try{
+    const url=new URL(value);
+    return url.protocol==='https:'&&!!url.hostname&&!url.username&&!url.password;
+  }catch{return false}
+}
+
+function safeDocumentStoragePath(value:unknown):value is string{
+  if(typeof value!=='string'||!value||value.length>1024||value!==value.trim()||
+     /[\\\u0000-\u001f\u007f%]/.test(value))return false;
+  return value.split('/').every(segment=>segment.length>0&&segment!=='.'&&segment!=='..');
 }
 
 async function readLimitedJson(req:Request):Promise<{body?:any;response?:Response}>{
-  const contentType=(req.headers.get('content-type')||'').toLowerCase();
-  if(!contentType.startsWith('application/json')){
+  // Lecture bornée pendant le flux, jamais en mémoire via req.text().
+  const contentType=(req.headers.get('content-type')||'').toLowerCase().split(';',1)[0].trim();
+  if(contentType!=='application/json'){
     return {response:privateJson({ok:false,error:'Type de contenu non autorisé.'},415)};
   }
+  // Borne effective pendant le flux : taille, fragments, UTF-8 et durée.
+  // La route sans JWT conserve un JSON de requête minimal (512 octets).
   const rawLength=req.headers.get('content-length');
-  if(rawLength){
-    const declared=Number(rawLength);
-    if(!Number.isFinite(declared)||declared<0||declared>MAX_REQUEST_BYTES){
-      return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
-    }
-  }
-  const raw=await req.text();
-  if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES){
+  if(rawLength!==null&&
+     (!/^[0-9]+$/.test(rawLength)||!Number.isSafeInteger(Number(rawLength))||
+      Number(rawLength)>MAX_REQUEST_BYTES)){
     return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
   }
-  try{return {body:JSON.parse(raw||'{}')}}catch{return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)}}
+  let raw:string;
+  try {
+    raw=await readBoundedRequestText(req,MAX_REQUEST_BYTES);
+  } catch(error) {
+    if(error instanceof Error && error.message==='REQUEST_TIMEOUT')
+      return {response:privateJson({ok:false,error:'Lecture de requête expirée.'},408)};
+    if(error instanceof Error && error.message==='REQUEST_TOO_LARGE')
+      return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
+    return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)};
+  }
+  try {
+    const body=JSON.parse(raw);
+    if(!body||typeof body!=='object'||Array.isArray(body))throw new Error('INVALID_JSON');
+    return {body};
+  } catch {
+    return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)};
+  }
 }
 
 Deno.serve(async(req)=>{
@@ -60,28 +100,48 @@ Deno.serve(async(req)=>{
       return privateJson({ok:false,error:'Document introuvable ou non approuvé.'},404);
     }
 
-    let userRank=0;
-    if(user){
-      const {data:isAdmin}=await service.rpc('is_sinjira_admin',{p_user_id:user.id});
-      if(isAdmin)userRank=100;
+    // Un niveau inconnu doit être refusé explicitement, AVANT les RPC de
+    // rôle, la comparaison de rang et toute émission de lien. Un seuil
+    // de repli (p. ex. 999) pourrait être atteint par un rang serveur
+    // anormalement élevé. Object.hasOwn exclut les propriétés héritées.
+    if(typeof doc.access_level!=='string'||!Object.hasOwn(ranks,doc.access_level)){
+      return privateJson({ok:false,error:'Votre compte ne possède pas le niveau d’accès requis.'},403);
+    }
+    // Une connexion ne doit pas réduire les droits réellement publics.
+    const requiredRank=ranks[doc.access_level];
+    let userRank=doc.projects?.visibility==='public'?ranks.public:0;
+    if(user&&userRank<requiredRank){
+      // Le propriétaire SINJIRA et les administrateurs constituent deux
+      // rôles distincts. Ne jamais déduire le rôle propriétaire du courriel.
+      const [{data:isOwner,error:ownerError},{data:isAdmin,error:adminError}]=await Promise.all([
+        service.rpc('is_sinjira_owner',{p_user_id:user.id}),
+        service.rpc('is_sinjira_admin',{p_user_id:user.id})
+      ]);
+      if((!ownerError&&isOwner===true)||(!adminError&&isAdmin===true))userRank=100;
       else{
-        const {data:accessRank}=await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user.id});
-        userRank=Number(accessRank||0);
+        const {data:accessRank,error:rankError}=await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user.id});
+        if(rankError)return privateJson({ok:false,error:'Droits du compte temporairement indisponibles.'},503);
+        const memberRank=Number.isFinite(Number(accessRank))?Number(accessRank):0;
+        userRank=Math.max(userRank,memberRank);
       }
-    }else if(doc.projects?.visibility==='public')userRank=1;
+    }
 
-    if(userRank<(ranks[doc.access_level]||999)){
+    if(userRank<requiredRank){
       return privateJson({ok:false,error:'Votre compte ne possède pas le niveau d’accès requis.'},403);
     }
 
     if(doc.external_url){
-      const url=String(doc.external_url).trim();
+      const url=String(doc.external_url);
       if(!externalUrlAllowed(url))return privateJson({ok:false,error:'URL de document non autorisée.'},500);
       return privateJson({ok:true,url,protected:false,expires_in:null});
     }
-    if(!doc.storage_bucket||!doc.storage_path)return privateJson({ok:false,error:'Fichier non configuré.'},500);
+    // Une entrée approuvée ne peut JAMAIS signer une ressource d'un autre
+    // coffre privé (histoires de vie, personnages, soumissions), même en cas
+    // de registre mal configuré. Le chemin objet doit être canonique.
+    if(doc.storage_bucket!==PRIVATE_DOCUMENT_BUCKET||!safeDocumentStoragePath(doc.storage_path))
+      return privateJson({ok:false,error:'Fichier non configuré.'},500);
 
-    const {data:signed,error:signedError}=await service.storage.from(doc.storage_bucket).createSignedUrl(doc.storage_path,600);
+    const {data:signed,error:signedError}=await service.storage.from(PRIVATE_DOCUMENT_BUCKET).createSignedUrl(doc.storage_path,600);
     if(signedError||!signed?.signedUrl)return privateJson({ok:false,error:'Impossible de créer le lien sécurisé.'},500);
     return privateJson({ok:true,url:signed.signedUrl,protected:true,expires_in:600});
   }catch{

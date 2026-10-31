@@ -1,0 +1,28 @@
+{
+  "schema": "nova-public-results-v1",
+  "publicationStatus": "not_open",
+  "publicationApproved": false,
+  "privacyReviewApproved": false,
+  "surveys": {
+    "nova-orientations-40-v1": {
+      "status": "not_open",
+      "questionCount": 40,
+      "respondents": null,
+      "questions": []
+    },
+    "nova-consultation-64-v1": {
+      "status": "not_open",
+      "questionCount": 64,
+      "respondents": null,
+      "questions": []
+    }
+  },
+  "rules": {
+    "minimumParticipants": 30,
+    "minimumNonzeroCell": 10,
+    "suppression": "entire-question"
+  },
+  "publishedOn": null,
+  "source": "aucune enquête enregistrée ou publiée",
+  "notes": "Aucun résultat de participation réelle n'est disponible. Les choix de démonstration ne sont ni envoyés ni comptabilisés."
+}

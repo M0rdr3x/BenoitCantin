@@ -1,0 +1,65 @@
+/* Sondage Nova 18+ — parcours accessible, indépendant de la Boussole. */
+.nova-survey-shell{max-width:860px;margin-inline:auto}
+.nova-survey-card{margin-block:20px;padding:clamp(20px,4vw,34px)}
+.nova-survey-card[hidden]{display:none!important}
+.nova-survey-card h2{margin-top:0}
+.nova-survey-eligibility{display:grid;gap:14px;margin:24px 0}
+.nova-survey-eligibility label{display:flex;align-items:flex-start;gap:12px;padding:16px;border:1px solid var(--line);border-radius:14px;background:#f6fafc;line-height:1.55;cursor:pointer}
+.nova-survey-eligibility input{width:20px;height:20px;flex:0 0 20px;margin-top:3px;accent-color:#157d91}
+.nova-survey-question{border:0;margin:0;padding:0;min-width:0}
+.nova-survey-question legend{font-size:clamp(1.22rem,2.6vw,1.58rem);line-height:1.45;font-weight:850;color:#122f45;padding:0;margin-bottom:15px}
+.nova-survey-hint{font-weight:700;color:#425b71}
+.nova-survey-progress{margin:0 0 28px}
+.nova-survey-progress p{margin:0 0 8px;font-weight:850}
+.nova-survey-progress progress{display:block;width:100%;height:15px;accent-color:#1384a8}
+.nova-survey-choices{display:grid;gap:10px;margin:20px 0}
+.nova-survey-choices label{display:flex;gap:12px;align-items:center;border:1px solid #bacddb;border-radius:13px;background:#f8fbfe;padding:13px 16px;font-weight:680;color:#1c354a;cursor:pointer}
+.nova-survey-choices label:has(input:checked){background:#e8f9fc;border-color:#118fa8;box-shadow:0 0 0 2px rgba(17,143,168,.15)}
+.nova-survey-choices input{width:19px;height:19px;flex:0 0 19px;accent-color:#1384a8}
+.nova-survey-choices label:focus-within,.nova-survey-eligibility label:focus-within{outline:3px solid #f6a554;outline-offset:2px}
+.nova-survey-actions{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:24px}
+.nova-survey-actions .btn[disabled],#sondage-start[disabled]{opacity:.55;cursor:not-allowed}
+.nova-survey-status{min-height:1.5em;color:#17465f;font-weight:700}
+.nova-survey-choices label:last-child{border-style:dashed}
+@media(max-width:560px){.nova-survey-actions{flex-direction:column}.nova-survey-actions .btn{width:100%}.nova-survey-card{padding:18px}}
+@media(prefers-reduced-motion:reduce){.nova-survey-card *{scroll-behavior:auto!important}}
+
+/* Questionnaire consultatif : relecture détaillée, progression et purge volontaire. */
+.nova-survey-progress-count{margin:8px 0 0;color:#425b71;font-size:.94rem;font-weight:650}
+.nova-survey-question-context{padding:11px 14px;border-left:4px solid #1384a8;border-radius:3px;background:#edf6fa;color:#25475d}
+.nova-survey-secondary-actions{margin-top:18px;display:flex;justify-content:flex-start}
+/* Les libellés longs du bouton de retrait doivent rester dans la carte à 320 px.
+   width:100% seul ne suffit pas si .btn force white-space:nowrap ou un min-width. */
+.nova-survey-secondary-actions{min-width:0;max-width:100%}
+.nova-survey-secondary-actions .btn{box-sizing:border-box;min-width:0;max-width:100%;font-size:.92rem;white-space:normal;overflow-wrap:anywhere;line-height:1.4;text-align:center}
+.nova-survey-review-list{list-style:decimal;margin:20px 0 24px;padding-left:1.6rem;display:grid;gap:12px}
+.nova-survey-review-list li{padding:15px;border:1px solid #c6d6e0;border-radius:12px;background:#f8fbfe}
+.nova-survey-review-list li::marker{font-weight:750;color:#164e67}
+.nova-survey-review-list li>div{overflow-wrap:anywhere}
+.nova-survey-review-list li p{margin:6px 0;line-height:1.5}
+.nova-survey-review-choice{font-weight:750;color:#17465f}
+.nova-survey-review-edit{margin-top:7px;min-width:100px}
+@media(max-width:560px){.nova-survey-secondary-actions .btn{width:100%}.nova-survey-review-list{padding-left:1.35rem}}
+
+/* Statistiques Nova : affichage de distributions globales uniquement. */
+.nova-results-shell{max-width:1040px;margin-inline:auto;padding-block:28px 54px}
+.nova-results-nav{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0}
+.nova-results-nav button{border:2px solid #176985;background:#fff;color:#123247;border-radius:12px;padding:12px 16px;min-height:48px;font:inherit;font-weight:750;cursor:pointer}
+.nova-results-nav button[aria-pressed="true"]{background:#176985;color:#fff}
+.nova-results-nav button:focus-visible{outline:3px solid #d08828;outline-offset:3px}
+#results-retry{box-sizing:border-box;max-width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere;text-align:center;line-height:1.45}
+#results-retry[hidden]{display:none!important}
+#results-retry:focus-visible{outline:3px solid #d08828;outline-offset:3px}
+.nova-results-principle,.nova-results-state{line-height:1.65}
+.nova-results-state{padding:14px 17px;border:1px solid #97bcca;background:#edf6fa;color:#17374c;border-radius:12px;font-weight:750}
+.nova-results-list{padding-left:1.5rem;display:grid;gap:15px}
+.nova-results-item{border:1px solid #cad9e4;background:#fff;border-radius:13px;padding:18px}
+.nova-results-item h4{margin:.2rem 0 12px;font-size:1.05rem;line-height:1.5}
+.nova-results-unavailable{color:#46576a;font-weight:650}
+.nova-results-bar-item{margin:11px 0;font-size:.94rem}
+.nova-results-meter{width:100%;height:12px;background:#e5edf3;border-radius:12px;overflow:hidden;margin-top:6px}
+.nova-results-fill{display:block;height:100%;background:#137f99}
+@media(max-width:580px){.nova-results-shell{padding:16px}.nova-results-nav button{width:100%}.nova-results-item{padding:13px}}
+
+/* Le point d'annonce des questions reste visible au clavier sur Firefox, WebKit et Chromium. */
+.nova-survey-question [data-sondage-question-focus]:focus{outline:3px solid #c76c16;outline-offset:5px;border-radius:3px}

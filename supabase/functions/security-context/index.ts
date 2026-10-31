@@ -1,3 +1,4 @@
+import { readBoundedRequestText } from '../_shared/bounded-request.mjs';
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { bearerToken, requiredUser, serviceClient } from '../_shared/auth.ts';
@@ -30,21 +31,38 @@ function privateJson(data: unknown, status = 200) {
 }
 
 async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }> {
-  const rawLength = req.headers.get('content-length');
-  if (rawLength) {
-    const declared = Number(rawLength);
-    if (!Number.isFinite(declared) || declared < 0 || declared > MAX_REQUEST_BYTES) {
-      return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
-    }
+  const contentType = (req.headers.get('content-type') || '').split(';', 1)[0].trim().toLowerCase();
+  if (contentType !== 'application/json') {
+    return { response: privateJson({ ok: false, error: 'Content-Type JSON requis.' }, 415) };
   }
 
-  const raw = await req.text();
+  const rawLength = req.headers.get('content-length');
+  if (rawLength !== null &&
+      (!/^[0-9]+$/.test(rawLength) || !Number.isSafeInteger(Number(rawLength)) ||
+       Number(rawLength) > MAX_REQUEST_BYTES)) {
+    return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
+  }
+
+  let raw: string;
+  try {
+    raw = await readBoundedRequestText(req, MAX_REQUEST_BYTES);
+  } catch (error) {
+    if (error instanceof Error && error.message === 'REQUEST_TOO_LARGE') {
+      return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
+    }
+    if (error instanceof Error && error.message === 'REQUEST_TIMEOUT') {
+      return { response: privateJson({ ok: false, error: 'Lecture de requête expirée.' }, 408) };
+    }
+    return { response: privateJson({ ok: false, error: 'Corps JSON invalide.' }, 400) };
+  }
   if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
     return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
   }
 
   try {
-    return { body: JSON.parse(raw || '{}') };
+    const body = JSON.parse(raw);
+    if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('INVALID_JSON');
+    return { body };
   } catch {
     return { response: privateJson({ ok: false, error: 'Corps JSON invalide.' }, 400) };
   }
@@ -83,22 +101,12 @@ function sessionIdFromVerifiedRequest(req: Request) {
 }
 
 /**
- * La localisation de sécurité est désactivée par défaut.
- * Elle ne peut être alimentée que lorsqu'un proxy contrôlé par SINJIRA ajoute
- * des en-têtes de géolocalisation approximative et que l'environnement active
- * explicitement SINJIRA_TRUST_GEO_HEADERS=true.
- *
- * On ne lit jamais l'IP du visiteur et aucune donnée GPS n'est demandée.
+ * Les en-têtes de localisation transmis par une requête HTTP ne prouvent
+ * jamais son origine proxy : les clients directs peuvent les falsifier.
+ * Faute de proxy authentifié, le risque géographique reste inconnu.
  */
-function trustedGeo(req: Request) {
-  if (Deno.env.get('SINJIRA_TRUST_GEO_HEADERS') !== 'true') {
-    return { country: null, region: null };
-  }
-  const countryRaw = req.headers.get('cf-ipcountry') || '';
-  const country = /^[A-Za-z]{2}$/.test(countryRaw) ? countryRaw.toUpperCase() : null;
-  const regionRaw = req.headers.get('x-sinjira-region') || '';
-  const region = regionRaw ? regionRaw.slice(0, 80) : null;
-  return { country, region };
+function trustedGeo(_req: Request) {
+  return { country: null, region: null };
 }
 
 async function processSecurityPushReceipts(service: ReturnType<typeof serviceClient>) {
@@ -268,7 +276,7 @@ Deno.serve(async (req) => {
       }
     });
   } catch (error) {
-    console.error('[security-context]', error);
+    console.error('[security-context]', error instanceof Error && error.message==='AUTH_REQUIRED' ? 'AUTH_REQUIRED' : 'SECURITY_CONTEXT_FAILED');
     if (error?.message === 'AUTH_REQUIRED') return privateJson({ ok: false, error: 'Connexion requise.', code: 'AUTH_REQUIRED' }, 401);
     return privateJson({ ok: false, error: 'Le contexte de sécurité est temporairement indisponible.' }, 500);
   }

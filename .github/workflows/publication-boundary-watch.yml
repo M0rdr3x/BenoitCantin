@@ -31,17 +31,20 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12.14'
-      - name: Tester les cas positifs et les refus de publication
-        run: python3 scripts/validate_publication_live_boundary.py --self-test
+      - name: Tester les routes et protéger la planification des sondes
+        run: |
+          python3 scripts/validate_publication_live_boundary.py --self-test
+          python3 scripts/validate_publication_watch_workflow.py --self-test
+          python3 scripts/validate_publication_watch_workflow.py --check
 
   live:
-    name: Vérifier l'hébergement et les six chemins techniques
+    name: Vérifier 36 routes publiques, 26 chemins interdits et le reçu Pages
     needs: contract
     # Pas de trafic de surveillance vers la production sur les PR ou pushes.
-    # L'exécution quotidienne et le lancement manuel prouvent l'état live.
+    # L'exécution quotidienne et le lancement manuel contrôlent les 62 routes.
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Récupérer le dépôt sans credentials persistés
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803

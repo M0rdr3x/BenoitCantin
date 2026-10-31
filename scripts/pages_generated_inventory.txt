@@ -1,0 +1,33 @@
+# Jekyll 3.10.0 — fichiers générés, observés dans GitHub Actions run 38108801120
+# Ces chemins doivent être revus explicitement à chaque ajout ou retrait.
+assets/css/style.css
+projets/projet-nova/official/reference/architecture-numerique-interoperabilite-reversibilite.html
+projets/projet-nova/official/reference/corpus.html
+projets/projet-nova/official/reference/cybersecurite-resilience-continuite.html
+projets/projet-nova/official/reference/finances.html
+projets/projet-nova/official/reference/identite-numerique-vie-privee.html
+projets/projet-nova/official/reference/programme.html
+projets/projet-nova/official/reference/statuts.html
+projets/projet-nova/official/versions/V316/V316_FINAL_STATE_SUMMARY.html
+projets/projet-nova/official/versions/V316/V316_IDENTITE_NUMERIQUE_VIE_PRIVEE_ACCES_AUDIT.html
+projets/projet-nova/official/versions/V316/index.html
+projets/projet-nova/official/versions/V317/V317_CYBERSECURITE_RESILIENCE_CONTINUITE.html
+projets/projet-nova/official/versions/V317/V317_FINAL_STATE_SUMMARY.html
+projets/projet-nova/official/versions/V317/index.html
+projets/projet-nova/official/versions/V318/V318_ARCHITECTURE_NUMERIQUE_INTEROPERABILITE_REVERSIBILITE.html
+projets/projet-nova/official/versions/V318/V318_FINAL_STATE_SUMMARY.html
+projets/projet-nova/official/versions/V318/index.html
+projets/projet-nova/official/versions/V319/V319_FINAL_STATE_SUMMARY.html
+projets/projet-nova/official/versions/V319/V319_SOUVERAINETE_DONNEES_ARCHIVES_REPRODUCTIBILITE.html
+projets/projet-nova/official/versions/V319/index.html
+projets/projet-nova/official/versions/V320/V320_FINAL_STATE_SUMMARY.html
+projets/projet-nova/official/versions/V320/V320_SEPARATION_DEPENSES_PUBLIQUES_SECTEUR_PRIVE.html
+projets/projet-nova/official/versions/V320/V320_VALIDATION_REPORT.html
+projets/projet-nova/official/versions/V320/index.html
+projets/projet-nova/official/versions/V321/V321_AUTONOMIE_OPERATIONNELLE_PUBLIQUE_CAPACITES_CRITIQUES_CONTINUITE.html
+projets/projet-nova/official/versions/V321/V321_FINAL_STATE_SUMMARY.html
+projets/projet-nova/official/versions/V321/V321_VALIDATION_REPORT.html
+projets/projet-nova/official/versions/V321/index.html
+projets/projet-nova/official/versions/V322/V322_FINAL_STATE_SUMMARY.html
+projets/projet-nova/official/versions/V322/V322_VALIDATION_REPORT.html
+projets/projet-nova/official/versions/V322/index.html

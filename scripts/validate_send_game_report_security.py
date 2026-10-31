@@ -11,8 +11,15 @@ EDGE = ROOT / 'supabase/functions/send-game-report/index.ts'
 
 REQUIRED = {
     'POST uniquement': "req.method !== 'POST'",
-    'JSON explicite': "contentType.startsWith('application/json')",
-    'lecture corps par texte': 'const raw = await req.text();',
+    'JSON explicite': "contentType!=='application/json'",
+    'MIME application/json exact': "split(';',1)[0].trim().toLowerCase()",
+    'longueur déclarée canonique': 'Number.isSafeInteger(Number(rawLength))',
+    'flux dépassé géré': "error.message==='REQUEST_TOO_LARGE'",
+    'délai borné géré': "error.message==='REQUEST_TIMEOUT'",
+    'racine JSON objet': 'Array.isArray(body)',
+    'mode explicitement validé': "body.mode !== 'download' && body.mode !== 'email'",
+    'fiche non tableau': 'Array.isArray(body.sheet_data)',
+    'lecture corps par flux borné': 'raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);',
     'mesure UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
     'réponse privée': "'Cache-Control': 'private, no-store, max-age=0'",
     'protection MIME': "'X-Content-Type-Options': 'nosniff'",
@@ -20,9 +27,9 @@ REQUIRED = {
     'champs fiche allowlistés': 'const TEXT_FIELDS = new Set([',
     'texte fiche borné': 'const MAX_TEXT = 6000;',
     'modèle PDF origine fixe': "const TEMPLATE_ORIGIN='https://www.benoitcantin.com';",
-    'redirections modèle refusées': "redirect:'error'",
+    'modèle PDF récupéré par lecteur borné': 'fetchBoundedPdf(reportTemplateUrl(),MAX_TEMPLATE_BYTES)',
     'taille modèle bornée': 'const MAX_TEMPLATE_BYTES=15*1024*1024;',
-    'signature PDF vérifiée': "!=='%PDF-'",
+    'lecteur PDF importé': "import { fetchBoundedPdf } from '../_shared/bounded-pdf-fetch.mjs';",
     'services payants désactivés': 'const PAID_EXTERNAL_SERVICES_ENABLED=false;',
     'courriel uniquement au compte': 'to: [user.email]',
     'log livraison fixe': "console.warn('[SINJIRA report]', { code:'REPORT_DELIVERY_RECORD_FAILED' });",
@@ -36,7 +43,7 @@ REQUIRED_PATTERNS = {
 
 FORBIDDEN = {
     'JSON direct non borné': 'await req.json()',
-    'message erreur backend brut': 'error.message',
+    'texte direct non borné': 'await req.text()',
     'stack erreur brute': 'error.stack',
     'objet erreur brut console.error': 'console.error(error)',
     'objet erreur court brut': 'console.error(e)',
@@ -64,6 +71,15 @@ def validate(path: Path) -> list[str]:
         if marker.lower() in lowered:
             errors.append(f'Garde send-game-report violé: {label}.')
 
+    # Seule l'identification de deux erreurs de lecture HTTP à codes fixes
+    # peut consulter error.message. Aucun log, réponse ou autre chemin ne doit
+    # relayer le texte d'une exception Supabase / PDF / fournisseur.
+    for match in re.finditer(r'\berror\.message\b', source):
+        following = source[match.end():]
+        if not re.match(r"\s*===\s*'(?:REQUEST_TIMEOUT|REQUEST_TOO_LARGE)'", following):
+            errors.append('Garde send-game-report violé: message erreur backend brut.')
+            break
+
     paid_pos = source.find('if (!PAID_EXTERNAL_SERVICES_ENABLED)')
     resend_pos = source.find("fetch('https://api.resend.com/emails'")
     auth_email_pos = source.find('if (!user?.email)')
@@ -90,6 +106,7 @@ def validate(path: Path) -> list[str]:
 def self_test() -> None:
     safe = """
 const FUNCTION_VERSION='24.5.2';
+import { fetchBoundedPdf } from '../_shared/bounded-pdf-fetch.mjs';
 const MAX_REQUEST_BYTES=220_000;
 const MAX_TEMPLATE_BYTES=15*1024*1024;
 const MAX_TEXT = 6000;
@@ -102,17 +119,24 @@ const PRIVATE_JSON_HEADERS = {
   'Referrer-Policy': 'no-referrer'
 };
 async function fetchTemplateBytes(){
- const response=await fetch('https://www.benoitcantin.com/x.pdf',{cache:'no-store',redirect:'error'});
- const bytes=new Uint8Array(await response.arrayBuffer());
- if(bytes.length<5||String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-') throw new Error('REPORT_TEMPLATE_NOT_PDF');
- return bytes;
+ return await fetchBoundedPdf(reportTemplateUrl(),MAX_TEMPLATE_BYTES);
 }
 async function readLimitedJson(req){
- const contentType=(req.headers.get('content-type')||'').toLowerCase();
- if(!contentType.startsWith('application/json')) return {response:new Response('',{status:415})};
- const raw = await req.text();
- if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES) return {response:new Response('',{status:413})};
- return {body:JSON.parse(raw||'{}')};
+ const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
+ if(contentType!=='application/json') return {response:new Response('',{status:415})};
+ const rawLength=req.headers.get('content-length');
+ if(rawLength!==null && !Number.isSafeInteger(Number(rawLength)))return {response:new Response('',{status:413})};
+ let raw;
+ try{raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);}
+ catch(error){
+  if(error.message==='REQUEST_TOO_LARGE')return {response:new Response('',{status:413})};
+  if(error.message==='REQUEST_TIMEOUT')return {response:new Response('',{status:408})};
+  throw error;
+ }
+ if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES)return {response:new Response('',{status:413})};
+ const body=JSON.parse(raw);
+ if(!body || typeof body!=='object' || Array.isArray(body))return {response:new Response('',{status:400})};
+ return {body};
 }
 async function recordDelivery(){
  const error=false;
@@ -123,6 +147,8 @@ Deno.serve(async(req)=>{
  try {
   const parsed = await readLimitedJson(req);
   const body=parsed.body||{};
+  if(body.mode !== 'download' && body.mode !== 'email')return new Response('',{status:400});
+  if(Array.isArray(body.sheet_data))return new Response('',{status:400});
   const user={email:'x@example.test'};
   const sheet={};
   const pdfBytes = await buildPdf(sheet);
@@ -148,8 +174,20 @@ Deno.serve(async(req)=>{
             raise AssertionError('Le cas sain doit passer: ' + ' | '.join(clean))
 
         mutations = {
-            'content-type retiré': safe.replace(" if(!contentType.startsWith('application/json')) return {response:new Response('',{status:415})};\n", ''),
-            'req.json direct': safe.replace(' const raw = await req.text();', ' const bodyDirect = await req.json();'),
+            'content-type retiré': safe.replace(" if(contentType!=='application/json') return {response:new Response('',{status:415})};\n", ''),
+            'MIME approximatif': safe.replace("contentType!=='application/json'", "contentType.startsWith('application/json')"),
+            'tableau JSON accepté': safe.replace("Array.isArray(body)", "false"),
+            'mode arbitraire accepté': safe.replace("body.mode !== 'download' && body.mode !== 'email'", "false"),
+            'tableau de fiche accepté': safe.replace("Array.isArray(body.sheet_data)", "false"),
+            'erreur interne exposée dans les logs': safe.replace(
+                "error.message==='REQUEST_TIMEOUT'",
+                "console.error(error.message)"),
+            'message backend renvoyé': safe.replace(
+                "error.message==='REQUEST_TOO_LARGE'",
+                "error:error.message"),
+            'req.json direct': safe.replace('raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);', ' const bodyDirect = await req.json();'),
+            'req.text direct': safe.replace('raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);', ' const raw = await req.text();'),
+            'lecteur PDF contourné': safe.replace('fetchBoundedPdf(reportTemplateUrl(),MAX_TEMPLATE_BYTES)', 'fetch(reportTemplateUrl())'),
             'no-store retiré': safe.replace("  'Cache-Control': 'private, no-store, max-age=0',\n", ''),
             'services payants activés': safe.replace('PAID_EXTERNAL_SERVICES_ENABLED=false', 'PAID_EXTERNAL_SERVICES_ENABLED=true'),
             'log livraison brut': safe.replace("console.warn('[SINJIRA report]', { code:'REPORT_DELIVERY_RECORD_FAILED' });", "console.warn('[SINJIRA report]', error.message);"),

@@ -48,12 +48,22 @@ def main() -> int:
         'assertAdminMfa(context)',
         "service.rpc('is_sinjira_admin'",
         'getAuthenticatorAssuranceLevel(token)',
-        "aal.nextLevel === 'aal2'",
+        "aal.nextLevel !== 'aal2'",
         "aal.currentLevel !== 'aal2'",
         "throw new Error('MFA_REQUIRED')",
         "throw new Error('MFA_STATE_UNAVAILABLE')",
         'export async function requiredAdmin',
     ], 'garde serveur administrateur')
+
+    # Les sept accès admin sont refusés si le deuxième facteur n'est pas
+    # inscrit : l'ancien mode progressif autorisait précisément ce cas AAL1.
+    legacy = "aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2'"
+    if legacy in auth:
+        raise AssertionError('Bascule AAL1 administrateur interdite')
+    if auth.count("aal.nextLevel !== 'aal2' || aal.currentLevel !== 'aal2'") != 1:
+        raise AssertionError('Contrôle AAL2 obligatoire administrateur absent')
+    if "la session aal1 reste permise" in auth:
+        raise AssertionError('Ancienne politique admin permissive encore déclarée')
 
     require(users, [
         "import { requiredAdmin } from '../_shared/auth.ts'",
@@ -94,7 +104,7 @@ def main() -> int:
         'stripe',
     ], 'aucun chemin payant actif dans admin-sinjira-v18')
 
-    print('OK admin V24.4.67: 7 endpoints centralisés, MFA AAL2 progressif fail-closed et IA distante verrouillée en mode gratuit.')
+    print('OK admin V24.4.67: 7 endpoints centralisés, MFA AAL2 obligatoire fail-closed et IA distante verrouillée en mode gratuit.')
     return 0
 
 

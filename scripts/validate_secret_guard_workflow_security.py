@@ -31,6 +31,13 @@ def validate_text(text: str) -> list[str]:
     require(errors, 'permissions:\n  contents: read' in text, 'permissions.contents doit rester read')
     require(errors, 'contents: write' not in text, 'permission contents:write interdite')
     require(errors, re.search(r'\$\{\{\s*secrets\.', text) is None, 'le garde secrets ne doit référencer aucun secret GitHub')
+    require(errors, 'on:\n  pull_request:\n' in text, 'garde secrets obligatoire sur toutes les PR')
+    require(errors, '    branches:\n      - main\n' in text, 'garde secrets obligatoire sur main')
+    require(errors, re.search(r'(?m)^\s+paths(?:-ignore)?:', text) is None,
+            'aucune exclusion de chemin permise')
+    require(errors, 'pull_request_target:' not in text, 'aucun contexte PR privilégié permis')
+    require(errors, 'continue-on-error:' not in text, 'le garde secrets doit bloquer')
+    require(errors, '    timeout-minutes: 10\n' in text, 'durée maximale du garde secrets absente')
     require(errors, 'runs-on: ubuntu-24.04' in text, 'runner Ubuntu 24.04 explicite requis')
     require(errors, 'ubuntu-latest' not in text, 'ubuntu-latest interdit pour ce garde critique')
 
@@ -48,7 +55,47 @@ def validate_text(text: str) -> list[str]:
 
     require(errors, 'python scripts/validate_secret_guard_workflow_security.py --self-test' in text, 'auto-tests du contrat absents')
     require(errors, 'python scripts/validate_secret_guard_workflow_security.py\n' in text, 'validation du contrat absente')
-    require(errors, 'python scripts/validate_no_committed_secrets.py' in text, 'scan des secrets absent')
+    require(errors, text.count('        run: python scripts/validate_repo_workflow_security.py --self-test\n') == 1,
+            'autotest des workflows GitHub absent/dupliqué')
+    require(errors, text.count('        run: python scripts/validate_repo_workflow_security.py\n') == 1,
+            'audit des workflows GitHub absent/dupliqué')
+    require(errors, text.count('          python scripts/validate_edge_jwt_boundaries.py --self-test\n') == 1,
+            'autotests des trois exceptions JWT absents')
+    require(errors, text.count('          python scripts/validate_edge_jwt_boundaries.py\n') == 1,
+            'contrat JWT Edge absent')
+    require(errors, text.count('        run: node --test tests/test_edge_error_log_redaction.cjs\n') == 1,
+            'audit de confidentialité des journaux Edge absent')
+    require(errors, text.count('        run: python scripts/validate_no_committed_secrets.py --self-test\n') == 1,
+            'autotest exhaustif du garde secrets absent/dupliqué')
+    require(errors, text.count('          python scripts/validate_admin_mfa_v24_4_67.py\n') == 1,
+            'validation MFA administrateur obligatoire absente')
+    require(errors, text.count('          node --test tests/test_admin_mfa_policy.cjs\n') == 1,
+            'tests AAL2 serveur absents')
+    for gate in (
+        'python scripts/validate_send_game_report_security.py --self-test',
+        'python scripts/validate_send_game_report_security.py',
+        'python scripts/validate_send_player_sheet_security.py --self-test',
+        'python scripts/validate_send_player_sheet_security.py',
+        'python scripts/validate_edge_template_fetch_v24_5_49.py',
+        'python scripts/validate_edge_function_inventory.py',
+    ):
+        require(errors, text.count('          ' + gate + '\n') == 1,
+                'contrat de sécurité PDF/Edge non exécuté: ' + gate)
+    for gate in (
+        'python scripts/validate_edge_pdf_output_budget.py --self-test',
+        'python scripts/validate_edge_pdf_output_budget.py',
+        'node --test tests/test_edge_pdf_output_budget.cjs',
+    ):
+        require(errors, text.count('          ' + gate + '\n') == 1,
+                'garde PDF sortant / mode courriel non exécuté: ' + gate)
+    require(errors, text.count('        run: node --test tests/test_edge_remote_pdf_stream.cjs\n') == 1,
+            'tests PDF distants bornés obligatoires absents')
+    require(errors, text.count('        run: node --test tests/test_admin_request_body_bounds.cjs\n') == 1,
+            'tests du lecteur borné des six API administrateur absents')
+    require(errors, text.count('        run: node --test tests/test_sensitive_edge_stream_limits.cjs\n') == 1,
+            'tests anti-DoS des API AAL2 absents')
+    require(errors, text.count('        run: python scripts/validate_no_committed_secrets.py\n') == 1,
+            'scan bloquant des secrets absent/dupliqué')
     return errors
 
 
@@ -62,8 +109,22 @@ def run_self_tests(text: str) -> None:
         'runner mobile': text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-latest', 1),
         'python large': text.replace(f"python-version: '{PYTHON_VERSION}'", "python-version: '3.12'", 1),
         'auto-test retiré': text.replace('        run: python scripts/validate_secret_guard_workflow_security.py --self-test\n', '', 1),
+        'auto-test secrets retiré': text.replace('        run: python scripts/validate_no_committed_secrets.py --self-test\n', '', 1),
+        'scan secrets retiré': text.replace('        run: python scripts/validate_no_committed_secrets.py\n', '', 1),
+        'audit workflows retiré': text.replace('        run: python scripts/validate_repo_workflow_security.py\n', '', 1),
+        'autotest workflows retiré': text.replace('        run: python scripts/validate_repo_workflow_security.py --self-test\n', '', 1),
+        'tests PDF distant retirés': text.replace('        run: node --test tests/test_edge_remote_pdf_stream.cjs\n', '', 1),
+        'contrat PDF public retiré': text.replace('          python scripts/validate_send_game_report_security.py --self-test\n', '', 1),
+        'contrat PDF privé retiré': text.replace('          python scripts/validate_send_player_sheet_security.py --self-test\n', '', 1),
+        'inventaire Edge retiré': text.replace('          python scripts/validate_edge_function_inventory.py\n', '', 1),
+        'tests lecteurs AAL2 retirés': text.replace('        run: node --test tests/test_sensitive_edge_stream_limits.cjs\n', '', 1),
+        'scan avec filtre de chemins': text.replace('  pull_request:\n', '  pull_request:\n    paths: ["docs/**"]\n', 1),
+        'scan non bloquant': text.replace('    timeout-minutes: 10\n', '    timeout-minutes: 10\n    continue-on-error: true\n', 1),
+        'limite de temps supprimée': text.replace('    timeout-minutes: 10\n', '', 1),
     }
     for name, mutated in cases.items():
+        if mutated == text:
+            raise SystemExit(f'ERREUR auto-test sans effet: {name}')
         if not validate_text(mutated):
             raise SystemExit(f'ERREUR auto-test garde secrets: mutation non détectée: {name}')
     print(f'OK auto-tests garde secrets: {len(cases)} affaiblissements critiques détectés.')
