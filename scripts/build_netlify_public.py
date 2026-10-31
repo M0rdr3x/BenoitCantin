@@ -298,6 +298,18 @@ PROJECT_NOVA_PUBLIC_DATA_JSON = {
     Path("projets/projet-nova/data/sources.json"),
 }
 
+# Les documents de référence publiés sont eux aussi approuvés un par un.
+# Un brouillon interne ajouté dans official/reference ne doit pas sortir.
+PROJECT_NOVA_PUBLIC_REFERENCE_MARKDOWN = {
+    Path("projets/projet-nova/official/reference/architecture-numerique-interoperabilite-reversibilite.md"),
+    Path("projets/projet-nova/official/reference/corpus.md"),
+    Path("projets/projet-nova/official/reference/cybersecurite-resilience-continuite.md"),
+    Path("projets/projet-nova/official/reference/finances.md"),
+    Path("projets/projet-nova/official/reference/identite-numerique-vie-privee.md"),
+    Path("projets/projet-nova/official/reference/programme.md"),
+    Path("projets/projet-nova/official/reference/statuts.md"),
+}
+
 PROJECT_NOVA_PUBLIC_STRUCTURED_PREFIXES = (
     Path("projets/projet-nova/data"),
     Path("projets/projet-nova/official/reference"),
@@ -397,7 +409,7 @@ def project_nova_structured_allowed(rel: Path) -> bool:
         if prefix.name == "data":
             return rel in PROJECT_NOVA_PUBLIC_DATA_JSON
         if prefix.name == "reference":
-            return rel.suffix.lower() == ".md"
+            return rel in PROJECT_NOVA_PUBLIC_REFERENCE_MARKDOWN
     return False
 
 
@@ -439,6 +451,12 @@ def relative_path_allowed(rel: Path) -> bool:
     # Les métadonnées techniques de release peuvent rester versionnées dans Git,
     # mais ne sont jamais nécessaires au runtime public.
     if rel in SINJIRA_PRIVATE_RELEASE_METADATA:
+        return False
+
+    # SINJIRA: aucune nouvelle donnée JSON brute, métadonnée de manuscrit,
+    # export de compte ou inventaire d'accès n'est publiable implicitement.
+    # Toute future donnée JSON de runtime devra être explicitement revue.
+    if len(parts) >= 2 and parts[:2] == ("projets", "sinjira") and rel.suffix.lower() == ".json":
         return False
 
     # Les documents SINJIRA sont publiés par allowlist exacte. Une future
@@ -902,6 +920,9 @@ def self_test_public_filesystem_boundary() -> list[str]:
     rejected = (
         "projets/projet-nova/.gitignore",
         "projets/projet-nova/data/sondage-reponses.json",
+        "projets/projet-nova/official/reference/notes-privees.md",
+        "projets/sinjira/romans/export-membres.json",
+        "projets/sinjira/jeux/reponses-joueurs.json",
         "projets/projet-nova/data/votes-individuels.json",
         "projets/projet-nova/data/export-utilisateurs.json",
         "projets/projet-nova/data/nouveau-fichier-non-revu.json",
@@ -926,6 +947,7 @@ def self_test_public_filesystem_boundary() -> list[str]:
         "compte/index.html",
         "projets/projet-nova/index.html",
         "projets/projet-nova/data/boussole-partis-2026.json",
+        "projets/projet-nova/official/reference/programme.md",
         "projets/projet-nova/data/actualites.json",
         "projets/projet-nova/data/sources.json",
         "projets/sinjira/romans/index.html",
