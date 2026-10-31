@@ -188,6 +188,27 @@ test("Partage Boussole : jamais de paramètres ni de fragment de l'URL source", 
   await nodes["#compass-copy-result"].onclick();
   assert.ok(copied.endsWith(safePage));
   assert.ok(!copied.includes(secret));
+
+  // Le chemin //hôte-tiers n'est jamais traité comme une autre origine.
+  const maliciousPath = "//faux-domaine.example/vol";
+  mock.window.location.pathname = maliciousPath;
+  mock.window.location.href = safePage + "?token=" + secret + "#resultat-prive";
+  const sameOriginLink = mock.window.location.origin + maliciousPath;
+  assert.notEqual(new URL(maliciousPath, mock.window.location.origin).href,
+    sameOriginLink, "Le cas de phishing doit être réellement reproductible");
+  nativeShare = null;
+  copied = null;
+  new vm.Script(source.slice(startShare, endShare) + "\nconfigureSharing([]);",
+    {filename:"boussole-electorale.js:double-slash-share"})
+    .runInNewContext(mock, {timeout:1000});
+  assert.equal(new URL(nodes["#compass-share-facebook"].href).searchParams.get("u"), sameOriginLink);
+  assert.equal(new URL(nodes["#compass-share-x"].href).searchParams.get("url"), sameOriginLink);
+  assert.equal(new URL(nodes["#compass-share-linkedin"].href).searchParams.get("url"), sameOriginLink);
+  await nodes["#compass-share-native"].onclick();
+  await nodes["#compass-copy-result"].onclick();
+  assert.equal(nativeShare.url, sameOriginLink);
+  assert.ok(copied.endsWith(sameOriginLink));
+  assert.ok(!nodes["#compass-share-email"].href.includes(secret));
 });
 
 
