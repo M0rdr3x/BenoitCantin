@@ -258,3 +258,53 @@ test("La page Boussole prévient du partage des opinions sensibles",()=>{
     assert.match(tag,/rel="noopener noreferrer"/,id+" : protection des liens externes absente");
   }
 });
+
+
+// La carte ne doit pas faire pivoter les axes non répondus ni dessiner une
+// continuité trompeuse entre deux dimensions séparées par des valeurs nulles.
+function renderRealRadar(data) {
+  const startRadar = source.indexOf("  function renderRadar(results){");
+  const endRadar = source.indexOf("\n  function coveragePercent(results){",startRadar);
+  assert.ok(startRadar >= 0 && endRadar > startRadar, "Fonction radar introuvable");
+  const host = {innerHTML:""};
+  new vm.Script(source.slice(startRadar,endRadar)+"\nrenderRadar(input);",
+    {filename:"boussole-electorale.js:renderRadar"})
+    .runInNewContext({input:data,$:selector=>selector==="#compass-radar"?host:null,
+      esc:value=>String(value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;","'":"&#39;"}[ch]))},
+      {timeout:1000});
+  return host.innerHTML;
+}
+test("Radar partiel : 16 axes fixes, aucun polygone à travers des dimensions absentes", () => {
+  const partial=axes.map((a,i)=>({
+    title:a.title,score:[0,1,4,7].includes(i)?(i*8)-30:null
+  }));
+  const html=renderRealRadar(partial);
+  assert.equal((html.match(/<text /g)||[]).length,16,
+    "Le graphique partiel doit conserver les 16 angles");
+  assert.equal((html.match(/class="compass-radar-point"/g)||[]).length,4);
+  assert.equal((html.match(/class="compass-radar-segment"/g)||[]).length,1,
+    "Seuls les deux premiers axes sont adjacents et calculés");
+  assert.doesNotMatch(html,/<polygon /,"Polygone trompeur sur données absentes");
+  assert.match(html,/4 dimensions calculées sur 16/);
+  assert.match(html,/—/);
+});
+test("Radar complet : polygone continu uniquement avec 16 scores connus", () => {
+  const complete=axes.map(a=>({title:a.title,score:0}));
+  const html=renderRealRadar(complete);
+  assert.equal((html.match(/<text /g)||[]).length,16);
+  assert.equal((html.match(/class="compass-radar-point"/g)||[]).length,16);
+  assert.equal((html.match(/<polygon /g)||[]).length,1);
+  assert.equal((html.match(/class="compass-radar-segment"/g)||[]).length,0);
+  assert.match(html,/16 dimensions calculées sur 16/);
+});
+test("Radar insuffisant : aucun positionnement supposé sur 1 ou 2 axes", () => {
+  const incomplete=axes.map((a,i)=>({title:a.title,score:i<2?75:null}));
+  const html=renderRealRadar(incomplete);
+  assert.doesNotMatch(html,/<svg/);
+  assert.match(html,/pas encore assez de dimensions/);
+});
+test("Radar : la notice HTML explique les dimensions non calculées", () => {
+  const html=fs.readFileSync(path.join(nova,"boussole-electorale.html"),"utf8");
+  assert.match(html,/Chaque rayon correspond toujours à la même dimension/);
+  assert.match(html,/aucun trait ne traverse une dimension manquante/);
+});

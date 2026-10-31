@@ -312,40 +312,60 @@
   function renderRadar(results){
     const host = $("#compass-radar");
     if(!host) return;
-    const valid = results.filter(r => r.score !== null);
-    if(valid.length < 3){
+    // Position fixe de chacun des 16 axes, même pour un profil partiel :
+    // ne jamais réattribuer les angles aux seules dimensions connues.
+    const size = 620, center = size / 2, radius = 220;
+    const points = results.map((r, index) => {
+      const angle = (-Math.PI / 2) + (index * 2 * Math.PI / results.length);
+      const known = Number.isFinite(r.score) && r.score >= -100 && r.score <= 100;
+      const rr = known ? radius * ((r.score + 100) / 200) : 0;
+      return {
+        known, result:r,
+        x:center + Math.cos(angle) * rr,
+        y:center + Math.sin(angle) * rr,
+        sx:center + Math.cos(angle) * radius,
+        sy:center + Math.sin(angle) * radius,
+        lx:center + Math.cos(angle) * (radius + 64),
+        ly:center + Math.sin(angle) * (radius + 64)
+      };
+    });
+    const computed = points.filter(p => p.known);
+    if(computed.length < 3){
       host.innerHTML = "<p>Il n’y a pas encore assez de dimensions répondues pour afficher la carte complète.</p>";
       return;
     }
-    const size = 620, center = size / 2, radius = 220;
-    const points = valid.map((r, index) => {
-      const angle = (-Math.PI / 2) + (index * 2 * Math.PI / valid.length);
-      const normalized = (r.score + 100) / 200;
-      const rr = radius * normalized;
-      return {
-        x:center + Math.cos(angle) * rr,
-        y:center + Math.sin(angle) * rr,
-        lx:center + Math.cos(angle) * (radius + 64),
-        ly:center + Math.sin(angle) * (radius + 64),
-        sx:center + Math.cos(angle) * radius,
-        sy:center + Math.sin(angle) * radius,
-        result:r
-      };
-    });
-    const polygon = points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
-    const spokes = points.map(p => `<line x1="${center}" y1="${center}" x2="${p.sx.toFixed(1)}" y2="${p.sy.toFixed(1)}"></line>`).join("");
+    const coord = p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+    const spokes = points.map(p =>
+      `<line x1="${center}" y1="${center}" x2="${p.sx.toFixed(1)}" y2="${p.sy.toFixed(1)}"></line>`
+    ).join("");
+    // Un polygone fermé inventerait un trajet à travers les axes non calculés.
+    // En profil partiel, ne relier que les axes ADJACENTS calculés.
+    const complete = computed.length === points.length;
+    const trace = complete
+      ? `<polygon points="${points.map(coord).join(" ")}"></polygon>`
+      : points.map((p, i) => {
+          const next = points[(i + 1) % points.length];
+          return p.known && next.known
+            ? `<line class="compass-radar-segment" x1="${p.x.toFixed(1)}" y1="${p.y.toFixed(1)}" x2="${next.x.toFixed(1)}" y2="${next.y.toFixed(1)}"></line>`
+            : "";
+        }).join("");
+    const markers = computed.map(p =>
+      `<circle class="compass-radar-point" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4"></circle>`
+    ).join("");
     const labels = points.map(p => {
-      const short = esc(p.result.title).split(" ").slice(0,3).join(" ");
-      return `<text x="${p.lx.toFixed(1)}" y="${p.ly.toFixed(1)}" text-anchor="middle"><tspan>${short}</tspan><tspan x="${p.lx.toFixed(1)}" dy="15">${p.result.score > 0 ? "+" : ""}${p.result.score}</tspan></text>`;
+      const short = esc(p.result.title).split(" ").slice(0, 3).join(" ");
+      const score = p.known ? (p.result.score > 0 ? "+" : "") + p.result.score : "—";
+      return `<text x="${p.lx.toFixed(1)}" y="${p.ly.toFixed(1)}" text-anchor="middle"><tspan>${short}</tspan><tspan x="${p.lx.toFixed(1)}" dy="15">${score}</tspan></text>`;
     }).join("");
     host.innerHTML = `
       <svg class="compass-radar-svg" viewBox="0 0 ${size} ${size}" role="img" aria-labelledby="compass-radar-title compass-radar-desc">
         <title id="compass-radar-title">Carte multidimensionnelle de votre profil</title>
-        <desc id="compass-radar-desc">Chaque rayon représente une dimension et sa position calculée selon vos réponses.</desc>
+        <desc id="compass-radar-desc">${computed.length} dimensions calculées sur ${points.length}, toujours aux mêmes angles. Un tiret signale une dimension non calculée; aucune liaison n’est tracée au travers de celle-ci.</desc>
         <circle cx="${center}" cy="${center}" r="${radius}"></circle>
         <circle cx="${center}" cy="${center}" r="${radius * .5}"></circle>
         ${spokes}
-        <polygon points="${polygon}"></polygon>
+        ${trace}
+        ${markers}
         ${labels}
       </svg>`;
   }
