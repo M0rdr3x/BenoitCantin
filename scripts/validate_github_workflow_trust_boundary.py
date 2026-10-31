@@ -19,6 +19,51 @@ WORKFLOWS = ROOT / ".github" / "workflows"
 APPROVED_WRITE_JOBS = {
     ("nova-seo-normalize.yml", "commit"),
 }
+
+APPROVED_PAGES_OIDC_JOB = ("deploy-github-pages-isolated.yml", "deploy")
+
+
+def validate_pages_deploy_contract(source: str) -> list[str]:
+    """Exception OIDC strictement limitée à l'action native Pages.
+    
+    La publication technique doit rester un workflow manuel avec artefact
+    isolé, double consentement, SHA exact et job deploy sans code externe.
+    """
+    errors = []
+    if "on:\n  workflow_dispatch:" not in source:
+        errors.append("Pages: déclenchement manuel seul obligatoire")
+    for trigger in ("push", "pull_request", "schedule", "workflow_run", "pull_request_target"):
+        if re.search(rf"(?m)^  {trigger}:", source):
+            errors.append("Pages: déclencheur automatique/privilégié interdit")
+    start = source.find("  deploy:\n")
+    if start < 0:
+        return errors + ["Pages: job deploy absent"]
+    tail = source[start:]
+    next_job = re.search(r"(?m)^  [a-zA-Z][a-zA-Z0-9_-]*:\s*$", tail[10:])
+    deploy = tail if not next_job else tail[:next_job.start()+10]
+    mandatory = (
+        "    needs: build",
+        "    permissions:\n      pages: write\n      id-token: write",
+        "      name: github-pages",
+        "inputs.confirm_containment == 'CONTAIN'",
+        "inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'",
+        "uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346",
+    )
+    if not all(marker in deploy for marker in mandatory):
+        errors.append("Pages: contrat déploiement manuel/permissions/artefact non conforme")
+    if source.count("      id-token: write") != 1 or source.count("      pages: write") != 1:
+        errors.append("Pages: privilèges de déploiement répétés")
+    if any(marker in deploy for marker in (
+        "run:", "actions/checkout@", "${{ secrets.", "continue-on-error:", "uses: ./",
+    )):
+        errors.append("Pages: exécution de code ou secret dans le job privilégié interdite")
+    if deploy.count("uses: ") != 1:
+        errors.append("Pages: seule l'action immuable de déploiement est autorisée")
+    if "python3 scripts/build_netlify_public.py --output _site --security-containment" not in source:
+        errors.append("Pages: générateur public isolé obligatoire")
+    if "path: _site" not in source:
+        errors.append("Pages: seul l'artefact isolé _site peut être téléversé")
+    return errors
 PRIVILEGED_EVENTS = frozenset({"pull_request_target", "workflow_run"})
 SHA_ACTION = re.compile(r"^[0-9a-f]{40}$")
 ACTION_LINE = re.compile(r"^\s*(?:-\s*)?uses:\s*([^\s#]+)", re.I)
@@ -95,9 +140,15 @@ def violations(filename: str, source: str) -> list[str]:
         if current_permissions and re.match(r"^      contents:\s*write\s*$", line):
             if (filename, current_job) not in APPROVED_WRITE_JOBS:
                 issues.append(f"Écriture GitHub non approuvée job {current_job} (ligne {number})")
+        if re.match(r"^      pages:\s*write\s*$", line):
+            if (filename, current_job) != APPROVED_PAGES_OIDC_JOB:
+                issues.append(f"Publication Pages privilégiée non approuvée (ligne {number})")
         if re.match(r"^      id-token:\s*write\s*$", line):
-            issues.append(f"Écriture OIDC non approuvée job {current_job} (ligne {number})")
+            if (filename, current_job) != APPROVED_PAGES_OIDC_JOB:
+                issues.append(f"Écriture OIDC non approuvée job {current_job} (ligne {number})")
 
+    if filename == APPROVED_PAGES_OIDC_JOB[0]:
+        issues.extend(validate_pages_deploy_contract(source))
     return issues
 
 
