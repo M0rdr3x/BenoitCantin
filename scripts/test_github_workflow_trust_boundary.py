@@ -32,6 +32,35 @@ BASE = (
 )
 
 
+PAGES_SAFE = (
+    "name: Confinement Pages\n"
+    "on:\n"
+    "  workflow_dispatch:\n"
+    "    inputs:\n"
+    "      expected_sha:\n"
+    "        required: true\n"
+    "permissions:\n"
+    "  contents: read\n"
+    "jobs:\n"
+    "  build:\n"
+    "    steps:\n"
+    "      - run: python3 scripts/build_netlify_public.py --output _site --security-containment\n"
+    "      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa\n"
+    "        with:\n"
+    "          path: _site\n"
+    "  deploy:\n"
+    "    needs: build\n"
+    "    if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'\n"
+    "    permissions:\n"
+    "      pages: write\n"
+    "      id-token: write\n"
+    "    environment:\n"
+    "      name: github-pages\n"
+    "    steps:\n"
+    "      - uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346\n"
+)
+
+
 class WorkflowTrustBoundaryTests(unittest.TestCase):
     def test_full_repository_baseline(self):
         self.assertEqual(check_repository(), [])
@@ -123,6 +152,27 @@ class WorkflowTrustBoundaryTests(unittest.TestCase):
             "permissions:\n  contents: read",
             "permissions:\n  contents: read\npermissions:\n  contents: write"
         )))
+
+
+    def test_pages_oidc_exception_is_exact_and_restricted(self):
+        self.assertEqual(violations("deploy-github-pages-isolated.yml", PAGES_SAFE), [])
+        self.assertTrue(violations("other.yml", PAGES_SAFE))
+        self.assertTrue(violations("deploy-github-pages-isolated.yml",
+                                   PAGES_SAFE.replace("  workflow_dispatch:", "  push:")))
+
+    def test_pages_refuses_executing_code_under_deploy_token(self):
+        self.assertTrue(violations("deploy-github-pages-isolated.yml",
+            PAGES_SAFE.replace("    environment:",
+                               "    steps:\\n      - run: curl https://example.invalid\\n    environment:")))
+        self.assertTrue(violations("deploy-github-pages-isolated.yml",
+            PAGES_SAFE.replace("    needs: build", "    needs: other")))
+
+    def test_pages_refuses_extra_oidc_and_unpinned_deploy_action(self):
+        self.assertTrue(violations("deploy-github-pages-isolated.yml",
+            PAGES_SAFE.replace("      id-token: write", "      id-token: write\\n      id-token: write")))
+        self.assertTrue(violations("deploy-github-pages-isolated.yml",
+            PAGES_SAFE.replace("actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346",
+                               "actions/deploy-pages@v4")))
 
     def test_symlink_is_refused(self):
         with tempfile.TemporaryDirectory() as root:
