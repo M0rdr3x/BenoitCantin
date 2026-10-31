@@ -13,6 +13,8 @@ on:
       - 'scripts/build_supabase_production_workspace.py'
       - 'scripts/validate_supabase_production_preflight_security.py'
       - 'scripts/test_supabase_production_preflight_security.py'
+      - 'scripts/validate_security_context_deployment_gate.py'
+      - 'scripts/test_security_context_deployment_gate.py'
       - '.github/workflows/supabase-production-preflight.yml'
       - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'
   pull_request:
@@ -26,6 +28,8 @@ on:
       - 'scripts/build_supabase_production_workspace.py'
       - 'scripts/validate_supabase_production_preflight_security.py'
       - 'scripts/test_supabase_production_preflight_security.py'
+      - 'scripts/validate_security_context_deployment_gate.py'
+      - 'scripts/test_security_context_deployment_gate.py'
       - '.github/workflows/supabase-production-preflight.yml'
       - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'
   workflow_dispatch:
@@ -406,6 +410,30 @@ jobs:
           echo '```text' >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/sinjira-db-lint-after.txt >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Vérifier le contrat RPC security-context avant publication Edge
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Refus si la source Edge n'a plus le RPC de session prévu.
+          python3 scripts/validate_security_context_deployment_gate.py --check-source \
+            .prod-workspace/supabase/functions/security-context/index.ts
+          request="$RUNNER_TEMP/security-context-rpc-request.json"
+          response="$RUNNER_TEMP/security-context-rpc-response.json"
+          python3 scripts/validate_security_context_deployment_gate.py --write-request "$request"
+          # Metadata pg_catalog strictement en lecture seule, jamais de données utilisateurs.
+          curl --fail-with-body --silent --show-error --proto '=https' --tlsv1.2 \
+            --request POST \
+            --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            --header 'Content-Type: application/json' \
+            --data-binary "@$request" \
+            --output "$response" \
+            "https://api.supabase.com/v1/projects/$PROJECT_ID/database/query/read-only"
+          python3 scripts/validate_security_context_deployment_gate.py --check-response "$response"
+          echo 'Contrat RPC session security-context confirmé avant déploiement Edge.' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Garantir les secrets Edge Functions indispensables
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}
