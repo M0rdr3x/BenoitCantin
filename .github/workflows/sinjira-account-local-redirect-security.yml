@@ -1,0 +1,38 @@
+name: SINJIRA — redirections compte et liens locaux
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-local-navigation-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  account-local-redirect-security:
+    name: Refuser les redirections externes après connexion
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Installer Node avec version contrôlée
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '22.16.0'
+          check-latest: false
+      - name: Vérifier la syntaxe JavaScript
+        run: |
+          node --check assets/js/sinjira-account.js
+          node --check scripts/test_sinjira_account_local_redirect.cjs
+      - name: Tester les chemins locaux et refus d'URL externes
+        run: node scripts/test_sinjira_account_local_redirect.cjs
