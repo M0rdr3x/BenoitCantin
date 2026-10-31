@@ -122,11 +122,7 @@ class EdgeContractTests(unittest.TestCase):
         self.assertTrue(validate_workflow(self.workflow.replace(block, block.replace(marker, "if: always()"), 1)))
 
     def test_workflow_refuses_secretless_api(self):
-        self.assertTrue(validate_workflow(
-            self.workflow.replace("SUPABASE_ACCESS_TOKEN: " + chr(36) + "{{ secrets.SUPABASE_ACCESS_TOKEN }}",
-                                  "SUPABASE_ACCESS_TOKEN: 'x'", 1)
-        ) or True)
-        # Cibler spécifiquement le gate, pas le premier secret du workflow.
+        # Cibler spécifiquement le gate, pas un secret d'un autre job.
         gate_start = self.workflow.index("      - name: " + GATE_NAME)
         gate_end = self.workflow.index("\n      - name: ", gate_start + 10)
         block = self.workflow[gate_start:gate_end]
