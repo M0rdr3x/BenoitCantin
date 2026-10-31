@@ -86,4 +86,29 @@ for (const snippet of mandatoryRenderSnippets) {
 assert.equal(src.includes('href="' + marker + 'e.link}"'), false);
 assert.equal(src.includes('<h3>' + marker + 'd.title}</h3>'), false);
 checks += 2;
+// Le second runtime conservé pour les archives doit avoir les mêmes barrières.
+const legacy = fs.readFileSync(path.join(__dirname, '../projets/projet-nova/assets/script.js'), 'utf8');
+const legacyPrefixEnd = legacy.indexOf('(function(){');
+const legacyCardStart = legacy.indexOf('      const card=d=>');
+const legacyCardEnd = legacy.indexOf('\n      function render()', legacyCardStart);
+assert.ok(legacyPrefixEnd > 0 && legacyCardStart > 0 && legacyCardEnd > legacyCardStart);
+const legacySandbox = {};
+vm.runInNewContext(legacy.slice(0, legacyPrefixEnd) + '\n'
+  + legacy.slice(legacyCardStart, legacyCardEnd)
+  + '\nglobalThis.testFns = {novaLegacyEscapeHtml, novaLegacySafeDocumentHref, card};',
+  legacySandbox, {timeout: 2000});
+const {novaLegacyEscapeHtml:legacyEscape,
+  novaLegacySafeDocumentHref:legacyHref, card:legacyCard} = legacySandbox.testFns;
+same(legacyEscape('<svg onload=alert(1)>'), '&lt;svg onload=alert(1)&gt;');
+same(legacyHref('documents/test.pdf'), 'documents/test.pdf');
+deniedUrl(legacyHref, 'javascript:alert(1)');
+deniedUrl(legacyHref, 'documents/../../secret.pdf');
+const legacyRendered = legacyCard(malicious);
+assert.ok(!legacyRendered.includes('<img src=x') && !legacyRendered.includes('<svg/onload')
+  && !legacyRendered.includes('javascript:alert(4)'), 'Injection encore possible dans les archives historiques.');
+checks++;
+assert.ok(legacy.includes("function text(v){return(v===undefined||v===null||v==='')?'—':novaLegacyEscapeHtml(v);}"),
+  'Ancienne table financière non échappée.');
+checks++;
+
 console.log('PASS: ' + checks + ' contrôles d’échappement HTML et d’URL NOVA avec données fictives.');
