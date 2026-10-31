@@ -49,13 +49,15 @@ begin
     raise exception 'INVALID_SURVEY_PAYLOAD' using errcode='22023';
   end if;
 
+  -- Un null JSON est invalide (ne pas dépendre de la logique SQL à 3 valeurs).
   -- 40 clés q01..q40 et valeur explicite même pour « Sans opinion » :
   -- une soumission partielle ou une question injectée n'est jamais agrégée.
-  if (select count(*) from pg_catalog.jsonb_each_text(p_answers)) != 40
+  if (select count(*) from pg_catalog.jsonb_each(p_answers)) != 40
      or exists (
-       select 1 from pg_catalog.jsonb_each_text(p_answers) as a(key,value)
-       where a.key !~ '^q(0[1-9]|[1-3][0-9]|40)$'
-          or a.value not in ('pour','contre','sans_opinion')
+       select 1 from pg_catalog.jsonb_each(p_answers) as a(key,value)
+       where pg_catalog.jsonb_typeof(a.value) is distinct from 'string'
+          or a.key !~ '^q(0[1-9]|[1-3][0-9]|40)$'
+          or (a.value #>> '{}') not in ('pour','contre','sans_opinion')
      )
   then
     raise exception 'INVALID_SURVEY_ANSWERS' using errcode='22023';
