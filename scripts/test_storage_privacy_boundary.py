@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 from validate_storage_privacy_boundary import (  # noqa: E402
-    PRIVATE, PUBLIC, ALL_EXPECTED, EXPECTED_FLAGS,
+    PRIVATE, PUBLIC, ALL_EXPECTED, EXPECTED_FLAGS, PRODUCTION_ONLY_BUCKETS,
     QUERY, migration_errors, repository_errors, validate_snapshot,
 )
 
@@ -43,6 +43,13 @@ class StoragePrivacyBoundaryTests(unittest.TestCase):
         self.assertEqual(len(PRIVATE), 4)
         self.assertEqual(PUBLIC, {"sinjira-avatars"})
         self.assertEqual(migration_errors(self.good), [])
+
+    def test_externally_provisioned_bucket_not_implicitly_public(self):
+        self.assertEqual(PRODUCTION_ONLY_BUCKETS, {"sinjira-character-submissions"})
+        self.assertTrue(PRODUCTION_ONLY_BUCKETS <= PRIVATE)
+        changed = {**self.good, "003.sql":
+            "UPDATE storage.buckets SET public=true WHERE id='sinjira-character-submissions';"}
+        self.assertTrue(migration_errors(changed))
 
     def test_reject_private_bucket_became_public(self):
         for name in PRIVATE:
