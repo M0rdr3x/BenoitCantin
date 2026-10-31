@@ -65,6 +65,7 @@ function makeFixture(spec, stage, revoked, futureCollectionOpen = false) {
     COLLECTION_OPEN:futureCollectionOpen, LIVE_OPINION_CONSENT_GRANTED:futureCollectionOpen,
     questions:Array.from({length:spec.count},(_,i)=>({id:"q"+i})),
     [spec.answers]:selections, step:7, editingReview:true, submitting:false,
+    consentEpoch:0,
     $:id=>elements[id],
     eligible:()=>elements["sondage-age"].checked && elements["sondage-consent"].checked,
     setStatus:(message,target="sondage-status")=>{elements[target].textContent=message;}
