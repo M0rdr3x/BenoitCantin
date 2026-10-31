@@ -1,6 +1,7 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredUser, serviceClient } from '../_shared/auth.ts';
 import { readBoundedJson, MAX_REQUEST_BYTES } from '../_shared/nova_survey_body.mjs';
+import { isPermanentNovaSurveyAccount } from '../_shared/nova_survey_account.mjs';
 
 // Préparé, jamais activé automatiquement : exige revue confidentialité,
 // configuration du responsable du traitement et publication Edge distincte.
@@ -56,6 +57,11 @@ Deno.serve(async req => {
   }
   try {
     const user = await requiredUser(req);
+    // Un compte temporaire Supabase est aussi « authenticated » : refus explicite
+    // avant toute agrégation; l'anti-doublon par compte n'est pas une preuve d'unicité.
+    if (!isPermanentNovaSurveyAccount(user)) {
+      return response(403, { ok: false, code: 'PERMANENT_ACCOUNT_REQUIRED' });
+    }
     if (Deno.env.get('NOVA_SURVEY_COLLECTION_ENABLED') !== 'true') {
       return response(503, { ok: false, code: 'COLLECTION_NOT_ENABLED' });
     }
