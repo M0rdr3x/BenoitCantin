@@ -1,0 +1,4 @@
+Contact: https://www.benoitcantin.com/contact.html
+Expires: 2027-09-27T23:59:59Z
+Preferred-Languages: fr, en
+Canonical: https://www.benoitcantin.com/.well-known/security.txt
