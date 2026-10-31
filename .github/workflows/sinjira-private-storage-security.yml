@@ -1,0 +1,36 @@
+name: SINJIRA — confidentialité des fichiers privés
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [ opened, synchronize, reopened, ready_for_review ]
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-storage-privacy-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  storage-boundary:
+    name: Refuser la publication des buckets de fichiers privés
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer le dépôt sans conserver le jeton
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Configurer Python épinglé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+      - name: Tester les régressions et les réponses défaillantes
+        run: python3 scripts/test_storage_privacy_boundary.py
+      - name: Vérifier les migrations Storage sans secret
+        run: python3 scripts/validate_storage_privacy_boundary.py --check-repository
