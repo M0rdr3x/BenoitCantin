@@ -127,3 +127,65 @@ test("L'importance forte pèse davantage que l'importance faible", () => {
   assert.ok(Math.abs(strong.find(r => r.id === id).score) >
             Math.abs(weak.find(r => r.id === id).score));
 });
+
+
+test("Partage Boussole : jamais de paramètres ni de fragment de l'URL source", async () => {
+  const startShare = source.indexOf("  function configureSharing(results){");
+  const endShare = source.indexOf("\n  async function copyText(", startShare);
+  assert.ok(startShare >= 0 && endShare > startShare,
+    "Le partage réel de la Boussole est introuvable");
+
+  const safePage = "https://exemple.test/projets/projet-nova/boussole-electorale.html";
+  const secret = "jeton-prive-ne-pas-transmettre";
+  const link = href => ({
+    href,
+    getAttribute(name) { return name === "href" ? this.href : null; }
+  });
+  const nodes = {
+    "#compass-share-email": link("mailto:"),
+    "#compass-email-recipient": {value:""},
+    "#compass-share-facebook": link("https://www.facebook.com/sharer/sharer.php"),
+    "#compass-share-x": link("https://twitter.com/intent/tweet"),
+    "#compass-share-linkedin": link("https://www.linkedin.com/sharing/share-offsite/"),
+    "#compass-share-native": {},
+    "#compass-copy-result": {},
+    "#compass-status": {textContent:""}
+  };
+  let nativeShare = null;
+  let copied = null;
+  const mock = {
+    $: selector => nodes[selector] || null,
+    URL,
+    window: {location: {
+      origin: "https://exemple.test",
+      pathname: "/projets/projet-nova/boussole-electorale.html",
+      href: safePage + "?token=" + secret + "#resultat-prive"
+    }},
+    navigator: {share: async payload => {nativeShare = payload;}},
+    buildResultText: () => "Profil synthétique local",
+    encodeURIComponent,
+    copyText: async text => {copied = text; return true;}
+  };
+  new vm.Script(source.slice(startShare, endShare) + "\nconfigureSharing([]);",
+    {filename:"boussole-electorale.js:configureSharing"})
+    .runInNewContext(mock, {timeout:1000});
+
+  const facebook = new URL(nodes["#compass-share-facebook"].href);
+  const twitter = new URL(nodes["#compass-share-x"].href);
+  const linkedin = new URL(nodes["#compass-share-linkedin"].href);
+  assert.equal(facebook.searchParams.get("u"), safePage);
+  assert.equal(twitter.searchParams.get("url"), safePage);
+  assert.equal(linkedin.searchParams.get("url"), safePage);
+  for(const name of ["#compass-share-email", "#compass-share-facebook",
+                    "#compass-share-x", "#compass-share-linkedin"]) {
+    assert.ok(!nodes[name].href.includes(secret), name + " divulgue un paramètre privé");
+    assert.ok(!nodes[name].href.includes("resultat-prive"), name + " divulgue un fragment privé");
+  }
+
+  await nodes["#compass-share-native"].onclick();
+  assert.equal(nativeShare.url, safePage);
+  assert.ok(!nativeShare.text.includes(secret));
+  await nodes["#compass-copy-result"].onclick();
+  assert.ok(copied.endsWith(safePage));
+  assert.ok(!copied.includes(secret));
+});
