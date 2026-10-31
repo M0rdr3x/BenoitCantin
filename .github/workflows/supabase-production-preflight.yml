@@ -84,6 +84,7 @@ jobs:
           python scripts/validate_edge_function_inventory.py
           python scripts/validate_social_rls_contract.py
           python scripts/validate_production_migration_ledger.py
+          python scripts/verify_supabase_remote_history.py --self-test
 
       - name: Construire le workspace production protégé
         shell: bash
@@ -279,6 +280,7 @@ jobs:
         run: |
           set -euo pipefail
           (cd .prod-workspace && supabase migration list --linked --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-migrations-before.txt
+          python scripts/verify_supabase_remote_history.py --supabase-list /tmp/sinjira-migrations-before.txt
           echo '### Historique Supabase avant synchronisation' >> "$GITHUB_STEP_SUMMARY"
           echo '```text' >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/sinjira-migrations-before.txt >> "$GITHUB_STEP_SUMMARY"
@@ -381,6 +383,7 @@ jobs:
           (cd .prod-workspace && supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD")
           (cd .prod-workspace && supabase db lint --linked --schema public --level error --fail-on error) | tee /tmp/sinjira-db-lint-approval.txt
           (cd .prod-workspace && supabase migration list --linked --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-migrations-approval.txt
+          python scripts/verify_supabase_remote_history.py --supabase-list /tmp/sinjira-migrations-approval.txt
           (cd .prod-workspace && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-dry-run-approval.txt
 
       - name: Appliquer les migrations de production depuis le workspace protégé

@@ -5,6 +5,8 @@ const MAX_CONTENT_BYTES = 1024 * 1024;
 // Un JSON peut représenter un même texte avec des séquences \uXXXX plus longues.
 // La limite de transport reste bornée tout en permettant une entrée décodée de 1 Mio.
 const MAX_REQUEST_BYTES = MAX_CONTENT_BYTES * 6 + 64 * 1024;
+const MAX_REQUEST_CHUNKS = 4096;
+const REQUEST_READ_TIMEOUT_MS = 15000;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const PRIVATE_HEADERS = {
   ...corsHeaders,
@@ -22,48 +24,50 @@ function privateJson(data: unknown, status = 200) {
 async function readBoundedJson(req: Request) {
   const contentType = (req.headers.get('content-type') || '').split(';', 1)[0].trim().toLowerCase();
   if (contentType !== 'application/json') throw new Error('JSON_REQUIRED');
-
-  const declaredRaw = req.headers.get('content-length');
-  if (declaredRaw) {
-    const declared = Number(declaredRaw);
-    if (Number.isFinite(declared) && declared > MAX_REQUEST_BYTES) throw new Error('REQUEST_TOO_LARGE');
-  }
-
-  if (!req.body) throw new Error('INVALID_JSON');
-  const reader = req.body.getReader();
+  const declared = req.headers.get('content-length');
+  if (declared !== null && (!/^[0-9]+$/.test(declared) ||
+      !Number.isSafeInteger(Number(declared)) || Number(declared) > MAX_REQUEST_BYTES))
+    throw new Error('REQUEST_TOO_LARGE');
+  if (!req.body || typeof req.body.getReader !== 'function') throw new Error('INVALID_JSON');
+  const stream = req.body.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;
+  let count = 0;
+  let timer;
+  const deadline = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error('REQUEST_TIMEOUT')), REQUEST_READ_TIMEOUT_MS);
+  });
   try {
-    while (true) {
-      const { value, done } = await reader.read();
+    for (;;) {
+      const { value, done } = await Promise.race([stream.read(), deadline]);
       if (done) break;
-      if (!value) continue;
+      if (!(value instanceof Uint8Array)) throw new Error('INVALID_JSON');
+      if (++count > MAX_REQUEST_CHUNKS) throw new Error('REQUEST_TOO_LARGE');
       total += value.byteLength;
-      if (total > MAX_REQUEST_BYTES) {
-        await reader.cancel('REQUEST_TOO_LARGE').catch(() => undefined);
-        throw new Error('REQUEST_TOO_LARGE');
-      }
+      if (total > MAX_REQUEST_BYTES) throw new Error('REQUEST_TOO_LARGE');
       chunks.push(value);
     }
+  } catch (error) {
+    // Ne pas attendre une annulation de flux hostile qui pourrait rester bloquée.
+    try { Promise.resolve(stream.cancel()).catch(() => {}); } catch {}
+    throw error;
   } finally {
-    reader.releaseLock();
+    clearTimeout(timer);
+    stream.releaseLock();
   }
-
   const bytes = new Uint8Array(total);
   let offset = 0;
   for (const chunk of chunks) {
     bytes.set(chunk, offset);
     offset += chunk.byteLength;
   }
-
-  let parsed: unknown;
   try {
-    parsed = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+    const parsed = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('INVALID_JSON');
+    return parsed as Record<string, unknown>;
   } catch {
     throw new Error('INVALID_JSON');
   }
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('INVALID_JSON');
-  return parsed as Record<string, unknown>;
 }
 
 function safeText(value: unknown, max: number) {
@@ -119,20 +123,12 @@ function entryType(value: unknown) {
 }
 
 /**
- * La localisation n'est jamais acceptée depuis le JSON client.
- * Elle reste désactivée par défaut et n'est utilisée que si un proxy contrôlé par
- * SINJIRA fournit des en-têtes approximatifs et que SINJIRA_TRUST_GEO_HEADERS=true.
- * Aucune IP brute ni donnée GPS n'est lue ou stockée par cette fonction.
+ * Les en-têtes géographiques ne sont pas une identité proxy vérifiée :
+ * un appel Edge direct pourrait imiter cf-ipcountry / x-sinjira-region.
+ * Jusqu'à signature cryptographique du proxy : pas de géosignal de requête.
  */
-function trustedGeo(req: Request) {
-  if (Deno.env.get('SINJIRA_TRUST_GEO_HEADERS') !== 'true') {
-    return { country: null, region: null };
-  }
-  const countryRaw = req.headers.get('cf-ipcountry') || '';
-  const country = /^[A-Za-z]{2}$/.test(countryRaw) ? countryRaw.toUpperCase() : null;
-  const regionRaw = req.headers.get('x-sinjira-region') || '';
-  const region = regionRaw ? regionRaw.slice(0, 80) : null;
-  return { country, region };
+function trustedGeo(_req: Request) {
+  return { country: null, region: null };
 }
 
 function rejectClientIdentity(body: Record<string, unknown>) {
@@ -183,6 +179,7 @@ function errorCode(error: unknown) {
     'MFA_STATE_UNAVAILABLE',
     'JSON_REQUIRED',
     'REQUEST_TOO_LARGE',
+    'REQUEST_TIMEOUT',
     'INVALID_JSON',
     'CLIENT_IDENTITY_FORBIDDEN',
     'VAULT_SESSION_REQUIRED',
@@ -376,6 +373,9 @@ Deno.serve(async (req) => {
     }
     if (code === 'REQUEST_TOO_LARGE') {
       return privateJson({ ok: false, error: 'Requête trop volumineuse.', code }, 413);
+    }
+    if (code === 'REQUEST_TIMEOUT') {
+      return privateJson({ ok: false, error: 'Lecture de requête expirée.', code }, 408);
     }
     if (code === 'INVALID_JSON') {
       return privateJson({ ok: false, error: 'JSON invalide.', code }, 400);

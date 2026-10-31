@@ -1,3 +1,4 @@
+import { readBoundedRequestText } from '../_shared/bounded-request.mjs';
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredUser, serviceClient } from '../_shared/auth.ts';
 
@@ -26,7 +27,7 @@ async function readBoundedJson(req:Request){
     if(Number.isFinite(declared)&&declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
   }
 
-  const raw=await req.text();
+  const raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);
   if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
 
   let body:unknown;
@@ -63,12 +64,12 @@ Deno.serve(async (req) => {
       p_session_id: revokeAll ? null : sessionId
     });
     if (error) {
-      console.error('[revoke-my-contributions] RPC failed',error);
+      console.error('[revoke-my-contributions]','REVOCATION_RPC_FAILED');
       return privateJson({ ok: false, error: 'Révocation impossible.',code:'REVOCATION_FAILED' }, 500);
     }
     return privateJson({ ok: true, removed: data || 0, scope: revokeAll ? 'all' : 'session' });
   } catch (error) {
-    console.error('[revoke-my-contributions]',error);
+    console.error('[revoke-my-contributions]',error instanceof Error && ['AUTH_REQUIRED','JSON_REQUIRED','REQUEST_TOO_LARGE','INVALID_JSON'].includes(error.message) ? error.message : 'REVOCATION_FAILED');
     if (error?.message === 'AUTH_REQUIRED') return privateJson({ ok: false, error: 'Connexion requise.',code:'AUTH_REQUIRED' }, 401);
     if (error?.message === 'JSON_REQUIRED') return privateJson({ ok: false, error: 'Corps JSON requis.',code:'JSON_REQUIRED' }, 415);
     if (error?.message === 'REQUEST_TOO_LARGE') return privateJson({ ok: false, error: 'Requête trop volumineuse.',code:'REQUEST_TOO_LARGE' }, 413);

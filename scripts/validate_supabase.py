@@ -3,12 +3,15 @@ from __future__ import annotations
 from pathlib import Path
 import re
 
+import validate_nova_candidate_migrations as nova_candidates
+
 ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase'/'migrations'
 FUN=ROOT/'supabase'/'functions'
 CONFIG=ROOT/'supabase'/'config.toml'
 FRONTEND=ROOT/'assets'/'js'/'sinjira-supabase-config.js'
 WORKFLOW=ROOT/'.github'/'workflows'/'supabase-production-preflight.yml'
+CANDIDATES=ROOT/'supabase'/'candidate-migrations'
 EXPECTED='24.4.13'
 REGISTRY_EXPECTED='24.5.2'
 PROJECT='gpvivleexywljowcqkru'
@@ -25,6 +28,15 @@ def latest_function(files:list[Path],name:str)->tuple[Path|None,str]:
 
 def main()->int:
     errors=[]
+    # Toujours refuser une dérive des fichiers Nova même lorsque ces RPC
+    # n'apparaissent pas dans les migrations de production.
+    candidate_contents={p.name:p.read_bytes() for p in CANDIDATES.glob('*.sql')}
+    errors.extend(nova_candidates.check(
+        candidate_contents,
+        {p.name for p in MIG.glob('*.sql')},
+        read(nova_candidates.REVIEWED),
+        read(nova_candidates.BUILDER),
+    ))
     files=sorted(MIG.glob('*.sql'))
     if not files:fail(errors,'Aucune migration Supabase.')
     versions=[]
@@ -64,7 +76,38 @@ def main()->int:
         if root.exists():source.extend(p for p in root.rglob('*') if p.is_file() and p.suffix in {'.js','.ts'})
     source_text='\n'.join(read(p) for p in source)
     called={x.lower() for x in re.findall(r"\.rpc\(\s*['\"]([a-zA-Z_][a-zA-Z0-9_]*)['\"]",source_text)}
-    for name in sorted(called-funcs):fail(errors,f'RPC appelée par le code mais absente des migrations: {name}')
+    # Deux RPC Nova sont préparées et figées, NON présentes en production.
+    # Leurs seuls appelants légitimes sont leurs propres Edge Functions inactives.
+    # Toute autre RPC manquante reste un échec dur.
+    candidate_rpc={
+        'nova_survey_submit_v1':(
+            CANDIDATES/'20261019170000_nova_adult_opinion_survey_v1.sql',
+            FUN/'nova-survey-submit'/'index.ts','NOVA_SURVEY_COLLECTION_ENABLED'),
+        'nova_consultation40_submit_v1':(
+            CANDIDATES/'20261019190000_nova_foundations_40_survey_v1.sql',
+            FUN/'nova-consultation40-submit'/'index.ts','NOVA40_COLLECTION_ENABLED'),
+    }
+    for name in sorted(called-funcs):
+        if name not in candidate_rpc:
+            fail(errors,f'RPC appelée par le code mais absente des migrations: {name}')
+            continue
+        candidate_path, authorized_caller, server_flag=candidate_rpc[name]
+        if not candidate_path.is_file() or not authorized_caller.is_file():
+            fail(errors,f'RPC Nova candidate absente du dépôt: {name}')
+            continue
+        candidate_text=read(candidate_path)
+        if f'create or replace function public.{name}(' not in candidate_text.lower():
+            fail(errors,f'RPC Nova candidate sans définition SQL figée: {name}')
+            continue
+        expected_call=re.compile(r"\.rpc\(\s*['\"]"+re.escape(name)+r"['\"]")
+        callers={p for p in source if expected_call.search(read(p))}
+        edge_code=read(authorized_caller)
+        if callers!={authorized_caller} or (
+            "Deno.env.get('"+server_flag+"') !== 'true'" not in edge_code
+        ):
+            fail(errors,f'RPC Nova candidate appelée hors fonction fermée ou sans verrou: {name}')
+        else:
+            print('INFO: RPC Nova candidate isolée du déploiement: '+name)
 
     function_dirs={p.name for p in FUN.iterdir() if p.is_dir() and not p.name.startswith('_')} if FUN.exists() else set()
     invoked=set(re.findall(r"\.functions\.invoke\(\s*['\"]([a-zA-Z0-9_-]+)['\"]",source_text))

@@ -236,6 +236,8 @@ def validate_text(text: str) -> list[str]:
             errors.append("L'application doit reconstruire le workspace protégé après la frontière d'environment.")
 
         approval = step_block(apply, "Revalider la cible production après approbation")
+        if "python scripts/verify_supabase_remote_history.py --supabase-list /tmp/sinjira-migrations-approval.txt" not in approval:
+            errors.append("La revalidation après approbation doit refuser un historique distant divergent.")
         for marker in (
             '(cd .prod-workspace && supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD")',
             '(cd .prod-workspace && supabase db lint --linked --schema public --level error --fail-on error)',

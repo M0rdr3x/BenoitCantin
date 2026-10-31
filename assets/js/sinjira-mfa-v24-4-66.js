@@ -63,11 +63,19 @@ async function finishSecurityChallenge(){
 }
 
 async function failSecurityChallenge(error){
-  console.warn('[SINJIRA security MFA approval]',error);
+  console.warn('[SINJIRA security MFA approval]','MFA_CHALLENGE_FAILED');
   clearPendingSecurityChallenge();
   await s.auth.signOut({scope:'local'}).catch(()=>{});
   if(form)form.hidden=true;
   setStatus(status,'La vérification renforcée n’a pas pu confirmer cette connexion inhabituelle. La session a été fermée; reconnectez-vous pour réessayer.','error');
+}
+
+async function failMfaUnavailable() {
+  // Ne conserver aucune session connectée si la vérification MFA est indisponible.
+  clearPendingSecurityChallenge();
+  try { await s.auth.signOut({scope:'local'}); } catch {}
+  if(form)form.hidden=true;
+  setStatus(status,'Le second facteur ne peut pas être vérifié pour le moment. La session a été fermée; reconnectez-vous pour réessayer.','error');
 }
 
 async function init(){
@@ -123,7 +131,13 @@ async function init(){
     }
     const submit=form.querySelector('[type="submit"]');
     if(submit)submit.disabled=true;
-    const {error}=await s.auth.mfa.challengeAndVerify({factorId,code});
+    let error;
+    try {
+      ({error}=await s.auth.mfa.challengeAndVerify({factorId,code}));
+    } catch {
+      await failMfaUnavailable();
+      return;
+    }
     if(error){
       if(submit)submit.disabled=false;
       setStatus(status,'Code invalide ou expiré. Utilisez le code actuel de votre application d’authentification.','error');
@@ -149,8 +163,7 @@ signOutButton?.addEventListener('click',async()=>{
   location.replace('/compte/connexion.html');
 });
 
-init().catch(error=>{
-  console.warn('[SINJIRA MFA challenge]',error);
-  if(form)form.hidden=true;
-  setStatus(status,'Le second facteur ne peut pas être vérifié pour le moment. Réessayez après une nouvelle connexion.','error');
+init().catch(async ()=>{
+  console.warn('[SINJIRA MFA challenge]','MFA_INIT_FAILED');
+  await failMfaUnavailable();
 });

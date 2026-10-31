@@ -26,9 +26,13 @@ function reportInvalid(form){
   return true;
 }
 function randomDeviceKey(){
-  if(globalThis.crypto?.randomUUID)return globalThis.crypto.randomUUID();
-  const bytes=new Uint8Array(24);globalThis.crypto?.getRandomValues?.(bytes);
-  return `sinjira-${Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}-${Date.now().toString(36)}`;
+  const source=globalThis.crypto;
+  if(typeof source?.randomUUID==='function')return source.randomUUID();
+  // Aucun identifiant de confiance calculé avec une horloge ou sans entropie.
+  if(typeof source?.getRandomValues!=='function')throw new Error('SECURE_RANDOM_UNAVAILABLE');
+  const bytes=new Uint8Array(24);
+  source.getRandomValues(bytes);
+  return `sinjira-${Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}`;
 }
 function securityDeviceKey(){
   try{
@@ -84,23 +88,31 @@ async function login(){
     const next=destination();
     setBusy(form,true);
     clearPendingChallenge();
+    let authenticated=false;
     try{
       const {error}=await getSupabase().auth.signInWithPassword({email:String(d.get('email')||'').trim(),password:String(d.get('password')||'')});
       if(error)return setStatus(status,'Connexion impossible. Vérifiez vos informations et la confirmation du courriel.','error');
+      authenticated=true;
 
       let evaluated=null;
       try{
         evaluated=await evaluateLoginSecurity();
       }catch(securityError){
-        console.warn('[SINJIRA login shield unavailable]',securityError);
-        // Le moteur contextuel est une couche supplémentaire. Une panne de cette
-        // couche ne doit pas verrouiller tout le compte; les zones extrêmement
-        // sensibles conservent leur propre contrôle MFA côté serveur.
-        location.replace(next);
+        // Sans vérification de sécurité, aucune session de connexion ne progresse.
+        // Les pages sensibles conservent en parallèle leurs gardes serveur AAL2.
+        console.warn('[SINJIRA login shield unavailable]','SECURITY_CONTEXT_UNAVAILABLE');
+        await getSupabase().auth.signOut({scope:'local'}).catch(()=>{});
+        setStatus(status,'La vérification de sécurité est indisponible. La connexion a été interrompue. Réessayez ultérieurement.','error');
         return;
       }
 
-      const outcome=String(evaluated.security?.outcome||'allow');
+      const outcome=String(evaluated.security?.outcome||'');
+      // Une réponse incomplète, inattendue ou altérée n'est JAMAIS un "allow".
+      if(!['allow','challenge','block'].includes(outcome)){
+        await getSupabase().auth.signOut({scope:'local'}).catch(()=>{});
+        setStatus(status,'Impossible de confirmer la sécurité de cette connexion. Réessayez ultérieurement.','error');
+        return;
+      }
       if(outcome==='block'){
         await getSupabase().auth.signOut({scope:'local'}).catch(()=>{});
         setStatus(status,'Connexion refusée : cet appareil a été révoqué dans Ma sécurité. Utilisez un appareil fiable pour vérifier votre compte.','error');
@@ -130,7 +142,13 @@ async function login(){
 
       location.replace(next);
     }catch(err){
-      console.warn('[SINJIRA auth login]',err);
+      // Une exception MFA (ou un échec de navigation) après le mot de passe
+      // ne doit jamais laisser la session nouvellement créée utilisable.
+      if(authenticated){
+        clearPendingChallenge();
+        try{await getSupabase().auth.signOut({scope:'local'});}catch{}
+      }
+      console.warn('[SINJIRA auth login]','AUTH_FLOW_FAILED');
       setStatus(status,'Connexion impossible pour le moment. Réessayez dans quelques instants.','error');
     }finally{setBusy(form,false)}
   });

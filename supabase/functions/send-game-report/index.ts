@@ -1,3 +1,5 @@
+import { fetchBoundedPdf } from '../_shared/bounded-pdf-fetch.mjs';
+import { readBoundedRequestText } from '../_shared/bounded-request.mjs';
 import { PDFDocument, StandardFonts } from 'npm:pdf-lib@1.17.1';
 import { corsHeaders } from '../_shared/cors.ts';
 import { optionalUser, serviceClient } from '../_shared/auth.ts';
@@ -5,6 +7,8 @@ import { optionalUser, serviceClient } from '../_shared/auth.ts';
 const FUNCTION_VERSION='24.5.2';
 const MAX_REQUEST_BYTES=220_000;
 const MAX_TEMPLATE_BYTES=15*1024*1024;
+// Limiter aussi l'artefact APRÈS sérialisation du PDF, avant Base64/réponse.
+const MAX_GENERATED_PDF_BYTES=20*1024*1024;
 // Intégration préparée, jamais activée implicitement. Une future activation exige
 // une décision explicite distincte sur le fournisseur et les coûts.
 const PAID_EXTERNAL_SERVICES_ENABLED=false;
@@ -40,36 +44,38 @@ function reportTemplateUrl(){
 }
 
 async function fetchTemplateBytes(){
-  const response=await fetch(reportTemplateUrl(),{cache:'no-store',redirect:'error'});
-  if(!response.ok)throw new Error('REPORT_TEMPLATE_FETCH_FAILED');
-  const declared=Number(response.headers.get('content-length')||'0');
-  if(Number.isFinite(declared)&&declared>MAX_TEMPLATE_BYTES)throw new Error('REPORT_TEMPLATE_TOO_LARGE');
-  const bytes=new Uint8Array(await response.arrayBuffer());
-  if(bytes.byteLength===0||bytes.byteLength>MAX_TEMPLATE_BYTES)throw new Error('REPORT_TEMPLATE_TOO_LARGE');
-  if(bytes.length<5||String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-')throw new Error('REPORT_TEMPLATE_NOT_PDF');
-  return bytes;
+  // L'URL est verrouillée sur l'origine officielle avant tout accès réseau.
+  return await fetchBoundedPdf(reportTemplateUrl(),MAX_TEMPLATE_BYTES);
 }
 
 async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }> {
-  const contentType=(req.headers.get('content-type')||'').toLowerCase();
-  if(!contentType.startsWith('application/json')){
+  const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
+  if(contentType!=='application/json'){
     return { response: privateJson({ ok:false, error:'Type de contenu non autorisé.', function_version:FUNCTION_VERSION }, 415) };
   }
-  const rawLength = req.headers.get('content-length');
-  if (rawLength) {
-    const declaredLength = Number(rawLength);
-    if (!Number.isFinite(declaredLength) || declaredLength < 0 || declaredLength > MAX_REQUEST_BYTES) {
-      return { response: privateJson({ ok:false, error:'Requête trop volumineuse.', function_version:FUNCTION_VERSION }, 413) };
-    }
-  }
-
-  const raw = await req.text();
-  if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
+  const rawLength=req.headers.get('content-length');
+  if(rawLength!==null &&
+    (!/^[0-9]+$/.test(rawLength) || !Number.isSafeInteger(Number(rawLength)) ||
+     Number(rawLength)>MAX_REQUEST_BYTES)){
     return { response: privateJson({ ok:false, error:'Requête trop volumineuse.', function_version:FUNCTION_VERSION }, 413) };
   }
-
+  let raw:string;
   try {
-    return { body: JSON.parse(raw || '{}') };
+    raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);
+  } catch(error) {
+    if(error instanceof Error && error.message==='REQUEST_TIMEOUT')
+      return { response: privateJson({ ok:false, error:'Lecture de requête expirée.', function_version:FUNCTION_VERSION }, 408) };
+    if(error instanceof Error && error.message==='REQUEST_TOO_LARGE')
+      return { response: privateJson({ ok:false, error:'Requête trop volumineuse.', function_version:FUNCTION_VERSION }, 413) };
+    return { response: privateJson({ ok:false, error:'Corps JSON invalide.', function_version:FUNCTION_VERSION }, 400) };
+  }
+  if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES){
+    return { response: privateJson({ ok:false, error:'Requête trop volumineuse.', function_version:FUNCTION_VERSION }, 413) };
+  }
+  try {
+    const body=JSON.parse(raw);
+    if(!body || typeof body!=='object' || Array.isArray(body))throw new Error('INVALID_JSON');
+    return { body };
   } catch {
     return { response: privateJson({ ok:false, error:'Corps JSON invalide.', function_version:FUNCTION_VERSION }, 400) };
   }
@@ -142,7 +148,10 @@ async function buildPdf(sheet: Record<string, string | boolean>) {
     // Certaines versions de lecteurs gèrent les apparences elles-mêmes.
   }
 
-  return await pdf.save();
+  const output=new Uint8Array(await pdf.save());
+  if(output.byteLength===0||output.byteLength>MAX_GENERATED_PDF_BYTES)
+    throw new Error('REPORT_OUTPUT_TOO_LARGE');
+  return output;
 }
 
 async function recordDelivery(userId: string, sessionId: unknown, delivery: 'download' | 'email') {
@@ -170,8 +179,19 @@ Deno.serve(async (req) => {
   try {
     const parsed = await readLimitedJson(req);
     if (parsed.response) return parsed.response;
-    const body = parsed.body || {};
+    const body = parsed.body;
+    // Contrôler les commandes et la fiche avant tout téléchargement et travail PDF.
+    if(body?.mode !== undefined && body.mode !== 'download' && body.mode !== 'email')
+      return privateJson({ok:false,error:'Mode de livraison invalide.',function_version:FUNCTION_VERSION},400);
+    if(body?.sheet_data !== undefined &&
+      (!body.sheet_data || typeof body.sheet_data !== 'object' || Array.isArray(body.sheet_data)))
+      return privateJson({ok:false,error:'Fiche joueur invalide.',function_version:FUNCTION_VERSION},400);
     const mode = body?.mode === 'email' ? 'email' : 'download';
+    // Ne JAMAIS récupérer le modèle PDF ni lancer pdf-lib si l'envoi est désactivé.
+    // Ce mode public était refusé seulement après les opérations coûteuses.
+    if (mode === 'email' && !PAID_EXTERNAL_SERVICES_ENABLED) {
+      return privateJson({ ok:false, error:'Le transport courriel externe est préparé mais désactivé. Téléchargez le PDF directement.', code:'PAID_EXTERNAL_SERVICE_DISABLED', function_version:FUNCTION_VERSION }, 503);
+    }
     const user = await optionalUser(req);
     const sheet = sanitizeSheet(body?.sheet_data || {});
     const pdfBytes = await buildPdf(sheet);

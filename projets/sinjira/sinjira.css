@@ -85,3 +85,70 @@
   border-radius:18px;
   background:#05070c;
 }
+
+/* SINJIRA — catalogue Logiciels, distinct des Romans et Jeux */
+.sinjira-software-visual{display:grid;place-items:center;margin:0;min-height:260px;padding:clamp(20px,4vw,48px);border:1px solid rgba(255,255,255,.12);border-radius:28px;background:radial-gradient(circle at 50% 40%,rgba(255,112,89,.18),transparent 65%),#070b15}
+.sinjira-software-visual img{display:block;width:min(100%,300px);height:auto;object-fit:contain;filter:drop-shadow(0 18px 32px rgba(0,0,0,.35))}
+.sinjira-software-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(16px,2.5vw,26px)}
+.sinjira-software-card{display:flex;flex-direction:column;align-items:flex-start;gap:14px;padding:clamp(22px,3vw,36px);border:1px solid rgba(255,255,255,.11);border-radius:22px;background:linear-gradient(160deg,rgba(27,34,49,.9),rgba(10,13,21,.96));box-shadow:0 16px 40px rgba(0,0,0,.17)}
+.sinjira-software-card h3{margin:0;font-size:clamp(1.2rem,2.4vw,1.6rem);line-height:1.25}
+.sinjira-software-card p{margin:0 0 8px;flex:1;max-width:57ch;line-height:1.65;color:#d5dce8}
+.sinjira-software-card .btn{margin-top:auto}
+.sinjira-software-roadmap{max-width:980px}
+.sinjira-software-page .universe-subnav a:focus-visible,.sinjira-software-card a:focus-visible{outline:3px solid #ffaf8f;outline-offset:4px}
+@media(max-width:700px){.sinjira-software-grid{grid-template-columns:1fr}.sinjira-software-visual{min-height:210px}}
+
+/* Les trois bannières officielles sont affichées intégralement : aucun texte
+   inclus dans les illustrations ne doit être coupé, y compris sur mobile. */
+.container.sinjira-category-hero-grid.sinjira-category-hero-grid--banner,
+.container.games-hero-grid.sinjira-category-hero-grid--banner,
+.v24-shell.v24-hero-grid.sinjira-category-hero-grid--banner {
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:clamp(20px,3vw,36px);
+}
+.sinjira-category-poster.sinjira-category-poster--banner {
+  display:block;
+  margin:0;
+  width:100%;
+  max-width:none;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.13);
+  border-radius:clamp(14px,2.5vw,28px);
+  background:#060913;
+  box-shadow:0 24px 70px rgba(0,0,0,.30);
+}
+.sinjira-category-poster.sinjira-category-poster--banner img {
+  display:block;
+  width:100%;
+  height:auto;
+  max-height:none;
+  aspect-ratio:auto;
+  object-fit:contain;
+  object-position:center;
+}
+.sinjira-portal-art {
+  display:block;
+  width:100%;
+  height:auto;
+  max-height:none;
+  margin:14px 0 18px;
+  border-radius:14px;
+  object-fit:contain;
+  background:#060913;
+}
+@media (max-width:640px) {
+  .sinjira-category-poster--banner {border-radius:12px}
+  .sinjira-category-hero-grid--banner {gap:18px}
+  .sinjira-portal-art {margin:12px 0}
+}
+
+/* Navigation par ancres : garder les titres visibles sous les deux menus fixes */
+.sinjira-software-page #contenu{scroll-margin-top:94px}
+.sinjira-software-page #outils,
+.sinjira-software-page #avenir{scroll-margin-top:178px}
+@media(max-width:650px){
+  .sinjira-software-page #contenu{scroll-margin-top:86px}
+  .sinjira-software-page #outils,
+  .sinjira-software-page #avenir{scroll-margin-top:170px}
+}

@@ -1,3 +1,4 @@
+import { readBoundedRequestText } from '../_shared/bounded-request.mjs';
 import {corsHeaders} from '../_shared/cors.ts';
 import {requiredUser,serviceClient} from '../_shared/auth.ts';
 
@@ -26,7 +27,7 @@ async function readLimitedJson(req:Request):Promise<{body?:any;response?:Respons
       return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
     }
   }
-  const raw=await req.text();
+  const raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);
   if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES){
     return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
   }
@@ -75,12 +76,12 @@ Deno.serve(async req=>{
       const msg=String(error.message||'');
       if(msg.includes('CODE_INVALID_OR_USED'))return privateJson({ok:false,error:'Ce code ne peut pas être activé. Vérifiez le code ou contactez le support.'},409);
       if(msg.includes('PRODUCT_NOT_ACTIVE'))return privateJson({ok:false,error:'Ce produit n’est pas disponible pour activation.'},409);
-      console.error('[redeem-license-code]',error);
+      console.error('[redeem-license-code]','LICENSE_REDEEM_FAILED');
       return privateJson({ok:false,error:'Activation impossible.',code:'LICENSE_REDEEM_FAILED'},500);
     }
     return privateJson({ok:true,entitlement:data?.[0]||null});
   }catch(e){
-    console.error('[redeem-license-code]',e);
+    console.error('[redeem-license-code]',e instanceof Error && e.message==='AUTH_REQUIRED' ? 'AUTH_REQUIRED' : 'LICENSE_UNEXPECTED_ERROR');
     if(e?.message==='AUTH_REQUIRED')return privateJson({ok:false,error:'Connexion requise.'},401);
     return privateJson({ok:false,error:'Activation impossible.',code:'LICENSE_UNEXPECTED_ERROR'},500);
   }

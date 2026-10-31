@@ -4,6 +4,7 @@ import os,re
 
 ROOT=Path(__file__).resolve().parents[1]
 MIG=ROOT/'supabase'/'migrations'
+CANDIDATES=ROOT/'supabase'/'candidate-migrations'
 
 EXPECTED_TABLES={
 'access_requests','account_identities','account_legacy_preferences','account_safety_profiles','admin_notifications',
@@ -46,7 +47,10 @@ PLANNED_LOCAL_TABLES={
 'market_listings','market_favorites','token_ledger',
 'codex_entities','codex_relationships','content_versions',
 'security_push_receipt_queue',
-'social_live_rooms','social_live_room_members','social_live_messages','social_live_room_invites','social_live_room_share_codes'
+'social_live_rooms','social_live_room_members','social_live_messages','social_live_room_invites','social_live_room_share_codes',
+# Consultations Projet Nova 18+ : DDL local proposé, jamais revendiqué comme production.
+'nova_consultation40_aggregate_counts','nova_consultation40_participants',
+'nova_survey_aggregate_counts','nova_survey_participants'
 }
 
 CREATE_RE=re.compile(r'create\s+table\s+(?:if\s+not\s+exists\s+)?(?:(?:public|private)\.)?([a-zA-Z_][a-zA-Z0-9_]*)',re.I)
@@ -58,13 +62,20 @@ def annotate(level:str,message:str):
 
 def main()->int:
     sql='\n'.join(p.read_text('utf-8',errors='ignore') for p in sorted(MIG.glob('*.sql')))
-    local={m.group(1).lower() for m in CREATE_RE.finditer(sql)}
-    missing=sorted(EXPECTED_TABLES-local)
+    candidate_sql='\n'.join(p.read_text('utf-8',errors='ignore') for p in sorted(CANDIDATES.glob('*.sql')))
+    local_active={m.group(1).lower() for m in CREATE_RE.finditer(sql)}
+    local_candidates={m.group(1).lower() for m in CREATE_RE.finditer(candidate_sql)}
+    local=local_active | local_candidates
+    missing=sorted(EXPECTED_TABLES-local_active)
     planned=sorted((local-EXPECTED_TABLES)&PLANNED_LOCAL_TABLES)
     unexpected=sorted(local-EXPECTED_TABLES-PLANNED_LOCAL_TABLES)
+    overlap=sorted(local_active & local_candidates)
+    accidental=sorted(local_active & {'nova_survey_participants','nova_survey_aggregate_counts','nova_consultation40_participants','nova_consultation40_aggregate_counts'})
     stale_planned=sorted(PLANNED_LOCAL_TABLES-local)
 
-    print(f'Manifeste production: {len(EXPECTED_TABLES)} tables; reconstruction locale: {len(local)} tables; modules planifiés présents: {len(planned)}.')
+    print(f'Manifeste production: {len(EXPECTED_TABLES)} tables; reconstruction locale active: {len(local_active)} tables; modules planifiés présents: {len(planned)}.')
+    if overlap or accidental:
+        print('ECHEC migration active contenant des tables Nova candidates: '+', '.join(sorted(set(overlap+accidental))))
     if missing:
         print(f'ECHEC reconstruction: {len(missing)} table(s) de production absente(s) des migrations locales:')
         for name in missing:
@@ -80,7 +91,7 @@ def main()->int:
     if planned:
         print('INFO modules locaux explicitement planifiés, non revendiqués comme production:')
         for name in planned:print('- PLANNED '+name)
-    if missing or unexpected or stale_planned:return 1
+    if missing or unexpected or stale_planned or overlap or accidental:return 1
     print('OK reconstruction: production entièrement reconstructible; aucune table locale non classifiée.')
     return 0
 

@@ -1,0 +1,663 @@
+#!/usr/bin/env python3
+"""Contrôle HTTP externe en lecture seule après une publication Pages explicitement approuvée."""
+from __future__ import annotations
+
+import argparse
+import sys
+import time
+from html.parser import HTMLParser
+from dataclasses import dataclass
+from typing import Callable, Mapping
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlparse
+from urllib.request import HTTPRedirectHandler, Request, build_opener
+from pages_release_proof import MARKER, render
+
+BASE = "https://www.benoitcantin.com"
+PUBLIC_ROUTES = (
+    "/", "/404.html", "/compte/", "/projets/sinjira/",
+    "/projets/sinjira/romans/", "/projets/sinjira/jeux/",
+    "/projets/sinjira/logiciels/",
+    "/projets/projet-nova/",
+    "/projets/projet-nova/boussole-electorale.html",
+    "/projets/projet-nova/resultats-sondages.html",
+    "/projets/projet-nova/assets/resultats-sondages.js",
+    "/projets/projet-nova/data/resultats-sondages-publics-v1.json",
+    "/projets/projet-nova/consultation-40.html",
+    "/projets/projet-nova/sondage.html",
+    "/projets/projet-nova/assets/consultation-40.js",
+    "/projets/projet-nova/data/consultation-40-v1.json",
+    "/projets/projet-nova/assets/sondage.js",
+    "/projets/projet-nova/assets/sondage.css",
+    "/projets/projet-nova/data/sondage-questions-v1.json",
+    "/projets/projet-nova/assets/boussole-electorale.js",
+    "/projets/projet-nova/assets/boussole-electorale.css",
+    "/projets/projet-nova/data/boussole-electorale-v2.json",
+    "/projets/projet-nova/data/boussole-sources-partis-2026.json",
+    "/projets/projet-nova/assets/nova-sondage-icone.webp",
+    "/robots.txt", "/sitemap.xml",
+    "/assets/js/site.js",
+    "/projets/projet-nova/data/boussole-partis-2026.json",
+    "/projets/projet-nova/data/boussole-preuves-2026.json",
+    "/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf",
+    "/assets/media/nova-logo.webp",
+    "/assets/media/nova-boussole-electorale.webp",
+    "/assets/media/nova-boussole-electorale-v2.webp",
+    "/assets/media/sinjira-romans-banniere-2026.webp",
+    "/assets/media/sinjira-jeux-banniere-2026.webp",
+    "/assets/media/sinjira-logiciels-banniere-2026.webp",
+)
+PRIVATE_ROUTES = (
+    "/supabase/config.toml",
+    "/tests/e2e/test_public_site.py",
+    "/mobile-native/App.tsx",
+    "/scripts/validate_site.py",
+    "/scripts/audit_pages_jekyll.py",
+    "/.github/workflows/validate-site.yml",
+    "/docs/README.md",
+    "/_config.yml",
+    "/assets/icons/README.md",
+    "/projets/projet-nova/netlify.toml",
+    "/projets/projet-nova/UPLOAD_GITHUB.md",
+    "/projets/projet-nova/SECURITY.md",
+    "/projets/sinjira/codex/livre-i-delivery-contract.json",
+    # Sources serveur/Supabase et dépendances mobiles : jamais servies par Pages.
+    "/supabase/migrations/20260808090000_sinjira_players.sql",
+    "/supabase/functions/get-private-book-url/index.ts",
+    "/supabase/tests/license_redemption_security_a1.test.sql",
+    "/mobile-native/package.json",
+    # API privées, migrations et contrats de sécurité : jamais un actif Pages.
+    "/supabase/functions/get-novel-file-url/index.ts",
+    "/supabase/functions/conscience-vault/index.ts",
+    "/supabase/functions/personal-ai/index.ts",
+    "/supabase/production-migration-ledger.txt",
+    "/.github/workflows/sinjira-secret-guard.yml",
+    "/package.json",
+    "/tests/test_sensitive_edge_stream_limits.cjs",
+    "/docs/SUPABASE_PRODUCTION_RUNBOOK.md",
+    # Ancien chemin technique Netlify : même refus strict après PUBLISH.
+    "/scripts/build_netlify_public.py",
+)
+ERROR_CODES = {404, 410}
+# Un HTTP 200 HTML sur un JS, un sitemap ou un robots.txt masque une publication cassée.
+MIME_HINTS = {
+    "/robots.txt": ("text/plain",),
+    "/sitemap.xml": ("application/xml", "text/xml"),
+    "/assets/js/site.js": ("application/javascript", "text/javascript",
+                           "application/x-javascript", "application/ecmascript",
+                           "text/ecmascript"),
+    "/projets/projet-nova/data/boussole-partis-2026.json": ("application/json",),
+    "/projets/projet-nova/data/boussole-preuves-2026.json": ("application/json",),
+    "/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf": ("application/pdf",),
+    "/assets/media/nova-logo.webp": ("image/webp",),
+    "/assets/media/nova-boussole-electorale.webp": ("image/webp",),
+    "/assets/media/nova-boussole-electorale-v2.webp": ("image/webp",),
+    "/projets/projet-nova/boussole-electorale.html": ("text/html",),
+    "/projets/projet-nova/resultats-sondages.html": ("text/html",),
+    "/projets/projet-nova/assets/resultats-sondages.js": ("application/javascript", "text/javascript", "application/x-javascript"),
+    "/projets/projet-nova/data/resultats-sondages-publics-v1.json": ("application/json",),
+    "/projets/projet-nova/consultation-40.html": ("text/html",),
+    "/projets/projet-nova/sondage.html": ("text/html",),
+    "/projets/projet-nova/assets/consultation-40.js": ("application/javascript", "text/javascript", "application/x-javascript"),
+    "/projets/projet-nova/data/consultation-40-v1.json": ("application/json",),
+    "/projets/projet-nova/assets/sondage.js": ("application/javascript", "text/javascript", "application/x-javascript"),
+    "/projets/projet-nova/assets/sondage.css": ("text/css",),
+    "/projets/projet-nova/data/sondage-questions-v1.json": ("application/json",),
+    "/projets/projet-nova/assets/boussole-electorale.js": ("application/javascript", "text/javascript", "application/x-javascript"),
+    "/projets/projet-nova/assets/boussole-electorale.css": ("text/css",),
+    "/projets/projet-nova/data/boussole-electorale-v2.json": ("application/json",),
+    "/projets/projet-nova/data/boussole-sources-partis-2026.json": ("application/json",),
+    "/projets/projet-nova/assets/nova-sondage-icone.webp": ("image/webp",),
+    "/assets/media/sinjira-romans-banniere-2026.webp": ("image/webp",),
+    "/assets/media/sinjira-jeux-banniere-2026.webp": ("image/webp",),
+    "/assets/media/sinjira-logiciels-banniere-2026.webp": ("image/webp",),
+}
+USER_AGENT = "SINJIRA-Pages-Publication-Audit/1.0"
+RELEASE_ATTEMPTS = 13
+RELEASE_PAUSE_SECONDS = 10
+# Contrôler le HTML Nova réellement en production, et pas seulement ses URLs.
+NOVA_HOME = "/projets/projet-nova/"
+NOVA_MAX_HTML_BYTES = 196608
+NOVA_NAV = {
+    "nova-survey-directory-40": "consultation-40.html",
+    "nova-survey-directory-64": "sondage.html",
+    "nova-survey-directory-compass": "boussole-electorale.html",
+}
+NOVA_ICONS = {
+    "assets/nova-sondage-icone.webp": 2,
+    "../../assets/media/nova-boussole-electorale-v2.webp": 1,
+}
+
+
+
+# Contrat minimal du HTML REEL servi aux visiteurs, distinct du simple HTTP 200.
+# La fonction reste en lecture seule et ne transmet aucune opinion politique.
+NOVA_TOOL_MARKERS = {
+    "/projets/projet-nova/consultation-40.html": (
+        b'id="sondage-privacy-warning"',
+        b'id="sondage-age"',
+        b'id="sondage-consent"',
+        b'id="sondage-start"',
+        b'id="sondage-next"',
+        b'id="sondage-review-list"',
+        b'id="sondage-submit"',
+        b'assets/consultation-40.js',
+    ),
+    "/projets/projet-nova/sondage.html": (
+        b'id="sondage-privacy-warning"',
+        b'id="sondage-age"',
+        b'id="sondage-consent"',
+        b'id="sondage-start"',
+        b'id="sondage-next"',
+        b'id="sondage-review-list"',
+        b'id="sondage-submit"',
+        b'assets/sondage.js',
+    ),
+    "/projets/projet-nova/boussole-electorale.html": (
+        b'id="compass-start"',
+        b'id="compass-next"',
+        b'id="compass-results"',
+        b'id="compass-results-grid"',
+        b'id="compass-evidence-question-results"',
+        b'assets/boussole-electorale.js',
+    ),
+    "/projets/projet-nova/resultats-sondages.html": (
+        b'id="results-state"',
+        b'id="results-retry"',
+        b'id="results-show-40"',
+        b'id="results-show-64"',
+        b'id="results-question-list"',
+        b'assets/resultats-sondages.js',
+    ),
+}
+
+class NovaHomepage(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.ids: list[str] = []
+        self.links: list[tuple[str, str | None]] = []
+        self.images: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attr = dict(attrs)
+        if attr.get("id"):
+            self.ids.append(attr["id"])
+        if tag == "a" and attr.get("id"):
+            self.links.append((attr["id"], attr.get("href")))
+        if tag == "img" and attr.get("src"):
+            self.images.append(attr["src"])
+
+
+def verify_nova_home(body: bytes) -> list[str]:
+    if not body or len(body) > NOVA_MAX_HTML_BYTES:
+        return ["Accueil Nova : réponse HTML absente ou trop volumineuse"]
+    try:
+        source = body.decode("utf-8", errors="strict")
+        html = NovaHomepage()
+        html.feed(source)
+        html.close()
+    except (UnicodeError, ValueError) as exc:
+        return ["Accueil Nova : HTML non valide (" + type(exc).__name__ + ")"]
+    errors: list[str] = []
+    if html.ids.count("consultations") != 1:
+        errors.append("Accueil Nova : section #consultations absente ou dupliquée")
+    for control, destination in NOVA_NAV.items():
+        links = [href for name, href in html.links if name == control]
+        if links != [destination]:
+            errors.append("Accueil Nova : bouton " + control + " absent ou mal orienté")
+    for icon, count in NOVA_ICONS.items():
+        if html.images.count(icon) < count:
+            errors.append("Accueil Nova : illustration manquante " + icon)
+    if "collecte fermée" not in source:
+        errors.append("Accueil Nova : avertissement sur la collecte fermée absent")
+    return errors
+
+
+
+
+def verify_nova_tool_page(path: str, body: bytes) -> list[str]:
+    """Détecte une page ancienne ou tronquée même si le serveur répond 200."""
+    if not body or len(body) > NOVA_MAX_HTML_BYTES:
+        return [f"Parcours public {path}: HTML absent ou excessif"]
+    try:
+        body.decode("utf-8", errors="strict")
+    except UnicodeError:
+        return [f"Parcours public {path}: HTML UTF-8 non valide"]
+    return [f"Parcours public {path}: composant manquant {marker.decode('ascii')}"
+            for marker in NOVA_TOOL_MARKERS[path] if body.count(marker) != 1]
+
+@dataclass(frozen=True)
+class Reply:
+    status: int
+    location: str = ""
+    content_type: str = ""
+    body: bytes = b""
+
+
+class StopRedirects(HTTPRedirectHandler):
+    def redirect_request(self, request, fp, code, msg, headers, newurl):
+        return None
+
+
+def fetch(url: str) -> Reply:
+    opener = build_opener(StopRedirects)
+    req = Request(url, headers={
+        "User-Agent": USER_AGENT,
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+        "Accept": "*/*",
+    })
+    try:
+        response = opener.open(req, timeout=12)
+    except HTTPError as exc:
+        return Reply(exc.code, exc.headers.get("Location", ""),
+                     exc.headers.get("Content-Type", ""))
+    with response:
+        path = urlparse(url).path
+        if path == "/" + MARKER:
+            body = response.read(2049)
+        elif path == NOVA_HOME or path in NOVA_TOOL_MARKERS:
+            # Lire uniquement les pages PUBLIQUES Nova, jamais les chemins techniques.
+            body = response.read(NOVA_MAX_HTML_BYTES + 1)
+        else:
+            body = b""
+        return Reply(response.status, response.headers.get("Location", ""),
+                     response.headers.get("Content-Type", ""), body)
+
+
+
+def wait_for_release(base: str, getter: Callable[[str], Reply],
+                     release: tuple[str, str], attempts: int = RELEASE_ATTEMPTS,
+                     pause: Callable[[int], None] = time.sleep) -> list[str]:
+    """Attendre une propagation CDN bornée, jamais approuver une ancienne version.
+
+    Seule l'identité du reçu est sondée. Tous les parcours publics et
+    interdictions techniques sont ensuite réévalués par verify().
+    """
+    if base != BASE:
+        return ["Domaine officiel interdit pour l'attente de publication"]
+    if not 1 <= attempts <= RELEASE_ATTEMPTS:
+        return ["Nombre de tentatives du reçu non autorisé"]
+    try:
+        expected = render(*release)
+    except ValueError:
+        return ["Identité de publication malformée"]
+    url = base + "/" + MARKER
+    last = "aucune réponse"
+    for index in range(attempts):
+        try:
+            response = getter(url)
+        except (URLError, OSError, TimeoutError, ValueError) as exc:
+            last = "erreur réseau " + type(exc).__name__
+        else:
+            if response.location or response.status in {301, 302, 307, 308}:
+                return ["Reçu de publication : redirection interdite"]
+            if response.status == 200:
+                mime = response.content_type.split(";", 1)[0].strip().lower()
+                if mime != "application/json":
+                    return ["Reçu de publication : MIME non JSON"]
+                if response.body == expected:
+                    return []
+                last = "révision SHA/run différente de celle approuvée"
+            else:
+                last = "HTTP " + str(response.status)
+        if index + 1 < attempts:
+            pause(RELEASE_PAUSE_SECONDS)
+    return [
+        "Reçu de publication non propagé après "
+        + str(attempts) + " tentatives (" + last + ")"
+    ]
+
+
+def verify(base: str, getter: Callable[[str], Reply],
+           release: tuple[str, str] | None = None) -> list[str]:
+    target = urlparse(base)
+    if (base != BASE or target.scheme != "https" or target.netloc != "www.benoitcantin.com"
+            or target.path or target.query or target.fragment):
+        return ["Base de contrôle interdite : le domaine officiel HTTPS est requis."]
+    errors: list[str] = []
+    # Chaque URL canonique contrôlée doit répondre directement en 200.
+    # Suivre une redirection vers l'accueil peut masquer une page absente.
+    # Cette règle ne concerne pas les liens sortants ni les chemins non sondés.
+    for path in PUBLIC_ROUTES:
+        try:
+            result = getter(base + path)
+        except (URLError, OSError, TimeoutError, ValueError) as exc:
+            errors.append(f"Parcours public {path}: erreur réseau ({type(exc).__name__})")
+            continue
+        if result.status in {301, 302, 303, 307, 308} or result.location:
+            errors.append(f"Parcours public {path}: redirection interdite sur URL canonique")
+            continue
+        if result.status != 200:
+            errors.append(f"Parcours public {path}: HTTP {result.status} (200 attendu)")
+            continue
+        content_type = result.content_type.split(";", 1)[0].strip().lower()
+        if path.endswith((".html", "/")) and content_type != "text/html":
+            errors.append(f"Parcours public {path}: type MIME HTML inattendu")
+        if path in MIME_HINTS and content_type not in MIME_HINTS[path]:
+            errors.append(f"Parcours public {path}: type MIME non conforme ({content_type or 'absent'})")
+        if path == NOVA_HOME and content_type == "text/html":
+            errors.extend(verify_nova_home(result.body))
+        if path in NOVA_TOOL_MARKERS and content_type == "text/html":
+            errors.extend(verify_nova_tool_page(path, result.body))
+    if release is not None:
+        marker_url = base + "/" + MARKER
+        try:
+            expected_receipt = render(*release)
+            receipt = getter(marker_url)
+        except (URLError, OSError, TimeoutError, ValueError) as exc:
+            errors.append(f"Reçu de publication non vérifiable ({type(exc).__name__})")
+        else:
+            if receipt.status != 200:
+                errors.append(f"Reçu de publication absent: HTTP {receipt.status}")
+            if receipt.location:
+                errors.append("Reçu de publication : redirection interdite")
+            mime = receipt.content_type.split(";", 1)[0].strip().lower()
+            if mime != "application/json":
+                errors.append("Reçu de publication : MIME JSON incorrect")
+            if receipt.body != expected_receipt:
+                errors.append("Reçu de publication différent du SHA/run approuvés")
+    for path in PRIVATE_ROUTES:
+        try:
+            result = getter(base + path)
+        except (URLError, OSError, TimeoutError, ValueError) as exc:
+            errors.append(f"Source technique {path}: erreur réseau ({type(exc).__name__})")
+            continue
+        if result.status not in ERROR_CODES:
+            errors.append(f"Source technique {path}: HTTP {result.status} (404/410 strict requis)")
+    return errors
+
+
+def self_test() -> None:
+    # La frontière post-PUBLISH doit couvrir les 18 chemins techniques,
+    # y compris le script historique Netlify, sans en oublier un.
+    assert len(PRIVATE_ROUTES) == len(set(PRIVATE_ROUTES)) == 26
+    assert "/scripts/build_netlify_public.py" in PRIVATE_ROUTES
+    assert "/supabase/migrations/20260808090000_sinjira_players.sql" in PRIVATE_ROUTES
+    assert "/supabase/functions/get-private-book-url/index.ts" in PRIVATE_ROUTES
+    assert "/supabase/tests/license_redemption_security_a1.test.sql" in PRIVATE_ROUTES
+    assert "/mobile-native/package.json" in PRIVATE_ROUTES
+    nova_home = (
+        '<section id="consultations">'
+        '<a id="nova-survey-directory-40" href="consultation-40.html">40</a>'
+        '<a id="nova-survey-directory-64" href="sondage.html">64</a>'
+        '<a id="nova-survey-directory-compass" href="boussole-electorale.html">Boussole</a>'
+        '<img src="assets/nova-sondage-icone.webp">'
+        '<img src="assets/nova-sondage-icone.webp">'
+        '<img src="../../assets/media/nova-boussole-electorale-v2.webp">'
+        '<p>collecte fermée</p></section>'
+    ).encode("utf-8")
+    assert not verify_nova_home(nova_home)
+    def fixture(url: str) -> Reply:
+        path = urlparse(url).path
+        if path == NOVA_HOME:
+            return Reply(200, content_type="text/html", body=nova_home)
+        if path in NOVA_TOOL_MARKERS:
+            return Reply(200, content_type="text/html",
+                         body=b"<html>" + b"\n".join(NOVA_TOOL_MARKERS[path]) + b"</html>")
+        if path in PRIVATE_ROUTES:
+            return Reply(404, content_type="text/html")
+        mime = "text/html" if path.endswith(("/", ".html")) else {
+            "/assets/js/site.js": "text/javascript",
+            "/sitemap.xml": "application/xml",
+            "/projets/projet-nova/data/boussole-partis-2026.json": "application/json",
+            "/projets/projet-nova/data/boussole-preuves-2026.json": "application/json",
+            "/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf": "application/pdf",
+            "/assets/media/nova-logo.webp": "image/webp",
+            "/assets/media/nova-boussole-electorale.webp": "image/webp",
+            "/assets/media/nova-boussole-electorale-v2.webp": "image/webp",
+            "/assets/media/sinjira-romans-banniere-2026.webp": "image/webp",
+            "/assets/media/sinjira-jeux-banniere-2026.webp": "image/webp",
+            "/assets/media/sinjira-logiciels-banniere-2026.webp": "image/webp",
+            "/projets/projet-nova/assets/consultation-40.js": "text/javascript",
+            "/projets/projet-nova/data/consultation-40-v1.json": "application/json",
+            "/projets/projet-nova/assets/sondage.js": "text/javascript",
+            "/projets/projet-nova/assets/sondage.css": "text/css",
+            "/projets/projet-nova/data/sondage-questions-v1.json": "application/json",
+            "/projets/projet-nova/assets/boussole-electorale.js": "text/javascript",
+            "/projets/projet-nova/assets/boussole-electorale.css": "text/css",
+            "/projets/projet-nova/data/boussole-electorale-v2.json": "application/json",
+            "/projets/projet-nova/data/boussole-sources-partis-2026.json": "application/json",
+            "/projets/projet-nova/assets/nova-sondage-icone.webp": "image/webp",
+            "/projets/projet-nova/resultats-sondages.html": "text/html",
+            "/projets/projet-nova/assets/resultats-sondages.js": "text/javascript",
+            "/projets/projet-nova/data/resultats-sondages-publics-v1.json": "application/json",
+        }.get(path, "text/plain")
+        return Reply(200, content_type=mime)
+    assert not verify(BASE, fixture), verify(BASE, fixture)
+    # Une page HTTP 200 sans formulaire ou script reste non publiable.
+    for route, markers in NOVA_TOOL_MARKERS.items():
+        for marker in markers:
+            def missing_tool_control(url: str, expected=route, missing=marker) -> Reply:
+                response = fixture(url)
+                if url == BASE + expected:
+                    return Reply(200, content_type="text/html",
+                                 body=response.body.replace(missing, b"MISSING", 1))
+                return response
+            assert any(route in error and "composant manquant" in error
+                       for error in verify(BASE, missing_tool_control)), (
+                "Rupture de page Nova non détectée : " + route
+            )
+        assert verify_nova_tool_page(route, b""), "HTML Nova absent accepté"
+        assert verify_nova_tool_page(route, b"x" * (NOVA_MAX_HTML_BYTES + 1)), (
+            "HTML Nova excessif accepté"
+        )
+    # Une page renvoyant 200 sans l'un des trois liens reste NON publiable.
+    for marker in ("nova-survey-directory-40", "nova-survey-directory-64",
+                   "nova-survey-directory-compass", 'id="consultations"',
+                   "collecte fermée", "../../assets/media/nova-boussole-electorale-v2.webp"):
+        def missing_on_home(url: str, target=marker) -> Reply:
+            if url == BASE + NOVA_HOME:
+                body = nova_home.replace(target.encode("utf-8"), b"REMOVED")
+                return Reply(200, content_type="text/html", body=body)
+            return fixture(url)
+        assert any("Accueil Nova" in issue for issue in verify(BASE, missing_on_home)), (
+            "Régression non détectée sur l'accueil Nova : " + marker
+        )
+    def misleading_link(url: str) -> Reply:
+        if url == BASE + NOVA_HOME:
+            return Reply(200, content_type="text/html", body=nova_home.replace(
+                b'href="sondage.html"', b'href="consultation-40.html"'))
+        return fixture(url)
+    assert any("nova-survey-directory-64" in issue
+               for issue in verify(BASE, misleading_link)), "Lien du sondage 64 erroné"
+    assert verify_nova_home(b""), "Page Nova absente acceptée"
+    assert verify_nova_home(b"x" * (NOVA_MAX_HTML_BYTES + 1)), (
+        "Page Nova excessivement grande acceptée"
+    )
+    def leak(url: str) -> Reply:
+        if url.endswith(PRIVATE_ROUTES[0]):
+            return Reply(200, content_type="text/plain")
+        return fixture(url)
+    assert any("supabase/config.toml" in e for e in verify(BASE, leak)), "Fuite technique non détectée"
+    def redirect_leak(url: str) -> Reply:
+        if url.endswith(PRIVATE_ROUTES[1]):
+            return Reply(302, location="/compte/")
+        return fixture(url)
+    assert any("test_public_site.py" in e for e in verify(BASE, redirect_leak)), "Redirect trompeur"
+    # Toute route technique, nouvelle ou historique, doit être refusée.
+    # Le GET d'un seul chemin en 200, 206, 301, 302, 403 ou 500 échoue.
+    for private in PRIVATE_ROUTES:
+        for exposed_status in (200, 206, 301, 302, 403, 500):
+            def unsafe_route(url: str, route=private, status=exposed_status) -> Reply:
+                if url == BASE + route:
+                    return Reply(status, content_type="text/plain")
+                return fixture(url)
+            assert any(private in error for error in verify(BASE, unsafe_route)), (
+                f"Chemin technique non vérifié : {private} / HTTP {exposed_status}"
+            )
+    def external(url: str) -> Reply:
+        if url == BASE + "/":
+            return Reply(302, location="https://other.example/")
+        return fixture(url)
+    assert any("redirection interdite" in e for e in verify(BASE, external)), (
+        "Redirection externe"
+    )
+    # Une redirection interne ne doit pas faire passer une route cassée
+    # en utilisant le HTTP 200 de l'accueil (ni remplacer une image).
+    for route in PUBLIC_ROUTES:
+        def masked_by_home(url: str, target=route) -> Reply:
+            if url == BASE + target:
+                return Reply(302, location="/", content_type="text/html")
+            return fixture(url)
+        issues = verify(BASE, masked_by_home)
+        assert any(route in issue and "redirection interdite" in issue
+                   for issue in issues), (
+            f"Redirection canonique masquée : {route}"
+        )
+    # Même une Location sur un HTTP 200 ne constitue pas une preuve
+    # suffisamment univoque pour la route exacte attendue.
+    def ambiguous_location(url: str) -> Reply:
+        if url == BASE + "/projets/sinjira/romans/":
+            return Reply(200, location="/", content_type="text/html")
+        return fixture(url)
+    assert any("romans/" in issue and "redirection interdite" in issue
+               for issue in verify(BASE, ambiguous_location))
+    def missing(url: str) -> Reply:
+        if url == BASE + "/projets/sinjira/":
+            return Reply(404, content_type="text/html")
+        return fixture(url)
+    assert any("projets/sinjira/" in e for e in verify(BASE, missing)), "Parcours public disparu"
+    for new_route in (
+        "/projets/sinjira/romans/", "/projets/sinjira/jeux/",
+        "/projets/sinjira/logiciels/",
+        "/assets/media/sinjira-romans-banniere-2026.webp",
+        "/assets/media/sinjira-jeux-banniere-2026.webp",
+        "/assets/media/sinjira-logiciels-banniere-2026.webp",
+        "/assets/media/nova-boussole-electorale.webp",
+        "/assets/media/nova-boussole-electorale-v2.webp",
+        "/projets/projet-nova/boussole-electorale.html",
+        "/projets/projet-nova/resultats-sondages.html",
+    "/projets/projet-nova/assets/resultats-sondages.js",
+    "/projets/projet-nova/data/resultats-sondages-publics-v1.json",
+    "/projets/projet-nova/consultation-40.html",
+        "/projets/projet-nova/sondage.html",
+        "/projets/projet-nova/assets/consultation-40.js",
+        "/projets/projet-nova/data/consultation-40-v1.json",
+        "/projets/projet-nova/assets/sondage.js",
+        "/projets/projet-nova/assets/sondage.css",
+        "/projets/projet-nova/data/sondage-questions-v1.json",
+        "/projets/projet-nova/assets/boussole-electorale.js",
+        "/projets/projet-nova/assets/boussole-electorale.css",
+        "/projets/projet-nova/data/boussole-electorale-v2.json",
+        "/projets/projet-nova/data/boussole-sources-partis-2026.json",
+        "/projets/projet-nova/assets/nova-sondage-icone.webp",
+    ):
+        def new_route_missing(url: str) -> Reply:
+            if url == BASE + new_route:
+                return Reply(404, content_type="text/html")
+            return fixture(url)
+        assert any(new_route in error for error in verify(BASE, new_route_missing)), (
+            f"Nouvelle route SINJIRA/Nova non protégée: {new_route}"
+        )
+    for asset in MIME_HINTS:
+        def wrong_mime(url: str) -> Reply:
+            if url == BASE + asset:
+                # MIME impossible pour une page HTML comme pour une image.
+                # Retourner text/html ici rendrait la fixture HTML valide.
+                return Reply(200, content_type="application/octet-stream")
+            return fixture(url)
+        assert any(asset in e and "MIME" in e for e in verify(BASE, wrong_mime)), (
+            f'Réponse de type interdit non détectée: {asset}'
+        )
+    def missing_mime(url: str) -> Reply:
+        if url == BASE + "/assets/js/site.js":
+            return Reply(200, content_type="")
+        return fixture(url)
+    assert any("site.js" in e and "MIME" in e for e in verify(BASE, missing_mime)), (
+        "Header Content-Type manquant non détecté"
+    )
+    sha, run = "a" * 40, "1234567"
+    def receipt_ok(url: str) -> Reply:
+        if url == BASE + "/" + MARKER:
+            return Reply(200, content_type="application/json", body=render(sha, run))
+        return fixture(url)
+    assert not verify(BASE, receipt_ok, (sha, run)), (
+        verify(BASE, receipt_ok, (sha, run))
+    )
+    assert any("Reçu de publication" in e for e in verify(BASE, receipt_ok, ("b" * 40, run))), (
+        "Mauvaise version publiée non détectée"
+    )
+    assert any("Reçu de publication" in e for e in verify(BASE, fixture, (sha, run))), (
+        "Absence de reçu non détectée"
+    )
+    def receipt_redirect(url: str) -> Reply:
+        if url == BASE + "/" + MARKER:
+            return Reply(302, location="https://other.example/", content_type="text/html")
+        return fixture(url)
+    assert any("Reçu de publication" in e for e in verify(BASE, receipt_redirect, (sha, run))), (
+        "Redirection d'identité non détectée"
+    )
+    # Propagation : deux reçus obsolètes, puis le reçu strictement attendu.
+    fetches: list[str] = []
+    pauses: list[int] = []
+    def eventual(url: str) -> Reply:
+        fetches.append(url)
+        return Reply(200, content_type="application/json",
+                     body=render(sha if len(fetches) >= 3 else "b" * 40, run))
+    assert not wait_for_release(BASE, eventual, (sha, run), attempts=3,
+                                pause=pauses.append), "Révision attendue non reconnue"
+    assert len(fetches) == 3 and pauses == [RELEASE_PAUSE_SECONDS] * 2, (
+        "Attente bornée mal calculée"
+    )
+    no_match = wait_for_release(BASE, lambda url: Reply(
+        200, content_type="application/json", body=render("b" * 40, run)),
+        (sha, run), attempts=2, pause=lambda _: None)
+    assert any("non propagé" in x for x in no_match), (
+        "Une ancienne version a été acceptée après le délai"
+    )
+    assert wait_for_release(BASE, lambda _: Reply(
+        302, location="https://other.example/"), (sha, run),
+        attempts=3, pause=lambda _: None), "Redirection du reçu autorisée"
+    assert wait_for_release(BASE, lambda _: Reply(
+        200, content_type="text/html", body=render(sha, run)), (sha, run),
+        attempts=3, pause=lambda _: None), "MIME incorrect approuvé"
+    assert wait_for_release(BASE, eventual, ("INVALID", run), pause=lambda _: None), (
+        "Identité illégale acceptée"
+    )
+    assert verify("http://www.benoitcantin.com", fixture), "HTTP en clair"
+    assert verify("https://example.com", fixture), "Hôte tiers"
+    print("OK autotests HTTP : fuites, MIME, redirections et identité SHA/run prouvées")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--check", action="store_true",
+                        help="Envoie exclusivement des requêtes GET HTTPS en lecture seule au site officiel")
+    parser.add_argument("--release-sha")
+    parser.add_argument("--release-run-id")
+    parser.add_argument("--await-release", action="store_true",
+                        help="Attendre jusqu'à deux minutes le SHA/run exact sur le domaine")
+    args = parser.parse_args()
+    if args.self_test:
+        self_test()
+        return 0
+    if not args.check:
+        parser.error("Préciser --self-test ou --check (aucun réseau par défaut)")
+    if bool(args.release_sha) != bool(args.release_run_id):
+        parser.error("--release-sha et --release-run-id requis ensemble")
+    identity = (args.release_sha, args.release_run_id) if args.release_sha else None
+    if args.await_release and identity is None:
+        parser.error("--await-release exige --release-sha et --release-run-id")
+    if args.await_release:
+        wait_errors = wait_for_release(BASE, fetch, identity)
+        if wait_errors:
+            for error in wait_errors:
+                print("ECHEC identité CDN: " + error, file=sys.stderr)
+            return 1
+        print("OK : réception CDN du SHA et du run exacts")
+    errors = verify(BASE, fetch, identity)
+    if errors:
+        print(f"ECHEC preuve live : {len(errors)} problème(s) détecté(s)", file=sys.stderr)
+        for error in errors:
+            print("- " + error, file=sys.stderr)
+        return 1
+    print(f"OK HTTP : {len(PUBLIC_ROUTES)} routes publiques, "
+          f"{len(PRIVATE_ROUTES)} chemins techniques protégés"
+          + (", et reçu SHA/run identique au déploiement" if identity else ""))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

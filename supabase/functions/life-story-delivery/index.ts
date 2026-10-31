@@ -1,3 +1,4 @@
+import { readBoundedRequestText } from '../_shared/bounded-request.mjs';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const MAX_REQUEST_BYTES = 256;
@@ -68,6 +69,48 @@ function hasPdfSignature(bytes: ArrayBuffer) {
   return String.fromCharCode(...head) === '%PDF-';
 }
 
+function canonicalExportPath(record: Record<string,unknown>, exportId:unknown): boolean {
+  // Même avec un registre erroné, un lien ne doit pas ouvrir un AUTRE export
+  // du même compartiment. Le service d'export écrit exactement ce chemin.
+  const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  if(typeof record.subject_user_id!=='string'||typeof record.case_id!=='string'||
+     typeof record.storage_path!=='string'||typeof exportId!=='string')return false;
+  if(!uuid.test(record.subject_user_id)||!uuid.test(record.case_id)||!uuid.test(exportId))
+    return false;
+  return record.storage_path===`${record.subject_user_id}/${record.case_id}/${exportId}.pdf`;
+}
+
+async function readDeliveryToken(req: Request): Promise<{ token?: string; response?: Response }> {
+  // Une fonction publique doit refuser le MIME et la taille AVANT la lecture.
+  const type=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
+  if(type!=='application/json')return {response:errorResponse(req,415)};
+  const declared=req.headers.get('content-length');
+  if(declared!==null &&
+    (!/^[0-9]+$/.test(declared)||!Number.isSafeInteger(Number(declared))||
+     Number(declared)>MAX_REQUEST_BYTES))return {response:errorResponse(req,413)};
+
+  let rawBody:string;
+  try{
+    rawBody=await readBoundedRequestText(req, MAX_REQUEST_BYTES);
+  }catch(error){
+    if(error instanceof Error && error.message==='REQUEST_TIMEOUT')
+      return {response:errorResponse(req,408)};
+    if(error instanceof Error && error.message==='REQUEST_TOO_LARGE')
+      return {response:errorResponse(req,413)};
+    return {response:errorResponse(req,400)};
+  }
+  // L'intégrité du flux et l'encodage fatal sont garantis par le lecteur partagé.
+  let payload:unknown;
+  try{payload=JSON.parse(rawBody)}catch{return {response:errorResponse(req,400)}}
+  if(!payload||typeof payload!=='object'||Array.isArray(payload))
+    return {response:errorResponse(req,400)};
+  const body=payload as Record<string,unknown>;
+  if(Object.keys(body).length!==1||typeof body.token!=='string')
+    return {response:errorResponse(req,400)};
+  if(!/^[a-f0-9]{64}$/.test(body.token))return {response:errorResponse(req)};
+  return {token:body.token};
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return preflight(req);
   if (req.method !== 'POST') return errorResponse(req, 405);
@@ -77,20 +120,9 @@ Deno.serve(async (req) => {
     const requestUrl = new URL(req.url);
     if (requestUrl.search) return errorResponse(req, 400);
 
-    const type = (req.headers.get('content-type') || '').toLowerCase();
-    if (!type.startsWith('application/json')) return errorResponse(req, 415);
-    const declaredLength = Number(req.headers.get('content-length') || '0');
-    if (Number.isFinite(declaredLength) && declaredLength > MAX_REQUEST_BYTES) return errorResponse(req, 413);
-
-    const rawBody = await req.text();
-    if (new TextEncoder().encode(rawBody).byteLength > MAX_REQUEST_BYTES) return errorResponse(req, 413);
-    let payload: unknown;
-    try { payload = JSON.parse(rawBody); } catch { return errorResponse(req, 400); }
-    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return errorResponse(req, 400);
-    const body = payload as Record<string, unknown>;
-    if (Object.keys(body).length !== 1 || typeof body.token !== 'string') return errorResponse(req, 400);
-    const token = body.token;
-    if (!/^[a-f0-9]{64}$/.test(token)) return errorResponse(req);
+    const parsed=await readDeliveryToken(req);
+    if(parsed.response)return parsed.response;
+    const token=parsed.token!;
 
     const hash = await sha256Hex(token);
     const service = serviceClient();
@@ -103,10 +135,12 @@ Deno.serve(async (req) => {
 
     const { data: record, error: exportError } = await service
       .from('life_story_exports')
-      .select('status,storage_bucket,storage_path,audience')
+      .select('status,storage_bucket,storage_path,audience,subject_user_id,case_id')
       .eq('id', link.export_id)
       .maybeSingle();
-    if (exportError || !record || !['generated', 'delivered'].includes(record.status) || record.storage_bucket !== 'sinjira-life-story-exports' || !record.storage_path) return errorResponse(req);
+    if (exportError || !record || !['generated', 'delivered'].includes(record.status) ||
+        record.storage_bucket !== 'sinjira-life-story-exports' ||
+        !canonicalExportPath(record,link.export_id)) return errorResponse(req);
 
     const { data: file, error: downloadError } = await service.storage.from('sinjira-life-story-exports').download(record.storage_path);
     if (downloadError || !file) return errorResponse(req, 410);

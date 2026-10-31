@@ -32,7 +32,16 @@ def main():
     elif module>=0 and guard>module: errors.append(f'Garde auth chargé après le module dans {rel}')
 
   helper=text('assets/js/sinjira-auth-route.js')
-  for required in ["raw.startsWith('//')","raw.includes('\\\\')","url.origin !== location.origin"]:
+  required_guards=[
+    "value.startsWith('//')",
+    "url.origin !== location.origin",
+    "url.pathname !== path",
+    "path.includes('%')",
+    r'/[\\\u0000-\u001f\u007f]/',
+    r'netlify\.toml',
+    "safeFallback = fallback === '' ? ''",
+  ]
+  for required in required_guards:
     if required not in helper: errors.append(f'Garde anti-open-redirect incomplet: {required}')
 
   signup_html=text('compte/inscription.html')

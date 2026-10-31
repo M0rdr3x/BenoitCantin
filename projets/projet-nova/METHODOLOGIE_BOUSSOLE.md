@@ -184,6 +184,12 @@ La validation GitHub affiche donc, à partir des preuves **finalisées** et en d
 
 L’objectif est de prioriser la recherche exacte de sources supplémentaires. Aucun seuil de densité ne doit inciter à transformer une position `unknown` ou `ambiguous` en appui/opposition sans preuve officielle et seconde révision indépendante. Une source qui ne répond pas au mécanisme précis de la question ne doit pas être forcée dans la matrice.
 
+## Transparence des révisions assistées par IA (octobre 2026)
+
+Les fiches dont le champ `secondIndependentReview.reviewer` est attribué à ChatGPT ont fait l'objet d'un **second examen documentaire assisté par IA**. La dénomination technique héritée du schéma ne doit pas être assimilée à un audit humain indépendant ni à une approbation des autorités électorales. Les sources, dates, réserves et divergences doivent demeurer accessibles; une validation externe de fond reste nécessaire avant de déclarer la couverture intégralement indépendante. Les positions `unknown` ne sont pas complétées par des suppositions.
+
+Le calcul local de la Boussole respecte `axisMinimumAnswered` (deux propositions principales répondues par axe dans la version 2.2.0). Une seule réponse principale n'autorise pas l'affichage d'un nombre sur cet axe; la couverture reste visible.
+
 ## Comparaison factuelle avec les formations
 
 Le profil personnel peut être calculé sur les 16 dimensions. Pour les formations politiques, le site doit privilégier une lecture factuelle : sélectionner une ou plusieurs formations et consulter, pour chaque proposition, les positions documentées, leurs sources, leur date et leur niveau de confiance.

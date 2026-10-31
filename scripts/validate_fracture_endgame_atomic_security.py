@@ -16,7 +16,8 @@ EDGE_REQUIRED = {
     'auth partagée': "import { requiredUser, serviceClient } from '../_shared/auth.ts';",
     'POST uniquement': "req.method !== 'POST'",
     'auth avant traitement': 'const user = await requiredUser(req);',
-    'lecture texte bornable': 'const rawBody = await req.text();',
+    'lecteur borné partagé': "import { readBoundedRequestText } from '../_shared/bounded-request.mjs';",
+    'lecture texte bornable': 'const rawBody = await readBoundedRequestText(req, MAX_REQUEST_BYTES);',
     'taille UTF-8 réelle': 'new TextEncoder().encode(rawBody).byteLength',
     'content-type JSON': "contentType.startsWith('application/json')",
     'réponse privée': "'Cache-Control': 'private, no-store, max-age=0'",
@@ -39,6 +40,7 @@ EDGE_REQUIRED = {
 
 EDGE_FORBIDDEN = {
     'JSON direct non borné': 'await req.json()',
+    'texte brut non borné': 'await req.text()',
     'insert contribution direct': ".from('internal_gameplay_contributions').insert",
     'update rapport direct': ".from('fracture_endgame_reports').update",
     'update partie direct': ".from('fracture_parties').update",
@@ -99,7 +101,7 @@ def validate(edge_path: Path, migration_path: Path) -> list[str]:
             errors.append(f'Garde Edge Fracture violé: {label}.')
 
     auth_pos = edge.find('const user = await requiredUser(req);')
-    body_pos = edge.find('const rawBody = await req.text();')
+    body_pos = edge.find('const rawBody = await readBoundedRequestText(req, MAX_REQUEST_BYTES);')
     if auth_pos < 0 or body_pos < 0:
         errors.append('Ordre auth/corps Fracture impossible à vérifier.')
     elif auth_pos > body_pos:
@@ -138,7 +140,8 @@ def self_test() -> None:
         raise AssertionError('Les fichiers réels sains doivent passer: ' + ' | '.join(clean))
 
     edge_cases = {
-        'JSON direct': real_edge.replace('const rawBody = await req.text();', 'const rawBody = JSON.stringify(await req.json());', 1),
+        'JSON direct': real_edge.replace('const rawBody = await readBoundedRequestText(req, MAX_REQUEST_BYTES);', 'const rawBody = JSON.stringify(await req.json());', 1),
+        'lecteur texte direct': real_edge.replace('const rawBody = await readBoundedRequestText(req, MAX_REQUEST_BYTES);', 'const rawBody = await req.text();', 1),
         'limite HTTP augmentée': real_edge.replace('MAX_REQUEST_BYTES = 4096;', 'MAX_REQUEST_BYTES = 40960;', 1),
         'content-type retiré': real_edge.replace("    if (!contentType.startsWith('application/json')) {", "    if (false) {", 1),
         'no-store retiré': real_edge.replace("      'Cache-Control': 'private, no-store, max-age=0',\n", '', 1),

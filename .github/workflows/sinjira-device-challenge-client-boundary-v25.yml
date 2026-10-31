@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'assets/js/sinjira-security-center-v24-4-98.js'
+      - 'tests/test_security_center_dom_escaping.cjs'
       - 'compte/securite.html'
       - 'mobile-native/App.tsx'
       - 'mobile-native/package.json'
@@ -17,6 +18,7 @@ on:
     branches: [main]
     paths:
       - 'assets/js/sinjira-security-center-v24-4-98.js'
+      - 'tests/test_security_center_dom_escaping.cjs'
       - 'compte/securite.html'
       - 'mobile-native/App.tsx'
       - 'mobile-native/package.json'
@@ -56,3 +58,6 @@ jobs:
           python3 scripts/validate_device_challenge_client_boundary.py
           python3 scripts/validate_device_challenge_continuity_smoke.py
           python3 scripts/validate_no_committed_secrets.py
+
+      - name: Refuser les injections d'attributs HTML dans le Centre de sécurité
+        run: node --test tests/test_security_center_dom_escaping.cjs

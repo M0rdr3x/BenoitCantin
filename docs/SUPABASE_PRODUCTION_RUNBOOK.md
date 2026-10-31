@@ -85,6 +85,20 @@ La production n’est considérée synchronisée que lorsque le résumé final a
 
 Un run nommé `APPLICATION DEMANDÉE` n’est **pas** une preuve d’application réussie. En cas d’échec ou de synchronisation partielle, arrêter la procédure et diagnostiquer la première étape en échec.
 
+## Écart constaté entre le registre Git et Supabase le 19 octobre 2026
+
+La lecture distante en mode consultation a recensé **189 migrations** alors que le ledger du dépôt n'en conserve que **186**. Les trois entrées supplémentaires sont :
+
+- `20261005150917` — `sinjira_novel_private_delivery_v25`;
+- `20261007224917` — `temporary_sinjira_livre_i_upload_policy`;
+- `20261007225257` — `remove_temporary_sinjira_livre_i_upload_policy`.
+
+**Aucune modification automatique du ledger ni réparation de l'historique ne doit être tentée.** Vérifier le SQL exact et les preuves des trois opérations réelles, puis réconcilier le registre dans une PR approuvée. Certaines migrations encore dans le lot revu portent des timestamps antérieurs aux trois migrations d'octobre; leur ordre et leur stratégie d'application doivent être résolus avant déploiement.
+
+Le contrôle `scripts/verify_supabase_remote_history.py` compare désormais la colonne « Remote » de `supabase migration list --linked` au ledger approuvé, **avant le dry-run** et de nouveau **après approbation humaine**. Une version ajoutée, absente, dupliquée ou illisible fait échouer le workflow. Les autotests locaux s'exécutent sans secret ni accès à la production.
+
+Les deux migrations politiques Nova (`20261019170000` et `20261019190000`) restent non revues. Leurs tables sont absentes de production. Revue légale et méthodologique, protection des opinions sensibles et approbation distincte sont indispensables avant mise en collecte.
+
 ## Rollout ciblé d’un module sensible
 
 Un rollout ciblé validé (par exemple Coffre des consciences, Emploi ou Mon IA) peut être appliqué séparément si son contrat impose une migration précise et un périmètre plus étroit que le workflow générique.

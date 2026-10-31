@@ -1,3 +1,5 @@
+import { fetchBoundedPdf } from '../_shared/bounded-pdf-fetch.mjs';
+import { readBoundedRequestText } from '../_shared/bounded-request.mjs';
 import { PDFDocument, StandardFonts } from 'npm:pdf-lib@1.17.1';
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredUser } from '../_shared/auth.ts';
@@ -5,6 +7,7 @@ import { requiredUser } from '../_shared/auth.ts';
 const FUNCTION_VERSION='24.5.54';
 const MAX_REQUEST_BYTES=220_000;
 const MAX_TEMPLATE_BYTES=15*1024*1024;
+const MAX_GENERATED_PDF_BYTES=20*1024*1024;
 const MAX_TEXT=6000;
 const PAID_EXTERNAL_SERVICES_ENABLED=false;
 const TEMPLATE_ORIGIN='https://www.benoitcantin.com';
@@ -47,7 +50,7 @@ async function readLimitedJson(req:Request):Promise<{body?:Record<string,unknown
     }
   }
 
-  const raw=await req.text();
+  const raw=await readBoundedRequestText(req, MAX_REQUEST_BYTES);
   if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES){
     return {response:privateJson({ok:false,error:'Requête trop volumineuse.',code:'REQUEST_TOO_LARGE',function_version:FUNCTION_VERSION},413)};
   }
@@ -75,16 +78,8 @@ function templateUrl(mode:'solo'|'standard'){
 }
 
 async function fetchTemplateBytes(mode:'solo'|'standard'){
-  const response=await fetch(templateUrl(mode),{cache:'no-store',redirect:'error'});
-  if(!response.ok)throw new Error('PLAYER_SHEET_TEMPLATE_FETCH_FAILED');
-
-  const declared=Number(response.headers.get('content-length')||'0');
-  if(Number.isFinite(declared)&&declared>MAX_TEMPLATE_BYTES)throw new Error('PLAYER_SHEET_TEMPLATE_TOO_LARGE');
-
-  const bytes=new Uint8Array(await response.arrayBuffer());
-  if(bytes.byteLength===0||bytes.byteLength>MAX_TEMPLATE_BYTES)throw new Error('PLAYER_SHEET_TEMPLATE_TOO_LARGE');
-  if(bytes.length<5||String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-')throw new Error('PLAYER_SHEET_TEMPLATE_NOT_PDF');
-  return bytes;
+  // Même borne de 15 Mio et protection contre les réponses trop lentes.
+  return await fetchBoundedPdf(templateUrl(mode),MAX_TEMPLATE_BYTES);
 }
 
 async function buildPlayerSheet(mode:'solo'|'standard',fields:Record<string,unknown>){
@@ -108,7 +103,10 @@ async function buildPlayerSheet(mode:'solo'|'standard',fields:Record<string,unkn
     // Certains lecteurs PDF régénèrent eux-mêmes les apparences.
   }
 
-  return await pdf.save();
+  const output=new Uint8Array(await pdf.save());
+  if(output.byteLength===0||output.byteLength>MAX_GENERATED_PDF_BYTES)
+    throw new Error('PLAYER_SHEET_OUTPUT_TOO_LARGE');
+  return output;
 }
 
 Deno.serve(async(req)=>{

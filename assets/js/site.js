@@ -110,6 +110,32 @@
     });
   }
 
+  // Afficher la catégorie SINJIRA active dans le sous-menu horizontal.
+  // Ne jamais employer scrollIntoView : il déplacerait aussi la page en
+  // hauteur jusqu'à ce sous-menu situé après le héros.
+  function revealCurrentUniverseCategory() {
+    var subnav = doc.querySelector('.universe-subnav .container');
+    if (!subnav || !window.matchMedia('(max-width: 820px)').matches) return;
+    var current = subnav.querySelector('a[aria-current="page"]');
+    if (!current || subnav.scrollWidth <= subnav.clientWidth + 2) return;
+    var area = subnav.getBoundingClientRect();
+    var selected = current.getBoundingClientRect();
+    if (selected.left >= area.left + 6 && selected.right <= area.right - 6) return;
+    var delta = (selected.left + selected.right - area.left - area.right) / 2;
+    subnav.scrollLeft = Math.max(0, Math.min(
+      subnav.scrollWidth - subnav.clientWidth, subnav.scrollLeft + delta
+    ));
+  }
+
+  revealCurrentUniverseCategory();
+  // Les dimensions du texte peuvent évoluer après le premier rendu
+  // (polices et feuilles chargées tardivement sur Firefox/WebKit).
+  window.addEventListener('load', revealCurrentUniverseCategory);
+  if (doc.fonts && doc.fonts.ready) {
+    doc.fonts.ready.then(revealCurrentUniverseCategory);
+  }
+  window.addEventListener('resize', revealCurrentUniverseCategory);
+
   var core = doc.querySelector('[data-core-preview]');
   if (core) {
     var coreImage = core.querySelector('img');
