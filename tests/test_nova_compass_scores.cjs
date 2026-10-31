@@ -189,3 +189,31 @@ test("Partage Boussole : jamais de paramètres ni de fragment de l'URL source", 
   assert.ok(copied.endsWith(safePage));
   assert.ok(!copied.includes(secret));
 });
+
+
+test("Liens de preuve Boussole : protocoles actifs et URL trompeuses refusés", () => {
+  const startUrl = source.indexOf("  function safeDocumentSource(raw){");
+  const endUrl = source.indexOf("\n  function validateDocumentaryCorpora", startUrl);
+  assert.ok(startUrl >= 0 && endUrl > startUrl, "Validation officielle des liens absente");
+  const validate = new vm.Script(source.slice(startUrl, endUrl) + "\nsafeDocumentSource(input)",
+    {filename: "boussole-electorale.js:safeDocumentSource"});
+  const inspect = input => validate.runInNewContext({input, URL}, {timeout:1000});
+  for(const url of [
+    "https://www.electionsquebec.qc.ca/",
+    "https://exemple.org/document.pdf?version=1"
+  ]) assert.equal(inspect(url), true, "Document HTTPS valide rejeté : " + url);
+  for(const url of [
+    "javascript:alert(1)",
+    "data:text/html,Bonjour",
+    "http://exemple.org/document.pdf",
+    "//exemple.org/document.pdf",
+    "https://utilisateur:motdepasse@exemple.org/",
+    "https://exemple.org:8443/document.pdf",
+    "https://exemple.org/a b",
+    "https://exemple.org/a\nb",
+    "https://",
+    "",
+    null,
+    "x".repeat(2100)
+  ]) assert.equal(inspect(url), false, "URL non sûre acceptée : " + String(url).slice(0,60));
+});
