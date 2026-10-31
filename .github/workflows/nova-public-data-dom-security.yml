@@ -1,0 +1,38 @@
+name: Projet NOVA — protection DOM contre les injections
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nova-dom-security-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  nova-public-dom:
+    name: Echappement HTML et validation des liens NOVA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout minimal et sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Node épinglé
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '22.16.0'
+          check-latest: false
+      - name: Vérifier la syntaxe des fichiers JS
+        run: |
+          node --check projets/projet-nova/script.js
+          node --check scripts/test_nova_public_data_xss.cjs
+      - name: Tester les données HTML malicieuses et URL externes
+        run: node scripts/test_nova_public_data_xss.cjs
