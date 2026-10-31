@@ -37,8 +37,15 @@ def violations(filename: str, source: str) -> list[str]:
     lines = active_lines(source)
     if re.search(r"(?mi)^\s*permissions:\s*(?:write-all|read-all)\s*$", source):
         issues.append("Permissions globales implicites interdites")
-    if not re.search(r"(?m)^permissions:\s*$", source):
-        issues.append("Déclaration explicite permissions globale manquante")
+    root_permissions = [line for _, line in lines if line.startswith("permissions:")]
+    if root_permissions != ["permissions:"]:
+        issues.append("Une seule déclaration globale permissions en bloc est exigée")
+    # La notation YAML en flux et les permissions de job en ligne ne doivent
+    # pas contourner les règles d'indention conservatrices de cet auditeur.
+    if any(re.match(r"^on:\s*\S", line) for _, line in lines):
+        issues.append("Déclencheurs YAML en ligne non audités et interdits")
+    if any(re.match(r"^    permissions:\s*\S", line) for _, line in lines):
+        issues.append("Permissions de job en ligne non auditées et interdites")
 
     for number, line in lines:
         if re.match(r"^\s{2}(?:pull_request_target|workflow_run):", line):
