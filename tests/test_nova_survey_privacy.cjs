@@ -27,7 +27,7 @@ function sliceFunction(source, first, next) {
   return source.slice(start, stop);
 }
 
-function makeFixture(spec, stage, revoked) {
+function makeFixture(spec, stage, revoked, futureCollectionOpen = false) {
   const source = fs.readFileSync(path.join(nova,"assets",spec.filename),"utf8");
   assert.match(source, /const COLLECTION_OPEN = false;/);
   assert.match(source, /const LIVE_OPINION_CONSENT_GRANTED = false;/);
@@ -62,7 +62,7 @@ function makeFixture(spec, stage, revoked) {
 
   const selections = new Map([["q01","opinion-fictive"]]);
   const sandbox = {
-    COLLECTION_OPEN:false, LIVE_OPINION_CONSENT_GRANTED:false,
+    COLLECTION_OPEN:futureCollectionOpen, LIVE_OPINION_CONSENT_GRANTED:futureCollectionOpen,
     questions:Array.from({length:spec.count},(_,i)=>({id:"q"+i})),
     [spec.answers]:selections, step:7, editingReview:true, submitting:false,
     $:id=>elements[id],
@@ -107,3 +107,50 @@ for (const spec of cases) {
     });
   }
 }
+
+/** Ces garde-fous doivent aussi rester actifs si un jour la collecte est autorisée.
+ * Le consentement de démonstration n'ouvre toujours aucune collecte en CI.
+ */
+for (const spec of cases) {
+  for (const stage of ["questionnaire", "finish"]) {
+    for (const revoked of ["age", "consent"]) {
+      test(spec.id + " : retrait " + revoked +
+           " efface les opinions même avec les drapeaux futurs en " + stage, () => {
+        const {elements:e,selections,sandbox:s} =
+          makeFixture(spec, stage, revoked, true);
+        assert.equal(selections.size, 0, "les opinions seraient retenues après retrait");
+        assert.equal(s.step, 0);
+        assert.equal(e["sondage-introduction"].hidden, false);
+        assert.equal(e["sondage-questionnaire"].hidden, true);
+        assert.equal(e["sondage-finish"].hidden, true);
+        assert.equal(e["sondage-age"].checked, false);
+        assert.equal(e["sondage-consent"].checked, false);
+      });
+    }
+  }
+  test(spec.id + " : purge inconditionnelle au départ et au retour bfcache", () => {
+    const source = fs.readFileSync(path.join(nova, "assets", spec.filename), "utf8");
+    assert.match(source,
+      /window\.addEventListener\('pagehide', \(\) => \{\s*clearLocalDemo\(\);\s*\}\);/);
+    assert.match(source,
+      /if \(event\.persisted\) clearLocalDemo\(\);/);
+    assert.ok(!source.includes("if (event.persisted && !COLLECTION_OPEN"),
+      "le retour d'historique ne doit jamais contourner la purge");
+    assert.equal((source.match(/if \(recorded \|\| submitting \|\| !eligible\(\)\) return;/g) || []).length, 2,
+      "impossible de modifier les choix locaux pendant ou après un envoi");
+  });
+}
+
+test("consultation-40 : aucun reset concurrent pendant une transmission", () => {
+  const source = fs.readFileSync(path.join(nova, "assets", "consultation-40.js"), "utf8");
+  const reset = sliceFunction(source, "resetSurvey", "init");
+  let confirmationCalled = false;
+  const sandbox = {
+    submitting: true,
+    window: {confirm: () => { confirmationCalled = true; return true; }},
+    clearLocalDemo: () => {throw Error("purge concurrente");},
+    $: () => ({focus: () => {throw Error("focus concurrent");}})
+  };
+  new vm.Script(reset + "\nresetSurvey();").runInNewContext(sandbox, {timeout: 1000});
+  assert.equal(confirmationCalled, false);
+});
