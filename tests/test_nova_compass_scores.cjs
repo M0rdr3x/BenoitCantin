@@ -333,3 +333,26 @@ test("Carte détaillée Boussole : aucune position affichée pour un score non c
   assert.match(card(-100),/<i style="left:0%">/);
   assert.match(card(100),/<i style="left:100%">/);
 });
+
+
+// L'inventaire politique est un instantané daté, et non une interrogation
+// temps réel du registre électoral. Sa cohérence interne n'établit pas
+// l'exhaustivité de la liste à une date ultérieure.
+test("Registre Boussole : provenance datée et aucune exhaustivité temps réel supposée",()=>{
+  const parties=JSON.parse(fs.readFileSync(path.join(nova,
+    "data/boussole-partis-2026.json"),"utf8"));
+  assert.equal(parties.registryEvidence.snapshotDate,"2026-10-07");
+  const startRegistry=source.indexOf("  function renderPartyRegistry(corpus,evidenceCorpus){");
+  const endRegistry=source.indexOf("\n  const DOCUMENTARY_STATUS_LABELS",startRegistry);
+  assert.ok(startRegistry>=0 && endRegistry>startRegistry);
+  const fragment=source.slice(startRegistry,endRegistry);
+  assert.match(fragment,/registryEvidence\?\.snapshotDate/);
+  assert.match(fragment,/Comptes du dossier cohérents avec l’instantané/);
+  assert.match(fragment,/consulter le registre officiel d’Élections Québec/);
+  assert.doesNotMatch(fragment,/Liste officielle 2026 complète/);
+  const page=fs.readFileSync(path.join(nova,
+    "boussole-electorale.html"),"utf8");
+  assert.match(page,/instantané daté du 7 octobre 2026/);
+  assert.match(page,/statut actuel doit être vérifié auprès d’Élections Québec/);
+  assert.doesNotMatch(page,/Les 20 partis actuellement autorisés/);
+});

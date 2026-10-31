@@ -561,15 +561,17 @@
       : parties.filter(party => party.election2026Listed === true && party.entityType !== "future_party_project").length;
     const listedElectionEntries = parties.filter(party => party.election2026Listed === true && party.entityType !== "future_party_project").length;
     const listComplete = currentParties.length === expectedCurrent && listedElectionEntries === expectedElectionEntries;
+    const registryDate = /^\d{4}-\d{2}-\d{2}$/.test(corpus.registryEvidence?.snapshotDate || "")
+      ? corpus.registryEvidence.snapshotDate : "date non indiquée";
 
     const renderCard = party => {
       const isFuture = party.entityType === "future_party_project";
       const isWithdrawn = party.entityType === "authorization_withdrawn_2026";
       const status = isFuture
-        ? "Futur parti — non autorisé actuellement"
+        ? "Futur parti — non autorisé selon cet instantané"
         : isWithdrawn
           ? "Autorisation retirée en 2026"
-          : "Parti provincial actuellement autorisé";
+          : "Parti provincial autorisé selon l’instantané daté";
       const candidateCount = Number.isInteger(party.candidateCount2026) ? party.candidateCount2026 : null;
       const participation = isFuture
         ? "Non inscrit à la liste officielle des candidatures 2026"
@@ -586,10 +588,10 @@
 
     host.innerHTML = `
       <div class="compass-party-completeness" role="status" aria-live="polite">
-        <strong>${listComplete ? "Liste officielle 2026 complète." : "Vérification de la liste officielle requise."}</strong>
-        <span>${currentParties.length}/${expectedCurrent} partis actuellement autorisés affichés · ${listedElectionEntries}/${expectedElectionEntries} entrées de partis du scrutin 2026 suivies.</span>
+        <strong>${listComplete ? "Comptes du dossier cohérents avec l’instantané enregistré." : "Divergence des comptes : vérification du registre requise."}</strong>
+        <span>Instantané du ${esc(registryDate)} : ${currentParties.length}/${expectedCurrent} partis considérés autorisés à cette date · ${listedElectionEntries}/${expectedElectionEntries} entrées du scrutin 2026 suivies. Le statut peut avoir changé depuis : consulter le registre officiel d’Élections Québec.</span>
       </div>
-      <div class="compass-party-group-title"><strong>Partis actuellement autorisés</strong><span>${currentParties.length} formation${currentParties.length === 1 ? "" : "s"}</span></div>
+      <div class="compass-party-group-title"><strong>Partis autorisés selon l’instantané daté</strong><span>${currentParties.length} formation${currentParties.length === 1 ? "" : "s"}</span></div>
       ${currentParties.map(renderCard).join("")}
       ${traceabilityParties.length ? `<div class="compass-party-group-title compass-party-group-title-secondary"><strong>Traçabilité et projet futur</strong><span>Ces entrées sont séparées des partis actuellement autorisés.</span></div>${traceabilityParties.map(renderCard).join("")}` : ""}
     `;
