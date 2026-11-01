@@ -12,8 +12,8 @@ EDGE = ROOT / 'supabase/functions/send-game-report/index.ts'
 REQUIRED = {
     'POST uniquement': "req.method !== 'POST'",
     'JSON explicite': "contentType.startsWith('application/json')",
-    'lecture corps par texte': 'const raw = await req.text();',
-    'mesure UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
+    'lecture corps par flux borné': 'const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);',
+    'refus des flux trop longs': 'if (!limited.ok) return',
     'réponse privée': "'Cache-Control': 'private, no-store, max-age=0'",
     'protection MIME': "'X-Content-Type-Options': 'nosniff'",
     'référent masqué': "'Referrer-Policy': 'no-referrer'",
@@ -36,6 +36,7 @@ REQUIRED_PATTERNS = {
 
 FORBIDDEN = {
     'JSON direct non borné': 'await req.json()',
+    'lecture texte non bornée': 'await req.text()',
     'message erreur backend brut': 'error.message',
     'stack erreur brute': 'error.stack',
     'objet erreur brut console.error': 'console.error(error)',
@@ -110,8 +111,9 @@ async function fetchTemplateBytes(){
 async function readLimitedJson(req){
  const contentType=(req.headers.get('content-type')||'').toLowerCase();
  if(!contentType.startsWith('application/json')) return {response:new Response('',{status:415})};
- const raw = await req.text();
- if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES) return {response:new Response('',{status:413})};
+ const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);
+ if (!limited.ok) return {response:new Response('',{status:413})};
+ const raw = limited.raw;
  return {body:JSON.parse(raw||'{}')};
 }
 async function recordDelivery(){
@@ -149,7 +151,8 @@ Deno.serve(async(req)=>{
 
         mutations = {
             'content-type retiré': safe.replace(" if(!contentType.startsWith('application/json')) return {response:new Response('',{status:415})};\n", ''),
-            'req.json direct': safe.replace(' const raw = await req.text();', ' const bodyDirect = await req.json();'),
+            'req.json direct': safe.replace(' const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);', ' const bodyDirect = await req.json();'),
+            'lecture non bornée': safe.replace(' const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);', ' const raw = await req.text();'),
             'no-store retiré': safe.replace("  'Cache-Control': 'private, no-store, max-age=0',\n", ''),
             'services payants activés': safe.replace('PAID_EXTERNAL_SERVICES_ENABLED=false', 'PAID_EXTERNAL_SERVICES_ENABLED=true'),
             'log livraison brut': safe.replace("console.warn('[SINJIRA report]', { code:'REPORT_DELIVERY_RECORD_FAILED' });", "console.warn('[SINJIRA report]', error.message);"),
