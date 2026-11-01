@@ -47,6 +47,24 @@ async function run() {
   await denied(makeGuard(async () => level('aal1', 'aal2'))(context()), 'MFA_REQUIRED');
   await denied(makeGuard(async () => level(null, null))(context()), 'MFA_REQUIRED');
 
+  // An Auth provider failure must be fail-closed AND must never expose its
+  // original error object (which could contain tokens or personal data).
+  const providerLogs = [];
+  const previousConsoleError = console.error;
+  console.error = (...args) => { providerLogs.push(args); };
+  try {
+    await denied(
+      makeGuard(async () => { throw new Error('SENSITIVE_PROVIDER_ERROR'); })(context()),
+      'MFA_STATE_UNAVAILABLE'
+    );
+  } finally {
+    console.error = previousConsoleError;
+  }
+  assert.deepEqual(providerLogs, [
+    ['[SINJIRA admin auth]', { code: 'ADMIN_MFA_STATE_UNAVAILABLE' }]
+  ]);
+
+
   let consultedAal = false;
   const unauthorized = makeGuard(async () => { consultedAal = true; return level('aal2', 'aal2'); });
   await denied(unauthorized(context(false)), 'ADMIN_REQUIRED');
