@@ -44,9 +44,6 @@ class IdentityOracleGuardTests(unittest.TestCase):
                     "RAISE EXCEPTION 'AAL2_REQUIRED'")
 
     def test_deny_precedes_sensitive_lookup(self):
-        self.reject("  IF private.security_verified_mfa_exists(p_user_id)",
-                    "  IF private.security_verified_mfa_exists(p_user_id)")
-
         candidate = self.source
         identity = candidate.index("  IF COALESCE(auth.jwt()->>'role'")
         factor = candidate.index("  IF private.security_verified_mfa_exists")
