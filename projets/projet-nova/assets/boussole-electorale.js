@@ -180,8 +180,10 @@
   function updateProgress(){
     if(!state.data) return;
     const total = state.data.questions.length;
-    const step = Math.min(total, state.currentIndex + 1);
-    const decided = state.answers.size;
+    // Après reset/pagehide, ne pas annoncer « Question 1 » ou 2 % de
+    // progression alors que le questionnaire est revenu à son introduction.
+    const step = state.started ? Math.min(total, state.currentIndex + 1) : 0;
+    const decided = state.started ? state.answers.size : 0;
     const pct = total ? Math.round(step / total * 100) : 0;
     const bar = $("#compass-progress-bar");
     if(bar) bar.style.width = pct + "%";
@@ -189,10 +191,13 @@
     if(progress){
       progress.setAttribute("aria-valuemax",String(total));
       progress.setAttribute("aria-valuenow",String(step));
-      progress.setAttribute("aria-valuetext",`Question ${step} sur ${total}`);
+      progress.setAttribute("aria-valuetext",step ?
+        `Question ${step} sur ${total}` : "Questionnaire non commencé");
     }
     const text = $("#compass-progress-text");
-    if(text) text.textContent = `Question ${step} sur ${total} — ${decided} réponse${decided > 1 ? "s" : ""} enregistrée${decided > 1 ? "s" : ""}`;
+    if(text) text.textContent = step
+      ? `Question ${step} sur ${total} — ${decided} réponse${decided > 1 ? "s" : ""} enregistrée${decided > 1 ? "s" : ""}`
+      : "Questionnaire non commencé — aucune réponse enregistrée.";
   }
 
   function updateStepControls(){

@@ -96,6 +96,12 @@ def main():
                     and page.locator("#compass-results-grid .compass-result-card").count() == 0
                     and page.locator("#compass-start").is_visible(),
                     "le résultat subsiste après réinitialisation")
+            require(page.locator("#compass-progress-track").get_attribute("aria-valuenow") == "0"
+                    and page.locator("#compass-progress-track").get_attribute("aria-valuetext")
+                    == "Questionnaire non commencé"
+                    and "non commencé" in page.locator("#compass-progress-text").inner_text(),
+                    "Retour à l'introduction : progression et accessibilité encore à question 1")
+
             require(page.evaluate("""() => {
                 const input = document.querySelector("#compass-email-recipient");
                 input.value = "autre@example.test";

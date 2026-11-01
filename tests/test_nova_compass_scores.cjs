@@ -423,3 +423,36 @@ test("Réinitialisation Boussole : aucune fermeture de partage ne retient le pro
   assert.equal(email.oninput,null);
   assert.equal(link.href,"mailto:");
 });
+
+
+test("Boussole : après reset la progression ARIA indique zéro, pas question 1",()=>{
+  const begin=source.indexOf("  function updateProgress(){");
+  const end=source.indexOf("\n  function updateStepControls(){",begin);
+  assert.ok(begin>=0 && end>begin,"Mise à jour de progression réelle introuvable");
+  const nodes=Object.create(null);
+  const $=selector=>(nodes[selector]??={
+    style:{},attributes:{},textContent:"",
+    setAttribute(k,v){this.attributes[k]=v;}
+  });
+  const state={
+    data:corpus,currentIndex:38,started:false,
+    answers:new Map([["q01",{value:2,importance:"normal"}]])
+  };
+  const vmContext={state,$};
+  const run=new vm.Script(source.slice(begin,end)+"\nupdateProgress();",{
+    filename:"boussole-electorale.js:updateProgress"});
+  run.runInNewContext(vmContext,{timeout:1000});
+  assert.equal(nodes["#compass-progress-track"].attributes["aria-valuenow"],"0");
+  assert.equal(nodes["#compass-progress-track"].attributes["aria-valuetext"],
+    "Questionnaire non commencé");
+  assert.equal(nodes["#compass-progress-bar"].style.width,"0%");
+  assert.match(nodes["#compass-progress-text"].textContent,/non commencé/);
+  assert.doesNotMatch(nodes["#compass-progress-text"].textContent,/Question 1 sur 64/);
+  // Commencer à répondre doit toujours restaurer une progression réelle.
+  state.started=true;
+  state.currentIndex=38;
+  run.runInNewContext(vmContext,{timeout:1000});
+  assert.equal(nodes["#compass-progress-track"].attributes["aria-valuenow"],"39");
+  assert.equal(nodes["#compass-progress-track"].attributes["aria-valuetext"],"Question 39 sur 64");
+  assert.match(nodes["#compass-progress-text"].textContent,/1 réponse enregistrée/);
+});
