@@ -174,6 +174,9 @@
       edit.setAttribute('aria-label', 'Modifier la réponse à la question ' + (index + 1));
       edit.addEventListener('click', () => {
         if (recorded || submitting || !eligible()) return;
+        // Une ancienne commande Modifier ne peut plus être réutilisée
+        // après une purge ou le remplacement de la liste de révision.
+        if ($('sondage-finish').hidden || !list.contains(edit)) return;
         step = index;
         editingReview = true;
         $('sondage-finish').hidden = true;
@@ -357,6 +360,7 @@
     $('sondage-form').addEventListener('submit', e => e.preventDefault());
     $('sondage-review').addEventListener('click', () => {
       if (recorded || submitting || !eligible()) return;
+      if ($('sondage-finish').hidden) return;
       step = 0;
       editingReview = false;
       $('sondage-finish').hidden = true;

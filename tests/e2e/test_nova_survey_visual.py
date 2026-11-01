@@ -252,6 +252,17 @@ def main():
             require(page.locator("#sondage-next").is_disabled(),
                     "Retrait du consentement : réponse antérieure réapparue")
             require(page.evaluate("""() => {
+                const oldButton=window.__novaOldReview64;
+                delete window.__novaOldReview64;
+                oldButton.click();
+                document.querySelector("#sondage-review").click();
+                return document.querySelector("#sondage-position").textContent ===
+                    "Question 1 sur 64" &&
+                    document.querySelector("#sondage-next").disabled &&
+                    document.querySelector("#sondage-next").textContent === "Suivant" &&
+                    document.querySelector("#sondage-answered").textContent.startsWith("0 question");
+            }"""), "Ancien bouton Modifier/raccourci masqué a modifié le nouveau parcours")
+            require(page.evaluate("""() => {
                 const stale = window.__novaDetached64;
                 delete window.__novaDetached64;
                 stale.dispatchEvent(new Event("change", {bubbles:true}));
@@ -282,6 +293,10 @@ def main():
                     "Écran final absent après 64 questions")
             require(page.locator("#sondage-review-list li").count() == 64,
                     "Récapitulatif des 64 choix absent")
+            page.evaluate("""() => {
+                window.__novaOldReview64 = document.querySelector(
+                    "#sondage-review-list li:last-child button");
+            }""")
             require("Votre choix : Plutôt d’accord" in
                     page.locator("#sondage-review-list li").first.inner_text(),
                     "Première réponse non affichée")

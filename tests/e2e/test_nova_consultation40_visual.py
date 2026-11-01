@@ -113,6 +113,17 @@ with sync_playwright() as p:
         check(page.locator("#sondage-next").is_disabled(),
               "Retrait du consentement : ancienne réponse réutilisée")
         check(page.evaluate("""() => {
+            const oldButton=window.__novaOldReview40;
+            delete window.__novaOldReview40;
+            oldButton.click();
+            document.querySelector("#sondage-review").click();
+            return document.querySelector("#sondage-position").textContent.startsWith(
+                "Question 1 sur 40") &&
+                document.querySelector("#sondage-next").disabled &&
+                document.querySelector("#sondage-next").textContent === "Suivant" &&
+                document.querySelector("#sondage-answered").textContent.startsWith("0 question");
+        }"""), "Ancien bouton Modifier/raccourci masqué a réactivé une étape effacée")
+        check(page.evaluate("""() => {
             const stale = window.__novaDetached40;
             delete window.__novaDetached40;
             stale.dispatchEvent(new Event("change", {bubbles:true}));
@@ -136,6 +147,10 @@ with sync_playwright() as p:
         check(page.locator("#sondage-finish").is_visible(), "récapitulatif final absent")
         check(page.locator("#sondage-review-list li").count() == 40,
               "40 réponses du récapitulatif absentes")
+        page.evaluate("""() => {
+            window.__novaOldReview40 = document.querySelector(
+                "#sondage-review-list li:last-child button");
+        }""")
         check(page.locator("#sondage-submit").is_disabled(), "collecte doit rester inactive")
         check(not calls, "des réponses ont été transmises")
         page.locator("#sondage-review-list li").first.locator("button").click()

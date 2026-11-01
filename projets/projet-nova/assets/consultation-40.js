@@ -145,6 +145,9 @@
       modify.setAttribute('aria-label', 'Modifier la réponse à la question ' + (i + 1));
       modify.addEventListener('click', () => {
         if (recorded || submitting || !eligible()) return;
+        // Après une purge ou une nouvelle relecture, l'ancien bouton
+        // détaché ne doit plus pouvoir piloter le questionnaire courant.
+        if ($('sondage-finish').hidden || !list.contains(modify)) return;
         step = i;
         editingReview = true;
         show('questionnaire');
@@ -250,6 +253,7 @@
     });
     $('sondage-review').addEventListener('click', () => {
       if (recorded || submitting || !eligible()) return;
+      if ($('sondage-finish').hidden) return;
       step = 0;
       editingReview = false;
       show('questionnaire');
