@@ -519,6 +519,48 @@ def main():
                 state="visible", timeout=10_000)
             require(compass.locator("#compass-evidence-parties .compass-evidence-card").count() == 22,
                     "Reprise de l'explorateur documentaire incomplète")
+            # Une nouvelle vérification échouée APRÈS un chargement réussi
+            # ne doit pas laisser survivre les anciens callbacks de rendu.
+            compass.route(evidence_pattern, unsafe_evidence)
+            compass.evaluate("document.querySelector('#compass-evidence-retry').click()")
+            compass.locator("#compass-evidence-retry").wait_for(
+                state="visible",timeout=15_000)
+            stale = compass.evaluate("""() => {
+                const select=document.querySelector("#compass-evidence-question");
+                const filter=document.querySelector("#compass-evidence-only-documented");
+                const links=document.querySelector("#compass-evidence-priority-links");
+                const status=document.querySelector("#compass-evidence-question-status");
+                const before=status.textContent;
+                select.dispatchEvent(new Event("change",{bubbles:true}));
+                filter.dispatchEvent(new Event("change",{bubbles:true}));
+                links.dispatchEvent(new MouseEvent("click",{bubbles:true}));
+                return {
+                    safe:select.disabled && filter.disabled && select.options.length===0 &&
+                        select.onchange===null && filter.onchange===null &&
+                        links.onclick===null && links.children.length===0 &&
+                        document.querySelector("#compass-evidence-priorities").hidden &&
+                        document.querySelector("#compass-evidence-question-results")
+                          .querySelectorAll(".compass-evidence-record").length===0 &&
+                        document.querySelector("#compass-evidence-parties")
+                          .querySelectorAll(".compass-evidence-card").length===0 &&
+                        status.textContent===before,
+                    status:status.textContent
+                };
+            }""")
+            require(stale["safe"],"Un corpus périmé est rendu après échec: "+repr(stale))
+            compass.unroute(evidence_pattern,unsafe_evidence)
+            compass.locator("#compass-evidence-retry").click()
+            compass.locator("#compass-evidence-parties .compass-evidence-card").first.wait_for(
+                state="visible",timeout=15_000)
+            restored = compass.evaluate("""() => {
+                const select=document.querySelector("#compass-evidence-question");
+                const filter=document.querySelector("#compass-evidence-only-documented");
+                return !select.disabled && !filter.disabled && select.options.length===64 &&
+                    typeof select.onchange==="function" &&
+                    typeof filter.onchange==="function" &&
+                    typeof document.querySelector("#compass-evidence-priority-links").onclick==="function";
+            }""")
+            require(restored,"Les commandes ne sont pas restaurées après reprise valide")
             # Une modification de registre ou de sources qui conserve la
             # structure JSON doit bloquer l'explorateur entier (échec fermé).
             for file_name in ("boussole-partis-2026.json",
