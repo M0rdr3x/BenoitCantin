@@ -113,17 +113,6 @@ with sync_playwright() as p:
         check(page.locator("#sondage-next").is_disabled(),
               "Retrait du consentement : ancienne réponse réutilisée")
         check(page.evaluate("""() => {
-            const oldButton=window.__novaOldReview40;
-            delete window.__novaOldReview40;
-            oldButton.click();
-            document.querySelector("#sondage-review").click();
-            return document.querySelector("#sondage-position").textContent.startsWith(
-                "Question 1 sur 40") &&
-                document.querySelector("#sondage-next").disabled &&
-                document.querySelector("#sondage-next").textContent === "Suivant" &&
-                document.querySelector("#sondage-answered").textContent.startsWith("0 question");
-        }"""), "Ancien bouton Modifier/raccourci masqué a réactivé une étape effacée")
-        check(page.evaluate("""() => {
             const stale = window.__novaDetached40;
             delete window.__novaDetached40;
             stale.dispatchEvent(new Event("change", {bubbles:true}));
@@ -188,6 +177,18 @@ with sync_playwright() as p:
         page.locator("#sondage-start").click()
         check(page.locator("#sondage-next").is_disabled(),
               "réponses conservées après l'effacement demandé")
+        # Après réinitialisation, l'ancien bouton de la dernière question est détaché.
+        check(page.evaluate("""() => {
+            const oldButton=window.__novaOldReview40;
+            delete window.__novaOldReview40;
+            oldButton.click();
+            document.querySelector("#sondage-review").click();
+            return document.querySelector("#sondage-position").textContent.startsWith(
+                "Question 1 sur 40") &&
+                document.querySelector("#sondage-next").disabled &&
+                document.querySelector("#sondage-next").textContent === "Suivant" &&
+                document.querySelector("#sondage-answered").textContent.startsWith("0 question");
+        }"""), "Ancien bouton Modifier/raccourci masqué a réactivé une étape effacée")
         check(not page.locator("input[value=contre]").is_checked(),
               "opinion personnelle encore présente après effacement")
         check(not calls, "un envoi politique s'est déclenché en aperçu")

@@ -252,17 +252,6 @@ def main():
             require(page.locator("#sondage-next").is_disabled(),
                     "Retrait du consentement : réponse antérieure réapparue")
             require(page.evaluate("""() => {
-                const oldButton=window.__novaOldReview64;
-                delete window.__novaOldReview64;
-                oldButton.click();
-                document.querySelector("#sondage-review").click();
-                return document.querySelector("#sondage-position").textContent ===
-                    "Question 1 sur 64" &&
-                    document.querySelector("#sondage-next").disabled &&
-                    document.querySelector("#sondage-next").textContent === "Suivant" &&
-                    document.querySelector("#sondage-answered").textContent.startsWith("0 question");
-            }"""), "Ancien bouton Modifier/raccourci masqué a modifié le nouveau parcours")
-            require(page.evaluate("""() => {
                 const stale = window.__novaDetached64;
                 delete window.__novaDetached64;
                 stale.dispatchEvent(new Event("change", {bubbles:true}));
@@ -353,6 +342,18 @@ def main():
             page.locator("#sondage-start").click()
             require(page.locator("#sondage-next").is_disabled(),
                     "Des opinions sont restées dans la mémoire après effacement")
+            # Après réinitialisation, l'ancien bouton de la dernière question est détaché.
+            require(page.evaluate("""() => {
+                const oldButton=window.__novaOldReview64;
+                delete window.__novaOldReview64;
+                oldButton.click();
+                document.querySelector("#sondage-review").click();
+                return document.querySelector("#sondage-position").textContent ===
+                    "Question 1 sur 64" &&
+                    document.querySelector("#sondage-next").disabled &&
+                    document.querySelector("#sondage-next").textContent === "Suivant" &&
+                    document.querySelector("#sondage-answered").textContent.startsWith("0 question");
+            }"""), "Ancien bouton Modifier/raccourci masqué a modifié le nouveau parcours")
             require(not page.locator("#sondage-choices input[value='1']").is_checked(),
                     "Ancienne réponse retrouvée après purge")
             require(sent == [], f"Des réponses ont été envoyées malgré la collecte fermée : {sent}")
