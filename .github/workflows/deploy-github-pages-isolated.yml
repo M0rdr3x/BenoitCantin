@@ -102,9 +102,9 @@ jobs:
         run: |
           {
             echo "### GitHub Pages — artefact public isolé"
-            echo "- SHA approuvé : `$GITHUB_SHA`"
+            printf '%s\n' "- SHA approuvé : $GITHUB_SHA"
             echo "- Fichiers publics : **$PAGES_PUBLIC_FILE_COUNT**"
-            echo "- Source téléversée : `_site`"
+            echo "- Source téléversée : _site"
             echo "- Racine du dépôt : **non publiée**"
             echo "- Mode : **confinement temporaire**"
             echo "- Démo Livre I : **master exact obligatoire, y compris en confinement**"
