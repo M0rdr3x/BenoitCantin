@@ -53,11 +53,16 @@ class SessionLivenessTests(unittest.TestCase):
         self.expect_reject("from auth.sessions as live_session","from public.security_devices as live_session")
 
     def test_refuse_guard_after_mfa(self):
-        self.expect_reject(
-            "  perform private.security_require_aal2_if_available(v_user);",
-            "  perform private.security_require_aal2_if_available(v_user);\n"
-            "  select * into v_row from public.security_devices where user_id=v_user;",
-        )
+        # Déplacer le vrai bloc de garde APRÈS la validation MFA :
+        # le validateur doit refuser une garde trop tardive.
+        match = GUARD.search(self.sql)
+        self.assertIsNotNone(match)
+        guard = match.group(0)
+        removed = self.sql[:match.start()] + self.sql[match.end():]
+        anchor = "  perform private.security_require_aal2_if_available(v_user);"
+        self.assertIn(anchor, removed)
+        moved = removed.replace(anchor, anchor + "\n  " + guard, 1)
+        self.assertTrue(errors(moved))
 
     def test_untrusted_device_cannot_approve(self):
         self.expect_reject("    and is_trusted\n","    and true\n")
@@ -86,8 +91,10 @@ class SessionLivenessTests(unittest.TestCase):
         self.assertTrue(errors(self.sql+"\nGRANT ALL ON ALL TABLES IN SCHEMA public TO anon;"))
 
     def test_changed_signature_refused(self):
-        self.expect_reject("p_challenge_id uuid, p_device_key text, p_decision text",
-                           "p_challenge_id text, p_device_key text, p_decision text")
+        self.expect_reject(
+            "CREATE OR REPLACE FUNCTION sinjira_security_internal.security_resolve_connection_challenge(p_challenge_id uuid, p_device_key text, p_decision text)",
+            "CREATE OR REPLACE FUNCTION sinjira_security_internal.security_resolve_connection_challenge(p_challenge_id text, p_device_key text, p_decision text)",
+        )
 
     def test_changed_security_definer_refused(self):
         self.expect_reject("SECURITY DEFINER","SECURITY INVOKER")
