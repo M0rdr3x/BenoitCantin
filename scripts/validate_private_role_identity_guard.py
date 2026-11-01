@@ -54,6 +54,21 @@ def errors_in_candidate(source: str) -> list[str]:
         if "$function$" not in low or low.count("$function$") != 2:
             errors.append("Corps SQL non vérifiable : " + name)
 
+    if "p_project_id uuid, p_user_id uuid default auth.uid()" not in ranknorm:
+        errors.append("Signature historique de rang de projet modifiée")
+    # Le refus doit être la PREMIÈRE branche du CASE, sans autre accès
+    # aux comptes, aux rôles ou aux projets avant la vérification.
+    required_prefix = (
+        "select case when p_user_id is not null "
+        "and coalesce(auth.jwt()->>'role', '') <> 'service_role' "
+        "and p_user_id is distinct from (select auth.uid()) "
+        "then 0 when private.is_sinjira_admin(p_user_id) then 100"
+    )
+    if required_prefix not in ranknorm:
+        errors.append("Priorité du garde de rang de projet modifiée")
+    if re.search(r"\bwhen\s+true\b", ranknorm):
+        errors.append("Branche inconditionnelle interdite dans le rang de projet")
+
     mandatory_admin = (
         "p_user_id is not null",
         "coalesce(auth.jwt()->>'role', '') = 'service_role'",
