@@ -1,4 +1,4 @@
-import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
+import { readLimitedUtf8Body, readLimitedBinaryResponse } from '../_shared/limited-body.mjs';
 import { PDFDocument, StandardFonts } from 'npm:pdf-lib@1.17.1';
 import { corsHeaders } from '../_shared/cors.ts';
 import { optionalUser, serviceClient } from '../_shared/auth.ts';
@@ -43,10 +43,12 @@ function reportTemplateUrl(){
 async function fetchTemplateBytes(){
   const response=await fetch(reportTemplateUrl(),{cache:'no-store',redirect:'error'});
   if(!response.ok)throw new Error('REPORT_TEMPLATE_FETCH_FAILED');
-  const declared=Number(response.headers.get('content-length')||'0');
-  if(Number.isFinite(declared)&&declared>MAX_TEMPLATE_BYTES)throw new Error('REPORT_TEMPLATE_TOO_LARGE');
-  const bytes=new Uint8Array(await response.arrayBuffer());
-  if(bytes.byteLength===0||bytes.byteLength>MAX_TEMPLATE_BYTES)throw new Error('REPORT_TEMPLATE_TOO_LARGE');
+  // Limiter le vrai flux binaire, pas seulement Content-Length (non fiable).
+  // response.arrayBuffer() permettrait à une origine défaillante de dépasser
+  // MAX_TEMPLATE_BYTES avant même de valider sa taille.
+  const limited=await readLimitedBinaryResponse(response,MAX_TEMPLATE_BYTES);
+  if(!limited.ok)throw new Error('REPORT_TEMPLATE_TOO_LARGE');
+  const bytes=limited.bytes;
   if(bytes.length<5||String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-')throw new Error('REPORT_TEMPLATE_NOT_PDF');
   return bytes;
 }
