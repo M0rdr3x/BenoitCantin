@@ -1,0 +1,38 @@
+name: Sécurité SINJIRA — sessions révoquées et appareils fiables
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-live-session-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  trusted-device-session-contract:
+    name: Refuser les sessions révoquées avant les actions d'appareils fiables
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout sans jeton persistant
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python épinglé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+      - name: Contrôle de syntaxe Python
+        run: python3 -m py_compile scripts/validate_trusted_device_live_session.py scripts/test_trusted_device_live_session.py
+      - name: Exécuter les mutations négatives du contrat de sessions actives
+        run: python3 scripts/test_trusted_device_live_session.py
+      - name: Vérifier que le SQL reste un candidat non déployable automatiquement
+        run: python3 scripts/validate_trusted_device_live_session.py --check
