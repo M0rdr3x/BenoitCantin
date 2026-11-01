@@ -32,6 +32,20 @@
   const $ = (sel, root=document) => root.querySelector(sel);
   const esc = value => String(value).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
 
+  // Les sources documentaires proviennent de JSON public : ne jamais permettre
+  // un protocole actif (javascript:, data:, blob:, etc.) dans un lien externe.
+  function safeEvidenceUrl(value){
+    if(typeof value !== "string" || !value || value.length > 2048) return "";
+    if(/[\\\u0000-\u001f\u007f]/.test(value)) return "";
+    try{
+      const parsed = new URL(value);
+      if(parsed.protocol !== "https:" || !parsed.hostname || parsed.username || parsed.password) return "";
+      return parsed.href;
+    }catch(_error){
+      return "";
+    }
+  }
+
   function currentQuestion(){
     return state.data?.questions?.[state.currentIndex] || null;
   }
@@ -53,8 +67,8 @@
         <span class="compass-question-counter">Question ${index + 1} sur ${state.data.questions.length}</span>
       </div>
       <div class="compass-response-grid compass-response-stack" role="radiogroup" aria-labelledby="compass-question-title">
-        ${RESPONSES.map(r => `<label><input type="radio" name="${question.id}" value="${r.value}"${saved?.value === r.value ? " checked" : ""}><span>${esc(r.label)}</span></label>`).join("")}
-        <label class="compass-skip"><input type="radio" name="${question.id}" value="skip"${saved && saved.value === null ? " checked" : ""}><span>Sans opinion / passer</span></label>
+        ${RESPONSES.map(r => `<label><input type="radio" name="${esc(question.id)}" value="${r.value}"${saved?.value === r.value ? " checked" : ""}><span>${esc(r.label)}</span></label>`).join("")}
+        <label class="compass-skip"><input type="radio" name="${esc(question.id)}" value="skip"${saved && saved.value === null ? " checked" : ""}><span>Sans opinion / passer</span></label>
       </div>
       <label class="compass-importance">Importance de cette proposition
         <select data-importance>
@@ -583,6 +597,7 @@
         const secondReviewDate = record.secondIndependentReview?.reviewedAt || "Date de révision non indiquée";
         const label = DOCUMENTARY_STATUS_LABELS[record.proposedStatus] || record.proposedStatus;
         const confidence = CONFIDENCE_LABELS[record.confidence] || record.confidence;
+        const evidenceUrl = safeEvidenceUrl(record.sourceUrl);
         return `
           <article class="compass-evidence-record">
             <h4>${esc(party.name)}</h4>
@@ -595,7 +610,7 @@
             </dl>
             <p><strong>Éléments retenus :</strong> ${esc(record.evidenceSummary)}</p>
             <p><strong>Justification du codage :</strong> ${esc(record.rationale)}</p>
-            <p><a href="${esc(record.sourceUrl)}" target="_blank" rel="noopener noreferrer">Consulter la source officielle ↗</a></p>
+            <p>${evidenceUrl ? `<a href="${esc(evidenceUrl)}" target="_blank" rel="noopener noreferrer">Consulter la source officielle ↗</a>` : `<span class="compass-evidence-unknown-label">Lien source non sécurisé ou indisponible</span>`}</p>
           </article>
         `;
       }).join("");

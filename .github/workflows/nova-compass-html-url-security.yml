@@ -1,0 +1,42 @@
+name: NOVA — boussole HTML et liens de preuves sécurisés
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nova-compass-html-security-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  compass-html-security:
+    name: Refuser les injections HTML et protocoles actifs dans la boussole
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout sans jeton persistant
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Installer Node épinglé
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.16.0'
+          check-latest: false
+      - name: Vérifier la syntaxe JavaScript
+        run: |
+          node --check projets/projet-nova/assets/boussole-electorale.js
+          node --check scripts/test_nova_compass_render_security.cjs
+      - name: Exécuter les fonctions réelles de rendu et les attaques synthétiques
+        run: node scripts/test_nova_compass_render_security.cjs
+      - name: Contrôler les corpus de preuves et les 64 identifiants de questions
+        run: |
+          python3 scripts/test_nova_compass_source_security.py
+          python3 scripts/validate_nova_compass_source_security.py
