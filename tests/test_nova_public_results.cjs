@@ -270,7 +270,7 @@ test('agrégats synthétiques : une publication datée dans le futur est refusé
 });
 test('registre : cache-busting du client de confidentialité des métadonnées',()=>{
   const html=fs.readFileSync(path.join(NOVA,'resultats-sondages.html'),'utf8');
-  assert.match(html,/assets\/resultats-sondages\.js\?v=20261031-privacy-metadata/);
+  assert.match(html,/assets\/resultats-sondages\.js\?v=20261101-generation/);
 });
 
 test('agrégats exclusivement synthétiques : affichage des comptes sûrs',async()=>{
@@ -492,3 +492,62 @@ for(const file of ['consultation-40.js','sondage.js']){
     assert.equal(fixture.released,1);
   });
 }
+
+
+test("Résultats Nova : la dernière vérification seule peut restaurer ou retirer les chiffres",async()=>{
+  const start=script.indexOf("  async function loadResults() {");
+  const end=script.indexOf("\n  function init() {",start);
+  assert.ok(start>=0 && end>start,"Fonction réelle loadResults introuvable");
+  for(const mode of ["old-success-new-failure","old-failure-new-success"]){
+    let resolveOld,rejectOld,calls=0,renders=0;
+    const retry={hidden:true,disabled:false};
+    const nodes={
+      "results-retry":retry,
+      "results-question-list":{replaceChildren(){this.cleared=true;}},
+      "results-state":{textContent:""},
+      "results-explainer":{textContent:""}
+    };
+    const fetchJSON=path=>{
+      if(path!=="snapshot") return Promise.resolve({questions:[]});
+      if(++calls===1){
+        return new Promise((resolve,reject)=>{resolveOld=resolve;rejectOld=reject;});
+      }
+      return mode==="old-success-new-failure"
+        ? Promise.reject(Error("new request rejected"))
+        : Promise.resolve({surveys:{},publicationApproved:true});
+    };
+    const context={
+      fetchJSON,CONFIG:{"40":{file:"40"},"64":{file:"64"}},SNAPSHOT:"snapshot",
+      manifestValid:()=>true,validSnapshot:()=>true,
+      $:id=>nodes[id],render:()=>{renders++;}
+    };
+    const source=[
+      "let loadFailed=false;let loadGeneration=0;let catalog=null;let snapshot=null;",
+      script.slice(start,end),
+      "globalThis.startCheck=loadResults;",
+      "globalThis.inspect=()=>({failed:loadFailed,catalog:catalog!==null,",
+      "snapshot:snapshot!==null,generation:loadGeneration});"
+    ].join("\n");
+    vm.runInNewContext(source,context,{timeout:1500});
+    const first=context.startCheck();
+    const second=context.startCheck();
+    await second;
+    const failure=mode==="old-success-new-failure";
+    assert.equal(context.inspect().failed,failure,mode);
+    assert.equal(context.inspect().snapshot,!failure,mode);
+    assert.equal(context.inspect().catalog,!failure,mode);
+    assert.equal(retry.hidden,!failure,mode);
+    assert.equal(retry.disabled,false,mode);
+    assert.equal(renders,1,"La dernière réponse n'a pas rendu une fois");
+    if(failure) resolveOld({surveys:{},publicationApproved:true});
+    else rejectOld(Error("Old request rejected"));
+    await first;
+    assert.equal(context.inspect().failed,failure,"Une réponse ancienne a inversé l'état");
+    assert.equal(context.inspect().snapshot,!failure,"Ancienne réponse a modifié le snapshot");
+    assert.equal(context.inspect().catalog,!failure,"Ancienne réponse a modifié le corpus");
+    assert.equal(retry.hidden,!failure);
+    assert.equal(retry.disabled,false);
+    assert.equal(renders,1,"L'ancien appel a produit un rendu additionnel");
+    assert.equal(context.inspect().generation,2);
+  }
+});

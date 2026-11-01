@@ -34,6 +34,9 @@
   let catalog = null;
   let snapshot = null;
   let loadFailed = false;
+  // Une réponse d'une tentative antérieure ne doit jamais remplacer l'état
+  // de la vérification la plus récente (y compris échec/confidentialité).
+  let loadGeneration = 0;
   // Pas de nouveaux champs publiés sans révision explicite du contrat.
   function exactKeys(obj, keys) {
     return obj !== null && typeof obj === 'object' && !Array.isArray(obj) &&
@@ -253,6 +256,7 @@
     });
   }
   async function loadResults() {
+    const generation=++loadGeneration;
     const retry=$('results-retry');
     retry.hidden=true;
     retry.disabled=true;
@@ -266,20 +270,26 @@
     try {
       const [a,b,publicData]=await Promise.all([
         fetchJSON(CONFIG['40'].file),fetchJSON(CONFIG['64'].file),fetchJSON(SNAPSHOT)]);
+      if (generation !== loadGeneration) return;
       if (!manifestValid(a,CONFIG['40']) || !manifestValid(b,CONFIG['64']) ||
           !validSnapshot(publicData)) throw Error('INVALID_PUBLICATION');
       catalog={'40':a,'64':b};
       snapshot=publicData;
       loadFailed=false;
     } catch {
+      if (generation !== loadGeneration) return;
       // Un retry échoué ne peut jamais conserver un bilan précédent en mémoire.
       catalog=null;
       snapshot=null;
       loadFailed=true;
     } finally {
-      render();
-      retry.hidden=!loadFailed;
-      retry.disabled=false;
+      // Un ancien finally ne peut pas réactiver Retry ni réafficher un ancien
+      // agrégat après l'échec de la tentative la plus récente.
+      if (generation === loadGeneration) {
+        render();
+        retry.hidden=!loadFailed;
+        retry.disabled=false;
+      }
     }
   }
   function init() {
