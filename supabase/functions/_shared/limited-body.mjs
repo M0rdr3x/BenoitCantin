@@ -44,3 +44,60 @@ export async function readLimitedUtf8Body(req, maxBytes) {
     reader.releaseLock();
   }
 }
+
+
+/**
+ * Read a remote binary response with a strict byte ceiling *while streaming*.
+ * The Content-Length header is optional and can lie, so the actual limit is
+ * enforced against the stream before any whole-body allocation. Used for the
+ * Fracture PDF template fetched by the public report-generating Edge Function.
+ *
+ * Return no bytes on malformed, empty, interrupted or oversized responses.
+ * Never reflect remote content into logs or HTTP error messages.
+ */
+export async function readLimitedBinaryResponse(response, maxBytes) {
+  if (!Number.isSafeInteger(maxBytes) || maxBytes < 1) {
+    throw new TypeError('Invalid binary response limit');
+  }
+
+  const declared = response.headers.get('content-length');
+  if (declared !== null) {
+    if (!/^(0|[1-9][0-9]*)$/.test(declared) ||
+        !Number.isSafeInteger(Number(declared)) ||
+        Number(declared) > maxBytes) {
+      return { ok: false };
+    }
+  }
+
+  if (!response.body) return { ok: false };
+  const reader = response.body.getReader();
+  const chunks = [];
+  let byteCount = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!(value instanceof Uint8Array) ||
+          value.byteLength > maxBytes - byteCount) {
+        await reader.cancel().catch(() => {});
+        return { ok: false };
+      }
+      byteCount += value.byteLength;
+      chunks.push(value);
+    }
+
+    if (byteCount === 0) return { ok: false };
+    const bytes = new Uint8Array(byteCount);
+    let offset = 0;
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    return { ok: true, bytes };
+  } catch {
+    await reader.cancel().catch(() => {});
+    return { ok: false };
+  } finally {
+    reader.releaseLock();
+  }
+}
