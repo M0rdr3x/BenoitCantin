@@ -47,7 +47,9 @@ async function run() {
   let oversizedHeaderRead = false;
   const oversizedHeaderResponse = new Response(new ReadableStream({
     pull() { oversizedHeaderRead = true; }
-  }), { headers: { 'content-length': String(pdf.byteLength + 1000) } });
+  }, { highWaterMark: 0 }), {
+    headers: { 'content-length': String(pdf.byteLength + 1000) }
+  });
   rejectResult(await readLimitedBinaryResponse(oversizedHeaderResponse, pdf.byteLength));
   assert.equal(oversizedHeaderRead, false, 'Reject oversized declared length before consuming data');
 
