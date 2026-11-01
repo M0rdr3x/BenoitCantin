@@ -34,6 +34,7 @@ def errors_in_candidate(source: str) -> list[str]:
         return errors + ["Structure des deux fonctions non reconnue"]
 
     admin, rank = functions[1], functions[2]
+    ranknorm = re.sub(r"\s+", " ", rank).lower()
     for name, body, ret in (
         ("is_sinjira_admin", admin, "boolean"),
         ("project_access_rank", rank, "integer"),
@@ -93,7 +94,6 @@ def errors_in_candidate(source: str) -> list[str]:
         "then 1",
         "else 0",
     )
-    ranknorm = re.sub(r"\s+", " ", rank).lower()
     for fragment in mandatory_rank:
         if fragment not in ranknorm:
             errors.append("Garde d'accès projet ou niveau public manquant")
