@@ -65,6 +65,13 @@ TECHNICAL_404_PATHS = (
     "/projets/projet-nova/.nojekyll",
     "/.env.production",
     "/assets/js/main.js.map",
+    # Exemples vérifiés dans le dépôt. Ils ne doivent jamais être servis
+    # même si une future modification affaiblit la liste positive du builder.
+    "/projets/projet-nova/official/versions/V322/V322_CURRENT_STATE.json",
+    "/projets/projet-nova/official/versions/V316/README.md",
+    "/projets/projet-nova/data/modele_comptabilite.csv",
+    "/projets/projet-nova/CNAME_APRES_NAMECHEAP.txt",
+    "/assets/icons/README.md",
 )
 REQUIRED_ROBOTS_DISALLOWS = (
     "/app/",
