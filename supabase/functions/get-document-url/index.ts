@@ -1,3 +1,4 @@
+import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import { corsHeaders } from '../_shared/cors.ts';
 import { optionalUser, serviceClient } from '../_shared/auth.ts';
 
@@ -27,17 +28,9 @@ async function readLimitedJson(req:Request):Promise<{body?:any;response?:Respons
   if(!contentType.startsWith('application/json')){
     return {response:privateJson({ok:false,error:'Type de contenu non autorisé.'},415)};
   }
-  const rawLength=req.headers.get('content-length');
-  if(rawLength){
-    const declared=Number(rawLength);
-    if(!Number.isFinite(declared)||declared<0||declared>MAX_REQUEST_BYTES){
-      return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
-    }
-  }
-  const raw=await req.text();
-  if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES){
-    return {response:privateJson({ok:false,error:'Requête trop volumineuse.'},413)};
-  }
+  const limited=await readLimitedUtf8Body(req,MAX_REQUEST_BYTES);
+  if(!limited.ok)return {response:privateJson({ok:false,error:'Requête trop volumineuse ou invalide.'},413)};
+  const raw=limited.raw;
   try{return {body:JSON.parse(raw||'{}')}}catch{return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)}}
 }
 
