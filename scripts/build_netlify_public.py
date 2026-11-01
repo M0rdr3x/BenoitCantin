@@ -543,20 +543,16 @@ def relative_path_allowed(rel: Path) -> bool:
     ):
         return project_nova_structured_allowed(rel)
 
-    # Le Codex peut contenir des contrats de livraison et inventaires de sources
-    # qui documentent précisément des artefacts privés/non déployés. Ils restent
-    # dans le dépôt de travail mais ne doivent jamais être copiés dans _site.
-    if (
-        len(parts) >= 4
-        and parts[0] == "projets"
-        and parts[1] == "sinjira"
-        and parts[2] == "codex"
-        and rel.suffix.lower() == ".json"
-        and (
-            rel.name.endswith("-delivery-contract.json")
-            or "-source-artifacts-" in rel.name
-        )
-    ):
+    # Tous les autres dossiers publics fonctionnent en liste positive
+    # d'extensions réellement nécessaires au navigateur. Une archive ZIP,
+    # un export CSV, un fichier TypeScript, un README ou un futur bundle de
+    # sources ne doit JAMAIS devenir public uniquement parce qu'il a été
+    # rangé sous projets/, assets/ ou un dossier de jeux/logiciels.
+    #
+    # Les JSON et documents de référence NOVA ont déjà été approuvés
+    # individuellement ci-dessus. Pour ajouter un téléchargement de logiciel,
+    # créer d'abord une liste positive dédiée après revue de son contenu.
+    if rel.suffix.lower() not in RUNTIME_WEB_SUFFIXES:
         return False
 
     return True
@@ -1008,6 +1004,20 @@ def self_test_public_filesystem_boundary() -> list[str]:
         "projets/sinjira/.private/settings.json",
         "projets/sinjira/jeux/backup.sql",
         "projets/sinjira/logiciels/debug.log",
+        "projets/sinjira/logiciels/logiciel-unrevu.zip",
+        "projets/sinjira/logiciels/archive-sources.tar.gz",
+        "projets/sinjira/jeux/code-source.ts",
+        "projets/sinjira/jeux/composant.tsx",
+        "projets/sinjira/jeux/secret-en-csv.csv",
+        "projets/sinjira/romans/notes-privees.md",
+        "projets/sinjira/jeux/rapport.txt",
+        "projets/sinjira/jeux/Makefile",
+        "assets/sources/app.ts",
+        "assets/private.json",
+        "assets/fichier-archives.zip",
+        "projets/autre-projet/notes-interne.md",
+        "projets/autre-projet/sauvegarde.csv",
+        "projets/autre-projet/sources.zip",
         "assets/js/main.js.map",
         "assets/private.key",
         "compte/config.toml",
