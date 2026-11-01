@@ -8,22 +8,42 @@ function qsa(sel){return [...document.querySelectorAll(sel)]}
 function status(message,type='info'){setStatus(qs('[data-security-center-status]'),message,type)}
 
 function randomDeviceKey(){
-  if(globalThis.crypto?.randomUUID)return globalThis.crypto.randomUUID();
-  const bytes=new Uint8Array(24);globalThis.crypto?.getRandomValues?.(bytes);
-  return `sinjira-${Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}-${Date.now().toString(36)}`;
+  const cryptoApi=globalThis.crypto;
+  if(typeof cryptoApi?.randomUUID==='function'){
+    const value=cryptoApi.randomUUID();
+    if(validDeviceKey(value))return value;
+    throw new Error('SECURE_RANDOM_REQUIRED');
+  }
+  if(typeof cryptoApi?.getRandomValues!=='function')throw new Error('SECURE_RANDOM_REQUIRED');
+  const bytes=new Uint8Array(24);
+  cryptoApi.getRandomValues(bytes);
+  const value=`sinjira-${Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}`;
+  if(!validDeviceKey(value))throw new Error('SECURE_RANDOM_REQUIRED');
+  return value;
+}
+
+function validDeviceKey(value){
+  if(typeof value!=='string'||value.length>128)return false;
+  if(/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(value))return !/^0{8}-(?:0{4}-){3}0{12}$/i.test(value);
+  const match=/^sinjira-([0-9a-f]{48})(?:-[0-9a-z]+)?$/i.exec(value);
+  return Boolean(match&&!/^0{48}$/.test(match[1]));
 }
 
 function deviceKey(){
   try{
     let value=localStorage.getItem(DEVICE_KEY_STORAGE);
-    if(!value){value=randomDeviceKey();localStorage.setItem(DEVICE_KEY_STORAGE,value)}
+    if(!validDeviceKey(value)){value=randomDeviceKey();localStorage.setItem(DEVICE_KEY_STORAGE,value)}
     return value;
-  }catch{
+  }catch(error){
+    if(error?.message==='SECURE_RANDOM_REQUIRED')throw error;
     try{
       let value=sessionStorage.getItem(DEVICE_KEY_STORAGE);
-      if(!value){value=randomDeviceKey();sessionStorage.setItem(DEVICE_KEY_STORAGE,value)}
+      if(!validDeviceKey(value)){value=randomDeviceKey();sessionStorage.setItem(DEVICE_KEY_STORAGE,value)}
       return value;
-    }catch{return randomDeviceKey()}
+    }catch(fallbackError){
+      if(fallbackError?.message==='SECURE_RANDOM_REQUIRED')throw fallbackError;
+      throw new Error('DEVICE_STORAGE_REQUIRED');
+    }
   }
 }
 
@@ -36,6 +56,10 @@ function deviceMetadata(){
   else if(/Android/i.test(ua))type='android';
   const browser=/Firefox/i.test(ua)?'Firefox':/Edg\//i.test(ua)?'Edge':/Chrome|CriOS/i.test(ua)?'Chrome':/Safari/i.test(ua)?'Safari':'Navigateur';
   return {device_key:deviceKey(),display_name:`${browser}${platform?` — ${platform}`:''}`.slice(0,120),device_type:type,platform};
+}
+
+function safeSecurityId(value){
+  return typeof value==='string'&&/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(value) ? value : '';
 }
 
 function pill(label,kind=''){return `<span class="security-pill ${kind}">${escapeHtml(label)}</span>`}
@@ -81,9 +105,10 @@ function renderDevices(devices){
   const node=qs('[data-security-devices]');if(!node)return;
   if(!devices.length){node.innerHTML=empty('Aucun appareil enregistré.');return}
   node.innerHTML=devices.map(d=>{
+    const deviceId=safeSecurityId(d.id);
     const current=d.is_current===true;
     const badges=[current&&pill('Cet appareil','good'),d.is_primary&&pill('Principal','good'),d.is_trusted&&pill('Fiable','good'),d.revoked_at&&pill('Révoqué','danger')].filter(Boolean).join(' ');
-    return `<article class="security-item" data-device-id="${d.id}"><div class="security-item-head"><div><h3>${escapeHtml(d.display_name||'Appareil SINJIRA')}</h3><div>${badges}</div></div><small>Dernière activité : ${escapeHtml(formatDate(d.last_seen_at))}</small></div><p><small>${escapeHtml(d.device_type||'appareil')} · ${escapeHtml(d.platform||'plateforme non précisée')}</small></p>${d.last_country_code?`<p><small>Dernière région de sécurité : ${escapeHtml(d.last_country_code)}${d.last_region_code?` · ${escapeHtml(d.last_region_code)}`:''}</small></p>`:''}<div class="security-actions">${!d.revoked_at&&!d.is_trusted&&current?`<button class="btn btn-secondary" type="button" data-device-trust="${d.id}">Marquer cet appareil fiable</button>`:''}${!d.revoked_at&&d.is_trusted&&!d.is_primary?`<button class="btn btn-secondary" type="button" data-device-primary="${d.id}">Définir principal</button>`:''}${!d.revoked_at&&d.is_trusted?`<button class="btn btn-secondary" type="button" data-device-untrust="${d.id}">Retirer la confiance</button>`:''}${!d.revoked_at&&!current?`<button class="btn btn-secondary" type="button" data-device-revoke="${d.id}">Révoquer</button>`:''}</div></article>`;
+    return `<article class="security-item" data-device-id="${deviceId}"><div class="security-item-head"><div><h3>${escapeHtml(d.display_name||'Appareil SINJIRA')}</h3><div>${badges}</div></div><small>Dernière activité : ${escapeHtml(formatDate(d.last_seen_at))}</small></div><p><small>${escapeHtml(d.device_type||'appareil')} · ${escapeHtml(d.platform||'plateforme non précisée')}</small></p>${d.last_country_code?`<p><small>Dernière région de sécurité : ${escapeHtml(d.last_country_code)}${d.last_region_code?` · ${escapeHtml(d.last_region_code)}`:''}</small></p>`:''}<div class="security-actions">${deviceId&&!d.revoked_at&&!d.is_trusted&&current?`<button class="btn btn-secondary" type="button" data-device-trust="${deviceId}">Marquer cet appareil fiable</button>`:''}${deviceId&&!d.revoked_at&&d.is_trusted&&!d.is_primary?`<button class="btn btn-secondary" type="button" data-device-primary="${deviceId}">Définir principal</button>`:''}${deviceId&&!d.revoked_at&&d.is_trusted?`<button class="btn btn-secondary" type="button" data-device-untrust="${deviceId}">Retirer la confiance</button>`:''}${deviceId&&!d.revoked_at&&!current?`<button class="btn btn-secondary" type="button" data-device-revoke="${deviceId}">Révoquer</button>`:''}</div></article>`;
   }).join('');
 }
 
@@ -113,7 +138,7 @@ function renderSecurityEvents(rows){
 function renderTravel(rows){
   const node=qs('[data-security-travel-list]');if(!node)return;
   if(!rows.length){node.innerHTML=empty('Aucun voyage enregistré.');return}
-  node.innerHTML=rows.map(r=>`<article class="security-item"><div class="security-item-head"><div><h3>${escapeHtml((r.destinations||[]).join(' → '))}</h3>${pill(r.status,r.status==='active'?'good':'')}</div><small>${escapeHtml(formatDate(r.starts_at))} → ${escapeHtml(formatDate(r.ends_at))}</small></div><p><small>Suppression prévue : ${escapeHtml(formatDate(r.delete_after))}</small></p>${r.status==='active'?`<div class="security-actions"><button class="btn btn-secondary" type="button" data-travel-cancel="${r.id}">Annuler ce voyage</button></div>`:''}</article>`).join('');
+  node.innerHTML=rows.map(r=>`<article class="security-item"><div class="security-item-head"><div><h3>${escapeHtml((r.destinations||[]).join(' → '))}</h3>${pill(r.status,r.status==='active'?'good':'')}</div><small>${escapeHtml(formatDate(r.starts_at))} → ${escapeHtml(formatDate(r.ends_at))}</small></div><p><small>Suppression prévue : ${escapeHtml(formatDate(r.delete_after))}</small></p>${r.status==='active'&&safeSecurityId(r.id)?`<div class="security-actions"><button class="btn btn-secondary" type="button" data-travel-cancel="${safeSecurityId(r.id)}">Annuler ce voyage</button></div>`:''}</article>`).join('');
 }
 
 function renderChallenges(rows,devices){
@@ -123,9 +148,10 @@ function renderChallenges(rows,devices){
   const currentDevice=devices.find(d=>d.is_current===true&&!d.revoked_at)||null;
   node.innerHTML=pending.map(r=>{
     const sameRequestDevice=Boolean(currentDevice&&currentDevice.id===r.request_device_id);
-    const canResolve=Boolean(currentDevice&&currentDevice.is_trusted&&!sameRequestDevice);
+    const challengeId=safeSecurityId(r.id);
+    const canResolve=Boolean(challengeId&&currentDevice&&safeSecurityId(currentDevice.id)&&currentDevice.is_trusted&&!sameRequestDevice);
     const controls=canResolve
-      ? `<div class="security-actions"><button class="btn btn-primary" type="button" data-challenge-approve="${r.id}">Autoriser</button><button class="btn btn-secondary" type="button" data-challenge-deny="${r.id}">Refuser</button></div>`
+      ? `<div class="security-actions"><button class="btn btn-primary" type="button" data-challenge-approve="${challengeId}">Autoriser</button><button class="btn btn-secondary" type="button" data-challenge-deny="${challengeId}">Refuser</button></div>`
       : sameRequestDevice
         ? '<p><small>Cette tentative provient de cet appareil. Elle doit être confirmée depuis un autre appareil déjà fiable.</small></p>'
         : '<p><small>Pour autoriser ou refuser cette tentative, utilisez un autre appareil déjà marqué comme fiable.</small></p>';
@@ -171,12 +197,15 @@ function friendlySecurityError(error){
   if(message.includes('TRUST_CONFIRMATION_REQUIRED'))return 'Cet appareil doit d’abord être autorisé depuis un autre appareil déjà fiable.';
   if(message.includes('CURRENT_DEVICE_REQUIRED'))return 'Seul l’appareil que vous utilisez actuellement peut être marqué comme fiable.';
   if(message.includes('AAL2_REQUIRED'))return 'Une vérification MFA récente est requise pour modifier la confiance des appareils.';
+  if(message.includes('SECURE_RANDOM_REQUIRED'))return 'Le navigateur ne permet pas de générer un identifiant d’appareil sécurisé. Utilisez une connexion HTTPS.';
+  if(message.includes('DEVICE_STORAGE_REQUIRED'))return 'Le stockage du navigateur est indisponible. Impossible de gérer les appareils sans identifiant stable.';
+  if(message.includes('INVALID_SECURITY_REFERENCE'))return 'Identifiant de sécurité non valide. Actualisez la page.';
   return message;
 }
 
 async function boot(){
-  const meta=deviceMetadata();
   try{
+    const meta=deviceMetadata();
     await requireUser();
     status('Initialisation du Centre de sécurité…');
     const contextResult=await registerContext(meta);
@@ -193,6 +222,9 @@ async function boot(){
     document.addEventListener('click',async e=>{
       const target=e.target.closest('button');if(!target)return;
       try{
+        for(const key of ['deviceTrust','devicePrimary','deviceUntrust','deviceRevoke','travelCancel','challengeApprove','challengeDeny']){
+          if(Object.hasOwn(target.dataset,key)&&!safeSecurityId(target.dataset[key]))throw new Error('INVALID_SECURITY_REFERENCE');
+        }
         if(target.dataset.deviceTrust){await rpc('security_set_device_trust',{p_device_id:target.dataset.deviceTrust,p_trusted:true,p_primary:false});status('Appareil marqué comme fiable.','success')}
         else if(target.dataset.devicePrimary){await rpc('security_set_device_trust',{p_device_id:target.dataset.devicePrimary,p_trusted:true,p_primary:true});status('Appareil principal mis à jour.','success')}
         else if(target.dataset.deviceUntrust){if(!confirmAction('Retirer la confiance à cet appareil ?'))return;await rpc('security_set_device_trust',{p_device_id:target.dataset.deviceUntrust,p_trusted:false,p_primary:false});status('Confiance retirée.','success')}
