@@ -34,6 +34,8 @@ jobs:
         run: python3 -m py_compile scripts/build_netlify_public.py scripts/validate_web_release_http.py
       - name: Simuler les fichiers cachés les symlinks et les documents privés
         run: python3 scripts/build_netlify_public.py --self-test-security
+      - name: Vérifier les formats publics et refuser archives et sources non approuvées
+        run: python3 scripts/test_web_public_extension_allowlist.py
       - name: Construire et auditer tous les contextes sans déployer
         run: python3 scripts/build_netlify_public.py --check
       - name: Auditer le confinement GitHub Pages
