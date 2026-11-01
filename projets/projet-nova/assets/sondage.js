@@ -98,7 +98,8 @@
       $('sondage-titre').focus({preventScroll:true});
       return;
     }
-    $('sondage-start').disabled = !eligible() || questions.length !== 64;
+    $('sondage-start').disabled = $('sondage-introduction').hidden ||
+      recorded || submitting || !eligible() || questions.length !== 64;
   }
   function renderQuestion() {
     if (!eligible() || questions.length !== 64 || step < 0 || step >= 64) return;
@@ -343,17 +344,21 @@
       $(id).addEventListener('change', refreshStart);
     }
     $('sondage-start').addEventListener('click', () => {
-      if (!eligible() || questions.length !== 64) return;
+      if (recorded || submitting || $('sondage-introduction').hidden ||
+          !eligible() || questions.length !== 64) return;
       $('sondage-introduction').hidden = true;
+      $('sondage-start').disabled = true;
       $('sondage-questionnaire').hidden = false;
       renderQuestion();
     });
     $('sondage-next').addEventListener('click', () => {
-      if (!eligible() || !questions[step] || !selections.has(questions[step].id)) return;
+      if (recorded || submitting || $('sondage-questionnaire').hidden ||
+          !eligible() || !questions[step] || !selections.has(questions[step].id)) return;
       if (editingReview || step + 1 === questions.length) finish();
       else { step++; renderQuestion(); }
     });
     $('sondage-back').addEventListener('click', () => {
+      if (recorded || submitting || $('sondage-questionnaire').hidden || !eligible()) return;
       if (editingReview) finish();
       else if (step > 0) { step--; renderQuestion(); }
     });

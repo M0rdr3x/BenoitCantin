@@ -136,6 +136,23 @@ with sync_playwright() as p:
         check(page.locator("#sondage-finish").is_visible(), "récapitulatif final absent")
         check(page.locator("#sondage-review-list li").count() == 40,
               "40 réponses du récapitulatif absentes")
+        check(page.evaluate("""() => {
+            const finish=document.querySelector("#sondage-finish");
+            const list=document.querySelector("#sondage-review-list");
+            const last=list.lastElementChild;
+            const position=document.querySelector("#sondage-position").textContent;
+            const next=document.querySelector("#sondage-next").textContent;
+            document.querySelector("#sondage-back").click();
+            document.querySelector("#sondage-next").click();
+            document.querySelector("#sondage-start").click();
+            return !finish.hidden &&
+                document.querySelector("#sondage-questionnaire").hidden &&
+                document.querySelector("#sondage-introduction").hidden &&
+                document.querySelector("#sondage-start").disabled &&
+                list.children.length===40 && list.lastElementChild===last &&
+                document.querySelector("#sondage-position").textContent===position &&
+                document.querySelector("#sondage-next").textContent===next;
+        }"""), "Les commandes d'un écran caché ont altéré le récapitulatif 40")
         page.evaluate("""() => {
             window.__novaOldReview40 = document.querySelector(
                 "#sondage-review-list li:last-child button");

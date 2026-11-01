@@ -71,7 +71,8 @@
       $('sondage-titre').focus({preventScroll:true});
       return;
     }
-    $('sondage-start').disabled = !eligible() || questions.length !== 40;
+    $('sondage-start').disabled = $('sondage-introduction').hidden ||
+      recorded || submitting || !eligible() || questions.length !== 40;
   }
   function render() {
     if (!eligible() || questions.length !== 40 || step < 0 || step >= 40) return;
@@ -238,16 +239,22 @@
       $(id).addEventListener('change', refresh);
     }
     $('sondage-start').addEventListener('click', () => {
-      if (!eligible() || questions.length !== 40) return;
+      // Un clic tardif sur le bouton masqué ne peut pas relancer un parcours
+      // terminé ni ramener des réponses personnelles dans un écran caché.
+      if (recorded || submitting || $('sondage-introduction').hidden ||
+          !eligible() || questions.length !== 40) return;
       show('questionnaire');
+      $('sondage-start').disabled = true;
       render();
     });
     $('sondage-next').addEventListener('click', () => {
-      if (!eligible() || !questions[step] || !answers.has(questions[step].id)) return;
+      if (recorded || submitting || $('sondage-questionnaire').hidden ||
+          !eligible() || !questions[step] || !answers.has(questions[step].id)) return;
       if (editingReview || step === 39) complete();
       else { step++; render(); }
     });
     $('sondage-back').addEventListener('click', () => {
+      if (recorded || submitting || $('sondage-questionnaire').hidden || !eligible()) return;
       if (editingReview) complete();
       else if (step > 0) { step--; render(); }
     });
