@@ -8,6 +8,8 @@ on:
       - 'supabase/production-migration-ledger.txt'
       - 'scripts/validate_admin_privacy_safety_aal2_v24_5_14.py'
       - 'scripts/validate_admin_aal2_workflow_security.py'
+      - 'scripts/test_admin_aal2_strict.mjs'
+      - 'supabase/functions/_shared/auth.ts'
       - 'scripts/validate_site.py'
       - 'scripts/validate_supabase.py'
       - 'scripts/validate_production_migration_ledger.py'
@@ -22,6 +24,8 @@ on:
       - 'supabase/production-migration-ledger.txt'
       - 'scripts/validate_admin_privacy_safety_aal2_v24_5_14.py'
       - 'scripts/validate_admin_aal2_workflow_security.py'
+      - 'scripts/test_admin_aal2_strict.mjs'
+      - 'supabase/functions/_shared/auth.ts'
       - 'scripts/validate_site.py'
       - 'scripts/validate_supabase.py'
       - 'scripts/validate_production_migration_ledger.py'
@@ -54,6 +58,9 @@ jobs:
 
       - name: Vérifier le contrat CI AAL2 admin
         run: python scripts/validate_admin_aal2_workflow_security.py
+
+      - name: Exécuter la politique MFA administrateur stricte
+        run: node scripts/test_admin_aal2_strict.mjs
 
       - name: Contrat AAL2 confidentialité/sécurité
         run: python scripts/validate_admin_privacy_safety_aal2_v24_5_14.py
