@@ -46,7 +46,8 @@ function makeFixture(spec, stage, revoked, futureCollectionOpen = false) {
     "sondage-age","sondage-consent","sondage-review-list",
     "sondage-status","sondage-submit-status","sondage-choices",
     "sondage-next","sondage-start","sondage-titre",
-    "sondage-recap","sondage-answered","sondage-position","sondage-progress"
+    "sondage-recap","sondage-answered","sondage-position","sondage-progress",
+    "sondage-submit"
   ]) {
     elements[id] = {
       hidden: false, disabled: false, checked: false,
@@ -92,6 +93,8 @@ for (const spec of cases) {
         assert.equal(e["sondage-choices"].cleared,true);
         assert.equal(e["sondage-start"].disabled,true);
         assert.equal(e["sondage-next"].disabled,true);
+        assert.equal(e["sondage-submit"].disabled,true,
+          "Un ancien bouton de transmission reste disponible après retrait");
         for (const id of ["sondage-recap","sondage-answered","sondage-position"]) {
           assert.equal(e[id].textContent,"",id+" conserve des données après retrait");
         }
@@ -457,7 +460,9 @@ for (const spec of cases) {
     f.elements["sondage-answered"].textContent="28 réponses";
     f.elements["sondage-position"].textContent="Question 28";
     f.elements["sondage-progress"].value=28;
+    f.elements["sondage-submit"].disabled=false;
     f.sandbox.clearLocalDemo();
+    assert.equal(f.elements["sondage-submit"].disabled,true);
     assert.equal(f.elements["sondage-recap"].textContent,"");
     assert.equal(f.elements["sondage-answered"].textContent,"");
     assert.equal(f.elements["sondage-position"].textContent,"");
@@ -467,6 +472,56 @@ for (const spec of cases) {
   test(spec.id+" : script public mis en cache invalidé après la purge de confidentialité",()=>{
     const html=fs.readFileSync(path.join(nova,spec.count===40?
       "consultation-40.html":"sondage.html"),"utf8");
-    assert.ok(html.includes('assets/'+spec.filename+'?v=1.1.3'));
+    assert.ok(html.includes('assets/'+spec.filename+'?v=1.1.4'));
   });
 }
+
+
+/** Le vrai écran final 40 questions était historiquement désactivé
+ * inconditionnellement, même si la collecte future était approuvée.
+ * Valider les deux verrous séparés et le comportement sans aucun réseau.
+ */
+test("consultation-40 : le récapitulatif respecte les deux verrous d'ouverture",()=>{
+  const source=fs.readFileSync(path.join(nova,"assets","consultation-40.js"),"utf8");
+  const functionText=sliceFunction(source,"complete","clearRecordedOpinions");
+  const run=({collection,consent,recorded=false,submitting=false})=>{
+    const nodes=Object.create(null);
+    const createElement=()=>({
+      children:[],textContent:"",attributes:{},
+      append(...children){this.children.push(...children);},
+      setAttribute(key,val){this.attributes[key]=val;},
+      addEventListener(){},focus(){}
+    });
+    const $=id=>(nodes[id]??=(Object.assign(createElement(),{
+      disabled:false,replaceChildren(...elements){this.children=elements;}
+    })));
+    const questions=Array.from({length:40},(_,i)=>({
+      id:"q"+String(i+1).padStart(2,"0"),topic:"Thème fictif",text:"Question fictive"
+    }));
+    const sandbox={
+      COLLECTION_OPEN:collection,LIVE_OPINION_CONSENT_GRANTED:consent,
+      recorded,submitting,eligible:()=>true,questions,
+      answers:new Map(questions.map(q=>[q.id,"pour"])),
+      choiceNames:new Map([["pour","Pour"]]),editingReview:true,
+      show:which=>{nodes.screen=which;},
+      $,
+      document:{createElement}
+    };
+    new vm.Script(functionText+"\ncomplete();",{filename:"consultation-40.js:complete"})
+      .runInNewContext(sandbox,{timeout:1000});
+    assert.equal(nodes.screen,"finish");
+    assert.equal(nodes["sondage-review-list"].children.length,40);
+    return nodes;
+  };
+  const closed=run({collection:false,consent:false});
+  assert.equal(closed["sondage-submit"].disabled,true);
+  assert.match(closed["sondage-submit-status"].textContent,/Collecte fermée/);
+  assert.equal(run({collection:true,consent:false})["sondage-submit"].disabled,true);
+  assert.equal(run({collection:false,consent:true})["sondage-submit"].disabled,true);
+  const ready=run({collection:true,consent:true});
+  assert.equal(ready["sondage-submit"].disabled,false,
+    "La future collecte approuvée reste bloquée sur le récapitulatif");
+  assert.match(ready["sondage-submit-status"].textContent,/compte permanent connecté/);
+  assert.equal(run({collection:true,consent:true,recorded:true})["sondage-submit"].disabled,true);
+  assert.equal(run({collection:true,consent:true,submitting:true})["sondage-submit"].disabled,true);
+});

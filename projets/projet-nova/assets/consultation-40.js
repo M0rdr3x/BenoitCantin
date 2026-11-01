@@ -149,9 +149,15 @@
       li.append(detail, modify);
       list.append(li);
     });
-    $('sondage-submit').disabled=true;
-    $('sondage-submit-status').textContent =
-      'Collecte fermée : aucune réponse enregistrée. Une ouverture distincte exige une validation de confidentialité et une approbation.';
+    // Même contrat que le questionnaire 64 : prêt pour une ouverture future
+    // UNIQUEMENT après nouveau parcours de consentement validé (#675).
+    // Les deux verrous sont volontairement false dans le candidat public.
+    const submissionReady = COLLECTION_OPEN && LIVE_OPINION_CONSENT_GRANTED &&
+      !recorded && !submitting;
+    $('sondage-submit').disabled = !submissionReady;
+    $('sondage-submit-status').textContent = submissionReady
+      ? 'Vous pouvez confirmer votre participation avec votre compte permanent connecté.'
+      : 'Collecte fermée : aucune réponse enregistrée. Une ouverture distincte exige une validation de confidentialité et une approbation.';
     $('sondage-finish-heading').setAttribute('tabindex', '-1');
     $('sondage-finish-heading').focus({ preventScroll: true });
   }
@@ -191,6 +197,7 @@
     show('introduction');
     $('sondage-choices').replaceChildren();
     $('sondage-next').disabled = true;
+    $('sondage-submit').disabled = true;
     refresh();
   }
   function resetSurvey() {
@@ -280,6 +287,8 @@
             $('sondage-submit-status').textContent = 'Une participation existe déjà pour ce compte.';
           } else if (code === 'PERMANENT_ACCOUNT_REQUIRED') {
             $('sondage-submit-status').textContent = 'Un compte permanent connecté est nécessaire; les comptes temporaires sont refusés.';
+          } else if (code === 'COLLECTION_NOT_ENABLED') {
+            $('sondage-submit-status').textContent = 'La collecte n’est pas ouverte par le serveur. Aucune participation enregistrée.';
           } else {
             $('sondage-submit-status').textContent = 'Enregistrement non confirmé. Aucun résultat affiché.';
           }

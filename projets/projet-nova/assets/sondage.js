@@ -298,6 +298,7 @@
     $('sondage-introduction').hidden = false;
     $('sondage-choices').replaceChildren();
     $('sondage-next').disabled = true;
+    $('sondage-submit').disabled = true;
     setStatus('');
     setStatus('', 'sondage-submit-status');
     refreshStart();
