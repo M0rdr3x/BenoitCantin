@@ -482,7 +482,7 @@ for (const spec of cases) {
   test(spec.id+" : script public mis en cache invalidé après la purge de confidentialité",()=>{
     const html=fs.readFileSync(path.join(nova,spec.count===40?
       "consultation-40.html":"sondage.html"),"utf8");
-    assert.ok(html.includes('assets/'+spec.filename+'?v=1.1.5'));
+    assert.ok(html.includes('assets/'+spec.filename+'?v=1.1.6'));
   });
 }
 
