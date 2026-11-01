@@ -162,6 +162,7 @@ test("Partage Boussole : jamais de paramètres ni de fragment de l'URL source", 
       href: safePage + "?token=" + secret + "#resultat-prive"
     }},
     navigator: {share: async payload => {nativeShare = payload;}},
+    shareGeneration:0,
     buildResultText: () => "Profil synthétique local",
     encodeURIComponent,
     copyText: async text => {copied = text; return true;}
@@ -389,7 +390,7 @@ test("Réinitialisation Boussole : aucune fermeture de partage ne retient le pro
     },
     buildResultText:()=>"PROFIL_PERSONNEL_SECRET_TEST",
     window:{location:{origin:"https://exemple.test",pathname:"/projets/projet-nova/boussole-electorale.html"}},
-    navigator:{},encodeURIComponent,updateProgress(){},
+    navigator:{},shareGeneration:0,encodeURIComponent,updateProgress(){},
     copyText:async()=>true
   };
   const action=new vm.Script(source.slice(beginShare,endShare)+
@@ -504,4 +505,62 @@ test("Boussole : résumé exact si aucune, 8 ou 16 dimensions sont calculables",
   const css=fs.readFileSync(path.join(nova,"assets/boussole-electorale.css"),"utf8");
   assert.match(html,/au moins deux propositions du même thème/);
   assert.match(css,/\.compass-share-card\[hidden\]\{display:none!important\}/);
+});
+
+
+test("Boussole : une promesse de partage tardive ne restaure pas le profil après reset",async()=>{
+  const beginShare=source.indexOf("  function configureSharing(results){");
+  const endCopy=source.indexOf("\n  function showResults(){",beginShare);
+  const beginReset=source.indexOf("  function reset(focusStart=true){");
+  const endReset=source.indexOf("\n  function renderPartyRegistry",beginReset);
+  assert.ok(beginShare>=0 && endCopy>beginShare && beginReset>=0 && endReset>beginReset);
+  const nodes=Object.create(null);
+  const node=id=>(nodes[id]??={
+    href:id==="#compass-share-facebook"?"https://www.facebook.com/sharer/sharer.php":
+      id==="#compass-share-x"?"https://x.com/intent/post":
+      id==="#compass-share-linkedin"?"https://www.linkedin.com/sharing/share-offsite/":
+      id==="#compass-share-email"?"mailto:":"",
+    value:"",hidden:false,textContent:"",onclick:null,oninput:null,
+    getAttribute(key){return key==="href"?this.href:null;},
+    setAttribute(key,value){if(key==="href")this.href=value;},
+    replaceChildren(){this.children=[];},focus(){}
+  });
+  let resolveNative,rejectClipboard,manualCopy=0,clipboardRequests=0;
+  const context={
+    $:node,shareGeneration:0,
+    state:{answers:new Map([["q01",{value:3,importance:"forte"}]]),
+      importance:new Map([["q01","forte"]]),currentIndex:12,
+      started:true,results:[{title:"Profil secret fictif"}]},
+    buildResultText:()=>"PROFIL_FICTIF_PRIVÉ",
+    window:{location:{origin:"https://exemple.test",pathname:"/projets/projet-nova/boussole-electorale.html"}},
+    navigator:{
+      share:()=>new Promise(resolve=>{resolveNative=resolve;}),
+      clipboard:{writeText:()=>{clipboardRequests++;
+        return new Promise((_resolve,reject)=>{rejectClipboard=reject;});}}
+    },
+    document:{createElement(){manualCopy++;throw Error("Copie de secours interdite");}},
+    encodeURIComponent,updateProgress(){}
+  };
+  new vm.Script(source.slice(beginShare,endCopy)+
+    "\n"+source.slice(beginReset,endReset)+"\nconfigureSharing([]);",
+    {filename:"boussole-electorale.js:pending-sharing-reset"})
+    .runInNewContext(context,{timeout:1000});
+  const clipboardPromise=node("#compass-copy-result").onclick();
+  const nativePromise=node("#compass-share-native").onclick();
+  assert.equal(clipboardRequests,1);
+  assert.equal(typeof resolveNative,"function");
+  assert.equal(typeof rejectClipboard,"function");
+  context.reset(false);
+  assert.equal(context.shareGeneration,1);
+  assert.match(node("#compass-status").textContent,/réinitialisé/);
+  rejectClipboard(Error("Clipboard refused after reset"));
+  resolveNative();
+  await Promise.all([clipboardPromise,nativePromise]);
+  assert.equal(manualCopy,0,"Ne jamais copier le vieux profil après révocation");
+  assert.match(node("#compass-status").textContent,/réinitialisé/,
+    "Une réponse tardive de partage a remplacé l'annonce de purge");
+  assert.equal(node("#compass-copy-result").onclick,null);
+  assert.equal(node("#compass-share-native").onclick,null);
+  assert.equal(node("#compass-share-email").href,"mailto:");
+  assert.equal(context.state.answers.size,0);
 });

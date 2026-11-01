@@ -91,7 +91,47 @@ def main():
                 typeof document.querySelector("#compass-copy-result").onclick === "function" &&
                 typeof document.querySelector("#compass-email-recipient").oninput === "function"
             """), "partage local non configuré après résultats")
-            page.locator("#compass-reset").click()
+            # Rejet asynchrone du presse-papiers et partage natif terminé
+            # APRÈS reset : pas de copie de secours, pas de statut restauré.
+            delayed = page.evaluate("""async () => {
+                let rejectClipboard;
+                let resolveShare;
+                let manualCopy = 0;
+                Object.defineProperty(navigator, "clipboard", {
+                    configurable:true,
+                    value:{writeText:()=>new Promise((_resolve,reject)=>{
+                        rejectClipboard=reject;
+                    })}
+                });
+                Object.defineProperty(navigator, "share", {
+                    configurable:true,
+                    value:()=>new Promise(resolve=>{resolveShare=resolve;})
+                });
+                const originalCreate = document.createElement.bind(document);
+                document.createElement = function(tag, ...rest) {
+                    if(tag.toLowerCase()==="textarea") manualCopy++;
+                    return originalCreate(tag, ...rest);
+                };
+                document.querySelector("#compass-copy-result").click();
+                document.querySelector("#compass-share-native").click();
+                if(typeof rejectClipboard!=="function" || typeof resolveShare!=="function") {
+                    return {ok:false,reason:"promesses non créées"};
+                }
+                document.querySelector("#compass-reset").click();
+                rejectClipboard(Error("Copie refusée après reset"));
+                resolveShare();
+                await new Promise(resolve=>setTimeout(resolve,0));
+                return {
+                    ok:manualCopy===0 &&
+                        document.querySelector("#compass-status").textContent.includes("réinitialisé") &&
+                        document.querySelector("#compass-copy-result").onclick===null &&
+                        document.querySelector("#compass-share-native").onclick===null &&
+                        document.querySelector("#compass-share-email").getAttribute("href")==="mailto:",
+                    manualCopy,
+                    status:document.querySelector("#compass-status").textContent
+                };
+            }""")
+            require(delayed["ok"], "Partage tardif après purge: " + repr(delayed))
             require(page.locator("#compass-results").is_hidden()
                     and page.locator("#compass-results-grid .compass-result-card").count() == 0
                     and page.locator("#compass-start").is_visible(),

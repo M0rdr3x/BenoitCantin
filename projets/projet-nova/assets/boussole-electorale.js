@@ -103,6 +103,9 @@
     started:false,
     results:null
   };
+  // Invalide les traitements asynchrones de partage dès que l'utilisateur
+  // efface un profil; la suppression des handlers seule ne suffit pas.
+  let shareGeneration = 0;
 
   const $ = (sel, root=document) => root.querySelector(sel);
   const esc = value => String(value).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
@@ -407,11 +410,13 @@
     const compact = buildResultText(results,true);
     const full = buildResultText(results,false);
     const subject = "Mon résultat — Boussole électorale Nova";
+    const generation = shareGeneration;
+    const sharingAllowed = () => generation === shareGeneration;
 
     const email = $("#compass-share-email");
     const emailInput = $("#compass-email-recipient");
     const updateEmailLink = () => {
-      if(!email) return;
+      if(!email || !sharingAllowed()) return;
       const recipient = emailInput?.value?.trim() || "";
       const target = recipient ? encodeURIComponent(recipient) : "";
       email.href = `mailto:${target}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(full + "\n\n" + pageUrl)}`;
@@ -439,15 +444,20 @@
 
     const nativeButton = $("#compass-share-native");
     if(nativeButton) nativeButton.onclick = async () => {
+      if(!sharingAllowed()) return;
       if(navigator.share){
         try{
+          // Une opération native déjà confiée au système ne peut pas être annulée.
           await navigator.share({title:subject,text:compact,url:pageUrl});
+          if(!sharingAllowed()) return;
           $("#compass-status").textContent = "Menu de partage ouvert.";
         }catch(error){
+          if(!sharingAllowed()) return;
           if(error?.name !== "AbortError") $("#compass-status").textContent = "Le partage n’a pas pu être ouvert. Vous pouvez copier le résumé.";
         }
       }else{
-        const copied = await copyText(compact + "\n" + pageUrl);
+        const copied = await copyText(compact + "\n" + pageUrl,sharingAllowed);
+        if(!sharingAllowed()) return;
         $("#compass-status").textContent = copied
           ? "Le partage natif n’est pas disponible; le résumé a été copié."
           : "Le partage natif et la copie sont indisponibles. Utilisez le courriel.";
@@ -456,18 +466,26 @@
 
     const copyButton = $("#compass-copy-result");
     if(copyButton) copyButton.onclick = async () => {
-      const copied = await copyText(full + "\n\n" + pageUrl);
+      if(!sharingAllowed()) return;
+      const copied = await copyText(full + "\n\n" + pageUrl,sharingAllowed);
+      if(!sharingAllowed()) return;
       $("#compass-status").textContent = copied
         ? "Résumé copié dans le presse-papiers."
         : "Copie non autorisée ou indisponible. Utilisez le courriel.";
     };
   }
 
-  async function copyText(text){
+  async function copyText(text,sharingAllowed=()=>true){
+    if(!sharingAllowed()) return false;
     if(navigator.clipboard?.writeText){
-      try{ await navigator.clipboard.writeText(text); return true; }
-      catch{ /* Repli manuel, sans transmettre le résultat. */ }
+      try{
+        await navigator.clipboard.writeText(text);
+        return sharingAllowed();
+      }catch{ /* Repli manuel uniquement si le profil est encore actif. */ }
     }
+    // Si la promesse clipboard a été rejetée APRÈS reset/pagehide,
+    // ne surtout pas recréer un textarea contenant le profil abandonné.
+    if(!sharingAllowed()) return false;
     const area = document.createElement("textarea");
     area.value = text;
     area.setAttribute("readonly","");
@@ -520,6 +538,8 @@
   }
 
   function reset(focusStart=true){
+    // Neutraliser tout traitement de partage déjà en attente, avant la purge.
+    shareGeneration += 1;
     state.answers.clear();
     state.importance.clear();
     state.currentIndex = 0;
