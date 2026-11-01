@@ -150,7 +150,8 @@
          currentQuestion()?.id !== question.id) return;
       // Dès que les réponses ou leur importance changent après le calcul,
       // ne jamais laisser partager un ancien profil présenté comme actuel.
-      if(state.results !== null) discardResultPreview();
+      const invalidated = state.results !== null;
+      if(invalidated) discardResultPreview();
       if(event.target.matches('input[type="radio"]')){
         const raw = event.target.value;
         const importance = state.importance.get(question.id) || fieldset.querySelector("[data-importance]")?.value || "normal";
@@ -160,9 +161,11 @@
         });
         updateStepControls();
         updateProgress();
-        $("#compass-status").textContent = raw === "skip"
-          ? "Question marquée « Sans opinion / passer ». Vous pouvez continuer."
-          : "Réponse enregistrée localement. Vous pouvez continuer.";
+        $("#compass-status").textContent = invalidated
+          ? "Ancien résultat retiré après modification. Continuez pour recalculer votre profil."
+          : raw === "skip"
+            ? "Question marquée « Sans opinion / passer ». Vous pouvez continuer."
+            : "Réponse enregistrée localement. Vous pouvez continuer.";
       }
       if(event.target.matches("[data-importance]")){
         state.importance.set(question.id, event.target.value);
