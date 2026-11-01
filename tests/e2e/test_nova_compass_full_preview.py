@@ -201,6 +201,36 @@ def main():
             }""")
             require(partial["ok"], "carte partielle trompeuse: " + repr(partial))
             page.locator("#compass-reset").click()
+
+            # Cas frontière méthodologique : 32/64 réponses, mais uniquement
+            # sur les huit premiers axes. Il ne s'agit pas d'un profil 16/16.
+            half = page.evaluate("""() => {
+                document.querySelector("#compass-start").click();
+                for (let step = 1; step <= 64; step++) {
+                    const radio = document.querySelector(
+                        '#compass-question-stage input[type="radio"][value="' +
+                        (step <= 32 ? "2" : "skip") + '"]'
+                    );
+                    if (!radio) return {ok:false,step};
+                    radio.click();
+                    document.querySelector("#compass-next").click();
+                }
+                const text = document.querySelector("#compass-summary").textContent;
+                const cards = [...document.querySelectorAll(
+                    "#compass-results-grid .compass-result-card")];
+                const calculated = cards.filter(card =>
+                    card.querySelector(".compass-result-head strong")?.textContent.trim() !== "—");
+                return {
+                    ok: !document.querySelector("#compass-results").hidden &&
+                        text.includes("Profil partiel") &&
+                        text.includes("8/16 dimensions calculables") &&
+                        cards.length === 16 && calculated.length === 8 &&
+                        !document.querySelector("#compass-share-card").hidden,
+                    step:64, calculated:calculated.length, summary:text
+                };
+            }""")
+            require(half["ok"], "32 réponses sur 8 axes présentées comme 16 axes: " + repr(half))
+            page.locator("#compass-reset").click()
             require(not submitted, "POST interdit détecté pendant la Boussole")
             print(f"PASS {BROWSER}: 64 questions, 16 scores neutres à zéro, "
                   "couverture 4/4, Sans opinion distinct, réinitialisation, zéro POST")
