@@ -58,7 +58,7 @@ class IdentityOracleGuardTests(unittest.TestCase):
         self.reject("p_user_id uuid)", "p_user_id text)")
         self.reject("RETURNS void", "RETURNS boolean")
         self.reject("STABLE", "VOLATILE")
-        self.reject("SECURITY DEFINER", "SECURITY INVOKER")
+        self.reject("\nSECURITY DEFINER\n", "\nSECURITY INVOKER\n")
         self.reject("SET search_path TO 'pg_catalog', 'auth', 'private'",
                     "SET search_path TO public")
 
