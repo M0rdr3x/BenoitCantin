@@ -208,7 +208,8 @@ function liveSubmissionFixture(spec) {
   const nodes = Object.create(null);
   for(const id of ["sondage-age","sondage-consent","sondage-submit",
                    "sondage-submit-status","sondage-review-list",
-                   "sondage-choices","sondage-recap","sondage-next"]) {
+                   "sondage-choices","sondage-recap","sondage-next",
+                   "sondage-answered","sondage-position","sondage-progress"]) {
     nodes[id] = {checked:id === "sondage-age" || id === "sondage-consent",
                  disabled:false,textContent:"",cleared:false,
                  replaceChildren(){this.cleared=true;this.textContent="";},
@@ -218,6 +219,9 @@ function liveSubmissionFixture(spec) {
   }
   nodes["sondage-review-list"].textContent="Bulletin fictif encore visible";
   nodes["sondage-choices"].textContent="Choix fictif encore visible";
+  nodes["sondage-answered"].textContent="40 ou 64 opinions enregistrées";
+  nodes["sondage-position"].textContent="Question finale du questionnaire";
+  nodes["sondage-progress"].value=spec.count;
   const choices = Array.from({length:spec.count},(_,i) =>
     ["q"+String(i+1).padStart(2,"0"),spec.count===40?"pour":"skip"]);
   let resolveAuth;
@@ -329,6 +333,9 @@ for(const spec of cases) {
     assert.equal(f.nodes["sondage-review-list"].cleared,true);
     assert.equal(f.nodes["sondage-choices"].cleared,true);
     assert.match(f.nodes["sondage-recap"].textContent,/effacés de cette page/);
+    assert.equal(f.nodes["sondage-answered"].textContent,"");
+    assert.equal(f.nodes["sondage-position"].textContent,"");
+    assert.equal(f.nodes["sondage-progress"].value,0);
     assert.equal(f.nodes["sondage-next"].disabled,true);
   });
 
@@ -349,6 +356,9 @@ for(const spec of cases) {
     assert.equal(f.nodes["sondage-age"].checked,false);
     assert.equal(f.nodes["sondage-consent"].checked,false);
     assert.match(f.nodes["sondage-submit-status"].textContent,/déjà|existe/);
+    assert.equal(f.nodes["sondage-answered"].textContent,"");
+    assert.equal(f.nodes["sondage-position"].textContent,"");
+    assert.equal(f.nodes["sondage-progress"].value,0);
   });
 }
 
@@ -472,7 +482,7 @@ for (const spec of cases) {
   test(spec.id+" : script public mis en cache invalidé après la purge de confidentialité",()=>{
     const html=fs.readFileSync(path.join(nova,spec.count===40?
       "consultation-40.html":"sondage.html"),"utf8");
-    assert.ok(html.includes('assets/'+spec.filename+'?v=1.1.4'));
+    assert.ok(html.includes('assets/'+spec.filename+'?v=1.1.5'));
   });
 }
 

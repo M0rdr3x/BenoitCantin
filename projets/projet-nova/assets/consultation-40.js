@@ -173,6 +173,11 @@
     $('sondage-age').checked = false;
     $('sondage-consent').checked = false;
     $('sondage-recap').textContent = 'Les choix de ce questionnaire ont été effacés de cette page après la réponse du serveur.';
+    // Les compteurs résiduels sont des traces d'une participation politique,
+    // y compris dans un formulaire masqué après un envoi confirmé ou doublon.
+    $('sondage-answered').textContent = '';
+    $('sondage-position').textContent = '';
+    $('sondage-progress').value = 0;
     $('sondage-next').disabled = true;
   }
   function clearLocalDemo() {
