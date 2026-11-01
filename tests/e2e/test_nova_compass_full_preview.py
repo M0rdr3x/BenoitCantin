@@ -108,6 +108,44 @@ def main():
             require(neutral["ok"], "profil neutre incomplet: " + repr(neutral))
             require(not submitted, "une opinion politique a été transmise pendant le test")
 
+            # Modifier les réponses APRÈS l'affichage du profil doit retirer
+            # immédiatement le résultat et toutes ses possibilités de partage.
+            page.locator("#compass-prev").click()
+            earlier = page.evaluate("""() => ({
+                question:document.querySelector("#compass-progress-text").textContent,
+                noResult:document.querySelector("#compass-results").hidden &&
+                  document.querySelector("#compass-results-grid").children.length===0 &&
+                  document.querySelector("#compass-summary").textContent==="" &&
+                  document.querySelector("#compass-copy-result").onclick===null &&
+                  document.querySelector("#compass-share-email").getAttribute("href")==="mailto:",
+                stageVisible:!document.querySelector("#compass-stepper").hidden
+            })""")
+            require(earlier["noResult"] and earlier["stageVisible"] and
+                    "Question 63 sur 64" in earlier["question"],
+                    "Revenir aux réponses conserve un ancien profil: "+repr(earlier))
+            page.locator("#compass-next").click()
+            require("Question 64 sur 64" in page.locator("#compass-progress-text").inner_text(),
+                    "Retour à la dernière question après modification impossible")
+            page.locator("#compass-next").click()
+            require(not page.locator("#compass-results").is_hidden(),
+                    "Profil non recalculable après navigation arrière/avant")
+            page.locator('#compass-question-stage input[value="3"]').check()
+            stale = page.evaluate("""() => {
+                const status=document.querySelector("#compass-status").textContent;
+                return document.querySelector("#compass-results").hidden &&
+                  document.querySelector("#compass-summary").textContent==="" &&
+                  document.querySelector("#compass-copy-result").onclick===null &&
+                  document.querySelector("#compass-share-native").onclick===null &&
+                  document.querySelector("#compass-share-email").getAttribute("href")==="mailto:" &&
+                  document.querySelector("#compass-results-grid").children.length===0 &&
+                  status.includes("Ancien résultat retiré");
+            }""")
+            require(stale,"Un changement direct conserve un résultat/partage périmé")
+            page.locator("#compass-next").click()
+            require(not page.locator("#compass-results").is_hidden() and
+                    page.locator("#compass-results-grid .compass-result-card").count() == 16,
+                    "Profil corrigé non recalculé après la 64e question")
+
             # Les callbacks de partage retiennent le résumé et doivent
             # également disparaître après reset, pas seulement les cartes SVG.
             require(page.evaluate("""() =>

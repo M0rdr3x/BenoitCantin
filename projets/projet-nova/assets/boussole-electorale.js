@@ -148,6 +148,9 @@
       const stage = $("#compass-question-stage");
       if(!state.started || !stage?.contains(fieldset) ||
          currentQuestion()?.id !== question.id) return;
+      // Dès que les réponses ou leur importance changent après le calcul,
+      // ne jamais laisser partager un ancien profil présenté comme actuel.
+      if(state.results !== null) discardResultPreview();
       if(event.target.matches('input[type="radio"]')){
         const raw = event.target.value;
         const importance = state.importance.get(question.id) || fieldset.querySelector("[data-importance]")?.value || "normal";
@@ -230,7 +233,7 @@
   }
 
   function startQuestionnaire(){
-    if(!state.data) return;
+    if(!state.data || state.started) return;
     state.started = true;
     state.currentIndex = 0;
     $("#compass-start-panel").hidden = true;
@@ -242,12 +245,14 @@
   }
 
   function goPrevious(){
-    if(state.currentIndex <= 0) return;
+    if(!state.started || state.currentIndex <= 0) return;
+    if(state.results !== null) discardResultPreview();
     state.currentIndex -= 1;
     renderCurrentQuestion();
   }
 
   function goNext(){
+    if(!state.started) return;
     const question = currentQuestion();
     const status = $("#compass-status");
     if(!question || !state.answers.has(question.id)){
@@ -505,6 +510,38 @@
     finally{ area.remove(); }
   }
 
+  function discardResultPreview(){
+    // Un résultat calculé n'est plus valide après modification. Supprimer
+    // également les liens/closures contenant des opinions, sans effacer les
+    // réponses : elles pourront être ajustées et le profil recalculé.
+    shareGeneration += 1;
+    state.results = null;
+    $("#compass-results-grid")?.replaceChildren();
+    $("#compass-radar")?.replaceChildren();
+    const summary = $("#compass-summary");
+    if(summary) summary.textContent = "";
+    const recipient = $("#compass-email-recipient");
+    if(recipient){
+      recipient.value = "";
+      recipient.oninput = null;
+    }
+    const nativeShare = $("#compass-share-native");
+    if(nativeShare) nativeShare.onclick = null;
+    const copyResult = $("#compass-copy-result");
+    if(copyResult) copyResult.onclick = null;
+    const email = $("#compass-share-email");
+    if(email) email.setAttribute("href","mailto:");
+    for(const id of ["compass-share-facebook","compass-share-x","compass-share-linkedin"]){
+      const link = $("#"+id);
+      if(link) link.setAttribute("href",(link.getAttribute("href") || "").split("?")[0]);
+    }
+    $("#compass-results").hidden = true;
+    const shareCard = $("#compass-share-card");
+    if(shareCard) shareCard.hidden = true;
+    const status = $("#compass-status");
+    if(status) status.textContent = "Ancien résultat retiré après modification. Continuez le questionnaire pour recalculer votre profil.";
+  }
+
   function showResults(){
     const answered = Array.from(state.answers.values()).filter(x => x.value !== null).length;
     if(answered === 0){
@@ -544,49 +581,19 @@
   }
 
   function reset(focusStart=true){
-    // Neutraliser tout traitement de partage déjà en attente, avant la purge.
-    shareGeneration += 1;
+    // Révoquer tout partage avant d'effacer les choix sensibles.
+    discardResultPreview();
     state.answers.clear();
     state.importance.clear();
     state.currentIndex = 0;
     state.started = false;
-    state.results = null;
-    // Ne conserver aucune opinion ou destination de partage dans le DOM caché
-    // après réinitialisation, navigation ou restauration d'historique.
     $("#compass-question-stage")?.replaceChildren();
-    $("#compass-results-grid")?.replaceChildren();
-    $("#compass-radar")?.replaceChildren();
-    const summary = $("#compass-summary");
-    if(summary) summary.textContent = "";
-    const recipient = $("#compass-email-recipient");
-    if(recipient){
-      recipient.value = "";
-      // Le listener conserve sinon une fermeture sur l'ancien résumé politique.
-      recipient.oninput = null;
-    }
-    // Ne laisser aucun résultat sensible dans des callbacks cachés après reset,
-    // pagehide ou restauration d'historique (même si le DOM visuel est vidé).
-    const nativeShare = $("#compass-share-native");
-    if(nativeShare) nativeShare.onclick = null;
-    const copyResult = $("#compass-copy-result");
-    if(copyResult) copyResult.onclick = null;
-    const email = $("#compass-share-email");
-    if(email) email.setAttribute("href","mailto:");
-    // Réutiliser les bases déjà déclarées dans le HTML approuvé.
-    for(const id of ["compass-share-facebook","compass-share-x","compass-share-linkedin"]){
-      const link = $("#"+id);
-      if(link) link.setAttribute("href",(link.getAttribute("href") || "").split("?")[0]);
-    }
-    $("#compass-results").hidden = true;
-    const shareCard = $("#compass-share-card");
-    if(shareCard) shareCard.hidden = true;
     $("#compass-stepper").hidden = true;
     $("#compass-start-panel").hidden = false;
     $("#compass-status").textContent = "Questionnaire réinitialisé. Vous pouvez recommencer quand vous voulez.";
     updateProgress();
     if(focusStart) $("#compass-start")?.focus();
   }
-
   function renderPartyRegistry(corpus,evidenceCorpus){
     const host = $("#compass-parties");
     if(!host) return;

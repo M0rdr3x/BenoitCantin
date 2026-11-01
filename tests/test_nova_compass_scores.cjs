@@ -393,7 +393,11 @@ test("Réinitialisation Boussole : aucune fermeture de partage ne retient le pro
     navigator:{},shareGeneration:0,encodeURIComponent,updateProgress(){},
     copyText:async()=>true
   };
+  const beginDiscard=source.indexOf("  function discardResultPreview(){");
+  const endDiscard=source.indexOf("\n  function showResults(){",beginDiscard);
+  assert.ok(beginDiscard>=0 && endDiscard>beginDiscard);
   const action=new vm.Script(source.slice(beginShare,endShare)+
+    "\n"+source.slice(beginDiscard,endDiscard)+
     "\n"+source.slice(beginReset,endReset)+
     "\nconfigureSharing([]);",{filename:"boussole-electorale.js:sharing-and-reset"});
   action.runInNewContext(ctx,{timeout:1000});
