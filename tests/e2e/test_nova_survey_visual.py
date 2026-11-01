@@ -562,7 +562,10 @@ def main():
                 return !document.querySelector('#compass-results').hidden &&
                     [...document.querySelectorAll('#compass-results-grid .compass-result-head strong')]
                       .every(x=>x.textContent.trim()==='—') &&
-                    document.querySelector('#compass-radar').textContent.includes('pas encore assez');
+                    document.querySelector('#compass-radar').textContent.includes('pas encore assez') &&
+                    document.querySelector('#compass-summary').textContent.includes('Aucune dimension calculable') &&
+                    document.querySelector('#compass-share-card').hidden &&
+                    getComputedStyle(document.querySelector('#compass-share-card')).display==='none';
             }""")
             require(partial, "Axe avec une seule réponse présenté comme un score fiable")
             compass.evaluate("window.dispatchEvent(new Event('pagehide'))")

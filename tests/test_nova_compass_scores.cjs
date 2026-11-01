@@ -456,3 +456,52 @@ test("Boussole : après reset la progression ARIA indique zéro, pas question 1"
   assert.equal(nodes["#compass-progress-track"].attributes["aria-valuetext"],"Question 39 sur 64");
   assert.match(nodes["#compass-progress-text"].textContent,/1 réponse enregistrée/);
 });
+
+
+test("Boussole : résumé exact si aucune, 8 ou 16 dimensions sont calculables",()=>{
+  const startResults=source.indexOf("  function showResults(){");
+  const endResults=source.indexOf("\n  function reset(focusStart=true){",startResults);
+  assert.ok(startResults>=0 && endResults>startResults);
+  const runner=new vm.Script(source.slice(startResults,endResults)+
+    "\nshowResults();",{filename:"boussole-electorale.js:showResults"});
+  const run=({answered,available})=>{
+    const nodes=Object.create(null);
+    const $=id=>(nodes[id]??={
+      textContent:"",hidden:true,innerHTML:"",focused:false,
+      focus(){this.focused=true;}
+    });
+    const result=axes.map((axis,i)=>({
+      ...axis,score:i<available?0:null,answered:i<available?4:1,total:4,coverage:i<available?100:25
+    }));
+    let sharing=0;
+    const context={
+      state:{data:corpus,answers:new Map(Array.from({length:answered},(_,i)=>
+        ["q"+String(i+1).padStart(2,"0"),{value:1,importance:"normal"}])),results:null},
+      $,calculate:()=>result,resultCard:()=>"<article></article>",
+      renderRadar:()=>{},coveragePercent:()=>Math.round(100*answered/64),
+      configureSharing:()=>{sharing++;},scrollToSection:()=>{}
+    };
+    runner.runInNewContext(context,{timeout:1000});
+    return {nodes,context,sharing};
+  };
+  const insufficient=run({answered:1,available:0});
+  assert.match(insufficient.nodes["#compass-summary"].textContent,/Aucune dimension calculable/);
+  assert.match(insufficient.nodes["#compass-summary"].textContent,/Aucun profil politique/);
+  assert.equal(insufficient.nodes["#compass-share-card"].hidden,true);
+  assert.equal(insufficient.nodes["#compass-results"].hidden,false);
+  assert.equal(insufficient.sharing,0);
+  assert.match(insufficient.nodes["#compass-status"].textContent,/Aucune dimension calculable/);
+  const misleading=run({answered:32,available:8});
+  assert.match(misleading.nodes["#compass-summary"].textContent,/Profil partiel/);
+  assert.match(misleading.nodes["#compass-summary"].textContent,/8\/16 dimensions calculables/);
+  assert.equal(misleading.nodes["#compass-share-card"].hidden,false);
+  assert.equal(misleading.sharing,1);
+  const complete=run({answered:64,available:16});
+  assert.match(complete.nodes["#compass-summary"].textContent,/Profil calculé sur 16 dimensions/);
+  assert.equal(complete.nodes["#compass-share-card"].hidden,false);
+  assert.equal(complete.sharing,1);
+  const html=fs.readFileSync(path.join(nova,"boussole-electorale.html"),"utf8");
+  const css=fs.readFileSync(path.join(nova,"assets/boussole-electorale.css"),"utf8");
+  assert.match(html,/au moins deux propositions du même thème/);
+  assert.match(css,/\.compass-share-card\[hidden\]\{display:none!important\}/);
+});

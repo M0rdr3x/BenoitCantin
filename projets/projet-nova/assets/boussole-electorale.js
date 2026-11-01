@@ -496,14 +496,24 @@
 
     const minimum = Math.ceil(state.data.questions.length * (state.data.methodology?.minimumAnsweredRatio ?? 0.5));
     const coverage = coveragePercent(results);
-    const partial = answered < minimum;
-    $("#compass-summary").textContent = partial
-      ? `Profil partiel : ${answered} propositions répondues sur ${state.data.questions.length}; couverture moyenne ${coverage} %. Les dimensions peu couvertes doivent être interprétées avec prudence.`
-      : `Profil calculé sur ${state.data.axes.length} dimensions; couverture moyenne ${coverage} %. Aucun score global gauche/droite n’est généré.`;
+    // Le nombre global de réponses ne remplace pas le seuil par axe.
+    // 32 réponses sur seulement 8 thèmes ne documentent PAS 16 axes.
+    const calculatedAxes = results.filter(result => result.score !== null).length;
+    const partial = answered < minimum || calculatedAxes !== state.data.axes.length;
+    $("#compass-summary").textContent = calculatedAxes === 0
+      ? `Aucune dimension calculable : ${answered} proposition(s) renseignée(s) sur ${state.data.questions.length}. Chaque dimension nécessite au moins deux réponses portant sur ce thème. Aucun profil politique n’est établi ni proposé au partage.`
+      : partial
+        ? `Profil partiel : ${answered} propositions répondues sur ${state.data.questions.length}; ${calculatedAxes}/${state.data.axes.length} dimensions calculables; couverture moyenne ${coverage} %. Les autres dimensions demeurent inconnues.`
+        : `Profil calculé sur ${calculatedAxes} dimensions; couverture moyenne ${coverage} %. Aucun score global gauche/droite n’est généré.`;
 
+    // Aucun score calculé => ni profil à partager ni lien sensible.
+    const shareCard = $("#compass-share-card");
+    if(shareCard) shareCard.hidden = calculatedAxes === 0;
     $("#compass-results").hidden = false;
-    configureSharing(results);
-    $("#compass-status").textContent = "Votre résultat a été calculé localement dans votre navigateur.";
+    if(calculatedAxes > 0) configureSharing(results);
+    $("#compass-status").textContent = calculatedAxes === 0
+      ? "Aucune dimension calculable. Répondez à au moins deux propositions d’un même thème pour obtenir un score."
+      : "Votre résultat a été calculé localement dans votre navigateur.";
     // L'étape finale doit aussi être annoncée au clavier et au lecteur d'écran.
     $("#compass-results-title")?.focus({preventScroll:true});
     scrollToSection($("#compass-results"));
@@ -542,6 +552,8 @@
       if(link) link.setAttribute("href",(link.getAttribute("href") || "").split("?")[0]);
     }
     $("#compass-results").hidden = true;
+    const shareCard = $("#compass-share-card");
+    if(shareCard) shareCard.hidden = true;
     $("#compass-stepper").hidden = true;
     $("#compass-start-panel").hidden = false;
     $("#compass-status").textContent = "Questionnaire réinitialisé. Vous pouvez recommencer quand vous voulez.";

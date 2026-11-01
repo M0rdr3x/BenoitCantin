@@ -136,6 +136,32 @@ def main():
             require(skipped["ok"], "64 choix Sans opinion ont produit un faux profil: " + repr(skipped))
             page.locator("#compass-reset").click()
 
+            # Une réponse n'implique pas une dimension calculable : ne pas
+            # proposer au partage un profil dépourvu de scores.
+            none = page.evaluate("""() => {
+                document.querySelector("#compass-start").click();
+                for (let step = 1; step <= 64; step++) {
+                    const radio = document.querySelector(
+                        '#compass-question-stage input[type="radio"][value="' +
+                        (step === 1 ? "2" : "skip") + '"]'
+                    );
+                    if (!radio) return {ok:false,step};
+                    radio.click();
+                    document.querySelector("#compass-next").click();
+                }
+                const share = document.querySelector("#compass-share-card");
+                return {
+                    ok: !document.querySelector("#compass-results").hidden &&
+                        document.querySelector("#compass-summary").textContent.includes(
+                            "Aucune dimension calculable") &&
+                        share.hidden && getComputedStyle(share).display === "none" &&
+                        document.querySelector("#compass-copy-result").onclick === null &&
+                        document.querySelector("#compass-share-native").onclick === null
+                };
+            }""")
+            require(none["ok"], "profil fantôme partageable avec une seule réponse: " + repr(none))
+            page.locator("#compass-reset").click()
+
             # Profil PARTIEL : trois dimensions adjacentes à deux réponses
             # chacune. Les treize autres restent non calculées, sans faux
             # marqueur neutre, sans polygone traversant leurs positions.
