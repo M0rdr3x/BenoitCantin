@@ -36,3 +36,7 @@ jobs:
           node --check scripts/test_nova_compass_render_security.cjs
       - name: Exécuter les fonctions réelles de rendu et les attaques synthétiques
         run: node scripts/test_nova_compass_render_security.cjs
+      - name: Contrôler les corpus de preuves et les 64 identifiants de questions
+        run: |
+          python3 scripts/test_nova_compass_source_security.py
+          python3 scripts/validate_nova_compass_source_security.py
