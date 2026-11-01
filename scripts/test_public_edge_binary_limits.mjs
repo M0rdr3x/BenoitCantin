@@ -60,11 +60,12 @@ async function run() {
   }
 
   let cancelled = false;
-  const oversized = streamResponse(
-    [pdf.subarray(0, 5), pdf.subarray(5), encoder.encode('EXCESS')],
-    {},
-    () => { cancelled = true; }
-  );
+  // Keep the source OPEN until the reader cancels it. A stream already
+  // closed by the fixture cannot exercise the underlying cancel callback.
+  const oversized = new Response(new ReadableStream({
+    pull(controller) { controller.enqueue(new Uint8Array(pdf.byteLength + 1)); },
+    cancel() { cancelled = true; }
+  }, { highWaterMark: 0 }));
   rejectResult(await readLimitedBinaryResponse(oversized, pdf.byteLength));
   assert.equal(cancelled, true, 'Stop oversized streaming input immediately');
 
