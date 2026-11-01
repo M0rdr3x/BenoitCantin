@@ -222,11 +222,11 @@ jobs:
         run: |
           {
             echo "### Netlify staging — preuve combinée"
-            echo "- Ref : `$GITHUB_REF`"
-            echo "- SHA source : `$GITHUB_SHA`"
-            echo "- Site Netlify : `$NETLIFY_SITE_NAME`"
-            echo "- Preview immuable : `$PREVIEW_PERMALINK` — **PASS**"
-            echo "- Production-candidate immuable : `$PRODUCTION_PERMALINK` — **PASS**"
+            printf '%s\n' "- Ref : $GITHUB_REF"
+            printf '%s\n' "- SHA source : $GITHUB_SHA"
+            printf '%s\n' "- Site Netlify : $NETLIFY_SITE_NAME"
+            printf '%s\n' "- Preview immuable : $PREVIEW_PERMALINK — **PASS**"
+            printf '%s\n' "- Production-candidate immuable : $PRODUCTION_PERMALINK — **PASS**"
             echo "- Deux deploys distincts : **oui**"
             echo "- Même site : **oui**"
             echo "- Promotion production Netlify : **non**"
