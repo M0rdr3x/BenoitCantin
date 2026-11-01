@@ -564,3 +564,33 @@ test("Boussole : une promesse de partage tardive ne restaure pas le profil aprè
   assert.equal(node("#compass-share-email").href,"mailto:");
   assert.equal(context.state.answers.size,0);
 });
+
+
+test("Boussole : les contrôles documentaires échouent fermés après retry",()=>{
+  const from=source.indexOf("  function clearEvidenceExplorer(){");
+  const to=source.indexOf("\n  async function loadPoliticalRegistryAndEvidence(){",from);
+  assert.ok(from>=0 && to>from,"Routine réelle de purge absente");
+  const nodes=Object.create(null);
+  const el=id=>(nodes[id]??={
+    onchange:()=>{},onclick:()=>{},disabled:false,hidden:false,
+    options:[{value:"q01"}],children:[{}],textContent:"Ancienne preuve",
+    replaceChildren(){this.children=[];this.options=[];}
+  });
+  new vm.Script(source.slice(from,to)+"\nclearEvidenceExplorer();")
+    .runInNewContext({$:el},{timeout:1000});
+  assert.equal(el("#compass-evidence-question").onchange,null);
+  assert.equal(el("#compass-evidence-only-documented").onchange,null);
+  assert.equal(el("#compass-evidence-question").disabled,true);
+  assert.equal(el("#compass-evidence-only-documented").disabled,true);
+  assert.equal(el("#compass-evidence-priority-links").onclick,null);
+  assert.equal(el("#compass-evidence-priority-links").children.length,0);
+  assert.equal(el("#compass-evidence-priorities").hidden,true);
+  assert.equal(el("#compass-evidence-question").options.length,0);
+  assert.equal(el("#compass-evidence-question-results").children.length,0);
+  assert.equal(el("#compass-evidence-selected-question").textContent,"");
+  const explorer=source.slice(source.indexOf("  function renderEvidenceExplorer("),
+    source.indexOf("\n  function renderDocumentaryStatus("));
+  for(const hook of ["select.onchange = renderSelected","filter.onchange = renderSelected",
+    "priorityLinks.onclick = event =>"]) assert.ok(explorer.includes(hook));
+  assert.doesNotMatch(explorer,/(?:select|filter|priorityLinks)\.addEventListener\(/);
+});

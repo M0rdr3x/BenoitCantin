@@ -705,7 +705,7 @@
       priorityLinks.innerHTML = limitedQuestions.map(({question,index}) =>
         `<button type="button" data-compass-priority="${esc(question.id)}" aria-controls="compass-evidence-question-results">Q${String(index + 1).padStart(2,"0")} — ${esc(question.text)}</button>`
       ).join("");
-      priorityLinks.addEventListener("click",event => {
+      priorityLinks.onclick = event => {
         const button = event.target.closest("button[data-compass-priority]");
         if(!button || !priorityLinks.contains(button)) return;
         const questionId = button.dataset.compassPriority;
@@ -713,7 +713,7 @@
         select.value = questionId;
         renderSelected();
         select.focus();
-      });
+      };
     }
 
     function renderSelected(){
@@ -781,8 +781,10 @@
       }).join("");
     }
 
-    select.addEventListener("change",renderSelected);
-    filter.addEventListener("change",renderSelected);
+    select.onchange = renderSelected;
+    filter.onchange = renderSelected;
+    select.disabled = false;
+    filter.disabled = false;
     const firstWithEvidence = questions.find(question => (recordsByQuestion.get(question.id) || []).length > 0);
     if(firstWithEvidence) select.value = firstWithEvidence.id;
     renderSelected();
@@ -984,6 +986,23 @@
   let questionnaireLoading = false;
   let documentaryBinding = null;
 
+  function clearEvidenceExplorer(){
+    // Refuser toute ancienne preuve après nouvel essai ou erreur.
+    const select = $("#compass-evidence-question");
+    if(select){ select.onchange = null; select.replaceChildren(); select.disabled = true; }
+    const filter = $("#compass-evidence-only-documented");
+    if(filter){ filter.onchange = null; filter.disabled = true; }
+    const links = $("#compass-evidence-priority-links");
+    if(links){ links.onclick = null; links.replaceChildren(); }
+    const priorities = $("#compass-evidence-priorities");
+    if(priorities) priorities.hidden = true;
+    const selected = $("#compass-evidence-selected-question");
+    if(selected) selected.textContent = "";
+    const status = $("#compass-evidence-question-status");
+    if(status) status.textContent = "Données documentaires indisponibles pendant la vérification.";
+    $("#compass-evidence-question-results")?.replaceChildren();
+  }
+
   async function loadPoliticalRegistryAndEvidence(){
     if(documentaryLoading) return;
     documentaryLoading = true;
@@ -991,6 +1010,10 @@
     const evidenceHost = $("#compass-evidence-parties");
     const status = $("#compass-evidence-status");
     const retry = $("#compass-evidence-retry");
+    clearEvidenceExplorer();
+    partyHost?.replaceChildren();
+    evidenceHost?.replaceChildren();
+    $("#compass-evidence-summary")?.replaceChildren();
     if(retry){
       retry.hidden = true;
       retry.disabled = true;
@@ -1009,6 +1032,7 @@
       renderEvidenceExplorer(questionCorpus,partyCorpus,evidenceCorpus);
       documentaryBinding = evidenceCorpus.questionnaireBinding;
     }catch(error){
+      clearEvidenceExplorer();
       if(partyHost) partyHost.innerHTML = "<p>Impossible de charger le registre des formations pour le moment.</p>";
       if(evidenceHost) evidenceHost.innerHTML = "<p>Impossible de charger l’état documentaire pour le moment.</p>";
       const summary = $("#compass-evidence-summary");
