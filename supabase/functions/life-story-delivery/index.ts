@@ -1,3 +1,4 @@
+import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const MAX_REQUEST_BYTES = 256;
@@ -79,11 +80,10 @@ Deno.serve(async (req) => {
 
     const type = (req.headers.get('content-type') || '').toLowerCase();
     if (!type.startsWith('application/json')) return errorResponse(req, 415);
-    const declaredLength = Number(req.headers.get('content-length') || '0');
-    if (Number.isFinite(declaredLength) && declaredLength > MAX_REQUEST_BYTES) return errorResponse(req, 413);
+    const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);
+    if (!limited.ok) return errorResponse(req, 413);
+    const rawBody = limited.raw;
 
-    const rawBody = await req.text();
-    if (new TextEncoder().encode(rawBody).byteLength > MAX_REQUEST_BYTES) return errorResponse(req, 413);
     let payload: unknown;
     try { payload = JSON.parse(rawBody); } catch { return errorResponse(req, 400); }
     if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return errorResponse(req, 400);
