@@ -78,6 +78,7 @@ async function registerContext(meta){
   try{
     const {data,error}=await getSupabase().functions.invoke('security-context',{body:{...meta,action:'security_center'}});
     if(error)throw error;
+    if(data?.ok!==true||!data?.security)throw new Error('SECURITY_CONTEXT_UNAVAILABLE');
     return {registered,context:data};
   }catch(error){
     console.warn('[SINJIRA security-context]',error?.message||error);
@@ -237,7 +238,8 @@ async function boot(){
       }catch(err){status(friendlySecurityError(err),'error')}
     });
 
-    status('Centre de sécurité prêt.','success');
+    if(contextResult.context)status('Centre de sécurité prêt.','success');
+    else status('Centre de sécurité chargé, mais la vérification contextuelle est indisponible. Les contrôles sensibles peuvent être restreints.','error');
   }catch(error){console.error('[SINJIRA security center]',error);status(friendlySecurityError(error),'error')}
 }
 
