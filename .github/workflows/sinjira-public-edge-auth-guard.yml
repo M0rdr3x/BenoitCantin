@@ -11,6 +11,7 @@ on:
       - 'scripts/validate_public_edge_auth_workflow_security.py'
       - 'scripts/test_public_edge_body_limits.mjs'
       - 'scripts/test_public_edge_binary_limits.mjs'
+      - 'scripts/test_document_external_urls.mjs'
       - 'scripts/validate_get_document_url_security.py'
       - 'scripts/validate_get_private_book_url_security.py'
       - 'scripts/validate_send_game_report_security.py'
@@ -37,6 +38,7 @@ on:
       - 'scripts/validate_public_edge_auth_workflow_security.py'
       - 'scripts/test_public_edge_body_limits.mjs'
       - 'scripts/test_public_edge_binary_limits.mjs'
+      - 'scripts/test_document_external_urls.mjs'
       - 'scripts/validate_get_document_url_security.py'
       - 'scripts/validate_get_private_book_url_security.py'
       - 'scripts/validate_send_game_report_security.py'
@@ -79,6 +81,8 @@ jobs:
         run: node scripts/test_public_edge_body_limits.mjs
       - name: Auto-tester le téléchargement du modèle PDF sans surcharge mémoire
         run: node scripts/test_public_edge_binary_limits.mjs
+      - name: Tester les URLs externes des documents contre les redirections ambiguës
+        run: node scripts/test_document_external_urls.mjs
       - name: Auto-tester get-document-url
         run: python scripts/validate_get_document_url_security.py --self-test
       - name: Vérifier la frontière publique de get-document-url
