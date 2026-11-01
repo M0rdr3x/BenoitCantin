@@ -242,6 +242,37 @@ test('un JSON approuvé ne peut pas ouvrir la publication tant que le verrou JS 
   await assertUnavailable(syntheticApproved());
 });
 
+test('agrégats synthétiques : notes et provenance ne peuvent exposer courriel, IP ou secret',async()=>{
+  const metadata=[
+    'Contact du répondant: participante@example.invalid',
+    'Adresse IP 192.0.2.14 du participant',
+    'session=identifiant-introuvable',
+    'token: cle-privee-de-test',
+    'Bearer abcdefghijklmnopqrstuvwxy',
+  ];
+  for(const field of ['source','notes']) {
+    for(const text of metadata) {
+      const data=syntheticApproved();
+      data[field]=text;
+      await assertUnavailable(data,{syntheticRelease:true});
+    }
+  }
+  // Les mentions neutres normales restent publiables dans la seule VM.
+  const data=syntheticApproved();
+  data.notes='Méthode agrégée fictive sans adresse personnelle.';
+  const el=await mount(data,{syntheticRelease:true});
+  assert.match(el('results-state').textContent,/Résultats agrégés approuvés/);
+});
+test('agrégats synthétiques : une publication datée dans le futur est refusée',async()=>{
+  const data=syntheticApproved();
+  data.publishedOn='2999-12-31';
+  await assertUnavailable(data,{syntheticRelease:true});
+});
+test('registre : cache-busting du client de confidentialité des métadonnées',()=>{
+  const html=fs.readFileSync(path.join(NOVA,'resultats-sondages.html'),'utf8');
+  assert.match(html,/assets\/resultats-sondages\.js\?v=20261031-privacy-metadata/);
+});
+
 test('agrégats exclusivement synthétiques : affichage des comptes sûrs',async()=>{
   const el=await mount(syntheticApproved(), {syntheticRelease:true});
   assert.match(el('results-state').textContent,/Résultats agrégés approuvés/);

@@ -3,6 +3,8 @@
 import argparse
 import hashlib
 import json
+import re
+from datetime import date, datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -25,6 +27,17 @@ SURVEYS={"nova-orientations-40-v1":(40,("pour","contre","sans_opinion")),
 FORBIDDEN=("person","user","email","ip_address","ipaddress","address","hash",
            "account","identity","identit","token","session","device","individual",
            "respondent_id","participant_id","ballot","raw_vote","demograph")
+# Métadonnées éditoriales futures : refuser la divulgation accidentelle
+# d'une adresse courriel, IP ou d'un secret explicitement nommé.
+PRIVATE_METADATA_PATTERNS=(
+    re.compile(r"[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}", re.I),
+    re.compile(r"(?:^|[^\d])(?:\d{1,3}\.){3}\d{1,3}(?:$|[^\d])"),
+    re.compile(r"\b(?:bearer\s+[a-z0-9_-]{12,}|(?:token|session|password|api[_-]?key)\s*[:=]\s*\S+)",re.I),
+)
+
+def safe_public_metadata(value):
+    return (isinstance(value,str) and bool(value.strip()) and len(value)<=400 and
+            not any(pattern.search(value) for pattern in PRIVATE_METADATA_PATTERNS))
 
 def validate(obj, review=False):
     """Fail closed: only the reviewed public aggregate schema is permitted.
@@ -53,8 +66,8 @@ def validate(obj, review=False):
         bad.append("Drapeaux de publication invalides")
     for key in ("source","notes"):
         value=obj.get(key)
-        if not isinstance(value,str) or not value.strip() or len(value)>400:
-            bad.append("Métadonnée publique absente/invalide: "+key)
+        if not safe_public_metadata(value):
+            bad.append("Métadonnée publique invalide ou identifiable: "+key)
 
     status=obj.get("publicationStatus")
     if status not in ("not_open","approved_aggregate"):
@@ -74,9 +87,10 @@ def validate(obj, review=False):
             bad.append("Publication sans double approbation")
         published=obj.get("publishedOn")
         try:
-            from datetime import date
-            if type(published)!=str or date.fromisoformat(published).isoformat()!=published:
-                raise ValueError("Format non canonique")
+            if (type(published)!=str or
+                    date.fromisoformat(published).isoformat()!=published or
+                    published>datetime.now(timezone.utc).date().isoformat()):
+                raise ValueError("Format non canonique ou date future")
         except (ValueError, TypeError):
             bad.append("Date de publication invalide")
 
@@ -287,6 +301,25 @@ def self_test():
     mutation["publishedOn"]="2026-10-22"
     assert validate(mutation,review=True), "Date non approuvée acceptée"
     assert not validate(sample,review=True), "Agrégation synthétique valide refusée"
+    for field in ("source","notes"):
+        original_value=sample[field]
+        for sensitive_value in (
+            "Courriel de participant: citoyen@example.invalid",
+            "IP 198.51.100.42 collectée à la participation",
+            "session=identifiant-prive-test",
+            "token: jeton-fictif-de-test",
+            "Bearer abcdefghijklmnopqrstuvwx",
+        ):
+            sample[field]=sensitive_value
+            assert validate(sample,review=True), (
+                "Mention identifiante acceptée par le validateur Python: "+field
+            )
+        sample[field]=original_value
+    original_date=sample["publishedOn"]
+    sample["publishedOn"]="2999-12-31"
+    assert validate(sample,review=True), "Date future acceptée en publication"
+    sample["publishedOn"]=original_date
+    assert not validate(sample,review=True), "Revue synthétique valide bloquée après tests"
     a["questions"][0]["counts"]={"pour":24,"contre":6,"sans_opinion":0}
     assert validate(sample,review=True), "Petite cellule publiée"
     a["questions"][0]={"id":"q01","status":"suppressed"}

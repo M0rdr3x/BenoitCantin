@@ -46,6 +46,15 @@
     return obj && typeof obj === 'object' && !Array.isArray(obj) &&
       Object.keys(obj).every(key => !forbidden.test(key));
   }
+  // Les champs éditoriaux libres du futur registre peuvent accidentellement
+  // contenir une identité ou un secret, même avec un schéma JSON sans identifiants.
+  // Défense supplémentaire côté navigateur; revue humaine #675 indispensable.
+  function safePublicMetadata(value) {
+    return typeof value === 'string' && !!value.trim() && value.length <= 400 &&
+      !/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i.test(value) &&
+      !/(?:^|[^\d])(?:\d{1,3}\.){3}\d{1,3}(?:$|[^\d])/.test(value) &&
+      !/\b(?:bearer\s+[a-z0-9_-]{12,}|(?:token|session|password|api[_-]?key)\s*[:=]\s*\S+)/i.test(value);
+  }
   function manifestValid(raw, config) {
     return raw && raw.id === config.id && raw.minimumAge === 18 &&
       Array.isArray(raw.questions) && raw.questions.length === config.length &&
@@ -64,16 +73,15 @@
         data.rules.minimumParticipants !== 30 ||
         data.rules.minimumNonzeroCell !== 10 ||
         data.rules.suppression !== 'entire-question' ||
-        typeof data.source !== 'string' || !data.source.trim() ||
-        data.source.length > 400 || typeof data.notes !== 'string' ||
-        !data.notes.trim() || data.notes.length > 400) return false;
+        !safePublicMetadata(data.source) || !safePublicMetadata(data.notes)) return false;
     if (data.publicationStatus === 'approved_aggregate') {
       if (!PUBLIC_AGGREGATES_ENABLED) return false;
       if (!data.publicationApproved || !data.privacyReviewApproved ||
           typeof data.publishedOn !== 'string' ||
           !/^\d{4}-\d{2}-\d{2}$/.test(data.publishedOn) ||
           Number.isNaN(Date.parse(data.publishedOn)) ||
-          new Date(data.publishedOn).toISOString().slice(0,10) !== data.publishedOn) return false;
+          new Date(data.publishedOn).toISOString().slice(0,10) !== data.publishedOn ||
+          data.publishedOn > new Date().toISOString().slice(0,10)) return false;
     }
     let publishedSurveys = 0;
     for (const cfg of Object.values(CONFIG)) {
