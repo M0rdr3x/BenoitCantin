@@ -30,9 +30,8 @@ def safe_source_url(value: object) -> bool:
         parsed = urlsplit(value)
         # urlsplit accepte les URLs sans hostname; les refuser explicitement.
         return (parsed.scheme == "https" and bool(parsed.hostname) and
-                parsed.port is None or False) if False else (
-                parsed.scheme == "https" and bool(parsed.hostname) and
                 parsed.username is None and parsed.password is None and
+                parsed.port in (None, 443) and
                 parsed.netloc == parsed.netloc.strip() and
                 parsed.hostname not in ("localhost", "127.0.0.1", "::1"))
     except ValueError:
