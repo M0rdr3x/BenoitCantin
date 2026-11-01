@@ -9,7 +9,7 @@ const js=fs.readFileSync(path.join(__dirname,'../assets/js/sinjira-security-cent
 assert.match(js,/^import .* from .*;\s*$/m);
 assert.match(js,/\nboot\(\);\s*$/);
 const script=js.replace(/^import .*;\s*$/gm,'').replace(/\nboot\(\);\s*$/,'')+
-  '\nglobalThis.__tests={randomDeviceKey,validDeviceKey,deviceKey,safeSecurityId,renderDevices,renderTravel,renderChallenges,friendlySecurityError};';
+  '\nglobalThis.__tests={randomDeviceKey,validDeviceKey,deviceKey,safeSecurityId,renderDevices,renderTravel,renderChallenges,registerContext,friendlySecurityError};';
 
 function memory(initial={}){
   const cache=new Map(Object.entries(initial));
@@ -140,4 +140,47 @@ check(!html.includes('data-challenge-approve='));
 // Les erreurs de génération crypto sont interceptées par boot et affichées.
 check(/async function boot\(\)\{\s*try\{\s*const meta=deviceMetadata\(\)/.test(js));
 check(js.includes("if(Object.hasOwn(target.dataset,key)&&!safeSecurityId(target.dataset[key]))"));
-console.log('PASS: '+assertions+' assertions contre les identifiants prévisibles et les références HTML du Centre de sécurité SINJIRA.');
+
+// La fonction Edge de contexte ne peut jamais être réputée opérationnelle si
+// sa réponse ne fournit pas explicitement ok=true et l'objet security.
+check(js.includes("if(data?.ok!==true||!data?.security)throw new Error('SECURITY_CONTEXT_UNAVAILABLE')"));
+check(js.includes("if(contextResult.context)status('Centre de sécurité prêt.','success')"));
+check(js.includes("else status('Centre de sécurité chargé, mais la vérification contextuelle est indisponible."));
+
+async function checkContextBehavior(){
+  let edge={data:{ok:true,security:{outcome:'allow'}},error:null};
+  let rpcCalls=0, edgeCalls=0;
+  sandbox.getSupabase=()=>({
+    rpc: async(name,args)=>{
+      check(name==='security_register_device');
+      check(typeof args.p_device_key==='string');
+      rpcCalls++;
+      return {data:{id:deviceID},error:null};
+    },
+    functions:{
+      invoke:async(name,opts)=>{
+        equal(name,'security-context');
+        check(opts.body.action==='security_center');
+        edgeCalls++;
+        return edge;
+      }
+    }
+  });
+  const meta={device_key:deviceID,display_name:'Test',platform:'Test',device_type:'browser'};
+  const healthy=await api.registerContext(meta);
+  equal(healthy.context.security.outcome,'allow');
+  edge={data:{ok:false,error:'blocked'},error:null};
+  const rejected=await api.registerContext(meta);
+  equal(rejected.context,null);
+  edge={data:{ok:true},error:null};
+  const missing=await api.registerContext(meta);
+  equal(missing.context,null);
+  edge={data:null,error:new Error('Edge unavailable')};
+  const outage=await api.registerContext(meta);
+  equal(outage.context,null);
+  equal(rpcCalls,4);
+  equal(edgeCalls,4);
+}
+checkContextBehavior().then(()=>{
+  console.log('PASS: '+assertions+' assertions contre les clés prévisibles, les actions HTML et les états de sécurité dégradés.');
+}).catch(error=>{console.error(error);process.exitCode=1;});
