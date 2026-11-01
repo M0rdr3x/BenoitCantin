@@ -99,7 +99,7 @@ def validate_text(text: str) -> list[str]:
     ]
     for marker in required:
         require(errors, marker in text, f'contrôle CI obligatoire absent: {marker.strip()}')
-    require(errors, text.count("      - 'scripts/test_public_edge_body_limits.mjs'\\n") == 2, 'le test streaming doit déclencher le workflow sur PR et push')
+    require(errors, text.count("      - 'scripts/test_public_edge_body_limits.mjs'") == 2, 'le test streaming doit déclencher le workflow sur PR et push')
     require(errors, text.count(GET_DOCUMENT_TRIGGER) == 2, 'le validateur get-document-url doit déclencher le workflow sur pull_request et push')
     require(errors, text.count(GET_PRIVATE_BOOK_TRIGGER) == 2, 'le validateur Livre I privé doit déclencher le workflow sur pull_request et push')
     require(errors, text.count(SEND_GAME_REPORT_TRIGGER) == 2, 'le validateur send-game-report doit déclencher le workflow sur pull_request et push')
