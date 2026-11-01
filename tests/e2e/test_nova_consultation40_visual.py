@@ -87,6 +87,10 @@ with sync_playwright() as p:
               "question référendaire initiale absente")
         check(page.locator("#sondage-next").is_disabled(), "réponse vide franchit une étape")
         page.locator("input[value=pour]").check()
+        page.evaluate("""() => {
+            window.__novaDetached40 = document.querySelector(
+                '#sondage-choices input[value="pour"]');
+        }""")
         # Révocation explicite en cours de parcours : le script doit effacer
         # tout choix politique et toute attestation, sans clic supplémentaire.
         page.evaluate("""() => {
@@ -108,6 +112,14 @@ with sync_playwright() as p:
         page.locator("#sondage-start").click()
         check(page.locator("#sondage-next").is_disabled(),
               "Retrait du consentement : ancienne réponse réutilisée")
+        check(page.evaluate("""() => {
+            const stale = window.__novaDetached40;
+            delete window.__novaDetached40;
+            stale.dispatchEvent(new Event("change", {bubbles:true}));
+            return document.querySelector("#sondage-next").disabled &&
+                document.querySelector("#sondage-answered").textContent.startsWith("0 question") &&
+                [...document.querySelectorAll('#sondage-choices input:checked')].length===0;
+        }"""), "Ancien bouton détaché a restauré une opinion après révocation")
         page.locator("input[value=pour]").check()
         page.locator("#sondage-next").click()
         check("Question 2 sur 40" in page.locator("#sondage-position").inner_text(),

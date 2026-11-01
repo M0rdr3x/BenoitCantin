@@ -42,6 +42,10 @@ def main():
 
             # Sans opinion n'est pas neutre et doit survivre à un aller-retour.
             page.locator('#compass-question-stage input[type="radio"][value="skip"]').check()
+            page.evaluate("""() => {
+                window.__novaDetachedCompass = document.querySelector(
+                    '#compass-question-stage fieldset');
+            }""")
             page.locator("#compass-next").click()
             require("Question 2 sur 64" in page.locator("#compass-progress-text").inner_text(),
                     "navigation vers la question 2 impossible")
@@ -49,6 +53,26 @@ def main():
             require(page.locator('#compass-question-stage input[value="skip"]').is_checked(),
                     "l'option Sans opinion a été oubliée")
             page.locator("#compass-reset").click()
+            # Une ancienne fermeture "change" demeure sur le fieldset détaché.
+            # Même après avoir commencé une nouvelle visite, elle ne peut plus
+            # recréer de score/importance ni activer Suivant.
+            stale = page.evaluate("""() => {
+                document.querySelector("#compass-start").click();
+                const fieldset=window.__novaDetachedCompass;
+                delete window.__novaDetachedCompass;
+                const oldRadio=fieldset.querySelector('input[type="radio"][value="3"]');
+                const oldWeight=fieldset.querySelector("[data-importance]");
+                oldRadio.dispatchEvent(new Event("change",{bubbles:true}));
+                oldWeight.value="forte";
+                oldWeight.dispatchEvent(new Event("change",{bubbles:true}));
+                const next=document.querySelector("#compass-next");
+                const progress=document.querySelector("#compass-progress-text").textContent;
+                const ok=next.disabled && progress.includes("0 réponse") &&
+                    !document.querySelector("#compass-question-stage input:checked");
+                document.querySelector("#compass-reset").click();
+                return {ok,progress};
+            }""")
+            require(stale["ok"], "Réponse/importance ressuscitée par un ancien champ: "+repr(stale))
 
             # 64 réponses neutres explicites doivent produire 16 vrais scores 0,
             # pas 16 scores inconnus, et une couverture 100 % sur chaque dimension.

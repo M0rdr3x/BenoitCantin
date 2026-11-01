@@ -95,6 +95,10 @@
       radio.value = choice;
       radio.checked = answers.get(item.id) === choice;
       radio.addEventListener('change', () => {
+        // Un ancien contrôle détaché après reset, retrait d'accord ou navigation
+        // ne peut plus réintroduire une opinion dans la mémoire du questionnaire.
+        if (!eligible() || $('sondage-questionnaire').hidden ||
+            !choices.contains(radio) || questions[step]?.id !== item.id) return;
         answers.set(item.id, choice);
         $('sondage-next').disabled = false;
         $('sondage-answered').textContent = answers.size + ' question(s) avec un choix sur 40';

@@ -142,6 +142,12 @@
     `;
 
     fieldset.addEventListener("change", event => {
+      // Le navigateur ou une tâche tardive peut encore émettre "change" sur
+      // un fieldset retiré du DOM par reset ou par changement de question.
+      // Refuser toute opinion/pondération issue de cette ancienne fermeture.
+      const stage = $("#compass-question-stage");
+      if(!state.started || !stage?.contains(fieldset) ||
+         currentQuestion()?.id !== question.id) return;
       if(event.target.matches('input[type="radio"]')){
         const raw = event.target.value;
         const importance = state.importance.get(question.id) || fieldset.querySelector("[data-importance]")?.value || "normal";

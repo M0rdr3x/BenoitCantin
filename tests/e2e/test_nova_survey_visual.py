@@ -226,6 +226,10 @@ def main():
             require(page.locator("#sondage-choices input[type=radio]").count() == 8,
                     "Échelle -3..+3 et Sans opinion non disponible")
             page.locator("#sondage-choices input[value='1']").check()
+            page.evaluate("""() => {
+                window.__novaDetached64 = document.querySelector(
+                    '#sondage-choices input[value="1"]');
+            }""")
             # Ne pas conserver d'opinions si l'accord de démonstration est
             # retiré en cours de route, avant un reset explicite ou pagehide.
             page.evaluate("""() => {
@@ -247,6 +251,14 @@ def main():
             page.locator("#sondage-start").click()
             require(page.locator("#sondage-next").is_disabled(),
                     "Retrait du consentement : réponse antérieure réapparue")
+            require(page.evaluate("""() => {
+                const stale = window.__novaDetached64;
+                delete window.__novaDetached64;
+                stale.dispatchEvent(new Event("change", {bubbles:true}));
+                return document.querySelector("#sondage-next").disabled &&
+                    document.querySelector("#sondage-answered").textContent.startsWith("0 question") &&
+                    [...document.querySelectorAll('#sondage-choices input:checked')].length===0;
+            }"""), "Ancien champ détaché a restauré une opinion après retrait")
             page.locator("#sondage-choices input[value='1']").check()
             page.locator("#sondage-next").click()
             require("Question 2 sur 64" in page.locator("#sondage-position").inner_text(),

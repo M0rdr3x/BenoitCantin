@@ -120,6 +120,10 @@
       input.value = value;
       input.checked = existing === value;
       input.addEventListener('change', () => {
+        // Un contrôle devenu obsolète (question remplacée ou visite effacée)
+        // ne doit pas recréer de réponse après un retrait d'accord.
+        if (!eligible() || $('sondage-questionnaire').hidden ||
+            !area.contains(input) || questions[step]?.id !== question.id) return;
         selections.set(question.id, value);
         $('sondage-answered').textContent = selections.size + ' question(s) avec un choix sur 64';
         $('sondage-next').disabled = false;
