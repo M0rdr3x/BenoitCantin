@@ -18,9 +18,19 @@ function privateJson(data:unknown,status=200){
   return new Response(JSON.stringify(data),{status,headers:PRIVATE_JSON_HEADERS});
 }
 
+const DOCUMENT_URL_BASE='https://www.benoitcantin.com';
 function externalUrlAllowed(value:string){
-  if(value.startsWith('/')&&!value.startsWith('//'))return true;
-  try{return new URL(value).protocol==='https:'}catch{return false}
+  // Les navigateurs interprètent parfois /\ comme // (origine externe).
+  // Contrôler la destination après parsing et refuser les caractères ambigus.
+  if(!value||value.length>2048||/[\u0000-\u0020\u007f\\]/.test(value))return false;
+  try{
+    const relative=value.startsWith('/');
+    if(relative&&value.startsWith('//'))return false;
+    const parsed=relative?new URL(value,DOCUMENT_URL_BASE):new URL(value);
+    if(parsed.protocol!=='https:'||parsed.username||parsed.password)return false;
+    if(relative&&parsed.origin!==DOCUMENT_URL_BASE)return false;
+    return true;
+  }catch{return false}
 }
 
 async function readLimitedJson(req:Request):Promise<{body?:any;response?:Response}>{
