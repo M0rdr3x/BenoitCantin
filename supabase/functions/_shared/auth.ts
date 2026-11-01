@@ -80,9 +80,11 @@ async function assertAdminMfa(context: Awaited<ReturnType<typeof authenticatedCo
   });
   if (adminError || !isAdmin) throw new Error('ADMIN_REQUIRED');
 
-  const aal = await assuranceLevel(context).catch((error) => {
-    console.error('[SINJIRA admin auth] état MFA indisponible', error);
-    throw error;
+  const aal = await assuranceLevel(context).catch(() => {
+    // Les exceptions du fournisseur Auth peuvent contenir des détails de
+    // contexte : ne jamais les écrire dans les journaux administratifs.
+    console.error('[SINJIRA admin auth]', { code: 'ADMIN_MFA_STATE_UNAVAILABLE' });
+    throw new Error('MFA_STATE_UNAVAILABLE');
   });
   // Une fonction administrative requiert toujours une session authentifiée
   // au niveau AAL2, même si aucun facteur MFA n'est encore enregistré.
