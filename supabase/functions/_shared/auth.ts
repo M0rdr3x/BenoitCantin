@@ -84,7 +84,10 @@ async function assertAdminMfa(context: Awaited<ReturnType<typeof authenticatedCo
     console.error('[SINJIRA admin auth] état MFA indisponible', error);
     throw error;
   });
-  if (aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') {
+  // Une fonction administrative requiert toujours une session authentifiée
+  // au niveau AAL2, même si aucun facteur MFA n'est encore enregistré.
+  // L'enrôlement initial se fait depuis le parcours Auth, hors route admin.
+  if (aal.currentLevel !== 'aal2') {
     throw new Error('MFA_REQUIRED');
   }
   return aal;
@@ -200,10 +203,11 @@ export async function requiredSensitiveUser(req: Request) {
 /**
  * Contexte administrateur V24.4.67.
  *
- * Politique MFA progressive :
- * - aucun facteur MFA vérifié -> la session aal1 reste permise;
- * - un facteur vérifié existe et la session peut monter à aal2 -> aal2 devient obligatoire;
- * - état MFA impossible à vérifier -> refus fermé pour une opération administrative.
+ * Politique stricte MFA administrateur :
+ * - une session aal2 est obligatoire pour toute opération admin;
+ * - aucun facteur enrôlé ou session aal1 -> accès admin refusé (MFA_REQUIRED);
+ * - l'enrôlement TOTP se fait par Supabase Auth, hors des routes administratives;
+ * - état MFA impossible à vérifier -> refus fermé (MFA_STATE_UNAVAILABLE).
  */
 export async function requiredAdmin(req: Request) {
   const context = await authenticatedContext(req);
