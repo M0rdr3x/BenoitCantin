@@ -60,6 +60,10 @@ BLOCKED_DIRS = (
     "supabase/", "tests/", "mobile-native/", "scripts/", "docs/",
     ".github/", ".git/", "projets/projet-nova/official/versions/",
 )
+# Le Codex public possède une seule page HTML approuvée. Un futur export,
+# fichier d'inventaire ou aperçu HTML ne doit jamais sortir par défaut.
+CODEX_PUBLIC_PAGE = "projets/sinjira/codex/index.html"
+CODEX_PREFIX = "projets/sinjira/codex/"
 
 def validate(root: Path, require_all: bool = True) -> list[str]:
     errors: list[str] = []
@@ -83,7 +87,9 @@ def validate(root: Path, require_all: bool = True) -> list[str]:
             continue
         if candidate.suffix.lower() in BLOCKED_EXTS:
             errors.append("Extension technique publiée : " + rel)
-        if any(rel.startswith(prefix) for prefix in BLOCKED_DIRS):
+        if any(rel.startswith(prefix) for prefix in BLOCKED_DIRS) or (
+            rel.startswith(CODEX_PREFIX) and rel != CODEX_PUBLIC_PAGE
+        ):
             errors.append("Répertoire technique publié : " + rel)
         if rel.endswith("/README.md"):
             errors.append("README technique publié : " + rel)
@@ -155,6 +161,22 @@ def self_test() -> None:
         safe = root / "index.html"
         safe.write_text("<!doctype html><title>Site test</title>", "utf-8")
         assert validate(root, require_all=False) == [], "Page de test légitime refusée"
+
+        # La page publique du Codex doit rester accessible, mais pas une
+        # future fiche HTML confidentielle placée dans son répertoire.
+        codex = root / "projets/sinjira/codex"
+        codex.mkdir(parents=True, exist_ok=True)
+        public_codex = codex / "index.html"
+        public_codex.write_text("<!doctype html><title>Codex</title>", "utf-8")
+        assert validate(root, require_all=False) == [], "Page Codex approuvée refusée"
+        for filename in ("private-preview.html", "draft-data.json", "notes.txt"):
+            unknown = codex / filename
+            unknown.write_text("synthetic", "utf-8")
+            violations = validate(root, require_all=False)
+            assert any("Répertoire technique publié : projets/sinjira/codex/" +
+                       filename in error for error in violations), (
+                           "Export Codex non approuvé", filename)
+            unknown.unlink()
 
         # Une redirection de dossier, même cassée, n'est pas un fichier au
         # sens de Path.is_file(). Le contrôle ne doit pas l'ignorer.
