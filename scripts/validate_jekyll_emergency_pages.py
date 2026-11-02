@@ -44,6 +44,7 @@ REQUIRED = (
     "projets/projet-nova/script.js",
     "projets/projet-nova/data/boussole-partis-2026.json",
     "projets/sinjira/romans/index.html",
+    "projets/sinjira/codex/index.html",
     "projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf",
     "assets/js/site.js",
     "compte/index.html",
@@ -58,7 +59,6 @@ BLOCKED_EXTS = {
 BLOCKED_DIRS = (
     "supabase/", "tests/", "mobile-native/", "scripts/", "docs/",
     ".github/", ".git/", "projets/projet-nova/official/versions/",
-    "projets/sinjira/codex/",
 )
 
 def validate(root: Path, require_all: bool = True) -> list[str]:
