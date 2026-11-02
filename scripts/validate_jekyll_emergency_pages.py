@@ -72,11 +72,15 @@ def validate(root: Path, require_all: bool = True) -> list[str]:
         if require_all and not (root / name).is_file():
             errors.append("Page/fichier public manquant : " + name)
     for candidate in root.rglob("*"):
-        if not candidate.is_file():
-            continue
         rel = candidate.relative_to(root).as_posix()
+        # Vérifier AVANT is_file() : is_file() suit la cible et ignore les
+        # liens vers des dossiers ainsi que les liens cassés. Un lien vers
+        # un répertoire interne ne doit jamais contourner le confinement.
         if candidate.is_symlink():
             errors.append("Lien symbolique publié : " + rel)
+            continue
+        if not candidate.is_file():
+            continue
         if candidate.suffix.lower() in BLOCKED_EXTS:
             errors.append("Extension technique publiée : " + rel)
         if any(rel.startswith(prefix) for prefix in BLOCKED_DIRS):
@@ -151,6 +155,40 @@ def self_test() -> None:
         safe = root / "index.html"
         safe.write_text("<!doctype html><title>Site test</title>", "utf-8")
         assert validate(root, require_all=False) == [], "Page de test légitime refusée"
+
+        # Une redirection de dossier, même cassée, n'est pas un fichier au
+        # sens de Path.is_file(). Le contrôle ne doit pas l'ignorer.
+        nested = root / "private-temp"
+        nested.mkdir()
+        (nested / "secret.txt").write_text("synthetic", "utf-8")
+        for name, target in (
+            ("dossier-lie", nested),
+            ("dossier-casse", root / "missing-private-folder"),
+            ("fichier-lie", safe),
+        ):
+            link = root / name
+            link.symlink_to(target, target_is_directory=name != "fichier-lie")
+            violations = validate(root, require_all=False)
+            assert any("Lien symbolique publié : " + name in error
+                       for error in violations), ("Lien non détecté", name)
+            link.unlink()
+
+        # L'allowlist de chemins doit aussi refuser un nouveau fichier
+        # apparemment public (.html/.js) dont le nom n'a pas été approuvé.
+        approved = root / "approved-artifact"
+        observed = root / "observed-artifact"
+        approved.mkdir()
+        observed.mkdir()
+        (approved / "index.html").write_text("synthetic", "utf-8")
+        (observed / "index.html").write_text("synthetic", "utf-8")
+        assert unexpected_against_approved(observed, approved) == []
+        for suffix in (".html", ".js", ".json"):
+            candidate = observed / ("unreviewed" + suffix)
+            candidate.write_text("synthetic", "utf-8")
+            violations = unexpected_against_approved(observed, approved)
+            assert any("Fichier hors allowlist isolée: " + candidate.name in error
+                       for error in violations), ("Fichier hors allowlist non détecté", suffix)
+            candidate.unlink()
     assert not validate_source(), "Configuration Jekyll incompatible"
     print("PASS: fixtures fail-closed des fichiers techniques et config Jekyll.")
 
