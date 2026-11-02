@@ -33,9 +33,11 @@ jobs:
           python-version: '3.12.14'
       - name: Tester les cas positifs et les refus de publication
         run: python3 scripts/validate_publication_live_boundary.py --self-test
+      - name: Tester les refus HTTP 404, l'absence de lecture des corps et les redirections
+        run: python3 scripts/test_publication_live_boundary.py
 
   live:
-    name: Vérifier l'hébergement et les six chemins techniques
+    name: Vérifier l'hébergement et les onze chemins techniques
     needs: contract
     # Pas de trafic de surveillance vers la production sur les PR ou pushes.
     # L'exécution quotidienne et le lancement manuel prouvent l'état live.
