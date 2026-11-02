@@ -214,8 +214,12 @@
     refresh();
   }
   function resetSurvey() {
-    if (submitting) return;
-    if (!window.confirm('Effacer tous vos choix et recommencer ce questionnaire?')) return;
+    // Ne jamais bloquer le retrait local du consentement pendant l'attente réseau.
+    // Un POST déjà parti ne peut toutefois pas être retiré rétroactivement.
+    const message = submitting
+      ? 'Une transmission est en cours. Vos réponses locales seront effacées et tout envoi non commencé invalidé, mais une requête déjà envoyée peut avoir été reçue et ne peut pas être annulée ici. Effacer maintenant?'
+      : 'Effacer tous vos choix et recommencer ce questionnaire?';
+    if (!window.confirm(message)) return;
     clearLocalDemo();
     $('sondage-titre').focus();
   }
@@ -271,7 +275,7 @@
     }
     $('sondage-form').addEventListener('submit', e => e.preventDefault());
     $('sondage-submit').addEventListener('click', async () => {
-      if (!COLLECTION_OPEN || !LIVE_OPINION_CONSENT_GRANTED || !eligible() || answers.size!==40 || submitting || recorded) return;
+      if (!COLLECTION_OPEN || !LIVE_OPINION_CONSENT_GRANTED || $('sondage-finish').hidden || !eligible() || answers.size!==40 || submitting || recorded) return;
       const payload = { survey: SURVEY_ID, age18Confirmed:true,
         explicitConsent:LIVE_OPINION_CONSENT_GRANTED, answers:Object.fromEntries(answers) };
       if (Object.keys(payload.answers).length !== 40 ||

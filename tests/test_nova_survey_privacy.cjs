@@ -163,19 +163,38 @@ for (const spec of cases) {
   });
 }
 
-test("consultation-40 : aucun reset concurrent pendant une transmission", () => {
-  const source = fs.readFileSync(path.join(nova, "assets", "consultation-40.js"), "utf8");
-  const reset = sliceFunction(source, "resetSurvey", "init");
-  let confirmationCalled = false;
-  const sandbox = {
-    submitting: true,
-    window: {confirm: () => { confirmationCalled = true; return true; }},
-    clearLocalDemo: () => {throw Error("purge concurrente");},
-    $: () => ({focus: () => {throw Error("focus concurrent");}})
-  };
-  new vm.Script(reset + "\nresetSurvey();").runInNewContext(sandbox, {timeout: 1000});
-  assert.equal(confirmationCalled, false);
-});
+for(const spec of cases) {
+  test(spec.id+" : Effacer reste disponible durant une transmission réseau",()=>{
+    const source=fs.readFileSync(path.join(nova,"assets",spec.filename),"utf8");
+    const reset=sliceFunction(source,"resetSurvey","init");
+    const f=makeFixture(spec,"finish",null);
+    f.sandbox.submitting=true;
+    let confirmation="";
+    f.sandbox.window={confirm:message=>{confirmation=message;return true;}};
+    new vm.Script(reset+"\nresetSurvey();").runInNewContext(f.sandbox,{timeout:1000});
+    assert.match(confirmation,/requête déjà envoyée/i);
+    assert.equal(f.selections.size,0,"Consentement retiré mais les choix subsistent");
+    assert.equal(f.sandbox.consentEpoch,1,"Envoi en attente non invalidé");
+    assert.equal(f.sandbox.submitting,true,"Verrou de transmission ouvert prématurément");
+    assert.equal(f.elements["sondage-age"].checked,false);
+    assert.equal(f.elements["sondage-consent"].checked,false);
+    assert.equal(f.elements["sondage-introduction"].hidden,false);
+    assert.equal(f.elements["sondage-start"].disabled,true);
+    assert.equal(f.elements["sondage-titre"].focused,true);
+  });
+  test(spec.id+" : annuler Effacer ne retire pas les réponses",()=>{
+    const source=fs.readFileSync(path.join(nova,"assets",spec.filename),"utf8");
+    const reset=sliceFunction(source,"resetSurvey","init");
+    const f=makeFixture(spec,"finish",null);
+    f.sandbox.submitting=true;
+    f.sandbox.window={confirm:()=>false};
+    new vm.Script(reset+"\nresetSurvey();").runInNewContext(f.sandbox,{timeout:1000});
+    assert.equal(f.selections.size,1);
+    assert.equal(f.sandbox.consentEpoch,0);
+    assert.equal(f.elements["sondage-finish"].hidden,false);
+    assert.equal(f.sandbox.submitting,true);
+  });
+}
 
 
 /**
@@ -217,6 +236,7 @@ function liveSubmissionFixture(spec) {
                    if(event === "click") this.callback = handler;
                  }};
   }
+  nodes["sondage-finish"]={hidden:false};
   nodes["sondage-review-list"].textContent="Bulletin fictif encore visible";
   nodes["sondage-choices"].textContent="Choix fictif encore visible";
   nodes["sondage-answered"].textContent="40 ou 64 opinions enregistrées";
@@ -297,6 +317,15 @@ for(const spec of cases) {
     assert.equal(f.state.recorded,false);
     assert.equal(f.state.submitting,false);
     assert.equal(f.nodes["sondage-submit-status"].textContent,"");
+  });
+
+  test(spec.id+" : Envoyer depuis un écran masqué ne peut démarrer de transmission",async()=>{
+    const f=liveSubmissionFixture(spec);
+    f.nodes["sondage-finish"].hidden=true;
+    await f.submit();
+    assert.equal(f.authRequested,0);
+    assert.equal(f.requests,0);
+    assert.equal(f.state.submitting,false);
   });
 
   test(spec.id+" : révocation pendant réponse réseau n'affiche aucun faux succès",async()=>{
@@ -482,7 +511,7 @@ for (const spec of cases) {
   test(spec.id+" : script public mis en cache invalidé après la purge de confidentialité",()=>{
     const html=fs.readFileSync(path.join(nova,spec.count===40?
       "consultation-40.html":"sondage.html"),"utf8");
-    assert.ok(html.includes('assets/'+spec.filename+'?v=1.1.8'));
+    assert.ok(html.includes('assets/'+spec.filename+'?v=1.1.9'));
   });
 }
 

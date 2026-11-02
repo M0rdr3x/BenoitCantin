@@ -212,7 +212,7 @@
     };
   }
   async function submit() {
-    if (!COLLECTION_OPEN || !LIVE_OPINION_CONSENT_GRANTED || recorded || submitting || !eligible()) return;
+    if (!COLLECTION_OPEN || !LIVE_OPINION_CONSENT_GRANTED || $('sondage-finish').hidden || recorded || submitting || !eligible()) return;
     let request;
     try { request = payload(); }
     catch { setStatus('Questionnaire incomplet ou admissibilité non confirmée.', 'sondage-submit-status'); return; }
@@ -317,9 +317,12 @@
     refreshStart();
   }
   function resetSurvey() {
-    // Effacer les choix locaux ne retire pas une contribution déjà agrégée.
-    if (submitting) return;
-    if (!window.confirm('Effacer toutes les réponses locales et retirer votre consentement pour cette visite?')) return;
+    // Ne jamais bloquer le retrait local du consentement pendant l'attente réseau.
+    // Un POST déjà parti ne peut toutefois pas être retiré rétroactivement.
+    const message = submitting
+      ? 'Une transmission est en cours. Vos réponses locales seront effacées et tout envoi non commencé invalidé, mais une requête déjà envoyée peut avoir été reçue et ne peut pas être annulée ici. Effacer maintenant?'
+      : 'Effacer toutes les réponses locales et retirer votre consentement pour cette visite?';
+    if (!window.confirm(message)) return;
     clearLocalDemo();
     $('sondage-titre').focus();
   }
