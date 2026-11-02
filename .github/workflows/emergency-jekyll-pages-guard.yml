@@ -56,3 +56,4 @@ jobs:
           test -f _site/index.html
           test -f _site/projets/projet-nova/index.html
           test -f _site/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf
+          python3 scripts/validate_jekyll_emergency_pages.py --output _jekyll_emergency_site --approved _site
