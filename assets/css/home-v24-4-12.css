@@ -35,3 +35,18 @@
 @media(max-width:700px){.home-projects{grid-template-columns:1fr}.home-project{min-height:0}}
 @media(max-width:620px){.home-page .hero{padding-top:28px}.home-cosmos{--home-orbit-size:min(94vw,450px);--home-node:112px}.home-cosmos .orbit-node{padding:9px 7px;border-radius:20px}.home-cosmos .node-registre-home img{width:84px;height:92px}.home-cosmos .node-sinjira-home img{width:84px;height:84px}.home-cosmos .node-nova-home img{width:84px;height:84px;padding:7px;transform:none}.home-cosmos .node-boussole-home img{width:86px;height:86px;border-radius:15px}.home-cosmos .orbit-node span{font-size:.71rem}.home-cosmos .identity-core{width:128px}.home-cosmos .node-registre-home{top:1%}.home-cosmos .node-sinjira-home{left:0;top:50%;bottom:auto}.home-cosmos .node-nova-home{right:0;top:50%;bottom:auto}.home-cosmos .node-boussole-home{left:50%;bottom:1%}.home-cosmos .cosmos-label{bottom:-24px}.home-project{text-align:center}.home-project img{margin:auto}.home-project[href="/projets/projet-nova/"] img{transform:none}.home-project[href="/projets/projet-nova/boussole-electorale.html"] img{transform:none}}
 @media(max-width:420px){.home-cosmos{--home-node:98px}.home-cosmos .node-registre-home img{width:70px;height:76px}.home-cosmos .node-sinjira-home img{width:70px;height:70px}.home-cosmos .node-nova-home img{width:70px;height:70px;padding:6px;transform:none}.home-cosmos .node-boussole-home img{width:72px;height:72px;border-radius:13px}.home-cosmos .orbit-node span{font-size:.65rem}.home-cosmos .identity-core{width:112px}}
+
+/* Carte publique distincte des quatre portes orbitales de l'accueil. */
+.home-surveys-section{padding:clamp(25px,4vw,48px) 0 12px;scroll-margin-top:96px}
+.home-surveys-panel{display:grid;grid-template-columns:clamp(130px,17vw,195px) minmax(0,1fr);align-items:center;gap:clamp(20px,4vw,46px);padding:clamp(24px,4vw,42px);border:1px solid rgba(110,218,234,.34);border-radius:27px;background:linear-gradient(120deg,rgba(12,54,73,.60),rgba(13,20,42,.96));box-shadow:0 18px 58px rgba(0,0,0,.18)}
+.home-surveys-visual{display:flex;align-items:center;justify-content:center;max-width:195px;aspect-ratio:1;border-radius:24px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.20);transition:transform .2s ease,border-color .2s ease}
+.home-surveys-visual:hover{transform:translateY(-3px);border-color:rgba(136,241,245,.75)}
+.home-surveys-visual:focus-visible{outline:3px solid #91f8ee;outline-offset:5px}
+.home-surveys-visual img{display:block;width:100%;height:100%;max-width:176px;max-height:176px;object-fit:contain;border-radius:18px}
+.home-surveys-copy{min-width:0}.home-surveys-copy h2{font-size:clamp(1.6rem,3vw,2.25rem);line-height:1.15;margin:.3rem 0 .8rem}
+.home-surveys-copy p{max-width:860px;color:var(--muted);line-height:1.65;margin:.4rem 0 .8rem}
+.home-surveys-copy .home-surveys-status{color:#d5eaf1;font-size:.93rem}
+.home-surveys-actions{display:flex;flex-wrap:wrap;align-items:stretch;gap:12px;margin-top:18px}
+.home-surveys-actions .btn{min-height:45px;white-space:normal;line-height:1.35;text-align:center}
+@media(max-width:700px){.home-surveys-panel{grid-template-columns:1fr;text-align:center;justify-items:center}.home-surveys-visual{width:126px}.home-surveys-copy h2{font-size:1.72rem}.home-surveys-actions{justify-content:center}.home-surveys-actions .btn{flex:1 1 220px}}
+@media(max-width:390px){.home-surveys-panel{padding:18px}.home-surveys-actions .btn{font-size:.9rem}}

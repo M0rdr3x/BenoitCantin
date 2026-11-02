@@ -2,9 +2,84 @@
   "use strict";
 
   const DATA_URL = "data/boussole-electorale-v2.json";
+  const APPROVED_COMPASS_SHA256 = "5d65a6067142fbba59a81edeaac49dc1befd82aa281c6e11e2f2509a1aee9109";
+  // Une connexion silencieusement bloquée doit aboutir à un bouton Réessayer,
+  // au lieu de maintenir indéfiniment l'interface sur « Chargement… ».
+  async function fetchLimitedBytes(url,maxBytes){
+    const controller=new AbortController();
+    const timeoutId=setTimeout(()=>controller.abort(),20000);
+    try{
+      const response=await fetch(url,{cache:"no-store",credentials:"omit",signal:controller.signal});
+      if(!response.ok) throw new Error("CORPUS_HTTP");
+      const declared=response.headers.get("content-length");
+      if(declared && (!/^[0-9]+$/.test(declared) || Number(declared)>maxBytes)){
+        throw new Error("CORPUS_SIZE");
+      }
+      // Ne jamais allouer un corps de taille arbitraire : interrompre la
+      // lecture en continu dès que la borne est atteinte, même sans en-tête.
+      if(!response.body?.getReader) throw new Error("CORPUS_STREAM");
+      const reader=response.body.getReader();
+      const chunks=[];
+      let total=0;
+      try{
+        for(;;){
+          const {done,value}=await reader.read();
+          if(done) break;
+          if(!ArrayBuffer.isView(value) || value.BYTES_PER_ELEMENT!==1){
+            throw new Error("CORPUS_STREAM");
+          }
+          total+=value.byteLength;
+          if(total>maxBytes){
+            controller.abort();
+            throw new Error("CORPUS_SIZE");
+          }
+          chunks.push(value);
+        }
+      }finally{
+        reader.releaseLock();
+      }
+      if(!total) throw new Error("CORPUS_SIZE");
+      const bytes=new Uint8Array(total);
+      let offset=0;
+      for(const part of chunks){
+        bytes.set(part,offset);
+        offset+=part.byteLength;
+      }
+      return bytes.buffer;
+    }finally{
+      clearTimeout(timeoutId);
+    }
+  }
+  async function fetchApprovedQuestionCorpus(){
+    if(!globalThis.crypto?.subtle) throw new Error("CORPUS_UNAVAILABLE");
+    const bytes=await fetchLimitedBytes(DATA_URL,65536);
+    const digest=await globalThis.crypto.subtle.digest("SHA-256",bytes);
+    const actual=Array.from(new Uint8Array(digest),
+      byte=>byte.toString(16).padStart(2,"0")).join("");
+    if(actual!==APPROVED_COMPASS_SHA256) throw new Error("CORPUS_INTEGRITY");
+    return JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(bytes));
+  }
   const PARTY_DATA_URL = "data/boussole-partis-2026.json";
   const PARTY_SOURCE_DATA_URL = "data/boussole-sources-partis-2026.json";
   const EVIDENCE_DATA_URL = "data/boussole-preuves-2026.json";
+  // Refuser les positions documentaires modifiées en cache/CDN, même lorsque
+  // les questions de la Boussole restent identiques.
+  const APPROVED_DOCUMENTARY_SHA256 = Object.freeze({
+    [PARTY_DATA_URL]: "69ca01c66e54586a809a151fb73ff383aeb6bf80dccab8036eba365d9d4e8784",
+    [PARTY_SOURCE_DATA_URL]: "2b3b226cc02375f51458dcd24588346b2574338ea91b592d8414926ce010113a",
+    [EVIDENCE_DATA_URL]: "09503ddd60aaed5f3aa6e03058d218a83f80361556f8e6431211ee84ac08ad79"
+  });
+  async function fetchApprovedDocumentary(url){
+    const approved=APPROVED_DOCUMENTARY_SHA256[url];
+    if(!approved || !globalThis.crypto?.subtle) throw new Error("DOCUMENTARY_UNAVAILABLE");
+    const maxBytes=url===EVIDENCE_DATA_URL ? 524288 : 65536;
+    const bytes=await fetchLimitedBytes(url,maxBytes);
+    const digest=await globalThis.crypto.subtle.digest("SHA-256",bytes);
+    const observed=Array.from(new Uint8Array(digest),
+      value=>value.toString(16).padStart(2,"0")).join("");
+    if(observed!==approved) throw new Error("DOCUMENTARY_INTEGRITY");
+    return JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(bytes));
+  }
   const RESPONSES = [
     {value:-3,label:"Tout à fait en désaccord"},
     {value:-2,label:"En désaccord"},
@@ -28,6 +103,9 @@
     started:false,
     results:null
   };
+  // Invalide les traitements asynchrones de partage dès que l'utilisateur
+  // efface un profil; la suppression des handlers seule ne suffit pas.
+  let shareGeneration = 0;
 
   const $ = (sel, root=document) => root.querySelector(sel);
   const esc = value => String(value).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
@@ -64,6 +142,16 @@
     `;
 
     fieldset.addEventListener("change", event => {
+      // Le navigateur ou une tâche tardive peut encore émettre "change" sur
+      // un fieldset retiré du DOM par reset ou par changement de question.
+      // Refuser toute opinion/pondération issue de cette ancienne fermeture.
+      const stage = $("#compass-question-stage");
+      if(!state.started || !stage?.contains(fieldset) ||
+         currentQuestion()?.id !== question.id) return;
+      // Dès que les réponses ou leur importance changent après le calcul,
+      // ne jamais laisser partager un ancien profil présenté comme actuel.
+      const invalidated = state.results !== null;
+      if(invalidated) discardResultPreview();
       if(event.target.matches('input[type="radio"]')){
         const raw = event.target.value;
         const importance = state.importance.get(question.id) || fieldset.querySelector("[data-importance]")?.value || "normal";
@@ -73,9 +161,11 @@
         });
         updateStepControls();
         updateProgress();
-        $("#compass-status").textContent = raw === "skip"
-          ? "Question marquée « Sans opinion / passer ». Vous pouvez continuer."
-          : "Réponse enregistrée localement. Vous pouvez continuer.";
+        $("#compass-status").textContent = invalidated
+          ? "Ancien résultat retiré après modification. Continuez pour recalculer votre profil."
+          : raw === "skip"
+            ? "Question marquée « Sans opinion / passer ». Vous pouvez continuer."
+            : "Réponse enregistrée localement. Vous pouvez continuer.";
       }
       if(event.target.matches("[data-importance]")){
         state.importance.set(question.id, event.target.value);
@@ -84,6 +174,9 @@
           savedAnswer.importance = event.target.value;
           state.answers.set(question.id, savedAnswer);
         }
+        // Une pondération corrigée après résultat réactive le recalcul
+        // même si la réponse radio elle-même n'a pas changé.
+        if(invalidated) updateStepControls();
       }
     });
 
@@ -105,8 +198,10 @@
   function updateProgress(){
     if(!state.data) return;
     const total = state.data.questions.length;
-    const step = Math.min(total, state.currentIndex + 1);
-    const decided = state.answers.size;
+    // Après reset/pagehide, ne pas annoncer « Question 1 » ou 2 % de
+    // progression alors que le questionnaire est revenu à son introduction.
+    const step = state.started ? Math.min(total, state.currentIndex + 1) : 0;
+    const decided = state.started ? state.answers.size : 0;
     const pct = total ? Math.round(step / total * 100) : 0;
     const bar = $("#compass-progress-bar");
     if(bar) bar.style.width = pct + "%";
@@ -114,10 +209,13 @@
     if(progress){
       progress.setAttribute("aria-valuemax",String(total));
       progress.setAttribute("aria-valuenow",String(step));
-      progress.setAttribute("aria-valuetext",`Question ${step} sur ${total}`);
+      progress.setAttribute("aria-valuetext",step ?
+        `Question ${step} sur ${total}` : "Questionnaire non commencé");
     }
     const text = $("#compass-progress-text");
-    if(text) text.textContent = `Question ${step} sur ${total} — ${decided} réponse${decided > 1 ? "s" : ""} enregistrée${decided > 1 ? "s" : ""}`;
+    if(text) text.textContent = step
+      ? `Question ${step} sur ${total} — ${decided} réponse${decided > 1 ? "s" : ""} enregistrée${decided > 1 ? "s" : ""}`
+      : "Questionnaire non commencé — aucune réponse enregistrée.";
   }
 
   function updateStepControls(){
@@ -141,7 +239,7 @@
   }
 
   function startQuestionnaire(){
-    if(!state.data) return;
+    if(!state.data || state.started) return;
     state.started = true;
     state.currentIndex = 0;
     $("#compass-start-panel").hidden = true;
@@ -153,12 +251,16 @@
   }
 
   function goPrevious(){
-    if(state.currentIndex <= 0) return;
+    if(!state.started || state.currentIndex <= 0) return;
+    if(state.results !== null) discardResultPreview();
     state.currentIndex -= 1;
     renderCurrentQuestion();
   }
 
   function goNext(){
+    // Un clic tardif sur « Consulter mes résultats », y compris injecté
+    // après la navigation au profil, ne doit pas recréer un ancien aperçu.
+    if(!state.started || state.results !== null) return;
     const question = currentQuestion();
     const status = $("#compass-status");
     if(!question || !state.answers.has(question.id)){
@@ -176,6 +278,7 @@
 
   function calculate(){
     const weightMap = state.data.methodology?.importanceWeights || {faible:0.5,normal:1,forte:1.5};
+    const axisMin = Number(state.data.methodology?.axisMinimumAnswered) || 2;
     const axes = new Map(state.data.axes.map(axis => [axis.id, {
       axis, sum:0, max:0, primaryAnswered:0, primaryTotal:0, evidenceWeight:0
     }]));
@@ -206,7 +309,8 @@
 
     return Array.from(axes.values()).map(bucket => ({
       ...bucket.axis,
-      score: bucket.max ? Math.round((bucket.sum / bucket.max) * 100) : null,
+      score: bucket.max && bucket.primaryAnswered >= axisMin
+        ? Math.round((bucket.sum / bucket.max) * 100) : null,
       answered: bucket.primaryAnswered,
       total: bucket.primaryTotal,
       coverage: bucket.primaryTotal ? Math.round(bucket.primaryAnswered / bucket.primaryTotal * 100) : 0,
@@ -226,7 +330,7 @@
           <strong aria-label="Score ${signed} sur une échelle de moins 100 à plus 100">${signed}</strong>
         </div>
         <div class="compass-axis-labels"><span>${esc(result.negative)}</span><span>${esc(result.positive)}</span></div>
-        <div class="compass-axis-track" aria-hidden="true"><span class="compass-axis-mid"></span><i style="left:${position}%"></i></div>
+        <div class="compass-axis-track" aria-hidden="true"><span class="compass-axis-mid"></span>${score === null ? "" : `<i style="left:${position}%"></i>`}</div>
         <div class="compass-result-meta">Couverture : ${result.answered}/${result.total} réponses (${result.coverage} %)</div>
       </article>
     `;
@@ -235,40 +339,60 @@
   function renderRadar(results){
     const host = $("#compass-radar");
     if(!host) return;
-    const valid = results.filter(r => r.score !== null);
-    if(valid.length < 3){
+    // Position fixe de chacun des 16 axes, même pour un profil partiel :
+    // ne jamais réattribuer les angles aux seules dimensions connues.
+    const size = 620, center = size / 2, radius = 220;
+    const points = results.map((r, index) => {
+      const angle = (-Math.PI / 2) + (index * 2 * Math.PI / results.length);
+      const known = Number.isFinite(r.score) && r.score >= -100 && r.score <= 100;
+      const rr = known ? radius * ((r.score + 100) / 200) : 0;
+      return {
+        known, result:r,
+        x:center + Math.cos(angle) * rr,
+        y:center + Math.sin(angle) * rr,
+        sx:center + Math.cos(angle) * radius,
+        sy:center + Math.sin(angle) * radius,
+        lx:center + Math.cos(angle) * (radius + 64),
+        ly:center + Math.sin(angle) * (radius + 64)
+      };
+    });
+    const computed = points.filter(p => p.known);
+    if(computed.length < 3){
       host.innerHTML = "<p>Il n’y a pas encore assez de dimensions répondues pour afficher la carte complète.</p>";
       return;
     }
-    const size = 620, center = size / 2, radius = 220;
-    const points = valid.map((r, index) => {
-      const angle = (-Math.PI / 2) + (index * 2 * Math.PI / valid.length);
-      const normalized = (r.score + 100) / 200;
-      const rr = radius * normalized;
-      return {
-        x:center + Math.cos(angle) * rr,
-        y:center + Math.sin(angle) * rr,
-        lx:center + Math.cos(angle) * (radius + 64),
-        ly:center + Math.sin(angle) * (radius + 64),
-        sx:center + Math.cos(angle) * radius,
-        sy:center + Math.sin(angle) * radius,
-        result:r
-      };
-    });
-    const polygon = points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
-    const spokes = points.map(p => `<line x1="${center}" y1="${center}" x2="${p.sx.toFixed(1)}" y2="${p.sy.toFixed(1)}"></line>`).join("");
+    const coord = p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+    const spokes = points.map(p =>
+      `<line x1="${center}" y1="${center}" x2="${p.sx.toFixed(1)}" y2="${p.sy.toFixed(1)}"></line>`
+    ).join("");
+    // Un polygone fermé inventerait un trajet à travers les axes non calculés.
+    // En profil partiel, ne relier que les axes ADJACENTS calculés.
+    const complete = computed.length === points.length;
+    const trace = complete
+      ? `<polygon points="${points.map(coord).join(" ")}"></polygon>`
+      : points.map((p, i) => {
+          const next = points[(i + 1) % points.length];
+          return p.known && next.known
+            ? `<line class="compass-radar-segment" x1="${p.x.toFixed(1)}" y1="${p.y.toFixed(1)}" x2="${next.x.toFixed(1)}" y2="${next.y.toFixed(1)}"></line>`
+            : "";
+        }).join("");
+    const markers = computed.map(p =>
+      `<circle class="compass-radar-point" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4"></circle>`
+    ).join("");
     const labels = points.map(p => {
-      const short = esc(p.result.title).split(" ").slice(0,3).join(" ");
-      return `<text x="${p.lx.toFixed(1)}" y="${p.ly.toFixed(1)}" text-anchor="middle"><tspan>${short}</tspan><tspan x="${p.lx.toFixed(1)}" dy="15">${p.result.score > 0 ? "+" : ""}${p.result.score}</tspan></text>`;
+      const short = esc(p.result.title).split(" ").slice(0, 3).join(" ");
+      const score = p.known ? (p.result.score > 0 ? "+" : "") + p.result.score : "—";
+      return `<text x="${p.lx.toFixed(1)}" y="${p.ly.toFixed(1)}" text-anchor="middle"><tspan>${short}</tspan><tspan x="${p.lx.toFixed(1)}" dy="15">${score}</tspan></text>`;
     }).join("");
     host.innerHTML = `
       <svg class="compass-radar-svg" viewBox="0 0 ${size} ${size}" role="img" aria-labelledby="compass-radar-title compass-radar-desc">
         <title id="compass-radar-title">Carte multidimensionnelle de votre profil</title>
-        <desc id="compass-radar-desc">Chaque rayon représente une dimension et sa position calculée selon vos réponses.</desc>
+        <desc id="compass-radar-desc">${computed.length} dimensions calculées sur ${points.length}, toujours aux mêmes angles. Un tiret signale une dimension non calculée; aucune liaison n’est tracée au travers de celle-ci.</desc>
         <circle cx="${center}" cy="${center}" r="${radius}"></circle>
         <circle cx="${center}" cy="${center}" r="${radius * .5}"></circle>
         ${spokes}
-        <polygon points="${polygon}"></polygon>
+        ${trace}
+        ${markers}
         ${labels}
       </svg>`;
   }
@@ -297,15 +421,21 @@
   }
 
   function configureSharing(results){
-    const pageUrl = window.location.href.split("#")[0];
+    // Partager exclusivement la page publique : jamais les paramètres d'URL
+    // (ex. tokens temporaires, identifiants de session ou codes de suivi).
+    // Ne pas reparcourir pathname comme une URL relative : //domaine-tiers
+    // serait alors interprété comme une nouvelle origine (URL network-path).
+    const pageUrl = window.location.origin + window.location.pathname;
     const compact = buildResultText(results,true);
     const full = buildResultText(results,false);
     const subject = "Mon résultat — Boussole électorale Nova";
+    const generation = shareGeneration;
+    const sharingAllowed = () => generation === shareGeneration;
 
     const email = $("#compass-share-email");
     const emailInput = $("#compass-email-recipient");
     const updateEmailLink = () => {
-      if(!email) return;
+      if(!email || !sharingAllowed()) return;
       const recipient = emailInput?.value?.trim() || "";
       const target = recipient ? encodeURIComponent(recipient) : "";
       email.href = `mailto:${target}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(full + "\n\n" + pageUrl)}`;
@@ -331,40 +461,93 @@
       linkedin.href = `${base}?url=${encodeURIComponent(pageUrl)}`;
     }
 
-    $("#compass-share-native")?.addEventListener("click", async () => {
+    const nativeButton = $("#compass-share-native");
+    if(nativeButton) nativeButton.onclick = async () => {
+      if(!sharingAllowed()) return;
       if(navigator.share){
         try{
+          // Une opération native déjà confiée au système ne peut pas être annulée.
           await navigator.share({title:subject,text:compact,url:pageUrl});
+          if(!sharingAllowed()) return;
           $("#compass-status").textContent = "Menu de partage ouvert.";
         }catch(error){
+          if(!sharingAllowed()) return;
           if(error?.name !== "AbortError") $("#compass-status").textContent = "Le partage n’a pas pu être ouvert. Vous pouvez copier le résumé.";
         }
       }else{
-        await copyText(compact + "\n" + pageUrl);
-        $("#compass-status").textContent = "Le partage natif n’est pas disponible; le résumé a été copié.";
+        const copied = await copyText(compact + "\n" + pageUrl,sharingAllowed);
+        if(!sharingAllowed()) return;
+        $("#compass-status").textContent = copied
+          ? "Le partage natif n’est pas disponible; le résumé a été copié."
+          : "Le partage natif et la copie sont indisponibles. Utilisez le courriel.";
       }
-    }, {once:true});
+    };
 
-    $("#compass-copy-result")?.addEventListener("click", async () => {
-      await copyText(full + "\n\n" + pageUrl);
-      $("#compass-status").textContent = "Résumé copié dans le presse-papiers.";
-    }, {once:true});
+    const copyButton = $("#compass-copy-result");
+    if(copyButton) copyButton.onclick = async () => {
+      if(!sharingAllowed()) return;
+      const copied = await copyText(full + "\n\n" + pageUrl,sharingAllowed);
+      if(!sharingAllowed()) return;
+      $("#compass-status").textContent = copied
+        ? "Résumé copié dans le presse-papiers."
+        : "Copie non autorisée ou indisponible. Utilisez le courriel.";
+    };
   }
 
-  async function copyText(text){
+  async function copyText(text,sharingAllowed=()=>true){
+    if(!sharingAllowed()) return false;
     if(navigator.clipboard?.writeText){
-      await navigator.clipboard.writeText(text);
-      return;
+      try{
+        await navigator.clipboard.writeText(text);
+        return sharingAllowed();
+      }catch{ /* Repli manuel uniquement si le profil est encore actif. */ }
     }
+    // Si la promesse clipboard a été rejetée APRÈS reset/pagehide,
+    // ne surtout pas recréer un textarea contenant le profil abandonné.
+    if(!sharingAllowed()) return false;
     const area = document.createElement("textarea");
     area.value = text;
     area.setAttribute("readonly","");
     area.style.position = "fixed";
     area.style.opacity = "0";
     document.body.appendChild(area);
-    area.select();
-    document.execCommand("copy");
-    area.remove();
+    try{
+      area.select();
+      return document.execCommand("copy") === true;
+    }catch{ return false; }
+    finally{ area.remove(); }
+  }
+
+  function discardResultPreview(){
+    // Un résultat calculé n'est plus valide après modification. Supprimer
+    // également les liens/closures contenant des opinions, sans effacer les
+    // réponses : elles pourront être ajustées et le profil recalculé.
+    shareGeneration += 1;
+    state.results = null;
+    $("#compass-results-grid")?.replaceChildren();
+    $("#compass-radar")?.replaceChildren();
+    const summary = $("#compass-summary");
+    if(summary) summary.textContent = "";
+    const recipient = $("#compass-email-recipient");
+    if(recipient){
+      recipient.value = "";
+      recipient.oninput = null;
+    }
+    const nativeShare = $("#compass-share-native");
+    if(nativeShare) nativeShare.onclick = null;
+    const copyResult = $("#compass-copy-result");
+    if(copyResult) copyResult.onclick = null;
+    const email = $("#compass-share-email");
+    if(email) email.setAttribute("href","mailto:");
+    for(const id of ["compass-share-facebook","compass-share-x","compass-share-linkedin"]){
+      const link = $("#"+id);
+      if(link) link.setAttribute("href",(link.getAttribute("href") || "").split("?")[0]);
+    }
+    $("#compass-results").hidden = true;
+    const shareCard = $("#compass-share-card");
+    if(shareCard) shareCard.hidden = true;
+    const status = $("#compass-status");
+    if(status) status.textContent = "Ancien résultat retiré après modification. Continuez le questionnaire pour recalculer votre profil.";
   }
 
   function showResults(){
@@ -382,33 +565,47 @@
 
     const minimum = Math.ceil(state.data.questions.length * (state.data.methodology?.minimumAnsweredRatio ?? 0.5));
     const coverage = coveragePercent(results);
-    const partial = answered < minimum;
-    $("#compass-summary").textContent = partial
-      ? `Profil partiel : ${answered} propositions répondues sur ${state.data.questions.length}; couverture moyenne ${coverage} %. Les dimensions peu couvertes doivent être interprétées avec prudence.`
-      : `Profil calculé sur ${state.data.axes.length} dimensions; couverture moyenne ${coverage} %. Aucun score global gauche/droite n’est généré.`;
+    // Le nombre global de réponses ne remplace pas le seuil par axe.
+    // 32 réponses sur seulement 8 thèmes ne documentent PAS 16 axes.
+    const calculatedAxes = results.filter(result => result.score !== null).length;
+    const partial = answered < minimum || calculatedAxes !== state.data.axes.length;
+    $("#compass-summary").textContent = calculatedAxes === 0
+      ? `Aucune dimension calculable : ${answered} proposition(s) renseignée(s) sur ${state.data.questions.length}. Chaque dimension nécessite au moins deux réponses portant sur ce thème. Aucun profil politique n’est établi ni proposé au partage.`
+      : partial
+        ? `Profil partiel : ${answered} propositions répondues sur ${state.data.questions.length}; ${calculatedAxes}/${state.data.axes.length} dimensions calculables; couverture moyenne ${coverage} %. Les autres dimensions demeurent inconnues.`
+        : `Profil calculé sur ${calculatedAxes} dimensions; couverture moyenne ${coverage} %. Aucun score global gauche/droite n’est généré.`;
 
+    // Aucun score calculé => ni profil à partager ni lien sensible.
+    const shareCard = $("#compass-share-card");
+    if(shareCard) shareCard.hidden = calculatedAxes === 0;
     $("#compass-results").hidden = false;
-    configureSharing(results);
-    $("#compass-status").textContent = "Votre résultat a été calculé localement dans votre navigateur.";
+    if(calculatedAxes > 0) configureSharing(results);
+    // Le résultat est maintenant figé. Revenir à une question ou modifier
+    // son importance invalide d'abord cet aperçu, puis réactive Suivant.
+    const next = $("#compass-next");
+    if(next) next.disabled = true;
+    $("#compass-status").textContent = calculatedAxes === 0
+      ? "Aucune dimension calculable. Répondez à au moins deux propositions d’un même thème pour obtenir un score."
+      : "Votre résultat a été calculé localement dans votre navigateur.";
     // L'étape finale doit aussi être annoncée au clavier et au lecteur d'écran.
     $("#compass-results-title")?.focus({preventScroll:true});
     scrollToSection($("#compass-results"));
   }
 
-  function reset(){
+  function reset(focusStart=true){
+    // Révoquer tout partage avant d'effacer les choix sensibles.
+    discardResultPreview();
     state.answers.clear();
     state.importance.clear();
     state.currentIndex = 0;
     state.started = false;
-    state.results = null;
-    $("#compass-results").hidden = true;
+    $("#compass-question-stage")?.replaceChildren();
     $("#compass-stepper").hidden = true;
     $("#compass-start-panel").hidden = false;
     $("#compass-status").textContent = "Questionnaire réinitialisé. Vous pouvez recommencer quand vous voulez.";
     updateProgress();
-    $("#compass-start")?.focus();
+    if(focusStart) $("#compass-start")?.focus();
   }
-
   function renderPartyRegistry(corpus,evidenceCorpus){
     const host = $("#compass-parties");
     if(!host) return;
@@ -436,15 +633,17 @@
       : parties.filter(party => party.election2026Listed === true && party.entityType !== "future_party_project").length;
     const listedElectionEntries = parties.filter(party => party.election2026Listed === true && party.entityType !== "future_party_project").length;
     const listComplete = currentParties.length === expectedCurrent && listedElectionEntries === expectedElectionEntries;
+    const registryDate = /^\d{4}-\d{2}-\d{2}$/.test(corpus.registryEvidence?.snapshotDate || "")
+      ? corpus.registryEvidence.snapshotDate : "date non indiquée";
 
     const renderCard = party => {
       const isFuture = party.entityType === "future_party_project";
       const isWithdrawn = party.entityType === "authorization_withdrawn_2026";
       const status = isFuture
-        ? "Futur parti — non autorisé actuellement"
+        ? "Futur parti — non autorisé selon cet instantané"
         : isWithdrawn
           ? "Autorisation retirée en 2026"
-          : "Parti provincial actuellement autorisé";
+          : "Parti provincial autorisé selon l’instantané daté";
       const candidateCount = Number.isInteger(party.candidateCount2026) ? party.candidateCount2026 : null;
       const participation = isFuture
         ? "Non inscrit à la liste officielle des candidatures 2026"
@@ -461,10 +660,10 @@
 
     host.innerHTML = `
       <div class="compass-party-completeness" role="status" aria-live="polite">
-        <strong>${listComplete ? "Liste officielle 2026 complète." : "Vérification de la liste officielle requise."}</strong>
-        <span>${currentParties.length}/${expectedCurrent} partis actuellement autorisés affichés · ${listedElectionEntries}/${expectedElectionEntries} entrées de partis du scrutin 2026 suivies.</span>
+        <strong>${listComplete ? "Comptes du dossier cohérents avec l’instantané enregistré." : "Divergence des comptes : vérification du registre requise."}</strong>
+        <span>Instantané du ${esc(registryDate)} : ${currentParties.length}/${expectedCurrent} partis considérés autorisés à cette date · ${listedElectionEntries}/${expectedElectionEntries} entrées du scrutin 2026 suivies. Le statut peut avoir changé depuis : consulter le registre officiel d’Élections Québec.</span>
       </div>
-      <div class="compass-party-group-title"><strong>Partis actuellement autorisés</strong><span>${currentParties.length} formation${currentParties.length === 1 ? "" : "s"}</span></div>
+      <div class="compass-party-group-title"><strong>Partis autorisés selon l’instantané daté</strong><span>${currentParties.length} formation${currentParties.length === 1 ? "" : "s"}</span></div>
       ${currentParties.map(renderCard).join("")}
       ${traceabilityParties.length ? `<div class="compass-party-group-title compass-party-group-title-secondary"><strong>Traçabilité et projet futur</strong><span>Ces entrées sont séparées des partis actuellement autorisés.</span></div>${traceabilityParties.map(renderCard).join("")}` : ""}
     `;
@@ -525,7 +724,7 @@
       priorityLinks.innerHTML = limitedQuestions.map(({question,index}) =>
         `<button type="button" data-compass-priority="${esc(question.id)}" aria-controls="compass-evidence-question-results">Q${String(index + 1).padStart(2,"0")} — ${esc(question.text)}</button>`
       ).join("");
-      priorityLinks.addEventListener("click",event => {
+      priorityLinks.onclick = event => {
         const button = event.target.closest("button[data-compass-priority]");
         if(!button || !priorityLinks.contains(button)) return;
         const questionId = button.dataset.compassPriority;
@@ -533,7 +732,7 @@
         select.value = questionId;
         renderSelected();
         select.focus();
-      });
+      };
     }
 
     function renderSelected(){
@@ -601,8 +800,10 @@
       }).join("");
     }
 
-    select.addEventListener("change",renderSelected);
-    filter.addEventListener("change",renderSelected);
+    select.onchange = renderSelected;
+    filter.onchange = renderSelected;
+    select.disabled = false;
+    filter.disabled = false;
     const firstWithEvidence = questions.find(question => (recordsByQuestion.get(question.id) || []).length > 0);
     if(firstWithEvidence) select.value = firstWithEvidence.id;
     renderSelected();
@@ -732,6 +933,16 @@
       );
   }
 
+  function safeDocumentSource(raw){
+    if(typeof raw !== "string" || raw.length > 2048 ||
+       /[\u0000-\u001f\u007f\s]/.test(raw)) return false;
+    try{
+      const uri = new URL(raw);
+      return uri.protocol === "https:" && !!uri.hostname && !uri.username &&
+        !uri.password && !uri.port;
+    }catch { return false; }
+  }
+
   function validateDocumentaryCorpora(questionCorpus,partyCorpus,sourceCorpus,evidenceCorpus){
     const questions = questionCorpus?.questions;
     const parties = partyCorpus?.parties;
@@ -777,7 +988,8 @@
       const key = record.questionId+"::"+record.partyId;
       if(!matrixByKey.has(key) || validatedRecords.has(key) ||
          record.proposedStatus === "unknown" ||
-         matrixByKey.get(key) !== record.proposedStatus){
+         matrixByKey.get(key) !== record.proposedStatus ||
+         !safeDocumentSource(record.sourceUrl)) {
         throw new Error("Fiche de preuve non synchronisée avec la matrice");
       }
       validatedRecords.set(key,record);
@@ -793,6 +1005,23 @@
   let questionnaireLoading = false;
   let documentaryBinding = null;
 
+  function clearEvidenceExplorer(){
+    // Refuser toute ancienne preuve après nouvel essai ou erreur.
+    const select = $("#compass-evidence-question");
+    if(select){ select.onchange = null; select.replaceChildren(); select.disabled = true; }
+    const filter = $("#compass-evidence-only-documented");
+    if(filter){ filter.onchange = null; filter.disabled = true; }
+    const links = $("#compass-evidence-priority-links");
+    if(links){ links.onclick = null; links.replaceChildren(); }
+    const priorities = $("#compass-evidence-priorities");
+    if(priorities) priorities.hidden = true;
+    const selected = $("#compass-evidence-selected-question");
+    if(selected) selected.textContent = "";
+    const status = $("#compass-evidence-question-status");
+    if(status) status.textContent = "Données documentaires indisponibles pendant la vérification.";
+    $("#compass-evidence-question-results")?.replaceChildren();
+  }
+
   async function loadPoliticalRegistryAndEvidence(){
     if(documentaryLoading) return;
     documentaryLoading = true;
@@ -800,23 +1029,21 @@
     const evidenceHost = $("#compass-evidence-parties");
     const status = $("#compass-evidence-status");
     const retry = $("#compass-evidence-retry");
+    clearEvidenceExplorer();
+    partyHost?.replaceChildren();
+    evidenceHost?.replaceChildren();
+    $("#compass-evidence-summary")?.replaceChildren();
     if(retry){
       retry.hidden = true;
       retry.disabled = true;
     }
     if(status) status.textContent = "Chargement des données documentaires…";
     try{
-      const [partyResponse,sourceResponse,evidenceResponse,questionResponse] = await Promise.all([
-        fetch(PARTY_DATA_URL,{cache:"no-store"}),
-        fetch(PARTY_SOURCE_DATA_URL,{cache:"no-store"}),
-        fetch(EVIDENCE_DATA_URL,{cache:"no-store"}),
-        fetch(DATA_URL,{cache:"no-store"})
-      ]);
-      for(const response of [partyResponse,sourceResponse,evidenceResponse,questionResponse]){
-        if(!response.ok) throw new Error("HTTP " + response.status);
-      }
       const [partyCorpus,sourceCorpus,evidenceCorpus,questionCorpus] = await Promise.all([
-        partyResponse.json(),sourceResponse.json(),evidenceResponse.json(),questionResponse.json()
+        fetchApprovedDocumentary(PARTY_DATA_URL),
+        fetchApprovedDocumentary(PARTY_SOURCE_DATA_URL),
+        fetchApprovedDocumentary(EVIDENCE_DATA_URL),
+        fetchApprovedQuestionCorpus()
       ]);
       validateDocumentaryCorpora(questionCorpus,partyCorpus,sourceCorpus,evidenceCorpus);
       renderPartyRegistry(partyCorpus,evidenceCorpus);
@@ -824,6 +1051,7 @@
       renderEvidenceExplorer(questionCorpus,partyCorpus,evidenceCorpus);
       documentaryBinding = evidenceCorpus.questionnaireBinding;
     }catch(error){
+      clearEvidenceExplorer();
       if(partyHost) partyHost.innerHTML = "<p>Impossible de charger le registre des formations pour le moment.</p>";
       if(evidenceHost) evidenceHost.innerHTML = "<p>Impossible de charger l’état documentaire pour le moment.</p>";
       const summary = $("#compass-evidence-summary");
@@ -854,9 +1082,7 @@
     if(start) start.disabled = true;
     if(status) status.textContent = "Chargement du questionnaire local…";
     try{
-      const response = await fetch(DATA_URL,{cache:"no-store"});
-      if(!response.ok) throw new Error("HTTP " + response.status);
-      const corpus = await response.json();
+      const corpus = await fetchApprovedQuestionCorpus();
       if(!Array.isArray(corpus.axes) || corpus.axes.length !== 16 ||
          !Array.isArray(corpus.questions) || corpus.questions.length !== 64){
         throw new Error("Questionnaire incomplet");
@@ -886,6 +1112,10 @@
     $("#compass-reset")?.addEventListener("click",reset);
     $("#compass-questionnaire-retry")?.addEventListener("click",init);
     $("#compass-evidence-retry")?.addEventListener("click",loadPoliticalRegistryAndEvidence);
+    // Page cachée ou restaurée par le cache de navigation : aucun profil
+    // politique précédent ne peut réapparaître sur un appareil partagé.
+    window.addEventListener("pagehide",()=>reset(false));
+    window.addEventListener("pageshow",event=>{ if(event.persisted) reset(false); });
     init();
     loadPoliticalRegistryAndEvidence();
   });

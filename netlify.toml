@@ -84,6 +84,33 @@
     Cache-Control = "public, max-age=0, must-revalidate"
 
 
+# Pages civiques sensibles : aucune réponse ou profil personnel ne doit
+# rester en cache HTTP ni propager son URL comme Referer vers d'autres sites.
+# Les démonstrations restent publiques, mais la collecte demeure fermée.
+[[headers]]
+  for = "/projets/projet-nova/consultation-40.html"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    Referrer-Policy = "no-referrer"
+
+[[headers]]
+  for = "/projets/projet-nova/sondage.html"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    Referrer-Policy = "no-referrer"
+
+[[headers]]
+  for = "/projets/projet-nova/boussole-electorale.html"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    Referrer-Policy = "no-referrer"
+
+[[headers]]
+  for = "/projets/projet-nova/resultats-sondages.html"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    Referrer-Policy = "no-referrer"
+
 [[headers]]
   for = "/supabase/*"
   [headers.values]

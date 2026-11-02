@@ -75,8 +75,8 @@
         ['contact.html','Contact']
       ];
       nav.innerHTML=navItems.map(([href,label])=>{
-        const extra=href==='boussole-electorale.html'?' nav-link-boussole':'';
-        return `<a class="nav-link${extra}" href="${href}">${label}</a>`;
+        const boussoleClass=href==='boussole-electorale.html'?' nav-link-boussole':'';
+        return `<a class="nav-link${boussoleClass}" href="${href}">${label}</a>`;
       }).join('');
     }
 
@@ -89,22 +89,25 @@
     });
 
     if(toggle&&nav){
-      // Conserver les améliorations d'accessibilité de main et la navigation
-      // globale du candidat ; le menu ne doit jamais rester ouvert au resize.
-      if(!nav.id)nav.id='navigation-nova';
+      // Un même contrat d'accessibilité pour les pages Nova et le portail.
+      // Conserver le menu utilisable sans souris, y compris après un resize.
+      if(!nav.id)nav.id='navigation-principale';
       toggle.setAttribute('aria-controls',nav.id);
-      const setMenuState=(open,{restoreFocus=false}={})=>{
+      const setMenuState=open=>{
         nav.classList.toggle('open',open);
         toggle.setAttribute('aria-expanded',open?'true':'false');
         toggle.setAttribute('aria-label',open?'Fermer le menu':'Ouvrir le menu');
-        if(!open&&restoreFocus)toggle.focus();
       };
       setMenuState(false);
       toggle.addEventListener('click',()=>setMenuState(!nav.classList.contains('open')));
       document.addEventListener('keydown',event=>{
-        if(event.key==='Escape'&&nav.classList.contains('open'))setMenuState(false,{restoreFocus:true});
+        if(event.key!=='Escape'||!nav.classList.contains('open'))return;
+        setMenuState(false);
+        toggle.focus();
       });
-      // pointerdown couvre Safari/tactile, click les activations clavier.
+      // Sur Safari tactile, le click synthétique peut arriver tard.
+      // pointerdown ferme immédiatement; click couvre aussi les activations
+      // au clavier et les environnements sans Pointer Events.
       const closeOnOutside=event=>{
         if(window.innerWidth>1100||!nav.classList.contains('open'))return;
         if(!nav.contains(event.target)&&!toggle.contains(event.target))setMenuState(false);

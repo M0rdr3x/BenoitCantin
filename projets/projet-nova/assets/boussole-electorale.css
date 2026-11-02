@@ -5,6 +5,8 @@
 .compass-radar-svg{display:block;width:min(100%,760px);height:auto;margin:0 auto}
 .compass-radar-svg circle,.compass-radar-svg line{fill:none;stroke:#cbd8e6;stroke-width:1}
 .compass-radar-svg polygon{fill:rgba(36,196,223,.18);stroke:#0f6f86;stroke-width:3}
+.compass-radar-svg line.compass-radar-segment{stroke:#0f6f86;stroke-width:3}
+.compass-radar-svg circle.compass-radar-point{fill:#0f6f86;stroke:#fff;stroke-width:2}
 .compass-radar-svg text{font-size:11px;font-weight:800;fill:#20364e}
 @media(max-width:700px){.compass-radar-svg{min-width:620px}}
 
@@ -213,3 +215,6 @@
   line-height:1.6;
   overflow-wrap:anywhere;
 }
+
+/* Un attribut hidden doit primer sur le display:grid du partage. */
+.compass-share-card[hidden]{display:none!important}

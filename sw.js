@@ -10,7 +10,7 @@ const CORE=[
   '/projets/projet-nova/assets/boussole-electorale.js','/projets/projet-nova/assets/boussole-electorale.css',
   '/projets/projet-nova/data/boussole-electorale-v2.json','/projets/projet-nova/data/boussole-partis-2026.json','/projets/projet-nova/data/boussole-sources-partis-2026.json','/projets/projet-nova/data/boussole-preuves-2026.json',
   '/assets/icons/benoit-sigil.svg','/android-chrome-192x192.png','/android-chrome-512x512.png','/assets/media/sinjira-emblem.webp','/assets/media/sinjira-registre.webp','/assets/media/nova-logo.webp','/assets/media/sinjira-livre-1-cover-480.webp','/assets/media/fracture-card-back.webp',
-  '/projets/sinjira/','/projets/sinjira/romans/','/projets/sinjira/romans/lire-demo.html','/projets/sinjira/jeux/','/projets/sinjira/registre/','/projets/sinjira/communaute/','/projets/sinjira/codex/','/projets/sinjira/monde-parallele/','/projets/sinjira/marche/','/projets/sinjira/jeux/fracture-du-reseau-mere/','/projets/projet-nova/','/projets/projet-nova/boussole-electorale.html'
+  '/projets/sinjira/','/projets/sinjira/romans/','/projets/sinjira/romans/lire-demo.html','/projets/sinjira/jeux/','/projets/sinjira/registre/','/projets/sinjira/communaute/','/projets/sinjira/codex/','/projets/sinjira/monde-parallele/','/projets/sinjira/marche/','/projets/sinjira/jeux/fracture-du-reseau-mere/','/projets/projet-nova/'
 ];
 function cacheableResponse(resp){const cc=String(resp.headers.get('Cache-Control')||'').toLowerCase();const vary=String(resp.headers.get('Vary')||'').toLowerCase();return resp.ok&&resp.status===200&&!resp.redirected&&cc.indexOf('no-store')===-1&&cc.indexOf('private')===-1&&cc.indexOf('no-cache')===-1&&!/(?:^|,)\s*(?:cookie|authorization|\*)\s*(?:,|$)/.test(vary)}
 // Initialiser le précache avec des requêtes anonymes : ne jamais conserver
@@ -48,6 +48,15 @@ self.addEventListener('fetch',e=>{
   const privatePath=u.pathname==='/app'||u.pathname.startsWith('/app/')||u.pathname==='/compte'||u.pathname.startsWith('/compte/')||u.pathname==='/Admin'||u.pathname.startsWith('/Admin/')||u.pathname==='/admin'||u.pathname.startsWith('/admin/')||u.pathname==='/histoire-de-vie'||u.pathname.startsWith('/histoire-de-vie/')||u.pathname==='/supabase'||u.pathname.startsWith('/supabase/');
   const releaseMarker=u.pathname==='/.well-known/release.json';
   if(releaseMarker){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}
+  // Les pages qui affichent une opinion ou un profil civique restent réseau
+  // seulement, même si l'hébergeur perd son en-tête Cache-Control: no-store.
+  const privateCivicPage=(
+    u.pathname==='/projets/projet-nova/consultation-40.html'||
+    u.pathname==='/projets/projet-nova/sondage.html'||
+    u.pathname==='/projets/projet-nova/boussole-electorale.html'||
+    u.pathname==='/projets/projet-nova/resultats-sondages.html'
+  );
+  if(privateCivicPage){e.respondWith(fetch(new Request(r,{cache:'no-store'})));return}
   if(privatePath){e.respondWith(fetch(new Request(r,{cache:'no-store'})).catch(()=>caches.match('/offline.html')));return}
   // Ne jamais écrire en Cache Storage des appels API, de session, de paiement
   // ou des réponses JSON dynamiques non explicitement précachées comme publiques.

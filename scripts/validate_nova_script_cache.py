@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Contrôle des versions de script sur les 42 pages HTML Projet Nova."""
+"""Contrôle des versions de script sur les 45 pages HTML Projet Nova."""
 from __future__ import annotations
 
 import argparse
@@ -8,11 +8,12 @@ from pathlib import Path
 
 NOVA = Path(__file__).resolve().parents[1] / "projets/projet-nova"
 VERSION = "26.2.0"
-EXPECTED_PAGE_COUNT = 42
-EXPECTED_WITH_SCRIPT = 38
+EXPECTED_PAGE_COUNT = 45
+EXPECTED_WITH_SCRIPT = 40
 SCRIPT_RE = re.compile(r"script\.js\?v=([^\"'<>\s]+)")
 EXPECTED_WITHOUT_SCRIPT = {
     "a-propos.html", "compte.html", "formulaire-soutien.html", "univers.html",
+    "resultats-sondages.html",
 }
 
 
@@ -78,4 +79,4 @@ if __name__ == "__main__":
         print("ECHEC:", err)
     if errors:
         raise SystemExit(1)
-    print("OK: 42 pages Projet Nova, 38 scripts versionnés 26.2.0, 4 exceptions.")
+    print("OK: 45 pages Projet Nova, 40 scripts versionnés 26.2.0, 5 exceptions.")

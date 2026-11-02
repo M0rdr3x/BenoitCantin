@@ -79,6 +79,8 @@ function testHarness({installCC='public, max-age=300',installVary='',installRedi
       for(const request of requests){
         assert.equal(request.credentials,'omit','Aucun cookie utilisateur dans le précache');
         assert.equal(request.cache,'no-store','Le précache initial doit ignorer le cache HTTP');
+        assert.ok(!/(?:consultation-40|sondage|boussole-electorale|resultats-sondages)\.html$/.test(request.url),
+          'Les pages civiques ne doivent jamais entrer dans le précache');
         assert.ok(request.url.startsWith('https://www.benoitcantin.com/'));
         assert.ok(!/\/(?:compte|admin|Admin|app|supabase|histoire-de-vie)\//.test(request.url),
           'Aucun espace privé admis dans le précache');
@@ -157,6 +159,18 @@ await expectedNoStore('/a-propos.html',{key:'secret-key'});
 await expectedNoStore('/.well-known/release.json');
 await expectedNoStore('/compte/');
 await expectedNoStore('/supabase/config.toml');
+for (const path of [
+  '/projets/projet-nova/consultation-40.html',
+  '/projets/projet-nova/sondage.html',
+  '/projets/projet-nova/boussole-electorale.html',
+  '/projets/projet-nova/resultats-sondages.html'
+]) {
+  // Même si le serveur répond "public", un questionnaire/profil ne doit
+  // jamais être enregistré, ni relu depuis une vieille PWA.
+  await expectedNoStore(path,{cc:'public, max-age=86400',cachedPath:path});
+  await expectedNoStore(path,{cc:'no-store',cachedPath:path});
+}
+
 // Nouvelle règle positive : futures routes publiques apparentes ne sont
 // JAMAIS retenues dans le cache tant qu'elles ne sont pas en liste CORE.
 await expectedNoStore('/projets/projet-nova/registre-dynamique.html');

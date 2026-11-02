@@ -1,0 +1,278 @@
+name: Nova — candidat Web isolé, sans publication
+
+on:
+  push:
+    branches: [staging/nova-public-40-64-boussole-2026-10-26]
+    paths:
+      - 'projets/projet-nova/**'
+      - 'scripts/build_netlify_public.py'
+      - 'scripts/validate_web_release_http.py'
+      - 'scripts/validate_nova_script_cache.py'
+      - 'tests/e2e/test_nova_consultation40_visual.py'
+      - 'tests/e2e/test_nova_survey_visual.py'
+      - 'tests/e2e/test_nova_compass_full_preview.py'
+      - 'tests/e2e/test_nova_keyboard_accessibility.py'
+      - 'tests/e2e/test_nova_narrow_viewports.py'
+      - 'tests/e2e/nova_network_stall_helpers.py'
+      - 'tests/test_nova_compass_scores.cjs'
+      - 'tests/test_nova_survey_privacy.cjs'
+      - 'tests/test_nova_public_results.cjs'
+      - 'tests/test_nova_release_gates.cjs'
+      - 'netlify.toml'
+      - 'sw.js'
+      - 'scripts/test_service_worker_privacy_runtime.mjs'
+      - 'scripts/test_nova_navigation_runtime.mjs'
+      - '.github/workflows/deploy-netlify-staging.yml'
+      - '.github/workflows/validate-netlify-preview.yml'
+      - '.github/workflows/validate-netlify-pre-dns.yml'
+      - 'scripts/validate_nova_public_access.py'
+      - 'scripts/validate_nova_public_results.py'
+      - 'index.html'
+      - 'assets/css/home-v24-4-12.css'
+      - '.github/workflows/release-security-allowlist.yml'
+      - '.github/workflows/nova-web-public-staging.yml'
+  pull_request:
+    branches: [a1/web-release-transparency]
+    paths:
+      - 'projets/projet-nova/**'
+      - 'tests/test_nova_compass_scores.cjs'
+      - 'tests/test_nova_survey_privacy.cjs'
+      - 'tests/test_nova_public_results.cjs'
+      - 'tests/test_nova_release_gates.cjs'
+      - 'tests/e2e/test_nova_*'
+      - 'tests/e2e/nova_network_stall_helpers.py'
+      - 'scripts/build_netlify_public.py'
+      - 'scripts/validate_nova_*'
+      - 'scripts/validate_web_release_http.py'
+      - 'scripts/test_service_worker_privacy_runtime.mjs'
+      - 'scripts/test_nova_navigation_runtime.mjs'
+      - 'assets/css/home-v24-4-12.css'
+      - 'index.html'
+      - 'netlify.toml'
+      - 'sw.js'
+      - '.github/workflows/nova-web-public-staging.yml'
+      - '.github/workflows/release-security-allowlist.yml'
+      - '.github/workflows/deploy-netlify-staging.yml'
+      - '.github/workflows/validate-netlify-preview.yml'
+      - '.github/workflows/validate-netlify-pre-dns.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nova-public-staging-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  score-contract:
+    name: Nova — contrats JS et en-têtes de confidentialité
+    if: github.event_name != 'pull_request' || (github.event.pull_request.head.ref == 'staging/nova-public-40-64-boussole-2026-10-26' && github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+          package-manager-cache: false
+      - name: Calcul et confidentialité — tests Node du code réel
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --test tests/test_nova_compass_scores.cjs
+          node --test tests/test_nova_survey_privacy.cjs
+          node --test tests/test_nova_public_results.cjs
+          node --test tests/test_nova_release_gates.cjs
+          node scripts/test_nova_navigation_runtime.mjs
+          node scripts/test_service_worker_privacy_runtime.mjs
+
+  civic-preview:
+    name: Nova — parcours Web candidat ${{ matrix.browser }}
+    if: github.event_name != 'pull_request' || (github.event.pull_request.head.ref == 'staging/nova-public-40-64-boussole-2026-10-26' && github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.61.0-noble@sha256:a9731514f24121d1dcd25d58d0a38146646d290a5998fd80d3e533e7b5e21c69
+      options: --user 1001
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Playwright version épinglée
+        run: python -m pip install --disable-pip-version-check 'playwright==1.61.0'
+      - name: Construire le vrai paquet Web public testé par le navigateur
+        shell: bash
+        env:
+          SINJIRA_RELEASE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          python3 scripts/build_netlify_public.py --output _site --standalone-netlify
+          test -f _site/projets/projet-nova/consultation-40.html
+          test -f _site/projets/projet-nova/sondage.html
+          test -f _site/projets/projet-nova/boussole-electorale.html
+          test ! -e _site/supabase/config.toml
+      - name: Serveur HTTP de l'artefact Web isolé, sans collecte
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m http.server 4173 --bind 127.0.0.1 --directory _site >/tmp/nova-public-http.log 2>&1 &
+          echo $! >/tmp/nova-public-http.pid
+          for attempt in $(seq 1 20); do
+            if python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4173/projets/projet-nova/', timeout=1).read(1)" >/dev/null 2>&1; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/nova-public-http.log
+          exit 1
+      - name: Refuser l'accès HTTP aux sources techniques même en test
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import urllib.error
+          import urllib.request
+          for route in ("supabase/config.toml", "supabase/functions/fracture-engine-gateway/index.ts", "supabase/migrations/20261019170000_nova_adult_opinion_survey_v1.sql", "scripts/build_netlify_public.py",
+                        "scripts/validate_nova_public_access.py", "scripts/validate_nova_public_results.py", "docs/PAGES_CONTROLLED_CUTOVER.md", "docs/NOVA_QUALIFICATION_ET_MISE_EN_SERVICE_2026-10-26.md", ".github/workflows/deploy-pages-controlled.yml",
+                        ".github/workflows/nova-web-public-staging.yml", "tests/test_nova_public_results.cjs", "tests/e2e/test_nova_compass_full_preview.py", "mobile-native/App.tsx", ".git/config",
+                        ".gitignore", ".env", "netlify.toml", "projets/projet-nova/.gitignore", "projets/projet-nova/.nojekyll"):
+              try:
+                  urllib.request.urlopen("http://127.0.0.1:4173/" + route, timeout=5)
+              except urllib.error.HTTPError as error:
+                  assert error.code == 404, (route, error.code)
+              else:
+                  raise AssertionError(f"Source technique exposée par HTTP : {route}")
+          print("PASS 19/19 chemins techniques en HTTP 404")
+          PY
+      - name: Tester la consultation 40, le sondage 64 et la Boussole
+        env:
+          BROWSER: ${{ matrix.browser }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tests/e2e/test_nova_consultation40_visual.py
+          python tests/e2e/test_nova_survey_visual.py
+          python tests/e2e/test_nova_compass_full_preview.py
+          python tests/e2e/test_nova_keyboard_accessibility.py
+          python tests/e2e/test_nova_narrow_viewports.py
+      - name: Fermer le serveur local
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/nova-public-http.pid ]; then kill "$(cat /tmp/nova-public-http.pid)" || true; fi
+
+  isolate-and-audit:
+    name: Construire deux paquets Nova sans déployer
+    if: github.event_name != 'pull_request' || (github.event.pull_request.head.ref == 'staging/nova-public-40-64-boussole-2026-10-26' && github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      SINJIRA_RELEASE_SHA: ${{ github.sha }}
+    steps:
+      - name: Checkout du commit exact sans jeton persistant
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python figé pour l'audit
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Audit des entrées Netlify et des frontières de sécurité
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/build_netlify_public.py --self-test-security
+          python3 scripts/validate_web_release_http.py --self-test
+          python3 scripts/build_netlify_public.py --check
+          python3 scripts/validate_nova_script_cache.py
+          python3 scripts/validate_nova_script_cache.py --self-test
+      - name: Construire le paquet preview autonome
+        shell: bash
+        env:
+          CONTEXT: deploy-preview
+        run: |
+          set -euo pipefail
+          python3 scripts/build_netlify_public.py --output _preview_site --standalone-netlify
+      - name: Construire le paquet production-candidate autonome
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/build_netlify_public.py --output _site --standalone-netlify
+      - name: Vérifier les trois parcours et bloquer les sources techniques
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_nova_public_access.py --source . --built _preview_site
+          python3 scripts/validate_nova_public_access.py --source . --built _site
+          python3 scripts/validate_nova_public_results.py --source . --built _preview_site
+          python3 scripts/validate_nova_public_results.py --source . --built _site
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          routes = (
+              "index.html", "consultation-40.html", "sondage.html",
+              "boussole-electorale.html", "resultats-sondages.html",
+              "assets/consultation-40.js", "assets/sondage.js",
+              "assets/boussole-electorale.js", "assets/resultats-sondages.js",
+              "assets/sondage.css", "assets/nova-sondage-icone.webp",
+              "data/consultation-40-v1.json", "data/sondage-questions-v1.json",
+              "data/boussole-electorale-v2.json",
+              "data/resultats-sondages-publics-v1.json"
+          )
+          forbidden = (
+              "supabase/config.toml", "scripts/build_netlify_public.py",
+              ".github/workflows/nova-web-public-staging.yml",
+              "tests/test_nova_public_results.cjs",
+              "mobile-native/App.tsx",
+          )
+          for target in (Path("_preview_site"), Path("_site")):
+              root = target / "projets/projet-nova"
+              for route in routes:
+                  file = root / route
+                  assert file.is_file() and not file.is_symlink() and file.stat().st_size > 0, f"Manquant : {file}"
+              for route in forbidden:
+                  assert not (target / route).exists(), f"Source technique exposée: {route}"
+              home = (root / "index.html").read_text(encoding="utf-8")
+              for address in ("consultation-40.html", "sondage.html", "boussole-electorale.html"):
+                  assert address in home, f"Accueil sans lien {address}"
+              for path, count in (("consultation-40-v1.json",40),
+                                  ("sondage-questions-v1.json",64),
+                                  ("boussole-electorale-v2.json",64)):
+                  data = json.loads((root/"data"/path).read_text(encoding="utf-8"))
+                  assert len(data["questions"]) == count, f"Corpus tronqué: {path}"
+              for path in ("assets/consultation-40.js", "assets/sondage.js"):
+                  script = (root/path).read_text(encoding="utf-8")
+                  assert "const COLLECTION_OPEN = false;" in script
+                  assert "const LIVE_OPINION_CONSENT_GRANTED = false;" in script
+              assert "const PUBLIC_AGGREGATES_ENABLED = false;" in (root/"assets/resultats-sondages.js").read_text(encoding="utf-8")
+              assert (root/"assets/nova-sondage-icone.webp").read_bytes().startswith(b"RIFF")
+              print("PASS paquet isolé sans collecte :",target)
+          PY
+      - name: Auto-tests négatifs des contrats Nova
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_nova_public_access.py --self-test
+          python3 scripts/validate_nova_public_results.py --self-test
+      - name: Rendre l'aperçu testable sans publier
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: nova-preview-isole-${{ github.sha }}
+          path: _preview_site/
+          retention-days: 7
+          if-no-files-found: error
+      - name: Rendre le candidat production inspectable sans déployer
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: nova-production-candidate-${{ github.sha }}
+          path: _site/
+          retention-days: 7
+          if-no-files-found: error
