@@ -57,13 +57,13 @@ function secretKey(env,logger) {
 }
 {
   const {events,logger}=recorder();
-  const modern='sb_secret_test_preferred_abcdefghijklmnopqrstuvwxyz';
+  const modern='synthetic-modern-server-key-abcdefghijklmnopqrstuvwxyz';
   assert.equal(secretKey({SUPABASE_SECRET_KEYS:JSON.stringify({default:modern}),SUPABASE_SERVICE_ROLE_KEY:'legacy'},logger),modern);
   assert.deepEqual(events,[],'Valid modern secret must never be logged');
 }
 {
   const {events,logger}=recorder();
-  const alt='sb_secret_test_secondary_abcdefghijklmnopqrstuvwxyz';
+  const alt='synthetic-secondary-server-key-abcdefghijklmnopqrstuvwxyz';
   assert.equal(secretKey({SUPABASE_SECRET_KEYS:JSON.stringify({secondary:alt}),SUPABASE_SERVICE_ROLE_KEY:'legacy'},logger),alt);
   assert.deepEqual(events,[]);
 }
