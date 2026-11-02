@@ -1,0 +1,58 @@
+name: Sécurité P0 — valider le confinement Jekyll de Pages legacy
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emergency-pages-jekyll-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  legacy-pages-boundary:
+    name: Jekyll d’urgence — zéro fichier technique dans le site
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Python figé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+
+      - name: Tester le fail-closed et l'absence de .nojekyll dans les sources
+        run: python3 scripts/validate_jekyll_emergency_pages.py --self-test
+
+      - name: Construire le rendu avec le moteur Jekyll officiel de GitHub Pages
+        uses: actions/jekyll-build-pages@44a6e6beabd48582f863aeeb6cb2151cc1716697
+        with:
+          source: ./
+          destination: ./_jekyll_emergency_site
+          verbose: false
+
+      - name: Refuser les fichiers techniques présents dans le rendu Jekyll
+        run: python3 scripts/validate_jekyll_emergency_pages.py --output _jekyll_emergency_site
+
+      - name: Contrôler la prochaine bascule Pages sur l'artefact isolé
+        run: |
+          python3 scripts/build_netlify_public.py --check --security-containment
+          python3 scripts/build_netlify_public.py --output _site --security-containment
+          test -f _site/.nojekyll
+          test ! -e _site/supabase
+          test ! -e _site/scripts
+          test ! -e _site/tests
+          test ! -e _site/mobile-native
+          test -f _site/index.html
+          test -f _site/projets/projet-nova/index.html
+          test -f _site/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf
