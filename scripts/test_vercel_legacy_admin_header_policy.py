@@ -42,7 +42,7 @@ class LegacyAdminHeaderSecurityTests(unittest.TestCase):
     def test_legacy_redirect_and_rewrite_still_denied(self) -> None:
         for key in ("redirects", "rewrites"):
             doc = base()
-            doc[key].append({"source": "/public", "destination": "/Admin/index.html"})
+            doc.setdefault(key, []).append({"source": "/public", "destination": "/Admin/index.html"})
             with self.subTest(key=key):
                 self.assertTrue(validator.contains_unsafe_legacy_admin_link(
                     "vercel.json", json.dumps(doc)
