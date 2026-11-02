@@ -1358,6 +1358,12 @@ def build(
         if root_file_allowed(source):
             shutil.copy2(source, output / source.name)
 
+    # Sur la branche de sources Pages, .nojekyll doit être absent pour que
+    # la configuration d'exclusion Jekyll soit appliquée en urgence.
+    # Sur l'artefact isolé _site, il doit au contraire être présent pour
+    # que GitHub Pages ne retransforme pas les fichiers Web déjà contrôlés.
+    (output / ".nojekyll").write_text("", encoding="utf-8")
+
     context = (
         deploy_context if deploy_context is not None else os.environ.get("CONTEXT", "")
     ).strip()
