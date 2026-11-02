@@ -11,6 +11,17 @@ theme: null
 include:
   - ".well-known"
   - ".well-known/security.txt"
+  # Chemins publics revus dans l'allowlist du builder; Jekyll a tendance à
+  # ignorer Markdown sans frontmatter et les dossiers exclus.
+  - "projets/projet-nova/PROPOSITIONS_PUBLIQUES.md"
+  - "projets/projet-nova/official/reference/architecture-numerique-interoperabilite-reversibilite.md"
+  - "projets/projet-nova/official/reference/corpus.md"
+  - "projets/projet-nova/official/reference/cybersecurite-resilience-continuite.md"
+  - "projets/projet-nova/official/reference/finances.md"
+  - "projets/projet-nova/official/reference/identite-numerique-vie-privee.md"
+  - "projets/projet-nova/official/reference/programme.md"
+  - "projets/projet-nova/official/reference/statuts.md"
+  - "projets/sinjira/codex/index.html"
 exclude:
   - ".git"
   - ".github"
