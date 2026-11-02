@@ -102,6 +102,13 @@ def unexpected_against_approved(jekyll: Path, approved: Path) -> list[str]:
         for path in jekyll.rglob("*") if path.is_file()
     }
     unexpected = sorted(observed_files - approved_files)
+    missing = sorted(approved_files - observed_files)
+    if missing:
+        # Une absence n'est pas une fuite, mais peut rompre des liens publics.
+        # Examiner la liste avant fusion; aucun contenu n'est imprimé.
+        print(f"INFO: {len(missing)} fichier(s) publics approuvés absents de Jekyll :")
+        for path in missing:
+            print("INFO: - " + path)
     # Filenames only. Never print file content or credentials.
     return [f"Fichier hors allowlist isolée: {path}" for path in unexpected]
 
