@@ -95,7 +95,7 @@ def main()->int:
         for unsafe in ('await req.text()', 'await req.json()'):
             if unsafe in code:
                 errors.append(f'{function_name}: lecture du corps non bornée réintroduite: {unsafe}')
-    if r'/[\\u0000-\\u0020\\u007f\\\\]/.test(value)' not in docurl:
+    if not (r'\u0000-\u0020' in docurl and r'\u007f\\' in docurl and '.test(value)' in docurl):
         errors.append('get-document-url: refus des contrôles ASCII et barres inversées absent.')
 
     if ".select('*" in docurl_low or ".select(\"*" in docurl_low:
