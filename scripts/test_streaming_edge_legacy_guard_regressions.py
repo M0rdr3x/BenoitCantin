@@ -74,7 +74,7 @@ def main() -> None:
         (privacy, "DOCURL",
          "relative&&parsed.origin!==DOCUMENT_URL_BASE", "false"),
         (privacy, "DOCURL",
-         r"\\u0000-\\u0020", "a-z"),
+         r"\u0000-\u0020", "a-z"),
     ]
     for module, attribute, needle, replacement in mutations:
         mutate(module, attribute, needle, replacement)
