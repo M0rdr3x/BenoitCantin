@@ -85,6 +85,27 @@ def validate(root: Path, require_all: bool = True) -> list[str]:
             errors.append("README technique publié : " + rel)
     return sorted(set(errors))
 
+def unexpected_against_approved(jekyll: Path, approved: Path) -> list[str]:
+    """Any file absent from the reviewed isolated artifact is an exposure.
+
+    Jekyll may render additional Markdown or forgotten JSON/metadata that
+    our suffix checks miss. Reject these too (closed file-set comparison).
+    """
+    if not approved.is_dir() or not jekyll.is_dir():
+        return ["Artefact de référence ou sortie Jekyll absent"]
+    approved_files = {
+        path.relative_to(approved).as_posix()
+        for path in approved.rglob("*") if path.is_file()
+    }
+    observed_files = {
+        path.relative_to(jekyll).as_posix()
+        for path in jekyll.rglob("*") if path.is_file()
+    }
+    unexpected = sorted(observed_files - approved_files)
+    # Filenames only. Never print file content or credentials.
+    return [f"Fichier hors allowlist isolée: {path}" for path in unexpected]
+
+
 def validate_source() -> list[str]:
     errors = []
     if (ROOT / ".nojekyll").exists():
@@ -130,11 +151,14 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--self-test", action="store_true")
     parser.add_argument("--output", type=Path, default=ROOT / "_jekyll_emergency_site")
+    parser.add_argument("--approved", type=Path, help="Répertoire _site isolé approuvé")
     args = parser.parse_args()
     if args.self_test:
         self_test()
         return 0
     errors = validate_source() + validate(args.output.resolve())
+    if args.approved:
+        errors.extend(unexpected_against_approved(args.output.resolve(), args.approved.resolve()))
     if errors:
         for error in errors:
             print("FAIL:", error)
