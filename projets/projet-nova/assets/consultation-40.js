@@ -329,7 +329,11 @@
         $('sondage-submit-status').textContent = 'Service temporairement indisponible.';
       } finally {
         submitting = false;
-        $('sondage-submit').disabled = recorded || !COLLECTION_OPEN || !LIVE_OPINION_CONSENT_GRANTED || !eligible();
+        // Un ancien envoi ne doit jamais réactiver le bouton après retrait
+        // d'accord, retour à l'introduction ou purge des 40 réponses.
+        $('sondage-submit').disabled = recorded || !COLLECTION_OPEN ||
+          !LIVE_OPINION_CONSENT_GRANTED || submissionConsentEpoch !== consentEpoch ||
+          $('sondage-finish').hidden || !eligible() || answers.size !== 40;
       }
     });
     // Une connexion qui ne répond jamais doit revenir à un état bloqué lisible.

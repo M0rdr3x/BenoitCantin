@@ -269,7 +269,11 @@
         'sondage-submit-status');
     } finally {
       submitting = false;
-      $('sondage-submit').disabled = recorded || !COLLECTION_OPEN || !LIVE_OPINION_CONSENT_GRANTED || !eligible();
+      // La fin d'une réponse réseau périmée ne doit jamais réactiver
+      // Envoyer après effacement, retrait d'accord ou changement d'écran.
+      $('sondage-submit').disabled = recorded || !COLLECTION_OPEN ||
+        !LIVE_OPINION_CONSENT_GRANTED || submissionConsentEpoch !== consentEpoch ||
+        $('sondage-finish').hidden || !eligible() || selections.size !== questions.length;
     }
   }
   function clearRecordedOpinions() {

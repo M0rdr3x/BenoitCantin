@@ -321,6 +321,48 @@ for(const spec of cases) {
     assert.equal(f.nodes["sondage-submit-status"].textContent,"");
   });
 
+  test(spec.id+" : reconsentement après purge ne réactive pas Envoyer par un ancien finally",async()=>{
+    const f=liveSubmissionFixture(spec);
+    const done=f.submit();
+    await awaitMicrotaskCondition(()=>f.authRequested===1);
+    f.revoke();
+    // L'utilisateur re-coche les deux cases pendant que l'ancien getUser
+    // attend encore, mais ses réponses ont été définitivement effacées.
+    f.nodes["sondage-age"].checked=true;
+    f.nodes["sondage-consent"].checked=true;
+    f.nodes["sondage-finish"].hidden=true;
+    f.resolveAuth();
+    await done;
+    assert.equal(f.requests,0,"Ancien consentement ne doit jamais autoriser un POST");
+    assert.equal(f.state.recorded,false);
+    assert.equal(f.state.submitting,false);
+    assert.equal(f.state[spec.answers].size,0);
+    assert.equal(f.nodes["sondage-submit"].disabled,true,
+      "Un ancien finally a réactivé Envoyer après purge/reconsentement");
+    assert.equal(f.nodes["sondage-submit-status"].textContent,"");
+  });
+
+  test(spec.id+" : résultat réseau tardif après reconsentement garde Envoyer bloqué",async()=>{
+    const f=liveSubmissionFixture(spec);
+    const done=f.submit();
+    await awaitMicrotaskCondition(()=>f.authRequested===1);
+    f.resolveAuth();
+    await awaitMicrotaskCondition(()=>f.requests===1);
+    f.revoke();
+    f.nodes["sondage-age"].checked=true;
+    f.nodes["sondage-consent"].checked=true;
+    f.nodes["sondage-finish"].hidden=true;
+    f.resolveInvoke();
+    await done;
+    assert.equal(f.requests,1,"La requête était déjà partie : pas de nouvel envoi");
+    assert.equal(f.state.recorded,false,"Ne pas afficher de faux succès après révocation");
+    assert.equal(f.state.submitting,false);
+    assert.equal(f.state[spec.answers].size,0);
+    assert.equal(f.nodes["sondage-submit"].disabled,true,
+      "Un résultat tardif ne doit pas rendre Envoyer actif");
+    assert.equal(f.nodes["sondage-submit-status"].textContent,"");
+  });
+
   test(spec.id+" : Envoyer depuis un écran masqué ne peut démarrer de transmission",async()=>{
     const f=liveSubmissionFixture(spec);
     f.nodes["sondage-finish"].hidden=true;
@@ -488,6 +530,8 @@ for(const spec of cases) {
     const answers=spec.count===40?f.state.answers:f.state.selections;
     assert.equal(answers.size,spec.count,"Un refus réseau ne détruit pas le récapitulatif");
     assert.match(f.nodes["sondage-submit-status"].textContent,/compte permanent connecté/i);
+    assert.equal(f.nodes["sondage-submit"].disabled,false,
+      "Un refus réseau ne doit pas bloquer une nouvelle tentative valide");
   });
 }
 
@@ -513,7 +557,7 @@ for (const spec of cases) {
   test(spec.id+" : script public mis en cache invalidé après la purge de confidentialité",()=>{
     const html=fs.readFileSync(path.join(nova,spec.count===40?
       "consultation-40.html":"sondage.html"),"utf8");
-    assert.ok(html.includes('assets/'+spec.filename+'?v=1.1.10'));
+    assert.ok(html.includes('assets/'+spec.filename+'?v=1.1.11'));
   });
 }
 
