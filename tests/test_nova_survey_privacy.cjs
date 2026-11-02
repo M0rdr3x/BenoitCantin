@@ -21,7 +21,9 @@ const cases = [
 
 function sliceFunction(source, first, next) {
   const start = source.indexOf("  function " + first + "(");
-  const stop = source.indexOf("  function " + next + "(", start + 3);
+  const normalStop = source.indexOf("  function " + next + "(", start + 3);
+  const asyncStop = source.indexOf("  async function " + next + "(", start + 3);
+  const stop = normalStop >= 0 ? normalStop : asyncStop;
   assert.ok(start >= 0 && stop > start,
     "Fonction officielle absente ou modifiée : " + first);
   return source.slice(start, stop);
