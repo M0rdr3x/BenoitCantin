@@ -9,6 +9,7 @@ CONFIG=ROOT/'supabase/config.toml'
 LEDGER=ROOT/'supabase/production-migration-ledger.txt'
 DOC=ROOT/'EDGE_TEMPLATE_FETCH_HARDENING_V24_5_49.md'
 INVENTORY=ROOT/'scripts/validate_edge_function_inventory.py'
+LIMITED=ROOT/'supabase/functions/_shared/limited-body.mjs'
 
 
 def read(path:Path)->str:
@@ -17,13 +18,14 @@ def read(path:Path)->str:
 
 def main()->int:
     errors=[]
-    for path in (REPORT,CONFIG,LEDGER,DOC,INVENTORY):
+    for path in (REPORT,CONFIG,LEDGER,DOC,INVENTORY,LIMITED):
         if not path.exists(): errors.append(f'Fichier absent: {path.relative_to(ROOT)}')
     if errors:
         for error in errors: print('- '+error)
         return 1
 
     report=read(REPORT)
+    limited=read(LIMITED)
     doc=read(DOC).lower()
     inventory=read(INVENTORY)
     config=tomllib.loads(read(CONFIG))
@@ -42,8 +44,8 @@ def main()->int:
         'url.username || url.password || url.search || url.hash',
         "redirect:'error'",
         "cache:'no-store'",
-        'declared>MAX_TEMPLATE_BYTES',
-        'bytes.byteLength===0||bytes.byteLength>MAX_TEMPLATE_BYTES',
+        'readLimitedBinaryResponse(response,MAX_TEMPLATE_BYTES)',
+        "if(!limited.ok)throw new Error('REPORT_TEMPLATE_TOO_LARGE')",
         "String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-'",
         'REPORT_TEMPLATE_URL_NOT_ALLOWED',
         'REPORT_TEMPLATE_TOO_LARGE',
@@ -54,6 +56,24 @@ def main()->int:
     ]
     for marker in report_markers:
         if marker not in report: errors.append(f'send-game-report: garde-fou absent: {marker}')
+
+    # Le plafond doit être imposé avant l'allocation, dans le lecteur partagé,
+    # y compris si Content-Length manque ou si l'origine le falsifie.
+    stream_markers=[
+        "export async function readLimitedBinaryResponse(response, maxBytes)",
+        "response.headers.get('content-length')",
+        "Number(declared) > maxBytes",
+        "value.byteLength > maxBytes - byteCount",
+        "if (byteCount === 0) return { ok: false }",
+        "await reader.cancel().catch(() => {})",
+    ]
+    for marker in stream_markers:
+        if marker not in limited:
+            errors.append(f'Lecteur PDF en flux: garde-fou absent: {marker}')
+    if 'await response.arrayBuffer()' in report.replace(
+        '// response.arrayBuffer() permettrait à une origine défaillante de dépasser', ''
+    ):
+        errors.append('Téléchargement PDF entier avant limitation interdit.')
 
     if re.search(r"fetch\s*\(\s*(?:TEMPLATE_URL|Deno\.env\.get\(['\"]REPORT_TEMPLATE_URL)",report):
         errors.append('Le modèle ne doit pas être téléchargé directement depuis une URL non validée.')
