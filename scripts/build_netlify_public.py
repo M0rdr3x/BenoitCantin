@@ -515,6 +515,11 @@ def relative_path_allowed(rel: Path) -> bool:
     if rel in SINJIRA_PRIVATE_RELEASE_METADATA:
         return False
 
+    # Codex : un seul document HTML public, pas de futur aperçu de travail
+    # ni export pouvant être publié par extension HTML autorisée ailleurs.
+    if len(parts) >= 3 and parts[:3] == ("projets", "sinjira", "codex"):
+        return rel == Path("projets/sinjira/codex/index.html")
+
     # SINJIRA: aucune nouvelle donnée JSON brute, métadonnée de manuscrit,
     # export de compte ou inventaire d'accès n'est publiable implicitement.
     # Toute future donnée JSON de runtime devra être explicitement revue.
@@ -1357,6 +1362,12 @@ def build(
             continue
         if root_file_allowed(source):
             shutil.copy2(source, output / source.name)
+
+    # Sur la branche de sources Pages, .nojekyll doit être absent pour que
+    # la configuration d'exclusion Jekyll soit appliquée en urgence.
+    # Sur l'artefact isolé _site, il doit au contraire être présent pour
+    # que GitHub Pages ne retransforme pas les fichiers Web déjà contrôlés.
+    (output / ".nojekyll").write_text("", encoding="utf-8")
 
     context = (
         deploy_context if deploy_context is not None else os.environ.get("CONTEXT", "")
