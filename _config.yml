@@ -7,6 +7,7 @@
 # Ne pas autoriser « source: » : GitHub Pages impose sa racine configurée.
 safe: true
 plugins: []
+theme: null
 include:
   - ".well-known"
   - ".well-known/security.txt"
@@ -44,6 +45,24 @@ exclude:
   - "netlify.toml"
   - "vercel.json"
   - "README.md"
+  # Aucun document Markdown racine n'est un fichier Web approuvé.
+  # Jekyll générerait aussi pour chacun une page HTML publique.
+  - "*.md"
+  # Rapports, inventaires et instructions historiques uniquement dans Git.
+  - "A_LIRE_*.txt"
+  - "CNAME_APRES_NAMECHEAP.txt"
+  - "DELETE_THESE_*.txt"
+  - "DEPLOIEMENT_GITHUB.txt"
+  - "FICHIERS_MODIFIES*.txt"
+  - "GUIDE_MISE_EN_LIGNE.txt"
+  - "INSTRUCTIONS*.txt"
+  - "MISE_A_JOUR*.txt"
+  - "RAPPORT*.txt"
+  - "README_SITE.txt"
+  - "SHA256SUMS*.txt"
+  - "MANIFEST_PACK_CUMULATIF*.json"
+  - "VERIFICATION*.json"
+  - "projets/projet-nova/CNAME"
   - "SECURITY.md"
   - "CONTRIBUTING.md"
   - "LICENSE"
