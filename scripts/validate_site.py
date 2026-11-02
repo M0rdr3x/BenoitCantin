@@ -4,6 +4,7 @@ from __future__ import annotations
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlparse, unquote
+import json
 import re
 import subprocess
 
@@ -25,6 +26,48 @@ NATIVE_MOBILE_PREFIX = 'mobile-native/'
 # Ces deux fichiers gardent volontairement la casse legacy /Admin/ uniquement pour
 # protéger/réécrire d'anciens favoris et caches. Ils ne constituent pas des liens actifs.
 LEGACY_ADMIN_COMPAT_FILES = {'sw.js', 'assets/js/v24-3-3-runtime.js'}
+
+
+def contains_unsafe_legacy_admin_link(rel: str, text: str) -> bool:
+    """Keep rejecting legacy /Admin/ links; allow only protected Vercel headers.
+
+    The pattern /Admin/(.*) is a header matcher, not a public navigation link.
+    An unprotected header, arbitrary redirect or HTML/JS reference stays denied.
+    """
+    if rel in LEGACY_ADMIN_COMPAT_FILES or rel.startswith('Admin/'):
+        return False
+    if rel == 'vercel.json':
+        try:
+            config = json.loads(text)
+            if not isinstance(config, dict):
+                return True
+            headers = config.get('headers', [])
+            if not isinstance(headers, list):
+                return True
+            for rule in headers:
+                if not isinstance(rule, dict) or rule.get('source') != '/Admin/(.*)':
+                    continue
+                entries = rule.get('headers')
+                if not isinstance(entries, list):
+                    return True
+                values = {
+                    item.get('key'): item.get('value')
+                    for item in entries if isinstance(item, dict)
+                    and isinstance(item.get('key'), str)
+                }
+                if (
+                    values.get('Cache-Control') != 'no-store'
+                    or values.get('Referrer-Policy') != 'no-referrer'
+                    or values.get('Pragma') != 'no-cache'
+                ):
+                    return True
+                # Remove only the reviewed legacy header matcher from the
+                # in-memory structure. All redirects/rewrites remain checked.
+                rule['source'] = '/admin/(.*)'
+            text = json.dumps(config, ensure_ascii=False)
+        except (json.JSONDecodeError, TypeError, ValueError):
+            return True
+    return re.search(r"['\\\"]/Admin/", text) is not None
 
 
 def srcset_urls(raw: str) -> list[str]:
@@ -343,7 +386,7 @@ def main() -> int:
                     errors.append(f'Secret potentiel dans {rel}')
             if active_sinjira(rel) and 'formspree' in text.lower():
                 errors.append(f'Formspree encore référencé dans une zone SINJIRA active: {rel}')
-            if rel not in LEGACY_ADMIN_COMPAT_FILES and not rel.startswith('Admin/') and re.search(r"[\'\"]\/Admin\/", text):
+            if contains_unsafe_legacy_admin_link(rel, text):
                 errors.append(f'Lien interne legacy /Admin/ dans {rel}')
 
     page_parsers: dict[Path, Parser] = {}
