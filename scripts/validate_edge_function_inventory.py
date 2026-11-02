@@ -26,10 +26,10 @@ CUSTOM_AUTH = {
     "get-document-url": (
         "optionalUser", "project_access_rank", "doc.status!=='approved'",
         "doc.projects?.status!=='active'", "createSignedUrl", "MAX_REQUEST_BYTES", "UUID_RE",
-        "externalUrlAllowed", "TextEncoder", "Cache-Control", "no-store", "Referrer-Policy",
+        "externalUrlAllowed", "readLimitedUtf8Body", "Cache-Control", "no-store", "Referrer-Policy",
     ),
     "send-game-report": (
-        "optionalUser", "!user?.email", "to: [user.email]", "MAX_REQUEST_BYTES", "TextEncoder",
+        "optionalUser", "!user?.email", "to: [user.email]", "MAX_REQUEST_BYTES", "readLimitedUtf8Body",
         "PAID_EXTERNAL_SERVICES_ENABLED=false", "MAX_TEMPLATE_BYTES=15*1024*1024",
         "TEMPLATE_ORIGIN='https://www.benoitcantin.com'",
         "TEMPLATE_PATH_PREFIX='/projets/sinjira/jeux/fracture-du-reseau-mere/documents/'",
@@ -165,6 +165,31 @@ def main() -> int:
         entry = FUNCTIONS / slug / "index.ts"
         if not entry.exists():
             errors.append(f"{slug}: index.ts absent.")
+
+    # Enforce the actual shared streaming implementation; old inline byte
+    # encoder markers are no longer applicable to these three public routes.
+    limited_reader = FUNCTIONS / "_shared" / "limited-body.mjs"
+    if not limited_reader.is_file():
+        errors.append("Lecteur HTTP borné partagé manquant.")
+    else:
+        helper = limited_reader.read_text("utf-8")
+        for marker in (
+            "req.body.getReader()",
+            "byteCount += value.byteLength",
+            "byteCount > maxBytes",
+            "new TextDecoder('utf-8', { fatal: true })",
+            "reader.cancel()",
+        ):
+            if marker not in helper:
+                errors.append(f"Lecteur HTTP borné partagé: contrôle manquant {marker}.")
+    for slug in ("get-document-url", "send-game-report", "life-story-delivery"):
+        entry = FUNCTIONS / slug / "index.ts"
+        if entry.is_file():
+            source = entry.read_text("utf-8")
+            if "readLimitedUtf8Body" not in source or "limited-body.mjs" not in source:
+                errors.append(f"{slug}: utilisation du lecteur HTTP partagé absente.")
+            if "await req.text()" in source or "await req.json()" in source:
+                errors.append(f"{slug}: lecture directe d'un corps non borné interdite.")
 
     for slug, markers in CUSTOM_AUTH.items():
         source = read_tree_text(FUNCTIONS / slug)

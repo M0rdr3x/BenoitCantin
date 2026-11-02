@@ -12,8 +12,8 @@ EDGE = ROOT / 'supabase/functions/get-document-url/index.ts'
 REQUIRED = {
     'POST uniquement': "req.method!=='POST'",
     'JSON explicite': "contentType.startsWith('application/json')",
-    'lecture bornée par texte': 'const raw=await req.text();',
-    'mesure UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
+    'lecture bornée par flux': 'const limited=await readLimitedUtf8Body(req,MAX_REQUEST_BYTES);',
+    'refus du dépassement de flux': 'if(!limited.ok)return',
     'UUID strict': 'const UUID_RE=',
     'document_id chaîne uniquement': "typeof parsed.body?.document_id==='string'",
     'réponse privée': "'Cache-Control':'private, no-store, max-age=0'",
@@ -36,6 +36,7 @@ REQUIRED_PATTERNS = {
 
 FORBIDDEN = {
     'JSON direct non borné': 'await req.json()',
+    'lecture texte non bornée': 'await req.text()',
     'coercition arbitraire document_id': "String(parsed.body?.document_id",
     'objet erreur brut': 'console.error(e)',
     'objet error brut': 'console.error(error)',
@@ -89,8 +90,9 @@ function externalUrlAllowed(url){return true;}
 async function readLimitedJson(req){
  const contentType=(req.headers.get('content-type')||'').toLowerCase();
  if(!contentType.startsWith('application/json')) return {response:privateJson({},415)};
- const raw=await req.text();
- if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES)return {response:privateJson({},413)};
+ const limited=await readLimitedUtf8Body(req,MAX_REQUEST_BYTES);
+ if(!limited.ok)return {response:privateJson({},413)};
+ const raw=limited.raw;
  return {body:JSON.parse(raw||'{}')};
 }
 Deno.serve(async(req)=>{
@@ -122,7 +124,8 @@ Deno.serve(async(req)=>{
         mutations = {
             'limite augmentée': safe.replace('MAX_REQUEST_BYTES=512;', 'MAX_REQUEST_BYTES=8192;'),
             'type JSON retiré': safe.replace("if(!contentType.startsWith('application/json')) return {response:privateJson({},415)};", ''),
-            'req.json direct': safe.replace('const raw=await req.text();', 'const body=await req.json();'),
+            'req.json direct': safe.replace('const limited=await readLimitedUtf8Body(req,MAX_REQUEST_BYTES);', 'const body=await req.json();'),
+            'lecture non bornée': safe.replace('const limited=await readLimitedUtf8Body(req,MAX_REQUEST_BYTES);', 'const raw=await req.text();'),
             'coercition document_id': safe.replace("typeof parsed.body?.document_id==='string'?parsed.body.document_id.trim():''", "String(parsed.body?.document_id||'').trim()"),
             'no-store retiré': safe.replace(" 'Cache-Control':'private, no-store, max-age=0',\n", ''),
             'TTL signé augmenté': safe.replace('createSignedUrl(doc.storage_path,600)', 'createSignedUrl(doc.storage_path,3600)'),

@@ -1,3 +1,4 @@
+import { readLimitedUtf8Body, readLimitedBinaryResponse } from '../_shared/limited-body.mjs';
 import { PDFDocument, StandardFonts } from 'npm:pdf-lib@1.17.1';
 import { corsHeaders } from '../_shared/cors.ts';
 import { optionalUser, serviceClient } from '../_shared/auth.ts';
@@ -42,10 +43,12 @@ function reportTemplateUrl(){
 async function fetchTemplateBytes(){
   const response=await fetch(reportTemplateUrl(),{cache:'no-store',redirect:'error'});
   if(!response.ok)throw new Error('REPORT_TEMPLATE_FETCH_FAILED');
-  const declared=Number(response.headers.get('content-length')||'0');
-  if(Number.isFinite(declared)&&declared>MAX_TEMPLATE_BYTES)throw new Error('REPORT_TEMPLATE_TOO_LARGE');
-  const bytes=new Uint8Array(await response.arrayBuffer());
-  if(bytes.byteLength===0||bytes.byteLength>MAX_TEMPLATE_BYTES)throw new Error('REPORT_TEMPLATE_TOO_LARGE');
+  // Limiter le vrai flux binaire, pas seulement Content-Length (non fiable).
+  // response.arrayBuffer() permettrait à une origine défaillante de dépasser
+  // MAX_TEMPLATE_BYTES avant même de valider sa taille.
+  const limited=await readLimitedBinaryResponse(response,MAX_TEMPLATE_BYTES);
+  if(!limited.ok)throw new Error('REPORT_TEMPLATE_TOO_LARGE');
+  const bytes=limited.bytes;
   if(bytes.length<5||String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-')throw new Error('REPORT_TEMPLATE_NOT_PDF');
   return bytes;
 }
@@ -55,18 +58,9 @@ async function readLimitedJson(req: Request): Promise<{ body?: any; response?: R
   if(!contentType.startsWith('application/json')){
     return { response: privateJson({ ok:false, error:'Type de contenu non autorisé.', function_version:FUNCTION_VERSION }, 415) };
   }
-  const rawLength = req.headers.get('content-length');
-  if (rawLength) {
-    const declaredLength = Number(rawLength);
-    if (!Number.isFinite(declaredLength) || declaredLength < 0 || declaredLength > MAX_REQUEST_BYTES) {
-      return { response: privateJson({ ok:false, error:'Requête trop volumineuse.', function_version:FUNCTION_VERSION }, 413) };
-    }
-  }
-
-  const raw = await req.text();
-  if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
-    return { response: privateJson({ ok:false, error:'Requête trop volumineuse.', function_version:FUNCTION_VERSION }, 413) };
-  }
+  const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);
+  if (!limited.ok) return { response: privateJson({ ok:false, error:'Requête trop volumineuse ou invalide.', function_version:FUNCTION_VERSION }, 413) };
+  const raw = limited.raw;
 
   try {
     return { body: JSON.parse(raw || '{}') };

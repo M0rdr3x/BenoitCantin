@@ -6,6 +6,7 @@ import tomllib
 ROOT=Path(__file__).resolve().parents[1]
 REPORT=ROOT/'supabase/functions/send-game-report/index.ts'
 DOCURL=ROOT/'supabase/functions/get-document-url/index.ts'
+LIMITED=ROOT/'supabase/functions/_shared/limited-body.mjs'
 CONFIG=ROOT/'supabase/config.toml'
 LEDGER=ROOT/'supabase/production-migration-ledger.txt'
 DOC=ROOT/'EDGE_RESPONSE_PRIVACY_V24_5_48.md'
@@ -21,7 +22,7 @@ def compact(text:str)->str:
 
 def main()->int:
     errors=[]
-    for path in (REPORT,DOCURL,CONFIG,LEDGER,DOC):
+    for path in (REPORT,DOCURL,CONFIG,LEDGER,DOC,LIMITED):
         if not path.exists(): errors.append(f'Fichier absent: {path.relative_to(ROOT)}')
     if errors:
         for error in errors: print('- '+error)
@@ -29,13 +30,14 @@ def main()->int:
 
     report=read(REPORT); report_low=compact(report)
     docurl=read(DOCURL); docurl_low=compact(docurl)
+    limited=read(LIMITED)
     doc=read(DOC).lower()
     ledger_rows=[x.strip() for x in read(LEDGER).splitlines() if x.strip() and not x.startswith('#')]
     config=tomllib.loads(read(CONFIG))
 
     report_markers=[
         'MAX_REQUEST_BYTES=220_000',
-        'TextEncoder().encode(raw).byteLength',
+        'readLimitedUtf8Body(req, MAX_REQUEST_BYTES)',
         "'Cache-Control': 'private, no-store, max-age=0'",
         "'Referrer-Policy': 'no-referrer'",
         "'X-Content-Type-Options': 'nosniff'",
@@ -59,12 +61,16 @@ def main()->int:
 
     doc_markers=[
         'UUID_RE=',
-        'TextEncoder().encode(raw).byteLength',
+        'readLimitedUtf8Body(req,MAX_REQUEST_BYTES)',
         "doc.status!=='approved'",
         "doc.projects?.status!=='active'",
         'externalUrlAllowed',
-        "value.startsWith('/')&&!value.startsWith('//')",
-        "new URL(value).protocol==='https:'",
+        "const DOCUMENT_URL_BASE='https://www.benoitcantin.com'",
+        "value.length>2048",
+        "relative&&value.startsWith('//')",
+        "relative?new URL(value,DOCUMENT_URL_BASE):new URL(value)",
+        "parsed.protocol!=='https:'||parsed.username||parsed.password",
+        "relative&&parsed.origin!==DOCUMENT_URL_BASE",
         'createSignedUrl(doc.storage_path,600)',
         "'Cache-Control':'private, no-store, max-age=0'",
         "'Referrer-Policy':'no-referrer'",
@@ -72,6 +78,25 @@ def main()->int:
     ]
     for marker in doc_markers:
         if marker not in docurl: errors.append(f'get-document-url: garde-fou absent: {marker}')
+
+    shared_markers=[
+        'export async function readLimitedUtf8Body(req, maxBytes)',
+        "req.headers.get('content-length')",
+        'Number(declared) > maxBytes',
+        'byteCount > maxBytes',
+        "new TextDecoder('utf-8', { fatal: true })",
+        'await reader.cancel().catch(() => {})',
+    ]
+    for marker in shared_markers:
+        if marker not in limited:
+            errors.append(f'Lecteur HTTP en flux non borné: {marker}')
+
+    for function_name, code in [('send-game-report',report),('get-document-url',docurl)]:
+        for unsafe in ('await req.text()', 'await req.json()'):
+            if unsafe in code:
+                errors.append(f'{function_name}: lecture du corps non bornée réintroduite: {unsafe}')
+    if not (r'\u0000-\u0020' in docurl and r'\u007f\\' in docurl and '.test(value)' in docurl):
+        errors.append('get-document-url: refus des contrôles ASCII et barres inversées absent.')
 
     if ".select('*" in docurl_low or ".select(\"*" in docurl_low:
         errors.append('get-document-url ne doit plus sélectionner toutes les colonnes du document.')
