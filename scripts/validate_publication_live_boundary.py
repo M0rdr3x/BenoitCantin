@@ -20,6 +20,13 @@ TECHNICAL_ROUTES = (
     "/scripts/build_netlify_public.py",
     "/docs/README.md",
     "/.github/workflows/validate-site.yml",
+    # Fichiers de travail réellement présents dans le dépôt et qui doivent
+    # être exclus du site Web, même sous un sous-dossier dit public.
+    "/projets/projet-nova/official/versions/V322/V322_CURRENT_STATE.json",
+    "/projets/projet-nova/official/versions/V316/README.md",
+    "/projets/projet-nova/data/modele_comptabilite.csv",
+    "/projets/projet-nova/CNAME_APRES_NAMECHEAP.txt",
+    "/assets/icons/README.md",
 )
 TIMEOUT_SECONDS = 12
 
@@ -120,7 +127,7 @@ def live() -> int:
         for error in errors:
             print("- " + error)
         return 1
-    print("PASS: six routes techniques en HTTP 404 et origine Netlify confirmée.")
+    print(f"PASS: {len(TECHNICAL_ROUTES)} routes techniques en HTTP 404 et origine Netlify confirmée.")
     print("Ce contrôle ne remplace pas le smoke complet de sécurité et des en-têtes #450.")
     return 0
 
