@@ -107,6 +107,21 @@ def main():
             }""")
             require(neutral["ok"], "profil neutre incomplet: " + repr(neutral))
             require(not submitted, "une opinion politique a été transmise pendant le test")
+            # La présentation finale doit être stable : un ancien événement
+            # « Suivant » ne doit pas recréer 16 cartes ni changer le partage.
+            frozen = page.evaluate("""() => {
+                const next=document.querySelector("#compass-next");
+                const cards=document.querySelector("#compass-results-grid");
+                const originalCard=cards.firstElementChild;
+                const originalCopy=document.querySelector("#compass-copy-result").onclick;
+                const originalStatus=document.querySelector("#compass-status").textContent;
+                next.dispatchEvent(new Event("click",{bubbles:true}));
+                return next.disabled && !document.querySelector("#compass-results").hidden &&
+                    cards.firstElementChild===originalCard &&
+                    document.querySelector("#compass-copy-result").onclick===originalCopy &&
+                    document.querySelector("#compass-status").textContent===originalStatus;
+            }""")
+            require(frozen,"Résultat dupliqué par une ancienne commande Suivant")
 
             # Modifier les réponses APRÈS l'affichage du profil doit retirer
             # immédiatement le résultat et toutes ses possibilités de partage.
@@ -145,6 +160,18 @@ def main():
             require(not page.locator("#compass-results").is_hidden() and
                     page.locator("#compass-results-grid .compass-result-card").count() == 16,
                     "Profil corrigé non recalculé après la 64e question")
+            # Corriger seulement la pondération de la question finale :
+            # Next doit être réactivé après purge du profil périmé.
+            page.locator("#compass-question-stage [data-importance]").select_option("forte")
+            require(page.locator("#compass-results").is_hidden() and
+                    not page.locator("#compass-next").is_disabled() and
+                    page.locator("#compass-results-grid").locator("*").count() == 0 and
+                    page.locator("#compass-copy-result").evaluate("(el) => el.onclick===null"),
+                    "Changement de pondération : ancien profil encore exposé ou recalcul désactivé")
+            page.locator("#compass-next").click()
+            require(not page.locator("#compass-results").is_hidden() and
+                    page.locator("#compass-next").is_disabled(),
+                    "Pondération ajustée : résultat impossible à recalculer ou commande encore active")
 
             # Les callbacks de partage retiennent le résumé et doivent
             # également disparaître après reset, pas seulement les cartes SVG.

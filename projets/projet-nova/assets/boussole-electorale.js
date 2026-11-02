@@ -174,6 +174,9 @@
           savedAnswer.importance = event.target.value;
           state.answers.set(question.id, savedAnswer);
         }
+        // Une pondération corrigée après résultat réactive le recalcul
+        // même si la réponse radio elle-même n'a pas changé.
+        if(invalidated) updateStepControls();
       }
     });
 
@@ -255,7 +258,9 @@
   }
 
   function goNext(){
-    if(!state.started) return;
+    // Un clic tardif sur « Consulter mes résultats », y compris injecté
+    // après la navigation au profil, ne doit pas recréer un ancien aperçu.
+    if(!state.started || state.results !== null) return;
     const question = currentQuestion();
     const status = $("#compass-status");
     if(!question || !state.answers.has(question.id)){
@@ -575,6 +580,10 @@
     if(shareCard) shareCard.hidden = calculatedAxes === 0;
     $("#compass-results").hidden = false;
     if(calculatedAxes > 0) configureSharing(results);
+    // Le résultat est maintenant figé. Revenir à une question ou modifier
+    // son importance invalide d'abord cet aperçu, puis réactive Suivant.
+    const next = $("#compass-next");
+    if(next) next.disabled = true;
     $("#compass-status").textContent = calculatedAxes === 0
       ? "Aucune dimension calculable. Répondez à au moins deux propositions d’un même thème pour obtenir un score."
       : "Votre résultat a été calculé localement dans votre navigateur.";

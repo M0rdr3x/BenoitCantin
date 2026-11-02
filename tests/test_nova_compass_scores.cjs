@@ -490,6 +490,8 @@ test("Boussole : résumé exact si aucune, 8 ou 16 dimensions sont calculables",
     return {nodes,context,sharing};
   };
   const insufficient=run({answered:1,available:0});
+  assert.equal(insufficient.nodes["#compass-next"].disabled,true,
+    "Ne pas laisser Suivant recalculer le profil sans axe disponible");
   assert.match(insufficient.nodes["#compass-summary"].textContent,/Aucune dimension calculable/);
   assert.match(insufficient.nodes["#compass-summary"].textContent,/Aucun profil politique/);
   assert.equal(insufficient.nodes["#compass-share-card"].hidden,true);
@@ -502,6 +504,8 @@ test("Boussole : résumé exact si aucune, 8 ou 16 dimensions sont calculables",
   assert.equal(misleading.nodes["#compass-share-card"].hidden,false);
   assert.equal(misleading.sharing,1);
   const complete=run({answered:64,available:16});
+  assert.equal(complete.nodes["#compass-next"].disabled,true,
+    "Un profil complet doit figer Suivant jusqu'à modification");
   assert.match(complete.nodes["#compass-summary"].textContent,/Profil calculé sur 16 dimensions/);
   assert.equal(complete.nodes["#compass-share-card"].hidden,false);
   assert.equal(complete.sharing,1);
