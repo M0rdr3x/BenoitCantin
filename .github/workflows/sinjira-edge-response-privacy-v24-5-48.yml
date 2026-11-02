@@ -36,4 +36,5 @@ jobs:
       - name: Vérifier V24.5.48
         run: |
           python scripts/validate_edge_response_privacy_v24_5_48.py
+          python scripts/test_streaming_edge_legacy_guard_regressions.py
           python scripts/validate_edge_function_inventory.py
