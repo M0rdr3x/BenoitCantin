@@ -9,6 +9,7 @@ on:
       - 'scripts/validate_admin_privacy_safety_aal2_v24_5_14.py'
       - 'scripts/validate_admin_aal2_workflow_security.py'
       - 'scripts/test_admin_aal2_strict.mjs'
+      - 'scripts/test_auth_error_redaction.mjs'
       - 'supabase/functions/_shared/auth.ts'
       - 'scripts/validate_site.py'
       - 'scripts/validate_supabase.py'
@@ -25,6 +26,7 @@ on:
       - 'scripts/validate_admin_privacy_safety_aal2_v24_5_14.py'
       - 'scripts/validate_admin_aal2_workflow_security.py'
       - 'scripts/test_admin_aal2_strict.mjs'
+      - 'scripts/test_auth_error_redaction.mjs'
       - 'supabase/functions/_shared/auth.ts'
       - 'scripts/validate_site.py'
       - 'scripts/validate_supabase.py'
@@ -61,6 +63,9 @@ jobs:
 
       - name: Exécuter la politique MFA administrateur stricte
         run: node scripts/test_admin_aal2_strict.mjs
+
+      - name: Vérifier l'absence de fuite des secrets et erreurs MFA dans les journaux
+        run: node scripts/test_auth_error_redaction.mjs
 
       - name: Contrat AAL2 confidentialité/sécurité
         run: python scripts/validate_admin_privacy_safety_aal2_v24_5_14.py
