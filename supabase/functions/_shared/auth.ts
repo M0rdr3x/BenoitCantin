@@ -25,8 +25,10 @@ function serverSecretKey() {
         (value) => typeof value === 'string' && value.length > 20
       );
       if (typeof fallback === 'string') return fallback;
-    } catch (error) {
-      console.warn('[SINJIRA auth] SUPABASE_SECRET_KEYS illisible, repli sur la clé legacy.', error);
+    } catch {
+      // JSON.parse peut inclure une partie de l'environnement secret dans
+      // son message : ne jamais journaliser l'exception ni sa valeur.
+      console.warn('[SINJIRA auth]', { code: 'SUPABASE_SECRET_KEYS_INVALID' });
     }
   }
   return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
@@ -103,7 +105,9 @@ async function sensitiveStepUpEnabled(context: Awaited<ReturnType<typeof authent
     .eq('user_id', user.id)
     .maybeSingle();
   if (error) {
-    console.error('[SINJIRA sensitive auth] préférences de sécurité indisponibles', error);
+    // Les erreurs PostgREST peuvent inclure des champs de requête/identité.
+    // Garder un code constant uniquement, sans l'objet d'erreur fournisseur.
+    console.error('[SINJIRA sensitive auth]', { code: 'SECURITY_STATE_UNAVAILABLE' });
     throw new Error('SECURITY_STATE_UNAVAILABLE');
   }
   return data?.sensitive_step_up !== false;
@@ -112,9 +116,10 @@ async function sensitiveStepUpEnabled(context: Awaited<ReturnType<typeof authent
 async function assertSensitiveMfa(context: Awaited<ReturnType<typeof authenticatedContext>>) {
   if (!(await sensitiveStepUpEnabled(context))) return null;
 
-  const aal = await assuranceLevel(context).catch((error) => {
-    console.error('[SINJIRA sensitive auth] état MFA indisponible', error);
-    throw error;
+  const aal = await assuranceLevel(context).catch(() => {
+    // Refuser fermé sans exposer l'erreur Auth interne au client ou aux logs.
+    console.error('[SINJIRA sensitive auth]', { code: 'MFA_STATE_UNAVAILABLE' });
+    throw new Error('MFA_STATE_UNAVAILABLE');
   });
   if (aal.nextLevel !== 'aal2') throw new Error('MFA_SETUP_REQUIRED');
   if (aal.currentLevel !== 'aal2') throw new Error('MFA_REQUIRED');
