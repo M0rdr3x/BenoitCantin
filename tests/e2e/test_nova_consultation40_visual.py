@@ -136,6 +136,21 @@ with sync_playwright() as p:
         check(page.locator("#sondage-finish").is_visible(), "récapitulatif final absent")
         check(page.locator("#sondage-review-list li").count() == 40,
               "40 réponses du récapitulatif absentes")
+        # Un bouton Effacer caché appartient à l'étape précédente. Un clic
+        # tardif ne peut ni demander une confirmation ni purger le récapitulatif.
+        check(page.evaluate("""() => {
+            const original=window.confirm;
+            let confirmations=0;
+            window.confirm=()=>{confirmations++;return true;};
+            try {
+                document.querySelector("#sondage-reset-question").click();
+                return confirmations===0 &&
+                    !document.querySelector("#sondage-finish").hidden &&
+                    document.querySelectorAll("#sondage-review-list li").length===40 &&
+                    document.querySelector("#sondage-age").checked &&
+                    document.querySelector("#sondage-consent").checked;
+            } finally { window.confirm=original; }
+        }"""), "Bouton Effacer masqué a interrompu le récapitulatif 40")
         check(page.evaluate("""() => {
             const finish=document.querySelector("#sondage-finish");
             const list=document.querySelector("#sondage-review-list");
@@ -170,6 +185,19 @@ with sync_playwright() as p:
               "révision non reflétée dans le récapitulatif")
         page.locator("#sondage-review").click()
         check(page.locator("#sondage-questionnaire").is_visible(), "relecture complète impossible")
+        check(page.evaluate("""() => {
+            const original=window.confirm;
+            let confirmations=0;
+            window.confirm=()=>{confirmations++;return true;};
+            try {
+                document.querySelector("#sondage-reset-finish").click();
+                return confirmations===0 &&
+                    !document.querySelector("#sondage-questionnaire").hidden &&
+                    document.querySelector("#sondage-age").checked &&
+                    document.querySelector("#sondage-consent").checked &&
+                    document.querySelector("#sondage-choices input:checked")!==null;
+            } finally { window.confirm=original; }
+        }"""), "Bouton Effacer caché du récapitulatif a purgé la relecture 40")
         check(page.locator("input[value=contre]").is_checked(),
               "réponse modifiée perdue à la relecture")
         page.once("dialog", lambda dialog: dialog.accept())

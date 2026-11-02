@@ -377,7 +377,14 @@
     });
     $('sondage-submit').addEventListener('click', submit);
     for (const id of ['sondage-reset-question', 'sondage-reset-finish']) {
-      $(id).addEventListener('click', resetSurvey);
+      $(id).addEventListener('click', () => {
+        // Les boutons restent présents mais cachés dans les autres écrans.
+        // Leur ancien événement ne doit jamais effacer une session active
+        // depuis un écran différent (clic tardif, script ou automation).
+        if ((id === 'sondage-reset-question' && $('sondage-questionnaire').hidden) ||
+            (id === 'sondage-reset-finish' && $('sondage-finish').hidden)) return;
+        resetSurvey();
+      });
     }
     // Éviter un écran de démarrage bloqué si l'un des deux corpus n'arrive pas.
     const controller = new AbortController();

@@ -271,7 +271,14 @@
       render();
     });
     for (const id of ['sondage-reset-question', 'sondage-reset-finish']) {
-      $(id).addEventListener('click', resetSurvey);
+      $(id).addEventListener('click', () => {
+        // Les boutons restent présents mais cachés dans les autres écrans.
+        // Leur ancien événement ne doit jamais effacer une session active
+        // depuis un écran différent (clic tardif, script ou automation).
+        if ((id === 'sondage-reset-question' && $('sondage-questionnaire').hidden) ||
+            (id === 'sondage-reset-finish' && $('sondage-finish').hidden)) return;
+        resetSurvey();
+      });
     }
     $('sondage-form').addEventListener('submit', e => e.preventDefault());
     $('sondage-submit').addEventListener('click', async () => {

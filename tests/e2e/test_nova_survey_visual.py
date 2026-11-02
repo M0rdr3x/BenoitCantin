@@ -283,6 +283,19 @@ def main():
             require(page.locator("#sondage-review-list li").count() == 64,
                     "Récapitulatif des 64 choix absent")
             require(page.evaluate("""() => {
+                const original=window.confirm;
+                let confirmations=0;
+                window.confirm=()=>{confirmations++;return true;};
+                try {
+                    document.querySelector("#sondage-reset-question").click();
+                    return confirmations===0 &&
+                        !document.querySelector("#sondage-finish").hidden &&
+                        document.querySelectorAll("#sondage-review-list li").length===64 &&
+                        document.querySelector("#sondage-age").checked &&
+                        document.querySelector("#sondage-consent").checked;
+                } finally { window.confirm=original; }
+            }"""), "Bouton Effacer masqué a interrompu le récapitulatif 64")
+            require(page.evaluate("""() => {
                 const finish=document.querySelector("#sondage-finish");
                 const list=document.querySelector("#sondage-review-list");
                 const last=list.lastElementChild;
@@ -330,6 +343,19 @@ def main():
             page.locator("#sondage-review").click()
             require(not page.locator("#sondage-questionnaire").is_hidden(),
                     "Relecture des questions impossible")
+            require(page.evaluate("""() => {
+                const original=window.confirm;
+                let confirmations=0;
+                window.confirm=()=>{confirmations++;return true;};
+                try {
+                    document.querySelector("#sondage-reset-finish").click();
+                    return confirmations===0 &&
+                        !document.querySelector("#sondage-questionnaire").hidden &&
+                        document.querySelector("#sondage-age").checked &&
+                        document.querySelector("#sondage-consent").checked &&
+                        document.querySelector("#sondage-choices input:checked")!==null;
+                } finally { window.confirm=original; }
+            }"""), "Bouton Effacer caché du récapitulatif a purgé la relecture 64")
             require("Question 1 sur 64" in page.locator("#sondage-position").inner_text(),
                     "La relecture ne démarre pas à la première question")
             require(page.locator("#sondage-choices input[value='-2']").is_checked(),
