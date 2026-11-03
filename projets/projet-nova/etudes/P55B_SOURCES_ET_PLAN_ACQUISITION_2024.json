@@ -1,0 +1,155 @@
+{
+  "schema_version": "P55B-1",
+  "date_reference": "2026-11-03",
+  "exercice": 2024,
+  "ancrages": [
+    "P54E",
+    "P54H",
+    "P54O",
+    "P54Q",
+    "P54Z",
+    "P55A"
+  ],
+  "sources": [
+    {
+      "code": "VILLE_2024",
+      "institution": "VILLE_DE_QUEBEC",
+      "url_officielle": "https://www.ville.quebec.qc.ca/publications/docs_ville/Rapport_financier_2024.pdf",
+      "pdf_index_zero": 102,
+      "taille_octets_historique": 8984919,
+      "sha256_historique": "b3ee3e671f7bf98e56c7d42b5e8b6c34de02a96c9dc1c96469819fa4dbfa7399",
+      "observations": [
+        "P54E-V-001"
+      ]
+    },
+    {
+      "code": "MAMH_23027_2024",
+      "institution": "MAMH",
+      "url_officielle": "https://www.mamh.gouv.qc.ca/documentsfinanciersweb/Rapport-financier-2024-et-autres-23027.pdf",
+      "pdf_index_zero": 162,
+      "taille_octets_historique": 10818312,
+      "sha256_historique": "4323c87d2114b58cf7a093c08f3b30327e949db91b9beb46a627eac1ecb4fc00",
+      "observations": [
+        "P54E-M-001",
+        "P54O-DATE-001",
+        "P54E-M-002",
+        "P54E-M-003"
+      ]
+    }
+  ],
+  "mandats_p54h_non_transmis": [
+    "MANDAT-COMPTABLE-2024",
+    "MANDAT-JURIDIQUE-2024"
+  ],
+  "phases_humaines": [
+    {
+      "code": "A01_ACQUISITION_OFFICIELLE",
+      "role": "RESPONSABLE_DOCUMENTAIRE_A_DESIGNER",
+      "livrable": "DEUX_COPIES_PUBLIQUES_LOCALES_HORS_DEPOT",
+      "prerequis": []
+    },
+    {
+      "code": "A02_CONFRONTATION_EDITIONS",
+      "role": "RESPONSABLE_DOCUMENTAIRE_A_DESIGNER",
+      "livrable": "SHA256_ET_TAILLE_COMPARES_A_P54Q",
+      "prerequis": [
+        "A01_ACQUISITION_OFFICIELLE"
+      ]
+    },
+    {
+      "code": "A03_DROITS_ET_PROVENANCE",
+      "role": "AUTORITE_HUMAINE_A_DESIGNER",
+      "livrable": "FICHE_DROITS_PROVENANCE_MISES_A_JOUR",
+      "prerequis": [
+        "A02_CONFRONTATION_EDITIONS"
+      ]
+    },
+    {
+      "code": "A04_LOCALISATION_ET_QUALIFICATION",
+      "role": "LECTEUR_ET_CONTRE_LECTEUR_A_DESIGNER",
+      "livrable": "CINQ_EXAMENS_VISUELS_CONTRADICTOIRES",
+      "prerequis": [
+        "A03_DROITS_ET_PROVENANCE"
+      ]
+    },
+    {
+      "code": "A05_RESERVES_ET_SUSPENSIONS",
+      "role": "GARANT_QUALITE_A_DESIGNER",
+      "livrable": "REGISTRE_DESACCORDS_ET_SUSPENSIONS",
+      "prerequis": [
+        "A04_LOCALISATION_ET_QUALIFICATION"
+      ]
+    },
+    {
+      "code": "A06_MANDATS_COMPTABLE_ET_JURIDIQUE",
+      "role": "GOUVERNANCE_A_DESIGNER",
+      "livrable": "DEUX_MANDATS_ECRITS_NON_TRANSMIS",
+      "prerequis": [
+        "A03_DROITS_ET_PROVENANCE"
+      ]
+    },
+    {
+      "code": "A07_EXPERTISES_INDEPENDANTES",
+      "role": "CPA_ET_JURISTE_A_MANDATER",
+      "livrable": "AVIS_AUTHENTIFIES_HORS_CODE",
+      "prerequis": [
+        "A05_RESERVES_ET_SUSPENSIONS",
+        "A06_MANDATS_COMPTABLE_ET_JURIDIQUE"
+      ]
+    },
+    {
+      "code": "A08_DECISION_INSTITUTIONNELLE",
+      "role": "AUTORITE_COMPETENTE_EXTERNE_AU_CODE",
+      "livrable": "DECISION_HUMAINE_DISTINCTE",
+      "prerequis": [
+        "A07_EXPERTISES_INDEPENDANTES"
+      ]
+    }
+  ],
+  "protections": {
+    "source_officielle_url_non_assimilee_a_octets_verifies": true,
+    "empreinte_historique_p54q_non_assimilee_authenticite": true,
+    "aucun_telechargement_ou_envoi_reseau": true,
+    "aucun_contact_aux_institutions": true,
+    "interdiction_soumission_mandats": true,
+    "deux_pdfs_requis_pour_reproduction": true,
+    "aucun_document_protege_dans_git": true,
+    "fichiers_locaux_0600_et_hors_depot": true,
+    "liens_symboliques_interdits": true,
+    "controle_signature_pdf_impossible_par_sha_seul": true,
+    "source_pdf_reference_2024": true,
+    "quatre_dossiers_p54e_ouverts": true,
+    "date_probable_non_confirmee": true,
+    "deux_mandats_p54h_non_transmis": true,
+    "aucun_expert_recrute": true,
+    "conservation_reserves_p54z_et_p55a": true,
+    "aucun_resultat_monetarise": true,
+    "absence_double_compte_ville_rtc_somhac": true,
+    "protection_emplois_services": true,
+    "protection_pouvoir_achat": true,
+    "deux_regimes_constitutionnels_separes": true,
+    "quarante_taches_p54n_non_attestees": true,
+    "dix_blocages_p54o_non_leves": true,
+    "p54b_96_p54c_8_non_attestes": true,
+    "aucune_modification_sinjira": true,
+    "aucune_fusion_main": true,
+    "aucun_go_automatique": true
+  },
+  "etat_initial": {
+    "sources_officielles_identifiees": 2,
+    "copies_locales_verifiees": 0,
+    "observations_a_revoir": 5,
+    "dossiers_p54e_ouverts": 4,
+    "date_probable_non_certifiee": 1,
+    "mandats_a_preparer": 2,
+    "mandats_reels_signes": 0,
+    "experts_independants_authentifies": 0,
+    "avis_signes_authentifies": 0,
+    "taches_p54n_non_attestees": 40,
+    "blocages_p54o_non_leves": 10,
+    "controles_p54b_non_attestes": 96,
+    "controles_p54c_non_attestes": 8,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
