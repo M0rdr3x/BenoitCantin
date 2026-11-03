@@ -136,12 +136,16 @@ Deno.serve(async (req:Request)=>{
     return respond(400,{error:"bulletin_invalide"},origin);
   }
   try {
+    // Vérifier le CAPTCHA avant toute requête privilégiée à PostgREST :
+    // un faux jeton ne doit jamais provoquer une lecture du catalogue SQL.
+    // Origin n'est qu'un signal navigateur, jamais une authentification.
+    if(!await confirmCaptcha(payload.captchaToken)) return respond(403,{error:"verification_anti_robot_echouee"},origin);
     const questions=await db("nova_poll_questions?poll_version=eq."+VERSION+"&select=question_id");
+    if(!Array.isArray(questions)) throw new Error("poll_not_ready");
     const expected=new Set(questions.map((q:any)=>q.question_id));
     if(expected.size!==8 || Object.keys(payload.answers).some(key=>!expected.has(key))) {
       return respond(400,{error:"questions_incompatibles"},origin);
     }
-    if(!await confirmCaptcha(payload.captchaToken)) return respond(403,{error:"verification_anti_robot_echouee"},origin);
     const tokenHash=await hashToken(payload.ballotToken);
     const result=await db("rpc/nova_poll_submit",{
       method:"POST",
