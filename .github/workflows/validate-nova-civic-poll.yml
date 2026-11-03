@@ -20,6 +20,7 @@ on:
       - 'projets/projet-nova/netlify.toml'
       - 'scripts/test_nova_civic_poll.py'
       - 'scripts/test_nova_boussole_runtime.cjs'
+      - 'scripts/smoke_nova_poll_edge.py'
       - 'scripts/check_nova_a1.py'
       - 'scripts/validate_seo_quality.py'
       - '.github/workflows/validate-nova-civic-poll.yml'
@@ -49,5 +50,7 @@ jobs:
           node-version: '22.23.2'
       - name: Tester le calcul et la carte de la boussole
         run: node scripts/test_nova_boussole_runtime.cjs
+      - name: Vérifier le service public sans envoyer de vote
+        run: python scripts/smoke_nova_poll_edge.py
       - name: Vérifier les liens et les fichiers du site
         run: python scripts/validate_site.py
