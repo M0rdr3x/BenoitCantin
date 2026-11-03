@@ -6,6 +6,7 @@ const diagnostic=JSON.parse(await readFile(new URL("../data/diagnostic-g0-sante-
 const registry=JSON.parse(await readFile(new URL("../data/registre-donnees-services-nova-sinjira.json",import.meta.url),"utf8"));
 const page=await readFile(new URL("../diagnostic-g0-sante.html",import.meta.url),"utf8");
 const sourceMap=new Map(diagnostic.sources.map(s=>[s.id,s]));
+const acquisition=JSON.parse(await readFile(new URL("../data/plan-acquisition-donnees-g0-sante.json",import.meta.url),"utf8"));
 
 test("G0 santé : aucun pilote, financement, coût par épisode ou économie prétendus",()=>{
   assert.equal(diagnostic.g0_completed,false);
@@ -67,4 +68,21 @@ test("page publique : déclaration de statut, source directe et lien vers la pre
   assert.ok(page.includes("statistique.quebec.ca/fr/document/utilisation-services-sante-et-services-sociaux/publication/utilisation-services-sante-sociaux-premiere-ligne-2025"));
   assert.ok(page.includes("diagnostic-g0-sante-premiere-ligne-v1.md"));
   assert.ok(page.includes("</main>") && page.includes("</html>"));
+});
+
+test("plan de demandes G0 sans demande transmise ni données personnelles",()=>{
+  assert.equal(acquisition.status,"PLAN_NON_TRANSMIS_NON_AUTORISE");
+  assert.equal(acquisition.demandes.length,9);
+  const ids=diagnostic.missing_before_g0_complete.map(x=>x.id).sort();
+  assert.deepEqual(acquisition.demandes.map(x=>x.id).sort(),ids);
+  for(const r of acquisition.demandes) {
+    assert.equal(r.statut,"NON_TRANSMISE");
+    assert.equal(r.autorite_confirmee,null);
+    assert.equal(r.demande_envoyee_le,null);
+    assert.equal(r.reponse_recue_le,null);
+    assert.equal(r.validation_independante,false);
+    assert.equal(r.proteger_donnees_personnelles,true);
+    assert.ok(r.autorites_candidates.length>=1);
+    assert.ok(r.champs_de_metadonnees_exiges.includes("territoire"));
+  }
 });
