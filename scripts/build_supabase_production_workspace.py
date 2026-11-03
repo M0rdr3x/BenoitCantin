@@ -119,8 +119,8 @@ def main():
     cfg_path = out / 'config.toml'
     cfg_text = cfg_path.read_text('utf-8')
     cfg_pattern = re.compile(
-        r'(?ms)^\\[functions\\.nova-civic-poll\\]\\s*\\n'
-        r'verify_jwt\\s*=\\s*false\\s*\\Z'
+        r'(?ms)^\[functions\.nova-civic-poll\]\s*\n'
+        r'verify_jwt\s*=\s*false\s*\Z'
     )
     if len(cfg_pattern.findall(cfg_text)) != 1:
         raise SystemExit('Configuration NOVA inattendue: ne jamais déployer la route publique implicitement.')
