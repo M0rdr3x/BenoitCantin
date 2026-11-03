@@ -8,7 +8,12 @@ on:
       - "scripts/tests/test_preparer_revue_independante_nova_p55a.py"
       - "projets/projet-nova/etudes/P55A_*"
       - "projets/projet-nova/etudes/P54Z_*"
+      - "projets/projet-nova/etudes/P54U_*"
+      - "projets/projet-nova/etudes/P54W_*"
+      - "projets/projet-nova/etudes/P54X_*"
+      - "projets/projet-nova/etudes/P54Y_*"
       - "scripts/preparer_passation_controlee_nova_p54z.py"
+      - "scripts/verifier_preparation_revue_nova_p54y.py"
   workflow_dispatch:
 permissions:
   contents: read
