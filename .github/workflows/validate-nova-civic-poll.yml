@@ -19,6 +19,9 @@ on:
       - 'vercel.json'
       - 'projets/projet-nova/netlify.toml'
       - 'scripts/test_nova_civic_poll.py'
+      - 'scripts/test_nova_poll_predeploy_security.py'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/build_supabase_production_workspace.py'
       - '.github/workflows/validate-nova-civic-poll.yml'
   push:
     branches: [main]
@@ -27,6 +30,9 @@ on:
       - 'supabase/NOVA_POLL_SCHEMA_PREDEPLOY.sql'
       - 'supabase/functions/nova-civic-poll/**'
       - 'scripts/test_nova_civic_poll.py'
+      - 'scripts/test_nova_poll_predeploy_security.py'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/build_supabase_production_workspace.py'
 permissions:
   contents: read
 jobs:
@@ -40,5 +46,9 @@ jobs:
           python-version: '3.12'
       - name: Vérifier les invariants et la syntaxe
         run: python scripts/test_nova_civic_poll.py
+      - name: Refuser toute publication implicite du vote NOVA via Supabase
+        run: |
+          python scripts/validate_edge_function_inventory.py
+          python scripts/test_nova_poll_predeploy_security.py
       - name: Vérifier les liens et les fichiers du site
         run: python scripts/validate_site.py
