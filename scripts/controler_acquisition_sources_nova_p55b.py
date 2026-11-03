@@ -228,7 +228,8 @@ def operation_plan():
 
 
 def public_report(source_states=None,declarations=None,inherited=0):
-    source_states = source_states or {c:NON_FOURNIE for c in PDF_CODES}
+    if source_states is None:
+        source_states = {c:NON_FOURNIE for c in PDF_CODES}
     need(type(source_states) is dict
          and set(source_states) == set(PDF_CODES)
          and all(s in (NON_FOURNIE,CONCORDANCE,EDITION)
