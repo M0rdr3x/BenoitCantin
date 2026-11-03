@@ -217,7 +217,8 @@ class TestP55C(unittest.TestCase):
         self.t(0)["etat_revue"]="RESERVE_OUVERTE"
         self.t(0)["qualification_declaree"]="VALEUR_A_EXAMINER_NON_CERTIFIEE"
         result=m.validate_private(self.sheet,self.positions)
-        report=m.public_report(claimed=result)
+        states={k:m.p55b.CONCORDANCE for k in m.p55b.PDF_CODES}
+        report=m.public_report(states,synthetic_attempt(),claimed=result)
         self.assertIsNone(report["economies_certifiees_cad"])
         self.assertEqual(report["avis_independants_authentifies"],0)
     def test_47_refus_comptage_ouvert_sans_reproduction(self):
