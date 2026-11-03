@@ -10,7 +10,10 @@ const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const CAPTCHA_SECRET = Deno.env.get("NOVA_POLL_TURNSTILE_SECRET") || "";
 const CAPTCHA_SITE_KEY = Deno.env.get("NOVA_POLL_TURNSTILE_SITE_KEY") || "";
 const HMAC_KEY = Deno.env.get("NOVA_POLL_HMAC_KEY") || "";
-const isOpen = () => Deno.env.get("NOVA_POLL_ENABLED") === "true"
+// Une activation accidentelle du flag ne suffit jamais : le corpus final
+// doit avoir été approuvé explicitement dans la configuration serveur.
+const isOpen = () => Deno.env.get("NOVA_POLL_APPROVED_VERSION") === VERSION
+  && Deno.env.get("NOVA_POLL_ENABLED") === "true"
   && !!CAPTCHA_SECRET && !!CAPTCHA_SITE_KEY && HMAC_KEY.length >= 32 && !!SERVICE_KEY;
 
 function respond(status: number, data: unknown, origin: string | null): Response {
