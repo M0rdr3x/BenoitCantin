@@ -1,0 +1,101 @@
+{
+  "schema_version": "P54Y-1",
+  "date_reference": "2026-11-02",
+  "exercice": 2024,
+  "chaine_reference": [
+    "P54Q",
+    "P54R",
+    "P54S",
+    "P54T",
+    "P54U",
+    "P54V",
+    "P54W",
+    "P54X"
+  ],
+  "sources_reference": {
+    "ville": {
+      "index_pdf_zero": 102,
+      "sha256": "b3ee3e671f7bf98e56c7d42b5e8b6c34de02a96c9dc1c96469819fa4dbfa7399"
+    },
+    "mamh": {
+      "index_pdf_zero": 162,
+      "sha256": "4323c87d2114b58cf7a093c08f3b30327e949db91b9beb46a627eac1ecb4fc00"
+    }
+  },
+  "gates": [
+    {
+      "jalon": "P54Q",
+      "controle": "REPRODUCTION_LOCALE_DEUX_PDF",
+      "preuve_requise": "PDF_2024_VERIFIES_HORS_GIT"
+    },
+    {
+      "jalon": "P54R",
+      "controle": "PROVENANCE_POSITIONS",
+      "preuve_requise": "BILAN_ORIGINAL_P54P_CONFORME"
+    },
+    {
+      "jalon": "P54S",
+      "controle": "INTEGRITE_ARTEFACT",
+      "preuve_requise": "ARCHIVE_CONFRONTEE_AU_RUN"
+    },
+    {
+      "jalon": "P54T",
+      "controle": "PREUVE_PUBLIQUE_FIGEE",
+      "preuve_requise": "DEUX_BILANS_PUBLICS_VERIFIES"
+    },
+    {
+      "jalon": "P54U",
+      "controle": "FICHES_CIBLEES",
+      "preuve_requise": "CINQ_FICHES_DOCUMENTAIRES"
+    },
+    {
+      "jalon": "P54V",
+      "controle": "EXTRAITS_PRIVES",
+      "preuve_requise": "CINQ_EXTRAITS_HORS_GIT"
+    },
+    {
+      "jalon": "P54W",
+      "controle": "REVUES_DECLAREES",
+      "preuve_requise": "DEUX_ROLES_SANS_AUTHENTIFICATION"
+    },
+    {
+      "jalon": "P54X",
+      "controle": "RECONTROLE_ORIGINAUX",
+      "preuve_requise": "QUATRE_ENTREES_PRIVEES_CONCORDANTES"
+    }
+  ],
+  "protections": {
+    "aucune_certification_automatique": true,
+    "aucune_transmission_reelle": true,
+    "aucune_revue_humaine_reelle_deduite": true,
+    "aucun_pdf_origine_archive_ci": true,
+    "aucun_extrait_jeton_publie": true,
+    "aucun_montant_deduit_des_offsets": true,
+    "deux_pdf_historiques_requis": true,
+    "statuts_validation_distincts": true,
+    "preuve_ci_ne_vaut_pas_avis_professionnel": true,
+    "cinq_occurrences_toujours_a_qualifier": true,
+    "quatre_dossiers_p54e_ouverts": true,
+    "date_probable_non_confirmee": true,
+    "quarante_taches_p54n_non_attestees": true,
+    "dix_blocages_p54o_non_leves": true,
+    "p54b_96_et_p54c_8_ouverts": true,
+    "consolidations_sans_double_compte": true,
+    "maintien_emplois_services": true,
+    "deux_scenarios_constitutionnels_separes": true,
+    "main_non_fusionnee": true,
+    "sinjira_non_modifie": true
+  },
+  "etat_initial": {
+    "gates_humains_non_attestes": 8,
+    "dossiers_p54e_ouverts": 4,
+    "occurrences_a_qualifier": 5,
+    "taches_p54n_non_attestees": 40,
+    "blocages_p54o_non_leves": 10,
+    "controles_p54b_non_attestes": 96,
+    "controles_p54c_non_attestes": 8,
+    "signatures_authentifiees": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

@@ -1,0 +1,61 @@
+name: Projet Nova P54Y - Preparation revue humaine sans certification
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54y.yml"
+      - "scripts/verifier_preparation_revue_nova_p54y.py"
+      - "scripts/tests/test_verifier_preparation_revue_nova_p54y.py"
+      - "projets/projet-nova/etudes/P54Y_*"
+      - "projets/projet-nova/etudes/p54t_archive_durable_p54p/**"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  readiness-documentaire-non-certifiante:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Executer les 22 tests de preparation non certifiante
+        run: |
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_verifier_preparation_revue_nova_p54y.py")
+          assert suite.countTestCases()==22,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Bilan public sans identites et sans originaux
+        run: |
+          python scripts/verifier_preparation_revue_nova_p54y.py --bilan p54y_bilan.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p54y_bilan.json").read_text("utf-8"))
+          assert d["jalons_structurellement_presents"]==8
+          assert d["revue_humaine_effectivement_realisee"] is False
+          assert d["pret_a_certifier"] is False
+          assert d["pret_a_fusionner"] is False
+          assert d["economies_certifiees_cad"] is None
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Refuser un faux GO
+        run: |
+          set +e
+          python scripts/verifier_preparation_revue_nova_p54y.py --exiger-go
+          status=$?
+          set -e
+          test "$status" -eq 3
+      - name: Artefact agregé seulement
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54y-readiness-non-certifiant
+          path: p54y_bilan.json
+          retention-days: 7
