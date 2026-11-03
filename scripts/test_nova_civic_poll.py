@@ -34,6 +34,8 @@ for n, q in enumerate(poll["questions"], 1):
     assert q["text"] == by_id[q["id"]]["text"], q["id"]
     assert q["text"].replace("'", "''") in sql
 assert [o["value"] for o in poll["options"]] == [-2, -1, 0, 1, 2, 9]
+builder = (ROOT / "scripts" / "build_netlify_public.py").read_text(encoding="utf-8")
+assert 'Path("projets/projet-nova/data/sondage-citoyen-v1.json")' in builder
 assert "sondage-citoyen.html" in html
 assert "boussole-electorale.html" in html
 assert "sondage-citoyen.html" in compass_html
