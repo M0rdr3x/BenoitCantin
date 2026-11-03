@@ -28,12 +28,12 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: "3.11"
-      - name: 62 tests - pas de pieces reelles en CI
+      - name: 66 tests - pas de pieces reelles en CI
         run: |
           python - <<'PY'
           import unittest
           suite=unittest.defaultTestLoader.discover("scripts/tests",pattern="test_controler_acquisition_sources_nova_p55b.py")
-          assert suite.countTestCases()==62,suite.countTestCases()
+          assert suite.countTestCases()==66,suite.countTestCases()
           result=unittest.TextTestRunner(verbosity=2).run(suite)
           assert result.wasSuccessful()
           PY
