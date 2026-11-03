@@ -12,7 +12,7 @@ La Boussole Nova produit d’abord un **profil politique multidimensionnel**. El
 4. **Importance personnelle facultative** : 0,5 / 1 / 1,5.
 5. **Questions transversales explicites** : une question peut contribuer secondairement à une autre dimension, mais ce poids secondaire doit être déclaré et rester inférieur ou égal à 0,4.
 6. **Aucune moyenne idéologique globale** : les dimensions restent visibles séparément.
-7. **Couverture affichée** : une dimension insuffisamment répondue ne doit pas être présentée comme précise.
+7. **Couverture affichée** : au moins deux des quatre propositions principales d’une dimension doivent recevoir une réponse non passée (seuil `axisMinimumAnswered: 2`) avant l’affichage d’un score. Les contributions transversales ne permettent pas de contourner cette exigence. Les axes sans score restent dans leur position fixe et ne sont pas remplacés par une valeur neutre.
 8. **Calcul local** : aucune réponse n’est transmise ou stockée de façon persistante par la V2.
 
 ## Rédaction non ambiguë des propositions
