@@ -1,4 +1,6 @@
--- Projet Nova : préparation contrôlée. Ne pas lancer avant revue de sécurité et validation des textes.
+-- Projet Nova : référence source déployée le 2026-11-03 sous le nom
+-- nova_poll_private_aggregates_prelaunch_20261103 (projet gpvivleexywljowcqkru).
+-- Ne pas rejouer en production sans revue des différences et de la migration distante.
 -- Données individuelles : AUCUNE réponse persistée; seules les sommes par choix sont conservées.
 BEGIN;
 
