@@ -23,6 +23,19 @@
 - Le questionnaire V1 contient huit questions sélectionnées dans la boussole, **qui ne peuvent pas être présumées identiques aux questions fournies auparavant sans vérification du document d'origine**.
 - Une fois le scrutin ouvert et des bulletins reçus, traiter les changements de questions comme une nouvelle version : ne pas réécrire rétroactivement les compteurs.
 
+## Clarification indispensable sur les versions du questionnaire
+
+Un inventaire historique de GitHub confirme l'existence de **trois périmètres différents** qui ne doivent pas être amalgamés :
+
+- **Boussole électorale : 64 questions / 16 dimensions**, instrument de profil individuel **sans envoi de réponses**.
+- **Sondage d'opinion historique : 64 questions**, distinct de la boussole, préparé sur une PR brouillon (issue [#674](https://github.com/M0rdr3x/BenoitCantin/issues/674)).
+- **Consultation référendaire historique : 40 questions**, projet distinct également documenté dans l'issue [#675](https://github.com/M0rdr3x/BenoitCantin/issues/675).
+- **Consultation actuellement codée : 8 questions** reprises de la boussole, version `nova-consultation-v1`, **provisoire et fermée**.
+
+Les huit questions ne doivent pas être considérées automatiquement comme le questionnaire original fourni par le propriétaire : le fichier source mentionné historiquement dans les échanges n'est pas rattaché de manière vérifiable à ce corpus. **Décision humaine requise** : identifier quel questionnaire doit être publié (8, 40, 64 ou le texte original), contrôler sa rédaction, figer la version et respecter la revue confidentialité. Toute nouvelle version modifie les clefs de la collecte, la documentation et les tests; les choix déjà agrégés ne sont jamais réinterprétés sous un nouveau libellé.
+
+Le schéma Supabase V1 contient huit questions et **ne convient pas** à une consultation de 40 ou 64 questions sans nouvelle migration évaluée et nouvelle fonction Edge. Conserver le vote désactivé en attendant le choix officiel. Les obstacles légaux et de responsabilité sont suivis dans l'issue [#675](https://github.com/M0rdr3x/BenoitCantin/issues/675), qui bloque l'ouverture.
+
 ## Prérequis avant ouverture effective du vote
 
 1. **Valider la formulation des huit questions** avec le texte approuvé et faire une révision de neutralité, accessibilité, clarté, bilinguisme si requis et conformité. Conserver le corpus source et la version de publication sans réécrire les questions après le premier bulletin.
