@@ -215,6 +215,11 @@ def main(argv=None):
         sha = None
         if a.declarations_p54z:
             doc, sha = upstream(a.declarations_p54z)
+            inherited = sum(
+                control["etat"] == "SUSPENDU"
+                for dossier in doc["dossiers"]
+                for control in dossier["controles"]
+            )
         if a.creer_modele_prive:
             p54z.write_new(a.creer_modele_prive, model(sha), private=True)
         totals = None
