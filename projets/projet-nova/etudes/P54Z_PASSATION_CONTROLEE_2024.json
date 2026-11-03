@@ -1,0 +1,71 @@
+{
+  "schema_version": "P54Z-1",
+  "date_reference": "2026-11-03",
+  "exercice": 2024,
+  "source_jalons": [
+    "P54U",
+    "P54W",
+    "P54X",
+    "P54Y"
+  ],
+  "references": [
+    "P54E-V-001",
+    "P54E-M-001",
+    "P54O-DATE-001",
+    "P54E-M-002",
+    "P54E-M-003"
+  ],
+  "controles": [
+    "IDENTIFIER_SOURCE_ORIGINALE",
+    "RETROUVER_OCCURRENCE_NFKC",
+    "COMPARER_SUR_PAGE_VISUELLE",
+    "QUALIFIER_NATURE_SUR_PIECE",
+    "DISTINGUER_DATE_FOLIO_REFERENCE_VALEUR",
+    "VALIDER_UNITE_EXERCICE_COLONNE_SI_PERTINENT",
+    "CONSERVER_RESERVES_ET_DESACCORDS",
+    "CONTRE_REVUE_INDEPENDANTE"
+  ],
+  "roles_non_designes": [
+    "GARANT_DOCUMENTAIRE",
+    "LECTEUR",
+    "CONTRE_LECTEUR",
+    "REFERENT_JURIDIQUE",
+    "REFERENT_COMPTABLE"
+  ],
+  "etats_declaratifs": [
+    "NON_INSTRUIT",
+    "PREPARATION_DECLAREE_NON_VERIFIEE",
+    "SUSPENDU"
+  ],
+  "protections": {
+    "aucune_identite_ni_signature_stockee": true,
+    "fichiers_prives_uniquement_hors_git": true,
+    "prive_0600_et_sans_liens_symboliques": true,
+    "bilans_publics_sans_jeton_ni_extrait": true,
+    "aucune_preuve_extraite_d_un_statut_declaratif": true,
+    "confrontation_pdfs_locaux_p54x_obligatoire": true,
+    "revue_professionnelle_independante_requise": true,
+    "blocages_et_contradictions_prioritaires": true,
+    "cinq_occurrences_non_certifiees": true,
+    "quatre_dossiers_p54e_ouverts": true,
+    "date_probable_non_qualifiee": true,
+    "quarante_taches_p54n_non_attestees": true,
+    "dix_blocages_p54o_non_leves": true,
+    "p54b_96_et_p54c_8_non_attestes": true,
+    "absence_de_double_compte_ville_rtc_somhac": true,
+    "protection_emplois_et_services": true,
+    "separation_regimes_constitutionnels": true,
+    "aucun_contact_externe": true,
+    "aucune_fusion_main": true,
+    "sinjira_non_modifie": true,
+    "no_go_automatique": true
+  },
+  "etat_initial": {
+    "positions_de_revue": 40,
+    "positions_instruite_sur_preuve": 0,
+    "avis_professionnels_authentifies": 0,
+    "signatures_verifiees": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
