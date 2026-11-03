@@ -381,6 +381,16 @@ class TestP55C(unittest.TestCase):
     def test_66_code_no_go_dependances(self):
         self.assertEqual(self.config["etat_initial"]["decision"],m.NO_GO)
         self.assertEqual(self.config["etat_initial"]["mandats_p54h_signes"],0)
+    def test_67_refus_qualification_sans_reproduction(self):
+        totals={name:(5 if name=="NON_EXAMINE" else 0)
+                for name in m.STATES}
+        seconds={name:(5 if name=="NON_EFFECTUEE" else 0)
+                 for name in m.COUNTER_REVIEWS}
+        kinds={name:(1 if name=="DATE_POSSIBLE_NON_CERTIFIEE" else
+                     4 if name=="NON_QUALIFIE" else 0)
+               for name in m.QUALIFICATIONS}
+        with self.assertRaises(ValueError):
+            m.public_report(claimed=(totals,seconds,kinds))
 
 
 if __name__=="__main__":
