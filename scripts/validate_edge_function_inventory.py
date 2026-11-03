@@ -17,6 +17,11 @@ CANONICAL = {
     "submit-game-contribution",
 }
 
+# Source en préparation, pas une fonction de production autorisée.
+# Le workspace de déploiement doit omettre son code ET sa configuration JWT.
+STAGED_PUBLIC = {"nova-civic-poll"}
+REVIEWED_SOURCE = CANONICAL | STAGED_PUBLIC
+
 RETIRED = {
     "admin-reader", "generate-sinjira-character", "admin-literary", "validate-phone-v22",
     "guardian-create-youth-v22", "create-youth-account",
@@ -41,6 +46,14 @@ CUSTOM_AUTH = {
         "service_life_story_register_download", "req.method !== 'POST'", "requestUrl.search",
         "MAX_REQUEST_BYTES", "MAX_PDF_BYTES", "hasPdfSignature", "allowedOrigin",
         "Content-Security-Policy", "Cache-Control", "no-store",
+    ),
+    "nova-civic-poll": (
+        'NOVA_POLL_ENABLED', 'CAPTCHA_SECRET', 'CAPTCHA_SITE_KEY', 'HMAC_KEY.length >= 32',
+        'verify_jwt', 'ORIGINS.has(origin)', 'MAX_BODY_BYTES = 8192',
+        'size>MAX_BODY_BYTES', 'TextDecoder("utf-8",{fatal:true})',
+        'MIN_PUBLIC_BALLOTS = 10', 'nova_poll_public_counts',
+        'nova_poll_publication_state', 'confirmCaptcha(payload.captchaToken)',
+        'crypto.subtle.sign', 'Cache-Control', 'no-store', 'Referrer-Policy',
     ),
 }
 
@@ -135,8 +148,8 @@ def main() -> int:
         return 1
 
     actual = {path.name for path in FUNCTIONS.iterdir() if path.is_dir() and path.name != "_shared"}
-    missing = sorted(CANONICAL - actual)
-    extra = sorted(actual - CANONICAL)
+    missing = sorted(REVIEWED_SOURCE - actual)
+    extra = sorted(actual - REVIEWED_SOURCE)
     if missing:
         errors.append("Fonctions canoniques absentes du dépôt: " + ", ".join(missing))
     if extra:
@@ -150,13 +163,13 @@ def main() -> int:
 
     function_config = config.get("functions", {}) if isinstance(config, dict) else {}
     configured = set(function_config.keys()) if isinstance(function_config, dict) else set()
-    if configured != CANONICAL:
-        if CANONICAL - configured:
-            errors.append("Fonctions canoniques absentes de config.toml: " + ", ".join(sorted(CANONICAL - configured)))
-        if configured - CANONICAL:
-            errors.append("Fonctions non canoniques encore configurées: " + ", ".join(sorted(configured - CANONICAL)))
+    if configured != REVIEWED_SOURCE:
+        if REVIEWED_SOURCE - configured:
+            errors.append("Fonctions inventoriées absentes de config.toml: " + ", ".join(sorted(REVIEWED_SOURCE - configured)))
+        if configured - REVIEWED_SOURCE:
+            errors.append("Fonctions non révisées configurées: " + ", ".join(sorted(configured - REVIEWED_SOURCE)))
 
-    for slug in sorted(CANONICAL):
+    for slug in sorted(REVIEWED_SOURCE):
         cfg = function_config.get(slug, {}) if isinstance(function_config, dict) else {}
         verify = cfg.get("verify_jwt") if isinstance(cfg, dict) else None
         expected = slug not in CUSTOM_AUTH
@@ -258,7 +271,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 24 fonctions canoniques, JWT/custom auth cohérents, portes Livre I entitlement privées, actions sensibles bornées/no-store, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 24 fonctions canoniques et 1 fonction NOVA en prépublication uniquement, JWT/custom auth cohérents, accès et corps bornés; le workspace de production doit exclure la fonction NOVA jusqu'à revue explicite.")
     return 0
 
 
