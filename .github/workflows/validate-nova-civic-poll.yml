@@ -56,7 +56,7 @@ jobs:
         run: python scripts/smoke_nova_poll_edge.py
       - name: Construire l'artefact public isolé
         env:
-          SINJIRA_RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          SINJIRA_RELEASE_SHA: ${{ github.sha }}
         run: python scripts/build_netlify_public.py --output _site --standalone-netlify
       - name: Valider les liens et les ressources NOVA réellement publiables
         run: python scripts/validate_nova_release_artifact.py _site
