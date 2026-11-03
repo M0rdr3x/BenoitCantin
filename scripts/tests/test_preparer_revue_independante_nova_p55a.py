@@ -154,6 +154,14 @@ class TestP55A(unittest.TestCase):
         self.assertFalse(m.report()["independance_experts_authentifiee"])
     def test_48_no_cas_clos(self):
         self.assertEqual(m.report()["qualifications_definitives"],0)
+    def test_49_suspendue_transmise_sans_fiche_p55a(self):
+        self.upstream["dossiers"][0]["controles"][0]["etat"]="SUSPENDU"
+        with tempfile.TemporaryDirectory() as t:
+            src=Path(t)/"src.json"; out=Path(t)/"bilan.json"
+            m.p54z.write_new(src,self.upstream,private=True)
+            self.assertEqual(m.main(["--declarations-p54z",str(src),
+                                     "--bilan-public",str(out)]),0)
+            self.assertEqual(json.loads(out.read_text())["suspensions_p54z_heritees"],1)
 
 
 if __name__=="__main__":
