@@ -29,7 +29,9 @@ RETIRED = {
 
 CUSTOM_AUTH = {
     "nova-civic-poll": (
-        'NOVA_POLL_ENABLED', 'CAPTCHA_SECRET', 'CAPTCHA_SITE_KEY', 'HMAC_KEY.length >= 32',
+        "NOVA_POLL_ENABLED", "NOVA_POLL_TURNSTILE_SECRET",
+        "NOVA_POLL_TURNSTILE_SITE_KEY", "NOVA_POLL_HMAC_KEY",
+        'CAPTCHA_SECRET', 'CAPTCHA_SITE_KEY', 'HMAC_KEY.length >= 32',
         'ORIGINS.has(origin)', 'MAX_BODY_BYTES = 8192',
         'size>MAX_BODY_BYTES', 'TextDecoder("utf-8",{fatal:true})',
         'MIN_PUBLIC_BALLOTS = 10', 'nova_poll_public_counts',
