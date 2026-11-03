@@ -1,0 +1,82 @@
+{
+  "schema_version": "P55A-1",
+  "date_reference": "2026-11-03",
+  "exercice_source": 2024,
+  "chaine_reference": [
+    "P54U",
+    "P54W",
+    "P54X",
+    "P54Y",
+    "P54Z"
+  ],
+  "dossier_references": [
+    "P54E-V-001",
+    "P54E-M-001",
+    "P54O-DATE-001",
+    "P54E-M-002",
+    "P54E-M-003"
+  ],
+  "controles": [
+    "ORIGINE_ET_INTEGRITE_ORIGINAUX",
+    "CHAINE_CONSERVATION_HORS_GIT",
+    "BASE_LEGALE_ET_DROITS_ACCES",
+    "MANDAT_ECRIT_ET_PERIMETRE_EXPERTISE",
+    "QUALIFICATION_ET_INDEPENDANCE_EXPERTS",
+    "CONFLITS_INTERETS",
+    "CONTRE_LECTURE_VISUELLE_ET_NFKC",
+    "CONTRADICTIONS_ET_RESERVES",
+    "CONSOLIDATION_VILLE_RTC_SOMHAC",
+    "IMPACT_EMPLOIS_SERVICES_ET_POUVOIR_ACHAT"
+  ],
+  "etats": [
+    "NON_INSTRUIT",
+    "PREPARE_NON_ATTESTE",
+    "RESERVE",
+    "SUSPENDU"
+  ],
+  "protections": {
+    "aucun_expert_reel_designe": true,
+    "aucune_authentification_professionnelle": true,
+    "aucune_signature_ou_identite_dans_git": true,
+    "declarations_privees_hors_depot": true,
+    "fichiers_prives_0600_sans_liens_symboliques": true,
+    "ancrage_sha256_p54z_requis": true,
+    "chaine_p54z_complete_pour_preparation": true,
+    "suspensions_p54z_prioritaires": true,
+    "reserves_p55a_non_closes_automatiquement": true,
+    "aucun_contact_ni_demande_externe": true,
+    "aucun_fichier_original_publication_ci": true,
+    "aucun_montant_ou_texte_brut_public": true,
+    "aucun_avis_certifie_par_presence_fichier": true,
+    "cinq_occurrences_non_qualifiees": true,
+    "quatre_dossiers_p54e_ouverts": true,
+    "date_probable_a_examiner": true,
+    "quarante_taches_p54n_non_attestees": true,
+    "dix_blocages_p54o_non_leves": true,
+    "p54b_96_p54c_8_non_attestes": true,
+    "pas_double_compte_ville_rtc_somhac": true,
+    "maintien_emplois_et_services": true,
+    "pouvoir_achat_non_degrade": true,
+    "deux_regimes_constitutionnels_separes": true,
+    "aucune_certification_fiscale": true,
+    "aucune_fusion_main": true,
+    "aucun_changement_sinjira": true,
+    "no_go_automatique": true
+  },
+  "etat_initial": {
+    "observations": 5,
+    "controles_revue": 50,
+    "positions_p54z": 40,
+    "dossiers_p54e_ouverts": 4,
+    "occurrence_date_probable_non_certifiee": 1,
+    "taches_p54n_non_attestees": 40,
+    "blocages_p54o_non_leves": 10,
+    "controles_p54b_non_attestes": 96,
+    "controles_p54c_non_attestes": 8,
+    "experts_mandates_attestes": 0,
+    "avis_independants_authentifies": 0,
+    "signatures_authentifiees": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
