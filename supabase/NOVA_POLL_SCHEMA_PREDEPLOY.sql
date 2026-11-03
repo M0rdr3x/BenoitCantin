@@ -25,14 +25,37 @@ CREATE TABLE IF NOT EXISTS public.nova_poll_receipts (
   received_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (poll_version,token_hash)
 );
+CREATE TABLE IF NOT EXISTS public.nova_poll_public_counts (
+  poll_version text NOT NULL,
+  question_id text NOT NULL,
+  option_value smallint NOT NULL CHECK (option_value IN (-2,-1,0,1,2,9)),
+  total bigint NOT NULL DEFAULT 0 CHECK (total >= 0),
+  PRIMARY KEY(poll_version,question_id,option_value),
+  FOREIGN KEY(poll_version,question_id)
+    REFERENCES public.nova_poll_questions(poll_version,question_id) ON DELETE RESTRICT
+);
+CREATE TABLE IF NOT EXISTS public.nova_poll_publication_state (
+  poll_version text PRIMARY KEY,
+  published_ballots bigint NOT NULL DEFAULT 0 CHECK (published_ballots >= 0),
+  published_at timestamptz
+);
+COMMENT ON TABLE public.nova_poll_public_counts IS
+  'Instantané public par lot; aucun compteur brut temps reel n est exposé.';
+COMMENT ON TABLE public.nova_poll_publication_state IS
+  'Publication atomique au minimum tous les dix nouveaux bulletins, jamais plus d une fois par six heures.';
 COMMENT ON TABLE public.nova_poll_receipts IS
   'Anti-rejeu par jeton aléatoire haché côté serveur; aucun choix politique, compte, courriel ou IP n est conservé. À purger après clôture du sondage. Ne garantit pas une personne unique.';
 ALTER TABLE public.nova_poll_questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.nova_poll_counts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.nova_poll_receipts ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.nova_poll_questions,public.nova_poll_counts,public.nova_poll_receipts FROM PUBLIC,anon,authenticated;
+ALTER TABLE public.nova_poll_public_counts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.nova_poll_publication_state ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.nova_poll_questions,public.nova_poll_counts,public.nova_poll_receipts,public.nova_poll_public_counts,public.nova_poll_publication_state FROM PUBLIC,anon,authenticated;
 GRANT SELECT,INSERT,UPDATE ON public.nova_poll_questions,public.nova_poll_counts TO service_role;
 GRANT SELECT,INSERT ON public.nova_poll_receipts TO service_role;
+GRANT SELECT,INSERT,UPDATE ON public.nova_poll_public_counts,public.nova_poll_publication_state TO service_role;
+INSERT INTO public.nova_poll_publication_state(poll_version) VALUES('nova-consultation-v1')
+ ON CONFLICT (poll_version) DO NOTHING;
 
 -- Les formulations sont figées dès le premier vote. Une modification exige une nouvelle version.
 INSERT INTO public.nova_poll_questions(poll_version,question_id,ordinal,question_text) VALUES
@@ -56,6 +79,9 @@ AS $fn$
 DECLARE
   v_question_count integer;
   v_inserted integer;
+  v_total_ballots bigint;
+  v_published_ballots bigint;
+  v_published_at timestamptz;
 BEGIN
   IF p_version <> 'nova-consultation-v1'
      OR p_token_hash IS NULL OR p_token_hash !~ '^[0-9a-f]{64}$'
@@ -92,6 +118,28 @@ BEGIN
     FROM jsonb_each_text(p_answers) AS choice
   ON CONFLICT(poll_version,question_id,option_value)
     DO UPDATE SET total=public.nova_poll_counts.total+1;
+
+  -- La publication par lot atténue l'inférence de réponses individuelles
+  -- par comparaison répétée des résultats publics.
+  SELECT published_ballots,published_at
+   INTO v_published_ballots,v_published_at
+   FROM public.nova_poll_publication_state
+   WHERE poll_version=p_version FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Publication non configurée' USING ERRCODE='55000'; END IF;
+  SELECT count(*) INTO v_total_ballots
+    FROM public.nova_poll_receipts WHERE poll_version=p_version;
+  IF v_total_ballots >= 10
+     AND v_total_ballots - v_published_ballots >= 10
+     AND (v_published_at IS NULL OR now() - v_published_at >= interval '6 hours') THEN
+    INSERT INTO public.nova_poll_public_counts(poll_version,question_id,option_value,total)
+      SELECT poll_version,question_id,option_value,total
+      FROM public.nova_poll_counts WHERE poll_version=p_version
+      ON CONFLICT(poll_version,question_id,option_value)
+      DO UPDATE SET total=EXCLUDED.total;
+    UPDATE public.nova_poll_publication_state
+      SET published_ballots=v_total_ballots,published_at=now()
+      WHERE poll_version=p_version;
+  END IF;
   RETURN 'accepted';
 END;
 $fn$;
