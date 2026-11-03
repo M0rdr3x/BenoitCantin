@@ -1,0 +1,72 @@
+name: Projet Nova P55B - Sources officielles sans certification
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p55b.yml"
+      - "scripts/controler_acquisition_sources_nova_p55b.py"
+      - "scripts/tests/test_controler_acquisition_sources_nova_p55b.py"
+      - "projets/projet-nova/etudes/P55B_*"
+      - "scripts/preparer_revue_independante_nova_p55a.py"
+      - "scripts/preparer_passation_controlee_nova_p54z.py"
+      - "projets/projet-nova/etudes/P54H_*"
+      - "projets/projet-nova/etudes/P54Q_*"
+      - "projets/projet-nova/etudes/P54E_*"
+      - "projets/projet-nova/etudes/P54O_*"
+      - "projets/projet-nova/etudes/P55A_*"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verification-sources-hors-reseau:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: 62 tests - pas de pieces reelles en CI
+        run: |
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover("scripts/tests",pattern="test_controler_acquisition_sources_nova_p55b.py")
+          assert suite.countTestCases()==62,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Bilan neutre uniquement
+        run: |
+          python scripts/controler_acquisition_sources_nova_p55b.py --bilan-public p55b_bilan.json --plan-public p55b_plan.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          bilan=json.loads(Path("p55b_bilan.json").read_text("utf-8"))
+          plan=json.loads(Path("p55b_plan.json").read_text("utf-8"))
+          assert bilan["sources_non_fournies"]==2
+          assert bilan["copies_locales_concordantes_p54q_non_authentifiees"]==0
+          assert bilan["sources_authentifiees_par_emetteur"]==0
+          assert bilan["avis_independants_authentifies"]==0
+          assert bilan["economies_certifiees_cad"] is None
+          assert not bilan["envoi_externe_autorise"]
+          assert not bilan["engagement_depense_autorise"]
+          assert bilan["decision"]=="NO_GO_AUTOMATIQUE"
+          assert len(plan["operations_humaines"])==8
+          PY
+      - name: Refus de fausse approbation
+        run: |
+          set +e
+          python scripts/controler_acquisition_sources_nova_p55b.py --exiger-go
+          status=$?
+          set -e
+          test "$status" -eq 3
+      - name: Artefacts publics sans PDF ni fichier prive
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p55b-plan-et-bilan-non-certifiants
+          path: |
+            p55b_bilan.json
+            p55b_plan.json
+          retention-days: 7
