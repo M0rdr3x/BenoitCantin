@@ -1,0 +1,297 @@
+{
+  "schema": "nova-sinjira-g0-acquisition/v1",
+  "document_id": "NOVA-SINJ-G0-SAN-001",
+  "project": "Projet Nova",
+  "prepared_on": "2026-11-03",
+  "status": "PLAN_NON_TRANSMIS_NON_AUTORISE",
+  "purpose": "Organiser la collecte des preuves manquantes du diagnostic de première ligne; aucune demande officielle n'a été envoyée par la création de ce fichier.",
+  "privacy_policy": "Préférer les données publiques ou agrégées. Aucune donnée nominative et aucun dossier patient ne sont autorisés par ce plan. Les autorisations légales et évaluations d'impact doivent précéder tout accès protégé.",
+  "reception_criteria": [
+    "Droits de diffusion établis avant publication.",
+    "Champ du service, période et territoire explicitement définis.",
+    "Qualité de la source vérifiée et version d'extraction conservée.",
+    "Compte des cas difficiles et refus, avec protection statistique des petits groupes.",
+    "Coûts publics et économiques réconciliés, sans double comptage.",
+    "Validation méthodologique indépendante consignée avant publication de conclusions."
+  ],
+  "demandes": [
+    {
+      "id": "M01",
+      "objet": "Définition clinique, admissibilité et statut du service",
+      "autorites_candidates": [
+        "RAMQ",
+        "Santé Québec",
+        "autorités professionnelles compétentes"
+      ],
+      "contenu_requis": "Avis écrit sur le panier de services, conditions de remboursement, lieu, statut des professionnels et définition d'un épisode comparable",
+      "format_acceptable": "documentation juridique et clinique agrégée",
+      "statut": "NON_TRANSMISE",
+      "autorite_confirmee": null,
+      "demande_envoyee_le": null,
+      "reponse_recue_le": null,
+      "source_extraction": null,
+      "lien_document_source": null,
+      "champs_de_metadonnees_exiges": [
+        "date_observation",
+        "date_extraction",
+        "territoire",
+        "population",
+        "unite",
+        "definition",
+        "numerateur_denominateur_si_applicable",
+        "qualite_et_limites",
+        "regles_diffusion"
+      ],
+      "proteger_donnees_personnelles": true,
+      "prealable_juridique": true,
+      "validation_independante": false
+    },
+    {
+      "id": "M02",
+      "objet": "Volumes d'épisodes par risque et territoire",
+      "autorites_candidates": [
+        "RAMQ",
+        "Santé Québec",
+        "équipes statistiques"
+      ],
+      "contenu_requis": "Comptes agrégés par région, période, code d'épisode et classe de complexité après suppression des petites cellules",
+      "format_acceptable": "tableau agrégé ou jeu ouvert anonymisé",
+      "statut": "NON_TRANSMISE",
+      "autorite_confirmee": null,
+      "demande_envoyee_le": null,
+      "reponse_recue_le": null,
+      "source_extraction": null,
+      "lien_document_source": null,
+      "champs_de_metadonnees_exiges": [
+        "date_observation",
+        "date_extraction",
+        "territoire",
+        "population",
+        "unite",
+        "definition",
+        "numerateur_denominateur_si_applicable",
+        "qualite_et_limites",
+        "regles_diffusion"
+      ],
+      "proteger_donnees_personnelles": true,
+      "prealable_juridique": false,
+      "validation_independante": false
+    },
+    {
+      "id": "M03",
+      "objet": "Délais de consultation et demandes non servies",
+      "autorites_candidates": [
+        "Santé Québec",
+        "responsables du GAMF/GAP"
+      ],
+      "contenu_requis": "Séries agrégées demande-triage-consultation avec médiane, p90, demandes en cours, ruptures et changements de définition",
+      "format_acceptable": "indicateurs agrégés région/période",
+      "statut": "NON_TRANSMISE",
+      "autorite_confirmee": null,
+      "demande_envoyee_le": null,
+      "reponse_recue_le": null,
+      "source_extraction": null,
+      "lien_document_source": null,
+      "champs_de_metadonnees_exiges": [
+        "date_observation",
+        "date_extraction",
+        "territoire",
+        "population",
+        "unite",
+        "definition",
+        "numerateur_denominateur_si_applicable",
+        "qualite_et_limites",
+        "regles_diffusion"
+      ],
+      "proteger_donnees_personnelles": true,
+      "prealable_juridique": false,
+      "validation_independante": false
+    },
+    {
+      "id": "M04",
+      "objet": "Coût complet de consultation et suivi",
+      "autorites_candidates": [
+        "RAMQ",
+        "Santé Québec",
+        "ministère responsable des finances"
+      ],
+      "contenu_requis": "Coûts par service comparable, honoraires, exploitation, capital, administration, dépenses aval, rapprochement budgétaire, méthode d'imputation",
+      "format_acceptable": "tableaux agrégés et méthode de comptabilité",
+      "statut": "NON_TRANSMISE",
+      "autorite_confirmee": null,
+      "demande_envoyee_le": null,
+      "reponse_recue_le": null,
+      "source_extraction": null,
+      "lien_document_source": null,
+      "champs_de_metadonnees_exiges": [
+        "date_observation",
+        "date_extraction",
+        "territoire",
+        "population",
+        "unite",
+        "definition",
+        "numerateur_denominateur_si_applicable",
+        "qualite_et_limites",
+        "regles_diffusion"
+      ],
+      "proteger_donnees_personnelles": true,
+      "prealable_juridique": false,
+      "validation_independante": false
+    },
+    {
+      "id": "M05",
+      "objet": "Main-d'œuvre et effets de déplacement",
+      "autorites_candidates": [
+        "Santé Québec",
+        "employeurs et représentants du personnel",
+        "organismes statistiques"
+      ],
+      "contenu_requis": "ETP et mouvements nets de professionnels, heures supplémentaires, conditions de travail et capacité de remplacement, sans dossiers nominatifs",
+      "format_acceptable": "statistiques agrégées et rapport méthodologique",
+      "statut": "NON_TRANSMISE",
+      "autorite_confirmee": null,
+      "demande_envoyee_le": null,
+      "reponse_recue_le": null,
+      "source_extraction": null,
+      "lien_document_source": null,
+      "champs_de_metadonnees_exiges": [
+        "date_observation",
+        "date_extraction",
+        "territoire",
+        "population",
+        "unite",
+        "definition",
+        "numerateur_denominateur_si_applicable",
+        "qualite_et_limites",
+        "regles_diffusion"
+      ],
+      "proteger_donnees_personnelles": true,
+      "prealable_juridique": false,
+      "validation_independante": false
+    },
+    {
+      "id": "M06",
+      "objet": "Sécurité et qualité clinique",
+      "autorites_candidates": [
+        "Santé Québec",
+        "ordres et agences responsables de qualité"
+      ],
+      "contenu_requis": "Événements cliniques, retours, suivi et résultats ajustés à la complexité selon méthodes validées",
+      "format_acceptable": "agrégats de qualité avec incertitude",
+      "statut": "NON_TRANSMISE",
+      "autorite_confirmee": null,
+      "demande_envoyee_le": null,
+      "reponse_recue_le": null,
+      "source_extraction": null,
+      "lien_document_source": null,
+      "champs_de_metadonnees_exiges": [
+        "date_observation",
+        "date_extraction",
+        "territoire",
+        "population",
+        "unite",
+        "definition",
+        "numerateur_denominateur_si_applicable",
+        "qualite_et_limites",
+        "regles_diffusion"
+      ],
+      "proteger_donnees_personnelles": true,
+      "prealable_juridique": false,
+      "validation_independante": false
+    },
+    {
+      "id": "M07",
+      "objet": "Frais usagers et aidants",
+      "autorites_candidates": [
+        "ISQ",
+        "organismes d'usagers",
+        "Santé Québec"
+      ],
+      "contenu_requis": "Frais additionnels et temps non rémunéré induits, avec enquêtes pertinentes et cadre de valorisation explicite",
+      "format_acceptable": "enquête agrégée et documentation",
+      "statut": "NON_TRANSMISE",
+      "autorite_confirmee": null,
+      "demande_envoyee_le": null,
+      "reponse_recue_le": null,
+      "source_extraction": null,
+      "lien_document_source": null,
+      "champs_de_metadonnees_exiges": [
+        "date_observation",
+        "date_extraction",
+        "territoire",
+        "population",
+        "unite",
+        "definition",
+        "numerateur_denominateur_si_applicable",
+        "qualite_et_limites",
+        "regles_diffusion"
+      ],
+      "proteger_donnees_personnelles": true,
+      "prealable_juridique": false,
+      "validation_independante": false
+    },
+    {
+      "id": "M08",
+      "objet": "Accès des cas complexes et couverture territoriale",
+      "autorites_candidates": [
+        "Santé Québec",
+        "autorités régionales",
+        "organismes communautaires"
+      ],
+      "contenu_requis": "Étendue des services, refus, réorientations, capacité de pointe et de secours, indicateurs régionaux comparables",
+      "format_acceptable": "tableaux d'accessibilité agrégés",
+      "statut": "NON_TRANSMISE",
+      "autorite_confirmee": null,
+      "demande_envoyee_le": null,
+      "reponse_recue_le": null,
+      "source_extraction": null,
+      "lien_document_source": null,
+      "champs_de_metadonnees_exiges": [
+        "date_observation",
+        "date_extraction",
+        "territoire",
+        "population",
+        "unite",
+        "definition",
+        "numerateur_denominateur_si_applicable",
+        "qualite_et_limites",
+        "regles_diffusion"
+      ],
+      "proteger_donnees_personnelles": true,
+      "prealable_juridique": false,
+      "validation_independante": false
+    },
+    {
+      "id": "M09",
+      "objet": "Validation légale, éthique et sécurité des données",
+      "autorites_candidates": [
+        "Juristes compétents",
+        "responsables de la vie privée",
+        "comités d'éthique si requis"
+      ],
+      "contenu_requis": "Avis sur les fondements d'échange de données, la protection des renseignements, les contrats, la couverture du régime et les autorisations",
+      "format_acceptable": "avis juridique/méthodologique; aucune donnée personnelle libre",
+      "statut": "NON_TRANSMISE",
+      "autorite_confirmee": null,
+      "demande_envoyee_le": null,
+      "reponse_recue_le": null,
+      "source_extraction": null,
+      "lien_document_source": null,
+      "champs_de_metadonnees_exiges": [
+        "date_observation",
+        "date_extraction",
+        "territoire",
+        "population",
+        "unite",
+        "definition",
+        "numerateur_denominateur_si_applicable",
+        "qualite_et_limites",
+        "regles_diffusion"
+      ],
+      "proteger_donnees_personnelles": true,
+      "prealable_juridique": true,
+      "validation_independante": false
+    }
+  ],
+  "keys": "Les clés M01-M09 correspondent à missing_before_g0_complete du diagnostic G0; aucune demande n'est réputée envoyée sans preuve."
+}
