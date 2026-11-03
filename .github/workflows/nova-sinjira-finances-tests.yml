@@ -1,0 +1,29 @@
+name: Nova-Sinjira - verifications financieres
+on:
+  push:
+    paths:
+      - "projets/projet-nova/assets/comparateur-financier-*.mjs"
+      - "projets/projet-nova/tests/*.test.mjs"
+      - "projets/projet-nova/data/registre-donnees-services-nova-sinjira.json"
+      - "projets/projet-nova/data/reperes-financiers-nova-sinjira-2026.json"
+      - ".github/workflows/nova-sinjira-finances-tests.yml"
+  pull_request:
+    paths:
+      - "projets/projet-nova/assets/comparateur-financier-*.mjs"
+      - "projets/projet-nova/tests/*.test.mjs"
+      - "projets/projet-nova/data/registre-donnees-services-nova-sinjira.json"
+      - "projets/projet-nova/data/reperes-financiers-nova-sinjira-2026.json"
+      - ".github/workflows/nova-sinjira-finances-tests.yml"
+permissions:
+  contents: read
+jobs:
+  verifications:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verifier les calculs et la provenance
+        run: node --test projets/projet-nova/tests/*.test.mjs
