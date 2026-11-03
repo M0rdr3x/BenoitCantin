@@ -14,7 +14,7 @@ CANONICAL = {
     "get-novel-file-url", "get-private-book-url", "life-story-delivery", "life-story-export", "personal-ai",
     "redeem-license-code", "revoke-my-contributions", "security-context", "send-game-report",
     "send-player-sheet", "submit-character-questionnaire", "submit-fracture-endgame",
-    "submit-game-contribution",
+    "submit-game-contribution", "nova-civic-poll",
 }
 
 RETIRED = {
@@ -23,6 +23,15 @@ RETIRED = {
 }
 
 CUSTOM_AUTH = {
+    "nova-civic-poll": (
+        "NOVA_POLL_ENABLED", "NOVA_POLL_TURNSTILE_SECRET",
+        "NOVA_POLL_TURNSTILE_SITE_KEY", "NOVA_POLL_HMAC_KEY",
+        "MAX_BODY_BYTES", "readLimitedJson", "confirmCaptcha",
+        "hashToken", "ORIGINS", "nova_poll_public_counts",
+        "nova_poll_publication_state", "MIN_PUBLIC_BALLOTS",
+        "if(!isOpen()) return respond(503",
+        "Cache-Control", "no-store", "Referrer-Policy",
+    ),
     "get-document-url": (
         "optionalUser", "project_access_rank", "doc.status!=='approved'",
         "doc.projects?.status!=='active'", "createSignedUrl", "MAX_REQUEST_BYTES", "UUID_RE",
@@ -258,7 +267,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 24 fonctions canoniques, JWT/custom auth cohérents, portes Livre I entitlement privées, actions sensibles bornées/no-store, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 25 fonctions canoniques, JWT/custom auth cohérents, portes Livre I entitlement privées, actions sensibles bornées/no-store, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
     return 0
 
 
