@@ -19,6 +19,9 @@ on:
       - 'vercel.json'
       - 'projets/projet-nova/netlify.toml'
       - 'scripts/test_nova_civic_poll.py'
+      - 'scripts/test_nova_poll_predeploy_security.py'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/build_supabase_production_workspace.py'
       - 'scripts/test_nova_boussole_runtime.cjs'
       - 'scripts/smoke_nova_poll_edge.py'
       - 'scripts/check_nova_a1.py'
@@ -31,6 +34,9 @@ on:
       - 'supabase/NOVA_POLL_SCHEMA_PREDEPLOY.sql'
       - 'supabase/functions/nova-civic-poll/**'
       - 'scripts/test_nova_civic_poll.py'
+      - 'scripts/test_nova_poll_predeploy_security.py'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/build_supabase_production_workspace.py'
 permissions:
   contents: read
 jobs:
@@ -44,6 +50,10 @@ jobs:
           python-version: '3.12'
       - name: Vérifier les invariants et la syntaxe
         run: python scripts/test_nova_civic_poll.py
+      - name: Tester le confinement SQL, JWT et le workspace de déploiement NOVA
+        run: |
+          python scripts/validate_edge_function_inventory.py
+          python scripts/test_nova_poll_predeploy_security.py
       - name: Configurer Node pour les tests du moteur
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
         with:
