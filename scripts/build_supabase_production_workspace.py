@@ -114,28 +114,38 @@ def main():
     # nous copiions son dossier. Refuser fermé tant que la revue SQL, CAPTCHA,
     # anti-abus et l'autorisation d'ouverture ne sont pas terminées.
     staged = out / 'functions' / 'nova-civic-poll'
-    if not staged.is_dir() or staged.is_symlink():
-        raise SystemExit('Le sondage NOVA en prépublication n a pas une source normale vérifiable.')
     cfg_path = out / 'config.toml'
     cfg_text = cfg_path.read_text('utf-8')
-    cfg_pattern = re.compile(
-        r'(?ms)^\[functions\.nova-civic-poll\]\s*\n'
-        r'verify_jwt\s*=\s*false\s*\Z'
-    )
-    if len(cfg_pattern.findall(cfg_text)) != 1:
-        raise SystemExit('Configuration NOVA inattendue: ne jamais déployer la route publique implicitement.')
-    cfg_text = cfg_pattern.sub('', cfg_text)
-    cfg_path.write_text(cfg_text, encoding='utf-8')
-    if 'nova-civic-poll' in tomllib.loads(cfg_text).get('functions', {}):
-        raise SystemExit('La fonction NOVA reste présente dans le config de production.')
-    shutil.rmtree(staged)
     candidate_sql = out / 'NOVA_POLL_SCHEMA_PREDEPLOY.sql'
-    if not candidate_sql.is_file():
-        raise SystemExit('Le SQL NOVA en préparation est manquant: revue requise.')
-    candidate_sql.unlink()
-    if staged.exists() or candidate_sql.exists():
-        raise SystemExit('Le sondage NOVA a fui dans le workspace de production.')
-    print('Prépublication NOVA isolée: fonction, configuration JWT et schéma SQL candidat exclus.')
+    staged_present = staged.exists() or staged.is_symlink()
+    configured = 'nova-civic-poll' in tomllib.loads(cfg_text).get('functions', {})
+    candidate_present = candidate_sql.is_file()
+    if any((staged_present, configured, candidate_present)):
+        # Source de production actuelle : les trois éléments doivent
+        # exister ENSEMBLE. Un candidat partiellement préparé est refusé.
+        if not all((staged_present, configured, candidate_present)):
+            raise SystemExit('Prépublication NOVA incohérente: source, JWT et SQL exigés ensemble.')
+        if not staged.is_dir() or staged.is_symlink():
+            raise SystemExit('Le sondage NOVA en prépublication n a pas une source normale vérifiable.')
+        cfg_pattern = re.compile(
+            r'(?ms)^\[functions\.nova-civic-poll\]\s*\n'
+            r'verify_jwt\s*=\s*false\s*\Z'
+        )
+        if len(cfg_pattern.findall(cfg_text)) != 1:
+            raise SystemExit('Configuration NOVA inattendue: déploiement public implicite interdit.')
+        cfg_text = cfg_pattern.sub('', cfg_text)
+        cfg_path.write_text(cfg_text, encoding='utf-8')
+        if 'nova-civic-poll' in tomllib.loads(cfg_text).get('functions', {}):
+            raise SystemExit('La fonction NOVA reste présente dans le config de production.')
+        shutil.rmtree(staged)
+        candidate_sql.unlink()
+        if staged.exists() or candidate_sql.exists():
+            raise SystemExit('Le sondage NOVA a fui dans le workspace de production.')
+        print('Prépublication NOVA isolée: fonction, configuration JWT et schéma SQL candidat exclus.')
+    else:
+        # Compatibilité avec les tests historiques sans sondage et les
+        # futurs workspaces où les trois sources ont été retirées ensemble.
+        print('Aucune source NOVA en prépublication dans ce workspace.')
 
     migout = out / 'migrations'
     migout.mkdir(parents=True, exist_ok=True)
