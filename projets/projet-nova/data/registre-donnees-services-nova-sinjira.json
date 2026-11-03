@@ -1,0 +1,569 @@
+{
+  "schema": "nova-sinjira-registre-donnees-service/v1",
+  "date_revue": "2026-11-03",
+  "status": "inventaire-des-besoins-sans-series-sectorielles-validees",
+  "projet": "Projet Nova",
+  "warning": "Il s'agit d'un registre de données à recueillir, pas de 14 budgets, ni de 14 politiques adoptées. Les URLs indiquent des points de départ possibles et ne prouvent pas la disponibilité de toutes les données nécessaires.",
+  "regles": [
+    "Ne jamais saisir un chiffre sans source, exercice, population, unité, qualité et périmètre.",
+    "Ne pas additionner dépenses consolidées et dépenses internes d'un organisme.",
+    "Ne pas imputer d'économies au budget sans récurrence, comparabilité et validation indépendante.",
+    "Mesurer les frais transférés aux citoyens et le coût de la capacité publique de réserve.",
+    "Protéger les petits effectifs, les renseignements personnels et les populations vulnérables."
+  ],
+  "champs_financiers_requis": [
+    "paiementPublic",
+    "administrationPublique",
+    "coutAvalPublic",
+    "ressourcesReelles",
+    "capitalAnnualise",
+    "fraisUsagers",
+    "tempsProches",
+    "transitionAnnuelle",
+    "reserveAnnuelle"
+  ],
+  "dossiers": [
+    {
+      "id": "NV-01",
+      "domaine": "Pouvoir d'achat",
+      "unite_comparaison_proposee": "ménage et période",
+      "indicateurs_proposes": "Revenu disponible réel après panier de biens et services essentiels, par taille de ménage et région",
+      "sources_institutionnelles_possibles": [
+        "Institut de la statistique du Québec"
+      ],
+      "adresses_de_depart": [],
+      "risque_de_comptabilisation": "revenus et prix comparables par période et ménage",
+      "etat_donnees": "à collecter et à valider",
+      "source_de_jeu_de_donnees_precis": null,
+      "date_valeur": null,
+      "periode_observation": null,
+      "territoire": null,
+      "population": null,
+      "nombre_unites": null,
+      "annee_de_prix": null,
+      "qualite_verifiee": false,
+      "chiffrage_valide": false,
+      "couts_par_mode": {
+        "public_actuel": null,
+        "public_reorganise": null,
+        "prive": null,
+        "cooperative": null,
+        "obnl": null
+      },
+      "affectation_personnel_validee": false,
+      "verifier_avant_pilote": [
+        "Droit applicable",
+        "Coût public et social complet",
+        "Contrefactuel documenté",
+        "Comparabilité et équité",
+        "Continuité territoriale",
+        "Audit indépendant"
+      ]
+    },
+    {
+      "id": "NV-02",
+      "domaine": "Fiscalité",
+      "unite_comparaison_proposee": "ménage ou entreprise et année fiscale",
+      "indicateurs_proposes": "Charge fiscale nette et prestations, par niveau de revenu et statut, selon le droit applicable",
+      "sources_institutionnelles_possibles": [
+        "Ministère des Finances du Québec"
+      ],
+      "adresses_de_depart": [
+        "https://www.quebec.ca/gouvernement/votre-gouvernement/budget-depenses/budget-2026-2027"
+      ],
+      "risque_de_comptabilisation": "comptes consolidés, assiettes, incitations, double comptage fédéral-provincial",
+      "etat_donnees": "à collecter et à valider",
+      "source_de_jeu_de_donnees_precis": null,
+      "date_valeur": null,
+      "periode_observation": null,
+      "territoire": null,
+      "population": null,
+      "nombre_unites": null,
+      "annee_de_prix": null,
+      "qualite_verifiee": false,
+      "chiffrage_valide": false,
+      "couts_par_mode": {
+        "public_actuel": null,
+        "public_reorganise": null,
+        "prive": null,
+        "cooperative": null,
+        "obnl": null
+      },
+      "affectation_personnel_validee": false,
+      "verifier_avant_pilote": [
+        "Droit applicable",
+        "Coût public et social complet",
+        "Contrefactuel documenté",
+        "Comparabilité et équité",
+        "Continuité territoriale",
+        "Audit indépendant"
+      ]
+    },
+    {
+      "id": "NV-03",
+      "domaine": "Santé première ligne",
+      "unite_comparaison_proposee": "épisode clinique standardisé",
+      "indicateurs_proposes": "Accès, délais p50/p90, sécurité, continuité et coûts ajustés à la complexité",
+      "sources_institutionnelles_possibles": [
+        "Santé Québec",
+        "RAMQ",
+        "ICIS"
+      ],
+      "adresses_de_depart": [
+        "https://www.quebec.ca/sante/systeme-et-services-de-sante/organisation-des-services/donnees-systeme-sante-quebecois-services/performance-reseau-sante-services-sociaux",
+        "https://www.ramq.gouv.qc.ca/fr/donnees-statistiques/ramq-quelques-chiffres"
+      ],
+      "risque_de_comptabilisation": "case-mix, ressources transversales, dotation et complications",
+      "etat_donnees": "à collecter et à valider",
+      "source_de_jeu_de_donnees_precis": null,
+      "date_valeur": null,
+      "periode_observation": null,
+      "territoire": null,
+      "population": null,
+      "nombre_unites": null,
+      "annee_de_prix": null,
+      "qualite_verifiee": false,
+      "chiffrage_valide": false,
+      "couts_par_mode": {
+        "public_actuel": null,
+        "public_reorganise": null,
+        "prive": null,
+        "cooperative": null,
+        "obnl": null
+      },
+      "affectation_personnel_validee": false,
+      "verifier_avant_pilote": [
+        "Droit applicable",
+        "Coût public et social complet",
+        "Contrefactuel documenté",
+        "Comparabilité et équité",
+        "Continuité territoriale",
+        "Audit indépendant"
+      ]
+    },
+    {
+      "id": "NV-04",
+      "domaine": "Logement",
+      "unite_comparaison_proposee": "logement habitable occupé et année",
+      "indicateurs_proposes": "Coût total pour ménages et collectivités, nombre net de logements habitables, qualité",
+      "sources_institutionnelles_possibles": [
+        "SCHL",
+        "Institut de la statistique du Québec",
+        "Municipalités"
+      ],
+      "adresses_de_depart": [],
+      "risque_de_comptabilisation": "comparer marché, logement social, logements neufs nets; coût du terrain",
+      "etat_donnees": "à collecter et à valider",
+      "source_de_jeu_de_donnees_precis": null,
+      "date_valeur": null,
+      "periode_observation": null,
+      "territoire": null,
+      "population": null,
+      "nombre_unites": null,
+      "annee_de_prix": null,
+      "qualite_verifiee": false,
+      "chiffrage_valide": false,
+      "couts_par_mode": {
+        "public_actuel": null,
+        "public_reorganise": null,
+        "prive": null,
+        "cooperative": null,
+        "obnl": null
+      },
+      "affectation_personnel_validee": false,
+      "verifier_avant_pilote": [
+        "Droit applicable",
+        "Coût public et social complet",
+        "Contrefactuel documenté",
+        "Comparabilité et équité",
+        "Continuité territoriale",
+        "Audit indépendant"
+      ]
+    },
+    {
+      "id": "NV-05",
+      "domaine": "Éducation",
+      "unite_comparaison_proposee": "année-élève comparable",
+      "indicateurs_proposes": "Résultats d'apprentissage, diplôme, soutien et ressources par élève",
+      "sources_institutionnelles_possibles": [
+        "Ministère de l'Éducation du Québec"
+      ],
+      "adresses_de_depart": [],
+      "risque_de_comptabilisation": "besoins particuliers, effectifs et transports scolaires",
+      "etat_donnees": "à collecter et à valider",
+      "source_de_jeu_de_donnees_precis": null,
+      "date_valeur": null,
+      "periode_observation": null,
+      "territoire": null,
+      "population": null,
+      "nombre_unites": null,
+      "annee_de_prix": null,
+      "qualite_verifiee": false,
+      "chiffrage_valide": false,
+      "couts_par_mode": {
+        "public_actuel": null,
+        "public_reorganise": null,
+        "prive": null,
+        "cooperative": null,
+        "obnl": null
+      },
+      "affectation_personnel_validee": false,
+      "verifier_avant_pilote": [
+        "Droit applicable",
+        "Coût public et social complet",
+        "Contrefactuel documenté",
+        "Comparabilité et équité",
+        "Continuité territoriale",
+        "Audit indépendant"
+      ]
+    },
+    {
+      "id": "NV-06",
+      "domaine": "Administration citoyenne",
+      "unite_comparaison_proposee": "dossier administratif finalisé",
+      "indicateurs_proposes": "Temps citoyen, erreurs, appels, plaintes et coût complet du dossier",
+      "sources_institutionnelles_possibles": [
+        "Ministères et organismes responsables"
+      ],
+      "adresses_de_depart": [],
+      "risque_de_comptabilisation": "guichets physiques et accès sans Internet inclus",
+      "etat_donnees": "à collecter et à valider",
+      "source_de_jeu_de_donnees_precis": null,
+      "date_valeur": null,
+      "periode_observation": null,
+      "territoire": null,
+      "population": null,
+      "nombre_unites": null,
+      "annee_de_prix": null,
+      "qualite_verifiee": false,
+      "chiffrage_valide": false,
+      "couts_par_mode": {
+        "public_actuel": null,
+        "public_reorganise": null,
+        "prive": null,
+        "cooperative": null,
+        "obnl": null
+      },
+      "affectation_personnel_validee": false,
+      "verifier_avant_pilote": [
+        "Droit applicable",
+        "Coût public et social complet",
+        "Contrefactuel documenté",
+        "Comparabilité et équité",
+        "Continuité territoriale",
+        "Audit indépendant"
+      ]
+    },
+    {
+      "id": "NV-07",
+      "domaine": "Travail et compétences",
+      "unite_comparaison_proposee": "personne en emploi et année",
+      "indicateurs_proposes": "Rétention, revenu réel, sécurité, formation et qualité de l'emploi",
+      "sources_institutionnelles_possibles": [
+        "Statistique Canada",
+        "Institut de la statistique du Québec",
+        "CNESST"
+      ],
+      "adresses_de_depart": [],
+      "risque_de_comptabilisation": "emploi déplacé entre fournisseurs et coûts de recrutement",
+      "etat_donnees": "à collecter et à valider",
+      "source_de_jeu_de_donnees_precis": null,
+      "date_valeur": null,
+      "periode_observation": null,
+      "territoire": null,
+      "population": null,
+      "nombre_unites": null,
+      "annee_de_prix": null,
+      "qualite_verifiee": false,
+      "chiffrage_valide": false,
+      "couts_par_mode": {
+        "public_actuel": null,
+        "public_reorganise": null,
+        "prive": null,
+        "cooperative": null,
+        "obnl": null
+      },
+      "affectation_personnel_validee": false,
+      "verifier_avant_pilote": [
+        "Droit applicable",
+        "Coût public et social complet",
+        "Contrefactuel documenté",
+        "Comparabilité et équité",
+        "Continuité territoriale",
+        "Audit indépendant"
+      ]
+    },
+    {
+      "id": "NV-08",
+      "domaine": "PME et production",
+      "unite_comparaison_proposee": "entreprise admissible et année",
+      "indicateurs_proposes": "Productivité, survie, retombées nettes et aides publiques temporaires",
+      "sources_institutionnelles_possibles": [
+        "Ministère de l'Économie du Québec",
+        "Statistique Canada"
+      ],
+      "adresses_de_depart": [],
+      "risque_de_comptabilisation": "subventions, prêts, placements et garanties à distinguer",
+      "etat_donnees": "à collecter et à valider",
+      "source_de_jeu_de_donnees_precis": null,
+      "date_valeur": null,
+      "periode_observation": null,
+      "territoire": null,
+      "population": null,
+      "nombre_unites": null,
+      "annee_de_prix": null,
+      "qualite_verifiee": false,
+      "chiffrage_valide": false,
+      "couts_par_mode": {
+        "public_actuel": null,
+        "public_reorganise": null,
+        "prive": null,
+        "cooperative": null,
+        "obnl": null
+      },
+      "affectation_personnel_validee": false,
+      "verifier_avant_pilote": [
+        "Droit applicable",
+        "Coût public et social complet",
+        "Contrefactuel documenté",
+        "Comparabilité et équité",
+        "Continuité territoriale",
+        "Audit indépendant"
+      ]
+    },
+    {
+      "id": "NV-09",
+      "domaine": "Familles, aînés et aide à domicile",
+      "unite_comparaison_proposee": "bénéficiaire suivi et année",
+      "indicateurs_proposes": "Autonomie, qualité de vie, sécurité, délais et temps des proches aidants",
+      "sources_institutionnelles_possibles": [
+        "Santé Québec",
+        "RAMQ",
+        "Ministère de la Famille"
+      ],
+      "adresses_de_depart": [
+        "https://www.quebec.ca/sante/systeme-et-services-de-sante/organisation-des-services/donnees-systeme-sante-quebecois-services/performance-reseau-sante-services-sociaux"
+      ],
+      "risque_de_comptabilisation": "éviter transfert de charge non payée vers les familles",
+      "etat_donnees": "à collecter et à valider",
+      "source_de_jeu_de_donnees_precis": null,
+      "date_valeur": null,
+      "periode_observation": null,
+      "territoire": null,
+      "population": null,
+      "nombre_unites": null,
+      "annee_de_prix": null,
+      "qualite_verifiee": false,
+      "chiffrage_valide": false,
+      "couts_par_mode": {
+        "public_actuel": null,
+        "public_reorganise": null,
+        "prive": null,
+        "cooperative": null,
+        "obnl": null
+      },
+      "affectation_personnel_validee": false,
+      "verifier_avant_pilote": [
+        "Droit applicable",
+        "Coût public et social complet",
+        "Contrefactuel documenté",
+        "Comparabilité et équité",
+        "Continuité territoriale",
+        "Audit indépendant"
+      ]
+    },
+    {
+      "id": "NV-10",
+      "domaine": "Justice et sécurité",
+      "unite_comparaison_proposee": "dossier clôturé de gravité comparable",
+      "indicateurs_proposes": "Délai médian et p90, recours, sécurité, coût public et social",
+      "sources_institutionnelles_possibles": [
+        "Ministère de la Justice du Québec",
+        "Statistique Canada"
+      ],
+      "adresses_de_depart": [],
+      "risque_de_comptabilisation": "droit procédural et comparabilité des dossiers",
+      "etat_donnees": "à collecter et à valider",
+      "source_de_jeu_de_donnees_precis": null,
+      "date_valeur": null,
+      "periode_observation": null,
+      "territoire": null,
+      "population": null,
+      "nombre_unites": null,
+      "annee_de_prix": null,
+      "qualite_verifiee": false,
+      "chiffrage_valide": false,
+      "couts_par_mode": {
+        "public_actuel": null,
+        "public_reorganise": null,
+        "prive": null,
+        "cooperative": null,
+        "obnl": null
+      },
+      "affectation_personnel_validee": false,
+      "verifier_avant_pilote": [
+        "Droit applicable",
+        "Coût public et social complet",
+        "Contrefactuel documenté",
+        "Comparabilité et équité",
+        "Continuité territoriale",
+        "Audit indépendant"
+      ]
+    },
+    {
+      "id": "NV-11",
+      "domaine": "Régions et mobilité",
+      "unite_comparaison_proposee": "déplacement accessible et segment territorial",
+      "indicateurs_proposes": "Ponctualité, couverture, accessibilité, sécurité et coût complet",
+      "sources_institutionnelles_possibles": [
+        "Municipalités",
+        "Ministère des Transports du Québec"
+      ],
+      "adresses_de_depart": [],
+      "risque_de_comptabilisation": "desserte rurale, faible densité et heures creuses",
+      "etat_donnees": "à collecter et à valider",
+      "source_de_jeu_de_donnees_precis": null,
+      "date_valeur": null,
+      "periode_observation": null,
+      "territoire": null,
+      "population": null,
+      "nombre_unites": null,
+      "annee_de_prix": null,
+      "qualite_verifiee": false,
+      "chiffrage_valide": false,
+      "couts_par_mode": {
+        "public_actuel": null,
+        "public_reorganise": null,
+        "prive": null,
+        "cooperative": null,
+        "obnl": null
+      },
+      "affectation_personnel_validee": false,
+      "verifier_avant_pilote": [
+        "Droit applicable",
+        "Coût public et social complet",
+        "Contrefactuel documenté",
+        "Comparabilité et équité",
+        "Continuité territoriale",
+        "Audit indépendant"
+      ]
+    },
+    {
+      "id": "NV-12",
+      "domaine": "Démocratie et contrats publics",
+      "unite_comparaison_proposee": "marché public ou décision comparable",
+      "indicateurs_proposes": "Délai de publication, coût final, avenants, plaintes, accès à l'audit",
+      "sources_institutionnelles_possibles": [
+        "SEAO",
+        "Autorité des marchés publics"
+      ],
+      "adresses_de_depart": [
+        "https://www.quebec.ca/gouvernement/faire-affaire-gouvernement/preparer-marches-publics/occasions-affaires"
+      ],
+      "risque_de_comptabilisation": "montant final des marchés, indépendance des contrôles et seuils légaux",
+      "etat_donnees": "à collecter et à valider",
+      "source_de_jeu_de_donnees_precis": null,
+      "date_valeur": null,
+      "periode_observation": null,
+      "territoire": null,
+      "population": null,
+      "nombre_unites": null,
+      "annee_de_prix": null,
+      "qualite_verifiee": false,
+      "chiffrage_valide": false,
+      "couts_par_mode": {
+        "public_actuel": null,
+        "public_reorganise": null,
+        "prive": null,
+        "cooperative": null,
+        "obnl": null
+      },
+      "affectation_personnel_validee": false,
+      "verifier_avant_pilote": [
+        "Droit applicable",
+        "Coût public et social complet",
+        "Contrefactuel documenté",
+        "Comparabilité et équité",
+        "Continuité territoriale",
+        "Audit indépendant"
+      ]
+    },
+    {
+      "id": "NV-13",
+      "domaine": "Environnement et réseaux vitaux",
+      "unite_comparaison_proposee": "unité de service eau, énergie ou déchets",
+      "indicateurs_proposes": "Sécurité sanitaire, continuité, coût de cycle de vie et état des milieux",
+      "sources_institutionnelles_possibles": [
+        "Ministère de l'Environnement du Québec",
+        "Municipalités",
+        "Hydro-Québec"
+      ],
+      "adresses_de_depart": [],
+      "risque_de_comptabilisation": "capital, risques climatiques et externalités",
+      "etat_donnees": "à collecter et à valider",
+      "source_de_jeu_de_donnees_precis": null,
+      "date_valeur": null,
+      "periode_observation": null,
+      "territoire": null,
+      "population": null,
+      "nombre_unites": null,
+      "annee_de_prix": null,
+      "qualite_verifiee": false,
+      "chiffrage_valide": false,
+      "couts_par_mode": {
+        "public_actuel": null,
+        "public_reorganise": null,
+        "prive": null,
+        "cooperative": null,
+        "obnl": null
+      },
+      "affectation_personnel_validee": false,
+      "verifier_avant_pilote": [
+        "Droit applicable",
+        "Coût public et social complet",
+        "Contrefactuel documenté",
+        "Comparabilité et équité",
+        "Continuité territoriale",
+        "Audit indépendant"
+      ]
+    },
+    {
+      "id": "NV-14",
+      "domaine": "Langue, intégration et droits",
+      "unite_comparaison_proposee": "personne admissible et période",
+      "indicateurs_proposes": "Délai d'accès, efficacité de l'accompagnement, droits et disponibilité régionale",
+      "sources_institutionnelles_possibles": [
+        "Ministères compétents",
+        "Statistique Canada"
+      ],
+      "adresses_de_depart": [],
+      "risque_de_comptabilisation": "ne pas utiliser données sensibles ou catégories protégées pour discriminer",
+      "etat_donnees": "à collecter et à valider",
+      "source_de_jeu_de_donnees_precis": null,
+      "date_valeur": null,
+      "periode_observation": null,
+      "territoire": null,
+      "population": null,
+      "nombre_unites": null,
+      "annee_de_prix": null,
+      "qualite_verifiee": false,
+      "chiffrage_valide": false,
+      "couts_par_mode": {
+        "public_actuel": null,
+        "public_reorganise": null,
+        "prive": null,
+        "cooperative": null,
+        "obnl": null
+      },
+      "affectation_personnel_validee": false,
+      "verifier_avant_pilote": [
+        "Droit applicable",
+        "Coût public et social complet",
+        "Contrefactuel documenté",
+        "Comparabilité et équité",
+        "Continuité territoriale",
+        "Audit indépendant"
+      ]
+    }
+  ]
+}
