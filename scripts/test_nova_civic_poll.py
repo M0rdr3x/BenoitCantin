@@ -37,6 +37,10 @@ assert [o["value"] for o in poll["options"]] == [-2, -1, 0, 1, 2, 9]
 builder = (ROOT / "scripts" / "build_netlify_public.py").read_text(encoding="utf-8")
 assert 'Path("projets/projet-nova/data/sondage-citoyen-v1.json")' in builder
 assert "sondage-citoyen.html" in html
+assert '"sondage-citoyen.html",' in (ROOT / "scripts" / "validate_seo_quality.py").read_text(encoding="utf-8")
+assert '"sondage-citoyen.html"' in (ROOT / "scripts" / "normalize_nova_seo.py").read_text(encoding="utf-8")
+for token in ('hreflang="fr-CA"', 'hreflang="x-default"', 'property="og:title"', 'name="twitter:card"', 'type="application/ld+json"'):
+    assert token in poll_html, token
 assert "boussole-electorale.html" in html
 assert "sondage-citoyen.html" in compass_html
 assert 'id="poll-adult"' in poll_html and 'id="poll-agree"' in poll_html
