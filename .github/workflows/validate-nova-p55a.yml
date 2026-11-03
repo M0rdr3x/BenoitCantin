@@ -1,0 +1,63 @@
+name: Projet Nova P55A - Revue independante preparatoire non certifiante
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p55a.yml"
+      - "scripts/preparer_revue_independante_nova_p55a.py"
+      - "scripts/tests/test_preparer_revue_independante_nova_p55a.py"
+      - "projets/projet-nova/etudes/P55A_*"
+      - "projets/projet-nova/etudes/P54Z_*"
+      - "scripts/preparer_passation_controlee_nova_p54z.py"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controle-revue-preparatoire:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Executer les 48 tests synthetiques P55A
+        run: |
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover("scripts/tests",pattern="test_preparer_revue_independante_nova_p55a.py")
+          assert suite.countTestCases()==48,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Produire bilan agregé sans source privee
+        run: |
+          python scripts/preparer_revue_independante_nova_p55a.py --bilan-public p55a_bilan.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p55a_bilan.json").read_text("utf-8"))
+          assert d["verifications_preparees"]==50
+          assert d["observations_non_certifiees"]==5
+          assert d["experts_mandates_attestes"]==0
+          assert d["avis_independants_authentifies"]==0
+          assert d["economies_certifiees_cad"] is None
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          assert not d["autorisation_envoi_externe"]
+          assert not d["autorisation_fusion_main"]
+          PY
+      - name: Refuser un faux GO
+        run: |
+          set +e
+          python scripts/preparer_revue_independante_nova_p55a.py --exiger-go
+          status=$?
+          set -e
+          test "$status" -eq 3
+      - name: Archiver exclusivement bilan sans pieces
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p55a-bilan-non-certifiant
+          path: p55a_bilan.json
+          retention-days: 7
