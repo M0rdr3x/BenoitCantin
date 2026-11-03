@@ -125,6 +125,9 @@ Les **valeurs observées de ACC-03, ACC-04, CLN-01, EQL-01, RH-01, FIN-01 et FIN
 - `data/registre-donnees-services-nova-sinjira.json` : inventaire des 14 chantiers; dossiers financiers sectoriels non certifiés.
 - `data/sources.json` : manifeste des **quatre** références officielles candidates existantes; **non modifié**.
 
+### Plan détaillé des demandes de données
+Les neuf rubriques `M01–M09` font l'objet du plan structuré `data/plan-acquisition-donnees-g0-sante.json`, qui associe à chacune les institutions candidates, les métadonnées exigées et les modalités de protection. **Statut : plan non transmis, demandes non envoyées, accès protégé non autorisé.** Les autorités candidates et les formats sont des hypothèses administratives, à confirmer avant toute démarche.
+
 ## 9. Doctrine Nova–Sinjira appliquée à ce dossier
 **Dignité** : le patient complexe n'est pas un coût à écarter.  
 **Vérité** : distinguer enquête, fichier administratif, hypothèse et expérience.  
