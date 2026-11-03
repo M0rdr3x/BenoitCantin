@@ -51,8 +51,12 @@ def read_json(path, limit=180000):
 
 def outside_repo(path):
     path = Path(path).expanduser().absolute()
-    require(path != ROOT and ROOT not in path.parents,
+    real = path.resolve(strict=False)
+    require(path != ROOT and ROOT not in path.parents
+            and real != ROOT and ROOT not in real.parents,
             "CHEMIN_DANS_DEPOT_INTERDIT")
+    require(not any(part.is_symlink() for part in (path, *path.parents)),
+            "LIEN_SYMBOLIQUE_DANS_CHEMIN_INTERDIT")
     return path
 
 
