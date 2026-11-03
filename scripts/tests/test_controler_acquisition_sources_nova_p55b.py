@@ -224,6 +224,36 @@ class TestP55B(unittest.TestCase):
     def test_62_no_automatic_savings(self):
         self.assertEqual(self.cfg["etat_initial"]["decision"],m.NO_GO)
         self.assertEqual(self.cfg["etat_initial"]["mandats_reels_signes"],0)
+    def test_63_chaine_p54z_p55a_maintient_suspension(self):
+        with tempfile.TemporaryDirectory() as t:
+            p54z=Path(t)/"p54z.json"
+            p55a=Path(t)/"p55a.json"
+            out=Path(t)/"public.json"
+            upstream=m.p54z.blank_model()
+            upstream["dossiers"][0]["controles"][0]["etat"]="SUSPENDU"
+            m.p54z.write_new(p54z,upstream,private=True)
+            _doc,sha=m.p55a.upstream(p54z)
+            m.p54z.write_new(p55a,m.p55a.model(sha),private=True)
+            self.assertEqual(m.main(["--declarations-p54z",str(p54z),
+                                     "--relecture-p55a",str(p55a),
+                                     "--bilan-public",str(out)]),0)
+            r=json.loads(out.read_text())
+            self.assertEqual(r["suspensions_p54z_heritees"],1)
+            self.assertEqual(r["avis_independants_authentifies"],0)
+    def test_64_chaine_sha_p55a_invalide_refuse(self):
+        with tempfile.TemporaryDirectory() as t:
+            p54z=Path(t)/"p54z.json"
+            p55a=Path(t)/"p55a.json"
+            m.p54z.write_new(p54z,m.p54z.blank_model(),private=True)
+            m.p54z.write_new(p55a,m.p55a.model("e"*64),private=True)
+            self.assertEqual(m.main(["--declarations-p54z",str(p54z),
+                                     "--relecture-p55a",str(p55a)]),2)
+    def test_65_statuts_vides_refuses(self):
+        with self.assertRaises(ValueError):
+            m.public_report(source_states={})
+    def test_66_booleen_non_admis_pour_suspensions(self):
+        with self.assertRaises(ValueError):
+            m.public_report(inherited=True)
 
 
 if __name__ == "__main__":
