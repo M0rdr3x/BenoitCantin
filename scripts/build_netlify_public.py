@@ -297,6 +297,9 @@ PROJECT_NOVA_PUBLIC_DATA_JSON = {
     Path("projets/projet-nova/data/documents.json"),
     Path("projets/projet-nova/data/rencontres.json"),
     Path("projets/projet-nova/data/sondage-citoyen-v1.json"),
+    # Source de repères financiers publics vérifiée : valeurs agrégées et
+    # URL institutionnelles seulement, jamais données nominatives ni jetons.
+    Path("projets/projet-nova/data/reperes-financiers-nova-sinjira-2026.json"),
     Path("projets/projet-nova/data/sources.json"),
 }
 

@@ -14,8 +14,13 @@ CANONICAL = {
     "get-novel-file-url", "get-private-book-url", "life-story-delivery", "life-story-export", "personal-ai",
     "redeem-license-code", "revoke-my-contributions", "security-context", "send-game-report",
     "send-player-sheet", "submit-character-questionnaire", "submit-fracture-endgame",
-    "submit-game-contribution", "nova-civic-poll",
+    "submit-game-contribution",
 }
+
+# Le sondage est une source approuvée pour tests, mais non déployable.
+# Le constructeur du workspace de production doit exclure source + TOML + SQL.
+STAGED_PUBLIC = {"nova-civic-poll"}
+REVIEWED_SOURCE = CANONICAL | STAGED_PUBLIC
 
 RETIRED = {
     "admin-reader", "generate-sinjira-character", "admin-literary", "validate-phone-v22",
@@ -26,11 +31,12 @@ CUSTOM_AUTH = {
     "nova-civic-poll": (
         "NOVA_POLL_ENABLED", "NOVA_POLL_TURNSTILE_SECRET",
         "NOVA_POLL_TURNSTILE_SITE_KEY", "NOVA_POLL_HMAC_KEY",
-        "MAX_BODY_BYTES", "readLimitedJson", "confirmCaptcha",
-        "hashToken", "ORIGINS", "nova_poll_public_counts",
-        "nova_poll_publication_state", "MIN_PUBLIC_BALLOTS",
-        "if(!isOpen()) return respond(503",
-        "Cache-Control", "no-store", "Referrer-Policy",
+        'CAPTCHA_SECRET', 'CAPTCHA_SITE_KEY', 'HMAC_KEY.length >= 32',
+        'ORIGINS.has(origin)', 'MAX_BODY_BYTES = 8192',
+        'size>MAX_BODY_BYTES', 'TextDecoder("utf-8",{fatal:true})',
+        'MIN_PUBLIC_BALLOTS = 10', 'nova_poll_public_counts',
+        'nova_poll_publication_state', 'confirmCaptcha(payload.captchaToken)',
+        'crypto.subtle.sign', 'Cache-Control', 'no-store', 'Referrer-Policy',
     ),
     "get-document-url": (
         "optionalUser", "project_access_rank", "doc.status!=='approved'",
@@ -144,8 +150,8 @@ def main() -> int:
         return 1
 
     actual = {path.name for path in FUNCTIONS.iterdir() if path.is_dir() and path.name != "_shared"}
-    missing = sorted(CANONICAL - actual)
-    extra = sorted(actual - CANONICAL)
+    missing = sorted(REVIEWED_SOURCE - actual)
+    extra = sorted(actual - REVIEWED_SOURCE)
     if missing:
         errors.append("Fonctions canoniques absentes du dépôt: " + ", ".join(missing))
     if extra:
@@ -159,13 +165,13 @@ def main() -> int:
 
     function_config = config.get("functions", {}) if isinstance(config, dict) else {}
     configured = set(function_config.keys()) if isinstance(function_config, dict) else set()
-    if configured != CANONICAL:
-        if CANONICAL - configured:
-            errors.append("Fonctions canoniques absentes de config.toml: " + ", ".join(sorted(CANONICAL - configured)))
-        if configured - CANONICAL:
-            errors.append("Fonctions non canoniques encore configurées: " + ", ".join(sorted(configured - CANONICAL)))
+    if configured != REVIEWED_SOURCE:
+        if REVIEWED_SOURCE - configured:
+            errors.append("Fonctions inventoriées absentes de config.toml: " + ", ".join(sorted(REVIEWED_SOURCE - configured)))
+        if configured - REVIEWED_SOURCE:
+            errors.append("Fonctions non révisées configurées: " + ", ".join(sorted(configured - REVIEWED_SOURCE)))
 
-    for slug in sorted(CANONICAL):
+    for slug in sorted(REVIEWED_SOURCE):
         cfg = function_config.get(slug, {}) if isinstance(function_config, dict) else {}
         verify = cfg.get("verify_jwt") if isinstance(cfg, dict) else None
         expected = slug not in CUSTOM_AUTH
@@ -267,7 +273,7 @@ def main() -> int:
             print("- " + error)
         return 1
 
-    print("OK inventaire Edge Functions: 25 fonctions canoniques, JWT/custom auth cohérents, portes Livre I entitlement privées, actions sensibles bornées/no-store, coffre et Mon IA derrière continuité de challenge serveur, aucune lecture directe des sources privées par Mon IA, UUID contribution non exposé, modèle PDF Fracture borné à l’origine approuvée, remise posthume POST sans jeton URL et aucun ancien appel Edge référencé.")
+    print("OK inventaire Edge Functions: 24 fonctions canoniques et 1 fonction NOVA en prépublication seulement; JWT/custom auth contrôlés, garde-fous Edge et workspace production isolé.")
     return 0
 
 
