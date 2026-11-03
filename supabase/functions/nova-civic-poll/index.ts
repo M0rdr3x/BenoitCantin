@@ -26,7 +26,7 @@ function respond(status: number, data: unknown, origin: string | null): Response
     headers.set("Access-Control-Allow-Methods","GET, POST, OPTIONS");
     headers.set("Access-Control-Allow-Headers","content-type");
   }
-  return new Response(JSON.stringify(data),{status,headers});
+  return new Response(status===204 ? null : JSON.stringify(data),{status,headers});
 }
 async function readLimitedJson(req: Request): Promise<unknown> {
   if(!req.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
