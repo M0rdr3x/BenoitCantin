@@ -1002,6 +1002,16 @@ def self_test_public_filesystem_boundary() -> list[str]:
             errors.append(f"Auto-test JSON: divulgation synthétique non refusée #{index}")
 
     rejected = (
+        # Les extensions Web légitimes ne rendent jamais un dotfile public.
+        # Cette règle s'applique aussi à la racine du dépôt, où l'ancienne
+        # allowlist acceptait un fichier comme .internal.js.
+        ".internal.js",
+        ".private.html",
+        ".credentials.css",
+        ".debug.mjs",
+        ".archive.webp",
+        ".SECRET.JS",
+        ".hidden.webmanifest",
         "projets/projet-nova/.gitignore",
         "projets/projet-nova/data/sondage-reponses.json",
         "projets/projet-nova/official/reference/notes-privees.md",
