@@ -1,0 +1,121 @@
+{
+  "schema_version": "P55C-1",
+  "date_reference": "2026-11-03",
+  "exercice": 2024,
+  "sources_jalons": [
+    "P54P",
+    "P54Q",
+    "P54Z",
+    "P55A",
+    "P55B"
+  ],
+  "observations": [
+    {
+      "reference": "P54E-V-001",
+      "source": "ville",
+      "index_observation_p54d": 0,
+      "pdf_index_zero": 102,
+      "zone": "FIN",
+      "qualification_initiale_indicative": "INDETERMINE"
+    },
+    {
+      "reference": "P54E-M-001",
+      "source": "mamh",
+      "index_observation_p54d": 1,
+      "pdf_index_zero": 162,
+      "zone": "DEBUT",
+      "qualification_initiale_indicative": "INDETERMINE"
+    },
+    {
+      "reference": "P54O-DATE-001",
+      "source": "mamh",
+      "index_observation_p54d": 2,
+      "pdf_index_zero": 162,
+      "zone": "FIN",
+      "qualification_initiale_indicative": "ANNEE_DATE_PROBABLE"
+    },
+    {
+      "reference": "P54E-M-002",
+      "source": "mamh",
+      "index_observation_p54d": 3,
+      "pdf_index_zero": 162,
+      "zone": "FIN",
+      "qualification_initiale_indicative": "INDETERMINE"
+    },
+    {
+      "reference": "P54E-M-003",
+      "source": "mamh",
+      "index_observation_p54d": 4,
+      "pdf_index_zero": 162,
+      "zone": "FIN",
+      "qualification_initiale_indicative": "INDETERMINE"
+    }
+  ],
+  "etats_de_revue": [
+    "NON_EXAMINE",
+    "REPERE_DECLARE_NON_AUTHENTIFIE",
+    "RESERVE_OUVERTE",
+    "SUSPENDU"
+  ],
+  "qualifications_declaratives": [
+    "NON_QUALIFIE",
+    "DATE_POSSIBLE_NON_CERTIFIEE",
+    "FOLIO_POSSIBLE_NON_CERTIFIE",
+    "REFERENCE_POSSIBLE_NON_CERTIFIEE",
+    "IDENTIFIANT_POSSIBLE_NON_CERTIFIE",
+    "VALEUR_A_EXAMINER_NON_CERTIFIEE"
+  ],
+  "contre_revues_declaratives": [
+    "NON_EFFECTUEE",
+    "DECLAREE_DISTINCTE_NON_AUTHENTIFIEE",
+    "DESACCORD_OUVERT"
+  ],
+  "protections": {
+    "deux_pdfs_originaux_historique_2024_exiges": true,
+    "aucune_verification_officielle_de_l_emetteur_par_sha": true,
+    "position_nfkc_n_est_pas_une_coordonnee_sur_page": true,
+    "aucune_reproduction_si_edition_differente": true,
+    "reutilise_p54q_et_p54p_sans_nouvel_extracteur": true,
+    "aucune_lecture_reelle_en_ci": true,
+    "cinq_references_ancres_p54e_p54o": true,
+    "fiche_privee_0600_hors_depot": true,
+    "liaison_fiche_aux_positions_reproduites": true,
+    "validation_p54z_p55a_avant_revue_declaree": true,
+    "suspensions_et_reserves_prioritaires": true,
+    "contre_lecture_declaree_non_assimilee_independance": true,
+    "zero_transmission_envoi_ou_contact": true,
+    "pas_d_identite_ni_signature_en_github": true,
+    "rapport_public_sans_offsets_ni_sha": true,
+    "aucun_avis_pro_humain_authentifie": true,
+    "aucune_economie_certifiee": true,
+    "quatre_dossiers_p54e_non_clos": true,
+    "date_probable_non_confirmee": true,
+    "deux_mandats_p54h_non_signes": true,
+    "quarante_taches_p54n_non_attestees": true,
+    "dix_blocages_p54o_non_leves": true,
+    "p54b_96_p54c_8_non_attestes": true,
+    "pas_de_double_compte_ville_rtc_somhac": true,
+    "emplois_services_pouvoir_achat_proteges": true,
+    "deux_regimes_constitutionnels_separes": true,
+    "aucun_changement_sinjira": true,
+    "aucune_fusion_main": true,
+    "no_go_automatique": true
+  },
+  "etat_initial": {
+    "sources_pdf_locales_fournies": 0,
+    "copies_historiques_concordantes": 0,
+    "positions_nfkc_reproduites": 0,
+    "observations": 5,
+    "dossiers_p54e_ouverts": 4,
+    "date_probable_non_certifiee": 1,
+    "fiches_revue_humaine_authentifiees": 0,
+    "avis_professionnels_authentifies": 0,
+    "mandats_p54h_signes": 0,
+    "taches_p54n_non_attestees": 40,
+    "blocages_p54o_non_leves": 10,
+    "controles_p54b_non_attestes": 96,
+    "controles_p54c_non_attestes": 8,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
