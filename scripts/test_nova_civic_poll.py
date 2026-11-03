@@ -37,6 +37,10 @@ assert [o["value"] for o in poll["options"]] == [-2, -1, 0, 1, 2, 9]
 builder = (ROOT / "scripts" / "build_netlify_public.py").read_text(encoding="utf-8")
 assert 'Path("projets/projet-nova/data/sondage-citoyen-v1.json")' in builder
 assert "sondage-citoyen.html" in html
+assert '"sondage-citoyen.html",' in (ROOT / "scripts" / "validate_seo_quality.py").read_text(encoding="utf-8")
+assert '"sondage-citoyen.html"' in (ROOT / "scripts" / "normalize_nova_seo.py").read_text(encoding="utf-8")
+for token in ('hreflang="fr-CA"', 'hreflang="x-default"', 'property="og:title"', 'name="twitter:card"', 'type="application/ld+json"'):
+    assert token in poll_html, token
 assert "boussole-electorale.html" in html
 assert "sondage-citoyen.html" in compass_html
 assert 'id="poll-adult"' in poll_html and 'id="poll-agree"' in poll_html
@@ -59,6 +63,9 @@ assert "ENABLE ROW LEVEL SECURITY" in sql
 assert "REVOKE ALL ON FUNCTION public.nova_poll_submit" in sql
 assert "GRANT EXECUTE ON FUNCTION public.nova_poll_submit" in sql
 assert "[functions.nova-civic-poll]" in config
+inventory = (ROOT / "scripts" / "validate_edge_function_inventory.py").read_text(encoding="utf-8")
+assert '"nova-civic-poll"' in inventory
+assert '"NOVA_POLL_HMAC_KEY"' in inventory
 for path in ("netlify.toml", "vercel.json", "projets/projet-nova/netlify.toml"):
     deployment = (ROOT / path).read_text(encoding="utf-8")
     assert "https://challenges.cloudflare.com" in deployment, path
@@ -68,6 +75,10 @@ assert "results.filter(r => r.score !== null)" not in compass_js[
     compass_js.index("function renderRadar"):compass_js.index("function coveragePercent")
 ], "Le radar ne doit jamais réindexer les axes partiels"
 assert "const complete = points.every" in compass_js
+assert "bucket.primaryAnswered >= axisMinimumAnswered" in compass_js
+assert compass["methodology"]["axisMinimumAnswered"] == 2
+assert "calculableAxes" in compass_js
+assert (ROOT / "scripts" / "test_nova_boussole_runtime.cjs").is_file()
 assert "compass-radar-marker" in compass_js
 assert "renderRadar(results)" in compass_js
 assert "partyComparison" in compass

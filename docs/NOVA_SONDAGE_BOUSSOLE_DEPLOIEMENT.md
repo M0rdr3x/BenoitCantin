@@ -10,21 +10,30 @@
 - `projets/projet-nova/data/sondage-citoyen-v1.json` : huit formulations **provisoires** extraites *sans modification* de la Boussole Nova. Ne pas présumer qu'il s'agit du questionnaire historiquement approuvé sans comparaison avec les questions soumises antérieurement.
 - `projets/projet-nova/assets/sondage-citoyen.{js,css}` : parcours anonyme et visualisation accessible.
 - `supabase/functions/nova-civic-poll/index.ts` : API autonome avec limites de taille, validation d'origine, Turnstile, HMAC serveur, dépouillement atomique, seuil de publication et publication par lots espacés.
-- `supabase/NOVA_POLL_SCHEMA_PREDEPLOY.sql` : script de schéma proposé, **non exécuté lors de cette livraison**.
+- `supabase/NOVA_POLL_SCHEMA_PREDEPLOY.sql` : script de schéma déployé sur Supabase en mode préouverture le 3 novembre 2026; ce fichier reste la référence de vérification.
 - `projets/projet-nova/assets/boussole-electorale.js` : radar : les 16 axes conservent leurs positions même si des questions sont passées.
 - `scripts/test_nova_civic_poll.py` : contrôles statiques en CI.
+
+## État technique contrôlé le 3 novembre 2026
+
+- Supabase projet `gpvivleexywljowcqkru` : cinq tables `nova_poll_*` créées et RLS activée, droits publics de lecture/écriture refusés.
+- Base : huit questions préparatoires, **zéro bulletin**, zéro choix comptabilisé et zéro instantané public.
+- Fonction serveur `nova-civic-poll` version 1 : déployée, sans authentification JWT générique mais avec accès public en lecture protégé par origine et écriture fermée sans variables d'activation et Turnstile.
+- La fonction ne doit **pas** être déclarée prête à recueillir des avis politiques tant que l'environnement, les secrets, la vérification Cloudflare, les tests de charge/anti-abus et la conformité n'ont pas été passés.
+- Le questionnaire V1 contient huit questions sélectionnées dans la boussole, **qui ne peuvent pas être présumées identiques aux questions fournies auparavant sans vérification du document d'origine**.
+- Une fois le scrutin ouvert et des bulletins reçus, traiter les changements de questions comme une nouvelle version : ne pas réécrire rétroactivement les compteurs.
 
 ## Prérequis avant ouverture effective du vote
 
 1. **Valider la formulation des huit questions** avec le texte approuvé et faire une révision de neutralité, accessibilité, clarté, bilinguisme si requis et conformité. Conserver le corpus source et la version de publication sans réécrire les questions après le premier bulletin.
 2. **Revue sécurité et confidentialité avant collecte**, y compris l'évaluation du service Cloudflare Turnstile, de Supabase, de leur traitement de données techniques, des durées de conservation, de la Loi 25 et des obligations légales applicables. Prévoir contact, registre d'incidents et responsabilités.
-3. Examiner `supabase/NOVA_POLL_SCHEMA_PREDEPLOY.sql` et le déployer via une migration formelle Supabase en fenêtre de changement maîtrisée. Confirmer que les trois tables ont **RLS activée** et qu'aucun rôle public `anon` / `authenticated` ne peut interroger, modifier les compteurs ou lancer `nova_poll_submit`.
+3. **Infrastructure installée le 3 novembre 2026** : migration `nova_poll_private_aggregates_prelaunch_20261103` appliquée au projet Supabase `gpvivleexywljowcqkru`. Les cinq tables ont **RLS activée** ; vérification SQL : rôles `anon` et `authenticated` sans lecture, écriture ni exécution de `nova_poll_submit`; rôle `service_role` réservé au serveur. Contrôler à nouveau après toute évolution de schéma.
 4. Configurer Cloudflare Turnstile pour les domaines `www.benoitcantin.com` et `benoitcantin.com`. Créer un secret HMAC long, aléatoire, dédié, non partagé et **non publié dans Git**. Configurer les variables privées dans Supabase : `NOVA_POLL_TURNSTILE_SECRET`, `NOVA_POLL_TURNSTILE_SITE_KEY`, `NOVA_POLL_HMAC_KEY`, `NOVA_POLL_ENABLED=false` par défaut. Supabase fournit `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` côté fonction ; jamais les afficher au navigateur.
-5. Déployer `nova-civic-poll` avec `verify_jwt=false` **uniquement après les tests**. Contrôler que cette API ne répond qu'aux origines autorisées. Attention : la validation du seul header Origin n'est pas une authentification ; la protection serveur repose également sur Turnstile, la validation stricte et le refus des privilèges directs aux clients.
-6. Exécuter les tests négatifs et positifs en environnement de préproduction : hors origine, préflight, appel sans CAPTCHA, CAPTCHA invalide, âge non confirmé, questionnaire incomplet, doublon, replay, réponses hors plage, corps volumineux, erreurs réseau, refus de publication avant 10 bulletins, publication par lots d'au moins 10 nouveaux votes, délai minimal de 6 heures, interdiction d'accéder aux compteurs bruts et accès public uniquement aux instantanés agrégés.
+5. **Fonction Edge installée le 3 novembre 2026**, version 1, `verify_jwt=false`, en mode fermeture de vote par défaut (`NOVA_POLL_ENABLED` absent ou différent de `true`). Avant activation, contrôler les appels navigateur et les tests d'origin. Attention : la validation du seul header Origin n'est pas une authentification ; la protection serveur repose également sur Turnstile, la validation stricte et le refus des privilèges directs aux clients.
+6. **Reste à faire avant activation :** exécuter les tests négatifs et positifs en environnement de préproduction : hors origine, préflight, appel sans CAPTCHA, CAPTCHA invalide, âge non confirmé, questionnaire incomplet, doublon, replay, réponses hors plage, corps volumineux, erreurs réseau, refus de publication avant 10 bulletins, publication par lots d'au moins 10 nouveaux votes, délai minimal de 6 heures, interdiction d'accéder aux compteurs bruts et accès public uniquement aux instantanés agrégés.
 7. Appliquer des mécanismes **complémentaires anti-abus** (contrôle de débit au niveau de la passerelle/WAF et surveillance anonymisée) sans stocker d'opinions politiques reliées à l'IP. **Ni CAPTCHA ni identifiant local ne garantissent l'unicité d'une personne** ; annoncer explicitement cette limite.
 8. Tester mobile, clavier, lecteur d'écran, focus, erreurs, qualité des données, sauvegardes, reprise et compatibilité navigateur.
-9. Après validation, fixer `published:true` dans `data/sondage-citoyen-v1.json`, puis activer `NOVA_POLL_ENABLED=true` dans les secrets serveur. Vérifier sur le **domaine public** le déroulement intégral puis observer les métriques techniques sans enregistrer de réponses individuelles.
+9. Après approbation du questionnaire définitif et validation de sécurité, fixer `published:true` dans `data/sondage-citoyen-v1.json`, puis activer `NOVA_POLL_ENABLED=true` dans les secrets serveur. Vérifier sur le **domaine public** le déroulement intégral puis observer les métriques techniques sans enregistrer de réponses individuelles.
 10. Conserver un protocole de clôture, de suppression des empreintes de jeton et de conservation des seuls compteurs agrégés. Le vote ne peut pas être supprimé individuellement après agrégation, puisqu'aucune association identité-réponse n'est conservée.
 
 ## Données, transparence, limitations
@@ -37,7 +46,7 @@ La Boussole électorale, en revanche, est **distincte du sondage** : ses 64 rép
 
 ## Publication et retour arrière
 
-- Lien GitHub : branche feature + PR vers `main`. La branche ne modifie pas le site de production jusqu'à fusion et déploiement réussi.
+- Le socle front-end a été fusionné sur `main` le 3 novembre 2026 (PR nº 733). La publication visible sur le domaine peut dépendre du pipeline d'hébergement. Ne jamais déduire sa présence de la fusion seule.
 - Un déploiement de la page statique avant la mise en service backend est sûr : formulaire visible, envoi **désactivé**.
 - Pour arrêter immédiatement la collecte : `NOVA_POLL_ENABLED=false` côté Supabase. Les résultats agrégés peuvent rester visibles si la base et l'API sont disponibles.
 - Conserver les journaux techniques de validation sans données sensibles et les résultats de vérification pour audit.

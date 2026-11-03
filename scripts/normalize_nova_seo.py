@@ -12,7 +12,7 @@ DEFAULT_IMAGE = "https://www.benoitcantin.com/projets/projet-nova/assets/nova-ba
 
 PAGES = [
     "index.html", "comprendre-nova.html", "programme.html", "documents.html",
-    "recrutement.html", "transparence.html", "comptabilite.html",
+    "recrutement.html", "sondage-citoyen.html", "transparence.html", "comptabilite.html",
     "registre-rencontres.html", "registre-conformite.html", "equipe.html",
     "propositions.html", "presse.html", "faq.html", "contact.html",
     "avis-legal.html", "confidentialite.html", "accessibilite.html",

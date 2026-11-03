@@ -204,9 +204,15 @@
       });
     });
 
+    // Une dimension ne reçoit aucun score tant que le seuil de questions
+    // principales défini dans le corpus méthodologique n'est pas atteint.
+    const configuredMinimum = state.data.methodology?.axisMinimumAnswered;
+    const axisMinimumAnswered = Number.isInteger(configuredMinimum) && configuredMinimum >= 1
+      ? configuredMinimum : 2;
     return Array.from(axes.values()).map(bucket => ({
       ...bucket.axis,
-      score: bucket.max ? Math.round((bucket.sum / bucket.max) * 100) : null,
+      score: bucket.max > 0 && bucket.primaryAnswered >= axisMinimumAnswered
+        ? Math.round((bucket.sum / bucket.max) * 100) : null,
       answered: bucket.primaryAnswered,
       total: bucket.primaryTotal,
       coverage: bucket.primaryTotal ? Math.round(bucket.primaryAnswered / bucket.primaryTotal * 100) : 0,
@@ -343,7 +349,8 @@
       linkedin.href = `${base}?url=${encodeURIComponent(pageUrl)}`;
     }
 
-    $("#compass-share-native")?.addEventListener("click", async () => {
+    const shareNative = $("#compass-share-native");
+    if(shareNative) shareNative.onclick = async () => {
       if(navigator.share){
         try{
           await navigator.share({title:subject,text:compact,url:pageUrl});
@@ -355,12 +362,13 @@
         await copyText(compact + "\n" + pageUrl);
         $("#compass-status").textContent = "Le partage natif n’est pas disponible; le résumé a été copié.";
       }
-    }, {once:true});
+    };
 
-    $("#compass-copy-result")?.addEventListener("click", async () => {
+    const copyResult = $("#compass-copy-result");
+    if(copyResult) copyResult.onclick = async () => {
       await copyText(full + "\n\n" + pageUrl);
       $("#compass-status").textContent = "Résumé copié dans le presse-papiers.";
-    }, {once:true});
+    };
   }
 
   async function copyText(text){
@@ -394,10 +402,11 @@
 
     const minimum = Math.ceil(state.data.questions.length * (state.data.methodology?.minimumAnsweredRatio ?? 0.5));
     const coverage = coveragePercent(results);
-    const partial = answered < minimum;
+    const calculableAxes = results.filter(result => result.score !== null).length;
+    const partial = answered < minimum || calculableAxes < state.data.axes.length;
     $("#compass-summary").textContent = partial
-      ? `Profil partiel : ${answered} propositions répondues sur ${state.data.questions.length}; couverture moyenne ${coverage} %. Les dimensions peu couvertes doivent être interprétées avec prudence.`
-      : `Profil calculé sur ${state.data.axes.length} dimensions; couverture moyenne ${coverage} %. Aucun score global gauche/droite n’est généré.`;
+      ? `Profil partiel : ${answered} propositions répondues sur ${state.data.questions.length}, ${calculableAxes}/${state.data.axes.length} dimensions calculables; couverture moyenne ${coverage} %. Une dimension nécessite au moins deux réponses principales.`
+      : `Profil calculé sur ${calculableAxes} dimensions; couverture moyenne ${coverage} %. Aucun score global gauche/droite n’est généré.`;
 
     $("#compass-results").hidden = false;
     configureSharing(results);
