@@ -134,9 +134,11 @@ class PublicationMonitorSecurityTests(unittest.TestCase):
         def fake_read(opener, route):
             observed.append(route)
             return (statuses[route], False)
-        with patch.object(boundary, "build_opener", return_value=object()), \\
-             patch.object(boundary, "read_status", side_effect=fake_read), \\
-             redirect_stdout(StringIO()):
+        with (
+            patch.object(boundary, "build_opener", return_value=object()),
+            patch.object(boundary, "read_status", side_effect=fake_read),
+            redirect_stdout(StringIO()),
+        ):
             self.assertEqual(boundary.live(mode="boundary"), 0)
             self.assertEqual(observed, ["/", *REQUIRED_ROUTES])
             observed.clear()
