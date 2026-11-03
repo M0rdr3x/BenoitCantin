@@ -25,8 +25,10 @@ function serverSecretKey() {
         (value) => typeof value === 'string' && value.length > 20
       );
       if (typeof fallback === 'string') return fallback;
-    } catch (error) {
-      console.warn('[SINJIRA auth] SUPABASE_SECRET_KEYS illisible, repli sur la clé legacy.', error);
+    } catch {
+      // JSON.parse peut inclure une partie de l'environnement secret dans
+      // son message : ne jamais journaliser l'exception ni sa valeur.
+      console.warn('[SINJIRA auth]', { code: 'SUPABASE_SECRET_KEYS_INVALID' });
     }
   }
   return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
@@ -80,11 +82,16 @@ async function assertAdminMfa(context: Awaited<ReturnType<typeof authenticatedCo
   });
   if (adminError || !isAdmin) throw new Error('ADMIN_REQUIRED');
 
-  const aal = await assuranceLevel(context).catch((error) => {
-    console.error('[SINJIRA admin auth] état MFA indisponible', error);
-    throw error;
+  const aal = await assuranceLevel(context).catch(() => {
+    // Les exceptions du fournisseur Auth peuvent contenir des détails de
+    // contexte : ne jamais les écrire dans les journaux administratifs.
+    console.error('[SINJIRA admin auth]', { code: 'ADMIN_MFA_STATE_UNAVAILABLE' });
+    throw new Error('MFA_STATE_UNAVAILABLE');
   });
-  if (aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') {
+  // Une fonction administrative requiert toujours une session authentifiée
+  // au niveau AAL2, même si aucun facteur MFA n'est encore enregistré.
+  // L'enrôlement initial se fait depuis le parcours Auth, hors route admin.
+  if (aal.currentLevel !== 'aal2') {
     throw new Error('MFA_REQUIRED');
   }
   return aal;
@@ -98,7 +105,9 @@ async function sensitiveStepUpEnabled(context: Awaited<ReturnType<typeof authent
     .eq('user_id', user.id)
     .maybeSingle();
   if (error) {
-    console.error('[SINJIRA sensitive auth] préférences de sécurité indisponibles', error);
+    // Les erreurs PostgREST peuvent inclure des champs de requête/identité.
+    // Garder un code constant uniquement, sans l'objet d'erreur fournisseur.
+    console.error('[SINJIRA sensitive auth]', { code: 'SECURITY_STATE_UNAVAILABLE' });
     throw new Error('SECURITY_STATE_UNAVAILABLE');
   }
   return data?.sensitive_step_up !== false;
@@ -107,9 +116,10 @@ async function sensitiveStepUpEnabled(context: Awaited<ReturnType<typeof authent
 async function assertSensitiveMfa(context: Awaited<ReturnType<typeof authenticatedContext>>) {
   if (!(await sensitiveStepUpEnabled(context))) return null;
 
-  const aal = await assuranceLevel(context).catch((error) => {
-    console.error('[SINJIRA sensitive auth] état MFA indisponible', error);
-    throw error;
+  const aal = await assuranceLevel(context).catch(() => {
+    // Refuser fermé sans exposer l'erreur Auth interne au client ou aux logs.
+    console.error('[SINJIRA sensitive auth]', { code: 'MFA_STATE_UNAVAILABLE' });
+    throw new Error('MFA_STATE_UNAVAILABLE');
   });
   if (aal.nextLevel !== 'aal2') throw new Error('MFA_SETUP_REQUIRED');
   if (aal.currentLevel !== 'aal2') throw new Error('MFA_REQUIRED');
@@ -200,10 +210,11 @@ export async function requiredSensitiveUser(req: Request) {
 /**
  * Contexte administrateur V24.4.67.
  *
- * Politique MFA progressive :
- * - aucun facteur MFA vérifié -> la session aal1 reste permise;
- * - un facteur vérifié existe et la session peut monter à aal2 -> aal2 devient obligatoire;
- * - état MFA impossible à vérifier -> refus fermé pour une opération administrative.
+ * Politique stricte MFA administrateur :
+ * - une session aal2 est obligatoire pour toute opération admin;
+ * - aucun facteur enrôlé ou session aal1 -> accès admin refusé (MFA_REQUIRED);
+ * - l'enrôlement TOTP se fait par Supabase Auth, hors des routes administratives;
+ * - état MFA impossible à vérifier -> refus fermé (MFA_STATE_UNAVAILABLE).
  */
 export async function requiredAdmin(req: Request) {
   const context = await authenticatedContext(req);

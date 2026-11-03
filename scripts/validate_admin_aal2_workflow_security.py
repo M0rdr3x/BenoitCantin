@@ -15,6 +15,8 @@ CONTRACT_TRIGGER = "      - 'scripts/validate_admin_aal2_workflow_security.py'"
 
 CHECKS = (
     'python scripts/validate_admin_privacy_safety_aal2_v24_5_14.py',
+    'node scripts/test_admin_aal2_strict.mjs',
+    'node scripts/test_auth_error_redaction.mjs',
     'python scripts/validate_site.py',
     'python scripts/validate_supabase.py',
     'python scripts/validate_production_migration_ledger.py',
@@ -49,6 +51,9 @@ def validate_text(text: str) -> None:
         fail('le contrat CI doit déclencher le workflow sur PR et push')
 
     for path in (
+        'scripts/test_admin_aal2_strict.mjs',
+        'scripts/test_auth_error_redaction.mjs',
+        'supabase/functions/_shared/auth.ts',
         'scripts/validate_site.py',
         'scripts/validate_supabase.py',
         'scripts/validate_production_migration_ledger.py',
