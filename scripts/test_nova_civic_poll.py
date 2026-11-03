@@ -50,6 +50,9 @@ assert "ENABLE ROW LEVEL SECURITY" in sql
 assert "REVOKE ALL ON FUNCTION public.nova_poll_submit" in sql
 assert "GRANT EXECUTE ON FUNCTION public.nova_poll_submit" in sql
 assert "[functions.nova-civic-poll]" in config
+for path in ("netlify.toml", "vercel.json", "projets/projet-nova/netlify.toml"):
+    deployment = (ROOT / path).read_text(encoding="utf-8")
+    assert "https://challenges.cloudflare.com" in deployment, path
 assert "resultsVisible" in edge and "showCounts?Object.fromEntries" in edge
 assert "localStorage.setItem" not in compass_js
 assert "results.filter(r => r.score !== null)" not in compass_js[
