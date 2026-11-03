@@ -50,7 +50,7 @@ def check_poll_edge(code: str) -> list[str]:
         if marker not in code:
             errors.append("Garde sondage absent: " + marker)
     # Eviter les tests par préfixe : 81920000 contient littéralement "8192".
-    if not re.search(r"\\bconst MAX_BODY_BYTES\\s*=\\s*8192\\s*;", code):
+    if not re.search(r"\bconst MAX_BODY_BYTES\s*=\s*8192\s*;", code):
         errors.append("Plafond du corps HTTP différent de 8192 octets.")
     # Le contrôle CORS de la réponse et le refus initial du handler sont
     # indépendants : une régression de l'un ne doit pas être cachée par l'autre.
