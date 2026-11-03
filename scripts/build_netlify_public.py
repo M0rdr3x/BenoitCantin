@@ -1468,6 +1468,11 @@ def validate_output(
                 continue
             if rel == Path("_redirects") and standalone_netlify:
                 continue
+        # Le marqueur de version est généré uniquement lors d'un build avec
+        # SINJIRA_RELEASE_SHA; sa valeur exacte vient d'être validée ci-dessus.
+        # Il n'est jamais admis comme fichier source arbitraire.
+        if rel == RELEASE_METADATA_PATH and expected_release_metadata is not None:
+            continue
         if not relative_path_allowed(rel):
             errors.append(f"Fichier hors allowlist présent dans le publish: {rel.as_posix()}")
 
