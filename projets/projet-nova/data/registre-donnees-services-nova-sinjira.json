@@ -114,7 +114,7 @@
         "https://www.ramq.gouv.qc.ca/fr/donnees-statistiques/ramq-quelques-chiffres"
       ],
       "risque_de_comptabilisation": "case-mix, ressources transversales, dotation et complications",
-      "etat_donnees": "à collecter et à valider",
+      "etat_donnees": "diagnostic d'accès partiel disponible; coûts comparatifs, qualité et ressources à collecter et valider",
       "source_de_jeu_de_donnees_precis": null,
       "date_valeur": null,
       "periode_observation": null,
@@ -139,7 +139,17 @@
         "Comparabilité et équité",
         "Continuité territoriale",
         "Audit indépendant"
-      ]
+      ],
+      "diagnostic_non_financier": {
+        "document_id": "NOVA-SINJ-G0-SAN-001",
+        "dossier_path": "official/working/diagnostic-g0-sante-premiere-ligne-v1.md",
+        "file_path": "data/diagnostic-g0-sante-premiere-ligne-2025.json",
+        "diagnosis": "partiel",
+        "porte_g0_franchie": false,
+        "source_publique": "https://statistique.quebec.ca/fr/document/utilisation-services-sante-et-services-sociaux/publication/utilisation-services-sante-sociaux-premiere-ligne-2025",
+        "released": "2026-11-02",
+        "conclusion": "L'enquête 2025 fournit des indicateurs d'affiliation et de recours aux urgences pour les adultes visés, sans coûts de prestation ni preuve causale."
+      }
     },
     {
       "id": "NV-04",
