@@ -93,10 +93,11 @@ def validate_target_hosting(statuses: Mapping[str, int], *, netlify: bool) -> li
 
 def validate_observations(statuses: Mapping[str, int], *, netlify: bool) -> list[str]:
     """Compatibilité du verdict historique strict : confidentialité ET cible."""
-    return validate_public_boundary(statuses) + [
-        error for error in validate_target_hosting(statuses, netlify=netlify)
-        if error not in validate_public_boundary(statuses)
-    ]
+    errors = validate_public_boundary(statuses)
+    for error in validate_target_hosting(statuses, netlify=netlify):
+        if error not in errors:
+            errors.append(error)
+    return errors
 
 
 def self_test() -> None:
