@@ -49,6 +49,13 @@ def check_poll_edge(code: str) -> list[str]:
     for marker in needed:
         if marker not in code:
             errors.append("Garde sondage absent: " + marker)
+    # Eviter les tests par préfixe : 81920000 contient littéralement "8192".
+    if not re.search(r"\\bconst MAX_BODY_BYTES\\s*=\\s*8192\\s*;", code):
+        errors.append("Plafond du corps HTTP différent de 8192 octets.")
+    # Le contrôle CORS de la réponse et le refus initial du handler sont
+    # indépendants : une régression de l'un ne doit pas être cachée par l'autre.
+    if code.count("ORIGINS.has(origin)") != 2:
+        errors.append("Contrôle des origines incomplet pour CORS ou pour le handler.")
     for raw in (
         'console.log(', 'console.error(', 'console.warn(',
         'await req.json()', 'await req.text()',
@@ -125,7 +132,8 @@ class NovaPollSecurityTests(unittest.TestCase):
                 original = 'if(!await confirmCaptcha(payload.captchaToken))'
                 begin = code.index(original, code.index('Deno.serve('))
                 search = code.index(old, begin)
-                altered = code[:begin] + code[search:search+len(old)] + '\n    ' + code[begin:]
+                injected = 'await db("nova_poll_questions?poll_version=eq."+VERSION+"&select=question_id");'
+                altered = code[:begin] + injected + '\n    ' + code[begin:]
             else:
                 altered = code.replace(old, replacement, 1)
             with self.subTest(name=name):
