@@ -10,6 +10,9 @@ from pathlib import Path
 import unittest
 from urllib.error import HTTPError
 from email.message import Message
+from contextlib import redirect_stdout
+from io import StringIO
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "scripts/validate_publication_live_boundary.py"
@@ -30,6 +33,25 @@ REQUIRED_ROUTES = (
     "/projets/projet-nova/data/modele_comptabilite.csv",
     "/projets/projet-nova/CNAME_APRES_NAMECHEAP.txt",
     "/assets/icons/README.md",
+    "/_config.yml",
+    "/netlify.toml",
+    "/vercel.json",
+    "/supabase/production-migration-ledger.txt",
+    "/supabase/functions/_shared/auth.ts",
+    "/supabase/functions/send-game-report/index.ts",
+    "/supabase/migrations/20260824013042_sinjira_v24_5_14_admin_privacy_safety_aal2_hardening.sql",
+    "/scripts/validate_publication_live_boundary.py",
+    "/scripts/test_publication_live_boundary.py",
+    "/docs/SUPABASE_PRODUCTION_RUNBOOK.md",
+    "/mobile-native/package.json",
+    "/mobile-native/NativeProfileHub.tsx",
+    "/.github/workflows/supabase-production-preflight.yml",
+    "/projets/sinjira/codex/livre-i-delivery-contract.json",
+    "/projets/projet-nova/README.md",
+    "/projets/projet-nova/official/versions/V317/V317_CYBERSECURITE_RESILIENCE_CONTINUITE_STATE.json",
+    "/projets/projet-nova/official/versions/V317/V317_REGISTRE_CHANGEMENTS_SECURITE_CONFIGURATIONS_MODELE.csv",
+    "/projets/projet-nova/official/versions/V316/V316_FINAL_INDEPENDENT_VERIFICATION.json",
+    "/ADMINISTRATION_FORMULAIRES.md",
 )
 
 
@@ -89,6 +111,44 @@ class PublicationMonitorSecurityTests(unittest.TestCase):
         self.assertTrue(boundary.validate_observations(expected, netlify=False))
         expected["/"] = 503
         self.assertTrue(boundary.validate_observations(expected, netlify=True))
+
+    def test_independent_hosting_and_confidentiality_verdicts(self):
+        statuses = {"/": 200}
+        statuses.update({route: 404 for route in REQUIRED_ROUTES})
+        self.assertEqual(boundary.validate_public_boundary(statuses), [])
+        self.assertEqual(boundary.validate_target_hosting(statuses, netlify=True), [])
+        self.assertTrue(boundary.validate_target_hosting(statuses, netlify=False))
+        self.assertTrue(boundary.validate_observations(statuses, netlify=False))
+        # Aucun défaut d'hébergement ne peut masquer une fuite technique.
+        statuses[REQUIRED_ROUTES[-1]] = 200
+        self.assertTrue(boundary.validate_public_boundary(statuses))
+        self.assertTrue(boundary.validate_observations(statuses, netlify=True))
+        statuses["/"] = 503
+        self.assertTrue(boundary.validate_public_boundary(statuses))
+        self.assertTrue(boundary.validate_target_hosting(statuses, netlify=True))
+
+    def test_live_modes_are_bounded_and_do_not_hide_exposures(self):
+        statuses = {"/": 200}
+        statuses.update({route: 404 for route in REQUIRED_ROUTES})
+        observed = []
+        def fake_read(opener, route):
+            observed.append(route)
+            return (statuses[route], False)
+        with patch.object(boundary, "build_opener", return_value=object()), \\
+             patch.object(boundary, "read_status", side_effect=fake_read), \\
+             redirect_stdout(StringIO()):
+            self.assertEqual(boundary.live(mode="boundary"), 0)
+            self.assertEqual(observed, ["/", *REQUIRED_ROUTES])
+            observed.clear()
+            self.assertEqual(boundary.live(mode="hosting"), 1)
+            self.assertEqual(observed, ["/"])
+            observed.clear()
+            self.assertEqual(boundary.live(mode="strict"), 1)
+            self.assertEqual(observed, ["/", *REQUIRED_ROUTES])
+            observed.clear()
+            statuses[REQUIRED_ROUTES[0]] = 200
+            self.assertEqual(boundary.live(mode="boundary"), 1)
+            self.assertEqual(observed, ["/", *REQUIRED_ROUTES])
 
     def test_http_requests_never_read_body(self):
         for route in REQUIRED_ROUTES:
