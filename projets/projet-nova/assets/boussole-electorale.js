@@ -235,40 +235,52 @@
   function renderRadar(results){
     const host = $("#compass-radar");
     if(!host) return;
-    const valid = results.filter(r => r.score !== null);
-    if(valid.length < 3){
-      host.innerHTML = "<p>Il n’y a pas encore assez de dimensions répondues pour afficher la carte complète.</p>";
+    if(!results.some(r => r.score !== null)){
+      host.innerHTML = "<p>Il n’y a pas assez de réponses pour afficher les dimensions.</p>";
       return;
     }
-    const size = 620, center = size / 2, radius = 220;
-    const points = valid.map((r, index) => {
-      const angle = (-Math.PI / 2) + (index * 2 * Math.PI / valid.length);
-      const normalized = (r.score + 100) / 200;
-      const rr = radius * normalized;
+    // Les 16 axes gardent TOUJOURS le même angle, même si certaines questions sont passées.
+    // Une dimension sans score n'est jamais ramenée artificiellement au centre.
+    const size = 680, center = size / 2, radius = 220;
+    const points = results.map((r,index) => {
+      const angle = (-Math.PI / 2) + (index * 2 * Math.PI / results.length);
+      const normalized = r.score === null ? null : (r.score + 100) / 200;
+      const rr = normalized === null ? null : radius * normalized;
       return {
-        x:center + Math.cos(angle) * rr,
-        y:center + Math.sin(angle) * rr,
-        lx:center + Math.cos(angle) * (radius + 64),
-        ly:center + Math.sin(angle) * (radius + 64),
+        x:rr === null ? null : center + Math.cos(angle) * rr,
+        y:rr === null ? null : center + Math.sin(angle) * rr,
+        lx:center + Math.cos(angle) * (radius + 70),
+        ly:center + Math.sin(angle) * (radius + 70),
         sx:center + Math.cos(angle) * radius,
         sy:center + Math.sin(angle) * radius,
         result:r
       };
     });
-    const polygon = points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+    const complete = points.every(p => p.x !== null);
+    const polygon = complete
+      ? `<polygon points="${points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")}"></polygon>`
+      : "";
     const spokes = points.map(p => `<line x1="${center}" y1="${center}" x2="${p.sx.toFixed(1)}" y2="${p.sy.toFixed(1)}"></line>`).join("");
+    const markers = points.filter(p => p.x !== null).map(p =>
+      `<circle class="compass-radar-marker" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5"></circle>`
+    ).join("");
     const labels = points.map(p => {
       const short = esc(p.result.title).split(" ").slice(0,3).join(" ");
-      return `<text x="${p.lx.toFixed(1)}" y="${p.ly.toFixed(1)}" text-anchor="middle"><tspan>${short}</tspan><tspan x="${p.lx.toFixed(1)}" dy="15">${p.result.score > 0 ? "+" : ""}${p.result.score}</tspan></text>`;
+      const score = p.result.score === null ? "—" : (p.result.score > 0 ? "+" : "") + p.result.score;
+      return `<text x="${p.lx.toFixed(1)}" y="${p.ly.toFixed(1)}" text-anchor="middle"><tspan>${short}</tspan><tspan x="${p.lx.toFixed(1)}" dy="15">${score}</tspan></text>`;
     }).join("");
+    const description = complete
+      ? "Profil sur seize dimensions. Les positions sont conservées dans leur ordre permanent."
+      : "Profil partiel : les seize dimensions conservent leur place. Les dimensions sans réponse sont signalées par un tiret et ne sont pas reliées par un polygone.";
     host.innerHTML = `
       <svg class="compass-radar-svg" viewBox="0 0 ${size} ${size}" role="img" aria-labelledby="compass-radar-title compass-radar-desc">
         <title id="compass-radar-title">Carte multidimensionnelle de votre profil</title>
-        <desc id="compass-radar-desc">Chaque rayon représente une dimension et sa position calculée selon vos réponses.</desc>
+        <desc id="compass-radar-desc">${description}</desc>
         <circle cx="${center}" cy="${center}" r="${radius}"></circle>
         <circle cx="${center}" cy="${center}" r="${radius * .5}"></circle>
         ${spokes}
-        <polygon points="${polygon}"></polygon>
+        ${polygon}
+        ${markers}
         ${labels}
       </svg>`;
   }
