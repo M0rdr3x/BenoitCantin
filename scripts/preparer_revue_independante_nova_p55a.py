@@ -213,6 +213,7 @@ def main(argv=None):
             p54z.outside_repo(a.creer_modele_prive)
         doc = None
         sha = None
+        inherited = 0
         if a.declarations_p54z:
             doc, sha = upstream(a.declarations_p54z)
             inherited = sum(
@@ -223,7 +224,6 @@ def main(argv=None):
         if a.creer_modele_prive:
             p54z.write_new(a.creer_modele_prive, model(sha), private=True)
         totals = None
-        inherited = 0
         if a.relecture_locale:
             local = p54z.read_json(private_source(a.relecture_locale),100000)
             totals, inherited = validate_local(local,doc,sha)
