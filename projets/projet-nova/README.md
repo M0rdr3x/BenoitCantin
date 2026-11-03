@@ -43,6 +43,16 @@ La vérification continue est décrite dans `.github/workflows/nova-sinjira-fina
 
 Ces études **ne sont ni une simulation officielle du budget, ni des économies réalisées, ni des règlements adoptés**. Aucun de ces nouveaux fichiers n'est inclus au manifeste des quatre références candidates `data/sources.json`. Toute incorporation éventuelle requiert validation, versionnement, nouvelle empreinte et autorité de décision identifiée.
 
+## Diagnostic sectoriel G0 — santé (3 novembre 2026)
+
+- Dossier de référence **non normatif** : `official/working/diagnostic-g0-sante-premiere-ligne-v1.md`.
+- Données de diagnostic et état des neuf preuves manquantes : `data/diagnostic-g0-sante-premiere-ligne-2025.json`.
+- Présentation publique : `diagnostic-g0-sante.html`.
+- Validation automatisée : `tests/diagnostic-g0-sante.test.mjs`, incluse dans le workflow de tests Nova–Sinjira.
+- L'enquête ISQ menée en **2025**, publiée le **2 novembre 2026**, étudie les adultes visés par son périmètre; elle ne fournit ni prix par consultation ni comparaison causale des opérateurs. Les indicateurs administratifs 2024 ne sont pas directement comparables au sondage 2025.
+- **Porte G0 non franchie**; aucune expérimentation autorisée, aucun budget engagé, aucune économie démontrée.
+- Ce dossier n'intègre pas automatiquement le Corpus maître, le Programme, les Statuts ni le Cadre financier officiels candidats.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
