@@ -37,7 +37,7 @@ jobs:
         run: python3 scripts/test_publication_live_boundary.py
 
   live:
-    name: Vérifier 30 chemins privés — confidentialité du site
+    name: Vérifier 33 chemins privés — confidentialité du site
     needs: contract
     # Pas de trafic de surveillance vers la production sur les PR ou pushes.
     # L'exécution quotidienne et le lancement manuel prouvent l'état live.
