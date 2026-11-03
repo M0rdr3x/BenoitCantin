@@ -21,6 +21,9 @@ NOVA_PAGE_NAMES = [
     "comprendre-nova.html",
     "programme.html",
     "boussole-electorale.html",
+    # Nouvelle page publique déjà indexée : validation canonique stricte,
+    # sans élargir la liste des préfixes privés ou des URL autorisées.
+    "sondage-citoyen.html",
     "finances.html",
     "documents.html",
     "recrutement.html",
