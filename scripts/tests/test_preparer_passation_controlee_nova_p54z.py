@@ -120,6 +120,11 @@ class TestP54Z(unittest.TestCase):
     def test_39_refus_dans_depot(self):
         with self.assertRaises(ValueError):
             m.outside_repo(m.ROOT/"interdit.json")
+        with tempfile.TemporaryDirectory() as tmp:
+            alias=Path(tmp)/"alias"
+            alias.symlink_to(m.ROOT,target_is_directory=True)
+            with self.assertRaises(ValueError):
+                m.outside_repo(alias/"interdit.json")
     def test_40_preserve_audit_dependances(self):
         self.assertEqual(self.config["etat_initial"]["decision"],m.NO_GO)
 
