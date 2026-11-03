@@ -325,6 +325,10 @@ def public_report(states=None,attempt=None,claimed=None,
          name:(5 if name == "NON_EFFECTUEE" else 0)
          for name in COUNTER_REVIEWS},
          "P55C_CONTRE_REVUE_SANS_REPRODUCTION")
+    need(reproduced or claimed[2] == {
+         name:(5 if name == "NON_QUALIFIE" else 0)
+         for name in QUALIFICATIONS},
+         "P55C_QUALIFICATION_SANS_REPRODUCTION")
     return {
         "schema_version":"P55C-BILAN-1","exercice":2024,
         "sources_pdf_locales_soumises":
