@@ -98,3 +98,8 @@ verify_jwt = true
 # dont seul le hash est conservé, avec expiration/révocation/limite de téléchargements.
 [functions.life-story-delivery]
 verify_jwt = false
+
+# Consultation citoyenne publique : JWT non requis, mais contrôle d'origine,
+# CAPTCHA Turnstile, HMAC et vérification d'activation côté fonction.
+[functions.nova-civic-poll]
+verify_jwt = false

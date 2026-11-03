@@ -296,6 +296,7 @@ PROJECT_NOVA_PUBLIC_DATA_JSON = {
     Path("projets/projet-nova/data/documents-word-only.json"),
     Path("projets/projet-nova/data/documents.json"),
     Path("projets/projet-nova/data/rencontres.json"),
+    Path("projets/projet-nova/data/sondage-citoyen-v1.json"),
     Path("projets/projet-nova/data/sources.json"),
 }
 
@@ -1039,6 +1040,7 @@ def self_test_public_filesystem_boundary() -> list[str]:
         "compte/index.html",
         "projets/projet-nova/index.html",
         "projets/projet-nova/data/boussole-partis-2026.json",
+        "projets/projet-nova/data/sondage-citoyen-v1.json",
         "projets/projet-nova/official/reference/programme.md",
         "projets/projet-nova/data/actualites.json",
         "projets/projet-nova/data/sources.json",

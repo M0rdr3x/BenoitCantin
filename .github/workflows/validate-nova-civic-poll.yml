@@ -1,0 +1,44 @@
+name: NOVA sondage et boussole — vérification
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'projets/projet-nova/index.html'
+      - 'projets/projet-nova/boussole-electorale.html'
+      - 'projets/projet-nova/sondage-citoyen.html'
+      - 'projets/projet-nova/assets/boussole-electorale.js'
+      - 'projets/projet-nova/assets/boussole-electorale.css'
+      - 'projets/projet-nova/assets/sondage-citoyen.js'
+      - 'projets/projet-nova/assets/sondage-citoyen.css'
+      - 'projets/projet-nova/data/*'
+      - 'supabase/NOVA_POLL_SCHEMA_PREDEPLOY.sql'
+      - 'supabase/functions/nova-civic-poll/**'
+      - 'supabase/config.toml'
+      - 'netlify.toml'
+      - 'vercel.json'
+      - 'projets/projet-nova/netlify.toml'
+      - 'scripts/test_nova_civic_poll.py'
+      - '.github/workflows/validate-nova-civic-poll.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'projets/projet-nova/**'
+      - 'supabase/NOVA_POLL_SCHEMA_PREDEPLOY.sql'
+      - 'supabase/functions/nova-civic-poll/**'
+      - 'scripts/test_nova_civic_poll.py'
+permissions:
+  contents: read
+jobs:
+  test-nova:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Vérifier les invariants et la syntaxe
+        run: python scripts/test_nova_civic_poll.py
+      - name: Vérifier les liens et les fichiers du site
+        run: python scripts/validate_site.py

@@ -213,3 +213,6 @@
   line-height:1.6;
   overflow-wrap:anywhere;
 }
+
+/* Les points du profil partiel restent visibles, même quand aucun polygone n'est tracé. */
+.compass-radar-svg circle.compass-radar-marker{fill:#087e9b;stroke:#ffffff;stroke-width:2}

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sondage citoyen et résultats publics | Projet Nova</title>
+<meta name="description" content="Consultation citoyenne volontaire et anonyme pour les personnes de 18 ans et plus. Méthode, questions et résultats agrégés accessibles publiquement.">
+<link rel="canonical" href="https://www.benoitcantin.com/projets/projet-nova/sondage-citoyen.html">
+<link rel="icon" href="assets/favicon.png">
+<link rel="stylesheet" href="styles.css?v=26"><link rel="stylesheet" href="assets/portal-return.css?v=5.0">
+<link rel="stylesheet" href="assets/sondage-citoyen.css?v=1">
+<script defer src="script.js?v=26.1.0"></script><script defer src="assets/sondage-citoyen.js?v=1"></script>
+</head>
+<body data-page="sondage-citoyen.html">
+<a class="skip-link" href="#contenu">Aller au contenu</a>
+<a class="portal-return-benoit" href="../../index.html" aria-label="Retour au portail Benoit Cantin"><img src="../../assets/icons/benoit-sigil.svg" alt="">Retour à Benoit Cantin</a>
+<header class="site-header site-header-pro" data-site-header><div class="container">
+<div class="header-combined"><div class="header-top"><div class="header-hero">
+<a class="header-side-logo" href="index.html" aria-label="Accueil Projet Nova"><img src="assets/logo-nova.webp" alt="Logo Projet Nova" width="150" height="150"></a>
+<div class="header-center"><div class="header-title-pro">La Nouvelle Opportunité Vers l’Avenir</div><div class="header-project-pro">Projet Nova</div><div class="header-tagline-pro">Consultation citoyenne</div></div>
+</div></div><div class="header-nav-row">
+<button class="menu-toggle" type="button" data-menu-toggle aria-controls="navigation-principale" aria-expanded="false" aria-label="Ouvrir le menu"><span></span><span></span><span></span></button>
+<nav id="navigation-principale" class="main-nav" data-main-nav aria-label="Navigation principale">
+<a class="nav-link" href="index.html">Accueil</a>
+<a class="nav-link active" href="sondage-citoyen.html" aria-current="page">Sondage citoyen</a>
+<a class="nav-link" href="boussole-electorale.html">Boussole électorale</a>
+<a class="nav-link" href="programme.html">Programme</a>
+<a class="nav-link" href="transparence.html">Transparence</a>
+<a class="nav-link" href="confidentialite.html">Confidentialité</a>
+</nav></div></div></div></header>
+<main id="contenu">
+<section class="page-hero"><div class="container poll-shell"><span class="eyebrow">Participation · 18 ans et plus</span>
+<h1>Sondage citoyen — exprimer son opinion sans dévoiler son identité.</h1>
+<p>Huit propositions de politique publique tirées du questionnaire de la Boussole, avec les mêmes options pour toutes les personnes. Les réponses ne sont pas associées à un nom, à un compte ou à un courriel.</p>
+<div class="hero-actions"><a class="btn btn-primary" href="#sondage">Consulter le sondage</a><a class="btn btn-outline" href="#resultats-publics">Voir les résultats publics</a><a class="btn btn-outline" href="#methode">Lire la méthode</a></div>
+</div></section>
+<section class="section" id="sondage"><div class="container poll-shell">
+<div class="section-head"><span class="eyebrow">Questionnaire indépendant</span><h2>Votre opinion, question par question</h2>
+<p>Participation volontaire et accessible exclusivement aux personnes qui déclarent avoir au moins 18 ans. Vous pouvez passer une question. Le vote n'est envoyé que lorsque vous choisissez « Envoyer mes réponses ».</p></div>
+<p id="poll-live-status" class="poll-state" role="status" aria-live="polite">Vérification de l’ouverture de la consultation…</p>
+<form id="poll-form" autocomplete="off" novalidate>
+<div id="poll-questions" class="poll-questions"><p>Chargement des propositions…</p></div>
+<div class="poll-consent"><label><input id="poll-adult" type="checkbox" required> Je déclare avoir 18 ans ou plus.</label>
+<label><input id="poll-agree" type="checkbox" required> Je comprends que les choix transmis seront additionnés aux résultats publics anonymes et que la consultation n'est pas un sondage représentatif de la population.</label></div>
+<div id="poll-captcha" class="poll-captcha" aria-label="Vérification anti-robots"></div>
+<div class="poll-action-row"><button type="submit" id="poll-send" class="btn btn-primary" disabled>Envoyer mes réponses</button><a class="btn btn-outline" href="#resultats-publics">Consulter les résultats</a></div>
+<p id="poll-feedback" role="status" aria-live="polite"></p>
+</form></div></section>
+<section class="section section-muted" id="resultats-publics"><div class="container poll-shell">
+<div class="section-head"><span class="eyebrow">Transparence</span><h2>Ce que pensent les participants</h2>
+<p>Résultats par question, sans nom, sans identité et sans bulletin individuel. Les effectifs et pourcentages proviennent du dernier lot publié : au moins dix nouveaux bulletins entre deux publications, espacées d'au moins six heures, pour limiter l'inférence de réponses individuelles. « Sans opinion » reste une catégorie distincte.</p></div>
+<p id="poll-results-status" role="status" aria-live="polite">Lecture des totaux publics…</p>
+<div id="poll-results" class="poll-results"></div>
+<button class="btn btn-outline" id="poll-refresh" type="button">Actualiser les résultats</button>
+</div></section>
+<section class="section" id="methode"><div class="container poll-shell">
+<div class="section-head"><span class="eyebrow">Cadre méthodologique</span><h2>Une consultation ouverte, pas une projection électorale</h2></div>
+<div class="grid grid-2">
+<article class="content-card"><h3>Questions et méthode publiques</h3><p>Les huit questions sont une sélection identifiée et publiée du corpus de la Boussole Nova. Toutes les personnes répondent aux mêmes formulations et selon la même échelle. Le questionnaire est versionné sur GitHub.</p></article>
+<article class="content-card"><h3>Aucune représentativité revendiquée</h3><p>Participation auto-sélectionnée, âge autodéclaré, absence de vérification indépendante « une personne, un vote ». Les résultats ne sont ni une estimation de l'opinion québécoise, ni une intention de vote, ni une prévision.</p></article>
+<article class="content-card"><h3>Résultats agrégés seulement</h3><p>Le serveur ne conserve pas de bulletin individuel : il additionne les choix et garde un identifiant anti-rejeu non réversible, sans l'associer aux réponses. Les résultats sont publiés par lots d'au moins dix nouvelles participations, avec un délai d'au moins six heures entre publications, afin de limiter la divulgation de réponses isolées.</p></article>
+<article class="content-card"><h3>Vie privée et sécurité</h3><p>Aucun nom, courriel, compte ou adresse IP n'est enregistré par la base du sondage. Le dispositif anti-robots Cloudflare Turnstile traite une vérification technique; les hébergeurs peuvent disposer de journaux techniques selon leurs propres politiques. Les réponses ne sont jamais affichées individuellement.</p></article>
+</div>
+<p class="poll-method-note"><strong>Important :</strong> ce sondage et la Boussole sont des outils distincts. La Boussole calcule un profil local sans transmettre de réponse. Le sondage ne transmet les choix que sur validation volontaire, afin de produire des résultats collectifs.</p>
+<p><a href="boussole-electorale.html">Explorer la Boussole électorale</a> · <a href="confidentialite.html">Lire la politique de confidentialité</a> · <a href="https://github.com/M0rdr3x/BenoitCantin/blob/main/projets/projet-nova/data/sondage-citoyen-v1.json" rel="noopener noreferrer" target="_blank">Consulter le questionnaire source</a></p>
+</div></section>
+</main>
+<footer class="footer"><div class="container footer-main"><section><h2>Projet Nova</h2><p>Un espace de consultation civique fondé sur la transparence des méthodes et le respect des opinions.</p></section><section><h3>Navigation</h3><ul><li><a href="index.html">Accueil</a></li><li><a href="boussole-electorale.html">Boussole électorale</a></li><li><a href="confidentialite.html">Confidentialité</a></li></ul></section></div><div class="container footer-bottom"><span>© Projet Nova — Consultation citoyenne.</span><span>Consultation volontaire non probabiliste.</span></div></footer>
+</body></html>
