@@ -36,6 +36,7 @@ for n, q in enumerate(poll["questions"], 1):
 assert [o["value"] for o in poll["options"]] == [-2, -1, 0, 1, 2, 9]
 builder = (ROOT / "scripts" / "build_netlify_public.py").read_text(encoding="utf-8")
 assert 'Path("projets/projet-nova/data/sondage-citoyen-v1.json")' in builder
+assert "rel == RELEASE_METADATA_PATH and expected_release_metadata is not None" in builder
 assert "sondage-citoyen.html" in html
 assert '"sondage-citoyen.html",' in (ROOT / "scripts" / "validate_seo_quality.py").read_text(encoding="utf-8")
 normalizer_code = (ROOT / "scripts" / "normalize_nova_seo.py").read_text(encoding="utf-8")
