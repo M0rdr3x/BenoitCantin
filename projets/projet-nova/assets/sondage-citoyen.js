@@ -81,8 +81,8 @@
     }
     const ready=data.resultsVisible === true;
     $("poll-results-status").textContent=ready
-      ? "Participations reçues : "+data.ballots+". Totaux agrégés, sans informations sur les personnes."
-      : "Les répartitions par réponse restent masquées jusqu’à "+(data.minPublicBallots || 10)+" participations. Cela limite la divulgation de réponses isolées.";
+      ? "Participations comprises dans la dernière publication : "+data.ballots+". Résultats publiés par lots, sans informations sur les personnes."+ (data.publishedAt ? " Dernière publication : "+new Date(data.publishedAt).toLocaleString("fr-CA")+".":"")
+      : "Les répartitions restent masquées jusqu’à "+(data.minPublicBallots || 10)+" participations. Les mises à jour n’interviennent que par lots de dix nouveaux bulletins et au plus une fois toutes les six heures.";
     for(const q of data.questions) {
       const article=document.createElement("article");article.className="poll-result-card";
       const h=document.createElement("h3");h.textContent=q.ordinal+". "+q.text;article.append(h);
