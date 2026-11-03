@@ -3,7 +3,6 @@ import {ALL_FIELDS, comparerScenarios} from "./comparateur-financier-core.mjs";
 const form = document.getElementById("finance-service-form");
 const resultats = document.getElementById("finance-results");
 const erreur = document.getElementById("finance-error");
-const texteEquivalent = document.getElementById("mode-alternatif-label");
 const selectMode = document.getElementById("mode-alternatif");
 const monnaie = new Intl.NumberFormat("fr-CA",{style:"currency",currency:"CAD",maximumFractionDigits:2});
 const nombre = new Intl.NumberFormat("fr-CA",{maximumFractionDigits:2});
@@ -24,9 +23,6 @@ function remplir(id, valeur) {
   const el=document.getElementById(id);
   if(el) el.textContent=afficherMontant(valeur);
 }
-selectMode?.addEventListener("change",()=>{
-  texteEquivalent.textContent=selectMode.options[selectMode.selectedIndex].textContent;
-});
 form?.addEventListener("submit",event=>{
   event.preventDefault();
   resultatMasque();
