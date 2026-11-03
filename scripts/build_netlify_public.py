@@ -367,6 +367,11 @@ def root_file_allowed(path: Path) -> bool:
         return False
     if path.name in PUBLIC_ROOT_EXACT:
         return True
+    # A root dotfile with a browser-compatible extension (e.g. .secret.js,
+    # .credentials.html) is still a private/config file by default. Keep
+    # the explicitly reviewed .nojekyll marker above as the sole exception.
+    if path.name.startswith("."):
+        return False
     return path.suffix.lower() in PUBLIC_ROOT_SUFFIXES
 
 
