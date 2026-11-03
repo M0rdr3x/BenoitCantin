@@ -63,11 +63,13 @@ async function db(path: string, init: RequestInit={}) {
   return response.status === 204 ? null : response.json();
 }
 async function publicResults() {
-  const [questions,counts] = await Promise.all([
+  const [questions,counts,publications] = await Promise.all([
     db("nova_poll_questions?poll_version=eq."+VERSION+"&select=question_id,ordinal,question_text&order=ordinal.asc"),
-    db("nova_poll_counts?poll_version=eq."+VERSION+"&select=question_id,option_value,total")
+    db("nova_poll_public_counts?poll_version=eq."+VERSION+"&select=question_id,option_value,total"),
+    db("nova_poll_publication_state?poll_version=eq."+VERSION+"&select=published_ballots,published_at")
   ]);
-  if(!Array.isArray(questions) || questions.length!==8 || !Array.isArray(counts)) throw new Error("not_ready");
+  if(!Array.isArray(questions) || questions.length!==8 || !Array.isArray(counts)
+     || !Array.isArray(publications) || publications.length!==1) throw new Error("not_ready");
   const countsById = new Map<string,number[]>();
   for(const q of questions) countsById.set(q.question_id,Array(6).fill(0));
   const values=[-2,-1,0,1,2,9];
@@ -76,14 +78,17 @@ async function publicResults() {
     const ix=values.indexOf(Number(row.option_value));
     if(ix>=0 && Number.isSafeInteger(Number(row.total))) countsById.get(row.question_id)![ix]=Number(row.total);
   }
-  const first=countsById.get(questions[0].question_id) || [];
-  const ballotCount=first.reduce((a,b)=>a+b,0);
+  const snapshot=publications[0];
+  const ballotCount=Number(snapshot.published_ballots);
+  if(!Number.isSafeInteger(ballotCount) || ballotCount<0) throw new Error("invalid_publication");
   const showCounts=ballotCount>=MIN_PUBLIC_BALLOTS;
   return {
     version: VERSION, open:isOpen(), siteKey:isOpen()?CAPTCHA_SITE_KEY:null,
     eligibility:"18+ déclaré", method:"consultation ouverte non probabiliste",
     minPublicBallots:MIN_PUBLIC_BALLOTS, ballots:showCounts?ballotCount:null,
     resultsVisible:showCounts,
+    publishedAt:showCounts ? snapshot.published_at : null,
+    publication: "lots d au moins dix nouveaux bulletins; publication au plus une fois par six heures",
     questions:questions.map(q=>({
       id:q.question_id,ordinal:q.ordinal,text:q.question_text,
       counts:showCounts?Object.fromEntries(values.map((v,i)=>[String(v),countsById.get(q.question_id)![i]])):null
