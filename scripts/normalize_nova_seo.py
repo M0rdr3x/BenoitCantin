@@ -11,7 +11,8 @@ NOVA = ROOT / "projets" / "projet-nova"
 DEFAULT_IMAGE = "https://www.benoitcantin.com/projets/projet-nova/assets/nova-banner-officielle.webp"
 
 PAGES = [
-    "index.html", "comprendre-nova.html", "programme.html", "documents.html",
+    "index.html", "comprendre-nova.html", "programme.html", "boussole-electorale.html",
+    "finances.html", "documents.html",
     "recrutement.html", "sondage-citoyen.html", "architecture-nova-sinjira.html",
     "mise-en-oeuvre-nova-sinjira.html", "transparence.html", "comptabilite.html",
     "registre-rencontres.html", "registre-conformite.html", "equipe.html",
