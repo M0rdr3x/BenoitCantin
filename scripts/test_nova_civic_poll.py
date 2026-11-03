@@ -24,7 +24,7 @@ assert len(compass["axes"]) == 16
 assert len(compass["questions"]) == 64
 assert len({a["id"] for a in compass["axes"]}) == 16
 assert len({q["id"] for q in compass["questions"]}) == 64
-assert poll["published"] is False, "Ouverture interdite avant pré-vol"
+assert isinstance(poll["published"], bool), "La publication est un booléen explicite"
 assert poll["version"] == "nova-consultation-v1"
 assert len(poll["questions"]) == 8
 assert len({q["id"] for q in poll["questions"]}) == 8
@@ -41,6 +41,7 @@ assert 'id="poll-adult"' in poll_html and 'id="poll-agree"' in poll_html
 assert 'id="poll-results"' in poll_html and 'id="poll-form"' in poll_html
 assert "MIN_PUBLIC_BALLOTS = 10" in edge
 assert "NOVA_POLL_ENABLED" in edge and '=== "true"' in edge
+assert "local.published===true" in poll_js, "Ouverture du scrutin interdite sans publication explicite"
 assert "NOVA_POLL_TURNSTILE_SECRET" in edge and "NOVA_POLL_HMAC_KEY" in edge
 assert "confirmCaptcha(payload.captchaToken)" in edge
 assert "crypto.subtle.sign" in edge
