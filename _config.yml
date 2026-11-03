@@ -83,6 +83,11 @@ exclude:
   - "projets/projet-nova/official/versions"
   - "projets/projet-nova/official/CURRENT_VERSION.json"
   - "projets/projet-nova/data/*.csv"
+  # Garde P0 : ces trois JSON ne sont PAS dans la liste publique _site.
+  # Les documents de travail NOVA restent réservés au dépôt Git.
+  - "projets/projet-nova/data/diagnostic-g0-sante-premiere-ligne-2025.json"
+  - "projets/projet-nova/data/registre-donnees-services-nova-sinjira.json"
+  - "projets/projet-nova/data/reperes-financiers-nova-sinjira-2026.json"
   - "projets/projet-nova/ADMINISTRATION_FORMULAIRES.md"
   - "projets/projet-nova/ARCHITECTURE_DES_UNIVERS.md"
   - "projets/projet-nova/AUDIT_SITE_NOVA_AAA_PLUS.md"
