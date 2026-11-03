@@ -16,6 +16,13 @@ INTENTIONAL_PUBLIC_FUNCTIONS = {
     'life-story-delivery': 'accès posthume par jeton opaque dédié, sans Compte SINJIRA requis',
 }
 
+# Permission JWT préparée dans le dépôt, mais strictement interdite dans
+# l'artefact de production tant que la revue anti-abus/SQL n'est pas terminée.
+# Ne pas mélanger cette liste à INTENTIONAL_PUBLIC_FUNCTIONS.
+STAGED_PUBLIC_FUNCTIONS = {
+    'nova-civic-poll': 'prépublication fermée: CAPTCHA/HMAC, sans source dans le workspace production',
+}
+
 
 def main() -> int:
     if not CONFIG.exists():
@@ -44,8 +51,9 @@ def main() -> int:
         elif verify_jwt is not None and not isinstance(verify_jwt, bool):
             errors.append(f'{name}: verify_jwt doit être un booléen TOML')
 
-    unexpected = explicit_public - set(INTENTIONAL_PUBLIC_FUNCTIONS)
-    missing = set(INTENTIONAL_PUBLIC_FUNCTIONS) - explicit_public
+    reviewed = set(INTENTIONAL_PUBLIC_FUNCTIONS) | set(STAGED_PUBLIC_FUNCTIONS)
+    unexpected = explicit_public - reviewed
+    missing = reviewed - explicit_public
 
     for name in sorted(unexpected):
         errors.append(
@@ -64,15 +72,31 @@ def main() -> int:
         if not function_entry.exists():
             errors.append(f'{name}: fonction publique configurée mais index.ts absent')
 
+    # La liste des exceptions de production ne doit jamais intégrer NOVA.
+    # Le builder revu supprime physiquement la source et le bloc TOML avant
+    # tout "supabase functions deploy" global.
+    builder = ROOT / 'scripts' / 'build_supabase_production_workspace.py'
+    if STAGED_PUBLIC_FUNCTIONS:
+        source = builder.read_text('utf-8') if builder.is_file() else ''
+        for staged in STAGED_PUBLIC_FUNCTIONS:
+            if staged in INTENTIONAL_PUBLIC_FUNCTIONS:
+                errors.append(f'{staged}: prépublication confondue avec fonction déjà autorisée.')
+            if (f"'functions' / '{staged}'" not in source
+                    or "shutil.rmtree(staged)" not in source
+                    or "cfg_pattern.sub('', cfg_text)" not in source):
+                errors.append(f'{staged}: exclusion physique du workspace de production non prouvée.')
+
     if errors:
         print(f'ECHEC: {len(errors)} problème(s) dans le contrat des Edge Functions publiques.')
         for error in errors:
             print(f'- {error}')
         return 1
 
-    print('OK: seules les Edge Functions publiques intentionnelles utilisent verify_jwt=false:')
-    for name in sorted(explicit_public):
+    print('OK: JWT public vérifié : fonctions canoniques et prépublication exclue du déploiement.')
+    for name in sorted(INTENTIONAL_PUBLIC_FUNCTIONS):
         print(f'- {name}: {INTENTIONAL_PUBLIC_FUNCTIONS[name]}')
+    for name in sorted(STAGED_PUBLIC_FUNCTIONS):
+        print(f'- {name}: {STAGED_PUBLIC_FUNCTIONS[name]}')
     return 0
 
 
