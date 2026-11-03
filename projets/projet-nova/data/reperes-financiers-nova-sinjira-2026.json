@@ -1,0 +1,42 @@
+{
+  "schema": "nova-sinjira-reperes-financiers/v1",
+  "verified_at": "2026-11-03",
+  "status": "official_reference_figures_not_scenario_inputs",
+  "note": "Montants publies par les sources, en millions de dollars canadiens, periodes et perimetres distincts. Ne pas sommer budget Quebec et programmes RAMQ: chevauchement substantiel.",
+  "quebec_budget_2026_2027": {
+    "source_name": "Ministere des Finances du Quebec, Budget 2026-2027, Plan budgetaire, tableau F.2 (mars 2026)",
+    "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_PlanBudgetaire.pdf",
+    "currency": "CAD",
+    "unit": "millions",
+    "fiscal_year": "2026-2027",
+    "type": "projection",
+    "revenus_consolides": 166492,
+    "depenses_portefeuilles": 160489,
+    "service_dette": 10268,
+    "depenses_consolidees": 170757,
+    "provision_eventualites": 2000,
+    "solde_comptable_avec_provision": -6265,
+    "versements_fonds_generations": 2347,
+    "solde_budgetaire": -8612,
+    "check": "166492-170757-2000=-6265; -6265-2347=-8612"
+  },
+  "ramq_2024_2025": {
+    "source_name": "Regie de l'assurance maladie du Quebec, La RAMQ en quelques chiffres (couts des programmes 2024-2025)",
+    "url": "https://www.ramq.gouv.qc.ca/fr/donnees-statistiques/ramq-quelques-chiffres",
+    "currency": "CAD",
+    "unit": "millions",
+    "fiscal_year": "2024-2025",
+    "type": "historical_program_cost",
+    "total_couts_programmes": 14232,
+    "remuneration_medecins_services_medicaux": 8662,
+    "medicaments_services_pharmaceutiques": 4469,
+    "autres_programmes": 1101,
+    "warning": "Ne represente pas l'ensemble des depenses de sante du Quebec; ce n'est pas un financement additionnel disponible."
+  },
+  "research": {
+    "icis_cout_sejour_standard": "https://www.cihi.ca/fr/indicateurs/cout-dun-sejour-standard-a-lhopital-cssh",
+    "cirano_2026": "https://cirano.qc.ca/index.php/fr/sommaires/2026PR-10"
+  },
+  "services_model_data_status": "NONE_VERIFIED_AVAILABLE_FOR_OPERATIONAL_SERVICE_LEVEL_COMPARISON",
+  "no_default_tariffs_or_savings": true
+}
