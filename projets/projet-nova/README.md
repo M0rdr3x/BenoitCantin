@@ -39,6 +39,8 @@ Les fichiers `data/reperes-financiers-nova-sinjira-2026.json` et `data/registre-
 
 Le site propose `comparateur-couts-services.html` (saisie locale sans tarifs par défaut) et `registre-donnees-nova-sinjira.html` (état de la donnée et références potentielles). Calcul : `assets/comparateur-financier-core.mjs` et `assets/comparateur-financier-ui.mjs`. Tests : `tests/comparateur-financier.test.mjs`, `tests/registre-donnees.test.mjs`. Commande depuis la racine du dépôt : `node --test projets/projet-nova/tests/*.test.mjs`.
 
+La vérification continue est décrite dans `.github/workflows/nova-sinjira-finances-tests.yml` : lors des changements pertinents de code ou de données, GitHub Actions exécute les tests arithmétiques et les contrôles du registre. **La présence du workflow ne prouve pas encore la réussite d'une exécution sur GitHub Actions.**
+
 Ces études **ne sont ni une simulation officielle du budget, ni des économies réalisées, ni des règlements adoptés**. Aucun de ces nouveaux fichiers n'est inclus au manifeste des quatre références candidates `data/sources.json`. Toute incorporation éventuelle requiert validation, versionnement, nouvelle empreinte et autorité de décision identifiée.
 
 ## Validation externe requise
