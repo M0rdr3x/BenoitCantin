@@ -72,6 +72,10 @@ assert "results.filter(r => r.score !== null)" not in compass_js[
     compass_js.index("function renderRadar"):compass_js.index("function coveragePercent")
 ], "Le radar ne doit jamais réindexer les axes partiels"
 assert "const complete = points.every" in compass_js
+assert "bucket.primaryAnswered >= axisMinimumAnswered" in compass_js
+assert compass["methodology"]["axisMinimumAnswered"] == 2
+assert "calculableAxes" in compass_js
+assert (ROOT / "scripts" / "test_nova_boussole_runtime.cjs").is_file()
 assert "compass-radar-marker" in compass_js
 assert "renderRadar(results)" in compass_js
 assert "partyComparison" in compass
