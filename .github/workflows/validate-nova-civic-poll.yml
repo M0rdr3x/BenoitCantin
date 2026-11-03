@@ -21,6 +21,8 @@ on:
       - 'scripts/test_nova_civic_poll.py'
       - 'scripts/test_nova_boussole_runtime.cjs'
       - 'scripts/smoke_nova_poll_edge.py'
+      - 'scripts/validate_nova_release_artifact.py'
+      - 'scripts/normalize_nova_seo.py'
       - 'scripts/check_nova_a1.py'
       - 'scripts/validate_seo_quality.py'
       - '.github/workflows/validate-nova-civic-poll.yml'
@@ -52,5 +54,11 @@ jobs:
         run: node scripts/test_nova_boussole_runtime.cjs
       - name: Vérifier le service public sans envoyer de vote
         run: python scripts/smoke_nova_poll_edge.py
+      - name: Construire l'artefact public isolé
+        env:
+          SINJIRA_RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python scripts/build_netlify_public.py --output _site --standalone-netlify
+      - name: Valider les liens et les ressources NOVA réellement publiables
+        run: python scripts/validate_nova_release_artifact.py _site
       - name: Vérifier les liens et les fichiers du site
         run: python scripts/validate_site.py
