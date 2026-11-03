@@ -1,0 +1,85 @@
+name: Projet Nova P55C - Rapprochement PDF local sans certification
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p55c.yml"
+      - "scripts/rapprocher_pieces_documentaires_nova_p55c.py"
+      - "scripts/tests/test_rapprocher_pieces_documentaires_nova_p55c.py"
+      - "scripts/controler_acquisition_sources_nova_p55b.py"
+      - "scripts/preparer_revue_independante_nova_p55a.py"
+      - "scripts/preparer_passation_controlee_nova_p54z.py"
+      - "scripts/reproduire_pdf_locaux_nova_p54q.py"
+      - "scripts/reproduire_localisations_pdf_nova_p54p.py"
+      - "projets/projet-nova/etudes/P55C_*"
+      - "projets/projet-nova/etudes/P55B_*"
+      - "projets/projet-nova/etudes/P55A_*"
+      - "projets/projet-nova/etudes/P54Z_*"
+      - "projets/projet-nova/etudes/P54Q_*"
+      - "projets/projet-nova/etudes/P54P_*"
+      - "projets/projet-nova/etudes/P54E_*"
+      - "projets/projet-nova/etudes/P54O_*"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rapprochement-technique-preparatoire:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Aligner le parseur PDF sur P54Q
+        run: python -m pip install pypdf==5.9.0
+      - name: Tester 66 invariants synthetiques sans PDFs reels
+        run: |
+          python -m py_compile scripts/rapprocher_pieces_documentaires_nova_p55c.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_rapprocher_pieces_documentaires_nova_p55c.py")
+          assert suite.countTestCases()==66,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Verifier bilan neutre sans source privee
+        run: |
+          python scripts/rapprocher_pieces_documentaires_nova_p55c.py --bilan-public p55c_bilan_neutre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p55c_bilan_neutre.json").read_text("utf-8"))
+          assert d["schema_version"]=="P55C-BILAN-1"
+          assert d["sources_pdf_locales_soumises"]==0
+          assert d["copies_concordantes_historiques_non_authentifiees"]==0
+          assert d["positions_nfkc_reproduites_techniquement"]==0
+          assert d["etats_revue_locaux_non_authentifies"]["NON_EXAMINE"]==5
+          assert d["avis_independants_authentifies"]==0
+          assert d["economies_certifiees_cad"] is None
+          assert not d["transmission_externe_autorisee"]
+          assert not d["fusion_main_autorisee"]
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          assert "offset_texte_nfkc" not in json.dumps(d)
+          PY
+      - name: Bloquer entree partielle et GO automatique
+        run: |
+          set +e
+          python scripts/rapprocher_pieces_documentaires_nova_p55c.py --ville-pdf "$RUNNER_TEMP/absent.pdf"
+          status=$?
+          set -e
+          test "$status" -eq 2
+          set +e
+          python scripts/rapprocher_pieces_documentaires_nova_p55c.py --exiger-go
+          status=$?
+          set -e
+          test "$status" -eq 3
+      - name: Archiver seulement un bilan neutre non nominatif
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p55c-bilan-neutre-sans-pdf
+          path: p55c_bilan_neutre.json
+          retention-days: 7
