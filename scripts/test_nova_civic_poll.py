@@ -53,6 +53,7 @@ assert "nova_poll_publication_state" in sql
 assert "v_total_ballots - v_published_ballots >= 10" in sql
 assert "interval '6 hours'" in sql
 assert 'db("nova_poll_counts?' not in edge, "L'API ne doit pas lire les totaux bruts"
+assert 'Deno.env.get("NOVA_POLL_APPROVED_VERSION") === VERSION' in edge
 assert "NOVA_POLL_ENABLED" in edge and '=== "true"' in edge
 assert "local.published===true" in poll_js, "Ouverture du scrutin interdite sans publication explicite"
 assert "NOVA_POLL_TURNSTILE_SECRET" in edge and "NOVA_POLL_HMAC_KEY" in edge
