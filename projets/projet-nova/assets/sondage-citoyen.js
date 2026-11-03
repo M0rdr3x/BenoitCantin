@@ -155,7 +155,7 @@
          || remote.questions.some((q,i)=>q.id!==questions[i].id || q.text!==questions[i].text)) {
         throw new Error("Questionnaire publié différent du référentiel");
       }
-      open=remote.open===true && typeof remote.siteKey==="string" && !!remote.siteKey;
+      open=local.published===true && remote.open===true && typeof remote.siteKey==="string" && !!remote.siteKey;
       siteKey=remote.siteKey||"";
       setStatus(open?"La consultation est ouverte aux personnes de 18 ans et plus."
         :"La consultation est en préparation. Les questions et la méthode peuvent être consultées, mais aucun vote ne peut encore être envoyé.");
