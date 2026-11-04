@@ -1,0 +1,91 @@
+name: Projet Nova P55F - Verrou d interpretation des rapports 2024
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p55f.yml"
+      - "scripts/verifier_interpretation_sources_nova_p55f.py"
+      - "scripts/tests/test_verifier_interpretation_sources_nova_p55f.py"
+      - "scripts/prioriser_pieces_manquantes_nova_p55e.py"
+      - "scripts/preparer_dossier_experts_nova_p55d.py"
+      - "scripts/rapprocher_pieces_documentaires_nova_p55c.py"
+      - "scripts/controler_acquisition_sources_nova_p55b.py"
+      - "projets/projet-nova/etudes/P55F_*"
+      - "projets/projet-nova/etudes/P55E_*"
+      - "projets/projet-nova/etudes/P55D_*"
+      - "projets/projet-nova/etudes/P55C_*"
+      - "projets/projet-nova/etudes/P55B_*"
+      - "projets/projet-nova/etudes/P54Q_*"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controles-interpretation-financiere-sans-expertise:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Parser PDF epingle comme P54Q
+        run: python -m pip install pypdf==5.9.0
+      - name: 60 tests de prudence et d'integrite sans fichiers originaux
+        run: |
+          python -m py_compile scripts/verifier_interpretation_sources_nova_p55f.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_verifier_interpretation_sources_nova_p55f.py")
+          assert suite.countTestCases()==60,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Verifier bilan et plan strictement non certifiants
+        run: |
+          python scripts/verifier_interpretation_sources_nova_p55f.py \
+            --bilan-public p55f_bilan_neutre.json --plan-public p55f_plan_neutre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path("p55f_bilan_neutre.json").read_text("utf-8"))
+          plan=json.loads(Path("p55f_plan_neutre.json").read_text("utf-8"))
+          assert report["schema_version"]=="P55F-BILAN-PUBLIC-1"
+          assert report["copies_pdf_manquantes"]==2
+          assert report["positions_nfkc_reproduites_techniquement"]==0
+          assert report["redressement_comparatif_2023_cad"]==1825176
+          assert report["redressement_2023_est_economie_2024"] is False
+          assert report["colonne_eliminations_est_gain_nouveau"] is False
+          assert report["version_pdf_officielle_actuelle_authentifiee"] is False
+          assert report["avis_independants_authentifies"]==0
+          assert report["economies_certifiees_cad"] is None
+          assert report["decision"]=="NO_GO_AUTOMATIQUE"
+          assert plan["decision"]=="NO_GO_AUTOMATIQUE"
+          assert len(plan["constats_prudence"])==4
+          assert len(plan["sources_et_notice"])==3
+          for item in (report,plan):
+              txt=json.dumps(item,ensure_ascii=False)
+              assert "sha256" not in txt and "offset_texte" not in txt
+          PY
+      - name: Refuser la certification artificielle et une seule source
+        run: |
+          set +e
+          python scripts/verifier_interpretation_sources_nova_p55f.py --exiger-certification
+          status=$?
+          set -e
+          test "$status" -eq 3
+          set +e
+          python scripts/verifier_interpretation_sources_nova_p55f.py --ville-pdf "$RUNNER_TEMP/absent.pdf"
+          status=$?
+          set -e
+          test "$status" -eq 2
+      - name: Publier seulement deux JSON neutres
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p55f-interpretation-financiere-non-certifiante
+          path: |
+            p55f_bilan_neutre.json
+            p55f_plan_neutre.json
+          retention-days: 7
