@@ -36,9 +36,18 @@ for n, q in enumerate(poll["questions"], 1):
 assert [o["value"] for o in poll["options"]] == [-2, -1, 0, 1, 2, 9]
 builder = (ROOT / "scripts" / "build_netlify_public.py").read_text(encoding="utf-8")
 assert 'Path("projets/projet-nova/data/sondage-citoyen-v1.json")' in builder
+assert "rel == RELEASE_METADATA_PATH and expected_release_metadata is not None" in builder
 assert "sondage-citoyen.html" in html
 assert '"sondage-citoyen.html",' in (ROOT / "scripts" / "validate_seo_quality.py").read_text(encoding="utf-8")
-assert '"sondage-citoyen.html"' in (ROOT / "scripts" / "normalize_nova_seo.py").read_text(encoding="utf-8")
+normalizer_code = (ROOT / "scripts" / "normalize_nova_seo.py").read_text(encoding="utf-8")
+for required_page in (
+    "sondage-citoyen.html",
+    "boussole-electorale.html",
+    "finances.html",
+    "architecture-nova-sinjira.html",
+    "mise-en-oeuvre-nova-sinjira.html",
+):
+    assert '"'+required_page+'"' in normalizer_code, f"Page absente du normaliseur SEO : {required_page}"
 for token in ('hreflang="fr-CA"', 'hreflang="x-default"', 'property="og:title"', 'name="twitter:card"', 'type="application/ld+json"'):
     assert token in poll_html, token
 assert "boussole-electorale.html" in html
@@ -53,10 +62,18 @@ assert "nova_poll_publication_state" in sql
 assert "v_total_ballots - v_published_ballots >= 10" in sql
 assert "interval '6 hours'" in sql
 assert 'db("nova_poll_counts?' not in edge, "L'API ne doit pas lire les totaux bruts"
+assert 'Deno.env.get("NOVA_POLL_APPROVED_VERSION") === VERSION' in edge
 assert "NOVA_POLL_ENABLED" in edge and '=== "true"' in edge
 assert "local.published===true" in poll_js, "Ouverture du scrutin interdite sans publication explicite"
 assert "NOVA_POLL_TURNSTILE_SECRET" in edge and "NOVA_POLL_HMAC_KEY" in edge
 assert "confirmCaptcha(payload.captchaToken)" in edge
+# Ne jamais interroger PostgREST avant vérification du CAPTCHA.
+post_index = edge.index('if(!isOpen())')
+captcha_index = edge.index('if(!await confirmCaptcha(payload.captchaToken))', post_index)
+db_index = edge.index('const questions=await db(', post_index)
+assert post_index < captcha_index < db_index
+assert 'if(!Array.isArray(questions))' in edge
+
 assert "crypto.subtle.sign" in edge
 assert "jsonb_each_text(p_answers)" in sql
 assert "ENABLE ROW LEVEL SECURITY" in sql
@@ -65,7 +82,13 @@ assert "GRANT EXECUTE ON FUNCTION public.nova_poll_submit" in sql
 assert "[functions.nova-civic-poll]" in config
 inventory = (ROOT / "scripts" / "validate_edge_function_inventory.py").read_text(encoding="utf-8")
 assert '"nova-civic-poll"' in inventory
+assert (ROOT / "scripts" / "test_nova_poll_runtime.cjs").is_file()
 assert '"NOVA_POLL_HMAC_KEY"' in inventory
+public_edge_guard = (ROOT / "scripts" / "validate_public_edge_auth.py").read_text(encoding="utf-8")
+assert "'nova-civic-poll':" in public_edge_guard
+assert "NOVA_POLL_APPROVED_VERSION" in public_edge_guard
+assert "le CAPTCHA doit précéder PostgREST" in public_edge_guard
+
 for path in ("netlify.toml", "vercel.json", "projets/projet-nova/netlify.toml"):
     deployment = (ROOT / path).read_text(encoding="utf-8")
     assert "https://challenges.cloudflare.com" in deployment, path
@@ -74,6 +97,17 @@ assert "localStorage.setItem" not in compass_js
 assert "results.filter(r => r.score !== null)" not in compass_js[
     compass_js.index("function renderRadar"):compass_js.index("function coveragePercent")
 ], "Le radar ne doit jamais réindexer les axes partiels"
+# Contrôle : la citation d'une valeur HTML ne doit pas être rompue par l'apostrophe.
+from validate_seo_quality import meta_content as seo_meta_content
+from normalize_nova_seo import meta_content as normalize_meta_content
+seo_fixture = "<meta name=\"description\" content=\"Dossier d'exécution &amp; consultation\">"
+assert seo_meta_content(seo_fixture, name="description") == "Dossier d'exécution & consultation"
+assert normalize_meta_content(seo_fixture, "description") == "Dossier d'exécution & consultation"
+assert seo_meta_content("<meta content='L&#39;avis public' property='og:description'>",
+                        prop="og:description") == "L'avis public"
+for required_page in ("comparateur-couts-services.html", "registre-donnees-nova-sinjira.html"):
+    assert '"' + required_page + '"' in (ROOT / "scripts/validate_seo_quality.py").read_text(encoding="utf-8")
+    assert '"' + required_page + '"' in (ROOT / "scripts/normalize_nova_seo.py").read_text(encoding="utf-8")
 assert "const complete = points.every" in compass_js
 assert "bucket.primaryAnswered >= axisMinimumAnswered" in compass_js
 assert compass["methodology"]["axisMinimumAnswered"] == 2

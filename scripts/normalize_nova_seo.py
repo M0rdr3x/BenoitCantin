@@ -11,8 +11,10 @@ NOVA = ROOT / "projets" / "projet-nova"
 DEFAULT_IMAGE = "https://www.benoitcantin.com/projets/projet-nova/assets/nova-banner-officielle.webp"
 
 PAGES = [
-    "index.html", "comprendre-nova.html", "programme.html", "documents.html",
-    "recrutement.html", "sondage-citoyen.html", "transparence.html", "comptabilite.html",
+    "index.html", "comprendre-nova.html", "programme.html", "boussole-electorale.html",
+    "finances.html", "documents.html",
+    "recrutement.html", "sondage-citoyen.html", "architecture-nova-sinjira.html",
+    "mise-en-oeuvre-nova-sinjira.html", "indicateurs-g0-sante.html", "diagnostic-g0-sante.html", "registre-donnees-nova-sinjira.html", "comparateur-couts-services.html", "transparence.html", "comptabilite.html",
     "registre-rencontres.html", "registre-conformite.html", "equipe.html",
     "propositions.html", "presse.html", "faq.html", "contact.html",
     "avis-legal.html", "confidentialite.html", "accessibilite.html",
@@ -22,11 +24,16 @@ PAGES = [
 
 
 def meta_content(text: str, name: str) -> str:
-    m = re.search(
-        rf'<meta\b(?=[^>]*\bname=["\']{re.escape(name)}["\'])[^>]*\bcontent=["\']([^"\']*)["\'][^>]*>',
-        text, re.I,
-    )
-    return html.unescape(m.group(1).strip()) if m else ""
+    """Respecter l'apostrophe interne aux valeurs entre guillemets doubles."""
+    for tag in re.findall(r'<meta\b[^>]*>', text, re.I):
+        key = re.search(r"""\bname\s*=\s*(?:"([^"]*)"|'([^']*)')""", tag, re.I)
+        if not key or (key.group(1) if key.group(1) is not None else key.group(2)) != name:
+            continue
+        content = re.search(r"""\bcontent\s*=\s*(?:"([^"]*)"|'([^']*)')""", tag, re.I)
+        if content:
+            value = content.group(1) if content.group(1) is not None else content.group(2)
+            return html.unescape(value.strip())
+    return ""
 
 
 def title_of(text: str) -> str:

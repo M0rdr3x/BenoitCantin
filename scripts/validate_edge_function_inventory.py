@@ -24,7 +24,7 @@ RETIRED = {
 
 CUSTOM_AUTH = {
     "nova-civic-poll": (
-        "NOVA_POLL_ENABLED", "NOVA_POLL_TURNSTILE_SECRET",
+        "NOVA_POLL_ENABLED", "NOVA_POLL_APPROVED_VERSION", "NOVA_POLL_TURNSTILE_SECRET",
         "NOVA_POLL_TURNSTILE_SITE_KEY", "NOVA_POLL_HMAC_KEY",
         "MAX_BODY_BYTES", "readLimitedJson", "confirmCaptcha",
         "hashToken", "ORIGINS", "nova_poll_public_counts",

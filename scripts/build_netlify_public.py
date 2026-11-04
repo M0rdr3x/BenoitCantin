@@ -1483,6 +1483,9 @@ def validate_output(
                 continue
             if rel == Path("_redirects") and standalone_netlify:
                 continue
+        # Uniquement le reçu généré et comparé aux métadonnées exactes ci-dessus.
+        if rel == RELEASE_METADATA_PATH and expected_release_metadata is not None:
+            continue
         if not relative_path_allowed(rel):
             errors.append(f"Fichier hors allowlist présent dans le publish: {rel.as_posix()}")
 

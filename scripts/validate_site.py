@@ -26,6 +26,10 @@ NATIVE_MOBILE_PREFIX = 'mobile-native/'
 # Ces deux fichiers gardent volontairement la casse legacy /Admin/ uniquement pour
 # protéger/réécrire d'anciens favoris et caches. Ils ne constituent pas des liens actifs.
 LEGACY_ADMIN_COMPAT_FILES = {'sw.js', 'assets/js/v24-3-3-runtime.js'}
+# Le code source et les sorties générées sont audités séparément.
+GENERATED_SITE_DIRS = frozenset({
+    '_site', '_preview_site', '_pages_site', '_containment_site', '_ci_site',
+})
 
 
 def contains_unsafe_legacy_admin_link(rel: str, text: str) -> bool:
@@ -189,6 +193,7 @@ def all_files() -> list[Path]:
     return [
         p for p in ROOT.rglob('*')
         if p.is_file() and '.git' not in p.parts and 'node_modules' not in p.parts
+        and p.relative_to(ROOT).parts[0] not in GENERATED_SITE_DIRS
     ]
 
 

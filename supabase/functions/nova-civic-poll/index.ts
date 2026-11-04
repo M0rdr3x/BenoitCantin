@@ -10,7 +10,10 @@ const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const CAPTCHA_SECRET = Deno.env.get("NOVA_POLL_TURNSTILE_SECRET") || "";
 const CAPTCHA_SITE_KEY = Deno.env.get("NOVA_POLL_TURNSTILE_SITE_KEY") || "";
 const HMAC_KEY = Deno.env.get("NOVA_POLL_HMAC_KEY") || "";
-const isOpen = () => Deno.env.get("NOVA_POLL_ENABLED") === "true"
+// Une activation accidentelle du flag ne suffit jamais : le corpus final
+// doit avoir été approuvé explicitement dans la configuration serveur.
+const isOpen = () => Deno.env.get("NOVA_POLL_APPROVED_VERSION") === VERSION
+  && Deno.env.get("NOVA_POLL_ENABLED") === "true"
   && !!CAPTCHA_SECRET && !!CAPTCHA_SITE_KEY && HMAC_KEY.length >= 32 && !!SERVICE_KEY;
 
 function respond(status: number, data: unknown, origin: string | null): Response {
@@ -136,12 +139,15 @@ Deno.serve(async (req:Request)=>{
     return respond(400,{error:"bulletin_invalide"},origin);
   }
   try {
+    // Contrôle anti-robot AVANT tout accès privilégié à PostgREST :
+    // Origin ne remplace pas l'authentification d'une requête.
+    if(!await confirmCaptcha(payload.captchaToken)) return respond(403,{error:"verification_anti_robot_echouee"},origin);
     const questions=await db("nova_poll_questions?poll_version=eq."+VERSION+"&select=question_id");
+    if(!Array.isArray(questions)) throw new Error("poll_not_ready");
     const expected=new Set(questions.map((q:any)=>q.question_id));
     if(expected.size!==8 || Object.keys(payload.answers).some(key=>!expected.has(key))) {
       return respond(400,{error:"questions_incompatibles"},origin);
     }
-    if(!await confirmCaptcha(payload.captchaToken)) return respond(403,{error:"verification_anti_robot_echouee"},origin);
     const tokenHash=await hashToken(payload.ballotToken);
     const result=await db("rpc/nova_poll_submit",{
       method:"POST",
