@@ -14,8 +14,10 @@ REQUIRED_FILES = (
     "boussole-electorale.html",
     "sondage-citoyen.html",
     "assets/boussole-electorale.js",
+    "assets/boussole-public-corpus.js",
     "assets/boussole-electorale.css",
     "assets/sondage-citoyen.js",
+    "assets/sondage-public-corpus.js",
     "assets/sondage-citoyen.css",
     "data/boussole-electorale-v2.json",
     "data/sondage-citoyen-v1.json",
@@ -54,10 +56,10 @@ def check(published: Path) -> list[str]:
     for route in ("sondage-citoyen.html", "boussole-electorale.html"):
         if not re.search(r'<a\b[^>]*href=["\']'+re.escape(route)+r'["\']', home):
             errors.append(f"Lien cliquable vers {route} absent de l’accueil publié")
-    for rel in ("assets/sondage-citoyen.js", "assets/sondage-citoyen.css"):
+    for rel in ("assets/sondage-citoyen.js", "assets/sondage-citoyen.css", "assets/sondage-public-corpus.js"):
         if rel not in poll_page:
             errors.append(f"Ressource du sondage non référencée : {rel}")
-    for rel in ("assets/boussole-electorale.js", "assets/boussole-electorale.css"):
+    for rel in ("assets/boussole-electorale.js", "assets/boussole-electorale.css", "assets/boussole-public-corpus.js"):
         if rel not in compass_page:
             errors.append(f"Ressource de la boussole non référencée : {rel}")
 

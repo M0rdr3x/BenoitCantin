@@ -46,7 +46,13 @@ REQUIRED = (
     ".well-known/security.txt",
     "projets/projet-nova/index.html",
     "projets/projet-nova/script.js",
-    "projets/projet-nova/data/boussole-partis-2026.json",
+    # Les JSON sous data/*.json sont exclus par Jekyll legacy.
+    # Exiger les bundles publics contrôlés bit-à-bit contre les JSON GitHub,
+    # et préserver l'exclusion des autres données de travail.
+    "projets/projet-nova/assets/boussole-public-corpus.js",
+    "projets/projet-nova/assets/sondage-public-corpus.js",
+    "projets/projet-nova/boussole-electorale.html",
+    "projets/projet-nova/sondage-citoyen.html",
     "projets/sinjira/romans/index.html",
     "projets/sinjira/codex/index.html",
     "projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf",
