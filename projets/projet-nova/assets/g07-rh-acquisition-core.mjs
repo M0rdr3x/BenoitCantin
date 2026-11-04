@@ -98,3 +98,52 @@ export function summarizeG07(baseline, priorRh) {
     notice:"Aucune présence numérique n'est une preuve de capacité ou de coût sans périmètre et audit."
   };
 }
+
+
+/**
+ * Inspecte l'annuaire ZIP d'un fichier XLSX SANS décompresser les feuilles.
+ * Aucun nombre de salarié n'est lu. Refuse ZIP64, chiffrement et chemins suspects.
+ */
+export function readXlsxZipDirectory(bytes) {
+  if (!(bytes instanceof Uint8Array) || bytes.byteLength<22 ||
+      bytes.byteLength>MAX_OFFICIAL_XLSX_BYTES) throw new Error("ZIP_SIZE_INVALID");
+  const dv=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
+  let eocd=-1;
+  for(let i=bytes.length-22;i>=Math.max(0,bytes.length-22-65535);i--){
+    if(dv.getUint32(i,true)===0x06054b50 &&
+       i+22+dv.getUint16(i+20,true)===bytes.length){eocd=i;break;}
+  }
+  if(eocd<0)throw new Error("ZIP_END_CENTRAL_DIRECTORY_NOT_FOUND");
+  const disk=dv.getUint16(eocd+4,true);
+  const centralDisk=dv.getUint16(eocd+6,true);
+  const localCount=dv.getUint16(eocd+8,true);
+  const count=dv.getUint16(eocd+10,true);
+  const centralSize=dv.getUint32(eocd+12,true);
+  const centralOffset=dv.getUint32(eocd+16,true);
+  if(disk!==0||centralDisk!==0||localCount!==count||count===0||
+     count===0xffff||centralSize===0xffffffff||centralOffset===0xffffffff)
+    throw new Error("ZIP_UNSUPPORTED_VOLUME_OR_ZIP64");
+  if(centralOffset+centralSize>eocd||centralOffset<4||count>5000)
+    throw new Error("ZIP_BAD_DIRECTORY_BOUNDS");
+  const decoder=new TextDecoder("utf-8",{fatal:true});
+  const entries=[];
+  let pos=centralOffset;
+  for(let i=0;i<count;i++){
+    if(pos+46>centralOffset+centralSize || dv.getUint32(pos,true)!==0x02014b50)
+      throw new Error("ZIP_BAD_DIRECTORY_ENTRY");
+    const flags=dv.getUint16(pos+8,true);
+    const uncompressedSize=dv.getUint32(pos+24,true);
+    const len=dv.getUint16(pos+28,true);
+    const extraLen=dv.getUint16(pos+30,true);
+    const commentLen=dv.getUint16(pos+32,true);
+    if(pos+46+len+extraLen+commentLen>centralOffset+centralSize)
+      throw new Error("ZIP_TRUNCATED_DIRECTORY");
+    const name=decoder.decode(bytes.subarray(pos+46,pos+46+len));
+    entries.push({name,encrypted:(flags&1)!==0,uncompressed_size:uncompressedSize});
+    pos+=46+len+extraLen+commentLen;
+  }
+  if(pos!==centralOffset+centralSize)throw new Error("ZIP_CENTRAL_DIRECTORY_SIZE_MISMATCH");
+  const inventory=inspectXlsxInventory(entries);
+  if(!inventory.ok)throw new Error("XLSX_INVALID_INVENTORY:"+inventory.failures.join(","));
+  return inventory;
+}
