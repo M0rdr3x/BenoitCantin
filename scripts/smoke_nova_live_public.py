@@ -74,6 +74,17 @@ def stable_api_get(getter=request, sleep=time.sleep):
     raise ValueError("Réessais API épuisés")
 
 
+def review_page_ok(html_source: str) -> bool:
+    """Une page candidate ne recueille pas d'avis politique."""
+    return (
+        len(re.findall(r'<li data-type="opinion" data-id="q[0-9]{2}">', html_source)) == 64
+        and len(re.findall(r'<li data-type="consultation" data-id="q[0-9]{2}">', html_source)) == 40
+        and 'Aucune réponse n’est enregistrée ici' in html_source
+        and 'noindex,follow' in html_source
+        and not re.search(r'<\\s*(form|input|button|script)\\b', html_source, re.I)
+    )
+
+
 def decode_bundle(source: str, variable: str):
     prefix = "window." + variable + " = "
     if source.count(prefix) != 1:
@@ -144,6 +155,7 @@ def self_test():
         pass
     else:
         raise AssertionError("Scripts inversés non détectés")
+    assert not review_page_ok("<form><li data-type='opinion'>x</li></form>")
     print("OK : test de contrôle HTTP NOVA en lecture seule.")
 
 
@@ -164,8 +176,13 @@ def main():
         if "sondage-citoyen.html" not in home or "boussole-electorale.html" not in home:
             raise ValueError("Liens vers sondage et boussole absents de l'accueil")
 
+        preview_html = verify(PREFIX + "sondages-a-valider.html")
+        if not review_page_ok(preview_html):
+            raise ValueError("Les 104 questions candidates ou la lecture seule ne sont pas conformes")
         poll_html = verify(PREFIX + "sondage-citoyen.html")
         compass_html = verify(PREFIX + "boussole-electorale.html")
+        if 'href="sondages-a-valider.html"' not in poll_html:
+            raise ValueError("Le sondage public n'indique pas le projet 64/40")
         script_order(poll_html, "sondage-public-corpus.js?v=1", "sondage-citoyen.js?v=3")
         script_order(compass_html, "boussole-public-corpus.js?v=1", "boussole-electorale.js?v=3.4.15")
 

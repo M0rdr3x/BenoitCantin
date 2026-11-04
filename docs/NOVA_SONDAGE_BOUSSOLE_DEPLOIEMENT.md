@@ -4,6 +4,14 @@
 **Public :** personnes se déclarant âgées de 18 ans et plus.  
 **Méthode :** consultation citoyenne ouverte, non probabiliste. Elle ne constitue ni une étude représentative de la population, ni une prédiction électorale.
 
+## Révision documentaire des questionnaires complets 64/40
+
+La PR candidate historique #639 contient deux questionnaires **non approuvés** : un sondage d'opinion de 64 questions (copie de la boussole v2.2.0, distinct de son calcul local) et une consultation consultative de 40 questions « Pour / Contre / Sans opinion », explicitement non officielle. Les deux sources exactes sont archivées dans `docs/nova-sondages/`, à partir du commit `5726b7262a89ddb42d210407c6d5473cc815feb0`, sans réponses de citoyens.
+
+La page **`sondages-a-valider.html`** expose les 104 questions en lecture seule depuis la page d'accueil et le sondage de huit questions. Elle ne contient aucun formulaire ni script de collecte et reste `noindex`. Cette visibilité sert à examiner les formulations et le protocole; elle **n'autorise pas** à ouvrir les votes. Le test `scripts/test_nova_candidate_questionnaires.py` compare texte par texte, ordre et version, bloque toute divergence, et interdit les composants de saisie; les contrôles de publication Netlify/Jekyll et la surveillance du site réel exigent cette page.
+
+Les huit questions de `sondage-citoyen.html` demeurent provisoires, fermées et distinctes du futur sondage d'opinion de 64 questions et de la consultation de 40 questions. Avant une collecte éventuelle, obtenir l'approbation documentaire et une analyse de confidentialité spécifique (voir issue #675), puis tester dans une base isolée. Aucun vote réel n'est créé par cette publication.
+
 ## Compatibilité du site public GitHub Pages/Jekyll
 
 Le 3 novembre 2026, des contrôles HTTP ont établi que le mode d'hébergement Jekyll historique ne servait pas les fichiers `data/sondage-citoyen-v1.json`, `data/boussole-electorale-v2.json` et les références documentaires de la boussole (HTTP 404), bien qu'ils existent dans GitHub et dans le paquet public isolé Netlify. Le filtre Jekyll strict doit rester en place pour ne pas publier les autres fichiers de travail.

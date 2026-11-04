@@ -7,6 +7,9 @@ on:
       - 'projets/projet-nova/index.html'
       - 'projets/projet-nova/boussole-electorale.html'
       - 'projets/projet-nova/sondage-citoyen.html'
+      - 'projets/projet-nova/sondages-a-valider.html'
+      - 'docs/nova-sondages/**'
+      - 'scripts/test_nova_candidate_questionnaires.py'
       - 'projets/projet-nova/assets/boussole-electorale.js'
       - 'projets/projet-nova/assets/boussole-electorale.css'
       - 'projets/projet-nova/assets/sondage-citoyen.js'
@@ -54,6 +57,8 @@ jobs:
           python-version: '3.12'
       - name: Vérifier les invariants et la syntaxe
         run: python scripts/test_nova_civic_poll.py
+      - name: Vérifier les avant-projets 64/40 en lecture seule, sans vote
+        run: python scripts/test_nova_candidate_questionnaires.py
       - name: Vérifier l'identité des bundles publics avec les JSON canoniques
         run: python scripts/test_nova_public_bundles.py
       - name: Configurer Node pour les tests du moteur

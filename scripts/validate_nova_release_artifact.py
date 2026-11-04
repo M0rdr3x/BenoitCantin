@@ -13,6 +13,7 @@ REQUIRED_FILES = (
     "index.html",
     "boussole-electorale.html",
     "sondage-citoyen.html",
+    "sondages-a-valider.html",
     "assets/boussole-electorale.js",
     "assets/boussole-public-corpus.js",
     "assets/boussole-electorale.css",
@@ -53,9 +54,20 @@ def check(published: Path) -> list[str]:
     poll = json.loads((prefix / "data" / "sondage-citoyen-v1.json").read_text(encoding="utf-8"))
     compass = json.loads((prefix / "data" / "boussole-electorale-v2.json").read_text(encoding="utf-8"))
 
-    for route in ("sondage-citoyen.html", "boussole-electorale.html"):
+    for route in ("sondage-citoyen.html", "boussole-electorale.html", "sondages-a-valider.html"):
         if not re.search(r'<a\b[^>]*href=["\']'+re.escape(route)+r'["\']', home):
             errors.append(f"Lien cliquable vers {route} absent de l’accueil publié")
+    review_page = (prefix / "sondages-a-valider.html").read_text(encoding="utf-8")
+    if 'href="sondages-a-valider.html"' not in poll_page:
+        errors.append("Le sondage publié n’a pas de lien vers les questionnaires complets en révision")
+    if len(re.findall(r'<li data-type="opinion" data-id="q[0-9]{2}">',review_page)) != 64:
+        errors.append("Avant-projet 64 : questionnaire incomplet dans l’artefact public")
+    if len(re.findall(r'<li data-type="consultation" data-id="q[0-9]{2}">',review_page)) != 40:
+        errors.append("Avant-projet 40 : questionnaire incomplet dans l’artefact public")
+    if '<meta name="robots" content="noindex,follow">' not in review_page:
+        errors.append("Questionnaires candidats : noindex absent")
+    if re.search(r'<\\s*(?:form|input|button|script)\\b', review_page, re.I):
+        errors.append("Questionnaires candidats : composant interactif interdit")
     for rel in ("assets/sondage-citoyen.js", "assets/sondage-citoyen.css", "assets/sondage-public-corpus.js"):
         if rel not in poll_page:
             errors.append(f"Ressource du sondage non référencée : {rel}")
