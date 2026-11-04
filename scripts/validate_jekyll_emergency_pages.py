@@ -150,15 +150,13 @@ def validate_source() -> list[str]:
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
             expected = {p.as_posix() for p in module.PROJECT_NOVA_PUBLIC_DATA_JSON}
-            include_block = source.split("include:\\n", 1)
-            include_text = include_block[1].split("\\nexclude:", 1)[0] if len(include_block) == 2 else ""
-            included = {
-                value
-                for line in include_text.splitlines()
-                if (value := line.strip().removeprefix("- ").strip(' "'))
-                .startswith("projets/projet-nova/data/")
-                and value.endswith(".json")
-            }
+            include_block = source.split("include:\n", 1)
+            include_text = include_block[1].split("\nexclude:", 1)[0] if len(include_block) == 2 else ""
+            included = set()
+            for line in include_text.splitlines():
+                stripped = line.strip()
+                if stripped.startswith('- "projets/projet-nova/data/') and stripped.endswith('.json"'):
+                    included.add(stripped[3:-1])
             if included != expected:
                 for item in sorted(expected - included):
                     errors.append("JSON NOVA public non explicitement inclus : " + item)
