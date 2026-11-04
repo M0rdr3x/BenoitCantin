@@ -5,6 +5,7 @@ import {inspectRegistry,inspectRHCohort,calculateETPReallocation} from "../asset
 
 const matrix=JSON.parse(await readFile(new URL("../data/registre-rh-regional-g0-6-sante.json",import.meta.url),"utf8"));
 const region=JSON.parse(await readFile(new URL("../data/portrait-regional-g0-sante-2025.json",import.meta.url),"utf8"));
+const pageRH=await readFile(new URL("../capacite-rh-g0-6-sante.html",import.meta.url),"utf8");
 const inputs={unit:"ETP_CLINIQUES_PRESENTS_PREMIERE_LIGNE",same_professions:true,
   same_periods_comparable:true,same_rss:true,no_overlap_documented:true,
   public_before:80,nonpublic_before:20,public_after:70,nonpublic_after:30};
@@ -103,4 +104,14 @@ test("aucune réforme ni économie ne résulte du registre RH",()=>{
  assert.equal(matrix.decision.funding_approved,false);
  assert.equal(matrix.decision.savings_certified,null);
  assert.equal(matrix.decision.external_audit_completed,false);
+});
+
+test("page G0.6 : 18 régions, 11 mesures et distinction des unités sont affichées",()=>{
+ assert.equal((pageRH.match(/class="rh-code"/g)||[]).length,18);
+ assert.equal((pageRH.match(/class="rh-card"/g)||[]).length,13);
+ assert.equal((pageRH.match(/class="rh-unknown"/g)||[]).length,54);
+ assert.match(pageRH,/un déplacement de travailleurs n'est pas un recrutement net/i);
+ assert.ok(pageRH.includes("protocole-g0-6-capacite-personnel-sante-v1.md"));
+ assert.ok(pageRH.includes("registre-rh-regional-g0-6-sante.json"));
+ assert.ok(pageRH.includes("</main>")&&pageRH.includes("</html>"));
 });
