@@ -77,6 +77,9 @@ function directory(bytes) {
     expect(uncompressed<=MAX_XML_ENTRY_BYTES||!name.endsWith(".xml"),"XML_SIZE_LIMIT");
     expect(local+30<=offset&&dv.getUint32(local,true)===0x04034b50,"LOCAL_HEADER_MISSING");
     const localNameLen=dv.getUint16(local+26,true),localExtra=dv.getUint16(local+28,true);
+    expect(dv.getUint16(local+8,true)===method,"ZIP_METHOD_MISMATCH");
+    const localName=dec.decode(bytes.subarray(local+30,local+30+localNameLen));
+    expect(localName===name,"ZIP_LOCAL_CENTRAL_NAME_MISMATCH");
     const dataOffset=local+30+localNameLen+localExtra;
     expect(dataOffset+compressed<=offset,"ZIP_DATA_OUT_OF_BOUNDS");
     entries.set(name,{name,method,crc,compressed,uncompressed,dataOffset});
