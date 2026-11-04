@@ -114,7 +114,7 @@
         "https://www.ramq.gouv.qc.ca/fr/donnees-statistiques/ramq-quelques-chiffres"
       ],
       "risque_de_comptabilisation": "case-mix, ressources transversales, dotation et complications",
-      "etat_donnees": "diagnostic d'accès partiel disponible; coûts comparatifs, qualité et ressources à collecter et valider",
+      "etat_donnees": "Accès : 16 taux régionaux et démarches urgences sourcés dans PDF ISQ Panorama 2026, contrôlés en interne; coûts, délais effectifs, effectifs et audit externe manquants",
       "source_de_jeu_de_donnees_precis": null,
       "date_valeur": null,
       "periode_observation": null,
@@ -151,10 +151,10 @@
         "conclusion": "L'enquête 2025 fournit des indicateurs d'affiliation et de recours aux urgences pour les adultes visés, sans coûts de prestation ni preuve causale."
       },
       "territorial_baseline": {
-        "document_id": "NOVA-SINJ-G0-SAN-004",
-        "status": "BASE_REGIONALE_PARTIELLE_NON_CERTIFIEE",
+        "document_id": "NOVA-SINJ-G0-SAN-005",
+        "status": "TAUX_REGIONAUX_PDF_ISQ_CONTROLES_INTERNE_NON_AUDITES",
         "data_path": "data/portrait-regional-g0-sante-2025.json",
-        "technical_path": "official/working/protocole-portrait-regional-sante-g0-v1.md",
+        "technical_path": "official/working/protocole-portrait-regional-sante-g0-v2.md",
         "webpage": "portrait-regional-g0-sante.html",
         "reference_publication": "2026-11-02",
         "source": "https://statistique.quebec.ca/fr/communique/portrait-multithematique-regions-vieillissement-population-main-oeuvre-transport-electrique",
@@ -167,7 +167,18 @@
         "validated_numeric_regional_values": 0,
         "regional_cost_comparisons_certified": 0,
         "source_xlsx_imported": false,
-        "gate_g0_completed": false
+        "gate_g0_completed": false,
+        "source_pdf_url": "https://statistique.quebec.ca/fr/fichier/panorama-des-regions-du-quebec-2026-sante.pdf",
+        "source_pdf_tables": [
+          "8.1",
+          "8.3"
+        ],
+        "numeric_regional_values_transcribed_from_official_pdf": 16,
+        "regional_emergency_step_values_transcribed_from_official_pdf": 16,
+        "pdf_transcription_internally_checked": true,
+        "numeric_values_independently_audited": 0,
+        "regional_sample_sizes_verified": 0,
+        "confidence_intervals_verified": 0
       }
     },
     {
