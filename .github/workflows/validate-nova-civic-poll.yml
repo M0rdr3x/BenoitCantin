@@ -24,6 +24,8 @@ on:
       - 'scripts/test_nova_boussole_runtime.cjs'
       - 'scripts/test_nova_poll_runtime.cjs'
       - 'scripts/smoke_nova_poll_edge.py'
+      - 'scripts/smoke_nova_live_public.py'
+      - '.github/workflows/nova-public-readonly-smoke.yml'
       - 'scripts/validate_nova_release_artifact.py'
       - 'scripts/build_netlify_public.py'
       - 'scripts/normalize_nova_seo.py'
@@ -64,6 +66,8 @@ jobs:
         run: node scripts/test_nova_boussole_runtime.cjs
       - name: Tester le verrou du formulaire client sans réseau
         run: node scripts/test_nova_poll_runtime.cjs
+      - name: Tester les contrôles HTTP publics sans réseau
+        run: python scripts/smoke_nova_live_public.py --self-test
       - name: Vérifier le service public sans envoyer de vote
         run: python scripts/smoke_nova_poll_edge.py
       - name: Construire l'artefact public isolé
