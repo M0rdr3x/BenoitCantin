@@ -66,7 +66,7 @@ def check(published: Path) -> list[str]:
         errors.append("Avant-projet 40 : questionnaire incomplet dans l’artefact public")
     if '<meta name="robots" content="noindex,follow">' not in review_page:
         errors.append("Questionnaires candidats : noindex absent")
-    if re.search(r'<\\s*(?:form|input|button|script)\\b', review_page, re.I):
+    if re.search(r'<\s*(?:form|input|button|script)\b', review_page, re.I):
         errors.append("Questionnaires candidats : composant interactif interdit")
     for rel in ("assets/sondage-citoyen.js", "assets/sondage-citoyen.css", "assets/sondage-public-corpus.js"):
         if rel not in poll_page:
