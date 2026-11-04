@@ -1,0 +1,156 @@
+{
+  "schema_version": "P55E-1",
+  "date_reference": "2026-11-03",
+  "exercice": 2024,
+  "source_jalons": [
+    "P54H",
+    "P54Q",
+    "P54Z",
+    "P55A",
+    "P55B",
+    "P55C",
+    "P55D"
+  ],
+  "references": [
+    "P54E-V-001",
+    "P54E-M-001",
+    "P54O-DATE-001",
+    "P54E-M-002",
+    "P54E-M-003"
+  ],
+  "categories_acces": [
+    "PUBLIC_SOUS_CONTROLE_EDITION",
+    "ACCES_LEGAL_A_VERIFIER",
+    "EXPERT_INDEPENDANT_A_MANDATER",
+    "DECISION_INSTITUTIONNELLE"
+  ],
+  "plan_actions": [
+    {
+      "code": "A01",
+      "action": "OBTENIR_PDF_VILLE_2024",
+      "categorie": "PUBLIC_SOUS_CONTROLE_EDITION",
+      "role_a_designer": "RESPONSABLE_DOCUMENTAIRE",
+      "livrable_attendu": "COPIE_VILLE_HORS_DEPOT"
+    },
+    {
+      "code": "A02",
+      "action": "OBTENIR_PDF_MAMH_2024",
+      "categorie": "PUBLIC_SOUS_CONTROLE_EDITION",
+      "role_a_designer": "RESPONSABLE_DOCUMENTAIRE",
+      "livrable_attendu": "COPIE_MAMH_HORS_DEPOT"
+    },
+    {
+      "code": "A03",
+      "action": "INSTRUIRE_CHANGEMENT_EDITION",
+      "categorie": "ACCES_LEGAL_A_VERIFIER",
+      "role_a_designer": "RESPONSABLE_DOCUMENTAIRE",
+      "livrable_attendu": "TRACE_DISTINCTE_DES_EDITIONS"
+    },
+    {
+      "code": "A04",
+      "action": "REPRODUIRE_CINQ_POSITIONS",
+      "categorie": "ACCES_LEGAL_A_VERIFIER",
+      "role_a_designer": "EXAMINATEUR_HABILITE",
+      "livrable_attendu": "POSITIONS_NFKC_CONCORDANTES"
+    },
+    {
+      "code": "A05",
+      "action": "VERIFIER_DROITS_ET_PROVENANCE",
+      "categorie": "ACCES_LEGAL_A_VERIFIER",
+      "role_a_designer": "RESPONSABLE_DOCUMENTAIRE",
+      "livrable_attendu": "DROITS_D_ACCES_VERIFIES"
+    },
+    {
+      "code": "A06",
+      "action": "RELIRE_CINQ_OBSERVATIONS",
+      "categorie": "ACCES_LEGAL_A_VERIFIER",
+      "role_a_designer": "LECTEUR_DOCUMENTAIRE",
+      "livrable_attendu": "QUALIFICATIONS_CONTRADICTOIRES"
+    },
+    {
+      "code": "A07",
+      "action": "TRAITER_RESERVES_SUSPENSIONS",
+      "categorie": "EXPERT_INDEPENDANT_A_MANDATER",
+      "role_a_designer": "CONTRE_LECTEUR_INDEPENDANT",
+      "livrable_attendu": "CONTRADICTIONS_TRACEES"
+    },
+    {
+      "code": "A08",
+      "action": "EXAMINER_MANDAT_COMPTABLE",
+      "categorie": "EXPERT_INDEPENDANT_A_MANDATER",
+      "role_a_designer": "GOUVERNANCE_HUMAINE",
+      "livrable_attendu": "MANDAT_COMPTABLE_NON_TRANSMIS"
+    },
+    {
+      "code": "A09",
+      "action": "EXAMINER_MANDAT_JURIDIQUE",
+      "categorie": "EXPERT_INDEPENDANT_A_MANDATER",
+      "role_a_designer": "GOUVERNANCE_HUMAINE",
+      "livrable_attendu": "MANDAT_JURIDIQUE_NON_TRANSMIS"
+    },
+    {
+      "code": "A10",
+      "action": "VERIFIER_CONSOLIDATION_ET_IMPACTS",
+      "categorie": "EXPERT_INDEPENDANT_A_MANDATER",
+      "role_a_designer": "CPA_ET_ANALYSTE_POLITIQUES_PUBLIQUES",
+      "livrable_attendu": "AUCUN_DOUBLE_COMPTE_ET_GARANTIES"
+    },
+    {
+      "code": "A11",
+      "action": "AUTHENTIFIER_AVIS_INDEPENDANTS",
+      "categorie": "DECISION_INSTITUTIONNELLE",
+      "role_a_designer": "AUTORITE_COMPETENTE",
+      "livrable_attendu": "ORIGINAUX_AVIS_VERIFIES"
+    },
+    {
+      "code": "A12",
+      "action": "DECISION_PAR_AUTORITE_COMPETENTE",
+      "categorie": "DECISION_INSTITUTIONNELLE",
+      "role_a_designer": "AUTORITE_COMPETENTE",
+      "livrable_attendu": "DECISION_INSTITUTIONNELLE_DISTINCTE"
+    }
+  ],
+  "protections": {
+    "aucun_telechargement_automatique": true,
+    "aucune_sollicitation_ou_contact_externe": true,
+    "etapes_prioritaires_conditionnees_par_preuves_reelles": true,
+    "deux_pdfs_historiques_p54q_requis": true,
+    "editions_divergentes_prioritaires_et_non_reecrites": true,
+    "aucune_reproduction_si_un_pdf_non_concordant": true,
+    "suivi_prive_p55d_reverifie_depuis_sources": true,
+    "plans_prives_hors_git_et_0600": true,
+    "aucun_chemin_offset_sha_prive_publie": true,
+    "aucun_nom_adresse_signature_contrat_ou_montant_dans_github": true,
+    "aucun_statut_preparation_assimile_attestation": true,
+    "suspensions_p54z_p55a_p55c_p55d_non_levees": true,
+    "deux_mandats_p54h_non_transmis": true,
+    "expertise_professionnelle_hors_code": true,
+    "zero_montant_certifie": true,
+    "quatre_p54e_ouverts_et_date_non_qualifiee": true,
+    "quarante_p54n_dix_p54o_non_leves": true,
+    "p54b_96_p54c_8_non_attestes": true,
+    "consolidation_ville_rtc_somhac_sans_double_compte": true,
+    "protection_emplois_services_pouvoir_achat": true,
+    "deux_regimes_constitutionnels_distincts": true,
+    "aucune_fusion_main": true,
+    "aucune_action_sinjira": true,
+    "no_go_automatique": true
+  },
+  "etat_initial": {
+    "documents_publics_references": 2,
+    "copies_originales_fournies_p55e": 0,
+    "editions_p55e_verifiees": 0,
+    "observations_a_revoir": 5,
+    "exigences_p55d_a_collecter": 40,
+    "mandats_professionnels_reels_signes": 0,
+    "avis_independants_authentifies": 0,
+    "dossiers_p54e_ouverts": 4,
+    "date_probable_non_certifiee": 1,
+    "taches_p54n_non_attestees": 40,
+    "blocages_p54o_non_leves": 10,
+    "controles_p54b_non_attestes": 96,
+    "controles_p54c_non_attestes": 8,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
