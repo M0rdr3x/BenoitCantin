@@ -99,3 +99,7 @@ Le navigateur contrôle également chaque lecture de l'API — y compris le bout
 ### Résilience bornée du contrôle réseau
 
 Les contrôles de disponibilité HTTP effectuent jusqu'à **trois lectures GET** en cas de HTTP 503 temporaire, séparées par des délais de 0,3 s et 0,6 s. Ils ne réessaient **jamais** l'envoi POST, ne masquent pas une panne persistante et vérifient les protections CORS et le refus des votes même lorsque la première lecture a dû être répétée. Des tests hors réseau simulent les échecs ponctuels et permanents. Les résultats restent invisibles si le service ne fournit pas de réponse cohérente.
+
+## Reprise d’une erreur de lecture transitoire sans ouvrir le vote
+
+Le service public Supabase peut répondre temporairement 503 à la première consultation. Au chargement, le navigateur effectue déjà une seconde lecture des résultats; désormais, si cette relecture est conforme, l’interface remet son statut exact (« consultation en préparation » ou « ouverte » uniquement avec toutes les conditions vérifiées), au lieu de laisser une alerte d’indisponibilité périmée. Si la relecture échoue, elle garde l’envoi désactivé et affiche l’indisponibilité. Ce changement concerne **uniquement la lecture GET**; aucun envoi POST n'est répété et les exigences d'âge, d'approbation de version et de CAPTCHA ne sont pas assouplies. Un test Node du gestionnaire réel simule l'incident et vérifie l'absence d'ouverture d'un corpus provisoire.
