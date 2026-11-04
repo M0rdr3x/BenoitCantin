@@ -20,6 +20,7 @@ async function verify(mode,remote=sample){
   const statuses=[];
   let firstCalls=0,retries=0,forms=0,robots=0;
   const ctx={
+    API:"https://example.invalid/nova-civic-poll",
     window:{__NOVA_POLL_PUBLIC_CORPUS:corpus},
     fetchJson:async()=>{firstCalls++;if(mode==="ok")return remote;
       throw new Error(mode==="invalid"?"public_snapshot_invalid":"HTTP 503");},
