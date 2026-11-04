@@ -8,7 +8,7 @@ const vm=require("node:vm");
 const assert=require("node:assert/strict");
 const file=path.join(__dirname,"../supabase/functions/nova-civic-poll/index.ts");
 const edge=fs.readFileSync(file,"utf8");
-const match=edge.match(/function verifyPublishedCounts\([\s\S]*?\n}\n+(?=async function publicResults\(\))/);
+const match=edge.match(/function verifyPublishedCounts\([\s\S]*?\n}\n+(?=\/\/ Une catégorie)/);
 assert.ok(match,"La fonction de validation réelle est introuvable");
 const js=match[0]
   .replace(/function verifyPublishedCounts\([\s\S]*?\)\s*:\s*Map<string,number\[\]>\s*\{/,
@@ -44,4 +44,25 @@ const oneOption=counts(10); oneOption[0]={question_id:"q01",option_value:0,total
 const result=verify(questions,oneOption,10);
 assert.equal(result.get("q01")[2],10);
 assert.equal(result.get("q01")[5],0);
+const cellMatch=edge.match(/function canPublishCells\([\s\S]*?\n}\n+(?=async function publicResults\(\))/);
+assert.ok(cellMatch,"Le filtre réel des petites cellules est introuvable");
+const compiled=cellMatch[0].replace(
+  /function canPublishCells\([\s\S]*?\): boolean\s*\{/,
+  "function canPublishCells(counts){"
+);
+assert.ok(!compiled.includes("Map<string"),"Le test ne doit pas évaluer du TypeScript");
+const cellCheck=vm.runInNewContext(
+  "const MIN_NONZERO_CELL=5;\n"+compiled+"\ncanPublishCells",
+  {},{timeout:2000}
+);
+const cells=row=>new Map(questions.map(q=>[q.question_id,row.slice()]));
+assert.equal(cellCheck(cells([10,0,0,0,0,0])),true);
+assert.equal(cellCheck(cells([5,5,0,0,0,0])),true);
+assert.equal(cellCheck(cells([9,1,0,0,0,0])),false,"Une réponse seule doit masquer le lot");
+assert.equal(cellCheck(cells([6,4,0,0,0,0])),false,"Quatre réponses doivent masquer le lot");
+assert.equal(cellCheck(cells([0,0,0,0,0,0])),true,"Zéros autorisés, seuil global indépendant");
+const mixed=cells([10,0,0,0,0,0]);mixed.set("q05",[9,1,0,0,0,0]);
+assert.equal(cellCheck(mixed),false,"Une seule question sensible doit masquer l'ensemble");
+assert.equal(cellCheck(cells([-1,11,0,0,0,0])),false,"Rejeter une valeur négative");
+console.log("OK NOVA : catégories 9/1 et 6/4 masquées, 5/5 possible, suppression globale et zéro conservé.");
 console.log("OK NOVA : instantanés cohérents 0/10/20/40, 11 cas de fraude ou lecture concurrente rejetés.");

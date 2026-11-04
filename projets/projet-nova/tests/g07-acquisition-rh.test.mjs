@@ -95,12 +95,17 @@ test("un manifeste acquis doit prouver l'empreinte, le nombre d'octets et la dat
   ...baseline,status:"ACQUIRED_UNINTERPRETED",
   retrieved_at_utc:"2026-11-04T22:00:00.000Z",
   sha256:"a".repeat(64),size_bytes:123456,
-  xlsx_inventory:{ok:true,worksheet_count:1,worksheets:["xl/worksheets/sheet1.xml"],failures:[]}
+  xlsx_inventory:{ok:true,worksheet_count:1,worksheets:["xl/worksheets/sheet1.xml"],failures:[]},
+  xlsx_metadata:{audit_level:"L2_STRUCTURE_SEULEMENT",container_valid:true,
+    worksheet_count:1,cell_values_read:false,clinic_fte_verified:0,
+    regional_worker_counts_verified:0,decision:"NON_FRANCHI"}
  };
  assert.equal(inspectAcquisitionManifest(m).ok,true);
  assert.equal(inspectAcquisitionManifest({...m,sha256:null}).ok,false);
  assert.equal(inspectAcquisitionManifest({...m,size_bytes:999999999}).ok,false);
  assert.equal(inspectAcquisitionManifest({...m,source_id:"IMPOSTEUR"}).ok,false);
+ assert.equal(inspectAcquisitionManifest({...m,xlsx_metadata:null}).ok,false);
+ assert.equal(inspectAcquisitionManifest({...m,xlsx_metadata:{...m.xlsx_metadata,cell_values_read:true}}).ok,false);
 });
 
 test("aucune validation clinique, budget, ETP ni autorisation déduite de l'acquisition",()=>{
