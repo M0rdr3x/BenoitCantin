@@ -83,6 +83,19 @@ Le protocole initial `official/working/protocole-portrait-regional-sante-g0-v1.m
 - **Interprétation :** affiliations, endroits habituels de suivi et démarches vers l'urgence utilisent des populations différentes. Les variations observées ne prouvent aucune causalité ni supériorité de gestion. Nunavik et Terres-Cries-de-la-Baie-James ne sont pas couverts par l'enquête; leur obligation d'accès n'en est pas diminuée.
 - **Gouvernance :** G0 **non franchie**, aucune région pilote désignée, aucun contrat, économie ou traitement de données de patient autorisé. Les quatre références candidates et leurs empreintes dans `data/sources.json` ne sont pas modifiées.
 
+## G0.5 — Accès effectif, main-d'œuvre et coûts complets (3 novembre 2026)
+
+- **Dossier technique non normatif :** `official/working/protocole-g0-5-preuve-capacite-sante-v1.md` (NOVA-SINJ-G0-SAN-006).
+- **Matrice des preuves par RSS :** `data/matrice-preuves-g0-5-sante.json` (18 RSS × 8 dimensions = **144 éléments de preuve**; **0 indépendamment validé** dans le dossier Nova).
+- **Contrôleur déterministe et bloquant par défaut :** `assets/g0-sante-gate-core.mjs`. Les preuves incomplètes restent `NON_FRANCHI`. Huit preuves complètes ne peuvent déclencher qu'une `REVUE_FORMELLE_REQUISE`, **jamais une autorisation de pilote, de budget ou de privatisation**.
+- **Tests :** `tests/g0-sante-gate.test.mjs` couvre complétude, 18 RSS, exclusions, fausses validations, aucun pilote automatique, et l'isolement des références historiques provinciales. La configuration GitHub Actions est mise à jour; son exécution effective ne doit pas être supposée.
+- **Présentation :** `preuves-g0-5-sante.html`, accessible depuis le diagnostic, la page régionale, le registre, la conformité, la bibliothèque et l'accueil.
+- **Sources vérifiées :** pages publiques du gouvernement du Québec et de la RAMQ concernant les accès à la première ligne, la performance du GAP, les données RH 2024–2025, St@tRAMQ et les statistiques sur demande. Les fichiers XLS/XLSX listés n'ont **pas** été importés ni convertis en chiffres régionaux inventés.
+- **Données historiques nationales :** 36 % de consultation en clinique à l'intérieur de 36 h, 84 % d'attitration, 79,5 % de rétention 0–12 mois des nouvelles embauches dans le réseau, **exercice 2024–2025 seulement**, publiées par le tableau stratégique gouvernemental. Ne pas les comparer directement aux 82 % de l'enquête ISQ 2025 ni aux 16 RSS de G0.4.
+- **Priorités de collecte :** huit tâches `Q01–Q08`, toutes `NON_ENTAME`. Les demandes documentaires préexistantes `M01–M09` et les trois lettres modèles sont toujours **non transmises**.
+- **Règles :** pas de données personnelles de santé ni de microdonnées sans autorisations, pas de coûts inventés, pas de déplacement ignoré des ETP publics, pas d'exclusion des RSS 17/18 du droit d'être considérées. **G0 non franchie**.
+- Les références officielles candidates du programme, du corpus, des statuts et des finances restent inchangées et les empreintes de `data/sources.json` ne sont pas modifiées.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
