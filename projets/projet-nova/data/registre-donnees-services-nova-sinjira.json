@@ -215,6 +215,26 @@
         "signed_approval": false,
         "gate_g0_completed": false,
         "warning": "Le nombre de personnes salariées, le nombre de personnes présentes et les professionnels rémunérés RAMQ ne sont pas des ETP cliniques additionnables sans méthode et dédoublonnage."
+      },
+      "rh_acquisition_g07": {
+        "document_id": "NOVA-SINJ-G0-SAN-010",
+        "phase": "G0.7",
+        "status": "SOURCE_IDENTIFIED_DOWNLOAD_BLOCKED",
+        "provenance_file": "data/registre-acquisition-rh-g0-7.json",
+        "workflow_manual": ".github/workflows/nova-g07-acquisition-rh.yml",
+        "source_control": "assets/g07-rh-acquisition-core.mjs",
+        "download_script": "scripts/g07-acquerir-rh-officiel.mjs",
+        "methodology": "official/working/protocole-g0-7-acquisition-rh-v1.md",
+        "webpage": "acquisition-rh-g0-7-sante.html",
+        "source_xlsx_obtained": false,
+        "source_xlsx_sha256": null,
+        "source_sheets_audited": 0,
+        "certified_staff_counts_by_rss": 0,
+        "independently_audited_clinical_fte_by_rss": 0,
+        "external_approval": false,
+        "g0_passed": false,
+        "financial_savings_evidence": null,
+        "note": "Une page et un lien XLSX confirmés ne signifient ni téléchargement ni extraction; workflow manuel seulement et aucun commit automatique."
       }
     },
     {
