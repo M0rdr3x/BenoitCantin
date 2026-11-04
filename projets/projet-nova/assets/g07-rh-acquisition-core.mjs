@@ -125,7 +125,12 @@ export function readXlsxZipDirectory(bytes) {
     throw new Error("ZIP_UNSUPPORTED_VOLUME_OR_ZIP64");
   if(centralOffset+centralSize>eocd||centralOffset<4||count>5000)
     throw new Error("ZIP_BAD_DIRECTORY_BOUNDS");
-  const decoder=new TextDecoder("utf-8",{fatal:true});
+  const decoder=typeof TextDecoder==="function" ? new TextDecoder("utf-8",{fatal:true}) : null;
+  const decodeName=bytesPart=>{
+    if(decoder)return decoder.decode(bytesPart);
+    if([...bytesPart].some(x=>x>127))throw new Error("ZIP_UTF8_DECODER_UNAVAILABLE");
+    return String.fromCharCode(...bytesPart);
+  };
   const entries=[];
   let pos=centralOffset;
   for(let i=0;i<count;i++){
@@ -138,7 +143,7 @@ export function readXlsxZipDirectory(bytes) {
     const commentLen=dv.getUint16(pos+32,true);
     if(pos+46+len+extraLen+commentLen>centralOffset+centralSize)
       throw new Error("ZIP_TRUNCATED_DIRECTORY");
-    const name=decoder.decode(bytes.subarray(pos+46,pos+46+len));
+    const name=decodeName(bytes.subarray(pos+46,pos+46+len));
     const localOffset=dv.getUint32(pos+42,true);
     if(localOffset+30>centralOffset || dv.getUint32(localOffset,true)!==0x04034b50)
       throw new Error("ZIP_LOCAL_HEADER_INVALID");
