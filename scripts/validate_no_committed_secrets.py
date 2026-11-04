@@ -101,6 +101,10 @@ def inspect_file(path: Path, rel: Path) -> list[str]:
     """Refuser tout fichier texte suivi qui n'a pas pu être inspecté."""
     if is_forbidden_env_file(path):
         return [f'{rel}: fichier d’environnement réel versionné']
+    # Un lien suivi par Git peut pointer hors du dépôt ou vers une source
+    # non contrôlée par la PR. Refuser ce type d'entrée AVANT stat()/read().
+    if path.is_symlink():
+        return [f'{rel}: lien symbolique suivi interdit dans le garde secrets']
 
     must_scan = path.suffix.lower() in MANDATORY_TEXT_EXTENSIONS or path.name in MANDATORY_TEXT_NAMES
     try:
