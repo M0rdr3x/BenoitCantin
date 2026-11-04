@@ -110,6 +110,50 @@ Le protocole initial `official/working/protocole-portrait-regional-sante-g0-v1.m
 - **Aucune addition** d'effectifs, de professionnels RAMQ et d'ETP sans méthode de dédoublonnage et période homogène. Les RSS 17 et 18 restent exclues **de l'enquête ISQ 2025**, mais non des recherches RH possibles.
 - **État :** G0 non franchie, aucun chiffrage unitaire, transfert de personnel, contrat, changement d'emploi ou budget adopté. Le corpus, le programme, les statuts, les finances candidats et le manifeste `data/sources.json` restent inchangés.
 
+## G0.7 — Acquisition contrôlée du XLSX RH (4 novembre 2026)
+
+**État vérifié :** le gouvernement du Québec répertorie le XLSX public `Portrait du personnel des établissements publics et privés conventionnés (2024–2025)`, 136 Ko environ; son téléchargement depuis les environnements de travail a **échoué**. Aucun chiffre RH ne peut donc être attribué aux 18 RSS à partir de ce XLSX. Cette situation est consignée et ne signifie pas qu'il n'existe aucun personnel dans les régions.
+
+- **Page G0.7 :** `acquisition-rh-g0-7-sante.html`, bilan des portes documentaires L0–L5, avec seulement L0 confirmé.
+- **Protocole :** `official/working/protocole-g0-7-acquisition-rh-v1.md`, provenance, permissions, schéma et précautions.
+- **Registre des tentatives :** `data/registre-acquisition-rh-g0-7.json` initialement `DOWNLOAD_BLOCKED`, aucune empreinte ni feuille XLSX inventée.
+- **Validation pure :** `assets/g07-rh-acquisition-core.mjs` — inventaire central ZIP/XLSX sans décompression ni extraction de données de personnel, empreinte et provenance obligatoires pour une acquisition réussie.
+- **Script de téléchargement volontaire :** `scripts/g07-acquerir-rh-officiel.mjs` — HTTPS officialisé, hôte CDN gouvernemental autorisé, limite 5 Mo, SHA‑256, date UTC et rapport de contrôles; sortie dans artefact et non dans le dépôt.
+- **Workflow manuel :** `.github/workflows/nova-g07-acquisition-rh.yml`. Déclencheur **`workflow_dispatch` seulement**, `contents: read`, conservation d'artefacts 14 jours, pas de commit automatique. **N'a pas été exécuté ni attesté réussi à cette date.**
+- **Tests d'intégrité :** `tests/g07-acquisition-rh.test.mjs` : 10 cas prévus sur l'inventaire ZIP, faux/invalides, interdiction de chiffres et blocage du statut non acquis.
+- **Rapport interne :** `official/working/rapport-controles-g0-7-acquisition-rh-v1.md` : 10/10 contrôles de structure exécutés dans V8 avec ZIP synthétiques; aucune analyse du XLSX officiel ni exécution complète de GitHub Actions attestée.
+- **Suite test générale :** surveillance des fichiers G0.7 ajoutée à `.github/workflows/nova-sinjira-finances-tests.yml`; l'ajout ne certifie aucun résultat CI.
+- **Étape de reprise :** dans GitHub Actions, sélectionner **Projet Nova G0.7 — audit source RH officielle**, puis **Run workflow**. Vérifier les journaux et l'artefact `source-audit.json`, ainsi que les octets XLSX si valides. Ne pas actualiser `registre-rh-regional-g0-6-sante.json` sans inspecter les feuilles, régions, périodes, professions, unités, doubles comptes et droits de diffusion.
+
+**Restrictions permanentes :** aucune donnée individuelle de salaire ou de patient, aucun ETP de première ligne inféré des personnes rémunérées RAMQ, aucun effet financier garanti, aucune autorisation automatique de pilote, aucun changement aux documents officiels candidats ou au manifeste `data/sources.json`.
+
+## G0.8 — Audit des métadonnées du classeur RH (4 novembre 2026)
+
+**État documenté :** fichier XLSX gouvernemental de la période **2024–2025** repéré; **octets non obtenus**. L'URL officielle et le catalogue sont confirmés, mais aucune feuille, donnée RH ni valeur d'ETP n'a été lue dans cette intervention.
+
+- **Page de suivi :** `audit-classeur-rh-g0-8-sante.html`, treize critères et six niveaux documentaires (L0 seul confirmé).
+- **Contrat qualité :** `data/registre-verification-classeur-rh-g0-8.json`, **18 RSS** et **13 contrôles**; toutes les valeurs RH demeurent `null`.
+- **Inspecteur Node 22 :** `assets/g08-rh-workbook-inspector.mjs`, vérifie ZIP/CRC, XML du classeur, relations internes, noms, dimensions, absence de macros, relations externes et fichiers incorporés suspects. Il **n'extrait aucune valeur de cellule**, aucun ETP ni salaire.
+- **Tests :** `tests/g08-rh-workbook-inspector.test.mjs`, onze scénarios sur des archives XLSX **synthétiques**, notamment métadonnées valides, fichiers tronqués, chemins liés, CRC, macros et XML potentiellement dangereux.
+- **Rapport de contrôle interne :** `official/working/rapport-controles-g0-8-validation-rh-v1.md` : 9/9 scénarios V8 exécutés sur des ZIP synthétiques non comprimés. Les 11 tests Node du dépôt, dont les scénarios DEFLATE, ne sont pas encore attestés comme exécutés.
+- **Acquisition G0.7 renforcée :** `scripts/g07-acquerir-rh-officiel.mjs` impose désormais `inspectOfficialRhWorkbook` avant d'enregistrer la source et ajoute `xlsx_metadata` au rapport; `assets/g07-rh-acquisition-core.mjs` rejette un manifeste prétendument acquis sans contrôle L2. Le registre G0.7 reste `DOWNLOAD_BLOCKED`.
+- **Workflow manuel :** `.github/workflows/nova-g07-acquisition-rh.yml` doit désormais exécuter les tests G0.7 et G0.8 avant toute tentative de téléchargement; **aucune exécution réussie n'est confirmée** par le seul ajout de cette configuration. Le workflow a uniquement `contents: read`, ne commit pas et conserve les artefacts au maximum 14 jours.
+- **Méthode :** `official/working/protocole-g0-8-validation-classeur-rh-v1.md` (NOVA-SINJ-G0-SAN-012); vérification future des en-têtes, unités, territoires, périodes, doubles comptes, données supprimées et examen indépendant avant toute interprétation.
+- **Gouvernance :** une copie SHA‑256 et des métadonnées OOXML cohérentes ne certifient pas les valeurs et ne peuvent déclencher ni ETP, ni économies, ni pilote. La source 2024–2025 n'est pas automatiquement représentative des effectifs de 2026. Aucune donnée personnelle de salarié ou patient n'est importée.
+- **Préservation :** références candidates du programme, du corpus, des finances et des statuts ainsi que le manifeste `data/sources.json` **inchangés**.
+
+## G0.9 — Revue des données RH et contrôle du double comptage (4 novembre 2026)
+
+- **Source officielle référencée mais non acquise :** le fichier gouvernemental `Portrait du personnel ... (2024–2025)` est listé sur Québec.ca; le téléchargement direct reste bloqué. Aucun dénombrement régional ni ETP n'a été extrait.
+- **Page G0.9 :** `rapprochement-rh-g0-9-sante.html`, explication des 13 contrôles et 18 RSS. Toutes les valeurs régionales RH sont « non disponibles » et non zéro.
+- **Registre :** `data/registre-rapprochement-rh-g0-9.json`, treize contrôles (source, feuille/cellule, géographie, période, unité, rôle détail/sous-total, doublons, suppression, zéro réel, RAMQ, première ligne, revue indépendante, autorité).
+- **Nouveau moteur de rapprochement :** `assets/g09-rh-reconciliation-core.mjs`, qui vérifie les références de cellules, les grains conceptuels, les doublons, les valeurs supprimées, l'empreinte source et les revues humaines. Il ne réalise **aucune somme officielle automatique** et retourne toujours `ready_for_release:false`.
+- **Paquet de revue :** `scripts/g09-generer-paquet-revue-rh.mjs`. Il exige un fichier G0.7/G0.8 réellement obtenu, revérifie son SHA‑256 et sa liste de feuilles, puis produit `g09-review-package.json` sans cellule ni montant de personnel.
+- **Tests :** `tests/g09-rh-reconciliation.test.mjs` contient dix scénarios synthétiques sur les contrôles de mappage et de refus. Le workflow manuel `.github/workflows/nova-g07-acquisition-rh.yml` exécute les tests G0.7/G0.8/G0.9 puis, **seulement après téléchargement réussi**, produit un paquet G0.9 comme artefact temporaire de 14 jours. La réussite GitHub Actions n'est pas attestée.
+- **Protocole :** `official/working/protocole-g0-9-interpretation-rh-v1.md` (NOVA-SINJ-G0-SAN-014), méthode de revue des tableaux et des sous-totaux avant tout calcul d'effectif.
+- **Contraintes :** personnel salarié R22 ≠ professionnels rémunérés RAMQ ≠ ETP cliniques; un pourcentage ISQ 2025 ≠ dénombrement RH 2024–2025. Une valeur manquante ou supprimée reste `null`, zéro n'est accepté que lorsqu'observé. Les 18 RSS et catégories d'établissement doivent être confirmées, pas inférées.
+- **Gouvernance :** G0 **non franchie**; aucune réforme, aucune économie et aucun budget autorisés. Les références officielles candidates et les empreintes du manifeste `data/sources.json` restent inchangées.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 

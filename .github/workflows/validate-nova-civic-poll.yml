@@ -22,11 +22,13 @@ on:
       - 'vercel.json'
       - 'projets/projet-nova/netlify.toml'
       - 'scripts/test_nova_civic_poll.py'
+      - 'scripts/test_nova_poll_delta_privacy.py'
       - 'scripts/test_nova_public_bundles.py'
       - 'scripts/validate_jekyll_emergency_pages.py'
       - 'scripts/test_nova_boussole_runtime.cjs'
       - 'scripts/test_nova_boussole_navigation.cjs'
       - 'scripts/test_nova_poll_runtime.cjs'
+      - 'scripts/test_nova_poll_recovery.cjs'
       - 'scripts/test_nova_edge_snapshot.cjs'
       - 'scripts/smoke_nova_poll_edge.py'
       - 'scripts/smoke_nova_live_public.py'
@@ -59,6 +61,8 @@ jobs:
         run: python scripts/test_nova_civic_poll.py
       - name: Vérifier les avant-projets 64/40 en lecture seule, sans vote
         run: python scripts/test_nova_candidate_questionnaires.py
+      - name: Tester les écarts entre lots publiés sans votes réels
+        run: python scripts/test_nova_poll_delta_privacy.py
       - name: Vérifier l'identité des bundles publics avec les JSON canoniques
         run: python scripts/test_nova_public_bundles.py
       - name: Configurer Node pour les tests du moteur
@@ -75,6 +79,8 @@ jobs:
         run: node scripts/test_nova_boussole_navigation.cjs
       - name: Tester la cohérence atomique des résultats publics sans vote
         run: node scripts/test_nova_edge_snapshot.cjs
+      - name: Tester le rétablissement d'une lecture GET temporairement indisponible
+        run: node scripts/test_nova_poll_recovery.cjs
       - name: Tester le verrou du formulaire client sans réseau
         run: node scripts/test_nova_poll_runtime.cjs
       - name: Tester les contrôles HTTP publics sans réseau
