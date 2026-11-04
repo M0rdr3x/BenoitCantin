@@ -147,7 +147,7 @@ def priority(states,reproduced,blockers=0):
     if not reproduced:
         return "REPRODUCTION_NON_OBTENUE",["A04"]
     if blockers:
-        return "RESERVES_ET_ACCÈS_A_EXAMINER",["A05","A07"]
+        return "RESERVES_ET_ACCES_A_EXAMINER",["A05","A07"]
     return "REVUE_HUMAINE_A_ORGANISER",["A05","A06"]
 
 
@@ -182,11 +182,19 @@ def private_worklist(doc):
          "P55E_SUIVI_PRIVÉ_INVALIDE")
     rows=[]
     for ref,record in zip(REFS,doc["observations"]):
-        need(record["reference"]==ref,"P55E_REFERENCE_MODIFIEE")
+        need(type(record) is dict
+             and set(record)=={"reference","exigences"}
+             and record["reference"]==ref
+             and type(record["exigences"]) is list
+             and len(record["exigences"])==len(p55d.GATES),
+             "P55E_GRILLE_OU_REFERENCE_MODIFIEE")
         pending=[]
         for (gate,_deliverable,role),cell in zip(
                 p55d.GATES,record["exigences"]):
-            need(cell["code"]==gate and cell["etat"] in p55d.STATES,
+            need(type(cell) is dict and set(cell)=={"code","etat"}
+                 and cell["code"]==gate
+                 and type(cell["etat"]) is str
+                 and cell["etat"] in p55d.STATES,
                  "P55E_GATE_INVALIDE")
             if cell["etat"]!="PREPARATION_DECLAREE_NON_ATTESTEE":
                 pending.append({"controle":gate,"etat":cell["etat"],
