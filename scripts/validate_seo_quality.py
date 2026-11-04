@@ -22,6 +22,8 @@ NOVA_PAGE_NAMES = [
     "programme.html",
     "boussole-electorale.html",
     "sondage-citoyen.html",
+    "architecture-nova-sinjira.html",
+    "mise-en-oeuvre-nova-sinjira.html",
     "finances.html",
     "documents.html",
     "recrutement.html",
