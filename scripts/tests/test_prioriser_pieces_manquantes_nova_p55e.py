@@ -177,7 +177,7 @@ class TestP55E(unittest.TestCase):
                    p55a_counts=parent,inherited_z=2,p55c_review=(4,1,1))
         self.assertEqual(r["suspensions_p54z_heritees"],2)
         self.assertEqual(r["reserves_p55a_heritees"],1)
-        self.assertEqual(r["phase_prioritaire"],"RESERVES_ET_ACCÈS_A_EXAMINER")
+        self.assertEqual(r["phase_prioritaire"],"RESERVES_ET_ACCES_A_EXAMINER")
         self.assertFalse(r["cloture_dossier_autorisee"])
     def test_37_mauvais_compteur_p55d(self):
         with self.assertRaises(ValueError):
@@ -284,7 +284,7 @@ class TestP55E(unittest.TestCase):
                              "--plan-prive",str(p),"--bilan-public",str(b)])
             self.assertEqual(code,0)
             out=json.loads(b.read_text())
-            self.assertEqual(out["phase_prioritaire"],"RESERVES_ET_ACCÈS_A_EXAMINER")
+            self.assertEqual(out["phase_prioritaire"],"RESERVES_ET_ACCES_A_EXAMINER")
             self.assertEqual(out["obstacles_declaratifs_agreges_non_uniques"],2)
     def test_60_fiche_alteree_refusee(self):
         with tempfile.TemporaryDirectory() as t:
@@ -356,7 +356,7 @@ class TestP55E(unittest.TestCase):
             d.chmod(0o644)
             with self.assertRaises(ValueError):m.p55a.private_source(d)
     def test_69_gouv_ni_deploiement(self):
-        self.assertEqual(m.cfg if False else self.cfg["etat_initial"]["decision"],m.NO_GO)
+        self.assertEqual(self.cfg["etat_initial"]["decision"],m.NO_GO)
         self.assertEqual(self.cfg["etat_initial"]["mandats_professionnels_reels_signes"],0)
     def test_70_workflow_ne_publie_aucune_preuve(self):
         self.assertEqual(m.report()["avis_independants_authentifies"],0)
