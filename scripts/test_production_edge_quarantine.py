@@ -87,6 +87,19 @@ class DeploymentQuarantineTests(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 builder.quarantine_unreviewed_edge_deploys(workspace)
 
+    def test_source_tree_symlink_is_rejected_before_copy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / 'supabase-source'
+            source.mkdir()
+            target = Path(tmp) / 'fixture.txt'
+            target.write_text('synthetic private marker', encoding='utf-8')
+            (source / 'unexpected.txt').symlink_to(target)
+            with self.assertRaises(SystemExit):
+                builder.reject_source_symlinks(source)
+
+    def test_normal_source_tree_is_accepted(self):
+        builder.reject_source_symlinks(SUPABASE)
+
     def test_symlinked_function_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             workspace = make_workspace(Path(tmp))
