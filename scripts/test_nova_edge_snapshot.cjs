@@ -8,7 +8,7 @@ const vm=require("node:vm");
 const assert=require("node:assert/strict");
 const file=path.join(__dirname,"../supabase/functions/nova-civic-poll/index.ts");
 const edge=fs.readFileSync(file,"utf8");
-const match=edge.match(/function verifyPublishedCounts\([\s\S]*?\n}\n(?=async function publicResults\(\))/);
+const match=edge.match(/function verifyPublishedCounts\([\s\S]*?\n}\n+(?=async function publicResults\(\))/);
 assert.ok(match,"La fonction de validation réelle est introuvable");
 const js=match[0]
   .replace(/function verifyPublishedCounts\([\s\S]*?\)\s*:\s*Map<string,number\[\]>\s*\{/,
