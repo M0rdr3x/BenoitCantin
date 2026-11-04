@@ -79,6 +79,8 @@ def main() -> int:
                 'confirmCaptcha',
                 'hashToken',
                 'nova_poll_submit',
+                'verifyPublishedCounts',
+                'inconsistent_public_snapshot',
                 'isOpen()',
                 'Cache-Control',
                 'no-store',
