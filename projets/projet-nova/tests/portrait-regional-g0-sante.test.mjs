@@ -6,6 +6,7 @@ const data=JSON.parse(await readFile(new URL("../data/portrait-regional-g0-sante
 const diagnostic=JSON.parse(await readFile(new URL("../data/diagnostic-g0-sante-premiere-ligne-2025.json",import.meta.url),"utf8"));
 const registre=JSON.parse(await readFile(new URL("../data/registre-donnees-services-nova-sinjira.json",import.meta.url),"utf8"));
 const page=await readFile(new URL("../portrait-regional-g0-sante.html",import.meta.url),"utf8");
+const csv=await readFile(new URL("../data/portrait-regional-g0-sante-2025.csv",import.meta.url),"utf8");
 const byId=Object.fromEntries(data.regions.map(x=>[x.id,x]));
 const observed=data.regions.filter(x=>x.included_in_survey);
 
@@ -108,4 +109,20 @@ test("page publique : les 16 valeurs sources, 18 régions et avertissements sont
  assert.match(page,/n'a pas.*pu être téléchargé/);
  assert.ok(page.includes("protocole-portrait-regional-sante-g0-v2.md"));
  assert.ok(page.includes("</main>") && page.includes("</html>"));
+});
+
+test("CSV régional : 18 lignes, codes préservés et valeurs égales au JSON",()=>{
+ const lines=csv.trimEnd().split("\n");
+ assert.equal(lines.length,19);
+ const rows=lines.map(line=>[...line.matchAll(/"((?:[^"]|"")*)"/g)].map(m=>m[1].replaceAll('""','"')));
+ assert.ok(rows.every(x=>x.length===16));
+ assert.deepEqual(rows.slice(1).map(x=>x[0]),data.regions.map(x=>"RSS-"+x.id));
+ for(let i=0;i<data.regions.length;i++){
+  const r=data.regions[i],line=rows[i+1];
+  assert.equal(line[3],r.affiliation_percent===null?"":String(r.affiliation_percent));
+  assert.equal(line[12],"");
+  assert.equal(line[13],"");
+  assert.equal(line[14],"");
+  assert.equal(line[15],"");
+ }
 });
