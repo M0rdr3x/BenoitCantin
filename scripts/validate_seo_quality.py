@@ -25,6 +25,7 @@ NOVA_PAGE_NAMES = [
     "sondage-citoyen.html",
     "portrait-regional-g0-sante.html",
     "preuves-g0-5-sante.html",
+    "capacite-rh-g0-6-sante.html",
     "indicateurs-g0-sante.html",
     "diagnostic-g0-sante.html",
     "registre-donnees-nova-sinjira.html",
