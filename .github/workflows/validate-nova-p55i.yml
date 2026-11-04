@@ -1,0 +1,85 @@
+name: Projet Nova P55I - Rapprochement budgétaire 2024 sans certification
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p55i.yml"
+      - "scripts/rapprocher_sommaire_budgetaire_nova_p55i.py"
+      - "scripts/tests/test_rapprocher_sommaire_budgetaire_nova_p55i.py"
+      - "scripts/acquerir_pdfs_publics_nova_p55h.py"
+      - "scripts/controler_integrite_pieces_nova_p55g.py"
+      - "scripts/verifier_interpretation_sources_nova_p55f.py"
+      - "projets/projet-nova/etudes/P55I_*"
+      - "projets/projet-nova/etudes/P55H_*"
+      - "projets/projet-nova/etudes/P55G_*"
+      - "projets/projet-nova/etudes/P55F_*"
+      - "projets/projet-nova/etudes/P54Q_*"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rapprochement-financier-provisoire:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Installer dependance PDF des modules anterieurs sans telecharger les rapports
+        run: python -m pip install pypdf==5.9.0
+      - name: 60 tests du calcul et des verrous anti-economies fictives
+        run: |
+          python -m py_compile scripts/rapprocher_sommaire_budgetaire_nova_p55i.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_rapprocher_sommaire_budgetaire_nova_p55i.py")
+          assert suite.countTestCases()==60,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Verifier table publique et bilan non audites sans acces aux PDF
+        run: |
+          python scripts/rapprocher_sommaire_budgetaire_nova_p55i.py \
+            --bilan-public p55i_bilan_neutre.json --table-public p55i_table_neutre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          b=json.loads(Path("p55i_bilan_neutre.json").read_text("utf-8"))
+          t=json.loads(Path("p55i_table_neutre.json").read_text("utf-8"))
+          assert b["schema_version"]=="P55I-BILAN-PUBLIC-1"
+          assert b["source_publique_texte_et_non_pieces_pdf_authentifiees"] is True
+          assert b["sommaire_budget_realisation_non_audite"] is True
+          assert b["revenus_fonctionnement_ecart_cad"]==97050926
+          assert b["revenus_investissement_ecart_cad"]==-140218159
+          assert b["charges_ecart_cad"]==14997942
+          assert b["variation_excédent_exercice_cad"]==-58165175
+          assert b["copies_originales_authentifiees_p55h"]==0
+          assert b["economies_certifiees_cad"] is None
+          assert b["decision"]=="NO_GO_AUTOMATIQUE"
+          assert len(t["lignes"])==4
+          assert sum(x["contribution_variation_resultat_cad"]
+                     for x in t["lignes"][:3])==-58165175
+          assert t["source_officielle"]["pdf_index_zero"]==6
+          assert t["aucune_economie_affirmee"] is True
+          assert not b["transmission_externe_autorisee"]
+          assert not b["fusion_main_autorisee"]
+          PY
+      - name: Exiger un code 3 lors de toute tentative de certification logicielle
+        run: |
+          set +e
+          python scripts/rapprocher_sommaire_budgetaire_nova_p55i.py --exiger-certification
+          status=$?
+          set -e
+          test "$status" -eq 3
+      - name: Archiver exclusivement le bilan et tableau chiffré public
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p55i-tableau-arithmetique-public-non-certifiant
+          path: |
+            p55i_bilan_neutre.json
+            p55i_table_neutre.json
+          retention-days: 7
