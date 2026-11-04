@@ -5,6 +5,8 @@ import {readFile} from "node:fs/promises";
 const diagnostic=JSON.parse(await readFile(new URL("../data/diagnostic-g0-sante-premiere-ligne-2025.json",import.meta.url),"utf8"));
 const registry=JSON.parse(await readFile(new URL("../data/registre-donnees-services-nova-sinjira.json",import.meta.url),"utf8"));
 const page=await readFile(new URL("../diagnostic-g0-sante.html",import.meta.url),"utf8");
+const dictionnaire=JSON.parse(await readFile(new URL("../data/dictionnaire-indicateurs-g0-sante.json",import.meta.url),"utf8"));
+const pageIndicateurs=await readFile(new URL("../indicateurs-g0-sante.html",import.meta.url),"utf8");
 const sourceMap=new Map(diagnostic.sources.map(s=>[s.id,s]));
 const acquisition=JSON.parse(await readFile(new URL("../data/plan-acquisition-donnees-g0-sante.json",import.meta.url),"utf8"));
 
@@ -85,4 +87,28 @@ test("plan de demandes G0 sans demande transmise ni données personnelles",()=>{
     assert.ok(r.autorites_candidates.length>=1);
     assert.ok(r.champs_de_metadonnees_exiges.includes("territoire"));
   }
+});
+
+test("dictionnaire G0 : quinze indicateurs, quatre valeurs sourcées, onze sans valeur",()=>{
+  assert.equal(dictionnaire.indicateurs.length,15);
+  assert.equal(new Set(dictionnaire.indicateurs.map(x=>x.id)).size,15);
+  const known=dictionnaire.indicateurs.filter(x=>x.valeur_publique_confirmee!==null);
+  const unknown=dictionnaire.indicateurs.filter(x=>x.valeur_publique_confirmee===null);
+  assert.equal(known.length,4);
+  assert.equal(unknown.length,11);
+  assert.ok(known.every(x=>x.statut.startsWith("ENQUETE_") && x.periode_valeur==="2025"));
+  assert.deepEqual(known.map(x=>x.valeur_publique_confirmee),["82 %","18 %","≈ 10 %","≈ 19 %"]);
+  assert.ok(unknown.every(x=>x.verified_numeric_extraction===false && x.periode_valeur===null));
+  assert.ok(dictionnaire.indicateurs.every(x=>x.url_source.startsWith("https://") && x.causality_established===false && x.public_private_cost_comparable===false && x.data_access_authorized===false));
+});
+
+test("GAP : ne pas confondre premier rappel, rendez-vous et consultation réelle",()=>{
+  const i=Object.fromEntries(dictionnaire.indicateurs.map(x=>[x.id,x]));
+  assert.match(i["G0-GAP-03"].limites_de_comparaison,/PAS date de consultation/);
+  assert.match(i["G0-GAP-05"].limites_de_comparaison,/PAS la preuve d'une consultation/);
+  assert.match(i["G0-GAP-04"].limites_de_comparaison,/non numériques/);
+  assert.equal(i["G0-SAN-ATT-01"].valeur_publique_confirmee,null);
+  assert.match(pageIndicateurs,/G0 non franchi/);
+  assert.ok(pageIndicateurs.includes("dictionnaire-indicateurs-g0-sante.json"));
+  assert.equal((pageIndicateurs.match(/class="metric-code"/g)||[]).length,15);
 });
