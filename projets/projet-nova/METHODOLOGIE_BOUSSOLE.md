@@ -224,3 +224,7 @@ Toute modification du texte d’une proposition exige une migration explicite :
 5. mettre à jour le lien questionnaire ↔ corpus seulement après cette révision.
 
 La CI compare le texte public de chaque question au texte auquel le corpus de preuves est lié. Une différence fait échouer la validation. Ce verrou évite qu’une ancienne branche, une reformulation éditoriale ou une fusion tardive change le sens d’une question tout en conservant des positions codées sur une formulation antérieure.
+
+## Parcours jusqu'à la dernière question
+
+La boussole permet de terminer le parcours même lorsque toutes les propositions sont marquées « Sans opinion / passer ». Dans ce cas, **aucune position politique n'est inventée** : les seize dimensions sont indiquées comme non calculables, le radar ne dessine aucun polygone et un message explique qu'au moins deux réponses principales sur un même thème sont nécessaires pour obtenir un premier score. Les options « Précédent » et « Recommencer » restent disponibles. Un test de navigation dans le moteur réel parcourt les 64 écrans, vérifie les retours et les choix, ainsi que la fin du parcours avec zéro, une ou plusieurs réponses exploitables, sans accès réseau ni stockage local.
