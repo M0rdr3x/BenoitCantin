@@ -1,0 +1,42 @@
+name: Projet Nova G0.7 — audit source RH officielle
+run-name: "Acquisition manuelle RH 2024-2025 — preuve uniquement"
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nova-rh-g07-acquisition
+  cancel-in-progress: false
+
+jobs:
+  acquisition-source:
+    name: Vérifier une source publique sans extraire d'effectifs
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      G07_ARTIFACT_DIR: g07-acquisition-output
+    steps:
+      - name: Lire le code à auditer
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Vérifier les garde-fous G0.7 avant téléchargement
+        run: node --test projets/projet-nova/tests/g07-acquisition-rh.test.mjs
+      - name: Télécharger le XLSX officiel et produire SHA-256 + inventaire ZIP
+        run: node projets/projet-nova/scripts/g07-acquerir-rh-officiel.mjs
+      - name: Conserver le rapport et le XLSX seulement s'il est validé
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-g07-rh-source-audit-${{ github.run_id }}
+          path: |
+            g07-acquisition-output/source-audit.json
+            g07-acquisition-output/rh-rsss-2024-2025-source.xlsx
+          if-no-files-found: warn
+          retention-days: 14
