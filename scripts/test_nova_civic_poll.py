@@ -75,6 +75,7 @@ assert "GRANT EXECUTE ON FUNCTION public.nova_poll_submit" in sql
 assert "[functions.nova-civic-poll]" in config
 inventory = (ROOT / "scripts" / "validate_edge_function_inventory.py").read_text(encoding="utf-8")
 assert '"nova-civic-poll"' in inventory
+assert (ROOT / "scripts" / "test_nova_poll_runtime.cjs").is_file()
 assert '"NOVA_POLL_HMAC_KEY"' in inventory
 for path in ("netlify.toml", "vercel.json", "projets/projet-nova/netlify.toml"):
     deployment = (ROOT / path).read_text(encoding="utf-8")
