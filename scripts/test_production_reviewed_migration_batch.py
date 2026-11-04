@@ -30,7 +30,31 @@ class ReviewedProductionMigrationBatchTests(unittest.TestCase):
             '20260101000000 baseline\n',
             encoding='utf-8',
         )
-        (self.supabase / 'config.toml').write_text('project_id = "test"\n', encoding='utf-8')
+        # Le constructeur production applique désormais la quarantaine Edge
+        # avant de produire ses migrations. Reproduire les deux routes sensibles
+        # avec des sources SYNTHÉTIQUES, sans identifiant ni secret réel.
+        (self.supabase / 'config.toml').write_text(
+            'project_id = "test"\n'
+            '[functions.security-context]\nverify_jwt = true\n'
+            '[functions.nova-civic-poll]\nverify_jwt = false\n',
+            encoding='utf-8',
+        )
+        functions = self.supabase / 'functions'
+        (functions / 'security-context').mkdir(parents=True)
+        (functions / 'security-context/index.ts').write_text(
+            '// Fixture SQL: service_security_evaluate_context_session\n',
+            encoding='utf-8',
+        )
+        (functions / 'nova-civic-poll').mkdir()
+        (functions / 'nova-civic-poll/index.ts').write_text(
+            '// Fixture activation: Deno.env.get("NOVA_POLL_ENABLED") === "true"\n'
+            '// Fixture CAPTCHA: if(!await confirmCaptcha(payload.captchaToken))\n'
+            '// Fixture privileged role: SUPABASE_SERVICE_ROLE_KEY\n',
+            encoding='utf-8',
+        )
+        (self.supabase / 'NOVA_POLL_SCHEMA_PREDEPLOY.sql').write_text(
+            '-- SQL candidat fictif isolé pour test\n', encoding='utf-8',
+        )
 
     def tearDown(self):
         self.tmp.cleanup()
@@ -74,6 +98,9 @@ class ReviewedProductionMigrationBatchTests(unittest.TestCase):
 
         self.assertEqual(proc.returncode, 0, self.output(proc))
         self.assertTrue((out / 'migrations' / f'{version}_{name}.sql').is_file())
+        self.assertFalse((out / 'functions/security-context').exists())
+        self.assertFalse((out / 'functions/nova-civic-poll').exists())
+        self.assertFalse((out / 'NOVA_POLL_SCHEMA_PREDEPLOY.sql').exists())
         marker = (out / 'migrations' / '20260101000000_baseline.sql').read_text('utf-8')
         self.assertIn('Marqueur de déploiement lié uniquement', marker)
 
