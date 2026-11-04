@@ -121,6 +121,7 @@ Le protocole initial `official/working/protocole-portrait-regional-sante-g0-v1.m
 - **Script de téléchargement volontaire :** `scripts/g07-acquerir-rh-officiel.mjs` — HTTPS officialisé, hôte CDN gouvernemental autorisé, limite 5 Mo, SHA‑256, date UTC et rapport de contrôles; sortie dans artefact et non dans le dépôt.
 - **Workflow manuel :** `.github/workflows/nova-g07-acquisition-rh.yml`. Déclencheur **`workflow_dispatch` seulement**, `contents: read`, conservation d'artefacts 14 jours, pas de commit automatique. **N'a pas été exécuté ni attesté réussi à cette date.**
 - **Tests d'intégrité :** `tests/g07-acquisition-rh.test.mjs` : 10 cas prévus sur l'inventaire ZIP, faux/invalides, interdiction de chiffres et blocage du statut non acquis.
+- **Rapport interne :** `official/working/rapport-controles-g0-7-acquisition-rh-v1.md` : 10/10 contrôles de structure exécutés dans V8 avec ZIP synthétiques; aucune analyse du XLSX officiel ni exécution complète de GitHub Actions attestée.
 - **Suite test générale :** surveillance des fichiers G0.7 ajoutée à `.github/workflows/nova-sinjira-finances-tests.yml`; l'ajout ne certifie aucun résultat CI.
 - **Étape de reprise :** dans GitHub Actions, sélectionner **Projet Nova G0.7 — audit source RH officielle**, puis **Run workflow**. Vérifier les journaux et l'artefact `source-audit.json`, ainsi que les octets XLSX si valides. Ne pas actualiser `registre-rh-regional-g0-6-sante.json` sans inspecter les feuilles, régions, périodes, professions, unités, doubles comptes et droits de diffusion.
 
