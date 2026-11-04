@@ -92,6 +92,12 @@ La Boussole électorale, en revanche, est **distincte du sondage** : ses 64 rép
 
 **Ne jamais annoncer « 100 % opérationnel » avant réussite des tests réels, examen des exigences applicables et validation de publication sur le domaine.**
 
+## Confidentialité : catégories de très faible effectif
+
+Le seuil d'au moins dix bulletins **ne suffit pas** à protéger une catégorie comptant un à quatre avis (par exemple neuf réponses pour une option et une pour une autre). Le serveur NOVA refuse désormais **toute la répartition, le total et la date de publication** lorsqu'une seule des six catégories d'une des huit questions contient entre un et quatre avis. Les catégories à zéro et à cinq ou davantage restent permises, sous le seuil général de dix participations. Le navigateur vérifie indépendamment ce même invariant. Aucun arrondi ni valeur inventée ne remplace un petit effectif. Tests sans réseau : répartitions fictives 9/1, 6/4 et 5/5, incluant un unique item sensible.
+
+**Limitation restante et bloquante avant ouverture :** la comparaison de deux lots publiés peut permettre de déduire une variation individuelle, même si chaque instantané satisfait le seuil de cinq par catégorie. Une analyse de divulgation temporelle et des mesures supplémentaires (report, regroupement ou politique de publication appropriée) restent indispensables. Ni l'absence de noms en base ni cette barrière ne justifient la promesse d'anonymat absolu. Ne pas activer `NOVA_POLL_ENABLED` avant revue du questionnaire, confidentialité et recette isolée.
+
 ## Vérification défensive des résultats publics côté navigateur
 
 Le navigateur contrôle également chaque lecture de l'API — y compris le bouton « Actualiser les résultats » — avant d'afficher une répartition. Les huit formulations et leur ordre doivent correspondre à la version locale, les résultats non publiés ne doivent contenir aucun petit effectif, et pour chaque lot public les six catégories de réponse doivent totaliser **exactement** le nombre de bulletins publiés, sous forme d'entiers sûrs et non négatifs. Toute donnée défectueuse ou incohérente est masquée plutôt que transformée en pourcentage. Si l'API annonce la fermeture pendant une session ouverte, le bouton d'envoi est désactivé immédiatement. Des tests Node sur le véritable code navigateur vérifient le contrat et les cas négatifs, sans vote ni réseau.

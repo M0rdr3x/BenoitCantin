@@ -3,6 +3,7 @@
   const VERSION = "nova-consultation-v1";
   const API = "https://gpvivleexywljowcqkru.supabase.co/functions/v1/nova-civic-poll";
   const VALUES = [-2,-1,0,1,2,9];
+  const MIN_NONZERO_CELL = 5;
   const LABELS = {
     "-2":"Tout à fait en désaccord",
     "-1":"Plutôt en désaccord",
@@ -141,7 +142,7 @@
       let total=0;
       for(const key of keys){
         const n=q.counts[key];
-        if(typeof n!=="number" || !Number.isSafeInteger(n) || n<0) return false;
+        if(typeof n!=="number" || !Number.isSafeInteger(n) || n<0 || (n>0 && n<MIN_NONZERO_CELL)) return false;
         total+=n;
         if(!Number.isSafeInteger(total)) return false;
       }

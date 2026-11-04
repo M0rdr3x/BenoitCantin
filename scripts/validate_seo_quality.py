@@ -27,6 +27,7 @@ NOVA_PAGE_NAMES = [
     "preuves-g0-5-sante.html",
     "capacite-rh-g0-6-sante.html",
     "acquisition-rh-g0-7-sante.html",
+    "audit-classeur-rh-g0-8-sante.html",
     "indicateurs-g0-sante.html",
     "diagnostic-g0-sante.html",
     "registre-donnees-nova-sinjira.html",

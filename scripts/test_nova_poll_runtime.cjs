@@ -56,6 +56,17 @@ const publicQuestions=baseQuestions.map(q=>({...q,counts:{...acceptedCounts}}));
 const publication={...hidden,resultsVisible:true,ballots:10,publishedAt:"2026-11-03T20:00:00Z",
   questions:publicQuestions};
 assert.equal(t.validatedPublicResponse(publication),true,"Lot de 10 bulletins cohérent");
+// Le navigateur refuse aussi les petites catégories même si le total
+// global d'une question est correct.
+const change=row=>({...publication,questions:publicQuestions.map((q,i)=>i===3
+  ? {...q,counts:row}:q)});
+assert.equal(t.validatedPublicResponse(change({"-2":9,"-1":1,"0":0,"1":0,"2":0,"9":0})),false,
+  "Une seule réponse dans une catégorie doit masquer tous les chiffres");
+assert.equal(t.validatedPublicResponse(change({"-2":6,"-1":4,"0":0,"1":0,"2":0,"9":0})),false,
+  "Une catégorie de quatre réponses doit rester privée");
+assert.equal(t.validatedPublicResponse(change({"-2":5,"-1":5,"0":0,"1":0,"2":0,"9":0})),true,
+  "Deux catégories de cinq réponses peuvent être affichées");
+
 const tamper=(make)=>({...publication,questions:publicQuestions.map((q,i)=>i? q:{...q,counts:make({...q.counts})})});
 assert.equal(t.validatedPublicResponse({...publication,ballots:20}),false,"Transition de lots incohérente");
 assert.equal(t.validatedPublicResponse(tamper(c=>({...c,"9":9}))),false,"Total incorrect");

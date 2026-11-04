@@ -60,6 +60,11 @@ assert "sondage-citoyen.html" in compass_html
 assert 'id="poll-adult"' in poll_html and 'id="poll-agree"' in poll_html
 assert 'id="poll-results"' in poll_html and 'id="poll-form"' in poll_html
 assert "MIN_PUBLIC_BALLOTS = 10" in edge
+assert "MIN_NONZERO_CELL = 5" in edge, "Seuil de divulgation par catégorie requis"
+assert "canPublishCells(countsById)" in edge
+assert "MIN_NONZERO_CELL = 5" in poll_js
+assert "(n>0 && n<MIN_NONZERO_CELL)" in poll_js
+
 assert "nova_poll_public_counts" in edge
 assert "function verifyPublishedCounts(" in edge
 assert "const countsById=verifyPublishedCounts(questions,counts,ballotCount)" in edge
