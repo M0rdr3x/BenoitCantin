@@ -32,7 +32,7 @@
     "redirects_http_https_refuses": true,
     "aucun_parametre_de_secret_ni_authentification": true,
     "pas_de_soumission_ou_contact_humain": true,
-    "pas_d_execution_reseau_en_ci": true,
+    "aucun_telechargement_des_pdf_officiels_en_ci": true,
     "deux_sources_obligatoires_ensemble": true,
     "destination_privee_neuve_hors_git": true,
     "creation_repertoire_0700": true,
