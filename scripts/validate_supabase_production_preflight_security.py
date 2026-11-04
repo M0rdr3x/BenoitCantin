@@ -151,6 +151,7 @@ def validate_text(text: str) -> list[str]:
     for trigger_path in (
         "      - 'scripts/validate_supabase_production_preflight_security.py'",
         "      - 'scripts/test_supabase_production_preflight_security.py'",
+        "      - 'scripts/test_production_edge_quarantine.py'",
         "      - '.github/workflows/supabase-production-preflight.yml'",
         "      - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'",
     ):
@@ -178,6 +179,8 @@ def validate_text(text: str) -> list[str]:
             errors.append("La chaîne locale Python → auto-test → contrat → validations est incomplète.")
         elif not setup_at < self_test_at < self_check_at < validate_at:
             errors.append("L'ordre doit rester Python → auto-test sécurité → contrat sécurité → validations Supabase.")
+        if "python scripts/test_production_edge_quarantine.py" not in local:
+            errors.append("Tests de quarantaine Edge absents du prévol local.")
         for command in (
             "python scripts/validate_supabase.py",
             "python scripts/validate_edge_function_inventory.py",
