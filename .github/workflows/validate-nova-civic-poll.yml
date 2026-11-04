@@ -22,6 +22,7 @@ on:
       - 'vercel.json'
       - 'projets/projet-nova/netlify.toml'
       - 'scripts/test_nova_civic_poll.py'
+      - 'scripts/test_nova_poll_delta_privacy.py'
       - 'scripts/test_nova_public_bundles.py'
       - 'scripts/validate_jekyll_emergency_pages.py'
       - 'scripts/test_nova_boussole_runtime.cjs'
@@ -60,6 +61,8 @@ jobs:
         run: python scripts/test_nova_civic_poll.py
       - name: Vérifier les avant-projets 64/40 en lecture seule, sans vote
         run: python scripts/test_nova_candidate_questionnaires.py
+      - name: Tester les écarts entre lots publiés sans votes réels
+        run: python scripts/test_nova_poll_delta_privacy.py
       - name: Vérifier l'identité des bundles publics avec les JSON canoniques
         run: python scripts/test_nova_public_bundles.py
       - name: Configurer Node pour les tests du moteur
