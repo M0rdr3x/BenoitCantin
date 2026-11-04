@@ -14,8 +14,9 @@ const js=match[0]
   .replace(/function verifyPublishedCounts\([\s\S]*?\)\s*:\s*Map<string,number\[\]>\s*\{/,
     "function verifyPublishedCounts(questions,counts,ballotCount){")
   .replace(/new Map<string,number\[\]>/g,"new Map")
+  .replace(/new Set<string>/g,"new Set")
   .replace(/countsById\.get\(id\)!\[ix\]/g,"countsById.get(id)[ix]");
-assert.ok(!js.includes("Map<string")&&!js.includes("get(id)!"),"TypeScript non supprimé du test");
+assert.ok(!js.includes("Map<string")&&!js.includes("Set<string")&&!js.includes("get(id)!"),"TypeScript non supprimé du test");
 const verify=vm.runInNewContext(js+"\nverifyPublishedCounts",{}, {timeout:2000});
 assert.equal(typeof verify,"function");
 const questions=Array.from({length:8},(_,i)=>({question_id:"q"+String(i+1).padStart(2,"0")}));
