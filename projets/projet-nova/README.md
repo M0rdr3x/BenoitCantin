@@ -110,6 +110,22 @@ Le protocole initial `official/working/protocole-portrait-regional-sante-g0-v1.m
 - **Aucune addition** d'effectifs, de professionnels RAMQ et d'ETP sans méthode de dédoublonnage et période homogène. Les RSS 17 et 18 restent exclues **de l'enquête ISQ 2025**, mais non des recherches RH possibles.
 - **État :** G0 non franchie, aucun chiffrage unitaire, transfert de personnel, contrat, changement d'emploi ou budget adopté. Le corpus, le programme, les statuts, les finances candidats et le manifeste `data/sources.json` restent inchangés.
 
+## G0.7 — Acquisition contrôlée du XLSX RH (4 novembre 2026)
+
+**État vérifié :** le gouvernement du Québec répertorie le XLSX public `Portrait du personnel des établissements publics et privés conventionnés (2024–2025)`, 136 Ko environ; son téléchargement depuis les environnements de travail a **échoué**. Aucun chiffre RH ne peut donc être attribué aux 18 RSS à partir de ce XLSX. Cette situation est consignée et ne signifie pas qu'il n'existe aucun personnel dans les régions.
+
+- **Page G0.7 :** `acquisition-rh-g0-7-sante.html`, bilan des portes documentaires L0–L5, avec seulement L0 confirmé.
+- **Protocole :** `official/working/protocole-g0-7-acquisition-rh-v1.md`, provenance, permissions, schéma et précautions.
+- **Registre des tentatives :** `data/registre-acquisition-rh-g0-7.json` initialement `DOWNLOAD_BLOCKED`, aucune empreinte ni feuille XLSX inventée.
+- **Validation pure :** `assets/g07-rh-acquisition-core.mjs` — inventaire central ZIP/XLSX sans décompression ni extraction de données de personnel, empreinte et provenance obligatoires pour une acquisition réussie.
+- **Script de téléchargement volontaire :** `scripts/g07-acquerir-rh-officiel.mjs` — HTTPS officialisé, hôte CDN gouvernemental autorisé, limite 5 Mo, SHA‑256, date UTC et rapport de contrôles; sortie dans artefact et non dans le dépôt.
+- **Workflow manuel :** `.github/workflows/nova-g07-acquisition-rh.yml`. Déclencheur **`workflow_dispatch` seulement**, `contents: read`, conservation d'artefacts 14 jours, pas de commit automatique. **N'a pas été exécuté ni attesté réussi à cette date.**
+- **Tests d'intégrité :** `tests/g07-acquisition-rh.test.mjs` : 10 cas prévus sur l'inventaire ZIP, faux/invalides, interdiction de chiffres et blocage du statut non acquis.
+- **Suite test générale :** surveillance des fichiers G0.7 ajoutée à `.github/workflows/nova-sinjira-finances-tests.yml`; l'ajout ne certifie aucun résultat CI.
+- **Étape de reprise :** dans GitHub Actions, sélectionner **Projet Nova G0.7 — audit source RH officielle**, puis **Run workflow**. Vérifier les journaux et l'artefact `source-audit.json`, ainsi que les octets XLSX si valides. Ne pas actualiser `registre-rh-regional-g0-6-sante.json` sans inspecter les feuilles, régions, périodes, professions, unités, doubles comptes et droits de diffusion.
+
+**Restrictions permanentes :** aucune donnée individuelle de salaire ou de patient, aucun ETP de première ligne inféré des personnes rémunérées RAMQ, aucun effet financier garanti, aucune autorisation automatique de pilote, aucun changement aux documents officiels candidats ou au manifeste `data/sources.json`.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
