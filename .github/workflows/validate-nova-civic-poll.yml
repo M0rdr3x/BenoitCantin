@@ -74,6 +74,8 @@ jobs:
         run: node scripts/test_nova_poll_runtime.cjs
       - name: Tester les contrôles HTTP publics sans réseau
         run: python scripts/smoke_nova_live_public.py --self-test
+      - name: Vérifier les tentatives bornées de lecture, sans réseau
+        run: python scripts/smoke_nova_poll_edge.py --self-test
       - name: Vérifier le service public sans envoyer de vote
         run: python scripts/smoke_nova_poll_edge.py
       - name: Construire l'artefact public isolé

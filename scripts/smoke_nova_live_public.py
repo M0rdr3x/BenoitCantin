@@ -10,6 +10,7 @@ import argparse
 import json
 import re
 from pathlib import Path
+import time
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
@@ -59,6 +60,20 @@ def request(url: str, allowed_host: str, *, origin: str | None = None):
         return err.code, err.headers, ""
 
 
+def stable_api_get(getter=request, sleep=time.sleep):
+    """Trois lectures GET maximum si l'API a un incident 503 bref."""
+    for attempt in range(3):
+        try:
+            response=getter(API, urlparse(API_ORIGIN).hostname or "", origin=ORIGIN)
+        except (URLError,TimeoutError):
+            if attempt==2: raise
+        else:
+            if response[0]!=503 or attempt==2:
+                return response
+        sleep(0.3 * (2 ** attempt))
+    raise ValueError("Réessais API épuisés")
+
+
 def decode_bundle(source: str, variable: str):
     prefix = "window." + variable + " = "
     if source.count(prefix) != 1:
@@ -93,6 +108,19 @@ def validate_opening_state(local_poll, response):
 
 
 def self_test():
+    reads=[]
+    delays=[]
+    def transient(url,host,*,origin=None):
+        reads.append(url)
+        return (200 if len(reads)==3 else 503,{},'{}')
+    assert stable_api_get(transient,delays.append)[0]==200
+    assert len(reads)==3 and delays==[0.3,0.6]
+    reads.clear();delays.clear()
+    def fail_forever(url,host,*,origin=None):
+        reads.append(url)
+        return 503,{},''
+    assert stable_api_get(fail_forever,delays.append)[0]==503
+    assert len(reads)==3
     source = 'window.__NOVA_TEST = {"questions": [], "published": false};'
     assert decode_bundle(source, "__NOVA_TEST") == {"questions": [], "published": False}
     try:
@@ -149,7 +177,7 @@ def main():
         verify(PREFIX + "assets/sondage-citoyen.js")
         verify(PREFIX + "assets/boussole-electorale.js")
 
-        status, headers, data = request(API, urlparse(API_ORIGIN).hostname or "", origin=ORIGIN)
+        status, headers, data = stable_api_get()
         checks += 1
         if status != 200 or headers.get("Access-Control-Allow-Origin") != ORIGIN:
             raise ValueError(f"API NOVA inaccessible ou CORS absent: HTTP {status}")

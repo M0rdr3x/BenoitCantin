@@ -87,3 +87,7 @@ La Boussole électorale, en revanche, est **distincte du sondage** : ses 64 rép
 ## Vérification défensive des résultats publics côté navigateur
 
 Le navigateur contrôle également chaque lecture de l'API — y compris le bouton « Actualiser les résultats » — avant d'afficher une répartition. Les huit formulations et leur ordre doivent correspondre à la version locale, les résultats non publiés ne doivent contenir aucun petit effectif, et pour chaque lot public les six catégories de réponse doivent totaliser **exactement** le nombre de bulletins publiés, sous forme d'entiers sûrs et non négatifs. Toute donnée défectueuse ou incohérente est masquée plutôt que transformée en pourcentage. Si l'API annonce la fermeture pendant une session ouverte, le bouton d'envoi est désactivé immédiatement. Des tests Node sur le véritable code navigateur vérifient le contrat et les cas négatifs, sans vote ni réseau.
+
+### Résilience bornée du contrôle réseau
+
+Les contrôles de disponibilité HTTP effectuent jusqu'à **trois lectures GET** en cas de HTTP 503 temporaire, séparées par des délais de 0,3 s et 0,6 s. Ils ne réessaient **jamais** l'envoi POST, ne masquent pas une panne persistante et vérifient les protections CORS et le refus des votes même lorsque la première lecture a dû être répétée. Des tests hors réseau simulent les échecs ponctuels et permanents. Les résultats restent invisibles si le service ne fournit pas de réponse cohérente.
