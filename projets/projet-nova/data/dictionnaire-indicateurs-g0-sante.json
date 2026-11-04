@@ -8,7 +8,8 @@
     "Ne pas interpréter une valeur absente comme zéro.",
     "La définition de l'indicateur provenant du tableau de bord ne certifie pas une valeur à date ni une série historique complète.",
     "La consultation effective est distincte de l'attitration, du premier rappel GAP et de l'octroi d'un rendez-vous.",
-    "Le registre ne démontre pas l'effet causal d'un opérateur public, privé, coopératif ou OBNL."
+    "Le registre ne démontre pas l'effet causal d'un opérateur public, privé, coopératif ou OBNL.",
+    "Mise à jour G0.4 : une extension régionale distincte fournit 16 taux officiels d'affiliation et des mesures de suivi/démarches extraites du PDF ISQ Panorama 2026, sans modifier les 15 indicateurs de ce dictionnaire."
   ],
   "sources_officielles": [
     {
@@ -263,5 +264,23 @@
       "verified_numeric_extraction": false,
       "data_access_authorized": false
     }
-  ]
+  ],
+  "regional_extension": {
+    "data_path": "data/portrait-regional-g0-sante-2025.json",
+    "csv_path": "data/portrait-regional-g0-sante-2025.csv",
+    "methodology_path": "official/working/protocole-portrait-regional-sante-g0-v2.md",
+    "source": "https://statistique.quebec.ca/fr/fichier/panorama-des-regions-du-quebec-2026-sante.pdf",
+    "source_tables": [
+      "8.1",
+      "8.3"
+    ],
+    "data_verified_in_official_pdf_text": true,
+    "regional_affiliation_percentages_recorded": 16,
+    "regional_affiliation_population": "adultes de 18 ans et plus visés par EQUSSSS 2025",
+    "more_indicators": "Les lieux habituels de suivi concernent les affiliés, et les démarches vers l'urgence concernent un autre sous-groupe: dernières démarches semi-urgentes/non urgentes.",
+    "external_audit_completed": false,
+    "xlsx_downloaded": false,
+    "regional_cost_series_available": false,
+    "note": "Extension régionale autonome: ne remplace pas les 15 indicateurs du catalogue G0.2 et ne permet pas de comparer les modes d'exploitation."
+  }
 }
