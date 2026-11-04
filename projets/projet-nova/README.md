@@ -55,6 +55,16 @@ Ces études **ne sont ni une simulation officielle du budget, ni des économies 
 
 Le plan `data/plan-acquisition-donnees-g0-sante.json` organise les neuf preuves manquantes par interlocuteurs institutionnels possibles. Les demandes sont **préparées mais non transmises**; les tests vérifient ce statut. Aucun accès à un dossier médical individuel ou à une donnée personnelle n'est autorisé.
 
+## Protocole G0.2 — dictionnaire des indicateurs (3 novembre 2026)
+
+Le dossier `official/working/protocole-indicateurs-et-acces-donnees-g0-sante-v1.md` distingue **attitration**, **demande**, **rappel GAP**, **rendez-vous attribué** et **consultation réellement effectuée**, avec définitions et limites documentées par le gouvernement du Québec.
+
+Le registre `data/dictionnaire-indicateurs-g0-sante.json` présente **15 indicateurs**, dont **4 valeurs observées dans l'enquête ISQ 2025** et **11 valeurs absentes/indicateurs à construire**. La page `indicateurs-g0-sante.html` l'expose avec des notes méthodologiques, sans classement régional inventé. Les fichiers de tableaux XLSX ISQ, dont la disponibilité est attestée, **n'ont pas encore été analysés** et ne sont pas reproduits.
+
+Trois modèles de correspondance existent sous `official/working/modeles-demandes-donnees-g0-sante-v1.md` pour l'ISQ, la RAMQ et Santé Québec : **aucune demande n'a été envoyée**. Les demandes de documents administratifs et tout accès à des renseignements de santé sont soumis aux règles et autorisations applicables.
+
+Les tests intégrés dans `tests/diagnostic-g0-sante.test.mjs` vérifient l'absence de coûts fictifs et de conclusion causale, la présence des sources et la différence entre les rappels et les consultations. **Aucune exécution CI réussie n'est certifiée par le simple ajout des tests.**
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
