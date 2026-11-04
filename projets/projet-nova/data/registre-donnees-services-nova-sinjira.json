@@ -198,6 +198,23 @@
         "source_year_alignment_done": false,
         "official_research_permissions_received": false,
         "note": "Une donnée régionale d'affiliation ISQ et un catalogue de RH ou de coûts ne suffisent pas à établir un accès effectif, un ETP net, un coût unitaire ou une conformité."
+      },
+      "rh_capacity_g06": {
+        "phase": "G0.6",
+        "document_id": "NOVA-SINJ-G0-SAN-008",
+        "registry": "data/registre-rh-regional-g0-6-sante.json",
+        "methodology": "official/working/protocole-g0-6-capacite-personnel-sante-v1.md",
+        "core": "assets/g06-capacite-rh-core.mjs",
+        "page": "capacite-rh-g0-6-sante.html",
+        "rss_total": 18,
+        "proposed_measures": 11,
+        "institutional_source_families": 4,
+        "rh_regional_numeric_series_inspected": 0,
+        "regional_clinical_etp_certified": 0,
+        "xlsx_staff_2024_2025_imported": false,
+        "signed_approval": false,
+        "gate_g0_completed": false,
+        "warning": "Le nombre de personnes salariées, le nombre de personnes présentes et les professionnels rémunérés RAMQ ne sont pas des ETP cliniques additionnables sans méthode et dédoublonnage."
       }
     },
     {
