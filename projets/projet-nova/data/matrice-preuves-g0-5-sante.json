@@ -1,0 +1,2110 @@
+{
+  "schema": "nova-sinjira-sante-g0-5-capacite/v1",
+  "dossier_id": "NOVA-SINJ-G0-SAN-006",
+  "projet": "Projet Nova",
+  "etat_le": "2026-11-03",
+  "statut": "MATRICE_DE_PREUVES_NON_CERTIFIEE",
+  "phase": "G0.5",
+  "population": "Services de première ligne médicalement assurés dans les conditions applicables; périmètre clinique encore à préciser.",
+  "rule": "G0 n'est pas franchie par la présence de liens. Une preuve doit être spécifique à l'épisode, à la RSS, à la période et à la dimension; revue indépendante et décision formelle demeurent nécessaires. Aucune automatisation n'autorise un pilote.",
+  "territoire": "18 régions sociosanitaires, dont RSS 17/18 hors champ de l'enquête ISQ; ne pas confondre avec les régions administratives.",
+  "categories": [
+    {
+      "code": "PERIMETRE",
+      "label": "Épisode clinique assuré comparable",
+      "definition": "Définition du panier, des exclusions, de l'assurabilité, de l'horizon de suivi et des opérateurs admissibles",
+      "mapping_missing_g0": "M01",
+      "critical": true
+    },
+    {
+      "code": "ACCES_REEL",
+      "label": "Demande → consultation effectivement obtenue",
+      "definition": "Nouvelles demandes datées et actes cliniques réalisés, cas non servis, médiane/p90 par complexité et RSS",
+      "mapping_missing_g0": "M03",
+      "critical": true
+    },
+    {
+      "code": "QUALITE",
+      "label": "Qualité, sécurité et continuité",
+      "definition": "Réorientations, complications, continuité des soins et suivi, avec ajustement du risque et cas complexes",
+      "mapping_missing_g0": "M06",
+      "critical": true
+    },
+    {
+      "code": "EQUITE",
+      "label": "Équité territoriale et accessibilité",
+      "definition": "Populations non couvertes, besoins non satisfaits, groupes vulnérables, accès hors ligne et mécanisme de secours",
+      "mapping_missing_g0": "M08",
+      "critical": true
+    },
+    {
+      "code": "PERSONNEL",
+      "label": "Main-d’œuvre nette et maintien des services",
+      "definition": "Effectifs équivalents temps plein, entrées/sorties, heures, régions, déplacements public/privé et maintien des services",
+      "mapping_missing_g0": "M05",
+      "critical": true
+    },
+    {
+      "code": "COUT_COMPLET",
+      "label": "Coûts publics et coût économique sans double compte",
+      "definition": "Paiement public, administration, exploitation, capital, coûts aval, frais ménages/proches, transition, réserve, ajustement au cas",
+      "mapping_missing_g0": "M04",
+      "critical": true
+    },
+    {
+      "code": "DROITS",
+      "label": "Conformité juridique et protection des données",
+      "definition": "Droits RAMQ, cadre contractuel, frais interdits, permissions de données, recours et avis juridique compétent",
+      "mapping_missing_g0": "M09",
+      "critical": true
+    },
+    {
+      "code": "CONTREFACTUEL",
+      "label": "Comparateur public amélioré et examen indépendant",
+      "definition": "Comparer l'amélioration publique réaliste, un privé agréé et une coopérative/OBNL avec méthode et évaluation indépendante",
+      "mapping_missing_g0": "M02",
+      "critical": true
+    }
+  ],
+  "sources": [
+    {
+      "id": "ISQ_PANORAMA_2026",
+      "purpose": "Taux régionaux d'affiliation et démarches vers l'urgence, enquête 2025, tables 8.1 et 8.3",
+      "url": "https://statistique.quebec.ca/fr/fichier/panorama-des-regions-du-quebec-2026-sante.pdf",
+      "year": "2025",
+      "source_format": "PDF",
+      "status": "TAUX_16_RSS_TRANSCRITS_NON_AUDITES",
+      "regional_numeric_usable_for": [
+        "affiliation"
+      ],
+      "not_usable_for": [
+        "acces_reel",
+        "cout_complet",
+        "personnel_net",
+        "qualite_causale"
+      ]
+    },
+    {
+      "id": "QUEBEC_PREMIERE_LIGNE",
+      "purpose": "Rapports trimestriels historiques sur inscriptions et assiduité des médecins, visites d'urgence triage 4/5",
+      "url": "https://www.quebec.ca/sante/systeme-et-services-de-sante/organisation-des-services/donnees-systeme-sante-quebecois-services/donnees-acces-services-medicaux-premiere-ligne",
+      "year": "2024-12-31 et 2025-03-31 préliminaire",
+      "source_format": "XLSX/XLS",
+      "status": "CATALOGUE_VERIFIE_FICHIERS_NON_IMPORTES",
+      "regional_numeric_usable_for": [],
+      "not_usable_for": [
+        "delai_consultation_réel_sans_validation",
+        "comparaison_prive_public"
+      ]
+    },
+    {
+      "id": "SANTE_QUEBEC_PERFORMANCE",
+      "purpose": "Définitions du tableau de bord, première ligne, GAP, ressources humaines; tableaux dynamiques et fréquences",
+      "url": "https://www.quebec.ca/sante/systeme-et-services-de-sante/organisation-des-services/donnees-systeme-sante-quebecois-services/performance-reseau-sante-services-sociaux",
+      "year": "méthodologie consultée 2026-11-03; aucune valeur dynamique extraite",
+      "source_format": "Page web/Power BI",
+      "status": "DEFINITIONS_VERIFIEES_SERIES_NON_EXTRAITES",
+      "regional_numeric_usable_for": [],
+      "not_usable_for": [
+        "delai_demande_consultation_realisee_via_rappel",
+        "causalite"
+      ]
+    },
+    {
+      "id": "QUEBEC_RH_2024_2025",
+      "purpose": "Portrait du personnel des établissements publics et privés conventionnés, ventilations selon région et catégorie, exercice 2024-2025",
+      "url": "https://www.quebec.ca/sante/systeme-et-services-de-sante/organisation-des-services/donnees-systeme-sante-quebecois-services/ressources-humaines",
+      "year": "2024-2025",
+      "source_format": "XLSX, catalogue",
+      "status": "CATALOGUE_VERIFIE_FICHIER_NON_IMPORTE",
+      "regional_numeric_usable_for": [],
+      "not_usable_for": [
+        "main_oeuvre_totale_public_prive_non_conventionne",
+        "ETP_nets_premiere_ligne_sans_reclassement"
+      ]
+    },
+    {
+      "id": "RAMQ_STATRAMQ",
+      "purpose": "Professionnels rémunérés par la RAMQ, paramètres par région sociosanitaire",
+      "url": "https://www.quebec.ca/sante/systeme-et-services-de-sante/organisation-des-services/donnees-systeme-sante-quebecois-services/ressources-humaines",
+      "year": "paramètres régionaux indiqués; valeurs non extraites",
+      "source_format": "Application St@tRAMQ référencée",
+      "status": "CATALOGUE_VERIFIE_SERIES_NON_EXTRAITES",
+      "regional_numeric_usable_for": [],
+      "not_usable_for": [
+        "ETP_reels_sans_presence",
+        "medecins_non_remuneres_RAMQ"
+      ]
+    },
+    {
+      "id": "RAMQ_STATS",
+      "purpose": "Statistiques sur programmes et mécanisme de demande de données complémentaires",
+      "url": "https://www.ramq.gouv.qc.ca/fr/donnees-statistiques",
+      "year": "catalogue consulté 2026-11-03",
+      "source_format": "Pages statistiques et procédures",
+      "status": "CATALOGUE_VERIFIE_SANS_COUT_PAR_EPISODE",
+      "regional_numeric_usable_for": [],
+      "not_usable_for": [
+        "cout_integral_par_consultation"
+      ]
+    },
+    {
+      "id": "TRESOR_BORD_2024_2025",
+      "purpose": "Indicateurs provinciaux du plan stratégique, résultats 2024-2025",
+      "url": "https://performance.gouv.qc.ca/tableau-de-bord/resultats-detailles/sante-et-services-sociaux",
+      "year": "2024-2025",
+      "source_format": "Tableau historique gouvernemental",
+      "status": "VALEURS_HISTORIQUES_NATIONALES_VERIFIEES",
+      "regional_numeric_usable_for": [],
+      "not_usable_for": [
+        "series_2026",
+        "valeur_par_RSS"
+      ]
+    }
+  ],
+  "historique_provincial_separe": [
+    {
+      "id": "QPROV-2024-25-36H",
+      "label": "Personnes ayant consulté un professionnel dans les 36 heures dans les cliniques médicales",
+      "value": 36,
+      "unit": "percent",
+      "period": "2024-2025",
+      "geography": "Québec, niveau du plan stratégique seulement",
+      "source_id": "TRESOR_BORD_2024_2025",
+      "excluded_from_regional_comparison": true,
+      "warning": "Ne pas confondre avec le premier rappel GAP en 36 heures, ni avec un résultat 2026."
+    },
+    {
+      "id": "QPROV-2024-25-ATT",
+      "label": "Personnes attitrées à un professionnel ou une équipe de première ligne",
+      "value": 84,
+      "unit": "percent",
+      "period": "2024-2025",
+      "geography": "Québec, indicateur administratif du plan stratégique",
+      "source_id": "TRESOR_BORD_2024_2025",
+      "excluded_from_regional_comparison": true,
+      "warning": "Définition et population distinctes de l'enquête EQUSSSS 2025 qui indiquait 82 %; aucune variation temporelle calculable directement."
+    },
+    {
+      "id": "QPROV-2024-25-RH",
+      "label": "Taux de rétention de 0 à 12 mois des nouvelles embauches dans le réseau",
+      "value": 79.5,
+      "unit": "percent",
+      "period": "2024-2025",
+      "geography": "Québec, ensemble du réseau",
+      "source_id": "TRESOR_BORD_2024_2025",
+      "excluded_from_regional_comparison": true,
+      "warning": "Ni effectif première ligne ni taux régional ni mouvement net public/privé."
+    }
+  ],
+  "acquisition_tasks": [
+    {
+      "id": "Q01",
+      "target": "ACCÈS",
+      "urgency": 1,
+      "document_source": "SANTE_QUEBEC_PERFORMANCE",
+      "request": "Obtenir séries RSS distinguant demandes datées, rendez-vous offerts, consultations effectuées et demandes jamais servies; documenter médiane/p90 et service assuré.",
+      "status": "NON_ENTAME",
+      "received": false
+    },
+    {
+      "id": "Q02",
+      "target": "PERSONNEL",
+      "urgency": 2,
+      "document_source": "QUEBEC_RH_2024_2025",
+      "request": "Importer sous réserve de droits les agrégats régionaux 2024–25 d'effectifs; documenter ETP vs personnes, catégories et établissements inclus/exclus; recueillir déplacements nets.",
+      "status": "NON_ENTAME",
+      "received": false
+    },
+    {
+      "id": "Q03",
+      "target": "PERIMETRE",
+      "urgency": 3,
+      "document_source": "RAMQ_STATS",
+      "request": "Définir avec avis clinique et juridique un épisode comparable et la couverture par lieu/opérateur/professionnel, sans supposer que toute clinique privée est hors RAMQ.",
+      "status": "NON_ENTAME",
+      "received": false
+    },
+    {
+      "id": "Q04",
+      "target": "COUT_COMPLET",
+      "urgency": 4,
+      "document_source": "RAMQ_STATS",
+      "request": "Obtenir valeurs par épisode et coûts de ressources réellement imputables, avec rapprochement; ne pas calculer avec les seuls honoraires.",
+      "status": "NON_ENTAME",
+      "received": false
+    },
+    {
+      "id": "Q05",
+      "target": "QUALITE",
+      "urgency": 5,
+      "document_source": "SANTE_QUEBEC_PERFORMANCE",
+      "request": "Définir indicateurs de réorientations, qualité et suivi, avec case-mix, confidentialité et contrôle clinique.",
+      "status": "NON_ENTAME",
+      "received": false
+    },
+    {
+      "id": "Q06",
+      "target": "EQUITE",
+      "urgency": 6,
+      "document_source": "ISQ_PANORAMA_2026",
+      "request": "Documenter les besoins complexes et la continuité sur les RSS 17 et 18 avec les autorités et communautés compétentes, en dehors de l'enquête EQUSSSS 2025.",
+      "status": "NON_ENTAME",
+      "received": false
+    },
+    {
+      "id": "Q07",
+      "target": "CONTREFACTUEL",
+      "urgency": 7,
+      "document_source": "SANTE_QUEBEC_PERFORMANCE",
+      "request": "Définir comparator public améliorable, modes privés assurés, coopératives/OBNL, groupe de complexité homogène, horizon, audit sans attribution causale préalable.",
+      "status": "NON_ENTAME",
+      "received": false
+    },
+    {
+      "id": "Q08",
+      "target": "DROITS",
+      "urgency": 8,
+      "document_source": "RAMQ_STATS",
+      "request": "Avis juridique sur droits des usagers, frais assurés, confidentialité, données nécessaires, autorisations et mécanismes de recours.",
+      "status": "NON_ENTAME",
+      "received": false
+    }
+  ],
+  "detailed_data_contract": {
+    "grain": "RSS (01–18) × période homogène × sous-groupe de besoin × type d'épisode assuré × mode de prestation — uniquement après validation de la définition",
+    "mandatory_metadata": [
+      "source_id",
+      "document_version",
+      "date_extraction",
+      "periode_debut",
+      "periode_fin",
+      "rss_id",
+      "population",
+      "numerateur",
+      "denominateur",
+      "unite",
+      "case_mix",
+      "inclusions_exclusions",
+      "methodologie",
+      "licence",
+      "incertitude",
+      "validation_independante"
+    ],
+    "no_patient_data": true,
+    "no_microdata_without_authorization": true,
+    "missing_value_policy": "null, jamais 0 ou absence de besoin",
+    "comparability_rule": "Si périodes, populations, lieux ou catégories de personnel divergent, ne pas faire de jointure numérique ni convertir la corrélation en effet causal.",
+    "provider_cost_rule": "Coût public complet = transferts/payments publics + administration non incluse + aval + réserves/transition; coût social ne double-compte pas les transferts et inclut ressources réelles et effets sur ménages.",
+    "workforce_rule": "Suivre ETP régionaux nets; les médecins payés par RAMQ et le personnel des seuls établissements conventionnés ne représentent pas toute la main-d'œuvre de première ligne."
+  },
+  "automatic_decision": {
+    "gate": "NON_FRANCHI",
+    "pilot": "INTERDIT",
+    "financement": "NON_APPROUVE",
+    "economies_chiffrees": null,
+    "approbation_independante": false
+  },
+  "regions": [
+    {
+      "rss_id": "01",
+      "rss_nom": "Bas-Saint-Laurent",
+      "survey_included": true,
+      "observed_affiliation_2025_percent": 88.9,
+      "observed_affiliation_source": "ISQ_PANORAMA_2026",
+      "dossier_g0_condition": "NON_FRANCHI",
+      "pilote_autorise": false,
+      "comparateur_cost_certified": false,
+      "preuves": {
+        "PERIMETRE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Définition du panier, des exclusions, de l'assurabilité, de l'horizon de suivi et des opérateurs admissibles"
+        },
+        "ACCES_REEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Le pourcentage d'affiliation 2025 ne mesure pas les consultations effectuées."
+        },
+        "QUALITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Réorientations, complications, continuité des soins et suivi, avec ajustement du risque et cas complexes"
+        },
+        "EQUITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Populations non couvertes, besoins non satisfaits, groupes vulnérables, accès hors ligne et mécanisme de secours"
+        },
+        "PERSONNEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Effectifs équivalents temps plein, entrées/sorties, heures, régions, déplacements public/privé et maintien des services"
+        },
+        "COUT_COMPLET": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Paiement public, administration, exploitation, capital, coûts aval, frais ménages/proches, transition, réserve, ajustement au cas"
+        },
+        "DROITS": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Droits RAMQ, cadre contractuel, frais interdits, permissions de données, recours et avis juridique compétent"
+        },
+        "CONTREFACTUEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Comparer l'amélioration publique réaliste, un privé agréé et une coopérative/OBNL avec méthode et évaluation indépendante"
+        }
+      }
+    },
+    {
+      "rss_id": "02",
+      "rss_nom": "Saguenay–Lac-Saint-Jean",
+      "survey_included": true,
+      "observed_affiliation_2025_percent": 87.6,
+      "observed_affiliation_source": "ISQ_PANORAMA_2026",
+      "dossier_g0_condition": "NON_FRANCHI",
+      "pilote_autorise": false,
+      "comparateur_cost_certified": false,
+      "preuves": {
+        "PERIMETRE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Définition du panier, des exclusions, de l'assurabilité, de l'horizon de suivi et des opérateurs admissibles"
+        },
+        "ACCES_REEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Le pourcentage d'affiliation 2025 ne mesure pas les consultations effectuées."
+        },
+        "QUALITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Réorientations, complications, continuité des soins et suivi, avec ajustement du risque et cas complexes"
+        },
+        "EQUITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Populations non couvertes, besoins non satisfaits, groupes vulnérables, accès hors ligne et mécanisme de secours"
+        },
+        "PERSONNEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Effectifs équivalents temps plein, entrées/sorties, heures, régions, déplacements public/privé et maintien des services"
+        },
+        "COUT_COMPLET": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Paiement public, administration, exploitation, capital, coûts aval, frais ménages/proches, transition, réserve, ajustement au cas"
+        },
+        "DROITS": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Droits RAMQ, cadre contractuel, frais interdits, permissions de données, recours et avis juridique compétent"
+        },
+        "CONTREFACTUEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Comparer l'amélioration publique réaliste, un privé agréé et une coopérative/OBNL avec méthode et évaluation indépendante"
+        }
+      }
+    },
+    {
+      "rss_id": "03",
+      "rss_nom": "Capitale-Nationale",
+      "survey_included": true,
+      "observed_affiliation_2025_percent": 82.9,
+      "observed_affiliation_source": "ISQ_PANORAMA_2026",
+      "dossier_g0_condition": "NON_FRANCHI",
+      "pilote_autorise": false,
+      "comparateur_cost_certified": false,
+      "preuves": {
+        "PERIMETRE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Définition du panier, des exclusions, de l'assurabilité, de l'horizon de suivi et des opérateurs admissibles"
+        },
+        "ACCES_REEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Le pourcentage d'affiliation 2025 ne mesure pas les consultations effectuées."
+        },
+        "QUALITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Réorientations, complications, continuité des soins et suivi, avec ajustement du risque et cas complexes"
+        },
+        "EQUITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Populations non couvertes, besoins non satisfaits, groupes vulnérables, accès hors ligne et mécanisme de secours"
+        },
+        "PERSONNEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Effectifs équivalents temps plein, entrées/sorties, heures, régions, déplacements public/privé et maintien des services"
+        },
+        "COUT_COMPLET": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Paiement public, administration, exploitation, capital, coûts aval, frais ménages/proches, transition, réserve, ajustement au cas"
+        },
+        "DROITS": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Droits RAMQ, cadre contractuel, frais interdits, permissions de données, recours et avis juridique compétent"
+        },
+        "CONTREFACTUEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Comparer l'amélioration publique réaliste, un privé agréé et une coopérative/OBNL avec méthode et évaluation indépendante"
+        }
+      }
+    },
+    {
+      "rss_id": "04",
+      "rss_nom": "Mauricie et Centre-du-Québec",
+      "survey_included": true,
+      "observed_affiliation_2025_percent": 85.1,
+      "observed_affiliation_source": "ISQ_PANORAMA_2026",
+      "dossier_g0_condition": "NON_FRANCHI",
+      "pilote_autorise": false,
+      "comparateur_cost_certified": false,
+      "preuves": {
+        "PERIMETRE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Définition du panier, des exclusions, de l'assurabilité, de l'horizon de suivi et des opérateurs admissibles"
+        },
+        "ACCES_REEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Le pourcentage d'affiliation 2025 ne mesure pas les consultations effectuées."
+        },
+        "QUALITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Réorientations, complications, continuité des soins et suivi, avec ajustement du risque et cas complexes"
+        },
+        "EQUITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Populations non couvertes, besoins non satisfaits, groupes vulnérables, accès hors ligne et mécanisme de secours"
+        },
+        "PERSONNEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Effectifs équivalents temps plein, entrées/sorties, heures, régions, déplacements public/privé et maintien des services"
+        },
+        "COUT_COMPLET": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Paiement public, administration, exploitation, capital, coûts aval, frais ménages/proches, transition, réserve, ajustement au cas"
+        },
+        "DROITS": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Droits RAMQ, cadre contractuel, frais interdits, permissions de données, recours et avis juridique compétent"
+        },
+        "CONTREFACTUEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Comparer l'amélioration publique réaliste, un privé agréé et une coopérative/OBNL avec méthode et évaluation indépendante"
+        }
+      }
+    },
+    {
+      "rss_id": "05",
+      "rss_nom": "Estrie",
+      "survey_included": true,
+      "observed_affiliation_2025_percent": 79.3,
+      "observed_affiliation_source": "ISQ_PANORAMA_2026",
+      "dossier_g0_condition": "NON_FRANCHI",
+      "pilote_autorise": false,
+      "comparateur_cost_certified": false,
+      "preuves": {
+        "PERIMETRE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Définition du panier, des exclusions, de l'assurabilité, de l'horizon de suivi et des opérateurs admissibles"
+        },
+        "ACCES_REEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Le pourcentage d'affiliation 2025 ne mesure pas les consultations effectuées."
+        },
+        "QUALITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Réorientations, complications, continuité des soins et suivi, avec ajustement du risque et cas complexes"
+        },
+        "EQUITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Populations non couvertes, besoins non satisfaits, groupes vulnérables, accès hors ligne et mécanisme de secours"
+        },
+        "PERSONNEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Effectifs équivalents temps plein, entrées/sorties, heures, régions, déplacements public/privé et maintien des services"
+        },
+        "COUT_COMPLET": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Paiement public, administration, exploitation, capital, coûts aval, frais ménages/proches, transition, réserve, ajustement au cas"
+        },
+        "DROITS": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Droits RAMQ, cadre contractuel, frais interdits, permissions de données, recours et avis juridique compétent"
+        },
+        "CONTREFACTUEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Comparer l'amélioration publique réaliste, un privé agréé et une coopérative/OBNL avec méthode et évaluation indépendante"
+        }
+      }
+    },
+    {
+      "rss_id": "06",
+      "rss_nom": "Montréal",
+      "survey_included": true,
+      "observed_affiliation_2025_percent": 77.1,
+      "observed_affiliation_source": "ISQ_PANORAMA_2026",
+      "dossier_g0_condition": "NON_FRANCHI",
+      "pilote_autorise": false,
+      "comparateur_cost_certified": false,
+      "preuves": {
+        "PERIMETRE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Définition du panier, des exclusions, de l'assurabilité, de l'horizon de suivi et des opérateurs admissibles"
+        },
+        "ACCES_REEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Le pourcentage d'affiliation 2025 ne mesure pas les consultations effectuées."
+        },
+        "QUALITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Réorientations, complications, continuité des soins et suivi, avec ajustement du risque et cas complexes"
+        },
+        "EQUITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Populations non couvertes, besoins non satisfaits, groupes vulnérables, accès hors ligne et mécanisme de secours"
+        },
+        "PERSONNEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Effectifs équivalents temps plein, entrées/sorties, heures, régions, déplacements public/privé et maintien des services"
+        },
+        "COUT_COMPLET": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Paiement public, administration, exploitation, capital, coûts aval, frais ménages/proches, transition, réserve, ajustement au cas"
+        },
+        "DROITS": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Droits RAMQ, cadre contractuel, frais interdits, permissions de données, recours et avis juridique compétent"
+        },
+        "CONTREFACTUEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Comparer l'amélioration publique réaliste, un privé agréé et une coopérative/OBNL avec méthode et évaluation indépendante"
+        }
+      }
+    },
+    {
+      "rss_id": "07",
+      "rss_nom": "Outaouais",
+      "survey_included": true,
+      "observed_affiliation_2025_percent": 85.8,
+      "observed_affiliation_source": "ISQ_PANORAMA_2026",
+      "dossier_g0_condition": "NON_FRANCHI",
+      "pilote_autorise": false,
+      "comparateur_cost_certified": false,
+      "preuves": {
+        "PERIMETRE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Définition du panier, des exclusions, de l'assurabilité, de l'horizon de suivi et des opérateurs admissibles"
+        },
+        "ACCES_REEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Le pourcentage d'affiliation 2025 ne mesure pas les consultations effectuées."
+        },
+        "QUALITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Réorientations, complications, continuité des soins et suivi, avec ajustement du risque et cas complexes"
+        },
+        "EQUITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Populations non couvertes, besoins non satisfaits, groupes vulnérables, accès hors ligne et mécanisme de secours"
+        },
+        "PERSONNEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Effectifs équivalents temps plein, entrées/sorties, heures, régions, déplacements public/privé et maintien des services"
+        },
+        "COUT_COMPLET": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Paiement public, administration, exploitation, capital, coûts aval, frais ménages/proches, transition, réserve, ajustement au cas"
+        },
+        "DROITS": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Droits RAMQ, cadre contractuel, frais interdits, permissions de données, recours et avis juridique compétent"
+        },
+        "CONTREFACTUEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Comparer l'amélioration publique réaliste, un privé agréé et une coopérative/OBNL avec méthode et évaluation indépendante"
+        }
+      }
+    },
+    {
+      "rss_id": "08",
+      "rss_nom": "Abitibi-Témiscamingue",
+      "survey_included": true,
+      "observed_affiliation_2025_percent": 80,
+      "observed_affiliation_source": "ISQ_PANORAMA_2026",
+      "dossier_g0_condition": "NON_FRANCHI",
+      "pilote_autorise": false,
+      "comparateur_cost_certified": false,
+      "preuves": {
+        "PERIMETRE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Définition du panier, des exclusions, de l'assurabilité, de l'horizon de suivi et des opérateurs admissibles"
+        },
+        "ACCES_REEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Le pourcentage d'affiliation 2025 ne mesure pas les consultations effectuées."
+        },
+        "QUALITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Réorientations, complications, continuité des soins et suivi, avec ajustement du risque et cas complexes"
+        },
+        "EQUITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Populations non couvertes, besoins non satisfaits, groupes vulnérables, accès hors ligne et mécanisme de secours"
+        },
+        "PERSONNEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Effectifs équivalents temps plein, entrées/sorties, heures, régions, déplacements public/privé et maintien des services"
+        },
+        "COUT_COMPLET": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Paiement public, administration, exploitation, capital, coûts aval, frais ménages/proches, transition, réserve, ajustement au cas"
+        },
+        "DROITS": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Droits RAMQ, cadre contractuel, frais interdits, permissions de données, recours et avis juridique compétent"
+        },
+        "CONTREFACTUEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Comparer l'amélioration publique réaliste, un privé agréé et une coopérative/OBNL avec méthode et évaluation indépendante"
+        }
+      }
+    },
+    {
+      "rss_id": "09",
+      "rss_nom": "Côte-Nord",
+      "survey_included": true,
+      "observed_affiliation_2025_percent": 81.1,
+      "observed_affiliation_source": "ISQ_PANORAMA_2026",
+      "dossier_g0_condition": "NON_FRANCHI",
+      "pilote_autorise": false,
+      "comparateur_cost_certified": false,
+      "preuves": {
+        "PERIMETRE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Définition du panier, des exclusions, de l'assurabilité, de l'horizon de suivi et des opérateurs admissibles"
+        },
+        "ACCES_REEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Le pourcentage d'affiliation 2025 ne mesure pas les consultations effectuées."
+        },
+        "QUALITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Réorientations, complications, continuité des soins et suivi, avec ajustement du risque et cas complexes"
+        },
+        "EQUITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Populations non couvertes, besoins non satisfaits, groupes vulnérables, accès hors ligne et mécanisme de secours"
+        },
+        "PERSONNEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Effectifs équivalents temps plein, entrées/sorties, heures, régions, déplacements public/privé et maintien des services"
+        },
+        "COUT_COMPLET": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Paiement public, administration, exploitation, capital, coûts aval, frais ménages/proches, transition, réserve, ajustement au cas"
+        },
+        "DROITS": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Droits RAMQ, cadre contractuel, frais interdits, permissions de données, recours et avis juridique compétent"
+        },
+        "CONTREFACTUEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Comparer l'amélioration publique réaliste, un privé agréé et une coopérative/OBNL avec méthode et évaluation indépendante"
+        }
+      }
+    },
+    {
+      "rss_id": "10",
+      "rss_nom": "Nord-du-Québec",
+      "survey_included": true,
+      "observed_affiliation_2025_percent": 88.8,
+      "observed_affiliation_source": "ISQ_PANORAMA_2026",
+      "dossier_g0_condition": "NON_FRANCHI",
+      "pilote_autorise": false,
+      "comparateur_cost_certified": false,
+      "preuves": {
+        "PERIMETRE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Définition du panier, des exclusions, de l'assurabilité, de l'horizon de suivi et des opérateurs admissibles"
+        },
+        "ACCES_REEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Le pourcentage d'affiliation 2025 ne mesure pas les consultations effectuées."
+        },
+        "QUALITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Réorientations, complications, continuité des soins et suivi, avec ajustement du risque et cas complexes"
+        },
+        "EQUITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Populations non couvertes, besoins non satisfaits, groupes vulnérables, accès hors ligne et mécanisme de secours"
+        },
+        "PERSONNEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Effectifs équivalents temps plein, entrées/sorties, heures, régions, déplacements public/privé et maintien des services"
+        },
+        "COUT_COMPLET": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Paiement public, administration, exploitation, capital, coûts aval, frais ménages/proches, transition, réserve, ajustement au cas"
+        },
+        "DROITS": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Droits RAMQ, cadre contractuel, frais interdits, permissions de données, recours et avis juridique compétent"
+        },
+        "CONTREFACTUEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Comparer l'amélioration publique réaliste, un privé agréé et une coopérative/OBNL avec méthode et évaluation indépendante"
+        }
+      }
+    },
+    {
+      "rss_id": "11",
+      "rss_nom": "Gaspésie–Îles-de-la-Madeleine",
+      "survey_included": true,
+      "observed_affiliation_2025_percent": 89.1,
+      "observed_affiliation_source": "ISQ_PANORAMA_2026",
+      "dossier_g0_condition": "NON_FRANCHI",
+      "pilote_autorise": false,
+      "comparateur_cost_certified": false,
+      "preuves": {
+        "PERIMETRE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Définition du panier, des exclusions, de l'assurabilité, de l'horizon de suivi et des opérateurs admissibles"
+        },
+        "ACCES_REEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Le pourcentage d'affiliation 2025 ne mesure pas les consultations effectuées."
+        },
+        "QUALITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Réorientations, complications, continuité des soins et suivi, avec ajustement du risque et cas complexes"
+        },
+        "EQUITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Populations non couvertes, besoins non satisfaits, groupes vulnérables, accès hors ligne et mécanisme de secours"
+        },
+        "PERSONNEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Effectifs équivalents temps plein, entrées/sorties, heures, régions, déplacements public/privé et maintien des services"
+        },
+        "COUT_COMPLET": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Paiement public, administration, exploitation, capital, coûts aval, frais ménages/proches, transition, réserve, ajustement au cas"
+        },
+        "DROITS": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Droits RAMQ, cadre contractuel, frais interdits, permissions de données, recours et avis juridique compétent"
+        },
+        "CONTREFACTUEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Comparer l'amélioration publique réaliste, un privé agréé et une coopérative/OBNL avec méthode et évaluation indépendante"
+        }
+      }
+    },
+    {
+      "rss_id": "12",
+      "rss_nom": "Chaudière-Appalaches",
+      "survey_included": true,
+      "observed_affiliation_2025_percent": 80.3,
+      "observed_affiliation_source": "ISQ_PANORAMA_2026",
+      "dossier_g0_condition": "NON_FRANCHI",
+      "pilote_autorise": false,
+      "comparateur_cost_certified": false,
+      "preuves": {
+        "PERIMETRE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Définition du panier, des exclusions, de l'assurabilité, de l'horizon de suivi et des opérateurs admissibles"
+        },
+        "ACCES_REEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Le pourcentage d'affiliation 2025 ne mesure pas les consultations effectuées."
+        },
+        "QUALITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Réorientations, complications, continuité des soins et suivi, avec ajustement du risque et cas complexes"
+        },
+        "EQUITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Populations non couvertes, besoins non satisfaits, groupes vulnérables, accès hors ligne et mécanisme de secours"
+        },
+        "PERSONNEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Effectifs équivalents temps plein, entrées/sorties, heures, régions, déplacements public/privé et maintien des services"
+        },
+        "COUT_COMPLET": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Paiement public, administration, exploitation, capital, coûts aval, frais ménages/proches, transition, réserve, ajustement au cas"
+        },
+        "DROITS": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Droits RAMQ, cadre contractuel, frais interdits, permissions de données, recours et avis juridique compétent"
+        },
+        "CONTREFACTUEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Comparer l'amélioration publique réaliste, un privé agréé et une coopérative/OBNL avec méthode et évaluation indépendante"
+        }
+      }
+    },
+    {
+      "rss_id": "13",
+      "rss_nom": "Laval",
+      "survey_included": true,
+      "observed_affiliation_2025_percent": 84.8,
+      "observed_affiliation_source": "ISQ_PANORAMA_2026",
+      "dossier_g0_condition": "NON_FRANCHI",
+      "pilote_autorise": false,
+      "comparateur_cost_certified": false,
+      "preuves": {
+        "PERIMETRE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Définition du panier, des exclusions, de l'assurabilité, de l'horizon de suivi et des opérateurs admissibles"
+        },
+        "ACCES_REEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Le pourcentage d'affiliation 2025 ne mesure pas les consultations effectuées."
+        },
+        "QUALITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Réorientations, complications, continuité des soins et suivi, avec ajustement du risque et cas complexes"
+        },
+        "EQUITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Populations non couvertes, besoins non satisfaits, groupes vulnérables, accès hors ligne et mécanisme de secours"
+        },
+        "PERSONNEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Effectifs équivalents temps plein, entrées/sorties, heures, régions, déplacements public/privé et maintien des services"
+        },
+        "COUT_COMPLET": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Paiement public, administration, exploitation, capital, coûts aval, frais ménages/proches, transition, réserve, ajustement au cas"
+        },
+        "DROITS": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Droits RAMQ, cadre contractuel, frais interdits, permissions de données, recours et avis juridique compétent"
+        },
+        "CONTREFACTUEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Comparer l'amélioration publique réaliste, un privé agréé et une coopérative/OBNL avec méthode et évaluation indépendante"
+        }
+      }
+    },
+    {
+      "rss_id": "14",
+      "rss_nom": "Lanaudière",
+      "survey_included": true,
+      "observed_affiliation_2025_percent": 87.2,
+      "observed_affiliation_source": "ISQ_PANORAMA_2026",
+      "dossier_g0_condition": "NON_FRANCHI",
+      "pilote_autorise": false,
+      "comparateur_cost_certified": false,
+      "preuves": {
+        "PERIMETRE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Définition du panier, des exclusions, de l'assurabilité, de l'horizon de suivi et des opérateurs admissibles"
+        },
+        "ACCES_REEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Le pourcentage d'affiliation 2025 ne mesure pas les consultations effectuées."
+        },
+        "QUALITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Réorientations, complications, continuité des soins et suivi, avec ajustement du risque et cas complexes"
+        },
+        "EQUITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Populations non couvertes, besoins non satisfaits, groupes vulnérables, accès hors ligne et mécanisme de secours"
+        },
+        "PERSONNEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Effectifs équivalents temps plein, entrées/sorties, heures, régions, déplacements public/privé et maintien des services"
+        },
+        "COUT_COMPLET": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Paiement public, administration, exploitation, capital, coûts aval, frais ménages/proches, transition, réserve, ajustement au cas"
+        },
+        "DROITS": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Droits RAMQ, cadre contractuel, frais interdits, permissions de données, recours et avis juridique compétent"
+        },
+        "CONTREFACTUEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Comparer l'amélioration publique réaliste, un privé agréé et une coopérative/OBNL avec méthode et évaluation indépendante"
+        }
+      }
+    },
+    {
+      "rss_id": "15",
+      "rss_nom": "Laurentides",
+      "survey_included": true,
+      "observed_affiliation_2025_percent": 79.8,
+      "observed_affiliation_source": "ISQ_PANORAMA_2026",
+      "dossier_g0_condition": "NON_FRANCHI",
+      "pilote_autorise": false,
+      "comparateur_cost_certified": false,
+      "preuves": {
+        "PERIMETRE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Définition du panier, des exclusions, de l'assurabilité, de l'horizon de suivi et des opérateurs admissibles"
+        },
+        "ACCES_REEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Le pourcentage d'affiliation 2025 ne mesure pas les consultations effectuées."
+        },
+        "QUALITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Réorientations, complications, continuité des soins et suivi, avec ajustement du risque et cas complexes"
+        },
+        "EQUITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Populations non couvertes, besoins non satisfaits, groupes vulnérables, accès hors ligne et mécanisme de secours"
+        },
+        "PERSONNEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Effectifs équivalents temps plein, entrées/sorties, heures, régions, déplacements public/privé et maintien des services"
+        },
+        "COUT_COMPLET": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Paiement public, administration, exploitation, capital, coûts aval, frais ménages/proches, transition, réserve, ajustement au cas"
+        },
+        "DROITS": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Droits RAMQ, cadre contractuel, frais interdits, permissions de données, recours et avis juridique compétent"
+        },
+        "CONTREFACTUEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Comparer l'amélioration publique réaliste, un privé agréé et une coopérative/OBNL avec méthode et évaluation indépendante"
+        }
+      }
+    },
+    {
+      "rss_id": "16",
+      "rss_nom": "Montérégie",
+      "survey_included": true,
+      "observed_affiliation_2025_percent": 83.9,
+      "observed_affiliation_source": "ISQ_PANORAMA_2026",
+      "dossier_g0_condition": "NON_FRANCHI",
+      "pilote_autorise": false,
+      "comparateur_cost_certified": false,
+      "preuves": {
+        "PERIMETRE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Définition du panier, des exclusions, de l'assurabilité, de l'horizon de suivi et des opérateurs admissibles"
+        },
+        "ACCES_REEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Le pourcentage d'affiliation 2025 ne mesure pas les consultations effectuées."
+        },
+        "QUALITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Réorientations, complications, continuité des soins et suivi, avec ajustement du risque et cas complexes"
+        },
+        "EQUITE": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Populations non couvertes, besoins non satisfaits, groupes vulnérables, accès hors ligne et mécanisme de secours"
+        },
+        "PERSONNEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Effectifs équivalents temps plein, entrées/sorties, heures, régions, déplacements public/privé et maintien des services"
+        },
+        "COUT_COMPLET": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Paiement public, administration, exploitation, capital, coûts aval, frais ménages/proches, transition, réserve, ajustement au cas"
+        },
+        "DROITS": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Droits RAMQ, cadre contractuel, frais interdits, permissions de données, recours et avis juridique compétent"
+        },
+        "CONTREFACTUEL": {
+          "status": "NON_DEMONTRE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Comparer l'amélioration publique réaliste, un privé agréé et une coopérative/OBNL avec méthode et évaluation indépendante"
+        }
+      }
+    },
+    {
+      "rss_id": "17",
+      "rss_nom": "Nunavik",
+      "survey_included": false,
+      "observed_affiliation_2025_percent": null,
+      "observed_affiliation_source": null,
+      "dossier_g0_condition": "NON_FRANCHI",
+      "pilote_autorise": false,
+      "comparateur_cost_certified": false,
+      "preuves": {
+        "PERIMETRE": {
+          "status": "NON_DEMONTRE_HORS_CHAMP_ENQUETE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Définition du panier, des exclusions, de l'assurabilité, de l'horizon de suivi et des opérateurs admissibles"
+        },
+        "ACCES_REEL": {
+          "status": "NON_DEMONTRE_HORS_CHAMP_ENQUETE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Le pourcentage d'affiliation 2025 ne mesure pas les consultations effectuées."
+        },
+        "QUALITE": {
+          "status": "NON_DEMONTRE_HORS_CHAMP_ENQUETE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Réorientations, complications, continuité des soins et suivi, avec ajustement du risque et cas complexes"
+        },
+        "EQUITE": {
+          "status": "NON_DEMONTRE_HORS_CHAMP_ENQUETE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "RSS exclue du sondage : source, compétences et consultation adaptées à organiser."
+        },
+        "PERSONNEL": {
+          "status": "NON_DEMONTRE_HORS_CHAMP_ENQUETE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Effectifs équivalents temps plein, entrées/sorties, heures, régions, déplacements public/privé et maintien des services"
+        },
+        "COUT_COMPLET": {
+          "status": "NON_DEMONTRE_HORS_CHAMP_ENQUETE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Paiement public, administration, exploitation, capital, coûts aval, frais ménages/proches, transition, réserve, ajustement au cas"
+        },
+        "DROITS": {
+          "status": "NON_DEMONTRE_HORS_CHAMP_ENQUETE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Droits RAMQ, cadre contractuel, frais interdits, permissions de données, recours et avis juridique compétent"
+        },
+        "CONTREFACTUEL": {
+          "status": "NON_DEMONTRE_HORS_CHAMP_ENQUETE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Comparer l'amélioration publique réaliste, un privé agréé et une coopérative/OBNL avec méthode et évaluation indépendante"
+        }
+      }
+    },
+    {
+      "rss_id": "18",
+      "rss_nom": "Terres-Cries-de-la-Baie-James",
+      "survey_included": false,
+      "observed_affiliation_2025_percent": null,
+      "observed_affiliation_source": null,
+      "dossier_g0_condition": "NON_FRANCHI",
+      "pilote_autorise": false,
+      "comparateur_cost_certified": false,
+      "preuves": {
+        "PERIMETRE": {
+          "status": "NON_DEMONTRE_HORS_CHAMP_ENQUETE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Définition du panier, des exclusions, de l'assurabilité, de l'horizon de suivi et des opérateurs admissibles"
+        },
+        "ACCES_REEL": {
+          "status": "NON_DEMONTRE_HORS_CHAMP_ENQUETE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Le pourcentage d'affiliation 2025 ne mesure pas les consultations effectuées."
+        },
+        "QUALITE": {
+          "status": "NON_DEMONTRE_HORS_CHAMP_ENQUETE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Réorientations, complications, continuité des soins et suivi, avec ajustement du risque et cas complexes"
+        },
+        "EQUITE": {
+          "status": "NON_DEMONTRE_HORS_CHAMP_ENQUETE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "RSS exclue du sondage : source, compétences et consultation adaptées à organiser."
+        },
+        "PERSONNEL": {
+          "status": "NON_DEMONTRE_HORS_CHAMP_ENQUETE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Effectifs équivalents temps plein, entrées/sorties, heures, régions, déplacements public/privé et maintien des services"
+        },
+        "COUT_COMPLET": {
+          "status": "NON_DEMONTRE_HORS_CHAMP_ENQUETE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Paiement public, administration, exploitation, capital, coûts aval, frais ménages/proches, transition, réserve, ajustement au cas"
+        },
+        "DROITS": {
+          "status": "NON_DEMONTRE_HORS_CHAMP_ENQUETE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Droits RAMQ, cadre contractuel, frais interdits, permissions de données, recours et avis juridique compétent"
+        },
+        "CONTREFACTUEL": {
+          "status": "NON_DEMONTRE_HORS_CHAMP_ENQUETE",
+          "official_source_id": null,
+          "reference_period": null,
+          "perimeter_approved": false,
+          "methodological_validated": false,
+          "independently_validated": false,
+          "evidence_url": null,
+          "reviewer": null,
+          "detail_missing": "Comparer l'amélioration publique réaliste, un privé agréé et une coopérative/OBNL avec méthode et évaluation indépendante"
+        }
+      }
+    }
+  ]
+}
