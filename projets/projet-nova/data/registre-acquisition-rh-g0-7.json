@@ -1,0 +1,66 @@
+{
+  "schema": "nova-rh-g07-acquisition/v1",
+  "source_id": "MSSS_RH_2024_2025",
+  "official_url": "https://cdn-contenu.quebec.ca/cdn-contenu/sante/documents/Systeme_et_services_de_sante/organisation-services/donnees-systeme-sante-quebecois-services/ressources-humaines/denombrement-et-remuneration-effectif-rsss-2024-2025.xlsx",
+  "official_landing_page": "https://www.quebec.ca/sante/systeme-et-services-de-sante/organisation-des-services/donnees-systeme-sante-quebecois-services/ressources-humaines",
+  "dataset_title": "Portrait du personnel des établissements publics et privés conventionnés du réseau de la santé et des services sociaux (2024-2025)",
+  "reference_period": "2024-2025",
+  "landing_page_last_updated": "2026-04-27",
+  "verified_on": "2026-11-04",
+  "status": "DOWNLOAD_BLOCKED",
+  "size_bytes": null,
+  "sha256": null,
+  "retrieved_at_utc": null,
+  "xlsx_inventory": null,
+  "source_attempts": [
+    {
+      "on": "2026-11-04",
+      "channel": "source_page",
+      "result": "CATALOGUE_VERIFIE",
+      "notes": "La page officielle présente le classeur XLSX de 136 Ko, des définitions régionales, et des tableaux de professions rémunérées RAMQ distincts."
+    },
+    {
+      "on": "2026-11-04",
+      "channel": "web_binary",
+      "result": "FORMAT_NON_SUPPORTE",
+      "notes": "L'outil de lecture du site reconnaît un fichier XLSX mais ne retourne pas les octets du classeur."
+    },
+    {
+      "on": "2026-11-04",
+      "channel": "container_download",
+      "result": "ECHEC_TELECHARGEMENT",
+      "notes": "Le transfert du fichier depuis le réseau de cet environnement n'a pas abouti."
+    },
+    {
+      "on": "2026-11-04",
+      "channel": "container_http",
+      "result": "ECHEC_DNS",
+      "notes": "La résolution DNS du domaine CDN a échoué dans l'environnement de travail."
+    }
+  ],
+  "access_via_github_actions": {
+    "workflow": ".github/workflows/nova-g07-acquisition-rh.yml",
+    "trigger": "workflow_dispatch seulement; exécution volontaire depuis GitHub Actions",
+    "expected_outputs": [
+      "source-audit.json",
+      "rh-2024-2025-officiel.xlsx si téléchargement et validation du conteneur réussissent"
+    ],
+    "auto_commit_official_workbook": false,
+    "automatic_regional_aggregate_extraction": false,
+    "privacy": "aucun dossier patient ou fichier individuel sollicité"
+  },
+  "etp_clinical_values_imported": 0,
+  "regional_workforce_values_imported": 0,
+  "external_validation_completed": false,
+  "g0_formally_passed": false,
+  "pilot_authorized": false,
+  "financial_savings_certified": false,
+  "notes": [
+    "Un lien vers le XLSX ne prouve pas le téléchargement.",
+    "Le fichier de 136 Ko est un portrait du personnel des établissements publics et privés conventionnés, pas un décompte exhaustif des ressources cliniques de première ligne.",
+    "Une source téléchargée doit d'abord passer des contrôles ZIP/XLSX et conserver ses empreintes; aucune valeur numérique RH ne doit être importée sans vérification des feuilles et dénominateurs.",
+    "Les professionnels rémunérés RAMQ sont une source distincte et ne sont pas automatiquement des ETP.",
+    "La source est de l'exercice 2024-2025 : elle ne décrit pas automatiquement l'état de 2026.",
+    "Aucun recrutement net, aucune économie, aucun changement d'emploi et aucun pilote ne sont décidés par cette étape."
+  ]
+}
