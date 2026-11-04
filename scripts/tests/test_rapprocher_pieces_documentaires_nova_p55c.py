@@ -391,6 +391,15 @@ class TestP55C(unittest.TestCase):
                for name in m.QUALIFICATIONS}
         with self.assertRaises(ValueError):
             m.public_report(claimed=(totals,seconds,kinds))
+    def test_68_amont_absent_met_cinquante_non_instruits(self):
+        z,a,counts,inherited=m.upstream_claims()
+        self.assertIsNone(z)
+        self.assertIsNone(a)
+        self.assertEqual(counts["NON_INSTRUIT"],50)
+        self.assertEqual(sum(counts.values()),50)
+        self.assertEqual(inherited,0)
+        r=m.public_report(upstream_counts=counts,inherited=inherited)
+        self.assertEqual(r["decision"],m.NO_GO)
 
 
 if __name__=="__main__":
