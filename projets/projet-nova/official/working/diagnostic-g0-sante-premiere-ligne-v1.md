@@ -1,4 +1,7 @@
 # NOVA-SINJ-G0-SAN-001 — Diagnostic initial vérifiable : accès aux soins de première ligne
+
+> **Mise à jour documentaire G0.4, 3 novembre 2026.** Une source régionale complémentaire, `official/working/protocole-portrait-regional-sante-g0-v2.md`, fournit désormais les 16 taux régionaux d'affiliation dans le tableau 8.1 du *Panorama ISQ 2026* (PDF officiel). Le présent diagnostic initial reste valable pour son périmètre et ses réserves, mais ne doit pas être interprété comme affirmant que les taux régionaux sont toujours inconnus. Aucun coût par épisode, délai effectif ni pilote n'en est déduit.
+
 **Date de vérification :** 3 novembre 2026  
 **Version :** 1.0 — dossier de travail  
 **Porte :** G0 (diagnostic), **partiellement documentée, non franchie**  
