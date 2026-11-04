@@ -183,7 +183,7 @@ def make_receipt(rows,reproduced=False,checked_at=None):
     if checked_at is None:
         checked_at=datetime.now(timezone.utc).isoformat(timespec="seconds")
     need(type(checked_at) is str
-         and re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\+00:00",
+         and re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00",
                           checked_at) is not None
          and datetime.fromisoformat(checked_at).tzinfo is not None,
          "P55G_DATE_CONTROLE_INVALIDE")
