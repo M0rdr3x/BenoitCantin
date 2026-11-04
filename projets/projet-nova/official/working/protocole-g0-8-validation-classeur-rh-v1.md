@@ -8,8 +8,7 @@
 ## 1. Résultat confirmé et limite
 La page officielle du gouvernement du Québec, mise à jour le **27 avril 2026**, référence le fichier **« Portrait du personnel des établissements publics et privés conventionnés du réseau de la santé et des services sociaux (2024-2025) »** (XLSX, 136 Ko).
 
-- Catalogue officiel : https://www.quebec.ca/sante/systeme-et-services-de-sante/organisation-des-services/donnees-systeme-sante-quebois-services/ressources-humaines
-- **Adresse corrigée du catalogue :** https://www.quebec.ca/sante/systeme-et-services-de-sante/organisation-des-services/donnees-systeme-sante-quebecois-services/ressources-humaines
+- Catalogue officiel : https://www.quebec.ca/sante/systeme-et-services-de-sante/organisation-des-services/donnees-systeme-sante-quebecois-services/ressources-humaines
 - Source XLSX : https://cdn-contenu.quebec.ca/cdn-contenu/sante/documents/Systeme_et_services_de_sante/organisation-services/donnees-systeme-sante-quebecois-services/ressources-humaines/denombrement-et-remuneration-effectif-rsss-2024-2025.xlsx
 
 À la date de ce rapport, l'URL est vérifiée via la page officielle et l'outil Web; la récupération des octets XLSX a **échoué** depuis les environnements de travail. **Aucun total régional, aucune feuille et aucune formule du classeur ne sont analysés.** Le registre demeure sans valeurs de personnel ni ETP.
