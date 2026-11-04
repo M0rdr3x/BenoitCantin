@@ -68,9 +68,20 @@ export function inspectAcquisitionManifest(m) {
     if (!isPlain(m.xlsx_inventory) || m.xlsx_inventory.ok!==true ||
         !Number.isInteger(m.xlsx_inventory.worksheet_count) ||
         m.xlsx_inventory.worksheet_count<1) failures.push("XLSX_INVENTORY_MISSING");
+    if (!isPlain(m.xlsx_metadata) ||
+        m.xlsx_metadata.audit_level!=="L2_STRUCTURE_SEULEMENT" ||
+        m.xlsx_metadata.container_valid!==true ||
+        !Number.isInteger(m.xlsx_metadata.worksheet_count) ||
+        m.xlsx_metadata.worksheet_count<1 ||
+        m.xlsx_metadata.cell_values_read!==false ||
+        m.xlsx_metadata.clinic_fte_verified!==0 ||
+        m.xlsx_metadata.regional_worker_counts_verified!==0 ||
+        m.xlsx_metadata.decision!=="NON_FRANCHI")
+      failures.push("L2_WORKBOOK_METADATA_MISSING");
   } else {
     if (m.sha256!==null || m.size_bytes!==null ||
-        m.retrieved_at_utc!==null || m.xlsx_inventory!==null)
+        m.retrieved_at_utc!==null || m.xlsx_inventory!==null ||
+        (m.xlsx_metadata!==undefined && m.xlsx_metadata!==null))
       failures.push("NOT_ACQUIRED_BUT_HASH_PRESENT");
   }
   return {ok:failures.length===0,failures};

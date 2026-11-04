@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: '22'
       - name: Vérifier les garde-fous G0.7 avant téléchargement
-        run: node --test projets/projet-nova/tests/g07-acquisition-rh.test.mjs
+        run: node --test projets/projet-nova/tests/g07-acquisition-rh.test.mjs projets/projet-nova/tests/g08-rh-workbook-inspector.test.mjs
       - name: Télécharger le XLSX officiel et produire SHA-256 + inventaire ZIP
         run: node projets/projet-nova/scripts/g07-acquerir-rh-officiel.mjs
       - name: Conserver le rapport et le XLSX seulement s'il est validé

@@ -10,6 +10,7 @@ import {
   OFFICIAL_RH_XLSX_URL,RH_SOURCE_ID,MAX_OFFICIAL_XLSX_BYTES,
   readXlsxZipDirectory,inspectAcquisitionManifest
 } from "../assets/g07-rh-acquisition-core.mjs";
+import {inspectOfficialRhWorkbook} from "../assets/g08-rh-workbook-inspector.mjs";
 
 const outputDir=resolve(process.env.G07_ARTIFACT_DIR || "g07-acquisition-output");
 const savedFile=join(outputDir,"rh-rsss-2024-2025-source.xlsx");
@@ -19,7 +20,7 @@ const base={
   schema:"nova-rh-g07-acquisition/v1",source_id:RH_SOURCE_ID,
   official_url:OFFICIAL_RH_XLSX_URL,
   retrieved_at_utc:null,status:"DOWNLOAD_BLOCKED",sha256:null,size_bytes:null,
-  xlsx_inventory:null,source_http_status:null,
+  xlsx_inventory:null,xlsx_metadata:null,source_http_status:null,
   content_type:null,etag:null,last_modified:null,
   etp_clinical_values_imported:0,regional_workforce_values_imported:0,
   external_validation_completed:false,g0_formally_passed:false,
@@ -72,7 +73,9 @@ async function fetchOfficialWorkbook() {
     if(total<1000)throw new Error("SOURCE_XLSX_UNEXPECTEDLY_SMALL");
     const bytes=Buffer.concat(chunks,total);
     const inventory=readXlsxZipDirectory(bytes);
-    return {bytes,inventory,metadata:{
+    // L2 : contrôler XML, relations, dimensions et intégrité des entrées avant conservation.
+    const workbookMetadata=inspectOfficialRhWorkbook(bytes);
+    return {bytes,inventory,workbookMetadata,metadata:{
       source_http_status:200,
       content_type:resp.headers.get("content-type"),
       etag:resp.headers.get("etag"),last_modified:resp.headers.get("last-modified"),
@@ -87,15 +90,15 @@ async function fetchOfficialWorkbook() {
 await mkdir(outputDir,{recursive:true});
 let report;
 try {
-  const {bytes,inventory,metadata}=await fetchOfficialWorkbook();
+  const {bytes,inventory,workbookMetadata,metadata}=await fetchOfficialWorkbook();
   report={...base,...metadata,
-    xlsx_inventory:inventory,status:"ACQUIRED_UNINTERPRETED"};
+    xlsx_inventory:inventory,xlsx_metadata:workbookMetadata,status:"ACQUIRED_UNINTERPRETED"};
   const validation=inspectAcquisitionManifest(report);
   if(!validation.ok)throw new Error("AUDIT_MANIFEST_INVALID_"+validation.failures.join("_"));
   await writeFile(savedFile,bytes,{flag:"wx"});
   console.log("Fichier public officiel acquis: "+report.size_bytes+
     " octets; SHA-256 "+report.sha256+
-    "; feuilles XML déclarées: "+inventory.worksheet_count);
+    "; feuilles XML authentifiées: "+workbookMetadata.worksheet_count);
   console.log("AUCUN chiffre d'emploi/ETP n'a été extrait ou validé.");
 } catch (e) {
   const reason=String(e instanceof Error?e.message:e);
