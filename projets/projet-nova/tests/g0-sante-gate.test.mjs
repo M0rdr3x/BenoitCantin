@@ -6,6 +6,7 @@ import {REQUIRED_G0_CODES,inspectEvidence,assessRegionalG0,assessAllRegions,
 
 const matrix=JSON.parse(await readFile(new URL("../data/matrice-preuves-g0-5-sante.json",import.meta.url),"utf8"));
 const regional=JSON.parse(await readFile(new URL("../data/portrait-regional-g0-sante-2025.json",import.meta.url),"utf8"));
+const pageG05=await readFile(new URL("../preuves-g0-5-sante.html",import.meta.url),"utf8");
 const byId=Object.fromEntries(matrix.regions.map(x=>[x.rss_id,x]));
 
 test("matrice G0.5: 18 RSS et 8 garanties distinctes cohérentes avec la source",()=>{
@@ -107,4 +108,15 @@ test("tableau G0.5 ne peut pas être construit sans les 18 RSS",()=>{
  const broken=structuredClone(matrix);
  broken.regions=broken.regions.slice(0,17);
  assert.throws(()=>assessAllRegions(broken),/18 RSS/);
+});
+
+test("page G0.5 : 18 lignes RSS, 8 garanties et mentions de blocage explicites",()=>{
+ assert.equal((pageG05.match(/class="g05-rss"/g)||[]).length,18);
+ assert.equal((pageG05.match(/class="g05-card"/g)||[]).length,8);
+ assert.equal((pageG05.match(/class="g05-status"/g)||[]).length,18);
+ assert.ok(pageG05.includes("revue formelle"));
+ assert.ok(pageG05.includes("36 %") || pageG05.includes("36 %".replace(" ","")));
+ assert.ok(pageG05.includes("matrice-preuves-g0-5-sante.json"));
+ assert.ok(pageG05.includes("protocole-g0-5-preuve-capacite-sante-v1.md"));
+ assert.ok(pageG05.includes("</main>")&&pageG05.includes("</html>"));
 });
