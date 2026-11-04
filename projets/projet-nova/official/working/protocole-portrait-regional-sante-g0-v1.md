@@ -1,5 +1,8 @@
 # NOVA-SINJ-G0-SAN-004 — Portrait régional de l'accès aux soins (G0.3)
 
+> **Note de version, 3 novembre 2026 — document historique G0.3.** Les mentions ci-dessous selon lesquelles les 16 taux régionaux ne sont pas connus décrivent l'état **avant** la découverte du tableau 8.1 du PDF de l'ISQ. Depuis G0.4, **les 16 taux et les lieux habituels de suivi sont transcrits du tableau 8.1**, et les démarches vers l'urgence du tableau 8.3. La méthode à jour est `official/working/protocole-portrait-regional-sante-g0-v2.md` et le registre courant `data/portrait-regional-g0-sante-2025.json`. Le XLSX demeure non téléchargé et G0 non franchie. **Ne pas utiliser les passages historiques plus bas comme état actuel.**
+
+
 **Projet :** Projet Nova — étude Nova–Sinjira  
 **Date :** 3 novembre 2026  
 **Statut :** référence analytique **partielle**, non adoptée; porte G0 **non franchie**.  
