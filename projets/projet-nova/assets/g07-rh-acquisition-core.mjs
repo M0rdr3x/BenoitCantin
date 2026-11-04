@@ -139,6 +139,9 @@ export function readXlsxZipDirectory(bytes) {
     if(pos+46+len+extraLen+commentLen>centralOffset+centralSize)
       throw new Error("ZIP_TRUNCATED_DIRECTORY");
     const name=decoder.decode(bytes.subarray(pos+46,pos+46+len));
+    const localOffset=dv.getUint32(pos+42,true);
+    if(localOffset+30>centralOffset || dv.getUint32(localOffset,true)!==0x04034b50)
+      throw new Error("ZIP_LOCAL_HEADER_INVALID");
     entries.push({name,encrypted:(flags&1)!==0,uncompressed_size:uncompressedSize});
     pos+=46+len+extraLen+commentLen;
   }
