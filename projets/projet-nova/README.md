@@ -65,16 +65,23 @@ Trois modèles de correspondance existent sous `official/working/modeles-demande
 
 Les tests intégrés dans `tests/diagnostic-g0-sante.test.mjs` vérifient l'absence de coûts fictifs et de conclusion causale, la présence des sources et la différence entre les rappels et les consultations. **Aucune exécution CI réussie n'est certifiée par le simple ajout des tests.**
 
-## G0.3 — Portrait régional de l'accès aux soins (3 novembre 2026)
+## G0.3 — Étape historique de repérage du portrait régional
 
-- Page publique proposée : `portrait-regional-g0-sante.html`.
-- Registre structuré : `data/portrait-regional-g0-sante-2025.json` (18 régions sociosanitaires, 16 incluses dans l'EQUSSSS 2025, 2 exclues, 6 différences relatives rapportées par l'ISQ, **0 taux régional numérique importé**).
-- Méthode et contrôle de provenance : `official/working/protocole-portrait-regional-sante-g0-v1.md`.
-- Contrôles automatisables : `tests/portrait-regional-g0-sante.test.mjs`, exécutables avec les autres tests Nova–Sinjira et déclarés au workflow GitHub Actions.
-- Sources : communiqué et faits saillants de l'ISQ du **2 novembre 2026**; découpage officiel des **18 régions sociosanitaires** du Québec, distinct des régions administratives.
-- Le fichier XLSX régional de l'ISQ est référencé et téléchargeable en principe, mais **il n'a pas pu être téléchargé ni analysé ici**. Les pourcentages exacts, tailles d'échantillon et incertitudes par RSS demeurent `null` dans le registre; aucune comparaison de coût ou choix de région pilote n'en découle.
-- Les RSS **17 (Nunavik)** et **18 (Terres-Cries-de-la-Baie-James)** sont hors champ de l'enquête, **pas hors champ des obligations de santé publique et d'équité**.
-- Ce dossier constitue une étude partielle **non normative**; la porte G0 reste **non franchie**. Aucune modification des quatre références candidates du manifeste officiel.
+Le premier inventaire G0.3 a recensé les **18 régions sociosanitaires**, les RSS 17 et 18 exclues de l'enquête, ainsi que six différences qualitatives signalées par le communiqué ISQ du 2 novembre 2026. **À cette étape historique**, aucun taux régional exact n'était encore extrait. Cet ancien constat **a été dépassé par G0.4** grâce à la lecture du PDF officiel.
+
+Le protocole initial `official/working/protocole-portrait-regional-sante-g0-v1.md` est conservé pour la traçabilité historique et renvoie désormais au protocole G0.4.
+
+## G0.4 — Taux régionaux exacts issus du Panorama ISQ 2026
+
+- **Source :** Institut de la statistique du Québec, *Panorama des régions du Québec 2026*, chapitre 8, https://statistique.quebec.ca/fr/fichier/panorama-des-regions-du-quebec-2026-sante.pdf , **tableau 8.1 page imprimée 144** et **tableau 8.3 page imprimée 146**, publié le 2 novembre 2026.
+- **Registre :** `data/portrait-regional-g0-sante-2025.json` : **16 taux numériques d'affiliation**, lieux habituels de suivi des affiliés et démarches vers l'urgence au dernier besoin semi-urgent/non urgent (avec les dénominateurs distincts), 2 RSS hors champ, 0 coût régional.
+- **CSV :** `data/portrait-regional-g0-sante-2025.csv`, 18 RSS avec codes préservés `RSS-01` à `RSS-18`, source identifiée et champs manquants laissés vides.
+- **Page :** `portrait-regional-g0-sante.html`, tableau source et avertissements sur la confusion possible entre affiliation et accès effectif.
+- **Méthode courante :** `official/working/protocole-portrait-regional-sante-g0-v2.md` (NOVA-SINJ-G0-SAN-005), qui remplace l'analyse qualitative v1 pour les faits disponibles.
+- **Tests :** `tests/portrait-regional-g0-sante.test.mjs` et fichier GitHub Actions `.github/workflows/nova-sinjira-finances-tests.yml` : vérifications locales automatisables des 16 valeurs, écarts significatifs rapportés, nombres 0–100, catégories de lieux avec tolérance d'arrondi, flags de précision, concordance CSV/JSON et statut non décisionnel.
+- **Statut du XLSX :** le classeur régional ISQ est référencé mais **n'a pas été téléchargé**. Les chiffres G0.4 viennent du **PDF**, pas d'un import Excel. Les effectifs, les intervalles de confiance régionaux, la comparaison des coûts et l'audit externe restent indisponibles.
+- **Interprétation :** affiliations, endroits habituels de suivi et démarches vers l'urgence utilisent des populations différentes. Les variations observées ne prouvent aucune causalité ni supériorité de gestion. Nunavik et Terres-Cries-de-la-Baie-James ne sont pas couverts par l'enquête; leur obligation d'accès n'en est pas diminuée.
+- **Gouvernance :** G0 **non franchie**, aucune région pilote désignée, aucun contrat, économie ou traitement de données de patient autorisé. Les quatre références candidates et leurs empreintes dans `data/sources.json` ne sont pas modifiées.
 
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
