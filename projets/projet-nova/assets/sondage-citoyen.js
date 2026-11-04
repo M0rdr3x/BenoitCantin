@@ -3,6 +3,7 @@
   const VERSION = "nova-consultation-v1";
   const API = "https://gpvivleexywljowcqkru.supabase.co/functions/v1/nova-civic-poll";
   const VALUES = [-2,-1,0,1,2,9];
+  const MIN_NONZERO_CELL = 5;
   const LABELS = {
     "-2":"Tout à fait en désaccord",
     "-1":"Plutôt en désaccord",
@@ -83,7 +84,7 @@
     const ready=data.resultsVisible === true;
     $("poll-results-status").textContent=ready
       ? "Participations comprises dans la dernière publication : "+data.ballots+". Résultats publiés par lots, sans informations sur les personnes."+ (data.publishedAt ? " Dernière publication : "+new Date(data.publishedAt).toLocaleString("fr-CA")+".":"")
-      : "Les répartitions restent masquées jusqu’à "+(data.minPublicBallots || 10)+" participations. Les mises à jour n’interviennent que par lots de dix nouveaux bulletins et au plus une fois toutes les six heures.";
+      : "Les répartitions restent masquées tant que les critères de confidentialité ne sont pas tous réunis : au moins dix participations, aucune catégorie de 1 à 4 avis, aucune variation de 1 à 4 avis par catégorie entre publications, au moins dix nouveaux bulletins et six heures entre les lots. Aucun résultat individuel n’est publié.";
     for(const q of data.questions) {
       const article=document.createElement("article");article.className="poll-result-card";
       const h=document.createElement("h3");h.textContent=q.ordinal+". "+q.text;article.append(h);
@@ -141,7 +142,7 @@
       let total=0;
       for(const key of keys){
         const n=q.counts[key];
-        if(typeof n!=="number" || !Number.isSafeInteger(n) || n<0) return false;
+        if(typeof n!=="number" || !Number.isSafeInteger(n) || n<0 || (n>0 && n<MIN_NONZERO_CELL)) return false;
         total+=n;
         if(!Number.isSafeInteger(total)) return false;
       }
@@ -211,9 +212,20 @@
         :"La consultation est en préparation. Les questions et la méthode peuvent être consultées, mais aucun vote ne peut encore être envoyé.");
       renderResults(remote);
     }catch{
+      // Un premier GET peut échouer de façon transitoire (HTTP 503). Si la
+      // relecture valide réussit, restaurer le vrai statut plutôt que
+      // laisser affichée à tort une erreur persistante.
       open=false;
-      setStatus("La consultation n'est pas ouverte : service de vote indisponible ou données non concordantes. Aucun vote n'est accepté.");
-      await refreshResults();
+      const recovered=await refreshResults();
+      if(recovered){
+        open=local.published===true && recovered.open===true
+          && typeof recovered.siteKey==="string" && !!recovered.siteKey;
+        siteKey=recovered.siteKey||"";
+        setStatus(open?"La consultation est ouverte aux personnes de 18 ans et plus."
+          :"La consultation est en préparation. Les questions et la méthode peuvent être consultées, mais aucun vote ne peut encore être envoyé.");
+      }else{
+        setStatus("La consultation n'est pas ouverte : service de vote indisponible ou données non concordantes. Aucun vote n'est accepté.");
+      }
     }
     renderForm(); if(open) loadTurnstile();
   }
