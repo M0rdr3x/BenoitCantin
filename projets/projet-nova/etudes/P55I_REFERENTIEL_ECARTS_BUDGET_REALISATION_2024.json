@@ -1,0 +1,113 @@
+{
+  "schema_version": "P55I-1",
+  "date_reference": "2026-11-04",
+  "exercice": 2024,
+  "source": {
+    "institution": "VILLE_DE_QUEBEC",
+    "nom_document": "Rapport financier 2024",
+    "url": "https://www.ville.quebec.qc.ca/publications/docs_ville/Rapport_financier_2024.pdf",
+    "pdf_index_zero": 6,
+    "page_imprimee": "5",
+    "section": "SOMMAIRE_DES_VARIATIONS_BUDGETAIRES_SUR_LES_RESULTATS",
+    "qualification": "NON_AUDITE_SOURCE_WEB_TEXTE_NON_REPRODUITE_SUR_OCTETS_P55H"
+  },
+  "source_amont": [
+    "P54Q",
+    "P55F",
+    "P55G",
+    "P55H"
+  ],
+  "lignes": [
+    {
+      "code": "REVENUS_FONCTIONNEMENT",
+      "nature": "recette_de_fonctionnement",
+      "budget_cad": 2089556928,
+      "realisation_cad": 2186607854,
+      "ecart_realisation_moins_budget_cad": 97050926,
+      "limite_interpretation": "VARIATION_DE_REVENUS_NON_ECONOMIE"
+    },
+    {
+      "code": "REVENUS_INVESTISSEMENT",
+      "nature": "recette_d_investissement",
+      "budget_cad": 403091050,
+      "realisation_cad": 262872891,
+      "ecart_realisation_moins_budget_cad": -140218159,
+      "limite_interpretation": "RECETTES_D_INVESTISSEMENT_NON_RECURRENTES_NON_ECONOMIE"
+    },
+    {
+      "code": "CHARGES",
+      "nature": "charge_comptable",
+      "budget_cad": 2092480059,
+      "realisation_cad": 2107478001,
+      "ecart_realisation_moins_budget_cad": 14997942,
+      "limite_interpretation": "ECART_DE_CHARGES_NON_EQUIVALENT_A_GASPILLAGE"
+    },
+    {
+      "code": "EXCEDENT_EXERCICE",
+      "nature": "solde_resultats",
+      "budget_cad": 400167919,
+      "realisation_cad": 342002744,
+      "ecart_realisation_moins_budget_cad": -58165175,
+      "limite_interpretation": "VARIATION_SOLDE_NON_ECONOMIE"
+    }
+  ],
+  "identites_attendues": {
+    "budget_resultat_cad": 400167919,
+    "realisation_resultat_cad": 342002744,
+    "ecart_resultat_cad": -58165175
+  },
+  "faits_contextuels_exclus": {
+    "redressement_2023_cad": 1825176,
+    "redressement_n_est_pas_economie": true,
+    "autres_organismes_non_rapproches": true
+  },
+  "protections": {
+    "source_publique_texte_non_authentification_octets": true,
+    "source_2024_paginee_pdf_zero_6": true,
+    "source_donnees_page_publique_indexee": true,
+    "source_p55h_edition_verifier_avant_certification": true,
+    "source_mamh_non_reconciliee": true,
+    "quatre_lignes_sans_doublon": true,
+    "arithmetique_entiers_sans_arrondis_cache": true,
+    "tous_ecarts_egaux_realise_moins_budget": true,
+    "identite_resultat_budget_verifiee": true,
+    "identite_resultat_realise_verifiee": true,
+    "identite_resultat_ecarts_verifiee": true,
+    "deux_classes_recettes_non_interchangeables": true,
+    "charges_conservees_signe_budgets_et_reels": true,
+    "aucun_ecart_comptable_assimile_economie": true,
+    "aucun_gaspillage_inferre_d_ecart_budgetaire": true,
+    "aucune_recette_investissement_assimilee_recette_recurrente": true,
+    "sommaire_non_audite_non_assimile_certification": true,
+    "redressement_2023_hors_rapprochement_2024": true,
+    "eliminations_ville_rtc_somhac_non_monetees": true,
+    "aucune_deduction_depuis_une_seule_page": true,
+    "aucun_nettoyage_optimiste_d_unites": true,
+    "aucune_comparaison_inter_regimes_automatique": true,
+    "aucune_reduction_effectifs_et_services": true,
+    "protection_pouvoir_achat": true,
+    "mandats_comptable_juridique_non_signes": true,
+    "quatre_dossiers_p54e_et_date_ouverts": true,
+    "p54n40_p54o10_p54b96_p54c8_non_attestes": true,
+    "aucune_economie_certifiee_cad": true,
+    "aucune_autorisation_de_depense_ou_contact": true,
+    "aucune_modification_sinjira": true,
+    "aucune_fusion_main": true,
+    "no_go_automatique": true
+  },
+  "etat_initial": {
+    "lignes_reproduites_depuis_texte_public": 4,
+    "copies_pdf_actuelles_authentifiees": 0,
+    "pieces_comparatives_mamh_rapprochees": 0,
+    "avis_comptables_authentifies": 0,
+    "mandats_signes": 0,
+    "economies_certifiees_cad": null,
+    "dossiers_p54e_ouverts": 4,
+    "date_probable_non_certifiee": 1,
+    "taches_p54n_non_attestees": 40,
+    "blocages_p54o_non_leves": 10,
+    "controles_p54b_non_attestes": 96,
+    "controles_p54c_non_attestes": 8,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
