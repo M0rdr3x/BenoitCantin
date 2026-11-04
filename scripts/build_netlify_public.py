@@ -486,6 +486,11 @@ def relative_path_allowed(rel: Path) -> bool:
     if not parts:
         return False
 
+    # Interdire les futurs fichiers NOVA sous data/ quel que soit leur
+    # format, AVANT toute exception PDF, d'extension ou de répertoire.
+    if len(parts) >= 3 and parts[:3] == ("projets", "projet-nova", "data"):
+        return rel in PROJECT_NOVA_PUBLIC_DATA_JSON
+
     # Defense globale, aussi pour le repertoire racine, assets, jeux, comptes
     # et tout futur dossier de manuscrits. Une extension .pdf n'accorde rien.
     if rel.suffix.lower() == ".pdf":
