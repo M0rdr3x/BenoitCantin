@@ -61,6 +61,11 @@ assert 'id="poll-adult"' in poll_html and 'id="poll-agree"' in poll_html
 assert 'id="poll-results"' in poll_html and 'id="poll-form"' in poll_html
 assert "MIN_PUBLIC_BALLOTS = 10" in edge
 assert "nova_poll_public_counts" in edge
+assert "function verifyPublishedCounts(" in edge
+assert "const countsById=verifyPublishedCounts(questions,counts,ballotCount)" in edge
+assert "inconsistent_public_snapshot" in edge
+assert (ROOT / "scripts" / "test_nova_edge_snapshot.cjs").is_file()
+
 assert "nova_poll_publication_state" in edge
 assert "nova_poll_public_counts" in sql
 assert "nova_poll_publication_state" in sql

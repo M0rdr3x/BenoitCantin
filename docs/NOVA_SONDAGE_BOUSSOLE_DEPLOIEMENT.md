@@ -10,6 +10,12 @@ Le 3 novembre 2026, des contrôles HTTP ont établi que le mode d'hébergement J
 
 Les copies JavaScript **publiques** et versionnées `assets/sondage-public-corpus.js` et `assets/boussole-public-corpus.js` exposent uniquement les corpus déjà explicitement autorisés, sans bulletin individuel, et sont comparées intégralement aux sources JSON par `scripts/test_nova_public_bundles.py`. L'interface privilégie ces copies et conserve un repli sur les fichiers JSON pour les hébergements isolés. Le contrôle de confinement Jekyll exige désormais les deux bundles et les deux pages. Toute modification du corpus source nécessite de régénérer les bundles avec le même contenu et de réussir la CI avant déploiement. Le sondage **reste fermé** tant que l'approbation explicite de sa version n'est pas reçue.
 
+## Vérification de cohérence des résultats avant exposition
+
+La lecture des questions, des résultats par option et du total des bulletins publiés utilise plusieurs requêtes PostgREST. Même si l'écriture SQL des publications est atomique, un lecteur pourrait interroger des états antérieurs et postérieurs à la transaction, et voir des totaux temporairement incompatibles. La fonction Edge vérifie désormais que **chaque question totalise exactement le nombre de bulletins du dernier lot publié**, que les catégories et questions sont connues, qu'aucun couple catégorie/question ne se répète et que tous les nombres sont des entiers non négatifs sûrs. En cas de divergence, l'API répond **503** sans divulguer de répartition. Les tests Node simulent des transitions 0 → 10 → 20, les données invalides et des lectures concurrentes. Aucun vrai vote n'est créé.
+
+Le contrôle HTTP de production signale aussi comme incident grave le cas où l'API renverrait `open=true` alors que le corpus public versionné affiche `published=false`.
+
 ## Surveillance de la publication réelle
 
 Le workflow GitHub `.github/workflows/nova-public-readonly-smoke.yml` effectue un **contrôle HTTP quotidien en lecture seule**. Il vérifie le domaine officiel, les liens du sondage et de la boussole, l'ordre des scripts, les deux corpus publics JS comparés aux sources, la disponibilité de la fonction Supabase, la concordance des huit questions et le refus de servir certains fichiers techniques. Aucun secret n'est utilisé; **aucun bulletin de vote n'est envoyé**.

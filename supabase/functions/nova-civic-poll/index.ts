@@ -65,6 +65,43 @@ async function db(path: string, init: RequestInit={}) {
   if(!response.ok) throw new Error("database_unavailable");
   return response.status === 204 ? null : response.json();
 }
+// Les tables publiques et l'état de publication sont lus séparément via
+// PostgREST. Une publication SQL atomique peut tomber ENTRE ces lectures.
+// Refuser tout instantané mélangé plutôt que divulguer des totaux inexactes.
+function verifyPublishedCounts(
+  questions: {question_id:string}[],
+  counts: {question_id:string,option_value:number,total:number|string}[],
+  ballotCount: number
+): Map<string,number[]> {
+  if(!Array.isArray(questions) || questions.length!==8 || !Array.isArray(counts)
+    || !Number.isSafeInteger(ballotCount) || ballotCount<0) {
+    throw new Error("invalid_snapshot");
+  }
+  const values=[-2,-1,0,1,2,9];
+  const countsById = new Map<string,number[]>();
+  const seen = new Set<string>();
+  for(const q of questions) {
+    if(typeof q?.question_id!=="string" || countsById.has(q.question_id)) throw new Error("invalid_snapshot_questions");
+    countsById.set(q.question_id,Array(6).fill(0));
+  }
+  for(const row of counts) {
+    const id=row?.question_id;
+    const ix=values.indexOf(Number(row?.option_value));
+    const count=Number(row?.total);
+    const key=String(id)+":"+String(row?.option_value);
+    if(!countsById.has(id) || ix<0 || !Number.isSafeInteger(count) || count<0 || seen.has(key)) {
+      throw new Error("invalid_snapshot_counts");
+    }
+    seen.add(key);
+    countsById.get(id)![ix]=count;
+  }
+  for(const amounts of countsById.values()) {
+    const sum=amounts.reduce((a,b)=>a+b,0);
+    if(!Number.isSafeInteger(sum) || sum!==ballotCount) throw new Error("inconsistent_public_snapshot");
+  }
+  return countsById;
+}
+
 async function publicResults() {
   const [questions,counts,publications] = await Promise.all([
     db("nova_poll_questions?poll_version=eq."+VERSION+"&select=question_id,ordinal,question_text&order=ordinal.asc"),
@@ -73,17 +110,13 @@ async function publicResults() {
   ]);
   if(!Array.isArray(questions) || questions.length!==8 || !Array.isArray(counts)
      || !Array.isArray(publications) || publications.length!==1) throw new Error("not_ready");
-  const countsById = new Map<string,number[]>();
-  for(const q of questions) countsById.set(q.question_id,Array(6).fill(0));
-  const values=[-2,-1,0,1,2,9];
-  for(const row of counts) {
-    if(!countsById.has(row.question_id)) continue;
-    const ix=values.indexOf(Number(row.option_value));
-    if(ix>=0 && Number.isSafeInteger(Number(row.total))) countsById.get(row.question_id)![ix]=Number(row.total);
-  }
   const snapshot=publications[0];
   const ballotCount=Number(snapshot.published_ballots);
   if(!Number.isSafeInteger(ballotCount) || ballotCount<0) throw new Error("invalid_publication");
+  const values=[-2,-1,0,1,2,9];
+  // Fail-closed : un état de publication et des compteurs lus à des instants
+  // différents ne doivent jamais produire des statistiques trompeuses.
+  const countsById=verifyPublishedCounts(questions,counts,ballotCount);
   const showCounts=ballotCount>=MIN_PUBLIC_BALLOTS;
   return {
     version: VERSION, open:isOpen(), siteKey:isOpen()?CAPTCHA_SITE_KEY:null,

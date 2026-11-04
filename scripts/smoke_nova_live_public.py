@@ -82,6 +82,16 @@ def script_order(html: str, bundle: str, application: str):
         raise ValueError("Chargement JavaScript incorrect : " + bundle)
 
 
+def validate_opening_state(local_poll, response):
+    """Le serveur ne doit jamais accepter des votes sur un corpus marqué provisoire."""
+    if not isinstance(local_poll.get("published"), bool):
+        raise ValueError("État de publication du corpus public invalide")
+    if not isinstance(response.get("open"), bool):
+        raise ValueError("État d'ouverture de l'API invalide")
+    if response["open"] and not local_poll["published"]:
+        raise ValueError("INCIDENT : serveur de vote ouvert sur un questionnaire public non approuvé")
+
+
 def self_test():
     source = 'window.__NOVA_TEST = {"questions": [], "published": false};'
     assert decode_bundle(source, "__NOVA_TEST") == {"questions": [], "published": False}
@@ -91,6 +101,14 @@ def self_test():
         pass
     else:
         raise AssertionError("Affectation JS dupliquée non détectée")
+    validate_opening_state({"published": False},{"open": False})
+    validate_opening_state({"published": True},{"open": True})
+    try:
+        validate_opening_state({"published": False},{"open": True})
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Activation serveur accidentelle non détectée")
     script_order('<script src="a.js"></script><script src="b.js"></script>', "a.js", "b.js")
     try:
         script_order('<script src="b.js"></script><script src="a.js"></script>', "a.js", "b.js")
@@ -140,6 +158,7 @@ def main():
             (NOVA / "assets/sondage-public-corpus.js").read_text("utf-8"),
             "__NOVA_POLL_PUBLIC_CORPUS",
         )
+        validate_opening_state(local_poll, response)
         if response.get("version") != local_poll["version"] or len(response.get("questions") or []) != 8:
             raise ValueError("Le questionnaire serveur et la version du site divergent")
         if [(q["id"],q["text"]) for q in response["questions"]] != [
