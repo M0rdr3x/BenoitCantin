@@ -174,7 +174,7 @@ def validate_source() -> list[str]:
         "- \"projets/projet-nova/official/versions\"",
         "- \"**/*.csv\"", "- \"**/*.ts\"", "- \"**/*.tsx\"",
         "- \"**/*.py\"", "- \"**/*.toml\"",
-        '- "projets/projet-nova/data/*.json"',
+        '- "projets/projet-nova/data/*"',
         '- "projets/projet-nova/data/plan-acquisition-donnees-g0-sante.json"',
         "- \".well-known/security.txt\"",
         '- "projets/projet-nova/data/diagnostic-g0-sante-premiere-ligne-2025.json"',
