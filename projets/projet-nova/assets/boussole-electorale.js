@@ -76,6 +76,9 @@
         $("#compass-status").textContent = raw === "skip"
           ? "Question marquée « Sans opinion / passer ». Vous pouvez continuer."
           : "Réponse enregistrée localement. Vous pouvez continuer.";
+        // Les résultats et liens de partage doivent refléter les réponses
+        // corrigées, sans imposer de recommencer les 64 étapes.
+        if(state.results !== null) showResults(false);
       }
       if(event.target.matches("[data-importance]")){
         state.importance.set(question.id, event.target.value);
@@ -83,6 +86,7 @@
         if(savedAnswer){
           savedAnswer.importance = event.target.value;
           state.answers.set(question.id, savedAnswer);
+          if(state.results !== null) showResults(false);
         }
       }
     });
@@ -387,14 +391,11 @@
     area.remove();
   }
 
-  function showResults(){
+  function showResults(focusAndScroll=true){
+    // Même si toutes les propositions sont passées, le questionnaire se
+    // termine normalement. La conclusion doit expliquer l'absence de score,
+    // sans inventer une position politique et sans piéger l'utilisateur à Q64.
     const answered = Array.from(state.answers.values()).filter(x => x.value !== null).length;
-    if(answered === 0){
-      $("#compass-status").textContent = "Vous avez passé toutes les questions. Répondez à au moins une proposition pour obtenir un profil.";
-      $("#compass-status").focus();
-      return;
-    }
-
     const results = calculate();
     state.results = results;
     $("#compass-results-grid").innerHTML = results.map(resultCard).join("");
@@ -404,16 +405,25 @@
     const coverage = coveragePercent(results);
     const calculableAxes = results.filter(result => result.score !== null).length;
     const partial = answered < minimum || calculableAxes < state.data.axes.length;
-    $("#compass-summary").textContent = partial
-      ? `Profil partiel : ${answered} propositions répondues sur ${state.data.questions.length}, ${calculableAxes}/${state.data.axes.length} dimensions calculables; couverture moyenne ${coverage} %. Une dimension nécessite au moins deux réponses principales.`
-      : `Profil calculé sur ${calculableAxes} dimensions; couverture moyenne ${coverage} %. Aucun score global gauche/droite n’est généré.`;
+    $("#compass-summary").textContent = calculableAxes === 0
+      ? `Aucune dimension calculable : ${answered} proposition${answered === 1 ? "" : "s"} répondue${answered === 1 ? "" : "s"} sur ${state.data.questions.length}. Pour obtenir un premier score, répondez à au moins deux propositions principales d’un même thème; utilisez « Précédent » pour revoir vos choix, ou « Recommencer ».`
+      : partial
+        ? `Profil partiel : ${answered} propositions répondues sur ${state.data.questions.length}, ${calculableAxes}/${state.data.axes.length} dimensions calculables; couverture moyenne ${coverage} %. Une dimension nécessite au moins deux réponses principales.`
+        : `Profil calculé sur ${calculableAxes} dimensions; couverture moyenne ${coverage} %. Aucun score global gauche/droite n’est généré.`;
 
     $("#compass-results").hidden = false;
     configureSharing(results);
-    $("#compass-status").textContent = "Votre résultat a été calculé localement dans votre navigateur.";
-    // L'étape finale doit aussi être annoncée au clavier et au lecteur d'écran.
-    $("#compass-results-title")?.focus({preventScroll:true});
-    scrollToSection($("#compass-results"));
+    $("#compass-status").textContent = !focusAndScroll
+      ? "Réponse modifiée : le profil et le partage ont été actualisés localement."
+      : calculableAxes === 0
+        ? "Questionnaire terminé : aucune dimension calculable. Vous pouvez revoir vos réponses."
+        : "Votre résultat a été calculé localement dans votre navigateur.";
+    // Une modification doit rester au clavier dans la question éditée :
+    // seule la consultation initiale des résultats déplace le focus.
+    if(focusAndScroll){
+      $("#compass-results-title")?.focus({preventScroll:true});
+      scrollToSection($("#compass-results"));
+    }
   }
 
   function reset(){
