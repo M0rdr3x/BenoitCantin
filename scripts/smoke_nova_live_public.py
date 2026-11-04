@@ -81,7 +81,7 @@ def review_page_ok(html_source: str) -> bool:
         and len(re.findall(r'<li data-type="consultation" data-id="q[0-9]{2}">', html_source)) == 40
         and 'Aucune réponse n’est enregistrée ici' in html_source
         and 'noindex,follow' in html_source
-        and not re.search(r'<\\s*(form|input|button|script)\\b', html_source, re.I)
+        and not re.search(r'<\s*(form|input|button|script)\b', html_source, re.I)
     )
 
 
