@@ -142,6 +142,18 @@ Le protocole initial `official/working/protocole-portrait-regional-sante-g0-v1.m
 - **Gouvernance :** une copie SHA‑256 et des métadonnées OOXML cohérentes ne certifient pas les valeurs et ne peuvent déclencher ni ETP, ni économies, ni pilote. La source 2024–2025 n'est pas automatiquement représentative des effectifs de 2026. Aucune donnée personnelle de salarié ou patient n'est importée.
 - **Préservation :** références candidates du programme, du corpus, des finances et des statuts ainsi que le manifeste `data/sources.json` **inchangés**.
 
+## G0.9 — Revue des données RH et contrôle du double comptage (4 novembre 2026)
+
+- **Source officielle référencée mais non acquise :** le fichier gouvernemental `Portrait du personnel ... (2024–2025)` est listé sur Québec.ca; le téléchargement direct reste bloqué. Aucun dénombrement régional ni ETP n'a été extrait.
+- **Page G0.9 :** `rapprochement-rh-g0-9-sante.html`, explication des 13 contrôles et 18 RSS. Toutes les valeurs régionales RH sont « non disponibles » et non zéro.
+- **Registre :** `data/registre-rapprochement-rh-g0-9.json`, treize contrôles (source, feuille/cellule, géographie, période, unité, rôle détail/sous-total, doublons, suppression, zéro réel, RAMQ, première ligne, revue indépendante, autorité).
+- **Nouveau moteur de rapprochement :** `assets/g09-rh-reconciliation-core.mjs`, qui vérifie les références de cellules, les grains conceptuels, les doublons, les valeurs supprimées, l'empreinte source et les revues humaines. Il ne réalise **aucune somme officielle automatique** et retourne toujours `ready_for_release:false`.
+- **Paquet de revue :** `scripts/g09-generer-paquet-revue-rh.mjs`. Il exige un fichier G0.7/G0.8 réellement obtenu, revérifie son SHA‑256 et sa liste de feuilles, puis produit `g09-review-package.json` sans cellule ni montant de personnel.
+- **Tests :** `tests/g09-rh-reconciliation.test.mjs` contient dix scénarios synthétiques sur les contrôles de mappage et de refus. Le workflow manuel `.github/workflows/nova-g07-acquisition-rh.yml` exécute les tests G0.7/G0.8/G0.9 puis, **seulement après téléchargement réussi**, produit un paquet G0.9 comme artefact temporaire de 14 jours. La réussite GitHub Actions n'est pas attestée.
+- **Protocole :** `official/working/protocole-g0-9-interpretation-rh-v1.md` (NOVA-SINJ-G0-SAN-014), méthode de revue des tableaux et des sous-totaux avant tout calcul d'effectif.
+- **Contraintes :** personnel salarié R22 ≠ professionnels rémunérés RAMQ ≠ ETP cliniques; un pourcentage ISQ 2025 ≠ dénombrement RH 2024–2025. Une valeur manquante ou supprimée reste `null`, zéro n'est accepté que lorsqu'observé. Les 18 RSS et catégories d'établissement doivent être confirmées, pas inférées.
+- **Gouvernance :** G0 **non franchie**; aucune réforme, aucune économie et aucun budget autorisés. Les références officielles candidates et les empreintes du manifeste `data/sources.json` restent inchangées.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
