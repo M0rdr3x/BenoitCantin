@@ -127,6 +127,21 @@ Le protocole initial `official/working/protocole-portrait-regional-sante-g0-v1.m
 
 **Restrictions permanentes :** aucune donnée individuelle de salaire ou de patient, aucun ETP de première ligne inféré des personnes rémunérées RAMQ, aucun effet financier garanti, aucune autorisation automatique de pilote, aucun changement aux documents officiels candidats ou au manifeste `data/sources.json`.
 
+## G0.8 — Audit des métadonnées du classeur RH (4 novembre 2026)
+
+**État documenté :** fichier XLSX gouvernemental de la période **2024–2025** repéré; **octets non obtenus**. L'URL officielle et le catalogue sont confirmés, mais aucune feuille, donnée RH ni valeur d'ETP n'a été lue dans cette intervention.
+
+- **Page de suivi :** `audit-classeur-rh-g0-8-sante.html`, treize critères et six niveaux documentaires (L0 seul confirmé).
+- **Contrat qualité :** `data/registre-verification-classeur-rh-g0-8.json`, **18 RSS** et **13 contrôles**; toutes les valeurs RH demeurent `null`.
+- **Inspecteur Node 22 :** `assets/g08-rh-workbook-inspector.mjs`, vérifie ZIP/CRC, XML du classeur, relations internes, noms, dimensions, absence de macros, relations externes et fichiers incorporés suspects. Il **n'extrait aucune valeur de cellule**, aucun ETP ni salaire.
+- **Tests :** `tests/g08-rh-workbook-inspector.test.mjs`, onze scénarios sur des archives XLSX **synthétiques**, notamment métadonnées valides, fichiers tronqués, chemins liés, CRC, macros et XML potentiellement dangereux.
+- **Rapport de contrôle interne :** `official/working/rapport-controles-g0-8-validation-rh-v1.md` : 9/9 scénarios V8 exécutés sur des ZIP synthétiques non comprimés. Les 11 tests Node du dépôt, dont les scénarios DEFLATE, ne sont pas encore attestés comme exécutés.
+- **Acquisition G0.7 renforcée :** `scripts/g07-acquerir-rh-officiel.mjs` impose désormais `inspectOfficialRhWorkbook` avant d'enregistrer la source et ajoute `xlsx_metadata` au rapport; `assets/g07-rh-acquisition-core.mjs` rejette un manifeste prétendument acquis sans contrôle L2. Le registre G0.7 reste `DOWNLOAD_BLOCKED`.
+- **Workflow manuel :** `.github/workflows/nova-g07-acquisition-rh.yml` doit désormais exécuter les tests G0.7 et G0.8 avant toute tentative de téléchargement; **aucune exécution réussie n'est confirmée** par le seul ajout de cette configuration. Le workflow a uniquement `contents: read`, ne commit pas et conserve les artefacts au maximum 14 jours.
+- **Méthode :** `official/working/protocole-g0-8-validation-classeur-rh-v1.md` (NOVA-SINJ-G0-SAN-012); vérification future des en-têtes, unités, territoires, périodes, doubles comptes, données supprimées et examen indépendant avant toute interprétation.
+- **Gouvernance :** une copie SHA‑256 et des métadonnées OOXML cohérentes ne certifient pas les valeurs et ne peuvent déclencher ni ETP, ni économies, ni pilote. La source 2024–2025 n'est pas automatiquement représentative des effectifs de 2026. Aucune donnée personnelle de salarié ou patient n'est importée.
+- **Préservation :** références candidates du programme, du corpus, des finances et des statuts ainsi que le manifeste `data/sources.json` **inchangés**.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
