@@ -74,6 +74,10 @@ assert (ROOT / "scripts" / "test_nova_edge_snapshot.cjs").is_file()
 assert "nova_poll_publication_state" in edge
 assert "nova_poll_public_counts" in sql
 assert "nova_poll_publication_state" in sql
+assert "current_count.total - COALESCE(previous_count.total,0) < 5" in sql
+assert "current_count.total < COALESCE(previous_count.total,0)" in sql
+assert "LEFT JOIN public.nova_poll_public_counts AS previous_count" in sql
+
 assert "v_total_ballots - v_published_ballots >= 10" in sql
 assert "interval '6 hours'" in sql
 assert 'db("nova_poll_counts?' not in edge, "L'API ne doit pas lire les totaux bruts"
