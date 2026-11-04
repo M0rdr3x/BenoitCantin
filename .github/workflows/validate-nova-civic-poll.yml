@@ -22,6 +22,7 @@ on:
       - 'scripts/test_nova_public_bundles.py'
       - 'scripts/validate_jekyll_emergency_pages.py'
       - 'scripts/test_nova_boussole_runtime.cjs'
+      - 'scripts/test_nova_boussole_navigation.cjs'
       - 'scripts/test_nova_poll_runtime.cjs'
       - 'scripts/test_nova_edge_snapshot.cjs'
       - 'scripts/smoke_nova_poll_edge.py'
@@ -65,6 +66,8 @@ jobs:
           node --check projets/projet-nova/assets/sondage-public-corpus.js
       - name: Tester le calcul et la carte de la boussole
         run: node scripts/test_nova_boussole_runtime.cjs
+      - name: Parcourir les 64 questions et les scénarios sans opinion
+        run: node scripts/test_nova_boussole_navigation.cjs
       - name: Tester la cohérence atomique des résultats publics sans vote
         run: node scripts/test_nova_edge_snapshot.cjs
       - name: Tester le verrou du formulaire client sans réseau
