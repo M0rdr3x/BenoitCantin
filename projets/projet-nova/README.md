@@ -97,6 +97,18 @@ Le protocole initial `official/working/protocole-portrait-regional-sante-g0-v1.m
 - **Règles :** pas de données personnelles de santé ni de microdonnées sans autorisations, pas de coûts inventés, pas de déplacement ignoré des ETP publics, pas d'exclusion des RSS 17/18 du droit d'être considérées. **G0 non franchie**.
 - Les références officielles candidates du programme, du corpus, des statuts et des finances restent inchangées et les empreintes de `data/sources.json` ne sont pas modifiées.
 
+## G0.6 — Personnel, ETP et capacité clinique (3 novembre 2026)
+
+- Dossier de travail, **non normatif** : `official/working/protocole-g0-6-capacite-personnel-sante-v1.md` (NOVA-SINJ-G0-SAN-008).
+- Registre des 18 RSS : `data/registre-rh-regional-g0-6-sante.json`, 11 définitions et 4 familles de sources, **aucune donnée RH régionale chiffrée importée ou validée**.
+- Page pédagogique : `capacite-rh-g0-6-sante.html`, avec périmètres et un exemple fictif qui montre qu'un déplacement de dix ETP ne crée pas d'ETP net.
+- Contrôle de cohérence : `assets/g06-capacite-rh-core.mjs`, exige la même unité clinique, le même territoire, des périodes comparables et un chevauchement contrôlé; ne prétend mesurer aucune productivité ni économie.
+- Tests : `tests/g06-capacite-rh.test.mjs`, intégrés à la configuration `.github/workflows/nova-sinjira-finances-tests.yml` sans supposer l'exécution de GitHub Actions.
+- **Source officielle existante mais non téléchargée :** classeur MSSS `Portrait du personnel des établissements publics et privés conventionnés ... (2024–2025)` depuis `https://www.quebec.ca/sante/systeme-et-services-de-sante/organisation-des-services/donnees-systeme-sante-quebecois-services/ressources-humaines`. Tentative de téléchargement échouée. Aucun chiffre provincial ou régional issu du XLSX n'est fabriqué.
+- **Définitions distinctes :** personnel ayant un lien d'emploi, personnel présent (R22), heures pertinentes, ETP clinique, professionnels rémunérés par la RAMQ (St@tRAMQ), heures supplémentaires obligatoires. Les professionnels rémunérés par la RAMQ et certains EPC ne font pas partie du même périmètre R22.
+- **Aucune addition** d'effectifs, de professionnels RAMQ et d'ETP sans méthode de dédoublonnage et période homogène. Les RSS 17 et 18 restent exclues **de l'enquête ISQ 2025**, mais non des recherches RH possibles.
+- **État :** G0 non franchie, aucun chiffrage unitaire, transfert de personnel, contrat, changement d'emploi ou budget adopté. Le corpus, le programme, les statuts, les finances candidats et le manifeste `data/sources.json` restent inchangés.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
