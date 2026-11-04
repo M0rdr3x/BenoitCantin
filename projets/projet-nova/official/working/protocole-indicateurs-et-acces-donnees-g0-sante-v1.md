@@ -1,5 +1,8 @@
 # NOVA-SINJ-G0-SAN-002 — Protocole de preuve, dictionnaire d'indicateurs et accès aux données
 
+> **Addendum G0.4, 3 novembre 2026.** Les 16 valeurs d'affiliation régionales sont désormais transcrites du tableau 8.1 du PDF `Panorama des régions du Québec 2026`, et les démarches vers l'urgence du tableau 8.3. Voir `official/working/protocole-portrait-regional-sante-g0-v2.md`. Le classeur XLSX ISQ n'a **pas** été importé. Les présentes règles de dictionnaire GAP et de confidentialité restent nécessaires et inchangées.
+
+
 **Projet politique :** Projet Nova  
 **Version :** 1.0 du 3 novembre 2026  
 **Statut :** dossier méthodologique de travail; non adopté, non validé par les institutions citées, sans demande de données expédiée et sans autorisation de traitement de renseignements personnels.  
