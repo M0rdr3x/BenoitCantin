@@ -28,6 +28,10 @@ BLOCKED = (
     "projets/projet-nova/official/versions/V322/V322_CURRENT_STATE.json",
     "projets/projet-nova/official/versions/V316/README.md",
     "projets/projet-nova/data/modele_comptabilite.csv",
+    "projets/projet-nova/data/diagnostic-g0-sante-premiere-ligne-2025.json",
+    "projets/projet-nova/data/registre-donnees-services-nova-sinjira.json",
+    "projets/projet-nova/data/reperes-financiers-nova-sinjira-2026.json",
+    "projets/projet-nova/data/plan-acquisition-donnees-g0-sante.json",
     "projets/projet-nova/CNAME_APRES_NAMECHEAP.txt",
     "assets/icons/README.md",
     "projets/sinjira/codex/livre-i-delivery-contract.json",
@@ -132,13 +136,44 @@ def validate_source() -> list[str]:
         errors.append("_config.yml absent")
         return errors
     source = config.read_text("utf-8")
+    # Le Jekyll historique doit avoir la même liste positive de JSON NOVA
+    # que l'artefact isolé _site, sans ajout discrétionnaire d'un futur export.
+    builder_path = ROOT / "scripts/build_netlify_public.py"
+    if not builder_path.is_file():
+        errors.append("Générateur isolé absent : impossible de valider l'allowlist JSON")
+    else:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("sinjira_public_builder_policy", builder_path)
+        if spec is None or spec.loader is None:
+            errors.append("Générateur isolé non chargeable")
+        else:
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            expected = {p.as_posix() for p in module.PROJECT_NOVA_PUBLIC_DATA_JSON}
+            include_block = source.split("include:\n", 1)
+            include_text = include_block[1].split("\nexclude:", 1)[0] if len(include_block) == 2 else ""
+            included = set()
+            for line in include_text.splitlines():
+                stripped = line.strip()
+                if stripped.startswith('- "projets/projet-nova/data/') and stripped.endswith('.json"'):
+                    included.add(stripped[3:-1])
+            if included != expected:
+                for item in sorted(expected - included):
+                    errors.append("JSON NOVA public non explicitement inclus : " + item)
+                for item in sorted(included - expected):
+                    errors.append("JSON NOVA non approuvé inclus dans Jekyll : " + item)
     for key in (
         "exclude:", "include:", "- \"supabase\"", "- \"scripts\"",
         "- \"tests\"", "- \"mobile-native\"", "- \"docs\"",
         "- \"projets/projet-nova/official/versions\"",
         "- \"**/*.csv\"", "- \"**/*.ts\"", "- \"**/*.tsx\"",
         "- \"**/*.py\"", "- \"**/*.toml\"",
+        '- "projets/projet-nova/data/*.json"',
+        '- "projets/projet-nova/data/plan-acquisition-donnees-g0-sante.json"',
         "- \".well-known/security.txt\"",
+        '- "projets/projet-nova/data/diagnostic-g0-sante-premiere-ligne-2025.json"',
+        '- "projets/projet-nova/data/registre-donnees-services-nova-sinjira.json"',
+        '- "projets/projet-nova/data/reperes-financiers-nova-sinjira-2026.json"',
     ):
         if key not in source:
             errors.append("Protection de configuration manquante : " + key)

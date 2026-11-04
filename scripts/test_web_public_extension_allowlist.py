@@ -19,6 +19,25 @@ spec.loader.exec_module(builder)
 
 
 class PublicArtifactExtensionAllowlist(unittest.TestCase):
+    def test_hidden_root_files_never_inherit_browser_extension_allowlist(self):
+        # A dotfile is not public simply because it ends in .html/.js/.css.
+        # Check the real policy used by both build and preflight.
+        for name in (
+            ".credentials.html", ".secrets.js", ".internal.css",
+            ".debug.mjs", ".private.webp", ".HIDDEN.JS",
+            ".hidden.webmanifest", ".env.html", ".env.production.js",
+        ):
+            with self.subTest(path=name):
+                self.assertFalse(builder.root_file_allowed(ROOT / name))
+                self.assertFalse(builder.relative_path_allowed(Path(name)))
+
+        # Only the known Jekyll marker is an approved root dotfile.
+        self.assertTrue(builder.root_file_allowed(ROOT / ".nojekyll"))
+        self.assertTrue(builder.relative_path_allowed(Path(".nojekyll")))
+        self.assertTrue(builder.root_file_allowed(ROOT / "index.html"))
+        self.assertTrue(builder.root_file_allowed(ROOT / "robots.txt"))
+        self.assertTrue(builder.root_file_allowed(ROOT / "CNAME"))
+
     def test_unreviewed_nested_sources_archives_exports_not_published(self):
         for directory in (
             "assets", "projets/sinjira/romans", "projets/sinjira/logiciels",

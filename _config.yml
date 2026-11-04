@@ -22,6 +22,19 @@ include:
   - "projets/projet-nova/official/reference/programme.md"
   - "projets/projet-nova/official/reference/statuts.md"
   - "projets/sinjira/codex/index.html"
+  # Liste positive des JSON d'interface autorisés par le générateur _site.
+  - "projets/projet-nova/data/actualites.json"
+  - "projets/projet-nova/data/boussole-electorale-v1.json"
+  - "projets/projet-nova/data/boussole-electorale-v2.json"
+  - "projets/projet-nova/data/boussole-partis-2026.json"
+  - "projets/projet-nova/data/boussole-preuves-2026.json"
+  - "projets/projet-nova/data/boussole-sources-partis-2026.json"
+  - "projets/projet-nova/data/comptabilite.json"
+  - "projets/projet-nova/data/documents-word-only.json"
+  - "projets/projet-nova/data/documents.json"
+  - "projets/projet-nova/data/rencontres.json"
+  - "projets/projet-nova/data/sondage-citoyen-v1.json"
+  - "projets/projet-nova/data/sources.json"
 exclude:
   - ".git"
   - ".github"
@@ -83,6 +96,15 @@ exclude:
   - "projets/projet-nova/official/versions"
   - "projets/projet-nova/official/CURRENT_VERSION.json"
   - "projets/projet-nova/data/*.csv"
+  # Refus global des futurs JSON de travail. Jekyll 3 examine include
+  # avant exclude : les 12 fichiers ci-dessus restent publics uniquement.
+  - "projets/projet-nova/data/*.json"
+  # Garde P0 : ces trois JSON ne sont PAS dans la liste publique _site.
+  # Les documents de travail NOVA restent réservés au dépôt Git.
+  - "projets/projet-nova/data/diagnostic-g0-sante-premiere-ligne-2025.json"
+  - "projets/projet-nova/data/registre-donnees-services-nova-sinjira.json"
+  - "projets/projet-nova/data/reperes-financiers-nova-sinjira-2026.json"
+  - "projets/projet-nova/data/plan-acquisition-donnees-g0-sante.json"
   - "projets/projet-nova/ADMINISTRATION_FORMULAIRES.md"
   - "projets/projet-nova/ARCHITECTURE_DES_UNIVERS.md"
   - "projets/projet-nova/AUDIT_SITE_NOVA_AAA_PLUS.md"
