@@ -35,6 +35,7 @@ REQUIRED_ROUTES = (
     "/projets/projet-nova/data/diagnostic-g0-sante-premiere-ligne-2025.json",
     "/projets/projet-nova/data/registre-donnees-services-nova-sinjira.json",
     "/projets/projet-nova/data/reperes-financiers-nova-sinjira-2026.json",
+    "/projets/projet-nova/data/plan-acquisition-donnees-g0-sante.json",
     "/projets/projet-nova/CNAME_APRES_NAMECHEAP.txt",
     "/assets/icons/README.md",
     "/_config.yml",
