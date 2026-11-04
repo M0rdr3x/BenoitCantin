@@ -138,7 +138,7 @@ def main():
 
         poll_html = verify(PREFIX + "sondage-citoyen.html")
         compass_html = verify(PREFIX + "boussole-electorale.html")
-        script_order(poll_html, "sondage-public-corpus.js?v=1", "sondage-citoyen.js?v=2")
+        script_order(poll_html, "sondage-public-corpus.js?v=1", "sondage-citoyen.js?v=3")
         script_order(compass_html, "boussole-public-corpus.js?v=1", "boussole-electorale.js?v=3.4.14")
 
         remote_poll = verify(PREFIX + "assets/sondage-public-corpus.js")

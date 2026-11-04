@@ -75,6 +75,10 @@ assert 'db("nova_poll_counts?' not in edge, "L'API ne doit pas lire les totaux b
 assert 'Deno.env.get("NOVA_POLL_APPROVED_VERSION") === VERSION' in edge
 assert "NOVA_POLL_ENABLED" in edge and '=== "true"' in edge
 assert "local.published===true" in poll_js, "Ouverture du scrutin interdite sans publication explicite"
+assert "function validatedPublicResponse(data)" in poll_js
+assert "if(!validatedPublicResponse(remote))" in poll_js
+assert "if(!validatedPublicResponse(data))" in poll_js
+
 assert "NOVA_POLL_TURNSTILE_SECRET" in edge and "NOVA_POLL_HMAC_KEY" in edge
 assert "confirmCaptcha(payload.captchaToken)" in edge
 # Ne jamais interroger PostgREST avant vérification du CAPTCHA.

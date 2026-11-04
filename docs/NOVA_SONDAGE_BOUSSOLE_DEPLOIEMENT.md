@@ -83,3 +83,7 @@ La Boussole électorale, en revanche, est **distincte du sondage** : ses 64 rép
 - Conserver les journaux techniques de validation sans données sensibles et les résultats de vérification pour audit.
 
 **Ne jamais annoncer « 100 % opérationnel » avant réussite des tests réels, examen des exigences applicables et validation de publication sur le domaine.**
+
+## Vérification défensive des résultats publics côté navigateur
+
+Le navigateur contrôle également chaque lecture de l'API — y compris le bouton « Actualiser les résultats » — avant d'afficher une répartition. Les huit formulations et leur ordre doivent correspondre à la version locale, les résultats non publiés ne doivent contenir aucun petit effectif, et pour chaque lot public les six catégories de réponse doivent totaliser **exactement** le nombre de bulletins publiés, sous forme d'entiers sûrs et non négatifs. Toute donnée défectueuse ou incohérente est masquée plutôt que transformée en pourcentage. Si l'API annonce la fermeture pendant une session ouverte, le bouton d'envoi est désactivé immédiatement. Des tests Node sur le véritable code navigateur vérifient le contrat et les cas négatifs, sans vote ni réseau.
