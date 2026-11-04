@@ -84,6 +84,17 @@ assert "localStorage.setItem" not in compass_js
 assert "results.filter(r => r.score !== null)" not in compass_js[
     compass_js.index("function renderRadar"):compass_js.index("function coveragePercent")
 ], "Le radar ne doit jamais réindexer les axes partiels"
+# Contrôle : la citation d'une valeur HTML ne doit pas être rompue par l'apostrophe.
+from validate_seo_quality import meta_content as seo_meta_content
+from normalize_nova_seo import meta_content as normalize_meta_content
+seo_fixture = "<meta name=\"description\" content=\"Dossier d'exécution &amp; consultation\">"
+assert seo_meta_content(seo_fixture, name="description") == "Dossier d'exécution & consultation"
+assert normalize_meta_content(seo_fixture, "description") == "Dossier d'exécution & consultation"
+assert seo_meta_content("<meta content='L&#39;avis public' property='og:description'>",
+                        prop="og:description") == "L'avis public"
+for required_page in ("comparateur-couts-services.html", "registre-donnees-nova-sinjira.html"):
+    assert '"' + required_page + '"' in (ROOT / "scripts/validate_seo_quality.py").read_text(encoding="utf-8")
+    assert '"' + required_page + '"' in (ROOT / "scripts/normalize_nova_seo.py").read_text(encoding="utf-8")
 assert "const complete = points.every" in compass_js
 assert "bucket.primaryAnswered >= axisMinimumAnswered" in compass_js
 assert compass["methodology"]["axisMinimumAnswered"] == 2
