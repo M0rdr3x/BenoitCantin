@@ -395,6 +395,14 @@ class TestP55H(unittest.TestCase):
         target=str(self.base/"public.json")
         self.assertEqual(m.main(["--bilan-public",target,
                                  "--plan-public",target]),2)
+    def test_71_content_length_inexact_rejete_et_nettoye(self):
+        folder=m.private_new_folder(self.folder())
+        def fetch(url):
+            return FakeHTTP(url,b"%PDF-123",declared_length="999")
+        with self.assertRaises(ValueError):
+            m.retrieve_one(m.official_sources()[0],folder,fetch=fetch)
+        self.assertFalse((folder/"VILLE_2024.pdf").exists())
+
     def test_70_economies_et_mandats_toujours_non_certifies(self):
         r=m.public_report()
         self.assertEqual(r["avis_professionnels_authentifies"],0)
