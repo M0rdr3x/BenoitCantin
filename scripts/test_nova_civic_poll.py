@@ -60,6 +60,12 @@ assert "sondage-citoyen.html" in compass_html
 assert 'id="poll-adult"' in poll_html and 'id="poll-agree"' in poll_html
 assert 'id="poll-results"' in poll_html and 'id="poll-form"' in poll_html
 assert "MIN_PUBLIC_BALLOTS = 10" in edge
+assert "MIN_NONZERO_CELL = 5" in edge, "Seuil de divulgation par catégorie requis"
+assert "canPublishCells(countsById)" in edge
+assert "MIN_NONZERO_CELL = 5" in poll_js
+assert "aucune variation de 1 à 4 avis par catégorie" in poll_js
+assert "(n>0 && n<MIN_NONZERO_CELL)" in poll_js
+
 assert "nova_poll_public_counts" in edge
 assert "function verifyPublishedCounts(" in edge
 assert "const countsById=verifyPublishedCounts(questions,counts,ballotCount)" in edge
@@ -69,6 +75,10 @@ assert (ROOT / "scripts" / "test_nova_edge_snapshot.cjs").is_file()
 assert "nova_poll_publication_state" in edge
 assert "nova_poll_public_counts" in sql
 assert "nova_poll_publication_state" in sql
+assert "current_count.total - COALESCE(previous_count.total,0) < 5" in sql
+assert "current_count.total < COALESCE(previous_count.total,0)" in sql
+assert "LEFT JOIN public.nova_poll_public_counts AS previous_count" in sql
+
 assert "v_total_ballots - v_published_ballots >= 10" in sql
 assert "interval '6 hours'" in sql
 assert 'db("nova_poll_counts?' not in edge, "L'API ne doit pas lire les totaux bruts"

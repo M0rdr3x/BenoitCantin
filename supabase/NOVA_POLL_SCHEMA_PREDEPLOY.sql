@@ -132,7 +132,24 @@ BEGIN
     FROM public.nova_poll_receipts WHERE poll_version=p_version;
   IF v_total_ballots >= 10
      AND v_total_ballots - v_published_ballots >= 10
-     AND (v_published_at IS NULL OR now() - v_published_at >= interval '6 hours') THEN
+     AND (v_published_at IS NULL OR now() - v_published_at >= interval '6 hours')
+     -- Un instantané diffusé ne doit pas révéler une variation de 1 à 4
+     -- avis, même si les totaux cumulés dépassent le seuil de confidentialité.
+     AND NOT EXISTS (
+       SELECT 1 FROM public.nova_poll_counts AS current_count
+       LEFT JOIN public.nova_poll_public_counts AS previous_count
+         ON previous_count.poll_version=current_count.poll_version
+        AND previous_count.question_id=current_count.question_id
+        AND previous_count.option_value=current_count.option_value
+       WHERE current_count.poll_version=p_version
+         AND (
+           current_count.total < COALESCE(previous_count.total,0)
+           OR (
+             current_count.total > COALESCE(previous_count.total,0)
+             AND current_count.total - COALESCE(previous_count.total,0) < 5
+           )
+         )
+     ) THEN
     INSERT INTO public.nova_poll_public_counts(poll_version,question_id,option_value,total)
       SELECT poll_version,question_id,option_value,total
       FROM public.nova_poll_counts WHERE poll_version=p_version

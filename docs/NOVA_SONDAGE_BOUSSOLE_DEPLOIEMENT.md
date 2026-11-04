@@ -4,6 +4,14 @@
 **Public :** personnes se déclarant âgées de 18 ans et plus.  
 **Méthode :** consultation citoyenne ouverte, non probabiliste. Elle ne constitue ni une étude représentative de la population, ni une prédiction électorale.
 
+## Révision documentaire des questionnaires complets 64/40
+
+La PR candidate historique #639 contient deux questionnaires **non approuvés** : un sondage d'opinion de 64 questions (copie de la boussole v2.2.0, distinct de son calcul local) et une consultation consultative de 40 questions « Pour / Contre / Sans opinion », explicitement non officielle. Les deux sources exactes sont archivées dans `docs/nova-sondages/`, à partir du commit `5726b7262a89ddb42d210407c6d5473cc815feb0`, sans réponses de citoyens.
+
+La page **`sondages-a-valider.html`** expose les 104 questions en lecture seule depuis la page d'accueil et le sondage de huit questions. Elle ne contient aucun formulaire ni script de collecte et reste `noindex`. Cette visibilité sert à examiner les formulations et le protocole; elle **n'autorise pas** à ouvrir les votes. Le test `scripts/test_nova_candidate_questionnaires.py` compare texte par texte, ordre et version, bloque toute divergence, et interdit les composants de saisie; les contrôles de publication Netlify/Jekyll et la surveillance du site réel exigent cette page.
+
+Les huit questions de `sondage-citoyen.html` demeurent provisoires, fermées et distinctes du futur sondage d'opinion de 64 questions et de la consultation de 40 questions. Avant une collecte éventuelle, obtenir l'approbation documentaire et une analyse de confidentialité spécifique (voir issue #675), puis tester dans une base isolée. Aucun vote réel n'est créé par cette publication.
+
 ## Compatibilité du site public GitHub Pages/Jekyll
 
 Le 3 novembre 2026, des contrôles HTTP ont établi que le mode d'hébergement Jekyll historique ne servait pas les fichiers `data/sondage-citoyen-v1.json`, `data/boussole-electorale-v2.json` et les références documentaires de la boussole (HTTP 404), bien qu'ils existent dans GitHub et dans le paquet public isolé Netlify. Le filtre Jekyll strict doit rester en place pour ne pas publier les autres fichiers de travail.
@@ -84,6 +92,12 @@ La Boussole électorale, en revanche, est **distincte du sondage** : ses 64 rép
 
 **Ne jamais annoncer « 100 % opérationnel » avant réussite des tests réels, examen des exigences applicables et validation de publication sur le domaine.**
 
+## Confidentialité : catégories de très faible effectif
+
+Le seuil d'au moins dix bulletins **ne suffit pas** à protéger une catégorie comptant un à quatre avis (par exemple neuf réponses pour une option et une pour une autre). Le serveur NOVA refuse désormais **toute la répartition, le total et la date de publication** lorsqu'une seule des six catégories d'une des huit questions contient entre un et quatre avis. Les catégories à zéro et à cinq ou davantage restent permises, sous le seuil général de dix participations. Le navigateur vérifie indépendamment ce même invariant. Aucun arrondi ni valeur inventée ne remplace un petit effectif. Tests sans réseau : répartitions fictives 9/1, 6/4 et 5/5, incluant un unique item sensible.
+
+**Limitation restante et bloquante avant ouverture :** la comparaison de deux lots publiés peut permettre de déduire une variation individuelle, même si chaque instantané satisfait le seuil de cinq par catégorie. Une analyse de divulgation temporelle et des mesures supplémentaires (report, regroupement ou politique de publication appropriée) restent indispensables. Ni l'absence de noms en base ni cette barrière ne justifient la promesse d'anonymat absolu. Ne pas activer `NOVA_POLL_ENABLED` avant revue du questionnaire, confidentialité et recette isolée.
+
 ## Vérification défensive des résultats publics côté navigateur
 
 Le navigateur contrôle également chaque lecture de l'API — y compris le bouton « Actualiser les résultats » — avant d'afficher une répartition. Les huit formulations et leur ordre doivent correspondre à la version locale, les résultats non publiés ne doivent contenir aucun petit effectif, et pour chaque lot public les six catégories de réponse doivent totaliser **exactement** le nombre de bulletins publiés, sous forme d'entiers sûrs et non négatifs. Toute donnée défectueuse ou incohérente est masquée plutôt que transformée en pourcentage. Si l'API annonce la fermeture pendant une session ouverte, le bouton d'envoi est désactivé immédiatement. Des tests Node sur le véritable code navigateur vérifient le contrat et les cas négatifs, sans vote ni réseau.
@@ -91,3 +105,13 @@ Le navigateur contrôle également chaque lecture de l'API — y compris le bout
 ### Résilience bornée du contrôle réseau
 
 Les contrôles de disponibilité HTTP effectuent jusqu'à **trois lectures GET** en cas de HTTP 503 temporaire, séparées par des délais de 0,3 s et 0,6 s. Ils ne réessaient **jamais** l'envoi POST, ne masquent pas une panne persistante et vérifient les protections CORS et le refus des votes même lorsque la première lecture a dû être répétée. Des tests hors réseau simulent les échecs ponctuels et permanents. Les résultats restent invisibles si le service ne fournit pas de réponse cohérente.
+
+## Reprise d’une erreur de lecture transitoire sans ouvrir le vote
+
+Le service public Supabase peut répondre temporairement 503 à la première consultation. Au chargement, le navigateur effectue déjà une seconde lecture des résultats; désormais, si cette relecture est conforme, l’interface remet son statut exact (« consultation en préparation » ou « ouverte » uniquement avec toutes les conditions vérifiées), au lieu de laisser une alerte d’indisponibilité périmée. Si la relecture échoue, elle garde l’envoi désactivé et affiche l’indisponibilité. Ce changement concerne **uniquement la lecture GET**; aucun envoi POST n'est répété et les exigences d'âge, d'approbation de version et de CAPTCHA ne sont pas assouplies. Un test Node du gestionnaire réel simule l'incident et vérifie l'absence d'ouverture d'un corpus provisoire.
+
+## Confidentialité des publications successives — sécurité en base
+
+La comparaison de deux totaux publics permettrait autrement de révéler une variation de seulement 1 à 4 réponses dans une catégorie même si chaque total cumulé dépasse cinq. La fonction PostgreSQL `nova_poll_submit` applique désormais un garde **dans la transaction de publication** : elle compare les nouveaux compteurs agrégés aux compteurs du dernier lot publié et **ne publie aucun nouveau lot** si une catégorie quelconque a augmenté de 1 à 4, ou si un compteur a diminué. Un premier lot est soumis à la même règle (comptage depuis zéro). Cette décision porte sur toutes les questions et options : la publication reste entièrement différée jusqu'à ce que tous les écarts positifs soient au moins cinq, ou nuls. Le seuil de dix participations et le délai de six heures continuent de s'appliquer. Les réponses restent comptabilisées en interne et ne sont pas perdues lorsque la publication est reportée.
+
+Le test `scripts/test_nova_poll_delta_privacy.py` vérifie la présence des conditions dans le SQL versionné et simule les deltas 9/1, 6/4, 5/5, 1/9, 0/10, ainsi que les compteurs décroissants, sans modifier la production. Cette défense protège **les écarts par option** mais ne prouve pas l'anonymat absolu face à toutes les corrélations entre questions, aux informations externes ou à des groupes connus. Une EFVP et une approbation documentaire sont toujours requises avant toute collecte.

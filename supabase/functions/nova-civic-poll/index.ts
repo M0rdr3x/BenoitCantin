@@ -5,6 +5,7 @@ const ORIGINS = new Set(["https://www.benoitcantin.com","https://benoitcantin.co
 const MAX_BODY_BYTES = 8192;
 const OPTIONS = new Set([-2,-1,0,1,2,9]);
 const MIN_PUBLIC_BALLOTS = 10;
+const MIN_NONZERO_CELL = 5;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const CAPTCHA_SECRET = Deno.env.get("NOVA_POLL_TURNSTILE_SECRET") || "";
@@ -102,6 +103,15 @@ function verifyPublishedCounts(
   return countsById;
 }
 
+// Une catégorie de 1 à 4 répondants serait dévoilée même si le total
+// global dépasse dix. Tout le tableau est supprimé, pas seulement la cellule,
+// afin de ne pas pouvoir la reconstituer par soustraction du total.
+function canPublishCells(counts: Map<string,number[]>): boolean {
+  return counts.size===8 && [...counts.values()].every(values =>
+    values.length===6 && values.every(n =>
+      Number.isSafeInteger(n) && n>=0 && (n===0 || n>=MIN_NONZERO_CELL)));
+}
+
 async function publicResults() {
   const [questions,counts,publications] = await Promise.all([
     db("nova_poll_questions?poll_version=eq."+VERSION+"&select=question_id,ordinal,question_text&order=ordinal.asc"),
@@ -117,7 +127,7 @@ async function publicResults() {
   // Fail-closed : un état de publication et des compteurs lus à des instants
   // différents ne doivent jamais produire des statistiques trompeuses.
   const countsById=verifyPublishedCounts(questions,counts,ballotCount);
-  const showCounts=ballotCount>=MIN_PUBLIC_BALLOTS;
+  const showCounts=ballotCount>=MIN_PUBLIC_BALLOTS && canPublishCells(countsById);
   return {
     version: VERSION, open:isOpen(), siteKey:isOpen()?CAPTCHA_SITE_KEY:null,
     eligibility:"18+ déclaré", method:"consultation ouverte non probabiliste",
