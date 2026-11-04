@@ -268,7 +268,7 @@ class TestP55D(unittest.TestCase):
     def test_63_no_human_decision_from_count_40(self):
         counts={name:(40 if name=="PREPARATION_DECLAREE_NON_ATTESTEE" else 0)
                 for name in m.STATES}
-        result=m.public_report(source_states() if False else None)
+        result=m.public_report()
         self.assertEqual(result["pieces_professionnelles_authentifiees"],0)
         # Deliberately cannot claim all prepared without reproduction.
         with self.assertRaises(ValueError):
@@ -281,6 +281,114 @@ class TestP55D(unittest.TestCase):
         result=m.public_report(states,reproduced=True,followup=followup)
         self.assertEqual(result["exigences_p55d_suspendues"],1)
         self.assertFalse(result["cloture_dossier_autorisee"])
+    def setup_local_files(self,dir_path,ready=False,suspended=False):
+        t=Path(dir_path)
+        v=t/"ville.pdf";h=t/"mamh.pdf"
+        v.write_bytes(b"%PDF-synthetique-ville")
+        h.write_bytes(b"%PDF-synthetique-mamh")
+        v.chmod(0o600);h.chmod(0o600)
+        z=t/"p54z.json";a=t/"p55a.json";c=t/"p55c.json"
+        zd=m.p54z.blank_model()
+        if ready:
+            for row in zd["dossiers"]:
+                for item in row["controles"]:
+                    item["etat"]="PREPARATION_DECLAREE_NON_VERIFIEE"
+        if suspended:
+            zd["dossiers"][0]["controles"][0]["etat"]="SUSPENDU"
+        m.p54z.write_new(z,zd,private=True)
+        _,sha=m.p55a.upstream(z)
+        ad=m.p55a.model(sha)
+        if ready:
+            for row in ad["dossiers"]:
+                for item in row["verifications"]:
+                    item["etat"]="PREPARE_NON_ATTESTE"
+        m.p54z.write_new(a,ad,private=True)
+        cd=m.p55c.private_model(positions())
+        if ready:
+            cd["observations"][0]["etat_revue"]="REPERE_DECLARE_NON_AUTHENTIFIE"
+            cd["observations"][0]["contre_revue_declaree"]="DECLAREE_DISTINCTE_NON_AUTHENTIFIEE"
+        m.p54z.write_new(c,cd,private=True)
+        return v,h,z,a,c,zd,ad,cd
+
+    def test_65_creation_synthetique_ancree_p55c(self):
+        with tempfile.TemporaryDirectory() as t:
+            v,h,z,a,c,*_=self.setup_local_files(t)
+            dst=Path(t)/"p55d.json"
+            with patch.object(m.p55c,"local_sources",
+                              return_value=(source_states(),reproduced())):
+                code=m.main([
+                    "--ville-pdf",str(v),"--mamh-pdf",str(h),
+                    "--declarations-p54z",str(z),"--relecture-p55a",str(a),
+                    "--fiche-p55c",str(c),"--creer-suivi-prive",str(dst)])
+            self.assertEqual(code,0)
+            self.assertEqual(dst.stat().st_mode&0o777,0o600)
+            data=json.loads(dst.read_text())
+            self.assertEqual(len(data["observations"]),5)
+            self.assertEqual(data["sha256_fiche_p55c"],
+                             m.hashlib.sha256(c.read_bytes()).hexdigest())
+
+    def test_66_preparation_synthetique_exige_doubles_relectures(self):
+        with tempfile.TemporaryDirectory() as t:
+            v,h,z,a,c,*_=self.setup_local_files(t,ready=True)
+            zd=json.loads(z.read_text())
+            ad=json.loads(a.read_text())
+            cd=json.loads(c.read_text())
+            self.assertTrue(m.is_prepared(0,zd,ad,cd))
+            followup=m.private_model(c.read_bytes())
+            followup["observations"][0]["exigences"][0]["etat"]="PREPARATION_DECLAREE_NON_ATTESTEE"
+            counts=m.validate_followup(followup,c.read_bytes(),zd,ad,cd)
+            self.assertEqual(counts["PREPARATION_DECLAREE_NON_ATTESTEE"],1)
+            self.assertEqual(m.public_report(
+                source_states(),True,counts)["avis_independants_authentifies"],0)
+
+    def test_67_relecture_synthetique_avec_reserve_non_closable(self):
+        with tempfile.TemporaryDirectory() as t:
+            v,h,z,a,c,*_=self.setup_local_files(t,ready=True)
+            track=Path(t)/"track.json";out=Path(t)/"bilan.json"
+            followup=m.private_model(c.read_bytes())
+            followup["observations"][0]["exigences"][0]["etat"]="PREPARATION_DECLAREE_NON_ATTESTEE"
+            followup["observations"][1]["exigences"][0]["etat"]="RESERVE"
+            m.p54z.write_new(track,followup,private=True)
+            with patch.object(m.p55c,"local_sources",
+                              return_value=(source_states(),reproduced())):
+                code=m.main(["--ville-pdf",str(v),"--mamh-pdf",str(h),
+                             "--declarations-p54z",str(z),"--relecture-p55a",str(a),
+                             "--fiche-p55c",str(c),"--suivi-prive",str(track),
+                             "--bilan-public",str(out)])
+            self.assertEqual(code,0)
+            d=json.loads(out.read_text())
+            self.assertEqual(d["suivi_local_declaratif_non_authentifie"]["PREPARATION_DECLAREE_NON_ATTESTEE"],1)
+            self.assertEqual(d["exigences_p55d_reserves"],1)
+            self.assertEqual(d["avis_independants_authentifies"],0)
+            self.assertFalse(d["envoi_dossier_a_expert_autorise"])
+
+    def test_68_fiche_privee_ancrage_altere_refuse(self):
+        with tempfile.TemporaryDirectory() as t:
+            v,h,z,a,c,*_=self.setup_local_files(t)
+            track=Path(t)/"track.json"
+            m.p54z.write_new(track,m.private_model(b"autre contenu"),private=True)
+            with patch.object(m.p55c,"local_sources",
+                              return_value=(source_states(),reproduced())):
+                code=m.main(["--ville-pdf",str(v),"--mamh-pdf",str(h),
+                             "--declarations-p54z",str(z),"--relecture-p55a",str(a),
+                             "--fiche-p55c",str(c),"--suivi-prive",str(track)])
+            self.assertEqual(code,2)
+
+    def test_69_suspension_p54z_heritee_sans_certification(self):
+        with tempfile.TemporaryDirectory() as t:
+            v,h,z,a,c,*_=self.setup_local_files(t,suspended=True)
+            track=Path(t)/"track.json";out=Path(t)/"bilan.json"
+            m.p54z.write_new(track,m.private_model(c.read_bytes()),private=True)
+            with patch.object(m.p55c,"local_sources",
+                              return_value=(source_states(),reproduced())):
+                code=m.main(["--ville-pdf",str(v),"--mamh-pdf",str(h),
+                             "--declarations-p54z",str(z),"--relecture-p55a",str(a),
+                             "--fiche-p55c",str(c),"--suivi-prive",str(track),
+                             "--bilan-public",str(out)])
+            self.assertEqual(code,0)
+            d=json.loads(out.read_text())
+            self.assertEqual(d["suspensions_p54z_heritees"],1)
+            self.assertFalse(d["cloture_dossier_autorisee"])
 
 
 if __name__=="__main__":
