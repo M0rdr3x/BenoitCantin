@@ -63,6 +63,7 @@ assert "MIN_PUBLIC_BALLOTS = 10" in edge
 assert "MIN_NONZERO_CELL = 5" in edge, "Seuil de divulgation par catégorie requis"
 assert "canPublishCells(countsById)" in edge
 assert "MIN_NONZERO_CELL = 5" in poll_js
+assert "aucune variation de 1 à 4 avis par catégorie" in poll_js
 assert "(n>0 && n<MIN_NONZERO_CELL)" in poll_js
 
 assert "nova_poll_public_counts" in edge

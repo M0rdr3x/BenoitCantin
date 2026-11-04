@@ -183,7 +183,7 @@ def main():
         compass_html = verify(PREFIX + "boussole-electorale.html")
         if 'href="sondages-a-valider.html"' not in poll_html:
             raise ValueError("Le sondage public n'indique pas le projet 64/40")
-        script_order(poll_html, "sondage-public-corpus.js?v=1", "sondage-citoyen.js?v=5")
+        script_order(poll_html, "sondage-public-corpus.js?v=1", "sondage-citoyen.js?v=6")
         script_order(compass_html, "boussole-public-corpus.js?v=1", "boussole-electorale.js?v=3.4.15")
 
         remote_poll = verify(PREFIX + "assets/sondage-public-corpus.js")
