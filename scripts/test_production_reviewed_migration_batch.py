@@ -98,6 +98,9 @@ class ReviewedProductionMigrationBatchTests(unittest.TestCase):
 
         self.assertEqual(proc.returncode, 0, self.output(proc))
         self.assertTrue((out / 'migrations' / f'{version}_{name}.sql').is_file())
+        self.assertFalse((out / 'functions/security-context').exists())
+        self.assertFalse((out / 'functions/nova-civic-poll').exists())
+        self.assertFalse((out / 'NOVA_POLL_SCHEMA_PREDEPLOY.sql').exists())
         marker = (out / 'migrations' / '20260101000000_baseline.sql').read_text('utf-8')
         self.assertIn('Marqueur de déploiement lié uniquement', marker)
 
