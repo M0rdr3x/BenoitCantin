@@ -149,6 +149,25 @@
         "source_publique": "https://statistique.quebec.ca/fr/document/utilisation-services-sante-et-services-sociaux/publication/utilisation-services-sante-sociaux-premiere-ligne-2025",
         "released": "2026-11-02",
         "conclusion": "L'enquête 2025 fournit des indicateurs d'affiliation et de recours aux urgences pour les adultes visés, sans coûts de prestation ni preuve causale."
+      },
+      "territorial_baseline": {
+        "document_id": "NOVA-SINJ-G0-SAN-004",
+        "status": "BASE_REGIONALE_PARTIELLE_NON_CERTIFIEE",
+        "data_path": "data/portrait-regional-g0-sante-2025.json",
+        "technical_path": "official/working/protocole-portrait-regional-sante-g0-v1.md",
+        "webpage": "portrait-regional-g0-sante.html",
+        "reference_publication": "2026-11-02",
+        "source": "https://statistique.quebec.ca/fr/communique/portrait-multithematique-regions-vieillissement-population-main-oeuvre-transport-electrique",
+        "n_rss": 18,
+        "excluded_rss": [
+          "17",
+          "18"
+        ],
+        "published_qualitative_differences": 6,
+        "validated_numeric_regional_values": 0,
+        "regional_cost_comparisons_certified": 0,
+        "source_xlsx_imported": false,
+        "gate_g0_completed": false
       }
     },
     {
