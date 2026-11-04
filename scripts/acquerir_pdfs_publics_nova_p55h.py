@@ -274,6 +274,55 @@ def acquire_pair(folder, fetch=None):
             shutil.rmtree(directory)
 
 
+def verify_private_folder(folder):
+    """Offline recheck of a past P55H collection, no HTTP and no rewriting."""
+    directory = p54z.outside_repo(folder)
+    need(directory.is_dir() and not directory.is_symlink()
+         and (directory.stat().st_mode & 0o777) == 0o700,
+         "P55H_REPERTOIRE_PRIVE_INVALIDE")
+    required = set(FILENAME.values()) | {"RECU_P55H.json"}
+    need(set(os.listdir(directory)) == required,
+         "P55H_FICHIERS_INATTENDUS_OU_ABSENTS")
+    rec = p55g.p55a.private_source(directory / "RECU_P55H.json")
+    receipt = p54z.read_json(rec, 100000)
+    need(type(receipt) is dict and set(receipt) == {
+         "schema_version", "exercice", "collecte_http_utc", "sources",
+         "empreinte_metadonnees_sha256",
+         "copie_actuelle_authentifiee_par_emetteur",
+         "signature_professionnelle_authentifiee",
+         "reproduction_nfkc_effectuee", "decision"},
+         "P55H_RECU_STRUCTURE_INVALIDE")
+    stamp = receipt["collecte_http_utc"]
+    need(type(stamp) is str
+         and len(stamp) == 25 and stamp.endswith("+00:00"),
+         "P55H_DATE_DE_CONTROLE_INVALIDE")
+    try:
+        parsed = datetime.fromisoformat(stamp)
+    except ValueError as e:
+        raise ValueError("P55H_DATE_DE_CONTROLE_INVALIDE") from e
+    need(parsed.utcoffset() is not None
+         and parsed.utcoffset().total_seconds() == 0
+         and parsed.isoformat(timespec="seconds") == stamp,
+         "P55H_DATE_NON_CANONIQUE")
+    rows = p55g.capture_pair(
+        directory / FILENAME["VILLE_2024"],
+        directory / FILENAME["MAMH_23027_2024"],
+    )
+    expected = {
+        "schema_version": "P55H-RECU-PRIVE-1",
+        "exercice": 2024,
+        "collecte_http_utc": stamp,
+        "sources": rows,
+        "empreinte_metadonnees_sha256": p55g.joint_hash(rows),
+        "copie_actuelle_authentifiee_par_emetteur": False,
+        "signature_professionnelle_authentifiee": False,
+        "reproduction_nfkc_effectuee": False,
+        "decision": NO_GO,
+    }
+    need(receipt == expected, "P55H_RECU_OU_PDF_MODIFIE")
+    return rows
+
+
 def public_report(rows=None):
     if rows is not None:
         p55g.valid_rows(rows)
@@ -330,6 +379,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--autoriser-lecture-https-public", action="store_true")
     parser.add_argument("--destination-privee")
+    parser.add_argument("--verifier-repertoire-prive")
     parser.add_argument("--bilan-public")
     parser.add_argument("--plan-public")
     parser.add_argument("--exiger-authenticite", action="store_true")
@@ -338,6 +388,9 @@ def main(argv=None):
         configuration()
         need(args.autoriser_lecture_https_public == bool(args.destination_privee),
              "P55H_ACTIVATION_EXPLICITE_ET_DESTINATION_REQUISES")
+        need(not (args.verifier_repertoire_prive and (
+                 args.destination_privee or args.autoriser_lecture_https_public)),
+             "P55H_ACQUISITION_ET_RECONTROLE_MUTUELLEMENT_EXCLUSIFS")
         targets = [p for p in (args.bilan_public, args.plan_public) if p]
         files = [Path(p).expanduser().absolute() for p in targets]
         need(len({p.resolve() for p in files}) == len(files),
@@ -355,6 +408,8 @@ def main(argv=None):
         rows = None
         if args.autoriser_lecture_https_public:
             rows = acquire_pair(args.destination_privee)
+        elif args.verifier_repertoire_prive:
+            rows = verify_private_folder(args.verifier_repertoire_prive)
         summary = public_report(rows)
         if args.bilan_public:
             p54z.write_new(args.bilan_public, summary)
