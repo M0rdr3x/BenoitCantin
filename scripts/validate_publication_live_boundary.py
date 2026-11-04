@@ -27,6 +27,11 @@ TECHNICAL_ROUTES = (
     "/projets/projet-nova/official/versions/V322/V322_CURRENT_STATE.json",
     "/projets/projet-nova/official/versions/V316/README.md",
     "/projets/projet-nova/data/modele_comptabilite.csv",
+    # Trois exports JSON non approuvés repérés dans le rendu Jekyll le 03/11.
+    "/projets/projet-nova/data/diagnostic-g0-sante-premiere-ligne-2025.json",
+    "/projets/projet-nova/data/registre-donnees-services-nova-sinjira.json",
+    "/projets/projet-nova/data/reperes-financiers-nova-sinjira-2026.json",
+    "/projets/projet-nova/data/plan-acquisition-donnees-g0-sante.json",
     "/projets/projet-nova/CNAME_APRES_NAMECHEAP.txt",
     "/assets/icons/README.md",
     # Refus des chemins techniques et des exports réellement versionnés.

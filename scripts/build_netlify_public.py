@@ -367,6 +367,11 @@ def root_file_allowed(path: Path) -> bool:
         return False
     if path.name in PUBLIC_ROOT_EXACT:
         return True
+    # A root dotfile with a browser-compatible extension (e.g. .secret.js,
+    # .credentials.html) is still a private/config file by default. Keep
+    # the explicitly reviewed .nojekyll marker above as the sole exception.
+    if path.name.startswith("."):
+        return False
     return path.suffix.lower() in PUBLIC_ROOT_SUFFIXES
 
 
@@ -997,6 +1002,16 @@ def self_test_public_filesystem_boundary() -> list[str]:
             errors.append(f"Auto-test JSON: divulgation synthétique non refusée #{index}")
 
     rejected = (
+        # Les extensions Web légitimes ne rendent jamais un dotfile public.
+        # Cette règle s'applique aussi à la racine du dépôt, où l'ancienne
+        # allowlist acceptait un fichier comme .internal.js.
+        ".internal.js",
+        ".private.html",
+        ".credentials.css",
+        ".debug.mjs",
+        ".archive.webp",
+        ".SECRET.JS",
+        ".hidden.webmanifest",
         "projets/projet-nova/.gitignore",
         "projets/projet-nova/data/sondage-reponses.json",
         "projets/projet-nova/official/reference/notes-privees.md",
@@ -1468,9 +1483,7 @@ def validate_output(
                 continue
             if rel == Path("_redirects") and standalone_netlify:
                 continue
-        # Le marqueur de version est généré uniquement lors d'un build avec
-        # SINJIRA_RELEASE_SHA; sa valeur exacte vient d'être validée ci-dessus.
-        # Il n'est jamais admis comme fichier source arbitraire.
+        # Uniquement le reçu généré et comparé aux métadonnées exactes ci-dessus.
         if rel == RELEASE_METADATA_PATH and expected_release_metadata is not None:
             continue
         if not relative_path_allowed(rel):

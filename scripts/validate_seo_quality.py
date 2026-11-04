@@ -23,6 +23,8 @@ NOVA_PAGE_NAMES = [
     "programme.html",
     "boussole-electorale.html",
     "sondage-citoyen.html",
+    "indicateurs-g0-sante.html",
+    "diagnostic-g0-sante.html",
     "registre-donnees-nova-sinjira.html",
     "comparateur-couts-services.html",
     "architecture-nova-sinjira.html",
