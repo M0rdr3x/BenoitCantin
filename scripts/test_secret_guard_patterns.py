@@ -58,6 +58,17 @@ class SecretGuardTests(unittest.TestCase):
             env.write_text('DUMMY=1', encoding='utf-8')
             self.assertTrue(guard.inspect_file(env, Path('.env.production')))
 
+    def test_symlink_is_rejected_before_reading_its_target(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            target = root / 'fake-private.txt'
+            target.write_text('synthetic content', encoding='utf-8')
+            tracked = root / 'tracked.js'
+            tracked.symlink_to(target)
+            findings = guard.inspect_file(tracked, Path('tracked.js'))
+            self.assertTrue(any('lien symbolique' in item for item in findings))
+            self.assertEqual(target.read_text(encoding='utf-8'), 'synthetic content')
+
     def test_big_binary_file_is_not_treated_as_text(self):
         with tempfile.TemporaryDirectory() as d:
             image = Path(d) / 'image.png'
