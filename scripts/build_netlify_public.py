@@ -501,6 +501,14 @@ def relative_path_allowed(rel: Path) -> bool:
         return root_file_allowed(ROOT / rel)
     if any(part.startswith(".") for part in parts):
         return False
+
+    # Le dossier data NOVA n'est pas un répertoire d'assets générique.
+    # Le contrôle doit précéder la politique Web par extension, sinon un
+    # nouvel export .html/.js/.svg pourrait être publié sans approbation.
+    # Seuls les 12 JSON du runtime déjà revus sortent de ce dossier.
+    if len(parts) >= 3 and parts[:3] == ("projets", "projet-nova", "data"):
+        return rel in PROJECT_NOVA_PUBLIC_DATA_JSON
+
     if parts[0] not in PUBLIC_DIRS:
         return False
     if rel.suffix.lower() in FORBIDDEN_NESTED_WEB_SUFFIXES:
