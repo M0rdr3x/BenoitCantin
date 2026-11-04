@@ -69,7 +69,7 @@ class DeploymentQuarantineTests(unittest.TestCase):
     def test_mismatched_auth_rpc_and_public_captcha_are_rejected(self):
         for slug, marker in (
             ('security-context', 'service_security_evaluate_context_session'),
-            ('nova-civic-poll', 'confirmCaptcha'),
+            ('nova-civic-poll', 'if(!await confirmCaptcha(payload.captchaToken))'),
         ):
             with self.subTest(slug=slug), tempfile.TemporaryDirectory() as tmp:
                 workspace = make_workspace(Path(tmp))
