@@ -44,7 +44,7 @@ def main() -> None:
 
     for page, names in (
         ("boussole-electorale.html",("assets/boussole-public-corpus.js?v=1","assets/boussole-electorale.js?v=3.4.15")),
-        ("sondage-citoyen.html",("assets/sondage-public-corpus.js?v=1","assets/sondage-citoyen.js?v=5")),
+        ("sondage-citoyen.html",("assets/sondage-public-corpus.js?v=1","assets/sondage-citoyen.js?v=6")),
     ):
         content = (NOVA / page).read_text(encoding="utf-8")
         assert all(content.count(name) == 1 for name in names), page

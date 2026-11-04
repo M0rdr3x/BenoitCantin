@@ -84,7 +84,7 @@
     const ready=data.resultsVisible === true;
     $("poll-results-status").textContent=ready
       ? "Participations comprises dans la dernière publication : "+data.ballots+". Résultats publiés par lots, sans informations sur les personnes."+ (data.publishedAt ? " Dernière publication : "+new Date(data.publishedAt).toLocaleString("fr-CA")+".":"")
-      : "Les répartitions restent masquées jusqu’à "+(data.minPublicBallots || 10)+" participations. Les mises à jour n’interviennent que par lots de dix nouveaux bulletins et au plus une fois toutes les six heures.";
+      : "Les répartitions restent masquées tant que les critères de confidentialité ne sont pas tous réunis : au moins dix participations, aucune catégorie de 1 à 4 avis, aucune variation de 1 à 4 avis par catégorie entre publications, au moins dix nouveaux bulletins et six heures entre les lots. Aucun résultat individuel n’est publié.";
     for(const q of data.questions) {
       const article=document.createElement("article");article.className="poll-result-card";
       const h=document.createElement("h3");h.textContent=q.ordinal+". "+q.text;article.append(h);
