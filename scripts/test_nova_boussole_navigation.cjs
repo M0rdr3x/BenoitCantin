@@ -109,11 +109,34 @@ const complete=Array.from({length:64},(_,i)=>i%5===0?null:((i%7)-3));
 assert.equal(run(complete),16,"Le profil complet doit couvrir seize axes");
 assert.match(el("compass-summary").textContent,/16 dimensions/);
 assert.match(el("compass-radar").innerHTML,/<polygon points=/);
+// Une modification après les résultats doit immédiatement actualiser la
+// carte et le courriel, sans perdre le focus de la question révisée.
+const beforeEdit=el("compass-results-grid").innerHTML;
+const previousEmail=el("compass-share-email").href;
+engine.goPrevious(); // Q63 (la fin est Q64)
+const focusedBefore=focusCount,scrolledBefore=scrollCount;
+choose(-3); // Q63 valait +3 dans ce scénario
+assert.equal(engine.state.currentIndex,62);
+assert.equal(el("compass-results").hidden,false);
+assert.notEqual(el("compass-results-grid").innerHTML,beforeEdit,"Profil ancien après modification");
+assert.notEqual(el("compass-share-email").href,previousEmail,"Partage ancien après modification");
+assert.equal(focusCount,focusedBefore,"Modification : ne pas déplacer le focus");
+assert.equal(scrollCount,scrolledBefore,"Modification : ne pas faire défiler automatiquement");
+assert.match(el("compass-status").textContent,/actualisés localement/);
 
 assert.equal(run(Array(64).fill(null)),0,"Aucun score pour 64 réponses sans opinion");
 assert.match(el("compass-summary").textContent,/Aucune dimension calculable/);
 assert.match(el("compass-summary").textContent,/0 proposition/);
 assert.doesNotMatch(el("compass-radar").innerHTML,/<polygon points=/);
+// Après 64 « Sans opinion », deux réponses du même thème réactivent
+// immédiatement une dimension, sans redémarrer le questionnaire.
+engine.goPrevious(); // Q63
+choose(2);
+engine.goPrevious(); // Q62
+choose(2);
+assert.equal(engine.calculate().filter(r=>r.score!==null).length,1);
+assert.match(el("compass-radar").innerHTML,/compass-radar-svg/);
+assert.doesNotMatch(el("compass-summary").textContent,/Aucune dimension calculable/);
 
 assert.equal(run([2,...Array(63).fill(null)]),0,"Un seul item ne suffit pas");
 assert.match(el("compass-summary").textContent,/au moins deux propositions principales/);

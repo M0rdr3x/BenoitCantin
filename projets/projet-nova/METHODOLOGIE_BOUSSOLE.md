@@ -228,3 +228,5 @@ La CI compare le texte public de chaque question au texte auquel le corpus de pr
 ## Parcours jusqu'à la dernière question
 
 La boussole permet de terminer le parcours même lorsque toutes les propositions sont marquées « Sans opinion / passer ». Dans ce cas, **aucune position politique n'est inventée** : les seize dimensions sont indiquées comme non calculables, le radar ne dessine aucun polygone et un message explique qu'au moins deux réponses principales sur un même thème sont nécessaires pour obtenir un premier score. Les options « Précédent » et « Recommencer » restent disponibles. Un test de navigation dans le moteur réel parcourt les 64 écrans, vérifie les retours et les choix, ainsi que la fin du parcours avec zéro, une ou plusieurs réponses exploitables, sans accès réseau ni stockage local.
+
+Les réponses ou importances modifiées **après** le premier affichage d'un profil recalculent immédiatement la carte, les seize scores et les textes de partage, sans requête réseau et sans déplacer le focus de la question en cours. Le test de parcours vérifie également ce scénario et la récupération d'un profil après 64 choix « Sans opinion ».
