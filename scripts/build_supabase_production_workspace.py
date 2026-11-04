@@ -62,6 +62,16 @@ def read_reviewed_batch(cutoff):
 
 
 
+
+def reject_source_symlinks(source: Path) -> None:
+    """Ne jamais suivre un lien du dépôt lors d'une copie vers la production."""
+    if source.is_symlink() or not source.is_dir():
+        raise SystemExit('Arborescence Supabase source absente ou symbolique.')
+    for candidate in source.rglob('*'):
+        if candidate.is_symlink():
+            raise SystemExit(f'Lien symbolique interdit dans Supabase : {candidate.relative_to(source)}')
+
+
 def quarantine_unreviewed_edge_deploys(workspace: Path) -> tuple[str, ...]:
     """Retirer les routes non autorisées du déploiement générique.
 
@@ -174,6 +184,7 @@ def main():
                 f'(attendu {expected_blob_sha}, obtenu {actual_blob_sha}).'
             )
 
+    reject_source_symlinks(SOURCE_SUPABASE)
     if out.exists():
         shutil.rmtree(out)
     shutil.copytree(SOURCE_SUPABASE, out, ignore=shutil.ignore_patterns('migrations', '.temp'))
