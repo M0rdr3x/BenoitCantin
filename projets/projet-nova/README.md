@@ -65,6 +65,17 @@ Trois modèles de correspondance existent sous `official/working/modeles-demande
 
 Les tests intégrés dans `tests/diagnostic-g0-sante.test.mjs` vérifient l'absence de coûts fictifs et de conclusion causale, la présence des sources et la différence entre les rappels et les consultations. **Aucune exécution CI réussie n'est certifiée par le simple ajout des tests.**
 
+## G0.3 — Portrait régional de l'accès aux soins (3 novembre 2026)
+
+- Page publique proposée : `portrait-regional-g0-sante.html`.
+- Registre structuré : `data/portrait-regional-g0-sante-2025.json` (18 régions sociosanitaires, 16 incluses dans l'EQUSSSS 2025, 2 exclues, 6 différences relatives rapportées par l'ISQ, **0 taux régional numérique importé**).
+- Méthode et contrôle de provenance : `official/working/protocole-portrait-regional-sante-g0-v1.md`.
+- Contrôles automatisables : `tests/portrait-regional-g0-sante.test.mjs`, exécutables avec les autres tests Nova–Sinjira et déclarés au workflow GitHub Actions.
+- Sources : communiqué et faits saillants de l'ISQ du **2 novembre 2026**; découpage officiel des **18 régions sociosanitaires** du Québec, distinct des régions administratives.
+- Le fichier XLSX régional de l'ISQ est référencé et téléchargeable en principe, mais **il n'a pas pu être téléchargé ni analysé ici**. Les pourcentages exacts, tailles d'échantillon et incertitudes par RSS demeurent `null` dans le registre; aucune comparaison de coût ou choix de région pilote n'en découle.
+- Les RSS **17 (Nunavik)** et **18 (Terres-Cries-de-la-Baie-James)** sont hors champ de l'enquête, **pas hors champ des obligations de santé publique et d'équité**.
+- Ce dossier constitue une étude partielle **non normative**; la porte G0 reste **non franchie**. Aucune modification des quatre références candidates du manifeste officiel.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
