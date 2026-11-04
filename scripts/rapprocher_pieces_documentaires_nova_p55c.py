@@ -209,7 +209,10 @@ def upstream_claims(path_z=None,path_a=None):
     need(bool(path_z) == bool(path_a),
          "P54Z_ET_P55A_EXIGES_ENSEMBLE")
     if not path_z:
-        return None,None,{name:0 for name in p55a.STATES},0
+        return None,None,{
+            name:(50 if name == "NON_INSTRUIT" else 0)
+            for name in p55a.STATES
+        },0
     p54z_doc,sha = p55a.upstream(path_z)
     p55a_doc = p54z.read_json(p55a.private_source(path_a),100000)
     counts,inherited = p55a.validate_local(
