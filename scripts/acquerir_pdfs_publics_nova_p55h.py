@@ -42,7 +42,7 @@ GUARDS = {
     "redirects_http_https_refuses",
     "aucun_parametre_de_secret_ni_authentification",
     "pas_de_soumission_ou_contact_humain",
-    "pas_d_execution_reseau_en_ci",
+    "aucun_telechargement_des_pdf_officiels_en_ci",
     "deux_sources_obligatoires_ensemble",
     "destination_privee_neuve_hors_git",
     "creation_repertoire_0700",
@@ -191,6 +191,7 @@ def retrieve_one(spec, directory, fetch=None):
                 need(clen.isascii() and clen.isdigit()
                      and int(clen) <= MAX_BYTES,
                      "P55H_LONGUEUR_ANNONCEE_EXCESSIVE")
+            expected_size = int(clen) if clen is not None else None
             mime = response.headers.get("Content-Type", "").split(";", 1)[0]
             need(mime.lower().strip() in (
                 "", "application/pdf", "application/octet-stream"),
@@ -219,6 +220,8 @@ def retrieve_one(spec, directory, fetch=None):
                 writer.flush()
                 os.fsync(writer.fileno())
             need(total >= 5, "P55H_PDF_TROP_COURT")
+            need(expected_size is None or total == expected_size,
+                 "P55H_REPONSE_TRONQUEE_OU_LONGUEUR_INCOHERENTE")
             return {
                 "code": spec["code"],
                 "taille_octets_lus": total,
