@@ -1,0 +1,32 @@
+name: NOVA — surveillance du site public sans vote
+
+on:
+  schedule:
+    - cron: '17 12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nova-production-readonly-smoke
+  cancel-in-progress: false
+
+jobs:
+  public-smoke:
+    name: Vérifier le vrai domaine, les corpus publics et l'API en lecture
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Récupérer le code public de référence
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Installer Python figé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Vérifier les cas négatifs du contrôle
+        run: python scripts/smoke_nova_live_public.py --self-test
+      - name: Vérifier le site réellement publié sans soumettre de bulletin
+        run: python scripts/smoke_nova_live_public.py
