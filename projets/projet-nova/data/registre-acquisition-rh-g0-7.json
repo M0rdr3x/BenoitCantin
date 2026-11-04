@@ -62,5 +62,13 @@
     "Les professionnels rémunérés RAMQ sont une source distincte et ne sont pas automatiquement des ETP.",
     "La source est de l'exercice 2024-2025 : elle ne décrit pas automatiquement l'état de 2026.",
     "Aucun recrutement net, aucune économie, aucun changement d'emploi et aucun pilote ne sont décidés par cette étape."
-  ]
+  ],
+  "xlsx_metadata": null,
+  "g08_requirement": {
+    "minimum": "L2_STRUCTURE_SEULEMENT",
+    "inspector": "assets/g08-rh-workbook-inspector.mjs",
+    "status": "NON_TESTE_SUR_FICHIER_OFFICIEL",
+    "value_extraction_authorized": false,
+    "approval_authorized": false
+  }
 }
