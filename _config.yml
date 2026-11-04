@@ -96,9 +96,10 @@ exclude:
   - "projets/projet-nova/official/versions"
   - "projets/projet-nova/official/CURRENT_VERSION.json"
   - "projets/projet-nova/data/*.csv"
-  # Refus global des futurs JSON de travail. Jekyll 3 examine include
-  # avant exclude : les 12 fichiers ci-dessus restent publics uniquement.
-  - "projets/projet-nova/data/*.json"
+  # Interdiction par défaut de tout futur fichier ou dossier de travail
+  # (HTML, JS, SVG, PDF, XML, JSON, exports...). Les 12 JSON explicitement
+  # inclus plus haut conservent leur destination publique uniquement.
+  - "projets/projet-nova/data/*"
   # Garde P0 : ces trois JSON ne sont PAS dans la liste publique _site.
   # Les documents de travail NOVA restent réservés au dépôt Git.
   - "projets/projet-nova/data/diagnostic-g0-sante-premiere-ligne-2025.json"

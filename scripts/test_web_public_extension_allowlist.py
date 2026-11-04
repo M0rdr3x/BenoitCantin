@@ -53,6 +53,22 @@ class PublicArtifactExtensionAllowlist(unittest.TestCase):
                 with self.subTest(directory=directory, filename=filename):
                     self.assertFalse(builder.relative_path_allowed(Path(directory) / filename))
 
+    def test_nova_data_denies_every_unreviewed_format_including_private_pdfs(self):
+        for filename in (
+            "sauvegarde.html", "script-test.js", "presentation.svg",
+            "rapport-publication.pdf", "questionnaire.xml",
+            "photo.webp", "export.json", "donnees.csv",
+            "subdir/private.html", "subdir/private.pdf",
+        ):
+            with self.subTest(path=filename):
+                self.assertFalse(builder.relative_path_allowed(
+                    Path("projets/projet-nova/data") / filename
+                ))
+        self.assertEqual(len(builder.PROJECT_NOVA_PUBLIC_DATA_JSON), 12)
+        for path in builder.PROJECT_NOVA_PUBLIC_DATA_JSON:
+            with self.subTest(approved=path.as_posix()):
+                self.assertTrue(builder.relative_path_allowed(path))
+
     def test_published_runtime_still_allowed(self):
         for name in (
             "assets/js/site.js", "assets/css/ai-transparency.css",
