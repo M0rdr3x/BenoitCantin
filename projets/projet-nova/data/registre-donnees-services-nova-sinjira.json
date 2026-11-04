@@ -179,6 +179,25 @@
         "numeric_values_independently_audited": 0,
         "regional_sample_sizes_verified": 0,
         "confidence_intervals_verified": 0
+      },
+      "capacity_evidence_g05": {
+        "phase": "G0.5",
+        "document_id": "NOVA-SINJ-G0-SAN-006",
+        "matrix_file": "data/matrice-preuves-g0-5-sante.json",
+        "validation_engine": "assets/g0-sante-gate-core.mjs",
+        "technical_file": "official/working/protocole-g0-5-preuve-capacite-sante-v1.md",
+        "public_page": "preuves-g0-5-sante.html",
+        "regions": 18,
+        "required_dimensions_per_region": 8,
+        "total_evidence_cells": 144,
+        "independently_validated_evidence_cells": 0,
+        "regions_ready_for_formal_review": 0,
+        "fully_audited_comparable_regional_cost_series": 0,
+        "g0_formally_passed": false,
+        "authorized_pilots": 0,
+        "source_year_alignment_done": false,
+        "official_research_permissions_received": false,
+        "note": "Une donnée régionale d'affiliation ISQ et un catalogue de RH ou de coûts ne suffisent pas à établir un accès effectif, un ETP net, un coût unitaire ou une conformité."
       }
     },
     {
