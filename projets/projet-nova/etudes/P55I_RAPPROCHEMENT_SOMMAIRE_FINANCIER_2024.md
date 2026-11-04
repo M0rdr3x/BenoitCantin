@@ -6,6 +6,8 @@
 
 Publication officielle : [Ville de Québec, Rapport financier 2024](https://www.ville.quebec.qc.ca/publications/docs_ville/Rapport_financier_2024.pdf), « Renseignements financiers consolidés — Sommaire des variations budgétaires sur les résultats », **page imprimée 7, page PDF indexée 6**. Le rapport identifie ce sommaire comme **non audité**.
 
+Le rapport reprend également les quatre montants **réalisés en 2024** dans son « Sommaire des résultats à des fins fiscales consolidés » (page imprimée 13, page PDF indexée 12), soit 2 186 607 854 $, 262 872 891 $, 2 107 478 001 $ et 342 002 744 $. Cette seconde présentation est une **cohérence interne au même rapport**, non une confirmation indépendante par un autre organisme.
+
 Les quatre lignes ci-dessous ont été **recopiées à partir de l'extraction de texte officielle consultable en ligne**. Les tentatives de capture visuelle via le navigateur et de récupération des octets dans le conteneur n'ont pas abouti. Par conséquent, **ni la mise en page des quatre chiffres, ni l'édition octet à octet, ni la signature de l'émetteur n'ont été revérifiées localement lors de P55I**. Les références SHA-256 historiques de P54Q demeurent inchangées. L'analyse n'est pas une expertise.
 
 ## Tableau de rapprochement
