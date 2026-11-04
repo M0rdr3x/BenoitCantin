@@ -1,0 +1,79 @@
+{
+  "schema_version": "P55H-1",
+  "date_reference": "2026-11-03",
+  "exercice": 2024,
+  "sources_requises": [
+    {
+      "code": "VILLE_2024",
+      "url_officielle": "https://www.ville.quebec.qc.ca/publications/docs_ville/Rapport_financier_2024.pdf",
+      "nom_fichier": "VILLE_2024.pdf",
+      "taille_octets_historique": 8984919,
+      "sha256_historique": "b3ee3e671f7bf98e56c7d42b5e8b6c34de02a96c9dc1c96469819fa4dbfa7399"
+    },
+    {
+      "code": "MAMH_23027_2024",
+      "url_officielle": "https://www.mamh.gouv.qc.ca/documentsfinanciersweb/Rapport-financier-2024-et-autres-23027.pdf",
+      "nom_fichier": "MAMH_23027_2024.pdf",
+      "taille_octets_historique": 10818312,
+      "sha256_historique": "4323c87d2114b58cf7a093c08f3b30327e949db91b9beb46a627eac1ecb4fc00"
+    }
+  ],
+  "protocole_reseau": "HTTPS_PUBLIC_EXPLICITE_SANS_REDIRECTION",
+  "etat_sources": [
+    "NON_ACQUISES",
+    "CONCORDANCE_HISTORIQUE_NON_AUTHENTIFIANTE",
+    "EDITION_DIFFERENTE_NON_AUTHENTIFIEE"
+  ],
+  "recu_prive_schema": "P55H-RECU-PRIVE-1",
+  "protections": {
+    "telechargement_interdit_sans_autorisation_explicite": true,
+    "seulement_deux_urls_https_officielles_allowlist": true,
+    "aucune_url_personnalisee": true,
+    "redirects_http_https_refuses": true,
+    "aucun_parametre_de_secret_ni_authentification": true,
+    "pas_de_soumission_ou_contact_humain": true,
+    "pas_d_execution_reseau_en_ci": true,
+    "deux_sources_obligatoires_ensemble": true,
+    "destination_privee_neuve_hors_git": true,
+    "creation_repertoire_0700": true,
+    "fichiers_pdfs_0600": true,
+    "liens_symboliques_interdits": true,
+    "lecture_streaming_taille_limitee_20mo": true,
+    "controle_en_tete_pdf": true,
+    "hash_sha256_calcules_sur_octets_reels": true,
+    "validation_reference_historique_p54q_inchangee": true,
+    "manifest_prive_sans_chemin_ni_signature": true,
+    "aucun_pdf_ni_sha_courant_dans_bilan_public": true,
+    "pas_d_ecrasement_des_references_historiques": true,
+    "editions_divergentes_conservees_en_reserve": true,
+    "telechargement_partiel_nettoye": true,
+    "stabilite_et_relecture_apres_capture": true,
+    "reproduction_nfkc_hors_acquisition": true,
+    "recu_n_est_pas_preuve_de_provenance": true,
+    "aucun_mandat_ni_avis_professionnel": true,
+    "aucune_economie_certifiee": true,
+    "redressement_2023_pas_economie_2024": true,
+    "eliminations_ville_rtc_somhac_pas_gain_nouveau": true,
+    "emplois_services_pouvoir_achat_proteges": true,
+    "deux_scenarios_constitutionnels_distincts": true,
+    "quatre_dossiers_et_date_non_clos": true,
+    "p54n40_p54o10_p54b96_p54c8_non_attestes": true,
+    "aucun_changement_sinjira": true,
+    "aucune_fusion_main": true,
+    "no_go_automatique": true
+  },
+  "etat_initial": {
+    "copies_pdf_acquises_et_verifiees_dans_ce_jalon": 0,
+    "reproductions_nfkc_cinq_positions": 0,
+    "avis_independants_authentifies": 0,
+    "mandats_signes": 0,
+    "dossiers_p54e_ouverts": 4,
+    "date_probable_non_certifiee": 1,
+    "taches_p54n_non_attestees": 40,
+    "blocages_p54o_non_leves": 10,
+    "controles_p54b_non_attestes": 96,
+    "controles_p54c_non_attestes": 8,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
