@@ -14,7 +14,7 @@ PAGES = [
     "index.html", "comprendre-nova.html", "programme.html", "boussole-electorale.html",
     "finances.html", "documents.html",
     "recrutement.html", "sondage-citoyen.html", "architecture-nova-sinjira.html",
-    "mise-en-oeuvre-nova-sinjira.html", "portrait-regional-g0-sante.html", "preuves-g0-5-sante.html", "capacite-rh-g0-6-sante.html", "indicateurs-g0-sante.html", "diagnostic-g0-sante.html", "registre-donnees-nova-sinjira.html", "comparateur-couts-services.html", "transparence.html", "comptabilite.html",
+    "mise-en-oeuvre-nova-sinjira.html", "portrait-regional-g0-sante.html", "preuves-g0-5-sante.html", "capacite-rh-g0-6-sante.html", "acquisition-rh-g0-7-sante.html", "indicateurs-g0-sante.html", "diagnostic-g0-sante.html", "registre-donnees-nova-sinjira.html", "comparateur-couts-services.html", "transparence.html", "comptabilite.html",
     "registre-rencontres.html", "registre-conformite.html", "equipe.html",
     "propositions.html", "presse.html", "faq.html", "contact.html",
     "avis-legal.html", "confidentialite.html", "accessibilite.html",

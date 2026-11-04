@@ -27,6 +27,7 @@ on:
       - 'scripts/test_nova_boussole_runtime.cjs'
       - 'scripts/test_nova_boussole_navigation.cjs'
       - 'scripts/test_nova_poll_runtime.cjs'
+      - 'scripts/test_nova_poll_recovery.cjs'
       - 'scripts/test_nova_edge_snapshot.cjs'
       - 'scripts/smoke_nova_poll_edge.py'
       - 'scripts/smoke_nova_live_public.py'
@@ -75,6 +76,8 @@ jobs:
         run: node scripts/test_nova_boussole_navigation.cjs
       - name: Tester la cohérence atomique des résultats publics sans vote
         run: node scripts/test_nova_edge_snapshot.cjs
+      - name: Tester le rétablissement d'une lecture GET temporairement indisponible
+        run: node scripts/test_nova_poll_recovery.cjs
       - name: Tester le verrou du formulaire client sans réseau
         run: node scripts/test_nova_poll_runtime.cjs
       - name: Tester les contrôles HTTP publics sans réseau

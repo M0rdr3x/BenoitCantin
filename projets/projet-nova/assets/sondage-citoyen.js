@@ -212,9 +212,20 @@
         :"La consultation est en préparation. Les questions et la méthode peuvent être consultées, mais aucun vote ne peut encore être envoyé.");
       renderResults(remote);
     }catch{
+      // Un premier GET peut échouer de façon transitoire (HTTP 503). Si la
+      // relecture valide réussit, restaurer le vrai statut plutôt que
+      // laisser affichée à tort une erreur persistante.
       open=false;
-      setStatus("La consultation n'est pas ouverte : service de vote indisponible ou données non concordantes. Aucun vote n'est accepté.");
-      await refreshResults();
+      const recovered=await refreshResults();
+      if(recovered){
+        open=local.published===true && recovered.open===true
+          && typeof recovered.siteKey==="string" && !!recovered.siteKey;
+        siteKey=recovered.siteKey||"";
+        setStatus(open?"La consultation est ouverte aux personnes de 18 ans et plus."
+          :"La consultation est en préparation. Les questions et la méthode peuvent être consultées, mais aucun vote ne peut encore être envoyé.");
+      }else{
+        setStatus("La consultation n'est pas ouverte : service de vote indisponible ou données non concordantes. Aucun vote n'est accepté.");
+      }
     }
     renderForm(); if(open) loadTurnstile();
   }
