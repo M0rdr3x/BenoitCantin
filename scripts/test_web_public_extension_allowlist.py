@@ -53,6 +53,23 @@ class PublicArtifactExtensionAllowlist(unittest.TestCase):
                 with self.subTest(directory=directory, filename=filename):
                     self.assertFalse(builder.relative_path_allowed(Path(directory) / filename))
 
+    def test_nova_data_subtree_never_approves_new_browser_file_types(self):
+        # Defensive default for NOVA data: no HTML/JS/PDF/SVG or arbitrary
+        # backup can bypass the reviewed 12 JSON runtime files.
+        for name in (
+            "rapport.html", "diagnostic.js", "photo.svg", "export.webp",
+            "secrets.json", "registre.csv", "formulaire.pdf",
+            "inventaire.xml", "rapport.txt", "notes.md",
+            "sous-dossier/indice.json", "sous-dossier/modele.html",
+        ):
+            with self.subTest(path=name):
+                rel = Path("projets/projet-nova/data") / name
+                self.assertFalse(builder.relative_path_allowed(rel))
+        self.assertEqual(len(builder.PROJECT_NOVA_PUBLIC_DATA_JSON), 12)
+        for rel in builder.PROJECT_NOVA_PUBLIC_DATA_JSON:
+            with self.subTest(public=rel.as_posix()):
+                self.assertTrue(builder.relative_path_allowed(rel))
+
     def test_published_runtime_still_allowed(self):
         for name in (
             "assets/js/site.js", "assets/css/ai-transparency.css",

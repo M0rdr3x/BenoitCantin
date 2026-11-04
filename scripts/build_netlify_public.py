@@ -486,6 +486,12 @@ def relative_path_allowed(rel: Path) -> bool:
     if not parts:
         return False
 
+    # La liste blanche de données NOVA précède même l'exception PDF :
+    # aucun nouveau fichier HTML, JS, PDF ou export de format inconnu ne doit
+    # sortir de data/ sans inclusion dans les 12 JSON approuvés.
+    if len(parts) >= 3 and parts[:3] == ("projets", "projet-nova", "data"):
+        return rel in PROJECT_NOVA_PUBLIC_DATA_JSON
+
     # Defense globale, aussi pour le repertoire racine, assets, jeux, comptes
     # et tout futur dossier de manuscrits. Une extension .pdf n'accorde rien.
     if rel.suffix.lower() == ".pdf":
@@ -501,6 +507,7 @@ def relative_path_allowed(rel: Path) -> bool:
         return root_file_allowed(ROOT / rel)
     if any(part.startswith(".") for part in parts):
         return False
+
     if parts[0] not in PUBLIC_DIRS:
         return False
     if rel.suffix.lower() in FORBIDDEN_NESTED_WEB_SUFFIXES:
@@ -1020,6 +1027,11 @@ def self_test_public_filesystem_boundary() -> list[str]:
         "projets/projet-nova/data/votes-individuels.json",
         "projets/projet-nova/data/export-utilisateurs.json",
         "projets/projet-nova/data/nouveau-fichier-non-revu.json",
+        "projets/projet-nova/data/interne.html",
+        "projets/projet-nova/data/dump.js",
+        "projets/projet-nova/data/apercu.svg",
+        "projets/projet-nova/data/maquette.pdf",
+        "projets/projet-nova/data/sous-dossier/export.xml",
         "projets/projet-nova/.nojekyll",
         "projets/projet-nova/assets/.env",
         "projets/sinjira/.private/settings.json",
