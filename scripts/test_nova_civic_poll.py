@@ -67,6 +67,13 @@ assert "NOVA_POLL_ENABLED" in edge and '=== "true"' in edge
 assert "local.published===true" in poll_js, "Ouverture du scrutin interdite sans publication explicite"
 assert "NOVA_POLL_TURNSTILE_SECRET" in edge and "NOVA_POLL_HMAC_KEY" in edge
 assert "confirmCaptcha(payload.captchaToken)" in edge
+# Ne jamais interroger PostgREST avant vérification du CAPTCHA.
+post_index = edge.index('if(!isOpen())')
+captcha_index = edge.index('if(!await confirmCaptcha(payload.captchaToken))', post_index)
+db_index = edge.index('const questions=await db(', post_index)
+assert post_index < captcha_index < db_index
+assert 'if(!Array.isArray(questions))' in edge
+
 assert "crypto.subtle.sign" in edge
 assert "jsonb_each_text(p_answers)" in sql
 assert "ENABLE ROW LEVEL SECURITY" in sql
