@@ -486,6 +486,12 @@ def relative_path_allowed(rel: Path) -> bool:
     if not parts:
         return False
 
+    # La liste blanche de données NOVA précède même l'exception PDF :
+    # aucun nouveau fichier HTML, JS, PDF ou export de format inconnu ne doit
+    # sortir de data/ sans inclusion dans les 12 JSON approuvés.
+    if len(parts) >= 3 and parts[:3] == ("projets", "projet-nova", "data"):
+        return rel in PROJECT_NOVA_PUBLIC_DATA_JSON
+
     # Defense globale, aussi pour le repertoire racine, assets, jeux, comptes
     # et tout futur dossier de manuscrits. Une extension .pdf n'accorde rien.
     if rel.suffix.lower() == ".pdf":
@@ -501,13 +507,6 @@ def relative_path_allowed(rel: Path) -> bool:
         return root_file_allowed(ROOT / rel)
     if any(part.startswith(".") for part in parts):
         return False
-
-    # Le dossier data NOVA n'est pas un répertoire d'assets générique.
-    # Le contrôle doit précéder la politique Web par extension, sinon un
-    # nouvel export .html/.js/.svg pourrait être publié sans approbation.
-    # Seuls les 12 JSON du runtime déjà revus sortent de ce dossier.
-    if len(parts) >= 3 and parts[:3] == ("projets", "projet-nova", "data"):
-        return rel in PROJECT_NOVA_PUBLIC_DATA_JSON
 
     if parts[0] not in PUBLIC_DIRS:
         return False
