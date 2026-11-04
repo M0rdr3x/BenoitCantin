@@ -144,9 +144,14 @@
     document.head.append(script);
   }
   async function loadPoll(){
-    let local;
-    try { local=await fetchJson("data/sondage-citoyen-v1.json"); }
-    catch { local={questions:[]}; }
+    // Le corpus embarqué provient exclusivement du JSON public versionné.
+    // Sur Pages legacy, le fichier data/*.json retourne 404 ; ne pas
+    // confondre cette erreur d'hébergement avec une consultation ouverte.
+    let local=window.__NOVA_POLL_PUBLIC_CORPUS;
+    if(!local){
+      try { local=await fetchJson("data/sondage-citoyen-v1.json"); }
+      catch { local={questions:[]}; }
+    }
     questions=(local.questions||[]).filter(q=>/^q[0-9]{2}$/.test(q.id));
     try {
       const remote=await fetchJson(API,{mode:"cors"});

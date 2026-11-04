@@ -827,18 +827,27 @@
     }
     if(status) status.textContent = "Chargement des données documentaires…";
     try{
-      const [partyResponse,sourceResponse,evidenceResponse,questionResponse] = await Promise.all([
-        fetch(PARTY_DATA_URL,{cache:"no-store"}),
-        fetch(PARTY_SOURCE_DATA_URL,{cache:"no-store"}),
-        fetch(EVIDENCE_DATA_URL,{cache:"no-store"}),
-        fetch(DATA_URL,{cache:"no-store"})
-      ]);
-      for(const response of [partyResponse,sourceResponse,evidenceResponse,questionResponse]){
-        if(!response.ok) throw new Error("HTTP " + response.status);
+      // GitHub Pages/Jekyll legacy retire plusieurs JSON publics du site.
+      // Les corpus JS vérifiés en CI donnent le même contenu sans réseau.
+      // En l'absence du bundle, conserver le chemin JSON pour Netlify.
+      const bundled = window.__NOVA_COMPASS_PUBLIC_CORPORA;
+      let partyCorpus,sourceCorpus,evidenceCorpus,questionCorpus;
+      if(bundled?.questionnaire && bundled?.parties && bundled?.sources && bundled?.evidence){
+        ({questionnaire:questionCorpus,parties:partyCorpus,sources:sourceCorpus,evidence:evidenceCorpus}=bundled);
+      }else{
+        const [partyResponse,sourceResponse,evidenceResponse,questionResponse] = await Promise.all([
+          fetch(PARTY_DATA_URL,{cache:"no-store"}),
+          fetch(PARTY_SOURCE_DATA_URL,{cache:"no-store"}),
+          fetch(EVIDENCE_DATA_URL,{cache:"no-store"}),
+          fetch(DATA_URL,{cache:"no-store"})
+        ]);
+        for(const response of [partyResponse,sourceResponse,evidenceResponse,questionResponse]){
+          if(!response.ok) throw new Error("HTTP " + response.status);
+        }
+        [partyCorpus,sourceCorpus,evidenceCorpus,questionCorpus] = await Promise.all([
+          partyResponse.json(),sourceResponse.json(),evidenceResponse.json(),questionResponse.json()
+        ]);
       }
-      const [partyCorpus,sourceCorpus,evidenceCorpus,questionCorpus] = await Promise.all([
-        partyResponse.json(),sourceResponse.json(),evidenceResponse.json(),questionResponse.json()
-      ]);
       validateDocumentaryCorpora(questionCorpus,partyCorpus,sourceCorpus,evidenceCorpus);
       renderPartyRegistry(partyCorpus,evidenceCorpus);
       renderDocumentaryStatus(partyCorpus,sourceCorpus,evidenceCorpus);
@@ -875,9 +884,14 @@
     if(start) start.disabled = true;
     if(status) status.textContent = "Chargement du questionnaire local…";
     try{
-      const response = await fetch(DATA_URL,{cache:"no-store"});
-      if(!response.ok) throw new Error("HTTP " + response.status);
-      const corpus = await response.json();
+      // Le corpus public embarqué est identique au fichier JSON (test d'intégrité).
+      // Le repli JSON reste disponible pour les hébergeurs qui le servent.
+      let corpus = window.__NOVA_COMPASS_PUBLIC_CORPORA?.questionnaire;
+      if(!corpus){
+        const response = await fetch(DATA_URL,{cache:"no-store"});
+        if(!response.ok) throw new Error("HTTP " + response.status);
+        corpus = await response.json();
+      }
       if(!Array.isArray(corpus.axes) || corpus.axes.length !== 16 ||
          !Array.isArray(corpus.questions) || corpus.questions.length !== 64){
         throw new Error("Questionnaire incomplet");

@@ -51,6 +51,11 @@ for required_page in (
 for token in ('hreflang="fr-CA"', 'hreflang="x-default"', 'property="og:title"', 'name="twitter:card"', 'type="application/ld+json"'):
     assert token in poll_html, token
 assert "boussole-electorale.html" in html
+assert 'assets/boussole-public-corpus.js?v=1' in compass_html
+assert 'assets/sondage-public-corpus.js?v=1' in poll_html
+assert 'window.__NOVA_COMPASS_PUBLIC_CORPORA?.questionnaire' in compass_js
+assert 'window.__NOVA_POLL_PUBLIC_CORPUS' in poll_js
+
 assert "sondage-citoyen.html" in compass_html
 assert 'id="poll-adult"' in poll_html and 'id="poll-agree"' in poll_html
 assert 'id="poll-results"' in poll_html and 'id="poll-form"' in poll_html

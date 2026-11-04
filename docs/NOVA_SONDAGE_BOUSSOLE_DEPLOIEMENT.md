@@ -4,6 +4,12 @@
 **Public :** personnes se déclarant âgées de 18 ans et plus.  
 **Méthode :** consultation citoyenne ouverte, non probabiliste. Elle ne constitue ni une étude représentative de la population, ni une prédiction électorale.
 
+## Compatibilité du site public GitHub Pages/Jekyll
+
+Le 3 novembre 2026, des contrôles HTTP ont établi que le mode d'hébergement Jekyll historique ne servait pas les fichiers `data/sondage-citoyen-v1.json`, `data/boussole-electorale-v2.json` et les références documentaires de la boussole (HTTP 404), bien qu'ils existent dans GitHub et dans le paquet public isolé Netlify. Le filtre Jekyll strict doit rester en place pour ne pas publier les autres fichiers de travail.
+
+Les copies JavaScript **publiques** et versionnées `assets/sondage-public-corpus.js` et `assets/boussole-public-corpus.js` exposent uniquement les corpus déjà explicitement autorisés, sans bulletin individuel, et sont comparées intégralement aux sources JSON par `scripts/test_nova_public_bundles.py`. L'interface privilégie ces copies et conserve un repli sur les fichiers JSON pour les hébergements isolés. Le contrôle de confinement Jekyll exige désormais les deux bundles et les deux pages. Toute modification du corpus source nécessite de régénérer les bundles avec le même contenu et de réussir la CI avant déploiement. Le sondage **reste fermé** tant que l'approbation explicite de sa version n'est pas reçue.
+
 ## Contenu de cette livraison
 
 - `projets/projet-nova/sondage-citoyen.html` : page publique, questionnaire, résultats agrégés publiés par lots et méthode.
