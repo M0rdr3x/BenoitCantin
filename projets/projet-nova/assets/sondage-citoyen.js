@@ -13,6 +13,7 @@
   };
   const $ = id => document.getElementById(id);
   let questions = [];
+  let localCorpus = null;
   let open = false;
   let captchaToken = "";
   let siteKey = "";
@@ -75,7 +76,7 @@
   }
   function renderResults(data){
     const host=$("poll-results");host.replaceChildren();
-    if(!data || !Array.isArray(data.questions)) {
+    if(!validatedPublicResponse(data)) {
       $("poll-results-status").textContent="Les résultats publics ne sont pas disponibles.";
       return;
     }
@@ -111,12 +112,57 @@
     if(!response.ok) throw new Error("HTTP "+response.status);
     return response.json();
   }
+  // Vérifier aussi dans le navigateur les lots publics avant de dessiner
+  // des pourcentages. Les résultats peuvent être corrompus en transit ou
+  // mélangés par un intermédiaire : mieux vaut afficher « indisponible ».
+  function validatedPublicResponse(data){
+    if(!localCorpus || localCorpus.version!==VERSION || typeof localCorpus.published!=="boolean"
+       || !data || typeof data!=="object" || Array.isArray(data)
+       || data.version!==VERSION || typeof data.open!=="boolean"
+       || (data.open && localCorpus.published!==true)
+       || data.minPublicBallots!==10
+       || !Array.isArray(data.questions) || questions.length!==8
+       || data.questions.length!==questions.length
+       || data.questions.some((q,i)=>!q || q.id!==questions[i].id
+         || q.ordinal!==questions[i].ordinal || q.text!==questions[i].text)){
+      return false;
+    }
+    if(data.resultsVisible===false){
+      return data.ballots===null && data.publishedAt===null
+        && data.questions.every(q=>q.counts===null);
+    }
+    if(data.resultsVisible!==true || !Number.isSafeInteger(data.ballots) || data.ballots<10){
+      return false;
+    }
+    const keys=VALUES.map(String);
+    return data.questions.every(q=>{
+      if(!q.counts || typeof q.counts!=="object" || Array.isArray(q.counts)
+         || Object.keys(q.counts).length!==keys.length) return false;
+      let total=0;
+      for(const key of keys){
+        const n=q.counts[key];
+        if(typeof n!=="number" || !Number.isSafeInteger(n) || n<0) return false;
+        total+=n;
+        if(!Number.isSafeInteger(total)) return false;
+      }
+      return total===data.ballots;
+    });
+  }
   async function refreshResults(){
     try {
       const data=await fetchJson(API,{mode:"cors"});
+      if(!validatedPublicResponse(data)) throw new Error("public_snapshot_invalid");
+      // Une fermeture serveur constatée en direct ferme aussi la soumission
+      // du navigateur, même si la page avait été ouverte auparavant.
+      if(open && !data.open){
+        open=false;captchaToken="";
+        setStatus("La consultation vient de fermer. Aucun nouveau vote ne peut être envoyé.");
+        updateButton();
+      }
       renderResults(data);
       return data;
     }catch{
+      open=false;captchaToken="";updateButton();
       renderResults(null);
       return null;
     }
@@ -152,13 +198,12 @@
       try { local=await fetchJson("data/sondage-citoyen-v1.json"); }
       catch { local={questions:[]}; }
     }
+    localCorpus=local;
     questions=(local.questions||[]).filter(q=>/^q[0-9]{2}$/.test(q.id));
     try {
       const remote=await fetchJson(API,{mode:"cors"});
-      if(remote.version!==VERSION || !Array.isArray(remote.questions)
-         || remote.questions.length!==questions.length
-         || remote.questions.some((q,i)=>q.id!==questions[i].id || q.text!==questions[i].text)) {
-        throw new Error("Questionnaire publié différent du référentiel");
+      if(!validatedPublicResponse(remote)) {
+        throw new Error("Questionnaire ou résultats publics non concordants");
       }
       open=local.published===true && remote.open===true && typeof remote.siteKey==="string" && !!remote.siteKey;
       siteKey=remote.siteKey||"";
