@@ -1,0 +1,163 @@
+{
+  "schema_version": "P55J-1",
+  "date_reference": "2026-11-04",
+  "exercice": 2024,
+  "source": {
+    "institution": "VILLE_DE_QUEBEC",
+    "url_officielle": "https://www.ville.quebec.qc.ca/publications/docs_ville/Rapport_financier_2024.pdf",
+    "pages_pdf_index_zero": [
+      6,
+      12
+    ],
+    "pages_imprimees": [
+      7,
+      13
+    ],
+    "attestation": "LECTURE_VISUELLE_PAGES_PDF_PAR_NAVIGATEUR_SANS_SHA_ACTUEL",
+    "libelle_page_13": "SOMMAIRE_RESULTATS_A_FINS_FISCALES_CONSOLIDES",
+    "note_perimetre": "TOTAL_CONSOLIDE_EXCLUT_OPERATIONS_ENTRE_ADMINISTRATION_ET_ORGANISMES"
+  },
+  "dependances": [
+    "P54Q",
+    "P55H",
+    "P55I"
+  ],
+  "lignes": [
+    {
+      "code": "REVENUS_FONCTIONNEMENT",
+      "categorie": "RECETTES_FONCTIONNEMENT",
+      "administration_municipale_cad": 2008356306,
+      "organismes_controles_partenariats_cad": 354693719,
+      "total_consolide_cad": 2186607854,
+      "residu_consolidation_cad": -176442171
+    },
+    {
+      "code": "REVENUS_INVESTISSEMENT",
+      "categorie": "RECETTES_INVESTISSEMENT",
+      "administration_municipale_cad": 152907248,
+      "organismes_controles_partenariats_cad": 110071948,
+      "total_consolide_cad": 262872891,
+      "residu_consolidation_cad": -106305
+    },
+    {
+      "code": "REVENUS_TOTAUX",
+      "categorie": "SOMME_RECETTES",
+      "administration_municipale_cad": 2161263554,
+      "organismes_controles_partenariats_cad": 464765667,
+      "total_consolide_cad": 2449480745,
+      "residu_consolidation_cad": -176548476
+    },
+    {
+      "code": "CHARGES",
+      "categorie": "CHARGES_COMPTABLES",
+      "administration_municipale_cad": 1920652747,
+      "organismes_controles_partenariats_cad": 365431466,
+      "total_consolide_cad": 2107478001,
+      "residu_consolidation_cad": -178606212
+    },
+    {
+      "code": "EXCEDENT_ACTIVITES",
+      "categorie": "RESULTAT_ACTIVITES",
+      "administration_municipale_cad": 240610807,
+      "organismes_controles_partenariats_cad": 99334201,
+      "total_consolide_cad": 342002744,
+      "residu_consolidation_cad": 2057736
+    },
+    {
+      "code": "FONCTIONNEMENT_AVANT_CONCILIATION",
+      "categorie": "SOLDE_AVANT_CONCILIATION_FISCALE",
+      "administration_municipale_cad": 87703559,
+      "organismes_controles_partenariats_cad": -10737747,
+      "total_consolide_cad": 79129853,
+      "residu_consolidation_cad": 2164041
+    },
+    {
+      "code": "ELEMENTS_CONCILIATION_FISCALE",
+      "categorie": "AJUSTEMENTS_FISCAUX",
+      "administration_municipale_cad": 10556966,
+      "organismes_controles_partenariats_cad": 42376268,
+      "total_consolide_cad": 50206104,
+      "residu_consolidation_cad": -2727130
+    },
+    {
+      "code": "EXCEDENT_FONCTIONNEMENT_FISCAL",
+      "categorie": "SOLDE_FISCAL_APRES_CONCILIATION",
+      "administration_municipale_cad": 98260525,
+      "organismes_controles_partenariats_cad": 31638521,
+      "total_consolide_cad": 129335957,
+      "residu_consolidation_cad": -563089
+    }
+  ],
+  "pont_fiscal_budget_realise": {
+    "excedent_comptable_budget_cad": 400167919,
+    "revenus_investissement_budget_cad": 403091050,
+    "fonctionnement_avant_conciliation_budget_cad": -2923131,
+    "elements_conciliation_budget_cad": 2923131,
+    "excedent_fonctionnement_fiscal_budget_cad": 0,
+    "excedent_comptable_realise_cad": 342002744,
+    "revenus_investissement_realises_cad": 262872891,
+    "fonctionnement_avant_conciliation_realise_cad": 79129853,
+    "elements_conciliation_realises_cad": 50206104,
+    "excedent_fonctionnement_fiscal_realise_cad": 129335957,
+    "variation_fonctionnement_avant_conciliation_cad": 82052984,
+    "variation_elements_conciliation_cad": 47282973,
+    "variation_fiscal_cad": 129335957
+  },
+  "interpretations_bloquees": [
+    "RESIDU_CONSOLIDATION_EST_ECONOMIE",
+    "RESIDU_EST_INTEGRALEMENT_UNE_ELIMINATION_CERTIFIEE",
+    "EXCEDENT_FISCAL_EST_TRESORERIE_LIBRE",
+    "SURPLUS_FISCAL_EST_GAIN_PROJET_NOVA"
+  ],
+  "protections": {
+    "source_page_7_capture_visuelle_site_officiel": true,
+    "source_page_13_capture_visuelle_site_officiel": true,
+    "aucune_copie_pdf_sha_actuel_verifiee": true,
+    "source_mamh_second_pdf_non_reliee": true,
+    "colonnes_administration_organismes_total_distinctes": true,
+    "tous_residus_calcules_total_moins_somme": true,
+    "aucun_residu_presenté_economie": true,
+    "aucun_residu_qualifie_automatiquement_elimination": true,
+    "pas_de_double_compte_organismes_et_ville": true,
+    "resultats_excedent_non_tresorerie_libre": true,
+    "ecarts_fiscaux_non_assimiles_economies": true,
+    "budget_municipal_non_additionne_au_consolide": true,
+    "reconciliation_somme_revenus_verifiee": true,
+    "reconciliation_somme_charges_verifiee": true,
+    "reconciliation_excedent_activites_verifiee": true,
+    "reconciliation_conciliation_verifiee": true,
+    "reconciliation_fiscal_2024_verifiee": true,
+    "reconciliation_budget_fiscal_2024_verifiee": true,
+    "reconciliation_variations_budget_fiscal_verifiee": true,
+    "rapport_p55i_en_amont_non_modifie": true,
+    "trace_page_methode_non_certifiante": true,
+    "document_pdf_non_copie_dans_git": true,
+    "aucun_mandat_cpa_ni_juridique_signe": true,
+    "dossiers_p54e_et_date_probable_ouverts": true,
+    "p54n_40_p54o_10_p54b_96_p54c_8_non_attestes": true,
+    "redressement_2023_non_economie_2024": true,
+    "protection_effectifs_et_services": true,
+    "protection_pouvoir_achat": true,
+    "regimes_quebec_canada_et_souverain_distincts": true,
+    "aucun_contact_ou_engagement_depense": true,
+    "aucune_transmission_automatique": true,
+    "aucune_fusion_main": true,
+    "sinjira_inchange": true,
+    "no_go_automatique": true
+  },
+  "etat_initial": {
+    "pages_controlees_visuellement_sur_site_officiel": 2,
+    "copies_pdf_verifiees_par_sha_actuel": 0,
+    "lignes_de_perimetre_a_qualifier": 8,
+    "avis_independants_authentifies": 0,
+    "mandats_professionnels_signes": 0,
+    "economies_certifiees_cad": null,
+    "dossiers_p54e_ouverts": 4,
+    "date_probable_non_certifiee": 1,
+    "taches_p54n_non_attestees": 40,
+    "blocages_p54o_non_leves": 10,
+    "controles_p54b_non_attestes": 96,
+    "controles_p54c_non_attestes": 8,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
