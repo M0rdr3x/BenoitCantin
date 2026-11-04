@@ -52,6 +52,16 @@ python scripts/controler_integrite_pieces_nova_p55g.py \
   --creer-recu-prive /hors_git/p55g_recu_independant.json
 ```
 
+**Recontrôle du reçu P55H, sans réseau et sans écriture :**
+
+```bash
+python scripts/acquerir_pdfs_publics_nova_p55h.py \
+  --verifier-repertoire-prive /hors_git/nova_sources_2024_nouvelle_acquisition \
+  --bilan-public /hors_git/p55h_bilan_recontrole.json
+```
+
+Ce recontrôle exige exactement les deux PDF et `RECU_P55H.json`, des droits `0700`/`0600`, et le même SHA-256 pour chaque PDF. Il rejette tout fichier ajouté, toute modification du reçu ou toute fausse déclaration de certification. Une paire issue d'une **édition différente mais inchangée** retourne toujours le statut 4, pour examen de provenance.
+
 P55G tente ensuite la reproduction des cinq positions P55C/P54Q; la revue **visuelle** et contradictoire reste à effectuer par des personnes compétentes. Les deux mandats comptable et juridique demeurent non transmis et non signés.
 
 **Codes de sortie :** 0 = bilan neutre ou deux concordances techniques; 4 = une ou deux éditions différentes (copies conservées en réserve); 2 = erreur réseau, de chemin, de statut HTTP, de taille, de contenu ou d'intégrité, avec suppression des téléchargements partiels; 3 = refus délibéré de `--exiger-authenticite`.
