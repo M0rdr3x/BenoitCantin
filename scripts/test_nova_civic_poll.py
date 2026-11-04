@@ -84,6 +84,11 @@ inventory = (ROOT / "scripts" / "validate_edge_function_inventory.py").read_text
 assert '"nova-civic-poll"' in inventory
 assert (ROOT / "scripts" / "test_nova_poll_runtime.cjs").is_file()
 assert '"NOVA_POLL_HMAC_KEY"' in inventory
+public_edge_guard = (ROOT / "scripts" / "validate_public_edge_auth.py").read_text(encoding="utf-8")
+assert "'nova-civic-poll':" in public_edge_guard
+assert "NOVA_POLL_APPROVED_VERSION" in public_edge_guard
+assert "le CAPTCHA doit précéder PostgREST" in public_edge_guard
+
 for path in ("netlify.toml", "vercel.json", "projets/projet-nova/netlify.toml"):
     deployment = (ROOT / path).read_text(encoding="utf-8")
     assert "https://challenges.cloudflare.com" in deployment, path

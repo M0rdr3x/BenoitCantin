@@ -14,6 +14,7 @@ INTENTIONAL_PUBLIC_FUNCTIONS = {
     'send-game-report': 'génération/téléchargement public borné; envoi externe désactivé par défaut',
     'get-document-url': 'documents publics approuvés; authentification utilisateur optionnelle',
     'life-story-delivery': 'accès posthume par jeton opaque dédié, sans Compte SINJIRA requis',
+    'nova-civic-poll': 'consultation fermée par défaut; approbation versionnée, CAPTCHA Turnstile, HMAC, origine et RPC service_role uniquement',
 }
 
 
@@ -63,6 +64,37 @@ def main() -> int:
         function_entry = ROOT / 'supabase' / 'functions' / name / 'index.ts'
         if not function_entry.exists():
             errors.append(f'{name}: fonction publique configurée mais index.ts absent')
+            continue
+        if name == 'nova-civic-poll':
+            source = function_entry.read_text(encoding='utf-8')
+            safeguards = (
+                'NOVA_POLL_ENABLED',
+                'NOVA_POLL_APPROVED_VERSION',
+                'NOVA_POLL_TURNSTILE_SECRET',
+                'NOVA_POLL_TURNSTILE_SITE_KEY',
+                'NOVA_POLL_HMAC_KEY',
+                'ORIGINS',
+                'MAX_BODY_BYTES',
+                'readLimitedJson',
+                'confirmCaptcha',
+                'hashToken',
+                'nova_poll_submit',
+                'isOpen()',
+                'Cache-Control',
+                'no-store',
+            )
+            for token in safeguards:
+                if token not in source:
+                    errors.append(f'nova-civic-poll: garde applicative absente: {token}')
+            # Vérifier l'ordre de l'authentification contre les privilèges SQL.
+            gate = source.find('if(!isOpen())')
+            captcha = source.find('if(!await confirmCaptcha(payload.captchaToken))', gate)
+            privileged = source.find('const questions=await db(', gate)
+            if not (0 <= gate < captcha < privileged):
+                errors.append('nova-civic-poll: le CAPTCHA doit précéder PostgREST')
+            if 'await req.json()' in source:
+                errors.append('nova-civic-poll: lecture du corps non bornée')
+
 
     if errors:
         print(f'ECHEC: {len(errors)} problème(s) dans le contrat des Edge Functions publiques.')
