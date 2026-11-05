@@ -401,6 +401,17 @@ def run() -> None:
         page.locator("#compass-start").click()
         page.locator("#compass-question-stage .compass-question").wait_for(state="visible", timeout=10_000)
         assert_true(
+            page.evaluate(
+                """() => {
+                  const form = document.querySelector("#compass-form");
+                  const event = new Event("submit", {bubbles: true, cancelable: true});
+                  form.dispatchEvent(event);
+                  return event.defaultPrevented;
+                }"""
+            ),
+            f"{BROWSER_NAME}: la soumission clavier de la Boussole doit être interceptée sans code HTML inline",
+        )
+        assert_true(
             page.locator("#compass-question-stage .compass-question").count() == 1,
             f"{BROWSER_NAME}: une seule question doit être visible à la fois",
         )
