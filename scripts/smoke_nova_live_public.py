@@ -37,7 +37,7 @@ class FixedHostRedirects(HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
-def request(url: str, allowed_host: str, *, origin: str | None = None):
+def request(url: str, allowed_host: str, *, origin: str | None = None, binary: bool = False):
     target = urlparse(url)
     if target.scheme != "https" or target.hostname != allowed_host:
         raise ValueError("Hôte de contrôle non autorisé")
@@ -55,9 +55,9 @@ def request(url: str, allowed_host: str, *, origin: str | None = None):
             data = response.read(MAX_BODY + 1)
             if len(data) > MAX_BODY:
                 raise ValueError("Réponse public trop volumineuse")
-            return response.status, response.headers, data.decode("utf-8")
+            return response.status, response.headers, data if binary else data.decode("utf-8")
     except HTTPError as err:
-        return err.code, err.headers, ""
+        return err.code, err.headers, b"" if binary else ""
 
 
 def stable_api_get(getter=request, sleep=time.sleep):
@@ -171,10 +171,30 @@ def main():
             raise ValueError(f"{path}: HTTP {status} au lieu de {expected}")
         return body
 
+    def verify_media(path: str, expected_type: str, magic: bytes):
+        nonlocal checks
+        status, headers, data = request(ORIGIN + path, "www.benoitcantin.com", binary=True)
+        checks += 1
+        if status != 200:
+            raise ValueError(f"{path}: ressource visuelle absente (HTTP {status})")
+        if headers.get_content_type() != expected_type:
+            raise ValueError(f"{path}: type de fichier inattendu")
+        if not data.startswith(magic):
+            raise ValueError(f"{path}: signature de fichier incorrecte")
+        if expected_type == "image/webp" and data[8:12] != b"WEBP":
+            raise ValueError(f"{path}: fichier WebP invalide")
+        return data
+
     try:
         home = verify(PREFIX)
         if "sondage-citoyen.html" not in home or "boussole-electorale.html" not in home:
             raise ValueError("Liens vers sondage et boussole absents de l'accueil")
+        if home.count('src="assets/sondage-citoyen.svg"') < 2:
+            raise ValueError("Illustration du sondage absente des accès d'accueil")
+        if home.count('src="../../assets/media/nova-boussole-electorale-v2.webp"') < 2:
+            raise ValueError("Illustration officielle de la boussole absente des accès d'accueil")
+        verify_media(PREFIX + "assets/sondage-citoyen.svg", "image/svg+xml", b"<svg")
+        verify_media("/assets/media/nova-boussole-electorale-v2.webp", "image/webp", b"RIFF")
 
         preview_html = verify(PREFIX + "sondages-a-valider.html")
         if not review_page_ok(preview_html):
