@@ -31,12 +31,15 @@ class ReviewedProductionMigrationBatchTests(unittest.TestCase):
             encoding='utf-8',
         )
         # Le constructeur production applique désormais la quarantaine Edge
-        # avant de produire ses migrations. Reproduire les deux routes sensibles
+        # avant de produire ses migrations. Reproduire les cinq routes sensibles
         # avec des sources SYNTHÉTIQUES, sans identifiant ni secret réel.
         (self.supabase / 'config.toml').write_text(
             'project_id = "test"\n'
             '[functions.security-context]\nverify_jwt = true\n'
-            '[functions.nova-civic-poll]\nverify_jwt = false\n',
+            '[functions.nova-civic-poll]\nverify_jwt = false\n'
+            '[functions.get-document-url]\nverify_jwt = false\n'
+            '[functions.send-game-report]\nverify_jwt = false\n'
+            '[functions.life-story-delivery]\nverify_jwt = false\n',
             encoding='utf-8',
         )
         functions = self.supabase / 'functions'
@@ -52,6 +55,30 @@ class ReviewedProductionMigrationBatchTests(unittest.TestCase):
             '// Fixture privileged role: SUPABASE_SERVICE_ROLE_KEY\n',
             encoding='utf-8',
         )
+        # Les fragments suivants ne contiennent aucune donnée utilisateur.
+        # Ils simulent les contrats des trois routes publiquement invoquables.
+        other_guards = {
+            'get-document-url': (
+                'optionalUser(req)', 'project_access_rank', 'createSignedUrl',
+                'MAX_REQUEST_BYTES', 'await readLimitedUtf8Body(',
+            ),
+            'send-game-report': (
+                'optionalUser(req)', 'PAID_EXTERNAL_SERVICES_ENABLED=false',
+                'to: [user.email]', 'MAX_REQUEST_BYTES',
+                'await readLimitedUtf8Body(', 'await readLimitedBinaryResponse(',
+            ),
+            'life-story-delivery': (
+                'allowedOrigin(req)', 'sha256Hex', 'token_hash',
+                'service_life_story_register_download', 'MAX_PDF_BYTES',
+                'await readLimitedUtf8Body(',
+            ),
+        }
+        for slug, guards in other_guards.items():
+            (functions / slug).mkdir()
+            (functions / slug / 'index.ts').write_text(
+                '\\n'.join('// synthetic: ' + item for item in guards) + '\\n',
+                encoding='utf-8',
+            )
         (self.supabase / 'NOVA_POLL_SCHEMA_PREDEPLOY.sql').write_text(
             '-- SQL candidat fictif isolé pour test\n', encoding='utf-8',
         )
@@ -100,6 +127,8 @@ class ReviewedProductionMigrationBatchTests(unittest.TestCase):
         self.assertTrue((out / 'migrations' / f'{version}_{name}.sql').is_file())
         self.assertFalse((out / 'functions/security-context').exists())
         self.assertFalse((out / 'functions/nova-civic-poll').exists())
+        for slug in ('get-document-url', 'send-game-report', 'life-story-delivery'):
+            self.assertFalse((out / 'functions' / slug).exists())
         self.assertFalse((out / 'NOVA_POLL_SCHEMA_PREDEPLOY.sql').exists())
         marker = (out / 'migrations' / '20260101000000_baseline.sql').read_text('utf-8')
         self.assertIn('Marqueur de déploiement lié uniquement', marker)
