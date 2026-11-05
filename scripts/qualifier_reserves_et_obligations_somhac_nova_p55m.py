@@ -136,7 +136,7 @@ GUARDS={
     "aucun_contact_ou_mandat",
     "aucune_depense_autorisee",
     "aucune_fusion_main",
-    "sindjira_non_modifie",
+    "sinjira_non_modifie",
     "no_go_automatique",
 }
 INITIAL={
