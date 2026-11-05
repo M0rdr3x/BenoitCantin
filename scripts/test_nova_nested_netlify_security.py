@@ -19,6 +19,34 @@ class NovaNestedNetlifySecurityTests(unittest.TestCase):
         self.assertEqual(builder.validate_nova_nested_netlify_config(), [])
         self.assertEqual(builder.validate_nova_nested_netlify_config(self.valid), [])
 
+    def test_emitted_http_policies_keep_privacy_and_technical_deny_rules(self):
+        headers = builder.render_standalone_headers(deploy_context="production")
+        redirects = builder.render_standalone_redirects()
+        for policy in (
+            "X-Content-Type-Options: nosniff",
+            "Strict-Transport-Security: max-age=31536000",
+            "Content-Security-Policy:",
+            "https://challenges.cloudflare.com",
+            "frame-ancestors 'self'",
+            "/compte/*",
+            "/admin/*",
+            "Cache-Control: private, no-store",
+        ):
+            with self.subTest(header=policy):
+                self.assertIn(policy, headers)
+        for rule in (
+            "/supabase/* /404.html 404!",
+            "/scripts/* /404.html 404!",
+            "/docs/* /404.html 404!",
+            "/.github/* /404.html 404!",
+            "/tests/* /404.html 404!",
+            "/mobile-native/* /404.html 404!",
+            "/roman /projets/sinjira/index.html 301",
+            "/registre /projets/sinjira/registre/index.html 301",
+        ):
+            with self.subTest(redirect=rule):
+                self.assertIn(rule, redirects)
+
     def test_mutants_fail_closed(self):
         bad_variants = {
             "publish current folder": self.valid.replace('publish = "_site"', 'publish = "."'),
