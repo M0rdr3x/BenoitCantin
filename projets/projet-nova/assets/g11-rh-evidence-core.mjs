@@ -102,7 +102,9 @@ export function readOriginalA2Cells(sheetXml,sharedXml){
  }
  if(!shared.length)throw new Error("EMPTY_SHARED_STRINGS");
  const cells={};
- for(const c of sheetXml.matchAll(/<c\b([^>]*)>([\s\S]*?)<\/c>/g)){
+ // Les cellules vides <c .../> ne doivent jamais absorber la cellule suivante.
+ const nonEmptyCellsXml=sheetXml.replace(/<c\b[^>]*\/>/g,"");
+ for(const c of nonEmptyCellsXml.matchAll(/<c\b([^>]*)>([\s\S]*?)<\/c>/g)){
   const ref=attribute(c[1],"r");if(!ref||!(/^[A-Z]{1,3}[1-9]\d*$/.test(ref)))continue;
   const v=c[2].match(/<v>([\s\S]*?)<\/v>/);
   if(!v)continue;
