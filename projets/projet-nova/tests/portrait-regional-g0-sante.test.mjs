@@ -106,7 +106,9 @@ test("page publique : les 16 valeurs sources, 18 régions et avertissements sont
  assert.ok(page.includes("31,0 %"));
  assert.ok(page.includes("77,1 %"));
  assert.match(page,/dénominateur/i);
- assert.match(page,/n'a pas.*pu être téléchargé/);
+ const textVisible=page.replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim();
+ assert.match(textVisible,/n'a pas pu être téléchargé/,
+   "L'avertissement XLSX doit rester lisible, même lorsque « pas » est en évidence dans le HTML.");
  assert.ok(page.includes("protocole-portrait-regional-sante-g0-v2.md"));
  assert.ok(page.includes("</main>") && page.includes("</html>"));
 });
