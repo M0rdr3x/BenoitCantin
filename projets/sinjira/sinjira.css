@@ -85,3 +85,7 @@
   border-radius:18px;
   background:#05070c;
 }
+
+/* Lien officiel YouTube : icône vectorielle et alignement tactile accessibles. */
+.sinjira-page .sinjira-youtube-link{display:inline-flex;align-items:center;justify-content:center;gap:.55rem;min-height:44px}
+.sinjira-page .sinjira-youtube-icon{display:block;flex:0 0 24px;width:24px;height:24px}

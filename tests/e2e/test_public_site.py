@@ -635,6 +635,21 @@ def run() -> None:
             )
 
             page.goto(urljoin(BASE_URL, "projets/sinjira/"), wait_until="domcontentloaded", timeout=30_000)
+            youtube = page.locator('main .sinjira-youtube-link[href="https://www.youtube.com/@SinjiraOfficiel"]')
+            assert_true(youtube.count() == 1 and youtube.is_visible(), f"{BROWSER_NAME}: lien officiel YouTube SINJIRA absent")
+            assert_true(
+                youtube.locator('svg.sinjira-youtube-icon[aria-hidden="true"]').count() == 1,
+                f"{BROWSER_NAME}: icône YouTube vectorielle ou accessible absente",
+            )
+            assert_true(
+                youtube.get_attribute("target") == "_blank"
+                and {"noopener", "noreferrer"}.issubset(set((youtube.get_attribute("rel") or "").split())),
+                f"{BROWSER_NAME}: ouverture du lien YouTube externe non sécurisée",
+            )
+            assert_true(
+                "YouTube" in (youtube.get_attribute("aria-label") or ""),
+                f"{BROWSER_NAME}: nom accessible de la chaîne YouTube absent",
+            )
             wait_for_assistant(page)
             assistant = page.evaluate("window.__SINJIRA_ASSISTANT__")
             assert_true(assistant.get("providerMode") == "local", f"{BROWSER_NAME}: assistant non local")
@@ -929,6 +944,13 @@ def run() -> None:
                 f"{BROWSER_NAME}: assistant mobile présent sur l’accueil désactivé",
             )
             mobile_page.goto(urljoin(BASE_URL, "projets/sinjira/"), wait_until="domcontentloaded", timeout=30_000)
+        mobile_youtube = mobile_page.locator('main .sinjira-youtube-link[href="https://www.youtube.com/@SinjiraOfficiel"]')
+        assert_true(mobile_youtube.count() == 1 and mobile_youtube.is_visible(), f"{BROWSER_NAME}: lien YouTube SINJIRA absent sur mobile")
+        youtube_box = mobile_youtube.bounding_box()
+        assert_true(
+            youtube_box is not None and youtube_box["height"] >= 44,
+            f"{BROWSER_NAME}: cible tactile YouTube SINJIRA inférieure à 44 px",
+        )
             wait_for_assistant(mobile_page)
             mobile_assistant = mobile_page.locator(".sinjira-assistant-toggle")
             mobile_assistant.click()
