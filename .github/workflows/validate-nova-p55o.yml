@@ -1,0 +1,89 @@
+name: Projet Nova P55O - Couverture financement deux regimes 2027-2036
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p55o.yml"
+      - "scripts/auditer_couverture_financement_nova_p55o.py"
+      - "scripts/tests/test_auditer_couverture_financement_nova_p55o.py"
+      - "scripts/evaluer_transition_fiscale_nova_p52b.py"
+      - "scripts/evaluer_completude_programme_nova_p55n.py"
+      - "projets/projet-nova/etudes/P55O_*"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+      - "projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json"
+      - "projets/projet-nova/etudes/P52C_REFERENTIEL_BUDGET_QUEBEC_2026_2027.json"
+      - "projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json"
+      - "projets/projet-nova/official/reference/programme.md"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controle-de-couverture-sans-recettes-inventees:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: 36 tests couverture des entrees fiscales 2027-2036
+        run: |
+          python -m py_compile scripts/auditer_couverture_financement_nova_p55o.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_auditer_couverture_financement_nova_p55o.py")
+          assert suite.countTestCases()==36,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Verifier uniquement les constats publics sans changement de score
+        run: |
+          python scripts/auditer_couverture_financement_nova_p55o.py \
+            --bilan-public p55o_bilan_public.json \
+            --table-public p55o_table_public.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p55o_bilan_public.json").read_text("utf-8"))
+          t=json.loads(Path("p55o_table_public.json").read_text("utf-8"))
+          assert r["schema_version"]=="P55O-BILAN-PUBLIC-1"
+          assert t["schema_version"]=="P55O-TABLE-PUBLIQUE-1"
+          assert r["maturite_programme_estimative_pourcent"]==53
+          assert r["maturite_modifiee_par_ce_jalon"] is False
+          assert r["recettes_inconnues"]==240
+          assert r["depenses_inconnues"]==360
+          assert r["total_montants_inconnus"]==600
+          assert r["soldes_futurs_calculables"]==0
+          assert r["hypotheses_anti_evasion_a_zero_non_certifiees"]==60
+          assert r["preuves_fiscales_p52a_ouvertes"]==20
+          assert r["impots_revenus_2026_2027_prevision_officielle_mcad"]==65327
+          assert r["impots_revenus_2026_2027_non_projections_nova"] is True
+          assert r["taux_de_deux_prelevements_determinables"] is False
+          assert r["financement_projet_demontre"] is False
+          assert r["gains_pouvoir_achat_demontres"] is False
+          assert r["economies_certifiees_cad"] is None
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          assert len(t["scenarios"])==6
+          assert len(t["plans_acquisition"])==10
+          assert all(v==60 for v in t["frequence_par_champ"].values())
+          assert all(v==60 for v in t["lacunes_par_exercice"].values())
+          assert t["anti_evasion_zero_est_hypothese_et_non_prevision"] is True
+          PY
+      - name: Refuser tout GO financier artificiel
+        run: |
+          set +e
+          python scripts/auditer_couverture_financement_nova_p55o.py --exiger-financement-demontre
+          rc=$?
+          set -e
+          test "$rc" -eq 3
+      - name: Archiver seulement le bilan et la table publiques
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p55o-couverture-budgets-public-non-certifie
+          path: |
+            p55o_bilan_public.json
+            p55o_table_public.json
+          retention-days: 7
