@@ -106,7 +106,9 @@ test("page publique : les 16 valeurs sources, 18 régions et avertissements sont
  assert.ok(page.includes("31,0 %"));
  assert.ok(page.includes("77,1 %"));
  assert.match(page,/dénominateur/i);
- assert.match(page,/n'a pas.*pu être téléchargé/);
+ // Le texte public peut entourer « pas » d'une balise <strong> :
+ // vérifier la mention elle-même, sans affaiblir l'avertissement de provenance.
+ assert.match(page.replace(/<\/?strong>/g, ""),/n'a pas.*pu être téléchargé/);
  assert.ok(page.includes("protocole-portrait-regional-sante-g0-v2.md"));
  assert.ok(page.includes("</main>") && page.includes("</html>"));
 });
