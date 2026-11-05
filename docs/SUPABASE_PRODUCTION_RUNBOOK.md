@@ -101,6 +101,10 @@ Dans ce cas :
 
 Ne jamais substituer à cette procédure un `db push --include-all`, `supabase migration repair`, `supabase db reset --linked` ou un déploiement global d’Edge Functions non borné.
 
+**Interdiction renforcée sur la CLI Edge :** ne jamais ajouter `--prune` ni `--no-verify-jwt` à une commande de synchronisation production. L'option `--prune` supprimerait les fonctions distantes absentes du workspace temporaire : or `security-context`, `nova-civic-poll`, `get-document-url`, `send-game-report` et `life-story-delivery` en sont volontairement exclues jusqu'à leur revue individuelle. Chaque nouvelle fonction `verify_jwt=false` doit également être examinée et expressément autorisée avant toute publication.
+
+Le constructeur ne peut effacer qu'un workspace CI à `.prod-workspace/supabase` ou une copie de test éphémère et isolée réservée au validateur du ledger. Les mises à jour des fonctions exclues doivent suivre une procédure **par slug**, avec revue de leurs contrôles d'authentification, tests négatifs, plan de retour arrière et vérification des versions distantes, et non un déploiement global implicite.
+
 ## Secrets GitHub Actions requis
 
 À configurer hors dépôt dans :
