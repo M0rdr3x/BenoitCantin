@@ -133,6 +133,21 @@ class ReviewedProductionMigrationBatchTests(unittest.TestCase):
         marker = (out / 'migrations' / '20260101000000_baseline.sql').read_text('utf-8')
         self.assertIn('Marqueur de déploiement lié uniquement', marker)
 
+    def test_temporary_ledger_validation_workspace_is_allowed(self):
+        version, name = '20260102000000', 'future_reviewed'
+        content = b'select 1;\n'
+        self.write_migration(version, name, content.decode())
+        self.write_batch([(version, name, git_blob_sha1(content))])
+        with tempfile.TemporaryDirectory(prefix='sinjira-ledger-') as td:
+            out = Path(td) / 'supabase'
+            proc = subprocess.run(
+                [sys.executable, str(self.scripts / BUILDER.name),
+                 '--output', str(out)],
+                cwd=self.root, capture_output=True, text=True,
+            )
+            self.assertEqual(proc.returncode, 0, self.output(proc))
+            self.assertTrue((out / 'migrations' / f'{version}_{name}.sql').is_file())
+
     def test_workspace_cannot_delete_an_unrelated_output(self):
         outside = self.root / 'private-unrelated'
         outside.mkdir()
