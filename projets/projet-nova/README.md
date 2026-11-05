@@ -217,6 +217,16 @@ Le protocole initial `official/working/protocole-portrait-regional-sante-g0-v1.m
 
 Le programme, le corpus, le cadre financier et les statuts de référence candidats, ainsi que `data/sources.json`, ne sont pas modifiés par cette étude.
 
+## G0.15 — Ventilation fiscale, fonds sociaux et incidence distributive (5 novembre 2026)
+
+**Suite de G0.14 :** protocole documentaire de quinze preuves fiscales V01–V15, **sans chiffres inventés, sans nouvelle taxe adoptée et sans suppression de recettes**.
+
+- **Dossier technique :** `official/working/protocole-g0-15-ventilation-fiscale-et-incidence-v1.md`; ventilation impôts/cotisations/redevances, définition du revenu des personnes et des entreprises, protections RRQ/RQAP/FSS, mécanismes anti-paradis fiscaux et effets distributifs sur les ménages.
+- **Registre JSON :** `data/matrice-preuves-g0-15-fiscalite.json`; quinze preuves toutes `A_DOCUMENTER`, aucune demande transmise, aucun rendement net ni taux chiffré.
+- **Portes de validation :** budgets distincts Québec au Canada/Québec souverain, avis juridiques et financiers indépendants, maintien des services, droits sociaux et travailleurs.
+- **Statut :** **G0.15 NON FRANCHIE**; préparation **47/100**, inchangée. Les textes de référence candidats et le manifeste `data/sources.json` sont conservés.
+- **Étape suivante :** G0.16, microsimulation distributive et de soutenabilité **seulement après collecte et validation des assiettes**.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
