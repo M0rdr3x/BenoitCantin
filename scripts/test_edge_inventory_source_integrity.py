@@ -5,6 +5,7 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 from validate_edge_function_inventory import (
     MAX_SOURCE_BYTES,
@@ -72,7 +73,8 @@ class InventorySourceIntegrityTests(unittest.TestCase):
             (root / "page.html").write_text(
                 '<a href="/functions/v1/admin-reader">call</a>', encoding="utf-8"
             )
-            self.assertEqual(len(find_edge_calls([root], "admin-reader")), 1)
+            with patch("validate_edge_function_inventory.ROOT", root):
+                self.assertEqual(len(find_edge_calls([root], "admin-reader")), 1)
 
 
 if __name__ == "__main__":
