@@ -140,18 +140,18 @@ def main() -> int:
     for path in sorted(sinjira_root.rglob("*.html")):
         rel = path.relative_to(ROOT).as_posix()
         page = path.read_text(encoding="utf-8")
-        visible_addresses = re.findall(r"[\\w.+-]+@[\\w.-]+\\.[A-Za-z]{2,}", page)
+        visible_addresses = re.findall(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", page)
         for address in visible_addresses:
             if address.lower() != official_email:
                 errors.append(f"Courriel public SINJIRA non officiel ({address}) : {rel}")
 
-        footer_match = re.search(r"<footer\\b[\\s\\S]*?</footer>", page, re.I)
+        footer_match = re.search(r"<footer\b[\s\S]*?</footer>", page, re.I)
         if footer_match and 'href="/contact.html"' in footer_match.group(0):
             checked_channels += 1
             footer = footer_match.group(0)
             if f'href="{official_mailto}"' not in footer:
                 errors.append(f"Courriel officiel SINJIRA absent du pied de page : {rel}")
-            youtube_tag = find_tag(footer, r'<a\\b[^>]*href="https://www\\.youtube\\.com/@SinjiraOfficiel"[^>]*>')
+            youtube_tag = find_tag(footer, r'<a\b[^>]*href="https://www\.youtube\.com/@SinjiraOfficiel"[^>]*>')
             if not youtube_tag or 'target="_blank"' not in youtube_tag or (
                 "noopener" not in youtube_tag or "noreferrer" not in youtube_tag
             ):
@@ -161,11 +161,11 @@ def main() -> int:
     if 'class="sinjira-official-channels"' not in home:
         errors.append("Bloc des canaux officiels absent de l’accueil SINJIRA")
     youtube_icon_link = find_tag(
-        home, r'<a\\b[^>]*class="sinjira-official-channel sinjira-official-channel-youtube"[^>]*>',
+        home, r'<a\b[^>]*class="sinjira-official-channel sinjira-official-channel-youtube"[^>]*>',
     )
     if not youtube_icon_link or f'href="{official_youtube}"' not in youtube_icon_link:
         errors.append("Accès prioritaire à la chaîne YouTube SINJIRA absent")
-    if not re.search(r'<svg\\b[^>]*class="sinjira-channel-icon"[^>]*>[\\s\\S]*?</svg>', home):
+    if not re.search(r'<svg\b[^>]*class="sinjira-channel-icon"[^>]*>[\s\S]*?</svg>', home):
         errors.append("Icône SVG YouTube inaccessible ou absente")
     if f'href="{official_mailto}"' not in home:
         errors.append("Courriel SINJIRA absent de l’accueil")
