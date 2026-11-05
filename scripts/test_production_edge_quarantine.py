@@ -90,6 +90,36 @@ class DeploymentQuarantineTests(unittest.TestCase):
                 with self.assertRaises(SystemExit):
                     builder.quarantine_unreviewed_edge_deploys(workspace)
 
+    def test_new_public_function_cannot_escape_quarantine(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            workspace = make_workspace(Path(tmp))
+            config = workspace / 'config.toml'
+            config.write_text(
+                config.read_text('utf-8')
+                + '\n[functions.new-unaudited-route]\nverify_jwt = false\n',
+                encoding='utf-8',
+            )
+            entry = workspace / 'functions/new-unaudited-route'
+            entry.mkdir()
+            (entry / 'index.ts').write_text('// Synthetic public route', encoding='utf-8')
+            with self.assertRaisesRegex(SystemExit, 'Nouvelle fonction publique non revue'):
+                builder.quarantine_unreviewed_edge_deploys(workspace)
+            self.assertTrue(entry.is_dir())
+
+    def test_missing_or_invalid_jwt_configuration_is_rejected(self):
+        for invalid in ('verify_jwt = "false"', 'verify_jwt = 0'):
+            with self.subTest(invalid=invalid), tempfile.TemporaryDirectory() as tmp:
+                workspace = make_workspace(Path(tmp))
+                config = workspace / 'config.toml'
+                original = config.read_text('utf-8')
+                config.write_text(
+                    original.replace('[functions.send-game-report]\nverify_jwt = false',
+                                     '[functions.send-game-report]\n' + invalid, 1),
+                    encoding='utf-8',
+                )
+                with self.assertRaises(SystemExit):
+                    builder.quarantine_unreviewed_edge_deploys(workspace)
+
     def test_missing_nova_sql_is_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             workspace = make_workspace(Path(tmp))
