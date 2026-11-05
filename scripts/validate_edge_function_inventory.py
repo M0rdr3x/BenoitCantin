@@ -116,8 +116,11 @@ class UnsafeSource(Exception):
 
 def read_security_text(file: Path) -> str:
     """Fail-closed : aucun lien symbolique, octet NUL ou décodage permissif."""
-    if file.is_symlink():
-        raise UnsafeSource(f"{file}: lien symbolique interdit")
+    # Contrôler aussi les répertoires parents : un index.ts ordinaire
+    # peut se trouver sous un dossier symbolique dirigé hors du dépôt.
+    for component in (file, *file.parents):
+        if component.is_symlink():
+            raise UnsafeSource(f"{component}: lien symbolique interdit")
     try:
         size = file.stat().st_size
         if size > MAX_SOURCE_BYTES:
@@ -137,9 +140,16 @@ def read_security_text(file: Path) -> str:
 
 
 def text_files(path: Path):
+    for component in (path, *path.parents):
+        if component.is_symlink():
+            raise UnsafeSource(f"{component}: lien symbolique interdit")
     if not path.exists():
         return
     for file in sorted(path.rglob("*")):
+        # Un dossier symbolique pourrait masquer des sources : le refuser
+        # même lorsqu'il ne contient aucun suffixe .ts/.js pertinent.
+        if file.is_symlink():
+            raise UnsafeSource(f"{file}: lien symbolique interdit")
         if file.is_file() and file.suffix in TEXT_SUFFIXES:
             yield file
 
@@ -171,7 +181,8 @@ def main() -> int:
         return 1
 
     if FUNCTIONS.is_symlink():
-        errors.append("Le répertoire des fonctions Edge est un lien symbolique.")
+        print("ECHEC inventaire Edge Functions: répertoire symbolique interdit.")
+        return 1
     for entry in FUNCTIONS.rglob("*"):
         if entry.is_symlink():
             errors.append(f"Lien symbolique interdit dans les fonctions Edge: {entry.relative_to(ROOT)}")
