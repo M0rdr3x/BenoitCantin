@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import os
+from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_playwright
@@ -74,6 +75,46 @@ def run() -> None:
         page = context.new_page()
         page_errors = []
         register_error_capture(page, page_errors)
+
+        if IS_LOCAL:
+            # Ne jamais solliciter l'API de production depuis l'E2E local.
+            # Elle refuse légitimement les origines localhost; WebKit peut
+            # signaler ce refus CORS comme une erreur JavaScript de la page.
+            poll_corpus_path = Path(__file__).resolve().parents[2] / "projets/projet-nova/data/sondage-citoyen-v1.json"
+            poll_corpus = json.loads(poll_corpus_path.read_text(encoding="utf-8"))
+            assert_true(poll_corpus["published"] is False, "Le corpus de sondage est provisoire")
+            poll_public_snapshot = json.dumps({
+                "version": poll_corpus["version"],
+                "open": False,
+                "siteKey": None,
+                "minPublicBallots": 10,
+                "resultsVisible": False,
+                "ballots": None,
+                "publishedAt": None,
+                "questions": [
+                    {"id": q["id"], "ordinal": q["ordinal"], "text": q["text"], "counts": None}
+                    for q in poll_corpus["questions"]
+                ],
+            }, ensure_ascii=False)
+            unexpected_poll_writes = []
+
+            def serve_closed_poll_snapshot(route):
+                if route.request.method != "GET":
+                    unexpected_poll_writes.append(route.request.method)
+                    route.fulfill(status=405, content_type="application/json", body='{"error":"vote_interdit_en_test"}')
+                    return
+                route.fulfill(
+                    status=200,
+                    content_type="application/json",
+                    headers={
+                        "Access-Control-Allow-Origin": "*",
+                        "Access-Control-Allow-Methods": "GET",
+                        "Cache-Control": "no-store",
+                    },
+                    body=poll_public_snapshot,
+                )
+
+            page.route("**/functions/v1/nova-civic-poll*", serve_closed_poll_snapshot)
 
         for route in PUBLIC_ROUTES:
             url = urljoin(BASE_URL, route)
@@ -198,6 +239,12 @@ def run() -> None:
             page.locator("#poll-results").count() == 1,
             f"{BROWSER_NAME}: zone des résultats agrégés absente",
         )
+
+        if IS_LOCAL:
+            assert_true(
+                not unexpected_poll_writes,
+                f"{BROWSER_NAME}: une écriture politique a été tentée pendant un test en lecture seule",
+            )
 
         page.goto(urljoin(BASE_URL, "projets/projet-nova/boussole-electorale.html"), wait_until="domcontentloaded", timeout=30_000)
         assert_true(
