@@ -155,6 +155,21 @@ Le protocole initial `official/working/protocole-portrait-regional-sante-g0-v1.m
 - **Contraintes :** personnel salarié R22 ≠ professionnels rémunérés RAMQ ≠ ETP cliniques; un pourcentage ISQ 2025 ≠ dénombrement RH 2024–2025. Une valeur manquante ou supprimée reste `null`, zéro n'est accepté que lorsqu'observé. Les 18 RSS et catégories d'établissement doivent être confirmées, pas inférées.
 - **Gouvernance :** G0 **non franchie**; aucune réforme, aucune économie et aucun budget autorisés. Les références officielles candidates et les empreintes du manifeste `data/sources.json` restent inchangées.
 
+## G0.10 — Première transcription régionale chiffrée MSSS (4 novembre 2026)
+
+**Nouveauté réelle :** une conversion secondaire du XLSX officiel MSSS `Portrait du personnel des établissements publics et privés conventionnés du RSSS (2024–2025)` a rendu lisible sa **Feuille A - 2**. Le parseur a servi le contenu du XLSX via HTTPS, mais **les octets originaux n'ont toujours pas été conservés localement, aucun SHA-256 n'a été obtenu et aucune adresse de cellule originale n'a été auditée**. Cela ne fait pas passer automatiquement L1/L2 des contrôles G0.7/G0.8, mais permet une **transcription descriptive provisoire sourcée**.
+
+- **Données descriptives provisoires :** `data/portrait-rh-msss-g0-10-2024-2025.json`, avec 18 RSS et les valeurs de personnes au 31 mars 2025, personnes au 31 mars 2024 et ETC rémunérés en 2024–2025, conservées séparément.
+- **Contrôle de totaux personnes :** 18 RSS **343 252** + ligne organisationnelle Santé Québec (00) **804** = total source **344 056 personnes** au 31 mars 2025; **somme exacte**.
+- **ETC rémunérés :** le total source est **283 740 ETC** en 2024–2025, alors que la somme des entiers régionaux transcrits et de la ligne Santé Québec est **283 738** : **écart de 2 ETC documenté sans correction artificielle**; cause éventuelle d'arrondi à vérifier. **ETC rémunérés ≠ ETP cliniques disponibles**.
+- **Portée statistique :** salariés et personnel d'encadrement de certains établissements publics et privés conventionnés et de Santé Québec, excluant notamment les professionnels directement rémunérés par la RAMQ, la main-d'œuvre indépendante et le privé non conventionné. Les RSS **17 Nunavik** et **18 Terres-Cries-de-la-Baie-James** sont couvertes dans ce portrait RH, même si elles étaient hors champ de l'enquête ISQ 2025 (source et population différentes).
+- **Page consultable dans le dépôt :** `portrait-effectifs-rh-g0-10-sante.html`, avec l'ensemble des 18 lignes, la ligne Santé Québec, les deux totaux et les réserves.
+- **Protocole :** `official/working/protocole-g0-10-portrait-rh-msss-v1.md` (NOVA-SINJ-G0-SAN-016).
+- **Validateur de transcription :** `assets/g10-rh-official-portrait-core.mjs`, exige 18 RSS distinctes, la somme des personnes exacte, l'écart ETC de 2 visible et les marqueurs `independent_audit:false`, `clinical_fte:null` et aucune permission.
+- **Tests :** `tests/g10-rh-official-portrait.test.mjs`, dix cas sur les erreurs de total, régions, statuts et faux ETC cliniques; les données et le fichier sont suivis par la configuration CI. Ne pas confondre contrôles V8 locaux et tests GitHub Actions complets.
+- **Préservation des phases G0.6–G0.9 :** les champs certifiés demeurent **`null`**, car la transcription secondaire G0.10 n'est pas une validation originale de L1/L2. Les registres antérieurs pointent vers le nouveau fichier dans `g10_secondary_rh_portrait`. Les textes officiels candidats et le manifeste `data/sources.json` demeurent inchangés.
+- **Pour certifier :** obtenir la copie binaire avec SHA-256, vérifier les cellules de la Feuille A - 2, résoudre l'écart de 2 ETC et faire confirmer le périmètre par un expert indépendant. **G0 NON FRANCHIE**, aucun pilote, transfert de personnel ni économie autorisés.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
