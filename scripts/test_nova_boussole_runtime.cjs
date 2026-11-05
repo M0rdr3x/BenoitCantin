@@ -16,9 +16,9 @@ const htmlHost={innerHTML:""};
 const fakeDocument = {
   addEventListener(){}, querySelector(sel){return sel==="#compass-radar"?htmlHost:null;}
 };
-const context = {document:fakeDocument,window:{},navigator:{},console};
+const context = {document:fakeDocument,window:{},navigator:{},console,URL};
 context.globalThis=context;
-const injection = ";globalThis.__novaRuntimeTest = {state,calculate,renderRadar,buildResultText,configureSharing};\n";
+const injection = ";globalThis.__novaRuntimeTest = {state,calculate,renderRadar,buildResultText,configureSharing,isSafeEvidenceUrl,validateDocumentaryCorpora};\n";
 const marker="})();";
 const offset=script.lastIndexOf(marker);
 assert.ok(offset>=0);
@@ -73,6 +73,46 @@ for(const r of all) {
   assert.ok(Number.isInteger(r.score) && Math.abs(r.score)<=100);
   assert.equal(r.answered,4);
 }
+// Les liens des preuves politiques ne doivent jamais exécuter de code.
+const {isSafeEvidenceUrl,validateDocumentaryCorpora}=context.__novaRuntimeTest;
+assert.equal(isSafeEvidenceUrl("https://www.electionsquebec.qc.ca/partis/"),true);
+for(const dangerous of [
+  "javascript:alert(1)","http://example.org/preuve",
+  "https://nom:secret@example.org/source",
+  "https://localhost/source",
+  "https://example.org/ligne"+String.fromCharCode(10)+"malformee",
+  "//example.org/preuve","https://",""
+]){
+  assert.equal(isSafeEvidenceUrl(dangerous),false,"URL de provenance refusée : "+dangerous);
+}
+const partyIds=Array.from({length:22},(_,i)=>"parti-"+String(i+1));
+const statuses=Object.fromEntries(partyIds.map(id=>[id,"unknown"]));
+const evidenceMatrix=data.questions.map((question,index)=>({
+  questionId:question.id,
+  statuses:index===0?{...statuses,[partyIds[0]]:"documented_support"}:{...statuses}
+}));
+const record={
+  questionId:data.questions[0].id,partyId:partyIds[0],
+  finalizable:true,proposedStatus:"documented_support",
+  secondIndependentReview:{status:"completed"},
+  sourceUrl:"https://www.electionsquebec.qc.ca/partis/"
+};
+const evidence={
+  partyIds,questions:evidenceMatrix,evidenceRecords:[record],
+  questionnaireBinding:{
+    questionnaireVersion:data.version,
+    questionTexts:Object.fromEntries(data.questions.map(q=>[q.id,q.text]))
+  }
+};
+const parties={parties:partyIds.map(id=>({id}))};
+const sources={parties:partyIds.map(id=>({id}))};
+assert.doesNotThrow(()=>validateDocumentaryCorpora(data,parties,sources,evidence),
+  "La source officielle HTTPS est acceptée");
+assert.throws(()=>validateDocumentaryCorpora(data,parties,sources,{
+  ...evidence,evidenceRecords:[{...record,sourceUrl:"javascript:alert(1)"}]
+}),/URL de provenance documentaire non sécurisée/,
+  "Une source dangereuse doit bloquer le corpus documentaire avant affichage");
+
 assert.ok(!script.includes('$("#compass-share-native")?.addEventListener("click"'),"Pas de listeners de partage empilés");
 assert.ok(script.includes("shareNative.onclick"));
 console.log("OK : boussole 64 questions / 16 dimensions, seuil principal 2, sans opinion, contributions croisées, graphique et partage.");
