@@ -13,6 +13,7 @@ on:
       - 'scripts/build_supabase_production_workspace.py'
       - 'scripts/validate_supabase_production_preflight_security.py'
       - 'scripts/test_supabase_production_preflight_security.py'
+      - 'scripts/test_production_edge_quarantine.py'
       - '.github/workflows/supabase-production-preflight.yml'
       - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'
   pull_request:
@@ -26,6 +27,7 @@ on:
       - 'scripts/build_supabase_production_workspace.py'
       - 'scripts/validate_supabase_production_preflight_security.py'
       - 'scripts/test_supabase_production_preflight_security.py'
+      - 'scripts/test_production_edge_quarantine.py'
       - '.github/workflows/supabase-production-preflight.yml'
       - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'
   workflow_dispatch:
@@ -69,6 +71,7 @@ jobs:
         run: |
           set -euo pipefail
           python scripts/test_supabase_production_preflight_security.py
+          python scripts/test_production_edge_quarantine.py
 
       - name: Vérifier le contrat sécurité du prévol production
         shell: bash

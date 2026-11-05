@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import argparse, hashlib, re, shutil, sys
+import argparse, hashlib, re, shutil, sys, tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_SUPABASE = ROOT / 'supabase'
@@ -61,11 +61,145 @@ def read_reviewed_batch(cutoff):
     return rows
 
 
+
+
+def reject_source_symlinks(source: Path) -> None:
+    """Ne jamais suivre un lien du dépôt lors d'une copie vers la production."""
+    if source.is_symlink() or not source.is_dir():
+        raise SystemExit('Arborescence Supabase source absente ou symbolique.')
+    for candidate in source.rglob('*'):
+        if candidate.is_symlink():
+            raise SystemExit(f'Lien symbolique interdit dans Supabase : {candidate.relative_to(source)}')
+
+
+def quarantine_unreviewed_edge_deploys(workspace: Path) -> tuple[str, ...]:
+    """Retirer les routes non autorisées du déploiement générique.
+
+    La suppression est limitée à la COPIE temporaire des fonctions. Les
+    fonctions déjà déployées dans Supabase restent actives et inchangées.
+    Toute dérive du contrat source/configuration fait échouer le prévol.
+    """
+    import tomllib
+
+    config_path = workspace / 'config.toml'
+    if config_path.is_symlink() or not config_path.is_file():
+        raise SystemExit('Configuration Supabase du workspace absente ou symbolique.')
+    original = config_path.read_text('utf-8')
+    parsed = tomllib.loads(original)
+    functions_config = parsed.get('functions')
+    if not isinstance(functions_config, dict):
+        raise SystemExit('Inventaire Edge Functions invalide.')
+
+    quarantine = (
+        ('security-context', True),
+        ('nova-civic-poll', False),
+        ('get-document-url', False),
+        ('send-game-report', False),
+        ('life-story-delivery', False),
+    )
+    # Bloquer toute nouvelle fonction publique non revue, même si sa source
+    # figure dans le workspace. Une route verify_jwt=false ne doit jamais
+    # passer dans un déploiement global par défaut.
+    public_reviewed = {slug for slug, jwt_required in quarantine if not jwt_required}
+    for slug, settings in functions_config.items():
+        if not isinstance(settings, dict) or type(settings.get('verify_jwt')) is not bool:
+            raise SystemExit(f'Configuration JWT absente ou invalide : {slug}.')
+        if settings['verify_jwt'] is False and slug not in public_reviewed:
+            raise SystemExit(f'Nouvelle fonction publique non revue : {slug}.')
+    config = original
+    for slug, jwt_required in quarantine:
+        folder = workspace / 'functions' / slug
+        entry = folder / 'index.ts'
+        if folder.is_symlink() or not folder.is_dir() or entry.is_symlink() or not entry.is_file():
+            raise SystemExit(f'Fonction sensible incomplète ou symbolique : {slug}.')
+        # Valeurs exactes et aucun autre paramètre susceptible de modifier
+        # l'authentification ou le comportement au prochain déploiement.
+        if functions_config.get(slug) != {'verify_jwt': jwt_required}:
+            raise SystemExit(f'Configuration de sécurité inattendue : {slug}.')
+        expected_line = f'[functions.{slug}]\nverify_jwt = {str(jwt_required).lower()}\n'
+        if config.count(expected_line) != 1:
+            raise SystemExit(f'Bloc TOML inattendu : {slug}.')
+        source = entry.read_text('utf-8')
+        if slug == 'security-context':
+            # Production vérifiée en lecture seule : cette RPC candidate
+            # n'existe pas encore; éviter de remplacer la fonction active.
+            if 'service_security_evaluate_context_session' not in source:
+                raise SystemExit('Contrat security-context modifié : revue indépendante obligatoire.')
+        elif slug == 'nova-civic-poll':
+            # Une fonction publique utilisant service_role ne doit jamais
+            # devenir déployable par la synchronisation générique implicite.
+            expected = ('Deno.env.get("NOVA_POLL_ENABLED") === "true"', 'if(!await confirmCaptcha(payload.captchaToken))', 'SUPABASE_SERVICE_ROLE_KEY')
+            if any(marker not in source for marker in expected):
+                raise SystemExit('Contrat public NOVA modifié : revue indépendante obligatoire.')
+        else:
+            # Ces trois routes publiques (verify_jwt=false) servent des PDF
+            # ou des liens privés. Leur version déployée diffère du code Git ;
+            # un deploy global ne doit jamais les remplacer implicitement.
+            public_guards = {
+                'get-document-url': ('optionalUser(req)', 'project_access_rank',
+                                     'createSignedUrl', 'MAX_REQUEST_BYTES'),
+                'send-game-report': ('optionalUser(req)',
+                                     'PAID_EXTERNAL_SERVICES_ENABLED=false',
+                                     'to: [user.email]', 'MAX_REQUEST_BYTES'),
+                'life-story-delivery': ('allowedOrigin(req)', 'sha256Hex',
+                                        'token_hash', 'service_life_story_register_download',
+                                        'MAX_PDF_BYTES'),
+            }
+            expected = public_guards[slug]
+            # Vérifier l'APPEL du lecteur borné, non sa simple importation.
+            if (any(marker not in source for marker in expected)
+                    or not re.search(r'\bawait\s+readLimitedUtf8Body\s*\(', source)
+                    or (slug == 'send-game-report' and not re.search(
+                        r'\bawait\s+readLimitedBinaryResponse\s*\(', source))):
+                raise SystemExit(f'Contrat public {slug} modifié : revue obligatoire.')
+        config = config.replace(expected_line, '', 1)
+
+    candidate = workspace / 'NOVA_POLL_SCHEMA_PREDEPLOY.sql'
+    if candidate.is_symlink() or not candidate.is_file():
+        raise SystemExit('SQL candidat NOVA absent ou symbolique : arrêt du déploiement.')
+    # S'assurer que les cinq fonctions ont disparu de l'inventaire TOML
+    # avant de supprimer leur copie et jamais une source du dépôt.
+    retained = tomllib.loads(config).get('functions', {})
+    if set(retained) != set(functions_config) - {slug for slug, _ in quarantine}:
+        raise SystemExit('Contrat de quarantaine TOML non respecté.')
+    for slug, _ in quarantine:
+        shutil.rmtree(workspace / 'functions' / slug)
+    candidate.unlink()
+    config_path.write_text(config, encoding='utf-8')
+    for slug, _ in quarantine:
+        if (workspace / 'functions' / slug).exists() or slug in tomllib.loads(config_path.read_text('utf-8')).get('functions', {}):
+            raise SystemExit(f'Fonction non approuvée encore déployable : {slug}.')
+    if candidate.exists():
+        raise SystemExit('SQL candidat NOVA encore présent dans le workspace.')
+    return tuple(slug for slug, _ in quarantine)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--output', required=True)
     args = ap.parse_args()
     out = Path(args.output).resolve()
+    # La construction supprime un ancien workspace. Borner ce chemin à la
+    # seule cible CI approuvée évite toute suppression accidentelle ailleurs.
+    workspace_parent = ROOT / '.prod-workspace'
+    expected_output = workspace_parent / 'supabase'
+    production_workspace = (not workspace_parent.is_symlink()
+                            and not expected_output.is_symlink()
+                            and out == expected_output.resolve())
+    # Seule exception : le validateur de ledger crée lui-même un dossier
+    # temporaire /tmp/sinjira-ledger-XXXXXXXX/supabase, jamais en production.
+    # Les parents et cibles résolus empêchent une sortie via lien symbolique.
+    temp_root = Path(tempfile.gettempdir()).resolve()
+    raw_output = Path(args.output)
+    ledger_test_workspace = (
+        not raw_output.is_symlink()
+        and out.name == 'supabase'
+        and re.fullmatch(r'sinjira-ledger-[a-zA-Z0-9_-]{6,}', out.parent.name)
+        and out.parent.parent == temp_root
+        and out.parent.is_dir()
+    )
+    if not (production_workspace or ledger_test_workspace):
+        raise SystemExit('Workspace production hors du chemin isolé approuvé.')
     if out == SOURCE_SUPABASE.resolve():
         raise SystemExit('Refus de modifier supabase/ source.')
 
@@ -104,9 +238,12 @@ def main():
                 f'(attendu {expected_blob_sha}, obtenu {actual_blob_sha}).'
             )
 
+    reject_source_symlinks(SOURCE_SUPABASE)
     if out.exists():
         shutil.rmtree(out)
     shutil.copytree(SOURCE_SUPABASE, out, ignore=shutil.ignore_patterns('migrations', '.temp'))
+    quarantined = quarantine_unreviewed_edge_deploys(out)
+    print('Edge Functions isolées du déploiement générique : ' + ', '.join(quarantined))
     migout = out / 'migrations'
     migout.mkdir(parents=True, exist_ok=True)
 
