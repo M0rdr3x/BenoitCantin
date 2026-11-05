@@ -80,7 +80,7 @@ for(const dangerous of [
   "javascript:alert(1)","http://example.org/preuve",
   "https://nom:secret@example.org/source",
   "https://localhost/source",
-  "https://example.org/ligne\\nmalformee",
+  "https://example.org/ligne"+String.fromCharCode(10)+"malformee",
   "//example.org/preuve","https://",""
 ]){
   assert.equal(isSafeEvidenceUrl(dangerous),false,"URL de provenance refusée : "+dangerous);
