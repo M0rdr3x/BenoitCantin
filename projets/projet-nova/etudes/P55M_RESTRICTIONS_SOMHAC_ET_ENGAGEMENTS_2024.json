@@ -1,0 +1,193 @@
+{
+  "schema_version": "P55M-1",
+  "reference_date": "2026-11-05",
+  "exercice_source": 2024,
+  "sources": [
+    {
+      "id": "VILLE_FINANCES_2024",
+      "url": "https://www.ville.quebec.qc.ca/publications/docs_ville/Rapport_financier_2024.pdf",
+      "notes": [
+        "7_PLACEMENTS_DE_PORTEFEUILLE_S11_PAGE_46",
+        "19_OBLIGATIONS_CONTRACTUELLES_S11_PAGE_54",
+        "20_DROITS_CONTRACTUELS_S11_PAGE_55"
+      ],
+      "type_verification": "EXTRACTION_TEXTE_SOURCE_OFFICIELLE_SANS_SCREENSHOT_ET_SANS_COPIE_LOCALE"
+    },
+    {
+      "id": "OMHQ_SOMHAC_MANDAT",
+      "url": "https://www.omhq.qc.ca/omhq-somhac",
+      "notes": [
+        "OMHQ_GERE_HABITATIONS_ABORDABLES_SOMHAC"
+      ],
+      "type_verification": "PAGE_INSTITUTIONNELLE_PUBLIQUE"
+    }
+  ],
+  "reserve_somhac": {
+    "exercice": 2024,
+    "placements_affectes_reparations_majeures_cad": 4689663,
+    "comparatif_2023_cad": 4676844,
+    "variation_2024_moins_2023_cad": 12819,
+    "variation_pct_une_decimale": "0.3",
+    "fonds_libres_disponibles_cad": null
+  },
+  "convention_somhac": {
+    "existe": true,
+    "organisme_partenaire": "ORGANISME_PROVINCIAL_NON_IDENTIFIE_DANS_LA_NOTE",
+    "annee_fin_indiquee": 2039,
+    "montant_annuel_cad": null,
+    "peut_etre_resilie_sans_frais": null
+  },
+  "obligations_contractuelles_groupe_organismes": {
+    "perimetre": "ORGANISMES_CONTROLES_ET_PARTENARIATS_RTC_SOMHAC_NON_VENTILES",
+    "periodicite": "ECHEANCES_FUTURES_PRESENTEES_AU_31_12_2024",
+    "annees": [
+      {
+        "periode": "2025",
+        "organismes_controles_et_partenariats_cad": 10961000,
+        "total_consolide_cad": 335521000
+      },
+      {
+        "periode": "2026",
+        "organismes_controles_et_partenariats_cad": 10301000,
+        "total_consolide_cad": 126874000
+      },
+      {
+        "periode": "2027",
+        "organismes_controles_et_partenariats_cad": 9806000,
+        "total_consolide_cad": 75687000
+      },
+      {
+        "periode": "2028",
+        "organismes_controles_et_partenariats_cad": 9124000,
+        "total_consolide_cad": 46215000
+      },
+      {
+        "periode": "2029",
+        "organismes_controles_et_partenariats_cad": 1331000,
+        "total_consolide_cad": 12831000
+      },
+      {
+        "periode": "2030_ET_SUIVANTES",
+        "organismes_controles_et_partenariats_cad": 333000,
+        "total_consolide_cad": 32556000
+      }
+    ],
+    "total_groupe_cad": 41856000,
+    "total_consolide_cad": 629684000,
+    "attribution_somhac_cad": null
+  },
+  "droits_contractuels_groupe_organismes": {
+    "perimetre": "ORGANISMES_CONTROLES_ET_PARTENAIRES_RTC_SOMHAC_NON_VENTILES",
+    "periode": "2025",
+    "montant_groupe_cad": 8591000,
+    "total_toutes_periodes_groupe_cad": 8591000,
+    "attribution_somhac_cad": null
+  },
+  "hypotheses_interdites": [
+    "RESERVE_4689663_EST_ECONOMIE",
+    "RESERVE_4689663_EST_CAISSE_LIBRE",
+    "TOTAL_41856000_EXCLUSIVEMENT_SOMHAC",
+    "DROITS_8591000_EXCLUSIVEMENT_SOMHAC",
+    "ENGAGEMENT_JUSQU_2039_SANS_OBLIGATION",
+    "SOLDE_NET_ENGAGEMENTS_MOINS_DROITS_EST_ECONOMIE",
+    "OMHQ_ET_SOMHAC_COMPTES_IDENTIQUES",
+    "FINANCEMENT_RTC_154M_EST_RECETTE_ADDITIONNELLE",
+    "REDUCTION_LOYERS_OU_ENTRETIEN_DEDUITE",
+    "SOMHAC_ETATS_INDIVIDUELS_2024_OBTENUS"
+  ],
+  "actions_humaines": [
+    {
+      "code": "M01",
+      "objet": "OBTENIR_ETATS_FINANCIERS_AUTONOMES_SOMHAC_2024",
+      "document_requis": "BILAN_RESULTATS_FLUX_TRESORERIE_NOTES_OPINION_SIGNATURES",
+      "statut": "NON_OBTENU"
+    },
+    {
+      "code": "M02",
+      "objet": "QUALIFIER_RESERVE_ENTRETIEN_2024",
+      "document_requis": "DETAIL_RESTRICTIONS_PLACEMENTS_PLAN_DE_MAINTIEN_DE_L_ETAT_DES_IMMEUBLES",
+      "statut": "NON_OBTENU"
+    },
+    {
+      "code": "M03",
+      "objet": "LIRE_CONVENTION_PROVINCIALE_2039",
+      "document_requis": "CONVENTION_SIGNEE_AVENANTS_OBLIGATIONS_RESSOURCES",
+      "statut": "NON_OBTENU"
+    },
+    {
+      "code": "M04",
+      "objet": "VENTILER_OBLIGATIONS_ET_DROITS_RTC_SOMHAC",
+      "document_requis": "ECHEANCIER_CONTRACTUEL_PAR_ENTITE_AVEC_ECRITURES",
+      "statut": "NON_OBTENU"
+    },
+    {
+      "code": "M05",
+      "objet": "VERIFIER_GESTION_OMHQ_ET_CONSOLIDATION",
+      "document_requis": "MANDATS_OMHQ_SOMHAC_OPERATIONS_RECIPROQUES_RAPPROCHEMENTS",
+      "statut": "NON_OBTENU"
+    },
+    {
+      "code": "M06",
+      "objet": "MESURER_IMPACT_SOCIAL_AVANT_OPTIMISATION",
+      "document_requis": "INDICATEURS_QUALITE_LOGEMENT_SECURITE_ENTRETIEN_EMPLOIS_LOYERS",
+      "statut": "NON_OBTENU"
+    }
+  ],
+  "protections": {
+    "rapport_ville_2024_identifie": true,
+    "notes_7_19_20_consultees_par_texte": true,
+    "capture_visuelle_notes_en_echec": true,
+    "pdf_historique_non_reacquis": true,
+    "somhac_omqh_personnes_distinctes": true,
+    "omqh_mandat_gestion_somhac": true,
+    "reserve_remplacement_2024_destinee_reparations_majeures": true,
+    "reserve_remplacement_2023_comparatif": true,
+    "reserve_variation_non_economie": true,
+    "reserve_n_est_pas_liquidite_libre": true,
+    "convention_exploitation_en_vigueur_jusqu_2039": true,
+    "pas_de_conclusion_rupture_convention": true,
+    "pas_de_montant_annuel_de_convention_invente": true,
+    "obligations_publiees_sont_regroupees_rtc_somhac": true,
+    "aucune_obligation_attribuee_exclusivement_somhac": true,
+    "droits_contractuels_groupes_non_attribues_somhac": true,
+    "obligations_non_decommittees": true,
+    "droits_non_convertis_en_economies": true,
+    "aucune_compensation_automatique_droits_obligations": true,
+    "total_six_periodes_obligations_verifie": true,
+    "distinction_2025_futur_et_2024_cloture": true,
+    "donnees_2024_pas_2025_ou_2026_confondus": true,
+    "aucun_etat_individuel_somhac_certifie": true,
+    "aucun_sous_total_rtc_reduit_pour_inferer_somhac": true,
+    "rtc_contrepartie_p55l_non_readditionnee": true,
+    "ecarts_p55k_restent_non_attribues": true,
+    "logements_abordables_proteges": true,
+    "entretien_majeur_protege": true,
+    "emploi_et_services_proteges": true,
+    "pouvoir_achat_et_loyers_proteges": true,
+    "deux_regimes_constitutionnels_distincts": true,
+    "attestation_expert_comptable_manquante": true,
+    "justificatifs_originaux_non_recus": true,
+    "quatre_p54e_et_date_non_certifiee": true,
+    "p54n40_p54o10_p54b96_p54c8_non_attestes": true,
+    "aucun_contact_ou_mandat": true,
+    "aucune_depense_autorisee": true,
+    "aucune_fusion_main": true,
+    "sindjira_non_modifie": true,
+    "no_go_automatique": true
+  },
+  "etat_initial": {
+    "rapports_somhac_individuels_2024_obtenus": 0,
+    "copies_pdf_origines_sha_actuel_verifiees": 0,
+    "ecritures_reciproques_obtenues": 0,
+    "avis_comptables_et_juridiques_authentifies": 0,
+    "mandats_signes": 0,
+    "economies_certifiees_cad": null,
+    "dossiers_p54e_ouverts": 4,
+    "date_probable_non_certifiee": 1,
+    "taches_p54n_non_attestees": 40,
+    "blocages_p54o_non_leves": 10,
+    "controles_p54b_non_attestes": 96,
+    "controles_p54c_non_attestes": 8,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
