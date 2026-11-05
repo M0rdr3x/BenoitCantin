@@ -300,6 +300,33 @@
         "g0_passed": false,
         "pilot_authorized": false,
         "warning": "Les chiffres descriptifs du personnel du RSSS ne constituent pas des ETP cliniques de première ligne. Contrôle des sommes des personnes exact, écart de 2 ETC laissé ouvert. Le statut L1/L2 du téléchargement officiel demeure non attesté."
+      },
+      "rh_original_evidence_g011": {
+        "phase": "G0.11",
+        "document_id": "NOVA-SINJ-G0-SAN-018",
+        "status": "ORIGINAL_EXTERNE_CONTROLE_CELLULES_CORRESPONDENT",
+        "source_evidence": "data/preuve-binaire-rh-msss-g0-11-2024-2025.json",
+        "execution_evidence": "data/rapport-execution-distante-g0-11-rh-2026-11-05.json",
+        "page": "preuve-source-rh-g0-11-sante.html",
+        "technical_protocol": "official/working/protocole-g0-11-validation-originale-rh-msss-v1.md",
+        "sha256": "8d65573b2f0bf0a935a58c75ba1b4b76050a08b902760f7a03b3cae0cdb86219",
+        "byte_size": 139566,
+        "worksheet": "Feuille A - 2",
+        "original_source_rows_checked": 19,
+        "persons_2025": 344056,
+        "paid_etc_rounded_total": 283740,
+        "individually_rounded_paid_etc_sum": 283738,
+        "etc_display_gap_explained_by_original_decimals": true,
+        "tests_node_executed_in_external_runtime": 57,
+        "tests_node_passed_in_external_runtime": 57,
+        "github_actions_execution_confirmed": false,
+        "original_xlsx_stored_in_repo": false,
+        "independent_institutional_review": false,
+        "clinical_fte_from_evidence": null,
+        "fiscal_savings_from_evidence": null,
+        "g0_passed": false,
+        "pilot_authorized": false,
+        "note": "Preuve technique externe et réconciliation des cellules originales; la disponibilité clinique de première ligne, les coûts et l'autorisation politique restent hors champ."
       }
     },
     {
