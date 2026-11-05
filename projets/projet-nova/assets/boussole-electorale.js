@@ -775,6 +775,20 @@
       );
   }
 
+  // Les liens de provenance sont vérifiés avant toute fiche finalisée :
+  // HTTPS avec hôte valide, sans identifiants ni caractères de contrôle.
+  function isSafeEvidenceUrl(value){
+    if(typeof value!=="string" || !value.startsWith("https:"+"/"+"/") ||
+       /[\u0000-\u001f\u007f]/.test(value)) return false;
+    try {
+      const source=new URL(value);
+      return source.protocol==="https:" && source.hostname.includes(".") &&
+        source.username==="" && source.password==="";
+    }catch{
+      return false;
+    }
+  }
+
   function validateDocumentaryCorpora(questionCorpus,partyCorpus,sourceCorpus,evidenceCorpus){
     const questions = questionCorpus?.questions;
     const parties = partyCorpus?.parties;
@@ -817,6 +831,9 @@
     for(const record of records){
       if(record.finalizable !== true ||
          record.secondIndependentReview?.status !== "completed") continue;
+      if(!isSafeEvidenceUrl(record.sourceUrl)){
+        throw new Error("URL de provenance documentaire non sécurisée");
+      }
       const key = record.questionId+"::"+record.partyId;
       if(!matrixByKey.has(key) || validatedRecords.has(key) ||
          record.proposedStatus === "unknown" ||
