@@ -11,7 +11,8 @@ import build_supabase_production_workspace as builder
 
 ROOT = Path(__file__).resolve().parents[1]
 SUPABASE = ROOT / 'supabase'
-QUARANTINED = ('security-context', 'nova-civic-poll')
+QUARANTINED = ('security-context', 'nova-civic-poll', 'get-document-url',
+               'send-game-report', 'life-story-delivery')
 
 
 def make_workspace(root: Path) -> Path:
@@ -29,7 +30,7 @@ def make_workspace(root: Path) -> Path:
 
 
 class DeploymentQuarantineTests(unittest.TestCase):
-    def test_two_sensitive_functions_are_excluded_without_touching_sources(self):
+    def test_five_sensitive_functions_are_excluded_without_touching_sources(self):
         with tempfile.TemporaryDirectory(prefix='edge-release-test-') as tmp:
             workspace = make_workspace(Path(tmp))
             original_source = (SUPABASE / 'functions/security-context/index.ts').read_bytes()
@@ -56,6 +57,12 @@ class DeploymentQuarantineTests(unittest.TestCase):
              '[functions.security-context]\nverify_jwt = false'),
             ('nova-civic-poll', '[functions.nova-civic-poll]\nverify_jwt = false',
              '[functions.nova-civic-poll]\nverify_jwt = true'),
+            ('get-document-url', '[functions.get-document-url]\nverify_jwt = false',
+             '[functions.get-document-url]\nverify_jwt = true'),
+            ('send-game-report', '[functions.send-game-report]\nverify_jwt = false',
+             '[functions.send-game-report]\nverify_jwt = true'),
+            ('life-story-delivery', '[functions.life-story-delivery]\nverify_jwt = false',
+             '[functions.life-story-delivery]\nverify_jwt = true'),
         ):
             with self.subTest(slug=slug), tempfile.TemporaryDirectory() as tmp:
                 workspace = make_workspace(Path(tmp))
@@ -70,6 +77,9 @@ class DeploymentQuarantineTests(unittest.TestCase):
         for slug, marker in (
             ('security-context', 'service_security_evaluate_context_session'),
             ('nova-civic-poll', 'if(!await confirmCaptcha(payload.captchaToken))'),
+            ('get-document-url', 'await readLimitedUtf8Body'),
+            ('send-game-report', 'await readLimitedBinaryResponse'),
+            ('life-story-delivery', 'await readLimitedUtf8Body'),
         ):
             with self.subTest(slug=slug), tempfile.TemporaryDirectory() as tmp:
                 workspace = make_workspace(Path(tmp))
