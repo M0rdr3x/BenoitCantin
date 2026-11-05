@@ -185,6 +185,38 @@ Le protocole initial `official/working/protocole-portrait-regional-sante-g0-v1.m
 - **Loi électorale provinciale :** source et guides à jour sous `https://www.electionsquebec.qc.ca/`. Le dépôt ne contient pas de preuve confirmant une autorisation officielle du Parti Nova et ne doit donc pas la présumer.
 - **Prochaine priorité :** dresser un **cadre fiscal et budgétaire consolidé sur dix ans** avec hypothèses explicites, puis les matrices juridiques et de transition pour rendre les mesures budgétables et soumises à un avis indépendant.
 
+## G0.13 — Viabilité financière sur dix ans et deux statuts du Québec (5 novembre 2026)
+
+**Source budgétaire actualisée :** Rapport préélectoral du ministère des Finances du Québec **d'août 2026**, plus récent que le budget de mars 2026. Les valeurs des cinq exercices **2026–2027 à 2030–2031** sont reprises comme **prévisions du gouvernement**, non comme budget approuvé du Projet Nova.
+
+- **Premier exercice (millions CAD) :** revenus **168 389**, dont transferts fédéraux **33 046**; dépenses **171 597**; provision **2 000**; déficit comptable **–5 208**; déficit budgétaire après Fonds des générations **–7 690**.
+- **Source publique :** `https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Rapport_preelectoral/FR/MINFR_RP_2026.pdf`, tableau pluriannuel; valeurs recoupées dans la présentation de la Province du Québec déposée à la SEC. Les années **2031–2036** ne figurent pas dans cette prévision de cinq ans et restent `null`.
+- **Données :** `data/cadre-financier-g0-13-2026-2036.json` regroupe les prévisions gouvernementales (5 exercices), les cinq années hors source et **deux scénarios Nova distincts** (`QUEBEC_CANADA` et `QUEBEC_SOUVERAIN`) dont les postes non évalués demeurent `null` pendant les dix ans.
+- **Écarts futurs du rapport officiel :** **1 850 M$ en 2028–2029** et **2 000 M$ par an en 2029–2031** encore à résorber; ils sont présentés comme hypothèses conditionnelles, non comme des économies réalisées.
+- **Politique de deux prélèvements :** impôt sur les revenus et mesure ciblant l'évasion et les paradis fiscaux **sans taux, assiette et rendement démontrés**; ne pas assimiler les revenus autonomes aux seuls impôts ni présumer la conservation des transferts fédéraux après souveraineté.
+- **Méthode :** `official/working/cadre-financier-g0-13-scenarios-protocole-v1.md`. L'analyse impose droit, assiettes, coûts de services, monnaie, dettes et actifs, prestations, droits des nations autochtones, pouvoir d'achat et protection des travailleurs.
+- **Page de consultation :** `viabilite-financiere-g0-13.html`; **contrôle automatisé :** `assets/g13-fiscal-readiness-core.mjs`; **tests :** `tests/g13-fiscal-readiness.test.mjs`.
+- **Exécution des tests :** **16/16 réussis sous Node v26.12.1 dans un environnement externe**, rapport `data/rapport-tests-g0-13-finances-2026-11-05.json`. L'exécution des GitHub Actions de ce changement et le déploiement public ne sont pas vérifiés.
+- **Avancement du programme : 47/100, inchangé** (grille G0.12). Construire un tableau ne constitue pas une validation indépendante de la viabilité fiscale. Le cadre de mars reste un repère historique; les références candidates `official/reference` et `data/sources.json` ne sont pas modifiés.
+
+**Étape G0.14 :** définir la classification juridique des recettes (revenus des particuliers et entreprises, TVA/TVQ, cotisations, redevances, tarifs, bénéfices des sociétés d'État, transferts fédéraux et taxes municipales), construire des assiettes défendables, documenter l'incidence distributive, puis seulement tester des taux et la soutenabilité de scénarios complets.
+
+## G0.14 — Cartographie des recettes et examen d'un système à deux prélèvements (5 novembre 2026)
+
+**Programme : 47/100, inchangé**, tant que les dépenses, les recettes sous réforme et les assiettes ne sont pas démontrées. G0.14 ne fixe aucun taux et ne revendique aucune économie nouvelle.
+
+- **Registre de travail :** `data/registre-assiettes-fiscales-g0-14-2026-2027.json`, neuf familles de recettes gouvernementales 2026–2027, six régimes ou compétences à distinguer, deux trajectoires constitutionnelles et sept études à mener.
+- **Rapprochement officiel :** huit catégories provinciales = **135 343 M$** de revenus autonomes; **33 046 M$** de transferts fédéraux, ensemble **168 389 M$**. Source : Rapport préélectoral d'août 2026 et tableau G0.13, non budget Nova.
+- **Sensibilité arithmétique uniquement :** santé FSS **9 538 M$** + foncier scolaire **1 301 M$** + taxes à la consommation **30 682 M$** = **41 521 M$** de recettes exposées à examiner. Dans un calcul artificiellement figé sans compensation, le solde budgétaire serait **−49 211 M$** plutôt que **−7 690 M$**. Ce chiffre **n'est pas** une prévision de la réforme Nova et conserve temporairement les droits et redevances mixtes (6 484 M$).
+- **Deux prélèvements envisagés :** définir un impôt sur les revenus des particuliers et entreprises et préciser si le deuxième « prélèvement anti-paradis fiscaux » est réellement une assiette additionnelle légale ou un mécanisme de conformité de l'impôt sur les revenus. Rendement net additionnel `null`, taux `null`, budget Nova `null`.
+- **Protection des régimes :** taxes municipales et fédérales, RRQ, RQAP, assurance médicaments, droits et redevances de ressources et dividendes des sociétés publiques ne sont pas automatiquement des taxes provinciales supprimables ni des recettes provinciales libres.
+- **Québec souverain :** aucune hypothèse de conservation des **33 046 M$** de transferts fédéraux; fonctions à reprendre, pensions, monnaie, dette, actifs et recettes complémentaires à évaluer.
+- **Protocole :** `official/working/protocole-g0-14-recettes-et-deux-prelevements-v1.md`; **page publique :** `deux-prelevements-g0-14.html`; **contrôle :** `assets/g14-fiscal-assiettes-core.mjs`; **tests Node :** `tests/g14-fiscal-assiettes.test.mjs` (16 cas). **16/16 tests Node réussis** en environnement externe (Node.js v26.12.1), sans preuve de réussite GitHub Actions. Rapport : `official/working/rapport-controles-g0-14-assiettes-fiscales-v1.md`. Ces contrôles ne certifient pas la viabilité de la politique fiscale.
+- **Sources de droit et fiscalité :** ministères du Québec, Revenu Québec et documentation municipale. La compatibilité juridique de la réforme proposée demeure **non examinée par un spécialiste indépendant**.
+- **Étape G0.15 :** mettre en œuvre la ventilation des prélèvements mixtes, la définition juridiquement utilisable de l'assiette « revenu », les fonds sociaux et l'analyse distributive avant de proposer un taux.
+
+Le programme, le corpus, le cadre financier et les statuts de référence candidats, ainsi que `data/sources.json`, ne sont pas modifiés par cette étude.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 

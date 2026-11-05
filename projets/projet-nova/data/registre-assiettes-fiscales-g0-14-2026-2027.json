@@ -1,0 +1,313 @@
+{
+  "schema": "nova-g014-assiettes-fiscales/v1",
+  "project": "Projet Nova",
+  "assessment_date": "2026-11-05",
+  "phase": "G0.14",
+  "status": "NORMATIVE_RESEARCH_ONLY_UNCOSTED_POLICY",
+  "programme_percent_before": 47,
+  "programme_percent_after": 47,
+  "units": "millions de dollars canadiens, exercice 2026-2027",
+  "source": {
+    "name": "Québec, Rapport préélectoral sur l'état des finances publiques, août 2026",
+    "budget_year": "2026-2027",
+    "source_date": "2026-08-17",
+    "primary_url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Rapport_preelectoral/FR/MINFR_RP_2026.pdf",
+    "cross_check_url": "https://www.sec.gov/Archives/edgar/data/722803/000106299326004487/exhibit99-5.htm",
+    "type": "PREVISION_NON_REALISATION",
+    "financial_figures_verified_at_category_level": true
+  },
+  "baseline": {
+    "own_source_revenue": 135343,
+    "federal_transfers": 33046,
+    "total_revenue": 168389,
+    "portfolio_expenditures": 161081,
+    "debt_service": 10516,
+    "total_expenditures": 171597,
+    "contingency_reserve": 2000,
+    "generations_fund_deposits": 2482,
+    "accounting_balance": -5208,
+    "budgetary_balance": -7690,
+    "source": "data/cadre-financier-g0-13-2026-2036.json"
+  },
+  "revenue_categories": [
+    {
+      "id": "IMPOT_PARTICULIERS",
+      "name": "Impôt sur le revenu des particuliers",
+      "amount_mcad": 50942,
+      "type": "IMPOT_REVENU",
+      "potential_policy": "CANDIDAT_REVENU_PERSONNES",
+      "scope": "PROVINCIAL",
+      "fiscal_tax": true,
+      "study": "Assiette brute imposable, barèmes, crédits remboursables et non remboursables, revenus de travail, de retraite, dividendes et gains en capital; distribution par revenu."
+    },
+    {
+      "id": "IMPOTS_SOCIETES",
+      "name": "Impôts des sociétés (catégorie agrégée)",
+      "amount_mcad": 14698,
+      "type": "IMPOTS_SOCIETES_AGREGES",
+      "potential_policy": "CANDIDAT_REVENU_ENTREPRISE_APRES_DECOMPOSITION",
+      "scope": "PROVINCIAL",
+      "fiscal_tax": true,
+      "study": "Distinguer précisément impôt sur profits des autres postes inclus dans le total des impôts de sociétés; assiette des PME et grandes entreprises, pertes et crédits."
+    },
+    {
+      "id": "COTISATIONS_SANTE",
+      "name": "Cotisations pour les services de santé",
+      "amount_mcad": 9538,
+      "type": "COTISATION_FISCALE_SANTE",
+      "potential_policy": "TRAITEMENT_A_ARBITRER",
+      "scope": "PROVINCIAL",
+      "fiscal_tax": true,
+      "study": "FSS employeurs et particuliers : statut fiscal, impacts sur masse salariale, dépenses de santé et garanties légales; suppression non présumée."
+    },
+    {
+      "id": "FONCIER_SCOLAIRE",
+      "name": "Impôt foncier scolaire",
+      "amount_mcad": 1301,
+      "type": "FONCIER_SCOLAIRE",
+      "potential_policy": "TRAITEMENT_A_ARBITRER",
+      "scope": "PROVINCIAL_SCOLAIRE",
+      "fiscal_tax": true,
+      "study": "Financement scolaire à maintenir, propriété et autonomie des organismes responsables, compensation des impacts distributifs."
+    },
+    {
+      "id": "TAXES_CONSOMMATION",
+      "name": "Taxes à la consommation",
+      "amount_mcad": 30682,
+      "type": "CONSOMMATION_MIXTE",
+      "potential_policy": "TRAITEMENT_A_ARBITRER",
+      "scope": "PROVINCIAL",
+      "fiscal_tax": true,
+      "study": "Distinguer TVQ, carburants, tabac, alcool, assurances et autres droits; incidence ménages et commerces, accords d'administration."
+    },
+    {
+      "id": "DROITS_PERMIS_REDEVANCES",
+      "name": "Droits, permis et redevances",
+      "amount_mcad": 6484,
+      "type": "MIXTE_FISCAL_NON_FISCAL",
+      "potential_policy": "VENTILATION_INDISPENSABLE",
+      "scope": "PROVINCIAL",
+      "fiscal_tax": null,
+      "study": "Ventiler droits de nature fiscale, redevances de ressources, tarification réglementaire, permis et compensation environnementale; ne pas traiter toute cette ligne comme une taxe."
+    },
+    {
+      "id": "REVENUS_DIVERS",
+      "name": "Revenus divers",
+      "amount_mcad": 15790,
+      "type": "NON_VENTILE_MIXTE",
+      "potential_policy": "VENTILATION_INDISPENSABLE",
+      "scope": "PROVINCIAL",
+      "fiscal_tax": null,
+      "study": "Revenus d'intérêts, frais et autres sources selon comptabilité gouvernementale; identifier les transferts internes et la capacité de conservation."
+    },
+    {
+      "id": "SOCIETES_ETAT",
+      "name": "Entreprises du gouvernement",
+      "amount_mcad": 5908,
+      "type": "REVENU_ENTREPRISES_PUBLIQUES",
+      "potential_policy": "NON_IMPOT_A_EXAMINER",
+      "scope": "PROVINCIAL",
+      "fiscal_tax": false,
+      "study": "Bénéfices et dividendes des sociétés d'État ne sont pas une nouvelle taxe; ne pas présumer distribuables intégralement ou de façon récurrente."
+    },
+    {
+      "id": "TRANSFERTS_FEDERAUX",
+      "name": "Transferts fédéraux",
+      "amount_mcad": 33046,
+      "type": "TRANSFERT_INTERGOUVERNEMENTAL",
+      "potential_policy": "PROVINCE_CONDITIONNEL_SOUVERAIN_REEVALUER",
+      "scope": "FEDERAL_VERS_PROVINCIAL",
+      "fiscal_tax": false,
+      "study": "Conditions de transferts fédéraux du Québec au Canada; aucune pérennité automatique après une transition souveraine."
+    }
+  ],
+  "reconciliation": {
+    "categories_count": 9,
+    "amounts_sum_to_total": true,
+    "own_revenue_category_sum": 135343,
+    "total_category_sum": 168389,
+    "candidate_income_related_categories": [
+      "IMPOT_PARTICULIERS",
+      "IMPOTS_SOCIETES"
+    ],
+    "income_related_category_total_illustrative": 65640,
+    "income_tax_legal_base_defined": false,
+    "other_revenues_are_not_all_taxes": true,
+    "income_percentage_from_total_revenue_not_a_tax_rate": true
+  },
+  "jurisdiction_separation": [
+    {
+      "id": "FEDERAL_TAXES",
+      "name": "TPS et impôts fédéraux",
+      "in_quebec_government_2026_baseline": false,
+      "amount_mcad": null,
+      "authority": "FEDERAL",
+      "decision": "Ne pas prétendre les supprimer par une loi du Québec demeurant au Canada."
+    },
+    {
+      "id": "MUNICIPAL_TAXES",
+      "name": "Taxes foncières et tarifs municipaux",
+      "in_quebec_government_2026_baseline": false,
+      "amount_mcad": null,
+      "authority": "MUNICIPAL",
+      "decision": "Autonomie légale et financement municipal à protéger; ne pas les assimiler à l'impôt foncier scolaire."
+    },
+    {
+      "id": "RRQ",
+      "name": "Cotisations du Régime de rentes du Québec",
+      "in_quebec_government_2026_baseline": false,
+      "amount_mcad": null,
+      "authority": "REGIME_SOCIAL_DISTINCT",
+      "decision": "Ne pas les considérer comme recettes budgétaires disponibles ni abolies sans financement actuariel des droits acquis."
+    },
+    {
+      "id": "RQAP",
+      "name": "Cotisations du Régime québécois d'assurance parentale",
+      "in_quebec_government_2026_baseline": false,
+      "amount_mcad": null,
+      "authority": "REGIME_SOCIAL_DISTINCT",
+      "decision": "Cotisations et prestations à examiner séparément; aucune abolition implicite."
+    },
+    {
+      "id": "ASSURANCE_MEDICAMENTS",
+      "name": "Cotisations et primes d'assurance médicaments",
+      "in_quebec_government_2026_baseline": null,
+      "amount_mcad": null,
+      "authority": "REGIME_PUBLIC_SPECIAL_A_VERIFIER",
+      "decision": "Déterminer périmètre, obligations, droits et financement, sans double comptage avec l'ensemble gouvernemental."
+    },
+    {
+      "id": "PARADIS_FISCAUX",
+      "name": "Recettes additionnelles nettes de lutte contre les paradis fiscaux",
+      "in_quebec_government_2026_baseline": null,
+      "amount_mcad": null,
+      "authority": "PARTAGE_COMPETENCES_FISCALITE_INTERNATIONALE",
+      "decision": "Revenu additionnel recouvrable non chiffré; éviter le double comptage avec les impôts déjà inclus et distinguer contrôle fiscal vs impôt autonome."
+    }
+  ],
+  "tax_design_constraints": {
+    "target": "Système simplifié de prélèvements sur les revenus des particuliers et entreprises et mesure anti-évasion visant les paradis fiscaux.",
+    "clarify_first": "La taxe dite anti-paradis fiscaux représente-t-elle une assiette distincte légitime ou une pénalité/mécanisme de contrôle de l'impôt sur le revenu?",
+    "personal_and_corporate_tax_bases_validated": false,
+    "income_tax_rate_percent": null,
+    "corporate_tax_rate_percent": null,
+    "offshore_measure_tax_base": null,
+    "offshore_measure_legal_authority_reviewed": false,
+    "offshore_revenue_incremental_after_overlap": null,
+    "existing_disallowed_taxes_final_list": null,
+    "maintained_non_tax_revenues_final_list": null,
+    "federal_transfers_after_sovereignty": null,
+    "taxpayer_behavior_analysis_complete": false,
+    "distributional_analysis_complete": false,
+    "municipal_and_social_fund_continuity_assured": false,
+    "employment_protections_impact_assessed": false,
+    "all_2026_sources_revised_under_nova": false,
+    "no_counter_tariffs_commitment": true,
+    "no_unfunded_tax_abolitions": true
+  },
+  "mechanical_sensitivity": {
+    "type": "ARITHMETIQUE_FIGEE_HYPOTHETIQUE_NON_PREVISION",
+    "treatment": "Si les trois lignes provinciales FSS, foncier scolaire et consommation étaient entièrement retranchées, les autres postes et dépenses restant mathématiquement inchangés : illustration d'exposition, non proposition adoptée.",
+    "removed_category_ids": [
+      "COTISATIONS_SANTE",
+      "FONCIER_SCOLAIRE",
+      "TAXES_CONSOMMATION"
+    ],
+    "removed_baseline_receipts": 41521,
+    "post_removal_revenues_before_any_new_tax_income": 126868,
+    "official_budgetary_balance_before_change": -7690,
+    "mechanical_budgetary_balance_without_replacement": -49211,
+    "mechanical_accounting_balance_without_replacement": -46729,
+    "replacement_or_real_savings_needed_to_reach_official_baseline_balance": 41521,
+    "net_adjustment_needed_to_reach_zero_budgetary_balance": 49211,
+    "remaining_mixed_duties_not_removed": 6484,
+    "caveats": [
+      "Les recettes de FSS, impôt foncier scolaire et taxes de consommation sont des prévisions sous les lois actuelles; leur suppression changerait les comportements, compensations, coûts d'administration, assiettes et peut-être les transferts.",
+      "L'hypothèse conserve provisoirement d'autres lignes incluant des droits et redevances mixtes : elle ne représente donc pas un régime complet à seulement deux prélèvements.",
+      "La somme 49 211 M$ est une nécessité mécanique sous hypothèses gelées, pas une prévision du déficit Nova ni une recommandation de hausses d'impôt.",
+      "Les économies ne sont pas supposées; la protection de l'emploi et des services reste obligatoire.",
+      "Le solde -7 690 M$ provient du cadre gouvernemental et ne doit pas être rebaptisé bilan du Projet Nova."
+    ],
+    "forecast_balance_nova": null,
+    "public_service_continuity_verified": false
+  },
+  "constitutional_scenarios": [
+    {
+      "id": "QUEBEC_CANADA",
+      "baseline_federal_transfers_2026_2027": 33046,
+      "new_income_tax_revenue": null,
+      "net_anti_haven_revenue": null,
+      "other_receipts_retained": null,
+      "tax_abolition_costs": null,
+      "total_spending": null,
+      "budget_balance": null,
+      "jurisdiction_verified": false
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "baseline_federal_transfers_2026_2027": null,
+      "new_income_tax_revenue": null,
+      "net_anti_haven_revenue": null,
+      "other_receipts_retained": null,
+      "new_federal_functions_net_cost": null,
+      "debt_sharing": null,
+      "pension_transition": null,
+      "money_and_customs": null,
+      "budget_balance": null,
+      "jurisdiction_verified": false
+    }
+  ],
+  "research_next": [
+    {
+      "id": "DEFINITIONS",
+      "priority": "P0",
+      "requirement": "Définir revenu, revenu net, bénéfice des entreprises, pertes, crédits, liens avec les mesures contre la fraude; déduire les taux uniquement à partir d'assiettes vérifiées.",
+      "status": "NON_ETABLI"
+    },
+    {
+      "id": "FISCALITY",
+      "priority": "P0",
+      "requirement": "Ventiler TVQ/consommation, FSS, impôt scolaire et les 6 484 M$ de droits/redevances entre prélèvements fiscaux et recettes non fiscales.",
+      "status": "NON_ETABLI"
+    },
+    {
+      "id": "FUNDS",
+      "priority": "P0",
+      "requirement": "RRQ, RQAP, couverture médicaments, santé, école et municipalités : démontrer continuité des obligations et autonomie des fonds.",
+      "status": "NON_ETABLI"
+    },
+    {
+      "id": "OFFSHORE",
+      "priority": "P0",
+      "requirement": "Distinguer évasion illégale, planification agressive, déclarations obligatoires, conventions internationales, récupération brute et nette, et doublons.",
+      "status": "NON_ETABLI"
+    },
+    {
+      "id": "INDEPENDENCE",
+      "priority": "P0",
+      "requirement": "Chiffrer scénario souverain sans conserver automatiquement les transferts fédéraux ou oublier les prestations et services remplacés.",
+      "status": "NON_ETABLI"
+    },
+    {
+      "id": "HOUSEHOLDS",
+      "priority": "P1",
+      "requirement": "Microsimuler ménages par déciles, familles, aînés, bas revenus, PME, régions, prix et effets comportementaux.",
+      "status": "NON_ETABLI"
+    },
+    {
+      "id": "BALANCE",
+      "priority": "P1",
+      "requirement": "Construire finances sur dix ans avec dépenses complètes, réserve, dette, plan de transition et audit indépendant.",
+      "status": "NON_ETABLI"
+    }
+  ],
+  "decision": {
+    "nova_budget_certified": false,
+    "tax_rates_financed": false,
+    "anti_tax_haven_yield_certified": false,
+    "workers_protected_with_evidence": false,
+    "independent_legal_review_done": false,
+    "programme_ready_for_government": false,
+    "g0_passed": false
+  }
+}

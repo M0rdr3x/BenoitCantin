@@ -126,6 +126,38 @@ def run() -> None:
             assert_true(page.locator("h1").count() >= 1, f"H1 absent: {url}")
             assert_true(bool(page.title().strip()), f"Titre absent: {url}")
 
+        # Canaux officiels SINJIRA : liens réels et icône YouTube visible.
+        page.goto(urljoin(BASE_URL, "projets/sinjira/"), wait_until="domcontentloaded", timeout=30_000)
+        official_channels = page.locator(".sinjira-official-channels")
+        assert_true(official_channels.count() == 1 and official_channels.is_visible(),
+                    f"{BROWSER_NAME}: accès officiels SINJIRA absents")
+        youtube = official_channels.locator(".sinjira-official-channel-youtube")
+        assert_true(youtube.count() == 1 and youtube.is_visible(),
+                    f"{BROWSER_NAME}: chaîne YouTube SINJIRA absente")
+        assert_true(youtube.get_attribute("href") == "https://www.youtube.com/@SinjiraOfficiel",
+                    f"{BROWSER_NAME}: lien YouTube SINJIRA incorrect")
+        assert_true(youtube.locator("svg.sinjira-channel-icon path").count() == 1,
+                    f"{BROWSER_NAME}: icône YouTube SINJIRA manquante")
+        email_link = official_channels.locator('.sinjira-official-channel-email')
+        assert_true(email_link.count() == 1 and email_link.is_visible(),
+                    f"{BROWSER_NAME}: courriel SINJIRA non visible")
+        assert_true(email_link.get_attribute("href") == "mailto:sinjiraofficiel@gmail.com",
+                    f"{BROWSER_NAME}: adresse courriel SINJIRA incorrecte")
+        assert_true(
+            page.locator('footer a[href="mailto:sinjiraofficiel@gmail.com"]').count() == 1,
+            f"{BROWSER_NAME}: contact officiel absent du pied de page SINJIRA",
+        )
+
+        page.goto(urljoin(BASE_URL, "contact.html"), wait_until="domcontentloaded", timeout=30_000)
+        assert_true(
+            page.locator('a[href="mailto:sinjiraofficiel@gmail.com"]').count() >= 2,
+            f"{BROWSER_NAME}: page Contact ne propose pas le courriel officiel SINJIRA",
+        )
+        assert_true(
+            page.locator('a[href="/projets/projet-nova/contact.html"]').count() >= 1,
+            f"{BROWSER_NAME}: canal distinct Projet Nova indisponible",
+        )
+
         page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30_000)
         page.wait_for_function(
             "document.querySelector('link[data-sinjira-browser-compat]') !== null",
