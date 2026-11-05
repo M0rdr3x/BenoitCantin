@@ -8,6 +8,7 @@ const assert=require("node:assert/strict");
 
 const root=path.resolve(__dirname,"..");
 const script=fs.readFileSync(path.join(root,"projets/projet-nova/script.js"),"utf8");
+const legacyScript=fs.readFileSync(path.join(root,"projets/projet-nova/assets/script.js"),"utf8");
 
 const compassSource=fs.readFileSync(path.join(root,"projets/projet-nova/assets/boussole-electorale.js"),"utf8");
 function testCompassEvidenceLinks(){
@@ -40,7 +41,7 @@ function testCompassEvidenceLinks(){
 }
 
 
-async function render({documents=[],finance=[],meetings=[],updates=[]}={}){
+async function render({documents=[],finance=[],meetings=[],updates=[],source=script}={}){
   const elements={
     docs:{innerHTML:""},finance:{innerHTML:""},
     meetings:{innerHTML:""},updates:{innerHTML:""},stamp:{textContent:""}
@@ -76,7 +77,7 @@ async function render({documents=[],finance=[],meetings=[],updates=[]}={}){
     },
     console
   });
-  vm.runInContext(script,context,{filename:"nova-script.js",timeout:1000});
+  vm.runInContext(source,context,{filename:"nova-script.js",timeout:1000});
   await new Promise(resolve=>setImmediate(resolve));
   await new Promise(resolve=>setImmediate(resolve));
   return {elements,context};
@@ -126,6 +127,26 @@ async function render({documents=[],finance=[],meetings=[],updates=[]}={}){
   for(const bad of ["javascript:alert(1)","documents/../secret.pdf","/private.pdf",
     "documents/malicious.svg","documents/evil.pdf?download=1"]){
     assert.equal(safe.pdfHref(bad),"","unsafe PDF href accepted: "+bad);
+  }
+  // La variante historique utilisée par certains chemins de NOVA possède
+  // son propre runtime et doit être couverte par les mêmes mutations.
+  const legacy=await render({...malicious,source:legacyScript});
+  for(const name of ["docs","finance","meetings"]){
+    const html=legacy.elements[name].innerHTML;
+    assert.ok(html.length>20,"legacy "+name+": missing render");
+    for(const forbidden of ["<script", "<svg", "<iframe", "<img", 'href="javascript:']){
+      assert.ok(!html.includes(forbidden),"legacy "+name+": dangerous token "+forbidden);
+    }
+    assert.ok(html.includes("&lt;"),"legacy "+name+": content not escaped");
+  }
+  assert.ok(legacy.elements.docs.innerHTML.includes(
+    'href="documents/01_Resume_Officiel_1_Page_Projet_Nova.pdf"'));
+  assert.ok(!legacy.elements.docs.innerHTML.includes('href="documents/../secret.pdf"'));
+  const legacySafe=vm.runInContext("NOVA_LEGACY_DOM",legacy.context);
+  assert.equal(legacySafe.escape('<&"\''),'&lt;&amp;&quot;&#39;');
+  for(const bad of ["javascript:alert(1)","documents/../secret.pdf",
+                    "/private.pdf","documents/malicious.svg"]){
+    assert.equal(legacySafe.pdfHref(bad),"","legacy unsafe PDF href accepted: "+bad);
   }
   const good=await render({updates:[{date:"2026-08-26",type:"NOVA",
     title:"Actualités",summary:"Résumé public",link:"finances.html",link_label:"Détails"}]});
