@@ -71,6 +71,7 @@ def run() -> None:
             locale="fr-CA",
             viewport={"width": 1440, "height": 1000},
             reduced_motion="reduce",
+            service_workers="block",
         )
         page = context.new_page()
         page_errors = []
@@ -114,7 +115,7 @@ def run() -> None:
                     body=poll_public_snapshot,
                 )
 
-            page.route("**/functions/v1/nova-civic-poll*", serve_closed_poll_snapshot)
+            context.route("**/functions/v1/nova-civic-poll*", serve_closed_poll_snapshot)
 
         for route in PUBLIC_ROUTES:
             url = urljoin(BASE_URL, route)
@@ -852,7 +853,10 @@ def run() -> None:
             viewport={"width": 390, "height": 844},
             has_touch=True,
             reduced_motion="reduce",
+            service_workers="block",
         )
+        if IS_LOCAL:
+            mobile.route("**/functions/v1/nova-civic-poll*", serve_closed_poll_snapshot)
         mobile_page = mobile.new_page()
         mobile_errors = []
         register_error_capture(mobile_page, mobile_errors)
