@@ -27,11 +27,13 @@ jobs:
         with:
           node-version: '22'
       - name: Vérifier les garde-fous G0.7 avant téléchargement
-        run: node --test projets/projet-nova/tests/g07-acquisition-rh.test.mjs projets/projet-nova/tests/g08-rh-workbook-inspector.test.mjs projets/projet-nova/tests/g09-rh-reconciliation.test.mjs
+        run: node --test projets/projet-nova/tests/g07-acquisition-rh.test.mjs projets/projet-nova/tests/g08-rh-workbook-inspector.test.mjs projets/projet-nova/tests/g09-rh-reconciliation.test.mjs projets/projet-nova/tests/g10-rh-official-portrait.test.mjs projets/projet-nova/tests/g11-rh-original-cells.test.mjs
       - name: Télécharger le XLSX officiel et produire SHA-256 + inventaire ZIP
         run: node projets/projet-nova/scripts/g07-acquerir-rh-officiel.mjs
       - name: Produire le paquet G0.9 de revue des feuilles (aucune valeur RH)
         run: node projets/projet-nova/scripts/g09-generer-paquet-revue-rh.mjs
+      - name: G0.11 — rapprocher SHA-256 et cellules Excel originales
+        run: node projets/projet-nova/scripts/g11-verifier-original-rh-officiel.mjs
       - name: Conserver le rapport et le XLSX seulement s'il est validé
         if: always()
         uses: actions/upload-artifact@v4
@@ -41,5 +43,6 @@ jobs:
             g07-acquisition-output/source-audit.json
             g07-acquisition-output/rh-rsss-2024-2025-source.xlsx
             g07-acquisition-output/g09-review-package.json
+            g07-acquisition-output/g11-original-cell-evidence-audit.json
           if-no-files-found: warn
           retention-days: 14
