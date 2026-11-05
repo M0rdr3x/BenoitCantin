@@ -1,0 +1,88 @@
+name: Projet Nova P55L - Confirmation croisee quotes-parts RTC Ville 2024
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p55l.yml"
+      - "scripts/recouper_quotes_parts_rtc_ville_nova_p55l.py"
+      - "scripts/tests/test_recouper_quotes_parts_rtc_ville_nova_p55l.py"
+      - "scripts/ventiler_revenus_reciproques_nova_p55k.py"
+      - "scripts/rapprocher_perimetres_et_conciliation_nova_p55j.py"
+      - "scripts/rapprocher_sommaire_budgetaire_nova_p55i.py"
+      - "projets/projet-nova/etudes/P55L_*"
+      - "projets/projet-nova/etudes/P55K_*"
+      - "projets/projet-nova/etudes/P55J_*"
+      - "projets/projet-nova/etudes/P55I_*"
+      - "projets/projet-nova/etudes/P54Q_*"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  recoupement-deux-publications-sans-certification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Dependances PDF amont sans telechargement de sources documentaires
+        run: python -m pip install pypdf==5.9.0
+      - name: Lancer 63 tests de concordance arithmetique et refus de certification
+        run: |
+          python -m py_compile scripts/recouper_quotes_parts_rtc_ville_nova_p55l.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_recouper_quotes_parts_rtc_ville_nova_p55l.py")
+          assert suite.countTestCases()==63,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Produire les bilans publics seulement sans origine PDF certifiee
+        run: |
+          python scripts/recouper_quotes_parts_rtc_ville_nova_p55l.py \
+            --bilan-public p55l_bilan_neutre.json --table-public p55l_table_neutre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          b=json.loads(Path("p55l_bilan_neutre.json").read_text("utf8"))
+          t=json.loads(Path("p55l_table_neutre.json").read_text("utf8"))
+          assert b["schema_version"]=="P55L-BILAN-PUBLIC-1"
+          assert t["schema_version"]=="P55L-TABLE-PUBLIQUE-1"
+          assert b["montant_quotes_parts_2024_cad"]==154047800
+          assert b["augmentation_par_rapport_2023_cad"]==10916800
+          assert b["augmentation_par_rapport_2023_pourcent"]=="7.6"
+          assert b["part_recettes_rtc_pourcent"]=="35.9"
+          assert b["repartition_exacte_contribution_municipale_connue"] is False
+          assert b["rapprochement_ecritures_comptables_independamment_verifie"] is False
+          assert b["copies_pdf_originales_sha_actuel_verifiees"]==0
+          assert b["economies_nouvelles_cad"] is None
+          assert b["economies_certifiees_cad"] is None
+          assert b["avis_professionnels_authentifies"]==0
+          assert b["mandats_signes"]==0
+          assert b["decision"]=="NO_GO_AUTOMATIQUE"
+          assert len(t["preuves_documentaires"])==4
+          assert t["pourcentage_part_ville_exact"] is False
+          assert t["montant_nouvelle_economie_demontre"] is None
+          for document in (b,t):
+              raw=json.dumps(document)
+              assert "sha256" not in raw and "offset_texte" not in raw
+          PY
+      - name: Refuser toute certification logicielle
+        run: |
+          set +e
+          python scripts/recouper_quotes_parts_rtc_ville_nova_p55l.py --exiger-certification
+          result=$?
+          set -e
+          test "$result" -eq 3
+      - name: Archiver exclusivement deux sorties publiques
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p55l-reconciliation-référence-publique
+          path: |
+            p55l_bilan_neutre.json
+            p55l_table_neutre.json
+          retention-days: 7
