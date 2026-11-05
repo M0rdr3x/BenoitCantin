@@ -622,5 +622,20 @@
     "independently_certified": false,
     "clinically_available_fte_verified": false,
     "note": "Les valeurs G0.10 sont une transcription provisoire d'une source officielle par un parseur externe. Ne pas remplacer les valeurs certifiées nulles ni confondre ETC et ETP clinique."
+  },
+  "g11_external_original_verification": {
+    "verified_on": "2026-11-05",
+    "evidence": "data/preuve-binaire-rh-msss-g0-11-2024-2025.json",
+    "original_url_status": "EXTERNAL_BINARY_RETRIEVED_AND_CELLS_VERIFIED",
+    "original_sha256": "8d65573b2f0bf0a935a58c75ba1b4b76050a08b902760f7a03b3cae0cdb86219",
+    "byte_count": 139566,
+    "original_source_table": "Feuille A - 2",
+    "source_rows_checked": 19,
+    "rounded_etc_gap_2_explained": true,
+    "repository_workflow_acquisition_confirmed": false,
+    "source_binary_archived_in_repository": false,
+    "clinically_available_fte_verified": false,
+    "g0_passed": false,
+    "note": "L'ancien statut de téléchargement de cette phase décrit les tentatives de G0.6–G0.9; une vérification binaire externe a réussi ultérieurement en G0.11. Les cellules de première ligne certifiées demeurent null."
   }
 }
