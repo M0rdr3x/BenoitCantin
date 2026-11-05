@@ -133,6 +133,31 @@ class ReviewedProductionMigrationBatchTests(unittest.TestCase):
         marker = (out / 'migrations' / '20260101000000_baseline.sql').read_text('utf-8')
         self.assertIn('Marqueur de déploiement lié uniquement', marker)
 
+    def test_workspace_cannot_delete_an_unrelated_output(self):
+        outside = self.root / 'private-unrelated'
+        outside.mkdir()
+        sentinel = outside / 'keep.txt'
+        sentinel.write_text('synthetic private fixture', encoding='utf-8')
+        proc = subprocess.run(
+            [sys.executable, str(self.scripts / BUILDER.name),
+             '--output', str(outside)],
+            cwd=self.root, capture_output=True, text=True,
+        )
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn('chemin isolé approuvé', self.output(proc))
+        self.assertEqual(sentinel.read_text('utf-8'), 'synthetic private fixture')
+
+    def test_workspace_symlink_to_outside_is_rejected(self):
+        outside = self.root / 'outside'
+        outside.mkdir()
+        sentinel = outside / 'keep.txt'
+        sentinel.write_text('synthetic fixture', encoding='utf-8')
+        (self.root / '.prod-workspace').symlink_to(outside, target_is_directory=True)
+        proc, _ = self.run_builder()
+        self.assertNotEqual(proc.returncode, 0)
+        self.assertIn('chemin isolé approuvé', self.output(proc))
+        self.assertEqual(sentinel.read_text('utf-8'), 'synthetic fixture')
+
     def test_unreviewed_future_migration_is_rejected(self):
         first_version = '20260102000000'
         first_name = 'future_reviewed'
