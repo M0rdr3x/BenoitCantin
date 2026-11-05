@@ -1,31 +1,14 @@
+# SÉCURITÉ : NE JAMAIS PUBLIER la racine du dépôt ni ce dossier source.
+# Lorsqu'un site Netlify cible Projet NOVA comme package directory,
+# sa base doit rester la racine du dépôt. Le constructeur produit
+# exclusivement un artefact public audité _site avec ses propres
+# fichiers _headers et _redirects (CSP, protection des zones privées,
+# refus des répertoires techniques).
+#
+# Si la base Netlify est configurée sur ce sous-dossier, la commande
+# ne trouve pas le constructeur racine et le déploiement échoue fermé.
+# Consultez netlify.toml à la racine pour la configuration canonique.
+
 [build]
-  publish = "."
-
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Content-Type-Options = "nosniff"
-    X-Frame-Options = "SAMEORIGIN"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
-    Content-Security-Policy = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; font-src 'self'; connect-src 'self' https://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; frame-src 'self' https://challenges.cloudflare.com; form-action 'self'; base-uri 'self'; frame-ancestors 'self'; object-src 'self'"
-
-[[headers]]
-  for = "/projets/projet-nova/documents/*.pdf"
-  [headers.values]
-    Cache-Control = "public, max-age=3600"
-
-[[redirects]]
-  from = "/nova"
-  to = "/projets/projet-nova/index.html"
-  status = 301
-
-[[redirects]]
-  from = "/roman"
-  to = "/projets/sinjira/index.html"
-  status = 301
-
-[[redirects]]
-  from = "/registre"
-  to = "/projets/sinjira/registre/index.html"
-  status = 301
+  command = "python3 scripts/build_netlify_public.py --standalone-netlify"
+  publish = "_site"

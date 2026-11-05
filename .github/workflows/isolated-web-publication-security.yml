@@ -36,6 +36,8 @@ jobs:
         run: python3 scripts/build_netlify_public.py --self-test-security
       - name: Vérifier les formats publics et refuser archives et sources non approuvées
         run: python3 scripts/test_web_public_extension_allowlist.py
+      - name: Refuser toute publication brute depuis le Netlify de Projet NOVA
+        run: python3 scripts/test_nova_nested_netlify_security.py
       - name: Valider les preuves Bash des déploiements Pages et Netlify
         run: python3 scripts/test_web_release_summary_shell.py
       - name: Vérifier les en-têtes privés et les anciens chemins Admin sans masquer les liens dangereux
