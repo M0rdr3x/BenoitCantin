@@ -155,16 +155,26 @@
       if(!validatedPublicResponse(data)) throw new Error("public_snapshot_invalid");
       // Une fermeture serveur constatée en direct ferme aussi la soumission
       // du navigateur, même si la page avait été ouverte auparavant.
-      if(open && !data.open){
+      if(!data.open){
+        const wasOpen=open;
         open=false;captchaToken="";
-        setStatus("La consultation vient de fermer. Aucun nouveau vote ne peut être envoyé.");
+        setStatus(wasOpen
+          ? "La consultation vient de fermer. Aucun nouveau vote ne peut être envoyé."
+          : "La consultation est en préparation. Aucun vote ne peut être envoyé.");
         updateButton();
+      }else if(!open){
+        // Une actualisation ne réactive jamais à elle seule une session
+        // fermée : les conditions d'ouverture sont revérifiées au chargement.
+        setStatus("Le service répond, mais la session de vote reste fermée. Rechargez la page pour vérifier les conditions d'ouverture.");
       }
       renderResults(data);
       return data;
     }catch{
+      // Ne jamais laisser un ancien message « consultation ouverte » après
+      // une panne réseau ou un instantané public invalide.
       open=false;captchaToken="";updateButton();
       renderResults(null);
+      setStatus("Service de consultation indisponible ou données publiques incohérentes. Aucun vote ne peut être envoyé.");
       return null;
     }
   }

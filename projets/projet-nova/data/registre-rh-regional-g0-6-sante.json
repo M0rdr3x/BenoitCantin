@@ -608,5 +608,34 @@
       "document_sha256": null,
       "status": "EN_ATTENTE_DE_DONNEES_AGREGEES"
     }
-  ]
+  ],
+  "g10_secondary_rh_portrait": {
+    "reference": "data/portrait-rh-msss-g0-10-2024-2025.json",
+    "secondary_xlsx_markdown_parsed": true,
+    "direct_original_xlsx_binary_acquired": false,
+    "original_sha256": null,
+    "source_sheet": "Feuille A - 2",
+    "rss_rows_with_provisional_persons_and_etc": 18,
+    "persons_2025_reported_total": 344056,
+    "etc_2024_2025_reported_total": 283740,
+    "etc_unresolved_discrepancy": 2,
+    "independently_certified": false,
+    "clinically_available_fte_verified": false,
+    "note": "Les valeurs G0.10 sont une transcription provisoire d'une source officielle par un parseur externe. Ne pas remplacer les valeurs certifiées nulles ni confondre ETC et ETP clinique."
+  },
+  "g11_external_original_verification": {
+    "verified_on": "2026-11-05",
+    "evidence": "data/preuve-binaire-rh-msss-g0-11-2024-2025.json",
+    "original_url_status": "EXTERNAL_BINARY_RETRIEVED_AND_CELLS_VERIFIED",
+    "original_sha256": "8d65573b2f0bf0a935a58c75ba1b4b76050a08b902760f7a03b3cae0cdb86219",
+    "byte_count": 139566,
+    "original_source_table": "Feuille A - 2",
+    "source_rows_checked": 19,
+    "rounded_etc_gap_2_explained": true,
+    "repository_workflow_acquisition_confirmed": false,
+    "source_binary_archived_in_repository": false,
+    "clinically_available_fte_verified": false,
+    "g0_passed": false,
+    "note": "L'ancien statut de téléchargement de cette phase décrit les tentatives de G0.6–G0.9; une vérification binaire externe a réussi ultérieurement en G0.11. Les cellules de première ligne certifiées demeurent null."
+  }
 }

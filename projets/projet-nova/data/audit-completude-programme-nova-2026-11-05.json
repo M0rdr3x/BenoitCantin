@@ -1,0 +1,508 @@
+{
+  "schema": "nova-programme-completude-v1",
+  "project": "Projet Nova",
+  "date": "2026-11-05",
+  "program_scope": "Programme politique québécois cohérent, chiffré, légalement examiné, consulté et prêt pour un scénario de gouvernement; variantes province et souveraineté distinctes.",
+  "status": "AUDIT_INTERNE_PROVISOIRE_NON_CERTIFIE",
+  "assessment_caveat": "Le 47% est une estimation de maturité fondée sur un jugement de revue documentaire pondérée, pas une mesure scientifique, un sondage ou une preuve d'adoption. Les preuves non retrouvées dans les fichiers examinés ne sont pas considérées comme inexistantes.",
+  "scoring": {
+    "method": "Somme des points attribués à 10 dimensions, chacune évaluée selon preuves visibles et risques restants; maximum 100.",
+    "maximum": 100,
+    "earned": 47,
+    "percentage": 47,
+    "rounding": "entier",
+    "legal_government_approval": false,
+    "documentation_maturity_estimate_percent": 75,
+    "documentation_maturity_is_independently_measured": false,
+    "definition": "Un programme est complet lorsque chaque mesure possède texte opérationnel, compétence légale, coût et financement, effets sur les droits et la main-d'oeuvre, indicateurs, risques et calendrier, avec revue externe et adoption politique formelle."
+  },
+  "dimensions": [
+    {
+      "id": "VISION",
+      "name": "Vision, principes, objectifs et cohérence",
+      "weight": 8,
+      "points": 8,
+      "source": [
+        "official/reference/programme.md",
+        "architecture-nova-sinjira.md"
+      ],
+      "evidence": "Mission et principes directeurs structurés; architecture publique candidate.",
+      "gap": "Soumettre les arbitrages contradictoires et leur priorité à une consultation formelle.",
+      "next": "Publier un contrat d'objectifs limités, vérifiables et explicitement non adoptés."
+    },
+    {
+      "id": "INSTITUTIONS",
+      "name": "Institutions, démocratie et constitution",
+      "weight": 12,
+      "points": 8,
+      "source": [
+        "official/reference/corpus.md",
+        "official/reference/programme.md"
+      ],
+      "evidence": "Architecture démocratique, élections et compétences institutionnelles décrites.",
+      "gap": "Vérification juridique externe, détails du vote à distance, carte électorale définitive et procédures d'application.",
+      "next": "Faire vérifier compétence, droits et recours; finaliser carte et dispositions d'application."
+    },
+    {
+      "id": "DROITS",
+      "name": "Droits fondamentaux, justice et sécurité",
+      "weight": 10,
+      "points": 6,
+      "source": [
+        "official/reference/corpus.md",
+        "official/reference/programme.md"
+      ],
+      "evidence": "Principes d'État de droit, sécurité, recours et indépendance documentés.",
+      "gap": "Audit judiciaire et compatibilité avec les chartes, droits procéduraux et mise en oeuvre sectorielle.",
+      "next": "Créer une matrice de conformité article par article et faire réviser par juristes."
+    },
+    {
+      "id": "SERVICES",
+      "name": "Santé, éducation, logement et services essentiels",
+      "weight": 12,
+      "points": 5,
+      "source": [
+        "official/reference/programme.md",
+        "official/working/plan-execution-nova-sinjira-v1.md",
+        "data/preuve-binaire-rh-msss-g0-11-2024-2025.json"
+      ],
+      "evidence": "Chantiers identifiés et contrôles avancés sur un jeu de données RH en santé.",
+      "gap": "Budgets sectoriels, besoins par territoires, capacité clinique, indicateurs d'accès, dispositifs d'éducation et logement chiffrés.",
+      "next": "Constituer fiches de programme et coûts complets; distinguer ETC rémunérés et heures cliniques."
+    },
+    {
+      "id": "ECONOMIE",
+      "name": "Économie, emploi, environnement, énergie et régions",
+      "weight": 12,
+      "points": 5,
+      "source": [
+        "official/reference/programme.md",
+        "architecture-nova-sinjira.md"
+      ],
+      "evidence": "Orientations sur travail, PME, ressources, concurrence, régions, résilience et environnement.",
+      "gap": "Mesures sectorielles avec coût, règle juridique, incidence sur l'emploi et indicateurs territoriaux.",
+      "next": "Développer scénarios complets PME/travail, habitation, énergie et transport selon sources actuelles."
+    },
+    {
+      "id": "FINANCES",
+      "name": "Fiscalité, budget, dette et financement du pays",
+      "weight": 16,
+      "points": 3,
+      "source": [
+        "official/reference/finances.md",
+        "official/working/modele-financier-services-nova-sinjira-v1.md"
+      ],
+      "evidence": "Cadre sur dix ans, trajectoires testées, limites et garde-fous de dette décrits.",
+      "gap": "Scénarios à deux taxes non démontrés soutenables; trajectoires actuelles sans équilibre, recettes de lutte paradis fiscaux non certifiées, coûts d'un État souverain ouverts.",
+      "next": "Élaborer une table budgétaire intégrale revenus/dépenses/dette sur dix ans par scénario et obtenir un audit externe."
+    },
+    {
+      "id": "SOUVERAINETE",
+      "name": "Québec au Canada et transition vers la souveraineté",
+      "weight": 10,
+      "points": 4,
+      "source": [
+        "official/reference/programme.md",
+        "official/reference/corpus.md",
+        "official/reference/finances.md"
+      ],
+      "evidence": "Objectif de souveraineté et règles de continuité des services énoncés.",
+      "gap": "Partage actifs/dette, prestations fédérales, engagements, monnaie, pensions, droit international et séquence négociée non arbitrés.",
+      "next": "Distinguer juridiquement et financièrement les deux scénarios, étape par étape."
+    },
+    {
+      "id": "EXECUTION",
+      "name": "Lois d'application, calendrier et mise en oeuvre",
+      "weight": 8,
+      "points": 4,
+      "source": [
+        "official/working/plan-execution-nova-sinjira-v1.md",
+        "official/working/cahier-charges-services-publics-v1.md"
+      ],
+      "evidence": "Portes G0–G4, cahier des charges, clauses de réversibilité et mesures de contrôle.",
+      "gap": "Nominations, responsabilités, coûts, textes d'application et preuves de passage des portes par secteur non établis.",
+      "next": "Créer une fiche responsable/budget/droits/risques/échéance pour toute mesure avant l'adoption."
+    },
+    {
+      "id": "PREUVES",
+      "name": "Données, indépendance des audits et transparence",
+      "weight": 7,
+      "points": 3,
+      "source": [
+        "data/preuve-binaire-rh-msss-g0-11-2024-2025.json",
+        "official/working/rapport-controles-g0-11-source-originale-rh-v1.md"
+      ],
+      "evidence": "Traçabilité technique RH, contrôle de cellules, validation et tests Node réellement exécutés hors GitHub Actions.",
+      "gap": "Audits sectoriels indépendants, mesures d'impact réelles, maîtrise des versions, vérification GitHub Actions et exécution de terrain manquantes.",
+      "next": "Étendre la méthode G0.11 à un portefeuille de preuves priorisées, sans publier de faux résultats cliniques."
+    },
+    {
+      "id": "ADOPTION",
+      "name": "Adoption démocratique, parti, équipes et consultation",
+      "weight": 5,
+      "points": 1,
+      "source": [
+        "official/reference/statuts.md",
+        "data/sources.json"
+      ],
+      "evidence": "Projet de statuts et exigences organisationnelles décrits; statut non adopté.",
+      "gap": "Adoption formelle, autorisation auprès d'Élections Québec, équipe réglementaire, adhésion et consultations à documenter.",
+      "next": "Préparer dossier de conformité du parti provincial, réserver les décisions aux instances compétentes et documenter les consultations."
+    }
+  ],
+  "sector_register": [
+    {
+      "id": "POUVOIR",
+      "name": "Pouvoir d'achat",
+      "linked_dimensions": [
+        "VISION",
+        "ECONOMIE",
+        "FINANCES"
+      ],
+      "completed_measure_sheets_confirmed": 0,
+      "source_baseline_confirmed": null,
+      "full_costed_budget_confirmed": null,
+      "legal_review_confirmed": null,
+      "territorial_impact_confirmed": null,
+      "consultation_confirmed": null,
+      "independent_validation_confirmed": null,
+      "stage": "CADRAGE_DOCUMENTAIRE",
+      "next_evidence": "Mesurer revenu disponible après panier essentiel par région, type de ménage et inflation.",
+      "unknown_is_not_failure": true
+    },
+    {
+      "id": "FISCALITE",
+      "name": "Fiscalité, entreprises et deux taxes projetées",
+      "linked_dimensions": [
+        "FINANCES",
+        "SOUVERAINETE"
+      ],
+      "completed_measure_sheets_confirmed": 0,
+      "source_baseline_confirmed": null,
+      "full_costed_budget_confirmed": null,
+      "legal_review_confirmed": null,
+      "territorial_impact_confirmed": null,
+      "consultation_confirmed": null,
+      "independent_validation_confirmed": null,
+      "stage": "CADRAGE_DOCUMENTAIRE",
+      "next_evidence": "Tester assiette, dépenses financées, incidence sur les ménages et contraintes juridiques distinctes Québec/Canada et Québec souverain.",
+      "unknown_is_not_failure": true
+    },
+    {
+      "id": "SANTE",
+      "name": "Santé et assurance RAMQ",
+      "linked_dimensions": [
+        "SERVICES",
+        "PREUVES"
+      ],
+      "completed_measure_sheets_confirmed": 0,
+      "source_baseline_confirmed": null,
+      "full_costed_budget_confirmed": null,
+      "legal_review_confirmed": null,
+      "territorial_impact_confirmed": null,
+      "consultation_confirmed": null,
+      "independent_validation_confirmed": null,
+      "stage": "CADRAGE_DOCUMENTAIRE",
+      "next_evidence": "Mesurer l'accès effectif, les heures cliniques disponibles, les coûts par épisode et le maintien des droits.",
+      "unknown_is_not_failure": true
+    },
+    {
+      "id": "LOGEMENT",
+      "name": "Habitation et construction",
+      "linked_dimensions": [
+        "SERVICES",
+        "ECONOMIE"
+      ],
+      "completed_measure_sheets_confirmed": 0,
+      "source_baseline_confirmed": null,
+      "full_costed_budget_confirmed": null,
+      "legal_review_confirmed": null,
+      "territorial_impact_confirmed": null,
+      "consultation_confirmed": null,
+      "independent_validation_confirmed": null,
+      "stage": "CADRAGE_DOCUMENTAIRE",
+      "next_evidence": "Démontrer logements nets livrés, délais, terrains, coûts et effets sur loyers sans supposer l'offre.",
+      "unknown_is_not_failure": true
+    },
+    {
+      "id": "EDUCATION",
+      "name": "Éducation, langue et compétences",
+      "linked_dimensions": [
+        "SERVICES",
+        "DROITS"
+      ],
+      "completed_measure_sheets_confirmed": 0,
+      "source_baseline_confirmed": null,
+      "full_costed_budget_confirmed": null,
+      "legal_review_confirmed": null,
+      "territorial_impact_confirmed": null,
+      "consultation_confirmed": null,
+      "independent_validation_confirmed": null,
+      "stage": "CADRAGE_DOCUMENTAIRE",
+      "next_evidence": "Définir acquis, personnel, besoins régionaux, accès et financement.",
+      "unknown_is_not_failure": true
+    },
+    {
+      "id": "ADMIN",
+      "name": "Administration et simplicité",
+      "linked_dimensions": [
+        "EXECUTION",
+        "FINANCES"
+      ],
+      "completed_measure_sheets_confirmed": 0,
+      "source_baseline_confirmed": null,
+      "full_costed_budget_confirmed": null,
+      "legal_review_confirmed": null,
+      "territorial_impact_confirmed": null,
+      "consultation_confirmed": null,
+      "independent_validation_confirmed": null,
+      "stage": "CADRAGE_DOCUMENTAIRE",
+      "next_evidence": "Chiffrer les procédures et délais supprimables sans perte de services et avec continuité.",
+      "unknown_is_not_failure": true
+    },
+    {
+      "id": "TRAVAIL",
+      "name": "Travail, salaires, droits et transitions",
+      "linked_dimensions": [
+        "ECONOMIE",
+        "DROITS"
+      ],
+      "completed_measure_sheets_confirmed": 0,
+      "source_baseline_confirmed": null,
+      "full_costed_budget_confirmed": null,
+      "legal_review_confirmed": null,
+      "territorial_impact_confirmed": null,
+      "consultation_confirmed": null,
+      "independent_validation_confirmed": null,
+      "stage": "CADRAGE_DOCUMENTAIRE",
+      "next_evidence": "Évaluer effets sur emplois, conditions, sous-traitance, protection des travailleurs et recours.",
+      "unknown_is_not_failure": true
+    },
+    {
+      "id": "PME",
+      "name": "PME, économie productive et aide limitée",
+      "linked_dimensions": [
+        "ECONOMIE",
+        "FINANCES"
+      ],
+      "completed_measure_sheets_confirmed": 0,
+      "source_baseline_confirmed": null,
+      "full_costed_budget_confirmed": null,
+      "legal_review_confirmed": null,
+      "territorial_impact_confirmed": null,
+      "consultation_confirmed": null,
+      "independent_validation_confirmed": null,
+      "stage": "CADRAGE_DOCUMENTAIRE",
+      "next_evidence": "Définir l'extinction des aides, l'examen d'impact et les conditions non discriminatoires.",
+      "unknown_is_not_failure": true
+    },
+    {
+      "id": "FAMILLES",
+      "name": "Familles, aînés et services sociaux",
+      "linked_dimensions": [
+        "SERVICES",
+        "DROITS"
+      ],
+      "completed_measure_sheets_confirmed": 0,
+      "source_baseline_confirmed": null,
+      "full_costed_budget_confirmed": null,
+      "legal_review_confirmed": null,
+      "territorial_impact_confirmed": null,
+      "consultation_confirmed": null,
+      "independent_validation_confirmed": null,
+      "stage": "CADRAGE_DOCUMENTAIRE",
+      "next_evidence": "Vérifier couverture, capacités territoriales, continuum de services et protections des personnes vulnérables.",
+      "unknown_is_not_failure": true
+    },
+    {
+      "id": "JUSTICE",
+      "name": "Justice, sécurité et protection",
+      "linked_dimensions": [
+        "DROITS",
+        "INSTITUTIONS"
+      ],
+      "completed_measure_sheets_confirmed": 0,
+      "source_baseline_confirmed": null,
+      "full_costed_budget_confirmed": null,
+      "legal_review_confirmed": null,
+      "territorial_impact_confirmed": null,
+      "consultation_confirmed": null,
+      "independent_validation_confirmed": null,
+      "stage": "CADRAGE_DOCUMENTAIRE",
+      "next_evidence": "Examen juridique indépendant des délais, recours, proportionnalité, responsabilités et budget.",
+      "unknown_is_not_failure": true
+    },
+    {
+      "id": "REGIONS",
+      "name": "Régions, eau, réseaux et mobilité",
+      "linked_dimensions": [
+        "ECONOMIE",
+        "EXECUTION"
+      ],
+      "completed_measure_sheets_confirmed": 0,
+      "source_baseline_confirmed": null,
+      "full_costed_budget_confirmed": null,
+      "legal_review_confirmed": null,
+      "territorial_impact_confirmed": null,
+      "consultation_confirmed": null,
+      "independent_validation_confirmed": null,
+      "stage": "CADRAGE_DOCUMENTAIRE",
+      "next_evidence": "Définir niveaux minimaux de service, infrastructures critiques, besoins et investissements.",
+      "unknown_is_not_failure": true
+    },
+    {
+      "id": "DEMOCRATIE",
+      "name": "Démocratie et vie politique",
+      "linked_dimensions": [
+        "INSTITUTIONS",
+        "ADOPTION"
+      ],
+      "completed_measure_sheets_confirmed": 0,
+      "source_baseline_confirmed": null,
+      "full_costed_budget_confirmed": null,
+      "legal_review_confirmed": null,
+      "territorial_impact_confirmed": null,
+      "consultation_confirmed": null,
+      "independent_validation_confirmed": null,
+      "stage": "CADRAGE_DOCUMENTAIRE",
+      "next_evidence": "Contrôler compétences, mécanismes de vote et révocation, transparence et conformité électorale.",
+      "unknown_is_not_failure": true
+    },
+    {
+      "id": "ENVIRONNEMENT",
+      "name": "Environnement et ressources",
+      "linked_dimensions": [
+        "ECONOMIE",
+        "FINANCES"
+      ],
+      "completed_measure_sheets_confirmed": 0,
+      "source_baseline_confirmed": null,
+      "full_costed_budget_confirmed": null,
+      "legal_review_confirmed": null,
+      "territorial_impact_confirmed": null,
+      "consultation_confirmed": null,
+      "independent_validation_confirmed": null,
+      "stage": "CADRAGE_DOCUMENTAIRE",
+      "next_evidence": "Chiffrer effets sur milieux naturels, énergie, eau, risques climatiques et plans de suivi.",
+      "unknown_is_not_failure": true
+    },
+    {
+      "id": "SOUVERAINETE",
+      "name": "Transition constitutionnelle et relations extérieures",
+      "linked_dimensions": [
+        "SOUVERAINETE",
+        "FINANCES"
+      ],
+      "completed_measure_sheets_confirmed": 0,
+      "source_baseline_confirmed": null,
+      "full_costed_budget_confirmed": null,
+      "legal_review_confirmed": null,
+      "territorial_impact_confirmed": null,
+      "consultation_confirmed": null,
+      "independent_validation_confirmed": null,
+      "stage": "CADRAGE_DOCUMENTAIRE",
+      "next_evidence": "Établir coût du nouvel État, actifs et dettes, pensions, monnaie, frontières, traités, services et continuité.",
+      "unknown_is_not_failure": true
+    }
+  ],
+  "critical_blockers": [
+    {
+      "id": "P0-FISCAL",
+      "priority": "P0",
+      "owner": "A désigner",
+      "next": "Cadre financier consolidé dix ans avec deux régimes constitutionnels, deux taxes souhaitées et scénario de maintien; détecter déficits et clauses de suspension.",
+      "source": "official/reference/finances.md"
+    },
+    {
+      "id": "P0-LEGAL",
+      "priority": "P0",
+      "owner": "A désigner",
+      "next": "Matrice des compétences législatives et de la compatibilité des droits, avis externe et recours secteur par secteur.",
+      "source": "official/reference/corpus.md"
+    },
+    {
+      "id": "P0-SOV",
+      "priority": "P0",
+      "owner": "A désigner",
+      "next": "Plan de transition juridique et budgétaire avec dette/actifs, monnaie, prestations et continuité des services.",
+      "source": "official/reference/programme.md"
+    },
+    {
+      "id": "P1-SERVICES",
+      "priority": "P1",
+      "owner": "A désigner",
+      "next": "14 fiches sectorielles fondées sur une situation de départ, un coût complet et des indicateurs testables; préserver la main-d'oeuvre et l'accès universel.",
+      "source": "official/working/plan-execution-nova-sinjira-v1.md"
+    },
+    {
+      "id": "P1-EXTERNAL",
+      "priority": "P1",
+      "owner": "A désigner",
+      "next": "Préparer demandes de validation indépendante et documenter auteurs, mandat, hypothèses et objections.",
+      "source": "official/reference/programme.md"
+    },
+    {
+      "id": "P1-ORGANIZATION",
+      "priority": "P1",
+      "owner": "A désigner",
+      "next": "Finaliser dossier d'autorisation d'un parti provincial sous la Loi électorale; ne pas déclarer le Parti Nova autorisé sans preuve.",
+      "source": "official/reference/statuts.md"
+    }
+  ],
+  "documentary_evidence": [
+    {
+      "path": "official/reference/programme.md",
+      "state": "REFERENCE_CANDIDATE_NON_ADOPTEE",
+      "comment": "16 sections, orientations et besoins explicites"
+    },
+    {
+      "path": "official/reference/corpus.md",
+      "state": "REFERENCE_CANDIDATE_NON_ADOPTEE",
+      "comment": "Architecture institutionnelle et contrôle des droits"
+    },
+    {
+      "path": "official/reference/finances.md",
+      "state": "MODELE_NON_CERTIFIE",
+      "comment": "Scénarios fiscaux testés ne suffisent pas encore à l'équilibre"
+    },
+    {
+      "path": "official/reference/statuts.md",
+      "state": "PROJET_DE_STATUTS_NON_ADOPTE",
+      "comment": "Organisation du Parti Nova à valider"
+    },
+    {
+      "path": "official/working/plan-execution-nova-sinjira-v1.md",
+      "state": "MODELE_DE_TRAVAIL",
+      "comment": "14 portefeuilles et 5 portes G0-G4"
+    },
+    {
+      "path": "official/versions/V322/V322_FINAL_STATE_SUMMARY.md",
+      "state": "TECHNICAL_CANDIDATE_NON_ADOPTED",
+      "comment": "Corpus technique V322 de 201 pages selon son propre rapport; n'atteste ni légalisation ni budgets"
+    },
+    {
+      "path": "data/preuve-binaire-rh-msss-g0-11-2024-2025.json",
+      "state": "PREUVE_TECHNIQUE_EXTERNE",
+      "comment": "Original MSSS vérifié sur 19 lignes, sans certification clinique indépendante"
+    }
+  ],
+  "external_primary_references": [
+    {
+      "title": "Élections Québec — autorisation d'un parti politique provincial",
+      "url": "https://www.electionsquebec.qc.ca/comprendre/comprendre-le-financement-politique/obtenir-le-droit-de-collecter-des-contributions-ou-de-faire-des-depenses/"
+    },
+    {
+      "title": "Formulaires et guides d'Élections Québec",
+      "url": "https://www.electionsquebec.qc.ca/financement-depenses-et-contributions/formulaires-et-guides/"
+    }
+  ],
+  "decisions": {
+    "source_reference_docs_unchanged": true,
+    "not_officially_adopted": true,
+    "independent_review_completed": false,
+    "political_party_authorized_verified": false,
+    "sector_budgets_certified": false,
+    "ready_to_govern": false,
+    "pilot_authorized": false
+  }
+}
