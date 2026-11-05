@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import argparse, hashlib, re, shutil, sys
+import argparse, hashlib, re, shutil, sys, tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_SUPABASE = ROOT / 'supabase'
@@ -183,8 +183,22 @@ def main():
     # seule cible CI approuvée évite toute suppression accidentelle ailleurs.
     workspace_parent = ROOT / '.prod-workspace'
     expected_output = workspace_parent / 'supabase'
-    if (workspace_parent.is_symlink() or expected_output.is_symlink()
-            or out != expected_output.resolve()):
+    production_workspace = (not workspace_parent.is_symlink()
+                            and not expected_output.is_symlink()
+                            and out == expected_output.resolve())
+    # Seule exception : le validateur de ledger crée lui-même un dossier
+    # temporaire /tmp/sinjira-ledger-XXXXXXXX/supabase, jamais en production.
+    # Les parents et cibles résolus empêchent une sortie via lien symbolique.
+    temp_root = Path(tempfile.gettempdir()).resolve()
+    raw_output = Path(args.output)
+    ledger_test_workspace = (
+        not raw_output.is_symlink()
+        and out.name == 'supabase'
+        and re.fullmatch(r'sinjira-ledger-[a-zA-Z0-9_-]{6,}', out.parent.name)
+        and out.parent.parent == temp_root
+        and out.parent.is_dir()
+    )
+    if not (production_workspace or ledger_test_workspace):
         raise SystemExit('Workspace production hors du chemin isolé approuvé.')
     if out == SOURCE_SUPABASE.resolve():
         raise SystemExit('Refus de modifier supabase/ source.')
