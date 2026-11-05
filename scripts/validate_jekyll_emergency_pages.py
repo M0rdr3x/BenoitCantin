@@ -51,6 +51,7 @@ REQUIRED = (
     # et préserver l'exclusion des autres données de travail.
     "projets/projet-nova/assets/boussole-public-corpus.js",
     "projets/projet-nova/assets/sondage-public-corpus.js",
+    "projets/projet-nova/assets/sondage-citoyen.svg",
     "projets/projet-nova/boussole-electorale.html",
     "projets/projet-nova/sondage-citoyen.html",
     "projets/projet-nova/sondages-a-valider.html",
