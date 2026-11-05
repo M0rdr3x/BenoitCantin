@@ -16,6 +16,7 @@ export function verifyG14(doc,baseline) {
  const s=doc.mechanical_sensitivity;
  if(exposure!==41521||s.removed_baseline_receipts!==exposure||s.post_removal_revenues_before_any_new_tax_income!==168389-exposure||s.mechanical_budgetary_balance_without_replacement!==-7690-exposure||s.mechanical_accounting_balance_without_replacement!==-5208-exposure||s.net_adjustment_needed_to_reach_zero_budgetary_balance!==7690+exposure||s.forecast_balance_nova!==null||s.type!=="ARITHMETIQUE_FIGEE_HYPOTHETIQUE_NON_PREVISION")errors.push("STRESS_MATH");
  if(doc.jurisdiction_separation.length!==6||doc.jurisdiction_separation.some(x=>x.amount_mcad!==null)||doc.constitutional_scenarios.length!==2||doc.constitutional_scenarios.some(x=>x.budget_balance!==null||x.net_anti_haven_revenue!==null)||doc.constitutional_scenarios.find(x=>x.id==="QUEBEC_SOUVERAIN")?.baseline_federal_transfers_2026_2027!==null)errors.push("COMPETENCE");
+ if(doc.programme_percent_before!==47||doc.programme_percent_after!==47)errors.push("UNPROVEN_PROGRAMME_PROGRESS");
  if(doc.tax_design_constraints.income_tax_rate_percent!==null||doc.tax_design_constraints.offshore_revenue_incremental_after_overlap!==null||doc.programme_percent_before!==47||doc.programme_percent_after!==47||doc.decision.g0_passed!==false||doc.decision.nova_budget_certified!==false)errors.push("UNVERIFIED_CLAIMS");
  const required=Object.keys(links);
  if(required.some(id=>!cats.some(x=>x.id===id)) || cats.some(x=>!required.includes(x.id)))errors.push("MISSING_REVENUE_CATEGORY");
