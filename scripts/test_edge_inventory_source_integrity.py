@@ -60,6 +60,32 @@ class InventorySourceIntegrityTests(unittest.TestCase):
                 read_tree_text(root)
             self.assertEqual(outside.read_text("utf-8"), "synthetic private fixture")
 
+    def test_symlinked_parent_directory_never_read(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            real = root / "private"
+            real.mkdir()
+            (real / "index.ts").write_text("synthetic private source", encoding="utf-8")
+            shortcut = root / "functions"
+            shortcut.symlink_to(real, target_is_directory=True)
+            with self.assertRaisesRegex(UnsafeSource, "symbolique"):
+                read_security_text(shortcut / "index.ts")
+            with self.assertRaisesRegex(UnsafeSource, "symbolique"):
+                read_tree_text(shortcut)
+
+    def test_symlinked_directory_inside_source_tree_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            external = root / "external"
+            external.mkdir()
+            (external / "index.ts").write_text("synthetic external source", encoding="utf-8")
+            scanned = root / "scanned"
+            scanned.mkdir()
+            (scanned / "real.ts").write_text("// normal source", encoding="utf-8")
+            (scanned / "redirect").symlink_to(external, target_is_directory=True)
+            with self.assertRaisesRegex(UnsafeSource, "symbolique"):
+                read_tree_text(scanned)
+
     def test_retired_edge_call_search_fails_on_corrupted_source(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
