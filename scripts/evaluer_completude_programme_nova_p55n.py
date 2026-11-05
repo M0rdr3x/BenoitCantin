@@ -59,6 +59,7 @@ EXPECTED_FALSE={
     "main_fusionnee","sinjira_modifie",
 }
 CANDIDATE_DOCS={
+    "projets/projet-nova/README.md",
     "projets/projet-nova/official/reference/programme.md",
     "projets/projet-nova/official/reference/corpus.md",
     "projets/projet-nova/official/reference/statuts.md",
