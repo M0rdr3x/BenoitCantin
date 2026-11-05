@@ -1,0 +1,91 @@
+name: Projet Nova P55M - Reserves SOMHAC et obligations contractuelles 2024
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p55m.yml"
+      - "scripts/qualifier_reserves_et_obligations_somhac_nova_p55m.py"
+      - "scripts/tests/test_qualifier_reserves_et_obligations_somhac_nova_p55m.py"
+      - "scripts/recouper_quotes_parts_rtc_ville_nova_p55l.py"
+      - "scripts/ventiler_revenus_reciproques_nova_p55k.py"
+      - "projets/projet-nova/etudes/P55M_*"
+      - "projets/projet-nova/etudes/P55L_*"
+      - "projets/projet-nova/etudes/P55K_*"
+      - "projets/projet-nova/etudes/P54Q_*"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preuves-restrictions-sans-economies-presumees:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout sans permission decriture
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Dependance historique PDF sans consulter les sources institutionnelles
+        run: python -m pip install pypdf==5.9.0
+      - name: Executer 64 tests sur reserve SOMHAC et obligations groupes
+        run: |
+          python -m py_compile scripts/qualifier_reserves_et_obligations_somhac_nova_p55m.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_qualifier_reserves_et_obligations_somhac_nova_p55m.py")
+          assert suite.countTestCases()==64,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Produire rapport public non certifiant et verifier les sommes
+        run: |
+          python scripts/qualifier_reserves_et_obligations_somhac_nova_p55m.py \
+            --bilan-public p55m_bilan_public.json \
+            --table-public p55m_table_public.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path("p55m_bilan_public.json").read_text(encoding="utf8"))
+          b=json.loads(Path("p55m_table_public.json").read_text(encoding="utf8"))
+          assert a["schema_version"]=="P55M-BILAN-PUBLIC-1"
+          assert b["schema_version"]=="P55M-TABLE-PUBLIQUE-1"
+          assert a["reserve_somhac_affectee_cad"]==4689663
+          assert a["variation_reserve_2024_2023_cad"]==12819
+          assert a["variation_reserve_pct"]=="0.3"
+          assert a["reserve_somhac_est_tresorerie_libre"] is False
+          assert a["convention_somhac_annee_fin_indiquee"]==2039
+          assert a["obligations_groupe_organismes_cad"]==41856000
+          assert a["droits_groupe_organismes_cad"]==8591000
+          assert a["obligations_groupe_sont_somhac_seulement"] is False
+          assert a["droits_groupe_sont_somhac_seulement"] is False
+          assert b["obligations_groupe"]["attribution_somhac_cad"] is None
+          assert b["droits_groupe"]["attribution_somhac_cad"] is None
+          assert b["convention_somhac"]["montant_annuel_cad"] is None
+          assert len(b["travaux_humains_requis"])==6
+          assert a["bilan_somhac_autonome_obtenu"] is False
+          assert a["ecritures_interorganismes_obtenues"] is False
+          assert a["pdf_originaux_verifies_par_sha_actuel"]==0
+          assert a["economies_certifiees_cad"] is None
+          assert a["decision"]=="NO_GO_AUTOMATIQUE"
+          assert a["transmission_externe_autorisee"] is False
+          assert a["fusion_main_autorisee"] is False
+          PY
+      - name: Refuser toute certification par logiciel
+        run: |
+          set +e
+          python scripts/qualifier_reserves_et_obligations_somhac_nova_p55m.py --exiger-certification
+          result=$?
+          set -e
+          test "$result" -eq 3
+      - name: Archiver uniquement les deux rapports publics neutres
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p55m-restrictions-somhac-public
+          path: |
+            p55m_bilan_public.json
+            p55m_table_public.json
+          retention-days: 7
