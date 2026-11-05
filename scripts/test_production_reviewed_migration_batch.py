@@ -76,7 +76,7 @@ class ReviewedProductionMigrationBatchTests(unittest.TestCase):
         for slug, guards in other_guards.items():
             (functions / slug).mkdir()
             (functions / slug / 'index.ts').write_text(
-                '\\n'.join('// synthetic: ' + item for item in guards) + '\\n',
+                '\n'.join('// synthetic: ' + item for item in guards) + '\n',
                 encoding='utf-8',
             )
         (self.supabase / 'NOVA_POLL_SCHEMA_PREDEPLOY.sql').write_text(
