@@ -1,0 +1,43 @@
+name: Sécurité — intégrité des sources Edge Functions
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/functions/**'
+      - 'supabase/config.toml'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/test_edge_inventory_source_integrity.py'
+      - '.github/workflows/edge-inventory-source-integrity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/**'
+      - 'supabase/config.toml'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/test_edge_inventory_source_integrity.py'
+      - '.github/workflows/edge-inventory-source-integrity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fail-closed-source-audit:
+    name: Bloquer sources Edge falsifiées, corrompues ou hors dépôt
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Récupérer le dépôt sans conserver de jeton
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Installer Python épinglé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+      - name: Auto-tests négatifs de l'analyseur
+        run: python3 scripts/test_edge_inventory_source_integrity.py
+      - name: Vérifier l'inventaire complet des fonctions Edge
+        run: python3 scripts/validate_edge_function_inventory.py
