@@ -9,6 +9,37 @@ const assert=require("node:assert/strict");
 const root=path.resolve(__dirname,"..");
 const script=fs.readFileSync(path.join(root,"projets/projet-nova/script.js"),"utf8");
 
+const compassSource=fs.readFileSync(path.join(root,"projets/projet-nova/assets/boussole-electorale.js"),"utf8");
+function testCompassEvidenceLinks(){
+  const start=compassSource.indexOf("  const safeSourceUrl = value => {");
+  const end=compassSource.indexOf("\n  };",start);
+  assert.ok(start>=0&&end>start,"compass HTTPS-only source helper missing");
+  const source=compassSource.slice(start,end+5);
+  const safeSourceUrl=vm.runInNewContext(source+"\nsafeSourceUrl",{URL});
+  for(const payload of [
+    "javascript:alert(1)","data:text/html,<svg>","http://evil.invalid/",
+    "//evil.invalid/path","https://user:password@evil.invalid/",
+    'https://evil.invalid/" onmouseover="alert(1)',
+    "not-a-url"
+  ]){
+    const result=safeSourceUrl(payload);
+    if(payload.startsWith('https://evil.invalid/"')){
+      assert.ok(!result.includes('"'),"external URL must be normalized and non-executable");
+    }else{
+      assert.equal(result,"","compass unsafe evidence source accepted: "+payload);
+    }
+  }
+  assert.equal(safeSourceUrl("https://www.quebec.ca/ressources"),"https://www.quebec.ca/ressources");
+  assert.equal((compassSource.match(/name="\$\{esc\(question\.id\)\}"/g)||[]).length,2,
+    "compass radio input names must escape untrusted question IDs");
+  const data=JSON.parse(fs.readFileSync(path.join(root,"projets/projet-nova/data/boussole-preuves-2026.json"),"utf8"));
+  for(const item of data.evidenceRecords||[]){
+    if(item.sourceUrl)assert.ok(safeSourceUrl(item.sourceUrl),
+      "existing documentary HTTPS source must remain reachable");
+  }
+}
+
+
 async function render({documents=[],finance=[],meetings=[],updates=[]}={}){
   const elements={
     docs:{innerHTML:""},finance:{innerHTML:""},
@@ -52,6 +83,7 @@ async function render({documents=[],finance=[],meetings=[],updates=[]}={}){
 }
 
 (async()=>{
+  testCompassEvidenceLinks();
   const payload='<img src=x onerror="alert(1)">';
   const malicious={
     documents:[
