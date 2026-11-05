@@ -113,9 +113,13 @@ assert "'nova-civic-poll':" in public_edge_guard
 assert "NOVA_POLL_APPROVED_VERSION" in public_edge_guard
 assert "le CAPTCHA doit précéder PostgREST" in public_edge_guard
 
-for path in ("netlify.toml", "vercel.json", "projets/projet-nova/netlify.toml"):
+for path in ("netlify.toml", "vercel.json"):
     deployment = (ROOT / path).read_text(encoding="utf-8")
     assert "https://challenges.cloudflare.com" in deployment, path
+# La configuration monorepo NOVA ne duplique plus les en-têtes : le builder
+# isolé produit le CSP Cloudflare dans _headers et refuse la source brute.
+from build_netlify_public import validate_nova_nested_netlify_config
+assert not validate_nova_nested_netlify_config()
 assert "resultsVisible" in edge and "showCounts?Object.fromEntries" in edge
 assert "localStorage.setItem" not in compass_js
 assert "results.filter(r => r.score !== null)" not in compass_js[
