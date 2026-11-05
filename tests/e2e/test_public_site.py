@@ -650,9 +650,10 @@ def run() -> None:
             assert_true(page.evaluate("window.__SINJIRA_ASSISTANT__.contextLabel") == "Projet Nova", f"{BROWSER_NAME}: contexte Projet Nova invalide")
 
         if IS_LOCAL:
-            # Simuler une indisponibilité réelle du questionnaire JSON.
-            # Le registre utilise le même fichier : les deux reprises doivent
-            # rester indépendantes, sans recharger la page ni lever l'erreur.
+            # Simuler la panne des JSON en forçant le chemin de secours :
+            # en production le corpus JS versionné est normalement prioritaire.
+            # Sans neutraliser ce bundle dans le test, le routage des JSON ne
+            # serait jamais utilisé et les boutons de reprise resteraient cachés.
             retry_context = browser.new_context(
                 locale="fr-CA",
                 viewport={"width": 1440, "height": 1000},
@@ -669,6 +670,14 @@ def run() -> None:
                 rejected_requests.append(route.request.url)
                 route.fulfill(status=503, content_type="application/json", body="{}")
 
+            retry_page.route(
+                "**/assets/boussole-public-corpus.js*",
+                lambda route: route.fulfill(
+                    status=200,
+                    content_type="application/javascript",
+                    body="window.__NOVA_COMPASS_PUBLIC_CORPORA = null;",
+                ),
+            )
             retry_page.route(corpus_pattern, reject_compass_corpus)
             retry_page.goto(
                 urljoin(BASE_URL, "projets/projet-nova/boussole-electorale.html"),
@@ -747,6 +756,14 @@ def run() -> None:
                     body=json.dumps(payload, ensure_ascii=False),
                 )
 
+            mismatch_page.route(
+                "**/assets/boussole-public-corpus.js*",
+                lambda route: route.fulfill(
+                    status=200,
+                    content_type="application/javascript",
+                    body="window.__NOVA_COMPASS_PUBLIC_CORPORA = null;",
+                ),
+            )
             mismatch_page.route(mismatch_pattern, corrupt_evidence_binding)
             mismatch_page.goto(
                 urljoin(BASE_URL, "projets/projet-nova/boussole-electorale.html"),
