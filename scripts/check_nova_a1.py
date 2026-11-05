@@ -213,20 +213,32 @@ else:
         if marker not in html_404:
             errors.append(f"404.html: contrat menu mobile absent: {marker}")
 
-nova_netlify = NOVA / "netlify.toml"
-if not nova_netlify.is_file():
-    errors.append("netlify.toml Projet Nova absent")
+# Sur Netlify monorepo, la configuration de package NOVA doit construire le
+# site public isolé depuis la racine. Les politiques HTTP ne sont plus copiées
+# dans la source NOVA : elles doivent exister dans _headers/_redirects générés.
+from build_netlify_public import (
+    validate_nova_nested_netlify_config,
+    render_standalone_headers,
+    render_standalone_redirects,
+)
+
+for issue in validate_nova_nested_netlify_config():
+    errors.append(f"netlify.toml Projet Nova: {issue}")
+
+try:
+    generated_headers = render_standalone_headers()
+    generated_redirects = render_standalone_redirects()
+except (OSError, ValueError) as exc:
+    errors.append(f"Netlify Projet Nova: génération de politiques impossible: {exc}")
 else:
-    netlify_text = nova_netlify.read_text(encoding="utf-8", errors="replace")
-    if "ere-des-consciences" in netlify_text:
-        errors.append("netlify.toml Projet Nova: ancienne route ere-des-consciences encore présente")
+    if "/projets/projet-nova/documents/*.pdf" not in generated_headers:
+        errors.append("Netlify Projet Nova: en-tête PDF public absent de _headers")
     for marker in (
-        '/projets/projet-nova/documents/*.pdf',
-        'to = "/projets/sinjira/index.html"',
-        'to = "/projets/sinjira/registre/index.html"',
+        "/roman /projets/sinjira/index.html 301",
+        "/registre /projets/sinjira/registre/index.html 301",
     ):
-        if marker not in netlify_text:
-            errors.append(f"netlify.toml Projet Nova: contrat de déploiement absent: {marker}")
+        if marker not in generated_redirects:
+            errors.append(f"Netlify Projet Nova: redirection historique absente de _redirects: {marker}")
 
 # Le manifeste PWA de Projet Nova doit rester borné à son sous-site.
 pwa_manifest = NOVA / "site.webmanifest"
