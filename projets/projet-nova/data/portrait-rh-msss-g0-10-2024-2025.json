@@ -261,5 +261,23 @@
     "pilot_authorized": false,
     "budget_authorized": false,
     "financial_savings_verified": null
+  },
+  "g11_original_workbook_verification": {
+    "checked_on": "2026-11-05",
+    "evidence": "data/preuve-binaire-rh-msss-g0-11-2024-2025.json",
+    "real_execution": "data/rapport-execution-distante-g0-11-rh-2026-11-05.json",
+    "sha256_received_original": "8d65573b2f0bf0a935a58c75ba1b4b76050a08b902760f7a03b3cae0cdb86219",
+    "workbook_size_bytes": 139566,
+    "original_cells_compared": 19,
+    "original_xlsx_obtained_in_external_runtime": true,
+    "original_xlsx_stored_in_repo": false,
+    "original_raw_etc_total_2024_2025_approx": 283739.959,
+    "rounded_source_total_etc": 283740,
+    "sum_individually_rounded_etc": 283738,
+    "displayed_gap_of_2_etc_explained_by_rounding": true,
+    "institutional_review_completed": false,
+    "clinical_fte_certified": false,
+    "g0_passed": false,
+    "clarification": "L'ancienne mention d'écart de 2 ETC à confirmer appartient au stade G0.10. Les cellules originales consultées en G0.11 démontrent l'arrondi; aucun ETP clinique ne découle de cette validation."
   }
 }
