@@ -201,6 +201,22 @@ Le protocole initial `official/working/protocole-portrait-regional-sante-g0-v1.m
 
 **Étape G0.14 :** définir la classification juridique des recettes (revenus des particuliers et entreprises, TVA/TVQ, cotisations, redevances, tarifs, bénéfices des sociétés d'État, transferts fédéraux et taxes municipales), construire des assiettes défendables, documenter l'incidence distributive, puis seulement tester des taux et la soutenabilité de scénarios complets.
 
+## G0.14 — Cartographie des recettes et examen d'un système à deux prélèvements (5 novembre 2026)
+
+**Programme : 47/100, inchangé**, tant que les dépenses, les recettes sous réforme et les assiettes ne sont pas démontrées. G0.14 ne fixe aucun taux et ne revendique aucune économie nouvelle.
+
+- **Registre de travail :** `data/registre-assiettes-fiscales-g0-14-2026-2027.json`, neuf familles de recettes gouvernementales 2026–2027, six régimes ou compétences à distinguer, deux trajectoires constitutionnelles et sept études à mener.
+- **Rapprochement officiel :** huit catégories provinciales = **135 343 M$** de revenus autonomes; **33 046 M$** de transferts fédéraux, ensemble **168 389 M$**. Source : Rapport préélectoral d'août 2026 et tableau G0.13, non budget Nova.
+- **Sensibilité arithmétique uniquement :** santé FSS **9 538 M$** + foncier scolaire **1 301 M$** + taxes à la consommation **30 682 M$** = **41 521 M$** de recettes exposées à examiner. Dans un calcul artificiellement figé sans compensation, le solde budgétaire serait **−49 211 M$** plutôt que **−7 690 M$**. Ce chiffre **n'est pas** une prévision de la réforme Nova et conserve temporairement les droits et redevances mixtes (6 484 M$).
+- **Deux prélèvements envisagés :** définir un impôt sur les revenus des particuliers et entreprises et préciser si le deuxième « prélèvement anti-paradis fiscaux » est réellement une assiette additionnelle légale ou un mécanisme de conformité de l'impôt sur les revenus. Rendement net additionnel `null`, taux `null`, budget Nova `null`.
+- **Protection des régimes :** taxes municipales et fédérales, RRQ, RQAP, assurance médicaments, droits et redevances de ressources et dividendes des sociétés publiques ne sont pas automatiquement des taxes provinciales supprimables ni des recettes provinciales libres.
+- **Québec souverain :** aucune hypothèse de conservation des **33 046 M$** de transferts fédéraux; fonctions à reprendre, pensions, monnaie, dette, actifs et recettes complémentaires à évaluer.
+- **Protocole :** `official/working/protocole-g0-14-recettes-et-deux-prelevements-v1.md`; **page publique :** `deux-prelevements-g0-14.html`; **contrôle :** `assets/g14-fiscal-assiettes-core.mjs`; **tests Node :** `tests/g14-fiscal-assiettes.test.mjs` (16 cas). Tests et vérifications techniques ne certifient pas la viabilité de la politique fiscale.
+- **Sources de droit et fiscalité :** ministères du Québec, Revenu Québec et documentation municipale. La compatibilité juridique de la réforme proposée demeure **non examinée par un spécialiste indépendant**.
+- **Étape G0.15 :** mettre en œuvre la ventilation des prélèvements mixtes, la définition juridiquement utilisable de l'assiette « revenu », les fonds sociaux et l'analyse distributive avant de proposer un taux.
+
+Le programme, le corpus, le cadre financier et les statuts de référence candidats, ainsi que `data/sources.json`, ne sont pas modifiés par cette étude.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
