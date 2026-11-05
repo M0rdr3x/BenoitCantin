@@ -6,7 +6,7 @@ const fs=require("node:fs"),path=require("node:path"),vm=require("node:vm");
 const assert=require("node:assert/strict");
 const source=fs.readFileSync(path.resolve(__dirname,
   "../projets/projet-nova/assets/boussole-electorale.js"),"utf8");
-const fn=source.match(/  function renderEvidenceExplorer\([^)]*\)\{[\s\S]*?\n  }\n(?=  function renderDocumentaryStatus\()/);
+const fn=source.match(/  function renderEvidenceExplorer\([^)]*\)\{[\s\S]*?\n  }\n\s*(?=  function renderDocumentaryStatus\()/);
 assert.ok(fn,"Explorateur documentaire introuvable");
 const listeners=new Map(),els=new Map();
 let writes=0;
