@@ -97,6 +97,15 @@ def quarantine_unreviewed_edge_deploys(workspace: Path) -> tuple[str, ...]:
         ('send-game-report', False),
         ('life-story-delivery', False),
     )
+    # Bloquer toute nouvelle fonction publique non revue, même si sa source
+    # figure dans le workspace. Une route verify_jwt=false ne doit jamais
+    # passer dans un déploiement global par défaut.
+    public_reviewed = {slug for slug, jwt_required in quarantine if not jwt_required}
+    for slug, settings in functions_config.items():
+        if not isinstance(settings, dict) or type(settings.get('verify_jwt')) is not bool:
+            raise SystemExit(f'Configuration JWT absente ou invalide : {slug}.')
+        if settings['verify_jwt'] is False and slug not in public_reviewed:
+            raise SystemExit(f'Nouvelle fonction publique non revue : {slug}.')
     config = original
     for slug, jwt_required in quarantine:
         folder = workspace / 'functions' / slug
