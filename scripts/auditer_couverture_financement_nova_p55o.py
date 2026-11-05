@@ -127,9 +127,10 @@ def validate_catalogue(catalogue):
                 and entry["etat"+"s_source"]==
                     "NON_RENSEIGNE_SUR_60_EXERCICES_SCENARIOS"
                 and entry["statut"]=="A_INSTRUIRE"
+                and type(entry["domaine"]) is str
+                and len(entry["domaine"])>=3
                 and all(type(entry[k]) is str and len(entry[k])>=8
-                        for k in ("domaine","preuve_requise",
-                                  "condition","interdiction")),
+                        for k in ("preuve_requise","condition","interdiction")),
                 "P55O_PREUVE_OU_CHAMP_NON_CONFORME")
     prior=catalogue.get("source_budget_historique")
     require(type(prior) is dict
