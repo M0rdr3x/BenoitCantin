@@ -172,6 +172,19 @@ Le protocole initial `official/working/protocole-portrait-regional-sante-g0-v1.m
 - **Préservation des phases G0.6–G0.9 :** les champs certifiés demeurent **`null`**, car la transcription secondaire G0.10 n'est pas une validation originale de L1/L2. Les registres antérieurs pointent vers le nouveau fichier dans `g10_secondary_rh_portrait`. Les textes officiels candidats et le manifeste `data/sources.json` demeurent inchangés.
 - **Pour certifier :** obtenir la copie binaire avec SHA-256, vérifier les cellules de la Feuille A - 2, résoudre l'écart de 2 ETC et faire confirmer le périmètre par un expert indépendant. **G0 NON FRANCHIE**, aucun pilote, transfert de personnel ni économie autorisés.
 
+## G0.12 — Audit de complétude du programme (5 novembre 2026)
+
+**État d'avancement estimé : 47/100 (47 %) vers un programme complet et applicable.** Il s'agit d'une **grille interne de maturité**, non d'une mesure scientifique ni d'un programme juridiquement ou financièrement certifié. La structuration/rédaction des orientations est appréciée à **environ 75 %**, mais ce second chiffre n'est pas audité indépendamment.
+
+- **Page publique :** `avancement-programme-nova.html`. Barème détaillé, dix domaines, quatorze chantiers, priorités documentaires et statut non adopté.
+- **Grille structurée :** `data/audit-completude-programme-nova-2026-11-05.json`. Somme des poids = 100, points accordés = 47; motivations par domaine et preuves sources, six décisions prioritaires.
+- **Audit détaillé :** `official/working/audit-completude-programme-g0-12-v1.md`. Le score ne représente ni une autorisation du parti, ni un budget équilibré, ni le droit d'appliquer une réforme.
+- **Validation logicielle :** `assets/audit-completude-programme-core.mjs` et `tests/audit-completude-programme.test.mjs`. Douze contrôles Node déclarés sur le calcul, les 14 chantiers, les pondérations, les falsifications du statut et les priorités; ne pas annoncer une exécution GitHub Actions sans journal.
+- **Points critiques :** financement des deux scénarios (Québec dans le Canada et Québec souverain), fiscalité à deux prélèvements non démontrée à l'équilibre, avis juridiques, transition constitutionnelle, budgets des 14 chantiers, évaluation indépendante, droits et protection de la main-d’œuvre, adoption statutaire et organisation électorale.
+- **Références préservées :** `official/reference/programme.md`, `corpus.md`, `finances.md`, `statuts.md`, et `data/sources.json` n'ont pas été modifiés pour la phase G0.12. Le corpus technique V322 est un candidat non adopté, non un résultat normatif.
+- **Loi électorale provinciale :** source et guides à jour sous `https://www.electionsquebec.qc.ca/`. Le dépôt ne contient pas de preuve confirmant une autorisation officielle du Parti Nova et ne doit donc pas la présumer.
+- **Prochaine priorité :** dresser un **cadre fiscal et budgétaire consolidé sur dix ans** avec hypothèses explicites, puis les matrices juridiques et de transition pour rendre les mesures budgétables et soumises à un avis indépendant.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
