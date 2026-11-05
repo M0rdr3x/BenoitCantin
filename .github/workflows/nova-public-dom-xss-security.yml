@@ -1,0 +1,46 @@
+name: Sécurité — NOVA données publiques sans injection HTML
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'projets/projet-nova/script.js'
+      - 'projets/projet-nova/assets/documents.js'
+      - 'projets/projet-nova/data/actualites.json'
+      - 'projets/projet-nova/data/comptabilite.json'
+      - 'projets/projet-nova/data/rencontres.json'
+      - 'scripts/test_nova_public_dom_xss.cjs'
+      - '.github/workflows/nova-public-dom-xss-security.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'projets/projet-nova/script.js'
+      - 'projets/projet-nova/assets/documents.js'
+      - 'projets/projet-nova/data/actualites.json'
+      - 'projets/projet-nova/data/comptabilite.json'
+      - 'projets/projet-nova/data/rencontres.json'
+      - 'scripts/test_nova_public_dom_xss.cjs'
+      - '.github/workflows/nova-public-dom-xss-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  xss-boundary:
+    name: Rejeter HTML actif et liens dangereux issus des JSON NOVA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Configurer Node épinglé
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+      - name: Vérifier la syntaxe du client public
+        run: node --check projets/projet-nova/script.js
+      - name: Exécuter les scénarios de mutation XSS
+        run: node scripts/test_nova_public_dom_xss.cjs
