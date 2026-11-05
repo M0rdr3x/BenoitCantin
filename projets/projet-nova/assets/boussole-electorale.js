@@ -925,6 +925,10 @@
   }
 
   document.addEventListener("DOMContentLoaded",() => {
+    // Bloquer les soumissions natives, y compris avec Entrée au clavier.
+    // Un gestionnaire JavaScript explicite reste actif sous une CSP stricte,
+    // contrairement à l’ancien attribut HTML inline onsubmit.
+    $("#compass-form")?.addEventListener("submit",event => event.preventDefault());
     $("#compass-start")?.addEventListener("click",startQuestionnaire);
     $("#compass-prev")?.addEventListener("click",goPrevious);
     $("#compass-next")?.addEventListener("click",goNext);

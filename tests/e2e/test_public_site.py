@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import os
+from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_playwright
@@ -20,6 +21,7 @@ PUBLIC_ROUTES = [
     "projets/sinjira/monde-parallele/",
     "projets/projet-nova/",
     "projets/projet-nova/boussole-electorale.html",
+    "projets/projet-nova/sondage-citoyen.html",
     "projets/sinjira/jeux/",
     "projets/sinjira/jeux/fracture-du-reseau-mere/",
 ]
@@ -69,10 +71,51 @@ def run() -> None:
             locale="fr-CA",
             viewport={"width": 1440, "height": 1000},
             reduced_motion="reduce",
+            service_workers="block",
         )
         page = context.new_page()
         page_errors = []
         register_error_capture(page, page_errors)
+
+        if IS_LOCAL:
+            # Ne jamais solliciter l'API de production depuis l'E2E local.
+            # Elle refuse légitimement les origines localhost; WebKit peut
+            # signaler ce refus CORS comme une erreur JavaScript de la page.
+            poll_corpus_path = Path(__file__).resolve().parents[2] / "projets/projet-nova/data/sondage-citoyen-v1.json"
+            poll_corpus = json.loads(poll_corpus_path.read_text(encoding="utf-8"))
+            assert_true(poll_corpus["published"] is False, "Le corpus de sondage est provisoire")
+            poll_public_snapshot = json.dumps({
+                "version": poll_corpus["version"],
+                "open": False,
+                "siteKey": None,
+                "minPublicBallots": 10,
+                "resultsVisible": False,
+                "ballots": None,
+                "publishedAt": None,
+                "questions": [
+                    {"id": q["id"], "ordinal": q["ordinal"], "text": q["text"], "counts": None}
+                    for q in poll_corpus["questions"]
+                ],
+            }, ensure_ascii=False)
+            unexpected_poll_writes = []
+
+            def serve_closed_poll_snapshot(route):
+                if route.request.method != "GET":
+                    unexpected_poll_writes.append(route.request.method)
+                    route.fulfill(status=405, content_type="application/json", body='{"error":"vote_interdit_en_test"}')
+                    return
+                route.fulfill(
+                    status=200,
+                    content_type="application/json",
+                    headers={
+                        "Access-Control-Allow-Origin": "*",
+                        "Access-Control-Allow-Methods": "GET",
+                        "Cache-Control": "no-store",
+                    },
+                    body=poll_public_snapshot,
+                )
+
+            context.route("**/functions/v1/nova-civic-poll*", serve_closed_poll_snapshot)
 
         for route in PUBLIC_ROUTES:
             url = urljoin(BASE_URL, route)
@@ -144,7 +187,26 @@ def run() -> None:
             page.locator('a[href="boussole-electorale.html"]').count() >= 3,
             f"{BROWSER_NAME}: la Boussole doit avoir au moins trois accès depuis l’accueil Nova",
         )
-        nova_compass_entry = page.locator(".nova-compass-entry .nova-compass-entry-link")
+        # Les deux outils partagent volontairement le style de carte, mais pas
+        # leur rôle : chaque sélecteur doit être propre à son accès public.
+        assert_true(
+            page.locator('a[href="sondage-citoyen.html"]').count() >= 3,
+            f"{BROWSER_NAME}: le sondage doit avoir au moins trois accès depuis l’accueil Nova",
+        )
+        nova_poll_entry = page.locator(".nova-poll-home-entry .nova-compass-entry-link")
+        assert_true(nova_poll_entry.count() == 1, f"{BROWSER_NAME}: accès prioritaire Sondage absent de Nova")
+        assert_true(nova_poll_entry.is_visible(), f"{BROWSER_NAME}: accès prioritaire Sondage non visible")
+        assert_true(
+            nova_poll_entry.locator('img[src="assets/sondage-citoyen.svg"]').count() == 1,
+            f"{BROWSER_NAME}: illustration du sondage absente de l’accès prioritaire",
+        )
+        assert_true(
+            page.locator('a.hero-side-link-sondage img[src="assets/sondage-citoyen.svg"]').count() == 1,
+            f"{BROWSER_NAME}: illustration du sondage absente des accès rapides",
+        )
+        nova_compass_entry = page.locator(
+            ".nova-compass-entry:not(.nova-poll-home-entry) .nova-compass-entry-link"
+        )
         assert_true(nova_compass_entry.count() == 1, f"{BROWSER_NAME}: accès prioritaire Boussole absent en haut de Nova")
         assert_true(nova_compass_entry.is_visible(), f"{BROWSER_NAME}: accès prioritaire Boussole non visible")
         assert_true(
@@ -155,6 +217,35 @@ def run() -> None:
             page.locator('nav .nav-link-boussole').inner_text().strip() == "Boussole électorale",
             f"{BROWSER_NAME}: libellé complet Boussole électorale absent de la navigation Nova",
         )
+
+        # Le questionnaire politique doit rester en lecture seule tant que
+        # la version n'a pas été explicitement approuvée. Aucun bulletin de
+        # production n'est envoyé par cette vérification navigateur.
+        page.goto(urljoin(BASE_URL, "projets/projet-nova/sondage-citoyen.html"), wait_until="domcontentloaded", timeout=30_000)
+        page.wait_for_function(
+            """() => {
+              const corpus = window.__NOVA_POLL_PUBLIC_CORPUS;
+              return !!corpus && corpus.published === false &&
+                corpus.questions?.length === 8 && corpus.options?.length === 6;
+            }""",
+            timeout=10_000,
+        )
+        assert_true(page.locator("#poll-form").count() == 1, f"{BROWSER_NAME}: formulaire sondage absent")
+        assert_true(page.locator("#poll-send").is_disabled(), f"{BROWSER_NAME}: collecte provisoire ouverte par erreur")
+        assert_true(
+            page.locator('a[href="sondages-a-valider.html"]').count() >= 1,
+            f"{BROWSER_NAME}: questionnaires candidats 40/64 non accessibles",
+        )
+        assert_true(
+            page.locator("#poll-results").count() == 1,
+            f"{BROWSER_NAME}: zone des résultats agrégés absente",
+        )
+
+        if IS_LOCAL:
+            assert_true(
+                not unexpected_poll_writes,
+                f"{BROWSER_NAME}: une écriture politique a été tentée pendant un test en lecture seule",
+            )
 
         page.goto(urljoin(BASE_URL, "projets/projet-nova/boussole-electorale.html"), wait_until="domcontentloaded", timeout=30_000)
         assert_true(
@@ -357,6 +448,17 @@ def run() -> None:
         assert_true(not page.locator("#compass-start").is_disabled(), f"{BROWSER_NAME}: démarrage Boussole indisponible")
         page.locator("#compass-start").click()
         page.locator("#compass-question-stage .compass-question").wait_for(state="visible", timeout=10_000)
+        assert_true(
+            page.evaluate(
+                """() => {
+                  const form = document.querySelector("#compass-form");
+                  const event = new Event("submit", {bubbles: true, cancelable: true});
+                  form.dispatchEvent(event);
+                  return event.defaultPrevented;
+                }"""
+            ),
+            f"{BROWSER_NAME}: la soumission clavier de la Boussole doit être interceptée sans code HTML inline",
+        )
         assert_true(
             page.locator("#compass-question-stage .compass-question").count() == 1,
             f"{BROWSER_NAME}: une seule question doit être visible à la fois",
@@ -596,9 +698,10 @@ def run() -> None:
             assert_true(page.evaluate("window.__SINJIRA_ASSISTANT__.contextLabel") == "Projet Nova", f"{BROWSER_NAME}: contexte Projet Nova invalide")
 
         if IS_LOCAL:
-            # Simuler une indisponibilité réelle du questionnaire JSON.
-            # Le registre utilise le même fichier : les deux reprises doivent
-            # rester indépendantes, sans recharger la page ni lever l'erreur.
+            # Simuler la panne des JSON en forçant le chemin de secours :
+            # en production le corpus JS versionné est normalement prioritaire.
+            # Sans neutraliser ce bundle dans le test, le routage des JSON ne
+            # serait jamais utilisé et les boutons de reprise resteraient cachés.
             retry_context = browser.new_context(
                 locale="fr-CA",
                 viewport={"width": 1440, "height": 1000},
@@ -615,6 +718,14 @@ def run() -> None:
                 rejected_requests.append(route.request.url)
                 route.fulfill(status=503, content_type="application/json", body="{}")
 
+            retry_page.route(
+                "**/assets/boussole-public-corpus.js*",
+                lambda route: route.fulfill(
+                    status=200,
+                    content_type="application/javascript",
+                    body="window.__NOVA_COMPASS_PUBLIC_CORPORA = null;",
+                ),
+            )
             retry_page.route(corpus_pattern, reject_compass_corpus)
             retry_page.goto(
                 urljoin(BASE_URL, "projets/projet-nova/boussole-electorale.html"),
@@ -693,6 +804,14 @@ def run() -> None:
                     body=json.dumps(payload, ensure_ascii=False),
                 )
 
+            mismatch_page.route(
+                "**/assets/boussole-public-corpus.js*",
+                lambda route: route.fulfill(
+                    status=200,
+                    content_type="application/javascript",
+                    body="window.__NOVA_COMPASS_PUBLIC_CORPORA = null;",
+                ),
+            )
             mismatch_page.route(mismatch_pattern, corrupt_evidence_binding)
             mismatch_page.goto(
                 urljoin(BASE_URL, "projets/projet-nova/boussole-electorale.html"),
@@ -734,7 +853,10 @@ def run() -> None:
             viewport={"width": 390, "height": 844},
             has_touch=True,
             reduced_motion="reduce",
+            service_workers="block",
         )
+        if IS_LOCAL:
+            mobile.route("**/functions/v1/nova-civic-poll*", serve_closed_poll_snapshot)
         mobile_page = mobile.new_page()
         mobile_errors = []
         register_error_capture(mobile_page, mobile_errors)
