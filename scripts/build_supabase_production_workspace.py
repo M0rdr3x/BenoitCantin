@@ -179,6 +179,13 @@ def main():
     ap.add_argument('--output', required=True)
     args = ap.parse_args()
     out = Path(args.output).resolve()
+    # La construction supprime un ancien workspace. Borner ce chemin à la
+    # seule cible CI approuvée évite toute suppression accidentelle ailleurs.
+    workspace_parent = ROOT / '.prod-workspace'
+    expected_output = workspace_parent / 'supabase'
+    if (workspace_parent.is_symlink() or expected_output.is_symlink()
+            or out != expected_output.resolve()):
+        raise SystemExit('Workspace production hors du chemin isolé approuvé.')
     if out == SOURCE_SUPABASE.resolve():
         raise SystemExit('Refus de modifier supabase/ source.')
 
