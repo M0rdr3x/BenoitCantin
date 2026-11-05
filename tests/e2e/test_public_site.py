@@ -313,9 +313,16 @@ def run() -> None:
         # Vérifier les chiffres affichés à partir de la matrice, sans total figé
         # (les sources et statuts peuvent évoluer d'une PR à l'autre).
         documentary_metrics = page.evaluate("""async () => {
-            const response = await fetch("data/boussole-preuves-2026.json", {cache:"no-store"});
-            if(!response.ok) throw new Error("Corpus de preuves indisponible");
-            const corpus = await response.json();
+            // Pages legacy héberge le corpus JS versionné, non les JSON.
+            // Utiliser la même source que le runtime; JSON reste le repli Netlify.
+            let corpus = window.__NOVA_COMPASS_PUBLIC_CORPORA?.evidence;
+            if(!corpus){
+                const response = await fetch("data/boussole-preuves-2026.json", {cache:"no-store"});
+                if(!response.ok) throw new Error("Corpus de preuves indisponible");
+                corpus = await response.json();
+            }
+            if(!Array.isArray(corpus.questions) || corpus.questions.length !== 64)
+                throw new Error("Corpus de preuves incomplet");
             const statuses = corpus.questions.flatMap(q => Object.values(q.statuses || {}));
             const expected = {
                 "Fiches finalisées": statuses.filter(v => v !== "unknown").length,
@@ -373,9 +380,12 @@ def run() -> None:
             f"{BROWSER_NAME}: menu documentaire contient des intitulés trop longs",
         )
         document_question_sync = page.evaluate("""async () => {
-            const response = await fetch("data/boussole-electorale-v2.json", {cache:"no-store"});
-            if(!response.ok) return false;
-            const corpus = await response.json();
+            let corpus = window.__NOVA_COMPASS_PUBLIC_CORPORA?.questionnaire;
+            if(!corpus){
+                const response = await fetch("data/boussole-electorale-v2.json", {cache:"no-store"});
+                if(!response.ok) return false;
+                corpus = await response.json();
+            }
             const select = document.querySelector("#compass-evidence-question");
             const text = document.querySelector("#compass-evidence-selected-question");
             const first = corpus.questions.find(q => q.id === "q01");
