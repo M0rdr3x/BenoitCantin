@@ -107,6 +107,33 @@ JWT_SENSITIVE_GUARDS = {
 }
 
 TEXT_SUFFIXES = {".ts", ".js", ".json", ".toml", ".md", ".html"}
+MAX_SOURCE_BYTES = 2 * 1024 * 1024
+
+
+class UnsafeSource(Exception):
+    """Une source contrôlée ne peut être vérifiée de façon fiable."""
+
+
+def read_security_text(file: Path) -> str:
+    """Fail-closed : aucun lien symbolique, octet NUL ou décodage permissif."""
+    if file.is_symlink():
+        raise UnsafeSource(f"{file}: lien symbolique interdit")
+    try:
+        size = file.stat().st_size
+        if size > MAX_SOURCE_BYTES:
+            raise UnsafeSource(f"{file}: fichier source trop volumineux")
+        data = file.read_bytes()
+    except OSError as exc:
+        raise UnsafeSource(f"{file}: source inaccessible ({type(exc).__name__})") from exc
+    if len(data) > MAX_SOURCE_BYTES:
+        raise UnsafeSource(f"{file}: fichier source trop volumineux")
+    if b"\x00" in data:
+        raise UnsafeSource(f"{file}: octet NUL dans une source texte")
+    try:
+        return data.decode("utf-8", errors="strict")
+    except UnicodeError as exc:
+        raise UnsafeSource(f"{file}: UTF-8 invalide") from exc
+
 
 
 def text_files(path: Path):
@@ -118,7 +145,7 @@ def text_files(path: Path):
 
 
 def read_tree_text(path: Path) -> str:
-    return "\n".join(file.read_text("utf-8", errors="ignore") for file in text_files(path) or [])
+    return "\n".join(read_security_text(file) for file in text_files(path) or [])
 
 
 def find_edge_calls(paths: list[Path], slug: str) -> list[str]:
@@ -131,7 +158,7 @@ def find_edge_calls(paths: list[Path], slug: str) -> list[str]:
     hits: list[str] = []
     for root in paths:
         for file in text_files(root) or []:
-            text = file.read_text("utf-8", errors="ignore")
+            text = read_security_text(file)
             if any(pattern.search(text) for pattern in patterns):
                 hits.append(str(file.relative_to(ROOT)))
     return sorted(set(hits))
@@ -143,6 +170,11 @@ def main() -> int:
         print("ECHEC inventaire Edge Functions: dossier supabase/functions absent.")
         return 1
 
+    if FUNCTIONS.is_symlink():
+        errors.append("Le répertoire des fonctions Edge est un lien symbolique.")
+    for entry in FUNCTIONS.rglob("*"):
+        if entry.is_symlink():
+            errors.append(f"Lien symbolique interdit dans les fonctions Edge: {entry.relative_to(ROOT)}")
     actual = {path.name for path in FUNCTIONS.iterdir() if path.is_dir() and path.name != "_shared"}
     missing = sorted(CANONICAL - actual)
     extra = sorted(actual - CANONICAL)
@@ -155,7 +187,9 @@ def main() -> int:
         errors.append("supabase/config.toml absent.")
         config = {}
     else:
-        config = tomllib.loads(CONFIG.read_text("utf-8"))
+        if CONFIG.is_symlink():
+            raise UnsafeSource("supabase/config.toml: lien symbolique interdit")
+        config = tomllib.loads(read_security_text(CONFIG))
 
     function_config = config.get("functions", {}) if isinstance(config, dict) else {}
     configured = set(function_config.keys()) if isinstance(function_config, dict) else set()
@@ -181,7 +215,7 @@ def main() -> int:
     if not limited_reader.is_file():
         errors.append("Lecteur HTTP borné partagé manquant.")
     else:
-        helper = limited_reader.read_text("utf-8")
+        helper = read_security_text(limited_reader)
         for marker in (
             "req.body.getReader()",
             "byteCount += value.byteLength",
@@ -194,7 +228,7 @@ def main() -> int:
     for slug in ("get-document-url", "send-game-report", "life-story-delivery"):
         entry = FUNCTIONS / slug / "index.ts"
         if entry.is_file():
-            source = entry.read_text("utf-8")
+            source = read_security_text(entry)
             if "readLimitedUtf8Body" not in source or "limited-body.mjs" not in source:
                 errors.append(f"{slug}: utilisation du lecteur HTTP partagé absente.")
             if "await req.text()" in source or "await req.json()" in source:
@@ -272,4 +306,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except UnsafeSource as exc:
+        print(f"ECHEC inventaire Edge Functions: lecture de source non fiable: {exc}")
+        raise SystemExit(1) from None
