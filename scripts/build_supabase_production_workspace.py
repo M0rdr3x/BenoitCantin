@@ -93,6 +93,9 @@ def quarantine_unreviewed_edge_deploys(workspace: Path) -> tuple[str, ...]:
     quarantine = (
         ('security-context', True),
         ('nova-civic-poll', False),
+        ('get-document-url', False),
+        ('send-game-report', False),
+        ('life-story-delivery', False),
     )
     config = original
     for slug, jwt_required in quarantine:
@@ -113,18 +116,39 @@ def quarantine_unreviewed_edge_deploys(workspace: Path) -> tuple[str, ...]:
             # n'existe pas encore; éviter de remplacer la fonction active.
             if 'service_security_evaluate_context_session' not in source:
                 raise SystemExit('Contrat security-context modifié : revue indépendante obligatoire.')
-        else:
+        elif slug == 'nova-civic-poll':
             # Une fonction publique utilisant service_role ne doit jamais
             # devenir déployable par la synchronisation générique implicite.
             expected = ('Deno.env.get("NOVA_POLL_ENABLED") === "true"', 'if(!await confirmCaptcha(payload.captchaToken))', 'SUPABASE_SERVICE_ROLE_KEY')
             if any(marker not in source for marker in expected):
                 raise SystemExit('Contrat public NOVA modifié : revue indépendante obligatoire.')
+        else:
+            # Ces trois routes publiques (verify_jwt=false) servent des PDF
+            # ou des liens privés. Leur version déployée diffère du code Git ;
+            # un deploy global ne doit jamais les remplacer implicitement.
+            public_guards = {
+                'get-document-url': ('optionalUser(req)', 'project_access_rank',
+                                     'createSignedUrl', 'MAX_REQUEST_BYTES'),
+                'send-game-report': ('optionalUser(req)',
+                                     'PAID_EXTERNAL_SERVICES_ENABLED=false',
+                                     'to: [user.email]', 'MAX_REQUEST_BYTES'),
+                'life-story-delivery': ('allowedOrigin(req)', 'sha256Hex',
+                                        'token_hash', 'service_life_story_register_download',
+                                        'MAX_PDF_BYTES'),
+            }
+            expected = public_guards[slug]
+            # Vérifier l'APPEL du lecteur borné, non sa simple importation.
+            if (any(marker not in source for marker in expected)
+                    or not re.search(r'\bawait\s+readLimitedUtf8Body\s*\(', source)
+                    or (slug == 'send-game-report' and not re.search(
+                        r'\bawait\s+readLimitedBinaryResponse\s*\(', source))):
+                raise SystemExit(f'Contrat public {slug} modifié : revue obligatoire.')
         config = config.replace(expected_line, '', 1)
 
     candidate = workspace / 'NOVA_POLL_SCHEMA_PREDEPLOY.sql'
     if candidate.is_symlink() or not candidate.is_file():
         raise SystemExit('SQL candidat NOVA absent ou symbolique : arrêt du déploiement.')
-    # S'assurer que les deux fonctions ont disparu de l'inventaire TOML
+    # S'assurer que les cinq fonctions ont disparu de l'inventaire TOML
     # avant de supprimer leur copie et jamais une source du dépôt.
     retained = tomllib.loads(config).get('functions', {})
     if set(retained) != set(functions_config) - {slug for slug, _ in quarantine}:
