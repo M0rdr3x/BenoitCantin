@@ -462,5 +462,19 @@
     "savings_verified": null,
     "independent_certification": false
   },
-  "next_action": "Exécuter volontairement le workflow G0.7 sur GitHub; examiner source-audit.json et les métadonnées du XLSX avant de commencer une extraction numérique."
+  "next_action": "Exécuter volontairement le workflow G0.7 sur GitHub; examiner source-audit.json et les métadonnées du XLSX avant de commencer une extraction numérique.",
+  "g10_secondary_rh_portrait": {
+    "reference": "data/portrait-rh-msss-g0-10-2024-2025.json",
+    "secondary_xlsx_markdown_parsed": true,
+    "direct_original_xlsx_binary_acquired": false,
+    "original_sha256": null,
+    "source_sheet": "Feuille A - 2",
+    "rss_rows_with_provisional_persons_and_etc": 18,
+    "persons_2025_reported_total": 344056,
+    "etc_2024_2025_reported_total": 283740,
+    "etc_unresolved_discrepancy": 2,
+    "independently_certified": false,
+    "clinically_available_fte_verified": false,
+    "note": "Les valeurs G0.10 sont une transcription provisoire d'une source officielle par un parseur externe. Ne pas remplacer les valeurs certifiées nulles ni confondre ETC et ETP clinique."
+  }
 }
