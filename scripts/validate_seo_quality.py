@@ -33,6 +33,7 @@ NOVA_PAGE_NAMES = [
     "preuve-source-rh-g0-11-sante.html",
     "avancement-programme-nova.html",
     "viabilite-financiere-g0-13.html",
+    "deux-prelevements-g0-14.html",
     "indicateurs-g0-sante.html",
     "diagnostic-g0-sante.html",
     "registre-donnees-nova-sinjira.html",
