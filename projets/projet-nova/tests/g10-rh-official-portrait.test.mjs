@@ -63,3 +63,25 @@ test("table publique limitée aux personnes et ETC rémunérés",()=>{
  assert.ok(tbl.every(x=>!Object.hasOwn(x,"clinical_fte")&&
    x.status==="TRANSCRIPTION_SECONDAIRE_NON_CERTIFIEE"));
 });
+
+test("concordance CSV avec JSON: 18 RSS, organisation 00 et total publié",async()=>{
+ const csv=await readFile(new URL("../data/portrait-rh-msss-g0-10-2024-2025.csv",import.meta.url),"utf8");
+ const lines=csv.trim().split("\n");
+ const records=lines.map(line=>[...line.matchAll(/"((?:[^"]|"")*)"/g)]
+   .map(x=>x[1].replaceAll('""','"')));
+ assert.equal(records.length,21);
+ assert.ok(records.every(x=>x.length===9));
+ for(let i=0;i<18;i++){
+  const row=records[i+1],source=document.regions[i];
+  assert.equal(row[0],"RSS");assert.equal(row[1],source.rss_id);
+  assert.equal(Number(row[3]),source.persons_2025);
+  assert.equal(Number(row[4]),source.etc_2024_2025);
+  assert.equal(Number(row[5]),source.persons_2024);
+ }
+ assert.equal(records[19][0],"ORGANISATION");
+ assert.equal(Number(records[19][3]),804);
+ assert.equal(records[20][0],"TOTAL_PUBLIE");
+ assert.equal(Number(records[20][3]),344056);
+ assert.equal(Number(records[20][4]),283740);
+ assert.ok(records[20][7].includes("2"));
+});
