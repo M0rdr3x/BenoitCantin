@@ -1,0 +1,265 @@
+{
+  "schema": "nova-rh-msss-g0-10-secondary-transcription/v1",
+  "project": "Projet Nova",
+  "review_date": "2026-11-04",
+  "scope": "Personnel salarié et encadrement du RSSS, établissements publics/privés conventionnés et Santé Québec; selon les exclusions du MSSS.",
+  "source": {
+    "publisher": "MSSS Québec",
+    "url": "https://cdn-contenu.quebec.ca/cdn-contenu/sante/documents/Systeme_et_services_de_sante/organisation-services/donnees-systeme-sante-quebecois-services/ressources-humaines/denombrement-et-remuneration-effectif-rsss-2024-2025.xlsx",
+    "landing_url": "https://www.quebec.ca/sante/systeme-et-services-de-sante/organisation-des-services/donnees-systeme-sante-quebecois-services/ressources-humaines",
+    "reported_data_production": "mars 2026",
+    "worksheet_title": "Feuille A - 2",
+    "obtained_as": "Rendu Markdown du XLSX officiel par Firecrawl; HTTP 200 et type MIME XLSX vérifiés dans la réponse du parseur",
+    "original_file_bytes_retained": false,
+    "original_sha256": null,
+    "verified_excel_cell_addresses": false,
+    "validation_state": "TRANSCRIPTION_TIERCE_PRESENCE_ETC_SOMMES_CONTROLEES_NON_CERTIFIEE",
+    "independent_audit": false
+  },
+  "definitions": {
+    "persons": "Nombre de personnes au 31 mars; emploi principal dans le périmètre MSSS et au moins une heure rémunérée ou non dans les 3 mois suivants le 31 mars pour 2018-2019 et années suivantes; personnes avec plus d'un emploi dédoublonnées selon statut/ETC.",
+    "etc": "Equivalent temps complet (ETC) calculé selon les heures rémunérées et les heures annuelles du poste, incluant certaines vacances, jours fériés et congés rémunérés et les heures supplémentaires prises en congé compensé; les heures supplémentaires payées sont exclues.",
+    "exclusions": "Professionnels directement rémunérés par RAMQ; main-d'œuvre indépendante; personnel du MSSS et organismes distincts; organismes communautaires et établissements privés non conventionnés; personnel des centres de recherche.",
+    "geography": "18 régions sociosanitaires; RSS 04 Mauricie et Centre-du-Québec regroupées; Nord-du-Québec réparti entre RSS 10, 17 et 18.",
+    "clinical_fte_equivalence": false
+  },
+  "regions": [
+    {
+      "rss_id": "01",
+      "region_source_name": "Bas-Saint-Laurent",
+      "persons_2025": 9057,
+      "persons_2024": 8962,
+      "etc_2024_2025": 7553,
+      "source_worksheet": "Feuille A - 2",
+      "clinical_fte": null,
+      "cost_per_episode": null,
+      "independently_reviewed": false
+    },
+    {
+      "rss_id": "02",
+      "region_source_name": "Saguenay - Lac-Saint-Jean",
+      "persons_2025": 12512,
+      "persons_2024": 12156,
+      "etc_2024_2025": 10292,
+      "source_worksheet": "Feuille A - 2",
+      "clinical_fte": null,
+      "cost_per_episode": null,
+      "independently_reviewed": false
+    },
+    {
+      "rss_id": "03",
+      "region_source_name": "Capitale-Nationale",
+      "persons_2025": 35703,
+      "persons_2024": 35450,
+      "etc_2024_2025": 30032,
+      "source_worksheet": "Feuille A - 2",
+      "clinical_fte": null,
+      "cost_per_episode": null,
+      "independently_reviewed": false
+    },
+    {
+      "rss_id": "04",
+      "region_source_name": "Mauricie et Centre-du-Québec",
+      "persons_2025": 21873,
+      "persons_2024": 21457,
+      "etc_2024_2025": 17500,
+      "source_worksheet": "Feuille A - 2",
+      "clinical_fte": null,
+      "cost_per_episode": null,
+      "independently_reviewed": false
+    },
+    {
+      "rss_id": "05",
+      "region_source_name": "Estrie",
+      "persons_2025": 20967,
+      "persons_2024": 20307,
+      "etc_2024_2025": 17028,
+      "source_worksheet": "Feuille A - 2",
+      "clinical_fte": null,
+      "cost_per_episode": null,
+      "independently_reviewed": false
+    },
+    {
+      "rss_id": "06",
+      "region_source_name": "Montréal",
+      "persons_2025": 107976,
+      "persons_2024": 106327,
+      "etc_2024_2025": 90259,
+      "source_worksheet": "Feuille A - 2",
+      "clinical_fte": null,
+      "cost_per_episode": null,
+      "independently_reviewed": false
+    },
+    {
+      "rss_id": "07",
+      "region_source_name": "Outaouais",
+      "persons_2025": 11401,
+      "persons_2024": 11478,
+      "etc_2024_2025": 9848,
+      "source_worksheet": "Feuille A - 2",
+      "clinical_fte": null,
+      "cost_per_episode": null,
+      "independently_reviewed": false
+    },
+    {
+      "rss_id": "08",
+      "region_source_name": "Abitibi-Témiscamingue",
+      "persons_2025": 6403,
+      "persons_2024": 6384,
+      "etc_2024_2025": 5101,
+      "source_worksheet": "Feuille A - 2",
+      "clinical_fte": null,
+      "cost_per_episode": null,
+      "independently_reviewed": false
+    },
+    {
+      "rss_id": "09",
+      "region_source_name": "Côte-Nord",
+      "persons_2025": 3760,
+      "persons_2024": 3735,
+      "etc_2024_2025": 3122,
+      "source_worksheet": "Feuille A - 2",
+      "clinical_fte": null,
+      "cost_per_episode": null,
+      "independently_reviewed": false
+    },
+    {
+      "rss_id": "10",
+      "region_source_name": "Nord-du-Québec",
+      "persons_2025": 626,
+      "persons_2024": 662,
+      "etc_2024_2025": 540,
+      "source_worksheet": "Feuille A - 2",
+      "clinical_fte": null,
+      "cost_per_episode": null,
+      "independently_reviewed": false
+    },
+    {
+      "rss_id": "11",
+      "region_source_name": "Gaspésie et Îles-de-la-Madeleine",
+      "persons_2025": 4376,
+      "persons_2024": 4430,
+      "etc_2024_2025": 3642,
+      "source_worksheet": "Feuille A - 2",
+      "clinical_fte": null,
+      "cost_per_episode": null,
+      "independently_reviewed": false
+    },
+    {
+      "rss_id": "12",
+      "region_source_name": "Chaudière-Appalaches",
+      "persons_2025": 15112,
+      "persons_2024": 14911,
+      "etc_2024_2025": 12625,
+      "source_worksheet": "Feuille A - 2",
+      "clinical_fte": null,
+      "cost_per_episode": null,
+      "independently_reviewed": false
+    },
+    {
+      "rss_id": "13",
+      "region_source_name": "Laval",
+      "persons_2025": 13381,
+      "persons_2024": 13080,
+      "etc_2024_2025": 11158,
+      "source_worksheet": "Feuille A - 2",
+      "clinical_fte": null,
+      "cost_per_episode": null,
+      "independently_reviewed": false
+    },
+    {
+      "rss_id": "14",
+      "region_source_name": "Lanaudière",
+      "persons_2025": 14779,
+      "persons_2024": 14464,
+      "etc_2024_2025": 12086,
+      "source_worksheet": "Feuille A - 2",
+      "clinical_fte": null,
+      "cost_per_episode": null,
+      "independently_reviewed": false
+    },
+    {
+      "rss_id": "15",
+      "region_source_name": "Laurentides",
+      "persons_2025": 18448,
+      "persons_2024": 17657,
+      "etc_2024_2025": 14851,
+      "source_worksheet": "Feuille A - 2",
+      "clinical_fte": null,
+      "cost_per_episode": null,
+      "independently_reviewed": false
+    },
+    {
+      "rss_id": "16",
+      "region_source_name": "Montérégie",
+      "persons_2025": 42066,
+      "persons_2024": 40736,
+      "etc_2024_2025": 34112,
+      "source_worksheet": "Feuille A - 2",
+      "clinical_fte": null,
+      "cost_per_episode": null,
+      "independently_reviewed": false
+    },
+    {
+      "rss_id": "17",
+      "region_source_name": "Nunavik",
+      "persons_2025": 2010,
+      "persons_2024": 1867,
+      "etc_2024_2025": 1577,
+      "source_worksheet": "Feuille A - 2",
+      "clinical_fte": null,
+      "cost_per_episode": null,
+      "independently_reviewed": false
+    },
+    {
+      "rss_id": "18",
+      "region_source_name": "Terres-Cries-de-la-Baie-James",
+      "persons_2025": 2802,
+      "persons_2024": 2667,
+      "etc_2024_2025": 2244,
+      "source_worksheet": "Feuille A - 2",
+      "clinical_fte": null,
+      "cost_per_episode": null,
+      "independently_reviewed": false
+    }
+  ],
+  "separate_hq": {
+    "code": "00",
+    "name": "00 - Santé Québec",
+    "persons_2025": 804,
+    "etc_2024_2025": 168,
+    "note": "Santé Québec est une ligne organisationnelle distincte, jamais une 19e RSS."
+  },
+  "totals": {
+    "people_2025_reported": 344056,
+    "people_2025_sum_regions": 343252,
+    "people_2025_hq": 804,
+    "people_2025_reconciles": true,
+    "people_2024_reported": 336730,
+    "people_2024_sum_regions": 336730,
+    "etc_2024_2025_reported": 283740,
+    "etc_2024_2025_sum_regions": 283570,
+    "etc_2024_2025_hq": 168,
+    "etc_2024_2025_delta_reported_minus_rounded_lines": 2,
+    "etc_2024_2025_exact_reconciliation": false,
+    "etc_2024_2025_rounding_possible_not_independently_verified": true
+  },
+  "publication_guardrails": [
+    "Transcription indirecte du XLSX, sans SHA-256 ni références de cellules Excel indépendamment vérifiées : pas d'audit L1/L2.",
+    "Le total de 344056 personnes comprend 343252 personnes ventilées par RSS et 804 personnes attribuées à la ligne organisationnelle Santé Québec.",
+    "Le total ETC 283740 diffère de 2 de la somme 18 RSS + Santé Québec; cause possible arrondi des nombres entiers publiés, à confirmer avant réconciliation certifiée.",
+    "Personnes, nombre d'emplois et ETC sont des mesures différentes; ne pas les additionner.",
+    "Un ETC rémunéré n'est PAS un ETP clinique effectivement présent en première ligne, ne prouve aucun rendez-vous ni aucune consultation obtenue.",
+    "Le registre ne couvre pas l'ensemble des professionnels rémunérés RAMQ, des travailleurs du privé non conventionné ou des organismes communautaires.",
+    "Les 2024 personnes sont historiques; changements de structure et de couverture à examiner avant toute analyse de tendance.",
+    "Ne pas joindre numériquement avec EQUSSSS 2025 ni déduire des économies ou une réforme."
+  ],
+  "decision": {
+    "source_document_numeric_transcription": true,
+    "certification_complete": false,
+    "g0_passed": false,
+    "pilot_authorized": false,
+    "budget_authorized": false,
+    "financial_savings_verified": null
+  }
+}
