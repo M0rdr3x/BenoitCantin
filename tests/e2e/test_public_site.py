@@ -20,6 +20,7 @@ PUBLIC_ROUTES = [
     "projets/sinjira/monde-parallele/",
     "projets/projet-nova/",
     "projets/projet-nova/boussole-electorale.html",
+    "projets/projet-nova/sondage-citoyen.html",
     "projets/sinjira/jeux/",
     "projets/sinjira/jeux/fracture-du-reseau-mere/",
 ]
@@ -144,7 +145,26 @@ def run() -> None:
             page.locator('a[href="boussole-electorale.html"]').count() >= 3,
             f"{BROWSER_NAME}: la Boussole doit avoir au moins trois accès depuis l’accueil Nova",
         )
-        nova_compass_entry = page.locator(".nova-compass-entry .nova-compass-entry-link")
+        # Les deux outils partagent volontairement le style de carte, mais pas
+        # leur rôle : chaque sélecteur doit être propre à son accès public.
+        assert_true(
+            page.locator('a[href="sondage-citoyen.html"]').count() >= 3,
+            f"{BROWSER_NAME}: le sondage doit avoir au moins trois accès depuis l’accueil Nova",
+        )
+        nova_poll_entry = page.locator(".nova-poll-home-entry .nova-compass-entry-link")
+        assert_true(nova_poll_entry.count() == 1, f"{BROWSER_NAME}: accès prioritaire Sondage absent de Nova")
+        assert_true(nova_poll_entry.is_visible(), f"{BROWSER_NAME}: accès prioritaire Sondage non visible")
+        assert_true(
+            nova_poll_entry.locator('img[src="assets/sondage-citoyen.svg"]').count() == 1,
+            f"{BROWSER_NAME}: illustration du sondage absente de l’accès prioritaire",
+        )
+        assert_true(
+            page.locator('a.hero-side-link-sondage img[src="assets/sondage-citoyen.svg"]').count() == 1,
+            f"{BROWSER_NAME}: illustration du sondage absente des accès rapides",
+        )
+        nova_compass_entry = page.locator(
+            ".nova-compass-entry:not(.nova-poll-home-entry) .nova-compass-entry-link"
+        )
         assert_true(nova_compass_entry.count() == 1, f"{BROWSER_NAME}: accès prioritaire Boussole absent en haut de Nova")
         assert_true(nova_compass_entry.is_visible(), f"{BROWSER_NAME}: accès prioritaire Boussole non visible")
         assert_true(
@@ -154,6 +174,29 @@ def run() -> None:
         assert_true(
             page.locator('nav .nav-link-boussole').inner_text().strip() == "Boussole électorale",
             f"{BROWSER_NAME}: libellé complet Boussole électorale absent de la navigation Nova",
+        )
+
+        # Le questionnaire politique doit rester en lecture seule tant que
+        # la version n'a pas été explicitement approuvée. Aucun bulletin de
+        # production n'est envoyé par cette vérification navigateur.
+        page.goto(urljoin(BASE_URL, "projets/projet-nova/sondage-citoyen.html"), wait_until="domcontentloaded", timeout=30_000)
+        page.wait_for_function(
+            """() => {
+              const corpus = window.__NOVA_POLL_PUBLIC_CORPUS;
+              return !!corpus && corpus.published === false &&
+                corpus.questions?.length === 8 && corpus.options?.length === 6;
+            }""",
+            timeout=10_000,
+        )
+        assert_true(page.locator("#poll-form").count() == 1, f"{BROWSER_NAME}: formulaire sondage absent")
+        assert_true(page.locator("#poll-send").is_disabled(), f"{BROWSER_NAME}: collecte provisoire ouverte par erreur")
+        assert_true(
+            page.locator('a[href="sondages-a-valider.html"]').count() >= 1,
+            f"{BROWSER_NAME}: questionnaires candidats 40/64 non accessibles",
+        )
+        assert_true(
+            page.locator("#poll-results").count() == 1,
+            f"{BROWSER_NAME}: zone des résultats agrégés absente",
         )
 
         page.goto(urljoin(BASE_URL, "projets/projet-nova/boussole-electorale.html"), wait_until="domcontentloaded", timeout=30_000)
