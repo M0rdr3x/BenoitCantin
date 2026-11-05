@@ -20,6 +20,7 @@ REQUIRED_FILES = (
     "assets/sondage-citoyen.js",
     "assets/sondage-public-corpus.js",
     "assets/sondage-citoyen.css",
+    "assets/sondage-citoyen.svg",
     "data/boussole-electorale-v2.json",
     "data/sondage-citoyen-v1.json",
     "confidentialite.html",
@@ -53,6 +54,26 @@ def check(published: Path) -> list[str]:
     compass_js = (prefix / "assets" / "boussole-electorale.js").read_text(encoding="utf-8")
     poll = json.loads((prefix / "data" / "sondage-citoyen-v1.json").read_text(encoding="utf-8"))
     compass = json.loads((prefix / "data" / "boussole-electorale-v2.json").read_text(encoding="utf-8"))
+
+    if home.count('src="assets/sondage-citoyen.svg"') < 2:
+        errors.append("Le visuel spécifique au sondage doit apparaître dans les deux accès d'accueil")
+    if home.count('src="../../assets/media/nova-boussole-electorale-v2.webp"') < 2:
+        errors.append("Le visuel officiel de la boussole doit rester visible dans les deux accès d'accueil")
+    import xml.etree.ElementTree as ET
+    try:
+        icon_root = ET.parse(prefix / "assets/sondage-citoyen.svg").getroot()
+        if icon_root.tag != "{http://www.w3.org/2000/svg}svg":
+            errors.append("Visuel sondage : le document n'est pas un SVG valide")
+        for element in icon_root.iter():
+            tag = element.tag.lower()
+            if tag.endswith("}script") or tag.endswith("}foreignobject"):
+                errors.append("Visuel sondage : contenu exécutable interdit")
+            if any(str(key).lower().startswith("on") for key in element.attrib):
+                errors.append("Visuel sondage : attribut d'événement interdit")
+            if any("http:" in str(value) or "https:" in str(value) for value in element.attrib.values()):
+                errors.append("Visuel sondage : ressource distante interdite")
+    except ET.ParseError:
+        errors.append("Visuel sondage : XML invalide")
 
     for route in ("sondage-citoyen.html", "boussole-electorale.html", "sondages-a-valider.html"):
         if not re.search(r'<a\b[^>]*href=["\']'+re.escape(route)+r'["\']', home):
