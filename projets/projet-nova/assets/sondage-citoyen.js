@@ -63,6 +63,11 @@
   function updateButton(){
     const btn=$("poll-send");
     const already=stored(votedKey)==="yes";
+    // Une fermeture de la consultation verrouille aussi les choix déjà
+    // visibles. Une soumission en cours ou confirmée verrouille les réponses.
+    for(const radio of $("poll-questions").querySelectorAll('input[type="radio"]')){
+      radio.disabled=!open || already || sending;
+    }
     const selections=questions.every(q=>!!document.querySelector('input[name="'+q.id+'"]:checked'));
     const consent=$("poll-adult").checked && $("poll-agree").checked;
     btn.disabled=!open || already || sending || !selections || !consent || !captchaToken;

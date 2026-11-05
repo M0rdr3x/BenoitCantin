@@ -568,7 +568,8 @@
       priorityLinks.innerHTML = limitedQuestions.map(({question,index}) =>
         `<button type="button" data-compass-priority="${esc(question.id)}" aria-controls="compass-evidence-question-results">Q${String(index + 1).padStart(2,"0")} — ${esc(question.text)}</button>`
       ).join("");
-      priorityLinks.addEventListener("click",event => {
+      // Ne pas empiler les gestionnaires lors de « Réessayer ».
+      priorityLinks.onclick = event => {
         const button = event.target.closest("button[data-compass-priority]");
         if(!button || !priorityLinks.contains(button)) return;
         const questionId = button.dataset.compassPriority;
@@ -576,7 +577,7 @@
         select.value = questionId;
         renderSelected();
         select.focus();
-      });
+      };
     }
 
     function renderSelected(){
@@ -644,8 +645,9 @@
       }).join("");
     }
 
-    select.addEventListener("change",renderSelected);
-    filter.addEventListener("change",renderSelected);
+    // Réattribuer au lieu d’empiler après chaque rechargement documentaire.
+    select.onchange=renderSelected;
+    filter.onchange=renderSelected;
     const firstWithEvidence = questions.find(question => (recordsByQuestion.get(question.id) || []).length > 0);
     if(firstWithEvidence) select.value = firstWithEvidence.id;
     renderSelected();
