@@ -103,3 +103,17 @@ test("mauvaise valeur de chaîne partagée est rejetée",()=>{
  '<worksheet><c r="A5" t="s"><v>999</v></c></worksheet>',
  '<sst><si><t>x</t></si></sst>'),/BAD_STRING_INDEX/);
 });
+
+test("cellules vides autofermées ne masquent pas le premier RSS suivant",()=>{
+ const shared='<sst><si><t>00 - Santé Québec</t></si>'+
+   '<si><t>01 - Bas-Saint-Laurent</t></si></sst>';
+ const xml='<worksheet><sheetData>'+
+   '<row r="5"><c r="A5" t="s"><v>0</v></c><c r="B5"><v>804</v></c>'+
+   '<c r="C5" s="53"/><c r="D5" s="53"/></row>'+
+   '<row r="6"><c r="A6" t="s"><v>1</v></c><c r="B6"><v>9057</v></c></row>'+
+   '</sheetData></worksheet>';
+ const cells=readOriginalA2Cells(xml,shared);
+ assert.equal(cells.A5,"00 - Santé Québec");
+ assert.equal(cells.A6,"01 - Bas-Saint-Laurent");
+ assert.equal(cells.B6,"9057");
+});
