@@ -1,0 +1,56 @@
+{
+  "schema": "nova-g11-external-execution-evidence/v1",
+  "date": "2026-11-05",
+  "project": "Projet Nova",
+  "scope": "Validation du portrait RH MSSS public 2024-2025 depuis une machine d'exécution externe éphémère",
+  "source_url": "https://cdn-contenu.quebec.ca/cdn-contenu/sante/documents/Systeme_et_services_de_sante/organisation-services/donnees-systeme-sante-quebecois-services/ressources-humaines/denombrement-et-remuneration-effectif-rsss-2024-2025.xlsx",
+  "runtime": "Node.js v26.12.1 (environnement distant de vérification, hors GitHub Actions)",
+  "command": "node projets/projet-nova/scripts/g11-verifier-original-rh-officiel.mjs",
+  "original_file_sha256": "8d65573b2f0bf0a935a58c75ba1b4b76050a08b902760f7a03b3cae0cdb86219",
+  "original_size_bytes": 139566,
+  "original_file_obtained_in_external_execution": true,
+  "original_file_committed_to_repository": false,
+  "workflow_github_actions_run_confirmed": false,
+  "execution": {
+    "status": "ORIGINAL_CELLS_MATCH_REVIEW_PENDING",
+    "exit_code": 0,
+    "source_rows_checked": 19,
+    "original_cells_match": true,
+    "rounding_gap_explained": true,
+    "total_persons_2025": 344056,
+    "paid_etc_displayed_total_2024_2025": 283740,
+    "paid_etc_rounded_line_difference": 2,
+    "error_code": null
+  },
+  "tests": {
+    "g07_to_g11_executed_in_external_node_initially": {
+      "total": 56,
+      "passed": 56,
+      "failed": 0,
+      "notes": "Suite de 56 tests exécutée avant l'ajout d'un test supplémentaire sur les cellules vides."
+    },
+    "g11_regression_suite_after_fix": {
+      "total": 15,
+      "passed": 15,
+      "failed": 0
+    },
+    "complete_post_fix_suite_reexecuted": false,
+    "github_actions_test_run_verified": false
+  },
+  "limits": [
+    "Une empreinte SHA-256 calculée sur des octets reçus ne constitue pas une signature ou attestation du gouvernement.",
+    "L'exécution s'est déroulée dans un environnement distant éphémère et non dans les GitHub Actions du dépôt.",
+    "La copie binaire n'a pas été conservée dans le dépôt; l'outil GitHub pourra refaire l'acquisition manuellement.",
+    "Les cellules contrôlées sont celles de la Feuille A - 2; l'ensemble des sept feuilles n'a pas été audité sémantiquement.",
+    "Les ETC rémunérés ne sont pas les heures cliniques réellement disponibles en première ligne.",
+    "Les statistiques et les conséquences d'une réforme restent soumises à une revue institutionnelle et professionnelle indépendante."
+  ],
+  "decision": {
+    "statistical_source_cell_check": true,
+    "independent_government_approval": false,
+    "clinical_fte_certified": false,
+    "financial_savings_certified": false,
+    "g0_passed": false,
+    "pilot_authorized": false
+  }
+}
