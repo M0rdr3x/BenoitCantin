@@ -20,7 +20,8 @@
     "total_persons_2025": 344056,
     "paid_etc_displayed_total_2024_2025": 283740,
     "paid_etc_rounded_line_difference": 2,
-    "error_code": null
+    "error_code": null,
+    "repeated_success_after_complete_suite": true
   },
   "tests": {
     "g07_to_g11_executed_in_external_node_initially": {
@@ -34,8 +35,15 @@
       "passed": 15,
       "failed": 0
     },
-    "complete_post_fix_suite_reexecuted": false,
-    "github_actions_test_run_verified": false
+    "complete_post_fix_suite_reexecuted": true,
+    "github_actions_test_run_verified": false,
+    "complete_post_fix_suite": {
+      "total": 57,
+      "passed": 57,
+      "failed": 0,
+      "runtime": "Node.js v26.12.1",
+      "execution_environment": "machine distante éphémère, hors GitHub Actions"
+    }
   },
   "limits": [
     "Une empreinte SHA-256 calculée sur des octets reçus ne constitue pas une signature ou attestation du gouvernement.",
