@@ -295,7 +295,11 @@ def validate_text(text: str) -> list[str]:
         if marker not in text:
             errors.append(f"Résumé production sans frontière de confiance attendue: {marker}")
 
-    for forbidden in ("--include-all", "supabase migration repair", "supabase db reset --linked"):
+    # Les cinq fonctions absentes du workspace doivent rester actives en
+    # production : --prune les supprimerait, --no-verify-jwt contournerait
+    # la configuration d'authentification revue.
+    for forbidden in ("--include-all", "--prune", "--no-verify-jwt",
+                      "supabase migration repair", "supabase db reset --linked"):
         if forbidden in text:
             errors.append(f"Primitive interdite dans le workflow production: {forbidden}")
 
