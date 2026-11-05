@@ -172,3 +172,30 @@ export function inspectOfficialRhWorkbook(input){
     ]
   };
 }
+
+
+/**
+ * G0.11 — Lire des parties XML explicites du classeur qui a passé les contrôles
+ * ZIP, CRC et tailles G0.8. Les informations doivent rester dans le poste
+ * de vérification : aucune publication automatique de cellules ou microdonnées.
+ */
+export function readXlsxValidatedXmlParts(bytes, requestedPaths){
+  expect(bytes instanceof Uint8Array,"XLSX_BYTES_REQUIRED");
+  expect(Array.isArray(requestedPaths)&&requestedPaths.length>=1&&
+    requestedPaths.length<=5&&
+    requestedPaths.every(p=>typeof p==="string"&&
+      /^(?:xl\/workbook\.xml|xl\/_rels\/workbook\.xml\.rels|xl\/sharedStrings\.xml|xl\/worksheets\/sheet[1-9]\d*\.xml)$/.test(p)),
+    "XML_PART_ALLOWLIST_VIOLATION");
+  const {entries}=directory(bytes);
+  let total=0;
+  const out={};
+  for(const part of requestedPaths){
+    if(Object.hasOwn(out,part))throw new Error("XML_PART_DUPLICATED_REQUEST");
+    const entry=entries.get(part);
+    expect(!!entry,"XML_PART_MISSING:"+part);
+    total+=entry.uncompressed;
+    expect(total<=MAX_TOTAL_XML_BYTES,"XML_PARTS_TOTAL_SIZE_EXCEEDED");
+    out[part]=xmlText(decompress(entry,bytes),part);
+  }
+  return out;
+}
