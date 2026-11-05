@@ -185,6 +185,22 @@ Le protocole initial `official/working/protocole-portrait-regional-sante-g0-v1.m
 - **Loi électorale provinciale :** source et guides à jour sous `https://www.electionsquebec.qc.ca/`. Le dépôt ne contient pas de preuve confirmant une autorisation officielle du Parti Nova et ne doit donc pas la présumer.
 - **Prochaine priorité :** dresser un **cadre fiscal et budgétaire consolidé sur dix ans** avec hypothèses explicites, puis les matrices juridiques et de transition pour rendre les mesures budgétables et soumises à un avis indépendant.
 
+## G0.13 — Viabilité financière sur dix ans et deux statuts du Québec (5 novembre 2026)
+
+**Source budgétaire actualisée :** Rapport préélectoral du ministère des Finances du Québec **d'août 2026**, plus récent que le budget de mars 2026. Les valeurs des cinq exercices **2026–2027 à 2030–2031** sont reprises comme **prévisions du gouvernement**, non comme budget approuvé du Projet Nova.
+
+- **Premier exercice (millions CAD) :** revenus **168 389**, dont transferts fédéraux **33 046**; dépenses **171 597**; provision **2 000**; déficit comptable **–5 208**; déficit budgétaire après Fonds des générations **–7 690**.
+- **Source publique :** `https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Rapport_preelectoral/FR/MINFR_RP_2026.pdf`, tableau pluriannuel; valeurs recoupées dans la présentation de la Province du Québec déposée à la SEC. Les années **2031–2036** ne figurent pas dans cette prévision de cinq ans et restent `null`.
+- **Données :** `data/cadre-financier-g0-13-2026-2036.json` regroupe les prévisions gouvernementales (5 exercices), les cinq années hors source et **deux scénarios Nova distincts** (`QUEBEC_CANADA` et `QUEBEC_SOUVERAIN`) dont les postes non évalués demeurent `null` pendant les dix ans.
+- **Écarts futurs du rapport officiel :** **1 850 M$ en 2028–2029** et **2 000 M$ par an en 2029–2031** encore à résorber; ils sont présentés comme hypothèses conditionnelles, non comme des économies réalisées.
+- **Politique de deux prélèvements :** impôt sur les revenus et mesure ciblant l'évasion et les paradis fiscaux **sans taux, assiette et rendement démontrés**; ne pas assimiler les revenus autonomes aux seuls impôts ni présumer la conservation des transferts fédéraux après souveraineté.
+- **Méthode :** `official/working/cadre-financier-g0-13-scenarios-protocole-v1.md`. L'analyse impose droit, assiettes, coûts de services, monnaie, dettes et actifs, prestations, droits des nations autochtones, pouvoir d'achat et protection des travailleurs.
+- **Page de consultation :** `viabilite-financiere-g0-13.html`; **contrôle automatisé :** `assets/g13-fiscal-readiness-core.mjs`; **tests :** `tests/g13-fiscal-readiness.test.mjs`.
+- **Exécution des tests :** **16/16 réussis sous Node v26.12.1 dans un environnement externe**, rapport `data/rapport-tests-g0-13-finances-2026-11-05.json`. L'exécution des GitHub Actions de ce changement et le déploiement public ne sont pas vérifiés.
+- **Avancement du programme : 47/100, inchangé** (grille G0.12). Construire un tableau ne constitue pas une validation indépendante de la viabilité fiscale. Le cadre de mars reste un repère historique; les références candidates `official/reference` et `data/sources.json` ne sont pas modifiés.
+
+**Étape G0.14 :** définir la classification juridique des recettes (revenus des particuliers et entreprises, TVA/TVQ, cotisations, redevances, tarifs, bénéfices des sociétés d'État, transferts fédéraux et taxes municipales), construire des assiettes défendables, documenter l'incidence distributive, puis seulement tester des taux et la soutenabilité de scénarios complets.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
