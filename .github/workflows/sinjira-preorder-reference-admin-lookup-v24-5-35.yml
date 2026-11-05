@@ -12,14 +12,16 @@ permissions:
 
 jobs:
   preorder-reference-admin-contract:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Récupérer le dépôt
-        uses: actions/checkout@v4
-      - name: Configurer Python
-        uses: actions/setup-python@v5
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
-          python-version: '3.12'
+          persist-credentials: false
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
       - name: Vérifier V24.5.35
         run: python scripts/validate_preorder_reference_admin_lookup_v24_5_35.py
       - name: Vérifier V24.5.34 historique

@@ -1,0 +1,35 @@
+name: Sécurité — intégrité des workflows GitHub Actions
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+      - 'scripts/validate_workflow_supply_chain.py'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - 'scripts/validate_workflow_supply_chain.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pinned-actions:
+    name: Contrat de provenance et de permissions GitHub Actions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout sans identifiants persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python figé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Auto-tester les invariants de sécurité
+        run: python scripts/validate_workflow_supply_chain.py --self-test
+      - name: Vérifier chaque workflow du dépôt
+        run: python scripts/validate_workflow_supply_chain.py
