@@ -1,0 +1,95 @@
+name: Projet Nova P55N - Barometre completude et portes de preuve
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p55n.yml"
+      - "scripts/evaluer_completude_programme_nova_p55n.py"
+      - "scripts/tests/test_evaluer_completude_programme_nova_p55n.py"
+      - "projets/projet-nova/etudes/P55N_*"
+      - "projets/projet-nova/official/reference/programme.md"
+      - "projets/projet-nova/official/reference/corpus.md"
+      - "projets/projet-nova/official/reference/statuts.md"
+      - "projets/projet-nova/DOCUMENT_CONTROL.md"
+      - "projets/projet-nova/etudes/P52A_FAISABILITE_FISCALE_DEUX_REGIMES.md"
+      - "projets/projet-nova/etudes/P52B_METHODOLOGIE_SIMULATION_FISCALE.md"
+      - "projets/projet-nova/etudes/P55M_NOTE_SOMHAC_RESERVES_CONVENTIONS_2024.md"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  barometre-documentaire-non-certifiant:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout sans persistance du jeton
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: 41 tests de coherence et de refus de score trompeur
+        run: |
+          python -m py_compile scripts/evaluer_completude_programme_nova_p55n.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_evaluer_completude_programme_nova_p55n.py")
+          assert suite.countTestCases()==41,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Produire les bilans publics sans modifier le programme candidat
+        run: |
+          python scripts/evaluer_completude_programme_nova_p55n.py \
+            --bilan-public p55n_bilan_public.json \
+            --table-public p55n_table_public.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p55n_bilan_public.json").read_text(encoding="utf-8"))
+          t=json.loads(Path("p55n_table_public.json").read_text(encoding="utf-8"))
+          assert r["schema_version"]=="P55N-BILAN-PUBLIC-1"
+          assert t["schema_version"]=="P55N-TABLE-PUBLIQUE-1"
+          assert r["pourcentage_estimatif"]==53
+          assert r["fourchette_prudente_pourcent"]==[45,60]
+          assert r["estimation_subjective_non_certifiee"] is True
+          assert r["evaluation_basee_sur_nombre_de_commits"] is False
+          assert r["programme_candidat_non_adopte"] is True
+          assert r["programme_integralement_finance"] is False
+          assert r["avis_independants_signes"]==0
+          assert r["portes_non_demontrees"]==10
+          assert r["priorites_ouvertes"]==12
+          assert r["travaux_acheves_automatiquement"]==0
+          assert r["economies_certifiees_cad"] is None
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          assert sum(a["points_estimes"] for a in t["axes"])==53
+          assert sum(a["maximum"] for a in t["axes"])==100
+          assert all(g["statut"]=="NON_DEMONTRE" for g in t["portes_de_completion"])
+          assert all(p["statut"]=="OUVERT" for p in t["priorites"])
+          assert t["constats"]["etudes_fiscales_p52a_non_adoptees"] is True
+          assert t["constats"]["autorisation_legale_parti_verifiee"] is False
+          assert t["constats"]["entrees_financieres_p52b_inconnues"]==600
+          assert t["constats"]["montants_incidence_p52d_inconnus"]==720
+          assert t["constats"]["economies_certifiees_cad"] is None
+          PY
+      - name: Interdire la certification automatique de completude et deployabilite
+        run: |
+          set +e
+          python scripts/evaluer_completude_programme_nova_p55n.py --exiger-complet
+          code_complet=$?
+          python scripts/evaluer_completude_programme_nova_p55n.py --exiger-pret-a-appliquer
+          code_pret=$?
+          set -e
+          test "$code_complet" -eq 3
+          test "$code_pret" -eq 3
+      - name: Archiver uniquement les resultats publies neutres
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p55n-maturite-editoriale-non-certifiee
+          path: |
+            p55n_bilan_public.json
+            p55n_table_public.json
+          retention-days: 7
