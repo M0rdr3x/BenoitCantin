@@ -6,7 +6,10 @@ const src=fs.readFileSync(path.join(__dirname,"../projets/projet-nova/assets/son
 const html=fs.readFileSync(path.join(__dirname,"../projets/projet-nova/sondage-citoyen.html"),"utf8");
 assert.match(html,/<button[^>]+id="poll-send"[^>]*\bdisabled\b/);
 const elements=new Map();
-const elem=id=>{if(!elements.has(id))elements.set(id,{disabled:false,checked:false,textContent:""});return elements.get(id);};
+const pollRadios=[{disabled:false},{disabled:false}];
+const elem=id=>{if(!elements.has(id))elements.set(id,{
+  disabled:false,checked:false,textContent:"",querySelectorAll:()=>pollRadios
+});return elements.get(id);};
 const selected=new Set();
 let voted=false;
 const context={
@@ -26,8 +29,10 @@ elem("poll-adult").checked=true;elem("poll-agree").checked=true;
 t.setQuestions([{id:"q02"}]);selected.add("q02");
 t.setCaptcha("jeton-de-test");t.setOpen(false);t.updateButton();
 assert.equal(elem("poll-send").disabled,true,"Consultation fermée");
+assert.ok(pollRadios.every(input=>input.disabled),"Choix verrouillés dès la fermeture");
 t.setOpen(true);t.updateButton();
 assert.equal(elem("poll-send").disabled,false,"Ouvert et consentement complet");
+assert.ok(pollRadios.every(input=>!input.disabled),"Choix utilisables uniquement si ouvert");
 selected.clear();t.updateButton();
 assert.equal(elem("poll-send").disabled,true,"Aucune réponse");
 selected.add("q02");t.setCaptcha("");t.updateButton();
@@ -36,10 +41,13 @@ t.setCaptcha("jeton-de-test");elem("poll-adult").checked=false;t.updateButton();
 assert.equal(elem("poll-send").disabled,true,"Âge non confirmé");
 elem("poll-adult").checked=true;voted=true;t.updateButton();
 assert.equal(elem("poll-send").disabled,true,"Déjà participé");
+assert.ok(pollRadios.every(input=>input.disabled),"Choix verrouillés après participation");
 voted=false;t.setSending(true);t.updateButton();
 assert.equal(elem("poll-send").disabled,true,"Envoi en cours");
+assert.ok(pollRadios.every(input=>input.disabled),"Choix verrouillés pendant envoi");
 t.setSending(false);t.setOpen(false);t.updateButton();
 assert.equal(elem("poll-send").disabled,true,"Retour en mode fermé");
+assert.ok(pollRadios.every(input=>input.disabled),"Les choix déjà rendus sont aussi verrouillés");
 const corpus=JSON.parse(fs.readFileSync(path.join(__dirname,"../projets/projet-nova/data/sondage-citoyen-v1.json"),"utf8"));
 t.setQuestions(corpus.questions);t.setLocal(corpus);
 const baseQuestions=corpus.questions.map(q=>({id:q.id,ordinal:q.ordinal,text:q.text,counts:null}));
