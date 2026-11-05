@@ -132,8 +132,6 @@ const NOVA_SAFE_DOM=Object.freeze({
         const download=pdf?`<a class="btn btn-outline" href="${pdf}" download>Télécharger le PDF</a>`:'<span class="btn btn-outline">Document non approuvé</span>';
         return `<article class="doc-card"><span class="pill">${safe(d.section)}</span><h3>${safe(d.title)}</h3><p>${safe(d.description)}</p><div class="card-actions"><a class="btn btn-primary" href="visionneuse.html?doc=${encodeURIComponent(String(d.id??''))}">Visionner l’archive</a>${download}</div></article>`;
       }
-        return `<article class="doc-card"><span class="pill">${d.section}</span><h3>${d.title}</h3><p>${d.description}</p><div class="card-actions"><a class="btn btn-primary" href="visionneuse.html?doc=${encodeURIComponent(d.id)}">Visionner l’archive</a><a class="btn btn-outline" href="${d.path}" download>Télécharger le PDF</a></div></article>`;
-      }
       function render(){
         const term=((searchEl&&searchEl.value)||'').toLowerCase().trim();
         const filter=(filterEl&&filterEl.value)||'';
