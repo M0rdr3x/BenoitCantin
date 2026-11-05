@@ -106,6 +106,14 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         bad = self.valid.replace(marker, "", 1)
         self.assertRejected(bad, "Chemin critique absent")
 
+    def test_destructive_prune_or_jwt_bypass_cannot_be_added(self):
+        marker = 'supabase functions deploy --project-ref "$PROJECT_ID" --use-api'
+        self.assertIn(marker, self.valid)
+        for flag in ('--prune', '--no-verify-jwt'):
+            with self.subTest(forbidden=flag):
+                bad = self.valid.replace(marker, marker + ' ' + flag, 1)
+                self.assertRejected(bad, 'Primitive interdite')
+
     def test_runbook_changes_must_trigger_security_workflow(self):
         marker = "      - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'\n"
         bad = self.valid.replace(marker, "", 1)
