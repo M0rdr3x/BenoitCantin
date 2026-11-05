@@ -24,6 +24,7 @@ GENERATED_NETLIFY_FILES = {"_headers", "_redirects"}
 RELEASE_METADATA_PATH = Path(".well-known/release.json")
 RELEASE_SHA_ENV = "SINJIRA_RELEASE_SHA"
 NETLIFY_CONFIG = ROOT / "netlify.toml"
+NOVA_NESTED_NETLIFY_CONFIG = ROOT / "projets/projet-nova/netlify.toml"
 VERCEL_CONFIG = ROOT / "vercel.json"
 NETLIFY_STAGING_WORKFLOW = ROOT / ".github/workflows/deploy-netlify-staging.yml"
 VERCEL_BUILD_COMMAND = "CONTEXT=deploy-preview SINJIRA_RELEASE_SHA=$VERCEL_GIT_COMMIT_SHA python3 scripts/build_netlify_public.py"
@@ -785,8 +786,43 @@ def validate_netlify_staging_workflow() -> list[str]:
     return errors
 
 
-def validate_netlify_config() -> list[str]:
+def validate_nova_nested_netlify_config(raw: str | None = None) -> list[str]:
+    """Refuser la publication du code source depuis une config monorepo.
+
+    Netlify peut sélectionner le netlify.toml d'un *package directory* avant
+    celui de la racine. La valeur historique publish="." pouvait donc envoyer
+    directement des sources, exports et fichiers techniques en production.
+    Le seul chemin approuvé est l'artefact public isolé construit à la racine.
+    """
     errors: list[str] = []
+    if raw is None:
+        if NOVA_NESTED_NETLIFY_CONFIG.is_symlink():
+            return ["Configuration NOVA Netlify symbolique interdite."]
+        if not NOVA_NESTED_NETLIFY_CONFIG.is_file():
+            return ["Configuration NOVA Netlify absente."]
+        try:
+            raw = NOVA_NESTED_NETLIFY_CONFIG.read_text(encoding="utf-8", errors="strict")
+        except (OSError, UnicodeError) as exc:
+            return [f"Configuration NOVA Netlify illisible : {exc}"]
+    try:
+        config = tomllib.loads(raw)
+    except tomllib.TOMLDecodeError:
+        return ["Configuration NOVA Netlify TOML invalide."]
+    if set(config) != {"build"}:
+        errors.append("Configuration NOVA Netlify : seules les directives de build sont permises.")
+    build = config.get("build")
+    if not isinstance(build, dict) or set(build) != {"command", "publish"}:
+        errors.append("Configuration NOVA Netlify : contrat de build strict requis.")
+    else:
+        if build["command"] != "python3 scripts/build_netlify_public.py --standalone-netlify":
+            errors.append("Configuration NOVA Netlify : constructeur public isolé obligatoire.")
+        if build["publish"] != "_site":
+            errors.append("Configuration NOVA Netlify : publish _site obligatoire.")
+    return errors
+
+
+def validate_netlify_config() -> list[str]:
+    errors: list[str] = validate_nova_nested_netlify_config()
     if not NETLIFY_CONFIG.is_file():
         return ["netlify.toml absent"]
 

@@ -73,6 +73,13 @@
   [headers.values]
     Cache-Control = "public, max-age=3600"
 
+# En-tête de compatibilité du sous-site NOVA, centralisé à la racine et
+# généré dans _headers : pas de configuration locale qui publie les sources.
+[[headers]]
+  for = "/projets/projet-nova/documents/*.pdf"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
 [[headers]]
   for = "/projets/projet-nova/script.js"
   [headers.values]
