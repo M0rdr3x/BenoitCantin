@@ -1,0 +1,220 @@
+{
+  "schema_version": "P55O-1",
+  "date_reference": "2026-11-05",
+  "objet": "TRIAGE_CHAMPS_FISCAUX_MANQUANTS_P52B_A_PARTIR_DES_ORIGINAUX_CANDIDATS",
+  "references": [
+    "P52A",
+    "P52B",
+    "P52C",
+    "P55N"
+  ],
+  "statut": "ANALYSE_CANDIDATE_NON_VALIDEE_INDEPENDAMMENT",
+  "source_budget_historique": {
+    "id": "P52C-1",
+    "exercice": "2026-2027",
+    "unite": "M_CAD",
+    "nature": "PREVISIONS_BUDGET_GOUVERNEMENT_QUEBEC_NON_PROJECTIONS_NOVA",
+    "postes_temoins": [
+      {
+        "id": "impot_particuliers",
+        "valeur_mcad": 50800
+      },
+      {
+        "id": "impot_societes",
+        "valeur_mcad": 14527
+      },
+      {
+        "id": "taxes_vente",
+        "valeur_mcad": 26349
+      },
+      {
+        "id": "cotisations_sante",
+        "valeur_mcad": 9412
+      },
+      {
+        "id": "foncier_scolaire",
+        "valeur_mcad": 1311
+      }
+    ],
+    "somme_impots_revenus_actuels_mcad": 65327,
+    "ventes_sont_agregat_non_tvq_seule": true,
+    "impossible_de_deduire_taux_futur": true
+  },
+  "perimetre": {
+    "regimes": [
+      "QUEBEC_DANS_CANADA",
+      "QUEBEC_SOUVERAIN"
+    ],
+    "scenarios": [
+      "central",
+      "prudent",
+      "stress"
+    ],
+    "exercices_debut": [
+      2027,
+      2028,
+      2029,
+      2030,
+      2031,
+      2032,
+      2033,
+      2034,
+      2035,
+      2036
+    ],
+    "unite": "G_CAD",
+    "nombre_exercices_scenarios": 60,
+    "postes_recettes_non_anti_evasion": 4,
+    "postes_depenses": 6,
+    "postes_inconnus_par_exercice_scenario": 10,
+    "recettes_inconnues": 240,
+    "depenses_inconnues": 360,
+    "champs_inconnus_total": 600,
+    "anti_evasion_zero_prudent_sans_certification": 60,
+    "exercices_scenarios_calculables": 0,
+    "justificatifs_p52a_ouverts": 20
+  },
+  "plans_acquisition": [
+    {
+      "id": "O01",
+      "champ": "impot_revenu_net",
+      "groupe": "recettes",
+      "domaine": "FISCALITE",
+      "preuve_requise": "ASSIETTES_PERSONNES_ENTREPRISES_CREDITS_CONFORMITE",
+      "condition": "SIMULATION_TAUX_ET_INCIDENTE_NON_CERTIFIEE",
+      "interdiction": "BUDGET_2026_2027_NON_PROJECTION_AUTOMATIQUE",
+      "etats_source": "NON_RENSEIGNE_SUR_60_EXERCICES_SCENARIOS",
+      "statut": "A_INSTRUIRE"
+    },
+    {
+      "id": "O02",
+      "champ": "revenus_non_fiscaux_nets",
+      "groupe": "recettes",
+      "domaine": "FINANCES_PUBLIQUES",
+      "preuve_requise": "DIVIDENDES_REDEVANCES_RECETTES_FONDS_ET_AFFECTATIONS",
+      "condition": "TRAITER_FONDS_AFFECTES_ET_ENTREPRISES_PUBLIQUES_SANS_DOUBLE_COMPTE",
+      "interdiction": "AUCUNE_REVENTE_HYPOTHETIQUE",
+      "etats_source": "NON_RENSEIGNE_SUR_60_EXERCICES_SCENARIOS",
+      "statut": "A_INSTRUIRE"
+    },
+    {
+      "id": "O03",
+      "champ": "transferts_federaux_nets",
+      "groupe": "recettes",
+      "domaine": "RELATIONS_FEDERALES",
+      "preuve_requise": "ENTENTES_TRANSFERTS_CADRE_LEGAL_SCENARIOS_CONSTITUTIONNELS",
+      "condition": "QUEBEC_DANS_CANADA_DISTINCT_DU_SOUVERAIN",
+      "interdiction": "TRANSFERTS_SOUVERAINS_NON_PRESUMES",
+      "etats_source": "NON_RENSEIGNE_SUR_60_EXERCICES_SCENARIOS",
+      "statut": "A_INSTRUIRE"
+    },
+    {
+      "id": "O04",
+      "champ": "autres_prelevements_provinciaux_nets",
+      "groupe": "recettes",
+      "domaine": "INVENTAIRE_FISCAL",
+      "preuve_requise": "LISTE_PRELEVEMENTS_ACTUELS_LOIS_REMPLACEMENT_ET_COMPENSATION",
+      "condition": "PRELEVEMENTS_ACTUELS_NON_AUTOMATIQUEMENT_ABOLIS",
+      "interdiction": "NE_PAS_METTRE_ZERO_SANS_LOI_ET_FINANCEMENT",
+      "etats_source": "NON_RENSEIGNE_SUR_60_EXERCICES_SCENARIOS",
+      "statut": "A_INSTRUIRE"
+    },
+    {
+      "id": "O05",
+      "champ": "services_existants_hors_dette_et_municipal_nets",
+      "groupe": "depenses",
+      "domaine": "SERVICES_ESSENTIELS",
+      "preuve_requise": "COUTS_SANTE_EDUCATION_JUSTICE_LOGEMENT_ET_RESEAUX",
+      "condition": "EMPLOIS_ET_SERVICES_PROTEGES",
+      "interdiction": "BASE_RECONCILIEE_SANS_DOUBLE_COMPTE",
+      "etats_source": "NON_RENSEIGNE_SUR_60_EXERCICES_SCENARIOS",
+      "statut": "A_INSTRUIRE"
+    },
+    {
+      "id": "O06",
+      "champ": "service_dette_net",
+      "groupe": "depenses",
+      "domaine": "DETTE",
+      "preuve_requise": "ECHEANCES_INTERETS_PARTAGE_DETTE_SENSIBILITES",
+      "condition": "SERVICE_DETTE_NE_PAS_AJOUTER_DEUX_FOIS",
+      "interdiction": "ACTIFS_ET_PASSIFS_NEGOCIATION_SOUVERAINETE",
+      "etats_source": "NON_RENSEIGNE_SUR_60_EXERCICES_SCENARIOS",
+      "statut": "A_INSTRUIRE"
+    },
+    {
+      "id": "O07",
+      "champ": "transferts_municipaux_nets",
+      "groupe": "depenses",
+      "domaine": "MUNICIPALITES",
+      "preuve_requise": "FINANCEMENT_MUNICIPAL_TAXES_LOCALES_RTC_SOMHAC",
+      "condition": "CONSOLIDATION_INTERORGANISMES_AVANT_COMPENSATION",
+      "interdiction": "PAS_DE_FAUSSES_ECONOMIES_P55I_P55M",
+      "etats_source": "NON_RENSEIGNE_SUR_60_EXERCICES_SCENARIOS",
+      "statut": "A_INSTRUIRE"
+    },
+    {
+      "id": "O08",
+      "champ": "fonctions_souveraines_nouvelles_nettes",
+      "groupe": "depenses",
+      "domaine": "SOUVERAINETE",
+      "preuve_requise": "MISSIONS_ACTUELLEMENT_FEDERALES_DOUANES_DIPLOMATIE_DEFENSE_RETRAITES",
+      "condition": "SCENARIOS_CONSTITUTIONNELS_LEGAUX_DISTINCTS",
+      "interdiction": "COUTS_FEDERAUX_NI_ZERO_NI_SOMME_AUTOMATIQUE",
+      "etats_source": "NON_RENSEIGNE_SUR_60_EXERCICES_SCENARIOS",
+      "statut": "A_INSTRUIRE"
+    },
+    {
+      "id": "O09",
+      "champ": "couts_transition_nets",
+      "groupe": "depenses",
+      "domaine": "TRANSITION",
+      "preuve_requise": "SYSTEMES_ETAT_PERSONNEL_MIGRATIONS_CONTRATS_ASSETS_ET_CONTINUITE",
+      "condition": "TRANSITION_PHASEE_DEUX_REGIMES",
+      "interdiction": "PAS_DE_DEPENSE_NON_VERIFIEE",
+      "etats_source": "NON_RENSEIGNE_SUR_60_EXERCICES_SCENARIOS",
+      "statut": "A_INSTRUIRE"
+    },
+    {
+      "id": "O10",
+      "champ": "provision_crises_nette",
+      "groupe": "depenses",
+      "domaine": "RESILIENCE",
+      "preuve_requise": "RISQUES_MACRO_CLIMAT_SANTE_CYBER_ET_MARGES_FINANCIERES",
+      "condition": "NE_PAS_EFFACER_LA_PROVISION_EN_CRISANT_ZERO",
+      "interdiction": "RESERVE_NON_FONDS_LIBRES",
+      "etats_source": "NON_RENSEIGNE_SUR_60_EXERCICES_SCENARIOS",
+      "statut": "A_INSTRUIRE"
+    }
+  ],
+  "conditions_bloquantes": [
+    "NE_PAS_SIMULER_UN_TAUX_SANS_ASSIETTE",
+    "NE_PAS_ASSIMILER_2026_2027_A_2027_2036",
+    "NE_PAS_REMPLACER_NULL_PAR_ZERO",
+    "NE_PAS_COMPTER_ANTI_EVASION_COMME_RECETTE_CERTIFIEE",
+    "NE_PAS_ABOLIR_LES_AUTRES_PRELEVEMENTS_PAR_UN_SOUHAIT",
+    "NE_PAS_SUPPRIMER_LE_FINANCEMENT_MUNICIPAL",
+    "NE_PAS_AJOUTER_DEUX_FOIS_SERVICE_DETTE",
+    "NE_PAS_CONFONDRE_PENSION_DETTE_ET_CAISSE",
+    "NE_PAS_CONFONDRE_SCENARIOS_CONSTITUTIONNELS",
+    "NE_PAS_AFFIRMER_GAINS_POUVOIR_ACHAT_SANS_INCIDENTE",
+    "NE_PAS_INVENTER_DES_RESULTATS_PROFESSIONNELS",
+    "NE_PAS_PUBLIER_COMME_PROGRAMME_ADOPTE"
+  ],
+  "protections": {
+    "pas_de_changement_p52b": true,
+    "pas_de_changement_p52c": true,
+    "pas_de_changement_p55n": true,
+    "pas_d_ajout_de_recettes_anti_evasion": true,
+    "pas_de_coupes_emploi_services": true,
+    "pas_d_appauvrissement_population": true,
+    "pas_de_taux_ni_economies_certifies": true,
+    "pas_de_recettes_federales_reprises_sans_competence": true,
+    "pas_de_double_compte_ville_rtc_somhac": true,
+    "aucun_contact_humain": true,
+    "aucun_engagement_financier": true,
+    "aucune_modification_sinjira": true,
+    "aucune_fusion_main": true,
+    "no_go_automatique": true
+  },
+  "decision": "NO_GO_AUTOMATIQUE"
+}
