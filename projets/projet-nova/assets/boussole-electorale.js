@@ -31,6 +31,18 @@
 
   const $ = (sel, root=document) => root.querySelector(sel);
   const esc = value => String(value).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
+  // Lien vers une preuve externe : HTTPS absolu sans identifiants.
+  // Refuser javascript:, data:, liens schéma-relatifs et URL malformées.
+  const safeSourceUrl = value => {
+    const raw=String(value??'');
+    if(!/^https:\/\//i.test(raw))return '';
+    try{
+      const url=new URL(raw);
+      if(url.protocol!=='https:' || url.username || url.password)return '';
+      return url.href;
+    }catch(_error){return '';}
+  };
+
 
   function currentQuestion(){
     return state.data?.questions?.[state.currentIndex] || null;
@@ -53,8 +65,8 @@
         <span class="compass-question-counter">Question ${index + 1} sur ${state.data.questions.length}</span>
       </div>
       <div class="compass-response-grid compass-response-stack" role="radiogroup" aria-labelledby="compass-question-title">
-        ${RESPONSES.map(r => `<label><input type="radio" name="${question.id}" value="${r.value}"${saved?.value === r.value ? " checked" : ""}><span>${esc(r.label)}</span></label>`).join("")}
-        <label class="compass-skip"><input type="radio" name="${question.id}" value="skip"${saved && saved.value === null ? " checked" : ""}><span>Sans opinion / passer</span></label>
+        ${RESPONSES.map(r => `<label><input type="radio" name="${esc(question.id)}" value="${r.value}"${saved?.value === r.value ? " checked" : ""}><span>${esc(r.label)}</span></label>`).join("")}
+        <label class="compass-skip"><input type="radio" name="${esc(question.id)}" value="skip"${saved && saved.value === null ? " checked" : ""}><span>Sans opinion / passer</span></label>
       </div>
       <label class="compass-importance">Importance de cette proposition
         <select data-importance>
@@ -626,7 +638,7 @@
             </dl>
             <p><strong>Éléments retenus :</strong> ${esc(record.evidenceSummary)}</p>
             <p><strong>Justification du codage :</strong> ${esc(record.rationale)}</p>
-            <p><a href="${esc(record.sourceUrl)}" target="_blank" rel="noopener noreferrer">Consulter la source officielle ↗</a></p>
+            ${safeSourceUrl(record.sourceUrl) ? `<p><a href="${esc(safeSourceUrl(record.sourceUrl))}" target="_blank" rel="noopener noreferrer">Consulter la source officielle ↗</a></p>` : "<p>Source externe non vérifiée.</p>"}
           </article>
         `;
       }).join("");
