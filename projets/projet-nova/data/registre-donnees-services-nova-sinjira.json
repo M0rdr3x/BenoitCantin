@@ -276,6 +276,30 @@
         "g0_passed": false,
         "savings_claim": null,
         "note": "Aucune agrégation automatique de sous-totaux, zéros non vérifiés ou effectifs RAMQ/R22; revue humaine puis indépendante."
+      },
+      "rh_provisional_observation_g010": {
+        "phase": "G0.10",
+        "document_id": "NOVA-SINJ-G0-SAN-016",
+        "scope": "Nombre de personnes au 31 mars 2025 et ETC rémunérés 2024-2025 du personnel salarié/cadres couverts par MSSS",
+        "source_dataset": "data/portrait-rh-msss-g0-10-2024-2025.json",
+        "methods_file": "official/working/protocole-g0-10-portrait-rh-msss-v1.md",
+        "page": "portrait-effectifs-rh-g0-10-sante.html",
+        "validation_core": "assets/g10-rh-official-portrait-core.mjs",
+        "source": "MSSS officiel, classeur 2024-2025, Feuille A - 2, transcrit par un parseur externe",
+        "persons_2025_reported_total": 344056,
+        "persons_2025_sum_18_rss": 343252,
+        "persons_2025_hq_sante_quebec": 804,
+        "etc_2024_2025_reported_total": 283740,
+        "etc_unresolved_difference": 2,
+        "secondary_parsed_source_access": true,
+        "official_original_binary_sha256": null,
+        "original_cells_independently_verified": false,
+        "provisional_aggregate_status": "DESCRIPTIF_NON_CERTIFIE",
+        "clinical_fte_validated": null,
+        "certified_savings": null,
+        "g0_passed": false,
+        "pilot_authorized": false,
+        "warning": "Les chiffres descriptifs du personnel du RSSS ne constituent pas des ETP cliniques de première ligne. Contrôle des sommes des personnes exact, écart de 2 ETC laissé ouvert. Le statut L1/L2 du téléchargement officiel demeure non attesté."
       }
     },
     {
