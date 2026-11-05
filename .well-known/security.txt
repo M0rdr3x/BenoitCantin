@@ -1,4 +1,5 @@
 Contact: https://www.benoitcantin.com/contact.html
 Expires: 2027-09-27T23:59:59Z
 Preferred-Languages: fr, en
+Policy: https://github.com/M0rdr3x/BenoitCantin/security/policy
 Canonical: https://www.benoitcantin.com/.well-known/security.txt
