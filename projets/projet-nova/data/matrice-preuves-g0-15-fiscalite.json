@@ -1,0 +1,194 @@
+{
+  "schema": "nova-g015-preuves-fiscalite/v1",
+  "project": "Projet Nova",
+  "date": "2026-11-05",
+  "phase": "G0.15",
+  "status": "NON_FRANCHIE",
+  "programme_score": 47,
+  "reference": "data/registre-assiettes-fiscales-g0-14-2026-2027.json",
+  "source_baseline_2026_2027": {
+    "autonomous_revenue_mcad": 135343,
+    "federal_transfers_mcad": 33046,
+    "total_revenue_mcad": 168389,
+    "is_nova_budget": false
+  },
+  "nova_tax_rate_percent": null,
+  "net_additional_haven_yield_mcad": null,
+  "financed_scenario_canada": null,
+  "financed_scenario_sovereign": null,
+  "demands_transmitted": false,
+  "source_data_individually_authorized": false,
+  "proofs": [
+    {
+      "id": "V01",
+      "group": "VENTILATION",
+      "required_evidence": "Consommation: TVQ et taxes spécifiques",
+      "status": "A_DOCUMENTER",
+      "primary_source": null,
+      "year": null,
+      "document_ref": null,
+      "amount_mcad": null,
+      "reviewed_independently": false
+    },
+    {
+      "id": "V02",
+      "group": "VENTILATION",
+      "required_evidence": "Droits, permis, redevances: nature et affectation",
+      "status": "A_DOCUMENTER",
+      "primary_source": null,
+      "year": null,
+      "document_ref": null,
+      "amount_mcad": null,
+      "reviewed_independently": false
+    },
+    {
+      "id": "V03",
+      "group": "VENTILATION",
+      "required_evidence": "Revenus divers: ventilation et transferts internes",
+      "status": "A_DOCUMENTER",
+      "primary_source": null,
+      "year": null,
+      "document_ref": null,
+      "amount_mcad": null,
+      "reviewed_independently": false
+    },
+    {
+      "id": "V04",
+      "group": "VENTILATION",
+      "required_evidence": "Impôts des sociétés: composantes exactes",
+      "status": "A_DOCUMENTER",
+      "primary_source": null,
+      "year": null,
+      "document_ref": null,
+      "amount_mcad": null,
+      "reviewed_independently": false
+    },
+    {
+      "id": "V05",
+      "group": "ASSIETTE",
+      "required_evidence": "Personnes physiques: assiette et crédits",
+      "status": "A_DOCUMENTER",
+      "primary_source": null,
+      "year": null,
+      "document_ref": null,
+      "amount_mcad": null,
+      "reviewed_independently": false
+    },
+    {
+      "id": "V06",
+      "group": "ASSIETTE",
+      "required_evidence": "Entreprises: profits, pertes et dividendes",
+      "status": "A_DOCUMENTER",
+      "primary_source": null,
+      "year": null,
+      "document_ref": null,
+      "amount_mcad": null,
+      "reviewed_independently": false
+    },
+    {
+      "id": "V07",
+      "group": "CONTINUITE",
+      "required_evidence": "RRQ: droits et équilibre actuariel",
+      "status": "A_DOCUMENTER",
+      "primary_source": null,
+      "year": null,
+      "document_ref": null,
+      "amount_mcad": null,
+      "reviewed_independently": false
+    },
+    {
+      "id": "V08",
+      "group": "CONTINUITE",
+      "required_evidence": "RQAP: cotisations, prestations, fonds fiduciaire",
+      "status": "A_DOCUMENTER",
+      "primary_source": null,
+      "year": null,
+      "document_ref": null,
+      "amount_mcad": null,
+      "reviewed_independently": false
+    },
+    {
+      "id": "V09",
+      "group": "CONTINUITE",
+      "required_evidence": "Santé et médicaments: financement et droits",
+      "status": "A_DOCUMENTER",
+      "primary_source": null,
+      "year": null,
+      "document_ref": null,
+      "amount_mcad": null,
+      "reviewed_independently": false
+    },
+    {
+      "id": "V10",
+      "group": "CONTINUITE",
+      "required_evidence": "Écoles et municipalités: financement et compétences",
+      "status": "A_DOCUMENTER",
+      "primary_source": null,
+      "year": null,
+      "document_ref": null,
+      "amount_mcad": null,
+      "reviewed_independently": false
+    },
+    {
+      "id": "V11",
+      "group": "CONFORMITE",
+      "required_evidence": "Paradis fiscaux: recette nette réellement additionnelle",
+      "status": "A_DOCUMENTER",
+      "primary_source": null,
+      "year": null,
+      "document_ref": null,
+      "amount_mcad": null,
+      "reviewed_independently": false
+    },
+    {
+      "id": "V12",
+      "group": "INCIDENCE",
+      "required_evidence": "Ménages et régions: déciles et pouvoir d'achat",
+      "status": "A_DOCUMENTER",
+      "primary_source": null,
+      "year": null,
+      "document_ref": null,
+      "amount_mcad": null,
+      "reviewed_independently": false
+    },
+    {
+      "id": "V13",
+      "group": "INCIDENCE",
+      "required_evidence": "PME, emplois, salariés et autonomes",
+      "status": "A_DOCUMENTER",
+      "primary_source": null,
+      "year": null,
+      "document_ref": null,
+      "amount_mcad": null,
+      "reviewed_independently": false
+    },
+    {
+      "id": "V14",
+      "group": "CONSTITUTION",
+      "required_evidence": "Québec dans le Canada et Québec souverain: obligations distinctes",
+      "status": "A_DOCUMENTER",
+      "primary_source": null,
+      "year": null,
+      "document_ref": null,
+      "amount_mcad": null,
+      "reviewed_independently": false
+    },
+    {
+      "id": "V15",
+      "group": "BUDGET",
+      "required_evidence": "Deux budgets sur dix ans et revue indépendante",
+      "status": "A_DOCUMENTER",
+      "primary_source": null,
+      "year": null,
+      "document_ref": null,
+      "amount_mcad": null,
+      "reviewed_independently": false
+    }
+  ],
+  "decision": {
+    "rates_authorized": false,
+    "abolitions_authorized": false,
+    "programme_certified": false,
+    "transition_authorized": false
+  }
+}
