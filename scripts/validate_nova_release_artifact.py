@@ -19,6 +19,7 @@ REQUIRED_FILES = (
     "assets/boussole-electorale.css",
     "assets/sondage-citoyen.js",
     "assets/sondage-public-corpus.js",
+    "assets/nova-civic-integrity.js",
     "assets/sondage-citoyen.css",
     "assets/sondage-citoyen.svg",
     "data/boussole-electorale-v2.json",
@@ -89,13 +90,23 @@ def check(published: Path) -> list[str]:
         errors.append("Questionnaires candidats : noindex absent")
     if re.search(r'<\s*(?:form|input|button|script)\b', review_page, re.I):
         errors.append("Questionnaires candidats : composant interactif interdit")
-    for rel in ("assets/sondage-citoyen.js", "assets/sondage-citoyen.css", "assets/sondage-public-corpus.js"):
+    for rel in ("assets/sondage-citoyen.js", "assets/sondage-citoyen.css", "assets/sondage-public-corpus.js", "assets/nova-civic-integrity.js"):
         if rel not in poll_page:
             errors.append(f"Ressource du sondage non référencée : {rel}")
     for rel in ("assets/boussole-electorale.js", "assets/boussole-electorale.css", "assets/boussole-public-corpus.js"):
         if rel not in compass_page:
             errors.append(f"Ressource de la boussole non référencée : {rel}")
 
+    # Une validation utilisée par le client doit précéder le client dans la page.
+    referenced = ('assets/sondage-public-corpus.js?v=1',
+                  'assets/nova-civic-integrity.js?v=1',
+                  'assets/sondage-citoyen.js?v=12')
+    if any(poll_page.count(item) != 1 for item in referenced) or not (
+        poll_page.find(referenced[0]) < poll_page.find(referenced[1]) < poll_page.find(referenced[2])
+    ):
+        errors.append("Sondage public : validation partagée absente ou ordre de chargement invalide")
+    if "__NOVA_CIVIC_INTEGRITY" not in poll_js:
+        errors.append("Sondage public : vérification du corpus partagée non appelée")
     if 'local.published===true' not in poll_js or '"nova-consultation-v1"' not in poll_js:
         errors.append("Sondage public : version ou fermeture explicite non vérifiables")
     if 'NOVA_POLL_APPROVED_VERSION' not in (
