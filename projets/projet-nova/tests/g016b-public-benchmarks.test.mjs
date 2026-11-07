@@ -101,3 +101,14 @@ test("entrées corrompues : refus contrôlé sans exception",()=>{
  const bad16=structuredClone(g016);bad16.scenarios[0]=null;
  assert.ok(inspectG016bBenchmarks(source,g015,bad16).errors.includes("PREDECESSOR_G016_MISMATCH"));
 });
+
+test("l’état public G0.16b présente les repères avec les limites et le 47 %",async()=>{
+ const html=await readFile(new URL("../avancement-programme-nova.html",import.meta.url),"utf8");
+ assert.match(html,/id="sources-g016b"/);
+ assert.match(html,/65 344 \$/);
+ assert.match(html,/25 500 \$/);
+ assert.match(html,/94 900 \$/);
+ assert.match(html,/0 sur 15 preuves fiscales/);
+ assert.match(html,/47 %/);
+ assert.match(html,/ne peuvent pas être appliquées mécaniquement/i);
+});
