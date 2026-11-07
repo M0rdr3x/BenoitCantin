@@ -1,0 +1,84 @@
+name: Projet Nova P55T - Temoin officiel revenu disponible 2026
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p55t.yml"
+      - "scripts/valider_temoin_revenu_disponible_2026_nova_p55t.py"
+      - "scripts/tests/test_valider_temoin_revenu_disponible_2026_nova_p55t.py"
+      - "scripts/mesurer_couverture_incidences_nova_p55s.py"
+      - "scripts/evaluer_completude_programme_nova_p55n.py"
+      - "projets/projet-nova/etudes/P55T_*"
+      - "projets/projet-nova/etudes/P55S_*"
+      - "projets/projet-nova/etudes/P52D_GABARIT_INCIDENCE_MENAGES_ENTREPRISES.json"
+      - "projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  temoin-2026-sans-promesse-de-gain-nova:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Lire la branche sans garder le jeton
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Executer 60 tests de source, ecart et taux marginaux
+        run: |
+          python -m py_compile scripts/valider_temoin_revenu_disponible_2026_nova_p55t.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_valider_temoin_revenu_disponible_2026_nova_p55t.py")
+          assert suite.countTestCases()==60,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Emission du bilan public et absence de taux Nova
+        run: |
+          python scripts/valider_temoin_revenu_disponible_2026_nova_p55t.py \
+            --bilan-public p55t_bilan_public.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p55t_bilan_public.json").read_text("utf8"))
+          assert d["schema_version"]=="P55T-BILAN-PUBLIC-1"
+          assert d["date_reference"]=="2026-11-07"
+          assert d["profil_officiel"]=="PERSONNE_VIVANT_SEULE"
+          assert d["revenu_annuel_du_témoin_cad"]==50000
+          assert d["variation_revenu_disponible_2025_2026_publiee_cad"]==847
+          assert d["somme_composantes_affichees_cad"]==846
+          assert d["ecart_de_presentation_inexplique_cad"]==1
+          assert d["aide_epicerie_energie_ponctuelle_cad"]==100
+          assert d["resultat_nova"] is None
+          assert d["revenu_disponible_2026_absolu_cad"] is None
+          assert d["comparaison_nova_vs_actuel_calculee"] is False
+          assert d["taux_propose_deux_prelevements_pct"] is None
+          assert d["barèmes_marginaux_de_l_annee_2026_ne_sont_pas_taux_nova"] is True
+          assert d["abattement_federal_quebec_pct"]=="16.5"
+          assert d["p52d_montants_inconnus"]==720
+          assert d["p52b_montants_inconnus"]==600
+          assert d["p55n_score_estime_inchange_pct"]==53
+          assert d["avis_independants_signes"]==0
+          assert d["economies_certifiees_mcad"] is None
+          assert d["questions_preuve_non_resolues"]==8
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Refuser la declaration abusive d'une simulation Nova
+        run: |
+          set +e
+          python scripts/valider_temoin_revenu_disponible_2026_nova_p55t.py --exiger-simulation-nova
+          rc=$?
+          set -e
+          test "$rc" -eq 3
+      - name: Conserver seulement le bilan public non certifiant
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p55t-repere-revenu-disponible-2026-non-certifiant
+          path: p55t_bilan_public.json
+          retention-days: 7
