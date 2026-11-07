@@ -195,6 +195,45 @@ def validate_cname(errors: list[str]) -> None:
         errors.append(f'CNAME inattendu: {value or "—"}; attendu: {DOMAIN}')
 
 
+def validate_private_cache_boundary(source: str) -> list[str]:
+    """Imposer réseau seul / no-store pour les routes privées dans le vrai SW.
+
+    Ne jamais accepter un simple marqueur en commentaire ou l'ancien cache
+    qui conservait potentiellement des réponses propres aux sessions.
+    """
+    errors: list[str] = []
+    private_function = re.search(
+        r'function\\s+privatePath\\(path\\)\\s*\\{(.*?)\\n\\}', source, re.S
+    )
+    if not private_function:
+        return ['sw.js: fonction de cloisonnement privé privatePath absente.']
+
+    guarded_paths = private_function.group(1)
+    for prefix in (
+        '/app', '/compte', '/Admin', '/admin', '/histoire-de-vie', '/supabase',
+    ):
+        if f"path==='{prefix}'" not in guarded_paths or f"path.startsWith('{prefix}/')" not in guarded_paths:
+            errors.append(f'sw.js: chemin privé non couvert entièrement: {prefix}')
+    for path in ('/administration', '/administration.html'):
+        if f"path==='{path}'" not in guarded_paths:
+            errors.append(f'sw.js: administration sans exclusion réseau: {path}')
+
+    branch = re.search(
+        r'if\\s*\\(\\s*privatePath\\(path\\)\\s*\\)\\s*\\{(.*?)\\n  \\}', source, re.S
+    )
+    if not branch:
+        errors.append('sw.js: branche network-only des chemins privés absente.')
+        return errors
+    guarded_branch = branch.group(1)
+    if "event.respondWith(fetch(new Request(request,{cache:'no-store'})))" not in guarded_branch:
+        errors.append('sw.js: les routes privées doivent utiliser fetch no-store directement.')
+    if 'caches.' in guarded_branch or '.catch(' in guarded_branch:
+        errors.append('sw.js: fallback CacheStorage interdit pour les routes privées.')
+    if 'return;' not in guarded_branch:
+        errors.append('sw.js: la branche privée doit quitter le gestionnaire fetch.')
+    return errors
+
+
 def validate_service_worker(errors: list[str]) -> None:
     path = ROOT / 'sw.js'
     if not path.exists():
@@ -228,10 +267,7 @@ def validate_service_worker(errors: list[str]) -> None:
         errors.append('sw.js: nom de cache explicite absent.')
     elif not cache_match.group(1).startswith(CACHE_PREFIX):
         errors.append(f'sw.js: cache obsolète {cache_match.group(1)!r}; préfixe attendu {CACHE_PREFIX!r}.')
-    if "u.pathname.startsWith('/app/')" not in text:
-        errors.append('sw.js: l’app sociale n’est plus explicitement network-only/no-store.')
-    if "u.pathname.startsWith('/compte/')" not in text:
-        errors.append('sw.js: les pages Compte ne sont plus explicitement network-only/no-store.')
+    errors.extend(validate_private_cache_boundary(text))
 
 
 def validate_install_runtime(errors: list[str]) -> None:
