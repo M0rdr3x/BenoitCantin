@@ -72,7 +72,7 @@ Ces conditions constituent **une méthode de préparation**, et non un programme
 
 - `data/risque-transition-taxes-locales-g0-16i-2024.json` : source G0.16h, quatre calculs de sensibilité, sept obligations de service et vingt exercices par statut laissés inconnus.
 - `assets/g016i-local-tax-stress-core.mjs` : moteur arithmétique pur, blocage des valeurs non sourcées, détection de faux bilans et des preuves de financement inventées.
-- `tests/g016i-local-tax-stress.test.mjs` : **37 tests de logique**, dont mutations hostiles de chiffres, statut juridique, périmètre, patrimoine municipal et calendrier; **37/37 réussis lors d'un rejeu JavaScript V8 isolé**, sans attestation d'une exécution native GitHub Actions.
+- `tests/g016i-local-tax-stress.test.mjs` : **38 tests de logique**, dont mutations hostiles de chiffres, statut juridique, périmètre, patrimoine municipal et calendrier; **38/38 réussis lors d'un rejeu JavaScript V8 isolé**, sans attestation d'une exécution native GitHub Actions.
 - `data/finances-municipales-g0-16h-2024.json` : source officielle de référence, non remplacée ni révisée artificiellement.
 
 **Verdict G0.16i :** les risques comptables **historiques** des quatre hypothèses sont établis de façon reproductible, **pas la viabilité financière d'une réforme Nova**. Le contrôle juridique, la comptabilité par municipalité, les dépenses de continuité et la validation indépendante restent manquants. G0.16i n'est **pas franchie** comme porte de préparation gouvernementale; score inchangé **47/100**. Les fichiers candidats `official/reference/*` et le manifeste `data/sources.json` ne sont pas modifiés.
