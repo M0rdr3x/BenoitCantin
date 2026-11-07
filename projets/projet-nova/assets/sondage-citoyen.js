@@ -114,18 +114,26 @@
       host.append(article);
     }
   }
-  // Les GET et les POST ne doivent pas bloquer indéfiniment sur réseau suspendu.
-  // Un POST interrompu reste réessayable avec le même jeton anti-rejeu.
-  async function boundedFetch(url,opts={}) {
+  // Le délai couvre ENTIÈREMENT le téléchargement et le décodage JSON,
+  // pas uniquement l'arrivée des en-têtes HTTP. Une réponse de corps
+  // bloquée conserve un signal d'annulation actif jusqu'à la fin.
+  // Si un POST est interrompu, son résultat reste indéterminé :
+  // la nouvelle tentative conserve le même jeton anti-rejeu.
+  async function boundedJsonRequest(url,opts={}) {
     const controller=new AbortController();
     const timer=setTimeout(()=>controller.abort(),REQUEST_TIMEOUT_MS);
-    try { return await fetch(url,{...opts,signal:controller.signal}); }
-    finally { clearTimeout(timer); }
+    try {
+      const response=await fetch(url,{...opts,signal:controller.signal});
+      const result=await response.json();
+      return {response,result};
+    }finally{
+      clearTimeout(timer);
+    }
   }
   async function fetchJson(url,opts) {
-    const response=await boundedFetch(url,{cache:"no-store",...opts});
+    const {response,result}=await boundedJsonRequest(url,{cache:"no-store",...opts});
     if(!response.ok) throw new Error("HTTP "+response.status);
-    return response.json();
+    return result;
   }
   // Vérifier aussi dans le navigateur les lots publics avant de dessiner
   // des pourcentages. Les résultats peuvent être corrompus en transit ou
@@ -273,12 +281,11 @@
     if(!captchaToken) {$("poll-feedback").textContent="Effectuez la vérification anti-robots.";return;}
     sending=true; updateButton();
     try {
-      const response=await boundedFetch(API,{
+      const {response,result}=await boundedJsonRequest(API,{
         method:"POST",mode:"cors",cache:"no-store",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({version:VERSION,ageConfirmed:true,ballotToken:randomToken(),captchaToken,answers})
       });
-      const result=await response.json();
       if(response.status===201 && result.status==="accepted") {
         save(votedKey,"yes");
         $("poll-feedback").textContent="Participation prise en compte. Merci. Seuls des totaux seront rendus publics.";
