@@ -60,7 +60,7 @@ class SecretGuardTests(unittest.TestCase):
                 with tempfile.TemporaryDirectory() as d:
                     p = Path(d) / filename
                     p.parent.mkdir(parents=True, exist_ok=True)
-                    p.write_bytes(b"\\x00\\xffsynthetic")
+                    p.write_bytes(b"\x00\xffsynthetic")
                     self.assertTrue(guard.inspect_file(p, Path(filename)))
 
     def test_approved_public_and_sample_files_remain_allowed(self):
