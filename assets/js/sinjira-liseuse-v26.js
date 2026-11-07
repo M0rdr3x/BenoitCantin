@@ -1,6 +1,7 @@
 import { getSupabase, requireUser } from './sinjira-supabase.js';
 import { pdfTextToParagraphs, speechTextChunks } from './sinjira-liseuse-text-v27.mjs';
 import { createReaderCompanion } from './sinjira-liseuse-companion-v28.mjs';
+import { chooseReadingPosition, ratioFromScroll, scrollTopForRatio } from './sinjira-liseuse-position-v31.mjs';
 
 /* SINJIRA 2026 — liseuse : le PDF intégral n'entre jamais dans le dépôt public
    ni dans localStorage. Le serveur attribue le droit de lecture avant de signer l'accès. */
@@ -41,7 +42,8 @@ const state={pdf:null,page:1,mode:'texte',theme:'sepia',size:20,zoom:1,
   voiceURI:'',speed:1,autoSpeech:false,
   user:null,novelId:null,renderVersion:0,renderQueue:Promise.resolve(),saveTimer:null,
   progressQueue:Promise.resolve(),accessEpoch:0,accessInvalidated:false,
-  loadController:null,authSubscription:null};
+  loadController:null,authSubscription:null,
+  positionRatio:0,restorePending:null,restoringScroll:false,scrollTimer:null,resumeSource:'debut'};
 const speech={active:false,paused:false,token:0,chunks:[],index:0,voices:[],utterance:null};
 const speechReady='speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
 const storageKey='sinjira:liseuse:'+edition+':la-cendre-du-jugement';
@@ -50,11 +52,16 @@ const pageStorageKey=()=>isFull?storageKey+':'+(state.user?.id||'non-connecte'):
 let companion=null;
 
 function safeLocalGet(key){try{return localStorage.getItem(key)}catch{return null}}
-function safeLocalSet(key,value){try{localStorage.setItem(key,value)}catch{/* navigation privée */}}
+function safeLocalSet(key,value){try{localStorage.setItem(key,value);return true}catch{return false}}
 function clamp(value,min,max){return Math.max(min,Math.min(max,Number(value)||min))}
 function message(value,type='info'){
   const node=$('reader-status');
   node.textContent=value;node.dataset.type=type;node.hidden=false;
+}
+function positionNotice(value,type='info'){
+  const node=$('reader-position-status');
+  node.textContent=value;
+  node.dataset.type=type;
 }
 function savePreferences(){
   // Seules les préférences de présentation sont mémorisées, jamais le texte privé.
@@ -124,13 +131,14 @@ function updateToolbar(){
   $('reader-chapters').value=String(chapter[0]);
 }
 function syncProgress(){
-  if(!isFull||!state.user||!state.novelId||!state.pdf)return state.progressQueue;
-  // Serialize writes: a slow previous request must not overwrite a newer page.
+  if(!isFull||!state.user||!state.novelId||!state.pdf||state.accessInvalidated){
+    return Promise.resolve(false);
+  }
+  // La file d'écriture évite qu'une ancienne requête écrase la dernière page.
   const userId=state.user.id,novelId=state.novelId,pdf=state.pdf;
   const send=async()=>{
-    if(!state.pdf||state.pdf!==pdf||state.user?.id!==userId||state.novelId!==novelId)return;
-    const page=state.page;
-    const updatedAt=new Date().toISOString();
+    if(!state.pdf||state.pdf!==pdf||state.user?.id!==userId||state.novelId!==novelId)return false;
+    const page=state.page,updatedAt=new Date().toISOString();
     const payload={user_id:userId,novel_id:novelId,
       last_page:page,progress_percent:Math.round(page/pdf.numPages*100),
       last_opened_at:updatedAt,updated_at:updatedAt};
@@ -138,13 +146,15 @@ function syncProgress(){
       const {error}=await getSupabase().from('sinjira_reader_library')
         .upsert(payload,{onConflict:'user_id,novel_id'});
       if(error)throw error;
+      return true;
     }catch{
       if(state.pdf===pdf&&state.user?.id===userId){
         message('La synchronisation a échoué. Votre page reste enregistrée sur cet appareil.','warning');
       }
+      return false;
     }
   };
-  state.progressQueue=state.progressQueue.catch(()=>{}).then(send);
+  state.progressQueue=state.progressQueue.catch(()=>false).then(send);
   return state.progressQueue;
 }
 function flushProgress(){
@@ -152,14 +162,71 @@ function flushProgress(){
   clearTimeout(state.saveTimer);state.saveTimer=null;
   void syncProgress();
 }
-function persist(){
-  // Éviter de mélanger la progression de différents comptes partageant un appareil.
-  const key=pageStorageKey();
-  safeLocalSet(key,String(state.page));
-  safeLocalSet(key+':updated',new Date().toISOString());
-  if(!isFull||!state.user||!state.novelId)return;
-  clearTimeout(state.saveTimer);
-  state.saveTimer=setTimeout(()=>{state.saveTimer=null;void syncProgress()},450);
+function persist({syncCloud=true}={}){
+  if(!state.pdf||(isFull&&state.accessInvalidated))return false;
+  // La page, l'horodatage et la position numérique sont les SEULES données
+  // de lecture écrites dans le navigateur. Aucun contenu du roman n'y entre.
+  const key=pageStorageKey(),at=new Date().toISOString();
+  const savedPage=safeLocalSet(key,String(state.page));
+  const savedTime=safeLocalSet(key+':updated',at);
+  const savedSpot=safeLocalSet(key+':spot',JSON.stringify({
+    page:state.page,ratio:state.positionRatio
+  }));
+  if(syncCloud&&isFull&&state.user&&state.novelId){
+    clearTimeout(state.saveTimer);
+    state.saveTimer=setTimeout(()=>{state.saveTimer=null;void syncProgress()},450);
+  }
+  return savedPage&&savedTime&&savedSpot;
+}
+function flushScrollPosition(){
+  if(!state.scrollTimer)return;
+  clearTimeout(state.scrollTimer);state.scrollTimer=null;
+  if(!state.pdf||state.restoringScroll)return;
+  const viewer=$('reader-viewer');
+  state.positionRatio=ratioFromScroll(viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight);
+  persist({syncCloud:false});
+}
+function restoreScrollAfterRender(version){
+  if(state.restorePending===null)return;
+  const ratio=state.restorePending;
+  state.restorePending=null;
+  state.restoringScroll=true;
+  requestAnimationFrame(()=>{
+    if(!state.pdf||version!==state.renderVersion)return;
+    const viewer=$('reader-viewer');
+    viewer.scrollTop=scrollTopForRatio(ratio,viewer.scrollHeight,viewer.clientHeight);
+    requestAnimationFrame(()=>{
+      if(version===state.renderVersion)state.restoringScroll=false;
+    });
+  });
+}
+async function saveCurrentPosition(){
+  if(!state.pdf)return;
+  flushScrollPosition();
+  const viewer=$('reader-viewer');
+  state.positionRatio=ratioFromScroll(viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight);
+  const localSaved=persist({syncCloud:false});
+  $('reader-save-position').disabled=true;
+  try{
+    if(isFull){
+      clearTimeout(state.saveTimer);state.saveTimer=null;
+      const cloudSaved=await syncProgress();
+      if(!state.pdf||state.accessInvalidated)return;
+      positionNotice(cloudSaved
+        ?'Position enregistrée : page '+state.page+' sur votre compte. Emplacement précis conservé sur cet appareil.'
+        :localSaved
+          ?'Page '+state.page+' enregistrée sur cet appareil. Synchronisation du compte indisponible : réessayez.'
+          :'Impossible d’enregistrer la position. Vérifiez la connexion et les paramètres du navigateur.',
+        cloudSaved?'success':'warning');
+    }else{
+      positionNotice(localSaved
+        ?'Position enregistrée : page '+state.page+' et emplacement précis sur cet appareil.'
+        :'Le navigateur ne permet pas la sauvegarde. Désactivez le mode privé ou autorisez le stockage.',
+        localSaved?'success':'warning');
+    }
+  }finally{
+    $('reader-save-position').disabled=false;
+  }
 }
 function updateSpeechControls(){
   $('reader-voice-play').disabled=!speechReady||!state.pdf||speech.active&&!speech.paused;
