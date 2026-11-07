@@ -114,3 +114,13 @@ test("les droits et obligations non démontrés demeurent inconnus",()=>{
  assert.equal(data.ramq.costs_covered_after_nova_tax_reform,null);
  assert.equal(data.decision.g016f_completed,false);
 });
+
+test("la page publique G0.16f montre droits, chiffres et portes non franchies",async()=>{
+ const html=await readFile(new URL("../avancement-programme-nova.html",import.meta.url),"utf8");
+ assert.match(html,/id="continuite-g016f"/);
+ assert.match(html,/14,542 G\$/);
+ assert.match(html,/8 937 M\$/);
+ assert.match(html,/0 sur 15 preuves fiscales/);
+ assert.match(html,/47 %/);
+ assert.match(html,/n'est pas présentée ici comme un surplus/);
+});
