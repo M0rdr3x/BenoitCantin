@@ -57,6 +57,35 @@ Une vérification supplémentaire de la **base Supabase connectée au site** a �
 
 **Limites et prochain contrôle :** vérifier l'absence d'autres chemins privilégiés vers les tables, le comportement simultané du RPC et les politiques de conservation, avec des tests d'intégration en environnement **isolé**. Ne pas écrire de faux votes en production; la certification « 100 % » reste non acquise.
 
+## Complément du 7 novembre : calcul reproductible et déploiement contrôlé
+
+### Résultat technique supplémentaire
+
+Le module `assets/nova-civic-integrity.js` contient désormais **`scoreCompass(questionnaire, answers)`**, une fonction pure pour les seize axes, contrôlant les réponses (−3 à +3, ou `null` pour « Sans opinion »), les poids d'importance et les projections secondaires. La boussole publique utilise **ce même calcul**, plutôt qu'une copie non testée.
+
+Une comparaison de **260 jeux de réponses de test diversifiés** (valeurs, poids et questions passées) entre le calcul historique et le nouveau moteur a donné **260 résultats identiques**. Des essais supplémentaires montrent que **64 questions passées** produisent **16 scores non calculables** et qu'un seul choix ne crée pas artificiellement un score d'axe. Le nouveau fichier `tests/nova-civic-scoring.test.mjs` contient **23 tests Node déclarés**; `tests/nova-civic-readiness.test.mjs` en contient maintenant **10**, en plus des **34 tests** d'intégrité existants. Leur exécution en GitHub Actions n'est **pas encore attestée** par une preuve de CI.
+
+Les huit **formulations et thèmes** du sondage sont aussi figés dans le contrôleur et comparés aux sources JSON; changer la formulation dans le bundle local seul empêche l'utilisation du questionnaire. Le sondage reste `published:false`.
+
+### Une fonctionnalité citoyenne supplémentaire
+
+La boussole permet désormais, **dans GitHub**, l'action **« Voir mon profil actuel (même incomplet) »**, sans parcourir les 64 étapes. Si une dimension compte moins de deux réponses principales, elle reste affichée **« données insuffisantes »**, sans score, et l'outil ne recommande jamais une formation politique. Les réponses restent localement consultables/corrigeables et `Recommencer` les efface. Le HTML, le JS, le CSS et les versions anti-cache ont été modifiés ensemble.
+
+### Tests navigateur et état de publication
+
+- [Parcours réel Q01 à Q25](https://agent.tinyfish.ai/runs/cd87d505-b0a4-4252-b23e-64309558e4e3) : les 25 premières questions ont accepté « Sans opinion / passer », sans erreur ni score pendant le défilement. **Q26 à Q64 et l'écran final n'ont pas été atteints** dans cette session : ne pas présenter ce test comme terminé.
+- [Navigation Q01/Q02 et remise à zéro](https://agent.tinyfish.ai/runs/9ecee317-305e-469f-a6a5-223c2055fba3) : deux réponses de test ont été correctement conservées, puis le bouton `Recommencer` a remis les réponses à zéro. **Le bouton de profil partiel nouvellement enregistré dans GitHub n'était pas encore visible sur le site public** pendant cette inspection. Le déploiement récent ne peut donc **pas être déclaré vérifié**.
+- Le dépôt possède un [workflow Netlify staging](https://github.com/M0rdr3x/BenoitCantin/blob/main/.github/workflows/deploy-netlify-staging.yml) à déclenchement **manuel**, protégé par un SHA complet, une branche de release, l'identité exacte du site et une confirmation `STAGING_ONLY`. Il produit des URLs de vérification sans promotion en production. **Aucune promotion ou activation n'est demandée par cet audit.**
+- La continuité GitHub → serveur public doit être vérifiée par **SHA de release**, accès au nouvel élément d'interface et tests de fumée navigateur **avant** de certifier la version publique.
+
+### Vérification du serveur du sondage en lecture seule
+
+La version 5 de l'Edge Function `nova-civic-poll` a été consultée : elle refuse l'ouverture sans drapeaux de publication, version approuvée et secrets requis, contrôle une origine explicite, effectue Turnstile côté serveur, hache le jeton avec HMAC et utilise un RPC privilégié avec validation des huit choix. L'étape a **revu le code**, et non certifié l'efficacité des protections face à des tentatives réelles. Les cinq tables protégées par RLS et les droits du RPC ont été vérifiés séparément. La consultation reste **fermée**, sans bulletins de test en production.
+
+### Matrice actualisée
+
+Le registre `data/validation-sondage-boussole-2026-11-07.json` atteste **5 contrôles sur 12** pour la boussole et **6 contrôles sur 11** pour le sondage. Ces rapports de portes franchies **ne sont pas des pourcentages de réussite**. Les contrôles restants exigent notamment des tests d'intégration complets, vérifications multi-navigateurs et accessibilité, revue de confidentialité et décisions de publication.
+
 ## Portes de qualité nécessaires pour pouvoir annoncer « 100 % »
 
 | Domaine | Critère vérifiable | Situation |
