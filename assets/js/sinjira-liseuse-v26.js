@@ -44,6 +44,7 @@ const speech={active:false,paused:false,token:0,chunks:[],index:0,voices:[],utte
 const speechReady='speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
 const storageKey='sinjira:liseuse:'+edition+':la-cendre-du-jugement';
 const themeKey='sinjira:liseuse:preferences';
+const pageStorageKey=()=>isFull?storageKey+':'+(state.user?.id||'non-connecte'):storageKey;
 let companion=null;
 
 function safeLocalGet(key){try{return localStorage.getItem(key)}catch{return null}}
@@ -120,17 +121,30 @@ function updateToolbar(){
   $('reader-chapter-label').textContent=chapter[1];
   $('reader-chapters').value=String(chapter[0]);
 }
+async function syncProgress(){
+  if(!isFull||!state.user||!state.novelId||!state.pdf)return;
+  const page=state.page;
+  const payload={user_id:state.user.id,novel_id:state.novelId,
+    last_page:page,progress_percent:Math.round(page/state.pdf.numPages*100),
+    last_opened_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+  try{
+    const {error}=await getSupabase().from('sinjira_reader_library').upsert(payload,{onConflict:'user_id,novel_id'});
+    if(error)throw error;
+  }catch{
+    message('La synchronisation de progression a échoué. La dernière page reste enregistrée sur cet appareil.','warning');
+  }
+}
+function flushProgress(){
+  if(!state.saveTimer)return;
+  clearTimeout(state.saveTimer);state.saveTimer=null;
+  void syncProgress();
+}
 function persist(){
-  safeLocalSet(storageKey,String(state.page));
+  // Éviter de mélanger la progression de différents comptes partageant un appareil.
+  safeLocalSet(pageStorageKey(),String(state.page));
   if(!isFull||!state.user||!state.novelId)return;
   clearTimeout(state.saveTimer);
-  state.saveTimer=setTimeout(async()=>{
-    const payload={user_id:state.user.id,novel_id:state.novelId,
-      last_page:state.page,progress_percent:Math.round(state.page/state.pdf.numPages*100),
-      last_opened_at:new Date().toISOString(),updated_at:new Date().toISOString()};
-    const {error}=await getSupabase().from('sinjira_reader_library').upsert(payload,{onConflict:'user_id,novel_id'});
-    if(error)message('Lecture affichée. La synchronisation de votre progression a échoué; votre page reste mémorisée sur cet appareil.','warning');
-  },650);
+  state.saveTimer=setTimeout(()=>{state.saveTimer=null;void syncProgress()},450);
 }
 function updateSpeechControls(){
   $('reader-voice-play').disabled=!speechReady||!state.pdf||speech.active&&!speech.paused;
@@ -332,7 +346,10 @@ function bindControls(){
   }));
   $('reader-voice-pause').addEventListener('click',toggleSpeechPause);
   $('reader-voice-stop').addEventListener('click',()=>stopNarration());
-  window.addEventListener('pagehide',()=>{stopNarration(false);clearTimeout(state.saveTimer);companion?.close()});
+  window.addEventListener('pagehide',()=>{stopNarration(false);flushProgress();companion?.close()});
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='hidden')flushProgress();
+  });
   $('reader-zoom').addEventListener('change',event=>{
     state.zoom=clamp(event.target.value,.8,1.5);setTheme();
     if(state.mode==='page')renderPage();
@@ -366,7 +383,7 @@ async function resolvePrivateUrl(){
 async function restorePage(){
   // Sur une première ouverture, commencer sur le prologue plutôt que sur la couverture image.
   const firstReadablePage=isFull?4:3;
-  let saved=clamp(Number(safeLocalGet(storageKey)||firstReadablePage),1,state.pdf.numPages);
+  let saved=clamp(Number(safeLocalGet(pageStorageKey())||firstReadablePage),1,state.pdf.numPages);
   if(isFull&&state.user){
     const {data:novel,error:novelError}=await getSupabase().from('sinjira_novels')
       .select('id').eq('slug',NOVEL_SLUG).maybeSingle();
