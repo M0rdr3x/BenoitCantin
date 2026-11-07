@@ -1,7 +1,7 @@
 import { getSupabase, requireUser } from './sinjira-supabase.js';
 import { pdfTextToParagraphs, speechTextChunks } from './sinjira-liseuse-text-v27.mjs';
 import { createReaderCompanion } from './sinjira-liseuse-companion-v28.mjs';
-import { chooseReadingPosition, ratioFromScroll, scrollTopForRatio } from './sinjira-liseuse-position-v31.mjs';
+import { chooseReadingPosition, ratioFromScroll, scrollTopForRatio, readingRatio } from './sinjira-liseuse-position-v31.mjs';
 
 /* SINJIRA 2026 — liseuse : le PDF intégral n'entre jamais dans le dépôt public
    ni dans localStorage. Le serveur attribue le droit de lecture avant de signer l'accès. */
@@ -140,7 +140,8 @@ function syncProgress(){
     if(!state.pdf||state.pdf!==pdf||state.user?.id!==userId||state.novelId!==novelId)return false;
     const page=state.page,updatedAt=new Date().toISOString();
     const payload={user_id:userId,novel_id:novelId,
-      last_page:page,progress_percent:Math.round(page/pdf.numPages*100),
+      last_page:page,scroll_ratio:readingRatio(state.positionRatio),
+      progress_percent:Math.round(page/pdf.numPages*100),
       last_opened_at:updatedAt,updated_at:updatedAt};
     try{
       const {error}=await getSupabase().from('sinjira_reader_library')
@@ -184,7 +185,7 @@ function flushScrollPosition(){
   if(!state.pdf||state.restoringScroll)return;
   const viewer=$('reader-viewer');
   state.positionRatio=ratioFromScroll(viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight);
-  persist({syncCloud:false});
+  persist({syncCloud:true});
 }
 function restoreScrollAfterRender(version){
   if(state.restorePending===null)return;
@@ -214,8 +215,8 @@ async function saveCurrentPosition(){
       if(!state.pdf||state.accessInvalidated)return;
       positionNotice(cloudSaved
         ?(localSaved
-          ?'Position enregistrée : page '+state.page+' sur votre compte. Emplacement précis conservé sur cet appareil.'
-          :'Page '+state.page+' synchronisée sur votre compte. Le défilement précis ne peut pas être conservé par ce navigateur.')
+          ?'Position enregistrée : page '+state.page+' et emplacement précis synchronisés sur votre compte et cet appareil.'
+          :'Position enregistrée : page '+state.page+' et emplacement précis synchronisés sur votre compte.')
         :localSaved
           ?'Page '+state.page+' enregistrée sur cet appareil. Synchronisation du compte indisponible : réessayez.'
           :'Impossible d’enregistrer la position. Vérifiez la connexion et les paramètres du navigateur.',
@@ -403,8 +404,10 @@ function bindControls(){
       if(!state.pdf||state.restoringScroll)return;
       const viewer=$('reader-viewer');
       state.positionRatio=ratioFromScroll(viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight);
-      if(!persist({syncCloud:false})){
-        positionNotice('Enregistrement automatique indisponible dans ce navigateur.','warning');
+      if(!persist({syncCloud:true})){
+        positionNotice(isFull
+          ?'Sauvegarde locale indisponible : tentative de synchronisation sur votre compte en cours.'
+          :'Enregistrement automatique indisponible dans ce navigateur.','warning');
       }
     },650);
   },{passive:true});
@@ -546,21 +549,22 @@ async function restorePage(){
     const spot=JSON.parse(safeLocalGet(key+':spot')||'null');
     if(spot&&spot.page===localPage)localRatio=spot.ratio;
   }catch{/* ancien format de progression */}
-  let serverPage=null,serverUpdatedAt=null;
+  let serverPage=null,serverRatio=null,serverUpdatedAt=null;
   if(isFull&&state.user){
     const {data:novel,error:novelError}=await getSupabase().from('sinjira_novels')
       .select('id').eq('slug',NOVEL_SLUG).maybeSingle();
     if(!novelError&&novel?.id){
       state.novelId=novel.id;
       const {data:progress}=await getSupabase().from('sinjira_reader_library')
-        .select('last_page,updated_at').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle();
+        .select('last_page,scroll_ratio,updated_at').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle();
       serverPage=progress?.last_page;
+      serverRatio=progress?.scroll_ratio??null;
       serverUpdatedAt=progress?.updated_at;
     }
   }
   const spot=chooseReadingPosition({
     localPage,localRatio,localUpdatedAt:safeLocalGet(key+':updated'),
-    serverPage,serverUpdatedAt,totalPages:state.pdf.numPages,defaultPage
+    serverPage,serverRatio,serverUpdatedAt,totalPages:state.pdf.numPages,defaultPage
   });
   state.page=spot.page;
   state.positionRatio=spot.ratio;
@@ -568,10 +572,10 @@ async function restorePage(){
   state.resumeSource=spot.source;
   state.restoringScroll=true;
   if(spot.source==='compte'){
-    // L'ancien schéma serveur mémorise la page, pas l'endroit exact dans cette page.
+    // La sauvegarde la plus récente est conservée sur l'appareil.
     safeLocalSet(key,String(spot.page));
     safeLocalSet(key+':updated',serverUpdatedAt||new Date().toISOString());
-    safeLocalSet(key+':spot',JSON.stringify({page:spot.page,ratio:0}));
+    safeLocalSet(key+':spot',JSON.stringify({page:spot.page,ratio:spot.ratio}));
   }
 }
 async function init(){
@@ -647,7 +651,7 @@ async function init(){
     updateToolbar();renderPage();updateSpeechControls();
     const origin=state.resumeSource==='compte'?'depuis votre compte'
       :state.resumeSource==='appareil'?'depuis cet appareil':'au début du roman';
-    positionNotice('Lecture prête : page '+state.page+' reprise '+origin+'. Enregistrement automatique actif.');
+    positionNotice('Lecture prête : page '+state.page+' reprise '+origin+'. Enregistrement automatique actif'+(isFull?' sur votre compte et votre appareil.': ' sur cet appareil.'));
     // L'indisponibilité de la synchronisation des notes ne bloque pas la lecture.
     companion.ready().catch(()=>message('La liseuse fonctionne, mais les repères personnels ne sont pas disponibles.','warning'));
     $('reader-status').hidden=true;
