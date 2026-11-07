@@ -149,3 +149,13 @@ test("l'explorateur des partis vérifie aussi les 64 questions avant de montrer 
  assert.ok(block.indexOf("validateQuestionnaireCorpus(questionCorpus)")<
    block.indexOf("validateDocumentaryCorpora(questionCorpus"));
 });
+
+test("le consentement explicite décrit la finalité et le caractère agrégé",()=>{
+ assert.match(pollHtml,/id="poll-agree"[^>]*type="checkbox" required/);
+ assert.match(pollHtml,/Je consens expressément à transmettre mes réponses politiques/);
+ assert.match(pollHtml,/publication de statistiques agrégées/);
+ assert.match(pollHtml,/href="confidentialite\.html"/);
+ assert.match(pollHtml,/impossible de retirer un bulletin particulier/);
+ assert.match(pollHtml,/Aucun choix n’est envoyé avant votre clic/);
+ assert.match(pollHtml,/n’est pas représentative de la population/);
+});
