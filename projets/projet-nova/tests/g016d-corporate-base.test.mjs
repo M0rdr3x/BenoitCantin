@@ -98,3 +98,13 @@ test("les sources déformées sont rejetées",()=>{
  const d=cp(data);d.source.url="https://not-official.example.org";
  assert.ok(check(d).errors.includes("SOURCE_INCORRECTE"));
 });
+
+test("la page publique présente G0.16d et refuse un taux inventé",async()=>{
+ const html=await readFile(new URL("../avancement-programme-nova.html",import.meta.url),"utf8");
+ assert.match(html,/id="societes-g016d"/);
+ assert.match(html,/95,8 G\$/);
+ assert.match(html,/155,9 G\$/);
+ assert.match(html,/2021 \(sociétés\), 2023 \(particuliers\)/);
+ assert.match(html,/0 sur 15 preuves fiscales indépendamment validées/);
+ assert.match(html,/score 47 % inchangé/);
+});
