@@ -253,7 +253,9 @@ def run() -> None:
                     f"{BROWSER_NAME}: texte reformatable absent de la liseuse")
         assert_true(not page.locator("#reader-text").is_hidden(),
                     f"{BROWSER_NAME}: le texte n'est pas le mode de lecture par défaut")
-        page.locator("#reader-size").fill("28")
+        page.locator("#reader-size").evaluate(
+            "(el) => {el.value='28';el.dispatchEvent(new Event('input',{bubbles:true}));}"
+        )
         assert_true(page.locator("#reader-size-value").inner_text()=="28 px",
                     f"{BROWSER_NAME}: taille du texte non personnalisable")
         page.locator("#reader-font").select_option("sans")
