@@ -1,5 +1,6 @@
 import { getSupabase, requireUser } from './sinjira-supabase.js';
 import { pdfTextToParagraphs, speechTextChunks } from './sinjira-liseuse-text-v27.mjs';
+import { createReaderCompanion } from './sinjira-liseuse-companion-v28.mjs';
 
 /* SINJIRA 2026 — liseuse : le PDF intégral n'entre jamais dans le dépôt public
    ni dans localStorage. Le serveur attribue le droit de lecture avant de signer l'accès. */
@@ -43,6 +44,7 @@ const speech={active:false,paused:false,token:0,chunks:[],index:0,voices:[],utte
 const speechReady='speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
 const storageKey='sinjira:liseuse:'+edition+':la-cendre-du-jugement';
 const themeKey='sinjira:liseuse:preferences';
+let companion=null;
 
 function safeLocalGet(key){try{return localStorage.getItem(key)}catch{return null}}
 function safeLocalSet(key,value){try{localStorage.setItem(key,value)}catch{/* navigation privée */}}
@@ -256,6 +258,7 @@ function renderPage(){
       $('reader-text').textContent=readable||'Cette page contient surtout des images ou du texte non sélectionnable. Utilisez « Afficher le PDF » pour consulter sa mise en page.';
       $('reader-canvas').hidden=true;
       $('reader-text').hidden=false;
+      companion?.onTextRendered();
     }else{
       const viewer=$('reader-viewer');
       const baseWidth=Math.max(280,Math.min(1150,viewer.clientWidth-40));
@@ -282,6 +285,7 @@ function changePage(value){
   stopNarration(false);
   state.page=next;
   updateToolbar();persist();renderPage();
+  companion?.onPageChange();
   $('reader-viewer').scrollTo({top:0,left:0,behavior:'auto'});
 }
 function bindControls(){
@@ -294,6 +298,7 @@ function bindControls(){
     stopNarration(false);
     state.mode=state.mode==='page'?'texte':'page';
     setTheme();renderPage();
+    companion?.onModeChange();
   });
   $('reader-theme').addEventListener('change',event=>{
     state.theme=event.target.value;setTheme();
@@ -327,7 +332,7 @@ function bindControls(){
   }));
   $('reader-voice-pause').addEventListener('click',toggleSpeechPause);
   $('reader-voice-stop').addEventListener('click',()=>stopNarration());
-  window.addEventListener('pagehide',()=>{stopNarration(false);clearTimeout(state.saveTimer)});
+  window.addEventListener('pagehide',()=>{stopNarration(false);clearTimeout(state.saveTimer);companion?.close()});
   $('reader-zoom').addEventListener('change',event=>{
     state.zoom=clamp(event.target.value,.8,1.5);setTheme();
     if(state.mode==='page')renderPage();
@@ -406,9 +411,26 @@ async function init(){
     state.pdf=await pdfjs.getDocument({data,isEvalSupported:false,useSystemFonts:true}).promise;
     if(state.pdf.numPages!==(isFull?520:82))throw new Error('Le nombre de pages de ce document ne correspond pas à l’édition attendue.');
     await restorePage();
+    companion=createReaderCompanion({
+      isFull,
+      getPdf:()=>state.pdf,
+      getPage:()=>state.page,
+      goToPage:changePage,
+      getChapters:()=>isFull?chaptersFull:chaptersDemo,
+      getUser:()=>state.user,
+      getNovelId:()=>state.novelId,
+      getSupabase,
+      getTextAtPage:async pageNumber=>{
+        const page=await state.pdf.getPage(pageNumber);
+        const text=await page.getTextContent();
+        return pdfTextToParagraphs(text.items);
+      },
+    });
     $('reader-loading').hidden=true;
     $('reader-content').hidden=false;
     updateToolbar();renderPage();updateSpeechControls();
+    // L'indisponibilité de la synchronisation des notes ne bloque pas la lecture.
+    companion.ready().catch(()=>message('La liseuse fonctionne, mais les repères personnels ne sont pas disponibles.','warning'));
     $('reader-status').hidden=true;
   }catch(error){
     if(error?.message==='Connexion requise')return;
