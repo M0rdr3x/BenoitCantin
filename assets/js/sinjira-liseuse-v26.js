@@ -1,4 +1,5 @@
-import { getSupabase, getCurrentUser, requireUser } from './sinjira-supabase.js';
+import { getSupabase, requireUser } from './sinjira-supabase.js';
+import { pdfTextToParagraphs, speechTextChunks } from './sinjira-liseuse-text-v27.mjs';
 
 /* SINJIRA 2026 — liseuse : le PDF intégral n'entre jamais dans le dépôt public
    ni dans localStorage. Le serveur attribue le droit de lecture avant de signer l'accès. */
@@ -34,8 +35,12 @@ const chaptersDemo=[
   [61,'Chapitre 3 — Une erreur qui regarde']
 ];
 const $=id=>document.getElementById(id);
-const state={pdf:null,page:1,mode:'page',theme:'sepia',size:20,zoom:1,
+const state={pdf:null,page:1,mode:'texte',theme:'sepia',size:20,zoom:1,
+  font:'serif',lineHeight:1.75,textWidth:780,letterSpacing:0,
+  voiceURI:'',speed:1,autoSpeech:false,
   user:null,novelId:null,renderVersion:0,renderQueue:Promise.resolve(),saveTimer:null};
+const speech={active:false,paused:false,token:0,chunks:[],index:0,voices:[]};
+const speechReady='speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
 const storageKey='sinjira:liseuse:'+edition+':la-cendre-du-jugement';
 const themeKey='sinjira:liseuse:preferences';
 
@@ -47,24 +52,50 @@ function message(value,type='info'){
   node.textContent=value;node.dataset.type=type;node.hidden=false;
 }
 function savePreferences(){
-  safeLocalSet(themeKey,JSON.stringify({theme:state.theme,size:state.size,zoom:state.zoom,mode:state.mode}));
+  // Seules les préférences de présentation sont mémorisées, jamais le texte privé.
+  const {theme,size,zoom,mode,font,lineHeight,textWidth,letterSpacing,voiceURI,speed,autoSpeech}=state;
+  safeLocalSet(themeKey,JSON.stringify({theme,size,zoom,mode,font,lineHeight,textWidth,letterSpacing,voiceURI,speed,autoSpeech}));
 }
 function loadPreferences(){
   try{
     const prefs=JSON.parse(safeLocalGet(themeKey)||'{}');
     if(['clair','sepia','nuit'].includes(prefs.theme))state.theme=prefs.theme;
     if(['texte','page'].includes(prefs.mode))state.mode=prefs.mode;
-    state.size=clamp(prefs.size||20,16,32);
+    if(['serif','sans','accessible'].includes(prefs.font))state.font=prefs.font;
+    if([1.45,1.75,2.1].includes(Number(prefs.lineHeight)))state.lineHeight=Number(prefs.lineHeight);
+    if([600,780,960].includes(Number(prefs.textWidth)))state.textWidth=Number(prefs.textWidth);
+    if([0,0.035,0.07].includes(Number(prefs.letterSpacing)))state.letterSpacing=Number(prefs.letterSpacing);
+    if([0.75,1,1.25,1.5].includes(Number(prefs.speed)))state.speed=Number(prefs.speed);
+    if(typeof prefs.voiceURI==='string')state.voiceURI=prefs.voiceURI.slice(0,300);
+    if(typeof prefs.autoSpeech==='boolean')state.autoSpeech=prefs.autoSpeech;
+    state.size=clamp(prefs.size||20,16,34);
     state.zoom=clamp(prefs.zoom||1,.8,1.5);
   }catch{/* valeurs par défaut */}
 }
 function setTheme(){
+  const fonts={
+    serif:"Georgia, 'Times New Roman', serif",
+    sans:"system-ui, -apple-system, 'Segoe UI', Arial, sans-serif",
+    accessible:"Verdana, Tahoma, Arial, sans-serif"
+  };
   document.body.dataset.readTheme=state.theme;
-  $('reader-theme').value=state.theme;
-  $('reader-size').value=String(state.size);
-  $('reader-zoom').value=String(state.zoom);
   document.body.style.setProperty('--reader-text-size',state.size+'px');
-  $('reader-mode').textContent=state.mode==='texte'?'Mode pages':'Mode texte';
+  document.body.style.setProperty('--reader-font',fonts[state.font]);
+  document.body.style.setProperty('--reader-line-height',String(state.lineHeight));
+  document.body.style.setProperty('--reader-measure',state.textWidth+'px');
+  document.body.style.setProperty('--reader-letter-spacing',state.letterSpacing+'em');
+  $('reader-theme').value=state.theme;
+  $('reader-font').value=state.font;
+  $('reader-size').value=String(state.size);
+  $('reader-size-value').textContent=state.size+' px';
+  $('reader-line-height').value=String(state.lineHeight);
+  $('reader-text-width').value=String(state.textWidth);
+  $('reader-letter-spacing').value=String(state.letterSpacing);
+  $('reader-zoom').value=String(state.zoom);
+  $('reader-speed').value=String(state.speed);
+  $('reader-voice-auto').checked=state.autoSpeech;
+  $('reader-mode').textContent=state.mode==='texte'?'Afficher le PDF':'Texte adaptable';
+  $('reader-mode').setAttribute('aria-pressed',String(state.mode==='page'));
   savePreferences();
 }
 function currentChapter(){
@@ -99,6 +130,117 @@ function persist(){
     if(error)message('Lecture affichée. La synchronisation de votre progression a échoué; votre page reste mémorisée sur cet appareil.','warning');
   },650);
 }
+function updateSpeechControls(){
+  $('reader-voice-play').disabled=!speechReady||!state.pdf||speech.active&&!speech.paused;
+  $('reader-voice-pause').disabled=!speechReady||!speech.active;
+  $('reader-voice-pause').textContent=speech.paused?'▶ Reprendre':'⏸ Pause';
+  $('reader-voice-stop').disabled=!speechReady||!speech.active;
+}
+function speechStatus(text){
+  $('reader-voice-status').textContent=text;
+  updateSpeechControls();
+}
+function stopNarration(announce=true){
+  speech.token++;
+  speech.active=false;speech.paused=false;speech.chunks=[];speech.index=0;
+  if(speechReady)window.speechSynthesis.cancel();
+  if(announce)speechStatus('Lecture vocale arrêtée.');
+  else updateSpeechControls();
+}
+function listVoices(){
+  if(!speechReady)return;
+  const available=window.speechSynthesis.getVoices();
+  speech.voices=available.filter(voice=>/^fr(?:-|$)/i.test(voice.lang));
+  const select=$('reader-voice');
+  const chosen=state.voiceURI;
+  select.replaceChildren();
+  const defaultOption=document.createElement('option');
+  defaultOption.value='';defaultOption.textContent='Voix automatique en français';
+  select.append(defaultOption);
+  for(const voice of speech.voices){
+    const option=document.createElement('option');
+    option.value=voice.voiceURI;
+    option.textContent=voice.name+' ('+voice.lang+')';
+    select.append(option);
+  }
+  select.value=speech.voices.some(v=>v.voiceURI===chosen)?chosen:'';
+}
+function configureSpeech(){
+  if(!speechReady){
+    $('reader-voice').disabled=true;
+    $('reader-speed').disabled=true;
+    $('reader-voice-auto').disabled=true;
+    speechStatus('Lecture vocale indisponible dans ce navigateur.');
+    return;
+  }
+  listVoices();
+  window.speechSynthesis.addEventListener?.('voiceschanged',listVoices);
+  updateSpeechControls();
+}
+function speakNext(token){
+  if(!speechReady||token!==speech.token||!speech.active)return;
+  if(speech.index>=speech.chunks.length){
+    const continueReading=state.autoSpeech&&state.page<state.pdf.numPages;
+    stopNarration(false);
+    if(continueReading){
+      changePage(state.page+1);
+      startNarration().catch(()=>speechStatus('Lecture vocale interrompue.'));
+    }else{
+      speechStatus('Page terminée. Vous pouvez poursuivre à la page suivante.');
+    }
+    return;
+  }
+  const utterance=new SpeechSynthesisUtterance(speech.chunks[speech.index]);
+  utterance.lang='fr-CA';
+  utterance.rate=state.speed;
+  utterance.voice=speech.voices.find(voice=>voice.voiceURI===state.voiceURI)||null;
+  utterance.onend=()=>{
+    if(token!==speech.token)return;
+    speech.index++;
+    speakNext(token);
+  };
+  utterance.onerror=event=>{
+    if(token!==speech.token)return;
+    if(event.error==='interrupted'||event.error==='canceled')return;
+    stopNarration(false);
+    speechStatus('La voix ne peut pas lire ce passage sur cet appareil.');
+  };
+  window.speechSynthesis.speak(utterance);
+}
+async function startNarration(){
+  if(!speechReady||!state.pdf)return;
+  stopNarration(false);
+  const token=speech.token;
+  const pageNumber=state.page;
+  const page=await state.pdf.getPage(pageNumber);
+  const content=await page.getTextContent();
+  if(token!==speech.token||pageNumber!==state.page)return;
+  const text=pdfTextToParagraphs(content.items);
+  if(!text){
+    speechStatus('Cette page ne contient pas de texte lisible par la voix. Essayez la suivante.');
+    return;
+  }
+  speech.chunks=speechTextChunks(text);
+  if(!speech.chunks.length)return;
+  state.mode='texte';
+  setTheme();renderPage();
+  speech.index=0;speech.active=true;speech.paused=false;
+  speechStatus('Lecture vocale de la page '+pageNumber+' en cours…');
+  speakNext(token);
+}
+function toggleSpeechPause(){
+  if(!speechReady||!speech.active)return;
+  if(speech.paused){
+    window.speechSynthesis.resume();
+    speech.paused=false;
+    speechStatus('Lecture vocale reprise.');
+  }else{
+    window.speechSynthesis.pause();
+    speech.paused=true;
+    speechStatus('Lecture vocale en pause.');
+  }
+}
+
 function renderPage(){
   const version=++state.renderVersion;
   state.renderQueue=state.renderQueue.catch(()=>{}).then(async()=>{
@@ -108,28 +250,8 @@ function renderPage(){
     if(state.mode==='texte'){
       const text=await page.getTextContent();
       if(version!==state.renderVersion)return;
-      const lines=[],items=Array.isArray(text.items)?text.items:[];
-      let line='',previousY=null;
-      for(const item of items){
-        if(typeof item.str!=='string')continue;
-        const y=Array.isArray(item.transform)?Math.round(item.transform[5]):previousY;
-        if(previousY!==null&&y!==null&&Math.abs(y-previousY)>3){
-          if(line.trim())lines.push(line.trim());
-          line='';
-        }
-        const word=item.str;
-        if(word){
-          if(line&&!/[\s\u2019'-]$/.test(line)&&!/^[,.;:!?)\]]/.test(word))line+=' ';
-          line+=word;
-        }
-        if(item.hasEOL){
-          if(line.trim())lines.push(line.trim());
-          line='';
-        }
-        previousY=y;
-      }
-      if(line.trim())lines.push(line.trim());
-      $('reader-text').textContent=lines.join('\n');
+      const readable=pdfTextToParagraphs(text.items);
+      $('reader-text').textContent=readable||'Cette page contient surtout des images ou du texte non sélectionnable. Utilisez « Afficher le PDF » pour consulter sa mise en page.';
       $('reader-canvas').hidden=true;
       $('reader-text').hidden=false;
     }else{
@@ -155,6 +277,7 @@ function changePage(value){
   if(!state.pdf)return;
   const next=clamp(Math.round(value),1,state.pdf.numPages);
   if(next===state.page)return;
+  stopNarration(false);
   state.page=next;
   updateToolbar();persist();renderPage();
   $('reader-viewer').scrollTo({top:0,left:0,behavior:'auto'});
@@ -166,6 +289,7 @@ function bindControls(){
   $('reader-range').addEventListener('change',event=>changePage(event.target.value));
   $('reader-chapters').addEventListener('change',event=>changePage(event.target.value));
   $('reader-mode').addEventListener('click',()=>{
+    stopNarration(false);
     state.mode=state.mode==='page'?'texte':'page';
     setTheme();renderPage();
   });
@@ -173,8 +297,35 @@ function bindControls(){
     state.theme=event.target.value;setTheme();
   });
   $('reader-size').addEventListener('input',event=>{
-    state.size=clamp(event.target.value,16,32);setTheme();
+    state.size=clamp(event.target.value,16,34);setTheme();
   });
+  $('reader-font').addEventListener('change',event=>{
+    if(['serif','sans','accessible'].includes(event.target.value)){state.font=event.target.value;setTheme()}
+  });
+  $('reader-line-height').addEventListener('change',event=>{
+    state.lineHeight=Number(event.target.value);setTheme();
+  });
+  $('reader-text-width').addEventListener('change',event=>{
+    state.textWidth=Number(event.target.value);setTheme();
+  });
+  $('reader-letter-spacing').addEventListener('change',event=>{
+    state.letterSpacing=Number(event.target.value);setTheme();
+  });
+  $('reader-speed').addEventListener('change',event=>{
+    state.speed=Number(event.target.value);savePreferences();
+  });
+  $('reader-voice').addEventListener('change',event=>{
+    state.voiceURI=event.target.value;stopNarration(false);savePreferences();
+  });
+  $('reader-voice-auto').addEventListener('change',event=>{
+    state.autoSpeech=event.target.checked;savePreferences();
+  });
+  $('reader-voice-play').addEventListener('click',()=>startNarration().catch(()=>{
+    stopNarration(false);speechStatus('Impossible de lancer la lecture à voix haute.');
+  }));
+  $('reader-voice-pause').addEventListener('click',toggleSpeechPause);
+  $('reader-voice-stop').addEventListener('click',()=>stopNarration());
+  window.addEventListener('pagehide',()=>{stopNarration(false);clearTimeout(state.saveTimer)});
   $('reader-zoom').addEventListener('change',event=>{
     state.zoom=clamp(event.target.value,.8,1.5);setTheme();
     if(state.mode==='page')renderPage();
@@ -220,7 +371,10 @@ async function restorePage(){
   state.page=saved;
 }
 async function init(){
-  loadPreferences();setTheme();bindControls();
+  loadPreferences();setTheme();bindControls();configureSpeech();
+  if(window.matchMedia?.('(max-width: 980px)').matches){
+    document.querySelectorAll('.reader-sidebar details').forEach(detail=>{detail.open=false});
+  }
   const chapters=isFull?chaptersFull:chaptersDemo;
   const picker=$('reader-chapters');
   for(const [page,label] of chapters){
@@ -250,7 +404,7 @@ async function init(){
     await restorePage();
     $('reader-loading').hidden=true;
     $('reader-content').hidden=false;
-    updateToolbar();renderPage();
+    updateToolbar();renderPage();updateSpeechControls();
     $('reader-status').hidden=true;
   }catch(error){
     if(error?.message==='Connexion requise')return;
