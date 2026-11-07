@@ -1,0 +1,124 @@
+{
+  "schema_version": "P55V-JEU-1",
+  "type_jeu": "SYNTHESE_FICTIVE_DEMONSTRATION",
+  "date_reference": "2026-11-07",
+  "statut": "NON_REPRESENTATIF_NON_ADOPTE",
+  "unite": "CAD_PAR_AN",
+  "avis_independant_obtenu": false,
+  "consequence_politique_reelle_autorisee": false,
+  "version_programme_adoptee": false,
+  "protection_des_donnees_nominatives": true,
+  "sortie_requise": "NO_GO_AUTOMATIQUE",
+  "cas": [
+    {
+      "id": "demo-m01",
+      "type": "menage",
+      "categorie": "personne_seule_revenu_modeste",
+      "regime": "QUEBEC_DANS_CANADA",
+      "scenario": "central",
+      "annee": 2026,
+      "actuel": {
+        "revenu_brut": "30000.00",
+        "prestations_federales": "1800.00",
+        "prestations_quebec_ou_etat": "1200.00",
+        "impot_revenu_federal": "1600.00",
+        "impot_revenu_quebec_ou_etat": "1200.00",
+        "cotisations_obligatoires": "1500.00",
+        "prelevements_municipaux_directs": "0.00",
+        "taxes_consommation_supportees": "1200.00"
+      },
+      "propose": {
+        "revenu_brut": "30000.00",
+        "prestations_federales": "1800.00",
+        "prestations_quebec_ou_etat": "1200.00",
+        "impot_revenu_federal": "1600.00",
+        "impot_revenu_quebec_ou_etat": "900.00",
+        "cotisations_obligatoires": "1500.00",
+        "prelevements_municipaux_directs": "0.00",
+        "taxes_consommation_supportees": "700.00"
+      },
+      "sources": {
+        "actuel": {
+          "revenu_brut": "FICTIF_EXPLICITE_NON_SOURCE",
+          "prestations_federales": "FICTIF_EXPLICITE_NON_SOURCE",
+          "prestations_quebec_ou_etat": "FICTIF_EXPLICITE_NON_SOURCE",
+          "impot_revenu_federal": "FICTIF_EXPLICITE_NON_SOURCE",
+          "impot_revenu_quebec_ou_etat": "FICTIF_EXPLICITE_NON_SOURCE",
+          "cotisations_obligatoires": "FICTIF_EXPLICITE_NON_SOURCE",
+          "prelevements_municipaux_directs": "FICTIF_EXPLICITE_NON_SOURCE",
+          "taxes_consommation_supportees": "FICTIF_EXPLICITE_NON_SOURCE"
+        },
+        "propose": {
+          "revenu_brut": "FICTIF_EXPLICITE_NON_SOURCE",
+          "prestations_federales": "FICTIF_EXPLICITE_NON_SOURCE",
+          "prestations_quebec_ou_etat": "FICTIF_EXPLICITE_NON_SOURCE",
+          "impot_revenu_federal": "FICTIF_EXPLICITE_NON_SOURCE",
+          "impot_revenu_quebec_ou_etat": "FICTIF_EXPLICITE_NON_SOURCE",
+          "cotisations_obligatoires": "FICTIF_EXPLICITE_NON_SOURCE",
+          "prelevements_municipaux_directs": "FICTIF_EXPLICITE_NON_SOURCE",
+          "taxes_consommation_supportees": "FICTIF_EXPLICITE_NON_SOURCE"
+        }
+      },
+      "avertissement": "EXEMPLE_ARITHMETIQUE_INVENTE_SANS_VERIFICATION_FISCALE"
+    },
+    {
+      "id": "demo-e01",
+      "type": "entreprise",
+      "categorie": "PME",
+      "regime": "QUEBEC_DANS_CANADA",
+      "scenario": "central",
+      "annee": 2026,
+      "actuel": {
+        "chiffre_affaires": "200000.00",
+        "couts_exploitation_hors_salaires": "60000.00",
+        "masse_salariale": "90000.00",
+        "impot_entreprise_federal": "10000.00",
+        "impot_entreprise_quebec_ou_etat": "8000.00",
+        "cotisations_employeur": "4000.00",
+        "prelevements_municipaux": "2000.00",
+        "taxes_consommation_non_recouvrables": "1000.00",
+        "subventions_recues": "1000.00",
+        "charge_additionnelle_anti_evasion": "0.00"
+      },
+      "propose": {
+        "chiffre_affaires": "200000.00",
+        "couts_exploitation_hors_salaires": "60000.00",
+        "masse_salariale": "90000.00",
+        "impot_entreprise_federal": "10000.00",
+        "impot_entreprise_quebec_ou_etat": "7000.00",
+        "cotisations_employeur": "4000.00",
+        "prelevements_municipaux": "2000.00",
+        "taxes_consommation_non_recouvrables": "500.00",
+        "subventions_recues": "1000.00",
+        "charge_additionnelle_anti_evasion": "0.00"
+      },
+      "sources": {
+        "actuel": {
+          "chiffre_affaires": "FICTIF_EXPLICITE_NON_SOURCE",
+          "couts_exploitation_hors_salaires": "FICTIF_EXPLICITE_NON_SOURCE",
+          "masse_salariale": "FICTIF_EXPLICITE_NON_SOURCE",
+          "impot_entreprise_federal": "FICTIF_EXPLICITE_NON_SOURCE",
+          "impot_entreprise_quebec_ou_etat": "FICTIF_EXPLICITE_NON_SOURCE",
+          "cotisations_employeur": "FICTIF_EXPLICITE_NON_SOURCE",
+          "prelevements_municipaux": "FICTIF_EXPLICITE_NON_SOURCE",
+          "taxes_consommation_non_recouvrables": "FICTIF_EXPLICITE_NON_SOURCE",
+          "subventions_recues": "FICTIF_EXPLICITE_NON_SOURCE",
+          "charge_additionnelle_anti_evasion": "FICTIF_EXPLICITE_NON_SOURCE"
+        },
+        "propose": {
+          "chiffre_affaires": "FICTIF_EXPLICITE_NON_SOURCE",
+          "couts_exploitation_hors_salaires": "FICTIF_EXPLICITE_NON_SOURCE",
+          "masse_salariale": "FICTIF_EXPLICITE_NON_SOURCE",
+          "impot_entreprise_federal": "FICTIF_EXPLICITE_NON_SOURCE",
+          "impot_entreprise_quebec_ou_etat": "FICTIF_EXPLICITE_NON_SOURCE",
+          "cotisations_employeur": "FICTIF_EXPLICITE_NON_SOURCE",
+          "prelevements_municipaux": "FICTIF_EXPLICITE_NON_SOURCE",
+          "taxes_consommation_non_recouvrables": "FICTIF_EXPLICITE_NON_SOURCE",
+          "subventions_recues": "FICTIF_EXPLICITE_NON_SOURCE",
+          "charge_additionnelle_anti_evasion": "FICTIF_EXPLICITE_NON_SOURCE"
+        }
+      },
+      "avertissement": "EXEMPLE_ARITHMETIQUE_INVENTE_SANS_VERIFICATION_FISCALE"
+    }
+  ]
+}
