@@ -373,6 +373,26 @@ Les fichiers de référence candidats `official/reference/*` et `data/sources.js
 
 **Suite G0.16i :** obtenir les fichiers comptables municipaux détaillés, harmoniser 2024–2026, intégrer les transferts inter-administrations et calculer avec un auditeur les besoins de compensation pour chacun des deux statuts constitutionnels. Les références candidates `official/reference/*` et `data/sources.json` ne sont pas modifiées.
 
+## G0.16i — Stress historique des taxes municipales et continuité des services (7 novembre 2026)
+
+**Programme : 47/100, inchangé.** La suite G0.16i utilise la sommation 2024 du MAMH, issue de G0.16h (**1 056 municipalités locales, couverture non exhaustive, détails fiscaux marqués non audités**), pour calculer quatre scénarios **purement arithmétiques, sans politique adoptée ni prévision 2026**.
+
+| Sensibilité sur les comptes **2024** à dépenses et autres revenus gelés | Taxes hypothétiquement retirées | Solde comptable mécanique |
+| --- | ---: | ---: |
+| Aucun retrait (référence enregistrée) | 0,000 G$ | **+3,742 G$** |
+| Taxes foncières générales seules | 13,215 G$ | **−9,473 G$** |
+| Toutes taxes sur valeur foncière | 14,970 G$ | **−11,228 G$** |
+| Toutes taxes municipales | 17,188 G$ | **−13,446 G$** |
+
+- **Ne jamais additionner les scénarios :** taxes générales ⊂ taxes sur valeur foncière ⊂ toutes taxes municipales. Les recettes de remplacement sont **inconnues**. Aucun solde du tableau n'est un **déficit prévisionnel Nova**.
+- **L'excédent 2024 de 3,742 G$ est comptable**, pas une réserve de liquidités ou des économies disponibles; les transferts internes et frais financiers sont déjà dans les comptes.
+- **Nouveau contrôle des années :** le [catalogue MAMH des profils municipaux](https://www.donneesquebec.ca/recherche/dataset/profil-financier-des-municipalites-locales), actualisé le **5 novembre 2026**, distingue les comptes **2024** et les données **2025 d'évaluation foncière**; ces dernières ne représentent **pas** des recettes fiscales 2025. Aucun budget 2025 n'est fabriqué.
+- **Continuité obligatoire :** sept catégories de services et droits (eau, voirie, sécurité, transports, aménagement, emplois/pensions, dette) ont des coûts et financements de remplacement **`null`**. Les **deux scénarios décennaux** 2026–2036 comportent **20 années sans bilan Nova chiffré**.
+- **Livrables GitHub :** `data/risque-transition-taxes-locales-g0-16i-2024.json`, `assets/g016i-local-tax-stress-core.mjs`, `tests/g016i-local-tax-stress.test.mjs` (**37/37 tests réussis en rejeu isolé V8, non certifiés dans GitHub Actions**) et `official/working/rapport-g0-16i-soutenabilite-taxes-municipales-v1.md`.
+- **Décision :** G0.16i documente les risques arithmétiques d'un changement fiscal, mais **n'homologue pas une loi, un taux, une économie ou un financement de remplacement**. La revue juridique, la réconciliation par municipalité et le budget indépendant restent à faire; **47/100 inchangé**.
+
+**Suite logique G0.16j :** rapprocher les municipalités/organismes manquants, mesurer le coût réel et la continuité de chaque service, vérifier les transferts internes et bâtir des budgets à dix ans distincts pour Québec dans le Canada et Québec souverain. Les documents normatifs candidats `official/reference/*` restent inchangés.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
