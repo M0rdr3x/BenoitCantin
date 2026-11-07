@@ -1,0 +1,56 @@
+name: Projet Nova P56E - Sources municipales 2027 et absence de faux GO
+on:
+  pull_request:
+    paths:
+      - 'scripts/rapprocher_enveloppes_municipales_nova_p56e.py'
+      - 'scripts/tests/test_rapprocher_enveloppes_municipales_nova_p56e.py'
+      - 'scripts/consolider_flux_interentites_nova_p56d.py'
+      - 'projets/projet-nova/etudes/P56E_*'
+      - '.github/workflows/validate-nova-p56e.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  municipalite-p56e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tests de regression P56D et P56E
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_consolider_flux_interentites_nova_p56d.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_rapprocher_enveloppes_municipales_nova_p56e.py' -v
+      - name: Verifier les enveloppes reelles publiees mais non versees
+        shell: bash
+        run: |
+          python scripts/rapprocher_enveloppes_municipales_nova_p56e.py \
+            --registre projets/projet-nova/etudes/P56E_REGISTRE_TRANSFERTS_MUNICIPAUX_2027_ET_VERIFICATION_SOURCES.json | python -c 'import json,sys; d=json.load(sys.stdin); assert d["nombre_programmes_budgetaires_identifies"]==4 and d["sous_total_quatre_enveloppes_previsionnelles_mcad"]=="951.8" and d["subventions_reelles_2027_versees_mcad"] is None and d["rapprochement_depense_province_recette_municipale"] is False and d["sommaire_historique_2025_valide"] is False and d["inconnues_budget_p52b"]==600 and d["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Verifier les 8 lignes de contreparties inachevees
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('projets/projet-nova/etudes/P56E_MATRICE_CONTREPARTIES_PREVISIONNELLES_ET_SOURCES.json')
+          d=json.loads(p.read_text(encoding='utf-8'))
+          assert d['schema_version']=='P56E-CONTREPARTIES-1'
+          assert d['nb_programmes']==4 and d['nb_lignes_attendues']==8
+          assert len(d['lignes'])==8 and len({r['id'] for r in d['lignes']})==8
+          assert d['nb_rapprochements_documentaires_valides']==0
+          assert all(r['montant_reconcilie_mcad'] is None and r['date_de_constatation'] is None and r['contrepartie_reelle'] is None and r['comptes_audites_ligne'] is None for r in d['lignes'])
+          assert d['rapprochement_reel_obtenu'] is False and d['economie_nova'] is None
+          assert d['decision']=='NO_GO_AUTOMATIQUE'
+          PY
+      - name: Exiger une certification (doit etre refusee)
+        shell: bash
+        run: |
+          set +e
+          python scripts/rapprocher_enveloppes_municipales_nova_p56e.py \
+            --registre projets/projet-nova/etudes/P56E_REGISTRE_TRANSFERTS_MUNICIPAUX_2027_ET_VERIFICATION_SOURCES.json --exiger-certification
+          code=$?
+          set -e
+          test "$code" -eq 3
