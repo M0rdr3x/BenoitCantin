@@ -262,6 +262,21 @@ Les quatre références candidates de `official/reference/*` et `data/sources.js
 - Test `tests/g015-sources-officielles.test.mjs` : 15 identifiants, contrôle HTTPS et domaines publics attendus, rejet des certifications et rendements fiscaux fictifs.
 - **Affichage public :** `avancement-programme-nova.html#sources-fiscales-g015` ; aucun gain du score de complétude sans dossier probant et réévaluation G0.12.
 
+## G0.16c — Revenu imposable et incidence fiscale réellement déclarés (7 novembre 2026)
+
+**Programme : 47/100, inchangé.** À la suite des repères sociaux de G0.16b, des **données fiscales provinciales observées pour 2023** sont transcrites directement depuis trois tableaux HTML du ministère des Finances du Québec.
+
+- **Source A.7 :** revenu total déclaré **427 915 M$**, revenu net **387 023 M$**, revenu imposable **372 261 M$**, impôt sur le revenu imposable **62 148 M$**, crédits non remboursables appliqués **21 358 M$**, impôt à payer **40 790 M$**, crédits remboursables appliqués **9 305 M$** et impôt moins crédits remboursables **31 485 M$**. Arrondi de 1 M$ possible entre revenu net, déductions et revenu imposable. Taux moyen officiel 9,5 % = impôt à payer / revenu **total**.
+- **Source tableau 4 :** **7 220 140** déclarants, dont **4 910 844 imposables** et **2 309 296 non imposables**.
+- **Source A.3 :** cinq quintiles de **contribuables** classés par revenu total; le cinquième quintile porte **50,10 % du revenu** et **69,41 % de l'impôt à payer**. Ne pas confondre ces quintiles avec les dix déciles de **ménages** de l'ISQ.
+- **Données :** `data/assiette-fiscale-particuliers-g0-16c-2023.json`.
+- **Rapport de provenance, rapprochements et limites :** `official/working/rapport-g0-16c-assiette-declaree-particuliers-2023-v1.md`.
+- **Contrôleur et tests :** `assets/g016c-tax-base-core.mjs` et `tests/g016c-tax-base.test.mjs` : résistent aux changements non sourcés de montants, dates, quintiles, taux et autorisations.
+
+**Portée :** données historiques de déclarations 2023, **pas** revenus autonomes prévus en 2026–2027, pas assiette Nova, pas impôt fédéral ou des sociétés complet, pas revenus de lutte anti-paradis fiscaux. L'acquisition des sources et une contre-expertise restent nécessaires; l'existence d'une base historique améliore l'étude documentaire de V05, mais **les quinze preuves G0.15 demeurent non franchies**. Aucun taux Nova ni économie de dépense publique démontrés.
+
+**Suite G0.16d :** obtenir ventilation des déductions/crédits, données fiscales des sociétés avec millésimes distincts, distributions de dépenses et effet sur les ménages; rapprocher les deux budgets à dix ans puis auditer indépendamment les hypothèses. Les fichiers candidats `official/reference/*` et `data/sources.json` ne sont pas modifiés.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
