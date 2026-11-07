@@ -51,6 +51,17 @@ def validate():
                   'state.accessInvalidated=true', 'auth.getUser()', 'loadedPdf.destroy?.()']:
         if token not in main:
             errors.append('Verrouillage du lecteur privé pendant chargement absent: '+token)
+    # V31 : les pages intégrales conservées dans l'historique du navigateur
+    # doivent être verrouillées, contrairement à la démo publique.
+    for token in ["if(isFull)lockPrivateReader();", "if(isFull&&event.persisted)",
+                  "location.reload();", "state.authSubscription?.unsubscribe?.()",
+                  "if(window.getSelection()?.toString())return;"]:
+        if token not in main:
+            errors.append('Cycle d’historique ou clavier sécurisé manquant: '+token)
+    if 'aria-keyshortcuts="ArrowLeft ArrowRight PageUp PageDown"' not in html:
+        errors.append('Raccourcis clavier non annoncés à la liseuse')
+    if 'aria-describedby="reader-shortcut-help"' not in html or 'id="reader-shortcut-help"' not in html:
+        errors.append('Explication des raccourcis clavier non liée à la lecture')
     # Empêcher le stockage de texte intégral (citations ou notes) en localStorage.
     if 'localStorage.setItem(DEMO_MARKS_KEY' not in companion:
         errors.append('Enregistrement de la démo non isolé')
