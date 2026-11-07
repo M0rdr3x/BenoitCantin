@@ -301,6 +301,7 @@ def run() -> None:
                         "reader-reading-stats","reader-focus","reader-chapter-next"):
             assert_true(page.locator("#"+control).count()==1,
                         f"{BROWSER_NAME}: commande V28 absente : "+control)
+        page.locator(".reader-bookmarks summary").click()
         page.locator("#reader-bookmark-add").click()
         assert_true("Signet" in page.locator("#reader-marks-list").inner_text(),
                     f"{BROWSER_NAME}: marque-page de démo non créé")
