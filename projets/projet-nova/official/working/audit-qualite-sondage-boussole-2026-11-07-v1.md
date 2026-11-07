@@ -90,6 +90,13 @@ Le registre `data/validation-sondage-boussole-2026-11-07.json` atteste **5 contr
 
 Le formulaire de sondage demande désormais **un consentement exprès** à la transmission d'opinions politiques pour leur comptabilisation et la publication conditionnelle de statistiques agrégées, avec un lien vers la politique de confidentialité et l'avertissement qu'une réponse agrégée ne peut être retirée individuellement. L'analyse préalable `official/working/controle-juridique-confidentialite-sondage-2026-11-07-v1.md` documente les références de la Commission d'accès à l'information et d'Élections Québec sur les sondages et les dépenses électorales. **Ce travail ne constitue pas une certification juridique; la porte légale demeure non franchie.**
 
+### Rejeu isolé des 70 cas de tests
+
+En plus des vérifications directes et de la parité mathématique, les trois fichiers `nova-civic-integrity.test.mjs` (**35 cas**), `nova-civic-scoring.test.mjs` (**25 cas**) et `nova-civic-readiness.test.mjs` (**10 cas**) ont été rejoués avec des ressources GitHub réellement récupérées, dans un **isolat JavaScript V8** muni d'adaptateurs minimaux pour les imports Node, la lecture des fichiers, les URL et les assertions.
+
+**Résultat de ce rejeu : 70/70 cas exécutés et réussis.** Cette preuve confirme une grande partie de la logique pure, des références de contenu et des contrats documentaires; elle **ne doit pas être présentée comme un passage réussi de `node --test` ni de GitHub Actions**, car ces adaptateurs ne reproduisent pas toutes les API natives, les navigateurs ou les serveurs. Les contrôles CI et préproduction restent requis.
+
+
 ## Portes de qualité nécessaires pour pouvoir annoncer « 100 % »
 
 | Domaine | Critère vérifiable | Situation |
