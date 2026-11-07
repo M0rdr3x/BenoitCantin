@@ -19,7 +19,7 @@ La condition « **100 % opérationnel** » n'est **pas certifiée** pour l'un ou
 3. `assets/sondage-citoyen.js` refuse un corpus corrompu avant de rendre le formulaire ou d'autoriser le vote. Le bouton exige toujours les huit réponses (dont « Sans opinion / passer »), les deux confirmations, un jeton Turnstile et le statut d'ouverture; aucune donnée n'est transmise par le validateur.
 4. `sondage-citoyen.html` expose un message de progression **accessible par lecteur d'écran**, « Questions répondues : X sur 8 »; `assets/sondage-citoyen.css` rend ce message lisible et `?v=2` invalide les anciennes feuilles de style.
 5. `boussole-electorale.html` et `sondage-citoyen.html` chargent le **script d'intégrité après les corpus et avant les scripts d'interaction**, avec nouvelles versions d'URL pour limiter les caches obsolètes.
-6. `tests/nova-civic-integrity.test.mjs` contient **33 tests déclarés** dans Node : documents, manipulations hostiles, ordre des chargements, conformité des bundles JSON/JavaScript, neutralité de la pondération, présence de la progression et non-publication du sondage.
+6. `tests/nova-civic-integrity.test.mjs` contient **34 tests déclarés** dans Node : documents, manipulations hostiles, ordre des chargements, conformité des bundles JSON/JavaScript, neutralité de la pondération, présence de la progression et non-publication du sondage.
 7. `.github/workflows/nova-sinjira-finances-tests.yml` déclenche désormais aussi les contrôles en cas de modification des interfaces, scripts et corpus civiques, pour `push` et `pull_request`.
 
 **Contrôles directs réellement exécutés :** **30/30** assertions de cohérence et mutations du validateur réussies dans un exécuteur JavaScript isolé. L'ensemble des **33 tests Node n'a pas encore une exécution CI attestée**, et les contrôles directs ne remplacent pas des tests navigateur exhaustifs.
@@ -42,6 +42,20 @@ Une session navigateur distante a examiné les deux pages en ligne **sans envoye
 **Preuve de contrôle externe :** https://agent.tinyfish.ai/runs/59ec01c2-2ef7-407f-a5bd-20e52b7b64e4
 
 Cette session ne confirme **pas** que tous les nouveaux fichiers GitHub sont déjà déployés sur le site, ni que les 64 questions ont été parcourues jusqu'à l'affichage final du graphique. Le parcours mobile et l'audit des lecteurs d'écran n'ont pas été attestés.
+
+## Audit d'accès Supabase — vérification en lecture seule
+
+Une vérification supplémentaire de la **base Supabase connectée au site** a été effectuée **sans soumettre de bulletin, ni modifier les politiques ou la structure** :
+
+- Les **cinq tables** `public.nova_poll_questions`, `public.nova_poll_counts`, `public.nova_poll_public_counts`, `public.nova_poll_publication_state` et `public.nova_poll_receipts` ont **RLS activée**.
+- Les rôles `anon` et `authenticated` ne disposent **d'aucun droit SQL direct de lecture ou d'insertion** sur ces cinq tables, selon les privilèges contrôlés. Aucun droit direct de mise à jour n'est accordé à `anon`.
+- La fonction SQL `public.nova_poll_submit` utilise `SECURITY DEFINER` avec un `search_path` fermé, mais le privilège `EXECUTE` est **réservé à `service_role`**, non accordé à `anon` ou `authenticated`. Le fait qu'elle soit dans le schéma `public` exige de conserver strictement cette restriction.
+- Le SQL du RPC vérifie version, questions, valeurs autorisées, jeton anti-rejeu et conflits; les comptes sont agrégés sans enregistrement des choix individuels. Les critères de publication par lots comprennent au moins dix nouveaux bulletins, six heures entre publications et une protection contre les écarts de moins de cinq dans chaque catégorie.
+- L'Edge Function publique `nova-civic-poll` contrôle les origines admises et le challenge antirobot avant l'appel privilégié au RPC. **Cette vérification du code ne remplace ni un test de charge, ni un pentest, ni la validation des paramètres secrets réels.**
+- La base contient toujours **huit questions, aucun bulletin enregistré et aucun résultat publié** au moment de l'inspection. Les huit formulations correspondent **caractère pour caractère** au corpus GitHub.
+- Le chargement du **registre partisan** de la boussole appelle maintenant aussi la validation complète du questionnaire avant toute présentation de fiches, afin d'empêcher des positions documentaires reliées à des axes incohérents.
+
+**Limites et prochain contrôle :** vérifier l'absence d'autres chemins privilégiés vers les tables, le comportement simultané du RPC et les politiques de conservation, avec des tests d'intégration en environnement **isolé**. Ne pas écrire de faux votes en production; la certification « 100 % » reste non acquise.
 
 ## Portes de qualité nécessaires pour pouvoir annoncer « 100 % »
 
