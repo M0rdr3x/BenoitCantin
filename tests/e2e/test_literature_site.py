@@ -312,6 +312,14 @@ def run() -> None:
         saved_marks=page.evaluate("localStorage.getItem('sinjira:liseuse:demo:marks:v28')")
         assert_true("Mon repère privé de test." in (saved_marks or ""),
                     f"{BROWSER_NAME}: la démo ne conserve pas les notes sur cet appareil")
+        page.locator("#reader-continuous").click()
+        assert_true(page.locator("#reader-continuous").get_attribute("aria-pressed")=="true",
+                    f"{BROWSER_NAME}: impossible d'activer le chapitre entier")
+        assert_true(not page.locator("#reader-chapter-scroll").is_hidden(),
+                    f"{BROWSER_NAME}: chapitre entier masqué")
+        page.locator("#reader-continuous").click()
+        assert_true(page.locator("#reader-chapter-scroll").is_hidden(),
+                    f"{BROWSER_NAME}: impossible de revenir à la lecture par page")
         page.locator("#reader-focus").click()
         assert_true("reader-focus-mode" in (page.locator("body").get_attribute("class") or ""),
                     f"{BROWSER_NAME}: mode lecture concentré inactif")
