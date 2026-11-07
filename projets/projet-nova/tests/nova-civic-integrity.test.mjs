@@ -155,7 +155,7 @@ test("le consentement explicite décrit la finalité et le caractère agrégé",
  assert.match(pollHtml,/Je consens expressément à transmettre mes réponses politiques/);
  assert.match(pollHtml,/publication de statistiques agrégées/);
  assert.match(pollHtml,/href="confidentialite\.html"/);
- assert.match(pollHtml,/impossible de retirer un bulletin particulier/);
+ assert.match(pollHtml,/pas possible de retirer un bulletin particulier/);
  assert.match(pollHtml,/Aucun choix n’est envoyé avant votre clic/);
  assert.match(pollHtml,/n’est pas représentative de la population/);
 });
