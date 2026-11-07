@@ -377,6 +377,27 @@ def run() -> None:
         )
         assert_true((page.locator("#reader-text").text_content() or "")!=initial_text,
                     f"{BROWSER_NAME}: texte de la page suivante non affiché")
+        # V31 : enregistrer explicitement sa position et la retrouver après fermeture.
+        assert_true(page.locator("#reader-save-position").count()==1,
+                    f"{BROWSER_NAME}: sauvegarde de lecture absente")
+        page.locator("#reader-save-position").click()
+        assert_true("Position enregistrée" in page.locator("#reader-position-status").inner_text(),
+                    f"{BROWSER_NAME}: accusé de sauvegarde manuelle absent")
+        saved_page=int(page.locator("#reader-page").input_value())
+        saved_spot=page.evaluate("""() => JSON.parse(localStorage.getItem(
+            'sinjira:liseuse:demo:la-cendre-du-jugement:spot'))""")
+        assert_true(saved_spot is not None and saved_spot["page"]==saved_page
+                    and 0<=saved_spot["ratio"]<=1,
+                    f"{BROWSER_NAME}: position locale invalide")
+        assert_true("text" not in saved_spot and "content" not in saved_spot,
+                    f"{BROWSER_NAME}: le texte du roman ne doit pas être sauvegardé")
+        page.reload(wait_until="domcontentloaded",timeout=30_000)
+        page.locator("#reader-content:not([hidden])").wait_for(timeout=20_000)
+        assert_true(page.locator("#reader-page").input_value()==str(saved_page),
+                    f"{BROWSER_NAME}: la position n'est pas reprise à la réouverture")
+        assert_true("reprise depuis cet appareil" in page.locator("#reader-position-status").inner_text(),
+                    f"{BROWSER_NAME}: retour à la dernière position non confirmé")
+
         for control in ("reader-voice-play","reader-voice-pause","reader-voice-stop",
                         "reader-voice","reader-speed","reader-voice-auto"):
             assert_true(page.locator("#"+control).count()==1,
