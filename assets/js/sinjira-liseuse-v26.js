@@ -39,7 +39,7 @@ const state={pdf:null,page:1,mode:'texte',theme:'sepia',size:20,zoom:1,
   font:'serif',lineHeight:1.75,textWidth:780,letterSpacing:0,
   voiceURI:'',speed:1,autoSpeech:false,
   user:null,novelId:null,renderVersion:0,renderQueue:Promise.resolve(),saveTimer:null};
-const speech={active:false,paused:false,token:0,chunks:[],index:0,voices:[]};
+const speech={active:false,paused:false,token:0,chunks:[],index:0,voices:[],utterance:null};
 const speechReady='speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
 const storageKey='sinjira:liseuse:'+edition+':la-cendre-du-jugement';
 const themeKey='sinjira:liseuse:preferences';
@@ -142,7 +142,7 @@ function speechStatus(text){
 }
 function stopNarration(announce=true){
   speech.token++;
-  speech.active=false;speech.paused=false;speech.chunks=[];speech.index=0;
+  speech.active=false;speech.paused=false;speech.chunks=[];speech.index=0;speech.utterance=null;
   if(speechReady)window.speechSynthesis.cancel();
   if(announce)speechStatus('Lecture vocale arrêtée.');
   else updateSpeechControls();
@@ -205,6 +205,8 @@ function speakNext(token){
     stopNarration(false);
     speechStatus('La voix ne peut pas lire ce passage sur cet appareil.');
   };
+  // Garder la référence en mémoire : certains moteurs WebKit interrompent autrement la voix.
+  speech.utterance=utterance;
   window.speechSynthesis.speak(utterance);
 }
 async function startNarration(){
@@ -357,7 +359,9 @@ async function resolvePrivateUrl(){
   return url.href;
 }
 async function restorePage(){
-  let saved=clamp(Number(safeLocalGet(storageKey)||1),1,state.pdf.numPages);
+  // Sur une première ouverture, commencer sur le prologue plutôt que sur la couverture image.
+  const firstReadablePage=isFull?4:3;
+  let saved=clamp(Number(safeLocalGet(storageKey)||firstReadablePage),1,state.pdf.numPages);
   if(isFull&&state.user){
     const {data:novel,error:novelError}=await getSupabase().from('sinjira_novels')
       .select('id').eq('slug',NOVEL_SLUG).maybeSingle();
