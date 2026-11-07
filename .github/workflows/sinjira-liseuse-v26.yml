@@ -10,6 +10,7 @@ on:
       - 'assets/js/sinjira-liseuse-v26.js'
       - 'assets/js/sinjira-liseuse-text-v27.mjs'
       - 'assets/js/sinjira-liseuse-companion-v28.mjs'
+      - 'assets/js/sinjira-liseuse-position-v31.mjs'
       - 'supabase/migrations/*sinjira_reader_marks_v28.sql'
       - 'scripts/validate_sinjira_reader_v28.py'
       - 'tests/reader/**'
@@ -27,6 +28,7 @@ on:
       - 'assets/js/sinjira-liseuse-v26.js'
       - 'assets/js/sinjira-liseuse-text-v27.mjs'
       - 'assets/js/sinjira-liseuse-companion-v28.mjs'
+      - 'assets/js/sinjira-liseuse-position-v31.mjs'
       - 'supabase/migrations/*sinjira_reader_marks_v28.sql'
       - 'scripts/validate_sinjira_reader_v28.py'
       - 'tests/reader/**'
@@ -59,6 +61,7 @@ jobs:
         run: |
           node --check assets/js/sinjira-liseuse-text-v27.mjs
           node --check assets/js/sinjira-liseuse-companion-v28.mjs
+          node --check assets/js/sinjira-liseuse-position-v31.mjs
           node --input-type=module --check < assets/js/sinjira-liseuse-v26.js
           node --test tests/reader/test_sinjira_liseuse_*.mjs
       - name: Vérifier les catégories, la liseuse et l'isolement des fichiers privés

@@ -96,7 +96,12 @@ post_index = edge.index('if(!isOpen())')
 captcha_index = edge.index('if(!await confirmCaptcha(payload.captchaToken))', post_index)
 db_index = edge.index('const questions=await db(', post_index)
 assert post_index < captcha_index < db_index
-assert 'if(!Array.isArray(questions))' in edge
+assert 'if(!matchesApprovedQuestions(questions))' in edge, (
+    "Avant tout RPC, les huit identifiants, rangs et textes officiels doivent être validés côté serveur"
+)
+assert 'if(!matchesApprovedQuestions(questions) || !Array.isArray(counts)' in edge, (
+    "Les résultats publics doivent aussi rejeter la dérive du questionnaire SQL"
+)
 
 assert "crypto.subtle.sign" in edge
 assert "jsonb_each_text(p_answers)" in sql

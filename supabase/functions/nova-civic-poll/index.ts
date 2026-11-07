@@ -3,6 +3,7 @@
 const VERSION = "nova-consultation-v1";
 const ORIGINS = new Set(["https://www.benoitcantin.com","https://benoitcantin.com"]);
 const MAX_BODY_BYTES = 8192;
+const BODY_READ_TIMEOUT_MS = 8000;
 const OPTIONS = new Set([-2,-1,0,1,2,9]);
 const MIN_PUBLIC_BALLOTS = 10;
 const MIN_NONZERO_CELL = 5;
@@ -16,6 +17,62 @@ const HMAC_KEY = Deno.env.get("NOVA_POLL_HMAC_KEY") || "";
 const isOpen = () => Deno.env.get("NOVA_POLL_APPROVED_VERSION") === VERSION
   && Deno.env.get("NOVA_POLL_ENABLED") === "true"
   && !!CAPTCHA_SECRET && !!CAPTCHA_SITE_KEY && HMAC_KEY.length >= 32 && !!SERVICE_KEY;
+
+// Contrat éditorial immuable : la base peut être altérée indépendamment du
+// questionnaire publié. Ni résultats ni écritures ne sont autorisés si le
+// texte, l'ordre ou l'identifiant des huit questions dérivent.
+const CANONICAL_QUESTIONS = Object.freeze([
+  {
+    "question_id": "q02",
+    "ordinal": 1,
+    "question_text": "Le gouvernement du Québec devrait réduire les restrictions à l’entrée de nouvelles entreprises dans les secteurs actuellement réglementés."
+  },
+  {
+    "question_id": "q09",
+    "ordinal": 2,
+    "question_text": "La majorité des soins de première ligne financés par l’État devrait être fournie par des établissements publics."
+  },
+  {
+    "question_id": "q17",
+    "ordinal": 3,
+    "question_text": "Le gouvernement du Québec devrait augmenter le financement consacré aux logements sociaux, coopératifs et sans but lucratif."
+  },
+  {
+    "question_id": "q22",
+    "ordinal": 4,
+    "question_text": "Le gouvernement du Québec devrait renoncer à une nouvelle norme environnementale si son analyse d’impact prévoit une hausse du coût de biens essentiels."
+  },
+  {
+    "question_id": "q29",
+    "ordinal": 5,
+    "question_text": "Les organismes publics ne devraient pas pouvoir élargir la surveillance numérique sans autorisation judiciaire préalable, sauf dans une urgence prévue par la loi."
+  },
+  {
+    "question_id": "q33",
+    "ordinal": 6,
+    "question_text": "Une pétition atteignant un seuil prévu par la loi devrait pouvoir déclencher un référendum provincial obligatoire."
+  },
+  {
+    "question_id": "q47",
+    "ordinal": 7,
+    "question_text": "Le gouvernement du Québec devrait préparer les conditions permettant la tenue d’un référendum sur la souveraineté."
+  },
+  {
+    "question_id": "q61",
+    "ordinal": 8,
+    "question_text": "Toute décision administrative importante prise à l’aide d’un système d’IA devrait pouvoir être expliquée à la personne concernée."
+  }
+]);
+function matchesApprovedQuestions(rows: unknown): boolean {
+  return Array.isArray(rows) && rows.length === CANONICAL_QUESTIONS.length
+    && rows.every((row,index) => {
+      const expected=CANONICAL_QUESTIONS[index];
+      return row!==null && typeof row==="object"
+        && row.question_id===expected.question_id
+        && row.ordinal===expected.ordinal
+        && row.question_text===expected.question_text;
+    });
+}
 
 function respond(status: number, data: unknown, origin: string | null): Response {
   const headers = new Headers({
@@ -36,18 +93,44 @@ async function readLimitedJson(req: Request): Promise<unknown> {
   if(!req.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
     throw new Error("type");
   }
+  // Rejeter un corps annoncé trop grand avant de réserver un lecteur.
+  // La limite est aussi appliquée aux octets réellement transmis.
+  const declared = req.headers.get("content-length");
+  if(declared !== null && (!/^\d+$/.test(declared) ||
+      !Number.isSafeInteger(Number(declared)) || Number(declared)>MAX_BODY_BYTES)) {
+    throw new Error("size");
+  }
   const reader = req.body?.getReader();
   if(!reader) throw new Error("body");
   let size=0; const chunks: Uint8Array[]=[];
+  let interrupted=false;
+  // Une source qui envoie quelques octets puis s'arrête ne doit pas retenir
+  // indéfiniment une invocation Edge. Annuler le lecteur débloque read().
+  // Ne jamais attendre cancel() lors d'un dépassement de limite.
+  const interrupt = () => {
+    interrupted=true;
+    try { void reader.cancel().catch(()=>{}); } catch { /* lecteur déjà clos */ }
+  };
+  const timeout=setTimeout(interrupt,BODY_READ_TIMEOUT_MS);
+  req.signal.addEventListener("abort",interrupt,{once:true});
   try {
+    if(req.signal.aborted) throw new Error("body_interrupted");
     while(true) {
       const {done,value}=await reader.read();
+      if(interrupted || req.signal.aborted) throw new Error("body_interrupted");
       if(done) break;
       size+=value.byteLength;
-      if(size>MAX_BODY_BYTES) { await reader.cancel(); throw new Error("size"); }
+      if(size>MAX_BODY_BYTES) {
+        interrupt();
+        throw new Error("size");
+      }
       chunks.push(value);
     }
-  } finally { reader.releaseLock(); }
+  } finally {
+    clearTimeout(timeout);
+    req.signal.removeEventListener("abort",interrupt);
+    reader.releaseLock();
+  }
   const buffer = new Uint8Array(size); let offset=0;
   for(const chunk of chunks) {buffer.set(chunk,offset);offset+=chunk.byteLength;}
   return JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(buffer));
@@ -118,7 +201,7 @@ async function publicResults() {
     db("nova_poll_public_counts?poll_version=eq."+VERSION+"&select=question_id,option_value,total"),
     db("nova_poll_publication_state?poll_version=eq."+VERSION+"&select=published_ballots,published_at")
   ]);
-  if(!Array.isArray(questions) || questions.length!==8 || !Array.isArray(counts)
+  if(!matchesApprovedQuestions(questions) || !Array.isArray(counts)
      || !Array.isArray(publications) || publications.length!==1) throw new Error("not_ready");
   const snapshot=publications[0];
   const ballotCount=Number(snapshot.published_ballots);
@@ -185,10 +268,15 @@ Deno.serve(async (req:Request)=>{
     // Contrôle anti-robot AVANT tout accès privilégié à PostgREST :
     // Origin ne remplace pas l'authentification d'une requête.
     if(!await confirmCaptcha(payload.captchaToken)) return respond(403,{error:"verification_anti_robot_echouee"},origin);
-    const questions=await db("nova_poll_questions?poll_version=eq."+VERSION+"&select=question_id");
-    if(!Array.isArray(questions)) throw new Error("poll_not_ready");
+    const questions=await db("nova_poll_questions?poll_version=eq."+VERSION+
+      "&select=question_id,ordinal,question_text&order=ordinal.asc");
+    if(!matchesApprovedQuestions(questions)) {
+      // Une divergence du registre serveur est une panne de configuration,
+      // jamais une réponse du participant à accepter ou à publier.
+      return respond(503,{error:"questionnaire_non_approuve"},origin);
+    }
     const expected=new Set(questions.map((q:any)=>q.question_id));
-    if(expected.size!==8 || Object.keys(payload.answers).some(key=>!expected.has(key))) {
+    if(Object.keys(payload.answers).some(key=>!expected.has(key))) {
       return respond(400,{error:"questions_incompatibles"},origin);
     }
     const tokenHash=await hashToken(payload.ballotToken);

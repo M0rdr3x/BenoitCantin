@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {normalizeSearch,findMatches,makeExcerpt,findQuoteRange,safeReaderMark} from '../../assets/js/sinjira-liseuse-companion-v28.mjs';
+import {normalizeSearch,findMatches,makeExcerpt,findQuoteRange,safeReaderMark,findMatchRanges} from '../../assets/js/sinjira-liseuse-companion-v28.mjs';
 
 test('la recherche est insensible aux accents et à la casse en français',()=>{
   assert.equal(normalizeSearch('Étrange RÉSEAU'), 'etrange reseau');
@@ -43,4 +43,28 @@ test('une sélection sur plusieurs lignes PDF conserve son surlignage',()=>{
   assert.ok(result);
   assert.equal(text.slice(result.start,result.end),text);
   assert.equal(findQuoteRange(text,'introuvable'),null);
+});
+
+test('la recherche retrouve les indices exacts après les accents décomposés',()=>{
+  const source='Cafe\u0301 au soleil. Un ÉTÉ réussi.';
+  const accent=findMatchRanges(source,'CAFÉ');
+  assert.equal(accent.length,1);
+  assert.equal(source.slice(accent[0].start,accent[0].end),'Cafe\u0301');
+  const summer=findMatchRanges(source,'ete');
+  assert.equal(summer.length,1);
+  assert.equal(source.slice(summer[0].start,summer[0].end),'ÉTÉ');
+  assert.deepEqual(findMatches(source,'ete'),[source.indexOf('ÉTÉ')]);
+});
+test('la recherche respecte les indices UTF-16 après les emojis et évite les faux résultats',()=>{
+  const source='📖 Une étonnante découverte. Étonnante encore.';
+  const hits=findMatchRanges(source,'ETONNANTE');
+  assert.equal(hits.length,2);
+  assert.equal(source.slice(hits[0].start,hits[0].end),'étonnante');
+  assert.equal(source.slice(hits[1].start,hits[1].end),'Étonnante');
+  assert.deepEqual(findMatchRanges(source,'x'),[]);
+});
+test('la recherche plafonne les occurrences pour éviter un rendu bloquant',()=>{
+  const source='roman '.repeat(5000);
+  assert.equal(findMatchRanges(source,'roman',25).length,25);
+  assert.equal(findMatchRanges(source,'roman',100000).length,1000);
 });

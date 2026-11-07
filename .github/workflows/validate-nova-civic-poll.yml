@@ -36,9 +36,11 @@ on:
       - 'scripts/test_nova_poll_runtime.cjs'
       - 'scripts/test_nova_civic_integrity.cjs'
       - 'scripts/test_nova_poll_network.cjs'
+      - 'scripts/test_nova_poll_body_read.cjs'
       - 'scripts/test_nova_poll_refresh.cjs'
       - 'scripts/test_nova_poll_recovery.cjs'
       - 'scripts/test_nova_edge_snapshot.cjs'
+      - 'scripts/test_nova_edge_canonical_questions.cjs'
       - 'scripts/smoke_nova_poll_edge.py'
       - 'scripts/smoke_nova_live_public.py'
       - '.github/workflows/nova-public-readonly-smoke.yml'
@@ -97,6 +99,8 @@ jobs:
         run: node scripts/test_nova_boussole_navigation.cjs
       - name: Tester la cohérence atomique des résultats publics sans vote
         run: node scripts/test_nova_edge_snapshot.cjs
+      - name: Vérifier le verrou éditorial côté serveur des 8 questions officielles
+        run: node scripts/test_nova_edge_canonical_questions.cjs
       - name: Tester le rétablissement d'une lecture GET temporairement indisponible
         run: node scripts/test_nova_poll_recovery.cjs
       - name: Tester le verrou du formulaire client sans réseau
@@ -105,6 +109,8 @@ jobs:
         run: node scripts/test_nova_poll_refresh.cjs
       - name: Tester les délais réseau GET/POST et la récupération après interruption
         run: node scripts/test_nova_poll_network.cjs
+      - name: Tester la lecture des corps POST lents, tronqués et abandonnés sur la fonction Edge
+        run: node scripts/test_nova_poll_body_read.cjs
       - name: Tester les contrôles HTTP publics sans réseau
         run: python scripts/smoke_nova_live_public.py --self-test
       - name: Vérifier les tentatives bornées de lecture, sans réseau

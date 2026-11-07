@@ -1,0 +1,129 @@
+{
+  "schema": "nova-g016h-finances-municipales-observees/v1",
+  "project": "Projet Nova",
+  "phase": "G0.16h",
+  "compiled_on": "2026-11-07",
+  "status": "TRANSCRIPTION_SOMMATION_GOUVERNEMENTALE_PARTIELLE_NON_AUDIT_NOVA",
+  "adopted": false,
+  "programme_score_before": 47,
+  "programme_score_after": 47,
+  "source": {
+    "publisher": "Ministère des Affaires municipales et de l'Habitation (MAMH)",
+    "title": "Rapport financier consolidé, exercice terminé le 31 décembre 2024 — Sommation des données — Municipalités locales",
+    "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/finances_indicateurs_fiscalite/information_financiere/rapports_financiers_organismes_municipaux/2024/RAP_financier_2024_sommation_municipalites_locales.pdf",
+    "report_year": 2024,
+    "comparison_year": 2023,
+    "reporting_units": "DOLLARS_CAD_COURANTS_ENTIERS",
+    "pdf_page_index_financials": 7,
+    "pdf_page_label_financials": "S7 / 3",
+    "pdf_page_index_tax_breakdown": 39,
+    "pdf_page_label_tax_breakdown": "S27 / 35",
+    "municipalities_included": 1056,
+    "scope_as_of": "2026-03-17",
+    "municipalities_absent_from_aggregate": true,
+    "northern_indigenous_and_other_exclusions_described_in_ministry_notes": true,
+    "consolidated_totals_already_include_subsidiary_activities": true,
+    "detail_tax_analysis_is_marked_non_audited": true,
+    "reviewed_independently_for_nova": false,
+    "source_observations_from_pdf_not_from_csv": true
+  },
+  "annual": [
+    {
+      "year": 2024,
+      "taxes_cad": 17188134046,
+      "property_base_taxes_cad": 14970167302,
+      "property_general_tax_cad": 13214586392,
+      "other_base_taxes_cad": 2199032000,
+      "business_taxes_cad": 18934744,
+      "total_revenues_cad": 32109026468,
+      "total_expenses_cad": 28366959822,
+      "operating_surplus_cad": 3742066646,
+      "government_transfers_cad": 5330360838,
+      "services_provided_revenue_cad": 4226149581,
+      "rights_levies_revenue_cad": 1559339417,
+      "financing_charges_cad": 1332060734,
+      "interest_and_debt_financing_included_in_expenses": true,
+      "credit_for_future_nova_reform_cad": null
+    },
+    {
+      "year": 2023,
+      "taxes_cad": 16081032867,
+      "property_base_taxes_cad": 13985227756,
+      "property_general_tax_cad": 12412062137,
+      "other_base_taxes_cad": 2076317336,
+      "business_taxes_cad": 19487775,
+      "total_revenues_cad": 29764058791,
+      "total_expenses_cad": 26469048805,
+      "operating_surplus_cad": 3295009986,
+      "government_transfers_cad": 4822974261,
+      "services_provided_revenue_cad": 4005032444,
+      "rights_levies_revenue_cad": 1245951214,
+      "financing_charges_cad": 1181427913,
+      "interest_and_debt_financing_included_in_expenses": true,
+      "credit_for_future_nova_reform_cad": null
+    }
+  ],
+  "observed_reconciliation": {
+    "year": 2024,
+    "taxes_cad": 17188134046,
+    "property_tax_share_of_all_municipal_taxes_pct": 87.1,
+    "property_tax_share_of_total_revenues_pct": 46.62,
+    "taxes_share_of_total_revenues_pct": 53.53,
+    "tax_yoy_growth_pct": 6.88,
+    "rounded_percent_derived_not_source_published": true,
+    "rounding_decimals": 2,
+    "scope_not_equivalent_umq_70_pct": true
+  },
+  "source_limitations": [
+    "Somme des municipalités locales incluses dans le rapport à la date indiquée; des collectivités sont absentes.",
+    "La section détaillée S27, page 35, est expressément marquée Non audité; la transcription n'est pas revue par un auditeur indépendant pour Nova.",
+    "La catégorie taxes sur la valeur foncière comprend la taxe générale et des taxes spéciales, pas seulement la taxe foncière générale.",
+    "La catégorie taxes sur une autre base inclut taxes/compensations/tarification; ne pas assimiler automatiquement toute la catégorie à une taxe abolissable.",
+    "La catégorie provinciale taxe foncière scolaire 2026-2027 du registre G0.14 n'est pas incluse comme recette municipale dans ce tableau et appartient à une autre année.",
+    "Les transferts entre administrations et les flux consolidés ne doivent pas être additionnés aux comptes provinciaux pour produire un soi-disant budget Nova.",
+    "L'analyse UMQ de 70 % des revenus municipaux fonciers n'a ni le même périmètre ni la même définition que les parts calculées ici.",
+    "Les recettes observées de 2024 ne sont pas le coût de remplacement 2026-2027 ni une projection de recettes Nova.",
+    "Les 2023 et 2024 présentés dans la même sommation ne garantissent pas une série longitudinale à périmètre municipal inchangé."
+  ],
+  "cross_status": {
+    "g014_school_property_tax_2026_2027_mcad": 1301,
+    "school_property_tax_separate_from_municipal_property_taxes": true,
+    "g016g_prior_csv_source": "PF-2024-2024-Prov.csv",
+    "prior_csv_contains_indicators_not_amounts": true,
+    "prior_csv_imported_and_validated": false,
+    "new_source_pdf_summation_transcribed": true,
+    "municipal_tax_transition_replacement_2026_mcad": null,
+    "independent_audit_completed": false,
+    "municipal_compensation_legally_approved": false,
+    "all_municipal_finance_data_exhaustive": false,
+    "two_tax_policy_certified": false,
+    "g015_v10_independently_verified": false,
+    "g015_v14_independently_verified": false,
+    "g015_v15_independently_verified": false
+  },
+  "scenarios": [
+    {
+      "id": "QUEBEC_CANADA",
+      "revenue_replacement_2026_2027_mcad": null,
+      "municipal_services_continuity_mcad": null,
+      "tax_reform_net_cost_mcad": null,
+      "legal_review": false,
+      "external_review": false
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "revenue_replacement_2026_2027_mcad": null,
+      "municipal_services_continuity_mcad": null,
+      "tax_reform_net_cost_mcad": null,
+      "legal_review": false,
+      "external_review": false
+    }
+  ],
+  "decision": {
+    "g016h_data_transcription_complete": true,
+    "g016h_full_proof_passed": false,
+    "municipal_taxes_abolition_approved": false,
+    "two_tax_budget_balanced": false,
+    "programme_complete": false
+  }
+}
