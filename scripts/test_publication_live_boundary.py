@@ -63,7 +63,7 @@ REQUIRED_ROUTES = (
     "/.env.production",
     "/.git/config",
     "/projets/sinjira/romans/livre-1-release.json",
-    "/projets/sinjira/codex/livre-i-delivery-contract.json",
+    "/projets/projet-nova/netlify.toml",
     "/projets/projet-nova/data/sondage-individuel.json",
 )
 
