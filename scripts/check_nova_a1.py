@@ -388,7 +388,7 @@ if compass_page.is_file():
     # Contrôler leur format et l'unicité plutôt qu'un numéro périmé.
     for asset in ("boussole-electorale.js", "boussole-electorale.css"):
         matches = re.findall(
-            r'(?:src|href)="(assets/' + re.escape(asset) + r'\\?v=[0-9][0-9.]*)"',
+            r'(?:src|href)="(assets/' + re.escape(asset) + r'\?v=[0-9][0-9.]*)"',
             compass_html,
         )
         if len(matches) != 1:
