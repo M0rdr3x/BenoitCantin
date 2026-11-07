@@ -367,6 +367,29 @@ function bindControls(){
     resizeTimer=setTimeout(renderPage,250);
   });
 }
+function lockPrivateReader(){
+  // Une déconnexion depuis un autre onglet doit verrouiller immédiatement le livre.
+  if(!isFull||!state.pdf)return;
+  stopNarration(false);companion?.close();
+  const book=state.pdf;
+  state.pdf=null;state.user=null;state.novelId=null;
+  state.renderVersion++;
+  $('reader-text').textContent='';
+  $('reader-canvas').width=0;$('reader-canvas').height=0;
+  $('reader-content').hidden=true;
+  $('reader-loading').hidden=true;$('reader-error').hidden=false;
+  message('Votre session a changé. Reconnectez-vous pour rouvrir le roman intégral.','error');
+  try{Promise.resolve(book.destroy?.()).catch(()=>{})}catch{/* PDF fermé */}
+}
+function watchPrivateSession(){
+  if(!isFull)return;
+  getSupabase().auth.onAuthStateChange((event,session)=>{
+    if(event==='SIGNED_OUT'||
+        (event==='SIGNED_IN'&&state.user&&session?.user?.id!==state.user.id)){
+      lockPrivateReader();
+    }
+  });
+}
 async function resolvePrivateUrl(){
   state.user=await requireUser('/compte/connexion.html');
   const {data,error}=await getSupabase().functions.invoke('get-novel-file-url',{body:{slug:NOVEL_SLUG}});
@@ -428,6 +451,7 @@ async function init(){
     state.pdf=await pdfjs.getDocument({data,isEvalSupported:false,useSystemFonts:true}).promise;
     if(state.pdf.numPages!==(isFull?520:82))throw new Error('Le nombre de pages de ce document ne correspond pas à l’édition attendue.');
     await restorePage();
+    watchPrivateSession();
     companion=createReaderCompanion({
       isFull,
       getPdf:()=>state.pdf,
