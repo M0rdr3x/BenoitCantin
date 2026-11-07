@@ -19,7 +19,11 @@ export function findMatchRanges(text,query,limit=40){
     const fragment=String.fromCodePoint(codepoint);
     const end=i+fragment.length;
     const normalized=fragment.normalize('NFD')
-      .replace(/[\\u0300-\\u036f]/g,'').toLocaleLowerCase('fr-CA');
+      .replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('fr-CA');
+    if(!normalized&&/[\u0300-\u036f]/u.test(fragment)&&ends.length){
+      // A combining accent belongs to the preceding visible character.
+      ends[ends.length-1]=end;
+    }
     for(let j=0;j<normalized.length;j++){
       folded+=normalized[j];starts.push(i);ends.push(end);
     }
