@@ -171,3 +171,14 @@ test("une étape G0.16f réputée complète n'augmente pas le score",()=>{
  assert.equal(r.ok,false);
  assert.ok(r.errors.includes("PREDECESSOR_GATES_UNPASSED"));
 });
+
+test("la ressource officielle agrégée 2024 MAMH est identifiable sans prétendre l'avoir extraite",()=>{
+ const m=data.source_facts.municipalities;
+ assert.equal(m.aggregate_2024_resource_page,
+  "https://www.donneesquebec.ca/recherche/dataset/profil-financier-des-municipalites-locales/resource/5dec077d-4ef9-4e22-99e9-0c4f3a6dd52d");
+ assert.equal(m.aggregate_2024_csv_status,"SOURCE_CATALOGUE_IDENTIFIEE_NON_IMPORTEE");
+ assert.equal(m.aggregate_property_tax_revenue_mcad,null);
+});
+test("l'import du CSV municipal ne peut pas être marqué réalisé sans total validé",()=>{
+ mustFail(d=>d.source_facts.municipalities.aggregate_2024_csv_status="IMPORTE_ET_AUDITE","MUNICIPAL_TAX_INCOMPLETE");
+});
