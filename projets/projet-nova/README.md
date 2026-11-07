@@ -256,10 +256,11 @@ Les quatre références candidates de `official/reference/*` et `data/sources.js
 
 ## G0.15 — Repérage des sources officielles (7 novembre 2026)
 
-- **8/15 exigences** ont au moins une piste de source publique consignée, pour **12 liens officiels**. Les sept autres n'ont pas encore de piste enregistrée.
+- **11/15 exigences** ont au moins une piste de source publique consignée, pour **15 candidatures de liens officiels** (dont certaines références réutilisées pour plusieurs exigences). Les quatre autres n'ont pas encore de piste enregistrée.
 - **0/15 preuves validées** : une référence publique ne garantit ni ventilation complète, ni base d'imposition démontrée, ni revue indépendante.
 - Registre `data/reperage-sources-officielles-g0-15-2026-11-07.json` : liens, périodes, limites et contrôle de provenance par V01–V15.
 - Test `tests/g015-sources-officielles.test.mjs` : 15 identifiants, contrôle HTTPS et domaines publics attendus, rejet des certifications et rendements fiscaux fictifs.
+- **Nouveaux candidats V04/V06/V13 :** source officielle des sociétés 2021 ajoutée après G0.16d; les trois pistes restent historiques, non auditées et non assimilées à des preuves validées.
 - **Affichage public :** `avancement-programme-nova.html#sources-fiscales-g015` ; aucun gain du score de complétude sans dossier probant et réévaluation G0.12.
 
 ## G0.16c — Revenu imposable et incidence fiscale réellement déclarés (7 novembre 2026)
