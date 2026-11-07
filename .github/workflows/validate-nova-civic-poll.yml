@@ -40,6 +40,7 @@ on:
       - 'scripts/test_nova_poll_refresh.cjs'
       - 'scripts/test_nova_poll_recovery.cjs'
       - 'scripts/test_nova_edge_snapshot.cjs'
+      - 'scripts/test_nova_edge_canonical_questions.cjs'
       - 'scripts/smoke_nova_poll_edge.py'
       - 'scripts/smoke_nova_live_public.py'
       - '.github/workflows/nova-public-readonly-smoke.yml'
@@ -98,6 +99,8 @@ jobs:
         run: node scripts/test_nova_boussole_navigation.cjs
       - name: Tester la cohérence atomique des résultats publics sans vote
         run: node scripts/test_nova_edge_snapshot.cjs
+      - name: Vérifier le verrou éditorial côté serveur des 8 questions officielles
+        run: node scripts/test_nova_edge_canonical_questions.cjs
       - name: Tester le rétablissement d'une lecture GET temporairement indisponible
         run: node scripts/test_nova_poll_recovery.cjs
       - name: Tester le verrou du formulaire client sans réseau
