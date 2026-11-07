@@ -58,6 +58,18 @@ def validate_governance_text(text):
         re.search(r'(?m)^on:\s*$\n\s{2}push:\s*$\n\s{4}branches:\s*\[main\]\s*$', text) is not None,
         'le workflow doit se déclencher sur tout push vers main',
     )
+    require(errors, "  schedule:\n    - cron: '17 11 * * *'\n" in text,
+            'surveillance quotidienne main absente')
+    require(errors, "  workflow_dispatch:\n" in text,
+            'contrôle manuel main absent')
+    require(errors, "if (context.eventName === 'push')" in text,
+            'association à une PR doit être limitée aux pushes')
+    require(errors, "if (context.ref !== 'refs/heads/main')" in text,
+            'contrôle réservé à main absent')
+    require(errors, "core.setFailed('La branche main n’est pas protégée" in text,
+            'absence de protection doit faire échouer le job')
+    require(errors, "core.warning('La branche main n’est pas protégée" not in text,
+            'simple avertissement de protection interdit')
     for forbidden in ('paths:', 'paths-ignore:', 'branches-ignore:'):
         require(errors, forbidden not in lower, f'filtre de déclenchement interdit: {forbidden}')
 
@@ -92,8 +104,8 @@ def validate_governance_text(text):
         ('if (!mergedToMain)', 'branche de refus des pushes directs absente'),
         ('core.setFailed(', 'un push direct doit faire échouer le job'),
         ("process.env.GITHUB_REF_PROTECTED === 'true'", 'état serveur GITHUB_REF_PROTECTED non contrôlé'),
-        ("core.warning('La branche main n’est pas protégée", 'alerte main non protégée absente'),
-        ('Cette alerte ne remplace pas la configuration GitHub Settings > Branches/Rulesets.', 'la limite de preuve serveur doit rester explicite'),
+        ("core.setFailed('La branche main n’est pas protégée", 'échec CI protection manquante absent'),
+        ('Cet échec CI ne remplace pas la configuration GitHub Settings > Branches/Rulesets.', 'la limite de preuve serveur doit rester explicite'),
     ):
         require(errors, marker in text, message)
 
@@ -183,7 +195,12 @@ def run_self_tests(governance, readme, contract):
         'PR non fusionnée': governance.replace("pr.merged_at && pr.base?.ref === 'main'", "pr.base?.ref === 'main'", 1),
         'permission écriture': governance.replace('contents: read', 'contents: write', 1),
         'contrôle protection retiré': governance.replace("process.env.GITHUB_REF_PROTECTED === 'true'", "'true' === 'true'", 1),
-        'limite preuve serveur retirée': governance.replace('Cette alerte ne remplace pas la configuration GitHub Settings > Branches/Rulesets.', 'Protection serveur confirmée.', 1),
+        'limite preuve serveur retirée': governance.replace('Cet échec CI ne remplace pas la configuration GitHub Settings > Branches/Rulesets.', 'Protection serveur confirmée.', 1),
+        'protection dégradée en avertissement': governance.replace("core.setFailed('La branche main n’est pas protégée", "core.warning('La branche main n’est pas protégée", 1),
+        'surveillance quotidienne retirée': governance.replace("  schedule:\n    - cron: '17 11 * * *'\n", '', 1),
+        'contrôle manuel retiré': governance.replace("  workflow_dispatch:\n", '', 1),
+        'contrôle événementiel retiré': governance.replace("if (context.eventName === 'push')", "if (true)", 1),
+        'contrôle ref main retiré': governance.replace("if (context.ref !== 'refs/heads/main')", "if (false)", 1),
         'github-script mobile': governance.replace(f'actions/github-script@{GITHUB_SCRIPT_SHA}', 'actions/github-script@v8', 1),
         'secret injecté': governance.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}\n    steps:\n', 1),
     }
@@ -254,7 +271,7 @@ def main():
 
     print(
         'OK contrat gouvernance main: détection locale des pushes main, principes obligatoires, '
-        'runtimes/actions immuables et alerte GITHUB_REF_PROTECTED conservés; '
+        'runtimes/actions immuables et échec CI GITHUB_REF_PROTECTED et contrôle quotidien conservés; '
         'ce contrat ne prouve pas la protection serveur de main.'
     )
     return 0
