@@ -22,7 +22,7 @@ assert.equal(integrity.inspectPollCompassBinding(poll,compass).ok,true,
 const clone=obj=>JSON.parse(JSON.stringify(obj));
 const reject=(fn,modified,reason)=>assert.equal(fn(modified).ok,false,reason);
 let p=clone(poll);p.questions[0].text+=" (question altérée)";
-assert.equal(integrity.inspectPoll(p).ok,true,"Une phrase non vide seule ne prouve pas l'identité");
+assert.equal(integrity.inspectPoll(p).ok,false,"Le texte d'une proposition est lié au corpus canonique");
 reject(v=>integrity.inspectPollCompassBinding(v,compass),p,
   "La comparaison canonique doit refuser une question politiquement modifiée");
 p=clone(poll);p.questions[0].axis="tax";
