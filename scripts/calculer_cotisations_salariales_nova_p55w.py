@@ -163,6 +163,12 @@ def load():
     with CONFIG.open(encoding="utf-8") as stream:
         d=json.load(stream)
     check(d)
+    import mesurer_couverture_incidences_nova_p55s as p55s
+    scope,coverage=p55s.load()
+    need(scope["decision"]==NO_GO
+         and coverage["total_montants_non_renseignes"]==720
+         and p55s.read(p55s.P55N)["score_estimatif"]==53,
+         "P55W_CHAINAGE_P52D_ET_P55N")
     return d
 
 def public_report(cfg,wage):
