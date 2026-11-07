@@ -66,11 +66,11 @@ assert.throws(()=>integrity.scoreCompass(compass,new Map([[primary[0].id,{value:
 assert.throws(()=>integrity.scoreCompass(compass,new Map([[primary[0].id,{value:3,importance:"inconnue"}]])),
   /INVALID_ANSWER/,"Importance hors barème refusée");
 const html=fs.readFileSync(path.join(nova,"sondage-citoyen.html"),"utf8");
-const refs=[...html.matchAll(/<script\\b[^>]*\\bsrc="([^"]+)"/g)].map(hit=>hit[1]);
+const refs=[...html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)].map(hit=>hit[1]);
 function scriptIndex(filename){
   const matches=refs.filter(ref=>ref.split("?",1)[0]==="assets/"+filename);
   assert.equal(matches.length,1,"Un seul script attendu : "+filename);
-  assert.match(matches[0],/\\?v=[0-9]+(?:\\.[0-9]+)*$/,"Version de cache obligatoire : "+filename);
+  assert.match(matches[0],/\?v=[0-9]+(?:\.[0-9]+)*$/,"Version de cache obligatoire : "+filename);
   const position=html.indexOf('src="'+matches[0]+'"');
   assert.ok(position>=0);
   return position;
