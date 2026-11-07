@@ -48,3 +48,39 @@ test('une sauvegarde cloud sur la même page ne doit pas effacer le défilement 
     totalPages:520,defaultPage:4
   }),{page:27,ratio:.79,source:'appareil'});
 });
+
+test('la position intrapage du compte plus récente est reprise sur un autre appareil',()=>{
+  assert.deepEqual(chooseReadingPosition({
+    localPage:18,localRatio:.11,localUpdatedAt:'2026-11-07T13:00:00Z',
+    serverPage:22,serverRatio:.674,serverUpdatedAt:'2026-11-07T14:00:00Z',
+    totalPages:520,defaultPage:4
+  }),{page:22,ratio:.674,source:'compte'});
+});
+test('le compte plus récent l’emporte même sur la même page quand il a un emplacement précis',()=>{
+  assert.deepEqual(chooseReadingPosition({
+    localPage:24,localRatio:.8,localUpdatedAt:'2026-11-07T13:00:00Z',
+    serverPage:24,serverRatio:.245,serverUpdatedAt:'2026-11-07T14:00:00Z',
+    totalPages:520,defaultPage:4
+  }),{page:24,ratio:.245,source:'compte'});
+});
+test('la progression locale la plus récente garde son emplacement sur cette page',()=>{
+  assert.deepEqual(chooseReadingPosition({
+    localPage:19,localRatio:.9,localUpdatedAt:'2026-11-07T16:00:00Z',
+    serverPage:19,serverRatio:.1,serverUpdatedAt:'2026-11-07T13:00:00Z',
+    totalPages:520,defaultPage:4
+  }),{page:19,ratio:.9,source:'appareil'});
+});
+test('une ancienne ligne SQL sans scroll_ratio préserve la position locale de la même page',()=>{
+  assert.deepEqual(chooseReadingPosition({
+    localPage:12,localRatio:.67,localUpdatedAt:'2026-11-07T12:00:00Z',
+    serverPage:12,serverRatio:null,serverUpdatedAt:'2026-11-07T14:00:00Z',
+    totalPages:520,defaultPage:4
+  }),{page:12,ratio:.67,source:'appareil'});
+});
+test('la position initiale zéro est distinguée du NULL hérité',()=>{
+  assert.deepEqual(chooseReadingPosition({
+    localPage:12,localRatio:.67,localUpdatedAt:'2026-11-07T12:00:00Z',
+    serverPage:12,serverRatio:0,serverUpdatedAt:'2026-11-07T14:00:00Z',
+    totalPages:520,defaultPage:4
+  }),{page:12,ratio:0,source:'compte'});
+});
