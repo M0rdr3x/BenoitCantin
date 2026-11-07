@@ -1,5 +1,6 @@
 import { getSupabase, requireUser } from './sinjira-supabase.js';
 import { pdfTextToParagraphs, speechTextChunks } from './sinjira-liseuse-text-v27.mjs';
+import { createReaderCompanion } from './sinjira-liseuse-companion-v28.mjs';
 
 /* SINJIRA 2026 — liseuse : le PDF intégral n'entre jamais dans le dépôt public
    ni dans localStorage. Le serveur attribue le droit de lecture avant de signer l'accès. */
@@ -43,6 +44,8 @@ const speech={active:false,paused:false,token:0,chunks:[],index:0,voices:[],utte
 const speechReady='speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
 const storageKey='sinjira:liseuse:'+edition+':la-cendre-du-jugement';
 const themeKey='sinjira:liseuse:preferences';
+const pageStorageKey=()=>isFull?storageKey+':'+(state.user?.id||'non-connecte'):storageKey;
+let companion=null;
 
 function safeLocalGet(key){try{return localStorage.getItem(key)}catch{return null}}
 function safeLocalSet(key,value){try{localStorage.setItem(key,value)}catch{/* navigation privée */}}
@@ -118,17 +121,30 @@ function updateToolbar(){
   $('reader-chapter-label').textContent=chapter[1];
   $('reader-chapters').value=String(chapter[0]);
 }
+async function syncProgress(){
+  if(!isFull||!state.user||!state.novelId||!state.pdf)return;
+  const page=state.page;
+  const payload={user_id:state.user.id,novel_id:state.novelId,
+    last_page:page,progress_percent:Math.round(page/state.pdf.numPages*100),
+    last_opened_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+  try{
+    const {error}=await getSupabase().from('sinjira_reader_library').upsert(payload,{onConflict:'user_id,novel_id'});
+    if(error)throw error;
+  }catch{
+    message('La synchronisation de progression a échoué. La dernière page reste enregistrée sur cet appareil.','warning');
+  }
+}
+function flushProgress(){
+  if(!state.saveTimer)return;
+  clearTimeout(state.saveTimer);state.saveTimer=null;
+  void syncProgress();
+}
 function persist(){
-  safeLocalSet(storageKey,String(state.page));
+  // Éviter de mélanger la progression de différents comptes partageant un appareil.
+  safeLocalSet(pageStorageKey(),String(state.page));
   if(!isFull||!state.user||!state.novelId)return;
   clearTimeout(state.saveTimer);
-  state.saveTimer=setTimeout(async()=>{
-    const payload={user_id:state.user.id,novel_id:state.novelId,
-      last_page:state.page,progress_percent:Math.round(state.page/state.pdf.numPages*100),
-      last_opened_at:new Date().toISOString(),updated_at:new Date().toISOString()};
-    const {error}=await getSupabase().from('sinjira_reader_library').upsert(payload,{onConflict:'user_id,novel_id'});
-    if(error)message('Lecture affichée. La synchronisation de votre progression a échoué; votre page reste mémorisée sur cet appareil.','warning');
-  },650);
+  state.saveTimer=setTimeout(()=>{state.saveTimer=null;void syncProgress()},450);
 }
 function updateSpeechControls(){
   $('reader-voice-play').disabled=!speechReady||!state.pdf||speech.active&&!speech.paused;
@@ -256,6 +272,7 @@ function renderPage(){
       $('reader-text').textContent=readable||'Cette page contient surtout des images ou du texte non sélectionnable. Utilisez « Afficher le PDF » pour consulter sa mise en page.';
       $('reader-canvas').hidden=true;
       $('reader-text').hidden=false;
+      companion?.onTextRendered();
     }else{
       const viewer=$('reader-viewer');
       const baseWidth=Math.max(280,Math.min(1150,viewer.clientWidth-40));
@@ -282,6 +299,7 @@ function changePage(value){
   stopNarration(false);
   state.page=next;
   updateToolbar();persist();renderPage();
+  companion?.onPageChange();
   $('reader-viewer').scrollTo({top:0,left:0,behavior:'auto'});
 }
 function bindControls(){
@@ -294,6 +312,7 @@ function bindControls(){
     stopNarration(false);
     state.mode=state.mode==='page'?'texte':'page';
     setTheme();renderPage();
+    companion?.onModeChange();
   });
   $('reader-theme').addEventListener('change',event=>{
     state.theme=event.target.value;setTheme();
@@ -327,7 +346,10 @@ function bindControls(){
   }));
   $('reader-voice-pause').addEventListener('click',toggleSpeechPause);
   $('reader-voice-stop').addEventListener('click',()=>stopNarration());
-  window.addEventListener('pagehide',()=>{stopNarration(false);clearTimeout(state.saveTimer)});
+  window.addEventListener('pagehide',()=>{stopNarration(false);flushProgress();companion?.close()});
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='hidden')flushProgress();
+  });
   $('reader-zoom').addEventListener('change',event=>{
     state.zoom=clamp(event.target.value,.8,1.5);setTheme();
     if(state.mode==='page')renderPage();
@@ -343,6 +365,36 @@ function bindControls(){
     if(state.mode!=='page')return;
     clearTimeout(resizeTimer);
     resizeTimer=setTimeout(renderPage,250);
+  });
+}
+function lockPrivateReader(){
+  // Une déconnexion depuis un autre onglet doit verrouiller immédiatement le livre.
+  if(!isFull||!state.pdf)return;
+  stopNarration(false);companion?.close();companion=null;
+  const book=state.pdf;
+  state.pdf=null;state.user=null;state.novelId=null;
+  state.renderVersion++;
+  // Effacer aussi les citations en mémoire, les résultats de recherche et les champs
+  // privés : changer de compte ne doit pas laisser afficher le contenu précédent.
+  $('reader-text').textContent='';
+  $('reader-marks-list').replaceChildren();
+  $('reader-search-results').replaceChildren();
+  $('reader-selection-preview').textContent='';
+  $('reader-note-input').value='';
+  $('reader-search-field').value='';
+  $('reader-canvas').width=0;$('reader-canvas').height=0;
+  $('reader-content').hidden=true;
+  $('reader-loading').hidden=true;$('reader-error').hidden=false;
+  message('Votre session a changé. Reconnectez-vous pour rouvrir le roman intégral.','error');
+  try{Promise.resolve(book.destroy?.()).catch(()=>{})}catch{/* PDF fermé */}
+}
+function watchPrivateSession(){
+  if(!isFull)return;
+  getSupabase().auth.onAuthStateChange((event,session)=>{
+    if(event==='SIGNED_OUT'||
+        (event==='SIGNED_IN'&&state.user&&session?.user?.id!==state.user.id)){
+      lockPrivateReader();
+    }
   });
 }
 async function resolvePrivateUrl(){
@@ -361,7 +413,7 @@ async function resolvePrivateUrl(){
 async function restorePage(){
   // Sur une première ouverture, commencer sur le prologue plutôt que sur la couverture image.
   const firstReadablePage=isFull?4:3;
-  let saved=clamp(Number(safeLocalGet(storageKey)||firstReadablePage),1,state.pdf.numPages);
+  let saved=clamp(Number(safeLocalGet(pageStorageKey())||firstReadablePage),1,state.pdf.numPages);
   if(isFull&&state.user){
     const {data:novel,error:novelError}=await getSupabase().from('sinjira_novels')
       .select('id').eq('slug',NOVEL_SLUG).maybeSingle();
@@ -406,9 +458,27 @@ async function init(){
     state.pdf=await pdfjs.getDocument({data,isEvalSupported:false,useSystemFonts:true}).promise;
     if(state.pdf.numPages!==(isFull?520:82))throw new Error('Le nombre de pages de ce document ne correspond pas à l’édition attendue.');
     await restorePage();
+    watchPrivateSession();
+    companion=createReaderCompanion({
+      isFull,
+      getPdf:()=>state.pdf,
+      getPage:()=>state.page,
+      goToPage:changePage,
+      getChapters:()=>isFull?chaptersFull:chaptersDemo,
+      getUser:()=>state.user,
+      getNovelId:()=>state.novelId,
+      getSupabase,
+      getTextAtPage:async pageNumber=>{
+        const page=await state.pdf.getPage(pageNumber);
+        const text=await page.getTextContent();
+        return pdfTextToParagraphs(text.items);
+      },
+    });
     $('reader-loading').hidden=true;
     $('reader-content').hidden=false;
     updateToolbar();renderPage();updateSpeechControls();
+    // L'indisponibilité de la synchronisation des notes ne bloque pas la lecture.
+    companion.ready().catch(()=>message('La liseuse fonctionne, mais les repères personnels ne sont pas disponibles.','warning'));
     $('reader-status').hidden=true;
   }catch(error){
     if(error?.message==='Connexion requise')return;

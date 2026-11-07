@@ -9,6 +9,9 @@ on:
       - 'projets/sinjira/romans/**'
       - 'assets/js/sinjira-liseuse-v26.js'
       - 'assets/js/sinjira-liseuse-text-v27.mjs'
+      - 'assets/js/sinjira-liseuse-companion-v28.mjs'
+      - 'supabase/migrations/*sinjira_reader_marks_v28.sql'
+      - 'scripts/validate_sinjira_reader_v28.py'
       - 'tests/reader/**'
       - 'assets/js/sinjira-library-hub-v26.js'
       - 'assets/js/sinjira-reads-v24-4-61.js'
@@ -23,6 +26,9 @@ on:
       - 'projets/sinjira/romans/**'
       - 'assets/js/sinjira-liseuse-v26.js'
       - 'assets/js/sinjira-liseuse-text-v27.mjs'
+      - 'assets/js/sinjira-liseuse-companion-v28.mjs'
+      - 'supabase/migrations/*sinjira_reader_marks_v28.sql'
+      - 'scripts/validate_sinjira_reader_v28.py'
       - 'tests/reader/**'
       - 'assets/js/sinjira-library-hub-v26.js'
       - 'assets/js/sinjira-reads-v24-4-61.js'
@@ -52,10 +58,13 @@ jobs:
       - name: Vérifier la syntaxe du lecteur et le texte reformatable
         run: |
           node --check assets/js/sinjira-liseuse-text-v27.mjs
+          node --check assets/js/sinjira-liseuse-companion-v28.mjs
           node --input-type=module --check < assets/js/sinjira-liseuse-v26.js
-          node --test tests/reader/test_sinjira_liseuse_text_v27.mjs
+          node --test tests/reader/test_sinjira_liseuse_*.mjs
       - name: Vérifier les catégories, la liseuse et l'isolement des fichiers privés
         run: python3 scripts/validate_sinjira_liseuse_v26.py
+      - name: Vérifier les règles RLS des notes et la recherche locale
+        run: python3 scripts/validate_sinjira_reader_v28.py
       - name: Vérifier les limites de la diffusion privée
         run: python3 scripts/validate_sinjira_livre_i_delivery.py
       - name: Vérifier les droits numériques en lecture seule

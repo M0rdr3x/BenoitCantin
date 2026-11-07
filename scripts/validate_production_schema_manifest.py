@@ -22,7 +22,7 @@ EXPECTED_TABLES={
 'project_access','projects','reader_character_submissions','reader_characters','reader_comments',
 'reader_library','reader_works','registry_account_links','research_consents','session_feedback',
 'sinjira_canon_context','sinjira_character_applications','sinjira_characters','sinjira_novel_comments',
-'sinjira_novels','sinjira_reader_library','sinjira_security_settings','social_blocks',
+'sinjira_novels','sinjira_reader_library','sinjira_reader_marks','sinjira_security_settings','social_blocks',
 'social_character_comments','social_character_likes','social_character_messages',
 'social_character_posts','social_profiles','social_real_comments','social_real_likes',
 'social_real_messages','social_real_posts','social_reports','social_suspensions','user_entitlements',
