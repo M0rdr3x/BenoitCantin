@@ -125,3 +125,19 @@ test("la boussole délègue désormais ses calculs au moteur contrôlé",()=>{
  assert.match(boussoleScript,/core\.scoreCompass\(state\.data,state\.answers\)/);
  assert.match(boussoleScript,/validateQuestionnaireCorpus\(questionCorpus\)/);
 });
+
+test("le profil partiel est explicitement disponible avant Q64",async()=>{
+ const html=await readFile(new URL("../boussole-electorale.html",import.meta.url),"utf8");
+ assert.match(html,/id="compass-preview"[^>]*aria-controls="compass-results"/);
+ assert.match(html,/Une dimension nécessitant moins de deux réponses principales restera non calculable/);
+ assert.match(boussoleScript,/\$\("#compass-preview"\)\?\.addEventListener\("click"/);
+ assert.match(boussoleScript,/if\(!state\.started \|\| !state\.data\)return;/);
+ assert.match(boussoleScript,/showResults\(\);/);
+});
+test("la page charge la nouvelle version du validateur et du moteur",async()=>{
+ const html=await readFile(new URL("../boussole-electorale.html",import.meta.url),"utf8");
+ const pollHtml=await readFile(new URL("../sondage-citoyen.html",import.meta.url),"utf8");
+ assert.match(html,/assets\/nova-civic-integrity\.js\?v=2/);
+ assert.match(html,/assets\/boussole-electorale\.js\?v=3\.4\.22/);
+ assert.match(pollHtml,/assets\/nova-civic-integrity\.js\?v=2/);
+});
