@@ -60,6 +60,11 @@
   }
 
   function validateQuestionnaireCorpus(corpus){
+    // Validation stricte des pôles, directions, poids et règles de neutralité.
+    // Une altération du corpus doit bloquer le calcul plutôt que le biaiser.
+    if(window.__NOVA_CIVIC_INTEGRITY?.inspectCompass(corpus)?.ok !== true){
+      throw new Error("Intégrité du questionnaire non vérifiée");
+    }
     if(!corpus || !Array.isArray(corpus.axes) || corpus.axes.length!==16
        || !Array.isArray(corpus.questions) || corpus.questions.length!==64){
       throw new Error("Questionnaire incomplet");
