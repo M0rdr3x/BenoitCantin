@@ -39,7 +39,8 @@ const $=id=>document.getElementById(id);
 const state={pdf:null,page:1,mode:'texte',theme:'sepia',size:20,zoom:1,
   font:'serif',lineHeight:1.75,textWidth:780,letterSpacing:0,
   voiceURI:'',speed:1,autoSpeech:false,
-  user:null,novelId:null,renderVersion:0,renderQueue:Promise.resolve(),saveTimer:null};
+  user:null,novelId:null,renderVersion:0,renderQueue:Promise.resolve(),saveTimer:null,
+  progressQueue:Promise.resolve()};
 const speech={active:false,paused:false,token:0,chunks:[],index:0,voices:[],utterance:null};
 const speechReady='speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
 const storageKey='sinjira:liseuse:'+edition+':la-cendre-du-jugement';
@@ -121,18 +122,29 @@ function updateToolbar(){
   $('reader-chapter-label').textContent=chapter[1];
   $('reader-chapters').value=String(chapter[0]);
 }
-async function syncProgress(){
-  if(!isFull||!state.user||!state.novelId||!state.pdf)return;
-  const page=state.page;
-  const payload={user_id:state.user.id,novel_id:state.novelId,
-    last_page:page,progress_percent:Math.round(page/state.pdf.numPages*100),
-    last_opened_at:new Date().toISOString(),updated_at:new Date().toISOString()};
-  try{
-    const {error}=await getSupabase().from('sinjira_reader_library').upsert(payload,{onConflict:'user_id,novel_id'});
-    if(error)throw error;
-  }catch{
-    message('La synchronisation de progression a échoué. La dernière page reste enregistrée sur cet appareil.','warning');
-  }
+function syncProgress(){
+  if(!isFull||!state.user||!state.novelId||!state.pdf)return state.progressQueue;
+  // Serialize writes: a slow previous request must not overwrite a newer page.
+  const userId=state.user.id,novelId=state.novelId,pdf=state.pdf;
+  const send=async()=>{
+    if(!state.pdf||state.pdf!==pdf||state.user?.id!==userId||state.novelId!==novelId)return;
+    const page=state.page;
+    const updatedAt=new Date().toISOString();
+    const payload={user_id:userId,novel_id:novelId,
+      last_page:page,progress_percent:Math.round(page/pdf.numPages*100),
+      last_opened_at:updatedAt,updated_at:updatedAt};
+    try{
+      const {error}=await getSupabase().from('sinjira_reader_library')
+        .upsert(payload,{onConflict:'user_id,novel_id'});
+      if(error)throw error;
+    }catch{
+      if(state.pdf===pdf&&state.user?.id===userId){
+        message('La synchronisation a échoué. Votre page reste enregistrée sur cet appareil.','warning');
+      }
+    }
+  };
+  state.progressQueue=state.progressQueue.catch(()=>{}).then(send);
+  return state.progressQueue;
 }
 function flushProgress(){
   if(!state.saveTimer)return;
@@ -141,7 +153,9 @@ function flushProgress(){
 }
 function persist(){
   // Éviter de mélanger la progression de différents comptes partageant un appareil.
-  safeLocalSet(pageStorageKey(),String(state.page));
+  const key=pageStorageKey();
+  safeLocalSet(key,String(state.page));
+  safeLocalSet(key+':updated',new Date().toISOString());
   if(!isFull||!state.user||!state.novelId)return;
   clearTimeout(state.saveTimer);
   state.saveTimer=setTimeout(()=>{state.saveTimer=null;void syncProgress()},450);
@@ -413,15 +427,23 @@ async function resolvePrivateUrl(){
 async function restorePage(){
   // Sur une première ouverture, commencer sur le prologue plutôt que sur la couverture image.
   const firstReadablePage=isFull?4:3;
-  let saved=clamp(Number(safeLocalGet(pageStorageKey())||firstReadablePage),1,state.pdf.numPages);
+  const key=pageStorageKey();
+  let saved=clamp(Number(safeLocalGet(key)||firstReadablePage),1,state.pdf.numPages);
+  const localSavedAt=Date.parse(safeLocalGet(key+':updated')||'')||0;
   if(isFull&&state.user){
     const {data:novel,error:novelError}=await getSupabase().from('sinjira_novels')
       .select('id').eq('slug',NOVEL_SLUG).maybeSingle();
     if(!novelError&&novel?.id){
       state.novelId=novel.id;
       const {data:progress}=await getSupabase().from('sinjira_reader_library')
-        .select('last_page').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle();
-      if(progress?.last_page)saved=clamp(progress.last_page,1,state.pdf.numPages);
+        .select('last_page,updated_at').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle();
+      const serverSavedAt=Date.parse(progress?.updated_at||'')||0;
+      // Preserve an offline/local position that has not yet reached the account.
+      if(progress?.last_page&&(!localSavedAt||serverSavedAt>localSavedAt)){
+        saved=clamp(progress.last_page,1,state.pdf.numPages);
+        safeLocalSet(key,String(saved));
+        if(serverSavedAt)safeLocalSet(key+':updated',progress.updated_at);
+      }
     }
   }
   state.page=saved;
