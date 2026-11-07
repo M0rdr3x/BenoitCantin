@@ -19,6 +19,7 @@ REQUIRED_FILES = (
     "assets/boussole-electorale.css",
     "assets/sondage-citoyen.js",
     "assets/sondage-public-corpus.js",
+    "assets/nova-civic-integrity.js",
     "assets/sondage-citoyen.css",
     "assets/sondage-citoyen.svg",
     "data/boussole-electorale-v2.json",
@@ -89,12 +90,29 @@ def check(published: Path) -> list[str]:
         errors.append("Questionnaires candidats : noindex absent")
     if re.search(r'<\s*(?:form|input|button|script)\b', review_page, re.I):
         errors.append("Questionnaires candidats : composant interactif interdit")
-    for rel in ("assets/sondage-citoyen.js", "assets/sondage-citoyen.css", "assets/sondage-public-corpus.js"):
+    for rel in ("assets/sondage-citoyen.js", "assets/sondage-citoyen.css", "assets/sondage-public-corpus.js", "assets/nova-civic-integrity.js"):
         if rel not in poll_page:
             errors.append(f"Ressource du sondage non référencée : {rel}")
-    for rel in ("assets/boussole-electorale.js", "assets/boussole-electorale.css", "assets/boussole-public-corpus.js"):
+    for rel in ("assets/boussole-electorale.js", "assets/boussole-electorale.css", "assets/boussole-public-corpus.js", "assets/nova-civic-integrity.js"):
         if rel not in compass_page:
             errors.append(f"Ressource de la boussole non référencée : {rel}")
+
+    # Les deux interfaces sont exécutables seulement si les trois fichiers
+    # (corpus, garde d'intégrité, application) sont présents dans cet ordre.
+    for page, names in (
+        (poll_page, ("sondage-public-corpus.js", "nova-civic-integrity.js", "sondage-citoyen.js")),
+        (compass_page, ("boussole-public-corpus.js", "nova-civic-integrity.js", "boussole-electorale.js")),
+    ):
+        sources = re.findall(r'<script\b[^>]*\bsrc="([^"]+)"', page, re.I)
+        positions = []
+        for name in names:
+            refs = [src for src in sources if src.split("?", 1)[0] == "assets/" + name]
+            if len(refs) != 1 or re.search(r"[?&]v=[0-9][0-9.]*$", refs[0]) is None:
+                errors.append("Interface NOVA : script absent, répété ou non versionné : " + name)
+            else:
+                positions.append(page.index('src="' + refs[0] + '"'))
+        if len(positions) != 3 or positions != sorted(positions):
+            errors.append("Interface NOVA : ordre corpus, intégrité, application invalide")
 
     if 'local.published===true' not in poll_js or '"nova-consultation-v1"' not in poll_js:
         errors.append("Sondage public : version ou fermeture explicite non vérifiables")
@@ -108,8 +126,12 @@ def check(published: Path) -> list[str]:
         errors.append("Sondage public : agrégats ou données individuelles dans le corpus statique")
     if len(compass.get("questions", [])) != 64 or len(compass.get("axes", [])) != 16:
         errors.append("Boussole publique : corpus 64/16 incorrect")
-    if 'bucket.primaryAnswered >= axisMinimumAnswered' not in compass_js:
-        errors.append("Boussole publique : seuil minimum de réponses non appliqué")
+    integrity_js = (prefix / "assets/nova-civic-integrity.js").read_text(encoding="utf-8")
+    if ('return core.scoreCompass(state.data,state.answers);' not in compass_js or
+            'bucket.primaryAnswered>=c.methodology.axisMinimumAnswered' not in integrity_js):
+        errors.append("Boussole publique : calcul partagé ou seuil minimum des deux réponses absent")
+    if "__NOVA_CIVIC_INTEGRITY" not in poll_js:
+        errors.append("Sondage public : vérification d'intégrité des huit propositions absente")
     if "https://challenges.cloudflare.com" not in (published / "_headers").read_text(encoding="utf-8"):
         errors.append("CSP Netlify : origine Turnstile absente")
     if not (published / ".well-known/release.json").is_file():
