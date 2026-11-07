@@ -1,0 +1,37 @@
+name: Projet Nova P56G - Sources provinciales et municipales 2024
+on:
+  pull_request:
+    paths:
+      - 'scripts/verifier_pont_provincial_municipal_nova_p56g.py'
+      - 'scripts/tests/test_verifier_pont_provincial_municipal_nova_p56g.py'
+      - 'projets/projet-nova/etudes/P56G_*'
+      - '.github/workflows/validate-nova-p56g.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preuves-p56g:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tester les 36 contrôles P56G
+        run: python -m unittest discover -s scripts/tests -p 'test_verifier_pont_provincial_municipal_nova_p56g.py' -v
+      - name: Verifier les montants publies et le non-appariement
+        shell: bash
+        run: |
+          python scripts/verifier_pont_provincial_municipal_nova_p56g.py \
+            --dossier projets/projet-nova/etudes/P56G_PREMIER_PONT_PROVINCIAL_MUNICIPAL_ALMA_2024.json | python -c 'import json,sys; x=json.load(sys.stdin); assert x["compensations_municipales_2024_cad"]=="5514445" and x["transferts_municipaux_2024_cad"]=="5578416" and x["engagement_provincial_40350_cad"]=="3320039" and x["engagement_provincial_40561_cad"]=="1665580" and x["liens_apparies_avec_preuves"]==0 and x["montant_apparie_cad"] is None and x["inconnues_p52b"]==600 and x["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Refuser la certification automatique
+        shell: bash
+        run: |
+          set +e
+          python scripts/verifier_pont_provincial_municipal_nova_p56g.py \
+            --dossier projets/projet-nova/etudes/P56G_PREMIER_PONT_PROVINCIAL_MUNICIPAL_ALMA_2024.json --exiger-appariement-certifie
+          code=$?
+          set -e
+          test "$code" -eq 3
