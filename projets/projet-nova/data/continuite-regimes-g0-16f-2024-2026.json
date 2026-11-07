@@ -1,0 +1,161 @@
+{
+  "schema": "nova-g016f-continuite-regimes/v1",
+  "date": "2026-11-07",
+  "phase": "G0.16f",
+  "project": "Projet Nova",
+  "status": "REPÈRES_PUBLICS_SANS_FINANCEMENT_NOVA_CERTIFIÉ",
+  "programme_percent_before": 47,
+  "programme_percent_after": 47,
+  "adopted": false,
+  "sources": [
+    {
+      "id": "RRQ_RATES",
+      "url": "https://www.retraitequebec.gouv.qc.ca/fr/programmes/regime-rentes-quebec/travail-et-cotisations/revenus-travail-admissibles-et-cotisations",
+      "publisher": "Retraite Québec",
+      "scope": "2026_legal_contribution_schedules",
+      "reviewed_externally_for_nova": false
+    },
+    {
+      "id": "RRQ_ACTUARIAL",
+      "url": "https://www.retraitequebec.gouv.qc.ca/fr/publications/programmes/regime-rentes-quebec-rrq/evaluations-actuarielles/resume-rapport-modifiant-evaluation-actuarielle-2024-rrq",
+      "publisher": "Retraite Québec",
+      "scope": "special_report_2024_modified_2026",
+      "reviewed_externally_for_nova": false
+    },
+    {
+      "id": "RQAP_RATES",
+      "url": "https://www.quebec.ca/entreprises-et-travailleurs-autonomes/administrer-gerer/embauche-gestion-personnel/assurance-parentale/taux-cotisations",
+      "publisher": "Gouvernement du Québec",
+      "scope": "2026_contribution_rates",
+      "reviewed_externally_for_nova": false
+    },
+    {
+      "id": "RQAP_FUND",
+      "url": "https://www.quebec.ca/gouvernement/ministeres-organismes/conseil-gestion-assurance-parentale/mission-mandats/fonds-dassurance-parentale",
+      "publisher": "Gouvernement du Québec",
+      "scope": "fiduciary_parental_fund",
+      "reviewed_externally_for_nova": false
+    },
+    {
+      "id": "RQAP_TRANSFER",
+      "url": "https://www.quebec.ca/gouvernement/ministeres-organismes/conseil-gestion-assurance-parentale",
+      "publisher": "Gouvernement du Québec",
+      "scope": "transfer_of_roles_2026_05_01",
+      "reviewed_externally_for_nova": false
+    },
+    {
+      "id": "RAMQ_NUMBERS",
+      "url": "https://www.ramq.gouv.qc.ca/fr/donnees-statistiques/ramq-quelques-chiffres",
+      "publisher": "Régie de l’assurance maladie du Québec",
+      "scope": "ramq_2024_2025_not_full_health_system",
+      "reviewed_externally_for_nova": false
+    },
+    {
+      "id": "HEALTH_FINANCING",
+      "url": "https://www.quebec.ca/sante/systeme-et-services-de-sante/organisation-des-services/donnees-systeme-sante-quebecois-services/ressources-financieres-systeme-sante-services-sociaux",
+      "publisher": "Gouvernement du Québec",
+      "scope": "2024_health_expenditure_estimates_and_funding_sources",
+      "reviewed_externally_for_nova": false
+    }
+  ],
+  "rrq": {
+    "year": 2026,
+    "contribution_exemption_cad": 3500,
+    "maximum_pensionable_earnings_cad": 74600,
+    "additional_maximum_pensionable_earnings_cad": 85000,
+    "employee_first_bracket_pct": 6.3,
+    "employer_first_bracket_pct": 6.3,
+    "employee_second_bracket_pct": 4,
+    "employer_second_bracket_pct": 4,
+    "source_id": "RRQ_RATES",
+    "actuarial_report_scope": "2024 actuarial evaluation special amendment, not complete revaluation",
+    "actuarial_base_contribution_rate_total_pct": 10.6,
+    "actuarial_base_required_rate_pct": 10.48,
+    "actuarial_base_margin_pct_points": 0.12,
+    "earlier_margin_pct_points": 0.33,
+    "actuarial_source_id": "RRQ_ACTUARIAL",
+    "replacement_financing_mcad": null,
+    "rights_maintained_under_nova": null,
+    "independent_actuary_nova_review": false
+  },
+  "rqap": {
+    "year": 2026,
+    "employee_rate_pct": 0.43,
+    "employer_rate_pct": 0.602,
+    "self_employed_rate_pct": 0.764,
+    "source_id": "RQAP_RATES",
+    "fund_character": "FONDS_FIDUCIAIRE_NON_BUDGETAIRE",
+    "fund_source_id": "RQAP_FUND",
+    "roles_transferred_to": "Retraite Québec",
+    "roles_transferred_effective": "2026-05-01",
+    "roles_source_id": "RQAP_TRANSFER",
+    "caveat": "La page Fonds utilise encore une terminologie héritée du Conseil; le transfert des responsabilités est déclaré sur la page institutionnelle.",
+    "fund_current_assets_mcad": null,
+    "annual_benefits_mcad": null,
+    "actuarial_projection_under_nova": null,
+    "continuity_financed_under_nova": false
+  },
+  "ramq": {
+    "fiscal_year": "2024-2025",
+    "financing_mcad": {
+      "fss": 8937,
+      "drug_insurance_fund": 4354,
+      "other": 1250,
+      "published_total": 14542,
+      "component_rounding_tolerance": 1
+    },
+    "program_cost_mcad": {
+      "physician_remuneration": 8662,
+      "pharmacy_drugs_services": 4469,
+      "other": 1101,
+      "published_total": 14232
+    },
+    "insured_health_millions": 8.6,
+    "insured_public_drug_millions": 3.9,
+    "source_id": "RAMQ_NUMBERS",
+    "scope": "RAMQ_ADMINISTERED_PROGRAMS_NOT_WHOLE_HEALTH_SYSTEM",
+    "difference_financing_costs_not_identified_as_surplus": true,
+    "costs_covered_after_nova_tax_reform": null,
+    "independent_service_continuity_review": false
+  },
+  "health_system": {
+    "calendar_year": 2024,
+    "estimated_total_spending_billion_cad": 81,
+    "estimated_public_spending_billion_cad": 59,
+    "values_approximate": true,
+    "source_id": "HEALTH_FINANCING",
+    "scope": "ALL_HEALTH_SPENDING_PUBLIC_AND_PRIVATE_NATIONAL_ACCOUNTS_NOT_RAMQ_SUBSET",
+    "do_not_sum_with_ramq_total": true,
+    "not_single_provincial_budget_line": true
+  },
+  "cross_year_reference": {
+    "fss_revenue_2026_2027_mcad": 9538,
+    "source": "data/registre-assiettes-fiscales-g0-14-2026-2027.json",
+    "not_equivalent_to_ramq_fss_financing_2024_2025": true,
+    "not_automatic_fss_replacement_cost": true
+  },
+  "required_g015_proofs": [
+    "V07",
+    "V08",
+    "V09"
+  ],
+  "remaining_continuity_to_finance": [
+    "EDUCATION",
+    "MUNICIPALITES",
+    "EMPLOIS",
+    "DETTE"
+  ],
+  "source_research_status": "PARTIAL_PRIMARY_WEBSITE_REVIEW_WITHOUT_SIGNED_AUDIT",
+  "decision": {
+    "g015_proofs_independently_verified": 0,
+    "g016f_completed": false,
+    "all_health_services_financed": false,
+    "rrq_funding_substitution_approved": false,
+    "rqap_funding_substitution_approved": false,
+    "fss_abolition_financed": false,
+    "drug_insurance_rights_assured": false,
+    "tax_rates_authorized": false,
+    "programme_certified": false,
+    "scenarios_financially_certified": false
+  }
+}
