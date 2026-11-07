@@ -14,7 +14,8 @@ REQUIRED = {
     'authentification obligatoire': 'requiredUser(req)',
     'session issue du JWT validé': 'sessionIdFromVerifiedRequest(req)',
     'lecture JSON bornée': 'readLimitedJson(req)',
-    'mesure UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
+    'flux limité avant allocation': 'readLimitedUtf8Body(req, MAX_REQUEST_BYTES)',
+    'helper partagé pour le corps limité': "from '../_shared/limited-body.mjs'",
     'réponse privée': "'Cache-Control': 'private, no-store, max-age=0'",
     'protection MIME': "'X-Content-Type-Options': 'nosniff'",
     'référent masqué': "'Referrer-Policy': 'no-referrer'",
@@ -34,6 +35,7 @@ REQUIRED_PATTERNS = {
 
 FORBIDDEN = {
     'lecture JSON directe non bornée': 'await req.json()',
+    'lecture de corps entière non bornée': 'await req.text()',
     'lecture JSON directe non bornée espacée': 'await req.json (',
     'lecture IP brute Cloudflare': 'cf-connecting-ip',
     'lecture IP brute proxy': 'x-forwarded-for',
@@ -73,6 +75,7 @@ def self_test() -> None:
     with TemporaryDirectory() as raw:
         path = Path(raw) / 'index.ts'
         safe = """
+import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 const MAX_REQUEST_BYTES = 4096;
 const PRIVATE_HEADERS = {
   'Cache-Control': 'private, no-store, max-age=0',
@@ -81,10 +84,9 @@ const PRIVATE_HEADERS = {
 };
 function privateJson(data, status=200){return new Response(JSON.stringify(data),{status,headers:PRIVATE_HEADERS})}
 async function readLimitedJson(req){
- const rawLength=req.headers.get('content-length');
- const raw=await req.text();
- new TextEncoder().encode(raw).byteLength;
- return {body:{}};
+ const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);
+ if(!limited.ok)return {response:privateJson({},413)};
+ return {body:JSON.parse(limited.raw||'{}')};
 }
 function sessionIdFromVerifiedRequest(req){return req}
 function trustedGeo(req){
@@ -118,6 +120,35 @@ privateJson({});
         clean = validate(path)
         if clean:
             raise AssertionError('Le cas sain doit passer: ' + ' | '.join(clean))
+
+        # Même avec une limite affichée, ne pas tolérer l'allocation préalable
+        # du corps complet avant de mesurer sa taille.
+        path.write_text(safe.replace(
+            'const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);',
+            'const limited = {ok:true,raw:await req.text()};',
+            1,
+        ), encoding='utf-8')
+        whole_body = validate(path)
+        if not any('corps entière non bornée' in item for item in whole_body):
+            raise AssertionError('Une lecture req.text() non bornée doit être bloquée.')
+
+        path.write_text(safe.replace(
+            'const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);',
+            'const limited = {ok:true,raw:"{}"};',
+            1,
+        ), encoding='utf-8')
+        missing_stream = validate(path)
+        if not any('flux limité avant allocation' in item for item in missing_stream):
+            raise AssertionError('Le retrait du lecteur limité doit être détecté.')
+
+        path.write_text(safe.replace(
+            "from '../_shared/limited-body.mjs'",
+            "from './untrusted-reader.mjs'",
+            1,
+        ), encoding='utf-8')
+        missing_import = validate(path)
+        if not any('helper partagé' in item for item in missing_import):
+            raise AssertionError('Une importation du helper non approuvé doit être détectée.')
 
         path.write_text(safe.replace('const parsed = await readLimitedJson(req);', 'const parsed = {body: await req.json()};'), encoding='utf-8')
         direct = validate(path)

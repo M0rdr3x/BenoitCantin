@@ -1,5 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { corsHeaders } from '../_shared/cors.ts';
+import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import { bearerToken, requiredUser, serviceClient } from '../_shared/auth.ts';
 import { buildSecurityPushMessage, SECURITY_PUSH_MAX_BATCH } from '../_shared/security-push-policy.mjs';
 import {
@@ -30,21 +31,14 @@ function privateJson(data: unknown, status = 200) {
 }
 
 async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }> {
-  const rawLength = req.headers.get('content-length');
-  if (rawLength) {
-    const declared = Number(rawLength);
-    if (!Number.isFinite(declared) || declared < 0 || declared > MAX_REQUEST_BYTES) {
-      return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
-    }
+  // Content-Length peut manquer ou être mensonger : arrêter le flux avant
+  // d'allouer le corps entier. Le helper refuse aussi l'UTF-8 invalide.
+  const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);
+  if (!limited.ok) {
+    return { response: privateJson({ ok: false, error: 'Requête trop volumineuse ou invalide.' }, 413) };
   }
-
-  const raw = await req.text();
-  if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
-    return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
-  }
-
   try {
-    return { body: JSON.parse(raw || '{}') };
+    return { body: JSON.parse(limited.raw || '{}') };
   } catch {
     return { response: privateJson({ ok: false, error: 'Corps JSON invalide.' }, 400) };
   }
