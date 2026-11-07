@@ -355,6 +355,7 @@ function renderPage(){
       $('reader-canvas').hidden=true;
       $('reader-text').hidden=false;
       companion?.onTextRendered();
+      restoreScrollAfterRender(version);
     }else{
       const viewer=$('reader-viewer');
       const baseWidth=Math.max(280,Math.min(1150,viewer.clientWidth-40));
@@ -371,6 +372,7 @@ function renderPage(){
         transform:pixelRatio===1?undefined:[pixelRatio,0,0,pixelRatio,0,0]}).promise;
       $('reader-text').hidden=true;
       canvas.hidden=false;
+      restoreScrollAfterRender(version);
     }
   }).catch(error=>message('Impossible d’afficher cette page. Réessayez ou utilisez le lecteur PDF de secours.','error'));
 }
@@ -378,13 +380,32 @@ function changePage(value){
   if(!state.pdf)return;
   const next=clamp(Math.round(value),1,state.pdf.numPages);
   if(next===state.page)return;
+  flushScrollPosition();
   stopNarration(false);
   state.page=next;
+  state.positionRatio=0;
+  state.restorePending=0;
+  state.restoringScroll=true;
+  $('reader-viewer').scrollTo({top:0,left:0,behavior:'instant'});
   updateToolbar();persist();renderPage();
+  positionNotice('Page '+state.page+' mémorisée automatiquement. Vous pouvez aussi l’enregistrer maintenant.');
   companion?.onPageChange();
-  $('reader-viewer').scrollTo({top:0,left:0,behavior:'auto'});
 }
 function bindControls(){
+  $('reader-save-position').addEventListener('click',()=>{void saveCurrentPosition()});
+  $('reader-viewer').addEventListener('scroll',()=>{
+    if(!state.pdf||state.restoringScroll)return;
+    clearTimeout(state.scrollTimer);
+    state.scrollTimer=setTimeout(()=>{
+      state.scrollTimer=null;
+      if(!state.pdf||state.restoringScroll)return;
+      const viewer=$('reader-viewer');
+      state.positionRatio=ratioFromScroll(viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight);
+      if(!persist({syncCloud:false})){
+        positionNotice('Enregistrement automatique indisponible dans ce navigateur.','warning');
+      }
+    },650);
+  },{passive:true});
   $('reader-previous').addEventListener('click',()=>changePage(state.page-1));
   $('reader-next').addEventListener('click',()=>changePage(state.page+1));
   $('reader-page').addEventListener('change',event=>changePage(event.target.value));
@@ -428,9 +449,13 @@ function bindControls(){
   }));
   $('reader-voice-pause').addEventListener('click',toggleSpeechPause);
   $('reader-voice-stop').addEventListener('click',()=>stopNarration());
-  window.addEventListener('pagehide',()=>{stopNarration(false);flushProgress();companion?.close()});
+  window.addEventListener('pagehide',()=>{
+    flushScrollPosition();stopNarration(false);flushProgress();companion?.close();
+  });
   document.addEventListener('visibilitychange',()=>{
-    if(document.visibilityState==='hidden')flushProgress();
+    if(document.visibilityState==='hidden'){
+      flushScrollPosition();flushProgress();
+    }
   });
   $('reader-zoom').addEventListener('change',event=>{
     state.zoom=clamp(event.target.value,.8,1.5);setTheme();
@@ -463,6 +488,8 @@ function lockPrivateReader(){
   state.loadController?.abort();
   state.loadController=null;
   clearTimeout(state.saveTimer);state.saveTimer=null;
+  clearTimeout(state.scrollTimer);state.scrollTimer=null;
+  $('reader-position-status').textContent='';
   stopNarration(false);
   companion?.close();companion=null;
   const book=state.pdf;
@@ -509,11 +536,15 @@ async function resolvePrivateUrl(){
   return url.href;
 }
 async function restorePage(){
-  // Sur une première ouverture, commencer sur le prologue plutôt que sur la couverture image.
-  const firstReadablePage=isFull?4:3;
-  const key=pageStorageKey();
-  let saved=clamp(Number(safeLocalGet(key)||firstReadablePage),1,state.pdf.numPages);
-  const localSavedAt=Date.parse(safeLocalGet(key+':updated')||'')||0;
+  // Conserver la compatibilité avec les anciennes pages sauvegardées sans défilement.
+  const defaultPage=isFull?4:3,key=pageStorageKey();
+  const localPage=Number(safeLocalGet(key));
+  let localRatio=0;
+  try{
+    const spot=JSON.parse(safeLocalGet(key+':spot')||'null');
+    if(spot&&spot.page===localPage)localRatio=spot.ratio;
+  }catch{/* ancien format de progression */}
+  let serverPage=null,serverUpdatedAt=null;
   if(isFull&&state.user){
     const {data:novel,error:novelError}=await getSupabase().from('sinjira_novels')
       .select('id').eq('slug',NOVEL_SLUG).maybeSingle();
@@ -521,16 +552,25 @@ async function restorePage(){
       state.novelId=novel.id;
       const {data:progress}=await getSupabase().from('sinjira_reader_library')
         .select('last_page,updated_at').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle();
-      const serverSavedAt=Date.parse(progress?.updated_at||'')||0;
-      // Preserve an offline/local position that has not yet reached the account.
-      if(progress?.last_page&&(!localSavedAt||serverSavedAt>localSavedAt)){
-        saved=clamp(progress.last_page,1,state.pdf.numPages);
-        safeLocalSet(key,String(saved));
-        if(serverSavedAt)safeLocalSet(key+':updated',progress.updated_at);
-      }
+      serverPage=progress?.last_page;
+      serverUpdatedAt=progress?.updated_at;
     }
   }
-  state.page=saved;
+  const spot=chooseReadingPosition({
+    localPage,localRatio,localUpdatedAt:safeLocalGet(key+':updated'),
+    serverPage,serverUpdatedAt,totalPages:state.pdf.numPages,defaultPage
+  });
+  state.page=spot.page;
+  state.positionRatio=spot.ratio;
+  state.restorePending=spot.ratio;
+  state.resumeSource=spot.source;
+  state.restoringScroll=true;
+  if(spot.source==='compte'){
+    // L'ancien schéma serveur mémorise la page, pas l'endroit exact dans cette page.
+    safeLocalSet(key,String(spot.page));
+    safeLocalSet(key+':updated',serverUpdatedAt||new Date().toISOString());
+    safeLocalSet(key+':spot',JSON.stringify({page:spot.page,ratio:0}));
+  }
 }
 async function init(){
   loadPreferences();setTheme();bindControls();configureSpeech();
@@ -603,6 +643,9 @@ async function init(){
     $('reader-loading').hidden=true;
     $('reader-content').hidden=false;
     updateToolbar();renderPage();updateSpeechControls();
+    const origin=state.resumeSource==='compte'?'depuis votre compte'
+      :state.resumeSource==='appareil'?'depuis cet appareil':'au début du roman';
+    positionNotice('Lecture prête : page '+state.page+' reprise '+origin+'. Enregistrement automatique actif.');
     // L'indisponibilité de la synchronisation des notes ne bloque pas la lecture.
     companion.ready().catch(()=>message('La liseuse fonctionne, mais les repères personnels ne sont pas disponibles.','warning'));
     $('reader-status').hidden=true;
