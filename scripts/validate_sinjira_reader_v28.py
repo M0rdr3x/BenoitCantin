@@ -18,6 +18,7 @@ def validate():
     ui=ElementIds();ui.feed(html)
     required=[
         'reader-focus','reader-reading-stats','reader-chapter-next',
+        'reader-continuous','reader-chapter-scroll',
         'reader-bookmark-add','reader-highlight-save','reader-note-input',
         'reader-note-save','reader-selection-preview','reader-marks-list',
         'reader-marks-status','reader-search-field','reader-search-submit',
@@ -28,12 +29,14 @@ def validate():
     companion=(ROOT/'assets/js/sinjira-liseuse-companion-v28.mjs').read_text('utf-8')
     ddl=(ROOT/'supabase/migrations/20261107120000_sinjira_reader_marks_v28.sql').read_text('utf-8')
     for needle in ['createReaderCompanion(', 'get-novel-file-url', 'resolvePrivateUrl',
-                   'SIGNED_ORIGIN', 'getTextAtPage:', 'sinjira_reader_library']:
+                   'SIGNED_ORIGIN', 'getTextAtPage:', 'sinjira_reader_library',
+                   'setReadingPageFromScroll', 'invalidateRender:']:
         if needle not in main:errors.append('Mécanisme principal absent: '+needle)
     for needle in ['sinjira_reader_marks','createReaderCompanion(', 'findMatches(',
                    'getTextAtPage(', 'document.createTextNode', 'textContent',
                    'state.searchVersion','isFull','reader-bookmark-add',
-                   'reader-focus','reader-reading-stats','user_id']:
+                   'reader-focus','reader-reading-stats','user_id',
+                   'startContinuous(', 'exitContinuous(', 'onContinuousScroll(']:
         if needle not in companion:errors.append('Mécanisme complémentaire absent: '+needle)
     # Empêcher le stockage de texte intégral (citations ou notes) en localStorage.
     if 'localStorage.setItem(DEMO_MARKS_KEY' not in companion:
