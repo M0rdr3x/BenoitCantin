@@ -9,7 +9,7 @@
 <title>Liseuse SINJIRA — La Cendre du Jugement</title>
 <link rel="icon" type="image/png" href="/assets/icons/sinjira-favicon.png">
 <link rel="stylesheet" href="/assets/css/site.css?v=24.4">
-<link rel="stylesheet" href="/assets/css/sinjira-liseuse-v26.css?v=26.11.07.2">
+<link rel="stylesheet" href="/assets/css/sinjira-liseuse-v26.css?v=28.11.07.1">
 </head>
 <body class="sinjira-liseuse account-page" data-read-theme="sepia">
 <a class="skip-link" href="#reader-viewer">Aller au livre</a>
@@ -51,6 +51,32 @@
     </div>
     <p class="reader-side-note">La voix utilise les fonctions de votre navigateur ou de votre appareil. Certaines voix peuvent nécessiter un service du système. Aucun service audio propre à SINJIRA n'est utilisé.</p>
   </details>
+  <details class="reader-bookmarks">
+    <summary>Mes marque-pages et annotations</summary>
+    <p class="reader-side-note">Les repères du roman intégral sont privés et synchronisés avec votre compte. Ceux de la démo restent sur cet appareil.</p>
+    <div class="reader-mark-buttons">
+      <button type="button" id="reader-bookmark-add">☆ Marquer cette page</button>
+      <button type="button" id="reader-highlight-save">Surligner la sélection</button>
+    </div>
+    <p class="reader-selected-quote" id="reader-selection-preview" role="status">Aucun passage sélectionné.</p>
+    <label for="reader-note-input">Écrire une note privée sur cette page</label>
+    <textarea id="reader-note-input" rows="3" maxlength="1500" placeholder="Votre note personnelle (1 500 caractères maximum)"></textarea>
+    <button type="button" id="reader-note-save">Enregistrer la note</button>
+    <p id="reader-marks-status" class="reader-side-note" role="status" aria-live="polite">Chargement de mes repères…</p>
+    <div id="reader-marks-list" class="reader-marks-list" aria-label="Liste de mes repères"></div>
+  </details>
+  <details class="reader-search-panel">
+    <summary>Rechercher dans le roman</summary>
+    <p class="reader-side-note">La recherche s’effectue localement, uniquement sur les pages accessibles dans votre édition. Aucun extrait n’est envoyé à un moteur externe.</p>
+    <label for="reader-search-field">Mot ou expression</label>
+    <input id="reader-search-field" type="search" minlength="2" maxlength="100" placeholder="Rechercher un passage…">
+    <div class="reader-mark-buttons">
+      <button id="reader-search-submit" type="button">Rechercher</button>
+      <button id="reader-search-cancel" type="button" hidden>Arrêter</button>
+    </div>
+    <p id="reader-search-status" class="reader-side-note" role="status" aria-live="polite">Saisissez un mot pour lancer la recherche.</p>
+    <div id="reader-search-results" class="reader-search-results" aria-label="Résultats de recherche"></div>
+  </details>
   <p class="reader-side-note" id="reader-privacy">Chargement de la politique de lecture…</p>
   <a class="reader-demo-link" id="reader-demo-link" href="/compte/liseuse.html?edition=demo" hidden>Lire l’extrait gratuit</a>
   <a class="reader-demo-link" id="reader-download-demo" href="/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf" download>Télécharger la démo PDF</a>
@@ -73,6 +99,8 @@
       <span>sur <strong id="reader-total">—</strong></span>
       <button id="reader-next" type="button">Suivante →</button>
       <button id="reader-mode" type="button" aria-label="Basculer entre le texte adaptable et la mise en page PDF" aria-pressed="false">Affichage PDF</button>
+      <button id="reader-chapter-next" type="button">Chapitre suivant</button>
+      <button id="reader-focus" type="button" aria-pressed="false" aria-label="Activer le mode lecture plein écran">Lecture plein écran</button>
     </div>
     <div class="reader-tools">
       <label for="reader-range">Progression</label>
@@ -87,6 +115,7 @@
       <span id="reader-voice-status" aria-live="polite">Lecture vocale prête</span>
     </div>
     <div class="reader-progress" aria-hidden="true"><span id="reader-bar"></span></div>
+    <p class="reader-reading-stats" id="reader-reading-stats" role="status" aria-live="polite">Progression en cours de chargement…</p>
     <div class="reader-viewer" id="reader-viewer" tabindex="0" aria-label="Texte du roman ou page PDF">
       <canvas id="reader-canvas" role="img" aria-label="Page du roman — activer le mode texte pour une lecture accessible"></canvas>
       <article id="reader-text" class="reader-text" lang="fr-CA" aria-label="Texte adaptable du roman, sélectionnable et lisible à voix haute"></article>
@@ -96,6 +125,6 @@
 </section>
 </main>
 <script defer src="/assets/js/site.js?v=24.4.100"></script>
-<script type="module" src="/assets/js/sinjira-liseuse-v26.js?v=26.11.07.2"></script>
+<script type="module" src="/assets/js/sinjira-liseuse-v26.js?v=28.11.07.1"></script>
 </body>
 </html>
