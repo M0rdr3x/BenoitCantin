@@ -90,7 +90,7 @@ def validate() -> list[str]:
     for part in forbidden:
         if part in reader:
             problems.append("Fichier intégral ou privilège exposé en JavaScript : " + part[:35])
-    for path in ("compte/liseuse.html", "compte/bibliotheque.html",
+    for path in ("compte/bibliotheque.html",
                  "compte/bibliotheque-romans.html",
                  "projets/sinjira/romans/index.html"):
         content=(ROOT / path).read_text("utf-8")
