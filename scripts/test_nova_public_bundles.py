@@ -52,7 +52,7 @@ def main() -> None:
             "sondage-public-corpus.js", "nova-civic-integrity.js", "sondage-citoyen.js")),
     ):
         content = (NOVA / page).read_text(encoding="utf-8")
-        sources = re.findall(r'<script\\b[^>]*\\bsrc="([^"]+)"', content, flags=re.I)
+        sources = re.findall(r'<script\b[^>]*\bsrc="([^"]+)"', content, flags=re.I)
         positions = []
         for filename in files:
             refs = [src for src in sources if src.split("?", 1)[0] == "assets/" + filename]
