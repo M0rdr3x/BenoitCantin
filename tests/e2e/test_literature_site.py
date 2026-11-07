@@ -92,6 +92,95 @@ def mock_web_reader(context) -> None:
         ),
     )
 
+
+def mock_private_reader(context) -> None:
+    """Essai exclusivement simulé : utilisateur fictif, aucun jeton/roman réel."""
+    fake_supabase = """
+      const user={id:'ci-fictitious-owner',email:'test@example.invalid'};
+      export function createClient(){
+        return {
+          auth:{
+            async getUser(){return {data:{user},error:null}},
+            mfa:{async getAuthenticatorAssuranceLevel(){
+              return {data:{currentLevel:'aal1',nextLevel:'aal1'},error:null};
+            }},
+            onAuthStateChange(callback){
+              window.__testReaderSignOut=()=>callback('SIGNED_OUT',null);
+              return {data:{subscription:{unsubscribe(){}}}};
+            }
+          },
+          functions:{async invoke(){
+            return {data:{ok:true,url:'https://gpvivleexywljowcqkru.supabase.co/storage/v1/object/sign/romans/test.pdf?token=fictitious'},error:null};
+          }},
+          from(){throw Error('Ne jamais interroger les tables pendant ce test')}
+        };
+      }
+    """
+    fake_pdfjs = """
+      export const GlobalWorkerOptions={workerSrc:''};
+      export function getDocument(){
+        window.__testPdfParsingStarted=true;
+        return {promise:new Promise(resolve=>{
+          window.__testCompletePdfParsing=()=>resolve({
+            numPages:520,
+            async destroy(){window.__testPdfDestroyed=true},
+            async getPage(){throw Error('Un PDF verrouillé ne doit jamais être affiché')}
+          });
+        })};
+      }
+    """
+    def javascript(route,body):
+        route.fulfill(status=200,content_type='text/javascript',
+            headers={'access-control-allow-origin':'*'},body=body)
+    context.route('**/npm/@supabase/supabase-js@2/+esm*',
+        lambda route: javascript(route,fake_supabase))
+    context.route('**/pdfjs-dist@4.9.155/build/pdf.min.mjs*',
+        lambda route: javascript(route,fake_pdfjs))
+    context.route('https://gpvivleexywljowcqkru.supabase.co/storage/v1/object/sign/**',
+        lambda route: route.fulfill(status=200, content_type='application/pdf',
+                                  headers={'access-control-allow-origin':'*'},
+                                  body=b'%PDF-1.7\n' + b'0'*2048))
+
+
+def assert_private_signout_during_load(browser):
+    """Déconnexion durant l'analyse PDF : le roman ne doit jamais apparaître."""
+    private_context=browser.new_context(locale='fr-CA',
+        viewport={'width':1440,'height':900})
+    mock_private_reader(private_context)
+    private_page=private_context.new_page()
+    errs=[]
+    collect_page_errors(private_page,errs)
+    try:
+        response=private_page.goto(urljoin(BASE_URL,'compte/liseuse.html?edition=integrale'),
+            wait_until='domcontentloaded',timeout=30_000)
+        assert_true(response is not None and response.status<400,
+            f'{BROWSER_NAME}: route intégrale privée introuvable')
+        private_page.wait_for_function(
+            '() => window.__testPdfParsingStarted===true && typeof window.__testReaderSignOut==="function"',
+            timeout=25_000)
+        assert_true(private_page.locator('#reader-content').is_hidden(),
+            f'{BROWSER_NAME}: contenu intégral visible avant autorisation finale')
+        private_page.evaluate('window.__testReaderSignOut()')
+        private_page.evaluate('window.__testCompletePdfParsing()')
+        private_page.wait_for_function(
+            '() => document.getElementById("reader-status")?.textContent.includes("Reconnectez-vous")',
+            timeout=12_000)
+        assert_true(private_page.locator('#reader-content').is_hidden(),
+            f'{BROWSER_NAME}: fuite visuelle après déconnexion durant le chargement')
+        assert_true(private_page.locator('#reader-text').text_content()=='',
+            f'{BROWSER_NAME}: contenu privé persistant après déconnexion')
+        assert_true(private_page.locator('#reader-error').is_visible(),
+            f'{BROWSER_NAME}: refus de session non signalé')
+        assert_true(private_page.evaluate(
+            "() => !Object.keys(localStorage).some(k => k.includes('roman-integral-pdf'))"),
+            f'{BROWSER_NAME}: livre privé stocké localement')
+        assert_true(private_page.evaluate('window.__testPdfDestroyed===true'),
+            f'{BROWSER_NAME}: ressources PDF non détruites après annulation')
+        assert_true(not errs, f'{BROWSER_NAME}: erreur JavaScript privée : {errs[:3]}')
+    finally:
+        private_context.close()
+
+
 def json_ld_graph(page) -> list[dict]:
     nodes: list[dict] = []
     scripts = page.locator('script[type="application/ld+json"]')
@@ -327,6 +416,9 @@ def run() -> None:
         assert_true("reader-focus-mode" not in (page.locator("body").get_attribute("class") or ""),
                     f"{BROWSER_NAME}: impossible de quitter le mode concentré")
 
+
+        # Protéger aussi l'édition intégrale pendant une déconnexion en vol.
+        assert_private_signout_during_load(browser)
 
         mobile = browser.new_context(
             locale="fr-CA",
