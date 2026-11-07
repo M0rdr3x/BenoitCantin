@@ -26,8 +26,8 @@ const inspect=doc=>{
      v.independently_reviewed!==false||
      !Array.isArray(v.candidats)||!v.prochaine_verification))failures.push("PROOFS_CHANGED");
  const selected=a.filter(v=>v.candidats.length>0).length;
- if(selected!==8||selected!==doc.selected_candidates_count||
-    a.reduce((n,v)=>n+v.candidats.length,0)!==12)failures.push("DISCOVERY_COUNTS");
+ if(selected!==11||selected!==doc.selected_candidates_count||
+    a.reduce((n,v)=>n+v.candidats.length,0)!==15)failures.push("DISCOVERY_COUNTS");
  for(const e of a)for(const s of e.candidats){
   let u;
   try{u=new URL(s.url)}catch{failures.push("INVALID_URL:"+e.id);continue;}
@@ -43,10 +43,10 @@ test("47 % est maintenu : zéro preuve fiscalement validée",()=>{
   p.primary_source===null&&p.reviewed_independently===false));
  assert.deepEqual(inspect(discovery),[]);
 });
-test("15 entrées G0.15, 8 thèmes repérés, 12 liens publics officiels",()=>{
+test("15 entrées G0.15, 11 thèmes repérés, 15 candidatures de sources",()=>{
  assert.equal(discovery.entries.length,15);
- assert.equal(discovery.selected_candidates_count,8);
- assert.equal(discovery.entries.reduce((n,e)=>n+e.candidats.length,0),12);
+ assert.equal(discovery.selected_candidates_count,11);
+ assert.equal(discovery.entries.reduce((n,e)=>n+e.candidats.length,0),15);
 });
 test("une source candidate ne peut devenir une preuve certifiée",()=>{
  const x=structuredClone(discovery);x.entries[6].independently_reviewed=true;
@@ -77,8 +77,19 @@ test("les sources de déciles restent distinctes d'une microsimulation",()=>{
 test("les liens et les limites sont visibles sur la page d'avancement",async()=>{
  const html=await readFile(new URL("../avancement-programme-nova.html",import.meta.url),"utf8");
  assert.match(html,/id="sources-fiscales-g015"/);
- assert.match(html,/8 exigences sur 15/);
+ assert.match(html,/11 exigences sur 15/);
  assert.match(html,/aucune des 15 preuves/);
  assert.match(html,/www.revenuquebec.ca\/fr\/salle-de-presse\/statistiques\/les-resultats/);
  assert.match(html,/statistique.quebec.ca\/fr\/produit\/tableau/);
+});
+
+test("V04 V06 V13 trouvent les sociétés 2021 sans ouvrir les portes G0.15",()=>{
+ const url="https://www.quebec.ca/gouvernement/finances-publiques/revenus/donnees-fiscales/statistiques-fiscales-societes";
+ for(const id of ["V04","V06","V13"]){
+   const e=discovery.entries.find(x=>x.id===id);
+   assert.ok(e.candidats.some(x=>x.url===url&&x.statut==="SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"));
+   assert.equal(e.statut_preuve_g015,"A_DOCUMENTER");
+ }
+ assert.equal(discovery.preconditions_confirmed,0);
+ assert.equal(discovery.programme_score_unchanged,47);
 });
