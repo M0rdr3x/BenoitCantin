@@ -80,7 +80,7 @@ Aucune prétention de téléchargement complet du fichier Excel MAMH de 18 Mo, d
 
 **Contrôleur :** `assets/g016h-municipal-finance-core.mjs`, refuse les modifications non sourcées de catégories, dates, montants, périmètre, pages, taux et fausses autorisations.
 
-**Tests :** `tests/g016h-municipal-finance.test.mjs` — **31 cas déclarés et exécutés avec succès dans un environnement JavaScript V8 isolé (31/31)**, et non une exécution native certifiée de GitHub Actions.
+**Tests :** `tests/g016h-municipal-finance.test.mjs` — **32 cas déclarés et exécutés avec succès dans un environnement JavaScript V8 isolé (32/32)**, et non une exécution native certifiée de GitHub Actions.
 
 **Travail non terminé :**
 1. Consolider les **comptes détaillés 2024 et 2025**, incluant municipalités absentes, MRC, communautés métropolitaines, régies et transports, avec mise en correspondance des comptes et traitement des flux internes.
