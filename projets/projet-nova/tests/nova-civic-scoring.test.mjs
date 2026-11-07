@@ -99,9 +99,10 @@ test("les questions inexistantes sont refusées",()=>{
  assert.throws(()=>scoreCompass(questionnaire,a([["q99",3]])),/INVALID_ANSWER/);
 });
 test("les importances inexistantes ou manquantes sont refusées",()=>{
- for(const weight of ["extra",null,undefined,5]){
+ for(const weight of ["extra",null,5]){
    assert.throws(()=>scoreCompass(questionnaire,a([["q01",3,weight]])),/INVALID_ANSWER/);
  }
+ assert.throws(()=>scoreCompass(questionnaire,new Map([["q01",{value:3}]])),/INVALID_ANSWER/);
 });
 test("un questionnaire modifié pendant le calcul est refusé",()=>{
  const corrupt=structuredClone(questionnaire);
