@@ -44,6 +44,13 @@ def validate():
                   'serverSavedAt>localSavedAt', 'state.progressQueue.catch']:
         if token not in main:
             errors.append('Synchronisation multiappareil non protégée: '+token)
+    # Une déconnexion pendant la signature ou le chargement doit verrouiller
+    # avant l'affichage et annuler le chargement privé en cours.
+    for token in ['watchPrivateSession();', 'state.loadController?.abort()',
+                  'assertPrivateAccess(loadEpoch)', 'signal:state.loadController.signal',
+                  'state.accessInvalidated=true', 'auth.getUser()', 'loadedPdf.destroy?.()']:
+        if token not in main:
+            errors.append('Verrouillage du lecteur privé pendant chargement absent: '+token)
     # Empêcher le stockage de texte intégral (citations ou notes) en localStorage.
     if 'localStorage.setItem(DEMO_MARKS_KEY' not in companion:
         errors.append('Enregistrement de la démo non isolé')
