@@ -9,6 +9,14 @@ const root = path.resolve(__dirname,"..");
 const data = JSON.parse(fs.readFileSync(path.join(root,"projets/projet-nova/data/boussole-electorale-v2.json"),"utf8"));
 const script = fs.readFileSync(path.join(root,"projets/projet-nova/assets/boussole-electorale.js"),"utf8");
 assert.match(script,/scoreCompass/,"Le moteur public délègue ses scores au module partagé");
+assert.ok(script.includes("Consulter la source citée ↗"),
+  "Un lien de provenance ne doit jamais être présenté à lui seul comme adhésion officielle d'un parti");
+assert.ok(!script.includes("Consulter la source officielle ↗"),
+  "Libellé de source officielle ambigu interdit");
+const publicHtml=fs.readFileSync(path.join(root,"projets/projet-nova/boussole-electorale.html"),"utf8");
+assert.match(publicHtml,/Un lien « source citée » peut renvoyer/,
+  "Le lecteur doit être informé de la limite d'interprétation des pièces");
+
 assert.equal(data.axes.length,16);
 assert.equal(data.questions.length,64);
 assert.equal(data.methodology.axisMinimumAnswered,2);

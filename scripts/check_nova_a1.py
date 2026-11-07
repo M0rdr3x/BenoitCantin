@@ -687,7 +687,7 @@ if party_corpus.is_file():
         "Justification du codage",
         "Vérifiée le",
         "Deuxième révision",
-        "Consulter la source officielle",
+        "Consulter la source citée",
         "Non documentée",
         "Cela ne signifie ni appui, ni opposition, ni neutralité",
         "researchCoverage",

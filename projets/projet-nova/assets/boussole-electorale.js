@@ -652,7 +652,7 @@
             </dl>
             <p><strong>Éléments retenus :</strong> ${esc(record.evidenceSummary)}</p>
             <p><strong>Justification du codage :</strong> ${esc(record.rationale)}</p>
-            ${safeSourceUrl(record.sourceUrl) ? `<p><a href="${esc(safeSourceUrl(record.sourceUrl))}" target="_blank" rel="noopener noreferrer">Consulter la source officielle ↗</a></p>` : "<p>Source externe non vérifiée.</p>"}
+            ${safeSourceUrl(record.sourceUrl) ? `<p><a href="${esc(safeSourceUrl(record.sourceUrl))}" target="_blank" rel="noopener noreferrer">Consulter la source citée ↗</a></p>` : "<p>Source externe non vérifiée.</p>"}
           </article>
         `;
       }).join("");
