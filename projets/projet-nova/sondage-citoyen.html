@@ -20,7 +20,7 @@
 <script type="application/ld+json" data-seo-v24-4-46>{"@context":"https://schema.org","@type":"WebPage","name":"Sondage citoyen et résultats publics | Projet Nova","description":"Consultation citoyenne volontaire pour les personnes de 18 ans et plus. Méthode et questions publiques, résultats diffusés par lots sous conditions de confidentialité.","url":"https://www.benoitcantin.com/projets/projet-nova/sondage-citoyen.html","inLanguage":"fr-CA","isPartOf":{"@type":"WebSite","name":"Projet Nova","url":"https://www.benoitcantin.com/projets/projet-nova/"}}</script>
 <link rel="icon" href="assets/favicon.png">
 <link rel="stylesheet" href="styles.css?v=26"><link rel="stylesheet" href="assets/portal-return.css?v=5.0">
-<link rel="stylesheet" href="assets/sondage-citoyen.css?v=2">
+<link rel="stylesheet" href="assets/sondage-citoyen.css?v=3">
 <script defer src="script.js?v=26.1.0"></script><script defer src="assets/sondage-public-corpus.js?v=1"></script><script defer src="assets/nova-civic-integrity.js?v=2"></script><script defer src="assets/sondage-citoyen.js?v=12"></script>
 </head>
 <body data-page="sondage-citoyen.html">
@@ -54,7 +54,8 @@
 <p id="poll-answer-progress" class="poll-progress" role="status" aria-live="polite">Questions répondues : 0 sur 8.</p>
 <div id="poll-questions" class="poll-questions"><p>Chargement des propositions…</p></div>
 <div class="poll-consent"><label><input id="poll-adult" type="checkbox" required> Je déclare avoir 18 ans ou plus.</label>
-<label><input id="poll-agree" type="checkbox" required> Je comprends que les choix transmis seront additionnés aux résultats publics anonymes et que la consultation n'est pas un sondage représentatif de la population.</label></div>
+<label><input id="poll-agree" type="checkbox" required> <span>Je consens expressément à transmettre mes réponses politiques pour leur comptabilisation dans cette consultation volontaire et, si les seuils de confidentialité sont atteints, à la publication de statistiques agrégées. J’ai consulté la <a href="confidentialite.html" target="_blank" rel="noopener noreferrer">politique de confidentialité</a>. Je comprends que cette consultation n’est pas représentative de la population.</span></label>
+<p class="poll-consent-note">Aucun choix n’est envoyé avant votre clic sur « Envoyer mes réponses ». Après réception, les réponses sont additionnées sans conserver de bulletin individuel : il n’est donc pas possible de retirer un bulletin particulier. Vous pouvez quitter le questionnaire sans envoyer vos réponses.</p></div>
 <div id="poll-captcha" class="poll-captcha" aria-label="Vérification anti-robots"></div>
 <div class="poll-action-row"><button type="submit" id="poll-send" class="btn btn-primary" disabled>Envoyer mes réponses</button><a class="btn btn-outline" href="#resultats-publics">Consulter les résultats</a></div>
 <p id="poll-feedback" role="status" aria-live="polite"></p>
