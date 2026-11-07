@@ -1,0 +1,122 @@
+{
+  "schema": "nova-g016d-societes-assiette-historique/v1",
+  "project": "Projet Nova",
+  "phase": "G0.16d",
+  "created_on": "2026-11-07",
+  "status": "SOURCE_OFFICIELLE_AGREGEE_TRANSCRITE_NON_AUDITEE",
+  "adopted": false,
+  "programme_score": 47,
+  "g015_proof_status_unchanged": true,
+  "source": {
+    "publisher": "Ministère des Finances du Québec",
+    "title": "Statistiques fiscales des sociétés 2021",
+    "year": 2021,
+    "source_page_last_updated": "2026-10-07",
+    "url": "https://www.quebec.ca/gouvernement/finances-publiques/revenus/donnees-fiscales/statistiques-fiscales-societes",
+    "source_type": "SOMMAIRE_HTML",
+    "original_pdf_examined": false,
+    "original_xlsx_imported": false,
+    "independent_reviewer_signed": false
+  },
+  "reference_unit": "MILLIONS_CAD_COURANTS_ANNEE_IMPOSITION_2021",
+  "corporate_tax_base": {
+    "quebec_taxable_income_mcad": 95784,
+    "payroll_subject_to_fss_mcad": 155850,
+    "worldwide_taxable_income_mcad": null,
+    "worldwide_taxable_income_is_quebec_base": false,
+    "loss_carryforwards_mcad": null,
+    "dividend_deductions_mcad": null
+  },
+  "receipts": {
+    "quebec_corporate_income_tax_mcad": 10000,
+    "health_services_fund_contributions_mcad": 5327,
+    "gross_income_tax_and_fss_mcad": 15327,
+    "tax_credits_mcad": 2468,
+    "net_after_credits_mcad": 12860,
+    "rounding_tolerance_mcad": 1
+  },
+  "population": {
+    "total_company_returns": 564599,
+    "small_company_returns": 542249,
+    "medium_company_returns": 14858,
+    "large_company_returns": 7492,
+    "company_returns_without_income_tax": 322020,
+    "company_returns_without_income_tax_or_fss": 239628
+  },
+  "sizes": [
+    {
+      "id": "SMALL",
+      "returns": 542249,
+      "income_tax_mcad": 2922,
+      "fss_mcad": 1173,
+      "combined_mcad": 4095
+    },
+    {
+      "id": "MEDIUM",
+      "returns": 14858,
+      "income_tax_mcad": 1525,
+      "fss_mcad": 1035,
+      "combined_mcad": 2560
+    },
+    {
+      "id": "LARGE",
+      "returns": 7492,
+      "income_tax_mcad": 5553,
+      "fss_mcad": 3119,
+      "combined_mcad": 8672
+    }
+  ],
+  "proportions_reported": {
+    "not_subject_to_corporate_income_tax_pct": 57,
+    "no_income_tax_nor_fss_due_pct": 42.4,
+    "large_business_share_of_total_gross_pct": 56.6
+  },
+  "cross_year_guardrails": {
+    "2021_corporate_returns_vs_2023_personal_returns": "NOT_SAME_TAX_YEAR_OR_UNIT",
+    "2021_corporate_returns_vs_2026_2027_approved_revenues": "NOT_COMPARABLE_WITHOUT_RECONCILIATION",
+    "taxable_income_quebec_vs_fss_payroll": "DIFFERENT_TAX_BASES",
+    "federal_cra_t2_vs_quebec_provincial_income_tax": "NOT_SAME_REVENUE_JURISDICTION",
+    "fss_contributions_vs_provincial_corporate_income_tax": "DIFFERENT_LEGAL_INSTRUMENTS",
+    "business_size_classes_are_tax_return_classifications": true,
+    "gross_income_tax_and_fss_is_not_all_public_revenues": true
+  },
+  "other_primary_source_context": {
+    "publisher": "Agence du revenu du Canada",
+    "url": "https://www.canada.ca/fr/agence-revenu/programmes/a-propos-agence-revenu-canada-arc/statistiques-revenu-statistiques-tps-tvh/statistiques-societes-t2/tableaux-statistiques-societes-annees-imposition-2019-2024.html",
+    "date_of_records": "2026-06-30",
+    "tax_years": "2019-2024",
+    "note": "Déclarations fédérales T2 : les montants d'impôt provincial du Québec ne sont pas inclus dans l'impôt total à payer de l'ARC. Source de contexte, aucune valeur fédérale importée.",
+    "imported": false
+  },
+  "evidence_links": {
+    "candidate_proofs": [
+      "V04",
+      "V06",
+      "V13"
+    ],
+    "g015_data": "data/matrice-preuves-g0-15-fiscalite.json",
+    "previous_personal_assiette": "data/assiette-fiscale-particuliers-g0-16c-2023.json",
+    "public_budget_reference": "data/registre-assiettes-fiscales-g0-14-2026-2027.json"
+  },
+  "unknown_nova": {
+    "corporate_rate_percent": null,
+    "personal_rate_percent": null,
+    "revenue_under_reform_mcad": null,
+    "additional_haven_compliance_yield_mcad": null,
+    "fss_continuity_financed_mcad": null,
+    "net_employment_effect": null,
+    "small_business_distribution_effect": null,
+    "quebec_sovereign_budget_balance_mcad": null,
+    "quebec_canada_budget_balance_mcad": null
+  },
+  "decision": {
+    "source_transcription_present": true,
+    "scope_and_period_reconciled": true,
+    "g015_evidence_independently_verified": false,
+    "corporate_baseline_current_verified": false,
+    "tax_design_approved": false,
+    "independent_review_completed": false,
+    "full_ten_year_budget_certified": false,
+    "programme_pct_after": 47
+  }
+}
