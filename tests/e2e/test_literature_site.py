@@ -42,6 +42,56 @@ def block_embedded_pdf(context) -> None:
     )
 
 
+
+
+def mock_web_reader(context) -> None:
+    """Liseuse en situation navigateur, sans accès serveur privé ni réseau CDN."""
+    context.unroute(f"**/{DEMO_BASENAME}")
+    context.route(
+        f"**/{DEMO_BASENAME}",
+        lambda route: route.fulfill(
+            status=200, content_type="application/pdf",
+            body=b"%PDF-1.7\n" + b"0" * 2048,
+        ),
+    )
+    context.route(
+        "**/npm/@supabase/supabase-js@2/+esm*",
+        lambda route: route.fulfill(
+            status=200,
+            content_type="text/javascript",
+            headers={"access-control-allow-origin": "*"},
+            body="export function createClient(){throw Error('Supabase privé non disponible au test démo')}",
+        ),
+    )
+    fake_pdfjs = """
+      export const GlobalWorkerOptions={workerSrc:''};
+      export function getDocument(){
+        return {promise:Promise.resolve({
+          numPages:82,
+          async getPage(pageNumber){
+            return {
+              async getTextContent(){
+                return {items:[
+                  {str:'Page '+pageNumber,transform:[1,0,0,1,10,500],width:80,height:12,hasEOL:true},
+                  {str:'Le texte est lisible dans la page.',transform:[1,0,0,1,10,482],width:180,height:12,hasEOL:true}
+                ]};
+              },
+              getViewport({scale}){return {width:600*scale,height:900*scale}},
+              render(){return {promise:Promise.resolve()}}
+            };
+          }
+        })};
+      }
+    """
+    context.route(
+        "**/pdfjs-dist@4.9.155/build/pdf.min.mjs*",
+        lambda route: route.fulfill(
+            status=200, content_type="text/javascript",
+            headers={"access-control-allow-origin": "*"},
+            body=fake_pdfjs,
+        ),
+    )
+
 def json_ld_graph(page) -> list[dict]:
     nodes: list[dict] = []
     scripts = page.locator('script[type="application/ld+json"]')
@@ -187,6 +237,39 @@ def run() -> None:
         assert_true(DEMO_BASENAME in (frame.get_attribute("src") or ""), f"{BROWSER_NAME}: iframe ne pointe plus vers la démo stable")
         assert_true("82 pages" in page.locator("main").inner_text(), f"{BROWSER_NAME}: lecteur ne décrit plus la démo 82 pages")
         assert_no_full_edition_link(page, "lecteur")
+
+        # Nouvelle liseuse Web : aucune URL signée privée, aucune dépendance serveur réelle.
+        mock_web_reader(context)
+        response=page.goto(urljoin(BASE_URL,"compte/liseuse.html?edition=demo"),
+                           wait_until="domcontentloaded",timeout=30_000)
+        assert_true(response is not None and response.status < 400,
+                    f"{BROWSER_NAME}: nouvelle liseuse inaccessible")
+        page.locator("#reader-content:not([hidden])").wait_for(timeout=20_000)
+        assert_true("Le texte est lisible dans la page." in page.locator("#reader-text").inner_text(),
+                    f"{BROWSER_NAME}: texte reformatable absent de la liseuse")
+        assert_true(not page.locator("#reader-text").is_hidden(),
+                    f"{BROWSER_NAME}: le texte n'est pas le mode de lecture par défaut")
+        page.locator("#reader-size").fill("28")
+        assert_true(page.locator("#reader-size-value").inner_text()=="28 px",
+                    f"{BROWSER_NAME}: taille du texte non personnalisable")
+        page.locator("#reader-font").select_option("sans")
+        assert_true(page.locator("#reader-text").evaluate(
+                    "e => getComputedStyle(e).fontFamily.includes('system-ui')"),
+                    f"{BROWSER_NAME}: choix de police non appliqué")
+        page.locator("#reader-line-height").select_option("2.1")
+        page.locator("#reader-theme").select_option("nuit")
+        assert_true(page.locator("body").get_attribute("data-read-theme")=="nuit",
+                    f"{BROWSER_NAME}: thème de lecture non appliqué")
+        page.locator("#reader-next").click()
+        assert_true(page.locator("#reader-page").input_value()=="2",
+                    f"{BROWSER_NAME}: pagination de la liseuse défectueuse")
+        assert_true("Page 2" in page.locator("#reader-text").inner_text(),
+                    f"{BROWSER_NAME}: texte de la page suivante non affiché")
+        for control in ("reader-voice-play","reader-voice-pause","reader-voice-stop",
+                        "reader-voice","reader-speed","reader-voice-auto"):
+            assert_true(page.locator("#"+control).count()==1,
+                        f"{BROWSER_NAME}: commande vocale absente : "+control)
+        assert_no_full_edition_link(page,"nouvelle liseuse")
 
         mobile = browser.new_context(
             locale="fr-CA",
