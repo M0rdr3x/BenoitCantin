@@ -207,3 +207,33 @@
   .sinjira-liseuse .reader-text{line-height:var(--reader-line-height)}
   .sinjira-liseuse.reader-focus-mode .reader-viewer{height:calc(100dvh - 255px)}
 }
+
+
+/* V29 — lecture continue d'un chapitre entier, sans iframe ni rupture visuelle. */
+.sinjira-liseuse .reader-chapter-scroll{
+  max-width:min(var(--reader-measure),calc(100% - 4px));
+  margin:0 auto 32px;padding:clamp(22px,5vw,58px);
+  text-align:left;background:var(--reader-paper);color:var(--reader-ink);
+  font-family:var(--reader-font);font-size:var(--reader-text-size);
+  line-height:var(--reader-line-height);letter-spacing:var(--reader-letter-spacing);
+  border-radius:7px;overflow-wrap:anywhere;
+  box-shadow:0 12px 55px rgba(0,0,0,.28);
+  user-select:text;-webkit-user-select:text;
+}
+.sinjira-liseuse .reader-chapter-heading{margin:0 0 1.8em;
+  font-family:var(--reader-font);font-size:1.35em;line-height:1.35;text-align:center;
+  color:var(--reader-ink)}
+.sinjira-liseuse .reader-chapter-page{position:relative;margin:0;padding:0 0 .75em;
+  scroll-margin-top:25px}
+.sinjira-liseuse .reader-page-marker{display:block;font-family:system-ui,sans-serif;
+  font-size:.62em;letter-spacing:0;color:var(--reader-ink);opacity:.65;
+  margin:1.2em 0 .4em}
+.sinjira-liseuse .reader-chapter-page-text{white-space:pre-wrap;overflow-wrap:anywhere;
+  hyphens:auto;text-wrap:pretty}
+.sinjira-liseuse .reader-chapter-page-text mark.reader-mark-personal{background:#ffdd73;color:#28241d}
+.sinjira-liseuse .reader-chapter-page-text mark.reader-mark-search{background:#80e6d2;color:#142825}
+.sinjira-liseuse .reader-chapter-loading{font-size:.8em;opacity:.85;text-align:center}
+@media(max-width:600px){
+ .sinjira-liseuse .reader-chapter-scroll{max-width:100%;padding:20px 18px}
+ .sinjira-liseuse .reader-chapter-heading{font-size:1.2em}
+}
