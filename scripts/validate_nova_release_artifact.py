@@ -93,7 +93,7 @@ def check(published: Path) -> list[str]:
     for rel in ("assets/sondage-citoyen.js", "assets/sondage-citoyen.css", "assets/sondage-public-corpus.js", "assets/nova-civic-integrity.js"):
         if rel not in poll_page:
             errors.append(f"Ressource du sondage non référencée : {rel}")
-    for rel in ("assets/boussole-electorale.js", "assets/boussole-electorale.css", "assets/boussole-public-corpus.js"):
+    for rel in ("assets/boussole-electorale.js", "assets/boussole-electorale.css", "assets/boussole-public-corpus.js", "assets/nova-civic-integrity.js"):
         if rel not in compass_page:
             errors.append(f"Ressource de la boussole non référencée : {rel}")
 
