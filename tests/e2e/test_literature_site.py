@@ -294,6 +294,31 @@ def run() -> None:
                         f"{BROWSER_NAME}: commande vocale absente : "+control)
         assert_no_full_edition_link(page,"nouvelle liseuse")
 
+        # V28 : repères de la démo, mode concentré, recherche et confidentialité.
+        for control in ("reader-bookmark-add","reader-highlight-save","reader-note-input",
+                        "reader-note-save","reader-marks-list","reader-search-field",
+                        "reader-search-submit","reader-search-cancel","reader-search-results",
+                        "reader-reading-stats","reader-focus","reader-chapter-next"):
+            assert_true(page.locator("#"+control).count()==1,
+                        f"{BROWSER_NAME}: commande V28 absente : "+control)
+        page.locator("#reader-bookmark-add").click()
+        assert_true("Signet" in page.locator("#reader-marks-list").inner_text(),
+                    f"{BROWSER_NAME}: marque-page de démo non créé")
+        page.locator("#reader-note-input").fill("Mon repère privé de test.")
+        page.locator("#reader-note-save").click()
+        assert_true("Mon repère privé de test." in page.locator("#reader-marks-list").inner_text(),
+                    f"{BROWSER_NAME}: note personnelle non enregistrée")
+        saved_marks=page.evaluate("localStorage.getItem('sinjira:liseuse:demo:marks:v28')")
+        assert_true("Mon repère privé de test." in (saved_marks or ""),
+                    f"{BROWSER_NAME}: la démo ne conserve pas les notes sur cet appareil")
+        page.locator("#reader-focus").click()
+        assert_true("reader-focus-mode" in (page.locator("body").get_attribute("class") or ""),
+                    f"{BROWSER_NAME}: mode lecture concentré inactif")
+        page.locator("#reader-focus").click()
+        assert_true("reader-focus-mode" not in (page.locator("body").get_attribute("class") or ""),
+                    f"{BROWSER_NAME}: impossible de quitter le mode concentré")
+
+
         mobile = browser.new_context(
             locale="fr-CA",
             viewport={"width": 390, "height": 844},
