@@ -203,7 +203,7 @@ def validate_private_cache_boundary(source: str) -> list[str]:
     """
     errors: list[str] = []
     private_function = re.search(
-        r'function\\s+privatePath\\(path\\)\\s*\\{(.*?)\\n\\}', source, re.S
+        r'function\s+privatePath\(path\)\s*\{(.*?)\n\}', source, re.S
     )
     if not private_function:
         return ['sw.js: fonction de cloisonnement privé privatePath absente.']
@@ -219,7 +219,7 @@ def validate_private_cache_boundary(source: str) -> list[str]:
             errors.append(f'sw.js: administration sans exclusion réseau: {path}')
 
     branch = re.search(
-        r'if\\s*\\(\\s*privatePath\\(path\\)\\s*\\)\\s*\\{(.*?)\\n  \\}', source, re.S
+        r'if\s*\(\s*privatePath\(path\)\s*\)\s*\{(.*?)\n  \}', source, re.S
     )
     if not branch:
         errors.append('sw.js: branche network-only des chemins privés absente.')
