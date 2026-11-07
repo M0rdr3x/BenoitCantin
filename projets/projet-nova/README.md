@@ -241,6 +241,19 @@ Le programme, le corpus, le cadre financier et les statuts de référence candid
 
 **Feuille de route du programme complet :** `official/working/feuille-route-completude-47-100-nova-v1.md` distingue les **47 points documentés** et les **53 points manquants** selon les dix pondérations de G0.12. Aucun gain de points automatique, ni adoption présumée.
 
+## G0.16b — Premiers repères officiels de revenu et de dépenses (7 novembre 2026)
+
+**Avancement : 47/100 inchangé, G0.16 toujours NON FRANCHIE.** Une première transcription documentaire de deux sources historiques 2023 est enregistrée; **aucune microsimulation ni économie fiscale Nova n'est autorisée**.
+
+- **ISQ / Enquête canadienne sur le revenu 2023 :** limites supérieures D1–D9 du **revenu après impôt ajusté selon la taille du ménage**, avec D10 non chiffré dans le tableau. Il s'agit de seuils de déciles, pas de revenus moyens, de revenus imposables ou de valeurs 2026.
+- **Statistique Canada / Enquête sur les dépenses des ménages 2023 :** dépenses moyennes québécoises **65 344 $**, parts logement **27,1 %**, transport **16,9 %**, alimentation **17,3 %**. Ce ne sont pas des dépenses par décile et ces deux publications **ne sont pas appariables** à l'échelle des ménages.
+- **Registre descriptif :** `data/reperes-publics-g0-16b-2023.json`, deux sources transcrites, deux catalogues à examiner, aucune donnée personnelle ni assiette fiscale calculée.
+- **Rapport méthode / limites :** `official/working/rapport-g0-16b-reperes-publics-revenu-depenses-v1.md`.
+- **Contrôles :** `assets/g016b-public-benchmarks-core.mjs` et `tests/g016b-public-benchmarks.test.mjs` empêchent les mutations des résultats, la confusion des millésimes et les affirmations prématurées de gains.
+- **Suite :** obtenir des données de revenu imposable, de dépenses ventilées et de continuité des protections sociales, vérifier les quinze preuves V01–V15 et faire examiner la méthode par des spécialistes indépendants avant toute calibration.
+
+Les quatre références candidates de `official/reference/*` et `data/sources.json` ne sont pas modifiées par cette recherche.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
