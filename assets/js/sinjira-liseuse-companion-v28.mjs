@@ -66,12 +66,13 @@ export function createReaderCompanion({
 }){
   const $=id=>document.getElementById(id);
   const state={marks:[],selectedQuote:'',searchVersion:0,searchTerm:'',searchBusy:false,
-    focus:false,continuous:false,chapterToken:0,scrollScheduled:false};
+    focus:false,continuous:false,chapterToken:0,scrollScheduled:false,closed:false};
   const DEMO_MARKS_KEY='sinjira:liseuse:demo:marks:v28';
   const db=()=>getSupabase().from('sinjira_reader_marks');
-  const isReady=()=>Boolean(getPdf());
+  const isReady=()=>!state.closed&&Boolean(getPdf());
   const currentPage=()=>Math.min(Math.max(1,getPage()),getPdf()?.numPages||520);
   function notice(text,kind='info',id='reader-marks-status'){
+    if(state.closed)return;
     const el=$(id);
     if(!el)return;
     el.textContent=text;el.dataset.type=kind;
@@ -84,7 +85,7 @@ export function createReaderCompanion({
   }
   function localMarksWrite(){
     // Démo publique seulement. Aucune citation de l'intégrale n'est stockée localement.
-    if(isFull)return;
+    if(isFull||state.closed)return;
     try{localStorage.setItem(DEMO_MARKS_KEY,JSON.stringify(state.marks.slice(0,200)))}catch{
       notice('Stockage local indisponible. Vos repères risquent de ne pas être conservés.','warning');
     }
@@ -104,6 +105,8 @@ export function createReaderCompanion({
     const {data,error}=await db().select('id,page,kind,quote,note,created_at')
       .eq('user_id',user.id).eq('novel_id',novelId)
       .order('created_at',{ascending:false}).limit(300);
+    // Refuser une réponse asynchrone devenue périmée après déconnexion.
+    if(!isReady()||getUser()?.id!==user.id||getNovelId()!==novelId)return;
     if(error){
       notice('Synchronisation indisponible : vos notes privées ne sont pas enregistrées localement.','error');
       return;
@@ -146,6 +149,7 @@ export function createReaderCompanion({
       }
       const {data,error}=await db().insert({...mark,user_id:user.id,novel_id:novelId})
         .select('id,page,kind,quote,note,created_at').single();
+      if(!isReady()||getUser()?.id!==user.id||getNovelId()!==novelId)return;
       if(error){
         notice('Impossible d’enregistrer ce repère privé. Veuillez réessayer.','error');
         return;
@@ -168,6 +172,7 @@ export function createReaderCompanion({
       if(!user||!novelId)return;
       const {error}=await db().delete()
         .eq('id',mark.id).eq('user_id',user.id).eq('novel_id',novelId);
+      if(!isReady()||getUser()?.id!==user.id||getNovelId()!==novelId)return;
       if(error){notice('La suppression n’a pas pu être synchronisée.','error');return}
     }
     state.marks=state.marks.filter(m=>m.id!==id);
@@ -176,6 +181,7 @@ export function createReaderCompanion({
     renderMarks();decoratePage();
   }
   function renderMarks(){
+    if(!isReady())return;
     const container=$('reader-marks-list');
     container.replaceChildren();
     const marks=[...state.marks].sort((a,b)=>{
@@ -249,6 +255,7 @@ export function createReaderCompanion({
     target.replaceChildren(frag);
   }
   function decoratePage(){
+    if(!isReady())return;
     if(state.continuous){
       for(const block of $('reader-chapter-scroll').querySelectorAll('.reader-chapter-page')){
         const text=block.querySelector('.reader-chapter-page-text');
@@ -259,6 +266,7 @@ export function createReaderCompanion({
     }
   }
   function selectedPassage(){
+    if(!isReady())return;
     const article=state.continuous?$('reader-chapter-scroll'):$('reader-text');
     const selection=window.getSelection();
     if(!article||article.hidden||!selection||selection.isCollapsed)return;
@@ -322,9 +330,9 @@ export function createReaderCompanion({
     $('reader-viewer').scrollTo({top:0,behavior:'instant'});
     try{
       for(let page=begin;page<=finish;page++){
-        if(!state.continuous||token!==state.chapterToken)return;
+        if(!state.continuous||token!==state.chapterToken||!isReady())return;
         const text=await getTextAtPage(page);
-        if(!state.continuous||token!==state.chapterToken)return;
+        if(!state.continuous||token!==state.chapterToken||!isReady())return;
         const section=document.createElement('section');
         section.className='reader-chapter-page';section.dataset.page=String(page);
         section.setAttribute('aria-label','Page '+page);
@@ -341,7 +349,7 @@ export function createReaderCompanion({
           await new Promise(resolve=>setTimeout(resolve,0));
         }
       }
-      if(!state.continuous||token!==state.chapterToken)return;
+      if(!state.continuous||token!==state.chapterToken||!isReady())return;
       status.remove();
       const starting=container.querySelector('[data-page="'+startPage+'"]');
       if(starting){
@@ -351,17 +359,17 @@ export function createReaderCompanion({
         });
       }
     }catch{
-      if(token===state.chapterToken){
+      if(token===state.chapterToken&&isReady()){
         status.textContent='Impossible de préparer ce chapitre en continu. Revenez en mode page par page.';
       }
     }
   }
   function onContinuousScroll(){
-    if(!state.continuous||state.scrollScheduled)return;
+    if(!isReady()||!state.continuous||state.scrollScheduled)return;
     state.scrollScheduled=true;
     requestAnimationFrame(()=>{
       state.scrollScheduled=false;
-      if(!state.continuous)return;
+      if(!isReady()||!state.continuous)return;
       const viewer=$('reader-viewer'),viewTop=viewer.getBoundingClientRect().top;
       const sections=$('reader-chapter-scroll').querySelectorAll('.reader-chapter-page');
       let best=null;
@@ -404,10 +412,10 @@ export function createReaderCompanion({
     let found=0,shown=0;
     try{
       for(let page=1;page<=max;page++){
-        if(version!==state.searchVersion)break;
+        if(version!==state.searchVersion||!isReady())break;
         // Lecture de chaque page en mémoire, jamais de requête à un moteur externe.
         const text=await getTextAtPage(page);
-        if(version!==state.searchVersion)break;
+        if(version!==state.searchVersion||!isReady())break;
         const matches=findMatches(text,query,1000);
         found+=matches.length;
         if(matches.length&&shown<80){
@@ -420,7 +428,7 @@ export function createReaderCompanion({
           await new Promise(resolve=>setTimeout(resolve,0));
         }
       }
-      if(version===state.searchVersion){
+      if(version===state.searchVersion&&isReady()){
         notice(found+' occurrence(s) trouvée(s) dans '+max+' pages. '+(shown<found?'80 résultats/pages affichés au maximum.':''),
           'info','reader-search-status');
         if(!shown){
@@ -431,11 +439,11 @@ export function createReaderCompanion({
         decoratePage();
       }
     }catch{
-      if(version===state.searchVersion){
+      if(version===state.searchVersion&&isReady()){
         notice('Recherche interrompue : une page n’a pas pu être analysée.','error','reader-search-status');
       }
     }finally{
-      if(version===state.searchVersion){
+      if(version===state.searchVersion&&isReady()){
         state.searchBusy=false;
         $('reader-search-submit').disabled=false;
         $('reader-search-cancel').hidden=true;
@@ -489,10 +497,27 @@ export function createReaderCompanion({
   }
   bind();
   return {
-    async ready(){await loadMarks();updateStats();decoratePage()},
-    onPageChange(){exitContinuous(false);state.selectedQuote='';$('reader-selection-preview').textContent='Aucun passage sélectionné.';updateStats()},
+    async ready(){await loadMarks();if(isReady()){updateStats();decoratePage()}},
+    onPageChange(){if(!isReady())return;exitContinuous(false);state.selectedQuote='';$('reader-selection-preview').textContent='Aucun passage sélectionné.';updateStats()},
     onTextRendered(){decoratePage()},
-    onModeChange(){exitContinuous(false);if(getPdf())decoratePage()},
-    close(){exitContinuous(false);cancelSearch();if(state.focus)focusMode(false)},
+    onModeChange(){if(!isReady())return;exitContinuous(false);decoratePage()},
+    close(){
+      // Invalider TOUS les callbacks pendants avant d'effacer les extraits.
+      state.closed=true;state.searchVersion++;state.searchBusy=false;
+      state.chapterToken++;state.scrollScheduled=false;state.continuous=false;
+      const chapter=$('reader-chapter-scroll');
+      chapter.hidden=true;chapter.replaceChildren();
+      $('reader-continuous').setAttribute('aria-pressed','false');
+      $('reader-continuous').textContent='Lire le chapitre entier';
+      state.marks=[];state.selectedQuote='';state.searchTerm='';
+      $('reader-marks-list').replaceChildren();
+      $('reader-search-results').replaceChildren();
+      $('reader-selection-preview').textContent='';
+      $('reader-note-input').value='';
+      $('reader-search-field').value='';
+      $('reader-search-submit').disabled=false;
+      $('reader-search-cancel').hidden=true;
+      if(state.focus)focusMode(false);
+    },
   };
 }
