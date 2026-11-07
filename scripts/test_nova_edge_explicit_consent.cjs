@@ -44,7 +44,7 @@ const mutations=[
   {...make(),version:"ancienne"},
   {...make(),ballotToken:"a"},
   {...make(),ballotToken:"z".repeat(48)},
-  {...make(),captchaToken:"trop-court"},
+  {...make(),captchaToken:"court"},
   {...make(),captchaToken:"x".repeat(4097)},
   {...make(),answers:{}},
   {...make(),answers:null},
@@ -54,8 +54,8 @@ const mutations=[
   {...make(),answers:{...make().answers,q02:7}},
   {...make(),answers:{...make().answers,q02:NaN}}
 ];
-for(const payload of mutations)assert.equal(validate(payload),false,
-  "Aucun bulletin invalide ne doit parvenir au CAPTCHA ou au RPC");
+for(const [index,payload] of mutations.entries())assert.equal(validate(payload),false,
+  "Mutation #"+index+" : aucun bulletin invalide ne doit parvenir au CAPTCHA ou au RPC");
 
 assert.match(html,/id="poll-adult"[^>]*type="checkbox"/,"Case d'âge distincte");
 assert.match(html,/id="poll-agree"[^>]*type="checkbox"/,"Case de consentement distincte");
