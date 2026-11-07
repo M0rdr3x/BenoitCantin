@@ -1,0 +1,80 @@
+name: Projet Nova P55U - Profils officiels 2026 menages et PME
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p55u.yml"
+      - "scripts/rapprocher_profils_officiels_nova_p55u.py"
+      - "scripts/tests/test_rapprocher_profils_officiels_nova_p55u.py"
+      - "scripts/valider_temoin_revenu_disponible_2026_nova_p55t.py"
+      - "scripts/mesurer_couverture_incidences_nova_p55s.py"
+      - "projets/projet-nova/etudes/P55U_*"
+      - "projets/projet-nova/etudes/P55T_*"
+      - "projets/projet-nova/etudes/P55S_*"
+      - "projets/projet-nova/etudes/P52D_GABARIT_INCIDENCE_MENAGES_ENTREPRISES.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  profils-publics-sans-persuasion-ni-taux-fictif:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout en lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Lancer 51 tests d'etat des quatre menages et de la PME
+        run: |
+          python -m py_compile scripts/rapprocher_profils_officiels_nova_p55u.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_rapprocher_profils_officiels_nova_p55u.py")
+          assert suite.countTestCases()==51,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Produire un bilan public sans politique Nova inventee
+        run: |
+          python scripts/rapprocher_profils_officiels_nova_p55u.py \
+            --bilan-public p55u_bilan_public.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p55u_bilan_public.json").read_text("utf8"))
+          assert r["schema_version"]=="P55U-BILAN-PUBLIC-1"
+          assert r["annee_cible_des_exemples"]==2026
+          assert r["nombre_menages_illustres"]==4
+          assert set(r["gains_illustratifs_cad"].values())=={217,245,363,440}
+          assert r["pme_exemple_10_employes_reduction_cotisations_cad"]==1010
+          assert r["temoin_plus_recent_personne_seule_50000_cad"]==847
+          assert r["temoin_automne_2025_personne_seule_50000_cad"]==245
+          assert r["comparaison_directe_des_deux_temoins_autorisee"] is False
+          assert r["causes_variation_entre_temoins_attribuables_a_nova"] is False
+          assert r["taux_nova_pct"] is None
+          assert r["gains_nova_reels_cad"] is None
+          assert r["incidence_p52d_montants_inconnus"]==720
+          assert r["budgets_p52b_montants_inconnus"]==600
+          assert r["score_programme_estime_inchange_pct"]==53
+          assert r["avis_independants_signes"]==0
+          assert r["economies_certifiees_cad"] is None
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Aucun passage GO sans analyse distributive Nova
+        run: |
+          set +e
+          python scripts/rapprocher_profils_officiels_nova_p55u.py --exiger-incidence-nova
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Archiver exclusivement le bilan public sans donnees nominatives
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p55u-profils-2026-reperes-non-certifies
+          path: p55u_bilan_public.json
+          retention-days: 7
