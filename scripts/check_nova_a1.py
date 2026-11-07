@@ -379,11 +379,20 @@ if compass_page.is_file():
         'id="compass-evidence-priorities"',
         'id="compass-evidence-priority-links"',
         "Tous les partis officiels, avec les mêmes règles.",
-        "assets/boussole-electorale.js?v=3.4.19",
-        "assets/boussole-electorale.css?v=3.6.10",
+        "assets/nova-civic-integrity.js?v=2",
     ):
         if marker.lower() not in compass_html.lower():
             errors.append(f"boussole électorale: marqueur public absent: {marker}")
+
+    # Les versions de cache changent lors des corrections de sécurité.
+    # Contrôler leur format et l'unicité plutôt qu'un numéro périmé.
+    for asset in ("boussole-electorale.js", "boussole-electorale.css"):
+        matches = re.findall(
+            r'(?:src|href)="(assets/' + re.escape(asset) + r'\?v=[0-9][0-9.]*)"',
+            compass_html,
+        )
+        if len(matches) != 1:
+            errors.append("boussole électorale: asset absent, dupliqué ou non versionné : " + asset)
 
     for marker in (
         'id="compass-start-panel"',

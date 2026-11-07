@@ -117,15 +117,16 @@ def script_ref(html: str, filename: str) -> str:
     return hits[0]
 
 
-def assert_scripts_match_source(deployed_html: str, source_html: str, bundle: str, application: str):
-    """Comparer les versions des scripts LIVE aux références de la branche GitHub."""
-    expected_bundle = script_ref(source_html, bundle)
-    expected_application = script_ref(source_html, application)
-    if script_ref(deployed_html, bundle) != expected_bundle:
-        raise ValueError("Version du corpus public déployé différente du code source : " + bundle)
-    if script_ref(deployed_html, application) != expected_application:
-        raise ValueError("Version du script applicatif déployé différente du code source : " + application)
-    script_order(deployed_html, expected_bundle, expected_application)
+def assert_scripts_match_source(deployed_html: str, source_html: str,
+                                bundle: str, application: str, dependencies=()):
+    """Vérifier versions, présence et ordre des scripts nécessaires à l'interface."""
+    names = (bundle, *dependencies, application)
+    expected = [script_ref(source_html, name) for name in names]
+    actual = [script_ref(deployed_html, name) for name in names]
+    if actual != expected:
+        raise ValueError("Versions des scripts publics déployés différentes du code source : " + ", ".join(names))
+    for before, after in zip(expected, expected[1:]):
+        script_order(deployed_html, before, after)
 
 
 def compare_local_application(raw: str, source_filename: str):
@@ -176,6 +177,26 @@ def self_test():
     else:
         raise AssertionError("Activation serveur accidentelle non détectée")
     script_order('<script src="a.js"></script><script src="b.js"></script>', "a.js", "b.js")
+    civic_scripts = ('<script defer src="assets/sondage-public-corpus.js?v=1"></script>'
+                     '<script defer src="assets/nova-civic-integrity.js?v=2"></script>'
+                     '<script defer src="assets/sondage-citoyen.js?v=12"></script>')
+    deps = ("nova-civic-integrity.js",)
+    assert_scripts_match_source(civic_scripts, civic_scripts,
+                                "sondage-public-corpus.js", "sondage-citoyen.js", deps)
+    for damaged in (
+        civic_scripts.replace('<script defer src="assets/nova-civic-integrity.js?v=2"></script>', ''),
+        civic_scripts.replace("nova-civic-integrity.js?v=2", "nova-civic-integrity.js?v=0"),
+        civic_scripts.replace('<script defer src="assets/nova-civic-integrity.js?v=2"></script>', '') +
+          '<script defer src="assets/nova-civic-integrity.js?v=2"></script>',
+    ):
+        try:
+            assert_scripts_match_source(damaged, civic_scripts,
+                                        "sondage-public-corpus.js", "sondage-citoyen.js", deps)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("Dépendance d'intégrité absente, périmée ou mal ordonnée acceptée")
+
     local_scripts = '<script defer src="assets/sondage-public-corpus.js?v=1"></script><script defer src="assets/sondage-citoyen.js?v=9"></script>'
     assert_scripts_match_source(local_scripts, local_scripts, "sondage-public-corpus.js", "sondage-citoyen.js")
     try:
@@ -254,15 +275,18 @@ def main():
         if 'href="sondages-a-valider.html"' not in poll_html:
             raise ValueError("Le sondage public n'indique pas le projet 64/40")
         assert_scripts_match_source(poll_html, (NOVA / "sondage-citoyen.html").read_text("utf-8"),
-                                    "sondage-public-corpus.js", "sondage-citoyen.js")
+                                    "sondage-public-corpus.js", "sondage-citoyen.js",
+                                    dependencies=("nova-civic-integrity.js",))
         assert_scripts_match_source(compass_html, (NOVA / "boussole-electorale.html").read_text("utf-8"),
-                                    "boussole-public-corpus.js", "boussole-electorale.js")
+                                    "boussole-public-corpus.js", "boussole-electorale.js",
+                                    dependencies=("nova-civic-integrity.js",))
 
         remote_poll = verify(PREFIX + "assets/sondage-public-corpus.js")
         remote_compass = verify(PREFIX + "assets/boussole-public-corpus.js")
         compare_local_bundle(remote_poll, "__NOVA_POLL_PUBLIC_CORPUS", "sondage-public-corpus.js")
         compare_local_bundle(remote_compass, "__NOVA_COMPASS_PUBLIC_CORPORA", "boussole-public-corpus.js")
 
+        compare_local_application(verify(PREFIX + "assets/nova-civic-integrity.js"), "nova-civic-integrity.js")
         compare_local_application(verify(PREFIX + "assets/sondage-citoyen.js"), "sondage-citoyen.js")
         compare_local_application(verify(PREFIX + "assets/boussole-electorale.js"), "boussole-electorale.js")
 

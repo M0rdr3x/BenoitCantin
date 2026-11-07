@@ -8,7 +8,7 @@ const vm = require("node:vm");
 const root = path.resolve(__dirname,"..");
 const data = JSON.parse(fs.readFileSync(path.join(root,"projets/projet-nova/data/boussole-electorale-v2.json"),"utf8"));
 const script = fs.readFileSync(path.join(root,"projets/projet-nova/assets/boussole-electorale.js"),"utf8");
-assert.match(script,/axisMinimumAnswered/);
+assert.match(script,/scoreCompass/,"Le moteur public délègue ses scores au module partagé");
 assert.equal(data.axes.length,16);
 assert.equal(data.questions.length,64);
 assert.equal(data.methodology.axisMinimumAnswered,2);
@@ -18,6 +18,10 @@ const fakeDocument = {
 };
 const context = {document:fakeDocument,window:{},navigator:{},console,URL};
 context.globalThis=context;
+const integrity=fs.readFileSync(path.join(root,"projets/projet-nova/assets/nova-civic-integrity.js"),"utf8");
+vm.runInNewContext(integrity,context,{timeout:1500});
+assert.equal(typeof context.window.__NOVA_CIVIC_INTEGRITY?.scoreCompass,"function",
+  "Le calcul doit provenir du moteur partagé");
 const injection = ";globalThis.__novaRuntimeTest = {state,calculate,renderRadar,buildResultText,configureSharing,isSafeEvidenceUrl,validateDocumentaryCorpora};\n";
 const marker="})();";
 const offset=script.lastIndexOf(marker);
