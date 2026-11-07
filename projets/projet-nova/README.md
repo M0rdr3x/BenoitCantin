@@ -227,6 +227,17 @@ Le programme, le corpus, le cadre financier et les statuts de référence candid
 - **Statut :** **G0.15 NON FRANCHIE**; préparation **47/100**, inchangée. Les textes de référence candidats et le manifeste `data/sources.json` sont conservés.
 - **Étape suivante :** G0.16, microsimulation distributive et de soutenabilité **seulement après collecte et validation des assiettes**.
 
+## G0.16 — Microsimulation distributive à données non calibrées (6 novembre 2026)
+
+**Préparation : 47/100, inchangée; aucune réforme fiscalement certifiée.** La phase G0.16 crée une structure de calcul et de vérification, **pas** un résultat sur les ménages.
+
+- **Protocole :** `official/working/protocole-g0-16-microsimulation-distributive-v1.md` (question économique, hypothèses, droits, populations, risques et preuves).
+- **Plan JSON :** `data/plan-microsimulation-g0-16.json` : deux contextes juridiques distincts, dix déciles par contexte, 15 préconditions G0.15 et aucune valeur distributive imputée; tous les résultats inconnus sont `null`.
+- **Contrôleur :** `assets/g16-incidence-core.mjs` : refuse faux résultats, transferts fédéraux souverains présumés, changements de score non justifiés, faux statuts de revue et doublons de déciles.
+- **Tests Node :** `tests/g16-incidence.test.mjs`; le calcul facultatif est **synthétique et non réutilisable comme donnée politique**.
+- **Étape suivante :** sources vérifiées et autorisées (G0.16b), puis microsimulation calibrée et audit externe (G0.16c), **uniquement si les portes de données, droits et fiscalité sont satisfaites**.
+- **Statut :** G0.16 **NON FRANCHIE**, aucune adoption, aucun taux, aucun budget ou gain Nova établi. `official/reference/*` et `data/sources.json` restent inchangés.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
