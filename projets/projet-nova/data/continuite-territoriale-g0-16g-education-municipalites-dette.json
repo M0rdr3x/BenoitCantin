@@ -1,0 +1,381 @@
+{
+  "schema": "nova-g016g-education-municipalites-travail-dette/v1",
+  "project": "Projet Nova",
+  "phase": "G0.16g",
+  "date": "2026-11-07",
+  "status": "EXAMEN_DOCUMENTAIRE_NON_AUDITE",
+  "adopted": false,
+  "programme_score_before": 47,
+  "programme_score_after": 47,
+  "purpose": "Identifier les obligations scolaires, municipales, de main-d'oeuvre et de dette qui ne peuvent disparaître dans une réforme hypothétique à deux prélèvements.",
+  "origins": [
+    {
+      "id": "G014_AUG2026",
+      "publisher": "Ministère des Finances du Québec",
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Rapport_preelectoral/FR/MINFR_RP_2026.pdf",
+      "year": "2026-2027",
+      "scope": "PREVISIONS_REVISEES_AOUT_2026",
+      "source_type": "PRIMARY_GOVERNMENT",
+      "reviewed_independently_for_nova": false
+    },
+    {
+      "id": "EDU_FISCAL_RULES",
+      "publisher": "Gouvernement du Québec",
+      "url": "https://www.quebec.ca/education/prescolaire-primaire-et-secondaire/administration-encadrements/financement/regles-budgetaires",
+      "year": "2026-2027",
+      "scope": "SYSTEME_SCOLAIRE_REGLES_SUBVENTION_ET_EQUILIBRE",
+      "source_type": "PRIMARY_GOVERNMENT",
+      "reviewed_independently_for_nova": false
+    },
+    {
+      "id": "MUNICIPAL_RF",
+      "publisher": "Ministère des Affaires municipales et de l'Habitation",
+      "url": "https://www.quebec.ca/gouvernement/gestion-municipale/finances-fiscalite-municipales/information-financiere/publications-financieres/rapport-financier",
+      "year": "2024",
+      "scope": "SOURCES_MUNICIPALES_AGREGEES_PAS_COUTS_NOVA",
+      "source_type": "PRIMARY_GOVERNMENT",
+      "reviewed_independently_for_nova": false
+    },
+    {
+      "id": "MUNICIPAL_OPEN_DATA",
+      "publisher": "Données Québec / MAMH",
+      "url": "https://www.donneesquebec.ca/recherche/dataset/profil-financier-des-municipalites-locales",
+      "year": "2024-2025",
+      "scope": "DONNEES_OUVERTES_PROFIL_MUNICIPAL_CSV",
+      "source_type": "PRIMARY_GOVERNMENT",
+      "reviewed_independently_for_nova": false
+    },
+    {
+      "id": "MUNICIPAL_UMQ",
+      "publisher": "Union des municipalités du Québec",
+      "url": "https://umq.qc.ca/rapport-fiscalite-finances-municipales/",
+      "year": "2026",
+      "scope": "DIAGNOSTIC_ASSOCIATIF_A_NE_PAS_CONFONDRE_AVEC_DONNEE_OFFICIELLE",
+      "source_type": "STAKEHOLDER_ASSOCIATION",
+      "reviewed_independently_for_nova": false
+    },
+    {
+      "id": "CONST_92",
+      "publisher": "Ministère de la Justice du Canada",
+      "url": "https://laws-lois.justice.gc.ca/fra/const/section-92.html?wbdisable=true",
+      "year": "CURRENT",
+      "scope": "COMPETENCES_PROVINCIALES_TAXATION_DIRECTE_EMPRUNTS_INSTITUTIONS_MUNICIPALES",
+      "source_type": "PRIMARY_LAW",
+      "reviewed_independently_for_nova": false
+    },
+    {
+      "id": "CONST_FULL",
+      "publisher": "Ministère de la Justice du Canada",
+      "url": "https://www.laws.justice.gc.ca/eng/Const/FullText.html",
+      "year": "CURRENT",
+      "scope": "COMPETENCES_EDUCATION_ARTICLE_93_ET_DROITS",
+      "source_type": "PRIMARY_LAW",
+      "reviewed_independently_for_nova": false
+    },
+    {
+      "id": "DEBT_FUND",
+      "publisher": "Gouvernement du Québec",
+      "url": "https://www.quebec.ca/gouvernement/finances-publiques/portrait-economique/dette-quebec-fonds-generations",
+      "year": "2026",
+      "scope": "DETTE_NETTE_FONDS_GENERATIONS_ET_CIBLES",
+      "source_type": "PRIMARY_GOVERNMENT",
+      "reviewed_independently_for_nova": false
+    },
+    {
+      "id": "EDU_BUDGET_RULES",
+      "publisher": "Gouvernement du Québec",
+      "url": "https://www.quebec.ca/gouvernement/votre-gouvernement/budget-depenses/budget-2026-2027",
+      "year": "2026-2027",
+      "scope": "CREDITS_MINISTERIELS_DISTINCTS_DES_RECETTES",
+      "source_type": "PRIMARY_GOVERNMENT",
+      "reviewed_independently_for_nova": false
+    },
+    {
+      "id": "EDU_STAFF",
+      "publisher": "Gouvernement du Québec",
+      "url": "https://www.quebec.ca/gouvernement/travailler-gouvernement/metiers-education/enseignant-formation-generale-jeunes-professionnelle-adultes/decouvrir-profession",
+      "year": "2026-2028",
+      "scope": "ENTENTES_ET_CONDITIONS_ENSEIGNANTS_SANS_REDUCTION_PRESUMEE",
+      "source_type": "PRIMARY_GOVERNMENT",
+      "reviewed_independently_for_nova": false
+    },
+    {
+      "id": "RETRAITE_EMPLOYES",
+      "publisher": "Gouvernement du Québec",
+      "url": "https://www.quebec.ca/gouvernement/travailler-gouvernement/remuneration-avantages-sociaux/retraite-rachat-service/regimes-retraite",
+      "year": "CURRENT",
+      "scope": "RREGOP_RRPE_DROITS_RETRAITE_EMPLOYES_PUBLICS",
+      "source_type": "PRIMARY_GOVERNMENT",
+      "reviewed_independently_for_nova": false
+    }
+  ],
+  "source_facts": {
+    "school_property_tax": {
+      "amount_mcad": 1301,
+      "year": "2026-2027",
+      "scope": "PROVINCIAL_SCHOOL_TAX_REVENUE",
+      "source_id": "G014_AUG2026",
+      "same_as_municipal_property_tax": false,
+      "entire_education_cost": false,
+      "proposed_abolition_approved": false,
+      "replacement_proven_mcad": null
+    },
+    "municipalities": {
+      "aggregate_property_tax_revenue_mcad": null,
+      "year": null,
+      "source_ids": [
+        "MUNICIPAL_RF",
+        "MUNICIPAL_OPEN_DATA"
+      ],
+      "umq_claim_property_share_pct": 70,
+      "umq_claim_source_id": "MUNICIPAL_UMQ",
+      "umq_claim_is_independent_audited_nova_data": false,
+      "municipal_taxation_not_in_provincial_1301_mcad": true,
+      "funding_transition_estimate_mcad": null
+    },
+    "education": {
+      "ministry_and_school_budget_reconciled_mcad": null,
+      "year": "2026-2027",
+      "source_ids": [
+        "EDU_FISCAL_RULES",
+        "EDU_BUDGET_RULES"
+      ],
+      "school_fiscal_equalization_in_rules": true,
+      "special_status_school_funding_separately_reviewed": false,
+      "student_service_continuity_certified": false
+    },
+    "debt": {
+      "government_service_2026_2027_mcad": 10516,
+      "source_id": "G014_AUG2026",
+      "net_debt_share_gdp_march_2026_pct": 38.1,
+      "source_id_for_share": "DEBT_FUND",
+      "fund_generations_balance_2026_bcad": 16.6,
+      "net_debt_not_same_as_annual_service": true,
+      "debt_stock_actual_mcad": null,
+      "sovereign_debt_share_allocation_mcad": null,
+      "debt_service_financing_nova_mcad": null,
+      "net_borrowing_nova_mcad": null
+    },
+    "workers": {
+      "public_workforce_baseline_full_time_equivalents": null,
+      "collective_agreements_reviewed": false,
+      "pensions_actuarial_cost_mcad": null,
+      "protect_current_workforce_in_transition": true,
+      "no_displacement_or_wage_loss_proven": false,
+      "source_ids": [
+        "EDU_STAFF",
+        "RETRAITE_EMPLOYES"
+      ]
+    }
+  },
+  "legal_competences": [
+    {
+      "id": "PROVINCIAL_DIRECT_TAXATION",
+      "section": "92(2)",
+      "scenario": "QUEBEC_CANADA",
+      "current_rule": "PROVINCIAL_DIRECT_TAXES",
+      "independent_legal_review": false
+    },
+    {
+      "id": "PROVINCIAL_BORROWING",
+      "section": "92(3)",
+      "scenario": "QUEBEC_CANADA",
+      "current_rule": "PROVINCIAL_BORROWING",
+      "independent_legal_review": false
+    },
+    {
+      "id": "MUNICIPAL_INSTITUTIONS",
+      "section": "92(8)",
+      "scenario": "QUEBEC_CANADA",
+      "current_rule": "LOCAL_COMPETENCE_FRAMEWORK",
+      "independent_legal_review": false
+    },
+    {
+      "id": "EDUCATION",
+      "section": "93",
+      "scenario": "QUEBEC_CANADA",
+      "current_rule": "EDUCATION_CONSTITUTIONAL_RIGHTS",
+      "independent_legal_review": false
+    }
+  ],
+  "critical_continuity": [
+    {
+      "id": "E01",
+      "sector": "EDUCATION",
+      "requirement": "Continuité et financement des écoles, soutien aux élèves, inclusion et régimes spéciaux",
+      "baseline_cost_mcad": null,
+      "replacement_mcad": null,
+      "legal_signoff": false,
+      "staff_signoff": false
+    },
+    {
+      "id": "E02",
+      "sector": "EDUCATION",
+      "requirement": "Financement des bâtiments, sécurité et entretien scolaire",
+      "baseline_cost_mcad": null,
+      "replacement_mcad": null,
+      "legal_signoff": false,
+      "staff_signoff": false
+    },
+    {
+      "id": "M01",
+      "sector": "MUNICIPALITES",
+      "requirement": "Eau potable, traitement des eaux usées et sécurité des réseaux",
+      "baseline_cost_mcad": null,
+      "replacement_mcad": null,
+      "legal_signoff": false,
+      "staff_signoff": false
+    },
+    {
+      "id": "M02",
+      "sector": "MUNICIPALITES",
+      "requirement": "Voirie, déneigement, entretien et transports locaux",
+      "baseline_cost_mcad": null,
+      "replacement_mcad": null,
+      "legal_signoff": false,
+      "staff_signoff": false
+    },
+    {
+      "id": "M03",
+      "sector": "MUNICIPALITES",
+      "requirement": "Sécurité incendie, planification, services et autonomie décisionnelle",
+      "baseline_cost_mcad": null,
+      "replacement_mcad": null,
+      "legal_signoff": false,
+      "staff_signoff": false
+    },
+    {
+      "id": "W01",
+      "sector": "EMPLOIS",
+      "requirement": "Maintien des emplois et conventions collectives dans la transition",
+      "baseline_cost_mcad": null,
+      "replacement_mcad": null,
+      "legal_signoff": false,
+      "staff_signoff": false
+    },
+    {
+      "id": "W02",
+      "sector": "EMPLOIS",
+      "requirement": "Rentes des travailleurs, cotisations, avantages et droits acquis",
+      "baseline_cost_mcad": null,
+      "replacement_mcad": null,
+      "legal_signoff": false,
+      "staff_signoff": false
+    },
+    {
+      "id": "D01",
+      "sector": "DETTE",
+      "requirement": "Respect des échéances d'intérêts, du capital et clauses financières",
+      "baseline_cost_mcad": null,
+      "replacement_mcad": null,
+      "legal_signoff": false,
+      "staff_signoff": false
+    },
+    {
+      "id": "D02",
+      "sector": "DETTE",
+      "requirement": "Modèle de flux de financement annuel et soutenabilité en scénario défavorable",
+      "baseline_cost_mcad": null,
+      "replacement_mcad": null,
+      "legal_signoff": false,
+      "staff_signoff": false
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "QUEBEC_CANADA",
+      "municipal_tax_authority_certified": false,
+      "education_competence_reviewed": false,
+      "school_budget_continuity_mcad": null,
+      "municipal_budget_continuity_mcad": null,
+      "public_workforce_guarantee_cost_mcad": null,
+      "pension_rights_cost_mcad": null,
+      "debt_service_mcad": null,
+      "independent_audit": false,
+      "federal_funding_or_inherited_debt_assumed": false
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "municipal_tax_authority_certified": false,
+      "education_competence_reviewed": false,
+      "school_budget_continuity_mcad": null,
+      "municipal_budget_continuity_mcad": null,
+      "public_workforce_guarantee_cost_mcad": null,
+      "pension_rights_cost_mcad": null,
+      "debt_service_mcad": null,
+      "independent_audit": false,
+      "federal_funding_or_inherited_debt_assumed": false
+    }
+  ],
+  "cross_checks": {
+    "no_double_count_school_municipal": true,
+    "g014_school_tax_mcad": 1301,
+    "g014_debt_service_mcad": 10516,
+    "g016e_years_unfunded": 20,
+    "g016f_workers_education_municipal_debt_unfunded": true,
+    "claims_70pct_umq_as_verified_federal_statistic": false,
+    "nations_incanada_and_sovereign_distinct": true,
+    "zero_fiscal_tax_rates_recommended": true
+  },
+  "required_proofs": [
+    "V10",
+    "V14",
+    "V15"
+  ],
+  "unresolved_issues": [
+    {
+      "code": "SCHOOL_PUBLIC_FINANCING",
+      "responsible_party": null,
+      "cost_mcad": null,
+      "independent_review": false,
+      "deadline": null
+    },
+    {
+      "code": "MUNICIPAL_2024_2025_AGGREGATION",
+      "responsible_party": null,
+      "cost_mcad": null,
+      "independent_review": false,
+      "deadline": null
+    },
+    {
+      "code": "MUNICIPAL_TAX_COMPENSATION",
+      "responsible_party": null,
+      "cost_mcad": null,
+      "independent_review": false,
+      "deadline": null
+    },
+    {
+      "code": "LABOUR_PENSION_RIGHTS",
+      "responsible_party": null,
+      "cost_mcad": null,
+      "independent_review": false,
+      "deadline": null
+    },
+    {
+      "code": "TEN_YEAR_DEBT_PICTURE",
+      "responsible_party": null,
+      "cost_mcad": null,
+      "independent_review": false,
+      "deadline": null
+    },
+    {
+      "code": "CANADA_SOVEREIGN_LEGAL_REVIEW",
+      "responsible_party": null,
+      "cost_mcad": null,
+      "independent_review": false,
+      "deadline": null
+    }
+  ],
+  "decision": {
+    "g015_passed": false,
+    "g016g_passed": false,
+    "municipal_property_tax_abolition_financed": false,
+    "school_property_tax_abolition_financed": false,
+    "staffing_savings_verified": false,
+    "pension_rights_preserved_verified": false,
+    "debt_continuity_financed": false,
+    "sovereign_budget_certified": false,
+    "two_tax_programme_approved": false,
+    "programme_complete": false
+  }
+}
