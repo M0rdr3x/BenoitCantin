@@ -395,7 +395,7 @@ if compass_page.is_file():
             errors.append("boussole électorale: asset absent, dupliqué ou non versionné : " + asset)
 
     for marker in (
-        'id="compass-start-panel"'
+        'id="compass-start-panel"',
         'id="compass-stepper"',
         'id="compass-progress-track"',
         'id="compass-results-title"',
