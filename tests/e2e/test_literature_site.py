@@ -245,6 +245,10 @@ def run() -> None:
         assert_true(response is not None and response.status < 400,
                     f"{BROWSER_NAME}: nouvelle liseuse inaccessible")
         page.locator("#reader-content:not([hidden])").wait_for(timeout=20_000)
+        page.wait_for_function(
+            "() => document.getElementById('reader-text')?.textContent.includes('Le texte est lisible dans la page.')",
+            timeout=20_000,
+        )
         assert_true("Le texte est lisible dans la page." in page.locator("#reader-text").inner_text(),
                     f"{BROWSER_NAME}: texte reformatable absent de la liseuse")
         assert_true(not page.locator("#reader-text").is_hidden(),
@@ -263,6 +267,10 @@ def run() -> None:
         page.locator("#reader-next").click()
         assert_true(page.locator("#reader-page").input_value()=="2",
                     f"{BROWSER_NAME}: pagination de la liseuse défectueuse")
+        page.wait_for_function(
+            "() => document.getElementById('reader-text')?.textContent.includes('Page 2')",
+            timeout=15_000,
+        )
         assert_true("Page 2" in page.locator("#reader-text").inner_text(),
                     f"{BROWSER_NAME}: texte de la page suivante non affiché")
         for control in ("reader-voice-play","reader-voice-pause","reader-voice-stop",
