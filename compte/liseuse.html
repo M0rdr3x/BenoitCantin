@@ -9,7 +9,7 @@
 <title>Liseuse SINJIRA — La Cendre du Jugement</title>
 <link rel="icon" type="image/png" href="/assets/icons/sinjira-favicon.png">
 <link rel="stylesheet" href="/assets/css/site.css?v=24.4">
-<link rel="stylesheet" href="/assets/css/sinjira-liseuse-v26.css?v=28.11.07.1">
+<link rel="stylesheet" href="/assets/css/sinjira-liseuse-v26.css?v=31.11.07.1">
 </head>
 <body class="sinjira-liseuse account-page" data-read-theme="sepia">
 <a class="skip-link" href="#reader-viewer">Aller au livre</a>
@@ -108,6 +108,11 @@
       <span id="reader-percent">0 %</span>
       <span id="reader-chapter-label" aria-live="polite"></span>
     </div>
+    <div class="reader-tools reader-save-bar" role="group" aria-label="Sauvegarde et reprise de la lecture">
+      <button id="reader-save-position" type="button" aria-describedby="reader-position-help"><span aria-hidden="true">▣</span> Enregistrer ma position</button>
+      <p id="reader-position-status" class="reader-position-status" role="status" aria-live="polite" aria-atomic="true">La liseuse mémorise automatiquement votre progression.</p>
+    </div>
+    <p id="reader-position-help" class="reader-position-help">Reprenez automatiquement votre lecture lors de votre prochaine visite. La démo est mémorisée sur cet appareil; la page du roman intégral est aussi synchronisée avec votre compte, lorsque disponible.</p>
     <div class="reader-tools reader-audio-bar" role="group" aria-label="Commandes de lecture à voix haute">
       <button id="reader-voice-play" type="button">▶ Écouter la page</button>
       <button id="reader-voice-pause" type="button" disabled>⏸ Pause</button>
@@ -120,11 +125,11 @@
       <canvas id="reader-canvas" role="img" aria-label="Page du roman — activer le mode texte pour une lecture accessible"></canvas>
       <article id="reader-text" class="reader-text" lang="fr-CA" aria-label="Texte adaptable du roman, sélectionnable et lisible à voix haute"></article>
     </div>
-    <p class="reader-footer">Lisez le texte directement ici, sans ouvrir de document externe, et ajustez sa présentation ou écoutez-le. La page est mémorisée sur cet appareil. Pour la version intégrale, la progression est également synchronisée à votre compte lorsque le serveur le permet. Utilisez les flèches du clavier pour tourner les pages.</p>
+    <p class="reader-footer">Lisez le texte directement ici, sans ouvrir de document externe, et ajustez sa présentation ou écoutez-le. Votre page et l’endroit exact où vous étiez dans cette page sont mémorisés sur cet appareil. Pour le roman intégral, la dernière page est également synchronisée avec votre compte lorsque le serveur le permet. Cliquez sur « Enregistrer ma position » pour confirmer une sauvegarde. Utilisez les flèches du clavier pour tourner les pages.</p>
   </div>
 </section>
 </main>
 <script defer src="/assets/js/site.js?v=24.4.100"></script>
-<script type="module" src="/assets/js/sinjira-liseuse-v26.js?v=30.11.07.1"></script>
+<script type="module" src="/assets/js/sinjira-liseuse-v26.js?v=31.11.07.1"></script>
 </body>
 </html>
