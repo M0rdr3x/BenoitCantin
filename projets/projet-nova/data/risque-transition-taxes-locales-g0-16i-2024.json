@@ -1,0 +1,516 @@
+{
+  "schema": "nova-g016i-local-tax-continuity-static/v1",
+  "project": "Projet Nova",
+  "phase": "G0.16i",
+  "date": "2026-11-07",
+  "status": "STRESS_ARITHMETIQUE_2024_NON_FORECAST",
+  "adopted": false,
+  "programme_score_before": 47,
+  "programme_score_after": 47,
+  "primary_source": "data/finances-municipales-g0-16h-2024.json",
+  "provenance": {
+    "source_grain": "AGGREGATED_INCLUDED_MUNICIPALITIES",
+    "included_local_municipalities": 1056,
+    "report_year": 2024,
+    "publication_context": "MAMH consolidated annual financial report; comparison column 2023",
+    "source_categories_not_mutually_independent": true,
+    "detailed_tax_analysis_marked_unaudited": true,
+    "missing_municipalities": true,
+    "external_audit_nova": false,
+    "latest_catalogue_url": "https://www.donneesquebec.ca/recherche/dataset/profil-financier-des-municipalites-locales",
+    "catalogue_updated_on": "2026-11-05",
+    "catalogue_financial_dataset_year": 2024,
+    "catalogue_2025_values_are_property_assessment_not_2025_financial_revenues": true,
+    "other_provincial_federal_municipal_flows_not_net_reconciled": true
+  },
+  "fixed_2024_baseline": {
+    "taxes_cad": 17188134046,
+    "property_base_taxes_cad": 14970167302,
+    "property_general_tax_cad": 13214586392,
+    "total_revenues_cad": 32109026468,
+    "total_expenses_cad": 28366959822,
+    "operating_surplus_cad": 3742066646,
+    "government_transfers_cad": 5330360838,
+    "financing_charges_cad": 1332060734
+  },
+  "static_stress": [
+    {
+      "id": "NO_TAX_REMOVAL",
+      "baseline_year": 2024,
+      "removed_revenue_cad": 0,
+      "remaining_revenue_cad": 32109026468,
+      "unchanged_expenses_cad": 28366959822,
+      "arithmetic_operating_balance_cad": 3742066646,
+      "replacement_to_hold_reference_balance_cad": 0,
+      "verified_replacement_cad": null,
+      "continuity_financed": false,
+      "legally_approved": false,
+      "actual_nova_prediction": false
+    },
+    {
+      "id": "GENERAL_PROPERTY_TAX_ONLY",
+      "baseline_year": 2024,
+      "removed_revenue_cad": 13214586392,
+      "remaining_revenue_cad": 18894440076,
+      "unchanged_expenses_cad": 28366959822,
+      "arithmetic_operating_balance_cad": -9472519746,
+      "replacement_to_hold_reference_balance_cad": 13214586392,
+      "verified_replacement_cad": null,
+      "continuity_financed": false,
+      "legally_approved": false,
+      "actual_nova_prediction": false
+    },
+    {
+      "id": "ALL_PROPERTY_BASED_TAXES",
+      "baseline_year": 2024,
+      "removed_revenue_cad": 14970167302,
+      "remaining_revenue_cad": 17138859166,
+      "unchanged_expenses_cad": 28366959822,
+      "arithmetic_operating_balance_cad": -11228100656,
+      "replacement_to_hold_reference_balance_cad": 14970167302,
+      "verified_replacement_cad": null,
+      "continuity_financed": false,
+      "legally_approved": false,
+      "actual_nova_prediction": false
+    },
+    {
+      "id": "ALL_MUNICIPAL_TAXES",
+      "baseline_year": 2024,
+      "removed_revenue_cad": 17188134046,
+      "remaining_revenue_cad": 14920892422,
+      "unchanged_expenses_cad": 28366959822,
+      "arithmetic_operating_balance_cad": -13446067400,
+      "replacement_to_hold_reference_balance_cad": 17188134046,
+      "verified_replacement_cad": null,
+      "continuity_financed": false,
+      "legally_approved": false,
+      "actual_nova_prediction": false
+    }
+  ],
+  "methodology": {
+    "fixed_budget_with_same_services": false,
+    "expenditure_numbers_frozen_for_sensitivity_only": true,
+    "category_stresses_overlap_never_add_together": true,
+    "other_revenues_2024_unchanged_assumed": true,
+    "2024_balance_is_accounting_not_free_cash": true,
+    "2024_balances_not_future_government_nova_predictions": true,
+    "tax_abolition_nova_neither_adopted_nor_possible_unilaterally_all_levels": true,
+    "liquidity_and_reserves_not_modeled": true,
+    "price_inflation_interest_changes_not_modeled": true,
+    "changes_in_federal_provincial_transfers_not_modeled": true,
+    "municipal_service_staff_continuity_not_guaranteed": true,
+    "actual_replacement_yield_verified": false,
+    "anti_haven_net_revenue_modeled": false,
+    "household_distribution_by_income_missing": true,
+    "regional_and_community_impact_missing": true,
+    "cannot_derive_2026_tax_rate": true,
+    "companion_source_grain": "G0.16h has 2023 and 2024 aggregated measures; coverage may differ",
+    "tax_exemption_notes": "Municipal taxation and tariffs vary by local law; 2024 revenue is not a 2026 amount or transferable provincial funds."
+  },
+  "static_observation_note": "Le solde 2024 reflète les comptes enregistrés; les écarts calculés après suppression hypothétique ne sont ni un besoin de refinancement vérifié, ni le coût des services, ni une proposition Nova. Une part de l'excédent comptable ne constitue pas nécessairement des liquidités disponibles.",
+  "essential_services": [
+    {
+      "code": "EAU_ET_EGOUTS",
+      "protected_in_principle": true,
+      "annual_continuity_cost_cad": null,
+      "income_replacement_identified_cad": null,
+      "local_legal_review": false,
+      "worker_rights_audit": false
+    },
+    {
+      "code": "VOIRIE_ET_DENEIGEMENT",
+      "protected_in_principle": true,
+      "annual_continuity_cost_cad": null,
+      "income_replacement_identified_cad": null,
+      "local_legal_review": false,
+      "worker_rights_audit": false
+    },
+    {
+      "code": "INCENDIE_ET_SECURITE_CIVILE",
+      "protected_in_principle": true,
+      "annual_continuity_cost_cad": null,
+      "income_replacement_identified_cad": null,
+      "local_legal_review": false,
+      "worker_rights_audit": false
+    },
+    {
+      "code": "TRANSPORTS_ET_EQUIPEMENTS",
+      "protected_in_principle": true,
+      "annual_continuity_cost_cad": null,
+      "income_replacement_identified_cad": null,
+      "local_legal_review": false,
+      "worker_rights_audit": false
+    },
+    {
+      "code": "AMENAGEMENT_ET_LOGEMENT",
+      "protected_in_principle": true,
+      "annual_continuity_cost_cad": null,
+      "income_replacement_identified_cad": null,
+      "local_legal_review": false,
+      "worker_rights_audit": false
+    },
+    {
+      "code": "MAIN_OEUVRE_ET_REGIMES_RETRAITE",
+      "protected_in_principle": true,
+      "annual_continuity_cost_cad": null,
+      "income_replacement_identified_cad": null,
+      "local_legal_review": false,
+      "worker_rights_audit": false
+    },
+    {
+      "code": "DETTE_ET_FINANCEMENT",
+      "protected_in_principle": true,
+      "annual_continuity_cost_cad": null,
+      "income_replacement_identified_cad": null,
+      "local_legal_review": false,
+      "worker_rights_audit": false
+    }
+  ],
+  "geographic_coverage": {
+    "municipal_row_level_data_imported": false,
+    "missing_municipalities_quantified": false,
+    "mrc_and_special_entities_reconciled": false,
+    "regional_service_costs_comparable": false,
+    "intergovernmental_transfers_eliminated_for_consolidated_budget": false
+  },
+  "two_constitutional_budgets": [
+    {
+      "id": "QUEBEC_CANADA",
+      "legal_competence_reviewed": false,
+      "public_finance_reconciliation_audited": false,
+      "municipalities_tax_autonomy_decided": false,
+      "workers_continuity_cost_verified": false,
+      "federal_transfers_assumed_retained": false,
+      "annual": [
+        {
+          "year": "2026-2027",
+          "frozen_2024_stress_not_automatically_projected": true,
+          "municipal_revenue_current_cad": null,
+          "municipal_tax_retirement_cad": null,
+          "legal_replacement_tax_yield_cad": null,
+          "municipal_essential_service_cost_cad": null,
+          "provincial_transfer_changes_cad": null,
+          "new_national_function_cost_cad": null,
+          "pension_worker_protection_cost_cad": null,
+          "municipal_net_balance_cad": null,
+          "independent_verification": false
+        },
+        {
+          "year": "2027-2028",
+          "frozen_2024_stress_not_automatically_projected": true,
+          "municipal_revenue_current_cad": null,
+          "municipal_tax_retirement_cad": null,
+          "legal_replacement_tax_yield_cad": null,
+          "municipal_essential_service_cost_cad": null,
+          "provincial_transfer_changes_cad": null,
+          "new_national_function_cost_cad": null,
+          "pension_worker_protection_cost_cad": null,
+          "municipal_net_balance_cad": null,
+          "independent_verification": false
+        },
+        {
+          "year": "2028-2029",
+          "frozen_2024_stress_not_automatically_projected": true,
+          "municipal_revenue_current_cad": null,
+          "municipal_tax_retirement_cad": null,
+          "legal_replacement_tax_yield_cad": null,
+          "municipal_essential_service_cost_cad": null,
+          "provincial_transfer_changes_cad": null,
+          "new_national_function_cost_cad": null,
+          "pension_worker_protection_cost_cad": null,
+          "municipal_net_balance_cad": null,
+          "independent_verification": false
+        },
+        {
+          "year": "2029-2030",
+          "frozen_2024_stress_not_automatically_projected": true,
+          "municipal_revenue_current_cad": null,
+          "municipal_tax_retirement_cad": null,
+          "legal_replacement_tax_yield_cad": null,
+          "municipal_essential_service_cost_cad": null,
+          "provincial_transfer_changes_cad": null,
+          "new_national_function_cost_cad": null,
+          "pension_worker_protection_cost_cad": null,
+          "municipal_net_balance_cad": null,
+          "independent_verification": false
+        },
+        {
+          "year": "2030-2031",
+          "frozen_2024_stress_not_automatically_projected": true,
+          "municipal_revenue_current_cad": null,
+          "municipal_tax_retirement_cad": null,
+          "legal_replacement_tax_yield_cad": null,
+          "municipal_essential_service_cost_cad": null,
+          "provincial_transfer_changes_cad": null,
+          "new_national_function_cost_cad": null,
+          "pension_worker_protection_cost_cad": null,
+          "municipal_net_balance_cad": null,
+          "independent_verification": false
+        },
+        {
+          "year": "2031-2032",
+          "frozen_2024_stress_not_automatically_projected": true,
+          "municipal_revenue_current_cad": null,
+          "municipal_tax_retirement_cad": null,
+          "legal_replacement_tax_yield_cad": null,
+          "municipal_essential_service_cost_cad": null,
+          "provincial_transfer_changes_cad": null,
+          "new_national_function_cost_cad": null,
+          "pension_worker_protection_cost_cad": null,
+          "municipal_net_balance_cad": null,
+          "independent_verification": false
+        },
+        {
+          "year": "2032-2033",
+          "frozen_2024_stress_not_automatically_projected": true,
+          "municipal_revenue_current_cad": null,
+          "municipal_tax_retirement_cad": null,
+          "legal_replacement_tax_yield_cad": null,
+          "municipal_essential_service_cost_cad": null,
+          "provincial_transfer_changes_cad": null,
+          "new_national_function_cost_cad": null,
+          "pension_worker_protection_cost_cad": null,
+          "municipal_net_balance_cad": null,
+          "independent_verification": false
+        },
+        {
+          "year": "2033-2034",
+          "frozen_2024_stress_not_automatically_projected": true,
+          "municipal_revenue_current_cad": null,
+          "municipal_tax_retirement_cad": null,
+          "legal_replacement_tax_yield_cad": null,
+          "municipal_essential_service_cost_cad": null,
+          "provincial_transfer_changes_cad": null,
+          "new_national_function_cost_cad": null,
+          "pension_worker_protection_cost_cad": null,
+          "municipal_net_balance_cad": null,
+          "independent_verification": false
+        },
+        {
+          "year": "2034-2035",
+          "frozen_2024_stress_not_automatically_projected": true,
+          "municipal_revenue_current_cad": null,
+          "municipal_tax_retirement_cad": null,
+          "legal_replacement_tax_yield_cad": null,
+          "municipal_essential_service_cost_cad": null,
+          "provincial_transfer_changes_cad": null,
+          "new_national_function_cost_cad": null,
+          "pension_worker_protection_cost_cad": null,
+          "municipal_net_balance_cad": null,
+          "independent_verification": false
+        },
+        {
+          "year": "2035-2036",
+          "frozen_2024_stress_not_automatically_projected": true,
+          "municipal_revenue_current_cad": null,
+          "municipal_tax_retirement_cad": null,
+          "legal_replacement_tax_yield_cad": null,
+          "municipal_essential_service_cost_cad": null,
+          "provincial_transfer_changes_cad": null,
+          "new_national_function_cost_cad": null,
+          "pension_worker_protection_cost_cad": null,
+          "municipal_net_balance_cad": null,
+          "independent_verification": false
+        }
+      ]
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "legal_competence_reviewed": false,
+      "public_finance_reconciliation_audited": false,
+      "municipalities_tax_autonomy_decided": false,
+      "workers_continuity_cost_verified": false,
+      "federal_transfers_assumed_retained": false,
+      "annual": [
+        {
+          "year": "2026-2027",
+          "frozen_2024_stress_not_automatically_projected": true,
+          "municipal_revenue_current_cad": null,
+          "municipal_tax_retirement_cad": null,
+          "legal_replacement_tax_yield_cad": null,
+          "municipal_essential_service_cost_cad": null,
+          "provincial_transfer_changes_cad": null,
+          "new_national_function_cost_cad": null,
+          "pension_worker_protection_cost_cad": null,
+          "municipal_net_balance_cad": null,
+          "independent_verification": false
+        },
+        {
+          "year": "2027-2028",
+          "frozen_2024_stress_not_automatically_projected": true,
+          "municipal_revenue_current_cad": null,
+          "municipal_tax_retirement_cad": null,
+          "legal_replacement_tax_yield_cad": null,
+          "municipal_essential_service_cost_cad": null,
+          "provincial_transfer_changes_cad": null,
+          "new_national_function_cost_cad": null,
+          "pension_worker_protection_cost_cad": null,
+          "municipal_net_balance_cad": null,
+          "independent_verification": false
+        },
+        {
+          "year": "2028-2029",
+          "frozen_2024_stress_not_automatically_projected": true,
+          "municipal_revenue_current_cad": null,
+          "municipal_tax_retirement_cad": null,
+          "legal_replacement_tax_yield_cad": null,
+          "municipal_essential_service_cost_cad": null,
+          "provincial_transfer_changes_cad": null,
+          "new_national_function_cost_cad": null,
+          "pension_worker_protection_cost_cad": null,
+          "municipal_net_balance_cad": null,
+          "independent_verification": false
+        },
+        {
+          "year": "2029-2030",
+          "frozen_2024_stress_not_automatically_projected": true,
+          "municipal_revenue_current_cad": null,
+          "municipal_tax_retirement_cad": null,
+          "legal_replacement_tax_yield_cad": null,
+          "municipal_essential_service_cost_cad": null,
+          "provincial_transfer_changes_cad": null,
+          "new_national_function_cost_cad": null,
+          "pension_worker_protection_cost_cad": null,
+          "municipal_net_balance_cad": null,
+          "independent_verification": false
+        },
+        {
+          "year": "2030-2031",
+          "frozen_2024_stress_not_automatically_projected": true,
+          "municipal_revenue_current_cad": null,
+          "municipal_tax_retirement_cad": null,
+          "legal_replacement_tax_yield_cad": null,
+          "municipal_essential_service_cost_cad": null,
+          "provincial_transfer_changes_cad": null,
+          "new_national_function_cost_cad": null,
+          "pension_worker_protection_cost_cad": null,
+          "municipal_net_balance_cad": null,
+          "independent_verification": false
+        },
+        {
+          "year": "2031-2032",
+          "frozen_2024_stress_not_automatically_projected": true,
+          "municipal_revenue_current_cad": null,
+          "municipal_tax_retirement_cad": null,
+          "legal_replacement_tax_yield_cad": null,
+          "municipal_essential_service_cost_cad": null,
+          "provincial_transfer_changes_cad": null,
+          "new_national_function_cost_cad": null,
+          "pension_worker_protection_cost_cad": null,
+          "municipal_net_balance_cad": null,
+          "independent_verification": false
+        },
+        {
+          "year": "2032-2033",
+          "frozen_2024_stress_not_automatically_projected": true,
+          "municipal_revenue_current_cad": null,
+          "municipal_tax_retirement_cad": null,
+          "legal_replacement_tax_yield_cad": null,
+          "municipal_essential_service_cost_cad": null,
+          "provincial_transfer_changes_cad": null,
+          "new_national_function_cost_cad": null,
+          "pension_worker_protection_cost_cad": null,
+          "municipal_net_balance_cad": null,
+          "independent_verification": false
+        },
+        {
+          "year": "2033-2034",
+          "frozen_2024_stress_not_automatically_projected": true,
+          "municipal_revenue_current_cad": null,
+          "municipal_tax_retirement_cad": null,
+          "legal_replacement_tax_yield_cad": null,
+          "municipal_essential_service_cost_cad": null,
+          "provincial_transfer_changes_cad": null,
+          "new_national_function_cost_cad": null,
+          "pension_worker_protection_cost_cad": null,
+          "municipal_net_balance_cad": null,
+          "independent_verification": false
+        },
+        {
+          "year": "2034-2035",
+          "frozen_2024_stress_not_automatically_projected": true,
+          "municipal_revenue_current_cad": null,
+          "municipal_tax_retirement_cad": null,
+          "legal_replacement_tax_yield_cad": null,
+          "municipal_essential_service_cost_cad": null,
+          "provincial_transfer_changes_cad": null,
+          "new_national_function_cost_cad": null,
+          "pension_worker_protection_cost_cad": null,
+          "municipal_net_balance_cad": null,
+          "independent_verification": false
+        },
+        {
+          "year": "2035-2036",
+          "frozen_2024_stress_not_automatically_projected": true,
+          "municipal_revenue_current_cad": null,
+          "municipal_tax_retirement_cad": null,
+          "legal_replacement_tax_yield_cad": null,
+          "municipal_essential_service_cost_cad": null,
+          "provincial_transfer_changes_cad": null,
+          "new_national_function_cost_cad": null,
+          "pension_worker_protection_cost_cad": null,
+          "municipal_net_balance_cad": null,
+          "independent_verification": false
+        }
+      ]
+    }
+  ],
+  "evidence_dependencies": [
+    "V01",
+    "V02",
+    "V04",
+    "V05",
+    "V06",
+    "V07",
+    "V08",
+    "V09",
+    "V10",
+    "V11",
+    "V12",
+    "V13",
+    "V14",
+    "V15"
+  ],
+  "unresolved_actions": [
+    {
+      "id": "2025_FINANCIAL_DATA",
+      "deliverable": "Retrieve the 2025 actual municipal reports when available; 2025 assessments alone are not 2025 revenues",
+      "proof_status": "NOT_COMPLETED"
+    },
+    {
+      "id": "GEOGRAPHY",
+      "deliverable": "Reconcile missing municipalities, special territorial authorities, MRC and municipal agencies",
+      "proof_status": "NOT_COMPLETED"
+    },
+    {
+      "id": "SERVICES",
+      "deliverable": "Determine essential service financing and recurring investments, workforce rights and pension liabilities by municipality",
+      "proof_status": "NOT_COMPLETED"
+    },
+    {
+      "id": "ACCOUNTING",
+      "deliverable": "Eliminate provincial-municipal transfers and double counting in a consolidated Quebec financial model",
+      "proof_status": "NOT_COMPLETED"
+    },
+    {
+      "id": "JURISDICTION",
+      "deliverable": "Obtain legal review of provincial-only versus all-government fiscal scope, with separate sovereign obligations",
+      "proof_status": "NOT_COMPLETED"
+    },
+    {
+      "id": "AUDIT",
+      "deliverable": "Have independent auditor verify ten-year scenario balances and household effects",
+      "proof_status": "NOT_COMPLETED"
+    }
+  ],
+  "decisions": {
+    "g016i_reference_stress_documented": true,
+    "g016i_financial_proof_passed": false,
+    "municipalities_fully_financed_under_nova": false,
+    "legal_tax_change_approved": false,
+    "sovereign_scenario_certified": false,
+    "municipal_assistance_budget_authorized": false,
+    "two_taxes_achievable_certified": false,
+    "programme_complete": false
+  }
+}
