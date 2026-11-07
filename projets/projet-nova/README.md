@@ -254,6 +254,14 @@ Le programme, le corpus, le cadre financier et les statuts de référence candid
 
 Les quatre références candidates de `official/reference/*` et `data/sources.json` ne sont pas modifiées par cette recherche.
 
+## G0.15 — Repérage des sources officielles (7 novembre 2026)
+
+- **8/15 exigences** ont au moins une piste de source publique consignée, pour **12 liens officiels**. Les sept autres n'ont pas encore de piste enregistrée.
+- **0/15 preuves validées** : une référence publique ne garantit ni ventilation complète, ni base d'imposition démontrée, ni revue indépendante.
+- Registre `data/reperage-sources-officielles-g0-15-2026-11-07.json` : liens, périodes, limites et contrôle de provenance par V01–V15.
+- Test `tests/g015-sources-officielles.test.mjs` : 15 identifiants, contrôle HTTPS et domaines publics attendus, rejet des certifications et rendements fiscaux fictifs.
+- **Affichage public :** `avancement-programme-nova.html#sources-fiscales-g015` ; aucun gain du score de complétude sans dossier probant et réévaluation G0.12.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
