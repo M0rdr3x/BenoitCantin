@@ -137,7 +137,9 @@ for required_page in ("comparateur-couts-services.html", "registre-donnees-nova-
     assert '"' + required_page + '"' in (ROOT / "scripts/validate_seo_quality.py").read_text(encoding="utf-8")
     assert '"' + required_page + '"' in (ROOT / "scripts/normalize_nova_seo.py").read_text(encoding="utf-8")
 assert "const complete = points.every" in compass_js
-assert "bucket.primaryAnswered >= axisMinimumAnswered" in compass_js
+integrity_js = (NOVA / "assets" / "nova-civic-integrity.js").read_text(encoding="utf-8")
+assert "return core.scoreCompass(state.data,state.answers);" in compass_js, "Le calcul doit utiliser le moteur partagé"
+assert "bucket.primaryAnswered>=c.methodology.axisMinimumAnswered" in integrity_js, "Seuil de réponses appliqué dans le moteur partagé"
 assert compass["methodology"]["axisMinimumAnswered"] == 2
 assert "calculableAxes" in compass_js
 assert (ROOT / "scripts" / "test_nova_boussole_runtime.cjs").is_file()
