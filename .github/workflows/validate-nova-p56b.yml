@@ -1,0 +1,35 @@
+name: Projet Nova P56B - Rapprochement versions finances publiques 2026
+on:
+  pull_request:
+    paths:
+      - 'scripts/rapprocher_versions_finances_nova_p56b.py'
+      - 'scripts/tests/test_rapprocher_versions_finances_nova_p56b.py'
+      - 'projets/projet-nova/etudes/P56B_*'
+      - '.github/workflows/validate-nova-p56b.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  p56b-rapprochement:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tester les sources et garde-fous P56B
+        run: python -m unittest discover -s scripts/tests -p 'test_rapprocher_versions_finances_nova_p56b.py' -v
+      - name: Refaire les identites des comptes publics 2025-2026
+        shell: bash
+        run: |
+          python scripts/rapprocher_versions_finances_nova_p56b.py --entree projets/projet-nova/etudes/P56B_SNAPSHOTS_FINANCES_2025_2026_SOURCES_OFFICIELLES.json | python -c 'import json,sys; d=json.load(sys.stdin); a=d["rapprochement_preliminaire_vers_audite_mcad"]; assert a["variation_solde_comptable"] == "-606" and a["variation_solde_leb"] == "-606" and d["donnees_auditees_references_mcad"]["solde_comptable"] == "-5502" and d["inconnues_p52b_conservees"] == 600 and d["budget_nova_certifie"] is False and d["decision"] == "NO_GO_AUTOMATIQUE"'
+      - name: Verifier le refus explicite de certification
+        shell: bash
+        run: |
+          set +e
+          python scripts/rapprocher_versions_finances_nova_p56b.py --entree projets/projet-nova/etudes/P56B_SNAPSHOTS_FINANCES_2025_2026_SOURCES_OFFICIELLES.json --exiger-budget-certifie
+          code=$?
+          set -e
+          test "$code" -eq 3
