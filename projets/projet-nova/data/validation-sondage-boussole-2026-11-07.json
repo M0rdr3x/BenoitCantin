@@ -3,7 +3,7 @@
   "as_of": "2026-11-07",
   "project": "Projet Nova",
   "status": "NON_HOMOLOGUE",
-  "methodology": "Un outil n'est déclaré prêt à 100 % que lorsque TOUS les critères obligatoires sont prouvés, les contrôles de sécurité sont vérifiés et la mise en service est approuvée. Aucun pourcentage provisoire n'est extrapolé des seuls tests unitaires.",
+  "methodology": "100 % exige tous les contrôles obligatoires attestés, l'homologation indépendante pertinente et l'ouverture du sondage explicitement approuvée. Les unités de tests, les visites navigateur et les portes documentaires sont suivies séparément, sans pourcentage synthétique inventé.",
   "programme_audit_g012": {
     "preparation_percent": 47,
     "audit_date": "2026-11-05",
@@ -15,7 +15,13 @@
     "latest_public_scripts_deployed_verified": false,
     "independent_security_audit_completed": false,
     "production_ballots_sent_for_test": 0,
-    "party_comparison_enabled": false
+    "party_comparison_enabled": false,
+    "last_browser_all_skip_questions_verified": 25,
+    "last_browser_full_64_completed": false,
+    "score_parity_test_cases": 260,
+    "vote_post_live_tested": false,
+    "external_run_25": "https://agent.tinyfish.ai/runs/cd87d505-b0a4-4252-b23e-64309558e4e3",
+    "e2e_partial_profile_awaits_public_deployment": true
   },
   "compass": {
     "url": "https://www.benoitcantin.com/projets/projet-nova/boussole-electorale.html",
@@ -51,6 +57,20 @@
         "criteria": "Q01 -> Q02 -> Q01; la réponse Q01 est conservée dans un navigateur réel",
         "evidence": "https://agent.tinyfish.ai/runs/59ec01c2-2ef7-407f-a5bd-20e52b7b64e4",
         "scope": "browser_chromium_basic"
+      },
+      {
+        "id": "COMPASS_SCORE_PARITY",
+        "status": "PASSED",
+        "criteria": "Moteur pur à 16 dimensions: 260 cas comparés à l'ancien calcul sans divergence; 23 tests Node déclarés, profils neutres et questions passées",
+        "evidence": "assets/nova-civic-integrity.js et tests/nova-civic-scoring.test.mjs",
+        "scope": "260_dynamic_parity_assertions_plus_versioned_unit_tests"
+      },
+      {
+        "id": "COMPASS_PARTIAL_PROFILE_RELEASE",
+        "status": "PENDING",
+        "criteria": "Bouton de consultation de profil partiel fonctionnel en production, réinitialisation et absence de scores non calculables confirmés",
+        "evidence": "boussole-electorale.html et assets/boussole-electorale.js",
+        "scope": "browser_full_flow_and_deployed_release_required"
       },
       {
         "id": "COMPASS_FULL_64_RESULT",
@@ -140,6 +160,13 @@
         "criteria": "Aucune représentativité affirmée; pas d'unicité vérifiée par personne",
         "evidence": "sondage-citoyen.html",
         "scope": "github_content_review"
+      },
+      {
+        "id": "POLL_SERVER_SOURCE_REVIEW",
+        "status": "PASSED",
+        "criteria": "Code Edge Function version 5 inspecté : contrôle d'origines, garde d'ouverture, Turnstile serveur, HMAC anti-rejeu, agrégats et lots de confidentialité",
+        "evidence": "Supabase Edge Function nova-civic-poll version 5",
+        "scope": "read_only_source_review_not_live_penetration_test"
       },
       {
         "id": "POLL_PRIVATE_PREFLIGHT",
