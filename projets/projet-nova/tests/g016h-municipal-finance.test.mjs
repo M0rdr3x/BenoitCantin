@@ -129,3 +129,13 @@ test("la taxe scolaire provinciale G0.14 n'est pas remplacée par la taxe munici
  const r=inspectG016hMunicipalData(d,g016g,x);
  assert.equal(r.ok,false);assert.ok(r.errors.includes("PREDECESSOR_CONTEXT"));
 });
+
+test("la page d’avancement décrit G0.16h, ses sources et le score inchangé",async()=>{
+ const html=await readFile(new URL("../avancement-programme-nova.html",import.meta.url),"utf8");
+ assert.match(html,/id="finances-municipales-g016h"/);
+ assert.match(html,/17,188 G\$/);
+ assert.match(html,/14,970 G\$/);
+ assert.match(html,/1 056 municipalités locales/);
+ assert.match(html,/Non audité/);
+ assert.match(html,/Score global : 47 % inchangé/);
+});
