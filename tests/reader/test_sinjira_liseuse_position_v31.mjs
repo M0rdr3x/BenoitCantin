@@ -40,3 +40,11 @@ test('les anciennes pages sauvegardées et les valeurs corrompues ont un repli s
     localPage:'NaN',localRatio:999,serverPage:-1,totalPages:82,defaultPage:3
   }),{page:3,ratio:0,source:'debut'});
 });
+
+test('une sauvegarde cloud sur la même page ne doit pas effacer le défilement local',()=>{
+  assert.deepEqual(chooseReadingPosition({
+    localPage:27,localRatio:.79,localUpdatedAt:'2026-11-07T13:00:00Z',
+    serverPage:27,serverUpdatedAt:'2026-11-07T13:00:01Z',
+    totalPages:520,defaultPage:4
+  }),{page:27,ratio:.79,source:'appareil'});
+});
