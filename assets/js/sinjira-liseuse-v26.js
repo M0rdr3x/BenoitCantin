@@ -287,6 +287,7 @@ function renderPage(){
       canvas.style.height=Math.round(drawing.height)+'px';
       await page.render({canvasContext:context,viewport:drawing,
         transform:pixelRatio===1?undefined:[pixelRatio,0,0,pixelRatio,0,0]}).promise;
+      if(version!==state.renderVersion)return;
       $('reader-text').hidden=true;
       canvas.hidden=false;
     }
