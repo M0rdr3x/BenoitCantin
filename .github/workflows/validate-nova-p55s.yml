@@ -1,0 +1,77 @@
+name: Projet Nova P55S - Incidence menages et entreprises sans taux fictif
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p55s.yml"
+      - "scripts/mesurer_couverture_incidences_nova_p55s.py"
+      - "scripts/tests/test_mesurer_couverture_incidences_nova_p55s.py"
+      - "scripts/evaluer_completude_programme_nova_p55n.py"
+      - "projets/projet-nova/etudes/P55S_*"
+      - "projets/projet-nova/etudes/P52D_GABARIT_INCIDENCE_MENAGES_ENTREPRISES.json"
+      - "projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verifier-couverture-sans-certification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout readonly
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: 50 tests de couverture et de simulations strictement fictives
+        run: |
+          python -m py_compile scripts/mesurer_couverture_incidences_nova_p55s.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_mesurer_couverture_incidences_nova_p55s.py")
+          assert suite.countTestCases()==50,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Publier exclusivement le bilan des donnees inconnues
+        run: |
+          python scripts/mesurer_couverture_incidences_nova_p55s.py \
+            --bilan-public p55s_bilan_public.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path("p55s_bilan_public.json").read_text("utf8"))
+          assert report["schema_version"]=="P55S-BILAN-PUBLIC-1"
+          assert report["score_programme_estimatif_pourcent"]==53
+          assert report["progression_score_demontree"] is False
+          assert report["scenarios_regime"]==6
+          assert report["cas_menages_total"]==30
+          assert report["cas_entreprises_total"]==12
+          assert report["montants_menages_non_renseignes"]==480
+          assert report["montants_entreprises_non_renseignes"]==240
+          assert report["montants_inconnus_total"]==720
+          assert report["simulations_reelles_completes"]==0
+          assert report["simulations_synthetiques_representatives"] is False
+          assert report["gain_pouvoir_achat_certifie"] is False
+          assert report["recettes_fiscales_deux_prelevements_demontrees"] is False
+          assert report["taux_fiscal_propose_pct"] is None
+          assert report["avis_independants_signes"]==0
+          assert report["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Interdire toute validation automatique de l'incidence
+        run: |
+          set +e
+          python scripts/mesurer_couverture_incidences_nova_p55s.py --exiger-incidence-validee
+          result=$?
+          set -e
+          test "$result" -eq 3
+      - name: Archiver bilan public neutre uniquement
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p55s-incidence-couverture-non-certifiee
+          path: p55s_bilan_public.json
+          retention-days: 7
