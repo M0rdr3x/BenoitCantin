@@ -259,7 +259,7 @@ def run() -> None:
               page:document.getElementById('reader-page')?.value
             })""")
             raise AssertionError(f"{BROWSER_NAME}: texte non affiché; debug={debug}; erreurs={errors[-5:]}") from exc
-        initial_text=page.locator("#reader-text").inner_text()
+        initial_text=page.locator("#reader-text").text_content() or ""
         assert_true(len(initial_text.strip())>20,
                     f"{BROWSER_NAME}: texte reformatable absent de la liseuse")
         assert_true(not page.locator("#reader-text").is_hidden(),
@@ -286,7 +286,7 @@ def run() -> None:
             "(previous) => {const t=document.getElementById('reader-text')?.textContent || ''; return t.trim().length>20 && t!==previous}",
             arg=initial_text, timeout=15_000,
         )
-        assert_true(page.locator("#reader-text").inner_text()!=initial_text,
+        assert_true((page.locator("#reader-text").text_content() or "")!=initial_text,
                     f"{BROWSER_NAME}: texte de la page suivante non affiché")
         for control in ("reader-voice-play","reader-voice-pause","reader-voice-stop",
                         "reader-voice","reader-speed","reader-voice-auto"):
