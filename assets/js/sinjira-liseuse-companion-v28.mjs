@@ -5,19 +5,43 @@
 export function normalizeSearch(value){
   return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('fr-CA').trim();
 }
-export function findMatches(text,query,limit=40){
+/** Returns ranges in the ORIGINAL string even with decomposed accents.
+    NFD may remove combining marks, therefore indices of normalized text cannot
+    be used directly to slice the PDF text. No full-book index is persisted. */
+export function findMatchRanges(text,query,limit=40){
+  const source=String(text||'');
   const needle=normalizeSearch(query);
   if(needle.length<2||needle.length>100)return [];
-  const haystack=normalizeSearch(text);
+  const starts=[],ends=[];
+  let folded='';
+  for(let i=0;i<source.length;){
+    const codepoint=source.codePointAt(i);
+    const fragment=String.fromCodePoint(codepoint);
+    const end=i+fragment.length;
+    const normalized=fragment.normalize('NFD')
+      .replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('fr-CA');
+    if(!normalized&&/[\u0300-\u036f]/u.test(fragment)&&ends.length){
+      // A combining accent belongs to the preceding visible character.
+      ends[ends.length-1]=end;
+    }
+    for(let j=0;j<normalized.length;j++){
+      folded+=normalized[j];starts.push(i);ends.push(end);
+    }
+    i=end;
+  }
   const result=[];
   let offset=0;
-  while(result.length<limit){
-    const at=haystack.indexOf(needle,offset);
+  const maximum=Math.max(0,Math.min(1000,Number(limit)||0));
+  while(result.length<maximum){
+    const at=folded.indexOf(needle,offset);
     if(at<0)break;
-    result.push(at);
-    offset=at+Math.max(needle.length,1);
+    result.push({start:starts[at],end:ends[at+needle.length-1]});
+    offset=at+needle.length;
   }
   return result;
+}
+export function findMatches(text,query,limit=40){
+  return findMatchRanges(text,query,limit).map(range=>range.start);
 }
 export function makeExcerpt(text,index,termLength=0,width=135){
   const start=Math.max(0,index-Math.floor(width/2));
@@ -65,8 +89,7 @@ export function createReaderCompanion({
   invalidateRender, renderSinglePage, onEnterContinuous,
 }){
   const $=id=>document.getElementById(id);
-  const state={marks:[],selectedQuote:'',searchVersion:0,searchTerm:'',searchBusy:false,
-    focus:false,continuous:false,chapterToken:0,scrollScheduled:false,closed:false};
+  const state={marks:[],selectedQuote:'',searchVersion:0,searchTerm:'',searchBusy:false,focus:false,closed:false,continuous:false,chapterToken:0,scrollScheduled:false};
   const DEMO_MARKS_KEY='sinjira:liseuse:demo:marks:v28';
   const db=()=>getSupabase().from('sinjira_reader_marks');
   const isReady=()=>!state.closed&&Boolean(getPdf());
@@ -105,7 +128,6 @@ export function createReaderCompanion({
     const {data,error}=await db().select('id,page,kind,quote,note,created_at')
       .eq('user_id',user.id).eq('novel_id',novelId)
       .order('created_at',{ascending:false}).limit(300);
-    // Refuser une réponse asynchrone devenue périmée après déconnexion.
     if(!isReady()||getUser()?.id!==user.id||getNovelId()!==novelId)return;
     if(error){
       notice('Synchronisation indisponible : vos notes privées ne sont pas enregistrées localement.','error');
@@ -181,7 +203,6 @@ export function createReaderCompanion({
     renderMarks();decoratePage();
   }
   function renderMarks(){
-    if(!isReady())return;
     const container=$('reader-marks-list');
     container.replaceChildren();
     const marks=[...state.marks].sort((a,b)=>{
@@ -235,8 +256,8 @@ export function createReaderCompanion({
       if(range)intervals.push({...range,kind:'personal'});
     }
     if(state.searchTerm){
-      const starts=findMatches(text,state.searchTerm,15);
-      for(const at of starts)intervals.push({start:at,end:at+state.searchTerm.length,kind:'search'});
+      const ranges=findMatchRanges(text,state.searchTerm,15);
+      for(const range of ranges)intervals.push({...range,kind:'search'});
     }
     if(!intervals.length){target.textContent=text;return;}
     intervals.sort((a,b)=>a.start-b.start||(b.end-a.end));
@@ -412,14 +433,14 @@ export function createReaderCompanion({
     let found=0,shown=0;
     try{
       for(let page=1;page<=max;page++){
-        if(version!==state.searchVersion||!isReady())break;
+        if(version!==state.searchVersion)break;
         // Lecture de chaque page en mémoire, jamais de requête à un moteur externe.
         const text=await getTextAtPage(page);
         if(version!==state.searchVersion||!isReady())break;
-        const matches=findMatches(text,query,1000);
+        const matches=findMatchRanges(text,query,1000);
         found+=matches.length;
         if(matches.length&&shown<80){
-          addResult(page,makeExcerpt(text,matches[0],query.length,130));
+          addResult(page,makeExcerpt(text,matches[0].start,matches[0].end-matches[0].start,130));
           shown++;
         }
         if(page%8===0||page===max){
@@ -443,7 +464,7 @@ export function createReaderCompanion({
         notice('Recherche interrompue : une page n’a pas pu être analysée.','error','reader-search-status');
       }
     }finally{
-      if(version===state.searchVersion&&isReady()){
+      if(version===state.searchVersion){
         state.searchBusy=false;
         $('reader-search-submit').disabled=false;
         $('reader-search-cancel').hidden=true;
@@ -499,25 +520,26 @@ export function createReaderCompanion({
   return {
     async ready(){await loadMarks();if(isReady()){updateStats();decoratePage()}},
     onPageChange(){if(!isReady())return;exitContinuous(false);state.selectedQuote='';$('reader-selection-preview').textContent='Aucun passage sélectionné.';updateStats()},
-    onTextRendered(){decoratePage()},
+    onTextRendered(){if(isReady())decoratePage()},
     onModeChange(){if(!isReady())return;exitContinuous(false);decoratePage()},
+    isContinuous(){return isReady()&&state.continuous},
     close(){
-      // Invalider TOUS les callbacks pendants avant d'effacer les extraits.
+      // Invalidate all pending searches and data reads before releasing references.
       state.closed=true;state.searchVersion++;state.searchBusy=false;
       state.chapterToken++;state.scrollScheduled=false;state.continuous=false;
       const chapter=$('reader-chapter-scroll');
       chapter.hidden=true;chapter.replaceChildren();
       $('reader-continuous').setAttribute('aria-pressed','false');
-      $('reader-continuous').textContent='Lire le chapitre entier';
       state.marks=[];state.selectedQuote='';state.searchTerm='';
+      if(state.focus){
+        state.focus=false;
+        document.body.classList.remove('reader-focus-mode');
+      }
       $('reader-marks-list').replaceChildren();
       $('reader-search-results').replaceChildren();
       $('reader-selection-preview').textContent='';
       $('reader-note-input').value='';
       $('reader-search-field').value='';
-      $('reader-search-submit').disabled=false;
-      $('reader-search-cancel').hidden=true;
-      if(state.focus)focusMode(false);
     },
   };
 }
