@@ -1,0 +1,65 @@
+{
+  "schema_version": "P55V-JEU-1",
+  "type_jeu": "CANDIDAT_DOCUMENTE_NON_AUDITE",
+  "date_reference": "2026-11-07",
+  "statut": "NON_REPRESENTATIF_NON_ADOPTE",
+  "unite": "CAD_PAR_AN",
+  "avis_independant_obtenu": false,
+  "consequence_politique_reelle_autorisee": false,
+  "version_programme_adoptee": false,
+  "protection_des_donnees_nominatives": true,
+  "sortie_requise": "NO_GO_AUTOMATIQUE",
+  "cas": [
+    {
+      "id": "cas-p01",
+      "type": "menage",
+      "categorie": "personne_seule_revenu_moyen",
+      "regime": "QUEBEC_DANS_CANADA",
+      "scenario": "central",
+      "annee": 2026,
+      "actuel": {
+        "revenu_brut": "50000.00",
+        "prestations_federales": null,
+        "prestations_quebec_ou_etat": null,
+        "impot_revenu_federal": null,
+        "impot_revenu_quebec_ou_etat": null,
+        "cotisations_obligatoires": null,
+        "prelevements_municipaux_directs": null,
+        "taxes_consommation_supportees": null
+      },
+      "propose": {
+        "revenu_brut": null,
+        "prestations_federales": null,
+        "prestations_quebec_ou_etat": null,
+        "impot_revenu_federal": null,
+        "impot_revenu_quebec_ou_etat": null,
+        "cotisations_obligatoires": null,
+        "prelevements_municipaux_directs": null,
+        "taxes_consommation_supportees": null
+      },
+      "sources": {
+        "actuel": {
+          "revenu_brut": "https://www.quebec.ca/finances-impots-et-taxes/credits-impots-deductions/estimer-revenu-disponible",
+          "prestations_federales": null,
+          "prestations_quebec_ou_etat": null,
+          "impot_revenu_federal": null,
+          "impot_revenu_quebec_ou_etat": null,
+          "cotisations_obligatoires": null,
+          "prelevements_municipaux_directs": null,
+          "taxes_consommation_supportees": null
+        },
+        "propose": {
+          "revenu_brut": null,
+          "prestations_federales": null,
+          "prestations_quebec_ou_etat": null,
+          "impot_revenu_federal": null,
+          "impot_revenu_quebec_ou_etat": null,
+          "cotisations_obligatoires": null,
+          "prelevements_municipaux_directs": null,
+          "taxes_consommation_supportees": null
+        }
+      },
+      "avertissement": "SOURCES_DECLAREES_NON_CONTROLEES_EXTERNEMENT"
+    }
+  ]
+}
