@@ -1,0 +1,174 @@
+{
+  "schema_version": "P56G-1",
+  "date_etude": "2026-11-07",
+  "statut": "DOSSIER_PILOTE_SOURCES_PUBLIQUES_NON_APPARIEES",
+  "municipalite": {
+    "nom": "Alma",
+    "code_mamh": "93042",
+    "territoire": "QUEBEC_DANS_CANADA",
+    "perimetre_bilan": "VILLE_ALMA_CONSOLIDE",
+    "exercice": "2024-01-01/2024-12-31",
+    "type": "ETATS_FINANCIERS_MUNICIPAUX_CONSOLIDES_AUDITES",
+    "avis_professionnel_sur_nova": false
+  },
+  "sources": {
+    "MUN_RAPPORT_2024": {
+      "organisme": "Ville d'Alma / MAMH",
+      "url": "https://www.mamh.gouv.qc.ca/documentsfinanciersweb/Rapport-financier-2024-et-autres-93042.pdf",
+      "type": "RAPPORT_FINANCIER_CONSOLIDE_2024",
+      "date_attestation": "2025-05-12",
+      "reference_interne": "S7 / État consolidé des résultats",
+      "montants_unite": "CAD"
+    },
+    "MAMH_ENGAGEMENTS_JUILLET_2024": {
+      "organisme": "MAMH",
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/documents_administratifs/acces_information/engagements_financiers/2024/LIS_engagements_juillet_2024.pdf",
+      "type": "LISTE_ENGAGEMENTS_FINANCIERS_2024_2025",
+      "mois_publication": "2024-07",
+      "programme": "40350",
+      "montants_unite": "CAD"
+    },
+    "MAMH_ENGAGEMENTS_AVRIL_2024": {
+      "organisme": "MAMH",
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/documents_administratifs/acces_information/engagements_financiers/2024/LIS_engagements_avril_2024.pdf",
+      "type": "LISTE_ENGAGEMENTS_FINANCIERS_2024_2025",
+      "mois_publication": "2024-04",
+      "programme": "40561",
+      "montants_unite": "CAD"
+    },
+    "MUNICIPALITE_COMMUNIQUE_2024": {
+      "organisme": "Ville d'Alma",
+      "url": "https://www.ville.alma.qc.ca/rapport-financier-2024/",
+      "type": "SYNTHESE_PUBLIQUE_NON_SUBSTITUT_A_ETATS_FINANCIERS"
+    }
+  },
+  "donnees_municipales": [
+    {
+      "id": "MUN_2024_COMPENSATIONS",
+      "poste": "Compensations tenant lieu de taxes",
+      "montant_cad": "5514445",
+      "nature": "RECETTE_CONSOLIDEE_REALISATION_2024",
+      "source_id": "MUN_RAPPORT_2024",
+      "rubrique": "État consolidé des résultats / S7, ligne 2",
+      "perimetre": "VILLE_ALMA_CONSOLIDE",
+      "exercice_fin": "2024-12-31"
+    },
+    {
+      "id": "MUN_2024_TRANSFERTS",
+      "poste": "Transferts",
+      "montant_cad": "5578416",
+      "nature": "RECETTE_CONSOLIDEE_REALISATION_2024",
+      "source_id": "MUN_RAPPORT_2024",
+      "rubrique": "État consolidé des résultats / S7, ligne 4",
+      "perimetre": "VILLE_ALMA_CONSOLIDE",
+      "exercice_fin": "2024-12-31"
+    }
+  ],
+  "donnees_provinciales": [
+    {
+      "id": "PROV_2024_40350",
+      "poste": "Compensations tenant lieu de taxes - réseau santé, services sociaux et éducation",
+      "montant_cad": "3320039",
+      "nature": "ENGAGEMENT_OU_VERSEMENT_PUBLIE_SANS_PREUVE_DATE_PAIEMENT",
+      "source_id": "MAMH_ENGAGEMENTS_JUILLET_2024",
+      "programme": "40350",
+      "ligne_reference": "1193",
+      "entite_beneficiaire": "Alma",
+      "exercice_fin": "2025-03-31"
+    },
+    {
+      "id": "PROV_2024_40561",
+      "poste": "Partage de la croissance d'un point de TVQ",
+      "montant_cad": "1665580",
+      "nature": "ENGAGEMENT_OU_VERSEMENT_PUBLIE_SANS_PREUVE_DATE_PAIEMENT",
+      "source_id": "MAMH_ENGAGEMENTS_AVRIL_2024",
+      "programme": "40561",
+      "ligne_reference": "746",
+      "entite_beneficiaire": "Alma",
+      "exercice_fin": "2025-03-31"
+    }
+  ],
+  "comptes_municipaux_controle_global": {
+    "revenus_consolides_cad": "93994134",
+    "charges_consolidees_cad": "89364728",
+    "excedent_comptable_cad": "4629406",
+    "excedent_budgetaire_de_fonctionnement_non_equivalent": true,
+    "source_id": "MUN_RAPPORT_2024"
+  },
+  "hypotheses_appariement": [
+    {
+      "id": "H01",
+      "source_province": "PROV_2024_40350",
+      "source_municipalite": "MUN_2024_COMPENSATIONS",
+      "classe_relation": "CANDIDAT_SOUS_CATEGORIE_DU_POSTE_MUNICIPAL",
+      "preuve_date_paiement": null,
+      "preuve_piece_comptable_municipale": null,
+      "preuve_contrepartie_identique": null,
+      "preuve_montant_egal": null,
+      "preuve_meme_periode": null,
+      "appariement_confirme": false,
+      "montant_rapproche_cad": null,
+      "montant_non_explique_cad": null,
+      "raison_non_appariement": "Programme provincial santé-éducation subset de compensation; exercice 2024-2025 versus année civile 2024; aucun paiement et aucune ventilation ligne-à-ligne prouvés"
+    },
+    {
+      "id": "H02",
+      "source_province": "PROV_2024_40561",
+      "source_municipalite": "MUN_2024_TRANSFERTS",
+      "classe_relation": "CANDIDAT_SOUS_CATEGORIE_TRANSFERTS_MUNICIPAUX",
+      "preuve_date_paiement": null,
+      "preuve_piece_comptable_municipale": null,
+      "preuve_contrepartie_identique": null,
+      "preuve_montant_egal": null,
+      "preuve_meme_periode": null,
+      "appariement_confirme": false,
+      "montant_rapproche_cad": null,
+      "montant_non_explique_cad": null,
+      "raison_non_appariement": "TVQ partagée par programme distinct, incluse potentiellement dans le poste plus large Transferts; exercice et constatation distincts non démontrés"
+    }
+  ],
+  "contexte_comparaison": {
+    "exercices_compatibles_pour_transfert_direct": false,
+    "sommes_agregees_et_lignes_de_programme_non_equivalentes": true,
+    "libelle_versement_sur_liste_ne_prouve_pas_encaissement_municipal": true,
+    "comparaison_arithmetique_residuelle_autorisee": false,
+    "absence_double_compte_certifiee": false
+  },
+  "etape_suivante_pieces": [
+    {
+      "id": "G01",
+      "preuve": "Table de ventilation détaillée des compensations par origine dans le RF 2024 et annexe auditeur",
+      "statut": "NON_OBTENUE"
+    },
+    {
+      "id": "G02",
+      "preuve": "Bordereau de paiement ou relevé MAMH daté et imputable à 2024 civil, programme 40350",
+      "statut": "NON_OBTENUE"
+    },
+    {
+      "id": "G03",
+      "preuve": "Table de ventilation par programme de la recette Transferts 2024, incluant TVQ 40561",
+      "statut": "NON_OBTENUE"
+    },
+    {
+      "id": "G04",
+      "preuve": "Journal ou extrait vérifiable de contrepartie municipale et provinciale de même montant et même droit",
+      "statut": "NON_OBTENUE"
+    },
+    {
+      "id": "G05",
+      "preuve": "Avis d'un comptable municipal indépendant sur le périmètre, les ajustements et le compte de passage",
+      "statut": "NON_OBTENUE"
+    }
+  ],
+  "autorisation_importation_p52b": false,
+  "exercices_couverts_p52b_2027_2036": 0,
+  "p52b_montants_inconnus": 600,
+  "p52d_incidences_inconnues": 720,
+  "score_p55n_estime": 53,
+  "economie_nova_certifiee_cad": null,
+  "reforme_fiscale_adoptee": false,
+  "certification_nova": false,
+  "decision": "NO_GO_AUTOMATIQUE",
+  "controle_visualisation_pdf": "CAPTURES_WEB_INDISPONIBLES_CACHE_MISS; EXTRACTION_TEXTE_INDEXEE_ET_PAGE_MUNICIPALE_OFFICIELLE_CONCORDE; PAS_DE_SHA_BINAIRE"
+}
