@@ -139,3 +139,13 @@ test("la comparaison des partis reste désactivée tant que les revues manquent"
  assert.ok(parties.parties.every(p=>p.comparisonEligible===false));
  assert.ok(evidence.evidenceRecords.every(x=>x.secondIndependentReview?.status==="completed"||x.finalizable!==true));
 });
+
+test("l'explorateur des partis vérifie aussi les 64 questions avant de montrer les sources",()=>{
+ const start=compassJs.indexOf("async function loadPoliticalRegistryAndEvidence()");
+ const end=compassJs.indexOf("let questionnaireLoading",start);
+ const block=compassJs.slice(start,end>start?end:start+6000);
+ assert.match(block,/validateQuestionnaireCorpus\(questionCorpus\);/);
+ assert.match(block,/validateDocumentaryCorpora\(questionCorpus,partyCorpus,sourceCorpus,evidenceCorpus\);/);
+ assert.ok(block.indexOf("validateQuestionnaireCorpus(questionCorpus)")<
+   block.indexOf("validateDocumentaryCorpora(questionCorpus"));
+});
