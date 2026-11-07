@@ -1,0 +1,42 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readingRatio, ratioFromScroll, scrollTopForRatio, chooseReadingPosition}
+  from '../../assets/js/sinjira-liseuse-position-v31.mjs';
+
+test('la position de défilement demeure bornée et précise',()=>{
+  assert.equal(readingRatio(-8),0);
+  assert.equal(readingRatio(9),1);
+  assert.equal(readingRatio('invalide'),0);
+  assert.equal(readingRatio(.34567),.346);
+  assert.equal(ratioFromScroll(300,1300,700),.5);
+  assert.equal(scrollTopForRatio(.5,1300,700),300);
+  assert.equal(ratioFromScroll(100,200,400),0);
+});
+test('la démo reprend le défilement exact de la page sauvegardée',()=>{
+  assert.deepEqual(chooseReadingPosition({
+    localPage:16,localRatio:.62,localUpdatedAt:'2026-11-07T13:00:00Z',
+    totalPages:82,defaultPage:3
+  }),{page:16,ratio:.62,source:'appareil'});
+});
+test('la progression récente du compte gagne, sans attribuer un défilement d’une autre page',()=>{
+  assert.deepEqual(chooseReadingPosition({
+    localPage:18,localRatio:.87,localUpdatedAt:'2026-11-07T12:00:00Z',
+    serverPage:22,serverUpdatedAt:'2026-11-07T13:00:00Z',
+    totalPages:520,defaultPage:4
+  }),{page:22,ratio:0,source:'compte'});
+});
+test('une progression locale plus récente que celle du compte est préservée',()=>{
+  assert.deepEqual(chooseReadingPosition({
+    localPage:35,localRatio:.22,localUpdatedAt:'2026-11-07T14:00:00Z',
+    serverPage:12,serverUpdatedAt:'2026-11-07T12:00:00Z',
+    totalPages:520,defaultPage:4
+  }),{page:35,ratio:.22,source:'appareil'});
+});
+test('les anciennes pages sauvegardées et les valeurs corrompues ont un repli sûr',()=>{
+  assert.deepEqual(chooseReadingPosition({
+    localPage:82,serverPage:900,totalPages:82,defaultPage:3
+  }),{page:82,ratio:0,source:'appareil'});
+  assert.deepEqual(chooseReadingPosition({
+    localPage:'NaN',localRatio:999,serverPage:-1,totalPages:82,defaultPage:3
+  }),{page:3,ratio:0,source:'debut'});
+});
