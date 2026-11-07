@@ -101,7 +101,7 @@ export function inspectG016bBenchmarks(d,proofs,plan){
  return {ok:errors.length===0,errors:[...new Set(errors)],
    documentary_benchmarks:2,candidate_catalogues:2,
    historical_year:2023,decile_boundaries_transcribed:9,
-   spending_2023_québec_cad:65344,
+   spending_2023_quebec_cad:65344,
    records_for_policy_simulation:0,can_calibrate:false,
    g016b_completed:false,programme_percent:47};
 }
