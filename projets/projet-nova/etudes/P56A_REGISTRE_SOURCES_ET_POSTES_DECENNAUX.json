@@ -1,0 +1,406 @@
+{
+  "schema_version": "P56A-SOURCES-1",
+  "date_reference": "2026-11-07",
+  "statut": "REGISTRE_CANDIDAT_NON_AUTHENTIFIE",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "unite": "G_CAD",
+  "lien_modele": "projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json",
+  "nombre_categories_par_regime": 11,
+  "nombre_lignes": 22,
+  "exercices": "2027-2036",
+  "trajectoires": [
+    "central",
+    "prudent",
+    "stress"
+  ],
+  "preuves_externes_signées": 0,
+  "montants_certifies": 0,
+  "sources_officielles_a_rapprocher": [
+    {
+      "id": "O1",
+      "objet": "Budget du Québec 2026-2027",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_PlanBudgetaire.pdf",
+      "etat": "REFERENCE_OFFICIELLE_A_EXTRAIRE_ET_RAPPROCHER",
+      "remarque": "PDF; tableaux par assiette et conventions avant import"
+    },
+    {
+      "id": "O2",
+      "objet": "Rapport préélectoral 2026 et outil de simulation amendé 3 septembre 2026",
+      "url": "https://www.quebec.ca/gouvernement/ministeres-organismes/finances/publications",
+      "etat": "PUBLICATION_REPEREE_A_RECONCILIER",
+      "remarque": "Amendement de l'outil de simulation ne permet pas de transposer sans harmoniser"
+    },
+    {
+      "id": "O3",
+      "objet": "Situation financière du Québec, premier trimestre 2026-2027, 25 septembre 2026",
+      "url": "https://www.quebec.ca/gouvernement/ministeres-organismes/finances/publications",
+      "etat": "PUBLICATION_REPEREE_A_RECONCILIER",
+      "remarque": "Résultats trimestriels distincts des prévisions annuelles"
+    },
+    {
+      "id": "O4",
+      "objet": "Comptes publics du Québec, volume 1 et volume 2",
+      "url": "https://www.quebec.ca/gouvernement/finances-publiques/budget-comptes-publics/comptes-publics/volumes-comptes-publics",
+      "etat": "SERIES_REELLES_A_CONCILIER",
+      "remarque": "Périmètre du consolidé et éliminations à vérifier; pas projet Nova"
+    },
+    {
+      "id": "O5",
+      "objet": "Résultats préliminaires 2025-2026",
+      "url": "https://www.quebec.ca/nouvelles/actualites/details/rapport-sur-la-situation-financiere-du-quebec-resultats-preliminaires-de-2025-2026-71070",
+      "etat": "PRELIMINAIRE_A_NE_PAS_CONFONDRE_AVEC_AUDITE",
+      "remarque": "Ne pas présenter comme comptes finaux"
+    }
+  ],
+  "regles": [
+    "Distinguer les données budgétées, préliminaires, auditées et fictives avant toutes comparaisons",
+    "Pas de doublons d'intérêts de dette ou de transferts internes entre les 11 postes",
+    "Pas de prélèvement provincial inventé ni de disparition de taxes fédérales au Québec dans le Canada",
+    "Pas de transfert fédéral, dette, monnaie ou actifs négociés supposés acquis pour un Québec souverain",
+    "Un zéro hypothétique n'est ni donnée observée ni source indépendante",
+    "Protéger les services, emplois, prestations, droits et revenu disponible; suivre territoires et municipalités",
+    "Aucun document privé d'employeur, individu, contribuable ni renseignement d'identification sur GitHub"
+  ],
+  "categories": [
+    {
+      "regime": "QUEBEC_DANS_CANADA",
+      "poste": "impot_revenu_net",
+      "nature": "Recette",
+      "etats": "NON_DOCUMENTE_NON_AUTHENTIFIE",
+      "montant_gcad": null,
+      "preuve_requise": "Assiette ménages et sociétés, crédits, remboursements, pouvoir de prélèvement et effet net par année",
+      "sources_a_rechercher": "Statistiques fiscales, déclarations agrégées et microsimulation indépendante; distinction fédéral/provincial",
+      "liens_preuves_fiscales": [
+        "F05",
+        "F09",
+        "F11"
+      ],
+      "portee_regime": "Pouvoirs québécois limités; TPS, fiscalité fédérale, douanes et pensions fédérales non abolis unilatéralement",
+      "decision": "NO_GO_AUTOMATIQUE"
+    },
+    {
+      "regime": "QUEBEC_DANS_CANADA",
+      "poste": "anti_evasion_additionnelle_nette",
+      "nature": "Recette",
+      "etats": "NON_DOCUMENTE_NON_AUTHENTIFIE",
+      "montant_gcad": null,
+      "preuve_requise": "Identifier mécanisme additionnel légal, preuve de rendement net sans double compte avec impôt sur revenu",
+      "sources_a_rechercher": "Étude fiscale indépendante; zéro prudent tant que non certifié",
+      "liens_preuves_fiscales": [
+        "F06",
+        "F08"
+      ],
+      "portee_regime": "Pouvoirs québécois limités; TPS, fiscalité fédérale, douanes et pensions fédérales non abolis unilatéralement",
+      "decision": "NO_GO_AUTOMATIQUE"
+    },
+    {
+      "regime": "QUEBEC_DANS_CANADA",
+      "poste": "revenus_non_fiscaux_nets",
+      "nature": "Recette",
+      "etats": "NON_DOCUMENTE_NON_AUTHENTIFIE",
+      "montant_gcad": null,
+      "preuve_requise": "Redevances, dividendes d'entreprises publiques, tarifs, revenus d'actifs; distinguer flux bruts/net",
+      "sources_a_rechercher": "Comptes publics, sociétés d'État et fonds spéciaux, rapprochement de périmètre",
+      "liens_preuves_fiscales": [
+        "F07",
+        "F09"
+      ],
+      "portee_regime": "Pouvoirs québécois limités; TPS, fiscalité fédérale, douanes et pensions fédérales non abolis unilatéralement",
+      "decision": "NO_GO_AUTOMATIQUE"
+    },
+    {
+      "regime": "QUEBEC_DANS_CANADA",
+      "poste": "transferts_federaux_nets",
+      "nature": "Recette",
+      "etats": "NON_DOCUMENTE_NON_AUTHENTIFIE",
+      "montant_gcad": null,
+      "preuve_requise": "Transferts fédéraux nets attribuables; ne pas additionner transferts internes et subventions liées",
+      "sources_a_rechercher": "Accords fédéraux-provinciaux, Comptes publics du Québec et Comptes publics du Canada",
+      "liens_preuves_fiscales": [
+        "F09",
+        "F10"
+      ],
+      "portee_regime": "Pouvoirs québécois limités; TPS, fiscalité fédérale, douanes et pensions fédérales non abolis unilatéralement",
+      "decision": "NO_GO_AUTOMATIQUE"
+    },
+    {
+      "regime": "QUEBEC_DANS_CANADA",
+      "poste": "autres_prelevements_provinciaux_nets",
+      "nature": "Recette",
+      "etats": "NON_DOCUMENTE_NON_AUTHENTIFIE",
+      "montant_gcad": null,
+      "preuve_requise": "Prélèvements résiduels détaillés, cotisations affectées, taxes foncières, droits et frais obligatoires",
+      "sources_a_rechercher": "Inventaire légal intégral et effet du remplacement sur municipalités, écoles et fonds sociaux",
+      "liens_preuves_fiscales": [
+        "F04",
+        "F07"
+      ],
+      "portee_regime": "Pouvoirs québécois limités; TPS, fiscalité fédérale, douanes et pensions fédérales non abolis unilatéralement",
+      "decision": "NO_GO_AUTOMATIQUE"
+    },
+    {
+      "regime": "QUEBEC_DANS_CANADA",
+      "poste": "services_existants_hors_dette_et_municipal_nets",
+      "nature": "Dépense",
+      "etats": "NON_DOCUMENTE_NON_AUTHENTIFIE",
+      "montant_gcad": null,
+      "preuve_requise": "Coûts santé, éducation, sécurité, justice, infrastructures et autres services; hors dette et municipal pour ne pas dupliquer",
+      "sources_a_rechercher": "Comptes publics mission/portefeuille, engagements, effectifs et coûts de maintien",
+      "liens_preuves_fiscales": [
+        "F09",
+        "F10",
+        "F12"
+      ],
+      "portee_regime": "Pouvoirs québécois limités; TPS, fiscalité fédérale, douanes et pensions fédérales non abolis unilatéralement",
+      "decision": "NO_GO_AUTOMATIQUE"
+    },
+    {
+      "regime": "QUEBEC_DANS_CANADA",
+      "poste": "service_dette_net",
+      "nature": "Dépense",
+      "etats": "NON_DOCUMENTE_NON_AUTHENTIFIE",
+      "montant_gcad": null,
+      "preuve_requise": "Intérêts, refinancement et dette applicable au régime; pas d'ajout double au total de référence",
+      "sources_a_rechercher": "Rapports de gestion de dette, conditions de financement, solde et maturité",
+      "liens_preuves_fiscales": [
+        "F09",
+        "F10"
+      ],
+      "portee_regime": "Pouvoirs québécois limités; TPS, fiscalité fédérale, douanes et pensions fédérales non abolis unilatéralement",
+      "decision": "NO_GO_AUTOMATIQUE"
+    },
+    {
+      "regime": "QUEBEC_DANS_CANADA",
+      "poste": "transferts_municipaux_nets",
+      "nature": "Dépense",
+      "etats": "NON_DOCUMENTE_NON_AUTHENTIFIE",
+      "montant_gcad": null,
+      "preuve_requise": "Flux Québec-municipalités/organismes; éliminations internes, financement des responsabilités locales",
+      "sources_a_rechercher": "Rapports municipaux consolidés, lois fiscales locales, conventions et éliminations",
+      "liens_preuves_fiscales": [
+        "F04",
+        "F09"
+      ],
+      "portee_regime": "Pouvoirs québécois limités; TPS, fiscalité fédérale, douanes et pensions fédérales non abolis unilatéralement",
+      "decision": "NO_GO_AUTOMATIQUE"
+    },
+    {
+      "regime": "QUEBEC_DANS_CANADA",
+      "poste": "fonctions_souveraines_nouvelles_nettes",
+      "nature": "Dépense",
+      "etats": "NON_DOCUMENTE_NON_AUTHENTIFIE",
+      "montant_gcad": null,
+      "preuve_requise": "Coûts additionnels pour fonctions fédérales reprises, frontières, défense, monnaie, pensions, traités, douanes",
+      "sources_a_rechercher": "Scénarios détaillés de négociation, dépenses fédérales imputables, nouveaux systèmes",
+      "liens_preuves_fiscales": [
+        "F14",
+        "F15",
+        "F16",
+        "F17"
+      ],
+      "portee_regime": "Pouvoirs québécois limités; TPS, fiscalité fédérale, douanes et pensions fédérales non abolis unilatéralement",
+      "decision": "NO_GO_AUTOMATIQUE"
+    },
+    {
+      "regime": "QUEBEC_DANS_CANADA",
+      "poste": "couts_transition_nets",
+      "nature": "Dépense",
+      "etats": "NON_DOCUMENTE_NON_AUTHENTIFIE",
+      "montant_gcad": null,
+      "preuve_requise": "Coûts non récurrents/récurrents systèmes, RH, actes juridiques, continuité, remboursement et négociations",
+      "sources_a_rechercher": "Plan de projet chiffré, calendrier, responsables, dépendances et risques",
+      "liens_preuves_fiscales": [
+        "F10",
+        "F14",
+        "F16"
+      ],
+      "portee_regime": "Pouvoirs québécois limités; TPS, fiscalité fédérale, douanes et pensions fédérales non abolis unilatéralement",
+      "decision": "NO_GO_AUTOMATIQUE"
+    },
+    {
+      "regime": "QUEBEC_DANS_CANADA",
+      "poste": "provision_crises_nette",
+      "nature": "Dépense",
+      "etats": "NON_DOCUMENTE_NON_AUTHENTIFIE",
+      "montant_gcad": null,
+      "preuve_requise": "Provision de résilience et scénarios de stress, sans économies fictives",
+      "sources_a_rechercher": "Analyse de sensibilité des taux, inflation, récession, catastrophe et cyberrisques",
+      "liens_preuves_fiscales": [
+        "F10",
+        "F12"
+      ],
+      "portee_regime": "Pouvoirs québécois limités; TPS, fiscalité fédérale, douanes et pensions fédérales non abolis unilatéralement",
+      "decision": "NO_GO_AUTOMATIQUE"
+    },
+    {
+      "regime": "QUEBEC_SOUVERAIN",
+      "poste": "impot_revenu_net",
+      "nature": "Recette",
+      "etats": "NON_DOCUMENTE_NON_AUTHENTIFIE",
+      "montant_gcad": null,
+      "preuve_requise": "Assiette ménages et sociétés, crédits, remboursements, pouvoir de prélèvement et effet net par année",
+      "sources_a_rechercher": "Statistiques fiscales, déclarations agrégées et microsimulation indépendante; distinction fédéral/provincial",
+      "liens_preuves_fiscales": [
+        "F05",
+        "F09",
+        "F11"
+      ],
+      "portee_regime": "Souveraineté conditionnelle; aucune dette/actif, prestation ou compétence fédérale acquise ni coût souverain présumé nul",
+      "decision": "NO_GO_AUTOMATIQUE"
+    },
+    {
+      "regime": "QUEBEC_SOUVERAIN",
+      "poste": "anti_evasion_additionnelle_nette",
+      "nature": "Recette",
+      "etats": "NON_DOCUMENTE_NON_AUTHENTIFIE",
+      "montant_gcad": null,
+      "preuve_requise": "Identifier mécanisme additionnel légal, preuve de rendement net sans double compte avec impôt sur revenu",
+      "sources_a_rechercher": "Étude fiscale indépendante; zéro prudent tant que non certifié",
+      "liens_preuves_fiscales": [
+        "F06",
+        "F08"
+      ],
+      "portee_regime": "Souveraineté conditionnelle; aucune dette/actif, prestation ou compétence fédérale acquise ni coût souverain présumé nul",
+      "decision": "NO_GO_AUTOMATIQUE"
+    },
+    {
+      "regime": "QUEBEC_SOUVERAIN",
+      "poste": "revenus_non_fiscaux_nets",
+      "nature": "Recette",
+      "etats": "NON_DOCUMENTE_NON_AUTHENTIFIE",
+      "montant_gcad": null,
+      "preuve_requise": "Redevances, dividendes d'entreprises publiques, tarifs, revenus d'actifs; distinguer flux bruts/net",
+      "sources_a_rechercher": "Comptes publics, sociétés d'État et fonds spéciaux, rapprochement de périmètre",
+      "liens_preuves_fiscales": [
+        "F07",
+        "F09"
+      ],
+      "portee_regime": "Souveraineté conditionnelle; aucune dette/actif, prestation ou compétence fédérale acquise ni coût souverain présumé nul",
+      "decision": "NO_GO_AUTOMATIQUE"
+    },
+    {
+      "regime": "QUEBEC_SOUVERAIN",
+      "poste": "transferts_federaux_nets",
+      "nature": "Recette",
+      "etats": "NON_DOCUMENTE_NON_AUTHENTIFIE",
+      "montant_gcad": null,
+      "preuve_requise": "Transferts fédéraux nets attribuables; ne pas additionner transferts internes et subventions liées",
+      "sources_a_rechercher": "Accords fédéraux-provinciaux, Comptes publics du Québec et Comptes publics du Canada",
+      "liens_preuves_fiscales": [
+        "F09",
+        "F10"
+      ],
+      "portee_regime": "Souveraineté conditionnelle; aucune dette/actif, prestation ou compétence fédérale acquise ni coût souverain présumé nul",
+      "decision": "NO_GO_AUTOMATIQUE"
+    },
+    {
+      "regime": "QUEBEC_SOUVERAIN",
+      "poste": "autres_prelevements_provinciaux_nets",
+      "nature": "Recette",
+      "etats": "NON_DOCUMENTE_NON_AUTHENTIFIE",
+      "montant_gcad": null,
+      "preuve_requise": "Prélèvements résiduels détaillés, cotisations affectées, taxes foncières, droits et frais obligatoires",
+      "sources_a_rechercher": "Inventaire légal intégral et effet du remplacement sur municipalités, écoles et fonds sociaux",
+      "liens_preuves_fiscales": [
+        "F04",
+        "F07"
+      ],
+      "portee_regime": "Souveraineté conditionnelle; aucune dette/actif, prestation ou compétence fédérale acquise ni coût souverain présumé nul",
+      "decision": "NO_GO_AUTOMATIQUE"
+    },
+    {
+      "regime": "QUEBEC_SOUVERAIN",
+      "poste": "services_existants_hors_dette_et_municipal_nets",
+      "nature": "Dépense",
+      "etats": "NON_DOCUMENTE_NON_AUTHENTIFIE",
+      "montant_gcad": null,
+      "preuve_requise": "Coûts santé, éducation, sécurité, justice, infrastructures et autres services; hors dette et municipal pour ne pas dupliquer",
+      "sources_a_rechercher": "Comptes publics mission/portefeuille, engagements, effectifs et coûts de maintien",
+      "liens_preuves_fiscales": [
+        "F09",
+        "F10",
+        "F12"
+      ],
+      "portee_regime": "Souveraineté conditionnelle; aucune dette/actif, prestation ou compétence fédérale acquise ni coût souverain présumé nul",
+      "decision": "NO_GO_AUTOMATIQUE"
+    },
+    {
+      "regime": "QUEBEC_SOUVERAIN",
+      "poste": "service_dette_net",
+      "nature": "Dépense",
+      "etats": "NON_DOCUMENTE_NON_AUTHENTIFIE",
+      "montant_gcad": null,
+      "preuve_requise": "Intérêts, refinancement et dette applicable au régime; pas d'ajout double au total de référence",
+      "sources_a_rechercher": "Rapports de gestion de dette, conditions de financement, solde et maturité",
+      "liens_preuves_fiscales": [
+        "F09",
+        "F10"
+      ],
+      "portee_regime": "Souveraineté conditionnelle; aucune dette/actif, prestation ou compétence fédérale acquise ni coût souverain présumé nul",
+      "decision": "NO_GO_AUTOMATIQUE"
+    },
+    {
+      "regime": "QUEBEC_SOUVERAIN",
+      "poste": "transferts_municipaux_nets",
+      "nature": "Dépense",
+      "etats": "NON_DOCUMENTE_NON_AUTHENTIFIE",
+      "montant_gcad": null,
+      "preuve_requise": "Flux Québec-municipalités/organismes; éliminations internes, financement des responsabilités locales",
+      "sources_a_rechercher": "Rapports municipaux consolidés, lois fiscales locales, conventions et éliminations",
+      "liens_preuves_fiscales": [
+        "F04",
+        "F09"
+      ],
+      "portee_regime": "Souveraineté conditionnelle; aucune dette/actif, prestation ou compétence fédérale acquise ni coût souverain présumé nul",
+      "decision": "NO_GO_AUTOMATIQUE"
+    },
+    {
+      "regime": "QUEBEC_SOUVERAIN",
+      "poste": "fonctions_souveraines_nouvelles_nettes",
+      "nature": "Dépense",
+      "etats": "NON_DOCUMENTE_NON_AUTHENTIFIE",
+      "montant_gcad": null,
+      "preuve_requise": "Coûts additionnels pour fonctions fédérales reprises, frontières, défense, monnaie, pensions, traités, douanes",
+      "sources_a_rechercher": "Scénarios détaillés de négociation, dépenses fédérales imputables, nouveaux systèmes",
+      "liens_preuves_fiscales": [
+        "F14",
+        "F15",
+        "F16",
+        "F17"
+      ],
+      "portee_regime": "Souveraineté conditionnelle; aucune dette/actif, prestation ou compétence fédérale acquise ni coût souverain présumé nul",
+      "decision": "NO_GO_AUTOMATIQUE"
+    },
+    {
+      "regime": "QUEBEC_SOUVERAIN",
+      "poste": "couts_transition_nets",
+      "nature": "Dépense",
+      "etats": "NON_DOCUMENTE_NON_AUTHENTIFIE",
+      "montant_gcad": null,
+      "preuve_requise": "Coûts non récurrents/récurrents systèmes, RH, actes juridiques, continuité, remboursement et négociations",
+      "sources_a_rechercher": "Plan de projet chiffré, calendrier, responsables, dépendances et risques",
+      "liens_preuves_fiscales": [
+        "F10",
+        "F14",
+        "F16"
+      ],
+      "portee_regime": "Souveraineté conditionnelle; aucune dette/actif, prestation ou compétence fédérale acquise ni coût souverain présumé nul",
+      "decision": "NO_GO_AUTOMATIQUE"
+    },
+    {
+      "regime": "QUEBEC_SOUVERAIN",
+      "poste": "provision_crises_nette",
+      "nature": "Dépense",
+      "etats": "NON_DOCUMENTE_NON_AUTHENTIFIE",
+      "montant_gcad": null,
+      "preuve_requise": "Provision de résilience et scénarios de stress, sans économies fictives",
+      "sources_a_rechercher": "Analyse de sensibilité des taux, inflation, récession, catastrophe et cyberrisques",
+      "liens_preuves_fiscales": [
+        "F10",
+        "F12"
+      ],
+      "portee_regime": "Souveraineté conditionnelle; aucune dette/actif, prestation ou compétence fédérale acquise ni coût souverain présumé nul",
+      "decision": "NO_GO_AUTOMATIQUE"
+    }
+  ]
+}
