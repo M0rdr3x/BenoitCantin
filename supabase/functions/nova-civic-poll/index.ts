@@ -40,7 +40,7 @@ async function readLimitedJson(req: Request): Promise<unknown> {
   // Rejeter un corps annoncé trop grand avant de réserver un lecteur.
   // La limite est aussi appliquée aux octets réellement transmis.
   const declared = req.headers.get("content-length");
-  if(declared !== null && (!/^\\d+$/.test(declared) ||
+  if(declared !== null && (!/^\d+$/.test(declared) ||
       !Number.isSafeInteger(Number(declared)) || Number(declared)>MAX_BODY_BYTES)) {
     throw new Error("size");
   }
