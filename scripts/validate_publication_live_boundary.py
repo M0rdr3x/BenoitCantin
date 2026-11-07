@@ -56,6 +56,16 @@ TECHNICAL_ROUTES = (
     "/projets/projet-nova/official/versions/V317/V317_REGISTRE_CHANGEMENTS_SECURITE_CONFIGURATIONS_MODELE.csv",
     "/projets/projet-nova/official/versions/V316/V316_FINAL_INDEPENDENT_VERIFICATION.json",
     "/ADMINISTRATION_FORMULAIRES.md",
+    # Sentinelles supplémentaires : racine legacy, secrets de configuration,
+    # métadonnées de livre et éventuel export de votes individuels.
+    # HTTP 404 exigé, aucune lecture des corps de réponse.
+    "/script.js",
+    "/.env",
+    "/.env.production",
+    "/.git/config",
+    "/projets/sinjira/romans/livre-1-release.json",
+    "/projets/sinjira/codex/livre-i-delivery-contract.json",
+    "/projets/projet-nova/data/sondage-individuel.json",
 )
 TIMEOUT_SECONDS = 12
 
