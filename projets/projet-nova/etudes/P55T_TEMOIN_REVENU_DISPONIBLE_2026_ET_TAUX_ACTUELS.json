@@ -1,0 +1,201 @@
+{
+  "schema_version": "P55T-1",
+  "date_reference": "2026-11-07",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "titre": "TEMOIN_OFFICIEL_REVENU_DISPONIBLE_2026_ET_BAREMES_FISCAUX_QUEBEC_CANADA",
+  "objectif": "DOCUMENTATION_D_UN_GAIN_HISTORIQUE_2025_2026_NON_SIMULATION_NOVA",
+  "source_principale": {
+    "id": "QUEBEC_REVENU_DISPONIBLE_2026",
+    "url": "https://www.quebec.ca/finances-impots-et-taxes/credits-impots-deductions/estimer-revenu-disponible",
+    "derniere_mise_a_jour_publiee": "2026-06-17",
+    "provenance": "PAGE_HTML_GOUVERNEMENT_QUEBEC_LUE_DIRECTEMENT_2026_11_07",
+    "montant_non_certifie_comme_resultat_projet_nova": true
+  },
+  "cas_officiel_2026": {
+    "profil": "PERSONNE_VIVANT_SEULE",
+    "revenu_annuel_indique_cad": 50000,
+    "annee_reference": 2025,
+    "annee_comparee": 2026,
+    "variation_revenu_disponible_publiee_cad": 847,
+    "composantes_de_variation_affichees_cad": [
+      {
+        "id": "AIDE_EPICERIE_ENERGIE_2026",
+        "montant_cad": 100,
+        "recurrence": "VERSEMENT_PONCTUEL_2026"
+      },
+      {
+        "id": "ALLOCATION_CANADIENNE_EPICERIE_BESOINS_ESSENTIELS",
+        "montant_cad": 358,
+        "recurrence": "MESURE_COMPOSITE_RECURRENCE_DETAIL_NON_DEDUITE"
+      },
+      {
+        "id": "REDUCTION_COTISATIONS",
+        "montant_cad": 72,
+        "recurrence": "A_ETUDIER"
+      },
+      {
+        "id": "INDEXATION_FISCALE_QUEBEC",
+        "montant_cad": 166,
+        "recurrence": "EFFET_INDEXATION_2026_PAR_RAPPORT_A_2025"
+      },
+      {
+        "id": "INDEXATION_FISCALE_FEDERALE",
+        "montant_cad": 150,
+        "recurrence": "EFFET_INDEXATION_2026_PAR_RAPPORT_A_2025"
+      }
+    ],
+    "somme_composantes_affichees_cad": 846,
+    "ecart_avec_total_publie_cad": 1,
+    "traitement_ecart": "ECART_DE_PRESENTATION_NON_EXPLIQUE_PAR_LA_PAGE_NE_PAS_INVENTER_DE_CAUSE",
+    "revenu_disponible_2025_total_cad": null,
+    "revenu_disponible_2026_total_cad": null,
+    "revenu_imposable_cad": null,
+    "impots_federaux_reels_cad": null,
+    "impots_quebec_reels_cad": null,
+    "resultat_nova_cad": null,
+    "recurrences_et_admissibilites_detaillees_non_prouvees": true,
+    "categorie_p52d_mapping_possible": "personne_seule_revenu_moyen",
+    "mapping_p52d_certifie": false,
+    "p52d_huit_valeurs_actuel_propose_non_remplies": true
+  },
+  "baremes_marginaux_2026": {
+    "quebec": {
+      "source": "https://www.revenuquebec.ca/fr/entreprises/retenues-a-la-source-et-cotisations-de-lemployeur/employeur-principaux-changements-2026/",
+      "nature": "TAUX_MARGINAUX_SUR_REVENU_IMPOSABLE_AUCUN_CREDIT_DEDUIT",
+      "paliers": [
+        {
+          "plafond_revenu_imposable_cad": 54345,
+          "taux_pct": "14"
+        },
+        {
+          "plafond_revenu_imposable_cad": 108680,
+          "taux_pct": "19"
+        },
+        {
+          "plafond_revenu_imposable_cad": 132245,
+          "taux_pct": "24"
+        },
+        {
+          "plafond_revenu_imposable_cad": null,
+          "taux_pct": "25.75"
+        }
+      ],
+      "montant_personnel_base_2026_cad": 18952,
+      "montant_personnel_base_est_cotisation": false
+    },
+    "federal": {
+      "source": "https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/taux-imposition-tranches-revenu/annee-en-cours.html",
+      "nature": "TAUX_MARGINAUX_SUR_REVENU_IMPOSABLE_AUCUN_CREDIT_NI_ABATTEMENT_DEDUITS",
+      "paliers": [
+        {
+          "plafond_revenu_imposable_cad": 58523,
+          "taux_pct": "14"
+        },
+        {
+          "plafond_revenu_imposable_cad": 117045,
+          "taux_pct": "20.5"
+        },
+        {
+          "plafond_revenu_imposable_cad": 181440,
+          "taux_pct": "26"
+        },
+        {
+          "plafond_revenu_imposable_cad": 258482,
+          "taux_pct": "29"
+        },
+        {
+          "plafond_revenu_imposable_cad": null,
+          "taux_pct": "33"
+        }
+      ],
+      "abattement_quebec_base_federale_pct": "16.5",
+      "abattement_source": "https://www.canada.ca/fr/ministere-finances/services/publications/depenses-fiscales/2026/partie-4.html",
+      "abattement_s_applique_sur": "IMPOT_FEDERAL_DE_BASE_EXIGIBLE_NON_SUR_REVENU_BRUT"
+    },
+    "barèmes_sont_lois_courantes_non_nova": true,
+    "calcul_impot_net_reel_autorise": false,
+    "calcul_impot_nova_autorise": false
+  },
+  "population_et_incidence": {
+    "annee_reference_des_reperes": 2026,
+    "contribution_p52d": "REPERE_OFFICIEL_DE_VARIATION_SEULEMENT_AUCUNE_VALEUR_NULL_DU_GABARIT_MODIFIEE",
+    "p52d_montants_inconnus": 720,
+    "p52b_montants_inconnus": 600,
+    "p55n_score_estime_pct": 53,
+    "effet_sur_score_reconnu": 0,
+    "personnes_reellement_modelees_avec_impots_complets": 0,
+    "entreprises_reellement_modelees_avec_impots_complets": 0,
+    "hausse_pouvoir_achat_nova_demontree": false,
+    "economie_certifiee_mcad": null
+  },
+  "questions_requises": [
+    {
+      "id": "T01",
+      "description": "OBTENIR_DETAIL_REVENUS_IMPOSABLES_CREDITS_COTISATIONS_AIDES_MENAGE_TEMOIN",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "T02",
+      "description": "VERIFIER_ECART_UN_DOLLAR_ENTRE_LE_TOTAL_ET_SOMME_DES_COMPOSANTES",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "T03",
+      "description": "ISOLER_VERSEMENTS_PONCTUELS_2026_DE_COMPOSANTES_RECURRENTES",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "T04",
+      "description": "INCLURE_IMPOT_FEDERAL_CREDITS_ET_ABATTEMENT_QUEBEC_SANS_DOUBLE_COMPTE",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "T05",
+      "description": "DISTRIBUER_PROFILS_PAR_REGION_DECILE_ET_SITUATION_FAMILIALE_AVEC_ECHANTILLON",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "T06",
+      "description": "DISSOCIER_SIMULATION_NOVA_DE_MESURES_REELLES_2025_2026",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "T07",
+      "description": "COMPARER_COUTS_EN_NATURE_SERVICES_PUBLICS_ET_PRIX_AVEC_METHODE_VALIDEE",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "T08",
+      "description": "OBTENIR_REVUE_FISCALISTE_ECONOMISTE_ET_EXPERT_COMPTABLE_INDEPENDANTS",
+      "statut": "OUVERT"
+    }
+  ],
+  "protections": {
+    "total_officiel_847_ne_pas_remplacer_par_846": true,
+    "ne_pas_inventer_cause_ecart_1_dollar": true,
+    "ne_pas_presenter_847_comme_gain_nova": true,
+    "ne_pas_presenter_cas_50000_comme_representatif": true,
+    "versement_100_ponctuel_2026": true,
+    "ne_pas_extrapoler_358_automatiquement_recurrent": true,
+    "baremes_marginaux_non_taux_effectifs": true,
+    "revenu_brut_non_necessairement_revenu_imposable": true,
+    "credits_fiscaux_non_entierement_decrits": true,
+    "abattement_federal_quebec_ne_pas_omettre": true,
+    "federal_reste_competent_au_canada": true,
+    "aucun_revenu_disponible_absolu_invente": true,
+    "aucune_valeur_p52d_null_remplacee": true,
+    "aucun_changement_p55n_53": true,
+    "aucun_montant_p52b_null_remplace": true,
+    "protection_menages_moyens_modestes_et_retraites": true,
+    "proteger_pme_emplois_et_services": true,
+    "scenario_souverain_hypothetique_distinct": true,
+    "pas_de_rendement_anti_paradis_fictif": true,
+    "pas_de_taux_nova_deduit": true,
+    "no_go_automatique": true,
+    "aucune_depense_ou_contact": true,
+    "sinjira_inchange": true,
+    "aucune_fusion_main": true
+  },
+  "statut": "REPERE_PUBLIC_2026_NON_REPRESENTATIF_NON_ADOPTE",
+  "decision_finale": "NO_GO_AUTOMATIQUE"
+}
