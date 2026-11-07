@@ -168,3 +168,15 @@ test("bilan de référence G0.16i falsifié brise la chaîne",()=>{
  assert.equal(res.ok,false);
  assert.ok(res.errors.includes("PREDECESSOR_BASE_MISMATCH"));
 });
+
+test("la page d’avancement G0.16j distingue chiffres et financement non démontré",async()=>{
+ const html=await readFile(new URL("../avancement-programme-nova.html",import.meta.url),"utf8");
+ assert.match(html,/id="depenses-services-g016j"/);
+ assert.match(html,/28,367 G\$/);
+ assert.match(html,/2,519 G\$/);
+ assert.match(html,/3,712 G\$/);
+ assert.match(html,/1 056 municipalités locales/);
+ assert.match(html,/« Non audité »/);
+ assert.match(html,/Viabilité financière Nova non démontrée/);
+ assert.match(html,/47 % inchangé/);
+});
