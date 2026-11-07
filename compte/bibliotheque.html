@@ -12,52 +12,45 @@
 <link href="../assets/css/v19-pro.css?v=24.1" rel="stylesheet"/>
 <link href="../assets/css/v20-social.css?v=24.1" rel="stylesheet"/>
 <link href="../assets/css/v24-platform.css?v=24.1" rel="stylesheet"/>
+<link href="../assets/css/sinjira-liseuse-v26.css?v=26.11.07" rel="stylesheet"/>
 </head>
-<body class="account-page" data-library-page="library-v24-4-61">
+<body class="account-page" data-library-page="hub-v26">
 <a class="skip-link" href="#contenu">Aller au contenu</a>
 <header class="site-header"><div class="container nav-shell"><a class="brand" href="/projets/sinjira/" aria-label="Accueil de SINJIRA™"><img alt="" height="47" src="/assets/media/sinjira-emblem.webp" width="47"/><span class="brand-text"><strong>SINJIRA™</strong><span>Compte</span></span></a><button aria-controls="navigation-principale" aria-expanded="false" aria-label="Ouvrir le menu" class="menu-toggle" data-menu-toggle type="button"><span></span></button><nav class="main-nav" id="navigation-principale" data-main-nav aria-label="Navigation principale"><a href="/">Accueil</a><a href="/projets/sinjira/">SINJIRA™</a><a href="/projets/projet-nova/">Projet Nova</a><a href="/a-propos.html">À propos</a><a aria-current="page" class="nav-cta" href="/compte/">Compte</a></nav></div></header>
 <div class="account-shell account-nav-scroll"><nav aria-label="Navigation du compte" class="account-nav"><a href="index.html">Mon espace</a><a aria-current="page" href="bibliotheque.html">Bibliothèque</a><a href="licences.html">Licences</a><a href="mes-lectures.html">Lectures</a><a href="mes-achats.html">Achats</a><a href="notifications.html">Notifications</a><a href="mon-personnage.html">Personnage</a><a href="communaute.html">Communauté</a><a href="messages.html">Messages</a><a href="profil.html">Profil</a><a href="securite.html">Sécurité</a><a href="parametres.html">Paramètres</a><a data-admin-nav hidden href="/admin/sinjira/">Administration</a><button data-logout type="button">Déconnexion</button></nav></div>
 <main id="contenu">
 <section class="account-hero"><div class="account-shell">
-<span class="eyebrow">Bibliothèque du compte</span>
-<h1>Ma bibliothèque SINJIRA™</h1>
-<p>Vos espaces accessibles, romans suivis et droits numériques sont réunis ici à partir des autorisations réelles de votre compte. Pour le Livre I, l’édition intégrale est délivrée par un lien privé temporaire uniquement au propriétaire et aux comptes qui possèdent le droit numérique requis.</p>
-<div class="account-welcome-strip"><strong data-library-role>Compte SINJIRA™</strong><span>Aucun achat ou service payant n’est activé actuellement.</span></div>
-<div class="account-stats">
-<div class="account-stat"><span>Espaces disponibles</span><strong data-library-project-count>0</strong></div>
-<div class="account-stat"><span>Romans suivis</span><strong data-library-read-count>0</strong></div>
-<div class="account-stat"><span>Droits numériques</span><strong data-library-entitlement-count>0</strong></div>
-<div class="account-stat"><span>Demandes en attente</span><strong data-library-request-count>0</strong></div>
-</div>
-<div class="v20-library-shortcuts">
-<a href="mes-lectures.html"><strong>Mes lectures</strong><span>Romans et progression.</span></a>
-<a href="licences.html"><strong>Mes licences</strong><span>Codes physiques et droits numériques.</span></a>
-<a href="documents.html"><strong>Ressources privées</strong><span>Documents autorisés pour votre compte.</span></a>
-<a href="playtests.html"><strong>Playtests</strong><span>Tests auxquels votre compte peut participer.</span></a>
-<a href="contributions.html"><strong>Contributions</strong><span>Partage volontaire, sans service payant.</span></a>
-</div>
-<div class="account-status" data-library-status hidden></div>
+<span class="eyebrow">Bibliothèque du compte SINJIRA™</span>
+<h1>Ma bibliothèque</h1>
+<p class="sinjira-library-intro">Une bibliothèque organisée comme une vraie collection : <strong>romans</strong>, <strong>jeux</strong> et <strong>ressources</strong> se consultent sur des pages séparées. Le contenu privé dépend toujours des droits attribués par le serveur.</p>
+<nav class="sinjira-library-tabs" aria-label="Catégories de bibliothèque">
+<a aria-current="page" href="bibliotheque.html">Vue d’ensemble</a>
+<a href="bibliotheque-romans.html">Romans</a>
+<a href="bibliotheque-jeux.html">Jeux</a>
+<a href="bibliotheque-ressources.html">Ressources</a>
+</nav>
+<div class="account-status" data-library-status role="status" aria-live="polite" hidden></div>
 </div></section>
-
 <section class="section section-tight"><div class="account-shell">
-<div class="section-heading"><span class="eyebrow">Jeux &amp; projets</span><h2>Espaces disponibles avec ce compte</h2><p>Chaque carte indique si l’accès est public, inclus avec le compte, privé, administrateur ou propriétaire.</p></div>
-<div class="library-grid" data-project-library></div>
-</div></section>
-
-<section class="section section-tight"><div class="account-shell">
-<div class="section-heading"><span class="eyebrow">Romans</span><h2>Lectures réellement suivies</h2><p>Cette section utilise la bibliothèque lecteur SINJIRA™ canonique et sa progression enregistrée.</p></div>
-<div class="account-reader-grid" data-library-reads></div>
-</div></section>
-
-<section class="section section-tight" id="livre-i"><div class="account-shell">
-<div class="section-heading"><span class="eyebrow">Accès numériques</span><h2>Licences et droits attribués</h2><p>Seuls les droits réellement associés à ce compte sont affichés. Le rôle propriétaire reste distinct des droits numériques attribués aux produits.</p></div>
-<div class="account-reader-grid" data-library-entitlements></div>
+<div class="sinjira-library-categories">
+<a class="sinjira-library-category" href="bibliotheque-romans.html"><span class="category-icon" aria-hidden="true">📖</span><h2>Romans</h2><p>La Cendre du Jugement, la liseuse de 520 pages à accès privé, l’extrait gratuit et les prochaines œuvres littéraires.</p><span class="category-link">Ouvrir mes romans →</span></a>
+<a class="sinjira-library-category" href="bibliotheque-jeux.html"><span class="category-icon" aria-hidden="true">🎲</span><h2>Jeux</h2><p>Les jeux de l’univers SINJIRA™, les parties et les parcours de test se trouvent dans leur espace propre.</p><span class="category-link">Ouvrir mes jeux →</span></a>
+<a class="sinjira-library-category" href="bibliotheque-ressources.html"><span class="category-icon" aria-hidden="true">🗂️</span><h2>Autres ressources</h2><p>Documents privés, licences, contributions et outils personnels, classés indépendamment.</p><span class="category-link">Consulter mes ressources →</span></a>
+</div>
+<article class="sinjira-library-feature" id="livre-i">
+<img src="/assets/media/sinjira-livre-1-cover.webp" alt="Couverture du roman SINJIRA, Livre I : La Cendre du Jugement">
+<div><span class="eyebrow">À lire maintenant</span><h2>La Cendre du Jugement</h2>
+<p><strong>Édition intégrale :</strong> 520 pages, 30 chapitres et un épilogue. <strong>Démo :</strong> 82 pages gratuites. La liseuse propose un sommaire, des réglages de lecture et la mémorisation de la dernière page.</p>
+<p>Le rôle propriétaire reste distinct des droits numériques attribués aux produits. L’intégrale demeure accessible seulement après vérification d’un accès autorisé.</p>
+<div class="hero-actions"><a class="btn btn-primary" href="liseuse.html?edition=integrale">Lire l’intégrale · accès privé</a><a class="btn btn-secondary" href="liseuse.html?edition=demo">Découvrir la démo</a></div>
+</div></article>
+<p class="sinjira-library-footer-note">Les livres sont stockés séparément des jeux. Le PDF complet ne se trouve pas dans les fichiers publics du site, et la bibliothèque ne crée aucune licence par elle-même.</p>
 </div></section>
 </main>
 <footer class="site-footer"><div class="container"><div class="footer-bottom"><span>© <span data-year></span> Benoit Cantin.</span><span>Compte SINJIRA™ — ressources gratuites activées seulement.</span></div></div></footer>
 <script defer src="../assets/js/site.js?v=7.6-sinjira-account"></script>
 <script src="../assets/js/sinjira-account.js?v=19.0" type="module"></script>
-<script src="../assets/js/sinjira-library.js?v=24.1" type="module"></script>
-<script src="../assets/js/sinjira-library-v24-4-61.js?v=25.1.0" type="module"></script>
+
+<script src="../assets/js/sinjira-library-hub-v26.js?v=26.11.07" type="module"></script>
 </body>
 </html>
