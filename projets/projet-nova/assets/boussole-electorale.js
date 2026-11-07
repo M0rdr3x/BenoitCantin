@@ -968,6 +968,10 @@
     $("#compass-start")?.addEventListener("click",startQuestionnaire);
     $("#compass-prev")?.addEventListener("click",goPrevious);
     $("#compass-next")?.addEventListener("click",goNext);
+    $("#compass-preview")?.addEventListener("click",()=>{
+      if(!state.started || !state.data)return;
+      showResults();
+    });
     $("#compass-reset")?.addEventListener("click",reset);
     $("#compass-questionnaire-retry")?.addEventListener("click",init);
     $("#compass-evidence-retry")?.addEventListener("click",loadPoliticalRegistryAndEvidence);
