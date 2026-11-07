@@ -236,6 +236,7 @@ Le programme, le corpus, le cadre financier et les statuts de référence candid
 - **Contrôleur :** `assets/g16-incidence-core.mjs` : refuse faux résultats, transferts fédéraux souverains présumés, changements de score non justifiés, faux statuts de revue et doublons de déciles.
 - **Tests Node :** `tests/g16-incidence.test.mjs`; le calcul facultatif est **synthétique et non réutilisable comme donnée politique**.
 - **Étape suivante :** sources vérifiées et autorisées (G0.16b), puis microsimulation calibrée et audit externe (G0.16c), **uniquement si les portes de données, droits et fiscalité sont satisfaites**.
+- **Contrôle documentaire complémentaire :** `assets/g016-microsimulation-gate-core.mjs` et `tests/g016-microsimulation-gate.test.mjs` vérifient les 15 preuves V01–V15 (actuellement 0/15), refusent les fausses certifications et ne peuvent jamais autoriser une simulation. Le score de 47/100 reste inchangé. La page publique `avancement-programme-nova.html#precontrole-g016` affiche ce verrou.
 - **Statut :** G0.16 **NON FRANCHIE**, aucune adoption, aucun taux, aucun budget ou gain Nova établi. `official/reference/*` et `data/sources.json` restent inchangés.
 
 ## Validation externe requise
