@@ -36,6 +36,34 @@
     save(storageKey,sessionToken);
     return sessionToken;
   }
+  // Le corpus public est versionné et non modifiable par le participant.
+  // Refuser les doublons, questions tronquées, réponses redéfinies et
+  // formats inattendus avant tout rendu ou appel de l'API de consultation.
+  function validLocalCorpus(corpus){
+    if(!corpus || typeof corpus!=="object" || Array.isArray(corpus)
+       || corpus.version!==VERSION || typeof corpus.published!=="boolean"
+       || corpus.format!=="consultation_ouverte_non_probabiliste"
+       || corpus.eligibility!=="18+"
+       || !Array.isArray(corpus.questions) || corpus.questions.length!==8
+       || !Array.isArray(corpus.options) || corpus.options.length!==VALUES.length){
+      return false;
+    }
+    const ids=new Set();
+    for(const [index,question] of corpus.questions.entries()){
+      if(!question || typeof question.id!=="string"
+         || !/^q[0-9]{2}$/.test(question.id) || ids.has(question.id)
+         || question.ordinal!==index+1
+         || typeof question.text!=="string" || !question.text.trim()
+         || typeof question.axis!=="string" || !/^[a-z][a-z-]*$/.test(question.axis)){
+        return false;
+      }
+      ids.add(question.id);
+    }
+    return corpus.options.every((option,index)=>
+      option && option.value===VALUES[index]
+      && option.label===LABELS[String(VALUES[index])]);
+  }
+
   function optionLabel(question,option) {
     const label = document.createElement("label");
     label.className = "poll-choice";
@@ -231,10 +259,18 @@
     let local=window.__NOVA_POLL_PUBLIC_CORPUS;
     if(!local){
       try { local=await fetchJson("data/sondage-citoyen-v1.json"); }
-      catch { local={questions:[]}; }
+      catch { local=null; }
+    }
+    if(!validLocalCorpus(local)){
+      // Un fichier tronqué ne doit pas bloquer l'interface en silence,
+      // ni ouvrir le vote sur une sélection partielle de propositions.
+      localCorpus=null;questions=[];open=false;siteKey="";
+      setStatus("Le questionnaire public est indisponible ou incomplet. Aucun vote ne peut être envoyé.");
+      renderForm();renderResults(null);
+      return;
     }
     localCorpus=local;
-    questions=(local.questions||[]).filter(q=>/^q[0-9]{2}$/.test(q.id));
+    questions=local.questions;
     try {
       const remote=await fetchJson(API,{mode:"cors"});
       if(!validatedPublicResponse(remote)) {

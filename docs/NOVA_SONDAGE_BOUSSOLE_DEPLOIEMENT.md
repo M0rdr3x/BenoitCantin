@@ -122,3 +122,10 @@ Le test `scripts/test_nova_poll_delta_privacy.py` vérifie la présence des cond
 Les requêtes GET des résultats et POST de soumission disposent d'une limite de **10 secondes englobant la réception des en-têtes et la lecture/décodage du corps JSON**. L'ancien contrôle levait sa limite à la réception des seuls en-têtes : un serveur transmettant HTTP 200 puis bloquant le corps pouvait immobiliser l'interface. Le contrôleur d'annulation reste actif jusqu'à la fin du décodage et le délai est nettoyé en cas de succès, d'erreur HTTP ou de JSON invalide. Le test Node `scripts/test_nova_poll_network.cjs` simule séparément le blocage des en-têtes et celui du corps pour GET et POST, sans requête réelle.
 
 **Cas particulier du POST :** une expiration du délai ne prouve pas que le serveur a refusé le bulletin. L'interface annonce donc seulement que l'envoi n'a **pas été confirmé** et réutilise le même jeton de participation lors d'une tentative ultérieure; le garde serveur d'anti-rejeu reste l'autorité. Aucune relance automatique du POST, aucune collecte supplémentaire et aucune modification des seuils de confidentialité.
+
+
+## Échec sécurisé sur corpus de sondage incomplet
+
+Le navigateur valide le corpus public **avant tout appel réseau au service de vote** : version et état de publication explicites, consultation ouverte non probabiliste réservée aux 18 ans et plus, huit questions distinctes avec ordre 1–8 et texte non vide, six choix avec valeurs et libellés identiques au questionnaire canonique. Une copie tronquée, dupliquée ou modifiée n'est jamais filtrée silencieusement pour former un questionnaire partiel. Dans ce cas, le navigateur affiche un message d'indisponibilité, masque les répartitions, verrouille l'envoi et ne contacte pas l'API de vote.
+
+Le test d'intégration `scripts/test_nova_poll_runtime.cjs` vérifie les cas négatifs et le comportement réel du chargement avec un corpus corrompu, sans réseau. Cette vérification n'autorise pas l'activation d'un corpus provisoire et ne remplace pas la revue de confidentialité ni l'approbation du questionnaire définitif.
