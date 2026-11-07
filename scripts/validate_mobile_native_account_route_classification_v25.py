@@ -61,6 +61,11 @@ WEB_DEATH_PROCEDURE = {"/compte/signaler-deces.html"}
 WEB_CONTEXTUAL_INFO = {
     "/compte/projet.html",
     "/compte/confidentialite-joueur.html",
+    # Bibliothèque Web segmentée : pages spécialisées, non routées comme modules natifs.
+    "/compte/bibliotheque-romans.html",
+    "/compte/bibliotheque-jeux.html",
+    "/compte/bibliotheque-ressources.html",
+    "/compte/liseuse.html",
 }
 
 CATEGORIES = {
@@ -89,7 +94,7 @@ def main() -> int:
         require(path.exists(), f"élément manquant: {path.relative_to(ROOT)}")
 
     actual_pages = {f"/compte/{path.name}" for path in ACCOUNT_DIR.glob("*.html") if path.is_file()}
-    require(len(actual_pages) == 42,
+    require(len(actual_pages) == 46,
             f"inventaire compte attendu à 42 pages, trouvé {len(actual_pages)}; toute nouvelle page doit être classifiée explicitement")
 
     seen: dict[str, str] = {}
@@ -104,7 +109,7 @@ def main() -> int:
     stale = sorted(classified - actual_pages)
     require(not missing, f"pages compte non classifiées: {', '.join(missing)}")
     require(not stale, f"routes classifiées sans fichier réel: {', '.join(stale)}")
-    require(len(classified) == 42, f"classification attendue à 42 routes, trouvée {len(classified)}")
+    require(len(classified) == 46, f"classification attendue à 42 routes, trouvée {len(classified)}")
     require(len(NATIVE_MODULE) == 31, f"classification native attendue à 31 routes, trouvée {len(NATIVE_MODULE)}")
 
     router = ROUTER.read_text("utf-8")
@@ -145,7 +150,7 @@ def main() -> int:
     for route in sorted(classified):
         require(route in doc, f"route absente de la documentation de classification: {route}")
     for marker in (
-        "42 pages html",
+        "46 pages html",
         "31 routes de sas",
         "accueil web de repli",
         "sécurité dédiée hors routeur",
@@ -192,7 +197,7 @@ def main() -> int:
         for marker in ("environment: production", "supabase_access_token", "${{ secrets.", "supabase start", "supabase db"):
             require(marker.lower() not in lowered, f"production/secret interdit dans workflow {label}: {marker}")
 
-    print("OK classification routes compte V25: 42/42 pages classifiées; 31 routes natives exactes; surfaces sensibles explicitement hors routeur.")
+    print("OK classification routes compte V25: 46/46 pages classifiées; 31 routes natives exactes; surfaces sensibles explicitement hors routeur.")
     return 0
 
 
