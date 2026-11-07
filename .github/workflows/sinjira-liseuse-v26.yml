@@ -8,6 +8,8 @@ on:
       - 'compte/liseuse.html'
       - 'projets/sinjira/romans/**'
       - 'assets/js/sinjira-liseuse-v26.js'
+      - 'assets/js/sinjira-liseuse-text-v27.mjs'
+      - 'tests/reader/**'
       - 'assets/js/sinjira-library-hub-v26.js'
       - 'assets/js/sinjira-reads-v24-4-61.js'
       - 'assets/css/sinjira-liseuse-v26.css'
@@ -20,6 +22,8 @@ on:
       - 'compte/liseuse.html'
       - 'projets/sinjira/romans/**'
       - 'assets/js/sinjira-liseuse-v26.js'
+      - 'assets/js/sinjira-liseuse-text-v27.mjs'
+      - 'tests/reader/**'
       - 'assets/js/sinjira-library-hub-v26.js'
       - 'assets/js/sinjira-reads-v24-4-61.js'
       - 'assets/css/sinjira-liseuse-v26.css'
@@ -45,6 +49,11 @@ jobs:
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12.14'
+      - name: Vérifier la syntaxe du lecteur et le texte reformatable
+        run: |
+          node --check assets/js/sinjira-liseuse-text-v27.mjs
+          node --input-type=module --check < assets/js/sinjira-liseuse-v26.js
+          node --test tests/reader/test_sinjira_liseuse_text_v27.mjs
       - name: Vérifier les catégories, la liseuse et l'isolement des fichiers privés
         run: python3 scripts/validate_sinjira_liseuse_v26.py
       - name: Vérifier les limites de la diffusion privée
