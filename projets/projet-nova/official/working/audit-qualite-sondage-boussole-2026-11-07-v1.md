@@ -19,7 +19,7 @@ La condition « **100 % opérationnel** » n'est **pas certifiée** pour l'un ou
 3. `assets/sondage-citoyen.js` refuse un corpus corrompu avant de rendre le formulaire ou d'autoriser le vote. Le bouton exige toujours les huit réponses (dont « Sans opinion / passer »), les deux confirmations, un jeton Turnstile et le statut d'ouverture; aucune donnée n'est transmise par le validateur.
 4. `sondage-citoyen.html` expose un message de progression **accessible par lecteur d'écran**, « Questions répondues : X sur 8 »; `assets/sondage-citoyen.css` rend ce message lisible et `?v=2` invalide les anciennes feuilles de style.
 5. `boussole-electorale.html` et `sondage-citoyen.html` chargent le **script d'intégrité après les corpus et avant les scripts d'interaction**, avec nouvelles versions d'URL pour limiter les caches obsolètes.
-6. `tests/nova-civic-integrity.test.mjs` contient **34 tests déclarés** dans Node : documents, manipulations hostiles, ordre des chargements, conformité des bundles JSON/JavaScript, neutralité de la pondération, présence de la progression et non-publication du sondage.
+6. `tests/nova-civic-integrity.test.mjs` contient **35 tests déclarés** dans Node : documents, manipulations hostiles, ordre des chargements, conformité des bundles JSON/JavaScript, neutralité de la pondération, présence de la progression et non-publication du sondage.
 7. `.github/workflows/nova-sinjira-finances-tests.yml` déclenche désormais aussi les contrôles en cas de modification des interfaces, scripts et corpus civiques, pour `push` et `pull_request`.
 
 **Contrôles directs réellement exécutés :** **30/30** assertions de cohérence et mutations du validateur réussies dans un exécuteur JavaScript isolé. L'ensemble des **33 tests Node n'a pas encore une exécution CI attestée**, et les contrôles directs ne remplacent pas des tests navigateur exhaustifs.
@@ -63,7 +63,7 @@ Une vérification supplémentaire de la **base Supabase connectée au site** a �
 
 Le module `assets/nova-civic-integrity.js` contient désormais **`scoreCompass(questionnaire, answers)`**, une fonction pure pour les seize axes, contrôlant les réponses (−3 à +3, ou `null` pour « Sans opinion »), les poids d'importance et les projections secondaires. La boussole publique utilise **ce même calcul**, plutôt qu'une copie non testée.
 
-Une comparaison de **260 jeux de réponses de test diversifiés** (valeurs, poids et questions passées) entre le calcul historique et le nouveau moteur a donné **260 résultats identiques**. Des essais supplémentaires montrent que **64 questions passées** produisent **16 scores non calculables** et qu'un seul choix ne crée pas artificiellement un score d'axe. Le nouveau fichier `tests/nova-civic-scoring.test.mjs` contient **23 tests Node déclarés**; `tests/nova-civic-readiness.test.mjs` en contient maintenant **10**, en plus des **34 tests** d'intégrité existants. Leur exécution en GitHub Actions n'est **pas encore attestée** par une preuve de CI.
+Une comparaison de **260 jeux de réponses de test diversifiés** (valeurs, poids et questions passées) entre le calcul historique et le nouveau moteur a donné **260 résultats identiques**. Des essais supplémentaires montrent que **64 questions passées** produisent **16 scores non calculables** et qu'un seul choix ne crée pas artificiellement un score d'axe. Le nouveau fichier `tests/nova-civic-scoring.test.mjs` contient **25 tests Node déclarés**; `tests/nova-civic-readiness.test.mjs` en contient maintenant **10**, en plus des **35 tests** d'intégrité existants. Leur exécution en GitHub Actions n'est **pas encore attestée** par une preuve de CI.
 
 Les huit **formulations et thèmes** du sondage sont aussi figés dans le contrôleur et comparés aux sources JSON; changer la formulation dans le bundle local seul empêche l'utilisation du questionnaire. Le sondage reste `published:false`.
 
@@ -85,6 +85,10 @@ La version 5 de l'Edge Function `nova-civic-poll` a été consultée : elle refu
 ### Matrice actualisée
 
 Le registre `data/validation-sondage-boussole-2026-11-07.json` atteste **5 contrôles sur 12** pour la boussole et **6 contrôles sur 11** pour le sondage. Ces rapports de portes franchies **ne sont pas des pourcentages de réussite**. Les contrôles restants exigent notamment des tests d'intégration complets, vérifications multi-navigateurs et accessibilité, revue de confidentialité et décisions de publication.
+
+### Complément : consentement explicite et conformité électorale
+
+Le formulaire de sondage demande désormais **un consentement exprès** à la transmission d'opinions politiques pour leur comptabilisation et la publication conditionnelle de statistiques agrégées, avec un lien vers la politique de confidentialité et l'avertissement qu'une réponse agrégée ne peut être retirée individuellement. L'analyse préalable `official/working/controle-juridique-confidentialite-sondage-2026-11-07-v1.md` documente les références de la Commission d'accès à l'information et d'Élections Québec sur les sondages et les dépenses électorales. **Ce travail ne constitue pas une certification juridique; la porte légale demeure non franchie.**
 
 ## Portes de qualité nécessaires pour pouvoir annoncer « 100 % »
 
