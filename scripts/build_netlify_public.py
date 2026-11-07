@@ -149,6 +149,17 @@ SINJIRA_DOCUMENTS_DIR = Path("projets/sinjira/documents")
 SINJIRA_PRIVATE_RELEASE_METADATA = {
     Path("projets/sinjira/romans/livre-1-release.json"),
 }
+# La bibliothèque de romans contient aussi des sources, métadonnées et
+# manuscrits privés. Aucune nouvelle page, image ou script ajouté dans ce
+# sous-arbre ne doit devenir public sans revue explicite. La liseuse privée
+# reste sous compte/ et charge le livre complet via une autorisation serveur.
+SINJIRA_PUBLIC_NOVEL_PAGES = frozenset({
+    Path("projets/sinjira/romans/index.html"),
+    Path("projets/sinjira/romans/lire-demo.html"),
+    Path("projets/sinjira/romans/precommande.html"),
+    Path("projets/sinjira/romans/le-sang-du-sauveur/index.html"),
+})
+
 LIVRE1_DEMO_PUBLIC_PATH = Path(
     "projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"
 )
@@ -526,6 +537,11 @@ def relative_path_allowed(rel: Path) -> bool:
     # mais ne sont jamais nécessaires au runtime public.
     if rel in SINJIRA_PRIVATE_RELEASE_METADATA:
         return False
+
+    # Le dossier romans est privé par défaut, même pour .html/.js/.webp :
+    # seuls les quatre écrans publics vérifiés peuvent entrer dans _site.
+    if len(parts) >= 3 and parts[:3] == ("projets", "sinjira", "romans"):
+        return rel in SINJIRA_PUBLIC_NOVEL_PAGES
 
     # Codex : un seul document HTML public, pas de futur aperçu de travail
     # ni export pouvant être publié par extension HTML autorisée ailleurs.
