@@ -358,6 +358,21 @@ Les fichiers de référence candidats `official/reference/*` et `data/sources.js
 
 **Suite logique :** extraire et rapprocher les profils financiers municipaux 2024–2025, établir les crédits/obligations scolaires, chiffrer les droits des salariés et les échéances de dette pour chaque statut du Québec et faire auditer deux budgets décennaux. Aucune loi ni référence candidate `official/reference/*` n'est modifiée.
 
+## G0.16h — Recettes fiscales municipales réellement observées en 2024 (7 novembre 2026)
+
+**Préparation du programme : 47/100 inchangé.** G0.16h ajoute, pour la première fois dans le dossier, une **sommation chiffrée officielle des comptes municipaux de 2024**, lue et vérifiée directement dans les pages **S7 / 3** et **S27 / 35** du [rapport MAMH 2024](https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/finances_indicateurs_fiscalite/information_financiere/rapports_financiers_organismes_municipaux/2024/RAP_financier_2024_sommation_municipalites_locales.pdf).
+
+- **Sommation partielle de 1 056 municipalités locales, au 17 mars 2026** : certaines municipalités et collectivités sont absentes; la section de ventilation des taxes est marquée **« Non audité »**. Cette source n'est **pas exhaustive** de tous les organismes municipaux.
+- **Recettes fiscales locales 2024 :** **17 188 134 046 $**, dont **14 970 167 302 $** de taxes sur la valeur foncière, **2 199 032 000 $** de taxes/compensations/tarifications sur une autre base et **18 934 744 $** de taxes d'affaires; les trois chiffres se réconcilient exactement.
+- **Comptes consolidés observés :** **32 109 026 468 $ de recettes**, **28 366 959 822 $ de charges** et **3 742 066 646 $ d'excédent lié aux activités**. Les transferts et frais de financement sont déjà compris dans les totaux : aucun double comptage.
+- **Rapports de parts dérivées (pas des pourcentages publiés par le MAMH) :** foncier = **87,10 % de toutes les taxes municipales** ou **46,62 % de toutes les recettes**; toutes les taxes = **53,53 % des recettes**. Ces définitions **diffèrent** du cadrage de l'UMQ selon lequel la taxe foncière contribue à 70 % des revenus municipaux.
+- **Données 2023 :** la même sommation contient les chiffres comparatifs; l'évolution calculée des taxes de **2023 à 2024 est de 6,88 %**, sans attribuer cette variation à une cause politique ou présumer un périmètre annuel constant.
+- **Attention :** taxe foncière **municipale de 2024** ≠ taxe **scolaire provinciale prévue 2026–2027 (1 301 M$)**. Ni l'une ni l'autre n'est un budget Nova. Le fichier antérieurement répertorié `PF-2024-2024-Prov.csv` contient des **indicateurs/ratios**, pas cette ventilation monétaire; il n'a pas été importé comme preuve.
+- **Livrables :** `data/finances-municipales-g0-16h-2024.json`, `assets/g016h-municipal-finance-core.mjs`, `tests/g016h-municipal-finance.test.mjs` (**31 cas, 31 réussis en rejeu V8 isolé, et non CI Node certifié**) et `official/working/rapport-g0-16h-finances-municipales-observees-2024-v1.md`.
+- **Décision :** recettes de référence désormais chiffrées, **mais compensation fiscale municipale 2026, financement des services et impacts sur les personnes restent inconnus**; G0.16h n'homologue aucune réforme ni aucun taux d'impôt. V10/V14/V15 G0.15 restent à documenter.
+
+**Suite G0.16i :** obtenir les fichiers comptables municipaux détaillés, harmoniser 2024–2026, intégrer les transferts inter-administrations et calculer avec un auditeur les besoins de compensation pour chacun des deux statuts constitutionnels. Les références candidates `official/reference/*` et `data/sources.json` ne sont pas modifiées.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
