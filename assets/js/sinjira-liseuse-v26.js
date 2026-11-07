@@ -361,7 +361,20 @@ function bindControls(){
   }));
   $('reader-voice-pause').addEventListener('click',toggleSpeechPause);
   $('reader-voice-stop').addEventListener('click',()=>stopNarration());
-  window.addEventListener('pagehide',()=>{stopNarration(false);flushProgress();companion?.close()});
+  window.addEventListener('pagehide',()=>{
+    stopNarration(false);
+    flushProgress();
+    // Un onglet privé ne doit jamais ressurgir depuis le cache de navigation
+    // après une déconnexion, un changement de compte ou la révocation des droits.
+    if(isFull)lockPrivateReader();
+    // La démo peut revenir du bfcache avec ses signets et son moteur actifs.
+  });
+  window.addEventListener('pageshow',event=>{
+    if(isFull&&event.persisted){
+      // Rétablit l'authentification et les droits de lecture côté serveur.
+      location.reload();
+    }
+  });
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='hidden')flushProgress();
   });
@@ -370,10 +383,21 @@ function bindControls(){
     if(state.mode==='page')renderPage();
   });
   document.addEventListener('keydown',event=>{
-    const tag=document.activeElement?.tagName||'';
-    if(['INPUT','SELECT','TEXTAREA','BUTTON'].includes(tag)||event.altKey||event.ctrlKey||event.metaKey)return;
-    if(event.key==='ArrowRight'||event.key==='PageDown'){event.preventDefault();changePage(state.page+1)}
-    if(event.key==='ArrowLeft'||event.key==='PageUp'){event.preventDefault();changePage(state.page-1)}
+    if(!state.pdf||event.defaultPrevented||event.isComposing||
+       event.altKey||event.ctrlKey||event.metaKey||event.shiftKey)return;
+    const active=document.activeElement;
+    // Les raccourcis concernent la lecture, jamais les contrôles, les liens,
+    // les menus ou les zones éditables utilisés au clavier.
+    if(active&&active!==document.body&&active!==document.documentElement&&
+       active!==$('reader-viewer'))return;
+    // Ne pas transformer un déplacement de sélection de texte en changement de page.
+    if(window.getSelection()?.toString())return;
+    if(event.key==='ArrowRight'||event.key==='PageDown'){
+      event.preventDefault();changePage(state.page+1);
+    }
+    if(event.key==='ArrowLeft'||event.key==='PageUp'){
+      event.preventDefault();changePage(state.page-1);
+    }
   });
   let resizeTimer;
   window.addEventListener('resize',()=>{
@@ -393,6 +417,8 @@ function lockPrivateReader(){
   if(!isFull||state.accessInvalidated)return;
   state.accessInvalidated=true;
   state.accessEpoch++;
+  try{state.authSubscription?.unsubscribe?.()}catch{/* Nettoyage best effort */}
+  state.authSubscription=null;
   state.loadController?.abort();
   state.loadController=null;
   clearTimeout(state.saveTimer);state.saveTimer=null;
