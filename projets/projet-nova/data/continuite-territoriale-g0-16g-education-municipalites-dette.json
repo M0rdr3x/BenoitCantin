@@ -131,7 +131,10 @@
       "umq_claim_source_id": "MUNICIPAL_UMQ",
       "umq_claim_is_independent_audited_nova_data": false,
       "municipal_taxation_not_in_provincial_1301_mcad": true,
-      "funding_transition_estimate_mcad": null
+      "funding_transition_estimate_mcad": null,
+      "aggregate_2024_resource_page": "https://www.donneesquebec.ca/recherche/dataset/profil-financier-des-municipalites-locales/resource/5dec077d-4ef9-4e22-99e9-0c4f3a6dd52d",
+      "aggregate_2024_csv_source": "https://mamh.gouv.qc.ca/fichiersdonneesouvertes/PF-2024-2024-Prov.csv",
+      "aggregate_2024_csv_status": "SOURCE_CATALOGUE_IDENTIFIEE_NON_IMPORTEE"
     },
     "education": {
       "ministry_and_school_budget_reconciled_mcad": null,
