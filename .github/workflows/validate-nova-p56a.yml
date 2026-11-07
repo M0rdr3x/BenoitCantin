@@ -1,0 +1,38 @@
+name: Projet Nova P56A - Audit de preparation budget decennal
+on:
+  pull_request:
+    paths:
+      - 'scripts/auditer_preparation_budget_decennal_nova_p56a.py'
+      - 'scripts/tests/test_auditer_preparation_budget_decennal_nova_p56a.py'
+      - 'scripts/evaluer_transition_fiscale_nova_p52b.py'
+      - 'projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json'
+      - 'projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json'
+      - 'projets/projet-nova/etudes/P56A_*'
+      - '.github/workflows/validate-nova-p56a.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit-p56a:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tester le protocole P56A
+        run: python -m unittest discover -s scripts/tests -p 'test_auditer_preparation_budget_decennal_nova_p56a.py' -v
+      - name: Verifier les 60 annees scenarios, sans fausse economie
+        shell: bash
+        run: |
+          python scripts/auditer_preparation_budget_decennal_nova_p56a.py --gabarit projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json --registre projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json | python -c 'import json,sys; r=json.load(sys.stdin); assert r["nombre_lignes"]==60 and r["nombre_champs_monetaires_theoriques"]==660 and r["nombre_champs_monetaires_inconnus"]==600 and r["preuves_fiscales_p52a_non_validees"]==20 and r["budget_decennal_certifie"] is False and r["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Refuser la certification automatique
+        shell: bash
+        run: |
+          set +e
+          python scripts/auditer_preparation_budget_decennal_nova_p56a.py --gabarit projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json --registre projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json --exiger-budget-certifie
+          code=$?
+          set -e
+          test "$code" -eq 3
