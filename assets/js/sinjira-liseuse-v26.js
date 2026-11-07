@@ -63,7 +63,7 @@ function setTheme(){
   $('reader-theme').value=state.theme;
   $('reader-size').value=String(state.size);
   $('reader-zoom').value=String(state.zoom);
-  document.documentElement.style.setProperty('--reader-text-size',state.size+'px');
+  document.body.style.setProperty('--reader-text-size',state.size+'px');
   $('reader-mode').textContent=state.mode==='texte'?'Mode pages':'Mode texte';
   savePreferences();
 }
@@ -157,7 +157,7 @@ function changePage(value){
   if(next===state.page)return;
   state.page=next;
   updateToolbar();persist();renderPage();
-  $('reader-viewer').scrollTo({top:0,left:0,behavior:'instant'});
+  $('reader-viewer').scrollTo({top:0,left:0,behavior:'auto'});
 }
 function bindControls(){
   $('reader-previous').addEventListener('click',()=>changePage(state.page-1));
