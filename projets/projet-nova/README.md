@@ -238,6 +238,8 @@ Le programme, le corpus, le cadre financier et les statuts de référence candid
 - **Étape suivante :** sources vérifiées et autorisées (G0.16b), puis microsimulation calibrée et audit externe (G0.16c), **uniquement si les portes de données, droits et fiscalité sont satisfaites**.
 - **Statut :** G0.16 **NON FRANCHIE**, aucune adoption, aucun taux, aucun budget ou gain Nova établi. `official/reference/*` et `data/sources.json` restent inchangés.
 
+**Feuille de route du programme complet :** `official/working/feuille-route-completude-47-100-nova-v1.md` distingue les **47 points documentés** et les **53 points manquants** selon les dix pondérations de G0.12. Aucun gain de points automatique, ni adoption présumée.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
