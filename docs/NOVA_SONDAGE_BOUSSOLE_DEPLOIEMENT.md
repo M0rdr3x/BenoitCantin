@@ -143,3 +143,13 @@ En complément du verrou client, la fonction `nova-civic-poll` contient une list
 Le test hors réseau `scripts/test_nova_edge_canonical_questions.cjs` compare le contrat serveur au JSON officiel et simule les permutations, doublons, suppressions, formulations modifiées et ordinaux invalides. Il vérifie la présence de ce contrôle dans les deux flux de l'API. Toute modification éditoriale devra rester une modification de version documentée et approuvée, et non une simple mise à jour silencieuse des textes de la base.
 
 Cette protection est fusionnable et testable **sans mise en service de collecte**. Elle n'autorise ni déploiement de la fonction Edge sans revue, ni activation de `NOVA_POLL_ENABLED` ou `NOVA_POLL_APPROVED_VERSION`. La politique d'avis politiques sensibles et les décisions de gouvernance restent à faire valider par les personnes compétentes.
+
+## Verrou d'âge et de consentement côté API
+
+Le sondage public comporte **deux cases distinctes** et obligatoires : déclaration personnelle d'avoir au moins 18 ans, puis consentement exprès à la transmission d'opinions politiques et à leur comptabilisation sous forme agrégée. Le client ne transmet un bulletin que lorsque les deux cases sont cochées; l'enveloppe JSON contient maintenant deux booléens indépendants : `ageConfirmed:true` et `consentConfirmed:true`.
+
+La fonction Edge refuse toute enveloppe avec consentement absent, faux ou non booléen **avant** CAPTCHA, HMAC ou accès à la base. La validation des huit choix, des jetons et des versions reste obligatoire. Le test `scripts/test_nova_edge_explicit_consent.cjs` exécute le vrai validateur d'enveloppe avec des cas valides et altérés, sans envoyer de bulletin ni accéder au réseau. Le script HTML du sondage change de version de cache pour diffuser le nouveau champ.
+
+**Limite importante :** ces deux valeurs sont des **déclarations effectuées par le client**, pas une vérification indépendante de l'âge ou du consentement effectif. Le système n'enregistre pas de preuve nominative et ne doit pas prétendre le faire. La revue humaine sur l'information à fournir, le fondement juridique, la conservation, les possibilités de retrait et la conformité applicable au Québec reste une condition bloquante de l'ouverture.
+
+Ce contrôle est préparatoire : les flags d'ouverture de la fonction Supabase et `published:false` restent inchangés. Aucun déploiement de la fonction Edge n'est autorisé par cette modification seule.
