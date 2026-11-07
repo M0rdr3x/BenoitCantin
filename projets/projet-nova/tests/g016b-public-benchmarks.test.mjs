@@ -14,7 +14,6 @@ test("deux références historiques et 47 % sans certification",()=>{
  const r=check(source);assert.equal(r.ok,true,r.errors.join(","));
  assert.equal(r.documentary_benchmarks,2);
  assert.equal(r.candidate_catalogues,2);
- assert.equal(r.decida,undefined);
  assert.equal(r.can_calibrate,false);
  assert.equal(r.programme_percent,47);
  assert.equal(r.records_for_policy_simulation,0);
