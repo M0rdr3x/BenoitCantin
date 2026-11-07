@@ -8,7 +8,7 @@ assert.match(html,/<button[^>]+id="poll-send"[^>]*\bdisabled\b/);
 const elements=new Map();
 const pollRadios=[{disabled:false},{disabled:false}];
 const elem=id=>{if(!elements.has(id))elements.set(id,{
-  disabled:false,checked:false,textContent:"",querySelectorAll:()=>pollRadios
+  disabled:false,checked:false,textContent:"",querySelectorAll:()=>pollRadios,replaceChildren:()=>{}
 });return elements.get(id);};
 const selected=new Set();
 let voted=false;
@@ -23,7 +23,7 @@ const context={
 context.globalThis=context;
 const end=src.lastIndexOf("})();");
 assert.ok(end>0);
-vm.runInNewContext(src.slice(0,end)+';globalThis.__pollTest={updateButton,setOpen:v=>open=v,setCaptcha:v=>captchaToken=v,setSending:v=>sending=v,setQuestions:v=>questions=v,setLocal:v=>localCorpus=v,validatedPublicResponse};'+src.slice(end),context,{timeout:2000});
+vm.runInNewContext(src.slice(0,end)+';globalThis.__pollTest={updateButton,setOpen:v=>open=v,setCaptcha:v=>captchaToken=v,setSending:v=>sending=v,setQuestions:v=>questions=v,setLocal:v=>localCorpus=v,validatedPublicResponse,validLocalCorpus,loadPoll};'+src.slice(end),context,{timeout:2000});
 const t=context.__pollTest;
 elem("poll-adult").checked=true;elem("poll-agree").checked=true;
 t.setQuestions([{id:"q02"}]);selected.add("q02");
@@ -49,6 +49,29 @@ t.setSending(false);t.setOpen(false);t.updateButton();
 assert.equal(elem("poll-send").disabled,true,"Retour en mode fermé");
 assert.ok(pollRadios.every(input=>input.disabled),"Les choix déjà rendus sont aussi verrouillés");
 const corpus=JSON.parse(fs.readFileSync(path.join(__dirname,"../projets/projet-nova/data/sondage-citoyen-v1.json"),"utf8"));
+assert.equal(t.validLocalCorpus(corpus),true,"Corpus officiel de huit questions valide");
+const clone=()=>JSON.parse(JSON.stringify(corpus));
+assert.equal(t.validLocalCorpus(null),false);
+assert.equal(t.validLocalCorpus({questions:{}}),false,"Structure défectueuse refusée");
+assert.equal(t.validLocalCorpus([]),false);
+let corrupt=clone();corrupt.questions=corrupt.questions.slice(0,7);
+assert.equal(t.validLocalCorpus(corrupt),false,"Questionnaire tronqué refusé");
+corrupt=clone();corrupt.questions[1].id=corrupt.questions[0].id;
+assert.equal(t.validLocalCorpus(corrupt),false,"Id de question répété refusé");
+corrupt=clone();corrupt.questions[2].ordinal=10;
+assert.equal(t.validLocalCorpus(corrupt),false,"Ordre des questions altéré refusé");
+corrupt=clone();corrupt.questions[0].text=" ";
+assert.equal(t.validLocalCorpus(corrupt),false,"Texte de question vide refusé");
+corrupt=clone();corrupt.options[0].value=99;
+assert.equal(t.validLocalCorpus(corrupt),false,"Catégorie de réponse différente refusée");
+corrupt=clone();corrupt.options[0].label="Position remplacée";
+assert.equal(t.validLocalCorpus(corrupt),false,"Libellé de réponse modifié refusé");
+corrupt=clone();corrupt.published="true";
+assert.equal(t.validLocalCorpus(corrupt),false,"Activation non booléenne refusée");
+corrupt=clone();corrupt.version="autre-version";
+assert.equal(t.validLocalCorpus(corrupt),false,"Version incompatible refusée");
+corrupt=clone();corrupt.format="sondage_representatif";
+assert.equal(t.validLocalCorpus(corrupt),false,"Format politique différent refusé");
 t.setQuestions(corpus.questions);t.setLocal(corpus);
 const baseQuestions=corpus.questions.map(q=>({id:q.id,ordinal:q.ordinal,text:q.text,counts:null}));
 const hidden={version:corpus.version,open:false,siteKey:null,minPublicBallots:10,
@@ -89,3 +112,19 @@ assert.equal(t.validatedPublicResponse(tamper(c=>({...c,"99":1}))),false,"Catég
 assert.equal(t.validatedPublicResponse(tamper(c=>({...c,"9":"10"}))),false,"Nombre sous forme de texte");
 console.log("OK sondage : serveur et navigateur concordants, aucun petit effectif, aucun pourcentage issu de données invalides.");
 console.log("OK sondage : désactivé hors ouverture, âge, anti-robot, choix et doublon.");
+
+
+// Cas d'intégration : le chargement d'un corpus invalide doit verrouiller
+// l'envoi, afficher une erreur claire et n'effectuer aucun GET ni POST.
+(async()=>{
+  let networkCalls=0;
+  context.fetch=()=>{networkCalls++;throw new Error("Une source corrompue n'autorise pas de requête réseau");};
+  context.window.__NOVA_POLL_PUBLIC_CORPUS={questions:"corrompues",published:true};
+  await t.loadPoll();
+  assert.equal(networkCalls,0,"Corpus invalide : aucun accès API");
+  assert.match(elem("poll-live-status").textContent,/incomplet/);
+  assert.equal(elem("poll-send").disabled,true,"Corpus invalide : envoi verrouillé");
+  assert.match(elem("poll-results-status").textContent,/pas disponibles/);
+  assert.match(elem("poll-questions").textContent,/indisponible/);
+  console.log("OK sondage : corpus public tronqué/doublé refuse toute collecte et affiche un état clair.");
+})().catch(error=>{console.error(error);process.exitCode=1;});
