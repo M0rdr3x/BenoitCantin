@@ -64,6 +64,9 @@ def validate() -> list[str]:
         "reader-loading","reader-content","reader-status","reader-total",
         "reader-error","reader-native-demo","reader-demo-link","reader-download-demo",
         "reader-edition","reader-privacy","reader-mode","reader-chapter-label",
+        "reader-font","reader-size-value","reader-line-height","reader-text-width",
+        "reader-letter-spacing","reader-voice","reader-speed","reader-voice-auto",
+        "reader-voice-play","reader-voice-pause","reader-voice-stop","reader-voice-status",
     )
     for element in expected_ids:
         if element not in ui.ids:
@@ -77,6 +80,9 @@ def validate() -> list[str]:
         "state.pdf.numPages", "reader-chapters", "reader-text",
         "reader-theme", "reader-page", "sinjira_reader_library",
         "localStorage", "SIGNED_ORIGIN", "isFull", "referrerPolicy:'no-referrer'",
+        "pdfTextToParagraphs", "speechTextChunks", "speechSynthesis",
+        "reader-voice-play", "reader-voice-pause", "reader-voice-stop",
+        "reader-font", "reader-line-height", "reader-text-width",
     )
     for needle in required:
         if needle not in reader:
@@ -90,6 +96,13 @@ def validate() -> list[str]:
     for part in forbidden:
         if part in reader:
             problems.append("Fichier intégral ou privilège exposé en JavaScript : " + part[:35])
+    if not (ROOT / "assets/js/sinjira-liseuse-text-v27.mjs").is_file():
+        problems.append("Moteur de texte reformatable absent")
+    else:
+        helper=(ROOT / "assets/js/sinjira-liseuse-text-v27.mjs").read_text("utf-8")
+        for marker in ("export function pdfTextToParagraphs(", "export function speechTextChunks("):
+            if marker not in helper:
+                problems.append("Fonction de lecture manquante : " + marker)
     for path in ("compte/bibliotheque.html",
                  "compte/bibliotheque-romans.html",
                  "projets/sinjira/romans/index.html"):
