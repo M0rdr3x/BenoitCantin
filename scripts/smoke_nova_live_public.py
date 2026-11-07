@@ -278,7 +278,8 @@ def main():
                                     "sondage-public-corpus.js", "sondage-citoyen.js",
                                     dependencies=("nova-civic-integrity.js",))
         assert_scripts_match_source(compass_html, (NOVA / "boussole-electorale.html").read_text("utf-8"),
-                                    "boussole-public-corpus.js", "boussole-electorale.js")
+                                    "boussole-public-corpus.js", "boussole-electorale.js",
+                                    dependencies=("nova-civic-integrity.js",))
 
         remote_poll = verify(PREFIX + "assets/sondage-public-corpus.js")
         remote_compass = verify(PREFIX + "assets/boussole-public-corpus.js")
