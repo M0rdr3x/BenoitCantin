@@ -108,6 +108,33 @@ def script_order(html: str, bundle: str, application: str):
         raise ValueError("Chargement JavaScript incorrect : " + bundle)
 
 
+def script_ref(html: str, filename: str) -> str:
+    """Récupérer l'unique script versionné attendu (aucun chemin de repli ambigu)."""
+    scripts = re.findall(r'<script\b[^>]*\bsrc="([^"]+)"', html, re.I)
+    hits = [src for src in scripts if src.split("?", 1)[0] == "assets/" + filename]
+    if len(hits) != 1 or "?" not in hits[0]:
+        raise ValueError("Référence JavaScript absente, dupliquée ou non versionnée : " + filename)
+    return hits[0]
+
+
+def assert_scripts_match_source(deployed_html: str, source_html: str, bundle: str, application: str):
+    """Comparer les versions des scripts LIVE aux références de la branche GitHub."""
+    expected_bundle = script_ref(source_html, bundle)
+    expected_application = script_ref(source_html, application)
+    if script_ref(deployed_html, bundle) != expected_bundle:
+        raise ValueError("Version du corpus public déployé différente du code source : " + bundle)
+    if script_ref(deployed_html, application) != expected_application:
+        raise ValueError("Version du script applicatif déployé différente du code source : " + application)
+    script_order(deployed_html, expected_bundle, expected_application)
+
+
+def compare_local_application(raw: str, source_filename: str):
+    """Vérifier les octets du code applicatif rendu public, pas seulement son HTTP 200."""
+    local = (NOVA / "assets" / source_filename).read_text(encoding="utf-8")
+    if raw != local:
+        raise ValueError("Script public périmé ou divergent : " + source_filename)
+
+
 def validate_opening_state(local_poll, response):
     """Le serveur ne doit jamais accepter des votes sur un corpus marqué provisoire."""
     if not isinstance(local_poll.get("published"), bool):
@@ -149,6 +176,29 @@ def self_test():
     else:
         raise AssertionError("Activation serveur accidentelle non détectée")
     script_order('<script src="a.js"></script><script src="b.js"></script>', "a.js", "b.js")
+    local_scripts = '<script defer src="assets/sondage-public-corpus.js?v=1"></script><script defer src="assets/sondage-citoyen.js?v=9"></script>'
+    assert_scripts_match_source(local_scripts, local_scripts, "sondage-public-corpus.js", "sondage-citoyen.js")
+    try:
+        assert_scripts_match_source(local_scripts.replace("v=9", "v=8"), local_scripts,
+                                    "sondage-public-corpus.js", "sondage-citoyen.js")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Un ancien script applicatif déployé doit être rejeté")
+    try:
+        assert_scripts_match_source(local_scripts.replace("v=1", "v=0"), local_scripts,
+                                    "sondage-public-corpus.js", "sondage-citoyen.js")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Un ancien corpus public déployé doit être rejeté")
+    try:
+        script_ref(local_scripts + '<script defer src="assets/sondage-citoyen.js?v=9"></script>',
+                   "sondage-citoyen.js")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Un script applicatif chargé deux fois doit être rejeté")
     try:
         script_order('<script src="b.js"></script><script src="a.js"></script>', "a.js", "b.js")
     except ValueError:
@@ -203,16 +253,18 @@ def main():
         compass_html = verify(PREFIX + "boussole-electorale.html")
         if 'href="sondages-a-valider.html"' not in poll_html:
             raise ValueError("Le sondage public n'indique pas le projet 64/40")
-        script_order(poll_html, "sondage-public-corpus.js?v=1", "sondage-citoyen.js?v=8")
-        script_order(compass_html, "boussole-public-corpus.js?v=1", "boussole-electorale.js?v=3.4.18")
+        assert_scripts_match_source(poll_html, (NOVA / "sondage-citoyen.html").read_text("utf-8"),
+                                    "sondage-public-corpus.js", "sondage-citoyen.js")
+        assert_scripts_match_source(compass_html, (NOVA / "boussole-electorale.html").read_text("utf-8"),
+                                    "boussole-public-corpus.js", "boussole-electorale.js")
 
         remote_poll = verify(PREFIX + "assets/sondage-public-corpus.js")
         remote_compass = verify(PREFIX + "assets/boussole-public-corpus.js")
         compare_local_bundle(remote_poll, "__NOVA_POLL_PUBLIC_CORPUS", "sondage-public-corpus.js")
         compare_local_bundle(remote_compass, "__NOVA_COMPASS_PUBLIC_CORPORA", "boussole-public-corpus.js")
 
-        verify(PREFIX + "assets/sondage-citoyen.js")
-        verify(PREFIX + "assets/boussole-electorale.js")
+        compare_local_application(verify(PREFIX + "assets/sondage-citoyen.js"), "sondage-citoyen.js")
+        compare_local_application(verify(PREFIX + "assets/boussole-electorale.js"), "boussole-electorale.js")
 
         status, headers, data = stable_api_get()
         checks += 1
