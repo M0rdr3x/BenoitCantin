@@ -344,6 +344,20 @@ Les quatre références candidates de `official/reference/*` et `data/sources.js
 
 Les fichiers de référence candidats `official/reference/*` et `data/sources.json` ne sont pas modifiés.
 
+## G0.16g — Protection des écoles, municipalités, travailleurs et dette (7 novembre 2026)
+
+**Évaluation de préparation du programme : 47/100, sans changement.** À la suite des chantiers G0.16e/f, ce dossier réunit des sources financières et juridiques sur les **écoles, les municipalités, la main-d'œuvre et le service de la dette**, pour éviter qu'une réforme fiscale à « deux prélèvements » reporte ses coûts sur les citoyens, salariés et municipalités.
+
+- **Taxe scolaire :** le rapport préélectoral d'août 2026, rapproché dans G0.14, prévoit **1 301 M$ en 2026–2027**. Cette recette **n'est ni un impôt foncier municipal ni le budget total de l'éducation**; aucun financement de remplacement Nova n'est démontré.
+- **Municipalités :** les séries MAMH/Données Québec sont identifiées mais **non consolidées**. L'UMQ évoque **70 % de revenus municipaux provenant de la taxe foncière**; c'est une affirmation de l'association, non une mesure de financement Nova auditée. **Aucun montant fiscal municipal global n'est ajouté ou inventé**.
+- **Droits et travail :** continuité à documenter pour les enseignants, employés des services publics, conventions collectives, pensions, eau, voirie, sécurité incendie et services locaux, sans économies de main-d'œuvre fictives.
+- **Dette :** les dépenses gouvernementales de service de dette **2026–2027 sont de 10 516 M$** (G0.14) et le ratio officiel de dette nette au 31 mars 2026 est de **38,1 % du PIB**. Ce sont des mesures distinctes; le service est déjà dans les dépenses du gouvernement, donc **aucun double comptage**.
+- **Compétences :** la Loi constitutionnelle de 1867, notamment 92(2), 92(3), 92(8) et 93, impose de distinguer l'administration provinciale, la fiscalité locale et les obligations scolaires; la souveraineté exige un compte séparé de dette et de fonctions héritées.
+- **Livrables vérifiables :** `data/continuite-territoriale-g0-16g-education-municipalites-dette.json` (11 sources, 9 obligations et 2 scénarios), `assets/g016g-territorial-continuity-core.mjs` (contrôles fail-closed), `tests/g016g-territorial-continuity.test.mjs` (**40 cas déclarés et rejoués en JavaScript isolé**) et `official/working/rapport-g0-16g-financement-ecoles-villes-emploi-dette-v1.md` (rapport et plan de travaux).
+- **Limites :** G0.15 V10, V14 et V15 restent à documenter; aucune révision juridique ou budgétaire indépendante, aucun taux de taxe proposé, et **G0.16g non franchie**. Les 40 cas ont été rejoués dans un environnement JavaScript compatible avec les assertions Node, **pas dans un CI GitHub Actions attesté**.
+
+**Suite logique :** extraire et rapprocher les profils financiers municipaux 2024–2025, établir les crédits/obligations scolaires, chiffrer les droits des salariés et les échéances de dette pour chaque statut du Québec et faire auditer deux budgets décennaux. Aucune loi ni référence candidate `official/reference/*` n'est modifiée.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
