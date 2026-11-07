@@ -1,0 +1,243 @@
+{
+  "schema": "nova-g015-reperage-sources-officielles/v1",
+  "project": "Projet Nova",
+  "date": "2026-11-07",
+  "statut": "REPERAGE_PUBLIC_NON_VALIDE",
+  "interpretation": "Un lien public vérifié n'est ni une preuve complète, ni une source primaire examinée exhaustivement, ni une revue indépendante.",
+  "source_registry": "data/matrice-preuves-g0-15-fiscalite.json",
+  "completeness_audit": "data/audit-completude-programme-nova-2026-11-05.json",
+  "programme_score_unchanged": 47,
+  "preconditions_confirmed": 0,
+  "independent_reviews_confirmed": 0,
+  "proof_scope_count": 15,
+  "selected_candidates_count": 8,
+  "entries": [
+    {
+      "id": "V01",
+      "group": "VENTILATION",
+      "requis": "Consommation: TVQ et taxes spécifiques",
+      "statut_preuve_g015": "A_DOCUMENTER",
+      "independently_reviewed": false,
+      "candidats": [
+        {
+          "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Rapport_preelectoral/FR/MINFR_RP_2026.pdf",
+          "periode": "2026-2027",
+          "apport": "Agrégats de recettes et nomenclature budgétaire prévisionnelle.",
+          "limite": "Aucune ventilation juridiquement exhaustive TVQ, carburants, produits ni rapprochement des prélèvements indirects dans ce registre.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        }
+      ],
+      "prochaine_verification": "Ventiler les sous-composantes de consommation et réconcilier TVA/TVQ, droits indirects et affectations sans double compte."
+    },
+    {
+      "id": "V02",
+      "group": "VENTILATION",
+      "requis": "Droits, permis, redevances: nature et affectation",
+      "statut_preuve_g015": "A_DOCUMENTER",
+      "independently_reviewed": false,
+      "candidats": [],
+      "prochaine_verification": "Obtenir ventilation légale et par exercice des droits, permis et redevances, puis statut de chaque flux."
+    },
+    {
+      "id": "V03",
+      "group": "VENTILATION",
+      "requis": "Revenus divers: ventilation et transferts internes",
+      "statut_preuve_g015": "A_DOCUMENTER",
+      "independently_reviewed": false,
+      "candidats": [],
+      "prochaine_verification": "Distinguer revenus divers, comptes à fin déterminée, transferts internes et consolidations."
+    },
+    {
+      "id": "V04",
+      "group": "VENTILATION",
+      "requis": "Impôts des sociétés: composantes exactes",
+      "statut_preuve_g015": "A_DOCUMENTER",
+      "independently_reviewed": false,
+      "candidats": [],
+      "prochaine_verification": "Décomposer les impôts des sociétés en prélèvements réels, taux, crédits, remboursements et pertes."
+    },
+    {
+      "id": "V05",
+      "group": "ASSIETTE",
+      "requis": "Personnes physiques: assiette et crédits",
+      "statut_preuve_g015": "A_DOCUMENTER",
+      "independently_reviewed": false,
+      "candidats": [
+        {
+          "url": "https://www.revenuquebec.ca/fr/salle-de-presse/statistiques/",
+          "periode": "années publiées variables",
+          "apport": "Répertoire officiel de statistiques des déclarations de particuliers.",
+          "limite": "Ne fournit pas à lui seul les assiettes fiscales applicables, crédits et microdonnées autorisées.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        }
+      ],
+      "prochaine_verification": "Acquérir les agrégats de l'assiette imposable et les crédits, année par année, avec méthode et autorisation."
+    },
+    {
+      "id": "V06",
+      "group": "ASSIETTE",
+      "requis": "Entreprises: profits, pertes et dividendes",
+      "statut_preuve_g015": "A_DOCUMENTER",
+      "independently_reviewed": false,
+      "candidats": [],
+      "prochaine_verification": "Obtenir séries officielles d'assiettes des sociétés, pertes reportées, dividendes et éventuels doubles comptes."
+    },
+    {
+      "id": "V07",
+      "group": "CONTINUITE",
+      "requis": "RRQ: droits et équilibre actuariel",
+      "statut_preuve_g015": "A_DOCUMENTER",
+      "independently_reviewed": false,
+      "candidats": [
+        {
+          "url": "https://www.retraitequebec.gouv.qc.ca/fr/publications/programmes/regime-rentes-quebec-rrq/evaluations-actuarielles/evaluation-actuarielle-regime-rentes-quebec-31-decembre-2024",
+          "periode": "31 décembre 2024; publication mise à jour octobre 2026",
+          "apport": "Évaluation actuarielle des réserves, cotisations, prestations et projections du RRQ.",
+          "limite": "Évaluation d'un régime en vigueur, pas une garantie de neutralité d'une réforme fiscale NOVA.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        },
+        {
+          "url": "https://www.retraitequebec.gouv.qc.ca/fr/actualites/2026/baisse-taux-cotisation-rrq-demeure-bonne-sante-financiere",
+          "periode": "2026",
+          "apport": "Changement des cotisations du régime de base en 2026.",
+          "limite": "Ne remplace pas les séries complètes et un avis actuariel indépendant sur une réforme.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        }
+      ],
+      "prochaine_verification": "Réconcilier la version actuarielle modifiée en 2026 avec le droit actuel et une analyse indépendante de continuité."
+    },
+    {
+      "id": "V08",
+      "group": "CONTINUITE",
+      "requis": "RQAP: cotisations, prestations, fonds fiduciaire",
+      "statut_preuve_g015": "A_DOCUMENTER",
+      "independently_reviewed": false,
+      "candidats": [
+        {
+          "url": "https://www.quebec.ca/gouvernement/ministeres-organismes/conseil-gestion-assurance-parentale/mission-mandats/fonds-dassurance-parentale",
+          "periode": "cadre institutionnel en vigueur",
+          "apport": "Nature fiduciaire, financement par cotisations et droits du RQAP.",
+          "limite": "Ne fournit pas seul les états financiers année par année ni un scénario de continuité financé.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        },
+        {
+          "url": "https://www.quebec.ca/gouvernement/ministeres-organismes/conseil-gestion-assurance-parentale/publications-et-statistiques-du-conseil-de-gestion-de-lassurance-parentale/publications",
+          "periode": "rapports 2025 cités",
+          "apport": "Répertoire des rapports annuels et actuariels RQAP.",
+          "limite": "Évaluer les rapports originaux, leurs périodes et le transfert de responsabilités à Retraite Québec en mai 2026.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        }
+      ],
+      "prochaine_verification": "Lire les états financiers originaux, taux, réserves et cotisations RQAP et confirmer le mandataire compétent depuis mai 2026."
+    },
+    {
+      "id": "V09",
+      "group": "CONTINUITE",
+      "requis": "Santé et médicaments: financement et droits",
+      "statut_preuve_g015": "A_DOCUMENTER",
+      "independently_reviewed": false,
+      "candidats": [
+        {
+          "url": "https://www.ramq.gouv.qc.ca/fr/donnees-statistiques/ramq-quelques-chiffres",
+          "periode": "2024-2025 et 2023-2024",
+          "apport": "Ventilation publiée de sources de financement et de coûts de programmes RAMQ.",
+          "limite": "Portée RAMQ seulement; sans consolidation complète du réseau de santé ni coût d'une réforme NOVA.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        }
+      ],
+      "prochaine_verification": "Consolider financement RAMQ, FSS, médicaments et services, sans inclure deux fois transferts ou fonds."
+    },
+    {
+      "id": "V10",
+      "group": "CONTINUITE",
+      "requis": "Écoles et municipalités: financement et compétences",
+      "statut_preuve_g015": "A_DOCUMENTER",
+      "independently_reviewed": false,
+      "candidats": [],
+      "prochaine_verification": "Séparer sources de financement scolaires, compétences municipales et obligations de continuité."
+    },
+    {
+      "id": "V11",
+      "group": "CONFORMITE",
+      "requis": "Paradis fiscaux: recette nette réellement additionnelle",
+      "statut_preuve_g015": "A_DOCUMENTER",
+      "independently_reviewed": false,
+      "candidats": [
+        {
+          "url": "https://www.revenuquebec.ca/fr/salle-de-presse/statistiques/les-resultats-des-activites-de-controle-fiscal/",
+          "periode": "2021-2022 à 2025-2026",
+          "apport": "Résultats historiques des activités de contrôle fiscal de Revenu Québec.",
+          "limite": "Montants historiques de contrôle : NI recettes nettes additionnelles, NI rendement exclusif des paradis fiscaux, NI recettes NOVA.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        },
+        {
+          "url": "https://www.revenuquebec.ca/fr/une-mission-des-actions/assurer-la-conformite-fiscale/evasion-fiscale/quest-ce-que-levasion-fiscale/",
+          "periode": "cadre général",
+          "apport": "Définitions de l'évasion et mentions des paradis fiscaux.",
+          "limite": "Texte explicatif, pas un chiffrage différentiel ni une compétence fiscale autonome.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        }
+      ],
+      "prochaine_verification": "Isoler des résultats déjà comptés le rendement réellement NOUVEAU, net des coûts et imputable à la compétence applicable."
+    },
+    {
+      "id": "V12",
+      "group": "INCIDENCE",
+      "requis": "Ménages et régions: déciles et pouvoir d'achat",
+      "statut_preuve_g015": "A_DOCUMENTER",
+      "independently_reviewed": false,
+      "candidats": [
+        {
+          "url": "https://statistique.quebec.ca/fr/produit/tableau/limite-superieure-deciles-revenu-repartition-menages-deciles-type-revenu-menage-revenu-ajuste-taille-menage",
+          "periode": "revenus 2023",
+          "apport": "Déciles par revenu du ménage ajusté et catégories de ménage; notes de précision.",
+          "limite": "Déciles de 2023, non microsimulation 2026-2027; coûts essentiels et différences avant/après réforme inconnus.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        },
+        {
+          "url": "https://statistique.quebec.ca/fr/produit/publication/indicateurs-progres-revenu-median-ajuste",
+          "periode": "2009-2024; mise à jour juin 2026",
+          "apport": "Revenu médian après impôt ajusté et méthode de comparaison en dollars constants.",
+          "limite": "Une médiane n'est pas la distribution des gagnants et perdants ni une assiette imposable.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        }
+      ],
+      "prochaine_verification": "Acquérir données anonymisées et autorisées, bases 2026 homogènes, échelles d'équivalence et dépenses essentielles sans réidentification."
+    },
+    {
+      "id": "V13",
+      "group": "INCIDENCE",
+      "requis": "PME, emplois, salariés et autonomes",
+      "statut_preuve_g015": "A_DOCUMENTER",
+      "independently_reviewed": false,
+      "candidats": [],
+      "prochaine_verification": "Constituer les baselines PME, emplois, salaires et indépendants ainsi que les scénarios de répercussion."
+    },
+    {
+      "id": "V14",
+      "group": "CONSTITUTION",
+      "requis": "Québec dans le Canada et Québec souverain: obligations distinctes",
+      "statut_preuve_g015": "A_DOCUMENTER",
+      "independently_reviewed": false,
+      "candidats": [],
+      "prochaine_verification": "Faire expertiser juridiquement les deux statuts constitutionnels, les compétences et les obligations reprises."
+    },
+    {
+      "id": "V15",
+      "group": "BUDGET",
+      "requis": "Deux budgets sur dix ans et revue indépendante",
+      "statut_preuve_g015": "A_DOCUMENTER",
+      "independently_reviewed": false,
+      "candidats": [
+        {
+          "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Rapport_preelectoral/FR/MINFR_RP_2026.pdf",
+          "periode": "2026-2027",
+          "apport": "Prévisions gouvernementales permettant un scénario de référence.",
+          "limite": "Ne couvre pas deux budgets NOVA sur dix ans; dette, fonctions fédérales, coûts et recettes doivent être reconstitués et validés indépendamment.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        }
+      ],
+      "prochaine_verification": "Produire et faire réviser deux budgets NOVA complets sur dix ans, avec scénarios adverses et vérifications indépendantes."
+    }
+  ]
+}
