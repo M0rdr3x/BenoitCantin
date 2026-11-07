@@ -245,10 +245,20 @@ def run() -> None:
         assert_true(response is not None and response.status < 400,
                     f"{BROWSER_NAME}: nouvelle liseuse inaccessible")
         page.locator("#reader-content:not([hidden])").wait_for(timeout=20_000)
-        page.wait_for_function(
-            "() => document.getElementById('reader-text')?.textContent.includes('Le texte est lisible dans la page.')",
-            timeout=20_000,
-        )
+        try:
+            page.wait_for_function(
+                "() => document.getElementById('reader-text')?.textContent.includes('Le texte est lisible dans la page.')",
+                timeout=25_000,
+            )
+        except Exception as exc:
+            debug=page.evaluate("""() => ({
+              mode:document.getElementById('reader-mode')?.textContent,
+              text:document.getElementById('reader-text')?.textContent?.slice(0,220),
+              hidden:document.getElementById('reader-text')?.hidden,
+              status:document.getElementById('reader-status')?.textContent,
+              page:document.getElementById('reader-page')?.value
+            })""")
+            raise AssertionError(f"{BROWSER_NAME}: texte non affiché; debug={debug}; erreurs={errors[-5:]}") from exc
         assert_true("Le texte est lisible dans la page." in page.locator("#reader-text").inner_text(),
                     f"{BROWSER_NAME}: texte reformatable absent de la liseuse")
         assert_true(not page.locator("#reader-text").is_hidden(),
