@@ -51,7 +51,11 @@ export function verifyG016gTerritorialContinuity(d,g014,g015,g016e,g016f){
    m.umq_claim_property_share_pct!==70||m.umq_claim_source_id!=="MUNICIPAL_UMQ"||
    m.umq_claim_is_independent_audited_nova_data!==false||
    m.municipal_taxation_not_in_provincial_1301_mcad!==true||
-   m.funding_transition_estimate_mcad!==null)fail("MUNICIPAL_TAX_INCOMPLETE");
+   m.funding_transition_estimate_mcad!==null||
+   m.aggregate_2024_resource_page!=="https://www.donneesquebec.ca/recherche/dataset/profil-financier-des-municipalites-locales/resource/5dec077d-4ef9-4e22-99e9-0c4f3a6dd52d"||
+   m.aggregate_2024_csv_source!=="https://mamh.gouv.qc.ca/fichiersdonneesouvertes/PF-2024-2024-Prov.csv"||
+   m.aggregate_2024_csv_status!=="SOURCE_CATALOGUE_IDENTIFIEE_NON_IMPORTEE")
+   fail("MUNICIPAL_TAX_INCOMPLETE");
  if(!obj(ed)||ed.ministry_and_school_budget_reconciled_mcad!==null||
    ed.year!=="2026-2027"||
    !same(ed.source_ids,["EDU_FISCAL_RULES","EDU_BUDGET_RULES"])||
