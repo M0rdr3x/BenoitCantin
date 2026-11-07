@@ -129,3 +129,10 @@ Les requêtes GET des résultats et POST de soumission disposent d'une limite de
 Le navigateur valide le corpus public **avant tout appel réseau au service de vote** : version et état de publication explicites, consultation ouverte non probabiliste réservée aux 18 ans et plus, huit questions distinctes avec ordre 1–8 et texte non vide, six choix avec valeurs et libellés identiques au questionnaire canonique. Une copie tronquée, dupliquée ou modifiée n'est jamais filtrée silencieusement pour former un questionnaire partiel. Dans ce cas, le navigateur affiche un message d'indisponibilité, masque les répartitions, verrouille l'envoi et ne contacte pas l'API de vote.
 
 Le test d'intégration `scripts/test_nova_poll_runtime.cjs` vérifie les cas négatifs et le comportement réel du chargement avec un corpus corrompu, sans réseau. Cette vérification n'autorise pas l'activation d'un corpus provisoire et ne remplace pas la revue de confidentialité ni l'approbation du questionnaire définitif.
+
+
+## Dépendance d'intégrité civique et vérification de livraison
+
+Le sondage public charge désormais `assets/nova-civic-integrity.js` **entre** le corpus public et le contrôleur de l'interface. Cette dépendance valide la structure canonique de la consultation; elle doit être disponible avec la même version que les sources. La CI exécute le vrai validateur sur les corpus 64/16 et 8 questions, ainsi que des mutations défavorables (texte, axe, ordre, poids, contrôle de neutralité, ouverture prématurée de la comparaison). Les bancs d'essai du navigateur simulent la dépendance réelle plutôt qu'un faux résultat favorable.
+
+Le contrôle de la publication isolée exige le fichier d'intégrité et son ordre de chargement. La surveillance du **site réel en lecture seule** en vérifie la référence versionnée et les octets, afin de signaler les caches ou hébergements déphasés. Les tests ne soumettent aucun bulletin. Une exécution de la CI est distincte d'un constat de publication effective sur le domaine public.
