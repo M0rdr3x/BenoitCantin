@@ -110,7 +110,7 @@ def script_order(html: str, bundle: str, application: str):
 
 def script_ref(html: str, filename: str) -> str:
     """Récupérer l'unique script versionné attendu (aucun chemin de repli ambigu)."""
-    scripts = re.findall(r'<script\\b[^>]*\\bsrc="([^"]+)"', html, re.I)
+    scripts = re.findall(r'<script\b[^>]*\bsrc="([^"]+)"', html, re.I)
     hits = [src for src in scripts if src.split("?", 1)[0] == "assets/" + filename]
     if len(hits) != 1 or "?" not in hits[0]:
         raise ValueError("Référence JavaScript absente, dupliquée ou non versionnée : " + filename)
