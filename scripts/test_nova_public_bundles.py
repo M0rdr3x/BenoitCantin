@@ -43,7 +43,7 @@ def main() -> None:
     assert poll["published"] is False, "Interdiction d'ouvrir les votes par génération du bundle"
 
     for page, names in (
-        ("boussole-electorale.html",("assets/boussole-public-corpus.js?v=1","assets/boussole-electorale.js?v=3.4.19")),
+        ("boussole-electorale.html",("assets/boussole-public-corpus.js?v=1","assets/boussole-electorale.js?v=3.4.21")),
         ("sondage-citoyen.html",("assets/sondage-public-corpus.js?v=1","assets/nova-civic-integrity.js?v=1","assets/sondage-citoyen.js?v=12")),
     ):
         content = (NOVA / page).read_text(encoding="utf-8")
