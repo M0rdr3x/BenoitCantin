@@ -21,6 +21,10 @@ const context={
   window:{},crypto:{getRandomValues:()=>{throw new Error("pas de jeton en test");}},console
 };
 context.globalThis=context;
+// Le navigateur charge la validation partagée avant le gestionnaire de sondage.
+const integrity=fs.readFileSync(path.join(__dirname,"../projets/projet-nova/assets/nova-civic-integrity.js"),"utf8");
+vm.runInNewContext(integrity,context,{timeout:2000});
+assert.equal(typeof context.window.__NOVA_CIVIC_INTEGRITY?.inspectPoll,"function");
 const end=src.lastIndexOf("})();");
 assert.ok(end>0);
 vm.runInNewContext(src.slice(0,end)+';globalThis.__pollTest={updateButton,setOpen:v=>open=v,setCaptcha:v=>captchaToken=v,setSending:v=>sending=v,setQuestions:v=>questions=v,setLocal:v=>localCorpus=v,validatedPublicResponse,validLocalCorpus,loadPoll};'+src.slice(end),context,{timeout:2000});
