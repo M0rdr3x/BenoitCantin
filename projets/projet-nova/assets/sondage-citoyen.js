@@ -40,6 +40,8 @@
   // Refuser les doublons, questions tronquées, réponses redéfinies et
   // formats inattendus avant tout rendu ou appel de l'API de consultation.
   function validLocalCorpus(corpus){
+    // Aucun vote si le corpus de référence ou les options ont été altérés.
+    if(window.__NOVA_CIVIC_INTEGRITY?.inspectPoll(corpus)?.ok !== true) return false;
     if(!corpus || typeof corpus!=="object" || Array.isArray(corpus)
        || corpus.version!==VERSION || typeof corpus.published!=="boolean"
        || corpus.format!=="consultation_ouverte_non_probabiliste"
@@ -97,7 +99,11 @@
     for(const radio of $("poll-questions").querySelectorAll('input[type="radio"]')){
       radio.disabled=!open || already || sending;
     }
-    const selections=questions.every(q=>!!document.querySelector('input[name="'+q.id+'"]:checked'));
+    const answered=questions.reduce((count,q)=>
+      count+(document.querySelector('input[name="'+q.id+'"]:checked')?1:0),0);
+    const progress=$("poll-answer-progress");
+    if(progress) progress.textContent="Questions répondues : "+answered+" sur "+(questions.length||8)+".";
+    const selections=questions.length===8 && answered===questions.length;
     const consent=$("poll-adult").checked && $("poll-agree").checked;
     btn.disabled=!open || already || sending || !selections || !consent || !captchaToken;
     if(already) {
