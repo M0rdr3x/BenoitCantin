@@ -134,5 +134,8 @@ test('fermeture de chapitre continu : aucun contenu mémorisé dans le DOM',asyn
   assert.equal(a.getElement('reader-continuous')['aria-pressed'],'false');
   // Les événements tardifs de l'ancienne liseuse sont sans effet.
   button.click();
+  // Laisser les résolutions de PDF différées traverser un tour de boucle :
+  // aucun callback tardif ne doit remettre une page privée à l'écran.
+  await new Promise(resolve=>setTimeout(resolve,0));
   assert.equal(chapter.children.length,0);
 });
