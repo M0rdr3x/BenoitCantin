@@ -92,3 +92,12 @@ test("les sources ne contiennent aucun dossier personnel",()=>{
  assert.equal(source.source_spreadsheets_imported,false);
  assert.equal(source.approved_for_microsimulation,false);
 });
+
+test("entrées corrompues : refus contrôlé sans exception",()=>{
+ const a=clone();a.candidates[0]=null;
+ assert.ok(check(a).errors.includes("CANDIDATE_CATALOGUES"));
+ const bad15=structuredClone(g015);bad15.proofs[0]=null;
+ assert.ok(inspectG016bBenchmarks(source,bad15,g016).errors.includes("PREDECESSOR_G015_MISMATCH"));
+ const bad16=structuredClone(g016);bad16.scenarios[0]=null;
+ assert.ok(inspectG016bBenchmarks(source,g015,bad16).errors.includes("PREDECESSOR_G016_MISMATCH"));
+});
