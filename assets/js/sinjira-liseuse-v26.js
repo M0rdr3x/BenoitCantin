@@ -213,7 +213,9 @@ async function saveCurrentPosition(){
       const cloudSaved=await syncProgress();
       if(!state.pdf||state.accessInvalidated)return;
       positionNotice(cloudSaved
-        ?'Position enregistrée : page '+state.page+' sur votre compte. Emplacement précis conservé sur cet appareil.'
+        ?(localSaved
+          ?'Position enregistrée : page '+state.page+' sur votre compte. Emplacement précis conservé sur cet appareil.'
+          :'Page '+state.page+' synchronisée sur votre compte. Le défilement précis ne peut pas être conservé par ce navigateur.')
         :localSaved
           ?'Page '+state.page+' enregistrée sur cet appareil. Synchronisation du compte indisponible : réessayez.'
           :'Impossible d’enregistrer la position. Vérifiez la connexion et les paramètres du navigateur.',
@@ -386,7 +388,7 @@ function changePage(value){
   state.positionRatio=0;
   state.restorePending=0;
   state.restoringScroll=true;
-  $('reader-viewer').scrollTo({top:0,left:0,behavior:'instant'});
+  $('reader-viewer').scrollTo({top:0,left:0,behavior:'auto'});
   updateToolbar();persist();renderPage();
   positionNotice('Page '+state.page+' mémorisée automatiquement. Vous pouvez aussi l’enregistrer maintenant.');
   companion?.onPageChange();
