@@ -307,6 +307,21 @@ Les quatre références candidates de `official/reference/*` et `data/sources.js
 
 **Décision :** G0.16e **non franchie**, **0/15 preuves fiscales validées indépendamment**, et **47/100** maintenu. Prochaine phase : harmoniser les millésimes, revoir assiettes/crédits/pertes, quantifier la continuité juridique et sociale et auditer séparément les deux budgets sur dix ans. `official/reference/*` et `data/sources.json` restent inchangés.
 
+## G0.16f — Continuité financière des régimes sociaux et de la santé (7 novembre 2026)
+
+**Programme 47/100, inchangé.** Les données publiques du RRQ, du RQAP, de la RAMQ et du financement général de la santé ajoutent des précisions aux risques de la réforme fiscale envisagée, **sans démontrer qu'une substitution des cotisations serait viable**.
+
+- **RRQ 2026 :** exemption 3 500 $, MGA 74 600 $, MSGA 85 000 $; cotisations **6,3 % salarié + 6,3 % employeur** sur la première tranche et **4 % + 4 %** sur la tranche supplémentaire. Le résumé de l'évaluation actuarielle spéciale indique une marge financière du régime de base réduite à **0,12 point**; aucune réforme Nova n'est évaluée actuariellement.
+- **RQAP 2026 :** cotisations **0,430 % salariés**, **0,602 % employeurs**, **0,764 % autonomes**; financement par un **fonds fiduciaire non budgétaire**. Les responsabilités du Conseil de gestion ont été transférées à **Retraite Québec le 1er mai 2026**.
+- **RAMQ 2024–2025 :** financement publié **14 542 M$**, dont **8 937 M$ FSS**, **4 354 M$ Fonds d'assurance médicaments**, **1 250 M$ autres** (écart d'arrondi 1 M$); coûts de programmes **14 232 M$**. Ces postes ne décrivent pas l'ensemble du réseau ni un surplus disponible.
+- **Système de santé 2024 :** environ **81 G$** de dépenses totales dont environ **59 G$** publiques, périmètre plus large à **ne pas additionner** directement à la RAMQ. Les 8 937 M$ de financement RAMQ FSS 2024–2025 ne sont pas les 9 538 M$ de cotisations santé prévues dans les finances gouvernementales 2026–2027.
+- **Registre :** `data/continuite-regimes-g0-16f-2024-2026.json`; **contrôleur :** `assets/g016f-social-continuity-core.mjs`; **tests :** `tests/g016f-social-continuity.test.mjs`; **rapport :** `official/working/rapport-g0-16f-protection-regimes-et-sante-v1.md`.
+- **Décision :** V07–V09 restent **`A_DOCUMENTER`**, les coûts de remplacement et avis juridiques sont inconnus, **0/15 preuves G0.15 validées indépendamment**, aucune abolition des cotisations ni nouvel impôt approuvés. G0.16f **NON FRANCHIE**.
+
+**Étape suivante :** consolider les comptes des fonds sociaux et coûts de santé (2024–2026), puis documenter éducation et fiscalité municipale (V10) et soumettre un scénario de continuité à revue juridique, actuarielle et financière indépendante avant de toucher aux prélèvements.
+
+Les fichiers de référence candidats `official/reference/*` et `data/sources.json` ne sont pas modifiés.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
