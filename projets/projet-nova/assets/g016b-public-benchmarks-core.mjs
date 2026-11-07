@@ -74,7 +74,7 @@ export function inspectG016bBenchmarks(d,proofs,plan){
     d.candidates[1]?.source_id!=="ISQ_REGIONAL_INCOME_2024"||
     d.candidates[1]?.source_url!==SOURCE_URLS.regional_catalogue||
     d.candidates[1]?.latest_examined_tax_year!==2024||
-    d.candidates.some(x=>x.content_imported!==false||x.assiettes_verified!==false))
+    d.candidates.some(x=>!obj(x)||x.content_imported!==false||x.assiettes_verified!==false))
   errors.push("CANDIDATE_CATALOGUES");
  if(!Array.isArray(d.scenarios)||d.scenarios.length!==2||
     d.scenarios[0]?.id!=="QUEBEC_CANADA"||d.scenarios[1]?.id!=="QUEBEC_SOUVERAIN"||
@@ -89,13 +89,13 @@ export function inspectG016bBenchmarks(d,proofs,plan){
      "new_nova_revenue_estimated","new_nova_savings_estimated","ready_to_govern"].some(k=>decision[k]!==false)||
     decision.programme_percent_after!==47)errors.push("PREMATURE_DECISION");
  if(!obj(proofs)||!Array.isArray(proofs.proofs)||proofs.proofs.length!==15||
-    proofs.proofs.some((x,i)=>x.id!=="V"+String(i+1).padStart(2,"0"))||
+    proofs.proofs.some((x,i)=>!obj(x)||x.id!=="V"+String(i+1).padStart(2,"0"))||
     proofs.programme_score!==47)
    errors.push("PREDECESSOR_G015_MISMATCH");
  if(!obj(plan)||plan.schema!=="nova-g016-incidence-distributive/v1"||
     plan.programme_score!==47||plan.status!=="CADRAGE_NON_CALIBRE"||
     !Array.isArray(plan.scenarios)||plan.scenarios.length!==2||
-    plan.scenarios.some(s=>!Array.isArray(s.distribution)||s.distribution.length!==10||
+    plan.scenarios.some(s=>!obj(s)||!Array.isArray(s.distribution)||s.distribution.length!==10||
       s.distribution.some(row=>row.net_change_cad!==null)))
    errors.push("PREDECESSOR_G016_MISMATCH");
  return {ok:errors.length===0,errors:[...new Set(errors)],
