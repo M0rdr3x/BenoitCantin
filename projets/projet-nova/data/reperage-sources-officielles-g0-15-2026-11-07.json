@@ -10,7 +10,7 @@
   "preconditions_confirmed": 0,
   "independent_reviews_confirmed": 0,
   "proof_scope_count": 15,
-  "selected_candidates_count": 8,
+  "selected_candidates_count": 11,
   "entries": [
     {
       "id": "V01",
@@ -53,7 +53,15 @@
       "requis": "Impôts des sociétés: composantes exactes",
       "statut_preuve_g015": "A_DOCUMENTER",
       "independently_reviewed": false,
-      "candidats": [],
+      "candidats": [
+        {
+          "url": "https://www.quebec.ca/gouvernement/finances-publiques/revenus/donnees-fiscales/statistiques-fiscales-societes",
+          "periode": "année d'imposition 2021; page actualisée le 7 octobre 2026",
+          "apport": "Sommaire public officiel 2021 : impôt des sociétés 10 000 M$, cotisation FSS 5 327 M$, crédits 2 468 M$ et total net arrondi 12 860 M$.",
+          "limite": "Ce sommaire 2021 ne fournit pas les flux actualisés 2026-2027, le détail de tous crédits, remboursements et affectations ni une revue externe.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        }
+      ],
       "prochaine_verification": "Décomposer les impôts des sociétés en prélèvements réels, taux, crédits, remboursements et pertes."
     },
     {
@@ -79,7 +87,15 @@
       "requis": "Entreprises: profits, pertes et dividendes",
       "statut_preuve_g015": "A_DOCUMENTER",
       "independently_reviewed": false,
-      "candidats": [],
+      "candidats": [
+        {
+          "url": "https://www.quebec.ca/gouvernement/finances-publiques/revenus/donnees-fiscales/statistiques-fiscales-societes",
+          "periode": "année d'imposition 2021; page actualisée le 7 octobre 2026",
+          "apport": "Sommaire officiel 2021 : revenu imposable québécois des sociétés 95 784 M$ et salaires assujettis au FSS 155 850 M$ (assiettes distinctes).",
+          "limite": "Les pertes, dividendes et reports fiscaux ne sont pas décomposés ici; 2021 ne suffit pas à proposer une base Nova en 2026.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        }
+      ],
       "prochaine_verification": "Obtenir séries officielles d'assiettes des sociétés, pertes reportées, dividendes et éventuels doubles comptes."
     },
     {
@@ -210,7 +226,15 @@
       "requis": "PME, emplois, salariés et autonomes",
       "statut_preuve_g015": "A_DOCUMENTER",
       "independently_reviewed": false,
-      "candidats": [],
+      "candidats": [
+        {
+          "url": "https://www.quebec.ca/gouvernement/finances-publiques/revenus/donnees-fiscales/statistiques-fiscales-societes",
+          "periode": "année d'imposition 2021; page actualisée le 7 octobre 2026",
+          "apport": "Sommaire 2021 : 564 599 déclarations de sociétés, effectifs et impôts/FSS par petite, moyenne et grande entreprise.",
+          "limite": "Les catégories ne démontrent pas l'effet de politique Nova sur les emplois, salaires, prix, indépendants et régions.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        }
+      ],
       "prochaine_verification": "Constituer les baselines PME, emplois, salaires et indépendants ainsi que les scénarios de répercussion."
     },
     {
