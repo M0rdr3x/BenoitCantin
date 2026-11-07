@@ -29,6 +29,11 @@ export function chooseReadingPosition({localPage,localRatio,localUpdatedAt,
   const serverValid=validPage(serverPage);
   const localDate=Date.parse(localUpdatedAt||'')||0;
   const serverDate=Date.parse(serverUpdatedAt||'')||0;
+  // Quand les deux copies indiquent la même page, le défilement local est
+  // plus précis que la position serveur (qui ne contient que le numéro).
+  if(localValid&&serverValid&&Number(localPage)===Number(serverPage)){
+    return {page:Number(localPage),ratio:readingRatio(localRatio),source:'appareil'};
+  }
   if(serverValid&&(!localValid||!localDate||serverDate>localDate)){
     return {page:Number(serverPage),ratio:0,source:'compte'};
   }
