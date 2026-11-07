@@ -1,0 +1,51 @@
+name: Projet Nova P56C - Rapprochement comptes publics et P52B
+on:
+  pull_request:
+    paths:
+      - 'scripts/rapprocher_comptes_publics_p52b_nova_p56c.py'
+      - 'scripts/tests/test_rapprocher_comptes_publics_p52b_nova_p56c.py'
+      - 'scripts/rapprocher_versions_finances_nova_p56b.py'
+      - 'scripts/evaluer_transition_fiscale_nova_p52b.py'
+      - 'projets/projet-nova/etudes/P56C_*'
+      - 'projets/projet-nova/etudes/P56B_SNAPSHOTS_FINANCES_2025_2026_SOURCES_OFFICIELLES.json'
+      - 'projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json'
+      - 'projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json'
+      - '.github/workflows/validate-nova-p56c.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controle-p56c:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Regressions budget P56A, sources P56B et pont P56C
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_auditer_preparation_budget_decennal_nova_p56a.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_rapprocher_versions_finances_nova_p56b.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_rapprocher_comptes_publics_p52b_nova_p56c.py' -v
+      - name: Reconciliation historique et non-transposition obligatoire
+        shell: bash
+        run: |
+          python scripts/rapprocher_comptes_publics_p52b_nova_p56c.py \
+            --table projets/projet-nova/etudes/P56C_TABLE_PASSAGE_COMPTES_PUBLICS_VERS_P52B_2025_2026.json \
+            --snapshots projets/projet-nova/etudes/P56B_SNAPSHOTS_FINANCES_2025_2026_SOURCES_OFFICIELLES.json \
+            --gabarit projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json \
+            --registre projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json | python -c 'import json,sys; a=json.load(sys.stdin); assert a["revenus_audites_mcad"]=="160428" and a["depenses_auditees_mcad"]=="165930" and a["impots_particuliers_et_societes_historiques_mcad"]=="63568" and a["montants_p52b_2027_2036_renseignes_par_ce_jalon"]==0 and a["montants_p52b_manquants"]==600 and a["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Exiger le refus de budget Nova certifie
+        shell: bash
+        run: |
+          set +e
+          python scripts/rapprocher_comptes_publics_p52b_nova_p56c.py \
+            --table projets/projet-nova/etudes/P56C_TABLE_PASSAGE_COMPTES_PUBLICS_VERS_P52B_2025_2026.json \
+            --snapshots projets/projet-nova/etudes/P56B_SNAPSHOTS_FINANCES_2025_2026_SOURCES_OFFICIELLES.json \
+            --gabarit projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json \
+            --registre projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json --exiger-budget-certifie
+          code=$?
+          set -e
+          test "$code" -eq 3
