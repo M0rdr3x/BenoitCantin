@@ -292,6 +292,21 @@ Les quatre références candidates de `official/reference/*` et `data/sources.js
 
 **Étape G0.16e :** actualiser la série fiscale des sociétés, vérifier pertes/crédits et assiettes légales, comptabiliser séparément les cotisations et services, harmoniser les dates et produire ensuite un dossier de soutenabilité à deux statuts constitutionnels. Les fichiers `official/reference/*` et `data/sources.json` restent inchangés.
 
+## G0.16e — Pont financier multi-millésimes et soutenabilité à démontrer (7 novembre 2026)
+
+**Programme : 47/100, inchangé; aucune nouvelle taxe chiffrée ni réforme certifiée.** L'étape G0.16e relie six montants hétérogènes en indiquant explicitement leur année, type (assiette, masse salariale, recette prévisionnelle), périmètre et source afin de **bloquer tout calcul de taux Nova à partir de chiffres incomparables**.
+
+- **2021, sociétés :** revenu imposable québécois **95 784 M$** et salaires soumis au FSS **155 850 M$** (bases distinctes).
+- **2023, particuliers :** revenu imposable déclaré **372 261 M$**; ne pas additionner avec les assiettes des sociétés de 2021.
+- **2026–2027, prévisions gouvernementales :** impôt des particuliers **50 942 M$**, impôts des sociétés agrégés **14 698 M$**, cotisations santé **9 538 M$**; ce sont des **recettes prévues sous les lois existantes, non des assiettes fiscales**.
+- **Budget gouvernemental 2026–2027 :** revenus **168 389 M$**, dépenses totales **171 597 M$**, provision pour éventualités **2 000 M$**, versements Fonds des générations **2 482 M$**, solde budgétaire **−7 690 M$**; **ce n'est pas un budget Nova**.
+- **Stress arithmétique, pas prévision :** retrancher seulement FSS, foncier scolaire et consommation (**41 521 M$**) sans compensation porterait le solde figé à **−49 211 M$**. Aucun retrait de recettes n'est adopté ou réputé légal.
+- **Continuité non démontrée :** RRQ, RQAP, FSS, médicaments, éducation, municipalités, travailleurs et dette ont des fiches de financement/avis juridiques encore **`null`**.
+- **Deux trajectoires distinctes de dix ans (Canada et souveraineté) :** tous les bilans Nova sont **`null`**; les transferts fédéraux ne sont pas automatiquement maintenus dans le second scénario.
+- **Registre :** `data/pont-financier-g0-16e-2021-2026.json`; **contrôleur :** `assets/g016e-financial-bridge-core.mjs`; **tests :** `tests/g016e-financial-bridge.test.mjs`; **rapport :** `official/working/rapport-g0-16e-pont-financier-et-viabilite-v1.md`.
+
+**Décision :** G0.16e **non franchie**, **0/15 preuves fiscales validées indépendamment**, et **47/100** maintenu. Prochaine phase : harmoniser les millésimes, revoir assiettes/crédits/pertes, quantifier la continuité juridique et sociale et auditer séparément les deux budgets sur dix ans. `official/reference/*` et `data/sources.json` restent inchangés.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
