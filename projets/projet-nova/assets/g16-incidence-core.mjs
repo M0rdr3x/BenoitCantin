@@ -61,7 +61,9 @@ export function inspectG16Plan(d,g015){
   const deciles=new Set();
   for(const r of s.distribution){
    if(!object(r)||!integer(r.decile)||r.decile<1||r.decile>10||
-      deciles.has(r.decile)||!OUTCOMES.every(k=>Object.hasOwn(r,k)&&r[k]===null)){
+      deciles.has(r.decile)||!OUTCOMES.every(k=>Object.hasOwn(r,k)&&r[k]===null)||
+      Object.keys(r).length!==OUTCOMES.length+1||
+      !Object.keys(r).every(k=>k==="decile"||OUTCOMES.includes(k))){
     errors.push("UNVERIFIED_DECILE:"+s.id);break;
    }
    deciles.add(r.decile);
