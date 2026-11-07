@@ -34,6 +34,10 @@ test("montant fictif dans un décile rejeté",()=>{
  const d=clone();d.scenarios[0].distribution[0].net_change_cad=3000;
  assert.ok(inspectG16Plan(d,g15).errors.some(x=>x.startsWith("UNVERIFIED_DECILE")));
 });
+test("colonne nouvelle sans validation refusée",()=>{
+ const d=clone();d.scenarios[0].distribution[0].gain_annonce_cad=1000;
+ assert.ok(inspectG16Plan(d,g15).errors.some(x=>x.startsWith("UNVERIFIED_DECILE")));
+});
 test("décile dupliqué rejeté",()=>{
  const d=clone();d.scenarios[0].distribution[0].decile=2;
  assert.equal(inspectG16Plan(d,g15).ok,false);
