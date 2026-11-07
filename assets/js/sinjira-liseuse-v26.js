@@ -292,6 +292,14 @@ function renderPage(){
     }
   }).catch(error=>message('Impossible d’afficher cette page. Réessayez ou utilisez le lecteur PDF de secours.','error'));
 }
+function setReadingPageFromScroll(value){
+  // Avancement par défilement sans rerendre toutes les pages du chapitre.
+  if(!state.pdf)return;
+  const next=clamp(Math.round(value),1,state.pdf.numPages);
+  if(next===state.page)return;
+  state.page=next;
+  updateToolbar();persist();
+}
 function changePage(value){
   if(!state.pdf)return;
   const next=clamp(Math.round(value),1,state.pdf.numPages);
@@ -468,6 +476,10 @@ async function init(){
       getUser:()=>state.user,
       getNovelId:()=>state.novelId,
       getSupabase,
+      setReadingPage:setReadingPageFromScroll,
+      invalidateRender:()=>{state.renderVersion++},
+      renderSinglePage:renderPage,
+      onEnterContinuous:()=>stopNarration(false),
       getTextAtPage:async pageNumber=>{
         const page=await state.pdf.getPage(pageNumber);
         const text=await page.getTextContent();
