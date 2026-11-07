@@ -34,6 +34,10 @@ async function verify(mode,remote=sample){
     renderForm:()=>forms++,
     loadTurnstile:()=>robots++
   };
+  // Même prérequis que dans la page publique : vérifier le corpus avec le vrai module.
+  const integrity=fs.readFileSync(path.resolve(__dirname,
+    "../projets/projet-nova/assets/nova-civic-integrity.js"),"utf8");
+  vm.runInNewContext(integrity,ctx,{timeout:2000});
   vm.runInNewContext(
     'const VERSION='+JSON.stringify(corpus.version)+';\n'
     + 'const VALUES='+JSON.stringify(corpus.options.map(x=>x.value))+';\n'
