@@ -97,7 +97,7 @@ Aucune de ces conditions ne peut être déclarée remplie par la simple présenc
 
 - `data/ventilation-charges-municipales-g0-16j-2024.json` : 10 catégories majeures, 34 détails, trois sous-ensembles calculés, deux exercices et deux scénarios constitutionnels non chiffrés.
 - `assets/g016j-municipal-services-core.mjs` : contrôle des données exactes, des rapprochements, des sources, des sous-totaux et des interdictions de financement ou de validation fictifs.
-- `tests/g016j-municipal-services.test.mjs` : **37 tests déclarés et 37 réussis en rejeu JavaScript isolé**; cela n'atteste **pas** une exécution GitHub Actions/Node native.
+- `tests/g016j-municipal-services.test.mjs` : **38 tests déclarés et 38 réussis en rejeu JavaScript isolé**; cela n'atteste **pas** une exécution GitHub Actions/Node native.
 - Pages PDF identifiées et vérifiées visuellement : **7, 51 et 52**.
 
 **Décision G0.16j :** rapprochement historique des charges **documenté**; coûts futurs et possibilité d'une réforme fiscale **non démontrés**. L'adoption et l'audit indépendant manquent. Le score du programme reste **47/100**; aucun changement aux textes candidats `official/reference/*` ou au manifeste `data/sources.json`.
