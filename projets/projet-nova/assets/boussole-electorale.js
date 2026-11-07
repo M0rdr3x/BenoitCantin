@@ -240,49 +240,13 @@
   }
 
   function calculate(){
-    const weightMap = state.data.methodology?.importanceWeights || {faible:0.5,normal:1,forte:1.5};
-    const axes = new Map(state.data.axes.map(axis => [axis.id, {
-      axis, sum:0, max:0, primaryAnswered:0, primaryTotal:0, evidenceWeight:0
-    }]));
-
-    state.data.questions.forEach(question => {
-      const primary = axes.get(question.axis);
-      if(primary) primary.primaryTotal += 1;
-
-      const answer = state.answers.get(question.id);
-      if(!answer || answer.value === null) return;
-      if(primary) primary.primaryAnswered += 1;
-
-      const userWeight = weightMap[answer.importance] ?? 1;
-      const loadings = Array.isArray(question.loadings) && question.loadings.length
-        ? question.loadings
-        : [{axis:question.axis, weight:1, direction:question.direction}];
-
-      loadings.forEach(loading => {
-        const bucket = axes.get(loading.axis);
-        if(!bucket) return;
-        const loadingWeight = Number(loading.weight) || 0;
-        const direction = Number(loading.direction) || 0;
-        bucket.sum += answer.value * direction * userWeight * loadingWeight;
-        bucket.max += 3 * userWeight * loadingWeight;
-        bucket.evidenceWeight += loadingWeight;
-      });
-    });
-
-    // Une dimension ne reçoit aucun score tant que le seuil de questions
-    // principales défini dans le corpus méthodologique n'est pas atteint.
-    const configuredMinimum = state.data.methodology?.axisMinimumAnswered;
-    const axisMinimumAnswered = Number.isInteger(configuredMinimum) && configuredMinimum >= 1
-      ? configuredMinimum : 2;
-    return Array.from(axes.values()).map(bucket => ({
-      ...bucket.axis,
-      score: bucket.max > 0 && bucket.primaryAnswered >= axisMinimumAnswered
-        ? Math.round((bucket.sum / bucket.max) * 100) : null,
-      answered: bucket.primaryAnswered,
-      total: bucket.primaryTotal,
-      coverage: bucket.primaryTotal ? Math.round(bucket.primaryAnswered / bucket.primaryTotal * 100) : 0,
-      evidenceWeight: Math.round(bucket.evidenceWeight * 100) / 100
-    }));
+    // Un moteur unique, pur et couvert par les tests calcule les 16 dimensions.
+    // Il échoue si une réponse ou une pondération est incohérente.
+    const core=window.__NOVA_CIVIC_INTEGRITY;
+    if(!core || typeof core.scoreCompass!=="function"){
+      throw new Error("Calcul du profil indisponible : contrôle d'intégrité manquant");
+    }
+    return core.scoreCompass(state.data,state.answers);
   }
 
   function resultCard(result){
