@@ -2,7 +2,7 @@
 
 ## Objectif
 
-Les hubs React Native SINJIRA restent des sas de navigation sans copie de données métier. Après la classification exhaustive des **42 pages** `compte/*.html` et le routage central des **31 routes natives**, leurs boutons doivent eux aussi respecter une frontière vérifiable.
+Les hubs React Native SINJIRA restent des sas de navigation sans copie de données métier. Après la classification exhaustive des **46 pages** `compte/*.html` et le routage central des **31 routes natives**, leurs boutons doivent eux aussi respecter une frontière vérifiable.
 
 **L’HUMAIN AVANT TOUT. PROTÉGER SANS SURVEILLER.**
 
@@ -42,6 +42,10 @@ Le contenu du Registre n’est jamais lu, résumé ou copié par ce garde ni par
 Les pages d’**authentification et MFA**, de récupération/réinitialisation de mot de passe et de **signalement de décès** ne sont pas des raccourcis de hub natif. Toute introduction de ces routes dans un `Native*Hub.tsx` doit faire échouer la CI et nécessiter une décision de sécurité explicite.
 
 La procédure de décès reste Web/serveur avec ses validations humaines. Aucun hub ne décide d’un décès, d’une remise posthume ou d’une autre action irréversible.
+
+## Bibliothèque Web spécialisée
+
+Les nouvelles routes `/compte/bibliotheque-romans.html`, `/compte/bibliotheque-jeux.html`, `/compte/bibliotheque-ressources.html` et `/compte/liseuse.html` sont classées **Web contextuelles** hors du routeur des 31 modules natifs. Les hubs ne leur donnent pas implicitement un droit d’accès et ne publient aucun PDF intégral. Les membres les atteignent par la bibliothèque Web; la liseuse vérifie les droits du compte auprès du serveur.
 
 ## Destinations publiques internes
 
