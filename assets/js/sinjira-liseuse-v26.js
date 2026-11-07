@@ -370,11 +370,18 @@ function bindControls(){
 function lockPrivateReader(){
   // Une déconnexion depuis un autre onglet doit verrouiller immédiatement le livre.
   if(!isFull||!state.pdf)return;
-  stopNarration(false);companion?.close();
+  stopNarration(false);companion?.close();companion=null;
   const book=state.pdf;
   state.pdf=null;state.user=null;state.novelId=null;
   state.renderVersion++;
+  // Effacer aussi les citations en mémoire, les résultats de recherche et les champs
+  // privés : changer de compte ne doit pas laisser afficher le contenu précédent.
   $('reader-text').textContent='';
+  $('reader-marks-list').replaceChildren();
+  $('reader-search-results').replaceChildren();
+  $('reader-selection-preview').textContent='';
+  $('reader-note-input').value='';
+  $('reader-search-field').value='';
   $('reader-canvas').width=0;$('reader-canvas').height=0;
   $('reader-content').hidden=true;
   $('reader-loading').hidden=true;$('reader-error').hidden=false;
