@@ -11,7 +11,7 @@ const html=fs.readFileSync(path.join(root,"projets/projet-nova/sondage-citoyen.h
 const match=edge.match(/function validBallotEnvelope\(payload: unknown\): boolean \{[\s\S]*?\n\}\n(?=async function confirmCaptcha)/);
 assert.ok(match,"Le validateur serveur de consentement est absent");
 let js=match[0]
-  .replace("payload: unknown","payload")
+  .replace("validBallotEnvelope(payload: unknown): boolean","validBallotEnvelope(payload)")
   .replace("const ballot=payload as Record<string,unknown>;","const ballot=payload;")
   .replace("const answers=ballot.answers as Record<string,unknown>;","const answers=ballot.answers;");
 assert.ok(!js.includes(" as Record<"),"TypeScript de test non transformé");
