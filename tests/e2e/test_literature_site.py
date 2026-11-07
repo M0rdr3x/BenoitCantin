@@ -264,14 +264,16 @@ def run() -> None:
         page.locator("#reader-theme").select_option("nuit")
         assert_true(page.locator("body").get_attribute("data-read-theme")=="nuit",
                     f"{BROWSER_NAME}: thème de lecture non appliqué")
+        initial_page=int(page.locator("#reader-page").input_value())
         page.locator("#reader-next").click()
-        assert_true(page.locator("#reader-page").input_value()=="2",
+        next_page=initial_page+1
+        assert_true(page.locator("#reader-page").input_value()==str(next_page),
                     f"{BROWSER_NAME}: pagination de la liseuse défectueuse")
         page.wait_for_function(
-            "() => document.getElementById('reader-text')?.textContent.includes('Page 2')",
-            timeout=15_000,
+            "(expected) => document.getElementById('reader-text')?.textContent.includes(expected)",
+            arg=f"Page {next_page}", timeout=15_000,
         )
-        assert_true("Page 2" in page.locator("#reader-text").inner_text(),
+        assert_true(f"Page {next_page}" in page.locator("#reader-text").inner_text(),
                     f"{BROWSER_NAME}: texte de la page suivante non affiché")
         for control in ("reader-voice-play","reader-voice-pause","reader-voice-stop",
                         "reader-voice","reader-speed","reader-voice-auto"):
