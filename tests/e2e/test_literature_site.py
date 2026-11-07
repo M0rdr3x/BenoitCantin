@@ -142,8 +142,8 @@ def mock_private_reader(context) -> None:
                                   body=b'%PDF-1.7\n' + b'0'*2048))
 
 
-def assert_private_signout_during_load(browser):
-    """Déconnexion durant l'analyse PDF : le roman ne doit jamais apparaître."""
+def assert_private_signout_during_load(browser, trigger='signout'):
+    """Déconnexion ou page cachée durant l'analyse : aucun texte privé affiché."""
     private_context=browser.new_context(locale='fr-CA',
         viewport={'width':1440,'height':900})
     mock_private_reader(private_context)
@@ -160,13 +160,17 @@ def assert_private_signout_during_load(browser):
             timeout=25_000)
         assert_true(private_page.locator('#reader-content').is_hidden(),
             f'{BROWSER_NAME}: contenu intégral visible avant autorisation finale')
-        private_page.evaluate('window.__testReaderSignOut()')
+        if trigger=='pagehide':
+            # Simule la mise en mémoire d'historique (bfcache) pendant le parsing.
+            private_page.evaluate("window.dispatchEvent(new Event('pagehide'))")
+        else:
+            private_page.evaluate('window.__testReaderSignOut()')
         private_page.evaluate('window.__testCompletePdfParsing()')
         private_page.wait_for_function(
             '() => document.getElementById("reader-status")?.textContent.includes("Reconnectez-vous")',
             timeout=12_000)
         assert_true(private_page.locator('#reader-content').is_hidden(),
-            f'{BROWSER_NAME}: fuite visuelle après déconnexion durant le chargement')
+            f'{BROWSER_NAME}: fuite visuelle après {trigger} durant le chargement')
         assert_true(private_page.locator('#reader-text').text_content()=='',
             f'{BROWSER_NAME}: contenu privé persistant après déconnexion')
         assert_true(private_page.locator('#reader-error').is_visible(),
@@ -176,7 +180,7 @@ def assert_private_signout_during_load(browser):
             f'{BROWSER_NAME}: livre privé stocké localement')
         assert_true(private_page.evaluate('window.__testPdfDestroyed===true'),
             f'{BROWSER_NAME}: ressources PDF non détruites après annulation')
-        assert_true(not errs, f'{BROWSER_NAME}: erreur JavaScript privée : {errs[:3]}')
+        assert_true(not errs, f'{BROWSER_NAME}: erreur JavaScript privée ({trigger}) : {errs[:3]}')
     finally:
         private_context.close()
 
@@ -398,6 +402,24 @@ def run() -> None:
         page.locator("#reader-note-save").click()
         assert_true("Mon repère privé de test." in page.locator("#reader-marks-list").inner_text(),
                     f"{BROWSER_NAME}: note personnelle non enregistrée")
+        # Une démo conservée dans l'historique doit rester interactive.
+        page.evaluate("window.dispatchEvent(new Event('pagehide'))")
+        previous_page=int(page.locator("#reader-page").input_value())
+        page.locator("#reader-viewer").focus()
+        page.keyboard.press("ArrowRight")
+        assert_true(page.locator("#reader-page").input_value()==str(previous_page+1),
+            f"{BROWSER_NAME}: navigation clavier non fonctionnelle dans le livre")
+        page.locator("#reader-page").focus()
+        page.keyboard.press("ArrowRight")
+        assert_true(page.locator("#reader-page").input_value()==str(previous_page+1),
+            f"{BROWSER_NAME}: les flèches modifient la page depuis un champ")
+        page.locator(".reader-return").focus()
+        page.keyboard.press("ArrowLeft")
+        assert_true(page.locator("#reader-page").input_value()==str(previous_page+1),
+            f"{BROWSER_NAME}: les flèches modifient la page depuis un lien")
+        page.locator("#reader-bookmark-add").click()
+        assert_true("Page "+str(previous_page+1) in page.locator("#reader-marks-list").inner_text(),
+            f"{BROWSER_NAME}: signets inactifs après restauration historique de la démo")
         saved_marks=page.evaluate("localStorage.getItem('sinjira:liseuse:demo:marks:v28')")
         assert_true("Mon repère privé de test." in (saved_marks or ""),
                     f"{BROWSER_NAME}: la démo ne conserve pas les notes sur cet appareil")
@@ -409,8 +431,10 @@ def run() -> None:
                     f"{BROWSER_NAME}: impossible de quitter le mode concentré")
 
 
-        # Protéger aussi l'édition intégrale pendant une déconnexion en vol.
+        # Protéger aussi l'édition intégrale pendant une déconnexion et
+        # une mise en historique bfcache au milieu du chargement.
         assert_private_signout_during_load(browser)
+        assert_private_signout_during_load(browser, trigger='pagehide')
 
         mobile = browser.new_context(
             locale="fr-CA",
