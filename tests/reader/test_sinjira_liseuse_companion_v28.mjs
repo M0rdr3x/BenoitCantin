@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {normalizeSearch,findMatches,makeExcerpt,safeReaderMark} from '../../assets/js/sinjira-liseuse-companion-v28.mjs';
+import {normalizeSearch,findMatches,makeExcerpt,findQuoteRange,safeReaderMark} from '../../assets/js/sinjira-liseuse-companion-v28.mjs';
 
 test('la recherche est insensible aux accents et à la casse en français',()=>{
   assert.equal(normalizeSearch('Étrange RÉSEAU'), 'etrange reseau');
@@ -35,4 +35,12 @@ test('les notes et citations sont bornées sans rendu HTML',()=>{
   assert.equal(mark.quote.length,280);
   assert.equal(mark.note.length,1500);
   assert.ok(mark.quote.startsWith('<img'));
+});
+
+test('une sélection sur plusieurs lignes PDF conserve son surlignage',()=>{
+  const text='Le récit\n    traverse les frontières.';
+  const result=findQuoteRange(text,'Le récit traverse les frontières.');
+  assert.ok(result);
+  assert.equal(text.slice(result.start,result.end),text);
+  assert.equal(findQuoteRange(text,'introuvable'),null);
 });
