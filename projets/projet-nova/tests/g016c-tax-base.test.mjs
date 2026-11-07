@@ -103,3 +103,14 @@ test("une source corrompue échoue sans créer de gain de fiscalité",()=>{
  const r=check(d);assert.equal(r.ok,false);
  assert.equal(r.new_nova_tax_rate,null);
 });
+
+test("la page publique conserve le 47 % et décrit les grandeurs fiscales 2023",async()=>{
+ const html=await readFile(new URL("../avancement-programme-nova.html",import.meta.url),"utf8");
+ assert.match(html,/id="assiette-g016c"/);
+ assert.match(html,/372,3 G\$/);
+ assert.match(html,/40,8 G\$/);
+ assert.match(html,/7,22 M/);
+ assert.match(html,/ne correspondent pas aux/);
+ assert.match(html,/Le score du projet reste à <strong>47 %<\/strong>/);
+ assert.match(html,/Aucune simulation Nova réalisée/);
+});
