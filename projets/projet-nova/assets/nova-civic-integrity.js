@@ -1,0 +1,96 @@
+/* Projet Nova — validation partagée des corpus électoraux.
+   Fonction pure, aucune requête réseau, aucune collecte de réponses. */
+(function(root){
+ "use strict";
+ const isObj=x=>x!==null&&typeof x==="object"&&!Array.isArray(x);
+ const text=x=>typeof x==="string"&&x.trim().length>0;
+ const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+ const POLL_IDS=Object.freeze(["q02","q09","q17","q22","q29","q33","q47","q61"]);
+ const POLL_VALUES=Object.freeze([-2,-1,0,1,2,9]);
+ const POLL_LABELS=Object.freeze(["Tout à fait en désaccord","Plutôt en désaccord",
+   "Ni d’accord ni en désaccord","Plutôt d’accord","Tout à fait d’accord","Sans opinion / passer"]);
+ const QUALITY=Object.freeze(["singlePolicyDecision","explicitActor","neutralTone",
+   "noPartyReference","noIdeologicalLabel","noPresumedMotive",
+   "reviewedForDoubleBarrel","reviewedForUndefinedQualifier"]);
+ const response=(issues)=>Object.freeze({ok:issues.length===0,issues});
+ function inspectCompass(c){
+   const issues=[];
+   if(!isObj(c)||c.version!=="2.2.0"||c.locale!=="fr-CA"||
+     !Array.isArray(c.axes)||c.axes.length!==16||
+     !Array.isArray(c.questions)||c.questions.length!==64||
+     !isObj(c.methodology)||!isObj(c.partyComparison))return response(["SCHEMA"]);
+   const axes=new Set();
+   for(const a of c.axes){
+     if(!isObj(a)||!text(a.id)||!/^[a-z][a-z-]*$/.test(a.id)||axes.has(a.id)||
+       !text(a.title)||!text(a.negative)||!text(a.positive))
+       issues.push("AXES");
+     else axes.add(a.id);
+   }
+   if(axes.size!==16)issues.push("AXIS_COUNT");
+   const m=c.methodology;
+   if(m.profile!=="multidimensional"||m.responseScale?.min!==-3||m.responseScale?.max!==3||
+      !equal(m.importanceWeights,{faible:0.5,normal:1,forte:1.5})||
+      m.axisMinimumAnswered!==2||c.partyComparison.enabled!==false||
+      c.partyComparison.unknownPolicy!=="Unknown party positions are excluded from distance and always disclosed.")
+     issues.push("CALCULATION_OR_NEUTRALITY_RULE");
+   const byAxis=new Map([...axes].map(id=>[id,{negative:0,positive:0}]));
+   const ids=new Set();
+   c.questions.forEach((q,i)=>{
+     const id="q"+String(i+1).padStart(2,"0");
+     if(!isObj(q)||q.id!==id||ids.has(q.id)||!axes.has(q.axis)||
+       !text(q.text)||![-1,1].includes(q.direction)||
+       !isObj(q.quality)||QUALITY.some(k=>q.quality[k]!==true)){
+       issues.push("QUESTION_"+id);return;
+     }
+     ids.add(q.id);
+     const bucket=byAxis.get(q.axis);
+     bucket[q.direction===1?"positive":"negative"]++;
+     if(!Array.isArray(q.loadings)||q.loadings.length<1||q.loadings.length>2||
+       !isObj(q.loadings[0])||q.loadings[0].axis!==q.axis||
+       q.loadings[0].weight!==1||q.loadings[0].direction!==q.direction)
+       issues.push("PRIMARY_LOADING_"+id);
+     if(q.loadings.length===2){
+       const sec=q.loadings[1];
+       if(!isObj(sec)||!axes.has(sec.axis)||sec.axis===q.axis||
+         !Number.isFinite(sec.weight)||sec.weight<=0||sec.weight>0.4||
+         ![-1,1].includes(sec.direction))issues.push("SECONDARY_LOADING_"+id);
+     }
+   });
+   for(const [id,v] of byAxis){
+     if(v.negative!==2||v.positive!==2)issues.push("UNBALANCED_AXIS_"+id);
+   }
+   return response([...new Set(issues)]);
+ }
+ function inspectPoll(c){
+   const issues=[];
+   if(!isObj(c)||c.version!=="nova-consultation-v1"||
+     typeof c.published!=="boolean"||
+     c.format!=="consultation_ouverte_non_probabiliste"||
+     c.eligibility!=="18+"||!Array.isArray(c.questions)||c.questions.length!==8||
+     !Array.isArray(c.options)||c.options.length!==6)return response(["SCHEMA"]);
+   c.questions.forEach((q,i)=>{
+     if(!isObj(q)||q.id!==POLL_IDS[i]||q.ordinal!==i+1||
+       !text(q.text)||!text(q.axis)||!/^[a-z][a-z-]*$/.test(q.axis))
+       issues.push("QUESTION_"+String(i+1));
+   });
+   if(!c.options.every((o,i)=>isObj(o)&&
+     o.value===POLL_VALUES[i]&&o.label===POLL_LABELS[i]))
+     issues.push("OPTIONS");
+   return response(issues);
+ }
+ function inspectPollCompassBinding(poll,compass){
+   const errors=[...inspectPoll(poll).issues,...inspectCompass(compass).issues];
+   if(errors.length)return response([...new Set(errors)]);
+   const questions=new Map(compass.questions.map(q=>[q.id,q]));
+   for(const q of poll.questions){
+     const master=questions.get(q.id);
+     if(!master||q.text!==master.text||q.axis!==master.axis)
+       errors.push("SOURCE_MISMATCH_"+q.id);
+   }
+   return response(errors);
+ }
+ root.__NOVA_CIVIC_INTEGRITY=Object.freeze({
+   inspectCompass,inspectPoll,inspectPollCompassBinding,
+   pollIds:POLL_IDS,values:POLL_VALUES
+ });
+})(typeof window!=="undefined"?window:(typeof globalThis!=="undefined"?globalThis:{}));
