@@ -62,7 +62,7 @@ export function safeReaderMark(mark){
 export function createReaderCompanion({
   isFull, getPdf, getPage, goToPage, getChapters, getUser,
   getNovelId, getSupabase, getTextAtPage, setReadingPage,
-  invalidateRender, renderSinglePage,
+  invalidateRender, renderSinglePage, onEnterContinuous,
 }){
   const $=id=>document.getElementById(id);
   const state={marks:[],selectedQuote:'',searchVersion:0,searchTerm:'',searchBusy:false,
@@ -305,6 +305,7 @@ export function createReaderCompanion({
     const startPage=currentPage();
     const token=++state.chapterToken;
     state.continuous=true;
+    onEnterContinuous();
     invalidateRender();
     const container=$('reader-chapter-scroll');
     container.replaceChildren();
@@ -480,7 +481,7 @@ export function createReaderCompanion({
       x=event.touches[0].clientX;y=event.touches[0].clientY;
     },{passive:true});
     viewer.addEventListener('touchend',event=>{
-      if(event.changedTouches.length!==1||window.getSelection()?.toString())return;
+      if(state.continuous||event.changedTouches.length!==1||window.getSelection()?.toString())return;
       const dx=event.changedTouches[0].clientX-x;
       const dy=event.changedTouches[0].clientY-y;
       if(Math.abs(dx)>90&&Math.abs(dy)<55)goToPage(currentPage()+(dx<0?1:-1));
