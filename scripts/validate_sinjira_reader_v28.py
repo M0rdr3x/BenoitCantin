@@ -87,6 +87,22 @@ def validate():
                    'reader-focus','reader-reading-stats','user_id',
                    'startContinuous(', 'exitContinuous(', 'onContinuousScroll(']:
         if needle not in companion:errors.append('Mécanisme complémentaire absent: '+needle)
+    # Les opérations asynchrones anciennes ne doivent pas repeupler l'écran privé.
+    for token in ['state.closed=true','getUser()?.id!==user.id',
+                  'findMatchRanges(', 'state.searchVersion++']:
+        if token not in companion:
+            errors.append('Isolation de session ou recherche Unicode manquante: '+token)
+    for token in ['progressQueue:Promise.resolve()', "key+':updated'",
+                  'serverSavedAt>localSavedAt', 'state.progressQueue.catch']:
+        if token not in main:
+            errors.append('Synchronisation multiappareil non protégée: '+token)
+    # Une déconnexion pendant la signature ou le chargement doit verrouiller
+    # avant l'affichage et annuler le chargement privé en cours.
+    for token in ['watchPrivateSession();', 'state.loadController?.abort()',
+                  'assertPrivateAccess(loadEpoch)', 'signal:state.loadController.signal',
+                  'state.accessInvalidated=true', 'auth.getUser()', 'loadedPdf.destroy?.()']:
+        if token not in main:
+            errors.append('Verrouillage du lecteur privé pendant chargement absent: '+token)
     # Empêcher le stockage de texte intégral (citations ou notes) en localStorage.
     if 'localStorage.setItem(DEMO_MARKS_KEY' not in companion:
         errors.append('Enregistrement de la démo non isolé')
