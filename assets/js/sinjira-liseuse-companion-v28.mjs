@@ -92,7 +92,13 @@ export function createReaderCompanion({
   const state={marks:[],selectedQuote:'',searchVersion:0,searchTerm:'',searchBusy:false,focus:false,closed:false,continuous:false,chapterToken:0,scrollScheduled:false};
   const DEMO_MARKS_KEY='sinjira:liseuse:demo:marks:v28';
   const db=()=>getSupabase().from('sinjira_reader_marks');
-  const isReady=()=>!state.closed&&Boolean(getPdf());
+  // Une instance ne doit jamais migrer implicitement vers un autre compte
+  // ou un autre roman, même avant l'arrivée de l'événement Auth de fermeture.
+  const sessionUserId=isFull?getUser()?.id:null;
+  const sessionNovelId=isFull?getNovelId():null;
+  const isReady=()=>!state.closed&&Boolean(getPdf())&&
+    (!isFull||(Boolean(sessionUserId)&&getUser()?.id===sessionUserId&&
+      getNovelId()===sessionNovelId));
   const currentPage=()=>Math.min(Math.max(1,getPage()),getPdf()?.numPages||520);
   function notice(text,kind='info',id='reader-marks-status'){
     if(state.closed)return;
