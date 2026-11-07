@@ -9,6 +9,7 @@
  const POLL_VALUES=Object.freeze([-2,-1,0,1,2,9]);
  const POLL_LABELS=Object.freeze(["Tout à fait en désaccord","Plutôt en désaccord",
    "Ni d’accord ni en désaccord","Plutôt d’accord","Tout à fait d’accord","Sans opinion / passer"]);
+ const POLL_CANONICAL=Object.freeze([{"id":"q02","text":"Le gouvernement du Québec devrait réduire les restrictions à l’entrée de nouvelles entreprises dans les secteurs actuellement réglementés.","axis":"economy"},{"id":"q09","text":"La majorité des soins de première ligne financés par l’État devrait être fournie par des établissements publics.","axis":"health"},{"id":"q17","text":"Le gouvernement du Québec devrait augmenter le financement consacré aux logements sociaux, coopératifs et sans but lucratif.","axis":"housing"},{"id":"q22","text":"Le gouvernement du Québec devrait renoncer à une nouvelle norme environnementale si son analyse d’impact prévoit une hausse du coût de biens essentiels.","axis":"environment"},{"id":"q29","text":"Les organismes publics ne devraient pas pouvoir élargir la surveillance numérique sans autorisation judiciaire préalable, sauf dans une urgence prévue par la loi.","axis":"liberties"},{"id":"q33","text":"Une pétition atteignant un seuil prévu par la loi devrait pouvoir déclencher un référendum provincial obligatoire.","axis":"democracy"},{"id":"q47","text":"Le gouvernement du Québec devrait préparer les conditions permettant la tenue d’un référendum sur la souveraineté.","axis":"quebec"},{"id":"q61","text":"Toute décision administrative importante prise à l’aide d’un système d’IA devrait pouvoir être expliquée à la personne concernée.","axis":"digital"}]);
  const QUALITY=Object.freeze(["singlePolicyDecision","explicitActor","neutralTone",
    "noPartyReference","noIdeologicalLabel","noPresumedMotive",
    "reviewedForDoubleBarrel","reviewedForUndefinedQualifier"]);
@@ -30,7 +31,7 @@
    const m=c.methodology;
    if(m.profile!=="multidimensional"||m.responseScale?.min!==-3||m.responseScale?.max!==3||
       !equal(m.importanceWeights,{faible:0.5,normal:1,forte:1.5})||
-      m.axisMinimumAnswered!==2||c.partyComparison.enabled!==false||
+      m.axisMinimumAnswered!==2||m.minimumAnsweredRatio!==0.5||c.partyComparison.enabled!==false||
       c.partyComparison.unknownPolicy!=="Unknown party positions are excluded from distance and always disclosed.")
      issues.push("CALCULATION_OR_NEUTRALITY_RULE");
    const byAxis=new Map([...axes].map(id=>[id,{negative:0,positive:0}]));
@@ -70,6 +71,7 @@
      !Array.isArray(c.options)||c.options.length!==6)return response(["SCHEMA"]);
    c.questions.forEach((q,i)=>{
      if(!isObj(q)||q.id!==POLL_IDS[i]||q.ordinal!==i+1||
+       q.text!==POLL_CANONICAL[i].text||q.axis!==POLL_CANONICAL[i].axis||
        !text(q.text)||!text(q.axis)||!/^[a-z][a-z-]*$/.test(q.axis))
        issues.push("QUESTION_"+String(i+1));
    });
@@ -80,7 +82,8 @@
  }
  function inspectPollCompassBinding(poll,compass){
    const errors=[...inspectPoll(poll).issues,...inspectCompass(compass).issues];
-   if(errors.length)return response([...new Set(errors)]);
+   if(!isObj(poll)||!Array.isArray(poll.questions)||
+      !isObj(compass)||!Array.isArray(compass.questions))return response([...new Set(errors)]);
    const questions=new Map(compass.questions.map(q=>[q.id,q]));
    for(const q of poll.questions){
      const master=questions.get(q.id);
@@ -89,8 +92,49 @@
    }
    return response(errors);
  }
+
+ // Le calcul officiel de la boussole est pur et reproductible :
+ // aucune écriture réseau, aucun profil utilisateur partagé.
+ function scoreCompass(c,answers){
+   if(!inspectCompass(c).ok) throw new Error("QUESTIONNAIRE_INVALID");
+   if(!answers||typeof answers.get!=="function"||typeof answers.entries!=="function")
+     throw new TypeError("ANSWERS_MAP_REQUIRED");
+   const questionIds=new Set(c.questions.map(q=>q.id));
+   const importanceWeights=c.methodology.importanceWeights;
+   for(const [id,answer] of answers.entries()){
+     if(!questionIds.has(id)||!isObj(answer)||
+        (answer.value!==null&&(!Number.isInteger(answer.value)||answer.value< -3||answer.value>3))||
+        !Object.hasOwn(importanceWeights,answer.importance))
+       throw new Error("INVALID_ANSWER");
+   }
+   const axes=new Map(c.axes.map(axis=>[axis.id,{
+     axis,sum:0,max:0,primaryAnswered:0,primaryTotal:0,evidenceWeight:0
+   }]));
+   for(const question of c.questions){
+     const primary=axes.get(question.axis);
+     primary.primaryTotal++;
+     const answer=answers.get(question.id);
+     if(!answer||answer.value===null)continue;
+     primary.primaryAnswered++;
+     const userWeight=importanceWeights[answer.importance];
+     for(const loading of question.loadings){
+       const bucket=axes.get(loading.axis);
+       bucket.sum+=answer.value*loading.direction*userWeight*loading.weight;
+       bucket.max+=3*userWeight*loading.weight;
+       bucket.evidenceWeight+=loading.weight;
+     }
+   }
+   return [...axes.values()].map(bucket=>({
+     ...bucket.axis,
+     score:bucket.max>0&&bucket.primaryAnswered>=c.methodology.axisMinimumAnswered
+       ?Math.round(bucket.sum/bucket.max*100):null,
+     answered:bucket.primaryAnswered,total:bucket.primaryTotal,
+     coverage:bucket.primaryTotal?Math.round(bucket.primaryAnswered/bucket.primaryTotal*100):0,
+     evidenceWeight:Math.round(bucket.evidenceWeight*100)/100
+   }));
+ }
  root.__NOVA_CIVIC_INTEGRITY=Object.freeze({
-   inspectCompass,inspectPoll,inspectPollCompassBinding,
+   inspectCompass,inspectPoll,inspectPollCompassBinding,scoreCompass,
    pollIds:POLL_IDS,values:POLL_VALUES
  });
 })(typeof window!=="undefined"?window:(typeof globalThis!=="undefined"?globalThis:{}));
