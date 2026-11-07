@@ -141,3 +141,66 @@ test("la page charge la nouvelle version du validateur et du moteur",async()=>{
  assert.match(html,/assets\/boussole-electorale\.js\?v=3\.4\.22/);
  assert.match(pollHtml,/assets\/nova-civic-integrity\.js\?v=2/);
 });
+
+function legacyScore(c,answers){
+ const weightMap=c.methodology.importanceWeights;
+ const axes=new Map(c.axes.map(axis=>[axis.id,{axis,sum:0,max:0,primaryAnswered:0,primaryTotal:0,evidenceWeight:0}]));
+ c.questions.forEach(question=>{
+   const primary=axes.get(question.axis);
+   if(primary)primary.primaryTotal+=1;
+   const answer=answers.get(question.id);
+   if(!answer || answer.value===null)return;
+   if(primary)primary.primaryAnswered+=1;
+   const weight=weightMap[answer.importance]??1;
+   const loads=Array.isArray(question.loadings)&&question.loadings.length?question.loadings:[{axis:question.axis,weight:1,direction:question.direction}];
+   loads.forEach(load=>{
+     const bucket=axes.get(load.axis);
+     if(!bucket)return;
+     const factor=Number(load.weight)||0;
+     const direction=Number(load.direction)||0;
+     bucket.sum+=answer.value*direction*weight*factor;
+     bucket.max+=3*weight*factor;
+     bucket.evidenceWeight+=factor;
+   });
+ });
+ return [...axes.values()].map(b=>({
+   ...b.axis,
+   score:b.max>0&&b.primaryAnswered>=2?Math.round(b.sum/b.max*100):null,
+   answered:b.primaryAnswered,
+   total:b.primaryTotal,
+   coverage:b.primaryTotal?Math.round(b.primaryAnswered/b.primaryTotal*100):0,
+   evidenceWeight:Math.round(b.evidenceWeight*100)/100
+ }));
+}
+test("parité déterministe de 260 profils mixtes avec la formule historique",()=>{
+ let seed=22013;
+ const rng=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+ for(let sample=0;sample<260;sample++){
+   const answers=new Map();
+   for(const q of questionnaire.questions){
+     const r=rng();
+     if(r<.17)continue;
+     const value=r<.4?null:Math.floor(rng()*7)-3;
+     const importance=["faible","normal","forte"][Math.floor(rng()*3)];
+     answers.set(q.id,{value,importance});
+   }
+   const actual=scoreCompass(questionnaire,answers);
+   const expected=legacyScore(questionnaire,answers);
+   assert.equal(JSON.stringify(actual),JSON.stringify(expected),"profil "+sample);
+ }
+});
+test("aucun score valide ne dépasse les pôles et aucun axe sous-couvert n'est calculé",()=>{
+ let seed=12007;
+ const rng=()=>{seed=(seed*48271)%2147483647;return seed/2147483647};
+ for(let sample=0;sample<300;sample++){
+   const answers=new Map(questionnaire.questions.map(q=>[q.id,{
+     value:rng()<.25?null:Math.floor(rng()*7)-3,
+     importance:["faible","normal","forte"][Math.floor(rng()*3)]
+   }]));
+   for(const x of scoreCompass(questionnaire,answers)){
+     assert.ok(x.score===null||(x.score>=-100&&x.score<=100));
+     assert.equal(x.score===null,x.answered<2);
+     assert.ok(x.coverage>=0&&x.coverage<=100);
+   }
+ }
+});
