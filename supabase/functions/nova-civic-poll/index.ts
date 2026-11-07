@@ -224,6 +224,26 @@ async function publicResults() {
     }))
   };
 }
+// Le formulaire affiche deux décisions DISTINCTES : âge auto-déclaré et
+// consentement explicite au traitement d'opinions politiques. Un POST direct
+// ne doit pas contourner la case de consentement du navigateur.
+// Cette déclaration n'est pas une preuve indépendante du consentement :
+// aucun identifiant ni bulletin individuel n'est conservé.
+function validBallotEnvelope(payload: unknown): boolean {
+  if(!payload || typeof payload!=="object" || Array.isArray(payload)) return false;
+  const ballot=payload as Record<string,unknown>;
+  if(ballot.version!==VERSION || ballot.ageConfirmed!==true ||
+     ballot.consentConfirmed!==true || typeof ballot.ballotToken!=="string" ||
+     !/^[0-9a-f]{48}$/.test(ballot.ballotToken) ||
+     typeof ballot.captchaToken!=="string" ||
+     ballot.captchaToken.length<10 || ballot.captchaToken.length>4096 ||
+     !ballot.answers || typeof ballot.answers!=="object" || Array.isArray(ballot.answers)) {
+    return false;
+  }
+  const answers=ballot.answers as Record<string,unknown>;
+  return Object.keys(answers).length===8 &&
+    Object.values(answers).every(value=>typeof value==="number" && OPTIONS.has(value));
+}
 async function confirmCaptcha(token: string) {
   const params=new URLSearchParams({secret:CAPTCHA_SECRET,response:token});
   const response=await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify",{
@@ -255,13 +275,7 @@ Deno.serve(async (req:Request)=>{
   let payload: any;
   try { payload=await readLimitedJson(req); }
   catch { return respond(400,{error:"bulletin_invalide"},origin); }
-  if(!payload || typeof payload!=="object" || Array.isArray(payload)
-      || payload.version!==VERSION || payload.ageConfirmed!==true
-      || typeof payload.ballotToken!=="string" || !/^[0-9a-f]{48}$/.test(payload.ballotToken)
-      || typeof payload.captchaToken!=="string" || payload.captchaToken.length<10 || payload.captchaToken.length>4096
-      || !payload.answers || typeof payload.answers!=="object" || Array.isArray(payload.answers)
-      || Object.keys(payload.answers).length!==8
-      || Object.values(payload.answers).some(x=>typeof x!=="number" || !OPTIONS.has(x))) {
+  if(!validBallotEnvelope(payload)) {
     return respond(400,{error:"bulletin_invalide"},origin);
   }
   try {
