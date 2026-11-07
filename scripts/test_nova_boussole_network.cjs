@@ -27,6 +27,10 @@ const context={
   fetch:async(url,opts)=>{requests.push({url,opts});return {ok:true,json:async()=>({value:42})};}
 };
 context.globalThis=context;
+// La boussole publique exige le même validateur d'intégrité que le sondage.
+const integrity=fs.readFileSync(path.join(base,"assets/nova-civic-integrity.js"),"utf8");
+vm.runInNewContext(integrity,context,{timeout:2500});
+assert.equal(typeof context.window.__NOVA_CIVIC_INTEGRITY?.inspectCompass,"function");
 const end=source.lastIndexOf("})();");
 assert.ok(end>0);
 vm.runInNewContext(source.slice(0,end)+";globalThis.__novaTest={fetchJsonWithTimeout,validateQuestionnaireCorpus};"+source.slice(end),
@@ -35,15 +39,15 @@ const {fetchJsonWithTimeout,validateQuestionnaireCorpus}=context.__novaTest;
 assert.doesNotThrow(()=>validateQuestionnaireCorpus(corpus),"64 propositions et 16 dimensions valides");
 const corrupted=()=>JSON.parse(JSON.stringify(corpus));
 let x=corrupted();x.questions[1].id=x.questions[0].id;
-assert.throws(()=>validateQuestionnaireCorpus(x),/dupliquée/,"Identifiants répétés interdits");
+assert.throws(()=>validateQuestionnaireCorpus(x),/Intégrité du questionnaire non vérifiée/,"Identifiants répétés interdits");
 x=corrupted();x.questions[1].axis="inconnue";
-assert.throws(()=>validateQuestionnaireCorpus(x),/sans dimension/,"Dimensions inconnues interdites");
+assert.throws(()=>validateQuestionnaireCorpus(x),/Intégrité du questionnaire non vérifiée/,"Dimensions inconnues interdites");
 x=corrupted();x.questions[1].axis=x.axes[1].id;
-assert.throws(()=>validateQuestionnaireCorpus(x),/Répartition/,"Quatre propositions exactes par dimension");
+assert.throws(()=>validateQuestionnaireCorpus(x),/Intégrité du questionnaire non vérifiée/,"Quatre propositions exactes par dimension");
 x=corrupted();x.questions[0].text=" ";
-assert.throws(()=>validateQuestionnaireCorpus(x),/Proposition invalide/,"Texte vide interdit");
+assert.throws(()=>validateQuestionnaireCorpus(x),/Intégrité du questionnaire non vérifiée/,"Texte vide interdit");
 x=corrupted();x.axes[1].id=x.axes[0].id;
-assert.throws(()=>validateQuestionnaireCorpus(x),/Dimensions invalides/,"Dimensions répétées interdites");
+assert.throws(()=>validateQuestionnaireCorpus(x),/Intégrité du questionnaire non vérifiée/,"Dimensions répétées interdites");
 
 (async()=>{
   const answer=await fetchJsonWithTimeout("/corpus");
