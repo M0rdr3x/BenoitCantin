@@ -39,3 +39,7 @@ jobs:
           node --check scripts/test_service_worker_security.cjs
       - name: Tester les frontières privées et l'absence de pollution inter-PWA
         run: node scripts/test_service_worker_security.cjs
+      - name: Tester le contrat du validateur PWA contre les contournements
+        run: python3 -m unittest scripts.test_validate_pwa_cache_security
+      - name: Vérifier la cohérence globale PWA du site
+        run: python3 scripts/validate_pwa.py
