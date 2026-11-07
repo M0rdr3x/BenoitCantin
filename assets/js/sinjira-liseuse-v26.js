@@ -39,7 +39,9 @@ const $=id=>document.getElementById(id);
 const state={pdf:null,page:1,mode:'texte',theme:'sepia',size:20,zoom:1,
   font:'serif',lineHeight:1.75,textWidth:780,letterSpacing:0,
   voiceURI:'',speed:1,autoSpeech:false,
-  user:null,novelId:null,renderVersion:0,renderQueue:Promise.resolve(),saveTimer:null};
+  user:null,novelId:null,renderVersion:0,renderQueue:Promise.resolve(),saveTimer:null,
+  progressQueue:Promise.resolve(),accessEpoch:0,accessInvalidated:false,
+  loadController:null,authSubscription:null};
 const speech={active:false,paused:false,token:0,chunks:[],index:0,voices:[],utterance:null};
 const speechReady='speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
 const storageKey='sinjira:liseuse:'+edition+':la-cendre-du-jugement';
@@ -121,18 +123,29 @@ function updateToolbar(){
   $('reader-chapter-label').textContent=chapter[1];
   $('reader-chapters').value=String(chapter[0]);
 }
-async function syncProgress(){
-  if(!isFull||!state.user||!state.novelId||!state.pdf)return;
-  const page=state.page;
-  const payload={user_id:state.user.id,novel_id:state.novelId,
-    last_page:page,progress_percent:Math.round(page/state.pdf.numPages*100),
-    last_opened_at:new Date().toISOString(),updated_at:new Date().toISOString()};
-  try{
-    const {error}=await getSupabase().from('sinjira_reader_library').upsert(payload,{onConflict:'user_id,novel_id'});
-    if(error)throw error;
-  }catch{
-    message('La synchronisation de progression a échoué. La dernière page reste enregistrée sur cet appareil.','warning');
-  }
+function syncProgress(){
+  if(!isFull||!state.user||!state.novelId||!state.pdf)return state.progressQueue;
+  // Serialize writes: a slow previous request must not overwrite a newer page.
+  const userId=state.user.id,novelId=state.novelId,pdf=state.pdf;
+  const send=async()=>{
+    if(!state.pdf||state.pdf!==pdf||state.user?.id!==userId||state.novelId!==novelId)return;
+    const page=state.page;
+    const updatedAt=new Date().toISOString();
+    const payload={user_id:userId,novel_id:novelId,
+      last_page:page,progress_percent:Math.round(page/pdf.numPages*100),
+      last_opened_at:updatedAt,updated_at:updatedAt};
+    try{
+      const {error}=await getSupabase().from('sinjira_reader_library')
+        .upsert(payload,{onConflict:'user_id,novel_id'});
+      if(error)throw error;
+    }catch{
+      if(state.pdf===pdf&&state.user?.id===userId){
+        message('La synchronisation a échoué. Votre page reste enregistrée sur cet appareil.','warning');
+      }
+    }
+  };
+  state.progressQueue=state.progressQueue.catch(()=>{}).then(send);
+  return state.progressQueue;
 }
 function flushProgress(){
   if(!state.saveTimer)return;
@@ -141,7 +154,9 @@ function flushProgress(){
 }
 function persist(){
   // Éviter de mélanger la progression de différents comptes partageant un appareil.
-  safeLocalSet(pageStorageKey(),String(state.page));
+  const key=pageStorageKey();
+  safeLocalSet(key,String(state.page));
+  safeLocalSet(key+':updated',new Date().toISOString());
   if(!isFull||!state.user||!state.novelId)return;
   clearTimeout(state.saveTimer);
   state.saveTimer=setTimeout(()=>{state.saveTimer=null;void syncProgress()},450);
@@ -376,15 +391,26 @@ function bindControls(){
     resizeTimer=setTimeout(renderPage,250);
   });
 }
+function assertPrivateAccess(epoch){
+  if(isFull&&(state.accessInvalidated||state.accessEpoch!==epoch||!state.user)){
+    throw new Error('SESSION_CHANGED');
+  }
+}
 function lockPrivateReader(){
-  // Une déconnexion depuis un autre onglet doit verrouiller immédiatement le livre.
-  if(!isFull||!state.pdf)return;
-  stopNarration(false);companion?.close();companion=null;
+  // Bloque aussi une déconnexion PENDANT la vérification, le téléchargement
+  // ou l'analyse du PDF, avant même son premier affichage.
+  if(!isFull||state.accessInvalidated)return;
+  state.accessInvalidated=true;
+  state.accessEpoch++;
+  state.loadController?.abort();
+  state.loadController=null;
+  clearTimeout(state.saveTimer);state.saveTimer=null;
+  stopNarration(false);
+  companion?.close();companion=null;
   const book=state.pdf;
   state.pdf=null;state.user=null;state.novelId=null;
   state.renderVersion++;
-  // Effacer aussi les citations en mémoire, les résultats de recherche et les champs
-  // privés : changer de compte ne doit pas laisser afficher le contenu précédent.
+  // Aucun texte/citation privé ne reste visible après changement de compte.
   $('reader-text').textContent='';
   $('reader-marks-list').replaceChildren();
   $('reader-search-results').replaceChildren();
@@ -395,20 +421,25 @@ function lockPrivateReader(){
   $('reader-content').hidden=true;
   $('reader-loading').hidden=true;$('reader-error').hidden=false;
   message('Votre session a changé. Reconnectez-vous pour rouvrir le roman intégral.','error');
-  try{Promise.resolve(book.destroy?.()).catch(()=>{})}catch{/* PDF fermé */}
+  try{Promise.resolve(book?.destroy?.()).catch(()=>{})}catch{/* PDF fermé */}
 }
 function watchPrivateSession(){
-  if(!isFull)return;
-  getSupabase().auth.onAuthStateChange((event,session)=>{
+  if(!isFull||state.authSubscription)return;
+  // S'abonner avant de signer et récupérer le PDF, pas après le chargement.
+  const {data}=getSupabase().auth.onAuthStateChange((event,session)=>{
     if(event==='SIGNED_OUT'||
-        (event==='SIGNED_IN'&&state.user&&session?.user?.id!==state.user.id)){
+       (event==='SIGNED_IN'&&state.user&&session?.user?.id!==state.user.id)){
       lockPrivateReader();
     }
   });
+  state.authSubscription=data?.subscription||null;
 }
 async function resolvePrivateUrl(){
   state.user=await requireUser('/compte/connexion.html');
+  watchPrivateSession();
+  const epoch=state.accessEpoch;
   const {data,error}=await getSupabase().functions.invoke('get-novel-file-url',{body:{slug:NOVEL_SLUG}});
+  assertPrivateAccess(epoch);
   if(error||data?.ok!==true||typeof data.url!=='string'){
     throw new Error(data?.error||'Lecture intégrale non disponible pour ce compte. Vérifiez vos droits numériques ou votre rôle propriétaire.');
   }
@@ -422,15 +453,23 @@ async function resolvePrivateUrl(){
 async function restorePage(){
   // Sur une première ouverture, commencer sur le prologue plutôt que sur la couverture image.
   const firstReadablePage=isFull?4:3;
-  let saved=clamp(Number(safeLocalGet(pageStorageKey())||firstReadablePage),1,state.pdf.numPages);
+  const key=pageStorageKey();
+  let saved=clamp(Number(safeLocalGet(key)||firstReadablePage),1,state.pdf.numPages);
+  const localSavedAt=Date.parse(safeLocalGet(key+':updated')||'')||0;
   if(isFull&&state.user){
     const {data:novel,error:novelError}=await getSupabase().from('sinjira_novels')
       .select('id').eq('slug',NOVEL_SLUG).maybeSingle();
     if(!novelError&&novel?.id){
       state.novelId=novel.id;
       const {data:progress}=await getSupabase().from('sinjira_reader_library')
-        .select('last_page').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle();
-      if(progress?.last_page)saved=clamp(progress.last_page,1,state.pdf.numPages);
+        .select('last_page,updated_at').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle();
+      const serverSavedAt=Date.parse(progress?.updated_at||'')||0;
+      // Preserve an offline/local position that has not yet reached the account.
+      if(progress?.last_page&&(!localSavedAt||serverSavedAt>localSavedAt)){
+        saved=clamp(progress.last_page,1,state.pdf.numPages);
+        safeLocalSet(key,String(saved));
+        if(serverSavedAt)safeLocalSet(key+':updated',progress.updated_at);
+      }
     }
   }
   state.page=saved;
@@ -454,20 +493,40 @@ async function init(){
     :'Démo officielle : prologue et chapitres 1 à 3. Vous pouvez aussi télécharger le PDF gratuit.';
   $('reader-download-demo').hidden=isFull;
   message(isFull?'Vérification de votre accès privé…':'Chargement de la démo officielle…');
+  let loadedPdf=null;
   try{
     const url=isFull?await resolvePrivateUrl():DEMO_URL;
-    /* Charger tous les octets une seule fois : aucune requête tardive après l’expiration
-       du lien signé, aucun jeton dans l’URL d’un iframe ni dans le stockage local. */
-    const response=await fetch(url,{cache:'no-store',referrerPolicy:'no-referrer'});
+    const loadEpoch=state.accessEpoch;
+    const expectedUserId=isFull?state.user?.id:null;
+    // Le lien privé n'est pas persistant. Une déconnexion annule immédiatement
+    // le téléchargement et interdit tout rendu même si une promesse se termine.
+    state.loadController=new AbortController();
+    const response=await fetch(url,{cache:'no-store',referrerPolicy:'no-referrer',
+      signal:state.loadController.signal});
+    assertPrivateAccess(loadEpoch);
     if(!response.ok)throw new Error('Le fichier PDF ne peut pas être chargé ('+response.status+').');
     const data=new Uint8Array(await response.arrayBuffer());
+    assertPrivateAccess(loadEpoch);
     if(data.byteLength<1024||data.byteLength>20*1024*1024)throw new Error('Taille du document inattendue.');
     const pdfjs=await import(PDFJS);
+    assertPrivateAccess(loadEpoch);
     pdfjs.GlobalWorkerOptions.workerSrc=PDF_WORKER;
-    state.pdf=await pdfjs.getDocument({data,isEvalSupported:false,useSystemFonts:true}).promise;
-    if(state.pdf.numPages!==(isFull?520:82))throw new Error('Le nombre de pages de ce document ne correspond pas à l’édition attendue.');
+    loadedPdf=await pdfjs.getDocument({data,isEvalSupported:false,useSystemFonts:true}).promise;
+    assertPrivateAccess(loadEpoch);
+    if(loadedPdf.numPages!==(isFull?520:82))throw new Error('Le nombre de pages de ce document ne correspond pas à l’édition attendue.');
+    state.pdf=loadedPdf;
     await restorePage();
-    watchPrivateSession();
+    assertPrivateAccess(loadEpoch);
+    if(isFull){
+      // Les droits sont attribués par le serveur; vérifier à nouveau la session
+      // juste avant d'afficher les octets privés en mémoire.
+      const {data:authData,error:authError}=await getSupabase().auth.getUser();
+      if(authError||!authData?.user||authData.user.id!==expectedUserId){
+        lockPrivateReader();
+      }
+      assertPrivateAccess(loadEpoch);
+    }
+    state.loadController=null;
     companion=createReaderCompanion({
       isFull,
       getPdf:()=>state.pdf,
@@ -494,9 +553,18 @@ async function init(){
     companion.ready().catch(()=>message('La liseuse fonctionne, mais les repères personnels ne sont pas disponibles.','warning'));
     $('reader-status').hidden=true;
   }catch(error){
+    state.loadController=null;
+    if(loadedPdf){
+      if(state.pdf===loadedPdf)state.pdf=null;
+      try{await loadedPdf.destroy?.()}catch{/* Destruction best effort */}
+    }
     if(error?.message==='Connexion requise')return;
     $('reader-loading').hidden=true;
-    message(error?.message||'Lecture actuellement indisponible.','error');
+    if(isFull&&(state.accessInvalidated||error?.message==='SESSION_CHANGED'||error?.name==='AbortError')){
+      message('Votre session a changé. Reconnectez-vous pour accéder à cette édition.','error');
+    }else{
+      message(error?.message||'Lecture actuellement indisponible.','error');
+    }
     $('reader-error').hidden=false;
     if(!isFull){
       const link=$('reader-native-demo');
