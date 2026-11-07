@@ -16,9 +16,11 @@ permissions:
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
       - name: Valider V24.5.41
         run: python3 scripts/validate_preorder_sale_readiness_v24_5_41.py
       - name: Valider le ledger production inchangé
