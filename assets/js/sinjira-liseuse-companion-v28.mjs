@@ -24,6 +24,28 @@ export function makeExcerpt(text,index,termLength=0,width=135){
   const end=Math.min(text.length,index+termLength+width-Math.floor(width/2));
   return (start?'…':'')+String(text).slice(start,end).replace(/\s+/gu,' ').trim()+(end<text.length?'…':'');
 }
+/** Trouve une sélection malgré les retours de ligne imposés par la mise en page PDF. */
+export function findQuoteRange(text,quote){
+  const source=String(text||''),target=String(quote||'').replace(/\s+/gu,' ').trim();
+  if(!target||target.length>280)return null;
+  let collapsed='',startMap=[],endMap=[];
+  for(let i=0;i<source.length;i++){
+    if(/\s/u.test(source[i])){
+      let end=i+1;
+      while(end<source.length&&/\s/u.test(source[end]))end++;
+      if(collapsed&&collapsed[collapsed.length-1]!==' '){
+        collapsed+=' ';startMap.push(i);endMap.push(end);
+      }
+      i=end-1;
+    }else{
+      collapsed+=source[i];startMap.push(i);endMap.push(i+1);
+    }
+  }
+  const at=collapsed.indexOf(target);
+  if(at<0)return null;
+  return {start:startMap[at],end:endMap[at+target.length-1]};
+}
+
 export function safeReaderMark(mark){
   if(!mark||typeof mark!=='object')return null;
   if(!['bookmark','highlight','note'].includes(mark.kind))return null;
@@ -202,8 +224,8 @@ export function createReaderCompanion({
     const intervals=[];
     for(const mark of state.marks){
       if(mark.page!==currentPage()||mark.kind!=='highlight'||!mark.quote)continue;
-      const start=text.indexOf(mark.quote);
-      if(start>=0)intervals.push({start,end:start+mark.quote.length,kind:'personal'});
+      const range=findQuoteRange(text,mark.quote);
+      if(range)intervals.push({...range,kind:'personal'});
     }
     if(state.searchTerm){
       const starts=findMatches(text,state.searchTerm,15);
