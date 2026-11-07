@@ -110,7 +110,7 @@ export function createReaderCompanion({
     if(kind==='highlight')mark.note='';
     if(kind==='bookmark'){mark.quote='';mark.note=''}
     if(!isFull){
-      const created={...mark,id:crypto.randomUUID?.()||String(Date.now()+Math.random()),
+      const created={...mark,id:window.crypto?.randomUUID?.()||String(Date.now()+Math.random()),
         created_at:new Date().toISOString()};
       state.marks.unshift(created);localMarksWrite();
       notice('Repère enregistré sur cet appareil.');
@@ -209,7 +209,7 @@ export function createReaderCompanion({
       const starts=findMatches(text,state.searchTerm,15);
       for(const at of starts)intervals.push({start:at,end:at+state.searchTerm.length,kind:'search'});
     }
-    if(!intervals.length)return;
+    if(!intervals.length){article.textContent=text;return;}
     intervals.sort((a,b)=>a.start-b.start||(b.end-a.end));
     const frag=document.createDocumentFragment();
     let position=0;
@@ -277,7 +277,7 @@ export function createReaderCompanion({
         // Lecture de chaque page en mémoire, jamais de requête à un moteur externe.
         const text=await getTextAtPage(page);
         if(version!==state.searchVersion)break;
-        const matches=findMatches(text,query,12);
+        const matches=findMatches(text,query,1000);
         found+=matches.length;
         if(matches.length&&shown<80){
           addResult(page,makeExcerpt(text,matches[0],query.length,130));
@@ -353,7 +353,7 @@ export function createReaderCompanion({
   }
   bind();
   return {
-    async ready(){await loadMarks();updateStats()},
+    async ready(){await loadMarks();updateStats();decoratePage()},
     onPageChange(){state.selectedQuote='';$('reader-selection-preview').textContent='Aucun passage sélectionné.';updateStats()},
     onTextRendered(){decoratePage()},
     onModeChange(){if(getPdf())decoratePage()},
