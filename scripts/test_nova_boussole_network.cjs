@@ -27,6 +27,10 @@ const context={
   fetch:async(url,opts)=>{requests.push({url,opts});return {ok:true,json:async()=>({value:42})};}
 };
 context.globalThis=context;
+// La boussole publique exige le même validateur d'intégrité que le sondage.
+const integrity=fs.readFileSync(path.join(base,"assets/nova-civic-integrity.js"),"utf8");
+vm.runInNewContext(integrity,context,{timeout:2500});
+assert.equal(typeof context.window.__NOVA_CIVIC_INTEGRITY?.inspectCompass,"function");
 const end=source.lastIndexOf("})();");
 assert.ok(end>0);
 vm.runInNewContext(source.slice(0,end)+";globalThis.__novaTest={fetchJsonWithTimeout,validateQuestionnaireCorpus};"+source.slice(end),
