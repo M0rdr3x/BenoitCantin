@@ -207,3 +207,21 @@
   .sinjira-liseuse .reader-text{line-height:var(--reader-line-height)}
   .sinjira-liseuse.reader-focus-mode .reader-viewer{height:calc(100dvh - 255px)}
 }
+
+/* V31 — sauvegarde de progression, visible et utilisable au clavier ou au toucher. */
+.sinjira-liseuse .reader-save-bar{gap:12px;justify-content:center;background:#102630}
+.sinjira-liseuse #reader-save-position{background:#246553;border-color:#90e4c8;min-height:45px;
+  color:#fff;font-weight:800}
+.sinjira-liseuse #reader-save-position:hover:not(:disabled){background:#2b8069}
+.sinjira-liseuse .reader-position-status{margin:0;max-width:610px;line-height:1.45;
+  font-size:.9rem;color:#e0f4f4;overflow-wrap:anywhere}
+.sinjira-liseuse .reader-position-status[data-type="success"]{color:#a5f3ca}
+.sinjira-liseuse .reader-position-status[data-type="warning"]{color:#ffe4a3}
+.sinjira-liseuse .reader-position-help{padding:7px 18px;margin:0;background:#0b1924;
+  color:#c1d6de;font-size:.82rem;text-align:center;line-height:1.45}
+.sinjira-liseuse #reader-save-position:focus-visible{outline:3px solid #e7fff5;outline-offset:3px}
+@media(max-width:600px){
+  .sinjira-liseuse .reader-save-bar{flex-direction:column;align-items:stretch;padding:10px}
+  .sinjira-liseuse .reader-position-status{text-align:center}
+  .sinjira-liseuse #reader-save-position{min-height:48px}
+}

@@ -21,7 +21,8 @@ def validate():
         'reader-bookmark-add','reader-highlight-save','reader-note-input',
         'reader-note-save','reader-selection-preview','reader-marks-list',
         'reader-marks-status','reader-search-field','reader-search-submit',
-        'reader-search-cancel','reader-search-status','reader-search-results'
+        'reader-search-cancel','reader-search-status','reader-search-results',
+        'reader-save-position','reader-position-status','reader-position-help'
     ]
     errors.extend('Commande manquante: '+name for name in required if name not in ui.ids)
     main=(ROOT/'assets/js/sinjira-liseuse-v26.js').read_text('utf-8')
@@ -41,7 +42,7 @@ def validate():
         if token not in companion:
             errors.append('Isolation de session ou recherche Unicode manquante: '+token)
     for token in ['progressQueue:Promise.resolve()', "key+':updated'",
-                  'serverSavedAt>localSavedAt', 'state.progressQueue.catch']:
+                  'state.progressQueue.catch']:
         if token not in main:
             errors.append('Synchronisation multiappareil non protégée: '+token)
     # Une déconnexion pendant la signature ou le chargement doit verrouiller
@@ -51,6 +52,18 @@ def validate():
                   'state.accessInvalidated=true', 'auth.getUser()', 'loadedPdf.destroy?.()']:
         if token not in main:
             errors.append('Verrouillage du lecteur privé pendant chargement absent: '+token)
+    # Reprise V31 : état minimal, page/intrapage, aucune citation écrite dans le navigateur.
+    spot=(ROOT/'assets/js/sinjira-liseuse-position-v31.mjs').read_text('utf-8')
+    for token in ['chooseReadingPosition(', 'ratioFromScroll(', 'scrollTopForRatio(',
+                  'serverDate>localDate']:
+        if token not in spot:
+            errors.append('Utilitaire de reprise de lecture absent: '+token)
+    for token in ['saveCurrentPosition()', "key+':spot'", 'restoreScrollAfterRender(version)',
+                  'flushScrollPosition()', 'state.positionRatio', "persist({syncCloud:false})"]:
+        if token not in main:
+            errors.append('Sauvegarde/reprise de lecture absente: '+token)
+    if ':spot' in spot or 'localStorage' in spot:
+        errors.append('Le module de position doit rester une transformation pure.')
     # Empêcher le stockage de texte intégral (citations ou notes) en localStorage.
     if 'localStorage.setItem(DEMO_MARKS_KEY' not in companion:
         errors.append('Enregistrement de la démo non isolé')

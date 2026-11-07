@@ -91,6 +91,15 @@ def mock_web_reader(context) -> None:
             body=fake_pdfjs,
         ),
     )
+    context.add_init_script("""
+      document.addEventListener('DOMContentLoaded',()=>{
+        if(!location.pathname.endsWith('/compte/liseuse.html'))return;
+        const style=document.createElement('style');
+        style.textContent='#reader-viewer{height:300px!important;min-height:300px!important} #reader-text{min-height:1800px!important}';
+        document.head.append(style);
+      });
+    """)
+
 
 
 def mock_private_reader(context) -> None:
@@ -377,6 +386,35 @@ def run() -> None:
         )
         assert_true((page.locator("#reader-text").text_content() or "")!=initial_text,
                     f"{BROWSER_NAME}: texte de la page suivante non affiché")
+        # V31 : enregistrer explicitement sa position et la retrouver après fermeture.
+        page.locator("#reader-viewer").evaluate("(el) => {el.scrollTop=450;el.dispatchEvent(new Event('scroll'))}")
+        assert_true(page.locator("#reader-viewer").evaluate("(el) => el.scrollTop > 0"),
+                    f"{BROWSER_NAME}: impossible de tester la position intrapage")
+        assert_true(page.locator("#reader-save-position").count()==1,
+                    f"{BROWSER_NAME}: sauvegarde de lecture absente")
+        page.locator("#reader-save-position").click()
+        assert_true("Position enregistrée" in page.locator("#reader-position-status").inner_text(),
+                    f"{BROWSER_NAME}: accusé de sauvegarde manuelle absent")
+        saved_page=int(page.locator("#reader-page").input_value())
+        saved_spot=page.evaluate("""() => JSON.parse(localStorage.getItem(
+            'sinjira:liseuse:demo:la-cendre-du-jugement:spot'))""")
+        assert_true(saved_spot is not None and saved_spot["page"]==saved_page
+                    and 0<saved_spot["ratio"]<=1,
+                    f"{BROWSER_NAME}: position locale invalide")
+        assert_true("text" not in saved_spot and "content" not in saved_spot,
+                    f"{BROWSER_NAME}: le texte du roman ne doit pas être sauvegardé")
+        page.reload(wait_until="domcontentloaded",timeout=30_000)
+        page.locator("#reader-content:not([hidden])").wait_for(timeout=20_000)
+        assert_true(page.locator("#reader-page").input_value()==str(saved_page),
+                    f"{BROWSER_NAME}: la position n'est pas reprise à la réouverture")
+        assert_true("reprise depuis cet appareil" in page.locator("#reader-position-status").inner_text(),
+                    f"{BROWSER_NAME}: retour à la dernière position non confirmé")
+        page.wait_for_function(
+            "() => document.getElementById('reader-viewer')?.scrollTop > 0",
+            timeout=15_000)
+        assert_true(page.locator("#reader-viewer").evaluate("(el) => el.scrollTop > 0"),
+                    f"{BROWSER_NAME}: le défilement intrapage n'a pas été restauré")
+
         for control in ("reader-voice-play","reader-voice-pause","reader-voice-stop",
                         "reader-voice","reader-speed","reader-voice-auto"):
             assert_true(page.locator("#"+control).count()==1,
