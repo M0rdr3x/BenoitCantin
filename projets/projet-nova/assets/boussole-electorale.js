@@ -932,6 +932,9 @@
           fetchJsonWithTimeout(DATA_URL)
         ]);
       }
+      // Même le volet documentaire doit rejeter un questionnaire altéré :
+      // empêcher des fiches de partis attachées à des axes/poids incohérents.
+      validateQuestionnaireCorpus(questionCorpus);
       validateDocumentaryCorpora(questionCorpus,partyCorpus,sourceCorpus,evidenceCorpus);
       renderPartyRegistry(partyCorpus,evidenceCorpus);
       renderDocumentaryStatus(partyCorpus,sourceCorpus,evidenceCorpus);
