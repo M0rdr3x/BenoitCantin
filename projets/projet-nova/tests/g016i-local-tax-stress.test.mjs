@@ -160,3 +160,14 @@ test("un montant négatif ou incohérent de référence échoue",()=>{
  const b=copy(d.fixed_2024_baseline);b.taxes_cad=-1;
  assert.throws(()=>calculateFrozenStress(b,"ALL_MUNICIPAL_TAXES"),/INVALID_REFERENCE_OR_MODE/);
 });
+
+test("la page publique G0.16i montre les quatre cas sans prétendre les prédire",async()=>{
+ const html=await readFile(new URL("../avancement-programme-nova.html",import.meta.url),"utf8");
+ assert.match(html,/id="stress-local-g016i"/);
+ assert.match(html,/−9,473 G\$/);
+ assert.match(html,/−11,228 G\$/);
+ assert.match(html,/−13,446 G\$/);
+ assert.match(html,/on ne doit pas additionner leurs montants/);
+ assert.match(html,/ni d'un budget Nova ni d'une réforme proposée/);
+ assert.match(html,/47 % inchangé/);
+});
