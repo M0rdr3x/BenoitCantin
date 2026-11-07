@@ -49,6 +49,10 @@ const ctx={
   fetch(){networkCalls++;throw Error("Aucune requête attendue");},console
 };
 ctx.globalThis=ctx;
+const integrity=fs.readFileSync(path.join(root,"projets/projet-nova/assets/nova-civic-integrity.js"),"utf8");
+vm.runInNewContext(integrity,ctx,{timeout:2500});
+assert.equal(typeof ctx.window.__NOVA_CIVIC_INTEGRITY?.scoreCompass,"function",
+  "Moteur de calcul partagé requis pour naviguer et afficher les scores");
 const marker="})();",at=source.lastIndexOf(marker);
 assert.ok(at>=0);
 const expose=";globalThis.__test={state,startQuestionnaire,goPrevious,goNext,reset,calculate,updateStepControls};";
