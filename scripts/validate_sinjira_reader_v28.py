@@ -17,7 +17,9 @@ def validate_private_session_lifecycle(source: str) -> list[str]:
     errors: list[str] = []
     required = {
         "état de session fermé": "closed:false",
-        "verrou sur la lecture": "const isReady=()=>!state.closed&&Boolean(getPdf());",
+        "verrou sur la lecture": "const isReady=()=>!state.closed&&Boolean(getPdf())",
+        "compte initial figé": "getUser()?.id===sessionUserId",
+        "roman initial figé": "getNovelId()===sessionNovelId",
         "annulation avant/après chargement de chapitre": (
             "if(!state.continuous||token!==state.chapterToken||!isReady())return;"
         ),
