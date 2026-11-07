@@ -1,0 +1,77 @@
+name: Projet Nova P53C - Original ARC 2024 et acquisition municipale non complete
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p53c.yml"
+      - "scripts/valider_donnees_sources_nova_p53c.py"
+      - "scripts/tests/test_valider_donnees_sources_nova_p53c.py"
+      - "projets/projet-nova/etudes/P53C_*"
+      - "projets/projet-nova/etudes/sources/P53C_*"
+      - "projets/projet-nova/etudes/P53A_*"
+      - "projets/projet-nova/etudes/P53B_*"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  archive-et-comparabilite-sans-go:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout fichiers sources sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: 75 tests de chaine d'acquisition et de rejection des chiffres inventes
+        run: |
+          python -m py_compile scripts/valider_donnees_sources_nova_p53c.py
+          python - <<'PY'
+          import unittest
+          cases=unittest.defaultTestLoader.discover(
+             "scripts/tests",pattern="test_valider_donnees_sources_nova_p53c.py")
+          assert cases.countTestCases()==75,cases.countTestCases()
+          r=unittest.TextTestRunner(verbosity=2).run(cases)
+          assert r.wasSuccessful()
+          PY
+      - name: Verifier les 1059 octets ARC 2024 et aucune consolidation fabriquee
+        run: |
+          python scripts/valider_donnees_sources_nova_p53c.py --rapport p53c_bilan.json --export-csv p53c_quebec_historique_2024.csv
+          python - <<'PY'
+          import csv,json
+          from pathlib import Path
+          d=json.loads(Path("p53c_bilan.json").read_text(encoding="utf-8"))
+          assert d["source_csv_octets_verifies"]==1059
+          assert d["csv_original_sha256_verifie"] is True
+          assert d["impot_federal_net_particuliers_quebec_2024_milliers_cad"]==43549895
+          assert d["difference_arrondis_5_tranches_milliers_cad"]==1
+          assert d["source_zip_municipale_acquise"] is False
+          assert d["recettes_federales_quebec_2026_2027_certifiees"] is False
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          with Path("p53c_quebec_historique_2024.csv").open(encoding="utf-8") as f:
+            lines=list(csv.reader(f))
+          assert len(lines)==7 and lines[-1][4]=="43549895"
+          assert all(x[-1]=="NON" for x in lines[1:])
+          PY
+      - name: Interdire la certification nationale sans preuves
+        run: |
+          set +e
+          python scripts/valider_donnees_sources_nova_p53c.py --exiger-consolidation --rapport p53c_refus_consolidation.json
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Partager uniquement le rapport agrege et le sommaire 2024
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p53c-original-arc-et-lacunes-municipales-no-go
+          path: |
+            p53c_bilan.json
+            p53c_quebec_historique_2024.csv
+            p53c_refus_consolidation.json
+          retention-days: 7
+          if-no-files-found: ignore

@@ -1,0 +1,160 @@
+{
+  "schema_version": "P53R-1",
+  "jalon": "P53R",
+  "date_reference": "2026-10-22",
+  "statut": "SIX_PROJETS_DE_DEMANDES_NON_TRANSMISES",
+  "exercice": 2024,
+  "cadre_juridique": "QUEBEC_ACTUEL_LOI_A_2_1",
+  "reference_legale": "https://www.legisquebec.gouv.qc.ca/fr/document/lc/A-2.1",
+  "reference_cai": "https://www.cai.gouv.qc.ca/acces-documents-organismes-publics/citoyens-acces-documents-publics/comment-acceder-documents-organismes-publics",
+  "codes": [
+    "66023",
+    "T1025",
+    "23027",
+    "T0081",
+    "T0088",
+    "39135"
+  ],
+  "destinations": {
+    "23027": {
+      "identifiant": "VILLE_DE_QUEBEC",
+      "page_procedure": "https://www.ville.quebec.qc.ca/apropos/acces-information/demande.aspx",
+      "identite_responsable_personnellement_verifiee": false
+    },
+    "39135": {
+      "identifiant": "SAINT_VALERE",
+      "page_procedure": "https://www.msvalere.qc.ca/acces-linformation",
+      "identite_responsable_personnellement_verifiee": false
+    },
+    "66023": {
+      "identifiant": "VILLE_DE_MONTREAL",
+      "page_procedure": "https://montreal.ca/services/acces-linformation",
+      "identite_responsable_personnellement_verifiee": false
+    },
+    "T1025": {
+      "identifiant": "ARTM",
+      "page_procedure": "https://www.artm.quebec/a-propos-de-l-artm/acces-aux-documents-et-protection-des-renseignements-personnels/",
+      "identite_responsable_personnellement_verifiee": false
+    },
+    "T0081": {
+      "identifiant": "STM",
+      "page_procedure": "https://www.stm.info/fr/a-propos/gouvernance-d-entreprise/acces-linformation",
+      "identite_responsable_personnellement_verifiee": false
+    },
+    "T0088": {
+      "identifiant": "RTC",
+      "page_procedure": "https://www.rtcquebec.ca/propos/gouvernance/acces-linformation",
+      "identite_responsable_personnellement_verifiee": false
+    }
+  },
+  "demandes_par_code": {
+    "23027": [
+      {
+        "type_piece": "eliminations_deja_comptabilisees",
+        "description": "Copie des tableaux ou feuilles existants qui documentent les éliminations réciproques de consolidation 2024 entre la Ville de Québec et les organismes contrôlés, notamment le RTC, dans la mesure où la Ville détient ces documents."
+      },
+      {
+        "type_piece": "perimetre_de_consolidation_2024",
+        "description": "Copie de la note et des annexes existantes établissant le périmètre consolidé de 2024 et les règles de présentation des transactions réciproques."
+      },
+      {
+        "type_piece": "etats_financiers_2024_version_originelle",
+        "description": "Copie du rapport financier consolidé 2024 officiel et de ses annexes, en indiquant toute version corrigée si elle existe."
+      }
+    ],
+    "39135": [
+      {
+        "type_piece": "etats_financiers_2024_version_originelle",
+        "description": "Copie du rapport financier 2024 de Saint-Valère, de son rapport du vérificateur si applicable et des annexes déposées ou transmises à l'autorité provinciale."
+      },
+      {
+        "type_piece": "entente_resolution_et_avenants",
+        "description": "Copie des résolutions ou ententes municipales existantes établissant des quotes-parts ou transferts concernant l'exercice 2024."
+      },
+      {
+        "type_piece": "facture_ou_appel_de_quote_part",
+        "description": "Copie des appels de quotes-parts ou demandes de versement adressées ou reçues en 2024 et détenues par la municipalité, dans les limites permises par la loi."
+      }
+    ],
+    "66023": [
+      {
+        "type_piece": "perimetre_de_consolidation_2024",
+        "description": "Copie des notes ou annexes existantes au rapport financier 2024 décrivant le périmètre de consolidation de la Ville, incluant les organismes contrôlés, si de telles pièces sont détenues."
+      },
+      {
+        "type_piece": "etats_financiers_2024_version_originelle",
+        "description": "Copie du rapport financier 2024 et des notes complémentaires publiées ou conservées avec les états financiers, en précisant la version."
+      },
+      {
+        "type_piece": "eliminations_deja_comptabilisees",
+        "description": "Copie de tout tableau ou annexe existant relatif aux écritures réciproques déjà éliminées dans la consolidation 2024, s'il en existe un et sous réserve des restrictions légales."
+      }
+    ],
+    "T1025": [
+      {
+        "type_piece": "entente_resolution_et_avenants",
+        "description": "Copie des ententes de financement et avenants en vigueur pendant l'exercice 2024 relatifs aux contributions et services de transport collectif, dans la mesure où ils sont détenus par l'ARTM."
+      },
+      {
+        "type_piece": "subventions_et_origine_financement",
+        "description": "Copie des annexes ou tableaux existants décrivant les sources de financement et contributions comptabilisées pour l'exercice 2024, si conservés."
+      },
+      {
+        "type_piece": "perimetre_de_consolidation_2024",
+        "description": "Copie de la note existante définissant le périmètre comptable et les organismes pris en compte dans le rapport annuel financier 2024 de l'ARTM."
+      }
+    ],
+    "T0081": [
+      {
+        "type_piece": "indicateurs_qualite_accessibilite_service",
+        "description": "Copie des tableaux existants de suivi de l'achalandage, de la ponctualité, de la fiabilité et de l'accessibilité du service durant l'exercice 2024."
+      },
+      {
+        "type_piece": "etats_financiers_2024_version_originelle",
+        "description": "Copie du rapport financier annuel officiel 2024 de la STM, avec ses notes comptables et, s'il y a lieu, ses versions corrigées."
+      },
+      {
+        "type_piece": "entente_resolution_et_avenants",
+        "description": "Copie des ententes et avenants de financement du service pour 2024 détenus par la STM, dans la mesure où ils sont communicables."
+      }
+    ],
+    "T0088": [
+      {
+        "type_piece": "eliminations_deja_comptabilisees",
+        "description": "Copie des documents existants détenus par le RTC décrivant les écritures réciproques 2024 avec la Ville de Québec et leur traitement pour consolidation; si ces documents sont plutôt détenus par la Ville, veuillez l'indiquer."
+      },
+      {
+        "type_piece": "indicateurs_qualite_accessibilite_service",
+        "description": "Copie des tableaux ou rapports de suivi du service, achalandage, fiabilité, accès et plaintes agrégées pour l'exercice 2024, s'ils sont détenus par le RTC."
+      },
+      {
+        "type_piece": "etats_financiers_2024_version_originelle",
+        "description": "Copie des états financiers annuels du RTC pour 2024 et des notes pertinentes à ses relations avec la Ville de Québec."
+      }
+    ]
+  },
+  "verrous": {
+    "absence_envoi_reseau": true,
+    "absence_avis_d_envoi": true,
+    "aucune_coordonnees_personnelles_publiquees": true,
+    "demander_documents_existants_non_analyse_nouvelle": true,
+    "droit_acces_et_tiers_a_examiner": true,
+    "caviardage_et_frais_eventuels": true,
+    "delai_court_apres_reception_effective": true,
+    "separation_competences_organismes": true,
+    "aucun_gain_financier_certifie": true,
+    "consolidation_quebec_rtc_protegee": true,
+    "travailleurs_et_services_proteges": true,
+    "aucune_fusion_automatique": true
+  },
+  "etat_initial": {
+    "projets_de_demandes": 6,
+    "documents_decrits": 18,
+    "organismes_procedures_identifiees": 6,
+    "demandes_envoyees": 0,
+    "reponses_reçues_et_verifiees": 0,
+    "originals_transactionnels_authentifies": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

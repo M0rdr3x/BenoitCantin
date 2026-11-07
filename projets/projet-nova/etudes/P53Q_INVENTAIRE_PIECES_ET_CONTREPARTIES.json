@@ -1,0 +1,80 @@
+{
+  "schema_version": "P53Q-1",
+  "jalon": "P53Q",
+  "date_reference": "2026-10-22",
+  "statut": "INVENTAIRE_DOCUMENTAIRE_SANS_ACQUISITION",
+  "exercice_reference": 2024,
+  "codes": [
+    "66023",
+    "T1025",
+    "23027",
+    "T0081",
+    "T0088",
+    "39135"
+  ],
+  "types_pieces": [
+    "competence_et_identite_juridique",
+    "etats_financiers_2024_version_originelle",
+    "perimetre_de_consolidation_2024",
+    "grand_livre_payeur",
+    "grand_livre_beneficiaire",
+    "entente_resolution_et_avenants",
+    "facture_ou_appel_de_quote_part",
+    "preuve_de_paiement",
+    "eliminations_deja_comptabilisees",
+    "subventions_et_origine_financement",
+    "cout_operationnel_reference",
+    "cout_transition",
+    "cout_recurrent_apres_changement",
+    "transfert_de_couts_vers_autres_acteurs",
+    "indicateurs_qualite_accessibilite_service",
+    "protections_emplois_conditions_travail",
+    "avis_independant_comptable_juridique"
+  ],
+  "priorite_document_par_organisme": {
+    "23027": "eliminations_deja_comptabilisees",
+    "39135": "etats_financiers_2024_version_originelle",
+    "66023": "perimetre_de_consolidation_2024",
+    "T1025": "entente_resolution_et_avenants",
+    "T0081": "indicateurs_qualite_accessibilite_service",
+    "T0088": "eliminations_deja_comptabilisees"
+  },
+  "etats_declaratifs": [
+    "NON_OBTENUE",
+    "REPERE_PUBLIC_NON_AUTHENTIFIE",
+    "DEMANDE_PREPAREE_NON_ENVOYEE",
+    "RECEPTION_DECLAREE_NON_VERIFIEE",
+    "REFUS_DECLARE_NON_VERIFIE"
+  ],
+  "phases": [
+    "P0_COMPETENCE",
+    "P1_SOURCES_OFFICIELLES",
+    "P2_DEUX_GRANDS_LIVRES",
+    "P3_CONSOLIDATION_ANTERIEURE",
+    "P4_SERVICES_ET_EMPLOIS",
+    "P5_CONTROLE_EXPERT_INDEPENDANT"
+  ],
+  "verrous": {
+    "aucune_piece_originale_dans_git": true,
+    "aucune_reception_authentifiee": true,
+    "aucune_demande_reelle_envoyee": true,
+    "aucune_economie_derivee_flux": true,
+    "eliminations_existantes_non_reutilisees": true,
+    "emplois_et_services_intacts": true,
+    "montants_inconnus_non_zeros": true,
+    "donnees_personnelles_exclues": true,
+    "pas_de_consolidation_de_regimes": true,
+    "aucune_fusion_autorisee": true,
+    "expertise_humaine_exigee": true
+  },
+  "etat_initial": {
+    "dossiers": 6,
+    "types_pieces_par_dossier": 17,
+    "emplacements_pieces": 102,
+    "originaux_authentifies": 0,
+    "demandes_envoyees": 0,
+    "avis_independants_signes": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

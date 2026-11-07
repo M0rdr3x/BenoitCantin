@@ -1,0 +1,53 @@
+{
+  "schema_version": "P54T-1",
+  "date_reference": "2026-10-24",
+  "source_jalon": "P54R",
+  "reference_run_p54p": 40151185184,
+  "reference_artifact_p54p": 12583661231,
+  "source_zip_sha256_historique": "d87562662c4c82176e02bdcb28035bb704f2734eb998e0161ef17a21e268c42e",
+  "copies_figees": {
+    "p54p_avant_acquisition.json": {
+      "chemin": "projets/projet-nova/etudes/p54t_archive_durable_p54p/p54p_avant_acquisition.json",
+      "sha256": "73856ddd9284acec7a0a5edcf538ff5f7c387ab28429e736cfeb85a1c92914dd",
+      "taille_octets": 795
+    },
+    "p54p_reproduction_conditionnelle.json": {
+      "chemin": "projets/projet-nova/etudes/p54t_archive_durable_p54p/p54p_reproduction_conditionnelle.json",
+      "sha256": "ebfae307f375519b5921358af70b624991f9a3f6a383eb91139d64c399620fb1",
+      "taille_octets": 2631
+    }
+  },
+  "position_ref_count": 5,
+  "protections": {
+    "fichiers_membres_figes_a_sha256_identique": true,
+    "pas_de_zip_original_reconstitue": true,
+    "pas_de_relecture_pdf_ce_jalon": true,
+    "octets_identiques_aux_artefacts_historique": true,
+    "origine_institutionnelle_non_authentifiee": true,
+    "aucune_anomalie_comptable_inferree": true,
+    "aucun_jeton_brut_ou_contexte": true,
+    "cinq_offsets_nfkc_non_visuels": true,
+    "date_probable_non_certifiee": true,
+    "quatre_dossiers_p54e_ouverts": true,
+    "controles_p54b_p54c_non_attestes": true,
+    "aucune_economie_certifiee": true,
+    "emplois_services_proteges": true,
+    "double_compte_ville_rtc_somhac_interdit": true,
+    "deux_scenarios_constitutionnels_distincts": true,
+    "aucune_transmission_externe": true,
+    "main_non_fusionnee": true,
+    "sinjira_inchange": true
+  },
+  "etat_initial": {
+    "copies_figees_recontrolees": 0,
+    "positions_historiques": 5,
+    "positions_pdf_reextraites_ce_jalon": 0,
+    "pdf_reacquis_ce_jalon": 0,
+    "archive_zip_reverifiee_ce_jalon": false,
+    "dossiers_p54e_ouverts": 4,
+    "controles_p54b_non_attestes": 96,
+    "controles_p54c_non_attestes": 8,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

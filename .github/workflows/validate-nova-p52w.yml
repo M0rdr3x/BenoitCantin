@@ -1,0 +1,76 @@
+name: Projet Nova P52W - Selection independante F09 sans recrutement
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p52w.yml"
+      - "scripts/preparer_selection_expert_nova_p52w.py"
+      - "scripts/tests/test_preparer_selection_expert_nova_p52w.py"
+      - "projets/projet-nova/etudes/P52W_*"
+      - "projets/projet-nova/etudes/P52V_REGISTRE_MISSION_F09.json"
+      - "projets/projet-nova/etudes/P52N_CAHIER_MANDATS_ET_CONSULTATION.json"
+      - "projets/projet-nova/etudes/P52Q_DOSSIERS_INSTRUCTION_VAGUE1.json"
+      - "projets/projet-nova/etudes/P52U_INSTRUCTION_HUMAINE_F09.json"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controle-sans-candidat-ni-depense:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Lire sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Installer Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Soixante-trois tests de structure de conflit et de simulation
+        run: |
+          python -m py_compile scripts/preparer_selection_expert_nova_p52w.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_preparer_selection_expert_nova_p52w.py")
+          assert suite.countTestCases()==63,suite.countTestCases()
+          outcome=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert outcome.wasSuccessful()
+          PY
+      - name: Rapport agrege et export vierge sans candidats
+        run: |
+          python scripts/preparer_selection_expert_nova_p52w.py --rapport p52w_bilan.json --export-csv p52w_grille_vierge.csv
+          python - <<'PY'
+          import csv,json
+          from pathlib import Path
+          d=json.loads(Path("p52w_bilan.json").read_text(encoding="utf-8"))
+          assert d["conditions_non_verifiees"]==12
+          assert d["axes_scores_non_adoptes"]==5
+          assert d["offres_recues"]==0
+          assert d["experts_recrutes"]==0
+          assert d["cout_engage_cad"]==0
+          assert d["positions_F09_validees_par_humain"]==0
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          with Path("p52w_grille_vierge.csv").open(encoding="utf-8") as f:
+            assert len(list(csv.reader(f)))==1
+          PY
+      - name: Refuser la validation par un mandat non obtenu
+        run: |
+          set +e
+          python scripts/preparer_selection_expert_nova_p52w.py --exiger-mandat --rapport p52w_refus_mandat.json
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Rapports non personnels et vierges seulement
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52w-grille-candidature-vierge-no-go
+          path: |
+            p52w_bilan.json
+            p52w_grille_vierge.csv
+            p52w_refus_mandat.json
+          retention-days: 7
+          if-no-files-found: ignore

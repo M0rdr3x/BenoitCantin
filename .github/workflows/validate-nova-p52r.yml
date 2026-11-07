@@ -1,0 +1,79 @@
+name: Projet Nova P52R - Rapprochement budget et originaux manquants
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p52r.yml"
+      - "scripts/auditer_rapprochement_budget_nova_p52r.py"
+      - "scripts/tests/test_auditer_rapprochement_budget_nova_p52r.py"
+      - "projets/projet-nova/etudes/P52R_*"
+      - "projets/projet-nova/etudes/P52C_REFERENTIEL_BUDGET_QUEBEC_2026_2027.json"
+      - "projets/projet-nova/etudes/P52J_RELECTURE_PRIMAIRE_BUDGET_2026_2027.json"
+      - "projets/projet-nova/etudes/P52K_REGISTRE_PROVENANCE_BUDGET.json"
+      - "projets/projet-nova/etudes/P52Q_DOSSIERS_INSTRUCTION_VAGUE1.json"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rapprochement-numerique-pas-certificat:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Lecture seule du depot sans creds persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Quarante-quatre tests de budget et de fichiers locaux fictifs
+        run: |
+          python -m py_compile scripts/auditer_rapprochement_budget_nova_p52r.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_auditer_rapprochement_budget_nova_p52r.py")
+          assert suite.countTestCases()==44,suite.countTestCases()
+          results=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert results.wasSuccessful()
+          PY
+      - name: Confirmer 21 lignes 8 sous totaux 10 montants et NO_GO
+        run: |
+          python scripts/auditer_rapprochement_budget_nova_p52r.py --rapport p52r_agregat.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p52r_agregat.json").read_text("utf-8"))
+          assert d["lignes_budget_discours_controlees"]==21
+          assert d["sous_totaux_budget_discours_controles"]==8
+          assert d["agregats_signes_plan_controles"]==10
+          assert d["identites_arithmetiques_confirmees"]==10
+          assert d["reception_octets_locale_non_attestee"] is None
+          assert d["pdf_originaux_autentifies"]==0
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: PDF originaux requis et expertise externe toujours non obtenue
+        run: |
+          set +e
+          python scripts/auditer_rapprochement_budget_nova_p52r.py --exiger-originaux --rapport p52r_absence_originaux.json
+          code=$?
+          set -e
+          test "$code" -eq 3
+          set +e
+          python scripts/auditer_rapprochement_budget_nova_p52r.py --exiger-expertise --rapport p52r_absence_expertise.json
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Artefacts agreges sans octets originaux
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52r-budget-sans-originaux-no-go
+          path: |
+            p52r_agregat.json
+            p52r_absence_originaux.json
+            p52r_absence_expertise.json
+          retention-days: 7
+          if-no-files-found: ignore

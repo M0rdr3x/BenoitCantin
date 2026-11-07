@@ -1,0 +1,868 @@
+{
+  "schema_version": "P52P-1",
+  "jalon": "P52P",
+  "date_reference": "2026-10-19",
+  "projet": "Projet Nova",
+  "statut": "REGISTRE_LACUNES_ET_PROVENANCE_NON_ACQUISE",
+  "references": {
+    "p52a": "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json",
+    "p52b": "projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json",
+    "p52d": "projets/projet-nova/etudes/P52D_GABARIT_INCIDENCE_MENAGES_ENTREPRISES.json",
+    "p52i": "projets/projet-nova/etudes/P52I_SOURCES_ET_ATTESTATIONS.json",
+    "p52j": "projets/projet-nova/etudes/P52J_RELECTURE_PRIMAIRE_BUDGET_2026_2027.json",
+    "p52k": "projets/projet-nova/etudes/P52K_REGISTRE_PROVENANCE_BUDGET.json",
+    "p52o": "projets/projet-nova/etudes/P52O_PLAN_ACQUISITION_PREUVES.json",
+    "sources_p52o": "projets/projet-nova/etudes/P52O_SOURCES_OFFICIELLES_REPEREES.json",
+    "p52n": "projets/projet-nova/etudes/P52N_CAHIER_MANDATS_ET_CONSULTATION.json",
+    "gabarit": "projets/projet-nova/etudes/P52P_GABARIT_RECEPTION_PIECE.json"
+  },
+  "exigences": [
+    {
+      "id": "F01",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "Compétence de modifier la TVQ et autres impôts québécois",
+      "vague": "V1",
+      "comite_pilote": "CJF",
+      "dependances_techniques": [],
+      "preuve_originale_a_obtenir": "Avis juridique provincial indépendant et tableau des lois à modifier",
+      "livrable_mandat_propose": "Avis juridique sourcé distinguant droits et limites de la fiscalité provinciale, et inventaire des textes à modifier",
+      "pistes_sources_reperées": [
+        "REF01",
+        "REF04"
+      ],
+      "relecture_budgetaire_P52J_disponible": false,
+      "phase_acquisition": "NON_ACQUISE",
+      "statut_juridique": "NON_VALIDE",
+      "pieces_obligatoires": {
+        "document_source_complet_et_version": null,
+        "copie_originale_archivee_avec_droits": null,
+        "empreinte_sha256_verifiee": null,
+        "definitions_perimetre_methode_unites": null,
+        "rapprochement_et_reproduction_independante": null,
+        "avis_expert_mandate_independant_signe": null,
+        "avis_contradictoire_et_reserves_resolues": null,
+        "decision_humaine_formellement_competente": null
+      },
+      "preuve_independante_authentifiee": false,
+      "source_identifiee_est_une_preuve": false,
+      "certification_budgetaire": false,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F02",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "TPS et impôt fédéral demeurent distincts",
+      "vague": "V1",
+      "comite_pilote": "CJF",
+      "dependances_techniques": [],
+      "preuve_originale_a_obtenir": "Avis sur les limites de compétence provinciale et les ententes d'administration",
+      "livrable_mandat_propose": "Note constitutionnelle des prélèvements fédéraux qui demeurent, y compris TPS et impôt fédéral",
+      "pistes_sources_reperées": [
+        "REF01"
+      ],
+      "relecture_budgetaire_P52J_disponible": false,
+      "phase_acquisition": "NON_ACQUISE",
+      "statut_juridique": "NON_VALIDE",
+      "pieces_obligatoires": {
+        "document_source_complet_et_version": null,
+        "copie_originale_archivee_avec_droits": null,
+        "empreinte_sha256_verifiee": null,
+        "definitions_perimetre_methode_unites": null,
+        "rapprochement_et_reproduction_independante": null,
+        "avis_expert_mandate_independant_signe": null,
+        "avis_contradictoire_et_reserves_resolues": null,
+        "decision_humaine_formellement_competente": null
+      },
+      "preuve_independante_authentifiee": false,
+      "source_identifiee_est_une_preuve": false,
+      "certification_budgetaire": false,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F03",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "Tarifs douaniers et contre-tarifs fédéraux",
+      "vague": "V1",
+      "comite_pilote": "CJF",
+      "dependances_techniques": [],
+      "preuve_originale_a_obtenir": "Table des décisions réservées au gouvernement fédéral; formulation honnête des engagements politiques provinciaux",
+      "livrable_mandat_propose": "Analyse de compétence sur les tarifs, contre-tarifs et engagements commerciaux",
+      "pistes_sources_reperées": [
+        "REF02"
+      ],
+      "relecture_budgetaire_P52J_disponible": false,
+      "phase_acquisition": "NON_ACQUISE",
+      "statut_juridique": "NON_VALIDE",
+      "pieces_obligatoires": {
+        "document_source_complet_et_version": null,
+        "copie_originale_archivee_avec_droits": null,
+        "empreinte_sha256_verifiee": null,
+        "definitions_perimetre_methode_unites": null,
+        "rapprochement_et_reproduction_independante": null,
+        "avis_expert_mandate_independant_signe": null,
+        "avis_contradictoire_et_reserves_resolues": null,
+        "decision_humaine_formellement_competente": null
+      },
+      "preuve_independante_authentifiee": false,
+      "source_identifiee_est_une_preuve": false,
+      "certification_budgetaire": false,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F04",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "Fiscalité municipale et taxes scolaires et foncières",
+      "vague": "V1",
+      "comite_pilote": "CFP",
+      "dependances_techniques": [],
+      "preuve_originale_a_obtenir": "Inventaire des taxes, transferts et services par municipalité; coût de remplacement",
+      "livrable_mandat_propose": "Table de consolidation et de compensation des recettes et services municipaux et scolaires",
+      "pistes_sources_reperées": [
+        "S06",
+        "REF06"
+      ],
+      "relecture_budgetaire_P52J_disponible": false,
+      "phase_acquisition": "NON_ACQUISE",
+      "statut_juridique": "NON_VALIDE",
+      "pieces_obligatoires": {
+        "document_source_complet_et_version": null,
+        "copie_originale_archivee_avec_droits": null,
+        "empreinte_sha256_verifiee": null,
+        "definitions_perimetre_methode_unites": null,
+        "rapprochement_et_reproduction_independante": null,
+        "avis_expert_mandate_independant_signe": null,
+        "avis_contradictoire_et_reserves_resolues": null,
+        "decision_humaine_formellement_competente": null
+      },
+      "preuve_independante_authentifiee": false,
+      "source_identifiee_est_une_preuve": false,
+      "certification_budgetaire": false,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F05",
+      "regime": "TOUS",
+      "theme": "Définition du prélèvement sur les revenus",
+      "vague": "V2",
+      "comite_pilote": "CJF",
+      "dependances_techniques": [
+        "F01",
+        "F02",
+        "F07"
+      ],
+      "preuve_originale_a_obtenir": "Assiettes individuelles et d'entreprises; crédits; non-imposition de subsistance; pertes reportables",
+      "livrable_mandat_propose": "Architecture de l'assiette de revenu, seuil de subsistance, pertes et crédits",
+      "pistes_sources_reperées": [
+        "REF07"
+      ],
+      "relecture_budgetaire_P52J_disponible": false,
+      "phase_acquisition": "NON_ACQUISE",
+      "statut_juridique": "NON_VALIDE",
+      "pieces_obligatoires": {
+        "document_source_complet_et_version": null,
+        "copie_originale_archivee_avec_droits": null,
+        "empreinte_sha256_verifiee": null,
+        "definitions_perimetre_methode_unites": null,
+        "rapprochement_et_reproduction_independante": null,
+        "avis_expert_mandate_independant_signe": null,
+        "avis_contradictoire_et_reserves_resolues": null,
+        "decision_humaine_formellement_competente": null
+      },
+      "preuve_independante_authentifiee": false,
+      "source_identifiee_est_une_preuve": false,
+      "certification_budgetaire": false,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F06",
+      "regime": "TOUS",
+      "theme": "Définition du prélèvement anti-paradis fiscaux",
+      "vague": "V2",
+      "comite_pilote": "CJF",
+      "dependances_techniques": [
+        "F01",
+        "F02",
+        "F03",
+        "F07"
+      ],
+      "preuve_originale_a_obtenir": "Fait générateur, territorialité, droits de contestation, absence de double comptage et interactions internationales",
+      "livrable_mandat_propose": "Définition du fait générateur anti-transfert abusif, traitement de la double imposition et recours",
+      "pistes_sources_reperées": [],
+      "relecture_budgetaire_P52J_disponible": false,
+      "phase_acquisition": "NON_ACQUISE",
+      "statut_juridique": "NON_VALIDE",
+      "pieces_obligatoires": {
+        "document_source_complet_et_version": null,
+        "copie_originale_archivee_avec_droits": null,
+        "empreinte_sha256_verifiee": null,
+        "definitions_perimetre_methode_unites": null,
+        "rapprochement_et_reproduction_independante": null,
+        "avis_expert_mandate_independant_signe": null,
+        "avis_contradictoire_et_reserves_resolues": null,
+        "decision_humaine_formellement_competente": null
+      },
+      "preuve_independante_authentifiee": false,
+      "source_identifiee_est_une_preuve": false,
+      "certification_budgetaire": false,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F07",
+      "regime": "TOUS",
+      "theme": "Inventaire de tous les prélèvements obligatoires",
+      "vague": "V1",
+      "comite_pilote": "CJF",
+      "dependances_techniques": [],
+      "preuve_originale_a_obtenir": "Registre exhaustif distinguant taxe, impôt, cotisation, redevance et frais réels avec compétence",
+      "livrable_mandat_propose": "Inventaire des prélèvements de tous niveaux et de leurs fondements juridiques",
+      "pistes_sources_reperées": [
+        "REF03",
+        "REF04",
+        "REF06"
+      ],
+      "relecture_budgetaire_P52J_disponible": false,
+      "phase_acquisition": "NON_ACQUISE",
+      "statut_juridique": "NON_VALIDE",
+      "pieces_obligatoires": {
+        "document_source_complet_et_version": null,
+        "copie_originale_archivee_avec_droits": null,
+        "empreinte_sha256_verifiee": null,
+        "definitions_perimetre_methode_unites": null,
+        "rapprochement_et_reproduction_independante": null,
+        "avis_expert_mandate_independant_signe": null,
+        "avis_contradictoire_et_reserves_resolues": null,
+        "decision_humaine_formellement_competente": null
+      },
+      "preuve_independante_authentifiee": false,
+      "source_identifiee_est_une_preuve": false,
+      "certification_budgetaire": false,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F08",
+      "regime": "TOUS",
+      "theme": "Rendement d'impôt anti-évasion",
+      "vague": "V3",
+      "comite_pilote": "CFP",
+      "dependances_techniques": [
+        "F06",
+        "F07",
+        "F09"
+      ],
+      "preuve_originale_a_obtenir": "Estimation indépendante nette et défendable; scénario de base reste à zéro sans preuve",
+      "livrable_mandat_propose": "Étude prudente du rendement net anti-évasion, coûts, contestations et intervalle d'incertitude",
+      "pistes_sources_reperées": [],
+      "relecture_budgetaire_P52J_disponible": false,
+      "phase_acquisition": "NON_ACQUISE",
+      "statut_juridique": "NON_VALIDE",
+      "pieces_obligatoires": {
+        "document_source_complet_et_version": null,
+        "copie_originale_archivee_avec_droits": null,
+        "empreinte_sha256_verifiee": null,
+        "definitions_perimetre_methode_unites": null,
+        "rapprochement_et_reproduction_independante": null,
+        "avis_expert_mandate_independant_signe": null,
+        "avis_contradictoire_et_reserves_resolues": null,
+        "decision_humaine_formellement_competente": null
+      },
+      "preuve_independante_authentifiee": false,
+      "source_identifiee_est_une_preuve": false,
+      "certification_budgetaire": false,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F09",
+      "regime": "TOUS",
+      "theme": "Sources budgétaires et réconciliation",
+      "vague": "V1",
+      "comite_pilote": "CFP",
+      "dependances_techniques": [],
+      "preuve_originale_a_obtenir": "Rapprochement 2026-2027 des données du modèle Nova avec comptes budgétaires officiels",
+      "livrable_mandat_propose": "Réconciliation documentée des postes 2026-2027, versions officielles et consolidation des périmètres",
+      "pistes_sources_reperées": [
+        "S01",
+        "S02",
+        "S07",
+        "REF05"
+      ],
+      "relecture_budgetaire_P52J_disponible": true,
+      "phase_acquisition": "NON_ACQUISE",
+      "statut_juridique": "NON_VALIDE",
+      "pieces_obligatoires": {
+        "document_source_complet_et_version": null,
+        "copie_originale_archivee_avec_droits": null,
+        "empreinte_sha256_verifiee": null,
+        "definitions_perimetre_methode_unites": null,
+        "rapprochement_et_reproduction_independante": null,
+        "avis_expert_mandate_independant_signe": null,
+        "avis_contradictoire_et_reserves_resolues": null,
+        "decision_humaine_formellement_competente": null
+      },
+      "preuve_independante_authentifiee": false,
+      "source_identifiee_est_une_preuve": false,
+      "certification_budgetaire": false,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F10",
+      "regime": "TOUS",
+      "theme": "Modèle décennal et scénarios",
+      "vague": "V4",
+      "comite_pilote": "CFP",
+      "dependances_techniques": [
+        "F05",
+        "F08",
+        "F09",
+        "F13",
+        "F14",
+        "F16",
+        "F17"
+      ],
+      "preuve_originale_a_obtenir": "Solde, encours de dette, liquidité, intérêts, financement des services, stress 1/3/5/10 ans",
+      "livrable_mandat_propose": "Modèle sur dix exercices pour deux statuts juridiques et scénarios défavorables avec audit des hypothèses",
+      "pistes_sources_reperées": [
+        "S02",
+        "S07",
+        "REF05"
+      ],
+      "relecture_budgetaire_P52J_disponible": false,
+      "phase_acquisition": "NON_ACQUISE",
+      "statut_juridique": "NON_VALIDE",
+      "pieces_obligatoires": {
+        "document_source_complet_et_version": null,
+        "copie_originale_archivee_avec_droits": null,
+        "empreinte_sha256_verifiee": null,
+        "definitions_perimetre_methode_unites": null,
+        "rapprochement_et_reproduction_independante": null,
+        "avis_expert_mandate_independant_signe": null,
+        "avis_contradictoire_et_reserves_resolues": null,
+        "decision_humaine_formellement_competente": null
+      },
+      "preuve_independante_authentifiee": false,
+      "source_identifiee_est_une_preuve": false,
+      "certification_budgetaire": false,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F11",
+      "regime": "TOUS",
+      "theme": "Équité et pouvoir d'achat",
+      "vague": "V5",
+      "comite_pilote": "CSD",
+      "dependances_techniques": [
+        "F05",
+        "F09",
+        "F10",
+        "F20"
+      ],
+      "preuve_originale_a_obtenir": "Variation du revenu disponible par décile/quintile, famille, région; bilan des entreprises",
+      "livrable_mandat_propose": "Étude distributive représentative avec poids, déciles, effets indirects et confidentialité",
+      "pistes_sources_reperées": [
+        "S03",
+        "S04",
+        "S05",
+        "S08",
+        "REF07",
+        "REF08"
+      ],
+      "relecture_budgetaire_P52J_disponible": false,
+      "phase_acquisition": "NON_ACQUISE",
+      "statut_juridique": "NON_VALIDE",
+      "pieces_obligatoires": {
+        "document_source_complet_et_version": null,
+        "copie_originale_archivee_avec_droits": null,
+        "empreinte_sha256_verifiee": null,
+        "definitions_perimetre_methode_unites": null,
+        "rapprochement_et_reproduction_independante": null,
+        "avis_expert_mandate_independant_signe": null,
+        "avis_contradictoire_et_reserves_resolues": null,
+        "decision_humaine_formellement_competente": null
+      },
+      "preuve_independante_authentifiee": false,
+      "source_identifiee_est_une_preuve": false,
+      "certification_budgetaire": false,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F12",
+      "regime": "TOUS",
+      "theme": "Emploi, services et économies réelles",
+      "vague": "V6",
+      "comite_pilote": "CSD",
+      "dependances_techniques": [
+        "F10",
+        "F11",
+        "F14"
+      ],
+      "preuve_originale_a_obtenir": "Audit par programme protégeant services et travailleurs; exclusion des transferts de coûts",
+      "livrable_mandat_propose": "Audit indépendant des services, emplois, transferts de coûts et économies vérifiables",
+      "pistes_sources_reperées": [],
+      "relecture_budgetaire_P52J_disponible": false,
+      "phase_acquisition": "NON_ACQUISE",
+      "statut_juridique": "NON_VALIDE",
+      "pieces_obligatoires": {
+        "document_source_complet_et_version": null,
+        "copie_originale_archivee_avec_droits": null,
+        "empreinte_sha256_verifiee": null,
+        "definitions_perimetre_methode_unites": null,
+        "rapprochement_et_reproduction_independante": null,
+        "avis_expert_mandate_independant_signe": null,
+        "avis_contradictoire_et_reserves_resolues": null,
+        "decision_humaine_formellement_competente": null
+      },
+      "preuve_independante_authentifiee": false,
+      "source_identifiee_est_une_preuve": false,
+      "certification_budgetaire": false,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F13",
+      "regime": "TOUS",
+      "theme": "Aides aux entreprises limitées dans le temps",
+      "vague": "V2",
+      "comite_pilote": "CFP",
+      "dependances_techniques": [
+        "F07",
+        "F09"
+      ],
+      "preuve_originale_a_obtenir": "Registre des aides avec dates de fin, bénéficiaires admissibles, reddition et récupération",
+      "livrable_mandat_propose": "Inventaire des soutiens temporaires aux entreprises, échéances, critères et remboursement",
+      "pistes_sources_reperées": [],
+      "relecture_budgetaire_P52J_disponible": false,
+      "phase_acquisition": "NON_ACQUISE",
+      "statut_juridique": "NON_VALIDE",
+      "pieces_obligatoires": {
+        "document_source_complet_et_version": null,
+        "copie_originale_archivee_avec_droits": null,
+        "empreinte_sha256_verifiee": null,
+        "definitions_perimetre_methode_unites": null,
+        "rapprochement_et_reproduction_independante": null,
+        "avis_expert_mandate_independant_signe": null,
+        "avis_contradictoire_et_reserves_resolues": null,
+        "decision_humaine_formellement_competente": null
+      },
+      "preuve_independante_authentifiee": false,
+      "source_identifiee_est_une_preuve": false,
+      "certification_budgetaire": false,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F14",
+      "regime": "TRANSITION_CONSTITUTIONNELLE",
+      "theme": "Continuité des services et droits",
+      "vague": "V2",
+      "comite_pilote": "CSD",
+      "dependances_techniques": [
+        "F04",
+        "F09",
+        "F20"
+      ],
+      "preuve_originale_a_obtenir": "Plan de trésorerie, pensions, prestations, contrats, droits, paie et transition fiscale",
+      "livrable_mandat_propose": "Plan de continuité des salaires, pensions, prestations, contrats, trésorerie et droits",
+      "pistes_sources_reperées": [],
+      "relecture_budgetaire_P52J_disponible": false,
+      "phase_acquisition": "NON_ACQUISE",
+      "statut_juridique": "NON_VALIDE",
+      "pieces_obligatoires": {
+        "document_source_complet_et_version": null,
+        "copie_originale_archivee_avec_droits": null,
+        "empreinte_sha256_verifiee": null,
+        "definitions_perimetre_methode_unites": null,
+        "rapprochement_et_reproduction_independante": null,
+        "avis_expert_mandate_independant_signe": null,
+        "avis_contradictoire_et_reserves_resolues": null,
+        "decision_humaine_formellement_competente": null
+      },
+      "preuve_independante_authentifiee": false,
+      "source_identifiee_est_une_preuve": false,
+      "certification_budgetaire": false,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F15",
+      "regime": "QUEBEC_SOUVERAIN",
+      "theme": "Partage de dette et actifs",
+      "vague": "V2",
+      "comite_pilote": "CTE",
+      "dependances_techniques": [
+        "F02",
+        "F03",
+        "F09"
+      ],
+      "preuve_originale_a_obtenir": "Trois hypothèses documentées; aucune quote-part ou entente supposée acquise",
+      "livrable_mandat_propose": "Trois hypothèses sourcées de partage d'actifs et de dette sans présumer une entente",
+      "pistes_sources_reperées": [],
+      "relecture_budgetaire_P52J_disponible": false,
+      "phase_acquisition": "NON_ACQUISE",
+      "statut_juridique": "NON_VALIDE",
+      "pieces_obligatoires": {
+        "document_source_complet_et_version": null,
+        "copie_originale_archivee_avec_droits": null,
+        "empreinte_sha256_verifiee": null,
+        "definitions_perimetre_methode_unites": null,
+        "rapprochement_et_reproduction_independante": null,
+        "avis_expert_mandate_independant_signe": null,
+        "avis_contradictoire_et_reserves_resolues": null,
+        "decision_humaine_formellement_competente": null
+      },
+      "preuve_independante_authentifiee": false,
+      "source_identifiee_est_une_preuve": false,
+      "certification_budgetaire": false,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F16",
+      "regime": "QUEBEC_SOUVERAIN",
+      "theme": "Reprise fonctions fédérales",
+      "vague": "V3",
+      "comite_pilote": "CTE",
+      "dependances_techniques": [
+        "F04",
+        "F09",
+        "F14",
+        "F15"
+      ],
+      "preuve_originale_a_obtenir": "Coûts complets défense, frontières, pension, diplomatie, immigration, systèmes et recouvrement",
+      "livrable_mandat_propose": "Coût brut et net des fonctions fédérales à reprendre, avec scénarios de transition",
+      "pistes_sources_reperées": [
+        "S07"
+      ],
+      "relecture_budgetaire_P52J_disponible": false,
+      "phase_acquisition": "NON_ACQUISE",
+      "statut_juridique": "NON_VALIDE",
+      "pieces_obligatoires": {
+        "document_source_complet_et_version": null,
+        "copie_originale_archivee_avec_droits": null,
+        "empreinte_sha256_verifiee": null,
+        "definitions_perimetre_methode_unites": null,
+        "rapprochement_et_reproduction_independante": null,
+        "avis_expert_mandate_independant_signe": null,
+        "avis_contradictoire_et_reserves_resolues": null,
+        "decision_humaine_formellement_competente": null
+      },
+      "preuve_independante_authentifiee": false,
+      "source_identifiee_est_une_preuve": false,
+      "certification_budgetaire": false,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F17",
+      "regime": "QUEBEC_SOUVERAIN",
+      "theme": "Monnaie, fiscalité transfrontalière et traités",
+      "vague": "V3",
+      "comite_pilote": "CTE",
+      "dependances_techniques": [
+        "F02",
+        "F03",
+        "F15"
+      ],
+      "preuve_originale_a_obtenir": "Scénarios monétaires, fiscalité internationale, administration douanière et continuité contrats",
+      "livrable_mandat_propose": "Étude des options monétaires, douanières, traités et risques transfrontaliers",
+      "pistes_sources_reperées": [
+        "REF02"
+      ],
+      "relecture_budgetaire_P52J_disponible": false,
+      "phase_acquisition": "NON_ACQUISE",
+      "statut_juridique": "NON_VALIDE",
+      "pieces_obligatoires": {
+        "document_source_complet_et_version": null,
+        "copie_originale_archivee_avec_droits": null,
+        "empreinte_sha256_verifiee": null,
+        "definitions_perimetre_methode_unites": null,
+        "rapprochement_et_reproduction_independante": null,
+        "avis_expert_mandate_independant_signe": null,
+        "avis_contradictoire_et_reserves_resolues": null,
+        "decision_humaine_formellement_competente": null
+      },
+      "preuve_independante_authentifiee": false,
+      "source_identifiee_est_une_preuve": false,
+      "certification_budgetaire": false,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F18",
+      "regime": "TOUS",
+      "theme": "Discipline avant abolition de prélèvements",
+      "vague": "V5",
+      "comite_pilote": "CFP",
+      "dependances_techniques": [
+        "F09",
+        "F10",
+        "F16"
+      ],
+      "preuve_originale_a_obtenir": "Preuve du surplus/équilibre antérieur et dette nette au plus 45 % du PIB",
+      "livrable_mandat_propose": "Vérification externe de l'équilibre/surplus antérieur et dette nette au plus 45 % du PIB",
+      "pistes_sources_reperées": [
+        "S02",
+        "REF05"
+      ],
+      "relecture_budgetaire_P52J_disponible": false,
+      "phase_acquisition": "NON_ACQUISE",
+      "statut_juridique": "NON_VALIDE",
+      "pieces_obligatoires": {
+        "document_source_complet_et_version": null,
+        "copie_originale_archivee_avec_droits": null,
+        "empreinte_sha256_verifiee": null,
+        "definitions_perimetre_methode_unites": null,
+        "rapprochement_et_reproduction_independante": null,
+        "avis_expert_mandate_independant_signe": null,
+        "avis_contradictoire_et_reserves_resolues": null,
+        "decision_humaine_formellement_competente": null
+      },
+      "preuve_independante_authentifiee": false,
+      "source_identifiee_est_une_preuve": false,
+      "certification_budgetaire": false,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F19",
+      "regime": "TOUS",
+      "theme": "Décision et adoption démocratiques",
+      "vague": "V1",
+      "comite_pilote": "CDE",
+      "dependances_techniques": [],
+      "preuve_originale_a_obtenir": "Autorité formellement compétente, consultation, version officielle signée et registre d'adoption",
+      "livrable_mandat_propose": "Matrice des autorités compétentes, consultations, adoption et contrôle démocratique",
+      "pistes_sources_reperées": [],
+      "relecture_budgetaire_P52J_disponible": false,
+      "phase_acquisition": "NON_ACQUISE",
+      "statut_juridique": "NON_VALIDE",
+      "pieces_obligatoires": {
+        "document_source_complet_et_version": null,
+        "copie_originale_archivee_avec_droits": null,
+        "empreinte_sha256_verifiee": null,
+        "definitions_perimetre_methode_unites": null,
+        "rapprochement_et_reproduction_independante": null,
+        "avis_expert_mandate_independant_signe": null,
+        "avis_contradictoire_et_reserves_resolues": null,
+        "decision_humaine_formellement_competente": null
+      },
+      "preuve_independante_authentifiee": false,
+      "source_identifiee_est_une_preuve": false,
+      "certification_budgetaire": false,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F20",
+      "regime": "TOUS",
+      "theme": "Vie privée et droits de recours fiscaux",
+      "vague": "V1",
+      "comite_pilote": "CSD",
+      "dependances_techniques": [],
+      "preuve_originale_a_obtenir": "Analyse protection des données, opposition, délai de recours et contrôle indépendant",
+      "livrable_mandat_propose": "Évaluation de vie privée, droits d'opposition, recours, conservation et contrôle indépendant",
+      "pistes_sources_reperées": [
+        "REF03"
+      ],
+      "relecture_budgetaire_P52J_disponible": false,
+      "phase_acquisition": "NON_ACQUISE",
+      "statut_juridique": "NON_VALIDE",
+      "pieces_obligatoires": {
+        "document_source_complet_et_version": null,
+        "copie_originale_archivee_avec_droits": null,
+        "empreinte_sha256_verifiee": null,
+        "definitions_perimetre_methode_unites": null,
+        "rapprochement_et_reproduction_independante": null,
+        "avis_expert_mandate_independant_signe": null,
+        "avis_contradictoire_et_reserves_resolues": null,
+        "decision_humaine_formellement_competente": null
+      },
+      "preuve_independante_authentifiee": false,
+      "source_identifiee_est_une_preuve": false,
+      "certification_budgetaire": false,
+      "adoption_autorisee": false
+    }
+  ],
+  "index_pistes": [
+    {
+      "id": "S01",
+      "regime": "PISTE_P52I",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/",
+      "version_publique_confirmee": false,
+      "empreinte_pdf_recue": false,
+      "expertise_externe": false
+    },
+    {
+      "id": "S02",
+      "regime": "PISTE_P52I",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_PlanBudgetaire.pdf",
+      "version_publique_confirmee": false,
+      "empreinte_pdf_recue": false,
+      "expertise_externe": false
+    },
+    {
+      "id": "S03",
+      "regime": "PISTE_P52I",
+      "url": "https://statistique.quebec.ca/fr/document/inegalite-revenu-menages-et-particuliers",
+      "version_publique_confirmee": false,
+      "empreinte_pdf_recue": false,
+      "expertise_externe": false
+    },
+    {
+      "id": "S04",
+      "regime": "PISTE_P52I",
+      "url": "https://statistique.quebec.ca/fr/document/revenu-menages-et-particuliers",
+      "version_publique_confirmee": false,
+      "empreinte_pdf_recue": false,
+      "expertise_externe": false
+    },
+    {
+      "id": "S05",
+      "regime": "PISTE_P52I",
+      "url": "https://www.statcan.gc.ca/fr/microsimulation/bdmsps/bdmsps",
+      "version_publique_confirmee": false,
+      "empreinte_pdf_recue": false,
+      "expertise_externe": false
+    },
+    {
+      "id": "S06",
+      "regime": "PISTE_P52I",
+      "url": "https://www150.statcan.gc.ca/n1/fr/catalogue/1010002001",
+      "version_publique_confirmee": false,
+      "empreinte_pdf_recue": false,
+      "expertise_externe": false
+    },
+    {
+      "id": "S07",
+      "regime": "PISTE_P52I",
+      "url": "https://www.canada.ca/fr/ministere-finances/organisation/transparence/documents-information/2026.html",
+      "version_publique_confirmee": false,
+      "empreinte_pdf_recue": false,
+      "expertise_externe": false
+    },
+    {
+      "id": "S08",
+      "regime": "PISTE_P52I",
+      "url": "https://statistique.quebec.ca/fr/document/revenu-disponible",
+      "version_publique_confirmee": false,
+      "empreinte_pdf_recue": false,
+      "expertise_externe": false
+    },
+    {
+      "id": "REF01",
+      "regime": "PISTE_P52O",
+      "url": "https://laws-lois.justice.gc.ca/fra/const/section-92.html?wbdisable=true",
+      "version_publique_confirmee": false,
+      "empreinte_pdf_recue": false,
+      "expertise_externe": false
+    },
+    {
+      "id": "REF02",
+      "regime": "PISTE_P52O",
+      "url": "https://www.laws-lois.justice.gc.ca/fra/lois/C-54.011/index.html",
+      "version_publique_confirmee": false,
+      "empreinte_pdf_recue": false,
+      "expertise_externe": false
+    },
+    {
+      "id": "REF03",
+      "regime": "PISTE_P52O",
+      "url": "https://www.legisquebec.gouv.qc.ca/fr/document/lc/A-6.002/20260401",
+      "version_publique_confirmee": false,
+      "empreinte_pdf_recue": false,
+      "expertise_externe": false
+    },
+    {
+      "id": "REF04",
+      "regime": "PISTE_P52O",
+      "url": "https://www.legisquebec.gouv.qc.ca/fr/document/lc/t-0.1/20241201",
+      "version_publique_confirmee": false,
+      "empreinte_pdf_recue": false,
+      "expertise_externe": false
+    },
+    {
+      "id": "REF05",
+      "regime": "PISTE_P52O",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/index.asp",
+      "version_publique_confirmee": false,
+      "empreinte_pdf_recue": false,
+      "expertise_externe": false
+    },
+    {
+      "id": "REF06",
+      "regime": "PISTE_P52O",
+      "url": "https://www150.statcan.gc.ca/n1/fr/catalogue/1010002001",
+      "version_publique_confirmee": false,
+      "empreinte_pdf_recue": false,
+      "expertise_externe": false
+    },
+    {
+      "id": "REF07",
+      "regime": "PISTE_P52O",
+      "url": "https://www.statcan.gc.ca/fr/microsimulation/bdmsps/bdmsps",
+      "version_publique_confirmee": false,
+      "empreinte_pdf_recue": false,
+      "expertise_externe": false
+    },
+    {
+      "id": "REF08",
+      "regime": "PISTE_P52O",
+      "url": "https://www150.statcan.gc.ca/n1/fr/catalogue/89F0002X2026001",
+      "version_publique_confirmee": false,
+      "empreinte_pdf_recue": false,
+      "expertise_externe": false
+    },
+    {
+      "id": "REF09",
+      "regime": "PISTE_P52O",
+      "url": "https://www.legisquebec.gouv.qc.ca/fr/tdm/lc/c-65.1",
+      "version_publique_confirmee": false,
+      "empreinte_pdf_recue": false,
+      "expertise_externe": false
+    },
+    {
+      "id": "REF10",
+      "regime": "PISTE_P52O",
+      "url": "https://www.quebec.ca/gouvernement/services-organisations-publiques/services-transformation-numerique/systeme-electronique-dappel-doffres-seao",
+      "version_publique_confirmee": false,
+      "empreinte_pdf_recue": false,
+      "expertise_externe": false
+    },
+    {
+      "id": "DISC2026_T3",
+      "regime": "RELECTURE_P52J",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_Discours.pdf",
+      "version_publique_confirmee": false,
+      "empreinte_pdf_recue": false,
+      "expertise_externe": false
+    },
+    {
+      "id": "PLAN2026_F2",
+      "regime": "RELECTURE_P52J",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_PlanBudgetaire.pdf",
+      "version_publique_confirmee": false,
+      "empreinte_pdf_recue": false,
+      "expertise_externe": false
+    }
+  ],
+  "regles_reception": {
+    "sources_pointees_ne_sont_pas_preuves": true,
+    "url_ne_prouve_pas_la_version_documentaire": true,
+    "dates_de_version_historique_a_controle_actualite": true,
+    "empreinte_sans_original_ne_prouve_pas_authenticite": true,
+    "signature_d_expert_authentification_externe_obligatoire": true,
+    "expertise_contradictoire_et_conflits_verifies_exiges": true,
+    "decision_humaine_reelle_separee_de_validation_technique": true,
+    "aucun_document_nominatif_dans_depot": true,
+    "pas_de_validation_fiscale_ou_tarif_tant_que_manques": true,
+    "statuts_non_valide_et_no_go_immutables_au_stade_p52p": true
+  },
+  "etat_verifie_par_sources_amont": {
+    "originaux_pdf_budget_archive_et_verifies": 0,
+    "avis_independants_certifies": 0,
+    "mandats_experts_reels": 0,
+    "valeurs_monetaires_p52b_renseignees": 0,
+    "valeurs_monetaires_p52d_renseignees": 0,
+    "publication_autorisee": false,
+    "fusion_autorisee": false,
+    "adoption_autorisee": false,
+    "decision": "NO_GO_AUTOMATIQUE"
+  },
+  "guide_anomalies": {
+    "archives_manquantes": "Obtenir le document complet sous droits et version, pas uniquement une URL.",
+    "version_ancienne": "Identifier la version consolidée applicable et les changements avant toute expertise.",
+    "source_sans_competence": "La référence peut être utile, mais elle ne répond pas à la preuve juridictionnelle et fiscale complète.",
+    "piece_contradictoire_absente": "Obtenir avis indépendant, objections, décision motivée et procédure de recours.",
+    "chiffre_manquant": "Rester null, ne jamais remplacer par 0 et ne jamais supposer une économie."
+  }
+}

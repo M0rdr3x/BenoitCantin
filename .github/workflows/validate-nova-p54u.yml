@@ -1,0 +1,109 @@
+name: Projet Nova P54U - Fiches de localisation sur bilans P54T verifies
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54u.yml"
+      - "scripts/preparer_feuilles_localisation_nova_p54u.py"
+      - "scripts/tests/test_preparer_feuilles_localisation_nova_p54u.py"
+      - "scripts/verifier_archive_publique_figee_nova_p54t.py"
+      - "scripts/verifier_provenance_artifact_nova_p54r.py"
+      - "scripts/controler_qualite_passation_nova_p54o.py"
+      - "projets/projet-nova/etudes/P54U_*"
+      - "projets/projet-nova/etudes/P54T_ARCHIVAGE_DURABLE_PREUVE_2024.json"
+      - "projets/projet-nova/etudes/p54t_archive_durable_p54p/**"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  localisation-documentaire-non-certifiante:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Version PDF historique
+        run: python -m pip install pypdf==5.9.0
+      - name: 69 tests locaux hors reseau
+        run: |
+          python -m py_compile scripts/preparer_feuilles_localisation_nova_p54u.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_preparer_feuilles_localisation_nova_p54u.py")
+          assert suite.countTestCases()==69,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Bilan sans lecture SHA au run courant
+        run: |
+          python scripts/preparer_feuilles_localisation_nova_p54u.py \
+            --bilan p54u_baseline.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          b=json.loads(Path("p54u_baseline.json").read_text("utf-8"))
+          assert b["deux_bilans_publics_p54t_reverifies_ce_run"]==0
+          assert b["positions_historiques_vers_fiches"]==0
+          assert b["economies_certifiees_cad"] is None
+          assert b["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Controle SHA des deux JSON figes et production des fiches
+        run: |
+          python scripts/preparer_feuilles_localisation_nova_p54u.py \
+            --verifier-bilans-figes \
+            --fiches p54u_fiches.json \
+            --instructions p54u_instructions.md \
+            --bilan p54u_bilan.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path("p54u_fiches.json").read_text("utf-8"))
+          b=json.loads(Path("p54u_bilan.json").read_text("utf-8"))
+          assert len(a["fiches"])==5
+          assert [x["offset_caractere_nfkc"] for x in a["fiches"]]==[2359,18,2420,2430,2436]
+          assert [x["longueur_texte_nfkc"] for x in a["fiches"]]==[2364,2439,2439,2439,2439]
+          assert sum(x["dossier_p54e"] for x in a["fiches"])==4
+          assert sum(len(x["travail_humain_a_effectuer"]) for x in a["fiches"])==25
+          assert all(not x["qualification_humaine_confirmee"] for x in a["fiches"])
+          assert a["pdf_relus_au_run_courant"]==0
+          assert a["signature_certifiee"] is False
+          assert a["autorisation_transmission_obtenue"] is False
+          assert a["decision"]=="NO_GO_AUTOMATIQUE"
+          assert b["deux_bilans_publics_p54t_reverifies_ce_run"]==2
+          assert b["octets_bilans_publics_reverifies_ce_run"]==3426
+          assert b["positions_historiques_vers_fiches"]==5
+          assert b["qualifications_humaines_reelles_effectuees"]==0
+          assert b["verifications_humaines_a_instruire"]==25
+          assert b["blocages_p54o_non_leves"]==10
+          assert b["taches_p54n_non_attestees"]==40
+          assert b["controles_p54b_non_attestes"]==96
+          assert b["controles_p54c_non_attestes"]==8
+          assert b["economies_certifiees_cad"] is None
+          assert b["pret_a_transmettre"] is False
+          assert b["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Refus de toute remise automatique
+        run: |
+          set +e
+          python scripts/preparer_feuilles_localisation_nova_p54u.py --exiger-remise
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Publier uniquement les fiches publiques et le bilan
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54u-fiches-cinq-observations-sans-certification
+          path: |
+            p54u_fiches.json
+            p54u_instructions.md
+            p54u_bilan.json
+          if-no-files-found: ignore
+          retention-days: 7

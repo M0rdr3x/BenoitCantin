@@ -1,0 +1,63 @@
+{
+  "schema_version": "P54D-1",
+  "jalon": "P54D",
+  "date_reference": "2026-10-24",
+  "exercice": 2024,
+  "source_p54c_run": 40119313052,
+  "pair_pdf_index_zero": {
+    "ville": 102,
+    "mamh": 162
+  },
+  "reference_occurrences": {
+    "ville": 10,
+    "mamh": 13,
+    "communes": 9,
+    "non_appariees_ville": 1,
+    "non_appariees_mamh": 4,
+    "total_non_appariees": 5,
+    "score_dice": 0.7826
+  },
+  "categories": [
+    "ANNEE_DATE_PROBABLE",
+    "PAGINATION_FOLIO_PROBABLE",
+    "REFERENCE_REGLEMENTAIRE_PROBABLE",
+    "COORDONNEE_IDENTIFIANT_PROBABLE",
+    "VALEUR_CHIFFREE_A_QUALIFIER",
+    "INDETERMINE"
+  ],
+  "controls": [
+    "DOUBLE_HASH_SHA256_OCTETS_RECALCULE",
+    "TYPE_DE_RAPPORT_COMMUN_P54C",
+    "EGALITE_OCCURRENCES_P54B",
+    "CINQ_OCCURRENCES_NON_APPARIEES",
+    "REGLES_DE_CLASSIFICATION_CONSERVATRICES",
+    "EXTRAITS_BRUTS_HORS_GIT",
+    "DIFFERENCE_NUMERIQUE_PAS_ECART_COMPTABLE",
+    "SEPARATION_VALIDATION_HUMAINE"
+  ],
+  "guards": {
+    "empreintes_source_recalculees": true,
+    "editions_changees_refusees": true,
+    "comptes_p54b_devant_etre_reproduits": true,
+    "classification_contextuelle_tentative": true,
+    "aucun_montant_publie": true,
+    "aucun_token_brut_publie": true,
+    "diagnostic_prive_uniquement_hors_git": true,
+    "aucune_preuve_certification_comptable": true,
+    "pages_pdf_zero_based": true,
+    "doctrine_2024_audit_specialise": true,
+    "emplois_et_services_maintenus": true,
+    "eliminations_deja_consolidees_protegees": true,
+    "regimes_quebec_canada_et_souverain_distincts": true,
+    "aucune_fusion_main": true
+  },
+  "baseline": {
+    "candidats_numeriques_non_apparies": 5,
+    "classifications_observees_en_p54d": null,
+    "montant_comptable_authentifie": 0,
+    "anomalies_comptables_demontrees": 0,
+    "avis_independant_signe_nova": 0,
+    "economie_certifiee_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "schema_version": "P54A-SNAPSHOT-P53Z-1",
+  "jalon": "P54A",
+  "date_analyse": "2026-10-24",
+  "run_id": 40113700739,
+  "job_id": 120930498332,
+  "artifact_id": 12567252796,
+  "provenance_outil": "GITHUB_ACTIONS_RESULTAT_P53Z_NON_SIGNATURE_INSTITUTIONNELLE",
+  "archive_sha256": "972cedafe5dd51c0f78f3b0c581fafd4cb0b652583c08627ca7178c755db4fba",
+  "exercice": 2024,
+  "sources": {
+    "ville": {
+      "url": "https://www.ville.quebec.qc.ca/publications/docs_ville/Rapport_financier_2024.pdf",
+      "capture_utc": "2026-10-24T16:58:03+00:00",
+      "octets": 8984919,
+      "sha256": "b3ee3e671f7bf98e56c7d42b5e8b6c34de02a96c9dc1c96469819fa4dbfa7399",
+      "pages": 230,
+      "pages_sans_texte_extractible": 27
+    },
+    "mamh": {
+      "url": "https://www.mamh.gouv.qc.ca/documentsfinanciersweb/Rapport-financier-2024-et-autres-23027.pdf",
+      "capture_utc": "2026-10-24T16:58:05+00:00",
+      "octets": 10818312,
+      "sha256": "4323c87d2114b58cf7a093c08f3b30327e949db91b9beb46a627eac1ecb4fc00",
+      "pages": 177,
+      "pages_sans_texte_extractible": 3
+    }
+  },
+  "comparaison_p53z": {
+    "captures_reussies": 2,
+    "comparateur_p53x_execute": true,
+    "fichiers_strictement_identiques": false,
+    "meme_nombre_pages": false,
+    "pages_textes_normalises_identiques_appariees": 0,
+    "pages_ville_textes_non_apparies": 203,
+    "ancrages_p53w_textuellement_identiques": {
+      "0": false,
+      "34": false,
+      "196": false
+    },
+    "avis_professionnels_signes": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  },
+  "sujets_a_expertiser": [
+    "EDITION_ET_COMPOSITION_DES_PUBLICATIONS",
+    "DISTINCTION_SECTION_AUDITEE_NON_AUDITEE",
+    "ETATS_FINANCIERS_ET_PERIMETRES_COMPARABLES",
+    "RAPPROCHEMENT_CONTREPARTIES_QUEBEC_RTC",
+    "ELIMINATIONS_ANTERIEURES_ET_COUTS_COMPLETS",
+    "GARANTIES_EMPLOIS_ET_SERVICES",
+    "AVIS_JURIDIQUE_ET_COMPTABLE_INDEPENDANTS"
+  ],
+  "verrous": {
+    "publication_mamh_potentiellement_assemblee": true,
+    "difference_octets_pas_erreur_comptable": true,
+    "zero_pages_identiques_texte_pas_zero_pages_similaires": true,
+    "pages_non_extractibles_indeterminees": true,
+    "empreintes_copies_pas_signatures_officielles": true,
+    "original_pdf_non_archive_dans_git": true,
+    "aucun_montant_derivé_de_recettes": true,
+    "double_compte_quebec_rtc_interdit": true,
+    "maintien_emplois_services": true,
+    "regimes_constitutionnels_separes": true,
+    "avis_independants_requis": true,
+    "aucune_fusion_automatique": true
+  }
+}

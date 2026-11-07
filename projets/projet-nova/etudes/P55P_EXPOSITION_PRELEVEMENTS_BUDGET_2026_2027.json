@@ -1,0 +1,157 @@
+{
+  "schema_version": "P55P-1",
+  "date_reference": "2026-11-05",
+  "exercice_base": "2026-2027",
+  "unite": "M_CAD",
+  "nature": "TEST_DE_SENSIBILITE_ARITHMETIQUE_STATIQUE_NON_PREVISION_POLITIQUE",
+  "source_ref": {
+    "gabarit": "P52C_REFERENTIEL_BUDGET_QUEBEC_2026_2027.json",
+    "document_discours": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_Discours.pdf",
+    "page_imprimee_discours": 27,
+    "page_pdf_index_zero_discours": 29,
+    "document_plan": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_PlanBudgetaire.pdf",
+    "table_plan": "F.2",
+    "page_imprimee_plan": "F.9",
+    "niveau_verification": "CAPTURE_VISUELLE_TABLEAU_3_DISCOURS_ET_TEXTE_TABLEAU_F2_PLAN_SANS_EMPREINTE_PDF"
+  },
+  "recettes": {
+    "impot_particuliers": 50800,
+    "impot_societes": 14527,
+    "cotisations_sante": 9412,
+    "foncier_scolaire": 1311,
+    "consommation_total": 30008,
+    "entreprises_gouvernement": 5853,
+    "droits_permis_redevances": 6542,
+    "revenus_divers": 15908,
+    "transferts_federaux": 32131,
+    "revenus_totaux": 166492,
+    "recettes_impot_revenus_actuels": 65327,
+    "prelevements_hors_impot_revenus_etudies": 40731,
+    "autres_recettes_sans_reclassement_juridique": 60434,
+    "somme_taxes_actuelles_personnes_societes_et_autres": 106058
+  },
+  "depenses_et_solde": {
+    "depenses_portefeuilles": 160489,
+    "service_dette": 10268,
+    "depenses_totales": 170757,
+    "provision_eventualites": 2000,
+    "versement_fonds_generations": 2347,
+    "deficit_comptable": -6265,
+    "solde_loi_equilibre_budgetaire": -8612
+  },
+  "classification_exposition": [
+    {
+      "groupe": "IMPOTS_REVENU_EXISTANTS",
+      "ids": [
+        "impot_particuliers",
+        "impot_societes"
+      ],
+      "montant_mcad": 65327,
+      "portee": "REFERENTIEL_DES_IMPOTS_ACTUELS_NON_ASSIETTE_IMPOSABLE_FUTURE",
+      "suppression_presumee": false
+    },
+    {
+      "groupe": "PRELEVEMENTS_PROVINCIAUX_A_EXAMINER",
+      "ids": [
+        "cotisations_sante",
+        "foncier_scolaire",
+        "taxes_consommation"
+      ],
+      "montant_mcad": 40731,
+      "portee": "EXPOSITION_STATIQUE_CONDITIONNELLE_SI_ABOLITION_INTEGRALE_TROIS_POSTES",
+      "suppression_presumee": false
+    },
+    {
+      "groupe": "AUTRES_RECETTES_ET_TRANSFERTS",
+      "ids": [
+        "entreprises_gouvernement",
+        "droits_permis_redevances",
+        "revenus_divers",
+        "transferts_federaux"
+      ],
+      "montant_mcad": 60434,
+      "portee": "REGROUPEMENT_COMPTABLE_SANS_CONCLUSION_JURIDIQUE_SUR_PERENNITE",
+      "suppression_presumee": false
+    }
+  ],
+  "exposition_sensibilite_statique": {
+    "condition": "ABOLITION_HYPOTHETIQUE_DE_TOUTES_LES_COTISATIONS_SANTE_FONCIER_SCOLAIRE_TAXES_CONSOMMATION_SANS_COMPENSATION",
+    "reduction_recettes_mcad": 40731,
+    "recettes_apres_suppression_hypothetique_mcad": 125761,
+    "deficit_comptable_si_aucUNE_ADAPTATION": -46996,
+    "solde_loi_si_aucUNE_ADAPTATION": -49343,
+    "ressources_additionnelles_pour_revenir_au_solde_comptable_original_mcad": 40731,
+    "ressources_additionnelles_pour_solde_comptable_zero_mcad": 46996,
+    "ressources_additionnelles_pour_solde_au_sens_de_la_loi_zero_mcad": 49343,
+    "economisation_presumee_mcad": null,
+    "rendement_prelevement_anti_paradis_fiscaux_mcad": null,
+    "taux_sur_revenus_necessaire_pct": null,
+    "assiette_revenus_a_taxer_mcad": null,
+    "benefice_net_menages_cad": null,
+    "prevision_validee": false
+  },
+  "garde_fous": [
+    "LE_SCENARIO_STATIQUE_EST_UN_TEST_DE_RISQUE_PAS_UNE_PREVISION",
+    "QUATRE_POSTES_FISCAUX_MAL_CLASSeS_NE_CREENT_PAS_UNE_NOUVELLE_TAXE",
+    "NE_PAS_APPLIQUER_REDUCTION_DU_QUEBEC_AU_FEDERAL",
+    "NE_PAS_SUPPRIMER_AUTOMATIQUEMENT_TAXES_MUNICIPALES",
+    "NE_PAS_ANNONCER_TAUX_SANS_ASSIETTE_ET_INCIDENTE",
+    "AUCUN_REVENU_ADDITIONNEL_ANTI_PARADIS_CERTIFIE",
+    "DROITS_PERMIS_REDEVANCES_A_CLASSER_JURIDIQUEMENT",
+    "RECETTES_DIVERSES_ET_FONDS_AFFECTES_A_EXAMINER",
+    "SERVICES_ESSENTIELS_NON_COUPEs",
+    "PROTECTION_EMPLOIS_ET_POUVOIR_ACHAT",
+    "SOLDE_COMPTABLE_DISTINCT_SOLDE_LEGAL",
+    "PROVISION_2000_ET_FONDS_GENERATIONS_2347_NON_DOUBLE_COMPTES",
+    "RECETTES_DU_SYSTEME_ACTUEL_NON_ASSIETTE_FISCALE",
+    "SOUVERAINETE_NE_HERITE_PAS_AUTOMATIQUEMENT_TRANSFERTS_FEDERAUX",
+    "REGIMES_QUEBEC_CANADA_ET_QUEBEC_SOUVERAIN_DISTINCTS",
+    "NO_GO_SANS_AVIS_INDEPENDANT",
+    "MAINTENIR_P55N_53_POURCENT_SANS_NOUVELLE_PREUVE",
+    "MAINTENIR_600_ENTREES_P52B_INCONNUES",
+    "AUCUNE_TRANSMISSION_EXTERNE",
+    "AUCUNE_DEPENSE",
+    "SINJIRA_INCHANGE",
+    "AUCUNE_FUSION_MAIN"
+  ],
+  "questions_a_resoudre": [
+    {
+      "id": "P01",
+      "objet": "ASSIETTE_REVENUS_PARTICULIERS_ENTREPRISES",
+      "preuve": "DONNEES_ASSIETTES_CREDITS_REPARTITION_ET_ETUDE_RECOUVREMENT",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "P02",
+      "objet": "FINANCEMENT_DES_PRELEVEMENTS_HORS_REVENUS",
+      "preuve": "REVUE_DES_COMPETENCES_ET_PLAN_DE_COMPENSATION_SERVICES",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "P03",
+      "objet": "PERIMETRE_DROITS_COTISATIONS_REDEVANCES",
+      "preuve": "QUALIFICATION_JURIDIQUE_DISTINCTE_IMPOTS_COTISATIONS_TARIFS",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "P04",
+      "objet": "IMPACT_MENAGES_ET_ENTREPRISES",
+      "preuve": "INCIDENCE_PAR_REVENUS_REGIONS_ET_STRUCTURES_FAMILIALES",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "P05",
+      "objet": "RECONCILIATION_FEDERALE_MUNICIPALE",
+      "preuve": "TABLEAU_DES_COMPETENCES_ET_RECETTES_LOCALES_SANS_DOUBLE_COMPTE",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "P06",
+      "objet": "TRANSITION_SOUVERAINE_FINANCIERE",
+      "preuve": "COUTS_FONCTIONS_REPRISES_DETTE_ACTIFS_NEGOCIATIONS",
+      "statut": "OUVERT"
+    }
+  ],
+  "statut": "ETUDE_CANDIDATE_NON_ADOPTEE",
+  "decision": "NO_GO_AUTOMATIQUE"
+}

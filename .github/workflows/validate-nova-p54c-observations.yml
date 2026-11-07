@@ -1,0 +1,66 @@
+name: Projet Nova P54C - Integrite des observations d audit
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54c-observations.yml"
+      - "scripts/verifier_observations_audit_nova_p54c.py"
+      - "scripts/tests/test_verifier_observations_audit_nova_p54c.py"
+      - "scripts/analyser_contexte_audit_depenses_nova_p54c.py"
+      - "projets/projet-nova/etudes/P54C_*"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  resultats-factuels-sans-conclusion-comptable:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout sans credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Installer dependance PDF epinglee
+        run: python -m pip install pypdf==5.9.0
+      - name: Executer 23 tests de coherence des observations
+        run: |
+          python -m py_compile scripts/verifier_observations_audit_nova_p54c.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_verifier_observations_audit_nova_p54c.py")
+          assert suite.countTestCases()==23,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Rapporter uniquement les constats autorises
+        run: |
+          python scripts/verifier_observations_audit_nova_p54c.py --bilan p54c_bilan_controle.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p54c_bilan_controle.json").read_text("utf-8"))
+          assert d["marqueurs_communs"]==7
+          assert d["jetons_non_apparies_toutes_sources"]==5
+          assert d["cause_justifiee_des_jetons_differents"] is False
+          assert d["examens_comptables_independants_signes"]==0
+          assert d["economies_certifiees_cad"] is None
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+          set +e
+          python scripts/verifier_observations_audit_nova_p54c.py --exiger-avis-independant
+          result=$?
+          set -e
+          test "$result" -eq 3
+      - name: Rapport agregé sans donnees sensibles
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54c-audit-observations-verifiees
+          path: p54c_bilan_controle.json
+          if-no-files-found: ignore
+          retention-days: 7

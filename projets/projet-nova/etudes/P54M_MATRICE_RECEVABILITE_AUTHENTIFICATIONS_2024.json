@@ -1,0 +1,89 @@
+{
+  "schema_version": "P54M-1",
+  "date_reference": "2026-10-24",
+  "exercice_source": 2024,
+  "source_jalon": "P54L",
+  "ancrage_p54d_run": 40120462237,
+  "mandats": [
+    "MANDAT-COMPTABLE-2024",
+    "MANDAT-JURIDIQUE-2024"
+  ],
+  "dossiers": [
+    "P54E-V-001",
+    "P54E-M-001",
+    "P54E-M-002",
+    "P54E-M-003"
+  ],
+  "categories_source": [
+    "TABLEAU_PROFESSIONNEL",
+    "AUTHENTICITE_SIGNATURE",
+    "CONFLITS_D_INTERETS",
+    "VALIDITE_MANDAT"
+  ],
+  "controles": [
+    "PORTEE_DOSSIER_MANDAT",
+    "ANCRAGE_SHA_P54I_P54L",
+    "ORIGINE_AUTORITE_COMPETENTE_A_CONTROLER",
+    "STATUT_PERMIS_A_CONTROLER",
+    "SIGNATURE_ORIGINALE_A_CONTROLER",
+    "CONFLITS_INDEPENDANCE_A_EXAMINER",
+    "QUATRE_CATEGORIES_DE_PREUVES",
+    "CONSOLIDATION_EMPLOIS_SERVICES"
+  ],
+  "decisions_preparatoires": [
+    "DEMANDER_COMPLEMENT",
+    "EXAMEN_FORMEL_NON_ATTESTE",
+    "IRRECEVABILITE_PROVISOIRE",
+    "SUSPENSION_DEMANDEE"
+  ],
+  "reserves": [
+    "AUCUNE_DECLAREE_NON_VERIFIEE",
+    "PIECES_INCOMPLETES",
+    "SIGNATURE_A_CONTROLER",
+    "STATUT_PERMIS_A_CONTROLER",
+    "CONFLIT_INTERETS_A_EXAMINER",
+    "CONTRADICTION_A_INSTRUIRE"
+  ],
+  "etats": [
+    "NON_INSTRUIT",
+    "COMPLEMENT_DOCUMENTAIRE_REQUIS",
+    "EXAMEN_FORMEL_DECLARATIF_NON_ATTESTE",
+    "IRRECEVABILITE_PROVISOIRE_DECLAREE",
+    "RESERVE_OUVERTE",
+    "CONTRADICTION_OUVERTE",
+    "SUSPENSION_PRIORITAIRE"
+  ],
+  "protections": {
+    "aucune_attestation_automatisee": true,
+    "origine_officielle_non_presumee": true,
+    "statut_professionnel_non_certifie": true,
+    "signature_non_authentifiee": true,
+    "aucun_contact_autorite": true,
+    "aucun_engagement_professionnel": true,
+    "aucun_document_personnel_dans_ci": true,
+    "identites_et_sha_prives_non_publies": true,
+    "quatre_categories_exigees_pour_examen_formel": true,
+    "examen_formel_non_certifiant": true,
+    "pas_de_dossier_clos": true,
+    "suspensions_conservees": true,
+    "contradictions_conservees": true,
+    "reserves_conservees": true,
+    "pas_de_double_compte_ville_rtc": true,
+    "emplois_services_proteges": true,
+    "regimes_constitutionnels_separes": true,
+    "aucun_go_automatique": true,
+    "main_non_fusionnee": true,
+    "sinjira_inchange": true
+  },
+  "etat_initial": {
+    "dossiers_a_instruire": 4,
+    "positions_mandat_dossier": 8,
+    "controles_de_portee_par_mandat": 8,
+    "authentifications_officielles_realisees": 0,
+    "signatures_certifiees": 0,
+    "decisions_institutionnelles": 0,
+    "avis_originaux_authentifies": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

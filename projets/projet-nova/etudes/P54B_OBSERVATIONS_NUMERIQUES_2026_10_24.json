@@ -1,0 +1,180 @@
+{
+  "schema_version": "P54B-OBSERVE-1",
+  "jalon": "P54B",
+  "exercice_financier": 2024,
+  "date_capture_utc": "2026-10-24",
+  "workflow_run_id": 40118178035,
+  "workflow_job_id": 120943789111,
+  "artifact_id": 12569352928,
+  "artifact_archive_sha256": "79e3f3fb2031ce5a81db8709f487785f490e275fff3a966e91be18600b8f76fc",
+  "phase_source_p54a_run": 40116065853,
+  "documents_heureux": [
+    {
+      "source_id": "ville",
+      "sha256_copie": "b3ee3e671f7bf98e56c7d42b5e8b6c34de02a96c9dc1c96469819fa4dbfa7399",
+      "copie_reverifiee": true
+    },
+    {
+      "source_id": "mamh",
+      "sha256_copie": "4323c87d2114b58cf7a093c08f3b30327e949db91b9beb46a627eac1ecb4fc00",
+      "copie_reverifiee": true
+    }
+  ],
+  "methode": "RECROISEMENT_DE_JETONS_NUMERIQUES_NON_QUALIFIES_DICE",
+  "lignes": [
+    {
+      "index_pdf_ville": 14,
+      "index_pdf_mamh": 173,
+      "jetons_ville": 79,
+      "jetons_mamh": 79,
+      "occurrences_communes": 78,
+      "non_appariees_ville": 1,
+      "non_appariees_mamh": 1,
+      "score_dice": 0.9873,
+      "statut": "MESURE_NUMERIQUE_LEXICALE_NON_CERTIFIEE"
+    },
+    {
+      "index_pdf_ville": 51,
+      "index_pdf_mamh": 30,
+      "jetons_ville": 99,
+      "jetons_mamh": 99,
+      "occurrences_communes": 98,
+      "non_appariees_ville": 1,
+      "non_appariees_mamh": 1,
+      "score_dice": 0.9899,
+      "statut": "MESURE_NUMERIQUE_LEXICALE_NON_CERTIFIEE"
+    },
+    {
+      "index_pdf_ville": 62,
+      "index_pdf_mamh": 44,
+      "jetons_ville": 119,
+      "jetons_mamh": 119,
+      "occurrences_communes": 118,
+      "non_appariees_ville": 1,
+      "non_appariees_mamh": 1,
+      "score_dice": 0.9916,
+      "statut": "MESURE_NUMERIQUE_LEXICALE_NON_CERTIFIEE"
+    },
+    {
+      "index_pdf_ville": 75,
+      "index_pdf_mamh": 57,
+      "jetons_ville": 86,
+      "jetons_mamh": 86,
+      "occurrences_communes": 85,
+      "non_appariees_ville": 1,
+      "non_appariees_mamh": 1,
+      "score_dice": 0.9884,
+      "statut": "MESURE_NUMERIQUE_LEXICALE_NON_CERTIFIEE"
+    },
+    {
+      "index_pdf_ville": 102,
+      "index_pdf_mamh": 162,
+      "jetons_ville": 10,
+      "jetons_mamh": 13,
+      "occurrences_communes": 9,
+      "non_appariees_ville": 1,
+      "non_appariees_mamh": 4,
+      "score_dice": 0.7826,
+      "statut": "MESURE_NUMERIQUE_LEXICALE_NON_CERTIFIEE"
+    },
+    {
+      "index_pdf_ville": 104,
+      "index_pdf_mamh": 164,
+      "jetons_ville": 66,
+      "jetons_mamh": 66,
+      "occurrences_communes": 65,
+      "non_appariees_ville": 1,
+      "non_appariees_mamh": 1,
+      "score_dice": 0.9848,
+      "statut": "MESURE_NUMERIQUE_LEXICALE_NON_CERTIFIEE"
+    },
+    {
+      "index_pdf_ville": 133,
+      "index_pdf_mamh": 136,
+      "jetons_ville": 51,
+      "jetons_mamh": 51,
+      "occurrences_communes": 50,
+      "non_appariees_ville": 1,
+      "non_appariees_mamh": 1,
+      "score_dice": 0.9804,
+      "statut": "MESURE_NUMERIQUE_LEXICALE_NON_CERTIFIEE"
+    },
+    {
+      "index_pdf_ville": 139,
+      "index_pdf_mamh": 140,
+      "jetons_ville": 55,
+      "jetons_mamh": 55,
+      "occurrences_communes": 54,
+      "non_appariees_ville": 1,
+      "non_appariees_mamh": 1,
+      "score_dice": 0.9818,
+      "statut": "MESURE_NUMERIQUE_LEXICALE_NON_CERTIFIEE"
+    },
+    {
+      "index_pdf_ville": 145,
+      "index_pdf_mamh": 146,
+      "jetons_ville": 42,
+      "jetons_mamh": 42,
+      "occurrences_communes": 41,
+      "non_appariees_ville": 1,
+      "non_appariees_mamh": 1,
+      "score_dice": 0.9762,
+      "statut": "MESURE_NUMERIQUE_LEXICALE_NON_CERTIFIEE"
+    },
+    {
+      "index_pdf_ville": 146,
+      "index_pdf_mamh": 147,
+      "jetons_ville": 42,
+      "jetons_mamh": 42,
+      "occurrences_communes": 41,
+      "non_appariees_ville": 1,
+      "non_appariees_mamh": 1,
+      "score_dice": 0.9762,
+      "statut": "MESURE_NUMERIQUE_LEXICALE_NON_CERTIFIEE"
+    },
+    {
+      "index_pdf_ville": 147,
+      "index_pdf_mamh": 148,
+      "jetons_ville": 48,
+      "jetons_mamh": 48,
+      "occurrences_communes": 47,
+      "non_appariees_ville": 1,
+      "non_appariees_mamh": 1,
+      "score_dice": 0.9792,
+      "statut": "MESURE_NUMERIQUE_LEXICALE_NON_CERTIFIEE"
+    },
+    {
+      "index_pdf_ville": 170,
+      "index_pdf_mamh": 155,
+      "jetons_ville": 39,
+      "jetons_mamh": 39,
+      "occurrences_communes": 38,
+      "non_appariees_ville": 1,
+      "non_appariees_mamh": 1,
+      "score_dice": 0.9744,
+      "statut": "MESURE_NUMERIQUE_LEXICALE_NON_CERTIFIEE"
+    }
+  ],
+  "resume": {
+    "paires_observees": 12,
+    "controles_qualificatifs_restants": 96,
+    "paires_dice_au_moins_0_97": 11,
+    "paire_moins_similaire": "102:162",
+    "extraction_jetons_effectuee": true,
+    "preuves_comptables_certifiees": 0,
+    "anomalies_financieres_demontrees": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  },
+  "limites": {
+    "recouvrement_de_jetons_pas_concordance_comptable": true,
+    "numeros_pages_et_annees_peuvent_influencer": true,
+    "montants_extraits_non_publies": true,
+    "source_edition_perimetre_audit_non_certifies": true,
+    "indice_pdf_commence_zero": true,
+    "protection_emplois_services": true,
+    "double_elimination_interdite": true,
+    "scenarios_constitutionnels_non_additifs": true,
+    "pas_de_fusion_automatique": true
+  }
+}

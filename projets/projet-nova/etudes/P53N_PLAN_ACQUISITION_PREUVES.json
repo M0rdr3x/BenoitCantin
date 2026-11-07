@@ -1,0 +1,95 @@
+{
+  "schema_version": "P53N-1",
+  "jalon": "P53N",
+  "date_reference": "2026-10-22",
+  "statut": "PLAN_PREPARATOIRE_SANS_DEMANDE_ENVOYEE",
+  "exercice_reference": 2024,
+  "projection_hypothetique": 2027,
+  "regimes": [
+    "QUEBEC_DANS_LE_CANADA",
+    "QUEBEC_SOUVERAIN_HYPOTHETIQUE"
+  ],
+  "categories": [
+    "ACHATS_REGROUPES_SANS_EXCLUSION",
+    "SIMPLIFICATION_FORMALITES",
+    "ENERGIE_ET_BATIMENTS",
+    "ENTRETIEN_PREVENTIF",
+    "LOGICIELS_ET_LICENCES",
+    "RENOUVELLEMENT_CONTRATS"
+  ],
+  "types_pieces": [
+    "competence_juridique",
+    "base_comptable",
+    "contrats_et_factures",
+    "volumes_de_service",
+    "cout_transition",
+    "couts_recurrents",
+    "couts_externes",
+    "comparabilite",
+    "qualite_avant_apres",
+    "consultation_employes_usagers",
+    "anti_double_compte",
+    "avis_independant"
+  ],
+  "garanties": [
+    "emplois_maintenus",
+    "heures_contractuelles_maintenues",
+    "salaires_et_conditions_maintenus",
+    "qualite_service_maintenue",
+    "delais_service_non_degrades",
+    "acces_humain_maintenu",
+    "services_essentiels_continus",
+    "droits_et_recours_maintenus"
+  ],
+  "etats_declaratifs": [
+    "NON_DEMANDE",
+    "REPERE_PUBLIC_DECLARATIF",
+    "DEMANDE_PREPAREE_NON_ENVOYEE",
+    "ENVOI_DECLARE_NON_VERIFIE",
+    "REPONSE_DECLAREE_NON_VERIFIEE",
+    "REFUS_DECLARE_NON_VERIFIE"
+  ],
+  "ordre_acquisition": [
+    "competence_juridique",
+    "base_comptable",
+    "contrats_et_factures",
+    "volumes_de_service",
+    "cout_transition",
+    "couts_recurrents",
+    "couts_externes",
+    "comparabilite",
+    "qualite_avant_apres",
+    "consultation_employes_usagers",
+    "anti_double_compte",
+    "avis_independant"
+  ],
+  "verrous": {
+    "aucun_envoi_sans_action_humaine": true,
+    "aucune_reception_authentifiee": true,
+    "aucun_stockage_documents_originaux_dans_git": true,
+    "aucun_renseignement_personnel_dans_rapport": true,
+    "aucune_economie_financiere_inventee": true,
+    "montants_inconnus_restent_nuls": true,
+    "droits_confidentialite_respectes": true,
+    "emplois_et_services_proteges": true,
+    "regimes_constitutionnels_non_cumules": true,
+    "aucun_delai_legal_demarre_sans_depot_effectif": true,
+    "aucune_fusion_automatique": true,
+    "avis_independant_exige": true
+  },
+  "etat_initial": {
+    "fiches_a_preparer": 12,
+    "familles_pieces_par_fiche": 12,
+    "emplacements_pieces": 144,
+    "demandes_effectivement_envoyees": 0,
+    "originaux_authentifies": 0,
+    "avis_independants_valides": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  },
+  "sources_methodologiques": [
+    "https://www.quebec.ca/acces-information",
+    "https://www.cmq.gouv.qc.ca/fr/verification-municipale/notre-mandat-en-bref",
+    "https://www.tresor.gouv.qc.ca/performance-de-letat/cadre-de-gestion-de-ladministration-gouvernementale/evaluation-de-programme"
+  ]
+}

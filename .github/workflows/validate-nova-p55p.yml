@@ -1,0 +1,91 @@
+name: Projet Nova P55P - Exposition fiscale statique sans taux invente
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p55p.yml"
+      - "scripts/calculer_exposition_prelevements_nova_p55p.py"
+      - "scripts/tests/test_calculer_exposition_prelevements_nova_p55p.py"
+      - "scripts/auditer_couverture_financement_nova_p55o.py"
+      - "scripts/evaluer_completude_programme_nova_p55n.py"
+      - "projets/projet-nova/etudes/P55P_*"
+      - "projets/projet-nova/etudes/P55O_*"
+      - "projets/projet-nova/etudes/P52C_REFERENTIEL_BUDGET_QUEBEC_2026_2027.json"
+      - "projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test-reconciliation-recettes-exposees:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout non modifiant
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Lancer 32 tests de reconciliation budgetaire
+        run: |
+          python -m py_compile scripts/calculer_exposition_prelevements_nova_p55p.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_calculer_exposition_prelevements_nova_p55p.py")
+          assert suite.countTestCases()==32,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Publier uniquement la ventilation non certifiante
+        run: |
+          python scripts/calculer_exposition_prelevements_nova_p55p.py \
+            --bilan-public p55p_bilan_public.json \
+            --table-public p55p_table_public.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p55p_bilan_public.json").read_text("utf-8"))
+          t=json.loads(Path("p55p_table_public.json").read_text("utf-8"))
+          assert r["schema_version"]=="P55P-BILAN-PUBLIC-1"
+          assert r["recettes_actuelles_imputs_revenus_mcad"]==65327
+          assert r["recettes_actuelles_hors_impot_revenus_exposees_mcad"]==40731
+          assert r["autres_recettes_et_transferts_hors_classement_mcad"]==60434
+          assert r["recettes_total_actuel_mcad"]==166492
+          assert r["deficit_actuel_comptable_mcad"]==-6265
+          assert r["solde_actuel_au_sens_loi_mcad"]==-8612
+          assert r["recettes_restantes_contrefactuelles_statiques_mcad"]==125761
+          assert r["deficit_contrefactuel_comptable_mcad"]==-46996
+          assert r["solde_contrefactuel_au_sens_loi_mcad"]==-49343
+          assert r["scenario_est_prevision"] is False
+          assert r["suppression_de_taxes_proposee_comme_actee"] is False
+          assert r["taux_impot_revenus_recommande_pct"] is None
+          assert r["assiette_taxable_deux_prelevements_mcad"] is None
+          assert r["montant_anti_evasion_certifie_mcad"] is None
+          assert r["economies_certifiees_mcad"] is None
+          assert r["score_maturite_estimatif_inchange_pct"]==53
+          assert r["montants_financiers_nova_2027_2036_inconnus"]==600
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          assert t["schema_version"]=="P55P-TABLE-PUBLIQUE-1"
+          assert len(t["classification_exposition"])==3
+          assert len(t["questions_non_resolues"])==6
+          assert t["mesure_non_certifiante"] is True
+          PY
+      - name: Refuser GO fiscal sans base imposable ni compensation
+        run: |
+          set +e
+          python scripts/calculer_exposition_prelevements_nova_p55p.py --exiger-faisabilite
+          rc=$?
+          set -e
+          test "$rc" -eq 3
+      - name: Archiver seulement tableaux publics
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p55p-exposition-statique-publique-non-certifiee
+          path: |
+            p55p_bilan_public.json
+            p55p_table_public.json
+          retention-days: 7

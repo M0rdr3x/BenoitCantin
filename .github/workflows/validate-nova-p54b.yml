@@ -1,0 +1,100 @@
+name: Projet Nova P54B - Matrice comptable et mesure numerique non certifiee
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54b.yml"
+      - "scripts/comparer_postes_financiers_nova_p54b.py"
+      - "scripts/tests/test_comparer_postes_financiers_nova_p54b.py"
+      - "scripts/verifier_resultats_observes_nova_p54a.py"
+      - "scripts/analyser_ecarts_publications_nova_p54a.py"
+      - "scripts/acquerir_publications_nova_p53z.py"
+      - "scripts/comparer_versions_pdf_nova_p53x.py"
+      - "projets/projet-nova/etudes/P54B_*"
+      - "projets/projet-nova/etudes/P54A_CAPTURES_REELLES_P53Z_2024.json"
+      - "projets/projet-nova/etudes/P54A_RESULTATS_REANALYSE_2026_10_24.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controle-financier-sans-certification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - name: Checkout sans persistance de credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Installer PDF parser epingle
+        run: python -m pip install pypdf==5.9.0
+      - name: Valider 56 tests de synthese uniquement
+        run: |
+          python -m py_compile scripts/comparer_postes_financiers_nova_p54b.py
+          python - <<'PY'
+          import unittest
+          tests=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_comparer_postes_financiers_nova_p54b.py")
+          assert tests.countTestCases()==56,tests.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(tests)
+          assert result.wasSuccessful()
+          PY
+      - name: Produire la matrice 12 x 8 et refuser toute somme inventee
+        run: |
+          python scripts/comparer_postes_financiers_nova_p54b.py --bilan p54b_neutre.json --matrice p54b_matrice.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path("p54b_neutre.json").read_text("utf-8"))
+          matrix=json.loads(Path("p54b_matrice.json").read_text("utf-8"))
+          assert report["paires_p54a_cibles"]==12
+          assert report["controles_comptables_requis"]==96
+          assert report["comparaison_lexicale_des_nombres_executee"] is False
+          assert sum(len(x["controles"]) for x in matrix["lignes"])==96
+          assert report["economies_certifiees_cad"] is None
+          assert report["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Comparer jetons de numeros des publications publiques verifiees
+        shell: bash
+        run: |
+          set +e
+          python scripts/comparer_postes_financiers_nova_p54b.py --comparer-publications --bilan p54b_observations.json
+          status=$?
+          set -e
+          echo "Acquisition et analyse technique: $status" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$status" -ne 0 ] && [ "$status" -ne 4 ]; then
+            echo "Echec technique de l'analyseur" >&2
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p54b_observations.json").read_text("utf-8"))
+          assert d["concordances_comptables_certifiees"]==0
+          assert d["ecarts_financiers_reels_authentifies"]==0
+          assert d["economies_certifiees_cad"] is None
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          print("Comparaison lexicale executee:",d["comparaison_lexicale_des_nombres_executee"])
+          print("Deux copies conformes P53Z:",d["deux_copies_conformes_aux_empreintes_P53Z"])
+          PY
+      - name: Refuser toute conclusion comptable automatique
+        run: |
+          set +e
+          python scripts/comparer_postes_financiers_nova_p54b.py --exiger-concordance-comptable --bilan p54b_refus.json
+          status=$?
+          set -e
+          test "$status" -eq 3
+      - name: Archiver seulement les comptes de jetons
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54b-matrice-96-et-recouvrement-lexical
+          path: |
+            p54b_neutre.json
+            p54b_observations.json
+            p54b_refus.json
+          if-no-files-found: ignore
+          retention-days: 7

@@ -1,0 +1,61 @@
+{
+  "schema_version": "P54B-1",
+  "jalon": "P54B",
+  "reference": "2026-10-24",
+  "exercice_source": 2024,
+  "statut": "TEST_COMPARABILITE_POSTES_SANS_AUTHENTIFICATION_DE_MONTANTS",
+  "sources_p54a": {
+    "run_id": 40116065853,
+    "source": "P54A_RESULTATS_REANALYSE_2026_10_24.json",
+    "copies_sha256": {
+      "ville": "b3ee3e671f7bf98e56c7d42b5e8b6c34de02a96c9dc1c96469819fa4dbfa7399",
+      "mamh": "4323c87d2114b58cf7a093c08f3b30327e949db91b9beb46a627eac1ecb4fc00"
+    }
+  },
+  "controles_comparabilite": [
+    "EXERCICE_ET_PERIODE_DES_VALEURS",
+    "ORGANISME_ET_PERIMETRE_CONSOLIDE",
+    "BASE_COMPTABLE_ET_POLITIQUES",
+    "STATUT_AUDITE_VS_NON_AUDITE",
+    "UNITES_CAD_MILLIERS_ET_SIGNE",
+    "LIBELLE_RUBRIQUE_ET_NOTES",
+    "OPERATIONS_RECIPROQUES_DEJA_ELIMINEES",
+    "TRAVAIL_SERVICES_TIERS_ET_COUTS_COMPLETS"
+  ],
+  "sources_methodologie": [
+    "https://www.quebec.ca/gouvernement/gestion-municipale/finances-fiscalite-municipales/information-financiere/presentation/normes-comptables",
+    "https://www.quebec.ca/gouvernement/gestion-municipale/finances-fiscalite-municipales/information-financiere/publications-financieres/rapport-financier",
+    "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/finances_indicateurs_fiscalite/information_financiere/manuel_information_financiere/manuel_complet.pdf"
+  ],
+  "limitations": {
+    "aucune_valeur_monnaie_exportee": true,
+    "jetons_numeriques_ne_sont_pas_des_montants_certifies": true,
+    "aucune_comparaison_transactionnelle_authentifiee": true,
+    "aucune_conclusion_automatique_audit": true,
+    "sources_octets_revérifiés_avant_mesure": true,
+    "nouvelle_edition_interrompt_comparaison": true,
+    "resultat_p54a_plafonne_a_douze_paires": true,
+    "indices_pdf_zero_based": true,
+    "controle_exercice_par_page_requis": true,
+    "controle_base_et_perimetre_requis": true,
+    "controle_devise_et_multiplicateurs_requis": true,
+    "controle_etats_audites_non_audites_requis": true,
+    "consolidation_quebec_rtc_pas_nouvelles_economies": true,
+    "protections_travailleurs_services": true,
+    "scenario_quebec_canada_separe_independance": true,
+    "avis_expert_humain_independant_requis": true,
+    "aucun_document_original_archive": true,
+    "aucune_fusion_main": true
+  },
+  "etat_initial": {
+    "pages_candidates": 12,
+    "controles_en_attente": 96,
+    "copies_publications_observees_p53z_p54a": 2,
+    "captures_P54B_reussies": null,
+    "scores_numeriques_mesures": null,
+    "montants_comparables_certifies": 0,
+    "ecarts_comptables_demontres": 0,
+    "economie_certifiee_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

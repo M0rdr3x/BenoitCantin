@@ -1,0 +1,168 @@
+{
+  "schema_version": "P55Q-1",
+  "date_reference": "2026-11-05",
+  "objet": "ASSIETTES_FISCALES_HISTORIQUES_QUEBEC_PERSONNES_ET_SOCIETES_ANNÉES_DIFFÉRENTES",
+  "statut": "ETUDE_HISTORIQUE_CANDIDATE_NON_ADOPTEE",
+  "sources": {
+    "personnes": {
+      "organisme": "MINISTERE_DES_FINANCES_QUEBEC",
+      "annee_imposition": 2023,
+      "publication_date": "2026-02-13",
+      "page_resume": "https://www.budget.finances.gouv.qc.ca/Budget/outils/statistiques-fiscales/somm-comp-impot.asp",
+      "page_communique": "https://www.quebec.ca/nouvelles/actualites/details/statistiques-fiscales-des-particuliers-annee-dimposition-2023-68514",
+      "table": "A.7",
+      "niveau_preuve": "TABLE_HTML_OFFICIELLE_SANS_COPIE_PDF_SHA_ACTUEL",
+      "unite": "M_CAD"
+    },
+    "societes": {
+      "organisme": "MINISTERE_DES_FINANCES_QUEBEC",
+      "annee_imposition": 2021,
+      "page_resume": "https://www.quebec.ca/gouvernement/finances-publiques/revenus/donnees-fiscales/statistiques-fiscales-societes",
+      "niveau_preuve": "PAGE_HTML_OFFICIELLE_SANS_COPIE_PDF_SHA_ACTUEL",
+      "unite": "M_CAD"
+    },
+    "budget_2026_2027": {
+      "source_interne": "P52C_REFERENTIEL_BUDGET_QUEBEC_2026_2027.json",
+      "exercice": "2026-2027",
+      "niveau_preuve": "PREVISIONS_BUDGET_ETUDIEES_P55P_NON_COMPATIBLES_ANNEES_IMPOSITION_BASES",
+      "unite": "M_CAD"
+    }
+  },
+  "personnes_2023": {
+    "contribuables_declares": 7220140,
+    "revenu_total_mcad": 427915,
+    "deductions_revenu_net_mcad": 40892,
+    "revenu_net_mcad": 387023,
+    "deductions_revenu_imposable_mcad": 14761,
+    "revenu_imposable_mcad": 372261,
+    "impot_sur_revenu_imposable_mcad": 62148,
+    "credits_non_remboursables_mcad": 21358,
+    "impot_a_payer_mcad": 40790,
+    "credits_remboursables_mcad": 9305,
+    "impot_moins_credits_remboursables_mcad": 31485,
+    "note": "TOTAUX_ARRONDIS_TABLE_A7_ANNEE_IMPOSITION_2023_NI_PROJECTION_2026_NI_IMPOT_FEDERAL"
+  },
+  "societes_2021": {
+    "declarations_revenues": 564599,
+    "revenu_imposable_au_quebec_mcad": 95784,
+    "revenu_imposable_mondial_mcad": 231518,
+    "impot_revenu_quebec_mcad": 10000,
+    "cotisations_fonds_services_sante_mcad": 5327,
+    "total_impots_cotisations_mcad": 15327,
+    "credits_impot_mcad": 2468,
+    "impot_cotisations_nets_credits_impot_mcad": 12860,
+    "societe_non_imposees_nombre": 322020,
+    "note": "DONNEES_QUEBEC_2021_ANNEE_DIFFERENTE_DES_PARTICULIERS_2023_AUCUN_TAUX_NOVA_DERIVE"
+  },
+  "comparaison_sans_addition": {
+    "annee_commune_disponible_pour_base_personnes_et_socs": false,
+    "somme_assiettes_utilisable_pour_taux": false,
+    "assiette_combinee_harmonisee_mcad": null,
+    "taux_pour_financer_les_deux_prelevements_pct": null,
+    "revenu_additionnel_anti_paradis_fiscaux_certifie_mcad": null,
+    "gain_pouvoir_achat_menages_demontre": false,
+    "budgets_decennaux_nova_finis": false,
+    "fiscalite_federale_et_municipale_incluse": false,
+    "montant_cible_p55p_hypothetique_remplacable_par_base_historique": false,
+    "budget_2026_personnes_impot_mcad": 50800,
+    "budget_2026_societes_impot_mcad": 14527,
+    "p55n_score_global_estime_pct": 53,
+    "p52b_champs_financiers_inconnus": 600,
+    "decision": "NO_GO_AUTOMATIQUE"
+  },
+  "pistes_de_travail": [
+    {
+      "code": "Q01",
+      "theme": "ANNEE_COMMUNE",
+      "preuve": "OBTENIR_REVENUS_IMPOSABLES_PARTICULIERS_ET_SOCIETES_POUR_UNE_MEME_ANNEE_RECENTE",
+      "statut": "OUVERT"
+    },
+    {
+      "code": "Q02",
+      "theme": "INDIVIDUS_DECILES_ET_REGIONS",
+      "preuve": "REPARTITION_REVENU_IMPOSABLE_CREDITS_REMBOURSABLES_CHARGES_ET_PRESTATIONS_PAR_GROUPE",
+      "statut": "OUVERT"
+    },
+    {
+      "code": "Q03",
+      "theme": "SOCIETES_PAR_TAILLE_ET_SECTEUR",
+      "preuve": "REVENU_IMPOSABLE_QUEBEC_REPARTITION_GEOGRAPHIQUE_PERTES_DEDUCTIONS_ET_CREDITS",
+      "statut": "OUVERT"
+    },
+    {
+      "code": "Q04",
+      "theme": "COMPETENCES_DANS_LE_CANADA",
+      "preuve": "DROITS_LEGISLATIFS_SUR_IMPOTS_PROVINCIAUX_ET_MAINTIEN_DES_IMPOTS_FEDERAUX",
+      "statut": "OUVERT"
+    },
+    {
+      "code": "Q05",
+      "theme": "CONVENTIONS_DE_SOUVERAINETE",
+      "preuve": "NEGOCIATIONS_FONCTIONS_REPRISES_DETTE_ACTIFS_ET_TRANSFERTS_NON_GARANTIS",
+      "statut": "OUVERT"
+    },
+    {
+      "code": "Q06",
+      "theme": "ASSIETTE_PROPOSEE",
+      "preuve": "TRAITEMENT_DEDUCTIONS_EXEMPTIONS_CREDITS_MINIMUM_VITAL_PERTES_ET_DEPLACEMENT_BENEFICES",
+      "statut": "OUVERT"
+    },
+    {
+      "code": "Q07",
+      "theme": "FINANCEMENT_MUNICIPAL",
+      "preuve": "FISCALITE_LOCALE_TAXES_SCOLAIRES_ET_TRANSFERTS_RAPPROCHES_SANS_DOUBLE_COMPTE",
+      "statut": "OUVERT"
+    },
+    {
+      "code": "Q08",
+      "theme": "MODELE_INCIDENTE",
+      "preuve": "COMPARAISONS_MENAGES_ET_ENTREPRISES_AVANT_APRES_AVEC_SERVICES_PRESTATIONS_ET_COUTS_INDIRECTS",
+      "statut": "OUVERT"
+    },
+    {
+      "code": "Q09",
+      "theme": "RECETTES_ANTI_PARADIS_FISCAUX",
+      "preuve": "FAIT_GENERATEUR_MESURES_ANTI_EVITEMENT_CONVENTIONS_RECOUVREMENT_ET_PREUVES_INDEPENDANTES",
+      "statut": "OUVERT"
+    },
+    {
+      "code": "Q10",
+      "theme": "VALIDATION_INDEPENDANTE",
+      "preuve": "AVIS_FISCALISTE_ECONOMISTE_JURISTE_ET_EXPERT_COMPTABLE_AUTHENTIFIES",
+      "statut": "OUVERT"
+    }
+  ],
+  "protections": {
+    "ANNEE_PERSONNES_2023_DISTINCTE_SOCIETES_2021": true,
+    "NE_JAMAIS_ADDITIONNER_ASSIETTES_ANNEES_DIFFERENTES": true,
+    "REVENU_TOTAL_PARTICULIERS_NON_REVENU_IMPOSABLE": true,
+    "REVENU_IMPOSABLE_PARTICULIERS_NON_RECETTE_FISCALE": true,
+    "REVENU_IMPOSABLE_SOCIETES_QUEBEC_DISTINCT_MONDE": true,
+    "IMPOT_QUEBEC_SOCIETES_DISTINCT_FSS": true,
+    "COMPARAISON_2026_BUDGET_NON_PERMISE_DIRECTEMENT": true,
+    "RECETTES_BUDGET_2026_NON_ASSIETTE_2023": true,
+    "IMPOTS_ACTUELS_ET_CREDITS_DISTINCTS": true,
+    "DEDUCTIONS_INCIDENTE_CREDITS_A_ETUDIER": true,
+    "NON_IMPOSABLES_NON_TAXES_AUTOMATIQUEMENT": true,
+    "TRAITEMENT_PERTES_ET_CREDITS_SOCIETES": true,
+    "AUCUNE_INTERPOLATION_2024_2025_2026": true,
+    "AUCUN_TAUX_EFFECTIF_UNIQUE_COMME_TAUX_PROPOSE": true,
+    "AUCUN_PRELEVEMENT_FEDERAL_ABOLI_PROVINCIALEMENT": true,
+    "AUCUN_TRANSFERT_FEDERAL_GARANTI_SOUVERAIN": true,
+    "AUCUN_GAINS_ANTI_PARADIS_PRESUME": true,
+    "AUCUNE_ECONOMIE_P55P_CREEE": true,
+    "600_POSTES_P52B_RESTENT_INCONNUS": true,
+    "POUVOIR_ACHAT_PROTEGE": true,
+    "EMPLOIS_SERVICES_PUBLICS_PROTEGES": true,
+    "DEUX_SCENARIOS_CONSTITUTIONNELS": true,
+    "PROVENANCE_PUBLIC_HTML_SANS_SHA_PDF": true,
+    "SOURCES_STATISTIQUES_HISTORIQUES_NON_PREVISIONS": true,
+    "DOCUMENT_CANDIDAT_NON_ADOPTE": true,
+    "AUCUN_MANDAT_PROFESSIONNEL_SIGNE": true,
+    "PAS_DE_CONTACT_OU_DEPENSE": true,
+    "SINJIRA_INCHANGE": true,
+    "AUCUNE_FUSION_MAIN": true,
+    "NO_GO_AUTOMATIQUE": true
+  },
+  "decision": "NO_GO_AUTOMATIQUE"
+}

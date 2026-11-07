@@ -1,0 +1,58 @@
+{
+  "schema_version": "P53Y-1",
+  "jalon": "P53Y",
+  "date_reference": "2026-10-24",
+  "statut": "REGISTRE_VERSIONS_DECLARATIF_SANS_AUTHENTIFICATION",
+  "exercice_reference": 2024,
+  "organisme_ville": "23027",
+  "organisme_rtc": "T0088",
+  "sources": {
+    "ville": "https://www.ville.quebec.qc.ca/publications/docs_ville/Rapport_financier_2024.pdf",
+    "mamh": "https://www.mamh.gouv.qc.ca/documentsfinanciersweb/Rapport-financier-2024-et-autres-23027.pdf"
+  },
+  "controles": [
+    "PROVENANCE_SOURCE",
+    "INTEGRITE_REFERENCE",
+    "PAGINATION_ET_TEXTES",
+    "ACCES_CONFIDENTIALITE",
+    "CONTREPARTIES_CONSOLIDATION",
+    "AVIS_INDEPENDANTS_EMPLOIS_SERVICES"
+  ],
+  "categorie_acquisition": [
+    "TELECHARGEMENT_DECLARE",
+    "COPIE_REMIS_DECLAREE"
+  ],
+  "roles": [
+    "COLLECTE_DOCUMENTAIRE",
+    "REVUE_QUALITE_INDEPENDANTE"
+  ],
+  "verrous": {
+    "aucun_original_dans_git": true,
+    "hash_pas_provenance": true,
+    "metadonnees_non_signees": true,
+    "comparaison_p53x_importee_non_reexecutee": true,
+    "incoherence_texte_pas_erreur_comptable": true,
+    "pages_sans_texte_indeterminees": true,
+    "mamh_pdf_compose_de_documents_multiples": true,
+    "aucun_taux_fiscal_adopte": true,
+    "pas_de_seconde_elimination_quebec_rtc": true,
+    "maintien_emplois_et_services": true,
+    "avis_expert_independant_requis": true,
+    "regimes_Quebec_Canada_et_souverain_separes": true,
+    "aucune_economie_certifiee": true,
+    "aucune_fusion_automatique": true
+  },
+  "etat_initial": {
+    "sources_suivies": 2,
+    "controles_en_attente": 12,
+    "fiches_versions_declares": 0,
+    "originaux_publiques_verifies_en_octets": 0,
+    "analyses_P53X_institutionnelles_certifiees": 0,
+    "versions_authentifiees_par_emetteur": 0,
+    "avis_professionnels_independants_signes": 0,
+    "faits_comptables_2024_certifies": 0,
+    "questions_P53W_bloquantes": 6,
+    "economie_certifiee_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

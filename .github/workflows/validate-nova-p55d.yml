@@ -1,0 +1,95 @@
+name: Projet Nova P55D - Dossier experts non certifiant
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p55d.yml"
+      - "scripts/preparer_dossier_experts_nova_p55d.py"
+      - "scripts/tests/test_preparer_dossier_experts_nova_p55d.py"
+      - "scripts/rapprocher_pieces_documentaires_nova_p55c.py"
+      - "scripts/controler_acquisition_sources_nova_p55b.py"
+      - "scripts/preparer_revue_independante_nova_p55a.py"
+      - "scripts/preparer_passation_controlee_nova_p54z.py"
+      - "scripts/reproduire_pdf_locaux_nova_p54q.py"
+      - "scripts/reproduire_localisations_pdf_nova_p54p.py"
+      - "projets/projet-nova/etudes/P55D_*"
+      - "projets/projet-nova/etudes/P55C_*"
+      - "projets/projet-nova/etudes/P55B_*"
+      - "projets/projet-nova/etudes/P55A_*"
+      - "projets/projet-nova/etudes/P54Z_*"
+      - "projets/projet-nova/etudes/P54Q_*"
+      - "projets/projet-nova/etudes/P54H_*"
+      - "projets/projet-nova/etudes/P54N_*"
+      - "projets/projet-nova/etudes/P54O_*"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controle-dossier-experts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Installer parseur PDF aligne sur P54Q
+        run: python -m pip install pypdf==5.9.0
+      - name: Verifier 69 tests synthetiques sans PDF reel
+        run: |
+          python -m py_compile scripts/preparer_dossier_experts_nova_p55d.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_preparer_dossier_experts_nova_p55d.py")
+          assert suite.countTestCases()==69,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Valider bilan et plan uniquement neutres
+        run: |
+          python scripts/preparer_dossier_experts_nova_p55d.py \
+            --bilan-public p55d_bilan_neutre.json --plan-public p55d_plan_neutre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p55d_bilan_neutre.json").read_text("utf-8"))
+          p=json.loads(Path("p55d_plan_neutre.json").read_text("utf-8"))
+          assert d["schema_version"]=="P55D-BILAN-PUBLIC-1"
+          assert d["exigences_preparatoires"]==40
+          assert d["suivi_local_declaratif_non_authentifie"]["A_COLLECTER"]==40
+          assert d["positions_nfkc_reproduites"]==0
+          assert d["pieces_professionnelles_authentifiees"]==0
+          assert d["avis_independants_authentifies"]==0
+          assert d["economies_certifiees_cad"] is None
+          assert not d["envoi_dossier_a_expert_autorise"]
+          assert not d["engagement_de_depense_autorise"]
+          assert not d["fusion_main_autorisee"]
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          assert p["total_exigences"]==40
+          assert len(p["mandats_projets_non_transmis"])==2
+          assert "sha256_fiche_p55c" not in json.dumps(d)
+          assert "offset_texte" not in json.dumps(d)
+          PY
+      - name: Refus de l envoi automatique et des dossiers incomplets
+        run: |
+          set +e
+          python scripts/preparer_dossier_experts_nova_p55d.py --exiger-transmission
+          status=$?
+          set -e
+          test "$status" -eq 3
+          set +e
+          python scripts/preparer_dossier_experts_nova_p55d.py --ville-pdf "$RUNNER_TEMP/absent.pdf"
+          status=$?
+          set -e
+          test "$status" -eq 2
+      - name: Archiver uniquement les bilans non certifiants
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p55d-bilan-plan-neutres
+          path: |
+            p55d_bilan_neutre.json
+            p55d_plan_neutre.json
+          retention-days: 7

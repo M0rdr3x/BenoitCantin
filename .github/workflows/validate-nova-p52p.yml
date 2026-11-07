@@ -1,0 +1,77 @@
+name: Projet Nova P52P - Audit des preuves manquantes
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p52p.yml"
+      - "scripts/auditer_lacunes_preuves_nova_p52p.py"
+      - "scripts/tests/test_auditer_lacunes_preuves_nova_p52p.py"
+      - "projets/projet-nova/etudes/P52P_*"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+      - "projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json"
+      - "projets/projet-nova/etudes/P52D_GABARIT_INCIDENCE_MENAGES_ENTREPRISES.json"
+      - "projets/projet-nova/etudes/P52I_SOURCES_ET_ATTESTATIONS.json"
+      - "projets/projet-nova/etudes/P52J_RELECTURE_PRIMAIRE_BUDGET_2026_2027.json"
+      - "projets/projet-nova/etudes/P52K_REGISTRE_PROVENANCE_BUDGET.json"
+      - "projets/projet-nova/etudes/P52O_PLAN_ACQUISITION_PREUVES.json"
+      - "projets/projet-nova/etudes/P52O_SOURCES_OFFICIELLES_REPEREES.json"
+      - "projets/projet-nova/etudes/P52N_CAHIER_MANDATS_ET_CONSULTATION.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inventaire-et-inconnues-mesurees:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Verifier les fichiers en lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Cinquante-et-un tests d'integrite et de manquants
+        run: |
+          python -m py_compile scripts/auditer_lacunes_preuves_nova_p52p.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_auditer_lacunes_preuves_nova_p52p.py")
+          assert suite.countTestCases()==51,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Recompter les champs reels inconnus
+        run: |
+          python scripts/auditer_lacunes_preuves_nova_p52p.py --rapport p52p_rapport_agrege.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p52p_rapport_agrege.json").read_text("utf-8"))
+          assert d["preuves_total"]==20
+          assert d["preuves_attestees"]==0
+          assert d["valeurs_monetaires_p52b_inconnues"]==600
+          assert d["valeurs_monetaires_p52d_inconnues"]==720
+          assert d["valeurs_monetaires_totales_inconnues"]==1320
+          assert d["autres_indicateurs_p52b_inconnus"]==120
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Refuser toute attestation automatique
+        run: |
+          set +e
+          python scripts/auditer_lacunes_preuves_nova_p52p.py --exiger-preuves --rapport p52p_refus.json
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Rapport agrege sans microdonnees ni liens de cas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52p-preuves-manquantes-no-go
+          path: |
+            p52p_rapport_agrege.json
+            p52p_refus.json
+          retention-days: 7
+          if-no-files-found: ignore

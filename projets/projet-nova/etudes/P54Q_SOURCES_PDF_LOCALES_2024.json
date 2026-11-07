@@ -1,0 +1,55 @@
+{
+  "schema_version": "P54Q-1",
+  "date_reference": "2026-10-24",
+  "exercice": 2024,
+  "source_jalon": "P54P",
+  "source_p54d_run": 40120462237,
+  "copies": {
+    "ville": {
+      "pdf_index_zero": 102,
+      "taille_octets": 8984919,
+      "sha256": "b3ee3e671f7bf98e56c7d42b5e8b6c34de02a96c9dc1c96469819fa4dbfa7399"
+    },
+    "mamh": {
+      "pdf_index_zero": 162,
+      "taille_octets": 10818312,
+      "sha256": "4323c87d2114b58cf7a093c08f3b30327e949db91b9beb46a627eac1ecb4fc00"
+    }
+  },
+  "protections": {
+    "deux_pdf_locaux_obligatoires": true,
+    "aucune_requete_reseau": true,
+    "chemins_fichiers_hors_depot": true,
+    "liens_symboliques_refuses": true,
+    "fichiers_reguliers_uniquement": true,
+    "empreintes_et_tailles_exigees": true,
+    "pypdf_version_epinglee": true,
+    "p54p_source_de_verite": true,
+    "aucune_position_si_copie_manquante": true,
+    "aucune_position_si_edition_differente": true,
+    "aucun_jeton_ou_contexte_publie": true,
+    "aucun_chemin_local_publie": true,
+    "aucune_signature_authentifiee": true,
+    "aucune_anomalie_monetaire_inferree": true,
+    "date_probable_non_certifiee": true,
+    "quatre_dossiers_p54e_ouverts": true,
+    "pas_de_double_compte_ville_rtc_somhac": true,
+    "emplois_services_proteges": true,
+    "scenarios_constitutionnels_separes": true,
+    "main_non_fusionnee": true,
+    "sinjira_inchange": true,
+    "no_go_automatique": true
+  },
+  "etat_initial": {
+    "copies_locales_soumises": 0,
+    "copies_verifiees_par_sha": 0,
+    "positions_reproduites": 0,
+    "dossiers_p54e_ouverts": 4,
+    "occurrence_date_probable_non_certifiee": 1,
+    "controles_p54b_non_attestes": 96,
+    "controles_p54c_non_attestes": 8,
+    "avis_professionnels_authentifies": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

@@ -1,0 +1,86 @@
+name: Projet Nova P55Q - Assiettes fiscales historiques sans taux fictifs
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p55q.yml"
+      - "scripts/controler_assiettes_historiques_nova_p55q.py"
+      - "scripts/tests/test_controler_assiettes_historiques_nova_p55q.py"
+      - "scripts/calculer_exposition_prelevements_nova_p55p.py"
+      - "scripts/auditer_couverture_financement_nova_p55o.py"
+      - "scripts/evaluer_completude_programme_nova_p55n.py"
+      - "projets/projet-nova/etudes/P55Q_*"
+      - "projets/projet-nova/etudes/P55P_*"
+      - "projets/projet-nova/etudes/P55O_*"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+      - "projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json"
+      - "projets/projet-nova/etudes/P52C_REFERENTIEL_BUDGET_QUEBEC_2026_2027.json"
+      - "projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-independent-historical-tax-base-years:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout readonly
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: 36 tests historical base and fiscal safeguards
+        run: |
+          python -m py_compile scripts/controler_assiettes_historiques_nova_p55q.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_controler_assiettes_historiques_nova_p55q.py")
+          assert suite.countTestCases()==36,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Neutral public exports with no combined taxable base
+        run: |
+          python scripts/controler_assiettes_historiques_nova_p55q.py \
+            --bilan-public p55q_bilan_neutre.json \
+            --table-public p55q_table_neutre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p55q_bilan_neutre.json").read_text(encoding="utf-8"))
+          t=json.loads(Path("p55q_table_neutre.json").read_text(encoding="utf-8"))
+          assert r["schema_version"]=="P55Q-BILAN-PUBLIC-1"
+          assert r["annee_particuliers"]==2023
+          assert r["annee_societes"]==2021
+          assert r["particuliers_revenu_imposable_historique_mcad"]==372261
+          assert r["societes_revenu_imposable_quebec_historique_mcad"]==95784
+          assert r["assiette_commune_certifiee_mcad"] is None
+          assert r["taux_fiscal_unifie_propose_pct"] is None
+          assert r["revenus_anti_paradis_certifies_mcad"] is None
+          assert r["score_estime_inchange_pct"]==53
+          assert r["inconnues_financieres_decennales"]==600
+          assert r["economie_certifiee_mcad"] is None
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          assert len(t["preuves_a_obtenir"])==10
+          assert t["limites"]["somme_assiettes_utilisable_pour_taux"] is False
+          assert t["limites"]["assiette_combinee_harmonisee_mcad"] is None
+          PY
+      - name: Refuser un taux Nova sans source comparable
+        run: |
+          set +e
+          python scripts/controler_assiettes_historiques_nova_p55q.py --exiger-taux-demontre
+          ret=$?
+          set -e
+          test "$ret" -eq 3
+      - name: Preserve only neutral public outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p55q-bases-historiques-publiques-non-certifiees
+          path: |
+            p55q_bilan_neutre.json
+            p55q_table_neutre.json
+          retention-days: 7

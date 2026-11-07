@@ -1,0 +1,123 @@
+{
+  "schema_version": "P55D-1",
+  "date_reference": "2026-11-03",
+  "exercice": 2024,
+  "chaines_precedentes": [
+    "P54H",
+    "P54N",
+    "P54O",
+    "P54Q",
+    "P54Z",
+    "P55A",
+    "P55B",
+    "P55C"
+  ],
+  "references": [
+    "P54E-V-001",
+    "P54E-M-001",
+    "P54O-DATE-001",
+    "P54E-M-002",
+    "P54E-M-003"
+  ],
+  "controles": [
+    {
+      "code": "ORIGINAL_VERSIONNE",
+      "livrable_attendu": "Copie source 2024, provenance et edition",
+      "role_requis_a_designer": "GARANT_DOCUMENTAIRE"
+    },
+    {
+      "code": "PAGE_VISUELLE",
+      "livrable_attendu": "Page PDF revue visuellement",
+      "role_requis_a_designer": "LECTEUR_DOCUMENTAIRE"
+    },
+    {
+      "code": "EXTRACTION_ET_CONTEXTE",
+      "livrable_attendu": "Occurrence NFKC confrontee au contexte",
+      "role_requis_a_designer": "LECTEUR_DOCUMENTAIRE"
+    },
+    {
+      "code": "QUALIFICATION_UNITE_EXERCICE",
+      "livrable_attendu": "Unite, exercice, signe et colonne",
+      "role_requis_a_designer": "CPA_SI_MONETAIRE"
+    },
+    {
+      "code": "PORTEE_JURIDIQUE_AUDIT",
+      "livrable_attendu": "Portee RAVQ 1435 et limites de l avis",
+      "role_requis_a_designer": "JURISTE_SI_NECESSAIRE"
+    },
+    {
+      "code": "PERIMETRE_ET_CONSOLIDATION",
+      "livrable_attendu": "Rapprochement Ville RTC SOMHAC sans double compte",
+      "role_requis_a_designer": "CPA"
+    },
+    {
+      "code": "CONTRE_REVUE_ET_RESERVES",
+      "livrable_attendu": "Contre revue et contradictions",
+      "role_requis_a_designer": "CONTRE_LECTEUR"
+    },
+    {
+      "code": "EMPLOIS_SERVICES_POUVOIR_ACHAT",
+      "livrable_attendu": "Continuite des services et effet social",
+      "role_requis_a_designer": "RESPONSABLE_POLITIQUES_PUBLIQUES"
+    }
+  ],
+  "statuts_declaratifs": [
+    "A_COLLECTER",
+    "PREPARATION_DECLAREE_NON_ATTESTEE",
+    "RESERVE",
+    "INACCESSIBLE",
+    "SUSPENDU"
+  ],
+  "mandats_sans_engagement": [
+    "MANDAT-COMPTABLE-2024",
+    "MANDAT-JURIDIQUE-2024"
+  ],
+  "protections": {
+    "deux_pdfs_historiques_concordants_requis": true,
+    "cinq_positions_p55c_reproduites_obligatoires": true,
+    "p54z_p55a_p55c_sources_privees_0600": true,
+    "ancrage_sha256_fiche_p55c": true,
+    "aucun_offset_sha_prive_ou_texte_bilan": true,
+    "aucune_identite_signature_devis_dans_git": true,
+    "pas_de_reseau_ni_contact_tiers": true,
+    "schema_ferme_sans_texte_libre": true,
+    "declarations_non_authentifiantes": true,
+    "aucune_qualification_definitive_automatique": true,
+    "aucun_expert_engage": true,
+    "deux_mandats_p54h_non_transmis": true,
+    "suspensions_reserves_contradictions_non_levees": true,
+    "edition_changee_bloque": true,
+    "quatre_dossiers_p54e_ouverts": true,
+    "date_probable_non_qualifiee": true,
+    "p54n_40_non_attestees": true,
+    "p54o_10_blocages": true,
+    "p54b_96_p54c_8_non_attestes": true,
+    "aucune_economie_certifiee": true,
+    "pas_de_double_compte_ville_rtc_somhac": true,
+    "emplois_services_pouvoir_achat_proteges": true,
+    "deux_regimes_constitutionnels_distincts": true,
+    "aucune_transmission_ni_depense": true,
+    "aucun_changement_sinjira": true,
+    "aucune_fusion_main": true,
+    "no_go_automatique": true
+  },
+  "etat_initial": {
+    "observations": 5,
+    "exigences_par_observation": 8,
+    "positions_a_instruire": 40,
+    "copies_pdf_verifiees_sur_place": 0,
+    "reproductions_nfkc": 0,
+    "pieces_authentifiees": 0,
+    "contre_revues_authentifiees": 0,
+    "mandats_professionnels_signes": 0,
+    "avis_authentifies": 0,
+    "dossiers_p54e_ouverts": 4,
+    "date_probable_non_certifiee": 1,
+    "taches_p54n_non_attestees": 40,
+    "blocages_p54o_non_leves": 10,
+    "controles_p54b_non_attestes": 96,
+    "controles_p54c_non_attestes": 8,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

@@ -1,0 +1,91 @@
+name: Projet Nova P52B - Simulation fiscale prudente en lecture seule
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p52b.yml"
+      - "scripts/evaluer_transition_fiscale_nova_p52b.py"
+      - "scripts/tests/test_evaluer_transition_fiscale_nova_p52b.py"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+      - "projets/projet-nova/etudes/P52B_*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  controle-modele-non-adopte:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Lire le candidat fiscal sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11 pour calcul decimal reproductible
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Compiler et executer exactement 35 tests
+        run: |
+          python -m py_compile scripts/evaluer_transition_fiscale_nova_p52b.py
+          python - <<'PY'
+          import unittest
+          tests=unittest.defaultTestLoader.discover("scripts/tests", pattern="test_evaluer_transition_fiscale_nova_p52b.py")
+          assert tests.countTestCases()==35, tests.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(tests)
+          if not result.wasSuccessful():
+              raise SystemExit(1)
+          print("P52B : 35/35 tests - calcul decimal prudent, refus des faux GO")
+          PY
+      - name: Simuler le gabarit sans inventer les donnees absentes
+        run: |
+          python scripts/evaluer_transition_fiscale_nova_p52b.py \
+            --gabarit projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json \
+            --registre projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json \
+            --rapport p52b_rapport_non_valide.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p52b_rapport_non_valide.json").read_text(encoding="utf-8"))
+          assert (r["nombre_regimes"],r["nombre_trajectoires"],r["nombre_exercices"])==(2,6,10)
+          assert r["entrees_financieres_manquantes"]==600
+          assert r["preuves_P52A_encore_non_valides"]==20
+          assert all(x["annees_calculables"]==0 and x["taux_fiscal_propose"] is None
+                     for x in r["resultats"])
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          assert r["publication_autorisee"] is False and r["taux_fiscal_adopte"] is False
+          print("P52B : 60 exercices-scenarios, 600 entrees inconnues, 20 preuves requises, NO_GO")
+          PY
+      - name: Le mode strict DOIT refuser la projection incomplete
+        run: |
+          set +e
+          python scripts/evaluer_transition_fiscale_nova_p52b.py \
+            --gabarit projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json \
+            --registre projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json \
+            --exiger-completude --rapport p52b_refus_strict.json
+          status=$?
+          set -e
+          if [ "$status" -ne 3 ]; then
+            echo "ERREUR_P52B : attendu code 3 pour manque de preuves; obtenu $status" >&2
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p52b_refus_strict.json").read_text(encoding="utf-8"))
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          assert r["entrees_financieres_manquantes"]==600
+          assert r["preuves_P52A_encore_non_valides"]==20
+          print("P52B : CODE 3 ATTENDU - aucune projection financiere validable ni GO.")
+          PY
+      - name: Conserver les seuls rapports agreges non nominatifs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52b-modelisation-incomplete-no-go
+          path: |
+            p52b_rapport_non_valide.json
+            p52b_refus_strict.json
+          if-no-files-found: ignore
+          retention-days: 7

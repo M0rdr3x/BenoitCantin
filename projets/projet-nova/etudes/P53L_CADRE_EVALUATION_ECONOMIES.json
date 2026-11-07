@@ -1,0 +1,56 @@
+{
+  "schema_version": "P53L-1",
+  "jalon": "P53L",
+  "date_reference": "2026-10-22",
+  "statut": "GRILLE_CANDIDATE_SANS_ECONOMIES_VALIDEES",
+  "reference_comptable": 2024,
+  "annee_projection_de_travail": 2027,
+  "categories": [
+    "ACHATS_REGROUPES_SANS_EXCLUSION",
+    "SIMPLIFICATION_FORMALITES",
+    "ENERGIE_ET_BATIMENTS",
+    "ENTRETIEN_PREVENTIF",
+    "LOGICIELS_ET_LICENCES",
+    "RENOUVELLEMENT_CONTRATS"
+  ],
+  "montants_obligatoires": [
+    "cout_annuel_reference_cad",
+    "cout_annuel_projection_cad",
+    "cout_recurrent_additionnel_cad",
+    "cout_initial_transition_cad",
+    "cout_transfere_citoyens_cad",
+    "cout_transfere_entreprises_cad",
+    "cout_transfere_autres_organismes_cad"
+  ],
+  "protections_obligatoires": [
+    "emplois_maintenus",
+    "heures_contractuelles_maintenues",
+    "salaires_et_conditions_maintenus",
+    "qualite_service_maintenue",
+    "delais_service_non_degrades",
+    "acces_humain_maintenu",
+    "services_essentiels_continus",
+    "droits_et_recours_maintenus"
+  ],
+  "verrous": {
+    "aucun_montant_suppose": true,
+    "non_confusion_elimination_comptable": true,
+    "aucune_suppression_emplois": true,
+    "aucun_transfert_frais": true,
+    "services_essentiels_proteges": true,
+    "pas_de_certification_automatique": true,
+    "controle_non_double_compte": true,
+    "pas_de_publication_de_microdonnees": true,
+    "aucun_taux_nova_adopte": true,
+    "aucun_financement_budgetaire_presume": true
+  },
+  "etat_initial": {
+    "pistes_recensees": 6,
+    "pistes_retenues": 0,
+    "economies_certifiees_cad": null,
+    "revenus_fiscaux_projetes_cad": null,
+    "personnel_reduit_autorise": false,
+    "certification_independante": false,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

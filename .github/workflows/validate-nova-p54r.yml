@@ -1,0 +1,72 @@
+name: Projet Nova P54R - Ancrage des positions P54P par artefact
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54r.yml"
+      - "scripts/verifier_provenance_artifact_nova_p54r.py"
+      - "scripts/tests/test_verifier_provenance_artifact_nova_p54r.py"
+      - "scripts/reproduire_localisations_pdf_nova_p54p.py"
+      - "projets/projet-nova/etudes/P54R_*"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verifier-registre-sans-certifier:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - name: Checkout lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Pypdf version fixe
+        run: python -m pip install pypdf==5.9.0
+      - name: 62 tests ZIP de provenances synthetiques
+        run: |
+          python -m py_compile scripts/verifier_provenance_artifact_nova_p54r.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+             "scripts/tests",pattern="test_verifier_provenance_artifact_nova_p54r.py")
+          assert suite.countTestCases()==62,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Registre public historique et absence de verification d'archive
+        run: |
+          python scripts/verifier_provenance_artifact_nova_p54r.py \
+            --bilan p54r_bilan_neutre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path("p54r_bilan_neutre.json").read_text("utf-8"))
+          assert p["source_run_p54p"]==40151185184
+          assert p["artifact_id"]==12583661231
+          assert [x["offset_texte_extrait"] for x in p["cinq_positions_de_reference"]]==[2359,18,2420,2430,2436]
+          assert p["archive_verifiee_par_octets_dans_cette_execution"] is False
+          assert p["positions_reverifiees_dans_cette_execution"]==0
+          assert p["sources_pdf_physiquement_relues_dans_cette_execution"]==0
+          assert p["qualification_professionnelle"] is False
+          assert p["economies_certifiees_cad"] is None
+          assert p["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Interdire toute certification
+        run: |
+          set +e
+          python scripts/verifier_provenance_artifact_nova_p54r.py --exiger-certification
+          rc=$?
+          set -e
+          test "$rc" -eq 3
+      - name: Archiver seulement le bilan neutre
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54r-provenance-cinq-positions-non-certifiantes
+          path: p54r_bilan_neutre.json
+          if-no-files-found: ignore
+          retention-days: 7

@@ -1,0 +1,135 @@
+{
+  "schema_version": "P52R-1",
+  "jalon": "P52R",
+  "date_reference": "2026-10-20",
+  "projet": "Projet Nova",
+  "statut": "CONCORDANCE_ARITHMETIQUE_OBSERVEE_SANS_RECEPTION_DES_PDF_ORIGINAUX",
+  "perimetre": "Prévisions officielles du budget du Québec 2026-2027, uniquement",
+  "nature_de_la_preuve": "Recalcul autonome des montants affichés sur deux pages publiques; ni audits de PDF, ni authentification officielle, ni expertise externe",
+  "origine_constats": [
+    {
+      "id": "DISC2026_T3",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_Discours.pdf",
+      "tableau": "Tableau 3",
+      "page_imprimee": "27",
+      "page_pdf_index_zero": 29,
+      "nombre_pages_rapporte_par_lecteur_web": 34,
+      "statut": "CAPTURE_VISUELLE_DU_TABLEAU_SANS_FICHIER_ORIGINAL",
+      "sha256_original": null,
+      "fichier_original_telecharge": false,
+      "examen_expert_independant": false
+    },
+    {
+      "id": "PLAN2026_F2",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_PlanBudgetaire.pdf",
+      "tableau": "Tableau F.2",
+      "page_imprimee": "F.9",
+      "page_pdf_index_zero": 277,
+      "nombre_pages_rapporte_par_lecteur_web": 426,
+      "statut": "CAPTURE_VISUELLE_DU_TABLEAU_SANS_FICHIER_ORIGINAL",
+      "sha256_original": null,
+      "fichier_original_telecharge": false,
+      "examen_expert_independant": false
+    }
+  ],
+  "figures_lues_depuis_images_publiees_mcad": {
+    "group_income": {
+      "impot_particuliers": 50800,
+      "cotisations_sante": 9412,
+      "impot_societes": 14527,
+      "foncier_scolaire": 1311
+    },
+    "group_consumption": {
+      "taxes_vente": 26349,
+      "carburants": 2097,
+      "tabac": 830,
+      "alcool": 574,
+      "consommation_autres": 158
+    },
+    "group_business": {
+      "hydro": 2445,
+      "loto": 1557,
+      "saq": 1406,
+      "iq": 292,
+      "sqdc": 146,
+      "entreprises_autres": 7
+    },
+    "group_non_tax": {
+      "droits_redevances": 6542,
+      "revenus_divers": 15908
+    },
+    "group_federal": {
+      "perequation": 13907,
+      "sante_federal": 9265,
+      "social_federal": 1392,
+      "autres_federaux": 7567
+    }
+  },
+  "agrege_officiel_2026_2027_mcad": {
+    "impots_sur_revenu_et_biens": 76050,
+    "taxes_consommation": 30008,
+    "entreprises_gouvernement": 5853,
+    "droits_permis_redevances": 6542,
+    "revenus_divers": 15908,
+    "transferts_federaux": 32131,
+    "revenus_autonomes": 134361,
+    "revenus_totaux": 166492,
+    "depenses_portefeuilles": -160489,
+    "service_dette": -10268,
+    "depenses_totales": -170757,
+    "provision_eventualites": -2000,
+    "deficit_comptable": -6265,
+    "versements_fonds_generations": -2347,
+    "solde_budgetaire_loi_equilibre": -8612
+  },
+  "rapprochements_attendus_mcad": {
+    "impots_sur_revenu_et_biens": 76050,
+    "taxes_consommation": 30008,
+    "entreprises_gouvernement": 5853,
+    "revenus_autonomes": 134361,
+    "transferts_federaux": 32131,
+    "revenus_totaux": 166492,
+    "depenses_totales": -170757,
+    "solde_avant_provision": -4265,
+    "deficit_comptable": -6265,
+    "solde_budgetaire_loi_equilibre": -8612
+  },
+  "references_amont": {
+    "p52c": "projets/projet-nova/etudes/P52C_REFERENTIEL_BUDGET_QUEBEC_2026_2027.json",
+    "p52j": "projets/projet-nova/etudes/P52J_RELECTURE_PRIMAIRE_BUDGET_2026_2027.json",
+    "p52k": "projets/projet-nova/etudes/P52K_REGISTRE_PROVENANCE_BUDGET.json",
+    "p52q": "projets/projet-nova/etudes/P52Q_DOSSIERS_INSTRUCTION_VAGUE1.json",
+    "p52a": "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+  },
+  "limitations": {
+    "liens_sources_ne_sont_pas_fichiers_authentifies": true,
+    "protocole_http_brut_sha256_indisponible_dans_cet_environnement": true,
+    "empreintes_pdf_originaux_non_calculees": true,
+    "verification_cryptographique_vers_organisme_officiel_non_effectuee": true,
+    "comparaison_nouvelle_version_publiee_non_effectuee": true,
+    "chiffres_previsions_et_non_realises": true,
+    "montants_du_modele_fiscal_nova_non_certifies": true,
+    "recettes_fiscales_federales_pas_revenus_provinciaux": true,
+    "transferts_federaux_non_presumes_en_cas_de_souverainete": true,
+    "aucun_montant_p52b_ou_p52d_complete": true,
+    "aucun_avis_independant_authentifie": true
+  },
+  "traitement_local_hors_git": {
+    "methode": "Lecteur local de deux PDF fourni ultérieurement par un utilisateur autorisé; SHA-256 calculé sur octets réellement lus, sans réseau",
+    "pdf_validation_formelle": "NON_ASSUREE_PAR_CONTROLES_DE_SIGNATURES",
+    "aucune_preuve_identite_officielle_deduite_du_hash": true,
+    "aucun_original_ou_nom_personnel_publie_par_workflow": true,
+    "rapport_local_sha256_n_est_pas_attestation_independante": true
+  },
+  "etat_dossiers": {
+    "F09": "NON_VALIDE",
+    "F01_F20_attestations_independantes": 0,
+    "originaux_pdf_2026_2027_archives_avec_preuve": 0,
+    "montants_financiers_nova_toujours_inconnus": 1320,
+    "expertise_publique_certifiee": false,
+    "fusion_autorisee": false,
+    "publication_autorisee": false,
+    "adoption_autorisee": false,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

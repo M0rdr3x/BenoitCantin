@@ -1,0 +1,11 @@
+{
+  "schema_version": "P52O-DEVIS-1",
+  "jalon": "P52O",
+  "statut": "SIMULATIONS_SYNTHETIQUES_NON_REELLES",
+  "simulations": [],
+  "aucun_devis_reel_obtenu": true,
+  "aucun_mandat_signe": true,
+  "financement_autorise": false,
+  "publication_autorisee": false,
+  "decision": "NO_GO_AUTOMATIQUE"
+}

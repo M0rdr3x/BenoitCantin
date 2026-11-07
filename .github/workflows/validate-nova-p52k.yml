@@ -1,0 +1,69 @@
+name: Projet Nova P52K - Chaine de preuve budgétaire
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p52k.yml"
+      - "scripts/controler_provenance_budget_nova_p52k.py"
+      - "scripts/tests/test_controler_provenance_budget_nova_p52k.py"
+      - "projets/projet-nova/etudes/P52K_*"
+      - "projets/projet-nova/etudes/P52J_RELECTURE_PRIMAIRE_BUDGET_2026_2027.json"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+      - "projets/projet-nova/etudes/P52I_SOURCES_ET_ATTESTATIONS.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  chaine-locale-et-no-go:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Code et manifestes en lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Trente tests contradictoires et aucun PDF original requis
+        run: |
+          python -m py_compile scripts/controler_provenance_budget_nova_p52k.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_controler_provenance_budget_nova_p52k.py")
+          assert suite.countTestCases()==30, suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Rapport sans attestations inventées
+        run: |
+          python scripts/controler_provenance_budget_nova_p52k.py audit --rapport p52k_rapport_agrege.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p52k_rapport_agrege.json").read_text("utf-8"))
+          assert d["sources_pdf_officielles_referencees"]==2
+          assert d["empreintes_d_originaux_enregistrees_dans_le_registre"]==0
+          assert d["preuves_P52A_independantes_manquantes"]==20
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          assert d["fusion_autorisee"] is False
+          PY
+      - name: Porte stricte - attestation encore manquante
+        run: |
+          set +e
+          python scripts/controler_provenance_budget_nova_p52k.py audit --exiger-attestation --rapport p52k_refus.json
+          result=$?
+          set -e
+          test "$result" -eq 3
+      - name: Uniquement les agrégats non confidentiels
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52k-provenance-no-go
+          path: |
+            p52k_rapport_agrege.json
+            p52k_refus.json
+          retention-days: 7
+          if-no-files-found: ignore

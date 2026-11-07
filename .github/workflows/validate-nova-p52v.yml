@@ -1,0 +1,77 @@
+name: Projet Nova P52V - Mandat independant F09 et grille 39 positions
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p52v.yml"
+      - "scripts/preparer_mission_expert_nova_p52v.py"
+      - "scripts/tests/test_preparer_mission_expert_nova_p52v.py"
+      - "projets/projet-nova/etudes/P52V_*"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+      - "projets/projet-nova/etudes/P52N_CAHIER_MANDATS_ET_CONSULTATION.json"
+      - "projets/projet-nova/etudes/P52Q_DOSSIERS_INSTRUCTION_VAGUE1.json"
+      - "projets/projet-nova/etudes/P52U_INSTRUCTION_HUMAINE_F09.json"
+      - "projets/projet-nova/etudes/P52J_RELECTURE_PRIMAIRE_BUDGET_2026_2027.json"
+      - "projets/projet-nova/etudes/P52S_RECEPISSES_HTTPS_OBSERVES_2026_10_20.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verification-mission-sans-expert-nomme:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Lecture seule sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Cinquante tests de controles humains et de fraude probatoire
+        run: |
+          python -m py_compile scripts/preparer_mission_expert_nova_p52v.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_preparer_mission_expert_nova_p52v.py")
+          assert suite.countTestCases()==50,suite.countTestCases()
+          r=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert r.wasSuccessful()
+          PY
+      - name: Exiger 39 lignes 3 croisements 12 controles et NO_GO
+        run: |
+          python scripts/preparer_mission_expert_nova_p52v.py --rapport p52v_resume_sans_pii.json --export-csv p52v_grille_39_positions.csv
+          python - <<'PY'
+          import csv,json
+          from pathlib import Path
+          r=json.loads(Path("p52v_resume_sans_pii.json").read_text("utf-8"))
+          assert r["positions_de_relecture_pret_a_transmettre"]==39
+          assert r["croisements_inter_tableaux_a_verifier"]==3
+          assert r["controles_humains_non_executes"]==12
+          assert r["livrables_experts_non_recus"]==8
+          assert r["candidats_identifies_et_verifies"]==0
+          assert r["avis_humains_reellement_signes"]==0
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          with Path("p52v_grille_39_positions.csv").open(encoding="utf-8") as f:
+            assert len(list(csv.reader(f)))==40
+          PY
+      - name: Le mode expertise doit rester bloque
+        run: |
+          set +e
+          python scripts/preparer_mission_expert_nova_p52v.py --exiger-expertise --rapport p52v_absence_expertise.json
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Seuls le bilan et la grille vierge sont partages
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52v-cahier-mission-et-grille-vierge-no-go
+          path: |
+            p52v_resume_sans_pii.json
+            p52v_grille_39_positions.csv
+            p52v_absence_expertise.json
+          if-no-files-found: ignore
+          retention-days: 7

@@ -1,0 +1,369 @@
+{
+  "schema_version": "P52Q-1",
+  "jalon": "P52Q",
+  "date_reference": "2026-10-19",
+  "projet": "Projet Nova",
+  "statut": "HUIT_DOSSIERS_PRELIMINAIRES_NON_CERTIFIES",
+  "references": {
+    "p52a": "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json",
+    "p52p": "projets/projet-nova/etudes/P52P_REGISTRE_COUVERTURE_ET_MANQUES.json",
+    "p52o": "projets/projet-nova/etudes/P52O_PLAN_ACQUISITION_PREUVES.json",
+    "p52n": "projets/projet-nova/etudes/P52N_CAHIER_MANDATS_ET_CONSULTATION.json",
+    "p52j": "projets/projet-nova/etudes/P52J_RELECTURE_PRIMAIRE_BUDGET_2026_2027.json",
+    "p52k": "projets/projet-nova/etudes/P52K_REGISTRE_PROVENANCE_BUDGET.json",
+    "sources": "projets/projet-nova/etudes/P52Q_REFERENCES_PRIMAIRES_VAGUE1.json"
+  },
+  "preuves_premiere_vague": [
+    "F01",
+    "F02",
+    "F03",
+    "F04",
+    "F07",
+    "F09",
+    "F19",
+    "F20"
+  ],
+  "dossiers": [
+    {
+      "id": "F01",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "Compétence de modifier la TVQ et autres impôts québécois",
+      "statut_preuve_amont": "NON_VALIDE",
+      "comite_pilote": "CJF",
+      "consultations": [
+        "CDE"
+      ],
+      "priorite_vague": "V1",
+      "sources_precedemment_reperees": [
+        "REF01",
+        "REF04"
+      ],
+      "nouveaux_reperes_officiels": [
+        "Q01",
+        "Q02",
+        "Q03"
+      ],
+      "objet_avis_humain_requis": "Avis juridique provincial indépendant et tableau des lois à modifier",
+      "dossier_a_livrer": "Avis juridique sur l'étendue exacte du pouvoir de légiférer au Québec dans le Canada",
+      "travaux_requis": [
+        "Contrôler les articles 91/92 et les contraintes d'une abolition provinciale de taxes",
+        "Comparer la version 2026 de la loi T-0.1 à l'ancienne référence P52O 2024",
+        "Établir la table des textes du Québec amendables sans présumer la suppression de prélèvements fédéraux",
+        "Demander un avis constitutionnel indépendant, contradictoire et signé"
+      ],
+      "reserves_particulieres": [
+        "Le texte officiel ne vaut pas l'avis indépendant sur la réforme Nova"
+      ],
+      "pieces_recues_verifiees": 0,
+      "expert_reel_mandate": false,
+      "travaux_termines": false,
+      "contradiction_independante_obtenue": false,
+      "justificatif_signature_authentifie": null,
+      "evaluation_couts_certifiee": false,
+      "avis_favorable_recu": false,
+      "decision_adoption_autorisee": false,
+      "statut": "DOSSIER_DOCUMENTAIRE_A_INSTRUIRE"
+    },
+    {
+      "id": "F02",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "TPS et impôt fédéral demeurent distincts",
+      "statut_preuve_amont": "NON_VALIDE",
+      "comite_pilote": "CJF",
+      "consultations": [
+        "CTE"
+      ],
+      "priorite_vague": "V1",
+      "sources_precedemment_reperees": [
+        "REF01"
+      ],
+      "nouveaux_reperes_officiels": [
+        "Q01",
+        "Q02",
+        "Q04"
+      ],
+      "objet_avis_humain_requis": "Avis sur les limites de compétence provinciale et les ententes d'administration",
+      "dossier_a_livrer": "Table de compétences fiscales fédérales et accords d'administration vérifiés",
+      "travaux_requis": [
+        "Distinguer impôts fédéraux personnels/sociétés, TPS et compétences québécoises",
+        "Identifier la Loi sur la taxe d'accise, les dispositions fédérales de l'impôt et les accords d'administration applicables",
+        "Vérifier les éventuelles conventions et la capacité réelle de les modifier",
+        "Obtenir un avis sur les limites provinciales de l'option deux prélèvements"
+      ],
+      "reserves_particulieres": [
+        "Le texte officiel ne vaut pas l'avis indépendant sur la réforme Nova"
+      ],
+      "pieces_recues_verifiees": 0,
+      "expert_reel_mandate": false,
+      "travaux_termines": false,
+      "contradiction_independante_obtenue": false,
+      "justificatif_signature_authentifie": null,
+      "evaluation_couts_certifiee": false,
+      "avis_favorable_recu": false,
+      "decision_adoption_autorisee": false,
+      "statut": "DOSSIER_DOCUMENTAIRE_A_INSTRUIRE"
+    },
+    {
+      "id": "F03",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "Tarifs douaniers et contre-tarifs fédéraux",
+      "statut_preuve_amont": "NON_VALIDE",
+      "comite_pilote": "CJF",
+      "consultations": [
+        "CTE"
+      ],
+      "priorite_vague": "V1",
+      "sources_precedemment_reperees": [
+        "REF02"
+      ],
+      "nouveaux_reperes_officiels": [
+        "Q02",
+        "Q05"
+      ],
+      "objet_avis_humain_requis": "Table des décisions réservées au gouvernement fédéral; formulation honnête des engagements politiques provinciaux",
+      "dossier_a_livrer": "Avis sur douanes, contre-tarifs et limites des engagements provinciaux",
+      "travaux_requis": [
+        "Vérifier l'attribution des pouvoirs fédéraux en matière de douane et commerce",
+        "Documenter la version du Tarif des douanes et ses exceptions applicables",
+        "Reformuler la position 'aucun contre-tarif' selon la compétence provinciale effective",
+        "Faire vérifier les conséquences des engagements commerciaux par juriste indépendant"
+      ],
+      "reserves_particulieres": [
+        "Le texte officiel ne vaut pas l'avis indépendant sur la réforme Nova"
+      ],
+      "pieces_recues_verifiees": 0,
+      "expert_reel_mandate": false,
+      "travaux_termines": false,
+      "contradiction_independante_obtenue": false,
+      "justificatif_signature_authentifie": null,
+      "evaluation_couts_certifiee": false,
+      "avis_favorable_recu": false,
+      "decision_adoption_autorisee": false,
+      "statut": "DOSSIER_DOCUMENTAIRE_A_INSTRUIRE"
+    },
+    {
+      "id": "F04",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "Fiscalité municipale et taxes scolaires et foncières",
+      "statut_preuve_amont": "NON_VALIDE",
+      "comite_pilote": "CFP",
+      "consultations": [
+        "CSD"
+      ],
+      "priorite_vague": "V1",
+      "sources_precedemment_reperees": [
+        "S06",
+        "REF06"
+      ],
+      "nouveaux_reperes_officiels": [
+        "Q06",
+        "Q07"
+      ],
+      "objet_avis_humain_requis": "Inventaire des taxes, transferts et services par municipalité; coût de remplacement",
+      "dossier_a_livrer": "Base annuelle consolidée des recettes et services des administrations municipales",
+      "travaux_requis": [
+        "Relever les catégories fiscales foncières, scolaires, municipales et les compensations existantes",
+        "Récupérer les données détaillées municipales, années et versions réellement utilisées",
+        "Consolider les transferts et éviter de compter deux fois les recettes ou dépenses",
+        "Chiffrer par scénario le maintien des services municipaux avant toute suppression"
+      ],
+      "reserves_particulieres": [
+        "Le texte officiel ne vaut pas l'avis indépendant sur la réforme Nova"
+      ],
+      "pieces_recues_verifiees": 0,
+      "expert_reel_mandate": false,
+      "travaux_termines": false,
+      "contradiction_independante_obtenue": false,
+      "justificatif_signature_authentifie": null,
+      "evaluation_couts_certifiee": false,
+      "avis_favorable_recu": false,
+      "decision_adoption_autorisee": false,
+      "statut": "DOSSIER_DOCUMENTAIRE_A_INSTRUIRE"
+    },
+    {
+      "id": "F07",
+      "regime": "TOUS",
+      "theme": "Inventaire de tous les prélèvements obligatoires",
+      "statut_preuve_amont": "NON_VALIDE",
+      "comite_pilote": "CJF",
+      "consultations": [
+        "CFP"
+      ],
+      "priorite_vague": "V1",
+      "sources_precedemment_reperees": [
+        "REF03",
+        "REF04",
+        "REF06"
+      ],
+      "nouveaux_reperes_officiels": [
+        "Q03",
+        "Q04",
+        "Q06",
+        "Q07",
+        "Q08"
+      ],
+      "objet_avis_humain_requis": "Registre exhaustif distinguant taxe, impôt, cotisation, redevance et frais réels avec compétence",
+      "dossier_a_livrer": "Inventaire comptable de tous les prélèvements obligatoires avec compétence et flux",
+      "travaux_requis": [
+        "Constituer un inventaire exhaustif des taxes, impôts, cotisations, contributions, redevances et frais",
+        "Classer chaque prélèvement par niveau de gouvernement et compétence vérifiable",
+        "Contrôler les sources fiscales fédérales, québécoises, scolaires et municipales manquantes",
+        "Calculer les recettes nettes de remplacement sans éliminer des charges par glissement de périmètre"
+      ],
+      "reserves_particulieres": [
+        "Le texte officiel ne vaut pas l'avis indépendant sur la réforme Nova"
+      ],
+      "pieces_recues_verifiees": 0,
+      "expert_reel_mandate": false,
+      "travaux_termines": false,
+      "contradiction_independante_obtenue": false,
+      "justificatif_signature_authentifie": null,
+      "evaluation_couts_certifiee": false,
+      "avis_favorable_recu": false,
+      "decision_adoption_autorisee": false,
+      "statut": "DOSSIER_DOCUMENTAIRE_A_INSTRUIRE"
+    },
+    {
+      "id": "F09",
+      "regime": "TOUS",
+      "theme": "Sources budgétaires et réconciliation",
+      "statut_preuve_amont": "NON_VALIDE",
+      "comite_pilote": "CFP",
+      "consultations": [
+        "CDE"
+      ],
+      "priorite_vague": "V1",
+      "sources_precedemment_reperees": [
+        "S01",
+        "S02",
+        "S07",
+        "REF05"
+      ],
+      "nouveaux_reperes_officiels": [
+        "Q12",
+        "Q13"
+      ],
+      "objet_avis_humain_requis": "Rapprochement 2026-2027 des données du modèle Nova avec comptes budgétaires officiels",
+      "dossier_a_livrer": "Rapprochement indépendant et signé des références budgétaires originales",
+      "travaux_requis": [
+        "Archiver licitement les deux PDF originaux et enregistrer les empreintes réelles et métadonnées",
+        "Refaire le contrôle du tableau 3 et F.2 par une seconde personne indépendante",
+        "Réconcilier les prévisions et les mises à jour, puis les comptes réels quand disponibles",
+        "Démontrer les transferts entre gouvernements et la nature des montants sans double comptage"
+      ],
+      "reserves_particulieres": [
+        "Tableaux 2026-2027 = prévisions et non finances réalisées",
+        "Les montants du modèle Nova restent inconnus"
+      ],
+      "pieces_recues_verifiees": 0,
+      "expert_reel_mandate": false,
+      "travaux_termines": false,
+      "contradiction_independante_obtenue": false,
+      "justificatif_signature_authentifie": null,
+      "evaluation_couts_certifiee": false,
+      "avis_favorable_recu": false,
+      "decision_adoption_autorisee": false,
+      "statut": "DOSSIER_DOCUMENTAIRE_A_INSTRUIRE"
+    },
+    {
+      "id": "F19",
+      "regime": "TOUS",
+      "theme": "Décision et adoption démocratiques",
+      "statut_preuve_amont": "NON_VALIDE",
+      "comite_pilote": "CDE",
+      "consultations": [
+        "CJF"
+      ],
+      "priorite_vague": "V1",
+      "sources_precedemment_reperees": [],
+      "nouveaux_reperes_officiels": [
+        "Q09"
+      ],
+      "objet_avis_humain_requis": "Autorité formellement compétente, consultation, version officielle signée et registre d'adoption",
+      "dossier_a_livrer": "Avis juridique sur procédures démocratiques et fondement de chaque autorisation",
+      "travaux_requis": [
+        "Distinguer adoption interne du projet politique, vote parlementaire, référendum et autres démarches applicables",
+        "Identifier avec précision les articles applicables et limites de la Loi sur la consultation populaire",
+        "Faire contrôler l'autorité habilitée, les droits démocratiques et les procédures de contestation",
+        "Prévoir version officielle signée, quorum et registre des décisions avant toute proclamation"
+      ],
+      "reserves_particulieres": [
+        "La consultation populaire est distincte d'une adoption constitutionnelle",
+        "Un parti ne déclenche pas à lui seul une procédure légale"
+      ],
+      "pieces_recues_verifiees": 0,
+      "expert_reel_mandate": false,
+      "travaux_termines": false,
+      "contradiction_independante_obtenue": false,
+      "justificatif_signature_authentifie": null,
+      "evaluation_couts_certifiee": false,
+      "avis_favorable_recu": false,
+      "decision_adoption_autorisee": false,
+      "statut": "DOSSIER_DOCUMENTAIRE_A_INSTRUIRE"
+    },
+    {
+      "id": "F20",
+      "regime": "TOUS",
+      "theme": "Vie privée et droits de recours fiscaux",
+      "statut_preuve_amont": "NON_VALIDE",
+      "comite_pilote": "CSD",
+      "consultations": [
+        "CJF",
+        "CDE"
+      ],
+      "priorite_vague": "V1",
+      "sources_precedemment_reperees": [
+        "REF03"
+      ],
+      "nouveaux_reperes_officiels": [
+        "Q08",
+        "Q10",
+        "Q11"
+      ],
+      "objet_avis_humain_requis": "Analyse protection des données, opposition, délai de recours et contrôle indépendant",
+      "dossier_a_livrer": "Analyse de confidentialité, statut juridique des responsables et voies de recours",
+      "travaux_requis": [
+        "Identifier séparément l'organisme responsable et les régimes public/privé potentiellement pertinents",
+        "Documenter collecte minimale, secret fiscal, accès, rectification, opposition et recours applicables",
+        "Préparer une évaluation de proportionnalité et l'archivage à accès contrôlé",
+        "Faire vérifier droits, délais, conflits d'intérêts et recours par spécialiste externe"
+      ],
+      "reserves_particulieres": [
+        "Secteur public et secteur privé ne sont pas interchangeables",
+        "La confidentialité fiscale exige une analyse distincte"
+      ],
+      "pieces_recues_verifiees": 0,
+      "expert_reel_mandate": false,
+      "travaux_termines": false,
+      "contradiction_independante_obtenue": false,
+      "justificatif_signature_authentifie": null,
+      "evaluation_couts_certifiee": false,
+      "avis_favorable_recu": false,
+      "decision_adoption_autorisee": false,
+      "statut": "DOSSIER_DOCUMENTAIRE_A_INSTRUIRE"
+    }
+  ],
+  "liste_des_controles_techniques": [
+    "comparer_les_huit_pieces_a_p52a_p52o_p52n_p52p",
+    "controler_les_liaisons_des_13_references_officielles",
+    "conserver_le_statut_2026_des_sources_sans_inventer_de_telechargement",
+    "refuser_toute_empreinte_de_pdf_et_signature_non_constatee",
+    "separer_droit_federal_provincial_municipal_et_prive",
+    "ne_pas_pretendre_a_une_approbation_de_f19",
+    "ne_pas_pretendre_que_les_previsions_f09_sont_des_comptes_reels",
+    "conserver_les_20_preuves_bloquantes_et_1320_champs_inconnus"
+  ],
+  "gouvernance": {
+    "originaux_pdf_budget_hashes_verifies": 0,
+    "nombre_dossiers_prioritaires": 8,
+    "expertises_independantes_signées": 0,
+    "dossiers_avec_avis_externe_authentifie": 0,
+    "preuves_f01_f20_encore_non_validees": 20,
+    "variables_monetaires_inconnues_amont": 1320,
+    "approbation_juridique_recue": false,
+    "publication_autorisee": false,
+    "fusion_autorisee": false,
+    "adoption_autorisee": false,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

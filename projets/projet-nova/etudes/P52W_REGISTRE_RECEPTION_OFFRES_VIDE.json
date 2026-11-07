@@ -1,0 +1,16 @@
+{
+  "schema_version": "P52W-RECEPTION-1",
+  "jalon": "P52W",
+  "statut": "AUCUNE_RECEPTION_EXTERNE",
+  "offres": [],
+  "evenements": [],
+  "etat": {
+    "receptions_authentifiees": 0,
+    "offres_admissibles": 0,
+    "avis_humains_verifies": 0,
+    "contrats": 0
+  },
+  "documents_confidentiels_dans_git": false,
+  "identites_ou_devis_publies": false,
+  "decision": "NO_GO_AUTOMATIQUE"
+}

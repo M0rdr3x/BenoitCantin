@@ -1,0 +1,70 @@
+name: Projet Nova P52M - Mandats comites et risques
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p52m.yml"
+      - "scripts/auditer_deliberations_nova_p52m.py"
+      - "scripts/tests/test_auditer_deliberations_nova_p52m.py"
+      - "projets/projet-nova/etudes/P52M_*"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+      - "projets/projet-nova/etudes/P52L_MATRICE_REVUES_INDEPENDANTES.json"
+      - "projets/projet-nova/etudes/P52K_REGISTRE_PROVENANCE_BUDGET.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  examens-fictifs-et-no-go:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Depot en lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Cinquante-quatre tests contradictoires
+        run: |
+          python -m py_compile scripts/auditer_deliberations_nova_p52m.py
+          python - <<'PY'
+          import unittest
+          s=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_auditer_deliberations_nova_p52m.py")
+          assert s.countTestCases()==54, s.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(s)
+          assert result.wasSuccessful()
+          PY
+      - name: Aucun comite cree aucune preuve certifiee
+        run: |
+          python scripts/auditer_deliberations_nova_p52m.py --rapport p52m_rapport_agrege.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p52m_rapport_agrege.json").read_text("utf-8"))
+          assert d["comites_proposes_non_constitues"]==5
+          assert d["preuves_bloquantes"]==20
+          assert d["simulations_examinees"]==0
+          assert d["membres_reellement_nommes"]==0
+          assert d["avis_externes_authentifies"]==0
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Refus explicite du GO automatique
+        run: |
+          set +e
+          python scripts/auditer_deliberations_nova_p52m.py --exiger-adoption --rapport p52m_refus.json
+          result=$?
+          set -e
+          test "$result" -eq 3
+      - name: Rapports agreges non nominatifs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52m-comites-candidats-no-go
+          path: |
+            p52m_rapport_agrege.json
+            p52m_refus.json
+          retention-days: 7
+          if-no-files-found: ignore

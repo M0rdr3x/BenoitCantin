@@ -1,0 +1,74 @@
+name: Projet Nova P53L - Evaluations prudentes des economies
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p53l.yml"
+      - "scripts/evaluer_hypotheses_economies_nova_p53l.py"
+      - "scripts/tests/test_evaluer_hypotheses_economies_nova_p53l.py"
+      - "scripts/preparer_controles_probatoires_nova_p53k.py"
+      - "scripts/auditer_appariements_municipaux_nova_p53j.py"
+      - "projets/projet-nova/etudes/P53L_*"
+      - "projets/projet-nova/etudes/P53K_EXIGENCES_PROBATOIRES.json"
+      - "projets/projet-nova/etudes/P53H_PRIORITES_VERIFICATION_2024.json"
+      - "projets/projet-nova/etudes/P53I_SOURCES_REVISION_ET_CHARGES_2024.json"
+      - "projets/projet-nova/etudes/sources/P53I_MAMH_2024_1344_RECETTES_CHARGES_SELECTION.csv"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  hypotheses-sans-faux-gains:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Source en lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Verifications P53L et tests de refus
+        run: |
+          python -m py_compile scripts/evaluer_hypotheses_economies_nova_p53l.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_evaluer_hypotheses_economies_nova_p53l.py")
+          assert suite.countTestCases()==38,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Recalculer et refuser toute economie non certifiee
+        run: |
+          python scripts/evaluer_hypotheses_economies_nova_p53l.py --rapport p53l_bilan.json --catalogue p53l_pistes.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p53l_bilan.json").read_text(encoding="utf-8"))
+          p=json.loads(Path("p53l_pistes.json").read_text(encoding="utf-8"))
+          assert d["organismes_p53j"]==1344 and d["dossiers_p53k"]==26
+          assert d["pistes_non_documentees"]==6
+          assert d["economies_annuelles_certifiees_cad"] is None
+          assert d["economies_premiere_annee_certifiees_cad"] is None
+          assert d["postes_supprimes_autorises"]==0
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          assert all(x["economies_certifiees_cad"] is None for x in p["pistes"])
+          PY
+          set +e
+          python scripts/evaluer_hypotheses_economies_nova_p53l.py --exiger-economies-certifiees --rapport p53l_refus.json
+          retour=$?
+          set -e
+          test "$retour" -eq 3
+      - name: Publier bilans agreges sans scenarios detailles
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p53l-economies-encore-non-certifiees
+          path: |
+            p53l_bilan.json
+            p53l_refus.json
+            p53l_pistes.json
+          if-no-files-found: ignore
+          retention-days: 7
