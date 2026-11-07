@@ -56,6 +56,11 @@ async function rejected(req,reason){
   await rejected(req,/size/);
   req=make(full('pas du JSON'));
   await rejected(req,/SyntaxError|Unexpected token|JSON/);
+  // Le décodeur fatal refuse les octets illisibles avant toute décision.
+  req=make(new ReadableStream({start(s){
+    s.enqueue(new Uint8Array([0xc3,0x28]));s.close();
+  }}));
+  await rejected(req,/TypeError|encoded data|encoding|UTF-8/);
 
   let cancelled=0;
   const large=new ReadableStream({
