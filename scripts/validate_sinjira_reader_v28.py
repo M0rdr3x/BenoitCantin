@@ -55,7 +55,7 @@ def validate():
     # Reprise V31 : état minimal, page/intrapage, aucune citation écrite dans le navigateur.
     spot=(ROOT/'assets/js/sinjira-liseuse-position-v31.mjs').read_text('utf-8')
     for token in ['chooseReadingPosition(', 'ratioFromScroll(', 'scrollTopForRatio(',
-                  'serverDate>localDate']:
+                  'serverDate>localDate', 'serverRatio=null', 'hasServerRatio']: 
         if token not in spot:
             errors.append('Utilitaire de reprise de lecture absent: '+token)
     for token in ['saveCurrentPosition()', "key+':spot'", 'restoreScrollAfterRender(version)',
@@ -64,6 +64,19 @@ def validate():
             errors.append('Sauvegarde/reprise de lecture absente: '+token)
     if ':spot' in spot or 'localStorage' in spot:
         errors.append('Le module de position doit rester une transformation pure.')
+    # V32: position serveur bornée et privée, sans modifier les politiques RLS.
+    migration=(ROOT/'supabase/migrations/20261107185500_sinjira_reader_progress_spot_v32.sql').read_text('utf-8')
+    for token in ['alter table public.sinjira_reader_library',
+                  'scroll_ratio numeric(5,4)', 'scroll_ratio >= 0',
+                  'scroll_ratio <= 1']:
+        if token not in migration:
+            errors.append('Champ de défilement SQL manquant ou sans borne: '+token)
+    for token in ['scroll_ratio:readingRatio(state.positionRatio)',
+                  "select('last_page,scroll_ratio,updated_at')",
+                  'serverRatio=progress?.scroll_ratio??null',
+                  'persist({syncCloud:true})']:
+        if token not in main:
+            errors.append('Synchronisation intrapage V32 manquante: '+token)
     # Empêcher le stockage de texte intégral (citations ou notes) en localStorage.
     if 'localStorage.setItem(DEMO_MARKS_KEY' not in companion:
         errors.append('Enregistrement de la démo non isolé')
