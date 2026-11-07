@@ -58,6 +58,16 @@ assert 'window.__NOVA_POLL_PUBLIC_CORPUS' in poll_js
 
 assert "sondage-citoyen.html" in compass_html
 assert 'id="poll-adult"' in poll_html and 'id="poll-agree"' in poll_html
+assert "consentConfirmed:true" in poll_js, (
+    "Le navigateur doit transmettre le consentement exprès séparément de l'âge"
+)
+assert "ballot.consentConfirmed!==true" in edge, (
+    "Le serveur Edge doit exiger le consentement politique explicite, sans équivalent textuel"
+)
+assert "if(!validBallotEnvelope(payload))" in edge, (
+    "Un POST sans consentement doit être refusé avant CAPTCHA et SQL"
+)
+assert (ROOT / "scripts" / "test_nova_edge_explicit_consent.cjs").is_file()
 assert 'id="poll-results"' in poll_html and 'id="poll-form"' in poll_html
 assert "MIN_PUBLIC_BALLOTS = 10" in edge
 assert "MIN_NONZERO_CELL = 5" in edge, "Seuil de divulgation par catégorie requis"
