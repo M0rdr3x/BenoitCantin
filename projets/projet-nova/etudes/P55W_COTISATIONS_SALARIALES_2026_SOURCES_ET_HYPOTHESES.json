@@ -1,0 +1,137 @@
+{
+  "schema_version": "P55W-1",
+  "date_reference": "2026-11-07",
+  "titre": "CALCUL_CONDITIONNEL_COTISATIONS_EMPLOYE_EMPLOYEUR_QUEBEC_2026",
+  "statut": "MODELE_DE_BAREME_OFFICIEL_CONDITIONNEL_NON_DECLARATION_REELLE",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "sources": {
+    "rrq_rqap": "https://www.revenuquebec.ca/fr/entreprises/retenues-a-la-source-et-cotisations-de-lemployeur/employeur-principaux-changements-2026/",
+    "ae_quebec": "https://www.canada.ca/fr/agence-revenu/services/impot/entreprises/sujets/retenues-paie/retenues-paie-cotisations/assurance-emploi-ae/taux-cotisation-a-ae-maximums.html",
+    "exemption_rrq": "https://www.revenuquebec.ca/fr/entreprises/retenues-a-la-source-et-cotisations-de-lemployeur/calcul-des-retenues-et-des-cotisations/cotisations-au-rrq/exemption-generale/",
+    "provenance": "PAGES_HTML_OFFICIELLES_CONSULTEES_2026_11_07_SANS_SIGNATURE_INTERMEDIAIRE",
+    "pays": "CANADA",
+    "province": "QUEBEC",
+    "annee": 2026
+  },
+  "parametres": {
+    "rrq": {
+      "exemption_annuelle_cad": "3500.00",
+      "max_gains_premier_palier_cad": "74600.00",
+      "max_gains_supplementaires_cad": "85000.00",
+      "taux_premier_palier_salarie_pct": "6.30",
+      "taux_premier_palier_employeur_pct": "6.30",
+      "taux_second_palier_salarie_pct": "4.00",
+      "taux_second_palier_employeur_pct": "4.00",
+      "maximum_salarie_cad": "4895.30",
+      "maximum_employeur_cad": "4895.30"
+    },
+    "rqap": {
+      "max_salaire_assurable_cad": "103000.00",
+      "taux_salarie_pct": "0.430",
+      "taux_employeur_pct": "0.602",
+      "maximum_salarie_cad": "442.90",
+      "maximum_employeur_cad": "620.06"
+    },
+    "ae": {
+      "max_salaire_assurable_cad": "68900.00",
+      "taux_salarie_quebec_pct": "1.30",
+      "taux_employeur_quebec_pct": "1.82",
+      "maximum_salarie_cad": "895.70",
+      "maximum_employeur_cad": "1253.98"
+    }
+  },
+  "hypotheses_obligatoires": {
+    "revenu_pris_comme_salaire_admissible_aux_trois_regimes": true,
+    "emploi_continu_toute_annee_2026": true,
+    "personne_salariee_18_a_64_ans": true,
+    "sans_exemption_ou_renonciation_particuliere": true,
+    "un_seul_employeur_pour_annee": true,
+    "gains_cotises_entierement_au_quebec": true,
+    "retenues_reelles_par_periode_ou_arrondi_peuvent_differer": true,
+    "cotisations_rrq_ei_rqap_uniquement": true,
+    "non_inclus_FSS_employeur_normes_travail_CNESST_et_autres_charges": true,
+    "non_inclus_impots_sur_revenu_reels": true,
+    "non_inclus_prestations_ou_credit_impot": true,
+    "non_comparable_automatiquement_a_l_exemple_gouvernemental_50k_revenu_annuel": true
+  },
+  "temoin_analytique_50000_cad": {
+    "salaire_presume_cad": "50000.00",
+    "rrq_salarie_cad": "2929.50",
+    "rqap_salarie_cad": "215.00",
+    "ae_salarie_cad": "650.00",
+    "total_salarie_trois_regimes_cad": "3794.50",
+    "rrq_employeur_cad": "2929.50",
+    "rqap_employeur_cad": "301.00",
+    "ae_employeur_cad": "910.00",
+    "total_employeur_trois_regimes_cad": "4140.50",
+    "source_du_salaire": "HYPOTHESE_EXPLICITE_FICTIVE_NON_PIECE_D_UN_SALARIE",
+    "type_de_calcul": "ARITHMETIQUE_DES_TAUX_2026_SOUS_HYPOTHESES_RESTRICTIVES",
+    "comparaison_directe_avec_P55T_847_cad_autorisee": false
+  },
+  "protections": {
+    "ne_pas_pretendre_fiscalite_nova_definie": true,
+    "aucun_taux_nova_ou_gain_certifie": true,
+    "financement_rentes_parentalite_assurance_emploi_a_preserver": true,
+    "droits_des_salaries_et_employeurs_proteges": true,
+    "ne_pas_affirmer_abolition_legale_des_cotisations": true,
+    "ne_pas_imputer_cotisations_employeurs_aux_salaires_individuels": true,
+    "effets_prix_salaires_inconnus": true,
+    "fss_employeur_exclu": true,
+    "assurance_chomage_federale_reste_dans_regime_canada": true,
+    "souverainete_non_appliquee_aux_taux_provinciaux_2026": true,
+    "ne_pas_transposer_taux_2026_aux_annees_2027_2036": true,
+    "aucune_hypothese_de_cotisation_sur_le_revenu_total_sans_salaire": true,
+    "ne_pas_ecraser_p52d_valeurs_null": true,
+    "p52d_montants_inconnus": 720,
+    "p52b_montants_inconnus": 600,
+    "p55n_score_estime_pourcent": 53,
+    "avis_independants_signes": 0,
+    "aucune_economie_financiere_certifiee": true,
+    "ne_pas_contacter_personne_ni_depense": true,
+    "sinjira_inchange": true,
+    "main_non_fusionnee": true,
+    "no_go_automatique": true
+  },
+  "actions": [
+    {
+      "id": "W01",
+      "objet": "OBTENIR_FICHES_PAIE_EXEMPLES_ANONYMISEES_ET_TEMOINS_SALARIES",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "W02",
+      "objet": "COMPLETER_IMPOTS_CREDITS_ET_PRESTATIONS_ACTUELS",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "W03",
+      "objet": "DEFINIR_LE_MAINTIEN_FINANCE_RRQ_RQAP_AE",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "W04",
+      "objet": "CALCULER_INCIDENTE_EMPLOYEUR_FSS_ET_AUTRES_CHARGES",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "W05",
+      "objet": "EVALUER_PETITES_ENTREPRISES_SECTEURS_ET_COUTS",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "W06",
+      "objet": "CONTROLER_REFORME_PAR_DECILE_REGION_ET_FAMILLE",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "W07",
+      "objet": "PRODUIRE_LES_BUDGETS_2027_2036_AVEC_ASSIETTES",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "W08",
+      "objet": "OBTENIR_AVIS_INDEPENDANTS_FISCALISTES_ET_ACTUAIRES",
+      "statut": "OUVERT"
+    }
+  ]
+}
