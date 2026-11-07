@@ -12,6 +12,9 @@
 .poll-consent{border:1px solid #c9d9e3;background:#f5f9fc;border-radius:16px;padding:20px;display:grid;gap:14px}
 .poll-consent label{display:flex;align-items:flex-start;gap:11px;line-height:1.5}
 .poll-consent input{margin-top:5px;flex-shrink:0}
+.poll-consent a{color:#086783;text-decoration:underline;text-underline-offset:2px}
+.poll-consent a:focus-visible{outline:3px solid #045c78;outline-offset:3px;border-radius:3px}
+.poll-consent-note{margin:0;padding:12px 15px;border-left:3px solid #216d86;background:#eef7fa;color:#254657;font-size:.94rem;line-height:1.6}
 .poll-captcha{min-height:20px;margin:18px 0}
 .poll-action-row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
 .poll-action-row button:disabled{opacity:.55;cursor:not-allowed}
