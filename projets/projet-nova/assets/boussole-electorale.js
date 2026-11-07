@@ -5,6 +5,7 @@
   const PARTY_DATA_URL = "data/boussole-partis-2026.json";
   const PARTY_SOURCE_DATA_URL = "data/boussole-sources-partis-2026.json";
   const EVIDENCE_DATA_URL = "data/boussole-preuves-2026.json";
+  const FALLBACK_TIMEOUT_MS = 10000;
   const RESPONSES = [
     {value:-3,label:"Tout à fait en désaccord"},
     {value:-2,label:"En désaccord"},
@@ -43,6 +44,49 @@
     }catch(_error){return '';}
   };
 
+
+  // Le JSON sert uniquement de repli lorsque le bundle public n'est pas disponible.
+  // Un réseau suspendu ne doit pas figer indéfiniment les boutons Réessayer.
+  async function fetchJsonWithTimeout(url){
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),FALLBACK_TIMEOUT_MS);
+    try{
+      const response=await fetch(url,{cache:"no-store",signal:controller.signal});
+      if(!response.ok) throw new Error("HTTP " + response.status);
+      return await response.json();
+    }finally{
+      clearTimeout(timer);
+    }
+  }
+
+  function validateQuestionnaireCorpus(corpus){
+    if(!corpus || !Array.isArray(corpus.axes) || corpus.axes.length!==16
+       || !Array.isArray(corpus.questions) || corpus.questions.length!==64){
+      throw new Error("Questionnaire incomplet");
+    }
+    const axes=new Set();
+    for(const axis of corpus.axes){
+      if(typeof axis?.id!=="string" || !axis.id || axes.has(axis.id)){
+        throw new Error("Dimensions invalides ou dupliquées");
+      }
+      axes.add(axis.id);
+    }
+    const counts=new Map([...axes].map(id=>[id,0]));
+    const ids=new Set();
+    for(const question of corpus.questions){
+      if(typeof question?.id!=="string" || !/^q[0-9]{2}$/.test(question.id)
+         || ids.has(question.id) || typeof question.text!=="string"
+         || !question.text.trim() || !axes.has(question.axis)){
+        throw new Error("Proposition invalide, dupliquée ou sans dimension");
+      }
+      ids.add(question.id);
+      counts.set(question.axis,counts.get(question.axis)+1);
+    }
+    if([...counts.values()].some(total=>total!==4)){
+      throw new Error("Répartition des propositions par dimension invalide");
+    }
+    return corpus;
+  }
 
   function currentQuestion(){
     return state.data?.questions?.[state.currentIndex] || null;
@@ -876,17 +920,11 @@
       if(bundled?.questionnaire && bundled?.parties && bundled?.sources && bundled?.evidence){
         ({questionnaire:questionCorpus,parties:partyCorpus,sources:sourceCorpus,evidence:evidenceCorpus}=bundled);
       }else{
-        const [partyResponse,sourceResponse,evidenceResponse,questionResponse] = await Promise.all([
-          fetch(PARTY_DATA_URL,{cache:"no-store"}),
-          fetch(PARTY_SOURCE_DATA_URL,{cache:"no-store"}),
-          fetch(EVIDENCE_DATA_URL,{cache:"no-store"}),
-          fetch(DATA_URL,{cache:"no-store"})
-        ]);
-        for(const response of [partyResponse,sourceResponse,evidenceResponse,questionResponse]){
-          if(!response.ok) throw new Error("HTTP " + response.status);
-        }
         [partyCorpus,sourceCorpus,evidenceCorpus,questionCorpus] = await Promise.all([
-          partyResponse.json(),sourceResponse.json(),evidenceResponse.json(),questionResponse.json()
+          fetchJsonWithTimeout(PARTY_DATA_URL),
+          fetchJsonWithTimeout(PARTY_SOURCE_DATA_URL),
+          fetchJsonWithTimeout(EVIDENCE_DATA_URL),
+          fetchJsonWithTimeout(DATA_URL)
         ]);
       }
       validateDocumentaryCorpora(questionCorpus,partyCorpus,sourceCorpus,evidenceCorpus);
@@ -929,14 +967,9 @@
       // Le repli JSON reste disponible pour les hébergeurs qui le servent.
       let corpus = window.__NOVA_COMPASS_PUBLIC_CORPORA?.questionnaire;
       if(!corpus){
-        const response = await fetch(DATA_URL,{cache:"no-store"});
-        if(!response.ok) throw new Error("HTTP " + response.status);
-        corpus = await response.json();
+        corpus = await fetchJsonWithTimeout(DATA_URL);
       }
-      if(!Array.isArray(corpus.axes) || corpus.axes.length !== 16 ||
-         !Array.isArray(corpus.questions) || corpus.questions.length !== 64){
-        throw new Error("Questionnaire incomplet");
-      }
+      validateQuestionnaireCorpus(corpus);
       if(documentaryBinding && !matchesQuestionnaireBinding(corpus,documentaryBinding)){
         throw new Error("Questionnaire incompatible avec les preuves déjà chargées");
       }
