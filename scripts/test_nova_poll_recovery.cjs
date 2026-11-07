@@ -10,7 +10,7 @@ const src=fs.readFileSync(path.resolve(__dirname,
   "../projets/projet-nova/assets/sondage-citoyen.js"),"utf8");
 const match=src.match(/  async function loadPoll\(\)\{[\s\S]*?\n  }\n(?=  async function submit\()/);
 assert.ok(match,"Handler de chargement de l'interface introuvable");
-const validator=src.match(/  function validLocalCorpus\(corpus\)\{[\s\S]*?\n  \}\n(?=  function optionLabel\()/);
+const validator=src.match(/  function validLocalCorpus\(corpus\)\{[\s\S]*?\n  \}/);
 assert.ok(validator,"Validation du corpus public manquante");
 const corpus=JSON.parse(fs.readFileSync(path.resolve(__dirname,
   "../projets/projet-nova/data/sondage-citoyen-v1.json"),"utf8"));
