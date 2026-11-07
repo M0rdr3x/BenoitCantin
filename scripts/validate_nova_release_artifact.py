@@ -119,8 +119,10 @@ def check(published: Path) -> list[str]:
         errors.append("Sondage public : agrégats ou données individuelles dans le corpus statique")
     if len(compass.get("questions", [])) != 64 or len(compass.get("axes", [])) != 16:
         errors.append("Boussole publique : corpus 64/16 incorrect")
-    if 'bucket.primaryAnswered >= axisMinimumAnswered' not in compass_js:
-        errors.append("Boussole publique : seuil minimum de réponses non appliqué")
+    integrity_js = (prefix / "assets/nova-civic-integrity.js").read_text(encoding="utf-8")
+    if ('return core.scoreCompass(state.data,state.answers);' not in compass_js or
+            'bucket.primaryAnswered>=c.methodology.axisMinimumAnswered' not in integrity_js):
+        errors.append("Boussole publique : moteur partagé ou seuil minimum de réponses absent")
     if "https://challenges.cloudflare.com" not in (published / "_headers").read_text(encoding="utf-8"):
         errors.append("CSP Netlify : origine Turnstile absente")
     if not (published / ".well-known/release.json").is_file():
