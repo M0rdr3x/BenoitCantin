@@ -32,7 +32,7 @@ Les inconnues restent des **null** dans G0.16g. Cette formule ne calcule actuell
 
 ## 2. Municipalités : financement local distinct du gouvernement du Québec
 
-Le [Ministère des Affaires municipales et de l'Habitation](https://www.quebec.ca/gouvernement/gestion-municipale/finances-fiscalite-municipales/information-financiere/publications-financieres/rapport-financier) publie les rapports financiers transmis par les municipalités, MRC, communautés métropolitaines, régies et organismes de transport. Les données sont aussi accessibles, sous forme de séries exploitables, par [Données Québec — Profil financier des municipalités locales](https://www.donneesquebec.ca/recherche/dataset/profil-financier-des-municipalites-locales). Ces séries doivent être consolidées à périmètre constant et en évitant les transferts entre administrations.
+Le [Ministère des Affaires municipales et de l'Habitation](https://www.quebec.ca/gouvernement/gestion-municipale/finances-fiscalite-municipales/information-financiere/publications-financieres/rapport-financier) publie les rapports financiers transmis par les municipalités, MRC, communautés métropolitaines, régies et organismes de transport. Les données sont aussi accessibles, sous forme de séries exploitables, par [Données Québec — Profil financier des municipalités locales](https://www.donneesquebec.ca/recherche/dataset/profil-financier-des-municipalites-locales). La [ressource agrégée 2024 pour tout le Québec](https://www.donneesquebec.ca/recherche/dataset/profil-financier-des-municipalites-locales/resource/5dec077d-4ef9-4e22-99e9-0c4f3a6dd52d) a été localisée au catalogue public (source déclarée : `PF-2024-2024-Prov.csv`). **Le contenu CSV n'a pas été importé ni contrôlé dans cette étape**; aucun chiffre tiré de ce fichier n'est donc déclaré vérifié. Ces séries doivent être consolidées à périmètre constant et en évitant les transferts entre administrations.
 
 L'[Union des municipalités du Québec, rapport 2026](https://umq.qc.ca/rapport-fiscalite-finances-municipales/) indique que **70 % des revenus municipaux proviennent de la taxe foncière**. Ce pourcentage constitue **un constat émis par une association sectorielle**, pas une compilation indépendante et auditée des coûts de la réforme Nova. Nous ne le convertissons donc **pas** en montant à payer ou économiser. Le montant total des revenus fonciers municipaux compatible avec un exercice annuel commun n'a pas encore été rapproché : **null**.
 
@@ -95,7 +95,7 @@ En cas de préparation d'une réforme : coût réel par élève, délai d'accès
 
 - Données : `data/continuite-territoriale-g0-16g-education-municipalites-dette.json` — 11 sources classées, 9 services/droits, 4 lignes de compétence, 2 scénarios.
 - Contrôleur : `assets/g016g-territorial-continuity-core.mjs` — compare G0.14/G0.15/G0.16e/G0.16f et refuse la substitution fictive de recettes.
-- Tests : `tests/g016g-territorial-continuity.test.mjs` — 40 cas déclarés et rejoués en JavaScript isolé; l'exécution officielle CI Node reste à vérifier.
+- Tests : `tests/g016g-territorial-continuity.test.mjs` — 42 cas déclarés et rejoués en JavaScript isolé; l'exécution officielle CI Node reste à vérifier.
 - Preuves indépendantes complètes pour V10, V14, V15 : **aucune**.
 - Statut **G0.16g non franchie**. Aucun effet budgétaire, économique ou juridique d'une réforme Nova n'est certifié. **Score 47/100 inchangé.**
 
