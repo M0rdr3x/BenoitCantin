@@ -38,6 +38,7 @@ PRIVATE_RUNTIME_PATHS = (
 
 PUBLIC_PATHS = (
     "/",
+    "/sw.js",
     "/.well-known/security.txt",
     "/assistant.html",
     "/transparence-ia.html",
@@ -466,6 +467,20 @@ def validate_release_headers(headers: object) -> list[str]:
     return errors
 
 
+def validate_service_worker_headers(headers: object) -> list[str]:
+    """Le SW de sécurité doit être livré sans cache HTTP par l'hébergeur."""
+    get = getattr(headers, "get")
+    problems: list[str] = []
+    if str(get("Cache-Control") or "").strip().lower() != "no-store":
+        problems.append("/sw.js: Cache-Control: no-store obligatoire.")
+    content_type = str(get("Content-Type") or "").split(";", 1)[0].strip().lower()
+    if content_type not in {"text/javascript", "application/javascript"}:
+        problems.append("/sw.js: MIME JavaScript obligatoire.")
+    if str(get("X-Content-Type-Options") or "").strip().lower() != "nosniff":
+        problems.append("/sw.js: X-Content-Type-Options: nosniff obligatoire.")
+    return problems
+
+
 def validate_release_metadata(body: str, context: str, expected_sha: str) -> list[str]:
     errors: list[str] = []
     normalized_sha = expected_sha.strip().lower()
@@ -547,6 +562,10 @@ def validate_release(
             errors.extend(validate_netlify_hosting_headers(headers))
         errors.extend(validate_home(body))
 
+    worker = responses.get("/sw.js")
+    if worker and worker[0] == 200:
+        errors.extend(validate_service_worker_headers(worker[1]))
+
     for compass_path in COMPASS_ASSET_PATHS:
         compass_response = responses.get(compass_path)
         if compass_response and compass_response[0] == 200:
@@ -601,6 +620,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
         asset_kind = COMPASS_ASSET_PATHS.get(self.path)
         content_type = (
             "application/json" if asset_kind in {"questions", "parties", "evidence", "sources"}
+            else "text/javascript" if self.path == "/sw.js"
             else "text/css" if asset_kind == "stylesheet"
             else "application/javascript" if asset_kind == "javascript"
             else "text/html; charset=utf-8"
@@ -632,7 +652,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
             "form-action 'self' https://formspree.io; "
             "frame-ancestors 'self'; object-src 'self'; base-uri 'self'",
         )
-        if private_runtime or release_metadata:
+        if private_runtime or release_metadata or self.path == "/sw.js":
             self.send_header("Cache-Control", "no-store")
         if getattr(self.server, "preview", False) or private_runtime or release_metadata:
             self.send_header("X-Robots-Tag", "noindex, nofollow, noarchive")
@@ -642,7 +662,9 @@ class FixtureHandler(BaseHTTPRequestHandler):
             self.wfile.write(b"not found")
             return
 
-        if self.path == "/":
+        if self.path == "/sw.js":
+            body = "self.addEventListener('fetch',()=>{});"
+        elif self.path == "/":
             body = """<!doctype html><html><body>
 <nav class="main-nav" id="navigation-principale">
 <a href="/">Accueil</a><a href="/projets/sinjira/">SINJIRA</a>
@@ -860,6 +882,21 @@ def self_test() -> None:
     )
     if not any("COOP" in issue for issue in coop_broken):
         raise SystemExit("ERREUR auto-test smoke HTTP: COOP affaibli non détecté.")
+
+    for weakened in (
+        {"Content-Type": "text/javascript", "X-Content-Type-Options": "nosniff"},
+        {"Cache-Control": "public, max-age=3600", "Content-Type": "text/javascript", "X-Content-Type-Options": "nosniff"},
+        {"Cache-Control": "no-store", "Content-Type": "text/html", "X-Content-Type-Options": "nosniff"},
+        {"Cache-Control": "no-store", "Content-Type": "text/javascript"},
+    ):
+        if not validate_service_worker_headers(weakened):
+            raise SystemExit("ERREUR auto-test smoke HTTP: protection /sw.js affaiblie non détectée.")
+    if validate_service_worker_headers({
+        "Cache-Control": "no-store",
+        "Content-Type": "text/javascript; charset=utf-8",
+        "X-Content-Type-Options": "nosniff",
+    }):
+        raise SystemExit("ERREUR auto-test smoke HTTP: script SW correct rejeté.")
 
     release_headers_broken = validate_release_headers(
         {"X-Robots-Tag": "noindex, nofollow, noarchive"}
