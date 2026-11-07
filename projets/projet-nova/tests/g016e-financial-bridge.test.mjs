@@ -119,3 +119,14 @@ test("source G0.15 non indépendante reste non validée",()=>{
  const d=structuredClone(g15);d.proofs[0].status="REVUE_INDEPENDANTE";
  assert.ok(verifyG016eBridge(bridge,corp,personal,g14,d).errors.includes("PREDECESSOR_EVIDENCE_INVALID"));
 });
+
+test("la page G0.16e affiche les soldes et les avertissements",async()=>{
+ const html=await readFile(new URL("../avancement-programme-nova.html",import.meta.url),"utf8");
+ assert.match(html,/id="pont-financier-g016e"/);
+ assert.match(html,/168,4 G\$/);
+ assert.match(html,/−7,69 G\$/);
+ assert.match(html,/−49 211 M\$/);
+ assert.match(html,/pas d'une projection de la réforme Nova/);
+ assert.match(html,/0 sur 15 exigences fiscales/);
+ assert.match(html,/47 %/);
+});
