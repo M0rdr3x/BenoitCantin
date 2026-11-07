@@ -18,6 +18,10 @@ const fakeDocument = {
 };
 const context = {document:fakeDocument,window:{},navigator:{},console,URL};
 context.globalThis=context;
+const integrity=fs.readFileSync(path.join(root,"projets/projet-nova/assets/nova-civic-integrity.js"),"utf8");
+vm.runInNewContext(integrity,context,{timeout:1500});
+assert.equal(typeof context.window.__NOVA_CIVIC_INTEGRITY?.scoreCompass,"function",
+  "Le calcul doit provenir du moteur partagé");
 const injection = ";globalThis.__novaRuntimeTest = {state,calculate,renderRadar,buildResultText,configureSharing,isSafeEvidenceUrl,validateDocumentaryCorpora};\n";
 const marker="})();";
 const offset=script.lastIndexOf(marker);
