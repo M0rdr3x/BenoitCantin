@@ -44,6 +44,27 @@ c=clone(compass);c.questions[0].loadings[0].weight=2;
 reject(integrity.inspectCompass,c,"Poids de chargement altéré");
 c=clone(compass);c.partyComparison.enabled=true;
 reject(integrity.inspectCompass,c,"Comparaison de parti non approuvée");
+// La formule utilise exclusivement les réponses locales; les scores n'existent
+// qu'avec au moins deux réponses principales sur chaque dimension.
+assert.equal(typeof integrity.scoreCompass,"function","Calcul officiel indépendant de l'interface");
+const emptyScores=integrity.scoreCompass(compass,new Map());
+assert.equal(emptyScores.length,16);
+assert.ok(emptyScores.every(axis=>axis.score===null&&axis.answered===0));
+const primary=compass.questions.filter(q=>q.axis===compass.axes[0].id);
+const one=new Map([[primary[0].id,{value:3,importance:"normal"}]]);
+assert.equal(integrity.scoreCompass(compass,one)[0].score,null,"Une seule réponse ne crée pas de score");
+one.set(primary[1].id,{value:-3,importance:"forte"});
+assert.equal(integrity.scoreCompass(compass,one)[0].answered,2,"Seuil d'au moins deux réponses atteint");
+assert.notEqual(integrity.scoreCompass(compass,one)[0].score,null);
+const neutral=new Map(compass.questions.map(q=>[q.id,{value:0,importance:"normal"}]));
+assert.ok(integrity.scoreCompass(compass,neutral).every(axis=>
+  axis.score===0&&axis.answered===4&&axis.coverage===100),"Seize axes neutres réellement calculables");
+assert.throws(()=>integrity.scoreCompass(compass,new Map([["q99",{value:3,importance:"normal"}]])),
+  /INVALID_ANSWER/,"Ne jamais calculer une question inconnue");
+assert.throws(()=>integrity.scoreCompass(compass,new Map([[primary[0].id,{value:4,importance:"normal"}]])),
+  /INVALID_ANSWER/,"Ne jamais accepter des réponses hors échelle");
+assert.throws(()=>integrity.scoreCompass(compass,new Map([[primary[0].id,{value:3,importance:"inconnue"}]])),
+  /INVALID_ANSWER/,"Importance hors barème refusée");
 const html=fs.readFileSync(path.join(nova,"sondage-citoyen.html"),"utf8");
 const corpusIndex=html.indexOf("assets/sondage-public-corpus.js?v=1");
 const integrityIndex=html.indexOf("assets/nova-civic-integrity.js?v=1");
