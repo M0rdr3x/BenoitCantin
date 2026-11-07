@@ -4,6 +4,7 @@
   const API = "https://gpvivleexywljowcqkru.supabase.co/functions/v1/nova-civic-poll";
   const VALUES = [-2,-1,0,1,2,9];
   const MIN_NONZERO_CELL = 5;
+  const REQUEST_TIMEOUT_MS = 10000;
   const LABELS = {
     "-2":"Tout à fait en désaccord",
     "-1":"Plutôt en désaccord",
@@ -113,8 +114,16 @@
       host.append(article);
     }
   }
+  // Les GET et les POST ne doivent pas bloquer indéfiniment sur réseau suspendu.
+  // Un POST interrompu reste réessayable avec le même jeton anti-rejeu.
+  async function boundedFetch(url,opts={}) {
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),REQUEST_TIMEOUT_MS);
+    try { return await fetch(url,{...opts,signal:controller.signal}); }
+    finally { clearTimeout(timer); }
+  }
   async function fetchJson(url,opts) {
-    const response=await fetch(url,{cache:"no-store",...opts});
+    const response=await boundedFetch(url,{cache:"no-store",...opts});
     if(!response.ok) throw new Error("HTTP "+response.status);
     return response.json();
   }
@@ -137,7 +146,9 @@
       return data.ballots===null && data.publishedAt===null
         && data.questions.every(q=>q.counts===null);
     }
-    if(data.resultsVisible!==true || !Number.isSafeInteger(data.ballots) || data.ballots<10){
+    // Un lot public sans date authentifiable ne doit pas paraître finalisé.
+    if(data.resultsVisible!==true || !Number.isSafeInteger(data.ballots) || data.ballots<10
+       || typeof data.publishedAt!=="string" || !Number.isFinite(Date.parse(data.publishedAt))){
       return false;
     }
     const keys=VALUES.map(String);
@@ -262,7 +273,7 @@
     if(!captchaToken) {$("poll-feedback").textContent="Effectuez la vérification anti-robots.";return;}
     sending=true; updateButton();
     try {
-      const response=await fetch(API,{
+      const response=await boundedFetch(API,{
         method:"POST",mode:"cors",cache:"no-store",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({version:VERSION,ageConfirmed:true,ballotToken:randomToken(),captchaToken,answers})

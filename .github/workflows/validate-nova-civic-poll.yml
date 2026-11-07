@@ -32,6 +32,7 @@ on:
       - 'scripts/test_nova_evidence_retry.cjs'
       - 'scripts/test_nova_boussole_navigation.cjs'
       - 'scripts/test_nova_poll_runtime.cjs'
+      - 'scripts/test_nova_poll_network.cjs'
       - 'scripts/test_nova_poll_refresh.cjs'
       - 'scripts/test_nova_poll_recovery.cjs'
       - 'scripts/test_nova_edge_snapshot.cjs'
@@ -94,6 +95,8 @@ jobs:
         run: node scripts/test_nova_poll_runtime.cjs
       - name: Valider la fermeture du sondage après incident réseau
         run: node scripts/test_nova_poll_refresh.cjs
+      - name: Tester les délais réseau GET/POST et la récupération après interruption
+        run: node scripts/test_nova_poll_network.cjs
       - name: Tester les contrôles HTTP publics sans réseau
         run: python scripts/smoke_nova_live_public.py --self-test
       - name: Vérifier les tentatives bornées de lecture, sans réseau

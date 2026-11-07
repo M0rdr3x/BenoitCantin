@@ -64,6 +64,10 @@ const publicQuestions=baseQuestions.map(q=>({...q,counts:{...acceptedCounts}}));
 const publication={...hidden,resultsVisible:true,ballots:10,publishedAt:"2026-11-03T20:00:00Z",
   questions:publicQuestions};
 assert.equal(t.validatedPublicResponse(publication),true,"Lot de 10 bulletins cohérent");
+assert.equal(t.validatedPublicResponse({...publication,publishedAt:null}),false,
+  "Une publication sans date doit être rejetée");
+assert.equal(t.validatedPublicResponse({...publication,publishedAt:"date-invalide"}),false,
+  "Une date de publication invalide ne doit pas être affichée");
 // Le navigateur refuse aussi les petites catégories même si le total
 // global d'une question est correct.
 const change=row=>({...publication,questions:publicQuestions.map((q,i)=>i===3
