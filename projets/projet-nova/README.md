@@ -227,6 +227,15 @@ Le programme, le corpus, le cadre financier et les statuts de référence candid
 - **Statut :** **G0.15 NON FRANCHIE**; préparation **47/100**, inchangée. Les textes de référence candidats et le manifeste `data/sources.json` sont conservés.
 - **Étape suivante :** G0.16, microsimulation distributive et de soutenabilité **seulement après collecte et validation des assiettes**.
 
+## G0.16 — Précontrôle de microsimulation (6 novembre 2026)
+
+- **47/100 reste inchangé** : aucun taux fiscal, budget Nova ni droit de réforme certifié.
+- **0/15 preuves fiscales G0.15** validées dans le registre `data/matrice-preuves-g0-15-fiscalite.json`.
+- `assets/g016-microsimulation-gate-core.mjs` : porte technique en lecture seule; contrôle les 15 pièces, la provenance et les faux indicateurs d'approbation; n'autorise jamais la simulation.
+- `tests/g016-microsimulation-gate.test.mjs` : tests de fraude documentaire, doublons, taux inventés et adoption présumée; intégrés à la CI financière.
+- `official/working/protocole-g0-16-precontrole-microsimulation-v1.md` : plan des preuves et examens externes avant tout modèle chiffré.
+- **Page publique :** `avancement-programme-nova.html#precontrole-g016`; les conclusions doivent rester provisoires tant que V01–V15 ne sont pas revues.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
