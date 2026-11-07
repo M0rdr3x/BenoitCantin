@@ -23,6 +23,8 @@ revoke all on table public.sinjira_reader_marks from public, anon;
 grant select, insert, update, delete on table public.sinjira_reader_marks to authenticated;
 create index if not exists sinjira_reader_marks_user_novel_page_idx
   on public.sinjira_reader_marks (user_id, novel_id, page, created_at);
+create index if not exists sinjira_reader_marks_novel_fk_idx
+  on public.sinjira_reader_marks (novel_id);
 create unique index if not exists sinjira_reader_marks_one_bookmark_per_page
   on public.sinjira_reader_marks (user_id, novel_id, page) where kind='bookmark';
 drop policy if exists "sinjira reader marks select own" on public.sinjira_reader_marks;
