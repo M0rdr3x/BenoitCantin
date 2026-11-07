@@ -52,7 +52,7 @@ SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ('AWS access key ID', re.compile(r'\bAKIA[0-9A-Z]{16}\b')),
     ('GitLab access token', re.compile(r'\bglpat-[A-Za-z0-9_-]{20,}\b')),
     ('Private key block', re.compile(r'-----BEGIN (?:RSA |EC |OPENSSH |DSA |ENCRYPTED )?PRIVATE KEY-----')),
-    ('PGP private key block', re.compile(r'-----BEGIN PGP PRIVATE KEY BLOCK-----')),
+    ('PGP private key block', re.compile(r'-----BEGIN PGP ' r'PRIVATE KEY BLOCK-----')),
     ('npm access token', re.compile(r'\bnpm_[A-Za-z0-9]{36,}\b')),
     ('Slack access token', re.compile(r'\bxox[baprs]-[A-Za-z0-9-]{20,}\b')),
     (
