@@ -44,11 +44,11 @@ def main() -> None:
 
     for page, names in (
         ("boussole-electorale.html",("assets/boussole-public-corpus.js?v=1","assets/boussole-electorale.js?v=3.4.19")),
-        ("sondage-citoyen.html",("assets/sondage-public-corpus.js?v=1","assets/sondage-citoyen.js?v=11")),
+        ("sondage-citoyen.html",("assets/sondage-public-corpus.js?v=1","assets/nova-civic-integrity.js?v=1","assets/sondage-citoyen.js?v=12")),
     ):
         content = (NOVA / page).read_text(encoding="utf-8")
         assert all(content.count(name) == 1 for name in names), page
-        assert content.index(names[0]) < content.index(names[1]), f"Ordre de chargement invalide: {page}"
+        assert [content.index(name) for name in names] == sorted(content.index(name) for name in names), f"Ordre de chargement invalide: {page}"
 
     jekyll = (ROOT / "scripts" / "validate_jekyll_emergency_pages.py").read_text(encoding="utf-8")
     assert '"projets/projet-nova/assets/boussole-public-corpus.js"' in jekyll
