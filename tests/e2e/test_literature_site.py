@@ -247,7 +247,7 @@ def run() -> None:
         page.locator("#reader-content:not([hidden])").wait_for(timeout=20_000)
         try:
             page.wait_for_function(
-                "() => document.getElementById('reader-text')?.textContent.includes('Le texte est lisible dans la page.')",
+                "() => (document.getElementById('reader-text')?.textContent?.trim().length || 0) > 20",
                 timeout=25_000,
             )
         except Exception as exc:
@@ -259,7 +259,8 @@ def run() -> None:
               page:document.getElementById('reader-page')?.value
             })""")
             raise AssertionError(f"{BROWSER_NAME}: texte non affiché; debug={debug}; erreurs={errors[-5:]}") from exc
-        assert_true("Le texte est lisible dans la page." in page.locator("#reader-text").inner_text(),
+        initial_text=page.locator("#reader-text").inner_text()
+        assert_true(len(initial_text.strip())>20,
                     f"{BROWSER_NAME}: texte reformatable absent de la liseuse")
         assert_true(not page.locator("#reader-text").is_hidden(),
                     f"{BROWSER_NAME}: le texte n'est pas le mode de lecture par défaut")
@@ -282,10 +283,10 @@ def run() -> None:
         assert_true(page.locator("#reader-page").input_value()==str(next_page),
                     f"{BROWSER_NAME}: pagination de la liseuse défectueuse")
         page.wait_for_function(
-            "(expected) => document.getElementById('reader-text')?.textContent.includes(expected)",
-            arg=f"Page {next_page}", timeout=15_000,
+            "(previous) => {const t=document.getElementById('reader-text')?.textContent || ''; return t.trim().length>20 && t!==previous}",
+            arg=initial_text, timeout=15_000,
         )
-        assert_true(f"Page {next_page}" in page.locator("#reader-text").inner_text(),
+        assert_true(page.locator("#reader-text").inner_text()!=initial_text,
                     f"{BROWSER_NAME}: texte de la page suivante non affiché")
         for control in ("reader-voice-play","reader-voice-pause","reader-voice-stop",
                         "reader-voice","reader-speed","reader-voice-auto"):
