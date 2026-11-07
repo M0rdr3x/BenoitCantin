@@ -1,0 +1,53 @@
+name: SINJIRA — liseuse et bibliothèque segmentée
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'compte/bibliotheque*.html'
+      - 'compte/liseuse.html'
+      - 'projets/sinjira/romans/**'
+      - 'assets/js/sinjira-liseuse-v26.js'
+      - 'assets/js/sinjira-library-hub-v26.js'
+      - 'assets/js/sinjira-reads-v24-4-61.js'
+      - 'assets/css/sinjira-liseuse-v26.css'
+      - 'scripts/validate_sinjira_liseuse_v26.py'
+      - '.github/workflows/sinjira-liseuse-v26.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compte/bibliotheque*.html'
+      - 'compte/liseuse.html'
+      - 'projets/sinjira/romans/**'
+      - 'assets/js/sinjira-liseuse-v26.js'
+      - 'assets/js/sinjira-library-hub-v26.js'
+      - 'assets/js/sinjira-reads-v24-4-61.js'
+      - 'assets/css/sinjira-liseuse-v26.css'
+      - 'scripts/validate_sinjira_liseuse_v26.py'
+      - '.github/workflows/sinjira-liseuse-v26.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-liseuse-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  reader-and-library:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Vérifier les catégories, la liseuse et l'isolement des fichiers privés
+        run: python3 scripts/validate_sinjira_liseuse_v26.py
+      - name: Vérifier les limites de la diffusion privée
+        run: python3 scripts/validate_sinjira_livre_i_delivery.py
+      - name: Vérifier les droits numériques en lecture seule
+        run: python3 scripts/validate_livre_i_entitlement_boundary.py

@@ -98,8 +98,8 @@ def main() -> int:
         require(path.exists(), f"élément manquant: {path.relative_to(ROOT)}")
 
     account_pages = {f"/compte/{path.name}" for path in ACCOUNT_DIR.glob("*.html") if path.is_file()}
-    require(len(account_pages) == 42,
-            f"inventaire compte attendu à 42 pages, trouvé {len(account_pages)}")
+    require(len(account_pages) == 46,
+            f"inventaire compte attendu à 46 pages, trouvé {len(account_pages)}")
     natives = native_routes()
     require(len(natives) == 31, f"31 routes natives attendues, trouvé {len(natives)}")
 
@@ -168,7 +168,7 @@ def main() -> int:
         "signalement de décès",
         "cinq ancres sécurité",
         "aucune destination externe",
-        "42 pages",
+        "46 pages",
         "31 routes natives",
     ):
         require(marker in docs, f"preuve documentaire manquante: {marker}")

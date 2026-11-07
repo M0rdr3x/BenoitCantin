@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#0b1422">
+<title>Liseuse SINJIRA — La Cendre du Jugement</title>
+<link rel="icon" type="image/png" href="/assets/icons/sinjira-favicon.png">
+<link rel="stylesheet" href="/assets/css/site.css?v=24.4">
+<link rel="stylesheet" href="/assets/css/sinjira-liseuse-v26.css?v=26.11.07">
+</head>
+<body class="sinjira-liseuse account-page" data-read-theme="sepia">
+<a class="skip-link" href="#reader-viewer">Aller au livre</a>
+<header class="reader-top"><div class="reader-top-inner">
+  <a class="reader-brand" href="/projets/sinjira/"><img src="/assets/media/sinjira-emblem.webp" alt=""> SINJIRA™</a>
+  <div class="reader-top-title"><strong>La Cendre du Jugement</strong><small id="reader-edition">Préparation de la lecture…</small></div>
+  <a class="reader-return" href="/compte/bibliotheque-romans.html">← Mes romans</a>
+</div></header>
+<main class="reader-layout" id="contenu">
+<aside class="reader-sidebar" aria-label="Réglages de la lecture">
+  <h2>Ma liseuse</h2>
+  <div><label for="reader-chapters">Aller à un chapitre</label>
+  <select id="reader-chapters" aria-label="Sommaire du roman"></select></div>
+  <div><label for="reader-theme">Apparence</label>
+  <select id="reader-theme"><option value="sepia">Papier sépia</option><option value="clair">Papier blanc</option><option value="nuit">Mode nuit</option></select></div>
+  <div><label for="reader-size">Taille du texte (mode texte)</label>
+  <input id="reader-size" type="range" min="16" max="32" step="1" value="20" aria-label="Taille du texte"></div>
+  <div><label for="reader-zoom">Zoom des pages</label>
+  <select id="reader-zoom"><option value="0.8">80 %</option><option value="1">100 %</option><option value="1.2">120 %</option><option value="1.5">150 %</option></select></div>
+  <p class="reader-side-note" id="reader-privacy">Chargement de la politique de lecture…</p>
+  <a class="reader-demo-link" id="reader-demo-link" href="/compte/liseuse.html?edition=demo" hidden>Lire l’extrait gratuit</a>
+  <a class="reader-demo-link" id="reader-download-demo" href="/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf" download>Télécharger la démo PDF</a>
+</aside>
+<section class="reader-stage" aria-label="Lecture du roman">
+  <p class="reader-status" id="reader-status" role="status" aria-live="polite">Chargement de la liseuse…</p>
+  <div class="reader-loading" id="reader-loading" aria-live="polite">
+    <p>Préparation du livre et de la mise en page…</p>
+    <p><small>La démo est publique. Le roman intégral exige une connexion et une autorisation du serveur.</small></p>
+  </div>
+  <div id="reader-error" hidden class="reader-footer">
+    <a id="reader-native-demo" href="/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf" hidden>Ouvrir le PDF gratuit dans le lecteur du navigateur</a>
+    <p>Vous pouvez également <a href="/compte/bibliotheque-romans.html">retourner à la bibliothèque</a>.</p>
+  </div>
+  <div id="reader-content" hidden>
+    <div class="reader-tools" aria-label="Navigation dans le livre">
+      <button id="reader-previous" type="button">← Précédente</button>
+      <label for="reader-page">Page</label>
+      <input id="reader-page" type="number" min="1" max="520" value="1" inputmode="numeric">
+      <span>sur <strong id="reader-total">—</strong></span>
+      <button id="reader-next" type="button">Suivante →</button>
+      <button id="reader-mode" type="button" aria-label="Basculer entre lecture des pages et lecture du texte">Mode texte</button>
+    </div>
+    <div class="reader-tools">
+      <label for="reader-range">Progression</label>
+      <input id="reader-range" type="range" min="1" max="520" value="1" aria-label="Naviguer dans les pages du livre">
+      <span id="reader-percent">0 %</span>
+      <span id="reader-chapter-label" aria-live="polite"></span>
+    </div>
+    <div class="reader-progress" aria-hidden="true"><span id="reader-bar"></span></div>
+    <div class="reader-viewer" id="reader-viewer" tabindex="0" aria-label="Texte du roman ou page PDF">
+      <canvas id="reader-canvas" role="img" aria-label="Page du roman — activer le mode texte pour une lecture accessible"></canvas>
+      <article id="reader-text" class="reader-text" hidden aria-label="Texte sélectionnable de la page"></article>
+    </div>
+    <p class="reader-footer">La page est mémorisée sur cet appareil. Pour la version intégrale, la progression est également synchronisée à votre compte lorsque le serveur le permet. Utilisez les flèches du clavier pour tourner les pages.</p>
+  </div>
+</section>
+</main>
+<script defer src="/assets/js/site.js?v=24.4.100"></script>
+<script type="module" src="/assets/js/sinjira-liseuse-v26.js?v=26.11.07"></script>
+</body>
+</html>

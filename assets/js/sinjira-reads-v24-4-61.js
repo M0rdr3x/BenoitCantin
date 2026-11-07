@@ -37,7 +37,7 @@ async function load(){
         ${progressBar(progress)}
         <p>${saved?`Dans votre bibliothèque · progression ${progress}%${saved.last_page?` · page ${Number(saved.last_page)}`:''}`:'Pas encore ajouté à votre bibliothèque.'}</p>
         <div class="hero-actions">
-          ${novel.demo_path?`<a class="btn btn-primary" href="${escapeHtml(novel.demo_path)}">${saved&&progress>0?'Continuer ma lecture':'Lire la démo'}</a>`:''}
+          ${novel.demo_path?`<a class="btn btn-primary" href="${novel.slug==='la-cendre-du-jugement'?'/compte/liseuse.html?edition=demo':escapeHtml(novel.demo_path)}">${saved&&progress>0?'Continuer ma lecture':'Lire la démo'}</a>`:''}${novel.slug==='la-cendre-du-jugement'?'<a class="btn btn-secondary" href="/compte/liseuse.html?edition=integrale">Lire l’intégrale (accès privé)</a>':''}
           <a class="btn btn-secondary" href="${escapeHtml(novel.public_path||'/projets/sinjira/romans/')}">Page du roman</a>
           ${saved?`<button class="btn btn-secondary" type="button" data-v2461-remove-read="${novel.id}">Retirer de ma bibliothèque</button>`:`<button class="btn btn-secondary" type="button" data-v2461-add-read="${novel.id}">Ajouter à ma bibliothèque</button>`}
         </div>

@@ -12,7 +12,7 @@ Cette étape ne migre aucune donnée, ne change aucune règle serveur et ne rend
 
 ## État de référence
 
-Le dépôt contient actuellement **42 pages HTML** directement sous `compte/`.
+Le dépôt contient actuellement **46 pages HTML** directement sous `compte/`.
 
 Elles sont réparties dans sept catégories disjointes :
 
@@ -22,7 +22,7 @@ Elles sont réparties dans sept catégories disjointes :
 4. 1 Registre personnel Web avec garde local ponctuel puis protections serveur;
 5. 5 flux Web d’authentification/MFA;
 6. 1 procédure Web sensible de signalement de décès;
-7. 2 pages Web contextuelles ou informatives.
+7. 6 pages Web contextuelles ou informatives.
 
 Aucune page n’est laissée « non classée ».
 
@@ -122,18 +122,22 @@ Ces pages sont des étapes d’établissement, de récupération ou de renforcem
 
 Le signalement d’un décès reste une procédure Web/serveur distincte. Aucun hub natif générique ne doit pouvoir valider un décès, déclencher une remise posthume ou prendre une décision irréversible à partir d’une simple intention de navigation.
 
-## 7. Pages Web contextuelles ou informatives — 2
+## 7. Pages Web contextuelles ou informatives — 6
 
 - `/compte/projet.html` : vue dynamique d’un projet sélectionné dans la Bibliothèque;
 - `/compte/confidentialite-joueur.html` : page d’information qui renvoie vers le Centre Vie privée pour les actions réelles.
+- `/compte/bibliotheque-romans.html` : collection littéraire et suivi de lecture, sans exposition du roman intégral;
+- `/compte/bibliotheque-jeux.html` : catalogue de jeux séparé, sans droits supplémentaires;
+- `/compte/bibliotheque-ressources.html` : documents et liens de compte, avec autorisation individuelle de chaque ressource;
+- `/compte/liseuse.html` : lecteur de PDF, démo publique ou intégrale après contrôle d’identité et de droits par Edge Function.
 
-Ces pages restent Web parce que leur rôle n’est pas celui d’un module natif autonome.
+Ces pages restent Web parce que leur rôle n’est pas celui d’un module natif autonome. La liseuse ne reçoit aucun droit implicite via le routage : le PDF complet n'est délivré que par l'endpoint serveur existant aux comptes autorisés. Les nouveaux chemins restent hors du sas natif et du stockage embarqué.
 
 ## Invariant CI
 
 `validate_mobile_native_account_route_classification_v25.py` doit vérifier :
 
-- que les 42 fichiers réels sont exactement couverts par les catégories ci-dessus;
+- que les 46 fichiers réels sont exactement couverts par les catégories ci-dessus;
 - que les catégories sont disjointes;
 - que les 31 routes natives sont exactement celles déclarées dans `NATIVE_MODULE_PATHS`;
 - qu’aucune route Web sensible ou spéciale n’est présente dans `NativeModuleRouter`;

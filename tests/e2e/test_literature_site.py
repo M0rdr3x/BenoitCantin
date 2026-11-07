@@ -124,7 +124,9 @@ def run() -> None:
         download_link = page.locator(f'a[download="{DEMO_BASENAME}"]')
         assert_true(download_link.count() == 1, f"{BROWSER_NAME}: téléchargement PDF nommé absent ou dupliqué")
         assert_true(download_link.get_attribute("type") == "application/pdf", f"{BROWSER_NAME}: type PDF du téléchargement absent")
-        assert_true(page.locator('a[href="/compte/bibliotheque.html#livre-i"]').count() == 1, f"{BROWSER_NAME}: accès privé Livre I absent de la fiche")
+        assert_true(page.locator('a[href="/compte/liseuse.html?edition=integrale"]').count() == 1, f"{BROWSER_NAME}: accès privé Livre I absent de la fiche")
+        assert_true(page.locator('a[href="/compte/liseuse.html?edition=demo"]').count() >= 1,
+                    f"{BROWSER_NAME}: lien vers la liseuse gratuite absent")
         assert_no_full_edition_link(page, "Littérature")
 
         pdf_head = context.request.head(urljoin(BASE_URL, DEMO_ROUTE), timeout=30_000)
@@ -176,7 +178,7 @@ def run() -> None:
         assert_true(FULL_BASENAME not in page.content(), f"{BROWSER_NAME}: nom du fichier intégral exposé dans le lecteur")
 
         assert_true(page.locator('body[data-reader-total-pages="82"]').count() == 1, f"{BROWSER_NAME}: pagination canonique 82 pages absente du lecteur")
-        assert_true(page.locator('a[href="/compte/bibliotheque.html#livre-i"]').count() == 1, f"{BROWSER_NAME}: accès privé Livre I absent du lecteur")
+        assert_true(page.locator('a[href="/compte/liseuse.html?edition=integrale"]').count() == 1, f"{BROWSER_NAME}: accès privé Livre I absent du lecteur")
         assert_true(page.locator('input[data-reader-page-number][aria-label="Numéro de page"]').count() == 1, f"{BROWSER_NAME}: champ de page lecteur non nommé")
         assert_true(page.locator("input[data-reader-page-number]").get_attribute("max") == "82", f"{BROWSER_NAME}: maximum du lecteur différent de 82")
         assert_true(page.locator('[data-reader-resume][aria-live="polite"]').count() == 1, f"{BROWSER_NAME}: reprise lecteur non annoncée aux aides techniques")
