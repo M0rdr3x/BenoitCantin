@@ -277,6 +277,20 @@ Les quatre références candidates de `official/reference/*` et `data/sources.js
 
 **Suite G0.16d :** obtenir ventilation des déductions/crédits, données fiscales des sociétés avec millésimes distincts, distributions de dépenses et effet sur les ménages; rapprocher les deux budgets à dix ans puis auditer indépendamment les hypothèses. Les fichiers candidats `official/reference/*` et `data/sources.json` ne sont pas modifiés.
 
+## G0.16d — Première assiette observée des sociétés et séparation du FSS (7 novembre 2026)
+
+**Programme : 47/100, inchangé.** La source publique du **ministère des Finances du Québec**, statistiques fiscales des sociétés de l'**année d'imposition 2021** (page actualisée le 7 octobre 2026), est transcrite, sans prétendre produire un taux Nova ou un budget financé.
+
+- **Assiettes distinctes :** revenu imposable des sociétés au Québec **95 784 M$**; salaires soumis au FSS **155 850 M$**. La deuxième assiette n'est pas un profit imposable.
+- **Prélèvements :** impôt sociétés **10 000 M$** + cotisations FSS **5 327 M$** = **15 327 M$**; crédits d'impôt **2 468 M$**, total net publié **12 860 M$** (différence d'arrondi de 1 M$).
+- **Déclarations :** **564 599** sociétés, dont **542 249 petites**, **14 858 moyennes** et **7 492 grandes**; leurs prélèvements totalisent respectivement **4 095**, **2 560** et **8 672 M$**.
+- **Registre :** `data/assiette-societes-g0-16d-2021.json`; contrôleur `assets/g016d-corporate-base-core.mjs`; tests `tests/g016d-corporate-base.test.mjs`.
+- **Rapport détaillé :** `official/working/rapport-g0-16d-assiettes-et-prelevements-societes-2021-v1.md`.
+- **Limites :** les sociétés 2021, les particuliers 2023 et les prévisions 2026–2027 sont de **périodes et populations différentes**; les données T2 fédérales de l'ARC ne contiennent pas l'impôt provincial des sociétés québécoises.
+- **Preuves :** éclairage documentaire partiel sur **V04/V06/V13**, toujours **`A_DOCUMENTER`** dans le registre G0.15. **0/15 preuves entièrement validées indépendamment**, aucun nouveau taux, aucun coût de remplacement des cotisations ni financement souverain établi.
+
+**Étape G0.16e :** actualiser la série fiscale des sociétés, vérifier pertes/crédits et assiettes légales, comptabiliser séparément les cotisations et services, harmoniser les dates et produire ensuite un dossier de soutenabilité à deux statuts constitutionnels. Les fichiers `official/reference/*` et `data/sources.json` restent inchangés.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
