@@ -22,6 +22,8 @@ Projet Nova est une démarche politique citoyenne québécoise en construction. 
 
 **Consentement et droit électoral :** la case de consentement du sondage exprime maintenant sa finalité, le caractère sensible des opinions, la publication conditionnelle de résultats agrégés et l'impossibilité de retirer un bulletin individuel après agrégation. Le rapport `official/working/controle-juridique-confidentialite-sondage-2026-11-07-v1.md` expose les références de la CAI et d'Élections Québec et les risques encore soumis à revue indépendante. Le sondage reste fermé.
 
+**Vérification directe renforcée :** 70/70 cas des trois suites de tests ont aussi été rejoués avec succès dans un isolat V8 à partir des fichiers GitHub, avec émulation minimale des interfaces Node. **Ce n'est ni une exécution Node native ni une preuve d'un CI GitHub réussi**; il reste à obtenir les journaux d'exécution officiels, l'audit navigateurs et la validation du déploiement.
+
 **Portes non franchies :** parcours complet de 64 questions jusqu'aux résultats, cas `skip` et importance, tests multi-navigateurs et accessibilité, publication incrémentale et confidentialité des lots, envois Turnstile anti-rejeu en préproduction, revue juridique et autorisation d'ouverture du sondage. La comparaison des partis demeure **désactivée** tant que la couverture documentaire et les revues indépendantes ne sont pas établies. La suite GitHub Actions n'est pas attestée réussie ni la dernière version HTML/JS confirmée déployée. Ne pas proclamer « 100 % ».
 
 **Distinct du score politique G0.12 :** l'évaluation interne globale du programme demeure à **47/100**, sans rapport direct avec le nombre de tests ou de critères des deux outils.
