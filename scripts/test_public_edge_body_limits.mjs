@@ -53,6 +53,7 @@ async function run() {
     ['supabase/functions/get-document-url/index.ts', 'readLimitedUtf8Body(req,MAX_REQUEST_BYTES)'],
     ['supabase/functions/send-game-report/index.ts', 'readLimitedUtf8Body(req, MAX_REQUEST_BYTES)'],
     ['supabase/functions/life-story-delivery/index.ts', 'readLimitedUtf8Body(req, MAX_REQUEST_BYTES)'],
+    ['supabase/functions/security-context/index.ts', 'readLimitedUtf8Body(req, MAX_REQUEST_BYTES)'],
   ]) {
     const source = readFileSync(resolve(root, path), 'utf8');
     assert.ok(source.includes("limited-body.mjs"), path + ': import absent');
@@ -60,6 +61,6 @@ async function run() {
     assert.ok(!source.includes('await req.text()'), path + ': lecture non bornée');
     assert.ok(!source.includes('await req.json()'), path + ': JSON non borné');
   }
-  console.log('PASS: limites de corps HTTP en flux, UTF-8, headers trompeurs et intégration des 3 fonctions publiques.');
+  console.log('PASS: limites de corps HTTP en flux, UTF-8, headers trompeurs et intégration des 4 fonctions surveillées.');
 }
 await run();
