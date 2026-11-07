@@ -208,7 +208,6 @@
   .sinjira-liseuse.reader-focus-mode .reader-viewer{height:calc(100dvh - 255px)}
 }
 
-
 /* V29 — lecture continue d'un chapitre entier, sans iframe ni rupture visuelle. */
 .sinjira-liseuse .reader-chapter-scroll{
   max-width:min(var(--reader-measure),calc(100% - 4px));
