@@ -22,17 +22,17 @@ test("deux outils : matrice complète et audit Nova distinct",()=>{
  assert.equal(d.decision.both_tools_100_percent,false);
  assert.equal(d.status,"NON_HOMOLOGUE");
 });
-test("boussole : quatre portes passées et six encore en attente",()=>{
+test("boussole : cinq portes contrôlées sur douze",()=>{
  assert.equal(d.compass.questions,64);
  assert.equal(d.compass.dimensions,16);
- assert.equal(d.compass.gates.length,10);
- assert.equal(passed(d.compass),4);
+ assert.equal(d.compass.gates.length,12);
+ assert.equal(passed(d.compass),5);
  validate(d.compass);
 });
-test("sondage : cinq portes passées et cinq encore en attente",()=>{
+test("sondage : six portes contrôlées sur onze",()=>{
  assert.equal(d.poll.questions,8);
- assert.equal(d.poll.gates.length,10);
- assert.equal(passed(d.poll),5);
+ assert.equal(d.poll.gates.length,11);
+ assert.equal(passed(d.poll),6);
  validate(d.poll);
 });
 test("vote en production non simulé, ni ouvert artificiellement",()=>{
@@ -62,4 +62,18 @@ test("la mise en service exige une autorisation séparée",()=>{
 test("le score politique 47/100 n'est jamais déduit du nombre de tests",()=>{
  assert.equal(d.decision.overall_programme_percent_revised,false);
  assert.equal(d.programme_audit_g012.preparation_percent,47);
+});
+
+test("les 260 comparaisons du calcul ne remplacent pas une vérification E2E à 64 questions",()=>{
+ assert.equal(d.cross_cutting.score_parity_test_cases,260);
+ assert.equal(d.cross_cutting.last_browser_all_skip_questions_verified,25);
+ assert.equal(d.cross_cutting.last_browser_full_64_completed,false);
+ assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_SCORE_PARITY").status,"PASSED");
+ assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_PARTIAL_PROFILE_RELEASE").status,"PENDING");
+});
+test("revue du code serveur sans autoriser la soumission en production",()=>{
+ assert.equal(d.poll.gates.find(x=>x.id==="POLL_SERVER_SOURCE_REVIEW").status,"PASSED");
+ assert.equal(d.cross_cutting.vote_post_live_tested,false);
+ assert.equal(d.poll.published_in_source,false);
+ assert.equal(d.decision.opening_poll_approved,false);
 });
