@@ -6,6 +6,20 @@
 
 Projet Nova est une démarche politique citoyenne québécoise en construction. Le site distingue les propositions politiques, les textes de référence candidats, les archives, les validations en cours et toute éventuelle activation future.
 
+## Qualité du sondage et de la boussole (audit 2026-11-07)
+
+**Objectif : tests complets et critères de réception prouvés avant toute affirmation « 100 % ».** Les deux pages ont été contrôlées en navigateur sans envoyer de bulletin. Le **questionnaire de la boussole (64 questions / 16 dimensions)** a passé les contrôles de cohérence des pôles et les premières étapes du parcours. Les **huit questions du sondage** correspondent exactement à leurs homologues GitHub, au bundle JS publié dans le dépôt et aux huit questions Supabase.
+
+**Améliorations directement effectuées :** `assets/nova-civic-integrity.js` (contrôles purs des questions, poids et orientations); `assets/boussole-electorale.js` et `assets/sondage-citoyen.js` (validation obligatoire à la lecture); `sondage-citoyen.html` (progression accessible); `assets/sondage-citoyen.css` (style adapté) et chargements JS versionnés dans les deux pages. Le chargement des fiches partisanes refuse aussi un questionnaire non valide.
+
+**Tests et sécurité :** `tests/nova-civic-integrity.test.mjs` déclare **34 tests**, `tests/nova-civic-readiness.test.mjs` en déclare **8**. La revue en lecture seule de Supabase constate **5 tables protégées par RLS** et sans privilèges SQL CRUD pour `anon` ou `authenticated`. Le RPC `nova_poll_submit` est exécutable uniquement par `service_role`. **Aucune soumission de production n'a été créée**; le sondage reste fermé, les comptes de votes et de publication sont à zéro. Les résultats publics restent cachés.
+
+**Matrice de réception :** `data/validation-sondage-boussole-2026-11-07.json` — **4/10 critères attestés pour la boussole**, **5/10 pour le sondage**, le reste est en attente. **Rapport :** `official/working/audit-qualite-sondage-boussole-2026-11-07-v1.md`. Preuve de navigation externe non destructive : https://agent.tinyfish.ai/runs/59ec01c2-2ef7-407f-a5bd-20e52b7b64e4.
+
+**Portes non franchies :** parcours complet de 64 questions jusqu'aux résultats, cas `skip` et importance, tests multi-navigateurs et accessibilité, publication incrémentale et confidentialité des lots, envois Turnstile anti-rejeu en préproduction, revue juridique et autorisation d'ouverture du sondage. La comparaison des partis demeure **désactivée** tant que la couverture documentaire et les revues indépendantes ne sont pas établies. La suite GitHub Actions n'est pas attestée réussie ni la dernière version HTML/JS confirmée déployée. Ne pas proclamer « 100 % ».
+
+**Distinct du score politique G0.12 :** l'évaluation interne globale du programme demeure à **47/100**, sans rapport direct avec le nombre de tests ou de critères des deux outils.
+
 ## Sources publiques prioritaires
 - `official/reference/corpus.md` : architecture institutionnelle et corpus maître public;
 - `official/reference/statuts.md` : statuts et gouvernance candidats du Parti Nova;
