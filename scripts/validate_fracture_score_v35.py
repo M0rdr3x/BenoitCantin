@@ -44,6 +44,9 @@ def validate():
         'centralCards:2*seats', 'dealtCards:3*seats',
         'rounds:express?6:10', 'if(express&&h<13)',
         'ballots:h*agents', 'resistanceWins>reseauWins',
+        'CARTES_PAR_FACTION', 'SCORE_POSSIBLE_PAR_FACTION',
+        'possibleOperationScores(config.centralCards,resistance,reseau)',
+        'maxScoreForCards(2*seats)',
         "status:winner?'finished':'tie-breaker'",
     ]:
         if token not in model:
