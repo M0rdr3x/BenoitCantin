@@ -1,0 +1,360 @@
+{
+  "schema": "nova-g016p-municipal-tax-comparison-v1",
+  "phase": "G0.16p",
+  "date": "2026-11-08",
+  "status": "SOURCE_BACKED_TAX_SCHEDULES_NO_VERIFIED_CASH_OR_HOUSEHOLD_BILLS",
+  "score_before": 47,
+  "score_after": 47,
+  "adopted": false,
+  "prior": "data/taxes-warwick-2026-et-preuves-versements-g0-16o.json",
+  "sources": [
+    {
+      "id": "LAVAL_2026",
+      "city": "Laval",
+      "url": "https://www.laval.ca/wp-content/uploads/2026/02/evolution-taux-taxation-tarification.pdf",
+      "year": 2026,
+      "pdf_text_reviewed": true,
+      "pdf_visual_verified": true,
+      "printed_page": 73
+    },
+    {
+      "id": "GATINEAU_2026",
+      "city": "Gatineau",
+      "url": "https://www.gatineau.ca/docs/guichet_municipal/administration_municipale/budget/budget_2026/budget.fr-CA.pdf",
+      "year": 2026,
+      "pdf_text_reviewed": true,
+      "pdf_visual_verified": false,
+      "visual_failure": "PDF trop volumineux",
+      "printed_page": 15
+    },
+    {
+      "id": "GATINEAU_NEIGHBOURHOOD",
+      "city": "Gatineau",
+      "url": "https://www.gatineau.ca/taxes/",
+      "year": 2026,
+      "pdf_text_reviewed": null,
+      "pdf_visual_verified": null
+    }
+  ],
+  "cities": [
+    {
+      "id": "WARWICK",
+      "tax_year": 2026,
+      "source": "G0.16o",
+      "general_residual_rate_per_100": 0.575,
+      "full_bill_verified_cad": null,
+      "cash_revenue_verified_cad": null
+    },
+    {
+      "id": "LAVAL",
+      "tax_year": 2026,
+      "source": "LAVAL_2026",
+      "general_base_rate_per_100": 0.4973,
+      "water_special_base_rate_per_100": 0.0111,
+      "artm_special_base_rate_per_100": 0.0825,
+      "selected_base_sum_per_100": 0.5909,
+      "six_plus_general_rate_per_100": 0.6629,
+      "additional_charges_unknown": true,
+      "full_bill_verified_cad": null,
+      "cash_revenue_verified_cad": null
+    },
+    {
+      "id": "GATINEAU",
+      "tax_year": 2026,
+      "source": "GATINEAU_2026",
+      "ordinary_residential_general_rate_per_1000": null,
+      "by_neighbourhood": true,
+      "six_plus_general_rate_per_1000": 6.964,
+      "transit_rate_per_1000": 1.417,
+      "new_city_debt_rate_per_1000": 0.83,
+      "waste_rate_per_logis": 178.83,
+      "municipal_median_model": {
+        "type": "PUBLISHED_CITY_BUDGET_EXAMPLE_NOT_ACTUAL_INDIVIDUAL_BILL",
+        "assessed_value_cad": 454600,
+        "general_cad": 2374.83,
+        "transit_cad": 644.17,
+        "waste_cad": 178.83,
+        "debt_cad": 377.32,
+        "selected_subtotal_cad": 3575.15,
+        "sector_extras_excluded": true,
+        "actual_bill_cad": null
+      },
+      "full_bill_verified_cad": null,
+      "cash_revenue_verified_cad": null
+    }
+  ],
+  "missing_proofs": [
+    {
+      "id": "P1",
+      "item": "Port-Daniel–Gascons règlement de taxation 2026 officiel",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "P2",
+      "item": "Unités de voisinage et catégorie exacte à Gatineau",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "P3",
+      "item": "Versements PRIMEAU comptabilisés par projet",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "P4",
+      "item": "Dette effectivement tirée et service réel",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "P5",
+      "item": "Factures représentatives anonymisées et services desservis",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "P6",
+      "item": "Coûts des actifs, entretien et obligations des travailleurs",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "P7",
+      "item": "Incidence par revenu disponible et par territoire",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "P8",
+      "item": "Avis juridiques et audit financier indépendants",
+      "status": "NOT_VERIFIED"
+    }
+  ],
+  "boundaries": {
+    "same_tax_year": true,
+    "comparable_total_bills": false,
+    "assessed_value_is_household_income": false,
+    "selected_rates_are_full_tax_bill": false,
+    "city_budget_is_audited_cash": false,
+    "grant_award_is_cash_payment": false,
+    "flat_gatineau_residential_rate_available": false,
+    "tax_savings_nova_calculated": false,
+    "sovereignty_federal_transfers_presumed": false
+  },
+  "scenarios": [
+    {
+      "id": "QUEBEC_CANADA",
+      "independently_audited": false,
+      "years": [
+        {
+          "year": 2026,
+          "property_tax_replacement_cad": null,
+          "municipal_service_costs_cad": null,
+          "employees_and_pensions_cad": null,
+          "debt_service_cad": null,
+          "grants_cash_verified_cad": null,
+          "replacement_revenue_cad": null,
+          "balance_cad": null
+        },
+        {
+          "year": 2027,
+          "property_tax_replacement_cad": null,
+          "municipal_service_costs_cad": null,
+          "employees_and_pensions_cad": null,
+          "debt_service_cad": null,
+          "grants_cash_verified_cad": null,
+          "replacement_revenue_cad": null,
+          "balance_cad": null
+        },
+        {
+          "year": 2028,
+          "property_tax_replacement_cad": null,
+          "municipal_service_costs_cad": null,
+          "employees_and_pensions_cad": null,
+          "debt_service_cad": null,
+          "grants_cash_verified_cad": null,
+          "replacement_revenue_cad": null,
+          "balance_cad": null
+        },
+        {
+          "year": 2029,
+          "property_tax_replacement_cad": null,
+          "municipal_service_costs_cad": null,
+          "employees_and_pensions_cad": null,
+          "debt_service_cad": null,
+          "grants_cash_verified_cad": null,
+          "replacement_revenue_cad": null,
+          "balance_cad": null
+        },
+        {
+          "year": 2030,
+          "property_tax_replacement_cad": null,
+          "municipal_service_costs_cad": null,
+          "employees_and_pensions_cad": null,
+          "debt_service_cad": null,
+          "grants_cash_verified_cad": null,
+          "replacement_revenue_cad": null,
+          "balance_cad": null
+        },
+        {
+          "year": 2031,
+          "property_tax_replacement_cad": null,
+          "municipal_service_costs_cad": null,
+          "employees_and_pensions_cad": null,
+          "debt_service_cad": null,
+          "grants_cash_verified_cad": null,
+          "replacement_revenue_cad": null,
+          "balance_cad": null
+        },
+        {
+          "year": 2032,
+          "property_tax_replacement_cad": null,
+          "municipal_service_costs_cad": null,
+          "employees_and_pensions_cad": null,
+          "debt_service_cad": null,
+          "grants_cash_verified_cad": null,
+          "replacement_revenue_cad": null,
+          "balance_cad": null
+        },
+        {
+          "year": 2033,
+          "property_tax_replacement_cad": null,
+          "municipal_service_costs_cad": null,
+          "employees_and_pensions_cad": null,
+          "debt_service_cad": null,
+          "grants_cash_verified_cad": null,
+          "replacement_revenue_cad": null,
+          "balance_cad": null
+        },
+        {
+          "year": 2034,
+          "property_tax_replacement_cad": null,
+          "municipal_service_costs_cad": null,
+          "employees_and_pensions_cad": null,
+          "debt_service_cad": null,
+          "grants_cash_verified_cad": null,
+          "replacement_revenue_cad": null,
+          "balance_cad": null
+        },
+        {
+          "year": 2035,
+          "property_tax_replacement_cad": null,
+          "municipal_service_costs_cad": null,
+          "employees_and_pensions_cad": null,
+          "debt_service_cad": null,
+          "grants_cash_verified_cad": null,
+          "replacement_revenue_cad": null,
+          "balance_cad": null
+        }
+      ]
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "independently_audited": false,
+      "years": [
+        {
+          "year": 2026,
+          "property_tax_replacement_cad": null,
+          "municipal_service_costs_cad": null,
+          "employees_and_pensions_cad": null,
+          "debt_service_cad": null,
+          "grants_cash_verified_cad": null,
+          "replacement_revenue_cad": null,
+          "balance_cad": null
+        },
+        {
+          "year": 2027,
+          "property_tax_replacement_cad": null,
+          "municipal_service_costs_cad": null,
+          "employees_and_pensions_cad": null,
+          "debt_service_cad": null,
+          "grants_cash_verified_cad": null,
+          "replacement_revenue_cad": null,
+          "balance_cad": null
+        },
+        {
+          "year": 2028,
+          "property_tax_replacement_cad": null,
+          "municipal_service_costs_cad": null,
+          "employees_and_pensions_cad": null,
+          "debt_service_cad": null,
+          "grants_cash_verified_cad": null,
+          "replacement_revenue_cad": null,
+          "balance_cad": null
+        },
+        {
+          "year": 2029,
+          "property_tax_replacement_cad": null,
+          "municipal_service_costs_cad": null,
+          "employees_and_pensions_cad": null,
+          "debt_service_cad": null,
+          "grants_cash_verified_cad": null,
+          "replacement_revenue_cad": null,
+          "balance_cad": null
+        },
+        {
+          "year": 2030,
+          "property_tax_replacement_cad": null,
+          "municipal_service_costs_cad": null,
+          "employees_and_pensions_cad": null,
+          "debt_service_cad": null,
+          "grants_cash_verified_cad": null,
+          "replacement_revenue_cad": null,
+          "balance_cad": null
+        },
+        {
+          "year": 2031,
+          "property_tax_replacement_cad": null,
+          "municipal_service_costs_cad": null,
+          "employees_and_pensions_cad": null,
+          "debt_service_cad": null,
+          "grants_cash_verified_cad": null,
+          "replacement_revenue_cad": null,
+          "balance_cad": null
+        },
+        {
+          "year": 2032,
+          "property_tax_replacement_cad": null,
+          "municipal_service_costs_cad": null,
+          "employees_and_pensions_cad": null,
+          "debt_service_cad": null,
+          "grants_cash_verified_cad": null,
+          "replacement_revenue_cad": null,
+          "balance_cad": null
+        },
+        {
+          "year": 2033,
+          "property_tax_replacement_cad": null,
+          "municipal_service_costs_cad": null,
+          "employees_and_pensions_cad": null,
+          "debt_service_cad": null,
+          "grants_cash_verified_cad": null,
+          "replacement_revenue_cad": null,
+          "balance_cad": null
+        },
+        {
+          "year": 2034,
+          "property_tax_replacement_cad": null,
+          "municipal_service_costs_cad": null,
+          "employees_and_pensions_cad": null,
+          "debt_service_cad": null,
+          "grants_cash_verified_cad": null,
+          "replacement_revenue_cad": null,
+          "balance_cad": null
+        },
+        {
+          "year": 2035,
+          "property_tax_replacement_cad": null,
+          "municipal_service_costs_cad": null,
+          "employees_and_pensions_cad": null,
+          "debt_service_cad": null,
+          "grants_cash_verified_cad": null,
+          "replacement_revenue_cad": null,
+          "balance_cad": null
+        }
+      ]
+    }
+  ],
+  "decision": {
+    "municipal_schedules_expanded": true,
+    "real_paid_household_bills_audited": false,
+    "primeau_payments_verified": false,
+    "reform_funded": false,
+    "program_complete": false
+  }
+}
