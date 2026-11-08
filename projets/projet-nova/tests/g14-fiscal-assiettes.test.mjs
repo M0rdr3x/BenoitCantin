@@ -78,3 +78,56 @@ test("le maintien des services ne peut pas être déclaré démontré",()=>{
  const d=clone();d.mechanical_sensitivity.public_service_continuity_verified=true;
  assert.ok(verifyG14(d,g13).errors.includes("ILLUSTRATION_NOT_LABELED"));
 });
+
+test("le même montant ne permet pas de transformer les droits mixtes en impôt",()=>{
+ const d=clone();
+ d.revenue_categories.find(x=>x.id==="DROITS_PERMIS_REDEVANCES").fiscal_tax=true;
+ const r=verifyG14(d,g13);
+ assert.ok(r.errors.includes("UNSUPPORTED_REVENUE_CLASSIFICATION"),r.errors.join(","));
+ assert.equal(reg.revenue_categories.find(x=>x.id==="DROITS_PERMIS_REDEVANCES").fiscal_tax,null);
+});
+test("des revenus divers non ventilés ne deviennent pas fiscalement libres",()=>{
+ const d=clone();const row=d.revenue_categories.find(x=>x.id==="REVENUS_DIVERS");
+ row.type="IMPOT_REVENU";
+ row.potential_policy="CANDIDAT_REVENU_PERSONNES";
+ assert.ok(verifyG14(d,g13).errors.includes("UNSUPPORTED_REVENUE_CLASSIFICATION"));
+});
+test("les dividendes des sociétés d'État ne sont pas un impôt nouveau",()=>{
+ const d=clone();const row=d.revenue_categories.find(x=>x.id==="SOCIETES_ETAT");
+ row.fiscal_tax=true;
+ assert.ok(verifyG14(d,g13).errors.includes("UNSUPPORTED_REVENUE_CLASSIFICATION"));
+});
+test("les transferts fédéraux ne sont pas une taxe provinciale",()=>{
+ const d=clone();const row=d.revenue_categories.find(x=>x.id==="TRANSFERTS_FEDERAUX");
+ row.scope="PROVINCIAL";
+ assert.ok(verifyG14(d,g13).errors.includes("UNSUPPORTED_REVENUE_CLASSIFICATION"));
+});
+test("la taxe scolaire reste juridiquement distinguée des recettes municipales",()=>{
+ const d=clone();const row=d.revenue_categories.find(x=>x.id==="FONCIER_SCOLAIRE");
+ row.scope="MUNICIPAL";
+ assert.ok(verifyG14(d,g13).errors.includes("UNSUPPORTED_REVENUE_CLASSIFICATION"));
+});
+test("un changement de nature des cotisations santé sans preuve est rejeté",()=>{
+ const d=clone();const row=d.revenue_categories.find(x=>x.id==="COTISATIONS_SANTE");
+ row.type="IMPOT_REVENU";
+ assert.ok(verifyG14(d,g13).errors.includes("UNSUPPORTED_REVENUE_CLASSIFICATION"));
+});
+test("même avec un total 168 389 M$ correct, le reclassement n'est pas validé",()=>{
+ const d=clone();d.revenue_categories.find(x=>x.id==="TAXES_CONSOMMATION").fiscal_tax=false;
+ const r=verifyG14(d,g13);
+ assert.ok(!r.errors.includes("SOURCE_TOTALS"));
+ assert.ok(!r.errors.includes("BASELINE_MAPPING"));
+ assert.ok(r.errors.includes("UNSUPPORTED_REVENUE_CLASSIFICATION"));
+ assert.equal(r.ok,false);
+});
+test("un registre malformé échoue proprement au lieu de contourner le contrôle",()=>{
+ for(const prop of ["baseline","mechanical_sensitivity","tax_design_constraints",
+   "decision","reconciliation","jurisdiction_separation","constitutional_scenarios"]){
+  const d=clone();delete d[prop];
+  const r=verifyG14(d,g13);
+  assert.equal(r.ok,false,prop);
+  assert.ok(r.errors.includes("SCHEMA"),prop);
+ }
+ const d=clone();d.revenue_categories[0]=null;
+ assert.ok(verifyG14(d,g13).errors.includes("SCHEMA"));
+});
