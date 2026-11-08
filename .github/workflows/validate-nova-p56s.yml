@@ -1,0 +1,53 @@
+name: Projet Nova P56S - Trois scenarios fiscaux non adoptes, compensation et deficit
+on:
+  pull_request:
+    paths:
+      - 'projets/projet-nova/etudes/P56S_*'
+      - 'scripts/comparer_options_fiscales_et_financement_nova_p56s.py'
+      - 'scripts/tests/test_comparer_options_fiscales_et_financement_nova_p56s.py'
+      - 'scripts/rapprocher_categories_recettes_et_deux_taxes_nova_p56r.py'
+      - 'projets/projet-nova/etudes/P56R_INVENTAIRE_EXHAUSTIF_CATEGORIES_RECETTES_ET_PONT_FISCAL_2026_2031.json'
+      - 'projets/projet-nova/etudes/P56Q_PONT_CONTREFACTUEL_RECETTES_2027_2031_SIMULATEUR_AMENDE.json'
+      - 'projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json'
+      - 'projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json'
+      - '.github/workflows/validate-nova-p56s.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  scenarios-financiers-conditionnels-p56s:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Valider 48 regressions P56R et 49 tests P56S
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_rapprocher_categories_recettes_et_deux_taxes_nova_p56r.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_comparer_options_fiscales_et_financement_nova_p56s.py' -v
+      - name: Verifier risques budgetaires et absence d'adoption
+        shell: bash
+        run: |
+          python scripts/comparer_options_fiscales_et_financement_nova_p56s.py \
+            --options projets/projet-nova/etudes/P56S_TROIS_OPTIONS_FISCALES_2027_2031_ET_CONDITIONS_PROTECTION.json \
+            --p56r projets/projet-nova/etudes/P56R_INVENTAIRE_EXHAUSTIF_CATEGORIES_RECETTES_ET_PONT_FISCAL_2026_2031.json \
+            --p56q projets/projet-nova/etudes/P56Q_PONT_CONTREFACTUEL_RECETTES_2027_2031_SIMULATEUR_AMENDE.json \
+            --cloture projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json | python -c 'import json,sys; r=json.load(sys.stdin); o=r["2027_2028"]; assert r["score_estime_pourcent"]==53 and r["points_estimes_restants"]==47 and r["nombre_options"]==3 and o["S1_CONTINUITE"]["solde_sans_financement_mcad"]=="-5695.00" and o["S2_TRANSITION_CONDITIONNELLE"]["perte_fictive_recettes_mcad"]=="10718.75" and o["S3_CIBLE_DEUX_PRELEVEMENTS"]["solde_sans_financement_mcad"]=="-48570.00" and r["budget_nova_certifie"] is False and r["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Refuser option fiscale adoptee artificiellement
+        shell: bash
+        run: |
+          set +e
+          python scripts/comparer_options_fiscales_et_financement_nova_p56s.py \
+            --options projets/projet-nova/etudes/P56S_TROIS_OPTIONS_FISCALES_2027_2031_ET_CONDITIONS_PROTECTION.json \
+            --p56r projets/projet-nova/etudes/P56R_INVENTAIRE_EXHAUSTIF_CATEGORIES_RECETTES_ET_PONT_FISCAL_2026_2031.json \
+            --p56q projets/projet-nova/etudes/P56Q_PONT_CONTREFACTUEL_RECETTES_2027_2031_SIMULATEUR_AMENDE.json \
+            --cloture projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --exiger-option-adoptee
+          status=$?
+          set -e
+          test "$status" -eq 3
