@@ -23,11 +23,11 @@ test("deux outils : matrice complète et audit Nova distinct",()=>{
  assert.equal(d.decision.both_tools_100_percent,false);
  assert.equal(d.status,"NON_HOMOLOGUE");
 });
-test("boussole : six portes vérifiées sur douze dans la matrice du 8 novembre",()=>{
+test("boussole : sept portes vérifiées sur douze dans la matrice du 8 novembre",()=>{
  assert.equal(d.compass.questions,64);
  assert.equal(d.compass.dimensions,16);
  assert.equal(d.compass.gates.length,12);
- assert.equal(passed(d.compass),6);
+ assert.equal(passed(d.compass),7);
  validate(d.compass);
 });
 test("sondage : six portes contrôlées sur onze",()=>{
@@ -100,6 +100,25 @@ test("le parcours E2E local de 64 questions est prouvé sur trois moteurs, le li
  assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_SCORE_PARITY").status,"PASSED");
  assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_PARTIAL_PROFILE_RELEASE").status,"PENDING");
 });
+test("pondération, saut, révision et partage validés seulement en E2E local des trois moteurs",()=>{
+ const gate=d.compass.gates.find(x=>x.id==="COMPASS_WEIGHT_SKIP_RESET");
+ assert.equal(gate.status,"PASSED");
+ assert.equal(gate.scope,"browser_e2e_local_all_three_engines_not_public_release");
+ assert.match(gate.evidence,/42536034601/);
+ assert.equal(d.cross_cutting.ci_local_weight_skip_share_reset_verified,true);
+ assert.deepEqual(d.cross_cutting.ci_local_weight_skip_share_reset_browsers,["chromium","firefox","webkit"]);
+ assert.equal(d.cross_cutting.ci_local_weight_skip_share_reset_workflow_urls.length,2);
+ assert.deepEqual(d.cross_cutting.ci_local_weight_skip_share_reset_release_prs,[886,889]);
+ assert.equal(d.summary.compass.passed,7);
+ assert.equal(d.summary.compass.percent,58.3);
+ assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_PARTIAL_PROFILE_RELEASE").status,"PENDING");
+ assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_CROSS_BROWSER").status,"PENDING");
+ assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_DEPLOYMENT_RELEASE").status,"PENDING");
+ assert.equal(d.decision.deployments_verified,false);
+ assert.equal(d.poll.published_in_source,false);
+ assert.equal(d.decision.opening_poll_approved,false);
+});
+
 test("revue du code serveur sans autoriser la soumission en production",()=>{
  assert.equal(d.poll.gates.find(x=>x.id==="POLL_SERVER_SOURCE_REVIEW").status,"PASSED");
  assert.equal(d.cross_cutting.vote_post_live_tested,false);
@@ -116,7 +135,7 @@ test("les taux publics de réception dérivent exactement de la matrice versionn
  const section=html.slice(start,end);
  const numbers=[
   {object:d.poll,denominator:11,expected:6,label:"sondage",name:"Critères de réception du sondage"},
-  {object:d.compass,denominator:12,expected:6,label:"boussole",name:"Critères de réception de la boussole"}
+  {object:d.compass,denominator:12,expected:7,label:"boussole",name:"Critères de réception de la boussole"}
  ];
  for(const item of numbers){
   const n=passed(item.object),total=item.object.gates.length;
@@ -166,7 +185,7 @@ test("les deux outils officiels rendent visible l'état daté sans ouvrir le son
  assert.ok(pollHtml.includes(pollPct));
  assert.ok(compassHtml.includes(compassPct));
  assert.ok(pollHtml.includes("6 critères sur 11 validés"));
- assert.ok(compassHtml.includes("6 critères sur 12 validés"));
+ assert.ok(compassHtml.includes("7 critères sur 12 validés"));
  assert.ok(compassHtml.includes("assets/boussole-electorale.js?v=3.4.26"),"Cache de la boussole invalidé après correction");
  assert.ok(pollHtml.includes("la collecte reste fermée"));
  for(const html of [pollHtml,compassHtml]){
@@ -182,9 +201,9 @@ test("le registre de 7 novembre demeure historique, sans réécriture des preuve
  assert.equal(historical.compass.gates.find(x=>x.id==="COMPASS_FULL_64_RESULT").status,"PENDING");
  assert.equal(d.as_of,"2026-11-08");
  assert.equal(d.previous_audit,"projets/projet-nova/data/validation-sondage-boussole-2026-11-07.json");
- assert.equal(d.summary.compass.passed,6);
+ assert.equal(d.summary.compass.passed,7);
  assert.equal(d.summary.compass.total,12);
- assert.equal(d.summary.compass.percent,50);
+ assert.equal(d.summary.compass.percent,58.3);
  assert.equal(d.summary.poll.passed,6);
  assert.equal(d.summary.poll.percent,54.5);
 });
