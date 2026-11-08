@@ -42,7 +42,7 @@ const state={pdf:null,page:1,mode:'texte',theme:'sepia',size:20,zoom:1,
   voiceURI:'',speed:1,autoSpeech:false,
   user:null,novelId:null,renderVersion:0,renderQueue:Promise.resolve(),saveTimer:null,
   progressQueue:Promise.resolve(),accessEpoch:0,accessInvalidated:false,
-  loadController:null,authSubscription:null,
+  loadController:null,authSubscription:null,cloudSpotSupported:null,
   positionRatio:0,restorePending:null,restoringScroll:false,scrollTimer:null,resumeSource:'debut'};
 const speech={active:false,paused:false,token:0,chunks:[],index:0,voices:[],utterance:null};
 const speechReady='speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
@@ -130,6 +130,13 @@ function updateToolbar(){
   $('reader-chapter-label').textContent=chapter[1];
   $('reader-chapters').value=String(chapter[0]);
 }
+function isMissingCloudSpotColumn(error){
+  // Compatibilité avec l'ancienne API REST tant que la migration V32
+  // n'a pas franchi le processus d'approbation de production.
+  return Boolean(error&&(['PGRST204','42703'].includes(error.code)||
+    /scroll_ratio.*(?:column|schema cache|does not exist)|(?:column|schema cache|does not exist).*scroll_ratio/i
+      .test(String(error.message||''))));
+}
 function syncProgress(){
   if(!isFull||!state.user||!state.novelId||!state.pdf||state.accessInvalidated){
     return Promise.resolve(false);
@@ -144,9 +151,17 @@ function syncProgress(){
       progress_percent:Math.round(page/pdf.numPages*100),
       last_opened_at:updatedAt,updated_at:updatedAt};
     try{
-      const {error}=await getSupabase().from('sinjira_reader_library')
+      if(state.cloudSpotSupported===false)delete payload.scroll_ratio;
+      let {error}=await getSupabase().from('sinjira_reader_library')
         .upsert(payload,{onConflict:'user_id,novel_id'});
+      if(error&&payload.scroll_ratio!==undefined&&isMissingCloudSpotColumn(error)){
+        state.cloudSpotSupported=false;
+        delete payload.scroll_ratio;
+        ({error}=await getSupabase().from('sinjira_reader_library')
+          .upsert(payload,{onConflict:'user_id,novel_id'}));
+      }
       if(error)throw error;
+      if(payload.scroll_ratio!==undefined)state.cloudSpotSupported=true;
       return true;
     }catch{
       if(state.pdf===pdf&&state.user?.id===userId){
@@ -214,9 +229,13 @@ async function saveCurrentPosition(){
       const cloudSaved=await syncProgress();
       if(!state.pdf||state.accessInvalidated)return;
       positionNotice(cloudSaved
-        ?(localSaved
-          ?'Position enregistrée : page '+state.page+' et emplacement précis synchronisés sur votre compte et cet appareil.'
-          :'Position enregistrée : page '+state.page+' et emplacement précis synchronisés sur votre compte.')
+        ?(state.cloudSpotSupported===false
+          ?(localSaved
+            ?'Page synchronisée avec votre compte. Le défilement précis reste enregistré sur cet appareil en attendant la mise à jour du serveur.'
+            :'Page synchronisée avec votre compte. Le défilement précis sera disponible après la mise à jour du serveur.')
+          :localSaved
+            ?'Position enregistrée : page '+state.page+' et emplacement précis synchronisés sur votre compte et cet appareil.'
+            :'Position enregistrée : page '+state.page+' et emplacement précis synchronisés sur votre compte.')
         :localSaved
           ?'Page '+state.page+' enregistrée sur cet appareil. Synchronisation du compte indisponible : réessayez.'
           :'Impossible d’enregistrer la position. Vérifiez la connexion et les paramètres du navigateur.',
@@ -555,11 +574,19 @@ async function restorePage(){
       .select('id').eq('slug',NOVEL_SLUG).maybeSingle();
     if(!novelError&&novel?.id){
       state.novelId=novel.id;
-      const {data:progress}=await getSupabase().from('sinjira_reader_library')
+      let {data:progress,error:progressError}=await getSupabase().from('sinjira_reader_library')
         .select('last_page,scroll_ratio,updated_at').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle();
-      serverPage=progress?.last_page;
-      serverRatio=progress?.scroll_ratio??null;
-      serverUpdatedAt=progress?.updated_at;
+      if(progressError&&isMissingCloudSpotColumn(progressError)){
+        state.cloudSpotSupported=false;
+        ({data:progress,error:progressError}=await getSupabase().from('sinjira_reader_library')
+          .select('last_page,updated_at').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle());
+      }
+      if(!progressError){
+        serverPage=progress?.last_page;
+        serverRatio=progress?.scroll_ratio??null;
+        serverUpdatedAt=progress?.updated_at;
+        if(state.cloudSpotSupported!==false)state.cloudSpotSupported=true;
+      }
     }
   }
   const spot=chooseReadingPosition({
