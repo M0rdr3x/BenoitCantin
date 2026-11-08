@@ -106,6 +106,16 @@ test('SINJIRA Formspree : canal secondaire, anti-doublons et filtrage',async()=>
     assert.equal(huge.accepted,false);
     assert.equal(sent.length,1,'refuser un questionnaire dont la copie serait tronquée');
 
+    const confirmation=fakeDatabase();
+    const confirmationResult=await sendFormspreeNotice(confirmation.client,'compte_confirme',SOURCE_ID,{
+      email:'visiteur@example.com'
+    });
+    assert.equal(confirmationResult.accepted,true);
+    assert.equal(sent.length,2);
+    assert.equal(sent[1].url,'https://formspree.io/f/xzeeqynp');
+    assert.equal(sent[1].data.email,'visiteur@example.com');
+    assert.equal('questionnaire' in sent[1].data,false,'une confirmation de compte ne transmet jamais de questionnaire');
+
     globalThis.fetch=async()=>{throw new Error('Simulated network failure')};
     const failingExternal=fakeDatabase();
     const offlineResult=await sendFormspreeNotice(failingExternal.client,'compte_confirme',SOURCE_ID,{
