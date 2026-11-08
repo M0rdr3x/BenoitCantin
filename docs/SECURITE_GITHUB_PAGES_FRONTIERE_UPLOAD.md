@@ -26,7 +26,7 @@ fichiers `.github/workflows/*.yml` et `.yaml`, en lecture seule :
   accusé des lacunes d'en-têtes, SHA de commit, `main` et génération
   via le builder isolé doivent être présents;
 - un second workflow qui utiliserait les actions Pages est refusé;
-- 11 tests de mutations négatives examinent des erreurs fréquentes.
+- 13 tests de mutations négatives examinent les erreurs courantes, y compris un faux `path` inséré dans `env:` et un doublon de section `with:`.
 
 Le workflow
 `.github/workflows/github-pages-artifact-scope-security.yml`
