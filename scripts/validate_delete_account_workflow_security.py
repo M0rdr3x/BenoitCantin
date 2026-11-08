@@ -8,8 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / '.github/workflows/sinjira-delete-account-v24-5-51.yml'
 CHECKOUT_SHA = 'd23441a48e516b6c34aea4fa41551a30e30af803'
-SETUP_PYTHON_SHA = 'ece7cb06caefa5fff74198d8649806c4678c61a1'
-PYTHON_VERSION = '3.12.14'
+PYTHON_RUN_CHECK = """python3 -c 'import sys; assert sys.version_info[:2] == (3, 12), "Python 3.12 requis"'"""
 
 
 def require(errors: list[str], condition: bool, message: str) -> None:
@@ -38,20 +37,20 @@ def validate_text(text: str) -> list[str]:
     require(errors, text.count(f'uses: actions/checkout@{CHECKOUT_SHA}') == 1, 'checkout doit être épinglé au SHA vérifié')
     require(errors, text.count('persist-credentials: false') == 1, 'checkout doit désactiver les credentials persistés')
     require(errors, 'persist-credentials: true' not in text, 'persist-credentials=true interdit')
-    require(errors, text.count(f'uses: actions/setup-python@{SETUP_PYTHON_SHA}') == 1, 'setup-python doit être épinglé au SHA vérifié')
-    require(errors, f"python-version: '{PYTHON_VERSION}'" in text, 'version Python exacte requise')
+    require(errors, 'actions/setup-python@' not in text, 'téléchargement setup-python inutile interdit')
+    require(errors, text.count(PYTHON_RUN_CHECK) == 1, 'Python 3.12 du runner doit être vérifié')
 
     targets = action_targets(text)
-    require(errors, len(targets) == 2, f'nombre inattendu d’actions réutilisables: {len(targets)}')
+    require(errors, len(targets) == 1, f'nombre inattendu d’actions réutilisables: {len(targets)}')
     for target in targets:
         require(errors, re.search(r'@[0-9a-f]{40}$', target) is not None, f'référence d’action non immuable: {target}')
 
     required_runs = (
-        'python scripts/validate_delete_account_workflow_security.py --self-test',
-        'python scripts/validate_delete_account_workflow_security.py\n',
-        'python scripts/validate_delete_account_v24_5_51.py',
-        'python scripts/validate_edge_function_inventory.py',
-        'python scripts/validate_production_migration_ledger.py',
+        'python3 scripts/validate_delete_account_workflow_security.py --self-test',
+        'python3 scripts/validate_delete_account_workflow_security.py\n',
+        'python3 scripts/validate_delete_account_v24_5_51.py',
+        'python3 scripts/validate_edge_function_inventory.py',
+        'python3 scripts/validate_production_migration_ledger.py',
     )
     for command in required_runs:
         require(errors, command in text, f'commande de contrôle absente: {command.strip()}')
@@ -61,15 +60,15 @@ def validate_text(text: str) -> list[str]:
 def run_self_tests(text: str) -> None:
     cases = {
         'checkout mobile': text.replace(f'actions/checkout@{CHECKOUT_SHA}', 'actions/checkout@v6', 1),
-        'setup-python mobile': text.replace(f'actions/setup-python@{SETUP_PYTHON_SHA}', 'actions/setup-python@v6', 1),
+        'vérification Python retirée': text.replace(PYTHON_RUN_CHECK, 'echo test-absent', 1),
         'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
         'permission écriture': text.replace('contents: read', 'contents: write', 1),
         'secret ajouté': text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-24.04\n    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}', 1),
         'runner mobile': text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-latest', 1),
-        'python large': text.replace(f"python-version: '{PYTHON_VERSION}'", "python-version: '3.12'", 1),
-        'suppression retirée': text.replace('          python scripts/validate_delete_account_v24_5_51.py\n', '', 1),
-        'inventaire Edge retiré': text.replace('          python scripts/validate_edge_function_inventory.py\n', '', 1),
-        'ledger retiré': text.replace('          python scripts/validate_production_migration_ledger.py\n', '', 1),
+        'Python dégradé': text.replace(PYTHON_RUN_CHECK, PYTHON_RUN_CHECK.replace('(3, 12)', '(3, 11)'), 1),
+        'suppression retirée': text.replace('          python3 scripts/validate_delete_account_v24_5_51.py\n', '', 1),
+        'inventaire Edge retiré': text.replace('          python3 scripts/validate_edge_function_inventory.py\n', '', 1),
+        'ledger retiré': text.replace('          python3 scripts/validate_production_migration_ledger.py\n', '', 1),
     }
     for name, mutated in cases.items():
         if not validate_text(mutated):
@@ -92,7 +91,7 @@ def main() -> int:
         for error in errors:
             print(f'ERREUR sécurité suppression compte: {error}')
         return 1
-    print('OK sécurité suppression compte: actions immuables, runtime figé, credentials non persistés et contrôles suppression/Edge/ledger conservés.')
+    print('OK sécurité suppression compte: actions immuables, runtime Python 3.12 vérifié, credentials non persistés et contrôles suppression/Edge/ledger conservés.')
     return 0
 
 
