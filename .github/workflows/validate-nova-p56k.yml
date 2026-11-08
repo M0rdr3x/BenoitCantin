@@ -1,0 +1,48 @@
+name: Projet Nova P56K - Assiettes fiscales et absence de taux inventes
+on:
+  pull_request:
+    paths:
+      - 'scripts/auditer_assiettes_revenues_societes_nova_p56k.py'
+      - 'scripts/tests/test_auditer_assiettes_revenues_societes_nova_p56k.py'
+      - 'scripts/evaluer_transition_fiscale_nova_p52b.py'
+      - 'projets/projet-nova/etudes/P56K_*'
+      - 'projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json'
+      - 'projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json'
+      - 'projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json'
+      - '.github/workflows/validate-nova-p56k.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controles-assiettes-p56k:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Executer les 53 tests P56K
+        run: python -m unittest discover -s scripts/tests -p 'test_auditer_assiettes_revenues_societes_nova_p56k.py' -v
+      - name: Rapprocher les assiettes publiees sans projeter Nova
+        shell: bash
+        run: |
+          python scripts/auditer_assiettes_revenues_societes_nova_p56k.py \
+            --assiettes projets/projet-nova/etudes/P56K_ASSIETTES_PARTICULIERS_SOCIETES_CREDITS_SOURCES_OFFICIELLES.json \
+            --gabarit projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json \
+            --preuves projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json | python -c 'import json,sys; d=json.load(sys.stdin); assert d["particuliers_revenu_imposable_mcad"]=="372261" and d["societes_revenu_imposable_quebec_mcad"]=="95784" and d["societes_ecart_arrondi_net_mcad"]=="-1" and d["depenses_fiscales_publiees_mcad"]=="52864.9" and d["recettes_nouvelles_nova_anti_paradis_mcad"] is None and d["taux_nova_calculable"] is False and d["montants_budget_p52b_inconnus"]==600 and d["score_estime_p55n"]==53 and d["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Verifier refus des faux taux certifies
+        shell: bash
+        run: |
+          set +e
+          python scripts/auditer_assiettes_revenues_societes_nova_p56k.py \
+            --assiettes projets/projet-nova/etudes/P56K_ASSIETTES_PARTICULIERS_SOCIETES_CREDITS_SOURCES_OFFICIELLES.json \
+            --gabarit projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json \
+            --preuves projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --exiger-taux-certifie
+          code=$?
+          set -e
+          test "$code" -eq 3
