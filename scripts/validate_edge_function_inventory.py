@@ -84,21 +84,21 @@ JWT_SENSITIVE_GUARDS = {
         "Referrer-Policy", "no-referrer",
     ),
     "delete-player-account": (
-        "req.method !== 'POST'", "MAX_REQUEST_BYTES=1024", "readBoundedJson", "TextEncoder",
+        "req.method !== 'POST'", "MAX_REQUEST_BYTES=1024", "readBoundedJson", "readLimitedUtf8Body", "limited-body.mjs",
         "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "Cache-Control", "private, no-store",
         "X-Content-Type-Options", "nosniff", "Referrer-Policy", "no-referrer",
         "privacy_service_can_delete_user", "MFA_REQUIRED", "OWNER_OR_ADMIN_DELETE_BLOCKED",
         "CONFIRM_PHRASE='SUPPRIMER MON COMPTE'",
     ),
     "revoke-my-contributions": (
-        "req.method !== 'POST'", "MAX_REQUEST_BYTES=2048", "readBoundedJson", "TextEncoder",
+        "req.method !== 'POST'", "MAX_REQUEST_BYTES=2048", "readBoundedJson", "readLimitedUtf8Body", "limited-body.mjs",
         "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "UUID_RE", "body.all===true",
         "AMBIGUOUS_SCOPE", "SESSION_REQUIRED", "revokeAll ? null : sessionId",
         "Cache-Control", "private, no-store", "X-Content-Type-Options", "nosniff",
         "Referrer-Policy", "no-referrer",
     ),
     "submit-game-contribution": (
-        "req.method!=='POST'", "MAX_REQUEST_BYTES=2048", "readBoundedJson", "TextEncoder",
+        "req.method!=='POST'", "MAX_REQUEST_BYTES=2048", "readBoundedJson", "readLimitedUtf8Body", "limited-body.mjs",
         "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "UUID_RE", "INVALID_SESSION",
         "p_user_id:user.id", "select('id,game_slug,play_mode,human_player_count,effective_player_count,player_count,duration_minutes')",
         "submitted:true", "Cache-Control", "private, no-store", "X-Content-Type-Options",
@@ -258,6 +258,20 @@ def main() -> int:
                 errors.append(f"{slug}: garde-fou HTTP/destructif manquant: {marker}.")
         if "await req.json()" in source or "await req.json (" in source:
             errors.append(f"{slug}: lecture JSON directe non bornée interdite.")
+
+    # Ces opérations touchent aux comptes, droits et licences; un corps
+    # complet et les erreurs de fournisseur ne doivent jamais sortir en logs.
+    for slug in ("delete-player-account", "revoke-my-contributions"):
+        source = read_tree_text(FUNCTIONS / slug)
+        if "await req.text()" in source or "await req.json()" in source:
+            errors.append(f"{slug}: corps HTTP chargé avant limite en flux.")
+        if "readLimitedUtf8Body(req,MAX_REQUEST_BYTES)" not in source:
+            errors.append(f"{slug}: limite d'octets en streaming absente.")
+    novel_source = read_tree_text(FUNCTIONS / "get-novel-file-url")
+    if "console.error(error)" in novel_source:
+        errors.append("get-novel-file-url: erreur fournisseur brute journalisée.")
+    if "code:'NOVEL_ACCESS_FAILED'" not in novel_source:
+        errors.append("get-novel-file-url: code de diagnostic constant absent.")
 
     book_source = read_tree_text(FUNCTIONS / "get-private-book-url")
     for forbidden in ("external_url", "getPublicUrl("):
