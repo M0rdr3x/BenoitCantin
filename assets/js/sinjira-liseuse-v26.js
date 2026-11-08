@@ -452,7 +452,19 @@ function bindControls(){
   $('reader-voice-pause').addEventListener('click',toggleSpeechPause);
   $('reader-voice-stop').addEventListener('click',()=>stopNarration());
   window.addEventListener('pagehide',()=>{
-    flushScrollPosition();stopNarration(false);flushProgress();companion?.close();
+    // Conserver uniquement la position, sans conserver de PDF ni de notes
+    // lorsqu'une édition intégrale passe dans le cache arrière du navigateur.
+    flushScrollPosition();
+    stopNarration(false);
+    flushProgress();
+    if(isFull)lockPrivateReader();
+    // La démo publique doit rester interactive lors d'un retour depuis bfcache.
+  });
+  window.addEventListener('pageshow',event=>{
+    if(isFull&&event.persisted){
+      // Recharger afin de revérifier session et droit serveur.
+      location.reload();
+    }
   });
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='hidden'){
@@ -464,10 +476,19 @@ function bindControls(){
     if(state.mode==='page')renderPage();
   });
   document.addEventListener('keydown',event=>{
-    const tag=document.activeElement?.tagName||'';
-    if(['INPUT','SELECT','TEXTAREA','BUTTON'].includes(tag)||event.altKey||event.ctrlKey||event.metaKey)return;
-    if(event.key==='ArrowRight'||event.key==='PageDown'){event.preventDefault();changePage(state.page+1)}
-    if(event.key==='ArrowLeft'||event.key==='PageUp'){event.preventDefault();changePage(state.page-1)}
+    if(!state.pdf||event.defaultPrevented||event.isComposing||
+       event.altKey||event.ctrlKey||event.metaKey||event.shiftKey)return;
+    const active=document.activeElement;
+    // Aucun raccourci depuis un champ, un lien, un bouton ou une zone éditable.
+    if(active&&active!==document.body&&active!==document.documentElement&&
+       active!==$('reader-viewer'))return;
+    if(window.getSelection()?.toString())return;
+    if(event.key==='ArrowRight'||event.key==='PageDown'){
+      event.preventDefault();changePage(state.page+1);
+    }
+    if(event.key==='ArrowLeft'||event.key==='PageUp'){
+      event.preventDefault();changePage(state.page-1);
+    }
   });
   let resizeTimer;
   window.addEventListener('resize',()=>{
@@ -487,6 +508,9 @@ function lockPrivateReader(){
   if(!isFull||state.accessInvalidated)return;
   state.accessInvalidated=true;
   state.accessEpoch++;
+  // Désabonner l'authentification uniquement à la destruction du lecteur privé.
+  try{state.authSubscription?.unsubscribe?.()}catch{/* nettoyage best effort */}
+  state.authSubscription=null;
   state.loadController?.abort();
   state.loadController=null;
   clearTimeout(state.saveTimer);state.saveTimer=null;
