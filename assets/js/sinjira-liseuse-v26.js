@@ -1,7 +1,7 @@
 import { getSupabase, requireUser } from './sinjira-supabase.js';
 import { pdfTextToParagraphs, speechTextChunks } from './sinjira-liseuse-text-v27.mjs';
 import { createReaderCompanion } from './sinjira-liseuse-companion-v28.mjs';
-import { chooseReadingPosition, ratioFromScroll, scrollTopForRatio, readingRatio } from './sinjira-liseuse-position-v31.mjs';
+import { chooseReadingPosition, ratioFromScroll, scrollTopForRatio, readingRatio } from './sinjira-liseuse-position-v31.mjs?v=32.11.07.1';
 
 /* SINJIRA 2026 — liseuse : le PDF intégral n'entre jamais dans le dépôt public
    ni dans localStorage. Le serveur attribue le droit de lecture avant de signer l'accès. */
