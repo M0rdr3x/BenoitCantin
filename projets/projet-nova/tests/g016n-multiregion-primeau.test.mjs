@@ -168,3 +168,26 @@ test("l'étude Warwick ne peut être remplacée par un autre montant",()=>{
  const z=validateG016nMultiRegion(d,prior);
  assert.ok(z.errors.includes("G016M_PREDECESSOR_MISMATCH"));
 });
+
+test("le titre du cas Port-Daniel ne peut être réécrit sans source",()=>{
+ mustFail(x=>x.projects[3].title_as_mamh="Usine terminée et payée","MAMH_ROW_MISMATCH");
+});
+test("l'URL d'une confirmation officielle ne peut être remplacée",()=>{
+ mustFail(x=>x.sources[4].url="https://example.org/invented","PROVENANCE_UNSUPPORTED");
+});
+test("le site G0.16n montre sept projets et les deux totaux vérifiés",async()=>{
+ const html=await readFile(new URL("../avancement-programme-nova.html",import.meta.url),"utf8");
+ assert.match(html,/id="sept-regions-primeau-g016n"/);
+ assert.match(html,/188,323 M\$/);
+ assert.match(html,/156,721 M\$/);
+ assert.match(html,/Port-Daniel–Gascons/);
+ assert.match(html,/47 % inchangé/);
+});
+test("la page d'avancement n'assimile pas l'emprunt au versement ni le tableau au Québec entier",async()=>{
+ const html=await readFile(new URL("../avancement-programme-nova.html",import.meta.url),"utf8");
+ assert.match(html,/Aides PRIMEAU inscrites pour ces projets/);
+ assert.match(html,/et non paiements de trésorerie vérifiés/);
+ assert.match(html,/sélection non aléatoire/);
+ assert.match(html,/emprunt brut autorisé/);
+ assert.match(html,/on ne doit pas additionner ces montants/);
+});
