@@ -1,0 +1,43 @@
+name: Projet Nova P56H - Concordances documentaires et interdiction du faux audit
+on:
+  pull_request:
+    paths:
+      - 'scripts/verifier_correspondances_revenus_municipaux_nova_p56h.py'
+      - 'scripts/tests/test_verifier_correspondances_revenus_municipaux_nova_p56h.py'
+      - 'projets/projet-nova/etudes/P56H_*'
+      - 'projets/projet-nova/etudes/P56G_PREMIER_PONT_PROVINCIAL_MUNICIPAL_ALMA_2024.json'
+      - '.github/workflows/validate-nova-p56h.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  concordances-p56h:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tester pilote P56G et correspondances P56H
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_verifier_pont_provincial_municipal_nova_p56g.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_verifier_correspondances_revenus_municipaux_nova_p56h.py' -v
+      - name: Comparer codes 40350 et 40561 et garder inconnues
+        shell: bash
+        run: |
+          python scripts/verifier_correspondances_revenus_municipaux_nova_p56h.py \
+            --decomposition projets/projet-nova/etudes/P56H_DECOMPOSITION_REVENUS_ALMA_2024_CORRESPONDANCES_PROVINCIALES.json \
+            --pilote-p56g projets/projet-nova/etudes/P56G_PREMIER_PONT_PROVINCIAL_MUNICIPAL_ALMA_2024.json | python -c 'import json,sys; d=json.load(sys.stdin); assert d["somme_sante_cegeps_ecoles_municipale_cad"]=="3320039" and d["montant_provincial_programme_40350_cad"]=="3320039" and d["difference_numerique_programme_40350_cad"]=="0" and d["difference_numerique_programme_40561_cad"]=="-2" and d["nombre_appariements_comptables_certifies"]==0 and d["inconnues_p52b"]==600 and d["score_p55n_estime_pourcent"]==53 and d["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Rejeter la certification comptable automatique
+        shell: bash
+        run: |
+          set +e
+          python scripts/verifier_correspondances_revenus_municipaux_nova_p56h.py \
+            --decomposition projets/projet-nova/etudes/P56H_DECOMPOSITION_REVENUS_ALMA_2024_CORRESPONDANCES_PROVINCIALES.json \
+            --pilote-p56g projets/projet-nova/etudes/P56G_PREMIER_PONT_PROVINCIAL_MUNICIPAL_ALMA_2024.json \
+            --exiger-appariement-certifie
+          code=$?
+          set -e
+          test "$code" -eq 3
