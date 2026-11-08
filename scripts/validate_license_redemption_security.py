@@ -34,8 +34,8 @@ REQUIRED_PATTERNS = {
 FORBIDDEN = {
     'lecture JSON directe non bornée': 'await req.json()',
     'lecture HTTP entière non bornée': 'await req.text()',
-    'journalisation d'erreur brute': "console.error('[redeem-license-code]',error)",
-    'journalisation d'exception brute': "console.error('[redeem-license-code]',e)",
+    "journalisation d'erreur brute": "console.error('[redeem-license-code]',error)",
+    "journalisation d'exception brute": "console.error('[redeem-license-code]',e)",
     'lecture JSON directe non bornée espacée': 'await req.json (',
 }
 
