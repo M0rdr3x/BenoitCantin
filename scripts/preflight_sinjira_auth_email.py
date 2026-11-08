@@ -48,6 +48,14 @@ def selftest():
     assert "workflow_dispatch:" in workflow
     assert "PREFLIGHT-READ-ONLY" in workflow
     assert "secrets.SUPABASE_ACCESS_TOKEN" in workflow
+    # Aucun téléchargement tiers de Python: le runner Ubuntu 24.04 fournit
+    # Python 3.12, validé avant l'auto-test et avant la lecture privée.
+    assert "actions/setup-python@" not in workflow
+    assert workflow.count("python3 -c 'import sys; assert sys.version_info[:2] == (3, 12)") == 2
+    assert workflow.count("environment: production") == 1
+    assert workflow.count("github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'") == 1
+    assert workflow.count("secrets.SUPABASE_ACCESS_TOKEN") == 1
+    assert workflow.count("python3 scripts/preflight_sinjira_auth_email.py --remote") == 1
     for illegal in ("--request PATCH","--request POST","--request DELETE","--request PUT","supabase db"):
         assert illegal not in workflow,"Méthode mutante interdite"
     good={"site_url":SITE,"disable_signup":False,"external_email_enabled":True,

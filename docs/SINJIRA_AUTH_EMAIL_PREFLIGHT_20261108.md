@@ -39,3 +39,9 @@ https://supabase.com/docs/guides/auth/auth-email-templates
 
 Le correctif global reste estimé à 80 % tant que les résultats de ce
 prévol et les courriels réellement reçus ne sont pas constatés.
+
+## Fiabilisation du contrôle Auth — 8 novembre 2026
+
+Le prévol GitHub Actions ne télécharge plus Python 3.12.14 auprès de `actions/python-versions` : cette distribution externe générait des erreurs réseau 504 dans plusieurs jobs de production. Les deux jobs utilisent le Python 3.12 déjà présent sur `ubuntu-24.04` et **échouent** s'il n'est pas en version 3.12. Les assertions de sécurité de `scripts/preflight_sinjira_auth_email.py --self-test` exigent les deux contrôles Python, l'environnement `production`, la branche `main`, l'événement manuel et le secret déjà présent, sans jamais imprimer sa valeur. Aucune règle de validation Auth n'a été désactivée.
+
+Le diagnostic des paramètres **privés** demeure manuel et protégé : `Run workflow` → `main` → `PREFLIGHT-READ-ONLY` → approbation `production` si applicable. Il ne crée aucun utilisateur ni courriel et ne modifie pas les paramètres Auth. Il faut toujours confirmer séparément la réception Formspree et le parcours TOTP AAL2 réel.
