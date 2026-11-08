@@ -17,11 +17,11 @@ export function scrollTopForRatio(ratio,scrollHeight,clientHeight){
   return Number.isFinite(max)?Math.round(readingRatio(ratio)*max):0;
 }
 
-/** Sélectionne la position la plus récemment enregistrée entre ce navigateur et le compte.
-    Les anciens comptes qui n'ont qu'un last_page restent compatibles.
-    Le serveur ne stocke actuellement que la page, jamais le défilement intrapage. */
+/** Choisit la sauvegarde la plus récente. Le champ cloud scroll_ratio est nullable :
+    null signifie une ancienne progression V31 sans emplacement précis.
+    Aucun texte, passage ou citation du roman n'est stocké. */
 export function chooseReadingPosition({localPage,localRatio,localUpdatedAt,
-    serverPage,serverUpdatedAt,totalPages,defaultPage}){
+    serverPage,serverRatio=null,serverUpdatedAt,totalPages,defaultPage}){
   const total=Math.max(1,Math.floor(Number(totalPages)||1));
   const validPage=(page)=>Number.isInteger(Number(page))&&Number(page)>=1&&Number(page)<=total;
   const fallback=validPage(defaultPage)?Number(defaultPage):1;
@@ -29,16 +29,23 @@ export function chooseReadingPosition({localPage,localRatio,localUpdatedAt,
   const serverValid=validPage(serverPage);
   const localDate=Date.parse(localUpdatedAt||'')||0;
   const serverDate=Date.parse(serverUpdatedAt||'')||0;
-  // Quand les deux copies indiquent la même page, le défilement local est
-  // plus précis que la position serveur (qui ne contient que le numéro).
-  if(localValid&&serverValid&&Number(localPage)===Number(serverPage)){
-    return {page:Number(localPage),ratio:readingRatio(localRatio),source:'appareil'};
-  }
+  const hasServerRatio=serverRatio!==null&&serverRatio!==undefined&&
+    Number.isFinite(Number(serverRatio))&&Number(serverRatio)>=0&&Number(serverRatio)<=1;
   if(serverValid&&(!localValid||!localDate||serverDate>localDate)){
-    return {page:Number(serverPage),ratio:0,source:'compte'};
+    // Une ancienne ligne SQL n'a pas encore de position intrapage.
+    // Conserver l'emplacement local si les deux copies pointent vers la même page.
+    if(localValid&&Number(localPage)===Number(serverPage)&&!hasServerRatio){
+      return {page:Number(localPage),ratio:readingRatio(localRatio),source:'appareil'};
+    }
+    return {page:Number(serverPage),
+      ratio:hasServerRatio?readingRatio(serverRatio):0,source:'compte'};
   }
   if(localValid){
     return {page:Number(localPage),ratio:readingRatio(localRatio),source:'appareil'};
+  }
+  if(serverValid){
+    return {page:Number(serverPage),
+      ratio:hasServerRatio?readingRatio(serverRatio):0,source:'compte'};
   }
   return {page:fallback,ratio:0,source:'debut'};
 }
