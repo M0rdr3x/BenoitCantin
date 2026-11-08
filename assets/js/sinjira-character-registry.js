@@ -107,10 +107,12 @@ form?.addEventListener('submit',async e=>{
    const result=await submitToSinjira(currentUser,{updateExisting:isOwnerForSubmit});
    localStorage.removeItem('registre-consciences-draft-v1');
    setState(successMessage(result),'success');
+   state?.scrollIntoView({behavior:'smooth',block:'center'});
    form.querySelectorAll('input,textarea,select,button').forEach(x=>x.disabled=true);
    registryReady=false;
  }catch(err){
    setState(err?.message||'Transmission impossible. Vos réponses restent visibles; réessayez.','error');
+   state?.scrollIntoView({behavior:'smooth',block:'center'});
    if(submitButton)submitButton.disabled=false;
  }finally{isSending=false}
 });
