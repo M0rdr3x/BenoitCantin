@@ -79,6 +79,9 @@ def main()->int:
     for marker in doc_markers:
         if marker not in docurl: errors.append(f'get-document-url: garde-fou absent: {marker}')
 
+    # Vérifier les marqueurs dans la SEULE fonction de lecture UTF-8 :
+    # le lecteur binaire ne doit pas masquer une régression du premier.
+    utf8_code=limited.split('export async function readLimitedBinaryResponse',1)[0]
     shared_markers=[
         'export async function readLimitedUtf8Body(req, maxBytes, timeoutMs = 20_000)',
         "req.headers.get('content-length')",
@@ -91,7 +94,7 @@ def main()->int:
         "clearTimeout(timeout)",
     ]
     for marker in shared_markers:
-        if marker not in limited:
+        if marker not in utf8_code:
             errors.append(f'Lecteur HTTP en flux non borné: {marker}')
 
     for function_name, code in [('send-game-report',report),('get-document-url',docurl)]:
