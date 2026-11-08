@@ -1,4 +1,4 @@
-name: SINJIRA — preuve HTTP publique du Registre et JWT
+name: SINJIRA — preuve HTTP publique Registre, JWT et Auth
 
 on:
   pull_request:

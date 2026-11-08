@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
+from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 SITE="https://www.benoitcantin.com"
 API="https://gpvivleexywljowcqkru.supabase.co/functions/v1"
+AUTH_SETTINGS="https://gpvivleexywljowcqkru.supabase.co/auth/v1/settings"
+PUBLIC_CONFIG=(Path(__file__).resolve().parents[1]/"assets/js/sinjira-supabase-config.js")
 PAGE_CONTRACTS={
     "/compte/inscription.html":('data-signup-form','formspree_receipt_opt_in'),
     "/compte/confirmer.html":('data-confirm-button','sinjira-confirm-email.js'),
@@ -57,6 +61,47 @@ def check_private_gateway(slug,fetcher=fetch):
     return True,"POST anonyme rejeté par la porte d'authentification"
 
 
+
+def publishable_key():
+    # La clé publishable est déjà livrée au navigateur : jamais de secret admin.
+    content=PUBLIC_CONFIG.read_text(encoding="utf-8")
+    match=re.search(r"supabasePublishableKey:\s*'((?:sb_publishable_)[A-Za-z0-9_-]+)'",content)
+    if not match:
+        raise ValueError("clé publique du site absente ou invalide")
+    return match.group(1)
+
+
+def check_auth_public_settings(fetcher=fetch,key=None):
+    # GoTrue expose ce sous-ensemble de réglages via GET /auth/v1/settings.
+    # Le corps de réponse, la clé publique et d'autres paramètres ne sont pas loggés.
+    if key is None:
+        key=publishable_key()
+    if not re.fullmatch(r"sb_publishable_[A-Za-z0-9_-]{15,}",key):
+        return False,"clé publique invalide"
+    req=Request(AUTH_SETTINGS,headers={
+        "Accept":"application/json",
+        "apikey":key,
+        "Cache-Control":"no-cache",
+    },method="GET")
+    status,body=fetcher(req,8192)
+    if status!=200 or len(body)>8192:
+        return False,"réglages Auth publics indisponibles"
+    try:
+        data=json.loads(body)
+    except (ValueError,UnicodeDecodeError):
+        return False,"réponse Auth publique invalide"
+    if not isinstance(data,dict):
+        return False,"réponse Auth inattendue"
+    external=data.get("external")
+    if not isinstance(external,dict) or external.get("email") is not True:
+        return False,"fournisseur Email non confirmé comme actif"
+    if data.get("disable_signup") is not False:
+        return False,"inscriptions non confirmées comme actives"
+    if data.get("mailer_autoconfirm") is not False:
+        return False,"confirmation obligatoire non vérifiée"
+    return True,"Email actif, inscription ouverte, confirmation obligatoire"
+
+
 def self_test():
     for path,markers in PAGE_CONTRACTS.items():
         assert check_public_page(path,markers,
@@ -80,7 +125,40 @@ def self_test():
         ]:
             assert not check_private_gateway(slug,
                  lambda r,n,s=status,b=payload:(s,b))[0]
-    print("PASS contrôles négatifs locaux : pages, JWT obligatoire, aucun secret.")
+    valid_settings={"external":{"email":True},
+                    "disable_signup":False,"mailer_autoconfirm":False}
+    def settings_response(data,status=200):
+        return lambda req,n: (
+            status,json.dumps(data).encode("utf-8")
+        )
+    def settings_good(req,limit):
+        assert req.full_url==AUTH_SETTINGS
+        assert req.get_method()=="GET"
+        assert req.get_header("Authorization") is None
+        assert req.get_header("Apikey")=="sb_publishable_TEST_TEST_TEST_TEST_TEST"
+        assert req.data is None
+        return 200,json.dumps(valid_settings).encode("utf-8")
+    assert check_auth_public_settings(settings_good,
+              key="sb_publishable_TEST_TEST_TEST_TEST_TEST")[0]
+    mutations=[
+        ({"external":{"email":False}},"email"),
+        ({"disable_signup":True},"signup"),
+        ({"mailer_autoconfirm":True},"autoconfirm"),
+        ({"external":{}},"missing email"),
+        ({"mailer_autoconfirm":None},"missing confirmation"),
+    ]
+    for patch,label in mutations:
+        invalid={**valid_settings,**patch}
+        assert not check_auth_public_settings(settings_response(invalid),
+                    key="sb_publishable_TEST_TEST_TEST_TEST_TEST")[0],label
+    assert not check_auth_public_settings(settings_response(valid_settings,401),
+            key="sb_publishable_TEST_TEST_TEST_TEST_TEST")[0]
+    assert not check_auth_public_settings(lambda req,n:(200,b"not-json"),
+            key="sb_publishable_TEST_TEST_TEST_TEST_TEST")[0]
+    assert not check_auth_public_settings(lambda req,n:(200,b"x"*8193),
+            key="sb_publishable_TEST_TEST_TEST_TEST_TEST")[0]
+    assert not check_auth_public_settings(settings_good,key="invalid-key")[0]
+    print("PASS contrôles négatifs locaux : pages, JWT et Auth publique, aucun secret.")
 
 
 def production_test():
@@ -101,8 +179,15 @@ def production_test():
         print(("PASS" if passed else "FAIL")+" JWT "+slug+" : "+reason)
         if not passed:
             failures.append(slug)
-    print("BILAN : "+str(len(PAGE_CONTRACTS)+len(FUNCTIONS)-len(failures))+
-          "/"+str(len(PAGE_CONTRACTS)+len(FUNCTIONS))+" contrôles publics.")
+    try:
+        passed,reason=check_auth_public_settings()
+    except (URLError,TimeoutError,OSError,ValueError):
+        passed,reason=False,"échec de lecture Auth publique"
+    print(("PASS" if passed else "FAIL")+" Auth /settings : "+reason)
+    if not passed:
+        failures.append("auth_public_settings")
+    print("BILAN : "+str(len(PAGE_CONTRACTS)+len(FUNCTIONS)+1-len(failures))+
+          "/"+str(len(PAGE_CONTRACTS)+len(FUNCTIONS)+1)+" contrôles publics.")
     print("Sans authentification, sans données personnelles, sans preuve de réception email.")
     return 1 if failures else 0
 
