@@ -678,6 +678,20 @@ Registre : `data/g016z-controle-versions-source-municipale-mamh.json`. Le score 
 
 **Suite G0.17d :** obtenir les fichiers réels 2024–2025 et leurs dictionnaires, puis rapprocher les budgets locaux des comptes provinciaux, les besoins de services d'eau et la protection des ménages. Les deux trajectoires Québec au Canada et Québec souverain restent **non financées**. **47/100 inchangé.**
 
+
+## G0.17d — Continuité de l'eau, engagements TECQ et deux scénarios (8 novembre 2026)
+
+**Complétude de préparation Nova–Sinjira : 47/100, 53 points restants.** La phase documente la poursuite des investissements municipaux liés à l'eau, aux services essentiels et aux actifs publics sans déduire de fausses économies de l'abolition des taxes.
+
+- **Nouvelle source 2024 :** la [page officielle de la Stratégie québécoise d'économie d'eau potable](https://www.quebec.ca/gouvernement/ministeres-organismes/affaires-municipales/publications/strategie-economie-potable/cartographie-avancement-strategie) propose une **base de données 2024 (XLSX), publiée le 30 juillet 2026**. Le téléchargement du classeur a échoué dans l'environnement (résolution DNS), et le contenu n'est **pas** analysé; les coûts, revenus et couverture de l'eau **pour 2024 restent inconnus**. Les 40 % de couverture du coût complet de 2023 ne sont pas réutilisés comme chiffre 2024.
+- **Financement public 2024–2028 :** le [TECQ officiel](https://www.quebec.ca/habitation-territoire/infrastructures-municipales/programmes/eau-potable-eaux-usees/programme-transfert-infrastructures-eau-collectives-quebec-tecq-2024-2028) prévoit **plus de 3,3 G$ d'appui sur cinq ans**, dont **plus de 2,2 G$ fédéraux** et **environ 1,0 G$ du Québec**. Ce sont des **enveloppes annoncées**, pas des paiements bancaires certifiés et pas seulement des projets d'eau potable. Ne jamais les ajouter sans contrôle au coût historique des réseaux d'eau ou au budget provincial.
+- **Conformité :** projets admissibles réalisés entre le **1er janvier 2024 et le 31 décembre 2028**, programmations municipales **mises à jour chaque année du 1er octobre au 15 février**, obligation d'investissements autonomes, reddition de comptes finale **au 30 juin 2029**; les paiements et preuves doivent être rapprochés individuellement.
+- **Deux scénarios constitutionnels :** dans le Canada, maintien du TECQ et des obligations uniquement selon le régime juridique et les conventions applicables; dans un Québec souverain, **aucune continuation automatique des fonds fédéraux n'est présumée**. Le montant fédéral pluriannuel n'est **pas** un coût annuel net automatique de l'indépendance : recettes, charges, dette et accords doivent être réconciliés.
+- **Proposition conditionnelle :** « Fonds de continuité des services municipaux et de maintien des actifs en eau », **avant-proposition non adoptée**, financée uniquement par des ressources légalement démontrées et **sans troisième taxe cachée**. Chaque subvention et chaque investissement doivent être suivis de **l'engagement à la facture puis au versement bancaire**, avec neutralisation des transferts entre gouvernements et maintien des services, actifs, salariés et droits. Les frais d'usage requièrent une qualification juridique.
+- **Livrables :** `data/g017d-plan-continuite-eau-et-tecq-2024-2028.json`, `assets/g017d-water-tecq-protection-core.mjs`, `tests/g017d-water-tecq-protection.test.mjs`, `official/working/rapport-g0-17d-continuite-eau-et-tecq-2024-2028-v1.md`. **53/53 tests de cohérence réussis en JavaScript/V8 isolé**; ni GitHub Actions ni audit externe du programme attestés.
+
+**Suite G0.17e :** obtenir les octets du classeur d'eau 2024 et les CSV municipaux 2024–2025, puis **les chiffres de transferts et paiements TECQ par municipalité**, afin de produire une consolidation par exercice compatible avec la promesse de deux prélèvements. Le score reste **47/100** jusqu'aux validations concrètes.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
