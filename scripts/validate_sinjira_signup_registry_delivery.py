@@ -65,6 +65,10 @@ def main()->int:
         ".from('sinjira_formspree_events')",
         'body:JSON.stringify(fields)',
         'reference:String(receipt.id)',
+        "if(reserveError.code==='23505')",
+        ".select('delivery_status')",
+        "accepted:!priorError&&prior?.delivery_status==='sent'",
+        "already:true",
     ])
     migration=check('supabase/migrations/20261108041500_sinjira_formspree_notification_ledger.sql',[
         'unique(event_type,source_id)', 'enable row level security',
