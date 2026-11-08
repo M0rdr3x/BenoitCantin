@@ -395,15 +395,23 @@
           if(error?.name !== "AbortError") $("#compass-status").textContent = "Le partage n’a pas pu être ouvert. Vous pouvez copier le résumé.";
         }
       }else{
-        await copyText(compact + "\n" + pageUrl);
-        $("#compass-status").textContent = "Le partage natif n’est pas disponible; le résumé a été copié.";
+        try {
+          await copyText(compact + "\n" + pageUrl);
+          $("#compass-status").textContent = "Le partage natif n’est pas disponible; le résumé a été copié.";
+        } catch(_error) {
+          $("#compass-status").textContent = "Copie impossible : utilisez « Préparer le courriel » pour partager votre résumé.";
+        }
       }
     };
 
     const copyResult = $("#compass-copy-result");
     if(copyResult) copyResult.onclick = async () => {
-      await copyText(full + "\n\n" + pageUrl);
-      $("#compass-status").textContent = "Résumé copié dans le presse-papiers.";
+      try {
+        await copyText(full + "\n\n" + pageUrl);
+        $("#compass-status").textContent = "Résumé copié dans le presse-papiers.";
+      } catch(_error) {
+        $("#compass-status").textContent = "Copie impossible : utilisez « Préparer le courriel » pour partager votre résumé.";
+      }
     };
   }
 
@@ -418,9 +426,14 @@
     area.style.position = "fixed";
     area.style.opacity = "0";
     document.body.appendChild(area);
-    area.select();
-    document.execCommand("copy");
-    area.remove();
+    try {
+      area.select();
+      if(document.execCommand("copy") !== true){
+        throw new Error("COPY_UNAVAILABLE");
+      }
+    } finally {
+      area.remove();
+    }
   }
 
   function showResults(focusAndScroll=true){
