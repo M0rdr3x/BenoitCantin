@@ -98,7 +98,7 @@ JWT_SENSITIVE_GUARDS = {
         "Referrer-Policy", "no-referrer",
     ),
     "submit-game-contribution": (
-        "req.method!=='POST'", "MAX_REQUEST_BYTES=2048", "readBoundedJson", "readLimitedUtf8Body", "limited-body.mjs",
+        "req.method!=='POST'", "MAX_REQUEST_BYTES=2048", "readBoundedJson", "TextEncoder",
         "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "UUID_RE", "INVALID_SESSION",
         "p_user_id:user.id", "select('id,game_slug,play_mode,human_player_count,effective_player_count,player_count,duration_minutes')",
         "submitted:true", "Cache-Control", "private, no-store", "X-Content-Type-Options",
