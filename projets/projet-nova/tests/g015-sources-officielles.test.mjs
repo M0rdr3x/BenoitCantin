@@ -27,7 +27,7 @@ const inspect=doc=>{
      !Array.isArray(v.candidats)||!v.prochaine_verification))failures.push("PROOFS_CHANGED");
  const selected=a.filter(v=>v.candidats.length>0).length;
  if(selected!==15||selected!==doc.selected_candidates_count||
-    a.reduce((n,v)=>n+v.candidats.length,0)!==23)failures.push("DISCOVERY_COUNTS");
+    a.reduce((n,v)=>n+v.candidats.length,0)!==24)failures.push("DISCOVERY_COUNTS");
  for(const e of a)for(const s of e.candidats){
   let u;
   try{u=new URL(s.url)}catch{failures.push("INVALID_URL:"+e.id);continue;}
@@ -43,10 +43,10 @@ test("47 % est maintenu : zéro preuve fiscalement validée",()=>{
   p.primary_source===null&&p.reviewed_independently===false));
  assert.deepEqual(inspect(discovery),[]);
 });
-test("15 entrées G0.15, 15 thèmes repérés, 23 candidatures de sources",()=>{
+test("15 entrées G0.15, 15 thèmes repérés, 24 candidatures de sources",()=>{
  assert.equal(discovery.entries.length,15);
  assert.equal(discovery.selected_candidates_count,15);
- assert.equal(discovery.entries.reduce((n,e)=>n+e.candidats.length,0),23);
+ assert.equal(discovery.entries.reduce((n,e)=>n+e.candidats.length,0),24);
 });
 test("une source candidate ne peut devenir une preuve certifiée",()=>{
  const x=structuredClone(discovery);x.entries[6].independently_reviewed=true;
@@ -95,7 +95,7 @@ test("V04 V06 V13 trouvent les sociétés 2021 sans ouvrir les portes G0.15",()=
 });
 
 test("V02, V03, V10 et V14 : sources publiques repérées, non certifiées",()=>{
- const expected={V02:2,V03:3,V10:2,V14:1};
+ const expected={V01:2,V02:2,V03:3,V10:2,V14:1};
  for(const [id,count] of Object.entries(expected)){
    const entry=discovery.entries.find(e=>e.id===id);
    assert.equal(entry.candidats.length,count,id);
@@ -118,10 +118,10 @@ test("la page publique reflète chaque piste G0.15 sans déclarer de validation"
  const excerpt=html.slice(start,end);
  const ids=[...excerpt.matchAll(/<tr><th scope="row">(V\d\d) /g)].map(m=>m[1]);
  assert.deepEqual(ids,proofs.proofs.map(p=>p.id));
- assert.match(excerpt,/23 candidatures de sources/);
+ assert.match(excerpt,/24 candidatures de sources/);
  assert.match(excerpt,/0 sur 15 sont validées/);
  assert.match(excerpt,/47 % inchangé/);
- for(const id of ["V02","V03","V10","V14"]){
+ for(const id of ["V01","V02","V03","V10","V14"]){
    assert.ok(ids.includes(id));
    for(const source of discovery.entries.find(e=>e.id===id).candidats){
      assert.ok(excerpt.includes(source.url),"Source visible pour "+id);
@@ -139,5 +139,17 @@ test("les comptes publics réalisés 2025-2026 sont reliés à V02 et V03 sans c
    assert.equal(row.independently_reviewed,false);
  }
  assert.equal(discovery.preconditions_confirmed,0);
+ assert.deepEqual(inspect(discovery),[]);
+});
+
+test("la note 4 officielle complète les trois volets sans changer leur statut",()=>{
+ const url="https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Comptes-publics/FR/CPTFR_vol1-2025-2026.pdf";
+ for(const id of ["V01","V02","V03"]){
+  const e=discovery.entries.find(x=>x.id===id);
+  assert.ok(e.candidats.some(x=>x.url===url&&x.statut==="SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"),id);
+  assert.equal(proofs.proofs.find(x=>x.id===id).reviewed_independently,false);
+ }
+ assert.equal(discovery.preconditions_confirmed,0);
+ assert.equal(discovery.independent_reviews_confirmed,0);
  assert.deepEqual(inspect(discovery),[]);
 });
