@@ -131,6 +131,7 @@ assert.equal(t.validatedPublicResponse(tamper(c=>({...c,"9":"10"}))),false,"Nomb
 t.setOpen(true);t.setSending(false);t.setCaptcha("jeton-de-test");
 for(const question of corpus.questions)selected.add(question.id);
 elem("poll-adult").checked=true;elem("poll-agree").checked=true;
+context.localStorage.getItem=()=>{throw new Error("Lecture de stockage bloquée");};
 assert.equal(t.alreadyVoted(),false,"Aucun vote confirmé pour cette session de test");
 t.updateButton();assert.equal(elem("poll-send").disabled,false);
 assert.doesNotThrow(()=>t.markVoted(),"Un refus de localStorage ne doit pas bloquer l'interface");
