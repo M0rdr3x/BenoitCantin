@@ -17,7 +17,7 @@
 1. Les bulletins et soupçons sont **confidentiels** : les recevoir et les traiter dans une fonction serveur autorisée. Ne jamais transmettre les bulletins d'autrui au client ni les écrire dans des logs.
 2. Authentifier chaque humain, vérifier la présence dans la partie, son numéro de siège, l'état clos des rondes, l'unicité de son bulletin et empêcher toute modification après clôture.
 3. Rassembler les bulletins dans une transaction serveur atomique avec contrôle de version; bloquer les reprises de requête et les scrutins partiels. Les tableaux d'entrée du module ne sont **jamais** des données client fiables.
-4. Lire le cumul des soupçons dans un stockage serveur protégé. Le paramètre `suspicionTotals=null` est utile aux tests, **pas** comme substitut à des soupçons historiques réels. Ne calculer l'agrégation qu'après validation de tous les bulletins.
+4. Lire le cumul des soupçons dans un stockage serveur protégé. **`suspicionTotals` est obligatoire**, y compris quand tous les cumuls réels valent zéro : l'absence du paramètre, `null` et les tableaux incomplets sont rejetés. Les tests fournissent eux aussi leurs valeurs explicitement. Ne calculer l'agrégation qu'après validation de tous les bulletins.
 5. Protéger et auditer le résultat de tirage aléatoire externe; `fractureApplyFinalDrawV38` vérifie uniquement l'appartenance des gagnants au groupe ex æquo, **pas** l'authenticité d'un tirage.
 6. La liste des agents secrets doit rester côté serveur; le modèle V38 ne reçoit, ne conserve ni ne révèle les identités des factions. Aucune mise à jour Supabase ni activation Web n'est autorisée par cette PR.
 7. Les résultats agrégés eux-mêmes sont potentiellement révélateurs; ne les publier qu'au moment approuvé par les règles, après clôture du scrutin.
@@ -30,7 +30,7 @@ Le manuel officiel décrit la désignation d'un nombre d'agents parmi les siège
 
 ## Validation
 
-- 9 tests Node locaux ont réussi sur le module et une simulation des exports de V36 (1, 2, 3, 5 et 20 humains; exclusions, cumuls, égalités, tirage externe et confidentialité).
+- La suite Node V38 vérifie les cas 1, 2, 3, 5 et 20 humains, l'absence de cumuls, les exclusions, les égalités, le tirage externe et la confidentialité. Les résultats de la CI GitHub sur le SHA final sont la preuve exigée avant fusion.
 - La CI GitHub doit rejouer les tests sur le **véritable V36**, ainsi que la suite V36 de non-régression, au SHA exact de la PR. Aucun résultat CI ne doit être déduit des seuls tests locaux.
 - Revue de sécurité, choix éditorial explicite et tests multi-comptes en environnement isolé restent obligatoires avant fusion fonctionnelle.
 
