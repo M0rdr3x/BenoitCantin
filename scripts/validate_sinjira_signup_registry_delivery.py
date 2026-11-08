@@ -29,11 +29,13 @@ def main()->int:
     confirmation=check('assets/js/sinjira-confirm-email.js',[
         "getSupabase().auth.verifyOtp(", "confirmButton?.addEventListener('click'",
         "getSupabase().auth.resend(", "options:{emailRedirectTo:", "'notify-account-confirmation'",
-        "signal:AbortSignal.timeout(8500)",
+        "signal:AbortSignal.timeout(8500)", "resendButton.disabled=!isSinjiraBackendConfigured()",
     ])
     confirmation_page=check('compte/confirmer.html',[
         'data-confirm-button hidden', 'data-confirm-resend-form',
         'noindex,nofollow', 'sinjira-confirm-email.js?v=2',
+        'data-confirm-resend-form method="post" action="/compte/confirmer.html"',
+        'type="submit" disabled>Renvoyer un lien', '<noscript>',
     ])
     registry_page=check('projets/sinjira/registre/index.html',[
         'data-character-form=', 'type="submit" disabled>Transmettre ma participation',
