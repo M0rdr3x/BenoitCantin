@@ -16,7 +16,9 @@ REQUIRED = {
     'mode gratuit compilé': 'const PAID_EXTERNAL_SERVICES_ENABLED=false;',
     'code mode gratuit': "code:'PAID_EXTERNAL_SERVICE_DISABLED'",
     'JSON explicite': "contentType.startsWith('application/json')",
-    'lecture corps texte': 'const raw=await req.text();',
+    'lecture corps en flux': 'const limited=await readLimitedUtf8Body(req,MAX_REQUEST_BYTES);',
+    'refus dépassement de flux': 'if(!limited.ok)',
+    'PDF distant borné en flux': 'const limitedPdf=await readLimitedBinaryResponse(response,MAX_TEMPLATE_BYTES);',
     'mesure UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
     'réponse privée': "'Cache-Control':'private, no-store, max-age=0'",
     'pragma no-cache': "'Pragma':'no-cache'",
@@ -37,6 +39,8 @@ FORBIDDEN = {
     'client Supabase local': 'createClient(',
     'auth artisanale': 'function userFrom(',
     'JSON direct non borné': 'await req.json()',
+    'corps HTTP non borné': 'await req.text()',
+    'PDF distant non borné': 'await response.arrayBuffer()',
     'lecture réponse fournisseur': 'await sent.text()',
     'log erreur brute court': 'console.error(e)',
     'log objet erreur brut': 'console.error(error)',
@@ -85,20 +89,24 @@ def validate_text(source: str, config: str) -> list[str]:
     require(errors, provider_pos > parse_pos,
             'Le fournisseur externe doit rester derrière auth, garde payant et validation du corps.')
 
-    raw_pos = source.find('const raw=await req.text();')
+    stream_pos = source.find('await readLimitedUtf8Body(req,MAX_REQUEST_BYTES)')
+    reject_pos = source.find('if(!limited.ok)')
+    raw_pos = source.find('const raw=limited.raw;')
     utf8_pos = source.find('new TextEncoder().encode(raw).byteLength')
     json_pos = source.find("JSON.parse(raw||'{}')")
-    require(errors, raw_pos >= 0 and utf8_pos > raw_pos and json_pos > utf8_pos,
-            'Le corps doit être mesuré en octets UTF-8 avant le parsing JSON.')
+    require(errors, 0 <= stream_pos < reject_pos < raw_pos < utf8_pos < json_pos,
+            'Le corps doit être limité en flux, rejeté en erreur puis parsé en JSON.')
 
     fetch_template_pos = source.find("fetch(templateUrl(mode),{cache:'no-store',redirect:'error'})")
     declared_template_pos = source.find("response.headers.get('content-length')")
-    actual_template_pos = source.find('bytes.byteLength===0||bytes.byteLength>MAX_TEMPLATE_BYTES')
+    stream_template_pos = source.find('await readLimitedBinaryResponse(response,MAX_TEMPLATE_BYTES)')
+    reject_template_pos = source.find('if(!limitedPdf.ok)')
+    actual_template_pos = source.find('const bytes=limitedPdf.bytes;')
     signature_pos = source.find("String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-'")
     require(errors,
-            fetch_template_pos >= 0 and declared_template_pos > fetch_template_pos and
-            actual_template_pos > declared_template_pos and signature_pos > actual_template_pos,
-            'Le modèle PDF doit refuser les redirections puis être borné et signé avant chargement.')
+            0 <= fetch_template_pos < declared_template_pos < stream_template_pos <
+            reject_template_pos < actual_template_pos < signature_pos,
+            'Le modèle PDF doit être téléchargé en flux borné avant validation signature.')
 
     origin_checks = [
         "url.protocol!=='https:'",
@@ -169,7 +177,9 @@ def self_test() -> None:
         'service payant activé': source.replace('PAID_EXTERNAL_SERVICES_ENABLED=false', 'PAID_EXTERNAL_SERVICES_ENABLED=true', 1),
         'garde payant après corps': source.replace(paid_block, moved_paid_block, 1),
         'requiredUser retiré': source.replace('const user=await requiredUser(req);', "const user={email:'bypass@example.test'};", 1),
-        'req.json direct': source.replace('const raw=await req.text();', 'const raw=JSON.stringify(await req.json());', 1),
+        'req.json direct': source.replace('const limited=await readLimitedUtf8Body(req,MAX_REQUEST_BYTES);', 'const limited={ok:true,raw:JSON.stringify(await req.json())};', 1),
+        'req.text non borné': source.replace('const limited=await readLimitedUtf8Body(req,MAX_REQUEST_BYTES);', 'const limited={ok:true,raw:await req.text()};', 1),
+        'PDF arrayBuffer non borné': source.replace('const limitedPdf=await readLimitedBinaryResponse(response,MAX_TEMPLATE_BYTES);', 'const limitedPdf={ok:true,bytes:new Uint8Array(await response.arrayBuffer())};', 1),
         'content-type affaibli': source.replace("contentType.startsWith('application/json')", "contentType.startsWith('text/plain')", 1),
         'limite requête augmentée': source.replace('MAX_REQUEST_BYTES=220_000;', 'MAX_REQUEST_BYTES=2_200_000;', 1),
         'mesure UTF-8 retirée': source.replace('new TextEncoder().encode(raw).byteLength', 'raw.length', 1),
