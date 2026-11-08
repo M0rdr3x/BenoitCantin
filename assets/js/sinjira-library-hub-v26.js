@@ -34,7 +34,9 @@ async function init(){
   const projects=Array.isArray(data)?data:[];
   container.innerHTML=projects.map(project=>{
     const path=safeLink(project.public_path)||'/projets/sinjira/jeux/';
-    const play=safeLink(project.play_path);
+    // L'ancien moteur Fracture ne respecte pas encore l'édition Déduction
+    // simplifiée : ne jamais présenter son ancien accès comme un jeu jouable.
+    const play=project.slug==='fracture-du-reseau-mere'?null:safeLink(project.play_path);
     const grant=access.get(project.id);
     const active=grant&&(!grant.expires_at||Date.parse(grant.expires_at)>Date.now());
     const isTester=elevated||(active&&grant.access_level==='tester');
