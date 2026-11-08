@@ -1,5 +1,6 @@
 import {corsHeaders} from '../_shared/cors.ts';
 import {requiredUser,serviceClient} from '../_shared/auth.ts';
+import {sendFormspreeNotice} from '../_shared/sinjira-formspree.ts';
 import {SINJIRA_CANON_PUBLIC_GUIDE} from '../_shared/sinjira-canon-public.ts';
 import {loadSinjiraCanonContext,canonPrompt} from '../_shared/sinjira-canon-context.ts';
 
@@ -96,12 +97,14 @@ Deno.serve(async(req)=>{
       }
       try{const {error}=await service.rpc('ensure_sinjira_owner_character');if(error)console.warn('[submit-character-questionnaire]','OWNER_CHARACTER_REPAIR_FAILED')}catch{console.warn('[submit-character-questionnaire]','OWNER_CHARACTER_REPAIR_FAILED')}
       const n=await notify(service,sub,user,p,answers as Record<string,unknown>,true);
-      return privateJson(successPayload(sub.id,{character_id:existingCharacter?.id||null,ai_generated:false,updated_existing:true},n));
+      const formspree=await sendFormspreeNotice(service,'registre_enregistre',sub.id);
+      return privateJson(successPayload(sub.id,{character_id:existingCharacter?.id||null,ai_generated:false,updated_existing:true,formspree_notification_sent:formspree.accepted},n));
     }
 
     const {data:sub,error}=await service.from('character_submissions').insert({user_id:user.id,account_pseudo:p?.pseudo||p?.display_name||'',account_email:user.email||'',source_payload:answers,photo_path:photo_path||null,status:'submitted'}).select('*').single();
     if(error)throw new Error('CHARACTER_SUBMISSION_WRITE_FAILED');
     const n=await notify(service,sub,user,p,answers as Record<string,unknown>,false);
+    const formspree=await sendFormspreeNotice(service,'registre_enregistre',sub.id);
     let generated=null;
     if(manual_only!==true&&REMOTE_AI_ENABLED){
       try{generated=await generate(answers as Record<string,unknown>,service)}
@@ -112,9 +115,9 @@ Deno.serve(async(req)=>{
       if(ce)throw new Error('CHARACTER_SUBMISSION_WRITE_FAILED');
       await service.from('character_submissions').update({status:'ai_draft'}).eq('id',sub.id);
       await service.from('character_generation_runs').insert({submission_id:sub.id,character_id:ch.id,model:generated.model,status:'completed'});
-      return privateJson(successPayload(sub.id,{character_id:ch.id,ai_generated:true},n));
+      return privateJson(successPayload(sub.id,{character_id:ch.id,ai_generated:true,formspree_notification_sent:formspree.accepted},n));
     }
-    return privateJson(successPayload(sub.id,{ai_generated:false},n));
+    return privateJson(successPayload(sub.id,{ai_generated:false,formspree_notification_sent:formspree.accepted},n));
   }catch(e){
     console.error('[submit-character-questionnaire]',safeLogCode(e));
     if(e?.message==='AUTH_REQUIRED')return privateJson({ok:false,error:'Connexion requise.',code:'AUTH_REQUIRED',version:VERSION},401);
