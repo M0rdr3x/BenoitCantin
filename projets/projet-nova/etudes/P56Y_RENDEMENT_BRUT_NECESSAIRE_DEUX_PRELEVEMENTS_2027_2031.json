@@ -1,0 +1,206 @@
+{
+  "schema_version": "P56Y-1",
+  "date_revision": "2026-11-08",
+  "objet": "PONT_RENDEMENT_BRUT_DEUX_PILIERS_FISCAUX_ET_REMPLACEMENT_IMPOTS_EXISTANTS_2027_2031",
+  "statut": "TEST_DE_CONTRAINTES_FINANCIERES_SANS_ASSIETTES_NOVA",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "sources": {
+    "P56R": "projets/projet-nova/etudes/P56R_INVENTAIRE_EXHAUSTIF_CATEGORIES_RECETTES_ET_PONT_FISCAL_2026_2031.json",
+    "P56Q": "projets/projet-nova/etudes/P56Q_PONT_CONTREFACTUEL_RECETTES_2027_2031_SIMULATEUR_AMENDE.json",
+    "P56X": "projets/projet-nova/etudes/P56X_ASSIETTES_HISTORIQUES_ET_VERROU_TAUX_NOVA_2027_2028.json",
+    "P56O": "projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json",
+    "P55N": "projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json",
+    "origine_budget": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Rapport_preelectoral/FR/MINFR_RP_2026.pdf"
+  },
+  "deux_formules": {
+    "replacement_total": "RENDEMENT_BRUT_CIBLE_NOUVEAUX_PILIERS = IMPOTS_REVENU_ACTUELS + TROIS_RECETTES_RETIREES",
+    "objectif_solde_zero_conditionnel": "RENDEMENT_CIBLE_POUR_SOLDE_ZERO = IMPOTS_REVENU_ACTUELS + TROIS_RECETTES_RETIREES - SOLDE_LEGAL_DE_REFERENCE + ECART_NON_RESORBE",
+    "ne_pas_confondre_nouvel_impot_total_avec_recettes_additionnelles": true,
+    "recettes_pilier_antiparadis_et_impot_sur_revenu_non_decomposees": true,
+    "transformation_formelle_sans_effets_comportementaux_et_sans_couts_transition": true
+  },
+  "annees": [
+    {
+      "exercice": "2027-2028",
+      "classification": "TEST_STATIQUE_REGIME_CANADA_SANS_NOUVELLES_ASSIETTES",
+      "recettes_publiques_de_reference_mcad": "174225",
+      "impots_personnes_societes_actuels_que_nova_remplacerait_mcad": "68093",
+      "trois_autres_prelevements_que_nova_pourrait_remplacer_mcad": "42875",
+      "recettes_total_a_substituer_si_deux_nouveaux_piliers_mcad": "110968",
+      "recettes_restant_hors_impots_et_trois_prelevements_mcad": "63257",
+      "solde_legal_reference_avec_resorption_mcad": "-5695",
+      "ecart_a_resorber_non_finance_mcad": "0",
+      "solde_legal_reference_sans_resorption_mcad": "-5695",
+      "rendement_nouveaux_piliers_pour_conserver_solde_existant_mcad": "110968",
+      "rendement_nouveaux_piliers_pour_solde_zero_avec_resorption_mcad": "116663",
+      "rendement_nouveaux_piliers_pour_solde_zero_sans_resorption_mcad": "116663",
+      "minimum_nouvelles_recettes_seulement_par_rapport_aux_impots_actuels_si_conserves_mcad": "48570",
+      "nouvelle_assiette_imposable_personnes_mcad": null,
+      "nouvelle_assiette_imposable_societes_mcad": null,
+      "rendement_net_fiscalite_revenu_nova_mcad": null,
+      "rendement_net_prelevement_anti_paradis_nova_mcad": null,
+      "compensations_sociales_nova_mcad": null,
+      "couts_transition_et_protection_emplois_nova_mcad": null,
+      "recettes_non_fiscales_requalifiees_certifiees_mcad": null,
+      "economie_administrative_reelle_certifiee_mcad": null,
+      "suffisance_qualite_services_nova_certifiee": false,
+      "solde_final_nova_chiffre": null,
+      "taux_nova_2027_2036_adopte": false
+    },
+    {
+      "exercice": "2028-2029",
+      "classification": "TEST_STATIQUE_REGIME_CANADA_SANS_NOUVELLES_ASSIETTES",
+      "recettes_publiques_de_reference_mcad": "178844",
+      "impots_personnes_societes_actuels_que_nova_remplacerait_mcad": "70101",
+      "trois_autres_prelevements_que_nova_pourrait_remplacer_mcad": "44169",
+      "recettes_total_a_substituer_si_deux_nouveaux_piliers_mcad": "114270",
+      "recettes_restant_hors_impots_et_trois_prelevements_mcad": "64574",
+      "solde_legal_reference_avec_resorption_mcad": "-1500",
+      "ecart_a_resorber_non_finance_mcad": "1850",
+      "solde_legal_reference_sans_resorption_mcad": "-3350",
+      "rendement_nouveaux_piliers_pour_conserver_solde_existant_mcad": "114270",
+      "rendement_nouveaux_piliers_pour_solde_zero_avec_resorption_mcad": "115770",
+      "rendement_nouveaux_piliers_pour_solde_zero_sans_resorption_mcad": "117620",
+      "minimum_nouvelles_recettes_seulement_par_rapport_aux_impots_actuels_si_conserves_mcad": "47519",
+      "nouvelle_assiette_imposable_personnes_mcad": null,
+      "nouvelle_assiette_imposable_societes_mcad": null,
+      "rendement_net_fiscalite_revenu_nova_mcad": null,
+      "rendement_net_prelevement_anti_paradis_nova_mcad": null,
+      "compensations_sociales_nova_mcad": null,
+      "couts_transition_et_protection_emplois_nova_mcad": null,
+      "recettes_non_fiscales_requalifiees_certifiees_mcad": null,
+      "economie_administrative_reelle_certifiee_mcad": null,
+      "suffisance_qualite_services_nova_certifiee": false,
+      "solde_final_nova_chiffre": null,
+      "taux_nova_2027_2036_adopte": false
+    },
+    {
+      "exercice": "2029-2030",
+      "classification": "TEST_STATIQUE_REGIME_CANADA_SANS_NOUVELLES_ASSIETTES",
+      "recettes_publiques_de_reference_mcad": "182441",
+      "impots_personnes_societes_actuels_que_nova_remplacerait_mcad": "72702",
+      "trois_autres_prelevements_que_nova_pourrait_remplacer_mcad": "45313",
+      "recettes_total_a_substituer_si_deux_nouveaux_piliers_mcad": "118015",
+      "recettes_restant_hors_impots_et_trois_prelevements_mcad": "64426",
+      "solde_legal_reference_avec_resorption_mcad": "0",
+      "ecart_a_resorber_non_finance_mcad": "2000",
+      "solde_legal_reference_sans_resorption_mcad": "-2000",
+      "rendement_nouveaux_piliers_pour_conserver_solde_existant_mcad": "118015",
+      "rendement_nouveaux_piliers_pour_solde_zero_avec_resorption_mcad": "118015",
+      "rendement_nouveaux_piliers_pour_solde_zero_sans_resorption_mcad": "120015",
+      "minimum_nouvelles_recettes_seulement_par_rapport_aux_impots_actuels_si_conserves_mcad": "47313",
+      "nouvelle_assiette_imposable_personnes_mcad": null,
+      "nouvelle_assiette_imposable_societes_mcad": null,
+      "rendement_net_fiscalite_revenu_nova_mcad": null,
+      "rendement_net_prelevement_anti_paradis_nova_mcad": null,
+      "compensations_sociales_nova_mcad": null,
+      "couts_transition_et_protection_emplois_nova_mcad": null,
+      "recettes_non_fiscales_requalifiees_certifiees_mcad": null,
+      "economie_administrative_reelle_certifiee_mcad": null,
+      "suffisance_qualite_services_nova_certifiee": false,
+      "solde_final_nova_chiffre": null,
+      "taux_nova_2027_2036_adopte": false
+    },
+    {
+      "exercice": "2030-2031",
+      "classification": "TEST_STATIQUE_REGIME_CANADA_SANS_NOUVELLES_ASSIETTES",
+      "recettes_publiques_de_reference_mcad": "189012",
+      "impots_personnes_societes_actuels_que_nova_remplacerait_mcad": "75881",
+      "trois_autres_prelevements_que_nova_pourrait_remplacer_mcad": "46528",
+      "recettes_total_a_substituer_si_deux_nouveaux_piliers_mcad": "122409",
+      "recettes_restant_hors_impots_et_trois_prelevements_mcad": "66603",
+      "solde_legal_reference_avec_resorption_mcad": "250",
+      "ecart_a_resorber_non_finance_mcad": "2000",
+      "solde_legal_reference_sans_resorption_mcad": "-1750",
+      "rendement_nouveaux_piliers_pour_conserver_solde_existant_mcad": "122409",
+      "rendement_nouveaux_piliers_pour_solde_zero_avec_resorption_mcad": "122159",
+      "rendement_nouveaux_piliers_pour_solde_zero_sans_resorption_mcad": "124159",
+      "minimum_nouvelles_recettes_seulement_par_rapport_aux_impots_actuels_si_conserves_mcad": "48278",
+      "nouvelle_assiette_imposable_personnes_mcad": null,
+      "nouvelle_assiette_imposable_societes_mcad": null,
+      "rendement_net_fiscalite_revenu_nova_mcad": null,
+      "rendement_net_prelevement_anti_paradis_nova_mcad": null,
+      "compensations_sociales_nova_mcad": null,
+      "couts_transition_et_protection_emplois_nova_mcad": null,
+      "recettes_non_fiscales_requalifiees_certifiees_mcad": null,
+      "economie_administrative_reelle_certifiee_mcad": null,
+      "suffisance_qualite_services_nova_certifiee": false,
+      "solde_final_nova_chiffre": null,
+      "taux_nova_2027_2036_adopte": false
+    }
+  ],
+  "regimes": {
+    "QUEBEC_DANS_CANADA": {
+      "classification": "TEST_REMPLACEMENT_PRELEVEMENTS_PROVINCIAUX",
+      "transferts_federaux_dans_reference_publique": true,
+      "recettes_federales_additionnelles_au_budget_nova": null,
+      "impots_federaux_non_abrogeables_par_quebec": true,
+      "simulation_incidence_familles_realisee": false
+    },
+    "QUEBEC_SOUVERAIN": {
+      "classification": "MODELE_DISTINCT_NON_CALCULE",
+      "transferts_federaux_de_reference_conserves_automatiquement": false,
+      "recettes_federales_additionnelles_au_budget_nova": null,
+      "nouveaux_couts_competences_federales_mcad": null,
+      "couts_repartition_dette_pensions_actifs_mcad": null,
+      "budget_souverain_certifie": false
+    }
+  },
+  "precautions": {
+    "cible_rendement_brut_n_est_pas_taux_imposition": true,
+    "cible_total_inclut_remplacement_des_impots_personnes_et_societes_existants": true,
+    "ne_pas_additionner_un_impot_nouveau_au_maintien_d_impots_remplaces": true,
+    "ne_pas_ajouter_les_42_875_deux_fois": true,
+    "recettes_souveraines_inconnues": true,
+    "trois_categories_ne_constituent_pas_toutes_les_taxes_et_cotisations": true,
+    "fonds_generations_deja_dans_solde_loi": true,
+    "ecarts_a_resorber_ne_sont_pas_gains_realises": true,
+    "revenus_anti_paradis_sont_inconnus_non_zero": true,
+    "credits_remboursables_et_pouvoir_achat_a_preserver": true,
+    "pas_de_suppression_de_postes_ou_services_automatique": true
+  },
+  "blocages": [
+    {
+      "id": "Y01",
+      "condition": "Reconstituer les assiettes de revenus fiscaux 2027-2028 des particuliers et sociétés sur la même base légale",
+      "statut": "NON_DEMONTRE"
+    },
+    {
+      "id": "Y02",
+      "condition": "Simuler les taux candidats, crédits et prestations avec résultats par décile et profil de ménage",
+      "statut": "NON_DEMONTRE"
+    },
+    {
+      "id": "Y03",
+      "condition": "Vérifier rendement net nouveau du prélèvement anti-paradis fiscaux après coûts et chevauchements",
+      "statut": "NON_DEMONTRE"
+    },
+    {
+      "id": "Y04",
+      "condition": "Auditer dépenses, emplois et besoins des services et éliminer le double comptage des transferts",
+      "statut": "NON_DEMONTRE"
+    },
+    {
+      "id": "Y05",
+      "condition": "Obtenir les scénarios complets 2027-2036 et le budget souverain propre à ses compétences",
+      "statut": "NON_DEMONTRE"
+    },
+    {
+      "id": "Y06",
+      "condition": "Obtenir signatures des expertises externes, consultation et décisions fiscales officielles",
+      "statut": "NON_DEMONTRE"
+    }
+  ],
+  "avancement": {
+    "score_p55n": 53,
+    "points_estimes_manquants": 47,
+    "portes_p56o_closes": 0,
+    "p52b_inconnus": 600,
+    "p52d_incidences_inconnues": 720,
+    "p52a_preuves_a_valider": 20,
+    "taux_nova_certifies": 0,
+    "modele_souverain_calcule": false,
+    "loi_fiscale_adoptee": false,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
