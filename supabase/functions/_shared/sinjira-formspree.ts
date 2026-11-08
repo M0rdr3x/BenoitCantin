@@ -28,6 +28,43 @@ const QUESTIONNAIRE_FIELDS = [
   'prohibited_elements','personality_notes'
 ] as const;
 
+const QUESTION_LABELS:Record<string,string>={
+  appearance_build:'Apparence — silhouette générale',
+  appearance_height:'Apparence — taille approximative',
+  appearance_hair:'Apparence — cheveux',
+  appearance_eyes:'Apparence — yeux',
+  appearance_style:'Apparence — style vestimentaire',
+  appearance_distinctive:'Apparence — signe distinctif',
+  scale_reserved_social:'Personnalité — réservé / sociable (1 à 5)',
+  scale_cautious_bold:'Personnalité — prudent / audacieux (1 à 5)',
+  scale_calm_impulsive:'Personnalité — calme / impulsif (1 à 5)',
+  scale_logic_instinct:'Personnalité — logique / instinctif (1 à 5)',
+  scale_conciliatory_confrontational:'Personnalité — conciliant / confrontant (1 à 5)',
+  scale_follower_leader:'Personnalité — suiveur / meneur (1 à 5)',
+  scale_wary_trusting:'Personnalité — méfiant / confiant (1 à 5)',
+  scale_flexible_rigid:'Personnalité — flexible / rigide (1 à 5)',
+  strengths:'Forces',
+  weaknesses:'Faiblesses',
+  values:'Valeurs',
+  pressure_first_reaction:'Premier réflexe face à un problème',
+  conflict_reaction:'Réaction en cas de conflit',
+  danger_reaction:'Réaction face au danger',
+  mistake_reaction:'Réaction face à une erreur',
+  trust_speed:'Facilité à accorder sa confiance',
+  preferred_group:'Préférence de travail en groupe',
+  communication_style:'Façon de communiquer',
+  humor_style:'Type d’humour',
+  skills:'Compétences',
+  organization_style:'Organisation personnelle',
+  preferred_environment:'Environnement préféré',
+  narrative_role:'Rôle souhaité pour le personnage',
+  narrative_importance:'Importance souhaitée dans le récit',
+  moral_orientation:'Orientation morale',
+  placement_preference:'Place souhaitée dans SINJIRA',
+  prohibited_elements:'Éléments ou destins refusés',
+  personality_notes:'Notes libres sur la personnalité'
+};
+
 function safeEmail(value:unknown):string {
   const email=String(value||'').trim().toLowerCase();
   if(email.length>254 || !/^[^\s@]{1,64}@[^\s@]+\.[^\s@]+$/.test(email) || /[\r\n]/.test(email))return '';
@@ -42,7 +79,7 @@ function questionnaireText(answers:Record<string,unknown>):string|null {
     const parts=Array.isArray(value)?value.map(String):[String(value)];
     const text=parts.map(v=>v.trim()).filter(Boolean).join(', ');
     if(!text)continue;
-    lines.push(`${key.replaceAll('_',' ')} : ${text}`);
+    lines.push(`${QUESTION_LABELS[key]||key.replaceAll('_',' ')} : ${text}`);
   }
   // Les limites évitent une soumission externe trop volumineuse et l'envoi
   // d'un questionnaire incomplet (ne pas tronquer silencieusement).
