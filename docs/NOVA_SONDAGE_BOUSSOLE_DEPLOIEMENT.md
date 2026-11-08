@@ -153,3 +153,11 @@ La fonction Edge refuse toute enveloppe avec consentement absent, faux ou non bo
 **Limite importante :** ces deux valeurs sont des **déclarations effectuées par le client**, pas une vérification indépendante de l'âge ou du consentement effectif. Le système n'enregistre pas de preuve nominative et ne doit pas prétendre le faire. La revue humaine sur l'information à fournir, le fondement juridique, la conservation, les possibilités de retrait et la conformité applicable au Québec reste une condition bloquante de l'ouverture.
 
 Ce contrôle est préparatoire : les flags d'ouverture de la fonction Supabase et `published:false` restent inchangés. Aucun déploiement de la fonction Edge n'est autorisé par cette modification seule.
+
+## Verrou de participation en l'absence de stockage local
+
+Après une réponse **HTTP 201 acceptée** ou **HTTP 409 déjà enregistrée**, le navigateur verrouille immédiatement toute nouvelle participation **en mémoire pour la session courante**, puis tente de conserver ce statut dans `localStorage`. Si le stockage est refusé (navigation privée, paramètres restrictifs, quota), l'écriture peut échouer mais **les choix et le bouton d'envoi restent désactivés** jusqu'au rechargement de la page. Un échec réseau non confirmé n'active pas ce verrou : l'utilisateur peut réessayer avec le **même jeton aléatoire**, conservé en mémoire durant la session.
+
+La limitation reste explicitement documentée : sans stockage persistant, le blocage du navigateur disparaît au rechargement, et l'outil ne prétend pas vérifier l'unicité d'une personne. Le mécanisme serveur d'anti-rejeu repose sur l'empreinte HMAC du jeton; ni le jeton ni l'état de confirmation ne doivent contenir les choix politiques. Aucun identifiant de personne n'est créé par ce correctif.
+
+Le test `scripts/test_nova_poll_runtime.cjs` simule une erreur d'écriture dans `localStorage` et vérifie que l'état de participation confirmée verrouille le bouton et les réponses. Il vérifie également le branchement du verrou aux réponses 201 et 409. Le client est versionné `sondage-citoyen.js?v=14` pour éviter une mise en cache périmée. Les approbations humaines de confidentialité restent obligatoires avant toute ouverture.
