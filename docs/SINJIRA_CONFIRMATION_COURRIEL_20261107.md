@@ -162,3 +162,11 @@ La page du Registre conserve désormais la photo privée après un appel de soum
 Le message de réussite distingue aussi explicitement le résultat `admin_notification_created` renvoyé par le serveur : un avis interne non confirmé ne doit pas être annoncé comme créé. Le succès du dossier Supabase ne constitue toujours pas une preuve de livraison de courriel Formspree. Ces gardes sont vérifiées dans `scripts/validate_sinjira_signup_registry_delivery.py`; le script client utilise désormais `sinjira-character-registry.js?v=24.5.5` pour éviter les caches de l'ancienne version.
 
 **Limite résiduelle à revoir avant publication :** un fichier privé orphelin peut subsister lorsqu'un envoi échoue définitivement après avoir été tenté; un mécanisme de maintenance sécurisé et borné est préférable à une suppression immédiate risquant de perdre une photo référencée. Aucun nettoyage automatique global ni suppression de données réelles ne sont activés par ce correctif.
+
+## Anti-doublon côté navigateur après résultat réseau indéterminé
+
+Lorsque l'appel `submit-character-questionnaire` a commencé, une erreur de réseau ou une réponse d'API non confirmée est traitée comme un **résultat indéterminé** : SINJIRA conserve la photo privée qui peut déjà être liée à une participation, désactive tout nouvel envoi sur cette page, garde les réponses affichées et fournit un lien « Vérifier mon dossier (nouvel onglet) » vers `/compte/mon-personnage.html`. Cela évite de recréer inutilement un dossier ou de générer de nouveaux fichiers dans le navigateur avant une consultation de l'état serveur. Le participant peut ouvrir le dossier dans un autre onglet, puis recharger le Registre après vérification si aucun dossier n'existe.
+
+Les erreurs **avant** toute invocation serveur (ex. photo refusée ou préparation locale) conservent le droit de réessayer et peuvent entraîner le nettoyage du fichier temporaire si présent. Ce comportement est gardé par le contrat `scripts/validate_sinjira_signup_registry_delivery.py` et la version de script `sinjira-character-registry.js?v=24.5.6`.
+
+**Limite connue :** la vérification de l'état dans un autre onglet repose sur la connexion du même participant; elle ne constitue pas une reprise transactionnelle automatique du POST. Les tests réels de perte d'accusé HTTP avant production restent obligatoires.

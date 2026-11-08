@@ -54,9 +54,16 @@ async function submitToSinjira(user,{updateExisting=false}={}){
    // Après l'envoi HTTP, l'absence d'accusé ne prouve pas l'absence de sauvegarde.
    // Conserver la photo privée: le dossier peut déjà la référencer en base.
    // Sans requête serveur, un fichier temporaire peut en revanche être nettoyé.
-   if(!invocationStarted)await cleanupUploadedPhoto(photo_path);
-   else console.warn('[SINJIRA registre] état de sauvegarde incertain; photo conservée');
-   throw e;
+   if(!invocationStarted){
+     await cleanupUploadedPhoto(photo_path);
+     throw e;
+   }
+   console.warn('[SINJIRA registre] état de sauvegarde incertain; photo conservée');
+   // Un échec transport/API après l'invocation peut cacher une écriture réussie.
+   // Empêcher tout second POST tant que la personne n'a pas vérifié son dossier.
+   const uncertainError=new Error('La réponse du serveur est incertaine. Pour éviter un doublon, vérifiez d’abord « Mon personnage » avant de transmettre à nouveau. Vos réponses restent visibles ici.');
+   uncertainError.submissionOutcomeUnknown=true;
+   throw uncertainError;
  }
 }
 async function tryOwnerRepair(user){if(!isSinjiraOwner(user))return;try{await getSupabase().rpc('ensure_sinjira_owner_character')}catch(e){console.info('Owner repair RPC unavailable.',e?.message||e)}}
@@ -136,9 +143,24 @@ form?.addEventListener('submit',async e=>{
    form.querySelectorAll('input,textarea,select,button').forEach(x=>x.disabled=true);
    registryReady=false;
  }catch(err){
+   const unknown=err?.submissionOutcomeUnknown===true;
    setState(err?.message||'Transmission impossible. Vos réponses restent visibles; réessayez.','error');
    state?.scrollIntoView({behavior:'smooth',block:'center'});
-   if(submitButton)submitButton.disabled=false;
+   if(unknown){
+     registryReady=false;
+     if(submitButton)submitButton.disabled=true;
+     // Vérification dans un nouvel onglet pour conserver les réponses visibles.
+     if(state&&!document.querySelector('[data-registry-verify-submission]')){
+       const link=document.createElement('a');
+       link.dataset.registryVerifySubmission='';
+       link.className='btn btn-secondary';
+       link.href='/compte/mon-personnage.html';
+       link.target='_blank';
+       link.rel='noopener noreferrer';
+       link.textContent='Vérifier mon dossier (nouvel onglet)';
+       state.insertAdjacentElement('afterend',link);
+     }
+   }else if(submitButton)submitButton.disabled=false;
  }finally{isSending=false}
 });
 init().catch(e=>{

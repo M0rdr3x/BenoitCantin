@@ -39,7 +39,7 @@ def main()->int:
     ])
     registry_page=check('projets/sinjira/registre/index.html',[
         'data-character-form=', 'type="submit" disabled>Transmettre ma participation',
-        'name="formspree_receipt_opt_in"', 'sinjira-character-registry.js?v=24.5.5',
+        'name="formspree_receipt_opt_in"', 'sinjira-character-registry.js?v=24.5.6',
     ])
     registry_js=check('assets/js/sinjira-character-registry.js',[
         "form?.addEventListener('submit',async e=>{",
@@ -49,6 +49,12 @@ def main()->int:
         "invocationStarted=true;",
         "if(!invocationStarted)await cleanupUploadedPhoto(photo_path);",
         "result.admin_notification_created===true",
+        "uncertainError.submissionOutcomeUnknown=true;",
+        "const unknown=err?.submissionOutcomeUnknown===true;",
+        "if(unknown){",
+        "registryReady=false;",
+        "link.href='/compte/mon-personnage.html';",
+        "link.target='_blank';",
     ])
     registry_edge=check('supabase/functions/submit-character-questionnaire/index.ts',[
         "requiredUser(req)", "answers.formspree_receipt_opt_in==='yes'",
@@ -142,6 +148,11 @@ def main()->int:
     # effacer la photo que le serveur peut déjà référencer dans le dossier.
     if re.search(r'catch\s*\(e\)\s*\{\s*await\s+cleanupUploadedPhoto\(photo_path\)',registry_js):
         errors.append('Registre : effacement photo aveugle après un échec réseau')
+    # Aucun second POST possible après une invocation réseau au résultat incertain.
+    if not re.search(r'if\s*\(unknown\)\s*\{\s*registryReady=false;',registry_js):
+        errors.append('Registre : second envoi encore autorisé après une réponse réseau incertaine')
+    if not re.search(r'if\s*\(!invocationStarted\)\s*\{\s*await\s+cleanupUploadedPhoto\(photo_path\)',registry_js):
+        errors.append('Registre : nettoyage temporaire pré-envoi non protégé')
     if 'Avis interne créé. Aucune copie' in registry_js:
         errors.append('Registre : avis interne annoncé sans vérifier le statut serveur')
 
