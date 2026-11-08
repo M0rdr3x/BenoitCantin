@@ -1,0 +1,592 @@
+{
+  "schema": "nova-g016w-tax-bases-distribution-municipal-gates/v1",
+  "phase": "G0.16w",
+  "date": "2026-11-08",
+  "score_before": 47,
+  "score_after": 47,
+  "programme_adopted": false,
+  "verified_two_levy_tax_rate_pct": null,
+  "full_2026_tax_base_verified": false,
+  "sources": [
+    {
+      "id": "FIN_QC_TAX_2023",
+      "url": "https://www.budget.finances.gouv.qc.ca/Budget/outils/statistiques-fiscales/somm-comp-impot.asp",
+      "institution": "Ministère des Finances du Québec",
+      "source_year": 2023,
+      "measure": "QUEBEC_PROVINCIAL_INDIVIDUAL_TAX_DECLARATIONS",
+      "format": "HTML"
+    },
+    {
+      "id": "FIN_QC_DISTRIB_2023",
+      "url": "https://www.budget.finances.gouv.qc.ca/Budget/outils/statistiques-fiscales/somm-impot-a-payer.asp",
+      "institution": "Ministère des Finances du Québec",
+      "source_year": 2023,
+      "measure": "TAXABLE_INCOME_GROUP_TAX_AND_REFUNDABLE_CREDITS",
+      "format": "HTML"
+    },
+    {
+      "id": "FIN_QC_FILERS_2023",
+      "url": "https://www.budget.finances.gouv.qc.ca/Budget/outils/statistiques-fiscales/somm-contribuables-profil.asp",
+      "institution": "Ministère des Finances du Québec",
+      "source_year": 2023,
+      "measure": "FILERS_COUNT_BY_GROUP",
+      "format": "HTML"
+    },
+    {
+      "id": "CRA_T1_2024",
+      "url": "https://www.canada.ca/content/dam/cra-arc/prog-policy/stats/t1-final-stats/2024-tax-year/tbl1_ac_fr.pdf",
+      "institution": "Agence du revenu du Canada",
+      "source_year": 2024,
+      "measure": "FEDERAL_T1_QC_PROVINCE_OF_TAXATION",
+      "format": "PDF",
+      "pdf_pages_checked_visually": [],
+      "screenshot_attempted": true,
+      "screenshot_result": "CACHE_MISS",
+      "extracted_text_page_zero_index": 2
+    },
+    {
+      "id": "CRA_T1_NOTES_2024",
+      "url": "https://www.canada.ca/fr/agence-revenu/programmes/a-propos-agence-revenu-canada-arc/statistiques-revenu-statistiques-tps-tvh/statistiques-finales-t1/annee-imposition-2024.html",
+      "institution": "Agence du revenu du Canada",
+      "source_year": 2024,
+      "measure": "FEDERAL_T1_SCOPE_DIFFERENCES_AND_ZERO_CONFIDENTIALITY",
+      "format": "HTML"
+    },
+    {
+      "id": "CRA_T2_2024",
+      "url": "https://www.canada.ca/content/dam/cra-arc/prog-policy/stats/t2-corp-stats/2019-2024/t2-crp-sttstcs-tbl05-e.pdf",
+      "institution": "Agence du revenu du Canada",
+      "source_year": 2024,
+      "measure": "FEDERAL_T2_TAXABLE_INCOME_ALLOCATED_QC_SCHEDULE5",
+      "format": "PDF",
+      "pdf_pages_checked_visually": [
+        0
+      ],
+      "screenshot_attempted": true,
+      "screenshot_result": "SUCCESS"
+    },
+    {
+      "id": "CRA_T2_NOTES_2024",
+      "url": "https://www.canada.ca/en/revenue-agency/programs/about-canada-revenue-agency-cra/income-statistics-gst-hst-statistics/t2-corporate-statistics/corporate-statistical-tables-2019-2024-tax-years.html",
+      "institution": "Agence du revenu du Canada",
+      "source_year": 2024,
+      "measure": "FEDERAL_T2_ALLOCATIONS_EXEMPTIONS_REASSESSMENTS",
+      "format": "HTML",
+      "extract_date": "2026-06-30"
+    },
+    {
+      "id": "MAMH_LOCAL_2023",
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/finances_indicateurs_fiscalite/fiscalite/fiscalite_organismes_municipaux.pdf",
+      "institution": "MAMH",
+      "source_year": 2023,
+      "measure": "ALL_MUNICIPAL_ORGANISATIONS_FUNDING_AGGREGATE",
+      "format": "PDF",
+      "pdf_pages_checked_visually": [
+        5
+      ]
+    },
+    {
+      "id": "CONSTITUTION",
+      "url": "https://lois.justice.gc.ca/fra/const/TexteComplet.html",
+      "institution": "Ministère de la Justice du Canada",
+      "source_year": null,
+      "measure": "CONSTITUTION_ACT_1867_S91_3_S92_2_S92_8",
+      "format": "HTML"
+    },
+    {
+      "id": "RQ_COTISATIONS",
+      "url": "https://www.revenuquebec.ca/fr/citoyens/declaration-de-revenus/payer-ou-etre-rembourse/paiement-des-cotisations/",
+      "institution": "Revenu Québec",
+      "source_year": null,
+      "measure": "RRQ_RQAP_ASSURANCE_MEDICAMENTS_ET_FSS_AS_DISTINCT_CONTRIBUTIONS",
+      "format": "HTML"
+    },
+    {
+      "id": "G016V",
+      "path": "data/cadre-financier-fiscal-g0-16v-aout-2026.json",
+      "measure": "GOVERNMENT_PROVINCIAL_ACCOUNTING_REFERENCE"
+    }
+  ],
+  "individual_quebec_provincial_2023": {
+    "fiscal_year": 2023,
+    "accounting_basis": "QUEBEC_PROVINCIAL_INDIVIDUAL_TAX_REPORTS_NOT_2026_FORECAST",
+    "total_declared_income_mcad": 427915,
+    "deductions_to_net_income_mcad": 40892,
+    "net_income_mcad": 387023,
+    "deductions_to_taxable_income_mcad": 14761,
+    "taxable_income_mcad": 372261,
+    "tax_on_taxable_income_before_nonref_mcad": 62148,
+    "nonref_tax_credit_effect_mcad": 21358,
+    "tax_payable_mcad": 40790,
+    "refundable_tax_credits_mcad": 9305,
+    "net_tax_after_refundable_mcad": 31485,
+    "taxable_filers": 4910844,
+    "non_taxable_filers": 2309296,
+    "total_filers": 7220140,
+    "filer_count_from_detailed_table": true,
+    "source_ids": [
+      "FIN_QC_TAX_2023",
+      "FIN_QC_FILERS_2023"
+    ],
+    "period_matches_provincial_budget_2026_27": false,
+    "federal_income_tax_included": false,
+    "caution": "Provincial assessed taxable income 2023 is not 2026-2027 taxable base and does not prove future capacity to raise 112.369 G$."
+  },
+  "individual_2023_distribution": {
+    "tax_year": 2023,
+    "source_ids": [
+      "FIN_QC_DISTRIB_2023",
+      "FIN_QC_FILERS_2023"
+    ],
+    "counts_rounded_to_nearest_thousand": true,
+    "groups": [
+      {
+        "id": "LT10",
+        "label": "Moins de 10 000 $",
+        "declared_total_revenue_mcad": 2532,
+        "income_tax_payable_mcad": 2,
+        "refundable_credits_mcad": 777,
+        "net_income_tax_after_refundable_mcad": -775,
+        "declaring_filers_thousands": 650
+      },
+      {
+        "id": "10_19",
+        "label": "10 000 $ à 19 999 $",
+        "declared_total_revenue_mcad": 12615,
+        "income_tax_payable_mcad": 10,
+        "refundable_credits_mcad": 1118,
+        "net_income_tax_after_refundable_mcad": -1108,
+        "declaring_filers_thousands": 817
+      },
+      {
+        "id": "20_29",
+        "label": "20 000 $ à 29 999 $",
+        "declared_total_revenue_mcad": 26507,
+        "income_tax_payable_mcad": 273,
+        "refundable_credits_mcad": 2306,
+        "net_income_tax_after_refundable_mcad": -2033,
+        "declaring_filers_thousands": 1074
+      },
+      {
+        "id": "30_49",
+        "label": "30 000 $ à 49 999 $",
+        "declared_total_revenue_mcad": 59789,
+        "income_tax_payable_mcad": 2816,
+        "refundable_credits_mcad": 2275,
+        "net_income_tax_after_refundable_mcad": 541,
+        "declaring_filers_thousands": 1492
+      },
+      {
+        "id": "50_99",
+        "label": "50 000 $ à 99 999 $",
+        "declared_total_revenue_mcad": 159483,
+        "income_tax_payable_mcad": 14365,
+        "refundable_credits_mcad": 2145,
+        "net_income_tax_after_refundable_mcad": 12220,
+        "declaring_filers_thousands": 2264
+      },
+      {
+        "id": "100PLUS",
+        "label": "100 000 $ ou plus",
+        "declared_total_revenue_mcad": 166989,
+        "income_tax_payable_mcad": 23324,
+        "refundable_credits_mcad": 683,
+        "net_income_tax_after_refundable_mcad": 22640,
+        "declaring_filers_thousands": 922
+      }
+    ],
+    "total_declared_income_mcad": 427915,
+    "tax_payable_mcad": 40790,
+    "refundable_credits_reported_mcad": 9305,
+    "selected_group_refundable_credits_sum_mcad": 9304,
+    "net_after_credits_mcad": 31485,
+    "refunds_are_policy_transfer_not_tax_payable_revenue": true,
+    "no_homogeneous_tax_rate_from_aggregate": true,
+    "rounding_caveat": "Les groupes comptent des milliers arrondis; total des crédits par groupes ne réconcilie pas toujours exactement le montant officiel arrondi."
+  },
+  "individual_cra_federal_2024": {
+    "tax_year": 2024,
+    "data_basis": "CRA_T1_PROVINCE_OF_TAXATION_FEDERAL_MEASURES_NOT_QUEBEC_PROVINCIAL_STATISTICS",
+    "filers": 7106960,
+    "total_declared_income_mcad": 431297.827,
+    "deductions_mcad": 54657.176,
+    "taxable_income_mcad": 376946.404,
+    "federal_net_income_tax_mcad": 43214.314,
+    "published_provincial_tax_field_thousands": 0,
+    "actual_provincial_income_tax_cad": null,
+    "published_provincial_tax_zero_represents_missing_for_quebec": true,
+    "income_tax_assessments_may_differ_from_quebec_provincial_basis": true,
+    "cannot_compare_filers_directly_to_provincial_statistics": true,
+    "no_2026_projection_derived": true,
+    "source_ids": [
+      "CRA_T1_2024",
+      "CRA_T1_NOTES_2024"
+    ]
+  },
+  "corporations_cra_federal_2024": {
+    "tax_year": 2024,
+    "province": "Quebec",
+    "taxable_income_thousands_cad": 204985142,
+    "taxable_income_mcad": 204985.142,
+    "prior_2023_revised_thousands_cad": 131063725,
+    "prior_2023_revised_mcad": 131063.725,
+    "measure": "CRA_T2_FEDERAL_TAXABLE_INCOME_ALLOCATED_TO_QC_USING_SCHEDULE_5",
+    "includes_exempt_inactive_taxable_income_in_table": true,
+    "requires_review_of_tax_province_allocation": true,
+    "not_revenu_quebec_provincial_corporate_tax_base": true,
+    "not_pre_tax_company_turnover": true,
+    "not_profit_after_tax": true,
+    "reassessments_subject_to_revision": true,
+    "not_2026_27_tax_base": true,
+    "not_same_year_as_2023_quebec_individuals": true,
+    "cannot_sum_to_2023_individual_base_for_policy_rate": true,
+    "source_ids": [
+      "CRA_T2_2024",
+      "CRA_T2_NOTES_2024"
+    ]
+  },
+  "municipal_2023": {
+    "source_id": "MAMH_LOCAL_2023",
+    "year": 2023,
+    "scope": "MUNICIPAL_ORGANISATIONS_GROUP_INCLUDES_LOCAL_AND_SUPRAMUNICIPAL_ORGANISATIONS_CONSOLIDATED",
+    "total_revenues_reported_gcad": 29.3,
+    "property_tax_gcad": 14,
+    "transfers_gcad": 6.2,
+    "other_local_gcad": 3.2,
+    "sales_goods_services_gcad": 2.9,
+    "user_fees_gcad": 2.1,
+    "payments_in_lieu_gcad": 1,
+    "sum_of_rounded_components_gcad": 29.4,
+    "rounding_difference_with_published_total_gcad": 0.1,
+    "property_tax_share_percent_reported": 48,
+    "must_not_add_whole_29_3_billion_to_province_budget": true,
+    "must_not_count_6_2_transfers_twice": true,
+    "property_tax_replacement_needed_if_eliminated": true,
+    "electricity_waste_water_rates_subject_to_legal_classification": true,
+    "fiscal_years_not_comparable_without_adjustment": true
+  },
+  "fiscal_gaps": {
+    "source_prior": "data/cadre-financier-fiscal-g0-16v-aout-2026.json",
+    "qc_provincial_2026_27_conditional_two_levy_target_mcad": 112369,
+    "includes_federal_taxes": false,
+    "includes_municipal_governments": false,
+    "includes_generations_fund": false,
+    "future_2026_27_compatible_tax_base_mcad": null,
+    "net_enforceable_tax_haven_levy_mcad": null,
+    "municipal_tax_replacement_fully_costed_mcad": null,
+    "school_tax_replacement_fully_costed_mcad": null,
+    "rrq_rqap_plan_costed_mcad": null,
+    "coherent_government_rate_pct": null,
+    "tax_rate_proposal_available": false,
+    "combining_crat1_crat2_as_certified_single_base_prohibited": true,
+    "using_2023_taxable_income_as_2026_base_prohibited": true
+  },
+  "distribution_protections": {
+    "special_attention_to_groups_negative_net_tax_after_refundable": true,
+    "do_not_abolish_refundable_credits_without_poverty_impact_test": true,
+    "no_family_level_tax_burden_claim_from_individual_tables": true,
+    "no_automatic_sales_tax_savings_pass_through": true,
+    "no_automatic_property_tax_savings_pass_through_to_renters": true,
+    "no_automatic_loss_of_insurance_entitlements": true,
+    "sample_household_profiles": [
+      {
+        "id": "LOW_CREDITS",
+        "purpose": "Maintien des crédits remboursables, non fiction de suppression",
+        "income_cad": null,
+        "assumptions_complete": false,
+        "status": "NOT_MODELED"
+      },
+      {
+        "id": "WORKER_RENTER",
+        "purpose": "Locataire salarié : incidences TVA/loyer et impôts deux paliers",
+        "income_cad": null,
+        "assumptions_complete": false,
+        "status": "NOT_MODELED"
+      },
+      {
+        "id": "OWNER_WORKER",
+        "purpose": "Propriétaire salarié : taxe foncière, tarification et impôts",
+        "income_cad": null,
+        "assumptions_complete": false,
+        "status": "NOT_MODELED"
+      },
+      {
+        "id": "RETIREE",
+        "purpose": "Retraite : prestations, crédits d'âge, service public",
+        "income_cad": null,
+        "assumptions_complete": false,
+        "status": "NOT_MODELED"
+      },
+      {
+        "id": "SME_OWNER",
+        "purpose": "PME : revenu entreprise, profit imposable et salaires",
+        "income_cad": null,
+        "assumptions_complete": false,
+        "status": "NOT_MODELED"
+      }
+    ],
+    "all_household_welfare_effects_estimated": false,
+    "missing_actual_household_distribution_microdata": true,
+    "living_standard_outcomes_verified": false
+  },
+  "constitutional_gate": {
+    "within_canada_province_cannot_unilaterally_repeal_federal_tax": true,
+    "provincial_direct_taxation_power_article": "92(2)",
+    "federal_taxation_power_article": "91(3)",
+    "provincial_municipal_institutions_article": "92(8)",
+    "tax_haven_collectibility_requires_constitutional_and_international_legal_review": true,
+    "tax_vs_user_fee_vs_social_insurance_distinction_unresolved": true,
+    "quebec_independent_state_tax_transfer_rules_not_assumed": true,
+    "no_non_retaliation_policy_claim_as_economic_proof": true,
+    "no_legality_approved": true,
+    "sources": [
+      "CONSTITUTION",
+      "RQ_COTISATIONS"
+    ]
+  },
+  "ten_year_scenarios": [
+    {
+      "id": "QUEBEC_CANADA",
+      "years": [
+        {
+          "fiscal_year": "2026-2027",
+          "effective_tax_rate_pct": null,
+          "net_income_tax_revenue_mcad": null,
+          "anti_haven_net_yield_mcad": null,
+          "municipal_net_transfer_required_mcad": null,
+          "federal_levies_replaced_by_province": false,
+          "full_consolidated_balance_mcad": null
+        },
+        {
+          "fiscal_year": "2027-2028",
+          "effective_tax_rate_pct": null,
+          "net_income_tax_revenue_mcad": null,
+          "anti_haven_net_yield_mcad": null,
+          "municipal_net_transfer_required_mcad": null,
+          "federal_levies_replaced_by_province": false,
+          "full_consolidated_balance_mcad": null
+        },
+        {
+          "fiscal_year": "2028-2029",
+          "effective_tax_rate_pct": null,
+          "net_income_tax_revenue_mcad": null,
+          "anti_haven_net_yield_mcad": null,
+          "municipal_net_transfer_required_mcad": null,
+          "federal_levies_replaced_by_province": false,
+          "full_consolidated_balance_mcad": null
+        },
+        {
+          "fiscal_year": "2029-2030",
+          "effective_tax_rate_pct": null,
+          "net_income_tax_revenue_mcad": null,
+          "anti_haven_net_yield_mcad": null,
+          "municipal_net_transfer_required_mcad": null,
+          "federal_levies_replaced_by_province": false,
+          "full_consolidated_balance_mcad": null
+        },
+        {
+          "fiscal_year": "2030-2031",
+          "effective_tax_rate_pct": null,
+          "net_income_tax_revenue_mcad": null,
+          "anti_haven_net_yield_mcad": null,
+          "municipal_net_transfer_required_mcad": null,
+          "federal_levies_replaced_by_province": false,
+          "full_consolidated_balance_mcad": null
+        },
+        {
+          "fiscal_year": "2031-2032",
+          "effective_tax_rate_pct": null,
+          "net_income_tax_revenue_mcad": null,
+          "anti_haven_net_yield_mcad": null,
+          "municipal_net_transfer_required_mcad": null,
+          "federal_levies_replaced_by_province": false,
+          "full_consolidated_balance_mcad": null
+        },
+        {
+          "fiscal_year": "2032-2033",
+          "effective_tax_rate_pct": null,
+          "net_income_tax_revenue_mcad": null,
+          "anti_haven_net_yield_mcad": null,
+          "municipal_net_transfer_required_mcad": null,
+          "federal_levies_replaced_by_province": false,
+          "full_consolidated_balance_mcad": null
+        },
+        {
+          "fiscal_year": "2033-2034",
+          "effective_tax_rate_pct": null,
+          "net_income_tax_revenue_mcad": null,
+          "anti_haven_net_yield_mcad": null,
+          "municipal_net_transfer_required_mcad": null,
+          "federal_levies_replaced_by_province": false,
+          "full_consolidated_balance_mcad": null
+        },
+        {
+          "fiscal_year": "2034-2035",
+          "effective_tax_rate_pct": null,
+          "net_income_tax_revenue_mcad": null,
+          "anti_haven_net_yield_mcad": null,
+          "municipal_net_transfer_required_mcad": null,
+          "federal_levies_replaced_by_province": false,
+          "full_consolidated_balance_mcad": null
+        },
+        {
+          "fiscal_year": "2035-2036",
+          "effective_tax_rate_pct": null,
+          "net_income_tax_revenue_mcad": null,
+          "anti_haven_net_yield_mcad": null,
+          "municipal_net_transfer_required_mcad": null,
+          "federal_levies_replaced_by_province": false,
+          "full_consolidated_balance_mcad": null
+        }
+      ]
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "years": [
+        {
+          "fiscal_year": "2026-2027",
+          "effective_tax_rate_pct": null,
+          "net_income_tax_revenue_mcad": null,
+          "anti_haven_net_yield_mcad": null,
+          "municipal_net_transfer_required_mcad": null,
+          "federal_levies_replaced_by_province": null,
+          "full_consolidated_balance_mcad": null
+        },
+        {
+          "fiscal_year": "2027-2028",
+          "effective_tax_rate_pct": null,
+          "net_income_tax_revenue_mcad": null,
+          "anti_haven_net_yield_mcad": null,
+          "municipal_net_transfer_required_mcad": null,
+          "federal_levies_replaced_by_province": null,
+          "full_consolidated_balance_mcad": null
+        },
+        {
+          "fiscal_year": "2028-2029",
+          "effective_tax_rate_pct": null,
+          "net_income_tax_revenue_mcad": null,
+          "anti_haven_net_yield_mcad": null,
+          "municipal_net_transfer_required_mcad": null,
+          "federal_levies_replaced_by_province": null,
+          "full_consolidated_balance_mcad": null
+        },
+        {
+          "fiscal_year": "2029-2030",
+          "effective_tax_rate_pct": null,
+          "net_income_tax_revenue_mcad": null,
+          "anti_haven_net_yield_mcad": null,
+          "municipal_net_transfer_required_mcad": null,
+          "federal_levies_replaced_by_province": null,
+          "full_consolidated_balance_mcad": null
+        },
+        {
+          "fiscal_year": "2030-2031",
+          "effective_tax_rate_pct": null,
+          "net_income_tax_revenue_mcad": null,
+          "anti_haven_net_yield_mcad": null,
+          "municipal_net_transfer_required_mcad": null,
+          "federal_levies_replaced_by_province": null,
+          "full_consolidated_balance_mcad": null
+        },
+        {
+          "fiscal_year": "2031-2032",
+          "effective_tax_rate_pct": null,
+          "net_income_tax_revenue_mcad": null,
+          "anti_haven_net_yield_mcad": null,
+          "municipal_net_transfer_required_mcad": null,
+          "federal_levies_replaced_by_province": null,
+          "full_consolidated_balance_mcad": null
+        },
+        {
+          "fiscal_year": "2032-2033",
+          "effective_tax_rate_pct": null,
+          "net_income_tax_revenue_mcad": null,
+          "anti_haven_net_yield_mcad": null,
+          "municipal_net_transfer_required_mcad": null,
+          "federal_levies_replaced_by_province": null,
+          "full_consolidated_balance_mcad": null
+        },
+        {
+          "fiscal_year": "2033-2034",
+          "effective_tax_rate_pct": null,
+          "net_income_tax_revenue_mcad": null,
+          "anti_haven_net_yield_mcad": null,
+          "municipal_net_transfer_required_mcad": null,
+          "federal_levies_replaced_by_province": null,
+          "full_consolidated_balance_mcad": null
+        },
+        {
+          "fiscal_year": "2034-2035",
+          "effective_tax_rate_pct": null,
+          "net_income_tax_revenue_mcad": null,
+          "anti_haven_net_yield_mcad": null,
+          "municipal_net_transfer_required_mcad": null,
+          "federal_levies_replaced_by_province": null,
+          "full_consolidated_balance_mcad": null
+        },
+        {
+          "fiscal_year": "2035-2036",
+          "effective_tax_rate_pct": null,
+          "net_income_tax_revenue_mcad": null,
+          "anti_haven_net_yield_mcad": null,
+          "municipal_net_transfer_required_mcad": null,
+          "federal_levies_replaced_by_province": null,
+          "full_consolidated_balance_mcad": null
+        }
+      ]
+    }
+  ],
+  "unresolved_validation_work": [
+    {
+      "id": "W01",
+      "need": "Rapprocher 2024 T1 fédéral à 2023 statistiques provinciales Québec selon assiette réelle",
+      "done": false
+    },
+    {
+      "id": "W02",
+      "need": "Obtenir la base taxable provinciale des sociétés et vérifier l'attribution fédérale du tableau T2",
+      "done": false
+    },
+    {
+      "id": "W03",
+      "need": "Chiffrer les recettes nettes recouvrables du mécanisme anti-paradis fiscaux",
+      "done": false
+    },
+    {
+      "id": "W04",
+      "need": "Remplacer fiscalité foncière municipale et scolaire sans diminution des services",
+      "done": false
+    },
+    {
+      "id": "W05",
+      "need": "Maintenir crédits remboursables et régimes cotisants (RRQ, RQAP, etc.) sans appauvrissement",
+      "done": false
+    },
+    {
+      "id": "W06",
+      "need": "Microsimulation de ménages, locataires, propriétaires, salariés, retraités et PME",
+      "done": false
+    },
+    {
+      "id": "W07",
+      "need": "Budgets fiscaux 2026-2036 de deux statuts, vérifiés et stress-testés",
+      "done": false
+    },
+    {
+      "id": "W08",
+      "need": "Avis externe de juristes, économistes et auditeurs; adoption formelle",
+      "done": false
+    }
+  ],
+  "decision": {
+    "observed_real_taxable_income_references_found": true,
+    "federal_corporate_2024_pdf_visual_checked": true,
+    "municipal_2023_pdf_visual_checked": true,
+    "federal_personal_2024_pdf_visual_checked": false,
+    "valid_synthetic_effect_calculator_ready": false,
+    "nova_tax_rate_certified": false,
+    "nova_distribution_effect_certified": false,
+    "nova_ten_year_budget_funded": false,
+    "score_increase_earned": false
+  }
+}
