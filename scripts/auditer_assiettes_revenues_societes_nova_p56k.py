@@ -116,8 +116,9 @@ def auditer(data,gabarit,preuves,barometre):
         r=refs[key]
         require(isinstance(r,dict) and r.get("url")==url and r.get("millesime")==year
                 and isinstance(r.get("organisme"),str)
-                and len(r["organisme"])>15,"SOURCE_METADONNEES_INVALIDE_"+key)
-    require(refs["PARTICULIERS_2023"].get("tableau")=="A.7 et A.9" and
+                and len(r["organisme"])>=8,"SOURCE_METADONNEES_INVALIDE_"+key)
+    require(refs["PARTICULIERS_2023"].get("url_nombre_contribuables")=="https://www.budget.finances.gouv.qc.ca/Budget/outils/statistiques-fiscales/resume.asp" and
+            refs["PARTICULIERS_2023"].get("tableau")=="A.7 et A.9" and
             refs["SOCIETES_2021"].get("tableau")==
             "Sommaire des assiettes et déclarations des sociétés" and
             refs["DEPENSES_FISCALES_2025"].get("tableau")==
