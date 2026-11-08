@@ -166,7 +166,19 @@ Deno.serve(async (req) => {
     if (parsed.response) return parsed.response;
     const body = parsed.body || {};
     const mode = body?.mode === 'email' ? 'email' : 'download';
+    // Rejeter les modes inaccessibles AVANT la récupération du modèle et la
+    // génération du PDF : une erreur 503/401 ne doit pas déclencher ce coût.
+    if (mode === 'email' && !PAID_EXTERNAL_SERVICES_ENABLED) {
+      return privateJson({ ok:false, error:'Le transport courriel externe est préparé mais désactivé. Téléchargez le PDF directement.', code:'PAID_EXTERNAL_SERVICE_DISABLED', function_version:FUNCTION_VERSION }, 503);
+    }
     const user = await optionalUser(req);
+    if (mode === 'email' && !user?.email) {
+      return privateJson({ ok: false, error: 'Connexion requise pour l’envoi par courriel.', function_version: FUNCTION_VERSION }, 401);
+    }
+    const resendKey = mode === 'email' ? Deno.env.get('RESEND_API_KEY') : null;
+    if (mode === 'email' && !resendKey) {
+      return privateJson({ ok: false, error: 'Service courriel non configuré.', function_version: FUNCTION_VERSION }, 503);
+    }
     const sheet = sanitizeSheet(body?.sheet_data || {});
     const pdfBytes = await buildPdf(sheet);
     const filename = `SINJIRA_Fracture_Rapport_${new Date().toISOString().slice(0, 10)}.pdf`;
@@ -176,19 +188,9 @@ Deno.serve(async (req) => {
       return privateJson({ ok: true, filename, pdf_base64: toBase64(pdfBytes), function_version: FUNCTION_VERSION });
     }
 
-    if (!PAID_EXTERNAL_SERVICES_ENABLED) {
-      return privateJson({ ok:false, error:'Le transport courriel externe est préparé mais désactivé. Téléchargez le PDF directement.', code:'PAID_EXTERNAL_SERVICE_DISABLED', function_version:FUNCTION_VERSION }, 503);
-    }
-
-    // L'envoi de courriel est réservé à un compte authentifié et uniquement à son adresse.
-    // Cette règle empêche la fonction publique de devenir un relais de spam.
-    if (!user?.email) {
-      return privateJson({ ok: false, error: 'Connexion requise pour l’envoi par courriel.', function_version: FUNCTION_VERSION }, 401);
-    }
-
-    const resendKey = Deno.env.get('RESEND_API_KEY');
+    // Les préconditions du courriel ont été validées avant le PDF.
+    // L'envoi reste strictement limité à l'adresse du compte authentifié.
     const from = Deno.env.get('REPORT_FROM_EMAIL') || 'SINJIRA <no-reply@benoitcantin.com>';
-    if (!resendKey) return privateJson({ ok: false, error: 'Service courriel non configuré.', function_version: FUNCTION_VERSION }, 503);
 
     const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',

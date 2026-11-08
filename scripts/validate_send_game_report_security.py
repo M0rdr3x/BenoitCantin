@@ -68,11 +68,15 @@ def validate(path: Path) -> list[str]:
         if marker.lower() in lowered:
             errors.append(f'Garde send-game-report violé: {label}.')
 
-    paid_pos = source.find('if (!PAID_EXTERNAL_SERVICES_ENABLED)')
+    paid_pos = source.find("if (mode === 'email' && !PAID_EXTERNAL_SERVICES_ENABLED)")
+    auth_email_pos = source.find("if (mode === 'email' && !user?.email)")
+    resend_key_pos = source.find("if (mode === 'email' && !resendKey)")
+    build_pos = source.find('const pdfBytes = await buildPdf(sheet)')
     resend_pos = source.find("fetch('https://api.resend.com/emails'")
-    auth_email_pos = source.find('if (!user?.email)')
-    if paid_pos < 0 or auth_email_pos < paid_pos or resend_pos < auth_email_pos:
-        errors.append('Le transport courriel doit rester désactivé par défaut puis exiger le compte avant tout appel fournisseur.')
+    if min(paid_pos, auth_email_pos, resend_key_pos, build_pos, resend_pos) < 0 or not (
+        paid_pos < auth_email_pos < resend_key_pos < build_pos < resend_pos
+    ):
+        errors.append('Les refus de service, connexion et configuration courriel doivent précéder toute génération PDF et tout appel fournisseur.')
 
     parse_pos = source.find('const parsed = await readLimitedJson(req)')
     build_pos = source.find('const pdfBytes = await buildPdf(sheet)')
@@ -130,11 +134,14 @@ Deno.serve(async(req)=>{
  try {
   const parsed = await readLimitedJson(req);
   const body=parsed.body||{};
+  const mode='email';
+  if (mode === 'email' && !PAID_EXTERNAL_SERVICES_ENABLED) return new Response('',{status:503});
   const user={email:'x@example.test'};
+  if (mode === 'email' && !user?.email) return new Response('',{status:401});
+  const resendKey='fixture';
+  if (mode === 'email' && !resendKey) return new Response('',{status:503});
   const sheet={};
   const pdfBytes = await buildPdf(sheet);
-  if (!PAID_EXTERNAL_SERVICES_ENABLED) return new Response('',{status:503});
-  if (!user?.email) return new Response('',{status:401});
   const resendResponse=await fetch('https://api.resend.com/emails',{method:'POST',body:JSON.stringify({to: [user.email]})});
   if(!resendResponse.ok){
    console.error('[SINJIRA report]', { code:'REPORT_EMAIL_PROVIDER_FAILED', status:resendResponse.status });
@@ -166,6 +173,7 @@ Deno.serve(async(req)=>{
             'catch brut': safe.replace("} catch {\n  console.error('[SINJIRA report]', { code:'SEND_GAME_REPORT_FAILED' });", "} catch (error) {\n  console.error(error);"),
             'limite augmentée': safe.replace('MAX_REQUEST_BYTES=220_000;', 'MAX_REQUEST_BYTES=2_200_000;'),
             'destinataire arbitraire': safe.replace('to: [user.email]', 'to: [body.email]'),
+            'précondition courriel trop tardive': safe.replace("  if (mode === 'email' && !PAID_EXTERNAL_SERVICES_ENABLED) return new Response('',{status:503});\n", ''),
         }
         for label, mutated in mutations.items():
             if mutated == safe:
