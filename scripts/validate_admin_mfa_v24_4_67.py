@@ -48,16 +48,35 @@ def main() -> int:
         'assertAdminMfa(context)',
         "service.rpc('is_sinjira_admin'",
         'getAuthenticatorAssuranceLevel(token)',
-        "aal.nextLevel === 'aal2'",
+        "aal.nextLevel !== 'aal2'",
+        "throw new Error('MFA_SETUP_REQUIRED')",
         "aal.currentLevel !== 'aal2'",
         "throw new Error('MFA_REQUIRED')",
         "throw new Error('MFA_STATE_UNAVAILABLE')",
         'export async function requiredAdmin',
     ], 'garde serveur administrateur')
 
+    # Le garde AAL2 doit refuser même l'administrateur sans facteur vérifié.
+    forbid(auth, [
+        "aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2'",
+        "aucun facteur MFA vérifié -> la session aal1 reste permise",
+    ], 'ancien mode MFA progressif administrateur')
+
+    for name in ACTIVE_ADMIN:
+        endpoint = read(f'supabase/functions/{name}/index.ts')
+        require(endpoint, [
+            "import { requiredAdmin } from '../_shared/auth.ts'",
+            'await requiredAdmin(req)',
+            "code:'MFA_SETUP_REQUIRED'",
+            "code:'MFA_REQUIRED'",
+            "code:'MFA_STATE_UNAVAILABLE'",
+            "setup_url:'/compte/securite.html'",
+        ], f'endpoint admin MFA obligatoire: {name}')
+
     require(users, [
         "import { requiredAdmin } from '../_shared/auth.ts'",
         'await requiredAdmin(req)',
+        "code:'MFA_SETUP_REQUIRED'",
         "code:'MFA_REQUIRED'",
         "code:'MFA_STATE_UNAVAILABLE'",
     ], 'admin-users partagé')
@@ -94,7 +113,7 @@ def main() -> int:
         'stripe',
     ], 'aucun chemin payant actif dans admin-sinjira-v18')
 
-    print('OK admin V24.4.67: 7 endpoints centralisés, MFA AAL2 progressif fail-closed et IA distante verrouillée en mode gratuit.')
+    print('OK admin V24.4.67: 7 endpoints centralisés, MFA AAL2 obligatoire fail-closed et IA distante verrouillée en mode gratuit.')
     return 0
 
 
