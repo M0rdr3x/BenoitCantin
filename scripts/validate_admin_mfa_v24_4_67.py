@@ -64,37 +64,40 @@ def main() -> int:
 
     for name in ACTIVE_ADMIN:
         endpoint = read(f'supabase/functions/{name}/index.ts')
-        require(endpoint, [
+        # Les modules TypeScript emploient parfois un style compact et parfois
+        # des espaces autour de ':' ; ne pas confondre formatage et sécurité.
+        compact_endpoint = ''.join(endpoint.split())
+        require(compact_endpoint, [
             "../_shared/auth.ts",
             "requiredAdmin",
-            'await requiredAdmin(req)',
+            "awaitrequiredAdmin(req)",
             "code:'MFA_SETUP_REQUIRED'",
             "code:'MFA_REQUIRED'",
             "code:'MFA_STATE_UNAVAILABLE'",
             "setup_url:'/compte/securite.html'",
         ], f'endpoint admin MFA obligatoire: {name}')
         if name != 'admin-users':
-            require(endpoint, [
+            require(compact_endpoint, [
                 'readLimitedUtf8Body(req,MAX_REQUEST_BYTES)',
-                "if(!limited.ok)throw new Error('REQUEST_TOO_LARGE')",
-                "const raw=limited.raw",
+                "if(!limited.ok)thrownewError('REQUEST_TOO_LARGE')",
+                "constraw=limited.raw",
             ], f'endpoint admin borné: {name}')
-            forbid(endpoint, [
-                'await req.text()', 'await req.json()',
+            forbid(compact_endpoint, [
+                'awaitreq.text()', 'awaitreq.json()',
             ], f'lecture HTTP non bornée: {name}')
-            auth_position = endpoint.find('await requiredAdmin(req)')
-            # L'implémentation du lecteur précède le gestionnaire dans le fichier;
-            # l'appel réel doit, lui, intervenir après la vérification AAL2.
-            call_marker = ('await readBoundedJson(req)' if name in
+            auth_position = compact_endpoint.find('awaitrequiredAdmin(req)')
+            # Comparer les appels, et non la déclaration du helper de lecture.
+            call_marker = ('awaitreadBoundedJson(req)' if name in
                            ('admin-console', 'admin-sinjira-v18') else
-                           'await readLimitedJson(req)')
-            body_position = endpoint.find(call_marker)
+                           'awaitreadLimitedJson(req)')
+            body_position = compact_endpoint.find(call_marker)
             if not 0 <= auth_position < body_position:
                 raise AssertionError(f'{name}: vérification admin/MFA impérativement avant lecture du corps HTTP')
 
-    require(users, [
-        "import { requiredAdmin } from '../_shared/auth.ts'",
-        'await requiredAdmin(req)',
+    compact_users = ''.join(users.split())
+    require(compact_users, [
+        "../_shared/auth.ts",
+        "awaitrequiredAdmin(req)",
         "code:'MFA_SETUP_REQUIRED'",
         "code:'MFA_REQUIRED'",
         "code:'MFA_STATE_UNAVAILABLE'",
