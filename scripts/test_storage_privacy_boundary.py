@@ -67,6 +67,48 @@ class StoragePrivacyBoundaryTests(unittest.TestCase):
         )
         self.assertTrue(migration_errors(mutated))
 
+    def test_allow_explicit_avatar_only_update(self):
+        source = {**self.good, "003.sql":
+                  "UPDATE storage.buckets SET public=true WHERE id='sinjira-avatars';"}
+        self.assertEqual(migration_errors(source), [])
+
+    def test_reject_avatar_name_used_as_update_exclusion(self):
+        for clause in (
+            "id <> 'sinjira-avatars'",
+            "id != 'sinjira-avatars'",
+            "id LIKE 'sinjira-%'",
+            "id = 'sinjira-avatars' OR public=false",
+            "id IN ('sinjira-avatars')",
+            "coalesce(id,'') <> 'sinjira-avatars'",
+            "true",
+        ):
+            with self.subTest(clause=clause):
+                source = {**self.good, "003.sql":
+                          f"UPDATE storage.buckets SET public=true WHERE {clause};"}
+                self.assertTrue(migration_errors(source),
+                    "Une modification Storage non ciblée est passée.")
+
+    def test_reject_unscoped_public_update(self):
+        source = {**self.good, "003.sql":
+                  "UPDATE storage.buckets SET public=true;"}
+        self.assertTrue(migration_errors(source))
+
+    def test_reject_multirow_public_insert(self):
+        source = {**self.good, "003.sql": (
+            "INSERT INTO storage.buckets(id,name,public) VALUES "
+            "('sinjira-avatars','sinjira-avatars',true),"
+            "('sinjira-life-story-exports','sinjira-life-story-exports',true);"
+        )}
+        self.assertTrue(migration_errors(source))
+
+    def test_reject_insert_select_with_unreviewed_scope(self):
+        source = {**self.good, "003.sql": (
+            "INSERT INTO storage.buckets(id,name,public) "
+            "SELECT id,id,true FROM public.unreviewed_buckets "
+            "ON CONFLICT (id) DO UPDATE SET public=true;"
+        )}
+        self.assertTrue(migration_errors(source))
+
     def test_reject_new_public_bucket(self):
         mutated = dict(self.good)
         mutated["003.sql"] = (
