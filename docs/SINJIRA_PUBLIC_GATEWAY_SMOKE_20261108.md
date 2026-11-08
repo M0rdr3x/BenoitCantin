@@ -49,3 +49,9 @@ Le bilan réseau passe de 6 à **11 contrôles**. Aucun compte, secret, question
 ou courriel n'est créé. Cette vérification ne démontre pas la réception Formspree
 ni la configuration Auth privée; le correctif global reste à 82 % jusqu'à
 validation de ces derniers jalons.
+
+## Dépendance JavaScript Supabase figée — 8 novembre 2026
+
+La version du SDK utilisée par le navigateur est désormais épinglée sur **@supabase/supabase-js 2.119.0** au lieu de `@2/+esm`. La version 2.119.0 est la version officielle stable du 4 novembre 2026; les URL jsDelivr flottante et explicite ont été vérifiées en lecture seule, toutes deux en HTTP 200 et `application/javascript`, avec un export `createClient`. Le changement ne modifie donc pas la version effectivement chargée au moment de la vérification. Il protège seulement contre une mise à niveau automatique lors d'une future publication Supabase.
+
+Le validateur statique du parcours inscription → confirmation → AAL2 → Registre exige désormais exactement cet import et les options de session attendues. Le code ne contient ni nouveau secret ni règle de données. **Limite :** l'épinglage de version n'est pas une empreinte SRI du fichier généré par jsDelivr; son contenu reste construit par le fournisseur. Les tests de livraison des courriels et le contrôle Auth privé restent distincts; **84 %** n'est pas augmenté par cette maintenance préventive.

@@ -22,6 +22,14 @@ def main()->int:
         'data-signup-form method="post"', 'type="submit" disabled>Créer mon compte',
         'name="formspree_receipt_opt_in"', 'v24-signup.js?v=24.5.3', '<noscript>',
     ])
+    supabase_client=check('assets/js/sinjira-supabase.js',[
+        "import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/+esm';",
+        'persistSession:true', 'autoRefreshToken:true', 'detectSessionInUrl:true',
+    ])
+    # Toute mise à jour du SDK est un changement de code contrôlé, jamais
+    # une montée silencieuse de version mineure depuis le CDN.
+    if re.search(r'@supabase/supabase-js@(?:2|latest)/\\+esm', supabase_client):
+        errors.append('SDK Supabase : URL CDN flottante interdite.')
     signup=check('assets/js/v24-signup.js',[
         'getSupabase().auth.signUp(', 'emailRedirectTo:', '/compte/confirmer.html',
         "formspree_receipt_opt_in:d.get('formspree_receipt_opt_in')==='yes'",
