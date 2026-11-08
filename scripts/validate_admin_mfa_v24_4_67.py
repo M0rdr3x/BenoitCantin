@@ -65,7 +65,8 @@ def main() -> int:
     for name in ACTIVE_ADMIN:
         endpoint = read(f'supabase/functions/{name}/index.ts')
         require(endpoint, [
-            "import { requiredAdmin } from '../_shared/auth.ts'",
+            "../_shared/auth.ts",
+            "requiredAdmin",
             'await requiredAdmin(req)',
             "code:'MFA_SETUP_REQUIRED'",
             "code:'MFA_REQUIRED'",
@@ -82,7 +83,12 @@ def main() -> int:
                 'await req.text()', 'await req.json()',
             ], f'lecture HTTP non bornée: {name}')
             auth_position = endpoint.find('await requiredAdmin(req)')
-            body_position = endpoint.find('await readLimitedUtf8Body(req,MAX_REQUEST_BYTES)')
+            # L'implémentation du lecteur précède le gestionnaire dans le fichier;
+            # l'appel réel doit, lui, intervenir après la vérification AAL2.
+            call_marker = ('await readBoundedJson(req)' if name in
+                           ('admin-console', 'admin-sinjira-v18') else
+                           'await readLimitedJson(req)')
+            body_position = endpoint.find(call_marker)
             if not 0 <= auth_position < body_position:
                 raise AssertionError(f'{name}: vérification admin/MFA impérativement avant lecture du corps HTTP')
 
