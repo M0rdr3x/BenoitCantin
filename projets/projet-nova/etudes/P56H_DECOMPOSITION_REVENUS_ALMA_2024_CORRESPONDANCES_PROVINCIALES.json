@@ -1,0 +1,189 @@
+{
+  "schema_version": "P56H-1",
+  "date_analyse": "2026-11-07",
+  "statut": "CONCORDANCES_ARITHMETIQUES_DOCUMENTEES_SANS_APPARIEMENT_COMPTABLE",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "municipalite": {
+    "nom": "Alma",
+    "code_mamh": "93042",
+    "exercice_civil": "2024-01-01/2024-12-31"
+  },
+  "sources": {
+    "MUN_2024_S27": {
+      "titre": "Rapport financier consolidé 2024 - Ville d'Alma, analyse des revenus consolidés S27",
+      "url": "https://www.mamh.gouv.qc.ca/documentsfinanciersweb/Rapport-financier-2024-et-autres-93042.pdf",
+      "nature_des_annexes": "INFORMATIONS_COMPLEMENTAIRES_NON_AUDITEES",
+      "pages_imprimees_s27": [
+        47,
+        52
+      ],
+      "controle_image_originale": "SCREENSHOT_WEB_ECHEC_CACHE_MISS",
+      "verification_du_binaire_original_et_sha256": false
+    },
+    "MAMH_JUILLET_2024_40350": {
+      "titre": "Liste des engagements financiers de juillet 2024 - MAMH",
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/documents_administratifs/acces_information/engagements_financiers/2024/LIS_engagements_juillet_2024.pdf",
+      "nature": "LISTE_PROVINCIALE_ENGAGEMENTS_LIBELLE_VERSEMENT",
+      "page_pdf_index_zero": 55,
+      "programme": "40350",
+      "numero_ligne": 1193,
+      "exercice": "2024-2025",
+      "controle_image_originale": "SCREENSHOT_WEB_ECHEC_CACHE_MISS"
+    },
+    "MAMH_AVRIL_2024_40561": {
+      "titre": "Liste des engagements financiers d'avril 2024 - MAMH",
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/documents_administratifs/acces_information/engagements_financiers/2024/LIS_engagements_avril_2024.pdf",
+      "nature": "LISTE_PROVINCIALE_ENGAGEMENTS_LIBELLE_VERSEMENT",
+      "page_pdf_index_zero": 49,
+      "programme": "40561",
+      "numero_ligne": 746,
+      "exercice": "2024-2025",
+      "controle_image_originale": "SCREENSHOT_WEB_ECHEC_CACHE_MISS"
+    }
+  },
+  "rubriques_municipales_detaillees": [
+    {
+      "id": "M_SANTE_S27_31",
+      "titre": "Immeubles du réseau de la santé et des services sociaux",
+      "source_id": "MUN_2024_S27",
+      "page_imprimee": 47,
+      "ligne_s27": 31,
+      "montant_realisation_2024_cad": "1163325",
+      "comptes_annexe_statut": "NON_AUDITE"
+    },
+    {
+      "id": "M_CEGEP_S27_32",
+      "titre": "Cégeps et universités",
+      "source_id": "MUN_2024_S27",
+      "page_imprimee": 47,
+      "ligne_s27": 32,
+      "montant_realisation_2024_cad": "576300",
+      "comptes_annexe_statut": "NON_AUDITE"
+    },
+    {
+      "id": "M_ECOLES_S27_33",
+      "titre": "Écoles primaires et secondaires",
+      "source_id": "MUN_2024_S27",
+      "page_imprimee": 47,
+      "ligne_s27": 33,
+      "montant_realisation_2024_cad": "1580414",
+      "comptes_annexe_statut": "NON_AUDITE"
+    },
+    {
+      "id": "M_TVQ_S27_136",
+      "titre": "Partage de la croissance d'un point de la TVQ",
+      "source_id": "MUN_2024_S27",
+      "page_imprimee": 52,
+      "ligne_s27": 136,
+      "montant_realisation_2024_cad": "1665578",
+      "comptes_annexe_statut": "NON_AUDITE"
+    }
+  ],
+  "lignes_provinciales": [
+    {
+      "id": "P_40350",
+      "source_id": "MAMH_JUILLET_2024_40350",
+      "programme": "40350",
+      "numero_ligne": 1193,
+      "montant_publie_exercice_2024_2025_cad": "3320039",
+      "beneficiaire": "Alma",
+      "nature": "ENGAGEMENT_MAMH_NON_PREUVE_PAIEMENT_DATE"
+    },
+    {
+      "id": "P_40561",
+      "source_id": "MAMH_AVRIL_2024_40561",
+      "programme": "40561",
+      "numero_ligne": 746,
+      "montant_publie_exercice_2024_2025_cad": "1665580",
+      "beneficiaire": "Alma",
+      "nature": "ENGAGEMENT_MAMH_NON_PREUVE_PAIEMENT_DATE"
+    }
+  ],
+  "comparaisons": [
+    {
+      "id": "C_40350",
+      "municipal_ids": [
+        "M_SANTE_S27_31",
+        "M_CEGEP_S27_32",
+        "M_ECOLES_S27_33"
+      ],
+      "provincial_id": "P_40350",
+      "montant_municipal_agrege_cad": "3320039",
+      "montant_provincial_cad": "3320039",
+      "ecart_municipal_moins_provincial_cad": "0",
+      "statut": "CONCORDANCE_NUMERIQUE_EXACTE_NON_CERTIFICATION",
+      "correspondance_comptable_confirmee": false,
+      "preuve_date_paiement": null,
+      "preuve_recette_municipale_meme_transaction": null,
+      "avis_independant_signé": null
+    },
+    {
+      "id": "C_40561",
+      "municipal_ids": [
+        "M_TVQ_S27_136"
+      ],
+      "provincial_id": "P_40561",
+      "montant_municipal_agrege_cad": "1665578",
+      "montant_provincial_cad": "1665580",
+      "ecart_municipal_moins_provincial_cad": "-2",
+      "statut": "ECART_NUMERIQUE_DEUX_DOLLARS_NON_EXPLIQUE",
+      "correspondance_comptable_confirmee": false,
+      "preuve_date_paiement": null,
+      "preuve_recette_municipale_meme_transaction": null,
+      "avis_independant_signé": null
+    }
+  ],
+  "reservations": [
+    "Les tableaux S27 sont explicitement qualifiés de NON AUDITÉS, même si le dossier contient des états consolidés audités.",
+    "Une liste d'engagements portant le terme versement ne démontre pas à elle seule la date d'encaissement municipal.",
+    "Les résultats municipaux couvrent l'année civile 2024; les montants ministériels sont présentés sur 2024-2025.",
+    "Le zéro d'écart est une égalité numérique de catégories, non une pièce comptable réciproque authentifiée.",
+    "Les deux dollars peuvent provenir d'ajustements, dates ou arrondis; la cause réelle est INCONNUE.",
+    "Les captures visuelles PDF via le navigateur ont retourné CACHE_MISS, aucun original binaire SHA-256 vérifié.",
+    "Une correspondance locale ne certifie pas l'ensemble des transferts du Québec, et encore moins le budget Nova.",
+    "Ne pas assimiler les trois sous-catégories scolaires et sanitaires aux autres recettes de compensation foncière.",
+    "Les financements de santé, éducation et municipalités doivent demeurer couverts quel que soit le régime proposé."
+  ],
+  "pieces_manquantes": [
+    {
+      "id": "H01",
+      "preuve": "Original PDF de chaque source récupéré et empreinte SHA256 conservée; validation visuelle des pages",
+      "statut": "NON_OBTENUE"
+    },
+    {
+      "id": "H02",
+      "preuve": "Bordereaux de paiement MAMH 40350 et 40561, dates, ventilations et ajustements",
+      "statut": "NON_OBTENUE"
+    },
+    {
+      "id": "H03",
+      "preuve": "Références de la pièce d'encaissement municipal et période de constatation de chaque ligne S27",
+      "statut": "NON_OBTENUE"
+    },
+    {
+      "id": "H04",
+      "preuve": "Explication probante de l'écart de 2 dollars sur programme 40561",
+      "statut": "NON_OBTENUE"
+    },
+    {
+      "id": "H05",
+      "preuve": "Revue signée par comptable municipal indépendant et critères d'élimination selon périmètre",
+      "statut": "NON_OBTENUE"
+    }
+  ],
+  "controle_parallele_p56g": {
+    "fichier": "projets/projet-nova/etudes/P56G_PREMIER_PONT_PROVINCIAL_MUNICIPAL_ALMA_2024.json",
+    "concordance_categorie_annee_2024": true,
+    "liens_deja_certifies_p56g": 0,
+    "p56g_ne_pas_modifer_via_p56h": true
+  },
+  "liens_arithmetiques_documentes": 2,
+  "liens_comptables_appaires_et_certifies": 0,
+  "montants_p52b_modifies": 0,
+  "postes_p52b_inconnus": 600,
+  "incidence_p52d_inconnues": 720,
+  "pourcentage_estime_p55n": 53,
+  "revenu_fiscal_nova_adopte": false,
+  "decision_fiscale_autorisee": false,
+  "economies_nova_certifiees_cad": null
+}
