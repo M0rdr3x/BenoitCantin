@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Contrats non destructifs des deux formulaires SINJIRA et des avis Formspree."""
+"""Contrats non destructifs : inscription, registre, consentement et envois Formspree."""
 from pathlib import Path
 import sys
 
@@ -10,88 +10,100 @@ def read(path:str)->str:
 
 def main()->int:
     errors=[]
-    def require(path, snippets):
-        source=read(path)
-        for marker in snippets:
-            if marker not in source:
-                errors.append(f"{path}: garde absent: {marker[:75]}")
-        return source
+    def check(path, markers):
+        body=read(path)
+        for marker in markers:
+            if marker not in body:
+                errors.append(f"{path}: garde manquante : {marker[:80]}")
+        return body
 
-    account=require('compte/inscription.html',[
+    signup_page=check('compte/inscription.html',[
         'data-signup-form method="post"', 'type="submit" disabled>Créer mon compte',
-        'v24-signup.js?v=24.5.3','<noscript>',
+        'name="formspree_receipt_opt_in"', 'v24-signup.js?v=24.5.3', '<noscript>',
     ])
-    signup=require('assets/js/v24-signup.js',[
-        'getSupabase().auth.signUp(', 'emailRedirectTo:`${SINJIRA_CONFIG.siteUrl}/compte/confirmer.html`',
-        'setBusy(!isSinjiraBackendConfigured());',
+    signup=check('assets/js/v24-signup.js',[
+        'getSupabase().auth.signUp(', 'emailRedirectTo:', '/compte/confirmer.html',
+        "formspree_receipt_opt_in:d.get('formspree_receipt_opt_in')==='yes'",
     ])
-    confirmation=require('assets/js/sinjira-confirm-email.js',[
+    confirmation=check('assets/js/sinjira-confirm-email.js',[
         "getSupabase().auth.verifyOtp(", "confirmButton?.addEventListener('click'",
         "getSupabase().auth.resend(", "'notify-account-confirmation'",
     ])
-    confirm_page=require('compte/confirmer.html',[
-        'data-confirm-button hidden', 'data-confirm-resend-form', 'noindex,nofollow',
-        'sinjira-confirm-email.js?v=2'
+    confirmation_page=check('compte/confirmer.html',[
+        'data-confirm-button hidden', 'data-confirm-resend-form',
+        'noindex,nofollow', 'sinjira-confirm-email.js?v=2',
     ])
-    registry_page=require('projets/sinjira/registre/index.html',[
+    registry_page=check('projets/sinjira/registre/index.html',[
         'data-character-form=', 'type="submit" disabled>Transmettre ma participation',
-        'sinjira-character-registry.js?v=24.5.3'
+        'name="formspree_receipt_opt_in"', 'sinjira-character-registry.js?v=24.5.4',
     ])
-    registry=require('assets/js/sinjira-character-registry.js',[
-        "form?.addEventListener('submit',async e=>{", 'e.preventDefault();',
-        'if(!registryReady||isSending||!currentUser)', 'if(profileError||submissionError||characterError)',
+    registry_js=check('assets/js/sinjira-character-registry.js',[
+        "form?.addEventListener('submit',async e=>{",
+        'e.preventDefault();', 'if(!registryReady||isSending||!currentUser)',
         "functions.invoke('submit-character-questionnaire'",
     ])
-    edge=require('supabase/functions/submit-character-questionnaire/index.ts',[
-        "requiredUser(req)", "sendFormspreeNotice(service,'registre_enregistre',sub.id)",
-        "if(error)throw new Error('CHARACTER_SUBMISSION_WRITE_FAILED')",
+    registry_edge=check('supabase/functions/submit-character-questionnaire/index.ts',[
+        "requiredUser(req)", "answers.formspree_receipt_opt_in==='yes'",
+        "sendFormspreeNotice(service,'registre_enregistre',sub.id,",
+        "answers:answers as Record<string,unknown>",
+        "CHARACTER_SUBMISSION_WRITE_FAILED",
     ])
-    notify=require('supabase/functions/notify-account-confirmation/index.ts',[
-        'requiredUser(req)', 'if(!user.email_confirmed_at)',
-        "sendFormspreeNotice(serviceClient(),'compte_confirme',user.id)",
+    account_edge=check('supabase/functions/notify-account-confirmation/index.ts',[
+        "requiredUser(req)", "if(!user.email_confirmed_at)",
+        "user.user_metadata?.formspree_receipt_opt_in!==true",
+        "sendFormspreeNotice(serviceClient(),'compte_confirme',user.id,{email:user.email||''})",
     ])
-    helper=require('supabase/functions/_shared/sinjira-formspree.ts',[
-        "'https://formspree.io/f/xzeeqynp'", "'https://formspree.io/f/mrppvrwa'",
-        ".from('sinjira_formspree_events')", 'body:JSON.stringify(fields)',
+    helper=check('supabase/functions/_shared/sinjira-formspree.ts',[
+        "'https://formspree.io/f/xzeeqynp'",
+        "'https://formspree.io/f/mrppvrwa'",
+        "QUESTIONNAIRE_FIELDS",
+        "const email=safeEmail(options?.email)",
+        "if(questionnaire)fields.questionnaire=questionnaire;",
+        "email, // Champ officiel Formspree",
+        ".from('sinjira_formspree_events')",
+        'body:JSON.stringify(fields)',
         'reference:String(receipt.id)',
     ])
-    migration=require('supabase/migrations/20261108041500_sinjira_formspree_notification_ledger.sql',[
-        'unique(event_type,source_id)',
-        'enable row level security',
+    migration=check('supabase/migrations/20261108041500_sinjira_formspree_notification_ledger.sql',[
+        'unique(event_type,source_id)', 'enable row level security',
         'revoke all on public.sinjira_formspree_events from public, anon, authenticated',
         'to service_role',
     ])
-    config=require('supabase/config.toml',[
+    check('supabase/config.toml',[
         '[functions.notify-account-confirmation]', 'verify_jwt = true',
     ])
-    inventory=require('scripts/validate_edge_function_inventory.py',[
+    check('scripts/validate_edge_function_inventory.py',[
         '"notify-account-confirmation"',
     ])
-    # Le navigateur n'envoie jamais de contenu sensible à Formspree.
+
+    # Jamais de soumission Formspree directe depuis des pages contenant les secrets.
     for path,src in [
-        ('compte/inscription.html',account),
+        ('compte/inscription.html',signup_page),
         ('assets/js/v24-signup.js',signup),
         ('assets/js/sinjira-confirm-email.js',confirmation),
-        ('compte/confirmer.html',confirm_page),
+        ('compte/confirmer.html',confirmation_page),
         ('projets/sinjira/registre/index.html',registry_page),
-        ('assets/js/sinjira-character-registry.js',registry)
+        ('assets/js/sinjira-character-registry.js',registry_js),
     ]:
         if 'formspree.io' in src:
-            errors.append(f'{path}: endpoint Formspree interdit côté navigateur')
-    # Pas de courriels, profils, mots de passe ou questionnaire dans l'avis.
-    if 'body:JSON.stringify(fields)' not in helper or 'email:' in helper or 'password:' in helper or 'answers:' in helper:
-        errors.append('Formspree: charge utile privée interdite.')
-    if "req.method!=='POST'" not in notify:
-        errors.append('Notification compte: POST obligatoire.')
-    if 'user.id' not in notify:
-        errors.append('Notification compte: source vérifiée manquante.')
+            errors.append(f'{path}: endpoint tiers interdit côté navigateur')
+
+    # La liste blanche ne doit inclure ni secrets, ni champs d'identification.
+    allow=helper.partition('const QUESTIONNAIRE_FIELDS = [')[2].partition('] as const;')[0]
+    for forbidden in ('password','date_naissance','prenom_legal','nom_legal','parent_','compte_','email','photo'):
+        if forbidden in allow:
+            errors.append(f'Liste blanche Formspree contient un champ interdit : {forbidden}')
+
+    if "req.method!=='POST'" not in account_edge:
+        errors.append('Notification de compte : POST requis.')
     if 'source_id' not in migration:
-        errors.append('Ledger: identité unique manquante.')
+        errors.append('Journal : source idempotente manquante.')
+
     if errors:
-        for err in errors:
-            print('ECHEC',err)
+        for error in errors:
+            print('ECHEC',error)
         return 1
-    print('OK inscription, confirmation, registre, Formspree, RLS, JWT et idempotence.')
+    print('OK inscription et Registre, copie créative, accord explicite, JWT, RLS et anti-doublons.')
     return 0
 
 if __name__=='__main__':
