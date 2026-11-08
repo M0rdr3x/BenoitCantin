@@ -111,6 +111,14 @@ test("un document sans champs obligatoires est rejeté proprement",()=>{
   assert.ok(check(x).errors.includes("SCHEMA"),k);
  }
 });
+test("une ligne de services malformée entraîne un refus contrôlé",()=>{
+ const x=structuredClone(d);
+ x.groups[2].categories[0]=null;
+ const result=check(x);
+ assert.equal(result.ok,false);
+ assert.ok(result.errors.includes("SUBCATEGORY_RECONCILIATION_V03"));
+ assert.ok(result.errors.includes("V03_SERVICE_SUBTOTAL"));
+});
 test("la page publique montre les trois ventilations et le score inchangé",async()=>{
  const html=await readFile(new URL("../avancement-programme-nova.html",import.meta.url),"utf8");
  const start=html.indexOf('id="ventilation-revenus-g015-v01-v03"');
