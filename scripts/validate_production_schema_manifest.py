@@ -37,7 +37,7 @@ EXPECTED_TABLES={
 'conscience_entries','conscience_vault_sessions','conscience_vault_audit',
 'employment_profiles','employment_applications',
 'personal_ai_settings','personal_ai_source_permissions','personal_ai_audit',
-'privacy_incident_register','privacy_requests','privacy_legal_holds','safety_escalation_cases'
+'privacy_incident_register','privacy_requests','privacy_legal_holds','safety_escalation_cases','sinjira_formspree_events'
 }
 
 PLANNED_LOCAL_TABLES={
