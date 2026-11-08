@@ -530,6 +530,20 @@ Les fichiers de référence candidats `official/reference/*` et `data/sources.js
 
 **Suite G0.16t :** isoler la comptabilité de chaque chantier, recueillir les bordereaux de virement PRIMEAU et contrôler l'écart entre contrats et tableaux de coûts avec une comptabilité projet détaillée. **47/100 inchangé.**
 
+
+## G0.16t — Décomptes nos 6 et 8 et ventilation de l'engagement PRIMEAU (8 novembre 2026)
+
+**Score interne de préparation de Nova–Sinjira : 47/100, 53 points restants.** Cette phase complète partiellement G0.16s avec deux nouvelles résolutions municipales et une source financière directe du MAMH. Aucun paiement bancaire individualisé ni audit fiscal de Nova n'est attesté.
+
+- **Décompte 6 :** [résolution municipale 2026-01-007 du 12 janvier 2026](https://munpdg.ca/wp-content/uploads/2026/02/proces-verbal-de-la-seance-ordinaire-du-12-janvier-2026.pdf), **2 612 027,17 $ avant taxes** autorisés pour Action Progex inc. Le même point autorise une facture Tetra Tech QI de **116 313,50 $** avant taxes pour Gascons.
+- **Décompte 8 :** [résolution municipale 2026-03-068 du 9 mars 2026](https://munpdg.ca/wp-content/uploads/2026/04/proces-verbal-seance-ordinaire-du-9-mars.pdf), **597 484,30 $ avant taxes** autorisés pour Action Progex inc. Le même point contient Tetra Tech QI **20 176,15 $** et Englobe **637,50 $** avant taxes pour Gascons, **exclus du total des décomptes Action Progex**.
+- **Série 2–8 :** les sept décomptes numérotés identifiés à ce stade représentent **18 621 734,12 $ d'autorisations sélectionnées avant taxes**, dont **15 313 639,29 $ issus de résolutions de 2025** et **3 308 094,83 $ de résolutions de 2026**. Le décompte **no 1 reste non vérifié**; la facture non numérotée d'août 2025 de **450 368,10 $** reste exclue afin d'éviter le double comptage. Aucune preuve bancaire de paiement individualisé n'a été établie.
+- **Engagement PRIMEAU ventilé par exercice :** [publication du MAMH, engagements de juin 2025, référence 2036036](https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/documents_administratifs/acces_information/engagements_financiers/2025/LIS_engagements_juin_2025.pdf) : aide totale **42 302 472 $**, dont **24 700 000 $ budgétés pour 2025–2026** et **17 602 472 $ pour 2026–2027**. Il s'agit d'une **ventilation d'engagements**, pas d'un relevé des montants versés; cette aide n'est pas une nouvelle subvention distincte de celle annoncée en juin 2025.
+- **Contrôles maintenus :** contrats octroyés, factures autorisées, comptes municipaux 2025, engagements MAMH et virements bancaires sont des objets différents; les dates des exercices provinciaux ne sont pas celles des exercices civils municipaux. La différence de périmètre entre le coût provincial de **44,5 M$**, les marchés octroyés et l'enveloppe du règlement de **56,596 M$** reste inexpliquée. Les captures visuelles PDF par navigateur ont échoué; les valeurs ici documentées reposent sur les textes officiels extraits.
+- **Livrables :** `data/engagements-et-decomptes-gascons-g0-16t-2025-2026.json`, `assets/g016t-commitments-reconciliation-core.mjs`, `tests/g016t-commitments-reconciliation.test.mjs`, `official/working/rapport-g0-16t-engagements-et-decomptes-gascons-v1.md`. **42 tests validés en rejeu JavaScript/V8 isolé, sans attestation de succès CI GitHub Actions ni audit financier indépendant.**
+
+**Suite G0.16u :** produire une piste d'audit **facture → résolution → virement** et **engagement PRIMEAU → réclamation → décaissement → dépôt**, obtenir les pièces bancaires, la concordance des périmètres et les coûts d'exploitation de l'eau avant toute réforme Nova prétendue financée. Les deux scénarios décennaux Québec au Canada et Québec souverain restent non chiffrés. **47/100 inchangé.**
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
