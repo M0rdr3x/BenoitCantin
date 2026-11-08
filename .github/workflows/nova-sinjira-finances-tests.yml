@@ -4,6 +4,11 @@ on:
     paths:
       - "projets/projet-nova/assets/comparateur-financier-*.mjs"
       - "projets/projet-nova/tests/*.test.mjs"
+      - "projets/projet-nova/data/g016*.json"
+      - "projets/projet-nova/data/g017*.json"
+      - "projets/projet-nova/assets/g016*.mjs"
+      - "projets/projet-nova/assets/g017*.mjs"
+      - "projets/projet-nova/scripts/g017*.mjs"
       - "projets/projet-nova/assets/nova-civic-integrity.js"
       - "projets/projet-nova/assets/sondage-citoyen.js"
       - "projets/projet-nova/assets/sondage-citoyen.css"
@@ -107,6 +112,11 @@ on:
     paths:
       - "projets/projet-nova/assets/comparateur-financier-*.mjs"
       - "projets/projet-nova/tests/*.test.mjs"
+      - "projets/projet-nova/data/g016*.json"
+      - "projets/projet-nova/data/g017*.json"
+      - "projets/projet-nova/assets/g016*.mjs"
+      - "projets/projet-nova/assets/g017*.mjs"
+      - "projets/projet-nova/scripts/g017*.mjs"
       - "projets/projet-nova/assets/nova-civic-integrity.js"
       - "projets/projet-nova/assets/sondage-citoyen.js"
       - "projets/projet-nova/assets/sondage-citoyen.css"
