@@ -138,7 +138,7 @@ Les deux prélèvements **ne seront considérés comme financièrement définis*
 **Livrables G0.16w :**
 - `data/g016w-assiettes-fiscales-et-garanties-distributives-2023-2024.json` — onze sources/séries, ventilation individuelle, sociétés, municipalités et zones inconnues.
 - `assets/g016w-fiscal-base-and-protection-core.mjs` — vérification des montants, règles de non-comparabilité, simulateurs de ménages et de budgets **strictement synthétiques**.
-- `tests/g016w-tax-bases-protections.test.mjs` — **62 tests** réussis en rejeu JavaScript/V8 isolé, et vérifications négatives contre taux fictifs, fausse compétence fiscale, double comptage, crédits supprimés et budgets souverains inventés.
+- `tests/g016w-tax-bases-protections.test.mjs` — **63 tests** réussis en rejeu JavaScript/V8 isolé, et vérifications négatives contre taux fictifs, fausse compétence fiscale, double comptage, crédits supprimés et budgets souverains inventés.
 
 **À réaliser en G0.16x :** construire une **table de concordance fiscale exhaustive** : impôt provincial/fédéral, droits, cotisations contributives, fiscalité foncière et scolaire, taxes d'accise et de consommation; marquer pour chaque composante son détenteur légal, le bénéficiaire, la décision Nova proposée, le service financé, son montant comparable, et la preuve de sa substitution. Ensuite, seulement, simuler plusieurs régimes progressifs candidats avec microdonnées anonymisées et audits de droits.
 
