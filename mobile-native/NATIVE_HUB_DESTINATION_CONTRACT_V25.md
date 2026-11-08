@@ -2,7 +2,7 @@
 
 ## Objectif
 
-Les hubs React Native SINJIRA restent des sas de navigation sans copie de données métier. Après la classification exhaustive des **46 pages** `compte/*.html` et le routage central des **31 routes natives**, leurs boutons doivent eux aussi respecter une frontière vérifiable.
+Les hubs React Native SINJIRA restent des sas de navigation sans copie de données métier. Après la classification exhaustive des **47 pages** `compte/*.html` et le routage central des **31 routes natives**, leurs boutons doivent eux aussi respecter une frontière vérifiable.
 
 **L’HUMAIN AVANT TOUT. PROTÉGER SANS SURVEILLER.**
 
@@ -39,7 +39,7 @@ Le contenu du Registre n’est jamais lu, résumé ou copié par ce garde ni par
 
 ## Surfaces interdites dans les tableaux de destinations
 
-Les pages d’**authentification et MFA**, de récupération/réinitialisation de mot de passe et de **signalement de décès** ne sont pas des raccourcis de hub natif. Toute introduction de ces routes dans un `Native*Hub.tsx` doit faire échouer la CI et nécessiter une décision de sécurité explicite.
+Les pages d’**authentification et MFA**, de récupération/réinitialisation de mot de passe et de **signalement de décès** ne sont pas des raccourcis de hub natif. La nouvelle page `/compte/confirmer.html` en fait explicitement partie : elle conserve le jeton de confirmation uniquement dans le navigateur et ne doit jamais être exposée dans une destination de hub. Toute introduction de ces routes dans un `Native*Hub.tsx` doit faire échouer la CI et nécessiter une décision de sécurité explicite.
 
 La procédure de décès reste Web/serveur avec ses validations humaines. Aucun hub ne décide d’un décès, d’une remise posthume ou d’une autre action irréversible.
 
