@@ -55,7 +55,7 @@ def mock_web_reader(context) -> None:
         ),
     )
     context.route(
-        "**/npm/@supabase/supabase-js@2/+esm*",
+        "**/npm/@supabase/supabase-js@2.119.0/+esm*",
         lambda route: route.fulfill(
             status=200,
             content_type="text/javascript",
@@ -141,7 +141,7 @@ def mock_private_reader(context) -> None:
     def javascript(route,body):
         route.fulfill(status=200,content_type='text/javascript',
             headers={'access-control-allow-origin':'*'},body=body)
-    context.route('**/npm/@supabase/supabase-js@2/+esm*',
+    context.route('**/npm/@supabase/supabase-js@2.119.0/+esm*',
         lambda route: javascript(route,fake_supabase))
     context.route('**/pdfjs-dist@4.9.155/build/pdf.min.mjs*',
         lambda route: javascript(route,fake_pdfjs))
@@ -293,7 +293,7 @@ export function getDocument(){
     def open_device(actor):
         ctx = browser.new_context(locale="fr-CA", viewport={"width": 1440, "height": 920})
         contexts.append(ctx)
-        ctx.route("**/npm/@supabase/supabase-js@2/+esm*",
+        ctx.route("**/npm/@supabase/supabase-js@2.119.0/+esm*",
                   lambda route: route.fulfill(
                       status=200, content_type="text/javascript",
                       headers={"access-control-allow-origin": "*"},
