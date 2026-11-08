@@ -43,7 +43,7 @@ const fakeDocument={
 };
 const ctx={
   document:fakeDocument,
-  window:{matchMedia:()=>({matches:true}),location:{href:"https://www.benoitcantin.com/projets/projet-nova/boussole-electorale.html"}},
+  window:{matchMedia:()=>({matches:true}),location:{href:"https://www.benoitcantin.com/projets/projet-nova/boussole-electorale.html?jeton=SECRET_FICTIF#fragment-prive"}},
   navigator:{},
   localStorage:{getItem(){storageCalls++;throw Error("localStorage interdit");},setItem(){storageCalls++;throw Error("localStorage interdit");}},
   fetch(){networkCalls++;throw Error("Aucune requête attendue");},console
@@ -113,6 +113,24 @@ const complete=Array.from({length:64},(_,i)=>i%5===0?null:((i%7)-3));
 assert.equal(run(complete),16,"Le profil complet doit couvrir seize axes");
 assert.match(el("compass-summary").textContent,/16 dimensions/);
 assert.match(el("compass-radar").innerHTML,/<polygon points=/);
+// Les paramètres et fragments de l'URL ne sont JAMAIS transmis aux
+// services tiers, aux liens mailto, au presse-papiers ni au partage natif.
+const canonicalUrl="https://www.benoitcantin.com/projets/projet-nova/boussole-electorale.html";
+for(const id of ["compass-share-email","compass-share-facebook","compass-share-x","compass-share-linkedin"]){
+  const href=decodeURIComponent(el(id).href);
+  assert.ok(href.includes(canonicalUrl),"Partage canonique attendu : "+id);
+  assert.doesNotMatch(href,/SECRET_FICTIF|jeton=|fragment-prive/,"Aucun jeton dans "+id);
+}
+let nativePayload=null;
+ctx.navigator.share=payload=>{nativePayload=payload;return Promise.resolve();};
+el("compass-share-native").onclick();
+assert.equal(nativePayload.url,canonicalUrl,"Partage natif : URL sans paramètres");
+assert.doesNotMatch(nativePayload.text,/SECRET_FICTIF|fragment-prive/);
+let copiedText="";
+ctx.navigator.clipboard={writeText:text=>{copiedText=text;return Promise.resolve();}};
+el("compass-copy-result").onclick();
+assert.ok(copiedText.includes(canonicalUrl),"Copie : URL canonique");
+assert.doesNotMatch(copiedText,/SECRET_FICTIF|jeton=|fragment-prive/,"Copie sans paramètre privé");
 // Une modification après les résultats doit immédiatement actualiser la
 // carte et le courriel, sans perdre le focus de la question révisée.
 const beforeEdit=el("compass-results-grid").innerHTML;
