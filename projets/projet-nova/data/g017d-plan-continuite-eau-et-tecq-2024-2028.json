@@ -1,0 +1,261 @@
+{
+  "schema": "nova-g017d-water-tecq-funding-protection/v1",
+  "phase": "G0.17d",
+  "date": "2026-11-08",
+  "score_before": 47,
+  "score_after": 47,
+  "points_remaining": 53,
+  "assumptions_reviewed_independently": false,
+  "legislation_adopted": false,
+  "real_financing_confirmed": false,
+  "official_sources": [
+    {
+      "id": "W2024",
+      "source": "MAMH Stratégie québécoise d'économie d'eau potable — cartographie et rapports",
+      "url": "https://www.quebec.ca/gouvernement/ministeres-organismes/affaires-municipales/publications/strategie-economie-potable/cartographie-avancement-strategie",
+      "fiscal_data_year": 2024,
+      "publication_date": "2026-07-30",
+      "role": "OFFICIAL_PUBLICATION_LISTING_WATER_2024_XLSX",
+      "binary_file": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/infrastructures/strategie_quebecoise_eau_potable/BIL_base_donnees_2024.xlsx",
+      "binary_downloaded": false,
+      "spreadsheet_rows_read": false,
+      "source_page_updated": "2026-10-26"
+    },
+    {
+      "id": "TECQ",
+      "source": "Gouvernement du Québec TECQ 2024–2028",
+      "url": "https://www.quebec.ca/habitation-territoire/infrastructures-municipales/programmes/eau-potable-eaux-usees/programme-transfert-infrastructures-eau-collectives-quebec-tecq-2024-2028",
+      "role": "OFFICIAL_HTML_PROGRAM_SCOPE_AND_PROCEDURE",
+      "federal_and_quebec_funding_more_than_gcad": 3.3,
+      "federal_component_more_than_gcad": 2.2,
+      "quebec_component_gcad": 1,
+      "known_as_envelope_not_cash": true,
+      "actual_paid_by_municipality_unknown": true
+    },
+    {
+      "id": "WA2023",
+      "source": "MAMH Rapport annuel de l'usage de l'eau potable 2023",
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/infrastructures/strategie_quebecoise_eau_potable/RAP_usage_eau_potable_2023.pdf",
+      "role": "HISTORICAL_WATER_SERVICE_FULL_COST_2023_ONLY"
+    },
+    {
+      "id": "M2024",
+      "source": "MAMH DAI-2026-030 municipal revenue presentation",
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/documents_administratifs/acces_information/demande_acces/2026/DAI_2026-030_cout_gestion_infrastructure.pdf",
+      "role": "HISTORICAL_MUNICIPAL_2024_GROSS_REVENUE_ONLY"
+    },
+    {
+      "id": "PRIMEAU",
+      "source": "Gouvernement du Québec PRIMEAU 2023-2033",
+      "url": "https://www.quebec.ca/habitation-territoire/infrastructures-municipales/programmes/eau-potable-eaux-usees/programme-infrastructures-municipales-eau-primeau",
+      "role": "SEPARATE_PROGRAM_DO_NOT_ADD_SAME_PROJECT_FUNDING_TWICE"
+    },
+    {
+      "id": "G017C",
+      "path": "data/g017c-recettes-municipales-2024-et-couts-eau-2023.json",
+      "role": "UPSTREAM_2023_WATER_AND_2024_REVENUES"
+    },
+    {
+      "id": "G017B",
+      "path": "data/g017b-mamh-municipal-ingestion-contract-2024-2025.json",
+      "role": "UPSTREAM_UNFETCHED_MUNICIPAL_FINANCE_CSV"
+    },
+    {
+      "id": "G016Z",
+      "path": "data/g016z-financement-consolide-et-protections-2026-2036.json",
+      "role": "UPSTREAM_FINANCIAL_AND_HARD_STOP_FRAMEWORK"
+    }
+  ],
+  "tecq_2024_2028": {
+    "program_id": "TECQ_2024_2028",
+    "scope": "QUEBEC_AND_CANADA_GOVERNMENT_SUPPORT_TO_MUNICIPAL_INFRASTRUCTURE_2024_2028",
+    "period_start": "2024-01-01",
+    "period_end": "2028-12-31",
+    "final_reporting_deadline": "2029-06-30",
+    "total_approved_support_lower_bound_mcad": 3300,
+    "federal_support_lower_bound_mcad": 2200,
+    "quebec_contribution_announced_mcad": 1000,
+    "exact_current_envelope_mcad": null,
+    "exact_federal_component_mcad": null,
+    "funding_disbursed_mcad": null,
+    "recipient_by_recipient_bank_receipts_verified": false,
+    "not_all_teqc_construction_is_water": true,
+    "municipal_project_approval_required": true,
+    "annual_program_update_window": {
+      "from_month_day": "10-01",
+      "to_month_day": "02-15"
+    },
+    "preexisting_tecq_2019_2024_closing_required": true,
+    "local_public_infrastructure_ownership_or_qualifying_tenure_required": true,
+    "local_autonomous_investments_mandatory": true,
+    "final_invoice_and_audit_before_closure": true,
+    "cannot_add_teqc_envelope_to_water_2023_cost_as_incremental_revenue": true,
+    "cannot_add_federal_envelope_to_2026_quebec_provincial_budget_as_new_money": true,
+    "federal_share_not_guaranteed_in_sovereign_scenario": true,
+    "primeau_and_tecq_same_cost_double_claim_prohibited": true
+  },
+  "water_database_2024": {
+    "listing_verified": true,
+    "release_date": "2026-07-30",
+    "binary_file_download_attempted": true,
+    "binary_file_downloaded": false,
+    "download_error": "NAME_RESOLUTION_FAILURE_IN_RUNTIME",
+    "water_2024_actual_full_cost_gcad": null,
+    "water_2024_actual_assigned_revenues_gcad": null,
+    "water_2024_actual_coverage_pct": null,
+    "water_2025_full_cost_gcad": null,
+    "future_water_cost_indexation_model_validated": false,
+    "cannot_copy_2023_40pct_as_2024_coverage": true,
+    "source_version_hash_sha256": null,
+    "source_year_and_report_year_distinct": true
+  },
+  "historical_context_from_g017c": {
+    "municipal_consolidated_revenue_2024_gcad": 31.3,
+    "municipal_federal_and_provincial_transfers_2024_gcad": 7.4,
+    "municipal_property_tax_2024_gcad": 15,
+    "water_2023_full_cost_approx_gcad": 6,
+    "water_2023_water_allocated_revenue_approx_gcad": 2.4,
+    "water_2023_uncovered_full_cost_approx_gcad": 3.6,
+    "all_amounts_different_years_or_scopes": true,
+    "municipal_2024_transfers_include_multiple_programmes_not_assigned_to_TECQ": true,
+    "no_cash_gap_inferred_from_water_full_cost": true
+  },
+  "conditional_policy_proposal": {
+    "name": "Fonds de continuité des services municipaux et de maintien des actifs en eau",
+    "status": "DRAFT_CONDITIONAL_NOVA_POLICY_NOT_ADOPTED",
+    "permitted_financing_sources": [
+      "INCOME_LEVY_NET_REVENUE_IF_VERIFIED",
+      "TAX_HAVEN_LEVY_INCREMENTAL_NET_REVENUE_IF_VERIFIED",
+      "EXISTING_NON_TAX_RECEIPTS_LEGALLY_COMPATIBLE_IF_VERIFIED",
+      "CONTRACTUALLY_AND_LEGALLY_CONTINUING_EXTERNAL_TRANSFERS_IF_VERIFIED"
+    ],
+    "not_a_new_third_tax": true,
+    "no_new_tariff_substituting_hidden_tax_without_legal_review": true,
+    "allocation_basis": [
+      "AUDITED_SERVICE_OPERATING_COST",
+      "AUDITED_LABOR_AND_PENSION_CONTINUITY",
+      "AUDITED_DEBT_SERVICE",
+      "CONDITION_ASSESSED_ASSET_MAINTENANCE_AND_RENEWAL",
+      "VALIDATED_CAPEX_BACKLOG_AND_CLIMATE_RISK",
+      "AFFORDABILITY_AND_EQUITY_ADJUSTMENT_WITH_NON_DISCRIMINATORY_RULES"
+    ],
+    "owner_roles": {
+      "program": "Autorité de transition et finances publiques (proposée)",
+      "municipal": "Direction financière municipale",
+      "review": "Auditeur financier indépendant",
+      "rights": "Autorité de protection des droits (proposée)"
+    },
+    "formal_agreements_required": true,
+    "ledger_eliminate_internal_province_municipal_transfer": true,
+    "public_project_registry_and_receipt_audit_required": true,
+    "no_cut_services_or_firing_local_workers_to_assume_balance": true,
+    "minimum_condition": "No reduction in a presently financed essential municipal service before verified replacement funds and auditable operating/asset continuity plan",
+    "benefit_for_households_untested": true
+  },
+  "funding_trace_rules": [
+    {
+      "id": "A",
+      "step": "IDENTIFY_EXISTING_PROGRAM",
+      "proof": "Programme et version de guide, bénéficiaire et projet existant"
+    },
+    {
+      "id": "B",
+      "step": "ESTABLISH_LEGAL_ELIGIBILITY",
+      "proof": "Programmation et décision ministérielle admissible"
+    },
+    {
+      "id": "C",
+      "step": "CERTIFY_COMMITTED_AMOUNT",
+      "proof": "Convention d'aide et ventilation des partenaires"
+    },
+    {
+      "id": "D",
+      "step": "VERIFY_ACTUAL_EXPENDITURE",
+      "proof": "Factures, décomptes, retenues, coûts réels et contrats"
+    },
+    {
+      "id": "E",
+      "step": "VERIFY_GOVERNMENT_CASH",
+      "proof": "Écritures ou confirmations de virements de chaque gouvernement"
+    },
+    {
+      "id": "F",
+      "step": "VERIFY_MUNICIPAL_CASH",
+      "proof": "Réception bancaire ou grand livre apparié, après caviardage"
+    },
+    {
+      "id": "G",
+      "step": "ELIMINATE_INTERNAL_TRANSFERS",
+      "proof": "Pont comptable de même exercice, poste et bénéficiaire"
+    },
+    {
+      "id": "H",
+      "step": "GUARANTEE_SERVICE_AND_ASSETS",
+      "proof": "Plan de gestion des actifs eau, opérations, effectifs, dette et maintenance"
+    }
+  ],
+  "two_status_scenarios": [
+    {
+      "id": "QUEBEC_CANADA",
+      "federal_support_continuation_per_applicable_law_and_agreements": "UNVERIFIED_FOR_NOVA_REFORM",
+      "municipal_teqc_replacement_need_mcad": null,
+      "provincial_municipal_net_consolidated_cost_mcad": null,
+      "new_nova_income_tax_rate_pct": null,
+      "verified_ten_year_balances": null,
+      "municipal_service_continuity_certified": false
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "federal_support_after_sovereignty": "NOT_AUTOMATIC",
+      "federal_envelope_imputed_as_new_cost_mcad": null,
+      "negotiated_legacy_funding_and_assigned_assets_verified": false,
+      "sovereign_service_replacement_and_municipal_cost_mcad": null,
+      "national_functions_and_debt_model_verified": false,
+      "new_nova_income_tax_rate_pct": null,
+      "verified_ten_year_balances": null,
+      "municipal_service_continuity_certified": false
+    }
+  ],
+  "tests_needed_before_score_increase": [
+    {
+      "id": "T01",
+      "criterion": "Water 2024 XLSX original byte hash, sheet codes, sums and completeness verified",
+      "passed": false
+    },
+    {
+      "id": "T02",
+      "criterion": "TECQ recipient and program records cross-reconciled, including 2025/26 transfers",
+      "passed": false
+    },
+    {
+      "id": "T03",
+      "criterion": "Legal and fiscal treatment of the two levy policy and municipal user-fees reviewed",
+      "passed": false
+    },
+    {
+      "id": "T04",
+      "criterion": "A conservative water 10-year asset finance forecast audited and funded",
+      "passed": false
+    },
+    {
+      "id": "T05",
+      "criterion": "Both constitutional fiscal scenarios have net expenditure and income bases",
+      "passed": false
+    },
+    {
+      "id": "T06",
+      "criterion": "Household affordability, labor rights and service continuity independently validated",
+      "passed": false
+    }
+  ],
+  "decisions": {
+    "official_water_2024_workbook_identified": true,
+    "actual_water_2024_workbook_read": false,
+    "tecq_official_program_and_conditions_verified": true,
+    "tecq_payments_verified": false,
+    "federal_replacement_cost_certified": false,
+    "actual_provincial_municipal_net_2026_balance_certified": false,
+    "source_backed_policy_safeguards_drafted": true,
+    "programme_score_rise_earned": false
+  }
+}
