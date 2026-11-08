@@ -1,0 +1,254 @@
+{
+  "schema_version": "P56K-1",
+  "date_revue": "2026-11-07",
+  "titre": "Statistiques des assiettes existantes des particuliers et societes, credits et limites de comparabilite",
+  "statut": "OBSERVATIONS_FISCALES_OFFICIELLES_HETEROGENES_NON_MODELE_NOVA",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "territoire": "QUEBEC_DANS_CANADA",
+  "sources": {
+    "PARTICULIERS_2023": {
+      "url": "https://www.budget.finances.gouv.qc.ca/Budget/outils/statistiques-fiscales/somm-comp-impot.asp",
+      "organisme": "Ministère des Finances du Québec",
+      "nature": "STATISTIQUES_ADMINISTRATIVES_PARTICULIERS",
+      "millesime": 2023,
+      "publication": "2026-02-13",
+      "tableau": "A.7 et A.9",
+      "note": "Déclarations des particuliers, pas les recettes comptables consolidées de l'État"
+    },
+    "SOCIETES_2021": {
+      "url": "https://www.quebec.ca/gouvernement/finances-publiques/revenus/donnees-fiscales/statistiques-fiscales-societes",
+      "organisme": "Ministère des Finances du Québec",
+      "nature": "STATISTIQUES_ADMINISTRATIVES_SOCIETES",
+      "millesime": 2021,
+      "tableau": "Sommaire des assiettes et déclarations des sociétés",
+      "note": "Revenu imposable des sociétés au Québec en 2021; différent des revenus des travailleurs autonomes déclarés par particuliers"
+    },
+    "DEPENSES_FISCALES_2025": {
+      "url": "https://www.budget.finances.gouv.qc.ca/Budget/outils/depenses-fiscales/portrait-portrait.asp",
+      "organisme": "Ministère des Finances du Québec",
+      "nature": "ESTIMATIONS_ET_PROJECTIONS_COUT_DEPENSES_FISCALES",
+      "millesime": 2025,
+      "tableau": "B.2 - Coût global des dépenses fiscales",
+      "note": "Non assimilables à un trésor récupérable et ne peuvent s'ajouter aux recettes comptables"
+    },
+    "CONTROLE_FISCAL_2025_2026": {
+      "url": "https://www.revenuquebec.ca/fr/salle-de-presse/statistiques/les-resultats-des-activites-de-controle-fiscal/",
+      "organisme": "Revenu Québec",
+      "nature": "RESULTATS_CONTROLE_FISCAL_NON_CASH_NOUVEAU_NET",
+      "millesime": "2025-2026",
+      "tableau": "Résultats des activités de contrôle fiscal",
+      "note": "Résultats publiés, pas un rendement nouveau du prélèvement Nova anti-paradis fiscaux; montant non ajoutable aux recettes"
+    }
+  },
+  "particuliers_2023": {
+    "unite_montant": "M_CAD",
+    "source_id": "PARTICULIERS_2023",
+    "revenu_total_mcad": "427915",
+    "deductions_revenu_net_mcad": "40892",
+    "revenu_net_mcad": "387023",
+    "deductions_revenu_imposable_mcad": "14761",
+    "revenu_imposable_mcad": "372261",
+    "impot_avant_credits_mcad": "62148",
+    "credits_non_remboursables_effet_mcad": "21358",
+    "impot_a_payer_mcad": "40790",
+    "credits_remboursables_mcad": "9305",
+    "impot_a_payer_net_credits_remboursables_mcad": "31485",
+    "taux_moyen_publie_pourcent": "9.5",
+    "taux_moyen_denominateur": "REVENU_TOTAL_ET_NON_REVENU_IMPOSABLE",
+    "nombre_declarations_milliers": "7220",
+    "declarations_imposables_milliers": "4911",
+    "declarations_non_imposables_milliers": "2309",
+    "remarque_arrondis": "Les totaux proviennent de tableaux publiés arrondis en M$ et milliers de personnes.",
+    "distribution_revenu_total_2023_mcad": [
+      {
+        "id": "REVENU_MOINS_10000",
+        "tranche": "Moins de 10 000 $",
+        "montant": "2532"
+      },
+      {
+        "id": "REVENU_10000_19999",
+        "tranche": "10 000 à 19 999 $",
+        "montant": "12615"
+      },
+      {
+        "id": "REVENU_20000_29999",
+        "tranche": "20 000 à 29 999 $",
+        "montant": "26507"
+      },
+      {
+        "id": "REVENU_30000_49999",
+        "tranche": "30 000 à 49 999 $",
+        "montant": "59789"
+      },
+      {
+        "id": "REVENU_50000_99999",
+        "tranche": "50 000 à 99 999 $",
+        "montant": "159483"
+      },
+      {
+        "id": "REVENU_100000_PLUS",
+        "tranche": "100 000 $ ou plus",
+        "montant": "166989"
+      }
+    ],
+    "distribution_type": "REVENUS_TOTAUX_ET_NON_ASSIETTES_IMPOSABLES_PAR_DECILE",
+    "pouvoir_achat_mesure_par_tranche": false,
+    "credit_par_tranche_obtenu": false
+  },
+  "societes_2021": {
+    "unite_montant": "M_CAD",
+    "source_id": "SOCIETES_2021",
+    "revenu_imposable_quebec_mcad": "95784",
+    "masse_salariale_assujettie_fss_mcad": "155850",
+    "impot_revenu_societes_mcad": "10000",
+    "cotisations_fss_societes_mcad": "5327",
+    "prelevements_bruts_deux_categories_mcad": "15327",
+    "credits_impot_societes_mcad": "2468",
+    "impots_et_cotisations_nets_apres_credits_publies_mcad": "12860",
+    "ecart_arrondi_attendu_sur_net_mcad": "1",
+    "nb_declarations_societes": "564599",
+    "nb_societes_non_imposees_revenu": "322020",
+    "pct_societes_non_imposees_revenu": "57.0",
+    "nombre_petites": "542249",
+    "nombre_moyennes": "14858",
+    "nombre_grandes": "7492",
+    "limites": [
+      "Le revenu imposable des sociétés en 2021 ne se confond pas avec les revenus de travail autonome des particuliers en 2023",
+      "La masse salariale servant de base au FSS ne constitue pas un bénéfice imposable des sociétés",
+      "Les crédits de sociétés et la cotisation FSS se calculent selon des règles distinctes",
+      "Les totaux publiés sont arrondis en M$ : 15327 - 2468 = 12859, alors que le montant net publié est 12860"
+    ]
+  },
+  "depenses_fiscales_2025": {
+    "unite": "M_CAD",
+    "source_id": "DEPENSES_FISCALES_2025",
+    "total_publie_mcad": "52864.9",
+    "impot_particuliers_mcad": "34843.4",
+    "impot_societes_mcad": "7196.8",
+    "taxes_consommation_mcad": "10824.7",
+    "beneficiaires_particuliers_mcad": "43046.9",
+    "beneficiaires_societes_mcad": "9818.0",
+    "nombre_mesures_total": 273,
+    "nombre_mesures_impot_particuliers": 152,
+    "nombre_mesures_impot_societes": 77,
+    "nombre_mesures_taxes_consommation": 44,
+    "annee_nature": "ESTIMATION_ET_PROJECTION_DEPENSES_FISCALES_NON_RECETTES_RECOUVREES",
+    "recettes_automatiquement_recuperables_mcad": null,
+    "droits_sociaux_et_mesures_protegees_a_inventorier": true
+  },
+  "controle_fiscal_2025_2026": {
+    "unite": "M_CAD",
+    "source_id": "CONTROLE_FISCAL_2025_2026",
+    "resultats_activites_controle_fiscal_publies_mcad": "4797",
+    "nouveau_rendement_recouvrable_nova_mcad": null,
+    "ajout_au_revenu_p52b_autorise": false,
+    "repartition_entreprises_pct": "69",
+    "repartition_particuliers_pct": "31",
+    "statut": "RESULTAT_ACTIVITES_CONTROLE_NON_NOUVELLE_ASSIETTE_NOVA"
+  },
+  "comparabilite": {
+    "annees_alignées": false,
+    "particuliers_annee": 2023,
+    "societes_annee": 2021,
+    "depenses_fiscales_annee": 2025,
+    "etats_financiers_niveau": "COMPTES_PUBLICS_2025_2026",
+    "total_assiettes_personnes_et_societes_measures_agrege_2023_mcad": null,
+    "taux_unique_nova_calculable": false,
+    "taux_societes_nova_calculable": false,
+    "taux_particuliers_nova_calculable": false,
+    "aucune_projection_decennale_issue_d_une_annee_historique": true,
+    "revenus_de_sociétés_2021_non_extrapoles_2027_2036": true,
+    "revenus_de_particuliers_2023_non_extrapoles_2027_2036": true,
+    "non_deduction_automatique_credits_et_prestations": true
+  },
+  "deux_regimes": {
+    "QUEBEC_DANS_CANADA": {
+      "competence": "QUEBEC_SEULEMENT_IMPOTS_PROVINCIAUX",
+      "impots_federaux_non_supprimables_unilateralement": true,
+      "societes_et_particuliers_pas_deux_assiettes_additionnables_sans_recoupements": true,
+      "assiettes_2027_2036_validees": false,
+      "incidence_menages_deciles_validee": false,
+      "revenu_nouveau_prelevement_anti_paradis_mcad": null
+    },
+    "QUEBEC_SOUVERAIN": {
+      "competence": "HYPOTHESE_CONDITIONNEE_STATUT_ET_NEGOCIATIONS",
+      "assiettes_federales_net_recouvrables_mcad": null,
+      "couteuses_fonctions_federales_dette_pensions_mcad": null,
+      "traites_accords_fiscalite_recours_verifies": false,
+      "assiettes_2027_2036_validees": false,
+      "taux_adopte": null
+    }
+  },
+  "preuves_suivantes": [
+    {
+      "id": "K01",
+      "objet": "Assiette revenu imposable des particuliers pour une année comparable aux sociétés, par décile et régions",
+      "statut": "NON_OBTENUE",
+      "preuve": null
+    },
+    {
+      "id": "K02",
+      "objet": "Statistiques fiscales des sociétés plus récentes par assiette, taille et pertes",
+      "statut": "NON_OBTENUE",
+      "preuve": null
+    },
+    {
+      "id": "K03",
+      "objet": "Relier crédits remboursables et prestations aux déciles sans doubler dépenses budgétaires",
+      "statut": "NON_OBTENUE",
+      "preuve": null
+    },
+    {
+      "id": "K04",
+      "objet": "Assiette et revenu disponible après impôts fédéraux, provinciaux et cotisations par ménage type",
+      "statut": "NON_OBTENUE",
+      "preuve": null
+    },
+    {
+      "id": "K05",
+      "objet": "Distinguer revenu brut mondial, revenu imposable au Québec et bases retenues pour entreprises",
+      "statut": "NON_OBTENUE",
+      "preuve": null
+    },
+    {
+      "id": "K06",
+      "objet": "Définir champ légal et rendement net additionnel vérifié anti-paradis, en évitant les recettes déjà obtenues",
+      "statut": "NON_OBTENUE",
+      "preuve": null
+    },
+    {
+      "id": "K07",
+      "objet": "Projections macroéconomiques et comportementales 2027-2036, trois scénarios par régime",
+      "statut": "NON_OBTENUE",
+      "preuve": null
+    },
+    {
+      "id": "K08",
+      "objet": "Dépenses pour services, municipalités et prestations, financement sans transfert caché",
+      "statut": "NON_OBTENUE",
+      "preuve": null
+    },
+    {
+      "id": "K09",
+      "objet": "Budget des nouvelles compétences en souveraineté, fiscalité fédérale, dette et pensions",
+      "statut": "NON_OBTENUE",
+      "preuve": null
+    },
+    {
+      "id": "K10",
+      "objet": "Expertise fiscale et juridique indépendante signée, conditions de prudence validées",
+      "statut": "NON_OBTENUE",
+      "preuve": null
+    }
+  ],
+  "nombre_preuves_restantes": 10,
+  "p55n_score_estimatif": 53,
+  "p52b_montants_inconnus": 600,
+  "p52d_incidences_inconnues": 720,
+  "p52a_preuves_non_validees": 20,
+  "taux_fiscaux_nova_adoptes": false,
+  "transposition_p52b": false,
+  "economies_nova_certifiees_mcad": null,
+  "validation_independante_nova": false,
+  "decision_budget_decennal": "NO_GO"
+}
