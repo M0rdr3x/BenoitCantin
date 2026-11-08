@@ -161,3 +161,19 @@ test("le dossier antérieur G0.16l reste non certifié",()=>{
  assert.equal(r.ok,false);
  assert.ok(r.errors.includes("INHERITED_G0_16L_NOT_CERTIFIED"));
 });
+
+test("la page d’avancement G0.16m présente le cas réel sans financement fictif",async()=>{
+ const html=await readFile(new URL("../avancement-programme-nova.html",import.meta.url),"utf8");
+ assert.match(html,/id="cas-warwick-g016m"/);
+ assert.match(html,/14 668 901 \$/);
+ assert.match(html,/20 074 664 \$/);
+ assert.match(html,/27,988 M\$/);
+ assert.match(html,/47 % inchangé/);
+});
+test("la page d’avancement maintient les avertissements sur les emprunts et versements",async()=>{
+ const html=await readFile(new URL("../avancement-programme-nova.html",import.meta.url),"utf8");
+ assert.match(html,/projet municipal existant, et non un projet ou une subvention attribuée à Nova/);
+ assert.match(html,/Une autorisation d'emprunt n'est pas une dette déjà tirée/);
+ assert.match(html,/un engagement gouvernemental n'est pas un paiement reçu/);
+ assert.match(html,/aucune attestation de versements/);
+});
