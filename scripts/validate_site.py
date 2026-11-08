@@ -401,7 +401,7 @@ def main() -> int:
                 if rel not in consent_pages:
                     errors.append(f'Formspree non autorisé dans une zone SINJIRA active: {rel}')
                 else:
-                    if re.search(r'https?://(?:www\\.)?formspree\\.io', text, re.I):
+                    if re.search(r'https?://(?:www\.)?formspree\.io', text, re.I):
                         errors.append(f'Endpoint Formspree interdit dans la page Web privée: {rel}')
                     if rel != 'compte/confidentialite-joueur.html' and 'name="formspree_receipt_opt_in"' not in text:
                         errors.append(f'Consentement Formspree absent du formulaire: {rel}')
