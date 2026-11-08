@@ -69,6 +69,10 @@ def main()->int:
         ".select('delivery_status')",
         "accepted:!priorError&&prior?.delivery_status==='sent'",
         "already:true",
+        "async function sendFormspreeNoticeCore(",
+        "export async function sendFormspreeNotice(",
+        "return await sendFormspreeNoticeCore(service,kind,sourceId,options);",
+        "reason:'SECONDARY_CHANNEL_UNAVAILABLE'",
     ])
     migration=check('supabase/migrations/20261108041500_sinjira_formspree_notification_ledger.sql',[
         'unique(event_type,source_id)', 'enable row level security',
