@@ -637,6 +637,20 @@ Les fichiers de référence candidats `official/reference/*` et `data/sources.js
 
 Registre : `data/g016z-controle-versions-source-municipale-mamh.json`. Le score **reste 47/100**. Cette anomalie est **ouverte**; elle doit être résolue avant tout chiffrage officiel d'un remplacement de la taxe foncière en 2026.
 
+
+## G0.17a — Contrôle de versions MAMH et continuité des transferts municipaux (8 novembre 2026)
+
+**Score de préparation Nova–Sinjira : 47/100, 53 points restant à obtenir.** Après G0.16z, le programme vérifie **l'origine et la comparabilité** des transferts fiscaux municipaux plutôt que de traiter une URL gouvernementale comme une preuve figée.
+
+- **Nouvelle source MAMH :** le [Sommaire des transferts fiscaux](https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/finances_indicateurs_fiscalite/information_financiere/SOM_transferts_fiscaux.pdf) présente une anomalie de version observable : la [page institutionnelle](https://www.quebec.ca/gouvernement/gestion-municipale/finances-fiscalite-municipales/fiscalite/encadrement) annonce **2025** et l'extraction textuelle indique **2025**, mais **la capture visuelle de la page PDF du tableau indique 2024**. La récupération de copies PDF immuables et d'une empreinte SHA-256 n'a pas réussi; **le conflit reste ouvert**.
+- **Données 2024 visibles :** pour les **programmes spécifiques de transferts fiscaux recensés**, la somme des cinq catégories de population est de **575 605 939 $**, dont **444 999 999 $ de partage de TVQ**. Les cinq lignes et leurs composantes ont été recalculées. **Il ne s'agit pas du total des transferts publics aux municipalités**, ni d'un budget Nova.
+- **Texte 2025 mis en quarantaine :** les chiffres extraits pour 2025 ne peuvent pas être présentés comme un exercice visuellement vérifié sur la même version du PDF. Tous les **écarts 2024–2025, taux de croissance et besoins de remplacement pour 2026** restent `null`. **Aucune économie extrapolée.**
+- **Conséquence sur « deux prélèvements » :** si la TVQ est supprimée ou remplacée, la continuité des transferts municipaux qui en dépendent doit être explicitement financée. Dans une consolidation **province + municipalités**, le même transfert doit être **neutralisé comme opération interne**, pas additionné deux fois comme une nouvelle ressource. Neutraliser le double compte ne supprime **aucun coût réel des services ni obligation envers les salariés**.
+- **Source de contrôle complémentaire :** [Données Québec, fichiers réels municipaux 2024 et 2025](https://www.donneesquebec.ca/recherche/dataset/rapport-financier-des-organismes-municipaux-et-autres-documents). Les jeux CSV ne sont **pas encore chargés**; un rapprochement complet nécessitera leurs définitions de postes, la liste des organismes absents et des années compatibles.
+- **Livrables :** `data/g017a-transferts-fiscaux-mamh-controle-versions-2024-2025.json`, `assets/g017a-mamh-transfer-source-gates.mjs`, `tests/g017a-mamh-transfer-source-integrity.test.mjs`, `official/working/rapport-g0-17a-reconciliation-transferts-fiscaux-mamh-v1.md`. **44/44 tests réussis en rejeu JavaScript/V8 isolé**; aucune attestation d'exécution GitHub Actions ni certification externe du programme.
+
+**Suite G0.17b :** importer les comptes municipaux réels par poste et les rapprocher des transferts provinciaux en respectant les périodes, puis vérifier les effets sur les budgets des ménages, les écoles, les municipalités et la main-d'œuvre. **47/100 inchangé.**
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
