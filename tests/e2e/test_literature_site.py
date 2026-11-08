@@ -326,8 +326,19 @@ export function getDocument(){
         first.locator("#reader-page").dispatch_event("change")
         first.wait_for_function(
             "() => document.getElementById('reader-text')?.textContent.includes('Page 37')")
-        first.locator("#reader-viewer").evaluate(
-            "(el) => {el.scrollTop=420;el.dispatchEvent(new Event('scroll'));}")
+        # La restauration réinitialise temporairement le défilement :
+        # attendre ses frames avant une interaction réelle simulée.
+        first.evaluate("""() => new Promise(resolve =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)))""")
+        first.locator("#reader-viewer").evaluate("""(el) => {
+            el.style.setProperty('height','300px','important');
+            el.style.setProperty('min-height','300px','important');
+            el.style.setProperty('max-height','300px','important');
+            el.style.setProperty('overflow-y','auto','important');
+            document.getElementById('reader-text').style.setProperty('min-height','1800px','important');
+            el.scrollTop=420;
+            el.dispatchEvent(new Event('scroll'));
+        }""")
         assert_true(first.locator("#reader-viewer").evaluate("(el) => el.scrollTop > 0"),
                     f"{BROWSER_NAME}: impossible de simuler le défilement privé")
         first.locator("#reader-save-position").click()
@@ -337,7 +348,9 @@ export function getDocument(){
         saved = cloud.get(owner)
         assert_true(saved is not None and saved.get("last_page") == 37
                     and 0 < saved.get("scroll_ratio", 0) < 1,
-                    f"{BROWSER_NAME}: position précise du compte non enregistrée")
+                    f"{BROWSER_NAME}: position précise du compte non enregistrée "
+                    f"(last_page={saved.get('last_page') if saved else None}, "
+                    f"scroll_ratio={saved.get('scroll_ratio') if saved else None})")
         assert_true("text" not in saved and "content" not in saved,
                     f"{BROWSER_NAME}: le texte privé ne doit pas être enregistré")
         ratio = saved["scroll_ratio"]
@@ -575,7 +588,20 @@ def run() -> None:
         assert_true((page.locator("#reader-text").text_content() or "")!=initial_text,
                     f"{BROWSER_NAME}: texte de la page suivante non affiché")
         # V31 : enregistrer explicitement sa position et la retrouver après fermeture.
-        page.locator("#reader-viewer").evaluate("(el) => {el.scrollTop=450;el.dispatchEvent(new Event('scroll'))}")
+        # V33 : attendre la fin du rendu et des deux frames de restauration avant de défiler.
+        # Sur Chromium/WebKit, la pose du style de test peut précéder le layout final.
+        page.wait_for_function("""() => document.getElementById('reader-text')?.textContent.trim().length>20""")
+        page.evaluate("""() => new Promise(resolve =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)))""")
+        page.locator("#reader-viewer").evaluate("""(el) => {
+            el.style.setProperty('height','300px','important');
+            el.style.setProperty('min-height','300px','important');
+            el.style.setProperty('max-height','300px','important');
+            el.style.setProperty('overflow-y','auto','important');
+            document.getElementById('reader-text').style.setProperty('min-height','1800px','important');
+            el.scrollTop=450;
+            el.dispatchEvent(new Event('scroll'));
+        }""")
         assert_true(page.locator("#reader-viewer").evaluate("(el) => el.scrollTop > 0"),
                     f"{BROWSER_NAME}: impossible de tester la position intrapage")
         assert_true(page.locator("#reader-save-position").count()==1,
