@@ -168,4 +168,21 @@ Les sources primaires et leurs restrictions de comparabilité sont documentées 
 
 Cette annexe conserve le score **53 % estimés**, les **600 montants P52B**, **720 incidences P52D**, **20 preuves P52A** et les dix conditions de clôture non démontrées. `NO_GO_AUTOMATIQUE`.
 
+## Annexe E — Rendement total des deux prélèvements et interdiction du double financement (P56Y)
+
+**Principe de cohérence : remplacer un impôt existant ne fournit pas deux fois les mêmes recettes.** La fiscalité à deux prélèvements est étudiée comme une architecture de substitution, pas comme deux nouveaux revenus ajoutés intégralement aux anciens impôts.
+
+Pour l'exercice **2027-2028**, le scénario provincial statique du rapport préélectoral distingue :
+- **68 093 M$** d'impôts provinciaux actuels sur les revenus des particuliers et des sociétés qui seraient **remplacés** par la nouvelle architecture;
+- **42 875 M$** de trois catégories supplémentaires de recettes à remplacer si leur suppression était effectivement décidée;
+- **5 695 M$** de déficit initial au sens de la Loi à combler pour viser un solde nul dans le test.
+
+Le rendement combiné du nouveau prélèvement sur les revenus et de la mesure anti-paradis fiscaux devrait donc atteindre, **dans ce scénario entièrement statique**, **110 968 M$ pour maintenir le solde public existant**, ou **116 663 M$ pour viser un solde au sens de la Loi égal à zéro**. Ce dernier montant est un **flux total de recettes budgétaires nettes à réaliser par les deux piliers**, pas un taux fiscal, un montant supplémentaire à ajouter aux anciens impôts ni une prévision du rendement légalement atteignable.
+
+Les seuils équivalents, **sans supposer les écarts non résorbés comme acquis**, seraient **117 620 M$ en 2028-2029**, **120 015 M$ en 2029-2030** et **124 159 M$ en 2030-2031**. Ils ne sont pas des prévisions Nova. Le coût réel des crédits, des compensations, des nouveaux systèmes administratifs, des besoins de services et des réactions économiques reste inconnu.
+
+Les chiffres proviennent du registre `projets/projet-nova/etudes/P56Y_RENDEMENT_BRUT_NECESSAIRE_DEUX_PRELEVEMENTS_2027_2031.json`, rapproché avec P56R, P56Q et P56X. **Les nouvelles assiettes fiscales de 2027, les taux candidats et le rendement du prélèvement anti-paradis fiscaux demeurent à démontrer**, pour le Québec dans le Canada et pour le Québec souverain distinctement. Toute mesure est soumise à la protection des emplois, du revenu disponible, des crédits remboursables, de la santé, de l'éducation et des services municipaux.
+
+Le programme reste à **53 % de complétude estimée**, sans taux adopté ni budget souverain certifié. `NO_GO_AUTOMATIQUE`.
+
 **Décision : `NO_GO_AUTOMATIQUE`. Aucune loi adoptée, aucun taux d'imposition adopté, aucune économie certifiée et aucun changement à `main` ou à SINJIRA.**
