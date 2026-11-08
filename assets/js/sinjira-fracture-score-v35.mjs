@@ -6,6 +6,34 @@ export const RESEAU_AGENTS=Object.freeze({
   15:5,16:5,17:6,18:6,19:6,20:7
 });
 export const POINTS_PAR_ACCUSATION=3;
+export const CARTES_PAR_FACTION=Object.freeze({unPoint:30,deuxPoints:12,troisPoints:3});
+
+/** Les 90 cartes comprennent deux lots identiques de 45 (30×1, 12×2, 3×3).
+    La somme maximale à N sièges ne correspond donc pas à 2N×3 : il n'existe
+    que six cartes de 3 points et vingt-quatre de 2 points au total. */
+function maxScoreForCards(count){
+  const threes=Math.min(count,6);
+  const twos=Math.min(Math.max(0,count-threes),24);
+  const ones=count-threes-twos;
+  return threes*3+twos*2+ones;
+}
+
+const SCORE_POSSIBLE_PAR_FACTION=Array.from({length:41},()=>new Set());
+for(let un=0;un<=30;un++)for(let deux=0;deux<=12;deux++){
+  for(let trois=0;trois<=3;trois++){
+    const cards=un+deux+trois;
+    if(cards>40)continue;
+    SCORE_POSSIBLE_PAR_FACTION[cards].add(un+2*deux+3*trois);
+  }
+}
+function possibleOperationScores(cardCount,resistance,reseau){
+  for(let resistanceCards=0;resistanceCards<=cardCount;resistanceCards++){
+    const reseauCards=cardCount-resistanceCards;
+    if(SCORE_POSSIBLE_PAR_FACTION[resistanceCards]?.has(resistance)&&
+       SCORE_POSSIBLE_PAR_FACTION[reseauCards]?.has(reseau))return true;
+  }
+  return false;
+}
 
 function integer(value,label,min,max){
   // Éviter que Number('') ou Number(null) soit interprété comme un zéro saisi.
@@ -30,7 +58,7 @@ export function fractureConfiguration(humans,{express=false}={}){
     humans:h,seats,agents,resistance:seats-agents,
     rounds:express?6:10,express,
     dealtCards:3*seats,centralCards:2*seats,
-    minRoundPoints:2*seats,maxRoundPoints:6*seats,
+    minRoundPoints:2*seats,maxRoundPoints:maxScoreForCards(2*seats),
     ballots:h*agents
   });
 }
@@ -47,6 +75,10 @@ export function fractureRound(config,values){
     throw new RangeError('Total impossible : les '+config.centralCards+
       ' cartes récupérées doivent rapporter '+config.minRoundPoints+
       ' à '+max+' points pour les deux camps réunis.');
+  }
+  if(!possibleOperationScores(config.centralCards,resistance,reseau)){
+    throw new RangeError('Scores impossibles avec les 45 cartes par faction '+
+      '(30×1 point, 12×2 points, 3×3 points). Vérifiez les cartes révélées.');
   }
   return Object.freeze({
     resistance,reseau,total,
