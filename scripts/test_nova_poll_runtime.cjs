@@ -5,6 +5,10 @@ const assert=require("node:assert/strict");
 const src=fs.readFileSync(path.join(__dirname,"../projets/projet-nova/assets/sondage-citoyen.js"),"utf8");
 const html=fs.readFileSync(path.join(__dirname,"../projets/projet-nova/sondage-citoyen.html"),"utf8");
 assert.match(html,/<button[^>]+id="poll-send"[^>]*\bdisabled\b/);
+assert.match(src,/if\(response\.status===201[\s\S]*?markVoted\(\)/,
+  "Un envoi confirmé doit verrouiller la session même sans localStorage");
+assert.match(src,/else if\(response\.status===409\)[\s\S]*?markVoted\(\)/,
+  "Un doublon confirmé doit également verrouiller cette session");
 const elements=new Map();
 const pollRadios=[{disabled:false},{disabled:false}];
 const elem=id=>{if(!elements.has(id))elements.set(id,{
