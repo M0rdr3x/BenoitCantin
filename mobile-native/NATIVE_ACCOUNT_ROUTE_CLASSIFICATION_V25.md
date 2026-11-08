@@ -12,7 +12,7 @@ Cette étape ne migre aucune donnée, ne change aucune règle serveur et ne rend
 
 ## État de référence
 
-Le dépôt contient actuellement **46 pages HTML** directement sous `compte/`.
+Le dépôt contient actuellement **47 pages HTML** directement sous `compte/`.
 
 Elles sont réparties dans sept catégories disjointes :
 
@@ -20,7 +20,7 @@ Elles sont réparties dans sept catégories disjointes :
 2. 1 accueil Web de repli du compte;
 3. 1 surface Sécurité avec hub natif dédié hors `NativeModuleRouter`;
 4. 1 Registre personnel Web avec garde local ponctuel puis protections serveur;
-5. 5 flux Web d’authentification/MFA;
+5. 6 flux Web d’authentification/MFA;
 6. 1 procédure Web sensible de signalement de décès;
 7. 6 pages Web contextuelles ou informatives.
 
@@ -106,10 +106,11 @@ Le Registre reste volontairement hors `NativeModuleRouter`. Son ouverture passe 
 
 Le natif ne reçoit, ne met en cache et n’exporte aucun contenu du Registre. Cette classification ne réduit ni la fenêtre locale courte, ni le verrouillage en arrière-plan, ni le MFA, ni le moteur de risque.
 
-## 5. Authentification et MFA Web — 5
+## 5. Authentification et MFA Web — 6
 
 - `/compte/connexion.html`;
 - `/compte/inscription.html`;
+- `/compte/confirmer.html` : confirmation volontaire du courriel, uniquement après clic et validation Supabase; aucun module natif ne traite le jeton.
 - `/compte/mot-de-passe-oublie.html`;
 - `/compte/reinitialiser-mot-de-passe.html`;
 - `/compte/mfa.html`.
