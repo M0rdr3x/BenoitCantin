@@ -110,5 +110,6 @@
     "no_payment_or_delivery_activation": true,
     "no_fake_release_date": true,
     "no_unverified_completion_percent": true
-  }
+  },
+  "edition_scope_note": "Édition 2026 du Livre I telle que déclarée dans le manifeste du portail SINJIRA. Les autres versions de travail et les autres romans de la saga ne sont pas évalués par ce registre."
 }
