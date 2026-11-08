@@ -1,0 +1,210 @@
+{
+  "schema_version": "P57B-1",
+  "date_revision": "2026-11-08",
+  "objet": "CONTINUITE_SOLIDARITE_2026_2027_COMPOSANTES_VERSEMENTS_FENETRES_COMPTABLES",
+  "statut": "CONCORDANCE_SOURCES_OFFICIELLES_SANS_PROJECTION_DE_DROITS_FISCAUX_NOVA",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "sources": {
+    "p57a": "projets/projet-nova/etudes/P57A_RECONCILIATION_CREDITS_2025_2026_COMPTES_PUBLICS_VOL1.json",
+    "p56z": "projets/projet-nova/etudes/P56Z_CONCORDANCE_CREDITS_2023_ET_RENDEMENT_2027_2031_SANS_DOUBLE_COMPTE.json",
+    "p56y": "projets/projet-nova/etudes/P56Y_RENDEMENT_BRUT_NECESSAIRE_DEUX_PRELEVEMENTS_2027_2031.json",
+    "p56o": "projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json",
+    "barometre": "projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json",
+    "credit_officiel": "https://www.revenuquebec.ca/fr/citoyens/credits-dimpot/credit-dimpot-pour-solidarite/",
+    "calcul_officiel": "https://www.revenuquebec.ca/fr/citoyens/declaration-de-revenus/produire-votre-declaration-de-revenus/aide-par-ligne/credit-dimpot-pour-solidarite/",
+    "versements_officiels": "https://www.revenuquebec.ca/fr/citoyens/credits-dimpot/credit-dimpot-pour-solidarite/versement-du-credit-dimpot-pour-solidarite/",
+    "composante_tvq": "https://www.revenuquebec.ca/fr/citoyens/credits-dimpot/credit-dimpot-pour-solidarite/composantes-du-credit-dimpot-pour-solidarite/composante-relative-a-la-tvq/",
+    "fiche_depense_fiscale": "https://www.budget.finances.gouv.qc.ca/Budget/outils/depenses-fiscales/fiches/fiche-110201.asp",
+    "estimation_revenu_disponible": "https://www.quebec.ca/finances-impots-et-taxes/credits-impots-deductions/estimer-revenu-disponible"
+  },
+  "classification_des_sources": {
+    "comptes_publics_2025_2026": {
+      "nature": "REEL_COMPTABILITE_CONSOLIDEE",
+      "annee_financiere": "2025-2026",
+      "credit_solidarite_degrevement_tvq_mcad": "1996",
+      "ne_figure_pas_dans_11578_mcad_reclasses": true
+    },
+    "depense_fiscale_2025_pour_2026": {
+      "nature": "PROJECTION_PUBLICATION_2025_PAS_REALISE",
+      "annee_de_projection": 2026,
+      "credit_solidarite_total_mcad": "2029.1",
+      "base_mesures_annoncees_au": "2025-12-31",
+      "beneficiaires_2023": "2836085",
+      "nombre_beneficiaires_2026_constate": null
+    },
+    "ne_pas_comparer_1996_2025_2026_et_2029_1_2026_comme_deux_exercices_identiques": true,
+    "aucun_deux_montants_n_est_cout_incremental_nova_2027": true,
+    "extrapolation_budget_2027_2036_interdite": true
+  },
+  "droits_et_calcul_actuels": {
+    "periode_de_versement": "2026-07-01/2027-06-30",
+    "situation_personnelle_date_reference": "2025-12-31",
+    "declaration_fiscale_annee_reference": 2025,
+    "demande_complete_date_limite": "2029-12-31",
+    "depend_revenu_familial_net_et_composition": true,
+    "seuil_revenu_familial_max_sans_conjoint_2026_2027_cad": "64545",
+    "seuil_base_avec_conjoint_2026_2027_cad": "70395",
+    "montant_seuil_additionnel_par_enfant_2026_2027_cad": "2634",
+    "seuil_revenu_seul_non_regle_generale_pour_villages_nordiques": true,
+    "base_vraie_pour_menages_nova_2027": null,
+    "protection_droit_future_approuvee": false
+  },
+  "composantes": [
+    {
+      "id": "TVQ",
+      "nature": "COMPENSATION_COUT_TVQ",
+      "statut_2026_2027": "EN_VIGUEUR",
+      "a_remplacer_ou_maintenir_si_retrait_tvq": true,
+      "revenu_fiscal_nouveau_nova_mcad": null,
+      "cout_2027_concorde_mcad": null
+    },
+    {
+      "id": "LOGEMENT",
+      "nature": "COMPOSANTE_RELATIVE_LOGEMENT",
+      "statut_2026_2027": "EN_VIGUEUR",
+      "a_remplacer_ou_maintenir_si_retrait_tvq": true,
+      "revenu_fiscal_nouveau_nova_mcad": null,
+      "cout_2027_concorde_mcad": null
+    },
+    {
+      "id": "VILLAGES_NORDIQUES",
+      "nature": "COUT_DE_VIE_NORDIQUE",
+      "statut_2026_2027": "EN_VIGUEUR",
+      "a_remplacer_ou_maintenir_si_retrait_tvq": true,
+      "revenu_fiscal_nouveau_nova_mcad": null,
+      "cout_2027_concorde_mcad": null
+    }
+  ],
+  "cadences": [
+    {
+      "id": "ANNUELLE",
+      "condition_montant": "<=240_CAD_ENTIERS",
+      "condition_revenu_fiscal_liee": false,
+      "versements_mois": [
+        "2026-07"
+      ],
+      "nb_avant_fin_exercice_2026_2027": 1,
+      "nb_dans_debut_exercice_2027_2028": 0,
+      "part_montant_budget_par_fiscal_year_connue": false
+    },
+    {
+      "id": "TRIMESTRIELLE",
+      "condition_montant": "241_A_799_CAD_ENTIERS",
+      "condition_revenu_fiscal_liee": false,
+      "versements_mois": [
+        "2026-07",
+        "2026-10",
+        "2027-01",
+        "2027-04"
+      ],
+      "nb_avant_fin_exercice_2026_2027": 3,
+      "nb_dans_debut_exercice_2027_2028": 1,
+      "part_montant_budget_par_fiscal_year_connue": false
+    },
+    {
+      "id": "MENSUELLE",
+      "condition_montant": ">=800_CAD_ENTIERS",
+      "condition_revenu_fiscal_liee": false,
+      "versements_mois": [
+        "2026-07",
+        "2026-08",
+        "2026-09",
+        "2026-10",
+        "2026-11",
+        "2026-12",
+        "2027-01",
+        "2027-02",
+        "2027-03",
+        "2027-04",
+        "2027-05",
+        "2027-06"
+      ],
+      "nb_avant_fin_exercice_2026_2027": 9,
+      "nb_dans_debut_exercice_2027_2028": 3,
+      "part_montant_budget_par_fiscal_year_connue": false
+    }
+  ],
+  "frontiere_calendrier": {
+    "cloture_2026_2027": "2027-03-31",
+    "exercice_2027_2028_debut": "2027-04-01",
+    "exercice_2027_2028_fin": "2028-03-31",
+    "versements_periode_juillet_2026_juin_2027_dans_2027_2028": [
+      "2027-04",
+      "2027-05",
+      "2027-06"
+    ],
+    "versements_periode_juillet_2027_juin_2028_parametres_non_disponibles": true,
+    "mois_comptabilisation_charge_selon_normes_non_derives_du_seul_calendrier_cash": true,
+    "montant_total_2027_2028_inconnu_mcad": null,
+    "calendrier_cash_non_identique_imputation_en_droits_constates": true
+  },
+  "regle_protection_citoyens_candidate": {
+    "objectif": "Eviter tout trou de versement ou perte nette de droits si changement de TVQ ou de fiscalite",
+    "statut": "OBJECTIF_DE_SIMULATION_A_VALIDER_NON_LOI_ADOPTEE",
+    "maintien_equivalent_jusqua_justification_financement": true,
+    "les_trois_composantes_doivent_etre_evaluees_separement": true,
+    "ne_pas_remplacer_composante_tvq_par_zero_sans_reconception_et_preuve": true,
+    "versements_jusqua_juin_2027_ne_sont_pas_automatiquement_abroges": true,
+    "exigence_simulation_revenu_disponible_avant_apres": true,
+    "maintien_pouvoir_achat_n_est_pas_encore_demontre": true,
+    "base_beneficiaires_par_province_region_et_type_menage_inconnue": true,
+    "impact_prix_et_comportements_non_mesure": true,
+    "avis_juridique_et_comptable_independants_non_obtenus": true,
+    "cout_nouveau_solde_nova_2027_mcad": null
+  },
+  "rapprochement_financier": {
+    "cible_brute_theorique_deux_piliers_sans_resorption_2027_2028_mcad": "116663",
+    "ne_pas_ajouter_1996_credits_comptables_2025_2026_aux_besoins_2027": true,
+    "ne_pas_ajouter_2029_1_projection_2026_aux_besoins_2027": true,
+    "en_cas_de_transfert_comptable_compter_seulement_variation_nette_prouvee": true,
+    "recettes_tvq_perdues_2027_2028_pas_mesure_de_gain_disponible_nette": true,
+    "prestations_federales_non_supposees_modifiables_par_province": true,
+    "calcul_increment_2027_2028_mcad": null,
+    "beneficiaires_reels_2027_2028": null,
+    "cout_protection_québec_souverain_mcad": null
+  },
+  "portes": [
+    {
+      "id": "B01",
+      "preuve": "Obtenir ventilation publique effective par composante TVQ logement nordique et periode fiscale, sans double compte avec les revenus",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "B02",
+      "preuve": "Valider le traitement comptable des versements traversant mars 2027 et separer flux de caisse des droits constates",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "B03",
+      "preuve": "Produire la simulation de revenu disponible avant et apres reforme pour menages modestes avec composantes et prestations",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "B04",
+      "preuve": "Chiffrer la compensation equivalente et son financement si suppression future de la TVQ, sans supprimer droits indirectement",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "B05",
+      "preuve": "Reconstituer le budget 2027-2028 et les regles en vigueur pendant le nouveau cycle de versement juillet 2027-juin 2028",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "B06",
+      "preuve": "Obtenir la revue juridique, comptable et distributive independante, puis approbation formelle du programme candidat",
+      "statut": "OUVERT"
+    }
+  ],
+  "avancement": {
+    "p55n_score_estime": 53,
+    "points_restants_estimes": 47,
+    "p56o_portes_validees": 0,
+    "p52b_cellules_manquantes": 600,
+    "p52d_incidences_inconnues": 720,
+    "p52a_preuves_fiscales_non_validees": 20,
+    "examens_independants_signes": 0,
+    "changement_barometre_par_ce_jalon": false,
+    "p57a_protections_2027_validees": false,
+    "no_go": "NO_GO_AUTOMATIQUE"
+  }
+}
