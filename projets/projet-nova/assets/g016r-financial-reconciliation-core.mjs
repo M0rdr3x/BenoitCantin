@@ -6,7 +6,7 @@ export function inspectG016r(d,q){
  const errors=[],fail=k=>errors.push(k);
  if(!isObject(d)||d.schema!=="nova-g016r-port-daniel-2025-audited-qualified/v1"||!isObject(d.source)||!isObject(d.realized_2025)||!isObject(d.position_2025)||!isObject(d.cash_flow_2025)||!isObject(d.reconciliation)||!isObject(d.debt))return {ok:false,errors:["SCHEMA"]};
  if(d.phase!=="G0.16r"||d.date!=="2026-11-08"||d.score_before!==47||d.score_after!==47)fail("SCORE_UNEARNED");
- if(q?.schema!=="nova-g016q-port-daniel-budget-2026/v1"||q?.score_after!==47||q?.case!=="PORT_DANIEL_GASCONS_02047")fail("UPSTREAM_CASE");
+ if(q?.schema!=="nova-g016q-port-daniel-budget-2026/v1"||q?.score_after!==47||q?.municipality!=="Port-Daniel–Gascons")fail("UPSTREAM_CASE");
  const s=d.source;
  if(d.case!=="PORT_DANIEL_GASCONS_02047"||s.url!=="https://www.mamh.gouv.qc.ca/documentsfinanciersweb/Rapport-financier-2025-et-autres-02047.pdf"||s.auditor_opinion!=="QUALIFIED"||!s.qualified_reason.includes("non quantifiées")||s.pdf_screenshot_attempted!==true||s.pdf_screenshot_outcome!=="CACHE_MISS"||s.independent_audit_of_projet_nova!==false||s.nontarget_supplementary_schedules_unqualified!==false)fail("AUDIT_QUALIFICATION");
  const a=d.realized_2025;
