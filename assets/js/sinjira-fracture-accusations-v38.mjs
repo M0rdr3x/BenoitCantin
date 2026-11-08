@@ -15,7 +15,7 @@ function strictSeat(value,max,label){
   return value;
 }
 function validSuspicions(suspicions,seats){
-  if(suspicions===null)return Array(seats).fill(0);
+  // Ne jamais inventer des scores à zéro : le backend doit fournir le cumul réel.
   if(!Array.isArray(suspicions)||suspicions.length!==seats){
     throw new RangeError('Les soupçons cumulés doivent couvrir chaque siège.');
   }
@@ -32,7 +32,7 @@ function validSuspicions(suspicions,seats){
  *  Les égalités au seuil sont départagées d'abord par les soupçons cumulés;
  *  une égalité restante est signalée pour tirage externe, sans Math.random.
  */
-export function fractureAggregateFinalBallotsV38(humans,ballots,{suspicionTotals=null}={}){
+export function fractureAggregateFinalBallotsV38(humans,ballots,{suspicionTotals}={}){
   const cfg=fractureSeats(humans);
   if(!Array.isArray(ballots)||ballots.length!==cfg.humans){
     throw new RangeError('Un bulletin par joueur humain est obligatoire.');
