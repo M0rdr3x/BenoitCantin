@@ -93,7 +93,12 @@
     "replacement_value_is_not_2026_budget": true,
     "poor_assets_full_replacement_not_always_required": true,
     "data_scope_different_from_mamh_2024": true,
-    "external_nova_audit_complete": false
+    "external_nova_audit_complete": false,
+    "value_assessed_age_or_judgment_gcad": 147.9,
+    "poor_assets_age_or_judgment_gcad": 8.8,
+    "acceptable_assets_age_or_judgment_gcad": 39.1,
+    "poor_assets_in_cities_above_100k_gcad": 14.8,
+    "poor_assets_in_cities_above_100k_share_approx_pct": 72
   },
   "municipal_water_operating_2024": {
     "expense_cad": 2519426792,
