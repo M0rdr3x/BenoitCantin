@@ -631,6 +631,12 @@ Les fichiers de référence candidats `official/reference/*` et `data/sources.js
 
 **Suite G0.17a :** obtenir des comptes provinciaux et municipaux comparables du même exercice, documenter chaque service, prestation et transfert, construire un modèle de financement autonome pour chaque statut et soumettre les résultats à des spécialistes indépendants. **Aucune hausse de score pour la création de fichiers : 47/100 inchangé.**
 
+### Contrôle de version MAMH découvert en G0.16z (8 novembre 2026)
+
+**Alerte de qualité documentaire :** à [la même adresse du PDF MAMH](https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/finances_indicateurs_fiscalite/fiscalite/fiscalite_organismes_municipaux.pdf), la **capture visuelle** retourne l'édition **mars 2025 / chiffres 2023** (29,3 G$ de recettes municipales, 14,0 G$ foncier, 6,2 G$ transferts), tandis que le **texte extrait** décrit une édition **septembre 2026 / chiffres 2024** (31,3 G$, 15,0 G$, 7,4 G$). Le système ne permet pas de garantir que la version PDF affichée et le texte extrait sont identiques. **N'utiliser ni l'un ni l'autre comme série 2026 et ne pas mélanger les deux millésimes** avant archivage et concordance sur un même fichier.
+
+Registre : `data/g016z-controle-versions-source-municipale-mamh.json`. Le score **reste 47/100**. Cette anomalie est **ouverte**; elle doit être résolue avant tout chiffrage officiel d'un remplacement de la taxe foncière en 2026.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
