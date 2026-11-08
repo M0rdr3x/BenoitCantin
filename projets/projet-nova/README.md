@@ -486,6 +486,19 @@ Les fichiers de référence candidats `official/reference/*` et `data/sources.js
 
 **Suite G0.16q :** établir un registre pièce par pièce des décaissements, factures et dettes réelles; rechercher des états financiers audités et soumettre tout remplacement fiscal à une simulation distributive homogène et à un examen indépendant. **47/100 inchangé.**
 
+
+## G0.16q — Prévisions, taxes et preuve des paiements municipaux (8 novembre 2026)
+
+**Programme complet et applicable : 47/100, 53 points restant à obtenir.** Le dossier G0.16q reprend Port-Daniel–Gascons (déjà examiné dans G0.16n) avec le [document explicatif officiel du budget 2026](https://munpdg.ca/wp-content/uploads/2026/02/Document-explicatif-budget-2026.pdf), dont les deux pages ont été inspectées visuellement.
+
+- **Budget prévisionnel 2026 :** revenus **6 580 654 $**, dont taxes **4 619 646 $** et transferts **725 626 $**; dépenses de fonctionnement **6 631 925 $**; affectations **-51 271 $**. Le budget est équilibré **après affectations**. Ces montants ne prouvent pas les encaissements ou les paiements de 2026.
+- **Taux général résidentiel 2026 :** **0,40000 $ par 100 $ de valeur foncière**, non par 100 $ de revenu. Services : Port-Daniel eau **102,64 $/unité**, égout **273,49 $**; Gascons eau **439,25 $**, sous réserve des conditions applicables. Les règlements complets ne sont pas vérifiés ici.
+- **PTI 2026–2028 :** **33 100 000 $ programmés**, dont **30 000 000 $** en 2026 pour l'aqueduc et l'égout du secteur Gascons. Il s'agit de **projets prévus**, non de décaissements ou de travaux achevés. **Ne pas additionner** ces montants à l'autorisation d'emprunt de 2025 G0.16n avant rapprochement.
+- **Pièces encore manquantes :** rapports financiers audités, dette tirée et intérêts, factures acquittées, versements PRIMEAU, dépenses d'exploitation, maintien des emplois, factures anonymisées et incidence distributive.
+- **Fichiers :** `data/preuves-budget-port-daniel-g0-16q-2026.json`, `assets/g016q-port-daniel-financial-core.mjs`, `tests/g016q-port-daniel-financial.test.mjs`, `official/working/rapport-g0-16q-preuves-budget-port-daniel-2026-v1.md`. Les cadres décennaux du Québec au Canada et du Québec souverain restent **non chiffrés**. Aucun audit financier externe ou paiement PRIMEAU nouveau n'est attesté.
+
+**Suite G0.16r :** rapprocher rapports financiers 2025, prêts effectivement tirés, subventions payées et dépenses réelles pour préparer une simulation contrôlée. **Score 47/100 inchangé.**
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
