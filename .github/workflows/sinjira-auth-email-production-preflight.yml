@@ -1,0 +1,81 @@
+name: SINJIRA — prévol Auth email en lecture seule
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/sinjira-auth-email-production-preflight.yml'
+      - 'scripts/preflight_sinjira_auth_email.py'
+      - 'docs/SINJIRA_AUTH_EMAIL_PREFLIGHT_20261108.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sinjira-auth-email-production-preflight.yml'
+      - 'scripts/preflight_sinjira_auth_email.py'
+      - 'docs/SINJIRA_AUTH_EMAIL_PREFLIGHT_20261108.md'
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Saisir exactement PREFLIGHT-READ-ONLY"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-auth-email-readonly-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  contract:
+    name: Test du diagnostic et des garde-fous
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python épinglé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+      - name: Auto-tests sans accès production
+        run: |
+          python3 -m py_compile scripts/preflight_sinjira_auth_email.py
+          python3 scripts/preflight_sinjira_auth_email.py --self-test
+
+  production-inspection:
+    name: Vérification réelle Auth, sans modification
+    needs: contract
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    environment: production
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Confirmation explicite du mode lecture seule
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          test "$CONFIRMATION" = 'PREFLIGHT-READ-ONLY' || {
+            echo "Confirmation incorrecte; aucune opération distante."
+            exit 1
+          }
+      - name: Checkout de main
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Python épinglé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+      - name: Lire seulement la configuration Auth distante
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: python3 scripts/preflight_sinjira_auth_email.py --remote
