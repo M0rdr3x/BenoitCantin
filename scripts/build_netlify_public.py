@@ -1429,7 +1429,13 @@ def build(
         if not source.is_file():
             continue
         if root_file_allowed(source):
-            shutil.copy2(source, output / source.name)
+            destination = output / source.name
+            shutil.copy2(source, destination)
+            rel = Path(source.name)
+            if is_private_html(rel):
+                content = source.read_text(encoding="utf-8", errors="strict")
+                secured = harden_private_html(rel, content, load_netlify_config())
+                destination.write_text(secured, encoding="utf-8")
 
     # Sur la branche de sources Pages, .nojekyll doit être absent pour que
     # la configuration d'exclusion Jekyll soit appliquée en urgence.
