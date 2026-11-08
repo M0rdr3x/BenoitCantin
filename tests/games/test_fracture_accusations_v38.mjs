@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {fractureAggregateFinalBallotsV38 as tally,fractureApplyFinalDrawV38 as draw} from '../../assets/js/sinjira-fracture-accusations-v38.mjs';
+import {fractureAggregateFinalBallotsV38 as rawTally,fractureApplyFinalDrawV38 as draw} from '../../assets/js/sinjira-fracture-accusations-v38.mjs';
+// Les zéros sont FOURNIS explicitement par les tests; le module ne doit jamais les inventer.
+const tally=(humans,ballots,options={})=>rawTally(humans,ballots,{
+ suspicionTotals:Array(Math.max(3,humans)).fill(0),...options
+});
 
 test('Solo : seuls les humains votent, sièges invisibles accusables',()=>{
  const t=tally(1,[[3]],{suspicionTotals:[0,0,0]});
@@ -65,4 +69,14 @@ test('20 humains : 7 cibles distinctes par humain, aucune auto-accusation',()=>{
  assert.equal(t.agents,7);assert.equal(t.ballotCount,140);
  assert.equal(t.selected.length+t.tieSlots,7);
  assert.equal(t.aggregates.reduce((n,x)=>n+x.votes,0),140);
+});
+
+test('refuse le silence du serveur sur les soupçons cumulés : échec plutôt que faux zéros',()=>{
+ const ballots=[[2],[1],[1]];
+ assert.throws(()=>rawTally(3,ballots),/couvrir chaque siège/);
+ assert.throws(()=>rawTally(3,ballots,{suspicionTotals:null}),/couvrir chaque siège/);
+ assert.throws(()=>rawTally(3,ballots,{suspicionTotals:undefined}),/couvrir chaque siège/);
+ const actual=rawTally(3,ballots,{suspicionTotals:[0,0,0]});
+ assert.equal(actual.status,'resolved');
+ assert.deepEqual(actual.selected,[1]);
 });
