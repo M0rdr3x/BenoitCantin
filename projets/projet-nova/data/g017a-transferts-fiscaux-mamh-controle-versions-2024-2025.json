@@ -91,7 +91,8 @@
     "other_selected_programmes_cad": 130605940,
     "represents_all_municipal_funding": false,
     "individual_bank_confirmation": false,
-    "status": "VISUALLY_DOCUMENTED_MUTABLE_URL_NOT_SNAPSHOT"
+    "status": "VISUALLY_DOCUMENTED_MUTABLE_URL_NOT_SNAPSHOT",
+    "pdf_bytes_immutable_sha256": null
   },
   "version2025_text_quarantined": {
     "year": 2025,
@@ -153,7 +154,8 @@
     "usable_verified_tvq_cad": null,
     "eligible_for_growth_claim": false,
     "different_categories_from_2024": true,
-    "status": "QUARANTINE_UNTIL_MATCHING_IMMUTABLE_PDF"
+    "status": "QUARANTINE_UNTIL_MATCHING_IMMUTABLE_PDF",
+    "pdf_visual_match": false
   },
   "comparisons": {
     "year2024_2025_change_verified_cad": null,
