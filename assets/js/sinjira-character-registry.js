@@ -40,7 +40,25 @@ async function uploadPhoto(user){
  if(error)throw error;return path;
 }
 async function cleanupUploadedPhoto(path){if(!path)return;try{const {error}=await getSupabase().storage.from('sinjira-character-sources').remove([path]);if(error)console.warn('[SINJIRA registre] nettoyage photo temporaire',error)}catch(e){console.warn('[SINJIRA registre] nettoyage photo temporaire impossible',e)}}
-async function submitToSinjira(user,{updateExisting=false}={}){let photo_path=null;try{photo_path=await uploadPhoto(user);const answers=serialize(form);const {data,error}=await getSupabase().functions.invoke('submit-character-questionnaire',{body:{answers,photo_path,manual_only:true,update_existing:updateExisting}});if(error||!data?.ok||data?.persisted!==true)throw new Error(data?.error||error?.message||'Le serveur n’a pas confirmé la sauvegarde du dossier.');return data}catch(e){await cleanupUploadedPhoto(photo_path);throw e}}
+async function submitToSinjira(user,{updateExisting=false}={}){
+ let photo_path=null;
+ let invocationStarted=false;
+ try{
+   photo_path=await uploadPhoto(user);
+   const answers=serialize(form);
+   invocationStarted=true;
+   const {data,error}=await getSupabase().functions.invoke('submit-character-questionnaire',{body:{answers,photo_path,manual_only:true,update_existing:updateExisting}});
+   if(error||!data?.ok||data?.persisted!==true)throw new Error(data?.error||error?.message||'Le serveur n’a pas confirmé la sauvegarde du dossier.');
+   return data;
+ }catch(e){
+   // Après l'envoi HTTP, l'absence d'accusé ne prouve pas l'absence de sauvegarde.
+   // Conserver la photo privée: le dossier peut déjà la référencer en base.
+   // Sans requête serveur, un fichier temporaire peut en revanche être nettoyé.
+   if(!invocationStarted)await cleanupUploadedPhoto(photo_path);
+   else console.warn('[SINJIRA registre] état de sauvegarde incertain; photo conservée');
+   throw e;
+ }
+}
 async function tryOwnerRepair(user){if(!isSinjiraOwner(user))return;try{await getSupabase().rpc('ensure_sinjira_owner_character')}catch(e){console.info('Owner repair RPC unavailable.',e?.message||e)}}
 function successMessage(result){
  const dossier=result.submission_id?` Dossier ${result.submission_id}.`:'';
@@ -48,11 +66,14 @@ function successMessage(result){
    ? `Questionnaire mis à jour et enregistré dans SINJIRA™.${dossier}`
    : `Participation enregistrée dans SINJIRA™.${dossier}`;
  const optedIn=form?.querySelector('[name="formspree_receipt_opt_in"]')?.checked===true;
- if(!optedIn)return `${base} Avis interne créé. Aucune copie n’a été envoyée à Formspree, conformément à votre choix.`;
+ const adminNotice=result.admin_notification_created===true
+   ? ' Avis interne créé.'
+   : ' Aucun avis interne confirmé; votre dossier reste enregistré.';
+ if(!optedIn)return `${base}${adminNotice} Aucune copie n’a été envoyée à Formspree, conformément à votre choix.`;
  if(result.formspree_notification_sent===true){
-   return `${base} Copie du questionnaire acceptée par Formspree pour notification à SINJIRA™. Un courriel d’accusé de réception sera envoyé si la réponse automatique est activée dans Formspree.`;
+   return `${base}${adminNotice} Copie du questionnaire acceptée par Formspree pour notification à SINJIRA™. Un courriel d’accusé de réception sera envoyé si la réponse automatique est activée dans Formspree.`;
  }
- return `${base} Le service Formspree n’a pas confirmé la réception de la copie. Le questionnaire demeure disponible dans votre dossier SINJIRA™.`;
+ return `${base}${adminNotice} Le service Formspree n’a pas confirmé la réception de la copie. Le questionnaire demeure disponible dans votre dossier SINJIRA™.`;
 }
 
 async function init(){

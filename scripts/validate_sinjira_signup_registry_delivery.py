@@ -39,12 +39,16 @@ def main()->int:
     ])
     registry_page=check('projets/sinjira/registre/index.html',[
         'data-character-form=', 'type="submit" disabled>Transmettre ma participation',
-        'name="formspree_receipt_opt_in"', 'sinjira-character-registry.js?v=24.5.4',
+        'name="formspree_receipt_opt_in"', 'sinjira-character-registry.js?v=24.5.5',
     ])
     registry_js=check('assets/js/sinjira-character-registry.js',[
         "form?.addEventListener('submit',async e=>{",
         'e.preventDefault();', 'if(!registryReady||isSending||!currentUser)',
         "functions.invoke('submit-character-questionnaire'",
+        "let invocationStarted=false;",
+        "invocationStarted=true;",
+        "if(!invocationStarted)await cleanupUploadedPhoto(photo_path);",
+        "result.admin_notification_created===true",
     ])
     registry_edge=check('supabase/functions/submit-character-questionnaire/index.ts',[
         "requiredUser(req)", "answers.formspree_receipt_opt_in==='yes'",
@@ -133,6 +137,13 @@ def main()->int:
         errors.append('Formspree : libellés en double.')
     if 'formspree_receipt_opt_in' not in form_html:
         errors.append('Registre : consentement Formspree absent du formulaire.')
+
+    # Si la réponse HTTP se perd après un enregistrement réussi, ne pas
+    # effacer la photo que le serveur peut déjà référencer dans le dossier.
+    if re.search(r'catch\\s*\\(e\\)\\s*\\{\\s*await\\s+cleanupUploadedPhoto\\(photo_path\\)',registry_js):
+        errors.append('Registre : effacement photo aveugle après un échec réseau')
+    if 'Avis interne créé. Aucune copie' in registry_js:
+        errors.append('Registre : avis interne annoncé sans vérifier le statut serveur')
 
     if "req.method!=='POST'" not in account_edge:
         errors.append('Notification de compte : POST requis.')

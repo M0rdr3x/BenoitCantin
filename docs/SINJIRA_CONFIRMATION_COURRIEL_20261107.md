@@ -154,3 +154,11 @@ La migration a été appliquée en production avec la version distante **`202611
 - **Environnement vierge :** appliquer cette version une fois dans l'ordre des migrations autorisées, après revue du manifeste, avant de déployer les fonctions.
 - Ne pas réécrire l'historique `supabase_migrations` et ne pas ajouter de migration « réparatrice » duplicative.
 - En date de cette vérification, GitHub #834 reste en brouillon; les fonctions et la page Web sont encore à publier. Un statut CI historique ne vaut pas réussite des tests du nouveau commit.
+
+## Résilience aux accusés réseau perdus et transparence des notifications
+
+La page du Registre conserve désormais la photo privée après un appel de soumission commencé dont le résultat serveur est inconnu. Elle n'efface le fichier temporaire que si **aucun appel de soumission serveur n'a été tenté**. En effet, un délai réseau peut masquer une sauvegarde déjà réussie; supprimer la photo dans ce cas créerait une référence cassée dans le dossier. Lorsqu'un envoi échoue sans réponse sûre, le participant doit recharger le Registre pour vérifier si sa participation est apparue avant de retenter un envoi.
+
+Le message de réussite distingue aussi explicitement le résultat `admin_notification_created` renvoyé par le serveur : un avis interne non confirmé ne doit pas être annoncé comme créé. Le succès du dossier Supabase ne constitue toujours pas une preuve de livraison de courriel Formspree. Ces gardes sont vérifiées dans `scripts/validate_sinjira_signup_registry_delivery.py`; le script client utilise désormais `sinjira-character-registry.js?v=24.5.5` pour éviter les caches de l'ancienne version.
+
+**Limite résiduelle à revoir avant publication :** un fichier privé orphelin peut subsister lorsqu'un envoi échoue définitivement après avoir été tenté; un mécanisme de maintenance sécurisé et borné est préférable à une suppression immédiate risquant de perdre une photo référencée. Aucun nettoyage automatique global ni suppression de données réelles ne sont activés par ce correctif.
