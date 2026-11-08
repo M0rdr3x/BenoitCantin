@@ -17,11 +17,37 @@ IMMUTABLE_ACTION = re.compile(r"^[^@\s]+@[a-f0-9]{40}$")
 IMMUTABLE_DOCKER = re.compile(r"^docker://[^@\s]+@sha256:[a-f0-9]{64}$")
 
 
+
+def has_privileged_pr_trigger(source: str) -> bool:
+    """Refuser pull_request_target dans les formes YAML bloc, liste et inline.
+
+    On n'interprète que l'événement racine `on` : les exemples dans les
+    commentaires et les commandes shell ne doivent pas produire de faux positifs.
+    """
+    lines = source.splitlines()
+    event = re.compile(r"(?<![\w])['\"]?pull_request_target['\"]?(?![\w])")
+    for index, line in enumerate(lines):
+        root = re.match(r"^(?:on|['\"]on['\"])\s*:\s*(.*)$", line)
+        if not root:
+            continue
+        if event.search(root.group(1).split("#", 1)[0]):
+            return True
+        for child in lines[index + 1:]:
+            if child.strip() and not child[0].isspace() and not child.lstrip().startswith("#"):
+                break
+            candidate = child.strip().split("#", 1)[0].strip()
+            if re.fullmatch(r"['\"]?pull_request_target['\"]?\s*:\s*.*", candidate):
+                return True
+            if re.fullmatch(r"-\s*['\"]?pull_request_target['\"]?", candidate):
+                return True
+    return False
+
+
 def inspect_workflow(name: str, source: str) -> list[str]:
     errors: list[str] = []
     if not re.search(r"^\s*permissions\s*:", source, flags=re.MULTILINE):
         errors.append(f"{name}: permissions explicites manquantes")
-    if re.search(r"^\s*pull_request_target\s*:", source, flags=re.MULTILINE):
+    if has_privileged_pr_trigger(source):
         errors.append(f"{name}: déclencheur privilégié pull_request_target interdit")
     if re.search(r"^\s*permissions\s*:\s*write-all\b", source, flags=re.MULTILINE):
         errors.append(f"{name}: permissions write-all interdites")
@@ -61,6 +87,19 @@ def self_test() -> None:
     for label, altered in mutants.items():
         if not inspect_workflow(label, altered):
             raise SystemExit(f"Auto-test défectueux : {label}")
+    for bad_event in (
+        "on: pull_request_target\n",
+        "on: [push, pull_request_target]\n",
+        "on: {push: {}, pull_request_target: {}}\n",
+        "on:\n  'pull_request_target':\n",
+        "on:\n  - pull_request_target\n",
+    ):
+        mutant = good.replace("on:\n  pull_request:\n", bad_event)
+        if not inspect_workflow("événement alternatif", mutant):
+            raise SystemExit("Auto-test défectueux : variante pull_request_target")
+    safe_comment = good.replace("  pull_request:", "  # pull_request_target interdit\n  pull_request:")
+    if inspect_workflow("commentaire inoffensif", safe_comment):
+        raise SystemExit("Auto-test défectueux : faux positif commentaire")
     print("OK: les mutations de sécurité CI sont refusées.")
 
 
