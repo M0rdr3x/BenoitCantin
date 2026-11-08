@@ -12,9 +12,15 @@ V42 = ROOT / "scripts/proposals/sinjira_fracture_v42_rls_update_candidate.sql"
 
 
 def strip_literals_comments(sql: str) -> str:
+    # Une chaîne littérale est neutralisée par deux guillemets SQL;
+    # les commentaires doivent être remplacés par des espaces, sinon
+    # un commentaire placé avant WITH ferait échouer une requête sûre.
+    def mask(m: re.Match[str]) -> str:
+        return "''" if m.group(0).startswith("'") else " "
+
     return re.sub(
         r"'(?:''|[^'])*'|--[^\n]*|/\*[\s\S]*?\*/",
-        "''",
+        mask,
         sql,
     )
 
