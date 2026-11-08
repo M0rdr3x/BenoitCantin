@@ -63,3 +63,22 @@ Cette grille doit être revue à chaque jalon significatif; **ne pas modifier le
 ### Mise à jour
 
 Lors du prochain jalon, consigner les modules modifiés, les preuves de tests (SHA/PR), les limites, les blocages d'approbation et la nouvelle estimation *si et seulement si* les critères se sont réellement améliorés.
+
+
+## Suivi de référence au 8 novembre 2026 — registre calculable
+
+L'estimation initiale **66,5 % ≈ 67 % (incertitude ±10 points)** est confirmée comme **score pondéré indicatif**, non comme certification du lancement. Le registre JSON de référence [`docs/sinjira/programme-readiness-2026-11-08.json`](sinjira/programme-readiness-2026-11-08.json) reprend les dix domaines ci-dessus **sans ajuster les poids, maturités ou périmètre**. Le calculateur [`scripts/sinjira_programme_progress.py`](../scripts/sinjira_programme_progress.py) contrôle la formule et les critères avec tests de refus des dates ou preuves fictives.
+
+### Jalons effectivement fusionnés depuis l'état initial
+
+- **Fracture V45** : [PR #885](https://github.com/M0rdr3x/BenoitCantin/pull/885) fusionnée, 30 CI réussies. Proposition de quarantaine de dix fonctions SQL, **non appliquée à Supabase**.
+- **Suivi éditorial des romans** : [PR #869](https://github.com/M0rdr3x/BenoitCantin/pull/869) fusionnée, 31 CI réussies et 32 tests Node. Registres de contrôle des deux livres **sans certification éditoriale finale ni publication intégrale**.
+- **Fracture V46** : [PR #888](https://github.com/M0rdr3x/BenoitCantin/pull/888) fusionnée, 25 CI réussies. Le prévol en lecture seule de la base réelle conclut à **6 PASS, 3 BLOCK, NO_GO** : les permissions mutatrices et deux `WITH CHECK` ne sont pas encore durcis en production.
+
+### Pourquoi aucune date de fin n'est annoncée
+
+Il n'existe pas actuellement de série de mesures suffisante sur **le temps nécessaire à l'achèvement des jalons critiques**, leurs dépendances, les décisions éditoriales et les fenêtres de déploiement protégées. En conséquence, la date de fin est **`null` (indéterminée)** dans le registre. On ne déduit jamais une échéance de `33 %` de travail restant, ni du nombre de PR fusionnées, sans taux de livraison mesuré.
+
+Les **13 critères de sortie** du registre restent ouverts et couvrent : synchronisation de lecture V32 et essai sur deux appareils, droits du livre privé, RLS/RPC Fracture, règles et multijoueur, révocation de sessions/MFA, performances mobiles et CSP privée, communauté et modération, Monde parallèle/Registre, révision éditoriale, commerce, Mon IA, puis recette et décision finale. Le calcul peut afficher **100 % de maturité estimée sans déclarer le lancement autorisé** tant que la validation réelle des critères et l'approbation du responsable ne sont pas consignées.
+
+Les responsables peuvent clôturer un jalon seulement avec une **preuve vérifiable, une date de contrôle et le bon périmètre**. Le workflow n'a aucun accès au serveur ni aux comptes réels et ne doit jamais déclarer de mise en production à partir des seuls tests unitaires. 
