@@ -55,7 +55,7 @@ def validate():
     # Reprise V31 : état minimal, page/intrapage, aucune citation écrite dans le navigateur.
     spot=(ROOT/'assets/js/sinjira-liseuse-position-v31.mjs').read_text('utf-8')
     for token in ['chooseReadingPosition(', 'ratioFromScroll(', 'scrollTopForRatio(',
-                  'serverDate>localDate', 'serverRatio=null', 'hasServerRatio']: 
+                  'serverDate>localDate', 'serverRatio=null', 'hasServerRatio', 'shouldReplayReadingProgress']: 
         if token not in spot:
             errors.append('Utilitaire de reprise de lecture absent: '+token)
     for token in ['saveCurrentPosition()', "key+':spot'", 'restoreScrollAfterRender(version)',
@@ -74,7 +74,9 @@ def validate():
     for token in ['scroll_ratio:readingRatio(state.positionRatio)',
                   "select('last_page,scroll_ratio,updated_at')",
                   'serverRatio=progress?.scroll_ratio??null',
-                  'persist({syncCloud:true})']:
+                  'persist({syncCloud:true})',
+                  "safeLocalSet(key+':pending',at)", "select('updated_at')",
+                  "window.addEventListener('online'", "safeLocalRemove(key+':pending')"]:
         if token not in main:
             errors.append('Synchronisation intrapage V32 manquante: '+token)
     # Empêcher le stockage de texte intégral (citations ou notes) en localStorage.

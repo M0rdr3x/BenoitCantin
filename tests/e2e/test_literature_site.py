@@ -198,6 +198,7 @@ def assert_private_cross_device_resume_mock(browser) -> None:
     """
     cloud = {}
     schema = {"legacy": False}
+    network = {"online": True}
     owner = "ci-fictional-reader-a"
     other = "ci-fictional-reader-b"
 
@@ -220,6 +221,9 @@ def assert_private_cross_device_resume_mock(browser) -> None:
                 data = {key: val for key, val in data.items() if key != "scroll_ratio"}
             return {"data": data, "error": None}
         if method == "upsert":
+            if not network["online"]:
+                return {"data": None, "error": {"code": "NETWORK_ERROR",
+                                              "message": "Simulated network outage"}}
             payload = request.get("payload") or {}
             if payload.get("user_id") != actor:
                 return {"error": {"code": "42501", "message": "RLS fake deny"}}
@@ -372,10 +376,39 @@ export function getDocument(){
                     f"{BROWSER_NAME}: progression d'un autre utilisateur exposée par le mock")
         assert_true(other not in cloud,
                     f"{BROWSER_NAME}: donnée de lecture attribuée au mauvais compte")
+
+        # V34 : une panne réseau ne doit ni effacer la page locale ni exposer
+        # un autre compte. À la reconnexion, comparer d'abord les dates.
+        network["online"] = False
+        first.locator("#reader-page").fill("42")
+        first.locator("#reader-page").dispatch_event("change")
+        first.wait_for_function(
+            "() => document.getElementById('reader-text')?.textContent.includes('Page 42')")
+        first.locator("#reader-save-position").click()
+        first.wait_for_function(
+            "() => document.getElementById('reader-position-status')?.textContent.includes('Synchronisation du compte indisponible')",
+            timeout=15_000)
+        assert_true(cloud[owner]["last_page"] == 37,
+                    f"{BROWSER_NAME}: données distantes modifiées pendant coupure")
+        pending = first.evaluate(
+            "() => localStorage.getItem('sinjira:liseuse:integrale:la-cendre-du-jugement:ci-fictional-reader-a:pending')")
+        assert_true(bool(pending),
+                    f"{BROWSER_NAME}: sauvegarde locale en attente absente")
+        network["online"] = True
+        first.evaluate("window.dispatchEvent(new Event('online'))")
+        first.wait_for_function(
+            "() => document.getElementById('reader-position-status')?.textContent.includes('Connexion rétablie')",
+            timeout=15_000)
+        assert_true(cloud[owner]["last_page"] == 42,
+                    f"{BROWSER_NAME}: reprise automatique après coupure non synchronisée")
+        assert_true(first.evaluate(
+            "() => localStorage.getItem('sinjira:liseuse:integrale:la-cendre-du-jugement:ci-fictional-reader-a:pending')") is None,
+            f"{BROWSER_NAME}: marqueur de synchronisation non purgé après succès")
+
         # Compatibilité avec la version serveur qui ne possède que last_page.
         schema["legacy"] = True
         legacy = open_device(owner)
-        assert_true(legacy.locator("#reader-page").input_value() == "37",
+        assert_true(legacy.locator("#reader-page").input_value() == "42",
                     f"{BROWSER_NAME}: ancienne sauvegarde serveur non reprise")
         legacy.locator("#reader-page").fill("39")
         legacy.locator("#reader-page").dispatch_event("change")
@@ -386,6 +419,26 @@ export function getDocument(){
         assert_true(cloud[owner]["last_page"] == 39 and
                     "scroll_ratio" not in cloud[owner],
                     f"{BROWSER_NAME}: fallback V31 n'a pas préservé la sauvegarde serveur")
+
+        # V34 : le compte plus récent ne doit pas être écrasé au retour du réseau.
+        network["online"] = False
+        legacy.locator("#reader-page").fill("40")
+        legacy.locator("#reader-page").dispatch_event("change")
+        legacy.wait_for_function(
+            "() => document.getElementById('reader-text')?.textContent.includes('Page 40')")
+        legacy.locator("#reader-save-position").click()
+        legacy.wait_for_function(
+            "() => document.getElementById('reader-position-status')?.textContent.includes('Synchronisation du compte indisponible')",
+            timeout=15_000)
+        cloud[owner] = {**cloud[owner], "last_page": 77,
+                        "updated_at": "2099-11-07T20:00:00.000Z"}
+        network["online"] = True
+        legacy.evaluate("window.dispatchEvent(new Event('online'))")
+        legacy.wait_for_function(
+            "() => document.getElementById('reader-position-status')?.textContent.includes('Une progression plus récente')",
+            timeout=15_000)
+        assert_true(cloud[owner]["last_page"] == 77,
+                    f"{BROWSER_NAME}: la reconnexion a écrasé une progression serveur plus récente")
     finally:
         for ctx in contexts:
             ctx.close()

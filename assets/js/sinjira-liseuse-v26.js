@@ -1,7 +1,7 @@
 import { getSupabase, requireUser } from './sinjira-supabase.js';
 import { pdfTextToParagraphs, speechTextChunks } from './sinjira-liseuse-text-v27.mjs';
 import { createReaderCompanion } from './sinjira-liseuse-companion-v28.mjs';
-import { chooseReadingPosition, ratioFromScroll, scrollTopForRatio, readingRatio } from './sinjira-liseuse-position-v31.mjs?v=32.11.07.1';
+import { chooseReadingPosition, ratioFromScroll, scrollTopForRatio, readingRatio, shouldReplayReadingProgress } from './sinjira-liseuse-position-v31.mjs?v=34.11.07.1';
 
 /* SINJIRA 2026 — liseuse : le PDF intégral n'entre jamais dans le dépôt public
    ni dans localStorage. Le serveur attribue le droit de lecture avant de signer l'accès. */
@@ -41,7 +41,8 @@ const state={pdf:null,page:1,mode:'texte',theme:'sepia',size:20,zoom:1,
   font:'serif',lineHeight:1.75,textWidth:780,letterSpacing:0,
   voiceURI:'',speed:1,autoSpeech:false,
   user:null,novelId:null,renderVersion:0,renderQueue:Promise.resolve(),saveTimer:null,
-  progressQueue:Promise.resolve(),accessEpoch:0,accessInvalidated:false,
+  progressQueue:Promise.resolve(),progressRevision:0,cloudDirty:false,cloudRetrying:false,
+  accessEpoch:0,accessInvalidated:false,
   loadController:null,authSubscription:null,cloudSpotSupported:null,
   positionRatio:0,restorePending:null,restoringScroll:false,scrollTimer:null,resumeSource:'debut'};
 const speech={active:false,paused:false,token:0,chunks:[],index:0,voices:[],utterance:null};
@@ -53,6 +54,7 @@ let companion=null;
 
 function safeLocalGet(key){try{return localStorage.getItem(key)}catch{return null}}
 function safeLocalSet(key,value){try{localStorage.setItem(key,value);return true}catch{return false}}
+function safeLocalRemove(key){try{localStorage.removeItem(key);return true}catch{return false}}
 function clamp(value,min,max){return Math.max(min,Math.min(max,Number(value)||min))}
 function message(value,type='info'){
   const node=$('reader-status');
@@ -146,6 +148,7 @@ function syncProgress(){
   const send=async()=>{
     if(!state.pdf||state.pdf!==pdf||state.user?.id!==userId||state.novelId!==novelId)return false;
     const page=state.page,updatedAt=new Date().toISOString();
+    const revision=state.progressRevision;
     const payload={user_id:userId,novel_id:novelId,
       last_page:page,scroll_ratio:readingRatio(state.positionRatio),
       progress_percent:Math.round(page/pdf.numPages*100),
@@ -161,10 +164,17 @@ function syncProgress(){
           .upsert(payload,{onConflict:'user_id,novel_id'}));
       }
       if(error)throw error;
+      if(state.pdf!==pdf||state.user?.id!==userId||state.accessInvalidated)return false;
       if(payload.scroll_ratio!==undefined)state.cloudSpotSupported=true;
+      // Un succès n'efface pas un changement local arrivé pendant l'écriture.
+      if(state.progressRevision===revision){
+        state.cloudDirty=false;
+        safeLocalRemove(pageStorageKey()+':pending');
+      }
       return true;
     }catch{
-      if(state.pdf===pdf&&state.user?.id===userId){
+      if(state.pdf===pdf&&state.user?.id===userId&&!state.accessInvalidated){
+        state.cloudDirty=true;
         message('La synchronisation a échoué. Votre page reste enregistrée sur cet appareil.','warning');
       }
       return false;
@@ -172,6 +182,40 @@ function syncProgress(){
   };
   state.progressQueue=state.progressQueue.catch(()=>false).then(send);
   return state.progressQueue;
+}
+/** Après une coupure, contrôler la session ET l'horodatage serveur avant toute
+    réécriture. Un autre appareil plus récent n'est jamais écrasé automatiquement. */
+async function retryCloudProgress(){
+  if(!isFull||!state.cloudDirty||state.cloudRetrying||!state.pdf||
+     !state.user||!state.novelId||state.accessInvalidated||
+     navigator.onLine===false)return;
+  const userId=state.user.id,novelId=state.novelId,pdf=state.pdf;
+  const key=pageStorageKey(),pendingAt=safeLocalGet(key+':pending');
+  if(!pendingAt)return;
+  state.cloudRetrying=true;
+  const stillAuthorized=()=>!state.accessInvalidated&&state.pdf===pdf&&
+    state.user?.id===userId&&state.novelId===novelId;
+  try{
+    const {data:auth,error:authError}=await getSupabase().auth.getUser();
+    if(authError||auth?.user?.id!==userId||!stillAuthorized())return;
+    const {data:remote,error}=await getSupabase().from('sinjira_reader_library')
+      .select('updated_at').eq('user_id',userId).eq('novel_id',novelId).maybeSingle();
+    if(error||!stillAuthorized()||safeLocalGet(key+':pending')!==pendingAt)return;
+    if(!shouldReplayReadingProgress(pendingAt,remote?.updated_at)){
+      // Ne pas déplacer le lecteur en cours de lecture; respecter le compte.
+      state.cloudDirty=false;
+      safeLocalRemove(key+':pending');
+      positionNotice('Une progression plus récente existe sur votre compte. La position de cet appareil n’a pas écrasé le compte.','warning');
+      return;
+    }
+    const restored=await syncProgress();
+    if(restored&&stillAuthorized()&&!state.cloudDirty){
+      positionNotice(state.cloudSpotSupported===false
+        ?'Connexion rétablie : votre page a été synchronisée sur votre compte. Le défilement exact reste sur cet appareil.'
+        :'Connexion rétablie : page et défilement précis synchronisés sur votre compte.','success');
+    }
+  }catch{/* Réseau toujours indisponible : conserver la sauvegarde locale. */}
+  finally{state.cloudRetrying=false}
 }
 function flushProgress(){
   if(!state.saveTimer)return;
@@ -188,6 +232,11 @@ function persist({syncCloud=true}={}){
   const savedSpot=safeLocalSet(key+':spot',JSON.stringify({
     page:state.page,ratio:state.positionRatio
   }));
+  if(isFull&&state.user&&state.novelId){
+    state.progressRevision++;
+    state.cloudDirty=true;
+    safeLocalSet(key+':pending',at);
+  }
   if(syncCloud&&isFull&&state.user&&state.novelId){
     clearTimeout(state.saveTimer);
     state.saveTimer=setTimeout(()=>{state.saveTimer=null;void syncProgress()},450);
@@ -473,12 +522,15 @@ function bindControls(){
   }));
   $('reader-voice-pause').addEventListener('click',toggleSpeechPause);
   $('reader-voice-stop').addEventListener('click',()=>stopNarration());
+  window.addEventListener('online',()=>{void retryCloudProgress()});
   window.addEventListener('pagehide',()=>{
     flushScrollPosition();stopNarration(false);flushProgress();companion?.close();
   });
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='hidden'){
       flushScrollPosition();flushProgress();
+    }else if(document.visibilityState==='visible'){
+      void retryCloudProgress();
     }
   });
   $('reader-zoom').addEventListener('change',event=>{
@@ -513,6 +565,7 @@ function lockPrivateReader(){
   state.loadController=null;
   clearTimeout(state.saveTimer);state.saveTimer=null;
   clearTimeout(state.scrollTimer);state.scrollTimer=null;
+  state.cloudDirty=false;state.cloudRetrying=false;
   $('reader-position-status').textContent='';
   stopNarration(false);
   companion?.close();companion=null;
@@ -598,11 +651,16 @@ async function restorePage(){
   state.restorePending=spot.ratio;
   state.resumeSource=spot.source;
   state.restoringScroll=true;
+  // Une écriture interrompue avant la fermeture reste récupérable sans
+  // texte du livre ni connexion automatique à un autre compte.
+  state.cloudDirty=isFull&&Boolean(safeLocalGet(key+':pending'));
   if(spot.source==='compte'){
     // La sauvegarde la plus récente est conservée sur l'appareil.
     safeLocalSet(key,String(spot.page));
     safeLocalSet(key+':updated',serverUpdatedAt||new Date().toISOString());
     safeLocalSet(key+':spot',JSON.stringify({page:spot.page,ratio:spot.ratio}));
+    state.cloudDirty=false;
+    safeLocalRemove(key+':pending');
   }
 }
 async function init(){
@@ -682,6 +740,7 @@ async function init(){
     // L'indisponibilité de la synchronisation des notes ne bloque pas la lecture.
     companion.ready().catch(()=>message('La liseuse fonctionne, mais les repères personnels ne sont pas disponibles.','warning'));
     $('reader-status').hidden=true;
+    if(isFull&&state.cloudDirty)void retryCloudProgress();
   }catch(error){
     state.loadController=null;
     if(loadedPdf){
