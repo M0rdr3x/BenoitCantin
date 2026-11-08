@@ -37,12 +37,20 @@ def without_line_comments(source: str) -> str:
 def inspect_sql(source: str) -> list[str]:
     errors: list[str] = []
     sql = without_line_comments(source).strip()
-    if not re.match(r"^BEGIN\s*;", sql, flags=re.I):
-        errors.append("Transaction explicite BEGIN obligatoire")
-    if not re.search(r"ROLLBACK\s*;\s*$", sql, flags=re.I):
-        errors.append("ROLLBACK final obligatoire : ne pas produire de migration déployable")
-    if re.search(r"\bCOMMIT\b|\bGRANT\b|\bREVOKE\b|\bDELETE\b|\bTRUNCATE\b|\bDROP\b", sql, flags=re.I):
-        errors.append("Commande de publication, de droits ou destructrice interdite")
+    if not re.match(r"^BEGIN\s*;", sql, flags=re.I) or len(
+        re.findall(r"(?im)^\s*BEGIN\s*;", sql)
+    ) != 1:
+        errors.append("Transaction explicite BEGIN unique obligatoire")
+    if not re.search(r"ROLLBACK\s*;\s*$", sql, flags=re.I) or len(
+        re.findall(r"(?im)^\s*ROLLBACK\s*;", sql)
+    ) != 1:
+        errors.append("ROLLBACK unique et final obligatoire : candidat non déployable")
+    if re.search(
+        r"\b(?:COMMIT|GRANT|REVOKE|INSERT|UPDATE|DELETE|TRUNCATE|DROP|ALTER|COPY|"
+        r"SAVEPOINT|RELEASE|EXECUTE|CALL|SET\s+ROLE|START\s+TRANSACTION)\b",
+        sql, flags=re.I
+    ):
+        errors.append("Commande de publication, de droits, dynamique ou destructrice interdite")
     chunks = re.split(r"(?i)\bCREATE OR REPLACE FUNCTION\s+", sql)
     if len(chunks) != 3:
         errors.append("Exactement deux fonctions privées doivent être remplacées")
@@ -51,6 +59,8 @@ def inspect_sql(source: str) -> list[str]:
     for body, (name, markers) in zip(chunks[1:], EXPECTED_FUNCTIONS.items()):
         if not body.lower().lstrip().startswith(name.lower() + "("):
             errors.append("Fonction ou ordre inattendu : " + name)
+        if "LANGUAGE sql" not in body:
+            errors.append("LANGUAGE sql attendu : " + name)
         if "SECURITY DEFINER" not in body:
             errors.append("SECURITY DEFINER historique absent : " + name)
         if "SET search_path = ''" not in body:
@@ -74,12 +84,16 @@ def self_test(source: str) -> None:
         ("retirer contrôle de recherche", "SET search_path = ''", "SET search_path = public"),
         ("ajouter privilège", "ROLLBACK;", "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA private TO anon;\nROLLBACK;"),
         ("retirer JWT", JWT_SERVICE_GUARD, "TRUE"),
+        ("démarrer une deuxième transaction", "ROLLBACK;", "BEGIN;\nROLLBACK;"),
+        ("terminer une transaction trop tôt", "CREATE OR REPLACE FUNCTION private.project_access_rank",
+         "ROLLBACK;\nCREATE OR REPLACE FUNCTION private.project_access_rank"),
+        ("ajouter une écriture", "ROLLBACK;", "UPDATE public.projects SET status='active';\nROLLBACK;"),
     )
     for name, original, changed in mutations:
         assert original in source, "Fixture absente : " + name
         mutant = source.replace(original, changed, 1)
         assert inspect_sql(mutant), "La mutation dangereuse est passée : " + name
-    print("OK : 6 mutations SQL refusées, aucune application de migration.")
+    print("OK : 9 mutations SQL refusées, aucune application de migration.")
 
 
 def main() -> int:
