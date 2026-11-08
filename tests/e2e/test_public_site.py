@@ -571,6 +571,60 @@ def run() -> None:
             parcours_64_questions["valid"],
             f"{BROWSER_NAME}: parcours guidé ou focus des résultats incorrect: {parcours_64_questions}",
         )
+
+        # Scénario navigateur distinct : 64 choix « Sans opinion » doivent
+        # se terminer sans score inventé, puis revenir à zéro. Aucun POST.
+        # On utilise les véritables événements DOM, sans API privée de test.
+        profil_sans_opinion = page.evaluate("""() => {
+            const panel = document.querySelector("#compass-start-panel");
+            const stepper = document.querySelector("#compass-stepper");
+            const results = document.querySelector("#compass-results");
+            const reset = document.querySelector("#compass-reset");
+            const start = document.querySelector("#compass-start");
+            if(!panel || !stepper || !results || !reset || !start){
+                return {ok:false,stage:"missing_controls"};
+            }
+            reset.click();
+            if(panel.hidden || !stepper.hidden || !results.hidden || start.disabled){
+                return {ok:false,stage:"initial_reset"};
+            }
+            start.click();
+            let visited=0;
+            for(let step=1;step<=64;step++){
+                const fieldset = document.querySelector("#compass-question-stage fieldset");
+                const progress = document.querySelector("#compass-progress-track");
+                const skip = fieldset?.querySelector('input[type="radio"][value="skip"]');
+                const next = document.querySelector("#compass-next");
+                if(!skip || progress?.getAttribute("aria-valuenow")!==String(step) ||
+                   !next || !next.disabled){
+                    return {ok:false,stage:"question",step,visited};
+                }
+                skip.click();
+                if(next.disabled || !skip.checked){
+                    return {ok:false,stage:"skip",step,visited};
+                }
+                next.click();
+                visited++;
+            }
+            const cards = [...document.querySelectorAll("#compass-results-grid .compass-result-card")];
+            const summary = document.querySelector("#compass-summary")?.textContent || "";
+            const radar = document.querySelector("#compass-radar");
+            const noArtificialScores = cards.length===16 &&
+                cards.every(card => card.querySelector("strong")?.textContent.trim()==="—") &&
+                !radar?.querySelector("polygon") &&
+                summary.includes("Aucune dimension calculable") &&
+                !results.hidden;
+            reset.click();
+            const zeroed = !panel.hidden && stepper.hidden && results.hidden &&
+                document.querySelector("#compass-progress-track")?.getAttribute("aria-valuenow")==="1";
+            return {ok:noArtificialScores&&zeroed&&visited===64,visited,
+                noArtificialScores,zeroed,summary};
+        }""")
+        assert_true(
+            profil_sans_opinion["ok"],
+            f"{BROWSER_NAME}: 64 « Sans opinion », résultats non artificiels ou réinitialisation: {profil_sans_opinion}",
+        )
+
         home_text = page.locator("main").inner_text().lower()
         for retired_name in ("lumina", "futurax", "chroniques de l’ombre", "chroniques de l'ombre"):
             assert_true(retired_name not in home_text, f"Accueil: univers secondaire remis au premier plan: {retired_name}")
