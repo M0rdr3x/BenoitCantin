@@ -210,3 +210,43 @@ test("un registre manipulé ne retourne jamais un faux 100 pour cent",()=>{
  assert.equal(result.book2,null);
  assert.equal(result.readiness_confirmed,false);
 });
+
+test("diagnostic d'archive du Livre II : 60 chapitres mesurés, pas une édition actuelle",async()=>{
+ const data=await load("docs/sinjira/audit-archive-livre-ii-2026-11-08.json");
+ assert.equal(data.schema,"sinjira-book-ii-historical-archive-diagnostic/v1");
+ assert.equal(data.status,"ARCHIVE_HISTORIQUE_NE_PAS_UTILISER_COMME_PREUVE_DE_FIN");
+ assert.equal(data.source.actual_pdf_pages,126);
+ assert.equal(data.source.version_master_current_confirmed,false);
+ assert.equal(data.per_chapter.length,60);
+ assert.deepEqual(data.per_chapter.map(c=>c.number),Array.from({length:60},(_,i)=>i+1));
+ assert.equal(data.completion.manuscript_editorial_completion_percent,null);
+ assert.equal(data.completion.publishing_readiness_percent,null);
+});
+test("les métriques historiques de 60 chapitres se concilient sans afficher le texte",async()=>{
+ const data=await load("docs/sinjira/audit-archive-livre-ii-2026-11-08.json");
+ const counts=data.per_chapter.reduce((n,c)=>n+c.word_count,0);
+ const wins=data.per_chapter.reduce((n,c)=>n+c.windows_30_tokens_shared_across_chapters,0);
+ assert.equal(counts,25274);
+ assert.equal(wins,16787);
+ assert.equal(data.results.total_tokens_inside_chapter_sections,counts);
+ assert.equal(data.results.total_chapter_occurrences_of_shared_windows,wins);
+ assert.equal(data.results.chapters_with_shared_windows,60);
+});
+test("les répétitions historiques ne sont jamais des pourcentages de finition",async()=>{
+ const data=await load("docs/sinjira/audit-archive-livre-ii-2026-11-08.json");
+ const weighted=data.per_chapter.reduce((n,c)=>n+c.word_count*c.word_share_covered_by_shared_windows_percent,0)/25274;
+ assert.equal(Number(weighted.toFixed(2)),84.74);
+ assert.equal(data.methodology.not_a_similarity_score,true);
+ assert.equal(data.methodology.not_a_plagiarism_assessment,true);
+ assert.equal(data.completion.archive_structural_headings_found_percent,100);
+ assert.equal(data.completion.manuscript_editorial_completion_percent,null);
+ assert.equal(data.results.manuscript_ready_for_publication,false);
+});
+test("aucun passage du manuscrit historique n'est exporté vers le dépôt",async()=>{
+ const data=await load("docs/sinjira/audit-archive-livre-ii-2026-11-08.json");
+ assert.equal(data.source.source_pdf_not_committed,true);
+ assert.equal(data.methodology.no_excerpts_copied,true);
+ assert.ok(data.per_chapter.every(c=>Object.keys(c).sort().join(",")===
+ ["number","review_status","windows_30_tokens_shared_across_chapters","word_count",
+  "word_share_covered_by_shared_windows_percent"].sort().join(",")));
+});
