@@ -174,9 +174,9 @@ def audit(x,k,r,v,w,o,b):
            "TAUX_NOVA_DEDUIT_DE_RECETTES_PUBLIQUES")
     demand(num(w["controle_arrondis"]["ligne_totale_officielle_mcad"])==num(pit["credits_remboursables_mcad"]),
            "CREDITS_2023_COHERENCE_P56W")
-    demand(all(x.get(k) is True for k in RULES) and
-           isinstance(x.get("regles"),dict) and
-           set(x["regles"])==set(RULES),
+    demand(isinstance(x.get("regles"),dict) and
+           set(x["regles"])==set(RULES) and
+           all(x["regles"].get(k) is True for k in RULES),
            "REGLES_CONSTITUTIONNELLES_OU_FISCALES_BRISEES")
     scopes=x.get("etude_taux_candidat_bloquee")
     demand(isinstance(scopes,dict) and
