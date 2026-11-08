@@ -39,7 +39,7 @@ def main()->int:
     ])
     registry_page=check('projets/sinjira/registre/index.html',[
         'data-character-form=', 'type="submit" disabled>Transmettre ma participation',
-        'name="formspree_receipt_opt_in"', 'sinjira-character-registry.js?v=24.5.6',
+        'name="formspree_receipt_opt_in"', 'sinjira-character-registry.js?v=24.5.7',
     ])
     registry_js=check('assets/js/sinjira-character-registry.js',[
         "form?.addEventListener('submit',async e=>{",
@@ -55,6 +55,7 @@ def main()->int:
         "registryReady=false;",
         "link.href='/compte/mon-personnage.html';",
         "link.target='_blank';",
+        "try{localStorage.removeItem('registre-consciences-draft-v1')}catch{",
     ])
     registry_edge=check('supabase/functions/submit-character-questionnaire/index.ts',[
         "requiredUser(req)", "answers.formspree_receipt_opt_in==='yes'",
@@ -153,6 +154,8 @@ def main()->int:
         errors.append('Registre : second envoi encore autorisé après une réponse réseau incertaine')
     if not re.search(r'if\s*\(!invocationStarted\)\s*\{\s*await\s+cleanupUploadedPhoto\(photo_path\)',registry_js):
         errors.append('Registre : nettoyage temporaire pré-envoi non protégé')
+    if re.search(r"(?m)^\s*localStorage\.removeItem\('registre-consciences-draft-v1'\);?\s*$",registry_js):
+        errors.append('Registre : panne du stockage local interprétée comme échec de sauvegarde')
     if 'Avis interne créé. Aucune copie' in registry_js:
         errors.append('Registre : avis interne annoncé sans vérifier le statut serveur')
 

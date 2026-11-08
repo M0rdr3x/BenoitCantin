@@ -170,3 +170,7 @@ Lorsque l'appel `submit-character-questionnaire` a commencé, une erreur de rés
 Les erreurs **avant** toute invocation serveur (ex. photo refusée ou préparation locale) conservent le droit de réessayer et peuvent entraîner le nettoyage du fichier temporaire si présent. Ce comportement est gardé par le contrat `scripts/validate_sinjira_signup_registry_delivery.py` et la version de script `sinjira-character-registry.js?v=24.5.6`.
 
 **Limite connue :** la vérification de l'état dans un autre onglet repose sur la connexion du même participant; elle ne constitue pas une reprise transactionnelle automatique du POST. Les tests réels de perte d'accusé HTTP avant production restent obligatoires.
+
+## Sauvegarde serveur confirmée et stockage local facultatif
+
+Une fois la sauvegarde Supabase confirmée, l'effacement du brouillon local (`registre-consciences-draft-v1`) est désormais **best effort**. Un `SecurityError` du navigateur, une restriction des cookies ou un `localStorage` inaccessible ne peut plus faire basculer l'interface sur un faux message « Transmission impossible » ni réactiver le bouton de soumission. La réussite du dossier n'est déterminée que par la réponse du serveur; les problèmes locaux sont consignés sans exposition de réponses. Le contrat automatisé protège le comportement et le script est versionné `sinjira-character-registry.js?v=24.5.7`.

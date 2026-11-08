@@ -137,7 +137,8 @@ form?.addEventListener('submit',async e=>{
  setState(isOwnerForSubmit?'Mise à jour sécurisée du dossier…':'Enregistrement sécurisé dans votre Compte SINJIRA™…','info');
  try{
    const result=await submitToSinjira(currentUser,{updateExisting:isOwnerForSubmit});
-   localStorage.removeItem('registre-consciences-draft-v1');
+   // Un blocage du stockage local ne doit jamais annuler un succès serveur.
+   try{localStorage.removeItem('registre-consciences-draft-v1')}catch{console.warn('[SINJIRA registre] brouillon local inaccessible')}
    setState(successMessage(result),'success');
    state?.scrollIntoView({behavior:'smooth',block:'center'});
    form.querySelectorAll('input,textarea,select,button').forEach(x=>x.disabled=true);
