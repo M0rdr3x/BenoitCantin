@@ -12,7 +12,7 @@ assert.match(src,/import \{ readLimitedUtf8Body \} from '\.\.\/_shared\/limited-
 assert.match(src,/readLimitedUtf8Body\(req, MAX_REQUEST_BYTES\)/);
 assert.match(src,/const MAX_REQUEST_BYTES = 4096;/);
 assert.doesNotMatch(src,/\bawait\s+req\.(?:text|json)\s*\(/);
-assert.match(src,/console\.error\('\[security-context\]', \{ code: 'SECURITY_CONTEXT_FAILED' \} \)/);
+assert.match(src,/console\.error\('\[security-context\]',\s*\{\s*code:\s*'SECURITY_CONTEXT_FAILED'\s*\}\s*\)/);
 assert.doesNotMatch(src,/console\.(?:error|log|warn)\('\[security-context\]',\s*error\s*\)/);
 const auth=src.indexOf('const user = await requiredUser(req)');
 const parse=src.indexOf('const parsed = await readLimitedJson(req)');
