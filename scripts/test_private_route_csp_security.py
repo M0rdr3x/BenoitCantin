@@ -139,6 +139,26 @@ class PrivateRoutesCspSecurityTests(unittest.TestCase):
                     )
                     self.assertIn('http-equiv="Content-Security-Policy"', generated)
 
+    def test_alias_racine_admin_csp_et_fallback(self) -> None:
+        netlify = {
+            row["for"]: row.get("values", {})
+            for row in self.netlify.get("headers", [])
+        }
+        vercel = {
+            row["source"]: {x["key"]: x["value"] for x in row.get("headers", [])}
+            for row in self.vercel.get("headers", [])
+        }
+        root_csp = netlify["/administration.html"]["Content-Security-Policy"]
+        self.assertEqual(csp_errors(root_csp), [])
+        self.assertEqual(
+            root_csp, vercel["/administration.html"]["Content-Security-Policy"]
+        )
+        self.assertIn("no-store", netlify["/administration.html"]["Cache-Control"])
+        source = (ROOT / "administration.html").read_text("utf-8")
+        rel = Path("administration.html")
+        generated = harden_private_html(rel, source, self.netlify)
+        self.assertEqual(private_csp_output_errors(rel, generated, self.netlify), [])
+
     def test_fallback_refuse_toute_injection_html_inline(self) -> None:
         fixture = "<!doctype html><html><head></head><body><p>Sûr</p></body></html>"
         rel = Path("compte/test-synthetique.html")
@@ -173,6 +193,7 @@ class PrivateRoutesCspSecurityTests(unittest.TestCase):
 
     def test_aliases_admin_redirigent_via_un_script_externe(self) -> None:
         paths = [
+            ROOT / "administration.html",
             ROOT / "Admin/sinjira-analytics.html",
             ROOT / "Admin/sinjira/index.html",
             ROOT / "Admin/sinjira/licences.html",
