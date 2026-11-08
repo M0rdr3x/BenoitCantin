@@ -61,6 +61,10 @@ def main()->int:
 
     # Le plafond doit être imposé avant l'allocation, dans le lecteur partagé,
     # y compris si Content-Length manque ou si l'origine le falsifie.
+    # La vérification doit porter sur le lecteur binaire lui-même et non
+    # accepter des marqueurs semblables dans la fonction UTF-8 voisine.
+    binary_at=limited.find('export async function readLimitedBinaryResponse')
+    binary_code=limited[binary_at:] if binary_at>=0 else ''
     stream_markers=[
         "export async function readLimitedBinaryResponse(response, maxBytes, timeoutMs = 30_000)",
         "response.headers.get('content-length')",
@@ -72,7 +76,7 @@ def main()->int:
         "clearTimeout(timeout)",
     ]
     for marker in stream_markers:
-        if marker not in limited:
+        if marker not in binary_code:
             errors.append(f'Lecteur PDF en flux: garde-fou absent: {marker}')
     if 'await response.arrayBuffer()' in report.replace(
         '// response.arrayBuffer() permettrait à une origine défaillante de dépasser', ''
