@@ -1,6 +1,7 @@
 name: SINJIRA — Fracture soupçons privés V39
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     branches: [main]
     paths:
       - 'assets/js/sinjira-fracture-soupcons-v39.mjs'
