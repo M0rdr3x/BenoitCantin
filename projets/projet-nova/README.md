@@ -473,6 +473,19 @@ Les fichiers de référence candidats `official/reference/*` et `data/sources.js
 
 **Suite G0.16p :** étendre à d'autres municipalités et à leurs taux de taxation 2026, recouper les prêts réellement décaissés, réclamations et paiements de subventions, puis établir les effets sur les ménages et les services à l'aide de données vérifiées avant toute proposition de taux Nova.
 
+
+## G0.16p — Comparaison prudente des barèmes municipaux 2026 (8 novembre 2026)
+
+**Préparation du programme : 47/100 (53 points restants).** Le projet était déjà à G0.16o; cette phase complète le dossier Warwick avec **Laval** et **Gatineau**, deux villes déjà étudiées en G0.16n.
+
+- **Laval :** taux foncier général de base **0,4973 $ par 100 $ d'évaluation**; taxe spéciale d'infrastructures d'eau **0,0111 $** et contribution ARTM **0,0825 $** (même assiette de 100 $, catégorie de base). Ce ne sont pas les seules taxes applicables. [Tableau officiel 2026, page 73](https://www.laval.ca/wp-content/uploads/2026/02/evolution-taux-taxation-tarification.pdf).
+- **Gatineau :** taxe résidentielle générale **variable selon l'unité de voisinage**, donc aucun taux ordinaire uniforme. Pour la catégorie des six logements et plus : **6,964 $ par 1 000 $ d'évaluation**, transport en commun **1,417 $ par 1 000 $**, service de dette de la nouvelle ville **0,830 $ par 1 000 $** et matières résiduelles **178,83 $ par logement**. Le budget illustre une résidence médiane évaluée à 454 600 $, avec **3 575,15 $ pour quatre rubriques sélectionnées** avant éventuels frais sectoriels; ce n'est pas un paiement individuel attesté. [Budget municipal 2026](https://www.gatineau.ca/docs/guichet_municipal/administration_municipale/budget/budget_2026/budget.fr-CA.pdf).
+- **Comparaison refusée :** les exemples Warwick (300 000 $, sous-total fictif partiel), Laval (300 000 $, sous-total fictif des trois taux de base **1 772,70 $**) et Gatineau (454 600 $, exemple médian officiel) ne constituent ni des factures équivalentes, ni des économies que Nova aurait réalisées.
+- **Livrables :** `data/comparaison-taxes-municipales-g0-16p-2026.json`, `assets/g016p-local-taxes-core.mjs`, `tests/g016p-local-tax-crosscheck.test.mjs` et `official/working/rapport-g0-16p-taxes-municipales-2026-v1.md`. Contrôles préalables de données satisfaits; réussite de la suite **Node/GitHub Actions non encore attestée**.
+- **Preuves manquantes :** règlements d'autres localités, comptes payés, décaissements d'emprunts, versements PRIMEAU, coût complet des actifs et services, incidence par revenu, audit juridique et financier. Les deux scénarios sur dix ans restent **non chiffrés** et aucune adoption politique ou réforme fiscale n'est déclarée.
+
+**Suite G0.16q :** établir un registre pièce par pièce des décaissements, factures et dettes réelles; rechercher des états financiers audités et soumettre tout remplacement fiscal à une simulation distributive homogène et à un examen indépendant. **47/100 inchangé.**
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
