@@ -90,7 +90,7 @@ function questionnaireText(answers:Record<string,unknown>):string|null {
 
 // Le déclencheur est uniquement côté serveur après réussite confirmée.
 // La contrainte SQL (event_type,source_id) évite les doubles avis et réponses automatiques.
-export async function sendFormspreeNotice(
+async function sendFormspreeNoticeCore(
   service:any, kind:EventName, sourceId:string, options:FormspreeOptions
 ): Promise<DeliveryResult> {
   const url=ENDPOINTS[kind];
@@ -157,4 +157,18 @@ export async function sendFormspreeNotice(
     .eq('id',receipt.id);
   if(stateError)console.warn('[SINJIRA Formspree]','OUTBOX_STATUS_UPDATE_FAILED');
   return {accepted,already:false,configured:true,reason:accepted?undefined:'DELIVERY_FAILED'};
+}
+
+// Un avis externe ne doit JAMAIS faire échouer l'inscription confirmée ou la
+// sauvegarde du Registre. Cet appel conserve un résultat borné et non nominatif,
+// même si Supabase, Formspree ou le réseau lève une exception inattendue.
+export async function sendFormspreeNotice(
+  service:any, kind:EventName, sourceId:string, options:FormspreeOptions
+): Promise<DeliveryResult> {
+  try {
+    return await sendFormspreeNoticeCore(service,kind,sourceId,options);
+  } catch {
+    console.warn('[SINJIRA Formspree]','SECONDARY_CHANNEL_UNAVAILABLE');
+    return {accepted:false,already:false,configured:false,reason:'SECONDARY_CHANNEL_UNAVAILABLE'};
+  }
 }
