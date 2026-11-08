@@ -15,14 +15,14 @@ from decimal import Decimal
 PREFACE="Version de travail du 8 novembre 2026"
 MUST_HAVE={
 1:("revenu disponible","microsimulation"),
-2:("deux prélèvements","paradis fiscaux"),
+2:("premier pilier","paradis fiscaux"),
 3:("redevance","transfert"),
 4:("42,875 G$","48,570 G$"),
 5:("120,433 G$","165,049 G$"),
 6:("postes","efficacité"),
 7:("crédits","prestations"),
 8:("dette","déficits"),
-9:("entreprises","aides"),
+9:("entreprise","aides"),
 10:("contre-tarifs","commerciale"),
 11:("Québec dans le Canada","Québec souverain"),
 12:("municipal","taxe scolaire"),
