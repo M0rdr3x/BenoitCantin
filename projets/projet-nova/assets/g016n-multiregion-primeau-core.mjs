@@ -12,6 +12,27 @@ export const OFFICIAL_MAMH_ROWS=Object.freeze([
 ]);
 export const OFFICIAL_PDF="https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/documents_administratifs/acces_information/demande_acces/2025/DAI_2025-082_subventions_primeau_2023_2033.pdf";
 export const OFFICIAL_COUNCIL_PDF="https://munpdg.ca/wp-content/uploads/2025/07/proces-verbal-de-la-seance-ordinaire-du-9-juin.pdf";
+
+export const VERIFIED_SECONDARY_URLS=Object.freeze([
+"https://www.quebec.ca/nouvelles/actualites/details/le-gouvernement-du-quebec-accorde-plus-de-42-m-a-port-daniel-gascons-63791",
+"https://www.newswire.ca/fr/news-releases/programme-d-infrastructures-municipales-d-eau-le-gouvernement-du-quebec-accorde-pres-de-57-m-a-gatineau-898220439.html",
+"https://www.quebec.ca/nouvelles/actualites/details/le-gouvernement-du-quebec-accorde-plus-de-23-m-a-laval-pour-ameliorer-la-resilience-de-ses-infrastructures-deau-62037",
+"https://www.quebec.ca/nouvelles/actualites/details/programme-dinfrastructures-municipales-deau-pres-de-85-m-a-lile-danticosti-pour-ses-infrastructures-deau-potable-58443"
+]);
+export const VERIFIED_CASE_TYPES=Object.freeze([
+"EAU_POTABLE_USINE","EAU_POTABLE_USINE","RETENTION_EAUX_PLUVIALES",
+"EAU_POTABLE_EGOUTS_VOIRIE","EAU_POTABLE_MISE_AUX_NORMES",
+"EPURATION_DEPHOSPHATATION","TRAITEMENT_EAUX_USEES"
+]);
+export const VERIFIED_CASE_TITLES=Object.freeze([
+"Nouvelle usine de production d’eau potable",
+"Réfection de l’usine de production d’eau potable du secteur Gatineau",
+"Construction d’un bassin de rétention souterrain — réservoir Cartier",
+"Alimentation et distribution d’eau potable, collecte et traitement des eaux usées",
+"Mise aux normes de l’eau potable",
+"Déphosphatation et désinfection des eaux usées de la station principale",
+"Remplacement du système de traitement Oxycair"
+]);
 const obj=x=>x!==null&&typeof x==="object"&&!Array.isArray(x);
 const same=(x,y)=>JSON.stringify(x)===JSON.stringify(y);
 const ratio=(a,c)=>Math.round(a*10000/c)/100;
@@ -45,6 +66,7 @@ export function validateG016nMultiRegion(d,g016m){
     d.sources[1]?.url!==OFFICIAL_COUNCIL_PDF||
     d.sources[1]?.screenshot_cache_miss!==true||
     !same(d.sources[1]?.visual_pdf_pages_zero_based,[])||
+    !same(d.sources.slice(2).map(x=>x?.url),VERIFIED_SECONDARY_URLS)||
     d.sources.some(s=>!s.url?.startsWith("https://")||!s.purpose||!s.publisher))
    bad("PROVENANCE_UNSUPPORTED");
  const ps=d.projects;
@@ -55,7 +77,8 @@ export function validateG016nMultiRegion(d,g016m){
        p.scheduled_start_in_2025_list,p.scheduled_finish_in_2025_list,
        p.source_list_pdf_page_zero_based],
       [id,name,region,cost,award,start,end,page])||
-     !p.title_as_mamh||!p.project_type||p.source_primary_id!=="MAMH_2025_082"||
+     p.title_as_mamh!==VERIFIED_CASE_TITLES[i]||p.project_type!==VERIFIED_CASE_TYPES[i]||
+     p.source_primary_id!=="MAMH_2025_082"||
      p.source_subprogramme!=="1.2"||
      p.ratio_award_to_max_eligible_cost_pct!==ratio(award,cost)||
      p.grant_status!=="LISTED_IN_MAMH_2025_AWARDED_OR_ONGOING_LIST_NOT_PAID_CONFIRMED"||
