@@ -817,6 +817,31 @@ def run() -> None:
                 check(clipboardPayload?.includes("Équilibre") &&
                   !clipboardPayload?.includes("+100") &&
                   !clipboardPayload?.includes(canary),"presse-papiers périmé");
+                // Refus d'autorisation : ne jamais annoncer une copie réussie.
+                Object.defineProperty(navigator,"clipboard",{configurable:true,value:{
+                  writeText:async () => {throw new Error("NotAllowedError");}
+                }});
+                await get("compass-copy-result").onclick();
+                check(get("compass-status")?.textContent.includes("Copie impossible"),
+                  "copie refusée annoncée comme réussie");
+                Object.defineProperty(navigator,"share",{configurable:true,value:undefined});
+                await get("compass-share-native").onclick();
+                check(get("compass-status")?.textContent.includes("Copie impossible"),
+                  "partage de repli annoncé comme réussi malgré un refus");
+                // Vieux navigateurs sans API Clipboard : execCommand(false)
+                // doit signaler l'échec et supprimer le textarea temporaire.
+                Object.defineProperty(navigator,"clipboard",{configurable:true,value:undefined});
+                const oldExec=document.execCommand;
+                const oldTextareas=document.querySelectorAll("textarea").length;
+                document.execCommand=()=>false;
+                try{
+                    await get("compass-copy-result").onclick();
+                    check(get("compass-status")?.textContent.includes("Copie impossible") &&
+                      document.querySelectorAll("textarea").length===oldTextareas,
+                      "repli clipboard faux-positif ou élément temporaire conservé");
+                }finally{
+                    document.execCommand=oldExec;
+                }
                 const clean=history.state;
                 history.replaceState(clean,"",origin);
                 reset.click();
