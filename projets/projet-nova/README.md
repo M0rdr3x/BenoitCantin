@@ -420,6 +420,19 @@ Les fichiers de référence candidats `official/reference/*` et `data/sources.js
 
 **Suite G0.16l :** recenser les plans PGA-Eau effectivement déposés et les inspections, rapprocher actifs/échéances/dépenses/financements par collectivité, puis faire vérifier un programme décennal de réhabilitation compatible avec la protection des salariés et le pouvoir d'achat des ménages. Les fichiers candidats `official/reference/*` ne sont pas modifiés.
 
+## G0.16l — Aides à l'eau : PGA-Eau, PRIMEAU et TECQ (7 novembre 2026)
+
+**Préparation globale : 47/100, 53 points manquants.** Après le patrimoine G0.16k, cette phase documente **les conditions réelles de financement**, pour ne pas assimiler les enveloppes publiques annoncées à de l'argent attribué à une municipalité ou au Projet Nova.
+
+- **PGA-Eau :** [MAMH — préparer un plan](https://www.quebec.ca/habitation-territoire/infrastructures-municipales/plan-gestion-actif-pga/eau) : engagement initial **invité pour le 31 décembre 2026**, comprenant une résolution et une transmission; ce n'est **pas** un PGA complet. Suivi annuel prévu dès 2028, actualisation du plan dès 2030.
+- **PRIMEAU 2023–2033 :** [programme MAMH](https://www.quebec.ca/habitation-territoire/infrastructures-municipales/programmes/eau-potable-eaux-usees/programme-infrastructures-municipales-eau-primeau) : **2,4 G$ d'enveloppe annoncée**, appel du **31 août au 30 octobre 2026 clos** (volet 1, priorités 1 à 4), volet 2 fermé aux nouvelles demandes; sélection soumise aux critères, à l'avancement et aux fonds disponibles.
+- **TECQ 2024–2028 :** [programme MAMH](https://www.quebec.ca/habitation-territoire/infrastructures-municipales/programmes/eau-potable-eaux-usees/programme-transfert-infrastructures-eau-collectives-quebec-tecq-2024-2028) : **plus de 3,3 G$ annoncés sur cinq ans**, contributions Canada + Québec, sous conditions. Mise à jour annuelle de la programmation entre **le 1er octobre et le 15 février**, résolution et approbation requises.
+- **Financement :** une **enveloppe ≠ admissibilité ≠ demande déposée ≠ aide promise ≠ paiement constaté**. Aucune de ces enveloppes n'est un revenu Nova et les financements fédéraux ne sont pas automatiquement transposables au scénario souverain.
+- **Livrables :** `data/financement-eau-g0-16l-pga-primeau-tecq-2026.json` (9 étapes, 2 programmes, 2 budgets distincts de 10 ans **non chiffrés**, aucun projet local fictif), `assets/g016l-water-funding-core.mjs` (contrôle des règles et calculs **synthétiques seulement**), `tests/g016l-water-funding.test.mjs` (**38 tests réussis en rejeu JavaScript isolé, CI Node non attestée**) et `official/working/protocole-g0-16l-eau-financement-preuves-pga-primeau-tecq-v1.md`.
+- **Décision :** mécanismes existants mieux documentés, mais **zéro attribution municipale spécifique vérifiée**, aucun plan PGA-Eau local homologué et aucun financement de rénovation à dix ans validé. **G0.16l non franchie comme porte de viabilité financière; score toujours 47/100**.
+
+**Suite G0.16m :** collecter des projets municipaux réellement documentés, rapports d'inspection, décisions de subventions, coûts et échéanciers, puis consolider un programme de maintien des services auditable sans prélèvement caché.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
