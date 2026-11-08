@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFile} from "node:fs/promises";
-const d=JSON.parse(await readFile(new URL("../data/validation-sondage-boussole-2026-11-07.json",import.meta.url),"utf8"));
+const d=JSON.parse(await readFile(new URL("../../../docs/nova-sondages/reception-sondage-boussole-2026-11-08.json",import.meta.url),"utf8"));
+const historical=JSON.parse(await readFile(new URL("../data/validation-sondage-boussole-2026-11-07.json",import.meta.url),"utf8"));
 const types=["PASSED","PENDING"];
 const passed=x=>x.gates.filter(g=>g.status==="PASSED").length;
 const validate=x=>{
@@ -22,11 +23,11 @@ test("deux outils : matrice complète et audit Nova distinct",()=>{
  assert.equal(d.decision.both_tools_100_percent,false);
  assert.equal(d.status,"NON_HOMOLOGUE");
 });
-test("boussole : cinq portes contrôlées sur douze",()=>{
+test("boussole : six portes vérifiées sur douze dans la matrice du 8 novembre",()=>{
  assert.equal(d.compass.questions,64);
  assert.equal(d.compass.dimensions,16);
  assert.equal(d.compass.gates.length,12);
- assert.equal(passed(d.compass),5);
+ assert.equal(passed(d.compass),6);
  validate(d.compass);
 });
 test("sondage : six portes contrôlées sur onze",()=>{
@@ -64,10 +65,15 @@ test("le score politique 47/100 n'est jamais déduit du nombre de tests",()=>{
  assert.equal(d.programme_audit_g012.preparation_percent,47);
 });
 
-test("les 260 comparaisons du calcul ne remplacent pas une vérification E2E à 64 questions",()=>{
+test("le parcours E2E local de 64 questions est prouvé sur trois moteurs, le live ne l’est pas",()=>{
  assert.equal(d.cross_cutting.score_parity_test_cases,260);
  assert.equal(d.cross_cutting.last_browser_all_skip_questions_verified,28);
  assert.equal(d.cross_cutting.last_browser_full_64_completed,false);
+ assert.equal(d.cross_cutting.ci_local_compass_full_64_verified,true);
+ assert.deepEqual(d.cross_cutting.ci_local_compass_full_64_browsers,["chromium","firefox","webkit"]);
+ assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_FULL_64_RESULT").status,"PASSED");
+ assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_FULL_64_RESULT").scope,"browser_e2e_local_pr_881_seulement_non_live");
+ assert.match(d.cross_cutting.ci_local_compass_full_64_workflow_url,/actions\/runs\/42531076014$/);
  assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_SCORE_PARITY").status,"PASSED");
  assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_PARTIAL_PROFILE_RELEASE").status,"PENDING");
 });
@@ -87,7 +93,7 @@ test("les taux publics de réception dérivent exactement de la matrice versionn
  const section=html.slice(start,end);
  const numbers=[
   {object:d.poll,denominator:11,expected:6,label:"sondage",name:"Critères de réception du sondage"},
-  {object:d.compass,denominator:12,expected:5,label:"boussole",name:"Critères de réception de la boussole"}
+  {object:d.compass,denominator:12,expected:6,label:"boussole",name:"Critères de réception de la boussole"}
  ];
  for(const item of numbers){
   const n=passed(item.object),total=item.object.gates.length;
@@ -100,7 +106,7 @@ test("les taux publics de réception dérivent exactement de la matrice versionn
   assert.ok(section.includes('aria-valuenow="'+n+'"'),item.label);
   assert.ok(section.includes('aria-valuemax="'+total+'"'),item.label);
  }
- assert.ok(section.includes("7 novembre 2026"));
+ assert.ok(section.includes("8 novembre 2026"));
  assert.match(section,/les pourcentages ci-dessous mesurent uniquement/i);
  assert.ok(section.includes("matrice de réception officielle"));
 });
@@ -137,12 +143,36 @@ test("les deux outils officiels rendent visible l'état daté sans ouvrir le son
  assert.ok(pollHtml.includes(pollPct));
  assert.ok(compassHtml.includes(compassPct));
  assert.ok(pollHtml.includes("6 critères sur 11 validés"));
- assert.ok(compassHtml.includes("5 critères sur 12 validés"));
+ assert.ok(compassHtml.includes("6 critères sur 12 validés"));
  assert.ok(compassHtml.includes("assets/boussole-electorale.js?v=3.4.25"),"Cache de la boussole invalidé après correction");
  assert.ok(pollHtml.includes("la collecte reste fermée"));
  for(const html of [pollHtml,compassHtml]){
   assert.ok(html.includes('href="sondages-a-valider.html#etat-validation-outils"'));
-  assert.ok(html.includes("Suivi de réception au 7 novembre 2026"));
+  assert.ok(html.includes("Suivi de réception au 8 novembre 2026"));
  }
  assert.match(pollHtml,/id="poll-send"[^>]*\bdisabled\b/);
+});
+
+
+test("le registre de 7 novembre demeure historique, sans réécriture des preuves",()=>{
+ assert.equal(historical.as_of,"2026-11-07");
+ assert.equal(historical.compass.gates.find(x=>x.id==="COMPASS_FULL_64_RESULT").status,"PENDING");
+ assert.equal(d.as_of,"2026-11-08");
+ assert.equal(d.previous_audit,"projets/projet-nova/data/validation-sondage-boussole-2026-11-07.json");
+ assert.equal(d.summary.compass.passed,6);
+ assert.equal(d.summary.compass.total,12);
+ assert.equal(d.summary.compass.percent,50);
+ assert.equal(d.summary.poll.passed,6);
+ assert.equal(d.summary.poll.percent,54.5);
+});
+test("l'E2E local ne valide pas l'ouverture du sondage ni le déploiement public",()=>{
+ assert.equal(d.cross_cutting.latest_public_scripts_deployed_verified,false);
+ assert.equal(d.cross_cutting.independent_security_audit_completed,false);
+ assert.equal(d.decision.deployments_verified,false);
+ assert.equal(d.decision.opening_poll_approved,false);
+ assert.equal(d.poll.published_in_source,false);
+ assert.equal(d.compass.comparison_enabled,false);
+ assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_CROSS_BROWSER").status,"PENDING");
+ assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_PARTIAL_PROFILE_RELEASE").status,"PENDING");
+ assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_ACCESSIBILITY").status,"PENDING");
 });
