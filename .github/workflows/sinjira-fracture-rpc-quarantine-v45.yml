@@ -1,0 +1,57 @@
+name: SINJIRA — Fracture V45 quarantaine RPC hors production
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+    paths:
+      - 'scripts/proposals/sinjira_fracture_v45_mutation_rpc_quarantine_candidate.sql'
+      - 'tests/security/sql/test_fracture_rpc_quarantine_v45.sql'
+      - 'tests/security/test_fracture_rpc_quarantine_v45_static.py'
+      - 'docs/SINJIRA_FRACTURE_MUTATION_RPC_QUARANTINE_V45.md'
+      - '.github/workflows/sinjira-fracture-rpc-quarantine-v45.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/proposals/sinjira_fracture_v45_mutation_rpc_quarantine_candidate.sql'
+      - 'tests/security/sql/test_fracture_rpc_quarantine_v45.sql'
+      - 'tests/security/test_fracture_rpc_quarantine_v45_static.py'
+      - 'docs/SINJIRA_FRACTURE_MUTATION_RPC_QUARANTINE_V45.md'
+      - '.github/workflows/sinjira-fracture-rpc-quarantine-v45.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sinjira-fracture-rpc-quarantine-v45-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  fake_database_quarantine_tests:
+    name: Refuser 10 RPC de mutation aux comptes Web fictifs
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_DB: sinjira_v45_fake_only
+          # Accès de confiance limité à ce service éphémère dans le runner.
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - '127.0.0.1:5432:5432'
+        options: >-
+          --health-cmd=pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    steps:
+      - name: Récupérer les sources sans identifiants persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Contrôler le périmètre exact des RPC et l'absence de migration
+        run: python3 -m unittest discover -s tests/security -p test_fracture_rpc_quarantine_v45_static.py -v
+      - name: Tester les rôles sur PostgreSQL fictif local uniquement
+        env:
+          PGCONNECT_TIMEOUT: '10'
+        run: |
+          psql --version
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_v45_fake_only -v ON_ERROR_STOP=1 -f tests/security/sql/test_fracture_rpc_quarantine_v45.sql
