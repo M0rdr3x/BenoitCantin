@@ -55,3 +55,11 @@ validation de ces derniers jalons.
 La version du SDK utilisée par le navigateur est désormais épinglée sur **@supabase/supabase-js 2.119.0** au lieu de `@2/+esm`. La version 2.119.0 est la version officielle stable du 4 novembre 2026; les URL jsDelivr flottante et explicite ont été vérifiées en lecture seule, toutes deux en HTTP 200 et `application/javascript`, avec un export `createClient`. Le changement ne modifie donc pas la version effectivement chargée au moment de la vérification. Il protège seulement contre une mise à niveau automatique lors d'une future publication Supabase.
 
 Le validateur statique du parcours inscription → confirmation → AAL2 → Registre exige désormais exactement cet import et les options de session attendues. Le code ne contient ni nouveau secret ni règle de données. **Limite :** l'épinglage de version n'est pas une empreinte SRI du fichier généré par jsDelivr; son contenu reste construit par le fournisseur. Les tests de livraison des courriels et le contrôle Auth privé restent distincts; **84 %** n'est pas augmenté par cette maintenance préventive.
+
+## Surveillance du SDK JavaScript en production — 8 novembre 2026
+
+Le contrôle HTTP externe de `/assets/js/sinjira-supabase.js` exige désormais l'import exact `@supabase/supabase-js@2.119.0/+esm`, en plus de la présence de `createClient` et du contrat de configuration. Un test négatif construit un ancien script fonctionnel en apparence avec l'import flottant `@2/+esm` : il **doit échouer**, même si le serveur renvoie HTTP 200 et un MIME JavaScript correct.
+
+Ce contrôle cible une anomalie effectivement observée : pendant une courte période après la fusion de #865, un cache Web servait encore l'ancien SDK. La vérification ne consulte aucun participant, n'utilise aucun compte ou jeton privé, ne change aucun enregistrement et n'envoie aucun courriel. Elle ne prétend pas vérifier le modèle Auth privé, la réception Formspree ni une session MFA AAL2.
+
+Le nombre de contrôles reste **11** ; la couverture du script publié est renforcée, pas artificiellement comptée comme un nouveau contrôle indépendant.

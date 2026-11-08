@@ -26,7 +26,10 @@ JS_SCRIPTS={
     "/assets/js/v24-signup.js?v=24.5.3":("getSupabase().auth.signUp(", "formspree_receipt_opt_in"),
     "/assets/js/sinjira-confirm-email.js?v=2":("getSupabase().auth.verifyOtp(", "notify-account-confirmation"),
     "/assets/js/sinjira-character-registry.js?v=24.5.8":("auth.mfa.getAuthenticatorAssuranceLevel()", "submit-character-questionnaire"),
-    "/assets/js/sinjira-supabase.js":("createClient(", "isSinjiraBackendConfigured"),
+    "/assets/js/sinjira-supabase.js":(
+        "createClient(", "isSinjiraBackendConfigured",
+        "import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/+esm';"
+    ),
     "/assets/js/sinjira-supabase-config.js":("supabasePublishableKey", "paidFeaturesEnabled"),
 }
 
@@ -151,6 +154,19 @@ def self_test():
         ):
             assert not check_js_script(path,markers,
                  lambda r,s=status,m=mime,b=body:(s,m,b))[0]
+    # Détecter une régression de publication même si l'ancien SDK
+    # fournit encore createClient() et réussirait les contrôles génériques.
+    sdk_path="/assets/js/sinjira-supabase.js"
+    sdk_markers=JS_SCRIPTS[sdk_path]
+    old_sdk=(
+        "import { createClient } from "
+        "'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';"
+    )
+    stale_fixture=("createClient( isSinjiraBackendConfigured "+old_sdk).encode("utf-8")
+    assert not check_js_script(
+        sdk_path,sdk_markers,
+        lambda request:(200,"application/javascript",stale_fixture)
+    )[0], "La production ne doit pas accepter l'ancien SDK flottant."
     for slug in FUNCTIONS:
         def rejected(r,limit):
             assert r.get_method()=="POST"
@@ -199,7 +215,7 @@ def self_test():
     assert not check_auth_public_settings(lambda req,n:(200,b"x"*8193),
             key="sb_publishable_TEST_TEST_TEST_TEST_TEST")[0]
     assert not check_auth_public_settings(settings_good,key="invalid-key")[0]
-    print("PASS contrôles négatifs locaux : pages, JWT et Auth publique, aucun secret.")
+    print("PASS contrôles négatifs locaux : pages, SDK épinglé, JWT et Auth publique, aucun secret.")
 
 
 def production_test():
