@@ -10,6 +10,7 @@ on:
       - 'scripts/validate_public_edge_auth.py'
       - 'scripts/validate_public_edge_auth_workflow_security.py'
       - 'scripts/test_public_edge_body_limits.mjs'
+      - 'scripts/test_sensitive_account_streaming.mjs'
       - 'scripts/test_public_edge_binary_limits.mjs'
       - 'scripts/test_document_external_urls.mjs'
       - 'scripts/validate_get_document_url_security.py'
@@ -37,6 +38,7 @@ on:
       - 'scripts/validate_public_edge_auth.py'
       - 'scripts/validate_public_edge_auth_workflow_security.py'
       - 'scripts/test_public_edge_body_limits.mjs'
+      - 'scripts/test_sensitive_account_streaming.mjs'
       - 'scripts/test_public_edge_binary_limits.mjs'
       - 'scripts/test_document_external_urls.mjs'
       - 'scripts/validate_get_document_url_security.py'
@@ -79,6 +81,8 @@ jobs:
         run: python scripts/validate_public_edge_auth.py
       - name: Auto-tester les bornes de lecture HTTP des trois fonctions publiques
         run: node scripts/test_public_edge_body_limits.mjs
+      - name: Auto-tester les corps JSON bornés et journaux expurgés des comptes sensibles
+        run: node scripts/test_sensitive_account_streaming.mjs
       - name: Auto-tester le téléchargement du modèle PDF sans surcharge mémoire
         run: node scripts/test_public_edge_binary_limits.mjs
       - name: Tester les URLs externes des documents contre les redirections ambiguës
