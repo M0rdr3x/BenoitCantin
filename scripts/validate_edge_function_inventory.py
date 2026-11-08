@@ -227,14 +227,20 @@ def main() -> int:
         errors.append("Lecteur HTTP borné partagé manquant.")
     else:
         helper = read_security_text(limited_reader)
+        # Le contrôle se fait dans le lecteur UTF-8, sans qu'un marqueur
+        # similaire du lecteur PDF puisse masquer une régression.
+        utf8_helper = helper.split("export async function readLimitedBinaryResponse", 1)[0]
         for marker in (
             "req.body.getReader()",
             "byteCount += value.byteLength",
-            "byteCount > maxBytes",
+            "value.byteLength > maxBytes - byteCount",
             "new TextDecoder('utf-8', { fatal: true })",
             "reader.cancel()",
+            "const timeout = setTimeout(interrupt, timeoutMs)",
+            "req.signal.addEventListener('abort', interrupt, { once: true })",
+            "clearTimeout(timeout)",
         ):
-            if marker not in helper:
+            if marker not in utf8_helper:
                 errors.append(f"Lecteur HTTP borné partagé: contrôle manquant {marker}.")
     for slug in ("get-document-url", "send-game-report", "life-story-delivery"):
         entry = FUNCTIONS / slug / "index.ts"
