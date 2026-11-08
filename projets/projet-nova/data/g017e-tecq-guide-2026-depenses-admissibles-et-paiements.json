@@ -1,0 +1,297 @@
+{
+  "schema": "nova-g017e-tecq-2026-legal-eligibility-cash-gates/v1",
+  "phase": "G0.17e",
+  "date": "2026-11-08",
+  "score_before": 47,
+  "score_after": 47,
+  "remaining": 53,
+  "scope": "PROGRAMME_FUNDING_CONTINUITY_NOT_FULL_TAX_REFORM",
+  "sources": [
+    {
+      "id": "GUIDE_JUL_2026",
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/infrastructures/tecq/GUI_tecq_2024_2028_juillet_2026.pdf",
+      "document_date": "2026-07",
+      "edition": "FOURTH",
+      "visual_pdf_pages_0_index": [
+        4,
+        5,
+        6,
+        7,
+        11,
+        13
+      ],
+      "pdf_screenshots_succeeded": true
+    },
+    {
+      "id": "GOV_PROGRAM",
+      "url": "https://www.quebec.ca/habitation-territoire/infrastructures-municipales/programmes/eau-potable-eaux-usees/programme-transfert-infrastructures-eau-collectives-quebec-tecq-2024-2028",
+      "available_newest_guide": "2026-07",
+      "status": "OFFICIAL_PROGRAMME_INDEX"
+    },
+    {
+      "id": "G017D",
+      "path": "data/g017d-plan-continuite-eau-et-tecq-2024-2028.json",
+      "status": "UPSTREAM_PROGRAM_REGISTER"
+    },
+    {
+      "id": "G017C",
+      "path": "data/g017c-recettes-municipales-2024-et-couts-eau-2023.json",
+      "status": "HISTORICAL_WATER_AND_LOCAL_REVENUE_NOT_2026_CASH"
+    }
+  ],
+  "tecq_envelope": {
+    "programme_years": "2024-2028",
+    "guide_wording": "près de",
+    "total_envelope_approx_mcad": 3316,
+    "federal_envelope_approx_mcad": 2226,
+    "quebec_envelope_approx_mcad": 1090,
+    "quebec_buildings_basic_additional_included_mcad": 90,
+    "quebec_general_mcad_approx_excluding_basic_buildings": 1000,
+    "sum_components_equals_approx_total": true,
+    "never_add_buildings_90m_twice": true,
+    "guide_values_approx_not_bank_reconciled": true,
+    "recipient_amount_verified_cad": null,
+    "municipality_count_eligible_verified": null,
+    "actual_cash_disbursed_cad": null,
+    "actual_cash_received_cad": null
+  },
+  "municipal_base_allocation_formula_from_guide": {
+    "population_reference_date": "2024-01-01",
+    "small_municipality_threshold_exclusive": 6500,
+    "small_lump_sum_cad": 500000,
+    "small_per_resident_cad": 215.27,
+    "large_per_resident_cad": 291.33,
+    "population_specific_2024_verified_for_example_municipality": null,
+    "category_exceptions_may_apply": true,
+    "do_not_use_as_cash_forecast": true,
+    "do_not_apply_to_all_municipalities_without_mergers_or_exceptions": true
+  },
+  "staged_commitment_not_cash": {
+    "percentage_intervals": [
+      {
+        "tranche": 1,
+        "period_start": "2024-01-01",
+        "period_end": "2025-03-31",
+        "planned_share_pct": 20,
+        "recipient_approved_amount_cad": null,
+        "received_bank_amount_cad": null,
+        "retained_cad": null,
+        "conditions_verified": false,
+        "statement_is_actual_cash": false
+      },
+      {
+        "tranche": 2,
+        "period_start": "2025-04-01",
+        "period_end": "2026-03-31",
+        "planned_share_pct": 20,
+        "recipient_approved_amount_cad": null,
+        "received_bank_amount_cad": null,
+        "retained_cad": null,
+        "conditions_verified": false,
+        "statement_is_actual_cash": false
+      },
+      {
+        "tranche": 3,
+        "period_start": "2026-04-01",
+        "period_end": "2027-03-31",
+        "planned_share_pct": 20,
+        "recipient_approved_amount_cad": null,
+        "received_bank_amount_cad": null,
+        "retained_cad": null,
+        "conditions_verified": false,
+        "statement_is_actual_cash": false
+      },
+      {
+        "tranche": 4,
+        "period_start": "2027-04-01",
+        "period_end": "2028-03-31",
+        "planned_share_pct": 20,
+        "recipient_approved_amount_cad": null,
+        "received_bank_amount_cad": null,
+        "retained_cad": null,
+        "conditions_verified": false,
+        "statement_is_actual_cash": false
+      },
+      {
+        "tranche": 5,
+        "period_start": "2028-04-01",
+        "period_end": "2028-12-31",
+        "planned_share_pct": 20,
+        "recipient_approved_amount_cad": null,
+        "received_bank_amount_cad": null,
+        "retained_cad": null,
+        "conditions_verified": false,
+        "statement_is_actual_cash": false
+      }
+    ],
+    "planned_total_pct": 100,
+    "unreceived_portion_rolls_forward": true,
+    "government_payment_depends_on_approved_programme": true,
+    "quebec_component_depends_on_legislative_appropriations": true,
+    "may_withhold_until_final_accounting_and_independent_audit": true,
+    "may_recover_excess_amount_after_audit": true,
+    "zero_is_not_missing": true,
+    "all_actual_cash_values_unknown": true
+  },
+  "eligible_and_ineligible_categories": [
+    {
+      "id": "E01",
+      "category": "WATER_NEW_OR_COMPLIANCE_WORK",
+      "eligible_in_principle": true,
+      "guide_section": "3.1.1",
+      "conditional": true
+    },
+    {
+      "id": "E02",
+      "category": "WATER_PIPE_RENEWAL",
+      "eligible_in_principle": true,
+      "guide_section": "3.1.1",
+      "conditional": true
+    },
+    {
+      "id": "E03",
+      "category": "ASSET_MANAGEMENT_STUDY",
+      "eligible_in_principle": true,
+      "guide_section": "3.1.1",
+      "conditional": true
+    },
+    {
+      "id": "E04",
+      "category": "USUAL_MAINTENANCE",
+      "eligible_in_principle": false,
+      "guide_section": "3.1.2",
+      "requires_separate_finance": true
+    },
+    {
+      "id": "E05",
+      "category": "REGULAR_MUNICIPAL_PAYROLL",
+      "eligible_in_principle": false,
+      "guide_section": "3.1.2",
+      "requires_separate_finance": true,
+      "exception": "Only salaries related to eligible asset-management studies and activities may qualify"
+    },
+    {
+      "id": "E06",
+      "category": "LEGAL_FEES",
+      "eligible_in_principle": false,
+      "guide_section": "3.1.2",
+      "requires_separate_finance": true
+    },
+    {
+      "id": "E07",
+      "category": "FINAL_AUDIT_FEES",
+      "eligible_in_principle": false,
+      "guide_section": "3.1.2",
+      "requires_separate_finance": true
+    },
+    {
+      "id": "E08",
+      "category": "REFUNDABLE_TAX_PORTION",
+      "eligible_in_principle": false,
+      "guide_section": "3.1.2",
+      "requires_separate_finance": true
+    },
+    {
+      "id": "E09",
+      "category": "WORKS_OUTSIDE_ELIGIBILITY_PERIOD",
+      "eligible_in_principle": false,
+      "guide_section": "3.1.2",
+      "requires_separate_finance": true
+    }
+  ],
+  "mandatory_dates_and_reviews": {
+    "works_eligibility_start": "2024-01-01",
+    "works_eligibility_end": "2028-12-31",
+    "annual_programme_update_window_start": "10-01",
+    "annual_programme_update_window_end": "02-15",
+    "asset_management_5pct_step_deadline": "2026-12-31",
+    "eco_bonus_up_to_pct": 10,
+    "eco_first_stage_bonus_up_to_pct": 5,
+    "eco_bonus_paid_verified_cad": null,
+    "final_reporting_deadline": "2029-06-30",
+    "independent_auditor_report_due_months_after_ministry_acceptance": 6,
+    "remaining_scheduled_holdback_as_actual_paid_cad": null,
+    "verified_independent_municipal_audit_for_sample_project": false
+  },
+  "cumulative_aid_accounting": {
+    "tecq_project_costs_paid_by_other_aid_must_be_excluded_from_TECQ_base": true,
+    "private_contributions_must_be_excluded_from_TECQ_base": true,
+    "total_public_support_must_not_exceed_total_direct_eligible_cost": true,
+    "maintenance_and_regular_payroll_outside_TECQ_eligible": true,
+    "local_workers_and_water_services_still_need_separate_recurring_funding": true,
+    "no_addition_of_two_grants_for_same_paid_cost": true,
+    "same_year_provincial_municipal_transfer_elimination_unverified": true,
+    "same_year_reconciled_eligible_cost_cad": null,
+    "same_year_other_aid_allocated_to_same_cost_cad": null,
+    "same_year_tecq_cash_cad": null,
+    "same_year_regular_maintenance_cad": null,
+    "same_year_regular_payroll_cad": null
+  },
+  "municipal_bridge_template": {
+    "common_unit": "CAD",
+    "municipality_code": null,
+    "reference_year": null,
+    "reported_operating_cost_cad": null,
+    "reported_regular_payroll_cad": null,
+    "reported_maintenance_cost_cad": null,
+    "eligible_capital_spend_cad": null,
+    "other_program_eligible_finance_cad": null,
+    "tecq_approved_share_cad": null,
+    "tecq_cleared_cash_cad": null,
+    "local_general_revenues_cad": null,
+    "local_debt_and_interest_cad": null,
+    "confirmed_budget_surplus_cad": null,
+    "source_year_matched": false,
+    "independent_accounting_review": false,
+    "no_2024_municipal_and_2026_provincial_addition": true
+  },
+  "policy_gates": [
+    {
+      "id": "P01",
+      "gate": "Separate recurring maintenance and payroll from TECQ investment aid",
+      "completed": false
+    },
+    {
+      "id": "P02",
+      "gate": "Validate actual 2024 water XLSX and 2024/25 real municipal CSV",
+      "completed": false
+    },
+    {
+      "id": "P03",
+      "gate": "Match recipient, costs, approvals, payments, withholding and bank receipts",
+      "completed": false
+    },
+    {
+      "id": "P04",
+      "gate": "Eliminate TECQ/PRIMEAU double financing for same cost",
+      "completed": false
+    },
+    {
+      "id": "P05",
+      "gate": "Audit municipal replacement funds for two-levy Quebec-in-Canada model",
+      "completed": false
+    },
+    {
+      "id": "P06",
+      "gate": "Audit separately sovereign federal obligations, own revenue, debt and wages",
+      "completed": false
+    },
+    {
+      "id": "P07",
+      "gate": "Independent legal, workforce, service and household incidence checks",
+      "completed": false
+    }
+  ],
+  "verification": {
+    "latest_public_guide_identified": true,
+    "pdf_visual_verified_relevant_pages": true,
+    "historical_2023_water_full_cost_known_from_upstream": true,
+    "actual_water_2024_workbook_parsed": false,
+    "tecq_per_municipality_cash_confirmed": false,
+    "federal_post_sovereignty_commitments_guaranteed": false,
+    "nova_taxable_income_base_reconciled": false,
+    "two_fiscal_scenarios_financed": false,
+    "audit_score_increment_earned": false,
+    "native_github_actions_success_not_established": true
+  }
+}
