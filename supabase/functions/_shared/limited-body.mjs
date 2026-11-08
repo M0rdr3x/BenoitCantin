@@ -76,9 +76,12 @@ export async function readLimitedUtf8Body(req, maxBytes, timeoutMs = 20_000) {
  * Return no bytes on malformed, empty, interrupted or oversized responses.
  * Never reflect remote content into logs or HTTP error messages.
  */
-export async function readLimitedBinaryResponse(response, maxBytes) {
+export async function readLimitedBinaryResponse(response, maxBytes, timeoutMs = 30_000) {
   if (!Number.isSafeInteger(maxBytes) || maxBytes < 1) {
     throw new TypeError('Invalid binary response limit');
+  }
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 120_000) {
+    throw new TypeError('Invalid binary response timeout');
   }
 
   const declared = response.headers.get('content-length');
@@ -94,31 +97,40 @@ export async function readLimitedBinaryResponse(response, maxBytes) {
   const reader = response.body.getReader();
   const chunks = [];
   let byteCount = 0;
+  let interrupted = false;
+  const interrupt = () => {
+    interrupted = true;
+    try { void reader.cancel().catch(() => {}); } catch { /* lecteur clos */ }
+  };
+  const timeout = setTimeout(interrupt, timeoutMs);
   try {
     while (true) {
       const { done, value } = await reader.read();
+      if (interrupted) return { ok: false };
       if (done) break;
       if (!(value instanceof Uint8Array) ||
           value.byteLength > maxBytes - byteCount) {
-        await reader.cancel().catch(() => {});
+        interrupt();
         return { ok: false };
       }
       byteCount += value.byteLength;
       chunks.push(value);
     }
 
-    if (byteCount === 0) return { ok: false };
+    if (interrupted || byteCount === 0) return { ok: false };
     const bytes = new Uint8Array(byteCount);
     let offset = 0;
     for (const chunk of chunks) {
       bytes.set(chunk, offset);
       offset += chunk.byteLength;
     }
+    if (interrupted) return { ok: false };
     return { ok: true, bytes };
   } catch {
-    await reader.cancel().catch(() => {});
+    interrupt();
     return { ok: false };
   } finally {
+    clearTimeout(timeout);
     reader.releaseLock();
   }
 }
