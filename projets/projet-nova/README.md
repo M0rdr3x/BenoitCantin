@@ -406,6 +406,20 @@ Les fichiers de référence candidats `official/reference/*` et `data/sources.js
 
 **Suite logique G0.16k :** construire un référentiel de continuité par fonction et municipalité, rapprocher la main-d'œuvre, les actifs, les financements et les échéances sur dix ans, puis obtenir les avis juridique et financier indépendants. Le score **47/100** n'augmente pas avec la rédaction de fichiers.
 
+## G0.16k — Réseaux d'eau : état des actifs, incertitude et financement à établir (7 novembre 2026)
+
+**Préparation globale du programme : 47/100, 53 points manquants.** G0.16k étend G0.16j avec les conclusions du [Portrait des infrastructures en eau des municipalités du Québec — 2025 (CERIU, soutien du MAMH)](https://ceriu.qc.ca/system/files/2026-03/Portrait_infrastructures_eau_municipalites_Quebec-2025.pdf), après contrôle visuel de son sommaire exécutif.
+
+- **Patrimoine d'eau estimé : 197,6 G$ de valeur de remplacement (2025)** pour **101 105 km de conduites et 10 659 ouvrages** : stock de reconstruction théorique, **pas une dépense annuelle ni un plan de travaux Nova**. La valeur comprend généralement la remise à niveau de la chaussée à la largeur de la tranchée.
+- **État des actifs :** 67 % en bon/très bon état, 23 % acceptable et 10 % mauvais/très mauvais. Les classes D/E valent **20,6 G$ à remplacer intégralement au prix de 2025**, mais **des réparations moins coûteuses peuvent être appropriées** : ne pas transformer les 20,6 G$ en budget immédiatement requis.
+- **Qualité de la donnée :** environ **75 % de la valeur (147,9 G$)** repose sur l'âge ou l'appréciation d'acteurs municipaux, et non sur une mesure de terrain. Le CERIU s'appuie sur **938 municipalités ayant transmis des données depuis 2014**, dont **666 ont actualisé leurs données en 2025**, avec extrapolations. Ce périmètre **diffère des 1 056 municipalités** des comptes MAMH 2024.
+- **Dépenses annuelles à ne pas ajouter au patrimoine :** **2 519 426 792 $** d'eau, égouts et eaux usées observés **en 2024** dans G0.16j; ni le montant 2024 ni la valeur du patrimoine 2025 ne mesurent, à eux seuls, le besoin de rénovation 2026–2036.
+- **PGA-Eau :** le [gouvernement invite les municipalités à s'engager dans la démarche d'ici le **31 décembre 2026**](https://www.quebec.ca/habitation-territoire/infrastructures-municipales/plan-gestion-actif-pga/eau). **Engagement ≠ plan complet adopté**, et l'ouverture de futurs financements ne peut être présumée.
+- **Livrables :** `data/continuite-actifs-eau-g0-16k-2025.json` (cinq types d'actifs, sept risques, six preuves manquantes et deux cadres décennaux sans recettes fictives), `assets/g016k-water-assets-core.mjs`, `tests/g016k-water-assets-continuity.test.mjs` (**36/36 tests réussis en rejeu isolé V8, non certifiés sur GitHub Actions**) et `official/working/rapport-g0-16k-actifs-eau-financement-continuite-v1.md`.
+- **Verdict :** preuve des risques de continuité améliorée, mais coûts d'entretien, recettes de remplacement, obligations des employés et budgets sur dix ans **non chiffrés ni audités indépendamment**. Aucune réforme fiscale ni loi adoptée; **47/100 inchangé**.
+
+**Suite G0.16l :** recenser les plans PGA-Eau effectivement déposés et les inspections, rapprocher actifs/échéances/dépenses/financements par collectivité, puis faire vérifier un programme décennal de réhabilitation compatible avec la protection des salariés et le pouvoir d'achat des ménages. Les fichiers candidats `official/reference/*` ne sont pas modifiés.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
