@@ -11,6 +11,7 @@ CATEGORIES = {
     "auth": {
         "compte/connexion.html",
         "compte/inscription.html",
+        "compte/confirmer.html",
         "compte/mot-de-passe-oublie.html",
         "compte/reinitialiser-mot-de-passe.html",
         "compte/mfa.html",
@@ -149,13 +150,13 @@ def validate_inventory(errors: list[str]) -> None:
             "Inventaire compte: classifications sans fichier: " + ", ".join(stale)
         )
 
-    if len(actual) != 46:
+    if len(actual) != 47:
         errors.append(
-            f"Inventaire compte: 46 pages HTML attendues, {len(actual)} trouvées."
+            f"Inventaire compte: 47 pages HTML attendues, {len(actual)} trouvées."
         )
-    if len(classified) != 46:
+    if len(classified) != 47:
         errors.append(
-            f"Inventaire compte: 46 pages classées attendues, {len(classified)} déclarées."
+            f"Inventaire compte: 47 pages classées attendues, {len(classified)} déclarées."
         )
 
 
@@ -251,7 +252,7 @@ def main() -> int:
         return 1
 
     print(
-        "OK Compte SINJIRA: 46 pages HTML classées explicitement; "
+        "OK Compte SINJIRA: 47 pages HTML classées explicitement; "
         "projet et modération utilisent le shell privé stable sans perdre leurs contrats."
     )
     return 0

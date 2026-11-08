@@ -128,7 +128,7 @@ def self_test() -> None:
         'log principal brut': real.replace("console.error('[submit-character-questionnaire]',safeLogCode(e));", 'console.error(e);', 1),
         'log notification brut': real.replace("console.warn('[submit-character-questionnaire]','ADMIN_NOTIFICATION_FAILED')", "console.warn('admin notification unavailable',e)", 1),
         'erreur génération brute': real.replace("error_text:'CHARACTER_GENERATION_FAILED'", "error_text:String(e?.message||e)", 1),
-        'réponse succès cacheable': real.replace('return privateJson(successPayload(sub.id,{ai_generated:false},n))', 'return json(successPayload(sub.id,{ai_generated:false},n))', 1),
+        'réponse succès cacheable': real.replace('return privateJson(successPayload(sub.id,{ai_generated:false,formspree_notification_sent:formspree.accepted},n))', 'return json(successPayload(sub.id,{ai_generated:false,formspree_notification_sent:formspree.accepted},n))', 1),
     }
 
     with TemporaryDirectory() as tmp:

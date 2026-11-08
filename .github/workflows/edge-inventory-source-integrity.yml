@@ -8,6 +8,16 @@ on:
       - 'supabase/config.toml'
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/test_edge_inventory_source_integrity.py'
+      - 'scripts/validate_sinjira_signup_registry_delivery.py'
+      - 'scripts/test_sinjira_formspree_runtime.mjs'
+      - 'assets/js/v24-signup.js'
+      - 'assets/js/sinjira-confirm-email.js'
+      - 'assets/js/sinjira-character-registry.js'
+      - 'compte/inscription.html'
+      - 'compte/confidentialite-joueur.html'
+      - 'supabase/migrations/20261108054703_sinjira_formspree_notification_ledger.sql'
+      - 'compte/confirmer.html'
+      - 'projets/sinjira/registre/index.html'
       - '.github/workflows/edge-inventory-source-integrity.yml'
   push:
     branches: [main]
@@ -16,6 +26,16 @@ on:
       - 'supabase/config.toml'
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/test_edge_inventory_source_integrity.py'
+      - 'scripts/validate_sinjira_signup_registry_delivery.py'
+      - 'scripts/test_sinjira_formspree_runtime.mjs'
+      - 'assets/js/v24-signup.js'
+      - 'assets/js/sinjira-confirm-email.js'
+      - 'assets/js/sinjira-character-registry.js'
+      - 'compte/inscription.html'
+      - 'compte/confidentialite-joueur.html'
+      - 'supabase/migrations/20261108054703_sinjira_formspree_notification_ledger.sql'
+      - 'compte/confirmer.html'
+      - 'projets/sinjira/registre/index.html'
       - '.github/workflows/edge-inventory-source-integrity.yml'
   workflow_dispatch:
 
@@ -41,3 +61,12 @@ jobs:
         run: python3 scripts/test_edge_inventory_source_integrity.py
       - name: Vérifier l'inventaire complet des fonctions Edge
         run: python3 scripts/validate_edge_function_inventory.py
+      - name: Tester inscription SINJIRA, Registre, Formspree et consentement
+        run: python3 scripts/validate_sinjira_signup_registry_delivery.py
+      - name: Installer Node.js épinglé pour les tests TypeScript réels
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.16.0'
+          check-latest: false
+      - name: Tester le vrai module Formspree sans envoyer de courriel
+        run: node --experimental-strip-types --test scripts/test_sinjira_formspree_runtime.mjs

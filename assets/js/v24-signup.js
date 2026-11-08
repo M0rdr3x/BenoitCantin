@@ -63,6 +63,8 @@ if(birthInput){
 }
 syncYouthControls();
 ready();
+// La page HTML désactive le bouton par défaut : aucun envoi natif si le module échoue.
+setBusy(!isSinjiraBackendConfigured());
 
 if(form){
   form.addEventListener('submit',async e=>{
@@ -121,12 +123,13 @@ if(form){
       account_age_band:minor?'minor_13_17':'adult_18_plus',
       guardian_controls_required:minor,
       initial_contributor_opt_in:contributor,
+      formspree_receipt_opt_in:d.get('formspree_receipt_opt_in')==='yes',
       initial_share_free_text:contributor&&d.get('share_free_text')==='yes'
     };
     const destination=wantsQuestionnaire?'/projets/sinjira/registre/':nextDestination();
     setBusy(true);
     try{
-      const {data,error}=await getSupabase().auth.signUp({email,password,options:{emailRedirectTo:`${SINJIRA_CONFIG.siteUrl}${destination}`,data:metadata}});
+      const {data,error}=await getSupabase().auth.signUp({email,password,options:{emailRedirectTo:`${SINJIRA_CONFIG.siteUrl}/compte/confirmer.html`,data:metadata}});
       if(error){
         const raw=String(error.message||'');
         if(/GUARDIAN_AUTHORIZATION_REQUIRED_UNDER_14|INVALID_OR_EXPIRED_GUARDIAN_CODE|ADULT_GUARDIAN_REQUIRED/i.test(raw)){
@@ -138,7 +141,7 @@ if(form){
       }
       if(data.session){location.assign(destination);return}
       const youthNote=age>=14&&age<18&&!guardianCode?' Les fonctions sociales resteront protégées jusqu’à la vérification d’un parent ou tuteur.':'';
-      setStatus(status,(wantsQuestionnaire?'Compte créé. Confirmez votre adresse courriel; le lien de confirmation vous mènera ensuite au questionnaire complet du Registre.':'Compte créé. Vérifiez votre courriel pour confirmer votre adresse.')+youthNote,'success');
+      setStatus(status,(wantsQuestionnaire?'Compte créé. Consultez votre courriel, ouvrez le lien de confirmation SINJIRA™ et cliquez sur « Confirmer mon compte ». Vous pourrez ensuite accéder au Registre.':'Compte créé. Consultez votre courriel, ouvrez le lien SINJIRA™ et cliquez sur « Confirmer mon compte ».')+youthNote,'success');
       form.reset();syncYouthControls();
     }catch(err){
       console.warn('[SINJIRA signup]',err);

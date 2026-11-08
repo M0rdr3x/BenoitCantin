@@ -53,6 +53,7 @@ GUARDED_VAULT = {"/compte/registre-personnel.html"}
 WEB_AUTH_MFA = {
     "/compte/connexion.html",
     "/compte/inscription.html",
+    "/compte/confirmer.html",
     "/compte/mot-de-passe-oublie.html",
     "/compte/reinitialiser-mot-de-passe.html",
     "/compte/mfa.html",
@@ -94,8 +95,8 @@ def main() -> int:
         require(path.exists(), f"élément manquant: {path.relative_to(ROOT)}")
 
     actual_pages = {f"/compte/{path.name}" for path in ACCOUNT_DIR.glob("*.html") if path.is_file()}
-    require(len(actual_pages) == 46,
-            f"inventaire compte attendu à 42 pages, trouvé {len(actual_pages)}; toute nouvelle page doit être classifiée explicitement")
+    require(len(actual_pages) == 47,
+            f"inventaire compte attendu à 47 pages, trouvé {len(actual_pages)}; toute nouvelle page doit être classifiée explicitement")
 
     seen: dict[str, str] = {}
     for category, routes in CATEGORIES.items():
@@ -109,7 +110,7 @@ def main() -> int:
     stale = sorted(classified - actual_pages)
     require(not missing, f"pages compte non classifiées: {', '.join(missing)}")
     require(not stale, f"routes classifiées sans fichier réel: {', '.join(stale)}")
-    require(len(classified) == 46, f"classification attendue à 42 routes, trouvée {len(classified)}")
+    require(len(classified) == 47, f"classification attendue à 47 routes, trouvée {len(classified)}")
     require(len(NATIVE_MODULE) == 31, f"classification native attendue à 31 routes, trouvée {len(NATIVE_MODULE)}")
 
     router = ROUTER.read_text("utf-8")
@@ -150,7 +151,7 @@ def main() -> int:
     for route in sorted(classified):
         require(route in doc, f"route absente de la documentation de classification: {route}")
     for marker in (
-        "46 pages html",
+        "47 pages html",
         "31 routes de sas",
         "accueil web de repli",
         "sécurité dédiée hors routeur",
@@ -197,7 +198,7 @@ def main() -> int:
         for marker in ("environment: production", "supabase_access_token", "${{ secrets.", "supabase start", "supabase db"):
             require(marker.lower() not in lowered, f"production/secret interdit dans workflow {label}: {marker}")
 
-    print("OK classification routes compte V25: 46/46 pages classifiées; 31 routes natives exactes; surfaces sensibles explicitement hors routeur.")
+    print("OK classification routes compte V25: 47/47 pages classifiées; 31 routes natives exactes; surfaces sensibles explicitement hors routeur.")
     return 0
 
 

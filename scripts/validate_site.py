@@ -390,7 +390,21 @@ def main() -> int:
                 if rx.search(text):
                     errors.append(f'Secret potentiel dans {rel}')
             if active_sinjira(rel) and 'formspree' in text.lower():
-                errors.append(f'Formspree encore référencé dans une zone SINJIRA active: {rel}')
+                # Formspree ne peut pas traiter directement les formulaires privés du
+                # navigateur. Seules les mentions explicites d'un transfert facultatif
+                # avec consentement sont autorisées sur ces trois pages connues.
+                consent_pages = {
+                    'compte/inscription.html',
+                    'compte/confidentialite-joueur.html',
+                    'projets/sinjira/registre/index.html',
+                }
+                if rel not in consent_pages:
+                    errors.append(f'Formspree non autorisé dans une zone SINJIRA active: {rel}')
+                else:
+                    if re.search(r'https?://(?:www\.)?formspree\.io', text, re.I):
+                        errors.append(f'Endpoint Formspree interdit dans la page Web privée: {rel}')
+                    if rel != 'compte/confidentialite-joueur.html' and 'name="formspree_receipt_opt_in"' not in text:
+                        errors.append(f'Consentement Formspree absent du formulaire: {rel}')
             if contains_unsafe_legacy_admin_link(rel, text):
                 errors.append(f'Lien interne legacy /Admin/ dans {rel}')
 
