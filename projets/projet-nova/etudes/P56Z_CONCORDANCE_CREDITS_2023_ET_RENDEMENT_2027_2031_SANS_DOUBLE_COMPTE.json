@@ -1,0 +1,301 @@
+{
+  "schema_version": "P56Z-1",
+  "date_revision": "2026-11-08",
+  "objet": "VERROU_ANTI_DOUBLE_COMPTE_CREDITS_REMBOURSABLES_HISTORIQUES_ET_CIBLES_DEUX_TAXES",
+  "statut": "CONCORDANCE_DOCUMENTAIRE_DIFFERENTS_EXERCICES_NON_BUDGET_NOVA",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "sources": {
+    "P56W": "projets/projet-nova/etudes/P56W_CREDITS_REMBOURSABLES_2023_PAR_CATEGORIE_ET_TRANCHES_PROTECTION.json",
+    "P56Y": "projets/projet-nova/etudes/P56Y_RENDEMENT_BRUT_NECESSAIRE_DEUX_PRELEVEMENTS_2027_2031.json",
+    "P56X": "projets/projet-nova/etudes/P56X_ASSIETTES_HISTORIQUES_ET_VERROU_TAUX_NOVA_2027_2028.json",
+    "P56O": "projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json",
+    "P55N": "projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json",
+    "A14": {
+      "url": "https://www.budget.finances.gouv.qc.ca/Budget/outils/statistiques-fiscales/somm-impot-a-payer.asp",
+      "annee": 2023,
+      "tableau": "A.14",
+      "statut": "DONNEES_OFFICIELLES_HISTORIQUES"
+    },
+    "A15": {
+      "url": "https://www.budget.finances.gouv.qc.ca/Budget/outils/statistiques-fiscales/somm-credit-remb.asp",
+      "annee": 2023,
+      "tableau": "A.15",
+      "statut": "DONNEES_OFFICIELLES_HISTORIQUES"
+    },
+    "DEFINITION": {
+      "url": "https://www.budget.finances.gouv.qc.ca/budget/outils/depenses-fiscales/metho-definition.asp",
+      "portee": "CREDITS_REMBOURSABLES_SOUVENT_ASSIMILABLES_TRANSFERTS",
+      "ne_definit_pas_reclassement_comptes_nova": true
+    }
+  },
+  "exercice_observation": {
+    "annee": 2023,
+    "unite": "MILLIONS_CAD",
+    "revenu_total_declarants_mcad": "427915",
+    "impot_sur_revenu_imposable_avant_credits_non_remboursables_mcad": "62148",
+    "credits_non_remboursables_mcad": "21358",
+    "impot_a_payer_apres_non_remboursables_mcad": "40790",
+    "credits_remboursables_mcad": "9305",
+    "impot_a_payer_moins_credits_remboursables_arithmetique_mcad": "31485",
+    "ce_solde_est_un_indicateur_statistique_non_recette_comptable_consolidee": true,
+    "population": "DECLARANTS_QUEBECOIS_NON_MENAGES",
+    "revenu_total_n_est_pas_assiette_imposable": true,
+    "crédits_non_remboursables_et_remboursables_non_interchangeables": true
+  },
+  "credits_remboursables_2023": {
+    "total_officiel_mcad": "9305",
+    "somme_categories_arrondies_mcad": "9306",
+    "ecart_arrondi_categories_moins_total_mcad": "1",
+    "somme_tranches_arrondies_mcad": "9304",
+    "ecart_arrondi_tranches_moins_total_mcad": "-1",
+    "categories_extraites_pertinentes": [
+      {
+        "id": "FAMILLE",
+        "intitule": "Allocation famille",
+        "total_mcad": "3569",
+        "annee": 2023,
+        "remboursement_reel_nova_2027_mcad": null,
+        "maintien_droit_apres_reforme_non_demontre": true
+      },
+      {
+        "id": "SOLIDARITE",
+        "intitule": "Crédit d’impôt pour la solidarité",
+        "total_mcad": "1709",
+        "annee": 2023,
+        "remboursement_reel_nova_2027_mcad": null,
+        "maintien_droit_apres_reforme_non_demontre": true
+      },
+      {
+        "id": "SOUTIEN_AINES",
+        "intitule": "Crédit pour soutien aux aînés",
+        "total_mcad": "1703",
+        "annee": 2023,
+        "remboursement_reel_nova_2027_mcad": null,
+        "maintien_droit_apres_reforme_non_demontre": true
+      },
+      {
+        "id": "GARDE",
+        "intitule": "Crédit pour frais de garde d’enfants",
+        "total_mcad": "975",
+        "annee": 2023,
+        "remboursement_reel_nova_2027_mcad": null,
+        "maintien_droit_apres_reforme_non_demontre": true
+      },
+      {
+        "id": "MAINTIEN_DOMICILE",
+        "intitule": "Crédit pour maintien à domicile des aînés",
+        "total_mcad": "656",
+        "annee": 2023,
+        "remboursement_reel_nova_2027_mcad": null,
+        "maintien_droit_apres_reforme_non_demontre": true
+      },
+      {
+        "id": "PRIME_TRAVAIL",
+        "intitule": "Prime au travail",
+        "total_mcad": "306",
+        "annee": 2023,
+        "remboursement_reel_nova_2027_mcad": null,
+        "maintien_droit_apres_reforme_non_demontre": true
+      }
+    ],
+    "moins_30000_cad": {
+      "tranches": [
+        "MOINS_10000",
+        "10000_19999",
+        "20000_29999"
+      ],
+      "montants_arrondis_mcad": [
+        "777",
+        "1118",
+        "2306"
+      ],
+      "somme_mcad": "4201",
+      "impot_a_payer_mcad": "285",
+      "impot_apres_credits_indicateur_arithmetique_mcad": "-3916",
+      "population_menages_vivants_representatifs": false,
+      "montant_compensation_nova_2027_mcad": null
+    },
+    "montants_2023_non_projetés_comme_prestations_2027": true,
+    "zero_publie_peut_signifier_moins_de_0_5_mcad": true,
+    "ecarts_arrondis_non_corriges_artificiellement": true
+  },
+  "rapprochement_decennal_amorce": [
+    {
+      "exercice": "2027-2028",
+      "remplacement_total_recettes_existantes_mcad": "110968",
+      "rendement_conditionnel_pour_solde_zero_avec_resorption_mcad": "116663",
+      "rendement_conditionnel_pour_solde_zero_sans_resorption_mcad": "116663",
+      "base_fiscale_2027_homogene_mcad": null,
+      "reconciliation_comptable_credits_actuels_avec_recettes_et_charges_mcad": null,
+      "cout_beneficiaires_credit_reel_mcad": null,
+      "cout_incidence_nouvelle_reforme_mcad": null,
+      "cout_compensations_incremental_net_mcad": null,
+      "rendement_net_nova_certifie_mcad": null,
+      "aucun_9305_historique_ajoute_aux_cibles": true,
+      "solde_final_nova_certifie": false
+    },
+    {
+      "exercice": "2028-2029",
+      "remplacement_total_recettes_existantes_mcad": "114270",
+      "rendement_conditionnel_pour_solde_zero_avec_resorption_mcad": "115770",
+      "rendement_conditionnel_pour_solde_zero_sans_resorption_mcad": "117620",
+      "base_fiscale_2027_homogene_mcad": null,
+      "reconciliation_comptable_credits_actuels_avec_recettes_et_charges_mcad": null,
+      "cout_beneficiaires_credit_reel_mcad": null,
+      "cout_incidence_nouvelle_reforme_mcad": null,
+      "cout_compensations_incremental_net_mcad": null,
+      "rendement_net_nova_certifie_mcad": null,
+      "aucun_9305_historique_ajoute_aux_cibles": true,
+      "solde_final_nova_certifie": false
+    },
+    {
+      "exercice": "2029-2030",
+      "remplacement_total_recettes_existantes_mcad": "118015",
+      "rendement_conditionnel_pour_solde_zero_avec_resorption_mcad": "118015",
+      "rendement_conditionnel_pour_solde_zero_sans_resorption_mcad": "120015",
+      "base_fiscale_2027_homogene_mcad": null,
+      "reconciliation_comptable_credits_actuels_avec_recettes_et_charges_mcad": null,
+      "cout_beneficiaires_credit_reel_mcad": null,
+      "cout_incidence_nouvelle_reforme_mcad": null,
+      "cout_compensations_incremental_net_mcad": null,
+      "rendement_net_nova_certifie_mcad": null,
+      "aucun_9305_historique_ajoute_aux_cibles": true,
+      "solde_final_nova_certifie": false
+    },
+    {
+      "exercice": "2030-2031",
+      "remplacement_total_recettes_existantes_mcad": "122409",
+      "rendement_conditionnel_pour_solde_zero_avec_resorption_mcad": "122159",
+      "rendement_conditionnel_pour_solde_zero_sans_resorption_mcad": "124159",
+      "base_fiscale_2027_homogene_mcad": null,
+      "reconciliation_comptable_credits_actuels_avec_recettes_et_charges_mcad": null,
+      "cout_beneficiaires_credit_reel_mcad": null,
+      "cout_incidence_nouvelle_reforme_mcad": null,
+      "cout_compensations_incremental_net_mcad": null,
+      "rendement_net_nova_certifie_mcad": null,
+      "aucun_9305_historique_ajoute_aux_cibles": true,
+      "solde_final_nova_certifie": false
+    }
+  ],
+  "conventions_reclassement": {
+    "regle_formelle": "INCREMENT_DE_COUT_A_JOUTER_SEULEMENT_SI_MESURE_NOUVELLE_NON_DEJA_COMPRISE_DANS_ASSIETTE_FISCALE_OU_DEPENSES_DE_REFERENCE",
+    "si_credit_actuel_est_deja_deduit_des_recettes": "NE_PAS_LE_DEDUIRE_ENCORE_DES_RECETTES_NOUVELLES_SANS RECONCILIATION",
+    "si_credit_actuel_est_deja_charge_de_transfert": "NE_PAS_LE_COMPTER_COMME_NOUVELLE_DEPENSE_UNE_SECONDE_FOIS",
+    "si_credit_est_reclasse_comme_prestation_sans_changement_droit": "NE_PAS_COMPTABILISER_LA_RECLASSIFICATION_COMME_ECONOMIE_OU_DEPENSE_NETTE_AUTOMATIQUE",
+    "si_prestation_est_augmentée": "IMPUTER_SEULEMENT_COUT_INCREMENTAL_NET_FONDE_SUR_ASSIETTES_ET_BENEFICIAIRES_VALIDES",
+    "regime_actuel_comptabilisation_exacte_2027_connue": false,
+    "reclassification_2027_faite": false,
+    "economies_comptables_identifiees_mcad": null,
+    "cout_protection_2027_2036_certifie_mcad": null
+  },
+  "juridictions": {
+    "QUEBEC_DANS_CANADA": {
+      "mesures_federales_non_modifiables_unilateralement": true,
+      "droits_credits_provinciaux_a_verifier": true,
+      "financement_services_non_reduit_par_hypothese": true
+    },
+    "QUEBEC_SOUVERAIN": {
+      "droits_pensions_et_competences_federales_a_negocier": true,
+      "transferts_federaux_continues_presumes": false,
+      "reclassification_fiscale_validée": false,
+      "budget_different_exige": true
+    }
+  },
+  "garde_fous": {
+    "ne_pas_additionner_9305_mcad_2023_aux_116663_mcad_2027": true,
+    "ne_pas_confondre_revenu_total_2023_et_assiette_2027": true,
+    "ne_pas_confondre_credit_non_remboursable_et_prestation_en_especes": true,
+    "ne_pas_abolir_prestation_pour_afficher_un_gain": true,
+    "ne_pas_supprimer_deux_fois_prestations_des_comptes": true,
+    "ne_pas_prendre_les_sensibilites_fiscales_pour_taux_adoptes": true,
+    "ne_pas_imaginer_une_economie_de_baisse_de_services": true,
+    "ne_pas_count_transfer_as_saving": true,
+    "ne_pas_prolonger_2023_en_2036": true,
+    "ne_pas_presumer_recettes_fiscales_souveraines": true,
+    "aucun_gagnant_perdant_menage_certifie": true
+  },
+  "portes": [
+    {
+      "id": "Z01",
+      "exigence": "Obtenir les comptes publics et conventions de classement des crédits remboursables : charges de transfert versus moindres revenus fiscaux",
+      "preuve_documentaire": null,
+      "statut": "NON_DEMONTRE",
+      "avis_independant_signe": false
+    },
+    {
+      "id": "Z02",
+      "exigence": "Rapprocher les crédits réellement inclus dans la référence de dépenses et de recettes gouvernementales 2027-2028",
+      "preuve_documentaire": null,
+      "statut": "NON_DEMONTRE",
+      "avis_independant_signe": false
+    },
+    {
+      "id": "Z03",
+      "exigence": "Modéliser la fiscalité et les versements aux ménages sur le même exercice et avec la même population",
+      "preuve_documentaire": null,
+      "statut": "NON_DEMONTRE",
+      "avis_independant_signe": false
+    },
+    {
+      "id": "Z04",
+      "exigence": "Déterminer les protections légales et les crédits par ménages, revenus, handicap, âge et composition familiale",
+      "preuve_documentaire": null,
+      "statut": "NON_DEMONTRE",
+      "avis_independant_signe": false
+    },
+    {
+      "id": "Z05",
+      "exigence": "Séparer les conversions administratives de crédits en versements de toute hausse véritable de coût budgétaire",
+      "preuve_documentaire": null,
+      "statut": "NON_DEMONTRE",
+      "avis_independant_signe": false
+    },
+    {
+      "id": "Z06",
+      "exigence": "Vérifier les incidences en revenu disponible et en dépenses essentielles par décile et région sans pertes cachées",
+      "preuve_documentaire": null,
+      "statut": "NON_DEMONTRE",
+      "avis_independant_signe": false
+    },
+    {
+      "id": "Z07",
+      "exigence": "Intégrer crédits non remboursables, pertes fiscales et assiettes 2027 dans le rendement des deux prélèvements",
+      "preuve_documentaire": null,
+      "statut": "NON_DEMONTRE",
+      "avis_independant_signe": false
+    },
+    {
+      "id": "Z08",
+      "exigence": "Établir les coûts de transition informatique, le traitement des déclarants et les recours administratifs",
+      "preuve_documentaire": null,
+      "statut": "NON_DEMONTRE",
+      "avis_independant_signe": false
+    },
+    {
+      "id": "Z09",
+      "exigence": "Faire revoir par un fiscaliste et comptable public indépendants la concordance des comptes et des droits",
+      "preuve_documentaire": null,
+      "statut": "NON_DEMONTRE",
+      "avis_independant_signe": false
+    },
+    {
+      "id": "Z10",
+      "exigence": "Publier les coûts nets et décisions approuvées des deux régimes constitutionnels sans fondre les transferts fédéraux",
+      "preuve_documentaire": null,
+      "statut": "NON_DEMONTRE",
+      "avis_independant_signe": false
+    }
+  ],
+  "completude": {
+    "score_p55n": 53,
+    "points_restants": 47,
+    "portes_p56o_demontrees": 0,
+    "p52b_montants_inconnus": 600,
+    "p52d_incidences_inconnues": 720,
+    "p52a_preuves_non_validees": 20,
+    "avis_experts_signes": 0,
+    "donnees_2027_menages_validees": 0,
+    "reforme_fiscale_adoptee": false,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
