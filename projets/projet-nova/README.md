@@ -446,6 +446,19 @@ Les fichiers de référence candidats `official/reference/*` et `data/sources.js
 
 **Suite G0.16n :** comparer d'autres cas municipaux publics de régions et de tailles différentes, puis obtenir dépenses finales, versements, financement réellement tiré, état des ouvrages et impact sur les citoyens avant d'auditer la fiscalité à deux prélèvements. **Score 47/100 inchangé.**
 
+## G0.16n — Sept projets PRIMEAU de sept régions, second dossier local de taxation (7 novembre 2026)
+
+**Préparation globale : 47/100 inchangé.** Après Warwick en G0.16m, l'étape G0.16n établit une comparaison **raisonnée et non représentative** de **sept projets de sept régions**, sur les **pages 4–5 de la [liste officielle MAMH PRIMEAU du 8 octobre 2025](https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/documents_administratifs/acces_information/demande_acces/2025/DAI_2025-082_subventions_primeau_2023_2033.pdf)**, inspectées visuellement.
+
+- **Portefeuille sélectionné :** maxima admissibles **188 322 869 $**; aides inscrites **156 721 180 $**; différence arithmétique **31 601 689 $**, **qui ne mesure pas les coûts locaux finaux ni la charge des citoyens**. Warwick n'est compté qu'une fois. Les communes sont Warwick, Gatineau, Laval, Port-Daniel–Gascons, L'Île-d'Anticosti, Val-d'Or et La Doré.
+- **Règle de preuve :** le *maximum admissible* du ministère n'est pas le coût total du chantier; l'aide inscrite n'est **pas un versement**; les dates prévisionnelles de la liste de 2025 ne prouvent pas l'achèvement en novembre 2026. L'échantillon n'est **pas représentatif des municipalités du Québec**.
+- **Second dossier financier municipal :** le [conseil de Port-Daniel–Gascons, procès-verbal du 9 juin 2025](https://munpdg.ca/wp-content/uploads/2025/07/proces-verbal-de-la-seance-ordinaire-du-9-juin.pdf), règlement **2025-01**, décrit une dépense estimée de **56 596 000 $** financée dans le règlement par **42 302 472 $ PRIMEAU + 14 293 528 $ d'emprunt autorisé sur 40 ans**. Le règlement prévoit une taxation spéciale générale sur une portion de l'emprunt et des compensations par secteur desservi; **ni les montants annuels par ménage ni l'encours réel de dette ne sont vérifiés**.
+- **Limites :** le PDF du conseil a pu être lu en texte public, mais sa capture visuelle a échoué; la confirmation ministérielle et la somme du règlement ne remplacent pas le grand livre ni un audit indépendant. **Ne pas additionner le coût du règlement au maximum admissible** : unités, dates et périmètres différents.
+- **Livrables :** `data/comparatif-cas-reels-primeau-g0-16n-2025.json`, `assets/g016n-multiregion-primeau-core.mjs`, `tests/g016n-multiregion-primeau.test.mjs` (**39 tests initiaux réussis en rejeu JavaScript V8 isolé; CI Node non certifiée**) et `official/working/rapport-g0-16n-comparatif-regional-primeau-port-daniel-v1.md`.
+- **Décision :** deux dossiers de financement local (Warwick et Port-Daniel), sept aides localisées vérifiables, **zéro versement réel audité dans cet échantillon**, aucun budget à deux taxes certifié. **Score 47/100 inchangé.**
+
+**Suite G0.16o :** rechercher versements effectifs, dépenses finales, encours de dette et taux de taxation locale; relier les protections des travailleurs et la continuité de l'eau à deux budgets décennaux audités. Les textes candidats `official/reference/*` restent inchangés.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
