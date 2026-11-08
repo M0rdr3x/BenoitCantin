@@ -145,7 +145,7 @@ def audit(p56j, crosswalk, snapshots, model, evidence, barometer):
           counter.get("pretend_que_ces_categories_sont_tous_prelevements_a_remplacer") is False
           and counter.get("services_et_depenses_constantes_dans_illustration") is True
           and counter.get("somme_des_postes_a_remplacer_prevision_validee") is False
-          and counter.get("aucun_montant_depenses_supprime") is False
+          and counter.get("aucun_montant_depenses_supprime") is True
           and counter.get("recettes_nouveaux_prelevements_certifiees_mcad") is None
           and counter.get("revenus_anti_evasion_supposes_nets_mcad")=="0"
           and counter.get("base_de_calcul_taux_imposition_candidat") is None
