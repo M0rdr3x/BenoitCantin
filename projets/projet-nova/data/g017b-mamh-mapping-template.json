@@ -1,0 +1,50 @@
+{
+  "schema": "nova-g017b-local-real-mamh-mapping/v1",
+  "intent": "EXAMPLE_TO_FILL_ONLY_NOT_VALIDATED_OR_READY",
+  "approvedForGovernmentClaims": false,
+  "crossYearDictionaryReviewed": false,
+  "coverageReviewed": false,
+  "instructions": [
+    "Remplacer les champs A_VALIDER uniquement après consultation des en-têtes réellement présents et du formulaire codifié propre à l'année.",
+    "Les listes d'organismes absents et les fichiers de description de postes doivent provenir du même millésime.",
+    "Ne pas inclure les budgets, agglomérations, MRC ou organismes de transport dans le total des seules municipalités locales.",
+    "Ne pas confondre un transfert intergouvernemental avec une nouvelle recette consolidée.",
+    "Un contrôle de source et la validation des codes ne constituent ni un audit juridique ni une preuve de financement Nova."
+  ],
+  "years": {
+    "2024": {
+      "grain": "MUNICIPALITE_LOCALE",
+      "basis": "ACTUAL",
+      "consolidation": "INTEGRAL",
+      "organizationCodeColumn": "A_VALIDER",
+      "organizationTypeColumn": "A_VALIDER",
+      "localOrganizationTypeValue": "A_VALIDER",
+      "dictionaryColumns": {
+        "accountCodeColumn": "A_VALIDER",
+        "descriptionColumn": "A_VALIDER"
+      },
+      "missingColumns": {
+        "codeColumn": "A_VALIDER"
+      },
+      "missingListReviewed": false,
+      "metrics": []
+    },
+    "2025": {
+      "grain": "MUNICIPALITE_LOCALE",
+      "basis": "ACTUAL",
+      "consolidation": "INTEGRAL",
+      "organizationCodeColumn": "A_VALIDER",
+      "organizationTypeColumn": "A_VALIDER",
+      "localOrganizationTypeValue": "A_VALIDER",
+      "dictionaryColumns": {
+        "accountCodeColumn": "A_VALIDER",
+        "descriptionColumn": "A_VALIDER"
+      },
+      "missingColumns": {
+        "codeColumn": "A_VALIDER"
+      },
+      "missingListReviewed": false,
+      "metrics": []
+    }
+  }
+}
