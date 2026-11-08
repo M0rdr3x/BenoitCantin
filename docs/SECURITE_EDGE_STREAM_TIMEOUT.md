@@ -24,6 +24,9 @@ en octets.
   peut retourner une promesse qui ne se termine pas).
 - Une réponse partielle après délai ou abandon est refusée entièrement :
   aucune portion ne peut être traitée comme un JSON accepté.
+- Le lecteur binaire partagé refuse également les réponses partielles
+  après **30 secondes** par défaut, même si la source ne termine jamais
+  la promesse d'annulation.
 - L'appel au modèle PDF est assorti de
   `AbortSignal.timeout(15_000)`; le plafond binaire de 15 Mio et
   le refus des redirections demeurent actifs.
