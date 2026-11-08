@@ -45,9 +45,14 @@ export function inspectG016kWaterContinuity(d,g016j,g016h){
  "updated_2025_municipalities","water_pipe_reporting_municipalities",
  "approx_percent_values_assessed_age_or_judgment",
  "bad_assets_age_or_judgment_share_pct",
- "acceptable_assets_age_or_judgment_share_pct"];
+ "acceptable_assets_age_or_judgment_share_pct",
+ "value_assessed_age_or_judgment_gcad",
+ "poor_assets_age_or_judgment_gcad",
+ "acceptable_assets_age_or_judgment_gcad",
+ "poor_assets_in_cities_above_100k_gcad",
+ "poor_assets_in_cities_above_100k_share_approx_pct"];
  const assetExpected=[197.6,188.5,159.7,37.9,67,23,10,44.9,20.6,
- 101105,10659,938,85,99,666,903,75,43,87];
+ 101105,10659,938,85,99,666,903,75,43,87,147.9,8.8,39.1,14.8,72];
  if(!eq(assetNums.map(k=>a[k]),assetExpected)||
     !Array.isArray(a.asset_types)||a.asset_types.length!==5||
     a.asset_types.some((t,i)=>!eq([
