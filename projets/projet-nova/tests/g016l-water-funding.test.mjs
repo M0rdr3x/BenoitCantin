@@ -1,8 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {readFile} from "node:fs/promises";
-import {inspectG016lFundingSources,calculateSyntheticFundingExercise}
- from "../assets/g016l-water-funding-core.mjs";
+import {inspectG016lFundingSources,calculateSyntheticFundingExercise} from "../assets/g016l-water-funding-core.mjs";
 
 const read=async file=>JSON.parse(await readFile(new URL("../data/"+file,import.meta.url),"utf8"));
 const [d,k]=await Promise.all([
