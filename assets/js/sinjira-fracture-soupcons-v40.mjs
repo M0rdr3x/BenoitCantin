@@ -4,6 +4,7 @@
  * Le backend garde la responsabilité JWT, session, sièges, état et RLS.
  */
 import {fractureAggregateSuspicionsV39} from './sinjira-fracture-soupcons-v39.mjs';
+import {fractureAggregateFinalBallotsV38} from './sinjira-fracture-accusations-v38.mjs';
 
 function seatNumber(value,label,min,max){
   if(typeof value!=='number'||!Number.isSafeInteger(value)||
@@ -50,5 +51,33 @@ export function fractureAggregateSeatSafeSuspicionsV40({
   }
   return fractureAggregateSuspicionsV39({
     humans,express,roundBallots,allowAbstention,eligibleTargets
+  });
+}
+
+/** Chaînage privé V39 -> V38 après clôture du vote.
+ * L'authenticité de CHAQUE entrée, de la table et des politiques doit être
+ * établie côté serveur; cette fonction ne remplace pas JWT/RLS/transaction.
+ * La sortie est privée : elle peut dévoiler le choix d'un humain en Solo.
+ * Aucun score/bonus de faction n'est calculé (arbitrage éditorial #857).
+ */
+export function fracturePreparePrivateFinalDecisionV40({
+  humans,express=false,roundBallots,finalBallots,
+  allowAbstention,allowSelfSuspicion,eligibleTargets
+}={}){
+  const suspicions=fractureAggregateSeatSafeSuspicionsV40({
+    humans,express,roundBallots,allowAbstention,
+    allowSelfSuspicion,eligibleTargets
+  });
+  const decision=fractureAggregateFinalBallotsV38(humans,finalBallots,{
+    suspicionTotals:suspicions.totals
+  });
+  if(decision.humans!==suspicions.humans||
+     decision.seats!==suspicions.seats||
+     decision.aggregates.length!==suspicions.totals.length){
+    throw new RangeError('Partie incohérente entre soupçons et scrutin final.');
+  }
+  return Object.freeze({
+    version:1,status:decision.status,
+    suspicions,decision
   });
 }
