@@ -14,7 +14,7 @@ ANSWER_LIMIT_RE = re.compile(r'\bMAX_ANSWERS_CHARS\s*=\s*500000\s*;')
 REQUIRED = {
     'version fonctionnelle stable': "const VERSION='24.5.2';",
     'POST uniquement': "req.method!=='POST'",
-    'auth utilisateur explicite': 'requiredUser(req)',
+    'auth AAL2 obligatoire du Registre': 'requiredVaultUser(req)',
     'lecture JSON bornée': 'readBoundedJson(req)',
     'content-type JSON strict': "if(contentType!=='application/json')throw new Error('JSON_REQUIRED');",
     'taille UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
@@ -79,7 +79,7 @@ def validate(path: Path) -> list[str]:
         if marker.lower() in lowered:
             errors.append(f'Garde questionnaire violé: {label}.')
 
-    auth_pos = source.find('const user=await requiredUser(req);')
+    auth_pos = source.find('const {user}=await requiredVaultUser(req);')
     body_pos = source.find('const body=await readBoundedJson(req);')
     if auth_pos < 0 or body_pos < 0:
         errors.append('Ordre auth/corps impossible à vérifier.')
@@ -112,9 +112,10 @@ def self_test() -> None:
         'no-store retiré': real.replace("'Cache-Control':'private, no-store, max-age=0',", '', 1),
         'limite HTTP augmentée': real.replace('MAX_REQUEST_BYTES=2*1024*1024;', 'MAX_REQUEST_BYTES=20*1024*1024;', 1),
         'limite réponses augmentée': real.replace('MAX_ANSWERS_CHARS=500000;', 'MAX_ANSWERS_CHARS=5000000;', 1),
+        'MFA obligataire contournée': real.replace('const {user}=await requiredVaultUser(req);', 'const user=await requiredUser(req);', 1),
         'ordre auth inversé': real.replace(
-            'const user=await requiredUser(req);\n    const service=serviceClient();\n    const body=await readBoundedJson(req);',
-            'const body=await readBoundedJson(req);\n    const user=await requiredUser(req);\n    const service=serviceClient();',
+            'const {user}=await requiredVaultUser(req);\n    const service=serviceClient();\n    const body=await readBoundedJson(req);',
+            'const body=await readBoundedJson(req);\n    const {user}=await requiredVaultUser(req);\n    const service=serviceClient();',
             1,
         ),
         'erreurs état ignorées': real.replace("    if(submissionResult.error||characterResult.error)throw new Error('CHARACTER_STATE_LOOKUP_FAILED');\n", '', 1),
@@ -156,7 +157,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK questionnaire Registre: auth/MFA avant corps, JSON 2 MiB, réponses privées, unicité fail-closed, IA distante désactivée et canon humain préservé.')
+    print('OK questionnaire Registre: AAL2 obligatoire côté serveur avant corps, JSON 2 MiB, réponses privées, unicité fail-closed, IA distante désactivée et canon humain préservé.')
     return 0
 
 

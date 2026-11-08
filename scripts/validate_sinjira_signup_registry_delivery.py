@@ -39,7 +39,7 @@ def main()->int:
     ])
     registry_page=check('projets/sinjira/registre/index.html',[
         'data-character-form=', 'type="submit" disabled>Transmettre ma participation',
-        'name="formspree_receipt_opt_in"', 'sinjira-character-registry.js?v=24.5.7',
+        'name="formspree_receipt_opt_in"', 'sinjira-character-registry.js?v=24.5.8',
     ])
     registry_js=check('assets/js/sinjira-character-registry.js',[
         "form?.addEventListener('submit',async e=>{",
@@ -48,6 +48,9 @@ def main()->int:
         "let invocationStarted=false;",
         "invocationStarted=true;",
         "result.admin_notification_created===true",
+        "auth.mfa.getAuthenticatorAssuranceLevel()",
+        "aal.nextLevel!=='aal2'",
+        "aal.currentLevel!=='aal2'",
         "uncertainError.submissionOutcomeUnknown=true;",
         "const unknown=err?.submissionOutcomeUnknown===true;",
         "if(unknown){",
@@ -57,7 +60,7 @@ def main()->int:
         "try{localStorage.removeItem('registre-consciences-draft-v1')}catch{",
     ])
     registry_edge=check('supabase/functions/submit-character-questionnaire/index.ts',[
-        "requiredUser(req)", "answers.formspree_receipt_opt_in==='yes'",
+        "requiredVaultUser(req)", "answers.formspree_receipt_opt_in==='yes'",
         "sendFormspreeNotice(service,'registre_enregistre',sub.id,",
         "answers:answers as Record<string,unknown>",
         "CHARACTER_SUBMISSION_WRITE_FAILED",
@@ -148,6 +151,13 @@ def main()->int:
     # effacer la photo que le serveur peut déjà référencer dans le dossier.
     if re.search(r'catch\s*\(e\)\s*\{\s*await\s+cleanupUploadedPhoto\(photo_path\)',registry_js):
         errors.append('Registre : effacement photo aveugle après un échec réseau')
+    # La préférence sensitive_step_up ne doit jamais permettre un POST Registre en AAL1.
+    if 'const {user}=await requiredVaultUser(req);' not in registry_edge:
+        errors.append('Registre : AAL2 non obligatoire sur l’Edge Function.')
+    if re.search(r'const\s+user\s*=\s*await\s+requiredUser\(req\)',registry_edge):
+        errors.append('Registre : frontière utilisateur standard utilisée à la place de la garde AAL2.')
+    if not registry_js.index('auth.mfa.getAuthenticatorAssuranceLevel()') < registry_js.index("rpc('security_sensitive_access_status'"):
+        errors.append('Registre : niveau MFA non contrôlé avant la vérification des permissions.')
     # Aucun second POST possible après une invocation réseau au résultat incertain.
     if not re.search(r'if\s*\(unknown\)\s*\{\s*registryReady=false;',registry_js):
         errors.append('Registre : second envoi encore autorisé après une réponse réseau incertaine')

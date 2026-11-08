@@ -22,6 +22,19 @@ function blockSensitiveForm(message,href='/compte/securite.html',label='Ouvrir M
  if(state&&!state.nextElementSibling?.matches?.('[data-registry-security-link]')){const link=document.createElement('a');link.dataset.registrySecurityLink='';link.className='btn btn-primary';link.href=href;link.textContent=label;state.insertAdjacentElement('afterend',link)}
 }
 async function ensureSensitiveAccess(){
+ // Le Registre privé exige AAL2 même si sensitive_step_up est désactivé.
+ // L'Edge Function répète cette vérification avant toute lecture du JSON.
+ const {data:aal,error:aalError}=await getSupabase().auth.mfa.getAuthenticatorAssuranceLevel();
+ if(aalError||!aal)throw new Error('Impossible de vérifier la double authentification du Registre pour le moment.');
+ if(aal.nextLevel!=='aal2'){
+   blockSensitiveForm('Pour accéder au Registre des Consciences, activez la double authentification dans Ma sécurité. Cette protection est obligatoire.');
+   return false;
+ }
+ if(aal.currentLevel!=='aal2'){
+   const next=location.pathname+location.search+location.hash;
+   location.replace(`/compte/mfa.html?next=${encodeURIComponent(next)}`);
+   return false;
+ }
  const {data,error}=await getSupabase().rpc('security_sensitive_access_status',{p_scope:'registry'});
  if(error)throw new Error('La protection du Registre ne peut pas être vérifiée pour le moment.');
  if(data?.allowed)return true;
