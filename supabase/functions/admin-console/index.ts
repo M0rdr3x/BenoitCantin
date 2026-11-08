@@ -1,3 +1,4 @@
+import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredAdmin } from '../_shared/auth.ts';
 
@@ -33,7 +34,9 @@ async function readBoundedJson(req:Request){
     const declared=Number(declaredRaw);
     if(!Number.isFinite(declared)||declared<0||declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
   }
-  const raw=await req.text();
+  const limited=await readLimitedUtf8Body(req,MAX_REQUEST_BYTES);
+  if(!limited.ok)throw new Error('REQUEST_TOO_LARGE');
+  const raw=limited.raw;
   if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
   let body:unknown;
   try{body=JSON.parse(raw)}catch{throw new Error('INVALID_JSON')}
