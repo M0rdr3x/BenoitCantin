@@ -1,0 +1,41 @@
+name: SINJIRA — avancement du programme et preuves de sortie
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+    paths:
+      - 'docs/sinjira/programme-readiness-2026-11-08.json'
+      - 'docs/SINJIRA_PROGRAMME_AVANCEMENT_2026-11-07.md'
+      - 'scripts/sinjira_programme_progress.py'
+      - 'tests/ops/test_sinjira_programme_progress.py'
+      - '.github/workflows/sinjira-programme-readiness.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/sinjira/programme-readiness-2026-11-08.json'
+      - 'docs/SINJIRA_PROGRAMME_AVANCEMENT_2026-11-07.md'
+      - 'scripts/sinjira_programme_progress.py'
+      - 'tests/ops/test_sinjira_programme_progress.py'
+      - '.github/workflows/sinjira-programme-readiness.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sinjira-programme-readiness-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate_programme_maturity:
+    name: Calcul exact et refus des % / dates de fin non prouvés
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Vérifier les fichiers sans identifiants persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Vérifier la grille de maturité et les décisions de sortie
+        run: |
+          python3 --version
+          python3 -m unittest discover -s tests/ops -p test_sinjira_programme_progress.py -v
+      - name: Afficher le bilan déterministe, sans connexion distante
+        run: python3 scripts/sinjira_programme_progress.py --json
