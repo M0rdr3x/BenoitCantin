@@ -307,7 +307,7 @@ def main() -> int:
 
     for slug, (auth, consumer) in STREAMED_REQUEST_ROUTES.items():
         src = read_security_text(FUNCTIONS / slug / "index.ts")
-        compact = re.sub(r"\\s+", "", src)
+        compact = re.sub(r"\s+", "", src)
         if ("awaitreq.text()" in compact or "awaitreq.json()" in compact or
                 "awaitreadLimitedUtf8Body(req,MAX_REQUEST_BYTES)" not in compact or
                 "if(!limited.ok)" not in compact):
@@ -317,7 +317,7 @@ def main() -> int:
         if not 0 <= auth_call < body_call:
             errors.append(f"{slug}: authentification obligatoire avant lecture du corps.")
     sheet_source = read_security_text(FUNCTIONS / "send-player-sheet" / "index.ts")
-    compact_sheet = re.sub(r"\\s+", "", sheet_source)
+    compact_sheet = re.sub(r"\s+", "", sheet_source)
     if ("awaitresponse.arrayBuffer()" in compact_sheet or
             "awaitreadLimitedBinaryResponse(response,MAX_TEMPLATE_BYTES)" not in compact_sheet or
             "if(!limitedPdf.ok)" not in compact_sheet):
