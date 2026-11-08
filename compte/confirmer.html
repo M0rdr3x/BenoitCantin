@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="fr-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Confirmer mon compte | SINJIRA™</title>
+  <link rel="icon" href="../assets/icons/sinjira-favicon.png">
+  <link rel="stylesheet" href="../assets/css/site.css?v=24.4.12">
+  <link rel="stylesheet" href="../assets/css/sinjira-player-account.css?v=24.4.12">
+  <link rel="stylesheet" href="../assets/css/v24-platform.css?v=24.4.12">
+  <link rel="stylesheet" href="../assets/css/v24-3-3-fixes.css?v=24.4.12">
+</head>
+<body class="account-page">
+  <a class="skip-link" href="#main-content">Aller au contenu principal</a>
+  <header class="site-header">
+    <div class="container nav-shell">
+      <a class="brand" href="/projets/sinjira/" aria-label="Accueil SINJIRA">
+        <img alt="" height="47" src="/assets/media/sinjira-emblem.webp" width="47">
+        <span class="brand-text"><strong>SINJIRA™</strong><span>Confirmation du compte</span></span>
+      </a>
+      <nav class="main-nav" aria-label="Navigation principale">
+        <a href="/">Accueil</a>
+        <a href="/projets/sinjira/">SINJIRA™</a>
+        <a href="/compte/connexion.html">Connexion</a>
+      </nav>
+    </div>
+  </header>
+  <main id="main-content">
+    <section class="account-hero">
+      <div class="account-shell">
+        <article class="account-card" style="max-width:720px;margin:auto">
+          <span class="eyebrow">Compte SINJIRA™</span>
+          <h1>Confirmer mon adresse courriel</h1>
+          <p>Pour protéger votre compte, la confirmation ne se fait qu'après votre clic sur le bouton ci-dessous. L'ouverture du lien, à elle seule, ne consomme pas le code.</p>
+          <p class="account-status" role="status" aria-live="polite" aria-atomic="true" data-confirm-status>Lecture du lien de confirmation…</p>
+          <div class="hero-actions">
+            <button class="btn btn-primary" type="button" data-confirm-button hidden>Confirmer mon compte</button>
+            <a class="btn btn-primary" data-confirm-next hidden href="/compte/index.html">Accéder à mon compte</a>
+            <a class="btn btn-secondary" href="/compte/connexion.html">Se connecter</a>
+          </div>
+          <hr>
+          <h2>Le lien ne fonctionne plus?</h2>
+          <p>Vous pouvez demander un nouveau courriel de confirmation. Entrez l'adresse utilisée lors de l'inscription.</p>
+          <form class="account-form" data-confirm-resend-form>
+            <div class="field">
+              <label for="confirm-email">Adresse courriel</label>
+              <input id="confirm-email" name="email" type="email" autocomplete="email" maxlength="254" required>
+            </div>
+            <button class="btn btn-secondary" type="submit">Renvoyer un lien</button>
+          </form>
+          <p class="account-status" role="status" aria-live="polite" aria-atomic="true" data-resend-status hidden></p>
+        </article>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer"><div class="container"><div class="footer-bottom"><span>© <span data-year></span> Benoit Cantin.</span><span>Compte SINJIRA™.</span></div></div></footer>
+  <script defer src="../assets/js/site.js?v=24.4.12"></script>
+  <script type="module" src="../assets/js/sinjira-confirm-email.js?v=1"></script>
+</body>
+</html>
