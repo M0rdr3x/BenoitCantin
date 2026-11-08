@@ -63,7 +63,7 @@ export function inspectG016mWarwickPilot(d,g016l){
     a.government_commitments.reduce((s,x)=>s+x.committed_cad,0)!==a.amount_cad)
     fail("GRANT_COMMITMENT_NOT_PAYMENT");
  if(!obj(p)||p.source_id!=="CITY_PTI"||
-    p.cost_scope!=="YEAR_2026_CONSTRUCTION_LINE_NOT_TOTAL_LIFETIME"||
+    p.scope!=="YEAR_2026_CONSTRUCTION_LINE_NOT_TOTAL_LIFETIME"||
     p.project_cost_line_cad!==20074664||p.same_primeau_award_cad!==14668901||
     p.water_fund_budgeted_cad!==336823||p.borrowing_budgeted_cad!==5068940||
     p.actual_paid_or_borrowed_verified_cad!==null||
