@@ -25,7 +25,7 @@ REQUIRED = {
     'JWT revérifié côté fonction': 'client.auth.getUser(token)',
     'JSON explicite': "contentType.startsWith('application/json')",
     'lecture HTTP en flux': 'const limited=await readLimitedUtf8Body(req,MAX_BODY_BYTES);',
-    'refus d'un flux dépassant la borne': 'if(!limited.ok)',
+    "refus de flux dépassant la borne": "if(!limited.ok)",
     'corps extrait après borne': 'const raw=limited.raw;',
     'réponse privée': "'Cache-Control':'private, no-store, max-age=0'",
     'pragma no-cache': "'Pragma':'no-cache'",
