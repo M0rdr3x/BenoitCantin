@@ -44,11 +44,15 @@ async function submitToSinjira(user,{updateExisting=false}={}){let photo_path=nu
 async function tryOwnerRepair(user){if(!isSinjiraOwner(user))return;try{await getSupabase().rpc('ensure_sinjira_owner_character')}catch(e){console.info('Owner repair RPC unavailable.',e?.message||e)}}
 function successMessage(result){
  const dossier=result.submission_id?` Dossier ${result.submission_id}.`:'';
- if(result.updated_existing){return result.participant_email_sent?`Questionnaire d’AbyssTime mis à jour et sauvegardé.${dossier} Une copie a été envoyée au courriel du compte.`:`Questionnaire d’AbyssTime mis à jour et sauvegardé.${dossier} Le personnage existant est conservé.`}
- if(result.participant_email_sent&&result.admin_email_sent)return `Participation sauvegardée dans SINJIRA™.${dossier} Une copie a été envoyée au participant et l’avis administrateur a été transmis.`;
- if(result.participant_email_sent)return `Participation sauvegardée dans SINJIRA™.${dossier} Une copie a été envoyée au courriel du compte. L’avis administrateur externe n’a pas été envoyé, mais la notification interne reste enregistrée.`;
- if(result.admin_email_sent)return `Participation sauvegardée dans SINJIRA™.${dossier} L’avis administrateur a été envoyé. La copie courriel du participant n’a pas pu être transmise; cela n’affecte pas la sauvegarde.`;
- return `Participation sauvegardée dans SINJIRA™.${dossier} La notification interne reste disponible dans l’administration; le service courriel est indisponible ou non configuré.`;
+ const base=result.updated_existing
+   ? `Questionnaire mis à jour et enregistré dans SINJIRA™.${dossier}`
+   : `Participation enregistrée dans SINJIRA™.${dossier}`;
+ const optedIn=form?.querySelector('[name="formspree_receipt_opt_in"]')?.checked===true;
+ if(!optedIn)return `${base} Avis interne créé. Aucune copie n’a été envoyée à Formspree, conformément à votre choix.`;
+ if(result.formspree_notification_sent===true){
+   return `${base} Copie du questionnaire acceptée par Formspree pour notification à SINJIRA™. Un courriel d’accusé de réception sera envoyé si la réponse automatique est activée dans Formspree.`;
+ }
+ return `${base} Le service Formspree n’a pas confirmé la réception de la copie. Le questionnaire demeure disponible dans votre dossier SINJIRA™.`;
 }
 
 async function init(){
