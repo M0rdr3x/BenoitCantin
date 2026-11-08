@@ -1,0 +1,275 @@
+{
+  "schema_version": "P56M-1",
+  "date_revision": "2026-11-07",
+  "statut": "CADRE_DE_MICROSIMULATION_A_RENSEIGNER_SANS_RESULTATS_REELS",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "objet": "EVALUER_REVENU_DISPONIBLE_ET_POUVOIR_ACHAT_PAR_MENAGE_QUEBEC_DEUX_REGIMES",
+  "methode_principale": {
+    "unite": "CAD_PAR_MENAGE_PAR_ANNEE",
+    "annee_cible_debut": 2027,
+    "annee_cible_fin": 2036,
+    "comparaison": "BASELINE_ET_POLITIQUE_MESUREES_MEME_ANNEE_MENAGE_COMPOSITION_ET_PRIX",
+    "formule_revenu_disponible": "SOMME_REVENUS_MARCHANDS_PLUS_PRESTATIONS_ET_CREDITS_REMBOURSABLES_MOINS_IMPOTS_NETS_DE_CREDITS_NON_REMBOURSABLES_ET_COTISATIONS_OBLIGATOIRES",
+    "formule_reste_apres_depenses_essentielles": "REVENU_DISPONIBLE_MOINS_CHARGES_ESSENTIELLES_REELLES_NON_COMPTEES_DEUX_FOIS",
+    "revenu_disponible_macro_isq_non_identique_au_reste_apres_depenses": true,
+    "credits_remboursables_comptes_seulement_dans_prestations": true,
+    "credits_non_remboursables_deja_contenus_dans_impots_nets": true,
+    "impots_consommation_deja_compris_dans_depenses_TTC": true,
+    "couts_publics_hors_menages_comptes_dans_P52B_et_pas_en_economie_menage": true,
+    "services_publics_en_nature_hors_revenu_disponible": true,
+    "taux_candidats_nova_encore_non_definis": true,
+    "exercice_fictif_n_est_pas_prevision_ni_statistique": true
+  },
+  "sources_methodologiques": [
+    {
+      "id": "GOUV_QC",
+      "url": "https://www.quebec.ca/finances-impots-et-taxes/credits-impots-deductions/estimer-revenu-disponible",
+      "statut": "METHODE_OFFICIELLE_REVENUS_IMPOTS_COTISATIONS_AIDES",
+      "usage": "Comparer situations familiales et aides Québec/fédéral, avec limites explicites des calculateurs"
+    },
+    {
+      "id": "SIMULREVENU",
+      "url": "https://www.simulrevenu.gouv.qc.ca/Simulation/Disponible",
+      "statut": "OUTIL_PUBLIC_DE_REFERENCE",
+      "usage": "Distinguer revenus, prélèvements et frais obligatoires, sans importer aveuglément des estimations"
+    },
+    {
+      "id": "ISQ",
+      "url": "https://statistique.quebec.ca/fr/produit/publication/revenu-disponible-par-habitant-2024-quebec-et-regions",
+      "statut": "DEFINITION_MACRO_DIFFERE_DE_CASH_RESTANT",
+      "usage": "Soins et éducation en nature exclus du revenu disponible macro et différences de coût de vie non mesurées"
+    }
+  ],
+  "champs_monetaire_revenus": [
+    "salaire_brut",
+    "revenu_autonome_net",
+    "revenu_placements_net",
+    "pension_privee",
+    "autres_revenus_marchands"
+  ],
+  "champs_monetaire_transferts": [
+    "credits_remboursables_quebec",
+    "credits_remboursables_federal",
+    "prestations_quebec",
+    "prestations_federal",
+    "autres_transferts_publics"
+  ],
+  "champs_monetaire_prelevements": [
+    "impot_quebec_net",
+    "impot_federal_net",
+    "cotisation_rrq",
+    "cotisation_ae",
+    "cotisation_rqap",
+    "prime_ramq",
+    "cotisations_retraite_obligatoires",
+    "autres_prelevements_obligatoires"
+  ],
+  "champs_monetaire_essentiels": [
+    "logement_cash",
+    "alimentation_ttc",
+    "transport_ttc",
+    "garde_enfants",
+    "medicaments_ttc",
+    "energie_ttc",
+    "autres_depenses_essentielles_ttc"
+  ],
+  "champs_etiquetes": {
+    "impot_quebec_net": "Impôt QC après crédits non remboursables; ne pas déduire crédit remboursable deux fois",
+    "impot_federal_net": "Impôt fédéral net, encore applicable au Québec dans le Canada",
+    "logement_cash": "Sorties de trésorerie logement, y compris principal hypothécaire seulement comme cashflow, pas coût économique",
+    "garde_enfants": "Frais payés par ménage nets de remboursements déjà inclus en transferts, sans double compte",
+    "alimentation_ttc": "TVQ/TPS comprises si payées; ne jamais retrancher ces taxes encore une fois"
+  },
+  "archetypes": [
+    {
+      "id": "M01",
+      "titre": "Personne seule à faible revenu",
+      "adultes": 1,
+      "enfants": 0,
+      "aines": 0,
+      "profil": "FAIBLE_REVENU",
+      "region": "A_DETERMINER",
+      "decile_revenu_disponible": null,
+      "ponderation_population": null,
+      "preuve_microdonnees": null
+    },
+    {
+      "id": "M02",
+      "titre": "Personne seule salariée",
+      "adultes": 1,
+      "enfants": 0,
+      "aines": 0,
+      "profil": "SALARIE",
+      "region": "A_DETERMINER",
+      "decile_revenu_disponible": null,
+      "ponderation_population": null,
+      "preuve_microdonnees": null
+    },
+    {
+      "id": "M03",
+      "titre": "Parent monoparental avec un enfant",
+      "adultes": 1,
+      "enfants": 1,
+      "aines": 0,
+      "profil": "MONOPARENTAL",
+      "region": "A_DETERMINER",
+      "decile_revenu_disponible": null,
+      "ponderation_population": null,
+      "preuve_microdonnees": null
+    },
+    {
+      "id": "M04",
+      "titre": "Couple salarié avec deux enfants",
+      "adultes": 2,
+      "enfants": 2,
+      "aines": 0,
+      "profil": "FAMILLE",
+      "region": "A_DETERMINER",
+      "decile_revenu_disponible": null,
+      "ponderation_population": null,
+      "preuve_microdonnees": null
+    },
+    {
+      "id": "M05",
+      "titre": "Personne retraitée vivant seule",
+      "adultes": 1,
+      "enfants": 0,
+      "aines": 1,
+      "profil": "RETRAITE",
+      "region": "A_DETERMINER",
+      "decile_revenu_disponible": null,
+      "ponderation_population": null,
+      "preuve_microdonnees": null
+    },
+    {
+      "id": "M06",
+      "titre": "Personne avec besoins liés au handicap",
+      "adultes": 1,
+      "enfants": 0,
+      "aines": 0,
+      "profil": "BESOINS_PARTICULIERS",
+      "region": "A_DETERMINER",
+      "decile_revenu_disponible": null,
+      "ponderation_population": null,
+      "preuve_microdonnees": null
+    },
+    {
+      "id": "M07",
+      "titre": "Travailleur autonome vivant seul",
+      "adultes": 1,
+      "enfants": 0,
+      "aines": 0,
+      "profil": "AUTONOME",
+      "region": "A_DETERMINER",
+      "decile_revenu_disponible": null,
+      "ponderation_population": null,
+      "preuve_microdonnees": null
+    },
+    {
+      "id": "M08",
+      "titre": "Couple retraité",
+      "adultes": 2,
+      "enfants": 0,
+      "aines": 2,
+      "profil": "RETRAITES",
+      "region": "A_DETERMINER",
+      "decile_revenu_disponible": null,
+      "ponderation_population": null,
+      "preuve_microdonnees": null
+    }
+  ],
+  "regimes": [
+    {
+      "id": "QUEBEC_DANS_CANADA",
+      "statut": "HYPOTHESE_DE_REFORME_PROVINCIALE",
+      "baseline": "PROLONGEMENT_DES_REGLES_ACTUELLES_MÊME_ANNEE",
+      "federal_income_tax_preserved": true,
+      "services_publics_sous_financement_p52b": false
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "statut": "HYPOTHESE_CONSTITUTIONNELLE_NON_ADOPTEE",
+      "baseline": "CONTINUATION_DU_QUEBEC_DANS_LE_CANADA_MÊME_ANNEE",
+      "federal_income_tax_preserved": null,
+      "recettes_federales_transferees_validees": false,
+      "charges_souveraines_validees": false,
+      "services_publics_sous_financement_p52b": false
+    }
+  ],
+  "modele_cas": {
+    "nombre_archetypes": 8,
+    "nombre_regimes": 2,
+    "annees_previsionnelles": 10,
+    "nombre_unites_archetype_regime_annee_en_attente": 160,
+    "montants_reels_popules": 0,
+    "couverture_observee": 0,
+    "baselines_futures_confirmees": 0,
+    "politique_nova_chiffree": 0,
+    "appariements_groupes_deciles_regions_realises": 0,
+    "effets_entreprises_PME_quantifies": 0,
+    "marges_incertitude_classees": 0
+  },
+  "conditions_publication": [
+    {
+      "id": "F01",
+      "but": "Source de chaque montant, même année et composition familiale dans baseline/candidat",
+      "ok": false
+    },
+    {
+      "id": "F02",
+      "but": "Respect et compensation de chaque perte de crédit remboursable et prestation pour les vulnérables",
+      "ok": false
+    },
+    {
+      "id": "F03",
+      "but": "Fiscalité fédérale et contributions obligatoires intactes dans le régime Canada",
+      "ok": false
+    },
+    {
+      "id": "F04",
+      "but": "Coût de logement, transport, alimentation, garde et variation de prix estimés sans double taxation",
+      "ok": false
+    },
+    {
+      "id": "F05",
+      "but": "Échantillon représentatif pondéré par région/décile et structure des ménages",
+      "ok": false
+    },
+    {
+      "id": "F06",
+      "but": "Tests revenus autonomes, pertes, handicap, retraite, enfants et personnes seules",
+      "ok": false
+    },
+    {
+      "id": "F07",
+      "but": "Effets sur emplois, masse salariale, PME et grandes sociétés avec assiettes contemporaines",
+      "ok": false
+    },
+    {
+      "id": "F08",
+      "but": "Financement intégral et continuité santé, éducation, municipalités et autres fonctions publiques",
+      "ok": false
+    },
+    {
+      "id": "F09",
+      "but": "Budget P52B complet 2027–2036, incertitude et scénarios macro, deux régimes",
+      "ok": false
+    },
+    {
+      "id": "F10",
+      "but": "Avis experts indépendants et consultation accessible avant adoption ou publication des gains",
+      "ok": false
+    }
+  ],
+  "issues_conserves": {
+    "p52b_montants_inconnus": 600,
+    "p52d_incidences_inconnues": 720,
+    "p52a_preuves_non_validees": 20,
+    "p55n_score_estimatif": 53,
+    "taux_nova_adopte": false,
+    "amelioration_universelle_pouvoir_achat_prouvee": false,
+    "economie_nova_certifiee_mcad": null,
+    "revenu_anti_paradis_certifie_mcad": null,
+    "avis_independant_signes": 0
+  }
+}
