@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   fractureConfiguration,fractureRound,fractureScore,
-  RESEAU_AGENTS,POINTS_PAR_ACCUSATION
+  RESEAU_AGENTS,POINTS_PAR_ACCUSATION,CARTES_PAR_FACTION
 } from '../../assets/js/sinjira-fracture-score-v35.mjs';
 
 test('configuration officielle pour 1 à 20 humains, dont 3 sièges en Solo / Duo',()=>{
@@ -16,12 +16,15 @@ test('configuration officielle pour 1 à 20 humains, dont 3 sièges en Solo / Du
     assert.equal(cfg.centralCards,2*cfg.seats);
     assert.equal(cfg.ballots,humans*cfg.agents);
     assert.equal(cfg.rounds,10);
-    assert.equal(cfg.maxRoundPoints,6*cfg.seats);
+    assert.ok(cfg.maxRoundPoints<=6*cfg.seats);
+    assert.ok(cfg.maxRoundPoints>=2*cfg.seats);
     assert.equal(cfg.minRoundPoints,2*cfg.seats);
   }
   assert.equal(fractureConfiguration(1).ballots,1);
   assert.equal(fractureConfiguration(2).ballots,2);
   assert.equal(fractureConfiguration(20).ballots,140);
+  assert.equal(fractureConfiguration(20).maxRoundPoints,76);
+  assert.deepEqual(CARTES_PAR_FACTION,{unPoint:30,deuxPoints:12,troisPoints:3});
 });
 test('format Express limité à 13 à 20 humains et 6 rondes',()=>{
   for(let humans=13;humans<=20;humans++){
@@ -38,11 +41,13 @@ test('toutes les 2N cartes marquent entre 2N et 6N points en règle standard',()
   assert.deepEqual(fractureRound(cfg,{resistance:10,reseau:0}),{
     resistance:10,reseau:0,total:10,winningFaction:'resistance'
   });
-  assert.equal(fractureRound(cfg,{resistance:15,reseau:15}).total,30);
-  assert.equal(fractureRound(cfg,{resistance:15,reseau:15}).winningFaction,'egalite');
+  assert.equal(fractureRound(cfg,{resistance:13,reseau:13}).total,26);
+  assert.equal(fractureRound(cfg,{resistance:13,reseau:13}).winningFaction,'egalite');
   assert.equal(fractureRound(cfg,{resistance:10,reseau:11}).winningFaction,'reseau');
   assert.throws(()=>fractureRound(cfg,{resistance:0,reseau:9}),/Total impossible/);
   assert.throws(()=>fractureRound(cfg,{resistance:16,reseau:15}),/Total impossible/);
+  assert.throws(()=>fractureRound(fractureConfiguration(20),{resistance:75,reseau:0}),/Scores impossibles/);
+  assert.equal(fractureRound(fractureConfiguration(20),{resistance:58,reseau:0}).total,58);
   assert.throws(()=>fractureRound(cfg,{resistance:-1,reseau:11}),/entier/);
   assert.throws(()=>fractureRound(cfg,{resistance:2.5,reseau:10}),/entier/);
   assert.throws(()=>fractureRound(cfg,{resistance:'',reseau:10}),/requis/);
