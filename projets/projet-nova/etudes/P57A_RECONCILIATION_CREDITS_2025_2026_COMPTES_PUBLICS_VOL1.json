@@ -1,0 +1,263 @@
+{
+  "schema_version": "P57A-1",
+  "date_revision": "2026-11-08",
+  "titre": "Reconciliation des credits remboursables dans les comptes consolides 2025-2026",
+  "objet": "PREUVE_HISTORIQUE_TRAITEMENT_COMPTABLE_CREDITS_REMISES_VS_TRANSFERTS_PAS_SIMULATION_NOVA_2027",
+  "statut": "SOURCES_PRIMAIRES_PDF_VERIFIEES_VISUELLEMENT_QUATRE_PAGES_VOLUME_1",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "sources": {
+    "comptes_publics_volume_1": {
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Comptes-publics/FR/CPTFR_vol1-2025-2026.pdf",
+      "annee_financiere": "2025-2026",
+      "pages_pdf_index_zero": [
+        108,
+        109,
+        110
+      ],
+      "pages_imprimees": [
+        102,
+        103,
+        104
+      ],
+      "verification_visuelle_effectuee": true,
+      "empreinte_fichier_original_sha256": null,
+      "note": "Les trois pages du volume 1 ont ete inspectees visuellement dans le lecteur officiel; l'empreinte binaire du PDF reste non certifiee."
+    },
+    "methodologie_depenses_fiscales": {
+      "url": "https://www.budget.finances.gouv.qc.ca/budget/outils/depenses-fiscales/metho-definition.asp",
+      "cadre": "CREDITS_REMBOURSABLES_PEUVANT_S_APPARENTER_A_DES_TRANSFERTS",
+      "non_equivalent_aux_comptes_consolides": true
+    },
+    "publication_du_registre": {
+      "url": "https://www.quebec.ca/gouvernement/finances-publiques/budget-comptes-publics/comptes-publics/volumes-comptes-publics",
+      "volume_1_comptabilite_consolidee": true,
+      "volume_2_autorisations_parlementaires_distinctes": true,
+      "ne_pas_consolider_volume_1_plus_volume_2": true
+    },
+    "travaux_nova": {
+      "p56p": "projets/projet-nova/etudes/P56P_BASE_BUDGET_PREELECTORALE_2026_2031_VGQ_ET_ECARTS.json",
+      "p56w": "projets/projet-nova/etudes/P56W_CREDITS_REMBOURSABLES_2023_PAR_CATEGORIE_ET_TRANCHES_PROTECTION.json",
+      "p56y": "projets/projet-nova/etudes/P56Y_RENDEMENT_BRUT_NECESSAIRE_DEUX_PRELEVEMENTS_2027_2031.json",
+      "p56z": "projets/projet-nova/etudes/P56Z_CONCORDANCE_CREDITS_2023_ET_RENDEMENT_2027_2031_SANS_DOUBLE_COMPTE.json",
+      "p56o": "projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json",
+      "p55n": "projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json"
+    }
+  },
+  "regle_comptable_verifiee": {
+    "effet_loi_fiscale": "Les credits remboursables reduisent les revenus fiscaux selon la legislation.",
+    "effet_normes_comptables": "Les credits constituant des transferts financiers sont reclasses en depenses de transfert et rehaussent les revenus fiscaux presentes.",
+    "compensation_entre_revenus_et_depenses_sans_gain_budgetaire": true,
+    "ce_reclassement_ne_cree_pas_d_argent_public_nouveau": true,
+    "les_credits_ne_sont_pas_tous_comptabilises_en_transferts": true,
+    "credit_solidarite_est_degrevement_sur_taxes_ventes": true,
+    "verification_exhaustive_classification_par_programme_2027_absente": true,
+    "classification_individuelle_des_beneficiaires_absente": true
+  },
+  "revenus_et_reclassement_2025_2026_mcad": {
+    "personnes": {
+      "revenus_fiscaux_nets_credits_remboursables": "40678",
+      "credits_transferts_reclasses": "8291",
+      "revenus_consolides": "48969"
+    },
+    "societes": {
+      "revenus_fiscaux_nets_credits_remboursables": "11312",
+      "credits_transferts_reclasses": "3287",
+      "revenus_consolides": "14599"
+    },
+    "cotisations_services_sante": {
+      "revenus_fiscaux_nets_credits_remboursables": "9304",
+      "credits_transferts_reclasses": "0",
+      "revenus_consolides": "9304"
+    },
+    "foncier_scolaire": {
+      "revenus_fiscaux_nets_credits_remboursables": "1243",
+      "credits_transferts_reclasses": "0",
+      "revenus_consolides": "1243"
+    },
+    "total_revenus_impot_biens": {
+      "revenus_fiscaux_nets_credits_remboursables": "62537",
+      "credits_transferts_reclasses": "11578",
+      "revenus_consolides": "74115"
+    },
+    "credit_solidarite": {
+      "montant_degrevement_taxes_ventes": "1996",
+      "inclure_dans_somme_transferts_impot_biens_11578": false,
+      "reductions_consom_deja_comprises_dans_revenus_net_publiés": true
+    },
+    "taxes_consommation_revenues_consolides": "29639"
+  },
+  "transferts_2025_2026_par_programme_mcad": {
+    "particuliers": [
+      {
+        "id": "FAMILLE",
+        "montant": "3941",
+        "portefeuille": "FAMILLE"
+      },
+      {
+        "id": "SOUTIEN_AINES",
+        "montant": "1710",
+        "portefeuille": "SANTE"
+      },
+      {
+        "id": "GARDE",
+        "montant": "965",
+        "portefeuille": "FAMILLE"
+      },
+      {
+        "id": "MAINTIEN_DOMICILE",
+        "montant": "760",
+        "portefeuille": "SANTE"
+      },
+      {
+        "id": "PRIME_TRAVAIL",
+        "montant": "330",
+        "portefeuille": "EMPLOI_SOLIDARITE"
+      },
+      {
+        "id": "AIDANTES",
+        "montant": "243",
+        "portefeuille": "SANTE"
+      },
+      {
+        "id": "EPARGNE_ETUDES",
+        "montant": "150",
+        "portefeuille": "AUTRES"
+      },
+      {
+        "id": "AUTRES_PART",
+        "montant": "192",
+        "portefeuille": "MIXTE"
+      }
+    ],
+    "societes": [
+      {
+        "id": "CINEMA",
+        "montant": "631",
+        "portefeuille": "CULTURE"
+      },
+      {
+        "id": "INVESTISSEMENT",
+        "montant": "629",
+        "portefeuille": "ECONOMIE"
+      },
+      {
+        "id": "AFFAIRES_ELECTRONIQUES",
+        "montant": "600",
+        "portefeuille": "ECONOMIE"
+      },
+      {
+        "id": "RECHERCHE",
+        "montant": "549",
+        "portefeuille": "ECONOMIE"
+      },
+      {
+        "id": "MULTIMEDIA",
+        "montant": "432",
+        "portefeuille": "ECONOMIE"
+      },
+      {
+        "id": "POURBOIRES",
+        "montant": "133",
+        "portefeuille": "AUTRES"
+      },
+      {
+        "id": "AUTRES_SOCIETES",
+        "montant": "313",
+        "portefeuille": "MIXTE"
+      }
+    ],
+    "ventilation_consolidee_par_portefeuille": {
+      "SANTE_SERVICES_SOCIAUX": "2810",
+      "FAMILLE": "4906",
+      "EMPLOI_SOLIDARITE": "405",
+      "ECONOMIE_INNOVATION_ENERGIE": "2292",
+      "CULTURE_COMMUNICATIONS": "701",
+      "AUTRES": "464"
+    },
+    "total_particuliers": "8291",
+    "total_societes": "3287",
+    "total_general": "11578"
+  },
+  "comparatif_2024_2025_mcad": {
+    "credits_transferts_total": "11130",
+    "credits_transferts_particuliers": "8059",
+    "credits_transferts_societes": "3071",
+    "credit_solidarite_reduction_taxes_ventes": "1944",
+    "recettes_impot_sur_revenu_et_biens_consolidees": "69081",
+    "source_volume_1_colonne_comparative": true
+  },
+  "distinction_statistique_2023": {
+    "statistiques_p56w_total_credit_remboursables_individus": "9305",
+    "statistique_fiscale_2023_non_directement_comparable_au_8291_2026": true,
+    "ne_pas_soustraire_9305_de_8291_pour_conclure_a_reduction_aides": true,
+    "ecarts_annees_population_perimetre_et_imputation": true,
+    "revenu_disponible_menage_nova_2027_certifie": null
+  },
+  "risque_pour_scenarios_fiscaux_nova": {
+    "rendements_bruts_2027_2028_deux_piliers_p56y_mcad": "116663",
+    "cible_budgetaire_2027_ne_s_ajuste_pas_automatiquement_de_11578_mcad": true,
+    "cible_budgetaire_2027_ne_s_ajuste_pas_automatiquement_de_1996_mcad": true,
+    "revenu_nouveau_impot_nova_reellement_certain_mcad": null,
+    "credits_et_transferts_2027_deja_dans_cadre_reference_exactement_reconcilies": false,
+    "classification_comptable_degrèvement_2027_verifiee": false,
+    "droits_2027_des_beneficiaires_finances": false,
+    "cout_incremental_compensations_2027_mcad": null,
+    "economie_apparente_par_reclassement_mcad": null,
+    "distinction_2026_observe_2027_prevu": true
+  },
+  "preuve_partiellement_obtenue": {
+    "condition_P56Z_Z01": "Obtenir les comptes publics et conventions de classement des crédits remboursables : charges de transfert versus moindres revenus fiscaux",
+    "niveau": "PARTIEL_HISTORIQUE",
+    "piece": "Comptes publics 2025-2026, volume 1, note 4 Revenus, pages imprimees 102-104",
+    "preuve_methode_historique": true,
+    "preuve_tous_programmes_2027": false,
+    "condition_Z01_fermee": false,
+    "condition_P56O_FIN_INC_fermee": false,
+    "contre_expertise_humaine_externe_obtenue": false
+  },
+  "etapes_suivantes": [
+    {
+      "id": "A01",
+      "objectif": "Obtenir le rapprochement comptes publics et prévisions 2027-2028 pour chaque crédit et ministère",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "A02",
+      "objectif": "Identifier la classification actuelle et future du crédit de solidarité comme dégrèvement de taxes à la consommation",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "A03",
+      "objectif": "Rapprocher budgets de transfert ministériels et crédits individuels 2027, sans double compte",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "A04",
+      "objectif": "Construire les incidences nettes des ménages avec crédits, prix, impôts et prestations fédérales",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "A05",
+      "objectif": "Examiner les crédits aux sociétés, les aides temporaires et le maintien des emplois",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "A06",
+      "objectif": "Obtenir avis d'un comptable public indépendant et d'un fiscaliste sur le pont 2027-2036",
+      "statut": "OUVERT"
+    }
+  ],
+  "avancement": {
+    "score_estime_p55n": 53,
+    "points_restants_estimes": 47,
+    "p52b_montants_inconnus": 600,
+    "p52d_incidences_manquantes": 720,
+    "p52a_preuves_non_validees": 20,
+    "portes_p56o_demonstrees": 0,
+    "avis_independants_signes": 0,
+    "programme_nova_termine": false,
+    "changements_apportes_p52b": 0,
+    "pourcentage_non_majore_par_test_ou_nouvelle_source": true,
+    "main_et_sinjira_non_modifies": true
+  }
+}
