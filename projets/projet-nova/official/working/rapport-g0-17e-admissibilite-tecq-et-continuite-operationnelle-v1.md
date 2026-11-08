@@ -100,7 +100,7 @@ Le dossier G0.17e livre :
 
 - `data/g017e-tecq-guide-2026-depenses-admissibles-et-paiements.json` : enveloppe, cinq périodes, admissibilités, coûts exclus, échéances, rapprochement de projets et montants inconnus;
 - `assets/g017e-tecq-legal-cost-cash-core.mjs` : contrôles stricts de provenance, d'éligibilité, de dépenses récurrentes et d'affirmations de paiement non prouvées;
-- `tests/g017e-tecq-legal-cost-cash.test.mjs` : **57 tests sur 57 réussis par rejeu JavaScript/V8 isolé**. L'exécution **native GitHub Actions n'est pas confirmée** par ce seul résultat.
+- `tests/g017e-tecq-legal-cost-cash.test.mjs` : **65 tests sur 65 réussis par rejeu JavaScript/V8 isolé**, y compris le contrôle de provenance CI. Une **exécution native GitHub Actions antérieure a réussi**, au commit de la version à 57 tests ([rapport d'exécution no 42536049965](https://github.com/M0rdr3x/BenoitCantin/actions/runs/42536049965), commit `01bb9b2de54918b9b1ac0e0622db719f322eb439`, tâche Node.js « Vérifier les calculs et la provenance »). La nouvelle version à 65 tests a déclenché [l'exécution no 42536695704](https://github.com/M0rdr3x/BenoitCantin/actions/runs/42536695704), **dont le résultat n'était pas encore confirmé à la rédaction de ce paragraphe**. Même un succès natif complet ne vaut **pas audit financier indépendant du Projet Nova**.
 
 Le projet ne possède toujours pas, pour chaque municipalité :
 
