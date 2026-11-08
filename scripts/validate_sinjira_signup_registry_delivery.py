@@ -28,7 +28,7 @@ def main()->int:
     ])
     confirmation=check('assets/js/sinjira-confirm-email.js',[
         "getSupabase().auth.verifyOtp(", "confirmButton?.addEventListener('click'",
-        "getSupabase().auth.resend(", "'notify-account-confirmation'",
+        "getSupabase().auth.resend(", "options:{emailRedirectTo:", "'notify-account-confirmation'",
         "signal:AbortSignal.timeout(8500)",
     ])
     confirmation_page=check('compte/confirmer.html',[
