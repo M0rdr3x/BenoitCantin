@@ -1,5 +1,5 @@
 import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2.119.0';
 
 const MAX_REQUEST_BYTES = 256;
 const MAX_PDF_BYTES = 15 * 1024 * 1024;

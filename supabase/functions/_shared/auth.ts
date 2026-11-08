@@ -1,4 +1,4 @@
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2.119.0';
 
 const ACTIVE_ADMIN_FUNCTIONS = new Set([
   'admin-analytics',
@@ -26,7 +26,7 @@ function serverSecretKey() {
       );
       if (typeof fallback === 'string') return fallback;
     } catch (error) {
-      console.warn('[SINJIRA auth] SUPABASE_SECRET_KEYS illisible, repli sur la clé legacy.', error);
+      console.warn('[SINJIRA auth]', { code: 'SERVER_KEYS_PARSE_FAILED' });
     }
   }
   return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
@@ -81,7 +81,7 @@ async function assertAdminMfa(context: Awaited<ReturnType<typeof authenticatedCo
   if (adminError || !isAdmin) throw new Error('ADMIN_REQUIRED');
 
   const aal = await assuranceLevel(context).catch((error) => {
-    console.error('[SINJIRA admin auth] état MFA indisponible', error);
+    console.error('[SINJIRA admin auth]', { code: 'MFA_STATE_UNAVAILABLE' });
     throw error;
   });
   if (aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') {
@@ -98,7 +98,7 @@ async function sensitiveStepUpEnabled(context: Awaited<ReturnType<typeof authent
     .eq('user_id', user.id)
     .maybeSingle();
   if (error) {
-    console.error('[SINJIRA sensitive auth] préférences de sécurité indisponibles', error);
+    console.error('[SINJIRA sensitive auth]', { code: 'SECURITY_STATE_UNAVAILABLE' });
     throw new Error('SECURITY_STATE_UNAVAILABLE');
   }
   return data?.sensitive_step_up !== false;
@@ -108,7 +108,7 @@ async function assertSensitiveMfa(context: Awaited<ReturnType<typeof authenticat
   if (!(await sensitiveStepUpEnabled(context))) return null;
 
   const aal = await assuranceLevel(context).catch((error) => {
-    console.error('[SINJIRA sensitive auth] état MFA indisponible', error);
+    console.error('[SINJIRA sensitive auth]', { code: 'MFA_STATE_UNAVAILABLE' });
     throw error;
   });
   if (aal.nextLevel !== 'aal2') throw new Error('MFA_SETUP_REQUIRED');

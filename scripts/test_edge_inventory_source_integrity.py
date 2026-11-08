@@ -13,10 +13,36 @@ from validate_edge_function_inventory import (
     find_edge_calls,
     read_security_text,
     read_tree_text,
+    unpinned_supabase_js_versions,
+    has_unsanitized_auth_error_log,
 )
 
 
 class InventorySourceIntegrityTests(unittest.TestCase):
+    def test_supabase_js_deps_must_use_exact_versions(self):
+        safe = (
+            "import { createClient } from 'npm:@supabase/supabase-js@2.119.0';\n"
+            "import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.119.0';\n"
+        )
+        self.assertEqual(unpinned_supabase_js_versions(safe), [])
+        for unsafe in ("2", "2.119", "latest", "^2.119.0"):
+            with self.subTest(unsafe=unsafe):
+                snippet = f"import {{ createClient }} from 'npm:@supabase/supabase-js@{unsafe}';"
+                self.assertEqual(unpinned_supabase_js_versions(snippet), [unsafe])
+        self.assertEqual(
+            unpinned_supabase_js_versions(
+                "import 'https://esm.sh/@supabase/supabase-js@2';"
+            ),
+            ["2"],
+        )
+
+    def test_private_auth_errors_are_not_logged_raw(self):
+        self.assertTrue(has_unsanitized_auth_error_log("console.warn('auth', error);"))
+        self.assertTrue(has_unsanitized_auth_error_log("console.error(error);"))
+        self.assertFalse(has_unsanitized_auth_error_log(
+            "console.error('[SINJIRA auth]', { code: 'MFA_STATE_UNAVAILABLE' });"
+        ))
+
     def test_utf8_source_accepted(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "index.ts"
