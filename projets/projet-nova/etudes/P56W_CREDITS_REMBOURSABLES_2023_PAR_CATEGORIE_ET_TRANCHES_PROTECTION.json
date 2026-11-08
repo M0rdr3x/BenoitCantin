@@ -374,7 +374,8 @@
     "erreurs_arrondis_possible_jusqua_2_mcad_par_tranche": true,
     "zéro_affiche_peut_indiquer_moins_0_5_mcad": true,
     "ne_pas_reconcilier_en_modifiant_des_lignes": true,
-    "chiffres_arrondis_ne_pas_utiliser_pour_micro_simulation_individuelle": true
+    "chiffres_arrondis_ne_pas_utiliser_pour_micro_simulation_individuelle": true,
+    "ecart_somme_tranches_publiees_moins_total_officiel_mcad": "-1"
   },
   "menages_plus_vulnerables_observations_a14": {
     "seuil_revenu_total_annuel_cad": "30000",
