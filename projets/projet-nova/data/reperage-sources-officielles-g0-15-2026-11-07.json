@@ -25,6 +25,13 @@
           "apport": "Agrégats de recettes et nomenclature budgétaire prévisionnelle.",
           "limite": "Aucune ventilation juridiquement exhaustive TVQ, carburants, produits ni rapprochement des prélèvements indirects dans ce registre.",
           "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        },
+        {
+          "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Comptes-publics/FR/CPTFR_vol1-2025-2026.pdf",
+          "periode": "Réalisations 2025-2026 et comparatifs reclassés 2024-2025; note 4, page imprimée 102 des Comptes publics 2025-2026",
+          "apport": "Ventilation publiée des taxes sur ventes nettes du crédit solidarité, carburants, tabac, alcool et autres; 29 639 M$ réalisés contre 28 377 M$ pour 2024-2025.",
+          "limite": "Ne distingue pas toutes les composantes juridiques de la TVQ, des droits et des dégrèvements; ne démontre ni taux ou recettes NOVA ni abolition et remplacement des taxes.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
         }
       ],
       "prochaine_verification": "Ventiler les sous-composantes de consommation et réconcilier TVA/TVQ, droits indirects et affectations sans double compte."
