@@ -12,7 +12,16 @@ const fragment = new URLSearchParams(location.hash.replace(/^#/, ''));
 const tokenHash = String(fragment.get('token_hash') || '').trim();
 const tokenType = String(fragment.get('type') || 'email').trim();
 
+async function notifyAccountConfirmation() {
+  try {
+    // Avis anonymisé, dédoublonné côté serveur; ce canal ne gère pas les comptes.
+    await getSupabase().functions.invoke('notify-account-confirmation',{body:{}});
+  } catch {
+    // L'authentification réussie ne dépend jamais de Formspree.
+  }
+}
 function showSuccess(user) {
+  if(user?.email_confirmed_at)void notifyAccountConfirmation();
   const questionnaire = user?.user_metadata?.wants_character_questionnaire === true;
   nextLink.href = questionnaire ? '/projets/sinjira/registre/' : '/compte/index.html';
   nextLink.textContent = questionnaire ? 'Ouvrir mon questionnaire' : 'Accéder à mon compte';
