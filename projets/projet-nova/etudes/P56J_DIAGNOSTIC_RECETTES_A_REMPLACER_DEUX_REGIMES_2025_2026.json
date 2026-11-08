@@ -74,7 +74,7 @@
     "pretend_que_ces_categories_sont_tous_prelevements_a_remplacer": false,
     "services_et_depenses_constantes_dans_illustration": true,
     "somme_des_postes_a_remplacer_prevision_validee": false,
-    "aucun_montant_depenses_supprime": false,
+    "aucun_montant_depenses_supprime": true,
     "recettes_nouveaux_prelevements_certifiees_mcad": null,
     "revenus_anti_evasion_supposes_nets_mcad": "0",
     "base_de_calcul_taux_imposition_candidat": null,
