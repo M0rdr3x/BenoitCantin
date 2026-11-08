@@ -7,6 +7,7 @@ on:
     paths:
       - 'projets/sinjira/romans/**'
       - 'projets/sinjira/codex/livre-i-delivery-contract.json'
+      - 'projets/sinjira/codex/avancement-editorial-2026-11-08.json'
       - 'assets/js/sinjira-roman-production-core-v1.mjs'
       - 'tests/reader/test_sinjira_roman_production_v1.mjs'
       - 'scripts/validate_sinjira_livre_i_delivery.py'
@@ -16,6 +17,7 @@ on:
     paths:
       - 'projets/sinjira/romans/**'
       - 'projets/sinjira/codex/livre-i-delivery-contract.json'
+      - 'projets/sinjira/codex/avancement-editorial-2026-11-08.json'
       - 'assets/js/sinjira-roman-production-core-v1.mjs'
       - 'tests/reader/test_sinjira_roman_production_v1.mjs'
       - 'scripts/validate_sinjira_livre_i_delivery.py'
