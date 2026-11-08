@@ -138,10 +138,13 @@ def fracture_gateway_body_boundary_valid(source: str) -> bool:
     """Un corps hostile ne doit être lu ni avant JWT, ni sans borne en flux."""
     if "await req.text()" in source or "await req.json()" in source:
         return False
+    bounded_reader = source.find("await readLimitedUtf8Body(req,MAX_BODY_BYTES)")
     authenticated = source.find("await client.auth.getUser(token)")
-    bounded = source.find("await readLimitedUtf8Body(req,MAX_BODY_BYTES)")
+    body_invoked = source.find("await readLimitedJson(req)")
     privileged = source.find("await client.rpc(action,args)")
-    return 0 <= authenticated < bounded < privileged
+    # Définir le lecteur plus haut dans le fichier n'est pas un appel réseau.
+    # Dans le gestionnaire HTTP, JWT -> lecture bornée -> action RPC.
+    return bounded_reader >= 0 and 0 <= authenticated < body_invoked < privileged
 
 
 class UnsafeSource(Exception):
