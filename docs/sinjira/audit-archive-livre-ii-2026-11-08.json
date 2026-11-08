@@ -1,0 +1,489 @@
+{
+  "schema": "sinjira-book-ii-historical-archive-diagnostic/v1",
+  "date": "2026-11-08",
+  "status": "ARCHIVE_HISTORIQUE_NE_PAS_UTILISER_COMME_PREUVE_DE_FIN",
+  "title": "Le Sang du Sauveur",
+  "source": {
+    "file_name": "Livre_02_Le_Sang_du_Sauveur.pdf",
+    "source_kind": "BIBLIOTHEQUE_UTILISATEUR_ARCHIVE_2026-07-04",
+    "library_file_id_recorded": false,
+    "actual_pdf_pages": 126,
+    "chapter_headings_extracted": 60,
+    "prologue_detected": true,
+    "epilogue_detected": true,
+    "source_pdf_not_committed": true,
+    "version_master_current_confirmed": false
+  },
+  "methodology": {
+    "tokens": "Unicode NFKC, minuscules, suites de lettres/chiffres avec apostrophes et traits d'union internes; en-têtes de copyright récurrents supprimés de chaque chapitre",
+    "chapter_boundaries": "En-têtes Chapitre 1 à Chapitre 60; le chapitre 60 inclut le matériau suivant jusqu'à la fin du document",
+    "window_length_tokens": 30,
+    "match_rule": "Une séquence identique de 30 tokens apparaît dans deux chapitres différents",
+    "word_share_explanation": "Pour chaque chapitre, pourcentage de ses tokens couverts par au moins une fenêtre partagée. Les fenêtres se chevauchent; ce ne sont pas des duplications indépendantes.",
+    "not_a_similarity_score": true,
+    "not_a_plagiarism_assessment": true,
+    "not_checked_against_later_manuscripts": true,
+    "no_excerpts_copied": true
+  },
+  "results": {
+    "actual_pdf_pages": 126,
+    "chapter_count": 60,
+    "total_tokens_inside_chapter_sections": 25274,
+    "shared_unique_windows_30_tokens": 2444,
+    "total_chapter_occurrences_of_shared_windows": 16787,
+    "chapters_with_shared_windows": 60,
+    "word_share_weighted_average_percent": 84.74,
+    "minimum_word_share_percent": 66.15,
+    "maximum_word_share_percent": 91.11,
+    "chapters_prioritized_by_shared_windows": [
+      23,
+      12,
+      18,
+      13,
+      54,
+      34,
+      22,
+      26,
+      36,
+      24
+    ],
+    "manuscript_ready_for_publication": false,
+    "can_establish_current_book_completion_percent": false
+  },
+  "per_chapter": [
+    {
+      "number": 1,
+      "word_count": 464,
+      "windows_30_tokens_shared_across_chapters": 258,
+      "word_share_covered_by_shared_windows_percent": 68.1,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 2,
+      "word_count": 455,
+      "windows_30_tokens_shared_across_chapters": 243,
+      "word_share_covered_by_shared_windows_percent": 66.15,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 3,
+      "word_count": 458,
+      "windows_30_tokens_shared_across_chapters": 252,
+      "word_share_covered_by_shared_windows_percent": 67.69,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 4,
+      "word_count": 403,
+      "windows_30_tokens_shared_across_chapters": 249,
+      "word_share_covered_by_shared_windows_percent": 76.18,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 5,
+      "word_count": 412,
+      "windows_30_tokens_shared_across_chapters": 252,
+      "word_share_covered_by_shared_windows_percent": 75.24,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 6,
+      "word_count": 416,
+      "windows_30_tokens_shared_across_chapters": 243,
+      "word_share_covered_by_shared_windows_percent": 74.28,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 7,
+      "word_count": 408,
+      "windows_30_tokens_shared_across_chapters": 249,
+      "word_share_covered_by_shared_windows_percent": 75.25,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 8,
+      "word_count": 407,
+      "windows_30_tokens_shared_across_chapters": 242,
+      "word_share_covered_by_shared_windows_percent": 73.71,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 9,
+      "word_count": 419,
+      "windows_30_tokens_shared_across_chapters": 306,
+      "word_share_covered_by_shared_windows_percent": 85.44,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 10,
+      "word_count": 423,
+      "windows_30_tokens_shared_across_chapters": 238,
+      "word_share_covered_by_shared_windows_percent": 71.87,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 11,
+      "word_count": 417,
+      "windows_30_tokens_shared_across_chapters": 293,
+      "word_share_covered_by_shared_windows_percent": 89.69,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 12,
+      "word_count": 411,
+      "windows_30_tokens_shared_across_chapters": 293,
+      "word_share_covered_by_shared_windows_percent": 91,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 13,
+      "word_count": 423,
+      "windows_30_tokens_shared_across_chapters": 303,
+      "word_share_covered_by_shared_windows_percent": 90.78,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 14,
+      "word_count": 418,
+      "windows_30_tokens_shared_across_chapters": 272,
+      "word_share_covered_by_shared_windows_percent": 84.45,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 15,
+      "word_count": 420,
+      "windows_30_tokens_shared_across_chapters": 276,
+      "word_share_covered_by_shared_windows_percent": 84.05,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 16,
+      "word_count": 410,
+      "windows_30_tokens_shared_across_chapters": 251,
+      "word_share_covered_by_shared_windows_percent": 84.39,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 17,
+      "word_count": 414,
+      "windows_30_tokens_shared_across_chapters": 232,
+      "word_share_covered_by_shared_windows_percent": 84.06,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 18,
+      "word_count": 416,
+      "windows_30_tokens_shared_across_chapters": 297,
+      "word_share_covered_by_shared_windows_percent": 90.87,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 19,
+      "word_count": 423,
+      "windows_30_tokens_shared_across_chapters": 260,
+      "word_share_covered_by_shared_windows_percent": 83.92,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 20,
+      "word_count": 409,
+      "windows_30_tokens_shared_across_chapters": 263,
+      "word_share_covered_by_shared_windows_percent": 84.11,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 21,
+      "word_count": 423,
+      "windows_30_tokens_shared_across_chapters": 276,
+      "word_share_covered_by_shared_windows_percent": 84.4,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 22,
+      "word_count": 418,
+      "windows_30_tokens_shared_across_chapters": 298,
+      "word_share_covered_by_shared_windows_percent": 90.67,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 23,
+      "word_count": 405,
+      "windows_30_tokens_shared_across_chapters": 288,
+      "word_share_covered_by_shared_windows_percent": 91.11,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 24,
+      "word_count": 419,
+      "windows_30_tokens_shared_across_chapters": 298,
+      "word_share_covered_by_shared_windows_percent": 90.45,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 25,
+      "word_count": 424,
+      "windows_30_tokens_shared_across_chapters": 301,
+      "word_share_covered_by_shared_windows_percent": 90.09,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 26,
+      "word_count": 417,
+      "windows_30_tokens_shared_across_chapters": 297,
+      "word_share_covered_by_shared_windows_percent": 90.65,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 27,
+      "word_count": 426,
+      "windows_30_tokens_shared_across_chapters": 261,
+      "word_share_covered_by_shared_windows_percent": 83.57,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 28,
+      "word_count": 408,
+      "windows_30_tokens_shared_across_chapters": 248,
+      "word_share_covered_by_shared_windows_percent": 84.07,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 29,
+      "word_count": 424,
+      "windows_30_tokens_shared_across_chapters": 300,
+      "word_share_covered_by_shared_windows_percent": 89.86,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 30,
+      "word_count": 424,
+      "windows_30_tokens_shared_across_chapters": 301,
+      "word_share_covered_by_shared_windows_percent": 90.09,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 31,
+      "word_count": 418,
+      "windows_30_tokens_shared_across_chapters": 271,
+      "word_share_covered_by_shared_windows_percent": 84.21,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 32,
+      "word_count": 416,
+      "windows_30_tokens_shared_across_chapters": 266,
+      "word_share_covered_by_shared_windows_percent": 83.89,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 33,
+      "word_count": 418,
+      "windows_30_tokens_shared_across_chapters": 297,
+      "word_share_covered_by_shared_windows_percent": 90.43,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 34,
+      "word_count": 421,
+      "windows_30_tokens_shared_across_chapters": 301,
+      "word_share_covered_by_shared_windows_percent": 90.74,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 35,
+      "word_count": 423,
+      "windows_30_tokens_shared_across_chapters": 295,
+      "word_share_covered_by_shared_windows_percent": 88.89,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 36,
+      "word_count": 415,
+      "windows_30_tokens_shared_across_chapters": 295,
+      "word_share_covered_by_shared_windows_percent": 90.6,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 37,
+      "word_count": 426,
+      "windows_30_tokens_shared_across_chapters": 332,
+      "word_share_covered_by_shared_windows_percent": 90.14,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 38,
+      "word_count": 421,
+      "windows_30_tokens_shared_across_chapters": 257,
+      "word_share_covered_by_shared_windows_percent": 84.09,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 39,
+      "word_count": 422,
+      "windows_30_tokens_shared_across_chapters": 274,
+      "word_share_covered_by_shared_windows_percent": 84.12,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 40,
+      "word_count": 411,
+      "windows_30_tokens_shared_across_chapters": 262,
+      "word_share_covered_by_shared_windows_percent": 83.45,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 41,
+      "word_count": 409,
+      "windows_30_tokens_shared_across_chapters": 264,
+      "word_share_covered_by_shared_windows_percent": 84.35,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 42,
+      "word_count": 419,
+      "windows_30_tokens_shared_across_chapters": 296,
+      "word_share_covered_by_shared_windows_percent": 89.98,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 43,
+      "word_count": 423,
+      "windows_30_tokens_shared_across_chapters": 272,
+      "word_share_covered_by_shared_windows_percent": 83.45,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 44,
+      "word_count": 414,
+      "windows_30_tokens_shared_across_chapters": 267,
+      "word_share_covered_by_shared_windows_percent": 84.06,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 45,
+      "word_count": 432,
+      "windows_30_tokens_shared_across_chapters": 283,
+      "word_share_covered_by_shared_windows_percent": 83.33,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 46,
+      "word_count": 424,
+      "windows_30_tokens_shared_across_chapters": 302,
+      "word_share_covered_by_shared_windows_percent": 90.33,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 47,
+      "word_count": 421,
+      "windows_30_tokens_shared_across_chapters": 296,
+      "word_share_covered_by_shared_windows_percent": 89.55,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 48,
+      "word_count": 408,
+      "windows_30_tokens_shared_across_chapters": 286,
+      "word_share_covered_by_shared_windows_percent": 89.95,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 49,
+      "word_count": 422,
+      "windows_30_tokens_shared_across_chapters": 299,
+      "word_share_covered_by_shared_windows_percent": 90.05,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 50,
+      "word_count": 416,
+      "windows_30_tokens_shared_across_chapters": 307,
+      "word_share_covered_by_shared_windows_percent": 89.66,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 51,
+      "word_count": 424,
+      "windows_30_tokens_shared_across_chapters": 272,
+      "word_share_covered_by_shared_windows_percent": 83.25,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 52,
+      "word_count": 418,
+      "windows_30_tokens_shared_across_chapters": 307,
+      "word_share_covered_by_shared_windows_percent": 83.97,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 53,
+      "word_count": 421,
+      "windows_30_tokens_shared_across_chapters": 296,
+      "word_share_covered_by_shared_windows_percent": 89.55,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 54,
+      "word_count": 422,
+      "windows_30_tokens_shared_across_chapters": 331,
+      "word_share_covered_by_shared_windows_percent": 90.76,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 55,
+      "word_count": 426,
+      "windows_30_tokens_shared_across_chapters": 275,
+      "word_share_covered_by_shared_windows_percent": 83.57,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 56,
+      "word_count": 412,
+      "windows_30_tokens_shared_across_chapters": 264,
+      "word_share_covered_by_shared_windows_percent": 83.74,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 57,
+      "word_count": 421,
+      "windows_30_tokens_shared_across_chapters": 299,
+      "word_share_covered_by_shared_windows_percent": 90.26,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 58,
+      "word_count": 418,
+      "windows_30_tokens_shared_across_chapters": 295,
+      "word_share_covered_by_shared_windows_percent": 89.95,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 59,
+      "word_count": 418,
+      "windows_30_tokens_shared_across_chapters": 293,
+      "word_share_covered_by_shared_windows_percent": 89.47,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    },
+    {
+      "number": 60,
+      "word_count": 501,
+      "windows_30_tokens_shared_across_chapters": 293,
+      "word_share_covered_by_shared_windows_percent": 74.65,
+      "review_status": "CONTROLE_REQUIS_SUR_VERSION_MAITRE"
+    }
+  ],
+  "workplan": [
+    "Acquérir la version maître datée et autorisée du Livre II et identifier sa structure et son empreinte sans publier le texte.",
+    "Comparer exclusivement les variantes en accès contrôlé; ne pas importer l'ancien PDF de 126 pages dans les assets du site.",
+    "Auditer les répétitions narratives réelles du maître, en priorité les dix chapitres à forte répétition de l'archive si la concordance est confirmée.",
+    "Réviser les scènes et causalités plutôt que compléter le nombre de pages par remplissage; protéger l'autonomie de Kyra.",
+    "Faire valider par l'auteur la continuité avec le Livre I, la structure narrative et les épreuves finales."
+  ],
+  "completion": {
+    "archive_structural_headings_found_percent": 100,
+    "manuscript_editorial_completion_percent": null,
+    "publishing_readiness_percent": null,
+    "latest_master_validated": false,
+    "independent_final_review": false
+  }
+}
