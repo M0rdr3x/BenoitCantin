@@ -79,6 +79,6 @@ Pour résoudre l'anomalie et avancer, il faudra :
 - `assets/g017a-mamh-transfer-source-gates.mjs` : refus des taux, écarts et financements inventés, plus test d'élimination des transferts internes en données **exclusivement fictives**.
 - `tests/g017a-mamh-transfer-source-integrity.test.mjs` : **44 tests réussis au rejeu JavaScript/V8 isolé**. Ce résultat ne remplace pas une exécution GitHub Actions native, la validation des PDF immuables ou un audit externe.
 
-**Décision G0.17a : contrôle de source renforcé; 2024 programmes MAMH visuellement documentés, 2025 chiffres non publiables comme comparables, TVA municipale à protéger dans la transition. Le conflit de version reste ouvert. Programme Nova–Sinjira inchangé à 47/100.**
+**Décision G0.17a : contrôle de source renforcé; 2024 programmes MAMH visuellement documentés, 2025 chiffres non publiables comme comparables, TVQ liée au financement municipal à protéger dans la transition. Le conflit de version reste ouvert. Programme Nova–Sinjira inchangé à 47/100.**
 
 **Suite G0.17b :** importer les données municipales réelles 2024–2025 à partir des fichiers codifiés, croiser chaque poste significatif avec sa contrepartie provinciale et réviser le modèle fiscal et les garanties de service sans inventer les recettes manquantes.
