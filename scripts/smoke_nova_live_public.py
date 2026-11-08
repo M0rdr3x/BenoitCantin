@@ -170,8 +170,9 @@ def validate_readiness_display(preview_html: str, poll_html: str,
             raise ValueError("Page publique périmée ou incohérente avec la matrice : " + key)
         if f"<strong>{percent} %</strong> <span>{passed} critères sur {total}</span>" not in section:
             raise ValueError("Grille publique périmée ou incohérente : " + key)
-        aria_name = ("sondage" if key == "poll" else "boussole")
-        pattern = (rf'<div role="progressbar" aria-label="Critères de réception de la {aria_name}"'
+        aria_label = ("Critères de réception du sondage" if key == "poll"
+                      else "Critères de réception de la boussole")
+        pattern = (rf'<div role="progressbar" aria-label="{aria_label}"'
                    rf'[^>]*aria-valuemax="{total}"[^>]*aria-valuenow="{passed}"'
                    rf'[^>]*class="draft-readiness-track"')
         if not re.search(pattern, section):
