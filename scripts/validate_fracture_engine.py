@@ -185,15 +185,17 @@ def main()->int:
    errors.append(f'send-game-report n’est pas la version durcie {REPORT_FUNCTION_VERSION}.')
   if 'body?.email' in report_fn or 'body.email' in report_fn:
    errors.append('send-game-report accepte encore une adresse courriel fournie par le navigateur.')
-  if 'if(!user?.email)' not in compact_report or 'to:[user.email]' not in compact_report:
+  if "if(mode==='email'&&!user?.email)" not in compact_report or 'to:[user.email]' not in compact_report:
    errors.append('send-game-report ne verrouille pas le destinataire sur le compte authentifié.')
   if 'constPAID_EXTERNAL_SERVICES_ENABLED=false;' not in compact_report:
    errors.append('send-game-report peut perdre le verrou de transport externe payant.')
-  if 'if(!PAID_EXTERNAL_SERVICES_ENABLED)' not in compact_report:
+  if "if(mode==='email'&&!PAID_EXTERNAL_SERVICES_ENABLED)" not in compact_report:
    errors.append('send-game-report ne refuse plus explicitement le transport courriel externe désactivé.')
-  disabled_pos=report_fn.find('if (!PAID_EXTERNAL_SERVICES_ENABLED)')
+  disabled_pos=report_fn.find("if (mode === 'email' && !PAID_EXTERNAL_SERVICES_ENABLED)")
+  auth_pos=report_fn.find("if (mode === 'email' && !user?.email)")
+  build_pos=report_fn.find('const pdfBytes = await buildPdf(sheet)')
   resend_pos=report_fn.find("fetch('https://api.resend.com/emails'")
-  if disabled_pos < 0 or resend_pos < 0 or disabled_pos > resend_pos:
+  if min(disabled_pos,auth_pos,build_pos,resend_pos) < 0 or not (disabled_pos < auth_pos < build_pos < resend_pos):
    errors.append('send-game-report pourrait atteindre Resend avant le verrou de service payant.')
 
  if errors:
