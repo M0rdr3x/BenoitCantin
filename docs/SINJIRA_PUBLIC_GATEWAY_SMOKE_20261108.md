@@ -26,3 +26,11 @@ de livraison de courriels. Pour clôturer les 20 % restants :
 3. contrôler l'absence de doublons dans le journal et les essais AAL2.
 
 Aucun abonnement payant ni clé serveur n'est utilisé par ce contrôle.
+
+## Vérification supplémentaire Auth publique, sans secret — 8 novembre 2026
+
+Le prévol HTTP vérifie aussi `GET /auth/v1/settings` avec la clé **publishable** déjà livrée au navigateur. Il contrôle seulement les indicateurs publics : fournisseur Email activé (`external.email`), création de comptes ouverte (`disable_signup=false`) et confirmation des adresses requise (`mailer_autoconfirm=false`). Le script ne publie jamais la clé ni le JSON de réponse. Des auto-tests négatifs simulent les régressions et les pannes réseau.
+
+Cette vérification est strictement en lecture seule et ne prouve **pas** les paramètres privés `Site URL`, l'allowlist des redirections, le modèle HTML de confirmation ou la réception des notifications Formspree. Ces éléments nécessitent toujours le prévol Auth protégé GitHub puis des essais de messagerie réels.
+
+Sources officielles : https://github.com/supabase/auth/blob/master/internal/api/settings.go ; https://supabase.com/docs/guides/getting-started/api-keys.
