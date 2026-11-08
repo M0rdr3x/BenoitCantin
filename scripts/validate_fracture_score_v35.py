@@ -65,7 +65,7 @@ def validate():
     # Cibler seulement les appels au client backend : Array.from(...) est
     # un outil JavaScript légitime utilisé pour les lignes de score.
     for source in [model, js]:
-        if re.search(r"\\b(?:supabase|client|db|s)\\.from\\s*\\(", source):
+        if re.search(r"(?:supabase|client|db|s)[.]from[ ]*[(]", source):
             errors.append("Le calculateur ne doit interroger aucune table distante")
     if "project.slug==='fracture-du-reseau-mere'?null:safeLink(project.play_path)" not in data[HUB_SCRIPT]:
         errors.append("L'ancienne URL « Jouer » Fracture doit rester désactivée")
