@@ -101,6 +101,12 @@ test("chiffres 2025-2026 indépendamment contrôlés contre le registre V02/V03"
  a.annual.find(r=>r.year==="2025-2026").rights_permits_royalties=9999;
  assert.ok(check(d,g014,g015,discovery,a).errors.includes("ACTUAL_FORECAST_CROSSCHECK"));
 });
+test("des catégories juridiquement renommées ne passent pas avec les mêmes montants",()=>{
+ mutate(x=>x.groups[0].categories[0].label="Nouvel impôt NOVA déjà collecté",
+   "SUBCATEGORY_RECONCILIATION_V01");
+ mutate(x=>x.groups[2].categories[1].label="Impôt sur le revenu des particuliers",
+   "SUBCATEGORY_RECONCILIATION_V03");
+});
 test("une source ou un ordre de sous-catégorie falsifié est rejeté",()=>{
  mutate(x=>x.source.pdf_page_index_zero_based=11,"PROVENANCE_FALSE");
  mutate(x=>x.groups[0].categories.reverse(),"SUBCATEGORY_RECONCILIATION_V01");
