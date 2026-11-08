@@ -1,0 +1,478 @@
+{
+  "schema_version": "P56W-1",
+  "date_revision": "2026-11-08",
+  "titre": "Protection détaillée des crédits remboursables 2023 avant réforme fiscale Nova",
+  "statut": "OBSERVATIONS_OFFICIELLES_DES_DECLARANTS_2023_NON_COUT_2027_2036",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "provenance": {
+    "fiscal_a15": {
+      "url": "https://www.budget.finances.gouv.qc.ca/Budget/outils/statistiques-fiscales/somm-credit-remb.asp",
+      "annee_observee": 2023,
+      "tableau": "A.15",
+      "portee": "CREDITS_REMBOURSABLES_PAR_TRANCHE_DE_REVENU_TOTAL",
+      "verifie_sur_page_officielle": true
+    },
+    "fiscal_a14": {
+      "url": "https://www.budget.finances.gouv.qc.ca/Budget/outils/statistiques-fiscales/somm-impot-a-payer.asp",
+      "annee_observee": 2023,
+      "tableau": "A.14"
+    },
+    "p56l": "projets/projet-nova/etudes/P56L_BASE_DISTRIBUTIVE_PARTICULIERS_2023_CREDITS_ET_QUINTILES.json",
+    "p56v": "projets/projet-nova/etudes/P56V_PONT_FINANCEMENT_SERVICES_OPTIONS_FISCALES_VGQ_2027_2029.json",
+    "p56n": "projets/projet-nova/etudes/P56N_CAS_TYPES_2026_REFERENCES_OFFICIELLES_PRESTATIONS_ET_LIMITES.json",
+    "p56o": "projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json",
+    "p55n": "projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json"
+  },
+  "unite_montants": "MILLIONS_DE_DOLLARS_CAD",
+  "population_statistique": "DECLARANTS_FISCAUX_INDIVIDUELS_NI_MENAGES_NI_BENEFICIAIRES_UNIQUES",
+  "annee_reference": 2023,
+  "tranches": [
+    {
+      "id": "MOINS_10000",
+      "montant_total_publie_mcad": "777",
+      "somme_credits_par_categorie_arrondis_mcad": "776",
+      "ecart_arrondi_somme_categories_moins_total_mcad": "-1",
+      "nombre_declarants_par_tranche": null,
+      "impot_federal_par_tranche": null,
+      "effet_revenu_disponible_nova": null
+    },
+    {
+      "id": "10000_19999",
+      "montant_total_publie_mcad": "1118",
+      "somme_credits_par_categorie_arrondis_mcad": "1117",
+      "ecart_arrondi_somme_categories_moins_total_mcad": "-1",
+      "nombre_declarants_par_tranche": null,
+      "impot_federal_par_tranche": null,
+      "effet_revenu_disponible_nova": null
+    },
+    {
+      "id": "20000_29999",
+      "montant_total_publie_mcad": "2306",
+      "somme_credits_par_categorie_arrondis_mcad": "2308",
+      "ecart_arrondi_somme_categories_moins_total_mcad": "2",
+      "nombre_declarants_par_tranche": null,
+      "impot_federal_par_tranche": null,
+      "effet_revenu_disponible_nova": null
+    },
+    {
+      "id": "30000_49999",
+      "montant_total_publie_mcad": "2275",
+      "somme_credits_par_categorie_arrondis_mcad": "2275",
+      "ecart_arrondi_somme_categories_moins_total_mcad": "0",
+      "nombre_declarants_par_tranche": null,
+      "impot_federal_par_tranche": null,
+      "effet_revenu_disponible_nova": null
+    },
+    {
+      "id": "50000_99999",
+      "montant_total_publie_mcad": "2145",
+      "somme_credits_par_categorie_arrondis_mcad": "2145",
+      "ecart_arrondi_somme_categories_moins_total_mcad": "0",
+      "nombre_declarants_par_tranche": null,
+      "impot_federal_par_tranche": null,
+      "effet_revenu_disponible_nova": null
+    },
+    {
+      "id": "100000_PLUS",
+      "montant_total_publie_mcad": "683",
+      "somme_credits_par_categorie_arrondis_mcad": "682",
+      "ecart_arrondi_somme_categories_moins_total_mcad": "-1",
+      "nombre_declarants_par_tranche": null,
+      "impot_federal_par_tranche": null,
+      "effet_revenu_disponible_nova": null
+    }
+  ],
+  "credits_par_categorie": [
+    {
+      "id": "FAMILLE",
+      "categorie": "Allocation famille",
+      "total_publie_mcad": "3569",
+      "part_publiee_pourcent": "38.4",
+      "montants_par_tranche_mcad": {
+        "MOINS_10000": "509",
+        "10000_19999": "364",
+        "20000_29999": "345",
+        "30000_49999": "806",
+        "50000_99999": "1197",
+        "100000_PLUS": "349"
+      },
+      "somme_tranches_arrondies_mcad": "3570",
+      "ecart_somme_arrondie_moins_total_publie_mcad": "1",
+      "beneficiaires_uniques_identifies": false,
+      "nombre_de_familles_identifiees": null,
+      "effet_nova_2027_2036_mcad": null,
+      "remplacement_par_transfert_direct_legalement_valide": false,
+      "statut": "OBSERVATION_AGREGEE_2023_NON_SIMULATION_NOVA"
+    },
+    {
+      "id": "SOLIDARITE",
+      "categorie": "Crédit d'impôt pour la solidarité",
+      "total_publie_mcad": "1709",
+      "part_publiee_pourcent": "18.4",
+      "montants_par_tranche_mcad": {
+        "MOINS_10000": "128",
+        "10000_19999": "284",
+        "20000_29999": "552",
+        "30000_49999": "513",
+        "50000_99999": "220",
+        "100000_PLUS": "13"
+      },
+      "somme_tranches_arrondies_mcad": "1710",
+      "ecart_somme_arrondie_moins_total_publie_mcad": "1",
+      "beneficiaires_uniques_identifies": false,
+      "nombre_de_familles_identifiees": null,
+      "effet_nova_2027_2036_mcad": null,
+      "remplacement_par_transfert_direct_legalement_valide": false,
+      "statut": "OBSERVATION_AGREGEE_2023_NON_SIMULATION_NOVA"
+    },
+    {
+      "id": "GARDE",
+      "categorie": "Crédit d'impôt pour frais de garde d'enfants",
+      "total_publie_mcad": "975",
+      "part_publiee_pourcent": "10.5",
+      "montants_par_tranche_mcad": {
+        "MOINS_10000": "35",
+        "10000_19999": "48",
+        "20000_29999": "68",
+        "30000_49999": "189",
+        "50000_99999": "384",
+        "100000_PLUS": "250"
+      },
+      "somme_tranches_arrondies_mcad": "974",
+      "ecart_somme_arrondie_moins_total_publie_mcad": "-1",
+      "beneficiaires_uniques_identifies": false,
+      "nombre_de_familles_identifiees": null,
+      "effet_nova_2027_2036_mcad": null,
+      "remplacement_par_transfert_direct_legalement_valide": false,
+      "statut": "OBSERVATION_AGREGEE_2023_NON_SIMULATION_NOVA"
+    },
+    {
+      "id": "PRIME_TRAVAIL",
+      "categorie": "Crédits d'impôt relatifs à la prime au travail",
+      "total_publie_mcad": "306",
+      "part_publiee_pourcent": "3.3",
+      "montants_par_tranche_mcad": {
+        "MOINS_10000": "46",
+        "10000_19999": "131",
+        "20000_29999": "75",
+        "30000_49999": "51",
+        "50000_99999": "4",
+        "100000_PLUS": "0"
+      },
+      "somme_tranches_arrondies_mcad": "307",
+      "ecart_somme_arrondie_moins_total_publie_mcad": "1",
+      "beneficiaires_uniques_identifies": false,
+      "nombre_de_familles_identifiees": null,
+      "effet_nova_2027_2036_mcad": null,
+      "remplacement_par_transfert_direct_legalement_valide": false,
+      "statut": "OBSERVATION_AGREGEE_2023_NON_SIMULATION_NOVA"
+    },
+    {
+      "id": "MAINTIEN_DOMICILE",
+      "categorie": "Crédit d'impôt pour maintien à domicile des aînés",
+      "total_publie_mcad": "656",
+      "part_publiee_pourcent": "7.1",
+      "montants_par_tranche_mcad": {
+        "MOINS_10000": "3",
+        "10000_19999": "23",
+        "20000_29999": "288",
+        "30000_49999": "192",
+        "50000_99999": "127",
+        "100000_PLUS": "22"
+      },
+      "somme_tranches_arrondies_mcad": "655",
+      "ecart_somme_arrondie_moins_total_publie_mcad": "-1",
+      "beneficiaires_uniques_identifies": false,
+      "nombre_de_familles_identifiees": null,
+      "effet_nova_2027_2036_mcad": null,
+      "remplacement_par_transfert_direct_legalement_valide": false,
+      "statut": "OBSERVATION_AGREGEE_2023_NON_SIMULATION_NOVA"
+    },
+    {
+      "id": "SOUTIEN_AINES",
+      "categorie": "Crédit d'impôt pour soutien aux aînés",
+      "total_publie_mcad": "1703",
+      "part_publiee_pourcent": "18.3",
+      "montants_par_tranche_mcad": {
+        "MOINS_10000": "36",
+        "10000_19999": "216",
+        "20000_29999": "905",
+        "30000_49999": "431",
+        "50000_99999": "111",
+        "100000_PLUS": "3"
+      },
+      "somme_tranches_arrondies_mcad": "1702",
+      "ecart_somme_arrondie_moins_total_publie_mcad": "-1",
+      "beneficiaires_uniques_identifies": false,
+      "nombre_de_familles_identifiees": null,
+      "effet_nova_2027_2036_mcad": null,
+      "remplacement_par_transfert_direct_legalement_valide": false,
+      "statut": "OBSERVATION_AGREGEE_2023_NON_SIMULATION_NOVA"
+    },
+    {
+      "id": "MEDICAUX",
+      "categorie": "Crédit d'impôt remboursable pour frais médicaux",
+      "total_publie_mcad": "71",
+      "part_publiee_pourcent": "0.8",
+      "montants_par_tranche_mcad": {
+        "MOINS_10000": "5",
+        "10000_19999": "15",
+        "20000_29999": "23",
+        "30000_49999": "25",
+        "50000_99999": "3",
+        "100000_PLUS": "0"
+      },
+      "somme_tranches_arrondies_mcad": "71",
+      "ecart_somme_arrondie_moins_total_publie_mcad": "0",
+      "beneficiaires_uniques_identifies": false,
+      "nombre_de_familles_identifiees": null,
+      "effet_nova_2027_2036_mcad": null,
+      "remplacement_par_transfert_direct_legalement_valide": false,
+      "statut": "OBSERVATION_AGREGEE_2023_NON_SIMULATION_NOVA"
+    },
+    {
+      "id": "AIDANTE",
+      "categorie": "Crédit d'impôt pour personne aidante",
+      "total_publie_mcad": "197",
+      "part_publiee_pourcent": "2.1",
+      "montants_par_tranche_mcad": {
+        "MOINS_10000": "9",
+        "10000_19999": "24",
+        "20000_29999": "31",
+        "30000_49999": "46",
+        "50000_99999": "63",
+        "100000_PLUS": "24"
+      },
+      "somme_tranches_arrondies_mcad": "197",
+      "ecart_somme_arrondie_moins_total_publie_mcad": "0",
+      "beneficiaires_uniques_identifies": false,
+      "nombre_de_familles_identifiees": null,
+      "effet_nova_2027_2036_mcad": null,
+      "remplacement_par_transfert_direct_legalement_valide": false,
+      "statut": "OBSERVATION_AGREGEE_2023_NON_SIMULATION_NOVA"
+    },
+    {
+      "id": "TVQ_SALARIE",
+      "categorie": "Remboursement de TVQ à un salarié ou membre d'une société de personnes",
+      "total_publie_mcad": "19",
+      "part_publiee_pourcent": "0.2",
+      "montants_par_tranche_mcad": {
+        "MOINS_10000": "0",
+        "10000_19999": "0",
+        "20000_29999": "0",
+        "30000_49999": "1",
+        "50000_99999": "8",
+        "100000_PLUS": "9"
+      },
+      "somme_tranches_arrondies_mcad": "18",
+      "ecart_somme_arrondie_moins_total_publie_mcad": "-1",
+      "beneficiaires_uniques_identifies": false,
+      "nombre_de_familles_identifiees": null,
+      "effet_nova_2027_2036_mcad": null,
+      "remplacement_par_transfert_direct_legalement_valide": false,
+      "statut": "OBSERVATION_AGREGEE_2023_NON_SIMULATION_NOVA"
+    },
+    {
+      "id": "ATHLETE",
+      "categorie": "Crédit d'impôt pour un athlète de haut niveau",
+      "total_publie_mcad": "6",
+      "part_publiee_pourcent": "0.1",
+      "montants_par_tranche_mcad": {
+        "MOINS_10000": "3",
+        "10000_19999": "1",
+        "20000_29999": "1",
+        "30000_49999": "0",
+        "50000_99999": "0",
+        "100000_PLUS": "0"
+      },
+      "somme_tranches_arrondies_mcad": "5",
+      "ecart_somme_arrondie_moins_total_publie_mcad": "-1",
+      "beneficiaires_uniques_identifies": false,
+      "nombre_de_familles_identifiees": null,
+      "effet_nova_2027_2036_mcad": null,
+      "remplacement_par_transfert_direct_legalement_valide": false,
+      "statut": "OBSERVATION_AGREGEE_2023_NON_SIMULATION_NOVA"
+    },
+    {
+      "id": "ADOPTION",
+      "categorie": "Crédit d'impôt pour frais d'adoption",
+      "total_publie_mcad": "1",
+      "part_publiee_pourcent": "0.0",
+      "montants_par_tranche_mcad": {
+        "MOINS_10000": "0",
+        "10000_19999": "0",
+        "20000_29999": "0",
+        "30000_49999": "0",
+        "50000_99999": "0",
+        "100000_PLUS": "0"
+      },
+      "somme_tranches_arrondies_mcad": "0",
+      "ecart_somme_arrondie_moins_total_publie_mcad": "-1",
+      "beneficiaires_uniques_identifies": false,
+      "nombre_de_familles_identifiees": null,
+      "effet_nova_2027_2036_mcad": null,
+      "remplacement_par_transfert_direct_legalement_valide": false,
+      "statut": "OBSERVATION_AGREGEE_2023_NON_SIMULATION_NOVA"
+    },
+    {
+      "id": "BOUCLIER",
+      "categorie": "Crédit d'impôt Bouclier fiscal",
+      "total_publie_mcad": "34",
+      "part_publiee_pourcent": "0.4",
+      "montants_par_tranche_mcad": {
+        "MOINS_10000": "1",
+        "10000_19999": "8",
+        "20000_29999": "13",
+        "30000_49999": "10",
+        "50000_99999": "2",
+        "100000_PLUS": "0"
+      },
+      "somme_tranches_arrondies_mcad": "34",
+      "ecart_somme_arrondie_moins_total_publie_mcad": "0",
+      "beneficiaires_uniques_identifies": false,
+      "nombre_de_familles_identifiees": null,
+      "effet_nova_2027_2036_mcad": null,
+      "remplacement_par_transfert_direct_legalement_valide": false,
+      "statut": "OBSERVATION_AGREGEE_2023_NON_SIMULATION_NOVA"
+    },
+    {
+      "id": "AUTRES",
+      "categorie": "Autres crédits d'impôt",
+      "total_publie_mcad": "60",
+      "part_publiee_pourcent": "0.6",
+      "montants_par_tranche_mcad": {
+        "MOINS_10000": "1",
+        "10000_19999": "3",
+        "20000_29999": "7",
+        "30000_49999": "11",
+        "50000_99999": "26",
+        "100000_PLUS": "12"
+      },
+      "somme_tranches_arrondies_mcad": "60",
+      "ecart_somme_arrondie_moins_total_publie_mcad": "0",
+      "beneficiaires_uniques_identifies": false,
+      "nombre_de_familles_identifiees": null,
+      "effet_nova_2027_2036_mcad": null,
+      "remplacement_par_transfert_direct_legalement_valide": false,
+      "statut": "OBSERVATION_AGREGEE_2023_NON_SIMULATION_NOVA"
+    }
+  ],
+  "controle_arrondis": {
+    "ligne_totale_officielle_mcad": "9305",
+    "somme_totaux_par_categorie_publies_mcad": "9306",
+    "ecart_somme_categories_moins_total_officiel_mcad": "1",
+    "ligne_totale_par_tranche_mcad": {
+      "MOINS_10000": "777",
+      "10000_19999": "1118",
+      "20000_29999": "2306",
+      "30000_49999": "2275",
+      "50000_99999": "2145",
+      "100000_PLUS": "683"
+    },
+    "somme_credits_total_officielle_par_tranche_mcad": "9304",
+    "somme_lignes_de_credits_arrondies_mcad": "9303",
+    "erreurs_arrondis_possible_jusqua_2_mcad_par_tranche": true,
+    "zéro_affiche_peut_indiquer_moins_0_5_mcad": true,
+    "ne_pas_reconcilier_en_modifiant_des_lignes": true,
+    "chiffres_arrondis_ne_pas_utiliser_pour_micro_simulation_individuelle": true
+  },
+  "menages_plus_vulnerables_observations_a14": {
+    "seuil_revenu_total_annuel_cad": "30000",
+    "groupe_six_tranches": [
+      "MOINS_10000",
+      "10000_19999",
+      "20000_29999"
+    ],
+    "credits_remboursables_tous_types_mcad": "4201",
+    "part_credit_remboursable_total_pourcent": "45.1",
+    "impot_a_payer_mcad": "285",
+    "impot_net_apres_credits_remboursables_mcad": "-3916",
+    "statistique_2023_pas_cout_de_compensation_2027": true,
+    "gains_ou_pertes_individuelles_connues": false
+  },
+  "quintiles_observes_a3": {
+    "premier_quintile_part_revenu_total_pourcent": "3.43",
+    "premier_quintile_part_impot_a_payer_pourcent": "0.03",
+    "dernier_quintile_part_revenu_total_pourcent": "50.10",
+    "dernier_quintile_part_impot_a_payer_pourcent": "69.41",
+    "quintiles_repartition_declarants_pas_repartition_menages": true,
+    "repartition_ne_permet_pas_de_deduire_effets_reforme_nova": true
+  },
+  "règles_integrite": {
+    "credits_remboursables_non_assimiles_a_recettes_disponibles": true,
+    "credits_2023_non_automatiquement_reconduits_a_2027": true,
+    "credits_2023_non_additionnes_aux_depenses_portefeuilles_p56v": true,
+    "minimum_de_protection_2027_2036_non_chiffre": true,
+    "suppression_des_credits_non_adoptee": true,
+    "compensation_menages_non_imputee_a_zero": true,
+    "montants_2023_non_transposes_comme_montants_2027": true,
+    "prestation_ponctuelle_2026_non_perpetualisee": true,
+    "assiette_totale_2023_non_assiette_imposable_nova_2027": true,
+    "beneficiaires_individuels_non_identifies": true,
+    "tranches_de_revenu_total_non_egales_a_quintiles": true,
+    "frais_federaux_et_cotisations_non_inclus_comme_simules": true
+  },
+  "preuves_pour_etape_suivante": [
+    {
+      "id": "W01",
+      "portee": "Établir les règles 2027-2028, crédits et transferts familiaux selon situation actuelle et nouvelle",
+      "statut": "NON_OBTENUE",
+      "preuve_id": null
+    },
+    {
+      "id": "W02",
+      "portee": "Associer les paiements réels par ménage aux impôts, prestations fédérales et crédits remboursables",
+      "statut": "NON_OBTENUE",
+      "preuve_id": null
+    },
+    {
+      "id": "W03",
+      "portee": "Chiffrer les perdants et les protections par décile, revenu disponible, région et type de foyer",
+      "statut": "NON_OBTENUE",
+      "preuve_id": null
+    },
+    {
+      "id": "W04",
+      "portee": "Mesurer la charge sur les PME, salariés et travailleurs autonomes sous chaque option fiscale",
+      "statut": "NON_OBTENUE",
+      "preuve_id": null
+    },
+    {
+      "id": "W05",
+      "portee": "Établir la source de financement sans additionner les crédits au budget public une seconde fois",
+      "statut": "NON_OBTENUE",
+      "preuve_id": null
+    },
+    {
+      "id": "W06",
+      "portee": "Faire valider juridiquement les nouveaux transferts et droits des personnes vulnérables",
+      "statut": "NON_OBTENUE",
+      "preuve_id": null
+    },
+    {
+      "id": "W07",
+      "portee": "Distinguer le régime provincial canadien du budget souverain, fonctions fédérales comprises",
+      "statut": "NON_OBTENUE",
+      "preuve_id": null
+    },
+    {
+      "id": "W08",
+      "portee": "Obtenir examen fiscal et comptable indépendant et approbation des mesures candidates",
+      "statut": "NON_OBTENUE",
+      "preuve_id": null
+    }
+  ],
+  "controle_completion": {
+    "score_estime_p55n": 53,
+    "points_restants_estimes": 47,
+    "portes_p56o_demonstrees": 0,
+    "p52b_cellules_ouvertes": 600,
+    "p52d_incidences_inconnues": 720,
+    "p52a_preuves_a_valider": 20,
+    "citoyens_proteges_dans_simulation_nova_demonstres": 0,
+    "nouveaux_taux_nova_adoptes": 0,
+    "avis_experts_nova_signes": 0,
+    "programme_termine": false,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
