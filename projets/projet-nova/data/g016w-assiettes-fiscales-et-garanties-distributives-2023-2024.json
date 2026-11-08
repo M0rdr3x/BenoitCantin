@@ -583,7 +583,7 @@
     "federal_corporate_2024_pdf_visual_checked": true,
     "municipal_2023_pdf_visual_checked": true,
     "federal_personal_2024_pdf_visual_checked": false,
-    "valid_synthetic_effect_calculator_ready": false,
+    "valid_synthetic_effect_calculator_ready": true,
     "nova_tax_rate_certified": false,
     "nova_distribution_effect_certified": false,
     "nova_ten_year_budget_funded": false,
