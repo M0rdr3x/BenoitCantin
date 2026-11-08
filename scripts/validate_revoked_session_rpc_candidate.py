@@ -7,6 +7,7 @@ base. Un test d'intégration staging avec sessions réelles reste obligatoire.
 from __future__ import annotations
 
 import argparse
+import hashlib
 from pathlib import Path
 import re
 
@@ -65,6 +66,20 @@ SIGNATURES = {
 }
 
 
+# SHA-256 des définitions actives pg_get_functiondef, avec simple strip()
+# en lecture seule au 8 novembre 2026. Toute dérive métier exige revue.
+SOURCE_SHA256 = {
+    "security_after_password_recovery": "1ced27350a3f05818e3bfebb03ebd5791fc9a5e0e566505a0d4c99ce79596a3a",
+    "security_compromise_account": "264a472bdd9f23df25aa9d26adaf00601e2a6a49f852c86bdb4253f3d16d8394",
+    "security_report_lost_device": "a8e31f1f9c68a6d4ec06fe78f52ebc81823b69d47f1e67bf227175c93b6b28f4",
+    "security_resolve_connection_challenge": "ca24404955fb7ee9a3c0f75e6171beb0e7000f00841e256070802b0d31c09f07",
+    "security_resolve_connection_challenge_mfa": "41717bb023f0415f8a986e7cf7b5f704e587e4d8877d39a3bc715f2fe0f35c10",
+    "security_revoke_device": "fcdf34e4f92a076cd3e8237a6ec17b4d9a784ed6ae116305a8595a7ab5340bbd",
+    "security_set_device_trust": "83ef68e2b45f4153c03f40f3d35532794f2ee189d31d6f91242d8a400810cd61",
+    "security_update_settings": "c11672c4df85e1a1ee3bb9e26b7bdfe46a2fd6776aa5f8062bc8dad5ba3a9dc2",
+}
+
+
 def remove_comments(source: str) -> str:
     return "\n".join(line.split("--", 1)[0] for line in source.splitlines())
 
@@ -84,7 +99,8 @@ def inspect(source: str) -> list[str]:
         errors.append("Le candidat doit contenir exactement neuf définitions de fonctions")
 
     pieces = code.split("CREATE OR REPLACE FUNCTION sinjira_security_internal.")
-    if len(pieces) != len(FUNCTION_NAMES) + 1:
+    raw_pieces = source.split("CREATE OR REPLACE FUNCTION sinjira_security_internal.")
+    if len(pieces) != len(FUNCTION_NAMES) + 1 or len(raw_pieces) != len(pieces):
         errors.append("Nombre de RPC SINJIRA sensibles incorrect")
         return errors
     helper = pieces[0]
@@ -99,7 +115,7 @@ def inspect(source: str) -> list[str]:
         errors.append("La fonction de sécurité ne doit pas être accordée aux rôles clients")
 
     names_seen = []
-    for part in pieces[1:]:
+    for part, raw_part in zip(pieces[1:], raw_pieces[1:]):
         found = re.match(r"([a-z_]+)\(", part)
         if not found:
             errors.append("Signature RPC non reconnaissable")
@@ -123,6 +139,22 @@ def inspect(source: str) -> list[str]:
             errors.append("Identité auth.uid() historique absente : " + name)
         if "RETURNS jsonb" not in part:
             errors.append("Type de retour historique modifié : " + name)
+
+        # Seule l'insertion d'un contrôle de session est autorisée.
+        # Reconstituer les octets de pg_get_functiondef à partir du SQL
+        # de la PR et comparer le SHA-256 fourni par PostgreSQL en lecture.
+        stop = raw_part.find("$function$;")
+        if stop < 0:
+            errors.append("Fin de fonction absente pour empreinte : " + name)
+        else:
+            original = (
+                "CREATE OR REPLACE FUNCTION sinjira_security_internal."
+                + raw_part[:stop] + "$function$"
+            )
+            original = original.replace("\n  " + SESSION_CALL, "", 1).strip()
+            actual_hash = hashlib.sha256(original.encode("utf-8")).hexdigest()
+            if actual_hash != SOURCE_SHA256[name]:
+                errors.append("Corps historique modifié hors garde de session : " + name)
 
     if tuple(names_seen) != FUNCTION_NAMES:
         errors.append("Liste ou ordre des RPC différent du catalogue attendu")
@@ -150,6 +182,9 @@ def self_test(source: str) -> None:
         ("grants publics introduits", "ROLLBACK;",
          "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA private TO PUBLIC;\nROLLBACK;"),
         ("double rollback", "ROLLBACK;", "ROLLBACK;\nROLLBACK;"),
+        ("logique métier historique modifiée",
+         "where id=p_device_id and user_id=v_user",
+         "where user_id=v_user"),
     )
     for label, original, replacement in mutations:
         if original not in source:
