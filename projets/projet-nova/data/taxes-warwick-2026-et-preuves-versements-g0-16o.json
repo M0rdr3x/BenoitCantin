@@ -1,0 +1,501 @@
+{
+  "schema": "nova-g016o-warwick-2026-taxes-grant-proof/v1",
+  "phase": "G0.16o",
+  "date": "2026-11-07",
+  "status": "REAL_2026_TAX_RULES_AND_GRANT_CLAIMS_NOT_CASH_AUDIT",
+  "programme_score_before": 47,
+  "programme_score_after": 47,
+  "adopted": false,
+  "sources": [
+    {
+      "id": "WARWICK_R415_2026",
+      "url": "https://villedewarwick.quebec/wp-content/uploads/2026/02/R415-2025-Taux-de-taxes-et-compensations-2026.pdf",
+      "organization": "Ville de Warwick",
+      "category": "ACTUAL_2026_TAX_REGULATION",
+      "financial_year": 2026,
+      "regulation_number": "415-2025",
+      "council_adopted": "2026-01-12",
+      "entered_into_force": "2026-01-14",
+      "text_read": true,
+      "web_pdf_screen_attempted": true,
+      "visual_screen_verified": false,
+      "visual_screen_issue": "anti-bot rendering"
+    },
+    {
+      "id": "WARWICK_R416_2026",
+      "url": "https://villedewarwick.quebec/wp-content/uploads/2026/02/R416-2025-Tarification-pour-lexercice-2026.pdf",
+      "organization": "Ville de Warwick",
+      "category": "ACTUAL_2026_USER_FEES",
+      "financial_year": 2026,
+      "regulation_number": "416-2025",
+      "text_read": true,
+      "web_pdf_screen_attempted": false,
+      "visual_screen_verified": false
+    },
+    {
+      "id": "MAMH_PRIMEAU_GUIDE_2026_08",
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/infrastructures/primeau/GUI_primeau_aout_2026.pdf",
+      "organization": "MAMH",
+      "category": "OFFICIAL_FINANCIAL_ASSISTANCE_RULES",
+      "version_date": "2026-08",
+      "text_read": true,
+      "web_pdf_screen_attempted": true,
+      "visual_screen_verified": false,
+      "visual_screen_issue": "web screenshot cache miss"
+    },
+    {
+      "id": "WARWICK_404_2025",
+      "url": "https://villedewarwick.quebec/wp-content/uploads/2025/03/R404-2025-Emprunt-usine-eau-potable-et-filiere-traitement-version-finale.pdf",
+      "organization": "Ville de Warwick",
+      "category": "EXISTING_BORROWING_AUTHORITY_DISTINCT_FROM_2026_RATE",
+      "text_read": true,
+      "web_pdf_screen_attempted": false,
+      "visual_screen_verified": false
+    }
+  ],
+  "observed_2026_tax_rules": {
+    "municipality": "Warwick",
+    "fiscal_year": 2026,
+    "published_tax_regulation": "415-2025",
+    "tax_rates_cad_per_100_assessment": [
+      {
+        "id": "RESIDENCE_BASE",
+        "article": "2.1",
+        "scope": "RESIDENTIAL_RESIDUAL_CLASS",
+        "kind": "GENERAL_PROPERTY_TAX",
+        "rate_cad_per_100": 0.575,
+        "mandatory_for_illustrative_residence": true,
+        "linked_to_404_2025": false
+      },
+      {
+        "id": "SPECIAL_FIREHALL_165_2012",
+        "article": "3.4",
+        "scope": "ALL_TAXABLE_PROPERTIES",
+        "kind": "SPECIAL_DEBT_TAX",
+        "rate_cad_per_100": 0.0123,
+        "mandatory_for_illustrative_residence": true,
+        "linked_to_404_2025": false
+      },
+      {
+        "id": "SPECIAL_FIRETRUCK_233_2017",
+        "article": "3.5",
+        "scope": "ALL_TAXABLE_PROPERTIES",
+        "kind": "SPECIAL_DEBT_TAX",
+        "rate_cad_per_100": 0.0061,
+        "mandatory_for_illustrative_residence": true,
+        "linked_to_404_2025": false
+      },
+      {
+        "id": "SPECIAL_FIRETRUCK_305_2020",
+        "article": "3.6",
+        "scope": "ALL_TAXABLE_PROPERTIES",
+        "kind": "SPECIAL_DEBT_TAX",
+        "rate_cad_per_100": 0.0035,
+        "mandatory_for_illustrative_residence": true,
+        "linked_to_404_2025": false
+      },
+      {
+        "id": "SPECIAL_ROADS_2026",
+        "article": "3.7",
+        "scope": "ALL_TAXABLE_PROPERTIES",
+        "kind": "SPECIAL_ROAD_CAPITAL_TAX",
+        "rate_cad_per_100": 0.025,
+        "mandatory_for_illustrative_residence": true,
+        "linked_to_404_2025": false
+      },
+      {
+        "id": "SPECIAL_STREETS_357_2022",
+        "article": "3.9",
+        "scope": "ALL_TAXABLE_PROPERTIES",
+        "kind": "SPECIAL_DEBT_TAX",
+        "rate_cad_per_100": 0.0155,
+        "mandatory_for_illustrative_residence": true,
+        "linked_to_404_2025": false
+      },
+      {
+        "id": "SPECIAL_SANITATION",
+        "article": "3.1",
+        "scope": "SECTOR_SERVICED_SANITATION",
+        "kind": "CONDITIONAL_SPECIAL_TAX",
+        "rate_cad_per_100": 0.101,
+        "mandatory_for_illustrative_residence": false,
+        "linked_to_404_2025": false
+      },
+      {
+        "id": "SPECIAL_BASIN_229_2017",
+        "article": "3.3",
+        "scope": "BASIN_SPECIFIC_WATER_OR_SEWER",
+        "kind": "CONDITIONAL_SPECIAL_TAX",
+        "rate_cad_per_100": 0.0056,
+        "mandatory_for_illustrative_residence": false,
+        "linked_to_404_2025": false
+      },
+      {
+        "id": "SPECIAL_STREETS_357_2022_WATER",
+        "article": "3.8",
+        "scope": "PROPERTIES_SERVICED_WATER_OR_SEWER",
+        "kind": "CONDITIONAL_SPECIAL_TAX",
+        "rate_cad_per_100": 0.0114,
+        "mandatory_for_illustrative_residence": false,
+        "linked_to_404_2025": false
+      },
+      {
+        "id": "SPECIAL_MRC_RURAL_WATERCOURSE",
+        "article": "3.2",
+        "scope": "REGISTERED_AGRICULTURAL_OPERATIONS",
+        "kind": "CONDITIONAL_SPECIAL_TAX",
+        "rate_cad_per_100": 0.0155,
+        "mandatory_for_illustrative_residence": false,
+        "linked_to_404_2025": false
+      }
+    ],
+    "fixed_compensations_cad_per_unit": [
+      {
+        "id": "WATER_RESIDENTIAL",
+        "article": "5.1",
+        "scope": "RESIDENTIAL_UNIT_CONNECTED_WATER",
+        "amount_cad": 102
+      },
+      {
+        "id": "SEWER_RESIDENTIAL",
+        "article": "5.1",
+        "scope": "RESIDENTIAL_UNIT_CONNECTED_SEWER",
+        "amount_cad": 31.25
+      },
+      {
+        "id": "WASTE_URBAN",
+        "article": "6.1",
+        "scope": "RESIDENTIAL_UNIT_URBAN_WASTE",
+        "amount_cad": 283
+      },
+      {
+        "id": "WASTE_RURAL",
+        "article": "6.1",
+        "scope": "RESIDENTIAL_UNIT_RURAL_WASTE",
+        "amount_cad": 267
+      }
+    ],
+    "ordinary_property_assessment_extracted_for_a_specific_home": false,
+    "actual_bill_paid_for_a_specific_home_cad": null,
+    "new_plant_404_2025_specific_2026_tax_rate_cad_per_100": null,
+    "r415_does_not_name_404_2025_explicitly": true,
+    "lack_of_named_404_rate_does_not_prove_zero_liability": true,
+    "other_municipal_by_laws_may_create_additional_charges": true,
+    "property_classification_and_sector_matter": true,
+    "all_applicable_special_rates_unknown_for_any_particular_home": true,
+    "user_taxes_2026_paid_aggregate_cad": null
+  },
+  "synthetic_household_example": {
+    "strictly_hypothetical": true,
+    "real_person_or_property": false,
+    "assessed_value_cad": 300000,
+    "property_class": "RESIDUAL_RESIDENTIAL",
+    "urban_waste_collection": true,
+    "one_unit": true,
+    "water_connected": true,
+    "sewer_connected": true,
+    "conditional_sanitation_tax_not_included": true,
+    "conditional_sector_specific_debt_taxes_not_included": true,
+    "new_404_2025_taxes_not_included_as_unverified": true,
+    "property_tax_rate_sum_cad_per_100": 0.6374,
+    "property_tax_subtotal_cad": 1912.2,
+    "water_flat_cad": 102,
+    "sewer_flat_cad": 31.25,
+    "urban_waste_flat_cad": 283,
+    "selected_fixed_services_subtotal_cad": 416.25,
+    "partial_example_subtotal_cad": 2328.45,
+    "actual_total_tax_bill_cad": null,
+    "source_for_2026_assessed_value": "SYNTHETIC_EXAMPLE_NO_ASSESSMENT_ROLL",
+    "full_bill_guaranteed": false,
+    "distributive_burden_claim": false,
+    "nova_tax_saving_predicted_cad": null
+  },
+  "primeau_current_guide_rules": {
+    "guide_date": "2026-08",
+    "source_id": "MAMH_PRIMEAU_GUIDE_2026_08",
+    "applicability_to_existing_2025_awards_requires_convention_review": true,
+    "prior_subprogramme_1_2_keeps_original_claim_cycle_per_government_site": true,
+    "partially_paid_only_after_approved_claims_not_automatic": true,
+    "partial_claim_maximum_share_pct": 90,
+    "partial_claim_limit_is_not_confirmed_paid_pct": true,
+    "final_claim_requires_cost_records_and_paid_invoices": true,
+    "up_to_ten_percent_may_be_held_on_selected_final_audits": true,
+    "ten_percent_holdback_applies_to_every_project": false,
+    "initial_payment_only_if_agreement_so_provides": true,
+    "any_initial_payment_verified_for_sample": false,
+    "applies_only_after_individual_agreement_checked": false,
+    "certain_projects_may_have_ministerial_final_verification": true
+  },
+  "warwick_case_link": "data/cas-municipal-reel-g0-16m-warwick-eau-2025-2026.json",
+  "regional_portfolio_link": "data/comparatif-cas-reels-primeau-g0-16n-2025.json",
+  "sample_cash_evidence": [
+    {
+      "id": "E1",
+      "required": "PAYMENT_ORDER_OR_CONFIRMED_GOVERNMENT_TRANSFER",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "E2",
+      "required": "MUNICIPAL_BANK_RECEIPT_OR_PUBLIC_ACCOUNT_GRANT_REVENUE",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "E3",
+      "required": "YEAR_AND_PROJECT_LINKED_FINAL_INVOICES",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "E4",
+      "required": "REAL_LOAN_DRAWDOWN_AND_AMORTIZATION",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "E5",
+      "required": "ANNUAL_2026_PROPERTY_TAX_AND_SERVICE_FEE_BY_ASSESSMENT_AND_SECTOR",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "E6",
+      "required": "DOCUMENTED_EMPLOYMENT_AND_WATER_SERVICE_CONTINUITY",
+      "status": "NOT_VERIFIED"
+    }
+  ],
+  "fiscal_interpretation": {
+    "taxes_municipal_in_existing_canada_scenario_not_identical_to_provincial_income_tax": true,
+    "warwick_local_2026_rates_not_quebec_wide_rates": true,
+    "removing_property_tax_requires_legal_replacement_funding_and_borrowing_continuity": true,
+    "published_property_rate_not_household_ability_to_pay": true,
+    "tax_per_100_assessed_not_tax_per_100_income": true,
+    "rates_are_not_all_cumulative_for_all_homes": true,
+    "grant_announcement_not_cash_received": true,
+    "grant_rules_not_project_specific_payment_proof": true,
+    "lack_of_documentary_payment_evidence_not_proof_of_no_payment": true,
+    "jurisdiction_review_not_done": true,
+    "independent_audit_not_done": true
+  },
+  "ten_year_unfunded_scenarios": [
+    {
+      "id": "QUEBEC_CANADA",
+      "legally_reviewed": false,
+      "independently_verified": false,
+      "years": [
+        {
+          "year": "2026-2027",
+          "property_tax_replaced_cad": null,
+          "net_grants_received_cad": null,
+          "municipal_services_cost_cad": null,
+          "loan_service_cost_cad": null,
+          "worker_obligations_cost_cad": null,
+          "replacement_funding_cad": null,
+          "net_budget_cad": null
+        },
+        {
+          "year": "2027-2028",
+          "property_tax_replaced_cad": null,
+          "net_grants_received_cad": null,
+          "municipal_services_cost_cad": null,
+          "loan_service_cost_cad": null,
+          "worker_obligations_cost_cad": null,
+          "replacement_funding_cad": null,
+          "net_budget_cad": null
+        },
+        {
+          "year": "2028-2029",
+          "property_tax_replaced_cad": null,
+          "net_grants_received_cad": null,
+          "municipal_services_cost_cad": null,
+          "loan_service_cost_cad": null,
+          "worker_obligations_cost_cad": null,
+          "replacement_funding_cad": null,
+          "net_budget_cad": null
+        },
+        {
+          "year": "2029-2030",
+          "property_tax_replaced_cad": null,
+          "net_grants_received_cad": null,
+          "municipal_services_cost_cad": null,
+          "loan_service_cost_cad": null,
+          "worker_obligations_cost_cad": null,
+          "replacement_funding_cad": null,
+          "net_budget_cad": null
+        },
+        {
+          "year": "2030-2031",
+          "property_tax_replaced_cad": null,
+          "net_grants_received_cad": null,
+          "municipal_services_cost_cad": null,
+          "loan_service_cost_cad": null,
+          "worker_obligations_cost_cad": null,
+          "replacement_funding_cad": null,
+          "net_budget_cad": null
+        },
+        {
+          "year": "2031-2032",
+          "property_tax_replaced_cad": null,
+          "net_grants_received_cad": null,
+          "municipal_services_cost_cad": null,
+          "loan_service_cost_cad": null,
+          "worker_obligations_cost_cad": null,
+          "replacement_funding_cad": null,
+          "net_budget_cad": null
+        },
+        {
+          "year": "2032-2033",
+          "property_tax_replaced_cad": null,
+          "net_grants_received_cad": null,
+          "municipal_services_cost_cad": null,
+          "loan_service_cost_cad": null,
+          "worker_obligations_cost_cad": null,
+          "replacement_funding_cad": null,
+          "net_budget_cad": null
+        },
+        {
+          "year": "2033-2034",
+          "property_tax_replaced_cad": null,
+          "net_grants_received_cad": null,
+          "municipal_services_cost_cad": null,
+          "loan_service_cost_cad": null,
+          "worker_obligations_cost_cad": null,
+          "replacement_funding_cad": null,
+          "net_budget_cad": null
+        },
+        {
+          "year": "2034-2035",
+          "property_tax_replaced_cad": null,
+          "net_grants_received_cad": null,
+          "municipal_services_cost_cad": null,
+          "loan_service_cost_cad": null,
+          "worker_obligations_cost_cad": null,
+          "replacement_funding_cad": null,
+          "net_budget_cad": null
+        },
+        {
+          "year": "2035-2036",
+          "property_tax_replaced_cad": null,
+          "net_grants_received_cad": null,
+          "municipal_services_cost_cad": null,
+          "loan_service_cost_cad": null,
+          "worker_obligations_cost_cad": null,
+          "replacement_funding_cad": null,
+          "net_budget_cad": null
+        }
+      ]
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "legally_reviewed": false,
+      "independently_verified": false,
+      "years": [
+        {
+          "year": "2026-2027",
+          "property_tax_replaced_cad": null,
+          "net_grants_received_cad": null,
+          "municipal_services_cost_cad": null,
+          "loan_service_cost_cad": null,
+          "worker_obligations_cost_cad": null,
+          "replacement_funding_cad": null,
+          "net_budget_cad": null
+        },
+        {
+          "year": "2027-2028",
+          "property_tax_replaced_cad": null,
+          "net_grants_received_cad": null,
+          "municipal_services_cost_cad": null,
+          "loan_service_cost_cad": null,
+          "worker_obligations_cost_cad": null,
+          "replacement_funding_cad": null,
+          "net_budget_cad": null
+        },
+        {
+          "year": "2028-2029",
+          "property_tax_replaced_cad": null,
+          "net_grants_received_cad": null,
+          "municipal_services_cost_cad": null,
+          "loan_service_cost_cad": null,
+          "worker_obligations_cost_cad": null,
+          "replacement_funding_cad": null,
+          "net_budget_cad": null
+        },
+        {
+          "year": "2029-2030",
+          "property_tax_replaced_cad": null,
+          "net_grants_received_cad": null,
+          "municipal_services_cost_cad": null,
+          "loan_service_cost_cad": null,
+          "worker_obligations_cost_cad": null,
+          "replacement_funding_cad": null,
+          "net_budget_cad": null
+        },
+        {
+          "year": "2030-2031",
+          "property_tax_replaced_cad": null,
+          "net_grants_received_cad": null,
+          "municipal_services_cost_cad": null,
+          "loan_service_cost_cad": null,
+          "worker_obligations_cost_cad": null,
+          "replacement_funding_cad": null,
+          "net_budget_cad": null
+        },
+        {
+          "year": "2031-2032",
+          "property_tax_replaced_cad": null,
+          "net_grants_received_cad": null,
+          "municipal_services_cost_cad": null,
+          "loan_service_cost_cad": null,
+          "worker_obligations_cost_cad": null,
+          "replacement_funding_cad": null,
+          "net_budget_cad": null
+        },
+        {
+          "year": "2032-2033",
+          "property_tax_replaced_cad": null,
+          "net_grants_received_cad": null,
+          "municipal_services_cost_cad": null,
+          "loan_service_cost_cad": null,
+          "worker_obligations_cost_cad": null,
+          "replacement_funding_cad": null,
+          "net_budget_cad": null
+        },
+        {
+          "year": "2033-2034",
+          "property_tax_replaced_cad": null,
+          "net_grants_received_cad": null,
+          "municipal_services_cost_cad": null,
+          "loan_service_cost_cad": null,
+          "worker_obligations_cost_cad": null,
+          "replacement_funding_cad": null,
+          "net_budget_cad": null
+        },
+        {
+          "year": "2034-2035",
+          "property_tax_replaced_cad": null,
+          "net_grants_received_cad": null,
+          "municipal_services_cost_cad": null,
+          "loan_service_cost_cad": null,
+          "worker_obligations_cost_cad": null,
+          "replacement_funding_cad": null,
+          "net_budget_cad": null
+        },
+        {
+          "year": "2035-2036",
+          "property_tax_replaced_cad": null,
+          "net_grants_received_cad": null,
+          "municipal_services_cost_cad": null,
+          "loan_service_cost_cad": null,
+          "worker_obligations_cost_cad": null,
+          "replacement_funding_cad": null,
+          "net_budget_cad": null
+        }
+      ]
+    }
+  ],
+  "decision": {
+    "g016o_actual_local_tax_rates_recorded": true,
+    "g016o_partial_synthetic_bill_reproducible": true,
+    "g016o_actual_household_tax_bills_verified": false,
+    "g016o_individual_grant_cash_verified": false,
+    "g016o_404_tax_in_current_bill_confirmed": false,
+    "g016o_fiscal_sustainability_audited": false,
+    "programme_complete": false
+  }
+}
