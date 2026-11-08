@@ -138,7 +138,7 @@ test("la page charge la nouvelle version du validateur et du moteur",async()=>{
  const html=await readFile(new URL("../boussole-electorale.html",import.meta.url),"utf8");
  const pollHtml=await readFile(new URL("../sondage-citoyen.html",import.meta.url),"utf8");
  assert.match(html,/assets\/nova-civic-integrity\.js\?v=2/);
- assert.match(html,/assets\/boussole-electorale\.js\?v=3\.4\.25/);
+ assert.match(html,/assets\/boussole-electorale\.js\?v=3\.4\.26/);
  assert.match(pollHtml,/assets\/nova-civic-integrity\.js\?v=2/);
 });
 
