@@ -40,6 +40,11 @@ Les huit définitions de fonction sont copiées depuis
 `pg_get_functiondef` du projet actif, puis une **seule instruction
 `PERFORM private.security_require_current_auth_session(v_user)`**
 est ajoutée immédiatement après leur contrôle `AUTH_REQUIRED`.
+Un second contrôle compare les **empreintes SHA-256 des huit définitions
+d'origine** calculées depuis le catalogue réel, après retrait de cette
+unique instruction. La CI rejette donc également toute altération
+inattendue de la logique métier copiée : elle ne peut pas se contenter
+de conserver quelques marqueurs de sécurité.
 
 ## Nouveau garde
 
