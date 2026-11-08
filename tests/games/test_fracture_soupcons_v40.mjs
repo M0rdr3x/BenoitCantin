@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {fractureAggregateSeatSafeSuspicionsV40 as aggregate} from '../../assets/js/sinjira-fracture-soupcons-v40.mjs';
+import {fractureAggregateSeatSafeSuspicionsV40 as aggregate, fracturePreparePrivateFinalDecisionV40 as prepare} from '../../assets/js/sinjira-fracture-soupcons-v40.mjs';
 import {fractureAggregateSuspicionsV39 as previous} from '../../assets/js/sinjira-fracture-soupcons-v39.mjs';
 
 const make=(humans,options={})=>{
@@ -98,4 +98,56 @@ test('aucun bulletin individuel ni secret dans le résultat gelé',()=>{
  for(const term of ['roundBallots','eligibleTargets','session','email','user_id','access_token','password']){
   assert.equal(json.includes(term),false,term);
  }
+});
+
+test('chaînage : trois humains, soupçons complets puis accusations collectives',()=>{
+ const args=make(3);
+ const r=prepare({...args,finalBallots:[[2],[1],[1]]});
+ assert.equal(r.status,'resolved');
+ assert.equal(r.decision.ballotCount,3);
+ assert.deepEqual(r.suspicions.totals,[10,10,10]);
+ assert.deepEqual(r.decision.selected,[1]);
+ assert.equal(r.decision.aggregates.find(x=>x.seat===1).suspicions,10);
+ assert.ok(Object.isFrozen(r)&&Object.isFrozen(r.decision)&&Object.isFrozen(r.suspicions));
+});
+test('chaînage Duo : soupçons cumulés tranchent une égalité de votes',()=>{
+ const args=make(2,{
+   roundBallots:Array.from({length:10},()=>[3,3])
+ });
+ const r=prepare({...args,finalBallots:[[2],[3]]});
+ assert.deepEqual(r.suspicions.totals,[0,0,20]);
+ assert.equal(r.status,'resolved');
+ assert.deepEqual(r.decision.selected,[3]);
+});
+test('chaînage Solo : un seul bulletin final et aucun siège invisible votant',()=>{
+ const r=prepare({...make(1),finalBallots:[[2]]});
+ assert.equal(r.decision.ballotCount,1);
+ assert.equal(r.suspicions.submitted,10);
+ assert.deepEqual(r.decision.selected,[2]);
+});
+test('chaînage Express : six rondes, nombre réglementaire d accusations par humain',()=>{
+ const humans=13;
+ const finalBallots=Array.from({length:humans},(_,i)=>
+  Array.from({length:humans},(_,j)=>j+1).filter(seat=>seat!==i+1).slice(0,4));
+ const r=prepare({...make(humans,{express:true}),finalBallots});
+ assert.equal(r.suspicions.rounds,6);
+ assert.equal(r.decision.ballotCount,52);
+ assert.equal(r.decision.selected.length+r.decision.tieSlots,4);
+});
+test('chaînage à refus : soupçons et accusations incomplets ne passent pas',()=>{
+ const args=make(3);
+ assert.throws(()=>prepare({...args,finalBallots:null}),/Un bulletin/);
+ assert.throws(()=>prepare({...args,finalBallots:[[2],[1]]}),/Un bulletin/);
+ assert.throws(()=>prepare({...args,finalBallots:[[1],[1],[1]]}),/lui-même/);
+ assert.throws(()=>prepare({...args,finalBallots:[[2],[1],[1,2]]}),/exactement/);
+ assert.throws(()=>prepare({...args,roundBallots:args.roundBallots.slice(1),finalBallots:[[2],[1],[1]]}),/Toutes les rondes/);
+});
+test('chaînage : aucune identité ni bulletin privé rendu; résultat à garder serveur',()=>{
+ const r=prepare({...make(3),finalBallots:[[2],[1],[1]]});
+ const s=JSON.stringify(r);
+ for(const secret of ['roundBallots','finalBallots','user_id','email','password','access_token','account']){
+  assert.equal(s.includes(secret),false,secret);
+ }
+ assert.equal(Object.hasOwn(r,'bonus'),false);
+ assert.equal(Object.hasOwn(r,'winner'),false);
 });
