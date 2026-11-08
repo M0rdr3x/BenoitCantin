@@ -21,7 +21,8 @@ def validate():
         'reader-bookmark-add','reader-highlight-save','reader-note-input',
         'reader-note-save','reader-selection-preview','reader-marks-list',
         'reader-marks-status','reader-search-field','reader-search-submit',
-        'reader-search-cancel','reader-search-status','reader-search-results'
+        'reader-search-cancel','reader-search-status','reader-search-results',
+        'reader-save-position','reader-position-status','reader-position-help'
     ]
     errors.extend('Commande manquante: '+name for name in required if name not in ui.ids)
     main=(ROOT/'assets/js/sinjira-liseuse-v26.js').read_text('utf-8')
@@ -41,7 +42,7 @@ def validate():
         if token not in companion:
             errors.append('Isolation de session ou recherche Unicode manquante: '+token)
     for token in ['progressQueue:Promise.resolve()', "key+':updated'",
-                  'serverSavedAt>localSavedAt', 'state.progressQueue.catch']:
+                  'state.progressQueue.catch']:
         if token not in main:
             errors.append('Synchronisation multiappareil non protégée: '+token)
     # Une déconnexion pendant la signature ou le chargement doit verrouiller
@@ -51,17 +52,30 @@ def validate():
                   'state.accessInvalidated=true', 'auth.getUser()', 'loadedPdf.destroy?.()']:
         if token not in main:
             errors.append('Verrouillage du lecteur privé pendant chargement absent: '+token)
-    # V31 : les pages intégrales conservées dans l'historique du navigateur
-    # doivent être verrouillées, contrairement à la démo publique.
-    for token in ["if(isFull)lockPrivateReader();", "if(isFull&&event.persisted)",
-                  "location.reload();", "state.authSubscription?.unsubscribe?.()",
+    # Reprise V31 : état minimal, page/intrapage, aucune citation écrite dans le navigateur.
+    spot=(ROOT/'assets/js/sinjira-liseuse-position-v31.mjs').read_text('utf-8')
+    for token in ['chooseReadingPosition(', 'ratioFromScroll(', 'scrollTopForRatio(',
+                  'serverDate>localDate']:
+        if token not in spot:
+            errors.append('Utilitaire de reprise de lecture absent: '+token)
+    for token in ['saveCurrentPosition()', "key+':spot'", 'restoreScrollAfterRender(version)',
+                  'flushScrollPosition()', 'state.positionRatio', "persist({syncCloud:false})"]:
+        if token not in main:
+            errors.append('Sauvegarde/reprise de lecture absente: '+token)
+    if ':spot' in spot or 'localStorage' in spot:
+        errors.append('Le module de position doit rester une transformation pure.')
+    # Un PDF intégral ne doit pas être restauré depuis le cache d'historique.
+    # La démo conserve son lecteur interactif; seul le privé est verrouillé.
+    for token in ["flushScrollPosition();", "if(isFull)lockPrivateReader();",
+                  "if(isFull&&event.persisted)", "location.reload();",
+                  "state.authSubscription?.unsubscribe?.()",
                   "if(window.getSelection()?.toString())return;"]:
         if token not in main:
-            errors.append('Cycle d’historique ou clavier sécurisé manquant: '+token)
+            errors.append('Cycle d’historique privé ou clavier sécurisé manquant: '+token)
     if 'aria-keyshortcuts="ArrowLeft ArrowRight PageUp PageDown"' not in html:
-        errors.append('Raccourcis clavier non annoncés à la liseuse')
+        errors.append('Raccourcis clavier du lecteur non annoncés')
     if 'aria-describedby="reader-shortcut-help"' not in html or 'id="reader-shortcut-help"' not in html:
-        errors.append('Explication des raccourcis clavier non liée à la lecture')
+        errors.append('Instructions clavier non liées à la zone de lecture')
     # Empêcher le stockage de texte intégral (citations ou notes) en localStorage.
     if 'localStorage.setItem(DEMO_MARKS_KEY' not in companion:
         errors.append('Enregistrement de la démo non isolé')
