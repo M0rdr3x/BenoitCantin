@@ -49,19 +49,30 @@ class LegacyAdminHeaderSecurityTests(unittest.TestCase):
                 ))
 
 
-    def test_root_administration_page_has_private_cache_headers(self) -> None:
+    def test_all_private_pages_have_explicit_nostore_headers(self) -> None:
         document = json.loads((ROOT / "vercel.json").read_text("utf-8"))
-        rules = [rule for rule in document["headers"]
-                 if rule.get("source") == "/administration.html"]
-        self.assertEqual(len(rules), 1, "La route historique doit être protégée explicitement")
-        headers = {header["key"].lower(): header["value"].lower()
-                   for header in rules[0]["headers"]}
-        cache_directives = {directive.strip() for directive in
-                            headers.get("cache-control", "").split(",")}
-        self.assertIn("private", cache_directives)
-        self.assertIn("no-store", cache_directives)
-        self.assertEqual(headers.get("referrer-policy"), "no-referrer")
-        self.assertEqual(headers.get("pragma"), "no-cache")
+        private_routes = (
+            "/compte/(.*)",
+            "/administration.html",
+            "/admin/(.*)",
+            "/Admin/(.*)",
+            "/app/(.*)",
+            "/histoire-de-vie/(.*)",
+        )
+        for route in private_routes:
+            with self.subTest(route=route):
+                rules = [rule for rule in document["headers"]
+                         if rule.get("source") == route]
+                self.assertEqual(len(rules), 1, "Une règle privée explicite est requise")
+                headers = {header["key"].lower(): header["value"].lower()
+                           for header in rules[0]["headers"]}
+                cache_directives = {directive.strip() for directive in
+                                    headers.get("cache-control", "").split(",")}
+                self.assertIn("private", cache_directives)
+                self.assertIn("no-store", cache_directives)
+                self.assertIn("max-age=0", cache_directives)
+                self.assertEqual(headers.get("referrer-policy"), "no-referrer")
+                self.assertEqual(headers.get("pragma"), "no-cache")
 
     def test_missing_private_headers_fails_closed(self) -> None:
         for item in ("Cache-Control", "Referrer-Policy", "Pragma"):
