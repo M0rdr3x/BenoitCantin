@@ -13,6 +13,8 @@ on:
       - 'assets/js/sinjira-confirm-email.js'
       - 'assets/js/sinjira-character-registry.js'
       - 'compte/inscription.html'
+      - 'compte/confidentialite-joueur.html'
+      - 'supabase/migrations/20261108041500_sinjira_formspree_notification_ledger.sql'
       - 'compte/confirmer.html'
       - 'projets/sinjira/registre/index.html'
       - '.github/workflows/edge-inventory-source-integrity.yml'
@@ -28,6 +30,8 @@ on:
       - 'assets/js/sinjira-confirm-email.js'
       - 'assets/js/sinjira-character-registry.js'
       - 'compte/inscription.html'
+      - 'compte/confidentialite-joueur.html'
+      - 'supabase/migrations/20261108041500_sinjira_formspree_notification_ledger.sql'
       - 'compte/confirmer.html'
       - 'projets/sinjira/registre/index.html'
       - '.github/workflows/edge-inventory-source-integrity.yml'
@@ -55,3 +59,5 @@ jobs:
         run: python3 scripts/test_edge_inventory_source_integrity.py
       - name: Vérifier l'inventaire complet des fonctions Edge
         run: python3 scripts/validate_edge_function_inventory.py
+      - name: Tester inscription SINJIRA, Registre, Formspree et consentement
+        run: python3 scripts/validate_sinjira_signup_registry_delivery.py
