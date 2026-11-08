@@ -43,22 +43,33 @@ def path_of_action(source: str, index: int) -> str | None:
     lines = source.splitlines()
     raw = lines[index]
     depth = len(raw) - len(raw.lstrip())
-    block: list[str] = []
+    with_seen = False
+    paths: list[str] = []
     for line in lines[index + 1 :]:
-        if line.strip() and not line.lstrip().startswith("#"):
-            indent = len(line) - len(line.lstrip())
-            if indent < depth or (indent == depth and not re.fullmatch(
-                r"with:\s*(?:#.*)?", line.strip()
-            )):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip())
+        if indent < depth or (indent <= depth and stripped.startswith("- ")):
+            break
+        if indent == depth:
+            if re.fullmatch(r"with:\s*(?:#.*)?", stripped):
+                if with_seen:
+                    return None
+                with_seen = True
+            elif with_seen:
                 break
-        block.append(line)
-    # Un seul path peut être spécifié, sans ancre YAML, variable ni alias.
-    value = "\n".join(block)
-    paths = re.findall(r"(?m)^\s+path:\s*([^\n#]*?)(?:\s+#.*)?$", value)
-    if len(paths) != 1 or re.search(r"(?m)^\s*<<\s*:", value):
-        return None
-    return paths[0].strip().strip("'\"")
-
+            continue
+        if not with_seen:
+            # Ne jamais confondre un chemin placé dans env: ou dans une
+            # autre clé de l'étape avec le paramètre réel de l'action.
+            continue
+        if re.match(r"^<<\s*:", stripped):
+            return None
+        match = re.fullmatch(r"path:\s*([^\n#]*?)(?:\s+#.*)?", stripped)
+        if match:
+            paths.append(match.group(1).strip().strip("'\""))
+    return paths[0] if with_seen and len(paths) == 1 else None
 
 def inspect_workflows(files: dict[str, str]) -> list[str]:
     errors: list[str] = []
@@ -114,6 +125,8 @@ def self_test() -> None:
         ("publish root", good.replace("path: _site", "path: .")),
         ("publish ancestor", good.replace("path: _site", "path: _site/..")),
         ("publish missing", good.replace("          path: _site\n", "")),
+        ("path fictif sous env", good.replace("        with:\n          path: _site", "        env:\n          path: _site")),
+        ("override après with", good.replace("        with:\n          path: _site", "        with:\n          path: _site\n        with:\n          path: .")),
         ("publish duplicate", good.replace("path: _site", "path: _site\n          path: .")),
         ("publish expression", good.replace("path: _site", "path: $WORKSPACE")),
         ("wrong SHA", good.replace(UPLOAD, UPLOAD.split("@")[0] + "@v3")),
@@ -126,7 +139,7 @@ def self_test() -> None:
     for label, altered in mutants:
         assert inspect_workflows({APPROVED: altered}), "Dangerous Pages fixture accepted: " + label
     assert inspect_workflows({APPROVED: good, "extra.yml": good})
-    print("OK : 11 mutations Pages refusées; upload _site unique autorisé.")
+    print("OK : 13 mutations Pages refusées; upload _site unique autorisé.")
 
 
 def main() -> int:
