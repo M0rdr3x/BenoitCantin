@@ -42,14 +42,15 @@
           <hr>
           <h2>Le lien ne fonctionne plus?</h2>
           <p>Vous pouvez demander un nouveau courriel de confirmation. Entrez l'adresse utilisée lors de l'inscription.</p>
-          <form class="account-form" data-confirm-resend-form>
+          <form class="account-form" data-confirm-resend-form method="post" action="/compte/confirmer.html">
             <div class="field">
               <label for="confirm-email">Adresse courriel</label>
               <input id="confirm-email" name="email" type="email" autocomplete="email" maxlength="254" required>
             </div>
-            <button class="btn btn-secondary" type="submit">Renvoyer un lien</button>
+            <button class="btn btn-secondary" type="submit" disabled>Renvoyer un lien</button>
           </form>
           <p class="account-status" role="status" aria-live="polite" aria-atomic="true" data-resend-status hidden></p>
+          <noscript><p class="account-status" role="alert">JavaScript est nécessaire pour vérifier ou renvoyer un courriel de confirmation. Aucune adresse n’a été transmise.</p></noscript>
         </article>
       </div>
     </section>
