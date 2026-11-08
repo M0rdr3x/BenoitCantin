@@ -1,0 +1,51 @@
+name: Projet Nova P57C - Scenarios menages fictifs et retention solidaire limitee
+on:
+  pull_request:
+    paths:
+      - 'projets/projet-nova/etudes/P57C_*'
+      - 'scripts/simuler_continuite_sociale_menages_synthetiques_nova_p57c.py'
+      - 'scripts/tests/test_simuler_continuite_sociale_menages_synthetiques_nova_p57c.py'
+      - 'projets/projet-nova/etudes/P57B_SOLIDARITE_VERSEMENTS_2026_2027_ET_VERROU_PROTECTION_TVQ.json'
+      - 'projets/projet-nova/etudes/P57A_RECONCILIATION_CREDITS_2025_2026_COMPTES_PUBLICS_VOL1.json'
+      - 'projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json'
+      - '.github/workflows/validate-nova-p57c.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controle-conditions-sociales-synthetiques:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tester 45 controles P57B et 53 nouveaux controles P57C
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_verifier_continuite_solidarite_nova_p57b.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_simuler_continuite_sociale_menages_synthetiques_nova_p57c.py' -v
+      - name: Valider 10 cas fictifs, seuil 26190, protection 50 pour cent et NO_GO
+        shell: bash
+        run: |
+          python scripts/simuler_continuite_sociale_menages_synthetiques_nova_p57c.py \
+            --pilote projets/projet-nova/etudes/P57C_PILOTE_MENAGES_SYNTHETIQUES_SOLIDARITE_2026_2027.json \
+            --p57b projets/projet-nova/etudes/P57B_SOLIDARITE_VERSEMENTS_2026_2027_ET_VERROU_PROTECTION_TVQ.json \
+            --p57a projets/projet-nova/etudes/P57A_RECONCILIATION_CREDITS_2025_2026_COMPTES_PUBLICS_VOL1.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json | python -c 'import json,sys; d=json.load(sys.stdin); c=d["resultats_par_cas"]; assert d["nombre_cas_synthetiques"]==10 and d["droits_individuels_reels_calcules"]==0 and c["C01"]["borne_superieure_retenue_sur_credit_annuel_si_protection_cad"]=="600.00" and c["C07"]["borne_superieure_retenue_sur_credit_annuel_si_protection_cad"]=="399.50" and c["C05"]["borne_superieure_retenue_sur_credit_annuel_si_protection_cad"] is None and d["budget_protection_menages_2027_certifie"] is False and d["score_estime_pourcent"]==53 and d["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Refuser fausse microsimulation et budget Nova certifie
+        shell: bash
+        run: |
+          set +e
+          python scripts/simuler_continuite_sociale_menages_synthetiques_nova_p57c.py \
+            --pilote projets/projet-nova/etudes/P57C_PILOTE_MENAGES_SYNTHETIQUES_SOLIDARITE_2026_2027.json \
+            --p57b projets/projet-nova/etudes/P57B_SOLIDARITE_VERSEMENTS_2026_2027_ET_VERROU_PROTECTION_TVQ.json \
+            --p57a projets/projet-nova/etudes/P57A_RECONCILIATION_CREDITS_2025_2026_COMPTES_PUBLICS_VOL1.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --exiger-microsimulation-validee
+          exit_code=$?
+          set -e
+          test "$exit_code" -eq 3
