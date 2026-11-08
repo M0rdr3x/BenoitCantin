@@ -7,7 +7,7 @@ Date : 2026-11-07
 - Des journaux Auth ont montré des réponses d'inscription 200, puis des vérifications `/verify` avec « One-time token not found » et « Email link is invalid or has expired ».
 - Les systèmes de sécurité des messageries peuvent préouvrir les URL et consommer les liens à usage unique. C'est une **cause possible**, pas une certitude établie pour chaque visiteur.
 - Le formulaire `/projets/sinjira/registre/` exige une session authentifiée; il vérifie en outre la protection AAL2/TOTP quand `sensitive_step_up` est activé (valeur par défaut).
-- L'envoi externe des copies et avis du Registre est désactivé dans la fonction actuelle. Il est distinct des courriels de confirmation de Supabase Auth.
+- L'ancien transport Resend des copies et avis est désactivé. Le correctif propose un envoi distinct via Formspree uniquement après accord explicite du membre.
 
 ## Déploiement — ordre impératif
 
@@ -43,7 +43,7 @@ Le `#token_hash=` fait voyager le jeton dans le fragment URL (non envoyé au ser
 6. Si un prestataire de courriel réécrit les liens pour le suivi de clic, **désactiver le suivi des liens** pour les messages d'authentification.
 7. Faire un test avec un compte de test et une boîte de réception administrée par vous : inscription → courriel → page SINJIRA → clic explicite → authentification → ouverture Compte ou Registre. Vérifier la récupération quand un lien est expiré au moyen de « Renvoyer un lien ».
 8. Pour transmettre le questionnaire, le visiteur doit être connecté. Lorsque la protection sensible est activée, il doit configurer la 2FA dans `/compte/securite.html` et valider la session AAL2. **Ce correctif ne diminue pas les contrôles de sécurité des dossiers privés.**
-9. Tester un questionnaire de test avec consentement et vérifier le nouvel enregistrement dans l'administration. Les copies par courriel du questionnaire resteront **désactivées** jusqu'à configuration explicite d'un service d'envoi adapté; cela ne doit pas être confondu avec une erreur de sauvegarde.
+9. Tester un questionnaire de test avec consentement et vérifier le nouvel enregistrement dans l'administration. L'envoi par Formspree doit être configuré dans Workflow, séparément de la sauvegarde Supabase. Les accusés de réception automatiques Formspree exigent Professional ou Business.
 
 ## Tests de non-régression suggérés
 
@@ -61,7 +61,7 @@ Documentation officielle :
 - https://supabase.com/docs/guides/auth/redirect-urls
 - https://supabase.com/docs/reference/javascript/auth-verifyotp
 
-## Intégration Formspree (avis techniques seulement)
+## Intégration Formspree (accusés et copie des réponses créatives)
 
 Deux formulaires ont été créés dans Formspree :
 
@@ -69,7 +69,7 @@ Deux formulaires ont été créés dans Formspree :
 - **Registre des Consciences** : `https://formspree.io/f/mrppvrwa`. La notification n'est faite qu'après écriture confirmée dans `character_submissions`.
 
 Les deux avis sont déclenchés **côté serveur** par un helper unique `supabase/functions/_shared/sinjira-formspree.ts`.
-Chaque avis contient seulement `event`, `reference` (UUID aléatoire distinct du compte/dossier), `message` générique et `date`. **Aucune donnée personnelle, photo, courriel, questionnaire, mot de passe ou code parental n'est envoyé à Formspree.** Les dossiers authentiques restent dans Supabase.
+Après un consentement facultatif enregistré dans SINJIRA, chaque avis contient le champ `email` du compte Supabase, `event`, `reference` (UUID aléatoire distinct du compte et du dossier), `message`, et `date`. Pour le Registre, le champ `questionnaire` contient **les réponses créatives** de la liste blanche du formulaire (y compris les notes libres). **Aucun mot de passe, nom légal, date de naissance, téléphone, photo, code parental ou information familiale n'est transféré.** Les données originales et complètes restent dans Supabase; une copie des réponses créatives et l'adresse courriel transitent par Formspree et peuvent être archivées par ce prestataire et reçues par courriel.
 
 Un registre dédié `public.sinjira_formspree_events`, fermé aux rôles `anon`/`authenticated` par RLS et privilèges SQL, assure une seule notification réservée par `(event_type, source_id)`. Un échec Formspree n'annule jamais la sauvegarde du questionnaire ni l'activation du compte. Contrôler aussi l'onglet Spam : Formshield est activé.
 
@@ -83,8 +83,8 @@ Un registre dédié `public.sinjira_formspree_events`, fermé aux rôles `anon`/
 6. Dans **Supabase Authentication → Email Templates → Confirm sign up**, installer le modèle avec le fragment `#token_hash={{ .TokenHash }}&amp;type=email` ci-dessus. **Ne jamais activer ce modèle avant que la page `confirmer.html` soit déployée.**
 7. Vérifier que la confirmation ne s'effectue pas simplement à l'ouverture du courriel. Seul le clic `Confirmer mon compte` doit échanger le jeton.
 8. Faire un essai avec **une adresse de test contrôlée**, puis confirmer que la notification apparaît dans le Formspree **Créer votre compte** une seule fois. Ne jamais soumettre directement à Formspree le formulaire d'inscription contenant les mots de passe.
-9. Avec ce compte, configurer le second facteur via `/compte/securite.html`, se reconnecter en AAL2, envoyer une participation factice consentie du Registre, puis vérifier qu'un **seul dossier** est sauvegardé dans Supabase et qu'un **seul avis non nominatif** apparaît dans le Formspree du Registre.
-10. Vérifier les erreurs, les délais de courriel, les journaux Auth Supabase et les alertes du Registre. Les courriels de copie du questionnaire restent désactivés par `PAID_EXTERNAL_SERVICES_ENABLED=false` jusqu'à validation d'un transport externe distinct.
+9. Avec ce compte, configurer le second facteur via `/compte/securite.html`, se reconnecter en AAL2, envoyer une participation factice consentie du Registre, puis vérifier qu'un **seul dossier** est sauvegardé dans Supabase et qu'une **seule soumission avec courriel et réponses créatives** apparaît dans Formspree, et que sa notification à sinjiraofficiel@gmail.com contient le champ questionnaire.
+10. Vérifier les erreurs, les délais de courriel, les journaux Auth Supabase et les alertes du Registre. Le transport Resend historique demeure désactivé (`PAID_EXTERNAL_SERVICES_ENABLED=false`). Cette valeur n'empêche pas le nouveau transport Formspree, mais la configuration Formspree est nécessaire et sa capacité de réponse automatique dépend du forfait.
 
 ### Limites et échecs possibles
 
@@ -104,3 +104,44 @@ python3 scripts/validate_public_edge_auth.py
 python3 scripts/validate_production_schema_manifest.py
 python3 scripts/validate_sinjira_signup_registry_delivery.py
 ```
+
+
+## Réglages obligatoires dans le tableau de bord Formspree
+
+**Aucun commit GitHub ne peut modifier les réglages du tableau de bord Formspree.** Ne pas confondre le bouton « formulaire créé » et l'activation d'un envoi de courriel.
+
+### Formspree — Registre des Consciences (mrppvrwa)
+
+1. Ouvrir le tableau de bord Formspree, sélectionner **Registre des Consciences**, puis **Workflow**.
+2. Vérifier la présence d'une action **Email** (création avec « + Add New », si absente), et la diriger vers **sinjiraofficiel@gmail.com**. Cette adresse doit préalablement avoir été ajoutée et **vérifiée** dans la section **Account → Email addresses** de Formspree.
+3. Vérifier que la notification Email inclut les champs de la soumission : `email` (pour Reply-To), `reference`, `event`, `questionnaire`, `date`. Le champ `questionnaire` est une copie lisible, avec une entrée par question du formulaire.
+4. Si vous avez **Professional ou Business**, dans **Workflow → Actions → + Add New → Auto Response**, configurer : 
+   - Nom de l'expéditeur : **SINJIRA™ — Registre des Consciences**
+   - Objet : **SINJIRA™ — Votre questionnaire a bien été reçu**
+   - Message : **Bonjour, votre questionnaire du Registre des Consciences a été enregistré dans SINJIRA™. Merci pour votre participation. Les réponses restent soumises à vérification avant toute utilisation dans l'univers SINJIRA™.**
+5. Pour tester sans vraies données : utiliser un compte de test, approuver l'envoi Formspree, envoyer des réponses fictives et vérifier une seule soumission, la réception dans **sinjiraofficiel@gmail.com** et l'accusé dans la boîte de test. Le statut HTTP 2xx de Formspree ne prouve **pas** la livraison d'un courriel.
+6. Si vous avez l'offre gratuite, l'action Auto Response peut être indisponible : conserver la confirmation **sur le site** et un accès au dossier Supabase, sans affirmer qu'un accusé courriel Formspree a été envoyé.
+
+### Formspree — Créer votre compte (xzeeqynp)
+
+1. Dans Formspree, ouvrir **Créer votre compte** puis **Workflow**.
+2. L'avis Formspree ne se déclenche qu'après confirmation réelle du compte dans Supabase et seulement si l'utilisateur a choisi le consentement facultatif. Aucun mot de passe n'est envoyé.
+3. Sous **Professional ou Business**, ajouter une action **Auto Response** :
+   - Nom de l'expéditeur : **SINJIRA™ — Comptes**
+   - Objet : **SINJIRA™ — Votre compte a été confirmé**
+   - Message : **Bonjour, votre adresse courriel est confirmée et votre Compte SINJIRA™ est prêt. Vous pouvez maintenant vous connecter et accéder au Registre des Consciences. Si vous n'êtes pas à l'origine de cette démarche, contactez SINJIRA™.**
+4. La confirmation indispensable à la création du compte **continue d'être envoyée par Supabase Auth**. Formspree n'active pas un compte, il envoie simplement un accusé supplémentaire si l'action Auto Response est disponible et activée.
+5. Test : un courriel de confirmation Supabase, un seul avis Formspree et un seul accusé Formspree pour le même compte; aucune duplication de comptes.
+
+### Respect de la vie privée
+
+- Les cases d'accord Formspree sont **facultatives** et non précochées. Un refus ne bloque pas le compte ni la sauvegarde Supabase du questionnaire.
+- Le consentement au transfert du Registre couvre le **courriel et les réponses créatives**, notamment les notes facultatives. Éviter toute donnée très privée dans les champs libres si on choisit ce transfert.
+- Ne pas transmettre des photos ou des justificatifs à Formspree. Le canal n'est pas le coffre privé des pièces jointes.
+- Formspree peut conserver les soumissions dans son archive si l'option **Submission Archive** est activée. Réviser ses durées de conservation et sa politique de confidentialité avant lancement.
+- L'envoi est **au mieux une fois** par événement source : aucun doublon automatique. Si Formspree échoue, la soumission officielle est intacte et une reprise contrôlée doit être décidée manuellement.
+
+Documentation Formspree (février 2026) :
+- https://help.formspree.io/articles/plugins/sending-a-confirmation-or-response-email
+- https://help.formspree.io/fr/articles/form-and-project-settings/changing-a-form-email-address
+- https://help.formspree.io/fr/articles/building-your-form/special-fields
