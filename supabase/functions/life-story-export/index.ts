@@ -19,6 +19,7 @@ const SAFE_ERROR_CODES = new Set([
   'AUTH_REQUIRED',
   'ADMIN_REQUIRED',
   'MFA_REQUIRED',
+  'MFA_SETUP_REQUIRED',
   'SOURCE_BOUNDARY_VIOLATION',
   'EXPORT_NOT_GENERATABLE',
   'EXPORT_NOT_GENERATED',
@@ -76,7 +77,7 @@ function classifyExportError(error: unknown) {
   const code = SAFE_ERROR_CODES.has(candidate) ? candidate : 'LIFE_STORY_EXPORT_FAILED';
   const status = code === 'AUTH_REQUIRED'
     ? 401
-    : code === 'ADMIN_REQUIRED' || code === 'MFA_REQUIRED'
+    : code === 'ADMIN_REQUIRED' || code === 'MFA_REQUIRED' || code === 'MFA_SETUP_REQUIRED'
       ? 403
       : code === 'LIFE_STORY_EXPORT_FAILED'
         ? 500
