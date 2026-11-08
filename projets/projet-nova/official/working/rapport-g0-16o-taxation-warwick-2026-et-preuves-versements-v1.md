@@ -85,7 +85,7 @@ Le Projet Nova propose de simplifier radicalement les prélèvements, avec une f
 4. **Travailleurs :** assurer le financement des services, des conventions collectives, de la formation et de la retraite avant de promettre des gains.
 5. **Crédibilité :** publier des budgets sur dix ans avec les données manquantes explicitement inconnues plutôt que de fournir un taux ou une économie imaginaires.
 
-Le registre `data/taxes-warwick-2026-et-preuves-versements-g0-16o.json` contient les taux, les compensations, les limites de la méthode, un exemple fictif calculable et **deux scénarios sur dix exercices dont les montants restent `null`**. Le module `assets/g016o-warwick-tax-core.mjs` interdit les véritables factures inventées. La suite `tests/g016o-warwick-tax-and-grants.test.mjs` déclare **39 cas réussis lors d'un rejeu JavaScript isolé**; l'exécution native GitHub Actions n'est pas attestée.
+Le registre `data/taxes-warwick-2026-et-preuves-versements-g0-16o.json` contient les taux, les compensations, les limites de la méthode, un exemple fictif calculable et **deux scénarios sur dix exercices dont les montants restent `null`**. Le module `assets/g016o-warwick-tax-core.mjs` interdit les véritables factures inventées. La suite `tests/g016o-warwick-tax-and-grants.test.mjs` déclare **41 cas réussis lors d'un rejeu JavaScript isolé**; l'exécution native GitHub Actions n'est pas attestée.
 
 **Verdict :** la fiscalité municipale effective est désormais documentée pour un exemple local réel en 2026, mais pas le fardeau individuel constaté ni les paiements de subventions, pas le financement d'une réforme à deux prélèvements et pas l'audit indépendant. **Score global inchangé : 47/100.**
 
