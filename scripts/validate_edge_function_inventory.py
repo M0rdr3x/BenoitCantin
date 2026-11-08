@@ -124,7 +124,7 @@ def unpinned_supabase_js_versions(source: str) -> list[str]:
 def has_unsanitized_auth_error_log(source: str) -> bool:
     """Refuser les erreurs brutes de parseur/SDK dans les logs d'auth partagés."""
     return bool(re.search(
-        r"console\\.(?:warn|error|log|info)\\s*\\([^;]*\\berror\\s*\\)",
+        r"console\.(?:warn|error|log|info)\s*\([^;]*\berror\s*\)",
         source,
     ))
 
