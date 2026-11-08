@@ -23,6 +23,7 @@ Le module importe désormais une version exacte :
   `/npm/@supabase/supabase-js@2.119.0/dist/index.mjs`.
   Les premiers imports `@supabase/*` observés sont également
   versionnés, sans preuve d'intégrité cryptographique de tout le graphe.
+- Le contrôle rejette aussi les origines CDN alternatives, les imports nus non contrôlés, les liens symboliques dans les sources exécutables et les modules illisibles.
 - `scripts/validate_browser_supabase_supply_chain.py` refuse les versions
   flottantes `@2`, `@latest`, `@^2`, les versions partielles,
   les versions imprévues, HTTP clair et les hôtes CDN alternatifs pour
