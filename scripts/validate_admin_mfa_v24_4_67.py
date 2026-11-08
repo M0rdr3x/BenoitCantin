@@ -72,6 +72,19 @@ def main() -> int:
             "code:'MFA_STATE_UNAVAILABLE'",
             "setup_url:'/compte/securite.html'",
         ], f'endpoint admin MFA obligatoire: {name}')
+        if name != 'admin-users':
+            require(endpoint, [
+                'readLimitedUtf8Body(req,MAX_REQUEST_BYTES)',
+                "if(!limited.ok)throw new Error('REQUEST_TOO_LARGE')",
+                "const raw=limited.raw",
+            ], f'endpoint admin borné: {name}')
+            forbid(endpoint, [
+                'await req.text()', 'await req.json()',
+            ], f'lecture HTTP non bornée: {name}')
+            auth_position = endpoint.find('await requiredAdmin(req)')
+            body_position = endpoint.find('await readLimitedUtf8Body(req,MAX_REQUEST_BYTES)')
+            if not 0 <= auth_position < body_position:
+                raise AssertionError(f'{name}: vérification admin/MFA impérativement avant lecture du corps HTTP')
 
     require(users, [
         "import { requiredAdmin } from '../_shared/auth.ts'",
