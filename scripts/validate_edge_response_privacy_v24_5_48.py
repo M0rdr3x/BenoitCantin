@@ -80,12 +80,15 @@ def main()->int:
         if marker not in docurl: errors.append(f'get-document-url: garde-fou absent: {marker}')
 
     shared_markers=[
-        'export async function readLimitedUtf8Body(req, maxBytes)',
+        'export async function readLimitedUtf8Body(req, maxBytes, timeoutMs = 20_000)',
         "req.headers.get('content-length')",
         'Number(declared) > maxBytes',
-        'byteCount > maxBytes',
+        'value.byteLength > maxBytes - byteCount',
         "new TextDecoder('utf-8', { fatal: true })",
-        'await reader.cancel().catch(() => {})',
+        'void reader.cancel().catch(() => {})',
+        "const timeout = setTimeout(interrupt, timeoutMs)",
+        "req.signal.addEventListener('abort', interrupt, { once: true })",
+        "clearTimeout(timeout)",
     ]
     for marker in shared_markers:
         if marker not in limited:
