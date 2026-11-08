@@ -1,0 +1,477 @@
+{
+  "schema": "nova-g016k-water-assets-continuity/v1",
+  "stage": "G0.16k",
+  "record_date": "2026-11-07",
+  "programme_score_before": 47,
+  "programme_score_after": 47,
+  "status": "ASSET_EXPOSURE_RECORDED_NOT_FUNDED",
+  "adopted": false,
+  "sources": [
+    {
+      "id": "CERIU_2025",
+      "organization": "CERIU avec soutien financier MAMH",
+      "kind": "sector_report",
+      "url": "https://ceriu.qc.ca/system/files/2026-03/Portrait_infrastructures_eau_municipalites_Quebec-2025.pdf",
+      "year": 2025,
+      "independently_reviewed_for_nova": false
+    },
+    {
+      "id": "GOV_PGA_2026",
+      "organization": "Gouvernement du Québec",
+      "kind": "official_guidance",
+      "url": "https://www.quebec.ca/habitation-territoire/infrastructures-municipales/plan-gestion-actif-pga/eau",
+      "year": 2026,
+      "independently_reviewed_for_nova": false
+    },
+    {
+      "id": "MAMH_EXPENSES_2024",
+      "organization": "Ministère des Affaires municipales et de l’Habitation",
+      "kind": "government_accounting",
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/finances_indicateurs_fiscalite/information_financiere/rapports_financiers_organismes_municipaux/2024/RAP_financier_2024_sommation_municipalites_locales.pdf",
+      "year": 2024,
+      "independently_reviewed_for_nova": false
+    }
+  ],
+  "assets_2025": {
+    "total_replacement_gcad": 197.6,
+    "prior_2024_replacement_gcad": 188.5,
+    "linear_subtotal_gcad": 159.7,
+    "facility_subtotal_gcad": 37.9,
+    "very_good_or_good_share_pct": 67,
+    "acceptable_share_pct": 23,
+    "poor_very_poor_share_pct": 10,
+    "acceptable_replacement_gcad": 44.9,
+    "poor_very_poor_replacement_gcad": 20.6,
+    "pipes_total_km": 101105,
+    "facilities_total": 10659,
+    "asset_types": [
+      {
+        "id": "POTABLE_PIPES",
+        "kind": "LINEAR",
+        "count": 44571,
+        "units": "km",
+        "replacement_gcad": 60.2
+      },
+      {
+        "id": "WASTEWATER_PIPES",
+        "kind": "LINEAR",
+        "count": 36761,
+        "units": "km",
+        "replacement_gcad": 64.3
+      },
+      {
+        "id": "STORMWATER_PIPES",
+        "kind": "LINEAR",
+        "count": 19773,
+        "units": "km",
+        "replacement_gcad": 35.2
+      },
+      {
+        "id": "POTABLE_FACILITIES",
+        "kind": "FACILITY",
+        "count": 4593,
+        "units": "facilities",
+        "replacement_gcad": 17.9
+      },
+      {
+        "id": "WASTEWATER_FACILITIES",
+        "kind": "FACILITY",
+        "count": 6066,
+        "units": "facilities",
+        "replacement_gcad": 20
+      }
+    ],
+    "reporting_municipalities_since_2014": 938,
+    "municipality_share_reported_pct": 85,
+    "represented_population_share_pct": 99,
+    "updated_2025_municipalities": 666,
+    "water_pipe_reporting_municipalities": 903,
+    "approx_percent_values_assessed_age_or_judgment": 75,
+    "bad_assets_age_or_judgment_share_pct": 43,
+    "acceptable_assets_age_or_judgment_share_pct": 87,
+    "includes_road_reinstatement_on_trench_width": true,
+    "replacement_value_is_not_2026_budget": true,
+    "poor_assets_full_replacement_not_always_required": true,
+    "data_scope_different_from_mamh_2024": true,
+    "external_nova_audit_complete": false
+  },
+  "municipal_water_operating_2024": {
+    "expense_cad": 2519426792,
+    "source_id": "MAMH_EXPENSES_2024",
+    "expenses_already_in_mamh_2024_total": true,
+    "municipalities_included": 1056,
+    "same_scope_as_ceriu_sample": false,
+    "expense_plus_asset_value_meaningful": false,
+    "derived_repair_backlog_cad": null,
+    "proved_renewal_funding_cad": null
+  },
+  "government_plans": {
+    "source_id": "GOV_PGA_2026",
+    "invited_commitment_deadline": "2026-12-31",
+    "engagement_is_final_pga_approval": false,
+    "engagement_involves_municipal_resolution": true,
+    "automatically_mandatory_for_all_municipalities": false,
+    "municipal_plans_fully_submitted_verified": null,
+    "future_10_year_renewal_budget_verified": false
+  },
+  "risk_register": [
+    {
+      "id": "DRINKING_WATER",
+      "priority": "CRITICAL",
+      "description": "Continuité et sécurité de l'eau potable",
+      "remediation_cost_cad": null,
+      "decision_approved": false
+    },
+    {
+      "id": "WASTEWATER",
+      "priority": "CRITICAL",
+      "description": "Traitement des eaux et risques sanitaires",
+      "remediation_cost_cad": null,
+      "decision_approved": false
+    },
+    {
+      "id": "FLOODING",
+      "priority": "HIGH",
+      "description": "Eaux pluviales et adaptation climatique",
+      "remediation_cost_cad": null,
+      "decision_approved": false
+    },
+    {
+      "id": "WORKERS",
+      "priority": "HIGH",
+      "description": "Personnel qualifié, conventions et retraites",
+      "remediation_cost_cad": null,
+      "decision_approved": false
+    },
+    {
+      "id": "INFLATION",
+      "priority": "HIGH",
+      "description": "Hausse des coûts de travaux et périmètres incomparables",
+      "remediation_cost_cad": null,
+      "decision_approved": false
+    },
+    {
+      "id": "DOUBLE_COUNT",
+      "priority": "HIGH",
+      "description": "Chaussées de tranchée déjà incluses dans la valeur de remplacement",
+      "remediation_cost_cad": null,
+      "decision_approved": false
+    },
+    {
+      "id": "FINANCING",
+      "priority": "CRITICAL",
+      "description": "Services locaux et effets sur les contribuables",
+      "remediation_cost_cad": null,
+      "decision_approved": false
+    }
+  ],
+  "accounting_barriers": {
+    "stock_2025_not_annual_flow_2024": true,
+    "bad_condition_stock_not_due_replacement_cost": true,
+    "category_C_not_automatically_due": true,
+    "road_trench_restoration_not_added_to_separate_total": true,
+    "provincial_and_municipal_finances_not_simple_sum": true,
+    "no_2026_to_2036_budget_inferred": true
+  },
+  "continuity_scenarios": [
+    {
+      "id": "QUEBEC_CANADA",
+      "legal_authority_verified": false,
+      "municipal_coverage_audited": false,
+      "workforce_obligations_approved": false,
+      "external_financial_audit": false,
+      "annual": [
+        {
+          "year": "2026-2027",
+          "water_opex_cad": null,
+          "asset_renewal_capex_cad": null,
+          "local_repair_need_cad": null,
+          "workers_pensions_cad": null,
+          "grants_net_cad": null,
+          "replacement_tax_revenue_cad": null,
+          "borrowing_cad": null,
+          "net_balance_cad": null,
+          "independently_verified": false
+        },
+        {
+          "year": "2027-2028",
+          "water_opex_cad": null,
+          "asset_renewal_capex_cad": null,
+          "local_repair_need_cad": null,
+          "workers_pensions_cad": null,
+          "grants_net_cad": null,
+          "replacement_tax_revenue_cad": null,
+          "borrowing_cad": null,
+          "net_balance_cad": null,
+          "independently_verified": false
+        },
+        {
+          "year": "2028-2029",
+          "water_opex_cad": null,
+          "asset_renewal_capex_cad": null,
+          "local_repair_need_cad": null,
+          "workers_pensions_cad": null,
+          "grants_net_cad": null,
+          "replacement_tax_revenue_cad": null,
+          "borrowing_cad": null,
+          "net_balance_cad": null,
+          "independently_verified": false
+        },
+        {
+          "year": "2029-2030",
+          "water_opex_cad": null,
+          "asset_renewal_capex_cad": null,
+          "local_repair_need_cad": null,
+          "workers_pensions_cad": null,
+          "grants_net_cad": null,
+          "replacement_tax_revenue_cad": null,
+          "borrowing_cad": null,
+          "net_balance_cad": null,
+          "independently_verified": false
+        },
+        {
+          "year": "2030-2031",
+          "water_opex_cad": null,
+          "asset_renewal_capex_cad": null,
+          "local_repair_need_cad": null,
+          "workers_pensions_cad": null,
+          "grants_net_cad": null,
+          "replacement_tax_revenue_cad": null,
+          "borrowing_cad": null,
+          "net_balance_cad": null,
+          "independently_verified": false
+        },
+        {
+          "year": "2031-2032",
+          "water_opex_cad": null,
+          "asset_renewal_capex_cad": null,
+          "local_repair_need_cad": null,
+          "workers_pensions_cad": null,
+          "grants_net_cad": null,
+          "replacement_tax_revenue_cad": null,
+          "borrowing_cad": null,
+          "net_balance_cad": null,
+          "independently_verified": false
+        },
+        {
+          "year": "2032-2033",
+          "water_opex_cad": null,
+          "asset_renewal_capex_cad": null,
+          "local_repair_need_cad": null,
+          "workers_pensions_cad": null,
+          "grants_net_cad": null,
+          "replacement_tax_revenue_cad": null,
+          "borrowing_cad": null,
+          "net_balance_cad": null,
+          "independently_verified": false
+        },
+        {
+          "year": "2033-2034",
+          "water_opex_cad": null,
+          "asset_renewal_capex_cad": null,
+          "local_repair_need_cad": null,
+          "workers_pensions_cad": null,
+          "grants_net_cad": null,
+          "replacement_tax_revenue_cad": null,
+          "borrowing_cad": null,
+          "net_balance_cad": null,
+          "independently_verified": false
+        },
+        {
+          "year": "2034-2035",
+          "water_opex_cad": null,
+          "asset_renewal_capex_cad": null,
+          "local_repair_need_cad": null,
+          "workers_pensions_cad": null,
+          "grants_net_cad": null,
+          "replacement_tax_revenue_cad": null,
+          "borrowing_cad": null,
+          "net_balance_cad": null,
+          "independently_verified": false
+        },
+        {
+          "year": "2035-2036",
+          "water_opex_cad": null,
+          "asset_renewal_capex_cad": null,
+          "local_repair_need_cad": null,
+          "workers_pensions_cad": null,
+          "grants_net_cad": null,
+          "replacement_tax_revenue_cad": null,
+          "borrowing_cad": null,
+          "net_balance_cad": null,
+          "independently_verified": false
+        }
+      ]
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "legal_authority_verified": false,
+      "municipal_coverage_audited": false,
+      "workforce_obligations_approved": false,
+      "external_financial_audit": false,
+      "annual": [
+        {
+          "year": "2026-2027",
+          "water_opex_cad": null,
+          "asset_renewal_capex_cad": null,
+          "local_repair_need_cad": null,
+          "workers_pensions_cad": null,
+          "grants_net_cad": null,
+          "replacement_tax_revenue_cad": null,
+          "borrowing_cad": null,
+          "net_balance_cad": null,
+          "independently_verified": false
+        },
+        {
+          "year": "2027-2028",
+          "water_opex_cad": null,
+          "asset_renewal_capex_cad": null,
+          "local_repair_need_cad": null,
+          "workers_pensions_cad": null,
+          "grants_net_cad": null,
+          "replacement_tax_revenue_cad": null,
+          "borrowing_cad": null,
+          "net_balance_cad": null,
+          "independently_verified": false
+        },
+        {
+          "year": "2028-2029",
+          "water_opex_cad": null,
+          "asset_renewal_capex_cad": null,
+          "local_repair_need_cad": null,
+          "workers_pensions_cad": null,
+          "grants_net_cad": null,
+          "replacement_tax_revenue_cad": null,
+          "borrowing_cad": null,
+          "net_balance_cad": null,
+          "independently_verified": false
+        },
+        {
+          "year": "2029-2030",
+          "water_opex_cad": null,
+          "asset_renewal_capex_cad": null,
+          "local_repair_need_cad": null,
+          "workers_pensions_cad": null,
+          "grants_net_cad": null,
+          "replacement_tax_revenue_cad": null,
+          "borrowing_cad": null,
+          "net_balance_cad": null,
+          "independently_verified": false
+        },
+        {
+          "year": "2030-2031",
+          "water_opex_cad": null,
+          "asset_renewal_capex_cad": null,
+          "local_repair_need_cad": null,
+          "workers_pensions_cad": null,
+          "grants_net_cad": null,
+          "replacement_tax_revenue_cad": null,
+          "borrowing_cad": null,
+          "net_balance_cad": null,
+          "independently_verified": false
+        },
+        {
+          "year": "2031-2032",
+          "water_opex_cad": null,
+          "asset_renewal_capex_cad": null,
+          "local_repair_need_cad": null,
+          "workers_pensions_cad": null,
+          "grants_net_cad": null,
+          "replacement_tax_revenue_cad": null,
+          "borrowing_cad": null,
+          "net_balance_cad": null,
+          "independently_verified": false
+        },
+        {
+          "year": "2032-2033",
+          "water_opex_cad": null,
+          "asset_renewal_capex_cad": null,
+          "local_repair_need_cad": null,
+          "workers_pensions_cad": null,
+          "grants_net_cad": null,
+          "replacement_tax_revenue_cad": null,
+          "borrowing_cad": null,
+          "net_balance_cad": null,
+          "independently_verified": false
+        },
+        {
+          "year": "2033-2034",
+          "water_opex_cad": null,
+          "asset_renewal_capex_cad": null,
+          "local_repair_need_cad": null,
+          "workers_pensions_cad": null,
+          "grants_net_cad": null,
+          "replacement_tax_revenue_cad": null,
+          "borrowing_cad": null,
+          "net_balance_cad": null,
+          "independently_verified": false
+        },
+        {
+          "year": "2034-2035",
+          "water_opex_cad": null,
+          "asset_renewal_capex_cad": null,
+          "local_repair_need_cad": null,
+          "workers_pensions_cad": null,
+          "grants_net_cad": null,
+          "replacement_tax_revenue_cad": null,
+          "borrowing_cad": null,
+          "net_balance_cad": null,
+          "independently_verified": false
+        },
+        {
+          "year": "2035-2036",
+          "water_opex_cad": null,
+          "asset_renewal_capex_cad": null,
+          "local_repair_need_cad": null,
+          "workers_pensions_cad": null,
+          "grants_net_cad": null,
+          "replacement_tax_revenue_cad": null,
+          "borrowing_cad": null,
+          "net_balance_cad": null,
+          "independently_verified": false
+        }
+      ]
+    }
+  ],
+  "unmet_evidence": [
+    {
+      "id": "E01",
+      "need": "Municipal plans PGA-Eau and council resolutions",
+      "status": "MISSING"
+    },
+    {
+      "id": "E02",
+      "need": "Verified condition surveys, not simply age-based estimates",
+      "status": "MISSING"
+    },
+    {
+      "id": "E03",
+      "need": "Risk-prioritized capital renewal costs and timetable",
+      "status": "MISSING"
+    },
+    {
+      "id": "E04",
+      "need": "Reconciliation of municipality, MRC and provincial transfers",
+      "status": "MISSING"
+    },
+    {
+      "id": "E05",
+      "need": "Protected employees, collective agreements and pensions",
+      "status": "MISSING"
+    },
+    {
+      "id": "E06",
+      "need": "Legal competence and independent audit for both constitutional scenarios",
+      "status": "MISSING"
+    }
+  ],
+  "decisions": {
+    "source_assessment_recorded": true,
+    "full_g016k_gate_passed": false,
+    "tax_reduction_financed": false,
+    "renewal_investments_funded": false,
+    "employee_rights_certified": false,
+    "program_budget_complete": false,
+    "independent_review_obtained": false
+  }
+}
