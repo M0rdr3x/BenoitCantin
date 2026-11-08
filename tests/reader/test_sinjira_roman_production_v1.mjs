@@ -149,3 +149,54 @@ test("la fiche du Livre II ne prétend ni manuscrit terminé ni sortie annoncée
  assert.match(html,/pourcentage[^<]*non mesurable/);
  assert.ok(!html.includes("100 % du Livre II"));
 });
+
+test("la grille éditoriale couvre prologue, 30 chapitres et épilogue sans texte privé",async()=>{
+ const track=await load("docs/sinjira/suivi-chapitres-livre-i-2026-11-08.json");
+ assert.equal(track.schema,"sinjira-livre-i-chapter-editorial-tracker/v1");
+ assert.equal(track.units.length,32);
+ assert.equal(track.units.filter(u=>u.kind==="chapter").length,30);
+ assert.equal(track.units[0].id,"prologue");
+ assert.equal(track.units.at(-1).id,"epilogue");
+ assert.equal(new Set(track.units.map(u=>u.id)).size,32);
+ assert.equal(track.declared_structure.chapters,manifest.book.chapters);
+});
+test("aucune des 32 relectures n'est présentée comme acquise sans une preuve",async()=>{
+ const track=await load("docs/sinjira/suivi-chapitres-livre-i-2026-11-08.json");
+ for(const unit of track.units){
+  assert.equal(unit.manuscript_section_verified,false);
+  assert.equal(unit.continuity_review,"NON_EVALUEE");
+  assert.equal(unit.structural_review,"NON_EVALUEE");
+  assert.equal(unit.copy_edit,"NON_EVALUEE");
+  assert.equal(unit.proof_read,"NON_EVALUEE");
+  assert.equal(unit.author_signoff,"NON_EVALUE");
+  assert.equal(unit.reviewed_on,null);
+  assert.equal(unit.review_evidence_ref,null);
+ }
+ assert.equal(track.progress.editorial_units_fully_validated,0);
+ assert.equal(track.progress.editorial_completion_percentage,null);
+});
+test("le sommaire publié de la démo ne certifie que sa portée, pas la relecture",async()=>{
+ const track=await load("docs/sinjira/suivi-chapitres-livre-i-2026-11-08.json");
+ assert.deepEqual(track.units.filter(u=>u.declared_in_free_demo).map(u=>u.id),
+ ["prologue","chapter-01","chapter-02","chapter-03"]);
+ assert.equal(track.progress.manuscript_verified_percentage,null);
+});
+test("le suivi des chapitres ne divulgue ni texte ni hash du livre intégral",async()=>{
+ const track=await load("docs/sinjira/suivi-chapitres-livre-i-2026-11-08.json");
+ assert.ok(Object.values(track.security).every(v=>v===false));
+ assert.equal(JSON.stringify(track).includes(contract.full_edition.sha256),false);
+ assert.ok(track.units.every(u=>u.private_master_page_reference===null&&u.chapter_title_verified===null));
+});
+test("aucun objectif de chapitre ni pourcentage fictif n'est assigné au Livre II",async()=>{
+ const track=await load("docs/sinjira/suivi-chapitres-livre-i-2026-11-08.json");
+ assert.equal(track.book_two.target_chapters,null);
+ assert.equal(track.book_two.chapters_written_confirmed,null);
+ assert.equal(track.book_two.validated_percentage,null);
+});
+test("le suivi éditorial reste exclu du rendu Jekyll d'urgence",async()=>{
+ const config=await readFile(new URL("../../_config.yml",import.meta.url),"utf8");
+ assert.match(config,/\n  - "docs"\n/);
+ const html=await readFile(new URL("../../projets/sinjira/romans/index.html",import.meta.url),"utf8");
+ assert.ok(!html.includes('href="avancement-editorial-2026-11-08.json"'));
+ assert.ok(html.includes("github.com/M0rdr3x/BenoitCantin/blob/main/docs/sinjira/avancement-editorial-2026-11-08.json"));
+});
