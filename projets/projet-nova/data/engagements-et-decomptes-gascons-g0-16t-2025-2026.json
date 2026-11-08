@@ -1,0 +1,258 @@
+{
+  "schema": "nova-g016t-gascons-certificate-and-grant-timing/v1",
+  "phase": "G0.16t",
+  "date": "2026-11-08",
+  "score_before": 47,
+  "score_after": 47,
+  "programme_adopted": false,
+  "independent_nova_audit": false,
+  "project": "Port-Daniel–Gascons — aqueduc et égout Gascons",
+  "official_sources": [
+    {
+      "id": "JAN_2026",
+      "url": "https://munpdg.ca/wp-content/uploads/2026/02/proces-verbal-de-la-seance-ordinaire-du-12-janvier-2026.pdf",
+      "meeting_date": "2026-01-12",
+      "pages_zero_index": [
+        2,
+        3
+      ],
+      "pdf_screenshot_attempted": true,
+      "pdf_screenshot_success": false,
+      "evidence": "MUNICIPAL_RESOLUTION_NOT_CASH"
+    },
+    {
+      "id": "MAR_2026",
+      "url": "https://munpdg.ca/wp-content/uploads/2026/04/proces-verbal-seance-ordinaire-du-9-mars.pdf",
+      "meeting_date": "2026-03-09",
+      "pages_zero_index": [
+        2
+      ],
+      "pdf_screenshot_attempted": true,
+      "pdf_screenshot_success": false,
+      "evidence": "MUNICIPAL_RESOLUTION_NOT_CASH"
+    },
+    {
+      "id": "MAMH_JUN_2025",
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/documents_administratifs/acces_information/engagements_financiers/2025/LIS_engagements_juin_2025.pdf",
+      "published": "2025-07-10",
+      "pdf_page_zero_index": 3,
+      "reference": "2036036",
+      "pdf_screenshot_attempted": true,
+      "pdf_screenshot_success": false,
+      "evidence": "GOVERNMENT_GRANT_FINANCIAL_COMMITMENT_NOT_PAID"
+    },
+    {
+      "id": "MINUTES_INDEX",
+      "url": "https://munpdg.ca/avis-public-2/",
+      "evidence": "OFFICIAL_MINUTES_INDEX"
+    }
+  ],
+  "from_prior": {
+    "file": "data/contrats-et-autorisations-paiement-gascons-g0-16s-2025-2026.json",
+    "certificate_numbers": [
+      2,
+      3,
+      4,
+      5,
+      7
+    ],
+    "selected_sum_pre_tax_cad": 15412222.65,
+    "unnumbered_august_invoice_pre_tax_cad": 450368.1,
+    "excluded_from_numbered_sum": true
+  },
+  "added_numbered_certificate_authorizations": [
+    {
+      "number": 6,
+      "resolution": "2026-01-007",
+      "date": "2026-01-12",
+      "company": "Action Progex inc.",
+      "pre_tax_cad": 2612027.17,
+      "source_id": "JAN_2026",
+      "bank_transfer_confirmed": false
+    },
+    {
+      "number": 8,
+      "resolution": "2026-03-068",
+      "date": "2026-03-09",
+      "company": "Action Progex inc.",
+      "pre_tax_cad": 597484.3,
+      "source_id": "MAR_2026",
+      "bank_transfer_confirmed": false
+    }
+  ],
+  "related_other_supplier_authorizations_excluded_from_progex_subtotal": [
+    {
+      "id": "TETRA_JAN",
+      "date": "2026-01-12",
+      "company": "Tetra Tech QI inc.",
+      "purpose": "Gascons works supervision",
+      "pre_tax_cad": 116313.5,
+      "source_id": "JAN_2026",
+      "bank_transfer_confirmed": false
+    },
+    {
+      "id": "TETRA_MAR",
+      "date": "2026-03-09",
+      "company": "Tetra Tech QI inc.",
+      "purpose": "Gascons works supervision",
+      "pre_tax_cad": 20176.15,
+      "source_id": "MAR_2026",
+      "bank_transfer_confirmed": false
+    },
+    {
+      "id": "ENGLOBE_MAR",
+      "date": "2026-03-09",
+      "company": "Englobe Corp.",
+      "purpose": "Gascons materials QA",
+      "pre_tax_cad": 637.5,
+      "source_id": "MAR_2026",
+      "bank_transfer_confirmed": false
+    }
+  ],
+  "selected_series": {
+    "certificate_numbers": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "certificate_1_status": "NOT_VERIFIED",
+    "number_1_amount_pre_tax_cad": null,
+    "selected_count": 7,
+    "subtotal_prior_pre_tax_cad": 15412222.65,
+    "subtotal_new_pre_tax_cad": 3209511.47,
+    "subtotal_all_selected_pre_tax_cad": 18621734.12,
+    "year_2025_selected_pre_tax_cad": 15313639.29,
+    "year_2026_selected_pre_tax_cad": 3308094.83,
+    "unnumbered_invoice_august_possible_overlap": true,
+    "unnumbered_august_invoice_included": false,
+    "actual_bank_paid_to_contractors_cad": null,
+    "all_project_certificates_covered": false,
+    "final_cost_of_project_cad": null
+  },
+  "provincial_commitment": {
+    "source_id": "MAMH_JUN_2025",
+    "reference": "2036036",
+    "beneficiary": "PORT-DANIEL-GASCONS",
+    "programme": "PRIMEAU 2023-2033",
+    "total_committed_cad": 42302472,
+    "yearly_phasing": [
+      {
+        "fiscal_year": "2025-2026",
+        "budget_engagement_cad": 24700000,
+        "verified_cash_disbursement_cad": null
+      },
+      {
+        "fiscal_year": "2026-2027",
+        "budget_engagement_cad": 17602472,
+        "verified_cash_disbursement_cad": null
+      }
+    ],
+    "paid_to_beneficiary_in_bank_cad": null,
+    "same_grant_announced_2025_not_additional_grant": true,
+    "fiscal_year_vs_calendar_year_not_equivalent": true,
+    "commitment_not_disbursement": true,
+    "government_ledger_vs_municipal_bank_not_reconciled": true
+  },
+  "controls": {
+    "authorizations_not_bank_receipts": true,
+    "no_project_paid_value_inferred": true,
+    "no_double_counting_august_invoice": true,
+    "no_tax_adjustments_inferred": true,
+    "no_2025_2026_years_mixed": true,
+    "provincial_fiscal_year_not_municipal_calendar_year": true,
+    "no_grant_committed_turned_into_paid": true,
+    "no_2026_full_actuals_inferred": true,
+    "unknown_is_not_zero": true,
+    "no_nova_tax_rate_created": true
+  },
+  "additional_evidence_needed": [
+    {
+      "id": "E01",
+      "description": "Certificat no 1 : montant, facture, résolution et chevauchement avec août",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "E02",
+      "description": "Certificats nos 2 à 8, bordereaux bancaires et retenues par contrat",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "E03",
+      "description": "PRIMEAU reçus de virement par réclamation, de 2025 à 2027",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "E04",
+      "description": "Justification des périmètres 44,5 M$, 53,679 M$ et 56,596 M$",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "E05",
+      "description": "Avenants et coût final net après taxes admissibles",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "E06",
+      "description": "Exploitation, qualité de l'eau, mise en service et obligations des salariés",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "E07",
+      "description": "Évaluation réelle sur factures et ménages anonymisés",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "E08",
+      "description": "Audits indépendants des scénarios de financement Nova",
+      "status": "UNVERIFIED"
+    }
+  ],
+  "decade_scenarios": [
+    {
+      "id": "QUEBEC_CANADA",
+      "validated": false,
+      "annual_balance_cad": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "validated": false,
+      "annual_balance_cad": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  ],
+  "decision": {
+    "certificate_6_identified": true,
+    "certificate_8_identified": true,
+    "complete_certificate_series_identified": false,
+    "grant_commitment_fiscal_phasing_identified": true,
+    "bank_paid_to_contractors_verified": false,
+    "grant_paid_to_municipality_verified": false,
+    "nova_tax_plan_funded": false,
+    "score_rise_allowed": false
+  }
+}
