@@ -326,7 +326,7 @@
       const {response,result}=await boundedJsonRequest(API,{
         method:"POST",mode:"cors",cache:"no-store",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({version:VERSION,ageConfirmed:true,ballotToken:randomToken(),captchaToken,answers})
+        body:JSON.stringify({version:VERSION,ageConfirmed:true,consentConfirmed:true,ballotToken:randomToken(),captchaToken,answers})
       });
       if(response.status===201 && result.status==="accepted") {
         save(votedKey,"yes");

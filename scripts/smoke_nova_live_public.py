@@ -179,7 +179,7 @@ def self_test():
     script_order('<script src="a.js"></script><script src="b.js"></script>', "a.js", "b.js")
     civic_scripts = ('<script defer src="assets/sondage-public-corpus.js?v=1"></script>'
                      '<script defer src="assets/nova-civic-integrity.js?v=2"></script>'
-                     '<script defer src="assets/sondage-citoyen.js?v=12"></script>')
+                     '<script defer src="assets/sondage-citoyen.js?v=13"></script>')
     deps = ("nova-civic-integrity.js",)
     assert_scripts_match_source(civic_scripts, civic_scripts,
                                 "sondage-public-corpus.js", "sondage-citoyen.js", deps)

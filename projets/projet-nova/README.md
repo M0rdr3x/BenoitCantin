@@ -373,6 +373,39 @@ Les fichiers de référence candidats `official/reference/*` et `data/sources.js
 
 **Suite G0.16i :** obtenir les fichiers comptables municipaux détaillés, harmoniser 2024–2026, intégrer les transferts inter-administrations et calculer avec un auditeur les besoins de compensation pour chacun des deux statuts constitutionnels. Les références candidates `official/reference/*` et `data/sources.json` ne sont pas modifiées.
 
+## G0.16i — Stress historique des taxes municipales et continuité des services (7 novembre 2026)
+
+**Programme : 47/100, inchangé.** La suite G0.16i utilise la sommation 2024 du MAMH, issue de G0.16h (**1 056 municipalités locales, couverture non exhaustive, détails fiscaux marqués non audités**), pour calculer quatre scénarios **purement arithmétiques, sans politique adoptée ni prévision 2026**.
+
+| Sensibilité sur les comptes **2024** à dépenses et autres revenus gelés | Taxes hypothétiquement retirées | Solde comptable mécanique |
+| --- | ---: | ---: |
+| Aucun retrait (référence enregistrée) | 0,000 G$ | **+3,742 G$** |
+| Taxes foncières générales seules | 13,215 G$ | **−9,473 G$** |
+| Toutes taxes sur valeur foncière | 14,970 G$ | **−11,228 G$** |
+| Toutes taxes municipales | 17,188 G$ | **−13,446 G$** |
+
+- **Ne jamais additionner les scénarios :** taxes générales ⊂ taxes sur valeur foncière ⊂ toutes taxes municipales. Les recettes de remplacement sont **inconnues**. Aucun solde du tableau n'est un **déficit prévisionnel Nova**.
+- **L'excédent 2024 de 3,742 G$ est comptable**, pas une réserve de liquidités ou des économies disponibles; les transferts internes et frais financiers sont déjà dans les comptes.
+- **Nouveau contrôle des années :** le [catalogue MAMH des profils municipaux](https://www.donneesquebec.ca/recherche/dataset/profil-financier-des-municipalites-locales), actualisé le **5 novembre 2026**, distingue les comptes **2024** et les données **2025 d'évaluation foncière**; ces dernières ne représentent **pas** des recettes fiscales 2025. Aucun budget 2025 n'est fabriqué.
+- **Continuité obligatoire :** sept catégories de services et droits (eau, voirie, sécurité, transports, aménagement, emplois/pensions, dette) ont des coûts et financements de remplacement **`null`**. Les **deux scénarios décennaux** 2026–2036 comportent **20 années sans bilan Nova chiffré**.
+- **Livrables GitHub :** `data/risque-transition-taxes-locales-g0-16i-2024.json`, `assets/g016i-local-tax-stress-core.mjs`, `tests/g016i-local-tax-stress.test.mjs` (**38/38 tests réussis en rejeu isolé V8, non certifiés dans GitHub Actions**) et `official/working/rapport-g0-16i-soutenabilite-taxes-municipales-v1.md`.
+- **Décision :** G0.16i documente les risques arithmétiques d'un changement fiscal, mais **n'homologue pas une loi, un taux, une économie ou un financement de remplacement**. La revue juridique, la réconciliation par municipalité et le budget indépendant restent à faire; **47/100 inchangé**.
+
+**Suite logique G0.16j :** rapprocher les municipalités/organismes manquants, mesurer le coût réel et la continuité de chaque service, vérifier les transferts internes et bâtir des budgets à dix ans distincts pour Québec dans le Canada et Québec souverain. Les documents normatifs candidats `official/reference/*` restent inchangés.
+
+## G0.16j — Dépenses municipales 2024 : eau, routes, incendie et autres services
+
+**Préparation du programme : 47/100, inchangée (53 points à obtenir).** G0.16j poursuit l'analyse G0.16h/i avec les **dépenses réellement enregistrées**, à partir des pages **S7 p. 3 et S28 p. 47–48** du [rapport consolidé MAMH 2024](https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/finances_indicateurs_fiscalite/information_financiere/rapports_financiers_organismes_municipaux/2024/RAP_financier_2024_sommation_municipalites_locales.pdf).
+
+- **Dépenses consolidées enregistrées en 2024 : 28 366 959 822 $** dans 1 056 municipalités incluses, comparées à **26 469 048 805 $ en 2023**. Le total est rapproché exactement au moyen de **10 catégories comptables**.
+- **Eau potable, eaux usées et égouts : 2 519 426 792 $** en 2024; **voirie et déneigement : 3 711 874 237 $**; **sécurité incendie : 1 533 111 877 $**. Ces montants sont des **sous-postes inclus dans les dépenses existantes**, et ne s'y ajoutent jamais. Les **34 postes détaillés** ont été rapprochés des fonctions correspondantes dans les deux exercices.
+- **Source et portée :** les pages de détail **S28 indiquent « Non audité »**; la sommation de 1 056 municipalités n'est pas exhaustive, et un inventaire des MRC/régies, des régions et des transferts internes est requis. **2024 ≠ financement garanti de 2026–2036.**
+- **Cohérence budgétaire :** les **frais de financement de 1 332 060 734 $** sont déjà dans le total des dépenses. Le stress fiscal 2024 de G0.16i est une simple soustraction arithmétique; aucune dépense des services ne peut être présentée comme une économie automatique lorsqu'une recette fiscale est retirée.
+- **Livrables :** `data/ventilation-charges-municipales-g0-16j-2024.json` (10 fonctions, 34 lignes, 2 exercices et 20 années de budgets futurs non renseignées), `assets/g016j-municipal-services-core.mjs`, `tests/g016j-municipal-services.test.mjs` (**38 tests réussis sur 38 lors d'un rejeu V8 isolé, sans attestation GitHub Actions**) et `official/working/rapport-g0-16j-services-municipaux-charges-observees-2024-v1.md`.
+- **Verdict :** données historiques des fonctions municipales désormais vérifiables, **mais garanties financières, répartition locale, effets sur les travailleurs, projections de recettes et avis indépendants encore absents**. Aucun prélèvement supprimé ni loi adoptée; **G0.16j non franchie comme porte de viabilité financière**.
+
+**Suite logique G0.16k :** construire un référentiel de continuité par fonction et municipalité, rapprocher la main-d'œuvre, les actifs, les financements et les échéances sur dix ans, puis obtenir les avis juridique et financier indépendants. Le score **47/100** n'augmente pas avec la rédaction de fichiers.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
