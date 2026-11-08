@@ -12,6 +12,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 
 PRIVATE_SCOPES = frozenset({"compte", "admin", "Admin", "app"})
+ROOT_PRIVATE_ALIAS = Path("administration.html")
 HEAD_OPEN = re.compile(r"<head(?:\s[^>]*)?>", re.IGNORECASE)
 
 
@@ -40,14 +41,16 @@ class PrivateHtmlAudit(HTMLParser):
 
 
 def is_private_html(rel: Path) -> bool:
-    return (len(rel.parts) > 1 and rel.parts[0] in PRIVATE_SCOPES
-            and rel.suffix.lower() in {".html", ".htm"})
+    return rel == ROOT_PRIVATE_ALIAS or (
+        len(rel.parts) > 1 and rel.parts[0] in PRIVATE_SCOPES
+        and rel.suffix.lower() in {".html", ".htm"}
+    )
 
 
 def policy_for(config: dict, rel: Path) -> str:
     if not is_private_html(rel):
         return ""
-    path = f"/{rel.parts[0]}/*"
+    path = "/administration.html" if rel == ROOT_PRIVATE_ALIAS else f"/{rel.parts[0]}/*"
     policies = [
         (item.get("values") or {}).get("Content-Security-Policy")
         for item in config.get("headers", [])
