@@ -19,11 +19,17 @@ SCOPES = ("assets/js", "compte", "projets/sinjira")
 SUFFIXES = frozenset((".js", ".mjs", ".html", ".htm"))
 MAX_SOURCE_BYTES = 2 * 1024 * 1024
 
+# Refuser toute autre origine HTTPS/HTTP fournissant le même paquet :
+# ne pas dépendre d'une liste incomplète de CDN connus.
 SDK_CDN = re.compile(
-    r"""https?://(?:cdn\.jsdelivr\.net/npm/|esm\.sh/|unpkg\.com/)
+    r"""https?://[^\s'"<>\x60)]*
         (?:@supabase/supabase-js|%40supabase%2Fsupabase-js)
         [^\s'"<>\x60)]*""",
     re.I | re.X,
+)
+SDK_BARE_IMPORT = re.compile(
+    r"""\b(?:from\s*|import\s*\(\s*|import\s*)['"]@supabase/supabase-js(?:@[^'"]*)?['"]""",
+    re.I,
 )
 
 
@@ -35,6 +41,8 @@ def scan_module(rel: str, source: str) -> list[str]:
             # Ne pas imprimer l'URL : une future chaîne source peut contenir
             # une query-string avec des informations non nécessaires aux logs.
             errors.append(f"{rel}: SDK Supabase non épinglé à {SDK_VERSION}")
+    if SDK_BARE_IMPORT.search(source):
+        errors.append(f"{rel}: import Supabase direct non audité, utiliser le module de session épinglé")
     return errors
 
 
@@ -42,9 +50,11 @@ def source_files() -> list[Path]:
     selected: set[Path] = set()
     for scope in SCOPES:
         root = ROOT / scope
-        if not root.is_dir():
-            raise RuntimeError(f"Répertoire de code public absent: {scope}")
+        if not root.is_dir() or root.is_symlink():
+            raise RuntimeError(f"Répertoire de code public absent ou symbolique: {scope}")
         for path in root.rglob("*"):
+            if path.is_symlink():
+                raise RuntimeError(f"Lien symbolique dans le périmètre public: {path.relative_to(ROOT)}")
             if path.is_file() and path.suffix.lower() in SUFFIXES:
                 selected.add(path)
     return sorted(selected)
@@ -93,12 +103,21 @@ def self_test() -> None:
         "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/+esm",
         "https://esm.sh/@supabase/supabase-js@2",
         "https://unpkg.com/@supabase/supabase-js@2",
+        "https://esm.run/@supabase/supabase-js@latest",
+        "https://cdn.skypack.dev/@supabase/supabase-js@2",
+        "https://example.org/packages/@supabase/supabase-js@2",
         "http://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/+esm",
         SDK_URL + "?module",
     ):
         assert scan_module("test", "import '" + url + "'"), f"URL non verrouillée: {url}"
+    for bare in (
+        "import '@supabase/supabase-js'",
+        'import { createClient } from "@supabase/supabase-js"',
+        "import('@supabase/supabase-js@latest')",
+    ):
+        assert scan_module("test", bare), "Import non contrôlé accepté"
     assert not scan_module("test", "https://cdn.jsdelivr.net/npm/another-package@1.2.3/+esm")
-    print("OK supply chain navigateur : 11 dérives/version flottante rejetées, URL npm immuable reconnue.")
+    print("OK supply chain navigateur : 14 URLs et 3 imports directs non fiables rejetés.")
 
 
 def main() -> int:
