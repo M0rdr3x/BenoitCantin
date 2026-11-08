@@ -9,8 +9,7 @@ from pathlib import Path
 
 WORKFLOW = Path('.github/workflows/sinjira-edge-response-privacy-v24-5-48.yml')
 CHECKOUT_SHA = 'd23441a48e516b6c34aea4fa41551a30e30af803'
-SETUP_PYTHON_SHA = 'ece7cb06caefa5fff74198d8649806c4678c61a1'
-PYTHON_VERSION = '3.12.14'
+PYTHON_RUN_CHECK = """python3 -c 'import sys; assert sys.version_info[:2] == (3, 12), \"Python 3.12 requis\"'"""
 
 
 def fail(message: str) -> None:
@@ -24,12 +23,11 @@ def validate_text(text: str) -> None:
         'timeout-minutes: 5',
         f'uses: actions/checkout@{CHECKOUT_SHA}',
         'persist-credentials: false',
-        f'uses: actions/setup-python@{SETUP_PYTHON_SHA}',
-        f"python-version: '{PYTHON_VERSION}'",
-        'python scripts/validate_edge_response_privacy_workflow_security.py --self-test',
-        'python scripts/validate_edge_response_privacy_workflow_security.py',
-        'python scripts/validate_edge_response_privacy_v24_5_48.py',
-        'python scripts/validate_edge_function_inventory.py',
+        PYTHON_RUN_CHECK,
+        'python3 scripts/validate_edge_response_privacy_workflow_security.py --self-test',
+        'python3 scripts/validate_edge_response_privacy_workflow_security.py',
+        'python3 scripts/validate_edge_response_privacy_v24_5_48.py',
+        'python3 scripts/validate_edge_function_inventory.py',
     ]
     for needle in required:
         if needle not in text:
@@ -38,7 +36,7 @@ def validate_text(text: str) -> None:
     forbidden = [
         'ubuntu-latest',
         'actions/checkout@v',
-        'actions/setup-python@v',
+        'actions/setup-python@',
         "python-version: '3.12'",
         'persist-credentials: true',
     ]
@@ -53,7 +51,7 @@ def validate_text(text: str) -> None:
         fail('permission GitHub en écriture détectée')
 
     uses_targets = re.findall(r'^\s*-?\s*uses:\s+(\S+)\s*$', text, flags=re.MULTILINE)
-    if len(uses_targets) != 2:
+    if len(uses_targets) != 1:
         fail(f'nombre inattendu d’actions réutilisables: {len(uses_targets)}')
     for target in uses_targets:
         if '@' not in target or not re.fullmatch(r'[0-9a-f]{40}', target.rsplit('@', 1)[1]):
@@ -65,16 +63,12 @@ def self_test(text: str) -> None:
         'checkout mobile': text.replace(
             f'actions/checkout@{CHECKOUT_SHA}', 'actions/checkout@v6', 1
         ),
-        'setup-python mobile': text.replace(
-            f'actions/setup-python@{SETUP_PYTHON_SHA}', 'actions/setup-python@v6', 1
-        ),
+        'Python non vérifié': text.replace(PYTHON_RUN_CHECK, 'echo python-non-verifie', 1),
         'credentials persistés': text.replace(
             'persist-credentials: false', 'persist-credentials: true', 1
         ),
         'runner mobile': text.replace('ubuntu-24.04', 'ubuntu-latest', 1),
-        'Python large': text.replace(
-            f"python-version: '{PYTHON_VERSION}'", "python-version: '3.12'", 1
-        ),
+        'Python minor erronée': text.replace(PYTHON_RUN_CHECK, PYTHON_RUN_CHECK.replace('(3, 12)', '(3, 11)'), 1),
         'secret GitHub': text.replace(
             'permissions:\n  contents: read',
             'permissions:\n  contents: read\nenv:\n  BAD: ${{ secrets.BAD }}',
@@ -83,15 +77,15 @@ def self_test(text: str) -> None:
         'permission écriture': text.replace('contents: read', 'contents: write', 1),
         'auto-test retiré': text.replace(
             '      - name: Auto-tester le contrat CI confidentialité Edge\n'
-            '        run: python scripts/validate_edge_response_privacy_workflow_security.py --self-test\n\n',
+            '        run: python3 scripts/validate_edge_response_privacy_workflow_security.py --self-test\n\n',
             '',
             1,
         ),
         'contrôle confidentialité retiré': text.replace(
-            '          python scripts/validate_edge_response_privacy_v24_5_48.py\n', '', 1
+            '          python3 scripts/validate_edge_response_privacy_v24_5_48.py\n', '', 1
         ),
         'inventaire Edge retiré': text.replace(
-            '          python scripts/validate_edge_function_inventory.py\n', '', 1
+            '          python3 scripts/validate_edge_function_inventory.py\n', '', 1
         ),
     }
 

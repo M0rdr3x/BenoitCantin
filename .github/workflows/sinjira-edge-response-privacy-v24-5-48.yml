@@ -22,19 +22,18 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Configurer Python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
-        with:
-          python-version: '3.12.14'
+      - name: Vérifier Python 3.12 sur Ubuntu 24.04
+        run: |
+          python3 -c 'import sys; assert sys.version_info[:2] == (3, 12), "Python 3.12 requis"'
 
       - name: Auto-tester le contrat CI confidentialité Edge
-        run: python scripts/validate_edge_response_privacy_workflow_security.py --self-test
+        run: python3 scripts/validate_edge_response_privacy_workflow_security.py --self-test
 
       - name: Vérifier le contrat CI confidentialité Edge
-        run: python scripts/validate_edge_response_privacy_workflow_security.py
+        run: python3 scripts/validate_edge_response_privacy_workflow_security.py
 
       - name: Vérifier V24.5.48
         run: |
-          python scripts/validate_edge_response_privacy_v24_5_48.py
-          python scripts/test_streaming_edge_legacy_guard_regressions.py
-          python scripts/validate_edge_function_inventory.py
+          python3 scripts/validate_edge_response_privacy_v24_5_48.py
+          python3 scripts/test_streaming_edge_legacy_guard_regressions.py
+          python3 scripts/validate_edge_function_inventory.py
