@@ -73,7 +73,7 @@ Pour G0.16k, le PGA-Eau constitue une source indispensable pour relier **état r
 
 Le registre de données `data/continuite-actifs-eau-g0-16k-2025.json` conserve cinq familles d'actifs, les niveaux de confiance, les sept risques, la date d'engagement PGA-Eau et deux scénarios de dix exercices dont **toutes les recettes, dépenses de rénovation et soldes futurs restent à documenter**.
 
-Le contrôleur `assets/g016k-water-assets-core.mjs` bloque les altérations des valeurs CERIU, le double comptage avec le MAMH, les fausses dates d'obligation et les budgets futurs inventés. La suite `tests/g016k-water-assets-continuity.test.mjs` déclare **36 cas exécutés et réussis dans un environnement JavaScript V8 isolé**. Ce n'est pas la preuve d'une exécution officielle de Node dans GitHub Actions.
+Le contrôleur `assets/g016k-water-assets-core.mjs` bloque les altérations des valeurs CERIU, le double comptage avec le MAMH, les fausses dates d'obligation et les budgets futurs inventés. La suite `tests/g016k-water-assets-continuity.test.mjs` déclare **37 cas exécutés et réussis dans un environnement JavaScript V8 isolé**. Ce n'est pas la preuve d'une exécution officielle de Node dans GitHub Actions.
 
 **Les six portes de preuve restent ouvertes :** plans municipaux réellement adoptés, inspections vérifiables, budgets de réfection fondés sur les besoins (et non la valeur de reconstruction intégrale), flux financiers et transferts, obligations des travailleurs et de la dette, et revue budgétaire/juridique indépendante des deux scénarios constitutionnels.
 
