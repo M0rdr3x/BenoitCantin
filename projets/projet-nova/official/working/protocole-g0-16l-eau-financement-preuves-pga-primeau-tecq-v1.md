@@ -69,7 +69,7 @@ La prochaine phase devrait solliciter ou consulter **des dossiers municipaux eff
 
 - Registre : `data/financement-eau-g0-16l-pga-primeau-tecq-2026.json` (trois sources, **neuf étapes**, deux programmes, **zéro projet réel importé**, six preuves manquantes, deux scénarios décennaux).
 - Contrôleur : `assets/g016l-water-funding-core.mjs` (financement et calendrier conditionnels, non-fabrication de dépenses).
-- Tests : `tests/g016l-water-funding.test.mjs` — **38 cas déclarés et réussis dans un rejeu JavaScript isolé**, pas un test Node/GitHub Actions officiellement attesté.
+- Tests : `tests/g016l-water-funding.test.mjs` — **40 cas déclarés et réussis dans un rejeu JavaScript isolé**, pas un test Node/GitHub Actions officiellement attesté.
 - **47/100 inchangé**, G0.16l documentaire avancé mais **financement et mise en œuvre non homologués**, aucun droit municipal modifié, aucun texte candidat `official/reference/*` ni `data/sources.json` réécrit.
 
 **Suite G0.16m recommandée :** collecte pilote de projets municipaux réels, preuves d'inspection et d'aides accordées, calcul de coûts et calendrier de maintenance priorisé, vérification des transferts et des effets distributifs. Aucun gain de points ne sera accordé sans éléments substantiels et revue externe.
