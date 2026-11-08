@@ -22,7 +22,8 @@
       "sources": {
         "public_manifest": "/projets/sinjira/romans/livre-1-release.json",
         "private_delivery_contract": "/projets/sinjira/codex/livre-i-delivery-contract.json",
-        "public_demo": "/projets/sinjira/romans/lire-demo.html"
+        "public_demo": "/projets/sinjira/romans/lire-demo.html",
+        "chapter_editorial_tracking": "docs/sinjira/suivi-chapitres-livre-i-2026-11-08.json"
       },
       "declared_structure": {
         "full_pages": 520,
