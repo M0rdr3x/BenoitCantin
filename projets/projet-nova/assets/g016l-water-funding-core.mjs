@@ -83,7 +83,7 @@ export function inspectG016lFundingSources(d,g016k){
     bad("ENVELOPE_MISREPRESENTED_AS_AWARD");
  if(!same(d.grant_evidence_stages,STAGES)||
     !Array.isArray(d.project_register)||d.project_register.length!==0||
-    Object.keys(d.project_schema_contract).length!==6||
+    Object.keys(d.project_schema_contract).length!==7||
     !same(d.project_schema_contract.required_grant_fields,
       ["programme","stage","amount_cad","award_document_url","verified_against_issuer"]))
     bad("PROJECT_DATA_CANNOT_BE_FABRICATED");
