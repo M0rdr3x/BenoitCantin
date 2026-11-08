@@ -7,6 +7,7 @@ on:
       - 'supabase/functions/**'
       - 'supabase/config.toml'
       - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/validate_edge_raw_body_regressions.py'
       - 'scripts/test_edge_inventory_source_integrity.py'
       - '.github/workflows/edge-inventory-source-integrity.yml'
   push:
@@ -15,6 +16,7 @@ on:
       - 'supabase/functions/**'
       - 'supabase/config.toml'
       - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/validate_edge_raw_body_regressions.py'
       - 'scripts/test_edge_inventory_source_integrity.py'
       - '.github/workflows/edge-inventory-source-integrity.yml'
   workflow_dispatch:
@@ -41,3 +43,7 @@ jobs:
         run: python3 scripts/test_edge_inventory_source_integrity.py
       - name: Vérifier l'inventaire complet des fonctions Edge
         run: python3 scripts/validate_edge_function_inventory.py
+      - name: Tester les mutations de lectures HTTP entières
+        run: python3 scripts/validate_edge_raw_body_regressions.py --self-test
+      - name: Empêcher toute nouvelle lecture Edge non bornée hors dette historique
+        run: python3 scripts/validate_edge_raw_body_regressions.py
