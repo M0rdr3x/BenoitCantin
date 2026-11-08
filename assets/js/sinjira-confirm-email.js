@@ -1,4 +1,4 @@
-import {getSupabase, isSinjiraBackendConfigured, setStatus} from './sinjira-supabase.js';
+import {getSupabase, isSinjiraBackendConfigured, setStatus, SINJIRA_CONFIG} from './sinjira-supabase.js';
 
 // Cette page ne consomme JAMAIS un jeton pendant son chargement.
 // Le POST verifyOtp est déclenché exclusivement par le clic de la personne.
@@ -88,7 +88,7 @@ resendForm?.addEventListener('submit', async (event) => {
   const submitButton = resendForm.querySelector('[type="submit"]');
   if (submitButton) submitButton.disabled = true;
   try {
-    const {error} = await getSupabase().auth.resend({type: 'signup', email});
+    const {error} = await getSupabase().auth.resend({type: 'signup', email, options:{emailRedirectTo:`${SINJIRA_CONFIG.siteUrl}/compte/confirmer.html`}});
     if (error) throw error;
     setStatus(resendStatus, 'Si cette adresse correspond à un compte en attente de validation, un nouveau courriel a été demandé. Vérifiez également vos pourriels.', 'success');
   } catch {
