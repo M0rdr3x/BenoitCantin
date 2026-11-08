@@ -439,7 +439,7 @@ export function createReaderCompanion({
     let found=0,shown=0;
     try{
       for(let page=1;page<=max;page++){
-        if(version!==state.searchVersion)break;
+        if(version!==state.searchVersion||!isReady())break;
         // Lecture de chaque page en mémoire, jamais de requête à un moteur externe.
         const text=await getTextAtPage(page);
         if(version!==state.searchVersion||!isReady())break;
@@ -470,7 +470,7 @@ export function createReaderCompanion({
         notice('Recherche interrompue : une page n’a pas pu être analysée.','error','reader-search-status');
       }
     }finally{
-      if(version===state.searchVersion){
+      if(version===state.searchVersion&&isReady()){
         state.searchBusy=false;
         $('reader-search-submit').disabled=false;
         $('reader-search-cancel').hidden=true;
