@@ -121,6 +121,8 @@ export function inspectSinjiraNovelEditorialReadiness(report,manifest,contract){
     /%PDF-|\b(?:eyJ[A-Za-z0-9_-]{20,})\b|\/storage\/v1\/object\/sign\//.test(json))
    fail("PRIVATE_CONTENT_EXPOSED");
  const ok=errors.length===0;
+ if(!ok)return {ok:false,errors:[...new Set(errors)],book1:null,book2:null,
+  readiness_confirmed:false,human_approval_required:true};
  return {ok,errors:[...new Set(errors)],
    book1:{
     declared_manuscript_pages:520,declared_chapters:30,declared_epilogue:true,
