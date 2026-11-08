@@ -107,7 +107,8 @@
         "same_primeau_award_cad": 14668901,
         "water_fund_budgeted_cad": 336823,
         "borrowing_budgeted_cad": 5068940,
-        "actual_paid_or_borrowed_verified_cad": null
+        "actual_paid_or_borrowed_verified_cad": null,
+        "source_id": "CITY_PTI"
       },
       "city_2025_bylaw": {
         "regulation": "404-2025",
