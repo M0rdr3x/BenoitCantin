@@ -515,6 +515,21 @@ Les fichiers de référence candidats `official/reference/*` et `data/sources.js
 
 **Suite G0.16s :** rapprochement du grand livre, des contrats et des pièces de paiement PRIMEAU du projet Gascons; étude de nouveaux cas avant tout taux fiscal ou gain budgétaire annoncé. **Score toujours 47/100.**
 
+
+## G0.16s — Octrois de contrats et décomptes Gascons (8 novembre 2026)
+
+**Préparation globale de Nova–Sinjira : 47/100, 53 points manquants; aucune adoption ni validation financière externe de Nova.** La phase G0.16s avance au niveau des **contrats particuliers et des autorisations municipales de décomptes** pour les réseaux d'eau potable et d'eaux usées du secteur Gascons, à Port-Daniel–Gascons.
+
+- **Marchés du 16 juin 2025 :** [procès-verbal municipal officiel](https://munpdg.ca/wp-content/uploads/2025/07/proces-verbal-de-la-seance-extraordinaire-du-16-juin.pdf). Construction Action Progex **50 484 372,75 $**, surveillance Tetra Tech QI **2 440 775,53 $**, contrôle des matériaux Englobe **754 236 $** — soit **53 679 384,28 $ d'octrois, taxes incluses**. Ces sommes **ne sont pas la facture finale ni les sommes versées**.
+- **Cinq décomptes progressifs numérotés repérés, avant taxes :** no 2 **2 715 347,20 $** (septembre 2025), no 3 **2 446 515,19 $** (octobre), no 4 **4 683 742,36 $** (novembre), no 5 **5 468 034,54 $** (décembre), no 7 **98 583,36 $** (février 2026) : **somme de ces cinq autorisations de conseil 15 412 222,65 $ avant taxes**, **sans preuve des virements bancaires**. Une facture distincte du 11 août **450 368,10 $ avant taxes**, sans numéro confirmé, est suivie à part pour prévenir le double comptage. Les certificats nos 1 et 6 n'ont pas été vérifiés dans cet échantillon.
+- **Périmètres financiers différents :** [projet de règlement 2025-01](https://munpdg.ca/wp-content/uploads/2025/07/proces-verbal-de-la-seance-extraordinaire-du-5-juin-2025-C.pdf) : **56 596 000 $** d'enveloppe, dont **42 302 472 $ d'aide PRIMEAU prévue** et **14 293 528 $ d'emprunt proposé**; [tableau de bord officiel de mars 2026](https://www.tresor.gouv.qc.ca/infrastructures-publiques/tableau-de-bord/1321-p1) : coût approuvé **44,5 M$** (Québec **42,3 M$**, partenaires **2,2 M$**), « en réalisation », mise en service **prévue** pour décembre 2026. **On ne peut pas assimiler ces montants à des dépenses payées ou des coûts finaux ni expliquer leur écart sans rapprochement des assiettes et des dates.**
+- **Comptes 2025 :** les sorties municipales d'immobilisations (**16 969 080 $**) sont agrégées sur tous les projets et ne peuvent être attribuées seulement aux entrepreneurs de Gascons; les états financiers portent une réserve de l'auditeur.
+- **Preuves restant nécessaires :** contrats et avenants à jour, certificats manquants, relevés bancaires des paiements, détail des aides PRIMEAU réellement reçues, financement et mises en service, maintien des travailleurs et coûts d'entretien, évaluation indépendante des scénarios fiscaux et constitutionnels.
+
+**Documents :** `data/contrats-et-autorisations-paiement-gascons-g0-16s-2025-2026.json`, `assets/g016s-gascons-procurement-core.mjs`, `tests/g016s-gascons-procurement.test.mjs`, `official/working/rapport-g0-16s-contrats-paiements-gascons-v1.md`. **42 tests structurels réussis en V8 isolé; exécution native GitHub Actions non confirmée.** Les captures visuelles PDF du navigateur ont échoué (cache miss), ce qui est signalé dans le registre.
+
+**Suite G0.16t :** isoler la comptabilité de chaque chantier, recueillir les bordereaux de virement PRIMEAU et contrôler l'écart entre contrats et tableaux de coûts avec une comptabilité projet détaillée. **47/100 inchangé.**
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
