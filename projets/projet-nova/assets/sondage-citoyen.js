@@ -22,10 +22,19 @@
   let captchaRendered = false;
   let sending = false;
   let sessionToken = "";
+  let sessionVoted = false;
   const storageKey = "nova_poll_ballot_token_v1";
   const votedKey = "nova_poll_sent_v1";
   function stored(key) {try { return localStorage.getItem(key); }catch { return null; }}
   function save(key,value) {try { localStorage.setItem(key,value); }catch { /* Private mode: session fallback */ }}
+  // Un succès confirmé doit verrouiller immédiatement l'interface, même
+  // si le navigateur refuse localStorage (navigation privée / quota).
+  // Le serveur conserve séparément son verrou HMAC anti-rejeu.
+  function alreadyVoted(){ return sessionVoted || stored(votedKey)==="yes"; }
+  function markVoted(){
+    sessionVoted=true;
+    save(votedKey,"yes");
+  }
   function setStatus(text) { $("poll-live-status").textContent = text; }
   function randomToken() {
     if(sessionToken) return sessionToken;
@@ -72,7 +81,7 @@
     const input = document.createElement("input");
     input.type="radio"; input.name=question.id; input.value=String(option);
     input.required = true;
-    input.disabled=!open || stored(votedKey)==="yes";
+    input.disabled=!open || alreadyVoted();
     const span = document.createElement("span");
     span.textContent=LABELS[String(option)];
     label.append(input,span); return label;
@@ -93,7 +102,7 @@
   }
   function updateButton(){
     const btn=$("poll-send");
-    const already=stored(votedKey)==="yes";
+    const already=alreadyVoted();
     // Une fermeture de la consultation verrouille aussi les choix déjà
     // visibles. Une soumission en cours ou confirmée verrouille les réponses.
     for(const radio of $("poll-questions").querySelectorAll('input[type="radio"]')){
@@ -307,7 +316,7 @@
   }
   async function submit(event){
     event.preventDefault();
-    if(!open || sending || stored(votedKey)==="yes") return;
+    if(!open || sending || alreadyVoted()) return;
     if(!$("poll-adult").checked || !$("poll-agree").checked) {
       $("poll-feedback").textContent="Confirmez votre âge et votre compréhension du sondage.";return;
     }
@@ -329,11 +338,11 @@
         body:JSON.stringify({version:VERSION,ageConfirmed:true,consentConfirmed:true,ballotToken:randomToken(),captchaToken,answers})
       });
       if(response.status===201 && result.status==="accepted") {
-        save(votedKey,"yes");
+        markVoted();
         $("poll-feedback").textContent="Participation prise en compte. Merci. Seuls des totaux seront rendus publics.";
         await refreshResults(); renderForm();
       }else if(response.status===409) {
-        save(votedKey,"yes");
+        markVoted();
         $("poll-feedback").textContent="Un bulletin associé à ce navigateur a déjà été enregistré.";renderForm();
       }else {
         $("poll-feedback").textContent="Votre bulletin n'a pas été confirmé ("+(result.error||"erreur")+"). Vérifiez le service et réessayez.";
