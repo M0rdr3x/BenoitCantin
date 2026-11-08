@@ -10,7 +10,7 @@
   "preconditions_confirmed": 0,
   "independent_reviews_confirmed": 0,
   "proof_scope_count": 15,
-  "selected_candidates_count": 11,
+  "selected_candidates_count": 15,
   "entries": [
     {
       "id": "V01",
@@ -35,7 +35,15 @@
       "requis": "Droits, permis, redevances: nature et affectation",
       "statut_preuve_g015": "A_DOCUMENTER",
       "independently_reviewed": false,
-      "candidats": [],
+      "candidats": [
+        {
+          "url": "https://www.quebec.ca/gouvernement/finances-publiques/revenus/tarification-services-publics",
+          "periode": "politique de tarification en vigueur, page consultée en novembre 2026",
+          "apport": "Classification de services tarifés, rôle du financement par les bénéficiaires et reddition de comptes annuelle des organismes.",
+          "limite": "Ne ventile pas toutes les recettes 2026-2027 par droits, permis, redevances et lois; ne prouve pas leur libre réaffectation ni une recette Nova.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        }
+      ],
       "prochaine_verification": "Obtenir ventilation légale et par exercice des droits, permis et redevances, puis statut de chaque flux."
     },
     {
@@ -44,7 +52,22 @@
       "requis": "Revenus divers: ventilation et transferts internes",
       "statut_preuve_g015": "A_DOCUMENTER",
       "independently_reviewed": false,
-      "candidats": [],
+      "candidats": [
+        {
+          "url": "https://www.quebec.ca/gouvernement/finances-publiques/budget-comptes-publics/comptes-publics/volumes-comptes-publics",
+          "periode": "comptes publics annuels, page de référence consultée en novembre 2026",
+          "apport": "Accès aux états financiers consolidés et aux fonds général et spéciaux, base pour retracer des flux.",
+          "limite": "Répertoire d'accès aux comptes et non rapprochement des revenus divers, remboursements et transferts internes par exercice.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        },
+        {
+          "url": "https://www.quebec.ca/gouvernement/finances-publiques/budget-comptes-publics/comptes-publics/perimetre-comptable-fiduciaires-gouvernement",
+          "periode": "périmètre comptable institutionnel, page consultée en novembre 2026",
+          "apport": "Périmètre des organismes contrôlés, fonds spéciaux et fiduciaires pour prévenir le double compte.",
+          "limite": "Ne quantifie pas à lui seul les revenus divers par entité ni leurs éliminations de consolidation; vérification des états originaux requise.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        }
+      ],
       "prochaine_verification": "Distinguer revenus divers, comptes à fin déterminée, transferts internes et consolidations."
     },
     {
@@ -169,7 +192,22 @@
       "requis": "Écoles et municipalités: financement et compétences",
       "statut_preuve_g015": "A_DOCUMENTER",
       "independently_reviewed": false,
-      "candidats": [],
+      "candidats": [
+        {
+          "url": "https://www.quebec.ca/education/prescolaire-primaire-et-secondaire/administration-encadrements/financement/taxe-scolaire",
+          "periode": "cadre du financement scolaire courant, page consultée en novembre 2026",
+          "apport": "Explique la destination de la taxe scolaire, notamment entretien et gestion des équipements et une partie du transport.",
+          "limite": "Ne fournit pas une consolidation complète des coûts de l'éducation ni une réforme financée.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        },
+        {
+          "url": "https://www.quebec.ca/gouvernement/gestion-municipale/finances-fiscalite-municipales/information-financiere/preparation-budget",
+          "periode": "préparation budgétaire municipale 2027, mise à jour octobre 2026",
+          "apport": "Répertoire des transferts municipaux anticipés et des mécanismes de répartition de certains prélèvements.",
+          "limite": "Prévisions municipales et transferts partiels seulement; ne démontrent ni compétence d'abolition des taxes ni continuité locale et scolaire sous Nova.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        }
+      ],
       "prochaine_verification": "Séparer sources de financement scolaires, compétences municipales et obligations de continuité."
     },
     {
@@ -243,7 +281,15 @@
       "requis": "Québec dans le Canada et Québec souverain: obligations distinctes",
       "statut_preuve_g015": "A_DOCUMENTER",
       "independently_reviewed": false,
-      "candidats": [],
+      "candidats": [
+        {
+          "url": "https://www.quebec.ca/gouvernement/relations-canadiennes/codification-administrative",
+          "periode": "cadre constitutionnel canadien, codification au 1er mai 2024, page consultée en novembre 2026",
+          "apport": "Accès public à la codification québécoise des lois constitutionnelles encadrant le partage des pouvoirs actuels.",
+          "limite": "Ne constitue pas un avis juridique sur la souveraineté ni une évaluation des coûts, dettes, transferts, pensions et obligations à reprendre.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        }
+      ],
       "prochaine_verification": "Faire expertiser juridiquement les deux statuts constitutionnels, les compétences et les obligations reprises."
     },
     {
@@ -263,5 +309,6 @@
       ],
       "prochaine_verification": "Produire et faire réviser deux budgets NOVA complets sur dix ans, avec scénarios adverses et vérifications indépendantes."
     }
-  ]
+  ],
+  "updated_at": "2026-11-08"
 }
