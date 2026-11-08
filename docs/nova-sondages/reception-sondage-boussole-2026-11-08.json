@@ -1,0 +1,237 @@
+{
+  "schema": "nova-civic-two-tools-readiness/v1",
+  "as_of": "2026-11-08",
+  "project": "Projet Nova",
+  "status": "NON_HOMOLOGUE",
+  "methodology": "Critères binaires d'homologation. Un parcours complet Q01–Q64, y compris sorties et 64 réponses « Sans opinion », a réussi sous Playwright dans Chromium, Firefox et WebKit sur le commit candidat #881; la porte de parcours E2E local est validée. Cette preuve ne valide ni le site public en production, ni la comparaison des partis, ni l'accessibilité indépendante, ni l'ouverture du sondage.",
+  "programme_audit_g012": {
+    "preparation_percent": 47,
+    "audit_date": "2026-11-05",
+    "unrelated_to_ui_readiness": true
+  },
+  "cross_cutting": {
+    "source_files_verified_in_github": true,
+    "latest_github_actions_pass_verified": false,
+    "latest_public_scripts_deployed_verified": false,
+    "independent_security_audit_completed": false,
+    "production_ballots_sent_for_test": 0,
+    "party_comparison_enabled": false,
+    "last_browser_all_skip_questions_verified": 28,
+    "last_browser_full_64_completed": false,
+    "score_parity_test_cases": 260,
+    "vote_post_live_tested": false,
+    "external_run_28": "https://agent.tinyfish.ai/runs/d7369cac-c8ba-429f-9ec2-a6e37175e519",
+    "e2e_partial_profile_awaits_public_deployment": true,
+    "ci_local_compass_full_64_verified": true,
+    "ci_local_compass_full_64_browsers": [
+      "chromium",
+      "firefox",
+      "webkit"
+    ],
+    "ci_local_compass_full_64_workflow_url": "https://github.com/M0rdr3x/BenoitCantin/actions/runs/42531076014",
+    "ci_local_compass_full_64_source_commit": "e59a7f6a40d5f39f53df6c493a3f88b69017e66c"
+  },
+  "compass": {
+    "url": "https://www.benoitcantin.com/projets/projet-nova/boussole-electorale.html",
+    "questions": 64,
+    "dimensions": 16,
+    "comparison_enabled": false,
+    "all_mandatory_gates_passed": false,
+    "gates": [
+      {
+        "id": "COMPASS_CORPUS_64_16",
+        "status": "PASSED",
+        "criteria": "64 propositions et 16 dimensions présentes; deux directions équilibrées par axe",
+        "evidence": "data/boussole-electorale-v2.json",
+        "scope": "version_source"
+      },
+      {
+        "id": "COMPASS_BUNDLES",
+        "status": "PASSED",
+        "criteria": "Corpus JS identiques aux quatre fichiers JSON sources",
+        "evidence": "assets/boussole-public-corpus.js",
+        "scope": "github_only"
+      },
+      {
+        "id": "COMPASS_DIRECTION_RULES",
+        "status": "PASSED",
+        "criteria": "Poids, directions et axes invalides bloqués par un contrôleur dédié",
+        "evidence": "assets/nova-civic-integrity.js",
+        "scope": "direct_assertions"
+      },
+      {
+        "id": "COMPASS_LIVE_BASIC",
+        "status": "PASSED",
+        "criteria": "Q01 -> Q02 -> Q01; la réponse Q01 est conservée dans un navigateur réel",
+        "evidence": "https://agent.tinyfish.ai/runs/59ec01c2-2ef7-407f-a5bd-20e52b7b64e4",
+        "scope": "browser_chromium_basic"
+      },
+      {
+        "id": "COMPASS_SCORE_PARITY",
+        "status": "PASSED",
+        "criteria": "Moteur pur à 16 dimensions: 260 cas comparés à l'ancien calcul sans divergence; 23 tests Node déclarés, profils neutres et questions passées",
+        "evidence": "assets/nova-civic-integrity.js et tests/nova-civic-scoring.test.mjs",
+        "scope": "260_dynamic_parity_assertions_plus_versioned_unit_tests"
+      },
+      {
+        "id": "COMPASS_PARTIAL_PROFILE_RELEASE",
+        "status": "PENDING",
+        "criteria": "Bouton de consultation de profil partiel fonctionnel en production, réinitialisation et absence de scores non calculables confirmés",
+        "evidence": "boussole-electorale.html et assets/boussole-electorale.js",
+        "scope": "browser_full_flow_and_deployed_release_required"
+      },
+      {
+        "id": "COMPASS_FULL_64_RESULT",
+        "status": "PASSED",
+        "criteria": "Compléter Q01 à Q64 et valider toutes les sorties, valeurs nulles et radar",
+        "evidence": "https://github.com/M0rdr3x/BenoitCantin/actions/runs/42531076014 ; tests/e2e/test_public_site.py (Chromium, Firefox, WebKit : Q01-Q64, résultats et 64 « Sans opinion »), PR #881 fusionnée",
+        "scope": "browser_e2e_local_pr_881_seulement_non_live"
+      },
+      {
+        "id": "COMPASS_WEIGHT_SKIP_RESET",
+        "status": "PENDING",
+        "criteria": "Tester pondération, sans opinion, changement de réponse, partage et remise à zéro jusqu'au résultat",
+        "evidence": "assets/boussole-electorale.js",
+        "scope": "browser_e2e_required"
+      },
+      {
+        "id": "COMPASS_ACCESSIBILITY",
+        "status": "PENDING",
+        "criteria": "Audit WCAG clavier, focus, lecteurs d'écran, contrastes et mouvement réduit",
+        "evidence": "boussole-electorale.html",
+        "scope": "independent_manual_qa"
+      },
+      {
+        "id": "COMPASS_CROSS_BROWSER",
+        "status": "PENDING",
+        "criteria": "Vérification mobile et Firefox, Safari, Chromium, y compris script en cache",
+        "evidence": "boussole-electorale.html",
+        "scope": "browser_matrix"
+      },
+      {
+        "id": "COMPASS_DOCUMENTARY_VALIDATION",
+        "status": "PENDING",
+        "criteria": "Couverture égale de sources primaires, deuxième relecture et statut parti par parti; aucune préférence de vote",
+        "evidence": "data/boussole-preuves-2026.json",
+        "scope": "independent_factual_review"
+      },
+      {
+        "id": "COMPASS_DEPLOYMENT_RELEASE",
+        "status": "PENDING",
+        "criteria": "Confirmer que les nouvelles révisions JS et le résultat des tests CI sont en production",
+        "evidence": "assets/boussole-electorale.js",
+        "scope": "release_verification"
+      }
+    ]
+  },
+  "poll": {
+    "url": "https://www.benoitcantin.com/projets/projet-nova/sondage-citoyen.html",
+    "questions": 8,
+    "published_in_source": false,
+    "edge_function_active": true,
+    "edge_function_version": 5,
+    "has_recorded_ballots": false,
+    "public_publication_ballots": 0,
+    "all_mandatory_gates_passed": false,
+    "gates": [
+      {
+        "id": "POLL_8_Q_ALIGNED",
+        "status": "PASSED",
+        "criteria": "8 identifiants, ordres et textes identiques en JSON GitHub et SQL Supabase",
+        "evidence": "data/sondage-citoyen-v1.json",
+        "scope": "github_and_db_read_only"
+      },
+      {
+        "id": "POLL_BUNDLE",
+        "status": "PASSED",
+        "criteria": "Fichier JavaScript public identique à la source JSON",
+        "evidence": "assets/sondage-public-corpus.js",
+        "scope": "github_only"
+      },
+      {
+        "id": "POLL_DB_ACCESS",
+        "status": "PASSED",
+        "criteria": "Cinq tables RLS; aucun accès direct anon/auth et RPC service_role seulement",
+        "evidence": "Supabase: public.nova_poll_* / public.nova_poll_submit",
+        "scope": "db_permission_read_only"
+      },
+      {
+        "id": "POLL_LIVE_CLOSED",
+        "status": "PASSED",
+        "criteria": "Huit questions affichées; vote fermé et aucun résultat public individuel",
+        "evidence": "https://agent.tinyfish.ai/runs/59ec01c2-2ef7-407f-a5bd-20e52b7b64e4",
+        "scope": "browser_live_basic"
+      },
+      {
+        "id": "POLL_DOCUMENTED_LIMITS",
+        "status": "PASSED",
+        "criteria": "Aucune représentativité affirmée; pas d'unicité vérifiée par personne",
+        "evidence": "sondage-citoyen.html",
+        "scope": "github_content_review"
+      },
+      {
+        "id": "POLL_SERVER_SOURCE_REVIEW",
+        "status": "PASSED",
+        "criteria": "Code Edge Function version 5 inspecté : contrôle d'origines, garde d'ouverture, Turnstile serveur, HMAC anti-rejeu, agrégats et lots de confidentialité",
+        "evidence": "Supabase Edge Function nova-civic-poll version 5",
+        "scope": "read_only_source_review_not_live_penetration_test"
+      },
+      {
+        "id": "POLL_PRIVATE_PREFLIGHT",
+        "status": "PENDING",
+        "criteria": "Vérifier publication par lots, réidentification par différences, stockage et durée de conservation",
+        "evidence": "Supabase: nova_poll_publication_state",
+        "scope": "private_preprod"
+      },
+      {
+        "id": "POLL_CAPTCHA_ANTIREPLAY",
+        "status": "PENDING",
+        "criteria": "Tester POST Turnstile, rejet des doublons, erreurs réseau, concurrence et limite de taille",
+        "evidence": "Supabase: nova-civic-poll",
+        "scope": "isolated_preprod"
+      },
+      {
+        "id": "POLL_ACCESSIBILITY",
+        "status": "PENDING",
+        "criteria": "Examen lecteurs d'écran, navigation au clavier et formulaires sur mobile",
+        "evidence": "sondage-citoyen.html",
+        "scope": "independent_manual_qa"
+      },
+      {
+        "id": "POLL_LEGAL_REVIEW",
+        "status": "PENDING",
+        "criteria": "Avis juridique vie privée et conditions d'une consultation d'opinions politiques",
+        "evidence": "confidentialite.html",
+        "scope": "independent_legal_review"
+      },
+      {
+        "id": "POLL_APPROVAL_GO_LIVE",
+        "status": "PENDING",
+        "criteria": "Approbation explicite du corpus et du mécanisme de vote avant publication et ouverture",
+        "evidence": "data/sondage-citoyen-v1.json",
+        "scope": "owner_and_release_approval"
+      }
+    ]
+  },
+  "decision": {
+    "both_tools_100_percent": false,
+    "opening_poll_approved": false,
+    "deployments_verified": false,
+    "party_comparison_approved": false,
+    "overall_programme_percent_revised": false
+  },
+  "previous_audit": "projets/projet-nova/data/validation-sondage-boussole-2026-11-07.json",
+  "summary": {
+    "poll": {
+      "passed": 6,
+      "total": 11,
+      "percent": 54.5
+    },
+    "compass": {
+      "passed": 6,
+      "total": 12,
+      "percent": 50
+    },
+    "limits": "Le dernier test en navigateur externe sur le site live reste partiel (Q01-Q28). Le site public déployé et l'avis indépendant ne sont pas certifiés; la collecte de votes n'est pas autorisée."
+  }
+}
