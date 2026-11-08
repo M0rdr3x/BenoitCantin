@@ -69,6 +69,7 @@ export function inspectG015V01V03Subcategories(d,g014,g015,discovery,g015Actuals
  if(!obj(v03)||!Array.isArray(v03.categories)||
     v03.services_rendered_subtotal_2024_2025_mcad!==8720||
     v03.services_rendered_subtotal_2025_2026_mcad!==9132||
+    v03.categories.slice(0,6).some(x=>!obj(x))||
     sum(v03.categories.slice(0,6),"year_2024_2025_mcad")!==8720||
     sum(v03.categories.slice(0,6),"year_2025_2026_mcad")!==9132)
   fail("V03_SERVICE_SUBTOTAL");
