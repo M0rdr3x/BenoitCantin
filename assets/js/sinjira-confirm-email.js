@@ -69,6 +69,8 @@ confirmButton?.addEventListener('click', async () => {
     // Ne laissez pas le jeton dans la barre d’adresse après l’échange.
     history.replaceState(history.state, '', location.pathname);
     showSuccess(data?.user || null);
+    // Notifier après la preuve de validation, même si le fournisseur omet l'objet user.
+    if(!data?.user?.email_confirmed_at)void notifyAccountConfirmation();
   } catch {
     setStatus(status, 'Ce lien est invalide, déjà utilisé ou expiré. Demandez un nouveau courriel de confirmation ci-dessous.', 'error');
     confirmButton.hidden = true;
