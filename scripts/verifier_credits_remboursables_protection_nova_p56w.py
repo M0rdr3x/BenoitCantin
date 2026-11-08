@@ -145,7 +145,8 @@ def audit(d,l,v,n,o,b):
          count(rounded.get("somme_totaux_par_categorie_publies_mcad"))==total_categories==9306 and
          rounded.get("ecart_somme_categories_moins_total_officiel_mcad")=="1" and
          rounded.get("ligne_totale_par_tranche_mcad")==dict(zip(BINS,map(str,BIN_TOTALS))) and
-         count(rounded.get("somme_credits_total_officielle_par_tranche_mcad"))==9305 and
+         count(rounded.get("somme_credits_total_officielle_par_tranche_mcad"))==9304 and
+         rounded.get("ecart_somme_tranches_publiees_moins_total_officiel_mcad")=="-1" and
          count(rounded.get("somme_lignes_de_credits_arrondies_mcad"))==sum(map(sum,matrix)) and
          all(rounded.get(k) is True for k in (
           "erreurs_arrondis_possible_jusqua_2_mcad_par_tranche",
