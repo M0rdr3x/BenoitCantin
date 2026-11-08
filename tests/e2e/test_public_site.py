@@ -750,6 +750,84 @@ def run() -> None:
                 f"{BROWSER_NAME}: pondération, modification en direct, retour, sans opinion, reprise ou remise à zéro incorrects: {weighted_journey}",
             )
 
+        # Sécurité du partage : aucun jeton en query/fragment et aucun
+        # appel aux plateformes. Le partage natif et le presse-papiers sont
+        # remplacés par des doubles de test, uniquement sur le serveur local.
+        if IS_LOCAL:
+            sharing_journey = page.evaluate("""async () => {
+                const get = id => document.getElementById(id);
+                const reset = get("compass-reset");
+                const start = get("compass-start");
+                const next = get("compass-next");
+                const preview = get("compass-preview");
+                const origin = window.location.href.split(/[?#]/,1)[0];
+                const canary = "JETON_PRIVE_FICTIF_12345";
+                const failures = [];
+                const check = (condition,label) => {if (!condition) failures.push(label);};
+                // Simuler un URL porteur de données confidentielles.
+                history.replaceState(null,"",location.pathname+"?jeton="+canary+"#fragment-prive");
+                reset.click();
+                start.click();
+                get("compass-question-stage").querySelector('input[type="radio"][value="3"]')?.click();
+                next.click();
+                get("compass-question-stage").querySelector('input[type="radio"][value="-3"]')?.click();
+                preview.click();
+                const ids=["compass-share-email","compass-share-facebook","compass-share-x","compass-share-linkedin"];
+                const links=()=>ids.map(id=>get(id)?.href||"");
+                const initialLinks=links();
+                check(initialLinks.length===4&&initialLinks.every(href=>href.includes(encodeURIComponent(origin)) ||
+                  href.includes(origin)), "liens canoniques manquants");
+                check(initialLinks.every(href=>!decodeURIComponent(href).includes(canary) &&
+                  !decodeURIComponent(href).includes("fragment-prive")), "fuite du jeton dans les liens");
+                const initialEmail=decodeURIComponent(get("compass-share-email").href);
+                check(initialEmail.includes("+100"), "résumé pondéré initial manquant");
+
+                const email=get("compass-email-recipient");
+                email.value="adresse-test@example.invalid";
+                email.dispatchEvent(new Event("input",{bubbles:true}));
+                check(decodeURIComponent(get("compass-share-email").href)
+                  .startsWith("mailto:adresse-test@example.invalid?"), "destinataire de test non ajouté");
+
+                let nativePayload=null;
+                let clipboardPayload=null;
+                Object.defineProperty(navigator,"share",{configurable:true,value:async payload=>{nativePayload=payload;}});
+                Object.defineProperty(navigator,"clipboard",{configurable:true,value:{
+                  writeText:async value=>{clipboardPayload=value;}
+                }});
+                await get("compass-share-native").onclick();
+                check(nativePayload?.url===origin &&
+                  !JSON.stringify(nativePayload).includes(canary) &&
+                  !JSON.stringify(nativePayload).includes("fragment-prive"),"partage natif non canonique");
+                await get("compass-copy-result").onclick();
+                check(clipboardPayload?.includes(origin) &&
+                  clipboardPayload?.includes("+100") &&
+                  !clipboardPayload?.includes(canary), "copie initiale incomplète");
+
+                const before=get("compass-share-email").href;
+                const input=get("compass-question-stage").querySelector('input[type="radio"][value="3"]');
+                input?.click();  // q02 passe de -3 à +3 : score +100 -> 0
+                const updated=decodeURIComponent(get("compass-share-email").href);
+                check(get("compass-results-grid").querySelector("strong")?.textContent.trim()==="0",
+                  "score non recalculé");
+                check(before!==get("compass-share-email").href &&
+                  updated.includes("Équilibre") &&
+                  !updated.includes("+100"),"courriel périmé après modification");
+                clipboardPayload=null;
+                await get("compass-copy-result").onclick();
+                check(clipboardPayload?.includes("Équilibre") &&
+                  !clipboardPayload?.includes("+100") &&
+                  !clipboardPayload?.includes(canary),"presse-papiers périmé");
+                const clean=history.state;
+                history.replaceState(clean,"",origin);
+                reset.click();
+                return {ok:failures.length===0,failures,channels:ids.length,
+                    nativeShareMocked:!!nativePayload,clipboardMocked:!!clipboardPayload};
+            }""")
+            assert_true(
+                sharing_journey["ok"],
+                f"{BROWSER_NAME}: fuite de confidentialité, résultat périmé ou erreur de partage: {sharing_journey}",
+            )
+
         home_text = page.locator("main").inner_text().lower()
         for retired_name in ("lumina", "futurax", "chroniques de l’ombre", "chroniques de l'ombre"):
             assert_true(retired_name not in home_text, f"Accueil: univers secondaire remis au premier plan: {retired_name}")
