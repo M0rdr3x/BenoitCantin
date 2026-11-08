@@ -24,7 +24,7 @@ export function inspecterMatriceJuridique(m){
  }
  if(m.date!=="2026-11-08"||m.baseline_points!==47||m.maximum_points!==100||
    m.increment_at_creation!==0)erreurs.push("REFERENCE_SCORE_ALTEREE");
- if(m.independent_juridical_audit_completed!==false)erreurs.push("AUDIT_EXTERNE_NON_ETABLI");
+ if(typeof m.independent_juridical_audit_completed!=="boolean")erreurs.push("AUDIT_EXTERNE_NON_ETABLI");
  if(!Array.isArray(m.jurisdictions)||m.jurisdictions.length!==2||
    CONTEXTES.some((c,i)=>m.jurisdictions[i]!==c))erreurs.push("CONTEXTES_INCORRECTS");
  const cases=Array.isArray(m.cases)?m.cases:[];
@@ -69,6 +69,11 @@ export function inspecterMatriceJuridique(m){
    if(row.adoption_decision!==null&&m.independent_juridical_audit_completed!==true)
      erreurs.push("ADOPTION_NON_PROUVEE:"+row.id);
  }
+ if(m.independent_juridical_audit_completed===true&&(
+      contextesExaminesDeclares!==24||
+      !urlSource(m.independent_juridical_audit_reference_url)||
+      !dateValide(m.independent_juridical_audit_date)))
+   erreurs.push("AUDIT_EXTERNE_NON_ETABLI");
  return {
    ok:erreurs.length===0,erreurs,dossiers:cases.length,
    contextes_attendus:24,contextes_examens_declares:contextesExaminesDeclares,
