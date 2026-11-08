@@ -65,7 +65,7 @@ export function inspectNOVACompletionGate(audit,g015,g013,g016e){
   if(!object(g015)||g015.schema!=="nova-g015-preuves-fiscalite/v1"||
      !Array.isArray(g015.proofs)||!uniqueExactly(g015.proofs.map(p=>p?.id),
         FISCAL_PROOF_IDS))errors.push("PREUVES_FISCALES_NON_CONFORMES");
-  if(!object(g013)||g013.schema!=="nova-g013-financial-framework/v1"||
+  if(!object(g013)||g013.schema!=="nova-g013-fiscal-readiness/v1"||
      !Array.isArray(g013.scenarios)||!uniqueExactly(
         g013.scenarios.map(s=>s?.id),SCENARIOS))errors.push("SCENARIOS_G013_NON_CONFORMES");
   if(!object(g016e)||g016e.schema!=="nova-g016e-pont-financier/v1"||
