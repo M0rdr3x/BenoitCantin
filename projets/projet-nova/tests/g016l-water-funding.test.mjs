@@ -170,3 +170,19 @@ test("la simulation bloque les montants négatifs et les décimales",()=>{
  assert.throws(()=>fake(100,[g("TECQ","PROMISE_DOCUMENTED",-1,"A")]),/INVALID_SYNTHETIC_COMMITMENT/);
  assert.throws(()=>fake(100,[g("TECQ","PROMISE_DOCUMENTED",1.2,"A")]),/INVALID_SYNTHETIC_COMMITMENT/);
 });
+
+test("la page d’avancement G0.16l expose les aides et les dates sans droits fictifs",async()=>{
+ const html=await readFile(new URL("../avancement-programme-nova.html",import.meta.url),"utf8");
+ assert.match(html,/id="aides-eau-g016l"/);
+ assert.match(html,/31 déc\. 2026/);
+ assert.match(html,/2,4 G\$/);
+ assert.match(html,/Plus de 3,3 G\$/);
+ assert.match(html,/appel du 31 août au 30 octobre 2026 terminé/i);
+ assert.match(html,/47 % inchangé/);
+});
+test("le libellé public distingue promesse et versement, sans transfert automatique",async()=>{
+ const html=await readFile(new URL("../avancement-programme-nova.html",import.meta.url),"utf8");
+ assert.match(html,/une demande admissible n'est pas une promesse/);
+ assert.match(html,/une promesse n'est pas un versement/);
+ assert.match(html,/contribution fédérale n'est pas présumée conservée/);
+});
