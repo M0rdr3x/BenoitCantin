@@ -1,0 +1,341 @@
+{
+  "schema": "nova-g016s-gascons-contracts-and-payment-authorizations/v1",
+  "phase": "G0.16s",
+  "date": "2026-11-08",
+  "audit_completion_before": 47,
+  "audit_completion_after": 47,
+  "program_adopted": false,
+  "independent_program_audit": false,
+  "municipality": "Port-Daniel–Gascons",
+  "project": "Gascons potable water/wastewater system",
+  "sources": [
+    {
+      "id": "S01_JUNE_AWARDS",
+      "url": "https://munpdg.ca/wp-content/uploads/2025/07/proces-verbal-de-la-seance-extraordinaire-du-16-juin.pdf",
+      "category": "MUNICIPAL_COUNCIL_CONTRACT_AWARDS",
+      "pdf_screenshot": "CACHE_MISS",
+      "text_extract_seen": true
+    },
+    {
+      "id": "S02_JUNE_BYLAW_DRAFT",
+      "url": "https://munpdg.ca/wp-content/uploads/2025/07/proces-verbal-de-la-seance-extraordinaire-du-5-juin-2025-C.pdf",
+      "category": "MUNICIPAL_DRAFT_REGULATION_NOT_ADOPTED_BY_THIS_TEXT",
+      "pdf_screenshot": "CACHE_MISS",
+      "text_extract_seen": true
+    },
+    {
+      "id": "S03_AUG",
+      "url": "https://munpdg.ca/wp-content/uploads/2025/09/seance-ordinaire-du-11-aout-2025.pdf",
+      "category": "MUNICIPAL_INVOICE_PAYMENT_AUTHORIZATION",
+      "pdf_screenshot": "CACHE_MISS",
+      "text_extract_seen": true
+    },
+    {
+      "id": "S04_SEP",
+      "url": "https://munpdg.ca/wp-content/uploads/2025/10/proces-verbal-de-la-seance-du-8-septembre-2025.pdf",
+      "category": "MUNICIPAL_INVOICE_PAYMENT_AUTHORIZATION",
+      "pdf_screenshot": "CACHE_MISS",
+      "text_extract_seen": true
+    },
+    {
+      "id": "S05_OCT",
+      "url": "https://munpdg.ca/wp-content/uploads/2025/11/proces-verbal-de-la-seance-ordinaire-du-1er-octobre-2025.pdf",
+      "category": "MUNICIPAL_INVOICE_PAYMENT_AUTHORIZATION",
+      "pdf_screenshot": "CACHE_MISS",
+      "text_extract_seen": true
+    },
+    {
+      "id": "S06_NOV",
+      "url": "https://munpdg.ca/wp-content/uploads/2025/12/proces-verbal-de-la-seance-ordinaire-du-10-novembre.pdf",
+      "category": "MUNICIPAL_INVOICE_PAYMENT_AUTHORIZATION",
+      "pdf_screenshot": "CACHE_MISS",
+      "text_extract_seen": true
+    },
+    {
+      "id": "S07_DEC",
+      "url": "https://munpdg.ca/wp-content/uploads/2026/01/proces-verbal-seance-ordinaire-du-8-decembre-2025.pdf",
+      "category": "MUNICIPAL_INVOICE_PAYMENT_AUTHORIZATION",
+      "pdf_screenshot": "CACHE_MISS",
+      "text_extract_seen": true
+    },
+    {
+      "id": "S08_FEB",
+      "url": "https://munpdg.ca/wp-content/uploads/2026/03/proces-verbal-de-la-seance-ordinaire-du-10-fevrier.pdf",
+      "category": "MUNICIPAL_INVOICE_PAYMENT_AUTHORIZATION",
+      "pdf_screenshot": "CACHE_MISS",
+      "text_extract_seen": true
+    },
+    {
+      "id": "S09_DASHBOARD",
+      "url": "https://www.tresor.gouv.qc.ca/infrastructures-publiques/tableau-de-bord/1321-p1",
+      "category": "OFFICIAL_2026_APPROVED_PROJECT_PARAMETERS",
+      "updated": "2026-03-18"
+    },
+    {
+      "id": "S10_CONTRACTOR",
+      "url": "https://actionprogex.com/realisations/alimentation-et-distribution-deau-potable-collecte-et-traitement-eaux-usees/",
+      "category": "VENDOR_DESCRIPTION_NOT_CASH_EVIDENCE"
+    },
+    {
+      "id": "S11_2025_STATEMENTS",
+      "url": "https://www.mamh.gouv.qc.ca/documentsfinanciersweb/Rapport-financier-2025-et-autres-02047.pdf",
+      "category": "MUNICIPAL_AUDITED_WITH_QUALIFICATION_AGGREGATE_ONLY"
+    },
+    {
+      "id": "S12_GRANT",
+      "url": "https://www.quebec.ca/nouvelles/actualites/details/le-gouvernement-du-quebec-accorde-plus-de-42-m-a-port-daniel-gascons-63791",
+      "category": "GOVERNMENT_GRANT_AWARDED_NOT_CASH_DEPOSIT"
+    }
+  ],
+  "contract_awards": {
+    "council_date": "2025-06-16",
+    "municipal_resolution_numbers": [
+      "2025-06-164",
+      "2025-06-165",
+      "2025-06-166"
+    ],
+    "amount_basis": "CAD_GROSS_INCLUDING_TAXES",
+    "items": [
+      {
+        "id": "A01",
+        "contractor": "Action Progex inc.",
+        "scope": "CONSTRUCTION",
+        "award_cad": 50484372.75,
+        "source_id": "S01_JUNE_AWARDS"
+      },
+      {
+        "id": "A02",
+        "contractor": "Tetra Tech QI inc.",
+        "scope": "CONSTRUCTION_SUPERVISION",
+        "award_cad": 2440775.53,
+        "source_id": "S01_JUNE_AWARDS"
+      },
+      {
+        "id": "A03",
+        "contractor": "Englobe Corp.",
+        "scope": "MATERIALS_QUALITY_CONTROL",
+        "award_cad": 754236,
+        "source_id": "S01_JUNE_AWARDS"
+      }
+    ],
+    "selected_awards_sum_cad": 53679384.28,
+    "total_lifetime_project_cost_cad": null,
+    "amount_paid_against_contracts_cad": null,
+    "amendments_and_change_orders_verified": false,
+    "contract_tax_recoverability_verified": false,
+    "awards_are_not_paid_expenditure": true
+  },
+  "council_authorizations": {
+    "classification": "COUNCIL_AUTHORISATIONS_BASIS_PRE_TAX_NOT_BANK_CONFIRMED",
+    "rows": [
+      {
+        "id": "D02",
+        "date": "2025-09-08",
+        "resolution": "2025-09-229",
+        "contractor": "Action Progex",
+        "certificate_no": "2",
+        "amount_pre_tax_cad": 2715347.2,
+        "source_id": "S04_SEP",
+        "paid_bank_confirmed": false
+      },
+      {
+        "id": "D03",
+        "date": "2025-10-01",
+        "resolution": "2025-10-248",
+        "contractor": "Action Progex",
+        "certificate_no": "3",
+        "amount_pre_tax_cad": 2446515.19,
+        "source_id": "S05_OCT",
+        "paid_bank_confirmed": false
+      },
+      {
+        "id": "D04",
+        "date": "2025-11-10",
+        "resolution": "2025-11-265",
+        "contractor": "Action Progex",
+        "certificate_no": "4",
+        "amount_pre_tax_cad": 4683742.36,
+        "source_id": "S06_NOV",
+        "paid_bank_confirmed": false
+      },
+      {
+        "id": "D05",
+        "date": "2025-12-08",
+        "resolution": "2025-12-281",
+        "contractor": "Action Progex",
+        "certificate_no": "5",
+        "amount_pre_tax_cad": 5468034.54,
+        "source_id": "S07_DEC",
+        "paid_bank_confirmed": false
+      },
+      {
+        "id": "D07",
+        "date": "2026-02-10",
+        "resolution": "2026-02-041",
+        "contractor": "Action Progex",
+        "certificate_no": "7",
+        "amount_pre_tax_cad": 98583.36,
+        "source_id": "S08_FEB",
+        "paid_bank_confirmed": false
+      }
+    ],
+    "numbered_selected_total_pre_tax_cad": 15412222.65,
+    "unnumbered_sample": {
+      "date": "2025-08-11",
+      "contractor": "Action Progex",
+      "resolution": "2025-08-202",
+      "amount_pre_tax_cad": 450368.1,
+      "source_id": "S03_AUG",
+      "certificate_no": null,
+      "included_in_numbered_total": false,
+      "possible_overlap_not_ruled_out": true,
+      "paid_bank_confirmed": false
+    },
+    "missing_certificate_numbers": [
+      1,
+      6
+    ],
+    "all_progress_certificates_verified": false,
+    "total_invoice_value_to_date_cad": null,
+    "project_bank_cash_outflow_verified_cad": null,
+    "vendor_bank_receipts_verified_cad": null,
+    "authorization_is_not_proof_of_payment": true,
+    "different_2025_2026_periods_do_not_prove_2025_total": true
+  },
+  "funding_and_scope": {
+    "bylaw_draft_resolution_date": "2025-06-05",
+    "regulation": "2025-01",
+    "works_and_envelope_cad": 56596000,
+    "proposed_long_term_borrowing_cad": 14293528,
+    "proposed_primeau_commitment_cad": 42302472,
+    "source_id": "S02_JUNE_BYLAW_DRAFT",
+    "debt_drawn_by_project_cad": null,
+    "primeau_disbursed_by_project_cad": null,
+    "june_2025_award_year": 2025,
+    "government_dashboard": {
+      "project_number": 1321,
+      "updated": "2026-03-18",
+      "status": "EN_REALISATION",
+      "planned_full_service": "2026-12",
+      "cost_approved_cad": 44500000,
+      "quebec_contribution_approved_cad": 42300000,
+      "partners_contribution_approved_cad": 2200000,
+      "source_id": "S09_DASHBOARD",
+      "equals_municipal_bylaw_scope": false,
+      "equals_construction_contract_scope": false,
+      "scope_comparability_verified": false,
+      "verified_paid_cad": null
+    },
+    "costs_not_interchangeable": true,
+    "bylaw_and_dashboard_different_approved_baselines": true,
+    "contract_gross_vs_dashboard_basis_unconfirmed": true,
+    "project_not_proven_in_service": true,
+    "grant_awarded_not_received_cash": true
+  },
+  "upstream_financial_2025": {
+    "previous_file": "data/reconciliation-financiere-port-daniel-g0-16r-2025.json",
+    "total_municipal_cash_capex_outflow_cad": 16969080,
+    "full_municipal_financial_statements_have_qualified_opinion": true,
+    "no_assignment_of_municipal_cash_to_selected_vendors": true,
+    "no_subtracting_council_authorizations_from_2025_cash_outflow": true
+  },
+  "controls": {
+    "no_casting_council_authorization_as_bank_payment": true,
+    "no_casting_contract_award_as_final_project_cost": true,
+    "no_casting_pledged_grant_as_cash": true,
+    "no_equating_2026_approved_parameter_to_2025_regulation": true,
+    "no_mixing_pre_tax_and_with_tax_totals": true,
+    "no_concluding_work_completed_from_contract_award": true,
+    "no_double_counting_numbered_and_unnumbered_certificates": true,
+    "no_extrapolation_of_all_certs_from_missing_1_and_6": true,
+    "no_2026_full_year_results_claim": true,
+    "no_automatic_zero_for_unverified_paid_amount": true,
+    "no_fake_tax_savings_or_tax_rates": true,
+    "no_inferred_project_balance_from_municipality_2025_aggregate": true
+  },
+  "remaining_proofs": [
+    {
+      "id": "K01",
+      "need": "Détails des certificats de paiement nos 1 et 6, état du contrat actualisé, avenants et retenues",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "K02",
+      "need": "Grand livre municipal Gascons 2025–2026 et rapprochement bancaire des paiements autorisés",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "K03",
+      "need": "Avis de versement et relevés bancaires PRIMEAU par réclamation et bénéficiaire",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "K04",
+      "need": "Comparabilité des périmètres du coût gouvernemental 44,5 M$, règlement 56,596 M$ et contrats",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "K05",
+      "need": "Coût réel final et procès-verbal de mise en service, qualité et continuité d'eau",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "K06",
+      "need": "Coûts récurrents, emplois, entretien, risques et obligations de mise hors service",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "K07",
+      "need": "Factures d'usagers et incidence selon la catégorie et le revenu disponible",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "K08",
+      "need": "Validation juridique et budgétaire indépendante de Nova en deux statuts constitutionnels",
+      "status": "NOT_VERIFIED"
+    }
+  ],
+  "scenario_ten_year": [
+    {
+      "id": "QUEBEC_CANADA",
+      "costs_and_revenue_verified": false,
+      "annual_balance_cad": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "costs_and_revenue_verified": false,
+      "annual_balance_cad": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  ],
+  "decisions": {
+    "project_specific_awards_verified_from_official_minutes": true,
+    "project_specific_council_authorizations_found": true,
+    "verified_paid_contracts_in_bank": false,
+    "verified_primeau_project_cash_receipt": false,
+    "project_final_cost_certified": false,
+    "funding_scenarios_certified": false,
+    "score_point_earned": false
+  }
+}
