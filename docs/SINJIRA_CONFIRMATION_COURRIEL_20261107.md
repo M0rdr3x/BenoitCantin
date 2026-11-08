@@ -1,4 +1,4 @@
-# Correctif SINJIRA™ — activation des comptes par confirmation volontaire
+# Correctif SINJIRA™ — inscription, confirmation, Registre et notifications Formspree
 Date : 2026-11-07
 
 ## Diagnostic du projet connecté
@@ -60,3 +60,47 @@ Documentation officielle :
 - https://supabase.com/docs/guides/auth/auth-email-templates
 - https://supabase.com/docs/guides/auth/redirect-urls
 - https://supabase.com/docs/reference/javascript/auth-verifyotp
+
+## Intégration Formspree (avis techniques seulement)
+
+Deux formulaires ont été créés dans Formspree :
+
+- **Créer votre compte** : `https://formspree.io/f/xzeeqynp`. La notification n'est faite qu'après confirmation réelle du courriel dans Supabase.
+- **Registre des Consciences** : `https://formspree.io/f/mrppvrwa`. La notification n'est faite qu'après écriture confirmée dans `character_submissions`.
+
+Les deux avis sont déclenchés **côté serveur** par un helper unique `supabase/functions/_shared/sinjira-formspree.ts`.
+Chaque avis contient seulement `event`, `reference` (UUID aléatoire distinct du compte/dossier), `message` générique et `date`. **Aucune donnée personnelle, photo, courriel, questionnaire, mot de passe ou code parental n'est envoyé à Formspree.** Les dossiers authentiques restent dans Supabase.
+
+Un registre dédié `public.sinjira_formspree_events`, fermé aux rôles `anon`/`authenticated` par RLS et privilèges SQL, assure une seule notification réservée par `(event_type, source_id)`. Un échec Formspree n'annule jamais la sauvegarde du questionnaire ni l'activation du compte. Contrôler aussi l'onglet Spam : Formshield est activé.
+
+### Mise en production dans cet ordre
+
+1. Examiner et tester les modifications de la PR unifiée (remplaçant la PR de confirmation initiale).
+2. Exécuter la migration `supabase/migrations/20261108041500_sinjira_formspree_notification_ledger.sql` **avant** de déployer les nouvelles fonctions.
+3. Déployer `submit-character-questionnaire` (avec l'import partagé) et `notify-account-confirmation` sur le projet `gpvivleexywljowcqkru`. Conserver **verify_jwt=true** pour les deux.
+4. Déployer les fichiers Web depuis GitHub/Netlify et vérifier que `/compte/confirmer.html`, `/assets/js/sinjira-confirm-email.js` et les deux formulaires sont accessibles.
+5. Configurer **Supabase Authentication → URL Configuration → Site URL** à `https://www.benoitcantin.com` et autoriser `https://www.benoitcantin.com/compte/confirmer.html` dans Redirect URLs.
+6. Dans **Supabase Authentication → Email Templates → Confirm sign up**, installer le modèle avec le fragment `#token_hash={{ .TokenHash }}&amp;type=email` ci-dessus. **Ne jamais activer ce modèle avant que la page `confirmer.html` soit déployée.**
+7. Vérifier que la confirmation ne s'effectue pas simplement à l'ouverture du courriel. Seul le clic `Confirmer mon compte` doit échanger le jeton.
+8. Faire un essai avec **une adresse de test contrôlée**, puis confirmer que la notification apparaît dans le Formspree **Créer votre compte** une seule fois. Ne jamais soumettre directement à Formspree le formulaire d'inscription contenant les mots de passe.
+9. Avec ce compte, configurer le second facteur via `/compte/securite.html`, se reconnecter en AAL2, envoyer une participation factice consentie du Registre, puis vérifier qu'un **seul dossier** est sauvegardé dans Supabase et qu'un **seul avis non nominatif** apparaît dans le Formspree du Registre.
+10. Vérifier les erreurs, les délais de courriel, les journaux Auth Supabase et les alertes du Registre. Les courriels de copie du questionnaire restent désactivés par `PAID_EXTERNAL_SERVICES_ENABLED=false` jusqu'à validation d'un transport externe distinct.
+
+### Limites et échecs possibles
+
+- Les anciens courriels utilisant un lien Supabase direct peuvent déjà être expirés ou consommés; l'utilisateur doit demander un **nouveau** lien depuis `/compte/confirmer.html`.
+- L'envoi d'avis Formspree est un service **secondaire** et dépend de ses protections anti-spam, quotas et disponibilité.
+- Un avis en échec est marqué `delivery_status='failed'` dans le registre interne. Par défaut, aucune répétition automatique n'est lancée, afin de privilégier l'absence de doublons; une reprise contrôlée devra être développée si nécessaire.
+- Si JavaScript ne charge pas, les boutons d'envoi restent désactivés. Aucune inscription ou participation ne doit être présentée comme enregistrée.
+- La configuration des **modèles de courriel Supabase hébergés** n'est pas modifiée par un commit GitHub : c'est une étape manuelle impérative.
+
+### Vérifications statiques prévues
+
+```sh
+python3 scripts/validate_auth.py
+python3 scripts/validate_character_questionnaire_security.py
+python3 scripts/validate_edge_function_inventory.py
+python3 scripts/validate_public_edge_auth.py
+python3 scripts/validate_production_schema_manifest.py
+python3 scripts/validate_sinjira_signup_registry_delivery.py
+```
