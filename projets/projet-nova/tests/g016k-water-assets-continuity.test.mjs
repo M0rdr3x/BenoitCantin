@@ -150,3 +150,16 @@ test("une source fiscale MAMH amont non cohérente bloque le contrôle",()=>{
  const r=inspectG016kWaterContinuity(d,g016j,z);
  assert.ok(r.errors.includes("ANNUAL_EXPENSE_STOCK_CONFUSION"));
 });
+
+test("147,9 G$ d'actifs sont évalués sur des critères théoriques ou subjectifs",()=>{
+ const a=d.assets_2025;
+ assert.equal(a.value_assessed_age_or_judgment_gcad,147.9);
+ assert.equal(a.poor_assets_age_or_judgment_gcad,8.8);
+ assert.equal(a.acceptable_assets_age_or_judgment_gcad,39.1);
+ assert.equal(a.poor_assets_in_cities_above_100k_gcad,14.8);
+ assert.equal(a.poor_assets_in_cities_above_100k_share_approx_pct,72);
+});
+test("le ratio de données estimées et la concentration urbaine ne peuvent être inventés",()=>{
+ reject(x=>x.assets_2025.value_assessed_age_or_judgment_gcad=100.0,"ASSET_INVENTORY_UNCORROBORATED");
+ reject(x=>x.assets_2025.poor_assets_in_cities_above_100k_gcad=20.0,"ASSET_INVENTORY_UNCORROBORATED");
+});
