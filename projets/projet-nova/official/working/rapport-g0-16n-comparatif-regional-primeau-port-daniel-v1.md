@@ -89,7 +89,7 @@ Le portefeuille G0.16n contient ces six exigences comme **`NOT_YET_VERIFIED`**. 
 
 - `data/comparatif-cas-reels-primeau-g0-16n-2025.json` : sept projets, sept régions, six sources publiques, un règlement local, statistiques échantillonnées, deux scénarios décennaux non financés;
 - `assets/g016n-multiregion-primeau-core.mjs` : contrôle strict de la source 2025-082, des montants exacts, des périmètres, de l'emprunt, de la provenance et de l'absence de paiements fictifs;
-- `tests/g016n-multiregion-primeau.test.mjs` : **39 cas initiaux déclarés et réussis dans un rejeu JavaScript isolé**, ce qui ne constitue pas une exécution native de la suite complète sous Node ou GitHub Actions;
+- `tests/g016n-multiregion-primeau.test.mjs` : **43 cas déclarés et réussis dans un rejeu JavaScript isolé**, ce qui ne constitue pas une exécution native de la suite complète sous Node ou GitHub Actions;
 - document primaire : liste MAMH du 8 octobre 2025, **pages PDF 4 et 5 inspectées visuellement**.
 
 **Verdict G0.16n :** le Projet Nova dispose désormais d'un portefeuille comparatif d'aides réelles et d'une deuxième étude locale d'emprunt/taxation. **Cela ne démontre toujours pas l'équilibre de la réforme fiscale Nova ni la viabilité budgétaire d'un Québec souverain**. **Score de préparation inchangé : 47/100.**
