@@ -19,7 +19,7 @@ def base() -> dict:
         "headers": [{
             "source": "/Admin/(.*)",
             "headers": [
-                {"key": "Cache-Control", "value": "no-store"},
+                {"key": "Cache-Control", "value": "private, no-store, max-age=0"},
                 {"key": "Referrer-Policy", "value": "no-referrer"},
                 {"key": "Pragma", "value": "no-cache"},
             ],
@@ -84,6 +84,27 @@ class LegacyAdminHeaderSecurityTests(unittest.TestCase):
                 self.assertTrue(validator.contains_unsafe_legacy_admin_link(
                     "vercel.json", json.dumps(doc)
                 ))
+
+    def test_unsafe_cache_directives_are_rejected(self) -> None:
+        for value in (
+            "no-store", "private", "max-age=0",
+            "public, no-store", "private, max-age=0",
+            "private, no-store, max-age=3600",
+            "private, no-store, max-age=0, public",
+        ):
+            doc = base()
+            doc["headers"][0]["headers"][0]["value"] = value
+            with self.subTest(cache=value):
+                self.assertTrue(validator.contains_unsafe_legacy_admin_link(
+                    "vercel.json", json.dumps(doc)
+                ))
+
+    def test_reviewed_cache_directives_can_be_reordered(self) -> None:
+        doc = base()
+        doc["headers"][0]["headers"][0]["value"] = "max-age=0, no-store, private"
+        self.assertFalse(validator.contains_unsafe_legacy_admin_link(
+            "vercel.json", json.dumps(doc)
+        ))
 
     def test_malformed_document_and_unprotected_rule_denied(self) -> None:
         self.assertTrue(validator.contains_unsafe_legacy_admin_link("vercel.json", "{invalid-json"))
