@@ -35,7 +35,19 @@ export function inspectG017e(d,priorD,priorC){
  if(bridge.common_unit!=="CAD"||Object.entries(bridge).some(([k,v])=>k==="common_unit"||k==="no_2024_municipal_and_2026_provincial_addition"?false:(k==="source_year_matched"||k==="independent_accounting_review"?v!==false:v!==null))||bridge.no_2024_municipal_and_2026_provincial_addition!==true)bad("BRIDGE_UNFILLED");
  if(d.policy_gates?.length!==7||d.policy_gates.some((x,i)=>x.id!=="P0"+(i+1)||x.completed!==false))bad("POLICY_NOT_SIGNED");
  const v=d.verification||{};
- if(v.latest_public_guide_identified!==true||v.pdf_visual_verified_relevant_pages!==true||v.historical_2023_water_full_cost_known_from_upstream!==true||v.native_github_actions_success_not_established!==true||["actual_water_2024_workbook_parsed","tecq_per_municipality_cash_confirmed","federal_post_sovereignty_commitments_guaranteed","nova_taxable_income_base_reconciled","two_fiscal_scenarios_financed","audit_score_increment_earned"].some(k=>v[k]!==false))bad("NO_FAKE_CERTIFICATION");
+ if(v.latest_public_guide_identified!==true||v.pdf_visual_verified_relevant_pages!==true||v.historical_2023_water_full_cost_known_from_upstream!==true||v.native_github_actions_success_not_established!==false||["actual_water_2024_workbook_parsed","tecq_per_municipality_cash_confirmed","federal_post_sovereignty_commitments_guaranteed","nova_taxable_income_base_reconciled","two_fiscal_scenarios_financed","audit_score_increment_earned"].some(k=>v[k]!==false))bad("NO_FAKE_CERTIFICATION");
+ const ci=v.native_github_actions_validation;
+ if(!obj(ci)||ci.status!=="CONFIRMED_AT_TEST_COMMIT"||ci.run_id!==42536049965
+   ||ci.run_url!=="https://github.com/M0rdr3x/BenoitCantin/actions/runs/42536049965"
+   ||ci.commit_sha!=="01bb9b2de54918b9b1ac0e0622db719f322eb439"
+   ||ci.workflow_file!==".github/workflows/nova-sinjira-finances-tests.yml"
+   ||ci.event!=="push"||ci.conclusion!=="success"
+   ||ci.node_version_in_workflow!=="22.23.2"||ci.job!=="verifications"
+   ||ci.job_conclusion!=="success"||ci.step!=="Verifier les calculs et la provenance"
+   ||ci.step_conclusion!=="success"
+   ||ci.test_command!=="node --test projets/projet-nova/tests/*.test.mjs"
+   ||ci.g017e_test_file_present_at_commit!==true||ci.independent_fiscal_audit!==false
+   ||ci.actual_tecq_bank_payments_verified!==false||ci.future_commit_ci_not_automatically_proven!==true)bad("CI_VERIFIED_SCOPE");
  return {ok:errors.length===0,errors:[...new Set(errors)],score:47,rounded_tecq_2024_28_envelope_mcad:3316,municipality_bank_paid_verified_cad:null,recurring_maintenance_and_payroll_funded:false};
 }
 /** Arithmetic demonstration ONLY: official guide rates, not an actual municipality award. */
