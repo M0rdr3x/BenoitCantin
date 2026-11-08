@@ -1,0 +1,47 @@
+name: SINJIRA — romans et progression éditoriale vérifiable
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'projets/sinjira/romans/**'
+      - 'projets/sinjira/codex/livre-i-delivery-contract.json'
+      - 'assets/js/sinjira-roman-production-core-v1.mjs'
+      - 'tests/reader/test_sinjira_roman_production_v1.mjs'
+      - 'scripts/validate_sinjira_livre_i_delivery.py'
+      - '.github/workflows/sinjira-romans-editorial-readiness.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'projets/sinjira/romans/**'
+      - 'projets/sinjira/codex/livre-i-delivery-contract.json'
+      - 'assets/js/sinjira-roman-production-core-v1.mjs'
+      - 'tests/reader/test_sinjira_roman_production_v1.mjs'
+      - 'scripts/validate_sinjira_livre_i_delivery.py'
+      - '.github/workflows/sinjira-romans-editorial-readiness.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-romans-editorial-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  roman-readiness:
+    name: Contrôler la progression littéraire sans publication privée
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Récupérer le dépôt en lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Vérifier la syntaxe et les contrats des deux romans
+        run: |
+          node --check assets/js/sinjira-roman-production-core-v1.mjs
+          node --test tests/reader/test_sinjira_roman_production_v1.mjs
+      - name: Contrôler la frontière de livraison privée du Livre I
+        run: python3 scripts/validate_sinjira_livre_i_delivery.py
