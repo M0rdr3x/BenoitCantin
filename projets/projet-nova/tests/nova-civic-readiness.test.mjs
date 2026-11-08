@@ -77,3 +77,72 @@ test("revue du code serveur sans autoriser la soumission en production",()=>{
  assert.equal(d.poll.published_in_source,false);
  assert.equal(d.decision.opening_poll_approved,false);
 });
+
+
+test("les taux publics de réception dérivent exactement de la matrice versionnée",async()=>{
+ const html=await readFile(new URL("../sondages-a-valider.html",import.meta.url),"utf8");
+ const start=html.indexOf('id="etat-validation-outils"');
+ const end=html.indexOf("</section>",start);
+ assert.ok(start>=0&&end>start,"Section accessible sur la page de lecture seule");
+ const section=html.slice(start,end);
+ const numbers=[
+  {object:d.poll,denominator:11,expected:6,label:"sondage",name:"Critères de réception du sondage"},
+  {object:d.compass,denominator:12,expected:5,label:"boussole",name:"Critères de réception de la boussole"}
+ ];
+ for(const item of numbers){
+  const n=passed(item.object),total=item.object.gates.length;
+  assert.equal(total,item.denominator,item.label);
+  assert.equal(n,item.expected,item.label);
+  const percent=(100*n/total).toFixed(1).replace(".",",")+" %";
+  assert.ok(section.includes(percent),percent);
+  assert.ok(section.includes(n+" critères sur "+total),item.label);
+  assert.ok(section.includes('aria-label="'+item.name+'"'));
+  assert.ok(section.includes('aria-valuenow="'+n+'"'),item.label);
+  assert.ok(section.includes('aria-valuemax="'+total+'"'),item.label);
+ }
+ assert.ok(section.includes("7 novembre 2026"));
+ assert.match(section,/les pourcentages ci-dessous mesurent uniquement/i);
+ assert.ok(section.includes("matrice de réception officielle"));
+});
+test("la grille d'avancement ne lance aucun vote ni une comparaison partisane",async()=>{
+ const html=await readFile(new URL("../sondages-a-valider.html",import.meta.url),"utf8");
+ const start=html.indexOf('id="etat-validation-outils"');
+ const end=html.indexOf("</section>",start);
+ const section=html.slice(start,end);
+ assert.ok(start>=0&&end>start);
+ assert.doesNotMatch(section,/<form\b|<input\b|type="submit"|turnstile|onclick=/i);
+ assert.ok(section.includes("Collecte fermée"));
+ assert.ok(section.includes("comparaison avec les partis demeure désactivée"));
+ assert.equal(d.poll.published_in_source,false);
+ assert.equal(d.compass.comparison_enabled,false);
+ assert.equal(d.decision.opening_poll_approved,false);
+});
+test("les pourcentages de réception ne sont pas des autorisations de production",()=>{
+ assert.ok(passed(d.poll)<d.poll.gates.length);
+ assert.ok(passed(d.compass)<d.compass.gates.length);
+ assert.equal(d.decision.both_tools_100_percent,false);
+ assert.equal(d.decision.deployments_verified,false);
+ assert.equal(d.status,"NON_HOMOLOGUE");
+ assert.equal(d.programme_audit_g012.unrelated_to_ui_readiness,true);
+});
+
+
+test("les deux outils officiels rendent visible l'état daté sans ouvrir le sondage",async()=>{
+ const [pollHtml,compassHtml]=await Promise.all([
+  readFile(new URL("../sondage-citoyen.html",import.meta.url),"utf8"),
+  readFile(new URL("../boussole-electorale.html",import.meta.url),"utf8")
+ ]);
+ const pollPct=(100*passed(d.poll)/d.poll.gates.length).toFixed(1).replace(".",",")+" %";
+ const compassPct=(100*passed(d.compass)/d.compass.gates.length).toFixed(1).replace(".",",")+" %";
+ assert.ok(pollHtml.includes(pollPct));
+ assert.ok(compassHtml.includes(compassPct));
+ assert.ok(pollHtml.includes("6 critères sur 11 validés"));
+ assert.ok(compassHtml.includes("5 critères sur 12 validés"));
+ assert.ok(compassHtml.includes("assets/boussole-electorale.js?v=3.4.25"),"Cache de la boussole invalidé après correction");
+ assert.ok(pollHtml.includes("la collecte reste fermée"));
+ for(const html of [pollHtml,compassHtml]){
+  assert.ok(html.includes('href="sondages-a-valider.html#etat-validation-outils"'));
+  assert.ok(html.includes("Suivi de réception au 7 novembre 2026"));
+ }
+ assert.match(pollHtml,/id="poll-send"[^>]*\bdisabled\b/);
+});

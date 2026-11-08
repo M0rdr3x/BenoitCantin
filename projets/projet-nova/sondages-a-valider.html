@@ -27,6 +27,18 @@
 .draft-actions{display:flex;gap:1rem;flex-wrap:wrap;margin:1.5rem 0}
 .draft-source{overflow-wrap:anywhere}
 @media(max-width:580px){.draft-group-content{padding:1rem}.draft-questions{padding-left:1.5rem}}
+
+.draft-readiness{border:1px solid #b9d4e4;border-radius:16px;background:#f4f9fc;padding:1.25rem;margin:1.5rem 0 2rem;color:#18384b}
+.draft-readiness>h2{margin-top:0}
+.draft-readiness-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem;margin:1.2rem 0}
+.draft-readiness-card{background:#fff;border:1px solid #cbd9e1;border-radius:14px;padding:1.15rem;min-width:0}
+.draft-readiness-card h3{margin-top:0}
+.draft-readiness-stat{display:flex;align-items:baseline;gap:.85rem;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.draft-readiness-stat strong{font-size:1.6rem;color:#124e68}
+.draft-readiness-track{height:12px;background:#e1eaf0;border-radius:99px;overflow:hidden}
+.draft-readiness-track span{display:block;height:100%;background:#1687a2;border-radius:99px}
+.draft-readiness a{overflow-wrap:anywhere}
+@media(max-width:760px){.draft-readiness-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body data-page="sondages-a-valider.html">
@@ -40,6 +52,26 @@
 <p>Ces questions sont présentées <strong>uniquement en lecture</strong> pour vérification des formulations, de la méthode et de la confidentialité. Aucune case à remplir, aucun envoi de données et aucun résultat inventé. Les textes sont issus du corpus candidat conservé dans la demande de fusion nº 639.</p>
 <p>La consultation de 40 questions n’est <strong>pas un référendum officiel</strong>. La boussole est un outil différent : elle calcule les réponses localement, sans les transmettre au sondage.</p>
 </div>
+<section id="etat-validation-outils" class="draft-readiness" aria-labelledby="etat-validation-outils-title">
+<h2 id="etat-validation-outils-title">État de validation des deux outils civiques</h2>
+<p>Dernière grille de réception détaillée : <strong>7 novembre 2026</strong>. Les pourcentages ci-dessous mesurent uniquement les <strong>critères de réception marqués comme réussis</strong> ; ils ne mesurent ni la proportion de code écrit, ni une certification indépendante, ni le pourcentage de préparation du programme politique.</p>
+<div class="draft-readiness-grid">
+<article class="draft-readiness-card">
+<h3>Sondage citoyen (8 questions)</h3>
+<p class="draft-readiness-stat"><strong>54,5 %</strong> <span>6 critères sur 11</span></p>
+<div role="progressbar" aria-label="Critères de réception du sondage" aria-valuemin="0" aria-valuemax="11" aria-valuenow="6" aria-valuetext="6 critères validés sur 11, soit 54,5 pour cent" class="draft-readiness-track"><span style="width:54.5%"></span></div>
+<p><strong>Collecte fermée.</strong> Les cinq contrôles encore à terminer concernent la confidentialité préproduction, les essais anti-rejeu et CAPTCHA, l'accessibilité, la conformité juridique et l'approbation explicite de l'ouverture.</p>
+</article>
+<article class="draft-readiness-card">
+<h3>Boussole électorale (64 questions, 16 dimensions)</h3>
+<p class="draft-readiness-stat"><strong>41,7 %</strong> <span>5 critères sur 12</span></p>
+<div role="progressbar" aria-label="Critères de réception de la boussole" aria-valuemin="0" aria-valuemax="12" aria-valuenow="5" aria-valuetext="5 critères validés sur 12, soit 41,7 pour cent" class="draft-readiness-track"><span style="width:41.7%"></span></div>
+<p>Les sept contrôles restants portent notamment sur le parcours navigateur complet, le profil partiel déployé, l'accessibilité, la couverture multi-navigateurs, la validation documentaire et la preuve de publication. <strong>La comparaison avec les partis demeure désactivée.</strong></p>
+</article>
+</div>
+<p><strong>Attention :</strong> les questionnaires candidats de 64 et 40 questions présentés plus bas sont distincts du sondage citoyen de huit questions. Aucun vote n'est recueilli sur cette page. Les validations de production, l'avis juridique et la décision d'ouverture ne sont pas présumés acquis.</p>
+<p>Référence vérifiable : <a href="https://github.com/M0rdr3x/BenoitCantin/blob/main/projets/projet-nova/data/validation-sondage-boussole-2026-11-07.json" rel="noopener noreferrer">matrice de réception officielle et critères restants sur GitHub</a>. Un <a href="https://github.com/M0rdr3x/BenoitCantin/blob/main/docs/NOVA_SONDAGE_BOUSSOLE_DEPLOIEMENT.md" rel="noopener noreferrer">contrôle backend en lecture seule du 8 novembre 2026</a> documente aussi la version 6 du service, la concordance des huit questions et l'absence de votes enregistrés. Pour vérifier une homologation ultérieure, il faut toujours confronter la matrice aux essais navigateur, audits indépendants et autorisations de déploiement.</p>
+</section>
 <div class="draft-actions"><a class="btn btn-outline" href="sondage-citoyen.html">Voir le sondage de 8 questions</a><a class="btn btn-outline" href="boussole-electorale.html">Utiliser la boussole de 64 questions</a></div>
 <details id="sondage-64" class="draft-group">
 <summary>Sondage d’opinion candidat — 64 propositions, 18 ans et plus</summary>

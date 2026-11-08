@@ -254,14 +254,20 @@
     const label = score === null ? "Données insuffisantes" : (score === 0 ? "Équilibre" : score < 0 ? result.negative : result.positive);
     const position = score === null ? 50 : Math.max(0, Math.min(100, (score + 100) / 2));
     const signed = score === null ? "—" : (score > 0 ? "+" + score : String(score));
+    // Un axe sans données suffisantes n'est PAS neutre : ne pas placer
+    // artificiellement son repère au milieu de l'échelle, ni l'annoncer
+    // comme un score calculé aux technologies d'assistance.
+    const scoreA11y = score === null
+      ? "Score indisponible : données insuffisantes"
+      : "Score " + signed + " sur une échelle de moins 100 à plus 100";
     return `
       <article class="compass-result-card">
         <div class="compass-result-head">
           <div><h3>${esc(result.title)}</h3><p>${esc(label)}</p></div>
-          <strong aria-label="Score ${signed} sur une échelle de moins 100 à plus 100">${signed}</strong>
+          <strong aria-label="${esc(scoreA11y)}">${signed}</strong>
         </div>
         <div class="compass-axis-labels"><span>${esc(result.negative)}</span><span>${esc(result.positive)}</span></div>
-        <div class="compass-axis-track" aria-hidden="true"><span class="compass-axis-mid"></span><i style="left:${position}%"></i></div>
+        <div class="compass-axis-track" aria-hidden="true"><span class="compass-axis-mid"></span>${score === null ? "" : `<i style="left:${position}%"></i>`}</div>
         <div class="compass-result-meta">Couverture : ${result.answered}/${result.total} réponses (${result.coverage} %)</div>
       </article>
     `;

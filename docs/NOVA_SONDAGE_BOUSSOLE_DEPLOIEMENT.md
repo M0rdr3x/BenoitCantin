@@ -161,3 +161,26 @@ Après une réponse **HTTP 201 acceptée** ou **HTTP 409 déjà enregistrée**, 
 La limitation reste explicitement documentée : sans stockage persistant, le blocage du navigateur disparaît au rechargement, et l'outil ne prétend pas vérifier l'unicité d'une personne. Le mécanisme serveur d'anti-rejeu repose sur l'empreinte HMAC du jeton; ni le jeton ni l'état de confirmation ne doivent contenir les choix politiques. Aucun identifiant de personne n'est créé par ce correctif.
 
 Le test `scripts/test_nova_poll_runtime.cjs` simule une erreur d'écriture dans `localStorage` et vérifie que l'état de participation confirmée verrouille le bouton et les réponses. Il vérifie également le branchement du verrou aux réponses 201 et 409. Le client est versionné `sondage-citoyen.js?v=14` pour éviter une mise en cache périmée. Les approbations humaines de confidentialité restent obligatoires avant toute ouverture.
+
+## Contrôle ciblé du 8 novembre 2026 — backend de sondage en lecture seule
+
+Cette vérification du projet Supabase associé au site a été conduite **sans vote de test, sans appel POST, sans modification de table, sans lecture de bulletin individuel et sans changement de publication**. Elle complète l'audit du 7 novembre 2026; elle ne remplace pas un examen juridique ou un essai d'intrusion.
+
+| Critère vérifié | Résultat observé le 8 novembre |
+|---|---|
+| Edge Function `nova-civic-poll` | ACTIVE, **version 6** |
+| Code Edge déployé et source `main` | **Identiques caractère pour caractère** (fichier `index.ts`) |
+| Questions SQL et corpus JSON GitHub | **8 sur 8**, identifiants, ordres et formulations identiques |
+| Tables `nova_poll_questions`, `nova_poll_counts`, `nova_poll_public_counts`, `nova_poll_receipts`, `nova_poll_publication_state` | **RLS activée sur les cinq** |
+| Droits directs `anon` / `authenticated` sur ces tables | **Aucun SELECT ni INSERT** |
+| RPC `public.nova_poll_submit` | `SECURITY DEFINER` ; **EXECUTE refusé à `anon` et `authenticated`, autorisé seulement à `service_role`** pour les rôles examinés |
+| Enregistrement des questions | 8 |
+| Reçus anti-rejeu `nova_poll_receipts` | 0 ligne |
+| Compteurs privés `nova_poll_counts` | 0 ligne |
+| Compteurs publiés `nova_poll_public_counts` | 0 ligne |
+| État de publication | `poll_version=nova-consultation-v1`, **0 bulletin publié**, date de publication nulle |
+
+**Limites :** le statut `ACTIVE` d'une Edge Function signifie que le service est déployé, **pas que la collecte est ouverte**. Cette vérification ne teste ni les secrets réels ni la résistance du CAPTCHA/Turnstile en concurrence, les délais, l'anti-rejeu à la charge, la conservation des données, l'absence de réidentification par comparaison de publications successives ou la conformité juridique d'une collecte d'opinions politiques. La matrice `data/validation-sondage-boussole-2026-11-07.json` conserve donc **6/11 portes validées pour le sondage** et **5/12 pour la boussole** tant qu'une réception formelle plus récente ne modifie pas les critères. Les prérequis à la collecte restent bloquants : voir [l'issue #674](https://github.com/M0rdr3x/BenoitCantin/issues/674) et [l'issue #675](https://github.com/M0rdr3x/BenoitCantin/issues/675).
+
+**Neutralité :** aucun bulletin fictif n'a été généré, aucune préférence politique n'est inférée, les positions des partis demeurent sans comparaison automatique et la boussole calcule son profil localement.
+

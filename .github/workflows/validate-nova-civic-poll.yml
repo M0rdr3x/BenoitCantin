@@ -32,6 +32,7 @@ on:
       - 'scripts/test_nova_boussole_runtime.cjs'
       - 'scripts/test_nova_evidence_retry.cjs'
       - 'scripts/test_nova_boussole_navigation.cjs'
+      - 'projets/projet-nova/tests/nova-civic-readiness.test.mjs'
       - 'scripts/test_nova_boussole_network.cjs'
       - 'scripts/test_nova_poll_runtime.cjs'
       - 'scripts/test_nova_civic_integrity.cjs'
@@ -100,6 +101,8 @@ jobs:
         run: node scripts/test_nova_evidence_retry.cjs
       - name: Parcourir les 64 questions et les scénarios sans opinion
         run: node scripts/test_nova_boussole_navigation.cjs
+      - name: Contrôler les critères de réception affichés et le sondage fermé
+        run: node --test projets/projet-nova/tests/nova-civic-readiness.test.mjs
       - name: Tester la cohérence atomique des résultats publics sans vote
         run: node scripts/test_nova_edge_snapshot.cjs
       - name: Vérifier le verrou éditorial côté serveur des 8 questions officielles

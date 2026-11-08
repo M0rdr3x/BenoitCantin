@@ -625,6 +625,56 @@ def run() -> None:
             f"{BROWSER_NAME}: 64 « Sans opinion », résultats non artificiels ou réinitialisation: {profil_sans_opinion}",
         )
 
+        # Réception du profil partiel dans le VRAI DOM : à une seule réponse,
+        # aucun score et aucun marqueur. À deux questions principales du même
+        # axe, exactement un score. Le contrôle sur la version locale évite
+        # de présumer que le nouveau JS est déjà publié en production.
+        if IS_LOCAL:
+            partial_profile = page.evaluate("""() => {
+                const reset = document.querySelector("#compass-reset");
+                const start = document.querySelector("#compass-start");
+                const next = document.querySelector("#compass-next");
+                const preview = document.querySelector("#compass-preview");
+                const stage = document.querySelector("#compass-question-stage");
+                const results = document.querySelector("#compass-results");
+                if(!reset || !start || !next || !preview || !stage || !results)
+                    return {ok:false,where:"missing_controls"};
+                reset.click();
+                start.click();
+                const first = stage.querySelector('input[type="radio"]');
+                if(!first) return {ok:false,where:"q01_missing"};
+                first.click();
+                preview.click();
+                const cardsOne = [...document.querySelectorAll("#compass-results-grid .compass-result-card")];
+                const noScore = cardsOne.length===16 &&
+                    cardsOne.every(card =>
+                        card.querySelector("strong")?.getAttribute("aria-label")==="Score indisponible : données insuffisantes" &&
+                        !card.querySelector(".compass-axis-track i")) &&
+                    document.querySelector("#compass-summary")?.textContent.includes("Aucune dimension calculable") &&
+                    !results.hidden;
+                next.click();
+                const second = stage.querySelector('input[type="radio"]');
+                if(!second) return {ok:false,where:"q02_missing",noScore};
+                second.click();
+                preview.click();
+                const cardsTwo = [...document.querySelectorAll("#compass-results-grid .compass-result-card")];
+                const oneScore = cardsTwo.length===16 &&
+                    cardsTwo.filter(card=>!!card.querySelector(".compass-axis-track i")).length===1 &&
+                    cardsTwo.filter(card=>
+                        card.querySelector("strong")?.getAttribute("aria-label")==="Score indisponible : données insuffisantes"
+                    ).length===15 &&
+                    document.querySelector("#compass-summary")?.textContent.includes("Profil partiel");
+                reset.click();
+                return {
+                    ok:noScore&&oneScore&&!document.querySelector("#compass-start-panel").hidden,
+                    noScore,oneScore,returnedToStart:!document.querySelector("#compass-start-panel").hidden
+                };
+            }""")
+            assert_true(
+                partial_profile["ok"],
+                f"{BROWSER_NAME}: profil partiel avec 1/2 réponses, repères et accessibilité incorrects: {partial_profile}",
+            )
+
         home_text = page.locator("main").inner_text().lower()
         for retired_name in ("lumina", "futurax", "chroniques de l’ombre", "chroniques de l'ombre"):
             assert_true(retired_name not in home_text, f"Accueil: univers secondaire remis au premier plan: {retired_name}")
