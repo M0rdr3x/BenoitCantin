@@ -1,4 +1,11 @@
 # Correctif SINJIRA™ — inscription, confirmation, Registre et notifications Formspree
+
+> **ÉTAT OPÉRATIONNEL ACTUEL — 8 novembre 2026 : 84 % estimés, 16 % non certifiés.** Le code de correction [#834](https://github.com/M0rdr3x/BenoitCantin/pull/834) est fusionné et les Edge Functions `notify-account-confirmation` **v2** et `submit-character-questionnaire` **v15** sont actives. Les réglages privés de confirmation/SMTP, la réception effective des deux avis Formspree et l'essai complet avec un compte fictif et un facteur TOTP vérifié **ne sont pas encore validés**. Ne pas affirmer 100 % ni une date de fin. Le ticket [#850](https://github.com/M0rdr3x/BenoitCantin/issues/850) est la source du suivi courant; les étapes historiques ci-dessous qui annoncent une PR en brouillon ou des fonctions non publiées sont des **archives**, pas des instructions de redéploiement.
+>
+> **Règle de sécurité en vigueur : le Registre exige toujours une session MFA `aal2`, indépendamment de `sensitive_step_up`.** Le site doit laisser l'utilisateur terminer son enrôlement TOTP depuis `/compte/securite.html` avant une participation. Aucune désactivation de MFA n'est autorisée pour faciliter les essais.
+>
+> **Publication Web :** la [PR de sécurité #891](https://github.com/M0rdr3x/BenoitCantin/pull/891) est fusionnée et le script public de compte est désormais observé avec `safeLocalNavigation`. Cela ne confirme pas toute la configuration de l'hébergement ni la réception des emails.
+
 Date : 2026-11-07
 
 ## Diagnostic du projet connecté
@@ -6,7 +13,7 @@ Date : 2026-11-07
 - Le point d'entrée `/compte/inscription.html` appelle Supabase Auth `signUp`.
 - Des journaux Auth ont montré des réponses d'inscription 200, puis des vérifications `/verify` avec « One-time token not found » et « Email link is invalid or has expired ».
 - Les systèmes de sécurité des messageries peuvent préouvrir les URL et consommer les liens à usage unique. C'est une **cause possible**, pas une certitude établie pour chaque visiteur.
-- Le formulaire `/projets/sinjira/registre/` exige une session authentifiée; il vérifie en outre la protection AAL2/TOTP quand `sensitive_step_up` est activé (valeur par défaut).
+- Le formulaire `/projets/sinjira/registre/` exige une session authentifiée **et une authentification TOTP AAL2 obligatoire**, indépendamment de la préférence `sensitive_step_up`.
 - L'ancien transport Resend des copies et avis est désactivé. Le correctif propose un envoi distinct via Formspree uniquement après accord explicite du membre.
 
 ## Déploiement — ordre impératif
@@ -42,7 +49,7 @@ Le `#token_hash=` fait voyager le jeton dans le fragment URL (non envoyé au ser
 
 6. Si un prestataire de courriel réécrit les liens pour le suivi de clic, **désactiver le suivi des liens** pour les messages d'authentification.
 7. Faire un test avec un compte de test et une boîte de réception administrée par vous : inscription → courriel → page SINJIRA → clic explicite → authentification → ouverture Compte ou Registre. Vérifier la récupération quand un lien est expiré au moyen de « Renvoyer un lien ».
-8. Pour transmettre le questionnaire, le visiteur doit être connecté. Lorsque la protection sensible est activée, il doit configurer la 2FA dans `/compte/securite.html` et valider la session AAL2. **Ce correctif ne diminue pas les contrôles de sécurité des dossiers privés.**
+8. Pour transmettre le questionnaire, le visiteur doit être connecté, **avoir configuré un facteur TOTP vérifié** dans `/compte/securite.html` et avoir validé une session **AAL2 dans tous les cas**. La préférence `sensitive_step_up` ne désactive jamais cette exigence pour le Registre. **Ce correctif ne diminue pas les contrôles de sécurité des dossiers privés.**
 9. Tester un questionnaire de test avec consentement et vérifier le nouvel enregistrement dans l'administration. L'envoi par Formspree doit être configuré dans Workflow, séparément de la sauvegarde Supabase. Les accusés de réception automatiques Formspree exigent Professional ou Business.
 
 ## Tests de non-régression suggérés
@@ -153,7 +160,7 @@ La migration a été appliquée en production avec la version distante **`202611
 - **Production existante :** aucun second `db push` de cette migration; contrôler `supabase_migrations.schema_migrations` et la table `public.sinjira_formspree_events` (RLS activée, accès `anon`/`authenticated` refusé) avant d'activer les Edge Functions.
 - **Environnement vierge :** appliquer cette version une fois dans l'ordre des migrations autorisées, après revue du manifeste, avant de déployer les fonctions.
 - Ne pas réécrire l'historique `supabase_migrations` et ne pas ajouter de migration « réparatrice » duplicative.
-- En date de cette vérification, GitHub #834 reste en brouillon; les fonctions et la page Web sont encore à publier. Un statut CI historique ne vaut pas réussite des tests du nouveau commit.
+- **Historique d'avant fusion (ne plus appliquer à la production actuelle)** : à la date de cette ancienne vérification, GitHub #834 restait en brouillon et les fonctions/pages étaient encore à publier. Un statut CI historique ne vaut pas réussite des tests du nouveau commit.
 
 ## Résilience aux accusés réseau perdus et transparence des notifications
 
@@ -199,7 +206,7 @@ Selon la documentation officielle Supabase du 31 octobre 2026, le SMTP intégré
 6. Configurer indépendamment les deux workflows **Formspree**, vérifier `sinjiraofficiel@gmail.com` comme destination et utiliser une adresse de test pour prouver la **réception** du message. Un `2xx` ou une ligne `delivery_status='sent'` signifie seulement que Formspree a accepté l’envoi, pas que la boîte l’a reçu.
 7. L’option **Auto Response** de Formspree demande **Professional ou Business**. Si aucun abonnement correspondant n’a été approuvé, ne pas activer de dépense; documenter clairement que l’accusé externe n’est pas disponible et que l’accusé **à l’écran** reste assuré seulement après sauvegarde confirmée.
 
-**Seuil de mise en service :** maintenir l’état **NON CERTIFIÉ / 80 % estimés** tant que l’existence du SMTP opérationnel, les paramètres Auth, les workflows Formspree, le parcours d’un compte de test extérieur, l’authentification AAL2 et la livraison réelle des courriels ne sont pas constatés. Ne jamais transformer un test de l’interface en preuve de délivrabilité.
+**Seuil de mise en service :** maintenir l’état **NON CERTIFIÉ / 84 % estimés** tant que l’existence du SMTP opérationnel, les paramètres Auth, les workflows Formspree, le parcours d’un compte de test extérieur, l’authentification AAL2 et la livraison réelle des courriels ne sont pas constatés. Ne jamais transformer un test de l’interface en preuve de délivrabilité.
 
 **Sources officielles :**
 - Supabase Auth — SMTP de production : https://supabase.com/docs/guides/auth/auth-smtp
