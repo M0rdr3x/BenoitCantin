@@ -184,3 +184,15 @@ Cette vérification du projet Supabase associé au site a été conduite **sans 
 
 **Neutralité :** aucun bulletin fictif n'a été généré, aucune préférence politique n'est inférée, les positions des partis demeurent sans comparaison automatique et la boussole calcule son profil localement.
 
+## Réception E2E locale du 8 novembre 2026 — version #881
+
+L'audit de référence du **7 novembre 2026** demeure archivé sans modification. Une nouvelle matrice, versionnée sous `docs/nova-sondages/reception-sondage-boussole-2026-11-08.json`, reconnaît **une seule porte supplémentaire** de la boussole : le parcours complet des 64 questions dans les tests navigateur automatisés, exécutés avec le code candidat de la [PR #881](https://github.com/M0rdr3x/BenoitCantin/pull/881) et réussis sur **Chromium, Firefox et WebKit**. Preuve : [GitHub Actions — Tests navigateur SINJIRA, exécution 42531076014](https://github.com/M0rdr3x/BenoitCantin/actions/runs/42531076014).
+
+- **Sondage de huit questions : 6/11 portes, soit 54,5 %.** Aucun critère relatif aux votes n'a été ajouté; la collecte demeure fermée et aucun bulletin de test n'a été enregistré.
+- **Boussole de 64 questions et 16 dimensions : 6/12 portes, soit 50,0 %.** La porte `COMPASS_FULL_64_RESULT` passe à `PASSED` **uniquement pour l'E2E sur la version locale du dépôt** : parcours Q01–Q64, résultats à seize dimensions, 64 réponses « Sans opinion », radar sans faux score et remise à zéro. Le scénario de profil partiel local a aussi réussi sous les trois moteurs, mais la porte `COMPASS_PARTIAL_PROFILE_RELEASE` nécessite **encore le contrôle du déploiement public**.
+- Les portes de **réception du site public, mobiles/multi-navigateurs en production, accessibilité indépendante, revue documentaire et comparaison partisane** restent en attente. Une réussite Playwright dans le dépôt n'est ni une homologation officielle ni une preuve de la version actuellement servie par le domaine.
+- Les anciens indicateurs du navigateur externe (28 réponses « Sans opinion » vérifiées, sans parcours final à 64 dans cette session) restent historiques et ne sont pas réécrits comme s'il s'agissait d'une validation live.
+- Le programme politique NOVA reste évalué séparément à **47/100** selon l'audit de programme de référence, non affecté par ces tests de site.
+
+**Frontières :** les preuves sont des métadonnées et des liens CI uniquement; aucun avis citoyen, jeton, secret, réponse individuelle ou comparaison de formation politique n'est ajouté au site. Les autorisations de collecte et les conditions de publication restent bloquantes.
+
