@@ -70,7 +70,8 @@
       "official_page": "/projets/sinjira/romans/le-sang-du-sauveur/",
       "publicly_confirmed_status": "EN_PRODUCTION_EDITORIALE",
       "sources": {
-        "public_page": "/projets/sinjira/romans/le-sang-du-sauveur/"
+        "public_page": "/projets/sinjira/romans/le-sang-du-sauveur/",
+        "historical_archive_diagnostic": "docs/sinjira/audit-archive-livre-ii-2026-11-08.json"
       },
       "declared_structure": {
         "full_pages": null,
@@ -101,7 +102,9 @@
         "Effectuer relecture structurelle, révisions de prose, corrections et lecture d'épreuves avec preuves datées",
         "N'annoncer une date ou un pourcentage de finition qu'après validation de la cible réelle"
       ],
-      "date_of_completion": null
+      "date_of_completion": null,
+      "historical_archive_note": "Une version PDF de juillet 2026 a 126 pages et 60 en-têtes de chapitres. Diagnostic de répétitions disponible; ce document n'est pas le maître actuel et ne permet pas de calculer un pourcentage final.",
+      "editorial_completion_tracking_issue": "https://github.com/M0rdr3x/BenoitCantin/issues/878"
     }
   ],
   "privacy_and_commerce": {
