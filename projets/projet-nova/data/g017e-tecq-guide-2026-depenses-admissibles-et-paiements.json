@@ -292,6 +292,26 @@
     "nova_taxable_income_base_reconciled": false,
     "two_fiscal_scenarios_financed": false,
     "audit_score_increment_earned": false,
-    "native_github_actions_success_not_established": true
+    "native_github_actions_success_not_established": false,
+    "native_github_actions_validation": {
+      "status": "CONFIRMED_AT_TEST_COMMIT",
+      "run_id": 42536049965,
+      "run_url": "https://github.com/M0rdr3x/BenoitCantin/actions/runs/42536049965",
+      "commit_sha": "01bb9b2de54918b9b1ac0e0622db719f322eb439",
+      "workflow": "Nova-Sinjira - verifications financieres",
+      "workflow_file": ".github/workflows/nova-sinjira-finances-tests.yml",
+      "event": "push",
+      "conclusion": "success",
+      "node_version_in_workflow": "22.23.2",
+      "job": "verifications",
+      "job_conclusion": "success",
+      "step": "Verifier les calculs et la provenance",
+      "step_conclusion": "success",
+      "test_command": "node --test projets/projet-nova/tests/*.test.mjs",
+      "g017e_test_file_present_at_commit": true,
+      "independent_fiscal_audit": false,
+      "actual_tecq_bank_payments_verified": false,
+      "future_commit_ci_not_automatically_proven": true
+    }
   }
 }
