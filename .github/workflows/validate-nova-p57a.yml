@@ -1,0 +1,56 @@
+name: Projet Nova P57A - Credit remboursable 2026 reclassement et degrevement
+on:
+  pull_request:
+    paths:
+      - 'projets/projet-nova/etudes/P57A_*'
+      - 'scripts/verifier_reclassement_credits_comptes_publics_nova_p57a.py'
+      - 'scripts/tests/test_verifier_reclassement_credits_comptes_publics_nova_p57a.py'
+      - 'projets/projet-nova/etudes/P56Z_CONCORDANCE_CREDITS_2023_ET_RENDEMENT_2027_2031_SANS_DOUBLE_COMPTE.json'
+      - 'projets/projet-nova/etudes/P56W_CREDITS_REMBOURSABLES_2023_PAR_CATEGORIE_ET_TRANCHES_PROTECTION.json'
+      - 'projets/projet-nova/etudes/P56Y_RENDEMENT_BRUT_NECESSAIRE_DEUX_PRELEVEMENTS_2027_2031.json'
+      - 'projets/projet-nova/etudes/P56P_BASE_BUDGET_PREELECTORALE_2026_2031_VGQ_ET_ECARTS.json'
+      - '.github/workflows/validate-nova-p57a.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pont-credit-reclassement-p57a:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Executer 48 tests P56Z et 41 nouveaux tests P57A
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_verifier_concordance_credits_et_rendement_nova_p56z.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_verifier_reclassement_credits_comptes_publics_nova_p57a.py' -v
+      - name: Reconciler 2026 revenus transferes et credit solidarite exclu du reclassement
+        shell: bash
+        run: |
+          python scripts/verifier_reclassement_credits_comptes_publics_nova_p57a.py \
+            --preuve projets/projet-nova/etudes/P57A_RECONCILIATION_CREDITS_2025_2026_COMPTES_PUBLICS_VOL1.json \
+            --p56p projets/projet-nova/etudes/P56P_BASE_BUDGET_PREELECTORALE_2026_2031_VGQ_ET_ECARTS.json \
+            --p56w projets/projet-nova/etudes/P56W_CREDITS_REMBOURSABLES_2023_PAR_CATEGORIE_ET_TRANCHES_PROTECTION.json \
+            --p56y projets/projet-nova/etudes/P56Y_RENDEMENT_BRUT_NECESSAIRE_DEUX_PRELEVEMENTS_2027_2031.json \
+            --p56z projets/projet-nova/etudes/P56Z_CONCORDANCE_CREDITS_2023_ET_RENDEMENT_2027_2031_SANS_DOUBLE_COMPTE.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --p55n projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json | python -c 'import json,sys; d=json.load(sys.stdin); assert d["total_reclassement_transferts_mcad"]=="11578" and d["particuliers_transferts_mcad"]=="8291" and d["societes_transferts_mcad"]=="3287" and d["degrevement_solidarite_taxes_consommation_mcad"]=="1996" and d["reclassement_revenus_apres_mcad"]=="74115" and d["condition_Z01_validee_pour_2027"] is False and d["score_estime_pourcent"]==53 and d["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Refuser attestation automatique des credits et prestations 2027
+        shell: bash
+        run: |
+          set +e
+          python scripts/verifier_reclassement_credits_comptes_publics_nova_p57a.py \
+            --preuve projets/projet-nova/etudes/P57A_RECONCILIATION_CREDITS_2025_2026_COMPTES_PUBLICS_VOL1.json \
+            --p56p projets/projet-nova/etudes/P56P_BASE_BUDGET_PREELECTORALE_2026_2031_VGQ_ET_ECARTS.json \
+            --p56w projets/projet-nova/etudes/P56W_CREDITS_REMBOURSABLES_2023_PAR_CATEGORIE_ET_TRANCHES_PROTECTION.json \
+            --p56y projets/projet-nova/etudes/P56Y_RENDEMENT_BRUT_NECESSAIRE_DEUX_PRELEVEMENTS_2027_2031.json \
+            --p56z projets/projet-nova/etudes/P56Z_CONCORDANCE_CREDITS_2023_ET_RENDEMENT_2027_2031_SANS_DOUBLE_COMPTE.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --p55n projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --exiger-preuve-2027-validee
+          outcome=$?
+          set -e
+          test "$outcome" -eq 3
