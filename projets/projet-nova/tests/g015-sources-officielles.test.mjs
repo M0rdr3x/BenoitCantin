@@ -116,7 +116,7 @@ test("la page publique reflète chaque piste G0.15 sans déclarer de validation"
  const end=html.indexOf("</section>",start);
  assert.ok(start>=0&&end>start);
  const excerpt=html.slice(start,end);
- const ids=[...excerpt.matchAll(/<tr><th scope="row">(V\\d\\d) /g)].map(m=>m[1]);
+ const ids=[...excerpt.matchAll(/<tr><th scope="row">(V\d\d) /g)].map(m=>m[1]);
  assert.deepEqual(ids,proofs.proofs.map(p=>p.id));
  assert.match(excerpt,/21 candidatures de sources/);
  assert.match(excerpt,/0 sur 15 sont validées/);
