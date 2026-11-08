@@ -42,6 +42,13 @@
           "apport": "Classification de services tarifés, rôle du financement par les bénéficiaires et reddition de comptes annuelle des organismes.",
           "limite": "Ne ventile pas toutes les recettes 2026-2027 par droits, permis, redevances et lois; ne prouve pas leur libre réaffectation ni une recette Nova.",
           "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        },
+        {
+          "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Comptes-publics/FR/CPTFR_vol1-2025-2026.pdf",
+          "periode": "réalisations consolidées 2025-2026, comptes publics gouvernementaux publiés le 17 juillet 2026",
+          "apport": "États consolidés gouvernementaux, page imprimée 5 : droits, permis et redevances réalisés 6 708 M$; comparatif reclassé 2024-2025 : 6 191 M$; opinion sans réserve du VGQ sur les comptes.",
+          "limite": "Le montant global ne ventile pas les droits et redevances par loi, redevable, fonds affecté, autorité fiscale ou nature abolissable. Comptes gouvernementaux audités, pas un audit de proposition NOVA.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
         }
       ],
       "prochaine_verification": "Obtenir ventilation légale et par exercice des droits, permis et redevances, puis statut de chaque flux."
@@ -65,6 +72,13 @@
           "periode": "périmètre comptable institutionnel, page consultée en novembre 2026",
           "apport": "Périmètre des organismes contrôlés, fonds spéciaux et fiduciaires pour prévenir le double compte.",
           "limite": "Ne quantifie pas à lui seul les revenus divers par entité ni leurs éliminations de consolidation; vérification des états originaux requise.",
+          "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
+        },
+        {
+          "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Comptes-publics/FR/CPTFR_vol1-2025-2026.pdf",
+          "periode": "réalisations consolidées 2025-2026, comptes publics gouvernementaux publiés le 17 juillet 2026",
+          "apport": "États consolidés gouvernementaux, page imprimée 5 : revenus divers réalisés 14 922 M$; comparatif reclassé 2024-2025 : 16 252 M$; opinion sans réserve du VGQ sur les comptes.",
+          "limite": "Montant consolidé sans attribution exhaustive des revenus par entité ou droit; transferts internes éliminés dans la consolidation sans conciliation Nova. Comptes audités, réforme NOVA non auditée.",
           "statut": "SOURCE_PUBLIQUE_REPEREE_NON_AUDITEE"
         }
       ],
