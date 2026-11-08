@@ -36,9 +36,9 @@ jobs:
         with:
           node-version: '22.23.2'
           package-manager-cache: false
-      - name: Tester V36, V39 et V40 sur les véritables fichiers
+      - name: Tester V36, V38, V39 et V40 sur les véritables fichiers
         run: |
           node --check assets/js/sinjira-fracture-soupcons-v40.mjs
-          node --test tests/games/test_fracture_mechanics_v36.mjs tests/games/test_fracture_soupcons_v39.mjs tests/games/test_fracture_soupcons_v40.mjs
+          node --test tests/games/test_fracture_mechanics_v36.mjs tests/games/test_fracture_accusations_v38.mjs tests/games/test_fracture_soupcons_v39.mjs tests/games/test_fracture_soupcons_v40.mjs
       - name: Préserver la confidentialité V36
         run: python3 scripts/validate_fracture_mechanics_v36.py
