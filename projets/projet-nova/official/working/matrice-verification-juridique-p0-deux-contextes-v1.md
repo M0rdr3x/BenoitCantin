@@ -55,6 +55,15 @@ Une revue **favorable** d'un article n'autorise pas les autres articles par cont
 - [Renvoi relatif à la sécession du Québec — Cour suprême du Canada](https://decisions.scc-csc.ca/scc-csc/scc-csc/fr/1643/1/document.do).
 - [Élections Québec — Autorisation et financement politique](https://www.electionsquebec.qc.ca/comprendre/comprendre-le-financement-politique/obtenir-le-droit-de-collecter-des-contributions-ou-de-faire-des-depenses/).
 
+
+## Contrôle de qualité automatique (branche de travail)
+
+Le module `assets/matrice-juridique-p0-core.mjs` inspecte la matrice JSON, **séparément pour chacun des 24 contextes**. La CI lance `tests/matrice-juridique-p0.test.mjs` lors de changements au moteur, à la matrice ou aux tests.
+
+Pour qu'un avis favorable **ou défavorable** soit déclaré documenté, ses références doivent comprendre : la décision/opinion datée, la pièce de mandat du réviseur et son indépendance déclarée, l'analyse des droits et recours, l'analyse budget/main-d'œuvre et le rapport de consultation. Une pièce manquante ou une date invalide bloque cette déclaration. L'audit global ne peut être déclaré achevé sans les 24 contextes documentés et ses propres références datées.
+
+**Limite fondamentale :** un contrôle automatique ne sait pas établir l'authenticité, l'exactitude ni la qualité d'un avis externe. Les liens peuvent être syntaxiquement valides sans constituer une preuve. Seul l'examen humain qualifié et la décision de l'autorité compétente permettent de franchir les portes juridique et politique. Le module retourne toujours `certification_automatique_autorisee: false` et `points_supplementaires_autorises: 0`.
+
 ## Porte de sortie
 
 Les **24 contextes d'examen (12 × 2)** doivent posséder des conclusions documentées, objections traitées, avis compétents, validations budgétaires et décisions explicites. Les dates de fin sont **conditionnelles** aux mandats, accès aux sources et délais de revue : aucune échéance de clôture n'est certifiée.
