@@ -47,7 +47,6 @@ def main()->int:
         "functions.invoke('submit-character-questionnaire'",
         "let invocationStarted=false;",
         "invocationStarted=true;",
-        "if(!invocationStarted)await cleanupUploadedPhoto(photo_path);",
         "result.admin_notification_created===true",
         "uncertainError.submissionOutcomeUnknown=true;",
         "const unknown=err?.submissionOutcomeUnknown===true;",
