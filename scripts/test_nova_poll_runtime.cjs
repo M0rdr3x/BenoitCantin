@@ -5,6 +5,10 @@ const assert=require("node:assert/strict");
 const src=fs.readFileSync(path.join(__dirname,"../projets/projet-nova/assets/sondage-citoyen.js"),"utf8");
 const html=fs.readFileSync(path.join(__dirname,"../projets/projet-nova/sondage-citoyen.html"),"utf8");
 assert.match(html,/<button[^>]+id="poll-send"[^>]*\bdisabled\b/);
+assert.match(src,/if\(response\.status===201[\s\S]*?markVoted\(\)/,
+  "Un envoi confirmé doit verrouiller la session même sans localStorage");
+assert.match(src,/else if\(response\.status===409\)[\s\S]*?markVoted\(\)/,
+  "Un doublon confirmé doit également verrouiller cette session");
 const elements=new Map();
 const pollRadios=[{disabled:false},{disabled:false}];
 const elem=id=>{if(!elements.has(id))elements.set(id,{
@@ -17,7 +21,7 @@ const context={
     const m=selector.match(/input\[name="([^"]+)"\]:checked/);
     return m&&selected.has(m[1])?{value:"0"}:null;
   },addEventListener:()=>{}},
-  localStorage:{getItem:key=>key==="nova_poll_sent_v1"&&voted?"yes":null,setItem:()=>{}},
+  localStorage:{getItem:key=>key==="nova_poll_sent_v1"&&voted?"yes":null,setItem:()=>{throw new Error("Stockage local refusé");}},
   window:{},crypto:{getRandomValues:()=>{throw new Error("pas de jeton en test");}},console
 };
 context.globalThis=context;
@@ -27,7 +31,7 @@ vm.runInNewContext(integrity,context,{timeout:2000});
 assert.equal(typeof context.window.__NOVA_CIVIC_INTEGRITY?.inspectPoll,"function");
 const end=src.lastIndexOf("})();");
 assert.ok(end>0);
-vm.runInNewContext(src.slice(0,end)+';globalThis.__pollTest={updateButton,setOpen:v=>open=v,setCaptcha:v=>captchaToken=v,setSending:v=>sending=v,setQuestions:v=>questions=v,setLocal:v=>localCorpus=v,validatedPublicResponse,validLocalCorpus,loadPoll};'+src.slice(end),context,{timeout:2000});
+vm.runInNewContext(src.slice(0,end)+';globalThis.__pollTest={updateButton,setOpen:v=>open=v,setCaptcha:v=>captchaToken=v,setSending:v=>sending=v,setQuestions:v=>questions=v,setLocal:v=>localCorpus=v,alreadyVoted,markVoted,validatedPublicResponse,validLocalCorpus,loadPoll};'+src.slice(end),context,{timeout:2000});
 const t=context.__pollTest;
 elem("poll-adult").checked=true;elem("poll-agree").checked=true;
 const corpus=JSON.parse(fs.readFileSync(path.join(__dirname,"../projets/projet-nova/data/sondage-citoyen-v1.json"),"utf8"));
@@ -122,6 +126,21 @@ assert.equal(t.validatedPublicResponse(tamper(c=>({...c,"9":Number.POSITIVE_INFI
 assert.equal(t.validatedPublicResponse(tamper(c=>({...c,"9":1.5}))),false,"Nombre fractionnaire");
 assert.equal(t.validatedPublicResponse(tamper(c=>({...c,"99":1}))),false,"Catégorie inconnue");
 assert.equal(t.validatedPublicResponse(tamper(c=>({...c,"9":"10"}))),false,"Nombre sous forme de texte");
+// Simuler localStorage qui refuse les écritures : la session doit rester
+// verrouillée dès qu'un POST 201 ou 409 a été confirmé, sans rejouer le vote.
+t.setOpen(true);t.setSending(false);t.setCaptcha("jeton-de-test");
+for(const question of corpus.questions)selected.add(question.id);
+elem("poll-adult").checked=true;elem("poll-agree").checked=true;
+context.localStorage.getItem=()=>{throw new Error("Lecture de stockage bloquée");};
+assert.equal(t.alreadyVoted(),false,"Aucun vote confirmé pour cette session de test");
+t.updateButton();assert.equal(elem("poll-send").disabled,false);
+assert.doesNotThrow(()=>t.markVoted(),"Un refus de localStorage ne doit pas bloquer l'interface");
+assert.equal(t.alreadyVoted(),true,"Le vote est marqué en mémoire sans stockage");
+t.updateButton();
+assert.equal(elem("poll-send").disabled,true,"Un succès confirmé ferme le bouton malgré l'absence de stockage");
+assert.ok(pollRadios.every(input=>input.disabled),"Choix bloqués pendant cette session");
+assert.match(elem("poll-send").textContent,/Participation enregistrée/,"Confirmation accessible visible");
+
 console.log("OK sondage : serveur et navigateur concordants, aucun petit effectif, aucun pourcentage issu de données invalides.");
 console.log("OK sondage : désactivé hors ouverture, âge, anti-robot, choix et doublon.");
 
