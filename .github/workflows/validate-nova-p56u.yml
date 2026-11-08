@@ -1,0 +1,52 @@
+name: Projet Nova P56U - Chapitre candidat finance et verification 16 articles
+on:
+  pull_request:
+    paths:
+      - 'projets/projet-nova/programme/P56U_*'
+      - 'scripts/verifier_concordance_chapitre_finances_nova_p56u.py'
+      - 'scripts/tests/test_verifier_concordance_chapitre_finances_nova_p56u.py'
+      - 'projets/projet-nova/etudes/P56T_BASE_OFFICIELLE_DEPENSES_PORTEFEUILLES_2025_2029_PROTECTION_SERVICES.json'
+      - 'projets/projet-nova/etudes/P56S_TROIS_OPTIONS_FISCALES_2027_2031_ET_CONDITIONS_PROTECTION.json'
+      - 'projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json'
+      - 'projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json'
+      - '.github/workflows/validate-nova-p56u.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  concordance-chapitre-p56u:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tester 41 validations P56T et 28 controles P56U
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_verifier_soutenabilite_services_et_depenses_nova_p56t.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_verifier_concordance_chapitre_finances_nova_p56u.py' -v
+      - name: Verifier faits, 16 articles et non adoption
+        shell: bash
+        run: |
+          python scripts/verifier_concordance_chapitre_finances_nova_p56u.py \
+            --chapitre projets/projet-nova/programme/P56U_CHAPITRE_CANDIDAT_FINANCES_FISCALITE_ET_CONTINUITE_SERVICES.md \
+            --p56s projets/projet-nova/etudes/P56S_TROIS_OPTIONS_FISCALES_2027_2031_ET_CONDITIONS_PROTECTION.json \
+            --p56t projets/projet-nova/etudes/P56T_BASE_OFFICIELLE_DEPENSES_PORTEFEUILLES_2025_2029_PROTECTION_SERVICES.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json | python -c 'import json,sys; x=json.load(sys.stdin); assert x["articles"]==16 and x["services_2027_2028_pivot_mcad"]=="120433" and x["recettes_a_remplacer_2027_2028_mcad"]=="42875" and x["score_interne_estime"]==53 and x["textes_officiellement_adoptes"] is False and x["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Refuser adoption automatique du programme
+        shell: bash
+        run: |
+          set +e
+          python scripts/verifier_concordance_chapitre_finances_nova_p56u.py \
+            --chapitre projets/projet-nova/programme/P56U_CHAPITRE_CANDIDAT_FINANCES_FISCALITE_ET_CONTINUITE_SERVICES.md \
+            --p56s projets/projet-nova/etudes/P56S_TROIS_OPTIONS_FISCALES_2027_2031_ET_CONDITIONS_PROTECTION.json \
+            --p56t projets/projet-nova/etudes/P56T_BASE_OFFICIELLE_DEPENSES_PORTEFEUILLES_2025_2029_PROTECTION_SERVICES.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --exiger-programme-adopte
+          code=$?
+          set -e
+          test "$code" -eq 3
