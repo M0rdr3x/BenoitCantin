@@ -50,7 +50,7 @@ class FractureV46Preflight(unittest.TestCase):
             r"(?i)\b(?:from|join)\s+([a-z_][a-z0-9_]*)\b", self.clean
         )}
         expected = {
-            "rpc", "expected_rpc", "inventory", "policy", "checks",
+            "rpc", "expected_rpc", "inventory", "policy", "write_policies", "checks",
             "pg_proc", "pg_namespace", "pg_policies", "pg_class",
         }
         self.assertTrue(found)
@@ -123,9 +123,9 @@ class FractureV46Preflight(unittest.TestCase):
             "rpc_anon_denied", "rpc_authenticated_denied",
             "rpc_service_role_preserved", "rls_both_target_tables",
             "rls_endgame_update_destination", "rls_player_document_destination",
-            "release_decision",
+            "rls_no_unreviewed_write_policies", "release_decision",
         })
-        self.assertEqual(len(checks), 9)
+        self.assertEqual(len(checks), 10)
         self.assertIn("CASE WHEN EXISTS (SELECT 1 FROM checks WHERE status='BLOCK')", self.sql)
         self.assertIn("THEN 'NO_GO'", self.sql)
         self.assertIn("ELSE 'REVIEW_REQUIRED'", self.sql)
