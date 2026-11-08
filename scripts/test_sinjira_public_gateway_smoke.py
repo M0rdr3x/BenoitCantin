@@ -22,6 +22,14 @@ PAGE_CONTRACTS={
     ),
 }
 FUNCTIONS=("notify-account-confirmation","submit-character-questionnaire")
+JS_SCRIPTS={
+    "/assets/js/v24-signup.js?v=24.5.3":("getSupabase().auth.signUp(", "formspree_receipt_opt_in"),
+    "/assets/js/sinjira-confirm-email.js?v=2":("getSupabase().auth.verifyOtp(", "notify-account-confirmation"),
+    "/assets/js/sinjira-character-registry.js?v=24.5.8":("auth.mfa.getAuthenticatorAssuranceLevel()", "submit-character-questionnaire"),
+    "/assets/js/sinjira-supabase.js":("createClient(", "isSinjiraBackendConfigured"),
+    "/assets/js/sinjira-supabase-config.js":("supabasePublishableKey", "paidFeaturesEnabled"),
+}
+
 AUTH_ERROR=re.compile(r'authorization|jwt|apikey|api key|authentication|unauthori[sz]ed|missing.*token',re.I)
 
 
@@ -43,6 +51,26 @@ def check_public_page(path,markers,fetcher=fetch):
     if any(marker not in bodytext for marker in markers):
         return False,"marqueur public attendu absent"
     return True,"HTTP 200; contenu publié conforme"
+
+
+def check_js_script(path, markers, fetcher=None):
+    request=Request(SITE+path,headers={"Accept":"application/javascript,text/javascript",
+                                         "Cache-Control":"no-cache"},method="GET")
+    if fetcher is None:
+        try:
+            with urlopen(request,timeout=13) as res:
+                status,mime,body=res.status,res.headers.get_content_type(),res.read(180001)
+        except HTTPError as err:
+            status,mime,body=err.code,err.headers.get_content_type(),err.read(2048)
+    else:
+        status,mime,body=fetcher(request)
+    if status!=200 or mime not in ("application/javascript","text/javascript"):
+        return False,"HTTP ou MIME JavaScript invalide"
+    if len(body)>180000 or not body:
+        return False,"fichier JS vide ou trop volumineux"
+    if any(m not in body.decode("utf-8",errors="replace") for m in markers):
+        return False,"script incomplet ou version erronée"
+    return True,"HTTP 200, MIME JavaScript et version attendue"
 
 
 def check_private_gateway(slug,fetcher=fetch):
@@ -110,6 +138,19 @@ def self_test():
             lambda r:(200,b"<html>ancienne version</html>"))[0]
         assert not check_public_page(path,markers,
             lambda r:(503,b"maintenance"))[0]
+    for path,markers in JS_SCRIPTS.items():
+        def good(req):
+            assert req.full_url==SITE+path and req.get_method()=="GET" and req.data is None
+            return 200,"application/javascript",(" ".join(markers)).encode("utf-8")
+        assert check_js_script(path,markers,good)[0]
+        for status,mime,body in (
+            (200,"text/html",(" ".join(markers)).encode("utf-8")),
+            (404,"application/javascript",b"Not Found"),
+            (200,"application/javascript",b"ancien script"),
+            (200,"application/javascript",b"x"*180001),
+        ):
+            assert not check_js_script(path,markers,
+                 lambda r,s=status,m=mime,b=body:(s,m,b))[0]
     for slug in FUNCTIONS:
         def rejected(r,limit):
             assert r.get_method()=="POST"
@@ -171,6 +212,14 @@ def production_test():
         print(("PASS" if passed else "FAIL")+" page "+path+" : "+reason)
         if not passed:
             failures.append(path)
+    for path,markers in JS_SCRIPTS.items():
+        try:
+            passed,reason=check_js_script(path,markers)
+        except (URLError,TimeoutError,OSError,ValueError):
+            passed,reason=False,"échec réseau JS"
+        print(("PASS" if passed else "FAIL")+" script "+path+" : "+reason)
+        if not passed:
+            failures.append(path)
     for slug in FUNCTIONS:
         try:
             passed,reason=check_private_gateway(slug)
@@ -186,8 +235,8 @@ def production_test():
     print(("PASS" if passed else "FAIL")+" Auth /settings : "+reason)
     if not passed:
         failures.append("auth_public_settings")
-    print("BILAN : "+str(len(PAGE_CONTRACTS)+len(FUNCTIONS)+1-len(failures))+
-          "/"+str(len(PAGE_CONTRACTS)+len(FUNCTIONS)+1)+" contrôles publics.")
+    print("BILAN : "+str(len(PAGE_CONTRACTS)+len(JS_SCRIPTS)+len(FUNCTIONS)+1-len(failures))+
+          "/"+str(len(PAGE_CONTRACTS)+len(JS_SCRIPTS)+len(FUNCTIONS)+1)+" contrôles publics.")
     print("Sans authentification, sans données personnelles, sans preuve de réception email.")
     return 1 if failures else 0
 
