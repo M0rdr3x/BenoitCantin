@@ -1,0 +1,59 @@
+name: Projet Nova P56J - Exposition fiscale et contre-factuel statique
+on:
+  pull_request:
+    paths:
+      - 'scripts/diagnostiquer_exposition_fiscale_deux_regimes_nova_p56j.py'
+      - 'scripts/tests/test_diagnostiquer_exposition_fiscale_deux_regimes_nova_p56j.py'
+      - 'projets/projet-nova/etudes/P56J_*'
+      - 'scripts/rapprocher_comptes_publics_p52b_nova_p56c.py'
+      - 'scripts/rapprocher_versions_finances_nova_p56b.py'
+      - 'scripts/evaluer_transition_fiscale_nova_p52b.py'
+      - 'projets/projet-nova/etudes/P56B_SNAPSHOTS_FINANCES_2025_2026_SOURCES_OFFICIELLES.json'
+      - 'projets/projet-nova/etudes/P56C_TABLE_PASSAGE_COMPTES_PUBLICS_VERS_P52B_2025_2026.json'
+      - 'projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json'
+      - 'projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json'
+      - 'projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json'
+      - '.github/workflows/validate-nova-p56j.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diagnostic-fiscal-p56j:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verifier historiques P56B, ventilation P56C et diagnostic P56J
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_rapprocher_versions_finances_nova_p56b.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_rapprocher_comptes_publics_p52b_nova_p56c.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_diagnostiquer_exposition_fiscale_deux_regimes_nova_p56j.py' -v
+      - name: Produire et controler le compte de passage fiscal 2025-2026
+        shell: bash
+        run: |
+          python scripts/diagnostiquer_exposition_fiscale_deux_regimes_nova_p56j.py \
+            --diagnostic projets/projet-nova/etudes/P56J_DIAGNOSTIC_RECETTES_A_REMPLACER_DEUX_REGIMES_2025_2026.json \
+            --p56c projets/projet-nova/etudes/P56C_TABLE_PASSAGE_COMPTES_PUBLICS_VERS_P52B_2025_2026.json \
+            --p56b projets/projet-nova/etudes/P56B_SNAPSHOTS_FINANCES_2025_2026_SOURCES_OFFICIELLES.json \
+            --gabarit projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json \
+            --preuves projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json | python -c 'import json,sys; d=json.load(sys.stdin); assert d["revenus_consolides_constates_mcad"]=="160428" and d["depenses_consolidees_constatees_mcad"]=="165930" and d["recettes_a_remplacer_pour_revenir_au_niveau_historique_mcad"]=="40186" and d["deficit_comptable_mecanique_sans_substitution_mcad"]=="45688" and d["scenarios_souverains_financiers_chiffres"]==0 and d["p55n_score_estimatif_pourcent"]==53 and d["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Refuser un taux fiscal certifie automatiquement
+        shell: bash
+        run: |
+          set +e
+          python scripts/diagnostiquer_exposition_fiscale_deux_regimes_nova_p56j.py \
+            --diagnostic projets/projet-nova/etudes/P56J_DIAGNOSTIC_RECETTES_A_REMPLACER_DEUX_REGIMES_2025_2026.json \
+            --p56c projets/projet-nova/etudes/P56C_TABLE_PASSAGE_COMPTES_PUBLICS_VERS_P52B_2025_2026.json \
+            --p56b projets/projet-nova/etudes/P56B_SNAPSHOTS_FINANCES_2025_2026_SOURCES_OFFICIELLES.json \
+            --gabarit projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json \
+            --preuves projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --exiger-taux-certifie
+          code=$?
+          set -e
+          test "$code" -eq 3
