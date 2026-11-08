@@ -46,14 +46,14 @@
     }
   },
   "perimetres": {
-    "québec_dans_canada": {
+    "QUEBEC_DANS_CANADA": {
       "regime": "QUEBEC_DANS_CANADA",
       "recettes_federales_non_supprimables_unilateralement": true,
       "transferts_federaux_publics_conserves_dans_illustration": true,
       "service_dette_deja_compris_dans_depenses": true,
       "prestations_crédits_et_services_non_supprimes_par_hypothese": true
     },
-    "québec_souverain": {
+    "QUEBEC_SOUVERAIN": {
       "regime": "QUEBEC_SOUVERAIN_HYPOTHETIQUE",
       "transferts_federaux_montants_automatiquement_conserves": false,
       "budget_souverain_decennal_etabli": false,
