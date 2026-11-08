@@ -1,0 +1,54 @@
+name: Projet Nova P57B - Continuite solidarite, trois composantes et periodes fiscales
+on:
+  pull_request:
+    paths:
+      - 'projets/projet-nova/etudes/P57B_*'
+      - 'scripts/verifier_continuite_solidarite_nova_p57b.py'
+      - 'scripts/tests/test_verifier_continuite_solidarite_nova_p57b.py'
+      - 'projets/projet-nova/etudes/P57A_RECONCILIATION_CREDITS_2025_2026_COMPTES_PUBLICS_VOL1.json'
+      - 'projets/projet-nova/etudes/P56Z_CONCORDANCE_CREDITS_2023_ET_RENDEMENT_2027_2031_SANS_DOUBLE_COMPTE.json'
+      - 'projets/projet-nova/etudes/P56Y_RENDEMENT_BRUT_NECESSAIRE_DEUX_PRELEVEMENTS_2027_2031.json'
+      - 'projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json'
+      - '.github/workflows/validate-nova-p57b.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  solidarite-protection-p57b:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tester 41 controles P57A et 45 tests P57B
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_verifier_reclassement_credits_comptes_publics_nova_p57a.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_verifier_continuite_solidarite_nova_p57b.py' -v
+      - name: Verifier la periode fiscale, l'absence de cout 2027 invente et le solde
+        shell: bash
+        run: |
+          python scripts/verifier_continuite_solidarite_nova_p57b.py \
+            --registre projets/projet-nova/etudes/P57B_SOLIDARITE_VERSEMENTS_2026_2027_ET_VERROU_PROTECTION_TVQ.json \
+            --p57a projets/projet-nova/etudes/P57A_RECONCILIATION_CREDITS_2025_2026_COMPTES_PUBLICS_VOL1.json \
+            --p56z projets/projet-nova/etudes/P56Z_CONCORDANCE_CREDITS_2023_ET_RENDEMENT_2027_2031_SANS_DOUBLE_COMPTE.json \
+            --p56y projets/projet-nova/etudes/P56Y_RENDEMENT_BRUT_NECESSAIRE_DEUX_PRELEVEMENTS_2027_2031.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json | python -c 'import json,sys; a=json.load(sys.stdin); assert a["degrevement_solidarite_constate_exercice_2025_2026_mcad"]=="1996" and a["cout_solidarite_projete_annee_2026_mcad"]=="2029.1" and a["calendrier_versement"]["TRIMESTRIELLE"]["avril_juin_2027"]==1 and a["calendrier_versement"]["MENSUELLE"]["avril_juin_2027"]==3 and a["budget_droits_2027_2028_confirme"] is False and a["score_estime_pourcent"]==53 and a["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Refuser certification automatique de la protection fiscale 2027
+        shell: bash
+        run: |
+          set +e
+          python scripts/verifier_continuite_solidarite_nova_p57b.py \
+            --registre projets/projet-nova/etudes/P57B_SOLIDARITE_VERSEMENTS_2026_2027_ET_VERROU_PROTECTION_TVQ.json \
+            --p57a projets/projet-nova/etudes/P57A_RECONCILIATION_CREDITS_2025_2026_COMPTES_PUBLICS_VOL1.json \
+            --p56z projets/projet-nova/etudes/P56Z_CONCORDANCE_CREDITS_2023_ET_RENDEMENT_2027_2031_SANS_DOUBLE_COMPTE.json \
+            --p56y projets/projet-nova/etudes/P56Y_RENDEMENT_BRUT_NECESSAIRE_DEUX_PRELEVEMENTS_2027_2031.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --exiger-protection-2027-certifiee
+          code=$?
+          set -e
+          test "$code" -eq 3
