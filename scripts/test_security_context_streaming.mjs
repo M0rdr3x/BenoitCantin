@@ -40,6 +40,9 @@ assert.deepEqual(await readLimitedUtf8Body(lied,4096),{ok:false},
 const tooBig=bodyRequest([encoder.encode('a')],{'content-length':'4097'});
 assert.deepEqual(await readLimitedUtf8Body(tooBig,4096),{ok:false},
   'Content-Length trop grand est bloqué avant lecture');
+const malformedLength=bodyRequest([encoder.encode('x')],{'content-length':'NaN'});
+assert.deepEqual(await readLimitedUtf8Body(malformedLength,4096),{ok:false},
+  'Content-Length non numérique rejeté avant allocation');
 const invalid=bodyRequest([new Uint8Array([0xc3])]);
 assert.deepEqual(await readLimitedUtf8Body(invalid,4096),{ok:false},
   'UTF-8 invalide refusé');
