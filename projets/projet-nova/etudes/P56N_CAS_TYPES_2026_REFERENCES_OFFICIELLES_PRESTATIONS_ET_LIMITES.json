@@ -1,0 +1,273 @@
+{
+  "schema_version": "P56N-1",
+  "date_etude": "2026-11-08",
+  "titre": "Références 2026 vérifiées pour cas types de revenu disponible et limites d'usage 2027-2036",
+  "statut": "REFERENCES_OFFICIELLES_2026_PAS_MICROSIMULATION_NOVA",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "perimetre": {
+    "territoire": "QUEBEC_DANS_CANADA",
+    "annees_sources": [
+      2025,
+      2026
+    ],
+    "annees_projet_nova": [
+      2027,
+      2036
+    ],
+    "unite_monnaie": "CAD",
+    "unite_population": "CAS_TYPE_NON_REPRESENTATIF"
+  },
+  "sources": {
+    "REVENU_DISPONIBLE": {
+      "url": "https://www.quebec.ca/finances-impots-et-taxes/credits-impots-deductions/estimer-revenu-disponible",
+      "organisme": "Gouvernement du Québec",
+      "date_mise_a_jour": "2026-06-17",
+      "statut": "PAGE_OFFICIELLE",
+      "original_pdf_sha256": null
+    },
+    "RETRAITE_QUEBEC": {
+      "url": "https://www.retraitequebec.gouv.qc.ca/fr/montants-prestations-et-donnees-base",
+      "organisme": "Retraite Québec",
+      "annee": 2026,
+      "statut": "PARAMETRES_ANNUELS_OFFICIELS",
+      "original_pdf_sha256": null
+    },
+    "SIMULREVENU": {
+      "url": "https://www.simulrevenu.gouv.qc.ca/Simulation/Disponible",
+      "organisme": "Ministère de l'Emploi et de la Solidarité sociale",
+      "statut": "DEFINITION_ET_LIMITATIONS_OUTIL_PUBLIC",
+      "original_pdf_sha256": null
+    },
+    "CFFP": {
+      "url": "https://cffp.recherche.usherbrooke.ca/outils-ressources/simulateur-fiscal-quebec/",
+      "organisme": "Chaire en fiscalité et en finances publiques, Université de Sherbrooke",
+      "publication": "2026-08-18",
+      "statut": "CONTEXTE_METHODOLOGIQUE_EXTERNE_NON_AUDIT_NOVA",
+      "original_pdf_sha256": null
+    }
+  },
+  "cas_type_officiel_2026": {
+    "id": "M02",
+    "profil": "PERSONNE_SEULE_SALARIEE",
+    "revenu_brut_annuel_cad": "50000",
+    "annee_depart": 2025,
+    "annee_arrivee": 2026,
+    "variation_revenu_disponible_publiee_cad": "847",
+    "contributions_a_variation_publiees_cad": [
+      {
+        "id": "EPICERIE_ENERGIE",
+        "montant": "100",
+        "nature": "AIDE_PONCTUELLE_2026",
+        "recurrence_2027_validee": false
+      },
+      {
+        "id": "ALLOC_FED_EPICERIE",
+        "montant": "358",
+        "nature": "CHANGEMENT_ALLOCATION_FEDERALE_2026_AVEC_PONCTUEL",
+        "recurrence_2027_validee": false
+      },
+      {
+        "id": "REDUC_COTISATIONS",
+        "montant": "72",
+        "nature": "VARIATION_COTISATIONS_DU_CAS_TYPE",
+        "recurrence_2027_validee": false
+      },
+      {
+        "id": "INDEXATION_QC",
+        "montant": "166",
+        "nature": "VARIATION_FISCALE_QUEBEC",
+        "recurrence_2027_validee": false
+      },
+      {
+        "id": "INDEXATION_FED",
+        "montant": "150",
+        "nature": "VARIATION_FISCALE_FEDERALE",
+        "recurrence_2027_validee": false
+      }
+    ],
+    "somme_composantes_cad": "846",
+    "ecart_total_publie_moins_somme_cad": "1",
+    "qualification_ecart": "ARRONDI_OU_DETAIL_NON_EXPLIQUE_SANS_ACCES_SORTIE_DETAILLEE",
+    "ne_pas_falsifier_composantes": true,
+    "revenu_disponible_2025_cad": null,
+    "revenu_disponible_2026_cad": null,
+    "variation_causale_nova_cad": null,
+    "cout_2027_2036_prevu_cad": null,
+    "ensemble_hypotheses_personnelles_reproduit": false
+  },
+  "versement_ponctuel_provincial_2026": {
+    "annonce": "2026-05-25",
+    "periode": "EXERCICE_2026_SEULEMENT",
+    "source_id": "REVENU_DISPONIBLE",
+    "admissibilite": "BENEFICIAIRES_DU_CREDIT_SOLIDARITE_POUR_JUILLET_2025_A_JUIN_2026",
+    "cas": [
+      {
+        "id": "PERSONNE_SEULE",
+        "categorie": "PERSONNE_SEULE",
+        "montant_potentiel_cad": "100",
+        "profile_p56m": "M02"
+      },
+      {
+        "id": "MONOPARENTAL",
+        "categorie": "FAMILLE_MONOPARENTALE",
+        "montant_potentiel_cad": "150",
+        "profile_p56m": "M03"
+      },
+      {
+        "id": "COUPLE_SANS_ENFANTS",
+        "categorie": "COUPLE_SANS_ENFANTS",
+        "montant_potentiel_cad": "150",
+        "profile_p56m": null
+      },
+      {
+        "id": "COUPLE_AVEC_ENFANTS",
+        "categorie": "COUPLE_AVEC_ENFANTS",
+        "montant_potentiel_cad": "200",
+        "profile_p56m": "M04"
+      }
+    ],
+    "versements_individuels_constates": 0,
+    "prorogation_2027_2036_constatee": false,
+    "revenu_recuperable_nova_cad": null
+  },
+  "allocation_famille_2026": {
+    "source_id": "RETRAITE_QUEBEC",
+    "par_enfant_max_cad": "3068",
+    "par_enfant_min_cad": "1221",
+    "supplement_monoparental_max_cad": "1077",
+    "supplement_monoparental_min_cad": "430",
+    "famille_monoparentale_un_enfant_max_theorique_cad": "4145",
+    "famille_monoparentale_un_enfant_min_theorique_cad": "1651",
+    "fournitures_scolaires_cad": "127",
+    "enfant_handicape_montant_annuel_cad": "2892",
+    "revenu_familial_ligne_275_determinant": true,
+    "garde_partagee_et_ages_et_presence_a_verifier": true,
+    "montant_une_famille_reelle_cad": null,
+    "projections_2027_2036_cad": null,
+    "droits_non_supprimables_sans_analyse": true
+  },
+  "cotisations_parametres_2026": {
+    "source_id": "REVENU_DISPONIBLE",
+    "rrq_employe_base_taux_2025_pourcent": "5.4",
+    "rrq_employe_base_taux_2026_pourcent": "5.3",
+    "rqap_employe_taux_2025_pourcent": "0.494",
+    "rqap_employe_taux_2026_pourcent": "0.430",
+    "hypotheses_plafonds_salaires_pas_appliquees": true,
+    "salarie_sujet_aux_regimes_a_verifier": true,
+    "calcul_integral_de_cotisation_individuelle_cad": null
+  },
+  "limitations": {
+    "revenu_disponible_sans_consommation_et_services_en_nature": true,
+    "calculateur_ministeriel_exclut_cas_revenus_dividendes_locations": true,
+    "outils_ne_prennent_pas_toutes_deductions_ex_reer": true,
+    "simulrevenu_non_adapte_travail_autonome": true,
+    "monoparentalites_et_gardes_partagees_pas_automatiquement_determines": true,
+    "aide_unique_2026_pas_projetee_2027_2036": true,
+    "revenu_disponible_et_reste_apres_depenses_essentielles_distincts": true,
+    "pas_de_microdonnees_ponderations_deciles_ni_de_menages_reels": true,
+    "pas_de_propagation_des_parametres_2026_aux_taux_nova": true
+  },
+  "tiers_modelisation": {
+    "REFERENCE_2026_SEULE": {
+      "donnees_officielles_extraites": true,
+      "cas_types_complets_reproduits": 0
+    },
+    "SIMULATION_NOVA_2027_2036": {
+      "donnees_futures_observees": false,
+      "calculs_reels_valides": 0
+    },
+    "EVALUATION_SOUVERAINETE": {
+      "dette_et_fonctions_federales_chiffrees": false,
+      "services_publics_budgetes": false
+    }
+  },
+  "preuves_manquantes": [
+    {
+      "id": "N01",
+      "exigence": "Capturer le même cas type 2025 et 2026 à partir de sorties officielles reproductibles, en conservant tous les paramètres et leurs versions",
+      "statut": "NON_OBTENUE",
+      "preuve_id": null,
+      "expert_validation": null
+    },
+    {
+      "id": "N02",
+      "exigence": "Obtenir un calcul équivalent sans versements ponctuels 2026, sans présenter le montant annuel comme récurrent",
+      "statut": "NON_OBTENUE",
+      "preuve_id": null,
+      "expert_validation": null
+    },
+    {
+      "id": "N03",
+      "exigence": "Vérifier l'admissibilité du crédit de solidarité juillet 2025 à juin 2026 pour chaque cas bénéficiaire",
+      "statut": "NON_OBTENUE",
+      "preuve_id": null,
+      "expert_validation": null
+    },
+    {
+      "id": "N04",
+      "exigence": "Établir les allocations famille réellement payables selon revenu familial, garde, âge, résidence et versements",
+      "statut": "NON_OBTENUE",
+      "preuve_id": null,
+      "expert_validation": null
+    },
+    {
+      "id": "N05",
+      "exigence": "Documenter aides fédérales, crédit TPS et nouvelle allocation 2026 avec paramètres de juillet et conditions",
+      "statut": "NON_OBTENUE",
+      "preuve_id": null,
+      "expert_validation": null
+    },
+    {
+      "id": "N06",
+      "exigence": "Vérifier les cotisations RRQ, RQAP, assurance-emploi, RAMQ et déductions pour chaque cas type",
+      "statut": "NON_OBTENUE",
+      "preuve_id": null,
+      "expert_validation": null
+    },
+    {
+      "id": "N07",
+      "exigence": "Obtenir revenus disponibles de ménages types et coûts essentiels comparables par région et année",
+      "statut": "NON_OBTENUE",
+      "preuve_id": null,
+      "expert_validation": null
+    },
+    {
+      "id": "N08",
+      "exigence": "Traiter les travailleurs autonomes hors du périmètre reconnu de SimulRevenu, sans calcul salarié substitué",
+      "statut": "NON_OBTENUE",
+      "preuve_id": null,
+      "expert_validation": null
+    },
+    {
+      "id": "N09",
+      "exigence": "Modéliser le cas souverain avec retraite, dette, prestations, fonctions fédérales et gouvernance transitoire",
+      "statut": "NON_OBTENUE",
+      "preuve_id": null,
+      "expert_validation": null
+    },
+    {
+      "id": "N10",
+      "exigence": "Rapprocher protections des ménages, recettes nettes et financement des services sur dix ans et avis indépendant",
+      "statut": "NON_OBTENUE",
+      "preuve_id": null,
+      "expert_validation": null
+    }
+  ],
+  "nombre_preuves": 10,
+  "integration": {
+    "cadre_p56m": "projets/projet-nova/etudes/P56M_CADRE_MICROSIMULATION_REVENUS_MENAGES_2027_2036.json",
+    "registre_p56l": "projets/projet-nova/etudes/P56L_BASE_DISTRIBUTIVE_PARTICULIERS_2023_CREDITS_ET_QUINTILES.json",
+    "barometre_p55n": "projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json",
+    "p56m_unites_a_renseigner": 160,
+    "p56m_unites_reelles_developpees": 0,
+    "p52b_montants_inconnus": 600,
+    "p52d_incidences_inconnues": 720,
+    "p52a_preuves_non_validees": 20,
+    "p55n_estimation_pourcent": 53,
+    "nouveaux_taux_nova_proposes": null,
+    "revenus_disponibles_futurs_certifies": 0,
+    "avis_independants_nova_signes": 0,
+    "effets_souverains_certifies": 0,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
