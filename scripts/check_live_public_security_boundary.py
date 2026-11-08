@@ -54,7 +54,6 @@ def http_status(path: str) -> int:
             "User-Agent": "BenoitCantin-PublicSecurityBoundary/1.0",
             "Accept": "*/*",
             "Cache-Control": "no-cache",
-            "Range": "bytes=0-0",
         },
     )
     opener = urllib.request.build_opener(NoRedirect())
