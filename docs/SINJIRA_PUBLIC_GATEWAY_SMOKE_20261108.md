@@ -34,3 +34,18 @@ Le prévol HTTP vérifie aussi `GET /auth/v1/settings` avec la clé **publishabl
 Cette vérification est strictement en lecture seule et ne prouve **pas** les paramètres privés `Site URL`, l'allowlist des redirections, le modèle HTML de confirmation ou la réception des notifications Formspree. Ces éléments nécessitent toujours le prévol Auth protégé GitHub puis des essais de messagerie réels.
 
 Sources officielles : https://github.com/supabase/auth/blob/master/internal/api/settings.go ; https://supabase.com/docs/guides/getting-started/api-keys.
+
+
+## Extension — cinq scripts JavaScript critiques
+
+Le contrôle HTTP vérifie désormais cinq fichiers en plus des pages publiques,
+de la porte JWT et des paramètres Auth : inscription, confirmation au clic,
+Registre AAL2, client Supabase et configuration publique. Tous doivent servir
+un HTTP 200, un type MIME JavaScript et les marqueurs des versions corrigées.
+Les tests négatifs vérifient le 404, le repli HTML, l'ancienne version et la
+taille de réponse anormale.
+
+Le bilan réseau passe de 6 à **11 contrôles**. Aucun compte, secret, questionnaire
+ou courriel n'est créé. Cette vérification ne démontre pas la réception Formspree
+ni la configuration Auth privée; le correctif global reste à 82 % jusqu'à
+validation de ces derniers jalons.
