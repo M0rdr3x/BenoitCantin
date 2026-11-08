@@ -164,3 +164,18 @@ test("les sources G0.16m restent une aide accordée sans preuves de paiement",()
  const r=inspectG016oWarwickTaxes(d,modified,n);
  assert.ok(r.errors.includes("UPSTREAM_CASES_NOT_CASH_VERIFIED"));
 });
+
+test("la page publique G0.16o indique taux réels et hypothèses du calcul",async()=>{
+ const html=await readFile(new URL("../avancement-programme-nova.html",import.meta.url),"utf8");
+ assert.match(html,/id="taxes-warwick-g016o"/);
+ assert.match(html,/0,575 \$/);
+ assert.match(html,/2 328,45 \$/);
+ assert.match(html,/exemple fictif et incomplet/);
+ assert.match(html,/47 % inchangé/);
+});
+test("le site ne fait pas passer les aides et taxes conditionnelles pour des recettes réelles",async()=>{
+ const html=await readFile(new URL("../avancement-programme-nova.html",import.meta.url),"utf8");
+ assert.match(html,/Ce n'est pas une facture complète ni une économie fiscale promise/);
+ assert.match(html,/pas une preuve de paiement/);
+ assert.match(html,/Aucun compte de taxes réel, versement PRIMEAU individualisé/);
+});
