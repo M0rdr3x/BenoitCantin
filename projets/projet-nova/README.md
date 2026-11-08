@@ -459,6 +459,20 @@ Les fichiers de référence candidats `official/reference/*` et `data/sources.js
 
 **Suite G0.16o :** rechercher versements effectifs, dépenses finales, encours de dette et taux de taxation locale; relier les protections des travailleurs et la continuité de l'eau à deux budgets décennaux audités. Les textes candidats `official/reference/*` restent inchangés.
 
+## G0.16o — Vrais taux municipaux 2026 et exigences de preuve des versements (7 novembre 2026)
+
+**Préparation du programme : 47/100, 53 points non démontrés.** Après sept cas d'aides PRIMEAU G0.16n, ce chantier examine pour la première fois la fiscalité **effectivement réglementée en 2026** dans l'une des municipalités étudiées, **Warwick**, ainsi que les règles de réclamation de subvention.
+
+- **Règlement municipal [415-2025 — Exercice 2026](https://villedewarwick.quebec/wp-content/uploads/2026/02/R415-2025-Taux-de-taxes-et-compensations-2026.pdf), en vigueur depuis le 14 janvier 2026 :** taux foncier résidentiel de base **0,575 $ par 100 $ d'évaluation** (pas de revenu); taxes spéciales liées à la sécurité incendie, aux routes, aux emprunts, aux réseaux et à l'assainissement **selon la catégorie de propriété et le secteur desservi**.
+- **Compensations de services publiées :** **102 $ d'aqueduc** et **31,25 $ d'égout par logement** concerné; collecte de matières résiduelles **283 $ en zone urbaine** ou **267 $ en zone rurale**. Les montants appartiennent aux tarifs réglementaires et non aux paiements déjà encaissés par la Ville.
+- **Exemple strictement fictif et incomplet :** propriété résidentielle d'une unité évaluée **300 000 $**, avec service d'eau, égout et collecte urbaine : **1 912,20 $** pour le taux général et cinq taux spéciaux universels, plus **416,25 $** de compensations sélectionnées, soit un **sous-total de 2 328,45 $**. Les taxes sectorielles, les autres règlements et les éventuelles obligations du projet 404-2025 **ne sont pas inclus**. **Ne jamais citer 2 328,45 $ comme une vraie facture, la facture totale ou un gain Nova.**
+- **Règlement d'emprunt de la nouvelle usine 404-2025 :** non mentionné explicitement parmi les taux du règlement annuel de taxation consulté; **ce silence ne prouve pas l'absence de charge future ou la suppression d'une taxe**. Le taux propre au projet est inconnu.
+- **[Guide officiel PRIMEAU 2023–2033 d'août 2026](https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/infrastructures/primeau/GUI_primeau_aout_2026.pdf) :** réclamations partielles **jusqu'à 90 % de l'aide potentiellement versable**, analyse des dépenses et preuves de paiement avant approbation finale, éventuelles retenues sur certains dossiers. **Plafond de réclamation ≠ paiement avéré.** Les conventions plus anciennes (p. ex. Warwick 2025) doivent être examinées individuellement.
+- **Sources et contrôles :** `data/taxes-warwick-2026-et-preuves-versements-g0-16o.json`, `assets/g016o-warwick-tax-core.mjs`, `tests/g016o-warwick-tax-and-grants.test.mjs` (**39 tests initiaux réussis en rejeu V8 isolé, sans certification CI GitHub**) et `official/working/rapport-g0-16o-taxation-warwick-2026-et-preuves-versements-v1.md`. Les PDF municipaux et le guide ont été lus en texte; les captures visuelles n'ont pas pu être validées.
+- **Verdict :** les règles fiscales locales 2026 sont sourcées, **mais aucune facture citoyenne réelle ni aucun virement PRIMEAU individualisé n'est vérifié**, et les deux budgets décennaux demeurent sans recette de remplacement. **G0.16o ne franchit pas la porte de viabilité; score toujours 47/100.**
+
+**Suite G0.16p :** étendre à d'autres municipalités et à leurs taux de taxation 2026, recouper les prêts réellement décaissés, réclamations et paiements de subventions, puis établir les effets sur les ménages et les services à l'aide de données vérifiées avant toute proposition de taux Nova.
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
