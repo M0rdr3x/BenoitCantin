@@ -665,6 +665,19 @@ Registre : `data/g016z-controle-versions-source-municipale-mamh.json`. Le score 
 
 **Suite G0.17c :** récupérer les fichiers réels 2024 et 2025, vérifier leurs définitions et la couverture, exécuter le lecteur, rapprocher leurs comptes des rapports municipaux audités et éliminer les transferts internes à périmètre constant. **47/100 inchangé tant que les critères ne sont pas démontrés.**
 
+
+## G0.17c — Recettes municipales 2024 et couverture du coût complet de l'eau 2023 (8 novembre 2026)
+
+**Score de préparation : 47/100, 53 points restants.** G0.17c ajoute des **données historiques utiles** au modèle de financement municipal du Projet Nova–Sinjira, sans extrapoler un budget de 2026 ni fixer un taux fiscal.
+
+- **Revenus municipaux observés en 2024 :** dans la [réponse MAMH DAI-2026-030](https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/documents_administratifs/acces_information/demande_acces/2026/DAI_2026-030_cout_gestion_infrastructure.pdf), les organismes municipaux ont déclaré **31,3 G$ de recettes consolidées**, dont **15,0 G$ foncier**, **7,4 G$ de transferts gouvernementaux**, **3,2 G$ de ventes de biens et services**, **2,2 G$ de tarification**, **1,3 G$ de droits de mutation** et **2,2 G$ d'autres revenus locaux**. Les montants sont **arrondis** et proviennent du texte d'une publication officielle; l'inspection visuelle du PDF de 18,8 Mo a échoué et la concordance avec les CSV MAMH originaux reste à faire.
+- **Services d'eau, année 2023 :** le [rapport ministériel sur l'usage de l'eau potable](https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/infrastructures/strategie_quebecoise_eau_potable/RAP_usage_eau_potable_2023.pdf) mesure **environ 2,4 G$ de recettes affectées** contre un **coût complet d'environ 6,0 G$**, soit **40 % de couverture**. Le calcul indicatif de **3,6 G$ non couverts** ne représente **pas un déficit de caisse ni un besoin chiffré pour 2026** : le coût complet inclut l'exploitation et une moyenne sur **dix ans** des besoins d'investissement, de maintien et de rattrapage.
+- **Une abolition fiscale exige un financement réel :** les recettes affectées à l'eau en 2023 reposaient environ à **50 % sur la taxe foncière**, **36 % sur les tarifs non volumétriques**, **7 % sur les tarifs volumétriques** et **7 % sur d'autres sources**. Les montants d'eau font déjà partie des comptes municipaux : on ne les additionne pas aux 31,3 G$ de 2024. Si Nova remplace ces recettes, il doit protéger les réseaux, le personnel, l'entretien et les dettes.
+- **Comptabilité et droit :** les **7,4 G$ de transferts 2024** sont des recettes municipales, mais ils doivent être neutralisés contre leur contrepartie chez le gouvernement payeur lors d'une consolidation, sans éliminer les services. La fiscalité scolaire ne se confond pas avec la taxe foncière municipale. Les tarifs, droits, redevances et ventes doivent être qualifiés **poste par poste** avant toute promesse de « deux prélèvements ».
+- **Livrables :** `data/g017c-recettes-municipales-2024-et-couts-eau-2023.json`, `assets/g017c-municipal-water-finance-core.mjs`, `tests/g017c-municipal-water-finance.test.mjs`, `official/working/rapport-g0-17c-recettes-municipales-et-financement-eau-v1.md`. **48/48 tests réussis en environnement JavaScript/V8 isolé; ni GitHub Actions ni audit indépendant de Nova attestés.**
+
+**Suite G0.17d :** obtenir les fichiers réels 2024–2025 et leurs dictionnaires, puis rapprocher les budgets locaux des comptes provinciaux, les besoins de services d'eau et la protection des ménages. Les deux trajectoires Québec au Canada et Québec souverain restent **non financées**. **47/100 inchangé.**
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
