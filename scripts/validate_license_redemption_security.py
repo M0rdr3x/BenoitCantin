@@ -13,7 +13,9 @@ REQUIRED = {
     'POST uniquement': "req.method!=='POST'",
     'authentification obligatoire': 'requiredUser(req)',
     'lecture JSON bornée': 'readLimitedJson(req)',
-    'mesure UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
+    'lecture bornée en flux': 'readLimitedUtf8Body(req,MAX_REQUEST_BYTES)',
+    'lecteur partagé': 'limited-body.mjs',
+    'journaux d’erreurs expurgés': "code:'LICENSE_REDEEM_FAILED'",
     'secret serveur du code': "Deno.env.get('SINJIRA_LICENSE_PEPPER')",
     'client serveur': 'serviceClient()',
     'RPC canonique': "s.rpc('redeem_sinjira_activation'",
@@ -31,6 +33,9 @@ REQUIRED_PATTERNS = {
 
 FORBIDDEN = {
     'lecture JSON directe non bornée': 'await req.json()',
+    'lecture HTTP entière non bornée': 'await req.text()',
+    'journalisation d'erreur brute': "console.error('[redeem-license-code]',error)",
+    'journalisation d'exception brute': "console.error('[redeem-license-code]',e)",
     'lecture JSON directe non bornée espacée': 'await req.json (',
 }
 
@@ -65,11 +70,12 @@ def self_test() -> None:
     with TemporaryDirectory() as raw:
         path = Path(raw) / 'index.ts'
         safe = """
+import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 const MAX_REQUEST_BYTES=4096;
 const MIN_CODE_LENGTH=12;
 const MAX_CODE_LENGTH=80;
 const PRIVATE_HEADERS={'Cache-Control':'private, no-store, max-age=0','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'};
-async function readLimitedJson(req){const raw=await req.text();new TextEncoder().encode(raw).byteLength;return {body:{}}}
+async function readLimitedJson(req){const limited=await readLimitedUtf8Body(req,MAX_REQUEST_BYTES);const body=JSON.parse(limited.raw||'{}');return {body}}
 Deno.serve(async req=>{
  if(req.method!=='POST')return null;
  const user=await requiredUser(req);
@@ -79,11 +85,23 @@ Deno.serve(async req=>{
  if(parsed.body?.action==='health')return null;
  return s.rpc('redeem_sinjira_activation',{p_code_hash:'x',p_user_id:user.id});
 });
+console.error('[redeem-license-code]',{code:'LICENSE_REDEEM_FAILED'});
 """
         path.write_text(safe, encoding='utf-8')
         clean = validate(path)
         if clean:
             raise AssertionError('Le cas sain doit passer: ' + ' | '.join(clean))
+
+        path.write_text(safe.replace('readLimitedUtf8Body(req,MAX_REQUEST_BYTES)', 'req.text()'), encoding='utf-8')
+        raw_body = validate(path)
+        if not any('lecture HTTP entière' in item or 'lecture bornée en flux' in item for item in raw_body):
+            raise AssertionError('Un corps lu en entier doit être rejeté.')
+
+        path.write_text(safe.replace("console.error('[redeem-license-code]',{code:'LICENSE_REDEEM_FAILED'});",
+                                     "console.error('[redeem-license-code]',error);"), encoding='utf-8')
+        raw_log = validate(path)
+        if not any('journalisation' in item or 'journaux d’erreurs' in item for item in raw_log):
+            raise AssertionError('Un log brut de fournisseur doit être rejeté.')
 
         path.write_text(safe.replace('const parsed=await readLimitedJson(req);', 'const parsed={body:await req.json()};'), encoding='utf-8')
         direct = validate(path)
