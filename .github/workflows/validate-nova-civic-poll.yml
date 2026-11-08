@@ -90,6 +90,8 @@ jobs:
           node --check projets/projet-nova/assets/nova-civic-integrity.js
       - name: Tester l’intégrité canonique et le moteur local partagé 64/16
         run: node scripts/test_nova_civic_integrity.cjs
+      - name: Tester les 16 dimensions et 260 profils de parité de calcul
+        run: node --test projets/projet-nova/tests/nova-civic-scoring.test.mjs
       - name: Tester le calcul et la carte de la boussole
         run: node scripts/test_nova_boussole_runtime.cjs
       - name: Tester le repli réseau de la boussole et les 64 propositions / 16 axes

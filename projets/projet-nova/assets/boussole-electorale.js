@@ -344,7 +344,8 @@
   }
 
   function configureSharing(results){
-    const pageUrl = window.location.href.split("#")[0];
+    // Ne jamais inclure les paramètres (jetons éventuels) ni le fragment dans un partage.
+    const pageUrl = window.location.href.split(/[?#]/,1)[0];
     const compact = buildResultText(results,true);
     const full = buildResultText(results,false);
     const subject = "Mon résultat — Boussole électorale Nova";

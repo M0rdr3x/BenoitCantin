@@ -66,7 +66,7 @@ test("le score politique 47/100 n'est jamais déduit du nombre de tests",()=>{
 
 test("les 260 comparaisons du calcul ne remplacent pas une vérification E2E à 64 questions",()=>{
  assert.equal(d.cross_cutting.score_parity_test_cases,260);
- assert.equal(d.cross_cutting.last_browser_all_skip_questions_verified,25);
+ assert.equal(d.cross_cutting.last_browser_all_skip_questions_verified,28);
  assert.equal(d.cross_cutting.last_browser_full_64_completed,false);
  assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_SCORE_PARITY").status,"PASSED");
  assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_PARTIAL_PROFILE_RELEASE").status,"PENDING");

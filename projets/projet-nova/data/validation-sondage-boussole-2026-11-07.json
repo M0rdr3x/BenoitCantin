@@ -16,11 +16,11 @@
     "independent_security_audit_completed": false,
     "production_ballots_sent_for_test": 0,
     "party_comparison_enabled": false,
-    "last_browser_all_skip_questions_verified": 25,
+    "last_browser_all_skip_questions_verified": 28,
     "last_browser_full_64_completed": false,
     "score_parity_test_cases": 260,
     "vote_post_live_tested": false,
-    "external_run_25": "https://agent.tinyfish.ai/runs/cd87d505-b0a4-4252-b23e-64309558e4e3",
+    "external_run_28": "https://agent.tinyfish.ai/runs/d7369cac-c8ba-429f-9ec2-a6e37175e519",
     "e2e_partial_profile_awaits_public_deployment": true
   },
   "compass": {
