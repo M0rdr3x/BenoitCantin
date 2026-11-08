@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Contrats non destructifs : inscription, registre, consentement et envois Formspree."""
 from pathlib import Path
+import re
 import sys
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -93,6 +94,34 @@ def main()->int:
     for forbidden in ('password','date_naissance','prenom_legal','nom_legal','parent_','compte_','email','photo'):
         if forbidden in allow:
             errors.append(f'Liste blanche Formspree contient un champ interdit : {forbidden}')
+
+
+    # Vérifier automatiquement toutes les questions du formulaire contre la copie
+    # Formspree et leurs libellés français. Pas de liste manuelle divergente.
+    form_html=registry_page.partition('<form ')[2].partition('</form>')[0]
+    displayed_fields=set(re.findall(r'\\bname="([a-z][a-z0-9_]*)"',form_html))
+    private_fields={
+        'compte_pseudo','compte_courriel','photo',
+        'confirm_original','formspree_receipt_opt_in',
+    }
+    exported=set(re.findall(r"'([a-z][a-z0-9_]*)'",allow))
+    expected=displayed_fields-private_fields
+    if not displayed_fields or not exported:
+        errors.append('Questionnaire : impossible de lire la liste des champs.')
+    if missing:=sorted(expected-exported):
+        errors.append('Formspree : questions manquantes de la copie : '+', '.join(missing))
+    if extra:=sorted(exported-expected):
+        errors.append('Formspree : champs non autorisés dans la copie : '+', '.join(extra))
+    if len(re.findall(r"'([a-z][a-z0-9_]*)'",allow))!=len(exported):
+        errors.append('Formspree : champs exportés en double.')
+    labels=helper.partition('const QUESTION_LABELS:Record<string,string>={')[2].partition('};')[0]
+    label_names=set(re.findall(r'^\\s*([a-z][a-z0-9_]*):',labels,re.M))
+    if exported!=label_names:
+        errors.append('Formspree : libellés français en décalage avec les questions.')
+    if len(re.findall(r'^\\s*([a-z][a-z0-9_]*):',labels,re.M))!=len(label_names):
+        errors.append('Formspree : libellés en double.')
+    if 'formspree_receipt_opt_in' not in form_html:
+        errors.append('Registre : consentement Formspree absent du formulaire.')
 
     if "req.method!=='POST'" not in account_edge:
         errors.append('Notification de compte : POST requis.')
