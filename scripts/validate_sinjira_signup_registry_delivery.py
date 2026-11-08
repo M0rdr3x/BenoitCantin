@@ -25,6 +25,7 @@ def main()->int:
     signup=check('assets/js/v24-signup.js',[
         'getSupabase().auth.signUp(', 'emailRedirectTo:', '/compte/confirmer.html',
         "formspree_receipt_opt_in:d.get('formspree_receipt_opt_in')==='yes'",
+        'vous devrez ensuite activer et valider la double authentification (AAL2) dans Ma sécurité.',
     ])
     confirmation=check('assets/js/sinjira-confirm-email.js',[
         "getSupabase().auth.verifyOtp(", "confirmButton?.addEventListener('click'",
@@ -40,6 +41,11 @@ def main()->int:
     registry_page=check('projets/sinjira/registre/index.html',[
         'data-character-form=', 'type="submit" disabled>Transmettre ma participation',
         'name="formspree_receipt_opt_in"', 'sinjira-character-registry.js?v=24.5.8',
+        'La double authentification (AAL2) est obligatoire pour tous les participants au Registre',
+    ])
+    security_page=check('compte/securite.html',[
+        'name="sensitive_step_up"', 'Le Registre exige toujours AAL2, même si cette option est désactivée.',
+        'Le Registre des Consciences exige toujours le niveau AAL2.',
     ])
     registry_js=check('assets/js/sinjira-character-registry.js',[
         "form?.addEventListener('submit',async e=>{",
@@ -100,6 +106,12 @@ def main()->int:
     check('scripts/validate_edge_function_inventory.py',[
         '"notify-account-confirmation"',
     ])
+
+    # Le Registre doit annoncer honnêtement que AAL2 est obligatoire et jamais facultatif.
+    if 'Si la protection renforcée est activée' in registry_page:
+        errors.append('Registre : la MFA obligatoire est annoncée comme facultative.')
+    if 'Le Registre, l’IA privée et la récupération peuvent demander' in security_page:
+        errors.append('Ma sécurité : une préférence semble pouvoir supprimer la MFA du Registre.')
 
     # Jamais de soumission Formspree directe depuis des pages contenant les secrets.
     for path,src in [
