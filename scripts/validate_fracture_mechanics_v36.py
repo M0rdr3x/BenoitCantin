@@ -48,13 +48,13 @@ def validate():
             errors.append("Documentation des limites absente : "+item)
     # Seuls les exports métiers sont autorisés : pas de réseau, accès DOM,
     # cookies, stockage persistant ou comptes dans le moteur pur.
-    no_comments=re.sub(r"/\\*[\\s\\S]*?\\*/|//[^\\n]*","",module)
+    no_comments=re.sub(r"/\*[\s\S]*?\*/|//[^\n]*","",module)
     for pattern in [
-        r"\\bfetch\\s*\\(", r"\\blocalStorage\\s*[.\\[]",
-        r"\\bsessionStorage\\s*[.\\[]", r"\\bindexedDB\\b",
-        r"\\bdocument\\s*[.\\[]", r"\\bwindow\\s*[.\\[]",
-        r"\\bgetSupabase\\s*\\(", r"\\b(?:client|db|s)\\.from\\s*\\(",
-        r"\\bWebSocket\\s*\\(", r"\\beval\\s*\\(",
+        r"\bfetch\s*\(", r"\blocalStorage\s*[.\[]",
+        r"\bsessionStorage\s*[.\[]", r"\bindexedDB\b",
+        r"\bdocument\s*[.\[]", r"\bwindow\s*[.\[]",
+        r"\bgetSupabase\s*\(", r"\b(?:client|db|s)\.from\s*\(",
+        r"\bWebSocket\s*\(", r"\beval\s*\(",
     ]:
         if re.search(pattern,no_comments):
             errors.append("Capacité externe interdite dans le moteur : "+pattern)
