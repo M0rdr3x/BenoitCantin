@@ -85,15 +85,23 @@ export function safeReaderMark(mark){
 
 export function createReaderCompanion({
   isFull, getPdf, getPage, goToPage, getChapters, getUser,
-  getNovelId, getSupabase, getTextAtPage,
+  getNovelId, getSupabase, getTextAtPage, setReadingPage,
+  invalidateRender, renderSinglePage, onEnterContinuous,
 }){
   const $=id=>document.getElementById(id);
-  const state={marks:[],selectedQuote:'',searchVersion:0,searchTerm:'',searchBusy:false,focus:false,closed:false};
+  const state={marks:[],selectedQuote:'',searchVersion:0,searchTerm:'',searchBusy:false,focus:false,closed:false,continuous:false,chapterToken:0,scrollScheduled:false};
   const DEMO_MARKS_KEY='sinjira:liseuse:demo:marks:v28';
   const db=()=>getSupabase().from('sinjira_reader_marks');
-  const isReady=()=>!state.closed&&Boolean(getPdf());
+  // Une instance ne doit jamais migrer implicitement vers un autre compte
+  // ou un autre roman, même avant l'arrivée de l'événement Auth de fermeture.
+  const sessionUserId=isFull?getUser()?.id:null;
+  const sessionNovelId=isFull?getNovelId():null;
+  const isReady=()=>!state.closed&&Boolean(getPdf())&&
+    (!isFull||(Boolean(sessionUserId)&&getUser()?.id===sessionUserId&&
+      getNovelId()===sessionNovelId));
   const currentPage=()=>Math.min(Math.max(1,getPage()),getPdf()?.numPages||520);
   function notice(text,kind='info',id='reader-marks-status'){
+    if(state.closed)return;
     const el=$(id);
     if(!el)return;
     el.textContent=text;el.dataset.type=kind;
@@ -106,7 +114,7 @@ export function createReaderCompanion({
   }
   function localMarksWrite(){
     // Démo publique seulement. Aucune citation de l'intégrale n'est stockée localement.
-    if(isFull)return;
+    if(isFull||state.closed)return;
     try{localStorage.setItem(DEMO_MARKS_KEY,JSON.stringify(state.marks.slice(0,200)))}catch{
       notice('Stockage local indisponible. Vos repères risquent de ne pas être conservés.','warning');
     }
@@ -243,14 +251,13 @@ export function createReaderCompanion({
     $('reader-bookmark-add').textContent=exists?'✓ Page marquée':'☆ Marquer cette page';
     $('reader-bookmark-add').disabled=exists;
   }
-  function decoratePage(){
-    const article=$('reader-text');
-    if(!article||article.hidden||!isReady())return;
-    const text=article.textContent||'';
+  function decorateText(target,pageNumber){
+    if(!target||!isReady())return;
+    const text=target.textContent||'';
     if(!text)return;
     const intervals=[];
     for(const mark of state.marks){
-      if(mark.page!==currentPage()||mark.kind!=='highlight'||!mark.quote)continue;
+      if(mark.page!==pageNumber||mark.kind!=='highlight'||!mark.quote)continue;
       const range=findQuoteRange(text,mark.quote);
       if(range)intervals.push({...range,kind:'personal'});
     }
@@ -258,7 +265,7 @@ export function createReaderCompanion({
       const ranges=findMatchRanges(text,state.searchTerm,15);
       for(const range of ranges)intervals.push({...range,kind:'search'});
     }
-    if(!intervals.length){article.textContent=text;return;}
+    if(!intervals.length){target.textContent=text;return;}
     intervals.sort((a,b)=>a.start-b.start||(b.end-a.end));
     const frag=document.createDocumentFragment();
     let position=0;
@@ -272,12 +279,30 @@ export function createReaderCompanion({
       position=interval.end;
     }
     frag.append(document.createTextNode(text.slice(position)));
-    article.replaceChildren(frag);
+    target.replaceChildren(frag);
+  }
+  function decoratePage(){
+    if(!isReady())return;
+    if(state.continuous){
+      for(const block of $('reader-chapter-scroll').querySelectorAll('.reader-chapter-page')){
+        const text=block.querySelector('.reader-chapter-page-text');
+        if(text)decorateText(text,Number(block.dataset.page));
+      }
+    }else if(!$('reader-text').hidden){
+      decorateText($('reader-text'),currentPage());
+    }
   }
   function selectedPassage(){
-    const article=$('reader-text'),selection=window.getSelection();
+    if(!isReady())return;
+    const article=state.continuous?$('reader-chapter-scroll'):$('reader-text');
+    const selection=window.getSelection();
     if(!article||article.hidden||!selection||selection.isCollapsed)return;
     if(!article.contains(selection.anchorNode)||!article.contains(selection.focusNode))return;
+    if(state.continuous){
+      const section=(selection.anchorNode.nodeType===1?selection.anchorNode:selection.anchorNode.parentElement)?.closest('.reader-chapter-page');
+      const page=Number(section?.dataset.page);
+      if(Number.isInteger(page))setReadingPage(page);
+    }
     const quote=selection.toString().replace(/\s+/gu,' ').trim().slice(0,280);
     if(!quote)return;
     state.selectedQuote=quote;
@@ -291,6 +316,98 @@ export function createReaderCompanion({
     $('reader-reading-stats').textContent='Progression : '+percent+' % · Page '+page+' sur '+total+
       ' · '+remaining+' page'+(remaining>1?'s':'')+' restante'+(remaining>1?'s':'')+'.';
     renderMarks();
+  }
+  function exitContinuous(render=true){
+    if(!state.continuous)return;
+    state.chapterToken++;
+    state.continuous=false;
+    $('reader-chapter-scroll').hidden=true;
+    $('reader-chapter-scroll').replaceChildren();
+    $('reader-continuous').setAttribute('aria-pressed','false');
+    $('reader-continuous').textContent='Lire le chapitre entier';
+    if(render)renderSinglePage();
+  }
+  async function startContinuous(){
+    if(!isReady())return;
+    if(state.continuous){exitContinuous();return}
+    const chapters=getChapters();
+    let idx=0;
+    for(let i=0;i<chapters.length;i++){
+      if(chapters[i][0]<=currentPage())idx=i;
+    }
+    const begin=chapters[idx][0];
+    const finish=Math.min(getPdf().numPages,(chapters[idx+1]?.[0]||getPdf().numPages+1)-1);
+    const startPage=currentPage();
+    const token=++state.chapterToken;
+    state.continuous=true;
+    onEnterContinuous();
+    invalidateRender();
+    const container=$('reader-chapter-scroll');
+    container.replaceChildren();
+    container.hidden=false;
+    $('reader-text').hidden=true;$('reader-canvas').hidden=true;
+    $('reader-continuous').setAttribute('aria-pressed','true');
+    $('reader-continuous').textContent='Revenir page par page';
+    const title=document.createElement('h2');
+    title.className='reader-chapter-heading';title.textContent=chapters[idx][1];
+    container.append(title);
+    const status=document.createElement('p');
+    status.className='reader-chapter-loading';status.setAttribute('role','status');
+    status.textContent='Préparation du chapitre…';container.append(status);
+    $('reader-viewer').scrollTo({top:0,behavior:'instant'});
+    try{
+      for(let page=begin;page<=finish;page++){
+        if(!state.continuous||token!==state.chapterToken||!isReady())return;
+        const text=await getTextAtPage(page);
+        if(!state.continuous||token!==state.chapterToken||!isReady())return;
+        const section=document.createElement('section');
+        section.className='reader-chapter-page';section.dataset.page=String(page);
+        section.setAttribute('aria-label','Page '+page);
+        const label=document.createElement('span');
+        label.className='reader-page-marker';label.textContent='Page '+page;
+        section.append(label);
+        const block=document.createElement('div');
+        block.className='reader-chapter-page-text';
+        block.textContent=text||'Page illustrée : passez en mode PDF pour voir son contenu.';
+        section.append(block);container.append(section);
+        decorateText(block,page);
+        if(page%4===0){
+          status.textContent='Préparation du chapitre : '+(page-begin+1)+' / '+(finish-begin+1)+' pages';
+          await new Promise(resolve=>setTimeout(resolve,0));
+        }
+      }
+      if(!state.continuous||token!==state.chapterToken||!isReady())return;
+      status.remove();
+      const starting=container.querySelector('[data-page="'+startPage+'"]');
+      if(starting){
+        $('reader-viewer').scrollTo({
+          top:starting.offsetTop-container.offsetTop,
+          behavior:'instant',
+        });
+      }
+    }catch{
+      if(token===state.chapterToken&&isReady()){
+        status.textContent='Impossible de préparer ce chapitre en continu. Revenez en mode page par page.';
+      }
+    }
+  }
+  function onContinuousScroll(){
+    if(!isReady()||!state.continuous||state.scrollScheduled)return;
+    state.scrollScheduled=true;
+    requestAnimationFrame(()=>{
+      state.scrollScheduled=false;
+      if(!isReady()||!state.continuous)return;
+      const viewer=$('reader-viewer'),viewTop=viewer.getBoundingClientRect().top;
+      const sections=$('reader-chapter-scroll').querySelectorAll('.reader-chapter-page');
+      let best=null;
+      for(const section of sections){
+        if(section.getBoundingClientRect().top<=viewTop+90)best=section;
+        else if(!best){best=section;break}
+        else break;
+      }
+      const page=Number(best?.dataset.page);
+      if(Number.isInteger(page)&&page!==currentPage())setReadingPage(page);
+    });
   }
   function focusMode(toggle){
     state.focus=Boolean(toggle);
@@ -322,7 +439,7 @@ export function createReaderCompanion({
     let found=0,shown=0;
     try{
       for(let page=1;page<=max;page++){
-        if(version!==state.searchVersion)break;
+        if(version!==state.searchVersion||!isReady())break;
         // Lecture de chaque page en mémoire, jamais de requête à un moteur externe.
         const text=await getTextAtPage(page);
         if(version!==state.searchVersion||!isReady())break;
@@ -353,7 +470,7 @@ export function createReaderCompanion({
         notice('Recherche interrompue : une page n’a pas pu être analysée.','error','reader-search-status');
       }
     }finally{
-      if(version===state.searchVersion){
+      if(version===state.searchVersion&&isReady()){
         state.searchBusy=false;
         $('reader-search-submit').disabled=false;
         $('reader-search-cancel').hidden=true;
@@ -380,6 +497,11 @@ export function createReaderCompanion({
     });
     $('reader-search-cancel').addEventListener('click',cancelSearch);
     $('reader-focus').addEventListener('click',()=>focusMode(!state.focus));
+    $('reader-continuous').addEventListener('click',()=>{void startContinuous()});
+    $('reader-chapter-scroll').addEventListener('mouseup',selectedPassage);
+    $('reader-chapter-scroll').addEventListener('keyup',selectedPassage);
+    $('reader-chapter-scroll').addEventListener('touchend',()=>setTimeout(selectedPassage,100));
+    $('reader-viewer').addEventListener('scroll',onContinuousScroll,{passive:true});
     $('reader-chapter-next').addEventListener('click',()=>{
       const next=getChapters().find(entry=>entry[0]>currentPage());
       if(next)goToPage(next[0]);
@@ -394,7 +516,7 @@ export function createReaderCompanion({
       x=event.touches[0].clientX;y=event.touches[0].clientY;
     },{passive:true});
     viewer.addEventListener('touchend',event=>{
-      if(event.changedTouches.length!==1||window.getSelection()?.toString())return;
+      if(state.continuous||event.changedTouches.length!==1||window.getSelection()?.toString())return;
       const dx=event.changedTouches[0].clientX-x;
       const dy=event.changedTouches[0].clientY-y;
       if(Math.abs(dx)>90&&Math.abs(dy)<55)goToPage(currentPage()+(dx<0?1:-1));
@@ -403,12 +525,17 @@ export function createReaderCompanion({
   bind();
   return {
     async ready(){await loadMarks();if(isReady()){updateStats();decoratePage()}},
-    onPageChange(){if(!isReady())return;state.selectedQuote='';$('reader-selection-preview').textContent='Aucun passage sélectionné.';updateStats()},
+    onPageChange(){if(!isReady())return;exitContinuous(false);state.selectedQuote='';$('reader-selection-preview').textContent='Aucun passage sélectionné.';updateStats()},
     onTextRendered(){if(isReady())decoratePage()},
-    onModeChange(){if(isReady())decoratePage()},
+    onModeChange(){if(!isReady())return;exitContinuous(false);decoratePage()},
+    isContinuous(){return isReady()&&state.continuous},
     close(){
       // Invalidate all pending searches and data reads before releasing references.
       state.closed=true;state.searchVersion++;state.searchBusy=false;
+      state.chapterToken++;state.scrollScheduled=false;state.continuous=false;
+      const chapter=$('reader-chapter-scroll');
+      chapter.hidden=true;chapter.replaceChildren();
+      $('reader-continuous').setAttribute('aria-pressed','false');
       state.marks=[];state.selectedQuote='';state.searchTerm='';
       if(state.focus){
         state.focus=false;

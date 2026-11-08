@@ -151,8 +151,8 @@ def mock_private_reader(context) -> None:
                                   body=b'%PDF-1.7\n' + b'0'*2048))
 
 
-def assert_private_signout_during_load(browser):
-    """Déconnexion durant l'analyse PDF : le roman ne doit jamais apparaître."""
+def assert_private_signout_during_load(browser, trigger='signout'):
+    """Déconnexion ou pagehide pendant le PDF : aucun texte privé affiché."""
     private_context=browser.new_context(locale='fr-CA',
         viewport={'width':1440,'height':900})
     mock_private_reader(private_context)
@@ -169,7 +169,10 @@ def assert_private_signout_during_load(browser):
             timeout=25_000)
         assert_true(private_page.locator('#reader-content').is_hidden(),
             f'{BROWSER_NAME}: contenu intégral visible avant autorisation finale')
-        private_page.evaluate('window.__testReaderSignOut()')
+        if trigger=='pagehide':
+            private_page.evaluate("window.dispatchEvent(new Event('pagehide'))")
+        else:
+            private_page.evaluate('window.__testReaderSignOut()')
         private_page.evaluate('window.__testCompletePdfParsing()')
         private_page.wait_for_function(
             '() => document.getElementById("reader-status")?.textContent.includes("Reconnectez-vous")',
@@ -439,6 +442,32 @@ def run() -> None:
         saved_marks=page.evaluate("localStorage.getItem('sinjira:liseuse:demo:marks:v28')")
         assert_true("Mon repère privé de test." in (saved_marks or ""),
                     f"{BROWSER_NAME}: la démo ne conserve pas les notes sur cet appareil")
+        page.locator("#reader-continuous").click()
+        assert_true(page.locator("#reader-continuous").get_attribute("aria-pressed")=="true",
+                    f"{BROWSER_NAME}: impossible d'activer le chapitre entier")
+        assert_true(not page.locator("#reader-chapter-scroll").is_hidden(),
+                    f"{BROWSER_NAME}: chapitre entier masqué")
+        page.locator("#reader-continuous").click()
+        assert_true(page.locator("#reader-chapter-scroll").is_hidden(),
+                    f"{BROWSER_NAME}: impossible de revenir à la lecture par page")
+        # L'historique bfcache ne doit pas détruire les commandes de la démo.
+        page.evaluate("window.dispatchEvent(new Event('pagehide'))")
+        previous_page=int(page.locator("#reader-page").input_value())
+        page.locator("#reader-viewer").focus()
+        page.keyboard.press("ArrowRight")
+        assert_true(page.locator("#reader-page").input_value()==str(previous_page+1),
+                    f"{BROWSER_NAME}: navigation clavier inactive dans le livre après pagehide")
+        page.locator("#reader-page").focus()
+        page.keyboard.press("ArrowRight")
+        assert_true(page.locator("#reader-page").input_value()==str(previous_page+1),
+                    f"{BROWSER_NAME}: navigation clavier déclenchée depuis un champ")
+        page.locator(".reader-return").focus()
+        page.keyboard.press("ArrowLeft")
+        assert_true(page.locator("#reader-page").input_value()==str(previous_page+1),
+                    f"{BROWSER_NAME}: navigation clavier déclenchée depuis un lien")
+        page.locator("#reader-bookmark-add").click()
+        assert_true("Page "+str(previous_page+1) in page.locator("#reader-marks-list").inner_text(),
+                    f"{BROWSER_NAME}: signet inactif après pagehide de la démo")
         page.locator("#reader-focus").click()
         assert_true("reader-focus-mode" in (page.locator("body").get_attribute("class") or ""),
                     f"{BROWSER_NAME}: mode lecture concentré inactif")
@@ -449,6 +478,7 @@ def run() -> None:
 
         # Protéger aussi l'édition intégrale pendant une déconnexion en vol.
         assert_private_signout_during_load(browser)
+        assert_private_signout_during_load(browser, trigger='pagehide')
 
         mobile = browser.new_context(
             locale="fr-CA",

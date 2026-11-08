@@ -181,7 +181,7 @@ function persist({syncCloud=true}={}){
 function flushScrollPosition(){
   if(!state.scrollTimer)return;
   clearTimeout(state.scrollTimer);state.scrollTimer=null;
-  if(!state.pdf||state.restoringScroll)return;
+  if(!state.pdf||state.restoringScroll||companion?.isContinuous?.())return;
   const viewer=$('reader-viewer');
   state.positionRatio=ratioFromScroll(viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight);
   persist({syncCloud:false});
@@ -204,7 +204,7 @@ async function saveCurrentPosition(){
   if(!state.pdf)return;
   flushScrollPosition();
   const viewer=$('reader-viewer');
-  state.positionRatio=ratioFromScroll(viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight);
+  state.positionRatio=companion?.isContinuous?.()?0:ratioFromScroll(viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight);
   const localSaved=persist({syncCloud:false});
   $('reader-save-position').disabled=true;
   try{
@@ -372,11 +372,21 @@ function renderPage(){
       canvas.style.height=Math.round(drawing.height)+'px';
       await page.render({canvasContext:context,viewport:drawing,
         transform:pixelRatio===1?undefined:[pixelRatio,0,0,pixelRatio,0,0]}).promise;
+      if(version!==state.renderVersion)return;
       $('reader-text').hidden=true;
       canvas.hidden=false;
       restoreScrollAfterRender(version);
     }
   }).catch(error=>message('Impossible d’afficher cette page. Réessayez ou utilisez le lecteur PDF de secours.','error'));
+}
+function setReadingPageFromScroll(value){
+  // Le défilement continu conserve la page, jamais le texte privé.
+  if(!state.pdf||(isFull&&state.accessInvalidated))return;
+  const next=clamp(Math.round(value),1,state.pdf.numPages);
+  if(next===state.page)return;
+  state.page=next;
+  state.positionRatio=0;state.restorePending=null;
+  updateToolbar();persist();
 }
 function changePage(value){
   if(!state.pdf)return;
@@ -396,11 +406,11 @@ function changePage(value){
 function bindControls(){
   $('reader-save-position').addEventListener('click',()=>{void saveCurrentPosition()});
   $('reader-viewer').addEventListener('scroll',()=>{
-    if(!state.pdf||state.restoringScroll)return;
+    if(!state.pdf||state.restoringScroll||companion?.isContinuous?.())return;
     clearTimeout(state.scrollTimer);
     state.scrollTimer=setTimeout(()=>{
       state.scrollTimer=null;
-      if(!state.pdf||state.restoringScroll)return;
+      if(!state.pdf||state.restoringScroll||companion?.isContinuous?.())return;
       const viewer=$('reader-viewer');
       state.positionRatio=ratioFromScroll(viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight);
       if(!persist({syncCloud:false})){
@@ -452,7 +462,16 @@ function bindControls(){
   $('reader-voice-pause').addEventListener('click',toggleSpeechPause);
   $('reader-voice-stop').addEventListener('click',()=>stopNarration());
   window.addEventListener('pagehide',()=>{
-    flushScrollPosition();stopNarration(false);flushProgress();companion?.close();
+    // L'historique navigateur ne doit jamais garder une édition privée en mémoire.
+    // La démo reste interactive lorsque l'utilisateur revient via le bfcache.
+    flushScrollPosition();stopNarration(false);flushProgress();
+    if(isFull)lockPrivateReader();
+  });
+  window.addEventListener('pageshow',event=>{
+    if(isFull&&event.persisted){
+      // Exiger une nouvelle validation de la session et des droits serveur.
+      location.reload();
+    }
   });
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='hidden'){
@@ -464,10 +483,19 @@ function bindControls(){
     if(state.mode==='page')renderPage();
   });
   document.addEventListener('keydown',event=>{
-    const tag=document.activeElement?.tagName||'';
-    if(['INPUT','SELECT','TEXTAREA','BUTTON'].includes(tag)||event.altKey||event.ctrlKey||event.metaKey)return;
-    if(event.key==='ArrowRight'||event.key==='PageDown'){event.preventDefault();changePage(state.page+1)}
-    if(event.key==='ArrowLeft'||event.key==='PageUp'){event.preventDefault();changePage(state.page-1)}
+    if(!state.pdf||event.defaultPrevented||event.isComposing||
+       event.altKey||event.ctrlKey||event.metaKey||event.shiftKey)return;
+    const active=document.activeElement;
+    if(active&&active!==document.body&&active!==document.documentElement&&
+       active!==$('reader-viewer'))return;
+    // Une sélection de texte ne doit jamais déclencher la pagination.
+    if(window.getSelection()?.toString())return;
+    if(event.key==='ArrowRight'||event.key==='PageDown'){
+      event.preventDefault();changePage(state.page+1);
+    }
+    if(event.key==='ArrowLeft'||event.key==='PageUp'){
+      event.preventDefault();changePage(state.page-1);
+    }
   });
   let resizeTimer;
   window.addEventListener('resize',()=>{
@@ -487,6 +515,8 @@ function lockPrivateReader(){
   if(!isFull||state.accessInvalidated)return;
   state.accessInvalidated=true;
   state.accessEpoch++;
+  try{state.authSubscription?.unsubscribe?.()}catch{/* nettoyage best effort */}
+  state.authSubscription=null;
   state.loadController?.abort();
   state.loadController=null;
   clearTimeout(state.saveTimer);state.saveTimer=null;
@@ -636,6 +666,14 @@ async function init(){
       getUser:()=>state.user,
       getNovelId:()=>state.novelId,
       getSupabase,
+      setReadingPage:setReadingPageFromScroll,
+      invalidateRender:()=>{state.renderVersion++},
+      renderSinglePage:renderPage,
+      onEnterContinuous:()=>{
+        stopNarration(false);
+        clearTimeout(state.scrollTimer);state.scrollTimer=null;
+        state.restoringScroll=false;state.positionRatio=0;state.restorePending=null;
+      },
       getTextAtPage:async pageNumber=>{
         const page=await state.pdf.getPage(pageNumber);
         const text=await page.getTextContent();
