@@ -1,0 +1,50 @@
+name: Projet Nova P56L - Incidence distributive observee et garde-fous pouvoir d'achat
+on:
+  pull_request:
+    paths:
+      - 'scripts/auditer_distribution_fiscale_et_protection_pouvoir_achat_nova_p56l.py'
+      - 'scripts/tests/test_auditer_distribution_fiscale_et_protection_pouvoir_achat_nova_p56l.py'
+      - 'scripts/auditer_assiettes_revenues_societes_nova_p56k.py'
+      - 'projets/projet-nova/etudes/P56L_*'
+      - 'projets/projet-nova/etudes/P56K_ASSIETTES_PARTICULIERS_SOCIETES_CREDITS_SOURCES_OFFICIELLES.json'
+      - '.github/workflows/validate-nova-p56l.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controles-distribution-p56l:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tester 53 regressions P56K et 50 protections P56L
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_auditer_assiettes_revenues_societes_nova_p56k.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_auditer_distribution_fiscale_et_protection_pouvoir_achat_nova_p56l.py' -v
+      - name: Verifier revenus fiscaux par tranche et la protection des credits
+        shell: bash
+        run: |
+          python scripts/auditer_distribution_fiscale_et_protection_pouvoir_achat_nova_p56l.py \
+            --distribution projets/projet-nova/etudes/P56L_BASE_DISTRIBUTIVE_PARTICULIERS_2023_CREDITS_ET_QUINTILES.json \
+            --p56k projets/projet-nova/etudes/P56K_ASSIETTES_PARTICULIERS_SOCIETES_CREDITS_SOURCES_OFFICIELLES.json \
+            --gabarit projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json \
+            --preuves projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json | python -c 'import json,sys; d=json.load(sys.stdin); assert d["credits_remboursables_moins_30000_mcad"]=="4201" and d["solde_impot_moins_credits_moins_30000_mcad"]=="-3916" and d["q5_part_revenu_pourcent"]=="50.10" and d["q5_part_impot_pourcent"]=="69.41" and d["nombre_portes_protection_ouvertes"]==10 and d["montants_budget_p52b_inconnus"]==600 and d["incidences_p52d_inconnues"]==720 and d["p55n_score_estime"]==53 and d["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Refuser une incidence fiscale Nova certifiee automatiquement
+        shell: bash
+        run: |
+          set +e
+          python scripts/auditer_distribution_fiscale_et_protection_pouvoir_achat_nova_p56l.py \
+            --distribution projets/projet-nova/etudes/P56L_BASE_DISTRIBUTIVE_PARTICULIERS_2023_CREDITS_ET_QUINTILES.json \
+            --p56k projets/projet-nova/etudes/P56K_ASSIETTES_PARTICULIERS_SOCIETES_CREDITS_SOURCES_OFFICIELLES.json \
+            --gabarit projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json \
+            --preuves projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --exiger-incidence-certifiee
+          code=$?
+          set -e
+          test "$code" -eq 3
