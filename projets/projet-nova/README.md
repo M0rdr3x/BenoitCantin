@@ -651,6 +651,20 @@ Registre : `data/g016z-controle-versions-source-municipale-mamh.json`. Le score 
 
 **Suite G0.17b :** importer les comptes municipaux réels par poste et les rapprocher des transferts provinciaux en respectant les périodes, puis vérifier les effets sur les budgets des ménages, les écoles, les municipalités et la main-d'œuvre. **47/100 inchangé.**
 
+
+## G0.17b — Import contrôlé des rapports financiers municipaux 2024–2025 (8 novembre 2026)
+
+**Score Nova–Sinjira : 47/100, 53 points encore à obtenir.** Cette phase construit un **outil d'importation reproductible** des données municipales réelles afin de préparer la vérification du financement des services municipaux. **Aucun fichier CSV complet n'a pu être téléchargé et aucun nouvel agrégat comptable québécois n'est certifié**.
+
+- **Catalogue source :** [Données Québec, MAMH — Rapports financiers des organismes municipaux](https://www.donneesquebec.ca/recherche/dataset/rapport-financier-des-organismes-municipaux-et-autres-documents), modifié le **7 novembre 2026**; les ressources **Données réelles 2024 et 2025, Simple occurrence** sont disponibles en CSV avec leurs **descriptions de postes**, **formulaires codifiés** et **listes d'organismes absents**. Les comptes peuvent être révisés après leur première transmission.
+- **Accès effectivement obtenu :** métadonnées des fichiers et [guide officiel MAMH](https://www.donneesquebec.ca/recherche/dataset/20673c5c-f672-4387-ae9d-378ac6fa8be0/resource/3212100b-f281-439b-9c65-511b568e0e27/download/gui_donneesquebec2025_vf.pdf) au format texte. **Téléchargement du CSV 2025 échoué** (résolution DNS locale; le navigateur ne peut rendre le fichier binaire). Les données détaillées 2024 et 2025 n'ont pas été importées. Le guide PDF n'a pas pu être contrôlé visuellement dans cette session (cache miss).
+- **Moteur de contrôle :** `assets/g017b-mamh-csv-import-core.mjs` lit les CSV, préserve les codes municipaux, valide types d'organismes et périmètres comptables, conserve les valeurs inconnues comme `null`, refuse doublons et définitions incohérentes, et interdit une comparaison globale si les années ou la couverture ne sont pas conciliées.
+- **Import local préparé :** `scripts/g017b-mamh-ingest.mjs` vérifie le **SHA-256** des fichiers fournis, les descriptions de postes de **chaque millésime**, et les listes d'absences avant de produire un diagnostic. `data/g017b-mamh-mapping-template.json` contient des champs à renseigner **à partir des en-têtes réels**, sans aucun code comptable inventé. **Il n'a pas été exécuté sur les fichiers officiels**.
+- **Interdictions maintenues :** ne pas ajouter deux fois un transfert Québec–municipalité; ne pas confondre municipalités locales, MRC, régies et agglomérations; ne pas additionner directement les comptes civils municipaux et les budgets provinciaux avril–mars; ne pas établir une économie, un taux Nova ou une baisse de taxes sans finances consolidées et revue indépendante.
+- **Preuves et contrôle :** `data/g017b-mamh-municipal-ingestion-contract-2024-2025.json`, `tests/g017b-mamh-csv-import.test.mjs`, `official/working/rapport-g0-17b-pipeline-comptes-municipaux-2024-2025-v1.md`. **52/52 tests réussis en JavaScript/V8 isolé sur exemples fictifs**, sans attestation d'exécution native GitHub Actions ni audit indépendant.
+
+**Suite G0.17c :** récupérer les fichiers réels 2024 et 2025, vérifier leurs définitions et la couverture, exécuter le lecteur, rapprocher leurs comptes des rapports municipaux audités et éliminer les transferts internes à périmètre constant. **47/100 inchangé tant que les critères ne sont pas démontrés.**
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
