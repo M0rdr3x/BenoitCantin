@@ -1,0 +1,43 @@
+name: SINJIRA — Fracture V46 prévol de lancement sans données privées
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+    paths:
+      - 'scripts/audits/sinjira_fracture_v46_release_preflight_readonly.sql'
+      - 'scripts/proposals/sinjira_fracture_v42_rls_update_candidate.sql'
+      - 'scripts/proposals/sinjira_fracture_v45_mutation_rpc_quarantine_candidate.sql'
+      - 'tests/security/test_fracture_release_preflight_v46.py'
+      - 'docs/SINJIRA_FRACTURE_RELEASE_PREFLIGHT_V46.md'
+      - '.github/workflows/sinjira-fracture-release-preflight-v46.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/audits/sinjira_fracture_v46_release_preflight_readonly.sql'
+      - 'scripts/proposals/sinjira_fracture_v42_rls_update_candidate.sql'
+      - 'scripts/proposals/sinjira_fracture_v45_mutation_rpc_quarantine_candidate.sql'
+      - 'tests/security/test_fracture_release_preflight_v46.py'
+      - 'docs/SINJIRA_FRACTURE_RELEASE_PREFLIGHT_V46.md'
+      - '.github/workflows/sinjira-fracture-release-preflight-v46.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sinjira-fracture-v46-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  inspect_catalogue_contract:
+    name: Contrats SQL de catalogues — aucun lien à Supabase
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Extraire le code sans identifiants persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Vérifier SQL, dix signatures, deux politiques et refus fermé
+        run: |
+          python3 -m unittest discover -s tests/security -p test_fracture_release_preflight_v46.py -v
+          python3 -m unittest discover -s tests/security -p test_fracture_backend_v41_readonly.py -v
+          python3 -m unittest discover -s tests/security -p test_fracture_rls_v42_static.py -v
+          python3 -m unittest discover -s tests/security -p test_fracture_rpc_quarantine_v45_static.py -v
