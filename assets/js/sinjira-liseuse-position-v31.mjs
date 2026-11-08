@@ -49,3 +49,14 @@ export function chooseReadingPosition({localPage,localRatio,localUpdatedAt,
   }
   return {page:fallback,ratio:0,source:'debut'};
 }
+
+/** V34 — ne jamais réécrire une progression de cet appareil si le compte
+    dispose déjà d'une sauvegarde plus récente. Les dates invalides refusent
+    le rejeu (sauf l'absence de ligne serveur, qui est un cas normal). */
+export function shouldReplayReadingProgress(pendingAt,serverUpdatedAt){
+  const local=Date.parse(pendingAt||'');
+  if(!Number.isFinite(local)||local<=0)return false;
+  if(!serverUpdatedAt)return true;
+  const remote=Date.parse(serverUpdatedAt);
+  return Number.isFinite(remote)&&remote>0&&local>=remote;
+}
