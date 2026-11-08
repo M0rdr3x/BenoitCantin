@@ -30,7 +30,7 @@ BEGIN
     SELECT 1 FROM auth.sessions s
     WHERE s.id = v_session
       AND s.user_id = p_user
-      AND (s.not_after IS NULL OR s.not_after > now())
+      AND (s.not_after IS NULL OR s.not_after > clock_timestamp())
   ) THEN
     RAISE EXCEPTION 'AUTH_SESSION_INVALID' USING ERRCODE='42501';
   END IF;
