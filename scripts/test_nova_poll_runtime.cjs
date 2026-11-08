@@ -12,7 +12,7 @@ assert.match(src,/else if\(response\.status===409\)[\s\S]*?markVoted\(\)/,
 const elements=new Map();
 const pollRadios=[{disabled:false},{disabled:false}];
 const elem=id=>{if(!elements.has(id))elements.set(id,{
-  disabled:false,checked:false,textContent:"",querySelectorAll:()=>pollRadios,replaceChildren:()=>{}
+  disabled:false,checked:false,textContent:"",querySelectorAll:()=>pollRadios,replaceChildren:()=>{},append:()=>{}
 });return elements.get(id);};
 const selected=new Set();
 let voted=false;
@@ -31,7 +31,7 @@ vm.runInNewContext(integrity,context,{timeout:2000});
 assert.equal(typeof context.window.__NOVA_CIVIC_INTEGRITY?.inspectPoll,"function");
 const end=src.lastIndexOf("})();");
 assert.ok(end>0);
-vm.runInNewContext(src.slice(0,end)+';globalThis.__pollTest={updateButton,setOpen:v=>open=v,setCaptcha:v=>captchaToken=v,setSending:v=>sending=v,setQuestions:v=>questions=v,setLocal:v=>localCorpus=v,alreadyVoted,markVoted,validatedPublicResponse,validLocalCorpus,loadPoll};'+src.slice(end),context,{timeout:2000});
+vm.runInNewContext(src.slice(0,end)+';globalThis.__pollTest={updateButton,setOpen:v=>open=v,setCaptcha:v=>captchaToken=v,setSending:v=>sending=v,setQuestions:v=>questions=v,setLocal:v=>localCorpus=v,alreadyVoted,markVoted,validatedPublicResponse,validLocalCorpus,loadPoll,submit,setSessionVoted:v=>sessionVoted=v};'+src.slice(end),context,{timeout:2000});
 const t=context.__pollTest;
 elem("poll-adult").checked=true;elem("poll-agree").checked=true;
 const corpus=JSON.parse(fs.readFileSync(path.join(__dirname,"../projets/projet-nova/data/sondage-citoyen-v1.json"),"utf8"));
@@ -148,6 +148,45 @@ console.log("OK sondage : désactivé hors ouverture, âge, anti-robot, choix et
 // Cas d'intégration : le chargement d'un corpus invalide doit verrouiller
 // l'envoi, afficher une erreur claire et n'effectuer aucun GET ni POST.
 (async()=>{
+  // Exercices des vrais chemins POST 201/409 en mémoire. Le fetch est un
+  // faux transport local : aucune opinion ni requête n'est envoyée à Supabase.
+  context.document.createElement=()=>({
+    style:{},append(){},setAttribute(){},replaceChildren(){},textContent:"",className:""
+  });
+  context.crypto.getRandomValues=bytes=>bytes.fill(7);
+  context.AbortController=AbortController;
+  context.setTimeout=setTimeout;
+  context.clearTimeout=clearTimeout;
+  for(const status of [201,409]){
+    let postCount=0, getCount=0;
+    t.setSessionVoted(false);
+    t.setOpen(true);
+    t.setSending(false);
+    t.setCaptcha("jeton-captcha-fictif");
+    context.fetch=async (_url,options={})=>{
+      if(options.method==="POST"){
+        postCount++;
+        const body=JSON.parse(options.body);
+        assert.equal(body.version,corpus.version);
+        assert.equal(Object.keys(body.answers).length,8);
+        return {
+          status,ok:status===201,
+          json:async()=>status===201?{status:"accepted"}:{error:"bulletin_deja_recu"}
+        };
+      }
+      getCount++;
+      return {status:503,ok:false,json:async()=>({error:"maintenance"})};
+    };
+    await t.submit({preventDefault(){}});
+    assert.equal(postCount,1,"Un seul POST simulé pour la confirmation "+status);
+    assert.equal(t.alreadyVoted(),true,"Confirmation "+status+" conservée en mémoire");
+    assert.equal(elem("poll-send").disabled,true,"Confirmation "+status+" verrouille le bouton");
+    assert.ok(pollRadios.every(input=>input.disabled),"Confirmation "+status+" verrouille les choix");
+    await t.submit({preventDefault(){}});
+    assert.equal(postCount,1,"Une confirmation "+status+" empêche toute nouvelle tentative");
+    assert.equal(getCount,status===201?1:0,"GET seulement après acceptation 201");
+  }
+  console.log("OK sondage : vraies branches HTTP 201/409 simulées, verrou de session et anti-renvoi.");
   let networkCalls=0;
   context.fetch=()=>{networkCalls++;throw new Error("Une source corrompue n'autorise pas de requête réseau");};
   context.window.__NOVA_POLL_PUBLIC_CORPUS={questions:"corrompues",published:true};
