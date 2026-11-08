@@ -47,7 +47,8 @@ test("82 pages offertes gratuitement ne sont pas 82 % du manuscrit",()=>{
 test("les hashes des démos dans le manifeste et le contrat concordent",()=>{
  assert.equal(manifest.demo.sha256,contract.demo.sha256);
  assert.equal(manifest.demo.pages,contract.demo.pages);
- change(x=>x.public_excerpt=99,"SCHEMA");
+ const forged=structuredClone(manifest);forged.demo.sha256="0".repeat(64);
+ assert.ok(check(report,forged).errors.includes("BOOK1_DEMO_SCOPE"));
 });
 test("le contrat de diffusion intégrale reste privé et non activé",()=>{
  const x=check();
