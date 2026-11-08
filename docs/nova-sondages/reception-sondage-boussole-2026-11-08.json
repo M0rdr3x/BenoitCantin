@@ -43,7 +43,21 @@
       "webkit"
     ],
     "ci_local_compass_full_64_workflow_url": "https://github.com/M0rdr3x/BenoitCantin/actions/runs/42531076014",
-    "ci_local_compass_full_64_source_commit": "e59a7f6a40d5f39f53df6c493a3f88b69017e66c"
+    "ci_local_compass_full_64_source_commit": "e59a7f6a40d5f39f53df6c493a3f88b69017e66c",
+    "ci_local_weight_skip_share_reset_verified": true,
+    "ci_local_weight_skip_share_reset_browsers": [
+      "chromium",
+      "firefox",
+      "webkit"
+    ],
+    "ci_local_weight_skip_share_reset_workflow_urls": [
+      "https://github.com/M0rdr3x/BenoitCantin/actions/runs/42534635211",
+      "https://github.com/M0rdr3x/BenoitCantin/actions/runs/42536034601"
+    ],
+    "ci_local_weight_skip_share_reset_release_prs": [
+      886,
+      889
+    ]
   },
   "compass": {
     "url": "https://www.benoitcantin.com/projets/projet-nova/boussole-electorale.html",
@@ -103,10 +117,10 @@
       },
       {
         "id": "COMPASS_WEIGHT_SKIP_RESET",
-        "status": "PENDING",
+        "status": "PASSED",
         "criteria": "Tester pondération, sans opinion, changement de réponse, partage et remise à zéro jusqu'au résultat",
-        "evidence": "assets/boussole-electorale.js",
-        "scope": "browser_e2e_required"
+        "evidence": "tests/e2e/test_public_site.py et scripts/test_nova_boussole_navigation.cjs ; GitHub Actions #42534635211 (parcours pondérés), #42536034601 (partage et refus de copie) ; Playwright Chromium/Firefox/WebKit",
+        "scope": "browser_e2e_local_all_three_engines_not_public_release"
       },
       {
         "id": "COMPASS_ACCESSIBILITY",
@@ -242,10 +256,10 @@
       "percent": 54.5
     },
     "compass": {
-      "passed": 6,
+      "passed": 7,
       "total": 12,
-      "percent": 50
+      "percent": 58.3
     },
-    "limits": "Le dernier test en navigateur externe sur le site live reste partiel (Q01-Q28). Le site public déployé et l'avis indépendant ne sont pas certifiés; la collecte de votes n'est pas autorisée."
+    "limits": "Parcours de pondération, réponses passées, partage simulé et réinitialisation réussis dans Chromium, Firefox et WebKit en navigateur local (PR #886 et #889). Le dernier navigateur externe en production reste partiel (Q01–Q28) et le déploiement live, l'accessibilité indépendante, les sources partisanes et l'avis juridique ne sont pas certifiés; la collecte de votes n'est pas autorisée."
   }
 }
