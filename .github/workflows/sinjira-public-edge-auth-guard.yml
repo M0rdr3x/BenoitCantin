@@ -18,6 +18,7 @@ on:
       - 'scripts/validate_send_player_sheet_security.py'
       - 'scripts/validate_license_redemption_security.py'
       - 'scripts/validate_security_context_request_security.py'
+      - 'scripts/test_security_context_streaming.mjs'
       - 'scripts/validate_admin_reports_request_security.py'
       - 'scripts/validate_admin_license_codes_security.py'
       - 'scripts/validate_admin_console_request_security.py'
@@ -45,6 +46,7 @@ on:
       - 'scripts/validate_send_player_sheet_security.py'
       - 'scripts/validate_license_redemption_security.py'
       - 'scripts/validate_security_context_request_security.py'
+      - 'scripts/test_security_context_streaming.mjs'
       - 'scripts/validate_admin_reports_request_security.py'
       - 'scripts/validate_admin_license_codes_security.py'
       - 'scripts/validate_admin_console_request_security.py'
@@ -107,6 +109,8 @@ jobs:
         run: python scripts/validate_security_context_request_security.py --self-test
       - name: Vérifier les bornes et la confidentialité de security-context
         run: python scripts/validate_security_context_request_security.py
+      - name: Tester le lecteur HTTP 4 KiB de security-context sans JWT ni RPC
+        run: node scripts/test_security_context_streaming.mjs
       - name: Auto-tester admin-reports
         run: python scripts/validate_admin_reports_request_security.py --self-test
       - name: Vérifier les bornes et la confidentialité de admin-reports
