@@ -21,7 +21,6 @@ async function notifyAccountConfirmation() {
   }
 }
 function showSuccess(user) {
-  if(user?.email_confirmed_at)void notifyAccountConfirmation();
   const questionnaire = user?.user_metadata?.wants_character_questionnaire === true;
   nextLink.href = questionnaire ? '/projets/sinjira/registre/' : '/compte/index.html';
   nextLink.textContent = questionnaire ? 'Ouvrir mon questionnaire' : 'Accéder à mon compte';
@@ -47,6 +46,7 @@ async function init() {
   try {
     const {data, error} = await getSupabase().auth.getUser();
     if (!error && data?.user?.email_confirmed_at) {
+      await notifyAccountConfirmation();
       showSuccess(data.user);
       return;
     }
@@ -68,9 +68,11 @@ confirmButton?.addEventListener('click', async () => {
     if (error) throw error;
     // Ne laissez pas le jeton dans la barre d’adresse après l’échange.
     history.replaceState(history.state, '', location.pathname);
+    // La confirmation doit rester valide même si Formspree est indisponible.
+    // Attendre la réponse du serveur avant de proposer une navigation, pour
+    // éviter qu'un changement de page annule l'envoi de notification.
+    await notifyAccountConfirmation();
     showSuccess(data?.user || null);
-    // Notifier après la preuve de validation, même si le fournisseur omet l'objet user.
-    if(!data?.user?.email_confirmed_at)void notifyAccountConfirmation();
   } catch {
     setStatus(status, 'Ce lien est invalide, déjà utilisé ou expiré. Demandez un nouveau courriel de confirmation ci-dessous.', 'error');
     confirmButton.hidden = true;
