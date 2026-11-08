@@ -109,3 +109,22 @@ test("V02, V03, V10 et V14 : sources publiques repérées, non certifiées",()=>
  assert.equal(discovery.programme_score_unchanged,47);
  assert.deepEqual(inspect(discovery),[]);
 });
+
+test("la page publique reflète chaque piste G0.15 sans déclarer de validation",async()=>{
+ const html=await readFile(new URL("../avancement-programme-nova.html",import.meta.url),"utf8");
+ const start=html.indexOf('id="sources-fiscales-g015"');
+ const end=html.indexOf("</section>",start);
+ assert.ok(start>=0&&end>start);
+ const excerpt=html.slice(start,end);
+ const ids=[...excerpt.matchAll(/<tr><th scope="row">(V\\d\\d) /g)].map(m=>m[1]);
+ assert.deepEqual(ids,proofs.proofs.map(p=>p.id));
+ assert.match(excerpt,/21 candidatures de sources/);
+ assert.match(excerpt,/0 sur 15 sont validées/);
+ assert.match(excerpt,/47 % inchangé/);
+ for(const id of ["V02","V03","V10","V14"]){
+   assert.ok(ids.includes(id));
+   for(const source of discovery.entries.find(e=>e.id===id).candidats){
+     assert.ok(excerpt.includes(source.url),"Source visible pour "+id);
+   }
+ }
+});
