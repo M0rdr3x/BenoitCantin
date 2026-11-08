@@ -48,16 +48,57 @@ def main() -> int:
         'assertAdminMfa(context)',
         "service.rpc('is_sinjira_admin'",
         'getAuthenticatorAssuranceLevel(token)',
-        "aal.nextLevel === 'aal2'",
+        "aal.nextLevel !== 'aal2'",
+        "throw new Error('MFA_SETUP_REQUIRED')",
         "aal.currentLevel !== 'aal2'",
         "throw new Error('MFA_REQUIRED')",
         "throw new Error('MFA_STATE_UNAVAILABLE')",
         'export async function requiredAdmin',
     ], 'garde serveur administrateur')
 
-    require(users, [
-        "import { requiredAdmin } from '../_shared/auth.ts'",
-        'await requiredAdmin(req)',
+    # Le garde AAL2 doit refuser même l'administrateur sans facteur vérifié.
+    forbid(auth, [
+        "aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2'",
+        "aucun facteur MFA vérifié -> la session aal1 reste permise",
+    ], 'ancien mode MFA progressif administrateur')
+
+    for name in ACTIVE_ADMIN:
+        endpoint = read(f'supabase/functions/{name}/index.ts')
+        # Les modules TypeScript emploient parfois un style compact et parfois
+        # des espaces autour de ':' ; ne pas confondre formatage et sécurité.
+        compact_endpoint = ''.join(endpoint.split())
+        require(compact_endpoint, [
+            "../_shared/auth.ts",
+            "requiredAdmin",
+            "awaitrequiredAdmin(req)",
+            "code:'MFA_SETUP_REQUIRED'",
+            "code:'MFA_REQUIRED'",
+            "code:'MFA_STATE_UNAVAILABLE'",
+            "setup_url:'/compte/securite.html'",
+        ], f'endpoint admin MFA obligatoire: {name}')
+        if name != 'admin-users':
+            require(compact_endpoint, [
+                'readLimitedUtf8Body(req,MAX_REQUEST_BYTES)',
+                "if(!limited.ok)thrownewError('REQUEST_TOO_LARGE')",
+                "constraw=limited.raw",
+            ], f'endpoint admin borné: {name}')
+            forbid(compact_endpoint, [
+                'awaitreq.text()', 'awaitreq.json()',
+            ], f'lecture HTTP non bornée: {name}')
+            auth_position = compact_endpoint.find('awaitrequiredAdmin(req)')
+            # Comparer les appels, et non la déclaration du helper de lecture.
+            call_marker = ('awaitreadBoundedJson(req)' if name in
+                           ('admin-console', 'admin-sinjira-v18') else
+                           'awaitreadLimitedJson(req)')
+            body_position = compact_endpoint.find(call_marker)
+            if not 0 <= auth_position < body_position:
+                raise AssertionError(f'{name}: vérification admin/MFA impérativement avant lecture du corps HTTP')
+
+    compact_users = ''.join(users.split())
+    require(compact_users, [
+        "../_shared/auth.ts",
+        "awaitrequiredAdmin(req)",
+        "code:'MFA_SETUP_REQUIRED'",
         "code:'MFA_REQUIRED'",
         "code:'MFA_STATE_UNAVAILABLE'",
     ], 'admin-users partagé')
@@ -94,7 +135,7 @@ def main() -> int:
         'stripe',
     ], 'aucun chemin payant actif dans admin-sinjira-v18')
 
-    print('OK admin V24.4.67: 7 endpoints centralisés, MFA AAL2 progressif fail-closed et IA distante verrouillée en mode gratuit.')
+    print('OK admin V24.4.67: 7 endpoints centralisés, MFA AAL2 obligatoire fail-closed et IA distante verrouillée en mode gratuit.')
     return 0
 
 

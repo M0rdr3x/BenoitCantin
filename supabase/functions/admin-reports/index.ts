@@ -1,9 +1,10 @@
+import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredAdmin } from '../_shared/auth.ts';
 
 const MAX_REQUEST_BYTES = 4096;
 const SAFE_LOG_CODES = new Set([
-  'AUTH_REQUIRED','ADMIN_REQUIRED','MFA_REQUIRED','MFA_STATE_UNAVAILABLE',
+  'AUTH_REQUIRED','ADMIN_REQUIRED','MFA_REQUIRED','MFA_SETUP_REQUIRED','MFA_STATE_UNAVAILABLE',
   'REQUEST_TOO_LARGE','JSON_REQUIRED','INVALID_JSON',
   'REPORT_DASHBOARD_QUERY_FAILED','REPORT_PROFILES_LOOKUP_FAILED','REPORT_OWNER_LOOKUP_FAILED'
 ]);
@@ -37,7 +38,9 @@ async function readLimitedJson(req: Request): Promise<Record<string, unknown>> {
   const contentType = (req.headers.get('content-type') || '').split(';', 1)[0].trim().toLowerCase();
   if (contentType !== 'application/json') throw new Error('JSON_REQUIRED');
 
-  const raw = await req.text();
+  const limited=await readLimitedUtf8Body(req,MAX_REQUEST_BYTES);
+  if(!limited.ok)throw new Error('REQUEST_TOO_LARGE');
+  const raw=limited.raw;
   if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
     throw new Error('REQUEST_TOO_LARGE');
   }
@@ -164,6 +167,7 @@ Deno.serve(async (req) => {
     if (error?.message === 'AUTH_REQUIRED') return privateJson({ ok:false, error:'Connexion requise.', code:'AUTH_REQUIRED' }, 401);
     if (error?.message === 'ADMIN_REQUIRED') return privateJson({ ok:false, error:'Accès administrateur refusé.', code:'ADMIN_REQUIRED' }, 403);
     if (error?.message === 'MFA_REQUIRED') return privateJson({ ok:false, error:'MFA_REQUIRED', code:'MFA_REQUIRED' }, 403);
+    if(error?.message==='MFA_SETUP_REQUIRED')return privateJson({ok:false,error:'Activez un facteur TOTP dans Ma sécurité avant d’utiliser l’administration.',code:'MFA_SETUP_REQUIRED',setup_url:'/compte/securite.html'},403);
     if (error?.message === 'MFA_STATE_UNAVAILABLE') return privateJson({ ok:false, error:'État MFA temporairement indisponible.', code:'MFA_STATE_UNAVAILABLE' }, 503);
     if (error?.message === 'REQUEST_TOO_LARGE') return privateJson({ ok:false, error:'Requête trop volumineuse.', code:'REQUEST_TOO_LARGE' }, 413);
     if (error?.message === 'JSON_REQUIRED') return privateJson({ ok:false, error:'Corps JSON requis.', code:'JSON_REQUIRED' }, 415);
