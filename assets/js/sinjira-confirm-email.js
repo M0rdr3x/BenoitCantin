@@ -15,7 +15,7 @@ const tokenType = String(fragment.get('type') || 'email').trim();
 async function notifyAccountConfirmation() {
   try {
     // Avis anonymisé, dédoublonné côté serveur; ce canal ne gère pas les comptes.
-    await getSupabase().functions.invoke('notify-account-confirmation',{body:{},timeout:8500});
+    await getSupabase().functions.invoke('notify-account-confirmation',{body:{},signal:AbortSignal.timeout(8500)});
   } catch {
     // L'authentification réussie ne dépend jamais de Formspree.
   }
