@@ -499,6 +499,22 @@ Les fichiers de référence candidats `official/reference/*` et `data/sources.js
 
 **Suite G0.16r :** rapprocher rapports financiers 2025, prêts effectivement tirés, subventions payées et dépenses réelles pour préparer une simulation contrôlée. **Score 47/100 inchangé.**
 
+
+## G0.16r — États financiers 2025 audités avec réserve et rapprochement des flux (8 novembre 2026)
+
+**Préparation du programme : 47/100; encore 53 points à obtenir.** Après les prévisions de 2026 étudiées en G0.16q, cette phase vérifie les **réalisations comptables 2025 de Port-Daniel–Gascons** dans le [rapport officiel 2025 publié par le MAMH](https://www.mamh.gouv.qc.ca/documentsfinanciersweb/Rapport-financier-2025-et-autres-02047.pdf).
+
+- **Attention à l'opinion de l'auditeur : réserve formelle** — obligations de mise hors service des immobilisations non évaluées ni inscrites; incidences sur les états financiers 2025 et 2024 **non quantifiées**. Le rapport municipal ne certifie pas Nova.
+- **Comptabilité d'exercice 2025 :** revenus reconnus **25 730 544 $** dont transferts **20 524 044 $**; charges **7 021 908 $**; excédent **18 708 636 $**. **Excédent comptable ≠ liquidités encaissées.**
+- **Flux de trésorerie 2025 :** fonctionnement **+2 095 979 $**, acquisitions d'immobilisations **−16 969 080 $**, financement **+16 323 277 $**, variation de trésorerie **+1 450 176 $**, liquidités finales **1 999 351 $**. Les intérêts **payés** sont **617 674 $**.
+- **Rapprochement :** ajouts d'immobilisations comptabilisés **22 581 524 $** moins montants dus pour immobilisations **5 612 444 $** égale sorties de trésorerie immobilisations **16 969 080 $**. L'égalité concerne l'ensemble de la municipalité, **pas exclusivement le projet Gascons**.
+- **Dette :** emprunts temporaires **18 571 000 $** au 31 décembre 2025 (variation nette **17 429 000 $** en 2025); emprunts à long terme bruts **17 430 500 $**; plafond temporaire autorisé pour les investissements **56 596 000 $**. **Plafond autorisé ≠ dette tirée** et aucune affectation exhaustive par projet n'est prouvée.
+- **Preuves manquantes :** détail des versements PRIMEAU, pièces bancaires par projet, ventilation des factures payées, évaluation des obligations de fin de vie des actifs, financement Nova des services et impacts distributifs. Le budget municipal 2026 (G0.16q) demeure une prévision, **non** un résultat de 2025 ou 2026.
+
+**Fichiers :** `data/reconciliation-financiere-port-daniel-g0-16r-2025.json`, `assets/g016r-financial-reconciliation-core.mjs`, `tests/g016r-financial-reconciliation.test.mjs`, `official/working/rapport-g0-16r-etats-financiers-port-daniel-2025-v1.md`. **42 tests réussis en rejeu JS/V8 isolé; statut GitHub Actions non attesté.** Les deux scénarios décennaux demeurent à `null` et sans validation indépendante. Les tentatives de captures PDF du navigateur ont échoué (cache miss); les chiffres retenus proviennent du texte des pages du PDF gouvernemental.
+
+**Suite G0.16s :** rapprochement du grand livre, des contrats et des pièces de paiement PRIMEAU du projet Gascons; étude de nouveaux cas avant tout taux fiscal ou gain budgétaire annoncé. **Score toujours 47/100.**
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
