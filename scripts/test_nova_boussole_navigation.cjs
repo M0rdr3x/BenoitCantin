@@ -113,6 +113,11 @@ const complete=Array.from({length:64},(_,i)=>i%5===0?null:((i%7)-3));
 assert.equal(run(complete),16,"Le profil complet doit couvrir seize axes");
 assert.match(el("compass-summary").textContent,/16 dimensions/);
 assert.match(el("compass-radar").innerHTML,/<polygon points=/);
+const fullGrid=el("compass-results-grid").innerHTML;
+assert.equal((fullGrid.match(/<i style="left:/g)||[]).length,16,
+  "Seuls les seize axes calculés ont un repère numérique");
+assert.doesNotMatch(fullGrid,/Score indisponible : données insuffisantes/,
+  "Un profil complet ne doit pas annoncer de score absent");
 // Les paramètres et fragments de l'URL ne sont JAMAIS transmis aux
 // services tiers, aux liens mailto, au presse-papiers ni au partage natif.
 const canonicalUrl="https://www.benoitcantin.com/projets/projet-nova/boussole-electorale.html";
@@ -150,6 +155,11 @@ assert.equal(run(Array(64).fill(null)),0,"Aucun score pour 64 réponses sans opi
 assert.match(el("compass-summary").textContent,/Aucune dimension calculable/);
 assert.match(el("compass-summary").textContent,/0 proposition/);
 assert.doesNotMatch(el("compass-radar").innerHTML,/<polygon points=/);
+const skippedGrid=el("compass-results-grid").innerHTML;
+assert.equal((skippedGrid.match(/Score indisponible : données insuffisantes/g)||[]).length,16,
+  "Les seize axes passés doivent annoncer que le score est indisponible");
+assert.equal((skippedGrid.match(/<i style="left:/g)||[]).length,0,
+  "Aucun repère graphique au centre : un axe non calculable n'est pas neutre");
 // Après 64 « Sans opinion », deux réponses du même thème réactivent
 // immédiatement une dimension, sans redémarrer le questionnaire.
 engine.goPrevious(); // Q63
@@ -157,6 +167,11 @@ choose(2);
 engine.goPrevious(); // Q62
 choose(2);
 assert.equal(engine.calculate().filter(r=>r.score!==null).length,1);
+const sparseGrid=el("compass-results-grid").innerHTML;
+assert.equal((sparseGrid.match(/<i style="left:/g)||[]).length,1,
+  "Le profil partiel n'invente jamais un point pour les quinze autres axes");
+assert.equal((sparseGrid.match(/Score indisponible : données insuffisantes/g)||[]).length,15,
+  "Les axes non calculables sont indiqués aux lecteurs d'écran");
 assert.match(el("compass-radar").innerHTML,/compass-radar-svg/);
 assert.doesNotMatch(el("compass-summary").textContent,/Aucune dimension calculable/);
 
