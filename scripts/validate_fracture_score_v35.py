@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Contrat public : assistant de score Fracture, ni ancien moteur ni données de compte."""
 from pathlib import Path
+import re
 
 ROOT = Path(__file__).resolve().parents[1]
 SCORE = ROOT / "projets/sinjira/jeux/fracture-du-reseau-mere/feuille-de-score.html"
@@ -57,10 +58,15 @@ def validate():
         if token not in js:
             errors.append(f"Commande UI ou garde-fou manquant : {token}")
     for forbidden in ['localStorage', 'sessionStorage', 'getSupabase',
-                      'fetch(', '.rpc(', '.from(', 'document.cookie',
+                      'fetch(', '.rpc(', 'document.cookie',
                       'innerHTML=', 'navigator.sendBeacon', 'indexedDB']:
         if forbidden in model or forbidden in js:
             errors.append(f"Le calculateur ne doit pas contenir : {forbidden}")
+    # Cibler seulement les appels au client backend : Array.from(...) est
+    # un outil JavaScript légitime utilisé pour les lignes de score.
+    for source in [model, js]:
+        if re.search(r"\\b(?:supabase|client|db|s)\\.from\\s*\\(", source):
+            errors.append("Le calculateur ne doit interroger aucune table distante")
     if "project.slug==='fracture-du-reseau-mere'?null:safeLink(project.play_path)" not in data[HUB_SCRIPT]:
         errors.append("L'ancienne URL « Jouer » Fracture doit rester désactivée")
     if "Mode Web en mise à niveau" not in data[GAME_WEB]:
