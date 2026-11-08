@@ -195,8 +195,28 @@ def validate_redirect(rel: str, target: str, canonical: str, errors: list[str]) 
         errors.append(f"{rel}: canonical incorrecte.")
     if f'href="{target}"' not in html:
         errors.append(f"{rel}: lien de secours absent vers {target}.")
-    if f"location.replace('{target}'+location.search+location.hash)" not in html:
-        errors.append(f"{rel}: redirection JS ne conserve pas query/hash.")
+    external_script = 'src="/assets/js/sinjira-admin-alias-redirect.js"'
+    trusted_target = f'data-admin-redirect-target="{target}"'
+    if external_script not in html or trusted_target not in html:
+        errors.append(f"{rel}: redirection externe vers cible strictement contrôlée absente.")
+    if "<script>location.replace" in html:
+        errors.append(f"{rel}: ancien JavaScript inline interdit par la CSP privée.")
+
+    redirect_script = ROOT / "assets/js/sinjira-admin-alias-redirect.js"
+    if not redirect_script.is_file():
+        errors.append("Script des alias administratifs absent.")
+    else:
+        code = redirect_script.read_text("utf-8", errors="strict")
+        for fragment in (
+            "document.currentScript",
+            "data",
+            "target.search = window.location.search",
+            "target.hash = window.location.hash",
+            "window.location.replace(target.href)",
+            "target.origin !== window.location.origin",
+        ):
+            if fragment not in code:
+                errors.append(f"{rel}: redirection JS ne préserve pas sa frontière: {fragment}")
 
 
 def main() -> int:
