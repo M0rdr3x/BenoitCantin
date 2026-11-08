@@ -190,6 +190,194 @@ def assert_private_signout_during_load(browser):
         private_context.close()
 
 
+
+def assert_private_cross_device_resume_mock(browser) -> None:
+    """V33 : deux navigateurs indépendants et un backend *simulé*.
+    Aucun compte réel, aucun PDF intégral, aucune opération en production.
+    Les contrôles RLS réels restent à vérifier séparément sur Supabase.
+    """
+    cloud = {}
+    schema = {"legacy": False}
+    owner = "ci-fictional-reader-a"
+    other = "ci-fictional-reader-b"
+
+    def fake_backend(request):
+        table = request.get("table")
+        actor = request.get("actor")
+        method = request.get("method")
+        if table == "sinjira_novels" and method == "single":
+            return {"data": {"id": "ci-fictional-novel"}, "error": None}
+        if table != "sinjira_reader_library":
+            raise AssertionError("Table privée non prévue dans le test : " + str(table))
+        if method == "single":
+            columns = str(request.get("columns") or "")
+            if schema["legacy"] and "scroll_ratio" in columns:
+                return {"data": None, "error": {
+                    "code": "42703", "message": "column scroll_ratio does not exist"
+                }}
+            data = cloud.get(actor)
+            if data and schema["legacy"]:
+                data = {key: val for key, val in data.items() if key != "scroll_ratio"}
+            return {"data": data, "error": None}
+        if method == "upsert":
+            payload = request.get("payload") or {}
+            if payload.get("user_id") != actor:
+                return {"error": {"code": "42501", "message": "RLS fake deny"}}
+            if schema["legacy"] and "scroll_ratio" in payload:
+                return {"error": {"code": "PGRST204",
+                                  "message": "Could not find the scroll_ratio column"}}
+            cloud[actor] = {**cloud.get(actor, {}), **payload}
+            if schema["legacy"]:
+                cloud[actor].pop("scroll_ratio", None)
+            return {"data": None, "error": None}
+        raise AssertionError("Opération de test inattendue : " + str(request))
+
+    fake_supabase = r"""
+const actor = __TEST_USER__;
+class Builder {
+  constructor(table){this.table=table;this.columns='';this.filters={};}
+  select(cols){this.columns=cols;return this;}
+  eq(key,value){this.filters[key]=value;return this;}
+  order(){return this;}
+  limit(){return Promise.resolve({data:[],error:null});}
+  maybeSingle(){return window.__sinjiraTestDb({
+    table:this.table,actor,method:'single',columns:this.columns,filters:this.filters
+  });}
+  upsert(payload){return window.__sinjiraTestDb({
+    table:this.table,actor,method:'upsert',payload
+  });}
+}
+export function createClient(){
+  const user={id:actor,email:'fictional@example.invalid'};
+  return {
+    auth:{
+      async getUser(){return {data:{user},error:null};},
+      mfa:{async getAuthenticatorAssuranceLevel(){
+        return {data:{currentLevel:'aal1',nextLevel:'aal1'},error:null};
+      }},
+      onAuthStateChange(){return {data:{subscription:{unsubscribe(){}}}};}
+    },
+    functions:{async invoke(name){
+      if(name!=='get-novel-file-url')throw Error('Unexpected function');
+      return {data:{ok:true,url:'https://gpvivleexywljowcqkru.supabase.co/storage/v1/object/sign/romans/ci-test.pdf?token=fictitious'},error:null};
+    }},
+    from(table){return new Builder(table);}
+  };
+}
+"""
+    fake_pdfjs = r"""
+export const GlobalWorkerOptions={workerSrc:''};
+export function getDocument(){
+  return {promise:Promise.resolve({
+    numPages:520,
+    async destroy(){},
+    async getPage(pageNumber){
+      return {
+        async getTextContent(){return {items:[
+          {str:'Page '+pageNumber,transform:[1,0,0,1,10,500],width:80,height:12,hasEOL:true},
+          {str:'Contenu artificiel pour le test de position.',transform:[1,0,0,1,10,480],width:250,height:12}
+        ]};},
+        getViewport({scale}){return {width:600*scale,height:900*scale};},
+        render(){return {promise:Promise.resolve()};}
+      };
+    }
+  })};
+}
+"""
+    contexts = []
+
+    def open_device(actor):
+        ctx = browser.new_context(locale="fr-CA", viewport={"width": 1440, "height": 920})
+        contexts.append(ctx)
+        ctx.route("**/npm/@supabase/supabase-js@2/+esm*",
+                  lambda route: route.fulfill(
+                      status=200, content_type="text/javascript",
+                      headers={"access-control-allow-origin": "*"},
+                      body=fake_supabase.replace("__TEST_USER__", json.dumps(actor))))
+        ctx.route("**/pdfjs-dist@4.9.155/build/pdf.min.mjs*",
+                  lambda route: route.fulfill(
+                      status=200, content_type="text/javascript",
+                      headers={"access-control-allow-origin": "*"}, body=fake_pdfjs))
+        ctx.route("https://gpvivleexywljowcqkru.supabase.co/storage/v1/object/sign/**",
+                  lambda route: route.fulfill(
+                      status=200, content_type="application/pdf",
+                      headers={"access-control-allow-origin": "*"},
+                      body=b"%PDF-1.7\n" + b"0" * 2048))
+        ctx.add_init_script("""
+          document.addEventListener('DOMContentLoaded',()=>{
+            const style=document.createElement('style');
+            style.textContent='#reader-viewer{height:300px!important;min-height:300px!important} #reader-text{min-height:1800px!important}';
+            document.head.append(style);
+          });
+        """)
+        page = ctx.new_page()
+        page.expose_function("__sinjiraTestDb", fake_backend)
+        response = page.goto(
+            urljoin(BASE_URL, "compte/liseuse.html?edition=integrale"),
+            wait_until="domcontentloaded", timeout=30_000)
+        assert_true(response is not None and response.status < 400,
+                    f"{BROWSER_NAME}: page privée simulée indisponible")
+        page.locator("#reader-content:not([hidden])").wait_for(timeout=25_000)
+        return page
+
+    try:
+        first = open_device(owner)
+        first.locator("#reader-page").fill("37")
+        first.locator("#reader-page").dispatch_event("change")
+        first.wait_for_function(
+            "() => document.getElementById('reader-text')?.textContent.includes('Page 37')")
+        first.locator("#reader-viewer").evaluate(
+            "(el) => {el.scrollTop=420;el.dispatchEvent(new Event('scroll'));}")
+        assert_true(first.locator("#reader-viewer").evaluate("(el) => el.scrollTop > 0"),
+                    f"{BROWSER_NAME}: impossible de simuler le défilement privé")
+        first.locator("#reader-save-position").click()
+        first.wait_for_function(
+            "() => document.getElementById('reader-position-status')?.textContent.includes('synchronisés sur votre compte')",
+            timeout=15_000)
+        saved = cloud.get(owner)
+        assert_true(saved is not None and saved.get("last_page") == 37
+                    and 0 < saved.get("scroll_ratio", 0) < 1,
+                    f"{BROWSER_NAME}: position précise du compte non enregistrée")
+        assert_true("text" not in saved and "content" not in saved,
+                    f"{BROWSER_NAME}: le texte privé ne doit pas être enregistré")
+        ratio = saved["scroll_ratio"]
+        second = open_device(owner)
+        assert_true(second.locator("#reader-page").input_value() == "37",
+                    f"{BROWSER_NAME}: la page du compte n'est pas reprise sur appareil B")
+        assert_true("reprise depuis votre compte" in
+                    second.locator("#reader-position-status").inner_text(),
+                    f"{BROWSER_NAME}: origine cloud non identifiée")
+        second.wait_for_function(
+            "() => document.getElementById('reader-viewer')?.scrollTop > 0",
+            timeout=15_000)
+        restored = second.locator("#reader-viewer").evaluate(
+            "(el) => el.scrollTop / Math.max(1,el.scrollHeight-el.clientHeight)")
+        assert_true(abs(restored - ratio) < 0.04,
+                    f"{BROWSER_NAME}: défilement cloud non repris ({restored} ≠ {ratio})")
+        third = open_device(other)
+        assert_true(third.locator("#reader-page").input_value() == "4",
+                    f"{BROWSER_NAME}: progression d'un autre utilisateur exposée par le mock")
+        assert_true(other not in cloud,
+                    f"{BROWSER_NAME}: donnée de lecture attribuée au mauvais compte")
+        # Compatibilité avec la version serveur qui ne possède que last_page.
+        schema["legacy"] = True
+        legacy = open_device(owner)
+        assert_true(legacy.locator("#reader-page").input_value() == "37",
+                    f"{BROWSER_NAME}: ancienne sauvegarde serveur non reprise")
+        legacy.locator("#reader-page").fill("39")
+        legacy.locator("#reader-page").dispatch_event("change")
+        legacy.locator("#reader-save-position").click()
+        legacy.wait_for_function(
+            "() => document.getElementById('reader-position-status')?.textContent.includes('Page synchronisée avec votre compte')",
+            timeout=15_000)
+        assert_true(cloud[owner]["last_page"] == 39 and
+                    "scroll_ratio" not in cloud[owner],
+                    f"{BROWSER_NAME}: fallback V31 n'a pas préservé la sauvegarde serveur")
+    finally:
+        for ctx in contexts:
+            ctx.close()
+
+
 def json_ld_graph(page) -> list[dict]:
     nodes: list[dict] = []
     scripts = page.locator('script[type="application/ld+json"]')
@@ -449,6 +637,7 @@ def run() -> None:
 
         # Protéger aussi l'édition intégrale pendant une déconnexion en vol.
         assert_private_signout_during_load(browser)
+        assert_private_cross_device_resume_mock(browser)
 
         mobile = browser.new_context(
             locale="fr-CA",
