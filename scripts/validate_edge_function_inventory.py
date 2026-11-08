@@ -109,6 +109,17 @@ JWT_SENSITIVE_GUARDS = {
 TEXT_SUFFIXES = {".ts", ".js", ".json", ".toml", ".md", ".html"}
 MAX_SOURCE_BYTES = 2 * 1024 * 1024
 
+# Éviter la résolution flottante de la pile d'authentification pendant un
+# déploiement Edge. Seules les versions semver exactes sont acceptées.
+SUPABASE_JS_REF = re.compile(r"""(?:npm:|https://esm\\.sh/)@supabase/supabase-js@([^\\s\x27\x22/?]+)""")
+EXACT_SEMVER = re.compile(r"^[0-9]+\\.[0-9]+\\.[0-9]+$")
+
+
+def unpinned_supabase_js_versions(source: str) -> list[str]:
+    return [match.group(1) for match in SUPABASE_JS_REF.finditer(source)
+            if not EXACT_SEMVER.fullmatch(match.group(1))]
+
+
 
 class UnsafeSource(Exception):
     """Une source contrôlée ne peut être vérifiée de façon fiable."""
@@ -219,6 +230,19 @@ def main() -> int:
         entry = FUNCTIONS / slug / "index.ts"
         if not entry.exists():
             errors.append(f"{slug}: index.ts absent.")
+
+    # Couvrir toutes les sources TypeScript Edge et les helpers partagés.
+    # Bloquer les plages majeures/mineures, latest et alias mobiles.
+    supabase_js_references = 0
+    for edge_source in sorted(FUNCTIONS.rglob("*.ts")):
+        text = read_security_text(edge_source)
+        supabase_js_references += len(SUPABASE_JS_REF.findall(text))
+        for version in unpinned_supabase_js_versions(text):
+            errors.append(
+                f"{edge_source.relative_to(ROOT)}: version Supabase JS non figée : {version}"
+            )
+    if supabase_js_references < 4:
+        errors.append("Contrat Supabase JS inattendu : moins de quatre références contrôlées.")
 
     # Enforce the actual shared streaming implementation; old inline byte
     # encoder markers are no longer applicable to these three public routes.
