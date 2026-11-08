@@ -13,7 +13,9 @@
       "millesime": 2023,
       "publication": "2026-02-13",
       "tableau": "A.7 et A.9",
-      "note": "Déclarations des particuliers, pas les recettes comptables consolidées de l'État"
+      "note": "Déclarations des particuliers, pas les recettes comptables consolidées de l'État",
+      "url_nombre_contribuables": "https://www.budget.finances.gouv.qc.ca/Budget/outils/statistiques-fiscales/resume.asp",
+      "note_nombre_contribuables": "A.1 - contribuables imposables, non imposables et total (en milliers)"
     },
     "SOCIETES_2021": {
       "url": "https://www.quebec.ca/gouvernement/finances-publiques/revenus/donnees-fiscales/statistiques-fiscales-societes",
