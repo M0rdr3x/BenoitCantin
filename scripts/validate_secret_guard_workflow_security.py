@@ -8,8 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / '.github/workflows/sinjira-secret-guard.yml'
 CHECKOUT_SHA = 'd23441a48e516b6c34aea4fa41551a30e30af803'
-SETUP_PYTHON_SHA = 'ece7cb06caefa5fff74198d8649806c4678c61a1'
-PYTHON_VERSION = '3.12.14'
+PYTHON_RUN_CHECK = """python3 -c 'import sys; assert sys.version_info[:2] == (3, 12), "Python 3.12 requis"'"""
 
 
 def require(errors: list[str], condition: bool, message: str) -> None:
@@ -35,35 +34,35 @@ def validate_text(text: str) -> list[str]:
     require(errors, 'ubuntu-latest' not in text, 'ubuntu-latest interdit pour ce garde critique')
 
     require(errors, text.count(f'uses: actions/checkout@{CHECKOUT_SHA}') == 1, 'checkout doit être épinglé au SHA vérifié')
-    require(errors, text.count(f'uses: actions/setup-python@{SETUP_PYTHON_SHA}') == 1, 'setup-python doit être épinglé au SHA vérifié')
+    require(errors, 'actions/setup-python@' not in text, 'téléchargement externe setup-python non requis')
+    require(errors, text.count(PYTHON_RUN_CHECK) == 1, 'vérification explicite Python 3.12 requise')
     require(errors, text.count('persist-credentials: false') == 1, 'checkout doit désactiver la persistance des credentials')
     require(errors, 'persist-credentials: true' not in text, 'persist-credentials=true interdit')
     require(errors, 'fetch-depth: 1' in text, 'le scan doit conserver un checkout borné à un commit')
-    require(errors, f"python-version: '{PYTHON_VERSION}'" in text, 'version Python exacte requise')
 
     targets = action_targets(text)
-    require(errors, len(targets) == 2, f'nombre inattendu d’actions réutilisables: {len(targets)}')
+    require(errors, len(targets) == 1, f'nombre inattendu d’actions réutilisables: {len(targets)}')
     for target in targets:
         require(errors, re.search(r'@[0-9a-f]{40}$', target) is not None, f'référence d’action non immuable: {target}')
 
-    require(errors, 'python scripts/validate_secret_guard_workflow_security.py --self-test' in text, 'auto-tests du contrat absents')
-    require(errors, 'python scripts/validate_secret_guard_workflow_security.py\n' in text, 'validation du contrat absente')
-    require(errors, 'python -m unittest scripts.test_secret_guard_patterns' in text, 'auto-tests des motifs de secrets absents')
-    require(errors, 'python scripts/validate_no_committed_secrets.py' in text, 'scan des secrets absent')
+    require(errors, 'python3 scripts/validate_secret_guard_workflow_security.py --self-test' in text, 'auto-tests du contrat absents')
+    require(errors, 'python3 scripts/validate_secret_guard_workflow_security.py\n' in text, 'validation du contrat absente')
+    require(errors, 'python3 -m unittest scripts.test_secret_guard_patterns' in text, 'auto-tests des motifs de secrets absents')
+    require(errors, 'python3 scripts/validate_no_committed_secrets.py' in text, 'scan des secrets absent')
     return errors
 
 
 def run_self_tests(text: str) -> None:
     cases = {
         'checkout mobile': text.replace(f'actions/checkout@{CHECKOUT_SHA}', 'actions/checkout@v6', 1),
-        'setup-python mobile': text.replace(f'actions/setup-python@{SETUP_PYTHON_SHA}', 'actions/setup-python@v6', 1),
+        'vérification Python retirée': text.replace(PYTHON_RUN_CHECK, 'echo python-non-verifie', 1),
         'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
         'permission écriture': text.replace('contents: read', 'contents: write', 1),
         'secret ajouté': text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-24.04\n    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}', 1),
         'runner mobile': text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-latest', 1),
-        'python large': text.replace(f"python-version: '{PYTHON_VERSION}'", "python-version: '3.12'", 1),
-        'auto-test retiré': text.replace('        run: python scripts/validate_secret_guard_workflow_security.py --self-test\n', '', 1),
-        'tests des motifs retirés': text.replace('        run: python -m unittest scripts.test_secret_guard_patterns\n', '', 1),
+        'Python minor dégradé': text.replace(PYTHON_RUN_CHECK, PYTHON_RUN_CHECK.replace('(3, 12)', '(3, 11)'), 1),
+        'auto-test retiré': text.replace('        run: python3 scripts/validate_secret_guard_workflow_security.py --self-test\n', '', 1),
+        'tests des motifs retirés': text.replace('        run: python3 -m unittest scripts.test_secret_guard_patterns\n', '', 1),
     }
     for name, mutated in cases.items():
         if not validate_text(mutated):
@@ -86,7 +85,7 @@ def main() -> int:
         for error in errors:
             print(f'ERREUR sécurité garde secrets: {error}')
         return 1
-    print('OK sécurité garde secrets: actions immuables, runtime figé, permissions lecture seule et aucun secret consommé.')
+    print('OK sécurité garde secrets: actions immuables, runtime Python 3.12 vérifié, permissions lecture seule et aucun secret consommé.')
     return 0
 
 
