@@ -538,5 +538,7 @@
   "completion_rule": "Une ligne n'est franchie qu'après avis juridique indépendant daté, analyse de droits/recours, analyse budgétaire et RH, consultation applicable et décision de l'autorité compétente; les deux scénarios sont évalués séparément.",
   "quality_gate": "assets/matrice-juridique-p0-core.mjs",
   "review_status_semantics": "Une conclusion est seulement déclarée documentée après la vérification syntaxique des sources et métadonnées. Aucun contrôle automatique ne certifie leur authenticité ni la conformité juridique.",
-  "reviewed_contexts_documented_at_creation": 0
+  "reviewed_contexts_documented_at_creation": 0,
+  "independent_juridical_audit_reference_url": null,
+  "independent_juridical_audit_date": null
 }
