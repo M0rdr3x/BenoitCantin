@@ -163,3 +163,14 @@ test("le ratio de données estimées et la concentration urbaine ne peuvent êtr
  reject(x=>x.assets_2025.value_assessed_age_or_judgment_gcad=100.0,"ASSET_INVENTORY_UNCORROBORATED");
  reject(x=>x.assets_2025.poor_assets_in_cities_above_100k_gcad=20.0,"ASSET_INVENTORY_UNCORROBORATED");
 });
+
+test("la page publique décrit G0.16k sans transformer les actifs en budget",async()=>{
+ const html=await readFile(new URL("../avancement-programme-nova.html",import.meta.url),"utf8");
+ assert.match(html,/id="actifs-eau-g016k"/);
+ assert.match(html,/197,6 G\$/);
+ assert.match(html,/20,6 G\$/);
+ assert.match(html,/75 %/);
+ assert.match(html,/d'ici le 31 décembre 2026/);
+ assert.match(html,/Aucun impôt n'est déclaré supprimable/);
+ assert.match(html,/47 % inchangé/);
+});
