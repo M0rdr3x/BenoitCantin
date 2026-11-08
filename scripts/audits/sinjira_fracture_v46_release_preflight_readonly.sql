@@ -41,6 +41,12 @@ policy AS (
         AND policyname='fracture docs own update')
     )
 ),
+write_policies AS (
+  SELECT tablename,policyname,cmd FROM pg_policies
+  WHERE schemaname='public'
+    AND tablename IN ('fracture_endgame_reports','fracture_player_documents')
+    AND cmd IN ('UPDATE','ALL')
+),
 checks AS (
   SELECT 'rpc_signature_inventory'::text AS check_id,
     CASE WHEN (SELECT count(*) FROM rpc WHERE oid IS NOT NULL)=10
@@ -85,6 +91,18 @@ checks AS (
         AND c.relrowsecurity
     )=2 THEN 'PASS' ELSE 'BLOCK' END,
     'RLS active sur les deux tables de documents concernés.'
+  UNION ALL
+  SELECT 'rls_no_unreviewed_write_policies',
+    CASE WHEN (SELECT count(*) FROM write_policies)=2
+      AND NOT EXISTS (
+        SELECT 1 FROM write_policies WHERE NOT (
+          (tablename='fracture_endgame_reports'
+            AND policyname='fracture endgame owner update' AND cmd='UPDATE')
+          OR (tablename='fracture_player_documents'
+            AND policyname='fracture docs own update' AND cmd='UPDATE')
+        )
+      ) THEN 'PASS' ELSE 'BLOCK' END,
+    'Refuser toute politique UPDATE ou ALL non revue sur les deux tables.'
   UNION ALL
   SELECT 'rls_endgame_update_destination',
     CASE WHEN EXISTS (
