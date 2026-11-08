@@ -15,6 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 from build_netlify_public import render_standalone_headers  # noqa: E402
+from private_route_csp import harden_private_html, private_csp_output_errors  # noqa: E402
 
 SCOPES = {
     "compte": ("/compte/*", "/compte/(.*)"),
@@ -125,6 +126,37 @@ class PrivateRoutesCspSecurityTests(unittest.TestCase):
                     parser.feed(path.read_text("utf-8"))
                     parser.close()
                     self.assertEqual(parser.errors, [])
+
+    def test_fallback_pages_statiques_ont_une_csp_meta_precoce(self) -> None:
+        for directory in SCOPES:
+            for page in sorted((ROOT / directory).rglob("*.html")):
+                with self.subTest(page=page.relative_to(ROOT).as_posix()):
+                    rel = page.relative_to(ROOT)
+                    source = page.read_text("utf-8")
+                    generated = harden_private_html(rel, source, self.netlify)
+                    self.assertEqual(
+                        private_csp_output_errors(rel, generated, self.netlify), []
+                    )
+                    self.assertIn('http-equiv="Content-Security-Policy"', generated)
+
+    def test_fallback_refuse_toute_injection_html_inline(self) -> None:
+        fixture = "<!doctype html><html><head></head><body><p>Sûr</p></body></html>"
+        rel = Path("compte/test-synthetique.html")
+        generated = harden_private_html(rel, fixture, self.netlify)
+        self.assertEqual(private_csp_output_errors(rel, generated, self.netlify), [])
+        hostile = [
+            "<script>alert(1)</script>",
+            '<img src="x" onerror="alert(1)">',
+            '<a href="javascript:alert(1)">liens</a>',
+        ]
+        for snippet in hostile:
+            with self.subTest(snippet=snippet):
+                with self.assertRaises(ValueError):
+                    harden_private_html(rel, fixture.replace("<p>Sûr</p>", snippet), self.netlify)
+        self.assertTrue(private_csp_output_errors(
+            rel, generated.replace('http-equiv="Content-Security-Policy"', 'http-equiv="X-Test"'),
+            self.netlify,
+        ))
 
     def test_module_admin_compte_est_externe_et_publie(self) -> None:
         html = (ROOT / "compte/index.html").read_text("utf-8")
