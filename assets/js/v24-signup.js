@@ -123,6 +123,7 @@ if(form){
       account_age_band:minor?'minor_13_17':'adult_18_plus',
       guardian_controls_required:minor,
       initial_contributor_opt_in:contributor,
+      formspree_receipt_opt_in:d.get('formspree_receipt_opt_in')==='yes',
       initial_share_free_text:contributor&&d.get('share_free_text')==='yes'
     };
     const destination=wantsQuestionnaire?'/projets/sinjira/registre/':nextDestination();
