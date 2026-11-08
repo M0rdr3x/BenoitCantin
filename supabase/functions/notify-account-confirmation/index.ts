@@ -18,7 +18,10 @@ Deno.serve(async req=>{
     // Le JWT réel est vérifié côté serveur. Rien n'est accepté depuis le corps HTTP.
     const user=await requiredUser(req);
     if(!user.email_confirmed_at)return response({ok:false,code:'EMAIL_NOT_CONFIRMED'},403);
-    const result=await sendFormspreeNotice(serviceClient(),'compte_confirme',user.id);
+    if(user.user_metadata?.formspree_receipt_opt_in!==true){
+      return response({ok:true,notification_sent:false,reason:'NO_FORMSPREE_CONSENT'});
+    }
+    const result=await sendFormspreeNotice(serviceClient(),'compte_confirme',user.id,{email:user.email||''});
     return response({ok:true,notification_sent:result.accepted,already_recorded:result.already});
   }catch{
     console.warn('[SINJIRA compte Formspree]','NOTIFICATION_NOT_AVAILABLE');
