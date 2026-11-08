@@ -66,6 +66,9 @@ verify_jwt = true
 [functions.submit-character-questionnaire]
 verify_jwt = true
 
+[functions.notify-account-confirmation]
+verify_jwt = true
+
 [functions.admin-sinjira-v18]
 verify_jwt = true
 
