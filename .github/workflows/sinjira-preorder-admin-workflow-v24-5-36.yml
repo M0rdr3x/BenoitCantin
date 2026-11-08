@@ -18,13 +18,12 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
-      - name: Configurer Python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
-        with:
-          python-version: '3.12.14'
+      - name: Vérifier Python 3.12 sur Ubuntu 24.04
+        run: |
+          python3 -c 'import sys; assert sys.version_info[:2] == (3, 12), "Python 3.12 requis"'
       - name: Vérifier V24.5.36
-        run: python scripts/validate_preorder_admin_workflow_v24_5_36.py
+        run: python3 scripts/validate_preorder_admin_workflow_v24_5_36.py
       - name: Vérifier V24.5.35 historique
-        run: python scripts/validate_preorder_reference_admin_lookup_v24_5_35.py
+        run: python3 scripts/validate_preorder_reference_admin_lookup_v24_5_35.py
       - name: Vérifier le ledger production
-        run: python scripts/validate_production_migration_ledger.py
+        run: python3 scripts/validate_production_migration_ledger.py

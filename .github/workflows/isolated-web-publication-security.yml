@@ -25,11 +25,9 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
-      - name: Configurer Python épinglé
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
-        with:
-          python-version: '3.12.14'
-          check-latest: false
+      - name: Vérifier Python 3.12 sur Ubuntu 24.04
+        run: |
+          python3 -c 'import sys; assert sys.version_info[:2] == (3, 12), "Python 3.12 requis"'
       - name: Contrôler la syntaxe du constructeur
         run: python3 -m py_compile scripts/build_netlify_public.py scripts/validate_web_release_http.py
       - name: Simuler les fichiers cachés les symlinks et les documents privés

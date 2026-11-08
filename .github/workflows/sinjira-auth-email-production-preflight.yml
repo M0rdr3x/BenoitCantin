@@ -37,11 +37,9 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
-      - name: Python épinglé
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
-        with:
-          python-version: '3.12.14'
-          check-latest: false
+      - name: Vérifier Python 3.12 du runner Ubuntu 24.04
+        run: |
+          python3 -c 'import sys; assert sys.version_info[:2] == (3, 12), "Python 3.12 requis"'
       - name: Auto-tests sans accès production
         run: |
           python3 -m py_compile scripts/preflight_sinjira_auth_email.py
@@ -70,11 +68,9 @@ jobs:
         with:
           ref: main
           persist-credentials: false
-      - name: Python épinglé
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
-        with:
-          python-version: '3.12.14'
-          check-latest: false
+      - name: Vérifier Python 3.12 du runner Ubuntu 24.04
+        run: |
+          python3 -c 'import sys; assert sys.version_info[:2] == (3, 12), "Python 3.12 requis"'
       - name: Lire seulement la configuration Auth distante
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
