@@ -21,11 +21,12 @@ Le prévol a été exécuté effectivement sur **les métadonnées de production
 | Mutations refusées à `authenticated` | **BLOCK** | Les 10 mutations sont encore exécutables par des comptes connectés |
 | Accès de maintenance `service_role` préservé | PASS | Privilèges actuellement présents |
 | RLS des deux tables de documents | PASS | RLS activée sur les deux tables |
+| Pas de politique de modification non revue | PASS | Seulement les deux politiques `UPDATE` connues; aucune politique `ALL` additionnelle |
 | `WITH CHECK` des rapports vers la partie cible | **BLOCK** | Politique actuelle sans contrainte de propriété de la partie cible |
 | `WITH CHECK` des documents vers la partie cible | **BLOCK** | Politique actuelle sans contrainte de membre sur la partie cible |
 | **Décision globale** | **NO_GO** | Trois blocages réels de préconditions; aucune autorisation automatique de déploiement |
 
-**Bilan : 5 PASS, 3 BLOCK, décision NO_GO.**
+**Bilan : 6 PASS, 3 BLOCK, décision NO_GO.**
 
 Le contrôle de `WITH CHECK` est une **heuristique de catalogue** qui vérifie la présence de garde-fous nommés, mais ne prouve pas que les prédicats SQL, jointures et fonctions `SECURITY DEFINER` sont sémantiquement corrects. Les tests multi-comptes demeurent obligatoires, même si toutes les lignes passent à PASS. Lorsque aucun blocage de catalogue n'est présent, le résultat final ne devient **pas** GO, mais **REVIEW_REQUIRED**.
 
@@ -37,7 +38,7 @@ Le test `tests/security/test_fracture_release_preflight_v46.py` :
 - vérifie que la requête ne lit que les catalogues autorisés;
 - compare exactement **les dix signatures** avec le fichier candidat V45;
 - vérifie les noms des deux politiques **effectivement visées** par V42;
-- impose les neuf contrôles et l'absence de feu vert automatique;
+- impose les dix contrôles et l'absence de feu vert automatique;
 - interdit les identifiants du projet Supabase et toute connexion distante en CI.
 
 Le workflow se contente de tester le SQL et ses contrats statiques, avec un jeton GitHub en lecture seule. Les validations réelles des politiques restent les recettes isolées livrées avec V42/V45.
