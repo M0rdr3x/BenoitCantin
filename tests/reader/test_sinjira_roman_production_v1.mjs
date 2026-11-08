@@ -200,3 +200,13 @@ test("le suivi éditorial reste exclu du rendu Jekyll d'urgence",async()=>{
  assert.ok(!html.includes('href="avancement-editorial-2026-11-08.json"'));
  assert.ok(html.includes("github.com/M0rdr3x/BenoitCantin/blob/main/docs/sinjira/avancement-editorial-2026-11-08.json"));
 });
+
+test("un registre manipulé ne retourne jamais un faux 100 pour cent",()=>{
+ const fake=structuredClone(report);
+ fake.books[0].declared_structure.chapters=99;
+ const result=check(fake);
+ assert.equal(result.ok,false);
+ assert.equal(result.book1,null);
+ assert.equal(result.book2,null);
+ assert.equal(result.readiness_confirmed,false);
+});
