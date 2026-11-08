@@ -1,0 +1,215 @@
+{
+  "schema_version": "P56I-1",
+  "date_controle": "2026-11-07",
+  "jalon_precedent": "P56H",
+  "statut": "REVUE_CRITIQUE_DES_PREUVES_PUBLIQUES_SANS_CERTIFICATION_NOVA",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "territoire": "QUEBEC_DANS_CANADA",
+  "perimetre": {
+    "municipalite": "Alma",
+    "code_mamh": "93042",
+    "annee_municipale": "2024",
+    "exercice_provincial": "2024-2025"
+  },
+  "sources": {
+    "RAPPORT_MUNICIPAL_S6": {
+      "url": "https://www.mamh.gouv.qc.ca/documentsfinanciersweb/Rapport-financier-2024-et-autres-93042.pdf",
+      "type": "ETATS_CONSOLIDES_AUDITES_AVEC_RESERVE",
+      "section": "S6 pages 1 à 4",
+      "opinion_audit": "AVEC_RESERVE",
+      "reserve": "Obligations liées à la mise hors service des immobilisations non évaluées et comptabilisées selon SP 3280",
+      "audit_Nova": false
+    },
+    "RAPPORT_MUNICIPAL_S27": {
+      "url": "https://www.mamh.gouv.qc.ca/documentsfinanciersweb/Rapport-financier-2024-et-autres-93042.pdf",
+      "type": "INFORMATIONS_COMPLEMENTAIRES_NON_AUDITEES",
+      "section": "S27, pages imprimées 47 et 52",
+      "audit_Nova": false
+    },
+    "MAMH_LISTES_2024": {
+      "juillet_url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/documents_administratifs/acces_information/engagements_financiers/2024/LIS_engagements_juillet_2024.pdf",
+      "avril_url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/documents_administratifs/acces_information/engagements_financiers/2024/LIS_engagements_avril_2024.pdf",
+      "type": "ENGAGEMENTS_FINANCIERS_MINISTERIELS",
+      "preuve_date_encaissement": false
+    }
+  },
+  "correspondances": {
+    "PROGRAMME_40350": {
+      "recette_s27_31_33_cad": "3320039",
+      "engagement_ministeriel_cad": "3320039",
+      "difference_cad": "0",
+      "concordance_arithmetique": true,
+      "preuve_comptabilite_reciproque": false
+    },
+    "PROGRAMME_40561": {
+      "recette_s27_136_cad": "1665578",
+      "engagement_ministeriel_cad": "1665580",
+      "difference_cad": "-2",
+      "concordance_arithmetique_exacte": false,
+      "preuve_comptabilite_reciproque": false,
+      "cause_ecart_cad": null
+    }
+  },
+  "audit_contradictoire": {
+    "documents_binaries_originaux_disponibles": false,
+    "empreintes_sha256_verifiees": 0,
+    "pages_comparees_visuellement_sur_meme_binaire": 0,
+    "dates_paiements_et_pieces_confirmees": 0,
+    "avis_sur_projet_nova_signes": 0,
+    "preuves_contreparties_certifiees": 0
+  },
+  "risques": [
+    {
+      "id": "I01",
+      "code": "OPINION_AUDIT_AVEC_RESERVE",
+      "etat": "CONSTAT_PUBLIE",
+      "localisation": "Rapport S6, pages imprimées 1-4",
+      "constat": "Opinion avec réserve liée aux obligations de mise hors service des immobilisations (SP 3280) non identifiées ni évaluées",
+      "consequence": "La réserve empêche de décrire les états municipaux 2024 comme dépourvus de réserve; elle ne prouve pas une erreur sur les transferts",
+      "source": "RAPPORT_MUNICIPAL_S6",
+      "expert_responsable_requis": "COMPTABLE_MUNICIPAL_INDEPENDANT",
+      "preuve_contradiction_obtenue": false,
+      "conclusion_financement_nova_autorisee": false
+    },
+    {
+      "id": "I02",
+      "code": "ANNEXE_S27_NON_AUDITEE",
+      "etat": "CONSTAT_PUBLIE",
+      "localisation": "Rapport S27, pages imprimées 47 et 52",
+      "constat": "Analyse détaillée des recettes municipales 2024, explicitement non auditée",
+      "consequence": "La concordance numérique n'hérite pas de l'opinion sur les états consolidés",
+      "source": "RAPPORT_MUNICIPAL_S27",
+      "expert_responsable_requis": "COMPTABLE_MUNICIPAL_INDEPENDANT",
+      "preuve_contradiction_obtenue": false,
+      "conclusion_financement_nova_autorisee": false
+    },
+    {
+      "id": "I03",
+      "code": "ENGAGEMENT_NE_PROUVE_PAS_PAIEMENT",
+      "etat": "NON_DEMONTRE",
+      "localisation": "MAMH juillet 2024, programme 40350, ligne 1193; avril 2024, programme 40561, ligne 746",
+      "constat": "Exiger un bordereau daté, numéro de référence de paiement et rapprochement de banque ou de constatation",
+      "consequence": "Les listes d'engagements comportent des libellés de versement, sans preuve indépendante d'encaissement municipal",
+      "source": "MAMH_LISTES_2024",
+      "expert_responsable_requis": "TRESORERIE_MAMH",
+      "preuve_contradiction_obtenue": false,
+      "conclusion_financement_nova_autorisee": false
+    },
+    {
+      "id": "I04",
+      "code": "EXERCICES_NON_IDENTIQUES",
+      "etat": "NON_DEMONTRE",
+      "localisation": "Ville d'Alma 2024; Québec exercice 2024-2025",
+      "constat": "Établir la date du fait générateur et la période de constatation des deux côtés",
+      "consequence": "Une égalité annuelle ne prouve pas la simultanéité ou le même fait générateur",
+      "source": "TOUTES_SOURCES",
+      "expert_responsable_requis": "COMPTABLE_MUNICIPAL_INDEPENDANT",
+      "preuve_contradiction_obtenue": false,
+      "conclusion_financement_nova_autorisee": false
+    },
+    {
+      "id": "I05",
+      "code": "ECART_TVQ_DEUX_DOLLARS",
+      "etat": "NON_DEMONTRE",
+      "localisation": "S27 ligne 136, programme 40561",
+      "constat": "Expliquer sur pièce l'écart municipal moins provincial de −2 CAD",
+      "consequence": "L'écart peut être un ajustement ou une autre convention, sans cause démontrée",
+      "source": "MAMH_LISTES_2024",
+      "expert_responsable_requis": "TRESORERIE_MAMH",
+      "preuve_contradiction_obtenue": false,
+      "conclusion_financement_nova_autorisee": false
+    },
+    {
+      "id": "I06",
+      "code": "ORIGINAL_PDF_NON_CONTROLE",
+      "etat": "NON_DEMONTRE",
+      "localisation": "Trois URL officielles indexées",
+      "constat": "Récupérer les trois PDF exacts, conserver empreintes SHA-256 et comparer le rendu des pages aux extraits",
+      "consequence": "Les captures web ont retourné CACHE_MISS et le téléchargement canonique n'a pas abouti",
+      "source": "TOUTES_SOURCES",
+      "expert_responsable_requis": "AUDITEUR_DOCUMENTAIRE",
+      "preuve_contradiction_obtenue": false,
+      "conclusion_financement_nova_autorisee": false
+    },
+    {
+      "id": "I07",
+      "code": "PERIMETRE_ET_TRANSFERTS",
+      "etat": "NON_DEMONTRE",
+      "localisation": "Volume 1 Québec vs comptes municipaux",
+      "constat": "Démontrer l'appartenance de chaque entité au périmètre retenu et les éliminations réciproques éventuelles",
+      "consequence": "Le reclassement comptable d'un transfert n'est pas une économie réelle",
+      "source": "TOUTES_SOURCES",
+      "expert_responsable_requis": "EXPERT_COMPTABILITE_PUBLIQUE",
+      "preuve_contradiction_obtenue": false,
+      "conclusion_financement_nova_autorisee": false
+    },
+    {
+      "id": "I08",
+      "code": "APPARIEMENT_COMPTABLE",
+      "etat": "NON_DEMONTRE",
+      "localisation": "Deux programmes provinciaux, sous-postes S27",
+      "constat": "Obtenir les écritures source, contreparties, dates, pièces et revue signée",
+      "consequence": "Même un écart de zéro dollar ne prouve pas une écriture réciproque",
+      "source": "TOUTES_SOURCES",
+      "expert_responsable_requis": "COMPTABLE_MUNICIPAL_INDEPENDANT",
+      "preuve_contradiction_obtenue": false,
+      "conclusion_financement_nova_autorisee": false
+    },
+    {
+      "id": "I09",
+      "code": "FINANCEMENT_FISCAL_DECENNAL",
+      "etat": "NON_DEMONTRE",
+      "localisation": "P52B, P52D et P52A",
+      "constat": "Financer services, municipalités, droits et transition dans deux régimes; examiner foyers et entreprises",
+      "consequence": "Ce pilote municipal 2024 ne chiffre aucun taux, dépense ou économie Nova 2027-2036",
+      "source": "MODELES_NOVA",
+      "expert_responsable_requis": "ECONOMISTE_ET_JURISTE_INDEPENDANTS",
+      "preuve_contradiction_obtenue": false,
+      "conclusion_financement_nova_autorisee": false
+    }
+  ],
+  "nombre_controles": 9,
+  "nb_constats_publics": 2,
+  "nb_controles_non_demontres": 7,
+  "pieces_a_obtenir": [
+    {
+      "id": "H01",
+      "nature": "Trois PDF binaires canoniques, SHA256 et rendu des pages sources",
+      "preuve_id": null,
+      "statut": "NON_OBTENUE"
+    },
+    {
+      "id": "H02",
+      "nature": "Bordereaux MAMH et dates paiement programmes 40350 et 40561",
+      "preuve_id": null,
+      "statut": "NON_OBTENUE"
+    },
+    {
+      "id": "H03",
+      "nature": "Journaux de recette municipale associés aux lignes S27, dates et pièces",
+      "preuve_id": null,
+      "statut": "NON_OBTENUE"
+    },
+    {
+      "id": "H04",
+      "nature": "Note circonstanciée résolvant l'écart de −2 CAD avec source",
+      "preuve_id": null,
+      "statut": "NON_OBTENUE"
+    },
+    {
+      "id": "H05",
+      "nature": "Avis de comptable municipal indépendant sur concordances et réserve",
+      "preuve_id": null,
+      "statut": "NON_OBTENUE"
+    }
+  ],
+  "score_p55n_estime": 53,
+  "p52b_champs_inconnus": 600,
+  "p52d_incidences_inconnues": 720,
+  "p52a_preuves_non_validees": 20,
+  "reformes_fiscales_adoptees": false,
+  "nouvelles_economies_certifiees_cad": null,
+  "budget_nova_decennal_certifie": false,
+  "validation_independante_nova": false,
+  "transposition_budgetaire_2027_2036": false
+}
