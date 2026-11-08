@@ -141,7 +141,7 @@ if(form){
       }
       if(data.session){location.assign(destination);return}
       const youthNote=age>=14&&age<18&&!guardianCode?' Les fonctions sociales resteront protégées jusqu’à la vérification d’un parent ou tuteur.':'';
-      setStatus(status,(wantsQuestionnaire?'Compte créé. Consultez votre courriel, ouvrez le lien de confirmation SINJIRA™ et cliquez sur « Confirmer mon compte ». Vous pourrez ensuite accéder au Registre.':'Compte créé. Consultez votre courriel, ouvrez le lien SINJIRA™ et cliquez sur « Confirmer mon compte ».')+youthNote,'success');
+      setStatus(status,(wantsQuestionnaire?'Compte créé. Consultez votre courriel, ouvrez le lien de confirmation SINJIRA™ et cliquez sur « Confirmer mon compte ». Pour transmettre le questionnaire du Registre, vous devrez ensuite activer et valider la double authentification (AAL2) dans Ma sécurité.':'Compte créé. Consultez votre courriel, ouvrez le lien SINJIRA™ et cliquez sur « Confirmer mon compte ».')+youthNote,'success');
       form.reset();syncYouthControls();
     }catch(err){
       console.warn('[SINJIRA signup]',err);
