@@ -99,7 +99,7 @@ def main()->int:
     # Vérifier automatiquement toutes les questions du formulaire contre la copie
     # Formspree et leurs libellés français. Pas de liste manuelle divergente.
     form_html=registry_page.partition('<form ')[2].partition('</form>')[0]
-    displayed_fields=set(re.findall(r'\\bname="([a-z][a-z0-9_]*)"',form_html))
+    displayed_fields=set(re.findall(r'\bname="([a-z][a-z0-9_]*)"',form_html))
     private_fields={
         'compte_pseudo','compte_courriel','photo',
         'confirm_original','formspree_receipt_opt_in',
@@ -115,10 +115,10 @@ def main()->int:
     if len(re.findall(r"'([a-z][a-z0-9_]*)'",allow))!=len(exported):
         errors.append('Formspree : champs exportés en double.')
     labels=helper.partition('const QUESTION_LABELS:Record<string,string>={')[2].partition('};')[0]
-    label_names=set(re.findall(r'^\\s*([a-z][a-z0-9_]*):',labels,re.M))
+    label_names=set(re.findall(r'^\s*([a-z][a-z0-9_]*):',labels,re.M))
     if exported!=label_names:
         errors.append('Formspree : libellés français en décalage avec les questions.')
-    if len(re.findall(r'^\\s*([a-z][a-z0-9_]*):',labels,re.M))!=len(label_names):
+    if len(re.findall(r'^\s*([a-z][a-z0-9_]*):',labels,re.M))!=len(label_names):
         errors.append('Formspree : libellés en double.')
     if 'formspree_receipt_opt_in' not in form_html:
         errors.append('Registre : consentement Formspree absent du formulaire.')
