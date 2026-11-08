@@ -140,7 +140,7 @@ def main()->int:
 
     # Si la réponse HTTP se perd après un enregistrement réussi, ne pas
     # effacer la photo que le serveur peut déjà référencer dans le dossier.
-    if re.search(r'catch\\s*\\(e\\)\\s*\\{\\s*await\\s+cleanupUploadedPhoto\\(photo_path\\)',registry_js):
+    if re.search(r'catch\s*\(e\)\s*\{\s*await\s+cleanupUploadedPhoto\(photo_path\)',registry_js):
         errors.append('Registre : effacement photo aveugle après un échec réseau')
     if 'Avis interne créé. Aucune copie' in registry_js:
         errors.append('Registre : avis interne annoncé sans vérifier le statut serveur')
