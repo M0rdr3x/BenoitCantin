@@ -54,6 +54,11 @@ CUSTOM_AUTH = {
 }
 
 JWT_SENSITIVE_GUARDS = {
+    "fracture-engine-gateway": (
+        "MAX_BODY_BYTES=32_000", "readLimitedUtf8Body(req,MAX_BODY_BYTES)",
+        "client.auth.getUser(token)", "ALLOWED_ACTIONS", "fracture_engine_get_state_safe",
+        "Cache-Control", "private, no-store", "Content-Type", "privateJson",
+    ),
     "conscience-vault": (
         "req.method !== 'POST'", "MAX_REQUEST_BYTES", "readBoundedJson", "req.body.getReader()",
         "REQUEST_TOO_LARGE", "INVALID_JSON", "requiredVaultUser", "service_conscience_evaluate_access",
@@ -127,6 +132,16 @@ def has_unsanitized_auth_error_log(source: str) -> bool:
         r"console\.(?:warn|error|log|info)\s*\([^;]*\berror\s*\)",
         source,
     ))
+
+
+def fracture_gateway_body_boundary_valid(source: str) -> bool:
+    """Un corps hostile ne doit être lu ni avant JWT, ni sans borne en flux."""
+    if "await req.text()" in source or "await req.json()" in source:
+        return False
+    authenticated = source.find("await client.auth.getUser(token)")
+    bounded = source.find("await readLimitedUtf8Body(req,MAX_BODY_BYTES)")
+    privileged = source.find("await client.rpc(action,args)")
+    return 0 <= authenticated < bounded < privileged
 
 
 class UnsafeSource(Exception):
@@ -294,6 +309,10 @@ def main() -> int:
                 errors.append(f"{slug}: garde-fou HTTP/destructif manquant: {marker}.")
         if "await req.json()" in source or "await req.json (" in source:
             errors.append(f"{slug}: lecture JSON directe non bornée interdite.")
+
+    gateway_source = read_security_text(FUNCTIONS / "fracture-engine-gateway" / "index.ts")
+    if not fracture_gateway_body_boundary_valid(gateway_source):
+        errors.append("fracture-engine-gateway: JWT avant lecture et limite HTTP streaming obligatoires.")
 
     # Ces opérations touchent aux comptes, droits et licences; un corps
     # complet et les erreurs de fournisseur ne doivent jamais sortir en logs.
