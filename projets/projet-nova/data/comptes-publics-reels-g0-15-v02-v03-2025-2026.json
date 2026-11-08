@@ -1,0 +1,99 @@
+{
+  "schema": "nova-g015-v02-v03-comptes-publics-reels/v1",
+  "project": "Projet Nova",
+  "prepared_on": "2026-11-08",
+  "phase": "G0.15-V02-V03",
+  "status": "MONTANTS_REELS_GOUVERNEMENT_PUBLICS_PREUVES_LEGALES_NOVA_NON_CERTIFIEES",
+  "programme_score_before": 47,
+  "programme_score_after": 47,
+  "source": {
+    "publisher": "Ministère des Finances du Québec",
+    "title": "Comptes publics 2025-2026, volume 1, États financiers consolidés",
+    "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Comptes-publics/FR/CPTFR_vol1-2025-2026.pdf",
+    "report_date": "2026-07-17",
+    "fiscal_year_end": "2026-03-31",
+    "pdf_page_index_zero_based_results": 11,
+    "printed_page_results": 5,
+    "pdf_page_index_zero_based_auditor_summary": 13,
+    "printed_page_auditor_summary": 7,
+    "government_accounts_vgq_unqualified_opinion": true,
+    "reviewed_independently_for_nova": false,
+    "source_values_read_as_consolidated_government_results": true
+  },
+  "units": "M_CAD",
+  "annual": [
+    {
+      "year": "2024-2025",
+      "classification": "COMPTES_PUBLICS_REELS_RECLASSES_COMPARATIFS",
+      "income_and_property_taxes": 69081,
+      "consumption_taxes": 28377,
+      "rights_permits_royalties": 6191,
+      "miscellaneous_revenues": 16252,
+      "government_enterprises": 5689,
+      "own_revenues": 125590,
+      "federal_transfers": 30498,
+      "total_revenues": 156088,
+      "total_expenditures": 161263,
+      "accounting_balance": -5175,
+      "observed_municipal_taxes_included": false
+    },
+    {
+      "year": "2025-2026",
+      "classification": "COMPTES_PUBLICS_REELS_2025_2026",
+      "income_and_property_taxes": 74115,
+      "consumption_taxes": 29639,
+      "rights_permits_royalties": 6708,
+      "miscellaneous_revenues": 14922,
+      "government_enterprises": 5241,
+      "own_revenues": 130625,
+      "federal_transfers": 29803,
+      "total_revenues": 160428,
+      "total_expenditures": 165930,
+      "accounting_balance": -5502,
+      "observed_municipal_taxes_included": false
+    }
+  ],
+  "changes_2025_2026_minus_2024_2025": {
+    "rights_permits_royalties": 517,
+    "miscellaneous_revenues": -1330,
+    "own_revenues": 5035,
+    "total_revenues": 4340,
+    "accounting_balance": -327
+  },
+  "cross_reference_g014": {
+    "year": "2026-2027",
+    "classification": "PREVISION_GOUVERNEMENT_PAS_REALISATION_2025_2026",
+    "forecast_rights_permits_royalties_mcad": 6484,
+    "forecast_miscellaneous_revenues_mcad": 15790,
+    "forecast_total_revenues_mcad": 168389,
+    "forecast_federal_transfers_mcad": 33046,
+    "compare_years_without_reconciliation": false,
+    "add_2025_2026_actuals_to_2026_2027_forecast": false,
+    "nova_budget_financed": false
+  },
+  "evidence": {
+    "v02_legal_source_allocation_complete": false,
+    "v03_internal_transfer_elimination_complete": false,
+    "rights_and_royalties_tax_share_identified": false,
+    "miscellaneous_income_tax_share_identified": false,
+    "g015_v02_independently_validated": false,
+    "g015_v03_independently_validated": false,
+    "tax_abolition_approved": false,
+    "new_nova_revenue_mcad": null,
+    "review_document_2025_2026_available": true,
+    "nova_external_fiscal_audit_complete": false
+  },
+  "decision": {
+    "g015_passed": false,
+    "programme_complete": false,
+    "budget_nova_certified": false
+  },
+  "limits": [
+    "Les comptes publics du Québec audités ne sont pas un audit indépendant des propositions du Projet Nova.",
+    "Les droits, permis et redevances regroupent des revenus mixtes; aucune ventilation juridique intégrale n'est attestée.",
+    "Les revenus divers ne sont pas automatiquement des taxes abolissables ni une recette libre.",
+    "Les comparatifs de 2024-2025 ont été reclassés pour correspondre à la présentation de 2025-2026.",
+    "Les résultats réels 2025-2026 et les prévisions 2026-2027 du gouvernement ne peuvent être additionnés ni confondus avec des recettes Nova.",
+    "Le tableau ne ventile pas l'ensemble des transferts internes, des fonds spéciaux ou des revenus par loi et administration."
+  ]
+}
