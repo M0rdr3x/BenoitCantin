@@ -5,7 +5,7 @@ import {inspectSinjiraNovelEditorialReadiness}
  from "../../assets/js/sinjira-roman-production-core-v1.mjs";
 const load=async path=>JSON.parse(await readFile(new URL("../../"+path,import.meta.url),"utf8"));
 const [report,manifest,contract]=await Promise.all([
- load("projets/sinjira/codex/avancement-editorial-2026-11-08.json"),
+ load("docs/sinjira/avancement-editorial-2026-11-08.json"),
  load("projets/sinjira/romans/livre-1-release.json"),
  load("projets/sinjira/codex/livre-i-delivery-contract.json")
 ]);
