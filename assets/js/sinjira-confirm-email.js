@@ -8,6 +8,7 @@ const confirmButton = document.querySelector('[data-confirm-button]');
 const nextLink = document.querySelector('[data-confirm-next]');
 const resendForm = document.querySelector('[data-confirm-resend-form]');
 const resendStatus = document.querySelector('[data-resend-status]');
+const resendButton = resendForm?.querySelector('button[type="submit"]');
 const fragment = new URLSearchParams(location.hash.replace(/^#/, ''));
 const tokenHash = String(fragment.get('token_hash') || '').trim();
 const tokenType = String(fragment.get('type') || 'email').trim();
@@ -98,4 +99,6 @@ resendForm?.addEventListener('submit', async (event) => {
   }
 });
 
+// Le formulaire HTML est bloqué par défaut : seule la logique Supabase est autorisée.
+if(resendButton)resendButton.disabled=!isSinjiraBackendConfigured();
 init();
