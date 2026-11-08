@@ -14,7 +14,10 @@ REQUIRED = {
     'authentification obligatoire': 'requiredUser(req)',
     'session issue du JWT validé': 'sessionIdFromVerifiedRequest(req)',
     'lecture JSON bornée': 'readLimitedJson(req)',
-    'mesure UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
+    'lecteur UTF-8 en flux': 'readLimitedUtf8Body(req, MAX_REQUEST_BYTES)',
+    'résultat JSON strict': "JSON.parse(limited.raw || '{}')",
+    'importation du lecteur partagé': "from '../_shared/limited-body.mjs'",
+    'journal expurgé': "code: 'SECURITY_CONTEXT_FAILED'",
     'réponse privée': "'Cache-Control': 'private, no-store, max-age=0'",
     'protection MIME': "'X-Content-Type-Options': 'nosniff'",
     'référent masqué': "'Referrer-Policy': 'no-referrer'",
@@ -34,6 +37,8 @@ REQUIRED_PATTERNS = {
 
 FORBIDDEN = {
     'lecture JSON directe non bornée': 'await req.json()',
+    'lecture HTTP brute non bornée': 'await req.text()',
+    'journalisation brute de l’exception': "console.error('[security-context]', error)",
     'lecture JSON directe non bornée espacée': 'await req.json (',
     'lecture IP brute Cloudflare': 'cf-connecting-ip',
     'lecture IP brute proxy': 'x-forwarded-for',
@@ -73,6 +78,7 @@ def self_test() -> None:
     with TemporaryDirectory() as raw:
         path = Path(raw) / 'index.ts'
         safe = """
+import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 const MAX_REQUEST_BYTES = 4096;
 const PRIVATE_HEADERS = {
   'Cache-Control': 'private, no-store, max-age=0',
@@ -81,10 +87,10 @@ const PRIVATE_HEADERS = {
 };
 function privateJson(data, status=200){return new Response(JSON.stringify(data),{status,headers:PRIVATE_HEADERS})}
 async function readLimitedJson(req){
- const rawLength=req.headers.get('content-length');
- const raw=await req.text();
- new TextEncoder().encode(raw).byteLength;
- return {body:{}};
+ const limited=await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);
+ if(!limited.ok) return {response:privateJson({},413)};
+ const body=JSON.parse(limited.raw || '{}');
+ return {body};
 }
 function sessionIdFromVerifiedRequest(req){return req}
 function trustedGeo(req){
@@ -113,11 +119,23 @@ Deno.serve(async (req) => {
 });
 privateJson({});
 privateJson({});
+console.error('[security-context]', { code: 'SECURITY_CONTEXT_FAILED' });
 """
         path.write_text(safe, encoding='utf-8')
         clean = validate(path)
         if clean:
             raise AssertionError('Le cas sain doit passer: ' + ' | '.join(clean))
+
+        path.write_text(safe.replace('readLimitedUtf8Body(req, MAX_REQUEST_BYTES)', 'req.text()'), encoding='utf-8')
+        raw_read = validate(path)
+        if not any('lecture HTTP brute' in item or 'lecteur UTF-8' in item for item in raw_read):
+            raise AssertionError('La lecture complète non bornée doit être bloquée.')
+
+        path.write_text(safe.replace("console.error('[security-context]', { code: 'SECURITY_CONTEXT_FAILED' });",
+                                     "console.error('[security-context]', error);"), encoding='utf-8')
+        raw_logs = validate(path)
+        if not any('journalisation brute' in item or 'journal expurgé' in item for item in raw_logs):
+            raise AssertionError('Un log d’exception brut doit être bloqué.')
 
         path.write_text(safe.replace('const parsed = await readLimitedJson(req);', 'const parsed = {body: await req.json()};'), encoding='utf-8')
         direct = validate(path)
