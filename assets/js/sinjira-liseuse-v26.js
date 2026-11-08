@@ -462,7 +462,16 @@ function bindControls(){
   $('reader-voice-pause').addEventListener('click',toggleSpeechPause);
   $('reader-voice-stop').addEventListener('click',()=>stopNarration());
   window.addEventListener('pagehide',()=>{
-    flushScrollPosition();stopNarration(false);flushProgress();companion?.close();
+    // L'historique navigateur ne doit jamais garder une édition privée en mémoire.
+    // La démo reste interactive lorsque l'utilisateur revient via le bfcache.
+    flushScrollPosition();stopNarration(false);flushProgress();
+    if(isFull)lockPrivateReader();
+  });
+  window.addEventListener('pageshow',event=>{
+    if(isFull&&event.persisted){
+      // Exiger une nouvelle validation de la session et des droits serveur.
+      location.reload();
+    }
   });
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='hidden'){
@@ -474,10 +483,19 @@ function bindControls(){
     if(state.mode==='page')renderPage();
   });
   document.addEventListener('keydown',event=>{
-    const tag=document.activeElement?.tagName||'';
-    if(['INPUT','SELECT','TEXTAREA','BUTTON'].includes(tag)||event.altKey||event.ctrlKey||event.metaKey)return;
-    if(event.key==='ArrowRight'||event.key==='PageDown'){event.preventDefault();changePage(state.page+1)}
-    if(event.key==='ArrowLeft'||event.key==='PageUp'){event.preventDefault();changePage(state.page-1)}
+    if(!state.pdf||event.defaultPrevented||event.isComposing||
+       event.altKey||event.ctrlKey||event.metaKey||event.shiftKey)return;
+    const active=document.activeElement;
+    if(active&&active!==document.body&&active!==document.documentElement&&
+       active!==$('reader-viewer'))return;
+    // Une sélection de texte ne doit jamais déclencher la pagination.
+    if(window.getSelection()?.toString())return;
+    if(event.key==='ArrowRight'||event.key==='PageDown'){
+      event.preventDefault();changePage(state.page+1);
+    }
+    if(event.key==='ArrowLeft'||event.key==='PageUp'){
+      event.preventDefault();changePage(state.page-1);
+    }
   });
   let resizeTimer;
   window.addEventListener('resize',()=>{
@@ -497,6 +515,8 @@ function lockPrivateReader(){
   if(!isFull||state.accessInvalidated)return;
   state.accessInvalidated=true;
   state.accessEpoch++;
+  try{state.authSubscription?.unsubscribe?.()}catch{/* nettoyage best effort */}
+  state.authSubscription=null;
   state.loadController?.abort();
   state.loadController=null;
   clearTimeout(state.saveTimer);state.saveTimer=null;
