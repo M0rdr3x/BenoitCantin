@@ -69,3 +69,12 @@ test("No fiscal bridge can be fabricated",()=>mustReject(x=>x.municipal_bridge_t
 test("No source offset can be claimed double",()=>mustReject(x=>x.cumulative_aid_accounting.no_addition_of_two_grants_for_same_paid_cost=false,"ELIGIBLE_BASE_AND_DOUBLE_COUNTS"));
 test("No signed policy gate invented",()=>mustReject(x=>x.policy_gates[2].completed=true,"POLICY_NOT_SIGNED"));
 test("No falsely audited sovereign financing",()=>mustReject(x=>x.verification.two_fiscal_scenarios_financed=true,"NO_FAKE_CERTIFICATION"));
+
+test("Native GitHub Actions verified for historical G0.17e commit",()=>assert.equal(d.verification.native_github_actions_validation.conclusion,"success"));
+test("Historical run URL and identifier grounded",()=>assert.equal(d.verification.native_github_actions_validation.run_url,"https://github.com/M0rdr3x/BenoitCantin/actions/runs/42536049965"));
+test("Native Node run does not certify programme finances",()=>assert.equal(d.verification.native_github_actions_validation.independent_fiscal_audit,false));
+test("CI cannot be described as proof of bank receipts",()=>assert.equal(d.verification.native_github_actions_validation.actual_tecq_bank_payments_verified,false));
+test("Any new commit CI must be separately established",()=>assert.equal(d.verification.native_github_actions_validation.future_commit_ci_not_automatically_proven,true));
+test("Reject forged historical CI conclusion",()=>mustReject(x=>x.verification.native_github_actions_validation.conclusion="success_and_audited","CI_VERIFIED_SCOPE"));
+test("Reject fabricated bank receipts attached to CI",()=>mustReject(x=>x.verification.native_github_actions_validation.actual_tecq_bank_payments_verified=true,"CI_VERIFIED_SCOPE"));
+test("Reject CI claim detached from commit",()=>mustReject(x=>x.verification.native_github_actions_validation.commit_sha="deadbeef","CI_VERIFIED_SCOPE"));
