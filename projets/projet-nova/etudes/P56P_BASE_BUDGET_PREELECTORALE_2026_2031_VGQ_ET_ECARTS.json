@@ -1,0 +1,380 @@
+{
+  "schema_version": "P56P-1",
+  "date_revision": "2026-11-08",
+  "objet": "POINT_DE_DEPART_BUDGETAIRE_OFFICIEL_PLUS_RECENT_POUR_COMPARAISONS_NOVA_2027_2031",
+  "statut": "BASE_PUBLIQUE_PREVISIONS_GOUVERNEMENT_AOUT_2026_PAS_BUDGET_NOVA",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "sources": {
+    "RAPPORT_PREELECTORAL": {
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Rapport_preelectoral/FR/MINFR_RP_2026.pdf",
+      "date_publication": "2026-08-17",
+      "organisme": "Ministère des Finances du Québec",
+      "tableau": "TABLEAU_2_CADRE_FINANCIER_2025_2026_A_2030_2031",
+      "page_pdf_indice_zero": 19,
+      "page_imprimee": 17,
+      "autres_pages_pdf_indices_zero": [
+        9,
+        45
+      ],
+      "octets_source_cryptographiquement_authentifies": false
+    },
+    "RAPPORT_TRIMESTRIEL": {
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/rapport/TRIMFR_SIFIN_1T_26-27.pdf",
+      "date_publication": "2026-09-25",
+      "organisme": "Ministère des Finances du Québec",
+      "tableau": "SOMMAIRE_RESULTATS_30_JUIN_2026_ET_PREVISIONS_2026_2027",
+      "page_pdf_indice_zero": 2,
+      "donnees_trimestrielles_non_auditees": true,
+      "meme_prevision_annuelle_2026_2027_que_rapport_aout": true
+    },
+    "EXAMEN_VGQ": {
+      "url": "https://www.vgq.qc.ca/fr/communique/C2026-3",
+      "date_publication": "2026-08-17",
+      "portee_annees": [
+        "2026-2027",
+        "2027-2028",
+        "2028-2029"
+      ],
+      "date_plausibilite": "2026-07-10",
+      "conclusion": "PLAUSIBLES_AVEC_DEFIS_ET_RESERVES_DE_PRESENTATION",
+      "ne_certifie_pas_realisation_previsions": true,
+      "ne_certifie_pas_budget_nova": true
+    },
+    "OUTIL_SIMULATION_AMENDE": {
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Rapport_preelectoral/FR/RPE2026_simulateur_amende.xlsx",
+      "date_amendement": "2026-09-03",
+      "elements_corriges": [
+        "SERVICE_DETTE_IMPACT_ELEMENT_DETTE",
+        "TABLEAUX_DETTE_NETTE_ET_BRUTE"
+      ],
+      "contenu_tableur_verifie_par_P56P": false,
+      "reproduction_des_resultats_via_tableur_amende_validee": false
+    }
+  },
+  "unite": "M_CAD",
+  "origine": "QUEBEC_DANS_CANADA",
+  "annees_historique_et_previsions": [
+    {
+      "exercice": "2025-2026",
+      "categorie": "COMPTE_PUBLIC_AUDITE_2025_2026",
+      "portee_certification_vgq": "ETATS_FINANCIERS_2025_2026_AUDITES",
+      "revenus": {
+        "impot_particuliers": "48969",
+        "cotisations_services_sante": "9304",
+        "impots_societes": "14599",
+        "impot_foncier_scolaire": "1243",
+        "taxes_consommation": "29639",
+        "droits_permis_redevances": "6708",
+        "revenus_divers": "14922",
+        "entreprises_gouvernement": "5241"
+      },
+      "revenus_autonomes_mcad": "130625",
+      "transferts_federaux_mcad": "29803",
+      "total_revenus_mcad": "160428",
+      "depenses_portefeuilles_mcad": "155782",
+      "service_dette_deja_inclus_mcad": "10148",
+      "total_depenses_hors_provision_mcad": "165930",
+      "provision_eventualites_mcad": "0",
+      "solde_comptable_avant_ecart_resorber_mcad": "-5502",
+      "ecart_a_resorber_non_finance_par_mesures_identifiees_mcad": "0",
+      "fonds_generations_mcad": "2289",
+      "solde_budgetaire_selon_loi_mcad": "-7791",
+      "reforme_nova_incluse": false,
+      "deux_taxes_nova_autorisees": false
+    },
+    {
+      "exercice": "2026-2027",
+      "categorie": "PREVISION_GOUVERNEMENT_AOUT_2026",
+      "portee_certification_vgq": "HYPOTHESES_ET_PREVISIONS_PLAUSIBLES_AU_10_JUILLET_2026_NON_GARANTIES",
+      "revenus": {
+        "impot_particuliers": "50942",
+        "cotisations_services_sante": "9538",
+        "impots_societes": "14698",
+        "impot_foncier_scolaire": "1301",
+        "taxes_consommation": "30682",
+        "droits_permis_redevances": "6484",
+        "revenus_divers": "15790",
+        "entreprises_gouvernement": "5908"
+      },
+      "revenus_autonomes_mcad": "135343",
+      "transferts_federaux_mcad": "33046",
+      "total_revenus_mcad": "168389",
+      "depenses_portefeuilles_mcad": "161081",
+      "service_dette_deja_inclus_mcad": "10516",
+      "total_depenses_hors_provision_mcad": "171597",
+      "provision_eventualites_mcad": "2000",
+      "solde_comptable_avant_ecart_resorber_mcad": "-5208",
+      "ecart_a_resorber_non_finance_par_mesures_identifiees_mcad": "0",
+      "fonds_generations_mcad": "2482",
+      "solde_budgetaire_selon_loi_mcad": "-7690",
+      "reforme_nova_incluse": false,
+      "deux_taxes_nova_autorisees": false
+    },
+    {
+      "exercice": "2027-2028",
+      "categorie": "PREVISION_GOUVERNEMENT_AOUT_2026",
+      "portee_certification_vgq": "HYPOTHESES_ET_PREVISIONS_PLAUSIBLES_AU_10_JUILLET_2026_NON_GARANTIES",
+      "revenus": {
+        "impot_particuliers": "52841",
+        "cotisations_services_sante": "9876",
+        "impots_societes": "15252",
+        "impot_foncier_scolaire": "1367",
+        "taxes_consommation": "31632",
+        "droits_permis_redevances": "6928",
+        "revenus_divers": "16110",
+        "entreprises_gouvernement": "6208"
+      },
+      "revenus_autonomes_mcad": "140214",
+      "transferts_federaux_mcad": "34011",
+      "total_revenus_mcad": "174225",
+      "depenses_portefeuilles_mcad": "165049",
+      "service_dette_deja_inclus_mcad": "10870",
+      "total_depenses_hors_provision_mcad": "175919",
+      "provision_eventualites_mcad": "1500",
+      "solde_comptable_avant_ecart_resorber_mcad": "-3194",
+      "ecart_a_resorber_non_finance_par_mesures_identifiees_mcad": "0",
+      "fonds_generations_mcad": "2501",
+      "solde_budgetaire_selon_loi_mcad": "-5695",
+      "reforme_nova_incluse": false,
+      "deux_taxes_nova_autorisees": false
+    },
+    {
+      "exercice": "2028-2029",
+      "categorie": "PREVISION_GOUVERNEMENT_AOUT_2026",
+      "portee_certification_vgq": "HYPOTHESES_ET_PREVISIONS_PLAUSIBLES_AU_10_JUILLET_2026_NON_GARANTIES",
+      "revenus": {
+        "impot_particuliers": "54861",
+        "cotisations_services_sante": "10327",
+        "impots_societes": "15240",
+        "impot_foncier_scolaire": "1426",
+        "taxes_consommation": "32416",
+        "droits_permis_redevances": "7278",
+        "revenus_divers": "16744",
+        "entreprises_gouvernement": "6909"
+      },
+      "revenus_autonomes_mcad": "145201",
+      "transferts_federaux_mcad": "33643",
+      "total_revenus_mcad": "178844",
+      "depenses_portefeuilles_mcad": "166666",
+      "service_dette_deja_inclus_mcad": "11402",
+      "total_depenses_hors_provision_mcad": "178068",
+      "provision_eventualites_mcad": "1500",
+      "solde_comptable_avant_ecart_resorber_mcad": "-724",
+      "ecart_a_resorber_non_finance_par_mesures_identifiees_mcad": "1850",
+      "fonds_generations_mcad": "2626",
+      "solde_budgetaire_selon_loi_mcad": "-1500",
+      "reforme_nova_incluse": false,
+      "deux_taxes_nova_autorisees": false
+    },
+    {
+      "exercice": "2029-2030",
+      "categorie": "PREVISION_GOUVERNEMENT_AOUT_2026",
+      "portee_certification_vgq": "HORS_PERIMETRE_EXAMEN_VGQ_TROIS_ANS",
+      "revenus": {
+        "impot_particuliers": "56867",
+        "cotisations_services_sante": "10628",
+        "impots_societes": "15835",
+        "impot_foncier_scolaire": "1479",
+        "taxes_consommation": "33206",
+        "droits_permis_redevances": "7586",
+        "revenus_divers": "17385",
+        "entreprises_gouvernement": "6653"
+      },
+      "revenus_autonomes_mcad": "149639",
+      "transferts_federaux_mcad": "32802",
+      "total_revenus_mcad": "182441",
+      "depenses_portefeuilles_mcad": "168291",
+      "service_dette_deja_inclus_mcad": "11860",
+      "total_depenses_hors_provision_mcad": "180151",
+      "provision_eventualites_mcad": "1500",
+      "solde_comptable_avant_ecart_resorber_mcad": "790",
+      "ecart_a_resorber_non_finance_par_mesures_identifiees_mcad": "2000",
+      "fonds_generations_mcad": "2790",
+      "solde_budgetaire_selon_loi_mcad": "0",
+      "reforme_nova_incluse": false,
+      "deux_taxes_nova_autorisees": false
+    },
+    {
+      "exercice": "2030-2031",
+      "categorie": "PREVISION_GOUVERNEMENT_AOUT_2026",
+      "portee_certification_vgq": "HORS_PERIMETRE_EXAMEN_VGQ_TROIS_ANS",
+      "revenus": {
+        "impot_particuliers": "59006",
+        "cotisations_services_sante": "10962",
+        "impots_societes": "16875",
+        "impot_foncier_scolaire": "1531",
+        "taxes_consommation": "34035",
+        "droits_permis_redevances": "7823",
+        "revenus_divers": "17988",
+        "entreprises_gouvernement": "7035"
+      },
+      "revenus_autonomes_mcad": "155255",
+      "transferts_federaux_mcad": "33757",
+      "total_revenus_mcad": "189012",
+      "depenses_portefeuilles_mcad": "173584",
+      "service_dette_deja_inclus_mcad": "12749",
+      "total_depenses_hors_provision_mcad": "186333",
+      "provision_eventualites_mcad": "1500",
+      "solde_comptable_avant_ecart_resorber_mcad": "1179",
+      "ecart_a_resorber_non_finance_par_mesures_identifiees_mcad": "2000",
+      "fonds_generations_mcad": "2929",
+      "solde_budgetaire_selon_loi_mcad": "250",
+      "reforme_nova_incluse": false,
+      "deux_taxes_nova_autorisees": false
+    }
+  ],
+  "reconciliation_mars_vs_aout_2026_2027": {
+    "source_mars": "projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json",
+    "ancienne_reference_mars_2026_2027": {
+      "revenus_consolides_mcad": "166492",
+      "depenses_consolidees_mcad": "170757",
+      "service_dette_indicatif_mcad": "10268"
+    },
+    "nouvelle_reference_aout_2026_2027": {
+      "revenus_consolides_mcad": "168389",
+      "depenses_consolidees_mcad": "171597",
+      "service_dette_indicatif_mcad": "10516"
+    },
+    "variations_aout_moins_mars": {
+      "revenus_consolides_mcad": "1897",
+      "depenses_consolidees_mcad": "840",
+      "service_dette_mcad": "248"
+    },
+    "reference_mars_modifiee_dans_P52B": false,
+    "nouvelle_base_2027_2036_certifiee_nova": false
+  },
+  "observation_trimestrielle_au_30_juin_2026": {
+    "type": "DONNEES_TRIMESTRIELLES_NON_AUDITEES",
+    "revenus_avril_juin_mcad": "41759",
+    "depenses_avril_juin_mcad": "42226",
+    "deficit_comptable_avril_juin_mcad": "-467",
+    "n_est_pas_un_quart_de_la_prevision_annuelle": true,
+    "rapport_septembre_confirme_prevision_2026_2027": true
+  },
+  "observations_pertinentes": {
+    "solde_2028_2029_avant_resorption_mcad": "-724",
+    "ecart_2028_2029_a_resorber_mcad": "1850",
+    "solde_comptable_2028_2029_apres_resorption_theorique_mcad": "1126",
+    "solde_budgetaire_2028_2029_si_resorption_mcad": "-1500",
+    "ecarts_a_resorber_2029_2030_et_2030_2031_mcad": [
+      "2000",
+      "2000"
+    ],
+    "equilibre_2029_2030_conditionnel_a_resorption": true,
+    "economie_nova_non_identifiee_pour_les_ecarts_mcad": null,
+    "sensibilites_risques_publics_rapport_tableau_13": [
+      {
+        "id": "RISQUE_PIB_NOMINAL",
+        "variation": "MOINS_1_POINT_POURCENT_CROISSANCE_PIB_NOMINAL",
+        "impact_revenus_autonomes_annuel_mcad": "-1200",
+        "limite": "SENSIBILITE_MODELE_GOUV_NE_PAS_ASSIMILER_REVENUS_FISCAUX_NOVA"
+      },
+      {
+        "id": "RISQUE_POPULATION",
+        "variation": "PLUS_1_POINT_POURCENT_POPULATION",
+        "impact_depenses_portefeuilles_annuel_mcad": "1270",
+        "limite": "DEPENSES_ADDITIONNELLES_NON_REDUCTION_EMPLIS"
+      },
+      {
+        "id": "RISQUE_PRIX",
+        "variation": "PLUS_1_POINT_POURCENT_NIVEAU_GENERAL_PRIX",
+        "impact_depenses_portefeuilles_annuel_mcad": "760",
+        "limite": "NE_PAS_PRETENDRE_PAS_DE_VARIATION_DES_REVENUS"
+      },
+      {
+        "id": "RISQUE_INTERETS",
+        "variation": "PLUS_1_POINT_POURCENT_TAUX_INTERET",
+        "impact_service_dette_annuel_mcad": "640",
+        "limite": "SENSIBILITE_DE_RAPPORT_NON_PROJECTION_2027_2036"
+      },
+      {
+        "id": "RISQUE_TRANSFERTS_POP",
+        "variation": "MOINS_0_1_POINT_POURCENT_PART_POP_QC_CANADA",
+        "impact_transferts_federaux_annuel_mcad": "-255",
+        "limite": "REGIME_QUEBEC_DANS_CANADA_SEULEMENT"
+      }
+    ],
+    "ne_pas_ajouter_les_sensibilites_sans_scenario_coherent": true,
+    "depenses_services_civiques_non_reduites_par_simple_elimination_de_taxes": true
+  },
+  "perimetres_et_limites": {
+    "annees_2025_2026_auditees": true,
+    "annees_2026_2027_a_2028_2029_vgq_plausibilite_non_garantie": true,
+    "annees_2029_2030_et_2030_2031_non_couvertes_par_l_examen_vgq": true,
+    "exercices_2031_2032_a_2036_2037_non_documentes_par_ce_rapport": true,
+    "prelevements_societes_personnes_neo_tax_nova_non_modelises": true,
+    "fonctions_federales_souverainete_non_projetees": true,
+    "provisions_eventualites_ne_sont_pas_depenses_services_ajoutees_deux_fois": true,
+    "fonds_generations_ne_fait_pas_partie_des_depenses_portefeuilles": true,
+    "service_dette_deja_inclus_dans_total_depenses": true,
+    "revenus_federaux_non_conserves_par_defaut_en_souverainete": true,
+    "mesures_fiscales_annoncees_apres_publication_a_reconcilier": true,
+    "rapport_budgetaire_n_est_pas_engagement_financier_nova": true
+  },
+  "livrables_manquants": [
+    {
+      "id": "P01",
+      "preuve": "Obtenir les sources détaillées de recettes et dépenses 2027-2031 par secteur, et les engagements municipaux transférés",
+      "statut": "MANQUANT",
+      "preuve_id": null
+    },
+    {
+      "id": "P02",
+      "preuve": "Réconcilier avec l'outil de simulation préélectoral amendé au 3 septembre 2026 et ses calculs du service de dette",
+      "statut": "MANQUANT",
+      "preuve_id": null
+    },
+    {
+      "id": "P03",
+      "preuve": "Établir la politique Nova, deux prélèvements, assiettes et taux candidats avec conséquences complètes sur les crédits",
+      "statut": "MANQUANT",
+      "preuve_id": null
+    },
+    {
+      "id": "P04",
+      "preuve": "Renseigner les dix exercices 2027-2036 et les trois scénarios par régime sans inventer le prolongement 2032-2036",
+      "statut": "MANQUANT",
+      "preuve_id": null
+    },
+    {
+      "id": "P05",
+      "preuve": "Étudier les conditions constitutionnelles, les revenus fédéraux recouvrables et les charges d'un Québec souverain",
+      "statut": "MANQUANT",
+      "preuve_id": null
+    },
+    {
+      "id": "P06",
+      "preuve": "Inclure en simulation les prix, les prestations, les emplois, les PME et la continuité des services par région",
+      "statut": "MANQUANT",
+      "preuve_id": null
+    },
+    {
+      "id": "P07",
+      "preuve": "Faire auditer les hypothèses Nova et la réconciliation des écritures par une équipe indépendante",
+      "statut": "MANQUANT",
+      "preuve_id": null
+    },
+    {
+      "id": "P08",
+      "preuve": "Réconcilier chaque nouveau bulletin budgétaire pertinent et la publication trimestrielle sans écraser les sources anciennes",
+      "statut": "MANQUANT",
+      "preuve_id": null
+    }
+  ],
+  "integration_nova": {
+    "barometre_p55n": "projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json",
+    "p52b": "projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json",
+    "p56o": "projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json",
+    "score_estimatif_pourcent": 53,
+    "postes_financiers_P52B_a_renseigner": 600,
+    "incidences_P52D_a_renseigner": 720,
+    "preuves_fiscales_P52A_non_validees": 20,
+    "portes_completes_P56O": 0,
+    "budget_nova_chiffre_et_valide": false,
+    "nombre_cellules_P52B_modifiees": 0,
+    "montants_nova_certifies_mcad": null,
+    "avis_independants_nova_signes": 0,
+    "main_modifiee": false,
+    "sinjira_modifie": false
+  }
+}
