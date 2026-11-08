@@ -1,0 +1,308 @@
+{
+  "schema_version": "P56Q-1",
+  "date_revision": "2026-11-08",
+  "objet": "EXPOSITION_PROVINCIALE_STATIQUE_TROIS_PRELEVEMENTS_2027_2031_ET_ETAT_VERIFICATION_SIMULATEUR_OFFICIEL",
+  "statut": "CONTRE_FACTUEL_PUREMENT_ARITHMETIQUE_NON_PROPOSITION_DE_SUPPRESSION",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "sources": {
+    "P56P": {
+      "path": "projets/projet-nova/etudes/P56P_BASE_BUDGET_PREELECTORALE_2026_2031_VGQ_ET_ECARTS.json",
+      "nature": "RECETTES_ET_DEPENSES_CADRE_FINANCIER",
+      "statut": "RECONCILIATION_GITHUB_P56P_SUCCESS",
+      "tableau": "2",
+      "page_pdf_index_zero": 19
+    },
+    "TABLEAU_PDF_OFFICIEL": {
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Rapport_preelectoral/FR/MINFR_RP_2026.pdf",
+      "nature": "RAPPORT_PREELECTORAL_AOUT_2026",
+      "tableau": 2,
+      "page_pdf_index_zero": 19,
+      "page_imprimee": 17,
+      "consultation_visuelle": true
+    },
+    "SIMULATEUR_AMENDE_OFFICIEL": {
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Rapport_preelectoral/FR/RPE2026_simulateur_amende.xlsx",
+      "page_index": "https://www.quebec.ca/gouvernement/ministeres-organismes/finances/publications",
+      "date_amendement": "2026-09-03",
+      "statut": "LIEN_OFFICIEL_CONFIRME_CONTENU_XLSX_NON_ACCESSIBLE",
+      "fichier_binaire_telecharge": false,
+      "empreinte_sha256": null,
+      "feuille_amendement_lue": false,
+      "formules_recalculees": false,
+      "impact_final_sur_modele_dette_valide": false
+    },
+    "BULLETIN_FISCAL_2026_7": {
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Bulletins/FR/BULFR_2026-7.pdf",
+      "date": "2026-11-05",
+      "page_pdf_index_zero": 0,
+      "nature": "ANNONCE_HARMONISATION_FUTURE_CONDITIONNELLE_TVQ",
+      "topics": [
+        "MASSOTHERAPIE",
+        "APPAREILS_THERAPIE_CHAMPS_ELECTRIQUES_ALTERNATIFS"
+      ],
+      "mesures_adoptees_et_en_vigueur": false,
+      "courant_budget_2027_2031_revise_mcad": null,
+      "consultation_visuelle": true
+    }
+  },
+  "perimetres": {
+    "québec_dans_canada": {
+      "regime": "QUEBEC_DANS_CANADA",
+      "recettes_federales_non_supprimables_unilateralement": true,
+      "transferts_federaux_publics_conserves_dans_illustration": true,
+      "service_dette_deja_compris_dans_depenses": true,
+      "prestations_crédits_et_services_non_supprimes_par_hypothese": true
+    },
+    "québec_souverain": {
+      "regime": "QUEBEC_SOUVERAIN_HYPOTHETIQUE",
+      "transferts_federaux_montants_automatiquement_conserves": false,
+      "budget_souverain_decennal_etabli": false,
+      "assiettes_federales_nouvelles_mcad": null,
+      "couts_fonctions_federales_mcad": null,
+      "revenus_nouveau_prelevement_anti_paradis_mcad": null
+    }
+  },
+  "annees_reconciliees": [
+    {
+      "exercice": "2025-2026",
+      "projection_p52b": false,
+      "classement": "OBSERVE_COMPTE_PUBLIC_2025_2026",
+      "revenus_existants_impots_personnes_et_societes_mcad": "63568",
+      "revenus_fss_mcad": "9304",
+      "revenus_impot_foncier_scolaire_mcad": "1243",
+      "revenus_taxes_consommation_mcad": "29639",
+      "trois_categories_risque_suppression_mcad": "40186",
+      "revenus_publics_initiaux_mcad": "160428",
+      "revenus_restants_si_retrait_purement_theorique_mcad": "120242",
+      "solde_budgetaire_initial_au_sens_de_la_loi_mcad": "-7791",
+      "ecart_gouvernemental_a_resorber_mcad": "0",
+      "solde_budgetaire_theorique_sans_recettes_remplacement_avec_ecart_a_resorber_mcad": "-47977",
+      "solde_budgetaire_theorique_sans_recettes_remplacement_sans_ecart_a_resorber_mcad": "-47977",
+      "remplacement_pour_maintenir_revenus_observes_ou_prevus_mcad": "40186",
+      "ressources_theoriques_additionnelles_pour_solde_loi_zero_si_ecart_resorbe_mcad": "47977",
+      "ressources_theoriques_additionnelles_pour_solde_loi_zero_sans_resorption_mcad": "47977",
+      "hypothese_statique_revenus_autres_inchanges": true,
+      "hypothese_statique_depenses_services_inchangees": true,
+      "gouvernement_federal_dans_le_canada_pouvoirs_inchanges": true,
+      "nouveaux_taux_fiscaux_nova": null,
+      "recettes_nouveau_prelevement_anti_paradis_mcad": null,
+      "calcul_n_est_pas_un_budget_nova": true
+    },
+    {
+      "exercice": "2026-2027",
+      "projection_p52b": false,
+      "classement": "PREVISION_GOUV_AOUT_2026",
+      "revenus_existants_impots_personnes_et_societes_mcad": "65640",
+      "revenus_fss_mcad": "9538",
+      "revenus_impot_foncier_scolaire_mcad": "1301",
+      "revenus_taxes_consommation_mcad": "30682",
+      "trois_categories_risque_suppression_mcad": "41521",
+      "revenus_publics_initiaux_mcad": "168389",
+      "revenus_restants_si_retrait_purement_theorique_mcad": "126868",
+      "solde_budgetaire_initial_au_sens_de_la_loi_mcad": "-7690",
+      "ecart_gouvernemental_a_resorber_mcad": "0",
+      "solde_budgetaire_theorique_sans_recettes_remplacement_avec_ecart_a_resorber_mcad": "-49211",
+      "solde_budgetaire_theorique_sans_recettes_remplacement_sans_ecart_a_resorber_mcad": "-49211",
+      "remplacement_pour_maintenir_revenus_observes_ou_prevus_mcad": "41521",
+      "ressources_theoriques_additionnelles_pour_solde_loi_zero_si_ecart_resorbe_mcad": "49211",
+      "ressources_theoriques_additionnelles_pour_solde_loi_zero_sans_resorption_mcad": "49211",
+      "hypothese_statique_revenus_autres_inchanges": true,
+      "hypothese_statique_depenses_services_inchangees": true,
+      "gouvernement_federal_dans_le_canada_pouvoirs_inchanges": true,
+      "nouveaux_taux_fiscaux_nova": null,
+      "recettes_nouveau_prelevement_anti_paradis_mcad": null,
+      "calcul_n_est_pas_un_budget_nova": true
+    },
+    {
+      "exercice": "2027-2028",
+      "projection_p52b": true,
+      "classement": "PREVISION_GOUV_AOUT_2026",
+      "revenus_existants_impots_personnes_et_societes_mcad": "68093",
+      "revenus_fss_mcad": "9876",
+      "revenus_impot_foncier_scolaire_mcad": "1367",
+      "revenus_taxes_consommation_mcad": "31632",
+      "trois_categories_risque_suppression_mcad": "42875",
+      "revenus_publics_initiaux_mcad": "174225",
+      "revenus_restants_si_retrait_purement_theorique_mcad": "131350",
+      "solde_budgetaire_initial_au_sens_de_la_loi_mcad": "-5695",
+      "ecart_gouvernemental_a_resorber_mcad": "0",
+      "solde_budgetaire_theorique_sans_recettes_remplacement_avec_ecart_a_resorber_mcad": "-48570",
+      "solde_budgetaire_theorique_sans_recettes_remplacement_sans_ecart_a_resorber_mcad": "-48570",
+      "remplacement_pour_maintenir_revenus_observes_ou_prevus_mcad": "42875",
+      "ressources_theoriques_additionnelles_pour_solde_loi_zero_si_ecart_resorbe_mcad": "48570",
+      "ressources_theoriques_additionnelles_pour_solde_loi_zero_sans_resorption_mcad": "48570",
+      "hypothese_statique_revenus_autres_inchanges": true,
+      "hypothese_statique_depenses_services_inchangees": true,
+      "gouvernement_federal_dans_le_canada_pouvoirs_inchanges": true,
+      "nouveaux_taux_fiscaux_nova": null,
+      "recettes_nouveau_prelevement_anti_paradis_mcad": null,
+      "calcul_n_est_pas_un_budget_nova": true
+    },
+    {
+      "exercice": "2028-2029",
+      "projection_p52b": true,
+      "classement": "PREVISION_GOUV_AOUT_2026",
+      "revenus_existants_impots_personnes_et_societes_mcad": "70101",
+      "revenus_fss_mcad": "10327",
+      "revenus_impot_foncier_scolaire_mcad": "1426",
+      "revenus_taxes_consommation_mcad": "32416",
+      "trois_categories_risque_suppression_mcad": "44169",
+      "revenus_publics_initiaux_mcad": "178844",
+      "revenus_restants_si_retrait_purement_theorique_mcad": "134675",
+      "solde_budgetaire_initial_au_sens_de_la_loi_mcad": "-1500",
+      "ecart_gouvernemental_a_resorber_mcad": "1850",
+      "solde_budgetaire_theorique_sans_recettes_remplacement_avec_ecart_a_resorber_mcad": "-45669",
+      "solde_budgetaire_theorique_sans_recettes_remplacement_sans_ecart_a_resorber_mcad": "-47519",
+      "remplacement_pour_maintenir_revenus_observes_ou_prevus_mcad": "44169",
+      "ressources_theoriques_additionnelles_pour_solde_loi_zero_si_ecart_resorbe_mcad": "45669",
+      "ressources_theoriques_additionnelles_pour_solde_loi_zero_sans_resorption_mcad": "47519",
+      "hypothese_statique_revenus_autres_inchanges": true,
+      "hypothese_statique_depenses_services_inchangees": true,
+      "gouvernement_federal_dans_le_canada_pouvoirs_inchanges": true,
+      "nouveaux_taux_fiscaux_nova": null,
+      "recettes_nouveau_prelevement_anti_paradis_mcad": null,
+      "calcul_n_est_pas_un_budget_nova": true
+    },
+    {
+      "exercice": "2029-2030",
+      "projection_p52b": true,
+      "classement": "PREVISION_GOUV_AOUT_2026",
+      "revenus_existants_impots_personnes_et_societes_mcad": "72702",
+      "revenus_fss_mcad": "10628",
+      "revenus_impot_foncier_scolaire_mcad": "1479",
+      "revenus_taxes_consommation_mcad": "33206",
+      "trois_categories_risque_suppression_mcad": "45313",
+      "revenus_publics_initiaux_mcad": "182441",
+      "revenus_restants_si_retrait_purement_theorique_mcad": "137128",
+      "solde_budgetaire_initial_au_sens_de_la_loi_mcad": "0",
+      "ecart_gouvernemental_a_resorber_mcad": "2000",
+      "solde_budgetaire_theorique_sans_recettes_remplacement_avec_ecart_a_resorber_mcad": "-45313",
+      "solde_budgetaire_theorique_sans_recettes_remplacement_sans_ecart_a_resorber_mcad": "-47313",
+      "remplacement_pour_maintenir_revenus_observes_ou_prevus_mcad": "45313",
+      "ressources_theoriques_additionnelles_pour_solde_loi_zero_si_ecart_resorbe_mcad": "45313",
+      "ressources_theoriques_additionnelles_pour_solde_loi_zero_sans_resorption_mcad": "47313",
+      "hypothese_statique_revenus_autres_inchanges": true,
+      "hypothese_statique_depenses_services_inchangees": true,
+      "gouvernement_federal_dans_le_canada_pouvoirs_inchanges": true,
+      "nouveaux_taux_fiscaux_nova": null,
+      "recettes_nouveau_prelevement_anti_paradis_mcad": null,
+      "calcul_n_est_pas_un_budget_nova": true
+    },
+    {
+      "exercice": "2030-2031",
+      "projection_p52b": true,
+      "classement": "PREVISION_GOUV_AOUT_2026",
+      "revenus_existants_impots_personnes_et_societes_mcad": "75881",
+      "revenus_fss_mcad": "10962",
+      "revenus_impot_foncier_scolaire_mcad": "1531",
+      "revenus_taxes_consommation_mcad": "34035",
+      "trois_categories_risque_suppression_mcad": "46528",
+      "revenus_publics_initiaux_mcad": "189012",
+      "revenus_restants_si_retrait_purement_theorique_mcad": "142484",
+      "solde_budgetaire_initial_au_sens_de_la_loi_mcad": "250",
+      "ecart_gouvernemental_a_resorber_mcad": "2000",
+      "solde_budgetaire_theorique_sans_recettes_remplacement_avec_ecart_a_resorber_mcad": "-46278",
+      "solde_budgetaire_theorique_sans_recettes_remplacement_sans_ecart_a_resorber_mcad": "-48278",
+      "remplacement_pour_maintenir_revenus_observes_ou_prevus_mcad": "46528",
+      "ressources_theoriques_additionnelles_pour_solde_loi_zero_si_ecart_resorbe_mcad": "46278",
+      "ressources_theoriques_additionnelles_pour_solde_loi_zero_sans_resorption_mcad": "48278",
+      "hypothese_statique_revenus_autres_inchanges": true,
+      "hypothese_statique_depenses_services_inchangees": true,
+      "gouvernement_federal_dans_le_canada_pouvoirs_inchanges": true,
+      "nouveaux_taux_fiscaux_nova": null,
+      "recettes_nouveau_prelevement_anti_paradis_mcad": null,
+      "calcul_n_est_pas_un_budget_nova": true
+    }
+  ],
+  "regles_usage": {
+    "trois_categories_fss_scolaire_consommation_et_non_toutes_taxes_ou_prelevements": true,
+    "conserver_cotisations_et_autres_paiements_non_classes": true,
+    "aucun_transfert_inter_gouvernemental_compte_comme_economie": true,
+    "aucune_suppression_reelle_de_recettes_ou_de_services": true,
+    "ne_pas_doubler_service_dette": true,
+    "ecart_a_resorber_non_compte_comme_economie_reelle": true,
+    "ne_pas_confondre_revenu_impots_existants_et_assiette_imposable": true,
+    "aucun_taux_nova_derive_par_division_sur_assiette_inconnue": true,
+    "ne_pas_extrapoler_exercice_2031_2032_a_2036_2037": true,
+    "ne_pas_compter_postrapport_bulletin_2026_7_comme_loi_en_vigueur": true,
+    "statut_excel_amende_non_verifie_bloque_validation_dette": true
+  },
+  "preuves_suivantes": [
+    {
+      "id": "Q01",
+      "objet": "Obtenir et authentifier binaire XLSX du simulateur amendé 2026 avec empreinte et copie des feuilles",
+      "statut": "OUVERT",
+      "preuve": null
+    },
+    {
+      "id": "Q02",
+      "objet": "Vérifier feuille Amendement et fonctions du service de la dette avant toute simulation dynamique",
+      "statut": "OUVERT",
+      "preuve": null
+    },
+    {
+      "id": "Q03",
+      "objet": "Harmoniser l'ensemble des prélèvements réels provinciaux, municipaux et cotisations obligatoires",
+      "statut": "OUVERT",
+      "preuve": null
+    },
+    {
+      "id": "Q04",
+      "objet": "Définir assiettes imposables Nova 2027-2036 et politique de crédits et prestations à protéger",
+      "statut": "OUVERT",
+      "preuve": null
+    },
+    {
+      "id": "Q05",
+      "objet": "Établir coûts nets continuité santé, éducation, services municipaux et personnels",
+      "statut": "OUVERT",
+      "preuve": null
+    },
+    {
+      "id": "Q06",
+      "objet": "Modéliser comportement des ménages, des entreprises et répercussion sur prix et emploi",
+      "statut": "OUVERT",
+      "preuve": null
+    },
+    {
+      "id": "Q07",
+      "objet": "Reconstituer budget souverain séparé fonctions fédérales, dette, actifs, pensions, traités",
+      "statut": "OUVERT",
+      "preuve": null
+    },
+    {
+      "id": "Q08",
+      "objet": "Rapprocher bulletin 2026-7 et éventuelles mesures adoptées futures sans effets budgétaires présumés",
+      "statut": "OUVERT",
+      "preuve": null
+    },
+    {
+      "id": "Q09",
+      "objet": "Renseigner 2031-2032 à 2036-2037 en scénarios sourcés, pas prolongation arbitraire",
+      "statut": "OUVERT",
+      "preuve": null
+    },
+    {
+      "id": "Q10",
+      "objet": "Obtenir validation juridique, fiscale et comptable indépendantes signées",
+      "statut": "OUVERT",
+      "preuve": null
+    }
+  ],
+  "integration": {
+    "p56p": "projets/projet-nova/etudes/P56P_BASE_BUDGET_PREELECTORALE_2026_2031_VGQ_ET_ECARTS.json",
+    "p56o": "projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json",
+    "p52b": "projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json",
+    "barometre": "projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json",
+    "p52b_budget_nova_cellules_modifiees": 0,
+    "p52b_montants_manquants": 600,
+    "p52d_incidences_manquantes": 720,
+    "p52a_preuves_non_validees": 20,
+    "p55n_score_estimatif_pourcent": 53,
+    "avis_independants_signes": 0,
+    "portes_cloture_completees": 0,
+    "taux_nova_candidats_renseignes": 0,
+    "resultats_reels_nova_certifies": 0,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
