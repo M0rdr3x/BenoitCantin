@@ -604,6 +604,19 @@ Les fichiers de référence candidats `official/reference/*` et `data/sources.js
 
 **Suite G0.16y :** produire un tableau financier consolidé entre les ordres de gouvernement et les régimes contributifs, recenser coûts de services et emplois, et définir des mécanismes légaux de transition avec arrêt obligatoire en cas de sous-financement. **47/100 inchangé sans preuve indépendante des critères manquants.**
 
+
+## G0.16y — Avant-projet de loi-cadre : 24 articles et 8 arrêts obligatoires (8 novembre 2026)
+
+**Score Nova–Sinjira : toujours 47/100, 53 points à valider.** Après la concordance G0.16x, un texte d'orientation juridique beaucoup plus opérationnel a été préparé. **Il ne s'agit pas d'une loi en vigueur**, ni d'un avis juridique indépendant : il doit être débattu, corrigé, validé et éventuellement adopté par les autorités compétentes.
+
+- **Avant-projet de texte :** `official/working/avant-projet-loi-cadre-transition-fiscale-nova-g0-16y-v1.md` — **24 articles** couvrant l'objet, les compétences constitutionnelles, les deux instruments proposés (revenus et paradis fiscaux), le double comptage des transferts, la protection des droits, les contrats, la dette, les services, la main-d'œuvre, l'école, les municipalités, l'environnement, l'absence de contre-tarifs, le financement sur dix ans et les contrôles externes.
+- **Registre d'application conditionnelle :** `data/g016y-loi-cadre-et-conditions-arret-2026.json` — **6 étapes** de progression sans date inventée, **8 arrêts actifs**, **24 articles au statut `DRAFT_NO_FORCE_OF_LAW`**. Les conditions bloquantes incluent légalité non vérifiée, recette inconnue, maintien des services non garanti, risques pour les crédits remboursables, droits contributifs non protégés et absence d'audit/adoption.
+- **Séparation impérative des cadres :** pour un **Québec dans le Canada**, le projet ne prétend abolir aucune taxe fédérale unilatéralement. Pour le **Québec souverain**, les transferts actuels ne sont pas présumés maintenus et la succession de la dette, des fonctions publiques, des traités et pensions n'est pas fictivement chiffrée.
+- **Contrôle technique :** `assets/g016y-transition-legal-gates-core.mjs` inspecte les 24 clauses, 8 arrêts et 6 étapes, et `tests/g016y-transition-legal-gates.test.mjs` contient **67 tests réussis en rejeu JavaScript/V8 isolé**. Aucun succès de GitHub Actions ni audit financier/constitutionnel externe n'est revendiqué.
+- **Liens de consultation :** [Concordance fiscale G0.16x](concordance-fiscale-nova.html) · [Rapport détaillé G0.16x](official/working/rapport-g0-16x-concordance-fiscale-et-gouvernance-2026-v1.md) · [Avant-projet G0.16y](official/working/avant-projet-loi-cadre-transition-fiscale-nova-g0-16y-v1.md).
+
+**Suite G0.16z :** bâtir le calendrier budgétaire consolidé avec garanties d'arrêt, responsables, coûts et preuves du transfert des financements municipaux et sociaux; demander une évaluation externe des effets distributifs avant toute affirmation que « deux taxes » suffisent. **Le score reste 47/100 tant que les portes ne sont pas franchies.**
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
