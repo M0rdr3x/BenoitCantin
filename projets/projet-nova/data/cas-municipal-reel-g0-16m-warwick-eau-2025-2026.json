@@ -1,0 +1,384 @@
+{
+  "schema": "nova-g016m-municipal-pilot/v1",
+  "phase": "G0.16m",
+  "date": "2026-11-07",
+  "status": "ONE_VERIFIABLE_REAL_PUBLIC_PROJECT_NOT_FINANCIAL_CERTIFICATION",
+  "adopted": false,
+  "score_before": 47,
+  "score_after": 47,
+  "sources": [
+    {
+      "id": "GOV_AWARD",
+      "url": "https://www.quebec.ca/nouvelles/actualites/details/le-gouvernement-du-quebec-accorde-plus-de-146-m-a-warwick-63958",
+      "date": "2025-06-26",
+      "kind": "award_announcement",
+      "viewed_text": true,
+      "pdf_visual_verified": false,
+      "other_pdf_screenshot_failed": false
+    },
+    {
+      "id": "GOV_PRIMEAU_LIST",
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/documents_administratifs/acces_information/demande_acces/2025/DAI_2025-082_subventions_primeau_2023_2033.pdf",
+      "date": "2025-10-08",
+      "kind": "official_award_and_eligible_cost",
+      "viewed_text": true,
+      "pdf_visual_verified": true,
+      "other_pdf_screenshot_failed": false
+    },
+    {
+      "id": "GOV_COMMITMENTS",
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/documents_administratifs/acces_information/engagements_financiers/2025/LIS_engagements_juin_2025.pdf",
+      "date": "2025-07-10",
+      "kind": "budget_year_commitments",
+      "viewed_text": true,
+      "pdf_visual_verified": false,
+      "other_pdf_screenshot_failed": true
+    },
+    {
+      "id": "CITY_PTI",
+      "url": "https://villedewarwick.quebec/wp-content/uploads/2025/12/Programme-triennal-des-immobilisations-2026-2027-2028.pdf",
+      "date": "2025-12",
+      "kind": "municipal_capital_program",
+      "viewed_text": true,
+      "pdf_visual_verified": false,
+      "other_pdf_screenshot_failed": true
+    },
+    {
+      "id": "CITY_BYLAW",
+      "url": "https://villedewarwick.quebec/wp-content/uploads/2025/03/R404-2025-Emprunt-usine-eau-potable-et-filiere-traitement-version-finale.pdf",
+      "date": "2025-03",
+      "kind": "local_authorized_borrowing",
+      "viewed_text": true,
+      "pdf_visual_verified": false,
+      "other_pdf_screenshot_failed": true
+    },
+    {
+      "id": "CITY_MINUTES",
+      "url": "https://villedewarwick.quebec/wp-content/uploads/2025/08/Proces-verbal-1er-juillet-2025.pdf",
+      "date": "2025-07-01",
+      "kind": "council_grant_letter",
+      "viewed_text": true,
+      "pdf_visual_verified": false,
+      "other_pdf_screenshot_failed": true
+    },
+    {
+      "id": "CITY_PROGRESS",
+      "url": "https://villedewarwick.quebec/etape-majeure-usine-eau-potable-warwick/",
+      "date": "2026-06-25",
+      "kind": "worksite_progress",
+      "viewed_text": true,
+      "pdf_visual_verified": false,
+      "other_pdf_screenshot_failed": false
+    }
+  ],
+  "cases": [
+    {
+      "id": "WARWICK_GERARD_LAROCHE_WATER_PLANT",
+      "municipality": "Warwick",
+      "region": "Centre-du-Québec",
+      "official_municipality_code": null,
+      "asset": "new_drinking_water_treatment_plant",
+      "purpose": "Reduce hardness, iron and manganese and secure potable water",
+      "award": {
+        "programme": "PRIMEAU_2023_2033",
+        "status": "AWARDED_NOT_PAYMENT_VERIFIED",
+        "amount_cad": 14668901,
+        "max_eligible_cost_cad": 15440948,
+        "rounded_share_eligible_pct": 95,
+        "government_date": "2025-06-26",
+        "letter_referenced_by_city_date": "2025-06-09",
+        "cash_paid_verified_cad": null,
+        "government_commitments": [
+          {
+            "fiscal": "2025-2026",
+            "committed_cad": 9779266
+          },
+          {
+            "fiscal": "2026-2027",
+            "committed_cad": 4889635
+          }
+        ],
+        "commitments_not_disbursements": true,
+        "beneficiary": "VILLE_DE_WARWICK_NOT_NOVA"
+      },
+      "city_2026_capital_plan": {
+        "project_cost_line_cad": 20074664,
+        "scope": "YEAR_2026_CONSTRUCTION_LINE_NOT_TOTAL_LIFETIME",
+        "same_primeau_award_cad": 14668901,
+        "water_fund_budgeted_cad": 336823,
+        "borrowing_budgeted_cad": 5068940,
+        "actual_paid_or_borrowed_verified_cad": null
+      },
+      "city_2025_bylaw": {
+        "regulation": "404-2025",
+        "authorised_total_spending_cad": 27988101,
+        "gross_borrowing_authorization_cad": 27988101,
+        "building_scope_cad": 24677387,
+        "pretreatment_equipment_scope_cad": 2465614,
+        "hardness_equipment_scope_cad": 845100,
+        "loan_duration_years": 30,
+        "special_tax_on_water_served_properties_in_bylaw": true,
+        "outstanding_debt_verified_cad": null,
+        "identical_scope_to_2026_pti": false
+      },
+      "progress": {
+        "municipal_update_date": "2026-06-25",
+        "reported_budget_used_percent": 50,
+        "reported_additions_percent": 0.39,
+        "planned_operation_month": "2027-06",
+        "independent_final_cost_verified": false,
+        "finished_as_of_november_verified": false
+      },
+      "missing_proofs": [
+        {
+          "id": "reconcile_2025_authorization_and_2026_plan",
+          "status": "OPEN"
+        },
+        {
+          "id": "verify_grant_cash_paid",
+          "status": "OPEN"
+        },
+        {
+          "id": "verify_loan_draws_and_interest",
+          "status": "OPEN"
+        },
+        {
+          "id": "audit_final_work_cost",
+          "status": "OPEN"
+        },
+        {
+          "id": "verify_service_quality_and_staff",
+          "status": "OPEN"
+        },
+        {
+          "id": "assess_special_tax_effect_on_households",
+          "status": "OPEN"
+        }
+      ],
+      "historically_confirmed_one_project": true,
+      "fully_costed_for_nova_reform": false
+    }
+  ],
+  "guards": {
+    "different_years_different_scopes": true,
+    "grant_promised_not_payment": true,
+    "commitment_schedule_not_bank_payment": true,
+    "bylaw_gross_borrowing_not_outstanding_debt": true,
+    "do_not_sum_pti_and_bylaw": true,
+    "eligible_grant_cost_not_lifetime_full_cost": true,
+    "no_grant_to_nova": true,
+    "unverified_cash_is_null": true,
+    "special_local_tax_may_have_household_effect": true,
+    "no_extrapolation_from_one_project": true
+  },
+  "summary": {
+    "real_cases_documented": 1,
+    "awarded_primeau_cases": 1,
+    "awarded_total_cad": 14668901,
+    "grant_cash_disbursements_verified_cad": null,
+    "actual_debt_cad": null,
+    "net_cost_of_nova_reform_cad": null,
+    "independent_fiscal_audit": false
+  },
+  "constitutional_budget": [
+    {
+      "id": "QUEBEC_CANADA",
+      "verified": false,
+      "years": [
+        {
+          "year": "2026-2027",
+          "local_cost_cad": null,
+          "award_paid_cad": null,
+          "borrowing_service_cad": null,
+          "household_tax_effect_cad": null,
+          "workforce_cost_cad": null,
+          "net_balance_cad": null
+        },
+        {
+          "year": "2027-2028",
+          "local_cost_cad": null,
+          "award_paid_cad": null,
+          "borrowing_service_cad": null,
+          "household_tax_effect_cad": null,
+          "workforce_cost_cad": null,
+          "net_balance_cad": null
+        },
+        {
+          "year": "2028-2029",
+          "local_cost_cad": null,
+          "award_paid_cad": null,
+          "borrowing_service_cad": null,
+          "household_tax_effect_cad": null,
+          "workforce_cost_cad": null,
+          "net_balance_cad": null
+        },
+        {
+          "year": "2029-2030",
+          "local_cost_cad": null,
+          "award_paid_cad": null,
+          "borrowing_service_cad": null,
+          "household_tax_effect_cad": null,
+          "workforce_cost_cad": null,
+          "net_balance_cad": null
+        },
+        {
+          "year": "2030-2031",
+          "local_cost_cad": null,
+          "award_paid_cad": null,
+          "borrowing_service_cad": null,
+          "household_tax_effect_cad": null,
+          "workforce_cost_cad": null,
+          "net_balance_cad": null
+        },
+        {
+          "year": "2031-2032",
+          "local_cost_cad": null,
+          "award_paid_cad": null,
+          "borrowing_service_cad": null,
+          "household_tax_effect_cad": null,
+          "workforce_cost_cad": null,
+          "net_balance_cad": null
+        },
+        {
+          "year": "2032-2033",
+          "local_cost_cad": null,
+          "award_paid_cad": null,
+          "borrowing_service_cad": null,
+          "household_tax_effect_cad": null,
+          "workforce_cost_cad": null,
+          "net_balance_cad": null
+        },
+        {
+          "year": "2033-2034",
+          "local_cost_cad": null,
+          "award_paid_cad": null,
+          "borrowing_service_cad": null,
+          "household_tax_effect_cad": null,
+          "workforce_cost_cad": null,
+          "net_balance_cad": null
+        },
+        {
+          "year": "2034-2035",
+          "local_cost_cad": null,
+          "award_paid_cad": null,
+          "borrowing_service_cad": null,
+          "household_tax_effect_cad": null,
+          "workforce_cost_cad": null,
+          "net_balance_cad": null
+        },
+        {
+          "year": "2035-2036",
+          "local_cost_cad": null,
+          "award_paid_cad": null,
+          "borrowing_service_cad": null,
+          "household_tax_effect_cad": null,
+          "workforce_cost_cad": null,
+          "net_balance_cad": null
+        }
+      ]
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "verified": false,
+      "years": [
+        {
+          "year": "2026-2027",
+          "local_cost_cad": null,
+          "award_paid_cad": null,
+          "borrowing_service_cad": null,
+          "household_tax_effect_cad": null,
+          "workforce_cost_cad": null,
+          "net_balance_cad": null
+        },
+        {
+          "year": "2027-2028",
+          "local_cost_cad": null,
+          "award_paid_cad": null,
+          "borrowing_service_cad": null,
+          "household_tax_effect_cad": null,
+          "workforce_cost_cad": null,
+          "net_balance_cad": null
+        },
+        {
+          "year": "2028-2029",
+          "local_cost_cad": null,
+          "award_paid_cad": null,
+          "borrowing_service_cad": null,
+          "household_tax_effect_cad": null,
+          "workforce_cost_cad": null,
+          "net_balance_cad": null
+        },
+        {
+          "year": "2029-2030",
+          "local_cost_cad": null,
+          "award_paid_cad": null,
+          "borrowing_service_cad": null,
+          "household_tax_effect_cad": null,
+          "workforce_cost_cad": null,
+          "net_balance_cad": null
+        },
+        {
+          "year": "2030-2031",
+          "local_cost_cad": null,
+          "award_paid_cad": null,
+          "borrowing_service_cad": null,
+          "household_tax_effect_cad": null,
+          "workforce_cost_cad": null,
+          "net_balance_cad": null
+        },
+        {
+          "year": "2031-2032",
+          "local_cost_cad": null,
+          "award_paid_cad": null,
+          "borrowing_service_cad": null,
+          "household_tax_effect_cad": null,
+          "workforce_cost_cad": null,
+          "net_balance_cad": null
+        },
+        {
+          "year": "2032-2033",
+          "local_cost_cad": null,
+          "award_paid_cad": null,
+          "borrowing_service_cad": null,
+          "household_tax_effect_cad": null,
+          "workforce_cost_cad": null,
+          "net_balance_cad": null
+        },
+        {
+          "year": "2033-2034",
+          "local_cost_cad": null,
+          "award_paid_cad": null,
+          "borrowing_service_cad": null,
+          "household_tax_effect_cad": null,
+          "workforce_cost_cad": null,
+          "net_balance_cad": null
+        },
+        {
+          "year": "2034-2035",
+          "local_cost_cad": null,
+          "award_paid_cad": null,
+          "borrowing_service_cad": null,
+          "household_tax_effect_cad": null,
+          "workforce_cost_cad": null,
+          "net_balance_cad": null
+        },
+        {
+          "year": "2035-2036",
+          "local_cost_cad": null,
+          "award_paid_cad": null,
+          "borrowing_service_cad": null,
+          "household_tax_effect_cad": null,
+          "workforce_cost_cad": null,
+          "net_balance_cad": null
+        }
+      ]
+    }
+  ],
+  "decision": {
+    "g016m_real_project_researched": true,
+    "municipal_cashflows_verified": false,
+    "new_fiscal_policy_approved": false,
+    "independent_legal_audit": false,
+    "programme_complete": false
+  }
+}
