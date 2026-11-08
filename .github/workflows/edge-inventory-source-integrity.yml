@@ -8,6 +8,13 @@ on:
       - 'supabase/config.toml'
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/test_edge_inventory_source_integrity.py'
+      - 'scripts/validate_sinjira_signup_registry_delivery.py'
+      - 'assets/js/v24-signup.js'
+      - 'assets/js/sinjira-confirm-email.js'
+      - 'assets/js/sinjira-character-registry.js'
+      - 'compte/inscription.html'
+      - 'compte/confirmer.html'
+      - 'projets/sinjira/registre/index.html'
       - '.github/workflows/edge-inventory-source-integrity.yml'
   push:
     branches: [main]
@@ -16,6 +23,13 @@ on:
       - 'supabase/config.toml'
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/test_edge_inventory_source_integrity.py'
+      - 'scripts/validate_sinjira_signup_registry_delivery.py'
+      - 'assets/js/v24-signup.js'
+      - 'assets/js/sinjira-confirm-email.js'
+      - 'assets/js/sinjira-character-registry.js'
+      - 'compte/inscription.html'
+      - 'compte/confirmer.html'
+      - 'projets/sinjira/registre/index.html'
       - '.github/workflows/edge-inventory-source-integrity.yml'
   workflow_dispatch:
 
