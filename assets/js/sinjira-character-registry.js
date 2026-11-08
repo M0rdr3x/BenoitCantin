@@ -6,6 +6,9 @@ const ALLOWED_PHOTO_TYPES=new Map([
  ['image/jpeg','jpg'],['image/png','png'],['image/webp','webp'],['image/avif','avif'],['image/gif','gif']
 ]);
 let currentUser=null,currentProfile=null;
+let registryReady=false,isSending=false,isOwnerForSubmit=false;
+const submitButton=form?.querySelector('button[type="submit"]');
+if(submitButton)submitButton.disabled=true;
 
 function setState(msg,type='info'){if(!state)return;state.textContent=msg;state.dataset.statusType=type}
 function serialize(formEl){const out={};for(const [k,v] of new FormData(formEl).entries()){if(v instanceof File||k==='reponses_json')continue;if(k in out)out[k]=Array.isArray(out[k])?[...out[k],v]:[out[k],v];else out[k]=v}return out}
@@ -56,11 +59,16 @@ async function init(){
  if(!(await ensureSensitiveAccess()))return;
  const owner=isSinjiraOwner(currentUser);
  if(owner)await tryOwnerRepair(currentUser);
- const [{data:p},{data:submissionRows},{data:characterRows}]=await Promise.all([
+ const [profileResult,submissionResult,characterResult]=await Promise.all([
    getSupabase().from('profiles').select('pseudo,display_name').eq('user_id',currentUser.id).maybeSingle(),
    getSupabase().from('character_submissions').select('id,status,source_payload,photo_path,created_at').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(1),
    getSupabase().from('characters').select('id,status,public_name,visible_to_user,updated_at').eq('user_id',currentUser.id).order('updated_at',{ascending:false}).limit(5)
  ]);
+ // Refuser l'envoi si l'état distant est inconnu : ne jamais supposer un nouveau dossier.
+ const {data:p,error:profileError}=profileResult;
+ const {data:submissionRows,error:submissionError}=submissionResult;
+ const {data:characterRows,error:characterError}=characterResult;
+ if(profileError||submissionError||characterError)throw new Error('Impossible de vérifier votre dossier actuellement. Vos réponses restent dans le formulaire; réessayez après rechargement.');
  currentProfile=p||{};
  const existingSubmission=rows(submissionRows)[0]||null;
  const existingCharacter=rows(characterRows).find(x=>x.status!=='archived')||rows(characterRows)[0]||null;
@@ -80,17 +88,34 @@ async function init(){
    const link=document.createElement('a');link.className='btn btn-primary';link.href='../../../compte/mon-personnage.html';link.textContent='Ouvrir Mon personnage';state.insertAdjacentElement('afterend',link);return;
  }else setState('Compte associé. Le questionnaire sera enregistré directement dans SINJIRA™.','success');
 
- form.addEventListener('submit',async e=>{
-   if(e.defaultPrevented)return;
-   e.preventDefault();
-   if(!form.checkValidity()){form.reportValidity();return}
-   submit.disabled=true;setState(owner?'Mise à jour sécurisée du dossier AbyssTime…':'Enregistrement sécurisé dans votre Compte SINJIRA™…','info');
-   try{
-     const result=await submitToSinjira(currentUser,{updateExisting:owner});
-     localStorage.removeItem('registre-consciences-draft-v1');
-     setState(successMessage(result),'success');
-     form.querySelectorAll('input,textarea,select,button').forEach(x=>x.disabled=true);
-   }catch(err){setState(err.message||'Transmission impossible. Aucune sauvegarde n’a été confirmée.','error');submit.disabled=false}
- });
+ registryReady=true;
+ isOwnerForSubmit=owner;
+ submit.disabled=false;
 }
-init().catch(e=>setState(e.message||'Erreur de liaison au compte.','error'));
+// Toujours intercepter l'envoi HTML avant toute opération asynchrone, même si l'init échoue.
+form?.addEventListener('submit',async e=>{
+ e.preventDefault();
+ if(!registryReady||isSending||!currentUser){
+   setState('Le Registre n’est pas prêt. Vérifiez votre connexion, la sécurité du compte et rechargez la page.','error');
+   return;
+ }
+ if(!form.checkValidity()){form.reportValidity();return}
+ isSending=true;
+ if(submitButton)submitButton.disabled=true;
+ setState(isOwnerForSubmit?'Mise à jour sécurisée du dossier…':'Enregistrement sécurisé dans votre Compte SINJIRA™…','info');
+ try{
+   const result=await submitToSinjira(currentUser,{updateExisting:isOwnerForSubmit});
+   localStorage.removeItem('registre-consciences-draft-v1');
+   setState(successMessage(result),'success');
+   form.querySelectorAll('input,textarea,select,button').forEach(x=>x.disabled=true);
+   registryReady=false;
+ }catch(err){
+   setState(err?.message||'Transmission impossible. Vos réponses restent visibles; réessayez.','error');
+   if(submitButton)submitButton.disabled=false;
+ }finally{isSending=false}
+});
+init().catch(e=>{
+ registryReady=false;
+ if(submitButton)submitButton.disabled=true;
+ setState(e?.message||'Erreur de liaison au compte. Aucune participation n’a été transmise.','error');
+});
