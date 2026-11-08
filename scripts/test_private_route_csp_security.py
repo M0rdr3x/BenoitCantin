@@ -18,7 +18,9 @@ from build_netlify_public import render_standalone_headers  # noqa: E402
 
 SCOPES = {
     "compte": ("/compte/*", "/compte/(.*)"),
-    "admin/sinjira": ("/admin/sinjira/*", "/admin/sinjira/(.*)"),
+    "admin": ("/admin/*", "/admin/(.*)"),
+    "Admin": ("/Admin/*", "/Admin/(.*)"),
+    "app": ("/app/*", "/app/(.*)"),
 }
 DISALLOWED_SCRIPT_TOKENS = {"'unsafe-inline'", "'unsafe-eval'", "data:", "blob:", "*"}
 ATTR_URLS = {"href", "src", "action", "formaction", "xlink:href"}
@@ -136,6 +138,26 @@ class PrivateRoutesCspSecurityTests(unittest.TestCase):
         self.assertIn("from './sinjira-supabase.js'", module)
         self.assertIn("s.functions.invoke('admin-console'", module)
         self.assertIn("s.functions.invoke('admin-reports'", module)
+
+    def test_aliases_admin_redirigent_via_un_script_externe(self) -> None:
+        paths = [
+            ROOT / "Admin/sinjira-analytics.html",
+            ROOT / "Admin/sinjira/index.html",
+            ROOT / "Admin/sinjira/licences.html",
+            ROOT / "admin/index.html",
+            ROOT / "admin/sinjira-analytics.html",
+        ]
+        redirect = ROOT / "assets/js/sinjira-admin-alias-redirect.js"
+        source = redirect.read_text("utf-8")
+        self.assertIn("document.currentScript", source)
+        self.assertIn("target.search = window.location.search", source)
+        self.assertIn("target.hash = window.location.hash", source)
+        for path in paths:
+            with self.subTest(path=path.relative_to(ROOT).as_posix()):
+                html = path.read_text("utf-8")
+                self.assertIn('src="/assets/js/sinjira-admin-alias-redirect.js"', html)
+                self.assertIn("data-admin-redirect-target=\"/admin/", html)
+                self.assertNotIn("<script>location.replace", html)
 
     def test_mutants_dangereux_sont_detectes(self) -> None:
         safe = ("default-src 'self'; script-src 'self'; script-src-attr 'none'; "
