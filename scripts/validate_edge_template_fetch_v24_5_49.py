@@ -44,6 +44,8 @@ def main()->int:
         'url.username || url.password || url.search || url.hash',
         "redirect:'error'",
         "cache:'no-store'",
+        'MAX_TEMPLATE_FETCH_MS=15_000',
+        'AbortSignal.timeout(MAX_TEMPLATE_FETCH_MS)',
         'readLimitedBinaryResponse(response,MAX_TEMPLATE_BYTES)',
         "if(!limited.ok)throw new Error('REPORT_TEMPLATE_TOO_LARGE')",
         "String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-'",
@@ -60,12 +62,14 @@ def main()->int:
     # Le plafond doit être imposé avant l'allocation, dans le lecteur partagé,
     # y compris si Content-Length manque ou si l'origine le falsifie.
     stream_markers=[
-        "export async function readLimitedBinaryResponse(response, maxBytes)",
+        "export async function readLimitedBinaryResponse(response, maxBytes, timeoutMs = 30_000)",
         "response.headers.get('content-length')",
         "Number(declared) > maxBytes",
         "value.byteLength > maxBytes - byteCount",
-        "if (byteCount === 0) return { ok: false }",
-        "await reader.cancel().catch(() => {})",
+        "if (interrupted || byteCount === 0) return { ok: false }",
+        "void reader.cancel().catch(() => {})",
+        "const timeout = setTimeout(interrupt, timeoutMs)",
+        "clearTimeout(timeout)",
     ]
     for marker in stream_markers:
         if marker not in limited:
