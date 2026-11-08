@@ -162,7 +162,20 @@ Les `tests/g016z-consolidated-funding.test.mjs` contiennent **80 tests de cohér
 
 Si un manque de preuve subsiste sur la légalité, l'équilibre des services, les droits ou la transition, le mécanisme doit **suspendre** la mise en œuvre plutôt que prétendre que le taux de deux prélèvements résout tout.
 
-### 11. Critère de complétude et décision G0.16z
+### 11. Contrôle qualité nouveau — conflit de version de la publication municipale du MAMH
+
+Au cours de la validation des sources le 8 novembre 2026, un **écart entre deux représentations de la même URL PDF** a été observé :
+
+- La **capture visuelle** rendue par l'outil montre une édition **« Mars 2025 »**, contenant des chiffres de **2023** : recettes municipales **29,3 G$**, foncier **14,0 G$**, transferts **6,2 G$**.
+- L'**extraction textuelle** de la même URL montre une édition **« Septembre 2026 »**, décrivant des comptes **2024** : recettes municipales **31,3 G$**, foncier **15,0 G$**, transferts affichés **7,4 G$**.
+
+Cette situation peut provenir de caches, de mises à jour du fichier à URL stable ou de différences de versions. **Il est impossible d'en déterminer la cause avec certitude dans le présent contrôle.** Les représentations ne sont pas assez cohérentes pour traiter ces données comme une source versionnée unique. **Les deux séries ne doivent pas être confondues ou substituées silencieusement.**
+
+Le registre de provenance `data/g016z-controle-versions-source-municipale-mamh.json` exige une **copie figée par millésime avec empreinte SHA-256** et un examen texte/visuel sur la même version. La série 2023 est conservée en tant que référence historique de l'édition 2025; la série 2024 textuellement relevée n'est **pas** incorporée au calcul de remplacement 2026. Les **valeurs municipales à remplacer pour 2026 restent inconnues**.
+
+Cette anomalie ne touche pas les tableaux provinciaux 2026-2027, dont les pages pertinentes du rapport officiel d'août 2026 ont été vérifiées visuellement.
+
+### 12. Critère de complétude et décision G0.16z
 
 Le barème de [l'audit de complétude](../../data/audit-completude-programme-nova-2026-11-05.json) exige textes opérationnels, compétences vérifiées, financements soutenables, effets sur la population et les salariés, calendrier, suivi, audit externe et adoption. L'ajout du registre et de l'outil **ne fait pas mécaniquement gagner des points**.
 

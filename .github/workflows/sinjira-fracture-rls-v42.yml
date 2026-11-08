@@ -1,0 +1,57 @@
+name: SINJIRA — V42 confinement RLS Fracture en PostgreSQL éphémère
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+    paths:
+      - 'scripts/proposals/sinjira_fracture_v42_rls_update_candidate.sql'
+      - 'tests/security/sql/test_fracture_rls_v42.sql'
+      - 'tests/security/test_fracture_rls_v42_static.py'
+      - 'docs/SINJIRA_FRACTURE_RLS_PARTY_INTEGRITY_V42.md'
+      - '.github/workflows/sinjira-fracture-rls-v42.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/proposals/sinjira_fracture_v42_rls_update_candidate.sql'
+      - 'tests/security/sql/test_fracture_rls_v42.sql'
+      - 'tests/security/test_fracture_rls_v42_static.py'
+      - 'docs/SINJIRA_FRACTURE_RLS_PARTY_INTEGRITY_V42.md'
+      - '.github/workflows/sinjira-fracture-rls-v42.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sinjira-fracture-rls-v42-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  isolated_policy_tests:
+    name: Deux comptes fictifs — refuser les transferts entre parties
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_DB: sinjira_v42_test_only
+          # Auth de confiance STRICTEMENT dans ce conteneur jetable de CI.
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - '127.0.0.1:5432:5432'
+        options: >-
+          --health-cmd=pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    steps:
+      - name: Extraire le code sans conserver les identifiants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Valider la portée statique et l'absence de déploiement automatique
+        run: python3 -m unittest discover -s tests/security -p test_fracture_rls_v42_static.py -v
+      - name: Tester les politiques sur PostgreSQL local éphémère uniquement
+        env:
+          PGCONNECT_TIMEOUT: '10'
+        run: |
+          psql --version
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_v42_test_only -v ON_ERROR_STOP=1 -f tests/security/sql/test_fracture_rls_v42.sql

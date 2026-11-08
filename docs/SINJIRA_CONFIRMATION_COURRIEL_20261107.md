@@ -183,3 +183,29 @@ Renforcement indépendant de la livraison Formspree : le point d’entrée serve
 Côté navigateur, le Registre vérifie explicitement `auth.mfa.getAuthenticatorAssuranceLevel()` avant d’afficher le formulaire comme transmissible : vers `/compte/securite.html` si le facteur manque; vers `/compte/mfa.html` pour valider une session déjà équipée; échec sans transmission si le contrôle est indisponible. Le script public est versionné `sinjira-character-registry.js?v=24.5.8`. Des mutations négatives du validateur doivent faire échouer les tests si la garde serveur obligatoire est remplacée par `requiredUser(req)`.
 
 Ce renforcement peut **bloquer les anciennes sessions AAL1** jusqu’à leur montée en AAL2; il ne supprime aucun dossier et ne publie aucune donnée. Déployer serveur et Web de façon coordonnée, après réussite de la CI de la PR de sécurité, sans diminuer l’exigence MFA pour une validation fictive.
+## Condition bloquante supplémentaire : transport SMTP Supabase Auth en production (audit du 8 novembre 2026)
+
+**IMPORTANT :** une page de confirmation publiée et un modèle `Confirm sign up` corrects ne prouvent pas que les nouveaux membres peuvent recevoir les courriels. Le transport de **Supabase Auth** est indépendant de **Formspree**. Formspree reçoit les avis facultatifs **après** validation du compte; il ne peut pas remplacer l’envoi initial du courriel d’activation.
+
+Selon la documentation officielle Supabase du 31 octobre 2026, le SMTP intégré de Supabase est réservé aux adresses autorisées de l’équipe du projet, limité et non destiné à l’exploitation publique. La livraison d’un courriel de confirmation vers un utilisateur externe exige donc la **vérification d’un SMTP personnalisé déjà opérationnel** (ou sa mise en place avec accord explicite sur tout coût).
+
+**Procédure de contrôle — à effectuer dans le tableau de bord Supabase, sans exposer de secret dans GitHub :**
+
+1. Ouvrir **Authentication → SMTP Settings** (ou les paramètres d’envoi des courriels de la version actuelle du tableau de bord) et constater si **Custom SMTP** est activé. Ne jamais copier son mot de passe ni ses identifiants dans une issue, un commit ou un rapport de test.
+2. Vérifier le nom d’hôte et le port du service, son domaine d’expédition vérifié, les protections SPF/DKIM/DMARC et le volume prévu. Ne pas supposer qu’un SMTP de test fonctionne pour des utilisateurs externes.
+3. Confirmer séparément **Site URL**, **Redirect URLs** et le modèle **Confirm sign up**, qui dirige vers `/compte/confirmer.html#token_hash=…&type=email`. Tester que l’ouverture du courriel ne consomme pas le jeton : seul le clic volontaire sur le bouton de la page doit confirmer.
+4. Créer un **compte fictif inédit avec une adresse de test contrôlée, non membre de l’équipe Supabase**, puis confirmer la réception effective du message, l’ouverture de la page et l’activation du compte. Conserver uniquement des résultats anonymisés : succès/échec, étape, horodatage, code d’erreur technique sans adresse ni jeton.
+5. Tester le renvoi, un lien expiré, une connexion AAL1 puis la transition obligatoire AAL2 du Registre. Ne pas désactiver la MFA pour faire réussir l’essai.
+6. Configurer indépendamment les deux workflows **Formspree**, vérifier `sinjiraofficiel@gmail.com` comme destination et utiliser une adresse de test pour prouver la **réception** du message. Un `2xx` ou une ligne `delivery_status='sent'` signifie seulement que Formspree a accepté l’envoi, pas que la boîte l’a reçu.
+7. L’option **Auto Response** de Formspree demande **Professional ou Business**. Si aucun abonnement correspondant n’a été approuvé, ne pas activer de dépense; documenter clairement que l’accusé externe n’est pas disponible et que l’accusé **à l’écran** reste assuré seulement après sauvegarde confirmée.
+
+**Seuil de mise en service :** maintenir l’état **NON CERTIFIÉ / 80 % estimés** tant que l’existence du SMTP opérationnel, les paramètres Auth, les workflows Formspree, le parcours d’un compte de test extérieur, l’authentification AAL2 et la livraison réelle des courriels ne sont pas constatés. Ne jamais transformer un test de l’interface en preuve de délivrabilité.
+
+**Sources officielles :**
+- Supabase Auth — SMTP de production : https://supabase.com/docs/guides/auth/auth-smtp
+- Supabase Auth — modèles de courriel : https://supabase.com/docs/guides/auth/auth-email-templates
+- Formspree — Auto Response : https://help.formspree.io/articles/plugins/sending-a-confirmation-or-response-email
+- Formspree — forfaits et fonctionnalités : https://formspree.io/plans
+
+**État lors de cet audit :** PR GitHub #834 déjà fusionnée; `notify-account-confirmation` v1 et `submit-character-questionnaire` v13 actives avec `verify_jwt=true`; aucun événement dans `public.sinjira_formspree_events`. La présence d’un SMTP personnalisé et la réception des courriels **n’ont pas pu être vérifiées** depuis les accès de cet audit. Aucune mise à jour des paramètres hébergés, aucun test d’envoi, aucun achat, aucune donnée réelle modifiée.
+
