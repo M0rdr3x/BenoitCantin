@@ -90,13 +90,29 @@ def migration_errors(files: dict[str, str]) -> list[str]:
         # publie une quelconque ligne; séparer les écritures pour audit humain.
         if any("'" + bucket + "'" in statement.lower() for bucket in PRIVATE):
             if re.search(r"\bpublic\s*=\s*true\b", statement, re.I) or re.search(
-                r",\s*true\s*[,)]", statement, re.I
+                r",\s*true\b\s*(?:::boolean)?\s*[,)]", statement, re.I
             ):
                 errors.append("Une migration rend potentiellement public un bucket privé.")
-        # Refuser les nouveaux buckets SINJIRA publics par défaut, sauf avatars.
-        if "storage.buckets" in statement.lower() and re.search(r"\bpublic\s*=\s*true\b", statement, re.I):
-            if "sinjira-avatars" not in statement.lower():
-                errors.append("Publication Storage sans allowlist avatars.")
+        # Une simple occurrence de 'sinjira-avatars' dans un WHERE n'est
+        # jamais la preuve que le UPDATE vise uniquement ce bucket :
+        # WHERE id <> 'sinjira-avatars' ouvrirait les *autres* buckets.
+        if re.search(r"\bpublic\s*=\s*true\b", statement, re.I):
+            if re.match(r"\s*update\s+storage\.buckets\b", statement, re.I):
+                where = re.search(r"\bwhere\s+(.+?)\s*;\s*$", statement, re.I | re.S)
+                if not where or not re.fullmatch(
+                    r"\s*id\s*=\s*'sinjira-avatars'\s*", where.group(1), re.I
+                ):
+                    errors.append("UPDATE public=true hors bucket avatar exact : NO_GO.")
+            else:
+                # INSERT ... ON CONFLICT peut contenir SET public=true.
+                # Le VALUES doit cibler un unique avatar ; pas un SELECT
+                # arbitraire ni une seconde ligne dont l'id est différent.
+                values = re.search(
+                    r"\bvalues\s*\(\s*'sinjira-avatars'\s*,", statement, re.I
+                )
+                rows = re.split(r"\bon\s+conflict\b", statement, maxsplit=1, flags=re.I)[0]
+                if not values or re.search(r"\)\s*,\s*\(", rows):
+                    errors.append("INSERT public=true sans ligne avatar unique : NO_GO.")
         if "storage.buckets" in statement.lower() and re.search(r"'sinjira-[^']+'", statement, re.I):
             # Tout ajout explicite d'un nouveau bucket avec un booléen public
             # dans VALUES doit avoir une revue, et non être déployé implicitement.
