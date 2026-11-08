@@ -59,7 +59,7 @@ test("Interdiction de consolider un vrai budget comme exemple",()=>assert.throws
 test("Incohérence de transfert entre entités rejetée",()=>assert.throws(()=>consolidateSyntheticGovernment({...synthetic(),municipal_transfer_received_from_province:6}),/UNRECONCILED_INTERNAL_TRANSFER/));
 test("Abolition fédérale imaginaire rejetée",()=>assert.throws(()=>consolidateSyntheticGovernment({...synthetic(),reassigned_federal_tax_revenue:20}),/NO_FEDERAL_TAX_TAKEOVER_IN_CANADA/));
 test("Fonctions nationales sans indépendance rejetées",()=>assert.throws(()=>consolidateSyntheticGovernment({...synthetic(),additional_national_services_spending:10}),/NO_FEDERAL_TAX_TAKEOVER_IN_CANADA/));
-test("Transferts fédéraux souverains non prouvés rejetés",()=>assert.throws(()=>consolidateSyntheticGovernment(synthetic("QUEBEC_SOUVERAIN"))),/NO_AUTOMATIC_FEDERAL_TRANSFER/));
+test("Transferts fédéraux souverains non prouvés rejetés",()=>assert.throws(()=>consolidateSyntheticGovernment(synthetic("QUEBEC_SOUVERAIN")) ,/NO_AUTOMATIC_FEDERAL_TRANSFER/));
 test("Souveraineté fictive à transferts nuls calculable",()=>assert.equal(consolidateSyntheticGovernment({...synthetic("QUEBEC_SOUVERAIN"),federal_transfer_received:0,additional_national_services_spending:15,reassigned_federal_tax_revenue:10}).consolidated_balance,-15));
 test("Score artificiellement élevé",()=>reject(x=>{x.score_after=48},"FALSE_COMPLETION"));
 test("Fausse réserve de 52 points",()=>reject(x=>{x.remaining=52},"FALSE_COMPLETION"));
