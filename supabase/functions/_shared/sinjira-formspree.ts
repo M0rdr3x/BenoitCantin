@@ -109,7 +109,22 @@ export async function sendFormspreeNotice(
     .select('id')
     .single();
   if(reserveError){
-    if(reserveError.code==='23505')return {accepted:false,already:true,configured:true};
+    if(reserveError.code==='23505'){
+      // Un avis déjà accepté ne doit jamais être renvoyé ni annoncé comme un échec.
+      // La consultation est réservée au serveur et ne divulgue aucune identité.
+      const {data:prior,error:priorError}=await service
+        .from('sinjira_formspree_events')
+        .select('delivery_status')
+        .eq('event_type',kind)
+        .eq('source_id',sourceId)
+        .maybeSingle();
+      return {
+        accepted:!priorError&&prior?.delivery_status==='sent',
+        already:true,
+        configured:true,
+        reason:priorError?'OUTBOX_STATE_UNAVAILABLE':undefined
+      };
+    }
     console.warn('[SINJIRA Formspree]','OUTBOX_RESERVATION_FAILED');
     return {accepted:false,already:false,configured:false,reason:'OUTBOX_RESERVATION_FAILED'};
   }
