@@ -111,8 +111,8 @@ MAX_SOURCE_BYTES = 2 * 1024 * 1024
 
 # Éviter la résolution flottante de la pile d'authentification pendant un
 # déploiement Edge. Seules les versions semver exactes sont acceptées.
-SUPABASE_JS_REF = re.compile(r"""(?:npm:|https://esm\\.sh/)@supabase/supabase-js@([^\\s\x27\x22/?]+)""")
-EXACT_SEMVER = re.compile(r"^[0-9]+\\.[0-9]+\\.[0-9]+$")
+SUPABASE_JS_REF = re.compile(r"""(?:npm:|https://esm\.sh/)@supabase/supabase-js@([^\s\x27\x22/?]+)""")
+EXACT_SEMVER = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 
 
 def unpinned_supabase_js_versions(source: str) -> list[str]:
