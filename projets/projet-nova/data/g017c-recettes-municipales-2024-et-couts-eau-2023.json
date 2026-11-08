@@ -1,0 +1,149 @@
+{
+  "schema": "nova-g017c-water-municipal-revenue-evidence/v1",
+  "phase": "G0.17c",
+  "date": "2026-11-08",
+  "score_before": 47,
+  "score_after": 47,
+  "points_remaining": 53,
+  "sources": [
+    {
+      "id": "M24",
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/documents_administratifs/acces_information/demande_acces/2026/DAI_2026-030_cout_gestion_infrastructure.pdf",
+      "document": "MAMH disclosed 2026-06-18",
+      "source_year": 2024,
+      "source_method": "PDF_TEXT_EXTRACTION",
+      "screenshot_attempted": true,
+      "screenshot_succeeded": false,
+      "screenshot_failure": "FILE_TOO_LARGE",
+      "csv_crosscheck_done": false
+    },
+    {
+      "id": "W23",
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/infrastructures/strategie_quebecoise_eau_potable/RAP_usage_eau_potable_2023.pdf",
+      "document": "MAMH water report 2023 (published 2025)",
+      "source_year": 2023,
+      "source_method": "PDF_TEXT_EXTRACTION_AND_PARTIAL_SCREENSHOT",
+      "screenshot_page_index_20_succeeded": true
+    },
+    {
+      "id": "CSV",
+      "url": "https://www.donneesquebec.ca/recherche/dataset/rapport-financier-des-organismes-municipaux-et-autres-documents",
+      "document": "2024/2025 actual coded municipal reports",
+      "raw_rows_imported": false
+    }
+  ],
+  "municipal": {
+    "year": 2024,
+    "scope": "QUEBEC_CONSOLIDATED_MUNICIPAL_ORGANIZATIONS",
+    "unit": "BILLION_CAD_1_DECIMAL_ROUNDED",
+    "total_revenue_gcad": 31.3,
+    "components": [
+      {
+        "id": "PROPERTY",
+        "name": "Taxe foncière",
+        "amount_gcad": 15,
+        "role": "REPLACEMENT_IF_ABOLISHED"
+      },
+      {
+        "id": "GOVERNMENT_TRANSFERS",
+        "name": "Transferts gouvernementaux",
+        "amount_gcad": 7.4,
+        "role": "INTERNAL_TRANSFER_CONSOLIDATION"
+      },
+      {
+        "id": "SALES",
+        "name": "Ventes biens et services",
+        "amount_gcad": 3.2,
+        "role": "REVENUE_TAX_CLASSIFICATION"
+      },
+      {
+        "id": "TARIFF",
+        "name": "Tarification",
+        "amount_gcad": 2.2,
+        "role": "SERVICE_CHARGE_LEGAL_REVIEW"
+      },
+      {
+        "id": "TRANSFER_DUTY",
+        "name": "Droits de mutation",
+        "amount_gcad": 1.3,
+        "role": "REPLACEMENT_IF_ABOLISHED"
+      },
+      {
+        "id": "OTHER",
+        "name": "Autres revenus locaux",
+        "amount_gcad": 2.2,
+        "role": "ITEM_CLASSIFICATION"
+      }
+    ],
+    "nontransfer_own_source_revenue_approx_gcad": 23.9,
+    "source_official_property_tax_share_pct": 47.8,
+    "source_official_own_revenue_share_pct": 76.5,
+    "verified_raw_municipal_csv": false,
+    "actual_total_year_2025_gcad": null,
+    "actual_total_year_2026_gcad": null,
+    "municipal_replacement_year_2026_gcad": null,
+    "same_year_transfer_cancellation_verified": false
+  },
+  "water": {
+    "year": 2023,
+    "scope": "NETWORK_SERVICES_WATER",
+    "municipal_reports": 669,
+    "eligible_municipalities": 849,
+    "population_served_coverage_pct": 96,
+    "reported_approx_annual_revenue_gcad": 2.4,
+    "reported_approx_full_service_cost_gcad": 6,
+    "reported_coverage_pct": 40,
+    "calculated_illustrative_uncovered_full_cost_gcad": 3.6,
+    "revenue_mix_pct": {
+      "volumetric": 7,
+      "nonvolumetric": 36,
+      "property": 50,
+      "other": 7
+    },
+    "full_cost_contains_operations_and_average_ten_year_asset_investment_needs": true,
+    "illustrative_gap_is_not_annual_cash_deficit": true,
+    "actual_full_cost_year_2026_gcad": null
+  },
+  "controls": {
+    "do_not_add_2024_municipal_to_2026_provincial_budget": true,
+    "do_not_add_2023_water_revenue_twice": true,
+    "cancel_internal_transfer_once_only": true,
+    "do_not_compare_unaligned_years_as_growth": true,
+    "do_not_treat_2023_full_cost_gap_as_booked_cash_loss": true,
+    "protect_water_services_workers_debt_and_maintenance": true,
+    "separate_school_property_tax_and_municipal_property_tax": true,
+    "taxes_fees_and_tariffs_require_legal_classification": true,
+    "do_not_invent_fiscal_2026_replacement_or_tax_rate": true,
+    "no_independent_programme_certification_claim": true
+  },
+  "scenarios": [
+    {
+      "id": "QUEBEC_CANADA",
+      "conditional_provincial_need_mcad": 112369,
+      "municipal_net_replacement_mcad": null,
+      "validated": false
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "partial_no_federal_transfers_stress_mcad": 145415,
+      "municipal_net_replacement_mcad": null,
+      "full_national_cost_mcad": null,
+      "validated": false
+    }
+  ],
+  "next_checks": [
+    "Retrieve 2024 and 2025 raw CSV plus accounting dictionaries and missing-org lists",
+    "Validate 2024 revenue breakdown against the exact original government CSV",
+    "Reconcile provincial-to-municipal transfers for the same period with double count elimination",
+    "Update comparable water cost and annualized investment data after 2023",
+    "Classify municipal duties and service fees under the two-tax promise and safeguard low-income households",
+    "Cost 10-year budgets for both legal regimes with independent reviews"
+  ],
+  "decision": {
+    "historical_official_totals_integrated": true,
+    "raw_2024_2025_csv_imported": false,
+    "municipal_net_replacement_costed": false,
+    "programme_certified": false,
+    "score_point_earned": false
+  }
+}
