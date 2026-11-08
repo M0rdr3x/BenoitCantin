@@ -1,9 +1,26 @@
 // Projet Nova G0.14 — contrôle fiscal documentaire; aucun financement certifié.
+// Classification comptable/juridique de référence : interdit de renommer des recettes
+// mixtes ou des transferts en taxes supprimables sans preuve indépendante.
+const CLASSIFICATION_G014=Object.freeze({
+  IMPOT_PARTICULIERS:{type:"IMPOT_REVENU",scope:"PROVINCIAL",fiscal_tax:true,potential_policy:"CANDIDAT_REVENU_PERSONNES"},
+  IMPOTS_SOCIETES:{type:"IMPOTS_SOCIETES_AGREGES",scope:"PROVINCIAL",fiscal_tax:true,potential_policy:"CANDIDAT_REVENU_ENTREPRISE_APRES_DECOMPOSITION"},
+  COTISATIONS_SANTE:{type:"COTISATION_FISCALE_SANTE",scope:"PROVINCIAL",fiscal_tax:true,potential_policy:"TRAITEMENT_A_ARBITRER"},
+  FONCIER_SCOLAIRE:{type:"FONCIER_SCOLAIRE",scope:"PROVINCIAL_SCOLAIRE",fiscal_tax:true,potential_policy:"TRAITEMENT_A_ARBITRER"},
+  TAXES_CONSOMMATION:{type:"CONSOMMATION_MIXTE",scope:"PROVINCIAL",fiscal_tax:true,potential_policy:"TRAITEMENT_A_ARBITRER"},
+  DROITS_PERMIS_REDEVANCES:{type:"MIXTE_FISCAL_NON_FISCAL",scope:"PROVINCIAL",fiscal_tax:null,potential_policy:"VENTILATION_INDISPENSABLE"},
+  REVENUS_DIVERS:{type:"NON_VENTILE_MIXTE",scope:"PROVINCIAL",fiscal_tax:null,potential_policy:"VENTILATION_INDISPENSABLE"},
+  SOCIETES_ETAT:{type:"REVENU_ENTREPRISES_PUBLIQUES",scope:"PROVINCIAL",fiscal_tax:false,potential_policy:"NON_IMPOT_A_EXAMINER"},
+  TRANSFERTS_FEDERAUX:{type:"TRANSFERT_INTERGOUVERNEMENTAL",scope:"FEDERAL_VERS_PROVINCIAL",fiscal_tax:false,potential_policy:"PROVINCE_CONDITIONNEL_SOUVERAIN_REEVALUER"}
+});
 export function verifyG14(doc,baseline) {
  const errors=[];
- if (!doc || doc.schema!=="nova-g014-assiettes-fiscales/v1" || !Array.isArray(doc.revenue_categories) || !baseline) return {ok:false,errors:["SCHEMA"]};
+ if (!doc || doc.schema!=="nova-g014-assiettes-fiscales/v1" || !Array.isArray(doc.revenue_categories) || !baseline || !baseline.five_year_income_components_2026_2027 || !doc.baseline || !doc.mechanical_sensitivity || !Array.isArray(doc.mechanical_sensitivity.removed_category_ids) || !doc.tax_design_constraints || !doc.decision || !doc.reconciliation || !Array.isArray(doc.jurisdiction_separation) || !Array.isArray(doc.constitutional_scenarios) || !Array.isArray(doc.research_next) || doc.revenue_categories.some(x=>!x||typeof x!=="object"||Array.isArray(x))) return {ok:false,errors:["SCHEMA"]};
  const cats=doc.revenue_categories;
  if(cats.length!==9 || new Set(cats.map(x=>x.id)).size!==9)errors.push("CATEGORIES");
+ if(cats.some(x=>{
+  const expected=CLASSIFICATION_G014[x.id];
+  return !expected||Object.entries(expected).some(([k,v])=>x[k]!==v);
+ }))errors.push("UNSUPPORTED_REVENUE_CLASSIFICATION");
  const total=cats.reduce((s,x)=>s+x.amount_mcad,0);
  const federal=cats.find(x=>x.id==="TRANSFERTS_FEDERAUX")?.amount_mcad;
  if(total!==168389||federal!==33046||total-federal!==135343)errors.push("SOURCE_TOTALS");
