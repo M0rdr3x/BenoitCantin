@@ -118,6 +118,19 @@ def validate():
             errors.append('Sauvegarde/reprise de lecture absente: '+token)
     if ':spot' in spot or 'localStorage' in spot:
         errors.append('Le module de position doit rester une transformation pure.')
+    # La page intégrale doit disparaître du cache d'historique; la démo reste
+    # interactive. Le contrôle conserve la position sauvegardée sur l'appareil.
+    for token in ["flushScrollPosition();stopNarration(false);flushProgress();",
+                  "if(isFull)lockPrivateReader();",
+                  "if(isFull&&event.persisted)", "location.reload();",
+                  "state.authSubscription?.unsubscribe?.()",
+                  "if(window.getSelection()?.toString())return;"]:
+        if token not in main:
+            errors.append('Protection bfcache/contrôles de lecture manquante: '+token)
+    if 'aria-keyshortcuts="ArrowLeft ArrowRight PageUp PageDown"' not in html:
+        errors.append('Raccourcis clavier de la zone du livre non déclarés')
+    if 'aria-describedby="reader-shortcut-help"' not in html or 'id="reader-shortcut-help"' not in html:
+        errors.append('Aide au clavier manquante ou non associée au lecteur')
     # Empêcher le stockage de texte intégral (citations ou notes) en localStorage.
     if 'localStorage.setItem(DEMO_MARKS_KEY' not in companion:
         errors.append('Enregistrement de la démo non isolé')
