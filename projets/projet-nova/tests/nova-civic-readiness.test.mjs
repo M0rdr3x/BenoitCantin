@@ -125,3 +125,23 @@ test("les pourcentages de réception ne sont pas des autorisations de production
  assert.equal(d.status,"NON_HOMOLOGUE");
  assert.equal(d.programme_audit_g012.unrelated_to_ui_readiness,true);
 });
+
+
+test("les deux outils officiels rendent visible l'état daté sans ouvrir le sondage",async()=>{
+ const [pollHtml,compassHtml]=await Promise.all([
+  readFile(new URL("../sondage-citoyen.html",import.meta.url),"utf8"),
+  readFile(new URL("../boussole-electorale.html",import.meta.url),"utf8")
+ ]);
+ const pollPct=(100*passed(d.poll)/d.poll.gates.length).toFixed(1).replace(".",",")+" %";
+ const compassPct=(100*passed(d.compass)/d.compass.gates.length).toFixed(1).replace(".",",")+" %";
+ assert.ok(pollHtml.includes(pollPct));
+ assert.ok(compassHtml.includes(compassPct));
+ assert.ok(pollHtml.includes("6 critères sur 11 validés"));
+ assert.ok(compassHtml.includes("5 critères sur 12 validés"));
+ assert.ok(pollHtml.includes("la collecte reste fermée"));
+ for(const html of [pollHtml,compassHtml]){
+  assert.ok(html.includes('href="sondages-a-valider.html#etat-validation-outils"'));
+  assert.ok(html.includes("Suivi de réception au 7 novembre 2026"));
+ }
+ assert.match(pollHtml,/id="poll-send"[^>]*\bdisabled\b/);
+});
