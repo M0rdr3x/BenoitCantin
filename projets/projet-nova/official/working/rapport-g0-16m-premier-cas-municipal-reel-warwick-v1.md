@@ -93,7 +93,7 @@ Les **six preuves manquantes** sont inscrites dans le registre : rapprochement f
 
 - `data/cas-municipal-reel-g0-16m-warwick-eau-2025-2026.json` : sources datées, cas Warwick, engagements, PTI, règlement, risques et dix exercices pour chacun des deux statuts;
 - `assets/g016m-real-municipal-case-core.mjs` : contrôleur de montants exacts et des limites de preuve;
-- `tests/g016m-real-municipal-case.test.mjs` : **37 cas de test initiaux**, tous réussis lors d'un rejeu JavaScript isolé; **aucune preuve d'un passage complet dans GitHub Actions**.
+- `tests/g016m-real-municipal-case.test.mjs` : **39 cas de test**, tous réussis lors d'un rejeu JavaScript isolé; **aucune preuve d'un passage complet dans GitHub Actions**.
 
 **Verdict :** G0.16m ajoute une **première aide réelle et traçable**, mais ce résultat n'est pas une certification budgétaire du Projet Nova. Le programme reste à **47/100** et 53 points manquent selon la dernière grille interne. Les textes candidats `official/reference/*` et `data/sources.json` ne sont pas modifiés.
 
