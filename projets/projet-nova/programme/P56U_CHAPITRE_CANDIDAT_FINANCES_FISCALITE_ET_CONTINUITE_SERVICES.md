@@ -154,4 +154,18 @@ Les hypothèses doivent être mises à jour lors de publications officielles, av
 
 **Conditions avant approbation :** produire les assiettes fiscales applicables, les coûts de protection des services et des effectifs, une microsimulation représentative du revenu disponible, les scénarios décennaux pour les deux régimes, les avis indépendants et la consultation documentée. Ce chapitre reste bloqué par les **600 montants P52B**, **720 incidences P52D** et **20 preuves P52A** manquants ou non validés. Le baromètre conserve **53 % estimés** et la décision reste `NO_GO_AUTOMATIQUE`.
 
+## Annexe D — Assiettes fiscales historiques, taux Nova et seuil de preuve (P56X)
+
+**La réforme fiscale à deux prélèvements demeure une cible conditionnelle, non une loi ni un taux adopté.** Le dossier P56X relie le chapitre aux données fiscales que les institutions publiques ont effectivement publiées :
+
+- **Particuliers en 2023 :** 427 915 M$ de revenu total, **372 261 M$ de revenu imposable**, 40 790 M$ d'impôt à payer et 9 305 M$ de crédits remboursables. Le rapport **40 790 / 427 915 = 9,53 %** utilise le revenu total comme dénominateur; **40 790 / 372 261 = 10,96 %** utilise le revenu imposable. Le ministère publie un taux moyen de **9,5 %** en 2023 avec le premier dénominateur après arrondi. **Ces chiffres ne constituent pas un taux Nova.**
+- **Sociétés en 2021 :** revenu imposable au Québec de **95 784 M$** et impôt sur le revenu de **10 000 M$**, soit un rapport de **10,44 %**. Les cotisations d'employeurs au FSS, les crédits, les pertes, la taille des sociétés et les règles légales doivent être considérés à part. **Cette assiette de 2021 ne peut pas être additionnée à l'assiette des particuliers de 2023 pour établir un taux 2027.**
+- **Finances publiques 2027-2028 :** le scénario statique de retrait de trois catégories de recettes expose **42 875 M$** de financement gouvernemental existant. Avec le déficit initial, le besoin arithmétique d'équilibre s'élèverait à **48 570 M$**, **avant** coûts de transition, variations économiques et maintien des prestations. **42 875 / 68 093 = 62,97 %** compare deux recettes gouvernementales existantes : **ce n'est ni une assiette ni un taux d'impôt que les citoyens devraient payer**.
+
+Les sources primaires et leurs restrictions de comparabilité sont documentées dans le [tableau A.17 des statistiques fiscales 2023](https://www.budget.finances.gouv.qc.ca/Budget/outils/statistiques-fiscales/somm-evo-historique.asp), les statistiques fiscales des sociétés, et `projets/projet-nova/etudes/P56X_ASSIETTES_HISTORIQUES_ET_VERROU_TAUX_NOVA_2027_2028.json`.
+
+**Conditions de décision :** avant toute proposition précise de taux, le projet exige des assiettes imposables applicables **au même exercice 2027-2028** pour les particuliers et les sociétés, le traitement des exemptions, crédits, prestations et pertes, la viabilité du prélèvement anti-paradis fiscaux, les incidences distributives et les coûts sectoriels, des scénarios par régime constitutionnel et des avis indépendants signés. Les valeurs inconnues restent inconnues, sans être assimilées à zéro. Aucune autorisation d'abolir des taxes ne découle de ces annexes.
+
+Cette annexe conserve le score **53 % estimés**, les **600 montants P52B**, **720 incidences P52D**, **20 preuves P52A** et les dix conditions de clôture non démontrées. `NO_GO_AUTOMATIQUE`.
+
 **Décision : `NO_GO_AUTOMATIQUE`. Aucune loi adoptée, aucun taux d'imposition adopté, aucune économie certifiée et aucun changement à `main` ou à SINJIRA.**
