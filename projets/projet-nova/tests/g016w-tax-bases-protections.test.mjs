@@ -15,6 +15,7 @@ mode:"SYNTHETIC_ONLY",scenario,provincial_services_and_debt_mcad:173597,provinci
 novaincome_tax_net_mcad:112369,tax_haven_net_mcad:0,local_services_additional_net_cost_mcad:0,credit_protections_net_cost_mcad:0,national_functions_net_cost_mcad:0,transition_cost_mcad:0,federal_taxes_assumed_reassigned_mcad:0
 });
 test("G0.16w contrôle de source valide",()=>assert.equal(inspectG016w(d,v).ok,true));
+test("Comparateur synthétique bien préparé sans certification",()=>assert.equal(d.decision.valid_synthetic_effect_calculator_ready,true));
 test("Score réel reste 47",()=>assert.equal(d.score_after,47));
 test("53 points manquants",()=>assert.equal(inspectG016w(d,v).missing,53));
 test("Revenu déclaré des particuliers québécois 2023 : 427915 M$",()=>assert.equal(d.individual_quebec_provincial_2023.total_declared_income_mcad,427915));
