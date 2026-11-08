@@ -1,6 +1,6 @@
 /* SINJIRA™ — Fracture du Réseau-Mère, Déduction simplifiée.
    Calculs de la feuille de score pour parties physiques. Sans identité, compte,
-   synchronisation, localStorage, ni accès au moteur multijoueur suspendu. */
+   synchronisation, aucune persistance ni accès au moteur multijoueur suspendu. */
 export const RESEAU_AGENTS=Object.freeze({
   3:1,4:1,5:2,6:2,7:2,8:3,9:3,10:3,11:4,12:4,13:4,14:5,
   15:5,16:5,17:6,18:6,19:6,20:7
