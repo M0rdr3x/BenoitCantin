@@ -544,6 +544,20 @@ Les fichiers de référence candidats `official/reference/*` et `data/sources.js
 
 **Suite G0.16u :** produire une piste d'audit **facture → résolution → virement** et **engagement PRIMEAU → réclamation → décaissement → dépôt**, obtenir les pièces bancaires, la concordance des périmètres et les coûts d'exploitation de l'eau avant toute réforme Nova prétendue financée. Les deux scénarios décennaux Québec au Canada et Québec souverain restent non chiffrés. **47/100 inchangé.**
 
+
+## G0.16u — Fermeture des 53 points et demandes de preuves financières (8 novembre 2026)
+
+**Préparation interne : 47/100, 53 points à obtenir.** Après les décomptes autorisés et engagements PRIMEAU de G0.16t, cette phase établit **deux demandes d'accès ciblées prêtes à être transmises mais NON ENVOYÉES** et un plan de validation détaillé par dimension. Aucun accusé de réception ou nouveau versement bancaire n'a été attesté.
+
+- **Score et priorité :** finances **13 points manquants**, services **7**, économie **7**, souveraineté **6**, institutions **4**, droits **4**, exécution **4**, preuves/audits **4**, adoption **4**, vision **0**. La somme reste **53**. On ne progresse pas automatiquement en ajoutant des fichiers; il faut une preuve exploitable et une nouvelle appréciation du critère. [Grille interne de référence](data/audit-completude-programme-nova-2026-11-05.json).
+- **Chaînes vérifiables :** pour les **18 621 734,12 $ d'autorisations Action Progex sélectionnées avant taxes**, documenter facture, certificat, résolution, comptabilisation et **débit bancaire réel**. Pour les **42 302 472 $ d'engagements MAMH PRIMEAU**, documenter convention, réclamation, autorisation, virement ministériel et **dépôt reçu**. Aucun paiement individualisé ni subvention encaissée n'est confirmé par les pièces analysées à ce jour.
+- **Deux demandes préparées, non envoyées :** `official/working/demande-acces-municipalite-g0-16u.md` pour les certificats nos 1–8, factures, paiements, avenants, dettes et dépenses de service; `official/working/demande-acces-mamh-g0-16u.md` pour la convention et les versements du dossier **2036036**. Les documents sollicités sont ceux **déjà existants**, avec protection des tiers et expurgation des comptes bancaires.
+- **Procédure vérifiée :** [CAI Québec](https://www.cai.gouv.qc.ca/acces-documents-organismes-publics/citoyens-acces-documents-publics/comment-acceder-documents-organismes-publics) : **20 jours civils** normalement après réception et prolongation possible de **10 jours**; demander **par écrit** pour disposer du recours approprié. **Aucun délai n'a commencé**, car les demandes n'ont pas été déposées.
+- **Traçabilité publique :** [MAMH — accès aux documents](https://www.quebec.ca/gouvernement/ministeres-organismes/affaires-municipales/cadre-legal-transparence/acces-information) et [Port-Daniel–Gascons — nous joindre](https://munpdg.ca/nous-joindre/). La présence d'une voie d'accès n'assure pas l'obtention des documents.
+- **Livrables G0.16u :** `data/g016u-plan-acces-preuves-et-fermeture-53-points.json`, `assets/g016u-audit-gates-core.mjs`, `tests/g016u-audit-gates.test.mjs`, `official/working/rapport-g0-16u-plan-acces-preuves-et-cloture-v1.md` et les deux demandes ci-dessus. **40/40 tests réussis en rejeu JavaScript/V8 isolé; GitHub Actions et audit indépendant non attestés.**
+
+**Suite G0.16v :** reprendre les paiements seulement après réception de justificatifs, et faire avancer **en parallèle** la modélisation fiscale et les analyses juridiques des scénarios Québec dans le Canada et Québec souverain. Aucun taux d'imposition Nova ni économie prétendument réalisée n'est déclaré. **47/100 maintenu.**
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
