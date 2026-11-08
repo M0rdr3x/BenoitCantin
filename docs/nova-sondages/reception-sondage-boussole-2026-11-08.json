@@ -20,6 +20,20 @@
     "last_browser_full_64_completed": false,
     "score_parity_test_cases": 260,
     "vote_post_live_tested": false,
+    "supabase_readonly_review": {
+      "audit_date": "2026-11-08",
+      "edge_function_version": 6,
+      "edge_source_exactly_matches_github": true,
+      "tables_with_rls": 5,
+      "anon_and_authenticated_direct_crud_grants": false,
+      "submit_rpc_service_role_only": true,
+      "receipt_rows": 0,
+      "raw_count_rows": 0,
+      "published_count_rows": 0,
+      "published_ballots": 0,
+      "evidence": "docs/nova-sondages/verification-supabase-lecture-seule-2026-11-08.md",
+      "scope": "supabase_read_only_no_http_post_no_independent_audit"
+    },
     "external_run_28": "https://agent.tinyfish.ai/runs/d7369cac-c8ba-429f-9ec2-a6e37175e519",
     "e2e_partial_profile_awaits_public_deployment": true,
     "ci_local_compass_full_64_verified": true,
@@ -129,7 +143,7 @@
     "questions": 8,
     "published_in_source": false,
     "edge_function_active": true,
-    "edge_function_version": 5,
+    "edge_function_version": 6,
     "has_recorded_ballots": false,
     "public_publication_ballots": 0,
     "all_mandatory_gates_passed": false,
@@ -172,8 +186,8 @@
       {
         "id": "POLL_SERVER_SOURCE_REVIEW",
         "status": "PASSED",
-        "criteria": "Code Edge Function version 5 inspecté : contrôle d'origines, garde d'ouverture, Turnstile serveur, HMAC anti-rejeu, agrégats et lots de confidentialité",
-        "evidence": "Supabase Edge Function nova-civic-poll version 5",
+        "criteria": "Code Edge Function version 6 inspecté : contrôle d'origines, garde d'ouverture, Turnstile serveur, HMAC anti-rejeu, agrégats et lots de confidentialité",
+        "evidence": "Supabase Edge Function nova-civic-poll version 6; source identique au dépôt GitHub en lecture seule (8 novembre 2026)",
         "scope": "read_only_source_review_not_live_penetration_test"
       },
       {

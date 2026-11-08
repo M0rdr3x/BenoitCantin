@@ -675,6 +675,81 @@ def run() -> None:
                 f"{BROWSER_NAME}: profil partiel avec 1/2 réponses, repères et accessibilité incorrects: {partial_profile}",
             )
 
+        # Scénario de pondération sur les vrais éléments de formulaire.
+        # Les 16 scores, les réponses passées et les partages restent locaux.
+        # Ce contrôle est réservé au serveur de test et ne vote jamais.
+        if IS_LOCAL:
+            weighted_journey = page.evaluate("""() => {
+                const el = selector => document.querySelector(selector);
+                const reset = el("#compass-reset");
+                const start = el("#compass-start");
+                const next = el("#compass-next");
+                const previous = el("#compass-prev");
+                const preview = el("#compass-preview");
+                const results = el("#compass-results");
+                if (![reset, start, next, previous, preview, results].every(Boolean))
+                    return {ok:false, stage:"missing_controls"};
+
+                const score = () => el("#compass-results-grid .compass-result-card strong")?.textContent.trim();
+                const markers = () => document.querySelectorAll("#compass-results-grid .compass-axis-track i").length;
+                const importance = () => el("#compass-question-stage select[data-importance]");
+                const choose = (value, weight) => {
+                    const input = el('#compass-question-stage input[type="radio"][value="' + value + '"]');
+                    const select = importance();
+                    if (!input || !select) return false;
+                    select.value = weight;
+                    select.dispatchEvent(new Event("change", {bubbles:true}));
+                    input.click();
+                    return true;
+                };
+
+                reset.click();
+                start.click();
+                if (!choose("3", "forte")) return {ok:false, stage:"q01"};
+                next.click();
+                if (el("#compass-question-stage fieldset")?.dataset.questionId !== "q02" ||
+                    !choose("3", "faible")) return {ok:false, stage:"q02"};
+                preview.click();
+                // q01 et q02 ont des directions opposées :
+                // (3*1,5 - 3*0,5) / (3*(1,5+0,5)) = +50.
+                const weighted = score() === "+50" && markers() === 1 &&
+                    el("#compass-summary")?.textContent.includes("Profil partiel") && !results.hidden;
+
+                const control = importance();
+                control.focus();
+                control.value = "forte";
+                control.dispatchEvent(new Event("change", {bubbles:true}));
+                const liveUpdate = score() === "0" && markers() === 1 &&
+                    document.activeElement === control &&
+                    el("#compass-status")?.textContent.includes("actualisés localement");
+
+                previous.click();
+                const back = el("#compass-question-stage fieldset")?.dataset.questionId === "q01" &&
+                    importance()?.value === "forte";
+                if (!choose("skip", "normal")) return {ok:false, stage:"skip"};
+                const skipped = score() === "—" && markers() === 0 &&
+                    el("#compass-results-grid .compass-result-card strong")
+                      ?.getAttribute("aria-label") === "Score indisponible : données insuffisantes";
+                if (!choose("3", "faible")) return {ok:false, stage:"restore"};
+                // q01 faible et q02 forte : le score est maintenant -50.
+                const restored = score() === "-50" && markers() === 1;
+
+                reset.click();
+                start.click();
+                const cleared = results.hidden && next.disabled &&
+                    importance()?.value === "normal" &&
+                    document.querySelectorAll("#compass-question-stage input[type='radio']:checked").length === 0 &&
+                    el("#compass-progress-track")?.getAttribute("aria-valuenow") === "1";
+                reset.click();
+
+                return {ok:weighted && liveUpdate && back && skipped && restored && cleared,
+                    weighted, liveUpdate, back, skipped, restored, cleared};
+            }""")
+            assert_true(
+                weighted_journey["ok"],
+                f"{BROWSER_NAME}: pondération, modification en direct, retour, sans opinion, reprise ou remise à zéro incorrects: {weighted_journey}",
+            )
+
         home_text = page.locator("main").inner_text().lower()
         for retired_name in ("lumina", "futurax", "chroniques de l’ombre", "chroniques de l'ombre"):
             assert_true(retired_name not in home_text, f"Accueil: univers secondaire remis au premier plan: {retired_name}")

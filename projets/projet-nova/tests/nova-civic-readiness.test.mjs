@@ -65,6 +65,29 @@ test("le score politique 47/100 n'est jamais déduit du nombre de tests",()=>{
  assert.equal(d.programme_audit_g012.preparation_percent,47);
 });
 
+test("audit de lecture seule Supabase : version et preuves, sans ouverture du vote",async()=>{
+ const review=d.cross_cutting.supabase_readonly_review;
+ assert.equal(review.audit_date,"2026-11-08");
+ assert.equal(d.poll.edge_function_version,6);
+ assert.equal(review.edge_function_version,d.poll.edge_function_version);
+ assert.equal(review.edge_source_exactly_matches_github,true);
+ assert.equal(review.tables_with_rls,5);
+ assert.equal(review.anon_and_authenticated_direct_crud_grants,false);
+ assert.equal(review.submit_rpc_service_role_only,true);
+ for(const key of ["receipt_rows","raw_count_rows","published_count_rows","published_ballots"]){
+  assert.equal(review[key],0,key);
+ }
+ assert.equal(d.poll.gates.find(x=>x.id==="POLL_DB_ACCESS").status,"PASSED");
+ assert.equal(d.poll.gates.find(x=>x.id==="POLL_PRIVATE_PREFLIGHT").status,"PENDING");
+ assert.equal(d.poll.gates.find(x=>x.id==="POLL_LEGAL_REVIEW").status,"PENDING");
+ assert.equal(d.poll.published_in_source,false);
+ assert.equal(d.decision.opening_poll_approved,false);
+ const text=await readFile(new URL("../../../docs/nova-sondages/verification-supabase-lecture-seule-2026-11-08.md",import.meta.url),"utf8");
+ assert.match(text,/version \*\*6\*\*/);
+ assert.match(text,/NON HOMOLOGUÉ/);
+ assert.match(text,/Aucun vote/);
+});
+
 test("le parcours E2E local de 64 questions est prouvé sur trois moteurs, le live ne l’est pas",()=>{
  assert.equal(d.cross_cutting.score_parity_test_cases,260);
  assert.equal(d.cross_cutting.last_browser_all_skip_questions_verified,28);
