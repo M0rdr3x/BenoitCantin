@@ -1,3 +1,4 @@
+import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { bearerToken, requiredUser, serviceClient } from '../_shared/auth.ts';
@@ -38,7 +39,9 @@ async function readLimitedJson(req: Request): Promise<{ body?: any; response?: R
     }
   }
 
-  const raw = await req.text();
+  const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);
+  if (!limited.ok) return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
+  const raw = limited.raw;
   if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
     return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
   }
