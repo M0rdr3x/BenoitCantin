@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {readingRatio, ratioFromScroll, scrollTopForRatio, chooseReadingPosition}
+import {readingRatio, ratioFromScroll, scrollTopForRatio, chooseReadingPosition, shouldReplayReadingProgress}
   from '../../assets/js/sinjira-liseuse-position-v31.mjs';
 
 test('la position de défilement demeure bornée et précise',()=>{
@@ -83,4 +83,16 @@ test('la position initiale zéro est distinguée du NULL hérité',()=>{
     serverPage:12,serverRatio:0,serverUpdatedAt:'2026-11-07T14:00:00Z',
     totalPages:520,defaultPage:4
   }),{page:12,ratio:0,source:'compte'});
+});
+
+test('V34 : reprise après coupure seulement si la sauvegarde locale est aussi récente',()=>{
+  assert.equal(shouldReplayReadingProgress('2026-11-07T22:00:03Z','2026-11-07T22:00:02Z'),true);
+  assert.equal(shouldReplayReadingProgress('2026-11-07T22:00:03Z','2026-11-07T22:00:03Z'),true);
+  assert.equal(shouldReplayReadingProgress('2026-11-07T22:00:03Z','2026-11-07T22:00:05Z'),false);
+});
+test('V34 : ne pas rejouer une sauvegarde locale sans date valide ou contre une date serveur invalide',()=>{
+  assert.equal(shouldReplayReadingProgress('invalide',null),false);
+  assert.equal(shouldReplayReadingProgress(null,null),false);
+  assert.equal(shouldReplayReadingProgress('2026-11-07T22:00:03Z',null),true);
+  assert.equal(shouldReplayReadingProgress('2026-11-07T22:00:03Z','invalide'),false);
 });
