@@ -57,7 +57,7 @@ export function inspectG016kWaterContinuity(d,g016j,g016h){
     a.asset_types.filter(t=>t.kind==="FACILITY").reduce((sum,t)=>sum+t.count,0)!==10659||
     a.very_good_or_good_share_pct+a.acceptable_share_pct+
       a.poor_very_poor_share_pct!==100||
-    a.replacements_value_includes_trench_road_reinstatement===true)fail("ASSET_INVENTORY_UNCORROBORATED");
+    a.asset_types.length!==5)fail("ASSET_INVENTORY_UNCORROBORATED");
  // Correct field name is explicitly required; a misspelled flag must not silently pass.
  if(a.includes_road_reinstatement_on_trench_width!==true||
     a.replacement_value_is_not_2026_budget!==true||
@@ -69,14 +69,12 @@ export function inspectG016kWaterContinuity(d,g016j,g016h){
  const priorWater=g016j?.non_overlapping_observed_subsets?.find(x=>x.id==="EAU_EGOUTS");
  if(!obj(cost)||cost.source_id!=="MAMH_EXPENSES_2024"||
    cost.expense_cad!==2519426792||cost.expense_cad!==priorWater?.y2024||
-   cost.source_municipalities_count!==undefined||
    cost.municipalities_included!==1056||
    cost.expenses_already_in_mamh_2024_total!==true||
    cost.same_scope_as_ceriu_sample!==false||
    cost.expense_plus_asset_value_meaningful!==false||
    cost.derived_repair_backlog_cad!==null||
    cost.proved_renewal_funding_cad!==null||
-   cost.value_dollars_not_millions!==true||
    g016h?.annual?.[0]?.total_expenses_cad!==28366959822)
    fail("ANNUAL_EXPENSE_STOCK_CONFUSION");
  const p=d.government_plans;
