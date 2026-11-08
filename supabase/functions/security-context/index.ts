@@ -1,6 +1,7 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { bearerToken, requiredUser, serviceClient } from '../_shared/auth.ts';
+import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import { buildSecurityPushMessage, SECURITY_PUSH_MAX_BATCH } from '../_shared/security-push-policy.mjs';
 import {
   SECURITY_PUSH_RECEIPT_URL,
@@ -30,21 +31,14 @@ function privateJson(data: unknown, status = 200) {
 }
 
 async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }> {
-  const rawLength = req.headers.get('content-length');
-  if (rawLength) {
-    const declared = Number(rawLength);
-    if (!Number.isFinite(declared) || declared < 0 || declared > MAX_REQUEST_BYTES) {
-      return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
-    }
+  // Appliquer la limite aux octets reçus pendant la lecture, même sans
+  // Content-Length fiable. Aucun req.text()/json() illimité, aucun corps logué.
+  const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);
+  if (!limited.ok) {
+    return { response: privateJson({ ok: false, error: 'Requête trop volumineuse ou invalide.' }, 413) };
   }
-
-  const raw = await req.text();
-  if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
-    return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
-  }
-
   try {
-    return { body: JSON.parse(raw || '{}') };
+    return { body: JSON.parse(limited.raw || '{}') };
   } catch {
     return { response: privateJson({ ok: false, error: 'Corps JSON invalide.' }, 400) };
   }
@@ -268,7 +262,9 @@ Deno.serve(async (req) => {
       }
     });
   } catch (error) {
-    console.error('[security-context]', error);
+    // Ne jamais journaliser des exceptions externes : elles peuvent inclure
+    // JWT, URL Supabase, détails RPC ou objets de fournisseurs.
+    console.error('[security-context]', { code: 'SECURITY_CONTEXT_FAILED' });
     if (error?.message === 'AUTH_REQUIRED') return privateJson({ ok: false, error: 'Connexion requise.', code: 'AUTH_REQUIRED' }, 401);
     return privateJson({ ok: false, error: 'Le contexte de sécurité est temporairement indisponible.' }, 500);
   }
