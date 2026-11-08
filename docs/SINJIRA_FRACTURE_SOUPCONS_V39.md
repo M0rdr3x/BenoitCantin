@@ -27,7 +27,7 @@ La saisie est fournie exclusivement par le futur backend sous la forme `roundBal
 
 ## Vérification et critères de fermeture
 
-- `node --test tests/games/test_fracture_soupcons_v39.mjs` : cas Solo/Duo/Express 13–20, valeurs manquantes, abstenions interdites/autorisées, politique obligatoire, numéros hors limites, cumuls complets, confidentialité structurelle.
+- `node --test tests/games/test_fracture_soupcons_v39.mjs` : cas Solo/Duo/Express 13–20, valeurs manquantes, abstentions interdites/autorisées, politique obligatoire, numéros hors limites, cumuls complets, confidentialité structurelle.
 - La CI GitHub exécute aussi les tests V36 et son validateur de contrat.
 - **Aucun changement à V35, V36, V37, V38, au lobby Web ni à Supabase dans cette PR.** Aucun déploiement ni donnée personnelle manipulée.
 - Le responsable doit approuver le sens des soupçons, les cibles et le score final (**issue #857**) avant intégration à une partie multijoueur réelle.
