@@ -11,7 +11,7 @@ const PRIVATE_HEADERS={
   'Referrer-Policy':'no-referrer'
 };
 const SAFE_LOG_CODES=new Set([
-  'AUTH_REQUIRED','ADMIN_REQUIRED','MFA_REQUIRED','MFA_STATE_UNAVAILABLE',
+  'AUTH_REQUIRED','ADMIN_REQUIRED','MFA_REQUIRED','MFA_SETUP_REQUIRED','MFA_STATE_UNAVAILABLE',
   'JSON_REQUIRED','REQUEST_TOO_LARGE','INVALID_JSON',
   'PLAYTEST_ACCESS_GRANT_FAILED','PLAYTEST_REVIEW_ROLLBACK_FAILED'
 ]);
@@ -259,6 +259,7 @@ Deno.serve(async(req)=>{
     if(e?.message==='AUTH_REQUIRED')return privateJson({ok:false,error:'Connexion requise.',code:'AUTH_REQUIRED'},401);
     if(e?.message==='ADMIN_REQUIRED')return privateJson({ok:false,error:'Accès administrateur refusé.',code:'ADMIN_REQUIRED'},403);
     if(e?.message==='MFA_REQUIRED')return privateJson({ok:false,error:'MFA_REQUIRED',code:'MFA_REQUIRED'},403);
+    if(e?.message==='MFA_SETUP_REQUIRED')return privateJson({ok:false,error:'Activez un facteur TOTP dans Ma sécurité avant d’utiliser l’administration.',code:'MFA_SETUP_REQUIRED',setup_url:'/compte/securite.html'},403);
     if(e?.message==='MFA_STATE_UNAVAILABLE')return privateJson({ok:false,error:'État MFA temporairement indisponible.',code:'MFA_STATE_UNAVAILABLE'},503);
     if(e?.message==='JSON_REQUIRED')return privateJson({ok:false,error:'Corps JSON requis.',code:'JSON_REQUIRED'},415);
     if(e?.message==='REQUEST_TOO_LARGE')return privateJson({ok:false,error:'Requête trop volumineuse.',code:'REQUEST_TOO_LARGE'},413);
