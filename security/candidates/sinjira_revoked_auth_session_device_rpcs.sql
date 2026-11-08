@@ -95,7 +95,7 @@ begin
 
   return jsonb_build_object('ok',true,'revoked_devices',v_revoked,'disabled_push_endpoints',v_push_disabled,'current_device_id',v_current,'current_device_trusted',false);
 end;
-$function$
+$function$;
 
 -- Contrat original conservé : security_compromise_account
 CREATE OR REPLACE FUNCTION sinjira_security_internal.security_compromise_account(p_current_device_key text DEFAULT NULL::text)
@@ -121,7 +121,7 @@ begin
   values(v_user,'security_emergency','Mesures de sécurité appliquées','Les autres appareils enregistrés ont été révoqués. Vérifiez vos moyens d’authentification.','/compte/securite.html');
   return jsonb_build_object('ok',true,'revoked_devices',v_revoked,'current_device_id',v_current);
 end;
-$function$
+$function$;
 
 -- Contrat original conservé : security_report_lost_device
 CREATE OR REPLACE FUNCTION sinjira_security_internal.security_report_lost_device(p_device_id uuid)
@@ -170,7 +170,7 @@ begin
 
   return jsonb_build_object('ok',true,'device_id',v_row.id,'disabled_push_endpoints',v_push_disabled,'session_revocation_required',true);
 end;
-$function$
+$function$;
 
 -- Contrat original conservé : security_resolve_connection_challenge
 CREATE OR REPLACE FUNCTION sinjira_security_internal.security_resolve_connection_challenge(p_challenge_id uuid, p_device_key text, p_decision text)
@@ -277,7 +277,7 @@ begin
 
   return to_jsonb(v_ch);
 end;
-$function$
+$function$;
 
 -- Contrat original conservé : security_resolve_connection_challenge_mfa
 CREATE OR REPLACE FUNCTION sinjira_security_internal.security_resolve_connection_challenge_mfa(p_challenge_id uuid, p_device_key text)
@@ -369,7 +369,7 @@ begin
 
   return to_jsonb(v_ch);
 end;
-$function$
+$function$;
 
 -- Contrat original conservé : security_revoke_device
 CREATE OR REPLACE FUNCTION sinjira_security_internal.security_revoke_device(p_device_id uuid)
@@ -411,7 +411,7 @@ begin
     'is_current',(v_session is not null and v_row.last_session_id=v_session)
   );
 end;
-$function$
+$function$;
 
 -- Contrat original conservé : security_set_device_trust
 CREATE OR REPLACE FUNCTION sinjira_security_internal.security_set_device_trust(p_device_id uuid, p_trusted boolean, p_primary boolean DEFAULT false)
@@ -516,7 +516,7 @@ begin
     'is_current',(v_session is not null and v_row.last_session_id=v_session)
   );
 end;
-$function$
+$function$;
 
 -- Contrat original conservé : security_update_settings
 CREATE OR REPLACE FUNCTION sinjira_security_internal.security_update_settings(p_remember_usual_region boolean DEFAULT NULL::boolean, p_sensitive_step_up boolean DEFAULT NULL::boolean, p_notify_new_device boolean DEFAULT NULL::boolean, p_notify_high_risk boolean DEFAULT NULL::boolean, p_notify_security_changes boolean DEFAULT NULL::boolean)
@@ -549,7 +549,7 @@ begin
   values(v_user,'settings_updated','Préférences du Centre de sécurité mises à jour.','info');
   return to_jsonb(v_row);
 end;
-$function$
+$function$;
 
 -- Candidat inerte : toute exécution de test annule ses modifications.
 ROLLBACK;
