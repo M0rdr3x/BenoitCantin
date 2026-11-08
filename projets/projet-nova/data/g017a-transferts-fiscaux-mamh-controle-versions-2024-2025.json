@@ -1,0 +1,250 @@
+{
+  "schema": "nova-g017a-mamh-municipal-fiscal-transfer-source-version/v1",
+  "phase": "G0.17a",
+  "date": "2026-11-08",
+  "score_before": 47,
+  "score_after": 47,
+  "remaining_score_points": 53,
+  "independent_audit_completed": false,
+  "party_adoption_done": false,
+  "source": {
+    "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/finances_indicateurs_fiscalite/information_financiere/SOM_transferts_fiscaux.pdf",
+    "source_mutable": true,
+    "web_page_lists_2025": true,
+    "extraction_text_title_year": 2025,
+    "screenshot_title_year": 2024,
+    "same_url_content_versions_conflict": true,
+    "immutable_pdf_bytes_available": false,
+    "immutable_pdf_sha256": null,
+    "direct_download_failed": true,
+    "version_conflict_resolved": false
+  },
+  "version2024_visual": {
+    "year": 2024,
+    "screenshot_page_zero_based": 2,
+    "source_method": "WEB_PDF_SCREENSHOT_VISUAL",
+    "columns": [
+      "cohort",
+      "total_cad",
+      "tvq_share_cad",
+      "public_land_cad",
+      "resource_royalty_cad",
+      "equalization_cad",
+      "equalization_neutrality_cad",
+      "compensation_neutrality_cad"
+    ],
+    "rows": [
+      [
+        "LT_2000",
+        79665308,
+        32404720,
+        17580024,
+        357746,
+        29244080,
+        68137,
+        10601
+      ],
+      [
+        "2000_9999",
+        89521975,
+        62289357,
+        4994468,
+        1821487,
+        20014459,
+        355300,
+        46904
+      ],
+      [
+        "10000_24999",
+        74014520,
+        53383394,
+        1696631,
+        13977045,
+        4957450,
+        0,
+        0
+      ],
+      [
+        "25000_99999",
+        109859973,
+        82761508,
+        1167581,
+        18903537,
+        7027347,
+        0,
+        0
+      ],
+      [
+        "GE_100000",
+        222544163,
+        214161020,
+        109720,
+        2940187,
+        5333236,
+        0,
+        0
+      ]
+    ],
+    "scope": "SELECTED_MAMH_FISCAL_TRANSFERS_NOT_ALL_TRANSFERS",
+    "total_of_selected_programmes_cad": 575605939,
+    "tvq_share_component_cad": 444999999,
+    "other_selected_programmes_cad": 130605940,
+    "represents_all_municipal_funding": false,
+    "individual_bank_confirmation": false,
+    "status": "VISUALLY_DOCUMENTED_MUTABLE_URL_NOT_SNAPSHOT"
+  },
+  "version2025_text_quarantined": {
+    "year": 2025,
+    "extraction_page_zero_based": 2,
+    "source_method": "WEB_PDF_EXTRACTED_TEXT_CONFLICTS_WITH_SCREENSHOT",
+    "columns": [
+      "cohort",
+      "total_cad",
+      "tvq_share_cad",
+      "public_land_cad",
+      "resource_royalty_cad",
+      "equalization_cad"
+    ],
+    "rows": [
+      [
+        "LT_2000",
+        98723832,
+        50614171,
+        17705802,
+        361432,
+        30042427
+      ],
+      [
+        "2000_9999",
+        121319437,
+        92287179,
+        5210610,
+        2503031,
+        21318617
+      ],
+      [
+        "10000_24999",
+        99150089,
+        77244725,
+        1831016,
+        13338707,
+        6735641
+      ],
+      [
+        "25000_99999",
+        143855063,
+        118473624,
+        1077255,
+        18850384,
+        5453800
+      ],
+      [
+        "GE_100000",
+        314776282,
+        308380313,
+        0,
+        2946450,
+        3449519
+      ]
+    ],
+    "text_only_aggregate_cad": 777824703,
+    "text_only_tvq_cad": 647000012,
+    "usable_verified_total_cad": null,
+    "usable_verified_tvq_cad": null,
+    "eligible_for_growth_claim": false,
+    "different_categories_from_2024": true,
+    "status": "QUARANTINE_UNTIL_MATCHING_IMMUTABLE_PDF"
+  },
+  "comparisons": {
+    "year2024_2025_change_verified_cad": null,
+    "year2024_2025_growth_rate_verified_pct": null,
+    "municipal2026_target_replacement_cad": null
+  },
+  "related_sources": [
+    {
+      "kind": "MAMH_PUBLIC_INDEX",
+      "url": "https://www.quebec.ca/gouvernement/gestion-municipale/finances-fiscalite-municipales/fiscalite/encadrement",
+      "index_names_2025": true
+    },
+    {
+      "kind": "MAMH_OPEN_DATA_PORTAL",
+      "url": "https://www.donneesquebec.ca/recherche/dataset/rapport-financier-des-organismes-municipaux-et-autres-documents",
+      "real_2024_and_2025_resources_listed": true,
+      "rows_imported": false
+    },
+    {
+      "kind": "PRIOR_CONFLICT",
+      "path": "data/g016z-controle-versions-source-municipale-mamh.json"
+    },
+    {
+      "kind": "PRIOR_DECADE",
+      "path": "data/g016z-financement-consolide-et-protections-2026-2036.json"
+    }
+  ],
+  "controls": {
+    "existing_tvq_share_2024_cad": 444999999,
+    "if_tvq_abolished_municipal_share_needs_explicit_replacement": true,
+    "provincial_to_municipal_transfer_is_not_new_consolidated_net_revenue": true,
+    "do_not_add_same_transfer_twice": true,
+    "year2024_is_not_year2026_forecast": true,
+    "different_edition_numbers_do_not_prove_growth": true,
+    "unknown_2025_is_not_zero": true,
+    "no_fictional_municipal_savings": true,
+    "municipal_service_worker_and_debt_protection": true,
+    "source_pdf_2025_visual_not_verified": true,
+    "no_levy_tax_rate_inferred": true
+  },
+  "verification_needed": [
+    {
+      "id": "Q01",
+      "task": "Freeze year-specific PDF 2024 and 2025 with SHA256",
+      "complete": false
+    },
+    {
+      "id": "Q02",
+      "task": "Check titles, page 3 and bytes match on each snapshot",
+      "complete": false
+    },
+    {
+      "id": "Q03",
+      "task": "Read MAMH 2024 and 2025 actual CSV with coded account line",
+      "complete": false
+    },
+    {
+      "id": "Q04",
+      "task": "Reconcile province-to-municipality transfers in identical periods",
+      "complete": false
+    },
+    {
+      "id": "Q05",
+      "task": "Stress-test municipal operations and cost of replacement of TVQ transfers",
+      "complete": false
+    },
+    {
+      "id": "Q06",
+      "task": "Obtain independent fiscal and legal approvals for both status scenarios",
+      "complete": false
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "QUEBEC_CANADA",
+      "verified_financially_complete": false,
+      "year2026_municipal_replacement_cad": null
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "verified_financially_complete": false,
+      "year2026_municipal_replacement_cad": null
+    }
+  ],
+  "decision": {
+    "visually_supported_year2024_subtotal": true,
+    "quarantine_year2025_extraction": true,
+    "closed_version_conflict": false,
+    "verified_year2025_spending": false,
+    "verified_bank_payments": false,
+    "nova_financed": false,
+    "score_increase_earned": false
+  }
+}
