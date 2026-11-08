@@ -64,6 +64,11 @@ STREAMED_REQUEST_ROUTES = {
 }
 
 JWT_SENSITIVE_GUARDS = {
+    "fracture-engine-gateway": (
+        "MAX_BODY_BYTES=32_000", "readLimitedUtf8Body(req,MAX_BODY_BYTES)",
+        "client.auth.getUser(token)", "ALLOWED_ACTIONS", "fracture_engine_get_state_safe",
+        "Cache-Control", "private, no-store", "Content-Type", "privateJson",
+    ),
     "conscience-vault": (
         "req.method !== 'POST'", "MAX_REQUEST_BYTES", "readBoundedJson", "req.body.getReader()",
         "REQUEST_TOO_LARGE", "INVALID_JSON", "requiredVaultUser", "service_conscience_evaluate_access",
@@ -137,6 +142,19 @@ def has_unsanitized_auth_error_log(source: str) -> bool:
         r"console\.(?:warn|error|log|info)\s*\([^;]*\berror\s*\)",
         source,
     ))
+
+
+def fracture_gateway_body_boundary_valid(source: str) -> bool:
+    """Un corps hostile ne doit être lu ni avant JWT, ni sans borne en flux."""
+    if "await req.text()" in source or "await req.json()" in source:
+        return False
+    bounded_reader = source.find("await readLimitedUtf8Body(req,MAX_BODY_BYTES)")
+    authenticated = source.find("await client.auth.getUser(token)")
+    body_invoked = source.find("await readLimitedJson(req)")
+    privileged = source.find("await client.rpc(action,args)")
+    # Définir le lecteur plus haut dans le fichier n'est pas un appel réseau.
+    # Dans le gestionnaire HTTP, JWT -> lecture bornée -> action RPC.
+    return bounded_reader >= 0 and 0 <= authenticated < body_invoked < privileged
 
 
 class UnsafeSource(Exception):
@@ -322,6 +340,10 @@ def main() -> int:
             "awaitreadLimitedBinaryResponse(response,MAX_TEMPLATE_BYTES)" not in compact_sheet or
             "if(!limitedPdf.ok)" not in compact_sheet):
         errors.append("send-player-sheet: modèle PDF distant lu sans limite de flux.")
+
+    gateway_source = read_security_text(FUNCTIONS / "fracture-engine-gateway" / "index.ts")
+    if not fracture_gateway_body_boundary_valid(gateway_source):
+        errors.append("fracture-engine-gateway: JWT avant lecture et limite HTTP streaming obligatoires.")
 
     # Ces opérations touchent aux comptes, droits et licences; un corps
     # complet et les erreurs de fournisseur ne doivent jamais sortir en logs.

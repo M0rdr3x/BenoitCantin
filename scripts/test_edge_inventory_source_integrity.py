@@ -15,6 +15,7 @@ from validate_edge_function_inventory import (
     read_tree_text,
     unpinned_supabase_js_versions,
     has_unsanitized_auth_error_log,
+    fracture_gateway_body_boundary_valid,
 )
 
 
@@ -42,6 +43,31 @@ class InventorySourceIntegrityTests(unittest.TestCase):
         self.assertFalse(has_unsanitized_auth_error_log(
             "console.error('[SINJIRA auth]', { code: 'MFA_STATE_UNAVAILABLE' });"
         ))
+
+    def test_fracture_gateway_rejects_unbounded_or_preauth_body(self):
+        secure = (
+            "async function readLimitedJson(req) {\\n"
+            "  await readLimitedUtf8Body(req,MAX_BODY_BYTES);\\n"
+            "}\\n"
+            "await client.auth.getUser(token);\\n"
+            "const body=await readLimitedJson(req);\\n"
+            "await client.rpc(action,args);\\n"
+        )
+        self.assertTrue(fracture_gateway_body_boundary_valid(secure))
+        for unsafe in (
+            secure.replace("await readLimitedUtf8Body(req,MAX_BODY_BYTES)", "await req.text()"),
+            secure.replace("await readLimitedUtf8Body(req,MAX_BODY_BYTES)", "await req.json()"),
+            secure.replace("await readLimitedJson(req)", "await req.text()"),
+            secure.replace("await client.auth.getUser(token)", "if(token){}"),
+            secure.replace(
+                "await client.auth.getUser(token);\\n", ""
+            ) + "await client.auth.getUser(token);\\n",
+            secure.replace(
+                "const body=await readLimitedJson(req);\\n", ""
+            ) + "const body=await readLimitedJson(req);\\n",
+        ):
+            with self.subTest(unsafe=unsafe):
+                self.assertFalse(fracture_gateway_body_boundary_valid(unsafe))
 
     def test_utf8_source_accepted(self):
         with tempfile.TemporaryDirectory() as directory:
