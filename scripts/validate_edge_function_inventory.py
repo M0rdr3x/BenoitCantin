@@ -53,6 +53,16 @@ CUSTOM_AUTH = {
     ),
 }
 
+# Routes où Content-Length est facultatif : la borne doit précéder tout buffering.
+STREAMED_REQUEST_ROUTES = {
+    "life-story-export": ("requiredAdmin", "readLimitedJson"),
+    "security-context": ("requiredUser", "readLimitedJson"),
+    "send-player-sheet": ("requiredUser", "readLimitedJson"),
+    "submit-character-questionnaire": ("requiredVaultUser", "readBoundedJson"),
+    "submit-fracture-endgame": ("requiredUser", "readLimitedUtf8Body"),
+    "submit-game-contribution": ("requiredUser", "readBoundedJson"),
+}
+
 JWT_SENSITIVE_GUARDS = {
     "conscience-vault": (
         "req.method !== 'POST'", "MAX_REQUEST_BYTES", "readBoundedJson", "req.body.getReader()",
@@ -294,6 +304,24 @@ def main() -> int:
                 errors.append(f"{slug}: garde-fou HTTP/destructif manquant: {marker}.")
         if "await req.json()" in source or "await req.json (" in source:
             errors.append(f"{slug}: lecture JSON directe non bornée interdite.")
+
+    for slug, (auth, consumer) in STREAMED_REQUEST_ROUTES.items():
+        src = read_security_text(FUNCTIONS / slug / "index.ts")
+        compact = re.sub(r"\\s+", "", src)
+        if ("awaitreq.text()" in compact or "awaitreq.json()" in compact or
+                "awaitreadLimitedUtf8Body(req,MAX_REQUEST_BYTES)" not in compact or
+                "if(!limited.ok)" not in compact):
+            errors.append(f"{slug}: lecteur HTTP non borné, ou erreur de flux non refusée.")
+        auth_call = src.find(f"await {auth}(req)")
+        body_call = src.find(f"await {consumer}(req")
+        if not 0 <= auth_call < body_call:
+            errors.append(f"{slug}: authentification obligatoire avant lecture du corps.")
+    sheet_source = read_security_text(FUNCTIONS / "send-player-sheet" / "index.ts")
+    compact_sheet = re.sub(r"\\s+", "", sheet_source)
+    if ("awaitresponse.arrayBuffer()" in compact_sheet or
+            "awaitreadLimitedBinaryResponse(response,MAX_TEMPLATE_BYTES)" not in compact_sheet or
+            "if(!limitedPdf.ok)" not in compact_sheet):
+        errors.append("send-player-sheet: modèle PDF distant lu sans limite de flux.")
 
     # Ces opérations touchent aux comptes, droits et licences; un corps
     # complet et les erreurs de fournisseur ne doivent jamais sortir en logs.
