@@ -121,6 +121,14 @@ def unpinned_supabase_js_versions(source: str) -> list[str]:
 
 
 
+def has_unsanitized_auth_error_log(source: str) -> bool:
+    """Refuser les erreurs brutes de parseur/SDK dans les logs d'auth partagés."""
+    return bool(re.search(
+        r"console\\.(?:warn|error|log|info)\\s*\\([^;]*\\berror\\s*\\)",
+        source,
+    ))
+
+
 class UnsafeSource(Exception):
     """Une source contrôlée ne peut être vérifiée de façon fiable."""
 
@@ -243,6 +251,10 @@ def main() -> int:
             )
     if supabase_js_references < 4:
         errors.append("Contrat Supabase JS inattendu : moins de quatre références contrôlées.")
+    auth_helper = read_security_text(FUNCTIONS / "_shared" / "auth.ts")
+    if has_unsanitized_auth_error_log(auth_helper):
+        errors.append("auth.ts: objet d'erreur brut interdit dans les journaux de sécurité.")
+
 
     # Enforce the actual shared streaming implementation; old inline byte
     # encoder markers are no longer applicable to these three public routes.
