@@ -36,7 +36,7 @@ def payloads(run_id: str) -> list[tuple[str, str, dict[str, str]]]:
             "event": "TEST_TECHNIQUE_SINJIRA_" + kind.upper(),
             "reference": "TEST-SINJIRA-" + run_id + "-" + kind,
             "message": ("TEST TECHNIQUE SINJIRA sans donnée de participant. "
-                        "Ce message ne confirme aucun compte et n'enregistre aucun questionnaire. "
+                        "Ce message n'est ni une inscription ni un enregistrement de dossier. "
                         "Vérifiez seulement la notification de test dans Formspree."),
             "date": date,
         }
