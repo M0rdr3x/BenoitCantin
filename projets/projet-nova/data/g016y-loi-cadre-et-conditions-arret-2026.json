@@ -1,0 +1,393 @@
+{
+  "schema": "nova-g016y-conditional-fiscal-transition-framework/v1",
+  "phase": "G0.16y",
+  "date": "2026-11-08",
+  "score_before": 47,
+  "score_after": 47,
+  "basis": "data/g016x-concordance-fiscale-multiniveau-2026.json",
+  "provisional_legislative_text": "official/working/avant-projet-loi-cadre-transition-fiscale-nova-g0-16y-v1.md",
+  "status": "DRAFT_NO_FORCE_OF_LAW",
+  "articles": [
+    {
+      "id": "A01",
+      "title": "Objet et conditions d'application",
+      "related_gate": "G01",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A02",
+      "title": "Taxe, cotisation, redevance et tarif : définitions",
+      "related_gate": "G01",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A03",
+      "title": "Respect des compétences constitutionnelles",
+      "related_gate": "G03",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A04",
+      "title": "Deux instruments fiscaux proposés",
+      "related_gate": "G03",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A05",
+      "title": "Contrôle du double compte anti-paradis fiscaux",
+      "related_gate": "G04",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A06",
+      "title": "Interdiction des économies non documentées",
+      "related_gate": "G02",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A07",
+      "title": "Consolidation des recettes et transferts publics",
+      "related_gate": "G02",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A08",
+      "title": "Financement des services municipaux",
+      "related_gate": "G05",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A09",
+      "title": "Garantie de financement des écoles",
+      "related_gate": "G05",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A10",
+      "title": "Péréquation et continuité des régions",
+      "related_gate": "G05",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A11",
+      "title": "Protection RRQ, RQAP, AE et médicaments",
+      "related_gate": "G06",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A12",
+      "title": "Protection des travailleurs et conventions",
+      "related_gate": "G06",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A13",
+      "title": "Crédits remboursables et prévention de la pauvreté",
+      "related_gate": "G08",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A14",
+      "title": "Analyse des effets sur les entreprises et l'emploi",
+      "related_gate": "G07",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A15",
+      "title": "Protection des obligations environnementales",
+      "related_gate": "G07",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A16",
+      "title": "Absence de contre-tarifs de représailles",
+      "related_gate": "G03",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A17",
+      "title": "Gestion de dette, pensions et obligations",
+      "related_gate": "G09",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A18",
+      "title": "Deux budgets décennaux avec stress tests",
+      "related_gate": "G09",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A19",
+      "title": "Souveraineté sans présomption de succession",
+      "related_gate": "G09",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A20",
+      "title": "Transferts fédéraux conditionnels",
+      "related_gate": "G02",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A21",
+      "title": "Avis indépendants juridiques et financiers",
+      "related_gate": "G10",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A22",
+      "title": "Consultation et adoption démocratique",
+      "related_gate": "G10",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A23",
+      "title": "Condition préalable et suspension des remplacements",
+      "related_gate": "G10",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    },
+    {
+      "id": "A24",
+      "title": "Transparence, recours et revue périodique",
+      "related_gate": "G10",
+      "legal_opinion_validated": false,
+      "funding_validated": false,
+      "adopted": false,
+      "entry_into_force_date": null
+    }
+  ],
+  "transition_stages": [
+    {
+      "id": "ST0",
+      "name": "Concordance des recettes",
+      "done": false,
+      "planned_date": null,
+      "formal_authority_approval": false
+    },
+    {
+      "id": "ST1",
+      "name": "Simulation et financement complet",
+      "done": false,
+      "planned_date": null,
+      "formal_authority_approval": false
+    },
+    {
+      "id": "ST2",
+      "name": "Avis de légalité et droits",
+      "done": false,
+      "planned_date": null,
+      "formal_authority_approval": false
+    },
+    {
+      "id": "ST3",
+      "name": "Consultation et processus législatif",
+      "done": false,
+      "planned_date": null,
+      "formal_authority_approval": false
+    },
+    {
+      "id": "ST4",
+      "name": "Transition progressive conditionnelle",
+      "done": false,
+      "planned_date": null,
+      "formal_authority_approval": false
+    },
+    {
+      "id": "ST5",
+      "name": "Évaluation indépendante annuelle",
+      "done": false,
+      "planned_date": null,
+      "formal_authority_approval": false
+    }
+  ],
+  "mandatory_stops": [
+    {
+      "id": "STOP01",
+      "name": "Compétence fiscale non démontrée",
+      "block_active": true,
+      "clearance_verified": false,
+      "evidence_uri": null
+    },
+    {
+      "id": "STOP02",
+      "name": "Assiette et rendement revenu inconnus",
+      "block_active": true,
+      "clearance_verified": false,
+      "evidence_uri": null
+    },
+    {
+      "id": "STOP03",
+      "name": "Recettes anti-paradis fiscaux non prouvées",
+      "block_active": true,
+      "clearance_verified": false,
+      "evidence_uri": null
+    },
+    {
+      "id": "STOP04",
+      "name": "Services municipaux et écoles sous-financés",
+      "block_active": true,
+      "clearance_verified": false,
+      "evidence_uri": null
+    },
+    {
+      "id": "STOP05",
+      "name": "Régimes sociaux et droits acquis menacés",
+      "block_active": true,
+      "clearance_verified": false,
+      "evidence_uri": null
+    },
+    {
+      "id": "STOP06",
+      "name": "Effets sur ménages et crédits non contrôlés",
+      "block_active": true,
+      "clearance_verified": false,
+      "evidence_uri": null
+    },
+    {
+      "id": "STOP07",
+      "name": "Dette, travailleurs et services non financés",
+      "block_active": true,
+      "clearance_verified": false,
+      "evidence_uri": null
+    },
+    {
+      "id": "STOP08",
+      "name": "Pas de bilan sur dix ans, d'avis indépendants ou d'approbation formelle",
+      "block_active": true,
+      "clearance_verified": false,
+      "evidence_uri": null
+    }
+  ],
+  "two_levy_proposal": {
+    "income_tax_treatment": "NOT_ENACTED",
+    "anti_haven_treatment": "NOT_ENACTED",
+    "certified_rates": null,
+    "certified_net_yields": null
+  },
+  "scenario": {
+    "QUEBEC_CANADA": {
+      "federal_tax_repealed_by_quebec": false,
+      "municipal_replacement_financed": false,
+      "annual_10_year_budget": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    },
+    "QUEBEC_SOUVERAIN": {
+      "federal_transfers_guaranteed": false,
+      "debt_and_functions_allocated": false,
+      "annual_10_year_budget": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ]
+    }
+  },
+  "hard_constraints": {
+    "no_unfunded_service_reduction": true,
+    "no_unilateral_federal_tax_abolition": true,
+    "no_claimed_rights_abrogation": true,
+    "no_unverified_tax_haven_receipts": true,
+    "no_automatic_federal_transfers_in_sovereignty": true,
+    "no_political_adoption_inferred_from_draft": true,
+    "no_inferred_date_of_100_percent_completion": true,
+    "no_increment_from_more_documents": true
+  },
+  "review": {
+    "independent_financial_review_signed": false,
+    "independent_legal_review_signed": false,
+    "public_consultation_completed": false,
+    "formal_adoption": false
+  },
+  "decision": {
+    "text_prepared_for_review": true,
+    "law_in_force": false,
+    "fiscal_sustainability_verified": false,
+    "stop_conditions_cleared": false,
+    "score_increase_earned": false
+  }
+}
