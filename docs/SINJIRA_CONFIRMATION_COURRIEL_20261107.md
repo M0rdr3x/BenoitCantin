@@ -174,3 +174,12 @@ Les erreurs **avant** toute invocation serveur (ex. photo refusée ou préparati
 ## Sauvegarde serveur confirmée et stockage local facultatif
 
 Une fois la sauvegarde Supabase confirmée, l'effacement du brouillon local (`registre-consciences-draft-v1`) est désormais **best effort**. Un `SecurityError` du navigateur, une restriction des cookies ou un `localStorage` inaccessible ne peut plus faire basculer l'interface sur un faux message « Transmission impossible » ni réactiver le bouton de soumission. La réussite du dossier n'est déterminée que par la réponse du serveur; les problèmes locaux sont consignés sans exposition de réponses. Le contrat automatisé protège le comportement et le script est versionné `sinjira-character-registry.js?v=24.5.7`.
+
+
+## Protection AAL2 obligatoire du questionnaire du Registre — 8 novembre 2026
+
+Renforcement indépendant de la livraison Formspree : le point d’entrée serveur `submit-character-questionnaire` n’utilise plus la politique de vérification sensible pouvant être désactivée via `security_user_settings.sensitive_step_up`. Il appelle désormais `requiredVaultUser(req)`, qui vérifie le JWT réel puis les niveaux AAL `currentLevel`/`nextLevel` du facteur Auth Supabase; **AAL2 est obligatoire pour tous les participants, même si la préférence de vérification renforcée générale est désactivée**. Les sessions AAL1 et les comptes sans facteur validé sont refusés avant la lecture du questionnaire; les états de sécurité indisponibles entraînent un échec fermé. Le contrôle de propriété de la photo et l’unicité du personnage restent inchangés.
+
+Côté navigateur, le Registre vérifie explicitement `auth.mfa.getAuthenticatorAssuranceLevel()` avant d’afficher le formulaire comme transmissible : vers `/compte/securite.html` si le facteur manque; vers `/compte/mfa.html` pour valider une session déjà équipée; échec sans transmission si le contrôle est indisponible. Le script public est versionné `sinjira-character-registry.js?v=24.5.8`. Des mutations négatives du validateur doivent faire échouer les tests si la garde serveur obligatoire est remplacée par `requiredUser(req)`.
+
+Ce renforcement peut **bloquer les anciennes sessions AAL1** jusqu’à leur montée en AAL2; il ne supprime aucun dossier et ne publie aucune donnée. Déployer serveur et Web de façon coordonnée, après réussite de la CI de la PR de sécurité, sans diminuer l’exigence MFA pour une validation fictive.

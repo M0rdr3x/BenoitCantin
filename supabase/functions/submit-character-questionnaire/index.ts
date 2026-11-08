@@ -1,5 +1,5 @@
 import {corsHeaders} from '../_shared/cors.ts';
-import {requiredUser,serviceClient} from '../_shared/auth.ts';
+import {requiredVaultUser,serviceClient} from '../_shared/auth.ts';
 import {sendFormspreeNotice} from '../_shared/sinjira-formspree.ts';
 import {SINJIRA_CANON_PUBLIC_GUIDE} from '../_shared/sinjira-canon-public.ts';
 import {loadSinjiraCanonContext,canonPrompt} from '../_shared/sinjira-canon-context.ts';
@@ -67,7 +67,7 @@ Deno.serve(async(req)=>{
   if(req.method==='OPTIONS')return new Response('ok',{headers:corsHeaders});
   if(req.method!=='POST')return privateJson({ok:false,error:'Méthode non autorisée.',version:VERSION},405);
   try{
-    const user=await requiredUser(req);
+    const {user}=await requiredVaultUser(req);
     const service=serviceClient();
     const body=await readBoundedJson(req);
     if(body.health===true)return privateJson({ok:true,version:VERSION,persisted:false,remote_ai_enabled:REMOTE_AI_ENABLED,paid_external_services_enabled:PAID_EXTERNAL_SERVICES_ENABLED});
