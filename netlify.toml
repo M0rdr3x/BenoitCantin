@@ -24,6 +24,7 @@
   for = "/compte/*"
   [headers.values]
     Cache-Control = "private, no-store, max-age=0"
+    Content-Security-Policy = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' https://cdn.jsdelivr.net https://challenges.cloudflare.com; script-src-attr 'none'; worker-src 'self' blob:; font-src 'self'; connect-src 'self' https://gpvivleexywljowcqkru.supabase.co wss://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; frame-src 'self' https://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; form-action 'self' https://formspree.io; base-uri 'self'; frame-ancestors 'self'; object-src 'none'; upgrade-insecure-requests"
     X-Robots-Tag = "noindex, nofollow, noarchive"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
@@ -32,6 +33,7 @@
   for = "/administration.html"
   [headers.values]
     Cache-Control = "private, no-store, max-age=0"
+    Content-Security-Policy = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' https://cdn.jsdelivr.net https://challenges.cloudflare.com; script-src-attr 'none'; worker-src 'self' blob:; font-src 'self'; connect-src 'self' https://gpvivleexywljowcqkru.supabase.co wss://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; frame-src 'self' https://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; form-action 'self' https://formspree.io; base-uri 'self'; frame-ancestors 'self'; object-src 'none'; upgrade-insecure-requests"
     X-Robots-Tag = "noindex, nofollow, noarchive"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
@@ -40,6 +42,7 @@
   for = "/admin/*"
   [headers.values]
     Cache-Control = "private, no-store, max-age=0"
+    Content-Security-Policy = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' https://cdn.jsdelivr.net https://challenges.cloudflare.com; script-src-attr 'none'; worker-src 'self' blob:; font-src 'self'; connect-src 'self' https://gpvivleexywljowcqkru.supabase.co wss://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; frame-src 'self' https://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; form-action 'self' https://formspree.io; base-uri 'self'; frame-ancestors 'self'; object-src 'none'; upgrade-insecure-requests"
     X-Robots-Tag = "noindex, nofollow, noarchive"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
@@ -48,6 +51,7 @@
   for = "/Admin/*"
   [headers.values]
     Cache-Control = "private, no-store, max-age=0"
+    Content-Security-Policy = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' https://cdn.jsdelivr.net https://challenges.cloudflare.com; script-src-attr 'none'; worker-src 'self' blob:; font-src 'self'; connect-src 'self' https://gpvivleexywljowcqkru.supabase.co wss://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; frame-src 'self' https://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; form-action 'self' https://formspree.io; base-uri 'self'; frame-ancestors 'self'; object-src 'none'; upgrade-insecure-requests"
     X-Robots-Tag = "noindex, nofollow, noarchive"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
@@ -56,6 +60,7 @@
   for = "/app/*"
   [headers.values]
     Cache-Control = "private, no-store, max-age=0"
+    Content-Security-Policy = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' https://cdn.jsdelivr.net https://challenges.cloudflare.com; script-src-attr 'none'; worker-src 'self' blob:; font-src 'self'; connect-src 'self' https://gpvivleexywljowcqkru.supabase.co wss://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; frame-src 'self' https://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; form-action 'self' https://formspree.io; base-uri 'self'; frame-ancestors 'self'; object-src 'none'; upgrade-insecure-requests"
     X-Robots-Tag = "noindex, nofollow, noarchive"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"

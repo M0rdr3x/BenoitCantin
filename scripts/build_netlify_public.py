@@ -12,6 +12,7 @@ import tomllib
 from pathlib import Path
 from urllib.parse import urlparse
 import xml.etree.ElementTree as ET
+from private_route_csp import harden_private_html, is_private_html, private_csp_output_errors
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = ROOT / "_site"
@@ -1419,12 +1420,22 @@ def build(
             destination = output / rel
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, destination)
+            if is_private_html(rel):
+                content = source.read_text(encoding="utf-8", errors="strict")
+                secured = harden_private_html(rel, content, load_netlify_config())
+                destination.write_text(secured, encoding="utf-8")
 
     for source in ROOT.iterdir():
         if not source.is_file():
             continue
         if root_file_allowed(source):
-            shutil.copy2(source, output / source.name)
+            destination = output / source.name
+            shutil.copy2(source, destination)
+            rel = Path(source.name)
+            if is_private_html(rel):
+                content = source.read_text(encoding="utf-8", errors="strict")
+                secured = harden_private_html(rel, content, load_netlify_config())
+                destination.write_text(secured, encoding="utf-8")
 
     # Sur la branche de sources Pages, .nojekyll doit être absent pour que
     # la configuration d'exclusion Jekyll soit appliquée en urgence.
@@ -1534,6 +1545,14 @@ def validate_output(
             continue
         if not relative_path_allowed(rel):
             errors.append(f"Fichier hors allowlist présent dans le publish: {rel.as_posix()}")
+        if is_private_html(rel):
+            try:
+                errors.extend(private_csp_output_errors(
+                    rel, published.read_text(encoding="utf-8", errors="strict"),
+                    load_netlify_config(),
+                ))
+            except (OSError, UnicodeError, ValueError) as exc:
+                errors.append(f"{rel}: impossible de vérifier la CSP meta: {exc}")
 
     sitemap_path = output / "sitemap.xml"
     if sitemap_path.is_file():
