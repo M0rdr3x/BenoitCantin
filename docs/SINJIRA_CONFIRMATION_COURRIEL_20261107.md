@@ -76,7 +76,7 @@ Un registre dédié `public.sinjira_formspree_events`, fermé aux rôles `anon`/
 ### Mise en production dans cet ordre
 
 1. Examiner et tester les modifications de la PR unifiée (remplaçant la PR de confirmation initiale).
-2. Exécuter la migration `supabase/migrations/20261108041500_sinjira_formspree_notification_ledger.sql` **avant** de déployer les nouvelles fonctions.
+2. Vérifier que la migration `supabase/migrations/20261108054703_sinjira_formspree_notification_ledger.sql` est déjà enregistrée en production (installée le 8 novembre 2026). **Ne pas l'exécuter une deuxième fois.** Pour un nouvel environnement vierge, l'appliquer avant le déploiement des fonctions.
 3. Déployer `submit-character-questionnaire` (avec l'import partagé) et `notify-account-confirmation` sur le projet `gpvivleexywljowcqkru`. Conserver **verify_jwt=true** pour les deux.
 4. Déployer les fichiers Web depuis GitHub/Netlify et vérifier que `/compte/confirmer.html`, `/assets/js/sinjira-confirm-email.js` et les deux formulaires sont accessibles.
 5. Configurer **Supabase Authentication → URL Configuration → Site URL** à `https://www.benoitcantin.com` et autoriser `https://www.benoitcantin.com/compte/confirmer.html` dans Redirect URLs.
@@ -145,3 +145,12 @@ Documentation Formspree (février 2026) :
 - https://help.formspree.io/articles/plugins/sending-a-confirmation-or-response-email
 - https://help.formspree.io/fr/articles/form-and-project-settings/changing-a-form-email-address
 - https://help.formspree.io/fr/articles/building-your-form/special-fields
+
+## Alignement de l'historique de migration — 8 novembre 2026
+
+La migration a été appliquée en production avec la version distante **`20261108054703`** et le nom **`sinjira_formspree_notification_ledger`**. Le fichier local et son inventaire revu utilisent désormais cette même version. Son contenu SQL et son blob Git restent **strictement inchangés** (`0bd4e7cb92ae73b8897d91f0fd67fbdff895919c`).
+
+- **Production existante :** aucun second `db push` de cette migration; contrôler `supabase_migrations.schema_migrations` et la table `public.sinjira_formspree_events` (RLS activée, accès `anon`/`authenticated` refusé) avant d'activer les Edge Functions.
+- **Environnement vierge :** appliquer cette version une fois dans l'ordre des migrations autorisées, après revue du manifeste, avant de déployer les fonctions.
+- Ne pas réécrire l'historique `supabase_migrations` et ne pas ajouter de migration « réparatrice » duplicative.
+- En date de cette vérification, GitHub #834 reste en brouillon; les fonctions et la page Web sont encore à publier. Un statut CI historique ne vaut pas réussite des tests du nouveau commit.

@@ -76,7 +76,7 @@ def main()->int:
         "return await sendFormspreeNoticeCore(service,kind,sourceId,options);",
         "reason:'SECONDARY_CHANNEL_UNAVAILABLE'",
     ])
-    migration=check('supabase/migrations/20261108041500_sinjira_formspree_notification_ledger.sql',[
+    migration=check('supabase/migrations/20261108054703_sinjira_formspree_notification_ledger.sql',[
         'unique(event_type,source_id)', 'enable row level security',
         'revoke all on public.sinjira_formspree_events from public, anon, authenticated',
         'to service_role',
