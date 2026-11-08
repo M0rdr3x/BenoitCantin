@@ -433,6 +433,19 @@ Les fichiers de référence candidats `official/reference/*` et `data/sources.js
 
 **Suite G0.16m :** collecter des projets municipaux réellement documentés, rapports d'inspection, décisions de subventions, coûts et échéanciers, puis consolider un programme de maintien des services auditable sans prélèvement caché.
 
+## G0.16m — Premier financement municipal réel vérifié : Warwick (7 novembre 2026)
+
+**Programme : 47/100, 53 points manquants.** Contrairement aux seules enveloppes théoriques répertoriées en G0.16l, cette étape examine un projet municipal réel : la **nouvelle usine d'eau potable Gérard-Laroche à Warwick**. **Il ne s'agit pas d'un projet Nova**, mais d'une étude de cas sur les preuves à exiger avant toute réforme fiscale.
+
+- **Aide confirmée :** le gouvernement du Québec a accordé **14 668 901 $** de PRIMEAU à Warwick en 2025 pour une assiette maximale admissible de **15 440 948 $**, [confirmée dans une liste ministérielle](https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/documents_administratifs/acces_information/demande_acces/2025/DAI_2025-082_subventions_primeau_2023_2033.pdf) et une [annonce officielle](https://www.quebec.ca/nouvelles/actualites/details/le-gouvernement-du-quebec-accorde-plus-de-146-m-a-warwick-63958). **Aide accordée ≠ subvention effectivement versée**, non attestée dans cette étude.
+- **Ligne du [PTI 2026–2028 de Warwick](https://villedewarwick.quebec/wp-content/uploads/2025/12/Programme-triennal-des-immobilisations-2026-2027-2028.pdf) : 20 074 664 $** pour la construction programmée en 2026, répartis exactement en **14 668 901 $ PRIMEAU + 336 823 $ fonds d'eau + 5 068 940 $ emprunt inscrit**. C'est une programmation annuelle, **pas** le coût global certifié du projet.
+- **[Règlement 404-2025](https://villedewarwick.quebec/wp-content/uploads/2025/03/R404-2025-Emprunt-usine-eau-potable-et-filiere-traitement-version-finale.pdf) : 27 988 101 $** de dépenses et un emprunt brut décrétés pour la construction **et des équipements**; le règlement mentionne une **taxe spéciale sur les immeubles desservis par l'aqueduc**. **Ne pas additionner les budgets 2025 et 2026**, ni assimiler l'autorisation d'emprunt à une dette effectivement tirée.
+- **Engagements ministériels :** **9 779 266 $** pour 2025–2026 et **4 889 635 $** pour 2026–2027, totalisant les **14 668 901 $** promis, [dans la liste officielle](https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/documents_administratifs/acces_information/engagements_financiers/2025/LIS_engagements_juin_2025.pdf). Ce calendrier d'engagements **ne démontre pas les paiements de trésorerie**.
+- **Livrables :** `data/cas-municipal-reel-g0-16m-warwick-eau-2025-2026.json` (sept sources publiques, une étude de cas, six preuves encore manquantes), `assets/g016m-real-municipal-case-core.mjs`, `tests/g016m-real-municipal-case.test.mjs` (**37 tests initiaux réussis en rejeu V8 isolé, pas de certification CI Node**) et `official/working/rapport-g0-16m-premier-cas-municipal-reel-warwick-v1.md`.
+- **Limites :** versements PRIMEAU, dette résiduelle, coût final, maintien du service, effets sur les ménages et statut du chantier au 7 novembre 2026 **non vérifiés**; les PDF municipaux ont été consultés en texte public sans contrôle visuel indépendant complet. **Aucune recette n'a été attribuée à Nova** et aucun taux d'impôt n'est proposé.
+
+**Suite G0.16n :** comparer d'autres cas municipaux publics de régions et de tailles différentes, puis obtenir dépenses finales, versements, financement réellement tiré, état des ouvrages et impact sur les citoyens avant d'auditer la fiscalité à deux prélèvements. **Score 47/100 inchangé.**
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
