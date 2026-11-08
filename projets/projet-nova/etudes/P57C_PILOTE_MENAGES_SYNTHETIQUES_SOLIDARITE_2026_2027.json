@@ -1,0 +1,281 @@
+{
+  "schema_version": "P57C-1",
+  "date_revision": "2026-11-08",
+  "objet": "PILOTE_SCENARIOS_SYNTHETIQUES_CONTINUITE_SOLIDARITE_ET_RETENUE_DETTE_CREDIT",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "statut": "BANC_ESSAI_DE_REGLES_2026_2027_NON_MICROSIMULATION_REELLE",
+  "provenance": {
+    "p57b": "projets/projet-nova/etudes/P57B_SOLIDARITE_VERSEMENTS_2026_2027_ET_VERROU_PROTECTION_TVQ.json",
+    "p57a": "projets/projet-nova/etudes/P57A_RECONCILIATION_CREDITS_2025_2026_COMPTES_PUBLICS_VOL1.json",
+    "p56o": "projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json",
+    "barometre": "projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json",
+    "calcul_revenu_quebec": "https://www.revenuquebec.ca/fr/citoyens/credits-dimpot/credit-dimpot-pour-solidarite/calcul-du-credit-dimpot-pour-solidarite/",
+    "versements_revenu_quebec": "https://www.revenuquebec.ca/fr/citoyens/credits-dimpot/credit-dimpot-pour-solidarite/versement-du-credit-dimpot-pour-solidarite/",
+    "retenue_dette_revenu_quebec": "https://www.revenuquebec.ca/fr/citoyens/credits-dimpot/credit-dimpot-pour-solidarite/situations-limitant-lutilisation-de-vos-versements-pour-payer-une-dette-a-letat/",
+    "conditions_revenu_quebec": "https://www.revenuquebec.ca/fr/citoyens/credits-dimpot/credit-dimpot-pour-solidarite/conditions-a-remplir/"
+  },
+  "parametres_publies_2026_2027": {
+    "periode_versement": "2026-07-01/2027-06-30",
+    "revenus_imposition_reference_annee": 2025,
+    "situation_personnelle_reference": "2025-12-31",
+    "seuil_revenu_familial_personne_seule_ou_monoparentale_cad": "64545",
+    "seuil_revenu_familial_couple_base_cad": "70395",
+    "majoration_maximum_par_enfant_cad": "2634",
+    "seuils_maximum_hors_villages_nordiques": true,
+    "seuil_retenue_dette_maximum_moins_de_50_pct_2026_2027_cad": "26190",
+    "part_maximum_retenue_si_protege": "0.50",
+    "aide_dernier_recours_donne_protection_50_pct_meme_sans_regle_revenu": true,
+    "montant_jusqua_240_versement_annuel": true,
+    "montant_241_799_versements_trimestriels": true,
+    "montant_a_partir_800_versements_mensuels": true,
+    "revenu_sous_seuil_ne_prouve_pas_admissibilite": true,
+    "absence_d_avis_ne_permet_pas_de_verser_credit_estime": true
+  },
+  "mensualites_officielles": {
+    "ANNUELLE": [
+      "2026-07"
+    ],
+    "TRIMESTRIELLE": [
+      "2026-07",
+      "2026-10",
+      "2027-01",
+      "2027-04"
+    ],
+    "MENSUELLE": [
+      "2026-07",
+      "2026-08",
+      "2026-09",
+      "2026-10",
+      "2026-11",
+      "2026-12",
+      "2027-01",
+      "2027-02",
+      "2027-03",
+      "2027-04",
+      "2027-05",
+      "2027-06"
+    ]
+  },
+  "jeux_de_cas_fictifs": [
+    {
+      "id": "C01",
+      "profil_synthetique": "Personne seule, dette envers Etat, revenu faible",
+      "situation_familiale": "PERSONNE_SEULE",
+      "enfants_a_charge": 0,
+      "residence_village_nordique": false,
+      "revenu_familial_net_reference_2025_cad": "20000",
+      "credit_annuel_fictif_deja_determine_par_avis_cad": "1200",
+      "dette_envers_etat": true,
+      "aide_financiere_dernier_recours": false,
+      "source_beneficiaire_reel": null,
+      "droit_au_credit_demonte_par_simulation": false,
+      "credit_effectivement_recu_cad": null,
+      "effet_fiscal_nova_certifie_cad": null,
+      "cout_public_prevision_2027_2028_mcad": null
+    },
+    {
+      "id": "C02",
+      "profil_synthetique": "Famille monoparentale, un enfant, versement trimestriel",
+      "situation_familiale": "MONOPARENTALE",
+      "enfants_a_charge": 1,
+      "residence_village_nordique": false,
+      "revenu_familial_net_reference_2025_cad": "30000",
+      "credit_annuel_fictif_deja_determine_par_avis_cad": "799",
+      "dette_envers_etat": false,
+      "aide_financiere_dernier_recours": false,
+      "source_beneficiaire_reel": null,
+      "droit_au_credit_demonte_par_simulation": false,
+      "credit_effectivement_recu_cad": null,
+      "effet_fiscal_nova_certifie_cad": null,
+      "cout_public_prevision_2027_2028_mcad": null
+    },
+    {
+      "id": "C03",
+      "profil_synthetique": "Couple au-dessus du seuil ordinaire, aucun montant illustratif",
+      "situation_familiale": "COUPLE",
+      "enfants_a_charge": 0,
+      "residence_village_nordique": false,
+      "revenu_familial_net_reference_2025_cad": "75000",
+      "credit_annuel_fictif_deja_determine_par_avis_cad": "0",
+      "dette_envers_etat": true,
+      "aide_financiere_dernier_recours": false,
+      "source_beneficiaire_reel": null,
+      "droit_au_credit_demonte_par_simulation": false,
+      "credit_effectivement_recu_cad": null,
+      "effet_fiscal_nova_certifie_cad": null,
+      "cout_public_prevision_2027_2028_mcad": null
+    },
+    {
+      "id": "C04",
+      "profil_synthetique": "Personne seule exactement au seuil de protection contre retenue",
+      "situation_familiale": "PERSONNE_SEULE",
+      "enfants_a_charge": 0,
+      "residence_village_nordique": false,
+      "revenu_familial_net_reference_2025_cad": "26190",
+      "credit_annuel_fictif_deja_determine_par_avis_cad": "240",
+      "dette_envers_etat": true,
+      "aide_financiere_dernier_recours": false,
+      "source_beneficiaire_reel": null,
+      "droit_au_credit_demonte_par_simulation": false,
+      "credit_effectivement_recu_cad": null,
+      "effet_fiscal_nova_certifie_cad": null,
+      "cout_public_prevision_2027_2028_mcad": null
+    },
+    {
+      "id": "C05",
+      "profil_synthetique": "Personne seule un dollar au-dessus de ce seuil",
+      "situation_familiale": "PERSONNE_SEULE",
+      "enfants_a_charge": 0,
+      "residence_village_nordique": false,
+      "revenu_familial_net_reference_2025_cad": "26191",
+      "credit_annuel_fictif_deja_determine_par_avis_cad": "800",
+      "dette_envers_etat": true,
+      "aide_financiere_dernier_recours": false,
+      "source_beneficiaire_reel": null,
+      "droit_au_credit_demonte_par_simulation": false,
+      "credit_effectivement_recu_cad": null,
+      "effet_fiscal_nova_certifie_cad": null,
+      "cout_public_prevision_2027_2028_mcad": null
+    },
+    {
+      "id": "C06",
+      "profil_synthetique": "Résidence en village nordique, seuil général non applicable",
+      "situation_familiale": "PERSONNE_SEULE",
+      "enfants_a_charge": 0,
+      "residence_village_nordique": true,
+      "revenu_familial_net_reference_2025_cad": "75000",
+      "credit_annuel_fictif_deja_determine_par_avis_cad": "600",
+      "dette_envers_etat": true,
+      "aide_financiere_dernier_recours": false,
+      "source_beneficiaire_reel": null,
+      "droit_au_credit_demonte_par_simulation": false,
+      "credit_effectivement_recu_cad": null,
+      "effet_fiscal_nova_certifie_cad": null,
+      "cout_public_prevision_2027_2028_mcad": null
+    },
+    {
+      "id": "C07",
+      "profil_synthetique": "Personne recevant assistance sociale et ayant une dette",
+      "situation_familiale": "PERSONNE_SEULE",
+      "enfants_a_charge": 0,
+      "residence_village_nordique": false,
+      "revenu_familial_net_reference_2025_cad": "15000",
+      "credit_annuel_fictif_deja_determine_par_avis_cad": "799",
+      "dette_envers_etat": true,
+      "aide_financiere_dernier_recours": true,
+      "source_beneficiaire_reel": null,
+      "droit_au_credit_demonte_par_simulation": false,
+      "credit_effectivement_recu_cad": null,
+      "effet_fiscal_nova_certifie_cad": null,
+      "cout_public_prevision_2027_2028_mcad": null
+    },
+    {
+      "id": "C08",
+      "profil_synthetique": "Revenu sous plafond mais crédit non automatiquement accordé",
+      "situation_familiale": "PERSONNE_SEULE",
+      "enfants_a_charge": 0,
+      "residence_village_nordique": false,
+      "revenu_familial_net_reference_2025_cad": "30000",
+      "credit_annuel_fictif_deja_determine_par_avis_cad": "0",
+      "dette_envers_etat": false,
+      "aide_financiere_dernier_recours": false,
+      "source_beneficiaire_reel": null,
+      "droit_au_credit_demonte_par_simulation": false,
+      "credit_effectivement_recu_cad": null,
+      "effet_fiscal_nova_certifie_cad": null,
+      "cout_public_prevision_2027_2028_mcad": null
+    },
+    {
+      "id": "C09",
+      "profil_synthetique": "Couple exactement au maximum général, aucun montant illustratif",
+      "situation_familiale": "COUPLE",
+      "enfants_a_charge": 0,
+      "residence_village_nordique": false,
+      "revenu_familial_net_reference_2025_cad": "70395",
+      "credit_annuel_fictif_deja_determine_par_avis_cad": "0",
+      "dette_envers_etat": false,
+      "aide_financiere_dernier_recours": false,
+      "source_beneficiaire_reel": null,
+      "droit_au_credit_demonte_par_simulation": false,
+      "credit_effectivement_recu_cad": null,
+      "effet_fiscal_nova_certifie_cad": null,
+      "cout_public_prevision_2027_2028_mcad": null
+    },
+    {
+      "id": "C10",
+      "profil_synthetique": "Famille monoparentale un enfant au maximum général",
+      "situation_familiale": "MONOPARENTALE",
+      "enfants_a_charge": 1,
+      "residence_village_nordique": false,
+      "revenu_familial_net_reference_2025_cad": "67179",
+      "credit_annuel_fictif_deja_determine_par_avis_cad": "0",
+      "dette_envers_etat": false,
+      "aide_financiere_dernier_recours": false,
+      "source_beneficiaire_reel": null,
+      "droit_au_credit_demonte_par_simulation": false,
+      "credit_effectivement_recu_cad": null,
+      "effet_fiscal_nova_certifie_cad": null,
+      "cout_public_prevision_2027_2028_mcad": null
+    }
+  ],
+  "integrite_qualificatifs": {
+    "cas_entierement_fictifs": true,
+    "montants_credit_non_calcules_depuis_impots": true,
+    "cas_de_0_credit_n_est_pas_preuve_inéligibilite": true,
+    "plafond_retenue_ne_signifie_pas_retenue_reellement_effectuee": true,
+    "en_absence_de_protection_identifiee_ne_pas_inferer_droit_de_retenir_100_pct": true,
+    "aucun_echeancier_de_versement_individuel_certifie": true,
+    "calendrier_de_versement_n_est_pas_charge_en_droits_constates": true,
+    "le_droit_reel_requiert_admissibilite_declaration_annexe_D_et_revenu_familial": true,
+    "aucun_nouveau_taux_nova_invente": true,
+    "aucun_resultat_net_menage_Nova_2027_certifie": true,
+    "aucune_somme_historique_double_comptee": true,
+    "transferts_federaux_non_presumes_souverainete": true,
+    "conformite_aux_droits_individuels_avant_simplification": true
+  },
+  "pistes_au_dela_du_banc_essai": [
+    {
+      "id": "C01",
+      "objectif": "Obtenir des données agrégées officielles par tranche de revenu, composante et situation familiale pour 2027-2028",
+      "preuve_statut": "NON_OBTENUE"
+    },
+    {
+      "id": "C02",
+      "objectif": "Rapprocher les droits reconnus aux exercices comptables et les échéances de dépôt direct pour 2027",
+      "preuve_statut": "NON_OBTENUE"
+    },
+    {
+      "id": "C03",
+      "objectif": "Séparer les effets d'abolition de TVQ de la protection des composantes logement et villages nordiques",
+      "preuve_statut": "NON_OBTENUE"
+    },
+    {
+      "id": "C04",
+      "objectif": "Calculer les revenus disponibles réels, incluant loyers, prix, cotisations, prestation fédérale et services",
+      "preuve_statut": "NON_OBTENUE"
+    },
+    {
+      "id": "C05",
+      "objectif": "Documenter les voies de recours, les erreurs administratives et le traitement des retards de versements",
+      "preuve_statut": "NON_OBTENUE"
+    },
+    {
+      "id": "C06",
+      "objectif": "Faire valider les hypothèses sociales, fiscales et comptables par des spécialistes indépendants",
+      "preuve_statut": "NON_OBTENUE"
+    }
+  ],
+  "avancement": {
+    "score_estime": 53,
+    "points_restants": 47,
+    "p56o_portes_demontrees": 0,
+    "p52b_lignes_financieres_non_remplies": 600,
+    "p52d_incidence_donnees_non_remplies": 720,
+    "p52a_preuves_non_validees": 20,
+    "avis_independants_nova_signes": 0,
+    "budget_nova_2027_2036_valide": false,
+    "modele_revenu_disponible_nova_valide": false,
+    "aucun_droit_nouveau_adopte": true,
+    "statut": "NO_GO_AUTOMATIQUE"
+  }
+}
