@@ -26,6 +26,18 @@ Dans cet environnement, une tentative de téléchargement du CSV 2025 a échoué
 
 **Conséquence : les vrais chiffres agrégés 2024 et 2025 restent à calculer.** La disponibilité d'une page de catalogue ne remplace pas la lecture des octets CSV.
 
+### 2 bis. Nouvelle source primaire de contrôle complémentaire — profil local 2024
+
+Le catalogue officiel [**Profil financier des municipalités locales**](https://www.donneesquebec.ca/recherche/dataset/profil-financier-des-municipalites-locales) identifie un [CSV agrégé pour le Québec, données **2024** (ressource 5dec077d-4ef9-4e22-99e9-0c4f3a6dd52d)](https://www.donneesquebec.ca/recherche/dataset/profil-financier-des-municipalites-locales/resource/5dec077d-4ef9-4e22-99e9-0c4f3a6dd52d). La fiche précise son [adresse directe de téléchargement](https://mamh.gouv.qc.ca/fichiersdonneesouvertes/PF-2024-2024-Prov.csv), une mise à jour indiquée au 1er septembre 2026 et la licence CC-BY 4.0. Le catalogue de la série a été mis à jour le 7 novembre 2026. **La référence est une métadonnée trouvée, pas un téléchargement réussi du fichier.**
+
+Cette source est distincte des **« Données réelles 2024 — Simple occurrence »** : elle concerne les **profils financiers des municipalités locales** et peut servir de contre-vérification après filtrage et identification des postes. Elle ne représente pas automatiquement le même périmètre que les **31,3 G$ de revenus des organismes municipaux consolidés 2024** figurant dans G0.17c, lesquels englobent des types d'organismes qui ne sont pas tous des municipalités locales. Une différence de total entre ces séries ne démontre donc pas une erreur avant examen des périmètres. Il ne faut pas non plus additionner les profils agrégés aux données détaillées, car il s'agirait du même univers de déclarations, partiellement superposé.
+
+L'édition **2024–2025** comprend une ressource basée sur les rapports **2024** et des fichiers de rôle d'évaluation **2025**. La ressource `PF-2024-2024-Prov.csv` n'est **pas** le relevé des recettes réelles de 2025.
+
+**État d'accès au 8 novembre 2026 :** la consultation du catalogue a abouti par recherche, mais le téléchargement direct du CSV a échoué dans l'environnement d'exécution (résolution DNS), et la lecture du CSV par le navigateur n'a pas abouti. Il n'existe donc **ni octets figés, ni empreinte SHA-256, ni décompte de lignes, ni agrégat obtenu** de ce fichier dans G0.17b. Les montants vérifiés 2024/2025 du registre restent `null`. **Aucun point de complétude Nova n'est gagné.**
+
+**Procédure de reprise :** récupérer le fichier CSV et la description des postes, enregistrer les empreintes et dates de récupération, examiner les en-têtes, faire correspondre les codes et vérifier les doublons; ensuite rapprocher la sous-population des municipalités locales extraite des rapports réels 2024 en contrôlant les organismes absents et les rubriques communes. Une personne compétente doit vérifier les écarts avant de qualifier la série d'« exploitable pour une projection ».
+
 ## 3. Méthode d'interprétation des comptes
 
 Le guide MAMH précise que les fichiers « Simple occurrence » comportent une ligne par organisme et des **colonnes associées à des codes de postes comptables**. Ces codes doivent être rapprochés du **formulaire codifié de l'exercice choisi** et de la **description des postes**. On ne peut donc pas attribuer un sens arbitraire à un champ numérique.
