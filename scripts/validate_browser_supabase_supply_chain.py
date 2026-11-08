@@ -62,9 +62,14 @@ def source_files() -> list[Path]:
 
 def inspect_repo() -> list[str]:
     errors: list[str] = []
-    if not CLIENT_FILE.is_file():
-        return ["Module partagé d'authentification SINJIRA absent"]
-    client = CLIENT_FILE.read_text(encoding="utf-8")
+    if not CLIENT_FILE.is_file() or CLIENT_FILE.is_symlink():
+        return ["Module partagé d'authentification SINJIRA absent ou symbolique"]
+    if CLIENT_FILE.stat().st_size > MAX_SOURCE_BYTES:
+        return ["Module partagé d'authentification SINJIRA trop volumineux"]
+    try:
+        client = CLIENT_FILE.read_text(encoding="utf-8", errors="strict")
+    except (UnicodeError, OSError):
+        return ["Module partagé d'authentification SINJIRA illisible"]
     expected = f"import {{ createClient }} from '{SDK_URL}';"
     if client.count(expected) != 1:
         errors.append("Import Supabase de session absent ou modifié, version immuable requise")
