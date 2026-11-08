@@ -5,28 +5,31 @@ export const OFFICIAL_REVENUE_NOTE_URL=
 const ID_GROUPS=["V01","V02","V03"];
 export const PUBLISHED_ROWS=Object.freeze({
  V01:[
- ["SALES",24650,25930,"FISCAL_SALES_NET_OF_CREDIT"],
- ["FUEL",2135,2158,"FISCAL_EXCISE"],
- ["TOBACCO",853,815,"FISCAL_EXCISE"],
- ["ALCOHOL",596,573,"FISCAL_EXCISE"],
- ["OTHER",143,163,"FISCAL_MIXED"]],
+ ["SALES","Ventes, nettes du crédit d'impôt pour la solidarité",24650,25930,"FISCAL_SALES_NET_OF_CREDIT"],
+ ["FUEL","Carburants",2135,2158,"FISCAL_EXCISE"],
+ ["TOBACCO","Tabac",853,815,"FISCAL_EXCISE"],
+ ["ALCOHOL","Boissons alcooliques",596,573,"FISCAL_EXCISE"],
+ ["OTHER","Autres taxes à la consommation",143,163,"FISCAL_MIXED"]
+ ],
  V02:[
- ["VEHICLES",2055,2181,"REGULATORY_RIGHTS"],
- ["NATURAL_RESOURCES",1667,2229,"RESOURCE_ROYALTIES"],
- ["GHG",1329,1123,"EMISSIONS_ALLOWANCE_REVENUE"],
- ["OTHER",1140,1175,"MIXED_RIGHTS_AND_FEES"]],
+ ["VEHICLES","Véhicules automobiles",2055,2181,"REGULATORY_RIGHTS"],
+ ["NATURAL_RESOURCES","Ressources naturelles",1667,2229,"RESOURCE_ROYALTIES"],
+ ["GHG","Émissions de gaz à effet de serre",1329,1123,"EMISSIONS_ALLOWANCE_REVENUE"],
+ ["OTHER","Autres droits, permis et redevances",1140,1175,"MIXED_RIGHTS_AND_FEES"]
+ ],
  V03:[
- ["HEALTH_OTHER",1761,1857,"HEALTH_SERVICE_CHARGES"],
- ["DRUG_PREMIUMS",1672,1751,"DRUG_INSURANCE_PREMIUMS"],
- ["TUITION",627,655,"EDUCATION_FEES"],
- ["SCHOOL_CHILDCARE",522,544,"SCHOOL_SERVICE_FEES"],
- ["POLICE",427,455,"PUBLIC_SERVICE_CHARGES"],
- ["OTHER_SERVICES",3711,3870,"MIXED_SERVICE_FEES"],
- ["RECEIVABLES",1979,1566,"INTEREST_LOAN_INCOME"],
- ["PENALTIES",1176,1563,"ENFORCEMENT_AND_RECOVERIES"],
- ["DONATIONS",1180,1186,"DONATIONS"],
- ["INVESTMENTS",1218,1072,"INVESTMENT_INCOME"],
- ["OTHER",1979,403,"MIXED_MISC_INCOME"]]
+ ["HEALTH_OTHER","Hébergement et services non assurés en santé",1761,1857,"HEALTH_SERVICE_CHARGES"],
+ ["DRUG_PREMIUMS","Primes de l'assurance médicaments",1672,1751,"DRUG_INSURANCE_PREMIUMS"],
+ ["TUITION","Frais de scolarité",627,655,"EDUCATION_FEES"],
+ ["SCHOOL_CHILDCARE","Garde d'enfants en milieu scolaire",522,544,"SCHOOL_SERVICE_FEES"],
+ ["POLICE","Services policiers",427,455,"PUBLIC_SERVICE_CHARGES"],
+ ["OTHER_SERVICES","Autres services rendus",3711,3870,"MIXED_SERVICE_FEES"],
+ ["RECEIVABLES","Revenus sur les débiteurs et les prêts",1979,1566,"INTEREST_LOAN_INCOME"],
+ ["PENALTIES","Pénalités, amendes et recouvrements",1176,1563,"ENFORCEMENT_AND_RECOVERIES"],
+ ["DONATIONS","Donations de tiers",1180,1186,"DONATIONS"],
+ ["INVESTMENTS","Revenus sur les placements",1218,1072,"INVESTMENT_INCOME"],
+ ["OTHER","Autres revenus divers",1979,403,"MIXED_MISC_INCOME"]
+ ]
 });
 const totals={"V01":[28377,29639],"V02":[6191,6708],"V03":[16252,14922]};
 const obj=x=>x!==null&&typeof x==="object"&&!Array.isArray(x);
@@ -59,7 +62,7 @@ export function inspectG015V01V03Subcategories(d,g014,g015,discovery,g015Actuals
   const g=d.groups.find(x=>x?.id===id),expected=PUBLISHED_ROWS[id],sumExpected=totals[id];
   if(!obj(g)||!Array.isArray(g.categories)||g.categories.length!==expected.length||
      g.categories.some((r,i)=>!obj(r)||typeof r.label!=="string"||
-       !same([r.id,r.year_2024_2025_mcad,r.year_2025_2026_mcad,r.treatment],expected[i]))||
+       !same([r.id,r.label,r.year_2024_2025_mcad,r.year_2025_2026_mcad,r.treatment],expected[i]))||
      !same([g.year_2024_2025_total_mcad,g.year_2025_2026_total_mcad],sumExpected)||
      sum(g.categories,"year_2024_2025_mcad")!==sumExpected[0]||
      sum(g.categories,"year_2025_2026_mcad")!==sumExpected[1])
