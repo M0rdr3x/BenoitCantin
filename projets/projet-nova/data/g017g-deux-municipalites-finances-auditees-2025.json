@@ -1,0 +1,215 @@
+{
+  "schema": "nova-g017g-two-municipalities-2025-evidence/v1",
+  "phase": "G0.17g",
+  "date": "2026-11-08",
+  "score_before": 47,
+  "score_after": 47,
+  "remaining_points": 53,
+  "scope": "TWO_CONVENIENCE_2025_CASES_NOT_QUEBEC_TAX_BASE",
+  "sources": [
+    {
+      "id": "PORT",
+      "code": "02047",
+      "url": "https://www.mamh.gouv.qc.ca/documentsfinanciersweb/Rapport-financier-2025-et-autres-02047.pdf",
+      "register_path": "data/g017f-rapprochement-municipal-fonctionnement-investissement-tresorerie-2025.json",
+      "screenshot_success": false,
+      "immutable_sha256": null
+    },
+    {
+      "id": "SAG",
+      "code": "94068",
+      "url": "https://ville.saguenay.ca/files/medias/La-ville-et-vie-d%C3%A9mocratique/Publications/Budget/Rapports-financiers-consolid%C3%A9s/Rapport-financier-2025-consolid%C3%A9-final.pdf",
+      "visual_page_indices": [
+        6,
+        7,
+        8
+      ],
+      "screenshot_other_pages_cache_miss": true,
+      "text_sections": [
+        "AUDITOR",
+        "S7",
+        "S8",
+        "S9",
+        "S10",
+        "S13",
+        "S14",
+        "S19"
+      ],
+      "immutable_sha256": null,
+      "year2024_comparatives_restated": true
+    }
+  ],
+  "samples": [
+    {
+      "code": "02047",
+      "name": "Port-Daniel–Gascons",
+      "scope": "MUNICIPAL_2025",
+      "auditor": "QUALIFIED_ASSET_RETIREMENT_OBLIGATIONS_UNQUANTIFIED",
+      "revenue": 25730544,
+      "taxes": 4525681,
+      "transfers": 20524044,
+      "expenses": 7021908,
+      "accrual_surplus": 18708636,
+      "operating_revenue": 5930672,
+      "investment_revenue": 19799872,
+      "fiscal_operation": 68566,
+      "fiscal_investment": -1845312,
+      "cash_begin": 549175,
+      "cash_operation": 2095979,
+      "cash_investment": -16969080,
+      "cash_portfolio": 0,
+      "cash_financing": 16323277,
+      "cash_change": 1450176,
+      "cash_end": 1999351,
+      "net_debt": 10526722
+    },
+    {
+      "code": "94068",
+      "name": "Saguenay",
+      "scope": "CONSOLIDATED_CONTROLLED_ENTITIES_AND_ELECTRICITY_NETWORK",
+      "auditor": "UNMODIFIED",
+      "auditor_date": "2026-06-02",
+      "revenue": 540158703,
+      "taxes": 317831049,
+      "transfers": 64741160,
+      "expenses": 534427768,
+      "accrual_surplus": 5730935,
+      "operating_revenue": 524797261,
+      "investment_revenue": 15361442,
+      "fiscal_operation": 14079053,
+      "fiscal_investment": 4755759,
+      "cash_begin": 157390687,
+      "cash_operation": 103120417,
+      "cash_investment": -107111111,
+      "cash_portfolio": 514945,
+      "cash_financing": 34662779,
+      "cash_change": 31187030,
+      "cash_end": 188577717,
+      "net_debt": 612200553,
+      "revenues_by_nature": {
+        "taxes": 317831049,
+        "compensations": 38074332,
+        "transfers": 64741160,
+        "services": 82281390,
+        "droits": 14973521,
+        "amendes": 5222292,
+        "placements": 7145173,
+        "interets": 4254267,
+        "autres": 5635519
+      },
+      "expenses_by_function": {
+        "administration": 51165994,
+        "securite": 80673591,
+        "transport": 127276753,
+        "hygiene": 78946292,
+        "sante": 6413100,
+        "amenagement": 34451743,
+        "loisirs": 77257791,
+        "electricite": 49434754,
+        "financement": 28807750
+      },
+      "fiscal_adjustments": {
+        "operations_before": -9630507,
+        "net_adjustments": 23709560
+      },
+      "fiscal_investment_bridge": {
+        "revenues": 15361442,
+        "capex": -110900628,
+        "properties": -248049,
+        "loans": -296500,
+        "new_long_funding": 93178956,
+        "allocations": 7660538
+      },
+      "financing_cash_components": {
+        "new_long_debt": 148121000,
+        "repayments": -116699801,
+        "temp_borrowings": 3204602,
+        "deferred_fees": 36978
+      },
+      "financial_assets": 327841873,
+      "liabilities": 940042426,
+      "long_debt": 750400642,
+      "capital_accrual": 110900628,
+      "capital_cash_acquisitions": 108303207,
+      "revenues_2024_restated": 536339341,
+      "expenses_2024_restated": 500756152
+    }
+  ],
+  "composition": {
+    "port_transfer_share_of_2025_total_pct": 79.76529373028413,
+    "sag_transfer_share_of_2025_total_pct": 11.985581207973242,
+    "port_tax_share_of_2025_total_pct": 17.588749775364253,
+    "sag_tax_share_of_2025_total_pct": 58.84030882679308,
+    "denominator": "EACH_2025_RECOGNIZED_TOTAL_REVENUE",
+    "causal_evidence": false,
+    "comparative_service_efficiency_proven": false,
+    "year2026_fiscal_rate_derived": false
+  },
+  "cautions": {
+    "a_two_case_convenience_sample_not_representative": true,
+    "scope_differs_controlled_entities_electricity": true,
+    "auditor_opinions_not_a_management_ranking": true,
+    "different_scale_no_naive_per_capita": true,
+    "two_city_revenue_not_quebec_total": true,
+    "port_capital_transfer_revenue_affects_its_denominator": true,
+    "no_source_verified_populations": true,
+    "no_raw_mamh_csv_imported": true,
+    "no_pdf_binary_hash_available": true,
+    "bank_specific_subsidy_receipt_unknown": true,
+    "recognized_revenue_not_bank_cash": true,
+    "no_2024_growth_claim_with_restated_base": true,
+    "no_debt_financing_savings_inferred": true,
+    "no_tecq_or_primeau_project_specific_payment_proof": true,
+    "two_tax_model_not_financed": true,
+    "programme_nova_not_independently_audited": true
+  },
+  "coverage": {
+    "municipalities": 2,
+    "method": "CONVENIENCE_ORIGINAL_OFFICIAL_REPORTS",
+    "population_weights_verified": false,
+    "mamh_2025_full_csv_imported": false,
+    "complete_municipal_coverage": false,
+    "nationwide_2025_public_balance_verified": false
+  },
+  "open_gates": [
+    {
+      "id": "G1",
+      "label": "Original CSV 2024/2025, dictionaries and absences with hash checks",
+      "passed": false
+    },
+    {
+      "id": "G2",
+      "label": "Consolidated vs nonconsolidated accounting boundary incl electric utility",
+      "passed": false
+    },
+    {
+      "id": "G3",
+      "label": "Population weights, accounts and similar services",
+      "passed": false
+    },
+    {
+      "id": "G4",
+      "label": "Transfers approved, paid and received, year matched; elimination once",
+      "passed": false
+    },
+    {
+      "id": "G5",
+      "label": "Ten-year operating and asset financing for both fiscal statuses",
+      "passed": false
+    },
+    {
+      "id": "G6",
+      "label": "Independent legal/fiscal review, actual household incidence",
+      "passed": false
+    }
+  ],
+  "decisions": {
+    "added_second_real_municipal_statement": true,
+    "accounting_and_cash_reconciled": true,
+    "source_scope_difference_disclosed": true,
+    "municipal_population_representative": false,
+    "nova_two_levy_funding_validated": false,
+    "independent_programme_audit": false,
+    "score_increment_earned": false
+  }
+}
