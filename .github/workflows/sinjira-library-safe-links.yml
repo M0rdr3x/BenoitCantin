@@ -6,16 +6,20 @@ on:
     paths:
       - 'assets/js/sinjira-library.js'
       - 'assets/js/sinjira-library-v24-4-61.js'
+      - 'assets/js/sinjira-document-url-policy.mjs'
       - 'assets/js/sinjira-library-hub-v26.js'
       - 'scripts/test_sinjira_library_safe_links.cjs'
+      - 'scripts/test_sinjira_document_url_boundary.mjs'
       - '.github/workflows/sinjira-library-safe-links.yml'
   push:
     branches: [main]
     paths:
       - 'assets/js/sinjira-library.js'
       - 'assets/js/sinjira-library-v24-4-61.js'
+      - 'assets/js/sinjira-document-url-policy.mjs'
       - 'assets/js/sinjira-library-hub-v26.js'
       - 'scripts/test_sinjira_library_safe_links.cjs'
+      - 'scripts/test_sinjira_document_url_boundary.mjs'
       - '.github/workflows/sinjira-library-safe-links.yml'
   workflow_dispatch:
 
@@ -42,6 +46,10 @@ jobs:
           node --check assets/js/sinjira-library.js
           node --check assets/js/sinjira-library-v24-4-61.js
           node --check assets/js/sinjira-library-hub-v26.js
+          node --check assets/js/sinjira-document-url-policy.mjs
           node --check scripts/test_sinjira_library_safe_links.cjs
+          node --check scripts/test_sinjira_document_url_boundary.mjs
       - name: Simuler les URLs dangereuses sans accès aux comptes
         run: node scripts/test_sinjira_library_safe_links.cjs
+      - name: Rejeter les faux documents signés et origines hostiles
+        run: node scripts/test_sinjira_document_url_boundary.mjs
