@@ -1,0 +1,84 @@
+name: SINJIRA — parité publique du correctif Auth et Registre
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/preflight_sinjira_public_release_parity.cjs'
+      - '.github/workflows/sinjira-public-release-parity.yml'
+      - 'compte/confirmer.html'
+      - 'compte/inscription.html'
+      - 'projets/sinjira/registre/index.html'
+      - 'assets/js/sinjira-confirm-email.js'
+      - 'assets/js/v24-signup.js'
+      - 'assets/js/sinjira-character-registry.js'
+      - 'assets/js/sinjira-account.js'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/preflight_sinjira_public_release_parity.cjs'
+      - '.github/workflows/sinjira-public-release-parity.yml'
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Saisir exactement PUBLIC-GET-ONLY (sept GET, aucune mutation)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-public-parity-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  local-contract:
+    name: Garde-fous du contrôle sans réseau
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Node 22 épinglé
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '22.16.0'
+          check-latest: false
+      - name: Tester le contrôle et détecter les dérives simulées
+        run: |
+          node --check scripts/preflight_sinjira_public_release_parity.cjs
+          node scripts/preflight_sinjira_public_release_parity.cjs --self-test
+
+  published-site:
+    name: Lecture publique des sept ressources
+    needs: local-contract
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Autorisation explicite des GET anonymes
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          test "$CONFIRMATION" = 'PUBLIC-GET-ONLY' || {
+            echo "Contrôle annulé : aucune requête publique effectuée."
+            exit 1
+          }
+      - name: Checkout de main sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Node 22 épinglé
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '22.16.0'
+          check-latest: false
+      - name: Constater la parité publique sans compte, POST ni secret
+        run: |
+          node scripts/preflight_sinjira_public_release_parity.cjs --production
