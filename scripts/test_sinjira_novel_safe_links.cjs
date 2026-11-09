@@ -63,7 +63,7 @@ async function main(){
       safeNovelHref,escapeHtml,console,
       location:{origin:SITE,search:''},
       document:{
-        body:{dataset:{v18Page:'none'}},
+        body:{dataset:{v18Page:file==='assets/js/sinjira-reads-v24-4-61.js'?'reads-v24-4-61':'none'}},
         querySelector(selector){return selector==='[data-reader-library]'?box:
           selector==='[data-v18-status]'?{hidden:true}:null},
       },
