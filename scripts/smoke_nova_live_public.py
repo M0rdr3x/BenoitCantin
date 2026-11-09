@@ -136,6 +136,49 @@ def compare_local_application(raw: str, source_filename: str):
         raise ValueError("Script public périmé ou divergent : " + source_filename)
 
 
+READINESS_FILE = ROOT / "docs" / "nova-sondages" / "reception-sondage-boussole-2026-11-08.json"
+
+
+def validate_readiness_display(preview_html: str, poll_html: str,
+                               compass_html: str, matrix: dict):
+    """Comparer les chiffres publics aux critères officiels, pas à une valeur codée en dur.
+
+    Un site affichant une ancienne réception doit échouer, même si le serveur
+    renvoie HTTP 200 et les ressources du questionnaire se chargent.
+    """
+    if matrix.get("status") != "NON_HOMOLOGUE" or matrix.get("decision", {}).get("opening_poll_approved") is not False:
+        raise ValueError("La décision de réception ne correspond plus au verrou de publication")
+
+    section_start = preview_html.find('id="etat-validation-outils"')
+    section_end = preview_html.find("</section>", section_start)
+    if section_start < 0 or section_end < 0:
+        raise ValueError("Section publique de suivi des validations absente")
+    section = preview_html[section_start:section_end]
+
+    for key, public_html in (("poll", poll_html), ("compass", compass_html)):
+        item = matrix[key]
+        gates = item["gates"]
+        passed = sum(g.get("status") == "PASSED" for g in gates)
+        total = len(gates)
+        recorded = matrix["summary"][key]
+        percent = f"{100 * passed / total:.1f}".replace(".", ",")
+        if (recorded.get("passed") != passed or recorded.get("total") != total
+                or recorded.get("percent") != round(100 * passed / total, 1)):
+            raise ValueError("Matrice de réception incohérente : " + key)
+
+        if f"{passed} critères sur {total} validés ({percent} %)" not in public_html:
+            raise ValueError("Page publique périmée ou incohérente avec la matrice : " + key)
+        if f"<strong>{percent} %</strong> <span>{passed} critères sur {total}</span>" not in section:
+            raise ValueError("Grille publique périmée ou incohérente : " + key)
+        aria_label = ("Critères de réception du sondage" if key == "poll"
+                      else "Critères de réception de la boussole")
+        pattern = (rf'<div role="progressbar" aria-label="{aria_label}"'
+                   rf'[^>]*aria-valuemax="{total}"[^>]*aria-valuenow="{passed}"'
+                   rf'[^>]*class="draft-readiness-track"')
+        if not re.search(pattern, section):
+            raise ValueError("Barre ARIA de réception périmée : " + key)
+
+
 def validate_opening_state(local_poll, response):
     """Le serveur ne doit jamais accepter des votes sur un corpus marqué provisoire."""
     if not isinstance(local_poll.get("published"), bool):
@@ -227,6 +270,31 @@ def self_test():
     else:
         raise AssertionError("Scripts inversés non détectés")
     assert not review_page_ok("<form><li data-type='opinion'>x</li></form>")
+    # Parité source/registres vérifiée hors ligne, avec cas négatifs.
+    matrix = json.loads(READINESS_FILE.read_text(encoding="utf-8"))
+    preview = (NOVA / "sondages-a-valider.html").read_text(encoding="utf-8")
+    poll_page = (NOVA / "sondage-citoyen.html").read_text(encoding="utf-8")
+    compass_page = (NOVA / "boussole-electorale.html").read_text(encoding="utf-8")
+    validate_readiness_display(preview, poll_page, compass_page, matrix)
+    for altered in (
+        (preview.replace("58,3 %", "50,0 %"), poll_page, compass_page, matrix),
+        (preview, poll_page, compass_page.replace("7 critères sur 12 validés", "6 critères sur 12 validés"), matrix),
+        (preview, poll_page.replace("6 critères sur 11 validés", "5 critères sur 11 validés"), compass_page, matrix),
+    ):
+        try:
+            validate_readiness_display(*altered)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("Grille ou compteur public périmé non détecté")
+    tampered = json.loads(json.dumps(matrix))
+    tampered["summary"]["compass"]["passed"] = 6
+    try:
+        validate_readiness_display(preview, poll_page, compass_page, tampered)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Matrice incohérente non détectée")
     print("OK : test de contrôle HTTP NOVA en lecture seule.")
 
 
@@ -272,6 +340,10 @@ def main():
             raise ValueError("Les 104 questions candidates ou la lecture seule ne sont pas conformes")
         poll_html = verify(PREFIX + "sondage-citoyen.html")
         compass_html = verify(PREFIX + "boussole-electorale.html")
+        validate_readiness_display(
+            preview_html, poll_html, compass_html,
+            json.loads(READINESS_FILE.read_text(encoding="utf-8")),
+        )
         if 'href="sondages-a-valider.html"' not in poll_html:
             raise ValueError("Le sondage public n'indique pas le projet 64/40")
         assert_scripts_match_source(poll_html, (NOVA / "sondage-citoyen.html").read_text("utf-8"),
