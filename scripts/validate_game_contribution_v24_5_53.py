@@ -1,6 +1,21 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import re
 import tomllib
+
+RAW_LOG_PATTERNS = (
+    re.compile(r"console\\.(?:error|warn|log)\\s*\\(\\s*['\\\"]\\[submit-game-contribution\\]['\\\"]\\s*,\\s*(?:e|err|error)(?:\\s*\\??\\.\\s*(?:message|stack|details|hint))?\\s*\\)"),
+    re.compile(r"console\\.(?:error|warn|log)\\s*\\(\\s*['\\\"]\\[submit-game-contribution\\]['\\\"]\\s*,\\s*JSON\\.stringify\\s*\\(\\s*(?:e|err|error)\\s*\\)\\s*\\)"),
+)
+
+def sensitive_log_errors(source: str) -> list[str]:
+    errors = []
+    if "console.error('[submit-game-contribution]',{code:'SUBMISSION_FAILED'});" not in source:
+        errors.append("Journalisation des erreurs à code fixe obligatoire.")
+    if any(pattern.search(source) for pattern in RAW_LOG_PATTERNS):
+        errors.append("Journalisation brute d'une exception interdite.")
+    return errors
+
 
 ROOT = Path(__file__).resolve().parents[1]
 FN = ROOT / 'supabase/functions/submit-game-contribution/index.ts'
@@ -49,6 +64,19 @@ def main() -> int:
 
     if 'await req.json()' in source:
         errors.append('Lecture JSON directe non bornée interdite.')
+    errors.extend(sensitive_log_errors(source))
+
+    # Les validateurs doivent rejeter les anciennes et les nouvelles variantes
+    # de divulgation d'exceptions, y compris une sérialisation en chaîne.
+    fixed = "console.error('[submit-game-contribution]',{code:'SUBMISSION_FAILED'});"
+    for unsafe in (
+        "console.error('[submit-game-contribution]',e);",
+        "console.warn('[submit-game-contribution]', JSON.stringify(e));",
+        "console.error('[submit-game-contribution]', error?.message);",
+    ):
+        synthetic = source.replace(fixed, unsafe, 1)
+        if synthetic == source or not sensitive_log_errors(synthetic):
+            errors.append("Auto-test de mutation des journaux échoué.")
     if 'contribution_id' in source:
         errors.append('UUID interne contribution_id interdit dans la réponse/client.')
     if ".select('*')" in source:
