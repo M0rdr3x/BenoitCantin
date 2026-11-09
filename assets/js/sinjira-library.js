@@ -3,6 +3,20 @@ import {getSupabase,requireUser,escapeHtml,setStatus,roleLabel,projectStatusLabe
 const page=document.body.dataset.libraryPage||'',status=document.querySelector('[data-library-status]');
 let user=null,owner=false;
 const rows=v=>Array.isArray(v)?v:[];
+function safeLibraryHref(value){
+  // Des attributs HTML échappés n'empêchent pas les protocoles javascript:.
+  if(typeof value!=='string'||value.length>2048||!value.startsWith('/')||
+     value.startsWith('//')||/[\u0000-\u0020\u007f\\]/.test(value))return '';
+  try{
+    const target=new URL(value,location.origin);
+    const rawPath=value.split(/[?#]/,1)[0];
+    // Refuser /../ et ses variantes percent-encodées, normalisées par URL.
+    if(target.origin!==location.origin||target.pathname!==rawPath||
+       target.username||target.password)return '';
+    return target.pathname+target.search+target.hash;
+  }catch{return ''}
+}
+
 function cover(p){if(p.cover_url)return p.cover_url;if(p.slug==='fracture-du-reseau-mere')return '/assets/media/sinjira-fracture-du-reseau-mere-officiel.webp';if(p.slug==='reseau-mere-resistance')return '/assets/media/sinjira-reseau-mere-resistance-officiel.webp';return '/assets/media/sinjira-emblem.webp'}
 async function openDoc(id){
   setStatus(status,'Préparation du document sécurisé…','info');
@@ -25,7 +39,8 @@ async function library(){
   const projects=rows(pr.data),docs=rows(dr.data),pending=new Map(rows(rr.data).map(x=>[x.project_id,x])),box=document.querySelector('[data-project-library]');
   box.innerHTML=projects.map(p=>{
     const a=access.get(p.id),tester=owner||a?.access_level==='tester',pd=docs.filter(d=>d.project_id===p.id),waiting=pending.has(p.id);
-    return `<article class="library-project-card"><div class="library-project-art"><img src="${escapeHtml(cover(p))}" alt=""></div><div class="library-project-body"><div class="library-project-meta"><span class="status-badge">${escapeHtml(projectStatusLabel(p.status))}</span>${tester?'<span class="role-chip role-chip--tester">Testeur</span>':''}</div><h2>${escapeHtml(p.name)}</h2><p>${escapeHtml(p.description||'')}</p><div class="library-project-stats"><span>${pd.length} document${pd.length===1?'':'s'} accessible${pd.length===1?'':'s'}</span><span>${p.visibility==='restricted'?'Accès restreint':'Inclus avec le compte'}</span></div><div class="hero-actions"><a class="btn btn-primary" href="/compte/projet.html?slug=${encodeURIComponent(p.slug)}">Ouvrir l’espace</a>${p.play_path?`<a class="btn btn-secondary" href="${escapeHtml(p.play_path)}">Jouer</a>`:''}${!tester&&p.allow_tester_requests?`<button class="btn btn-secondary" type="button" data-request-tester="${p.id}" ${waiting?'disabled':''}>${waiting?'Demande testeur en attente':'Demander accès testeur'}</button>`:''}</div></div></article>`;
+    const playHref=safeLibraryHref(p.play_path);
+    return `<article class="library-project-card"><div class="library-project-art"><img src="${escapeHtml(cover(p))}" alt=""></div><div class="library-project-body"><div class="library-project-meta"><span class="status-badge">${escapeHtml(projectStatusLabel(p.status))}</span>${tester?'<span class="role-chip role-chip--tester">Testeur</span>':''}</div><h2>${escapeHtml(p.name)}</h2><p>${escapeHtml(p.description||'')}</p><div class="library-project-stats"><span>${pd.length} document${pd.length===1?'':'s'} accessible${pd.length===1?'':'s'}</span><span>${p.visibility==='restricted'?'Accès restreint':'Inclus avec le compte'}</span></div><div class="hero-actions"><a class="btn btn-primary" href="/compte/projet.html?slug=${encodeURIComponent(p.slug)}">Ouvrir l’espace</a>${playHref?`<a class="btn btn-secondary" href="${escapeHtml(playHref)}">Jouer</a>`:''}${!tester&&p.allow_tester_requests?`<button class="btn btn-secondary" type="button" data-request-tester="${p.id}" ${waiting?'disabled':''}>${waiting?'Demande testeur en attente':'Demander accès testeur'}</button>`:''}</div></div></article>`;
   }).join('')||'<div class="notice"><strong>Aucun projet disponible.</strong></div>';
   box.querySelectorAll('[data-request-tester]').forEach(b=>b.addEventListener('click',async()=>{
     const message=prompt('Court message pour votre demande (facultatif).')||'';
@@ -50,7 +65,8 @@ async function project(){
   document.querySelector('[data-project-name]').textContent=p.name;document.querySelector('[data-project-description]').textContent=p.description||'';document.querySelector('[data-project-status]').textContent=projectStatusLabel(p.status);
   const img=document.querySelector('[data-project-cover]');img.src=cover(p);img.alt=`Visuel de ${p.name}`;
   const a=rows(access).find(x=>x.project_id===p.id);document.querySelector('[data-project-role]').textContent=owner?'Propriétaire · accès total':a?.access_level==='tester'?'Testeur approuvé':p.visibility==='restricted'?'Joueur approuvé':'Compte joueur';
-  document.querySelector('[data-project-actions]').innerHTML=`${p.public_path?`<a class="btn btn-secondary" href="${escapeHtml(p.public_path)}">Page publique</a>`:''}${p.play_path?`<a class="btn btn-primary" href="${escapeHtml(p.play_path)}">Jouer</a>`:''}`;
+  const publicHref=safeLibraryHref(p.public_path),playHref=safeLibraryHref(p.play_path);
+  document.querySelector('[data-project-actions]').innerHTML=`${publicHref?`<a class="btn btn-secondary" href="${escapeHtml(publicHref)}">Page publique</a>`:''}${playHref?`<a class="btn btn-primary" href="${escapeHtml(playHref)}">Jouer</a>`:''}`;
   const {data:docs}=await s.from('documents').select('id,title,description,version,document_type,access_level').eq('project_id',p.id).eq('status','approved').order('sort_order');
   const dl=document.querySelector('[data-project-documents]');dl.innerHTML=rows(docs).map(d=>`<article class="document-row"><div><strong>${escapeHtml(d.title)}</strong><span>${escapeHtml(d.description||'')}</span></div><div class="document-row-meta"><small>v${escapeHtml(d.version||'—')}</small><small>${escapeHtml(roleLabel(d.access_level))}</small><button class="btn btn-secondary btn-small" type="button" data-open-document="${d.id}">Ouvrir</button></div></article>`).join('')||'<p>Aucun document approuvé accessible.</p>';bindDocs(dl);
   const {data:pts}=await s.from('playtests').select('id,title,description,status,starts_at,ends_at,max_participants').eq('project_id',p.id).in('status',['open','active']).order('starts_at');
