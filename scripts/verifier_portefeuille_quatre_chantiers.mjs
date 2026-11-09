@@ -8,14 +8,15 @@ const ids=["NOVA_POLITIQUE","NOVA_SINJIRA_MODELE","CIVIC_COMPASS","CIVIC_POLL","
 const paths=[
  "projets/projet-nova/data/audit-completude-programme-nova-2026-11-05.json",
  "projets/projet-nova/official/working/plan-execution-nova-sinjira-v1.md",
+ "docs/nova-sondages/reception-sondage-boussole-2026-11-08.json",
  "projets/projet-nova/data/validation-sondage-boussole-2026-11-07.json",
  "docs/sinjira/programme-readiness-2026-11-08.json"
 ];
 const name=x=>String(x??"");
-export function verifierPortefeuille(portfolio,nova,civic,sinjira,planText){
+export function verifierPortefeuille(portfolio,nova,civic,sinjira,planText,historicalCivic){
  const errors=[],fail=x=>errors.push(x);
  if(!obj(portfolio)||!Array.isArray(portfolio.tracks)||!obj(portfolio.sources)||
-   !obj(portfolio.policies)||!obj(nova)||!obj(civic)||!obj(sinjira)||
+   !obj(portfolio.policies)||!obj(nova)||!obj(civic)||!obj(sinjira)||!obj(historicalCivic)||
    typeof planText!=="string")
    return {ok:false,errors:["SOURCE_OR_SCHEMA_MISSING"],completion_certified:false};
  if(portfolio.schema!=="projets-nova-sinjira-portefeuille/v1"||
@@ -23,10 +24,12 @@ export function verifierPortefeuille(portfolio,nova,civic,sinjira,planText){
     portfolio.timezone!=="America/Toronto"||
     portfolio.status!=="BILAN_DOCUMENTAIRE_NON_CERTIFIE_NON_ADOPTE")
    fail("SNAPSHOT_SCOPE_CHANGED");
- const sourceKeys=["nova","nova_sinjira","civic","sinjira"];
- const expectedSourceDates=["2026-11-05","2026-11-03","2026-11-07","2026-11-08"];
+ const sourceKeys=["nova","nova_sinjira","civic","civic_history","sinjira"];
+ const expectedSourceDates=["2026-11-05","2026-11-03","2026-11-08","2026-11-07","2026-11-08"];
  if(sourceKeys.some((k,i)=>portfolio.sources[k]?.path!==paths[i]||
-    portfolio.sources[k]?.as_of!==expectedSourceDates[i]))
+    portfolio.sources[k]?.as_of!==expectedSourceDates[i])||
+    portfolio.sources.civic_history?.compass_passed!==5||
+    portfolio.sources.civic_history?.compass_total!==12)
    fail("SOURCE_PATH_OR_DATE_CHANGED");
  const tracks=portfolio.tracks;
  if(tracks.length!==ids.length||ids.some((id,i)=>tracks[i]?.id!==id)||
@@ -79,17 +82,38 @@ export function verifierPortefeuille(portfolio,nova,civic,sinjira,planText){
  const compassPassed=civic.compass?.gates?.filter(x=>x?.status==="PASSED").length??null,
        pollPassed=civic.poll?.gates?.filter(x=>x?.status==="PASSED").length??null;
  if(!Array.isArray(civic.compass?.gates)||civic.compass.gates.length!==12||
-    compassPassed!==5||c.passed!==5||c.total!==12||
+    compassPassed!==9||c.passed!==9||c.total!==12||
     c.metric_kind!=="COUVERTURE_DES_CRITERES_PAS_COMPLETUDE"||
-    !near(c.observed_gate_coverage_pct,100*5/12)||
+    !near(c.observed_gate_coverage_pct,100*9/12)||
     c.comparison_parties_approved!==false)
    fail("COMPASS_COVERAGE_IS_NOT_COMPLETION");
+ if(historicalCivic.schema!=="nova-civic-two-tools-readiness/v1"||
+    historicalCivic.as_of!=="2026-11-07"||
+    historicalCivic.compass?.gates?.length!==12||
+    historicalCivic.compass.gates.filter(g=>g.status==="PASSED").length!==5||
+    historicalCivic.poll?.gates?.length!==11||
+    historicalCivic.poll.gates.filter(g=>g.status==="PASSED").length!==6)
+   fail("CIVIC_HISTORICAL_BASELINE_CHANGED");
+ if(civic.summary?.compass?.passed!==9||civic.summary?.compass?.total!==12||
+    civic.summary?.compass?.percent!==75||
+    civic.summary?.poll?.passed!==6||civic.summary?.poll?.total!==11||
+    !near(civic.summary?.poll?.percent,54.5)||
+    civic.compass?.gates?.find(g=>g.id==="COMPASS_DOCUMENTARY_VALIDATION")?.status!=="PENDING"||
+    civic.compass?.gates?.find(g=>g.id==="COMPASS_ACCESSIBILITY")?.status!=="PENDING"||
+    civic.compass?.gates?.find(g=>g.id==="COMPASS_CROSS_BROWSER")?.status!=="PENDING")
+   fail("CIVIC_CERTIFICATION_GATES_REMAIN_PENDING");
  if(!Array.isArray(civic.poll?.gates)||civic.poll.gates.length!==11||
     pollPassed!==6||p.passed!==6||p.total!==11||
     p.metric_kind!=="COUVERTURE_DES_CRITERES_PAS_COMPLETUDE"||
     !near(p.observed_gate_coverage_pct,100*6/11)||
     p.publication_authorized!==false)
    fail("POLL_COVERAGE_IS_NOT_AUTHORIZATION");
+ if(!obj(portfolio.civic_combined)||
+    portfolio.civic_combined.metric_kind!=="COUVERTURE_DES_CRITERES_PAS_COMPLETUDE"||
+    portfolio.civic_combined.passed!==15||portfolio.civic_combined.total!==23||
+    !near(portfolio.civic_combined.observed_gate_coverage_pct,100*15/23)||
+    portfolio.civic_combined.certified!==false)
+   fail("CIVIC_TOOLS_TOTAL_IS_NOT_COMPLETION");
  if(sinjira.schema!=="sinjira-programme-readiness/v1"||
     sinjira.scope!=="SINJIRA_ONLY_EXCLUDES_PROJET_NOVA"||
     sinjira.reference_date!==portfolio.sources.sinjira?.as_of||
@@ -127,7 +151,9 @@ export function verifierPortefeuille(portfolio,nova,civic,sinjira,planText){
   reference_local_date:"2026-11-08",
   nova_programme_score:47,nova_points_missing:53,
   nova_sinjira_percentage:null,
-  compass_gates:{passed:compassPassed,total:12,coverage_only_pct:Math.round(10000*5/12)/100},
+  compass_gates:{passed:compassPassed,total:12,coverage_only_pct:Math.round(10000*9/12)/100},
+  compass_historical_2026_11_07:{passed:5,total:12},
+  civic_tools_combined:{passed:15,total:23,coverage_only_pct:Math.round(10000*15/23)/100},
   poll_gates:{passed:pollPassed,total:11,coverage_only_pct:Math.round(10000*6/11)/100},
   sinjira_product_maturity_estimate:weighted,
   sinjira_uncertainty_percentage_points:10,
@@ -142,18 +168,19 @@ export function verifierPortefeuille(portfolio,nova,civic,sinjira,planText){
 }
 
 export async function loadPortfolioSources(root=new URL("../",import.meta.url)){
- const [portfolio,nova,planText,civic,sinjira]=await Promise.all([
+ const [portfolio,nova,planText,civic,historicalCivic,sinjira]=await Promise.all([
   readFile(new URL("docs/portefeuille/etat-quatre-chantiers-2026-11-08.json",root),"utf8").then(JSON.parse),
   readFile(new URL(paths[0],root),"utf8").then(JSON.parse),
   readFile(new URL(paths[1],root),"utf8"),
   readFile(new URL(paths[2],root),"utf8").then(JSON.parse),
-  readFile(new URL(paths[3],root),"utf8").then(JSON.parse)
+  readFile(new URL(paths[3],root),"utf8").then(JSON.parse),
+  readFile(new URL(paths[4],root),"utf8").then(JSON.parse)
  ]);
- return {portfolio,nova,planText,civic,sinjira};
+ return {portfolio,nova,planText,civic,sinjira,historicalCivic};
 }
 if(process.argv[1]&&new URL("file://"+process.argv[1]).pathname===new URL(import.meta.url).pathname){
- loadPortfolioSources().then(({portfolio,nova,civic,sinjira,planText})=>{
-  const result=verifierPortefeuille(portfolio,nova,civic,sinjira,planText);
+ loadPortfolioSources().then(({portfolio,nova,civic,sinjira,planText,historicalCivic})=>{
+  const result=verifierPortefeuille(portfolio,nova,civic,sinjira,planText,historicalCivic);
   process.stdout.write(JSON.stringify(result,null,2)+"\n");
   if(!result.ok)process.exitCode=1;
  }).catch(e=>{process.stderr.write(String(e)+"\n");process.exitCode=1;});
