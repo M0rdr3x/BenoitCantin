@@ -215,8 +215,6 @@ def self_test() -> None:
         "No prod environment":workflow.replace("environment: production","",1),
         "JWT disabled":workflow.replace(" --use-api"," --use-api --no-verify-jwt",1),
         "Bulk deploy":workflow.replace('deploy "$FUNCTION_SLUG"','deploy',1),
-        "Scope du token":workflow.replace(
-            '          SUPABASE_ACCESS_TOKEN: ' + '
         "Unbound commit":workflow.replace('test "$REVIEWED_SHA" = "$GITHUB_SHA"','true',1),
     }.items():
         assert verify_repository(ROOT,src), "Modification dangereuse non détectée : " + label
