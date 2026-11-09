@@ -16,7 +16,7 @@ FUNCTIONS = ROOT / "supabase/functions"
 EXTENSIONS = frozenset({".ts", ".tsx", ".js", ".mjs", ".mts"})
 
 LOG = r"\bconsole\.(?:error|warn|log|info|debug)\s*\("
-RAW_NAMES = r"(?:error|err|exception|e|req|request)"
+RAW_NAMES = r"(?:error|err|exception|e|req|request|res|response|user|session|token|jwt|payload|body)"
 PATTERNS = {
     "raw_exception_argument": re.compile(
         LOG + r"(?:[^;\n]*?,\s*)?" + RAW_NAMES
@@ -91,12 +91,15 @@ def self_test() -> None:
         "pile": "console.error('[SINJIRA]', { stack: exception.stack });",
         "interpolation": "console.warn(\`Détail \${error.message}\`);",
         "corps brut": "console.log('[SINJIRA]', await response.text());",
+        "réponse brute": "console.warn('[SINJIRA]', response);",
+        "profil utilisateur": "console.error('[SINJIRA]', user);",
+        "jeton de session": "console.log('[SINJIRA]', token);",
     }
     for name, mutant in mutants.items():
         findings = scan(mutant)
         if not findings:
             raise AssertionError("Fuite simulée acceptée : " + name)
-    print("OK : codes fixes autorisés, huit journaux sensibles simulés refusés.")
+    print("OK : codes fixes autorisés, onze journaux sensibles simulés refusés.")
 
 
 def main() -> int:
