@@ -23,11 +23,11 @@ test("deux outils : matrice complète et audit Nova distinct",()=>{
  assert.equal(d.decision.both_tools_100_percent,false);
  assert.equal(d.status,"NON_HOMOLOGUE");
 });
-test("boussole : sept portes vérifiées sur douze dans la matrice du 8 novembre",()=>{
+test("boussole : neuf portes vérifiées sur douze dans la matrice du 8 novembre",()=>{
  assert.equal(d.compass.questions,64);
  assert.equal(d.compass.dimensions,16);
  assert.equal(d.compass.gates.length,12);
- assert.equal(passed(d.compass),7);
+ assert.equal(passed(d.compass),9);
  validate(d.compass);
 });
 test("sondage : six portes contrôlées sur onze",()=>{
@@ -45,7 +45,7 @@ test("vote en production non simulé, ni ouvert artificiellement",()=>{
 });
 test("aucune certification de déploiement ou d'audit externe non fondée",()=>{
  assert.equal(d.cross_cutting.latest_github_actions_pass_verified,false);
- assert.equal(d.cross_cutting.latest_public_scripts_deployed_verified,false);
+ assert.equal(d.cross_cutting.latest_public_scripts_deployed_verified,true);
  assert.equal(d.cross_cutting.independent_security_audit_completed,false);
  assert.equal(d.decision.deployments_verified,false);
 });
@@ -88,17 +88,17 @@ test("audit de lecture seule Supabase : version et preuves, sans ouverture du vo
  assert.match(text,/Aucun vote/);
 });
 
-test("le parcours E2E local de 64 questions est prouvé sur trois moteurs, le live ne l’est pas",()=>{
+test("le parcours local multi-moteurs et le parcours navigateur public sont distingués",()=>{
  assert.equal(d.cross_cutting.score_parity_test_cases,260);
- assert.equal(d.cross_cutting.last_browser_all_skip_questions_verified,28);
- assert.equal(d.cross_cutting.last_browser_full_64_completed,false);
+ assert.equal(d.cross_cutting.last_browser_all_skip_questions_verified,64);
+ assert.equal(d.cross_cutting.last_browser_full_64_completed,true);
  assert.equal(d.cross_cutting.ci_local_compass_full_64_verified,true);
  assert.deepEqual(d.cross_cutting.ci_local_compass_full_64_browsers,["chromium","firefox","webkit"]);
  assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_FULL_64_RESULT").status,"PASSED");
  assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_FULL_64_RESULT").scope,"browser_e2e_local_pr_881_seulement_non_live");
  assert.match(d.cross_cutting.ci_local_compass_full_64_workflow_url,/actions\/runs\/42531076014$/);
  assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_SCORE_PARITY").status,"PASSED");
- assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_PARTIAL_PROFILE_RELEASE").status,"PENDING");
+ assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_PARTIAL_PROFILE_RELEASE").status,"PASSED");
 });
 test("pondération, saut, révision et partage validés seulement en E2E local des trois moteurs",()=>{
  const gate=d.compass.gates.find(x=>x.id==="COMPASS_WEIGHT_SKIP_RESET");
@@ -109,13 +109,42 @@ test("pondération, saut, révision et partage validés seulement en E2E local d
  assert.deepEqual(d.cross_cutting.ci_local_weight_skip_share_reset_browsers,["chromium","firefox","webkit"]);
  assert.equal(d.cross_cutting.ci_local_weight_skip_share_reset_workflow_urls.length,2);
  assert.deepEqual(d.cross_cutting.ci_local_weight_skip_share_reset_release_prs,[886,889]);
- assert.equal(d.summary.compass.passed,7);
- assert.equal(d.summary.compass.percent,58.3);
- assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_PARTIAL_PROFILE_RELEASE").status,"PENDING");
+ assert.equal(d.summary.compass.passed,9);
+ assert.equal(d.summary.compass.percent,75);
+ assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_PARTIAL_PROFILE_RELEASE").status,"PASSED");
  assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_CROSS_BROWSER").status,"PENDING");
- assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_DEPLOYMENT_RELEASE").status,"PENDING");
+ assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_DEPLOYMENT_RELEASE").status,"PASSED");
  assert.equal(d.decision.deployments_verified,false);
  assert.equal(d.poll.published_in_source,false);
+ assert.equal(d.decision.opening_poll_approved,false);
+});
+
+test("preuve de publication exacte et parcours externe sans vote ni certification indépendante",async()=>{
+ const live=d.cross_cutting.compass_live_readonly_review;
+ assert.equal(live.audit_date,"2026-11-08");
+ assert.equal(live.deployed_script_version,"3.4.26");
+ assert.equal(live.exact_js_files_compared_to_github,5);
+ assert.equal(live.exact_js_files_match,true);
+ assert.equal(live.public_html_version_and_progress_verified,true);
+ assert.equal(live.live_partial_profile_two_questions_verified,true);
+ assert.equal(live.live_weighted_score_recalculation_verified,true);
+ assert.equal(live.live_reset_verified,true);
+ assert.equal(live.full_64_skip_journey_completed,true);
+ assert.equal(live.outbound_requests_during_interaction,0);
+ assert.equal(live.production_votes_sent,0);
+ assert.match(live.ci_reference,/42538803964$/);
+ assert.equal(d.compass.gates.find(g=>g.id==="COMPASS_PARTIAL_PROFILE_RELEASE").scope,"external_browser_live_desktop_and_full_64_synthetic_not_mobile");
+ assert.equal(d.compass.gates.find(g=>g.id==="COMPASS_DEPLOYMENT_RELEASE").scope,"live_http_exact_5_scripts_and_ci_success_browser_test");
+ assert.equal(d.cross_cutting.latest_public_scripts_deployed_verified,true);
+ const evidence=await readFile(new URL("../../../docs/nova-sondages/verification-live-boussole-2026-11-08.md",import.meta.url),"utf8");
+ assert.match(evidence,/384 458 caractères/);
+ assert.match(evidence,/64 réponses « Sans opinion/);
+ assert.match(evidence,/aucune opinion n'a été soumise|aucune opinion n’a été soumise/i);
+ for(const id of ["COMPASS_CROSS_BROWSER","COMPASS_ACCESSIBILITY","COMPASS_DOCUMENTARY_VALIDATION"]){
+   assert.equal(d.compass.gates.find(g=>g.id===id).status,"PENDING");
+ }
+ assert.equal(d.poll.published_in_source,false);
+ assert.equal(d.decision.deployments_verified,false);
  assert.equal(d.decision.opening_poll_approved,false);
 });
 
@@ -135,7 +164,7 @@ test("les taux publics de réception dérivent exactement de la matrice versionn
  const section=html.slice(start,end);
  const numbers=[
   {object:d.poll,denominator:11,expected:6,label:"sondage",name:"Critères de réception du sondage"},
-  {object:d.compass,denominator:12,expected:7,label:"boussole",name:"Critères de réception de la boussole"}
+  {object:d.compass,denominator:12,expected:9,label:"boussole",name:"Critères de réception de la boussole"}
  ];
  for(const item of numbers){
   const n=passed(item.object),total=item.object.gates.length;
@@ -185,7 +214,7 @@ test("les deux outils officiels rendent visible l'état daté sans ouvrir le son
  assert.ok(pollHtml.includes(pollPct));
  assert.ok(compassHtml.includes(compassPct));
  assert.ok(pollHtml.includes("6 critères sur 11 validés"));
- assert.ok(compassHtml.includes("7 critères sur 12 validés"));
+ assert.ok(compassHtml.includes("9 critères sur 12 validés"));
  assert.ok(compassHtml.includes("assets/boussole-electorale.js?v=3.4.26"),"Cache de la boussole invalidé après correction");
  assert.ok(pollHtml.includes("la collecte reste fermée"));
  for(const html of [pollHtml,compassHtml]){
@@ -201,20 +230,20 @@ test("le registre de 7 novembre demeure historique, sans réécriture des preuve
  assert.equal(historical.compass.gates.find(x=>x.id==="COMPASS_FULL_64_RESULT").status,"PENDING");
  assert.equal(d.as_of,"2026-11-08");
  assert.equal(d.previous_audit,"projets/projet-nova/data/validation-sondage-boussole-2026-11-07.json");
- assert.equal(d.summary.compass.passed,7);
+ assert.equal(d.summary.compass.passed,9);
  assert.equal(d.summary.compass.total,12);
- assert.equal(d.summary.compass.percent,58.3);
+ assert.equal(d.summary.compass.percent,75);
  assert.equal(d.summary.poll.passed,6);
  assert.equal(d.summary.poll.percent,54.5);
 });
-test("l'E2E local ne valide pas l'ouverture du sondage ni le déploiement public",()=>{
- assert.equal(d.cross_cutting.latest_public_scripts_deployed_verified,false);
+test("la réception live de la boussole ne valide pas l'ouverture du sondage ni les autres audits",()=>{
+ assert.equal(d.cross_cutting.latest_public_scripts_deployed_verified,true);
  assert.equal(d.cross_cutting.independent_security_audit_completed,false);
  assert.equal(d.decision.deployments_verified,false);
  assert.equal(d.decision.opening_poll_approved,false);
  assert.equal(d.poll.published_in_source,false);
  assert.equal(d.compass.comparison_enabled,false);
  assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_CROSS_BROWSER").status,"PENDING");
- assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_PARTIAL_PROFILE_RELEASE").status,"PENDING");
+ assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_PARTIAL_PROFILE_RELEASE").status,"PASSED");
  assert.equal(d.compass.gates.find(x=>x.id==="COMPASS_ACCESSIBILITY").status,"PENDING");
 });
