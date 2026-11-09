@@ -151,12 +151,15 @@ try{
   enrollForm?.addEventListener('submit',async event=>{
     event.preventDefault();
     if(!pendingFactorId)return;
+    const submit=enrollForm.querySelector('[type="submit"]');
+    // Ne jamais soumettre deux challenges simultanés (touche Entrée, double clic,
+    // ou événement submit déclenché pendant une vérification en cours).
+    if(submit?.disabled)return;
     const code=String(new FormData(enrollForm).get('code')||'').replace(/\s+/g,'');
     if(!/^\d{6}$/.test(code)){
       setStatus(status,'Entrez le code à 6 chiffres de votre application d’authentification.','error');
       return;
     }
-    const submit=enrollForm.querySelector('[type="submit"]');
     if(submit)submit.disabled=true;
     // Une panne réseau peut REJETER la promesse, pas seulement retourner error.
     // Garder l'activation en attente et rendre le bouton réutilisable.
