@@ -43,7 +43,7 @@ test("vote en production non simulé, ni ouvert artificiellement",()=>{
  assert.equal(d.cross_cutting.production_ballots_sent_for_test,0);
  assert.equal(d.decision.opening_poll_approved,false);
 });
-test("aucune certification de déploiement ou d'audit externe non fondée",()=>{
+test("déploiement du moteur confirmé sans prétendre aux audits indépendants",()=>{
  assert.equal(d.cross_cutting.latest_github_actions_pass_verified,false);
  assert.equal(d.cross_cutting.latest_public_scripts_deployed_verified,true);
  assert.equal(d.cross_cutting.independent_security_audit_completed,false);
