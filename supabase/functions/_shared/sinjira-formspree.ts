@@ -155,7 +155,13 @@ async function sendFormspreeNoticeCore(
   const {error:stateError}=await service.from('sinjira_formspree_events')
     .update({delivery_status:accepted?'sent':'failed',sent_at:accepted?new Date().toISOString():null})
     .eq('id',receipt.id);
-  if(stateError)console.warn('[SINJIRA Formspree]','OUTBOX_STATUS_UPDATE_FAILED');
+  if(stateError){
+    // Formspree a peut-être accepté la requête, mais son statut ne peut pas être
+    // certifié dans le journal. Ne jamais annoncer une livraison prouvée,
+    // et ne pas rejouer automatiquement un POST possiblement accepté.
+    console.warn('[SINJIRA Formspree]','OUTBOX_STATUS_UPDATE_FAILED');
+    return {accepted:false,already:false,configured:true,reason:'OUTBOX_STATUS_UPDATE_FAILED'};
+  }
   return {accepted,already:false,configured:true,reason:accepted?undefined:'DELIVERY_FAILED'};
 }
 
