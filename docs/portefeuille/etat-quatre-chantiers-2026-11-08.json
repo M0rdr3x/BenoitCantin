@@ -14,12 +14,18 @@
       "as_of": "2026-11-03"
     },
     "civic": {
-      "path": "projets/projet-nova/data/validation-sondage-boussole-2026-11-07.json",
-      "as_of": "2026-11-07"
+      "path": "docs/nova-sondages/reception-sondage-boussole-2026-11-08.json",
+      "as_of": "2026-11-08"
     },
     "sinjira": {
       "path": "docs/sinjira/programme-readiness-2026-11-08.json",
       "as_of": "2026-11-08"
+    },
+    "civic_history": {
+      "path": "projets/projet-nova/data/validation-sondage-boussole-2026-11-07.json",
+      "as_of": "2026-11-07",
+      "compass_passed": 5,
+      "compass_total": 12
     }
   },
   "tracks": [
@@ -76,9 +82,9 @@
       "id": "CIVIC_COMPASS",
       "label": "Projet Nova — boussole électorale",
       "metric_kind": "COUVERTURE_DES_CRITERES_PAS_COMPLETUDE",
-      "passed": 5,
+      "passed": 9,
       "total": 12,
-      "observed_gate_coverage_pct": 41.6667,
+      "observed_gate_coverage_pct": 75,
       "certified": false,
       "completion_date": null,
       "planned_target_date": null,
@@ -86,11 +92,11 @@
       "target_is_guaranteed": false,
       "comparison_parties_approved": false,
       "blockers": [
-        "Parcours 64 questions et profil partiel à confirmer en production",
-        "Accessibilité, essais navigateurs et correspondance de release",
-        "Vérification documentaire des sources des partis"
+        "Audit WCAG indépendant, clavier, contraste et lecteurs d'écran non homologué",
+        "Compatibilité appareils réels, Firefox/Safari et cache en production non homologuée",
+        "Sources primaires des partis et impartialité : seconde relecture non terminée"
       ],
-      "next_acceptance": "Essais E2E et accessibilité, identité SHA publié, contrôle factuel contradictoire; ne pas activer de classement partisan sans validation."
+      "next_acceptance": "Contrôler indépendamment accessibilité, appareils et navigateurs réels, plus preuve documentaire des positions; conserver la comparaison partisane désactivée."
     },
     {
       "id": "CIVIC_POLL",
@@ -150,5 +156,12 @@
   },
   "completion_certified": false,
   "expected_decision": "NO_GO_POUR_ATTESTATION_DE_FIN",
-  "commentary": "Date de fin NOVA cible de travail fin 2027 et non certifiée; toute autre date reste inconnue faute de mesures crédibles des durées, de validations et d'approbations."
+  "commentary": "Nova 47/100; Nova–Sinjira sans pourcentage autonome; boussole 9/12 (75 %) au 8 novembre après 5/12 au 7; sondage 6/11 (54,5 %); SINJIRA 66,5 % maturité indicative. Ces mesures ne sont pas additives. Cible Nova fin 2027 seulement indicative.",
+  "civic_combined": {
+    "metric_kind": "COUVERTURE_DES_CRITERES_PAS_COMPLETUDE",
+    "passed": 15,
+    "total": 23,
+    "observed_gate_coverage_pct": 65.2174,
+    "certified": false
+  }
 }
