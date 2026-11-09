@@ -42,3 +42,21 @@ Le document ne valide **aucun des cinq critères**. Si le test local échoue, co
 - `.github/workflows/nova-poll-v7-sql-private-lab.yml`
 
 **Décision de lancement : NO-GO, en attente d'autorisation et d'avis indépendants.**
+
+## Extension V8 — Soumissions simultanées du même jeton et de jetons distincts
+
+**Hypothèse testée :** la contrainte unique `(poll_version,token_hash)` et les compteurs agrégés doivent produire le même nombre de bulletins comptabilisés, que les requêtes fictives arrivent en série ou presque simultanément. Ces essais se déroulent **uniquement sur le même PostgreSQL jetable local**, après V7 et une remise à zéro autorisée des seules lignes fictives.
+
+Le script `scripts/test_nova_poll_v8_concurrent_local.sh` refuse toute exécution si l'identité du serveur n'est pas exactement `nova_poll_v7_disposable` sur `127.0.0.1`. Il utilise `psql` et `SET ROLE service_role` **dans des connexions séparées**. Les jetons sont des valeurs hexadécimales artificielles produites par `printf`; aucune identité ni opinion réelle n'est collectée ou persistée. L'essai est volontairement une concurrence **best-effort dans la CI** et ne prétend pas simuler toute une charge nationale ou des latences d'Internet.
+
+| Essai | Garantie vérifiée sur la base jetable |
+| --- | --- |
+| Même jeton, **deux appels asynchrones** | Exactement **un** `accepted`, un `duplicate`, **un seul reçu**, huit compteurs à 1, **aucun lot public** avant dix participants |
+| **16 jetons différents**, seize connexions asynchrones | Les 16 soumissions terminent avec `accepted`, sans interblocage ni échec SQL, huit comptes agrégés valant 16 |
+| Instantané publié sous concurrence | Au moins dix bulletins avant publication, au plus seize; huit comptes publiés identiques au compteur `published_ballots` |
+| Isolation du banc | Garde serveur/base avant le `TRUNCATE` local, aucune connexion Supabase, aucun changement du schéma SQL original |
+| Résultat et autorisation | Le script indique explicitement `NOVA-V8-LAB-ONLY-NO_GO`. Une réussite CI reste une **preuve de laboratoire**, non une autorisation de vote |
+
+Des tests Python de contrat supplémentaires `tests/security/test_nova_poll_v8_concurrency_contract.py` et `bash -n` protègent le scénario, qui est lancé par la validation existante `.github/workflows/validate-nova-civic-poll.yml`.
+
+**Conditions restant à vérifier séparément :** concurrence avec des réponses différentes et simultanées, expiration du CAPTCHA, erreurs réseau, test d'intrusion avec secrets de test, résilience lors d'un crash à mi-transaction, confidentialité de plusieurs publications, purge des reçus, accessibilité mobile et lecteur d'écran et avis juridique sur les données d'opinions politiques. Aucune porte `POLL_PRIVATE_PREFLIGHT`, `POLL_CAPTCHA_ANTIREPLAY` ou `POLL_APPROVAL_GO_LIVE` ne doit changer d'état sans attestation distincte.
