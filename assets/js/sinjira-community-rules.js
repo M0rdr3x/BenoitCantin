@@ -1,4 +1,5 @@
 import {getSupabase,requireUser,RULES_VERSION,socialStatus,socialErrorStatus} from './sinjira-social-common.js?v=24.4.82';
+import {safeSocialDestination} from './sinjira-social-navigation-guard.mjs';
 
 const status=document.querySelector('[data-rules-status]');
 const button=document.querySelector('[data-accept-rules]');
@@ -50,7 +51,10 @@ installV2Rules();
         if(saveError)return fail(saveError);
         socialStatus(status,'Règles acceptées. Vous pouvez maintenant utiliser la Communauté et le Réseau personnage.','success');
         const next=new URLSearchParams(location.search).get('next');
-        setTimeout(()=>{location.href=next&&next.startsWith('/')?next:'/compte/communaute.html';},500);
+        const destination=safeSocialDestination(next,{
+          origin:location.origin,scopes:['/compte/','/projets/sinjira/']
+        })||'/compte/communaute.html';
+        setTimeout(()=>{location.href=destination;},500);
       }finally{
         if(button&&!button.textContent.includes('déjà'))button.disabled=false;
       }
