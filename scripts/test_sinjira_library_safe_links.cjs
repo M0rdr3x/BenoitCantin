@@ -44,7 +44,7 @@ function boot(file,override={}){
   });
   // Les imports ESM ne sont pas nécessaires pour vérifier la fonction réelle
   // et les interpolations du template client dans une VM isolée.
-  const withoutImport=source.replace(/^import [^\n]+\n/m,'');
+  const withoutImport=source.replace(/^import [^\n]+\n/gm,'');
   vm.runInContext(withoutImport,ctx,{filename:file,timeout:2000});
   return {ctx,source,containers,href:vm.runInContext('safeLibraryHref',ctx)};
 }
