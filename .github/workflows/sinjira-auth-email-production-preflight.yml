@@ -9,6 +9,8 @@ on:
       - 'scripts/test_sinjira_confirmation_manual_click.cjs'
       - 'scripts/test_sinjira_formspree_transport.cjs'
       - 'scripts/test_sinjira_confirmation_notice_server.cjs'
+      - 'scripts/test_sinjira_totp_verification_recovery.cjs'
+      - 'assets/js/v24-security.js'
       - 'supabase/functions/notify-account-confirmation/index.ts'
       - 'supabase/functions/_shared/sinjira-formspree.ts'
       - 'assets/js/sinjira-confirm-email.js'
@@ -21,6 +23,8 @@ on:
       - 'scripts/test_sinjira_confirmation_manual_click.cjs'
       - 'scripts/test_sinjira_formspree_transport.cjs'
       - 'scripts/test_sinjira_confirmation_notice_server.cjs'
+      - 'scripts/test_sinjira_totp_verification_recovery.cjs'
+      - 'assets/js/v24-security.js'
       - 'supabase/functions/notify-account-confirmation/index.ts'
       - 'supabase/functions/_shared/sinjira-formspree.ts'
       - 'assets/js/sinjira-confirm-email.js'
@@ -73,6 +77,10 @@ jobs:
         run: |
           node --check scripts/test_sinjira_confirmation_notice_server.cjs
           node scripts/test_sinjira_confirmation_notice_server.cjs
+      - name: Vérifier les erreurs de vérification TOTP sans bloquer le bouton
+        run: |
+          node --check scripts/test_sinjira_totp_verification_recovery.cjs
+          node scripts/test_sinjira_totp_verification_recovery.cjs
 
   production-inspection:
     name: Vérification réelle Auth, sans modification
