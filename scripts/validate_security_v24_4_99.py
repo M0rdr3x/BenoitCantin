@@ -52,7 +52,17 @@ def main():
         "signOut({scope:'global'})",
         's.auth.getUser()',
     ],'client récupération')
-    forbid(recovery,['auth.getSession()'],'récupération serveur-vérifiée')
+    forbid(recovery,['auth.getSession()', 'randomDeviceKey()', 'getRandomValues?.(', "console.warn('[SINJIRA secure recovery]',error)"],'récupération serveur-vérifiée')
+    require(recovery,[
+        'function validDeviceKey(value)',
+        "for(const storageName of ['localStorage','sessionStorage'])",
+        'if(validDeviceKey(value))return value;',
+        'return null;',
+        'cleanupOk=!cleanupError&&data?.ok===true;',
+        "signOut({scope:'global'})",
+        "signOut({scope:'local'})",
+        "if(!globalSignoutOk)",
+    ],'récupération sans identité prévisible et déconnexion vérifiée')
 
     security=read('assets/js/sinjira-security-v24-4-99.js')
     require(security,[
@@ -66,7 +76,7 @@ def main():
     forbid(security,['navigator.credentials.create','navigator.credentials.get'],'passkeys avant domaine final')
 
     reset=read('compte/reinitialiser-mot-de-passe.html')
-    require(reset,['sinjira-recovery-v24-4-99.js?v=24.4.99','second facteur'],'page récupération')
+    require(reset,['sinjira-recovery-v24-4-99.js?v=24.4.99.1','second facteur'],'page récupération')
     center=read('compte/securite.html')
     require(center,['sinjira-security-v24-4-99.js?v=24.4.99','Déclarer perdu','aucun SMS, aucun numéro de téléphone et aucun fournisseur payant n’est requis'],'page Ma sécurité')
 
