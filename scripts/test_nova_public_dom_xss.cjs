@@ -166,7 +166,7 @@ async function render({documents=[],finance=[],meetings=[],updates=[],source=scr
   assert.ok(!rootLegacy.elements.docs.innerHTML.includes('href="documents/../secret.pdf"'));
   assert.ok(rootLegacy.elements.docs.innerHTML.includes('Document non approuvé'));
   const rootSafe=vm.runInContext("NOVA_LEGACY_ROOT_DOM",rootLegacy.context);
-  assert.equal(rootSafe.escape("<&\\"'"),"&lt;&amp;&quot;&#39;");
+  assert.equal(rootSafe.escape(String.fromCharCode(60,38,34,39)),"&lt;&amp;&quot;&#39;");
   for(const bad of ["javascript:alert(1)","documents/../secret.pdf","/private.pdf",
     "documents/malicious.svg","documents/evil.pdf?download=1"]){
     assert.equal(rootSafe.pdfHref(bad),"","root: lien PDF non sûr accepté "+bad);
