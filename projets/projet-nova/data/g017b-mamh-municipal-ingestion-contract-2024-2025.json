@@ -195,5 +195,31 @@
     "crosscheck_completed": false,
     "reason_not_processed": "RUNTIME_DNS_FAILURE_TO_MAMH_DIRECT_SOURCE_AND_UNSUPPORTED_CSV_TEXT_BROWSER",
     "next_action": "Acquérir les octets du CSV, figer SHA-256/date, comparer les agrégats au sous-ensemble des municipalités locales du rapport brut 2024 après contrôle des postes et des organismes absents."
+  },
+  "provenance_and_aggregation_gate_2026_11_09": {
+    "phase": "G0.17b",
+    "reviewed_at": "2026-11-09",
+    "source": "Catalogue MAMH et contrôle logiciel local; aucun téléchargement CSV authentifié",
+    "source_catalog_url": "https://www.donneesquebec.ca/recherche/dataset/rapport-financier-des-organismes-municipaux-et-autres-documents",
+    "official_files_are_updated_regularly": true,
+    "catalog_metadata_is_not_verified_csv_bytes": true,
+    "three_sha256_digests_prove_integrity_not_origin": true,
+    "observed_sha256_for_real_2024_csv": null,
+    "observed_sha256_for_real_2025_csv": null,
+    "independent_matching_of_2024_publisher_digest": false,
+    "independent_matching_of_2025_publisher_digest": false,
+    "independent_municipality_population_completeness_review": false,
+    "province_to_municipality_transfer_elimination_verified": false,
+    "independent_financial_audit_signed": false,
+    "technical_candidate_aggregation_is_not_public_total": true,
+    "official_province_wide_aggregation_allowed": false,
+    "applied_code_paths": [
+      "assets/g017b-mamh-csv-import-core.mjs",
+      "scripts/g017b-mamh-ingest.mjs",
+      "tests/g017b-mamh-csv-import.test.mjs",
+      "tests/g017b-mamh-cli-provenance.test.mjs"
+    ],
+    "policy_score_authorized_increment": 0,
+    "analysis_note": "Deux fichiers CSV inventés et marqués par l'appelant comme officiels ne doivent jamais générer une totalisation provinciale publiable. Aucune preuve d'origine indépendante ni de transferts internes annulés n'existe ici."
   }
 }
