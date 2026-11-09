@@ -12,7 +12,7 @@ class V8ConcurrencyNoLivePoll(unittest.TestCase):
         self.assertIn('DB="nova_poll_v7_disposable"',SCRIPT)
         self.assertIn('HOST="127.0.0.1"',SCRIPT)
         self.assertIn('actual="$(db -c',SCRIPT)
-        self.assertIn('if [[ "$actual" != "nova_poll_v7_disposable:127.0.0.1" ]]',SCRIPT)
+        self.assertIn('if [[ "$actual" != "nova_poll_v7_disposable" || "$HOST" != "127.0.0.1" ]]',SCRIPT)
         self.assertLess(SCRIPT.index('actual="$(db -c'),SCRIPT.index('reset_fixture\n'))
     def test_no_network_remote_secrets_or_real_voters(self):
         for word in ("supabase.co","https://","curl ","wget ","PGPASSWORD",
