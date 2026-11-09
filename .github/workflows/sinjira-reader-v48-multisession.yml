@@ -1,0 +1,66 @@
+name: SINJIRA — liseuse V48 tests RLS multi-connexion isolés
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+    paths:
+      - 'tests/security/sql/setup_sinjira_reader_v48.sql'
+      - 'tests/security/sql/test_sinjira_reader_v48_client_a.sql'
+      - 'tests/security/sql/test_sinjira_reader_v48_client_b.sql'
+      - 'tests/security/sql/test_sinjira_reader_v48_client_a_return.sql'
+      - 'tests/security/test_sinjira_reader_v48_static.py'
+      - 'supabase/migrations/20261107185500_sinjira_reader_progress_spot_v32.sql'
+      - 'docs/SINJIRA_READER_V48_MULTISESSION_TESTS.md'
+      - '.github/workflows/sinjira-reader-v48-multisession.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tests/security/sql/setup_sinjira_reader_v48.sql'
+      - 'tests/security/sql/test_sinjira_reader_v48_client_a.sql'
+      - 'tests/security/sql/test_sinjira_reader_v48_client_b.sql'
+      - 'tests/security/sql/test_sinjira_reader_v48_client_a_return.sql'
+      - 'tests/security/test_sinjira_reader_v48_static.py'
+      - 'supabase/migrations/20261107185500_sinjira_reader_progress_spot_v32.sql'
+      - 'docs/SINJIRA_READER_V48_MULTISESSION_TESTS.md'
+      - '.github/workflows/sinjira-reader-v48-multisession.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sinjira-reader-v48-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify_reader_across_fake_sessions:
+    name: Tester la progression A/B/A sur quatre connexions SQL sans secrets
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_DB: sinjira_reader_v48_test_only
+          # Confiance confinée au conteneur local éphémère et au runner.
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - '127.0.0.1:5432:5432'
+        options: >-
+          --health-cmd=pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    steps:
+      - name: Récupérer les sources sans conserver les identifiants GitHub
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Vérifier les scénarios fictifs et la migration V32 de référence
+        run: python3 -m unittest discover -s tests/security -p test_sinjira_reader_v48_static.py -v
+      - name: Exécuter les quatre sessions PostgreSQL locales indépendantes
+        env:
+          PGCONNECT_TIMEOUT: '10'
+        run: |
+          psql --version
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v48_test_only -v ON_ERROR_STOP=1 -f tests/security/sql/setup_sinjira_reader_v48.sql
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v48_test_only -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v48_client_a.sql
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v48_test_only -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v48_client_b.sql
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v48_test_only -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v48_client_a_return.sql
