@@ -25,6 +25,27 @@ def assert_focus(page, selector, message):
     assert active, message
 
 
+def assert_focus_in_viewport(page, label):
+    """Détecte un focus hors écran; ne détecte pas tous les recouvrements CSS."""
+    measure = page.evaluate(
+        """() => {
+          const el = document.activeElement;
+          if (!el || !el.isConnected) return {in_viewport:false, reason:"no_active_element"};
+          const r = el.getBoundingClientRect();
+          const st = getComputedStyle(el);
+          return {
+            in_viewport: r.width > 0 && r.height > 0 &&
+              r.right > 0 && r.bottom > 0 &&
+              r.left < innerWidth && r.top < innerHeight &&
+              st.visibility !== "hidden" && st.display !== "none",
+            x:r.x,y:r.y,width:r.width,height:r.height,
+            viewport_width:innerWidth,viewport_height:innerHeight
+          };
+        }"""
+    )
+    assert measure["in_viewport"], label + ": focus hors écran / invisible: " + repr(measure)
+
+
 def focused_outline(page):
     return page.evaluate(
         """() => {
@@ -69,6 +90,7 @@ def run_view(browser, width, height):
     assert page.locator("#compass-stepper").is_visible()
     assert page.locator("#compass-question-stage fieldset").get_attribute("data-question-id") == "q01"
     assert_focus(page, "[data-compass-question-focus]", "Focus question Q01 manquant")
+    assert_focus_in_viewport(page, "Question Q01")
     assert page.locator("#compass-progress-track").get_attribute("aria-valuemax") == "64"
     assert page.locator("#compass-progress-track").get_attribute("aria-valuenow") == "1"
 
@@ -84,6 +106,7 @@ def run_view(browser, width, height):
 
     page.keyboard.press("Tab")
     assert_focus(page, "#compass-question-stage [data-importance]", "Select importance inaccessible")
+    assert_focus_in_viewport(page, "Sélecteur importance")
     outline = focused_outline(page)
     assert outline["style"] != "none" and outline["width"] >= 3, (
         "Repère de focus sur l'importance absent: " + repr(outline)
@@ -94,11 +117,13 @@ def run_view(browser, width, height):
     # À Q01, le bouton Précédent est désactivé et doit être ignoré par Tab.
     page.keyboard.press("Tab")
     assert_focus(page, "#compass-next", "Suivant non accessible au clavier à Q01")
+    assert_focus_in_viewport(page, "Suivant Q01")
     outline = focused_outline(page)
     assert outline["style"] != "none" and outline["width"] >= 3, "Suivant sans focus visible"
     page.keyboard.press("Enter")
     assert page.locator("#compass-question-stage fieldset").get_attribute("data-question-id") == "q02"
     assert_focus(page, "[data-compass-question-focus]", "Focus question Q02 manquant")
+    assert_focus_in_viewport(page, "Question Q02")
     assert page.locator("#compass-progress-track").get_attribute("aria-valuenow") == "2"
 
     page.keyboard.press("Tab")
@@ -107,12 +132,15 @@ def run_view(browser, width, height):
     page.keyboard.press("Tab")  # importance
     page.keyboard.press("Tab")  # précédent
     assert_focus(page, "#compass-prev", "Précédent inaccessible à Q02")
+    assert_focus_in_viewport(page, "Précédent Q02")
     page.keyboard.press("Tab")  # suivant
     page.keyboard.press("Tab")  # profil partiel
     assert_focus(page, "#compass-preview", "Profil partiel inaccessible au clavier")
+    assert_focus_in_viewport(page, "Profil partiel")
     page.keyboard.press("Enter")
     assert not page.locator("#compass-results").is_hidden(), "Profil non affiché"
     assert_focus(page, "#compass-results-title", "Le titre des résultats ne reçoit pas le focus")
+    assert_focus_in_viewport(page, "Titre du résultat")
     outline = focused_outline(page)
     assert outline["style"] != "none" and outline["width"] >= 3, "Résultats sans focus visible"
     assert page.locator("#compass-results-grid .compass-result-card").count() == 16
@@ -123,6 +151,7 @@ def run_view(browser, width, height):
     assert page.locator("#compass-results").is_hidden()
     assert page.locator("#compass-start-panel").is_visible()
     assert_focus(page, "#compass-start", "Recommencer ne rend pas le focus au départ")
+    assert_focus_in_viewport(page, "Retour au départ")
     assert page.locator("#compass-stepper").is_hidden()
     assert page.locator("#compass-start").is_enabled()
     assert page.evaluate(
@@ -134,6 +163,7 @@ def run_view(browser, width, height):
         "browser": BROWSER_NAME, "viewport": width, "keyboard_focus": "passed",
         "questions_checked": 2, "result_cards": 16,
         "political_network_writes": len(forbidden_writes),
+        "geometric_viewport_focus_checks": 8,
         "manual_wcag_certified": False,
     }, ensure_ascii=False))
     context.close()
