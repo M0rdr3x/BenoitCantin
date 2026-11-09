@@ -50,6 +50,9 @@ def verify_repository(root: Path, workflow: str) -> list[str]:
         "needs: preflight", "cancel-in-progress: false",
         "test \"$GITHUB_REF\" = \"refs/heads/main\"",
         "DEPLOY-SINJIRA-EDGE-$FUNCTION_SLUG",
+        'test "$REVIEWED_SHA" = "$GITHUB_SHA"',
+        '[[ "$REVIEWED_SHA" =~ ^[0-9a-f]{40}$ ]]',
+        "source_commit:",
         "EXPECTED_VERSION=2",
         "python3 scripts/validate_targeted_edge_promotion_security.py --self-test",
         "python3 scripts/validate_targeted_edge_promotion_security.py --verify-repo",
@@ -185,6 +188,7 @@ def self_test() -> None:
         "No prod environment":workflow.replace("environment: production","",1),
         "JWT disabled":workflow.replace(" --use-api"," --use-api --no-verify-jwt",1),
         "Bulk deploy":workflow.replace('deploy "$FUNCTION_SLUG"','deploy',1),
+        "Unbound commit":workflow.replace('test "$REVIEWED_SHA" = "$GITHUB_SHA"','true',1),
     }.items():
         assert verify_repository(ROOT,src), "Modification dangereuse non détectée : " + label
     print("OK sécurité: JWT, limites, rôles, confirmation et dérives de release testés.")
