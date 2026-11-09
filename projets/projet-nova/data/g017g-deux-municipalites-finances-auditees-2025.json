@@ -61,7 +61,8 @@
       "cash_financing": 16323277,
       "cash_change": 1450176,
       "cash_end": 1999351,
-      "net_debt": 10526722
+      "net_debt": 10526722,
+      "year": 2025
     },
     {
       "code": "94068",
@@ -132,7 +133,8 @@
       "capital_accrual": 110900628,
       "capital_cash_acquisitions": 108303207,
       "revenues_2024_restated": 536339341,
-      "expenses_2024_restated": 500756152
+      "expenses_2024_restated": 500756152,
+      "year": 2025
     }
   ],
   "composition": {
