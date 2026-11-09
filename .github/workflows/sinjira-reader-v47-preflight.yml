@@ -1,0 +1,41 @@
+name: SINJIRA — liseuse V47 prévol V32 lecture seule
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+    paths:
+      - 'scripts/audits/sinjira_reader_v47_preflight_readonly.sql'
+      - 'scripts/validate_sinjira_reader_v47_preflight.py'
+      - 'tests/security/test_sinjira_reader_v47_preflight.py'
+      - 'supabase/migrations/20261107185500_sinjira_reader_progress_spot_v32.sql'
+      - 'docs/SINJIRA_READER_V47_PRODUCTION_PREFLIGHT.md'
+      - '.github/workflows/sinjira-reader-v47-preflight.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/audits/sinjira_reader_v47_preflight_readonly.sql'
+      - 'scripts/validate_sinjira_reader_v47_preflight.py'
+      - 'tests/security/test_sinjira_reader_v47_preflight.py'
+      - 'supabase/migrations/20261107185500_sinjira_reader_progress_spot_v32.sql'
+      - 'docs/SINJIRA_READER_V47_PRODUCTION_PREFLIGHT.md'
+      - '.github/workflows/sinjira-reader-v47-preflight.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sinjira-reader-v47-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  reader_v47_contract:
+    name: Refuser lecture privée, DDL et date de mise en service fictive
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Extraire les sources sans conserver de secrets
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Valider le prévol et la migration originale sans connexion à Supabase
+        run: |
+          python3 scripts/validate_sinjira_reader_v47_preflight.py
+          python3 -m unittest discover -s tests/security -p test_sinjira_reader_v47_preflight.py -v
