@@ -85,15 +85,18 @@ jobs:
         run: |
           set -euo pipefail
           curl --proto '=https' --tlsv1.2 --fail --silent --show-error             --max-time 30 --retry 2             --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN"             --header 'Accept: application/json'             --output "$RUNNER_TEMP/edge-inventory.json"             'https://api.supabase.com/v1/projects/gpvivleexywljowcqkru/functions'
-      - name: Télécharger les trente-deux sources sans exécuter aucun endpoint
+      - name: Télécharger 32 bundles séparés, y compris leurs dépendances partagées
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_EDGE_READONLY_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/edge-live"
-          cd "$RUNNER_TEMP/edge-live"
           for slug in admin-analytics admin-console admin-license-codes admin-literary admin-reader admin-reports admin-sinjira-v18 admin-social-v20 admin-users conscience-vault create-youth-account delete-player-account fracture-engine-gateway generate-sinjira-character get-document-url get-novel-file-url guardian-create-youth-v22 life-story-delivery life-story-export notify-account-confirmation nova-civic-poll personal-ai redeem-license-code revoke-my-contributions security-context send-game-report send-player-sheet sinjira-maintenance-upload-20261007 submit-character-questionnaire submit-fracture-endgame submit-game-contribution validate-phone-v22; do
+            # Un dossier par fonction conserve sa version de _shared/auth.ts ;
+            # télécharger en commun pourrait masquer une dépendance vulnérable.
+            mkdir -p "$RUNNER_TEMP/edge-live/$slug"
+            cd "$RUNNER_TEMP/edge-live/$slug"
             supabase functions download "$slug" --project-ref gpvivleexywljowcqkru
           done
       - name: Échouer si ACL JWT ou source déployée diverge
