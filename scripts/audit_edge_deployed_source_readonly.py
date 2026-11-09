@@ -154,7 +154,7 @@ def audit(local: Path, downloaded: Path, metadata: object) -> list[str]:
 
 def self_test() -> None:
     rows = [
-        {"slug": slug, "verify_jwt": slug in JWT_REQUIRED, "status": "ACTIVE", "version": 1}
+        {"slug": slug, "verify_jwt": slug in (JWT_REQUIRED | RETIRED_TOMBSTONES), "status": "ACTIVE", "version": 1}
         for slug in sorted(EXPECTED_FUNCTIONS)
     ]
     with tempfile.TemporaryDirectory() as tmp:
