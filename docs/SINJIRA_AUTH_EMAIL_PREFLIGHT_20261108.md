@@ -1,5 +1,76 @@
 # SINJIRA — Prévol Auth et courriels en lecture seule (8 novembre 2026)
 
+## État vérifié et procédure de clôture — 9 novembre 2026
+
+**Périmètre : correctif inscription / confirmation / notifications Formspree /
+Registre, et non l'intégralité du programme SINJIRA.**
+
+**Avancement : 84 % estimés, 16 points non certifiés.** Les deux fonctions
+Supabase actives en production sont `notify-account-confirmation` **v4**
+et `submit-character-questionnaire` **v17**, toutes deux avec
+`verify_jwt=true`. Les correctifs Formspree #918 et #920 ont été fusionnés
+et redéployés ; le journal `sinjira_formspree_events` n'a **aucun événement**,
+aucun facteur TOTP n'a le statut `verified` et aucun compte n'a le consentement
+facultatif `formspree_receipt_opt_in=true`. Les **0 avis** enregistrés ne
+prouvent donc pas à eux seuls une panne de transport. L'historique GitHub
+Actions accessible ne comporte **aucun déclenchement manuel**
+`workflow_dispatch` des prévols. Ce constat est une photographie du 9 novembre
+et doit être revérifié au moment du sign-off.
+
+### Ordre de travail pour atteindre réellement 100 %
+
+- [ ] **Jalon A — 3 points : paramètres SMTP privés et courriel Auth reçu.**
+  Depuis [GitHub Actions — prévol Auth](https://github.com/M0rdr3x/BenoitCantin/actions/workflows/sinjira-auth-email-production-preflight.yml),
+  sélectionner `Run workflow`, la branche `main`, entrer exactement
+  `PREFLIGHT-READ-ONLY`, puis approuver l'environnement `production` selon
+  les règles du dépôt. **Avant le lancement**, s'assurer que cet environnement
+  dispose du secret `SUPABASE_ACCESS_TOKEN` autorisé en lecture de la
+  configuration Auth. L'existence de ce secret n'a pas pu être certifiée avec
+  l'accès de lecture disponible. Aucun token ne doit figurer dans les rapports.
+  Exiger **13 contrôles PASS, 0 ÉCHEC** ; les avertissements sans secret/SMTP
+  sont attendus. Puis confirmer **dans une boîte de test contrôlée** qu'un
+  courriel Auth de confirmation a effectivement été reçu et qu'un clic
+  volontaire sur le bouton réussit. Le prévol seul **ne suffit pas**.
+
+- [ ] **Jalon B — 3 points : réception Formspree avec consentement.**
+  Vérifier depuis le tableau de bord privé des formulaires
+  `xzeeqynp` (confirmation de compte) et `mrppvrwa` (Registre) que le
+  Workflow est activé et que son destinataire vérifié est bien
+  `sinjiraofficiel@gmail.com`. Utiliser un compte de test volontairement
+  consentant ; confirmer son adresse via le courriel Auth, puis contrôler
+  **un** événement `sent` dans `sinjira_formspree_events` **et l'arrivée
+  réelle du message dans la boîte officielle**. Un HTTP 2xx ou une ligne
+  `sent` seuls n'attestent pas cette réception. Un autre compte de test,
+  **sans opt-in**, ne doit provoquer ni avis ni ligne dans le journal.
+  Ne jamais forcer un consentement pour obtenir un résultat vert.
+
+- [ ] **Jalon C — 10 points : parcours authentifié complet.** Avec les mêmes
+  comptes fictifs et des réponses de questionnaire fictives, vérifier
+  inscription → réception Auth → clic de confirmation → connexion → inscription
+  TOTP dans `/compte/securite.html` → **vérification réelle du facteur et
+  `currentLevel=aal2`** → Registre → sauvegarde observable dans
+  `character_submissions` → comportement idempotent et absence de doublon.
+  Ne pas désactiver AAL2, le JWT ni les contrôles de consentement. Prévoir une
+  suppression documentée des données de test selon les droits autorisés.
+
+- [ ] **Contrôle supplémentaire de publication.** Sur `main`, exécuter
+  [le prévol public en lecture seule](https://github.com/M0rdr3x/BenoitCantin/actions/workflows/sinjira-public-release-parity.yml)
+  avec `PUBLIC-GET-ONLY`. Les quatre scripts JS publics ont déjà été comparés
+  sans divergence à GitHub `main` le 9 novembre ; ce workflow permet de
+  recontrôler la version publiée après un déploiement. Il ne valide pas SMTP.
+
+**Décision de fin :** ne déclarer le correctif **100 % terminé** que si les
+jalons A, B et C ont des résultats datés et vérifiables, sans publier les
+adresses de test, les codes TOTP, les jetons, les réponses privées du Registre
+ou le contenu des courriels. Si un jalon échoue, relever uniquement le nom de
+son contrôle, son état PASS/ÉCHEC et un lien vers l'exécution protégée.
+Une date de fin ne peut pas être annoncée avant ces preuves.
+
+**Source de suivi :** [issue #850](https://github.com/M0rdr3x/BenoitCantin/issues/850).
+Les sections ci-dessous documentent l'évolution historique depuis le 8 novembre ;
+leurs références `v15` et `v2` ne sont pas les versions actuellement déployées.
+
+
 Objectif : réduire les 16 % restants du correctif SINJIRA en vérifiant la
 configuration Auth hébergée sans envoyer de message ni changer les réglages.
 
