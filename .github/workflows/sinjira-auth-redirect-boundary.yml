@@ -46,3 +46,5 @@ jobs:
         run: node scripts/test_sinjira_account_local_redirect.cjs
       - name: Vérifier le contrat de sécurité Auth existant
         run: python3 scripts/validate_auth.py
+      - name: Vérifier le contrat MFA et la nouvelle frontière canonique
+        run: python3 scripts/validate_mfa_v24_4_66.py
