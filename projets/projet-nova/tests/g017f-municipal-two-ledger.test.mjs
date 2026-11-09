@@ -71,7 +71,7 @@ test("Synthetic values cannot be negative",()=>assert.throws(()=>illustrateSepar
 test("Synthetic parameters must be CAD integers",()=>assert.throws(()=>illustrateSeparatedFundingLanes({...example,annual_payroll:2.5}),/CAD_NONNEGATIVE_INTEGERS_ONLY/));
 test("No simulation can be used as official appropriation",()=>assert.throws(()=>illustrateSeparatedFundingLanes({...example,mode:"OFFICIAL_QUEBEC"}),/SYNTHETIC_ONLY/));
 test("Reject false 48% score",()=>forbid(x=>x.score_after=48,"SCORE_AND_SCOPE"));
-test("Reject falsely unqualified auditor opinion",()=>forbid(x=>x.sources.opinion="CLEAN","AUDIT_SOURCE_PROVENANCE"));
+test("Reject falsely unqualified auditor opinion",()=>forbid(x=>x.sources.opinion="CLEAN","OFFICIAL_PROVENANCE"));
 test("Reject unproved capital transfer cash",()=>forbid(x=>x.revenues.capital_subsidy_cash_received_cad=19799872,"REVENUES_SPLIT"));
 test("Reject transfer from capital to normal payroll",()=>forbid(x=>x.revenues.capital_subsidy_cannot_be_assumed_for_regular_payroll=false,"REVENUES_SPLIT"));
 test("Reject false total operating revenues",()=>forbid(x=>x.revenues.operating_cad=25730544,"REVENUES_SPLIT"));
