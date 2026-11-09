@@ -52,6 +52,8 @@ test("CLI: deux fixtures fictives étiquetées comme MAMH ne deviennent pas un t
   assert.equal(result.status,0,result.stderr||result.stdout);
   const report=JSON.parse(await readFile(join(folder,names.output),"utf8"));
   assert.equal(report.actualMunicipalDataParsed,true);
+  // Des lignes techniquement parsées ne constituent PAS une couverture officielle.
+  assert.ok(report.municipalityCounts.every(x=>x.coverageReady===false));
   assert.equal(report.diagnostics.matchedMunicipalities,2);
   assert.equal(report.diagnostics.technicallyComparableCohortOnly,true);
   assert.equal(report.diagnostics.officialNationalAggregationPermitted,false);
