@@ -4,8 +4,8 @@ import re
 import tomllib
 
 RAW_LOG_PATTERNS = (
-    re.compile(r"console\\.(?:error|warn|log)\\s*\\(\\s*['\\\"]\\[submit-game-contribution\\]['\\\"]\\s*,\\s*(?:e|err|error)(?:\\s*\\??\\.\\s*(?:message|stack|details|hint))?\\s*\\)"),
-    re.compile(r"console\\.(?:error|warn|log)\\s*\\(\\s*['\\\"]\\[submit-game-contribution\\]['\\\"]\\s*,\\s*JSON\\.stringify\\s*\\(\\s*(?:e|err|error)\\s*\\)\\s*\\)"),
+    re.compile(r"""console\.(?:error|warn|log)\s*\(\s*['"]\[submit-game-contribution\]['"]\s*,\s*(?:e|err|error)(?:\s*\??\.\s*(?:message|stack|details|hint))?\s*\)"""),
+    re.compile(r"""console\.(?:error|warn|log)\s*\(\s*['"]\[submit-game-contribution\]['"]\s*,\s*JSON\.stringify\s*\(\s*(?:e|err|error)\s*\)\s*\)"""),
 )
 
 def sensitive_log_errors(source: str) -> list[str]:
