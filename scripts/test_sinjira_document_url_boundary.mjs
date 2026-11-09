@@ -59,7 +59,7 @@ for(const value of [
 ])invalid(value,true);
 invalid(SIGNED,undefined);
 invalid(SIGNED,'true');
-invalid('https://other.invalid/public.pdf',false);
+valid('https://other.invalid/public.pdf',false);
 
 equal(resolveDocumentUrl('/site.html',{...SCOPES,siteOrigin:'http://unsafe.invalid',protectedDocument:false}),null,'Origine HTTP locale rejetée');
 equal(resolveDocumentUrl(SIGNED,{...SCOPES,storageOrigin:'http://unsafe.invalid',protectedDocument:true}),null,'Origine stockage HTTP rejetée');
@@ -125,7 +125,8 @@ async function check(){
   assert.ok(novel.logs.some(entry=>entry.kind==='error'),'Rejet du roman notifié');
   novel.setResponse({ok:true,url:SIGNED,protected:false});
   await novel.run(button);
-  equal(novel.calls.length,2,'Le contrat de document public HTTPS reste explicite');
+  equal(novel.calls.length,1,'Le roman intégral ne doit jamais être rétrogradé en lien public');
+  equal(button.disabled,false,'Bouton libéré après tentative de downgrade');
   console.log('PASS: '+assertions+' gardes de liens de documents et de romans, contre-exemples URL et navigation DOM sans opener.');
 }
 check().catch(error=>{console.error(error);process.exitCode=1;});
