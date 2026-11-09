@@ -12,12 +12,12 @@
   "cross_cutting": {
     "source_files_verified_in_github": true,
     "latest_github_actions_pass_verified": false,
-    "latest_public_scripts_deployed_verified": false,
+    "latest_public_scripts_deployed_verified": true,
     "independent_security_audit_completed": false,
     "production_ballots_sent_for_test": 0,
     "party_comparison_enabled": false,
-    "last_browser_all_skip_questions_verified": 28,
-    "last_browser_full_64_completed": false,
+    "last_browser_all_skip_questions_verified": 64,
+    "last_browser_full_64_completed": true,
     "score_parity_test_cases": 260,
     "vote_post_live_tested": false,
     "supabase_readonly_review": {
@@ -35,7 +35,7 @@
       "scope": "supabase_read_only_no_http_post_no_independent_audit"
     },
     "external_run_28": "https://agent.tinyfish.ai/runs/d7369cac-c8ba-429f-9ec2-a6e37175e519",
-    "e2e_partial_profile_awaits_public_deployment": true,
+    "e2e_partial_profile_awaits_public_deployment": false,
     "ci_local_compass_full_64_verified": true,
     "ci_local_compass_full_64_browsers": [
       "chromium",
@@ -57,7 +57,24 @@
     "ci_local_weight_skip_share_reset_release_prs": [
       886,
       889
-    ]
+    ],
+    "compass_live_readonly_review": {
+      "audit_date": "2026-11-08",
+      "deployed_script_version": "3.4.26",
+      "public_html_version_and_progress_verified": true,
+      "exact_js_files_compared_to_github": 5,
+      "exact_js_files_match": true,
+      "external_browser_session": "01a1bdaf-4388-7774-8e0d-faa8c7621a9f",
+      "full_64_skip_journey_completed": true,
+      "live_partial_profile_two_questions_verified": true,
+      "live_weighted_score_recalculation_verified": true,
+      "live_reset_verified": true,
+      "outbound_requests_during_interaction": 0,
+      "production_votes_sent": 0,
+      "ci_reference": "https://github.com/M0rdr3x/BenoitCantin/actions/runs/42538803964",
+      "evidence": "docs/nova-sondages/verification-live-boussole-2026-11-08.md",
+      "scope": "one_external_desktop_browser_without_independent_wcag_or_mobile_safari_review"
+    }
   },
   "compass": {
     "url": "https://www.benoitcantin.com/projets/projet-nova/boussole-electorale.html",
@@ -103,10 +120,10 @@
       },
       {
         "id": "COMPASS_PARTIAL_PROFILE_RELEASE",
-        "status": "PENDING",
+        "status": "PASSED",
         "criteria": "Bouton de consultation de profil partiel fonctionnel en production, réinitialisation et absence de scores non calculables confirmés",
-        "evidence": "boussole-electorale.html et assets/boussole-electorale.js",
-        "scope": "browser_full_flow_and_deployed_release_required"
+        "evidence": "docs/nova-sondages/verification-live-boussole-2026-11-08.md; scripts publics identiques caractère par caractère au dépôt; navigateur live Q01-Q64 en lecture seule; GitHub Actions #42538803964",
+        "scope": "external_browser_live_desktop_and_full_64_synthetic_not_mobile"
       },
       {
         "id": "COMPASS_FULL_64_RESULT",
@@ -145,10 +162,10 @@
       },
       {
         "id": "COMPASS_DEPLOYMENT_RELEASE",
-        "status": "PENDING",
+        "status": "PASSED",
         "criteria": "Confirmer que les nouvelles révisions JS et le résultat des tests CI sont en production",
-        "evidence": "assets/boussole-electorale.js",
-        "scope": "release_verification"
+        "evidence": "docs/nova-sondages/verification-live-boussole-2026-11-08.md; scripts publics identiques caractère par caractère au dépôt; navigateur live Q01-Q64 en lecture seule; GitHub Actions #42538803964",
+        "scope": "live_http_exact_5_scripts_and_ci_success_browser_test"
       }
     ]
   },
@@ -256,10 +273,10 @@
       "percent": 54.5
     },
     "compass": {
-      "passed": 7,
+      "passed": 9,
       "total": 12,
-      "percent": 58.3
+      "percent": 75
     },
-    "limits": "Parcours de pondération, réponses passées, partage simulé et réinitialisation réussis dans Chromium, Firefox et WebKit en navigateur local (PR #886 et #889). Le dernier navigateur externe en production reste partiel (Q01–Q28) et le déploiement live, l'accessibilité indépendante, les sources partisanes et l'avis juridique ne sont pas certifiés; la collecte de votes n'est pas autorisée."
+    "limits": "Cinq fichiers JavaScript civiques vérifiés identiques entre GitHub et le domaine public; boussole Q01–Q64, profil partiel, pondération et réinitialisation réussis en navigateur externe sur le site live, sans vote. Trois contrôles boussole encore en attente : accessibilité indépendante, appareils réels et navigateurs en production, relecture documentaire. Cinq contrôles sondage toujours en attente, collecte fermée."
   }
 }
