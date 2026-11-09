@@ -1,0 +1,45 @@
+name: Projet Nova-Sinjira - preuves G0-G4 sans certification
+
+on:
+  pull_request:
+    paths:
+      - "projets/projet-nova/data/matrice-avancement-nova-sinjira-g0-g4-2026-11-08.json"
+      - "projets/projet-nova/data/registre-donnees-services-nova-sinjira.json"
+      - "projets/projet-nova/data/audit-completude-programme-nova-2026-11-05.json"
+      - "projets/projet-nova/assets/nova-sinjira-g0-g4-progress-core.mjs"
+      - "projets/projet-nova/tests/nova-sinjira-g0-g4-progress.test.mjs"
+      - "projets/projet-nova/official/working/plan-execution-nova-sinjira-v1.md"
+      - ".github/workflows/nova-sinjira-g0-g4-proofs.yml"
+  push:
+    paths:
+      - "projets/projet-nova/data/matrice-avancement-nova-sinjira-g0-g4-2026-11-08.json"
+      - "projets/projet-nova/data/registre-donnees-services-nova-sinjira.json"
+      - "projets/projet-nova/data/audit-completude-programme-nova-2026-11-05.json"
+      - "projets/projet-nova/assets/nova-sinjira-g0-g4-progress-core.mjs"
+      - "projets/projet-nova/tests/nova-sinjira-g0-g4-progress.test.mjs"
+      - "projets/projet-nova/official/working/plan-execution-nova-sinjira-v1.md"
+      - ".github/workflows/nova-sinjira-g0-g4-proofs.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nova-sinjira-proofs-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verification:
+    name: Réconcilier 14 dossiers et 70 portes sans modifier la production
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout du commit exact sans identifiants conservés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Installer Node 20 épinglé
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: "20"
+      - name: Vérifier la matrice et les cas adversariaux
+        run: node --test projets/projet-nova/tests/nova-sinjira-g0-g4-progress.test.mjs
