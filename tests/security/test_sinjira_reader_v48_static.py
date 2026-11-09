@@ -66,7 +66,7 @@ class ReaderV48IsolatedSecurityContract(unittest.TestCase):
         self.assertIn("GET DIAGNOSTICS affected=ROW_COUNT", self.client_b)
         self.assertIn("SET ROLE anon;", self.client_b)
         self.assertIn("IF n<>0 THEN RAISE EXCEPTION", self.client_b)
-        self.assertIn("scroll_ratio=0.5678", self.return_a)
+        self.assertIn("ratio<>0.5678", self.return_a)
         self.assertIn("scroll_ratio=1.0000", self.return_a)
 
     def test_no_real_identifiers_credentials_or_remote_connections(self):
@@ -80,7 +80,7 @@ class ReaderV48IsolatedSecurityContract(unittest.TestCase):
             with self.subTest(token=token):
                 self.assertNotIn(token.lower(), combined.lower())
         self.assertFalse(re.search(r"(?i)https?://", combined))
-        self.assertIn("Aucun", self.return_a.replace("aucun", "Aucun") if "aucun" in self.return_a else self.setup)
+        self.assertIn("JAMAIS PRODUCTION", self.setup)
 
     def test_all_commands_are_local_only(self):
         for source in (self.setup,self.client_a,self.client_b,self.return_a):
