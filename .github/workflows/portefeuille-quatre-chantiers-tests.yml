@@ -1,0 +1,47 @@
+name: Portefeuille Nova-Sinjira - quatre bilans sans auto-certification
+
+on:
+  pull_request:
+    paths:
+      - "docs/portefeuille/**"
+      - "docs/sinjira/programme-readiness-2026-11-08.json"
+      - "projets/projet-nova/data/audit-completude-programme-nova-2026-11-05.json"
+      - "projets/projet-nova/data/validation-sondage-boussole-2026-11-07.json"
+      - "projets/projet-nova/official/working/plan-execution-nova-sinjira-v1.md"
+      - "scripts/verifier_portefeuille_quatre_chantiers.mjs"
+      - "tests/portefeuille-quatre-chantiers.test.mjs"
+      - ".github/workflows/portefeuille-quatre-chantiers-tests.yml"
+  push:
+    paths:
+      - "docs/portefeuille/**"
+      - "docs/sinjira/programme-readiness-2026-11-08.json"
+      - "projets/projet-nova/data/audit-completude-programme-nova-2026-11-05.json"
+      - "projets/projet-nova/data/validation-sondage-boussole-2026-11-07.json"
+      - "projets/projet-nova/official/working/plan-execution-nova-sinjira-v1.md"
+      - "scripts/verifier_portefeuille_quatre_chantiers.mjs"
+      - "tests/portefeuille-quatre-chantiers.test.mjs"
+      - ".github/workflows/portefeuille-quatre-chantiers-tests.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: portefeuille-readiness-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit-read-only:
+    name: Comparer les quatre périmètres sans action de production
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Télécharger le code de ce commit exact
+        uses: actions/checkout@v4
+      - name: Installer Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Tester le registre et les cas adverses
+        run: node --test tests/portefeuille-quatre-chantiers.test.mjs
+      - name: Afficher le bilan non certifié
+        run: node scripts/verifier_portefeuille_quatre_chantiers.mjs
