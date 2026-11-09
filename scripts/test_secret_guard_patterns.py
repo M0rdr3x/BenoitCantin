@@ -40,7 +40,7 @@ class SecretGuardTests(unittest.TestCase):
             ('Google OAuth client secret', 'GOCSPX-' + ('a' * 28)),
             ('Resend API token', 're_' + ('a' * 36)),
             ('Slack bot or user token', 'xoxb-123-456-' + ('a' * 24)),
-            ('Private key block', '-----BEGIN ENCRYPTED PRIVATE KEY-----'),
+            ('Private key block', '-----BEGIN ENCRYPTED' + ' PRIVATE KEY-----'),
         )
         for label, synthetic in samples:
             with self.subTest(label=label):
