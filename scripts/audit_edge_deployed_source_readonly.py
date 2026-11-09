@@ -12,6 +12,7 @@ import json
 import re
 from pathlib import Path
 import tempfile
+import tomllib
 
 PROJECT_REF = "gpvivleexywljowcqkru"
 PUBLIC_NO_JWT = frozenset({
@@ -55,6 +56,7 @@ RETIRED_TOMBSTONES = frozenset({
 MONITORED_FUNCTIONS = PUBLIC_NO_JWT | JWT_REQUIRED
 EXPECTED_FUNCTIONS = MONITORED_FUNCTIONS | RETIRED_TOMBSTONES
 TOMBSTONES_PATH = Path("supabase/retired-edge-tombstones.json")
+REPO_ONLY_NOT_DEPLOYED = frozenset({"get-private-book-url"})
 LIMIT = 250_000
 METADATA_LIMIT = 500_000
 
@@ -155,6 +157,30 @@ def retired_snapshots(local: Path) -> dict[str, str]:
     return normalized
 
 
+def verify_repository_contract(local: Path) -> list[str]:
+    """Garantir que chaque source attendue existe et que les JWT source sont conformes."""
+    errors: list[str] = []
+    try:
+        settings = tomllib.loads(safe_text(local, Path("supabase/config.toml")))
+        funcs = settings.get("functions", {})
+        if not isinstance(funcs, dict):
+            return ["Configuration Edge absente"]
+        expected = MONITORED_FUNCTIONS | REPO_ONLY_NOT_DEPLOYED
+        if set(funcs) != expected:
+            errors.append("Liste des fonctions du dépôt changée sans revue")
+        for slug in sorted(expected):
+            cfg = funcs.get(slug, {})
+            should_verify = slug not in PUBLIC_NO_JWT
+            if not isinstance(cfg, dict) or cfg.get("verify_jwt") is not should_verify:
+                errors.append(slug + " : verify_jwt du dépôt affaibli ou absent")
+        for slug in sorted(MONITORED_FUNCTIONS):
+            safe_text(local, Path("supabase/functions") / slug / "index.ts")
+        retired_snapshots(local)
+    except (ValueError, TypeError, OSError, UnicodeError, tomllib.TOMLDecodeError) as exc:
+        errors.append("Contrat du dépôt incomplet ou illisible : " + str(exc))
+    return errors
+
+
 def audit(local: Path, downloaded: Path, metadata: object) -> list[str]:
     errors = validate_metadata(metadata)
     if errors:
@@ -207,6 +233,21 @@ def self_test() -> None:
             dst = remote / "supabase/functions" / slug / "index.ts"
             dst.parent.mkdir(parents=True, exist_ok=True)
             dst.write_text(retired_source, "utf-8")
+        config = repo / "supabase/config.toml"
+        config.parent.mkdir(parents=True, exist_ok=True)
+        config.write_text("".join(
+            "[functions." + slug + "]\nverify_jwt = "
+            + ("false" if slug in PUBLIC_NO_JWT else "true") + "\n"
+            for slug in sorted(MONITORED_FUNCTIONS | REPO_ONLY_NOT_DEPLOYED)
+        ), "utf-8")
+        assert verify_repository_contract(repo) == []
+        config.write_text(config.read_text("utf-8").replace(
+            "[functions.redeem-license-code]\nverify_jwt = true",
+            "[functions.redeem-license-code]\nverify_jwt = false"), "utf-8")
+        assert verify_repository_contract(repo), "Configuration locale JWT affaiblie acceptée"
+        config.write_text(config.read_text("utf-8").replace(
+            "[functions.redeem-license-code]\nverify_jwt = false",
+            "[functions.redeem-license-code]\nverify_jwt = true"), "utf-8")
         assert audit(repo, remote, rows) == []
         mutants: dict[str, object] = {
             "missing JWT flag": [{k: v for k, v in row.items() if k != "verify_jwt"}
@@ -265,6 +306,7 @@ def self_test() -> None:
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--self-test", action="store_true")
+    p.add_argument("--verify-repo", action="store_true")
     p.add_argument("--local-root", type=Path)
     p.add_argument("--downloaded-root", type=Path)
     p.add_argument("--metadata", type=Path)
@@ -272,6 +314,11 @@ def main() -> int:
     if args.self_test:
         self_test()
         return 0
+    if args.verify_repo:
+        problems = verify_repository_contract(Path(__file__).resolve().parents[1])
+        for problem in problems:
+            print("NO_GO Edge source : " + problem)
+        return 1 if problems else 0
     if not (args.local_root and args.downloaded_root and args.metadata):
         p.error("--local-root, --downloaded-root et --metadata sont obligatoires")
     try:
