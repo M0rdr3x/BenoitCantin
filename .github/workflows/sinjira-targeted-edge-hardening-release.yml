@@ -26,6 +26,10 @@ on:
         options:
           - revoke-my-contributions
           - redeem-license-code
+      source_commit:
+        description: "SHA complet (40 caractères) du commit main validé par CI"
+        required: true
+        type: string
       confirmation:
         description: "Saisir DEPLOY-SINJIRA-EDGE- suivi du nom exact de la fonction"
         required: true
@@ -77,8 +81,11 @@ jobs:
         env:
           FUNCTION_SLUG: ${{ inputs.function_slug }}
           CONFIRMATION: ${{ inputs.confirmation }}
+          REVIEWED_SHA: ${{ inputs.source_commit }}
         run: |
           set -euo pipefail
+          test "$REVIEWED_SHA" = "$GITHUB_SHA" || { echo "NO_GO: SHA non approuvé"; exit 1; }
+          [[ "$REVIEWED_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "NO_GO: SHA malformé"; exit 1; }
           test "$GITHUB_REF" = "refs/heads/main" || { echo "NO_GO: lancement hors main"; exit 1; }
           case "$FUNCTION_SLUG" in
             revoke-my-contributions|redeem-license-code) ;;
