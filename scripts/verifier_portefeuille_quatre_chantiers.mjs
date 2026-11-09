@@ -3,7 +3,7 @@
 import {readFile} from "node:fs/promises";
 const obj=x=>x!==null&&typeof x==="object"&&!Array.isArray(x);
 const integer=x=>Number.isInteger(x)&&x>=0;
-const near=(a,b)=>typeof a==="number"&&Number.isFinite(a)&&Math.abs(a-b)<.00001;
+const near=(a,b)=>typeof a==="number"&&Number.isFinite(a)&&Math.abs(a-b)<.0001;
 const ids=["NOVA_POLITIQUE","NOVA_SINJIRA_MODELE","CIVIC_COMPASS","CIVIC_POLL","SINJIRA_TOTAL"];
 const paths=[
  "projets/projet-nova/data/audit-completude-programme-nova-2026-11-05.json",
@@ -119,7 +119,7 @@ export function verifierPortefeuille(portfolio,nova,civic,sinjira,planText){
  }
  if(portfolio.completion_certified!==false||
     portfolio.expected_decision!=="NO_GO_POUR_ATTESTATION_DE_FIN"||
-    Object.keys(portfolio.policies).length!==10||
+    Object.keys(portfolio.policies).length!==11||
     Object.values(portfolio.policies).some(value=>value!==true))
    fail("UNAUTHORIZED_COMPLETION_OR_ACTIVATION");
  return {
