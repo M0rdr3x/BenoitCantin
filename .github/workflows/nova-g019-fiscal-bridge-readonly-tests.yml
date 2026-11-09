@@ -1,0 +1,53 @@
+name: Projet Nova G0.19 - rapprochement fiscal et deux budgets non certifies
+
+on:
+  pull_request:
+    paths:
+      - "projets/projet-nova/assets/g019-two-budget-reconciliation-core.mjs"
+      - "projets/projet-nova/tests/g019-two-budget-reconciliation.test.mjs"
+      - "projets/projet-nova/data/registre-assiettes-fiscales-g0-14-2026-2027.json"
+      - "projets/projet-nova/data/cadre-financier-fiscal-g0-16v-aout-2026.json"
+      - "projets/projet-nova/data/g016z-financement-consolide-et-protections-2026-2036.json"
+      - "projets/projet-nova/data/comptes-publics-reels-g0-15-v02-v03-2025-2026.json"
+      - "projets/projet-nova/data/g017c-recettes-municipales-2024-et-couts-eau-2023.json"
+      - "projets/projet-nova/data/cadre-financier-g0-13-2026-2036.json"
+      - "projets/projet-nova/data/audit-completude-programme-nova-2026-11-05.json"
+      - "projets/projet-nova/official/working/rapport-g0-19-pont-financier-deux-scenarios-v1.md"
+      - ".github/workflows/nova-g019-fiscal-bridge-readonly-tests.yml"
+  push:
+    paths:
+      - "projets/projet-nova/assets/g019-two-budget-reconciliation-core.mjs"
+      - "projets/projet-nova/tests/g019-two-budget-reconciliation.test.mjs"
+      - "projets/projet-nova/data/registre-assiettes-fiscales-g0-14-2026-2027.json"
+      - "projets/projet-nova/data/cadre-financier-fiscal-g0-16v-aout-2026.json"
+      - "projets/projet-nova/data/g016z-financement-consolide-et-protections-2026-2036.json"
+      - "projets/projet-nova/data/comptes-publics-reels-g0-15-v02-v03-2025-2026.json"
+      - "projets/projet-nova/data/g017c-recettes-municipales-2024-et-couts-eau-2023.json"
+      - "projets/projet-nova/data/cadre-financier-g0-13-2026-2036.json"
+      - "projets/projet-nova/data/audit-completude-programme-nova-2026-11-05.json"
+      - "projets/projet-nova/official/working/rapport-g0-19-pont-financier-deux-scenarios-v1.md"
+      - ".github/workflows/nova-g019-fiscal-bridge-readonly-tests.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nova-g019-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rapprochement-sans-production:
+    name: Vérifier les 5 exercices de référence et les 20 budgets Nova non certifiés
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Lire les sources de ce commit exact sans identifiants conservés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Installer Node 20 épinglé
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: "20"
+      - name: Exécuter 16 tests de rapprochement financier et rejets adversariaux
+        run: node --test projets/projet-nova/tests/g019-two-budget-reconciliation.test.mjs
