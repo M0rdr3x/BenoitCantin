@@ -329,6 +329,27 @@ def self_test() -> None:
         assert audit(repo, remote, rows), "Source Edge surdimensionnée acceptée"
         f.write_text("const safe = true;\n", "utf-8")
 
+        # La conformité de index.ts seule ne garantit pas celle des modules d'auth.
+        shared_local = repo / "supabase/functions/_shared/auth.ts"
+        shared_remote = remote / first / "supabase/functions/_shared/auth.ts"
+        shared_local.parent.mkdir(parents=True, exist_ok=True)
+        shared_remote.parent.mkdir(parents=True, exist_ok=True)
+        shared_local.write_text("export const guard = true;\n", "utf-8")
+        shared_remote.write_text("export const guard = true;\n", "utf-8")
+        index_local = repo / "supabase/functions" / first / "index.ts"
+        imported = "import '../_shared/auth.ts';\nconst safe = true;\n"
+        index_local.write_text(imported, "utf-8")
+        f.write_text(imported, "utf-8")
+        assert audit(repo, remote, rows) == [], "Dépendance sûre refusée"
+        shared_remote.write_text("export const guard = false;\n", "utf-8")
+        assert audit(repo, remote, rows), "Dépendance d'authentification divergente acceptée"
+        shared_remote.unlink()
+        assert audit(repo, remote, rows), "Dépendance d'authentification absente acceptée"
+        shared_remote.write_text("export const guard = true;\n", "utf-8")
+        index_local.write_text("const safe = true;\n", "utf-8")
+        f.write_text("const safe = true;\n", "utf-8")
+        assert audit(repo, remote, rows) == []
+
         retired = sorted(RETIRED_TOMBSTONES)[0]
         stopped = remote / retired / "supabase/functions" / retired / "index.ts"
         stopped.write_text(retired_source.replace("status:410", "status:200"), "utf-8")
