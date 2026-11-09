@@ -184,7 +184,30 @@ async function main() {
     eq(exception.accepted, false, 'Exception ne déclenche pas une livraison fictive');
     eq(exception.reason, 'SECONDARY_CHANNEL_UNAVAILABLE', 'Exception isolée du parcours principal');
 
-    eq(requests.length, 4, 'Nombre exact de POST simulés sans réseau');
+    // Un HTTP 2xx sans confirmation du journal n'est pas une livraison
+    // traçable. Le système doit rester non bloquant ET ne jamais rejouer
+    // automatiquement une requête qui a peut-être été acceptée.
+    const untracked = fakeLedger({ updateError: true });
+    const uncertain = await sendFormspreeNotice(
+      untracked.service, 'compte_confirme', sourceId,
+      { email: 'demo@example.invalid' }
+    );
+    eq(uncertain.accepted, false, 'HTTP 2xx non certifié si le statut SQL échoue');
+    eq(uncertain.reason, 'OUTBOX_STATUS_UPDATE_FAILED', 'Motif de traçabilité absent');
+    eq(uncertain.configured, true, 'Canal renseigné mais réponse incertaine');
+    eq(untracked.history.updates.length, 1, 'Une seule tentative de statut');
+    eq(untracked.rows.values().next().value.delivery_status, 'pending',
+      'Ligne reste pending si la mise à jour échoue');
+    const countBeforeRetry = requests.length;
+    const uncertainDuplicate = await sendFormspreeNotice(
+      untracked.service, 'compte_confirme', sourceId,
+      { email: 'demo@example.invalid' }
+    );
+    eq(uncertainDuplicate.already, true, 'Doublon toujours verrouillé après statut incertain');
+    eq(uncertainDuplicate.accepted, false, 'Pending ne devient pas un succès fictif');
+    eq(requests.length, countBeforeRetry, 'Aucun second POST Formspree après réponse incertaine');
+
+    eq(requests.length, 5, 'Nombre exact de POST simulés sans réseau');
     console.log('PASS SINJIRA Formspree : ' + assertions +
       ' assertions sur le vrai module TS, zéro appel réseau externe.');
   } finally {
