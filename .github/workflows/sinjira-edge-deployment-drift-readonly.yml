@@ -40,7 +40,7 @@ jobs:
         run: python3 scripts/audit_edge_deployed_source_readonly.py --self-test
 
   compare-deployed:
-    name: Vérifier les quatre fonctions Edge publiques réellement actives
+    name: Vérifier les six fonctions Edge critiques réellement actives
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     needs: verify-fixtures
     runs-on: ubuntu-24.04
@@ -77,7 +77,7 @@ jobs:
         run: |
           set -euo pipefail
           curl --proto '=https' --tlsv1.2 --fail --silent --show-error             --max-time 30 --retry 2             --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN"             --header 'Accept: application/json'             --output "$RUNNER_TEMP/edge-inventory.json"             'https://api.supabase.com/v1/projects/gpvivleexywljowcqkru/functions'
-      - name: Télécharger les quatre sources publiques sans les exécuter
+      - name: Télécharger les six sources critiques sans les exécuter
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_EDGE_READONLY_TOKEN }}
         shell: bash
@@ -85,7 +85,7 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/edge-live"
           cd "$RUNNER_TEMP/edge-live"
-          for slug in get-document-url send-game-report life-story-delivery nova-civic-poll; do
+          for slug in get-document-url send-game-report life-story-delivery nova-civic-poll revoke-my-contributions redeem-license-code; do
             supabase functions download "$slug" --project-ref gpvivleexywljowcqkru
           done
       - name: Échouer si ACL JWT ou source déployée diverge
