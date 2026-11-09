@@ -49,6 +49,24 @@ class SinjiraReaderV47Contracts(unittest.TestCase):
         self.assert_bad_sql(lambda s: s.replace("reader_anon_direct_grants", "reader_grants_ok", 1),
                             "RELEASE_CHECK_INVENTORY_CHANGED")
 
+    def test_refuse_wrong_numeric_precision(self):
+        self.assert_bad_sql(
+            lambda s: s.replace("numeric_precision=5", "numeric_precision=4"),
+            "MISSING_CHECK:numeric_precision=5",
+        )
+
+    def test_refuse_wrong_numeric_scale(self):
+        self.assert_bad_sql(
+            lambda s: s.replace("numeric_scale=4", "numeric_scale=3"),
+            "MISSING_CHECK:numeric_scale=4",
+        )
+
+    def test_refuse_removed_null_default_constraint(self):
+        self.assert_bad_sql(
+            lambda s: s.replace("AND column_default IS NULL", ""),
+            "MISSING_CHECK:column_default IS NULL",
+        )
+
     def test_refuse_changed_column_type(self):
         migration = self.v32.replace("scroll_ratio numeric(5,4)", "scroll_ratio numeric(2,1)")
         self.assertIn("V32_MIGRATION_DRIFT",validate_sources(self.sql, migration))
