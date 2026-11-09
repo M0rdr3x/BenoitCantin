@@ -20,7 +20,7 @@ test("Nova audit remains at 47",()=>assert.equal(d.score_after,47));
 test("53 out of 100 still not earned",()=>assert.equal(d.remaining_points,53));
 test("Exactly two source records",()=>assert.equal(d.sources.length,2));
 test("Exactly two municipal case records",()=>assert.equal(d.samples.length,2));
-test("Two municipality 2025 year fields",()=>assert.ok(d.samples.every(x=>x.year===undefined)===false ? d.samples.every(x=>x.code&&d.date==="2026-11-08") : d.date==="2026-11-08"));
+test("Both municipality cases cover the 2025 calendar year",()=>assert.ok(d.samples.every(x=>x.year===2025)));
 test("Port-Daniel source case code",()=>assert.equal(p.code,"02047"));
 test("Saguenay source case code",()=>assert.equal(s.code,"94068"));
 test("Saguenay report audit opinion non-modified",()=>assert.equal(s.auditor,"UNMODIFIED"));
