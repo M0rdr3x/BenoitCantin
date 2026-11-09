@@ -54,6 +54,8 @@ on:
       - 'scripts/validate_seo_quality.py'
       - 'tests/security/sql/nova_poll_v7_*.sql'
       - 'tests/security/test_nova_poll_v7_disposable_contract.py'
+      - 'tests/security/test_nova_poll_v8_concurrency_contract.py'
+      - 'scripts/test_nova_poll_v8_concurrent_local.sh'
       - '.github/workflows/nova-poll-v7-sql-private-lab.yml'
       - '.github/workflows/validate-nova-civic-poll.yml'
   push:
@@ -65,6 +67,8 @@ on:
       - 'scripts/test_nova_civic_poll.py'
       - 'tests/security/sql/nova_poll_v7_*.sql'
       - 'tests/security/test_nova_poll_v7_disposable_contract.py'
+      - 'tests/security/test_nova_poll_v8_concurrency_contract.py'
+      - 'scripts/test_nova_poll_v8_concurrent_local.sh'
       - '.github/workflows/nova-poll-v7-sql-private-lab.yml'
       - '.github/workflows/validate-nova-civic-poll.yml'
 permissions:
@@ -180,5 +184,10 @@ jobs:
         env:
           PGCONNECT_TIMEOUT: '10'
         run: psql --no-psqlrc -h 127.0.0.1 -U postgres -d nova_poll_v7_disposable -v ON_ERROR_STOP=1 -f tests/security/sql/nova_poll_v7_private_batches.sql
+      - name: Deux connexions même jeton puis seize connexions distinctes en parallèle
+        run: |
+          python3 -m unittest discover -s tests/security -p test_nova_poll_v8_concurrency_contract.py -v
+          bash -n scripts/test_nova_poll_v8_concurrent_local.sh
+          bash scripts/test_nova_poll_v8_concurrent_local.sh
       - name: Ne jamais transformer un test en autorisation de vote
         run: echo 'NO_GO - laboratoire isolé, scrutin non ouvert, aucune donnée réelle'
