@@ -276,11 +276,30 @@ def self_test():
     poll_page = (NOVA / "sondage-citoyen.html").read_text(encoding="utf-8")
     compass_page = (NOVA / "boussole-electorale.html").read_text(encoding="utf-8")
     validate_readiness_display(preview, poll_page, compass_page, matrix)
-    for altered in (
-        (preview.replace("58,3 %", "50,0 %"), poll_page, compass_page, matrix),
-        (preview, poll_page, compass_page.replace("7 critères sur 12 validés", "6 critères sur 12 validés"), matrix),
-        (preview, poll_page.replace("6 critères sur 11 validés", "5 critères sur 11 validés"), compass_page, matrix),
-    ):
+    # Générer les cas négatifs à partir de la matrice actuelle : changer le
+    # nombre de validations ne doit jamais rendre cet auto-test obsolète.
+    poll_count = matrix["summary"]["poll"]["passed"]
+    poll_total = matrix["summary"]["poll"]["total"]
+    compass_count = matrix["summary"]["compass"]["passed"]
+    compass_total = matrix["summary"]["compass"]["total"]
+    compass_pct = f"{100 * compass_count / compass_total:.1f}".replace(".", ",")
+    old_grid = (f"<strong>{compass_pct} %</strong> "
+                f"<span>{compass_count} critères sur {compass_total}</span>")
+    old_compass = f"{compass_count} critères sur {compass_total} validés"
+    old_poll = f"{poll_count} critères sur {poll_total} validés"
+    assert old_grid in preview and old_compass in compass_page and old_poll in poll_page
+    altered_cases = (
+        (preview.replace(old_grid, old_grid.replace(compass_pct, "0,0", 1)),
+         poll_page, compass_page, matrix),
+        (preview, poll_page,
+         compass_page.replace(old_compass, f"{compass_count - 1} critères sur {compass_total} validés"),
+         matrix),
+        (preview,
+         poll_page.replace(old_poll, f"{poll_count - 1} critères sur {poll_total} validés"),
+         compass_page, matrix),
+    )
+    for altered in altered_cases:
+        assert (altered[0], altered[1], altered[2]) != (preview, poll_page, compass_page)
         try:
             validate_readiness_display(*altered)
         except ValueError:
@@ -288,7 +307,7 @@ def self_test():
         else:
             raise AssertionError("Grille ou compteur public périmé non détecté")
     tampered = json.loads(json.dumps(matrix))
-    tampered["summary"]["compass"]["passed"] = 6
+    tampered["summary"]["compass"]["passed"] = compass_count - 1
     try:
         validate_readiness_display(preview, poll_page, compass_page, tampered)
     except ValueError:
