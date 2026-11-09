@@ -181,6 +181,58 @@ def verify_repository_contract(local: Path) -> list[str]:
     return errors
 
 
+def check_bundle(local: Path, downloaded: Path, slug: str,
+                 tombstones: dict[str, str]) -> list[str]:
+    """Comparer les sources et dépendances de chaque fonction indépendamment."""
+    errors: list[str] = []
+    bundle = downloaded / slug
+    functions_dir = bundle / "supabase/functions"
+    if (bundle.is_symlink() or functions_dir.is_symlink()
+            or not functions_dir.is_dir()):
+        return [slug + " : bundle distant absent ou lien symbolique"]
+    included: set[str] = set()
+    for item in sorted(functions_dir.rglob("*")):
+        if item.is_symlink():
+            errors.append(slug + " : lien symbolique présent dans le bundle")
+            continue
+        if not item.is_file():
+            continue
+        rel = item.relative_to(functions_dir)
+        if rel.parts[0] not in (slug, "_shared"):
+            errors.append(slug + " : fichier distant inattendu " + rel.as_posix())
+            continue
+        included.add(rel.as_posix())
+        full_rel = Path("supabase/functions") / rel
+        try:
+            deployed = safe_text(bundle, full_rel)
+            if slug in RETIRED_TOMBSTONES and rel == Path(slug) / "index.ts":
+                canonical = tombstones[slug]
+            else:
+                canonical = safe_text(local, full_rel)
+        except ValueError as exc:
+            errors.append(slug + " : source ou dépendance inaccessible (" + str(exc) + ")")
+            continue
+        if deployed != canonical:
+            errors.append(slug + " : dérive de source ou dépendance " + rel.as_posix())
+    entry = slug + "/index.ts"
+    if entry not in included:
+        errors.append(slug + " : point d'entrée absent du bundle téléchargé")
+    if slug in RETIRED_TOMBSTONES:
+        if included != {entry}:
+            errors.append(slug + " : code supplémentaire dans une fonction retirée")
+    else:
+        try:
+            source = safe_text(local, Path("supabase/functions") / slug / "index.ts")
+        except ValueError as exc:
+            errors.append(slug + " : source canonique illisible (" + str(exc) + ")")
+        else:
+            for dependency in re.findall(r"['\"]\.\./_shared/([^'\"]+)['\"]", source):
+                key = "_shared/" + dependency
+                if key not in included:
+                    errors.append(slug + " : dépendance importée absente " + key)
+    return errors
+
+
 def audit(local: Path, downloaded: Path, metadata: object) -> list[str]:
     errors = validate_metadata(metadata)
     if errors:
@@ -190,17 +242,8 @@ def audit(local: Path, downloaded: Path, metadata: object) -> list[str]:
     except ValueError as exc:
         return [str(exc)]
     for slug in sorted(EXPECTED_FUNCTIONS):
-        rel = Path("supabase/functions") / slug / "index.ts"
-        try:
-            deployed = safe_text(downloaded, rel)
-            canonical = tombstones[slug] if slug in RETIRED_TOMBSTONES else safe_text(local, rel)
-        except ValueError as exc:
-            errors.append(f"{slug} : source inaccessible ({exc})")
-            continue
-        if deployed != canonical:
-            errors.append(f"{slug} : dérive de source Edge ou réactivation d'une fonction retirée (NO_GO)")
+        errors.extend(check_bundle(local, downloaded, slug, tombstones))
     return errors
-
 
 def self_test() -> None:
     rows = [
@@ -211,8 +254,8 @@ def self_test() -> None:
         base = Path(tmp)
         repo = base / "repo"
         remote = base / "remote"
-        for root in (repo, remote):
-            for slug in MONITORED_FUNCTIONS:
+        for slug in MONITORED_FUNCTIONS:
+            for root in (repo, remote / slug):
                 dst = root / "supabase/functions" / slug / "index.ts"
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 dst.write_text("const safe = true;\n", "utf-8")
@@ -230,7 +273,7 @@ def self_test() -> None:
             "utf-8",
         )
         for slug in RETIRED_TOMBSTONES:
-            dst = remote / "supabase/functions" / slug / "index.ts"
+            dst = remote / slug / "supabase/functions" / slug / "index.ts"
             dst.parent.mkdir(parents=True, exist_ok=True)
             dst.write_text(retired_source, "utf-8")
         config = repo / "supabase/config.toml"
@@ -272,7 +315,7 @@ def self_test() -> None:
             assert audit(repo, remote, payload), "Métadonnées non fiables acceptées : " + name
 
         first = sorted(MONITORED_FUNCTIONS)[0]
-        f = remote / "supabase/functions" / first / "index.ts"
+        f = remote / first / "supabase/functions" / first / "index.ts"
         f.write_text("const safe = false;\n", "utf-8")
         assert audit(repo, remote, rows), "Dérive de source Edge acceptée"
         f.write_text("const safe = true;\n", "utf-8")
@@ -287,7 +330,7 @@ def self_test() -> None:
         f.write_text("const safe = true;\n", "utf-8")
 
         retired = sorted(RETIRED_TOMBSTONES)[0]
-        stopped = remote / "supabase/functions" / retired / "index.ts"
+        stopped = remote / retired / "supabase/functions" / retired / "index.ts"
         stopped.write_text(retired_source.replace("status:410", "status:200"), "utf-8")
         assert audit(repo, remote, rows), "Réactivation d'une fonction retirée acceptée"
         stopped.write_text(retired_source, "utf-8")
