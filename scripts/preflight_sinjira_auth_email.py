@@ -37,6 +37,23 @@ def audit(config):
           config.get("mfa_totp_verify_enabled") is True)
     minlength=config.get("password_min_length")
     check("Longueur minimale douze",type(minlength) is int and minlength>=12)
+    # Ces paramètres existent dans GET /config/auth. Leur présence ne valide ni
+    # les secrets SMTP masqués par l'API ni la livraison des messages.
+    smtp_host=config.get("smtp_host")
+    check("Serveur SMTP personnalisé renseigné",
+          isinstance(smtp_host,str) and bool(smtp_host.strip()) and
+          smtp_host.strip().lower() not in ("localhost","127.0.0.1","0.0.0.0","::1"))
+    smtp_port=config.get("smtp_port")
+    port_text=str(smtp_port).strip() if type(smtp_port) in (int,str) else ""
+    check("Port SMTP valide",port_text.isdecimal() and 1<=int(port_text)<=65535)
+    sender=config.get("smtp_admin_email")
+    check("Adresse expéditrice SMTP valide",
+          isinstance(sender,str) and 0<len(sender)<=254 and
+          sender.count("@")==1 and "." in sender.rsplit("@",1)[-1] and
+          not any(c.isspace() for c in sender))
+    smtp_user=config.get("smtp_user")
+    check("Identifiant SMTP renseigné",isinstance(smtp_user,str) and bool(smtp_user.strip()))
+    warnings.append("SMTP : secret et livraison réelle non vérifiables par ce prévol")
     if config.get("password_hibp_enabled") is not True:
         warnings.append("Protection HIBP absente ou non vérifiée; offre Supabase à confirmer")
     return passed,failed,warnings
@@ -64,9 +81,11 @@ def selftest():
               '<a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email">Confirmer</a>',
           "mailer_subjects_confirmation":"Confirmez votre compte",
           "mfa_totp_enroll_enabled":True,"mfa_totp_verify_enabled":True,
-          "password_min_length":12,"password_hibp_enabled":False}
+          "password_min_length":12,"password_hibp_enabled":False,
+          "smtp_host":"smtp.example.org","smtp_port":"587",
+          "smtp_admin_email":"no-reply@example.org","smtp_user":"smtp-account"}
     ok,bad,warn=audit(good)
-    assert len(ok)==9 and not bad and len(warn)==1
+    assert len(ok)==13 and not bad and len(warn)==2
     mutations=[
         ({"site_url":"https://invalid.example"},"Site URL"),
         ({"disable_signup":True},"Inscription ouverte"),
@@ -77,13 +96,19 @@ def selftest():
         ({"mfa_totp_verify_enabled":False},"MFA TOTP disponible"),
         ({"password_min_length":8},"Longueur minimale douze"),
         ({"external_email_enabled":False},"Courriel activé"),
+        ({"smtp_host":""},"Serveur SMTP personnalisé renseigné"),
+        ({"smtp_host":"127.0.0.1"},"Serveur SMTP personnalisé renseigné"),
+        ({"smtp_port":"not-a-port"},"Port SMTP valide"),
+        ({"smtp_port":"0"},"Port SMTP valide"),
+        ({"smtp_admin_email":"not-an-email"},"Adresse expéditrice SMTP valide"),
+        ({"smtp_user":""},"Identifiant SMTP renseigné"),
     ]
     for update,label in mutations:
         _,failed,_=audit({**good,**update})
         assert label in failed,"Régression non détectée : "+label
-    assert len(audit({})[1])==9
+    assert len(audit({})[1])==13
     assert not audit({**good,"uri_allow_list":SITE+"/**"})[1]
-    print("OK prévol Auth : neuf contrats, neuf régressions et wildcard testés.")
+    print("OK prévol Auth : treize contrats, quinze régressions et wildcard testés.")
 
 
 def remote():
