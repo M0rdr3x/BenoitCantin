@@ -120,6 +120,42 @@ async function main(){
     'href="\'+escapeHtml(play)+\'"',
   ])assert.ok(hub.includes(required),'V26 hub: garde absente : '+required);
   assert.ok(!hub.includes('const safeLink='));
-  console.log('PASS: 3 bibliothèques SINJIRA, liens internes, injection de protocoles et rendus V24 protégés.');
+  // Exécuter également le véritable rendu de la bibliothèque V26 active,
+  // avec des réponses Supabase synthétiques et sans connexion externe.
+  const hubRows=[{
+    id:'22222222-2222-4222-8222-222222222222',
+    slug:'reseau-mere-resistance',
+    name:'Jeu de test',description:'Données simulées',
+    public_path:'//evil.invalid/track',play_path:'javascript:alert(1)',
+    allow_tester_requests:false,status:'active',
+  }];
+  const service={
+    from(name){
+      return {
+        select(){return this},
+        in(){return this},
+        order(){return Promise.resolve({data:name==='projects'?hubRows:[]})},
+        eq(){return Promise.resolve({data:[]})},
+      };
+    },
+    rpc(){return Promise.resolve({data:false})},
+  };
+  const activeHub=boot(FILES[2],{
+    requireUser(){return Promise.resolve({id:'synthetic-user'})},
+    getSupabase(){return service},
+  });
+  await new Promise(resolve=>setImmediate(resolve));
+  const hubBox=activeHub.containers['[data-library-account-games]'];
+  assert.ok(hubBox.innerHTML.includes('href="/projets/sinjira/jeux/"'),
+    'V26: repli local en cas de chemin projet malformé');
+  assert.ok(!hubBox.innerHTML.includes('javascript:')&&!hubBox.innerHTML.includes('evil.invalid'),
+    'V26: lien dangereux inséré dans le rendu');
+  hubRows[0].public_path='/projets/sinjira/';
+  hubRows[0].play_path='/projets/sinjira/jeux/reseau-mere-resistance/';
+  await vm.runInContext('init()',activeHub.ctx);
+  assert.ok(hubBox.innerHTML.includes('href="/projets/sinjira/"'));
+  assert.ok(hubBox.innerHTML.includes('href="/projets/sinjira/jeux/reseau-mere-resistance/"'));
+  console.log('PASS: 3 bibliothèques SINJIRA, liens internes, injections de protocoles, rendus V24 et V26 protégés.');
+
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
