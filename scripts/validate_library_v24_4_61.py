@@ -67,7 +67,7 @@ def main()->int:
 
     require(reads_html,[
         'data-v18-page="reads-v24-4-61"',
-        'sinjira-reads-v24-4-61.js?v=24.4.61',
+        'sinjira-reads-v24-4-61.js?v=24.4.94',
         'data-reader-library'
     ],'mes-lectures.html')
 
@@ -87,9 +87,15 @@ def main()->int:
         "from('sinjira_reader_library')",
         'data-v2461-add-read',
         'data-v2461-remove-read',
+        'safeNovelHref(novel.demo_path,location.origin)',
+        'safeNovelHref(novel.public_path,location.origin)',
         "onConflict:'user_id,novel_id'"
     ],'sinjira-reads-v24-4-61.js')
-    forbid(reads_js,["from('novels')","from('reader_library')"],'sinjira-reads-v24-4-61.js')
+    forbid(reads_js,["from('novels')","from('reader_library')",'escapeHtml(novel.demo_path)','escapeHtml(novel.public_path)'],'sinjira-reads-v24-4-61.js')
+    legacy_reads=read('assets/js/sinjira-account-v18.js')
+    require(legacy_reads,['safeNovelHref(n.demo_path,location.origin)','safeNovelHref(n.public_path,location.origin)'],'client V18 historique')
+    novel_href=read('assets/js/sinjira-novel-href.mjs')
+    require(novel_href,['target.origin!==base.origin','target.pathname!==rawPath','value.startsWith(\'//\')','/compte/','/projets/sinjira/'],'frontière canonique des romans')
 
     require(progress_js,[
         'getCurrentUser',
