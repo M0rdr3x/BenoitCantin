@@ -14,8 +14,10 @@ db() {
 }
 
 # Contrôler l'identité du serveur AVANT toute commande qui modifie des lignes.
-actual="$(db -c "SELECT current_database()||':'||host(inet_server_addr())")"
-if [[ "$actual" != "nova_poll_v7_disposable:127.0.0.1" ]]; then
+# L'adresse inet_server_addr() appartient au conteneur Docker (ex.: 172.18.x.x),
+# PAS à l'adresse de connexion du client psql, fixée ci-dessus à 127.0.0.1.
+actual="$(db -c "SELECT current_database()")"
+if [[ "$actual" != "nova_poll_v7_disposable" || "$HOST" != "127.0.0.1" ]]; then
   echo "NOVA-V8-REFUS: serveur ou base non fictifs ($actual)" >&2
   exit 10
 fi
