@@ -97,9 +97,10 @@ async function openFullNovel(button){
       setStatus(status,message,data?.code==='FILE_NOT_READY'?'info':'error');
       return;
     }
+    if(data.protected!==true){setStatus(status,'Le serveur a refusé la livraison privée du roman.','error');return}
     const destination=resolveDocumentUrl(data.url,{
       siteOrigin:location.origin,storageOrigin:SINJIRA_CONFIG.supabaseUrl,
-      protectedDocument:data.protected
+      protectedDocument:true
     });
     if(!destination){setStatus(status,'Le serveur a renvoyé un lien privé non autorisé.','error');return}
     window.open(destination,'_blank','noopener,noreferrer');
