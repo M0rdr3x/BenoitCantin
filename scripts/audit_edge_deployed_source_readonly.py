@@ -118,10 +118,10 @@ def retired_snapshots(local: Path) -> dict[str, str]:
     for slug, src in expected.items():
         if not isinstance(src, str) or len(src.encode("utf-8")) > 2048:
             raise ValueError("Source de retrait absente ou anormale : " + slug)
-        source = src.replace("\\r\\n", "\\n").rstrip("\\n")
+        source = src.replace("\r\n", "\n").rstrip("\n")
         if (
             source.count("Deno.serve(") != 1
-            or not re.search(r"\\bstatus\\s*:\\s*410\\b", source)
+            or not re.search(r"\bstatus\s*:\s*410\b", source)
             or "no-store" not in source
             or "fetch(" in source
             or "Deno.env" in source
@@ -168,7 +168,7 @@ def self_test() -> None:
                 dst.write_text("const safe = true;\n", "utf-8")
         retired_source = (
             'Deno.serve(()=>new Response("retired",'
-            '{status:410,headers:{"Cache-Control":"no-store"}}));\\n'
+            '{status:410,headers:{"Cache-Control":"no-store"}}));\n'
         )
         retired_contract = repo / TOMBSTONES_PATH
         retired_contract.parent.mkdir(parents=True, exist_ok=True)
@@ -215,6 +215,7 @@ def self_test() -> None:
         f.write_text("const safe = true;\n", "utf-8")
         f.write_text("A" * (LIMIT + 1), "utf-8")
         assert audit(repo, remote, rows), "Source Edge surdimensionnée acceptée"
+        f.write_text("const safe = true;\n", "utf-8")
 
         retired = sorted(RETIRED_TOMBSTONES)[0]
         stopped = remote / "supabase/functions" / retired / "index.ts"
