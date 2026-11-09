@@ -135,7 +135,8 @@ async function main(){
         select(){return this},
         in(){return this},
         order(){return Promise.resolve({data:name==='projects'?hubRows:[]})},
-        eq(){return Promise.resolve({data:[]})},
+        eq(){return this},
+        then(resolve,reject){return Promise.resolve({data:[]}).then(resolve,reject)},
       };
     },
     rpc(){return Promise.resolve({data:false})},
