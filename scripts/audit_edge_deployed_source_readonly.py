@@ -19,6 +19,11 @@ PUBLIC_NO_JWT = frozenset({
     "life-story-delivery",
     "nova-civic-poll",
 })
+JWT_REQUIRED = frozenset({
+    "revoke-my-contributions",
+    "redeem-license-code",
+})
+MONITORED_FUNCTIONS = PUBLIC_NO_JWT | JWT_REQUIRED
 LIMIT = 250_000
 METADATA_LIMIT = 500_000
 
@@ -81,8 +86,8 @@ def validate_metadata(payload: object) -> list[str]:
             "Exceptions JWT modifiées : attendues " + ",".join(sorted(PUBLIC_NO_JWT))
             + " ; constatées " + ",".join(sorted(no_jwt))
         )
-    if not PUBLIC_NO_JWT <= seen:
-        errors.append("Fonction Edge publique attendue absente de l'inventaire")
+    if not MONITORED_FUNCTIONS <= seen:
+        errors.append("Fonction Edge suivie absente de l'inventaire")
     return errors
 
 
@@ -90,7 +95,7 @@ def audit(local: Path, downloaded: Path, metadata: object) -> list[str]:
     errors = validate_metadata(metadata)
     if errors:
         return errors
-    for slug in sorted(PUBLIC_NO_JWT):
+    for slug in sorted(MONITORED_FUNCTIONS):
         rel = Path("supabase/functions") / slug / "index.ts"
         try:
             deployed = safe_text(downloaded, rel)
@@ -105,15 +110,15 @@ def audit(local: Path, downloaded: Path, metadata: object) -> list[str]:
 
 def self_test() -> None:
     rows = [
-        {"slug": slug, "verify_jwt": False, "status": "ACTIVE", "version": 1}
-        for slug in sorted(PUBLIC_NO_JWT)
+        {"slug": slug, "verify_jwt": slug in JWT_REQUIRED, "status": "ACTIVE", "version": 1}
+        for slug in sorted(MONITORED_FUNCTIONS)
     ]
     with tempfile.TemporaryDirectory() as tmp:
         base = Path(tmp)
         repo = base / "repo"
         remote = base / "remote"
         for root in (repo, remote):
-            for slug in PUBLIC_NO_JWT:
+            for slug in MONITORED_FUNCTIONS:
                 dst = root / "supabase/functions" / slug / "index.ts"
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 dst.write_text("const safe = true;\n", "utf-8")
@@ -128,11 +133,15 @@ def self_test() -> None:
             "duplicate slug": rows + [rows[0]],
             "missing function": rows[:-1],
             "wrong metadata": {"unexpected": []},
+            "authenticated function exposed without JWT": [
+                {**row, "verify_jwt": False}
+                if row["slug"] == "redeem-license-code" else row for row in rows
+            ],
         }
         for name, payload in mutants.items():
             assert audit(repo, remote, payload), "Métadonnées non fiables acceptées : " + name
 
-        first = sorted(PUBLIC_NO_JWT)[0]
+        first = sorted(MONITORED_FUNCTIONS)[0]
         f = remote / "supabase/functions" / first / "index.ts"
         f.write_text("const safe = false;\n", "utf-8")
         assert audit(repo, remote, rows), "Dérive de source Edge acceptée"
@@ -172,7 +181,7 @@ def main() -> int:
             print("NO_GO Edge : " + issue)
         return 1
     print(
-        "PASS : quatre exceptions JWT inchangées, fonctions actives "
+        "PASS : quatre exceptions JWT inchangées, six fonctions surveillées, fonctions actives "
         "et sources déployées correspondant au code approuvé."
     )
     return 0
