@@ -217,3 +217,26 @@
 
 /* Les points du profil partiel restent visibles, même quand aucun polygone n'est tracé. */
 .compass-radar-svg circle.compass-radar-marker{fill:#087e9b;stroke:#ffffff;stroke-width:2}
+
+/* Repères clavier explicites : sélectionner l'importance, naviguer et partager.
+   Les audits automatiques ne remplacent pas les essais manuels WCAG. */
+#compass-stepper .compass-importance select:focus-visible,
+#compass-stepper .compass-step-actions .btn:focus-visible,
+#compass-stepper .compass-secondary-actions .btn:focus-visible,
+#compass-results .compass-share-actions :is(a, button):focus-visible,
+#compass-results #compass-results-title:focus {
+  outline:3px solid #0f6f86;
+  outline-offset:4px;
+}
+#compass-stepper .compass-importance select:focus-visible {
+  border-color:#0f6f86;
+}
+@media (forced-colors:active) {
+  #compass-stepper .compass-importance select:focus-visible,
+  #compass-stepper .compass-step-actions .btn:focus-visible,
+  #compass-stepper .compass-secondary-actions .btn:focus-visible,
+  #compass-results .compass-share-actions :is(a, button):focus-visible,
+  #compass-results #compass-results-title:focus {
+    outline-color:Highlight;
+  }
+}
