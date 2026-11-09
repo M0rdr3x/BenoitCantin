@@ -8,7 +8,8 @@ WITH t AS (
  WHERE n.nspname='public' AND c.relname='sinjira_reader_library'
  AND c.relkind IN ('r','p')
 ), columns AS (
- SELECT column_name,data_type,is_nullable,udt_name,column_default
+ SELECT column_name,data_type,is_nullable,udt_name,column_default,
+ numeric_precision,numeric_scale
  FROM information_schema.columns
  WHERE table_schema='public' AND table_name='sinjira_reader_library'
 ), constraints AS (
@@ -82,7 +83,8 @@ WITH t AS (
  SELECT 'reader_scroll_ratio_column',
  CASE WHEN EXISTS (SELECT 1 FROM columns
  WHERE column_name='scroll_ratio' AND data_type='numeric'
- AND is_nullable='YES')
+ AND numeric_precision=5 AND numeric_scale=4
+ AND is_nullable='YES' AND column_default IS NULL)
  THEN 'PASS' ELSE 'BLOCK' END,
  'La colonne V32 nullable de position intrapage doit être déployée.'
  UNION ALL
