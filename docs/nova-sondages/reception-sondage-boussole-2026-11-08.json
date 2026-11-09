@@ -3,7 +3,7 @@
   "as_of": "2026-11-08",
   "project": "Projet Nova",
   "status": "NON_HOMOLOGUE",
-  "methodology": "Critères binaires d'homologation. Un parcours complet Q01–Q64, y compris sorties et 64 réponses « Sans opinion », a réussi sous Playwright dans Chromium, Firefox et WebKit sur le commit candidat #881; la porte de parcours E2E local est validée. Cette preuve ne valide ni le site public en production, ni la comparaison des partis, ni l'accessibilité indépendante, ni l'ouverture du sondage.",
+  "methodology": "Critères binaires d'homologation. Un parcours complet Q01–Q64, y compris sorties et 64 réponses « Sans opinion », a réussi sous Playwright dans Chromium, Firefox et WebKit sur le commit candidat #881; la porte de parcours E2E local est validée. La parité des cinq fichiers JavaScript avec le domaine public, la sortie de profil partiel et un parcours externe Q01–Q64 ont ensuite été vérifiés sur la version 3.4.26. Cette réception ne valide ni l'accessibilité indépendante, ni les navigateurs et appareils réels en production, ni la comparaison des partis, ni l'ouverture du sondage.",
   "programme_audit_g012": {
     "preparation_percent": 47,
     "audit_date": "2026-11-05",
