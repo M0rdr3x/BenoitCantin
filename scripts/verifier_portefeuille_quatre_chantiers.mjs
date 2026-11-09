@@ -54,7 +54,7 @@ export function verifierPortefeuille(portfolio,nova,civic,sinjira,planText){
  const sectors=nova.sector_register;
  if(!Array.isArray(sectors)||sectors.length!==14||
     sectors.some(r=>r?.completed_measure_sheets_confirmed!==0||
-       r.independent_validation_confirmed!==false))
+       r.independent_validation_confirmed!==null))
    fail("NOVA_SECTORS_SOURCE_CHANGED");
  if(ns.metric_kind!=="AUCUN_BAREME_DE_COMPLETUDE_AUTONOME"||
     ns.estimated_percent!==null||ns.measures_sectors_candidate!==14||
