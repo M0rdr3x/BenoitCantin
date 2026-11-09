@@ -21,8 +21,27 @@ PUBLIC_NO_JWT = frozenset({
     "nova-civic-poll",
 })
 JWT_REQUIRED = frozenset({
-    "revoke-my-contributions",
+    "admin-analytics",
+    "admin-console",
+    "admin-license-codes",
+    "admin-reports",
+    "admin-sinjira-v18",
+    "admin-social-v20",
+    "admin-users",
+    "conscience-vault",
+    "delete-player-account",
+    "fracture-engine-gateway",
+    "get-novel-file-url",
+    "life-story-export",
+    "notify-account-confirmation",
+    "personal-ai",
     "redeem-license-code",
+    "revoke-my-contributions",
+    "security-context",
+    "send-player-sheet",
+    "submit-character-questionnaire",
+    "submit-fracture-endgame",
+    "submit-game-contribution",
 })
 RETIRED_TOMBSTONES = frozenset({
     "admin-reader",
@@ -98,8 +117,13 @@ def validate_metadata(payload: object) -> list[str]:
             "Exceptions JWT modifiées : attendues " + ",".join(sorted(PUBLIC_NO_JWT))
             + " ; constatées " + ",".join(sorted(no_jwt))
         )
-    if not EXPECTED_FUNCTIONS <= seen:
-        errors.append("Fonction Edge critique ou retirée absente de l'inventaire")
+    if seen != EXPECTED_FUNCTIONS:
+        unexpected = sorted(seen - EXPECTED_FUNCTIONS)
+        missing = sorted(EXPECTED_FUNCTIONS - seen)
+        errors.append(
+            "Inventaire Edge changé sans revue : absentes=" + ",".join(missing)
+            + " ; nouvelles=" + ",".join(unexpected)
+        )
     return errors
 
 
@@ -194,6 +218,10 @@ def self_test() -> None:
             "duplicate slug": rows + [rows[0]],
             "missing function": rows[:-1],
             "wrong metadata": {"unexpected": []},
+            "unexpected authenticated function": rows + [
+                {"slug": "unreviewed-auth-function", "verify_jwt": True,
+                 "status": "ACTIVE", "version": 1}
+            ],
             "authenticated function exposed without JWT": [
                 {**row, "verify_jwt": False}
                 if row["slug"] == "redeem-license-code" else row for row in rows
@@ -255,8 +283,8 @@ def main() -> int:
             print("NO_GO Edge : " + issue)
         return 1
     print(
-        "PASS : quatre exceptions JWT inchangées, six fonctions actives et sept points "
-        "de retrait préservés, sources déployées conformes au code approuvé."
+        "PASS : inventaire exact 32/32, JWT et sources des 25 fonctions actives, "
+        "sept fonctions retirées bloquées, parité déployée confirmée."
     )
     return 0
 
