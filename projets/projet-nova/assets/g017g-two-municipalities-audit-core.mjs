@@ -25,8 +25,8 @@ export function auditG017g(d,portPrior){
  return {ok:false,errors:["SCHEMA"]};
  if(d.phase!=="G0.17g"||d.date!=="2026-11-08"||d.score_before!==47||d.score_after!==47||d.remaining_points!==53||d.scope!=="TWO_CONVENIENCE_2025_CASES_NOT_QUEBEC_TAX_BASE")bad("NO_SCORE_INCREASE");
  const [p,s]=d.samples;
- if(p.code!=="02047"||p.name!=="Port-Daniel–Gascons"||p.scope!=="MUNICIPAL_2025"||p.auditor!=="QUALIFIED_ASSET_RETIREMENT_OBLIGATIONS_UNQUANTIFIED"||!match(p,commonFields,expectedPort))bad("PORT_DATA");
- if(s.code!=="94068"||s.name!=="Saguenay"||s.scope!=="CONSOLIDATED_CONTROLLED_ENTITIES_AND_ELECTRICITY_NETWORK"||s.auditor!=="UNMODIFIED"||s.auditor_date!=="2026-06-02"||!match(s,commonFields,expectedSag))bad("SAG_DATA");
+ if(p.year!==2025||p.code!=="02047"||p.name!=="Port-Daniel–Gascons"||p.scope!=="MUNICIPAL_2025"||p.auditor!=="QUALIFIED_ASSET_RETIREMENT_OBLIGATIONS_UNQUANTIFIED"||!match(p,commonFields,expectedPort))bad("PORT_DATA");
+ if(s.year!==2025||s.code!=="94068"||s.name!=="Saguenay"||s.scope!=="CONSOLIDATED_CONTROLLED_ENTITIES_AND_ELECTRICITY_NETWORK"||s.auditor!=="UNMODIFIED"||s.auditor_date!=="2026-06-02"||!match(s,commonFields,expectedSag))bad("SAG_DATA");
  const urls=d.sources;
  if(!Array.isArray(urls)||urls.length!==2||urls[0]?.code!=="02047"||urls[0]?.register_path!=="data/g017f-rapprochement-municipal-fonctionnement-investissement-tresorerie-2025.json"||urls[0]?.screenshot_success!==false||urls[0]?.immutable_sha256!==null||urls[1]?.code!=="94068"||urls[1]?.url!=="https://ville.saguenay.ca/files/medias/La-ville-et-vie-d%C3%A9mocratique/Publications/Budget/Rapports-financiers-consolid%C3%A9s/Rapport-financier-2025-consolid%C3%A9-final.pdf"||JSON.stringify(urls[1]?.visual_page_indices)!=="[6,7,8]"||urls[1]?.screenshot_other_pages_cache_miss!==true||urls[1]?.immutable_sha256!==null||urls[1]?.year2024_comparatives_restated!==true)bad("SOURCE_PROVENANCE");
  if(p.revenue-p.expenses!==p.accrual_surplus||s.revenue-s.expenses!==s.accrual_surplus||s.revenue-s.investment_revenue!==s.operating_revenue||p.revenue-p.investment_revenue!==p.operating_revenue)bad("ACCRUAL_AND_REVENUE_LANES");
