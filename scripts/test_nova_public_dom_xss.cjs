@@ -9,6 +9,7 @@ const assert=require("node:assert/strict");
 const root=path.resolve(__dirname,"..");
 const script=fs.readFileSync(path.join(root,"projets/projet-nova/script.js"),"utf8");
 const legacyScript=fs.readFileSync(path.join(root,"projets/projet-nova/assets/script.js"),"utf8");
+const rootLegacyScript=fs.readFileSync(path.join(root,"script.js"),"utf8");
 
 const compassSource=fs.readFileSync(path.join(root,"projets/projet-nova/assets/boussole-electorale.js"),"utf8");
 function testCompassEvidenceLinks(){
@@ -147,6 +148,28 @@ async function render({documents=[],finance=[],meetings=[],updates=[],source=scr
   for(const bad of ["javascript:alert(1)","documents/../secret.pdf",
                     "/private.pdf","documents/malicious.svg"]){
     assert.equal(legacySafe.pdfHref(bad),"","legacy unsafe PDF href accepted: "+bad);
+  }
+
+  // La variante historique à la racine doit refuser les mêmes injections,
+  // même si l'artefact de publication isolé ne la distribue plus.
+  const rootLegacy=await render({...malicious,source:rootLegacyScript});
+  for(const name of ["docs","finance","meetings"]){
+    const html=rootLegacy.elements[name].innerHTML;
+    assert.ok(html.length>20,"root "+name+": rendu manquant");
+    for(const forbidden of ["<script","<svg","<iframe","<img",'href="javascript:']){
+      assert.ok(!html.includes(forbidden),"root "+name+": contenu actif "+forbidden);
+    }
+    assert.ok(html.includes("&lt;"),"root "+name+": texte non échappé");
+  }
+  assert.ok(rootLegacy.elements.docs.innerHTML.includes(
+    'href="documents/01_Resume_Officiel_1_Page_Projet_Nova.pdf"'));
+  assert.ok(!rootLegacy.elements.docs.innerHTML.includes('href="documents/../secret.pdf"'));
+  assert.ok(rootLegacy.elements.docs.innerHTML.includes('Document non approuvé'));
+  const rootSafe=vm.runInContext("NOVA_LEGACY_ROOT_DOM",rootLegacy.context);
+  assert.equal(rootSafe.escape("<&\\"'"),"&lt;&amp;&quot;&#39;");
+  for(const bad of ["javascript:alert(1)","documents/../secret.pdf","/private.pdf",
+    "documents/malicious.svg","documents/evil.pdf?download=1"]){
+    assert.equal(rootSafe.pdfHref(bad),"","root: lien PDF non sûr accepté "+bad);
   }
   const good=await render({updates:[{date:"2026-08-26",type:"NOVA",
     title:"Actualités",summary:"Résumé public",link:"finances.html",link_label:"Détails"}]});
