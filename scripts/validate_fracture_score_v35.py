@@ -67,7 +67,7 @@ def validate():
     for source in [model, js]:
         if re.search(r"(?:supabase|client|db|s)[.]from[ ]*[(]", source):
             errors.append("Le calculateur ne doit interroger aucune table distante")
-    if "project.slug==='fracture-du-reseau-mere'?null:safeLink(project.play_path)" not in data[HUB_SCRIPT]:
+    if "project.slug==='fracture-du-reseau-mere'?null:safeLibraryHref(project.play_path)" not in data[HUB_SCRIPT]:
         errors.append("L'ancienne URL « Jouer » Fracture doit rester désactivée")
     if "Mode Web en mise à niveau" not in data[GAME_WEB]:
         errors.append("Le moteur multijoueur n'est pas confirmé suspendu")
