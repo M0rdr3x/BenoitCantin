@@ -113,9 +113,16 @@ def main()->int:
         '.update({read_at:',
         '.is(\'read_at\',null)',
         'safeActionPath',
-        "path.startsWith('/compte/')",
-        "path.startsWith('/projets/sinjira/')"
+        'safeSocialDestination(value,',
+        "scopes:['/compte/','/projets/sinjira/']"
     ],'client notifications')
+    require(read(ROOT/'assets/js/sinjira-social-navigation-guard.mjs'),[
+        "target.origin!==base.origin",
+        "target.pathname!==rawPath",
+        "value.startsWith('//')",
+        "scopes.some(scope=>target.pathname.startsWith(scope))"
+    ],'garde partagé des URL sociales')
+
     forbid(client,[
         "from('user_notifications').insert",
         "from('user_notifications').delete",
