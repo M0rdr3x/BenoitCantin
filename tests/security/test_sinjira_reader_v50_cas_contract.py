@@ -15,7 +15,7 @@ FAKE_NOVEL="10000000-0000-0000-0000-000000000001"
 
 class CasProofNotProduction(unittest.TestCase):
     def test_no_production_migration_or_real_identity(self):
-        all_sql="\n".join(re.sub(r"(?m)^\\s*--[^\\n]*","",sql) for sql in (SETUP,B,A,RECONCILE))
+        all_sql="\n".join(line for sql in (SETUP,B,A,RECONCILE) for line in sql.splitlines() if not line.lstrip().startswith("--"))
         for forbidden in (
             "gpvivleexywljowcqkru","supabase.co","SERVICE_ROLE",
             "supabase db push","apply_migration","postgresql://",
