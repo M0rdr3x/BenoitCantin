@@ -10,7 +10,7 @@ function eq(actual, expected, label) { assert.equal(actual, expected, label); as
 function yes(value, label) { assert.ok(value, label); assertions++; }
 function contains(text, value, label) { yes(text.includes(value), label); }
 
-function fakeLedger({ reserveError = false, lookupError = false, updateError = false } = {}) {
+function fakeLedger({ reserveError = false, lookupError = false, updateError = false, updateNoRow = false } = {}) {
   const rows = new Map(), history = { inserts: [], updates: [], lookups: 0 };
   let sequence = 0;
   const service = {
@@ -50,13 +50,23 @@ function fakeLedger({ reserveError = false, lookupError = false, updateError = f
         },
         update(patch) {
           return {
-            async eq(columnName, id) {
+            eq(columnName, id) {
               eq(columnName, 'id', 'Mise à jour réservée à la ligne idempotente');
               history.updates.push({ id, ...patch });
-              if (updateError) return { error: { code: '500' } };
-              const row = [...rows.values()].find(r => r.id === id);
-              if (row) Object.assign(row, patch);
-              return { error: null };
+              return {
+                select(column) {
+                  eq(column, 'id', 'Vérification SQL limitée à l’identifiant');
+                  return {
+                    async maybeSingle() {
+                      if (updateError) return { data: null, error: { code: '500' } };
+                      const row = updateNoRow
+                        ? null : [...rows.values()].find(r => r.id === id);
+                      if (row) Object.assign(row, patch);
+                      return { data: row ? { id: row.id } : null, error: null };
+                    }
+                  };
+                }
+              };
             }
           };
         }
@@ -207,7 +217,27 @@ async function main() {
     eq(uncertainDuplicate.accepted, false, 'Pending ne devient pas un succès fictif');
     eq(requests.length, countBeforeRetry, 'Aucun second POST Formspree après réponse incertaine');
 
-    eq(requests.length, 5, 'Nombre exact de POST simulés sans réseau');
+    // PostgREST peut répondre sans erreur à un UPDATE sans aucune ligne modifiée.
+    // Le test exige un retour conservateur et aucun réessai risquant un doublon.
+    const absentRow = fakeLedger({ updateNoRow: true });
+    const notPersisted = await sendFormspreeNotice(
+      absentRow.service, 'compte_confirme', sourceId,
+      { email: 'demo@example.invalid' }
+    );
+    eq(notPersisted.accepted, false, 'UPDATE de zéro ligne ne certifie pas la livraison');
+    eq(notPersisted.reason, 'OUTBOX_STATUS_UPDATE_FAILED', 'Aucun identifiant mis à jour');
+    eq(absentRow.rows.values().next().value.delivery_status, 'pending',
+      'Réservation reste pending si zéro ligne mise à jour');
+    const noRetryCount = requests.length;
+    const noRowAgain = await sendFormspreeNotice(
+      absentRow.service, 'compte_confirme', sourceId,
+      { email: 'demo@example.invalid' }
+    );
+    eq(noRowAgain.already, true, 'Réservation précédente bloque le réessai');
+    eq(noRowAgain.accepted, false, 'Pas de succès fictif après UPDATE de zéro ligne');
+    eq(requests.length, noRetryCount, 'Aucun second POST sur UPDATE de zéro ligne');
+
+    eq(requests.length, 6, 'Nombre exact de POST simulés sans réseau');
     console.log('PASS SINJIRA Formspree : ' + assertions +
       ' assertions sur le vrai module TS, zéro appel réseau externe.');
   } finally {

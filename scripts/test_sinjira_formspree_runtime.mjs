@@ -6,7 +6,7 @@ import {sendFormspreeNotice} from '../supabase/functions/_shared/sinjira-formspr
 const SOURCE_ID='00000000-0000-4000-8000-000000000001';
 const EVENT_ID='33333333-3333-4333-8333-333333333333';
 
-function fakeDatabase({duplicate=false,prior='sent',writeThrows=false,readThrows=false}={}){
+function fakeDatabase({duplicate=false,prior='sent',writeThrows=false,readThrows=false,updateNoRow=false}={}){
   const changes=[];
   const client={
     from(table){
@@ -32,7 +32,22 @@ function fakeDatabase({duplicate=false,prior='sent',writeThrows=false,readThrows
         },
         update(data){
           changes.push(data);
-          return {eq:async()=>({error:null})};
+          return {
+            eq(column,id){
+              assert.equal(column,'id');
+              assert.equal(id,EVENT_ID);
+              return {
+                select(field){
+                  assert.equal(field,'id','UPDATE ne retourne que le UUID interne');
+                  return {
+                    async maybeSingle(){
+                      return {data:updateNoRow?null:{id:EVENT_ID},error:null};
+                    }
+                  };
+                }
+              };
+            }
+          };
         }
       };
     }
@@ -123,6 +138,17 @@ test('SINJIRA Formspree : canal secondaire, anti-doublons et filtrage',async()=>
     });
     assert.equal(offlineResult.accepted,false);
     assert.equal(failingExternal.changes[0].delivery_status,'failed');
+
+    // PostgREST n'émet pas nécessairement d'erreur si UPDATE ne touche
+    // aucune ligne : refuser une preuve de livraison fictive.
+    globalThis.fetch=async()=>new Response(JSON.stringify({ok:true}),{status:200});
+    const noRow=fakeDatabase({updateNoRow:true});
+    const noRowResult=await sendFormspreeNotice(noRow.client,'compte_confirme',SOURCE_ID,{
+      email:'visiteur@example.com'
+    });
+    assert.equal(noRowResult.accepted,false,'aucune ligne SQL mise à jour : avis non certifié');
+    assert.equal(noRowResult.reason,'OUTBOX_STATUS_UPDATE_FAILED','cause de traçabilité conservée');
+    assert.equal(noRow.changes[0].delivery_status,'sent','tentative d’UPDATE correctement simulée');
 
     assert.ok(warnings.length>0,'journaliser uniquement des codes techniques');
   } finally {

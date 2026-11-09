@@ -152,10 +152,15 @@ async function sendFormspreeNoticeCore(
   }catch{
     console.warn('[SINJIRA Formspree]','DELIVERY_UNAVAILABLE');
   }
-  const {error:stateError}=await service.from('sinjira_formspree_events')
+  // Par défaut PostgREST peut réussir un UPDATE qui modifie zéro ligne.
+  // Le SELECT du seul identifiant confirme que la réservation a bien été mise
+  // à jour, sans exposer son contenu ni affaiblir RLS.
+  const {data:updatedStatus,error:stateError}=await service.from('sinjira_formspree_events')
     .update({delivery_status:accepted?'sent':'failed',sent_at:accepted?new Date().toISOString():null})
-    .eq('id',receipt.id);
-  if(stateError){
+    .eq('id',receipt.id)
+    .select('id')
+    .maybeSingle();
+  if(stateError || updatedStatus?.id!==receipt.id){
     // Formspree a peut-être accepté la requête, mais son statut ne peut pas être
     // certifié dans le journal. Ne jamais annoncer une livraison prouvée,
     // et ne pas rejouer automatiquement un POST possiblement accepté.
