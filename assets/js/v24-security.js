@@ -158,15 +158,28 @@ try{
     }
     const submit=enrollForm.querySelector('[type="submit"]');
     if(submit)submit.disabled=true;
-    const {error}=await s.auth.mfa.challengeAndVerify({factorId:pendingFactorId,code});
-    if(error){
-      if(submit)submit.disabled=false;
-      setStatus(status,'Le code TOTP est invalide ou expiré. Utilisez le code actuellement affiché.','error');
+    // Une panne réseau peut REJETER la promesse, pas seulement retourner error.
+    // Garder l'activation en attente et rendre le bouton réutilisable.
+    try {
+      const {error}=await s.auth.mfa.challengeAndVerify({factorId:pendingFactorId,code});
+      if(error){
+        setStatus(status,'Le code TOTP est invalide ou expiré. Utilisez le code actuellement affiché.','error');
+        return;
+      }
+    } catch {
+      setStatus(status,'La vérification TOTP est temporairement indisponible. Réessayez avec le code courant.','error');
       return;
+    } finally {
+      if(submit)submit.disabled=false;
     }
     hideSetup();
     setStatus(status,'Authentification TOTP activée. Les prochaines connexions aux pages privées demanderont ce second facteur.','success');
-    await loadFactors(s);
+    try {
+      await loadFactors(s);
+    } catch {
+      // Le facteur est déjà activé, même si l'actualisation de l'écran échoue.
+      setStatus(status,'Facteur TOTP activé. Actualisez la page pour vérifier son état.','info');
+    }
   });
 
   cancelButton?.addEventListener('click',async()=>{
