@@ -28,7 +28,7 @@ La documentation Supabase précise que les privilèges GRANT et les politiques R
 
 La migration V32 `supabase/migrations/20261107185500_sinjira_reader_progress_spot_v32.sql` existe déjà sur `main` et ajoute `scroll_ratio numeric(5,4) NULL` avec contrainte de valeur entre 0 et 1. **Cette PR V47 ne modifie pas la migration et ne l'applique pas.**
 
-Respecter strictement [`docs/SUPABASE_PRODUCTION_RUNBOOK.md`](../SUPABASE_PRODUCTION_RUNBOOK.md) : le registre de migrations effectives, le workspace protégé, le prévol local puis distant, la confirmation explicite sur `main` et la protection de l'Environment GitHub `production`. **Ne jamais utiliser un `supabase db push --linked` depuis l'historique de reconstruction du dépôt.**
+Respecter strictement [`docs/SUPABASE_PRODUCTION_RUNBOOK.md`](SUPABASE_PRODUCTION_RUNBOOK.md) : le registre de migrations effectives, le workspace protégé, le prévol local puis distant, la confirmation explicite sur `main` et la protection de l'Environment GitHub `production`. **Ne jamais utiliser un `supabase db push --linked` depuis l'historique de reconstruction du dépôt.**
 
 Avant et après application autorisée, vérifier les différences de schéma attendues, la compatibilité avec les progressions anciennes (position `NULL`), les politiques RLS, l'absence d'accès inter-comptes et le droit de lecture aux romans réellement autorisés. Le correctif de schéma ne vaut pas recette de lecture.
 
