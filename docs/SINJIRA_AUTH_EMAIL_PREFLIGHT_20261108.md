@@ -44,6 +44,19 @@ prévol et les courriels réellement reçus ne sont pas constatés.
 
 Le prévol GitHub Actions ne télécharge plus Python 3.12.14 auprès de `actions/python-versions` : cette distribution externe générait des erreurs réseau 504 dans plusieurs jobs de production. Les deux jobs utilisent le Python 3.12 déjà présent sur `ubuntu-24.04` et **échouent** s'il n'est pas en version 3.12. Les assertions de sécurité de `scripts/preflight_sinjira_auth_email.py --self-test` exigent les deux contrôles Python, l'environnement `production`, la branche `main`, l'événement manuel et le secret déjà présent, sans jamais imprimer sa valeur. Aucune règle de validation Auth n'a été désactivée.
 
+## Vérification SMTP personnalisée — révision du 8 novembre 2026
+
+Le prévol en lecture seule vérifie maintenant **13 contrats Auth** (au lieu de 9), dont quatre exigences explicitement SMTP fondées sur les champs présents dans le `GET /v1/projects/{ref}/config/auth` de Supabase :
+
+- Un `smtp_host` non vide et différent d'une cible de développement locale.
+- Un `smtp_port` numérique valide (1 à 65535), accepté comme entier ou texte.
+- Une `smtp_admin_email` syntaxiquement plausible, sans exposer son adresse dans le résultat du workflow.
+- Un `smtp_user` renseigné, sans afficher sa valeur.
+
+**Frontière de vérification :** la présence de ces champs **ne prouve pas** l'exactitude du mot de passe SMTP, la validation du domaine émetteur, les quotas, l'acceptation par le serveur externe ou l'arrivée d'un courriel. Le workflow ne lit pas `smtp_pass` comme preuve de succès, ne produit aucune valeur privée et n'envoie aucun message. Il ajoute un avertissement permanent de validation par véritable réception dans une boîte de test. Un contrôle SMTP échoué garde le jalon « SMTP Auth : 3 % » **non certifié** ; un contrôle réussi ne le clôture pas sans preuve de délivrabilité.
+
+Les autocontrôles du script couvrent les valeurs absentes, le port invalide et les noms d'hôte locaux. Aucun fournisseur payant, accès Production ou secret n'est ajouté par cette modification.
+
 Le diagnostic des paramètres **privés** demeure manuel et protégé : `Run workflow` → `main` → `PREFLIGHT-READ-ONLY` → approbation `production` si applicable. Il ne crée aucun utilisateur ni courriel et ne modifie pas les paramètres Auth. Il faut toujours confirmer séparément la réception Formspree et le parcours TOTP AAL2 réel.
 
 ## État opérationnel actualisé — 8 novembre 2026
