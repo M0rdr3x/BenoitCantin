@@ -7,6 +7,8 @@ on:
       - "supabase/NOVA_POLL_SCHEMA_PREDEPLOY.sql"
       - "tests/security/sql/nova_poll_v7_*.sql"
       - "tests/security/test_nova_poll_v7_disposable_contract.py"
+      - "tests/security/test_nova_poll_v8_concurrency_contract.py"
+      - "scripts/test_nova_poll_v8_concurrent_local.sh"
       - "docs/nova-sondages/rapport-prevol-prive-postgresql-v7-2026-11-09.md"
       - ".github/workflows/nova-poll-v7-sql-private-lab.yml"
   push:
@@ -15,6 +17,8 @@ on:
       - "supabase/NOVA_POLL_SCHEMA_PREDEPLOY.sql"
       - "tests/security/sql/nova_poll_v7_*.sql"
       - "tests/security/test_nova_poll_v7_disposable_contract.py"
+      - "tests/security/test_nova_poll_v8_concurrency_contract.py"
+      - "scripts/test_nova_poll_v8_concurrent_local.sh"
       - "docs/nova-sondages/rapport-prevol-prive-postgresql-v7-2026-11-09.md"
       - ".github/workflows/nova-poll-v7-sql-private-lab.yml"
 
@@ -65,5 +69,10 @@ jobs:
           PGCONNECT_TIMEOUT: '10'
         run: |
           psql --no-psqlrc -h 127.0.0.1 -U postgres -d nova_poll_v7_disposable -v ON_ERROR_STOP=1 -f tests/security/sql/nova_poll_v7_private_batches.sql
+      - name: Soumissions réellement concurrentes, uniquement jetons de test
+        run: |
+          python3 -m unittest discover -s tests/security -p test_nova_poll_v8_concurrency_contract.py -v
+          bash -n scripts/test_nova_poll_v8_concurrent_local.sh
+          bash scripts/test_nova_poll_v8_concurrent_local.sh
       - name: Décision contrôlée - l'homologation reste interdite
         run: echo 'NOVA-POLL-V7-LAB-ONLY: aucun vote réel; le sondage reste fermé, 6/11 critères, pas de prévol privé complet ni GO.'
