@@ -48,7 +48,9 @@ def main():
     require(focus,["new URLSearchParams(location.search).get('post')",'UUID_RE',"[data-post]","data-real-feed],[data-character-feed]",'MutationObserver',"card.dataset.notificationTarget='true'","card.scrollIntoView({behavior:'smooth',block:'center'})"],'focus publication')
     forbid(focus,['innerHTML','eval(','location.href=targetId'],'focus publication')
 
-    require(notify,["social_real_reply:'Communauté'","social_character_reply:'Rôle-play'","path.startsWith('/compte/')"],'centre notifications')
+    require(notify,["social_real_reply:'Communauté'","social_character_reply:'Rôle-play'","safeSocialDestination(value,"],'centre notifications')
+    guard=(ROOT/'assets/js/sinjira-social-navigation-guard.mjs').read_text('utf-8')
+    require(guard,["target.origin!==base.origin","target.pathname!==rawPath","scopes.some(scope=>target.pathname.startsWith(scope))"],'frontière des URL sociales')
     require(notify_page,['réponses de la Communauté','sinjira-user-notifications-v24-4-63.js?v='],'page notifications')
     match=re.search(r'sinjira-user-notifications-v24-4-63\.js\?v=([0-9]+(?:\.[0-9]+)+)',notify_page)
     if not match or version_tuple(match.group(1)) < version_tuple('24.4.73'):
