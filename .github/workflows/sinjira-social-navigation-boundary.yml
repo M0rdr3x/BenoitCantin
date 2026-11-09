@@ -12,6 +12,7 @@ on:
       - 'compte/index.html'
       - 'scripts/test_sinjira_social_navigation_boundary.cjs'
       - 'scripts/validate_user_notifications_v24_4_63.py'
+      - 'scripts/validate_social_reply_notifications_v24_4_73.py'
       - '.github/workflows/sinjira-social-navigation-boundary.yml'
   push:
     branches: [main]
@@ -24,6 +25,7 @@ on:
       - 'compte/index.html'
       - 'scripts/test_sinjira_social_navigation_boundary.cjs'
       - 'scripts/validate_user_notifications_v24_4_63.py'
+      - 'scripts/validate_social_reply_notifications_v24_4_73.py'
       - '.github/workflows/sinjira-social-navigation-boundary.yml'
   workflow_dispatch:
 
@@ -57,3 +59,5 @@ jobs:
         run: python3 scripts/validate_user_notifications_v24_4_63.py
       - name: Vérifier les contrats de modération communautaire
         run: python3 scripts/validate_community_safety_v24_4_79.py
+      - name: Vérifier les notifications de réponses sociales
+        run: python3 scripts/validate_social_reply_notifications_v24_4_73.py
