@@ -6,9 +6,16 @@ on:
     paths:
       - 'assets/js/sinjira-library.js'
       - 'assets/js/sinjira-library-v24-4-61.js'
+      - 'assets/js/sinjira-novel-href.mjs'
+      - 'assets/js/sinjira-account-v18.js'
+      - 'assets/js/sinjira-reads-v24-4-61.js'
+      - 'compte/mes-lectures.html'
+      - 'compte/bibliotheque-romans.html'
       - 'assets/js/sinjira-document-url-policy.mjs'
       - 'assets/js/sinjira-library-hub-v26.js'
       - 'scripts/test_sinjira_library_safe_links.cjs'
+      - 'scripts/test_sinjira_novel_safe_links.cjs'
+      - 'scripts/validate_library_v24_4_61.py'
       - 'scripts/test_sinjira_document_url_boundary.mjs'
       - '.github/workflows/sinjira-library-safe-links.yml'
   push:
@@ -16,9 +23,16 @@ on:
     paths:
       - 'assets/js/sinjira-library.js'
       - 'assets/js/sinjira-library-v24-4-61.js'
+      - 'assets/js/sinjira-novel-href.mjs'
+      - 'assets/js/sinjira-account-v18.js'
+      - 'assets/js/sinjira-reads-v24-4-61.js'
+      - 'compte/mes-lectures.html'
+      - 'compte/bibliotheque-romans.html'
       - 'assets/js/sinjira-document-url-policy.mjs'
       - 'assets/js/sinjira-library-hub-v26.js'
       - 'scripts/test_sinjira_library_safe_links.cjs'
+      - 'scripts/test_sinjira_novel_safe_links.cjs'
+      - 'scripts/validate_library_v24_4_61.py'
       - 'scripts/test_sinjira_document_url_boundary.mjs'
       - '.github/workflows/sinjira-library-safe-links.yml'
   workflow_dispatch:
@@ -45,11 +59,19 @@ jobs:
         run: |
           node --check assets/js/sinjira-library.js
           node --check assets/js/sinjira-library-v24-4-61.js
+          node --check assets/js/sinjira-account-v18.js
+          node --check assets/js/sinjira-reads-v24-4-61.js
+          node --check assets/js/sinjira-novel-href.mjs
           node --check assets/js/sinjira-library-hub-v26.js
           node --check assets/js/sinjira-document-url-policy.mjs
           node --check scripts/test_sinjira_library_safe_links.cjs
+          node --check scripts/test_sinjira_novel_safe_links.cjs
           node --check scripts/test_sinjira_document_url_boundary.mjs
       - name: Simuler les URLs dangereuses sans accès aux comptes
         run: node scripts/test_sinjira_library_safe_links.cjs
+      - name: Vérifier toutes les fiches romans depuis des métadonnées hostiles
+        run: node scripts/test_sinjira_novel_safe_links.cjs
+      - name: Vérifier le contrat des lecteurs V24 et historiques
+        run: python3 scripts/validate_library_v24_4_61.py
       - name: Rejeter les faux documents signés et origines hostiles
         run: node scripts/test_sinjira_document_url_boundary.mjs
