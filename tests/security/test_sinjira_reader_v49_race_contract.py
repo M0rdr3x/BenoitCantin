@@ -97,8 +97,8 @@ class SameAccountOutOfOrderWriteProof(unittest.TestCase):
             self.assertNotIn("DROP TABLE",sql.upper())
 
     def test_iso_timestamps_are_intentionally_stale(self):
-        self.assertEqual(self.steps[1].count(B_TIME),2)
-        self.assertEqual(self.steps[2].count(A_TIME),2)
+        self.assertEqual(self.steps[1].count(B_TIME),3)
+        self.assertEqual(self.steps[2].count(A_TIME),3)
         self.assertRegex(self.steps[2],r"ON CONFLICT \(user_id,novel_id\) DO UPDATE SET")
 
 if __name__ == "__main__":
