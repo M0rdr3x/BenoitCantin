@@ -79,6 +79,8 @@ def run() -> None:
                     service_workers="block",
                 )
                 attempted_writes = []
+                external_gets_during_answers = []
+                interaction_started = [False]
 
                 def prevent_writes(route) -> None:
                     request = route.request
@@ -90,6 +92,17 @@ def run() -> None:
 
                 context.route("**/*", prevent_writes)
                 page = context.new_page()
+
+                def observe_request(request) -> None:
+                    if not interaction_started[0]:
+                        return
+                    host = urlparse(request.url).hostname
+                    if host not in ("127.0.0.1", "localhost", None):
+                        # Ne pas enregistrer une URL qui pourrait contenir une
+                        # réponse; les contrôles n'utilisent que le décompte.
+                        external_gets_during_answers.append(request.method)
+
+                page.on("request", observe_request)
                 response = page.goto(urljoin(BASE_URL, COMPASS),
                                      wait_until="domcontentloaded", timeout=30_000)
                 assert response is not None and response.status == 200
@@ -99,6 +112,7 @@ def run() -> None:
                     timeout=15_000,
                 )
                 assert page.locator("#compass-results").is_hidden()
+                interaction_started[0] = True
                 keyboard_activate(page, "#compass-start")
                 check_question_semantics(page, "q01")
                 assert page.locator("#compass-next").is_disabled()
@@ -110,9 +124,11 @@ def run() -> None:
                 # Le focus automatique de la légende doit permettre d'atteindre
                 # les réponses sans souris, puis d'en sélectionner une par Espace.
                 page.keyboard.press("Tab")
-                assert page.evaluate(
-                    "() => document.activeElement.matches("
-                    "'#compass-question-stage input[type=radio][value=\\\"-3\\\"]')"
+                first = page.locator(
+                    '#compass-question-stage input[type="radio"][value="-3"]'
+                )
+                assert first.evaluate(
+                    "(e) => document.activeElement === e"
                 ), "Tab depuis la légende n'atteint pas la première réponse"
                 page.keyboard.press("Space")
                 assert page.locator(
@@ -152,6 +168,10 @@ def run() -> None:
                     "(e) => document.activeElement === e"
                 ), "Le retour au début doit restaurer un focus logique"
                 assert not attempted_writes, "Tentative réseau d'écriture interdite"
+                assert not external_gets_during_answers, (
+                    "Connexion externe observée pendant les réponses"
+                )
+                interaction_started[0] = False
                 page.reload(wait_until="domcontentloaded", timeout=30_000)
                 assert page.locator("#compass-results").is_hidden()
                 assert not attempted_writes, "Écriture détectée après rechargement"
@@ -164,6 +184,7 @@ def run() -> None:
                     "status": "passed",
                     "votes_submitted": 0,
                     "network_writes_attempted": len(attempted_writes),
+                    "external_requests_during_answers": len(external_gets_during_answers),
                     "scope": "local_browser_only_not_WCAG_certification",
                 }, ensure_ascii=False))
                 context.close()
