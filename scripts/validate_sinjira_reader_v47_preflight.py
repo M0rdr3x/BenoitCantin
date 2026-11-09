@@ -71,7 +71,8 @@ def validate_sources(preflight: str, migration: str) -> list[str]:
         "sinjira_reader_library", "pg_policies", "relrowsecurity",
         "has_table_privilege('anon'", "has_table_privilege('authenticated'",
         "reader_single_owner_policy", "auth.uid", "reader_scroll_ratio_column",
-        "reader_scroll_ratio_range", "numeric", "is_nullable='YES'",
+        "reader_scroll_ratio_range", "numeric", "numeric_precision=5",
+        "numeric_scale=4", "column_default IS NULL", "is_nullable='YES'",
         "sinjira_reader_library_scroll_ratio_range", "reader_legacy_bounds",
     ):
         if expected not in preflight:
