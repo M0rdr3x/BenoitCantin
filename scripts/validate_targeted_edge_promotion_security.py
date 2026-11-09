@@ -16,6 +16,7 @@ PUBLIC = frozenset(("get-document-url", "send-game-report", "life-story-delivery
 SHA_CHECKOUT = "d23441a48e516b6c34aea4fa41551a30e30af803"
 SHA_PYTHON = "ece7cb06caefa5fff74198d8649806c4678c61a1"
 SHA_SUPABASE = "3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf"
+REQUIRED_SHARED = ("auth.ts", "cors.ts", "limited-body.mjs")
 
 
 def check(condition: bool, errors: list[str], label: str) -> None:
@@ -30,6 +31,9 @@ def verify_repository(root: Path, workflow: str) -> list[str]:
         cfg = config.get("functions", {}).get(slug, {})
         check(cfg.get("verify_jwt") is True, errors, slug + ": JWT doit rester activé")
         source = (root / "supabase/functions" / slug / "index.ts").read_text("utf-8")
+        for dependency in REQUIRED_SHARED:
+            check("../_shared/" + dependency in source, errors,
+                  slug + ": import partagé obligatoire absent " + dependency)
         for marker in ("requiredUser(req)", "readLimitedUtf8Body", "serviceClient()", "no-store"):
             check(marker in source, errors, slug + ": contrat absent " + marker)
         for marker in ("await req.json()", "await req.text()"):
@@ -146,20 +150,45 @@ def verify_snapshot(current: list[dict], slug: str, phase: str,
 
 
 def verify_deployed_code(local: Path, remote: Path, slug: str) -> list[str]:
+    """Refuser une release tant que les dépendances Auth du bundle ne sont pas égales au SHA approuvé.
+
+    Un index.ts identique n'implique PAS une authentification identique si
+    _shared/auth.ts est resté à une ancienne version en production.
+    """
     if slug not in TARGETS:
         return ["Fonction hors liste blanche"]
-    rel = Path("supabase/functions") / slug / "index.ts"
-    source = remote / rel
-    # Refuser aussi les parents symboliques : un simple is_symlink() sur index.ts ne suffit pas.
-    chain = (remote, remote / "supabase", remote / "supabase/functions",
-             remote / "supabase/functions" / slug, source)
-    if any(item.is_symlink() for item in chain) or not source.is_file():
-        return ["Source téléchargée absente ou lien symbolique"]
-    if source.stat().st_size > 250_000:
-        return ["Source téléchargée anormalement grande"]
-    normalize = lambda p: p.read_text("utf-8", errors="strict").replace("\r\n", "\n").rstrip("\n")
-    return [] if normalize(local / rel) == normalize(source) else ["Code déployé différent de main"]
-
+    required = (
+        Path("supabase/functions") / slug / "index.ts",
+        *(Path("supabase/functions/_shared") / name for name in REQUIRED_SHARED),
+    )
+    issues: list[str] = []
+    for rel in required:
+        for base, label in ((local, "approuvée"), (remote, "déployée")):
+            current = base
+            # L'ensemble de la chaîne doit être régulier : pas de substitution
+            # par un lien symbolique à un niveau intermédiaire du répertoire.
+            for part in rel.parts:
+                current = current / part
+                if current.is_symlink():
+                    issues.append(label + " : lien symbolique interdit " + str(rel))
+                    break
+            else:
+                if not current.is_file():
+                    issues.append(label + " : dépendance absente " + str(rel))
+                elif current.stat().st_size > 250_000:
+                    issues.append(label + " : fichier anormalement volumineux " + str(rel))
+        if issues:
+            continue
+        try:
+            canonical = (local / rel).read_text("utf-8", errors="strict")
+            deployed = (remote / rel).read_text("utf-8", errors="strict")
+            # Normaliser uniquement le format des lignes téléchargées.
+            normalized = lambda source: source.replace("\r\n", "\n").rstrip("\n")
+            if normalized(canonical) != normalized(deployed):
+                issues.append("Dérive du bundle Edge : " + str(rel))
+        except (OSError, UnicodeError) as exc:
+            issues.append("Source de bundle illisible : " + str(rel))
+    return issues
 
 def self_test() -> None:
     records = [{"slug": slug, "status": "ACTIVE", "verify_jwt": slug not in PUBLIC,
@@ -200,13 +229,39 @@ def self_test() -> None:
 
     with tempfile.TemporaryDirectory() as tmp:
         local,remote=(Path(tmp)/"local",Path(tmp)/"remote")
+        entry = Path("supabase/functions/revoke-my-contributions/index.ts")
+        shared = Path("supabase/functions/_shared")
         for root in (local,remote):
-            f=root/"supabase/functions/revoke-my-contributions/index.ts"
+            f=root/entry
             f.parent.mkdir(parents=True)
             f.write_text("hardened();\n","utf-8")
+            for name in REQUIRED_SHARED:
+                dep=root/shared/name
+                dep.parent.mkdir(parents=True,exist_ok=True)
+                dep.write_text("export const secure = true;\n","utf-8")
         assert not verify_deployed_code(local,remote,"revoke-my-contributions")
-        (remote/"supabase/functions/revoke-my-contributions/index.ts").write_text("unsafe();\n","utf-8")
-        assert verify_deployed_code(local,remote,"revoke-my-contributions")
+        (remote/entry).write_text("unsafe();\n","utf-8")
+        assert verify_deployed_code(local,remote,"revoke-my-contributions"), "index.ts divergent accepté"
+        (remote/entry).write_text("hardened();\n","utf-8")
+        assert not verify_deployed_code(local,remote,"revoke-my-contributions")
+        old_auth=remote/shared/"auth.ts"
+        old_auth.write_text("export const secure = false;\n","utf-8")
+        assert verify_deployed_code(local,remote,"revoke-my-contributions"), "ancienne auth.ts acceptée"
+        old_auth.unlink()
+        assert verify_deployed_code(local,remote,"revoke-my-contributions"), "auth.ts absente acceptée"
+        old_auth.symlink_to(local/shared/"auth.ts")
+        assert verify_deployed_code(local,remote,"revoke-my-contributions"), "lien auth.ts accepté"
+        old_auth.unlink()
+        old_auth.write_text("export const secure = true;\n","utf-8")
+        assert not verify_deployed_code(local,remote,"revoke-my-contributions")
+        old_cors=remote/shared/"cors.ts"
+        old_cors.write_text("corsUnsafe();\n","utf-8")
+        assert verify_deployed_code(local,remote,"revoke-my-contributions"), "cors divergent accepté"
+        old_cors.write_text("export const secure = true;\n","utf-8")
+        old_body=remote/shared/"limited-body.mjs"
+        old_body.write_text("readUnbounded();\n","utf-8")
+        assert verify_deployed_code(local,remote,"revoke-my-contributions"), "lecteur non borné accepté"
+
     workflow=WORKFLOW.read_text("utf-8")
     assert not verify_repository(ROOT,workflow),verify_repository(ROOT,workflow)
     for label,src in {
