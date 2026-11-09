@@ -44,6 +44,7 @@ async function scenario(mode) {
   const status = element();
   let factorStatus = 'unverified';
   let enrollCalls = 0, verifyCalls = 0, factorRefresh = 0;
+  let releaseVerification = null;
   const messages = [];
   const mfa = {
     async listFactors() {
@@ -72,6 +73,9 @@ async function scenario(mode) {
       eq(code, '123456', 'Code fictif issu du formulaire et non de la page');
       if (mode === 'network-error') throw new Error('Simulated network failure');
       if (mode === 'invalid-code') return { error: { message: 'Invalid TOTP' } };
+      if (mode === 'slow-success') {
+        await new Promise(resolve => { releaseVerification = resolve; });
+      }
       factorStatus = 'verified';
       return { data: { access_token: 'FAKE_ACCESS_TOKEN' }, error: null };
     }
@@ -113,7 +117,18 @@ async function scenario(mode) {
   eq(enrollCalls, 1, 'Un seul enrôlement de test');
   eq(setup.hidden, false, 'Secret temporaire présenté uniquement après enrôlement');
   eq(form.submitButton.disabled, false, 'Code utilisable après enrôlement');
-  await form.listeners.submit({ preventDefault() {} });
+  if (mode === 'slow-success') {
+    const inFlight = form.listeners.submit({ preventDefault() {} });
+    eq(form.submitButton.disabled, true, 'Challenge initial en cours : bouton verrouillé');
+    eq(typeof releaseVerification, 'function', 'Le transport MFA est volontairement en attente');
+    await form.listeners.submit({ preventDefault() {} });
+    eq(verifyCalls, 1, 'Une seconde soumission ne lance pas un second challenge TOTP');
+    eq(form.submitButton.disabled, true, 'Le doublon ne déverrouille pas le premier challenge');
+    releaseVerification();
+    await inFlight;
+  } else {
+    await form.listeners.submit({ preventDefault() {} });
+  }
   eq(verifyCalls, 1, 'Un seul challengeAndVerify par soumission');
   if (mode === 'network-error') {
     eq(form.submitButton.disabled, false, 'Exception réseau : bouton réactivé');
@@ -151,6 +166,7 @@ async function main() {
   await scenario('invalid-code');
   await scenario('success');
   await scenario('refresh-failure');
+  await scenario('slow-success');
   console.log('PASS SINJIRA sécurité TOTP : ' + assertions +
     ' assertions exécutées sur le vrai module, sans compte ni réseau.');
 }
