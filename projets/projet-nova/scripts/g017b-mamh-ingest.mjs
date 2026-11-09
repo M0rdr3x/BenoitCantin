@@ -113,7 +113,10 @@ async function main(){
       auditableMeaningAndSourceBeforePolicy:true
     },
     programCompletionScoreChange:0,
-    actualMunicipalDataParsed:true,
+    localInputCsvParsed:true,
+    sourceYearsDeclaredByCaller:true,
+    realOfficialMamhCsvAuthenticated:false,
+    actualMunicipalDataParsed:false,
     // L'appelant peut fournir des fichiers de test ou des fichiers non officiels :
     // l'outil ne peut pas authentifier l'éditeur et interdit toute diffusion certifiée.
     inputsFromOfficialPublisherIndependentlyAuthenticated:false,
