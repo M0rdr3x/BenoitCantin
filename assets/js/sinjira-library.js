@@ -1,4 +1,5 @@
-import {getSupabase,requireUser,escapeHtml,setStatus,roleLabel,projectStatusLabel,isSinjiraOwner} from './sinjira-supabase.js';
+import {getSupabase,requireUser,escapeHtml,setStatus,roleLabel,projectStatusLabel,isSinjiraOwner,SINJIRA_CONFIG} from './sinjira-supabase.js';
+import {resolveDocumentUrl} from './sinjira-document-url-policy.mjs';
 
 const page=document.body.dataset.libraryPage||'',status=document.querySelector('[data-library-status]');
 let user=null,owner=false;
@@ -22,7 +23,13 @@ async function openDoc(id){
   setStatus(status,'Préparation du document sécurisé…','info');
   const {data,error}=await getSupabase().functions.invoke('get-document-url',{body:{document_id:id}});
   if(error||!data?.ok||!data?.url){setStatus(status,data?.error||error?.message||'Accès impossible.','error');return}
-  window.open(data.url,'_blank','noopener');setStatus(status,data.protected?'Document ouvert avec un lien temporaire sécurisé.':'Document ouvert.','success');
+  const destination=resolveDocumentUrl(data.url,{
+    siteOrigin:location.origin,storageOrigin:SINJIRA_CONFIG.supabaseUrl,
+    protectedDocument:data.protected
+  });
+  if(!destination){setStatus(status,'Le serveur a renvoyé un lien de document non autorisé.','error');return}
+  window.open(destination,'_blank','noopener,noreferrer');
+  setStatus(status,data.protected?'Document ouvert avec un lien temporaire sécurisé.':'Document ouvert.','success');
 }
 function bindDocs(root=document){root.querySelectorAll('[data-open-document]').forEach(b=>b.addEventListener('click',()=>openDoc(b.dataset.openDocument)))}
 async function accessMap(){
