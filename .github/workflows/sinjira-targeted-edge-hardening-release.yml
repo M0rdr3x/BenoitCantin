@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/sinjira-targeted-edge-hardening-release.yml'
       - 'scripts/validate_targeted_edge_promotion_security.py'
+      - 'docs/sinjira-targeted-edge-security-release.md'
       - 'supabase/functions/revoke-my-contributions/**'
       - 'supabase/functions/redeem-license-code/**'
       - 'supabase/config.toml'
@@ -14,6 +15,7 @@ on:
     paths:
       - '.github/workflows/sinjira-targeted-edge-hardening-release.yml'
       - 'scripts/validate_targeted_edge_promotion_security.py'
+      - 'docs/sinjira-targeted-edge-security-release.md'
       - 'supabase/functions/revoke-my-contributions/**'
       - 'supabase/functions/redeem-license-code/**'
       - 'supabase/config.toml'
