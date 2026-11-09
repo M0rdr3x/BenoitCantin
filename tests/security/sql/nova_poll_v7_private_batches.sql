@@ -102,7 +102,7 @@ BEGIN
   IF n<>8 THEN RAISE EXCEPTION 'V7: 19 réponses fictives ne figurent pas dans le lot'; END IF;
   SELECT count(*) INTO n FROM public.nova_poll_public_counts
    WHERE poll_version='nova-consultation-v1' AND option_value=-1 AND total=5;
-  IF n<>8 THEN RAISE EXCEPTION 'V7: la cellule de cinq réponses n'est pas présente'; END IF;
+  IF n<>8 THEN RAISE EXCEPTION 'V7: la cellule de cinq réponses n''est pas présente'; END IF;
   IF (SELECT count(*) FROM public.nova_poll_receipts)<>24 THEN
    RAISE EXCEPTION 'V7: compteurs bruts divergents';
   END IF;
