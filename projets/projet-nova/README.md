@@ -707,6 +707,22 @@ Registre : `data/g016z-controle-versions-source-municipale-mamh.json`. Le score 
 
 **Suite G0.17f :** produire pour un échantillon vérifié de municipalités un pont d'exploitation et d'investissement, avec revenus réellement encaissés, subventions conditionnelles, frais récurrents, contrôle des transferts et audits par régime constitutionnel. **Le score reste 47/100 tant que les conditions de financement ne sont pas prouvées.**
 
+
+## G0.17f — Rapprochement municipal réel 2025 : fonctionnement, investissement et trésorerie (8 novembre 2026)
+
+**État du programme Nova–Sinjira : 47/100 selon l'audit interne (53 points restants).** La phase G0.17f transforme les comptes municipaux **2025 de Port-Daniel–Gascons** en un **pont fiscal et financier contrôlable**. Elle n'extrapole **pas** ce cas à toutes les municipalités ni au budget souverain.
+
+- **Source officielle :** [Rapport financier 2025 MAMH, municipalité 02047](https://www.mamh.gouv.qc.ca/documentsfinanciersweb/Rapport-financier-2025-et-autres-02047.pdf), pages PDF **3, 7, 8, 10, 26 à 30**. Extraction du texte relue; capture d'image du PDF échouée (**cache miss**). L'auditeur indépendant a formulé une **opinion avec réserve** sur les obligations de mise hors service d'immobilisations non évaluées. **Il n'a pas audité Nova**.
+- **Revenus de fonctionnement : 5 930 672 $**, dont **724 172 $ de transferts de fonctionnement**. **Transferts d'investissement reconnus : 19 799 872 $**. Leur somme donne les **25 730 544 $ de recettes comptables**. Les revenus reconnus ne signifient pas que les subventions sont encaissées ou disponibles pour les salaires réguliers.
+- **Charges 2025 : 7 021 908 $**, dont **1 820 788 $ de rémunérations et charges sociales** et **1 483 807 $ d'amortissement non monétaire**. Les répartitions par fonctions (transport, eau, loisirs, etc.) et par natures (personnel, biens, dette, etc.) sont deux présentations du même total : **ne jamais les additionner**.
+- **Fonctionnement à des fins fiscales : 68 566 $ d'excédent** : revenus 5 930 672 $ − charges 7 021 908 $ + amortissement 1 483 807 $ − remboursement fiscal de dette 560 996 $ + affectations nettes 236 991 $. **Ce résultat n'est pas un solde bancaire ni une recette Nova**.
+- **Investissement à des fins fiscales : −1 845 312 $**, avec **19 799 872 $** de recettes d'investissement, **22 581 524 $** d'acquisitions constatées, **650 000 $** de financement à long terme et **286 340 $** d'affectations. Sur les acquisitions, **21 542 601 $** relèvent de l'hygiène du milieu, **pas nécessairement entièrement du chantier Gascons**.
+- **Trésorerie :** 549 175 $ au début + **2 095 979 $** de flux opérationnels − **16 969 080 $** de décaissements pour immobilisations + **16 323 277 $** de flux de financement = **1 999 351 $** à la fin. Les **22 581 524 $ d'immobilisations constatées** moins **5 612 444 $ de factures d'immobilisations encore à payer** donnent les **16 969 080 $ de sorties de caisse**. Les créances envers Québec ne sont pas du liquide.
+- **Dette et risques :** emprunts temporaires **18 571 000 $** fin 2025 contre **1 142 000 $** fin 2024; dette financière nette **10 526 722 $**; obligation de mise hors service non quantifiée. Ces montants ne démontrent ni fraude ni économie réalisable.
+- **Code et preuves :** `data/g017f-rapprochement-municipal-fonctionnement-investissement-tresorerie-2025.json`, `assets/g017f-municipal-two-ledger-core.mjs`, `tests/g017f-municipal-two-ledger.test.mjs`, `official/working/rapport-g0-17f-double-pont-comptable-municipal-2025-v1.md`. **76/76 tests réussis en rejeu JavaScript/V8 isolé**; la réussite de chaque version de GitHub Actions et toute vérification externe demeurent des contrôles séparés.
+
+**Suite G0.17g :** utiliser le registre de cas comme structure contrôlable pour les véritables fichiers municipaux 2024–2025, les services d'eau et les subventions affectées; établir des comptes pluriannuels de fonctionnement, investissement, dette et main-d'œuvre, puis valider les deux scénarios constitutionnels avec des spécialistes indépendants. **Aucune hausse de score n'est déclarée sans franchissement de critère.**
+
 ## Validation externe requise
 Le caractère « document de référence » ne remplace jamais les validations juridique, financière, électorale, cybersécurité ou accessibilité requises.
 
