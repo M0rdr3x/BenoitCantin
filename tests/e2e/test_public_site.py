@@ -486,6 +486,14 @@ def run() -> None:
         assert_true(evidence_alphabetical, f"{BROWSER_NAME}: état documentaire non alphabétique")
         page.locator("#compass-start").wait_for(state="visible", timeout=10_000)
         assert_true(not page.locator("#compass-start").is_disabled(), f"{BROWSER_NAME}: démarrage Boussole indisponible")
+        # Observer tout le parcours politique : aucun appel réseau vers un
+        # tiers, aucun POST, beacon, PUT ou DELETE ne doit contenir les réponses.
+        # Le chargement initial des corpus publics est déjà terminé.
+        compass_requests = []
+        if IS_LOCAL:
+            page.on("request", lambda req: compass_requests.append({
+                "method": req.method, "url": req.url,
+            }))
         page.locator("#compass-start").click()
         page.locator("#compass-question-stage .compass-question").wait_for(state="visible", timeout=10_000)
         assert_true(
@@ -851,6 +859,22 @@ def run() -> None:
             assert_true(
                 sharing_journey["ok"],
                 f"{BROWSER_NAME}: fuite de confidentialité, résultat périmé ou erreur de partage: {sharing_journey}",
+            )
+
+        if IS_LOCAL:
+            site_host = urlparse(BASE_URL).hostname
+            unexpected_compass_requests = [
+                request for request in compass_requests
+                if request["method"].upper() != "GET"
+                or (
+                    urlparse(request["url"]).scheme in ("http", "https")
+                    and urlparse(request["url"]).hostname != site_host
+                )
+            ]
+            assert_true(
+                not unexpected_compass_requests,
+                f"{BROWSER_NAME}: le parcours Boussole a déclenché un transfert "
+                f"de données ou un appel réseau tiers: {unexpected_compass_requests}",
             )
 
         home_text = page.locator("main").inner_text().lower()
