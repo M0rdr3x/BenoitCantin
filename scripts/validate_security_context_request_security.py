@@ -26,11 +26,19 @@ REQUIRED = {
     'réponse succès privée': 'return privateJson({\n      ok: true,',
     'contrat confidentialité IP': 'raw_ip_stored: false',
     'contrat confidentialité GPS': 'gps_used: false',
+    'journaux d’erreurs à codes fixes': "console.error('[security-context]', { code: 'SECURITY_CONTEXT_UNAVAILABLE' });",
 }
 
 REQUIRED_PATTERNS = {
     'requête bornée exactement à 4096 octets': re.compile(r'\bMAX_REQUEST_BYTES\s*=\s*4_?096\s*;'),
 }
+
+UNSAFE_LOG_PATTERNS = (
+    re.compile(r'console\.(?:error|warn|log)\s*\(\s*[\'\"]\[security-context\][\'\"]\s*,\s*(?:error|err|e)(?:\s*\??\.\s*(?:message|stack|details|hint))?\s*\)'),
+    re.compile(r'console\.(?:error|warn|log)\s*\(\s*[\'\"]\[security-context\][\'\"]\s*,\s*JSON\.stringify\s*\(\s*(?:error|err|e)\s*\)\s*\)'),
+    re.compile(r'console\.(?:error|warn|log)\s*\(\s*[\'\"]\[security-context\][\'\"]\s*,\s*\{\s*(?:message|stack|details|hint)\s*:\s*(?:error|err|e)\s*\??\.\s*\w+'),
+)
+
 
 FORBIDDEN = {
     'lecture JSON directe non bornée': 'await req.json()',
@@ -57,6 +65,8 @@ def validate(path: Path) -> list[str]:
     for label, marker in FORBIDDEN.items():
         if marker in source.lower():
             errors.append(f'Garde security-context violé: {label}.')
+    if any(pattern.search(source) for pattern in UNSAFE_LOG_PATTERNS):
+        errors.append('Garde security-context violé: journalisation brute ou détail fournisseur.')
 
     parsed_pos = source.find('const parsed = await readLimitedJson(req)')
     auth_pos = source.find('const user = await requiredUser(req)')
@@ -113,6 +123,7 @@ Deno.serve(async (req) => {
 });
 privateJson({});
 privateJson({});
+console.error('[security-context]', { code: 'SECURITY_CONTEXT_UNAVAILABLE' });
 """
         path.write_text(safe, encoding='utf-8')
         clean = validate(path)
@@ -133,6 +144,30 @@ privateJson({});
         body_size = validate(path)
         if not any('4096 octets' in item for item in body_size):
             raise AssertionError('Une limite de corps affaiblie doit être bloquée.')
+
+        path.write_text(safe.replace(
+            "console.error('[security-context]', { code: 'SECURITY_CONTEXT_UNAVAILABLE' });",
+            "console.error('[security-context]', error);"
+        ), encoding='utf-8')
+        assert any('journalisation' in x for x in validate(path)), (
+            "Une exception brute enregistrée dans les logs doit être rejetée"
+        )
+
+        path.write_text(safe.replace(
+            "console.error('[security-context]', { code: 'SECURITY_CONTEXT_UNAVAILABLE' });",
+            "console.warn('[security-context]', JSON.stringify(error));"
+        ), encoding='utf-8')
+        assert any('journalisation' in x for x in validate(path)), (
+            "La sérialisation d'une erreur dans les logs doit être rejetée"
+        )
+
+        path.write_text(safe.replace(
+            "console.error('[security-context]', { code: 'SECURITY_CONTEXT_UNAVAILABLE' });",
+            "console.error('[security-context]', { message: error?.message });"
+        ), encoding='utf-8')
+        assert any('journalisation' in x for x in validate(path)), (
+            "Un champ d'exception brut dans les logs doit être rejeté"
+        )
 
         path.write_text(safe.replace("const country=req.headers.get('cf-ipcountry');", "const country=req.headers.get('cf-connecting-ip');"), encoding='utf-8')
         raw_ip = validate(path)
