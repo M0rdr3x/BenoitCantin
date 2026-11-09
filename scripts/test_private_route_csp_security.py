@@ -212,6 +212,38 @@ class PrivateRoutesCspSecurityTests(unittest.TestCase):
                 self.assertIn("data-admin-redirect-target=\"/admin/", html)
                 self.assertNotIn("<script>location.replace", html)
 
+    def test_remise_histoire_de_vie_refuse_les_scripts_inline_et_le_cadrage(self) -> None:
+        """La remise d'un PDF privé doit rester isolée même si la politique globale se relâche."""
+        path_netlify = "/histoire-de-vie/*"
+        path_vercel = "/histoire-de-vie/(.*)"
+        netlify = {row["for"]: row.get("values", {}) for row in self.netlify["headers"]}
+        vercel = {
+            row["source"]: {header["key"]: header["value"] for header in row["headers"]}
+            for row in self.vercel["headers"]
+        }
+        expected = netlify[path_netlify]["Content-Security-Policy"]
+        self.assertEqual(expected, vercel[path_vercel]["Content-Security-Policy"])
+        for required in (
+            "default-src 'none'", "script-src 'self'", "script-src-attr 'none'",
+            "object-src 'none'", "frame-src 'none'", "frame-ancestors 'none'",
+            "base-uri 'none'", "form-action 'none'", "upgrade-insecure-requests",
+        ):
+            self.assertIn(required, expected)
+        self.assertNotIn("'unsafe-inline'", expected)
+        self.assertNotIn("'unsafe-eval'", expected)
+        self.assertIn("no-store", netlify[path_netlify]["Cache-Control"])
+        self.assertIn("no-store", vercel[path_vercel]["Cache-Control"])
+        generated = render_standalone_headers(deploy_context="production")
+        scoped = generated.split("\n" + path_netlify + "\n", 1)
+        self.assertEqual(len(scoped), 2)
+        self.assertIn("frame-ancestors 'none'", scoped[1].split("\n\n", 1)[0])
+        page = (ROOT / "histoire-de-vie/remise.html").read_text("utf-8")
+        audit = ScriptSurfaceAudit()
+        audit.feed(page)
+        audit.close()
+        self.assertEqual(audit.errors, [])
+        self.assertIn('http-equiv="Content-Security-Policy"', page)
+
     def test_mutants_dangereux_sont_detectes(self) -> None:
         safe = ("default-src 'self'; script-src 'self'; script-src-attr 'none'; "
                 "object-src 'none'; base-uri 'self'; frame-ancestors 'self'; "

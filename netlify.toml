@@ -69,6 +69,7 @@
   for = "/histoire-de-vie/*"
   [headers.values]
     Cache-Control = "private, no-store, max-age=0"
+    Content-Security-Policy = "default-src 'none'; script-src 'self'; script-src-attr 'none'; style-src 'self'; connect-src https://gpvivleexywljowcqkru.supabase.co; img-src 'self' data:; font-src 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests"
     X-Robots-Tag = "noindex, nofollow, noarchive"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
