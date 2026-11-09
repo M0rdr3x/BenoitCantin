@@ -24,7 +24,7 @@ export function analyserG019(s){
   audit.dimensions?.find(d=>d.id==="FINANCES")?.weight!==16)
  reject("AUDIT_SOURCE_MISMATCH");
  if(assiettes.schema!=="nova-g014-assiettes-fiscales/v1"||
-    prevision.schema!=="nova-g016v-fiscal-framework-aug2026/v1" &&
+    prevision.schema!=="nova-g016v-two-levies-public-finance-reference/v1"||
     prevision.phase!=="G0.16v")
  reject("FISCAL_PROVENANCE_MISMATCH");
  if(consolide.schema!=="nova-g016z-consolidated-financing-and-transition-controls/v1"||
@@ -74,7 +74,6 @@ export function analyserG019(s){
    const tax=p?.existing_tax_sources_mcad, nontax=p?.other_government_receipts_mcad,
     fed=p?.federal_transfers_mcad,spend=p?.government_expenditure_including_debt_service_mcad,
     prov=p?.contingency_provision_mcad,gen=p?.generations_fund_contribution_mcad;
-   if(p?.fiscal_year!==y||!p.verifier_general_plausibility_review_2026_2028_only===undefined){} // pas de changement des périmètres
    if(p?.fiscal_year!==y||![tax,nontax,fed,spend,prov,gen].every(whole)||
      tax+nontax+fed!==p?.total_government_revenue_mcad||
      p.total_government_revenue_mcad!==c.provincial_revenue_mcad||
