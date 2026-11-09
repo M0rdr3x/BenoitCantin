@@ -86,8 +86,13 @@ test("une empreinte SHA-256 ne certifie pas l'origine officielle sans réception
   provenance:alleged(2024,"a"),missingOrganismCodes:[]});
  const p25=inspectMamhPanel({csvText:C24,year:2025,config,
   provenance:alleged(2025,"b"),missingOrganismCodes:[]});
- assert.equal(p24.completenessReady,true);
- assert.equal(p25.completenessReady,true);
+ assert.equal(p24.technicalCompletenessReady,true);
+ assert.equal(p25.technicalCompletenessReady,true);
+ assert.equal(p24.completenessReady,false);
+ assert.equal(p25.completenessReady,false);
+ assert.equal(p24.sourceBytesPresentedAsOfficialByCaller,true);
+ assert.equal(p24.officialSourceRecordImported,false);
+ assert.equal(p25.officialSourceRecordImported,false);
  assert.equal(p24.sourceOriginIndependentlyAuthenticated,false);
  assert.equal(p25.evidenceOfOriginalDownloadExternallyVerified,false);
  const compared=compareMamhPanels(p24,p25,{dictionaryComparabilityApproved:true,coverageReviewed:true});
