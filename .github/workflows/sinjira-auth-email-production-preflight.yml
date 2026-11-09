@@ -6,12 +6,16 @@ on:
     paths:
       - '.github/workflows/sinjira-auth-email-production-preflight.yml'
       - 'scripts/preflight_sinjira_auth_email.py'
+      - 'scripts/test_sinjira_confirmation_manual_click.cjs'
+      - 'assets/js/sinjira-confirm-email.js'
       - 'docs/SINJIRA_AUTH_EMAIL_PREFLIGHT_20261108.md'
   push:
     branches: [main]
     paths:
       - '.github/workflows/sinjira-auth-email-production-preflight.yml'
       - 'scripts/preflight_sinjira_auth_email.py'
+      - 'scripts/test_sinjira_confirmation_manual_click.cjs'
+      - 'assets/js/sinjira-confirm-email.js'
       - 'docs/SINJIRA_AUTH_EMAIL_PREFLIGHT_20261108.md'
   workflow_dispatch:
     inputs:
@@ -44,6 +48,15 @@ jobs:
         run: |
           python3 -m py_compile scripts/preflight_sinjira_auth_email.py
           python3 scripts/preflight_sinjira_auth_email.py --self-test
+      - name: Configurer Node pour les tests du vrai script de confirmation
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '22.16.0'
+          check-latest: false
+      - name: Refuser toute activation du courriel sans clic humain
+        run: |
+          node --check scripts/test_sinjira_confirmation_manual_click.cjs
+          node scripts/test_sinjira_confirmation_manual_click.cjs
 
   production-inspection:
     name: Vérification réelle Auth, sans modification
