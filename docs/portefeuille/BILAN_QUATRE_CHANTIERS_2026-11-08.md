@@ -9,16 +9,16 @@
 | --- | ---: | --- | --- |
 | **Projet Nova — programme politique** | **47/100 = 47 %** | Audit interne du 5 novembre, dix dimensions pondérées | **Non** : 53 points et validations indépendantes manquent |
 | **Projet Nova–Sinjira — modèle de réforme** | **Non quantifiable séparément** | Architecture politique de Nova, plan G0–G4 par secteur; pas de barème indépendant | **Non** : diagnostics, coût, droit, expérimentation et approbations non complets |
-| **Boussole électorale de Nova** | **5/12 contrôles réussis (41,7 % des contrôles)** | Checklist technique du 7 novembre, sans pondération de l'importance des critères | **Non** : parcours de 64 questions, QA et version publique non certifiés |
-| **Sondage citoyen de Nova** | **6/11 contrôles réussis (54,5 % des contrôles)** | Checklist technique du 7 novembre, sans pondération de l'importance des critères | **Non** : collecte non autorisée, confidentialité et essais préproduction manquants |
+| **Boussole électorale de Nova** | **9/12 contrôles réussis (75,0 % des contrôles)** | Réception technique du 8 novembre, 64 questions testées localement et vérification publique partielle, sans pondération des contrôles | **Non** : accessibilité, interopérabilité sur appareils réels et sources des partis non homologuées |
+| **Sondage citoyen de Nova** | **6/11 contrôles réussis (54,5 % des contrôles)** | Réception technique du 8 novembre, sans pondération de l'importance des critères | **Non** : collecte non autorisée, confidentialité et essais préproduction manquants |
 | **SINJIRA™ — programme numérique et créatif complet** | **66,5 % ≈ 67 % ±10 points** | Dix domaines de maturité produit pondérés, 8 novembre | **Non** : 13/13 portes de lancement encore ouvertes |
 
-**Important :** ce sont **quatre périmètres**, dont le troisième comporte **deux outils**. Il est **interdit de calculer une moyenne générale** de 47, 41,7, 54,5 et 66,5. Le Projet Nova–Sinjira n'a **aucun taux autonome défendable**. Les autres chiffres ne sont ni comparables ni interchangeables.
+**Important :** ce sont **quatre périmètres**, dont le troisième comporte **deux outils**. Il est **interdit de calculer une moyenne générale** de 47, 75, 54,5 et 66,5. Le Projet Nova–Sinjira n'a **aucun taux autonome défendable**. Les autres chiffres ne sont ni comparables ni interchangeables.
 
 Les données sont tirées de :
 - [Audit du Projet Nova du 5 novembre](../../projets/projet-nova/data/audit-completude-programme-nova-2026-11-05.json).
 - [Plan d'exécution Nova–Sinjira G0–G4](../../projets/projet-nova/official/working/plan-execution-nova-sinjira-v1.md).
-- [Registre des contrôles de la boussole et du sondage du 7 novembre](../../projets/projet-nova/data/validation-sondage-boussole-2026-11-07.json).
+- [Registre courant des contrôles de la boussole et du sondage du 8 novembre](../nova-sondages/reception-sondage-boussole-2026-11-08.json); [archive du 7 novembre](../../projets/projet-nova/data/validation-sondage-boussole-2026-11-07.json) conservée pour la progression historique.
 - [Registre de maturité de SINJIRA du 8 novembre](../sinjira/programme-readiness-2026-11-08.json).
 
 ## 1. Projet Nova : 47 %, 53 points à obtenir
@@ -37,15 +37,18 @@ Le plan existant décrit cinq portes : **G0 diagnostic**, **G1 comparaison**, **
 
 **Échéance : indéterminée.** Une estimation numérique ou un taux « global Nova–Sinjira » ne pourra être établi qu'après définition explicite du périmètre, des pondérations, de l'état des 14 dossiers, des coûts, des droits, des responsabilités et des critères d'acceptation. Aucune privatisation, aucune économie, aucun pilote ou transfert de service n'est déclaré adopté.
 
-## 3. Boussole électorale : 5/12 conditions réussies, couverture documentaire de 41,7 %
+## 3. Boussole électorale : 9/12 critères réussis, couverture technique de 75 %
 
-La boussole dispose de **64 propositions sur 16 dimensions**, d'un moteur de calcul testé et de parcours navigateur partiels. Il reste notamment :
-- Résultat complet **64/64** et profil partiel testés jusqu'au rendu final sur la **version réellement publiée**;
-- Essais de poids, sauts, remise à zéro, lecture mobile et compatibilité Chromium/Firefox/Safari;
-- Vérification **WCAG**, qualité des sources par parti, second regard factuel et provenance des positions;
-- Preuve du SHA réellement livré et décision explicite avant toute comparaison partisane.
+Le **registre courant du 8 novembre** constate **9 critères réussis sur 12**, soit **75,0 % de couverture des conditions de réception**, contre **5/12 (41,7 %) dans l'archive du 7 novembre**. Il ne s'agit pas d'une pondération de maturité ni d'une attestation indépendante de disponibilité.
 
-**Échéance : inconnue.** Le contenu et le calcul local ne suffisent pas à homologuer les fonctions ni à établir la publication. Aucune recommandation de vote, classement de partis ou préférence personnelle ne doit être déduite automatiquement de ces contrôles.
+**Progrès documentés :** le questionnaire comporte 64 propositions et 16 dimensions, le moteur de scores a fait l'objet d'une comparaison sur 260 profils, les parcours complets et les scénarios de correction/pondération ont été testés dans les trois moteurs de navigateur *en local*, et une vérification de la version publique a constaté le profil partiel, le calcul actualisé, 64 réponses « sans opinion » et la remise à zéro. Une concordance entre cinq scripts publics et GitHub est également documentée dans [la revue live du 8 novembre](../nova-sondages/verification-live-boussole-2026-11-08.md).
+
+**Trois critères demeurent en attente :**
+- **Accessibilité** : revue manuelle indépendante WCAG, clavier, lecteur d'écran, annonces dynamiques et contraste;
+- **Compatibilité et cache** : vérifications sur appareils et navigateurs réellement déployés, dont Safari/Firefox, au-delà de l'émulation et de la CI locale;
+- **Documentation partisane** : relecture contradictoire des sources primaires et contrôle de neutralité des preuves, sans activer de classement de partis.
+
+**Échéance : inconnue.** Des tests locaux et une vérification publique partielle ne valent ni homologation juridique/éditoriale ni validation exhaustive sur des appareils réels. La comparaison avec les partis reste désactivée.
 
 ## 4. Sondage citoyen : 6/11 conditions réussies, couverture documentaire de 54,5 %
 
@@ -53,7 +56,7 @@ Le corpus comporte **8 questions**. Les contrôles du code, des mécanismes d'ac
 
 Critères manquants : protection des publications agrégées contre la réidentification, essais du CAPTCHA et de l'anti-rejeu en **préproduction isolée**, compatibilité/accessibilité, avis juridique sur les opinions politiques sensibles, politique de conservation et décision officielle d'activation. **Ne pas utiliser des votes simulés dans le serveur de production.**
 
-**Échéance : inconnue.** Les pourcentages de contrôles réussis ne représentent pas la proportion d'effort restant : un seul contrôle de confidentialité peut demander beaucoup plus de travail que plusieurs contrôles de structure.
+**Échéance : inconnue.** Les deux outils totalisent **15 critères réussis sur 23 (65,2 % de couverture seulement)**. Les pourcentages de contrôles réussis ne représentent pas la proportion d'effort restant : un seul contrôle de confidentialité peut demander beaucoup plus de travail que plusieurs contrôles de structure.
 
 ## 5. SINJIRA™ : maturité estimée à 66,5 %, lancement non autorisé
 
