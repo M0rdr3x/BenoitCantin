@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 import tempfile
 
@@ -23,7 +24,18 @@ JWT_REQUIRED = frozenset({
     "revoke-my-contributions",
     "redeem-license-code",
 })
+RETIRED_TOMBSTONES = frozenset({
+    "admin-reader",
+    "generate-sinjira-character",
+    "admin-literary",
+    "validate-phone-v22",
+    "guardian-create-youth-v22",
+    "create-youth-account",
+    "sinjira-maintenance-upload-20261007",
+})
 MONITORED_FUNCTIONS = PUBLIC_NO_JWT | JWT_REQUIRED
+EXPECTED_FUNCTIONS = MONITORED_FUNCTIONS | RETIRED_TOMBSTONES
+TOMBSTONES_PATH = Path("supabase/retired-edge-tombstones.json")
 LIMIT = 250_000
 METADATA_LIMIT = 500_000
 
@@ -86,32 +98,64 @@ def validate_metadata(payload: object) -> list[str]:
             "Exceptions JWT modifiées : attendues " + ",".join(sorted(PUBLIC_NO_JWT))
             + " ; constatées " + ",".join(sorted(no_jwt))
         )
-    if not MONITORED_FUNCTIONS <= seen:
-        errors.append("Fonction Edge suivie absente de l'inventaire")
+    if not EXPECTED_FUNCTIONS <= seen:
+        errors.append("Fonction Edge critique ou retirée absente de l'inventaire")
     return errors
+
+
+def retired_snapshots(local: Path) -> dict[str, str]:
+    """Lire le contrat de sources 410 approuvé, jamais le traiter comme code exécutable."""
+    try:
+        payload = json.loads(safe_text(local, TOMBSTONES_PATH))
+    except (ValueError, TypeError) as exc:
+        raise ValueError("Contrat des fonctions retirées absent ou illisible") from exc
+    if not isinstance(payload, dict) or payload.get("contract_version") != 1:
+        raise ValueError("Version du contrat des fonctions retirées non approuvée")
+    expected = payload.get("functions")
+    if not isinstance(expected, dict) or set(expected) != RETIRED_TOMBSTONES:
+        raise ValueError("Liste des fonctions retirées non conforme au contrat")
+    normalized: dict[str, str] = {}
+    for slug, src in expected.items():
+        if not isinstance(src, str) or len(src.encode("utf-8")) > 2048:
+            raise ValueError("Source de retrait absente ou anormale : " + slug)
+        source = src.replace("\\r\\n", "\\n").rstrip("\\n")
+        if (
+            source.count("Deno.serve(") != 1
+            or not re.search(r"\\bstatus\\s*:\\s*410\\b", source)
+            or "no-store" not in source
+            or "fetch(" in source
+            or "Deno.env" in source
+        ):
+            raise ValueError("Fonction retirée non fail-closed : " + slug)
+        normalized[slug] = source
+    return normalized
 
 
 def audit(local: Path, downloaded: Path, metadata: object) -> list[str]:
     errors = validate_metadata(metadata)
     if errors:
         return errors
-    for slug in sorted(MONITORED_FUNCTIONS):
+    try:
+        tombstones = retired_snapshots(local)
+    except ValueError as exc:
+        return [str(exc)]
+    for slug in sorted(EXPECTED_FUNCTIONS):
         rel = Path("supabase/functions") / slug / "index.ts"
         try:
             deployed = safe_text(downloaded, rel)
-            canonical = safe_text(local, rel)
+            canonical = tombstones[slug] if slug in RETIRED_TOMBSTONES else safe_text(local, rel)
         except ValueError as exc:
             errors.append(f"{slug} : source inaccessible ({exc})")
             continue
         if deployed != canonical:
-            errors.append(f"{slug} : dérive de code déployé (NO_GO)")
+            errors.append(f"{slug} : dérive de source Edge ou réactivation d'une fonction retirée (NO_GO)")
     return errors
 
 
 def self_test() -> None:
     rows = [
         {"slug": slug, "verify_jwt": slug in JWT_REQUIRED, "status": "ACTIVE", "version": 1}
-        for slug in sorted(MONITORED_FUNCTIONS)
+        for slug in sorted(EXPECTED_FUNCTIONS)
     ]
     with tempfile.TemporaryDirectory() as tmp:
         base = Path(tmp)
@@ -122,6 +166,23 @@ def self_test() -> None:
                 dst = root / "supabase/functions" / slug / "index.ts"
                 dst.parent.mkdir(parents=True, exist_ok=True)
                 dst.write_text("const safe = true;\n", "utf-8")
+        retired_source = (
+            'Deno.serve(()=>new Response("retired",'
+            '{status:410,headers:{"Cache-Control":"no-store"}}));\\n'
+        )
+        retired_contract = repo / TOMBSTONES_PATH
+        retired_contract.parent.mkdir(parents=True, exist_ok=True)
+        retired_contract.write_text(
+            json.dumps({
+                "contract_version": 1,
+                "functions": {slug: retired_source for slug in RETIRED_TOMBSTONES},
+            }),
+            "utf-8",
+        )
+        for slug in RETIRED_TOMBSTONES:
+            dst = remote / "supabase/functions" / slug / "index.ts"
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            dst.write_text(retired_source, "utf-8")
         assert audit(repo, remote, rows) == []
         mutants: dict[str, object] = {
             "missing JWT flag": [{k: v for k, v in row.items() if k != "verify_jwt"}
@@ -155,6 +216,18 @@ def self_test() -> None:
         f.write_text("A" * (LIMIT + 1), "utf-8")
         assert audit(repo, remote, rows), "Source Edge surdimensionnée acceptée"
 
+        retired = sorted(RETIRED_TOMBSTONES)[0]
+        stopped = remote / "supabase/functions" / retired / "index.ts"
+        stopped.write_text(retired_source.replace("status:410", "status:200"), "utf-8")
+        assert audit(repo, remote, rows), "Réactivation d'une fonction retirée acceptée"
+        stopped.write_text(retired_source, "utf-8")
+        retired_contract.write_text(
+            json.dumps({"contract_version": 1, "functions": {}}), "utf-8"
+        )
+        assert audit(repo, remote, rows), "Inventaire des fonctions retirées altéré"
+        retired_contract.unlink()
+        assert audit(repo, remote, rows), "Contrat de retrait manquant accepté"
+
         assert validate_metadata([{"slug": "x", "verify_jwt": 0, "status": "ACTIVE",
                                    "version": 1}]), "Faux booléen accepté"
     print("OK : snapshots synthétiques, dérive, ACL JWT, liens symboliques et sources volumineuses refusés.")
@@ -181,8 +254,8 @@ def main() -> int:
             print("NO_GO Edge : " + issue)
         return 1
     print(
-        "PASS : quatre exceptions JWT inchangées, six fonctions surveillées, fonctions actives "
-        "et sources déployées correspondant au code approuvé."
+        "PASS : quatre exceptions JWT inchangées, six fonctions actives et sept points "
+        "de retrait préservés, sources déployées conformes au code approuvé."
     )
     return 0
 
