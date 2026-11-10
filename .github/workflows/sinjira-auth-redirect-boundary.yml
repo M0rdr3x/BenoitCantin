@@ -12,12 +12,6 @@ on:
       - 'compte/reinitialiser-mot-de-passe.html'
       - 'scripts/validate_auth.py'
       - 'scripts/validate_mfa_v24_4_66.py'
-      - 'compte/connexion.html'
-      - 'compte/inscription.html'
-      - 'compte/mot-de-passe-oublie.html'
-      - 'compte/reinitialiser-mot-de-passe.html'
-      - 'scripts/validate_auth.py'
-      - 'scripts/validate_mfa_v24_4_66.py'
       - 'scripts/test_sinjira_auth_redirect_boundary.cjs'
       - '.github/workflows/sinjira-auth-redirect-boundary.yml'
   push:
@@ -25,6 +19,12 @@ on:
     paths:
       - 'assets/js/sinjira-auth-route.js'
       - 'assets/js/sinjira-supabase.js'
+      - 'compte/connexion.html'
+      - 'compte/inscription.html'
+      - 'compte/mot-de-passe-oublie.html'
+      - 'compte/reinitialiser-mot-de-passe.html'
+      - 'scripts/validate_auth.py'
+      - 'scripts/validate_mfa_v24_4_66.py'
       - 'scripts/test_sinjira_auth_redirect_boundary.cjs'
       - '.github/workflows/sinjira-auth-redirect-boundary.yml'
   workflow_dispatch:
