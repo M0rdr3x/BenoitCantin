@@ -71,14 +71,22 @@ def validate():
                   'scroll_ratio <= 1']:
         if token not in migration:
             errors.append('Champ de défilement SQL manquant ou sans borne: '+token)
-    for token in ['scroll_ratio:readingRatio(state.positionRatio)',
-                  "select('last_page,scroll_ratio,updated_at')",
+    for token in ['p_scroll_ratio:readingRatio(state.positionRatio)',
+                  "select('last_page,scroll_ratio,updated_at,revision')",
                   'serverRatio=progress?.scroll_ratio??null',
                   'persist({syncCloud:true})',
                   "safeLocalSet(key+':pending',at)", "select('updated_at')",
                   "window.addEventListener('online'", "safeLocalRemove(key+':pending')"]:
         if token not in main:
             errors.append('Synchronisation intrapage V32 manquante: '+token)
+    # V51 : toute écriture cloud doit utiliser le CAS atomique.
+    for token in ["rpc('sinjira_reader_save_progress_cas'",
+                  'p_expected_revision:expectedRevision',
+                  'state.cloudConflict=true','state.cloudRevisionReady']:
+        if token not in main:
+            errors.append('Protection CAS V51 manquante: '+token)
+    if ".upsert(payload,{onConflict:'user_id,novel_id'})" in main:
+        errors.append('UPSERT de la liseuse contourne V51')
     # Empêcher le stockage de texte intégral (citations ou notes) en localStorage.
     if 'localStorage.setItem(DEMO_MARKS_KEY' not in companion:
         errors.append('Enregistrement de la démo non isolé')
