@@ -199,7 +199,7 @@ function syncProgress(){
 async function retryCloudProgress(){
   if(!isFull||!state.cloudDirty||state.cloudRetrying||!state.pdf||
      !state.user||!state.novelId||state.accessInvalidated||
-     navigator.onLine===false)return;
+     !state.cloudRevisionReady||state.cloudConflict||navigator.onLine===false)return;
   const userId=state.user.id,novelId=state.novelId,pdf=state.pdf;
   const key=pageStorageKey(),pendingAt=safeLocalGet(key+':pending');
   if(!pendingAt)return;
@@ -577,6 +577,7 @@ function lockPrivateReader(){
   clearTimeout(state.saveTimer);state.saveTimer=null;
   clearTimeout(state.scrollTimer);state.scrollTimer=null;
   state.cloudDirty=false;state.cloudRetrying=false;
+  state.cloudRevision=null;state.cloudRevisionReady=false;state.cloudConflict=false;
   $('reader-position-status').textContent='';
   stopNarration(false);
   companion?.close();companion=null;
@@ -639,17 +640,25 @@ async function restorePage(){
     if(!novelError&&novel?.id){
       state.novelId=novel.id;
       let {data:progress,error:progressError}=await getSupabase().from('sinjira_reader_library')
-        .select('last_page,scroll_ratio,updated_at').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle();
+        .select('last_page,scroll_ratio,updated_at,revision').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle();
       if(progressError&&isMissingCloudSpotColumn(progressError)){
         state.cloudSpotSupported=false;
         ({data:progress,error:progressError}=await getSupabase().from('sinjira_reader_library')
-          .select('last_page,updated_at').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle());
+          .select('last_page,updated_at,revision').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle());
       }
       if(!progressError){
         serverPage=progress?.last_page;
         serverRatio=progress?.scroll_ratio??null;
         serverUpdatedAt=progress?.updated_at;
         if(state.cloudSpotSupported!==false)state.cloudSpotSupported=true;
+        // V51 : NULL en lecture signifie création initiale, une ligne historique
+        // déjà présente possède revision=0. Jamais de repli vers UPSERT.
+        const number=Number(progress?.revision);
+        if(!progress||(progress.revision!==null&&progress.revision!==undefined&&
+            Number.isSafeInteger(number)&&number>=0)){
+          state.cloudRevision=progress?number:null;
+          state.cloudRevisionReady=true;
+        }
       }
     }
   }
@@ -747,7 +756,13 @@ async function init(){
     updateToolbar();renderPage();updateSpeechControls();
     const origin=state.resumeSource==='compte'?'depuis votre compte'
       :state.resumeSource==='appareil'?'depuis cet appareil':'au début du roman';
-    positionNotice('Lecture prête : page '+state.page+' reprise '+origin+'. Enregistrement automatique actif'+(isFull?' sur votre compte et votre appareil.': ' sur cet appareil.'));
+    positionNotice('Lecture prête : page '+state.page+' reprise '+origin+'. '+
+      (isFull
+        ?(state.cloudRevisionReady
+          ?'Enregistrement automatique protégé sur votre compte et votre appareil.'
+          :'Enregistrement sur cet appareil uniquement; synchronisation cloud protégée en attente.')
+        :'Enregistrement automatique sur cet appareil.'),
+      state.cloudRevisionReady||!isFull?'info':'warning');
     // L'indisponibilité de la synchronisation des notes ne bloque pas la lecture.
     companion.ready().catch(()=>message('La liseuse fonctionne, mais les repères personnels ne sont pas disponibles.','warning'));
     $('reader-status').hidden=true;
