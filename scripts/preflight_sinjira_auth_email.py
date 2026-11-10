@@ -4,6 +4,8 @@ import argparse
 import json
 import os
 from pathlib import Path
+from html.parser import HTMLParser
+from urllib.parse import parse_qsl, urlsplit
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -12,6 +14,44 @@ SITE="https://www.benoitcantin.com"
 CONFIRM=SITE+"/compte/confirmer.html"
 API="https://api.supabase.com/v1/projects/"+PROJECT+"/config/auth"
 WORKFLOW=Path(__file__).resolve().parents[1]/".github/workflows/sinjira-auth-email-production-preflight.yml"
+
+
+class ConfirmationLinkParser(HTMLParser):
+    """Inspecter les vrais href HTML, jamais les commentaires ni le texte brut."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.valid_link = False
+
+    def handle_starttag(self, tag, attrs):
+        if tag != "a":
+            return
+        for name, value in attrs:
+            if name != "href" or not isinstance(value, str):
+                continue
+            parts = urlsplit(value)
+            if (parts.scheme + "://" + parts.netloc + parts.path != CONFIRM
+                    or parts.query or parts.username or parts.password):
+                continue
+            # HTMLParser décode &amp; en &, puis on vérifie les deux paramètres
+            # du fragment sans accepter de doublons ou de valeur étrangère.
+            pairs = parse_qsl(parts.fragment, keep_blank_values=True)
+            if (len(pairs) == 2 and
+                    dict(pairs) == {"token_hash": "{{ .TokenHash }}",
+                                  "type": "email"}):
+                self.valid_link = True
+
+
+def has_secure_confirmation_link(content):
+    if not isinstance(content, str) or "{{ .ConfirmationURL }}" in content:
+        return False
+    try:
+        parser = ConfirmationLinkParser()
+        parser.feed(content)
+        parser.close()
+        return parser.valid_link
+    except ValueError:
+        return False
 
 
 def audit(config):
@@ -28,9 +68,7 @@ def audit(config):
     urls={s.strip().rstrip("/") for s in allowed.split(",")} if isinstance(allowed,str) else set()
     check("URL de retour permise",bool(urls & {CONFIRM,SITE+"/**"}))
     content=config.get("mailer_templates_confirmation_content")
-    check("Modèle sécurisé par fragment",isinstance(content,str) and
-          CONFIRM+"#token_hash={{ .TokenHash }}" in content and
-          "type=email" in content and "{{ .ConfirmationURL }}" not in content)
+    check("Modèle sécurisé par fragment",has_secure_confirmation_link(content))
     subject=config.get("mailer_subjects_confirmation")
     check("Objet de confirmation défini",isinstance(subject,str) and bool(subject.strip()))
     check("MFA TOTP disponible",config.get("mfa_totp_enroll_enabled") is True and
@@ -108,7 +146,23 @@ def selftest():
         assert label in failed,"Régression non détectée : "+label
     assert len(audit({})[1])==13
     assert not audit({**good,"uri_allow_list":SITE+"/**"})[1]
-    print("OK prévol Auth : treize contrats, quinze régressions et wildcard testés.")
+    # Une mention textuelle n'est pas un vrai lien de confirmation.
+    # Le paramètre type=email doit appartenir au MÊME href que token_hash.
+    deceptive_templates = [
+        CONFIRM+"#token_hash={{ .TokenHash }}&amp;type=email",
+        "<!-- <a href='"+CONFIRM+"#token_hash={{ .TokenHash }}&amp;type=email'> -->",
+        "<a href='"+CONFIRM+"#token_hash={{ .TokenHash }}'>Confirmer</a> type=email",
+        "<a href='"+CONFIRM+"#token_hash={{ .TokenHash }}&amp;type=recovery'>type=email</a>",
+        "<a href='https://evil.example/compte/confirmer.html#token_hash={{ .TokenHash }}&amp;type=email'>Confirmer</a>",
+        "<a href='"+CONFIRM+"#token_hash={{ .TokenHash }}&amp;type=email&amp;type=email'>Confirmer</a>",
+    ]
+    for template in deceptive_templates:
+        _, failed, _ = audit({**good, "mailer_templates_confirmation_content": template})
+        assert "Modèle sécurisé par fragment" in failed, "Faux positif du modèle de courriel"
+    assert has_secure_confirmation_link(
+        "<a href='"+CONFIRM+"#token_hash={{ .TokenHash }}&type=email'>Confirmer</a>")
+    print("OK prévol Auth : treize contrats, quinze régressions, "
+          "six modèles trompeurs et wildcard testés.")
 
 
 def remote():
