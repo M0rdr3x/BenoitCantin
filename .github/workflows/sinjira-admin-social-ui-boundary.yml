@@ -7,6 +7,9 @@ on:
       - 'assets/js/sinjira-admin-social-v20.js'
       - 'admin/sinjira/index.html'
       - 'scripts/test_sinjira_admin_social_ui_boundary.cjs'
+      - 'scripts/test_sinjira_admin_social_edge_prewrite.cjs'
+      - 'supabase/functions/admin-social-v20/index.ts'
+      - 'scripts/validate_admin_social_request_security.py'
       - '.github/workflows/sinjira-admin-social-ui-boundary.yml'
   push:
     branches: [main]
@@ -14,6 +17,9 @@ on:
       - 'assets/js/sinjira-admin-social-v20.js'
       - 'admin/sinjira/index.html'
       - 'scripts/test_sinjira_admin_social_ui_boundary.cjs'
+      - 'scripts/test_sinjira_admin_social_edge_prewrite.cjs'
+      - 'supabase/functions/admin-social-v20/index.ts'
+      - 'scripts/validate_admin_social_request_security.py'
       - '.github/workflows/sinjira-admin-social-ui-boundary.yml'
   workflow_dispatch:
 
@@ -39,8 +45,11 @@ jobs:
         run: |
           node --check assets/js/sinjira-admin-social-v20.js
           node --check scripts/test_sinjira_admin_social_ui_boundary.cjs
+          node --check scripts/test_sinjira_admin_social_edge_prewrite.cjs
       - name: Exercer les vraies décisions de modération avec un DOM falsifié
         run: node scripts/test_sinjira_admin_social_ui_boundary.cjs
+      - name: Vérifier la cible réelle avant insertion de sanctions Edge
+        run: node scripts/test_sinjira_admin_social_edge_prewrite.cjs
       - name: Vérifier la sécurité du service Edge de modération
         run: |
           python3 scripts/validate_admin_social_request_security.py
