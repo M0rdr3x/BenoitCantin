@@ -1,0 +1,40 @@
+name: Nova — arbitrage fiscal normatif sans adoption fictive
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'projets/projet-nova/data/arbitrage-fiscal-concordance-2026-11-10.json'
+      - 'projets/projet-nova/scripts/audit-arbitrage-fiscal-2026-11-10.mjs'
+      - 'projets/projet-nova/tests/audit-arbitrage-fiscal-2026-11-10.test.mjs'
+      - 'projets/projet-nova/official/working/dossier-arbitrage-fiscal-taxe-unique-deux-prelevements-2026-11-10.md'
+      - '.github/workflows/nova-arbitrage-fiscal-2026-11-10.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'projets/projet-nova/data/arbitrage-fiscal-concordance-2026-11-10.json'
+      - 'projets/projet-nova/scripts/audit-arbitrage-fiscal-2026-11-10.mjs'
+      - 'projets/projet-nova/tests/audit-arbitrage-fiscal-2026-11-10.test.mjs'
+      - '.github/workflows/nova-arbitrage-fiscal-2026-11-10.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verifier-dossier:
+    name: Vérifier la concordance candidate et les blocages documentés
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout épinglé, lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Vérifier la syntaxe des deux scripts
+        run: |
+          node --check projets/projet-nova/scripts/audit-arbitrage-fiscal-2026-11-10.mjs
+          node --check projets/projet-nova/tests/audit-arbitrage-fiscal-2026-11-10.test.mjs
+      - name: Tests adversariaux (aucun service externe)
+        run: node --test projets/projet-nova/tests/audit-arbitrage-fiscal-2026-11-10.test.mjs
+      - name: Recalcul des statuts sans nouvelle homologation
+        run: node projets/projet-nova/scripts/audit-arbitrage-fiscal-2026-11-10.mjs
