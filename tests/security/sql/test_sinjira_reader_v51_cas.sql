@@ -12,7 +12,7 @@ BEGIN
 END $check$;
 
 -- Migration V51 originale, la V32 a déjà été chargée par V48.
-\i supabase/migrations/20261110011500_sinjira_reader_progress_revision_cas_v51.sql
+\i supabase/review-candidates/20261110011500_sinjira_reader_progress_revision_cas_v51.sql
 
 DO $permissions$
 BEGIN
@@ -152,7 +152,7 @@ CREATE TEMP TABLE v51_before_replay AS
  SELECT user_id,novel_id,last_page,progress_percent,scroll_ratio,
         revision,created_at,updated_at,last_opened_at
  FROM public.sinjira_reader_library;
-\i supabase/migrations/20261110011500_sinjira_reader_progress_revision_cas_v51.sql
+\i supabase/review-candidates/20261110011500_sinjira_reader_progress_revision_cas_v51.sql
 DO $verify$
 DECLARE n integer;
 BEGIN
