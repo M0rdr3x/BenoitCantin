@@ -1,0 +1,210 @@
+{
+  "schema": "nova-g018-calendrier-conditionnel/v1",
+  "project": "Projet Nova",
+  "snapshot_date": "2026-11-08",
+  "reference_audit_date": "2026-11-05",
+  "reference_audit_path": "data/audit-completude-programme-nova-2026-11-05.json",
+  "closure_gate_core": "assets/closure-gate-programme-core.mjs",
+  "existing_roadmap": "official/working/feuille-route-completude-47-100-nova-v1.md",
+  "programme_completion_score": 47,
+  "maximum_score": 100,
+  "points_to_obtain": 53,
+  "documentation_maturity_estimate_percent": 75,
+  "documentation_maturity_is_certification": false,
+  "target": "2027-12-31",
+  "target_is_binding": false,
+  "projected_completion_certified_date": null,
+  "independence_and_legal_approvals_pending": true,
+  "status": "PLANIFICATION_CONDITIONNELLE_NON_ADOPTEE",
+  "risks": [
+    {
+      "id": "R01",
+      "name": "Données fiscales ou municipales non disponibles",
+      "impact": "Les études et les budgets ne peuvent être certifiés.",
+      "mitigation": "Tracer les sources primaires par millésime, garder inconnues à null, demander les pièces nécessaires."
+    },
+    {
+      "id": "R02",
+      "name": "Avis juridico-constitutionnels contradictoires",
+      "impact": "Il faut modifier ou abandonner des propositions, puis les réexaminer.",
+      "mitigation": "Conserver objections, consulter les titulaires de droits et redéposer les analyses."
+    },
+    {
+      "id": "R03",
+      "name": "Manque de personnes indépendantes et de financement",
+      "impact": "Aucune échéance crédible de validation.",
+      "mitigation": "Désigner effectivement responsables, réviseurs et budget avant engagement."
+    },
+    {
+      "id": "R04",
+      "name": "Deux prélèvements non soutenables dans un scénario",
+      "impact": "La réforme ne peut être présentée comme financée et le calendrier glisse.",
+      "mitigation": "Maintenir les protections et la règle d'arrêt, tester scénarios défavorables."
+    },
+    {
+      "id": "R05",
+      "name": "Consultation ou adoption non obtenue",
+      "impact": "Programme non adopté même si la rédaction est achevée.",
+      "mitigation": "Distinguer validation technique de toute approbation politique ou légalisation."
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M01",
+      "title": "Responsables, périmètres et mandats",
+      "target_date": "2026-12-31",
+      "depends_on": [],
+      "purpose": "Gouvernance candidate : définir les personnes habilitées, la méthode d'audit et les moyens sans déclarer des postes pourvus.",
+      "deliverables": [
+        "Mandat de pilotage écrit",
+        "Attribution des responsabilités et conflits d'intérêts",
+        "Budget de conception et accès aux sources"
+      ],
+      "status": "A_PLANIFIER",
+      "owner_real_name": null,
+      "owner_mandate_reference": null,
+      "budget_authorized": null,
+      "completion_date": null,
+      "proof_urls": [],
+      "reviewer_independence_verified": null,
+      "decision_by_competent_body": null
+    },
+    {
+      "id": "M02",
+      "title": "Données fiscales et méthode de financement",
+      "target_date": "2027-03-31",
+      "depends_on": [
+        "M01"
+      ],
+      "purpose": "P0 : préparer les 15 dossiers de preuve fiscale et les assiettes avant simulation sans présumer leur homologation.",
+      "deliverables": [
+        "Inventaire V01–V15 documenté, y compris les lacunes",
+        "Contrôles des transferts interadministrations et doubles comptes",
+        "Protocole de validation des assiettes des particuliers et sociétés"
+      ],
+      "status": "A_PLANIFIER",
+      "owner_real_name": null,
+      "owner_mandate_reference": null,
+      "budget_authorized": null,
+      "completion_date": null,
+      "proof_urls": [],
+      "reviewer_independence_verified": null,
+      "decision_by_competent_body": null
+    },
+    {
+      "id": "M03",
+      "title": "Contrôle des droits et des compétences",
+      "target_date": "2027-03-31",
+      "depends_on": [
+        "M01"
+      ],
+      "purpose": "P0 : instruire les 24 contextes des 12 dossiers juridiques et demander des avis indépendants.",
+      "deliverables": [
+        "Dossier de revue Québec dans le Canada",
+        "Dossier de revue Québec souverain hypothétique",
+        "Avis indépendants, objections et droits/recours"
+      ],
+      "status": "A_PLANIFIER",
+      "owner_real_name": null,
+      "owner_mandate_reference": null,
+      "budget_authorized": null,
+      "completion_date": null,
+      "proof_urls": [],
+      "reviewer_independence_verified": null,
+      "decision_by_competent_body": null
+    },
+    {
+      "id": "M04",
+      "title": "Transition souveraine et continuité juridique",
+      "target_date": "2027-06-30",
+      "depends_on": [
+        "M02",
+        "M03"
+      ],
+      "purpose": "P0 : préciser actifs, dettes, pensions, monnaie, traités, responsabilités fédérales et continuité dans deux régimes séparés.",
+      "deliverables": [
+        "Étude actifs/dettes et régimes de pension",
+        "Plan de continuité des fonctions fédérales",
+        "Scénarios de négociation et risques juridiques"
+      ],
+      "status": "A_PLANIFIER",
+      "owner_real_name": null,
+      "owner_mandate_reference": null,
+      "budget_authorized": null,
+      "completion_date": null,
+      "proof_urls": [],
+      "reviewer_independence_verified": null,
+      "decision_by_competent_body": null
+    },
+    {
+      "id": "M05",
+      "title": "Quatorze dossiers sectoriels complets",
+      "target_date": "2027-06-30",
+      "depends_on": [
+        "M01"
+      ],
+      "purpose": "P1 : chacun des 14 secteurs doit présenter coût complet, services réels, main-d'œuvre, risques et accès territorial.",
+      "deliverables": [
+        "14 fiches sectorielles vérifiables",
+        "Coûts et effectifs préservés ou changements légalement examinés",
+        "Indicateurs, délais et mécanismes de correction"
+      ],
+      "status": "A_PLANIFIER",
+      "owner_real_name": null,
+      "owner_mandate_reference": null,
+      "budget_authorized": null,
+      "completion_date": null,
+      "proof_urls": [],
+      "reviewer_independence_verified": null,
+      "decision_by_competent_body": null
+    },
+    {
+      "id": "M06",
+      "title": "Budgets décennaux et audits indépendants",
+      "target_date": "2027-09-30",
+      "depends_on": [
+        "M02",
+        "M03",
+        "M04",
+        "M05"
+      ],
+      "purpose": "P0/P1 : deux scénarios de dix ans, les 15 preuves fiscales, les 20 exercices-scénarios et la revue critique externe.",
+      "deliverables": [
+        "15 preuves fiscales homologuées de façon indépendante",
+        "20 exercices-scénarios et deux budgets sur dix ans audités",
+        "Revues juridique, financière et sectorielle indépendantes"
+      ],
+      "status": "A_PLANIFIER",
+      "owner_real_name": null,
+      "owner_mandate_reference": null,
+      "budget_authorized": null,
+      "completion_date": null,
+      "proof_urls": [],
+      "reviewer_independence_verified": null,
+      "decision_by_competent_body": null
+    },
+    {
+      "id": "M07",
+      "title": "Consultation, arbitrages et adoption formelle",
+      "target_date": "2027-12-31",
+      "depends_on": [
+        "M06"
+      ],
+      "purpose": "P1/P2 : consultations documentées, corrections publiques, organes habilités, décisions formelles et registre des preuves.",
+      "deliverables": [
+        "Consultations et traitement public des objections",
+        "Décisions d'adoption par les autorités réellement compétentes",
+        "Dernier audit 100/100 et sept conditions G0.17 remplies"
+      ],
+      "status": "A_PLANIFIER",
+      "owner_real_name": null,
+      "owner_mandate_reference": null,
+      "budget_authorized": null,
+      "completion_date": null,
+      "proof_urls": [],
+      "reviewer_independence_verified": null,
+      "decision_by_competent_body": null
+    }
+  ],
+  "output_interpretation": "Le 31 décembre 2027 est un jalon proposé, jamais une date de fin prouvée. Faute de mandats, coûts, avis et décisions, la prévision de clôture attestée reste null. Les sept portes de G0.17 demeurent la source de décision."
+}
