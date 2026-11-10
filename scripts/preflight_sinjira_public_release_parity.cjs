@@ -29,6 +29,11 @@ const HTML = [
     'AAL2', 'formspree_receipt_opt_in'
   ] }
 ];
+const REQUIRED_MODULES = {
+  'compte/confirmer.html': '../assets/js/sinjira-confirm-email.js?v=3',
+  'compte/inscription.html': '../assets/js/v24-signup.js?v=24.5.4',
+  'projets/sinjira/registre/index.html': '../../../assets/js/sinjira-character-registry.js?v=24.5.8'
+};
 
 function sha256(value) {
   return createHash('sha256').update(value).digest('hex');
@@ -53,6 +58,29 @@ function verifyHtml(route, served, markers) {
     if (!content.includes(marker)) {
       throw new Error('PAGE PUBLIÉE INCOMPLÈTE : ' + route +
         ' — marqueur requis absent : ' + marker);
+    }
+  }
+  const expected = REQUIRED_MODULES[route];
+  if (expected) {
+    // Un texte ou un commentaire contenant la bonne version n'est PAS une
+    // balise <script src> active. Vérifier le src local exact et type=module.
+    const withoutComments = content.replace(/<!--[\s\S]*?-->/g, '');
+    const basename = expected.split('/').pop().split('?')[0];
+    const candidates = [];
+    for (const match of withoutComments.matchAll(/<script\b([^>]*)>/gi)) {
+      const tag = match[1];
+      const attrs = { src: [], type: [] };
+      const pattern = /(?:^|\s)(src|type)\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
+      for (const attr of tag.matchAll(pattern)) {
+        attrs[attr[1].toLowerCase()].push(attr[2] ?? attr[3]);
+      }
+      if (tag.includes(basename)) candidates.push(attrs);
+    }
+    const sole = candidates.length === 1 ? candidates[0] : null;
+    if (!sole || sole.src.length !== 1 || sole.src[0] !== expected ||
+        sole.type.length !== 1 || sole.type[0].toLowerCase() !== 'module') {
+      throw new Error('MODULE HTML NON CONFORME : ' + route +
+        ' — balise script locale exacte, unique et type=module exigée.');
     }
   }
   return true;
@@ -119,6 +147,40 @@ function selfTest() {
     assert.throws(() => verifyHtml(entry.path, Buffer.from('page obsolète'), entry.markers),
       /PAGE PUBLIÉE INCOMPLÈTE/);
   }
+  for (const entry of HTML) {
+    const source = local(entry.path).toString('utf8');
+    const expected = REQUIRED_MODULES[entry.path];
+    const scriptTag = '<script src="' + expected + '" type="module"></script>';
+    const marker = expected.split('/').pop();
+    const stale = expected.replace(/v=([\d.]+)/, (_all, v) =>
+      'v=' + v + '-stale');
+    const variants = [
+      // Le bon marqueur hors balise ne doit plus cacher l'ancien module.
+      source.replace(expected, stale) + '<!-- ' + marker + ' -->',
+      source.replace(expected, stale) + '<p>' + marker + '</p>',
+      // Une balise redondante ne doit pas coexister avec la bonne.
+      source + '<script src="' + stale + '" type="module"></script>',
+      // Le src peut sembler sûr dans du texte mais être d'origine extérieure.
+      source.replace(expected, 'https://evil.invalid/' + marker) +
+        '<!-- ' + expected + ' -->',
+      // Un double src est ambigu : les navigateurs ne le choisissent pas
+      // nécessairement comme le premier vérificateur HTML.
+      source.replace(expected, expected + '" src="https://evil.invalid/x.js'),
+      // Même le bon src ne suffit pas avec un type de module incorrect.
+      source.replace('src="' + expected + '" type="module"',
+        'src="' + expected + '" type="text/plain"')
+        .replace('type="module" src="' + expected + '"',
+        'type="text/plain" src="' + expected + '"')
+    ];
+    for (const variant of variants) {
+      assert.throws(() => verifyHtml(entry.path, Buffer.from(variant), entry.markers),
+        /MODULE HTML NON CONFORME/, 'Fausse parité HTML non refusée : ' + entry.path);
+    }
+    // Le marqueur seul dans un commentaire ne remplace pas un vrai script.
+    assert.throws(() => verifyHtml(entry.path, Buffer.from(
+      source.replace(expected, stale) + '<!-- ' + scriptTag + ' -->'
+    ), entry.markers), /MODULE HTML NON CONFORME/);
+  }
   // Un cache ancien peut masquer un correctif déjà fusionné. Détecter
   // la régression de la révision chargée dans les vraies pages HTML.
   for (const [route, current, previous] of [
@@ -134,7 +196,7 @@ function selfTest() {
       /PAGE PUBLIÉE INCOMPLÈTE/, 'Révision obsolète non détectée : ' + route);
   }
   assert.throws(() => local('../secret'));
-  console.log('PASS prévol public SINJIRA : 5 JS (dont TOTP), 3 pages, détection de dérive, aucun réseau.');
+  console.log('PASS prévol public SINJIRA : 5 JS, 3 pages, vrais scripts HTML et tentatives de faux PASS refusées, aucun réseau.');
 }
 async function production() {
   const errors = [];

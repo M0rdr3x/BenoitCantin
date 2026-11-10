@@ -65,6 +65,10 @@ et doit être revérifié au moment du sign-off.
   `v24-signup.js?v=24.5.4`, pour contourner les anciens caches après
   les correctifs de sécurité. Le contrat CI refuse le retour aux anciennes
   révisions ; seule une inspection du site publié confirme la livraison.
+  Le prévol public vérifie également la présence d'une **unique vraie
+  balise `<script>`** pour chaque module critique, avec `src` local exact
+  et `type=module` ; un commentaire, un texte, un script externe ou un
+  doublon ne peuvent pas faire réussir artificiellement ce contrôle.
   Les quatre scripts JS publics ont déjà été comparés
   sans divergence à GitHub `main` le 9 novembre ; ce workflow permet de
   recontrôler la version publiée après un déploiement. À partir de la PR de
