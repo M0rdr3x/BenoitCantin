@@ -1,0 +1,72 @@
+name: Projet Nova P50W - preflight des checks et revues (NO GO)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p50w.yml"
+      - "scripts/preflight_nova_ruleset_p50w.py"
+      - "scripts/tests/test_preflight_nova_ruleset_p50w.py"
+      - "projets/projet-nova/controles/P50W_*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+  checks: read
+
+jobs:
+  preflight-administration-sans-mutation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Lire P50W sans jeton persiste
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Lire le modele P50V desactive au SHA exact
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: d8acb58c2829cf990d7c77614b3f640369fdbdca
+          path: candidate_p50v
+          sparse-checkout: |
+            projets/projet-nova/controles/P50V_CANDIDAT_RULESET_MAIN_DESACTIVE.json
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Verifier vingt cas adversariaux hors reseau
+        run: |
+          python -m py_compile scripts/preflight_nova_ruleset_p50w.py
+          python -m unittest discover -s scripts/tests -p 'test_preflight_nova_ruleset_p50w.py' -v
+      - name: Observer main, les revues et neuf check-runs reels sur 3 PR
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/preflight_nova_ruleset_p50w.py \
+            --candidate candidate_p50v/projets/projet-nova/controles/P50V_CANDIDAT_RULESET_MAIN_DESACTIVE.json \
+            --report p50w_preflight.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p50w_preflight.json").read_text(encoding="utf-8"))
+          assert r["decision"]=="NO_GO_AUTOMATIQUE",r
+          assert r["autorisation_publication"] is False,r
+          assert r["autorisation_fusion"] is False,r
+          assert r["ruleset_installe_par_ce_controle"] is False,r
+          assert r["checks_attendus"]==9,r
+          assert r["checks_reussis_sur_sha"]==9,r
+          assert r["prs_au_sha_attendu"]==4,r
+          print("P50W: neuf checks reels reussis sur trois PR brouillon, application GitHub Actions 15368.")
+          print("P50W: obstacles administration et demandes revues:",r["obstacles"])
+          print("P50W: NON installe, NON fusionne, NO_GO institutionnel.")
+          PY
+      - name: Garder les conclusions statistiques sans identites
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p50w-preflight-no-go
+          path: p50w_preflight.json
+          if-no-files-found: ignore
+          retention-days: 7
