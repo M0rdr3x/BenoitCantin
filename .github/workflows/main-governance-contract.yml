@@ -8,6 +8,7 @@ on:
       - '.github/workflows/main-governance.yml'
       - '.github/workflows/main-governance-contract.yml'
       - 'scripts/validate_main_governance_contract.py'
+      - 'scripts/test_main_governance_runtime.cjs'
   push:
     branches: [main]
     paths:
@@ -15,6 +16,7 @@ on:
       - '.github/workflows/main-governance.yml'
       - '.github/workflows/main-governance-contract.yml'
       - 'scripts/validate_main_governance_contract.py'
+      - 'scripts/test_main_governance_runtime.cjs'
   workflow_dispatch:
 
 permissions:
@@ -40,3 +42,6 @@ jobs:
 
       - name: Vérifier le contrat de gouvernance main
         run: python3 scripts/validate_main_governance_contract.py
+
+      - name: Rejouer le contrôle GitHub sur des événements et PR synthétiques
+        run: node scripts/test_main_governance_runtime.cjs
