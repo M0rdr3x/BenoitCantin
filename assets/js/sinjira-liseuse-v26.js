@@ -302,7 +302,9 @@ async function saveCurrentPosition(){
             ?'Position enregistrée : page '+state.page+' et emplacement précis synchronisés sur votre compte et cet appareil.'
             :'Position enregistrée : page '+state.page+' et emplacement précis synchronisés sur votre compte.')
         :localSaved
-          ?'Page '+state.page+' enregistrée sur cet appareil. Synchronisation du compte indisponible : réessayez.'
+          ?(state.cloudConflict
+            ?'Conflit entre appareils : la position de cet appareil est conservée localement et n’a pas écrasé votre compte. Rechargez pour choisir la bonne progression.'
+            :'Page '+state.page+' enregistrée sur cet appareil. Synchronisation du compte indisponible : réessayez.')
           :'Impossible d’enregistrer la position. Vérifiez la connexion et les paramètres du navigateur.',
         cloudSaved?'success':'warning');
     }else{
