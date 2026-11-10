@@ -25,7 +25,7 @@ REQUIRED = {
     'fallback log backend fixe': "'MODERATION_BACKEND_FAILED'",
     'log notification fixe': "'NOTIFICATION_WRITE_FAILED'",
     'source humaine': "decision_source:'human_admin'",
-    'appel humain': "a==='review_appeal'",
+    'appel humain opérationnel': "if(a==='review_appeal')return privateJson(await reviewAppeal(s,user.id,b))",
     'renversement d’appel': "outcome==='reversed'",
     'raison d’appel bornée': 'reason.length<20||reason.length>4000',
     'MFA fermé': "e?.message==='MFA_STATE_UNAVAILABLE'",
