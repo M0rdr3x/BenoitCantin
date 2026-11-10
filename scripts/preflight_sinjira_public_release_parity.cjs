@@ -19,10 +19,10 @@ const SCRIPTS = [
 ];
 const HTML = [
   { path: 'compte/confirmer.html', markers: [
-    'data-confirm-button hidden', 'sinjira-confirm-email.js?v=2'
+    'data-confirm-button hidden', 'sinjira-confirm-email.js?v=3'
   ] },
   { path: 'compte/inscription.html', markers: [
-    'data-signup-form', 'formspree_receipt_opt_in', 'v24-signup.js?v=24.5.3'
+    'data-signup-form', 'formspree_receipt_opt_in', 'v24-signup.js?v=24.5.4'
   ] },
   { path: 'projets/sinjira/registre/index.html', markers: [
     'sinjira-character-registry.js?v=24.5.8',
@@ -118,6 +118,20 @@ function selfTest() {
     assert.equal(verifyHtml(entry.path, source, entry.markers), true);
     assert.throws(() => verifyHtml(entry.path, Buffer.from('page obsolète'), entry.markers),
       /PAGE PUBLIÉE INCOMPLÈTE/);
+  }
+  // Un cache ancien peut masquer un correctif déjà fusionné. Détecter
+  // la régression de la révision chargée dans les vraies pages HTML.
+  for (const [route, current, previous] of [
+    ['compte/confirmer.html', 'sinjira-confirm-email.js?v=3', 'sinjira-confirm-email.js?v=2'],
+    ['compte/inscription.html', 'v24-signup.js?v=24.5.4', 'v24-signup.js?v=24.5.3']
+  ]) {
+    const item = HTML.find(entry => entry.path === route);
+    const currentHtml = local(route).toString('utf8');
+    assert.ok(currentHtml.includes(current), 'Révision récente absente : ' + route);
+    assert.ok(!currentHtml.includes(previous), 'Ancienne révision encore référencée : ' + route);
+    const staleHtml = Buffer.from(currentHtml.replace(current, previous));
+    assert.throws(() => verifyHtml(route, staleHtml, item.markers),
+      /PAGE PUBLIÉE INCOMPLÈTE/, 'Révision obsolète non détectée : ' + route);
   }
   assert.throws(() => local('../secret'));
   console.log('PASS prévol public SINJIRA : 5 JS (dont TOTP), 3 pages, détection de dérive, aucun réseau.');

@@ -20,7 +20,7 @@ def main()->int:
 
     signup_page=check('compte/inscription.html',[
         'data-signup-form method="post"', 'type="submit" disabled>Créer mon compte',
-        'name="formspree_receipt_opt_in"', 'v24-signup.js?v=24.5.3', '<noscript>',
+        'name="formspree_receipt_opt_in"', 'v24-signup.js?v=24.5.4', '<noscript>',
     ])
     supabase_client=check('assets/js/sinjira-supabase.js',[
         "import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/+esm';",
@@ -54,7 +54,7 @@ def main()->int:
     ])
     confirmation_page=check('compte/confirmer.html',[
         'data-confirm-button hidden', 'data-confirm-resend-form',
-        'noindex,nofollow', 'sinjira-confirm-email.js?v=2',
+        'noindex,nofollow', 'sinjira-confirm-email.js?v=3',
         'data-confirm-resend-form method="post" action="/compte/confirmer.html"',
         'type="submit" disabled>Renvoyer un lien', '<noscript>',
     ])
