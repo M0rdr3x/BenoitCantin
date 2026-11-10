@@ -81,7 +81,7 @@ async function main(){
   await rejected(context({reportStatus:'resolved'}),'REPORT_NOT_OPEN','Rapport déjà résolu');
   await rejected(context({reportStatus:'archived'}),'REPORT_NOT_OPEN','Rapport archivé');
   await rejected(context({subject:null}),'TARGET_USER_NOT_FOUND','Cible supprimée');
-  await rejected(context({subject:undefined}),'TARGET_USER_NOT_FOUND','Cible introuvable');
+  await rejected(context({subject:''}),'TARGET_USER_NOT_FOUND','Cible introuvable');
   for(const days of [0,-1,1.5,366,'7',null,NaN,Infinity,-Infinity]){
     await rejected(context({days}),'INVALID_SUSPENSION_DURATION',
       'Durée de suspension invalide '+String(days));
