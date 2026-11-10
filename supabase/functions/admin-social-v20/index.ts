@@ -16,10 +16,7 @@ const SAFE_LOG_CODES=new Set([
   'REQUEST_TOO_LARGE','INVALID_JSON','UNSUPPORTED_MEDIA_TYPE',
   'CONTENT_TARGET_NOT_REVERSIBLE','TARGET_USER_NOT_FOUND',
   'DATING_REPORT_HAS_NO_REMOVABLE_PUBLIC_CONTENT','INVALID_APPEAL_OUTCOME',
-  'APPEAL_REVIEW_REASON_LENGTH', 'INVALID_MODERATION_REFERENCE',
-  'REPORT_NOT_OPEN', 'TARGET_USER_NOT_FOUND', 'INVALID_SUSPENSION_DURATION',
-  'ATOMIC_MODERATION_FAILED', 'INVALID_MODERATION_INPUT',
-  'APPEAL_NOT_PENDING', 'DECISION_NOT_ACTIVE', 'SUSPENSION_ALREADY_ACTIVE'
+  'APPEAL_REVIEW_REASON_LENGTH'
 ]);
 
 function privateJson(data:unknown,status=200){
@@ -53,6 +50,47 @@ async function readLimitedJson(req:Request){
   return body;
 }
 
+const targetTables:any={
+  real:{post:['social_real_posts','user_id'],comment:['social_real_comments','user_id'],message:['social_real_messages','sender_user_id']},
+  character:{post:['social_character_posts','user_id'],comment:['social_character_comments','user_id'],message:['social_character_messages','sender_user_id']}
+};
+
+async function canonicalUser(s:any,table:string,idColumn:string,userColumn:string,id:string){
+  const {data,error}=await s.from(table).select(userColumn).eq(idColumn,id).maybeSingle();
+  if(error)throw error;
+  return data?.[userColumn]||null;
+}
+
+async function reportTargetUser(s:any,r:any){
+  const snap=r.snapshot||{};
+  if(snap.source==='dating'){
+    const profileId=String(snap.dating_profile_id||r.target_id||'');
+    if(!profileId)return null;
+    return canonicalUser(s,'dating_profiles','id','user_id',profileId);
+  }
+  if(r.network==='real'){
+    if(r.target_type==='post')return canonicalUser(s,'social_real_posts','id','user_id',r.target_id);
+    if(r.target_type==='comment')return canonicalUser(s,'social_real_comments','id','user_id',r.target_id);
+    if(r.target_type==='message')return canonicalUser(s,'social_real_messages','id','sender_user_id',r.target_id);
+    if(r.target_type==='profile')return canonicalUser(s,'social_profiles','user_id','user_id',r.target_id);
+  }
+  if(r.network==='character'){
+    if(r.target_type==='post')return canonicalUser(s,'social_character_posts','id','user_id',r.target_id);
+    if(r.target_type==='comment')return canonicalUser(s,'social_character_comments','id','user_id',r.target_id);
+    if(r.target_type==='message')return canonicalUser(s,'social_character_messages','id','sender_user_id',r.target_id);
+    if(r.target_type==='profile')return canonicalUser(s,'character_social_profiles','character_id','user_id',r.target_id);
+  }
+  return null;
+}
+
+async function targetSnapshot(s:any,r:any){
+  const pair=targetTables?.[r.network]?.[r.target_type];
+  if(!pair)return null;
+  const {data,error}=await s.from(pair[0]).select('*').eq('id',r.target_id).maybeSingle();
+  if(error)throw error;
+  return data||null;
+}
+
 function policyAndStatement(r:any,b:any,action:string){
   const rule=String(b.policy_rule||`Règles communautaires SINJIRA™ — ${r.reason||'sécurité communautaire'}`).trim().slice(0,240);
   let statement=String(b.statement_of_reasons||'').trim();
@@ -64,74 +102,53 @@ function policyAndStatement(r:any,b:any,action:string){
   return {rule,statement:statement.slice(0,4000)};
 }
 
-// Les erreurs de PostgREST ne sont ni retournées ni journalisées en clair.
-// Seuls des codes métier fixes et non sensibles sont conservés.
-const ATOMIC_SQL_CODES=new Set([
-  'REPORT_NOT_OPEN','TARGET_USER_NOT_FOUND','CONTENT_TARGET_NOT_REVERSIBLE',
-  'INVALID_SUSPENSION_DURATION','INVALID_MODERATION_INPUT',
-  'APPEAL_NOT_PENDING','DECISION_NOT_ACTIVE','ADMIN_REQUIRED',
-  'SUSPENSION_ALREADY_ACTIVE','INVALID_APPEAL_REVIEW'
-]);
-function atomicFailure(error:any):never{
-  const code=typeof error?.message==='string'&&ATOMIC_SQL_CODES.has(error.message)
-    ?error.message:'ATOMIC_MODERATION_FAILED';
-  throw new Error(code);
-}
-async function atomicModeration(
-  s:any,adminId:string,reportId:string,
-  action:'resolve_report'|'hide_content'|'suspend_social',
-  payload:any={}
-){
-  // Le service Role n'est accessible qu'après requiredAdmin(req) et AAL2.
-  // On utilise le wrapper PUBLIC limité à service_role, pas le schéma privé.
-  const {data,error}=await s.rpc('sinjira_admin_moderate_atomic',{
-    p_admin_id:adminId,p_report_id:reportId,p_action:action,
-    p_policy_rule:payload.rule??null,
-    p_statement:payload.statement??null,
-    p_urgency:payload.urgency??'standard',p_days:payload.days??null
+async function notifyDecision(s:any,userId:string|null,decisionId:string,title:string,body:string){
+  if(!userId)return;
+  const {error}=await s.from('user_notifications').insert({
+    user_id:userId,notification_type:'moderation_decision',title,body,
+    related_entity_type:'moderation_decision',related_entity_id:decisionId,
+    action_path:'/compte/moderation.html'
   });
-  if(error)atomicFailure(error);
-  if(data?.ok!==true ||
-    (action==='resolve_report' ? data.resolved!==true :
-      typeof data.decision_id!=='string'))
-    throw new Error('ATOMIC_MODERATION_FAILED');
-  return data;
-}
-async function createDecision(
-  s:any,adminId:string,r:any,b:any,action:'hide_content'|'suspend_social'
-){
-  if(!r||r.status!=='open')throw new Error('REPORT_NOT_OPEN');
-  if(action==='hide_content'&&
-    (r.snapshot?.source==='dating'||
-     !['real','character'].includes(r.network)||
-     !['post','comment','message'].includes(r.target_type)))
-    throw new Error('CONTENT_TARGET_NOT_REVERSIBLE');
-  const {rule,statement}=policyAndStatement(r,b,action);
-  const urgency=b.urgency===undefined?'standard':b.urgency;
-  if(!['standard','urgent_harm','illegal_content'].includes(urgency))
-    throw new Error('INVALID_MODERATION_INPUT');
-  const days=action==='suspend_social'?(b.days===undefined?7:b.days):null;
-  if(action==='suspend_social'&&
-    (typeof days!=='number'||!Number.isInteger(days)||days<1||days>365))
-    throw new Error('INVALID_SUSPENSION_DURATION');
-  const result=await atomicModeration(s,adminId,r.id,action,{
-    rule,statement,urgency,days
-  });
-  return {id:result.decision_id,ends_at:result.until_at??null};
+  if(error)console.error('[SINJIRA moderation notification]','NOTIFICATION_WRITE_FAILED');
 }
 
-async function appealOverview(s:any,adminId:string){
-  const {data,error}=await s.rpc('sinjira_admin_appeals_overview',{
-    p_admin_id:adminId,p_limit:300
-  });
-  if(error)atomicFailure(error);
-  if(!data||!Number.isSafeInteger(data.pending_count)||
-     data.pending_count<0||!Array.isArray(data.appeals))
-    throw new Error('ATOMIC_MODERATION_FAILED');
-  return data;
+async function createDecision(s:any,adminId:string,r:any,b:any,action:'hide_content'|'suspend_social'){
+  const subject=await reportTargetUser(s,r);
+  if(action==='hide_content'&&!targetTables?.[r.network]?.[r.target_type])throw new Error('CONTENT_TARGET_NOT_REVERSIBLE');
+  const evidence={report_snapshot:r.snapshot||{},target_snapshot:await targetSnapshot(s,r),report_reason:r.reason,report_created_at:r.created_at};
+  const {rule,statement}=policyAndStatement(r,b,action);
+  const urgency=['standard','urgent_harm','illegal_content'].includes(String(b.urgency))?String(b.urgency):'standard';
+  const row:any={subject_user_id:subject,report_id:r.id,network:r.snapshot?.source==='dating'?'dating':r.network,target_type:r.snapshot?.source==='dating'?'account':r.target_type,target_id:r.target_id,action,status:'active',policy_rule:rule,statement_of_reasons:statement,evidence_snapshot:evidence,urgency,decision_source:'human_admin',decided_by:adminId};
+  if(action==='suspend_social'){
+    const days=Math.max(1,Math.min(Number(b.days||7),365));
+    row.ends_at=new Date(Date.now()+days*86400000).toISOString();
+  }
+  const {data:decision,error}=await s.schema('private').from('moderation_decisions').insert(row).select('id,ends_at').single();
+  if(error)throw error;
+  if(action==='suspend_social'){
+    if(!subject)throw new Error('TARGET_USER_NOT_FOUND');
+    const {error:suspensionError}=await s.from('social_suspensions').upsert({user_id:subject,reason:statement,until_at:decision.ends_at,created_by:adminId,moderation_decision_id:decision.id},{onConflict:'user_id'});
+    if(suspensionError)throw suspensionError;
+  }
+  const {error:reportError}=await s.from('social_reports').update({status:'resolved',reviewed_at:new Date().toISOString(),reviewed_by:adminId}).eq('id',r.id);
+  if(reportError)throw reportError;
+  await notifyDecision(s,subject,decision.id,action==='hide_content'?'Décision de modération — contenu masqué':'Décision de modération — suspension sociale',statement);
+  return decision;
 }
-async function listAppeals(s:any,adminId:string){
-  return (await appealOverview(s,adminId)).appeals;
+
+async function listAppeals(s:any){
+  const {data:appeals,error}=await s.schema('private').from('moderation_appeals').select('*').eq('status','pending').order('submitted_at',{ascending:true}).limit(300);
+  if(error)throw error;
+  const rows=appeals||[];
+  const ids=[...new Set(rows.map((x:any)=>x.decision_id).filter(Boolean))];
+  let decisions:any[]=[];
+  if(ids.length){
+    const res=await s.schema('private').from('moderation_decisions').select('id,subject_user_id,network,target_type,target_id,action,status,policy_rule,statement_of_reasons,urgency,starts_at,ends_at,appeal_deadline,decided_at').in('id',ids);
+    if(res.error)throw res.error;
+    decisions=res.data||[];
+  }
+  const byId=new Map(decisions.map((d:any)=>[d.id,d]));
+  return rows.map((a:any)=>({...a,decision:byId.get(a.decision_id)||null}));
 }
 
 async function reviewAppeal(s:any,adminId:string,b:any){
@@ -139,15 +156,26 @@ async function reviewAppeal(s:any,adminId:string,b:any){
   const reason=String(b.review_reason||'').trim();
   if(!['upheld','reversed'].includes(outcome))throw new Error('INVALID_APPEAL_OUTCOME');
   if(reason.length<20||reason.length>4000)throw new Error('APPEAL_REVIEW_REASON_LENGTH');
-  const {data,error}=await s.rpc('sinjira_admin_review_appeal_atomic',{
-    p_admin_id:adminId,p_appeal_id:b.appeal_id,
-    p_outcome:outcome,p_review_reason:reason
-  });
-  if(error)atomicFailure(error);
-  if(data?.ok!==true||data.outcome!==outcome||
-    typeof data.decision_id!=='string'||typeof data.appeal_id!=='string')
-    throw new Error('ATOMIC_MODERATION_FAILED');
-  return data;
+  const {data:appeal,error}=await s.schema('private').from('moderation_appeals').select('*').eq('id',b.appeal_id).eq('status','pending').single();
+  if(error)throw error;
+  const {data:decision,error:decisionError}=await s.schema('private').from('moderation_decisions').select('*').eq('id',appeal.decision_id).single();
+  if(decisionError)throw decisionError;
+  const now=new Date().toISOString();
+  if(outcome==='reversed'){
+    const {error:reverseError}=await s.schema('private').from('moderation_decisions').update({status:'reversed',reversed_at:now,reversed_by:adminId,reversal_reason:reason,updated_at:now}).eq('id',decision.id);
+    if(reverseError)throw reverseError;
+    if(decision.action==='suspend_social'){
+      const {error:suspensionError}=await s.from('social_suspensions').delete().eq('moderation_decision_id',decision.id);
+      if(suspensionError)throw suspensionError;
+    }
+  }
+  const {error:appealError}=await s.schema('private').from('moderation_appeals').update({status:outcome,reviewed_by:adminId,reviewed_at:now,review_reason:reason,updated_at:now}).eq('id',appeal.id);
+  if(appealError)throw appealError;
+  if(appeal.appellant_user_id){
+    const title=outcome==='reversed'?'Appel accepté — décision renversée':'Appel examiné — décision maintenue';
+    await notifyDecision(s,appeal.appellant_user_id,decision.id,title,reason);
+  }
+  return {ok:true,outcome,decision_id:decision.id};
 }
 
 Deno.serve(async(req)=>{
@@ -158,47 +186,35 @@ Deno.serve(async(req)=>{
     requireJsonContentType(req);
     const b=await readLimitedJson(req);
     const a=typeof b.action==='string'?b.action.trim().slice(0,64):'';
-    // Obligatoire aussi pour clients alternatifs et requêtes sans UI.
-    if(['resolve_report','restrict_reported_content','remove_reported_content',
-      'suspend_reported_user','review_appeal'].includes(a)){
-      const reference=a==='review_appeal'?b.appeal_id:b.report_id;
-      if(typeof reference!=='string'||!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(reference))
-        throw new Error('INVALID_MODERATION_REFERENCE');
-    }
     if(a==='dashboard'){
-      const [{count:open,error:openError},{count:susp,error:suspError},appeals]=await Promise.all([
+      const [{count:open},{count:susp},{count:appeals}]=await Promise.all([
         s.from('social_reports').select('id',{count:'exact',head:true}).eq('status','open'),
         s.from('social_suspensions').select('user_id',{count:'exact',head:true}).or(`until_at.is.null,until_at.gt.${new Date().toISOString()}`),
-        appealOverview(s,user.id)
+        s.schema('private').from('moderation_appeals').select('id',{count:'exact',head:true}).eq('status','pending')
       ]);
-      if(openError||suspError)throw new Error('ATOMIC_MODERATION_FAILED');
-      return privateJson({ok:true,dashboard:{
-        open_reports:open||0,active_suspensions:susp||0,
-        pending_appeals:appeals.pending_count
-      }});
+      return privateJson({ok:true,dashboard:{open_reports:open||0,active_suspensions:susp||0,pending_appeals:appeals||0}});
     }
     if(a==='list_reports'){
       const {data,error}=await s.from('social_reports').select('*').eq('status','open').order('created_at',{ascending:false}).limit(300);
       if(error)throw error;
       return privateJson({ok:true,reports:data||[]});
     }
-    if(a==='list_appeals')return privateJson({ok:true,appeals:await listAppeals(s,user.id)});
+    if(a==='list_appeals')return privateJson({ok:true,appeals:await listAppeals(s)});
     if(a==='resolve_report'){
-      await atomicModeration(s,user.id,b.report_id,'resolve_report');
+      const {error}=await s.from('social_reports').update({status:'resolved',reviewed_at:new Date().toISOString(),reviewed_by:user.id}).eq('id',b.report_id);
+      if(error)throw error;
       return privateJson({ok:true});
     }
     if(a==='restrict_reported_content'||a==='remove_reported_content'){
-      const {data:r,error}=await s.from('social_reports').select('*').eq('id',b.report_id).eq('status','open').maybeSingle();
+      const {data:r,error}=await s.from('social_reports').select('*').eq('id',b.report_id).single();
       if(error)throw error;
-      if(!r)throw new Error('REPORT_NOT_OPEN');
       if(r.snapshot?.source==='dating')throw new Error('DATING_REPORT_HAS_NO_REMOVABLE_PUBLIC_CONTENT');
       const decision=await createDecision(s,user.id,r,b,'hide_content');
       return privateJson({ok:true,decision_id:decision.id,reversible:true});
     }
     if(a==='suspend_reported_user'){
-      const {data:r,error}=await s.from('social_reports').select('*').eq('id',b.report_id).eq('status','open').maybeSingle();
+      const {data:r,error}=await s.from('social_reports').select('*').eq('id',b.report_id).single();
       if(error)throw error;
-      if(!r)throw new Error('REPORT_NOT_OPEN');
       const decision=await createDecision(s,user.id,r,b,'suspend_social');
       return privateJson({ok:true,decision_id:decision.id,until_at:decision.ends_at,reversible:true});
     }
@@ -214,12 +230,6 @@ Deno.serve(async(req)=>{
     if(e?.message==='REQUEST_TOO_LARGE')return privateJson({ok:false,error:'Requête trop volumineuse.',code:'REQUEST_TOO_LARGE'},413);
     if(e?.message==='UNSUPPORTED_MEDIA_TYPE')return privateJson({ok:false,error:'Content-Type application/json requis.',code:'UNSUPPORTED_MEDIA_TYPE'},415);
     if(e?.message==='INVALID_JSON')return privateJson({ok:false,error:'JSON invalide.',code:'INVALID_JSON'},400);
-    if(e?.message==='INVALID_MODERATION_REFERENCE'||e?.message==='INVALID_SUSPENSION_DURATION')
-      return privateJson({ok:false,error:'Paramètres de modération invalides.',code:'INVALID_MODERATION_INPUT'},400);
-    if(e?.message==='REPORT_NOT_OPEN')
-      return privateJson({ok:false,error:'Ce signalement n’est plus ouvert.',code:'REPORT_NOT_OPEN'},409);
-    if(e?.message==='TARGET_USER_NOT_FOUND')
-      return privateJson({ok:false,error:'La cible de cette mesure est introuvable.',code:'TARGET_USER_NOT_FOUND'},409);
     return privateJson({ok:false,error:'Erreur de modération sociale.',code:'MODERATION_FAILED'},500);
   }
 });
