@@ -32,7 +32,8 @@ et doit être revérifié au moment du sign-off.
   dans le modèle HTML**, exclusivement dans le lien HTTPS prévu : un second
   jeton dans une image, un autre lien, un commentaire ou un texte crée un
   échec, même si le bon lien existe. Les liens de pied de page sans jeton
-  restent acceptés. Cette vérification statique n'atteste pas la livraison. Puis confirmer **dans une boîte de test contrôlée** qu'un
+  restent acceptés. Cette vérification statique n'atteste pas la livraison.
+  Puis confirmer **dans une boîte de test contrôlée** qu'un
   courriel Auth de confirmation a effectivement été reçu et qu'un clic
   volontaire sur le bouton réussit. Le prévol seul **ne suffit pas**.
 
