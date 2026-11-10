@@ -26,20 +26,22 @@ class ConfirmationLinkParser(HTMLParser):
     def handle_starttag(self, tag, attrs):
         if tag != "a":
             return
-        for name, value in attrs:
-            if name != "href" or not isinstance(value, str):
-                continue
-            parts = urlsplit(value)
-            if (parts.scheme + "://" + parts.netloc + parts.path != CONFIRM
-                    or parts.query or parts.username or parts.password):
-                continue
-            # HTMLParser décode &amp; en &, puis on vérifie les deux paramètres
-            # du fragment sans accepter de doublons ou de valeur étrangère.
-            pairs = parse_qsl(parts.fragment, keep_blank_values=True)
-            if (len(pairs) == 2 and
-                    dict(pairs) == {"token_hash": "{{ .TokenHash }}",
-                                  "type": "email"}):
-                self.valid_link = True
+        # Deux attributs href sont ambigus : les navigateurs peuvent choisir
+        # différemment la destination. On refuse ce modèle sans le certifier.
+        hrefs = [value for name, value in attrs if name == "href"]
+        if len(hrefs) != 1 or not isinstance(hrefs[0], str):
+            return
+        parts = urlsplit(hrefs[0])
+        if (parts.scheme + "://" + parts.netloc + parts.path != CONFIRM
+                or parts.query or parts.username or parts.password):
+            return
+        # HTMLParser décode &amp; en &, puis on vérifie les deux paramètres
+        # du fragment sans accepter de doublons ou de valeur étrangère.
+        pairs = parse_qsl(parts.fragment, keep_blank_values=True)
+        if (len(pairs) == 2 and
+                dict(pairs) == {"token_hash": "{{ .TokenHash }}",
+                              "type": "email"}):
+            self.valid_link = True
 
 
 def has_secure_confirmation_link(content):
@@ -155,6 +157,8 @@ def selftest():
         "<a href='"+CONFIRM+"#token_hash={{ .TokenHash }}&amp;type=recovery'>type=email</a>",
         "<a href='https://evil.example/compte/confirmer.html#token_hash={{ .TokenHash }}&amp;type=email'>Confirmer</a>",
         "<a href='"+CONFIRM+"#token_hash={{ .TokenHash }}&amp;type=email&amp;type=email'>Confirmer</a>",
+        "<a href='https://evil.example/' href='"+CONFIRM+"#token_hash={{ .TokenHash }}&amp;type=email'>Confirmer</a>",
+        "<a href='"+CONFIRM+"#token_hash={{ .TokenHash }}&amp;type=email' href='https://evil.example/'>Confirmer</a>",
     ]
     for template in deceptive_templates:
         _, failed, _ = audit({**good, "mailer_templates_confirmation_content": template})
@@ -162,7 +166,7 @@ def selftest():
     assert has_secure_confirmation_link(
         "<a href='"+CONFIRM+"#token_hash={{ .TokenHash }}&type=email'>Confirmer</a>")
     print("OK prévol Auth : treize contrats, quinze régressions, "
-          "six modèles trompeurs et wildcard testés.")
+          "huit modèles trompeurs et wildcard testés.")
 
 
 def remote():
