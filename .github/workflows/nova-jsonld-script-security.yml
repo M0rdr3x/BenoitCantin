@@ -1,0 +1,37 @@
+name: Projet NOVA — sécurité des métadonnées JSON-LD
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nova-jsonld-security-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  nova-jsonld-security:
+    name: Refuser les injections script dans les données structurées NOVA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Configurer Python épinglé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+      - name: Vérifier la syntaxe du normaliseur et des tests
+        run: |
+          python3 -m py_compile scripts/normalize_nova_seo.py scripts/test_nova_jsonld_script_boundary.py
+      - name: Tester le HTML final et les tentatives de sortie de balise script
+        run: python3 scripts/test_nova_jsonld_script_boundary.py
