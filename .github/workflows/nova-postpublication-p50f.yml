@@ -1,0 +1,49 @@
+name: Controle postpublication Projet Nova P50F
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/verify_nova_public_p50f.py'
+      - 'scripts/tests/test_verify_nova_public_p50f.py'
+      - '.github/workflows/nova-postpublication-p50f.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests-sans-reseau:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Recuperer les fichiers
+        uses: actions/checkout@v6
+      - name: Configurer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Verifier la logique du controle sans acces reseau
+        run: python -m unittest discover -s scripts/tests -p test_verify_nova_public_p50f.py -v
+
+  audit-site-reel:
+    if: github.event_name == 'workflow_dispatch'
+    needs: tests-sans-reseau
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Recuperer les fichiers
+        uses: actions/checkout@v6
+      - name: Configurer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Verifier quatre URL publiques sans envoi de formulaire
+        run: python scripts/verify_nova_public_p50f.py --output artifacts/controle_p50f.json
+      - name: Conserver le rapport, y compris en cas d'ecart
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: controle-publication-projet-nova-p50f
+          path: artifacts/controle_p50f.json
+          if-no-files-found: warn
