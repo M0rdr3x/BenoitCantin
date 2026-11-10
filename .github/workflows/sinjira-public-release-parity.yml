@@ -1,4 +1,4 @@
-name: SINJIRA — parité publique du correctif Auth et Registre
+name: SINJIRA — parité publique du correctif Auth, TOTP et Registre
 
 on:
   pull_request:
@@ -13,15 +13,17 @@ on:
       - 'assets/js/v24-signup.js'
       - 'assets/js/sinjira-character-registry.js'
       - 'assets/js/sinjira-account.js'
+      - 'assets/js/v24-security.js'
   push:
     branches: [main]
     paths:
       - 'scripts/preflight_sinjira_public_release_parity.cjs'
       - '.github/workflows/sinjira-public-release-parity.yml'
+      - 'assets/js/v24-security.js'
   workflow_dispatch:
     inputs:
       confirmation:
-        description: "Saisir exactement PUBLIC-GET-ONLY (sept GET, aucune mutation)"
+        description: "Saisir exactement PUBLIC-GET-ONLY (huit GET, aucune mutation)"
         required: true
         type: string
 
@@ -53,7 +55,7 @@ jobs:
           node scripts/preflight_sinjira_public_release_parity.cjs --self-test
 
   published-site:
-    name: Lecture publique des sept ressources
+    name: Lecture publique des huit ressources
     needs: local-contract
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04

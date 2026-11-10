@@ -14,7 +14,8 @@ const SCRIPTS = [
   'assets/js/sinjira-confirm-email.js',
   'assets/js/v24-signup.js',
   'assets/js/sinjira-character-registry.js',
-  'assets/js/sinjira-account.js'
+  'assets/js/sinjira-account.js',
+  'assets/js/v24-security.js' // TOTP / AAL2 : contrôler la version effectivement publiée
 ];
 const HTML = [
   { path: 'compte/confirmer.html', markers: [
@@ -94,7 +95,7 @@ function getPublic(route) {
   });
 }
 function selfTest() {
-  assert.equal(SCRIPTS.length, 4);
+  assert.equal(SCRIPTS.length, 5);
   assert.equal(HTML.length, 3);
   const first = local(SCRIPTS[0]);
   assert.ok(first.toString('utf8').includes("confirmButton?.addEventListener('click'"));
@@ -103,6 +104,15 @@ function selfTest() {
   assert.throws(() => verifyJs(SCRIPTS[0], Buffer.from('ancien code'), first),
     /DÉCALAGE DE PUBLICATION/);
   for (const route of SCRIPTS) assert.ok(local(route).length > 100);
+  const totp = local('assets/js/v24-security.js');
+  assert.ok(totp.toString('utf8').includes('challengeAndVerify'),
+    'Le script TOTP publié doit permettre la vérification du second facteur.');
+  assert.ok(totp.toString('utf8').includes('getAuthenticatorAssuranceLevel'),
+    'Le script TOTP doit vérifier le niveau d’assurance.');
+  assert.equal(verifyJs('assets/js/v24-security.js', totp), true);
+  assert.throws(() => verifyJs('assets/js/v24-security.js',
+    Buffer.concat([totp, Buffer.from('\n// ancienne version simulée')]), totp),
+  /DÉCALAGE DE PUBLICATION/);
   for (const entry of HTML) {
     const source = local(entry.path);
     assert.equal(verifyHtml(entry.path, source, entry.markers), true);
@@ -110,7 +120,7 @@ function selfTest() {
       /PAGE PUBLIÉE INCOMPLÈTE/);
   }
   assert.throws(() => local('../secret'));
-  console.log('PASS prévol public SINJIRA : 4 JS, 3 pages, détection de dérive, aucun réseau.');
+  console.log('PASS prévol public SINJIRA : 5 JS (dont TOTP), 3 pages, détection de dérive, aucun réseau.');
 }
 async function production() {
   const errors = [];
@@ -134,7 +144,7 @@ async function production() {
       console.error('ÉCHEC page : ' + entry.path + ' (' + error.message + ')');
     }
   }
-  console.log('BILAN : ' + (7 - errors.length) + '/7 ressources publiques vérifiées.');
+  console.log('BILAN : ' + (SCRIPTS.length + HTML.length - errors.length) + '/' + (SCRIPTS.length + HTML.length) + ' ressources publiques vérifiées.');
   if (errors.length) {
     console.error('NON CERTIFIÉ : divergence publication / code ou accès public.');
     process.exitCode = 1;
