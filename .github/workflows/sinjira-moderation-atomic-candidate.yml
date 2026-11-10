@@ -34,7 +34,7 @@ jobs:
           POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_DB: sinjira_test
         ports:
-          - 5432:5432
+          - '127.0.0.1:5432:5432'
         options: >-
           --health-cmd "pg_isready -U postgres -d sinjira_test"
           --health-interval 10s
@@ -50,6 +50,13 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           persist-credentials: false
+      - name: Refuser le port PostgreSQL ouvert sur toutes les interfaces
+        run: |
+          binding="$(docker port '${{ job.services.postgres.id }}' 5432/tcp)"
+          if [ "$binding" != '127.0.0.1:5432' ]; then
+            echo "REFUS : la base fictive doit rester accessible sur localhost seulement." >&2
+            exit 1
+          fi
       - name: Installer le client PostgreSQL uniquement si nécessaire
         run: |
           if ! command -v psql >/dev/null 2>&1; then
