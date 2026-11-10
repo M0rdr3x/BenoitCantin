@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import re
 
 ROOT=Path(__file__).resolve().parents[1]
 WRAPPER=ROOT/'assets/js/sinjira-admin-console.js'
@@ -13,7 +14,8 @@ need(WRAPPER.exists(),'wrapper admin-console absent')
 need(CORE.exists(),'moteur admin-console historique absent')
 if WRAPPER.exists():
     js=WRAPPER.read_text('utf-8')
-    need("import './sinjira-admin-console-core.js'" in js,'wrapper ne charge pas le moteur admin existant')
+    need(bool(re.search(r"(?m)^\\s*import\\s+['\\\"]\\./sinjira-admin-console-core\\.js(?:\\?v=[A-Za-z0-9._-]+)?['\\\"]\\s*;", js)),
+         'wrapper ne charge pas le moteur admin existant avec un chemin local explicite')
     need("Identifiant de projet" in js,'nouveau libellé absent')
     need("Ex. Fracture du Réseau-Mère" in js,'exemple Fracture du Réseau-Mère absent')
     need("slugField.hidden=true" in js,'champ slug technique non masqué')
