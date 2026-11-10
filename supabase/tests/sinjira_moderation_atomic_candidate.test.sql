@@ -225,7 +225,7 @@ from private.moderation_decisions d
 where d.report_id='dddddddd-dddd-4ddd-dddd-ddddddddddde';
 
 set role service_role;
-do $
+do $qa$
 declare v_failed boolean:=false;
 begin
  begin
@@ -238,9 +238,9 @@ begin
    v_failed:=true;
  end;
  if not v_failed then raise exception 'EXPECTED_APPEAL_ROLLBACK'; end if;
-end $;
+end $qa$;
 
-do $
+do $qa$
 declare v_failed boolean:=false;
 begin
  begin
@@ -254,7 +254,7 @@ begin
    v_failed:=true;
  end;
  if not v_failed then raise exception 'EXPECTED_NULL_ACTION_REJECTION'; end if;
-end $;
+end $qa$;
 reset role;
 
 select public.fixture_assert_true(
