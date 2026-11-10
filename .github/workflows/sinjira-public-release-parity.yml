@@ -20,6 +20,13 @@ on:
       - 'scripts/preflight_sinjira_public_release_parity.cjs'
       - '.github/workflows/sinjira-public-release-parity.yml'
       - 'assets/js/v24-security.js'
+      - 'compte/confirmer.html'
+      - 'compte/inscription.html'
+      - 'projets/sinjira/registre/index.html'
+      - 'assets/js/sinjira-confirm-email.js'
+      - 'assets/js/v24-signup.js'
+      - 'assets/js/sinjira-character-registry.js'
+      - 'assets/js/sinjira-account.js'
   workflow_dispatch:
     inputs:
       confirmation:
