@@ -28,7 +28,11 @@ et doit être revérifié au moment du sign-off.
   configuration Auth. L'existence de ce secret n'a pas pu être certifiée avec
   l'accès de lecture disponible. Aucun token ne doit figurer dans les rapports.
   Exiger **13 contrôles PASS, 0 ÉCHEC** ; les avertissements sans secret/SMTP
-  sont attendus. Puis confirmer **dans une boîte de test contrôlée** qu'un
+  sont attendus. Le prévol exige aussi **un seul usage du jeton de confirmation
+  dans le modèle HTML**, exclusivement dans le lien HTTPS prévu : un second
+  jeton dans une image, un autre lien, un commentaire ou un texte crée un
+  échec, même si le bon lien existe. Les liens de pied de page sans jeton
+  restent acceptés. Cette vérification statique n'atteste pas la livraison. Puis confirmer **dans une boîte de test contrôlée** qu'un
   courriel Auth de confirmation a effectivement été reçu et qu'un clic
   volontaire sur le bouton réussit. Le prévol seul **ne suffit pas**.
 
