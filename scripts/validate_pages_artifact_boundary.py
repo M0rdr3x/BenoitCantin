@@ -66,6 +66,11 @@ def path_of_action(source: str, index: int) -> str | None:
             continue
         if re.match(r"^<<\s*:", stripped):
             return None
+        # Le paramètre doit être un enfant DIRECT de with:, jamais un leurre
+        # placé sous une clé imbriquée. Sinon GitHub Actions peut ignorer le
+        # faux path et conserver le défaut dangereux de l'action (".").
+        if indent != depth + 2:
+            continue
         match = re.fullmatch(r"path:\s*([^\n#]*?)(?:\s+#.*)?", stripped)
         if match:
             paths.append(match.group(1).strip().strip("'\""))
@@ -129,6 +134,17 @@ def self_test() -> None:
         ("override après with", good.replace("        with:\n          path: _site", "        with:\n          path: _site\n        with:\n          path: .")),
         ("publish duplicate", good.replace("path: _site", "path: _site\n          path: .")),
         ("publish expression", good.replace("path: _site", "path: $WORKSPACE")),
+        # Un path sous une clé intermédiaire ne serait pas transmis à
+        # actions/upload-pages-artifact et peut laisser le défaut ".".
+        ("nested fake path", good.replace(
+            "        with:\n          path: _site\n",
+            "        with:\n          nested:\n            path: _site\n",
+        )),
+        # L'indentation directe doit être celle de la clé path: de l'action.
+        ("overindented path", good.replace(
+            "        with:\n          path: _site\n",
+            "        with:\n            path: _site\n",
+        )),
         ("wrong SHA", good.replace(UPLOAD, UPLOAD.split("@")[0] + "@v3")),
         ("missing review", good.replace("confirm_containment:", "not_confirmed:")),
         ("missing main", good.replace("github.ref == 'refs/heads/main'", "true")),
@@ -139,7 +155,7 @@ def self_test() -> None:
     for label, altered in mutants:
         assert inspect_workflows({APPROVED: altered}), "Dangerous Pages fixture accepted: " + label
     assert inspect_workflows({APPROVED: good, "extra.yml": good})
-    print("OK : 13 mutations Pages refusées; upload _site unique autorisé.")
+    print("OK : 15 mutations Pages refusées; upload _site direct obligatoire.")
 
 
 def main() -> int:
