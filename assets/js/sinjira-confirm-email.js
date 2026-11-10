@@ -67,13 +67,20 @@ confirmButton?.addEventListener('click', async () => {
       type: 'email'
     });
     if (error) throw error;
+    // Un résultat sans utilisateur réellement confirmé n'est pas une preuve
+    // d'inscription validée. Préserver le fragment et permettre une nouvelle
+    // vérification au lieu de notifier Formspree ou d'afficher un faux succès.
+    if (!data?.user?.email_confirmed_at) {
+      setStatus(status, 'Le service n’a pas confirmé la validation de votre courriel. Rechargez la page ou connectez-vous pour vérifier l’état du compte.', 'error');
+      return;
+    }
     // Ne laissez pas le jeton dans la barre d’adresse après l’échange.
     history.replaceState(history.state, '', location.pathname);
     // La confirmation doit rester valide même si Formspree est indisponible.
     // Attendre la réponse du serveur avant de proposer une navigation, pour
     // éviter qu'un changement de page annule l'envoi de notification.
     await notifyAccountConfirmation();
-    showSuccess(data?.user || null);
+    showSuccess(data.user);
   } catch {
     setStatus(status, 'Ce lien est invalide, déjà utilisé ou expiré. Demandez un nouveau courriel de confirmation ci-dessous.', 'error');
     confirmButton.hidden = true;
