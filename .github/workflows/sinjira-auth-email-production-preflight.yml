@@ -10,7 +10,9 @@ on:
       - 'scripts/test_sinjira_formspree_transport.cjs'
       - 'scripts/test_sinjira_confirmation_notice_server.cjs'
       - 'scripts/test_sinjira_totp_verification_recovery.cjs'
+      - 'scripts/test_sinjira_signup_next_fallback.cjs'
       - 'assets/js/v24-security.js'
+      - 'assets/js/v24-signup.js'
       - 'supabase/functions/notify-account-confirmation/index.ts'
       - 'supabase/functions/_shared/sinjira-formspree.ts'
       - 'assets/js/sinjira-confirm-email.js'
@@ -24,7 +26,9 @@ on:
       - 'scripts/test_sinjira_formspree_transport.cjs'
       - 'scripts/test_sinjira_confirmation_notice_server.cjs'
       - 'scripts/test_sinjira_totp_verification_recovery.cjs'
+      - 'scripts/test_sinjira_signup_next_fallback.cjs'
       - 'assets/js/v24-security.js'
+      - 'assets/js/v24-signup.js'
       - 'supabase/functions/notify-account-confirmation/index.ts'
       - 'supabase/functions/_shared/sinjira-formspree.ts'
       - 'assets/js/sinjira-confirm-email.js'
@@ -77,6 +81,10 @@ jobs:
         run: |
           node --check scripts/test_sinjira_confirmation_notice_server.cjs
           node scripts/test_sinjira_confirmation_notice_server.cjs
+      - name: Refuser les redirections non contrôlées à l'inscription
+        run: |
+          node --check scripts/test_sinjira_signup_next_fallback.cjs
+          node scripts/test_sinjira_signup_next_fallback.cjs
       - name: Vérifier les erreurs de vérification TOTP sans bloquer le bouton
         run: |
           node --check scripts/test_sinjira_totp_verification_recovery.cjs
