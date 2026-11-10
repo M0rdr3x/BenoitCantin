@@ -10,11 +10,14 @@ export function getSupabase() {
 export async function getCurrentUser() {if (!isSinjiraBackendConfigured()) return null;const {data,error}=await getSupabase().auth.getUser();return error ? null : (data.user || null)}
 
 export function safeInternalDestination(value,fallback='/compte/index.html'){
-  const raw=String(value||'').trim();
-  if(!raw.startsWith('/')||raw.startsWith('//')||raw.includes('\\')||/[\u0000-\u001f\u007f]/.test(raw))return fallback;
+  const raw=typeof value==='string'?value:'';
+  if(!raw||raw!==raw.trim()||!raw.startsWith('/')||raw.startsWith('//')||
+     raw.includes('\\')||/[\u0000-\u0020\u007f]/.test(raw)||
+     /%(?:0[0-9a-f]|1[0-9a-f]|2f|5c|7f)/i.test(raw))return fallback;
   try{
     const url=new URL(raw,location.origin);
-    if(url.origin!==location.origin||url.username||url.password)return fallback;
+    if(url.origin!==location.origin||url.username||url.password||
+       url.pathname!==raw.split(/[?#]/,1)[0])return fallback;
     return `${url.pathname}${url.search}${url.hash}`;
   }catch{return fallback}
 }

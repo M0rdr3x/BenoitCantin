@@ -30,6 +30,8 @@ def main():
     module=max(src.find('sinjira-auth-pages.js'),src.find('v24-signup.js'),src.find('sinjira-recovery-v24-4-99.js'))
     if guard<0: errors.append(f'Garde de redirection auth absent: {rel}')
     elif module>=0 and guard>module: errors.append(f'Garde auth chargé après le module dans {rel}')
+    if 'sinjira-auth-route.js?v=24.4.13' not in src:
+      errors.append(f'Garde Auth pas actualisé après durcissement des destinations: {rel}')
 
   helper=text('assets/js/sinjira-auth-route.js')
   for required in ["raw.startsWith('//')","raw.includes('\\\\')","url.origin !== location.origin"]:

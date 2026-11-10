@@ -4,16 +4,19 @@
   const DEFAULT_DESTINATION = '/compte/index.html';
 
   function safeLocalDestination(value, fallback = DEFAULT_DESTINATION) {
-    const raw = String(value || '').trim();
-    const safeFallback = String(fallback || DEFAULT_DESTINATION);
-    if (!raw) return safeFallback;
-    if (!raw.startsWith('/') || raw.startsWith('//') || raw.includes('\\') || /[\u0000-\u001f\u007f]/.test(raw)) {
+    const raw = typeof value === 'string' ? value : '';
+    // Chaîne vide explicite : sanitizeCurrentNext doit retirer la destination.
+    const safeFallback = fallback === '' ? '' : String(fallback || DEFAULT_DESTINATION);
+    if (!raw || raw !== raw.trim()) return safeFallback;
+    if (!raw.startsWith('/') || raw.startsWith('//') || raw.includes('\\') || /[\u0000-\u0020\u007f]/.test(raw) ||
+        /%(?:0[0-9a-f]|1[0-9a-f]|2f|5c|7f)/i.test(raw)) {
       return safeFallback;
     }
     try {
       const url = new URL(raw, location.origin);
       if (url.origin !== location.origin) return safeFallback;
-      if (!url.pathname.startsWith('/') || url.username || url.password) return safeFallback;
+      if (!url.pathname.startsWith('/') || url.username || url.password ||
+          url.pathname !== raw.split(/[?#]/, 1)[0]) return safeFallback;
       return `${url.pathname}${url.search}${url.hash}`;
     } catch {
       return safeFallback;

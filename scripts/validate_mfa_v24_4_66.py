@@ -36,7 +36,9 @@ def main():
         'await new Promise(()=>{})',
         "raw.startsWith('//')",
         "raw.includes('\\\\')",
-        "[\\u0000-\\u001f\\u007f]"
+        "[\\u0000-\\u0020\\u007f]",
+        "/%(?:0[0-9a-f]|1[0-9a-f]|2f|5c|7f)/i.test(raw)",
+        "url.pathname!==raw.split(/[?#]/,1)[0]"
     ],'garde MFA central')
 
     require(challenge,[

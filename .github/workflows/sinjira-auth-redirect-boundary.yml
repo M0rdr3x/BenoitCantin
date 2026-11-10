@@ -1,0 +1,62 @@
+name: Sécurité SINJIRA — redirections Auth et MFA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-auth-route.js'
+      - 'assets/js/sinjira-supabase.js'
+      - 'compte/connexion.html'
+      - 'compte/inscription.html'
+      - 'compte/mot-de-passe-oublie.html'
+      - 'compte/reinitialiser-mot-de-passe.html'
+      - 'scripts/validate_auth.py'
+      - 'scripts/validate_mfa_v24_4_66.py'
+      - 'scripts/test_sinjira_auth_redirect_boundary.cjs'
+      - '.github/workflows/sinjira-auth-redirect-boundary.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-auth-route.js'
+      - 'assets/js/sinjira-supabase.js'
+      - 'compte/connexion.html'
+      - 'compte/inscription.html'
+      - 'compte/mot-de-passe-oublie.html'
+      - 'compte/reinitialiser-mot-de-passe.html'
+      - 'scripts/validate_auth.py'
+      - 'scripts/validate_mfa_v24_4_66.py'
+      - 'scripts/test_sinjira_auth_redirect_boundary.cjs'
+      - '.github/workflows/sinjira-auth-redirect-boundary.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  auth-return-boundary:
+    name: Bloquer les destinations ambiguës après Auth/MFA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sans jeton persistant
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Node épinglé
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '22.16.0'
+          package-manager-cache: false
+      - name: Vérifier la syntaxe des modules et du banc d'essai
+        run: |
+          node --check assets/js/sinjira-auth-route.js
+          node --check assets/js/sinjira-supabase.js
+          node --check scripts/test_sinjira_auth_redirect_boundary.cjs
+      - name: Vérifier les destinations Auth et MFA
+        run: node scripts/test_sinjira_auth_redirect_boundary.cjs
+      - name: Empêcher les régressions du client historique
+        run: node scripts/test_sinjira_account_local_redirect.cjs
+      - name: Vérifier le contrat de sécurité Auth existant
+        run: python3 scripts/validate_auth.py
+      - name: Vérifier le contrat MFA et la nouvelle frontière canonique
+        run: python3 scripts/validate_mfa_v24_4_66.py
