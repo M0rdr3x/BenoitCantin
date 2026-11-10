@@ -25,8 +25,14 @@ fichiers `.github/workflows/*.yml` et `.yaml`, en lecture seule :
 - les verrous de déclenchement manuel, confirmation explicite,
   accusé des lacunes d'en-têtes, SHA de commit, `main` et génération
   via le builder isolé doivent être présents;
+- le champ `path: _site` doit être un enfant **direct** du `with:` de
+  `actions/upload-pages-artifact`. Une déclaration factice imbriquée sous
+  `with: { nested: ... }` n'est plus suffisante : elle pourrait être ignorée
+  par l'action, laissant sa valeur par défaut `.` publier la racine technique;
+- deux tests négatifs supplémentaires simulent le `path` sous une clé
+  `nested:` et un `path` à indentation incorrecte;
 - un second workflow qui utiliserait les actions Pages est refusé;
-- 13 tests de mutations négatives examinent les erreurs courantes, y compris un faux `path` inséré dans `env:` et un doublon de section `with:`.
+- 15 tests de mutations négatives examinent les erreurs courantes, y compris un faux `path` inséré dans `env:` et un doublon de section `with:`.
 
 Le workflow
 `.github/workflows/github-pages-artifact-scope-security.yml`
