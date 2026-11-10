@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'supabase/migrations/20261110011500_sinjira_reader_progress_revision_cas_v51.sql'
+      - 'supabase/review-candidates/20261110011500_sinjira_reader_progress_revision_cas_v51.sql'
       - 'assets/js/sinjira-liseuse-v26.js'
       - 'assets/js/sinjira-reader-progress-v24-4-61.js'
       - 'tests/security/sql/test_sinjira_reader_v51_cas.sql'
@@ -14,7 +14,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'supabase/migrations/20261110011500_sinjira_reader_progress_revision_cas_v51.sql'
+      - 'supabase/review-candidates/20261110011500_sinjira_reader_progress_revision_cas_v51.sql'
       - 'assets/js/sinjira-liseuse-v26.js'
       - 'assets/js/sinjira-reader-progress-v24-4-61.js'
       - 'tests/security/sql/test_sinjira_reader_v51_cas.sql'
