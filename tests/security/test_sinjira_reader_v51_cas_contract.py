@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[2]
-MIGRATION=(ROOT/"supabase/migrations/20261110011500_sinjira_reader_progress_revision_cas_v51.sql").read_text(encoding="utf-8")
+MIGRATION=(ROOT/"supabase/review-candidates/20261110011500_sinjira_reader_progress_revision_cas_v51.sql").read_text(encoding="utf-8")
 SQL=(ROOT/"tests/security/sql/test_sinjira_reader_v51_cas.sql").read_text(encoding="utf-8")
 CLIENT=(ROOT/"assets/js/sinjira-liseuse-v26.js").read_text(encoding="utf-8")
 LEGACY=(ROOT/"assets/js/sinjira-reader-progress-v24-4-61.js").read_text(encoding="utf-8")
