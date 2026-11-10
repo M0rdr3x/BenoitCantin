@@ -7,6 +7,9 @@ on:
       - 'supabase/candidate-migrations/sinjira_moderation_atomic_candidate.sql'
       - 'supabase/tests/sinjira_moderation_atomic_candidate_fixture.sql'
       - 'supabase/tests/sinjira_moderation_atomic_candidate.test.sql'
+      - 'supabase/functions/admin-social-v20/index.ts'
+      - 'scripts/test_sinjira_admin_social_atomic_rpc.cjs'
+      - 'scripts/validate_admin_social_request_security.py'
       - 'scripts/test_sinjira_moderation_atomic_concurrency.sh'
       - '.github/workflows/sinjira-moderation-atomic-candidate.yml'
   push:
@@ -15,6 +18,9 @@ on:
       - 'supabase/candidate-migrations/sinjira_moderation_atomic_candidate.sql'
       - 'supabase/tests/sinjira_moderation_atomic_candidate_fixture.sql'
       - 'supabase/tests/sinjira_moderation_atomic_candidate.test.sql'
+      - 'supabase/functions/admin-social-v20/index.ts'
+      - 'scripts/test_sinjira_admin_social_atomic_rpc.cjs'
+      - 'scripts/validate_admin_social_request_security.py'
       - 'scripts/test_sinjira_moderation_atomic_concurrency.sh'
       - '.github/workflows/sinjira-moderation-atomic-candidate.yml'
   workflow_dispatch:
@@ -57,6 +63,19 @@ jobs:
             echo "REFUS : la base fictive doit rester accessible sur localhost seulement." >&2
             exit 1
           fi
+      - name: Installer Node.js à version épinglée
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+          package-manager-cache: false
+      - name: Exercer les vraies fonctions Edge via RPC fictives
+        run: |
+          node --check scripts/test_sinjira_admin_social_atomic_rpc.cjs
+          node scripts/test_sinjira_admin_social_atomic_rpc.cjs
+      - name: Refuser les régressions de la frontière JWT et SQL Edge
+        run: |
+          python3 scripts/validate_admin_social_request_security.py
+          python3 scripts/validate_admin_social_request_security.py --self-test
       - name: Installer le client PostgreSQL uniquement si nécessaire
         run: |
           if ! command -v psql >/dev/null 2>&1; then
