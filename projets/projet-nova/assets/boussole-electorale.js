@@ -659,7 +659,7 @@
         const checkedAt = record.checkedAt || "Date de vérification non indiquée";
         const secondReviewDate = record.secondIndependentReview?.reviewedAt || "Date de révision non indiquée";
         const reviewIdentity = String(record.secondIndependentReview?.reviewer || "");
-        const reviewKind = /chatgpt|openai|\\b(?:ia|ai|llm)\\b/i.test(reviewIdentity)
+        const reviewKind = /chatgpt|openai|\b(?:ia|ai|llm)\b/i.test(reviewIdentity)
           ? "Relecture par IA, sans attestation indépendante"
           : "Relecture déclarée, attestation externe non vérifiée";
         const label = DOCUMENTARY_STATUS_LABELS[record.proposedStatus] || record.proposedStatus;
@@ -729,7 +729,7 @@
     ).length;
     const secondReviewed = records.filter(record => record.secondIndependentReview?.status === "completed").length;
     const aiReviewed = records.filter(record =>
-      /chatgpt|openai|\\b(?:ia|ai|llm)\\b/i.test(String(record.secondIndependentReview?.reviewer || ""))
+      /chatgpt|openai|\b(?:ia|ai|llm)\b/i.test(String(record.secondIndependentReview?.reviewer || ""))
     ).length;
     const pendingSecond = records.filter(record => record.secondIndependentReview?.status === "pending").length;
     const finalizedByParty = new Map(parties.map(party => [party.id,0]));
