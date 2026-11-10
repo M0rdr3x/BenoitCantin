@@ -2,22 +2,58 @@
 -- Fictif uniquement. Prérequis : fixture + candidat déjà chargés dans une
 -- base PostgreSQL temporaire, jamais sur une base Supabase distante.
 select public.fixture_assert_true(
- not has_function_privilege('anon','private.sinjira_admin_moderate_atomic(uuid,uuid,text,text,text,text,integer)','EXECUTE'),
+ not has_function_privilege('anon','public.sinjira_admin_moderate_atomic(uuid,uuid,text,text,text,text,integer)','EXECUTE'),
  'anon ne doit pas pouvoir déclencher une sanction');
 select public.fixture_assert_true(
- not has_function_privilege('authenticated','private.sinjira_admin_moderate_atomic(uuid,uuid,text,text,text,text,integer)','EXECUTE'),
+ not has_function_privilege('authenticated','public.sinjira_admin_moderate_atomic(uuid,uuid,text,text,text,text,integer)','EXECUTE'),
  'authenticated ne doit pas pouvoir déclencher une sanction');
 select public.fixture_assert_true(
- has_function_privilege('service_role','private.sinjira_admin_moderate_atomic(uuid,uuid,text,text,text,text,integer)','EXECUTE'),
+ has_function_privilege('service_role','public.sinjira_admin_moderate_atomic(uuid,uuid,text,text,text,text,integer)','EXECUTE'),
  'seul le rôle serveur peut déclencher une sanction');
 select public.fixture_assert_true(
- not has_function_privilege('anon','private.sinjira_admin_review_appeal_atomic(uuid,uuid,text,text)','EXECUTE')
- and not has_function_privilege('authenticated','private.sinjira_admin_review_appeal_atomic(uuid,uuid,text,text)','EXECUTE')
- and has_function_privilege('service_role','private.sinjira_admin_review_appeal_atomic(uuid,uuid,text,text)','EXECUTE'),
+ not has_function_privilege('anon','public.sinjira_admin_review_appeal_atomic(uuid,uuid,text,text)','EXECUTE')
+ and not has_function_privilege('authenticated','public.sinjira_admin_review_appeal_atomic(uuid,uuid,text,text)','EXECUTE')
+ and has_function_privilege('service_role','public.sinjira_admin_review_appeal_atomic(uuid,uuid,text,text)','EXECUTE'),
  'revue des appels réservée au rôle serveur');
 select public.fixture_assert_true(
  not has_table_privilege('service_role','private.moderation_decisions','INSERT'),
  'pas de droit INSERT direct sur les décisions privées');
+
+
+-- Le schéma public n'ouvre pas les RPC : seul service_role peut exécuter.
+select public.fixture_assert_true(
+ not has_function_privilege('anon',
+  'public.sinjira_admin_moderate_atomic(uuid,uuid,text,text,text,text,integer)','EXECUTE')
+ and not has_function_privilege('authenticated',
+  'public.sinjira_admin_moderate_atomic(uuid,uuid,text,text,text,text,integer)','EXECUTE')
+ and has_function_privilege('service_role',
+  'public.sinjira_admin_moderate_atomic(uuid,uuid,text,text,text,text,integer)','EXECUTE'),
+ 'RPC publique sanction : accès réservé au service');
+select public.fixture_assert_true(
+ not has_function_privilege('anon',
+  'public.sinjira_admin_review_appeal_atomic(uuid,uuid,text,text)','EXECUTE')
+ and not has_function_privilege('authenticated',
+  'public.sinjira_admin_review_appeal_atomic(uuid,uuid,text,text)','EXECUTE')
+ and has_function_privilege('service_role',
+  'public.sinjira_admin_review_appeal_atomic(uuid,uuid,text,text)','EXECUTE'),
+ 'RPC publique appel : accès réservé au service');
+
+-- Même si un client authentifié falsifie son JWT SQL, le rôle SQL
+-- authenticated doit être refusé AVANT le code SECURITY DEFINER.
+select set_config('request.jwt.claims','{"role":"service_role"}',false);
+set role authenticated;
+do $refuse$
+begin
+  begin
+    perform public.sinjira_admin_moderate_atomic(
+      'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
+      'dddddddd-dddd-4ddd-dddd-ddddddddddde','resolve_report');
+    raise exception 'EXPECTED_SQL_PERMISSION_DENIAL';
+  exception when insufficient_privilege then null;
+  end;
+end;
+$refuse$;
+reset role;
 
 -- La session simule le JWT du SERVICE et l'identité de l'admin est une
 -- variable signée par Edge après vérification AAL2, jamais celle du client.
@@ -25,7 +61,7 @@ select set_config('request.jwt.claims','{"role":"service_role"}',false);
 set role service_role;
 
 -- Un rapport valide déclenche décision, suspension, clôture et notification.
-select private.sinjira_admin_moderate_atomic(
+select public.sinjira_admin_moderate_atomic(
  'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
  'dddddddd-dddd-4ddd-dddd-dddddddddddd',
  'suspend_social','Règles communautaires de sécurité',
@@ -39,7 +75,7 @@ do $$
 declare v_failed boolean:=false;
 begin
  begin
-   perform private.sinjira_admin_moderate_atomic(
+   perform public.sinjira_admin_moderate_atomic(
      'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
      'dddddddd-dddd-4ddd-dddd-dddddddddddd',
      'suspend_social','Règles communautaires de sécurité',
@@ -55,7 +91,7 @@ do $$
 declare v_failed boolean:=false;
 begin
  begin
-   perform private.sinjira_admin_moderate_atomic(
+   perform public.sinjira_admin_moderate_atomic(
      'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',
      'dddddddd-dddd-4ddd-dddd-ddddddddddde',
      'hide_content','Règles communautaires de sécurité',
@@ -71,7 +107,7 @@ do $$
 declare v_failed boolean:=false;
 begin
  begin
-   perform private.sinjira_admin_moderate_atomic(
+   perform public.sinjira_admin_moderate_atomic(
      'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
      'dddddddd-dddd-4ddd-dddd-ddddddddddd0',
      'hide_content','Règles communautaires de sécurité',
@@ -87,7 +123,7 @@ do $$
 declare v_failed boolean:=false;
 begin
  begin
-   perform private.sinjira_admin_moderate_atomic(
+   perform public.sinjira_admin_moderate_atomic(
      'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
      'dddddddd-dddd-4ddd-dddd-ddddddddddde',
      'suspend_social','Règles communautaires de sécurité',
@@ -105,7 +141,7 @@ do $$
 declare v_failed boolean:=false;
 begin
  begin
-   perform private.sinjira_admin_moderate_atomic(
+   perform public.sinjira_admin_moderate_atomic(
      'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
      'dddddddd-dddd-4ddd-dddd-ddddddddddd2',
      'hide_content','Règles communautaires de sécurité',
@@ -123,7 +159,7 @@ do $$
 declare v_failed boolean:=false;
 begin
  begin
-   perform private.sinjira_admin_moderate_atomic(
+   perform public.sinjira_admin_moderate_atomic(
      'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
      'dddddddd-dddd-4ddd-dddd-ddddddddddde',
      'suspend_social','Règles communautaires de sécurité',
@@ -137,7 +173,7 @@ end $$;
 
 -- Un rapport clos sans sanction reste possible et ne fabrique aucun lien
 -- avec une décision, une suspension ni un appel.
-select private.sinjira_admin_moderate_atomic(
+select public.sinjira_admin_moderate_atomic(
  'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
  'dddddddd-dddd-4ddd-dddd-ddddddddddd1',
  'resolve_report',null,null,null,null);
@@ -173,7 +209,7 @@ select 'ffffffff-ffff-4fff-ffff-ffffffffffff',d.id,'bbbbbbbb-bbbb-4bbb-bbbb-bbbb
 from private.moderation_decisions d limit 1;
 
 set role service_role;
-select private.sinjira_admin_review_appeal_atomic(
+select public.sinjira_admin_review_appeal_atomic(
  'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
  'ffffffff-ffff-4fff-ffff-ffffffffffff',
  'reversed','L’appel a été accepté après réexamen humain et correction de la décision initiale.');
@@ -182,7 +218,7 @@ do $$
 declare v_failed boolean:=false;
 begin
  begin
-   perform private.sinjira_admin_review_appeal_atomic(
+   perform public.sinjira_admin_review_appeal_atomic(
      'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
      'ffffffff-ffff-4fff-ffff-ffffffffffff',
      'reversed','Un appel déjà tranché ne peut être renversé une deuxième fois.');
@@ -211,7 +247,7 @@ select public.fixture_assert_true(
 -- Une seconde suspension sert à vérifier l'atomicité du RENVERSEMENT :
 -- faire échouer la notification DOIT rétablir décision, appel et suspension.
 set role service_role;
-select private.sinjira_admin_moderate_atomic(
+select public.sinjira_admin_moderate_atomic(
  'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
  'dddddddd-dddd-4ddd-dddd-ddddddddddde',
  'suspend_social','Règles communautaires de sécurité',
@@ -229,7 +265,7 @@ do $qa$
 declare v_failed boolean:=false;
 begin
  begin
-   perform private.sinjira_admin_review_appeal_atomic(
+   perform public.sinjira_admin_review_appeal_atomic(
      'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
      'ffffffff-ffff-4fff-ffff-fffffffffff0',
      'reversed','FORCE_ROLLBACK — un échec de notification ne peut renverser une suspension à moitié.');
@@ -244,7 +280,7 @@ do $qa$
 declare v_failed boolean:=false;
 begin
  begin
-   perform private.sinjira_admin_moderate_atomic(
+   perform public.sinjira_admin_moderate_atomic(
      'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
      'dddddddd-dddd-4ddd-dddd-dddddddddddf',
      null,'Règles communautaires de sécurité',
