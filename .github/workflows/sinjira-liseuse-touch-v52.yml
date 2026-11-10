@@ -1,0 +1,37 @@
+name: SINJIRA V52 — liseuse tactile mobile sans régression
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-liseuse-touch-v52.mjs'
+      - 'assets/css/sinjira-liseuse-v26.css'
+      - 'compte/liseuse.html'
+      - 'tests/sinjira-liseuse-touch-v52.test.mjs'
+      - '.github/workflows/sinjira-liseuse-touch-v52.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-liseuse-touch-v52.mjs'
+      - 'assets/css/sinjira-liseuse-v26.css'
+      - 'compte/liseuse.html'
+      - 'tests/sinjira-liseuse-touch-v52.test.mjs'
+
+permissions:
+  contents: read
+
+jobs:
+  navigation-tactile:
+    name: Glissement mobile, sélection, défilement, limites et intégrité
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout épinglé sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Contrôle de syntaxe
+        run: |
+          node --check assets/js/sinjira-liseuse-touch-v52.mjs
+          node --check tests/sinjira-liseuse-touch-v52.test.mjs
+      - name: Tests de commandes et de contrat mobile
+        run: node --test tests/sinjira-liseuse-touch-v52.test.mjs
