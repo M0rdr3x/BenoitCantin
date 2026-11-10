@@ -3,6 +3,9 @@ name: Gouvernance main SINJIRA
 on:
   push:
     branches: [main]
+  schedule:
+    - cron: '17 11 * * *'
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -17,19 +20,30 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
         with:
           script: |
-            const { owner, repo } = context.repo;
-            const sha = context.sha;
-            const { data: pulls } = await github.rest.repos.listPullRequestsAssociatedWithCommit({ owner, repo, commit_sha: sha });
-            const mergedToMain = pulls.some(pr => pr.merged_at && pr.base?.ref === 'main');
-            if (!mergedToMain) {
-              core.setFailed(`Le commit ${sha} est arrivé sur main sans Pull Request fusionnée associée. Examiner immédiatement ce changement.`);
+            // Ce contrôle signale les écarts; seul un ruleset GitHub protège avant le push.
+            if (context.ref !== 'refs/heads/main') {
+              core.setFailed('Le contrôle de gouvernance doit s’exécuter sur refs/heads/main.');
               return;
             }
-            core.info(`Commit ${sha} associé à une PR fusionnée vers main.`);
-
             const protectedRef = process.env.GITHUB_REF_PROTECTED === 'true';
             if (!protectedRef) {
-              core.warning('La branche main n’est pas protégée par une branch protection ou un ruleset. Cette alerte ne remplace pas la configuration GitHub Settings > Branches/Rulesets.');
+              core.setFailed('La branche main n’est pas protégée par GitHub. Cet échec CI ne remplace pas la configuration GitHub Settings > Branches/Rulesets.');
             } else {
-              core.info('La branche main est protégée par une branch protection ou un ruleset.');
+              core.info('Protection serveur détectée sur main; qualité et contournements des règles à vérifier séparément.');
+            }
+            if (context.eventName === 'push') {
+              const { owner, repo } = context.repo;
+              const sha = context.sha;
+              const { data: pulls } = await github.rest.repos.listPullRequestsAssociatedWithCommit({ owner, repo, commit_sha: sha });
+              // L'association seule n'atteste pas que ce push est issu de la fusion:
+              // exiger le SHA exact produit par la PR (merge, squash ou rebase).
+              const mergedToMain = pulls.some(pr => pr.merged_at && pr.base?.ref === 'main' && pr.merge_commit_sha === sha);
+              if (!mergedToMain) {
+                core.setFailed('Le commit ' + sha + ' est arrivé sur main sans Pull Request fusionnée associée. Examiner immédiatement ce changement.');
+              } else {
+                core.info('Commit ' + sha + ' associé à une PR fusionnée vers main.');
+              }
+            } else {
+              // schedule/workflow_dispatch : surveiller la branche même sans commit récent.
+              core.info('Contrôle périodique ou manuel en lecture seule de la protection main.');
             }
