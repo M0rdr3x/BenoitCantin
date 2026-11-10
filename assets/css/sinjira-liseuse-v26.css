@@ -228,12 +228,12 @@
 
 
 /* V52 — liseuse tactile smartphone/tablette. Les boutons ne masquent pas le
-   contenu et le balayage horizontal n'empêche pas le défilement vertical. */
+   contenu et le défilement vertical, horizontal en zoom et le pincement restent natifs. */
 .sinjira-liseuse .reader-touch-nav,
 .sinjira-liseuse .reader-swipe-help{display:none}
 @media(max-width:760px){
   .sinjira-liseuse .reader-viewer{
-    touch-action:pan-y pinch-zoom;
+    touch-action:auto;
     overscroll-behavior-x:contain;
     -webkit-overflow-scrolling:touch;
   }
