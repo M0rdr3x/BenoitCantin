@@ -1,4 +1,5 @@
 import { getSupabase, requireUser, friendlyBackendMessage } from './sinjira-supabase.js';
+import {isSafeLifeStoryId,isSafeDeathReportCode} from './sinjira-life-story-owner-boundaries.mjs';
 
 const statusNode = document.querySelector('[data-life-story-posthumous-status]');
 const panel = document.querySelector('[data-life-story-posthumous-case]');
@@ -49,8 +50,8 @@ async function loadCase() {
     : 'Aucun PDF ne peut être préparé avant la fin du délai et une deuxième validation humaine.';
   panel.append(title, details, guard);
   if (contestForm) {
-    contestForm.hidden = !current.can_contest;
-    contestForm.dataset.caseId = current.case_id || '';
+    contestForm.hidden = !(current.can_contest && isSafeLifeStoryId(current.case_id));
+    contestForm.dataset.caseId = isSafeLifeStoryId(current.case_id) ? current.case_id : '';
   }
 }
 
@@ -82,7 +83,7 @@ async function loadReportCodes() {
     const title = document.createElement('strong'); title.textContent = row.label || 'Code privé';
     const meta = document.createElement('p'); meta.textContent = `${row.status === 'active' ? 'Actif' : row.status === 'used' ? 'Utilisé' : 'Révoqué'} · créé ${dateTime(row.created_at)}`;
     card.append(title, meta);
-    if (row.status === 'active') {
+    if (row.status === 'active' && isSafeLifeStoryId(row.id)) {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'btn btn-secondary'; button.dataset.revokeReportCode = row.id; button.textContent = 'Révoquer ce code'; card.append(button);
     }
     list.append(card);
@@ -98,12 +99,16 @@ async function createReportCode(event) {
   try {
     const { data, error } = await s.rpc('life_story_create_report_code', { p_label: label });
     if (error) throw error;
+    // Le code brut est un secret affiché une seule fois. Refuser toute
+    // réponse non conforme au contrat SQL (32 octets hex / display_once).
+    if(data?.display_once!==true || !isSafeDeathReportCode(data?.code))
+      throw new Error('REPORT_CODE_INVALID');
     form.reset();
     const once = document.querySelector('[data-report-code-once]');
     if (once) {
       once.hidden = false; once.innerHTML = '';
       const strong = document.createElement('strong'); strong.textContent = 'Copiez ce code maintenant — SINJIRA ne pourra pas l’afficher de nouveau.';
-      const input = document.createElement('input'); input.readOnly = true; input.value = String(data?.code || ''); input.setAttribute('aria-label', 'Code privé de signalement');
+      const input = document.createElement('input'); input.readOnly = true; input.value = data.code; input.setAttribute('aria-label', 'Code privé de signalement');
       const copy = document.createElement('button'); copy.type = 'button'; copy.className = 'btn btn-primary'; copy.textContent = 'Copier le code';
       copy.addEventListener('click', async () => { try { await navigator.clipboard.writeText(input.value); copy.textContent = 'Copié'; } catch { input.select(); } });
       once.append(strong, input, copy);
@@ -117,6 +122,10 @@ async function createReportCode(event) {
 async function revokeReportCode(event) {
   const button = event.target.closest('[data-revoke-report-code]');
   if (!button) return;
+  if (!isSafeLifeStoryId(button.dataset.revokeReportCode)){
+    showStatus('Référence de code non valide. Actualisez la liste.', 'error');
+    return;
+  }
   if (!confirm('Révoquer ce code ? Il ne pourra plus servir à signaler un décès.')) return;
   button.disabled = true;
   try {
@@ -133,7 +142,7 @@ contestForm?.addEventListener('submit', async (event) => {
   event.preventDefault();
   const caseId = contestForm.dataset.caseId || '';
   const reason = String(new FormData(contestForm).get('reason') || '').trim();
-  if (!caseId || reason.length < 5) {
+  if (!isSafeLifeStoryId(caseId) || reason.length < 5) {
     showStatus('Expliquez brièvement pourquoi cette déclaration est incorrecte.', 'error');
     return;
   }
