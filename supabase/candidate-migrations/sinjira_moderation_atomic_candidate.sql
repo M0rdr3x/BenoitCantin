@@ -304,6 +304,60 @@ grant execute on function private.sinjira_admin_review_appeal_atomic(
   uuid,uuid,text,text
 ) to service_role;
 
+-- Points d'entrée PostgREST : schema public exposé, mais EXECUTE UNIQUEMENT
+-- au rôle serveur. Le wrapper SECURITY INVOKER ne contourne aucune ACL.
+-- La fonction SQL privée garde le verrou transactionnel et les contrôles
+-- indépendants du navigateur / des paramètres d'administration.
+create or replace function public.sinjira_admin_moderate_atomic(
+  p_admin_id uuid, p_report_id uuid, p_action text,
+  p_policy_rule text default null, p_statement text default null,
+  p_urgency text default 'standard', p_days integer default null
+)
+returns jsonb
+language sql
+security invoker
+set search_path = ''
+as $public_rpc$
+  select private.sinjira_admin_moderate_atomic(
+    p_admin_id,p_report_id,p_action,
+    p_policy_rule,p_statement,p_urgency,p_days
+  );
+$public_rpc$;
+
+create or replace function public.sinjira_admin_review_appeal_atomic(
+  p_admin_id uuid, p_appeal_id uuid,
+  p_outcome text, p_review_reason text
+)
+returns jsonb
+language sql
+security invoker
+set search_path = ''
+as $public_rpc$
+  select private.sinjira_admin_review_appeal_atomic(
+    p_admin_id,p_appeal_id,p_outcome,p_review_reason
+  );
+$public_rpc$;
+
+revoke all on function public.sinjira_admin_moderate_atomic(
+  uuid,uuid,text,text,text,text,integer
+) from public,anon,authenticated;
+revoke all on function public.sinjira_admin_review_appeal_atomic(
+  uuid,uuid,text,text
+) from public,anon,authenticated;
+grant execute on function public.sinjira_admin_moderate_atomic(
+  uuid,uuid,text,text,text,text,integer
+) to service_role;
+grant execute on function public.sinjira_admin_review_appeal_atomic(
+  uuid,uuid,text,text
+) to service_role;
+
+comment on function public.sinjira_admin_moderate_atomic(
+  uuid,uuid,text,text,text,text,integer
+) is 'PostgREST service_role seulement; wrapper invoker du candidat SQL transactionnel.';
+comment on function public.sinjira_admin_review_appeal_atomic(
+  uuid,uuid,text,text
+) is 'PostgREST service_role seulement; wrapper invoker du candidat de révision atomique.';
+
 comment on function private.sinjira_admin_moderate_atomic(
   uuid,uuid,text,text,text,text,integer
 ) is 'Candidat non déployé : transaction de modération avec verrou rapport/cible, notification et rollback. service_role uniquement, AAL2 contrôlé au niveau Edge.';
