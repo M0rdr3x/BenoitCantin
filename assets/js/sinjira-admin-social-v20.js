@@ -7,6 +7,24 @@ const reasonLabels={
   impersonation:'Usurpation ou identité trompeuse',other:'Autre problème de sécurité'
 };
 
+// Ces gardes complètent requiredAdmin/JWT/AAL2 sur admin-social-v20.
+// Ils refusent les références ou décisions forgées depuis un DOM modifié.
+function safeModerationId(value){
+  return typeof value==='string'&&/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(value)?value:'';
+}
+function validDecisionPayload(payload){
+  return payload.policy_rule.length>=1&&payload.policy_rule.length<=240&&
+    payload.statement_of_reasons.length>=20&&payload.statement_of_reasons.length<=4000&&
+    ['standard','urgent_harm','illegal_content'].includes(payload.urgency);
+}
+async function safeModerationAction(action){
+  try{await action();}
+  catch{
+    // Les exceptions de modération peuvent contenir des détails privés.
+    alert('Action de modération non confirmée. Actualisez la console et réessayez.');
+  }
+}
+
 async function call(action,extra={}){
   const {data,error}=await getSupabase().functions.invoke('admin-social-v20',{body:{action,...extra}});
   if(error||!data?.ok)throw new Error(data?.error||error?.message||'Erreur modération sociale');
@@ -53,28 +71,56 @@ async function load(){
   document.querySelector('[data-social-suspension-count]').textContent=String(d.dashboard.active_suspensions||0);
   if(ui.count)ui.count.textContent=String(d.dashboard.pending_appeals||0);
   const box=document.querySelector('[data-social-report-list]');
-  box.innerHTML=(r.reports||[]).map(reportCard).join('')||'<p>Aucun signalement ouvert.</p>';
+  const reports=Array.isArray(r.reports)?r.reports.filter(item=>safeModerationId(item?.id)):[];
+  box.innerHTML=reports.map(reportCard).join('')||'<p>Aucun signalement ouvert.</p>';
   box.querySelectorAll('[data-report]').forEach(card=>{
     const id=card.dataset.report;
-    card.querySelector('[data-resolve]').onclick=async()=>{await call('resolve_report',{report_id:id});await load();};
+    const report=reports.find(item=>item.id===id);
+    if(!safeModerationId(id)||!report)return;
+    const current=()=>card.dataset.report===id;
+    card.querySelector('[data-resolve]').onclick=()=>safeModerationAction(async()=>{
+      if(!current())return;
+      await call('resolve_report',{report_id:id});await load();
+    });
     const restrict=card.querySelector('[data-restrict]');
-    if(restrict)restrict.onclick=async()=>{if(confirm('Masquer ce contenu de façon réversible et notifier le membre?')){await call('restrict_reported_content',{report_id:id,...reportPayload(card)});await load();}};
-    card.querySelector('[data-suspend]').onclick=async()=>{if(confirm('Suspendre socialement le compte visé pendant 7 jours? La mesure sera réversible et appelable.')){await call('suspend_reported_user',{report_id:id,days:7,...reportPayload(card)});await load();}};
+    if(restrict&&report.snapshot?.source!=='dating')restrict.onclick=()=>safeModerationAction(async()=>{
+      if(!current())return;
+      const payload=reportPayload(card);
+      if(!validDecisionPayload(payload)){alert('Règle ou justification de modération invalide.');return}
+      if(confirm('Masquer ce contenu de façon réversible et notifier le membre?')){
+        await call('restrict_reported_content',{report_id:id,...payload});await load();
+      }
+    });
+    card.querySelector('[data-suspend]').onclick=()=>safeModerationAction(async()=>{
+      if(!current())return;
+      const payload=reportPayload(card);
+      if(!validDecisionPayload(payload)){alert('Règle ou justification de modération invalide.');return}
+      if(confirm('Suspendre socialement le compte visé pendant 7 jours? La mesure sera réversible et appelable.')){
+        await call('suspend_reported_user',{report_id:id,days:7,...payload});await load();
+      }
+    });
   });
   if(ui.list){
-    ui.list.innerHTML=(a.appeals||[]).map(appealCard).join('')||'<p>Aucun appel en attente.</p>';
+    const appeals=Array.isArray(a.appeals)?a.appeals.filter(item=>safeModerationId(item?.id)):[];
+    ui.list.innerHTML=appeals.map(appealCard).join('')||'<p>Aucun appel en attente.</p>';
     ui.list.querySelectorAll('[data-appeal]').forEach(card=>{
       const id=card.dataset.appeal;
-      const review=async outcome=>{
+      if(!safeModerationId(id)||!appeals.some(item=>item.id===id))return;
+      const review=outcome=>safeModerationAction(async()=>{
+        if(card.dataset.appeal!==id||!['upheld','reversed'].includes(outcome))return;
         const reviewReason=String(card.querySelector('[data-review-reason]')?.value||'').trim();
-        if(reviewReason.length<20){alert('La révision humaine doit être motivée en au moins 20 caractères.');return}
+        if(reviewReason.length<20||reviewReason.length>4000){
+          alert('La révision humaine doit être motivée en 20 à 4000 caractères.');return;
+        }
         const label=outcome==='reversed'?'renverser':'maintenir';
-        if(confirm(`Confirmer : ${label} la décision?`)){await call('review_appeal',{appeal_id:id,outcome,review_reason:reviewReason});await load();}
-      };
+        if(confirm(`Confirmer : ${label} la décision?`)){
+          await call('review_appeal',{appeal_id:id,outcome,review_reason:reviewReason});await load();
+        }
+      });
       card.querySelector('[data-uphold]').onclick=()=>review('upheld');
       card.querySelector('[data-reverse]').onclick=()=>review('reversed');
     });
   }
 }
 
-(async()=>{try{await load();}catch(e){console.error('[SINJIRA admin moderation]',e);}})();
+(async()=>{try{await load();}catch{console.error('[SINJIRA admin moderation]','MODERATION_LOAD_FAILED');}})();
