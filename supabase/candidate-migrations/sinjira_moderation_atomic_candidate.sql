@@ -44,7 +44,7 @@ begin
     raise exception 'ADMIN_REQUIRED';
   end if;
 
-  if p_report_id is null or p_action not in
+  if p_report_id is null or coalesce(p_action,'') not in
      ('resolve_report','hide_content','suspend_social') then
     raise exception 'INVALID_MODERATION_INPUT';
   end if;
@@ -71,7 +71,7 @@ begin
   v_statement:=pg_catalog.btrim(coalesce(p_statement,''));
   if pg_catalog.char_length(v_rule) not between 3 and 240
      or pg_catalog.char_length(v_statement) not between 20 and 4000
-     or p_urgency not in ('standard','urgent_harm','illegal_content') then
+     or coalesce(p_urgency,'') not in ('standard','urgent_harm','illegal_content') then
     raise exception 'INVALID_MODERATION_INPUT';
   end if;
 
@@ -223,7 +223,7 @@ begin
     raise exception 'ADMIN_REQUIRED';
   end if;
   v_reason:=pg_catalog.btrim(coalesce(p_review_reason,''));
-  if p_appeal_id is null or p_outcome not in ('upheld','reversed')
+  if p_appeal_id is null or coalesce(p_outcome,'') not in ('upheld','reversed')
      or pg_catalog.char_length(v_reason) not between 20 and 4000 then
     raise exception 'INVALID_APPEAL_REVIEW';
   end if;
