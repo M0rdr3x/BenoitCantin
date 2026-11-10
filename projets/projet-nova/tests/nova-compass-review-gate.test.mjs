@@ -85,5 +85,5 @@ test("corpus source manquant ou incomplet interdit tout score de validation",()=
  const x=copy();x.preuves.partyIds.pop();
  assert.equal(run(x).ok,false);
  assert.equal(run(x).percent_complete,null);
- assert.equal(run(null).release_documentary_gate_passed,false);
+ assert.equal(inspectReviewGate(null).release_documentary_gate_passed,false);
 });
