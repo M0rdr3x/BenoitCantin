@@ -32,6 +32,30 @@ class SecretGuardTests(unittest.TestCase):
             with self.subTest(prefix=token[:4]):
                 self.assertTrue(detected_names(token))
 
+
+    def test_additional_provider_secrets_are_detected_without_real_keys(self):
+        samples = (
+            ('Stripe restricted live key', 'rk_live_' + ('a' * 32)),
+            ('Supabase personal access token', 'sbp_' + ('a' * 40)),
+            ('Google OAuth client secret', 'GOCSPX-' + ('a' * 28)),
+            ('Resend API token', 're_' + ('a' * 36)),
+            ('Slack bot or user token', 'xoxb-123-456-' + ('a' * 24)),
+            ('Private key block', '-----BEGIN ENCRYPTED' + ' PRIVATE KEY-----'),
+        )
+        for label, synthetic in samples:
+            with self.subTest(label=label):
+                self.assertIn(label, detected_names(synthetic))
+
+    def test_new_source_formats_are_always_inspected(self):
+        for suffix in ('.ipynb', '.properties', '.tfvars', '.gradle', '.graphql'):
+            with self.subTest(suffix=suffix):
+                self.assertIn(suffix, guard.MANDATORY_TEXT_EXTENSIONS)
+                with tempfile.TemporaryDirectory() as d:
+                    path = Path(d) / ('settings' + suffix)
+                    path.write_bytes(b'x' * (guard.MAX_TEXT_BYTES + 1))
+                    findings = guard.inspect_file(path, Path(path.name))
+                    self.assertTrue(any('trop volumineux' in x for x in findings))
+
     def test_environment_references_are_not_secrets(self):
         for sample in (
             'NETLIFY_AUTH_TOKEN = process.env.NETLIFY_AUTH_TOKEN',

@@ -9,9 +9,10 @@ ROOT = Path(__file__).resolve().parents[1]
 MAX_TEXT_BYTES = 2 * 1024 * 1024
 # Les gros fichiers sources ne doivent pas échapper silencieusement au contrôle.
 MANDATORY_TEXT_EXTENSIONS = frozenset({
-    '.cjs', '.conf', '.css', '.csv', '.html', '.htm', '.ini', '.js',
-    '.json', '.md', '.mjs', '.py', '.sh', '.sql', '.svg', '.toml',
-    '.ts', '.tsx', '.txt', '.webmanifest', '.xml', '.yaml', '.yml',
+    '.cjs', '.conf', '.config', '.css', '.csv', '.gradle', '.graphql',
+    '.html', '.htm', '.ini', '.ipynb', '.js', '.json', '.kts', '.md',
+    '.mjs', '.properties', '.py', '.sh', '.sql', '.svg', '.tf', '.tfvars',
+    '.toml', '.ts', '.tsx', '.txt', '.webmanifest', '.xml', '.yaml', '.yml',
 })
 MANDATORY_TEXT_NAMES = frozenset({'Dockerfile', 'Makefile', 'CNAME'})
 
@@ -25,7 +26,12 @@ SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ('OpenAI project secret', re.compile(r'\bsk-proj-[A-Za-z0-9_-]{20,}\b')),
     ('AWS access key ID', re.compile(r'\bAKIA[0-9A-Z]{16}\b')),
     ('GitLab access token', re.compile(r'\bglpat-[A-Za-z0-9_-]{20,}\b')),
-    ('Private key block', re.compile(r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----')),
+    ('Stripe restricted live key', re.compile(r'\brk_live_[A-Za-z0-9]{20,}\b')),
+    ('Supabase personal access token', re.compile(r'\bsbp_[0-9a-fA-F]{40}\b')),
+    ('Google OAuth client secret', re.compile(r'\bGOCSPX-[A-Za-z0-9_-]{20,}\b')),
+    ('Resend API token', re.compile(r'\bre_[A-Za-z0-9]{30,}\b')),
+    ('Slack bot or user token', re.compile(r'\bxox[bp]-[0-9]+-[0-9]+-[A-Za-z0-9-]{12,}\b')),
+    ('Private key block', re.compile(r'-----BEGIN (?:(?:RSA|EC|OPENSSH|DSA|ENCRYPTED) )?PRIVATE KEY-----')),
     (
         'Deployment or anti-bot secret assignment',
         re.compile(
