@@ -17,7 +17,8 @@ const allowed=new Set(["unknown","documented_support","documented_opposition",
  "documented_mixed_or_conditional","ambiguous","contradictory"]);
 const evidenceStatus=new Set(["documented_support","documented_opposition",
  "documented_mixed_or_conditional","ambiguous","contradictory"]);
-export function inspectReviewGate({questionnaire,parties,sources,preuves}={}){
+export function inspectReviewGate(input={}){
+ const {questionnaire,parties,sources,preuves}=obj(input)?input:{};
  const errors=[];
  if(!Array.isArray(questionnaire?.questions)||questionnaire.questions.length!==64||
     !Array.isArray(parties?.parties)||parties.parties.length!==22||
