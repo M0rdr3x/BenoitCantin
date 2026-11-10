@@ -304,6 +304,59 @@ grant execute on function private.sinjira_admin_review_appeal_atomic(
   uuid,uuid,text,text
 ) to service_role;
 
+-- Lecture privée des appels, SANS ouvrir SELECT aux tables privées :
+-- remplace les lectures directes Edge qui n'ont pas d'ACL service_role.
+create or replace function private.sinjira_admin_appeals_overview(
+  p_admin_id uuid, p_limit integer default 300
+)
+returns jsonb language plpgsql security definer set search_path=''
+as $function$
+declare
+  v_count bigint;
+  v_rows jsonb;
+begin
+  if coalesce(auth.jwt()->>'role','') <> 'service_role'
+     or not coalesce(public.is_sinjira_admin(p_admin_id),false) then
+    raise exception 'ADMIN_REQUIRED';
+  end if;
+  if p_limit is null or p_limit<1 or p_limit>300 then
+    raise exception 'INVALID_APPEALS_LIMIT';
+  end if;
+
+  select count(*) into v_count
+  from private.moderation_appeals a where a.status='pending';
+
+  select coalesce(pg_catalog.jsonb_agg(q.payload order by q.submitted_at),'[]'::jsonb)
+  into v_rows
+  from (
+    select a.submitted_at,
+      (to_jsonb(a) || pg_catalog.jsonb_build_object('decision',
+        pg_catalog.jsonb_build_object(
+          'id',d.id,'subject_user_id',d.subject_user_id,
+          'network',d.network,'target_type',d.target_type,
+          'target_id',d.target_id,'action',d.action,'status',d.status,
+          'policy_rule',d.policy_rule,
+          'statement_of_reasons',d.statement_of_reasons,
+          'urgency',d.urgency,'starts_at',d.starts_at,
+          'ends_at',d.ends_at,'appeal_deadline',d.appeal_deadline,
+          'decided_at',d.decided_at
+        )
+      )) as payload
+    from private.moderation_appeals a
+    join private.moderation_decisions d on d.id=a.decision_id
+    where a.status='pending'
+    order by a.submitted_at,a.id
+    limit p_limit
+  ) q;
+  return pg_catalog.jsonb_build_object('pending_count',v_count,'appeals',v_rows);
+end;
+$function$;
+
+revoke all on function private.sinjira_admin_appeals_overview(uuid,integer)
+from public,anon,authenticated;
+grant execute on function private.sinjira_admin_appeals_overview(uuid,integer)
+to service_role;
+
 -- Points d'entrée PostgREST : schema public exposé, mais EXECUTE UNIQUEMENT
 -- au rôle serveur. Le wrapper SECURITY INVOKER ne contourne aucune ACL.
 -- La fonction SQL privée garde le verrou transactionnel et les contrôles
@@ -337,6 +390,19 @@ as $public_rpc$
     p_admin_id,p_appeal_id,p_outcome,p_review_reason
   );
 $public_rpc$;
+
+create or replace function public.sinjira_admin_appeals_overview(
+  p_admin_id uuid, p_limit integer default 300
+)
+returns jsonb language sql security invoker set search_path=''
+as $public_rpc$
+  select private.sinjira_admin_appeals_overview(p_admin_id,p_limit);
+$public_rpc$;
+
+revoke all on function public.sinjira_admin_appeals_overview(uuid,integer)
+from public,anon,authenticated;
+grant execute on function public.sinjira_admin_appeals_overview(uuid,integer)
+to service_role;
 
 revoke all on function public.sinjira_admin_moderate_atomic(
   uuid,uuid,text,text,text,text,integer
