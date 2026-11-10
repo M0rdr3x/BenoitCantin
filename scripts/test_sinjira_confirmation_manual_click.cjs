@@ -155,6 +155,30 @@ async function main() {
     assertions += 8;
   }
 
+  for (const hash of [
+    '#token_hash=one&token_hash=two&type=email',
+    '#token_hash=one&type=email&type=signup',
+    '#token_hash=one&type=email&redirect=https%3A%2F%2Fevil.invalid%2F',
+    '#token_hash=&type=email',
+    '#token_hash=one'
+  ]) {
+    const ambiguous = await scenario({ hash, existingUser: true });
+    assert.equal(ambiguous.calls.verify.length, 0, 'Lien ambigu vérifié automatiquement');
+    assert.equal(ambiguous.calls.getUser, 0, 'Lien ambigu détourné vers le succès de session');
+    assert.equal(ambiguous.calls.notify, 0, 'Lien ambigu a déclenché Formspree');
+    assert.equal(ambiguous.confirm.hidden, true, 'Lien ambigu a activé le bouton');
+    assert.ok(ambiguous.calls.statuses.some(x => x.kind === 'error'),
+      'Lien ambigu doit produire un diagnostic non certifié');
+    assertions += 5;
+  }
+
+  const reordered = await scenario({hash:'#type=email&token_hash=inert'});
+  assert.equal(reordered.confirm.hidden, false, 'Ordre inversé des paramètres valides refusé');
+  await reordered.confirm.handlers.click();
+  assert.equal(reordered.calls.verify.length, 1, 'Un fragment réordonné valide doit fonctionner');
+  assert.ok(reordered.calls.statuses.some(x => x.kind === 'success'));
+  assertions += 3;
+
   const badType = await scenario({ hash: '#token_hash=inert&type=recovery' });
   assert.equal(badType.calls.verify.length, 0);
   assert.equal(badType.calls.notify, 0);
