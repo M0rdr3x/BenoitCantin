@@ -146,7 +146,7 @@ test('contrat HTML/CSS : module autonome et gestes expliqués',()=>{
   assert.match(html,/id="reader-touch-prev"/);
   assert.match(html,/id="reader-touch-next"/);
   assert.match(html,/aria-describedby="reader-swipe-help"/);
-  assert.match(css,/touch-action:pan-y pinch-zoom/);
+  assert.match(css,/touch-action:auto/);
   assert.match(css,/min-height:48px/);
   assert.match(css,/env\(safe-area-inset-bottom/);
 });
