@@ -140,6 +140,11 @@ function isMissingCloudSpotColumn(error){
     /scroll_ratio.*(?:column|schema cache|does not exist)|(?:column|schema cache|does not exist).*scroll_ratio/i
       .test(String(error.message||''))));
 }
+function isMissingCloudRevisionColumn(error){
+  return Boolean(error&&(['PGRST204','42703'].includes(error.code)||
+    /revision.*(?:column|schema cache|does not exist)|(?:column|schema cache|does not exist).*revision/i
+      .test(String(error.message||''))));
+}
 function syncProgress(){
   if(!isFull||!state.user||!state.novelId||!state.pdf||state.accessInvalidated){
     return Promise.resolve(false);
@@ -645,6 +650,12 @@ async function restorePage(){
         state.cloudSpotSupported=false;
         ({data:progress,error:progressError}=await getSupabase().from('sinjira_reader_library')
           .select('last_page,updated_at,revision').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle());
+      }
+      if(progressError&&isMissingCloudRevisionColumn(progressError)){
+        // Lire les anciennes pages, mais ne jamais en déduire un droit
+        // d'écriture cloud : la version atomique V51 n'est pas déployée.
+        ({data:progress,error:progressError}=await getSupabase().from('sinjira_reader_library')
+          .select('last_page,updated_at').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle());
       }
       if(!progressError){
         serverPage=progress?.last_page;
