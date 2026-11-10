@@ -50,8 +50,8 @@ class V50NoProduction(unittest.TestCase):
         self.assertIn("'127.0.0.1:5432:5432'",WF)
         self.assertIn("permissions:\n  contents: read",WF)
         self.assertIn("persist-credentials: false",WF)
-        self.assertLess(WF.index("test_sinjira_reader_v48_client_a_return.sql"),
-                        WF.index("test_sinjira_reader_v50_stale_overwrite.sql"))
+        self.assertLess(WF.rindex("test_sinjira_reader_v48_client_a_return.sql"),
+                        WF.rindex("test_sinjira_reader_v50_stale_overwrite.sql"))
     def test_no_false_go_when_cas_lab_passes(self):
         self.assertIn("V50-NO_GO-PRODUCTION",SQL)
         self.assertNotIn("reader_v32_prod=PASS",SQL)
