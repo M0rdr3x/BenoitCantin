@@ -100,7 +100,7 @@ def validate_governance_text(text):
     for marker, message in (
         ('repos.listPullRequestsAssociatedWithCommit', 'association commit → PR non vérifiée'),
         ('commit_sha: sha', 'le SHA courant doit être utilisé pour la recherche de PR'),
-        ("pr.merged_at && pr.base?.ref === 'main'", 'la PR doit être fusionnée explicitement vers main'),
+        ("pr.merged_at && pr.base?.ref === 'main' && pr.merge_commit_sha === sha", 'la PR doit être fusionnée sur main avec un SHA de fusion identique au push'),
         ('if (!mergedToMain)', 'branche de refus des pushes directs absente'),
         ('core.setFailed(', 'un refus de gouvernance doit échouer'),
         ("core.setFailed('Le commit '", 'un push direct doit faire échouer le job'),
@@ -150,6 +150,7 @@ def validate_contract_workflow(text):
         '.github/workflows/main-governance.yml',
         '.github/workflows/main-governance-contract.yml',
         'scripts/validate_main_governance_contract.py',
+        'scripts/test_main_governance_runtime.cjs',
     ):
         require(errors, text.count(f"      - '{path}'") >= 2, f'workflow contrat: {path} doit déclencher PR et push main')
 
@@ -161,6 +162,8 @@ def validate_contract_workflow(text):
     )
     require(errors, 'python3 scripts/validate_main_governance_contract.py --self-test' in text, 'auto-tests du validateur absents')
     require(errors, 'python3 scripts/validate_main_governance_contract.py' in text, 'validation du workflow réel absente')
+    require(errors, 'node scripts/test_main_governance_runtime.cjs' in text,
+            'exécution simulée de la vérification main absente')
     require(errors, re.search(r'(?m)^\s{2}contents:\s*read\s*$', text) is not None, 'workflow contrat: contents doit être read')
     require(errors, re.search(r'(?im)^\s*[a-z0-9_-]+:\s*write\s*$', text) is None, 'workflow contrat: permission write interdite')
 
@@ -193,7 +196,8 @@ def run_self_tests(governance, readme, contract):
         'runner mobile': governance.replace(f'runs-on: {RUNNER}', 'runs-on: ubuntu-latest', 1),
         'timeout retiré': governance.replace(f'    timeout-minutes: {TIMEOUT_MINUTES}\n', '', 1),
         'sans échec': governance.replace("core.setFailed('Le commit '", "core.info('Le commit '", 1),
-        'PR non fusionnée': governance.replace("pr.merged_at && pr.base?.ref === 'main'", "pr.base?.ref === 'main'", 1),
+        'PR non fusionnée': governance.replace("pr.merged_at && pr.base?.ref === 'main' && pr.merge_commit_sha === sha", "pr.base?.ref === 'main' && pr.merge_commit_sha === sha", 1),
+        'PR seulement associée, sans SHA de fusion': governance.replace("pr.merged_at && pr.base?.ref === 'main' && pr.merge_commit_sha === sha", "pr.merged_at && pr.base?.ref === 'main'", 1),
         'permission écriture': governance.replace('contents: read', 'contents: write', 1),
         'contrôle protection retiré': governance.replace("process.env.GITHUB_REF_PROTECTED === 'true'", "'true' === 'true'", 1),
         'limite preuve serveur retirée': governance.replace('Cet échec CI ne remplace pas la configuration GitHub Settings > Branches/Rulesets.', 'Protection serveur confirmée.', 1),
@@ -233,6 +237,7 @@ def run_self_tests(governance, readme, contract):
         'python non figé': contract.replace(f"python-version: '{PYTHON_VERSION}'", "python-version: '3.12'", 1),
         'credentials persistés': contract.replace('persist-credentials: false', 'persist-credentials: true', 1),
         'permission écriture contrat': contract.replace('contents: read', 'contents: write', 1),
+        'test runtime retiré': contract.replace('node scripts/test_main_governance_runtime.cjs', 'echo skip-runtime', 1),
         'secret contrat injecté': contract.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}\n    steps:\n', 1),
     }
     for name, mutated in contract_cases.items():
