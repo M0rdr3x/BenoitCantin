@@ -55,8 +55,8 @@ jobs:
       - name: Contrats du périmètre de sécurité et syntaxe navigateur
         run: |
           python3 -m unittest discover -s tests/security -p test_sinjira_reader_v51_cas_contract.py -v
-          node --check assets/js/sinjira-liseuse-v26.js
-          node --check assets/js/sinjira-reader-progress-v24-4-61.js
+          node --input-type=module --check < assets/js/sinjira-liseuse-v26.js
+          node --input-type=module --check < assets/js/sinjira-reader-progress-v24-4-61.js
       - name: Installer les deux lignes fictives avec la V32 originale et A B A
         env:
           PGCONNECT_TIMEOUT: '10'
