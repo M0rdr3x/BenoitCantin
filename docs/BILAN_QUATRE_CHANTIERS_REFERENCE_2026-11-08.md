@@ -69,3 +69,34 @@ Aucune date de fin fiable : les dépendances de production, les délais de revue
 5. **P1 : contrôle de programme.** Toute actualisation exige numérateur, dénominateur, date, responsables, preuve et approbation. Ne pas moyenner les scores.
 
 Le [contrôle automatique des quatre indicateurs historiques](https://github.com/M0rdr3x/BenoitCantin/blob/audit/quatre-chantiers-reference-2026-11-09/scripts/controle-quatre-chantiers-2026-11-08.mjs) et ses tests détectent les dérives documentaires. Ils ne remplacent aucune expertise externe et n'augmentent aucun taux de maturité.
+
+
+## Addendum de suivi — 9 novembre 2026 (sans révision des scores)
+
+Cet addendum enregistre **des preuves de provenance et des risques ouverts** après le bilan historique du 8 novembre. Une nouvelle source trouvée ou un audit préparé ne constituent pas une acceptation d'étape.
+
+### A. Projet Nova — financement fiscal et municipal
+
+- Le registre du [MAMH / Données Québec](https://www.donneesquebec.ca/recherche/dataset/rapport-financier-des-organismes-municipaux-et-autres-documents) publie les fichiers de **données réelles 2024 et 2025**, les descriptions de postes et les listes d'organismes absents. Les fichiers sont mis à jour régulièrement et doivent être figés avant toute analyse.
+- Profil financier des municipalités locales, [Québec agrégé 2024](https://www.donneesquebec.ca/recherche/dataset/profil-financier-des-municipalites-locales/resource/5dec077d-4ef9-4e22-99e9-0c4f3a6dd52d) et [Québec agrégé 2025](https://www.donneesquebec.ca/recherche/dataset/profil-financier-des-municipalites-locales/resource/12b38e53-b289-4e90-83ef-40cb39e71f53) : distinguer le **profil des municipalités locales** des **rapports financiers de l'ensemble des organismes municipaux**.
+- [Issue #906](https://github.com/M0rdr3x/BenoitCantin/issues/906) complétée par un protocole de provenance 2024–2025, sans importer de CSV ni valider de chiffres. Il faut obtenir les fichiers bruts, enregistrer SHA-256, année de publication, année d'exercice, codes comptables, couverture et corrections.
+- Avant toute proposition de taux à deux prélèvements, tester séparément la viabilité des deux scénarios constitutionnels. Le rendement anti-paradis fiscaux ne doit jamais être posé égal à une nouvelle taxe au rendement garanti sans assiette légale démontrée.
+
+### B. Nova–Sinjira — preuves de services publics
+
+- [PR #930](https://github.com/M0rdr3x/BenoitCantin/pull/930) propose la validation G0 des 14 secteurs, et [PR #913](https://github.com/M0rdr3x/BenoitCantin/pull/913) la matrice G0–G4; toutes deux nécessitent une revue et les sources originales.
+- Aucun G1 de comparaison ne peut prétendre à des économies sans coûts complets comparables : données municipales, RH, effets sur usagers, accessibilité et qualité. Le coût transféré à un autre niveau de gouvernement ou à un ménage n'est pas une économie publique nette.
+- Prochaine pièce attendue : un premier secteur avec période, territoire, population, unités, données figées, couverture et responsables G0 — avant toute fiche de pilote.
+
+### C. Boussole et sondage — contrôle de réception
+
+- Pour la boussole, [PR #937](https://github.com/M0rdr3x/BenoitCantin/pull/937) clarifie que les 140 relectures par IA ne sont **pas** des certifications humaines indépendantes. L'étape suivante est un plan d'échantillonnage contradictoire, double codage humain indépendant, arbitrage traçable, couverture équilibrée et version contrôlée.
+- Pour le sondage, l'ouverture reste interdite jusqu'à une recette complète (anti-rejeu, CAPTCHA, confidentialité, accessibilité, avis juridique et approbation formelle). La fiabilité de l'outil de profil personnel ne vaut pas autorisation de collecter des réponses.
+
+### D. SINJIRA™ — revue supplémentaire V51
+
+- [Issue #955](https://github.com/M0rdr3x/BenoitCantin/issues/955) ouverte : la RPC candidate `sinjira_reader_save_progress_cas` sécurise la révision et l'identité du **lecteur**, mais ne contrôle pas explicitement en SQL l'éligibilité du compte au **roman**. La signature de téléchargement `get-novel-file-url` est séparée. Il faut confirmer en préproduction la règle métier des livres privés et les autorisations.
+- La fixture SQL V48 ne modélise que l'existence d'un roman et non ses droits d'accès. L'issue est un **manque de preuve d'autorisation**, pas la démonstration qu'un livre privé a fuité en production.
+- La PR #947 reste **DRAFT et non déployée**; maintenir le prévol Supabase, la migration officielle et la réception sur deux appareils comme barrières non contournables.
+
+**Décision maintenue :** Nova = **47/100**, Nova–Sinjira = **taux non chiffrable**, boussole = **9/12**, sondage = **6/11**, SINJIRA = **66,5 % ±10 points**, **13/13 portes ouvertes**. Aucune date de fin certifiée nouvelle.
