@@ -207,4 +207,73 @@ select public.fixture_assert_true(
  (select count(*) from public.user_notifications)=2,
  'une notification initiale et une notification après appel');
 
+
+-- Une seconde suspension sert à vérifier l'atomicité du RENVERSEMENT :
+-- faire échouer la notification DOIT rétablir décision, appel et suspension.
+set role service_role;
+select private.sinjira_admin_moderate_atomic(
+ 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
+ 'dddddddd-dddd-4ddd-dddd-ddddddddddde',
+ 'suspend_social','Règles communautaires de sécurité',
+ 'Une seconde sanction fictive prépare une révision avec échec forcé.','standard',7);
+reset role;
+
+insert into private.moderation_appeals(id,decision_id,appellant_user_id,appeal_text)
+select 'ffffffff-ffff-4fff-ffff-fffffffffff0',d.id,'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',
+'Une autre demande de révision humaine de la seconde suspension.'
+from private.moderation_decisions d
+where d.report_id='dddddddd-dddd-4ddd-dddd-ddddddddddde';
+
+set role service_role;
+do $
+declare v_failed boolean:=false;
+begin
+ begin
+   perform private.sinjira_admin_review_appeal_atomic(
+     'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
+     'ffffffff-ffff-4fff-ffff-fffffffffff0',
+     'reversed','FORCE_ROLLBACK — un échec de notification ne peut renverser une suspension à moitié.');
+ exception when others then
+   if sqlerrm<>'FIXTURE_FORCED_FAILURE' then raise; end if;
+   v_failed:=true;
+ end;
+ if not v_failed then raise exception 'EXPECTED_APPEAL_ROLLBACK'; end if;
+end $;
+
+do $
+declare v_failed boolean:=false;
+begin
+ begin
+   perform private.sinjira_admin_moderate_atomic(
+     'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
+     'dddddddd-dddd-4ddd-dddd-dddddddddddf',
+     null,'Règles communautaires de sécurité',
+     'Une action SQL nulle doit être refusée sans effet.','standard',null);
+ exception when others then
+   if sqlerrm<>'INVALID_MODERATION_INPUT' then raise; end if;
+   v_failed:=true;
+ end;
+ if not v_failed then raise exception 'EXPECTED_NULL_ACTION_REJECTION'; end if;
+end $;
+reset role;
+
+select public.fixture_assert_true(
+ (select status='active' from private.moderation_decisions
+  where report_id='dddddddd-dddd-4ddd-dddd-ddddddddddde'),
+ 'rollback appel : la décision originale doit rester active');
+select public.fixture_assert_true(
+ (select status='pending' from private.moderation_appeals
+  where id='ffffffff-ffff-4fff-ffff-fffffffffff0'),
+ 'rollback appel : la révision doit rester en attente');
+select public.fixture_assert_true(
+ (select count(*) from public.social_suspensions)=1,
+ 'rollback appel : la suspension antérieure est conservée');
+select public.fixture_assert_true(
+ (select count(*) from public.user_notifications)=3,
+ 'rollback appel : aucune notification résiduelle après échec');
+select public.fixture_assert_true(
+ (select status='open' from public.social_reports
+  where id='dddddddd-dddd-4ddd-dddd-dddddddddddf'),
+ 'une action SQL nulle ne ferme pas le rapport');
+
 select 'PASS: base temporaire — droits minimaux, sanction atomique, rollback forcé, appels et réexamen.' as result;
