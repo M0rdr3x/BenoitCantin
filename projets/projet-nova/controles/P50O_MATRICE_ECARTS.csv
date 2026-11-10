@@ -1,0 +1,9 @@
+code,gravite,composant,sonde,cible,etat,action
+F01,HAUTE,PR636 validateur,forms.gle via ancre,Lien Google Forms,A_VERIFIER_EN_CI,Refuser URL fournisseur externe
+F02,HAUTE,PR636 validateur,docs.google.com/forms en iframe,Google Forms iframe,A_VERIFIER_EN_CI,Inspecter src et iframe
+F03,HAUTE,PR636 validateur,typeform.com via ancre,Lien Typeform,A_VERIFIER_EN_CI,Contrôle des URL externes
+F04,HAUTE,PR636 validateur,jotform.com via ancre,Lien Jotform,A_VERIFIER_EN_CI,Contrôle des URL externes
+F05,HAUTE,PR636 validateur,checkout.stripe.com via ancre,Paiement Stripe,A_VERIFIER_EN_CI,Contrôle des URL paiement
+F06,HAUTE,PR636 validateur,paypal.com/donate via ancre,Don PayPal,A_VERIFIER_EN_CI,Contrôle des URL de dons
+F07,MOYENNE,PR636 validateur,mailto en commentaire HTML,Faux contact valide,A_VERIFIER_EN_CI,Analyser vraies ancres mailto
+F08,MOYENNE,PR636 validateur,forms.gle dans script,Lien JS externe,A_VERIFIER_EN_CI,Revue des scripts et URL dynamiques
