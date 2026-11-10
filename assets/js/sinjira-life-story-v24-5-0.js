@@ -1,4 +1,5 @@
 import {getSupabase,requireUser,escapeHtml,setStatus,formatDate} from './sinjira-supabase.js';
+import {isSafeLifeStoryId} from './sinjira-life-story-owner-boundaries.mjs';
 
 const s=getSupabase();
 const PAGE_PATH='/compte/histoire-de-vie.html';
@@ -53,10 +54,12 @@ async function loadState(){
   ]);
   for(const result of [settingsResult,entriesResult,versionsResult,mappingsResult,recipientsResult])if(result.error)throw result.error;
   state.settings=settingsResult.data;
-  state.entries=entriesResult.data||[];
-  state.versions=versionsResult.data||[];
-  state.mappings=mappingsResult.data||[];
-  state.recipients=recipientsResult.data||[];
+  // Une réponse RPC/REST anormale ne doit pas être transformée en attributs
+  // HTML ni réutilisée comme référence d'une opération privée.
+  state.entries=(entriesResult.data||[]).filter(e=>isSafeLifeStoryId(e.id));
+  state.versions=(versionsResult.data||[]).filter(v=>isSafeLifeStoryId(v.id));
+  state.mappings=(mappingsResult.data||[]).filter(m=>isSafeLifeStoryId(m.entry_id)&&isSafeLifeStoryId(m.version_id));
+  state.recipients=(recipientsResult.data||[]).filter(r=>isSafeLifeStoryId(r.id)&&isSafeLifeStoryId(r.version_id));
   renderAll();
 }
 
@@ -145,6 +148,7 @@ async function addEntry(form){
 }
 
 async function authorizeEntry(id){
+  if(!isSafeLifeStoryId(id)||!state.entries.some(entry=>entry.id===id))throw new Error('Référence de souvenir non valide.');
   if(!globalThis.confirm('Autoriser cet élément à pouvoir être inclus dans votre Histoire de vie posthume ? Vous devrez encore choisir les versions. Cette autorisation ne donne aucun accès au Registre des Consciences.'))return;
   const {error}=await s.from('life_story_entries').update({approval_status:'approved',posthumous_disclosure:'selected_versions',user_approved_at:new Date().toISOString()}).eq('id',id).eq('user_id',state.user.id);
   if(error)throw error;
@@ -153,6 +157,7 @@ async function authorizeEntry(id){
 }
 
 async function privatizeEntry(id){
+  if(!isSafeLifeStoryId(id)||!state.entries.some(entry=>entry.id===id))throw new Error('Référence de souvenir non valide.');
   if(!globalThis.confirm('Retirer cet élément de toutes les versions et le garder privé ?'))return;
   const {error}=await s.from('life_story_entries').update({posthumous_disclosure:'never'}).eq('id',id).eq('user_id',state.user.id);
   if(error)throw error;
@@ -161,6 +166,7 @@ async function privatizeEntry(id){
 }
 
 async function deleteEntry(id){
+  if(!isSafeLifeStoryId(id)||!state.entries.some(entry=>entry.id===id))throw new Error('Référence de souvenir non valide.');
   if(!globalThis.confirm('Supprimer définitivement cet élément de votre Histoire de vie ?'))return;
   const {error}=await s.from('life_story_entries').delete().eq('id',id).eq('user_id',state.user.id);
   if(error)throw error;
@@ -169,6 +175,11 @@ async function deleteEntry(id){
 }
 
 async function toggleVersion(entryId,versionId,checked){
+  const entry=state.entries.find(e=>e.id===entryId);
+  if(!isSafeLifeStoryId(entryId)||!isSafeLifeStoryId(versionId)||
+     !entry||!state.versions.some(v=>v.id===versionId)||
+     (checked&&(entry.approval_status!=='approved'||entry.posthumous_disclosure!=='selected_versions')))
+    throw new Error('Sélection de version non autorisée.');
   if(checked){
     const sortOrder=state.mappings.filter(m=>m.version_id===versionId).length;
     const {error}=await s.from('life_story_version_entries').insert({user_id:state.user.id,entry_id:entryId,version_id:versionId,sort_order:sortOrder});
@@ -183,6 +194,7 @@ async function toggleVersion(entryId,versionId,checked){
 
 async function saveVersion(form){
   const id=form.dataset.versionForm;
+  if(!isSafeLifeStoryId(id)||!state.versions.some(v=>v.id===id))throw new Error('Référence de version non valide.');
   const data=new FormData(form);
   const title=String(data.get('title')||'').trim();
   const instructions=String(data.get('instructions')||'').trim();
@@ -198,6 +210,8 @@ async function addRecipient(form){
   const versionId=String(data.get('version_id')||'');
   const label=String(data.get('recipient_label')||'').trim();
   const email=String(data.get('recipient_email')||'').trim();
+  if(!isSafeLifeStoryId(versionId)||!state.versions.some(v=>v.id===versionId))
+    throw new Error('Référence de version non valide.');
   if(!versionId||!label)throw new Error('Choisissez une version et indiquez le nom du destinataire.');
   const payload={user_id:state.user.id,version_id:versionId,recipient_kind:email?'email':'named_contact',recipient_label:label,recipient_email:email||null,status:'active'};
   const {error}=await s.from('life_story_recipients').insert(payload);
@@ -208,6 +222,7 @@ async function addRecipient(form){
 }
 
 async function deleteRecipient(id){
+  if(!isSafeLifeStoryId(id)||!state.recipients.some(r=>r.id===id))throw new Error('Référence de destinataire non valide.');
   if(!globalThis.confirm('Retirer ce destinataire de votre directive ?'))return;
   const {error}=await s.from('life_story_recipients').delete().eq('id',id).eq('user_id',state.user.id);
   if(error)throw error;
@@ -262,7 +277,8 @@ async function boot(){
   report('Histoire de vie chargée. Tout nouvel élément reste privé tant que vous ne l’autorisez pas.','success');
 }
 
-boot().catch(error=>{
-  console.warn('[SINJIRA life story]',error);
+boot().catch(()=>{
+  // Une erreur Supabase peut contenir des métadonnées de dossier privé.
+  // Ne jamais la journaliser en clair depuis le navigateur.
   report('Impossible de charger l’Histoire de vie de façon sécurisée pour le moment.','error');
 });
