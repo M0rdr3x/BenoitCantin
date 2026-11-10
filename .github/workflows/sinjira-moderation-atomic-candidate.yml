@@ -31,7 +31,7 @@ jobs:
       postgres:
         image: postgres:17.6
         env:
-          POSTGRES_PASSWORD: sinjira-ephemeral-ci-only
+          POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_DB: sinjira_test
         ports:
           - 5432:5432
@@ -45,7 +45,6 @@ jobs:
       PGPORT: '5432'
       PGDATABASE: sinjira_test
       PGUSER: postgres
-      PGPASSWORD: sinjira-ephemeral-ci-only
     steps:
       - name: Checkout sans jeton persistant
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
