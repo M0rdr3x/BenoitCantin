@@ -225,3 +225,74 @@
   .sinjira-liseuse .reader-position-status{text-align:center}
   .sinjira-liseuse #reader-save-position{min-height:48px}
 }
+
+
+/* V52 — liseuse tactile smartphone/tablette. Les boutons ne masquent pas le
+   contenu et le balayage horizontal n'empêche pas le défilement vertical. */
+.sinjira-liseuse .reader-touch-nav,
+.sinjira-liseuse .reader-swipe-help{display:none}
+@media(max-width:760px){
+  .sinjira-liseuse .reader-viewer{
+    touch-action:pan-y pinch-zoom;
+    overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+  .sinjira-liseuse .reader-stage{
+    padding-bottom:calc(76px + env(safe-area-inset-bottom,0px));
+  }
+  .sinjira-liseuse .reader-text{
+    box-sizing:border-box;
+    max-width:100%;
+    padding:clamp(18px,5vw,30px);
+    border-radius:6px;
+  }
+  .sinjira-liseuse .reader-swipe-help{
+    display:block;
+    margin:0;
+    padding:10px 18px;
+    color:#d0e3e8;
+    font-size:.86rem;
+    line-height:1.55;
+    text-align:center;
+    background:#0b1a27;
+  }
+  .sinjira-liseuse .reader-touch-nav{
+    display:flex;
+    position:fixed;
+    z-index:60;
+    bottom:0;
+    right:0;
+    left:0;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding:9px max(12px,env(safe-area-inset-right,0px))
+      calc(9px + env(safe-area-inset-bottom,0px))
+      max(12px,env(safe-area-inset-left,0px));
+    background:rgba(10,21,31,.98);
+    border-top:1px solid #52716f;
+    box-shadow:0 -6px 24px rgba(0,0,0,.3);
+  }
+  .sinjira-liseuse .reader-touch-nav button{
+    flex:1 1 130px;
+    min-width:0;
+    min-height:48px;
+    padding:10px 12px;
+    font-size:.95rem;
+    border-radius:12px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .sinjira-liseuse .reader-touch-nav button:focus-visible{
+    outline:3px solid #b9fff2;
+    outline-offset:2px;
+  }
+  .sinjira-liseuse .reader-touch-nav-hint{
+    flex:0 0 auto;
+    color:#b1cdd0;
+    font-size:.76rem;
+    text-align:center;
+  }
+}
+@media(max-width:400px){
+  .sinjira-liseuse .reader-touch-nav-hint{display:none}
+}
