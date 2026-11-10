@@ -1,0 +1,44 @@
+{
+  "schema_version": "P50N-1.0",
+  "date_observation": "2026-10-14",
+  "origine": "GitHub - blobs obtenus par lecture de commit fige",
+  "repo": "M0rdr3x/BenoitCantin",
+  "refs": {
+    "main": "9ed5f70cbe7022f25a679346a1288701f3b09067",
+    "pr636": "6cd38faf1124a9bcbb2be1beaa12bcd14a85f9fb",
+    "pr638": "e027b0ca130fe91b00e52d9e9fe2f1b301f4b47e",
+    "pr640": "332afe7d9d73390feb41b0deb588692f3c73d48d"
+  },
+  "fichiers": {
+    "participer.html": {
+      "main": "832a73caf4d1a7490523422c9d677974df0bc8f0",
+      "pr636": "ef037f1ef6257c676573a80afae060b4e965bb25",
+      "pr638": "832a73caf4d1a7490523422c9d677974df0bc8f0",
+      "pr640": "ef037f1ef6257c676573a80afae060b4e965bb25"
+    },
+    "avis-legal.html": {
+      "main": "4f35dba55c01f744fad9247354e77cd51c9d7a3c",
+      "pr636": "602dc790de1416a3bc3806f6a0d328a489925752",
+      "pr638": "4f35dba55c01f744fad9247354e77cd51c9d7a3c",
+      "pr640": "602dc790de1416a3bc3806f6a0d328a489925752"
+    },
+    "code-conduite.html": {
+      "main": "155e5aae78ef7220ba3de39483248dfd98052faf",
+      "pr636": "155e5aae78ef7220ba3de39483248dfd98052faf",
+      "pr638": "34a00ecae9592846d6578b74e03796a768b2450f",
+      "pr640": "34a00ecae9592846d6578b74e03796a768b2450f"
+    }
+  },
+  "chemins_reference": {
+    "statuts": "projets/projet-nova/official/reference/statuts.md",
+    "manifeste": "projets/projet-nova/data/sources.json"
+  },
+  "garde_fous": {
+    "fusionner_pr640": false,
+    "etat_publication": "NO_GO",
+    "revues_humaines_obtenues": false,
+    "habilitations_prouvees": false,
+    "mise_en_ligne_verifiee": false
+  },
+  "lecture": "Instantane fige; relecture des SHA et des revues indispensable apres toute nouvelle modification. Les tests de compatibilite ne constituent ni approbation ni recette publique."
+}
