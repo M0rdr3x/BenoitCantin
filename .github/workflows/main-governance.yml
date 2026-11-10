@@ -35,7 +35,9 @@ jobs:
               const { owner, repo } = context.repo;
               const sha = context.sha;
               const { data: pulls } = await github.rest.repos.listPullRequestsAssociatedWithCommit({ owner, repo, commit_sha: sha });
-              const mergedToMain = pulls.some(pr => pr.merged_at && pr.base?.ref === 'main');
+              // L'association seule n'atteste pas que ce push est issu de la fusion:
+              // exiger le SHA exact produit par la PR (merge, squash ou rebase).
+              const mergedToMain = pulls.some(pr => pr.merged_at && pr.base?.ref === 'main' && pr.merge_commit_sha === sha);
               if (!mergedToMain) {
                 core.setFailed('Le commit ' + sha + ' est arrivé sur main sans Pull Request fusionnée associée. Examiner immédiatement ce changement.');
               } else {
