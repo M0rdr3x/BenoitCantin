@@ -1,0 +1,167 @@
+{
+  "schema": "projets-nova-sinjira-portefeuille/v1",
+  "reference_local_date": "2026-11-08",
+  "timezone": "America/Toronto",
+  "status": "BILAN_DOCUMENTAIRE_NON_CERTIFIE_NON_ADOPTE",
+  "scope_rule": "Quatre périmètres distincts : Nova politique, Nova-Sinjira modèle de réforme, deux outils civiques, SINJIRA produit culturel et numérique. Les taux ne s'additionnent ni ne se moyennent.",
+  "sources": {
+    "nova": {
+      "path": "projets/projet-nova/data/audit-completude-programme-nova-2026-11-05.json",
+      "as_of": "2026-11-05"
+    },
+    "nova_sinjira": {
+      "path": "projets/projet-nova/official/working/plan-execution-nova-sinjira-v1.md",
+      "as_of": "2026-11-03"
+    },
+    "civic": {
+      "path": "docs/nova-sondages/reception-sondage-boussole-2026-11-08.json",
+      "as_of": "2026-11-08"
+    },
+    "sinjira": {
+      "path": "docs/sinjira/programme-readiness-2026-11-08.json",
+      "as_of": "2026-11-08"
+    },
+    "civic_history": {
+      "path": "projets/projet-nova/data/validation-sondage-boussole-2026-11-07.json",
+      "as_of": "2026-11-07",
+      "compass_passed": 5,
+      "compass_total": 12
+    }
+  },
+  "tracks": [
+    {
+      "id": "NOVA_POLITIQUE",
+      "label": "Projet Nova — programme politique",
+      "metric_kind": "AUDIT_INTERNE_POINTS_SUR_100",
+      "earned": 47,
+      "maximum": 100,
+      "missing_points": 53,
+      "certified": false,
+      "completion_date": null,
+      "planned_target_date": "2027-12-31",
+      "target_is_approved": false,
+      "target_is_guaranteed": false,
+      "planning_reference": "https://github.com/M0rdr3x/BenoitCantin/pull/894",
+      "closure_gates_total": 7,
+      "closure_gates_passed": 0,
+      "blockers": [
+        "Preuves financières V01–V15 non validées indépendamment",
+        "Deux budgets de dix ans non audités",
+        "Droits, secteurs, consultation et adoption non validés"
+      ],
+      "next_acceptance": "Réexamen documenté des dix dimensions, quinze preuves financières, vingt exercices-scénarios, avis indépendants et décisions compétentes."
+    },
+    {
+      "id": "NOVA_SINJIRA_MODELE",
+      "label": "Projet Nova–Sinjira — modèle de réforme des services",
+      "metric_kind": "AUCUN_BAREME_DE_COMPLETUDE_AUTONOME",
+      "estimated_percent": null,
+      "certified": false,
+      "completion_date": null,
+      "planned_target_date": null,
+      "target_is_approved": false,
+      "target_is_guaranteed": false,
+      "stage_sequence": [
+        "G0_DIAGNOSTIC",
+        "G1_COMPARAISON",
+        "G2_LEGALITE_FINANCEMENT",
+        "G3_PILOTE",
+        "G4_GENERALISATION"
+      ],
+      "measures_sectors_candidate": 14,
+      "independently_validated_sectors_in_nova_audit": 0,
+      "distinction": "Inspiré des principes SINJIRA, mais une proposition normative et budgétaire du Projet Nova; aucun droit du produit SINJIRA n'est transféré à l'État.",
+      "blockers": [
+        "Données de services, coûts et RH pas complètement prouvés",
+        "Aucune preuve d'autorisation de pilote ni d'adoption globale",
+        "Compétences, droits et avantages comparatifs non audités"
+      ],
+      "next_acceptance": "Chaque dossier sectoriel G0–G4 doit avoir mandat, source, comparaison à périmètre égal, financement, audit des droits et preuve de validation indépendante."
+    },
+    {
+      "id": "CIVIC_COMPASS",
+      "label": "Projet Nova — boussole électorale",
+      "metric_kind": "COUVERTURE_DES_CRITERES_PAS_COMPLETUDE",
+      "passed": 9,
+      "total": 12,
+      "observed_gate_coverage_pct": 75,
+      "certified": false,
+      "completion_date": null,
+      "planned_target_date": null,
+      "target_is_approved": false,
+      "target_is_guaranteed": false,
+      "comparison_parties_approved": false,
+      "blockers": [
+        "Audit WCAG indépendant, clavier, contraste et lecteurs d'écran non homologué",
+        "Compatibilité appareils réels, Firefox/Safari et cache en production non homologuée",
+        "Sources primaires des partis et impartialité : seconde relecture non terminée"
+      ],
+      "next_acceptance": "Contrôler indépendamment accessibilité, appareils et navigateurs réels, plus preuve documentaire des positions; conserver la comparaison partisane désactivée."
+    },
+    {
+      "id": "CIVIC_POLL",
+      "label": "Projet Nova — sondage citoyen",
+      "metric_kind": "COUVERTURE_DES_CRITERES_PAS_COMPLETUDE",
+      "passed": 6,
+      "total": 11,
+      "observed_gate_coverage_pct": 54.5455,
+      "certified": false,
+      "completion_date": null,
+      "planned_target_date": null,
+      "target_is_approved": false,
+      "target_is_guaranteed": false,
+      "publication_authorized": false,
+      "blockers": [
+        "Confidentialité et risques de réidentification par lots non homologués",
+        "Turnstile/HMAC/race conditions à tester uniquement en préproduction isolée",
+        "Consentement, conformité électorale, décision d'ouverture manquants"
+      ],
+      "next_acceptance": "Avis juridique indépendant, essais préproduction et approbation formelle; aucun bulletin d'essai en production."
+    },
+    {
+      "id": "SINJIRA_TOTAL",
+      "label": "SINJIRA™ — programme complet hors Projet Nova",
+      "metric_kind": "ESTIMATION_PONDEREE_DE_MATURITE_PRODUIT",
+      "estimated_percent": 66.5,
+      "estimate_uncertainty_percentage_points": 10,
+      "certified": false,
+      "completion_date": null,
+      "planned_target_date": null,
+      "target_is_approved": false,
+      "target_is_guaranteed": false,
+      "exit_gates_total": 13,
+      "exit_gates_passed": 0,
+      "launch_approved": false,
+      "blockers": [
+        "Synchronisation liseuse V32 et revue des droits sur les livres",
+        "Fracture multijoueur serveur et sécurité RPC/RLS NO_GO",
+        "Jeux, communauté, monde parallèle, romans et services à valider",
+        "Commerce et Mon IA non prêts, approbation de lancement absente"
+      ],
+      "next_acceptance": "Preuves de sécurité et tests réels, manuscrits maîtres contrôlés, décision fonctionnelle de périmètre et treize critères de lancement attestés."
+    }
+  ],
+  "policies": {
+    "no_arithmetic_average_across_tracks": true,
+    "do_not_use_civic_coverage_as_product_completion": true,
+    "never_label_sinjira_66_5_as_certified": true,
+    "no_nova_sinjira_guessed_percent": true,
+    "no_auto_certification_from_CI": true,
+    "no_public_civic_poll_opening": true,
+    "no_party_ranking_without_factual_review": true,
+    "no_payment_or_network_game_reactivation": true,
+    "no_fiscal_rates_or_savings_invented": true,
+    "no_write_to_official_reference": true,
+    "source_of_evidence_checked_at_runtime": true
+  },
+  "completion_certified": false,
+  "expected_decision": "NO_GO_POUR_ATTESTATION_DE_FIN",
+  "commentary": "Nova 47/100; Nova–Sinjira sans pourcentage autonome; boussole 9/12 (75 %) au 8 novembre après 5/12 au 7; sondage 6/11 (54,5 %); SINJIRA 66,5 % maturité indicative. Ces mesures ne sont pas additives. Cible Nova fin 2027 seulement indicative.",
+  "civic_combined": {
+    "metric_kind": "COUVERTURE_DES_CRITERES_PAS_COMPLETUDE",
+    "passed": 15,
+    "total": 23,
+    "observed_gate_coverage_pct": 65.2174,
+    "certified": false
+  }
+}
