@@ -8,6 +8,7 @@ on:
       - 'assets/js/sinjira-admin-console.js'
       - 'admin/sinjira/index.html'
       - 'scripts/test_sinjira_admin_console_dom_boundary.cjs'
+      - 'scripts/validate_project_identifier_ui.py'
       - '.github/workflows/sinjira-admin-dom-boundary.yml'
   push:
     branches: [main]
@@ -16,6 +17,7 @@ on:
       - 'assets/js/sinjira-admin-console.js'
       - 'admin/sinjira/index.html'
       - 'scripts/test_sinjira_admin_console_dom_boundary.cjs'
+      - 'scripts/validate_project_identifier_ui.py'
       - '.github/workflows/sinjira-admin-dom-boundary.yml'
   workflow_dispatch:
 
@@ -49,3 +51,5 @@ jobs:
           python3 scripts/validate_admin_console_request_security.py
           python3 scripts/validate_admin_users_privacy.py
           python3 scripts/validate_admin_sinjira_v18_request_security.py
+      - name: Contrat de l’import versionné du moteur administratif
+        run: python3 scripts/validate_project_identifier_ui.py
