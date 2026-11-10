@@ -1,0 +1,166 @@
+{
+  "schema_version": "P50I-1.0",
+  "nature": "MODELE_PUBLIC_SANS_PREUVE_PRIVEE",
+  "observation_date": "2026-10-14",
+  "identite_courante": "Projet Nova",
+  "future_identite_conditionnelle": "Parti Nova",
+  "qualification_actuelle": "INDETERMINEE_NON_ATTESTEE",
+  "autorisation_electorale": "NON_VERIFIEE",
+  "reservation_nom": "NON_VERIFIEE",
+  "collecte_formulaires": "SUSPENDUE",
+  "financement_officiel": "NON_AUTORISE_PAR_CE_MODELE",
+  "actes_autorises_par_ce_modele": [],
+  "sources_officielles": [
+    {
+      "id": "EQ-AUTORISATION",
+      "nom": "Élections Québec - autorisation partis provinciaux",
+      "url": "https://www.electionsquebec.qc.ca/comprendre/comprendre-le-financement-politique/obtenir-une-autorisation/"
+    },
+    {
+      "id": "EQ-REPAQ",
+      "nom": "Élections Québec - registre REPAQ",
+      "url": "https://www.electionsquebec.qc.ca/partis-et-autres-entites-politiques/"
+    },
+    {
+      "id": "LOI-E33",
+      "nom": "Légis Québec - Loi électorale E-3.3",
+      "url": "https://www.legisquebec.gouv.qc.ca/fr/document/lc/E-3.3"
+    },
+    {
+      "id": "CAI-PARTIS",
+      "nom": "CAI - partis politiques provinciaux",
+      "url": "https://www.cai.gouv.qc.ca/protection-renseignements-personnels/information-pour-partis-politiques-provinciaux"
+    },
+    {
+      "id": "CAI-PRIVE",
+      "nom": "CAI - responsable RP organisations privées",
+      "url": "https://www.cai.gouv.qc.ca/protection-renseignements-personnels/information-entreprises-privees/responsable-protection-renseignements-personnels-entreprise"
+    },
+    {
+      "id": "CAI-HORS-QUEBEC",
+      "nom": "CAI - transferts hors Québec",
+      "url": "https://www.cai.gouv.qc.ca/protection-renseignements-personnels/information-entreprises-privees/utilisation-communication-renseignements-personnels"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "PROJET",
+      "qualification": "A_ETABLIR",
+      "fait_etabli": false
+    },
+    {
+      "id": "ORGANISATION_PRIVEE",
+      "qualification": "A_ETABLIR",
+      "fait_etabli": false
+    },
+    {
+      "id": "PARTI_EN_PREPARATION",
+      "qualification": "A_ETABLIR",
+      "fait_etabli": false
+    },
+    {
+      "id": "PARTI_AUTORISE",
+      "qualification": "A_VERIFIER_REPAQ_ET_ACTE",
+      "fait_etabli": false
+    }
+  ],
+  "preuves": [
+    {
+      "id": "Q01",
+      "objet": "Porteur et forme juridique",
+      "responsabilite_cible": "qualification_forme",
+      "statut": "NON_DOCUMENTE",
+      "reference_opaque": "",
+      "date_verification": "",
+      "pieces_sensibles_hors_depot": true
+    },
+    {
+      "id": "Q02",
+      "objet": "Qualification du régime électoral provincial",
+      "responsabilite_cible": "regime_electoral",
+      "statut": "NON_DOCUMENTE",
+      "reference_opaque": "",
+      "date_verification": "",
+      "pieces_sensibles_hors_depot": true
+    },
+    {
+      "id": "Q03",
+      "objet": "Nom et réservation éventuelle",
+      "responsabilite_cible": "nom_et_reservation",
+      "statut": "NON_DOCUMENTE",
+      "reference_opaque": "",
+      "date_verification": "",
+      "pieces_sensibles_hors_depot": true
+    },
+    {
+      "id": "Q04",
+      "objet": "Organes, désignations et acceptations",
+      "responsabilite_cible": "mandats",
+      "statut": "NON_DOCUMENTE",
+      "reference_opaque": "",
+      "date_verification": "",
+      "pieces_sensibles_hors_depot": true
+    },
+    {
+      "id": "Q05",
+      "objet": "Régime du financement et contrôle des dépenses",
+      "responsabilite_cible": "finances",
+      "statut": "NON_DOCUMENTE",
+      "reference_opaque": "",
+      "date_verification": "",
+      "pieces_sensibles_hors_depot": true
+    },
+    {
+      "id": "Q06",
+      "objet": "Cartographie des traitements et régime de protection",
+      "responsabilite_cible": "donnees_personnelles",
+      "statut": "NON_DOCUMENTE",
+      "reference_opaque": "",
+      "date_verification": "",
+      "pieces_sensibles_hors_depot": true
+    },
+    {
+      "id": "Q07",
+      "objet": "Hébergement, fournisseurs et traitement hors Québec",
+      "responsabilite_cible": "prestataires",
+      "statut": "NON_DOCUMENTE",
+      "reference_opaque": "",
+      "date_verification": "",
+      "pieces_sensibles_hors_depot": true
+    },
+    {
+      "id": "Q08",
+      "objet": "Rétention, incidents, accès, audit",
+      "responsabilite_cible": "securite_documentaire",
+      "statut": "NON_DOCUMENTE",
+      "reference_opaque": "",
+      "date_verification": "",
+      "pieces_sensibles_hors_depot": true
+    },
+    {
+      "id": "Q09",
+      "objet": "Mandats de décision et séparation des rôles",
+      "responsabilite_cible": "pouvoir_publication",
+      "statut": "NON_DOCUMENTE",
+      "reference_opaque": "",
+      "date_verification": "",
+      "pieces_sensibles_hors_depot": true
+    }
+  ],
+  "verrous": [
+    "PR_640_NON_FUSIONNABLE",
+    "AUCUN_FORMULAIRE_ACTIF_PAR_CE_JALON",
+    "AUCUNE_COLLECTE_DE_SIGNATURES_PAR_CE_JALON",
+    "AUCUNE_CONTRIBUTION_POLITIQUE_PAR_CE_JALON",
+    "AUCUNE_AUTORISATION_JURIDIQUE_PAR_CE_JALON",
+    "AUCUNE_DONNEE_PRIVEE_DANS_GIT"
+  ],
+  "decision": {
+    "statut": "NO_GO",
+    "habilitation_attestee": false,
+    "avis_juridique_independant_atteste": false,
+    "publication_autorisee": false,
+    "collecte_sensible_autorisee": false
+  },
+  "note": "Modele non probant; le validateur n'authentifie aucune piece, identite ni autorisation."
+}
