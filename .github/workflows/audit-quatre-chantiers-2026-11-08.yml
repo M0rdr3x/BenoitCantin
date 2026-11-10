@@ -1,0 +1,45 @@
+name: Audit historique — quatre chantiers Nova et SINJIRA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/controle-quatre-chantiers-2026-11-08.mjs'
+      - 'tests/controle-quatre-chantiers-2026-11-08.test.mjs'
+      - 'docs/BILAN_QUATRE_CHANTIERS_REFERENCE_2026-11-08.md'
+      - 'docs/nova-sondages/reception-sondage-boussole-2026-11-08.json'
+      - 'docs/sinjira/programme-readiness-2026-11-08.json'
+      - 'projets/projet-nova/data/audit-completude-programme-nova-2026-11-05.json'
+      - 'projets/projet-nova/data/registre-donnees-services-nova-sinjira.json'
+      - '.github/workflows/audit-quatre-chantiers-2026-11-08.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/controle-quatre-chantiers-2026-11-08.mjs'
+      - 'tests/controle-quatre-chantiers-2026-11-08.test.mjs'
+      - 'docs/nova-sondages/reception-sondage-boussole-2026-11-08.json'
+      - 'docs/sinjira/programme-readiness-2026-11-08.json'
+      - 'projets/projet-nova/data/audit-completude-programme-nova-2026-11-05.json'
+      - 'projets/projet-nova/data/registre-donnees-services-nova-sinjira.json'
+
+permissions:
+  contents: read
+
+jobs:
+  controle-bilan:
+    name: Recalculer sans fusionner les métriques hétérogènes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout épinglé sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Contrôle syntaxique Node
+        run: |
+          node --check scripts/controle-quatre-chantiers-2026-11-08.mjs
+          node --check tests/controle-quatre-chantiers-2026-11-08.test.mjs
+      - name: Tests adversariaux en lecture seule
+        run: node --test tests/controle-quatre-chantiers-2026-11-08.test.mjs
+      - name: Afficher l'instantané historique (aucun GO)
+        run: node scripts/controle-quatre-chantiers-2026-11-08.mjs
