@@ -47,7 +47,7 @@ function target(){
     addEventListener(name,callback){events.set(name,callback)},
     removeEventListener(name,callback){if(events.get(name)===callback)events.delete(name)},
     emit(name,event={}){events.get(name)?.(event)},
-    click(){if(!this.disabled)this.clicks++},
+    click(){if(!this.disabled){this.clicks++;this.emit('click',{target:this})}},
     events
   };
 }
