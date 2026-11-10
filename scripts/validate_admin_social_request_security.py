@@ -29,6 +29,13 @@ REQUIRED = {
     'renversement d’appel': "outcome==='reversed'",
     'raison d’appel bornée': 'reason.length<20||reason.length>4000',
     'MFA fermé': "e?.message==='MFA_STATE_UNAVAILABLE'",
+    'référence vérifiée côté Edge': "throw new Error('INVALID_MODERATION_REFERENCE')",
+    'rapport non ouvert interdit': "if(!r||r.status!=='open')throw new Error('REPORT_NOT_OPEN')",
+    'cible vérifiée avant création': "if(!subject)throw new Error('TARGET_USER_NOT_FOUND')",
+    'durée de suspension entière': "typeof days!=='number'||!Number.isInteger(days)||days<1||days>365",
+    'clôture conditionnelle du rapport': ".eq('id',r.id).eq('status','open').select('id').maybeSingle()",
+    'échec d’écriture sans notification': "if(!closed)throw new Error('REPORT_NOT_OPEN')",
+    'erreur de référence sans fuite': "code:'INVALID_MODERATION_INPUT'",
 }
 
 FORBIDDEN = {
@@ -42,6 +49,7 @@ FORBIDDEN = {
     'message erreur notification journalisé': "console.error('[SINJIRA moderation notification]',error.message)",
     'objet erreur global journalisé': "console.error('[admin-social-v20]',e)",
     'message erreur global journalisé': "console.error('[admin-social-v20]',e?.message)",
+    'durée silencieusement ramenée à la limite': 'Math.max(1,Math.min(Number(b.days||7),365))',
 }
 
 
@@ -74,6 +82,23 @@ def validate(path: Path) -> list[str]:
     fallback_log_pos = source.find("return SAFE_LOG_CODES.has(code)?code:'MODERATION_BACKEND_FAILED'")
     if safe_log_pos < 0 or fallback_log_pos < 0:
         errors.append('La journalisation globale doit rester sanitizée par allowlist avec fallback fixe.')
+
+    start = source.find('async function createDecision(')
+    end = source.find('async function listAppeals(', start)
+    if start < 0 or end <= start:
+        errors.append('createDecision introuvable.')
+    else:
+        decision = source[start:end]
+        guard = decision.find("if(!subject)throw new Error('TARGET_USER_NOT_FOUND')")
+        write = decision.find(".from('moderation_decisions').insert(row)")
+        if min(guard, write) < 0 or guard >= write:
+            errors.append('Cible canonique à vérifier AVANT toute insertion de décision.')
+        status_guard = decision.find("if(!r||r.status!=='open')")
+        if status_guard < 0 or status_guard >= write:
+            errors.append('Signalement ouvert à confirmer AVANT écriture de sanction.')
+        duration_guard = decision.find("if(typeof days!=='number'||!Number.isInteger(days)")
+        if duration_guard < 0 or duration_guard >= write:
+            errors.append('Durée entière 1..365 à valider AVANT écriture de suspension.')
 
     if source.count('reversible:true') != 2:
         errors.append('Les deux mesures de modération actives doivent rester explicitement réversibles.')
@@ -110,6 +135,16 @@ def self_test() -> None:
         'source humaine retirée': real.replace("decision_source:'human_admin'", "decision_source:'automated'", 1),
         'réversibilité retirée': real.replace('reversible:true', 'reversible:false', 1),
         'appel retiré': real.replace("if(a==='review_appeal')", "if(a==='review_appeal_disabled')", 1),
+        'cible non vérifiée': real.replace("  if(!subject)throw new Error('TARGET_USER_NOT_FOUND');", "", 1),
+        'statut rapport non vérifié': real.replace("  if(!r||r.status!=='open')throw new Error('REPORT_NOT_OPEN');", "", 1),
+        'durée de sanction non bornée': real.replace("    if(typeof days!=='number'||!Number.isInteger(days)||days<1||days>365)", "    if(false)", 1),
+        'rapport clos sans comparaison': real.replace(".eq('id',r.id).eq('status','open').select('id').maybeSingle()", ".eq('id',r.id).select('id').maybeSingle()", 1),
+        'identifiant admin non contrôlé': real.replace("        throw new Error('INVALID_MODERATION_REFERENCE');", "        return privateJson({ok:true});", 1),
+        'vérification cible déplacée après insertion': real.replace("  if(!subject)throw new Error('TARGET_USER_NOT_FOUND');", "", 1).replace(
+            "  if(error)throw error;\n  if(action==='suspend_social'){",
+            "  if(error)throw error;\n  if(!subject)throw new Error('TARGET_USER_NOT_FOUND');\n  if(action==='suspend_social'){",
+            1,
+        ),
     }
 
     with TemporaryDirectory() as tmp:
