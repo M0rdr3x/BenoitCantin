@@ -38,6 +38,18 @@ select public.fixture_assert_true(
   'public.sinjira_admin_review_appeal_atomic(uuid,uuid,text,text)','EXECUTE'),
  'RPC publique appel : accès réservé au service');
 
+select public.fixture_assert_true(
+  not has_function_privilege('anon',
+    'public.sinjira_admin_appeals_overview(uuid,integer)','EXECUTE')
+  and not has_function_privilege('authenticated',
+    'public.sinjira_admin_appeals_overview(uuid,integer)','EXECUTE')
+  and has_function_privilege('service_role',
+    'public.sinjira_admin_appeals_overview(uuid,integer)','EXECUTE'),
+  'la liste privée des appels doit être réservée au rôle serveur');
+select public.fixture_assert_true(
+  not has_table_privilege('service_role','private.moderation_appeals','SELECT'),
+  'la RPC de consultation ne doit pas ouvrir SELECT aux tables privées');
+
 -- Même si un client authentifié falsifie son JWT SQL, le rôle SQL
 -- authenticated doit être refusé AVANT le code SECURITY DEFINER.
 select set_config('request.jwt.claims','{"role":"service_role"}',false);
@@ -209,6 +221,18 @@ select 'ffffffff-ffff-4fff-ffff-ffffffffffff',d.id,'bbbbbbbb-bbbb-4bbb-bbbb-bbbb
 from private.moderation_decisions d limit 1;
 
 set role service_role;
+select public.fixture_assert_true(
+ (public.sinjira_admin_appeals_overview(
+  'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',300)->>'pending_count')::integer=1,
+ 'le tableau admin retourne le vrai nombre des appels en attente');
+select public.fixture_assert_true(
+ jsonb_array_length(public.sinjira_admin_appeals_overview(
+  'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',300)->'appeals')=1,
+ 'le tableau admin contient la décision de l appel');
+select public.fixture_assert_true(
+ public.sinjira_admin_appeals_overview(
+  'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',300)->'appeals'->0->'decision'->>'action'='suspend_social',
+ 'la décision est jointe en lecture privée et sans accès REST aux tables');
 select public.sinjira_admin_review_appeal_atomic(
  'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
  'ffffffff-ffff-4fff-ffff-ffffffffffff',
@@ -243,6 +267,13 @@ select public.fixture_assert_true(
  (select count(*) from public.user_notifications)=2,
  'une notification initiale et une notification après appel');
 
+
+set role service_role;
+select public.fixture_assert_true(
+ (public.sinjira_admin_appeals_overview(
+  'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',300)->>'pending_count')::integer=0,
+ 'un appel traité ne réapparaît pas dans les affaires en attente');
+reset role;
 
 -- Une seconde suspension sert à vérifier l'atomicité du RENVERSEMENT :
 -- faire échouer la notification DOIT rétablir décision, appel et suspension.
