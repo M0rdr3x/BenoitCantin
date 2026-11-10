@@ -30,10 +30,10 @@ function localDateString(date=new Date()){
   return `${y}-${m}-${d}`;
 }
 function nextDestination(def='/compte/index.html'){
-  if(window.SINJIRA_AUTH_ROUTE?.next)return window.SINJIRA_AUTH_ROUTE.next(def);
-  const value=new URLSearchParams(location.search).get('next');
-  if(!value||!value.startsWith('/')||value.startsWith('//')||value.includes('\\')||/[\u0000-\u001f\u007f]/.test(value))return def;
-  try{const url=new URL(value,location.origin);return url.origin===location.origin?`${url.pathname}${url.search}${url.hash}`:def}catch{return def}
+  // Le garde de redirection partagé est l'autorité. En son absence, aucun
+  // paramètre next de l'URL ne doit devenir une destination de navigation.
+  const trustedNext=window.SINJIRA_AUTH_ROUTE?.next;
+  return typeof trustedNext==='function'?trustedNext(def):def;
 }
 function normalizeGuardianCode(value=''){return String(value).trim().toUpperCase().replace(/\s+/g,'')}
 function isCanada(value=''){return ['canada','ca','can'].includes(String(value).trim().toLowerCase())}
