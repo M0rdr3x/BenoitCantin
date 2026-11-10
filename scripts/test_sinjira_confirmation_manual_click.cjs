@@ -48,6 +48,10 @@ async function scenario(options = {}) {
       async verifyOtp(args) {
         calls.verify.push(args);
         if (options.invalidToken) return { data: null, error: new Error('Jeton expiré') };
+        if (options.emptyVerification) return { data: null, error: null };
+        if (options.unconfirmedVerification) {
+          return { data: { user: { ...fakeUser, email_confirmed_at: null } }, error: null };
+        }
         return { data: { user: fakeUser }, error: null };
       },
       async resend(args) {
@@ -133,6 +137,23 @@ async function main() {
   assert.equal(expired.calls.urls.length, 0);
   assert.ok(expired.calls.statuses.some(x => x.kind === 'error'));
   assertions += 4;
+
+  for (const mode of ['emptyVerification', 'unconfirmedVerification']) {
+    const options = { hash: '#token_hash=inert&type=email', [mode]: true };
+    const uncertain = await scenario(options);
+    await uncertain.confirm.handlers.click();
+    assert.equal(uncertain.calls.verify.length, 1, mode + ': le jeton est vérifié une fois');
+    assert.equal(uncertain.calls.notify, 0, mode + ': Formspree ne doit pas être appelé');
+    assert.equal(uncertain.calls.urls.length, 0, mode + ': fragment conservé avant preuve');
+    assert.equal(uncertain.next.hidden, true, mode + ': lien de succès absent');
+    assert.equal(uncertain.confirm.hidden, false, mode + ': réessai humain possible');
+    assert.equal(uncertain.confirm.disabled, false, mode + ': bouton réactivé');
+    assert.ok(uncertain.calls.statuses.some(x => x.kind === 'error'),
+      mode + ': l’incertitude ne doit pas être affichée comme un succès');
+    assert.ok(!uncertain.calls.statuses.some(x => x.kind === 'success'),
+      mode + ': ne pas fabriquer un succès');
+    assertions += 8;
+  }
 
   const badType = await scenario({ hash: '#token_hash=inert&type=recovery' });
   assert.equal(badType.calls.verify.length, 0);
