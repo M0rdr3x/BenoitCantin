@@ -10,8 +10,14 @@ const resendForm = document.querySelector('[data-confirm-resend-form]');
 const resendStatus = document.querySelector('[data-resend-status]');
 const resendButton = resendForm?.querySelector('button[type="submit"]');
 const fragment = new URLSearchParams(location.hash.replace(/^#/, ''));
-const tokenHash = String(fragment.get('token_hash') || '').trim();
-const tokenType = String(fragment.get('type') || 'email').trim();
+// Un lien Auth attendu comporte exactement une fois chaque paramètre.
+// Les fragments réécrits avec doublon ou paramètre additionnel ne doivent
+ // pas être transmis à verifyOtp, même si URLSearchParams.get en accepte un.
+const hasTokenFields = fragment.has('token_hash') || fragment.has('type');
+const wellFormedFragment = [...fragment.keys()].length === 2 &&
+  fragment.getAll('token_hash').length === 1 && fragment.getAll('type').length === 1;
+const tokenHash = wellFormedFragment ? String(fragment.get('token_hash') || '').trim() : '';
+const tokenType = wellFormedFragment ? String(fragment.get('type') || '').trim() : '';
 
 async function notifyAccountConfirmation() {
   try {
@@ -33,6 +39,10 @@ function showSuccess(user) {
 async function init() {
   if (!isSinjiraBackendConfigured()) {
     setStatus(status, 'Le service de comptes est temporairement indisponible.', 'error');
+    return;
+  }
+  if (hasTokenFields && (!wellFormedFragment || !tokenHash)) {
+    setStatus(status, 'Ce lien de confirmation est incomplet ou ambigu. Demandez un nouveau courriel plutôt que de l’utiliser.', 'error');
     return;
   }
   if (tokenHash) {
