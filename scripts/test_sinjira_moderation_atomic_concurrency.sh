@@ -7,8 +7,8 @@ if [[ "$PGHOST" != "127.0.0.1" || "$PGDATABASE" != "sinjira_test" ]]; then
 fi
 ADMIN="aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa"
 REPORT="dddddddd-dddd-4ddd-dddd-ddddddddddd3"
-FIRST="BEGIN; select set_config('request.jwt.claims','{\"role\":\"service_role\"}',false); set role service_role; select private.sinjira_admin_moderate_atomic('$ADMIN','$REPORT','hide_content','Règles communautaires de sécurité','Première décision humaine sur le signalement concurrent.','standard',null); select pg_sleep(2); COMMIT;"
-SECOND="BEGIN; select set_config('request.jwt.claims','{\"role\":\"service_role\"}',false); set role service_role; select private.sinjira_admin_moderate_atomic('$ADMIN','$REPORT','hide_content','Règles communautaires de sécurité','Deuxième décision qui doit être rejetée sous verrou concurrent.','standard',null); COMMIT;"
+FIRST="BEGIN; select set_config('request.jwt.claims','{\"role\":\"service_role\"}',false); set role service_role; select public.sinjira_admin_moderate_atomic('$ADMIN','$REPORT','hide_content','Règles communautaires de sécurité','Première décision humaine sur le signalement concurrent.','standard',null); select pg_sleep(2); COMMIT;"
+SECOND="BEGIN; select set_config('request.jwt.claims','{\"role\":\"service_role\"}',false); set role service_role; select public.sinjira_admin_moderate_atomic('$ADMIN','$REPORT','hide_content','Règles communautaires de sécurité','Deuxième décision qui doit être rejetée sous verrou concurrent.','standard',null); COMMIT;"
 first_log="$(mktemp)"
 second_log="$(mktemp)"
 trap 'rm -f "$first_log" "$second_log"' EXIT
