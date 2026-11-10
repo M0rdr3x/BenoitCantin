@@ -94,6 +94,10 @@ jobs:
         run: node scripts/test_nova_civic_integrity.cjs
       - name: Tester les 16 dimensions et 260 profils de parité de calcul
         run: node --test projets/projet-nova/tests/nova-civic-scoring.test.mjs
+      - name: Vérifier les 140 relectures IA et refuser la fausse attestation humaine
+        run: |
+          node --test projets/projet-nova/tests/nova-compass-review-gate.test.mjs
+          node --test projets/projet-nova/tests/nova-compass-ui-review.test.mjs
       - name: Tester le calcul et la carte de la boussole
         run: node scripts/test_nova_boussole_runtime.cjs
       - name: Tester le repli réseau de la boussole et les 64 propositions / 16 axes
