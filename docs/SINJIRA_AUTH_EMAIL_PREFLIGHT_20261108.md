@@ -57,7 +57,14 @@ et doit être revérifié au moment du sign-off.
   [le prévol public en lecture seule](https://github.com/M0rdr3x/BenoitCantin/actions/workflows/sinjira-public-release-parity.yml)
   avec `PUBLIC-GET-ONLY`. Les quatre scripts JS publics ont déjà été comparés
   sans divergence à GitHub `main` le 9 novembre ; ce workflow permet de
-  recontrôler la version publiée après un déploiement. Il ne valide pas SMTP.
+  recontrôler la version publiée après un déploiement. À partir de la PR de
+  contrôle TOTP, un **cinquième script** (`assets/js/v24-security.js`) est
+  comparé octet par octet, pour déceler une ancienne version de la vérification
+  MFA. Le contrôle porte alors sur **5 JS + 3 pages = 8 GET anonymes**. Le
+  script privé de la page sécurité ne nécessite aucune connexion pour ce
+  contrôle de parité, et la page HTML protégée n'est pas consultée.
+  **Cette parité ne prouve ni la réception SMTP, ni un facteur TOTP réellement
+  vérifié, ni une session AAL2.**
 
 **Décision de fin :** ne déclarer le correctif **100 % terminé** que si les
 jalons A, B et C ont des résultats datés et vérifiables, sans publier les
