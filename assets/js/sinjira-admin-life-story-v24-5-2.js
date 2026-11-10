@@ -13,6 +13,26 @@ const caseCleanupBox = document.querySelector('[data-legacy-case-cleanup]');
 const deliveryOnce = document.querySelector('[data-legacy-delivery-once]');
 const state = { user: null, requests: [], detail: null };
 const fmt = new Intl.DateTimeFormat('fr-CA', { dateStyle: 'medium', timeStyle: 'short' });
+const PRIVATE_DELIVERY_PAGE = 'https://www.benoitcantin.com/histoire-de-vie/remise.html';
+
+function safeAdminUuid(value) {
+  return typeof value === 'string' && /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(value) ? value : '';
+}
+function safePrivateDeliveryUrl(value) {
+  // Le serveur life-story-export n'émet que cette page, suivie d'un jeton
+  // aléatoire hexadécimal de 256 bits dans le fragment (jamais la query).
+  if (typeof value !== 'string' || value.length > 512 ||
+      /[\u0000-\u0020\u007f\\]/.test(value)) return '';
+  try {
+    const target = new URL(value);
+    if (target.protocol !== 'https:' || target.username || target.password ||
+        target.origin !== 'https://www.benoitcantin.com' ||
+        target.pathname !== '/histoire-de-vie/remise.html' ||
+        target.search !== '' || !/^#[a-f0-9]{64}$/.test(target.hash) ||
+        target.href !== value) return '';
+    return target.href;
+  } catch { return ''; }
+}
 
 function showStatus(message, kind = '') {
   if (!statusNode) return;
@@ -69,7 +89,7 @@ function renderRequests() {
     requestList.innerHTML = '<p>Aucun signalement ou dossier posthume actif.</p>';
     return;
   }
-  requestList.innerHTML = state.requests.map((row) => {
+  requestList.innerHTML = state.requests.filter(row => safeAdminUuid(row.id) && (!row.case_id || safeAdminUuid(row.case_id))).map((row) => {
     const caseState = row.case_status ? statusLabel(row.case_status) : statusLabel(row.status);
     const hold = row.hold_until ? ` · délai jusqu’au ${escapeHtml(dt(row.hold_until))}` : '';
     const contest = row.has_open_contest ? ' · contestation ouverte' : '';
@@ -84,6 +104,9 @@ async function verifyRequest(button) {
   const box = button.closest('[data-verify-box]');
   const date = box?.querySelector('[data-verify-date]')?.value || '';
   const basis = box?.querySelector('[data-verify-basis]')?.value || '';
+  if (!safeAdminUuid(requestId) || !['official_record','funeral_home','family_document','other_verified'].includes(basis)) {
+    showStatus('Référence ou type de vérification non valide.', 'error'); return;
+  }
   if (!date || !basis) { showStatus('Indiquez la date et la base de vérification.', 'error'); return; }
   if (!confirm('Confirmer cette première vérification humaine ? Un délai incompressible de 30 jours commencera.')) return;
   button.disabled = true;
@@ -97,6 +120,7 @@ async function verifyRequest(button) {
 }
 
 async function openCase(caseId) {
+  if (!safeAdminUuid(caseId)) throw new Error('INVALID_ADMIN_REFERENCE');
   state.detail = await rpc('admin_life_story_case_detail', { p_case_id: caseId });
   renderCase();
   if (caseSection) { caseSection.hidden = false; caseSection.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
@@ -104,7 +128,7 @@ async function openCase(caseId) {
 function renderCase() {
   const detail = state.detail || {};
   const c = detail.case || {};
-  if (!c.id) return;
+  if (!safeAdminUuid(c.id)) { if (caseActions) caseActions.innerHTML = ''; return; }
   const holdPassed = c.hold_until && new Date(c.hold_until).getTime() <= Date.now();
   if (caseSummary) caseSummary.innerHTML = `<span class="eyebrow">${escapeHtml(statusLabel(c.status))}</span><h3>Dossier posthume</h3><p>Date du décès : <strong>${escapeHtml(c.date_of_death || '—')}</strong></p><p>Base : ${escapeHtml(c.verification_basis || '—')} · première validation ${escapeHtml(dt(c.first_verified_at))}</p><p>Délai de sécurité : ${escapeHtml(dt(c.hold_until))}${holdPassed ? ' · écoulé' : ' · en cours'}</p><p>Deuxième validation : ${escapeHtml(dt(c.second_confirmed_at))}</p>`;
   renderCaseActions(c, holdPassed);
@@ -114,6 +138,7 @@ function renderCase() {
 }
 function renderCaseActions(c, holdPassed) {
   if (!caseActions) return;
+  if (!safeAdminUuid(c.id)) { caseActions.innerHTML = ''; return; }
   const actions = [];
   if (c.status === 'verified_hold') {
     actions.push(`<button class="btn btn-primary" type="button" data-confirm-case="${c.id}" ${holdPassed ? '' : 'disabled'}>Deuxième validation humaine</button>`);
@@ -127,11 +152,11 @@ function renderContests(contests, c) {
   if (!contests.length) { contestsBox.innerHTML = '<p>Aucune contestation.</p>'; return; }
   contestsBox.innerHTML = contests.map((x) => `<article class="life-story-item"><strong>${escapeHtml(statusLabel(x.status))}</strong><p>${escapeHtml(x.reason || '')}</p><small>${escapeHtml(dt(x.submitted_at))}${x.resolution_note ? ` · ${escapeHtml(x.resolution_note)}` : ''}</small>${x.status === 'open' && c.status === 'contested' ? `<div class="life-story-actions"><button class="btn btn-primary" type="button" data-resolve-contest="upheld">Confirmer que la contestation est fondée</button><button class="btn btn-secondary" type="button" data-resolve-contest="dismissed">Rejeter la contestation après vérification</button></div>` : ''}</article>`).join('');
 }
-function exportFor(versionId, exports) { return exports.find((e) => e.version_id === versionId); }
+function exportFor(versionId, exports) { return exports.find((e) => e.version_id === versionId && safeAdminUuid(e.id)); }
 function renderVersions(versions, exports, c) {
   if (!versionsBox) return;
   if (!versions.length) { versionsBox.innerHTML = '<p>Aucune version Histoire de vie.</p>'; return; }
-  versionsBox.innerHTML = versions.map((v) => {
+  versionsBox.innerHTML = versions.filter(v => safeAdminUuid(v.id)).map((v) => {
     const exp = exportFor(v.id, exports);
     const eligible = c.status === 'ready_for_export' && v.status === 'ready' && Number(v.recipient_count || 0) > 0 && Number(v.authorized_entry_count || 0) > 0;
     let actions = '';
@@ -145,7 +170,8 @@ function renderVersions(versions, exports, c) {
 }
 function renderCaseCleanup(tasks) {
   if (!caseCleanupBox) return;
-  caseCleanupBox.innerHTML = tasks.length ? tasks.map(cleanupCard).join('') : '<p>Aucune tâche de nettoyage pour ce dossier.</p>';
+  const valid = tasks.filter(t => safeAdminUuid(t.id));
+  caseCleanupBox.innerHTML = valid.length ? valid.map(cleanupCard).join('') : '<p>Aucune tâche de nettoyage pour ce dossier.</p>';
 }
 function cleanupCard(t) {
   const due = t.due_after && new Date(t.due_after).getTime() <= Date.now();
@@ -185,26 +211,36 @@ async function prepareExport(versionId) {
   return exportId;
 }
 async function exportAction(action, exportId) {
+  if (!safeAdminUuid(exportId) || !['generate','create_delivery_links','revoke','purge'].includes(action)) throw new Error('INVALID_EXPORT_ACTION');
   const labels = { generate: 'Générer le PDF privé ?', create_delivery_links: 'Créer de nouveaux liens de remise ? Les anciens liens seront invalidés.', revoke: 'Révoquer cet export et ses liens ?', purge: 'Purger définitivement le PDF arrivé à échéance ?' };
   if (!confirm(labels[action] || 'Confirmer cette action ?')) return;
   const { data, error } = await s.functions.invoke('life-story-export', { body: { action, export_id: exportId } });
   if (error || !data?.ok) throw new Error(data?.code || data?.error || error?.message || 'EXPORT_ACTION_FAILED');
-  if (action === 'create_delivery_links') renderDeliveryLinks(data.links || []);
+  if (action === 'create_delivery_links' && !renderDeliveryLinks(data.links || [])) return;
   showStatus(action === 'generate' ? 'PDF généré dans le stockage privé.' : action === 'create_delivery_links' ? 'Liens créés. Ils sont affichés une seule fois ci-dessous.' : action === 'revoke' ? 'Export et liens révoqués.' : 'PDF purgé.', 'success');
   const c = state.detail?.case; if (c?.id) await openCase(c.id);
 }
 function renderDeliveryLinks(links) {
-  if (!deliveryOnce) return;
+  if (!deliveryOnce) return false;
+  // Aucun lien n'est affiché si UNE destination diffère du contrat Edge.
+  if (!Array.isArray(links) || !links.length || links.length > 100 ||
+      !links.every(item => item && safePrivateDeliveryUrl(item.download_url))) {
+    deliveryOnce.hidden = true;
+    deliveryOnce.innerHTML = '';
+    showStatus('Les liens privés renvoyés ne respectent pas le format sécurisé. Aucune adresse ne peut être copiée.', 'error');
+    return false;
+  }
   deliveryOnce.hidden = false;
   deliveryOnce.innerHTML = '<strong>Copiez maintenant ces liens de remise. Aucun courriel n’est envoyé automatiquement par SINJIRA.</strong>';
   for (const item of links) {
     const row = document.createElement('div'); row.className = 'life-story-item';
     const label = document.createElement('p'); label.textContent = `${item.recipient_label || 'Destinataire'}${item.recipient_email ? ` · ${item.recipient_email}` : ''} · expire ${dt(item.expires_at)}`;
-    const input = document.createElement('input'); input.readOnly = true; input.value = String(item.download_url || ''); input.setAttribute('aria-label', `Lien de remise pour ${item.recipient_label || 'destinataire'}`);
+    const input = document.createElement('input'); input.readOnly = true; input.value = safePrivateDeliveryUrl(item.download_url); input.setAttribute('aria-label', `Lien de remise pour ${item.recipient_label || 'destinataire'}`);
     const copy = document.createElement('button'); copy.type = 'button'; copy.className = 'btn btn-secondary'; copy.textContent = 'Copier le lien';
     copy.addEventListener('click', async () => { try { await navigator.clipboard.writeText(input.value); copy.textContent = 'Copié'; } catch { input.select(); } });
     row.append(label, input, copy); deliveryOnce.append(row);
   }
+  return true;
 }
 async function completeCase(caseId) {
   if (!confirm('Clore ce dossier ? Toutes les versions ayant des destinataires doivent avoir été traitées.')) return;
@@ -223,12 +259,23 @@ async function completeCleanup(taskId, taskStatus) {
 async function loadCleanup() {
   const data = await rpc('admin_life_story_cleanup_due', { p_limit: 100 });
   const rows = Array.isArray(data) ? data : [];
-  if (cleanupList) cleanupList.innerHTML = rows.length ? rows.map((t) => `<article class="life-story-item"><strong>${escapeHtml(t.subject_display_name || 'Compte SINJIRA')}</strong><p>${escapeHtml(t.task_type || '')} · échéance ${escapeHtml(dt(t.due_after))}</p><div class="life-story-actions"><button class="btn btn-primary" type="button" data-cleanup-task="${t.id}" data-cleanup-status="completed">Marquer la revue complétée</button><button class="btn btn-secondary" type="button" data-cleanup-task="${t.id}" data-cleanup-status="skipped">Ignorer</button></div></article>`).join('') : '<p>Aucune tâche arrivée à échéance.</p>';
+  const valid = rows.filter(t => safeAdminUuid(t.id));
+  if (cleanupList) cleanupList.innerHTML = valid.length ? valid.map((t) => `<article class="life-story-item"><strong>${escapeHtml(t.subject_display_name || 'Compte SINJIRA')}</strong><p>${escapeHtml(t.task_type || '')} · échéance ${escapeHtml(dt(t.due_after))}</p><div class="life-story-actions"><button class="btn btn-primary" type="button" data-cleanup-task="${t.id}" data-cleanup-status="completed">Marquer la revue complétée</button><button class="btn btn-secondary" type="button" data-cleanup-task="${t.id}" data-cleanup-status="skipped">Ignorer</button></div></article>`).join('') : '<p>Aucune tâche arrivée à échéance.</p>';
 }
 
 document.addEventListener('click', async (event) => {
   const button = event.target.closest('button'); if (!button) return;
   try {
+    for (const key of ['verifyRequest','openCase','confirmCase','closeCase','prepareExport','completeCase','cleanupTask']) {
+      if (Object.hasOwn(button.dataset,key) && !safeAdminUuid(button.dataset[key])) throw new Error('INVALID_ADMIN_REFERENCE');
+    }
+    if (Object.hasOwn(button.dataset,'exportAction') &&
+        (!['generate','create_delivery_links','revoke','purge'].includes(button.dataset.exportAction) ||
+         !safeAdminUuid(button.dataset.exportId))) throw new Error('INVALID_EXPORT_ACTION');
+    if (Object.hasOwn(button.dataset,'resolveContest') &&
+        !['upheld','dismissed'].includes(button.dataset.resolveContest)) throw new Error('INVALID_CONTEST_ACTION');
+    if (Object.hasOwn(button.dataset,'cleanupTask') &&
+        !['completed','skipped'].includes(button.dataset.cleanupStatus)) throw new Error('INVALID_CLEANUP_ACTION');
     if (button.dataset.verifyRequest) await verifyRequest(button);
     else if (button.dataset.openCase) await openCase(button.dataset.openCase);
     else if (button.dataset.confirmCase) await confirmCase(button.dataset.confirmCase);
