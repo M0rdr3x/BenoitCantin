@@ -1,0 +1,76 @@
+{
+  "schema": "nova-arbitrage-fiscal-normatif-v1",
+  "reference_date": "2026-11-10",
+  "status": "PROPOSITION_NON_ARBITREE",
+  "scope": "Contradiction documentaire historique SCQ/Nova; aucune loi ni décision gouvernementale",
+  "historical_candidate": {
+    "rule": "TAXE_UNIQUE",
+    "article_level_concordance_verified": false,
+    "formally_adopted": false
+  },
+  "recent_candidate": {
+    "rule": "REVENU_ET_MECANISME_ANTI_PARADIS_FISCAUX",
+    "anti_haven_legal_classification": null,
+    "formally_adopted": false
+  },
+  "choices": [
+    {
+      "id": "TAXE_UNIQUE",
+      "adopted": false
+    },
+    {
+      "id": "REVENU_PLUS_MECANISME_DISTINCT",
+      "adopted": false
+    },
+    {
+      "id": "REVENU_AVEC_ANTI_EVITEMENT_INTEGRE",
+      "adopted": false
+    }
+  ],
+  "regimes": [
+    {
+      "id": "QUEBEC_DANS_CANADA",
+      "legal_competence_review": null,
+      "independent_budget_review": null,
+      "transition_federal_municipal_coverage": null
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN_HYPOTHETIQUE",
+      "legal_competence_review": null,
+      "independent_budget_review": null,
+      "transition_federal_municipal_coverage": null
+    }
+  ],
+  "projected_finances": {
+    "years": 10,
+    "trajectories_per_regime": 3,
+    "total_exercises_expected": 60,
+    "source_model": "https://github.com/M0rdr3x/BenoitCantin/pull/673",
+    "fully_audited_exercises": 0,
+    "municipal_2024_2025_import_certified": false,
+    "anti_haven_receipt_increment_certified": null,
+    "full_funding_demonstrated": false
+  },
+  "audit_requirements": {
+    "primary_normative_articles_verified": false,
+    "independent_legal_opinions_complete": false,
+    "independent_fiscal_opinions_complete": false,
+    "distributional_review_complete": false,
+    "workers_and_services_continuity_verified": false,
+    "public_consultation_completed": false
+  },
+  "programme_reference": {
+    "audit_date": "2026-11-05",
+    "progress_points": 47,
+    "finance_points": 3,
+    "finance_maximum": 16,
+    "score_increment_authorized": 0
+  },
+  "decision": {
+    "approved": false,
+    "selected_option": null,
+    "competent_body": null,
+    "adoption_date": null,
+    "certified_finish_date": null
+  }
+}
