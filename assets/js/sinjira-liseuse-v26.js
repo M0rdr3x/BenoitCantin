@@ -149,7 +149,7 @@ function syncProgress(){
   if(!state.cloudRevisionReady||state.cloudConflict){
     state.cloudDirty=true;
     positionNotice(state.cloudConflict
-      ?'Conflit entre appareils : votre position locale est conservée. Rechargez pour comparer les sauvegardes.','warning'
+      ?'Conflit entre appareils : votre position locale est conservée. Rechargez pour comparer les sauvegardes.'
       :'Synchronisation protégée en attente : votre page reste sur cet appareil.','warning');
     return Promise.resolve(false);
   }
