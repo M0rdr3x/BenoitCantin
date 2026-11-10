@@ -10,13 +10,13 @@ async function syncCanonicalPage(user,novel,pageNumber){
   const pageValue=Math.max(1,Number(pageNumber)||1);
   const progress=Math.max(0,Math.min(100,Math.round((pageValue/83)*100)));
   const {data:current,error:readError}=await s.from('sinjira_reader_library')
-    .select('revision').eq('user_id',user.id).eq('novel_id',novel.id).maybeSingle();
+    .select('revision,scroll_ratio').eq('user_id',user.id).eq('novel_id',novel.id).maybeSingle();
   if(readError)return false; // V51 absente : ne pas tenter un UPSERT aveugle.
   const expected=current?Number(current.revision):null;
   if(current&&(!Number.isSafeInteger(expected)||expected<0))return false;
   const {data,error}=await s.rpc('sinjira_reader_save_progress_cas',{
     p_novel_id:novel.id,p_expected_revision:expected,
-    p_last_page:pageValue,p_progress_percent:progress,p_scroll_ratio:null
+    p_last_page:pageValue,p_progress_percent:progress,p_scroll_ratio:current?.scroll_ratio??null
   }).single();
   // Conflit (autre appareil) ou RPC absente : ne jamais écraser une ligne.
   return !error&&data?.result_status==='saved';
