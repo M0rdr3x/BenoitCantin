@@ -12,7 +12,7 @@ const resendButton = resendForm?.querySelector('button[type="submit"]');
 const fragment = new URLSearchParams(location.hash.replace(/^#/, ''));
 // Un lien Auth attendu comporte exactement une fois chaque paramètre.
 // Les fragments réécrits avec doublon ou paramètre additionnel ne doivent
- // pas être transmis à verifyOtp, même si URLSearchParams.get en accepte un.
+// pas être transmis à verifyOtp, même si URLSearchParams.get en accepte un.
 const hasTokenFields = fragment.has('token_hash') || fragment.has('type');
 const wellFormedFragment = [...fragment.keys()].length === 2 &&
   fragment.getAll('token_hash').length === 1 && fragment.getAll('type').length === 1;
