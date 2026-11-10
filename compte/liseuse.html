@@ -9,7 +9,7 @@
 <title>Liseuse SINJIRA — La Cendre du Jugement</title>
 <link rel="icon" type="image/png" href="/assets/icons/sinjira-favicon.png">
 <link rel="stylesheet" href="/assets/css/site.css?v=24.4">
-<link rel="stylesheet" href="/assets/css/sinjira-liseuse-v26.css?v=31.11.07.1">
+<link rel="stylesheet" href="/assets/css/sinjira-liseuse-v26.css?v=52.11.10.1">
 </head>
 <body class="sinjira-liseuse account-page" data-read-theme="sepia">
 <a class="skip-link" href="#reader-viewer">Aller au livre</a>
@@ -121,9 +121,15 @@
     </div>
     <div class="reader-progress" aria-hidden="true"><span id="reader-bar"></span></div>
     <p class="reader-reading-stats" id="reader-reading-stats" role="status" aria-live="polite">Progression en cours de chargement…</p>
-    <div class="reader-viewer" id="reader-viewer" tabindex="0" aria-label="Texte du roman ou page PDF">
+    <div class="reader-viewer" id="reader-viewer" tabindex="0" aria-label="Texte du roman ou page PDF" aria-describedby="reader-swipe-help">
       <canvas id="reader-canvas" role="img" aria-label="Page du roman — activer le mode texte pour une lecture accessible"></canvas>
       <article id="reader-text" class="reader-text" lang="fr-CA" aria-label="Texte adaptable du roman, sélectionnable et lisible à voix haute"></article>
+    </div>
+    <p id="reader-swipe-help" class="reader-swipe-help">Sur téléphone ou tablette, glissez le doigt vers la gauche dans le livre pour passer à la page suivante, ou vers la droite pour revenir à la page précédente. Faites défiler verticalement pour lire le reste de la page. Les flèches et les commandes clavier restent disponibles.</p>
+    <div class="reader-touch-nav" role="group" aria-label="Tourner les pages sur écran tactile">
+      <button id="reader-touch-prev" type="button" aria-label="Revenir à la page précédente">← Précédente</button>
+      <span class="reader-touch-nav-hint" aria-hidden="true">Glissez pour tourner</span>
+      <button id="reader-touch-next" type="button" aria-label="Passer à la page suivante">Suivante →</button>
     </div>
     <p class="reader-footer">Lisez le texte directement ici, sans ouvrir de document externe, et ajustez sa présentation ou écoutez-le. Votre page et l’endroit exact où vous étiez dans cette page sont mémorisés sur cet appareil. Pour le roman intégral, la dernière page et le défilement précis sont également synchronisés avec votre compte lorsque le serveur le permet. Cliquez sur « Enregistrer ma position » pour confirmer une sauvegarde. Utilisez les flèches du clavier pour tourner les pages.</p>
   </div>
@@ -131,5 +137,6 @@
 </main>
 <script defer src="/assets/js/site.js?v=24.4.100"></script>
 <script type="module" src="/assets/js/sinjira-liseuse-v26.js?v=34.11.07.1"></script>
+<script type="module" src="/assets/js/sinjira-liseuse-touch-v52.mjs?v=52.11.10.1"></script>
 </body>
 </html>
