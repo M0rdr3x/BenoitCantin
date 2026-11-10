@@ -1,0 +1,51 @@
+name: Sécurité SINJIRA — révocation après récupération
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-recovery-v24-4-99.js'
+      - 'compte/reinitialiser-mot-de-passe.html'
+      - 'scripts/test_sinjira_recovery_revocation_fail_closed.cjs'
+      - 'scripts/validate_security_v24_4_99.py'
+      - '.github/workflows/sinjira-recovery-device-revocation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-recovery-v24-4-99.js'
+      - 'compte/reinitialiser-mot-de-passe.html'
+      - 'scripts/test_sinjira_recovery_revocation_fail_closed.cjs'
+      - 'scripts/validate_security_v24_4_99.py'
+      - '.github/workflows/sinjira-recovery-device-revocation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recovery-revocation:
+    name: Confirmer la révocation totale et interdire les clés prévisibles
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Node.js épinglé
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+          package-manager-cache: false
+      - name: Vérifier la syntaxe du vrai module et du banc d'essai
+        run: |
+          node --check assets/js/sinjira-recovery-v24-4-99.js
+          node --check scripts/test_sinjira_recovery_revocation_fail_closed.cjs
+      - name: Prouver la révocation complète et le traitement des erreurs Auth
+        run: node scripts/test_sinjira_recovery_revocation_fail_closed.cjs
+      - name: Contrôler les engagements de sécurité récupération V24
+        run: python3 scripts/validate_security_v24_4_99.py
+      - name: Confirmer la fermeture globale après changement du mot de passe
+        run: python3 scripts/validate_session_security_v24_4_68.py
+      - name: Vérifier le contrat Auth du compte
+        run: python3 scripts/validate_auth.py
