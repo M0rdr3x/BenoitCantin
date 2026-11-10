@@ -7,7 +7,17 @@ const fs=require('node:fs');
 const path=require('node:path');
 const vm=require('node:vm');
 const root=path.resolve(__dirname,'..');
-const src=fs.readFileSync(path.join(root,'supabase/functions/admin-social-v20/index.ts'),'utf8');
+const src=fs.readFileSync(path.join(root,'supabase/candidate-edge/admin-social-v20/index.ts'),'utf8');
+// Aucun runtime actif ne doit appeler une RPC non encore migrée en production.
+const active=fs.readFileSync(path.join(root,'supabase/functions/admin-social-v20/index.ts'),'utf8');
+for(const name of [
+  'sinjira_admin_moderate_atomic',
+  'sinjira_admin_review_appeal_atomic',
+  'sinjira_admin_appeals_overview'
+]){
+  assert.ok(!active.includes("s.rpc('"+name+"'"),
+    'RPC candidate dangereusement appelée par la fonction Edge active : '+name);
+}
 const start=src.indexOf('function policyAndStatement(');
 const end=src.indexOf('Deno.serve(async(req)=>{',start);
 assert.ok(start>=0&&end>start,'Fonctions serveur de modération atomique absentes');
