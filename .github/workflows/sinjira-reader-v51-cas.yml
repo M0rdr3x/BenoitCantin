@@ -8,6 +8,7 @@ on:
       - 'assets/js/sinjira-liseuse-v26.js'
       - 'assets/js/sinjira-reader-progress-v24-4-61.js'
       - 'tests/security/sql/test_sinjira_reader_v51_cas.sql'
+      - 'scripts/test_sinjira_reader_v51_concurrent_local.sh'
       - 'tests/security/test_sinjira_reader_v51_cas_contract.py'
       - 'docs/SINJIRA_READER_V51_CAS_RELEASE_GATE.md'
       - '.github/workflows/sinjira-reader-v51-cas.yml'
@@ -18,6 +19,7 @@ on:
       - 'assets/js/sinjira-liseuse-v26.js'
       - 'assets/js/sinjira-reader-progress-v24-4-61.js'
       - 'tests/security/sql/test_sinjira_reader_v51_cas.sql'
+      - 'scripts/test_sinjira_reader_v51_concurrent_local.sh'
       - 'tests/security/test_sinjira_reader_v51_cas_contract.py'
       - 'docs/SINJIRA_READER_V51_CAS_RELEASE_GATE.md'
       - '.github/workflows/sinjira-reader-v51-cas.yml'
@@ -70,5 +72,9 @@ jobs:
           PGCONNECT_TIMEOUT: '10'
         run: |
           psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v51_lab -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v51_cas.sql
+      - name: Tester deux connexions PostgreSQL vraiment concurrentes du meme compte fictif
+        run: |
+          bash -n scripts/test_sinjira_reader_v51_concurrent_local.sh
+          bash scripts/test_sinjira_reader_v51_concurrent_local.sh
       - name: Validation limitée — NO_GO production sans approbation humaine
         run: echo "V51-LAB-PASS-NO_GO — test SQL local uniquement, migration non appliquée à Supabase."
