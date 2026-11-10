@@ -121,8 +121,8 @@ async function main(){
     lacks(html,bad,'Aucune insertion brute des attributs '+selector);
   }
   const entriesHtml=privateNodes.get('[data-life-story-entries]').innerHTML;
-  yes(entriesHtml.includes('data-entry-authorize="'+id+'"'),
-    'Fixture autorisée : le garde doit garder les actions des souvenirs légitimes' );
+  yes(entriesHtml.includes('data-entry-private="'+id+'"'),
+    'Souvenir déjà autorisé : l’action de retrait vers le privé reste disponible' );
   const versionHtml=privateNodes.get('[data-life-story-versions]').innerHTML;
   yes(versionHtml.includes('data-version-form="'+version+'"'),'Formulaire d’une version légitime conservé');
 
