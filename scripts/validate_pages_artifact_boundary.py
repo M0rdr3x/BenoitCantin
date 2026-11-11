@@ -78,7 +78,7 @@ def path_of_action(source: str, index: int) -> str | None:
 
 def active_lines(source: str) -> str:
     """Ignore les commentaires YAML avant toute vérification de verrou."""
-    return "\\n".join(line for line in source.splitlines()
+    return "\n".join(line for line in source.splitlines()
                      if line.strip() and not line.lstrip().startswith("#"))
 
 
@@ -86,14 +86,14 @@ def manual_events(source: str) -> list[str] | None:
     """N'accepter que le déclencheur manuel explicite au niveau racine."""
     lines = source.splitlines()
     starts = [i for i, line in enumerate(lines)
-              if re.fullmatch(r"on:\\s*(?:#.*)?", line)]
+              if re.fullmatch(r"on:\s*(?:#.*)?", line)]
     if len(starts) != 1:
         return None
     events: list[str] = []
     for line in lines[starts[0] + 1:]:
         if line.strip() and not line[0].isspace() and not line.lstrip().startswith("#"):
             break
-        match = re.fullmatch(r"  ([a-z][a-z0-9_]*):\\s*(?:#.*)?", line)
+        match = re.fullmatch(r"  ([a-z][a-z0-9_]*):\s*(?:#.*)?", line)
         if match:
             events.append(match.group(1))
     return events
@@ -102,14 +102,14 @@ def manual_events(source: str) -> list[str] | None:
 def manual_job_gate(source: str, name: str) -> bool:
     """Chaque job de publication doit être verrouillé, pas seulement un autre job."""
     marker = f"  {name}:"
-    index = source.find("\\n" + marker + "\\n")
+    index = source.find("\n" + marker + "\n")
     if index == -1:
         return False
     rest = source[index + len(marker) + 2:]
-    next_job = re.search(r"(?m)^  [a-zA-Z][a-zA-Z0-9_-]*:\\s*$", rest)
+    next_job = re.search(r"(?m)^  [a-zA-Z][a-zA-Z0-9_-]*:\s*$", rest)
     if next_job:
         rest = rest[:next_job.start()]
-    match = re.search(r"(?m)^    if:\\s*(.+)$", rest)
+    match = re.search(r"(?m)^    if:\s*(.+)$", rest)
     if not match:
         return False
     expression = match.group(1)
