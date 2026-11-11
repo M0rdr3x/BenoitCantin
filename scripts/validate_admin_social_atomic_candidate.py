@@ -36,6 +36,7 @@ REQUIRED = {
     "refus des erreurs SQL imprévues": "throw new Error('ATOMIC_MODERATION_FAILED')",
     "aucun détail de PostgREST dans la réponse": "if(error)atomicFailure(error)",
     "rapport clos refusé": "if(!r||r.status!=='open')throw new Error('REPORT_NOT_OPEN')",
+    "snapshot Rencontres non authentifié refusé": "if(r.snapshot?.source==='dating')throw new Error('UNVERIFIED_DATING_PROVENANCE')",
     "durée entière strictement bornée": "typeof days!=='number'||!Number.isInteger(days)||days<1||days>365",
     "urgence strictement bornée": "if(!['standard','urgent_harm','illegal_content'].includes(urgency))",
     "révision humaine contrôlée": "reason.length<20||reason.length>4000",
@@ -186,6 +187,8 @@ def self_test() -> None:
             "await s.from('moderation_decisions').insert(", 1),
         "rapport fermé autorisé": original.replace(
             "if(!r||r.status!=='open')throw new Error('REPORT_NOT_OPEN');", "", 1),
+        "sanction Rencontres par snapshot forgé": original.replace(
+            "if(r.snapshot?.source==='dating')throw new Error('UNVERIFIED_DATING_PROVENANCE');", "", 1),
         "durée laxiste": original.replace(
             "typeof days!=='number'||!Number.isInteger(days)||days<1||days>365",
             "typeof days!=='number'", 1),
