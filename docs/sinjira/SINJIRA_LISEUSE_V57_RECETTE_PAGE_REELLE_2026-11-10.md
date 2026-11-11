@@ -26,7 +26,19 @@ La V57 ajoute un parcours Playwright qui ouvre **la page HTML réelle du dépôt
 6. Basculer en PDF fidèle et confirmer qu'un geste ne saute **qu'une seule** page source; revenir ensuite au texte adaptable.
 7. Échouer en présence d'erreur JS de page ou de communication réseau externe inattendue.
 
-Le test s'ajoute aux **53 tests Node V52–V56** et aux parcours de test synthétiques V54.
+Le test s'ajoute aux **56 tests Node V52–V57** et aux parcours de test synthétiques V54.
+
+## Défaut d'intégration identifié par la recette réelle
+
+La première exécution de la V57 a mis en évidence un vrai défaut que la fixture V54 ne couvrait pas : lors d'un balayage sur une page avec de longs paragraphes, le module V53 avançait correctement d'un écran **mais** `sinjira-liseuse-companion-v28.mjs` disposait encore de son ancien gestionnaire `touchend`, qui tournait systématiquement une **page source PDF**. Le lecteur sautait ainsi du texte malgré la V53.
+
+La pile V57 propose le correctif suivant :
+- `sinjira-liseuse-touch-v52.mjs` déclare `data-reader-touch-managed="v52"` sur la zone de lecture, puis le retire au démontage;
+- le compagnon V28 ne tourne plus le PDF lorsque V52 détient la gestion tactile, lorsque la présentation est `screens`, ou lorsqu'un événement a déjà été annulé; il conserve seulement un repli pour une ancienne page n'ayant pas chargé V52;
+- la V52 n'interprète pas les gestes `screens`, laissant V53 agir seule en lecture paginée;
+- les contrôles Node supplémentaires et le scénario V57 sur **l'HTML réel** doivent vérifier qu'un balayage ne change pas le numéro PDF tant qu'il reste du texte à lire.
+
+Ce défaut n'est **pas** une preuve qu'il s'est produit chez un utilisateur en production : les versions V52–V56 n'étaient pas encore déployées. L'échec des premières CI V57 est conservé dans l'historique pour démontrer le défaut et son correctif.
 
 ## Limites
 
