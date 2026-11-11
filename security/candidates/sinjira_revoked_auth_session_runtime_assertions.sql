@@ -3,7 +3,7 @@
 -- Les UUID et domaines sont exclusivement fictifs.
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET LOCAL search_path = public, extensions;
-SELECT plan(20);
+SELECT plan(44);
 
 SELECT has_function(
   'private','security_require_current_auth_session',ARRAY['uuid'],
@@ -18,6 +18,79 @@ SELECT ok(
   NOT has_function_privilege('authenticated',
     'private.security_require_current_auth_session(uuid)','EXECUTE'),
   'authenticated ne peut pas appeler le garde privilégié directement'
+);
+
+-- Contrôles des huit interfaces publiques réellement accessibles depuis PostgREST.
+SELECT ok(
+  NOT has_function_privilege('anon','public.security_after_password_recovery(text)','EXECUTE'),
+  'anon refuse par le point d’entrée security_after_password_recovery'
+);
+SELECT ok(
+  has_function_privilege('authenticated','public.security_after_password_recovery(text)','EXECUTE'),
+  'authenticated a le contrat d’entrée security_after_password_recovery'
+);
+
+SELECT ok(
+  NOT has_function_privilege('anon','public.security_compromise_account(text)','EXECUTE'),
+  'anon refuse par le point d’entrée security_compromise_account'
+);
+SELECT ok(
+  has_function_privilege('authenticated','public.security_compromise_account(text)','EXECUTE'),
+  'authenticated a le contrat d’entrée security_compromise_account'
+);
+
+SELECT ok(
+  NOT has_function_privilege('anon','public.security_report_lost_device(uuid)','EXECUTE'),
+  'anon refuse par le point d’entrée security_report_lost_device'
+);
+SELECT ok(
+  has_function_privilege('authenticated','public.security_report_lost_device(uuid)','EXECUTE'),
+  'authenticated a le contrat d’entrée security_report_lost_device'
+);
+
+SELECT ok(
+  NOT has_function_privilege('anon','public.security_resolve_connection_challenge(uuid,text,text)','EXECUTE'),
+  'anon refuse par le point d’entrée security_resolve_connection_challenge'
+);
+SELECT ok(
+  has_function_privilege('authenticated','public.security_resolve_connection_challenge(uuid,text,text)','EXECUTE'),
+  'authenticated a le contrat d’entrée security_resolve_connection_challenge'
+);
+
+SELECT ok(
+  NOT has_function_privilege('anon','public.security_resolve_connection_challenge_mfa(uuid,text)','EXECUTE'),
+  'anon refuse par le point d’entrée security_resolve_connection_challenge_mfa'
+);
+SELECT ok(
+  has_function_privilege('authenticated','public.security_resolve_connection_challenge_mfa(uuid,text)','EXECUTE'),
+  'authenticated a le contrat d’entrée security_resolve_connection_challenge_mfa'
+);
+
+SELECT ok(
+  NOT has_function_privilege('anon','public.security_revoke_device(uuid)','EXECUTE'),
+  'anon refuse par le point d’entrée security_revoke_device'
+);
+SELECT ok(
+  has_function_privilege('authenticated','public.security_revoke_device(uuid)','EXECUTE'),
+  'authenticated a le contrat d’entrée security_revoke_device'
+);
+
+SELECT ok(
+  NOT has_function_privilege('anon','public.security_set_device_trust(uuid,boolean,boolean)','EXECUTE'),
+  'anon refuse par le point d’entrée security_set_device_trust'
+);
+SELECT ok(
+  has_function_privilege('authenticated','public.security_set_device_trust(uuid,boolean,boolean)','EXECUTE'),
+  'authenticated a le contrat d’entrée security_set_device_trust'
+);
+
+SELECT ok(
+  NOT has_function_privilege('anon','public.security_update_settings(boolean,boolean,boolean,boolean,boolean)','EXECUTE'),
+  'anon refuse par le point d’entrée security_update_settings'
+);
+SELECT ok(
+  has_function_privilege('authenticated','public.security_update_settings(boolean,boolean,boolean,boolean,boolean)','EXECUTE'),
+  'authenticated a le contrat d’entrée security_update_settings'
 );
 
 -- Deux utilisateurs fictifs : pas d'e-mail personnel ni de compte live.
@@ -159,4 +232,93 @@ SELECT throws_ok(
       NULL,NULL,NULL,NULL,NULL)$$,
   '42501','AUTH_SESSION_INVALID','paramètres de sécurité bloqués sans session'
 );
+
+-- Une simulation en rôle PostgREST « authenticated » : le contrôle pgTAP
+-- lui-même continue sous le rôle de test, mais la RPC est réellement exécutée
+-- avec les droits DB de l'utilisateur connecté. Aucune élévation ni SQL distant.
+CREATE OR REPLACE FUNCTION pg_temp.authenticated_rpc_rejects_revoked_session(p_call text)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path TO 'pg_catalog'
+AS $rpc_role$
+DECLARE
+  v_denied boolean := false;
+BEGIN
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  IF current_user <> 'authenticated' THEN
+    RAISE EXCEPTION 'TEST_ROLE_SWITCH_FAILED';
+  END IF;
+  BEGIN
+    EXECUTE p_call;
+  EXCEPTION WHEN SQLSTATE '42501' THEN
+    v_denied := SQLERRM = 'AUTH_SESSION_INVALID';
+  END;
+  EXECUTE 'RESET ROLE';
+  RETURN v_denied;
+EXCEPTION WHEN OTHERS THEN
+  EXECUTE 'RESET ROLE';
+  RAISE;
+END;
+$rpc_role$;
+
+-- Garde de révocation vérifiée au travers des 8 API publiques, non directement
+-- dans le schéma interne et sans privilèges postgres pendant les appels.
+
+SELECT ok(
+  pg_temp.authenticated_rpc_rejects_revoked_session(
+    'SELECT public.security_after_password_recovery(NULL)'
+  ),
+  'session révoquée : endpoint public security_after_password_recovery refusé sous rôle authenticated'
+);
+
+SELECT ok(
+  pg_temp.authenticated_rpc_rejects_revoked_session(
+    'SELECT public.security_compromise_account(NULL)'
+  ),
+  'session révoquée : endpoint public security_compromise_account refusé sous rôle authenticated'
+);
+
+SELECT ok(
+  pg_temp.authenticated_rpc_rejects_revoked_session(
+    'SELECT public.security_report_lost_device('ffffffff-ffff-4fff-8fff-ffffffffffff')'
+  ),
+  'session révoquée : endpoint public security_report_lost_device refusé sous rôle authenticated'
+);
+
+SELECT ok(
+  pg_temp.authenticated_rpc_rejects_revoked_session(
+    'SELECT public.security_resolve_connection_challenge('ffffffff-ffff-4fff-8fff-ffffffffffff','fixture-key','approved')'
+  ),
+  'session révoquée : endpoint public security_resolve_connection_challenge refusé sous rôle authenticated'
+);
+
+SELECT ok(
+  pg_temp.authenticated_rpc_rejects_revoked_session(
+    'SELECT public.security_resolve_connection_challenge_mfa('ffffffff-ffff-4fff-8fff-ffffffffffff','fixture-key')'
+  ),
+  'session révoquée : endpoint public security_resolve_connection_challenge_mfa refusé sous rôle authenticated'
+);
+
+SELECT ok(
+  pg_temp.authenticated_rpc_rejects_revoked_session(
+    'SELECT public.security_revoke_device('ffffffff-ffff-4fff-8fff-ffffffffffff')'
+  ),
+  'session révoquée : endpoint public security_revoke_device refusé sous rôle authenticated'
+);
+
+SELECT ok(
+  pg_temp.authenticated_rpc_rejects_revoked_session(
+    'SELECT public.security_set_device_trust('ffffffff-ffff-4fff-8fff-ffffffffffff',true,false)'
+  ),
+  'session révoquée : endpoint public security_set_device_trust refusé sous rôle authenticated'
+);
+
+SELECT ok(
+  pg_temp.authenticated_rpc_rejects_revoked_session(
+    'SELECT public.security_update_settings(NULL,NULL,NULL,NULL,NULL)'
+  ),
+  'session révoquée : endpoint public security_update_settings refusé sous rôle authenticated'
+);
+
 SELECT * FROM finish();
