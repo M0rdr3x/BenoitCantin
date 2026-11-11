@@ -124,7 +124,7 @@ def self_test() -> None:
         'retirer contrôle SHA': original.replace(
             'test "$(git rev-parse HEAD)" = "$GITHUB_SHA"', 'true', 1),
         'supprimer preuve de nouvelle version': original.replace(
-            'python3 scripts/verify_sinjira_registry_edge_deployment.py \\',
+            'python3 scripts/verify_sinjira_registry_edge_deployment.py --before /tmp/sinjira-registry-edge-before.txt',
             'true', 1),
         'retirer contrôle photo': original.replace(
             "grep -Fq 'isCanonicalRegistryPhotoPath(photo_path,user.id)'", 'true', 1),
