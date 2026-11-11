@@ -11,6 +11,12 @@ Les boutons « Précédente » / « Suivante » servent par ailleurs à deux fon
 - **PDF ou défilement libre** : changer directement de page source PDF.
 Leurs anciens libellés `aria-label` permanents ne distinguaient pas ces comportements.
 
+## Anomalie révélée par la vraie page et corrigée en V61
+
+Le premier parcours V61 sur `compte/liseuse.html` a démontré un vrai défaut d'intégration : la V53 gérait correctement le focus, **mais le moteur historique `sinjira-liseuse-v26.js` captait également les flèches au niveau global du document**. Appuyer sur la flèche droite hors de la zone du roman changeait directement la page PDF source.
+
+Le moteur V26 exige maintenant lui aussi le focus de `#reader-viewer`, respecte les entrées et la sélection de texte, ignore les événements déjà empêchés par V53, et **s'abstient totalement lorsque le mode `screens` est actif**. Il continue à permettre de tourner les pages dans le mode PDF lorsque le livre est au focus. La recette réelle teste le cas qui échouait, pour prévenir toute régression.
+
 ## Changement de code
 
 - Les touches **ArrowLeft, ArrowRight, PageUp et PageDown** sont interceptées uniquement lorsque le focus est sur `#reader-viewer` ou dans un de ses descendants non interactifs.
@@ -24,7 +30,7 @@ Leurs anciens libellés `aria-label` permanents ne distinguaient pas ces comport
 
 ## Contrôles
 
-- Trois tests Node supplémentaires vérifient les flèches **hors du livre**, les libellés alternant entre écrans et pages sources, ainsi que le HTML/CSS accessibles.
+- Quatre tests Node supplémentaires vérifient les flèches **hors du livre**, les libellés alternant entre écrans et pages sources, ainsi que le HTML/CSS accessibles.
 - Le parcours Playwright de la **vraie page `compte/liseuse.html`**, avec livre synthétique, contrôle la zone au focus, le retour arrière, un champ de réglage au focus et les libellés de navigation après désactivation puis réactivation de la pagination.
 - Les mêmes suites de navigation V52–V60 sont rejouées en **Chromium et WebKit**, sur cinq formats mobile/tablette, avec PDF.js fictif et appels Supabase bloqués.
 - Les tests ne certifient pas VoiceOver/TalkBack, les raccourcis natifs des vrais appareils, ni le fonctionnement avec les romans intégrals privés.
