@@ -106,9 +106,17 @@ async function main(){
 
   await rejected(()=>f.createDecision(service,admin,{
     ...r,snapshot:{source:'dating'}
-  },{},'hide_content'),'CONTENT_TARGET_NOT_REVERSIBLE',
+  },{},'hide_content'),'UNVERIFIED_DATING_PROVENANCE',
   'aucun masquage non réversible de Rencontres');
   eq(calls.length,before,'aucune RPC en réseau privé Rencontres');
+  await rejected(()=>f.createDecision(service,admin,{
+    ...r,snapshot:{
+      source:'dating',
+      dating_profile_id:'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa'
+    }
+  },{},'suspend_social'),'UNVERIFIED_DATING_PROVENANCE',
+  'snapshot falsifié ne peut pas rediriger une suspension vers un tiers');
+  eq(calls.length,before,'aucune sanction par source non vérifiée');
 
   for(const days of [0,-7,1.5,366,'7',null,Infinity]){
     await rejected(()=>f.createDecision(service,admin,r,{days},'suspend_social'),
