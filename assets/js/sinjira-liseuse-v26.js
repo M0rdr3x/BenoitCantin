@@ -538,10 +538,23 @@ function bindControls(){
     if(state.mode==='page')renderPage();
   });
   document.addEventListener('keydown',event=>{
-    const tag=document.activeElement?.tagName||'';
-    if(['INPUT','SELECT','TEXTAREA','BUTTON'].includes(tag)||event.altKey||event.ctrlKey||event.metaKey)return;
-    if(event.key==='ArrowRight'||event.key==='PageDown'){event.preventDefault();changePage(state.page+1)}
-    if(event.key==='ArrowLeft'||event.key==='PageUp'){event.preventDefault();changePage(state.page-1)}
+    // V61: le moteur historique ne doit pas changer le PDF depuis n'importe
+    // quelle zone du site ni contredire la pagination V53 par écrans.
+    if(event.defaultPrevented||event.altKey||event.ctrlKey||event.metaKey||
+       event.shiftKey)return;
+    const viewer=$('reader-viewer');
+    const focused=document.activeElement;
+    if(!focused||(focused!==viewer&&!viewer.contains(focused)))return;
+    const tag=focused.tagName||'';
+    if(['INPUT','SELECT','TEXTAREA','BUTTON','A'].includes(tag)||
+       focused.isContentEditable||window.getSelection?.()?.toString()?.trim())return;
+    if(viewer.dataset.readerLayout==='screens')return;
+    if(event.key==='ArrowRight'||event.key==='PageDown'){
+      event.preventDefault();changePage(state.page+1);
+    }
+    if(event.key==='ArrowLeft'||event.key==='PageUp'){
+      event.preventDefault();changePage(state.page-1);
+    }
   });
   let resizeTimer;
   window.addEventListener('resize',()=>{
