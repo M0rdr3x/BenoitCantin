@@ -121,9 +121,10 @@ test('précache install : une page CORE privée n’est pas écrite', async () =
   const sw = harness(req => response(req.url === ORIGIN + '/' ? {'Cache-Control': 'private'} : {}));
   const event = eventFor();
   sw.listeners.install(event);
-  await event.done;
+  await assert.rejects(event.done, /précache public incomplet/);
   assert.ok(sw.fetches.length >= sw.CORE.length);
-  assert.ok(sw.fetches.every(req => req.credentials === 'omit'), 'aucun cookie envoyé au précache');
+  assert.ok(sw.fetches.every(req => req.credentials === 'omit' && req.redirect === 'error'), 'aucun cookie ou redirection accepté au précache');
+  assert.ok(sw.deletes.includes(sw.CACHE), 'cache incomplet supprimé');
   assert.equal(sw.puts.some(x => x.url === ORIGIN + '/'), false);
   assert.equal(sw.puts.some(x => x.url === ORIGIN + '/offline.html'), true);
 });
@@ -247,4 +248,47 @@ test('un endpoint privé garde son mode authentifié et ne peut pas être mis en
   assert.equal(sw.fetches[0].credentials, 'same-origin');
   assert.equal(sw.puts.length, 0);
   assert.deepEqual(sw.matches, []);
+});
+
+test('un précache partiellement indisponible est refusé et nettoyé', async () => {
+  const sw = harness(async req => {
+    if(req.url.endsWith('/assets/js/site.js'))throw new Error('synthetic network failure');
+    return response();
+  });
+  const event = eventFor();
+  sw.listeners.install(event);
+  await assert.rejects(event.done, /précache public incomplet/);
+  assert.ok(sw.deletes.includes(sw.CACHE));
+  assert.ok(sw.fetches.every(req => req.credentials === 'omit' && req.redirect === 'error'));
+});
+
+test('Range et no-store/no-cache contournent entièrement CacheStorage', async () => {
+  const cases = [
+    request('/assets/js/site.js', {headers: {Range: 'bytes=0-10'}}),
+    request('/assets/js/site.js', {cache: 'no-store'}),
+    request('/assets/media/image.webp', {cache: 'no-cache'}),
+  ];
+  for(const r of cases){
+    const sw = harness();
+    const event = eventFor(r);
+    sw.listeners.fetch(event);
+    await event.result;
+    assert.equal(sw.fetches.length, 1, r.url);
+    assert.equal(sw.fetches[0].cache, 'no-store', r.url);
+    assert.equal(sw.puts.length, 0, r.url);
+    assert.deepEqual(sw.matches, [], r.url);
+    assert.deepEqual(sw.globalMatches, [], r.url);
+  }
+});
+
+test('les ressources publiques ne suivent jamais une redirection externe', async () => {
+  for(const resource of ['/', '/assets/js/site.js', '/assets/media/cover.webp']){
+    const sw = harness();
+    const event = eventFor(request(resource));
+    sw.listeners.fetch(event);
+    await event.result;
+    assert.equal(sw.fetches.length, 1, resource);
+    assert.equal(sw.fetches[0].redirect, 'error', resource);
+    assert.equal(sw.fetches[0].credentials, 'omit', resource);
+  }
 });
