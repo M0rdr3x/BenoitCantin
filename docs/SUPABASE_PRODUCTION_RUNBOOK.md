@@ -105,6 +105,60 @@ Ne jamais substituer à cette procédure un `db push --include-all`, `supabase m
 
 Le constructeur ne peut effacer qu'un workspace CI à `.prod-workspace/supabase` ou une copie de test éphémère et isolée réservée au validateur du ledger. Les mises à jour des fonctions exclues doivent suivre une procédure **par slug**, avec revue de leurs contrôles d'authentification, tests négatifs, plan de retour arrière et vérification des versions distantes, et non un déploiement global implicite.
 
+## SINJIRA™ — déploiement ciblé de la seule fonction du Registre
+
+La **PR #988** a durci la validation du chemin des photos dans
+`supabase/functions/submit-character-questionnaire/index.ts`.
+Une fusion GitHub ne déploie pas automatiquement cette fonction.
+La fonction Supabase hébergée reste à vérifier par comparaison de son code
+réel avec `main` et de sa configuration `verify_jwt=true`.
+
+**Ne pas utiliser le déploiement générique `apply=true` pour ce seul correctif.**
+Le fichier `supabase/production-reviewed-migration-batch.txt` contient
+actuellement **17 migrations futures distinctes** (chiffre constaté au
+10 novembre 2026) qui seraient candidates à une application globale.
+L'activation de tout ce lot n'est pas une étape de recette SMTP/Registre.
+
+La voie GitHub distincte est :
+
+`.github/workflows/sinjira-registry-edge-scoped-deploy.yml`
+
+1. Sur GitHub Actions, ouvrir « SINJIRA — déploiement ciblé Edge Registre »,
+   sélectionner **`main`**, et lancer d'abord `apply=false`.
+   Ce mode n'utilise aucun secret et n'exécute que les tests locaux.
+2. Inspecter les validations GitHub de `main` : le véritable validateur photo
+   doit refuser les chemins arbitraires ; l'authentification JWT et AAL2 du
+   serveur doivent rester obligatoires. Confirmer la configuration effective
+   des reviewers GitHub de l'Environment `production` plutôt que de présumer
+   leur existence du seul YAML.
+3. Avec autorisation explicite de la personne responsable, lancer manuellement
+   depuis **`main`** le même workflow avec `apply=true` et la valeur
+   exacte `DEPLOY-SINJIRA-REGISTRY-EDGE`. Le job `deploy` doit franchir
+   l'Environment `production` et disposer du secret
+   `SUPABASE_ACCESS_TOKEN`. Il déploie **seulement**
+   `submit-character-questionnaire`, sans `--prune`,
+   sans `--no-verify-jwt`, sans migration SQL et sans autre fonction.
+   Une erreur du job ne doit jamais être interprétée comme un déploiement réussi.
+4. Après exécution, vérifier la **nouvelle version réellement déployée**,
+   `verify_jwt=true` et **la présence de
+   `isCanonicalRegistryPhotoPath(photo_path,user.id)` dans le code hébergé**.
+   Vérifier avec des comptes de test consentants qu'un chemin non canonique est
+   refusé en HTTP 400 avant toute écriture, qu'un JWT invalide échoue et que le
+   parcours AAL2 + dossier autorisé fonctionne. La seule sortie de
+   `supabase functions list` confirme la présence, **pas la parité source**.
+5. **Cette voie ne déploie pas la politique SQL AAL2 des photos**.
+   Celle-ci est préparée dans
+   `scripts/sql/sinjira_character_sources_insert_requires_aal2.sql`.
+   Appliquer la politique exclusivement via migration ciblée revue et
+   enregistrée, puis vérifier `pg_policies` et le comportement Storage
+   authentifié AAL1 refusé / AAL2 autorisé. Réconcilier le ledger réel avant
+   toute autre synchronisation générique.
+
+Ces validations de déploiement sont distinctes des preuves de réception
+SMTP, de consentement/réception Formspree et du parcours TOTP AAL2/Registre
+complet requis par l'issue #850. Le taux de 84 % estimés n'augmente pas
+sur la seule base d'une CI ou d'une demande de déploiement.
+
 ## Secrets GitHub Actions requis
 
 À configurer hors dépôt dans :
