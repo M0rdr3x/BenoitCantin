@@ -145,6 +145,10 @@ La voie GitHub distincte est :
 4. Après exécution, vérifier la **nouvelle version réellement déployée**,
    `verify_jwt=true` et **la présence de
    `isCanonicalRegistryPhotoPath(photo_path,user.id)` dans le code hébergé**.
+   Le workflow compare aussi la version **ACTIVE** remontée par
+   `supabase functions list` avant/après et refuse un déploiement sans
+   incrément de version. Ce contrôle détecte un échec de publication silencieux,
+   mais **une version supérieure ne prouve pas à elle seule le contenu exécuté**.
    Vérifier avec des comptes de test consentants qu'un chemin non canonique est
    refusé en HTTP 400 avant toute écriture, qu'un JWT invalide échoue et que le
    parcours AAL2 + dossier autorisé fonctionne. La seule sortie de

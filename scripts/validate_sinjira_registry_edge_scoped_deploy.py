@@ -61,6 +61,14 @@ def validate(source: str) -> list[str]:
     need("          node-version: '22.16.0'", 'Node de CI non épinglé.')
     need('node scripts/test_sinjira_character_photo_path.cjs',
          'Test de l’authenticité du validateur Edge absent.')
+    need('python3 scripts/verify_sinjira_registry_edge_deployment.py --self-test',
+         'Autotest des versions Edge absent.')
+    need('python3 scripts/verify_sinjira_registry_edge_deployment.py',
+         'Comparaison de versions Edge absente.')
+    need('--before /tmp/sinjira-registry-edge-before.txt',
+         'Version de production avant déploiement non vérifiée.')
+    need('--after /tmp/sinjira-registry-edge-after.txt',
+         'Version de production après déploiement non vérifiée.')
     need('python3 scripts/validate_sinjira_registry_edge_scoped_deploy.py --self-test',
          'Auto-test du garde de déploiement absent.')
     need(COMMAND, 'Commande de déploiement mono-slug attendue absente.')
@@ -115,6 +123,9 @@ def self_test() -> None:
             '          ref: ${{ github.sha }}', '          ref: main', 1),
         'retirer contrôle SHA': original.replace(
             'test "$(git rev-parse HEAD)" = "$GITHUB_SHA"', 'true', 1),
+        'supprimer preuve de nouvelle version': original.replace(
+            'python3 scripts/verify_sinjira_registry_edge_deployment.py --before /tmp/sinjira-registry-edge-before.txt',
+            'true', 1),
         'retirer contrôle photo': original.replace(
             "grep -Fq 'isCanonicalRegistryPhotoPath(photo_path,user.id)'", 'true', 1),
         'supprimer confirmation': original.replace(

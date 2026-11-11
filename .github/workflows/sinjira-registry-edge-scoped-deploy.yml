@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/sinjira-registry-edge-scoped-deploy.yml'
       - 'scripts/validate_sinjira_registry_edge_scoped_deploy.py'
+      - 'scripts/verify_sinjira_registry_edge_deployment.py'
       - 'scripts/test_sinjira_character_photo_path.cjs'
       - 'scripts/validate_character_questionnaire_security.py'
       - 'scripts/validate_sinjira_signup_registry_delivery.py'
@@ -19,6 +20,7 @@ on:
     paths:
       - '.github/workflows/sinjira-registry-edge-scoped-deploy.yml'
       - 'scripts/validate_sinjira_registry_edge_scoped_deploy.py'
+      - 'scripts/verify_sinjira_registry_edge_deployment.py'
       - 'scripts/test_sinjira_character_photo_path.cjs'
       - 'scripts/validate_character_questionnaire_security.py'
       - 'scripts/validate_sinjira_signup_registry_delivery.py'
@@ -63,6 +65,7 @@ jobs:
         run: |
           python3 scripts/validate_sinjira_registry_edge_scoped_deploy.py --self-test
           python3 scripts/validate_sinjira_registry_edge_scoped_deploy.py
+          python3 scripts/verify_sinjira_registry_edge_deployment.py --self-test
       - name: Installer Node pour les tests sans réseau
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
         with:
@@ -153,6 +156,7 @@ jobs:
         run: |
           set -euo pipefail
           supabase functions list --project-ref "$PROJECT_ID" > /tmp/sinjira-registry-edge-after.txt
-          grep -Fq 'submit-character-questionnaire' /tmp/sinjira-registry-edge-after.txt
-          echo 'Fonction cible présente après déploiement. Vérifier séparément son contenu, verify_jwt=true et les tests Auth/AAL2 de production.' >> "$GITHUB_STEP_SUMMARY"
+          python3 scripts/verify_sinjira_registry_edge_deployment.py --before /tmp/sinjira-registry-edge-before.txt --after /tmp/sinjira-registry-edge-after.txt | tee /tmp/sinjira-registry-edge-version-proof.txt
+          cat /tmp/sinjira-registry-edge-version-proof.txt >> "$GITHUB_STEP_SUMMARY"
+          echo 'Version ciblée augmentée. Vérifier séparément la parité du code hébergé, verify_jwt=true et les tests Auth/AAL2 de production.' >> "$GITHUB_STEP_SUMMARY"
           echo 'Aucune migration SQL ou autre fonction Edge déployée par ce workflow.' >> "$GITHUB_STEP_SUMMARY"
