@@ -24,10 +24,10 @@ Il s'agit d'une **pagination d'affichage du texte issu du PDF**, non de l'import
 ## Contrôles automatisés dans la PR V53
 
 - `assets/js/sinjira-liseuse-reflow-v53.mjs` : fonctions pures `measureReaderScreen`, `readerScreenState`, `planReaderScreenTurn`, plus un raccordement DOM au moteur PDF existant.
-- `tests/sinjira-liseuse-reflow-v53.test.mjs` : **22 tests** (mouvement, retour, écran final, limites du livre, clavier, sélection, mode PDF, mode continu, sans faux service d'accès).
+- `tests/sinjira-liseuse-reflow-v53.test.mjs` : **27 tests** (mouvement, retour, écran final, limites du livre, clavier, sélection, mode PDF, mode continu, sans faux service d'accès).
 - Workflow `.github/workflows/sinjira-liseuse-reflow-v53.yml` : contrôle de syntaxe JS, tests V52 et V53, permissions de lecture seules, aucun accès à Supabase ni migration.
 
-Les tests valident la **logique** et des interactions DOM simulées, **pas** l'ergonomie physique ni le rendu sur appareils.
+Un contrôle supplémentaire empêche de charger deux instances du gestionnaire V52 (même URL versionnée dans l'HTML et l'import V53). Les tests valident la **logique** et des interactions DOM simulées, **pas** l'ergonomie physique ni le rendu sur appareils.
 
 ## Porte de réception sur appareils réels — encore ouverte
 
