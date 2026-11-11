@@ -1,0 +1,48 @@
+name: SINJIRA V53 — lecteur texte paginé sur mobile
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feat/sinjira-liseuse-mobile-swipe-v52-20261110
+    paths:
+      - 'assets/js/sinjira-liseuse-reflow-v53.mjs'
+      - 'assets/js/sinjira-liseuse-touch-v52.mjs'
+      - 'compte/liseuse.html'
+      - 'assets/css/sinjira-liseuse-v26.css'
+      - 'tests/sinjira-liseuse-reflow-v53.test.mjs'
+      - 'tests/sinjira-liseuse-touch-v52.test.mjs'
+      - 'docs/sinjira/SINJIRA_LISEUSE_V53_PAGINATION_ECRAN_RECEPTION_2026-11-10.md'
+      - '.github/workflows/sinjira-liseuse-reflow-v53.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-liseuse-reflow-v53.mjs'
+      - 'assets/js/sinjira-liseuse-touch-v52.mjs'
+      - 'compte/liseuse.html'
+      - 'assets/css/sinjira-liseuse-v26.css'
+      - 'tests/sinjira-liseuse-reflow-v53.test.mjs'
+      - 'tests/sinjira-liseuse-touch-v52.test.mjs'
+      - '.github/workflows/sinjira-liseuse-reflow-v53.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  mode-liseuse:
+    name: Pages écran, gestes, sauvegardes existantes et mode continu
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout épinglé sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Vérifier la syntaxe du moteur et des tests
+        run: |
+          node --check assets/js/sinjira-liseuse-reflow-v53.mjs
+          node --check assets/js/sinjira-liseuse-touch-v52.mjs
+          node --check tests/sinjira-liseuse-reflow-v53.test.mjs
+          node --check tests/sinjira-liseuse-touch-v52.test.mjs
+      - name: Tester la pagination et les gestes ensemble
+        run: node --test tests/sinjira-liseuse-reflow-v53.test.mjs tests/sinjira-liseuse-touch-v52.test.mjs
