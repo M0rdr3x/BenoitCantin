@@ -69,7 +69,9 @@ self.addEventListener('fetch',e=>{
     }).catch(()=>caches.match(r).then(x=>x||caches.match('/offline.html'))));
     return;
   }
-  const liveAsset=/\/assets\/(?:js|css)\//.test(u.pathname);
+  // Le code JS/CSS doit rester network-first : une correction de sécurité ne
+  // doit pas être masquée par une version ancienne en Cache Storage.
+  const liveAsset=/\.(?:js|mjs|css)$/i.test(u.pathname);
   if(liveAsset){
     e.respondWith(fetch(new Request(r,{cache:'no-store'})).then(resp=>{
       if(cacheableResponse(r,resp))caches.open(CACHE).then(c=>c.put(r,resp.clone()));
