@@ -125,6 +125,20 @@ export function bindReaderScreenMode({
   const sync=()=>{
     const active=isPaged();
     viewer.dataset.readerLayout=active?'screens':'scroll';
+    // V61 : les mêmes boutons contrôlent soit les portions de texte, soit
+    // les pages PDF. Un libellé statique tromperait un lecteur d'écran.
+    const backLabel=active
+      ?'Écran précédent, ou page du livre précédente au début'
+      :'Page du livre précédente';
+    const forwardLabel=active
+      ?'Écran suivant, ou page du livre suivante à la fin'
+      :'Page du livre suivante';
+    const describe=(button,label)=>{
+      if(button?.getAttribute?.('aria-label')!==label)
+        button?.setAttribute?.('aria-label',label);
+    };
+    for(const button of [previous,mobilePrevious])describe(button,backLabel);
+    for(const button of [next,mobileNext])describe(button,forwardLabel);
     status.hidden=!active;
     if(!active){
       if(mobilePrevious)mobilePrevious.disabled=previous.disabled;
@@ -222,6 +236,11 @@ export function bindReaderScreenMode({
   const onKeyboard=event=>{
     if(!isPaged()||event.defaultPrevented||event.altKey||event.ctrlKey||
       event.metaKey||event.shiftKey||isInteractive(document.activeElement))return;
+    // V61 : les flèches sont des raccourcis de la LISEUSE, pas du site.
+    // Hors du focus du livre, conserver les raccourcis du navigateur,
+    // les zones de réglage et la navigation des technologies d'assistance.
+    const focused=document.activeElement;
+    if(!focused||(focused!==viewer&&!viewer.contains?.(focused)))return;
     const direction=event.key==='ArrowLeft'||event.key==='PageUp'?'previous'
       :event.key==='ArrowRight'||event.key==='PageDown'?'next':null;
     if(!direction)return;
