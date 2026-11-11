@@ -62,8 +62,35 @@ BEGIN
       USING ERRCODE = '22023';
   END IF;
 
-  -- Un UUID de roman fictif ne doit pas pouvoir créer une ligne orpheline.
-  IF NOT EXISTS(SELECT 1 FROM public.sinjira_novels WHERE id=p_novel_id) THEN
+  -- V59: contrôle d'autorisation MÉTIER au sein de la RPC privilégiée.
+  -- La validation des droits du PDF par l'Edge Function ne protège pas une
+  -- invocation directe de cette fonction SECURITY DEFINER.
+  -- Aligner: roman publié + fichier disponible et
+  -- (propriétaire, admin, ou droit sur produit actif).
+  -- Le même statut "unavailable" est renvoyé pour tout roman inaccessible,
+  -- publié ou non / existant ou non, sans révéler son existence.
+  IF NOT EXISTS (
+    SELECT 1
+      FROM public.sinjira_novels AS novel
+     WHERE novel.id=p_novel_id
+       AND novel.status='published'
+       AND novel.file_ready IS TRUE
+       AND (
+         COALESCE(public.is_sinjira_owner(v_user),false)
+         OR COALESCE(public.is_sinjira_admin(v_user),false)
+         OR (
+           novel.product_id IS NOT NULL
+           AND EXISTS (
+             SELECT 1
+               FROM public.user_entitlements AS entitlement
+               JOIN public.products AS product ON product.id=entitlement.product_id
+              WHERE entitlement.user_id=v_user
+                AND entitlement.product_id=novel.product_id
+                AND product.active IS TRUE
+           )
+         )
+       )
+  ) THEN
     RETURN QUERY SELECT 'unavailable'::text,NULL::bigint,NULL::integer,
       NULL::numeric,NULL::timestamptz;
     RETURN;
