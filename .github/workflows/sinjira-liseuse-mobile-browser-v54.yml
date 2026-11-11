@@ -1,0 +1,54 @@
+name: SINJIRA V54 — réception mobile en navigateur isolé
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feat/sinjira-liseuse-reflow-mobile-v53-20261110
+    paths:
+      - 'assets/js/sinjira-liseuse-reflow-v53.mjs'
+      - 'assets/js/sinjira-liseuse-touch-v52.mjs'
+      - 'compte/liseuse.html'
+      - 'tests/e2e/fixtures/sinjira-liseuse-mobile-v54.html'
+      - 'tests/e2e/test_sinjira_liseuse_mobile_v54.py'
+      - 'tests/sinjira-liseuse-reflow-v53.test.mjs'
+      - 'tests/sinjira-liseuse-touch-v52.test.mjs'
+      - '.github/workflows/sinjira-liseuse-mobile-browser-v54.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tests/e2e/fixtures/sinjira-liseuse-mobile-v54.html'
+      - 'tests/e2e/test_sinjira_liseuse_mobile_v54.py'
+      - '.github/workflows/sinjira-liseuse-mobile-browser-v54.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  mobile-browser:
+    name: Pages et gestes — ${{ matrix.browser }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - name: Checkout épinglé (pas de secrets persistants)
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Analyse statique JS et Python
+        run: |
+          node --check assets/js/sinjira-liseuse-reflow-v53.mjs
+          node --check assets/js/sinjira-liseuse-touch-v52.mjs
+          python3 -m py_compile tests/e2e/test_sinjira_liseuse_mobile_v54.py
+      - name: Contrôles Node de sécurité et de pagination
+        run: node --test tests/sinjira-liseuse-reflow-v53.test.mjs tests/sinjira-liseuse-touch-v52.test.mjs
+      - name: Navigateur Playwright isolé sans Supabase ni compte
+        run: |
+          python3 -m venv .venv-reader-v54
+          . .venv-reader-v54/bin/activate
+          python -m pip install --disable-pip-version-check playwright==1.57.0
+          python -m playwright install --with-deps ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_mobile_v54.py --browser ${{ matrix.browser }}
