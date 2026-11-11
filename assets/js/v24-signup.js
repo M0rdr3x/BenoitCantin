@@ -139,6 +139,13 @@ if(form){
         }else setStatus(status,'Création du compte impossible. Vérifiez les renseignements ou utilisez une autre adresse courriel.','error');
         return;
       }
+      // Un résultat sans erreur mais sans utilisateur identifié ne prouve
+      // pas la création du compte. Préserver le formulaire et refuser le
+      // faux succès plutôt que de promettre un courriel non confirmé.
+      if(!data?.user || typeof data.user.id!=='string' || !data.user.id.trim()){
+        setStatus(status,'Le service n’a pas confirmé la création de votre compte. Vos renseignements restent dans le formulaire; réessayez plus tard.','error');
+        return;
+      }
       if(data.session){location.assign(destination);return}
       const youthNote=age>=14&&age<18&&!guardianCode?' Les fonctions sociales resteront protégées jusqu’à la vérification d’un parent ou tuteur.':'';
       setStatus(status,(wantsQuestionnaire?'Compte créé. Consultez votre courriel, ouvrez le lien de confirmation SINJIRA™ et cliquez sur « Confirmer mon compte ». Pour transmettre le questionnaire du Registre, vous devrez ensuite activer et valider la double authentification (AAL2) dans Ma sécurité.':'Compte créé. Consultez votre courriel, ouvrez le lien SINJIRA™ et cliquez sur « Confirmer mon compte ».')+youthNote,'success');
