@@ -110,7 +110,7 @@ function mockTarget(opts={}){
     handlers
   };
 }
-function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=false}={}){
+function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=false,deferredRaf=false}={}){
   const observed=[];
   class FakeObserver{
     constructor(callback){this.callback=callback;observed.push(this)}
@@ -132,10 +132,28 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
     toggle=mockTarget(),status=mockTarget(),pageField=mockTarget();
   const media=mockTarget();media.matches=true;
   let now=0;
+  const frameQueue=[];
+  const raf=fn=>deferredRaf?frameQueue.push(fn):fn();
+  const flushFrames=()=>{
+    let count=0;
+    // Les appels placés dans la nouvelle trame ne sont exécutés qu'au
+    // prochain passage, comme requestAnimationFrame dans le navigateur.
+    while(frameQueue.length){
+      if(++count>15)throw new Error('V56 : boucle de restitution');
+      const frame=frameQueue.splice(0);
+      frame.forEach(fn=>fn());
+    }
+  };
+  let statusWrites=0;
+  let statusValue=status.textContent;
+  Object.defineProperty(status,'textContent',{
+    get:()=>statusValue,set:value=>{statusWrites++;statusValue=value},
+    configurable:true
+  });
   const teardown=bindReaderScreenMode({
     viewer,text,previous,next,mobilePrevious,mobileNext,toggle,status,
     pageField,media,getSelectionText:()=>selected,
-    clock:()=>now,raf:fn=>fn(),Observer:observe?FakeObserver:null
+    clock:()=>now,raf,Observer:observe?FakeObserver:null
   });
   function restore(){
     teardown();
@@ -157,6 +175,7 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
   return {viewer,text,previous,next,mobilePrevious,mobileNext,toggle,status,
     pageField,documentMock,windowMock,media,restore,swipe,
     notifyText:()=>observed.find(x=>x.target===text)?.emit([{type:'childList'}]),
+    flushFrames,getStatusWrites:()=>statusWrites,
     setSelected:v=>{selected=v}};
 }
 test('intégration : le mode pages d’écran est activé par défaut sur mobile',()=>{
@@ -164,6 +183,44 @@ test('intégration : le mode pages d’écran est activé par défaut sur mobile
   try{
     assert.equal(f.viewer.dataset.readerLayout,'screens');
     assert.match(f.status.textContent,/Écran 1 sur 4/);
+  }finally{f.restore()}
+});
+test('V56 : l’annonce accessible ne se répète pas à chaque scroll de la même portion',()=>{
+  const f=fixture();
+  try{
+    const startingWrites=f.getStatusWrites();
+    f.viewer.scrollTo({top:10});
+    f.viewer.scrollTo({top:20});
+    assert.equal(f.getStatusWrites(),startingWrites);
+    f.viewer.scrollTo({top:320});
+    assert.equal(f.getStatusWrites(),startingWrites+1);
+    f.viewer.scrollTo({top:321});
+    assert.equal(f.getStatusWrites(),startingWrites+1);
+  }finally{f.restore()}
+});
+test('V56 : rotation mobile conserve la même proportion malgré événements en double',()=>{
+  const f=fixture({deferredRaf:true});
+  try{
+    f.viewer.scrollTo({top:350});
+    assert.equal(f.viewer.scrollTop,350);
+    f.windowMock.emit('resize',{});
+    f.viewer.scrollHeight=1750; // mise en page plus longue après rotation
+    f.viewer.emit('scroll',{}); // ratio temporairement modifié pendant le layout
+    f.media.emit('change',{});
+    f.flushFrames();
+    assert.equal(f.viewer.scrollTop,700);
+    assert.match(f.status.textContent,/Écran/);
+  }finally{f.restore()}
+});
+test('V56 : input puis change de taille de police ne créent pas deux déplacements',()=>{
+  const f=fixture({deferredRaf:true});
+  try{
+    f.viewer.scrollTo({top:350});
+    f.documentMock.emit('input',{target:{id:'reader-size'}});
+    f.viewer.scrollHeight=2100;
+    f.documentMock.emit('change',{target:{id:'reader-size'}});
+    f.flushFrames();
+    assert.equal(f.viewer.scrollTop,875); // 50 % de la nouvelle hauteur scrollable
   }finally{f.restore()}
 });
 test('intégration : glisser gauche/droite navigue par écran sans changer page PDF',()=>{

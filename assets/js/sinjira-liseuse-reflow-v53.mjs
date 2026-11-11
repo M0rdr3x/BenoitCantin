@@ -95,6 +95,7 @@ export function bindReaderScreenMode({
   if(!viewer||!text||!previous||!next||!toggle||!status||!pageField)
     throw new Error('SINJIRA V53 : contrôles nécessaires absents');
   let gesture=null,pendingPreviousPdf=null,lastRatio=0,restoring=false,closed=false;
+  let pendingLayoutRatio=null; // V56 : une seule position de référence par réagencement
   toggle.checked=localPreference();
   const isPaged=()=>!closed&&media.matches&&toggle.checked&&!text.hidden;
   const metric=()=>readerScreenState({
@@ -111,10 +112,12 @@ export function bindReaderScreenMode({
       return;
     }
     const s=metric();
-    status.textContent='Écran '+s.screen+' sur '+s.screens+' · page '+pageField.value+' du livre';
+    const announced='Écran '+s.screen+' sur '+s.screens+' · page '+pageField.value+' du livre';
+    // Une zone aria-live ne doit pas annoncer la même phrase à chaque scroll.
+    if(status.textContent!==announced)status.textContent=announced;
     if(mobilePrevious)mobilePrevious.disabled=!s.hasPreviousScreen&&previous.disabled;
     if(mobileNext)mobileNext.disabled=!s.hasNextScreen&&next.disabled;
-    if(!restoring)lastRatio=s.ratio;
+    if(!restoring&&pendingLayoutRatio===null)lastRatio=s.ratio;
   };
   const scrollToScreen=top=>{
     restoring=true;
@@ -229,27 +232,35 @@ export function bindReaderScreenMode({
   buttonsObserver?.observe(previous,{attributes:true,attributeFilter:['disabled']});
   buttonsObserver?.observe(next,{attributes:true,attributeFilter:['disabled']});
   const onScroll=()=>{if(!closed)sync()};
-  const onToggle=()=>{
-    const previousRatio=metric().ratio;
-    savePreference(toggle.checked);
-    sync();
-    raf(()=>{if(closed)return;scrollToScreen(
-      previousRatio*Math.max(0,viewer.scrollHeight-viewer.clientHeight));});
-  };
-  const onResize=()=>{
-    const ratio=lastRatio;
+  /**
+   * V56 : un changement de police déclenche souvent input puis change; et une
+   * rotation provoque resize puis media.change. Capturer une SEULE position
+   * proportionnelle évite qu'un événement post-reflow remplace l'ancre.
+   * Cette ancre est une fraction du PDF courant, pas un identifiant EPUB.
+   */
+  const scheduleLayoutRestore=ratio=>{
+    if(pendingLayoutRatio!==null)return;
+    pendingLayoutRatio=Math.max(0,Math.min(1,Number.isFinite(ratio)?ratio:0));
     raf(()=>raf(()=>{
       if(closed)return;
-      if(isPaged())scrollToScreen(ratio*Math.max(0,viewer.scrollHeight-viewer.clientHeight));
+      const target=pendingLayoutRatio;
+      pendingLayoutRatio=null;
+      if(isPaged())scrollToScreen(target*Math.max(0,viewer.scrollHeight-viewer.clientHeight));
       else sync();
     }));
   };
+  const onToggle=()=>{
+    // Un mode continu peut avoir une proportion différente de lastRatio.
+    const previousRatio=metric().ratio;
+    savePreference(toggle.checked);
+    sync();
+    scheduleLayoutRestore(previousRatio);
+  };
+  const onResize=()=>scheduleLayoutRestore(lastRatio);
   const onPreferences=event=>{
-    if(!isPaged()||!['reader-size','reader-font','reader-line-height','reader-letter-spacing','reader-text-width'].includes(event.target?.id))return;
-    lastRatio=metric().ratio;
-    raf(()=>raf(()=>{
-      if(isPaged())scrollToScreen(lastRatio*Math.max(0,viewer.scrollHeight-viewer.clientHeight));
-    }));
+    if(!isPaged()||!['reader-size','reader-font','reader-line-height',
+      'reader-letter-spacing','reader-text-width'].includes(event.target?.id))return;
+    scheduleLayoutRestore(lastRatio);
   };
   viewer.addEventListener('touchstart',onTouchStart,{capture:true,passive:true});
   viewer.addEventListener('touchmove',onTouchMove,{capture:true,passive:true});

@@ -1,0 +1,51 @@
+name: SINJIRA V56 — accessibilité et reprise de lecture
+
+on:
+  pull_request:
+    branches:
+      - fix/sinjira-liseuse-v55-anti-saut-de-lignes-20261110
+      - main
+    paths:
+      - 'assets/js/sinjira-liseuse-reflow-v53.mjs'
+      - 'tests/sinjira-liseuse-reflow-v53.test.mjs'
+      - 'tests/sinjira-liseuse-touch-v52.test.mjs'
+      - 'tests/e2e/test_sinjira_liseuse_mobile_v54.py'
+      - '.github/workflows/sinjira-liseuse-accessibilite-v56.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-liseuse-reflow-v53.mjs'
+      - 'tests/sinjira-liseuse-reflow-v53.test.mjs'
+      - 'tests/e2e/test_sinjira_liseuse_mobile_v54.py'
+
+permissions:
+  contents: read
+
+jobs:
+  accessibilite-reprise:
+    name: Aria-live, rotation, lecture — ${{ matrix.browser }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - name: Checkout épinglé et sans identifiant persistant
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Contrôler la syntaxe
+        run: |
+          node --check assets/js/sinjira-liseuse-reflow-v53.mjs
+          node --check assets/js/sinjira-liseuse-touch-v52.mjs
+          python3 -m py_compile tests/e2e/test_sinjira_liseuse_mobile_v54.py
+      - name: Tests Node — lecture et accessibilité
+        run: node --test tests/sinjira-liseuse-reflow-v53.test.mjs tests/sinjira-liseuse-touch-v52.test.mjs
+      - name: Tests navigateur synthétiques (aucun roman ni compte)
+        run: |
+          python3 -m venv .venv-reader-v56
+          . .venv-reader-v56/bin/activate
+          python -m pip install --disable-pip-version-check playwright==1.57.0
+          python -m playwright install --with-deps ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_mobile_v54.py --browser ${{ matrix.browser }}
