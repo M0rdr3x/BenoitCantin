@@ -67,7 +67,12 @@ et doit être revérifié au moment du sign-off.
   un second envoi et propose « Mon personnage », tout en supprimant
   uniquement la photo temporaire de la tentative rejetée. Une erreur
   réseau reste incertaine : jamais de nettoyage potentiellement destructif.
-  Client Registre `sinjira-character-registry.js?v=24.5.9`.
+  Le navigateur revérifie l'identité de session, `currentLevel=aal2`
+  et l'accès sensible côté serveur **au moment de la transmission**, avant
+  de téléverser une photo ou d'envoyer le questionnaire. Une session expirée,
+  un compte différent, un AAL1 ou une erreur de contrôle bloque l'envoi,
+  conserve le brouillon et exige de recharger le Registre. Client
+  `sinjira-character-registry.js?v=24.5.10`.
   Le module `v24-security.js?v=24.4.70` ne doit annoncer « TOTP activée »
   que si `challengeAndVerify()` retourne une session avec `access_token`
   et que `getAuthenticatorAssuranceLevel()` confirme `currentLevel=aal2`.
