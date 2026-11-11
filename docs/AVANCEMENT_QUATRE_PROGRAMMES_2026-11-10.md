@@ -20,7 +20,7 @@ Les pourcentages ne sont donc **pas additifs**, et ne représentent ni une proba
 
 ### Définitions indispensables
 
-**Nova 47 %.** Score de maturité documentaire, juridique, financière et de préparation. Les finances ont **3 points sur 16** : les scénarios de recettes/dépenses/dette sur dix ans (Québec dans le Canada et Québec souverain), les propositions de deux taxes et la soutenabilité sans hausse d'appauvrissement ne sont pas démontrés. Le bilan n'est pas un budget adopté ni une indépendance prévue pour 2027.
+**Nova 47 %.** Score de maturité documentaire, juridique, financière et de préparation. La cible du **31 décembre 2027** appartient au [calendrier de travail conditionnel G0.18 (PR #894)](https://github.com/M0rdr3x/BenoitCantin/pull/894), non à une date de fin prouvée par l'audit. Les finances ont **3 points sur 16** : les scénarios de recettes/dépenses/dette sur dix ans (Québec dans le Canada et Québec souverain), les propositions de deux taxes et la soutenabilité sans hausse d'appauvrissement ne sont pas démontrés. Le bilan n'est pas un budget adopté ni une indépendance prévue pour 2027.
 
 **Services publics.** Le registre `registre-donnees-services-nova-sinjira.json` est un **inventaire de besoins**. Il interdit de présenter 14 secteurs définis comme 14 politiques financées ou comme un pourcentage global calculé sans méthodes, mesures, populations, années de prix et validation externe.
 
@@ -44,6 +44,6 @@ Les pourcentages ne sont donc **pas additifs**, et ne représentent ni une proba
 - [Registre des services Nova–Sinjira](../projets/projet-nova/data/registre-donnees-services-nova-sinjira.json)
 - [Réception de la boussole et du sondage](nova-sondages/reception-sondage-boussole-2026-11-08.json)
 - [Maturité et 13 portes SINJIRA](sinjira/programme-readiness-2026-11-08.json)
-- [Préparation sécuritaire de la liseuse V58](sinjira/SINJIRA_LISEUSE_V58_INTEGRATION_ET_RECEPTION_2026-11-10.md) (dans la branche PR #983)
+- [Préparation sécuritaire de la liseuse V58 — PR candidate #983](https://github.com/M0rdr3x/BenoitCantin/blob/review/sinjira-liseuse-mobile-v58-main-aligned-20261110/docs/sinjira/SINJIRA_LISEUSE_V58_INTEGRATION_ET_RECEPTION_2026-11-10.md) (non fusionnée)
 
 Le script `scripts/validate_quatre_programmes_baseline_20261110.mjs` et ses **8 tests Node** recalculent et vérifient directement les valeurs à partir des quatre fichiers JSON originaux. Ce document est un **instantané daté** : toute nouvelle mesure devra être enregistrée et vérifiée par les registres sources avant de remplacer cette référence.
