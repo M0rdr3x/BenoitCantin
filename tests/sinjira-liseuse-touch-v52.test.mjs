@@ -78,6 +78,19 @@ test('intégration : les gestes cliquent uniquement les commandes officielles',(
   assert.equal(x.previous.clicks,1);
   x.release();
 });
+test('V57 : mode pages écran V53 bloque totalement le double changement PDF par V52',()=>{
+  const x=fixture();
+  x.viewer.dataset={readerLayout:'screens'};
+  x.swipe(-110);x.swipe(110);
+  x.mobileNext.click();x.mobilePrevious.click();
+  assert.equal(x.next.clicks,0);
+  assert.equal(x.previous.clicks,0);
+  x.viewer.dataset.readerLayout='scroll';
+  x.swipe(-110);x.mobilePrevious.click();
+  assert.equal(x.next.clicks,1);
+  assert.equal(x.previous.clicks,1);
+  x.release();
+});
 test('intégration : commandes de navigation en bas de l’écran',()=>{
   const x=fixture();
   x.mobileNext.click();x.mobilePrevious.click();
