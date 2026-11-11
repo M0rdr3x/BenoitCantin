@@ -10,7 +10,7 @@ const turn=(direction,scrollTop)=>planReaderScreenTurn({direction,scrollTop,...s
 
 test('CSS line-height sans unité se convertit en hauteur réelle',()=>{
   assert.equal(parseReaderLineHeight({lineHeight:'1.75',fontSize:'20px'}),35);
-  assert.equal(parseReaderLineHeight({lineHeight:'2.1',fontSize:'24px'}),50.4);
+  assert.ok(Math.abs(parseReaderLineHeight({lineHeight:'2.1',fontSize:'24px'})-50.4)<1e-9);
 });
 test('CSS line-height en px ne doit pas être multiplié',()=>{
   assert.equal(parseReaderLineHeight({lineHeight:'35px',fontSize:'20px'}),35);
