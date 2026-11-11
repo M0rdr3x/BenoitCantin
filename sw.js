@@ -40,14 +40,22 @@ function cacheableResponse(request,resp){
 }
 // Lire exclusivement le cache appartenant à cette version du site.
 function cachedPublic(request){return caches.open(CACHE).then(cache=>cache.match(request));}
-function anonymousPublicRequest(request){return new Request(request,{cache:'no-store',credentials:'omit'});}
+function anonymousPublicRequest(request){return new Request(request,{cache:'no-store',credentials:'omit',redirect:'error'});}
 self.addEventListener('install',e=>e.waitUntil(
-  caches.open(CACHE).then(c=>Promise.all(CORE.map(async path=>{
-    const request=anonymousPublicRequest(new URL(path,location.origin));
-    const response=await fetch(request);
-    // addAll() ignorait Cache-Control: private sur les pages précachées.
-    if(cacheableResponse(request,response))await c.put(request,response);
-  }))).then(()=>self.skipWaiting())
+  caches.open(CACHE).then(async cache=>{
+    // Attendre tous les téléchargements avant de refuser l'installation.
+    // Un précache incomplet ne doit jamais devenir une version active.
+    const results=await Promise.allSettled(CORE.map(async path=>{
+      const request=anonymousPublicRequest(new URL(path,location.origin));
+      const response=await fetch(request);
+      if(!cacheableResponse(request,response))throw new Error('précache public non admissible');
+      await cache.put(request,response);
+    }));
+    if(results.some(result=>result.status!=='fulfilled')){
+      await caches.delete(CACHE);
+      throw new Error('précache public incomplet ou non admissible');
+    }
+  }).then(()=>self.skipWaiting())
 ));
 self.addEventListener('activate',e=>e.waitUntil(
   caches.keys().then(keys=>Promise.all(keys
@@ -60,7 +68,8 @@ self.addEventListener('fetch',e=>{
   // Les chemins inconnus, URL encodées, requêtes avec token et API passent
   // seulement par le réseau, sans lecture ni écriture dans Cache Storage.
   if(isPrivatePath(u.pathname)||!isPublicCachePath(u.pathname)||u.search||
-      u.pathname.includes('%')||r.headers.has('authorization')){
+      u.pathname.includes('%')||r.headers.has('authorization')||
+      r.headers.has('range')||r.cache==='no-store'||r.cache==='no-cache'){
     e.respondWith(fetch(new Request(r,{cache:'no-store'})).catch(error=>{
       // Une API privée ne doit pas recevoir offline.html en remplacement de JSON.
       if(r.mode!=='navigate')throw error;
