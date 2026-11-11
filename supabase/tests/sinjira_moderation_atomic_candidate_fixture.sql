@@ -105,6 +105,20 @@ create table public.user_notifications(
  action_path text
 );
 
+-- Reproduire le contrôle RLS public : autoriser uniquement le propriétaire
+-- d'un signalement fictif, puis ajouter la politique restrictive candidate.
+create or replace function auth.uid()
+returns uuid language sql stable set search_path=''
+as $
+  select nullif(auth.jwt()->>'sub','')::uuid;
+$;
+grant usage on schema public to authenticated;
+grant insert on public.social_reports to authenticated;
+alter table public.social_reports enable row level security;
+create policy social_reports_own_insert on public.social_reports
+for insert to authenticated
+with check (auth.uid()=reporter_user_id);
+
 alter table private.moderation_decisions enable row level security;
 alter table private.moderation_appeals enable row level security;
 revoke all on table private.moderation_decisions,private.moderation_appeals from public,anon,authenticated,service_role;
