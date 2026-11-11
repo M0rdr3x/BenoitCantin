@@ -80,7 +80,7 @@ def main()->int:
         "uncertainError.submissionOutcomeUnknown=true;",
         "isConfirmedRegistryDuplicate(error)", "duplicate.submissionAlreadyExists=true;",
         "const unknown=err?.submissionOutcomeUnknown===true;",
-        "if(unknown){",
+        "if(unknown||duplicate){",
         "registryReady=false;",
         "link.href='/compte/mon-personnage.html';",
         "link.target='_blank';",
