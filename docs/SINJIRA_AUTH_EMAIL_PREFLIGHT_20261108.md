@@ -108,6 +108,36 @@ et doit être revérifié au moment du sign-off.
   **Cette parité ne prouve ni la réception SMTP, ni un facteur TOTP réellement
   vérifié, ni une session AAL2.**
 
+### Protection SQL AAL2 des photos privées — revue préalable au déploiement
+
+Audit de production (lecture seule, 10 novembre 2026) : le bucket
+`sinjira-character-sources` est **privé** et vide ; les politiques existantes
+`char_source_insert_own`, `char_source_select_own` et
+`char_source_delete_own` restreignent les chemins au propriétaire.
+**Ces règles ne vérifient pas elles-mêmes le niveau AAL2 du JWT.**
+Le navigateur #981 impose déjà AAL2 avant l'upload et l'Edge Function le
+réexige avant de créer un dossier, mais un appel direct de l'API Storage peut
+contourner le contrôle du navigateur.
+
+Le SQL de durcissement est versionné dans
+`scripts/sql/sinjira_character_sources_insert_requires_aal2.sql`.
+Il ajoute une politique Postgres **`AS RESTRICTIVE FOR INSERT TO authenticated`**
+qui impose `auth.jwt()->>'aal' = 'aal2'` au **seul** bucket source. Les règles
+permissives de propriété existantes continuent de s'appliquer ; les autres
+buckets restent inchangés. CI : test statique sur le SQL et simulation
+des valeurs `aal2`, `aal1`, jeton sans `aal` et autres buckets.
+
+**Attention : la CI ne déploie pas cette politique.**
+Pour la mise en production, effectuer une migration Supabase enregistrée,
+avec revue de l'environnement autorisé, puis contrôler `pg_policies` pour
+le nom exact, `cmd=INSERT`, `permissive=RESTRICTIVE` et la condition
+`auth.jwt()->>'aal' = 'aal2'`. Un test Storage authentifié AAL1 (refus)
+et AAL2 (accepté dans le dossier propre seulement), sans exposer de fichiers
+réels, reste nécessaire pour sa certification opérationnelle.
+Aucune modification des données `storage.objects` à la main.
+Un simple HTTP 200 ou une CI verte **n'est pas** une preuve de l'application
+de cette politique en production.
+
 **Décision de fin :** ne déclarer le correctif **100 % terminé** que si les
 jalons A, B et C ont des résultats datés et vérifiables, sans publier les
 adresses de test, les codes TOTP, les jetons, les réponses privées du Registre
