@@ -39,6 +39,11 @@ def self_test() -> None:
     assert sql.count("\nROLLBACK;") == 1
     assert "CREATE OR REPLACE FUNCTION private.security_require_current_auth_session" in sql
     assert "INSERT INTO auth.users" in sql
+    assert "SELECT plan(44);" in sql
+    assert sql.count("pg_temp.authenticated_rpc_rejects_revoked_session(") == 9
+    assert sql.count("NOT has_function_privilege('anon','public.") == 8
+    assert sql.count("has_function_privilege('authenticated','public.") == 8
+    assert "IF current_user <> 'authenticated'" in sql
     assert "SELECT * FROM finish()" in sql
     assert sql.endswith("\nROLLBACK;\n")
     print("OK : assemblage pgTAP transactionnel, aucun SQL exécuté.")
