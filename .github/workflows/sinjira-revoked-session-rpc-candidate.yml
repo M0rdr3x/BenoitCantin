@@ -63,7 +63,7 @@ jobs:
           version: 2.111.0
       - name: Démarrer la base Supabase de test locale
         run: supabase start
-      - name: Exécuter 20 scénarios de sessions et huit RPC avec pgTAP
+      - name: Exécuter 44 assertions pgTAP dont huit RPC avec rôle authenticated
         shell: bash
         run: |
           set -euo pipefail
