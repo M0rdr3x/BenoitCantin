@@ -38,8 +38,10 @@ def validate(source: str) -> list[str]:
     need('    if: ${{ ' + GUARD + ' }}', 'Job de déploiement non limité à main/manuel/confirmation.')
     need('    environment: production\n', 'Frontière production absente.')
     need('          persist-credentials: false', 'Checkout sans identifiants persistants absent.')
-    need('          ref: main', 'Référence main explicite absente.')
+    need('          ref: ${{ github.sha }}', 'Checkout du commit exact testé absent.')
     need("test \"$GITHUB_REF\" = 'refs/heads/main'", 'Vérification de branche après approbation absente.')
+    need('test "$(git rev-parse HEAD)" = "$GITHUB_SHA"',
+         'Identité du commit entre tests et déploiement non contrôlée.')
     need("test \"$CONFIRMATION\" = 'DEPLOY-SINJIRA-REGISTRY-EDGE'",
          'Confirmation explicite après approbation absente.')
     need("grep -Fq 'isCanonicalRegistryPhotoPath(photo_path,user.id)'",
@@ -109,6 +111,10 @@ def self_test() -> None:
                                                          'supabase functions deploy --project-ref "$PROJECT_ID" --use-api', 1),
         'JWT désactivé': original.replace(COMMAND, COMMAND + ' --no-verify-jwt', 1),
         'application par défaut': original.replace('        default: false', '        default: true', 1),
+        'déployer depuis main flottant': original.replace(
+            '          ref: ${{ github.sha }}', '          ref: main', 1),
+        'retirer contrôle SHA': original.replace(
+            'test "$(git rev-parse HEAD)" = "$GITHUB_SHA"', 'true', 1),
         'retirer contrôle photo': original.replace(
             "grep -Fq 'isCanonicalRegistryPhotoPath(photo_path,user.id)'", 'true', 1),
         'supprimer confirmation': original.replace(

@@ -135,7 +135,10 @@ La voie GitHub distincte est :
    depuis **`main`** le même workflow avec `apply=true` et la valeur
    exacte `DEPLOY-SINJIRA-REGISTRY-EDGE`. Le job `deploy` doit franchir
    l'Environment `production` et disposer du secret
-   `SUPABASE_ACCESS_TOKEN`. Il déploie **seulement**
+   `SUPABASE_ACCESS_TOKEN`. Le checkout utilise **le commit exact
+   `github.sha` déjà validé par le job de tests**, jamais la référence
+   mouvante `main`, et vérifie `git rev-parse HEAD = GITHUB_SHA`
+   après approbation. Il déploie **seulement**
    `submit-character-questionnaire`, sans `--prune`,
    sans `--no-verify-jwt`, sans migration SQL et sans autre fonction.
    Une erreur du job ne doit jamais être interprétée comme un déploiement réussi.

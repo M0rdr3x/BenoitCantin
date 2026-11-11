@@ -88,10 +88,10 @@ jobs:
     env:
       PROJECT_ID: gpvivleexywljowcqkru
     steps:
-      - name: Checkout de main sans credentials
+      - name: Checkout du commit validé sans credentials
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
-          ref: main
+          ref: ${{ github.sha }}
           persist-credentials: false
       - name: Vérifier l'intention après la frontière production
         shell: bash
@@ -101,6 +101,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$GITHUB_REF" = 'refs/heads/main'
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           test "$APPLY" = 'true'
           test "$CONFIRMATION" = 'DEPLOY-SINJIRA-REGISTRY-EDGE'
           test -f supabase/functions/submit-character-questionnaire/index.ts
