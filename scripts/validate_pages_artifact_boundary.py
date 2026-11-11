@@ -146,6 +146,11 @@ def inspect_workflows(files: dict[str, str]) -> list[str]:
             errors.append(f"Workflow Pages isolé sans verrou : {marker}")
     if manual_events(body) != ["workflow_dispatch"]:
         errors.append("Pages doit avoir workflow_dispatch comme seul événement")
+    # Un nom mentionné dans un if/commentaire ne prouve pas que l'input
+    # obligatoire de workflow_dispatch est réellement déclaré.
+    for key in ("confirm_containment", "acknowledge_header_gap", "expected_sha"):
+        if len(re.findall(rf"(?m)^      {key}:\\s*(?:#.*)?$", body)) != 1:
+            errors.append(f"Input Pages absent, non direct ou ambigu : {key}")
     for job in ("build", "deploy"):
         if not manual_job_gate(body, job):
             errors.append(f"Job Pages {job} sans triple contrôle main + confirmation + avertissement")
@@ -213,11 +218,15 @@ def self_test() -> None:
             "true # github.ref == 'refs/heads/main'",
         )),
         ("path variant", good.replace("path: _site", "path: ./_site")),
+        ("input in comment", good.replace(
+            "      expected_sha:\\n",
+            "      # expected_sha:\\n",
+        )),
     )
     for label, altered in mutants:
         assert inspect_workflows({APPROVED: altered}), "Dangerous Pages fixture accepted: " + label
     assert inspect_workflows({APPROVED: good, "extra.yml": good})
-    print("OK : 19 mutations Pages refusées; upload _site direct et double garde obligatoire.")
+    print("OK : 21 mutations Pages refusées; upload _site direct et double garde obligatoire.")
 
 
 def main() -> int:
