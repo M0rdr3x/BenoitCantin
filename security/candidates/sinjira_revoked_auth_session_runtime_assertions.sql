@@ -267,56 +267,56 @@ $rpc_role$;
 
 SELECT ok(
   pg_temp.authenticated_rpc_rejects_revoked_session(
-    'SELECT public.security_after_password_recovery(NULL)'
+    $call$SELECT public.security_after_password_recovery(NULL)$call$
   ),
   'session révoquée : endpoint public security_after_password_recovery refusé sous rôle authenticated'
 );
 
 SELECT ok(
   pg_temp.authenticated_rpc_rejects_revoked_session(
-    'SELECT public.security_compromise_account(NULL)'
+    $call$SELECT public.security_compromise_account(NULL)$call$
   ),
   'session révoquée : endpoint public security_compromise_account refusé sous rôle authenticated'
 );
 
 SELECT ok(
   pg_temp.authenticated_rpc_rejects_revoked_session(
-    'SELECT public.security_report_lost_device('ffffffff-ffff-4fff-8fff-ffffffffffff')'
+    $call$SELECT public.security_report_lost_device('ffffffff-ffff-4fff-8fff-ffffffffffff')$call$
   ),
   'session révoquée : endpoint public security_report_lost_device refusé sous rôle authenticated'
 );
 
 SELECT ok(
   pg_temp.authenticated_rpc_rejects_revoked_session(
-    'SELECT public.security_resolve_connection_challenge('ffffffff-ffff-4fff-8fff-ffffffffffff','fixture-key','approved')'
+    $call$SELECT public.security_resolve_connection_challenge('ffffffff-ffff-4fff-8fff-ffffffffffff','fixture-key','approved')$call$
   ),
   'session révoquée : endpoint public security_resolve_connection_challenge refusé sous rôle authenticated'
 );
 
 SELECT ok(
   pg_temp.authenticated_rpc_rejects_revoked_session(
-    'SELECT public.security_resolve_connection_challenge_mfa('ffffffff-ffff-4fff-8fff-ffffffffffff','fixture-key')'
+    $call$SELECT public.security_resolve_connection_challenge_mfa('ffffffff-ffff-4fff-8fff-ffffffffffff','fixture-key')$call$
   ),
   'session révoquée : endpoint public security_resolve_connection_challenge_mfa refusé sous rôle authenticated'
 );
 
 SELECT ok(
   pg_temp.authenticated_rpc_rejects_revoked_session(
-    'SELECT public.security_revoke_device('ffffffff-ffff-4fff-8fff-ffffffffffff')'
+    $call$SELECT public.security_revoke_device('ffffffff-ffff-4fff-8fff-ffffffffffff')$call$
   ),
   'session révoquée : endpoint public security_revoke_device refusé sous rôle authenticated'
 );
 
 SELECT ok(
   pg_temp.authenticated_rpc_rejects_revoked_session(
-    'SELECT public.security_set_device_trust('ffffffff-ffff-4fff-8fff-ffffffffffff',true,false)'
+    $call$SELECT public.security_set_device_trust('ffffffff-ffff-4fff-8fff-ffffffffffff',true,false)$call$
   ),
   'session révoquée : endpoint public security_set_device_trust refusé sous rôle authenticated'
 );
 
 SELECT ok(
   pg_temp.authenticated_rpc_rejects_revoked_session(
-    'SELECT public.security_update_settings(NULL,NULL,NULL,NULL,NULL)'
+    $call$SELECT public.security_update_settings(NULL,NULL,NULL,NULL,NULL)$call$
   ),
   'session révoquée : endpoint public security_update_settings refusé sous rôle authenticated'
 );
