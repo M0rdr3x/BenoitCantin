@@ -39,7 +39,8 @@ export async function requireUser(redirect='/compte/connexion.html') {
         await new Promise(()=>{});
       }
     }catch(error){
-      console.warn('[SINJIRA MFA gate]',error?.message||error);
+      // Les erreurs Auth peuvent contenir des détails de session ou de serveur.
+      console.warn('[SINJIRA MFA gate] Vérification indisponible; passage par MFA requis.');
       location.replace(`/compte/mfa.html?next=${encodeURIComponent(next)}&state=aal-check`);
       await new Promise(()=>{});
     }
@@ -89,14 +90,17 @@ export function friendlyBackendMessage(message,fallback='Une opération serveur 
   if(/duplicate key|23505/i.test(raw))return 'Cette information existe déjà dans votre compte.';
   if(/foreign key|23503/i.test(raw))return 'Cette opération dépend d’un élément qui n’est plus disponible.';
   if(/null value|23502|check constraint|23514|syntax error|SQLSTATE|column .* does not exist/i.test(raw))return 'Le serveur a refusé cette opération. Le diagnostic administrateur permet d’identifier le composant à synchroniser.';
-  return raw.length>240?fallback:raw;
+  // N'afficher aucune erreur serveur non reconnue : elle pourrait contenir
+  // des noms de tables, des valeurs privées, un jeton ou un diagnostic SQL.
+  return fallback;
 }
 export function setStatus(node,msg,type='info'){
   if(!node)return;
   const raw=String(msg||'');
-  const friendly=friendlyBackendMessage(raw,raw||'Une opération n’a pas pu être terminée.');
-  if(friendly!==raw&&raw)console.warn('[SINJIRA backend]',raw);
   const isError=type==='error';
+  // Les confirmations rédigées par l'application restent intactes. Les erreurs
+  // de backend ne doivent jamais être rendues en clair ni répétées en console.
+  const friendly=isError?friendlyBackendMessage(raw):raw;
   node.setAttribute('role',isError?'alert':'status');
   node.setAttribute('aria-live',isError?'assertive':'polite');
   node.setAttribute('aria-atomic','true');
@@ -107,4 +111,4 @@ export function setStatus(node,msg,type='info'){
 export function roleLabel(v){return ({public:'Public',account:'Compte joueur',player:'Joueur approuvé',tester:'Testeur approuvé',admin:'Administration'})[v]||v||'—'}
 export function projectStatusLabel(v){return ({draft:'Brouillon',development:'En développement',testing:'En test',active:'Disponible',archived:'Archivé'})[v]||v||'—'}
 export { SINJIRA_CONFIG, isSinjiraBackendConfigured };
-if(typeof location!=='undefined'&&/^\/admin\/sinjira(?:\/|$)/i.test(location.pathname)){queueMicrotask(()=>import('./v24-admin-health.js?v=24.4.67').catch(err=>console.warn('[SINJIRA admin health loader]',err)))}
+if(typeof location!=='undefined'&&/^\/admin\/sinjira(?:\/|$)/i.test(location.pathname)){queueMicrotask(()=>import('./v24-admin-health.js?v=24.4.67').catch(err=>console.warn('[SINJIRA admin health loader] Chargement indisponible.')))}
