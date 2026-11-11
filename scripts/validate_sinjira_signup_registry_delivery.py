@@ -95,6 +95,9 @@ def main()->int:
         "sendFormspreeNotice(service,'registre_enregistre',sub.id,",
         "answers:answers as Record<string,unknown>",
         "CHARACTER_SUBMISSION_WRITE_FAILED",
+        "isCanonicalRegistryPhotoPath(photo_path,user.id)",
+        "code:'INVALID_CHARACTER_PHOTO_PATH'",
+        "const photo_path=body.photo_path??null",
     ])
     account_edge=check('supabase/functions/notify-account-confirmation/index.ts',[
         "requiredUser(req)", "if(!user.email_confirmed_at)",
