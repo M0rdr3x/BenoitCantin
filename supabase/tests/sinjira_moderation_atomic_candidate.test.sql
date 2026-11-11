@@ -67,6 +67,49 @@ end;
 $refuse$;
 reset role;
 
+-- Le membre qui accepte les règles peut signaler un contenu social ordinaire.
+-- Il NE DOIT PAS pouvoir fournir un snapshot Rencontres privilégié :
+-- le vrai signalement Rencontres est rédigé par le RPC SQL vérifié.
+select set_config('request.jwt.claims',
+ '{"role":"authenticated","sub":"cccccccc-cccc-4ccc-cccc-cccccccccccc"}',false);
+set role authenticated;
+insert into public.social_reports(
+ id,reporter_user_id,network,target_type,target_id,reason,snapshot
+) values (
+ 'dddddddd-dddd-4ddd-dddd-ddddddddddd4',
+ 'cccccccc-cccc-4ccc-cccc-cccccccccccc',
+ 'real','post','eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee',
+ 'threats','{}'::jsonb
+);
+do $rls$
+declare v_denied boolean:=false;
+begin
+  begin
+    insert into public.social_reports(
+      id,reporter_user_id,network,target_type,target_id,reason,snapshot
+    ) values (
+      'dddddddd-dddd-4ddd-dddd-ddddddddddd5',
+      'cccccccc-cccc-4ccc-cccc-cccccccccccc',
+      'real','profile','99999999-9999-4999-9999-999999999998',
+      'threats',
+      '{"source":"dating","dating_profile_id":"99999999-9999-4999-9999-999999999998"}'::jsonb
+    );
+  exception when insufficient_privilege then
+    v_denied:=true;
+  end;
+  if not v_denied then raise exception 'RLS_DATING_SPOOF_INSERT_SUCCEEDED'; end if;
+end;
+$rls$;
+reset role;
+select public.fixture_assert_true(
+ (select count(*) from public.social_reports
+  where id='dddddddd-dddd-4ddd-dddd-ddddddddddd4')=1,
+ 'Le RLS ne doit pas empêcher le signalement social ordinaire');
+select public.fixture_assert_true(
+ (select count(*) from public.social_reports
+  where id='dddddddd-dddd-4ddd-dddd-ddddddddddd5')=0,
+ 'Le snapshot Rencontres falsifié doit être rejeté par RLS');
+
 -- La session simule le JWT du SERVICE et l'identité de l'admin est une
 -- variable signée par Edge après vérification AAL2, jamais celle du client.
 select set_config('request.jwt.claims','{"role":"service_role"}',false);
