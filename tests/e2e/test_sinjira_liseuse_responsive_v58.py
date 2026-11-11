@@ -72,6 +72,28 @@ def run(playwright, engine, origin):
           document.querySelector('#reader-text').textContent.includes('LIVRE DE TEST')""")
         assert snapshot(page)["page"]==3,snapshot(page)
 
+        # V61 : les touches de lecture n'interceptent pas la navigation du site.
+        page.evaluate("document.querySelector('#reader-viewer').blur()")
+        page.keyboard.press("ArrowRight")
+        away=snapshot(page)
+        assert away["page"]==3 and away["scroll"]==0,away
+        # Après entrée explicite dans la zone de livre, les flèches agissent
+        # par portions d'écran et respectent le retour arrière.
+        page.locator("#reader-viewer").focus()
+        page.keyboard.press("ArrowRight")
+        on_reader=snapshot(page)
+        assert on_reader["page"]==3 and on_reader["scroll"]>0,on_reader
+        page.keyboard.press("ArrowLeft")
+        back=snapshot(page)
+        assert back["page"]==3 and back["scroll"]==0,back
+        # Un champ de réglage peut récupérer le focus sans tourner le roman.
+        page.locator("#reader-page").focus()
+        page.keyboard.press("ArrowRight")
+        input_focus=snapshot(page)
+        assert input_focus["page"]==3 and input_focus["scroll"]==0,input_focus
+        assert "Écran suivant" in page.locator("#reader-touch-next").get_attribute("aria-label")
+        assert "Écran précédent" in page.locator("#reader-touch-prev").get_attribute("aria-label")
+
         # Chaque taille conserve le livre, les boutons accessibles, le texte
         # réorganisé et une navigation par portion plutôt que par page PDF.
         for label,width,height in VIEWPORTS:
@@ -135,6 +157,13 @@ def run(playwright, engine, origin):
         assert not page.locator("body").evaluate(
             "(node)=>node.classList.contains('reader-focus-mode')"
         ),"Impossible de quitter le plein écran"
+
+        # V61 : les libellés d'aide changent quand on quitte le mode paginé.
+        page.locator("#reader-screens-enabled").uncheck()
+        assert page.locator("#reader-touch-next").get_attribute("aria-label")=="Page du livre suivante"
+        assert page.locator("#reader-touch-prev").get_attribute("aria-label")=="Page du livre précédente"
+        page.locator("#reader-screens-enabled").check()
+        assert "Écran suivant" in page.locator("#reader-touch-next").get_attribute("aria-label")
 
         # V60: le vrai moteur JS chargé sur cette page ne doit pas demander
         # un balayage pour seulement 10 px supplémentaires à la fin.
