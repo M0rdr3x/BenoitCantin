@@ -36,6 +36,8 @@ function cacheableResponse(request,resp){
   if(resp.headers.get('Set-Cookie'))return false;
   return true;
 }
+// Lire exclusivement le cache appartenant à cette version du site.
+function cachedPublic(request){return caches.open(CACHE).then(cache=>cache.match(request));}
 self.addEventListener('install',e=>e.waitUntil(
   caches.open(CACHE).then(c=>Promise.all(CORE.map(async path=>{
     const request=new Request(new URL(path,location.origin),{cache:'no-store'});
@@ -56,7 +58,11 @@ self.addEventListener('fetch',e=>{
   // seulement par le réseau, sans lecture ni écriture dans Cache Storage.
   if(isPrivatePath(u.pathname)||!isPublicCachePath(u.pathname)||u.search||
       u.pathname.includes('%')||r.headers.has('authorization')){
-    e.respondWith(fetch(new Request(r,{cache:'no-store'})).catch(()=>caches.match('/offline.html')));
+    e.respondWith(fetch(new Request(r,{cache:'no-store'})).catch(error=>{
+      // Une API privée ne doit pas recevoir offline.html en remplacement de JSON.
+      if(r.mode!=='navigate')throw error;
+      return cachedPublic('/offline.html').then(page=>{if(page)return page;throw error;});
+    }));
     return;
   }
   if(r.destination==='document'){
@@ -66,7 +72,7 @@ self.addEventListener('fetch',e=>{
         caches.open(CACHE).then(c=>c.put(r,cp));
       }
       return resp;
-    }).catch(()=>caches.match(r).then(x=>x||caches.match('/offline.html'))));
+    }).catch(()=>cachedPublic(r).then(x=>x||cachedPublic('/offline.html'))));
     return;
   }
   // Le code JS/CSS doit rester network-first : une correction de sécurité ne
@@ -76,11 +82,11 @@ self.addEventListener('fetch',e=>{
     e.respondWith(fetch(new Request(r,{cache:'no-store'})).then(resp=>{
       if(cacheableResponse(r,resp))caches.open(CACHE).then(c=>c.put(r,resp.clone()));
       return resp;
-    }).catch(()=>caches.match(r).then(x=>x||caches.match(u.pathname))));
+    }).catch(()=>cachedPublic(r).then(x=>x||cachedPublic(u.pathname))));
     return;
   }
-  e.respondWith(caches.match(r).then(cached=>cached||fetch(r).then(resp=>{
+  e.respondWith(cachedPublic(r).then(cached=>cached||fetch(r).then(resp=>{
     if(cacheableResponse(r,resp))caches.open(CACHE).then(c=>c.put(r,resp.clone()));
     return resp;
-  })).catch(()=>caches.match('/offline.html')));
+  })).catch(()=>cachedPublic('/offline.html')));
 });
