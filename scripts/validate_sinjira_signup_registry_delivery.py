@@ -136,7 +136,7 @@ def main()->int:
         errors.append('Registre : script AAL2 ne doit supprimer aucune politique RLS.')
     check('scripts/test_sinjira_storage_photo_aal2_policy.cjs',[
         'Restrictive INSERT only', 'Never drop an owner policy',
-        'without database' if False else 'sans base de données',
+        'sans base de données',
     ])
     check('supabase/config.toml',[
         '[functions.notify-account-confirmation]', 'verify_jwt = true',
