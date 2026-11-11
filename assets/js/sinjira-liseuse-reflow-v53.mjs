@@ -46,7 +46,7 @@ export function parseReaderLineHeight({lineHeight,fontSize}={}){
   if(raw.endsWith('px'))return number;
   // CSS line-height sans unité: ex. 1.75 signifie 1.75 × font-size,
   // et non 1.75 px. Important pour ne pas couper une ligne sur Safari.
-  if(/^\\d+(?:\\.\\d+)?$/.test(raw))return number*font;
+  if(Number.isFinite(Number(raw)))return number*font;
   return font*1.75;
 }
 function currentLineHeight(element){
