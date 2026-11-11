@@ -22,7 +22,7 @@ const HTML = [
     'data-confirm-button hidden', 'sinjira-confirm-email.js?v=3'
   ] },
   { path: 'compte/inscription.html', markers: [
-    'data-signup-form', 'formspree_receipt_opt_in', 'v24-signup.js?v=24.5.5'
+    'data-signup-form', 'formspree_receipt_opt_in', 'v24-signup.js?v=24.5.6'
   ] },
   { path: 'projets/sinjira/registre/index.html', markers: [
     'sinjira-character-registry.js?v=24.5.8',
@@ -31,7 +31,7 @@ const HTML = [
 ];
 const REQUIRED_MODULES = {
   'compte/confirmer.html': '../assets/js/sinjira-confirm-email.js?v=3',
-  'compte/inscription.html': '../assets/js/v24-signup.js?v=24.5.5',
+  'compte/inscription.html': '../assets/js/v24-signup.js?v=24.5.6',
   'projets/sinjira/registre/index.html': '../../../assets/js/sinjira-character-registry.js?v=24.5.8'
 };
 
@@ -185,7 +185,7 @@ function selfTest() {
   // la régression de la révision chargée dans les vraies pages HTML.
   for (const [route, current, previous] of [
     ['compte/confirmer.html', 'sinjira-confirm-email.js?v=3', 'sinjira-confirm-email.js?v=2'],
-    ['compte/inscription.html', 'v24-signup.js?v=24.5.5', 'v24-signup.js?v=24.5.4']
+    ['compte/inscription.html', 'v24-signup.js?v=24.5.6', 'v24-signup.js?v=24.5.5']
   ]) {
     const item = HTML.find(entry => entry.path === route);
     const currentHtml = local(route).toString('utf8');

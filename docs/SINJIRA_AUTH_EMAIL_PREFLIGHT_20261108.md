@@ -66,8 +66,11 @@ et doit être revérifié au moment du sign-off.
   [le prévol public en lecture seule](https://github.com/M0rdr3x/BenoitCantin/actions/workflows/sinjira-public-release-parity.yml)
   avec `PUBLIC-GET-ONLY`. Les pages de confirmation et d'inscription chargent
   désormais respectivement `sinjira-confirm-email.js?v=3` et
-  `v24-signup.js?v=24.5.5`, pour contourner les anciens caches après
-  les correctifs de sécurité. Le contrat CI refuse le retour aux anciennes
+  `v24-signup.js?v=24.5.6`, pour contourner les anciens caches après
+  les correctifs de sécurité. Cette révision utilise un accusé d'inscription
+  **neutre** : le SDK Auth peut retourner un utilisateur masqué si l'adresse
+  existe déjà, donc même un `user.id` n'atteste pas qu'un nouveau compte
+  a été créé ni qu'un courriel SMTP a été reçu. Le contrat CI refuse le retour aux anciennes
   révisions ; seule une inspection du site publié confirme la livraison.
   Le prévol public vérifie également la présence d'une **unique vraie
   balise `<script>`** pour chaque module critique, avec `src` local exact

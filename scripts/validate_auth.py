@@ -41,7 +41,7 @@ def main():
   confirmation_html=text('compte/confirmer.html')
   if 'sinjira-confirm-email.js?v=3' not in confirmation_html or 'sinjira-confirm-email.js?v=2' in confirmation_html:
     errors.append('Confirmation: l’ancienne révision du module Auth peut rester en cache.')
-  if 'v24-signup.js?v=24.5.5' not in signup_html or 'v24-signup.js?v=24.5.4' in signup_html:
+  if 'v24-signup.js?v=24.5.6' not in signup_html or 'v24-signup.js?v=24.5.5' in signup_html:
     errors.append('Inscription: l’ancienne révision du module Auth peut rester en cache.')
   if len(re.findall(r'minlength=["\']12["\']',signup_html))<2:
     errors.append('Inscription: les deux champs mot de passe doivent imposer minlength=12.')

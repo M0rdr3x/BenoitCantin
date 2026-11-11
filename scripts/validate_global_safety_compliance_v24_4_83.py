@@ -55,7 +55,7 @@ req('age<13' in signup_js and '13 ans et plus' in signup_js,'JavaScript inscript
 req('age<18&&!isCanada(residenceCountry)' in signup_js,'Gate jeunesse Canada absent côté client.')
 req('partir de 13 ans' in signup_html.lower() and 'moins de 13 ans' in signup_html.lower(),'Interface inscription pas alignée sur 13+.')
 req('comptes de 13 à 17 ans' in signup_html.lower() and 'canada' in signup_html.lower(),'Gate jeunesse Canada non expliqué à l’inscription.')
-req('v24-signup.js?v=24.5.5' in signup_html,'Version du client inscription sécurisé non actualisée.')
+req('v24-signup.js?v=24.5.6' in signup_html,'Version du client inscription sécurisé non actualisée.')
 for phrase in ('registre interne','cinq ans','30 jours','13 ans','comptes jeunesse 13–17 ans','canada','rencontres sinjira™ est strictement 18+','ia distante payante est désactivée','paiements en ligne','responsable de la protection des renseignements personnels','gouvernance-vie-privee.html','formspree','états-unis','canada central'):
     req(phrase in privacy.lower(),f'Politique vie privée incomplète: {phrase}')
 for phrase in ('responsable de la protection des renseignements personnels','benoit cantin','rôles et responsabilités','conservation et destruction','plaintes et demandes','efvp','formulaire officiel de contact'):
