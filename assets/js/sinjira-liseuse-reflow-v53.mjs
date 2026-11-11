@@ -38,11 +38,20 @@ export function planReaderScreenTurn({direction,scrollTop,scrollHeight,clientHei
   return {type:'screen',direction,top:Math.max(0,prevIndex*s.step)};
 }
 
+export function parseReaderLineHeight({lineHeight,fontSize}={}){
+  const font=Number.parseFloat(fontSize)||20;
+  const raw=String(lineHeight??'').trim();
+  const number=Number.parseFloat(raw);
+  if(!Number.isFinite(number)||number<=0)return font*1.75;
+  if(raw.endsWith('px'))return number;
+  // CSS line-height sans unité: ex. 1.75 signifie 1.75 × font-size,
+  // et non 1.75 px. Important pour ne pas couper une ligne sur Safari.
+  if(/^\\d+(?:\\.\\d+)?$/.test(raw))return number*font;
+  return font*1.75;
+}
 function currentLineHeight(element){
   const style=window.getComputedStyle(element);
-  const px=Number.parseFloat(style.lineHeight);
-  if(Number.isFinite(px)&&px>0)return px;
-  return (Number.parseFloat(style.fontSize)||20)*1.75;
+  return parseReaderLineHeight({lineHeight:style.lineHeight,fontSize:style.fontSize});
 }
 function isInteractive(element){
   return Boolean(element?.closest?.(INTERACTIVE));
