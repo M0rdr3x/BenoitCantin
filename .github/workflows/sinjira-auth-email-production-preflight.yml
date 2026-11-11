@@ -13,6 +13,8 @@ on:
       - 'scripts/test_sinjira_signup_next_fallback.cjs'
       - 'scripts/test_sinjira_signup_response.cjs'
       - 'scripts/test_sinjira_registry_duplicate_response.cjs'
+      - 'scripts/test_sinjira_storage_photo_aal2_policy.cjs'
+      - 'scripts/sql/sinjira_character_sources_insert_requires_aal2.sql'
       - 'assets/js/sinjira-character-registry.js'
       - 'projets/sinjira/registre/index.html'
       - 'assets/js/v24-security.js'
@@ -33,6 +35,8 @@ on:
       - 'scripts/test_sinjira_signup_next_fallback.cjs'
       - 'scripts/test_sinjira_signup_response.cjs'
       - 'scripts/test_sinjira_registry_duplicate_response.cjs'
+      - 'scripts/test_sinjira_storage_photo_aal2_policy.cjs'
+      - 'scripts/sql/sinjira_character_sources_insert_requires_aal2.sql'
       - 'assets/js/sinjira-character-registry.js'
       - 'projets/sinjira/registre/index.html'
       - 'assets/js/v24-security.js'
@@ -101,6 +105,10 @@ jobs:
         run: |
           node --check scripts/test_sinjira_registry_duplicate_response.cjs
           node scripts/test_sinjira_registry_duplicate_response.cjs
+      - name: Vérifier le contrat SQL RLS AAL2 des photos privées du Registre
+        run: |
+          node --check scripts/test_sinjira_storage_photo_aal2_policy.cjs
+          node scripts/test_sinjira_storage_photo_aal2_policy.cjs
       - name: Vérifier les erreurs de vérification TOTP sans bloquer le bouton
         run: |
           node --check scripts/test_sinjira_totp_verification_recovery.cjs
