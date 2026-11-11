@@ -1,0 +1,72 @@
+name: SINJIRA V59 — autorisation CAS des romans (laboratoire)
+
+on:
+  pull_request:
+    branches:
+      - fix/sinjira-reader-v51-atomic-cas-20261109
+      - main
+    paths:
+      - 'supabase/review-candidates/20261110011500_sinjira_reader_progress_revision_cas_v51.sql'
+      - 'tests/security/sql/setup_sinjira_reader_v59_entitlements.sql'
+      - 'tests/security/sql/test_sinjira_reader_v59_entitlements.sql'
+      - 'tests/security/sql/test_sinjira_reader_v51_cas.sql'
+      - 'tests/security/test_sinjira_reader_v51_cas_contract.py'
+      - '.github/workflows/sinjira-reader-v59-entitlement-parity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tests/security/sql/test_sinjira_reader_v59_entitlements.sql'
+      - 'supabase/review-candidates/20261110011500_sinjira_reader_progress_revision_cas_v51.sql'
+      - '.github/workflows/sinjira-reader-v59-entitlement-parity.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  entitlement-cas:
+    name: Aucun marque-page sans droit de lecture — PostgreSQL fictif
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_DB: sinjira_reader_v51_lab
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - '127.0.0.1:5432:5432'
+        options: >-
+          --health-cmd=pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    steps:
+      - name: Extraire les sources sans conserver d'identifiants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Exécuter les contrats statiques et syntaxiques V51
+        run: |
+          python3 -m unittest discover -s tests/security -p test_sinjira_reader_v51_cas_contract.py -v
+          node --input-type=module --check < assets/js/sinjira-liseuse-v26.js
+          node --input-type=module --check < assets/js/sinjira-reader-progress-v24-4-61.js
+      - name: Créer le laboratoire V48 avec les mêmes anciens marque-pages
+        env:
+          PGCONNECT_TIMEOUT: '10'
+        run: |
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v51_lab -v ON_ERROR_STOP=1 -f tests/security/sql/setup_sinjira_reader_v48.sql
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v51_lab -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v48_client_a.sql
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v51_lab -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v48_client_b.sql
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v51_lab -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v48_client_a_return.sql
+      - name: Ajouter catalogue et droits fictifs avant migration candidate
+        run: |
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v51_lab -v ON_ERROR_STOP=1 -f tests/security/sql/setup_sinjira_reader_v59_entitlements.sql
+      - name: Réexécuter les cas CAS V51 sans perte de progression
+        run: |
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v51_lab -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v51_cas.sql
+          bash scripts/test_sinjira_reader_v51_concurrent_local.sh
+      - name: Refuser l'accès et vérifier la révocation en PostgreSQL
+        run: |
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v51_lab -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v59_entitlements.sql
+      - name: Attestation exclusivement locale sans SQL de production
+        run: echo "V59-LAB-PASS-NO_GO : droits testés sur PostgreSQL fictif, aucune mutation de la base Supabase."
