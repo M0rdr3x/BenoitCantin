@@ -20,12 +20,34 @@ WORKFLOW=Path(__file__).resolve().parents[1]/".github/workflows/sinjira-auth-ema
 class ConfirmationLinkParser(HTMLParser):
     """Inspecter les vrais href HTML, jamais les commentaires ni le texte brut."""
 
+    # Éléments sans fermeture : ils ne modifient pas l'héritage de visibilité.
+    VOID_TAGS = frozenset(("area", "base", "br", "col", "embed", "hr",
+                           "img", "input", "link", "meta", "param",
+                           "source", "track", "wbr"))
+
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.valid_link = False
+        self.visibility_stack = []
 
     def handle_starttag(self, tag, attrs):
-        if tag != "a":
+        properties = dict(attrs)
+        style = str(properties.get("style") or "")
+        # Un href correct mais dans un bloc invisible ne doit pas être
+        # considéré comme un bouton de confirmation utilisable.
+        local_hidden = (
+            tag in ("template", "head", "script", "style")
+            or "hidden" in properties
+            or "inert" in properties
+            or str(properties.get("aria-hidden") or "").strip().lower() == "true"
+            or bool(re.search(r"(?:^|;)\s*(?:display\s*:\s*none|visibility\s*:\s*hidden)\b",
+                              style, re.IGNORECASE))
+        )
+        inherited_hidden = self.visibility_stack[-1][1] if self.visibility_stack else False
+        hidden = local_hidden or inherited_hidden
+        if tag not in self.VOID_TAGS:
+            self.visibility_stack.append((tag, hidden))
+        if tag != "a" or hidden:
             return
         # Deux attributs href sont ambigus : les navigateurs peuvent choisir
         # différemment la destination. On refuse ce modèle sans le certifier.
@@ -43,6 +65,20 @@ class ConfirmationLinkParser(HTMLParser):
                 dict(pairs) == {"token_hash": "{{ .TokenHash }}",
                               "type": "email"}):
             self.valid_link = True
+
+    def handle_endtag(self, tag):
+        # Empiler/dépiler les ancêtres permet de rejeter les liens cachés
+        # sans rejeter un lien visible situé après le bloc masqué.
+        for index in range(len(self.visibility_stack) - 1, -1, -1):
+            if self.visibility_stack[index][0] == tag:
+                del self.visibility_stack[index:]
+                break
+
+    def handle_startendtag(self, tag, attrs):
+        # Un <a ... /> sans contenu n'est pas un lien cliquable.
+        if tag == "a":
+            return
+        self.handle_starttag(tag, attrs)
 
 
 def has_secure_confirmation_link(content):
@@ -188,6 +224,20 @@ def selftest():
         safe + "<p>{{- .TokenHash -}}</p>",
     ]
     deceptive_templates.extend(leaked_templates)
+    # Régression : la destination est correcte mais le vrai lien de
+    # confirmation ne peut pas être vu/activé par le destinataire.
+    hidden_templates = [
+        '<a hidden href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email">Confirmer</a>',
+        '<a aria-hidden="true" href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email">Confirmer</a>',
+        '<a style="display:none" href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email">Confirmer</a>',
+        '<a style="DISPLAY : None !important" href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email">Confirmer</a>',
+        '<div hidden><a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email">Confirmer</a></div>',
+        '<section style="visibility:hidden"><a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email">Confirmer</a></section>',
+        '<template><a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email">Confirmer</a></template>',
+        '<div inert><a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email">Confirmer</a></div>',
+        '<a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email" />',
+    ]
+    deceptive_templates.extend(hidden_templates)
     for template in deceptive_templates:
         _, failed, _ = audit({**good, "mailer_templates_confirmation_content": template})
         assert "Modèle sécurisé par fragment" in failed, "Faux positif du modèle de courriel"
@@ -196,8 +246,14 @@ def selftest():
     assert has_secure_confirmation_link(
         good["mailer_templates_confirmation_content"] +
         "<a href='https://www.benoitcantin.com/'>Accueil sans jeton</a>")
+    assert has_secure_confirmation_link(
+        "<div hidden><p>Contenu auxiliaire masqué</p></div>" +
+        good["mailer_templates_confirmation_content"])
+    assert has_secure_confirmation_link(
+        "<template><a href='https://example.invalid/'>Ignoré</a></template>" +
+        good["mailer_templates_confirmation_content"])
     print("OK prévol Auth : treize contrats, quinze régressions, "
-          "dix-neuf modèles trompeurs (dont fuites de jeton) et wildcard testés.")
+          "vingt-huit modèles trompeurs (dont liens cachés) et wildcard testés.")
 
 
 def remote():
