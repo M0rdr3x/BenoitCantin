@@ -167,8 +167,20 @@ form?.addEventListener('submit',async e=>{
  isSending=true;
  if(submitButton)submitButton.disabled=true;
  setState(isOwnerForSubmit?'Mise à jour sécurisée du dossier…':'Enregistrement sécurisé dans votre Compte SINJIRA™…','info');
+ // La session peut changer après le chargement de la page. Aucune photo
+ // personnelle ne doit être téléversée avant une nouvelle vérification AAL2.
+ let securityCheckedBeforeUpload=false;
  try{
-   const result=await submitToSinjira(currentUser,{updateExisting:isOwnerForSubmit});
+   const activeUser=await getCurrentUser();
+   if(!activeUser||activeUser.id!==currentUser.id){
+     throw new Error('Votre session SINJIRA™ a changé ou expiré. Reconnectez-vous et rechargez le Registre avant tout envoi.');
+   }
+   if(!(await ensureSensitiveAccess())){
+     registryReady=false;
+     return;
+   }
+   securityCheckedBeforeUpload=true;
+   const result=await submitToSinjira(activeUser,{updateExisting:isOwnerForSubmit});
    // Un blocage du stockage local ne doit jamais annuler un succès serveur.
    try{localStorage.removeItem('registre-consciences-draft-v1')}catch{console.warn('[SINJIRA registre] brouillon local inaccessible')}
    setState(successMessage(result),'success');
@@ -180,7 +192,12 @@ form?.addEventListener('submit',async e=>{
    const duplicate=err?.submissionAlreadyExists===true;
    setState(err?.message||'Transmission impossible. Vos réponses restent visibles; réessayez.','error');
    state?.scrollIntoView({behavior:'smooth',block:'center'});
-   if(unknown||duplicate){
+   if(!securityCheckedBeforeUpload){
+     // Aucun POST ni téléversement n'a commencé : bloquer le formulaire
+     // jusqu'à une nouvelle visite avec une session réellement vérifiée.
+     registryReady=false;
+     if(submitButton)submitButton.disabled=true;
+   }else if(unknown||duplicate){
      registryReady=false;
      if(submitButton)submitButton.disabled=true;
      // Vérification dans un nouvel onglet pour conserver les réponses visibles.

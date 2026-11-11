@@ -60,7 +60,7 @@ def main()->int:
     ])
     registry_page=check('projets/sinjira/registre/index.html',[
         'data-character-form=', 'type="submit" disabled>Transmettre ma participation',
-        'name="formspree_receipt_opt_in"', 'sinjira-character-registry.js?v=24.5.9',
+        'name="formspree_receipt_opt_in"', 'sinjira-character-registry.js?v=24.5.10',
         'La double authentification (AAL2) est obligatoire pour tous les participants au Registre',
     ])
     security_page=check('compte/securite.html',[
@@ -79,6 +79,10 @@ def main()->int:
         "aal.currentLevel!=='aal2'",
         "uncertainError.submissionOutcomeUnknown=true;",
         "isConfirmedRegistryDuplicate(error)", "duplicate.submissionAlreadyExists=true;",
+        "const activeUser=await getCurrentUser();",
+        "if(!(await ensureSensitiveAccess()))",
+        "securityCheckedBeforeUpload=true;",
+        "submitToSinjira(activeUser,",
         "const unknown=err?.submissionOutcomeUnknown===true;",
         "if(unknown||duplicate){",
         "registryReady=false;",
