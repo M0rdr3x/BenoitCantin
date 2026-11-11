@@ -158,5 +158,25 @@ jobs:
           supabase functions list --project-ref "$PROJECT_ID" > /tmp/sinjira-registry-edge-after.txt
           python3 scripts/verify_sinjira_registry_edge_deployment.py --before /tmp/sinjira-registry-edge-before.txt --after /tmp/sinjira-registry-edge-after.txt | tee /tmp/sinjira-registry-edge-version-proof.txt
           cat /tmp/sinjira-registry-edge-version-proof.txt >> "$GITHUB_STEP_SUMMARY"
-          echo 'Version ciblée augmentée. Vérifier séparément la parité du code hébergé, verify_jwt=true et les tests Auth/AAL2 de production.' >> "$GITHUB_STEP_SUMMARY"
+          # Lire uniquement la fonction cible dans un dossier temporaire, jamais
+          # le dépôt de production. La CLI ne reçoit aucune permission d'écriture.
+          temp="$(mktemp -d)"
+          trap 'rm -rf "$temp"' EXIT
+          mkdir -p "$temp/supabase/functions"
+          cp supabase/config.toml "$temp/supabase/config.toml"
+          (
+            cd "$temp"
+            supabase functions download submit-character-questionnaire --project-ref "$PROJECT_ID" --use-api
+          )
+          downloaded="$temp/supabase/functions/submit-character-questionnaire/index.ts"
+          test -f "$downloaded"
+          test ! -L "$downloaded"
+          test -f supabase/functions/submit-character-questionnaire/index.ts
+          cmp -s supabase/functions/submit-character-questionnaire/index.ts "$downloaded" || {
+            echo 'ÉCHEC : le code Edge distant ne correspond pas au commit GitHub testé.'
+            exit 4
+          }
+          node scripts/test_sinjira_character_photo_path.cjs --source "$downloaded"
+          echo 'Source Edge téléchargée strictement identique au commit testé ; validation des chemins photo passée.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Version et code de la fonction cible contrôlés. Les essais Auth/AAL2 de production restent distincts.' >> "$GITHUB_STEP_SUMMARY"
           echo 'Aucune migration SQL ou autre fonction Edge déployée par ce workflow.' >> "$GITHUB_STEP_SUMMARY"
