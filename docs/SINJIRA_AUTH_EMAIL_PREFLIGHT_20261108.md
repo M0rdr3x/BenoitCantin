@@ -63,6 +63,11 @@ et doit être revérifié au moment du sign-off.
   TOTP dans `/compte/securite.html` → **vérification réelle du facteur et
   `currentLevel=aal2`** → Registre → sauvegarde observable dans
   `character_submissions` → comportement idempotent et absence de doublon.
+  Le module `v24-security.js?v=24.4.70` ne doit annoncer « TOTP activée »
+  que si `challengeAndVerify()` retourne une session avec `access_token`
+  et que `getAuthenticatorAssuranceLevel()` confirme `currentLevel=aal2`.
+  Un résultat ambigu, `aal1` ou une erreur d'assurance restent **non certifiés**.
+  Ces tests hors ligne ne remplacent pas la vérification AAL2 réelle.
   Ne pas désactiver AAL2, le JWT ni les contrôles de consentement. Prévoir une
   suppression documentée des données de test selon les droits autorisés.
 

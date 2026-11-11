@@ -57,6 +57,12 @@ async function scenario(mode) {
         : [] }, error: null };
     },
     async getAuthenticatorAssuranceLevel() {
+      if (mode === 'aal-check-error' && factorStatus === 'verified') {
+        return { data: null, error: { message: 'Assurance temporairement indisponible' } };
+      }
+      if (mode === 'aal1-after-verify' && factorStatus === 'verified') {
+        return { data: { currentLevel: 'aal1' }, error: null };
+      }
       return { data: { currentLevel: factorStatus === 'verified' ? 'aal2' : 'aal1' }, error: null };
     },
     async enroll() {
@@ -73,6 +79,7 @@ async function scenario(mode) {
       eq(code, '123456', 'Code fictif issu du formulaire et non de la page');
       if (mode === 'network-error') throw new Error('Simulated network failure');
       if (mode === 'invalid-code') return { error: { message: 'Invalid TOTP' } };
+      if (mode === 'empty-success') return { data: null, error: null };
       if (mode === 'slow-success') {
         await new Promise(resolve => { releaseVerification = resolve; });
       }
@@ -145,6 +152,13 @@ async function scenario(mode) {
     yes(messages.some(x => x.level === 'error' && x.message.includes('invalide ou expiré')),
       'Message correct sans fuite de détail Auth');
     eq(factorStatus, 'unverified', 'Code incorrect : TOTP non confirmé');
+  } else if (['empty-success','aal1-after-verify','aal-check-error'].includes(mode)) {
+    eq(form.submitButton.disabled, false, 'Réponse incertaine : bouton réactivé');
+    eq(setup.hidden, false, 'Réponse incertaine : configuration préservée');
+    eq(form.resetCalled, undefined, 'Réponse incertaine : secret non effacé prématurément');
+    yes(messages.some(x => x.level === 'error'), 'Réponse incertaine affichée comme erreur');
+    yes(!messages.some(x => x.level === 'success' && x.message.includes('TOTP activée')),
+      'Jamais de faux succès TOTP sans niveau AAL2 confirmé');
   } else {
     eq(form.submitButton.disabled, false, 'Succès : bouton non bloqué');
     eq(setup.hidden, true, 'Succès : QR et secret ne sont plus affichés');
@@ -167,6 +181,9 @@ async function main() {
   await scenario('success');
   await scenario('refresh-failure');
   await scenario('slow-success');
+  await scenario('empty-success');
+  await scenario('aal1-after-verify');
+  await scenario('aal-check-error');
   console.log('PASS SINJIRA sécurité TOTP : ' + assertions +
     ' assertions exécutées sur le vrai module, sans compte ni réseau.');
 }

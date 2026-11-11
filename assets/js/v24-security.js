@@ -164,13 +164,24 @@ try{
     // Une panne réseau peut REJETER la promesse, pas seulement retourner error.
     // Garder l'activation en attente et rendre le bouton réutilisable.
     try {
-      const {error}=await s.auth.mfa.challengeAndVerify({factorId:pendingFactorId,code});
+      const {data:verifiedSession,error}=await s.auth.mfa.challengeAndVerify({factorId:pendingFactorId,code});
       if(error){
         setStatus(status,'Le code TOTP est invalide ou expiré. Utilisez le code actuellement affiché.','error');
         return;
       }
+      // Un appel résolu sans erreur n'est pas une preuve de session renforcée.
+      // Ne jamais annoncer l'activation sans jeton nouveau et niveau AAL2.
+      if(!verifiedSession?.access_token){
+        setStatus(status,'Le service n’a pas confirmé la vérification TOTP. Actualisez la page pour vérifier votre état de sécurité.','error');
+        return;
+      }
+      const {data:assurance,error:assuranceError}=await s.auth.mfa.getAuthenticatorAssuranceLevel();
+      if(assuranceError || assurance?.currentLevel!=='aal2'){
+        setStatus(status,'La session n’a pas confirmé le niveau AAL2. Actualisez la page et vérifiez votre sécurité avant d’utiliser le Registre.','error');
+        return;
+      }
     } catch {
-      setStatus(status,'La vérification TOTP est temporairement indisponible. Réessayez avec le code courant.','error');
+      setStatus(status,'La vérification TOTP est temporairement indisponible. Réessayez après avoir vérifié votre état de sécurité.','error');
       return;
     } finally {
       if(submit)submit.disabled=false;

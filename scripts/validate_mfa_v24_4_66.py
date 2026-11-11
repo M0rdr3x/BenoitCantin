@@ -59,6 +59,8 @@ def main():
         "factorType:'totp'",
         'friendlyName:`SINJIRA TOTP ${verifiedCount+1}`',
         'challengeAndVerify',
+        "verifiedSession?.access_token",
+        "assurance?.currentLevel!=='aal2'",
         'mfa.unenroll',
         "qrCode.startsWith('data:image/')",
         "verified.length?'Ajouter une application d’authentification de secours'"
@@ -81,7 +83,7 @@ def main():
     require(security_page,[
         'data-mfa-enroll',
         'data-mfa-factors',
-        'v24-security.js?v=',
+        'v24-security.js?v=24.4.70',
         'aucun SMS, aucun numéro de téléphone et aucun fournisseur payant n’est requis'
     ],'page sécurité MFA')
 
