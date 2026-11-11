@@ -254,7 +254,8 @@ def main() -> int:
     require(security_ui, [
         "rpc('security_list_devices',{p_current_device_key:meta.device_key})",
         'const current=d.is_current===true',
-        'devices.find(d=>d.is_current===true&&!d.revoked_at)',
+        'devices.find(d=>securityRecordId(d?.id)&&d.is_current===true&&!d.revoked_at)',
+        'const id=securityRecordId(d?.id);',
         "!d.revoked_at&&!d.is_trusted&&current?",
         "message.includes('TRUST_CONFIRMATION_REQUIRED')",
         "message.includes('CURRENT_DEVICE_REQUIRED')",
