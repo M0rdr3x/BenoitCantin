@@ -129,6 +129,25 @@ def run(playwright, browser_type, url):
             });
             return orig(...args);
           };
+          const input=document.querySelector('#reader-page');
+          const desc=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value');
+          Object.defineProperty(input,'value',{
+            configurable:true,
+            get(){return desc.get.call(this)},
+            set(value){
+              window.__readerSwipeTrace.push({
+                type:'page.value.setter',value:String(value),
+                stack:new Error('Page value assigned').stack
+              });
+              desc.set.call(this,value);
+            }
+          });
+          next.addEventListener('click',event=>{
+            window.__readerSwipeTrace.push({
+              type:'next.click-event',trusted:event.isTrusted,
+              stack:new Error('PDF next event').stack
+            });
+          },true);
           const viewer=document.querySelector('#reader-viewer');
           viewer.addEventListener('touchend',ev=>{
             window.__readerSwipeTrace.push({
