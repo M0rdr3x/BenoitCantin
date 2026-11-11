@@ -413,6 +413,13 @@ test('V61 : indications des raccourcis et focus visible existent dans la vraie p
   assert.match(html,/placez d’abord le focus dans la zone du livre/);
   assert.match(css,/\.reader-viewer:focus-visible\{outline:3px solid/);
 });
+test('V61 : le moteur historique V26 ne doit pas doubler les flèches clavier V53',()=>{
+  const source=readFileSync(new URL('../assets/js/sinjira-liseuse-v26.js',import.meta.url),'utf8');
+  assert.match(source,/event\.defaultPrevented/);
+  assert.match(source,/focused!==viewer/);
+  assert.match(source,/viewer\.dataset\.readerLayout==='screens'/);
+  assert.match(source,/viewer\.contains\(focused\)/);
+});
 test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
