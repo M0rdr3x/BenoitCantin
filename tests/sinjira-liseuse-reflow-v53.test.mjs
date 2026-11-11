@@ -71,6 +71,46 @@ test('un geste à droite recule écran par écran avant la page PDF précédente
   assert.deepEqual(turn('previous',315),{type:'screen',direction:'previous',top:0});
   assert.deepEqual(turn('previous',0),{type:'document',direction:'previous'});
 });
+test('V60 : aucun micro-écran de dix pixels à la fin d’une page source',()=>{
+  const p={scrollHeight:850,clientHeight:350,lineHeight:35,
+    paddingTop:22,paddingBottom:22};
+  const at=top=>readerScreenState({...p,scrollTop:top});
+  const turn= (direction,top)=>planReaderScreenTurn({...p,direction,scrollTop:top});
+  assert.equal(at(0).screens,3);
+  assert.equal(at(0).screen,1);
+  assert.equal(turn('next',0).top,245);
+  assert.equal(turn('next',245).top,500);
+  assert.equal(at(500).screen,3);
+  assert.equal(turn('next',500).type,'document');
+  assert.equal(turn('previous',500).top,245);
+  assert.equal(turn('previous',245).top,0);
+  assert.equal(turn('previous',0).type,'document');
+});
+test('V60 : aucun saut de contenu lorsqu’il reste plus d’une ligne',()=>{
+  const p={scrollHeight:950,clientHeight:350,lineHeight:35,
+    paddingTop:22,paddingBottom:22};
+  const f=(direction,top)=>planReaderScreenTurn({...p,scrollTop:top,direction});
+  assert.equal(readerScreenState({...p,scrollTop:0}).screens,4);
+  assert.equal(f('next',0).top,245);
+  assert.equal(f('next',245).top,490);
+  assert.equal(f('next',490).top,600);
+  assert.equal(f('previous',600).top,490);
+  assert.equal(f('next',600).type,'document');
+});
+test('V60 : un reliquat nul reste réversible sans doublon',()=>{
+  const p={scrollHeight:840,clientHeight:350,lineHeight:35,
+    paddingTop:22,paddingBottom:22};
+  assert.equal(readerScreenState({...p}).screens,3);
+  assert.equal(planReaderScreenTurn({...p,scrollTop:245,direction:'next'}).top,490);
+  assert.equal(planReaderScreenTurn({...p,scrollTop:490,direction:'previous'}).top,245);
+});
+test('V60 : un marque-page restauré près de la fin rejoint la vraie fin',()=>{
+  const p={scrollHeight:850,clientHeight:350,lineHeight:35,
+    paddingTop:22,paddingBottom:22};
+  assert.equal(readerScreenState({...p,scrollTop:490}).screen,3);
+  assert.equal(planReaderScreenTurn({...p,scrollTop:490,direction:'next'}).top,500);
+  assert.equal(planReaderScreenTurn({...p,scrollTop:490,direction:'previous'}).top,245);
+});
 test('un PDF dont le texte tient sur un écran tourne directement la page',()=>{
   const args={scrollTop:0,scrollHeight:350,clientHeight:350,lineHeight:35};
   assert.equal(planReaderScreenTurn({direction:'next',...args}).type,'document');
