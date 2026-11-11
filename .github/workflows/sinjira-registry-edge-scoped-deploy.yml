@@ -1,0 +1,157 @@
+name: SINJIRA — déploiement ciblé Edge Registre
+run-name: "SINJIRA Registre Edge — ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && 'APPLICATION DEMANDÉE' || 'CONTRÔLES SEULEMENT' }}"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/sinjira-registry-edge-scoped-deploy.yml'
+      - 'scripts/validate_sinjira_registry_edge_scoped_deploy.py'
+      - 'scripts/test_sinjira_character_photo_path.cjs'
+      - 'scripts/validate_character_questionnaire_security.py'
+      - 'scripts/validate_sinjira_signup_registry_delivery.py'
+      - 'supabase/functions/submit-character-questionnaire/**'
+      - 'supabase/functions/_shared/**'
+      - 'supabase/config.toml'
+      - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sinjira-registry-edge-scoped-deploy.yml'
+      - 'scripts/validate_sinjira_registry_edge_scoped_deploy.py'
+      - 'scripts/test_sinjira_character_photo_path.cjs'
+      - 'scripts/validate_character_questionnaire_security.py'
+      - 'scripts/validate_sinjira_signup_registry_delivery.py'
+      - 'supabase/functions/submit-character-questionnaire/**'
+      - 'supabase/functions/_shared/**'
+      - 'supabase/config.toml'
+      - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Déployer UNIQUEMENT submit-character-questionnaire (false = tests sans production)"
+        required: true
+        type: boolean
+        default: false
+      confirmation:
+        description: "Pour apply=true, saisir exactement DEPLOY-SINJIRA-REGISTRY-EDGE"
+        required: true
+        type: string
+        default: "PREFLIGHT_ONLY"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-registry-edge-${{ github.event_name == 'workflow_dispatch' && 'manual' || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  contract:
+    name: Contrats Edge et frontière de déploiement — aucun secret
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Checkout en lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Vérifier Python 3.12
+        run: |
+          python3 -c 'import sys; assert sys.version_info[:2] == (3, 12)'
+      - name: Vérifier la frontière de déploiement ciblé
+        run: |
+          python3 scripts/validate_sinjira_registry_edge_scoped_deploy.py --self-test
+          python3 scripts/validate_sinjira_registry_edge_scoped_deploy.py
+      - name: Installer Node pour les tests sans réseau
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '22.16.0'
+          check-latest: false
+      - name: Vérifier les chemins photo via le véritable validateur Edge
+        run: |
+          node --check scripts/test_sinjira_character_photo_path.cjs
+          node scripts/test_sinjira_character_photo_path.cjs
+      - name: Vérifier la sécurité du questionnaire Edge
+        run: |
+          python3 scripts/validate_character_questionnaire_security.py --self-test
+          python3 scripts/validate_character_questionnaire_security.py
+          python3 scripts/validate_sinjira_signup_registry_delivery.py
+
+  deploy:
+    name: Application manuelle du SEUL contrôleur Registre
+    needs: contract
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && inputs.confirmation == 'DEPLOY-SINJIRA-REGISTRY-EDGE' && github.ref == 'refs/heads/main' }}
+    environment: production
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      PROJECT_ID: gpvivleexywljowcqkru
+    steps:
+      - name: Checkout de main sans credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Vérifier l'intention après la frontière production
+        shell: bash
+        env:
+          APPLY: ${{ inputs.apply }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = 'refs/heads/main'
+          test "$APPLY" = 'true'
+          test "$CONFIRMATION" = 'DEPLOY-SINJIRA-REGISTRY-EDGE'
+          test -f supabase/functions/submit-character-questionnaire/index.ts
+          test -f supabase/config.toml
+          grep -Fq 'isCanonicalRegistryPhotoPath(photo_path,user.id)' supabase/functions/submit-character-questionnaire/index.ts
+          grep -Fq '[functions.submit-character-questionnaire]' supabase/config.toml
+          python3 - <<'PY'
+          import tomllib
+          from pathlib import Path
+          config=tomllib.loads(Path('supabase/config.toml').read_text('utf-8'))
+          assert config['functions']['submit-character-questionnaire']['verify_jwt'] is True
+          PY
+          echo 'Contrat et cible de déploiement validés après la frontière production.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Installer Supabase CLI épinglée
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
+        with:
+          version: 2.111.0
+          github-token: ${{ github.token }}
+      - name: Vérifier version de CLI et secret de production
+        shell: bash
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          supabase --version
+          test -n "$SUPABASE_ACCESS_TOKEN" || {
+            echo 'Secret SUPABASE_ACCESS_TOKEN manquant, aucun déploiement.'
+            exit 2
+          }
+          supabase functions list --project-ref "$PROJECT_ID" > /tmp/sinjira-registry-edge-before.txt
+          grep -Fq 'submit-character-questionnaire' /tmp/sinjira-registry-edge-before.txt || {
+            echo 'Fonction cible non trouvée sur le projet attendu; refus.'
+            exit 3
+          }
+      - name: Déployer uniquement submit-character-questionnaire
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && inputs.confirmation == 'DEPLOY-SINJIRA-REGISTRY-EDGE' && github.ref == 'refs/heads/main' }}
+        shell: bash
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_ACCESS_TOKEN"
+          supabase functions deploy submit-character-questionnaire --project-ref "$PROJECT_ID" --use-api
+      - name: Vérifier la présence de la fonction après déploiement
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && inputs.confirmation == 'DEPLOY-SINJIRA-REGISTRY-EDGE' && github.ref == 'refs/heads/main' }}
+        shell: bash
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          supabase functions list --project-ref "$PROJECT_ID" > /tmp/sinjira-registry-edge-after.txt
+          grep -Fq 'submit-character-questionnaire' /tmp/sinjira-registry-edge-after.txt
+          echo 'Fonction cible présente après déploiement. Vérifier séparément son contenu, verify_jwt=true et les tests Auth/AAL2 de production.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Aucune migration SQL ou autre fonction Edge déployée par ce workflow.' >> "$GITHUB_STEP_SUMMARY"
