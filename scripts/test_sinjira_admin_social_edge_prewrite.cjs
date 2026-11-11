@@ -24,7 +24,7 @@ const uuid='123e4567-e89b-42d3-a456-426614174000';
 const author='223e4567-e89b-42d3-a456-426614174000';
 function context({
   reportStatus='open',subject=author,action='suspend_social',
-  days=7,closed=true,decisionError=null,suspensionError=null,reportError=null
+  days=7,closed=true,datingSource=false,decisionError=null,suspensionError=null,reportError=null
 }={}){
   const history=[];
   const client={
@@ -62,7 +62,7 @@ function context({
   });
   vm.runInContext(implementation+'\nglobalThis.testCreateDecision=createDecision;',ctx,{timeout:2000});
   const r={id:uuid,status:reportStatus,network:'real',target_type:'post',target_id:uuid,
-    reason:'threats',created_at:'2026-11-09',snapshot:{}};
+    reason:'threats',created_at:'2026-11-09',snapshot:datingSource?{source:'dating',dating_profile_id:uuid}:{}};
   const body={days};
   return {perform:()=>ctx.testCreateDecision(client,author,r,body,action),
     history,r,body,subject};
@@ -82,6 +82,8 @@ async function main(){
   await rejected(context({reportStatus:'archived'}),'REPORT_NOT_OPEN','Rapport archivé');
   await rejected(context({subject:null}),'TARGET_USER_NOT_FOUND','Cible supprimée');
   await rejected(context({subject:''}),'TARGET_USER_NOT_FOUND','Cible introuvable');
+  await rejected(context({datingSource:true}),'UNVERIFIED_DATING_PROVENANCE',
+    'Un identifiant Rencontres fourni par le client ne permet pas de suspendre un tiers');
   for(const days of [0,-1,1.5,366,'7',null,NaN,Infinity,-Infinity]){
     await rejected(context({days}),'INVALID_SUSPENSION_DURATION',
       'Durée de suspension invalide '+String(days));
@@ -127,7 +129,8 @@ async function main(){
     "if(!closed)throw new Error('REPORT_NOT_OPEN')",
     "code:'INVALID_MODERATION_INPUT'",
     "code:'REPORT_NOT_OPEN'",
-    "code:'TARGET_USER_NOT_FOUND'"
+    "code:'TARGET_USER_NOT_FOUND'",
+    "throw new Error('UNVERIFIED_DATING_PROVENANCE')"
   ];
   for(const needle of sourceMarkers)truthy(edge.includes(needle),'Garde serveur absent: '+needle);
   truthy(!edge.includes("Math.max(1,Math.min(Number(b.days||7),365))"),
