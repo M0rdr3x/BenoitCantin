@@ -107,7 +107,12 @@ jobs:
           test -f supabase/config.toml
           grep -Fq 'isCanonicalRegistryPhotoPath(photo_path,user.id)' supabase/functions/submit-character-questionnaire/index.ts
           grep -Fq '[functions.submit-character-questionnaire]' supabase/config.toml
-          grep -Fq 'verify_jwt = true' supabase/config.toml
+          python3 - <<'PY'
+          import tomllib
+          from pathlib import Path
+          config=tomllib.loads(Path('supabase/config.toml').read_text('utf-8'))
+          assert config['functions']['submit-character-questionnaire']['verify_jwt'] is True
+          PY
           echo 'Contrat et cible de déploiement validés après la frontière production.' >> "$GITHUB_STEP_SUMMARY"
       - name: Installer Supabase CLI épinglée
         uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
