@@ -136,6 +136,24 @@ def run(playwright, engine, origin):
             "(node)=>node.classList.contains('reader-focus-mode')"
         ),"Impossible de quitter le plein écran"
 
+        # V60: le vrai moteur JS chargé sur cette page ne doit pas demander
+        # un balayage pour seulement 10 px supplémentaires à la fin.
+        tail=page.evaluate("""async ()=>{
+          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.10.1');
+          const p={scrollHeight:850,clientHeight:350,lineHeight:35,
+            paddingTop:22,paddingBottom:22};
+          return {
+            screens:m.readerScreenState({...p,scrollTop:0}).screens,
+            forward:m.planReaderScreenTurn({...p,scrollTop:245,direction:'next'}),
+            backward:m.planReaderScreenTurn({...p,scrollTop:500,direction:'previous'}),
+            end:m.planReaderScreenTurn({...p,scrollTop:500,direction:'next'})
+          };
+        }""")
+        assert tail["screens"]==3,tail
+        assert tail["forward"]["top"]==500,tail
+        assert tail["backward"]["top"]==245,tail
+        assert tail["end"]["type"]=="document",tail
+
         assert not blocked,blocked
         assert not errors,errors
         context.close()
