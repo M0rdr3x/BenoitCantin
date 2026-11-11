@@ -149,6 +149,14 @@ La voie GitHub distincte est :
    `supabase functions list` avant/après et refuse un déploiement sans
    incrément de version. Ce contrôle détecte un échec de publication silencieux,
    mais **une version supérieure ne prouve pas à elle seule le contenu exécuté**.
+   Le job télécharge donc également **uniquement** le source de cette fonction
+   dans un dossier temporaire avec `supabase functions download --use-api`,
+   compare le `index.ts` au fichier du commit GitHub testé et rejoue les
+   tests adversariaux du chemin photo sur le code téléchargé. Une différence
+   d'octets, un téléchargement indisponible ou un test négatif font échouer
+   le job sans annoncer un déploiement certifié. Le CLI peut éventuellement
+   restituer un source reconstitué différent : dans ce cas, faire une
+   revue manuelle explicite, plutôt que d'assouplir silencieusement le test.
    Vérifier avec des comptes de test consentants qu'un chemin non canonique est
    refusé en HTTP 400 avant toute écriture, qu'un JWT invalide échoue et que le
    parcours AAL2 + dossier autorisé fonctionne. La seule sortie de

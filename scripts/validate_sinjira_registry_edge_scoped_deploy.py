@@ -69,6 +69,14 @@ def validate(source: str) -> list[str]:
          'Version de production avant déploiement non vérifiée.')
     need('--after /tmp/sinjira-registry-edge-after.txt',
          'Version de production après déploiement non vérifiée.')
+    need('supabase functions download submit-character-questionnaire --project-ref "$PROJECT_ID" --use-api',
+         'Téléchargement du seul code Edge distant absent.')
+    need('cmp -s supabase/functions/submit-character-questionnaire/index.ts "$downloaded"',
+         'Parité exacte du source Edge distant absente.')
+    need('node scripts/test_sinjira_character_photo_path.cjs --source "$downloaded"',
+         'Test adversarial du code réellement récupéré absent.')
+    need('trap \'rm -rf "$temp"\' EXIT',
+         'Nettoyage sécurisé du workspace source distant absent.')
     need('python3 scripts/validate_sinjira_registry_edge_scoped_deploy.py --self-test',
          'Auto-test du garde de déploiement absent.')
     need(COMMAND, 'Commande de déploiement mono-slug attendue absente.')
@@ -125,6 +133,15 @@ def self_test() -> None:
             'test "$(git rev-parse HEAD)" = "$GITHUB_SHA"', 'true', 1),
         'supprimer preuve de nouvelle version': original.replace(
             'python3 scripts/verify_sinjira_registry_edge_deployment.py --before /tmp/sinjira-registry-edge-before.txt',
+            'true', 1),
+        'supprimer comparaison du code distant': original.replace(
+            'cmp -s supabase/functions/submit-character-questionnaire/index.ts "$downloaded"',
+            'true', 1),
+        'remplacer le test du code distant': original.replace(
+            'node scripts/test_sinjira_character_photo_path.cjs --source "$downloaded"',
+            'true', 1),
+        'ne plus télécharger le code distant': original.replace(
+            'supabase functions download submit-character-questionnaire --project-ref "$PROJECT_ID" --use-api',
             'true', 1),
         'retirer contrôle photo': original.replace(
             "grep -Fq 'isCanonicalRegistryPhotoPath(photo_path,user.id)'", 'true', 1),
