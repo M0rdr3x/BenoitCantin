@@ -76,7 +76,7 @@ test('seuls les chemins publics explicites et les médias statiques sont persist
 
 test('Cache-Control private et directives sensibles ne sont jamais persistés', () => {
   const sw = harness();
-  const r = request('/assets/js/site.js');
+  const r = request('/assets/js/site.js', {credentials: 'omit'});
   assert.equal(sw.cacheableResponse(r, response({'Cache-Control': 'public, max-age=600'})), true);
   for (const h of [
     {'Cache-Control': 'private, max-age=3600'},
@@ -123,6 +123,7 @@ test('précache install : une page CORE privée n’est pas écrite', async () =
   sw.listeners.install(event);
   await event.done;
   assert.ok(sw.fetches.length >= sw.CORE.length);
+  assert.ok(sw.fetches.every(req => req.credentials === 'omit'), 'aucun cookie envoyé au précache');
   assert.equal(sw.puts.some(x => x.url === ORIGIN + '/'), false);
   assert.equal(sw.puts.some(x => x.url === ORIGIN + '/offline.html'), true);
 });
@@ -214,4 +215,36 @@ test('une API privée indisponible propage son erreur réseau au lieu de renvoye
   assert.deepEqual(sw.globalMatches, []);
   assert.deepEqual(sw.matches, []);
   assert.equal(sw.puts.length, 0);
+});
+
+test('une ressource publique chargée avec cookies ne peut pas être stockée', () => {
+  const sw = harness();
+  const publicAsset = '/assets/js/site.js';
+  assert.equal(sw.cacheableResponse(request(publicAsset), response()), false);
+  assert.equal(sw.cacheableResponse(request(publicAsset, {credentials: 'include'}), response()), false);
+  assert.equal(sw.cacheableResponse(request(publicAsset, {credentials: 'omit'}), response()), true);
+});
+
+test('seuls les chemins publics chargés sans cookies peuvent rejoindre le cache', async () => {
+  for (const route of ['/', '/assets/js/site.js', '/assets/media/example.webp', '/projets/sinjira/romans/']) {
+    const sw = harness(() => response({'Cache-Control': 'public, max-age=3600'}));
+    const event = eventFor(request(route));
+    sw.listeners.fetch(event);
+    await event.result;
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(sw.fetches.length, 1, route);
+    assert.equal(sw.fetches[0].credentials, 'omit', route);
+    assert.equal(sw.puts.length, 1, route);
+  }
+});
+
+test('un endpoint privé garde son mode authentifié et ne peut pas être mis en cache', async () => {
+  const sw = harness();
+  const event = eventFor(request('/compte/mon-profil.html'));
+  sw.listeners.fetch(event);
+  await event.result;
+  assert.equal(sw.fetches.length, 1);
+  assert.equal(sw.fetches[0].credentials, 'same-origin');
+  assert.equal(sw.puts.length, 0);
+  assert.deepEqual(sw.matches, []);
 });
