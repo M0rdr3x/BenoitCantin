@@ -10,18 +10,20 @@ const vm = require('node:vm');
 const SOURCE = fs.readFileSync(path.join(__dirname, '..', 'sw.js'), 'utf8');
 const ORIGIN = 'https://www.benoitcantin.com';
 
-function harness(responseFor = () => new Response('public', {status: 200}), cacheNames = []) {
+function harness(responseFor = () => new Response('public', {status: 200}), cacheNames = [], cacheHit = () => undefined) {
   const listeners = {};
   const puts = [];
   const matches = [];
+  const globalMatches = [];
   const deletes = [];
   const fetches = [];
   const cache = {
     put: async (req, resp) => { puts.push({url: req.url, status: resp.status}); },
+    match: async req => { matches.push(String(req.url || req)); return cacheHit(req); },
   };
   const caches = {
     open: async () => cache,
-    match: async req => { matches.push(String(req.url || req)); return undefined; },
+    match: async req => { globalMatches.push(String(req.url || req)); throw new Error('CacheStorage.match global interdit'); },
     keys: async () => cacheNames,
     delete: async name => { deletes.push(name); return true; },
   };
@@ -36,7 +38,7 @@ function harness(responseFor = () => new Response('public', {status: 200}), cach
     fetch: async req => { fetches.push(req); return responseFor(req); },
   };
   vm.runInNewContext(SOURCE + '\n;globalThis.__test = {cacheableResponse,isPrivatePath,isPublicCachePath,CORE,CACHE};', context, {filename: 'sw.js'});
-  return {listeners, puts, matches, deletes, fetches, ...context.__test};
+  return {listeners, puts, matches, globalMatches, deletes, fetches, ...context.__test};
 }
 
 function request(url, options) {
@@ -183,4 +185,33 @@ test('les scripts JS/MJS/CSS restent network-first pour diffuser les correctifs'
     assert.equal(sw.fetches.length, 1, asset);
     assert.equal(sw.matches.length, 0, 'aucune copie obsolète lue avant le réseau: ' + asset);
   }
+});
+
+test('une application voisine ne peut pas influencer le cache hors ligne du site', async () => {
+  const sw = harness(
+    async () => { throw new TypeError('network unavailable'); },
+    ['some-other-app-cache'],
+    req => req === '/offline.html' ? new Response('Page locale approuvée') : undefined,
+  );
+  const event = eventFor(request('/assets/media/example.webp'));
+  sw.listeners.fetch(event);
+  const result = await event.result;
+  assert.equal(await result.text(), 'Page locale approuvée');
+  assert.deepEqual(sw.globalMatches, []);
+  assert.equal(sw.matches.length, 2);
+  assert.equal(sw.matches[1], '/offline.html');
+});
+
+test('une API privée indisponible propage son erreur réseau au lieu de renvoyer du HTML', async () => {
+  const sw = harness(
+    async () => { throw new TypeError('network unavailable'); },
+    ['some-other-app-cache'],
+    () => new Response('Page HTML hors ligne'),
+  );
+  const event = eventFor(request('/api/profile'));
+  sw.listeners.fetch(event);
+  await assert.rejects(event.result, /network unavailable/);
+  assert.deepEqual(sw.globalMatches, []);
+  assert.deepEqual(sw.matches, []);
+  assert.equal(sw.puts.length, 0);
 });
