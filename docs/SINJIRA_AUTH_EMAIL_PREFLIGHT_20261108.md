@@ -35,7 +35,11 @@ et doit être revérifié au moment du sign-off.
   restent acceptés. Le prévol rejette aussi un lien de confirmation placé
   dans un élément HTML masqué (`hidden`, `inert`, `aria-hidden`,
   `display:none`, `visibility:hidden` ou `<template>`). Un lien visible
-  après un bloc masqué demeure acceptable. Ce contrôle statique ne peut pas
+  après un bloc masqué demeure acceptable. Le prévol refuse également un
+  `<a href>` vide ou dont le seul libellé est masqué : le lien doit avoir
+  du texte visible, y compris dans un élément enfant, ou une image porteuse
+  d'un attribut `src` et d'un `alt` non vide. Un commentaire HTML et une
+  image décorative ne suffisent pas. Ce contrôle statique ne peut pas
   analyser toutes les feuilles de style et **n'atteste pas la livraison**.
   Puis confirmer **dans une boîte de test contrôlée** qu'un
   courriel Auth de confirmation a effectivement été reçu et qu'un clic
