@@ -83,7 +83,10 @@ async function scenario(result,{uploadFails=false,aal='aal2',userState='same',rp
     CSS:{escape:v=>v},HTMLInputElement:class {},Event:class {}
   };
   vm.runInNewContext(program,context,{timeout:2500,filename:'sinjira-character-registry.js'});
-  await Promise.resolve();await Promise.resolve();
+  // Attendre la fin de l'initialisation asynchrone avant de simuler une
+  // session ouverte. Deux microtasks ne suffisent pas : init() pourrait
+  // réécrire currentUser=null après l'injection du test.
+  await new Promise(resolve=>setImmediate(resolve));
   context.__setReady();
   sessionAvailable=true;
   eq(typeof events.submit,'function','Real submit handler');
