@@ -30,8 +30,7 @@ export function planReaderScreenTurn({direction,scrollTop,scrollHeight,clientHei
   const s=readerScreenState({scrollTop,scrollHeight,clientHeight,lineHeight});
   if(direction==='next'){
     if(!s.hasNextScreen)return {type:'document',direction};
-    const next=Math.max(s.top+Math.min(s.step,s.max-s.top),
-      (Math.floor((s.top+2)/s.step)+1)*s.step);
+    const next=(Math.floor((s.top+2)/s.step)+1)*s.step;
     return {type:'screen',direction,top:Math.min(s.max,next)};
   }
   if(!s.hasPreviousScreen)return {type:'document',direction};
@@ -185,7 +184,6 @@ export function bindReaderScreenMode({
   const afterTextChanged=()=>{
     if(!isPaged()){sync();return}
     const expected=pendingPreviousPdf;
-    const restoreRatio=lastRatio;
     raf(()=>raf(()=>{
       if(closed)return;
       if(expected!==null&&Number(pageField.value)===expected){
