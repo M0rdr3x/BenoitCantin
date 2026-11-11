@@ -7,6 +7,7 @@ create schema auth;
 create schema private;
 grant usage on schema public to service_role;
 grant usage on schema auth to service_role;
+grant usage on schema auth to authenticated;
 
 create table auth.users(id uuid primary key);
 create table public.internal_admin_users(user_id uuid primary key references auth.users(id));
