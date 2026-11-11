@@ -111,6 +111,21 @@ def run_browser(playwright, engine, origin):
         one = swipe(page, -120)
         assert one["consumed"] and one["page"] == 3, one
         assert one["scroll"] > 0, one
+        # V55 : le changement d'écran tient compte du padding ET garde
+        # un interligne visible en recouvrement, plutôt que sauter du texte.
+        geometry = page.evaluate("""() => {
+          const viewer=document.querySelector('#reader-viewer');
+          const text=document.querySelector('#reader-text');
+          const css=getComputedStyle(text);
+          return {
+            available:viewer.clientHeight-
+              parseFloat(css.paddingTop)-parseFloat(css.paddingBottom),
+            line:parseFloat(css.lineHeight)
+          };
+        }""")
+        assert one["scroll"] <= geometry["available"]-geometry["line"]+1, (
+            one, geometry
+        )
         assert one["changes"] == [], one
         back = swipe(page, 120)
         assert back["consumed"] and back["page"] == 3, back

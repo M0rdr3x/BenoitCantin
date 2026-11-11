@@ -22,6 +22,32 @@ test('la page-écran avance par lignes complètes',()=>{
   assert.equal(measureReaderScreen({clientHeight:350,lineHeight:35}),315);
   assert.equal(measureReaderScreen({clientHeight:200,lineHeight:20}),180);
 });
+test('V55 : marge intérieure de 22 px laisse une ligne de chevauchement entre deux écrans',()=>{
+  const step=measureReaderScreen({
+    clientHeight:350,lineHeight:35,paddingTop:22,paddingBottom:22
+  });
+  assert.equal(step,245);
+  assert.ok(step<=350-44-35);
+});
+test('V55 : navigation écran par écran ne saute aucune portion au changement de page source',()=>{
+  const sample={scrollHeight:1050,clientHeight:350,lineHeight:35,
+    paddingTop:22,paddingBottom:22};
+  assert.equal(planReaderScreenTurn({direction:'next',scrollTop:0,...sample}).top,245);
+  assert.equal(planReaderScreenTurn({direction:'next',scrollTop:245,...sample}).top,490);
+  assert.equal(planReaderScreenTurn({direction:'next',scrollTop:490,...sample}).top,700);
+  assert.equal(planReaderScreenTurn({direction:'next',scrollTop:700,...sample}).type,'document');
+  assert.equal(planReaderScreenTurn({direction:'previous',scrollTop:700,...sample}).top,490);
+  assert.equal(planReaderScreenTurn({direction:'previous',scrollTop:490,...sample}).top,245);
+  assert.equal(planReaderScreenTurn({direction:'previous',scrollTop:245,...sample}).top,0);
+});
+test('V55 : les marges invalides et un écran extrêmement petit restent bornés',()=>{
+  assert.equal(measureReaderScreen({
+    clientHeight:20,lineHeight:35,paddingTop:40,paddingBottom:40
+  }),1);
+  assert.equal(measureReaderScreen({
+    clientHeight:350,lineHeight:35,paddingTop:NaN,paddingBottom:-12
+  }),315);
+});
 test('un petit écran reste navigable sans division par zéro',()=>{
   assert.equal(measureReaderScreen({clientHeight:0,lineHeight:32}),1);
   assert.equal(measureReaderScreen({clientHeight:20,lineHeight:32}),20);
