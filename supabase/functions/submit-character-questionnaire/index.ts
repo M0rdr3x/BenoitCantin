@@ -44,6 +44,16 @@ async function readBoundedJson(req:Request){
   return body as Record<string,unknown>;
 }
 
+// La photo source n'est jamais une URL ni un chemin arbitraire envoyé par le
+// client. Le navigateur utilise exactement `<uid>/<crypto.randomUUID()>.<ext>`.
+// Cette vérification est indépendante de l'RLS Storage et de la MFA serveur.
+function isCanonicalRegistryPhotoPath(raw:unknown,userId:string):boolean{
+  if(typeof raw!=='string')return false;
+  const prefix=`${userId}/`;
+  if(!raw.startsWith(prefix)||raw.length>prefix.length+41)return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpg|png|webp|avif|gif)$/.test(raw.slice(prefix.length));
+}
+
 const escapeHtml=(v:unknown)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[c]||c));
 const labelize=(k:string)=>k.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
 function creativePayload(src:Record<string,unknown>){const out:Record<string,unknown>={};for(const [k,v] of Object.entries(src||{})){if(PRIVATE_KEYS.includes(k)||k.startsWith('parent_')||k.startsWith('photo'))continue;out[k]=v}return out}
@@ -77,8 +87,9 @@ Deno.serve(async(req)=>{
     const answers=body.answers;
     if(!answers||typeof answers!=='object'||Array.isArray(answers))return privateJson({ok:false,error:'Réponses du questionnaire manquantes.',version:VERSION},400);
     if(JSON.stringify(answers).length>MAX_ANSWERS_CHARS)return privateJson({ok:false,error:'Questionnaire trop volumineux.',version:VERSION},413);
-    const photo_path=body.photo_path||null,manual_only=body.manual_only!==false,update_existing=body.update_existing===true;
-    if(photo_path&&(!String(photo_path).startsWith(`${user.id}/`)||String(photo_path).includes('..')))return privateJson({ok:false,error:'Photo de dossier invalide.',version:VERSION},400);
+    const photo_path=body.photo_path??null,manual_only=body.manual_only!==false,update_existing=body.update_existing===true;
+    // Rejet AVANT toute lecture ou écriture de dossier, notification, ou appel externe.
+    if(photo_path!==null && !isCanonicalRegistryPhotoPath(photo_path,user.id))return privateJson({ok:false,error:'Chemin de photo de dossier invalide.',code:'INVALID_CHARACTER_PHOTO_PATH',version:VERSION},400);
     const owner=String(user?.email||'').trim().toLowerCase()==='kingtyrano@gmail.com';
     const [profileResult,submissionResult,characterResult]=await Promise.all([
       service.from('profiles').select('pseudo,display_name').eq('user_id',user.id).maybeSingle(),
