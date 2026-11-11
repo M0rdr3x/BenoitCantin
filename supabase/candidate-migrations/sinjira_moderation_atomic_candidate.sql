@@ -7,6 +7,19 @@
 -- l'appartenance à la liste d'administrateurs; elle ne remplace pas l'AAL2 Edge.
 -- AUCUN accès EXECUTE pour PUBLIC, anon ou authenticated.
 --
+-- Empêcher l'insertion directe par un membre d'un faux signalement
+-- Rencontres, sans affaiblir la politique permissive d'ownership existante.
+-- Le vrai signalement est créé par dating_report_connection() SECURITY
+-- DEFINER, qui vérifie la connexion et s'exécute en contexte propriétaire.
+-- Cette politique restrictive s'ajoute (AND) aux politiques existantes.
+drop policy if exists social_reports_reject_unverified_dating on public.social_reports;
+create policy social_reports_reject_unverified_dating
+on public.social_reports
+as restrictive
+for insert
+to authenticated
+with check (coalesce(snapshot->>'source','') <> 'dating');
+
 -- Chaque appel de fonction PL/pgSQL est exécuté dans une transaction unique.
 -- Une exception lors de l'une des écritures annule toutes les autres écritures.
 create or replace function private.sinjira_admin_moderate_atomic(
