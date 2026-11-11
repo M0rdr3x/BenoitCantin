@@ -1,0 +1,51 @@
+name: SINJIRA V55 — continuité des lignes en liseuse mobile
+on:
+  pull_request:
+    branches:
+      - test/sinjira-liseuse-v54-mobile-browser-20261110
+      - main
+    paths:
+      - 'assets/js/sinjira-liseuse-reflow-v53.mjs'
+      - 'tests/sinjira-liseuse-reflow-v53.test.mjs'
+      - 'tests/sinjira-liseuse-touch-v52.test.mjs'
+      - 'tests/e2e/test_sinjira_liseuse_mobile_v54.py'
+      - 'tests/e2e/fixtures/sinjira-liseuse-mobile-v54.html'
+      - '.github/workflows/sinjira-liseuse-anti-saut-v55.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-liseuse-reflow-v53.mjs'
+      - 'tests/sinjira-liseuse-reflow-v53.test.mjs'
+      - 'tests/e2e/test_sinjira_liseuse_mobile_v54.py'
+
+permissions:
+  contents: read
+
+jobs:
+  non-regression:
+    name: Zéro saut de ligne — ${{ matrix.browser }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - name: Checkout épinglé sans persistance d'identifiants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Contrôle de syntaxe
+        run: |
+          node --check assets/js/sinjira-liseuse-reflow-v53.mjs
+          node --check assets/js/sinjira-liseuse-touch-v52.mjs
+          python3 -m py_compile tests/e2e/test_sinjira_liseuse_mobile_v54.py
+      - name: Tests Node pagination et gestes
+        run: node --test tests/sinjira-liseuse-reflow-v53.test.mjs tests/sinjira-liseuse-touch-v52.test.mjs
+      - name: Parcours navigateur local sans données privées
+        run: |
+          python3 -m venv .venv-reader-v55
+          . .venv-reader-v55/bin/activate
+          python -m pip install --disable-pip-version-check playwright==1.57.0
+          python -m playwright install --with-deps ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_mobile_v54.py --browser ${{ matrix.browser }}
