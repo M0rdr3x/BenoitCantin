@@ -8,6 +8,7 @@ on:
     paths:
       - 'compte/liseuse.html'
       - 'assets/js/sinjira-liseuse-v26.js'
+      - 'assets/js/sinjira-liseuse-companion-v28.mjs'
       - 'assets/js/sinjira-liseuse-reflow-v53.mjs'
       - 'assets/js/sinjira-liseuse-touch-v52.mjs'
       - 'tests/e2e/test_sinjira_liseuse_real_page_v57.py'
