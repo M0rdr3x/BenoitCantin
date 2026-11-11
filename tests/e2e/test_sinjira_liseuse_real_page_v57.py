@@ -115,6 +115,28 @@ def run(playwright, browser_type, url):
         assert "LIVRE DE TEST · Page 3" in first["text"]
         assert not rejected,rejected
 
+        # Diagnostic de régression : retracer toute tentative de déclencher
+        # la navigation PDF depuis un seul geste, y compris un double module.
+        page.evaluate("""() => {
+          window.__readerSwipeTrace=[];
+          const next=document.querySelector('#reader-next');
+          const orig=next.click.bind(next);
+          next.click=function(...args){
+            window.__readerSwipeTrace.push({
+              type:'next.click',stack:new Error('PDF next clicked').stack,
+              layout:document.querySelector('#reader-viewer').dataset.readerLayout,
+              top:document.querySelector('#reader-viewer').scrollTop
+            });
+            return orig(...args);
+          };
+          const viewer=document.querySelector('#reader-viewer');
+          viewer.addEventListener('touchend',ev=>{
+            window.__readerSwipeTrace.push({
+              type:'touchend-after-capture',prevented:ev.defaultPrevented,
+              layout:viewer.dataset.readerLayout,top:viewer.scrollTop
+            });
+          },true);
+        }""")
         # Tout le mouvement a lieu sur la vraie fenêtre de lecture, sans
         # modifier la page PDF tant qu'elle comporte du texte.
         forward=swipe(page,-130)
@@ -122,7 +144,8 @@ def run(playwright, browser_type, url):
         assert forward["consumed"] and second["page"]==3,{
             "first_scroll":first["scroll"],"first_max":first["max"],
             "forward":forward,"second_page":second["page"],
-            "second_scroll":second["scroll"],"second_screen":second["screen"]}
+            "second_scroll":second["scroll"],"second_screen":second["screen"],
+            "trace":page.evaluate("window.__readerSwipeTrace")}
         assert second["scroll"]>first["scroll"],(first,second)
         reverse=swipe(page,130)
         rewind=snapshot(page)
