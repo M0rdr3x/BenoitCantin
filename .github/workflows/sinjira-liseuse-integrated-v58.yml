@@ -1,4 +1,4 @@
-name: SINJIRA V58 — liseuse mobile : intégration réelle
+name: "SINJIRA V58 — liseuse mobile : intégration réelle"
 on:
   pull_request:
     branches: [main, test/sinjira-liseuse-v57-vraie-page-mobile-20261110]
