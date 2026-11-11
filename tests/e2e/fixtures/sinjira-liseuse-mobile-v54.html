@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Fixture locale V54 — liseuse mobile sans livre privé</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#111c2c;color:#f3f8ff;font-family:system-ui,sans-serif}
+header{padding:8px 14px}
+button{min-height:48px;margin:3px;padding:8px;background:#184a50;color:white;border:2px solid #6adacb;border-radius:8px}
+button:disabled{opacity:.35}
+#controls{display:flex;flex-wrap:wrap;align-items:center;padding:5px}
+#reader-screen-count{display:block;min-height:24px}
+#reader-viewer{height:310px;width:min(100%,600px);overflow:auto;margin:auto;background:#f3ead5;color:#29251f}
+#reader-viewer[data-reader-layout="screens"]{overflow-x:hidden;overflow-y:hidden;touch-action:pan-y pinch-zoom}
+#reader-text{font-size:20px;line-height:35px;white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%;padding:10px}
+#reader-viewer:focus-visible{outline:3px solid #6adacb}
+#reader-touch-prev,#reader-touch-next{min-width:100px}
+#reader-canvas{display:none}
+</style>
+</head>
+<body>
+<header><strong>SINJIRA — simulation locale (aucun roman réel, aucun compte)</strong></header>
+<div id="controls">
+  <button id="reader-previous" type="button">Page PDF précédente</button>
+  <label for="reader-page">Page source</label>
+  <input id="reader-page" type="number" value="3" min="1" max="5">
+  <button id="reader-next" type="button">Page PDF suivante</button>
+  <label for="reader-screens-enabled">
+    <input id="reader-screens-enabled" type="checkbox" checked> Pages-écran
+  </label>
+  <output id="reader-screen-count" aria-live="polite">Chargement</output>
+</div>
+<div id="reader-viewer" tabindex="0" aria-label="Texte de test">
+  <article id="reader-text" aria-label="Texte synthétique"></article>
+  <canvas id="reader-canvas" hidden></canvas>
+</div>
+<div id="reader-touch-nav">
+  <button id="reader-touch-prev" type="button">← Précédente</button>
+  <button id="reader-touch-next" type="button">Suivante →</button>
+</div>
+<p id="result" aria-live="polite">Prêt</p>
+<script>
+(function(){
+  const $=name=>document.getElementById(name);
+  const viewer=$('reader-viewer'),text=$('reader-text'),page=$('reader-page');
+  const previous=$('reader-previous'),next=$('reader-next');
+  // Du TEXTE DE TEST UNIQUEMENT; aucun contenu SINJIRA ou service privé.
+  const synthetic=n=>Array.from({length:55},(_,i)=>'Page '+n+' · ligne synthétique '+String(i+1).padStart(2,'0')+
+    ' : exemple de lecture à la largeur du téléphone, sans texte privé.').join('\n');
+  window.__readerFixture={changes:[],ready:true};
+  function render(){
+    const value=Number(page.value);
+    previous.disabled=value<=1;next.disabled=value>=5;
+    text.textContent=synthetic(value);
+    viewer.scrollTop=0;
+    $('result').textContent='Page source '+value;
+  }
+  function change(delta){
+    const before=Number(page.value),after=Math.max(1,Math.min(5,before+delta));
+    if(before===after)return;
+    page.value=String(after);
+    window.__readerFixture.changes.push(after);
+    render();
+  }
+  previous.addEventListener('click',()=>change(-1));
+  next.addEventListener('click',()=>change(1));
+  page.addEventListener('change',render);
+  render();
+})();
+</script>
+<script type="module" src="/assets/js/sinjira-liseuse-touch-v52.mjs?v=52.11.10.1"></script>
+<script type="module" src="/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.10.1"></script>
+</body>
+</html>
