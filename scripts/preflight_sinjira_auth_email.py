@@ -29,6 +29,9 @@ class ConfirmationLinkParser(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.valid_link = False
         self.visibility_stack = []
+        # Un <a href> valide n'est pas utilisable si son contenu est vide.
+        # On ne valide l'ancre qu'à sa fermeture, après contrôle du libellé.
+        self.pending_links = []
 
     def handle_starttag(self, tag, attrs):
         properties = dict(attrs)
@@ -47,6 +50,12 @@ class ConfirmationLinkParser(HTMLParser):
         hidden = local_hidden or inherited_hidden
         if tag not in self.VOID_TAGS:
             self.visibility_stack.append((tag, hidden))
+        if tag == "img" and not hidden and self.pending_links:
+            # Image cliquable : exiger une source et un texte alternatif.
+            # Un <img> décoratif ne remplace pas un libellé de confirmation.
+            if (str(properties.get("src") or "").strip() and
+                    str(properties.get("alt") or "").strip()):
+                self.pending_links[-1]["has_label"] = True
         if tag != "a" or hidden:
             return
         # Deux attributs href sont ambigus : les navigateurs peuvent choisir
@@ -64,9 +73,22 @@ class ConfirmationLinkParser(HTMLParser):
         if (len(pairs) == 2 and
                 dict(pairs) == {"token_hash": "{{ .TokenHash }}",
                               "type": "email"}):
-            self.valid_link = True
+            self.pending_links.append({
+                "depth": len(self.visibility_stack), "has_label": False
+            })
+
+    def handle_data(self, data):
+        if (self.pending_links and self.visibility_stack and
+                not self.visibility_stack[-1][1] and data.strip()):
+            self.pending_links[-1]["has_label"] = True
 
     def handle_endtag(self, tag):
+        if tag == "a" and self.pending_links:
+            current = self.pending_links[-1]
+            if current["depth"] == len(self.visibility_stack):
+                self.pending_links.pop()
+                if current["has_label"]:
+                    self.valid_link = True
         # Empiler/dépiler les ancêtres permet de rejeter les liens cachés
         # sans rejeter un lien visible situé après le bloc masqué.
         for index in range(len(self.visibility_stack) - 1, -1, -1):
@@ -79,6 +101,8 @@ class ConfirmationLinkParser(HTMLParser):
         if tag == "a":
             return
         self.handle_starttag(tag, attrs)
+        if tag not in self.VOID_TAGS:
+            self.handle_endtag(tag)
 
 
 def has_secure_confirmation_link(content):
@@ -238,6 +262,17 @@ def selftest():
         '<a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email" />',
     ]
     deceptive_templates.extend(hidden_templates)
+    # Le href exact ne suffit pas si le destinataire n'a rien à cliquer.
+    # Le prévol doit également accepter un vrai libellé ou une image avec alt.
+    empty_link_templates = [
+        '<a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email"></a>',
+        '<a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email">  </a>',
+        '<a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email"><!-- Confirmer --></a>',
+        '<a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email"><span hidden>Confirmer</span></a>',
+        '<a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email"><img src="image.png" alt=""></a>',
+        '<a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email"><img alt="Confirmer"></a>',
+    ]
+    deceptive_templates.extend(empty_link_templates)
     for template in deceptive_templates:
         _, failed, _ = audit({**good, "mailer_templates_confirmation_content": template})
         assert "Modèle sécurisé par fragment" in failed, "Faux positif du modèle de courriel"
@@ -252,8 +287,14 @@ def selftest():
     assert has_secure_confirmation_link(
         "<template><a href='https://example.invalid/'>Ignoré</a></template>" +
         good["mailer_templates_confirmation_content"])
+    assert has_secure_confirmation_link(
+        '<a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email"><strong>Confirmer mon compte</strong></a>')
+    assert has_secure_confirmation_link(
+        '<a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email"><img src="image.png" alt="Confirmer mon compte"></a>')
+    assert has_secure_confirmation_link(
+        "<span style='display:none'/>" + good["mailer_templates_confirmation_content"])
     print("OK prévol Auth : treize contrats, quinze régressions, "
-          "vingt-huit modèles trompeurs (dont liens cachés) et wildcard testés.")
+          "trente-quatre modèles trompeurs (dont liens vides) et wildcard testés.")
 
 
 def remote():
