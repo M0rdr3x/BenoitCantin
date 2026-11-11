@@ -69,4 +69,5 @@ jobs:
         run: |
           psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v51_lab -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v59_entitlements.sql
       - name: Attestation exclusivement locale sans SQL de production
-        run: echo "V59-LAB-PASS-NO_GO : droits testés sur PostgreSQL fictif, aucune mutation de la base Supabase."
+        run: |
+          echo "V59-LAB-PASS-NO_GO : droits testés sur PostgreSQL fictif, aucune mutation de la base Supabase."
