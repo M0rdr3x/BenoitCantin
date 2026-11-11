@@ -394,6 +394,12 @@ export function createReaderCompanion({
       x=event.touches[0].clientX;y=event.touches[0].clientY;
     },{passive:true});
     viewer.addEventListener('touchend',event=>{
+      // V57 : le module tactile V52 possède les gestes; V53 les interprète
+      // par écran. Le compagnon historique ne doit JAMAIS tourner le PDF
+      // une seconde fois après ces modules. Garde le repli uniquement si
+      // une ancienne page HTML n'a pas chargé V52.
+      if(viewer.dataset?.readerTouchManaged==='v52'||
+         viewer.dataset?.readerLayout==='screens'||event.defaultPrevented)return;
       if(event.changedTouches.length!==1||window.getSelection()?.toString())return;
       const dx=event.changedTouches[0].clientX-x;
       const dy=event.changedTouches[0].clientY-y;

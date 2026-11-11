@@ -43,7 +43,7 @@ test('valeurs erronées ou durée impossible sont rejetées',()=>{
 function target(){
   const events=new Map();
   return {
-    disabled:false,clicks:0,clientWidth:375,scrollWidth:375,
+    disabled:false,clicks:0,clientWidth:375,scrollWidth:375,dataset:{},
     addEventListener(name,callback){events.set(name,callback)},
     removeEventListener(name,callback){if(events.get(name)===callback)events.delete(name)},
     emit(name,event={}){events.get(name)?.(event)},
@@ -77,6 +77,31 @@ test('intégration : les gestes cliquent uniquement les commandes officielles',(
   assert.equal(x.next.clicks,1);
   assert.equal(x.previous.clicks,1);
   x.release();
+});
+test('V57 : mode pages écran V53 bloque totalement le double changement PDF par V52',()=>{
+  const x=fixture();
+  x.viewer.dataset={readerLayout:'screens'};
+  x.swipe(-110);x.swipe(110);
+  x.mobileNext.click();x.mobilePrevious.click();
+  assert.equal(x.next.clicks,0);
+  assert.equal(x.previous.clicks,0);
+  x.viewer.dataset.readerLayout='scroll';
+  x.swipe(-110);x.mobilePrevious.click();
+  assert.equal(x.next.clicks,1);
+  assert.equal(x.previous.clicks,1);
+  x.release();
+});
+test('V57 : le module V52 annonce son statut au compagnon historique puis libère le marqueur',()=>{
+  const x=fixture();
+  assert.equal(x.viewer.dataset.readerTouchManaged,'v52');
+  x.release();
+  assert.equal(x.viewer.dataset.readerTouchManaged,undefined);
+});
+test('V57 : le compagnon V28 refuse le double geste quand V52 contrôle la lecture',()=>{
+  const source=readFileSync(new URL('../assets/js/sinjira-liseuse-companion-v28.mjs',import.meta.url),'utf8');
+  assert.match(source,/readerTouchManaged==='v52'/);
+  assert.match(source,/readerLayout==='screens'/);
+  assert.match(source,/event\.defaultPrevented/);
 });
 test('intégration : commandes de navigation en bas de l’écran',()=>{
   const x=fixture();
