@@ -39,7 +39,7 @@ def main():
 
   signup_html=text('compte/inscription.html')
   confirmation_html=text('compte/confirmer.html')
-  if 'sinjira-confirm-email.js?v=3' not in confirmation_html or 'sinjira-confirm-email.js?v=2' in confirmation_html:
+  if 'sinjira-confirm-email.js?v=4' not in confirmation_html or 'sinjira-confirm-email.js?v=3' in confirmation_html:
     errors.append('Confirmation: l’ancienne révision du module Auth peut rester en cache.')
   if 'v24-signup.js?v=24.5.6' not in signup_html or 'v24-signup.js?v=24.5.5' in signup_html:
     errors.append('Inscription: l’ancienne révision du module Auth peut rester en cache.')
