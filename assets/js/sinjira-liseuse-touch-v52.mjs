@@ -48,6 +48,10 @@ export function bindReaderTouchNavigation({
   const end=event=>{
     const initial=origin;
     origin=null;
+    // Le mode V53 « pages d'écran » possède son propre gestionnaire tactile.
+    // Ne JAMAIS déclencher ici le changement de page PDF quand V53 est actif,
+    // même si preventDefault() n'a pas été honoré sur un appareil tactile.
+    if(viewer.dataset?.readerLayout==='screens')return;
     if(!initial||event.touches?.length!==0||event.changedTouches?.length!==1)return;
     const touch=event.changedTouches[0];
     if(touch.identifier!==initial.id||event.defaultPrevented)return;
@@ -67,8 +71,12 @@ export function bindReaderTouchNavigation({
   viewer.addEventListener('touchcancel',cancel,{passive:true});
   viewer.addEventListener('touchend',end,{passive:true});
 
-  const mobileBack=()=>{if(!previous.disabled)previous.click()};
-  const mobileForward=()=>{if(!next.disabled)next.click()};
+  const mobileBack=()=>{
+    if(viewer.dataset?.readerLayout!=='screens'&&!previous.disabled)previous.click();
+  };
+  const mobileForward=()=>{
+    if(viewer.dataset?.readerLayout!=='screens'&&!next.disabled)next.click();
+  };
   mobilePrevious?.addEventListener('click',mobileBack);
   mobileNext?.addEventListener('click',mobileForward);
 
