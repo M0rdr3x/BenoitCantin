@@ -32,7 +32,7 @@ REQUIRED_SHORTCUTS = {
     '/projets/sinjira/registre/',
     '/projets/sinjira/monde-parallele/',
 }
-CACHE_PREFIX = 'benoitcantin-v24-4-95-'
+CACHE_PREFIX = 'benoitcantin-v24-4-96-'
 
 
 def local_target(raw: str, base: Path | None = None) -> Path | None:
@@ -228,10 +228,23 @@ def validate_service_worker(errors: list[str]) -> None:
         errors.append('sw.js: nom de cache explicite absent.')
     elif not cache_match.group(1).startswith(CACHE_PREFIX):
         errors.append(f'sw.js: cache obsolète {cache_match.group(1)!r}; préfixe attendu {CACHE_PREFIX!r}.')
-    if "u.pathname.startsWith('/app/')" not in text:
-        errors.append('sw.js: l’app sociale n’est plus explicitement network-only/no-store.')
-    if "u.pathname.startsWith('/compte/')" not in text:
-        errors.append('sw.js: les pages Compte ne sont plus explicitement network-only/no-store.')
+    # V24.4.96 : le routeur privé est centralisé et les tests Node exécutent
+    # les vrais handlers install/fetch/activate (plus fiables qu'un simple grep).
+    private_fn = re.search(
+        r'function\s+isPrivatePath\(pathname\)\s*\{(.*?)\n\}', text, re.S
+    )
+    private_body = private_fn.group(1) if private_fn else ''
+    for path, label in [("'/app'", "app sociale"), ("'/compte'", "pages Compte"),
+                        ("'/admin'", "administration"), ("'/histoire-de-vie'", "patrimoine privé")]:
+        if path not in private_body:
+            errors.append(f'sw.js: {label} absents du routeur privé.')
+    if ("isPrivatePath(u.pathname)" not in text or
+            "!isPublicCachePath(u.pathname)" not in text or
+            "fetch(new Request(r,{cache:'no-store'}))" not in text):
+        errors.append('sw.js: les chemins privés/dynamiques ne sont plus réseau-only/no-store.')
+    if ("if(cacheableResponse(request,response))" not in text or
+            "if(cacheableResponse(r,resp))" not in text):
+        errors.append('sw.js: contrôles de confidentialité absents du précache ou du fetch.')
 
 
 def validate_install_runtime(errors: list[str]) -> None:
