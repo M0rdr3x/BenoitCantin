@@ -1,0 +1,40 @@
+name: "Audit — bilan des quatre programmes au 8 novembre 2026"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'projets/projet-nova/data/audit-completude-programme-nova-2026-11-05.json'
+      - 'projets/projet-nova/data/registre-donnees-services-nova-sinjira.json'
+      - 'docs/nova-sondages/reception-sondage-boussole-2026-11-08.json'
+      - 'docs/sinjira/programme-readiness-2026-11-08.json'
+      - 'docs/AVANCEMENT_QUATRE_PROGRAMMES_2026-11-10.md'
+      - 'scripts/validate_quatre_programmes_baseline_20261110.mjs'
+      - 'tests/quatre_programmes_baseline_20261110.test.mjs'
+      - '.github/workflows/quatre-programmes-baseline-20261110.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/validate_quatre_programmes_baseline_20261110.mjs'
+      - 'tests/quatre_programmes_baseline_20261110.test.mjs'
+
+permissions:
+  contents: read
+jobs:
+  source-audit:
+    name: Vérifier les 47, 75, 54,5 et 66,5 sans inventer un taux sectoriel
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - name: Lire la branche sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Vérifier la syntaxe
+        run: |
+          node --check scripts/validate_quatre_programmes_baseline_20261110.mjs
+          node --check tests/quatre_programmes_baseline_20261110.test.mjs
+      - name: Recalculer les chiffres et portes à partir des sources
+        run: |
+          node scripts/validate_quatre_programmes_baseline_20261110.mjs
+          node --test tests/quatre_programmes_baseline_20261110.test.mjs
