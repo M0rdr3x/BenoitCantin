@@ -107,7 +107,11 @@ def run(playwright, browser_type, url):
           document.querySelector('#reader-text').textContent.includes('LIVRE DE TEST')""",timeout=15000)
         first=snapshot(page)
         assert first["page"]==3 and first["layout"]=="screens",first
-        assert first["max"]>200 and first["prevDisabled"] is False,first
+        assert first["max"]>200 and first["prevDisabled"] is False,{
+            "scroll":first["scroll"],"max":first["max"],"page":first["page"]}
+        assert first["scroll"]<2,{
+            "reason":"Page initiale PDF incorrectement repositionnée",
+            "scroll":first["scroll"],"max":first["max"],"page":first["page"]}
         assert "LIVRE DE TEST · Page 3" in first["text"]
         assert not rejected,rejected
 
@@ -115,7 +119,10 @@ def run(playwright, browser_type, url):
         # modifier la page PDF tant qu'elle comporte du texte.
         forward=swipe(page,-130)
         second=snapshot(page)
-        assert forward["consumed"] and second["page"]==3,second
+        assert forward["consumed"] and second["page"]==3,{
+            "first_scroll":first["scroll"],"first_max":first["max"],
+            "forward":forward,"second_page":second["page"],
+            "second_scroll":second["scroll"],"second_screen":second["screen"]}
         assert second["scroll"]>first["scroll"],(first,second)
         reverse=swipe(page,130)
         rewind=snapshot(page)
