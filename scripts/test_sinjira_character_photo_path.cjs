@@ -3,7 +3,14 @@
 // Aucun appel réseau, aucun compte et aucune écriture dans Storage.
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
-const file=fs.readFileSync(path.join(__dirname,'..','supabase/functions/submit-character-questionnaire/index.ts'),'utf8');
+// Par défaut, tester la source GitHub. Sur ordre explicite du pipeline protégé,
+ // réexécuter exactement la même suite sur le fichier téléchargé de Supabase.
+const argv=process.argv.slice(2);
+assert.ok(argv.length===0||(argv.length===2&&argv[0]==='--source'&&path.isAbsolute(argv[1])),
+  'Source extérieure autorisée uniquement en chemin absolu avec --source');
+const filePath=argv.length===2?argv[1]:path.join(__dirname,'..','supabase/functions/submit-character-questionnaire/index.ts');
+assert.ok(fs.statSync(filePath).isFile(),'Source Edge attendue : fichier régulier');
+const file=fs.readFileSync(filePath,'utf8');
 const pattern=/function isCanonicalRegistryPhotoPath\(raw:unknown,userId:string\):boolean\{[\s\S]*?\n\}/g;
 const funcs=[...file.matchAll(pattern)];
 assert.equal(funcs.length,1,'Une seule implémentation du contrôle serveur attendue');
