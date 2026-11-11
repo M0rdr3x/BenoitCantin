@@ -21,12 +21,16 @@ SELECT ok(
 );
 
 -- Deux utilisateurs fictifs : pas d'e-mail personnel ni de compte live.
-INSERT INTO auth.users(id, aud, role, email, created_at, updated_at)
+INSERT INTO auth.users(id, aud, role, email, raw_user_meta_data, created_at, updated_at)
 VALUES
  ('11111111-1111-4111-8111-111111111111', 'authenticated', 'authenticated',
-  'rpc-fixture-a@example.invalid', now(),now()),
+  'rpc-fixture-a@example.invalid',
+  '{"birth_date":"1990-01-15","date_of_birth":"1990-01-15","gender":"female"}'::jsonb,
+  now(),now()),
  ('22222222-2222-4222-8222-222222222222', 'authenticated', 'authenticated',
-  'rpc-fixture-b@example.invalid', now(),now());
+  'rpc-fixture-b@example.invalid',
+  '{"birth_date":"1990-01-15","date_of_birth":"1990-01-15","gender":"female"}'::jsonb,
+  now(),now());
 
 INSERT INTO auth.sessions(id, user_id, not_after)
 VALUES
