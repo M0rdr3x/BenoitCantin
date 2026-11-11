@@ -32,6 +32,9 @@ export function bindReaderTouchNavigation({
   Observer=typeof MutationObserver!=='undefined'?MutationObserver:null
 }={}){
   if(!viewer||!previous||!next)throw new Error('V52: zone ou boutons de lecture absents');
+  // Marqueur partagé avec le module historique V28 : V52 devient l'unique
+  // propriétaire du geste, que le lecteur soit en mode PDF ou écran texte.
+  if(viewer.dataset)viewer.dataset.readerTouchManaged='v52';
   let origin=null;
   const start=event=>{
     origin=null;
@@ -90,6 +93,7 @@ export function bindReaderTouchNavigation({
   reflectDisabled();
   return ()=>{
     origin=null;
+    if(viewer.dataset?.readerTouchManaged==='v52')delete viewer.dataset.readerTouchManaged;
     viewer.removeEventListener('touchstart',start);
     viewer.removeEventListener('touchmove',move);
     viewer.removeEventListener('touchcancel',cancel);
