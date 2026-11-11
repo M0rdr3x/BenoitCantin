@@ -34,19 +34,21 @@ def serve_fixture():
 SWIPE_JS = """
 ({dx,dy=5,multiple=false})=>{
   const el=document.querySelector('#reader-viewer');
-  const start=new Touch({identifier:9,target:el,clientX:255,clientY:250});
-  const end=new Touch({identifier:9,target:el,
-    clientX:255+dx,clientY:250+dy});
-  const arr=multiple?[start,new Touch({
-    identifier:10,target:el,clientX:200,clientY:200})]:[start];
-  el.dispatchEvent(new TouchEvent('touchstart',{
-    touches:arr,targetTouches:arr,changedTouches:[start],
-    bubbles:true,cancelable:true
-  }));
-  const ev=new TouchEvent('touchend',{
-    touches:[],targetTouches:[],changedTouches:[end],
-    bubbles:true,cancelable:true
-  });
+  // Touch() n'a pas de constructeur public sur certains WebKit Linux :
+  // conserver le vrai dispatch/capture/bubble DOM avec un payload TouchLike.
+  const start={identifier:9,target:el,clientX:255,clientY:250};
+  const end={identifier:9,target:el,clientX:255+dx,clientY:250+dy};
+  const arr=multiple?[start,{identifier:10,target:el,clientX:200,clientY:200}]:[start];
+  const touchEvent=(type,touches,changed)=>{
+    const ev=new Event(type,{bubbles:true,cancelable:true});
+    Object.defineProperties(ev,{
+      touches:{value:touches},targetTouches:{value:touches},
+      changedTouches:{value:changed}
+    });
+    return ev;
+  };
+  el.dispatchEvent(touchEvent('touchstart',arr,[start]));
+  const ev=touchEvent('touchend',[],[end]);
   el.dispatchEvent(ev);
   return {
     consumed:ev.defaultPrevented,
