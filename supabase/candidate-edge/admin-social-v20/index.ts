@@ -73,7 +73,8 @@ const ATOMIC_SQL_CODES=new Set([
   'REPORT_NOT_OPEN','TARGET_USER_NOT_FOUND','CONTENT_TARGET_NOT_REVERSIBLE',
   'INVALID_SUSPENSION_DURATION','INVALID_MODERATION_INPUT',
   'APPEAL_NOT_PENDING','DECISION_NOT_ACTIVE','ADMIN_REQUIRED',
-  'SUSPENSION_ALREADY_ACTIVE','INVALID_APPEAL_REVIEW'
+  'SUSPENSION_ALREADY_ACTIVE','INVALID_APPEAL_REVIEW',
+  'UNVERIFIED_DATING_PROVENANCE'
 ]);
 function atomicFailure(error:any):never{
   const code=typeof error?.message==='string'&&ATOMIC_SQL_CODES.has(error.message)
@@ -104,8 +105,11 @@ async function createDecision(
   s:any,adminId:string,r:any,b:any,action:'hide_content'|'suspend_social'
 ){
   if(!r||r.status!=='open')throw new Error('REPORT_NOT_OPEN');
+  // Le snapshot n'est pas une preuve d'identité canonique côté serveur.
+  // Ne pas autoriser une suspension Rencontres avant provenance SQL vérifiée.
+  if(r.snapshot?.source==='dating')throw new Error('UNVERIFIED_DATING_PROVENANCE');
   if(action==='hide_content'&&
-    (r.snapshot?.source==='dating'||
+    (
      !['real','character'].includes(r.network)||
      !['post','comment','message'].includes(r.target_type)))
     throw new Error('CONTENT_TARGET_NOT_REVERSIBLE');
