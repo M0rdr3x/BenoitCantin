@@ -242,9 +242,15 @@ def validate_service_worker(errors: list[str]) -> None:
             "!isPublicCachePath(u.pathname)" not in text or
             "fetch(new Request(r,{cache:'no-store'}))" not in text):
         errors.append('sw.js: les chemins privés/dynamiques ne sont plus réseau-only/no-store.')
-    if ("if(cacheableResponse(request,response))" not in text or
-            "if(cacheableResponse(r,resp))" not in text):
-        errors.append('sw.js: contrôles de confidentialité absents du précache ou du fetch.')
+    # Le précache doit refuser explicitement les réponses inadmissibles puis
+    # effacer son cache provisoire. Les lectures publiques restent sans cookies.
+    if ("Promise.allSettled(CORE.map(" not in text or
+            "if(!cacheableResponse(request,response))" not in text or
+            "await caches.delete(CACHE)" not in text or
+            "if(cacheableResponse(publicRequest,resp))" not in text or
+            "request.credentials!=='omit'" not in text or
+            "redirect:'error'" not in text):
+        errors.append('sw.js: confidentialité ou précache fail-closed insuffisants.')
 
 
 def validate_install_runtime(errors: list[str]) -> None:
