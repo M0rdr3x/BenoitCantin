@@ -84,7 +84,14 @@ function mockTarget(opts={}){
     handlers
   };
 }
-function fixture({selected='',lastBookPage=false,firstBookPage=false}={}){
+function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=false}={}){
+  const observed=[];
+  class FakeObserver{
+    constructor(callback){this.callback=callback;observed.push(this)}
+    observe(target){this.target=target}
+    disconnect(){}
+    emit(mutations){this.callback(mutations)}
+  }
   const oldWindow=globalThis.window,oldDocument=globalThis.document;
   const windowMock=mockTarget();
   windowMock.getComputedStyle=()=>({lineHeight:'35px',fontSize:'20px'});
@@ -102,7 +109,7 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false}={}){
   const teardown=bindReaderScreenMode({
     viewer,text,previous,next,mobilePrevious,mobileNext,toggle,status,
     pageField,media,getSelectionText:()=>selected,
-    clock:()=>now,raf:fn=>fn(),Observer:null
+    clock:()=>now,raf:fn=>fn(),Observer:observe?FakeObserver:null
   });
   function restore(){
     teardown();
@@ -123,6 +130,7 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false}={}){
   }
   return {viewer,text,previous,next,mobilePrevious,mobileNext,toggle,status,
     pageField,documentMock,windowMock,media,restore,swipe,
+    notifyText:()=>observed.find(x=>x.target===text)?.emit([{type:'childList'}]),
     setSelected:v=>{selected=v}};
 }
 test('intégration : le mode pages d’écran est activé par défaut sur mobile',()=>{
@@ -181,6 +189,21 @@ test('intégration : une page PDF reste le repli lorsqu’il n’existe plus d�
     f.viewer.scrollTop=700;f.viewer.emit('scroll',{});
     f.swipe(-100);
     assert.equal(f.next.clicks,1);
+  }finally{f.restore()}
+});
+test('intégration : retour à la page PDF précédente ouvre sa dernière portion',()=>{
+  const f=fixture({observe:true});
+  try{
+    f.previous.addEventListener('click',()=>{
+      f.pageField.value='3';
+      f.viewer.scrollTop=0;
+      f.viewer.emit('scroll',{});
+    });
+    f.swipe(105);
+    assert.equal(f.previous.clicks,1);
+    f.notifyText();
+    assert.equal(f.viewer.scrollTop,700);
+    assert.match(f.status.textContent,/Écran 4 sur 4 · page 3/);
   }finally{f.restore()}
 });
 test('intégration : mode PDF laisse les gestes au module V52',()=>{
