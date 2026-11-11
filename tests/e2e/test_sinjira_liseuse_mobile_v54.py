@@ -131,6 +131,25 @@ def run_browser(playwright, engine, origin):
         assert back["consumed"] and back["page"] == 3, back
         assert back["scroll"] == 0, back
 
+        # V56 : aria-live annonce le changement d'écran, pas les micro-scrolls.
+        page.evaluate("""() => {
+          window.__readerAnnounceCount=0;
+          const output=document.querySelector('#reader-screen-count');
+          window.__readerAnnounceObserver=new MutationObserver(records=>{
+            window.__readerAnnounceCount+=records.length;
+          });
+          window.__readerAnnounceObserver.observe(output,{
+            childList:true,characterData:true,subtree:true
+          });
+          document.querySelector('#reader-viewer').scrollTop=12;
+        }""")
+        page.wait_for_timeout(80)
+        assert page.evaluate("window.__readerAnnounceCount") == 0, (
+            "Annonce répétée pour un déplacement sans changement d'écran"
+        )
+        page.evaluate("document.querySelector('#reader-viewer').scrollTop=0")
+        page.wait_for_timeout(50)
+
         # Les gestes verticaux ne provoquent aucune modification.
         before = state(page)
         vertical = swipe(page, -8, 140)
@@ -181,6 +200,7 @@ def run_browser(playwright, engine, origin):
         page.locator("#reader-touch-next").click()
         buttons = state(page)
         assert buttons["page"] == 3 and buttons["scroll"] > 0, buttons
+        fraction_before = buttons["scroll"] / max(1, buttons["max"])
 
         # Changer l'interligne et tourner le téléphone conserve le livre affiché.
         page.evaluate("""() => {
@@ -192,8 +212,16 @@ def run_browser(playwright, engine, origin):
         page.set_viewport_size({"width": 780, "height": 390})
         page.wait_for_function("""() =>
           document.querySelector('#reader-screen-count').textContent.includes('Écran')""")
+        # Deux trames sont nécessaires au recalcul du lecteur après le resize.
+        page.wait_for_timeout(150)
         rotated = state(page)
         assert rotated["page"] == 3, rotated
+        fraction_after = rotated["scroll"] / max(1, rotated["max"])
+        assert abs(fraction_after-fraction_before) < 0.08, (
+            "Rotation : la position proportionnelle a été perdue",
+            fraction_before, fraction_after, rotated
+        )
+        page.evaluate("window.__readerAnnounceObserver.disconnect()")
 
         # Le mode PDF doit retomber sur les gestes V52 sans double page.
         page.evaluate("""() => {
