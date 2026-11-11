@@ -250,6 +250,15 @@ test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=
   assert.match(css,/min-height:48px/);
   assert.match(css,/reader-layout="scroll"/);
 });
+test('V52 singleton: import V53 et script HTML ont exactement la même URL cache-bustée',()=>{
+  const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
+  const module=readFileSync(new URL('../assets/js/sinjira-liseuse-reflow-v53.mjs',import.meta.url),'utf8');
+  const htmlUrl='/assets/js/sinjira-liseuse-touch-v52.mjs?v=52.11.10.1';
+  const importedUrl='./sinjira-liseuse-touch-v52.mjs?v=52.11.10.1';
+  assert.ok(html.includes('src="'+htmlUrl+'"'));
+  assert.ok(module.includes("'"+importedUrl+"'"));
+  assert.equal(html.split('sinjira-liseuse-touch-v52.mjs').length-1,1);
+});
 test('la nouvelle fonction ne contient aucune écriture d’identité ou de roman',()=>{
   const module=readFileSync(new URL('../assets/js/sinjira-liseuse-reflow-v53.mjs',import.meta.url),'utf8');
   assert.doesNotMatch(module,/supabase|\.upsert\(|createSignedUrl|reader_library|localStorage\.setItem\([^,]+\+|serviceClient/);
