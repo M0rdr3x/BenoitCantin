@@ -1,0 +1,49 @@
+name: "SINJIRA V60 — lecture continue sans micro-page finale"
+on:
+  pull_request:
+    branches:
+      - review/sinjira-liseuse-mobile-v58-main-aligned-20261110
+      - main
+    paths:
+      - 'assets/js/sinjira-liseuse-reflow-v53.mjs'
+      - 'tests/sinjira-liseuse-reflow-v53.test.mjs'
+      - 'tests/e2e/test_sinjira_liseuse_responsive_v58.py'
+      - '.github/workflows/sinjira-liseuse-fin-page-v60.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-liseuse-reflow-v53.mjs'
+      - 'tests/e2e/test_sinjira_liseuse_responsive_v58.py'
+      - '.github/workflows/sinjira-liseuse-fin-page-v60.yml'
+permissions:
+  contents: read
+jobs:
+  reader-tail:
+    name: "Fin de page et mobile — ${{ matrix.browser }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - name: Checkout sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Contrôler la syntaxe
+        run: |
+          node --check assets/js/sinjira-liseuse-reflow-v53.mjs
+          python3 -m py_compile tests/e2e/test_sinjira_liseuse_responsive_v58.py
+      - name: Régressions unitaires gestes et écran final
+        run: |
+          node --test tests/sinjira-liseuse-reflow-v53.test.mjs tests/sinjira-liseuse-touch-v52.test.mjs
+      - name: Vérifier la vraie liseuse sur le moteur de navigateur
+        run: |
+          python3 -m venv .venv-reader-v60
+          . .venv-reader-v60/bin/activate
+          python -m pip install --disable-pip-version-check playwright==1.57.0
+          python -m playwright install --with-deps ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_mobile_v54.py --browser ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_real_page_v57.py --browser ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_responsive_v58.py --browser ${{ matrix.browser }}
