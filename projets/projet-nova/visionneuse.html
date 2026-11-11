@@ -62,7 +62,7 @@
     if(!window.pdfjsLib){status.textContent='La visionneuse PDF intégrée n’a pas chargé. Aucun téléchargement automatique n’a été lancé. Utilisez Télécharger seulement si vous voulez enregistrer le fichier.'; return;}
     try{
       status.textContent='Chargement du PDF dans la visionneuse du site...';
-      pdf=await pdfjsLib.getDocument({url:d.path, disableAutoFetch:false, disableStream:false}).promise;
+      pdf=await pdfjsLib.getDocument({url:d.path, isEvalSupported:false, enableXfa:false, disableAutoFetch:false, disableStream:false}).promise;
       status.textContent='Document affiché dans le site. Le téléchargement se fait seulement avec le bouton Télécharger le PDF.';
       await renderPage();
     }catch(e){
