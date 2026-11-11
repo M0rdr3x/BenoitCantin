@@ -20,7 +20,7 @@ def main()->int:
 
     signup_page=check('compte/inscription.html',[
         'data-signup-form method="post"', 'type="submit" disabled>Créer mon compte',
-        'name="formspree_receipt_opt_in"', 'v24-signup.js?v=24.5.4', '<noscript>',
+        'name="formspree_receipt_opt_in"', 'v24-signup.js?v=24.5.5', '<noscript>',
     ])
     supabase_client=check('assets/js/sinjira-supabase.js',[
         "import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/+esm';",
