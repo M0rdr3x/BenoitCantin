@@ -99,9 +99,14 @@ confirmButton?.addEventListener('click', async () => {
   }
 });
 
+// Le bouton disabled n'empêche pas un second événement submit au clavier.
+// Refuser toute requête concurrente, indépendamment de l'état du bouton.
+let resendInFlight = false;
 resendForm?.addEventListener('submit', async (event) => {
   event.preventDefault();
+  if (resendInFlight || !isSinjiraBackendConfigured()) return;
   if (!resendForm.reportValidity()) return;
+  resendInFlight = true;
   const email = String(new FormData(resendForm).get('email') || '').trim();
   const submitButton = resendForm.querySelector('[type="submit"]');
   if (submitButton) submitButton.disabled = true;
@@ -112,6 +117,7 @@ resendForm?.addEventListener('submit', async (event) => {
   } catch {
     setStatus(resendStatus, 'Le renvoi est indisponible pour le moment ou la limite d’envoi est atteinte. Réessayez plus tard.', 'error');
   } finally {
+    resendInFlight = false;
     if (submitButton) submitButton.disabled = false;
   }
 });
