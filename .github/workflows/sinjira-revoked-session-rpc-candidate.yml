@@ -6,12 +6,16 @@ on:
     paths:
       - 'security/candidates/sinjira_revoked_auth_session_device_rpcs.sql'
       - 'scripts/validate_revoked_session_rpc_candidate.py'
+      - 'scripts/build_revoked_session_rpc_runtime_test.py'
+      - 'security/candidates/sinjira_revoked_auth_session_runtime_assertions.sql'
       - '.github/workflows/sinjira-revoked-session-rpc-candidate.yml'
   push:
     branches: [main]
     paths:
       - 'security/candidates/sinjira_revoked_auth_session_device_rpcs.sql'
       - 'scripts/validate_revoked_session_rpc_candidate.py'
+      - 'scripts/build_revoked_session_rpc_runtime_test.py'
+      - 'security/candidates/sinjira_revoked_auth_session_runtime_assertions.sql'
       - '.github/workflows/sinjira-revoked-session-rpc-candidate.yml'
   workflow_dispatch:
 
@@ -35,3 +39,36 @@ jobs:
         run: python3 scripts/validate_revoked_session_rpc_candidate.py --self-test
       - name: Vérifier le candidat SQL sans connexion Supabase
         run: python3 scripts/validate_revoked_session_rpc_candidate.py
+
+  local-runtime-revoked-sessions:
+    name: Tester les sessions révoquées dans Supabase local (pgTAP)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout isolé
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python figé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Auto-tester l'assemblage SQL sans accès distant
+        run: python3 scripts/build_revoked_session_rpc_runtime_test.py --self-test
+      - name: Installer Supabase CLI figée
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
+        with:
+          version: 2.111.0
+      - name: Démarrer la base Supabase de test locale
+        run: supabase start
+      - name: Exécuter 20 scénarios de sessions et huit RPC avec pgTAP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/build_revoked_session_rpc_runtime_test.py
+          supabase test db supabase/tests/__sinjira_revoked_session_candidate_generated.test.sql --local
+      - name: Fermer Supabase local et supprimer les données fictives
+        if: always()
+        run: supabase stop --no-backup || true
