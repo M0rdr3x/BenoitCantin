@@ -123,6 +123,11 @@ jobs:
         with:
           version: 2.111.0
           github-token: ${{ github.token }}
+      - name: Installer Node épinglé pour tester le source Edge distant
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '22.16.0'
+          check-latest: false
       - name: Vérifier version de CLI et secret de production
         shell: bash
         env:
