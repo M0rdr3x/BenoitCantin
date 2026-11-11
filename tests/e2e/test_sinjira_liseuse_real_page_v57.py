@@ -229,7 +229,11 @@ def run(playwright, browser_type, url):
 
         # Repasser au texte et à la mise en page mobile.
         page.locator("#reader-mode").click()
-        page.wait_for_function("""()=>document.querySelector('#reader-text').hidden===false""")
+        # MutationObserver V53 rétablit le mode paginé après que le moteur
+        # PDF a rendu le texte : attendre les DEUX conditions de stabilité.
+        page.wait_for_function("""()=>
+          document.querySelector('#reader-text').hidden===false &&
+          document.querySelector('#reader-viewer').dataset.readerLayout==='screens'""")
         assert snapshot(page)["layout"]=="screens",snapshot(page)
         assert not failures,failures
         assert not rejected,rejected
