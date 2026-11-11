@@ -137,6 +137,7 @@ test('un grand texte peut être divisé en plusieurs écrans, jamais en zéro',(
 
 function mockTarget(opts={}){
   const handlers=new Map();
+  const attributes=new Map();
   return {
     disabled:opts.disabled??false,hidden:opts.hidden??false,checked:opts.checked??true,
     dataset:{},clientWidth:opts.clientWidth??375,clientHeight:opts.clientHeight??350,
@@ -147,6 +148,9 @@ function mockTarget(opts={}){
     emit(name,event={}){for(const fn of handlers.get(name)||[])fn(event)},
     click(){if(this.disabled)return;this.clicks++;this.emit('click',{preventDefault(){},stopImmediatePropagation(){}})},
     scrollTo({top}){this.scrollTop=top;this.emit('scroll',{})},
+    getAttribute(name){return attributes.get(name)??null},
+    setAttribute(name,value){attributes.set(name,String(value))},
+    contains(node){return node===this},
     handlers
   };
 }
@@ -170,6 +174,7 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
     next=mockTarget({disabled:lastBookPage}),
     mobilePrevious=mockTarget(),mobileNext=mockTarget(),
     toggle=mockTarget(),status=mockTarget(),pageField=mockTarget();
+  documentMock.activeElement=viewer; // le clavier du test possède le focus du livre
   const media=mockTarget();media.matches=true;
   let now=0;
   const frameQueue=[];
@@ -358,6 +363,55 @@ test('intégration : clavier flèche droite pagine sans double passage PDF',()=>
     assert.equal(f.viewer.scrollTop,315);
     assert.equal(f.next.clicks,0);
   }finally{f.restore()}
+});
+test('V61 : les raccourcis de lecture n’interceptent pas les flèches hors du livre',()=>{
+  const f=fixture();
+  const key=key=>({key,defaultPrevented:false,altKey:false,ctrlKey:false,
+    metaKey:false,shiftKey:false,preventDefault(){this.defaultPrevented=true},
+    stopImmediatePropagation(){}});
+  try{
+    f.documentMock.activeElement=f.documentMock;
+    const elsewhere=key('ArrowRight');
+    f.documentMock.emit('keydown',elsewhere);
+    assert.equal(elsewhere.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,0);
+    f.documentMock.activeElement=f.previous;
+    const controls=key('PageDown');
+    f.documentMock.emit('keydown',controls);
+    assert.equal(controls.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,0);
+    f.documentMock.activeElement=null;
+    const noFocus=key('PageUp');
+    f.documentMock.emit('keydown',noFocus);
+    assert.equal(noFocus.defaultPrevented,false);
+    f.documentMock.activeElement=f.viewer;
+    const active=key('ArrowRight');
+    f.documentMock.emit('keydown',active);
+    assert.equal(active.defaultPrevented,true);
+    assert.equal(f.viewer.scrollTop,315);
+  }finally{f.restore()}
+});
+test('V61 : boutons de lecture annoncent écran ou page du livre selon le mode',()=>{
+  const f=fixture();
+  try{
+    for(const control of [f.previous,f.mobilePrevious])
+      assert.match(control.getAttribute('aria-label'),/Écran précédent/);
+    for(const control of [f.next,f.mobileNext])
+      assert.match(control.getAttribute('aria-label'),/Écran suivant/);
+    f.text.hidden=true;
+    f.toggle.emit('change',{});
+    for(const control of [f.previous,f.mobilePrevious])
+      assert.equal(control.getAttribute('aria-label'),'Page du livre précédente');
+    for(const control of [f.next,f.mobileNext])
+      assert.equal(control.getAttribute('aria-label'),'Page du livre suivante');
+  }finally{f.restore()}
+});
+test('V61 : indications des raccourcis et focus visible existent dans la vraie page',()=>{
+  const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
+  assert.match(html,/aria-keyshortcuts="ArrowLeft ArrowRight PageUp PageDown"/);
+  assert.match(html,/placez d’abord le focus dans la zone du livre/);
+  assert.match(css,/\.reader-viewer:focus-visible\{outline:3px solid/);
 });
 test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
