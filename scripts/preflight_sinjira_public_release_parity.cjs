@@ -25,14 +25,14 @@ const HTML = [
     'data-signup-form', 'formspree_receipt_opt_in', 'v24-signup.js?v=24.5.6'
   ] },
   { path: 'projets/sinjira/registre/index.html', markers: [
-    'sinjira-character-registry.js?v=24.5.9',
+    'sinjira-character-registry.js?v=24.5.10',
     'AAL2', 'formspree_receipt_opt_in'
   ] }
 ];
 const REQUIRED_MODULES = {
   'compte/confirmer.html': '../assets/js/sinjira-confirm-email.js?v=4',
   'compte/inscription.html': '../assets/js/v24-signup.js?v=24.5.6',
-  'projets/sinjira/registre/index.html': '../../../assets/js/sinjira-character-registry.js?v=24.5.9'
+  'projets/sinjira/registre/index.html': '../../../assets/js/sinjira-character-registry.js?v=24.5.10'
 };
 
 function sha256(value) {
