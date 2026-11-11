@@ -168,3 +168,19 @@ test('fichiers publics : refuser le cache des réponses privées, conserver le p
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(allowed.puts.length, 1);
 });
+
+test('les scripts JS/MJS/CSS restent network-first pour diffuser les correctifs', async () => {
+  for (const asset of [
+    '/assets/js/site.js',
+    '/projets/projet-nova/script.js',
+    '/projets/sinjira/jeux/game.mjs',
+    '/projets/sinjira/jeux/style.css',
+  ]) {
+    const sw = harness(() => response({'Cache-Control': 'public, max-age=3600'}));
+    const event = eventFor(request(asset));
+    sw.listeners.fetch(event);
+    await event.result;
+    assert.equal(sw.fetches.length, 1, asset);
+    assert.equal(sw.matches.length, 0, 'aucune copie obsolète lue avant le réseau: ' + asset);
+  }
+});
