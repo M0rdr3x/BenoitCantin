@@ -58,6 +58,7 @@
 .sinjira-liseuse .reader-progress{height:4px;background:#1e3042}
 .sinjira-liseuse .reader-progress span{display:block;height:100%;width:0;background:#83e3d6}
 .sinjira-liseuse .reader-stage{min-width:0}
+.sinjira-liseuse .reader-viewer:focus-visible{outline:3px solid #83e3d6;outline-offset:-3px}
 .sinjira-liseuse .reader-viewer{height:calc(100vh - 175px);min-height:520px;overflow:auto;
  padding:22px 16px;background:#07101b;text-align:center}
 .sinjira-liseuse .reader-canvas{display:block;margin:0 auto 25px;max-width:none;border-radius:6px;
