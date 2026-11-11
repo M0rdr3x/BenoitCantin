@@ -125,6 +125,19 @@ def main()->int:
         'revoke all on public.sinjira_formspree_events from public, anon, authenticated',
         'to service_role',
     ])
+    storage_sql=check('scripts/sql/sinjira_character_sources_insert_requires_aal2.sql',[
+        'CREATE POLICY sinjira_character_sources_insert_requires_aal2',
+        'ON storage.objects', 'AS RESTRICTIVE', 'FOR INSERT', 'TO authenticated',
+        "bucket_id <> 'sinjira-character-sources'",
+        "auth.jwt()->>'aal'", "'aal2'",
+        'char_source_insert_own', "public=false",
+    ])
+    if 'DROP POLICY' in storage_sql.upper() or 'DISABLE ROW LEVEL SECURITY' in storage_sql.upper():
+        errors.append('Registre : script AAL2 ne doit supprimer aucune politique RLS.')
+    check('scripts/test_sinjira_storage_photo_aal2_policy.cjs',[
+        'Restrictive INSERT only', 'Never drop an owner policy',
+        'without database' if False else 'sans base de données',
+    ])
     check('supabase/config.toml',[
         '[functions.notify-account-confirmation]', 'verify_jwt = true',
     ])
