@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'assets/js/sinjira-liseuse-reflow-v53.mjs'
+      - 'assets/js/sinjira-liseuse-v26.js'
       - 'compte/liseuse.html'
       - 'assets/css/sinjira-liseuse-v26.css'
       - 'tests/sinjira-liseuse-reflow-v53.test.mjs'
@@ -37,6 +38,7 @@ jobs:
       - name: Vérifier syntaxe JavaScript et Python
         run: |
           node --check assets/js/sinjira-liseuse-reflow-v53.mjs
+          node --check assets/js/sinjira-liseuse-v26.js
           node --check assets/js/sinjira-liseuse-touch-v52.mjs
           node --check tests/sinjira-liseuse-reflow-v53.test.mjs
           python3 -m py_compile tests/e2e/test_sinjira_liseuse_mobile_v54.py tests/e2e/test_sinjira_liseuse_real_page_v57.py tests/e2e/test_sinjira_liseuse_responsive_v58.py
