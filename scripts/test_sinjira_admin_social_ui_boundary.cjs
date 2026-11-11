@@ -118,6 +118,8 @@ async function test(){
   notIn(appealList.innerHTML,'Faux appel','Appel malformé non rendu');
   yes(reportList.find(datingId).querySelector('[data-restrict]')===null,
     'Aucun masquage de contenu offert pour signalement Rencontres');
+  yes(reportList.find(datingId).querySelector('[data-suspend]')===null,
+    'Aucune suspension Rencontres par snapshot de provenance invérifiable');
   yes(reportList.find(reportId).querySelector('[data-restrict]')!==null,
     'Option de masquage public conservée');
 
