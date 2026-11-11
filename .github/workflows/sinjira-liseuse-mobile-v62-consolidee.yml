@@ -1,0 +1,61 @@
+name: "SINJIRA V62 — réception consolidée liseuse mobile"
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'compte/liseuse.html'
+      - 'assets/css/sinjira-liseuse-v26.css'
+      - 'assets/js/sinjira-liseuse-v26.js'
+      - 'assets/js/sinjira-liseuse-companion-v28.mjs'
+      - 'assets/js/sinjira-liseuse-touch-v52.mjs'
+      - 'assets/js/sinjira-liseuse-reflow-v53.mjs'
+      - 'tests/sinjira-liseuse-reflow-v53.test.mjs'
+      - 'tests/sinjira-liseuse-touch-v52.test.mjs'
+      - 'tests/e2e/test_sinjira_liseuse_mobile_v54.py'
+      - 'tests/e2e/test_sinjira_liseuse_real_page_v57.py'
+      - 'tests/e2e/test_sinjira_liseuse_responsive_v58.py'
+      - 'tests/e2e/fixtures/sinjira-liseuse-mobile-v54.html'
+      - '.github/workflows/sinjira-liseuse-mobile-v62-consolidee.yml'
+      - 'docs/sinjira/SINJIRA_LISEUSE_V62_INTEGRATION_CONSOLIDEE_2026-11-11.md'
+  push:
+    branches: [main]
+    paths:
+      - 'compte/liseuse.html'
+      - 'assets/js/sinjira-liseuse-reflow-v53.mjs'
+      - '.github/workflows/sinjira-liseuse-mobile-v62-consolidee.yml'
+permissions:
+  contents: read
+jobs:
+  mobile-reader:
+    name: "Navigation mobile + page réelle — ${{ matrix.browser }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - name: Checkout épinglé sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Vérifier la syntaxe des moteurs et bancs
+        run: |
+          node --check assets/js/sinjira-liseuse-v26.js
+          node --check assets/js/sinjira-liseuse-companion-v28.mjs
+          node --check assets/js/sinjira-liseuse-touch-v52.mjs
+          node --check assets/js/sinjira-liseuse-reflow-v53.mjs
+          python3 -m py_compile tests/e2e/test_sinjira_liseuse_mobile_v54.py tests/e2e/test_sinjira_liseuse_real_page_v57.py tests/e2e/test_sinjira_liseuse_responsive_v58.py
+      - name: Tests de pagination / gestes / clavier
+        run: node --test tests/sinjira-liseuse-reflow-v53.test.mjs tests/sinjira-liseuse-touch-v52.test.mjs
+      - name: Banc tactile sur page réelle (PDF fictif et compte bloqué)
+        run: |
+          python3 -m venv .venv-sinjira-v62
+          . .venv-sinjira-v62/bin/activate
+          python -m pip install --disable-pip-version-check playwright==1.57.0
+          python -m playwright install --with-deps ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_mobile_v54.py --browser ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_real_page_v57.py --browser ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_responsive_v58.py --browser ${{ matrix.browser }}
+      - name: Preuve CI — sans distribution ni migration
+        run: echo "SINJIRA_V62_TESTS_ONLY_NO_PRODUCTION_GO"
