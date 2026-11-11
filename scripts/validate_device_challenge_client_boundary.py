@@ -46,12 +46,12 @@ def main() -> int:
     # et présente la clé de l’appareil courant, jamais une clé choisie ailleurs.
     approve = (
         "rpc('security_resolve_connection_challenge',{"
-        "p_challenge_id:target.dataset.challengeApprove,"
+        "p_challenge_id:requiredSecurityRecordId(target.dataset.challengeApprove),"
         "p_device_key:meta.device_key,p_decision:'approved'})"
     )
     deny = (
         "rpc('security_resolve_connection_challenge',{"
-        "p_challenge_id:target.dataset.challengeDeny,"
+        "p_challenge_id:requiredSecurityRecordId(target.dataset.challengeDeny),"
         "p_device_key:meta.device_key,p_decision:'denied'})"
     )
     require(approve in web, 'approbation Web non liée à meta.device_key de la session courante')
