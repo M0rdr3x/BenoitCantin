@@ -63,6 +63,11 @@ et doit être revérifié au moment du sign-off.
   TOTP dans `/compte/securite.html` → **vérification réelle du facteur et
   `currentLevel=aal2`** → Registre → sauvegarde observable dans
   `character_submissions` → comportement idempotent et absence de doublon.
+  Un refus explicite `HTTP 409 / ONE_CHARACTER_PER_ACCOUNT` bloque
+  un second envoi et propose « Mon personnage », tout en supprimant
+  uniquement la photo temporaire de la tentative rejetée. Une erreur
+  réseau reste incertaine : jamais de nettoyage potentiellement destructif.
+  Client Registre `sinjira-character-registry.js?v=24.5.9`.
   Le module `v24-security.js?v=24.4.70` ne doit annoncer « TOTP activée »
   que si `challengeAndVerify()` retourne une session avec `access_token`
   et que `getAuthenticatorAssuranceLevel()` confirme `currentLevel=aal2`.
