@@ -25,13 +25,29 @@ export function measureReaderScreen({
   const safeStep=Math.min(available,(lines-overlap)*line);
   return Math.max(1,Math.min(clientHeight,Math.round(safeStep)));
 }
+/**
+ * V60 : quand il reste moins d'un interligne à lire au-delà du dernier pas
+ * complet, ne pas générer un « écran final » qui n'avance que de 2 à 30 px.
+ * Le saut supplémentaire est borné par la hauteur d'une ligne, et préserve
+ * donc le recouvrement utile de V55 sans masquer un passage entier.
+ */
+function readerShortTail({max,step,lineHeight}){
+  if(!Number.isFinite(max)||!Number.isFinite(step)||max<=0||step<=0)return null;
+  const fullSteps=Math.floor(max/step);
+  if(fullSteps<1)return null;
+  const tail=max-fullSteps*step;
+  const limit=Math.min(step*0.18,Number.isFinite(lineHeight)&&lineHeight>0?lineHeight:30);
+  return tail>0&&tail<=limit
+    ?{omitted:fullSteps*step,previous:(fullSteps-1)*step}:null;
+}
 export function readerScreenState({scrollTop=0,scrollHeight=0,clientHeight=0,lineHeight=30,paddingTop=0,paddingBottom=0}={}){
   const max=Math.max(0,scrollHeight-clientHeight);
   const top=Math.max(0,Math.min(max,Number.isFinite(scrollTop)?scrollTop:0));
   const step=measureReaderScreen({clientHeight,lineHeight,paddingTop,paddingBottom});
-  const screens=Math.max(1,Math.ceil(max/step)+1);
+  const shortTail=readerShortTail({max,step,lineHeight});
+  const screens=Math.max(1,Math.ceil(max/step)+1-(shortTail?1:0));
   const screen=top>=max-2?screens:Math.max(1,Math.min(screens,Math.floor((top+2)/step)+1));
-  return {top,max,step,screens,screen,ratio:max>0?top/max:0,
+  return {top,max,step,screens,screen,shortTail,ratio:max>0?top/max:0,
     hasPreviousScreen:top>2,hasNextScreen:top<max-2};
 }
 export function planReaderScreenTurn({direction,scrollTop,scrollHeight,clientHeight,lineHeight,paddingTop=0,paddingBottom=0}){
@@ -40,9 +56,13 @@ export function planReaderScreenTurn({direction,scrollTop,scrollHeight,clientHei
   if(direction==='next'){
     if(!s.hasNextScreen)return {type:'document',direction};
     const next=(Math.floor((s.top+2)/s.step)+1)*s.step;
+    if(s.shortTail&&next>=s.shortTail.omitted-2)
+      return {type:'screen',direction,top:s.max};
     return {type:'screen',direction,top:Math.min(s.max,next)};
   }
   if(!s.hasPreviousScreen)return {type:'document',direction};
+  if(s.shortTail&&s.top>=s.max-2)
+    return {type:'screen',direction,top:s.shortTail.previous};
   const prevIndex=Math.max(0,Math.ceil((s.top-2)/s.step)-1);
   return {type:'screen',direction,top:Math.max(0,prevIndex*s.step)};
 }
