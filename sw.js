@@ -19,6 +19,8 @@ function isPublicCachePath(pathname){
     && /\.(?:css|js|mjs|png|jpe?g|gif|webp|avif|svg|ico|woff2?|ttf|otf|mp3|ogg|wav|mp4|webm|webmanifest)$/i.test(pathname);
 }
 function cacheableResponse(request,resp){
+  // Une réponse associée à des cookies/session ne doit jamais être persistée.
+  if(request.credentials!=='omit')return false;
   if(!resp||!resp.ok||resp.status!==200||resp.redirected||['opaque','opaqueredirect','error'].includes(resp.type))return false;
   const url=new URL(request.url);
   if(url.origin!==location.origin||url.search||url.pathname.includes('%')||isPrivatePath(url.pathname)||!isPublicCachePath(url.pathname))return false;
@@ -38,9 +40,10 @@ function cacheableResponse(request,resp){
 }
 // Lire exclusivement le cache appartenant à cette version du site.
 function cachedPublic(request){return caches.open(CACHE).then(cache=>cache.match(request));}
+function anonymousPublicRequest(request){return new Request(request,{cache:'no-store',credentials:'omit'});}
 self.addEventListener('install',e=>e.waitUntil(
   caches.open(CACHE).then(c=>Promise.all(CORE.map(async path=>{
-    const request=new Request(new URL(path,location.origin),{cache:'no-store'});
+    const request=anonymousPublicRequest(new URL(path,location.origin));
     const response=await fetch(request);
     // addAll() ignorait Cache-Control: private sur les pages précachées.
     if(cacheableResponse(request,response))await c.put(request,response);
@@ -66,8 +69,9 @@ self.addEventListener('fetch',e=>{
     return;
   }
   if(r.destination==='document'){
-    e.respondWith(fetch(new Request(r,{cache:'no-store'})).then(resp=>{
-      if(cacheableResponse(r,resp)){
+    const publicRequest=anonymousPublicRequest(r);
+    e.respondWith(fetch(publicRequest).then(resp=>{
+      if(cacheableResponse(publicRequest,resp)){
         const cp=resp.clone();
         caches.open(CACHE).then(c=>c.put(r,cp));
       }
@@ -79,14 +83,16 @@ self.addEventListener('fetch',e=>{
   // doit pas être masquée par une version ancienne en Cache Storage.
   const liveAsset=/\.(?:js|mjs|css)$/i.test(u.pathname);
   if(liveAsset){
-    e.respondWith(fetch(new Request(r,{cache:'no-store'})).then(resp=>{
-      if(cacheableResponse(r,resp))caches.open(CACHE).then(c=>c.put(r,resp.clone()));
+    const publicRequest=anonymousPublicRequest(r);
+    e.respondWith(fetch(publicRequest).then(resp=>{
+      if(cacheableResponse(publicRequest,resp))caches.open(CACHE).then(c=>c.put(r,resp.clone()));
       return resp;
     }).catch(()=>cachedPublic(r).then(x=>x||cachedPublic(u.pathname))));
     return;
   }
-  e.respondWith(cachedPublic(r).then(cached=>cached||fetch(r).then(resp=>{
-    if(cacheableResponse(r,resp))caches.open(CACHE).then(c=>c.put(r,resp.clone()));
+  const publicRequest=anonymousPublicRequest(r);
+  e.respondWith(cachedPublic(r).then(cached=>cached||fetch(publicRequest).then(resp=>{
+    if(cacheableResponse(publicRequest,resp))caches.open(CACHE).then(c=>c.put(r,resp.clone()));
     return resp;
   })).catch(()=>cachedPublic('/offline.html')));
 });
