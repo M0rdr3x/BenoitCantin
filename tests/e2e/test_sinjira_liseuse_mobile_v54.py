@@ -54,7 +54,7 @@ SWIPE_JS = """
     consumed:ev.defaultPrevented,
     page:Number(document.querySelector('#reader-page').value),
     scroll:el.scrollTop,
-    changes:[...window.__readerFixture.changes],
+    changes:[...(window.__readerFixture?.changes||[])],
     indicator:document.querySelector('#reader-screen-count').textContent
   };
 }
