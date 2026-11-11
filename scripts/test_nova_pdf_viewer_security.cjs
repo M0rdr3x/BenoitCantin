@@ -36,7 +36,7 @@ class FakeElement {
 function good(overrides = {}) {
   return {id:'resume', order:'01', title:'Résumé public', path:'documents/resume.pdf', file:'resume.pdf', ...overrides};
 }
-function boot(documents, search = '') {
+function boot(documents, search = '', pdfLib = null) {
   const elements = Object.fromEntries(
     ['docSelect', 'viewerTitle', 'viewerStatus', 'downloadBtn', 'pdfPages',
      'pageInfo', 'prevPage', 'nextPage', 'zoomIn', 'zoomOut']
@@ -45,7 +45,8 @@ function boot(documents, search = '') {
   const pageUrl = ORIGIN + search;
   const historyCalls = [];
   const sandbox = {
-    window: {NOVA_DOCUMENTS: documents},
+    window: {NOVA_DOCUMENTS: documents, pdfjsLib: pdfLib},
+    pdfjsLib: pdfLib,
     document: {
       getElementById(id) { return elements[id]; },
       createElement(name) {
@@ -120,4 +121,40 @@ test('aucune écriture innerHTML ni chemin PDF arbitraire', () => {
   assert.ok(source.includes("pdfjsLib.getDocument({url:d.path"));
   assert.ok(source.includes("filter(isSafeDocument)"));
   assert.ok(source.includes("select.replaceChildren()"));
+});
+
+test('PDF.js ne peut pas évaluer le code d’un document et désactive XFA', () => {
+  const calls = [];
+  const pdfLib = {
+    GlobalWorkerOptions: {},
+    getDocument(options) {
+      calls.push(options);
+      // Ne jamais lancer de rendu PDF réseau ou natif pendant ce test.
+      return {promise: new Promise(() => {})};
+    },
+  };
+  const {elements} = boot([good()], '?doc=resume', pdfLib);
+  assert.equal(elements.downloadBtn.href, 'documents/resume.pdf');
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, 'documents/resume.pdf');
+  assert.equal(calls[0].isEvalSupported, false, 'CVE-2024-4367 : eval désactivé');
+  assert.equal(calls[0].enableXfa, false, 'formulaires XFA non exécutables');
+  assert.equal(pdfLib.GlobalWorkerOptions.workerSrc,
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js');
+});
+
+test('PDF.js ne reçoit jamais un chemin malveillant du catalogue', () => {
+  const calls = [];
+  const pdfLib = {
+    GlobalWorkerOptions: {},
+    getDocument(options) { calls.push(options); return {promise:new Promise(() => {})}; },
+  };
+  boot([
+    good({id:'bad',path:'https://evil.invalid/payload.pdf',file:'payload.pdf'}),
+    good({id:'bad-script',path:'javascript:alert(1)',file:'x.pdf'}),
+    good(),
+  ], '?doc=bad', pdfLib);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, 'documents/resume.pdf');
+  assert.equal(calls[0].isEvalSupported, false);
 });
