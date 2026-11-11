@@ -17,7 +17,8 @@ const SAFE_LOG_CODES=new Set([
   'CONTENT_TARGET_NOT_REVERSIBLE','TARGET_USER_NOT_FOUND',
   'DATING_REPORT_HAS_NO_REMOVABLE_PUBLIC_CONTENT','INVALID_APPEAL_OUTCOME',
   'APPEAL_REVIEW_REASON_LENGTH', 'INVALID_MODERATION_REFERENCE',
-  'REPORT_NOT_OPEN', 'TARGET_USER_NOT_FOUND', 'INVALID_SUSPENSION_DURATION'
+  'REPORT_NOT_OPEN', 'TARGET_USER_NOT_FOUND', 'INVALID_SUSPENSION_DURATION',
+  'UNVERIFIED_DATING_PROVENANCE'
 ]);
 
 function privateJson(data:unknown,status=200){
@@ -117,6 +118,10 @@ async function createDecision(s:any,adminId:string,r:any,b:any,action:'hide_cont
   // Ne pas enregistrer une sanction si le signalement est clos ou que
   // l'identité canonique visée n'existe plus.
   if(!r||r.status!=='open')throw new Error('REPORT_NOT_OPEN');
+  // La colonne snapshot peut être choisie par le signalant (RLS INSERT).
+  // Ne jamais laisser "dating_profile_id" sélectionner une cible à suspendre
+  // tant que la relation Rencontres n'est pas prouvée par données SQL canoniques.
+  if(r.snapshot?.source==='dating')throw new Error('UNVERIFIED_DATING_PROVENANCE');
   if(action==='hide_content'&&!targetTables?.[r.network]?.[r.target_type])throw new Error('CONTENT_TARGET_NOT_REVERSIBLE');
   const subject=await reportTargetUser(s,r);
   if(!subject)throw new Error('TARGET_USER_NOT_FOUND');
@@ -257,6 +262,8 @@ Deno.serve(async(req)=>{
       return privateJson({ok:false,error:'Ce signalement n’est plus ouvert.',code:'REPORT_NOT_OPEN'},409);
     if(e?.message==='TARGET_USER_NOT_FOUND')
       return privateJson({ok:false,error:'La cible de cette mesure est introuvable.',code:'TARGET_USER_NOT_FOUND'},409);
+    if(e?.message==='UNVERIFIED_DATING_PROVENANCE')
+      return privateJson({ok:false,error:'La provenance du signalement doit être vérifiée avant toute sanction.',code:'UNVERIFIED_DATING_PROVENANCE'},409);
     return privateJson({ok:false,error:'Erreur de modération sociale.',code:'MODERATION_FAILED'},500);
   }
 });
