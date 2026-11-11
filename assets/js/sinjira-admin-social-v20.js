@@ -45,7 +45,7 @@ function decisionInputs(x){
 }
 function reportCard(x){
   const isDating=x.snapshot?.source==='dating',reason=reasonLabels[x.reason]||x.reason;
-  return `<article class="v20-admin-report" data-report="${escapeHtml(x.id)}"><strong>${isDating?'Rencontres SINJIRA™':escapeHtml(x.network)} · ${escapeHtml(reason)}</strong><p>Signalé le ${escapeHtml(new Date(x.created_at).toLocaleString('fr-CA'))}</p>${isDating?datingEvidence(x):genericEvidence(x)}${decisionInputs(x)}<div class="v20-admin-actions"><button class="btn btn-secondary btn-small" data-resolve>Résoudre sans mesure</button>${isDating?'':'<button class="btn btn-primary btn-small" data-restrict>Masquer réversiblement</button>'}<button class="btn btn-secondary btn-small" data-suspend>Suspension 7 jours</button></div></article>`;
+  return `<article class="v20-admin-report" data-report="${escapeHtml(x.id)}"><strong>${isDating?'Rencontres SINJIRA™':escapeHtml(x.network)} · ${escapeHtml(reason)}</strong><p>Signalé le ${escapeHtml(new Date(x.created_at).toLocaleString('fr-CA'))}</p>${isDating?datingEvidence(x):genericEvidence(x)}${decisionInputs(x)}<div class="v20-admin-actions"><button class="btn btn-secondary btn-small" data-resolve>Résoudre sans mesure</button>${isDating?'':'<button class="btn btn-primary btn-small" data-restrict>Masquer réversiblement</button><button class="btn btn-secondary btn-small" data-suspend>Suspension 7 jours</button>'}</div></article>`;
 }
 function reportPayload(card){return {policy_rule:String(card.querySelector('[data-policy-rule]')?.value||'').trim(),statement_of_reasons:String(card.querySelector('[data-statement]')?.value||'').trim(),urgency:String(card.querySelector('[data-urgency]')?.value||'standard')}}
 
@@ -91,7 +91,8 @@ async function load(){
         await call('restrict_reported_content',{report_id:id,...payload});await load();
       }
     });
-    card.querySelector('[data-suspend]').onclick=()=>safeModerationAction(async()=>{
+    const suspend=card.querySelector('[data-suspend]');
+    if(suspend&&report.snapshot?.source!=='dating')suspend.onclick=()=>safeModerationAction(async()=>{
       if(!current())return;
       const payload=reportPayload(card);
       if(!validDecisionPayload(payload)){alert('Règle ou justification de modération invalide.');return}
