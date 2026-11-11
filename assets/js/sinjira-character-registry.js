@@ -53,6 +53,16 @@ async function uploadPhoto(user){
  if(error)throw error;return path;
 }
 async function cleanupUploadedPhoto(path){if(!path)return;try{const {error}=await getSupabase().storage.from('sinjira-character-sources').remove([path]);if(error)console.warn('[SINJIRA registre] nettoyage photo temporaire',error)}catch(e){console.warn('[SINJIRA registre] nettoyage photo temporaire impossible',e)}}
+// Seul HTTP 409 avec le code métier exact prouve un refus définitif.
+// Une erreur de transport, un HTTP 500 ou un 409 non reconnu reste incertain.
+async function isConfirmedRegistryDuplicate(error){
+ const response=error?.context;
+ if(response?.status!==409 || typeof response.json!=='function')return false;
+ try{
+   const payload=await response.json();
+   return payload?.code==='ONE_CHARACTER_PER_ACCOUNT';
+ }catch{return false}
+}
 async function submitToSinjira(user,{updateExisting=false}={}){
  let photo_path=null;
  let invocationStarted=false;
@@ -61,9 +71,18 @@ async function submitToSinjira(user,{updateExisting=false}={}){
    const answers=serialize(form);
    invocationStarted=true;
    const {data,error}=await getSupabase().functions.invoke('submit-character-questionnaire',{body:{answers,photo_path,manual_only:true,update_existing:updateExisting}});
+   if(error && await isConfirmedRegistryDuplicate(error)){
+     // Le POST est explicitement refusé avant écriture. La photo unique
+     // téléversée pour CET essai ne référence aucun dossier existant.
+     await cleanupUploadedPhoto(photo_path);
+     const duplicate=new Error('Ce compte possède déjà une demande ou son personnage unique SINJIRA™. Aucune nouvelle participation n’a été créée. Ouvrez « Mon personnage » pour consulter le dossier existant.');
+     duplicate.submissionAlreadyExists=true;
+     throw duplicate;
+   }
    if(error||!data?.ok||data?.persisted!==true)throw new Error(data?.error||error?.message||'Le serveur n’a pas confirmé la sauvegarde du dossier.');
    return data;
  }catch(e){
+   if(e?.submissionAlreadyExists===true)throw e;
    // Après l'envoi HTTP, l'absence d'accusé ne prouve pas l'absence de sauvegarde.
    // Conserver la photo privée: le dossier peut déjà la référencer en base.
    // Sans requête serveur, un fichier temporaire peut en revanche être nettoyé.
@@ -158,9 +177,10 @@ form?.addEventListener('submit',async e=>{
    registryReady=false;
  }catch(err){
    const unknown=err?.submissionOutcomeUnknown===true;
+   const duplicate=err?.submissionAlreadyExists===true;
    setState(err?.message||'Transmission impossible. Vos réponses restent visibles; réessayez.','error');
    state?.scrollIntoView({behavior:'smooth',block:'center'});
-   if(unknown){
+   if(unknown||duplicate){
      registryReady=false;
      if(submitButton)submitButton.disabled=true;
      // Vérification dans un nouvel onglet pour conserver les réponses visibles.

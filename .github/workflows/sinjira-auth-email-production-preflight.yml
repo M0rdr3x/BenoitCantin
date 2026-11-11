@@ -12,6 +12,9 @@ on:
       - 'scripts/test_sinjira_totp_verification_recovery.cjs'
       - 'scripts/test_sinjira_signup_next_fallback.cjs'
       - 'scripts/test_sinjira_signup_response.cjs'
+      - 'scripts/test_sinjira_registry_duplicate_response.cjs'
+      - 'assets/js/sinjira-character-registry.js'
+      - 'projets/sinjira/registre/index.html'
       - 'assets/js/v24-security.js'
       - 'assets/js/v24-signup.js'
       - 'supabase/functions/notify-account-confirmation/index.ts'
@@ -29,6 +32,9 @@ on:
       - 'scripts/test_sinjira_totp_verification_recovery.cjs'
       - 'scripts/test_sinjira_signup_next_fallback.cjs'
       - 'scripts/test_sinjira_signup_response.cjs'
+      - 'scripts/test_sinjira_registry_duplicate_response.cjs'
+      - 'assets/js/sinjira-character-registry.js'
+      - 'projets/sinjira/registre/index.html'
       - 'assets/js/v24-security.js'
       - 'assets/js/v24-signup.js'
       - 'supabase/functions/notify-account-confirmation/index.ts'
@@ -91,6 +97,10 @@ jobs:
         run: |
           node --check scripts/test_sinjira_signup_response.cjs
           node scripts/test_sinjira_signup_response.cjs
+      - name: Refuser les doublons explicites du Registre sans perdre la protection des erreurs incertaines
+        run: |
+          node --check scripts/test_sinjira_registry_duplicate_response.cjs
+          node scripts/test_sinjira_registry_duplicate_response.cjs
       - name: Vérifier les erreurs de vérification TOTP sans bloquer le bouton
         run: |
           node --check scripts/test_sinjira_totp_verification_recovery.cjs

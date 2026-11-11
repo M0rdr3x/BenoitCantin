@@ -60,7 +60,7 @@ def main()->int:
     ])
     registry_page=check('projets/sinjira/registre/index.html',[
         'data-character-form=', 'type="submit" disabled>Transmettre ma participation',
-        'name="formspree_receipt_opt_in"', 'sinjira-character-registry.js?v=24.5.8',
+        'name="formspree_receipt_opt_in"', 'sinjira-character-registry.js?v=24.5.9',
         'La double authentification (AAL2) est obligatoire pour tous les participants au Registre',
     ])
     security_page=check('compte/securite.html',[
@@ -78,8 +78,9 @@ def main()->int:
         "aal.nextLevel!=='aal2'",
         "aal.currentLevel!=='aal2'",
         "uncertainError.submissionOutcomeUnknown=true;",
+        "isConfirmedRegistryDuplicate(error)", "duplicate.submissionAlreadyExists=true;",
         "const unknown=err?.submissionOutcomeUnknown===true;",
-        "if(unknown){",
+        "if(unknown||duplicate){",
         "registryReady=false;",
         "link.href='/compte/mon-personnage.html';",
         "link.target='_blank';",
@@ -191,7 +192,7 @@ def main()->int:
     if not registry_js.index('auth.mfa.getAuthenticatorAssuranceLevel()') < registry_js.index("rpc('security_sensitive_access_status'"):
         errors.append('Registre : niveau MFA non contrôlé avant la vérification des permissions.')
     # Aucun second POST possible après une invocation réseau au résultat incertain.
-    if not re.search(r'if\s*\(unknown\)\s*\{\s*registryReady=false;',registry_js):
+    if not re.search(r'if\s*\(unknown\|\|duplicate\)\s*\{\s*registryReady=false;',registry_js):
         errors.append('Registre : second envoi encore autorisé après une réponse réseau incertaine')
     if not re.search(r'if\s*\(!invocationStarted\)\s*\{\s*await\s+cleanupUploadedPhoto\(photo_path\)',registry_js):
         errors.append('Registre : nettoyage temporaire pré-envoi non protégé')
