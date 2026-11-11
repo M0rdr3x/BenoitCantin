@@ -18,15 +18,19 @@ function randomDeviceKey(){
   return `sinjira-${Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}`;
 }
 
+// Faire expirer les anciennes clés créées avec un tableau non initialisé.
+function weakLegacyDeviceKey(value){
+  return typeof value==='string'&&/^sinjira-0{48}-[0-9a-z]+$/i.test(value);
+}
 function deviceKey(){
   try{
     let value=localStorage.getItem(DEVICE_KEY_STORAGE);
-    if(!value){value=randomDeviceKey();localStorage.setItem(DEVICE_KEY_STORAGE,value)}
+    if(!value||weakLegacyDeviceKey(value)){value=randomDeviceKey();localStorage.setItem(DEVICE_KEY_STORAGE,value)}
     return value;
   }catch{
     try{
       let value=sessionStorage.getItem(DEVICE_KEY_STORAGE);
-      if(!value){value=randomDeviceKey();sessionStorage.setItem(DEVICE_KEY_STORAGE,value)}
+      if(!value||weakLegacyDeviceKey(value)){value=randomDeviceKey();sessionStorage.setItem(DEVICE_KEY_STORAGE,value)}
       return value;
     }catch{return randomDeviceKey()}
   }
