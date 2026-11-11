@@ -149,7 +149,7 @@ def inspect_workflows(files: dict[str, str]) -> list[str]:
     # Un nom mentionné dans un if/commentaire ne prouve pas que l'input
     # obligatoire de workflow_dispatch est réellement déclaré.
     for key in ("confirm_containment", "acknowledge_header_gap", "expected_sha"):
-        if len(re.findall(rf"(?m)^      {key}:\\s*(?:#.*)?$", body)) != 1:
+        if len(re.findall(rf"(?m)^      {key}:\s*(?:#.*)?$", body)) != 1:
             errors.append(f"Input Pages absent, non direct ou ambigu : {key}")
     for job in ("build", "deploy"):
         if not manual_job_gate(body, job):
@@ -219,8 +219,8 @@ def self_test() -> None:
         )),
         ("path variant", good.replace("path: _site", "path: ./_site")),
         ("input in comment", good.replace(
-            "      expected_sha:\\n",
-            "      # expected_sha:\\n",
+            "      expected_sha:\n",
+            "      # expected_sha:\n",
         )),
     )
     for label, altered in mutants:
