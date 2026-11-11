@@ -2,12 +2,22 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {
-  measureReaderScreen,readerScreenState,planReaderScreenTurn,bindReaderScreenMode
+  measureReaderScreen,readerScreenState,planReaderScreenTurn,bindReaderScreenMode,parseReaderLineHeight
 } from '../assets/js/sinjira-liseuse-reflow-v53.mjs';
 
 const setup={scrollHeight:1050,clientHeight:350,lineHeight:35};
 const turn=(direction,scrollTop)=>planReaderScreenTurn({direction,scrollTop,...setup});
 
+test('CSS line-height sans unité se convertit en hauteur réelle',()=>{
+  assert.equal(parseReaderLineHeight({lineHeight:'1.75',fontSize:'20px'}),35);
+  assert.equal(parseReaderLineHeight({lineHeight:'2.1',fontSize:'24px'}),50.4);
+});
+test('CSS line-height en px ne doit pas être multiplié',()=>{
+  assert.equal(parseReaderLineHeight({lineHeight:'35px',fontSize:'20px'}),35);
+});
+test('interligne inconnu retombe sur 1,75 sans valeur NaN',()=>{
+  assert.equal(parseReaderLineHeight({lineHeight:'normal',fontSize:'20px'}),35);
+});
 test('la page-écran avance par lignes complètes',()=>{
   assert.equal(measureReaderScreen({clientHeight:350,lineHeight:35}),315);
   assert.equal(measureReaderScreen({clientHeight:200,lineHeight:20}),180);
