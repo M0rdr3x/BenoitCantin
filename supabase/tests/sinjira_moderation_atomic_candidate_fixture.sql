@@ -110,9 +110,9 @@ create table public.user_notifications(
 -- d'un signalement fictif, puis ajouter la politique restrictive candidate.
 create or replace function auth.uid()
 returns uuid language sql stable set search_path=''
-as $
+as $authuid$
   select nullif(auth.jwt()->>'sub','')::uuid;
-$;
+$authuid$;
 grant usage on schema public to authenticated;
 grant insert on public.social_reports to authenticated;
 alter table public.social_reports enable row level security;
