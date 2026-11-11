@@ -74,13 +74,26 @@ async function main(){
     eq(x.submit.disabled,false,'Can retry');
   }
   const created=await run({data:{user:{id:'00000000-0000-4000-8000-000000000001'},session:null},error:null});
-  eq(created.call.status.at(-1)?.kind,'success','Confirmed response says check email');
+  eq(created.call.status.at(-1)?.kind,'success','Acknowledged signup request is non-error');
+  yes(created.call.status.at(-1)?.message.includes('Si elle peut être traitée'),
+    'Signup request acknowledged without promising a created account');
+  yes(!created.call.status.at(-1)?.message.includes('Compte créé'),
+    'Supabase obfuscated user cannot trigger a false account-created claim');
   eq(created.call.resets,1,'Form cleared only when user acknowledged');
   eq(created.call.redirects.length,0,'No redirect before session');
   const immediate=await run({data:{user:{id:'00000000-0000-4000-8000-000000000001'},session:{access_token:'fake'}},error:null});
   eq(immediate.call.redirects[0],'/compte/index.html','User plus session redirects');
   const registry=await run({data:{user:{id:'00000000-0000-4000-8000-000000000001'},session:{access_token:'fake'}},error:null},{questionnaire:true});
   eq(registry.call.redirects[0],'/projets/sinjira/registre/','Intended registry redirect');
+  const registryWithoutSession=await run({data:{user:{id:'00000000-0000-4000-8000-000000000001',identities:[]},session:null},error:null},{questionnaire:true});
+  eq(registryWithoutSession.call.status.at(-1)?.kind,'success',
+    'A potentially obfuscated user is not treated as an error by SDK');
+  yes(registryWithoutSession.call.status.at(-1)?.message.includes('Si elle peut être traitée'),
+    'Potentially obfuscated user receives neutral acknowledgement');
+  yes(!registryWithoutSession.call.status.at(-1)?.message.includes('Compte créé'),
+    'Registry request does not assert a nonexistent new account');
+  eq(registryWithoutSession.call.redirects.length,0,
+    'No navigation to protected registry without session');
   const apiError=await run({data:null,error:{message:'error-inert'}});
   eq(apiError.call.status.at(-1)?.kind,'error','Explicit error still fails');
   eq(apiError.call.resets,0,'Explicit error preserves form');
