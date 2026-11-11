@@ -108,6 +108,23 @@ et doit être revérifié au moment du sign-off.
   **Cette parité ne prouve ni la réception SMTP, ni un facteur TOTP réellement
   vérifié, ni une session AAL2.**
 
+### Contrôle serveur du chemin des photos du Registre
+
+Le navigateur crée chaque objet source sous le nom
+`<uid>/<uuid-v4>.<jpg|png|webp|avif|gif>`.
+Le serveur `submit-character-questionnaire` doit refuser avant tout accès
+au dossier, même avec un JWT valide et AAL2, un `photo_path` non textuel,
+un identifiant d'un autre compte, un chemin imbriqué, une extension inconnue,
+un UUID invalide, une URL ou une chaîne trop longue. `null` et l'absence
+de photo sont permis. Ce contrôle canonique **complète** la protection
+Storage et le contrôle AAL2, sans s'y substituer.
+
+Le test `scripts/test_sinjira_character_photo_path.cjs` extrait la
+fonction de validation du véritable module TypeScript, et vérifie des
+cas valides et malformés sans envoyer de photo ni appeler Supabase.
+**Tant que la nouvelle Edge Function n'est pas déployée et testée en
+production, la correction est uniquement fusionnée dans GitHub.**
+
 ### Protection SQL AAL2 des photos privées — revue préalable au déploiement
 
 Audit de production (lecture seule, 10 novembre 2026) : le bucket

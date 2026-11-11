@@ -30,8 +30,10 @@ REQUIRED = {
     'état unique fail-closed': "if(submissionResult.error||characterResult.error)throw new Error('CHARACTER_STATE_LOOKUP_FAILED');",
     'unicité compte': "code:'ONE_CHARACTER_PER_ACCOUNT'",
     'mise à jour existante explicitement demandée': 'owner&&update_existing&&(existingSubmission||existingCharacter)',
-    'photo limitée au compte': "String(photo_path).startsWith(`${user.id}/`)",
-    'traversée photo refusée': "String(photo_path).includes('..')",
+    'chemin photo limité au compte': "const prefix=`${userId}/`;",
+    'format photo UUID v4 strict': "return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}",
+    'chemin photo refusé avant accès': "!isCanonicalRegistryPhotoPath(photo_path,user.id)",
+    'photo brute non convertible en objet': "const photo_path=body.photo_path??null",
     'canon provisoire': "canon_status:'PROVISOIRE'",
     'revue auteur': "status:'author_review'",
     'Roman I verrouillé dans le prompt': 'Le Roman 1 — La Cendre du Jugement est verrouillé.',
@@ -56,6 +58,8 @@ FORBIDDEN = {
     'log courriel backend brut': "console.warn('admin email failed',e)",
     'log participant backend brut': "console.warn('participant resend',await r.text())",
     'erreur génération brute persistée': "error_text:String(e?.message||e)",
+    'ancien contrôle photo permissif': 'String(photo_path).startsWith',
+    'ancien contrôle traversée permissif': "String(photo_path).includes('..')",
 }
 
 
@@ -125,7 +129,12 @@ def self_test() -> None:
         'canon automatique': real.replace("canon_status:'PROVISOIRE'", "canon_status:'CANON'", 1),
         'revue auteur retirée': real.replace("status:'author_review'", "status:'approved'", 1),
         'filtre privé retiré': real.replace("if(PRIVATE_KEYS.includes(k)||k.startsWith('parent_')||k.startsWith('photo'))continue;", '', 1),
-        'photo hors compte acceptée': real.replace("!String(photo_path).startsWith(`${user.id}/`)||", '', 1),
+        'photo hors compte acceptée': real.replace("!isCanonicalRegistryPhotoPath(photo_path,user.id)", 'false', 1),
+        'schéma UUID photo affaibli': real.replace(
+            "return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}",
+            "return /^.*",
+            1,
+        ),
         'log principal brut': real.replace("console.error('[submit-character-questionnaire]',safeLogCode(e));", 'console.error(e);', 1),
         'log notification brut': real.replace("console.warn('[submit-character-questionnaire]','ADMIN_NOTIFICATION_FAILED')", "console.warn('admin notification unavailable',e)", 1),
         'erreur génération brute': real.replace("error_text:'CHARACTER_GENERATION_FAILED'", "error_text:String(e?.message||e)", 1),
