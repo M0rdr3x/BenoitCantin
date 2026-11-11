@@ -1,0 +1,57 @@
+name: SINJIRA V57 — réception sur la vraie page liseuse
+
+on:
+  pull_request:
+    branches:
+      - fix/sinjira-liseuse-v56-accessibilite-reprise-20261110
+      - main
+    paths:
+      - 'compte/liseuse.html'
+      - 'assets/js/sinjira-liseuse-v26.js'
+      - 'assets/js/sinjira-liseuse-companion-v28.mjs'
+      - 'assets/js/sinjira-liseuse-reflow-v53.mjs'
+      - 'assets/js/sinjira-liseuse-touch-v52.mjs'
+      - 'tests/e2e/test_sinjira_liseuse_real_page_v57.py'
+      - 'tests/e2e/test_sinjira_liseuse_mobile_v54.py'
+      - 'tests/sinjira-liseuse-reflow-v53.test.mjs'
+      - 'tests/sinjira-liseuse-touch-v52.test.mjs'
+      - '.github/workflows/sinjira-liseuse-real-page-v57.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tests/e2e/test_sinjira_liseuse_real_page_v57.py'
+      - '.github/workflows/sinjira-liseuse-real-page-v57.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  vrai-lecteur-mobile:
+    name: Vraie liseuse — ${{ matrix.browser }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - name: Checkout épinglé et sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Contrôler la syntaxe
+        run: |
+          node --check assets/js/sinjira-liseuse-v26.js
+          node --check assets/js/sinjira-liseuse-reflow-v53.mjs
+          node --check assets/js/sinjira-liseuse-touch-v52.mjs
+          python3 -m py_compile tests/e2e/test_sinjira_liseuse_mobile_v54.py tests/e2e/test_sinjira_liseuse_real_page_v57.py
+      - name: Régressions gestures/reflow V52–V56
+        run: node --test tests/sinjira-liseuse-reflow-v53.test.mjs tests/sinjira-liseuse-touch-v52.test.mjs
+      - name: Navigateur réel, PDF et identité privés simulés et coupés
+        run: |
+          python3 -m venv .venv-reader-v57
+          . .venv-reader-v57/bin/activate
+          python -m pip install --disable-pip-version-check playwright==1.57.0
+          python -m playwright install --with-deps ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_mobile_v54.py --browser ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_real_page_v57.py --browser ${{ matrix.browser }}
