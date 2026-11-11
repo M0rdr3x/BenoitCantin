@@ -11,6 +11,7 @@ on:
       - 'scripts/test_sinjira_confirmation_notice_server.cjs'
       - 'scripts/test_sinjira_totp_verification_recovery.cjs'
       - 'scripts/test_sinjira_signup_next_fallback.cjs'
+      - 'scripts/test_sinjira_signup_response.cjs'
       - 'assets/js/v24-security.js'
       - 'assets/js/v24-signup.js'
       - 'supabase/functions/notify-account-confirmation/index.ts'
@@ -27,6 +28,7 @@ on:
       - 'scripts/test_sinjira_confirmation_notice_server.cjs'
       - 'scripts/test_sinjira_totp_verification_recovery.cjs'
       - 'scripts/test_sinjira_signup_next_fallback.cjs'
+      - 'scripts/test_sinjira_signup_response.cjs'
       - 'assets/js/v24-security.js'
       - 'assets/js/v24-signup.js'
       - 'supabase/functions/notify-account-confirmation/index.ts'
@@ -85,6 +87,10 @@ jobs:
         run: |
           node --check scripts/test_sinjira_signup_next_fallback.cjs
           node scripts/test_sinjira_signup_next_fallback.cjs
+      - name: Refuser les faux succès d'inscription sans utilisateur confirmé
+        run: |
+          node --check scripts/test_sinjira_signup_response.cjs
+          node scripts/test_sinjira_signup_response.cjs
       - name: Vérifier les erreurs de vérification TOTP sans bloquer le bouton
         run: |
           node --check scripts/test_sinjira_totp_verification_recovery.cjs
