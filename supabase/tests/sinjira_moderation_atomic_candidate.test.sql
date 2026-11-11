@@ -343,4 +343,53 @@ select public.fixture_assert_true(
   where id='dddddddd-dddd-4ddd-dddd-dddddddddddf'),
  'une action SQL nulle ne ferme pas le rapport');
 
+
+-- Régression d'une identité Rencontres falsifiée dans le JSON d'un
+-- signalement social public : le snapshot n'est PAS une preuve SQL.
+-- Le profil ciblé appartient ici à un AUTRE utilisateur (admin fictif).
+insert into public.dating_profiles(id,user_id) values(
+ '99999999-9999-4999-9999-999999999998',
+ 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa');
+update public.social_reports
+set snapshot='{"source":"dating","dating_profile_id":"99999999-9999-4999-9999-999999999998"}'::jsonb
+where id='dddddddd-dddd-4ddd-dddd-ddddddddddd3';
+
+set role service_role;
+do $spoof$
+declare v_rejected boolean:=false;
+begin
+  begin
+    perform public.sinjira_admin_moderate_atomic(
+      'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
+      'dddddddd-dddd-4ddd-dddd-ddddddddddd3',
+      'suspend_social','Règles communautaires de sécurité',
+      'Un signalement social ne prouve pas la provenance d un profil Rencontres.',
+      'standard',7);
+  exception when others then
+    if sqlerrm<>'UNVERIFIED_DATING_PROVENANCE' then raise; end if;
+    v_rejected:=true;
+  end;
+  if not v_rejected then raise exception 'EXPECTED_DATING_PROVENANCE_DENIAL'; end if;
+end;
+$spoof$;
+reset role;
+
+select public.fixture_assert_true(
+ not exists(select 1 from private.moderation_decisions
+            where report_id='dddddddd-dddd-4ddd-dddd-ddddddddddd3'),
+ 'Un snapshot Rencontres forgé ne crée aucune décision contre un autre compte');
+select public.fixture_assert_true(
+ (select status='open' from public.social_reports
+  where id='dddddddd-dddd-4ddd-dddd-ddddddddddd3'),
+ 'Un snapshot forgé ne clôture pas le signalement');
+select public.fixture_assert_true(
+ not exists(select 1 from public.social_suspensions
+            where user_id='aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa'),
+ 'Un faux ID de profil ne peut suspendre un tiers');
+
+-- Revenir à un rapport social canonique pour le test de concurrence à 2 sessions.
+update public.social_reports
+set snapshot='{}'::jsonb
+where id='dddddddd-dddd-4ddd-dddd-ddddddddddd3';
+
 select 'PASS: base temporaire — droits minimaux, sanction atomique, rollback forcé, appels et réexamen.' as result;
