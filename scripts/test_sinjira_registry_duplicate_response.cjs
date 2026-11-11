@@ -96,7 +96,7 @@ async function main(){
   const duplicate=await scenario({data:null,error:{context:{status:409,async json(){
     return {code:'ONE_CHARACTER_PER_ACCOUNT'};
   }}}});
-  eq(duplicate.calls.invokes.length,1,'409 only one invoke');
+  eq(duplicate.calls.invokes.length,1,'409 only one invoke; diagnostic fictif: '+JSON.stringify({status:duplicate.state.textContent,aalChecks:duplicate.calls.aalChecks,rpcChecks:duplicate.calls.rpcChecks,uploads:duplicate.calls.uploads.length,redirects:duplicate.calls.redirects}));
   eq(duplicate.calls.uploads.length,1,'409 photo uploaded before rejection');
   eq(duplicate.calls.removes.length,1,'Known rejection deletes only new orphan');
   eq(duplicate.button.disabled,true,'Known duplicate locks form');
