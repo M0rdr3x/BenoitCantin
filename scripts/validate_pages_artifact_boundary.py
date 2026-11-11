@@ -78,7 +78,7 @@ def path_of_action(source: str, index: int) -> str | None:
 
 def active_lines(source: str) -> str:
     """Ignore les commentaires YAML avant toute vérification de verrou."""
-    return "\n".join(line for line in source.splitlines()
+    return "\n".join(line.split(" #", 1)[0] for line in source.splitlines()
                      if line.strip() and not line.lstrip().startswith("#"))
 
 
@@ -112,7 +112,7 @@ def manual_job_gate(source: str, name: str) -> bool:
     match = re.search(r"(?m)^    if:\s*(.+)$", rest)
     if not match:
         return False
-    expression = match.group(1)
+    expression = match.group(1).split(" #", 1)[0]
     return all(token in expression for token in (
         "github.ref == 'refs/heads/main'",
         "inputs.confirm_containment == 'CONTAIN'",
