@@ -79,21 +79,13 @@ begin
   v_network:=v_report.network;
   v_type:=v_report.target_type;
 
-  -- Source Rencontres : le profil est résolu uniquement dans la base privée.
-  -- Une identité déclarée dans le JSON de signalement reste une donnée non
-  -- fiable; vérifier sa forme avant de la convertir en UUID.
+  -- Le snapshot du signalement ne prouve PAS la provenance du dossier.
+  -- Un signalant pourrait y placer source=dating et dating_profile_id
+  -- pour détourner une sanction vers un autre compte. Tant qu'aucune
+  -- relation SQL canonique et vérifiable du dossier Rencontres n'existe,
+  -- interdire toute sanction basée sur ce chemin non fiable.
   if v_report.snapshot->>'source'='dating' then
-    if p_action='hide_content' then raise exception 'CONTENT_TARGET_NOT_REVERSIBLE'; end if;
-    if coalesce(v_report.snapshot->>'dating_profile_id','')<>'' then
-      if (v_report.snapshot->>'dating_profile_id') !~
-         '^[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$' then
-        raise exception 'INVALID_MODERATION_TARGET';
-      end if;
-      v_target_id:=(v_report.snapshot->>'dating_profile_id')::uuid;
-    end if;
-    v_network:='dating';
-    v_type:='account';
-    select d.user_id into v_subject from public.dating_profiles d where d.id=v_target_id;
+    raise exception 'UNVERIFIED_DATING_PROVENANCE';
   elsif v_report.network='real' then
     if v_report.target_type='post' then
       select p.user_id,to_jsonb(p) into v_subject,v_target_snapshot
