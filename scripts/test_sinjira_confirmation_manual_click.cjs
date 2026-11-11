@@ -56,6 +56,9 @@ async function scenario(options = {}) {
       },
       async resend(args) {
         calls.resend.push(args);
+        if (options.holdResend) {
+          await new Promise(resolve => { calls.releaseResend = resolve; });
+        }
         return options.resendError
           ? { error: new Error('Limite') } : { error: null };
       }
@@ -210,7 +213,41 @@ async function main() {
   assert.ok(resend.calls.statuses.some(x => x.kind === 'success'));
   assertions += 6;
 
+  const repeated = await scenario({ holdResend: true });
+  const inertSubmit = () => ({ preventDefault() {} });
+  const firstSubmit = repeated.resend.handlers.submit(inertSubmit());
+  assert.equal(repeated.calls.resend.length, 1, 'Une demande doit démarrer.');
+  assert.equal(repeated.resendButton.disabled, true, 'Renvoi verrouillé durant la requête.');
+  await repeated.resend.handlers.submit(inertSubmit());
+  assert.equal(repeated.calls.resend.length, 1,
+    'Un second événement submit pendant le renvoi a déclenché un doublon.');
+  repeated.calls.releaseResend();
+  await firstSubmit;
+  assert.equal(repeated.resendButton.disabled, false,
+    'Le formulaire doit pouvoir réessayer après la réponse.');
+  assert.ok(repeated.calls.statuses.some(x => x.kind === 'success'),
+    'La requête initiale doit toujours réussir.');
+  assertions += 5;
+
+  const refused = await scenario({ resendError: true });
+  await refused.resend.handlers.submit(inertSubmit());
+  assert.equal(refused.calls.resend.length, 1, 'Une erreur de renvoi compte un essai unique.');
+  assert.equal(refused.resendButton.disabled, false, 'Erreur: bouton réactivé.');
+  assert.ok(refused.calls.statuses.some(x => x.kind === 'error'),
+    'Erreur de limite/réseau présentée sans faux succès.');
+  assertions += 3;
+
+  const invalid = await scenario({ resendValid: false });
+  await invalid.resend.handlers.submit(inertSubmit());
+  assert.equal(invalid.calls.resend.length, 0,
+    'Formulaire invalide ne doit jamais lancer la requête.');
+  assertions += 1;
+
   const offline = await scenario({ backend: false });
+  await offline.resend.handlers.submit(inertSubmit());
+  assert.equal(offline.calls.resend.length, 0,
+    'Backend hors ligne: aucune requête même sur submit programmatique.');
+  assertions += 1;
   assert.equal(offline.calls.verify.length, 0);
   assert.equal(offline.calls.notify, 0);
   assert.equal(offline.resendButton.disabled, true);

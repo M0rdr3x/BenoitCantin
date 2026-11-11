@@ -19,7 +19,7 @@ const SCRIPTS = [
 ];
 const HTML = [
   { path: 'compte/confirmer.html', markers: [
-    'data-confirm-button hidden', 'sinjira-confirm-email.js?v=3'
+    'data-confirm-button hidden', 'sinjira-confirm-email.js?v=4'
   ] },
   { path: 'compte/inscription.html', markers: [
     'data-signup-form', 'formspree_receipt_opt_in', 'v24-signup.js?v=24.5.6'
@@ -30,7 +30,7 @@ const HTML = [
   ] }
 ];
 const REQUIRED_MODULES = {
-  'compte/confirmer.html': '../assets/js/sinjira-confirm-email.js?v=3',
+  'compte/confirmer.html': '../assets/js/sinjira-confirm-email.js?v=4',
   'compte/inscription.html': '../assets/js/v24-signup.js?v=24.5.6',
   'projets/sinjira/registre/index.html': '../../../assets/js/sinjira-character-registry.js?v=24.5.8'
 };
@@ -184,7 +184,7 @@ function selfTest() {
   // Un cache ancien peut masquer un correctif déjà fusionné. Détecter
   // la régression de la révision chargée dans les vraies pages HTML.
   for (const [route, current, previous] of [
-    ['compte/confirmer.html', 'sinjira-confirm-email.js?v=3', 'sinjira-confirm-email.js?v=2'],
+    ['compte/confirmer.html', 'sinjira-confirm-email.js?v=4', 'sinjira-confirm-email.js?v=3'],
     ['compte/inscription.html', 'v24-signup.js?v=24.5.6', 'v24-signup.js?v=24.5.5']
   ]) {
     const item = HTML.find(entry => entry.path === route);

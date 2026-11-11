@@ -54,7 +54,7 @@ def main()->int:
     ])
     confirmation_page=check('compte/confirmer.html',[
         'data-confirm-button hidden', 'data-confirm-resend-form',
-        'noindex,nofollow', 'sinjira-confirm-email.js?v=3',
+        'noindex,nofollow', 'sinjira-confirm-email.js?v=4',
         'data-confirm-resend-form method="post" action="/compte/confirmer.html"',
         'type="submit" disabled>Renvoyer un lien', '<noscript>',
     ])
