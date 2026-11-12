@@ -42,6 +42,52 @@ class SecretGuardTests(unittest.TestCase):
             with self.subTest(sample=sample):
                 self.assertNotIn('Deployment or anti-bot secret assignment', detected_names(sample))
 
+
+    def test_sensitive_credential_files_are_never_committed(self):
+        # Filenames can identify private credentials without reading bytes.
+        # No actual secrets, tokens or credentials are included in tests.
+        for filename in (
+            "tls/key.pem", "tls/secret.key", "tls/store.p12",
+            "tls/store.pfx", "tls/store.jks", "tls/store.keystore",
+            "passwords.kdbx", ".npmrc", ".pypirc", ".netrc",
+            ".git-credentials", ".ssh/id_rsa", ".ssh/id_dsa",
+            ".ssh/id_ecdsa", ".ssh/id_ed25519",
+            "sub/.aws/credentials", "sub/.docker/config.json",
+            "sub/.kube/config",
+        ):
+            with self.subTest(path=filename):
+                self.assertTrue(guard.is_forbidden_credential_file(Path(filename)))
+                with tempfile.TemporaryDirectory() as d:
+                    p = Path(d) / filename
+                    p.parent.mkdir(parents=True, exist_ok=True)
+                    p.write_bytes(b"\x00\xffsynthetic")
+                    self.assertTrue(guard.inspect_file(p, Path(filename)))
+
+    def test_approved_public_and_sample_files_remain_allowed(self):
+        for filename in (
+            ".env.example", ".env.sample", ".env.template",
+            "assets/certificate.svg", "assets/js/site.js",
+            "docs/how-to-secure-keys.md", "assets/favicon.png",
+        ):
+            with self.subTest(path=filename):
+                self.assertFalse(guard.is_forbidden_credential_file(Path(filename)))
+                with tempfile.TemporaryDirectory() as d:
+                    p = Path(d) / filename
+                    p.parent.mkdir(parents=True, exist_ok=True)
+                    p.write_text("only synthetic benign content", encoding="utf-8")
+                    self.assertEqual(guard.inspect_file(p, Path(filename)), [])
+
+    def test_additional_private_key_headers_and_access_tokens(self):
+        for payload, expected in (
+            ("-----BEGIN " + "ENCRYPTED PRIVATE KEY-----", "Private key block"),
+            ("-----BEGIN " + "DSA PRIVATE KEY-----", "Private key block"),
+            ("-----BEGIN PGP " + "PRIVATE KEY BLOCK-----", "PGP private key block"),
+            ("npm_" + ("a" * 36), "npm access token"),
+            ("xoxb-" + ("a" * 45), "Slack access token"),
+        ):
+            with self.subTest(kind=expected):
+                self.assertIn(expected, detected_names(payload))
+
     def test_large_text_is_rejected_instead_of_ignored(self):
         with tempfile.TemporaryDirectory() as d:
             path = Path(d) / 'large.sql'

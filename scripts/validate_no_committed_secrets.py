@@ -17,6 +17,32 @@ MANDATORY_TEXT_NAMES = frozenset({'Dockerfile', 'Makefile', 'CNAME'})
 
 ALLOWED_ENV_FILES = {'.env.example', '.env.sample', '.env.template'}
 
+# Interdire les conteneurs de clés, profils d'identifiants et fichiers
+# d'authentification indépendamment de leur taille ou de leur encodage.
+# Ces types binaires échappaient au scanner de motifs texte.
+FORBIDDEN_CREDENTIAL_SUFFIXES = frozenset({
+    '.pem', '.key', '.p12', '.pfx', '.jks', '.keystore', '.kdbx',
+})
+FORBIDDEN_CREDENTIAL_NAMES = frozenset({
+    '.npmrc', '.pypirc', '.netrc', '.git-credentials',
+    'id_rsa', 'id_dsa', 'id_ecdsa', 'id_ed25519',
+})
+FORBIDDEN_CREDENTIAL_PATH_TAILS = frozenset({
+    ('.aws', 'credentials'),
+    ('.docker', 'config.json'),
+    ('.kube', 'config'),
+})
+
+
+def is_forbidden_credential_file(rel: Path) -> bool:
+    """Refuser les fichiers de credentials même lorsqu'ils sont binaires."""
+    parts = tuple(part.lower() for part in rel.parts)
+    return (
+        rel.suffix.lower() in FORBIDDEN_CREDENTIAL_SUFFIXES
+        or rel.name.lower() in FORBIDDEN_CREDENTIAL_NAMES
+        or any(parts[-len(tail):] == tail for tail in FORBIDDEN_CREDENTIAL_PATH_TAILS)
+    )
+
 SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ('Supabase secret key', re.compile(r'\bsb_secret_[A-Za-z0-9._-]{20,}\b')),
     ('GitHub classic token', re.compile(r'\bgh[pousr]_[A-Za-z0-9]{30,}\b')),
@@ -25,7 +51,10 @@ SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ('OpenAI project secret', re.compile(r'\bsk-proj-[A-Za-z0-9_-]{20,}\b')),
     ('AWS access key ID', re.compile(r'\bAKIA[0-9A-Z]{16}\b')),
     ('GitLab access token', re.compile(r'\bglpat-[A-Za-z0-9_-]{20,}\b')),
-    ('Private key block', re.compile(r'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----')),
+    ('Private key block', re.compile(r'-----BEGIN (?:RSA |EC |OPENSSH |DSA |ENCRYPTED )?PRIVATE KEY-----')),
+    ('PGP private key block', re.compile(r'-----BEGIN PGP ' r'PRIVATE KEY BLOCK-----')),
+    ('npm access token', re.compile(r'\bnpm_[A-Za-z0-9]{36,}\b')),
+    ('Slack access token', re.compile(r'\bxox[baprs]-[A-Za-z0-9-]{20,}\b')),
     (
         'Deployment or anti-bot secret assignment',
         re.compile(
@@ -101,6 +130,8 @@ def inspect_file(path: Path, rel: Path) -> list[str]:
     """Refuser tout fichier texte suivi qui n'a pas pu être inspecté."""
     if is_forbidden_env_file(path):
         return [f'{rel}: fichier d’environnement réel versionné']
+    if is_forbidden_credential_file(rel):
+        return [f'{rel}: fichier de clés ou identifiants interdit dans Git']
     # Un lien suivi par Git peut pointer hors du dépôt ou vers une source
     # non contrôlée par la PR. Refuser ce type d'entrée AVANT stat()/read().
     if path.is_symlink():
