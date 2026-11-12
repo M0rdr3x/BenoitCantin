@@ -24,7 +24,7 @@ ok(/'sinjira character photo own update'/.test(source),'Owner UPDATE policy in l
 ok(/'char_source_insert_own'/.test(source),'Existing source owner INSERT policy required');
 ok(/'sinjira character photo own delete'/.test(source),'Legacy owner DELETE policy required');
 const clean=source.replace(/--[^\n]*/g,'');
-const created=[...clean.matchAll(/CREATE POLICY ([a-z_]+)\s+ON storage\.objects AS RESTRICTIVE FOR (SELECT|INSERT|UPDATE|DELETE) TO authenticated\s+([\s\S]*?);/g)];
+const created=[...clean.matchAll(/CREATE POLICY ([a-z0-9_]+)\s+ON storage\.objects AS RESTRICTIVE FOR (SELECT|INSERT|UPDATE|DELETE) TO authenticated\s+([\s\S]*?);/g)];
 ok(created.length===4,'Exactly four restrictive policies; one per operation');
 for(const [verb,name,clauses] of policies){
   const match=created.filter(m=>m[1]===name&&m[2]===verb);
