@@ -12,7 +12,7 @@ REQUEST_LIMIT_RE = re.compile(r'\bMAX_REQUEST_BYTES\s*=\s*2\s*\*\s*1024\s*\*\s*1
 ANSWER_LIMIT_RE = re.compile(r'\bMAX_ANSWERS_CHARS\s*=\s*500000\s*;')
 
 REQUIRED = {
-    'version fonctionnelle stable': "const VERSION='24.5.2';",
+    'version fonctionnelle stable': "const VERSION='24.5.3';",
     'POST uniquement': "req.method!=='POST'",
     'auth AAL2 obligatoire du Registre': 'requiredVaultUser(req)',
     'lecture JSON bornée': 'readBoundedJson(req)',
@@ -29,6 +29,9 @@ REQUIRED = {
     'état personnage interrogé': "service.from('characters').select('id,status,submission_id').eq('user_id',user.id)",
     'état unique fail-closed': "if(submissionResult.error||characterResult.error)throw new Error('CHARACTER_STATE_LOOKUP_FAILED');",
     'unicité compte': "code:'ONE_CHARACTER_PER_ACCOUNT'",
+    'conflit SQL unique seulement': "writeError.code!=='23505'",
+    'conflit revérifié par compte': "service.from('character_submissions').select('id').eq('user_id',userId).maybeSingle()",
+    'conflit 409 après relecture': "if(await hasConfirmedConcurrentSubmission(service,user.id,error))",
     'mise à jour existante explicitement demandée': 'owner&&update_existing&&(existingSubmission||existingCharacter)',
     'chemin photo limité au compte': "const prefix=`${userId}/`;",
     'format photo UUID v4 strict': "return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}",
@@ -91,6 +94,8 @@ def validate(path: Path) -> list[str]:
         errors.append('Le questionnaire ne doit pas être lu avant auth/JWT/MFA.')
 
     state_check = source.find("if(submissionResult.error||characterResult.error)throw new Error('CHARACTER_STATE_LOOKUP_FAILED');")
+    if source.count("code:'ONE_CHARACTER_PER_ACCOUNT'") != 2:
+        errors.append('Registre : le refus 409 doit être identique avant INSERT et après conflit confirmé.')
     uniqueness = source.find("code:'ONE_CHARACTER_PER_ACCOUNT'")
     if state_check < 0 or uniqueness < 0 or state_check > uniqueness:
         errors.append('Les erreurs de lecture de l’état doivent bloquer avant la décision un-personnage-par-compte.')
@@ -124,6 +129,10 @@ def self_test() -> None:
         ),
         'erreurs état ignorées': real.replace("    if(submissionResult.error||characterResult.error)throw new Error('CHARACTER_STATE_LOOKUP_FAILED');\n", '', 1),
         'unicité retirée': real.replace("code:'ONE_CHARACTER_PER_ACCOUNT'", "code:'DUPLICATE_ALLOWED'", 1),
+        'conflit reclassé sans preuve': real.replace(
+            "if(await hasConfirmedConcurrentSubmission(service,user.id,error))",
+            "if(error.code==='23505')", 1,
+        ),
         'IA distante activée': real.replace('const REMOTE_AI_ENABLED=false;', 'const REMOTE_AI_ENABLED=true;', 1),
         'services payants activés': real.replace('const PAID_EXTERNAL_SERVICES_ENABLED=false;', 'const PAID_EXTERNAL_SERVICES_ENABLED=true;', 1),
         'canon automatique': real.replace("canon_status:'PROVISOIRE'", "canon_status:'CANON'", 1),
