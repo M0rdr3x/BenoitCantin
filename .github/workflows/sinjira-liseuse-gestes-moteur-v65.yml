@@ -1,0 +1,48 @@
+name: "SINJIRA V65 — vérification des vrais événements tactiles Chromium"
+on:
+  pull_request:
+    branches:
+      - review/sinjira-liseuse-mobile-v64-integration-main-20261111
+      - main
+    paths:
+      - 'tests/e2e/test_sinjira_liseuse_native_touch_v65.py'
+      - 'tests/e2e/test_sinjira_liseuse_real_page_v57.py'
+      - 'tests/e2e/test_sinjira_liseuse_mobile_v54.py'
+      - 'assets/js/sinjira-liseuse-touch-v52.mjs'
+      - 'assets/js/sinjira-liseuse-reflow-v53.mjs'
+      - 'assets/js/sinjira-liseuse-companion-v28.mjs'
+      - 'compte/liseuse.html'
+      - '.github/workflows/sinjira-liseuse-gestes-moteur-v65.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tests/e2e/test_sinjira_liseuse_native_touch_v65.py'
+      - '.github/workflows/sinjira-liseuse-gestes-moteur-v65.yml'
+permissions:
+  contents: read
+jobs:
+  tactile-chromium:
+    name: TouchStart/Move/End du moteur Chromium sur vrai HTML
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Extraire les sources sans secret
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Contrôler la syntaxe
+        run: |
+          node --check assets/js/sinjira-liseuse-touch-v52.mjs
+          node --check assets/js/sinjira-liseuse-reflow-v53.mjs
+          python3 -m py_compile tests/e2e/test_sinjira_liseuse_native_touch_v65.py
+      - name: Régressions 68 tests de lecture
+        run: node --test tests/sinjira-liseuse-reflow-v53.test.mjs tests/sinjira-liseuse-touch-v52.test.mjs
+      - name: Émettre les événements tactiles du moteur dans la vraie liseuse
+        run: |
+          python3 -m venv .venv-reader-v65
+          . .venv-reader-v65/bin/activate
+          python -m pip install --disable-pip-version-check playwright==1.57.0
+          python -m playwright install --with-deps chromium
+          python tests/e2e/test_sinjira_liseuse_native_touch_v65.py --browser chromium
+      - name: Conclusion du laboratoire
+        run: echo "V65-LAB-PASS : aucun téléphone physique ni service de roman privé utilisé"
