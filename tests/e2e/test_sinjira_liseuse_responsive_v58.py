@@ -125,6 +125,9 @@ def run(playwright, engine, origin):
         # Test typographique extrême réellement prévu dans l'interface :
         # les plus grands caractères doivent reflow et la page reste navigable.
         page.set_viewport_size({"width":320,"height":568})
+        # Les coordonnées caret*FromPoint sont relatives à la fenêtre.
+        # Afficher réellement le livre avant d'évaluer un texte visible.
+        page.locator("#reader-viewer").scroll_into_view_if_needed()
         # V63 : mesurer un caractère effectivement visible AVANT la
         # modification du CSS. L'ancre reste en mémoire navigateur uniquement.
         anchored=page.evaluate("""async()=>{
@@ -135,8 +138,13 @@ def run(playwright, engine, origin):
           await new Promise(resolve=>requestAnimationFrame(resolve));
           const anchor=m.captureReaderTextAnchor({viewer,text});
           window.__v63Anchor=anchor;
+          const bounds=viewer.getBoundingClientRect();
+          const pageBounds=text.getBoundingClientRect();
           return {available:Boolean(anchor),offset:anchor?.offset||0,
-            position:viewer.scrollTop};
+            position:viewer.scrollTop,viewerTop:bounds.top,
+            viewerBottom:bounds.bottom,viewportHeight:innerHeight,
+            textLeft:pageBounds.left,textRight:pageBounds.right,
+            textNodes:text.childNodes.length};
         }""")
         assert anchored["available"],("V63: caret incapable de repérer le texte",anchored)
         assert anchored["position"]>300,anchored
