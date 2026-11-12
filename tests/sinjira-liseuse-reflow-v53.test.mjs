@@ -214,6 +214,17 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
       preventDefault(){this.defaultPrevented=true}
     };
     viewer.emit('touchstart',started);
+    for(const [mx,my] of options.moves||[]){
+      viewer.emit('touchmove',{touches:[{
+        identifier:1,clientX:175+mx,clientY:140+my
+      }]});
+    }
+    if(options.scrollDuring){
+      const original=viewer.scrollTop;
+      viewer.scrollTop=original+options.scrollDuring;
+      viewer.emit('touchmove',{touches:[begin]});
+      viewer.scrollTop=original;
+    }
     now+=options.elapsed??200;
     viewer.emit('touchend',finished);
     return finished;
@@ -224,6 +235,39 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
     flushFrames,getStatusWrites:()=>statusWrites,
     setSelected:v=>{selected=v}};
 }
+test('V66 : trajet texte vertical puis gauche ne provoque aucun changement écran',()=>{
+  const f=fixture();
+  try{
+    const evt=f.swipe(-140,3,{moves:[[-10,110],[-75,10]]});
+    assert.equal(evt.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(f.next.clicks,0);
+    const valid=f.swipe(-140,3,{moves:[[-80,8]]});
+    assert.equal(valid.defaultPrevented,true);
+    assert.ok(f.viewer.scrollTop>0);
+  }finally{f.restore()}
+});
+test('V66 : trajet texte vertical puis droite ne revient pas à une autre page',()=>{
+  const f=fixture();
+  try{
+    const evt=f.swipe(140,2,{moves:[[10,-130],[90,-8]]});
+    assert.equal(evt.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(f.previous.clicks,0);
+  }finally{f.restore()}
+});
+test('V66 : scroll natif transitoire annule un faux balayage de texte',()=>{
+  const f=fixture();
+  try{
+    const evt=f.swipe(-140,2,{scrollDuring:50});
+    assert.equal(evt.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(f.next.clicks,0);
+    const valid=f.swipe(-140,2);
+    assert.equal(valid.defaultPrevented,true);
+    assert.ok(f.viewer.scrollTop>0);
+  }finally{f.restore()}
+});
 test('V63 : capture d’un caractère local visible, sans stocker le texte',()=>{
   const node={nodeType:3,length:100};
   let glyphTop=80,scrollTop=220;
