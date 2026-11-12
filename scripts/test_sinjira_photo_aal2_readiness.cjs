@@ -27,8 +27,7 @@ function check(text){
   assert.ok(!/\b(?:INSERT\s+INTO|DELETE\s+FROM|UPDATE\s+[a-z_][\w.]*)\b/i.test(commentsRemoved),'Aucune écriture SQL');
   const migrationOwners=base(migration,startM,endM,'owner contract migration');
   // SQL preflight ends its VALUES rows with a parenthesis that closes the CTE.
-  const expectedChunk=text.split('),\nowner_rules AS (')[0];
-  const preflightOwners=base(expectedChunk,startQ,'\n)', 'owner query');
+  const preflightOwners=base(text,startQ,'\n),\nowner_rules AS (', 'owner query');
   assert.equal(preflightOwners,migrationOwners,'Les 7 expressions propriétaire doivent être identiques à la migration source');
   const owners=(migrationOwners.match(/\('(?:char_source_|sinjira character photo own )/g)||[]).length;
   assert.equal(owners,7,'Les 7 politiques propriétaires requises');
