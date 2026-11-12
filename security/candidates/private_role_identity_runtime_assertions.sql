@@ -2,7 +2,7 @@
 -- UUID et courriels entièrement fictifs; aucune donnée hébergée utilisée.
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET LOCAL search_path = public, extensions;
-SELECT plan(24);
+SELECT plan(28);
 
 SELECT ok(has_schema_privilege('anon','private','USAGE'), 'usage private pour RLS anonyme');
 SELECT ok(has_schema_privilege('authenticated','private','USAGE'), 'usage private pour RLS connecté');
@@ -165,4 +165,26 @@ SELECT is(
  '0','un utilisateur ne lit pas le rang admin d''un tiers'
 );
 
+
+-- Vérifications réelles des POLITIQUES RLS, pas seulement des helpers.
+SELECT is(
+ pg_temp.sinjira_check_as('anon',NULL,'anon',
+ $test$SELECT count(*)::text FROM public.projects WHERE slug LIKE 'local-security-rank-%'$test$),
+ '1','RLS projects interdit les projets non publics aux visiteurs'
+);
+SELECT is(
+ pg_temp.sinjira_check_as('authenticated','11111111-1111-4111-8111-111111111111','authenticated',
+ $test$SELECT count(*)::text FROM public.projects WHERE slug LIKE 'local-security-rank-%'$test$),
+ '3','RLS projects conserve les projets autorisés du testeur A'
+);
+SELECT is(
+ pg_temp.sinjira_check_as('authenticated','22222222-2222-4222-8222-222222222222','authenticated',
+ $test$SELECT count(*)::text FROM public.projects WHERE slug LIKE 'local-security-rank-%'$test$),
+ '3','RLS projects conserve les projets autorisés du joueur B'
+);
+SELECT is(
+ pg_temp.sinjira_check_as('authenticated','33333333-3333-4333-8333-333333333333','authenticated',
+ $test$SELECT count(*)::text FROM public.projects WHERE slug LIKE 'local-security-rank-%'$test$),
+ '4','RLS projects conserve la lecture administrateur propriétaire'
+);
 SELECT * FROM finish();
