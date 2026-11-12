@@ -17,6 +17,38 @@ SET LOCAL search_path = public, extensions;
 -- La simulation de la politique RLS est uniquement DANS BEGIN/ROLLBACK.
 -- Cette permission ne sera JAMAIS appliquée sur Supabase distant.
 GRANT SELECT ON public.projects TO anon, authenticated;
+
+-- La reconstruction locale ne reflète pas encore l'ensemble des politiques
+-- réellement déployées. Test ciblé sous un SNAPSHOT transactionnel des deux
+-- politiques de lecture projets, vérifiées dans pg_catalog.pg_policies live.
+-- Aucune stratégie d'accès n'est ajoutée aux autres tables ni à production.
+DO $local_policy_snapshot$
+DECLARE v_policy record;
+BEGIN
+  FOR v_policy IN
+    SELECT policyname
+    FROM pg_catalog.pg_policies
+    WHERE schemaname='public' AND tablename='projects' AND cmd='SELECT'
+  LOOP
+    EXECUTE format('DROP POLICY %I ON public.projects',v_policy.policyname);
+  END LOOP;
+END
+$local_policy_snapshot$;
+
+CREATE POLICY projects_public_read ON public.projects FOR SELECT TO anon
+USING (status<>'draft' AND visibility='public');
+
+CREATE POLICY projects_authenticated_read ON public.projects FOR SELECT TO authenticated
+USING (
+  public.is_sinjira_admin((SELECT auth.uid()))
+  OR (
+    status<>'draft'
+    AND (
+      visibility IN ('public','account')
+      OR private.project_access_rank(id,(SELECT auth.uid())) >= 20
+    )
+  )
+);
 SELECT plan(28);
 
 SELECT ok(has_schema_privilege('anon','private','USAGE'), 'usage private pour RLS anonyme');
