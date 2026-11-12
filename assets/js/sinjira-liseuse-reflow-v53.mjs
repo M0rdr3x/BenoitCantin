@@ -96,27 +96,36 @@ export function captureReaderTextAnchor({viewer,text,doc=globalThis.document}={}
   const style=globalThis.window?.getComputedStyle?.(text);
   const padLeft=Math.max(0,Number.parseFloat(style?.paddingLeft)||0);
   const x=Math.min(page.right-8,Math.max(page.left+8,page.left+padLeft+18));
-  const y=Math.min(box.bottom-12,box.top+Math.max(24,Math.min(85,box.height*.14)));
-  if(x<box.left||x>box.right||y<=box.top||y>=box.bottom)return null;
-  let node=null,offset=0;
-  if(doc.caretPositionFromPoint){
-    const pos=doc.caretPositionFromPoint(x,y);
-    if(pos){node=pos.offsetNode;offset=pos.offset}
+  if(x<box.left||x>box.right)return null;
+  // V63 : sur un petit cellulaire, la barre supérieure « sticky » peut
+  // recouvrir les premières lignes visibles de la zone de lecture. Ne pas
+  // prendre un caractère du logo/titre comme ancre du livre.
+  for(const fraction of [.14,.27,.40,.56,.72,.87]){
+    const y=Math.min(box.bottom-12,box.top+Math.max(24,box.height*fraction));
+    if(y<=box.top||y>=box.bottom)continue;
+    const layer=doc.elementFromPoint?.(x,y);
+    if(layer&&!text.contains?.(layer))continue;
+    let node=null,offset=0;
+    if(doc.caretPositionFromPoint){
+      const pos=doc.caretPositionFromPoint(x,y);
+      if(pos){node=pos.offsetNode;offset=pos.offset}
+    }
+    if((node?.nodeType!==3||!text.contains?.(node))&&doc.caretRangeFromPoint){
+      const pos=doc.caretRangeFromPoint(x,y);
+      if(pos){node=pos.startContainer;offset=pos.startOffset}
+    }
+    if(node?.nodeType!==3||!text.contains?.(node)||!node.length)continue;
+    const index=Math.max(0,Math.min(node.length-1,Number(offset)||0));
+    try{
+      const range=doc.createRange();
+      range.setStart(node,index);range.setEnd(node,index+1);
+      const rect=Array.from(range.getClientRects()).find(r=>r.height>0);
+      if(!rect||!Number.isFinite(rect.top))continue;
+      if(rect.top<box.top-box.height||rect.top>box.bottom+box.height)continue;
+      return {node,offset:index,relativeY:rect.top-box.top};
+    }catch{/* autre portion visible ou repli ratio */}
   }
-  if((node?.nodeType!==3||!text.contains?.(node))&&doc.caretRangeFromPoint){
-    const pos=doc.caretRangeFromPoint(x,y);
-    if(pos){node=pos.startContainer;offset=pos.startOffset}
-  }
-  if(node?.nodeType!==3||!text.contains?.(node)||!node.length)return null;
-  const index=Math.max(0,Math.min(node.length-1,Number(offset)||0));
-  try{
-    const range=doc.createRange();
-    range.setStart(node,index);range.setEnd(node,index+1);
-    const rect=Array.from(range.getClientRects()).find(r=>r.height>0);
-    if(!rect||!Number.isFinite(rect.top))return null;
-    if(rect.top<box.top-box.height||rect.top>box.bottom+box.height)return null;
-    return {node,offset:index,relativeY:rect.top-box.top};
-  }catch{return null}
+  return null;
 }
 /** Replace un caractère visible dans l'écran sans persister son texte. */
 export function restoreReaderTextAnchor({viewer,text,anchor,doc=globalThis.document}={}){
