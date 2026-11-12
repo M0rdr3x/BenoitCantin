@@ -9,6 +9,7 @@ on:
       - 'scripts/validate_sinjira_registry_edge_scoped_deploy.py'
       - 'scripts/verify_sinjira_registry_edge_deployment.py'
       - 'scripts/test_sinjira_character_photo_path.cjs'
+      - 'scripts/test_sinjira_registry_unique_conflict.cjs'
       - 'scripts/validate_character_questionnaire_security.py'
       - 'scripts/validate_sinjira_signup_registry_delivery.py'
       - 'supabase/functions/submit-character-questionnaire/**'
@@ -22,6 +23,7 @@ on:
       - 'scripts/validate_sinjira_registry_edge_scoped_deploy.py'
       - 'scripts/verify_sinjira_registry_edge_deployment.py'
       - 'scripts/test_sinjira_character_photo_path.cjs'
+      - 'scripts/test_sinjira_registry_unique_conflict.cjs'
       - 'scripts/validate_character_questionnaire_security.py'
       - 'scripts/validate_sinjira_signup_registry_delivery.py'
       - 'supabase/functions/submit-character-questionnaire/**'
@@ -75,6 +77,10 @@ jobs:
         run: |
           node --check scripts/test_sinjira_character_photo_path.cjs
           node scripts/test_sinjira_character_photo_path.cjs
+      - name: Confirmer les conflits SQL concurrents du Registre
+        run: |
+          node --check scripts/test_sinjira_registry_unique_conflict.cjs
+          node scripts/test_sinjira_registry_unique_conflict.cjs
       - name: Vérifier la sécurité du questionnaire Edge
         run: |
           python3 scripts/validate_character_questionnaire_security.py --self-test
@@ -182,6 +188,7 @@ jobs:
             exit 4
           }
           node scripts/test_sinjira_character_photo_path.cjs --source "$downloaded"
+          node scripts/test_sinjira_registry_unique_conflict.cjs --source "$downloaded"
           echo 'Source Edge téléchargée strictement identique au commit testé ; validation des chemins photo passée.' >> "$GITHUB_STEP_SUMMARY"
           echo 'Version et code de la fonction cible contrôlés. Les essais Auth/AAL2 de production restent distincts.' >> "$GITHUB_STEP_SUMMARY"
           echo 'Aucune migration SQL ou autre fonction Edge déployée par ce workflow.' >> "$GITHUB_STEP_SUMMARY"
