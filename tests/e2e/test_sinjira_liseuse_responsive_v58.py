@@ -159,7 +159,13 @@ def run(playwright, engine, origin):
             fallbackInside:fallback?.startContainer?
               text.contains(fallback.startContainer):null,
             caretApi:typeof document.caretPositionFromPoint,
-            rangeApi:typeof document.caretRangeFromPoint};
+            rangeApi:typeof document.caretRangeFromPoint,
+            caretParent:pos?.offsetNode?.parentElement?.id||pos?.offsetNode?.parentElement?.className,
+            fallbackParent:fallback?.startContainer?.parentElement?.id||
+              fallback?.startContainer?.parentElement?.className,
+            elementAtPoint:document.elementFromPoint(px,py)?.id||
+              document.elementFromPoint(px,py)?.className,
+            textTop:pageBounds.top,textBottom:pageBounds.bottom};
         }""")
         assert anchored["available"],("V63: caret incapable de repérer le texte",anchored)
         assert anchored["position"]>300,anchored
