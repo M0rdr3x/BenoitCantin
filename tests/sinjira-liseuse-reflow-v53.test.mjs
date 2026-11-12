@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {
-  measureReaderScreen,readerScreenState,planReaderScreenTurn,bindReaderScreenMode,parseReaderLineHeight
+  measureReaderScreen,readerScreenState,planReaderScreenTurn,bindReaderScreenMode,parseReaderLineHeight,
+  captureReaderTextAnchor,restoreReaderTextAnchor
 } from '../assets/js/sinjira-liseuse-reflow-v53.mjs';
 
 const setup={scrollHeight:1050,clientHeight:350,lineHeight:35};
@@ -223,6 +224,70 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
     flushFrames,getStatusWrites:()=>statusWrites,
     setSelected:v=>{selected=v}};
 }
+test('V63 : capture d’un caractère local visible, sans stocker le texte',()=>{
+  const node={nodeType:3,length:100};
+  let glyphTop=80,scrollTop=220;
+  const doc={
+    caretPositionFromPoint:()=>({offsetNode:node,offset:27}),
+    createRange:()=>({
+      setStart(n,o){assert.equal(n,node);assert.equal(o,27)},
+      setEnd(n,o){assert.equal(n,node);assert.equal(o,28)},
+      getClientRects:()=>[{top:glyphTop,height:20}]
+    })
+  };
+  const viewer={
+    scrollTop,scrollHeight:1800,clientHeight:350,
+    getBoundingClientRect:()=>({left:0,right:320,width:320,top:0,bottom:350,height:350}),
+    scrollTo({top}){this.scrollTop=top}
+  };
+  const text={
+    hidden:false,contains:n=>n===node,
+    getBoundingClientRect:()=>({left:0,right:320,width:320})
+  };
+  const anchor=captureReaderTextAnchor({viewer,text,doc});
+  assert.deepEqual(anchor,{node,offset:27,relativeY:80});
+  glyphTop=190;
+  assert.equal(restoreReaderTextAnchor({viewer,text,anchor,doc}),true);
+  assert.equal(viewer.scrollTop,330);
+  assert.equal(anchor.text,undefined); // zéro extrait de roman persistant
+});
+test('V63 : ancre devenue périmée après changement de page PDF est rejetée',()=>{
+  const oldNode={nodeType:3,length:80};
+  const viewer={
+    scrollTop:70,scrollHeight:1500,clientHeight:350,
+    getBoundingClientRect:()=>({top:0}),scrollTo(){throw Error('ne pas scroller')}
+  };
+  const text={hidden:false,contains:()=>false};
+  const doc={createRange(){throw Error('ne jamais évaluer une ancienne page')}};
+  assert.equal(restoreReaderTextAnchor({
+    viewer,text,doc,anchor:{node:oldNode,offset:23,relativeY:80}
+  }),false);
+  assert.equal(viewer.scrollTop,70);
+});
+test('V63 : absence API caret et page cachée -> conservation du repli ratio',()=>{
+  const viewer={getBoundingClientRect:()=>({width:300,height:350,top:0,bottom:350,left:0,right:300})};
+  const text={hidden:false,getBoundingClientRect:()=>({width:300,left:0,right:300})};
+  assert.equal(captureReaderTextAnchor({viewer,text,doc:{createRange(){}}}),null);
+  text.hidden=true;
+  assert.equal(captureReaderTextAnchor({
+    viewer,text,doc:{createRange(){},caretPositionFromPoint(){}}
+  }),null);
+});
+test('V63 : aucun dépassement même si la nouvelle mise en page raccourcit le livre',()=>{
+  const node={nodeType:3,length:12};
+  const viewer={
+    scrollTop:400,scrollHeight:420,clientHeight:350,
+    getBoundingClientRect:()=>({top:0}),scrollTo({top}){this.scrollTop=top}
+  };
+  const doc={createRange:()=>({
+    setStart(){},setEnd(){},getClientRects:()=>[{top:500,height:20}]
+  })};
+  assert.equal(restoreReaderTextAnchor({
+    viewer,text:{hidden:false,contains:n=>n===node},doc,
+    anchor:{node,offset:4,relativeY:80}
+  }),true);
+  assert.equal(viewer.scrollTop,70);
+});
 test('intégration : le mode pages d’écran est activé par défaut sur mobile',()=>{
   const f=fixture();
   try{
