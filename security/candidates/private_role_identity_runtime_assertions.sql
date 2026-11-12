@@ -2,6 +2,11 @@
 -- UUID et courriels entièrement fictifs; aucune donnée hébergée utilisée.
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET LOCAL search_path = public, extensions;
+-- Les migrations locales ne reproduisent pas encore les GRANT SELECT de
+-- la production (constat catalogue live : anon=true et authenticated=true).
+-- La simulation de la politique RLS est uniquement DANS BEGIN/ROLLBACK.
+-- Cette permission ne sera JAMAIS appliquée sur Supabase distant.
+GRANT SELECT ON public.projects TO anon, authenticated;
 SELECT plan(28);
 
 SELECT ok(has_schema_privilege('anon','private','USAGE'), 'usage private pour RLS anonyme');
