@@ -98,6 +98,9 @@ def main() -> int:
         'download_count',
         "record.storage_bucket!=='sinjira-life-story-exports'",
         'hasPdfSignature(bytes)',
+        "readPrivateLifeStoryPdf({",
+        "maxBytes: MAX_PDF_BYTES",
+        "'../_shared/private-life-story-pdf.mjs'",
         "String.fromCharCode(...head)==='%PDF-'",
         "service.rpc('service_life_story_register_download'",
         'allowedOrigin(req)',
@@ -110,6 +113,13 @@ def main() -> int:
     for marker in delivery_markers:
         if compact(marker) not in delivery_flat:
             errors.append(f'Edge delivery incomplète: {marker}')
+    for forbidden in (
+        "storage.from('sinjira-life-story-exports').download(",
+        "await file.arrayBuffer()",
+        "createSignedUrl(",
+    ):
+        if forbidden in delivery:
+            errors.append(f"Lecture non bornée / lien public interdit: {forbidden}")
     if "searchparams.get('token')" in delivery.lower() or 'searchparams.get("token")' in delivery.lower():
         errors.append('Le backend ne doit jamais lire le jeton depuis la query string.')
     validate_pos = delivery.find('hasPdfSignature(bytes)')
