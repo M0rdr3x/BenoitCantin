@@ -63,7 +63,7 @@ jobs:
           version: 2.111.0
       - name: Démarrer la base Supabase locale
         run: supabase start
-      - name: Exécuter 24 assertions pgTAP sans écrire en production
+      - name: Exécuter 28 assertions pgTAP sans écrire en production
         shell: bash
         run: |
           set -euo pipefail
