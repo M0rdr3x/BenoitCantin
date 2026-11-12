@@ -68,6 +68,7 @@ export async function readPrivateLifeStoryPdf({
   // toute la réponse. Un timer explicite interrompt aussi les clients simulés
   // dont le fetch n'entretient aucun événement réseau dans Node.
   const controller = new AbortController();
+  const startedAt = performance.now();
   const deadline = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetchImpl(target.toString(), {
@@ -83,8 +84,13 @@ export async function readPrivateLifeStoryPdf({
       referrerPolicy: 'no-referrer',
       signal: controller.signal
     });
-    if (!response.ok) return { ok: false };
-    return await readLimitedBinaryResponse(response, maxBytes, timeoutMs);
+    if (!response.ok || controller.signal.aborted) return { ok: false };
+    // Une seule fenêtre de temps : le lecteur n'obtient que la durée
+    // restante APRÈS la réception des en-têtes HTTP, jamais un nouveau
+    // crédit complet qui doublerait le budget sur un serveur lent.
+    const remainingMs = Math.floor(timeoutMs - (performance.now() - startedAt));
+    if (remainingMs < 1) return { ok: false };
+    return await readLimitedBinaryResponse(response, maxBytes, remainingMs);
   } catch {
     // Aucune exception, requête, URL ou clé n'est reflétée dans la réponse.
     return { ok: false };
