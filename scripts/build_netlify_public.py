@@ -201,13 +201,74 @@ RUNTIME_WEB_SUFFIXES = {
     ".ttf",
 }
 
+# Liste positive des fichiers de racine approuvés pour une publication Web.
+# Toute nouvelle page ou image exige une revue explicite du fichier et l'ajout
+# de son nom ici. Une extension navigateur seule n'accorde aucun droit.
 PUBLIC_ROOT_EXACT = {
     ".nojekyll",
+    "404.html",
     "CNAME",
-    "documents.json",
+    "a-propos.html",
+    "accessibilite.html",
+    "actualites.html",
+    "administration.html",
+    "android-chrome-192x192.png",
+    "android-chrome-512x512.png",
+    "apple-touch-icon.png",
+    "avis-legal.html",
+    "banniere-nova.jpg",
+    "code-conduite.html",
+    "comprendre-nova.html",
+    "comptabilite.html",
+    "confidentialite.html",
+    "constitution.html",
+    "contact.html",
     "documents-word-only.json",
+    "documents.html",
+    "documents.json",
+    "equipe.html",
+    "faq.html",
+    "favicon-16x16.png",
+    "favicon-32x32.png",
+    "favicon.ico",
+    "favicon.png",
+    "formulaire-soutien.html",
+    "gouvernance-vie-privee.html",
+    "header-bg-nova.webp",
+    "index.html",
+    "livre-nova.html",
+    "logo-github-profile.png",
+    "logo-institutionnel.png",
+    "logo-nova.png",
+    "lois-administratives.html",
+    "lois-ordinaires.html",
+    "lois-organiques.html",
+    "manifest.webmanifest",
+    "manifeste.html",
+    "merci-formulaire.html",
+    "merci.html",
+    "mises-a-jour.html",
+    "mission.html",
+    "offline.html",
+    "participer.html",
+    "presse.html",
+    "programme.html",
+    "propositions.html",
+    "recrutement.html",
+    "registre-conformite.html",
+    "registre-rencontres.html",
+    "reglements.html",
     "robots.txt",
+    "site.webmanifest",
     "sitemap.xml",
+    "styles.css",
+    "sw.js",
+    "transition.html",
+    "transparence-ia.html",
+    "transparence.html",
+    "univers.html",
+    "vision.html",
+    "visionneuse.html",
 }
 
 PUBLIC_ROOT_DENY = {
@@ -374,7 +435,9 @@ def root_file_allowed(path: Path) -> bool:
     # the explicitly reviewed .nojekyll marker above as the sole exception.
     if path.name.startswith("."):
         return False
-    return path.suffix.lower() in PUBLIC_ROOT_SUFFIXES
+    # Un nom de fichier inconnu reste privé même s'il se termine par .html,
+    # .js, .css, .png ou une autre extension lisible par le navigateur.
+    return False
 
 
 def re_full_sha256(value: str) -> bool:

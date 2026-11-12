@@ -38,6 +38,33 @@ class PublicArtifactExtensionAllowlist(unittest.TestCase):
         self.assertTrue(builder.root_file_allowed(ROOT / "robots.txt"))
         self.assertTrue(builder.root_file_allowed(ROOT / "CNAME"))
 
+    def test_root_web_publication_requires_explicit_filename_review(self):
+        # New web-like files at repository root must never publish by suffix.
+        # Keep the approved current assets working; additions require an
+        # intentional review and an exact entry in PUBLIC_ROOT_EXACT.
+        for source in ROOT.iterdir():
+            if (source.is_file() and not source.name.startswith(".")
+                    and source.name not in builder.PUBLIC_ROOT_DENY
+                    and source.suffix.lower() in builder.PUBLIC_ROOT_SUFFIXES):
+                with self.subTest(approved=source.name):
+                    self.assertTrue(builder.root_file_allowed(source),
+                                    f"Unreviewed root asset: {source.name}")
+
+        for name in (
+            "secret.html", "private.js", "unexpected.css", "debug.webp",
+            "draft.svg", "unreviewed.png", "new.webmanifest",
+            "export.xml", "internal.mp4", "test.mjs", "script.js",
+        ):
+            with self.subTest(denied=name):
+                self.assertNotIn(name, builder.PUBLIC_ROOT_EXACT)
+                self.assertFalse(builder.root_file_allowed(ROOT / name))
+                self.assertFalse(builder.relative_path_allowed(Path(name)))
+
+        for name in ("index.html", "404.html", "styles.css", "sw.js",
+                     "favicon.ico", "manifest.webmanifest", "CNAME"):
+            with self.subTest(approved=name):
+                self.assertTrue(builder.root_file_allowed(ROOT / name))
+
     def test_unreviewed_nested_sources_archives_exports_not_published(self):
         for directory in (
             "assets", "projets/sinjira/romans", "projets/sinjira/logiciels",
