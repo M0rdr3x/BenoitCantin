@@ -156,7 +156,7 @@ jobs:
 
       - name: Installer Supabase CLI
         if: ${{ github.event_name == 'workflow_dispatch' }}
-        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # branche v2 vérifiée le 2026-09-08
+        uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # branche v2 vérifiée le 2026-09-08
         with:
           version: 2.111.0
           github-token: ${{ github.token }}
@@ -348,7 +348,7 @@ jobs:
           test -d .prod-workspace/supabase/migrations
 
       - name: Installer Supabase CLI pour l'application
-        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # branche v2 vérifiée le 2026-09-08
+        uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # branche v2 vérifiée le 2026-09-08
         with:
           version: 2.111.0
           github-token: ${{ github.token }}
