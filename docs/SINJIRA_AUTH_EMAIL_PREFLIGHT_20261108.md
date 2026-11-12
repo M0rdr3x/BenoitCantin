@@ -156,6 +156,8 @@ Le correctif à déployer, dans le fichier historique
 pour **les deux buckets**. Leur caractère restrictif préserve
 les règles propriétaires permissives existantes ; aucune permission
 supplémentaire n'est accordée et les autres buckets sont inchangés.
+La transaction confronte aussi les **sept politiques propriétaires** aux expressions SQL complètes observées en production (USING et WITH CHECK, rôle exclusivement `authenticated`) : une règle du type `(... auth.uid() ...) OR TRUE` bloque la migration. Une mise à jour légitime de la représentation PostgreSQL exige une revue du prévol, sans assouplissement implicite.
+
 La transaction vérifie RLS, le caractère privé des deux buckets,
 les sept règles propriétaires et l'absence des quatre politiques
 avant toute modification. Les tests CI couvrent les quatre opérations,

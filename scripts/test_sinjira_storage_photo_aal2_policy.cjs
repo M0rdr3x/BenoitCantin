@@ -17,13 +17,68 @@ const policies=[
 ok(/\bBEGIN;\s*/.test(source)&&/\bCOMMIT;\s*$/.test(source),'Transaction atomique');
 ok(/c\.relrowsecurity=true/.test(source),'RLS Storage activée impérative');
 ok(/public=false\)\s*<>\s*2/.test(source),'Deux compartiments privés requis');
-ok(/'authenticated'=ANY\(p\.roles\)/.test(source),'Owner policies limited to authenticated');
+ok(/p\.roles=ARRAY\['authenticated'::name\]/.test(source),'Owner policies must have authenticated-only role');
 ok(/p\.permissive='PERMISSIVE'/.test(source),'Owner policies must remain permissive');
-ok(/'%auth\.uid\(\)%'/.test(source),'Owner policies must check user ID');
+ok(/expected\.owner_predicate/.test(source),'Owner clauses compared to an exact expected expression');
+ok(/regexp_replace\(p\.qual/.test(source),'Owner USING clause compared exactly');
+ok(/regexp_replace\(p\.with_check/.test(source),'Owner WITH CHECK clause compared exactly');
+no(/\bLIKE\s+'%auth\.uid/.test(source),'Never accept owner ACL by substring');
 ok(/'sinjira character photo own update'/.test(source),'Owner UPDATE policy in legacy bucket required');
 ok(/'char_source_insert_own'/.test(source),'Existing source owner INSERT policy required');
 ok(/'sinjira character photo own delete'/.test(source),'Legacy owner DELETE policy required');
 const clean=source.replace(/--[^\n]*/g,'');
+
+// Match the *seven* audited owner-policy expressions, not just a substring.
+// This is an offline guard; a separate READ-ONLY SQL check confirmed that
+// the currently hosted policies satisfy this exact contract (12 Nov 2026).
+const ownerNames=[
+  ['char_source_insert_own','INSERT','sources'],
+  ['char_source_select_own','SELECT','sources'],
+  ['char_source_delete_own','DELETE','sources'],
+  ['sinjira character photo own insert','INSERT','submissions'],
+  ['sinjira character photo own select','SELECT','submissions'],
+  ['sinjira character photo own update','UPDATE','submissions'],
+  ['sinjira character photo own delete','DELETE','submissions'],
+];
+const expectedOwnerExpr={
+  sources:"((bucket_id = ''sinjira-character-sources''::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))",
+  submissions:"((bucket_id = ''sinjira-character-submissions''::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text))"
+};
+const expectedOwnerRows=ownerNames.map(([name,cmd,bucket])=>
+  "('"+name+"','"+cmd+"','"+expectedOwnerExpr[bucket]+"')"
+);
+const ownerScope=source.split('AS expected(policy_name,policy_cmd,owner_predicate)')[0].split('      VALUES\n').pop();
+assert.ok(ownerScope&&!ownerScope.includes('CREATE POLICY'),'Owner VALUES block present');
+const ownerRows=ownerScope.split('\n').map(s=>s.trim().replace(/,$/,'')).filter(s=>s.startsWith("('"));
+function assertExactOwnerRows(rows){
+  assert.deepEqual(rows,expectedOwnerRows,
+    'All seven owner policies must exactly match their audited predicates');
+}
+assertExactOwnerRows(ownerRows);
+assertions++;
+for(const text of [
+  "p.roles=ARRAY['authenticated'::name]",
+  "p.permissive='PERMISSIVE'",
+  "CASE WHEN expected.policy_cmd IN ('SELECT','UPDATE','DELETE')",
+  "CASE WHEN expected.policy_cmd IN ('INSERT','UPDATE')",
+  "regexp_replace(p.qual,'[[:space:]]','','g')",
+  "regexp_replace(p.with_check,'[[:space:]]','','g')",
+  "regexp_replace(expected.owner_predicate,'[[:space:]]','','g')"
+]){
+  ok(source.includes(text),'Missing strict owner-policy preflight: '+text);
+}
+for(const [label,mutator] of [
+  ['owner policy OR TRUE',rows=>rows.map((s,i)=>i===0?s.replace("::text))","::text)) OR TRUE"):s)],
+  ['owner prefix only',rows=>rows.map((s,i)=>i===3?s.replace("storage.foldername(name)","storage.filename(name)"):s)],
+  ['owner user removed',rows=>rows.map((s,i)=>i===1?s.replace("auth.uid()","'fixed-user'"):s)]
+]){
+  const mutated=mutator(ownerRows);
+  assert.notDeepEqual(mutated,ownerRows,'Mutation must alter the current owner ACL: '+label);
+  assert.throws(()=>assertExactOwnerRows(mutated),assert.AssertionError,
+    'Unsafe owner-policy mutation must fail the same strict check: '+label);
+  assertions++;
+}
+
 const created=[...clean.matchAll(/CREATE POLICY ([a-z0-9_]+)\s+ON storage\.objects AS RESTRICTIVE FOR (SELECT|INSERT|UPDATE|DELETE) TO authenticated\s+([\s\S]*?);/g)];
 ok(created.length===4,'Exactly four restrictive policies; one per operation');
 for(const [verb,name,clauses] of policies){

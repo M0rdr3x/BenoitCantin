@@ -22,31 +22,41 @@ BEGIN
     RAISE EXCEPTION 'SINJIRA: deux buckets de photos du Registre prives obligatoires';
   END IF;
 
-  -- La politique restrictive ne GRANT rien. Les 7 politiques permissives
-  -- existantes, propriétaires et ciblées sur leur bucket, doivent subsister.
+  -- Les politiques propriétaires ne doivent JAMAIS être acceptées sur des
+  -- fragments de texte : (... AND auth.uid()) OR TRUE reste une faille.
+  -- Comparer les expressions complètes de pg_policies en lecture seule,
+  -- après normalisation des espaces PostgreSQL. Tout changement de forme
+  -- (y compris une évolution légitime de la représentation SQL) exige une
+  -- revue explicite AVANT l'application de cette migration.
   IF EXISTS (
     SELECT 1 FROM (
       VALUES
-        ('char_source_insert_own','sinjira-character-sources','INSERT'),
-        ('char_source_select_own','sinjira-character-sources','SELECT'),
-        ('char_source_delete_own','sinjira-character-sources','DELETE'),
-        ('sinjira character photo own insert','sinjira-character-submissions','INSERT'),
-        ('sinjira character photo own select','sinjira-character-submissions','SELECT'),
-        ('sinjira character photo own update','sinjira-character-submissions','UPDATE'),
-        ('sinjira character photo own delete','sinjira-character-submissions','DELETE')
-    ) AS existing(name,bucket,operation)
+        ('char_source_insert_own','INSERT','((bucket_id = ''sinjira-character-sources''::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))'),
+        ('char_source_select_own','SELECT','((bucket_id = ''sinjira-character-sources''::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))'),
+        ('char_source_delete_own','DELETE','((bucket_id = ''sinjira-character-sources''::text) AND ((storage.foldername(name))[1] = (auth.uid())::text))'),
+        ('sinjira character photo own insert','INSERT','((bucket_id = ''sinjira-character-submissions''::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text))'),
+        ('sinjira character photo own select','SELECT','((bucket_id = ''sinjira-character-submissions''::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text))'),
+        ('sinjira character photo own update','UPDATE','((bucket_id = ''sinjira-character-submissions''::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text))'),
+        ('sinjira character photo own delete','DELETE','((bucket_id = ''sinjira-character-submissions''::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text))')
+    ) AS expected(policy_name,policy_cmd,owner_predicate)
     WHERE NOT EXISTS (
       SELECT 1 FROM pg_policies p
       WHERE p.schemaname='storage' AND p.tablename='objects'
-        AND p.policyname=existing.name AND p.cmd=existing.operation
+        AND p.policyname=expected.policy_name
+        AND p.cmd=expected.policy_cmd
         AND p.permissive='PERMISSIVE'
-        AND 'authenticated'=ANY(p.roles)
-        AND (coalesce(p.qual,'') || coalesce(p.with_check,'')) LIKE
-          ('%' || existing.bucket || '%')
-        AND (coalesce(p.qual,'') || coalesce(p.with_check,'')) LIKE '%auth.uid()%'
+        AND p.roles=ARRAY['authenticated'::name]
+        AND coalesce(regexp_replace(p.qual,'[[:space:]]','','g'),'') =
+          CASE WHEN expected.policy_cmd IN ('SELECT','UPDATE','DELETE')
+            THEN regexp_replace(expected.owner_predicate,'[[:space:]]','','g')
+            ELSE '' END
+        AND coalesce(regexp_replace(p.with_check,'[[:space:]]','','g'),'') =
+          CASE WHEN expected.policy_cmd IN ('INSERT','UPDATE')
+            THEN regexp_replace(expected.owner_predicate,'[[:space:]]','','g')
+            ELSE '' END
     )
   ) THEN
-    RAISE EXCEPTION 'SINJIRA: politique proprietaire de photos manquante ou modifiee';
+    RAISE EXCEPTION 'SINJIRA: politique proprietaire drift ou affaiblissement, migration refusee';
   END IF;
 
   IF EXISTS (
