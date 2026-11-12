@@ -34,7 +34,7 @@ def render() -> str:
     if not checks.endswith("SELECT * FROM finish();"):
         raise ValueError("finish() absent des assertions pgTAP")
     candidate_prefix = re.sub(r"(?i)\bROLLBACK\s*;\s*$", "", source).rstrip()
-    return candidate_prefix + "\n\n" + checks + "\n\nROLLBACK;\n"
+    return candidate_prefix + "\n\nSET LOCAL application_name = 'sinjira-local-rls-pgtap';\n" + checks + "\n\nROLLBACK;\n"
 
 
 def self_test() -> None:
@@ -46,6 +46,8 @@ def self_test() -> None:
     assert "INSERT INTO auth.users" in sql
     assert "SET LOCAL ROLE" in sql
     assert "SELECT plan(28);" in sql
+    assert "SET LOCAL application_name = 'sinjira-local-rls-pgtap'" in sql
+    assert "SINJIRA_PGTAP_LOCAL_ASSEMBLY_REQUIRED" in sql
     print("OK : 28 assertions préparées dans une transaction rollback-only.")
 
 
