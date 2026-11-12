@@ -127,7 +127,7 @@ def self_test(text: str) -> None:
             1,
         ),
         'test PDF privé en flux retiré': text.replace(
-            '        run: node --test scripts/test_life_story_private_pdf_stream.mjs\\n\\n',
+            '        run: node --test scripts/test_life_story_private_pdf_stream.mjs\n\n',
             '',
             1,
         ),
