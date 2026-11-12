@@ -59,8 +59,13 @@ def contains_unsafe_legacy_admin_link(rel: str, text: str) -> bool:
                     for item in entries if isinstance(item, dict)
                     and isinstance(item.get('key'), str)
                 }
+                cache_value = values.get('Cache-Control')
+                cache_tokens = (
+                    {token.strip().lower() for token in cache_value.split(',') if token.strip()}
+                    if isinstance(cache_value, str) else set()
+                )
                 if (
-                    values.get('Cache-Control') != 'no-store'
+                    cache_tokens != {'private', 'no-store', 'max-age=0'}
                     or values.get('Referrer-Policy') != 'no-referrer'
                     or values.get('Pragma') != 'no-cache'
                 ):
