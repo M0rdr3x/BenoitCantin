@@ -1,0 +1,98 @@
+{
+  "schema_version": "P54P-1",
+  "date_reference": "2026-10-24",
+  "exercice": 2024,
+  "source_jalons": [
+    "P53Z",
+    "P54D",
+    "P54O"
+  ],
+  "source_run_p54d": 40120462237,
+  "sources": {
+    "ville": {
+      "pdf_index_zero": 102,
+      "taille_octets": 8984919,
+      "sha256": "b3ee3e671f7bf98e56c7d42b5e8b6c34de02a96c9dc1c96469819fa4dbfa7399"
+    },
+    "mamh": {
+      "pdf_index_zero": 162,
+      "taille_octets": 10818312,
+      "sha256": "4323c87d2114b58cf7a093c08f3b30327e949db91b9beb46a627eac1ecb4fc00"
+    }
+  },
+  "observations_attendues": [
+    {
+      "source": "ville",
+      "index_p54d": 0,
+      "classe": "INDETERMINE",
+      "zone": "FIN",
+      "dossier": "P54E-V-001"
+    },
+    {
+      "source": "mamh",
+      "index_p54d": 1,
+      "classe": "INDETERMINE",
+      "zone": "DEBUT",
+      "dossier": "P54E-M-001"
+    },
+    {
+      "source": "mamh",
+      "index_p54d": 2,
+      "classe": "ANNEE_DATE_PROBABLE",
+      "zone": "FIN",
+      "dossier": null
+    },
+    {
+      "source": "mamh",
+      "index_p54d": 3,
+      "classe": "INDETERMINE",
+      "zone": "FIN",
+      "dossier": "P54E-M-002"
+    },
+    {
+      "source": "mamh",
+      "index_p54d": 4,
+      "classe": "INDETERMINE",
+      "zone": "FIN",
+      "dossier": "P54E-M-003"
+    }
+  ],
+  "etats": [
+    "NON_TENTE",
+    "SOURCE_NON_ACQUISE",
+    "EDITION_DIFFERENTE",
+    "CONTEXTE_OU_EXTRACTION_INCOHERENTE",
+    "REPRODUCTION_TECHNIQUE_SANS_ATTESTATION"
+  ],
+  "protections": {
+    "aucune_lecture_jeton_brut_en_sortie": true,
+    "aucune_inference_montant": true,
+    "sources_https_publiques_uniquement": true,
+    "versions_pdf_exactes_ou_echec": true,
+    "metadonnees_p54d_imposees": true,
+    "positions_seulement_si_reproduction_complete": true,
+    "pas_de_melange_versions": true,
+    "diagnostic_prive_non_publie": true,
+    "aucune_authentification_emetteur": true,
+    "aucune_expertise_nova": true,
+    "pages_index_zero": true,
+    "dates_probables_non_certifiees": true,
+    "aucune_reduction_emplois_services": true,
+    "pas_de_double_compte_ville_rtc_somhac": true,
+    "regimes_constitutionnels_distincts": true,
+    "aucune_transmission_externe": true,
+    "aucun_merge_main": true,
+    "sinjira_inchange": true
+  },
+  "etat_initial": {
+    "sources_reacquises_dans_ce_jalon": 0,
+    "positions_caracteres_reproduites": 0,
+    "occurrences_indeterminees": 4,
+    "annee_date_probable_non_certifiee": 1,
+    "dossiers_p54e_ouverts": 4,
+    "controles_p54b_ouverts": 96,
+    "controles_p54c_ouverts": 8,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

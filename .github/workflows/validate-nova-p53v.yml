@@ -1,0 +1,82 @@
+name: Projet Nova P53V - Reconciliation des ecarts sans cloture
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p53v.yml"
+      - "scripts/reconcilier_ecarts_nova_p53v.py"
+      - "scripts/tests/test_reconcilier_ecarts_nova_p53v.py"
+      - "scripts/verifier_separation_controles_nova_p53u.py"
+      - "scripts/verifier_integrite_locale_nova_p53t.py"
+      - "scripts/suivre_demandes_acces_nova_p53s.py"
+      - "scripts/preparer_demandes_acces_nova_p53r.py"
+      - "scripts/inventorier_pieces_primaires_nova_p53q.py"
+      - "scripts/constituer_dossiers_institutionnels_nova_p53p.py"
+      - "scripts/prioriser_sources_officielles_nova_p53o.py"
+      - "projets/projet-nova/etudes/P53V_*"
+      - "projets/projet-nova/etudes/P53U_GRILLE_INDEPENDANCE_REVUE_PROBATOIRE.json"
+      - "projets/projet-nova/etudes/P53T_PROTOCOLE_INTEGRITE_PROVENANCE.json"
+      - "projets/projet-nova/etudes/P53S_REGISTRE_SUIVI_ET_RECOURS.json"
+      - "projets/projet-nova/etudes/P53R_PROJETS_DEMANDES_ACCES_2024.json"
+      - "projets/projet-nova/etudes/P53Q_INVENTAIRE_PIECES_ET_CONTREPARTIES.json"
+      - "projets/projet-nova/etudes/P53P_DOSSIERS_INSTITUTIONNELS_2024.json"
+      - "projets/projet-nova/etudes/P53O_MATRICE_SOURCES_OFFICIELLES.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  signalements-potentiels-non-certifies:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout sans persistance credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: 64 tests de réconciliation sans certification
+        run: |
+          python -m py_compile scripts/reconcilier_ecarts_nova_p53v.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_reconcilier_ecarts_nova_p53v.py")
+          assert suite.countTestCases()==64,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Exiger zéro anomalie certifiée et aucune clôture
+        run: |
+          python scripts/reconcilier_ecarts_nova_p53v.py --bilan p53v_bilan.json --registre p53v_registre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          b=json.loads(Path("p53v_bilan.json").read_text("utf-8"))
+          r=json.loads(Path("p53v_registre.json").read_text("utf-8"))["lignes"]
+          assert len(r)==48
+          assert b["exigences_p53u_en_suspens"]==162
+          assert b["alertes_methodologiques_quebec_rtc"]==2
+          assert b["ecarts_financiers_reels_authentifies"]==0
+          assert b["correctifs_independamment_valides"]==0
+          assert b["clotures_par_autorite_habilitee"]==0
+          assert b["economies_certifiees_cad"] is None
+          assert b["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+          set +e
+          python scripts/reconcilier_ecarts_nova_p53v.py --exiger-correctifs-clos --bilan p53v_refus.json
+          status=$?
+          set -e
+          test "$status" -eq 3
+      - name: Exporter bilan agrégé exclusivement
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p53v-48-verifications-non-closes
+          path: |
+            p53v_bilan.json
+            p53v_refus.json
+          if-no-files-found: ignore
+          retention-days: 7

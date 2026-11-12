@@ -1,0 +1,91 @@
+name: Projet Nova P55K - Quotes-parts et revenus consolides 2024
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p55k.yml"
+      - "scripts/ventiler_revenus_reciproques_nova_p55k.py"
+      - "scripts/tests/test_ventiler_revenus_reciproques_nova_p55k.py"
+      - "scripts/rapprocher_perimetres_et_conciliation_nova_p55j.py"
+      - "scripts/rapprocher_sommaire_budgetaire_nova_p55i.py"
+      - "scripts/acquerir_pdfs_publics_nova_p55h.py"
+      - "projets/projet-nova/etudes/P55K_*"
+      - "projets/projet-nova/etudes/P55J_*"
+      - "projets/projet-nova/etudes/P55I_*"
+      - "projets/projet-nova/etudes/P55H_*"
+      - "projets/projet-nova/etudes/P54Q_*"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controle-quotes-parts-et-revenus-sans-certification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout sans permission d ecriture
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Dependance parseur de la chaine historique sans rapports institutionnels
+        run: python -m pip install pypdf==5.9.0
+      - name: Executer 70 tests synthetiques de ventilation
+        run: |
+          python -m py_compile scripts/ventiler_revenus_reciproques_nova_p55k.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_ventiler_revenus_reciproques_nova_p55k.py")
+          assert suite.countTestCases()==70,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Tester totaux neutres et limites de preuve
+        run: |
+          python scripts/ventiler_revenus_reciproques_nova_p55k.py \
+            --bilan-public p55k_bilan_neutre.json --table-public p55k_table_neutre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          b=json.loads(Path("p55k_bilan_neutre.json").read_text("utf-8"))
+          t=json.loads(Path("p55k_table_neutre.json").read_text("utf-8"))
+          assert b["schema_version"]=="P55K-BILAN-PUBLIC-1"
+          assert t["schema_version"]=="P55K-TABLE-PUBLIQUE-1"
+          assert len(t["lignes"])==10
+          assert len(t["travaux_humains_requis"])==5
+          assert b["residu_global_revenus_cad"]==-176442171
+          assert b["residu_quotes_parts_cad"]==-154047800
+          assert b["residu_hors_quotes_parts_cad"]==-22394371
+          assert b["concentration_quotes_parts_pourcent"]=="87.3"
+          assert b["nombre_categories_a_qualifier_humainement"]==7
+          assert b["page_ventilation_s12_verifiee_visuellement"] is False
+          assert b["copies_pdf_authentifiees_sha_actuel"]==0
+          assert b["quotes_parts_qualifiees_par_ecritures"] is False
+          assert b["part_rtc_et_somhac_seperee_disponible"] is False
+          assert b["ecarts_sont_economies_certifiees"] is False
+          assert b["economies_certifiees_cad"] is None
+          assert b["decision"]=="NO_GO_AUTOMATIQUE"
+          assert b["transmission_externe_autorisee"] is False
+          assert b["fusion_main_autorisee"] is False
+          for d in (b,t):
+              raw=json.dumps(d,ensure_ascii=False)
+              assert "sha256" not in raw and "offset_texte" not in raw
+          PY
+      - name: Refuser la certification logicielle
+        run: |
+          set +e
+          python scripts/ventiler_revenus_reciproques_nova_p55k.py --exiger-certification
+          rc=$?
+          set -e
+          test "$rc" -eq 3
+      - name: Archiver seulement des sorties publiques non certifiantes
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p55k-ventilation-revenus-public-non-certifiante
+          path: |
+            p55k_bilan_neutre.json
+            p55k_table_neutre.json
+          retention-days: 7

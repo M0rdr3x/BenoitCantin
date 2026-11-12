@@ -1,0 +1,53 @@
+name: Projet Nova P56Z - Credits remboursables sans double comptage 2023-2031
+on:
+  pull_request:
+    paths:
+      - 'projets/projet-nova/etudes/P56Z_*'
+      - 'scripts/verifier_concordance_credits_et_rendement_nova_p56z.py'
+      - 'scripts/tests/test_verifier_concordance_credits_et_rendement_nova_p56z.py'
+      - 'projets/projet-nova/etudes/P56W_CREDITS_REMBOURSABLES_2023_PAR_CATEGORIE_ET_TRANCHES_PROTECTION.json'
+      - 'projets/projet-nova/etudes/P56X_ASSIETTES_HISTORIQUES_ET_VERROU_TAUX_NOVA_2027_2028.json'
+      - 'projets/projet-nova/etudes/P56Y_RENDEMENT_BRUT_NECESSAIRE_DEUX_PRELEVEMENTS_2027_2031.json'
+      - 'projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json'
+      - '.github/workflows/validate-nova-p56z.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rapprocher-credits-et-rendement-p56z:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Executer 34 tests P56Y et 48 tests P56Z
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_verifier_rendement_total_deux_prelevements_nova_p56y.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_verifier_concordance_credits_et_rendement_nova_p56z.py' -v
+      - name: Verifier le verrou anti-double-compte et les credits pour revenus modestes
+        run: |
+          python scripts/verifier_concordance_credits_et_rendement_nova_p56z.py \
+            --concordance projets/projet-nova/etudes/P56Z_CONCORDANCE_CREDITS_2023_ET_RENDEMENT_2027_2031_SANS_DOUBLE_COMPTE.json \
+            --p56w projets/projet-nova/etudes/P56W_CREDITS_REMBOURSABLES_2023_PAR_CATEGORIE_ET_TRANCHES_PROTECTION.json \
+            --p56y projets/projet-nova/etudes/P56Y_RENDEMENT_BRUT_NECESSAIRE_DEUX_PRELEVEMENTS_2027_2031.json \
+            --p56x projets/projet-nova/etudes/P56X_ASSIETTES_HISTORIQUES_ET_VERROU_TAUX_NOVA_2027_2028.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json | python -c 'import json,sys; x=json.load(sys.stdin); assert x["credits_remboursables_2023_mcad"]=="9305" and x["credit_tranches_moins_30000_cad_mcad"]=="4201" and x["besoin_rendement_2027_2028_sans_resorption_mcad"]=="116663" and x["credits_2023_supposes_cout_additionnel_en_2027"] is False and x["reclassement_credits_2027_certifie"] is False and x["score_estime_p55n"]==53 and x["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Interdire toute certification de protection des menages par simple calcul
+        shell: bash
+        run: |
+          set +e
+          python scripts/verifier_concordance_credits_et_rendement_nova_p56z.py \
+            --concordance projets/projet-nova/etudes/P56Z_CONCORDANCE_CREDITS_2023_ET_RENDEMENT_2027_2031_SANS_DOUBLE_COMPTE.json \
+            --p56w projets/projet-nova/etudes/P56W_CREDITS_REMBOURSABLES_2023_PAR_CATEGORIE_ET_TRANCHES_PROTECTION.json \
+            --p56y projets/projet-nova/etudes/P56Y_RENDEMENT_BRUT_NECESSAIRE_DEUX_PRELEVEMENTS_2027_2031.json \
+            --p56x projets/projet-nova/etudes/P56X_ASSIETTES_HISTORIQUES_ET_VERROU_TAUX_NOVA_2027_2028.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --exiger-protection-certifiee
+          exit_code=$?
+          set -e
+          test "$exit_code" -eq 3

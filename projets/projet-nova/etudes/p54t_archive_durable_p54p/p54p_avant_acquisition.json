@@ -1,0 +1,24 @@
+{
+  "controles_p54b_non_attestes": 96,
+  "controles_p54c_non_attestes": 8,
+  "copies_exactes_verifiees": 0,
+  "decision": "NO_GO_AUTOMATIQUE",
+  "dossiers_p54e_ouverts": 4,
+  "economies_certifiees_cad": null,
+  "exercice": 2024,
+  "expertises_independantes_signees": 0,
+  "fusion_main_autorisee": false,
+  "limite_offsets": "CARACTERES_TEXTE_PYPDF_NORMALISE_NFKC_NON_COORDONNEES_VISUELLES",
+  "occurrence_date_probable_non_certifiee": 1,
+  "occurrences_localisees_automatiquement": 0,
+  "originaux_confidentiels_publies": 0,
+  "pdf_sources_deja_attestes_par_emetteur": false,
+  "positions_caracteres_sur_texte_extrait": null,
+  "schema_version": "P54P-BILAN-1",
+  "sources": {
+    "mamh": "NON_TENTE",
+    "ville": "NON_TENTE"
+  },
+  "statut_capture": "NON_TENTE",
+  "tokens_bruts_publies": 0
+}

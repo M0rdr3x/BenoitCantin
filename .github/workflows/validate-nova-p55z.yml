@@ -1,0 +1,40 @@
+name: Projet Nova P55Z - Jonction prudente charges employeur
+on:
+  pull_request:
+    paths:
+      - 'scripts/consolider_charges_employeur_nova_p55z.py'
+      - 'scripts/tests/test_consolider_charges_employeur_nova_p55z.py'
+      - 'scripts/calculer_charges_employeur_nova_p55x.py'
+      - 'scripts/rapprocher_tarification_cnesst_nova_p55y.py'
+      - 'projets/projet-nova/etudes/P55Z_*'
+      - '.github/workflows/validate-nova-p55z.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  p55z-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Regression P55X-P55Y-P55Z
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_calculer_charges_employeur_nova_p55x.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_rapprocher_tarification_cnesst_nova_p55y.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_consolider_charges_employeur_nova_p55z.py' -v
+      - name: Verifier le dossier fictif, sans faux GO
+        shell: bash
+        run: |
+          python scripts/consolider_charges_employeur_nova_p55z.py --entree projets/projet-nova/etudes/P55Z_EXEMPLE_RAPPROCHEMENT_CHARGES_FICTIVES_2026.json | python -c 'import json,sys; r=json.load(sys.stdin); c=r["rapprochement"]; assert c["charges_partielles_six_postes_cad"] == "60455.00"; assert c["cout_employeur_complet_cad"] is None; assert r["decision"] == "NO_GO_AUTOMATIQUE"'
+      - name: Verifier rejet d'une certification
+        shell: bash
+        run: |
+          set +e
+          python scripts/consolider_charges_employeur_nova_p55z.py --entree projets/projet-nova/etudes/P55Z_EXEMPLE_RAPPROCHEMENT_CHARGES_FICTIVES_2026.json --exiger-faisabilite
+          code=$?
+          set -e
+          test "$code" -eq 3

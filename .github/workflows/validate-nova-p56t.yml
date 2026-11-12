@@ -1,0 +1,52 @@
+name: Projet Nova P56T - Services publics 2025-2029 et budget sectoriel sans faux gains
+on:
+  pull_request:
+    paths:
+      - 'projets/projet-nova/etudes/P56T_*'
+      - 'scripts/verifier_soutenabilite_services_et_depenses_nova_p56t.py'
+      - 'scripts/tests/test_verifier_soutenabilite_services_et_depenses_nova_p56t.py'
+      - 'projets/projet-nova/etudes/P56P_BASE_BUDGET_PREELECTORALE_2026_2031_VGQ_ET_ECARTS.json'
+      - 'projets/projet-nova/etudes/P56S_TROIS_OPTIONS_FISCALES_2027_2031_ET_CONDITIONS_PROTECTION.json'
+      - 'projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json'
+      - 'projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json'
+      - '.github/workflows/validate-nova-p56t.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controle-services-et-depenses-p56t:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Executer 49 tests P56S et 41 tests P56T
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_comparer_options_fiscales_et_financement_nova_p56s.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_verifier_soutenabilite_services_et_depenses_nova_p56t.py' -v
+      - name: Verifier totaux des services et financement Nova non prouve
+        shell: bash
+        run: |
+          python scripts/verifier_soutenabilite_services_et_depenses_nova_p56t.py \
+            --secteurs projets/projet-nova/etudes/P56T_BASE_OFFICIELLE_DEPENSES_PORTEFEUILLES_2025_2029_PROTECTION_SERVICES.json \
+            --p56p projets/projet-nova/etudes/P56P_BASE_BUDGET_PREELECTORALE_2026_2031_VGQ_ET_ECARTS.json \
+            --p56s projets/projet-nova/etudes/P56S_TROIS_OPTIONS_FISCALES_2027_2031_ET_CONDITIONS_PROTECTION.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json | python -c 'import json,sys; r=json.load(sys.stdin); assert r["annees"]["2027-2028"]["total_portefeuilles_publics_mcad"]=="165049" and r["sante_education_superieur_famille_mcad"]=="120433" and r["annees"]["2027-2028"]["sept_portefeuilles_services_mcad"]=="140657" and r["budgets_nova_p52b_manquants"]==600 and r["score_estime_pourcent"]==53 and r["services_publics_proteges_et_finances_par_nova_demontres"] is False and r["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Refuser certification automatique de la protection des services
+        shell: bash
+        run: |
+          set +e
+          python scripts/verifier_soutenabilite_services_et_depenses_nova_p56t.py \
+            --secteurs projets/projet-nova/etudes/P56T_BASE_OFFICIELLE_DEPENSES_PORTEFEUILLES_2025_2029_PROTECTION_SERVICES.json \
+            --p56p projets/projet-nova/etudes/P56P_BASE_BUDGET_PREELECTORALE_2026_2031_VGQ_ET_ECARTS.json \
+            --p56s projets/projet-nova/etudes/P56S_TROIS_OPTIONS_FISCALES_2027_2031_ET_CONDITIONS_PROTECTION.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --declarer-services-finances
+          code=$?
+          set -e
+          test "$code" -eq 3

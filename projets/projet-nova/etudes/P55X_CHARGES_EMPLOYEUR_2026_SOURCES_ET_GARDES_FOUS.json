@@ -1,0 +1,63 @@
+{
+  "schema_version": "P55X-1",
+  "date_reference": "2026-11-07",
+  "statut": "ETUDE_ARITHMETIQUE_QUEBEC_CANADA_2026_NON_ADOPTEE",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "sources": {
+    "revenu_quebec_fss": "https://www.revenuquebec.ca/fr/entreprises/retenues-a-la-source-et-cotisations-de-lemployeur/employeur-principaux-changements-2026/",
+    "revenu_quebec_normes": "https://www.revenuquebec.ca/fr/entreprises/retenues-a-la-source-et-cotisations-de-lemployeur/calcul-des-retenues-et-des-cotisations/cotisation-relative-aux-normes-du-travail/",
+    "associations_fss": "https://www.revenuquebec.ca/fr/entreprises/retenues-a-la-source-et-cotisations-de-lemployeur/calcul-des-retenues-et-des-cotisations/cotisation-de-lemployeur-fss/masse-salariale-totale/",
+    "cnesst": "https://www.cnesst.gouv.qc.ca/fr/demarches-formulaires/employeurs/assurance-sante-securite-travail/tarification/taux-prime",
+    "cnesst_taux_moyen": "https://www.cnesst.gouv.qc.ca/fr/demarches-formulaires/employeurs/assurance-sante-securite-travail/tarification/annexes-tableaux/taux-moyen-prime"
+  },
+  "regles": {
+    "fss_seuil_bas": "1000000.00",
+    "fss_seuil_plein": "7800000.00",
+    "fss_taux_general_bas_pct": "1.65",
+    "fss_taux_primaire_manufacturier_bas_pct": "1.25",
+    "fss_taux_plein_pct": "4.26",
+    "fss_intermediaire_general_pct": "1.2662 + 0.3838 * (masse_salariale_totale / 1000000)",
+    "fss_intermediaire_primaire_manufacturier_pct": "0.8074 + 0.4426 * (masse_salariale_totale / 1000000)",
+    "normes_du_travail_pct": "0.06",
+    "normes_plafond_remuneration_par_personne": "103000.00",
+    "cnesst_taux_moyen_2026_pour_100": "1.54",
+    "taux_moyen_cnesst_utilisable_comme_taux_entreprise": false
+  },
+  "exemple_fictif": {
+    "personnes": 10,
+    "salaire_identique": "50000.00",
+    "masse_salariale": "500000.00",
+    "trois_cotisations_employeur_p55w": "41405.00",
+    "fss_general_non_exonere": "8250.00",
+    "normes_si_applicables": "300.00",
+    "total_partiel_general": "49955.00",
+    "fss_primaire_manufacturier_non_exonere": "6250.00",
+    "total_partiel_primaire_manufacturier": "47955.00",
+    "prime_cnesst": null,
+    "cout_complet_employeur": null,
+    "variation_nova": null
+  },
+  "exigences_ouvertes": [
+    "X01_ASSOCIATIONS_ET_SECTEUR_FSS",
+    "X02_CONGES_EXEMPTIONS_ASSIETTES",
+    "X03_ASSUJETTISSEMENT_NORMES",
+    "X04_CLASSIFICATION_ET_TAUX_REEL_CNESST",
+    "X05_SALAIRES_ASSURABLES_REELS",
+    "X06_AUTRES_CHARGES_FORMATION_CONVENTIONS",
+    "X07_FINANCEMENT_PRESTATIONS_ET_DROITS",
+    "X08_INCIDENCE_EMPLOIS_PRIX_ET_POUVOIR_ACHAT",
+    "X09_REVUE_PROFESSIONNELLE_SIGNEE"
+  ],
+  "garde_fous": {
+    "emplois_services_pouvoir_achat_proteges": true,
+    "cnesst_inconnue_pas_zero": true,
+    "ne_pas_presenter_comme_cout_complet": true,
+    "ne_pas_melanger_deux_regimes_constitutionnels": true,
+    "aucun_taux_nova_ou_economie_certifies": true,
+    "p52b_inconnues": 600,
+    "p52d_inconnues": 720,
+    "p55n_score_estimatif": 53,
+    "aucune_fusion_main_ni_changement_sinjira": true,
+    "no_go_automatique": true
+  }
+}

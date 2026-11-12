@@ -1,0 +1,55 @@
+name: Projet Nova P56W - Protections fiscales et credits remb 2023
+on:
+  pull_request:
+    paths:
+      - 'projets/projet-nova/etudes/P56W_*'
+      - 'scripts/verifier_credits_remboursables_protection_nova_p56w.py'
+      - 'scripts/tests/test_verifier_credits_remboursables_protection_nova_p56w.py'
+      - 'projets/projet-nova/etudes/P56L_BASE_DISTRIBUTIVE_PARTICULIERS_2023_CREDITS_ET_QUINTILES.json'
+      - 'projets/projet-nova/etudes/P56V_PONT_FINANCEMENT_SERVICES_OPTIONS_FISCALES_VGQ_2027_2029.json'
+      - 'projets/projet-nova/etudes/P56N_CAS_TYPES_2026_REFERENCES_OFFICIELLES_PRESTATIONS_ET_LIMITES.json'
+      - 'projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json'
+      - 'projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json'
+      - '.github/workflows/validate-nova-p56w.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  proteger-credits-et-montants-observes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Valider 47 regressions P56V et 38 tests P56W
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_verifier_pont_financement_services_nova_p56v.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_verifier_credits_remboursables_protection_nova_p56w.py' -v
+      - name: Verifier les arrondis et le non-remplacement automatique des prestations
+        shell: bash
+        run: |
+          python scripts/verifier_credits_remboursables_protection_nova_p56w.py \
+            --credits projets/projet-nova/etudes/P56W_CREDITS_REMBOURSABLES_2023_PAR_CATEGORIE_ET_TRANCHES_PROTECTION.json \
+            --p56l projets/projet-nova/etudes/P56L_BASE_DISTRIBUTIVE_PARTICULIERS_2023_CREDITS_ET_QUINTILES.json \
+            --p56v projets/projet-nova/etudes/P56V_PONT_FINANCEMENT_SERVICES_OPTIONS_FISCALES_VGQ_2027_2029.json \
+            --p56n projets/projet-nova/etudes/P56N_CAS_TYPES_2026_REFERENCES_OFFICIELLES_PRESTATIONS_ET_LIMITES.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json | python -c 'import json,sys; x=json.load(sys.stdin); assert x["credits_remboursables_officiels_mcad"]=="9305" and x["credits_sous_30000_mcad"]=="4201" and x["somme_categories_arrondies_mcad"]=="9306" and x["nombre_categories"]==13 and x["nombre_tranches"]==6 and x["score_estime_pourcent"]==53 and x["budget_nova_certifie"] is False and x["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Refuser gains Nova sans simulation de revenu disponible
+        shell: bash
+        run: |
+          set +e
+          python scripts/verifier_credits_remboursables_protection_nova_p56w.py \
+            --credits projets/projet-nova/etudes/P56W_CREDITS_REMBOURSABLES_2023_PAR_CATEGORIE_ET_TRANCHES_PROTECTION.json \
+            --p56l projets/projet-nova/etudes/P56L_BASE_DISTRIBUTIVE_PARTICULIERS_2023_CREDITS_ET_QUINTILES.json \
+            --p56v projets/projet-nova/etudes/P56V_PONT_FINANCEMENT_SERVICES_OPTIONS_FISCALES_VGQ_2027_2029.json \
+            --p56n projets/projet-nova/etudes/P56N_CAS_TYPES_2026_REFERENCES_OFFICIELLES_PRESTATIONS_ET_LIMITES.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --certifier-gains-fiscaux-nova
+          outcome=$?
+          set -e
+          test "$outcome" -eq 3

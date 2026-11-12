@@ -1,0 +1,245 @@
+{
+  "schema_version": "P52X-1",
+  "jalon": "P52X",
+  "date_reference": "2026-10-20",
+  "statut": "AUTORITE_NON_QUALIFIEE_AUCUN_FINANCEMENT_AUTORISE",
+  "preuve_visee": "F09",
+  "perimetre": "Préconditions juridiques, budgétaires et de protection des données avant consultation de prestataires",
+  "references": {
+    "p52w": "projets/projet-nova/etudes/P52W_MATRICE_SELECTION_ET_GARDES_F09.json",
+    "reception_p52w": "projets/projet-nova/etudes/P52W_REGISTRE_RECEPTION_OFFRES_VIDE.json",
+    "p52v": "projets/projet-nova/etudes/P52V_REGISTRE_MISSION_F09.json",
+    "p52n": "projets/projet-nova/etudes/P52N_CAHIER_MANDATS_ET_CONSULTATION.json",
+    "p52q": "projets/projet-nova/etudes/P52Q_DOSSIERS_INSTRUCTION_VAGUE1.json",
+    "p52a": "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+  },
+  "sources_officielles_a_verifier": [
+    {
+      "id": "ELECTORAL",
+      "url": "https://www.electionsquebec.qc.ca/comprendre/comprendre-le-financement-politique/obtenir-le-droit-de-collecter-des-contributions-ou-de-faire-des-depenses/",
+      "usage": "Vérifier le statut de toute entité politique québécoise qui prétend recevoir des contributions ou engager des dépenses",
+      "verification_statut_effectuee": false
+    },
+    {
+      "id": "LCOP",
+      "url": "https://www.legisquebec.gouv.qc.ca/fr/document/lc/c-65.1",
+      "usage": "Déterminer seulement si le mandant entre dans le champ de cette loi et quels contrats seraient visés",
+      "verification_applicabilite_effectuee": false
+    },
+    {
+      "id": "CAI_PARTIS",
+      "url": "https://www.cai.gouv.qc.ca/protection-renseignements-personnels/information-pour-partis-politiques-provinciaux",
+      "usage": "Examiner les obligations particulières concernant les renseignements personnels des électeurs, qui ne remplacent pas l'analyse du traitement des candidats prestataires",
+      "verification_applicabilite_effectuee": false
+    },
+    {
+      "id": "PRIVE",
+      "url": "https://www.legisquebec.gouv.qc.ca/fr/document/lc/p-39.1",
+      "usage": "Examiner les exigences éventuelles du secteur privé concernant les données des fournisseurs",
+      "verification_applicabilite_effectuee": false
+    }
+  ],
+  "hypotheses_statut_mandant": [
+    {
+      "code": "PROJET_SANS_ENTITE_VERIFIEE",
+      "description": "Projet ou initiative sans personnalité ou délégation contractuelle vérifiée",
+      "retenue_juridiquement": false
+    },
+    {
+      "code": "PARTI_QUEBEC_AUTORISE",
+      "description": "Parti politique québécois dont l'autorisation et les agents compétents seraient effectivement vérifiés",
+      "retenue_juridiquement": false
+    },
+    {
+      "code": "ORGANISME_PUBLIC_QUEBEC",
+      "description": "Organisme public dont les compétences contractuelles et exigences de marchés seraient effectivement vérifiées",
+      "retenue_juridiquement": false
+    },
+    {
+      "code": "ENTITE_PRIVEE_AUTRE",
+      "description": "Personne ou entité privée relevant d'un cadre contractuel légal effectivement déterminé",
+      "retenue_juridiquement": false
+    }
+  ],
+  "preconditions": [
+    {
+      "id": "X01",
+      "domaine": "AUTORITE",
+      "question": "Identifier la personne ou entité juridique mandante, son statut et sa capacité réelle à contracter",
+      "correspondance_p52w": "G01",
+      "etat": "NON_DOCUMENTE",
+      "decision_humaine_authentifiee": false,
+      "autorite_verifiee": false,
+      "reference_piece_confidentielle": null,
+      "conflit_declare_et_resolu": false
+    },
+    {
+      "id": "X02",
+      "domaine": "AUTORITE",
+      "question": "Obtenir les délégations signées et la capacité de chaque signataire avant toute action",
+      "correspondance_p52w": "G01",
+      "etat": "NON_DOCUMENTE",
+      "decision_humaine_authentifiee": false,
+      "autorite_verifiee": false,
+      "reference_piece_confidentielle": null,
+      "conflit_declare_et_resolu": false
+    },
+    {
+      "id": "X03",
+      "domaine": "CADRE",
+      "question": "Déterminer si le mandant est privé, parti politique autorisé ou organisme public; vérifier la preuve de statut",
+      "correspondance_p52w": "G02",
+      "etat": "NON_DOCUMENTE",
+      "decision_humaine_authentifiee": false,
+      "autorite_verifiee": false,
+      "reference_piece_confidentielle": null,
+      "conflit_declare_et_resolu": false
+    },
+    {
+      "id": "X04",
+      "domaine": "CADRE",
+      "question": "Établir par avis juridique les règles contractuelles et électorales applicables, sans seuil présumé",
+      "correspondance_p52w": "G02",
+      "etat": "NON_DOCUMENTE",
+      "decision_humaine_authentifiee": false,
+      "autorite_verifiee": false,
+      "reference_piece_confidentielle": null,
+      "conflit_declare_et_resolu": false
+    },
+    {
+      "id": "X05",
+      "domaine": "FINANCES",
+      "question": "Déterminer la source licite et le contrôle comptable des fonds susceptibles de financer F09",
+      "correspondance_p52w": "G03",
+      "etat": "NON_DOCUMENTE",
+      "decision_humaine_authentifiee": false,
+      "autorite_verifiee": false,
+      "reference_piece_confidentielle": null,
+      "conflit_declare_et_resolu": false
+    },
+    {
+      "id": "X06",
+      "domaine": "FINANCES",
+      "question": "Faire approuver un plafond réel chiffré, l'imputation et l'interdiction de dépense non autorisée",
+      "correspondance_p52w": "G03",
+      "etat": "NON_DOCUMENTE",
+      "decision_humaine_authentifiee": false,
+      "autorite_verifiee": false,
+      "reference_piece_confidentielle": null,
+      "conflit_declare_et_resolu": false
+    },
+    {
+      "id": "X07",
+      "domaine": "GOUVERNANCE",
+      "question": "Désigner les personnes responsables de l'analyse, de la décision et du contrôle, fonctions distinctes",
+      "correspondance_p52w": "G12",
+      "etat": "NON_DOCUMENTE",
+      "decision_humaine_authentifiee": false,
+      "autorite_verifiee": false,
+      "reference_piece_confidentielle": null,
+      "conflit_declare_et_resolu": false
+    },
+    {
+      "id": "X08",
+      "domaine": "GOUVERNANCE",
+      "question": "Faire adopter les critères P52W avant d'évaluer ou contacter des candidats",
+      "correspondance_p52w": "G04",
+      "etat": "NON_DOCUMENTE",
+      "decision_humaine_authentifiee": false,
+      "autorite_verifiee": false,
+      "reference_piece_confidentielle": null,
+      "conflit_declare_et_resolu": false
+    },
+    {
+      "id": "X09",
+      "domaine": "VIE_PRIVEE",
+      "question": "Qualifier la collecte de renseignements des professionnels et le régime de protection applicable",
+      "correspondance_p52w": "G09",
+      "etat": "NON_DOCUMENTE",
+      "decision_humaine_authentifiee": false,
+      "autorite_verifiee": false,
+      "reference_piece_confidentielle": null,
+      "conflit_declare_et_resolu": false
+    },
+    {
+      "id": "X10",
+      "domaine": "VIE_PRIVEE",
+      "question": "Déterminer un canal privé sécurisé, l'information aux candidats, les accès et la durée de conservation",
+      "correspondance_p52w": "G09",
+      "etat": "NON_DOCUMENTE",
+      "decision_humaine_authentifiee": false,
+      "autorite_verifiee": false,
+      "reference_piece_confidentielle": null,
+      "conflit_declare_et_resolu": false
+    },
+    {
+      "id": "X11",
+      "domaine": "VIE_PRIVEE",
+      "question": "Évaluer les transferts ou accès hors Québec si pertinents et choisir les mesures nécessaires",
+      "correspondance_p52w": "G09",
+      "etat": "NON_DOCUMENTE",
+      "decision_humaine_authentifiee": false,
+      "autorite_verifiee": false,
+      "reference_piece_confidentielle": null,
+      "conflit_declare_et_resolu": false
+    },
+    {
+      "id": "X12",
+      "domaine": "RECOURS",
+      "question": "Prévoir recusation, réserves, traitement des plaintes et conservation des décisions motivées",
+      "correspondance_p52w": "G11",
+      "etat": "NON_DOCUMENTE",
+      "decision_humaine_authentifiee": false,
+      "autorite_verifiee": false,
+      "reference_piece_confidentielle": null,
+      "conflit_declare_et_resolu": false
+    }
+  ],
+  "securite_reception": {
+    "canal_de_reception_operationnel": false,
+    "fournisseur_d_hebergement_selectionne": false,
+    "localisation_donnees_verifiee": false,
+    "avis_confidentialite_approuve": false,
+    "mesures_de_controle_acces_approuvees": false,
+    "duree_conservation_validee": false,
+    "plan_effacement_valide": false,
+    "evaluation_facteurs_vie_privee_realisee_si_requise": false,
+    "aucune_collecte_reelle_en_cours": true,
+    "aucun_candidat_nominal_sur_github": true,
+    "aucune_donnee_personnelle_dans_ci": true,
+    "aucun_seuil_reglementaire_invente": true
+  },
+  "decision_precontractuelle": {
+    "statut": "NON_SOUMISE_A_UNE_AUTORITE",
+    "mandant_legal_identifie": false,
+    "statut_electoral_ou_juridique_verifie": false,
+    "regime_achats_documente": false,
+    "delegation_signature_authentifiee": false,
+    "budget_total_autorise_cad": null,
+    "fonds_engages_cad": 0,
+    "responsable_financier_nomme": false,
+    "responsable_vie_privee_nomme": false,
+    "approbateur_distinct_nomme": false,
+    "conflits_interets_verifies": false,
+    "invitation_envoyee": false,
+    "canal_confidentiel_active": false,
+    "contrat_signe": false,
+    "relecteur_humain_mandate": false,
+    "preuve_F09_certifiee": false,
+    "publication_autorisee": false,
+    "fusion_autorisee": false,
+    "adoption_autorisee": false,
+    "decision": "NO_GO_AUTOMATIQUE"
+  },
+  "bilan": {
+    "preconditions_a_documenter": 12,
+    "hypotheses_juridiques_non_determines": 4,
+    "consultations_professionnelles_reelles": 0,
+    "candidatures_reelles": 0,
+    "contrats_signes": 0,
+    "depenses_effectives_cad": 0,
+    "preuves_f01_f20_non_validees": 20,
+    "valeurs_nova_inconnues": 1320,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

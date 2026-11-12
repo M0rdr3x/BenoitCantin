@@ -1,0 +1,95 @@
+name: Projet Nova P55E - Triage probatoire sans certification
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p55e.yml"
+      - "scripts/prioriser_pieces_manquantes_nova_p55e.py"
+      - "scripts/tests/test_prioriser_pieces_manquantes_nova_p55e.py"
+      - "scripts/preparer_dossier_experts_nova_p55d.py"
+      - "scripts/rapprocher_pieces_documentaires_nova_p55c.py"
+      - "scripts/controler_acquisition_sources_nova_p55b.py"
+      - "scripts/preparer_revue_independante_nova_p55a.py"
+      - "scripts/preparer_passation_controlee_nova_p54z.py"
+      - "projets/projet-nova/etudes/P55E_*"
+      - "projets/projet-nova/etudes/P55D_*"
+      - "projets/projet-nova/etudes/P55C_*"
+      - "projets/projet-nova/etudes/P55B_*"
+      - "projets/projet-nova/etudes/P55A_*"
+      - "projets/projet-nova/etudes/P54H_*"
+      - "projets/projet-nova/etudes/P54Q_*"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verification-triage-preuves:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout sans identifiants permanents
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Parseur aligne sur P54Q
+        run: python -m pip install pypdf==5.9.0
+      - name: Executer 70 tests synthétiques sans PDF reel
+        run: |
+          python -m py_compile scripts/prioriser_pieces_manquantes_nova_p55e.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_prioriser_pieces_manquantes_nova_p55e.py")
+          assert suite.countTestCases()==70,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Plan de reprise neutre sans document ni personne
+        run: |
+          python scripts/prioriser_pieces_manquantes_nova_p55e.py \
+            --plan-public p55e_plan_neutre.json --bilan-public p55e_bilan_neutre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p55e_bilan_neutre.json").read_text("utf-8"))
+          p=json.loads(Path("p55e_plan_neutre.json").read_text("utf-8"))
+          assert d["schema_version"]=="P55E-BILAN-PUBLIC-1"
+          assert d["copies_publiques_absentes"]==2
+          assert d["phase_prioritaire"]=="COPIES_MANQUANTES"
+          assert d["prochaines_actions_codes"]==["A01","A02"]
+          assert d["positions_nfkc_reproduites_techniquement"]==0
+          assert d["suivi_p55d_declaratif_non_atteste"]["A_COLLECTER"]==40
+          assert d["avis_independants_authentifies"]==0
+          assert d["economies_certifiees_cad"] is None
+          assert not d["transmission_externe_autorisee"]
+          assert not d["engagement_depense_autorise"]
+          assert not d["fusion_main_autorisee"]
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          assert len(p["actions"])==12
+          assert len(p["sources_officielles_a_consulter"])==2
+          assert all("sha256" not in json.dumps(x) for x in (d,p))
+          assert all("offset_" not in json.dumps(x) for x in (d,p))
+          PY
+      - name: Refus de GO automatique et de fichiers partiels
+        run: |
+          set +e
+          python scripts/prioriser_pieces_manquantes_nova_p55e.py --exiger-go
+          status=$?
+          set -e
+          test "$status" -eq 3
+          set +e
+          python scripts/prioriser_pieces_manquantes_nova_p55e.py --ville-pdf "$RUNNER_TEMP/absent.pdf"
+          status=$?
+          set -e
+          test "$status" -eq 2
+      - name: Archiver exclusivement le plan et le bilan neutres
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p55e-triage-neutre-sans-pdf
+          path: |
+            p55e_plan_neutre.json
+            p55e_bilan_neutre.json
+          retention-days: 7

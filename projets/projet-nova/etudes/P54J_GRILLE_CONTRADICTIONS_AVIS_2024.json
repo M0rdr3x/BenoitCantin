@@ -1,0 +1,92 @@
+{
+  "schema_version": "P54J-1",
+  "date_reference": "2026-10-24",
+  "exercice_source": 2024,
+  "source_jalon": "P54I",
+  "source_run_p54d": 40120462237,
+  "mandats": [
+    "MANDAT-COMPTABLE-2024",
+    "MANDAT-JURIDIQUE-2024"
+  ],
+  "dossiers": [
+    "P54E-V-001",
+    "P54E-M-001",
+    "P54E-M-002",
+    "P54E-M-003"
+  ],
+  "etats_conclusion": [
+    "AUCUNE_CONCLUSION",
+    "NON_CONCLUANT",
+    "DIFFERENCE_DOCUMENTAIRE_POSSIBLE",
+    "COMPARABILITE_A_ETABLIR",
+    "PAS_D_ECART_DEMONTRE",
+    "HORS_PORTEE_MANDAT"
+  ],
+  "etats_contradiction": [
+    "NON_SIGNALEE",
+    "DIVERGENCE_DE_PORTEE_OUVERTE",
+    "QUESTION_PROBATOIRE_OUVERTE"
+  ],
+  "statuts_dossier": [
+    "AUCUN_AVIS_LOCAL",
+    "AVIS_UNIQUE_DECLARATIF_NON_AUTHENTIFIE",
+    "DEUX_VOLETS_NON_AUTHENTIFIES",
+    "RESERVE_DOCUMENTAIRE_OUVERTE",
+    "CONTRADICTION_DECLAREE",
+    "SUSPENSION_MAINTENUE"
+  ],
+  "controles_portee": [
+    "AVIS_LIE_A_FICHE_P54I",
+    "PIECE_LOCALE_SHA256_RECALCULE",
+    "PORTEE_DU_MANDAT",
+    "PERIMETRE_ENTITES_CONSOLIDATION",
+    "EXERCICE_2024_ET_FOLIO",
+    "UNITES_ET_CONVENTIONS_SIGNES",
+    "CONFLITS_ET_INDEPENDANCE_A_AUTHENTIFIER",
+    "SIGNATURE_ORIGINALE_A_AUTHENTIFIER",
+    "RESERVES_ET_CONTRADICTIONS",
+    "EFFETS_EMPLOIS_SERVICES_ET_RECIPROCITES"
+  ],
+  "reserves_reprises_p54i": [
+    "AUCUNE_DECLAREE_NON_VERIFIEE",
+    "SIGNATURE_A_VERIFIER",
+    "PORTEE_LIMITEE",
+    "PIECES_PRIMAIRES_MANQUANTES",
+    "CONFLIT_A_EXAMINER",
+    "CONTRADICTION_OUVERTE",
+    "UNITE_PERIMETRE_AMBIGUS",
+    "SUSPENSION_EXPLICITE"
+  ],
+  "protections": {
+    "aucune_authenticite_automatique": true,
+    "aucune_signature_professionnelle_fictive": true,
+    "aucun_avis_nouvellement_obtenu_par_ci": true,
+    "fiches_privees_hors_git": true,
+    "empreinte_fiche_p54i_sur_octets": true,
+    "aucune_piece_utilisee_sans_validation_p54i": true,
+    "suspension_prioritaire": true,
+    "reserve_maintenue": true,
+    "avis_juridique_et_comptable_non_assimiles": true,
+    "desaccord_declare_non_efface": true,
+    "dossier_humain_non_clos": true,
+    "aucun_montant_public_extrait": true,
+    "aucune_economie_certifiee": true,
+    "maintien_emploi_et_services": true,
+    "aucun_double_compte_ville_rtc": true,
+    "scenarios_constitutionnels_separes": true,
+    "aucun_merge_main": true,
+    "aucune_intervention_sinjira": true
+  },
+  "etat_initial": {
+    "avis_techniquement_recus": 0,
+    "avis_professionnels_authentifies": 0,
+    "revues_de_conclusion_reelles": 0,
+    "dossiers_a_revoir": 4,
+    "mandats_non_authentifies": 2,
+    "points_de_controle_non_attestes": 20,
+    "comparabilites_p54b_ouvertes": 96,
+    "verifications_p54c_ouvertes": 8,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

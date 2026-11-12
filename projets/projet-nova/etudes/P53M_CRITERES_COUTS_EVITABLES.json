@@ -1,0 +1,99 @@
+{
+  "schema_version": "P53M-1",
+  "jalon": "P53M",
+  "date_reference": "2026-10-22",
+  "statut": "ETUDE_NON_ADOPTEE",
+  "regimes": [
+    "QUEBEC_DANS_LE_CANADA",
+    "QUEBEC_SOUVERAIN_HYPOTHETIQUE"
+  ],
+  "categories": [
+    "ACHATS_REGROUPES_SANS_EXCLUSION",
+    "SIMPLIFICATION_FORMALITES",
+    "ENERGIE_ET_BATIMENTS",
+    "ENTRETIEN_PREVENTIF",
+    "LOGICIELS_ET_LICENCES",
+    "RENOUVELLEMENT_CONTRATS"
+  ],
+  "preuves_requises": [
+    "competence_juridique",
+    "base_comptable",
+    "contrats_et_factures",
+    "volumes_de_service",
+    "cout_transition",
+    "couts_recurrents",
+    "couts_externes",
+    "comparabilite",
+    "qualite_avant_apres",
+    "consultation_employes_usagers",
+    "anti_double_compte",
+    "avis_independant"
+  ],
+  "protections": [
+    "emplois_maintenus",
+    "heures_contractuelles_maintenues",
+    "salaires_et_conditions_maintenus",
+    "qualite_service_maintenue",
+    "delais_service_non_degrades",
+    "acces_humain_maintenu",
+    "services_essentiels_continus",
+    "droits_et_recours_maintenus"
+  ],
+  "indicateurs": {
+    "ACHATS_REGROUPES_SANS_EXCLUSION": [
+      "cout_unitaire",
+      "qualite_livraison",
+      "temps_approvisionnement",
+      "concurrence"
+    ],
+    "SIMPLIFICATION_FORMALITES": [
+      "temps_traitement",
+      "erreurs",
+      "acces_humain",
+      "satisfaction"
+    ],
+    "ENERGIE_ET_BATIMENTS": [
+      "energie_surface",
+      "confort",
+      "cout_entretien",
+      "pannes"
+    ],
+    "ENTRETIEN_PREVENTIF": [
+      "indisponibilite",
+      "pannes",
+      "cout_cycle_vie",
+      "securite"
+    ],
+    "LOGICIELS_ET_LICENCES": [
+      "licences_actives",
+      "incidents_securite",
+      "cout_support",
+      "accessibilite"
+    ],
+    "RENOUVELLEMENT_CONTRATS": [
+      "cout_unitaire_service",
+      "qualite",
+      "delais",
+      "conditions_fournisseurs"
+    ]
+  },
+  "verrous": {
+    "montants_inconnus_restent_inconnus": true,
+    "aucune_suppression_emplois": true,
+    "aucun_transfert_couts": true,
+    "services_essentiels_intacts": true,
+    "pas_de_double_compte": true,
+    "pas_de_melange_regimes": true,
+    "aucune_certification_automatique": true,
+    "aucun_document_prive_dans_git": true,
+    "aucune_fusion": true,
+    "pas_d_economie_par_consolidation": true
+  },
+  "etat_initial": {
+    "fiches": 12,
+    "preuves_primaires_certifiees": 0,
+    "avis_independants": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

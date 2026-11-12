@@ -1,0 +1,476 @@
+{
+  "schema_version": "P56R-1",
+  "date_revision": "2026-11-08",
+  "objet": "RECONCILIATION_DES_HUIT_CATEGORIES_REVENUS_GOUVERNEMENTAUX_POUR_NOVA",
+  "statut": "CLASSIFICATION_PRELIMINAIRE_RECETTES_OFFICIELLES_NON_DECISIONS_POLITIQUES",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "provenance": {
+    "p56p": "projets/projet-nova/etudes/P56P_BASE_BUDGET_PREELECTORALE_2026_2031_VGQ_ET_ECARTS.json",
+    "p56q": "projets/projet-nova/etudes/P56Q_PONT_CONTREFACTUEL_RECETTES_2027_2031_SIMULATEUR_AMENDE.json",
+    "p56o": "projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json",
+    "budget_officiel": {
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Rapport_preelectoral/FR/MINFR_RP_2026.pdf",
+      "date": "2026-08-17",
+      "tableau": "2",
+      "page_imprimee": 17
+    },
+    "fss": {
+      "url": "https://www.revenuquebec.ca/fr/entreprises/retenues-a-la-source-et-cotisations-de-lemployeur/employeur-principaux-changements-2026/",
+      "portee": "BAREME_FSS_EMPLOYEURS_EN_2026",
+      "remplace_pas_un_calcul_de_cotisations_reelles": true
+    },
+    "taxe_scolaire": {
+      "url": "https://www.quebec.ca/education/prescolaire-primaire-et-secondaire/administration-encadrements/financement/taxe-scolaire",
+      "portee": "FINANCEMENT_RESEAU_SCOLAIRE_ET_TRANSPORT",
+      "valeur_reelle_affectee_non_calculee": true
+    },
+    "entreprises_publics": {
+      "url": "https://www.quebec.ca/gouvernement/finances-publiques/budget-comptes-publics/comptes-publics/perimetre-comptable-fiduciaires-gouvernement",
+      "portee": "ENTREPRISES_AUTONOMES_DE_DROIT",
+      "flux_financier_nouveau_non_calcule": true
+    },
+    "transferts": {
+      "source": "RAPPORT_PREELECTORAL_2026",
+      "statut": "RECETTE_DU_REGIME_QUEBEC_CANADA_NON_GARANTIE_EN_SOUVERAINETE"
+    }
+  },
+  "deux_prelevements_et_limites": {
+    "orientation": "IMPOT_UNIQUE_SUR_REVENUS_PARTICULIERS_ET_SOCIETES_PLUS_MESURE_CONTRE_ABUS_PARADIS_FISCAUX",
+    "pilier_revenu_potentiel_categories": [
+      "impot_particuliers",
+      "impots_societes"
+    ],
+    "pilier_anti_paradis_recettes_futures_mcad": null,
+    "taux_personnes_entreprises_proposes": null,
+    "prelevements_non_fiscaux_et_redevances_non_classes_comme_impots_automatiquement": true,
+    "cotisations_regimes_sociaux_federaux_non_abolies_unilateralement": true,
+    "suppression_taxe_fonciere_scolaire_NON_adoptee": true,
+    "suppression_FSS_NON_adoptee": true,
+    "suppression_taxes_consommation_provinciales_NON_adoptee": true,
+    "remplacement_et_compensation_obligatoires_avant_adoption": true,
+    "offre_services_publics_maintenue_dans_contre_factuel": true,
+    "aucun_effet_comportemental_ou_dynamique_inclus": true
+  },
+  "categories_officielles": [
+    {
+      "id": "R01",
+      "poste_p56p": "impot_particuliers",
+      "nature": "IMPOT_REVENU_ACTUEL",
+      "traitement_provisoire": "PILIER_1_POTENTIEL",
+      "assiette_ou_nature": "IMPOT_PROVINCIAL_SUR_LE_REVENU",
+      "risque_et_justification": "Les recettes existantes ne sont pas une assiette et ne prouvent aucun taux Nova",
+      "montants_annee_p56p_mcad": {
+        "2025-2026": "48969",
+        "2026-2027": "50942",
+        "2027-2028": "52841",
+        "2028-2029": "54861",
+        "2029-2030": "56867",
+        "2030-2031": "59006"
+      },
+      "avis_juridique_independant": null,
+      "circuit_de_continuite_documente": false,
+      "effet_nova_2027_2036_mcad": null,
+      "statut": "A_EXAMINER"
+    },
+    {
+      "id": "R02",
+      "poste_p56p": "impots_societes",
+      "nature": "IMPOT_REVENU_ACTUEL",
+      "traitement_provisoire": "PILIER_1_POTENTIEL",
+      "assiette_ou_nature": "IMPOT_PROVINCIAL_SUR_LES_SOCIETES",
+      "risque_et_justification": "L'incidence varie selon bénéfices, pertes et crédits; non uniforme par employeur",
+      "montants_annee_p56p_mcad": {
+        "2025-2026": "14599",
+        "2026-2027": "14698",
+        "2027-2028": "15252",
+        "2028-2029": "15240",
+        "2029-2030": "15835",
+        "2030-2031": "16875"
+      },
+      "avis_juridique_independant": null,
+      "circuit_de_continuite_documente": false,
+      "effet_nova_2027_2036_mcad": null,
+      "statut": "A_EXAMINER"
+    },
+    {
+      "id": "R03",
+      "poste_p56p": "cotisations_services_sante",
+      "nature": "COTISATION_EMPLOYEURS",
+      "traitement_provisoire": "REMPLACEMENT_EXPLICITE_A_DEMONTRER",
+      "assiette_ou_nature": "COTISATION_FSS_SUR_MASSE_SALARIALE",
+      "risque_et_justification": "La cotisation FSS porte sur des salaires, pas directement le bénéfice; préserver financement et emplois",
+      "montants_annee_p56p_mcad": {
+        "2025-2026": "9304",
+        "2026-2027": "9538",
+        "2027-2028": "9876",
+        "2028-2029": "10327",
+        "2029-2030": "10628",
+        "2030-2031": "10962"
+      },
+      "avis_juridique_independant": null,
+      "circuit_de_continuite_documente": false,
+      "effet_nova_2027_2036_mcad": null,
+      "statut": "A_EXAMINER"
+    },
+    {
+      "id": "R04",
+      "poste_p56p": "impot_foncier_scolaire",
+      "nature": "PRELEVEMENT_SCOLAIRE",
+      "traitement_provisoire": "REMPLACEMENT_EXPLICITE_A_DEMONTRER",
+      "assiette_ou_nature": "TAXE_SCOLAIRE_FINANCEMENT_BESOINS_LOCAUX",
+      "risque_et_justification": "Le réseau scolaire dépend de ce financement; compétences et mécanismes à examiner",
+      "montants_annee_p56p_mcad": {
+        "2025-2026": "1243",
+        "2026-2027": "1301",
+        "2027-2028": "1367",
+        "2028-2029": "1426",
+        "2029-2030": "1479",
+        "2030-2031": "1531"
+      },
+      "avis_juridique_independant": null,
+      "circuit_de_continuite_documente": false,
+      "effet_nova_2027_2036_mcad": null,
+      "statut": "A_EXAMINER"
+    },
+    {
+      "id": "R05",
+      "poste_p56p": "taxes_consommation",
+      "nature": "TAXES_PROVINCIALES_CONSOMMATION",
+      "traitement_provisoire": "REMPLACEMENT_EXPLICITE_A_DEMONTRER",
+      "assiette_ou_nature": "TAXES_TVQ_ET_AUTRES_CONSOMMATION",
+      "risque_et_justification": "La TPS fédérale n'est pas annulable unilatéralement; transmission aux prix non garantie",
+      "montants_annee_p56p_mcad": {
+        "2025-2026": "29639",
+        "2026-2027": "30682",
+        "2027-2028": "31632",
+        "2028-2029": "32416",
+        "2029-2030": "33206",
+        "2030-2031": "34035"
+      },
+      "avis_juridique_independant": null,
+      "circuit_de_continuite_documente": false,
+      "effet_nova_2027_2036_mcad": null,
+      "statut": "A_EXAMINER"
+    },
+    {
+      "id": "R06",
+      "poste_p56p": "droits_permis_redevances",
+      "nature": "RECETTES_HETEROGENES",
+      "traitement_provisoire": "AUDIT_JURIDIQUE_ET_VENTILATION",
+      "assiette_ou_nature": "DROITS_PERMIS_ET_REDEVANCES",
+      "risque_et_justification": "Distinguer impôts déguisés, tarifs services, redevances d'exploitation, droits contractuels",
+      "montants_annee_p56p_mcad": {
+        "2025-2026": "6708",
+        "2026-2027": "6484",
+        "2027-2028": "6928",
+        "2028-2029": "7278",
+        "2029-2030": "7586",
+        "2030-2031": "7823"
+      },
+      "avis_juridique_independant": null,
+      "circuit_de_continuite_documente": false,
+      "effet_nova_2027_2036_mcad": null,
+      "statut": "A_EXAMINER"
+    },
+    {
+      "id": "R07",
+      "poste_p56p": "revenus_divers",
+      "nature": "RECETTES_HETEROGENES",
+      "traitement_provisoire": "AUDIT_COMPTABLE_ET_VENTILATION",
+      "assiette_ou_nature": "RECETTES_DIVERSES_NON_VENTILEES",
+      "risque_et_justification": "Exiger détail avant de présumer maintien, privatisation ou suppression",
+      "montants_annee_p56p_mcad": {
+        "2025-2026": "14922",
+        "2026-2027": "15790",
+        "2027-2028": "16110",
+        "2028-2029": "16744",
+        "2029-2030": "17385",
+        "2030-2031": "17988"
+      },
+      "avis_juridique_independant": null,
+      "circuit_de_continuite_documente": false,
+      "effet_nova_2027_2036_mcad": null,
+      "statut": "A_EXAMINER"
+    },
+    {
+      "id": "R08",
+      "poste_p56p": "entreprises_gouvernement",
+      "nature": "REVENUS_ENTREPRISES_PUBLIQUES",
+      "traitement_provisoire": "CONSERVATION_SOUS_REVUE",
+      "assiette_ou_nature": "REVENUS_DES_ENTREPRISES_GOUVERNEMENT",
+      "risque_et_justification": "Ni taxe ni économie garantie; flux nets à concilier et mandats publics à protéger",
+      "montants_annee_p56p_mcad": {
+        "2025-2026": "5241",
+        "2026-2027": "5908",
+        "2027-2028": "6208",
+        "2028-2029": "6909",
+        "2029-2030": "6653",
+        "2030-2031": "7035"
+      },
+      "avis_juridique_independant": null,
+      "circuit_de_continuite_documente": false,
+      "effet_nova_2027_2036_mcad": null,
+      "statut": "A_EXAMINER"
+    }
+  ],
+  "transferts_federaux": {
+    "classe": "TRANSFERT_INTERGOUVERNEMENTAL",
+    "lien_avec_regime": "QUEBEC_DANS_CANADA",
+    "montants_par_exercice_mcad": {
+      "2025-2026": "29803",
+      "2026-2027": "33046",
+      "2027-2028": "34011",
+      "2028-2029": "33643",
+      "2029-2030": "32802",
+      "2030-2031": "33757"
+    },
+    "non_economie_budgetaire": true,
+    "transfert_pas_maintenu_par_defaut_en_souverainete": true
+  },
+  "rapprochement_annees": [
+    {
+      "exercice": "2025-2026",
+      "millesime": "COMPTES_PUBLICS_2025_2026",
+      "impots_sur_revenu_actuels_mcad": "63568",
+      "trois_categories_a_remplacer_si_supprimees_mcad": "40186",
+      "autres_revenus_autonomes_a_qualifier_mcad": "26871",
+      "transferts_federaux_au_regime_actuel_mcad": "29803",
+      "revenus_consolides_regime_actuel_mcad": "160428",
+      "reconciliation_somme_mcad": "160428",
+      "montant_pour_maintenir_recettes_publiques_mcad": "40186",
+      "besoin_arithmetique_si_zero_solde_loi_mcad": "47977",
+      "besoin_zero_solde_loi_sans_ecarts_a_resorber_mcad": "47977",
+      "recettes_remplacement_en_pourcentage_des_impots_revenu_actuels": "63.22",
+      "ressources_zero_solde_en_pourcentage_des_impots_revenu_actuels": "75.47",
+      "taux_effectif_nova": null,
+      "rendement_cible_anti_paradis_prevu_mcad": null,
+      "economie_reelle_identifiee_mcad": null,
+      "scenario_immuable_hypothese_statique": true,
+      "n_est_pas_une_hausse_de_taux_recommandee": true
+    },
+    {
+      "exercice": "2026-2027",
+      "millesime": "PREVISIONS_RAPPORT_PREELECTORAL_AOUT_2026",
+      "impots_sur_revenu_actuels_mcad": "65640",
+      "trois_categories_a_remplacer_si_supprimees_mcad": "41521",
+      "autres_revenus_autonomes_a_qualifier_mcad": "28182",
+      "transferts_federaux_au_regime_actuel_mcad": "33046",
+      "revenus_consolides_regime_actuel_mcad": "168389",
+      "reconciliation_somme_mcad": "168389",
+      "montant_pour_maintenir_recettes_publiques_mcad": "41521",
+      "besoin_arithmetique_si_zero_solde_loi_mcad": "49211",
+      "besoin_zero_solde_loi_sans_ecarts_a_resorber_mcad": "49211",
+      "recettes_remplacement_en_pourcentage_des_impots_revenu_actuels": "63.26",
+      "ressources_zero_solde_en_pourcentage_des_impots_revenu_actuels": "74.97",
+      "taux_effectif_nova": null,
+      "rendement_cible_anti_paradis_prevu_mcad": null,
+      "economie_reelle_identifiee_mcad": null,
+      "scenario_immuable_hypothese_statique": true,
+      "n_est_pas_une_hausse_de_taux_recommandee": true
+    },
+    {
+      "exercice": "2027-2028",
+      "millesime": "PREVISIONS_RAPPORT_PREELECTORAL_AOUT_2026",
+      "impots_sur_revenu_actuels_mcad": "68093",
+      "trois_categories_a_remplacer_si_supprimees_mcad": "42875",
+      "autres_revenus_autonomes_a_qualifier_mcad": "29246",
+      "transferts_federaux_au_regime_actuel_mcad": "34011",
+      "revenus_consolides_regime_actuel_mcad": "174225",
+      "reconciliation_somme_mcad": "174225",
+      "montant_pour_maintenir_recettes_publiques_mcad": "42875",
+      "besoin_arithmetique_si_zero_solde_loi_mcad": "48570",
+      "besoin_zero_solde_loi_sans_ecarts_a_resorber_mcad": "48570",
+      "recettes_remplacement_en_pourcentage_des_impots_revenu_actuels": "62.97",
+      "ressources_zero_solde_en_pourcentage_des_impots_revenu_actuels": "71.33",
+      "taux_effectif_nova": null,
+      "rendement_cible_anti_paradis_prevu_mcad": null,
+      "economie_reelle_identifiee_mcad": null,
+      "scenario_immuable_hypothese_statique": true,
+      "n_est_pas_une_hausse_de_taux_recommandee": true
+    },
+    {
+      "exercice": "2028-2029",
+      "millesime": "PREVISIONS_RAPPORT_PREELECTORAL_AOUT_2026",
+      "impots_sur_revenu_actuels_mcad": "70101",
+      "trois_categories_a_remplacer_si_supprimees_mcad": "44169",
+      "autres_revenus_autonomes_a_qualifier_mcad": "30931",
+      "transferts_federaux_au_regime_actuel_mcad": "33643",
+      "revenus_consolides_regime_actuel_mcad": "178844",
+      "reconciliation_somme_mcad": "178844",
+      "montant_pour_maintenir_recettes_publiques_mcad": "44169",
+      "besoin_arithmetique_si_zero_solde_loi_mcad": "45669",
+      "besoin_zero_solde_loi_sans_ecarts_a_resorber_mcad": "47519",
+      "recettes_remplacement_en_pourcentage_des_impots_revenu_actuels": "63.01",
+      "ressources_zero_solde_en_pourcentage_des_impots_revenu_actuels": "65.15",
+      "taux_effectif_nova": null,
+      "rendement_cible_anti_paradis_prevu_mcad": null,
+      "economie_reelle_identifiee_mcad": null,
+      "scenario_immuable_hypothese_statique": true,
+      "n_est_pas_une_hausse_de_taux_recommandee": true
+    },
+    {
+      "exercice": "2029-2030",
+      "millesime": "PREVISIONS_RAPPORT_PREELECTORAL_AOUT_2026",
+      "impots_sur_revenu_actuels_mcad": "72702",
+      "trois_categories_a_remplacer_si_supprimees_mcad": "45313",
+      "autres_revenus_autonomes_a_qualifier_mcad": "31624",
+      "transferts_federaux_au_regime_actuel_mcad": "32802",
+      "revenus_consolides_regime_actuel_mcad": "182441",
+      "reconciliation_somme_mcad": "182441",
+      "montant_pour_maintenir_recettes_publiques_mcad": "45313",
+      "besoin_arithmetique_si_zero_solde_loi_mcad": "45313",
+      "besoin_zero_solde_loi_sans_ecarts_a_resorber_mcad": "47313",
+      "recettes_remplacement_en_pourcentage_des_impots_revenu_actuels": "62.33",
+      "ressources_zero_solde_en_pourcentage_des_impots_revenu_actuels": "62.33",
+      "taux_effectif_nova": null,
+      "rendement_cible_anti_paradis_prevu_mcad": null,
+      "economie_reelle_identifiee_mcad": null,
+      "scenario_immuable_hypothese_statique": true,
+      "n_est_pas_une_hausse_de_taux_recommandee": true
+    },
+    {
+      "exercice": "2030-2031",
+      "millesime": "PREVISIONS_RAPPORT_PREELECTORAL_AOUT_2026",
+      "impots_sur_revenu_actuels_mcad": "75881",
+      "trois_categories_a_remplacer_si_supprimees_mcad": "46528",
+      "autres_revenus_autonomes_a_qualifier_mcad": "32846",
+      "transferts_federaux_au_regime_actuel_mcad": "33757",
+      "revenus_consolides_regime_actuel_mcad": "189012",
+      "reconciliation_somme_mcad": "189012",
+      "montant_pour_maintenir_recettes_publiques_mcad": "46528",
+      "besoin_arithmetique_si_zero_solde_loi_mcad": "46278",
+      "besoin_zero_solde_loi_sans_ecarts_a_resorber_mcad": "48278",
+      "recettes_remplacement_en_pourcentage_des_impots_revenu_actuels": "61.32",
+      "ressources_zero_solde_en_pourcentage_des_impots_revenu_actuels": "60.99",
+      "taux_effectif_nova": null,
+      "rendement_cible_anti_paradis_prevu_mcad": null,
+      "economie_reelle_identifiee_mcad": null,
+      "scenario_immuable_hypothese_statique": true,
+      "n_est_pas_une_hausse_de_taux_recommandee": true
+    }
+  ],
+  "deux_regimes": {
+    "QUEBEC_DANS_CANADA": {
+      "recettes_federales_dans_reference_publique": true,
+      "tps_et_impots_federaux_non_abolissables_unilateralement": true,
+      "simulation_nova_certifiee": false
+    },
+    "QUEBEC_SOUVERAIN": {
+      "reference_provinciale_non_directement_transposable": true,
+      "transferts_federaux_maintenus_par_defaut": false,
+      "assiettes_impots_federaux_devenu_souverains_mcad": null,
+      "couts_fonctions_federales_mcad": null,
+      "dette_et_pensions_de_transition_mcad": null,
+      "simulation_nova_certifiee": false
+    }
+  },
+  "limites": {
+    "chiffres_actuels_sont_recettes_pas_assiettes": true,
+    "pourcentage_du_rendement_actuel_n_est_pas_taux_imposition": true,
+    "retrait_trois_categories_n_est_pas_decision_nova": true,
+    "cotisations_FSS_ne_sont_pas_base_benefices": true,
+    "taxe_scolaire_n_est_pas_une_economie_de_services": true,
+    "taxes_federales_non_retirables_par_regime_provincial": true,
+    "les_ressources_provenant_des_transferts_ne_sont_pas_une_economie": true,
+    "droits_permis_redevances_non_decomposes": true,
+    "revenus_divers_non_decomposes": true,
+    "simulations_continuation_gouvernementale_non_programme_nova": true,
+    "souverainete_ne_donne_pas_recettes_federales_gratuites": true,
+    "recommandation_taux_fiscaux_non_autorisee": true
+  },
+  "conditions_pour_prochaine_phase": [
+    {
+      "id": "R01",
+      "critere": "Détailler les lois et bases de chaque poste; ne pas classer tout revenu public comme taxe",
+      "statut": "NON_DEMONTRE",
+      "preuve_id": null,
+      "responsable_habilite": null,
+      "validation_independante": false
+    },
+    {
+      "id": "R02",
+      "critere": "Identifier et financer services locaux scolaires si l'impôt foncier scolaire est supprimé",
+      "statut": "NON_DEMONTRE",
+      "preuve_id": null,
+      "responsable_habilite": null,
+      "validation_independante": false
+    },
+    {
+      "id": "R03",
+      "critere": "Distinguer cotisation FSS sur masse salariale et impôt sur profits sans pénaliser la main-d'oeuvre",
+      "statut": "NON_DEMONTRE",
+      "preuve_id": null,
+      "responsable_habilite": null,
+      "validation_independante": false
+    },
+    {
+      "id": "R04",
+      "critere": "Protéger les revenus disponibles et crédits remboursables des ménages les plus modestes",
+      "statut": "NON_DEMONTRE",
+      "preuve_id": null,
+      "responsable_habilite": null,
+      "validation_independante": false
+    },
+    {
+      "id": "R05",
+      "critere": "Modéliser l'évolution des prix TTC et la TPS fédérale avec les compétences juridiques provinciales",
+      "statut": "NON_DEMONTRE",
+      "preuve_id": null,
+      "responsable_habilite": null,
+      "validation_independante": false
+    },
+    {
+      "id": "R06",
+      "critere": "Décomposer droits, redevances, permis et recettes diverses; pas de recettes automatiques",
+      "statut": "NON_DEMONTRE",
+      "preuve_id": null,
+      "responsable_habilite": null,
+      "validation_independante": false
+    },
+    {
+      "id": "R07",
+      "critere": "Réconcilier ressources réelles des entreprises gouvernementales et besoins des mandats publics",
+      "statut": "NON_DEMONTRE",
+      "preuve_id": null,
+      "responsable_habilite": null,
+      "validation_independante": false
+    },
+    {
+      "id": "R08",
+      "critere": "Construire année 2027-2028 puis 2027-2036 pour trois scénarios et deux régimes, dette incluse",
+      "statut": "NON_DEMONTRE",
+      "preuve_id": null,
+      "responsable_habilite": null,
+      "validation_independante": false
+    },
+    {
+      "id": "R09",
+      "critere": "Chiffrer les fonctions fédérales, dette, pensions et transfert de services du régime souverain",
+      "statut": "NON_DEMONTRE",
+      "preuve_id": null,
+      "responsable_habilite": null,
+      "validation_independante": false
+    },
+    {
+      "id": "R10",
+      "critere": "Obtenir avis indépendants et consultation, puis approbation des mesures candidates avant toute adoption",
+      "statut": "NON_DEMONTRE",
+      "preuve_id": null,
+      "responsable_habilite": null,
+      "validation_independante": false
+    }
+  ],
+  "indicateurs_fins": {
+    "p55n_score_estime": 53,
+    "p55n_points_restants_estimes": 47,
+    "p56o_portes_closes": 0,
+    "p52b_montants_a_renseigner": 600,
+    "p52d_incidence_a_renseigner": 720,
+    "p52a_preuves_a_valider": 20,
+    "annees_du_modele_decennal_sans_prevision_officielle_aout_2026": 6,
+    "avis_independants_nova_signes": 0,
+    "politique_nova_adoptee": false,
+    "budget_nova_certifie": false,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

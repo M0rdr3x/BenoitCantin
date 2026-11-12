@@ -1,0 +1,56 @@
+name: Projet Nova P56R - Recettes publiques et deux prelevements sans faux taux
+on:
+  pull_request:
+    paths:
+      - 'projets/projet-nova/etudes/P56R_*'
+      - 'scripts/rapprocher_categories_recettes_et_deux_taxes_nova_p56r.py'
+      - 'scripts/tests/test_rapprocher_categories_recettes_et_deux_taxes_nova_p56r.py'
+      - 'scripts/mesurer_pont_recettes_fiscales_nova_p56q.py'
+      - 'projets/projet-nova/etudes/P56Q_PONT_CONTREFACTUEL_RECETTES_2027_2031_SIMULATEUR_AMENDE.json'
+      - 'projets/projet-nova/etudes/P56P_BASE_BUDGET_PREELECTORALE_2026_2031_VGQ_ET_ECARTS.json'
+      - 'projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json'
+      - 'projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json'
+      - 'projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json'
+      - '.github/workflows/validate-nova-p56r.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  repartition-recettes-p56r:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tester 54 regressions P56Q et 48 tests P56R
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_mesurer_pont_recettes_fiscales_nova_p56q.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_rapprocher_categories_recettes_et_deux_taxes_nova_p56r.py' -v
+      - name: Verifier rapprochement 174225 G$ et absence de taux invente
+        shell: bash
+        run: |
+          python scripts/rapprocher_categories_recettes_et_deux_taxes_nova_p56r.py \
+            --inventaire projets/projet-nova/etudes/P56R_INVENTAIRE_EXHAUSTIF_CATEGORIES_RECETTES_ET_PONT_FISCAL_2026_2031.json \
+            --p56p projets/projet-nova/etudes/P56P_BASE_BUDGET_PREELECTORALE_2026_2031_VGQ_ET_ECARTS.json \
+            --p56q projets/projet-nova/etudes/P56Q_PONT_CONTREFACTUEL_RECETTES_2027_2031_SIMULATEUR_AMENDE.json \
+            --p52b projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json | python -c 'import json,sys; x=json.load(sys.stdin); p=x["tableau_annee_pivot"]; assert p["impots_revenu_actuels_mcad"]=="68093" and p["trois_categories_a_remplacer_mcad"]=="42875" and p["autres_revenus_provinciaux_mcad"]=="29246" and p["transferts_federaux_mcad"]=="34011" and p["revenus_publics_totaux_mcad"]=="174225" and p["ratio_recettes_a_remplacer_sur_impots_revenu_actuels_pourcent"]=="62.97" and x["taux_fiscal_nova_calculable"] is False and x["score_estime_p55n"]==53 and x["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Refuser budget Nova et taux certifies sans preuves
+        shell: bash
+        run: |
+          set +e
+          python scripts/rapprocher_categories_recettes_et_deux_taxes_nova_p56r.py \
+            --inventaire projets/projet-nova/etudes/P56R_INVENTAIRE_EXHAUSTIF_CATEGORIES_RECETTES_ET_PONT_FISCAL_2026_2031.json \
+            --p56p projets/projet-nova/etudes/P56P_BASE_BUDGET_PREELECTORALE_2026_2031_VGQ_ET_ECARTS.json \
+            --p56q projets/projet-nova/etudes/P56Q_PONT_CONTREFACTUEL_RECETTES_2027_2031_SIMULATEUR_AMENDE.json \
+            --p52b projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --exiger-budget-nova-certifie
+          code=$?
+          set -e
+          test "$code" -eq 3

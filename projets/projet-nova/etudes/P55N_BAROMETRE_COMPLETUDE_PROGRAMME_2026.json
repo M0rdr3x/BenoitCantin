@@ -1,0 +1,337 @@
+{
+  "schema_version": "P55N-1",
+  "date_evaluation": "2026-11-05",
+  "objet": "ESTIMATION_AVANCEMENT_PROGRAMME_COMPLET_DEFENDABLE_NON_STATUT_DE_GOUVERNEMENT",
+  "methode": "JUGEMENT_EDITO_ANALYTIQUE_PONDERE_NON_AUDIT_INDEPENDANT",
+  "champ": "TEXTES_DE_REFERENCE_CANDIDATS_ET_ETUDES_DU_DEPOT_GITHUB_BRANCHE_PR673",
+  "score_evalue_sur": 100,
+  "score_estimatif": 53,
+  "fourchette_prudente": [
+    45,
+    60
+  ],
+  "axes": [
+    {
+      "id": "VISION",
+      "titre": "Vision, principes et valeurs",
+      "maximum": 10,
+      "points_estimes": 10,
+      "preuve_documentaire": [
+        "projets/projet-nova/official/reference/programme.md",
+        "projets/projet-nova/official/reference/corpus.md"
+      ],
+      "lacune": "Validation éditoriale des arbitrages intersectoriels",
+      "mesure": "MATURITE_REDACTIONNELLE_MANUELLE"
+    },
+    {
+      "id": "INSTITUTIONS",
+      "titre": "Institutions et réforme démocratique",
+      "maximum": 15,
+      "points_estimes": 13,
+      "preuve_documentaire": [
+        "projets/projet-nova/official/reference/programme.md",
+        "projets/projet-nova/official/reference/statuts.md"
+      ],
+      "lacune": "Simulation de la représentation régionale et revue contradictoire du système électoral",
+      "mesure": "MATURITE_REDACTIONNELLE_MANUELLE"
+    },
+    {
+      "id": "CONSTITUTION",
+      "titre": "Constitution, lois et architecture normative",
+      "maximum": 15,
+      "points_estimes": 12,
+      "preuve_documentaire": [
+        "projets/projet-nova/official/reference/corpus.md",
+        "projets/projet-nova/DOCUMENT_CONTROL.md"
+      ],
+      "lacune": "Concordance externe, conflits normatifs, compétences effectives, juridiction et recours",
+      "mesure": "MATURITE_REDACTIONNELLE_MANUELLE"
+    },
+    {
+      "id": "SECTEURS",
+      "titre": "Services publics, économie et politiques sectorielles",
+      "maximum": 15,
+      "points_estimes": 9,
+      "preuve_documentaire": [
+        "projets/projet-nova/official/reference/programme.md"
+      ],
+      "lacune": "Mesures sectorielles chiffrées, priorités et indicateurs de continuité de services",
+      "mesure": "MATURITE_REDACTIONNELLE_MANUELLE"
+    },
+    {
+      "id": "FISCALITE",
+      "titre": "Fiscalité, finances et incidence des deux régimes",
+      "maximum": 20,
+      "points_estimes": 5,
+      "preuve_documentaire": [
+        "projets/projet-nova/etudes/P52A_FAISABILITE_FISCALE_DEUX_REGIMES.md",
+        "projets/projet-nova/etudes/P52B_METHODOLOGIE_SIMULATION_FISCALE.md",
+        "projets/projet-nova/etudes/P55M_NOTE_SOMHAC_RESERVES_CONVENTIONS_2024.md"
+      ],
+      "lacune": "Assiettes, taux, ressources récurrentes, charges municipales, incidence ménages, preuves d'économies et revue indépendante",
+      "mesure": "MATURITE_REDACTIONNELLE_MANUELLE"
+    },
+    {
+      "id": "TRANSITION",
+      "titre": "Transition, faisabilité et exécution opérationnelle",
+      "maximum": 10,
+      "points_estimes": 4,
+      "preuve_documentaire": [
+        "projets/projet-nova/official/reference/corpus.md",
+        "projets/projet-nova/etudes/P52A_FAISABILITE_FISCALE_DEUX_REGIMES.md"
+      ],
+      "lacune": "Échéancier avec dépendances, coût et maintien des fonctions fédérales et provinciales selon chaque scénario",
+      "mesure": "MATURITE_REDACTIONNELLE_MANUELLE"
+    },
+    {
+      "id": "EXPERTISE",
+      "titre": "Avis indépendants juridiques, comptables et techniques",
+      "maximum": 10,
+      "points_estimes": 0,
+      "preuve_documentaire": [
+        "projets/projet-nova/etudes/P55M_NOTE_SOMHAC_RESERVES_CONVENTIONS_2024.md"
+      ],
+      "lacune": "Rapports indépendants signés et vérification contradictoire sur pièces",
+      "mesure": "AUCUNE_ATTESTATION_INDEPENDANTE_VERIFIEE_DANS_LE_PERIMETRE"
+    },
+    {
+      "id": "ADOPTION",
+      "titre": "Consultations formelles et adoption démocratique",
+      "maximum": 5,
+      "points_estimes": 0,
+      "preuve_documentaire": [
+        "projets/projet-nova/official/reference/statuts.md",
+        "projets/projet-nova/README.md"
+      ],
+      "lacune": "Autorité légitime d'adoption, consultation documentée, autorisation électorale à vérifier séparément",
+      "mesure": "AUCUNE_ADOPTION_FORMELLE_ATTESTEE_DANS_LE_PERIMETRE"
+    }
+  ],
+  "portes_de_completion": [
+    {
+      "id": "FIN_BUDGET",
+      "statut": "NON_DEMONTRE",
+      "preuve": "Budgets décennaux renseignés et équilibrage ou déficit financé"
+    },
+    {
+      "id": "FIN_INC",
+      "statut": "NON_DEMONTRE",
+      "preuve": "Impacts distributifs et protection du pouvoir d'achat"
+    },
+    {
+      "id": "FIN_MUNICIPAL",
+      "statut": "NON_DEMONTRE",
+      "preuve": "Comptes municipaux et interorganismes rapprochés sans double compte"
+    },
+    {
+      "id": "SERVICES",
+      "statut": "NON_DEMONTRE",
+      "preuve": "Continuité sectorielle et emploi protégés avec coûts validés"
+    },
+    {
+      "id": "LEGAL",
+      "statut": "NON_DEMONTRE",
+      "preuve": "Compétences, conformité constitutionnelle et sécession vérifiées"
+    },
+    {
+      "id": "ELECTORAL",
+      "statut": "NON_DEMONTRE",
+      "preuve": "Système électoral simulé et audité indépendamment"
+    },
+    {
+      "id": "TRANSITION",
+      "statut": "NON_DEMONTRE",
+      "preuve": "Plan exécutable, budgets, risques et dépendances"
+    },
+    {
+      "id": "EXPERTS",
+      "statut": "NON_DEMONTRE",
+      "preuve": "Avis indépendants signés, résultats conciliés"
+    },
+    {
+      "id": "CONSULTATIONS",
+      "statut": "NON_DEMONTRE",
+      "preuve": "Consultations contradictoires et accessibles vérifiables"
+    },
+    {
+      "id": "ADOPTION",
+      "statut": "NON_DEMONTRE",
+      "preuve": "Approbation formelle de textes candidats et contrôle des versions"
+    }
+  ],
+  "priorites": [
+    {
+      "id": "N01",
+      "rang": 1,
+      "axe": "FISCALITE",
+      "priorite": "CRITIQUE",
+      "livrable": "Deux bilans à dix ans intégralement renseignés, Québec dans le Canada et Québec souverain hypothétique",
+      "preuve_acceptation": "Assiettes, recettes, charges, dettes, transferts, écart budgétaire et sensibilités sourcés, sans double compte",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "N02",
+      "rang": 2,
+      "axe": "FISCALITE",
+      "priorite": "CRITIQUE",
+      "livrable": "Étude des deux prélèvements et de l'incidence sur ménages et entreprises",
+      "preuve_acceptation": "Compétences, taux candidate étudiés, déciles et régions, limites anti-évasion et protections du pouvoir d'achat démontrés",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "N03",
+      "rang": 3,
+      "axe": "FISCALITE",
+      "priorite": "CRITIQUE",
+      "livrable": "Inventaire intergouvernemental, municipal et organismes sans économies fictives",
+      "preuve_acceptation": "Écritures entre entités, engagements, fonds affectés, sources officielles et frais de transition rapprochés",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "N04",
+      "rang": 4,
+      "axe": "TRANSITION",
+      "priorite": "CRITIQUE",
+      "livrable": "Séquence de transition pour les deux scénarios constitutionnels",
+      "preuve_acceptation": "Périodes, responsables, lois requises, droits, monnaie, frontières, dette, actifs, risques et continuité testés",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "N05",
+      "rang": 5,
+      "axe": "SECTEURS",
+      "priorite": "ELEVEE",
+      "livrable": "Programmes de santé, éducation, logement, sécurité, justice et infrastructures quantifiés",
+      "preuve_acceptation": "Indicateurs, coûts complets, effectifs maintenus, qualité et accès aux services, conséquences régionales",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "N06",
+      "rang": 6,
+      "axe": "CONSTITUTION",
+      "priorite": "ELEVEE",
+      "livrable": "Matrice de concordance juridique actualisée et mécanismes de recours",
+      "preuve_acceptation": "Normes candidates, compétences dans le Canada, jurisprudence de sécession, droits et avis d'experts",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "N07",
+      "rang": 7,
+      "axe": "INSTITUTIONS",
+      "priorite": "ELEVEE",
+      "livrable": "Simulations reproductibles du système électoral par circonscription et région",
+      "preuve_acceptation": "Scénarios réels et adversariaux, 127 sièges, deux tours et règles correctives analysés",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "N08",
+      "rang": 8,
+      "axe": "TRANSITION",
+      "priorite": "ELEVEE",
+      "livrable": "Plan opérationnel 0 à 180 jours, 1 à 3 ans et 4 à 10 ans",
+      "preuve_acceptation": "Dépendances, financement, priorités et arrêts sûrs, sans réduire brutalement les services",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "N09",
+      "rang": 9,
+      "axe": "EXPERTISE",
+      "priorite": "CRITIQUE",
+      "livrable": "Contre-expertises indépendantes juridique, comptable, constitutionnelle et technique",
+      "preuve_acceptation": "Mandats authentifiés, méthodologies, réserves, avis signés et corrections traçables",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "N10",
+      "rang": 10,
+      "axe": "ADOPTION",
+      "priorite": "ELEVEE",
+      "livrable": "Processus documenté de consultation publique accessible et protégé",
+      "preuve_acceptation": "Règles d'échantillonnage, avis contradictoires, accessibilité, protection des données et synthèses neutres",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "N11",
+      "rang": 11,
+      "axe": "ADOPTION",
+      "priorite": "ELEVEE",
+      "livrable": "Validation du statut légal du parti et du processus d'adoption",
+      "preuve_acceptation": "Vérification Élections Québec, dirigeants et représentants, règles financières et procès-verbaux, sans déclarer une autorisation inexistante",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "N12",
+      "rang": 12,
+      "axe": "VISION",
+      "priorite": "ELEVEE",
+      "livrable": "Réconciliation des études P52A–P55M avec le programme public candidat",
+      "preuve_acceptation": "Décisions explicites, provenance, versions et statut non adopté de toute nouvelle politique, puis cohérence complète des sections",
+      "statut": "OUVERT"
+    }
+  ],
+  "constats_non_ambigus": {
+    "programme_public_derniere_consolidation": "2026-08-26",
+    "programme_public_non_adopte": true,
+    "etudes_fiscales_p52a_non_adoptees": true,
+    "scenarios_fiscaux_a_distinguer": [
+      "QUEBEC_AU_SEIN_DU_CANADA",
+      "QUEBEC_SOUVERAIN_HYPOTHETIQUE"
+    ],
+    "deux_prelevements_proposes": [
+      "IMPOT_REVENUS_PERSONNES_ET_ENTREPRISES",
+      "MECANISME_ANTI_PARADIS_FISCAUX_A_DEFINIR"
+    ],
+    "taux_definitif_adopte": false,
+    "rendement_additionnel_anti_evasion_certifie": false,
+    "dossiers_preuves_fiscales_p52a_ouverts": 20,
+    "entrees_financieres_p52b_inconnues": 600,
+    "montants_incidence_p52d_inconnus": 720,
+    "rapports_originaux_p55h_actuels_verifies_sha": 0,
+    "mandats_independants_signes": 0,
+    "economies_certifiees_cad": null,
+    "estimation_est_une_mesure_officielle": false,
+    "autorisation_legale_parti_verifiee": false,
+    "programme_global_integralement_finance": false,
+    "main_fusionnee": false,
+    "sinjira_modifie": false
+  },
+  "references_reglementaires": [
+    {
+      "objet": "autorisation_parti_provincial",
+      "source": "https://www.electionsquebec.qc.ca/comprendre/comprendre-le-financement-politique/obtenir-le-droit-de-collecter-des-contributions-ou-de-faire-des-depenses/",
+      "portee": "L'autorisation électorale du parti reste à établir par preuve; n'atteste pas la qualité du programme"
+    },
+    {
+      "objet": "secession",
+      "source": "https://laws-lois.justice.gc.ca/fra/lois/C-31.8/section-2.html",
+      "portee": "Négociation et conditions légales à examiner; ne vaut pas opinion de constitutionnaliste"
+    },
+    {
+      "objet": "budget_quebec_2026_2027",
+      "source": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_PlanBudgetaire.pdf",
+      "portee": "Base publique à rapprocher; pas prévision budgétaire Nova"
+    }
+  ],
+  "protections": {
+    "pas_de_pourcentage_certifie": true,
+    "pas_de_scores_a_partir_nombre_commits": true,
+    "score_ne_vaut_pas_adoption": true,
+    "score_ne_vaut_pas_faisabilite": true,
+    "la_ci_ne_certifie_pas_un_plan_fiscal": true,
+    "toute_revalorisation_exige_une_preuve": true,
+    "aucune_abrogation_fiscale_automatique": true,
+    "aucun_taux_fiscal_sans_etude": true,
+    "tous_services_et_emplois_proteges": true,
+    "pouvoir_achat_prioritaire": true,
+    "ne_pas_confondre_deux_scenarios": true,
+    "aucune_economie_de_residu_comptable": true,
+    "pas_d_avis_professionnel_invente": true,
+    "aucune_demande_d_identites_personnelles": true,
+    "aucun_contact_externe": true,
+    "aucune_depense": true,
+    "pas_de_changement_sinjira": true,
+    "pas_de_fusion_main": true,
+    "no_go_automatique": true
+  },
+  "decision": "NO_GO_AUTOMATIQUE"
+}

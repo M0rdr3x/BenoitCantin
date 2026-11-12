@@ -1,0 +1,96 @@
+name: Projet Nova P54X - Reverification privee obligatoire des originaux
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54x.yml"
+      - "scripts/reverifier_originaux_avant_revue_nova_p54x.py"
+      - "scripts/tests/test_reverifier_originaux_avant_revue_nova_p54x.py"
+      - "scripts/qualifier_occurrences_privees_nova_p54w.py"
+      - "scripts/preparer_contextes_prives_nova_p54v.py"
+      - "scripts/reproduire_pdf_locaux_nova_p54q.py"
+      - "scripts/verifier_archive_publique_figee_nova_p54t.py"
+      - "projets/projet-nova/etudes/P54X_*"
+      - "projets/projet-nova/etudes/P54W_GRILLE_QUALIFICATION_HUMAINE_2024.json"
+      - "projets/projet-nova/etudes/P54V_REVUE_PRIVEE_CONTEXTES_2024.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controles-prives-synthetiques-sans-certificat:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout sans authentifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Parseur PDF historique
+        run: python -m pip install pypdf==5.9.0
+      - name: Executer 69 tests avec uniquement des PDF fictifs et des mocks explicites
+        run: |
+          python -m py_compile scripts/reverifier_originaux_avant_revue_nova_p54x.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",
+            pattern="test_reverifier_originaux_avant_revue_nova_p54x.py")
+          assert suite.countTestCases()==69,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Bilan initial sans originaux, signature ni avis reel
+        run: |
+          python scripts/reverifier_originaux_avant_revue_nova_p54x.py \
+            --bilan-public p54x_bilan_neutre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p54x_bilan_neutre.json").read_text("utf-8"))
+          assert len(r["occurrences"])==5
+          assert r["statuts_de_qualification"]=={"NON_EXAMINE":5}
+          assert r["copies_pdf_sha256_reverifiees"]==0
+          assert r["cinq_contextes_p54v_reconstruits"]==0
+          assert r["declarations_p54w_non_authentifiees"]==0
+          assert r["signatures_professionnelles_authentifiees"]==0
+          assert r["qualifications_humaines_certifiees"]==0
+          assert r["textes_ou_jetons_prives_publies"]==0
+          assert r["dossiers_p54e_ouverts"]==4
+          assert r["taches_p54n_non_attestees"]==40
+          assert r["blocages_p54o_non_leves"]==10
+          assert r["controles_p54b_non_attestes"]==96
+          assert r["controles_p54c_non_attestes"]==8
+          assert r["economies_certifiees_cad"] is None
+          assert r["pret_a_transmettre"] is False
+          assert r["cloture_automatique_autorisee"] is False
+          assert r["fusion_main_autorisee"] is False
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Aucune revue sans les quatre sources privees
+        run: |
+          set +e
+          python scripts/reverifier_originaux_avant_revue_nova_p54x.py \
+            --pdf-ville /tmp/document-absent.pdf
+          rc=$?
+          set -e
+          test "$rc" -eq 2
+      - name: Interdire toute cloture automatique
+        run: |
+          set +e
+          python scripts/reverifier_originaux_avant_revue_nova_p54x.py \
+            --exiger-cloture
+          rc=$?
+          set -e
+          test "$rc" -eq 3
+      - name: Ne publier que le bilan public neutre
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54x-originals-required-before-declared-review
+          path: p54x_bilan_neutre.json
+          if-no-files-found: ignore
+          retention-days: 7

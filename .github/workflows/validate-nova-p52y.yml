@@ -1,0 +1,78 @@
+name: Projet Nova P52Y - Passation aux autorites reelles et protection main
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p52y.yml"
+      - "scripts/auditer_passage_autorite_nova_p52y.py"
+      - "scripts/tests/test_auditer_passage_autorite_nova_p52y.py"
+      - "projets/projet-nova/etudes/P52Y_*"
+      - "projets/projet-nova/etudes/P52X_PRECONDITIONS_AUTORITE_ET_CONFIDENTIALITE.json"
+      - "projets/projet-nova/etudes/P52W_MATRICE_SELECTION_ET_GARDES_F09.json"
+      - "projets/projet-nova/etudes/P52V_REGISTRE_MISSION_F09.json"
+      - "projets/projet-nova/etudes/P52N_CAHIER_MANDATS_ET_CONSULTATION.json"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  transferts-non-autorises:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Lecture sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: 74 tests de refus et de dependances humaines
+        run: |
+          python -m py_compile scripts/auditer_passage_autorite_nova_p52y.py
+          python - <<'PY'
+          import unittest
+          cases=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_auditer_passage_autorite_nova_p52y.py")
+          assert cases.countTestCases()==74,cases.countTestCases()
+          out=unittest.TextTestRunner(verbosity=2).run(cases)
+          assert out.wasSuccessful()
+          PY
+      - name: Liste des 10 decisions operationnelles et etat NO_GO
+        run: |
+          python scripts/auditer_passage_autorite_nova_p52y.py --rapport p52y_bilan.json --export-csv p52y_actions_humaines_vierges.csv
+          python - <<'PY'
+          import csv,json
+          from pathlib import Path
+          d=json.loads(Path("p52y_bilan.json").read_text("utf-8"))
+          assert d["actions_pretes_pour_remise_non_executees"]==10
+          assert d["actions_mandat_non_executees"]==8
+          assert d["actions_protection_github_non_executees"]==2
+          assert d["decisions_attendues"]==4
+          assert d["main_protegee_au_constat"] is False
+          assert d["revues_humaines_PR_673_au_constat"]==0
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          with Path("p52y_actions_humaines_vierges.csv").open(encoding="utf-8") as h:
+            rows=list(csv.reader(h))
+          assert len(rows)==11
+          assert all(row[7:]==["","","","",""] for row in rows[1:])
+          PY
+      - name: Refuser une habilitation humaine non obtenue
+        run: |
+          set +e
+          python scripts/auditer_passage_autorite_nova_p52y.py --exiger-autorisations --rapport p52y_strict_no_go.json
+          status=$?
+          set -e
+          test "$status" -eq 3
+      - name: Rapports agreges et grille vierge uniquement
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52y-passation-humaine-vierge-no-go
+          path: |
+            p52y_bilan.json
+            p52y_actions_humaines_vierges.csv
+            p52y_strict_no_go.json
+          retention-days: 7
+          if-no-files-found: ignore

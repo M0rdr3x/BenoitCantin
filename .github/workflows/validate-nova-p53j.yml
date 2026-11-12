@@ -1,0 +1,69 @@
+name: Projet Nova P53J - Triage probatoire des contreparties municipales
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p53j.yml"
+      - "scripts/auditer_appariements_municipaux_nova_p53j.py"
+      - "scripts/tests/test_auditer_appariements_municipaux_nova_p53j.py"
+      - "projets/projet-nova/etudes/P53J_*"
+      - "projets/projet-nova/etudes/P53I_SOURCES_REVISION_ET_CHARGES_2024.json"
+      - "projets/projet-nova/etudes/P53H_PRIORITES_VERIFICATION_2024.json"
+      - "projets/projet-nova/etudes/sources/P53I_MAMH_2024_1344_RECETTES_CHARGES_SELECTION.csv"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  triage-sans-elimination:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Tests de provenance, 25 priorites, 1344 declarations et refus
+        run: |
+          python -m py_compile scripts/auditer_appariements_municipaux_nova_p53j.py
+          python - <<'PY'
+          import unittest
+          suite = unittest.defaultTestLoader.discover(
+            "scripts/tests", pattern="test_auditer_appariements_municipaux_nova_p53j.py")
+          assert suite.countTestCases() == 22, suite.countTestCases()
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Journal audit 2024 sans contrepartie attribuee
+        run: |
+          python scripts/auditer_appariements_municipaux_nova_p53j.py --rapport p53j_bilan.json --export-csv p53j_journal_1344.csv
+          python - <<'PY'
+          import csv, json
+          from pathlib import Path
+          d = json.loads(Path("p53j_bilan.json").read_text(encoding="utf-8"))
+          with Path("p53j_journal_1344.csv").open(encoding="utf-8", newline="") as f:
+              j = list(csv.DictReader(f))
+          assert len(j) == 1344
+          assert d["priorites_p53h_controlees"] == 25
+          assert d["eliminations_comptables_certifiees_cad"] is None
+          assert d["decision"] == "NO_GO_AUTOMATIQUE"
+          assert all(not r["montant_eliminable_certifie_cad"] for r in j)
+          PY
+      - name: Refus obligatoire sans justificatifs bilateraux
+        run: |
+          set +e
+          python scripts/auditer_appariements_municipaux_nova_p53j.py --exiger-appariements --rapport p53j_refus.json
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Conserver seulement le bilan de controle, pas le journal integral
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p53j-triage-1344-non-apparie-no-go
+          path: |
+            p53j_bilan.json
+            p53j_refus.json
+          if-no-files-found: ignore
+          retention-days: 7

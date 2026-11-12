@@ -1,0 +1,49 @@
+name: Projet Nova P56D - Consolidation des flux municipaux
+on:
+  pull_request:
+    paths:
+      - 'scripts/consolider_flux_interentites_nova_p56d.py'
+      - 'scripts/tests/test_consolider_flux_interentites_nova_p56d.py'
+      - 'projets/projet-nova/etudes/P56D_*'
+      - '.github/workflows/validate-nova-p56d.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controle-p56d:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tester consolidation anti-fausse economie P56D
+        run: python -m unittest discover -s scripts/tests -p 'test_consolider_flux_interentites_nova_p56d.py' -v
+      - name: Verifier le registre de 18 obligations sans chiffres inventes
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('projets/projet-nova/etudes/P56D_REGISTRE_OBLIGATIONS_MUNICIPALES_SOCIALES_ET_SERVICES.json').read_text(encoding='utf-8'))
+          assert d['schema_version']=='P56D-OBLIGATIONS-1'
+          assert d['nombre_obligations']==18 and len(d['lignes'])==18
+          assert len({i['id'] for i in d['lignes']})==18
+          assert all(i['montant_justifie_mcad'] is None and i['statut']=='NON_DEMONTRE' and i['suppression_ou_transfert_automatique_autorise'] is False for i in d['lignes'])
+          assert d['transferts_fiscaux_municipaux_budget_2026_27']['admissible_comme_economie_nova'] is False
+          assert d['decision']=='NO_GO_AUTOMATIQUE'
+          PY
+      - name: Verifier les deux perimetres sans gains Nova
+        shell: bash
+        run: |
+          python scripts/consolider_flux_interentites_nova_p56d.py --entree projets/projet-nova/etudes/P56D_EXEMPLE_FICTIF_FLUX_INTERENTITES_2026_2027.json | python -c 'import json,sys; d=json.load(sys.stdin); a=d["vues"]["ETAT_QUEBEC_FICTIF_NON_OFFICIEL"]; b=d["vues"]["SECTEUR_PUBLIC_QC_ELARGI_FICTIF_NON_OFFICIEL"]; assert a["solde_arithmetique_fictif_mcad"]=="-115.00" and b["solde_arithmetique_fictif_mcad"]=="83.00" and b["economies_reelles_certifiees_mcad"] is None and d["elimination_transferts_egale_economie"] is False and d["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Refuser toute faisabilite automatique
+        shell: bash
+        run: |
+          set +e
+          python scripts/consolider_flux_interentites_nova_p56d.py --entree projets/projet-nova/etudes/P56D_EXEMPLE_FICTIF_FLUX_INTERENTITES_2026_2027.json --exiger-faisabilite
+          code=$?
+          set -e
+          test "$code" -eq 3

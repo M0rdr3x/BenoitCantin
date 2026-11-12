@@ -1,0 +1,258 @@
+{
+  "schema_version": "P52Q-SOURCES-1",
+  "jalon": "P52Q",
+  "date_consultation": "2026-10-19",
+  "statut": "REFERENCES_OFFICIELLES_CONSULTEES_SANS_ARCHIVE_ORIGINALE",
+  "sources": [
+    {
+      "id": "Q01",
+      "titre": "Loi constitutionnelle de 1867, article 92",
+      "url": "https://laws-lois.justice.gc.ca/fra/const/section-92.html?wbdisable=true",
+      "preuves_associees": [
+        "F01",
+        "F02"
+      ],
+      "nature": "TEXTE_OFFICIEL_HTML",
+      "version_visible_au_moment_de_consultation": "ARTICLE_92",
+      "statut_reperage": "CONSULTE_SOURCE_OFFICIELLE_EN_LIGNE",
+      "avertissement_limites": "La taxation directe provinciale ne vaut pas pouvoir de suppression du régime fédéral",
+      "copie_originale_hors_git_obtenue": false,
+      "sha256_octets_origine": null,
+      "verification_version_par_second_lecteur": false,
+      "interpretation_par_expert_independant": false,
+      "certification_origine_documentaire": false,
+      "preuve_F01_F20_certifiee": false
+    },
+    {
+      "id": "Q02",
+      "titre": "Loi constitutionnelle de 1867, article 91",
+      "url": "https://laws-lois.justice.gc.ca/fra/const/section-91.html",
+      "preuves_associees": [
+        "F01",
+        "F02",
+        "F03"
+      ],
+      "nature": "TEXTE_OFFICIEL_HTML",
+      "version_visible_au_moment_de_consultation": "ARTICLE_91",
+      "statut_reperage": "CONSULTE_SOURCE_OFFICIELLE_EN_LIGNE",
+      "avertissement_limites": "La fiscalité et les échanges fédéraux doivent être examinés séparément",
+      "copie_originale_hors_git_obtenue": false,
+      "sha256_octets_origine": null,
+      "verification_version_par_second_lecteur": false,
+      "interpretation_par_expert_independant": false,
+      "certification_origine_documentaire": false,
+      "preuve_F01_F20_certifiee": false
+    },
+    {
+      "id": "Q03",
+      "titre": "Loi sur la taxe de vente du Québec T-0.1",
+      "url": "https://www.legisquebec.gouv.qc.ca/fr/document/lc/T-0.1/20260101?langCont=fr",
+      "preuves_associees": [
+        "F01",
+        "F07"
+      ],
+      "nature": "TEXTE_OFFICIEL_VERSION_DATEE",
+      "version_visible_au_moment_de_consultation": "2026-01-01",
+      "statut_reperage": "CONSULTE_SOURCE_OFFICIELLE_EN_LIGNE",
+      "avertissement_limites": "Version affichée 2026-01-01; actualiser la version applicable avant de proposer un article de loi",
+      "copie_originale_hors_git_obtenue": false,
+      "sha256_octets_origine": null,
+      "verification_version_par_second_lecteur": false,
+      "interpretation_par_expert_independant": false,
+      "certification_origine_documentaire": false,
+      "preuve_F01_F20_certifiee": false
+    },
+    {
+      "id": "Q04",
+      "titre": "Loi sur la taxe d'accise fédérale E-15 (TPS)",
+      "url": "https://laws-lois.justice.gc.ca/fra/lois/E-15/index.html",
+      "preuves_associees": [
+        "F02",
+        "F07"
+      ],
+      "nature": "TEXTE_OFFICIEL_FEDERAL",
+      "version_visible_au_moment_de_consultation": "2026-09-21",
+      "statut_reperage": "CONSULTE_SOURCE_OFFICIELLE_EN_LIGNE",
+      "avertissement_limites": "Version fédérale consultée; questions d'administration et d'entente restent à analyser",
+      "copie_originale_hors_git_obtenue": false,
+      "sha256_octets_origine": null,
+      "verification_version_par_second_lecteur": false,
+      "interpretation_par_expert_independant": false,
+      "certification_origine_documentaire": false,
+      "preuve_F01_F20_certifiee": false
+    },
+    {
+      "id": "Q05",
+      "titre": "Tarif des douanes, loi fédérale C-54.011",
+      "url": "https://www.laws-lois.justice.gc.ca/fra/lois/C-54.011/index.html",
+      "preuves_associees": [
+        "F03"
+      ],
+      "nature": "TEXTE_OFFICIEL_FEDERAL",
+      "version_visible_au_moment_de_consultation": "2026-09-21",
+      "statut_reperage": "CONSULTE_SOURCE_OFFICIELLE_EN_LIGNE",
+      "avertissement_limites": "Interdit de présenter les contre-tarifs provinciaux comme un pouvoir canadien transféré",
+      "copie_originale_hors_git_obtenue": false,
+      "sha256_octets_origine": null,
+      "verification_version_par_second_lecteur": false,
+      "interpretation_par_expert_independant": false,
+      "certification_origine_documentaire": false,
+      "preuve_F01_F20_certifiee": false
+    },
+    {
+      "id": "Q06",
+      "titre": "Loi sur la fiscalité municipale F-2.1",
+      "url": "https://www.legisquebec.gouv.qc.ca/fr/ShowDoc/cs/F-2.1",
+      "preuves_associees": [
+        "F04",
+        "F07"
+      ],
+      "nature": "TEXTE_OFFICIEL_MUNICIPAL",
+      "version_visible_au_moment_de_consultation": "2026-02-23",
+      "statut_reperage": "CONSULTE_SOURCE_OFFICIELLE_EN_LIGNE",
+      "avertissement_limites": "Les compétences, taxes foncières, exemptions et compensations doivent être distinguées",
+      "copie_originale_hors_git_obtenue": false,
+      "sha256_octets_origine": null,
+      "verification_version_par_second_lecteur": false,
+      "interpretation_par_expert_independant": false,
+      "certification_origine_documentaire": false,
+      "preuve_F01_F20_certifiee": false
+    },
+    {
+      "id": "Q07",
+      "titre": "Rapports financiers des organismes municipaux, MAMH",
+      "url": "https://www.quebec.ca/gouvernement/gestion-municipale/finances-fiscalite-municipales/information-financiere/publications-financieres/rapport-financier",
+      "preuves_associees": [
+        "F04",
+        "F07"
+      ],
+      "nature": "DONNEES_PUBLIQUES_DOCUMENTEES",
+      "version_visible_au_moment_de_consultation": "2024_PUBLICATIONS",
+      "statut_reperage": "CONSULTE_SOURCE_OFFICIELLE_EN_LIGNE",
+      "avertissement_limites": "Les rapports 2024 sont présentés; la base ouverte évolue, extractions et périmètres doivent être figés",
+      "copie_originale_hors_git_obtenue": false,
+      "sha256_octets_origine": null,
+      "verification_version_par_second_lecteur": false,
+      "interpretation_par_expert_independant": false,
+      "certification_origine_documentaire": false,
+      "preuve_F01_F20_certifiee": false
+    },
+    {
+      "id": "Q08",
+      "titre": "Loi sur l'administration fiscale A-6.002",
+      "url": "https://www.legisquebec.gouv.qc.ca/fr/document/lc/A-6.002/20260401",
+      "preuves_associees": [
+        "F07",
+        "F20"
+      ],
+      "nature": "TEXTE_OFFICIEL_VERSION_DATEE",
+      "version_visible_au_moment_de_consultation": "2026-04-01",
+      "statut_reperage": "CONSULTE_SOURCE_OFFICIELLE_EN_LIGNE",
+      "avertissement_limites": "Distinguer définitions fiscales, procédures, secret et contestations",
+      "copie_originale_hors_git_obtenue": false,
+      "sha256_octets_origine": null,
+      "verification_version_par_second_lecteur": false,
+      "interpretation_par_expert_independant": false,
+      "certification_origine_documentaire": false,
+      "preuve_F01_F20_certifiee": false
+    },
+    {
+      "id": "Q09",
+      "titre": "Loi sur la consultation populaire C-64.1",
+      "url": "https://www.legisquebec.gouv.qc.ca/fr/document/lc/C-64.1",
+      "preuves_associees": [
+        "F19"
+      ],
+      "nature": "TEXTE_OFFICIEL_REFERENDAIRE",
+      "version_visible_au_moment_de_consultation": "2026-02-23",
+      "statut_reperage": "CONSULTE_SOURCE_OFFICIELLE_EN_LIGNE",
+      "avertissement_limites": "Un mécanisme référendaire existe; sa légalité et pertinence pour la mesure sont à démontrer",
+      "copie_originale_hors_git_obtenue": false,
+      "sha256_octets_origine": null,
+      "verification_version_par_second_lecteur": false,
+      "interpretation_par_expert_independant": false,
+      "certification_origine_documentaire": false,
+      "preuve_F01_F20_certifiee": false
+    },
+    {
+      "id": "Q10",
+      "titre": "Loi sur l'accès aux documents des organismes publics et sur la protection des renseignements personnels A-2.1",
+      "url": "https://www.legisquebec.gouv.qc.ca/fr/document/lc/A-2.1?langCont=fr",
+      "preuves_associees": [
+        "F20"
+      ],
+      "nature": "TEXTE_OFFICIEL_SECTEUR_PUBLIC",
+      "version_visible_au_moment_de_consultation": "2026-02-23",
+      "statut_reperage": "CONSULTE_SOURCE_OFFICIELLE_EN_LIGNE",
+      "avertissement_limites": "L'applicabilité suppose le statut juridique de l'organisme et des données",
+      "copie_originale_hors_git_obtenue": false,
+      "sha256_octets_origine": null,
+      "verification_version_par_second_lecteur": false,
+      "interpretation_par_expert_independant": false,
+      "certification_origine_documentaire": false,
+      "preuve_F01_F20_certifiee": false
+    },
+    {
+      "id": "Q11",
+      "titre": "Loi sur la protection des renseignements personnels dans le secteur privé P-39.1",
+      "url": "https://www.legisquebec.gouv.qc.ca/fr/document/lc/p-39.1",
+      "preuves_associees": [
+        "F20"
+      ],
+      "nature": "TEXTE_OFFICIEL_SECTEUR_PRIVE",
+      "version_visible_au_moment_de_consultation": "2026-02-23",
+      "statut_reperage": "CONSULTE_SOURCE_OFFICIELLE_EN_LIGNE",
+      "avertissement_limites": "Ne pas l'appliquer automatiquement à toutes les opérations d'un parti ou d'une organisation",
+      "copie_originale_hors_git_obtenue": false,
+      "sha256_octets_origine": null,
+      "verification_version_par_second_lecteur": false,
+      "interpretation_par_expert_independant": false,
+      "certification_origine_documentaire": false,
+      "preuve_F01_F20_certifiee": false
+    },
+    {
+      "id": "Q12",
+      "titre": "Budget Québec 2026-2027 — Plan budgétaire, tableau F.2",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_PlanBudgetaire.pdf",
+      "preuves_associees": [
+        "F09"
+      ],
+      "nature": "DOCUMENT_BUDGETAIRE_P52J",
+      "version_visible_au_moment_de_consultation": "2026-03-18",
+      "statut_reperage": "IDENTIFIE_ET_RELUE_ASSISTEE_P52J",
+      "avertissement_limites": "Prévisions P52J; copie originale non archivée et concordance externe non signée",
+      "copie_originale_hors_git_obtenue": false,
+      "sha256_octets_origine": null,
+      "verification_version_par_second_lecteur": false,
+      "interpretation_par_expert_independant": false,
+      "certification_origine_documentaire": false,
+      "preuve_F01_F20_certifiee": false
+    },
+    {
+      "id": "Q13",
+      "titre": "Budget Québec 2026-2027 — Discours, tableau 3",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_Discours.pdf",
+      "preuves_associees": [
+        "F09"
+      ],
+      "nature": "DOCUMENT_BUDGETAIRE_P52J",
+      "version_visible_au_moment_de_consultation": "2026-03-18",
+      "statut_reperage": "IDENTIFIE_ET_RELUE_ASSISTEE_P52J",
+      "avertissement_limites": "Prévisions P52J; aucune certification des finances Nova ni réalisation budgétaire",
+      "copie_originale_hors_git_obtenue": false,
+      "sha256_octets_origine": null,
+      "verification_version_par_second_lecteur": false,
+      "interpretation_par_expert_independant": false,
+      "certification_origine_documentaire": false,
+      "preuve_F01_F20_certifiee": false
+    }
+  ],
+  "sources_nouvelles_ajoutees_a_p52p_sans_pretendre_revision_p52p": 13,
+  "originals_archives_certifies": 0,
+  "expertises_independantes_obtenues": 0,
+  "statut_versions_légales_a_reverifier": true,
+  "lecture_original_pdf_reproduite_dans_ce_jalon": false,
+  "publication_autorisee": false,
+  "fusion_autorisee": false,
+  "decision": "NO_GO_AUTOMATIQUE"
+}

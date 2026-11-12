@@ -1,0 +1,79 @@
+name: Projet Nova P53G - couverture 1343 organismes municipaux 2024
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p53g.yml"
+      - "scripts/valider_couverture_organismes_nova_p53g.py"
+      - "scripts/tests/test_valider_couverture_organismes_nova_p53g.py"
+      - "projets/projet-nova/etudes/P53G_*"
+      - "projets/projet-nova/etudes/sources/P53G_*"
+      - "projets/projet-nova/etudes/P53E_PREUVES_HISTORIQUES_MUNICIPALES.json"
+      - "projets/projet-nova/etudes/sources/P53E_MAMH_2024_MUNICIPALITES_LOCALES_SELECTION.csv"
+      - "projets/projet-nova/etudes/P53F_FLUX_INTERADMIN_2024.json"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verifier-perimetres-sans-consolidation-inventee:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Lecture seule des fichiers avec identifiants absents
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: 87 tests de perimetre, source exacte et refus de fausse consolidation
+        run: |
+          python -m py_compile scripts/valider_couverture_organismes_nova_p53g.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_valider_couverture_organismes_nova_p53g.py")
+          assert suite.countTestCases()==87,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Reproduire 1343 rapprochements et cinq groupes bruts
+        run: |
+          python scripts/valider_couverture_organismes_nova_p53g.py --rapport p53g_bilan.json --export-csv p53g_cinq_groupes_2024.csv
+          python - <<'PY'
+          import csv,json
+          from pathlib import Path
+          d=json.loads(Path("p53g_bilan.json").read_text(encoding="utf-8"))
+          assert d["organismes_denombrables"]==1343
+          assert d["municipalites_locales"]==1094
+          assert d["mrc_regies_transport_communautes"]==249
+          assert d["enveloppe_recettes_brutes_CAD"]==41663676586
+          assert d["quotes_et_transferts_exposition_brute_CAD"]==10864282201
+          assert d["reconciliations_des_12_postes_par_organisme"]==1343
+          assert d["recettes_consolidees_interorganismes_certifiees"] is False
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          with Path("p53g_cinq_groupes_2024.csv").open(encoding="utf-8") as f:
+            lines=list(csv.reader(f))
+          assert len(lines)==6
+          assert all(row[-1]=="" for row in lines[1:])
+          PY
+      - name: Interdire de certifier une consolidation absente
+        run: |
+          set +e
+          python scripts/valider_couverture_organismes_nova_p53g.py --exiger-consolidation --rapport p53g_non_consolide.json
+          status=$?
+          set -e
+          test "$status" -eq 3
+      - name: Publier uniquement les rapports historiques agreges non certifies
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p53g-1343-organismes-comptes-bruts-no-go
+          path: |
+            p53g_bilan.json
+            p53g_cinq_groupes_2024.csv
+            p53g_non_consolide.json
+          retention-days: 7
+          if-no-files-found: ignore

@@ -1,0 +1,94 @@
+name: Projet Nova P55J - Consolidation et pont fiscal 2024
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p55j.yml"
+      - "scripts/rapprocher_perimetres_et_conciliation_nova_p55j.py"
+      - "scripts/tests/test_rapprocher_perimetres_et_conciliation_nova_p55j.py"
+      - "scripts/rapprocher_sommaire_budgetaire_nova_p55i.py"
+      - "scripts/acquerir_pdfs_publics_nova_p55h.py"
+      - "scripts/controler_integrite_pieces_nova_p55g.py"
+      - "projets/projet-nova/etudes/P55J_*"
+      - "projets/projet-nova/etudes/P55I_*"
+      - "projets/projet-nova/etudes/P55H_*"
+      - "projets/projet-nova/etudes/P54Q_*"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controle-pont-fiscal-et-perimetre-sans-certification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout en lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Installer parseur PDF de la chaine amont sans ouvrir les rapports publics
+        run: python -m pip install pypdf==5.9.0
+      - name: Exécuter 75 tests sur les 8 postes et le pont fiscal
+        run: |
+          python -m py_compile scripts/rapprocher_perimetres_et_conciliation_nova_p55j.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_rapprocher_perimetres_et_conciliation_nova_p55j.py")
+          assert suite.countTestCases()==75,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Calculer uniquement les tableaux financiers publics neutres
+        run: |
+          python scripts/rapprocher_perimetres_et_conciliation_nova_p55j.py \
+            --bilan-public p55j_bilan_public.json --table-public p55j_table_public.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          b=json.loads(Path("p55j_bilan_public.json").read_text("utf-8"))
+          t=json.loads(Path("p55j_table_public.json").read_text("utf-8"))
+          assert b["schema_version"]=="P55J-BILAN-PUBLIC-1"
+          assert t["schema_version"]=="P55J-TABLE-PUBLIQUE-1"
+          assert b["pages_officielles_controlees_visuellement"]==2
+          assert b["copies_pdf_verifiees_par_sha_actuel"]==0
+          assert len(t["lignes"])==8
+          assert b["ecart_recettes_consolidation_derive_cad"]==-176548476
+          assert b["ecart_charges_consolidation_derive_cad"]==-178606212
+          assert b["ecart_resultat_consolidation_derive_cad"]==2057736
+          assert b["excedent_fonctionnement_a_fins_fiscales_consolide_cad"]==129335957
+          assert b["residus_expliques_et_attestes_par_expert"]==0
+          assert b["excedent_fiscal_equivaut_economie_certifiee"] is False
+          assert b["excedent_fiscal_equivaut_tresorerie_libre"] is False
+          assert b["ecarts_consolidation_equivalent_eliminations_certifiees"] is False
+          assert b["economies_certifiees_cad"] is None
+          assert b["decision"]=="NO_GO_AUTOMATIQUE"
+          assert t["statut_residus"]=="DIFFERENCES_ARITHMETIQUES_A_QUALIFIER_NON_ECONOMIES"
+          assert len(t["etapes_humaines"])==4
+          assert sum(x["residu_consolidation_cad"] for x in t["lignes"] if
+                     x["code"] in ("REVENUS_FONCTIONNEMENT",
+                     "REVENUS_INVESTISSEMENT")) == -176548476
+          assert b["transmission_externe_autorisee"] is False
+          assert b["fusion_main_autorisee"] is False
+          for document in (b,t):
+              content=json.dumps(document,ensure_ascii=False)
+              assert "sha256" not in content and "offset_texte" not in content
+          PY
+      - name: Refuser clôture automatique ou certification par programmation
+        run: |
+          set +e
+          python scripts/rapprocher_perimetres_et_conciliation_nova_p55j.py --exiger-cloture
+          status=$?
+          set -e
+          test "$status" -eq 3
+      - name: Archiver le bilan et la table publiques seulement
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p55j-rapprochement-consolidation-public
+          path: |
+            p55j_bilan_public.json
+            p55j_table_public.json
+          retention-days: 7

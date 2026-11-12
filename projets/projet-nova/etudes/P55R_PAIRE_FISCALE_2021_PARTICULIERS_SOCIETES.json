@@ -1,0 +1,170 @@
+{
+  "schema_version": "P55R-1",
+  "date_reference": "2026-11-05",
+  "objectif": "PAIRE_ANNEE_IMPOSITION_2021_PARTICULIERS_ET_SOCIETES_NON_ASSIETTE_FISCALE_NOVA",
+  "statut": "ETUDE_CANDIDATE_NON_ADOPTEE",
+  "sources": {
+    "particuliers_2021": {
+      "url_table_historique": "https://www.budget.finances.gouv.qc.ca/Budget/outils/statistiques-fiscales/somm-evo-historique.asp",
+      "url_rapport_2021": "https://www.budget.finances.gouv.qc.ca/Budget/outils/statistiques-fiscales/documents/STAFR_sfp_2021.pdf",
+      "annee_imposition": 2021,
+      "date_depot_rapport": "2025-02",
+      "tableaux": [
+        "A.8_COMPOSANTES_2021",
+        "A.16_CONTRIBUABLES_2021",
+        "A.17_EVOLUTION_HISTORIQUE_2021"
+      ],
+      "preuve": "TEXTE_HTML_ET_PDF_OFFICIEL_CAPTURE_PDF_WEB_ECHOUEE_AUCUN_SHA_ACTUEL"
+    },
+    "societes_2021": {
+      "url": "https://www.quebec.ca/gouvernement/finances-publiques/revenus/donnees-fiscales/statistiques-fiscales-societes",
+      "annee_imposition": 2021,
+      "preuve": "PAGE_HTML_OFFICIELLE_DERNIERE_MISE_A_JOUR_2026_10_07_SANS_SHA_PDF"
+    }
+  },
+  "particuliers_2021": {
+    "revenu_total_mcad": 383335,
+    "deductions_agregees_mcad": 49437,
+    "revenu_imposable_mcad": 333898,
+    "impot_sur_revenu_imposable_mcad": 58651,
+    "credits_non_remboursables_pour_rapprochement_mcad": 20148,
+    "impot_a_payer_mcad": 38503,
+    "credits_remboursables_mcad": 14118,
+    "impot_apres_credits_remboursables_mcad": 24384,
+    "credit_exceptionnel_cout_vie_2021_mcad_approx": 7100,
+    "credit_exceptionnel_est_approx": true,
+    "declarations_milliers": 6975,
+    "non_imposables_milliers": 2052,
+    "non_imposables_pct_publie": "29.4",
+    "unite_statistique": "M_CAD_ET_MILLIERS_DE_DECLARATIONS"
+  },
+  "societes_2021": {
+    "revenu_imposable_quebec_mcad": 95784,
+    "revenu_imposable_mondial_mcad": 231518,
+    "impot_revenu_quebec_mcad": 10000,
+    "cotisations_fss_mcad": 5327,
+    "impots_cotisations_totaux_mcad": 15327,
+    "credits_impot_mcad": 2468,
+    "nets_credits_mcad": 12860,
+    "declarations": 564599,
+    "societes_non_imposees_revenu": 322020,
+    "societes_sans_impot_ni_cotisation_fss": 239628,
+    "petites_declarations": 542249,
+    "moyennes_declarations": 14858,
+    "grandes_declarations": 7492,
+    "petites_impots_cotisations_mcad": 4095,
+    "moyennes_impots_cotisations_mcad": 2560,
+    "grandes_impots_cotisations_mcad": 8672,
+    "part_grandes_impots_cotisations_pct_publie": "56.6",
+    "non_imposees_revenu_pct_publie": "57.0",
+    "societes_sans_impots_et_fss_pct_publie": "42.4",
+    "unite_statistique": "M_CAD_ET_NOMBRE_DE_DECLARATIONS"
+  },
+  "rapprochements_autorises": {
+    "impot_personnes_net_arrondi_mcad_tolerance": 1,
+    "impots_societes_nets_arrondi_mcad_tolerance": 1,
+    "declarations_personnes_en_milliers_arrondis": true,
+    "comparaison_2021_meme_annee": {
+      "annee_commune_observee": 2021,
+      "annees_2023_particuliers_recentes_disponibles": true,
+      "particuliers_revenu_imposable_2023_mcad": 372261,
+      "particuliers_delta_2021_a_2023_mcad": 38363,
+      "particuliers_variation_deux_ans_pct_une_decimale": "11.5",
+      "annee_commune_est_base_fiscale_harmonisee": false,
+      "assiette_proposee_nova_mcad": null,
+      "assiette_combinee_validee_mcad": null,
+      "taux_nova_propose_pct": null,
+      "recettes_anti_paradis_certifiees_mcad": null,
+      "p52b_inconnues_restantes": 600,
+      "p55n_completude_estimee_pct": 53,
+      "credits_exceptionnels_2021_recurrents_presumes": false,
+      "financement_deux_prelevements_demontre": false,
+      "incidence_pouvoir_achat_demontree": false,
+      "statut": "NO_GO_AUTOMATIQUE"
+    }
+  },
+  "actions_preuves_humaines": [
+    {
+      "id": "R01",
+      "objet": "DEFINIR_BASE_DE_REVENU_HARMONISEE_POUR_DEUX_TYPES_DE_CONTRIBUABLES",
+      "preuve": "CLASSIFICATION_PERSONNES_ENTREPRISES_GAINS_PRESTATIONS_CREDITS_ET_LOIS",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "R02",
+      "objet": "MESURER_PROTECTION_MINIMUM_VITAL_POUR_LES_MENAGES",
+      "preuve": "DONNEES_PAR_TRANCHE_REGION_ET_COMPOSITION_FAMILIALE",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "R03",
+      "objet": "MESURER_DIVERSITE_DES_PETITES_SOCIETES_ET_DES_PERTES",
+      "preuve": "REPARTITION_CHIFFRE_AFFAIRES_BENEFICES_PERTES_CREDITS_TAILLE",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "R04",
+      "objet": "ISOLER_COTISATIONS_FSS_ET_CREDITS_EXCEPTIONNELS",
+      "preuve": "INCIDENCE_ET_COUTS_DE_REMPLACEMENT_DES_FINANCEMENTS_CONCERNES",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "R05",
+      "objet": "ACTUALISER_LES_ASSIETTES_AU_MILLESIME_RECENT",
+      "preuve": "STATISTIQUES_COMPARABLES_2023_ET_PLUS_DES_SOCIETES_AVEC_COUVERTURE_IDENTIQUE",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "R06",
+      "objet": "EVALUER_LA_CAPACITE_DEUX_REGIMES_A_FINANCER_TOUS_LES_SERVICES",
+      "preuve": "PROJECTIONS_DETAILLEES_P52B_DEUX_SCENARIOS_ET_CONTRE_EXPERTISE",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "R07",
+      "objet": "AUDITER_INCIDENTE_DES_MENAGES_ET_DES_ENTREPRISES",
+      "preuve": "SIMULATION_REVENUS_DISPONIBLES_NETS_PAR_REGION_ET_DECILE",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "R08",
+      "objet": "EXAMINER_COMPETENCES_FISCALES_ET_TRANSITION",
+      "preuve": "AVIS_INDEPENDANTS_DROIT_FISCAL_CONSTITUTIONNEL_ET_INTERNATIONAL",
+      "statut": "OUVERT"
+    }
+  ],
+  "protections": {
+    "ANNEE_COMMUNE_OBSERVEE_2021_MAIS_REGIMES_FISCAUX_DISTINCTS": true,
+    "IMPOTS_FEDERAUX_ET_MUNICIPAUX_NON_INCLUS": true,
+    "ASSIETTES_PERSONNES_ET_SOCIETES_NON_FUSIONNEES": true,
+    "PAS_D_ASSIETTE_COMMUNE_NOVA_SANS_NOUVELLE_LOI": true,
+    "ANNEE_2021_NON_PROJECTION_2027_2036": true,
+    "PERSONNES_2023_PRESENTEES_SEPAREMENT": true,
+    "CREDITS_REMBOURSABLES_2021_EXCEPTIONNELS_NON_RECURRANTS": true,
+    "CREDITS_NON_REMBOURSABLES_DISTINCTS": true,
+    "IMPOT_SOCIETES_DISTINCT_COTISATIONS_FSS": true,
+    "TAUX_MOYEN_HISTORIQUE_NON_TAUX_CANDIDAT": true,
+    "PROPORTIONS_NON_IMPOSEES_NE_DONNENT_PAS_ASSIETTE_NOUVELLE": true,
+    "GRANDES_SOCIETES_CONCENTRATION_NE_JUSTIFIE_PAS_TAUX_FIXE": true,
+    "ARRONDIS_SEPARATEMENT_AVEC_TOLERANCE_UN_MILLION": true,
+    "PROTEGER_MINIMUM_VITAL_MENAGES": true,
+    "PROTEGER_RETRAITES_ET_PRESTATIONS": true,
+    "PROTEGER_PETITES_ENTREPRISES_ET_EMPLOIS": true,
+    "ASSIETTES_MULTINATIONALES_A_ETUDIER_SANS_ASSUMER_REVENUS": true,
+    "DEUX_SCENARIOS_CONSTITUTIONNELS_DISTINCTS": true,
+    "FONDS_AFFECTES_ET_SERVICE_DETTE_INTACTS": true,
+    "600_ENTREES_P52B_INCONNUES": true,
+    "P55Q_2021_2023_ETUDES_HISTORIQUES_CONSERVEES": true,
+    "P55N_SCORE_53_INCHANGE_SANS_VALIDATION": true,
+    "AUCUN_NOUVEAU_TAUX_CADRE_FISCAL_ADOPTE": true,
+    "AUCUNE_ECONOMIE_CERTIFIEE": true,
+    "PAS_D_AVIS_INDEPENDANT_INVENTE": true,
+    "PDF_2021_SCREENSHOT_ECHOUE_NI_SHA_ACTUEL": true,
+    "AUCUNE_CONTACT_EXTERNE": true,
+    "AUCUNE_DEPENSE": true,
+    "SINJIRA_INCHANGE": true,
+    "PAS_DE_FUSION_MAIN": true,
+    "NO_GO_AUTOMATIQUE": true
+  },
+  "decision": "NO_GO_AUTOMATIQUE"
+}

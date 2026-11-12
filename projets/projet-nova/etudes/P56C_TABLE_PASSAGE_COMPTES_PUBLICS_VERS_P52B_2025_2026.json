@@ -1,0 +1,198 @@
+{
+  "schema_version": "P56C-1",
+  "reference_date": "2026-11-07",
+  "exercice": "2025-2026",
+  "date_cloture": "2026-03-31",
+  "territoire": "QUEBEC_DANS_CANADA",
+  "nature": "OBSERVATION_HISTORIQUE_COMPTES_PUBLICS_AUDITES",
+  "statut": "TABLE_DE_PASSAGE_CONCEPTUELLE_NON_CERTIFIEE_NOVA",
+  "source": {
+    "titre": "Comptes publics 2025-2026, volume 1, Quebec",
+    "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Comptes-publics/FR/CPTFR_vol1-2025-2026.pdf",
+    "publication": "2026-07-17",
+    "pages_pdf_zero_index": [
+      11,
+      18
+    ]
+  },
+  "unite_montant": "M_CAD",
+  "modes": [
+    "OBSERVATION_AUDITEE",
+    "CANDIDAT_DE_REGROUPEMENT_NON_DIRECT",
+    "DECOMPOSITION_OBLIGATOIRE"
+  ],
+  "poste_sources": [
+    {
+      "id": "impot_particuliers",
+      "nature": "RECETTE",
+      "montant_audite_mcad": "48969",
+      "page_pdf_zero_index": 18,
+      "postes_candidats_p52b": [
+        "impot_revenu_net"
+      ],
+      "restriction": "RAPPROCHEMENT_FISCAL_ET_CREDITS_REQUIS",
+      "explication": "Les impots observés ne prouvent ni assiette ni rendement d un nouveau prélèvement.",
+      "transposition_directe_autorisee": false,
+      "exercice_cible_p52b_2027_2036": null,
+      "source_validation_p56b": "P56B_SNAPSHOTS_FINANCES_2025_2026_SOURCES_OFFICIELLES.json"
+    },
+    {
+      "id": "impots_societes",
+      "nature": "RECETTE",
+      "montant_audite_mcad": "14599",
+      "page_pdf_zero_index": 18,
+      "postes_candidats_p52b": [
+        "impot_revenu_net"
+      ],
+      "restriction": "RAPPROCHEMENT_FISCAL_ET_CREDITS_REQUIS",
+      "explication": "Le bénéfice imposable de sociétés dans le système actuel diffère des assiettes candidates.",
+      "transposition_directe_autorisee": false,
+      "exercice_cible_p52b_2027_2036": null,
+      "source_validation_p56b": "P56B_SNAPSHOTS_FINANCES_2025_2026_SOURCES_OFFICIELLES.json"
+    },
+    {
+      "id": "cotisations_services_sante",
+      "nature": "RECETTE",
+      "montant_audite_mcad": "9304",
+      "page_pdf_zero_index": 18,
+      "postes_candidats_p52b": [
+        "autres_prelevements_provinciaux_nets"
+      ],
+      "restriction": "CONTRIBUTION_AFFECTEE_A_FINANCER",
+      "explication": "Ne peut disparaître par renommage sans garantir la continuité du financement.",
+      "transposition_directe_autorisee": false,
+      "exercice_cible_p52b_2027_2036": null,
+      "source_validation_p56b": "P56B_SNAPSHOTS_FINANCES_2025_2026_SOURCES_OFFICIELLES.json"
+    },
+    {
+      "id": "impot_foncier_scolaire",
+      "nature": "RECETTE",
+      "montant_audite_mcad": "1243",
+      "page_pdf_zero_index": 18,
+      "postes_candidats_p52b": [
+        "autres_prelevements_provinciaux_nets"
+      ],
+      "restriction": "FISCALITE_SCOLAIRE_A_CONCILIER",
+      "explication": "Ne peut être supprimé sans financement des obligations scolaires.",
+      "transposition_directe_autorisee": false,
+      "exercice_cible_p52b_2027_2036": null,
+      "source_validation_p56b": "P56B_SNAPSHOTS_FINANCES_2025_2026_SOURCES_OFFICIELLES.json"
+    },
+    {
+      "id": "taxes_consommation",
+      "nature": "RECETTE",
+      "montant_audite_mcad": "29639",
+      "page_pdf_zero_index": 11,
+      "postes_candidats_p52b": [
+        "autres_prelevements_provinciaux_nets"
+      ],
+      "restriction": "TAXES_EXISTANTES_A_INVENTORIER",
+      "explication": "Les taxes sur la consommation ne sont pas des impôts sur les revenus.",
+      "transposition_directe_autorisee": false,
+      "exercice_cible_p52b_2027_2036": null,
+      "source_validation_p56b": "P56B_SNAPSHOTS_FINANCES_2025_2026_SOURCES_OFFICIELLES.json"
+    },
+    {
+      "id": "droits_permis_redevances",
+      "nature": "RECETTE",
+      "montant_audite_mcad": "6708",
+      "page_pdf_zero_index": 11,
+      "postes_candidats_p52b": [
+        "revenus_non_fiscaux_nets",
+        "autres_prelevements_provinciaux_nets"
+      ],
+      "restriction": "VENTILATION_LEGALE_REQUISE",
+      "explication": "Mixte: droits ou redevances obligatoires; séparer frais contrepartie et recettes fiscales.",
+      "transposition_directe_autorisee": false,
+      "exercice_cible_p52b_2027_2036": null,
+      "source_validation_p56b": "P56B_SNAPSHOTS_FINANCES_2025_2026_SOURCES_OFFICIELLES.json"
+    },
+    {
+      "id": "revenus_divers",
+      "nature": "RECETTE",
+      "montant_audite_mcad": "14922",
+      "page_pdf_zero_index": 11,
+      "postes_candidats_p52b": [
+        "revenus_non_fiscaux_nets",
+        "autres_prelevements_provinciaux_nets"
+      ],
+      "restriction": "COMPOSITION_DETAILLEE_REQUISE",
+      "explication": "Services rendus, placements, pénalités et transferts possibles: exiger la ventilation.",
+      "transposition_directe_autorisee": false,
+      "exercice_cible_p52b_2027_2036": null,
+      "source_validation_p56b": "P56B_SNAPSHOTS_FINANCES_2025_2026_SOURCES_OFFICIELLES.json"
+    },
+    {
+      "id": "revenus_entreprises_gouvernement",
+      "nature": "RECETTE",
+      "montant_audite_mcad": "5241",
+      "page_pdf_zero_index": 11,
+      "postes_candidats_p52b": [
+        "revenus_non_fiscaux_nets"
+      ],
+      "restriction": "PROFITS_NON_EQUIVALENTS_AU_CASH",
+      "explication": "Revenus de sociétés d État ne valent pas automatiquement dividendes distribuables.",
+      "transposition_directe_autorisee": false,
+      "exercice_cible_p52b_2027_2036": null,
+      "source_validation_p56b": "P56B_SNAPSHOTS_FINANCES_2025_2026_SOURCES_OFFICIELLES.json"
+    },
+    {
+      "id": "transferts_gouvernement_federal",
+      "nature": "RECETTE",
+      "montant_audite_mcad": "29803",
+      "page_pdf_zero_index": 11,
+      "postes_candidats_p52b": [
+        "transferts_federaux_nets"
+      ],
+      "restriction": "TRANSFERABILITE_SEULEMENT_CANADA",
+      "explication": "Flux historiques du Québec au Canada; pas une recette garantie pour un Québec souverain.",
+      "transposition_directe_autorisee": false,
+      "exercice_cible_p52b_2027_2036": null,
+      "source_validation_p56b": "P56B_SNAPSHOTS_FINANCES_2025_2026_SOURCES_OFFICIELLES.json"
+    },
+    {
+      "id": "depenses_portefeuilles",
+      "nature": "DEPENSE",
+      "montant_audite_mcad": "155782",
+      "page_pdf_zero_index": 11,
+      "postes_candidats_p52b": [
+        "services_existants_hors_dette_et_municipal_nets",
+        "transferts_municipaux_nets",
+        "couts_transition_nets"
+      ],
+      "restriction": "SEGMENTATION_SERVICES_MUNICIPAL_TRANSITION",
+      "explication": "Les dépenses regroupent plusieurs portefeuilles; ne pas transférer 155782 uniquement aux services hors dette et municipalités.",
+      "transposition_directe_autorisee": false,
+      "exercice_cible_p52b_2027_2036": null,
+      "source_validation_p56b": "P56B_SNAPSHOTS_FINANCES_2025_2026_SOURCES_OFFICIELLES.json"
+    },
+    {
+      "id": "service_dette",
+      "nature": "DEPENSE",
+      "montant_audite_mcad": "10148",
+      "page_pdf_zero_index": 11,
+      "postes_candidats_p52b": [
+        "service_dette_net"
+      ],
+      "restriction": "DETTE_2025_SANS_PROJECTION",
+      "explication": "Déjà inclus dans les dépenses totales 2025-2026; ne pas le doubler ni transposer à 2027-2036.",
+      "transposition_directe_autorisee": false,
+      "exercice_cible_p52b_2027_2036": null,
+      "source_validation_p56b": "P56B_SNAPSHOTS_FINANCES_2025_2026_SOURCES_OFFICIELLES.json"
+    }
+  ],
+  "regles_de_consolidation": [
+    "Les 4 sous-postes fiscaux remplacent la categorie agregée 74115 M$, sans l additionner en plus",
+    "La somme des 9 sous-postes de recettes vaut 160428 M$ et n inclut aucun transfert intragroupe additionnel",
+    "La somme des portefeuilles 155782 M$ et du service de dette 10148 M$ vaut 165930 M$; frais de dette comptés une fois",
+    "Les operations de volume 2 avec des organismes du gouvernement ne doivent pas être ajoutées au volume 1 consolidé",
+    "Tous montants historiques observés dans le Quebec au Canada, aucun transfert automatique à 2027-2036 ni au Quebec souverain",
+    "Les deux regimes constitutionnels et le financement des municipalites, pensions et services sont à étudier distinctement",
+    "Aucune abolition fiscale, aucun taux Nova et aucun rendement anti-evasion ne sont autorisés sans étude"
+  ],
+  "postes_budgetaires_p52b_inconnus_maintenus": 600,
+  "incidences_p52d_inconnues_maintenues": 720,
+  "p55n_maturite_estimee": 53,
+  "transposition_aux_projections_automatique": false,
+  "decision": "NO_GO_AUTOMATIQUE"
+}

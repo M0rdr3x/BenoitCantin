@@ -1,0 +1,55 @@
+name: Projet Nova P56Y - Rendement total de deux nouveaux prelevements sans double compte
+on:
+  pull_request:
+    paths:
+      - 'projets/projet-nova/etudes/P56Y_*'
+      - 'scripts/verifier_rendement_total_deux_prelevements_nova_p56y.py'
+      - 'scripts/tests/test_verifier_rendement_total_deux_prelevements_nova_p56y.py'
+      - 'projets/projet-nova/etudes/P56R_INVENTAIRE_EXHAUSTIF_CATEGORIES_RECETTES_ET_PONT_FISCAL_2026_2031.json'
+      - 'projets/projet-nova/etudes/P56Q_PONT_CONTREFACTUEL_RECETTES_2027_2031_SIMULATEUR_AMENDE.json'
+      - 'projets/projet-nova/etudes/P56X_ASSIETTES_HISTORIQUES_ET_VERROU_TAUX_NOVA_2027_2028.json'
+      - 'projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json'
+      - 'projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json'
+      - '.github/workflows/validate-nova-p56y.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rendement-total-deux-piliers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Executer 46 tests P56X et 34 tests P56Y
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_verifier_assiettes_candidats_fiscaux_nova_p56x.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_verifier_rendement_total_deux_prelevements_nova_p56y.py' -v
+      - name: Valider le total des revenus fiscaux a remplacer sur quatre annees
+        shell: bash
+        run: |
+          python scripts/verifier_rendement_total_deux_prelevements_nova_p56y.py \
+            --pont projets/projet-nova/etudes/P56Y_RENDEMENT_BRUT_NECESSAIRE_DEUX_PRELEVEMENTS_2027_2031.json \
+            --p56r projets/projet-nova/etudes/P56R_INVENTAIRE_EXHAUSTIF_CATEGORIES_RECETTES_ET_PONT_FISCAL_2026_2031.json \
+            --p56q projets/projet-nova/etudes/P56Q_PONT_CONTREFACTUEL_RECETTES_2027_2031_SIMULATEUR_AMENDE.json \
+            --p56x projets/projet-nova/etudes/P56X_ASSIETTES_HISTORIQUES_ET_VERROU_TAUX_NOVA_2027_2028.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json | python -c 'import json,sys; x=json.load(sys.stdin); y=x["annees"]["2027-2028"]; assert y["rendement_nouveaux_piliers_memes_recettes_mcad"]=="110968" and y["rendement_nouveaux_piliers_pour_solde_zero_prudent_mcad"]=="116663" and x["annees"]["2028-2029"]["rendement_nouveaux_piliers_pour_solde_zero_prudent_mcad"]=="117620" and x["score_estime_pourcent"]==53 and x["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Refuser taux Nova automatique sans assiettes et droits
+        shell: bash
+        run: |
+          set +e
+          python scripts/verifier_rendement_total_deux_prelevements_nova_p56y.py \
+            --pont projets/projet-nova/etudes/P56Y_RENDEMENT_BRUT_NECESSAIRE_DEUX_PRELEVEMENTS_2027_2031.json \
+            --p56r projets/projet-nova/etudes/P56R_INVENTAIRE_EXHAUSTIF_CATEGORIES_RECETTES_ET_PONT_FISCAL_2026_2031.json \
+            --p56q projets/projet-nova/etudes/P56Q_PONT_CONTREFACTUEL_RECETTES_2027_2031_SIMULATEUR_AMENDE.json \
+            --p56x projets/projet-nova/etudes/P56X_ASSIETTES_HISTORIQUES_ET_VERROU_TAUX_NOVA_2027_2028.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --exiger-taux-adoptes
+          result=$?
+          set -e
+          test "$result" -eq 3

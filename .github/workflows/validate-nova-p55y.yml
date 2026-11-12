@@ -1,0 +1,35 @@
+name: Projet Nova P55Y - Reconciliation CNESST conditionnelle
+on:
+  pull_request:
+    paths:
+      - 'scripts/rapprocher_tarification_cnesst_nova_p55y.py'
+      - 'scripts/tests/test_rapprocher_tarification_cnesst_nova_p55y.py'
+      - 'projets/projet-nova/etudes/P55Y_*'
+      - '.github/workflows/validate-nova-p55y.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validation-p55y:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tester les calculs et refus P55Y
+        run: python -m unittest discover -s scripts/tests -p 'test_rapprocher_tarification_cnesst_nova_p55y.py' -v
+      - name: Verifier les exemples strictement fictifs
+        shell: bash
+        run: |
+          python scripts/rapprocher_tarification_cnesst_nova_p55y.py --entree projets/projet-nova/etudes/P55Y_EXEMPLE_FICTIF_TARIFICATION_CNESST_2026.json | python -c 'import json,sys; d=json.load(sys.stdin); assert d["prime_cnesst_conditionnelle_totale_cad"] == "10500.00" and d["gain_nova_cad"] is None and d["decision"] == "NO_GO_AUTOMATIQUE"'
+      - name: Verifier le refus de faisabilite
+        shell: bash
+        run: |
+          set +e
+          python scripts/rapprocher_tarification_cnesst_nova_p55y.py --entree projets/projet-nova/etudes/P55Y_EXEMPLE_FICTIF_TARIFICATION_CNESST_2026.json --exiger-faisabilite
+          code=$?
+          set -e
+          test "$code" -eq 3

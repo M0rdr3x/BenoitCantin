@@ -1,0 +1,104 @@
+{
+  "schema_version": "P56F-1",
+  "date_reference": "2026-11-07",
+  "statut": "REFERENCE_HISTORIQUE_PUBLIEE_ET_QUARANTAINE_VERSION_2025",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "territoire": "QUEBEC_DANS_CANADA",
+  "unite": "M_CAD",
+  "serie_historique_2023": {
+    "annee": 2023,
+    "type": "AGREGAT_MUNICIPAL_RAPPORTE_NON_AUDIT_INDEPENDANT_NOVA",
+    "source": {
+      "titre": "Le financement et la fiscalité des organismes municipaux au Québec",
+      "organisme": "Ministère des Affaires municipales et de l'Habitation",
+      "publication": "2025-03",
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/finances_indicateurs_fiscalite/fiscalite/fiscalite_organismes_municipaux.pdf",
+      "section": "Transferts gouvernementaux — Transferts totaux aux organismes municipaux 2023",
+      "note_source": "Données 2023 compilées à partir des rapports reçus jusqu'au 30 janvier 2025"
+    },
+    "perimetre": "Organismes municipaux selon le rapport MAMH; municipalités locales et organismes supramunicipaux et paramunicipaux avec consolidations particulières",
+    "transferts_de_droits_inconditionnels_mcad": "763.6",
+    "transferts_conditionnels_partage_frais_mcad": "5426.5",
+    "total_transferts_mcad": "6190.1",
+    "parts_publiees_pourcent": {
+      "droits": "12.3",
+      "partage_frais": "87.7"
+    },
+    "sous_categories_deja_incluses": [
+      {
+        "id": "TRANSPORT_COLLECTIF",
+        "montant_mcad": "2118.4",
+        "dans": "transferts_conditionnels_partage_frais_mcad"
+      },
+      {
+        "id": "EAU_ET_EGOUT",
+        "montant_mcad": "1048.0",
+        "dans": "transferts_conditionnels_partage_frais_mcad"
+      },
+      {
+        "id": "RESEAU_ROUTIER",
+        "montant_mcad": "869.2",
+        "dans": "transferts_conditionnels_partage_frais_mcad"
+      }
+    ],
+    "sources_municipales_sous_jacentes_individuellement_authentifiees_pour_nova": 0
+  },
+  "previsions_2027": {
+    "annee_civile": 2027,
+    "type": "QUATRE_ENVELOPPES_PREVISIONNELLES_PARTIELLES",
+    "source_lien": "projets/projet-nova/etudes/P56E_REGISTRE_TRANSFERTS_MUNICIPAUX_2027_ET_VERIFICATION_SOURCES.json",
+    "sous_total_quatre_programmes_mcad": "951.8",
+    "total_transferts_2027_tous_programmes_mcad": null,
+    "depenses_effectives_provinciales_2027_mcad": null,
+    "recettes_effectives_municipales_2027_mcad": null
+  },
+  "sommaire_2025": {
+    "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/finances_indicateurs_fiscalite/information_financiere/SOM_transferts_fiscaux.pdf",
+    "libelle_page_web": "Sommaire des transferts fiscaux 2025",
+    "extraction_texte_web_2026_11_07": "TABLE_2025",
+    "rendu_visuel_web_2026_11_07": "TABLE_2024",
+    "verification_document_binaire_original": null,
+    "empreinte_sha256_document_binaire": null,
+    "cause_precise_divergence": null,
+    "montants_2025_importables": null,
+    "qualification": "QUARANTAINE_VERSION_MIXTE_OU_CACHE_NON_RESOLU",
+    "source_officielle_rejete_comme_2025": false,
+    "autorisation_importation": false,
+    "protocole_resolution": [
+      "Télécharger l'original canonique du ministère et enregistrer la date de récupération",
+      "Calculer empreinte SHA-256 du PDF exact, avec preuve de provenance",
+      "Vérifier visuellement la couverture ET chaque tableau et examiner les étiquettes 2024/2025",
+      "Comparer extraction texte et image du même binaire, sans mélanger des caches ou millésimes",
+      "Obtenir le sommaire officiel 2024 distinct et contrôler les chiffres de chaque tableau",
+      "Si divergence persistante, solliciter la confirmation formelle du ministère avant exploitation",
+      "Ne jamais déclarer 2025 résolu par un seul intitulé de page ou un cache web"
+    ]
+  },
+  "comparabilite": {
+    "annees_identiques": false,
+    "unites_compatibles": true,
+    "perimetres_equivalents": false,
+    "categories_identiques": false,
+    "statut_comptable_identique": false,
+    "ratio_2027_sur_2023_calculable": false,
+    "croissance_2023_2027_demontree": false,
+    "incidence_reforme_nova_etablies": false,
+    "raison": "2023 total de tous transferts publiés vs 2027 quatre enveloppes prévisionnelles distinctes; pas de valeur 2025 exploitable"
+  },
+  "provenance_professionnelle": {
+    "date_compilation": "2026-11-07",
+    "donnees_officielles_municipales_referencees": true,
+    "comptes_individuels_rendus_auditables_ici": false,
+    "revue_par_comptable_municipal_independant": false,
+    "sources_appariees_en_comptabilite_d_etat": false,
+    "couverture_tous_programmes_2027": false
+  },
+  "p52b_inconnues_restantes": 600,
+  "p52d_incidences_inconnues": 720,
+  "preuves_p52a_non_validees": 20,
+  "p55n_maturite_estimative": 53,
+  "projections_p52b_modifiees": false,
+  "taux_fiscaux_nova_adoptes": false,
+  "economies_nova_certifiees_mcad": null,
+  "financement_des_services_valide": false
+}

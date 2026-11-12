@@ -1,0 +1,103 @@
+name: Projet Nova P54S - Reverification du vrai ZIP historique P54P
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54s.yml"
+      - "scripts/verifier_provenance_artifact_nova_p54r.py"
+      - "scripts/tests/test_verifier_provenance_artifact_nova_p54r.py"
+      - "projets/projet-nova/etudes/P54R_*"
+      - "projets/projet-nova/etudes/P54S_*"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verifier-octets-artefact-github:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: pypdf version fixe
+        run: python -m pip install pypdf==5.9.0
+      - name: Relancer 62 tests adversariaux P54R
+        run: |
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_verifier_provenance_artifact_nova_p54r.py")
+          assert suite.countTestCases()==62,suite.countTestCases()
+          assert unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful()
+          PY
+      - name: Télécharger le même artefact par API GitHub officielle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/p54s"
+          gh api -H "Accept: application/vnd.github+json" \
+            "/repos/$GITHUB_REPOSITORY/actions/artifacts/12583661231/zip" \
+            > "$RUNNER_TEMP/p54s/original.zip"
+          python - <<'PY'
+          import hashlib,os
+          from pathlib import Path
+          p=Path(os.environ["RUNNER_TEMP"])/"p54s/original.zip"
+          assert p.stat().st_size==1533
+          assert hashlib.sha256(p.read_bytes()).hexdigest()==(
+            "d87562662c4c82176e02bdcb28035bb704f2734eb998e0161ef17a21e268c42e")
+          PY
+      - name: Vérifier ZIP, deux membres et cinq offsets par P54R
+        run: |
+          python scripts/verifier_provenance_artifact_nova_p54r.py \
+            --archive "$RUNNER_TEMP/p54s/original.zip" \
+            --bilan p54s_bilan_reverifie.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          cfg=json.loads(Path("projets/projet-nova/etudes/P54S_CONTROLE_ARTEFACT_ORIGINAL_2024.json").read_text("utf-8"))
+          r=json.loads(Path("p54s_bilan_reverifie.json").read_text("utf-8"))
+          assert r["artifact_id"]==cfg["source_artifact"]
+          assert r["empreinte_archive_referencee"]==cfg["archive_sha256"]
+          assert r["archive_verifiee_par_octets_dans_cette_execution"] is True
+          assert r["positions_reverifiees_dans_cette_execution"]==5
+          assert [x["offset_texte_extrait"] for x in r["cinq_positions_de_reference"]]==cfg["positions_de_reference"]
+          assert r["sources_pdf_physiquement_relues_dans_cette_execution"]==0
+          assert r["qualification_professionnelle"] is False
+          assert r["statut_date_probable_certifie"] is False
+          assert r["economies_certifiees_cad"] is None
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Archive corrompue toujours refusée
+        run: |
+          cp "$RUNNER_TEMP/p54s/original.zip" "$RUNNER_TEMP/p54s/corrompue.zip"
+          printf 'X' >> "$RUNNER_TEMP/p54s/corrompue.zip"
+          set +e
+          python scripts/verifier_provenance_artifact_nova_p54r.py --archive "$RUNNER_TEMP/p54s/corrompue.zip"
+          status=$?
+          set -e
+          test "$status" -eq 2
+      - name: Aucune certification automatique possible
+        run: |
+          set +e
+          python scripts/verifier_provenance_artifact_nova_p54r.py \
+            --archive "$RUNNER_TEMP/p54s/original.zip" --exiger-certification
+          status=$?
+          set -e
+          test "$status" -eq 3
+      - name: Effacer les ZIP locaux du runner
+        if: always()
+        run: rm -f "$RUNNER_TEMP/p54s/original.zip" "$RUNNER_TEMP/p54s/corrompue.zip"
+      - name: Publier exclusivement le bilan non certifiant
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54s-reverification-historique-artefact-p54p
+          path: p54s_bilan_reverifie.json
+          if-no-files-found: ignore
+          retention-days: 7

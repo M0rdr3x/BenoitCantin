@@ -1,0 +1,43 @@
+name: Projet Nova P56F - Comparabilite historique transferts municipaux
+on:
+  pull_request:
+    paths:
+      - 'scripts/verifier_provenance_transferts_municipaux_nova_p56f.py'
+      - 'scripts/tests/test_verifier_provenance_transferts_municipaux_nova_p56f.py'
+      - 'scripts/rapprocher_enveloppes_municipales_nova_p56e.py'
+      - 'projets/projet-nova/etudes/P56F_*'
+      - 'projets/projet-nova/etudes/P56E_REGISTRE_TRANSFERTS_MUNICIPAUX_2027_ET_VERIFICATION_SOURCES.json'
+      - '.github/workflows/validate-nova-p56f.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sources-p56f:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Regressions P56E et nouvelles preuves P56F
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_rapprocher_enveloppes_municipales_nova_p56e.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_verifier_provenance_transferts_municipaux_nova_p56f.py' -v
+      - name: Concilier 2023 sans projeter sur 2027
+        shell: bash
+        run: |
+          python scripts/verifier_provenance_transferts_municipaux_nova_p56f.py \
+            --historique projets/projet-nova/etudes/P56F_REFERENCES_MUNICIPALES_2023_2027_ET_QUARANTAINE_2025.json \
+            --previsions projets/projet-nova/etudes/P56E_REGISTRE_TRANSFERTS_MUNICIPAUX_2027_ET_VERIFICATION_SOURCES.json | python -c 'import json,sys; d=json.load(sys.stdin); assert d["reference_historique_2023_total_transferts_mcad"]=="6190.1" and d["reference_historique_2023_transferts_droits_mcad"]=="763.6" and d["reference_historique_2023_transferts_conditionnels_mcad"]=="5426.5" and d["enveloppes_quatre_programmes_2027_prevision_mcad"]=="951.8" and d["taux_de_croissance_2023_2027"] is None and d["montant_sommaire_2025_valide_mcad"] is None and d["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Exiger un refus de faisabilite non demontree
+        shell: bash
+        run: |
+          set +e
+          python scripts/verifier_provenance_transferts_municipaux_nova_p56f.py \
+            --historique projets/projet-nova/etudes/P56F_REFERENCES_MUNICIPALES_2023_2027_ET_QUARANTAINE_2025.json \
+            --previsions projets/projet-nova/etudes/P56E_REGISTRE_TRANSFERTS_MUNICIPAUX_2027_ET_VERIFICATION_SOURCES.json --exiger-faisabilite
+          code=$?
+          set -e
+          test "$code" -eq 3

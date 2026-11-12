@@ -1,0 +1,205 @@
+{
+  "schema_version": "P55K-1",
+  "date_reference": "2026-11-04",
+  "exercice": 2024,
+  "source": {
+    "document": "RAPPORT_FINANCIER_VILLE_QUEBEC_2024",
+    "url": "https://www.ville.quebec.qc.ca/publications/docs_ville/Rapport_financier_2024.pdf",
+    "page_pdf_index_zero_ventilation": 62,
+    "page_imprimee_ventilation": 63,
+    "page_pdf_index_zero_methodes": 34,
+    "page_imprimee_methodes": 35,
+    "page_pdf_index_zero_budget": 196,
+    "page_imprimee_budget": 197,
+    "niveau_preuve_ventilation": "EXTRACTION_TEXTE_DU_PDF_OFFICIEL_NON_CONTROLEE_VISUELLEMENT_S12",
+    "niveau_preuve_methodes": "CAPTURE_VISUELLE_PDF_OFFICIEL",
+    "etat_original_local": "NON_ACQUIS_NON_AUTHENTIFIE"
+  },
+  "references": [
+    "P54Q",
+    "P55H",
+    "P55I",
+    "P55J"
+  ],
+  "lignes": [
+    {
+      "code": "TAXES",
+      "administration_municipale_cad": 1296686206,
+      "organismes_controles_partenariats_cad": 0,
+      "total_consolide_cad": 1295208647,
+      "residu_total_moins_somme_cad": -1477559,
+      "interpretation_provisoire": "A_QUALIFIER_SUR_ECRITURES"
+    },
+    {
+      "code": "COMPENSATIONS_TENANT_LIEU_TAXES",
+      "administration_municipale_cad": 134445067,
+      "organismes_controles_partenariats_cad": 0,
+      "total_consolide_cad": 132702160,
+      "residu_total_moins_somme_cad": -1742907,
+      "interpretation_provisoire": "A_QUALIFIER_SUR_ECRITURES"
+    },
+    {
+      "code": "QUOTES_PARTS",
+      "administration_municipale_cad": 47353223,
+      "organismes_controles_partenariats_cad": 154047800,
+      "total_consolide_cad": 47353223,
+      "residu_total_moins_somme_cad": -154047800,
+      "interpretation_provisoire": "COMPATIBLE_NEUTRALISATION_RECIPROQUE_A_VERIFIER"
+    },
+    {
+      "code": "TRANSFERTS",
+      "administration_municipale_cad": 228223969,
+      "organismes_controles_partenariats_cad": 100926706,
+      "total_consolide_cad": 319764739,
+      "residu_total_moins_somme_cad": -9385936,
+      "interpretation_provisoire": "A_QUALIFIER_SUR_ECRITURES"
+    },
+    {
+      "code": "SERVICES_RENDUS",
+      "administration_municipale_cad": 96508463,
+      "organismes_controles_partenariats_cad": 95138908,
+      "total_consolide_cad": 188160353,
+      "residu_total_moins_somme_cad": -3487018,
+      "interpretation_provisoire": "A_QUALIFIER_SUR_ECRITURES"
+    },
+    {
+      "code": "IMPOSITION_DE_DROITS",
+      "administration_municipale_cad": 97261483,
+      "organismes_controles_partenariats_cad": 0,
+      "total_consolide_cad": 97261483,
+      "residu_total_moins_somme_cad": 0,
+      "interpretation_provisoire": "AUCUN_RESIDU_CALCULE"
+    },
+    {
+      "code": "AMENDES_ET_PENALITES",
+      "administration_municipale_cad": 19294230,
+      "organismes_controles_partenariats_cad": 0,
+      "total_consolide_cad": 19294230,
+      "residu_total_moins_somme_cad": 0,
+      "interpretation_provisoire": "AUCUN_RESIDU_CALCULE"
+    },
+    {
+      "code": "REVENUS_PLACEMENTS",
+      "administration_municipale_cad": 46576373,
+      "organismes_controles_partenariats_cad": 350943,
+      "total_consolide_cad": 46927316,
+      "residu_total_moins_somme_cad": 0,
+      "interpretation_provisoire": "AUCUN_RESIDU_CALCULE"
+    },
+    {
+      "code": "AUTRES_REVENUS_INTERETS",
+      "administration_municipale_cad": 21438065,
+      "organismes_controles_partenariats_cad": 3754116,
+      "total_consolide_cad": 23941951,
+      "residu_total_moins_somme_cad": -1250230,
+      "interpretation_provisoire": "A_QUALIFIER_SUR_ECRITURES"
+    },
+    {
+      "code": "AUTRES_REVENUS",
+      "administration_municipale_cad": 20569227,
+      "organismes_controles_partenariats_cad": 475246,
+      "total_consolide_cad": 15993752,
+      "residu_total_moins_somme_cad": -5050721,
+      "interpretation_provisoire": "A_QUALIFIER_SUR_ECRITURES"
+    }
+  ],
+  "totaux_et_concentration": {
+    "administration_revenus_fonctionnement_cad": 2008356306,
+    "organismes_revenus_fonctionnement_cad": 354693719,
+    "total_revenus_fonctionnement_consolides_cad": 2186607854,
+    "residu_revenus_fonctionnement_cad": -176442171,
+    "residu_quotes_parts_cad": -154047800,
+    "part_quotes_parts_dans_abs_residu_pourcent_arrondi_une_decimale": "87.3",
+    "autres_residus_cad": -22394371,
+    "organismes_individuels_rtc_somhac_ventiles": false
+  },
+  "travaux_humains_requis": [
+    {
+      "code": "K01",
+      "titre": "Relever_la_nature_des_quotes_parts_154047800",
+      "preuve_attendue": "DETAIL_TRANSACTIONS_RECIPROQUES_ET_NOTES_COMPTABLES",
+      "statut": "A_EXAMINER_PAR_COMPTABLE"
+    },
+    {
+      "code": "K02",
+      "titre": "Ventiler_les_quotes_parts_par_RTC_et_SOMHAC",
+      "preuve_attendue": "GRAND_LIVRE_ET_ETATS_SEPARES_DE_CHAQUE_ORGANISME",
+      "statut": "A_EXAMINER_PAR_COMPTABLE"
+    },
+    {
+      "code": "K03",
+      "titre": "Identifier_autres_residus_22394371",
+      "preuve_attendue": "ECRITURES_D_ELIMINATION_RECLASSEMENT_ET_BOUCLAGE",
+      "statut": "A_EXAMINER_PAR_COMPTABLE"
+    },
+    {
+      "code": "K04",
+      "titre": "Etablir_perimetre_legal_et_comptabilite_agglomeration_local",
+      "preuve_attendue": "REGLES_MAMH_ET_RESOLUTIONS_BUDGETAIRES_2024",
+      "statut": "A_EXAMINER_PAR_JURISTE_ET_COMPTABLE"
+    },
+    {
+      "code": "K05",
+      "titre": "Qualifier_effet_net_et_recurrence_sans_emplois_services",
+      "preuve_attendue": "BUDGET_OPERATIONS_SERVICES_AFFECTATIONS_ET_CONTROLE_INDEPENDANT",
+      "statut": "A_EXAMINER_PAR_COMPTABLE"
+    }
+  ],
+  "protections": {
+    "premiere_source_pdf_2024_officielle": true,
+    "page_63_imprimee_pdf_62_extraction_texte": true,
+    "screenshot_page_62_non_obtenu": true,
+    "methodes_comptables_page_35_capture_visuelle": true,
+    "note_budget_197_capture_visuelle": true,
+    "rtc_somhac_seuls_organismes_controles_declares": true,
+    "agglomeration_et_local_ne_sont_pas_deux_societes": true,
+    "regroupement_organismes_non_ventile_par_rtc_somhac": true,
+    "dix_lignes_revenus_fonctionnement_reproduites": true,
+    "total_admin_somme_des_dix_lignes": true,
+    "total_org_somme_des_dix_lignes": true,
+    "total_consolide_somme_des_dix_lignes": true,
+    "residu_calcul_respecte_trois_perimetres": true,
+    "residu_176442171_doit_egaler_p55j": true,
+    "quotes_parts_154047800_egal_org_colonne": true,
+    "concentration_87_3_pourcent_avec_decimal": true,
+    "aucune_attribution_sans_ecriture_reciproque": true,
+    "aucune_attribution_rtc_vs_somhac": true,
+    "residus_de_taxes_sans_org_identifie_non_qualifies": true,
+    "residus_zero_ne_prouvent_pas_absence_transactions": true,
+    "aucune_economie_certifiee_sur_residus": true,
+    "p55i_p55j_herites_et_controles": true,
+    "pas_d_absorption_du_budget_d_agglomeration": true,
+    "aucun_nouveau_gain_depuis_elimination_existante": true,
+    "surplus_fiscal_n_est_pas_tresorerie_libre": true,
+    "aucune_copie_pdf_locale_sha_authentifiee": true,
+    "notes_visuelles_ne_certifient_pas_ligne_s12": true,
+    "exiger_avis_cpa_et_pieces_justificatives": true,
+    "avis_juridiques_non_signes": true,
+    "protections_emplois_services": true,
+    "protection_pouvoir_achat": true,
+    "distinction_deux_scenarios_politiques": true,
+    "p54e_quatre_dossiers_et_date_non_clos": true,
+    "p54n40_p54o10_p54b96_p54c8_en_suspens": true,
+    "pas_de_contact_avec_institutions": true,
+    "pas_de_contrat_ni_depense": true,
+    "ne_pas_modifier_sinjira": true,
+    "aucune_fusion_main": true,
+    "no_go_automatique": true
+  },
+  "etat_initial": {
+    "operations_reciproques_detaillees_obtenues": 0,
+    "organismes_separes_et_expertises": 0,
+    "copies_pdf_origine_verifiees_sha_2024": 0,
+    "tests_avec_chiffres_publies_non_certifiant": 0,
+    "attestations_professionnelles": 0,
+    "mandats_signes": 0,
+    "economies_certifiees_cad": null,
+    "observations_p54e_ouvertes": 4,
+    "date_probable_non_certifiee": 1,
+    "taches_p54n_non_attestees": 40,
+    "blocages_p54o_non_leves": 10,
+    "controles_p54b_non_attestes": 96,
+    "controles_p54c_non_attestes": 8,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

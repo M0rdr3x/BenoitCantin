@@ -1,0 +1,139 @@
+{
+  "schema_version": "P54A-OBSERVATIONS-CI-1",
+  "exercice": 2024,
+  "capture_source_p53z_run_id": 40113700739,
+  "rapport_validation_run_id": 40116065853,
+  "rapport_validation_artifact_id": 12568158622,
+  "rapport_validation_artifact_sha256": "c973b8558bc05ec4f4d572da66a700548b7ba835e88cd4208c2c96f6fbea86dc",
+  "provenance": "CONTROLE_TECHNIQUE_DES_COPIES_HTTPS_NON_SIGNATURE_EMETTEUR",
+  "date_reanalyse_utc": "2026-10-24",
+  "copies": {
+    "ville": {
+      "capture_utc": "2026-10-24T17:26:58+00:00",
+      "taille": 8984919,
+      "sha256": "b3ee3e671f7bf98e56c7d42b5e8b6c34de02a96c9dc1c96469819fa4dbfa7399",
+      "sha_identique_capture_p53z": true
+    },
+    "mamh": {
+      "capture_utc": "2026-10-24T17:26:59+00:00",
+      "taille": 10818312,
+      "sha256": "4323c87d2114b58cf7a093c08f3b30327e949db91b9beb46a627eac1ecb4fc00",
+      "sha_identique_capture_p53z": true
+    }
+  },
+  "methode": "NGRAMMES_4_MOTS_SCORE_JACCARD_ET_MATCHING_1_A_1",
+  "minimum_score": 0.35,
+  "plafonnement_candidates": 12,
+  "candidates_affichees": 12,
+  "candidates": [
+    {
+      "page_index_pdf_ville": 14,
+      "page_index_pdf_mamh": 173,
+      "score_jaccard": 0.9511,
+      "ngrams_communs": 350,
+      "conclusion": "CANDIDAT_DOCUMENTAIRE_NON_CERTIFIE"
+    },
+    {
+      "page_index_pdf_ville": 51,
+      "page_index_pdf_mamh": 30,
+      "score_jaccard": 0.925,
+      "ngrams_communs": 469,
+      "conclusion": "CANDIDAT_DOCUMENTAIRE_NON_CERTIFIE"
+    },
+    {
+      "page_index_pdf_ville": 62,
+      "page_index_pdf_mamh": 44,
+      "score_jaccard": 0.9106,
+      "ngrams_communs": 591,
+      "conclusion": "CANDIDAT_DOCUMENTAIRE_NON_CERTIFIE"
+    },
+    {
+      "page_index_pdf_ville": 75,
+      "page_index_pdf_mamh": 57,
+      "score_jaccard": 0.9219,
+      "ngrams_communs": 496,
+      "conclusion": "CANDIDAT_DOCUMENTAIRE_NON_CERTIFIE"
+    },
+    {
+      "page_index_pdf_ville": 102,
+      "page_index_pdf_mamh": 162,
+      "score_jaccard": 0.9156,
+      "ngrams_communs": 347,
+      "conclusion": "CANDIDAT_DOCUMENTAIRE_NON_CERTIFIE"
+    },
+    {
+      "page_index_pdf_ville": 104,
+      "page_index_pdf_mamh": 164,
+      "score_jaccard": 0.9128,
+      "ngrams_communs": 272,
+      "conclusion": "CANDIDAT_DOCUMENTAIRE_NON_CERTIFIE"
+    },
+    {
+      "page_index_pdf_ville": 133,
+      "page_index_pdf_mamh": 136,
+      "score_jaccard": 0.92,
+      "ngrams_communs": 345,
+      "conclusion": "CANDIDAT_DOCUMENTAIRE_NON_CERTIFIE"
+    },
+    {
+      "page_index_pdf_ville": 139,
+      "page_index_pdf_mamh": 140,
+      "score_jaccard": 0.9083,
+      "ngrams_communs": 297,
+      "conclusion": "CANDIDAT_DOCUMENTAIRE_NON_CERTIFIE"
+    },
+    {
+      "page_index_pdf_ville": 145,
+      "page_index_pdf_mamh": 146,
+      "score_jaccard": 0.9366,
+      "ngrams_communs": 325,
+      "conclusion": "CANDIDAT_DOCUMENTAIRE_NON_CERTIFIE"
+    },
+    {
+      "page_index_pdf_ville": 146,
+      "page_index_pdf_mamh": 147,
+      "score_jaccard": 0.9256,
+      "ngrams_communs": 311,
+      "conclusion": "CANDIDAT_DOCUMENTAIRE_NON_CERTIFIE"
+    },
+    {
+      "page_index_pdf_ville": 147,
+      "page_index_pdf_mamh": 148,
+      "score_jaccard": 0.9172,
+      "ngrams_communs": 399,
+      "conclusion": "CANDIDAT_DOCUMENTAIRE_NON_CERTIFIE"
+    },
+    {
+      "page_index_pdf_ville": 170,
+      "page_index_pdf_mamh": 155,
+      "score_jaccard": 0.9167,
+      "ngrams_communs": 286,
+      "conclusion": "CANDIDAT_DOCUMENTAIRE_NON_CERTIFIE"
+    }
+  ],
+  "resultats": {
+    "recapacquisition_reussie": true,
+    "captures_actualisees": 2,
+    "nombres_pages_verifies_p53z": {
+      "ville": 230,
+      "mamh": 177
+    },
+    "pages_exactement_identiques_selon_p53x": 0,
+    "pages_similaires_identifiees_en_tete_de_classement": 12,
+    "rapprochements_comptables_authentifies": 0,
+    "avis_independants_signes": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  },
+  "limites": {
+    "maximum_12_pas_nombre_total_correspondances": true,
+    "indices_pdf_zero_based_pas_pages_imprimees": true,
+    "ressemblance_textuelle_pas_identite_juridique": true,
+    "forme_des_pdfs_peut_differer": true,
+    "pages_sans_texte_non_comparees": true,
+    "organes_emetteurs_non_authentifies_par_hash": true,
+    "consolidation_rtc_deja_effectuee": true,
+    "emplois_et_services_garantis": true,
+    "pas_de_fusion_automatique": true
+  }
+}

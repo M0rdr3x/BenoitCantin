@@ -1,0 +1,11 @@
+{
+  "schema_version": "P52N-SIM-1",
+  "jalon": "P52N",
+  "statut": "SIMULATIONS_VIDES_NON_AUTHENTIFIEES",
+  "simulations_candidatures": [],
+  "simulations_observations": [],
+  "autorisation_contrat": false,
+  "autorisation_consultation": false,
+  "autorisation_publication": false,
+  "decision": "NO_GO_AUTOMATIQUE"
+}

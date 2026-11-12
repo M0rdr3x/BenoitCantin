@@ -1,0 +1,58 @@
+name: Projet Nova P56X - Assiettes fiscales comparables et taux non certifies
+on:
+  pull_request:
+    paths:
+      - 'projets/projet-nova/etudes/P56X_*'
+      - 'scripts/verifier_assiettes_candidats_fiscaux_nova_p56x.py'
+      - 'scripts/tests/test_verifier_assiettes_candidats_fiscaux_nova_p56x.py'
+      - 'projets/projet-nova/etudes/P56K_ASSIETTES_PARTICULIERS_SOCIETES_CREDITS_SOURCES_OFFICIELLES.json'
+      - 'projets/projet-nova/etudes/P56R_INVENTAIRE_EXHAUSTIF_CATEGORIES_RECETTES_ET_PONT_FISCAL_2026_2031.json'
+      - 'projets/projet-nova/etudes/P56V_PONT_FINANCEMENT_SERVICES_OPTIONS_FISCALES_VGQ_2027_2029.json'
+      - 'projets/projet-nova/etudes/P56W_CREDITS_REMBOURSABLES_2023_PAR_CATEGORIE_ET_TRANCHES_PROTECTION.json'
+      - 'projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json'
+      - 'projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json'
+      - '.github/workflows/validate-nova-p56x.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  assiettes-et-taux-p56x:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Executer 38 tests P56W et 46 tests P56X
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_verifier_credits_remboursables_protection_nova_p56w.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_verifier_assiettes_candidats_fiscaux_nova_p56x.py' -v
+      - name: Verifier assiettes historiques et blocage taux fiscal fictif
+        shell: bash
+        run: |
+          python scripts/verifier_assiettes_candidats_fiscaux_nova_p56x.py \
+            --assiettes projets/projet-nova/etudes/P56X_ASSIETTES_HISTORIQUES_ET_VERROU_TAUX_NOVA_2027_2028.json \
+            --p56k projets/projet-nova/etudes/P56K_ASSIETTES_PARTICULIERS_SOCIETES_CREDITS_SOURCES_OFFICIELLES.json \
+            --p56r projets/projet-nova/etudes/P56R_INVENTAIRE_EXHAUSTIF_CATEGORIES_RECETTES_ET_PONT_FISCAL_2026_2031.json \
+            --p56v projets/projet-nova/etudes/P56V_PONT_FINANCEMENT_SERVICES_OPTIONS_FISCALES_VGQ_2027_2029.json \
+            --p56w projets/projet-nova/etudes/P56W_CREDITS_REMBOURSABLES_2023_PAR_CATEGORIE_ET_TRANCHES_PROTECTION.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json | python -c 'import json,sys; x=json.load(sys.stdin); assert x["personnes_2023_assiette_imposable_mcad"]=="372261" and x["societes_2021_assiette_imposable_mcad"]=="95784" and x["financement_statique_equilibre_2027_mcad"]=="48570" and x["taux_2027_nova_certifie"] is False and x["score_estime_pourcent"]==53 and x["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Refuser publication automatique taux Nova sans assiettes 2027
+        shell: bash
+        run: |
+          set +e
+          python scripts/verifier_assiettes_candidats_fiscaux_nova_p56x.py \
+            --assiettes projets/projet-nova/etudes/P56X_ASSIETTES_HISTORIQUES_ET_VERROU_TAUX_NOVA_2027_2028.json \
+            --p56k projets/projet-nova/etudes/P56K_ASSIETTES_PARTICULIERS_SOCIETES_CREDITS_SOURCES_OFFICIELLES.json \
+            --p56r projets/projet-nova/etudes/P56R_INVENTAIRE_EXHAUSTIF_CATEGORIES_RECETTES_ET_PONT_FISCAL_2026_2031.json \
+            --p56v projets/projet-nova/etudes/P56V_PONT_FINANCEMENT_SERVICES_OPTIONS_FISCALES_VGQ_2027_2029.json \
+            --p56w projets/projet-nova/etudes/P56W_CREDITS_REMBOURSABLES_2023_PAR_CATEGORIE_ET_TRANCHES_PROTECTION.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --publier-taux-nova
+          result=$?
+          set -e
+          test "$result" -eq 3

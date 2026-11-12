@@ -1,0 +1,48 @@
+name: Projet Nova P56I - Assurance des pieces et opinion avec reserve
+on:
+  pull_request:
+    paths:
+      - 'scripts/auditer_chaine_preuves_finances_municipales_nova_p56i.py'
+      - 'scripts/tests/test_auditer_chaine_preuves_finances_municipales_nova_p56i.py'
+      - 'scripts/verifier_correspondances_revenus_municipaux_nova_p56h.py'
+      - 'scripts/verifier_pont_provincial_municipal_nova_p56g.py'
+      - 'projets/projet-nova/etudes/P56I_*'
+      - 'projets/projet-nova/etudes/P56H_DECOMPOSITION_REVENUS_ALMA_2024_CORRESPONDANCES_PROVINCIALES.json'
+      - 'projets/projet-nova/etudes/P56G_PREMIER_PONT_PROVINCIAL_MUNICIPAL_ALMA_2024.json'
+      - '.github/workflows/validate-nova-p56i.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  chaine-probante-p56i:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Executer tests P56G P56H et P56I
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_verifier_pont_provincial_municipal_nova_p56g.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_verifier_correspondances_revenus_municipaux_nova_p56h.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_auditer_chaine_preuves_finances_municipales_nova_p56i.py' -v
+      - name: Verifier opinion avec reserve et annexe non auditee
+        shell: bash
+        run: |
+          python scripts/auditer_chaine_preuves_finances_municipales_nova_p56i.py \
+            --registre projets/projet-nova/etudes/P56I_REGISTRE_ASSURANCE_PREUVES_ET_RESERVES_ALMA_2024.json \
+            --p56h projets/projet-nova/etudes/P56H_DECOMPOSITION_REVENUS_ALMA_2024_CORRESPONDANCES_PROVINCIALES.json \
+            --p56g projets/projet-nova/etudes/P56G_PREMIER_PONT_PROVINCIAL_MUNICIPAL_ALMA_2024.json | python -c 'import json,sys; x=json.load(sys.stdin); assert x["rapport_municipal_audit_avec_reserve"] is True and x["annexe_s27_auditee"] is False and x["ecart_40561_non_explique_cad"]=="-2" and x["appariements_comptables_certifies"]==0 and x["p52b_champs_inconnus"]==600 and x["p55n_score_estimatif"]==53 and x["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Interdire l autorisation automatique
+        shell: bash
+        run: |
+          set +e
+          python scripts/auditer_chaine_preuves_finances_municipales_nova_p56i.py \
+            --registre projets/projet-nova/etudes/P56I_REGISTRE_ASSURANCE_PREUVES_ET_RESERVES_ALMA_2024.json \
+            --p56h projets/projet-nova/etudes/P56H_DECOMPOSITION_REVENUS_ALMA_2024_CORRESPONDANCES_PROVINCIALES.json \
+            --p56g projets/projet-nova/etudes/P56G_PREMIER_PONT_PROVINCIAL_MUNICIPAL_ALMA_2024.json --exiger-certification
+          code=$?
+          set -e
+          test "$code" -eq 3

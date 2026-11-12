@@ -1,0 +1,130 @@
+{
+  "schema_version": "P53A-LACUNES-1",
+  "jalon": "P53A",
+  "statut": "DONNEES_HORS_BUDGET_NON_ACQUISES",
+  "reference_p53a": "projets/projet-nova/etudes/P53A_REGISTRE_RECETTES_ET_COMPETENCES.json",
+  "source_municipale_candidate": {
+    "url": "https://www150.statcan.gc.ca/t1/tbl1/fr/tv.action?pid=1010002001",
+    "tableau": "10-10-0020-01",
+    "selection_geographie_annee_et_nature_reelle": false
+  },
+  "dossiers": [
+    {
+      "id": "E01",
+      "objet": "Impot federal revenu",
+      "juridiction": "FEDERAL",
+      "question_p52z": "T02",
+      "preuve_p52a": "F02",
+      "montant_mcad": null,
+      "periode_comparable_verifiee": false,
+      "source_officielle_extraite_et_authentifiee": false,
+      "perimetre_et_double_comptage_valide": false,
+      "recette_nova_mcad": null
+    },
+    {
+      "id": "E02",
+      "objet": "TPS federale",
+      "juridiction": "FEDERAL",
+      "question_p52z": "T04",
+      "preuve_p52a": "F02",
+      "montant_mcad": null,
+      "periode_comparable_verifiee": false,
+      "source_officielle_extraite_et_authentifiee": false,
+      "perimetre_et_double_comptage_valide": false,
+      "recette_nova_mcad": null
+    },
+    {
+      "id": "E03",
+      "objet": "Douanes federales",
+      "juridiction": "FEDERAL",
+      "question_p52z": "T06",
+      "preuve_p52a": "F03",
+      "montant_mcad": null,
+      "periode_comparable_verifiee": false,
+      "source_officielle_extraite_et_authentifiee": false,
+      "perimetre_et_double_comptage_valide": false,
+      "recette_nova_mcad": null
+    },
+    {
+      "id": "E04",
+      "objet": "Taxes foncieres municipales",
+      "juridiction": "MUNICIPAL",
+      "question_p52z": "T07",
+      "preuve_p52a": "F04",
+      "montant_mcad": null,
+      "periode_comparable_verifiee": false,
+      "source_officielle_extraite_et_authentifiee": false,
+      "perimetre_et_double_comptage_valide": false,
+      "recette_nova_mcad": null
+    },
+    {
+      "id": "E05",
+      "objet": "Autres taxes et tarifs locaux",
+      "juridiction": "MUNICIPAL",
+      "question_p52z": "T07",
+      "preuve_p52a": "F04",
+      "montant_mcad": null,
+      "periode_comparable_verifiee": false,
+      "source_officielle_extraite_et_authentifiee": false,
+      "perimetre_et_double_comptage_valide": false,
+      "recette_nova_mcad": null
+    },
+    {
+      "id": "E06",
+      "objet": "Cotisations RRQ",
+      "juridiction": "REGIMES_CONTRIBUTIFS",
+      "question_p52z": "T09",
+      "preuve_p52a": "F07",
+      "montant_mcad": null,
+      "periode_comparable_verifiee": false,
+      "source_officielle_extraite_et_authentifiee": false,
+      "perimetre_et_double_comptage_valide": false,
+      "recette_nova_mcad": null
+    },
+    {
+      "id": "E07",
+      "objet": "Cotisations assurance-emploi",
+      "juridiction": "FEDERAL",
+      "question_p52z": "T09",
+      "preuve_p52a": "F07",
+      "montant_mcad": null,
+      "periode_comparable_verifiee": false,
+      "source_officielle_extraite_et_authentifiee": false,
+      "perimetre_et_double_comptage_valide": false,
+      "recette_nova_mcad": null
+    },
+    {
+      "id": "E08",
+      "objet": "RQAP et autres contributions",
+      "juridiction": "REGIMES_CONTRIBUTIFS",
+      "question_p52z": "T09",
+      "preuve_p52a": "F07",
+      "montant_mcad": null,
+      "periode_comparable_verifiee": false,
+      "source_officielle_extraite_et_authentifiee": false,
+      "perimetre_et_double_comptage_valide": false,
+      "recette_nova_mcad": null
+    },
+    {
+      "id": "E09",
+      "objet": "Accises et autres taxes federales",
+      "juridiction": "FEDERAL",
+      "question_p52z": "T09",
+      "preuve_p52a": "F07",
+      "montant_mcad": null,
+      "periode_comparable_verifiee": false,
+      "source_officielle_extraite_et_authentifiee": false,
+      "perimetre_et_double_comptage_valide": false,
+      "recette_nova_mcad": null
+    }
+  ],
+  "bilan": {
+    "lacunes": 9,
+    "postes_chiffres": 0,
+    "consolidation_tous_niveaux": false,
+    "publication_autorisee": false,
+    "fusion_autorisee": false,
+    "adoption_autorisee": false,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

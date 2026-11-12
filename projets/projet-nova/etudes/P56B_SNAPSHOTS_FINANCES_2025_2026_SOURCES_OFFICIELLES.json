@@ -1,0 +1,120 @@
+{
+  "schema_version": "P56B-1",
+  "date_extraction": "2026-11-07",
+  "territoire": "QUEBEC_DANS_CANADA",
+  "exercice": "2025-2026",
+  "fin_exercice": "2026-03-31",
+  "statut": "OBSERVATIONS_PUBLIQUES_DE_VERSIONS_DISTINCTES_SANS_AUDIT_NOVA",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "unite_montants": "M_CAD",
+  "unite_ratio": "POURCENT_PIB",
+  "sources": {
+    "COMPTES_PUBLICS_AUDITES_2025_2026": {
+      "titre": "Comptes publics du Québec 2025-2026 - Volume 1",
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Comptes-publics/FR/CPTFR_vol1-2025-2026.pdf",
+      "publication": "2026-07",
+      "type": "ETATS_FINANCIERS_AUDITES_PUBLICS",
+      "pages_pdf_zero_index": [
+        11,
+        13,
+        14
+      ],
+      "precision": "Données de l'Etat, incluant les chiffres du budget initial repris dans les colonnes comparatives. Opinion de l'auditeur sur comptes publics, PAS sur Projet Nova."
+    },
+    "RAPPORT_PRELIMINAIRE_2025_2026": {
+      "titre": "Rapport sur la situation financière - résultats préliminaires 2025-2026",
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Rapports_situation_financiere/TRIMFR_SIFIN_4T_25-26.pdf",
+      "publication": "2026-06-11",
+      "type": "PRELIMINAIRE_NON_AUDITE",
+      "pages_pdf_zero_index": [
+        0,
+        2
+      ],
+      "precision": "Situation décrite selon information disponible au 1er juin 2026; résultats ensuite révisés."
+    }
+  },
+  "snapshots": {
+    "BUDGET_INITIAL_REPRIS_DANS_COMPTES_PUBLICS": {
+      "source_id": "COMPTES_PUBLICS_AUDITES_2025_2026",
+      "statut": "PREVISION_BUDGET_INITIAL_RECLASSEE_DANS_ETATS_AUDITES",
+      "exercice": "2025-2026",
+      "donnees": {
+        "revenus_totaux_mcad": "156342",
+        "depenses_totales_mcad": "165772",
+        "provision_eventualites_mcad": "2000",
+        "solde_comptable_mcad": "-11430",
+        "versements_fonds_generations_mcad": "-2177",
+        "solde_leb_mcad": "-13607",
+        "ratio_dette_nette_pib_pct": null
+      },
+      "pages_par_metrique": {
+        "revenus_totaux_mcad": 11,
+        "depenses_totales_mcad": 11,
+        "provision_eventualites_mcad": 11,
+        "solde_comptable_mcad": 11,
+        "versements_fonds_generations_mcad": 14,
+        "solde_leb_mcad": 14
+      }
+    },
+    "PRELIMINAIRE_JUIN_2026": {
+      "source_id": "RAPPORT_PRELIMINAIRE_2025_2026",
+      "statut": "RESULTAT_PRELIMINAIRE_NON_AUDITE",
+      "exercice": "2025-2026",
+      "donnees": {
+        "revenus_totaux_mcad": "161113",
+        "depenses_totales_mcad": "166009",
+        "provision_eventualites_mcad": null,
+        "solde_comptable_mcad": "-4896",
+        "versements_fonds_generations_mcad": "-2289",
+        "solde_leb_mcad": "-7185",
+        "ratio_dette_nette_pib_pct": "38.0"
+      },
+      "pages_par_metrique": {
+        "revenus_totaux_mcad": 2,
+        "depenses_totales_mcad": 2,
+        "solde_comptable_mcad": 2,
+        "versements_fonds_generations_mcad": 2,
+        "solde_leb_mcad": 2,
+        "ratio_dette_nette_pib_pct": 0
+      }
+    },
+    "COMPTES_AUDITES_JUILLET_2026": {
+      "source_id": "COMPTES_PUBLICS_AUDITES_2025_2026",
+      "statut": "RESULTAT_ANNUEL_COMPTES_PUBLICS_AUDITES",
+      "exercice": "2025-2026",
+      "donnees": {
+        "revenus_totaux_mcad": "160428",
+        "depenses_totales_mcad": "165930",
+        "provision_eventualites_mcad": null,
+        "solde_comptable_mcad": "-5502",
+        "versements_fonds_generations_mcad": "-2289",
+        "solde_leb_mcad": "-7791",
+        "ratio_dette_nette_pib_pct": "38.1"
+      },
+      "pages_par_metrique": {
+        "revenus_totaux_mcad": 11,
+        "depenses_totales_mcad": 11,
+        "solde_comptable_mcad": 11,
+        "versements_fonds_generations_mcad": 14,
+        "solde_leb_mcad": 14,
+        "ratio_dette_nette_pib_pct": 13
+      }
+    }
+  },
+  "incompatibilites": [
+    "Ne jamais classer les résultats préliminaires de juin comme définitifs",
+    "Ne pas confondre le solde comptable et le solde LEB après Fonds des générations",
+    "Ne pas retrancher à nouveau le service de la dette inclus dans les dépenses",
+    "Ne pas transposer les états 2025-2026 dans les 60 lignes 2027-2036 du modèle P52B",
+    "Ne pas utiliser un montant consolidé comme recette disponible d'une nouvelle taxe",
+    "Ne pas assimiler l'opinion du Vérificateur général sur l'Etat à une certification du Projet Nova",
+    "Ne pas rapprocher les budgets du Québec dans le Canada et les hypothèses de souveraineté comme un même périmètre",
+    "Les chiffres arrondis en G$ sont secondaires aux valeurs exactes M$ documentées dans les tableaux"
+  ],
+  "inconnues_p52b_conservees": 600,
+  "incidences_p52d_inconnues": 720,
+  "score_p55n_estime": 53,
+  "autorisation_publication_normative": false,
+  "validation_budget_nova": false,
+  "expertise_independante_nova": false
+}

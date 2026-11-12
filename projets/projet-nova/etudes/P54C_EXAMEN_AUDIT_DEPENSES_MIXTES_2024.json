@@ -1,0 +1,64 @@
+{
+  "schema_version": "P54C-1",
+  "jalon": "P54C",
+  "exercice": 2024,
+  "date_reference": "2026-10-24",
+  "titre": "EXAMEN_CIBLE_RAPPORT_AUDITEURS_DEPENSES_MIXTES",
+  "source_p54b_run": 40118178035,
+  "pair_prioritaire": {
+    "page_index_pdf_ville": 102,
+    "page_index_pdf_mamh": 162,
+    "score_dice_p54b": 0.7826,
+    "jetons_numeriques_ville": 10,
+    "jetons_numeriques_mamh": 13,
+    "jetons_numeriques_communs": 9
+  },
+  "contexte_documente_ville": {
+    "document": "RAPPORT_DES_AUDITEURS_INDEPENDANTS_VENTILATION_DEPENSES_MIXTES",
+    "perimetre": "COMPETENCES_AGGLOMERATION_ET_LOCALES",
+    "exercice": "31_DECEMBRE_2024",
+    "referentiel_cite": "R.A.V.Q. 1435",
+    "provenance": "RAPPORT_MUNICIPAL_PAGE_PDF_102_INSPECTEE"
+  },
+  "sources": {
+    "ville": "https://www.ville.quebec.qc.ca/publications/docs_ville/Rapport_financier_2024.pdf",
+    "mamh": "https://www.mamh.gouv.qc.ca/documentsfinanciersweb/Rapport-financier-2024-et-autres-23027.pdf"
+  },
+  "controle_points": [
+    "SECTION_ET_NATURE_RAPPORT_AUDIT",
+    "EXERCICE_ET_DATE_REFERENCES",
+    "PERIMETRE_DEPENSES_MIXTES_LOCALES_AGGLOMERATION",
+    "REFERENTIEL_RAVQ_1435_ET_USAGE",
+    "CONCORDANCE_ENTRE_PUBLICATIONS",
+    "DIFFERENCES_JETONS_NUMERIQUES_NON_QUALIFIES",
+    "SIGNATURES_AVIS_ET_LIMITES",
+    "EFFETS_EMPLOIS_SERVICES_CONTREPARTIES"
+  ],
+  "verrous": {
+    "captures_P53Z_obligatoires": true,
+    "empreintes_recalculees_sur_octets": true,
+    "changement_edition_bloquant": true,
+    "pages_pdf_zero_based": true,
+    "page_auditee_ne_certifie_pas_economies": true,
+    "seules_sections_de_meme_perimetre_comparables": true,
+    "ecart_de_jetons_n_est_pas_anomalie": true,
+    "signature_document_differe_expertise_nova": true,
+    "aucunes_pieces_origines_dans_git": true,
+    "aucun_texte_brut_des_pages_exporte": true,
+    "pas_de_pii_de_signataires_dans_bilan": true,
+    "protection_emplois_services": true,
+    "elimination_reciproque_pas_nouveau_gain": true,
+    "scenarios_quebec_canada_independant_separes": true,
+    "zero_economie_certifiee": true,
+    "aucune_fusion_automatique": true
+  },
+  "etat_initial": {
+    "pages_ciblees": 2,
+    "analyses_contextuelles_effectuees": 0,
+    "examen_professionnel_independant_signe": 0,
+    "montants_certifies": 0,
+    "economies_certifiees_cad": null,
+    "conclusion": "NO_GO_AUTOMATIQUE",
+    "controles_pros_a_instruire": 8
+  }
+}

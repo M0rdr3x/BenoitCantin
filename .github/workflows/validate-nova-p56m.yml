@@ -1,0 +1,46 @@
+name: Projet Nova P56M - Revenu disponible fictif et protections des menages
+on:
+  pull_request:
+    paths:
+      - 'projets/projet-nova/etudes/P56M_*'
+      - 'scripts/simuler_revenu_disponible_menages_nova_p56m.py'
+      - 'scripts/tests/test_simuler_revenu_disponible_menages_nova_p56m.py'
+      - 'projets/projet-nova/etudes/P56L_BASE_DISTRIBUTIVE_PARTICULIERS_2023_CREDITS_ET_QUINTILES.json'
+      - 'projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json'
+      - '.github/workflows/validate-nova-p56m.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  calculs-menages-p56m:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verifier 50 tests P56L et 55 tests P56M
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_auditer_distribution_fiscale_et_protection_pouvoir_achat_nova_p56l.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_simuler_revenu_disponible_menages_nova_p56m.py' -v
+      - name: Confirmer absence de chiffres et de protection fictivement certifies
+        shell: bash
+        run: |
+          python scripts/simuler_revenu_disponible_menages_nova_p56m.py \
+            --cadre projets/projet-nova/etudes/P56M_CADRE_MICROSIMULATION_REVENUS_MENAGES_2027_2036.json \
+            --p56l projets/projet-nova/etudes/P56L_BASE_DISTRIBUTIVE_PARTICULIERS_2023_CREDITS_ET_QUINTILES.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json | python -c 'import json,sys; d=json.load(sys.stdin); assert d["archetypes"]==8 and d["regimes"]==2 and d["unites_archetype_regime_annee_a_renseigner"]==160 and d["montants_reels_certifies"]==0 and d["protection_pouvoir_achat_certifiee"] is False and d["p52b_inconnus"]==600 and d["p52d_inconnus"]==720 and d["p55n_score_estime"]==53 and d["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Empecher toute certification implicite
+        shell: bash
+        run: |
+          set +e
+          python scripts/simuler_revenu_disponible_menages_nova_p56m.py \
+            --cadre projets/projet-nova/etudes/P56M_CADRE_MICROSIMULATION_REVENUS_MENAGES_2027_2036.json \
+            --p56l projets/projet-nova/etudes/P56L_BASE_DISTRIBUTIVE_PARTICULIERS_2023_CREDITS_ET_QUINTILES.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --exiger-microsimulation-certifiee
+          code=$?
+          set -e
+          test "$code" -eq 3

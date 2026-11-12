@@ -1,0 +1,20 @@
+{
+  "schema_version": "P55Y-1",
+  "annee": 2026,
+  "territoire": "QUEBEC_DANS_LE_CANADA",
+  "nature": "FICTIF",
+  "unites": [
+    {
+      "code": "UNIT-A",
+      "taux_prime_par_100_cad": "1.5000",
+      "salaires_assurables_cad": "300000.00",
+      "origine_taux": "HYPOTHESE_FICTIVE"
+    },
+    {
+      "code": "UNIT-B",
+      "taux_prime_par_100_cad": "3.0000",
+      "salaires_assurables_cad": "200000.00",
+      "origine_taux": "HYPOTHESE_FICTIVE"
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+name: Projet Nova P53Y - Registre versions declaratives sans certification
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p53y.yml"
+      - "scripts/enregistrer_versions_documentaires_nova_p53y.py"
+      - "scripts/tests/test_enregistrer_versions_documentaires_nova_p53y.py"
+      - "scripts/comparer_versions_pdf_nova_p53x.py"
+      - "scripts/constituer_dossier_pilote_nova_p53w.py"
+      - "scripts/reconcilier_ecarts_nova_p53v.py"
+      - "scripts/verifier_separation_controles_nova_p53u.py"
+      - "scripts/verifier_integrite_locale_nova_p53t.py"
+      - "scripts/suivre_demandes_acces_nova_p53s.py"
+      - "scripts/preparer_demandes_acces_nova_p53r.py"
+      - "scripts/inventorier_pieces_primaires_nova_p53q.py"
+      - "projets/projet-nova/etudes/P53Y_*"
+      - "projets/projet-nova/etudes/P53X_PROTOCOLE_COMPARAISON_DEUX_PDF_2024.json"
+      - "projets/projet-nova/etudes/P53W_DOSSIER_PUBLIC_QUEBEC_RTC.json"
+      - "projets/projet-nova/etudes/P53V_REGISTRE_ECARTS_ET_CORRECTIFS.json"
+      - "projets/projet-nova/etudes/P53U_GRILLE_INDEPENDANCE_REVUE_PROBATOIRE.json"
+      - "projets/projet-nova/etudes/P53T_PROTOCOLE_INTEGRITE_PROVENANCE.json"
+      - "projets/projet-nova/etudes/P53S_REGISTRE_SUIVI_ET_RECOURS.json"
+      - "projets/projet-nova/etudes/P53R_PROJETS_DEMANDES_ACCES_2024.json"
+      - "projets/projet-nova/etudes/P53Q_INVENTAIRE_PIECES_ET_CONTREPARTIES.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  coherence-versions-declaratives:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: 74 controles unitaires de declarations et limites probatoires
+        run: |
+          python -m py_compile scripts/enregistrer_versions_documentaires_nova_p53y.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_enregistrer_versions_documentaires_nova_p53y.py")
+          assert suite.countTestCases()==74,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Registre sans documents et refus certification
+        run: |
+          python scripts/enregistrer_versions_documentaires_nova_p53y.py --rapport p53y_bilan.json --registre p53y_registre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path("p53y_bilan.json").read_text("utf-8"))
+          register=json.loads(Path("p53y_registre.json").read_text("utf-8"))
+          assert len(register["sources"])==2
+          assert report["controles_en_attente"]==12
+          assert report["copies_officielles_authentifiees"]==0
+          assert report["avis_independants_signes"]==0
+          assert report["economie_certifiee_cad"] is None
+          assert report["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+          set +e
+          python scripts/enregistrer_versions_documentaires_nova_p53y.py --exiger-authentification --rapport p53y_refus.json
+          status=$?
+          set -e
+          test "$status" -eq 3
+      - name: Artefacts agreges seulement
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p53y-registre-non-authentifie
+          path: |
+            p53y_bilan.json
+            p53y_refus.json
+          if-no-files-found: ignore
+          retention-days: 7

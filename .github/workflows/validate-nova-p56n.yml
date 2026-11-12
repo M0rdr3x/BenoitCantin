@@ -1,0 +1,49 @@
+name: Projet Nova P56N - Cas officiels 2026 et protection des aides ponctuelles
+on:
+  pull_request:
+    paths:
+      - 'projets/projet-nova/etudes/P56N_*'
+      - 'scripts/verifier_cas_types_fiscaux_officiels_nova_p56n.py'
+      - 'scripts/tests/test_verifier_cas_types_fiscaux_officiels_nova_p56n.py'
+      - 'projets/projet-nova/etudes/P56M_CADRE_MICROSIMULATION_REVENUS_MENAGES_2027_2036.json'
+      - 'projets/projet-nova/etudes/P56L_BASE_DISTRIBUTIVE_PARTICULIERS_2023_CREDITS_ET_QUINTILES.json'
+      - 'projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json'
+      - '.github/workflows/validate-nova-p56n.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preuves-cas-types-p56n:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Executer 55 tests P56M et 40 tests P56N
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_simuler_revenu_disponible_menages_nova_p56m.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_verifier_cas_types_fiscaux_officiels_nova_p56n.py' -v
+      - name: Verifier cas officiel 2026 sans projection de revenu Nova
+        shell: bash
+        run: |
+          python scripts/verifier_cas_types_fiscaux_officiels_nova_p56n.py \
+            --references projets/projet-nova/etudes/P56N_CAS_TYPES_2026_REFERENCES_OFFICIELLES_PRESTATIONS_ET_LIMITES.json \
+            --p56m projets/projet-nova/etudes/P56M_CADRE_MICROSIMULATION_REVENUS_MENAGES_2027_2036.json \
+            --p56l projets/projet-nova/etudes/P56L_BASE_DISTRIBUTIVE_PARTICULIERS_2023_CREDITS_ET_QUINTILES.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json | python -c 'import json,sys; d=json.load(sys.stdin); assert d["variation_officielle_2025_2026_cad"]=="847" and d["somme_variations_composantes_cad"]=="846" and d["ecart_non_resolu_cad"]=="1" and d["cas_types_microsimules_et_certifies"]==0 and d["paiements_2026_projetes_automatiquement_2027"] is False and d["p52b_montants_inconnus"]==600 and d["p52d_incidences_inconnues"]==720 and d["score_estime_p55n"]==53 and d["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Refuser automatiquement les taux Nova non certifies
+        shell: bash
+        run: |
+          set +e
+          python scripts/verifier_cas_types_fiscaux_officiels_nova_p56n.py \
+            --references projets/projet-nova/etudes/P56N_CAS_TYPES_2026_REFERENCES_OFFICIELLES_PRESTATIONS_ET_LIMITES.json \
+            --p56m projets/projet-nova/etudes/P56M_CADRE_MICROSIMULATION_REVENUS_MENAGES_2027_2036.json \
+            --p56l projets/projet-nova/etudes/P56L_BASE_DISTRIBUTIVE_PARTICULIERS_2023_CREDITS_ET_QUINTILES.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --exiger-taux-certifie
+          code=$?
+          set -e
+          test "$code" -eq 3

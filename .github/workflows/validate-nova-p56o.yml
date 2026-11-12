@@ -1,0 +1,55 @@
+name: Projet Nova P56O - Definition de fin et criteres des 100 pour cent
+on:
+  pull_request:
+    paths:
+      - 'projets/projet-nova/etudes/P56O_*'
+      - 'scripts/evaluer_cloture_programme_nova_p56o.py'
+      - 'scripts/tests/test_evaluer_cloture_programme_nova_p56o.py'
+      - 'projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json'
+      - 'projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json'
+      - 'projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json'
+      - 'projets/projet-nova/etudes/P56M_CADRE_MICROSIMULATION_REVENUS_MENAGES_2027_2036.json'
+      - 'projets/projet-nova/etudes/P56N_CAS_TYPES_2026_REFERENCES_OFFICIELLES_PRESTATIONS_ET_LIMITES.json'
+      - '.github/workflows/validate-nova-p56o.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controle-criteres-de-fin-p56o:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Executer les 40 controles P56N et les 55 controles P56O
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_verifier_cas_types_fiscaux_officiels_nova_p56n.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_evaluer_cloture_programme_nova_p56o.py' -v
+      - name: Verifier le total, les preuves et la non-attestation
+        shell: bash
+        run: |
+          python scripts/evaluer_cloture_programme_nova_p56o.py \
+            --cloture projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --p52b projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json \
+            --p52a projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json \
+            --p56m projets/projet-nova/etudes/P56M_CADRE_MICROSIMULATION_REVENUS_MENAGES_2027_2036.json \
+            --p56n projets/projet-nova/etudes/P56N_CAS_TYPES_2026_REFERENCES_OFFICIELLES_PRESTATIONS_ET_LIMITES.json | python -c 'import json,sys; x=json.load(sys.stdin); assert x["score_estime_pourcent"]==53 and x["points_restants_estimes"]==47 and x["portes_total"]==10 and x["portes_fermees_documentairement"]==0 and x["valeurs_budgetaires_p52b_inconnues"]==600 and x["preuves_fiscales_p52a_non_validees"]==20 and x["incidences_p52d_inconnues_declares"]==720 and x["programme_termine_et_atteste"] is False and x["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Refuser une declaration automatique de programme termine
+        shell: bash
+        run: |
+          set +e
+          python scripts/evaluer_cloture_programme_nova_p56o.py \
+            --cloture projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --p52b projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json \
+            --p52a projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json \
+            --p56m projets/projet-nova/etudes/P56M_CADRE_MICROSIMULATION_REVENUS_MENAGES_2027_2036.json \
+            --p56n projets/projet-nova/etudes/P56N_CAS_TYPES_2026_REFERENCES_OFFICIELLES_PRESTATIONS_ET_LIMITES.json \
+            --declarer-programme-termine
+          code=$?
+          set -e
+          test "$code" -eq 3

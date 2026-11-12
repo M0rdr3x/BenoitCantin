@@ -1,0 +1,70 @@
+name: Projet Nova P52L - Avis independants et contestations
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p52l.yml"
+      - "scripts/evaluer_relectures_independantes_nova_p52l.py"
+      - "scripts/tests/test_evaluer_relectures_independantes_nova_p52l.py"
+      - "projets/projet-nova/etudes/P52L_*"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+      - "projets/projet-nova/etudes/P52I_SOURCES_ET_ATTESTATIONS.json"
+      - "projets/projet-nova/etudes/P52K_REGISTRE_PROVENANCE_BUDGET.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  non-autorisation-par-defaut:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Lecture seule et identifiants non conserves
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Quarante-quatre tests adversariaux
+        run: |
+          python -m py_compile scripts/evaluer_relectures_independantes_nova_p52l.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests",pattern="test_evaluer_relectures_independantes_nova_p52l.py")
+          assert suite.countTestCases()==44,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Rapport agrege 20 preuves en attente
+        run: |
+          python scripts/evaluer_relectures_independantes_nova_p52l.py --rapport p52l_rapport_agrege.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p52l_rapport_agrege.json").read_text("utf-8"))
+          assert r["preuves_encadrees"]==20
+          assert r["evenements_declares"]==0
+          assert r["stades_declaratifs"]["NON_RECUE"]==20
+          assert r["attestations_humaines_authentifiees"]==0
+          assert r["decisions_formelles_authentifiees"]==0
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Exigence stricte refuse la validation fictive
+        run: |
+          set +e
+          python scripts/evaluer_relectures_independantes_nova_p52l.py --exiger-validation --rapport p52l_refus.json
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Fichiers agregees sans identite
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p52l-revues-declaratives-no-go
+          path: |
+            p52l_rapport_agrege.json
+            p52l_refus.json
+          retention-days: 7
+          if-no-files-found: ignore

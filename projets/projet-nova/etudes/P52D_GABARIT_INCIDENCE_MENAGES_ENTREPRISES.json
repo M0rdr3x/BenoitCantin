@@ -1,0 +1,1261 @@
+{
+  "schema_version": "P52D-1",
+  "statut": "ETUDE_NON_ADOPTEE",
+  "reference_main_sha": "9ed5f70cbe7022f25a679346a1288701f3b09067",
+  "unite": "CAD_PAR_CAS_ANNUEL",
+  "autorisations": {
+    "fiscalite": false,
+    "publication": false,
+    "fusion": false
+  },
+  "aucune_ponderation_population": true,
+  "sources_metodologiques": [
+    {
+      "url": "https://www.finances.gouv.qc.ca/ministere/outils_services/outils_calcul/revenu_disponible/",
+      "scope": "méthode générale revenu disponible; le calculateur public ne couvre pas tous les revenus et crédits; ne donne aucune valeur automatique à ce gabarit"
+    },
+    {
+      "url": "https://www.revenuquebec.ca/fr/citoyens/declaration-de-revenus/produire-votre-declaration-de-revenus/taux-dimposition/",
+      "scope": "taux marginaux Québec 2026; non assimilables à des impôts nets effectivement acquittés"
+    },
+    {
+      "url": "https://www150.statcan.gc.ca/n1/en/catalogue/3610058701",
+      "scope": "quintiles publiés Canada, NON utilisables comme ménage québécois représentatif sans filtrage et méthode"
+    },
+    {
+      "url": "https://www150.statcan.gc.ca/n1/daily-quotidien/260413/t002a-fra.htm",
+      "scope": "statistique sur quintiles Canada, ni valeurs individuelles ni données québécoises de cette grille"
+    }
+  ],
+  "regimes": {
+    "QUEBEC_DANS_CANADA": {
+      "competence": "PROVINCE_SANS_MODIFIER_FEDERAL",
+      "scenarios": {
+        "central": {
+          "menages": [
+            {
+              "regime": "QUEBEC_DANS_CANADA",
+              "scenario": "central",
+              "categorie": "personne_seule_revenu_modeste",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_DANS_CANADA",
+              "scenario": "central",
+              "categorie": "famille_avec_enfants",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_DANS_CANADA",
+              "scenario": "central",
+              "categorie": "famille_monoparentale",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_DANS_CANADA",
+              "scenario": "central",
+              "categorie": "personne_retraitee",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_DANS_CANADA",
+              "scenario": "central",
+              "categorie": "personne_seule_revenu_moyen",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            }
+          ],
+          "entreprises": [
+            {
+              "regime": "QUEBEC_DANS_CANADA",
+              "scenario": "central",
+              "categorie": "PME",
+              "actuel": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "propose": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_DANS_CANADA",
+              "scenario": "central",
+              "categorie": "GRANDE_ENTREPRISE",
+              "actuel": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "propose": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "sources": {},
+              "classification_validee": false
+            }
+          ]
+        },
+        "prudent": {
+          "menages": [
+            {
+              "regime": "QUEBEC_DANS_CANADA",
+              "scenario": "prudent",
+              "categorie": "personne_seule_revenu_modeste",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_DANS_CANADA",
+              "scenario": "prudent",
+              "categorie": "famille_avec_enfants",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_DANS_CANADA",
+              "scenario": "prudent",
+              "categorie": "famille_monoparentale",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_DANS_CANADA",
+              "scenario": "prudent",
+              "categorie": "personne_retraitee",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_DANS_CANADA",
+              "scenario": "prudent",
+              "categorie": "personne_seule_revenu_moyen",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            }
+          ],
+          "entreprises": [
+            {
+              "regime": "QUEBEC_DANS_CANADA",
+              "scenario": "prudent",
+              "categorie": "PME",
+              "actuel": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "propose": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_DANS_CANADA",
+              "scenario": "prudent",
+              "categorie": "GRANDE_ENTREPRISE",
+              "actuel": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "propose": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "sources": {},
+              "classification_validee": false
+            }
+          ]
+        },
+        "stress": {
+          "menages": [
+            {
+              "regime": "QUEBEC_DANS_CANADA",
+              "scenario": "stress",
+              "categorie": "personne_seule_revenu_modeste",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_DANS_CANADA",
+              "scenario": "stress",
+              "categorie": "famille_avec_enfants",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_DANS_CANADA",
+              "scenario": "stress",
+              "categorie": "famille_monoparentale",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_DANS_CANADA",
+              "scenario": "stress",
+              "categorie": "personne_retraitee",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_DANS_CANADA",
+              "scenario": "stress",
+              "categorie": "personne_seule_revenu_moyen",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            }
+          ],
+          "entreprises": [
+            {
+              "regime": "QUEBEC_DANS_CANADA",
+              "scenario": "stress",
+              "categorie": "PME",
+              "actuel": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "propose": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_DANS_CANADA",
+              "scenario": "stress",
+              "categorie": "GRANDE_ENTREPRISE",
+              "actuel": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "propose": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "sources": {},
+              "classification_validee": false
+            }
+          ]
+        }
+      }
+    },
+    "QUEBEC_SOUVERAIN": {
+      "competence": "ETAT_SOUVERAIN_HYPOTHETIQUE_NON_RECONNU",
+      "scenarios": {
+        "central": {
+          "menages": [
+            {
+              "regime": "QUEBEC_SOUVERAIN",
+              "scenario": "central",
+              "categorie": "personne_seule_revenu_modeste",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_SOUVERAIN",
+              "scenario": "central",
+              "categorie": "famille_avec_enfants",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_SOUVERAIN",
+              "scenario": "central",
+              "categorie": "famille_monoparentale",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_SOUVERAIN",
+              "scenario": "central",
+              "categorie": "personne_retraitee",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_SOUVERAIN",
+              "scenario": "central",
+              "categorie": "personne_seule_revenu_moyen",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            }
+          ],
+          "entreprises": [
+            {
+              "regime": "QUEBEC_SOUVERAIN",
+              "scenario": "central",
+              "categorie": "PME",
+              "actuel": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "propose": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_SOUVERAIN",
+              "scenario": "central",
+              "categorie": "GRANDE_ENTREPRISE",
+              "actuel": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "propose": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "sources": {},
+              "classification_validee": false
+            }
+          ]
+        },
+        "prudent": {
+          "menages": [
+            {
+              "regime": "QUEBEC_SOUVERAIN",
+              "scenario": "prudent",
+              "categorie": "personne_seule_revenu_modeste",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_SOUVERAIN",
+              "scenario": "prudent",
+              "categorie": "famille_avec_enfants",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_SOUVERAIN",
+              "scenario": "prudent",
+              "categorie": "famille_monoparentale",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_SOUVERAIN",
+              "scenario": "prudent",
+              "categorie": "personne_retraitee",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_SOUVERAIN",
+              "scenario": "prudent",
+              "categorie": "personne_seule_revenu_moyen",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            }
+          ],
+          "entreprises": [
+            {
+              "regime": "QUEBEC_SOUVERAIN",
+              "scenario": "prudent",
+              "categorie": "PME",
+              "actuel": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "propose": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_SOUVERAIN",
+              "scenario": "prudent",
+              "categorie": "GRANDE_ENTREPRISE",
+              "actuel": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "propose": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "sources": {},
+              "classification_validee": false
+            }
+          ]
+        },
+        "stress": {
+          "menages": [
+            {
+              "regime": "QUEBEC_SOUVERAIN",
+              "scenario": "stress",
+              "categorie": "personne_seule_revenu_modeste",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_SOUVERAIN",
+              "scenario": "stress",
+              "categorie": "famille_avec_enfants",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_SOUVERAIN",
+              "scenario": "stress",
+              "categorie": "famille_monoparentale",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_SOUVERAIN",
+              "scenario": "stress",
+              "categorie": "personne_retraitee",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_SOUVERAIN",
+              "scenario": "stress",
+              "categorie": "personne_seule_revenu_moyen",
+              "actuel": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "propose": {
+                "revenu_brut": null,
+                "prestations_federales": null,
+                "prestations_quebec_ou_etat": null,
+                "impot_revenu_federal": null,
+                "impot_revenu_quebec_ou_etat": null,
+                "cotisations_obligatoires": null,
+                "prelevements_municipaux_directs": null,
+                "taxes_consommation_supportees": null
+              },
+              "sources": {},
+              "classification_validee": false
+            }
+          ],
+          "entreprises": [
+            {
+              "regime": "QUEBEC_SOUVERAIN",
+              "scenario": "stress",
+              "categorie": "PME",
+              "actuel": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "propose": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "sources": {},
+              "classification_validee": false
+            },
+            {
+              "regime": "QUEBEC_SOUVERAIN",
+              "scenario": "stress",
+              "categorie": "GRANDE_ENTREPRISE",
+              "actuel": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "propose": {
+                "chiffre_affaires": null,
+                "couts_exploitation_hors_salaires": null,
+                "masse_salariale": null,
+                "impot_entreprise_federal": null,
+                "impot_entreprise_quebec_ou_etat": null,
+                "cotisations_employeur": null,
+                "prelevements_municipaux": null,
+                "taxes_consommation_non_recouvrables": null,
+                "subventions_recues": null,
+                "charge_additionnelle_anti_evasion": null
+              },
+              "sources": {},
+              "classification_validee": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  "note": "Toutes les valeurs sont volontairement null. Les 42 cas (30 ménages + 12 entreprises) ne sont pas des ménages réels ni un échantillon représentatif. Deux phases × 8 ou 10 composantes donnent 720 entrées inconnues. Les variations fiscales ne peuvent être revendiquées avant preuves indépendantes. Aucun effet prix/salaires, inflation, taux d'imposition ou comportement projeté."
+}

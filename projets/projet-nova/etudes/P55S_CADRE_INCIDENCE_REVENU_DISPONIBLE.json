@@ -1,0 +1,207 @@
+{
+  "schema_version": "P55S-1",
+  "date_reference": "2026-11-06",
+  "titre": "CADRE_INCIDENCE_DISTRIBUTIVE_MENAGES_ET_ENTREPRISES_AUCUN_TAUX_ADOPTE",
+  "sources": [
+    {
+      "id": "P52D",
+      "chemin": "projets/projet-nova/etudes/P52D_GABARIT_INCIDENCE_MENAGES_ENTREPRISES.json",
+      "role": "SOURCES_DE_CAS_AU_STATUT_INCONNU"
+    },
+    {
+      "id": "ISQ_DISPONIBLE",
+      "url": "https://statistique.quebec.ca/fr/document/revenu-disponible",
+      "role": "METHODOLOGIE_DEFINITIONS_NON_MICRODONNEES"
+    },
+    {
+      "id": "QUEBEC_SIMULATION",
+      "url": "https://www.quebec.ca/finances-impots-et-taxes/credits-impots-deductions/estimer-revenu-disponible",
+      "role": "REFERENCE_OFFICIELLE_ESTIMATION_REVENUS_NON_EXHAUSTIVE"
+    },
+    {
+      "id": "CFFP_SIMULATEUR",
+      "url": "https://cffp.recherche.usherbrooke.ca/outils-ressources/simulateur-fiscal-quebec/",
+      "role": "RESSOURCE_METHODOLOGIQUE_AUDITER_AVANT_COPIE"
+    },
+    {
+      "id": "P55N",
+      "chemin": "projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json",
+      "role": "POINTAGE_NON_CERTIFIE"
+    }
+  ],
+  "perimetre": {
+    "regimes": [
+      "QUEBEC_DANS_CANADA",
+      "QUEBEC_SOUVERAIN"
+    ],
+    "scenarios": [
+      "central",
+      "prudent",
+      "stress"
+    ],
+    "menages_categories": [
+      "personne_seule_revenu_modeste",
+      "famille_avec_enfants",
+      "famille_monoparentale",
+      "personne_retraitee",
+      "personne_seule_revenu_moyen"
+    ],
+    "entreprises_categories": [
+      "PME",
+      "GRANDE_ENTREPRISE"
+    ],
+    "champs_menages": [
+      "revenu_brut",
+      "prestations_federales",
+      "prestations_quebec_ou_etat",
+      "impot_revenu_federal",
+      "impot_revenu_quebec_ou_etat",
+      "cotisations_obligatoires",
+      "prelevements_municipaux_directs",
+      "taxes_consommation_supportees"
+    ],
+    "champs_entreprises": [
+      "chiffre_affaires",
+      "couts_exploitation_hors_salaires",
+      "masse_salariale",
+      "impot_entreprise_federal",
+      "impot_entreprise_quebec_ou_etat",
+      "cotisations_employeur",
+      "prelevements_municipaux",
+      "taxes_consommation_non_recouvrables",
+      "subventions_recues",
+      "charge_additionnelle_anti_evasion"
+    ],
+    "situations_fiscales": [
+      "actuel",
+      "propose"
+    ],
+    "combinaisons_regime_scenario": 6,
+    "nombre_cas_menages": 30,
+    "nombre_cas_entreprises": 12,
+    "montants_menages_inconnus": 480,
+    "montants_entreprises_inconnus": 240,
+    "montants_inconnus_total": 720,
+    "cas_reels_suffisamment_documentes": 0,
+    "cas_artificiels_representatifs_de_la_population": false,
+    "comparaison_validable_avec_donnees_actuelles": false
+  },
+  "methodes": {
+    "menage_direct": "revenu_brut + prestations_federales + prestations_quebec_ou_etat - impot_revenu_federal - impot_revenu_quebec_ou_etat - cotisations_obligatoires - prelevements_municipaux_directs",
+    "menage_apres_taxes_supportees_illustratif": "menage_direct - taxes_consommation_supportees",
+    "entreprise_flux_simplifie_illustratif": "chiffre_affaires - couts_exploitation_hors_salaires - masse_salariale - impot_entreprise_federal - impot_entreprise_quebec_ou_etat - cotisations_employeur - prelevements_municipaux - taxes_consommation_non_recouvrables + subventions_recues - charge_additionnelle_anti_evasion",
+    "limite_menage": "TAXES_CONSOMMATION_SUPPORTÉES_NE_SONT_PAS_UNE_DEDUCTION_DU_REVENU_DISPONIBLE_OFFICIEL",
+    "limite_entreprise": "FLUX_SIMPLIFIE_NON_BENEFICE_FISCAL_NI_TRESORERIE_CERTIFIEE",
+    "calcul_reel_autorise": false,
+    "calcul_synthetique_avec_jeu_fictif_explicitement_declare": true,
+    "extrapolation_fiscale_autorisee": false,
+    "comparaison_reelle_par_decile_disponible": false
+  },
+  "actions_justificatifs": [
+    {
+      "id": "S01",
+      "objet": "REVENU_DISPONIBLE_ACTUEL",
+      "preuve": "Simulateur 2026 Gouvernement du Québec et hypothèses vérifiées par situation familiale",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "S02",
+      "objet": "PROTECTION_FAIBLES_REVENUS",
+      "preuve": "Impôts, cotisations, prestations et cas sous minimum vital par région",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "S03",
+      "objet": "ENFANTS_ET_MONOPARENTS",
+      "preuve": "Allocation famille Québec, prestations fédérales, frais et crédits non automatiquement supprimés",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "S04",
+      "objet": "RETRAITES",
+      "preuve": "Prestations, crédits, pensions et coût des services essentiels préservés",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "S05",
+      "objet": "TRANSMISSION_PRIX",
+      "preuve": "Répercussion possible des taxes ou cotisations sur les prix et le coût de la vie",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "S06",
+      "objet": "PME_ET_EMPLOIS",
+      "preuve": "Cotisations employeur, subventions, taxes non recouvrables, incertitude sur répercussion salariale",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "S07",
+      "objet": "FISCALITE_FEDERALE",
+      "preuve": "Compétences fédérales intactes au Canada et mécanismes hypothétiques de transition",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "S08",
+      "objet": "MUNICIPALITES",
+      "preuve": "Taxes directes et financement des services municipaux conciliés sans double compte",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "S09",
+      "objet": "PONDERATION_POPULATION",
+      "preuve": "Échantillon statistique représentatif et distribution par décile et région",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "S10",
+      "objet": "FONCTIONS_PUBLIQUES",
+      "preuve": "Qualité, capacité et financement du maintien des services en nature",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "S11",
+      "objet": "RECETTES_ET_SOLDE",
+      "preuve": "Lien aux deux budgets décennaux et au rendement anti-évasion non présumé",
+      "statut": "OUVERT"
+    },
+    {
+      "id": "S12",
+      "objet": "AVIS_INDEPENDANTS",
+      "preuve": "Validation fiscale juridique économique et comptable signée",
+      "statut": "OUVERT"
+    }
+  ],
+  "protections": {
+    "NE_PAS_REMPLACER_NULL_PAR_ZERO": true,
+    "NE_PAS_CALCULER_INCIDENTE_REELLE_SANS_PIECES": true,
+    "CALCULS_SYNTHETIQUES_SEULEMENT_PAR_ENTREES_EXPLICITES": true,
+    "AUCUNE_PONDERATION_POPULATION_PAR_CAS_FICTIFS": true,
+    "REVENU_DISPONIBLE_DIRECT_DISTINCT_TAXES_CONSOMMATION": true,
+    "DEPENSES_SERVICES_PUBLICS_EN_NATURE_HORS_REVENU_DISPONIBLE": true,
+    "PRIX_ET_REPERCUSSIONS_NON_ESTIMES_AUTOMATIQUEMENT": true,
+    "TRAITEMENT_FRAIS_GARDE_ET_LOGEMENT_A_DOCUMENTer": true,
+    "FEDERAL_NON_SUPPRIME_DANS_CANADA": true,
+    "TRANSITION_SOUVERAINE_HYPOTHETIQUE": true,
+    "SERVICE_DETTE_ET_PRESTATIONS_NON_SUPPRIMES": true,
+    "PROTECTION_MENAGES_MODESTES_ET_RETRAITES": true,
+    "PROTECTION_PME_ET_EMPLOIS": true,
+    "FONDS_MUNICIPAUX_CONSERVES": true,
+    "PRELEVEMENT_ANTI_PARADIS_NON_CERTIFIE": true,
+    "IMPOT_REVENU_NON_VALIDE": true,
+    "CRITERES_GO_REQUIERENT_CAS_COMPLETS": true,
+    "AUCUN_TAUX_CANDIDAT_IMPLICITE": true,
+    "DEFICIT_BUDGETAIRE_NE_SE_DEDUIT_PAS_DES_CAS": true,
+    "MAINTENIR_P52D_720_MONTANTS_INCONNUS": true,
+    "MAINTENIR_P52B_600_MONTANTS_INCONNUS": true,
+    "MAINTENIR_P55N_53_POURCENT": true,
+    "AUCUNE_ECONOMIE_CERTIFIEE": true,
+    "AUCUN_AVIS_PROFESSIONNEL_SIGNE": true,
+    "SINJIRA_INCHANGE": true,
+    "PAS_DE_CONTACT_EXTERNE": true,
+    "PAS_DE_DEPENSE": true,
+    "PAS_DE_FUSION_MAIN": true,
+    "NO_GO_AUTOMATIQUE": true
+  },
+  "statut": "PROTOCOLE_DE_CALCUL_DOCUMENTAIRE_ET_SYNTHETIQUE_NON_ADOPTE",
+  "decision": "NO_GO_AUTOMATIQUE"
+}

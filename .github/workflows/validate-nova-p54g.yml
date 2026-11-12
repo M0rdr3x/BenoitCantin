@@ -1,0 +1,83 @@
+name: Projet Nova P54G - Decisions de suivi sans cloture automatique
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54g.yml"
+      - "scripts/controler_decisions_procedurales_nova_p54g.py"
+      - "scripts/tests/test_controler_decisions_procedurales_nova_p54g.py"
+      - "scripts/gerer_contre_revues_nova_p54f.py"
+      - "scripts/preparer_revue_humaine_nova_p54e.py"
+      - "projets/projet-nova/etudes/P54G_*"
+      - "projets/projet-nova/etudes/P54F_REGISTRE_CONTRE_REVUE_2024.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  formaliser-suivis-non-certifiants:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Dependances de la chaine documentaire
+        run: python -m pip install pypdf==5.9.0
+      - name: Executer 54 tests synthetiques
+        run: |
+          python -m py_compile scripts/controler_decisions_procedurales_nova_p54g.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_controler_decisions_procedurales_nova_p54g.py")
+          assert suite.countTestCases()==54,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Quatre dossiers restent ouverts et non certifies
+        run: |
+          python scripts/controler_decisions_procedurales_nova_p54g.py --bilan p54g_initial.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p54g_initial.json").read_text("utf-8"))
+          assert len(d["dossiers"])==4
+          assert d["declarations_P54F_recues"]==0
+          assert d["actions_suivi_declarees"]==0
+          assert d["dossiers_certifies"]==0
+          assert d["avis_independants_signes_authentifies"]==0
+          assert d["economies_certifiees_cad"] is None
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          assert all(not row["dossier_clos"] for row in d["dossiers"])
+          PY
+      - name: Creer et effacer un modele prive du runner
+        run: |
+          python scripts/controler_decisions_procedurales_nova_p54g.py --modele-prive "$RUNNER_TEMP/p54g_modele_prive.json"
+          python - <<'PY'
+          import os,json
+          from pathlib import Path
+          f=Path(os.environ["RUNNER_TEMP"])/"p54g_modele_prive.json"
+          assert f.exists() and (f.stat().st_mode & 0o777)==0o600
+          assert json.loads(f.read_text("utf-8"))["suivis"]==[]
+          f.unlink()
+          PY
+      - name: Refuser tout GO automatique
+        run: |
+          set +e
+          python scripts/controler_decisions_procedurales_nova_p54g.py --exiger-go
+          result=$?
+          set -e
+          test "$result" -eq 3
+      - name: Archiver uniquement le bilan neutre
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54g-decisions-suivi-quatre-dossiers-no-go
+          path: p54g_initial.json
+          if-no-files-found: ignore
+          retention-days: 7

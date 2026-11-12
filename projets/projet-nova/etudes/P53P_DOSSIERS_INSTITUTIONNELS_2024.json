@@ -1,0 +1,102 @@
+{
+  "schema_version": "P53P-1",
+  "jalon": "P53P",
+  "date_reference": "2026-10-22",
+  "statut": "SOURCES_CIBLEES_SANS_PIECE_TRANSACTIONNELLE",
+  "exercice": 2024,
+  "priorites_preexistantes": 5,
+  "ajout_hors_top25": 1,
+  "sources_officielles": {
+    "MONTREAL_BILAN_2024": "https://montreal.ca/articles/bilan-financier-2024-de-montreal-91858",
+    "ARTM_RAPPORT_2024": "https://www.artm.quebec/rapport-annuel-2024/",
+    "QUEBEC_RF_2024": "https://www.ville.quebec.qc.ca/publications/docs_ville/Rapport_financier_2024.pdf",
+    "QUEBEC_RAPPORTS": "https://www.ville.quebec.qc.ca/apropos/profil-financier/rapport-financier.aspx",
+    "STM_INDICATEURS": "https://www.stm.info/fr/a-propos/informations-entreprise-et-financieres/indicateurs-de-performance",
+    "RTC_BILAN_ACHALANDAGE": "https://www.rtcquebec.ca/medias/communiques/achalandage-et-satisfaction-indicateurs-au-vert-pour-le-rtc",
+    "SAINT_VALERE_DOCUMENTATION": "https://www.msvalere.qc.ca/documentation",
+    "MAMH_PORTAIL": "https://www.quebec.ca/gouvernement/gestion-municipale/finances-fiscalite-municipales/information-financiere/publications-financieres/rapport-financier"
+  },
+  "constat_consolidation_source": "QUEBEC_RF_2024",
+  "constat_consolidation_pages_pdf": [
+    35,
+    197
+  ],
+  "cas": [
+    {
+      "code": "66023",
+      "rang_p53h": 1,
+      "constat": "PUBLICATION_2024_SANS_APPARIEMENT_TRANSACTIONNEL",
+      "sources": [
+        "MONTREAL_BILAN_2024",
+        "MAMH_PORTAIL"
+      ]
+    },
+    {
+      "code": "T1025",
+      "rang_p53h": 2,
+      "constat": "PUBLICATION_2024_SANS_APPARIEMENT_TRANSACTIONNEL",
+      "sources": [
+        "ARTM_RAPPORT_2024",
+        "MAMH_PORTAIL"
+      ]
+    },
+    {
+      "code": "23027",
+      "rang_p53h": 3,
+      "constat": "RTC_CONSOLIDE_ET_RECIPROQUES_DEJA_ELIMINEES",
+      "sources": [
+        "QUEBEC_RF_2024",
+        "QUEBEC_RAPPORTS",
+        "MAMH_PORTAIL"
+      ]
+    },
+    {
+      "code": "T0081",
+      "rang_p53h": 4,
+      "constat": "INDICATEURS_2024_SANS_APPARIEMENT_TRANSACTIONNEL",
+      "sources": [
+        "STM_INDICATEURS",
+        "MAMH_PORTAIL"
+      ]
+    },
+    {
+      "code": "T0088",
+      "rang_p53h": 5,
+      "constat": "RTC_CONSOLIDE_ET_RECIPROQUES_DEJA_ELIMINEES",
+      "sources": [
+        "QUEBEC_RF_2024",
+        "RTC_BILAN_ACHALANDAGE",
+        "MAMH_PORTAIL"
+      ]
+    },
+    {
+      "code": "39135",
+      "rang_p53h": null,
+      "constat": "AJOUT_SOURCE_MAMH_2024_SANS_APPARIEMENT",
+      "sources": [
+        "SAINT_VALERE_DOCUMENTATION",
+        "MAMH_PORTAIL"
+      ]
+    }
+  ],
+  "verrous": {
+    "aucune_economie_derivee_de_flux_recus": true,
+    "consolidation_deja_realisee_non_nouveau_gain": true,
+    "aucun_appariement_invente": true,
+    "originaux_transactionnels_non_acquis": true,
+    "zero_non_substitue_aux_blancs": true,
+    "aucune_fusion_autorisee": true,
+    "services_emplois_maintenus": true,
+    "source_2024_non_budget_2026_2027": true,
+    "cas_top5_pas_reclassement_top25": true,
+    "aucune_hypothese_fiscale_adoptee": true
+  },
+  "etat_initial": {
+    "sources_publiques_referencees": 8,
+    "cas_documentaires": 6,
+    "transactions_appariees": 0,
+    "avis_independants_signes": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

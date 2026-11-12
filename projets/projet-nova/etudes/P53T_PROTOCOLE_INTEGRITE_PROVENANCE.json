@@ -1,0 +1,69 @@
+{
+  "schema_version": "P53T-1",
+  "jalon": "P53T",
+  "date_reference": "2026-10-22",
+  "statut": "PROTOCOLE_INTEGRITE_LOCALE_SANS_AUTHENTIFICATION",
+  "exercice_reference": 2024,
+  "codes": [
+    "66023",
+    "T1025",
+    "23027",
+    "T0081",
+    "T0088",
+    "39135"
+  ],
+  "positions_par_dossier": 17,
+  "types_justificatifs": [
+    "PIECE_FINANCIERE",
+    "TRACE_TRANSMISSION",
+    "ETAT_FINANCIER",
+    "PIECE_SERVICES_EMPLOIS"
+  ],
+  "roles": [
+    "COLLECTE_DOCUMENTAIRE",
+    "CONTROLE_TECHNIQUE",
+    "EXAMEN_JURIDIQUE",
+    "REVUE_INDEPENDANTE"
+  ],
+  "operations": [
+    "RECEPTION",
+    "COPIE_CONTROLEE",
+    "CONSULTATION",
+    "TRANSFERT"
+  ],
+  "statuts": [
+    "NON_PRESENTE",
+    "CONCORDANCE_OCTETS_LOCAUX_NON_AUTHENTIFICATION",
+    "ECHEC_CONTROLE_OCTETS",
+    "ACCES_RESTREINT_NON_TRAITE"
+  ],
+  "standards": [
+    "https://csrc.nist.gov/glossary/term/chain_of_custody",
+    "https://nvlpubs.nist.gov/nistpubs/ir/2022/NIST.IR.8387.pdf",
+    "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-175Br1.pdf"
+  ],
+  "verrous": {
+    "aucun_original_ni_montant_en_sortie": true,
+    "controles_sur_fichiers_locaux_explicitement_fournis": true,
+    "aucune_connexion_reseau": true,
+    "chemins_de_traversee_et_symlinks_refuses": true,
+    "documents_restraints_non_lus": true,
+    "hash_seul_ne_prouve_pas_provenance": true,
+    "declaration_roles_journal_non_signes": true,
+    "horodatage_declare_n_est_pas_preuve": true,
+    "pieces_de_six_organismes_non_equivalentes_economies": true,
+    "controle_double_elimination_quebec_rtc": true,
+    "garanties_emplois_et_services": true,
+    "pas_d_economie_certifiee": true,
+    "aucune_fusion_automatique": true
+  },
+  "etat_initial": {
+    "dossiers": 6,
+    "slots": 102,
+    "originaux_obtenus_par_le_projet": 0,
+    "attestations_provenance_signees": 0,
+    "controles_humains_independants_valides": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

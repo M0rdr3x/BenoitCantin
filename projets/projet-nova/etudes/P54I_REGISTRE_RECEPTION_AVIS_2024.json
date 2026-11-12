@@ -1,0 +1,87 @@
+{
+  "schema_version": "P54I-1",
+  "date_reference": "2026-10-24",
+  "exercice_source": 2024,
+  "source_jalon": "P54H",
+  "source_run_p54d": 40120462237,
+  "mandats": [
+    "MANDAT-COMPTABLE-2024",
+    "MANDAT-JURIDIQUE-2024"
+  ],
+  "dossiers_source": [
+    "P54E-V-001",
+    "P54E-M-001",
+    "P54E-M-002",
+    "P54E-M-003"
+  ],
+  "types_piece": [
+    "DOCUMENT_MANDAT_DECLARATIF",
+    "AVIS_PROFESSIONNEL_NON_AUTHENTIFIE",
+    "ANNEXE_JUSTIFICATIVE"
+  ],
+  "reserves": [
+    "AUCUNE_DECLAREE_NON_VERIFIEE",
+    "SIGNATURE_A_VERIFIER",
+    "PORTEE_LIMITEE",
+    "PIECES_PRIMAIRES_MANQUANTES",
+    "CONFLIT_A_EXAMINER",
+    "CONTRADICTION_OUVERTE",
+    "UNITE_PERIMETRE_AMBIGUS",
+    "SUSPENSION_EXPLICITE"
+  ],
+  "situations": [
+    "FICHIER_LOCAL_NON_RECU",
+    "FICHIER_LOCAL_INTEGRE_NON_AUTHENTIFIE",
+    "RESERVE_OUVERTE",
+    "SUSPENDU"
+  ],
+  "points_reception": [
+    "EMPLACEMENT_PRIVE",
+    "SHA256_OCTETS",
+    "TYPE_PIECE_ET_MANDAT",
+    "PORTEE_EXERCICE_2024",
+    "CONFLITS_ET_INDEPENDANCE",
+    "SIGNATURE_ET_AUTHENTICITE",
+    "RESERVES_ET_CONTRADICTIONS",
+    "DROITS_D_ACCES_ET_CONFIDENTIALITE",
+    "CONTINUITE_EMPLOIS_SERVICES",
+    "DOUBLE_COMPTE_CONSOLIDATION"
+  ],
+  "limites": {
+    "taille_manifest_octets": 32768,
+    "nombre_fichiers_max": 8,
+    "fichier_max_octets": 33554432,
+    "roles_de_reception_non_authentifies": 2
+  },
+  "protections": {
+    "fichier_local_ne_prouve_pas_provenance_officielle": true,
+    "hachage_octets_obligatoire": true,
+    "avis_professionnel_ne_signifie_pas_audit_certifie": true,
+    "authenticite_signature_non_automatisee": true,
+    "qualification_professionnelle_non_verifiee": true,
+    "conflits_d_interets_non_resolus_automatiquement": true,
+    "reservations_et_desaccords_non_effaces": true,
+    "pièces_privees_hors_git": true,
+    "aucun_fichier_avis_original_sur_actions": true,
+    "aucun_nom_numero_permis_ni_sha_prive_public": true,
+    "aucune_simulation_d_honoraires_engages": true,
+    "aucun_contact_ou_mandat_reel_pretendu": true,
+    "aucun_go_financier_ou_politique": true,
+    "aucun_dossier_p54e_clos": true,
+    "aucun_double_compte_ville_rtc": true,
+    "emploi_et_services_proteges": true,
+    "deux_scenarios_quebec_separes": true,
+    "main_et_sinjira_inchanges": true
+  },
+  "etat_initial": {
+    "mandats": 2,
+    "dossiers_non_clos": 4,
+    "positions_controle_reception_non_attestees": 20,
+    "documents_reellement_recus_dans_git": 0,
+    "avis_originaux_authentifies": 0,
+    "mandats_signes_authentifies": 0,
+    "experts_independance_verifiee": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

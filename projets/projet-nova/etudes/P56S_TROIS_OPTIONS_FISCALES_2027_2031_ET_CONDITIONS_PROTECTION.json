@@ -1,0 +1,392 @@
+{
+  "schema_version": "P56S-1",
+  "date": "2026-11-08",
+  "titre": "Trois options fiscales comparables - continuité, transition conditionnelle et cible à deux prélèvements",
+  "statut": "ARITHMETIQUE_EXPLORATOIRE_PAS_TAUX_NOVA_PAS_POLITIQUE_ADOPTEE",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "sources": {
+    "p56r": "projets/projet-nova/etudes/P56R_INVENTAIRE_EXHAUSTIF_CATEGORIES_RECETTES_ET_PONT_FISCAL_2026_2031.json",
+    "p56q": "projets/projet-nova/etudes/P56Q_PONT_CONTREFACTUEL_RECETTES_2027_2031_SIMULATEUR_AMENDE.json",
+    "p56o": "projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json",
+    "p55n": "projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json",
+    "officiel": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Rapport_preelectoral/FR/MINFR_RP_2026.pdf"
+  },
+  "perimetre": {
+    "annees_donnees": [
+      "2027-2028",
+      "2028-2029",
+      "2029-2030",
+      "2030-2031"
+    ],
+    "annees_modeles_non_justifiees": [
+      "2031-2032",
+      "2032-2033",
+      "2033-2034",
+      "2034-2035",
+      "2035-2036",
+      "2036-2037"
+    ],
+    "regime_calcule": "QUEBEC_DANS_CANADA_REFORME_PROVINCIALE",
+    "regime_non_calcule": "QUEBEC_SOUVERAIN_HYPOTHETIQUE",
+    "unite": "MILLIONS_CAD_ANNUELS",
+    "assiette_retrait_exclusivement": [
+      "cotisations_services_sante",
+      "impot_foncier_scolaire",
+      "taxes_consommation"
+    ],
+    "source_solde": "SOLDE_BUDGETAIRE_AU_SENS_DE_LA_LOI_AVEC_FONDS_GENERATIONS",
+    "role_2025_2026": "REFERENCE_HISTORIQUE_NON_EXERCICE_DE_TRANSITION_NOVA"
+  },
+  "hypotheses_communes": {
+    "retrait_tout_ou_partie_des_trois_recettes_purement_theorique": true,
+    "budgets_services_inchanges_pour_mesure_risque": true,
+    "aucune_economie_administrative_presumee": true,
+    "aucune_recette_anti_paradis_presumee": true,
+    "assiette_impot_nova_inconnue": true,
+    "taux_nova_inconnu": true,
+    "revenus_et_depenses_hors_trois_postes_supposes_constants": true,
+    "effets_macroeconomiques_non_estimes": true,
+    "credits_et_prestations_des_menages_a_preserver": true,
+    "compensations_et_cout_transition_inconnus": true,
+    "revenus_federaux_inchanges_uniquement_dans_referentiel_provincial": true,
+    "gains_revenu_disponible_non_demontres": true,
+    "no_go_constitutionnel_et_financier": true,
+    "un_quart_pour_S2_est_sensibilite_pas_echeancier": true,
+    "autres_droits_et_redevances_non_supprimes_par_defaut": true
+  },
+  "options": [
+    {
+      "id": "S1_CONTINUITE",
+      "title": "Continuité provisoire avec simplification administrative",
+      "numerateur": 0,
+      "denominateur": 4,
+      "statut": "REFERENCE_OPERATIONNELLE_NON_ARCHITECTURE_FINALE",
+      "criteres": "Ne retire aucune recette dans le stress test; réforme administrative possible sans revendiquer déjà les deux prélèvements",
+      "nonAdoptee": true,
+      "unite_fraction": "QUARTS_DES_TROIS_POSTES_SEULEMENT",
+      "resultats_par_exercice": [
+        {
+          "exercice": "2027-2028",
+          "exposition_officielle_trois_postes_mcad": "42875.00",
+          "solde_loi_reference_avec_mesures_a_resorber_mcad": "-5695.00",
+          "ecart_a_resorber_non_garanti_mcad": "0.00",
+          "recettes_retirees_uniquement_dans_le_test_mcad": "0.00",
+          "besoins_remplacement_recettes_pour_solde_initial_inchange_mcad": "0.00",
+          "solde_loi_sans_nouveau_financement_si_retrait_test_mcad": "-5695.00",
+          "solde_loi_sans_nouveau_financement_et_sans_resorption_mcad": "-5695.00",
+          "ressources_additionnelles_pour_solde_loi_zero_avec_ecart_mcad": "5695.00",
+          "ressources_additionnelles_pour_solde_loi_zero_sans_resorption_mcad": "5695.00",
+          "recettes_nouvelles_impot_revenu_nova_reellement_demontrees_mcad": null,
+          "recettes_nouvelles_anti_paradis_reellement_demontrees_mcad": null,
+          "compensations_pertes_prestations_mcad": null,
+          "cout_transition_mcad": null,
+          "variation_revenu_disponible_menages_certifiee_mcad": null,
+          "cout_complet_services_et_protection_emplois_certifie_mcad": null
+        },
+        {
+          "exercice": "2028-2029",
+          "exposition_officielle_trois_postes_mcad": "44169.00",
+          "solde_loi_reference_avec_mesures_a_resorber_mcad": "-1500.00",
+          "ecart_a_resorber_non_garanti_mcad": "1850.00",
+          "recettes_retirees_uniquement_dans_le_test_mcad": "0.00",
+          "besoins_remplacement_recettes_pour_solde_initial_inchange_mcad": "0.00",
+          "solde_loi_sans_nouveau_financement_si_retrait_test_mcad": "-1500.00",
+          "solde_loi_sans_nouveau_financement_et_sans_resorption_mcad": "-3350.00",
+          "ressources_additionnelles_pour_solde_loi_zero_avec_ecart_mcad": "1500.00",
+          "ressources_additionnelles_pour_solde_loi_zero_sans_resorption_mcad": "3350.00",
+          "recettes_nouvelles_impot_revenu_nova_reellement_demontrees_mcad": null,
+          "recettes_nouvelles_anti_paradis_reellement_demontrees_mcad": null,
+          "compensations_pertes_prestations_mcad": null,
+          "cout_transition_mcad": null,
+          "variation_revenu_disponible_menages_certifiee_mcad": null,
+          "cout_complet_services_et_protection_emplois_certifie_mcad": null
+        },
+        {
+          "exercice": "2029-2030",
+          "exposition_officielle_trois_postes_mcad": "45313.00",
+          "solde_loi_reference_avec_mesures_a_resorber_mcad": "0.00",
+          "ecart_a_resorber_non_garanti_mcad": "2000.00",
+          "recettes_retirees_uniquement_dans_le_test_mcad": "0.00",
+          "besoins_remplacement_recettes_pour_solde_initial_inchange_mcad": "0.00",
+          "solde_loi_sans_nouveau_financement_si_retrait_test_mcad": "0.00",
+          "solde_loi_sans_nouveau_financement_et_sans_resorption_mcad": "-2000.00",
+          "ressources_additionnelles_pour_solde_loi_zero_avec_ecart_mcad": "0.00",
+          "ressources_additionnelles_pour_solde_loi_zero_sans_resorption_mcad": "2000.00",
+          "recettes_nouvelles_impot_revenu_nova_reellement_demontrees_mcad": null,
+          "recettes_nouvelles_anti_paradis_reellement_demontrees_mcad": null,
+          "compensations_pertes_prestations_mcad": null,
+          "cout_transition_mcad": null,
+          "variation_revenu_disponible_menages_certifiee_mcad": null,
+          "cout_complet_services_et_protection_emplois_certifie_mcad": null
+        },
+        {
+          "exercice": "2030-2031",
+          "exposition_officielle_trois_postes_mcad": "46528.00",
+          "solde_loi_reference_avec_mesures_a_resorber_mcad": "250.00",
+          "ecart_a_resorber_non_garanti_mcad": "2000.00",
+          "recettes_retirees_uniquement_dans_le_test_mcad": "0.00",
+          "besoins_remplacement_recettes_pour_solde_initial_inchange_mcad": "0.00",
+          "solde_loi_sans_nouveau_financement_si_retrait_test_mcad": "250.00",
+          "solde_loi_sans_nouveau_financement_et_sans_resorption_mcad": "-1750.00",
+          "ressources_additionnelles_pour_solde_loi_zero_avec_ecart_mcad": "0.00",
+          "ressources_additionnelles_pour_solde_loi_zero_sans_resorption_mcad": "1750.00",
+          "recettes_nouvelles_impot_revenu_nova_reellement_demontrees_mcad": null,
+          "recettes_nouvelles_anti_paradis_reellement_demontrees_mcad": null,
+          "compensations_pertes_prestations_mcad": null,
+          "cout_transition_mcad": null,
+          "variation_revenu_disponible_menages_certifiee_mcad": null,
+          "cout_complet_services_et_protection_emplois_certifie_mcad": null
+        }
+      ]
+    },
+    {
+      "id": "S2_TRANSITION_CONDITIONNELLE",
+      "title": "Remplacement progressif soumis à vérification de financement",
+      "numerateur": 1,
+      "denominateur": 4,
+      "statut": "TEST_25_POURCENT_PUREMENT_ILLUSTRATIF_SANS_CALENDRIER_ADOPTE",
+      "criteres": "Test mécanique sur un quart des trois recettes; phase réelle doit être autorisée séparément après protections et financement",
+      "nonAdoptee": true,
+      "unite_fraction": "QUARTS_DES_TROIS_POSTES_SEULEMENT",
+      "resultats_par_exercice": [
+        {
+          "exercice": "2027-2028",
+          "exposition_officielle_trois_postes_mcad": "42875.00",
+          "solde_loi_reference_avec_mesures_a_resorber_mcad": "-5695.00",
+          "ecart_a_resorber_non_garanti_mcad": "0.00",
+          "recettes_retirees_uniquement_dans_le_test_mcad": "10718.75",
+          "besoins_remplacement_recettes_pour_solde_initial_inchange_mcad": "10718.75",
+          "solde_loi_sans_nouveau_financement_si_retrait_test_mcad": "-16413.75",
+          "solde_loi_sans_nouveau_financement_et_sans_resorption_mcad": "-16413.75",
+          "ressources_additionnelles_pour_solde_loi_zero_avec_ecart_mcad": "16413.75",
+          "ressources_additionnelles_pour_solde_loi_zero_sans_resorption_mcad": "16413.75",
+          "recettes_nouvelles_impot_revenu_nova_reellement_demontrees_mcad": null,
+          "recettes_nouvelles_anti_paradis_reellement_demontrees_mcad": null,
+          "compensations_pertes_prestations_mcad": null,
+          "cout_transition_mcad": null,
+          "variation_revenu_disponible_menages_certifiee_mcad": null,
+          "cout_complet_services_et_protection_emplois_certifie_mcad": null
+        },
+        {
+          "exercice": "2028-2029",
+          "exposition_officielle_trois_postes_mcad": "44169.00",
+          "solde_loi_reference_avec_mesures_a_resorber_mcad": "-1500.00",
+          "ecart_a_resorber_non_garanti_mcad": "1850.00",
+          "recettes_retirees_uniquement_dans_le_test_mcad": "11042.25",
+          "besoins_remplacement_recettes_pour_solde_initial_inchange_mcad": "11042.25",
+          "solde_loi_sans_nouveau_financement_si_retrait_test_mcad": "-12542.25",
+          "solde_loi_sans_nouveau_financement_et_sans_resorption_mcad": "-14392.25",
+          "ressources_additionnelles_pour_solde_loi_zero_avec_ecart_mcad": "12542.25",
+          "ressources_additionnelles_pour_solde_loi_zero_sans_resorption_mcad": "14392.25",
+          "recettes_nouvelles_impot_revenu_nova_reellement_demontrees_mcad": null,
+          "recettes_nouvelles_anti_paradis_reellement_demontrees_mcad": null,
+          "compensations_pertes_prestations_mcad": null,
+          "cout_transition_mcad": null,
+          "variation_revenu_disponible_menages_certifiee_mcad": null,
+          "cout_complet_services_et_protection_emplois_certifie_mcad": null
+        },
+        {
+          "exercice": "2029-2030",
+          "exposition_officielle_trois_postes_mcad": "45313.00",
+          "solde_loi_reference_avec_mesures_a_resorber_mcad": "0.00",
+          "ecart_a_resorber_non_garanti_mcad": "2000.00",
+          "recettes_retirees_uniquement_dans_le_test_mcad": "11328.25",
+          "besoins_remplacement_recettes_pour_solde_initial_inchange_mcad": "11328.25",
+          "solde_loi_sans_nouveau_financement_si_retrait_test_mcad": "-11328.25",
+          "solde_loi_sans_nouveau_financement_et_sans_resorption_mcad": "-13328.25",
+          "ressources_additionnelles_pour_solde_loi_zero_avec_ecart_mcad": "11328.25",
+          "ressources_additionnelles_pour_solde_loi_zero_sans_resorption_mcad": "13328.25",
+          "recettes_nouvelles_impot_revenu_nova_reellement_demontrees_mcad": null,
+          "recettes_nouvelles_anti_paradis_reellement_demontrees_mcad": null,
+          "compensations_pertes_prestations_mcad": null,
+          "cout_transition_mcad": null,
+          "variation_revenu_disponible_menages_certifiee_mcad": null,
+          "cout_complet_services_et_protection_emplois_certifie_mcad": null
+        },
+        {
+          "exercice": "2030-2031",
+          "exposition_officielle_trois_postes_mcad": "46528.00",
+          "solde_loi_reference_avec_mesures_a_resorber_mcad": "250.00",
+          "ecart_a_resorber_non_garanti_mcad": "2000.00",
+          "recettes_retirees_uniquement_dans_le_test_mcad": "11632.00",
+          "besoins_remplacement_recettes_pour_solde_initial_inchange_mcad": "11632.00",
+          "solde_loi_sans_nouveau_financement_si_retrait_test_mcad": "-11382.00",
+          "solde_loi_sans_nouveau_financement_et_sans_resorption_mcad": "-13382.00",
+          "ressources_additionnelles_pour_solde_loi_zero_avec_ecart_mcad": "11382.00",
+          "ressources_additionnelles_pour_solde_loi_zero_sans_resorption_mcad": "13382.00",
+          "recettes_nouvelles_impot_revenu_nova_reellement_demontrees_mcad": null,
+          "recettes_nouvelles_anti_paradis_reellement_demontrees_mcad": null,
+          "compensations_pertes_prestations_mcad": null,
+          "cout_transition_mcad": null,
+          "variation_revenu_disponible_menages_certifiee_mcad": null,
+          "cout_complet_services_et_protection_emplois_certifie_mcad": null
+        }
+      ]
+    },
+    {
+      "id": "S3_CIBLE_DEUX_PRELEVEMENTS",
+      "title": "Objectif fiscal final à deux prélèvements, sous conditions",
+      "numerateur": 4,
+      "denominateur": 4,
+      "statut": "TEST_100_POURCENT_PUREMENT_ILLUSTRATIF_NON_ADOPTE",
+      "criteres": "Tester le retrait des trois recettes, pas la suppression de tous droits ni cotisations; exiger assiettes, services et avis indépendants",
+      "nonAdoptee": true,
+      "unite_fraction": "QUARTS_DES_TROIS_POSTES_SEULEMENT",
+      "resultats_par_exercice": [
+        {
+          "exercice": "2027-2028",
+          "exposition_officielle_trois_postes_mcad": "42875.00",
+          "solde_loi_reference_avec_mesures_a_resorber_mcad": "-5695.00",
+          "ecart_a_resorber_non_garanti_mcad": "0.00",
+          "recettes_retirees_uniquement_dans_le_test_mcad": "42875.00",
+          "besoins_remplacement_recettes_pour_solde_initial_inchange_mcad": "42875.00",
+          "solde_loi_sans_nouveau_financement_si_retrait_test_mcad": "-48570.00",
+          "solde_loi_sans_nouveau_financement_et_sans_resorption_mcad": "-48570.00",
+          "ressources_additionnelles_pour_solde_loi_zero_avec_ecart_mcad": "48570.00",
+          "ressources_additionnelles_pour_solde_loi_zero_sans_resorption_mcad": "48570.00",
+          "recettes_nouvelles_impot_revenu_nova_reellement_demontrees_mcad": null,
+          "recettes_nouvelles_anti_paradis_reellement_demontrees_mcad": null,
+          "compensations_pertes_prestations_mcad": null,
+          "cout_transition_mcad": null,
+          "variation_revenu_disponible_menages_certifiee_mcad": null,
+          "cout_complet_services_et_protection_emplois_certifie_mcad": null
+        },
+        {
+          "exercice": "2028-2029",
+          "exposition_officielle_trois_postes_mcad": "44169.00",
+          "solde_loi_reference_avec_mesures_a_resorber_mcad": "-1500.00",
+          "ecart_a_resorber_non_garanti_mcad": "1850.00",
+          "recettes_retirees_uniquement_dans_le_test_mcad": "44169.00",
+          "besoins_remplacement_recettes_pour_solde_initial_inchange_mcad": "44169.00",
+          "solde_loi_sans_nouveau_financement_si_retrait_test_mcad": "-45669.00",
+          "solde_loi_sans_nouveau_financement_et_sans_resorption_mcad": "-47519.00",
+          "ressources_additionnelles_pour_solde_loi_zero_avec_ecart_mcad": "45669.00",
+          "ressources_additionnelles_pour_solde_loi_zero_sans_resorption_mcad": "47519.00",
+          "recettes_nouvelles_impot_revenu_nova_reellement_demontrees_mcad": null,
+          "recettes_nouvelles_anti_paradis_reellement_demontrees_mcad": null,
+          "compensations_pertes_prestations_mcad": null,
+          "cout_transition_mcad": null,
+          "variation_revenu_disponible_menages_certifiee_mcad": null,
+          "cout_complet_services_et_protection_emplois_certifie_mcad": null
+        },
+        {
+          "exercice": "2029-2030",
+          "exposition_officielle_trois_postes_mcad": "45313.00",
+          "solde_loi_reference_avec_mesures_a_resorber_mcad": "0.00",
+          "ecart_a_resorber_non_garanti_mcad": "2000.00",
+          "recettes_retirees_uniquement_dans_le_test_mcad": "45313.00",
+          "besoins_remplacement_recettes_pour_solde_initial_inchange_mcad": "45313.00",
+          "solde_loi_sans_nouveau_financement_si_retrait_test_mcad": "-45313.00",
+          "solde_loi_sans_nouveau_financement_et_sans_resorption_mcad": "-47313.00",
+          "ressources_additionnelles_pour_solde_loi_zero_avec_ecart_mcad": "45313.00",
+          "ressources_additionnelles_pour_solde_loi_zero_sans_resorption_mcad": "47313.00",
+          "recettes_nouvelles_impot_revenu_nova_reellement_demontrees_mcad": null,
+          "recettes_nouvelles_anti_paradis_reellement_demontrees_mcad": null,
+          "compensations_pertes_prestations_mcad": null,
+          "cout_transition_mcad": null,
+          "variation_revenu_disponible_menages_certifiee_mcad": null,
+          "cout_complet_services_et_protection_emplois_certifie_mcad": null
+        },
+        {
+          "exercice": "2030-2031",
+          "exposition_officielle_trois_postes_mcad": "46528.00",
+          "solde_loi_reference_avec_mesures_a_resorber_mcad": "250.00",
+          "ecart_a_resorber_non_garanti_mcad": "2000.00",
+          "recettes_retirees_uniquement_dans_le_test_mcad": "46528.00",
+          "besoins_remplacement_recettes_pour_solde_initial_inchange_mcad": "46528.00",
+          "solde_loi_sans_nouveau_financement_si_retrait_test_mcad": "-46278.00",
+          "solde_loi_sans_nouveau_financement_et_sans_resorption_mcad": "-48278.00",
+          "ressources_additionnelles_pour_solde_loi_zero_avec_ecart_mcad": "46278.00",
+          "ressources_additionnelles_pour_solde_loi_zero_sans_resorption_mcad": "48278.00",
+          "recettes_nouvelles_impot_revenu_nova_reellement_demontrees_mcad": null,
+          "recettes_nouvelles_anti_paradis_reellement_demontrees_mcad": null,
+          "compensations_pertes_prestations_mcad": null,
+          "cout_transition_mcad": null,
+          "variation_revenu_disponible_menages_certifiee_mcad": null,
+          "cout_complet_services_et_protection_emplois_certifie_mcad": null
+        }
+      ]
+    }
+  ],
+  "souverainete": {
+    "modele_separe_requis": true,
+    "toutes_lignes_quantitatives": null,
+    "transferts_federaux_automatiquement_retenus": false,
+    "nouvelles_recettes_fiscales_federales_validees": false,
+    "couts_nouvelles_competences_chiffres": false,
+    "dette_repartie_et_pensions_chiffrees": false,
+    "statut": "AUCUNE_SIMULATION_SOUVERAINE_VALIDE"
+  },
+  "priorite_et_preuves_a_obtenir": [
+    {
+      "id": "S01",
+      "tache": "Assiettes fiscales des particuliers et sociétés : déductions, pertes et crédits avec millésimes harmonisés",
+      "statut": "NON_OBTENUE"
+    },
+    {
+      "id": "S02",
+      "tache": "Préservation des aides, crédits remboursables et du revenu disponible par décile et composition familiale",
+      "statut": "NON_OBTENUE"
+    },
+    {
+      "id": "S03",
+      "tache": "Coût intégral des services de santé, d'éducation, des municipalités et des régimes sociaux",
+      "statut": "NON_OBTENUE"
+    },
+    {
+      "id": "S04",
+      "tache": "Rendement anti-paradis fiscaux établi avec base légale et absence de double imposition",
+      "statut": "NON_OBTENUE"
+    },
+    {
+      "id": "S05",
+      "tache": "Simulations comportementales de consommation, prix, emploi, PME et investissement",
+      "statut": "NON_OBTENUE"
+    },
+    {
+      "id": "S06",
+      "tache": "Détail des droits, redevances et revenus divers avant qualification fiscale et juridique",
+      "statut": "NON_OBTENUE"
+    },
+    {
+      "id": "S07",
+      "tache": "Budget décennal sourcé pour chacune des deux situations et scénarios central, prudent, stress",
+      "statut": "NON_OBTENUE"
+    },
+    {
+      "id": "S08",
+      "tache": "Expertise constitutionnelle indépendante et revue du financement des compétences transférées",
+      "statut": "NON_OBTENUE"
+    },
+    {
+      "id": "S09",
+      "tache": "Analyse des pertes, compensations et coûts de transition pour chaque option, sans supprimer d'emplois",
+      "statut": "NON_OBTENUE"
+    },
+    {
+      "id": "S10",
+      "tache": "Consultation et décision de politique publique explicite, suivies d'une approbation humaine formelle",
+      "statut": "NON_OBTENUE"
+    }
+  ],
+  "barometre": {
+    "score_estime_sur_100": 53,
+    "points_estimes_manquants": 47,
+    "portes_p56o_encore_non_demontrees": 10,
+    "preuves_p52a_non_validees": 20,
+    "cellules_p52b_manquantes": 600,
+    "incidences_p52d_manquantes": 720,
+    "avis_independants_signes": 0,
+    "renumerotation_du_score_par_creation_fichiers": false
+  },
+  "indicateurs_refus": {
+    "options_adoptees": 0,
+    "taux_nova_certifies": 0,
+    "resultats_distributifs_nova_certifies": 0,
+    "scenario_souverain_valide": false,
+    "financement_remplacement_demontre": false,
+    "taux_imposition_derive_de_ratio_recettes": false,
+    "modele_publicable_comme_prevision_nova": false
+  },
+  "decision_finale": "NO_GO_AUTOMATIQUE"
+}

@@ -1,0 +1,98 @@
+name: Projet Nova P54T - Preuves JSON P54P figees durablement
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54t.yml"
+      - "scripts/verifier_archive_publique_figee_nova_p54t.py"
+      - "scripts/tests/test_verifier_archive_publique_figee_nova_p54t.py"
+      - "scripts/verifier_provenance_artifact_nova_p54r.py"
+      - "scripts/reproduire_localisations_pdf_nova_p54p.py"
+      - "projets/projet-nova/etudes/P54T_*"
+      - "projets/projet-nova/etudes/p54t_archive_durable_p54p/**"
+      - "projets/projet-nova/etudes/P54R_PREUVES_TECHNIQUES_OBSERVEES_P54P_2024.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integrite-json-figes-hors-expiration-artefacts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout en lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: pypdf de reference
+        run: python -m pip install pypdf==5.9.0
+      - name: 68 tests adversariaux P54T, hors reseau
+        run: |
+          python -m py_compile scripts/verifier_archive_publique_figee_nova_p54t.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_verifier_archive_publique_figee_nova_p54t.py")
+          assert suite.countTestCases()==68,suite.countTestCases()
+          assert unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful()
+          PY
+      - name: Confirmer les octets exacts des deux membres P54P
+        run: |
+          python scripts/verifier_archive_publique_figee_nova_p54t.py \
+            --verifier-fichiers-figes --bilan p54t_relecture_publique.json
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          cfg=json.loads(Path(
+            "projets/projet-nova/etudes/P54T_ARCHIVAGE_DURABLE_PREUVE_2024.json"
+            ).read_text("utf-8"))
+          for name,entry in cfg["copies_figees"].items():
+            data=Path(entry["chemin"]).read_bytes()
+            assert len(data)==entry["taille_octets"]
+            assert hashlib.sha256(data).hexdigest()==entry["sha256"]
+          r=json.loads(Path("p54t_relecture_publique.json").read_text("utf-8"))
+          assert r["bilans_publics_fixes_reverifies_ce_run"]==2
+          assert r["octets_bilans_reverifies_ce_run"]==3426
+          assert r["positions_des_bilans_figes_reverifiees_ce_run"]==5
+          assert [x["offset_texte_extrait"] for x in r[
+            "positions_nfkc_texte_source"]]==[2359,18,2420,2430,2436]
+          assert r["zip_archive_originale_relue_ce_run"] is False
+          assert r["pdf_originaux_relus_ce_run"]==0
+          assert r["pdf_emetteurs_authentifies"]==0
+          assert r["economies_certifiees_cad"] is None
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Bilan initial distingue d'un vrai recontrole
+        run: |
+          python scripts/verifier_archive_publique_figee_nova_p54t.py \
+            --bilan p54t_bilan_initial.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p54t_bilan_initial.json").read_text("utf-8"))
+          assert r["bilans_publics_fixes_reverifies_ce_run"]==0
+          assert r["positions_des_bilans_figes_reverifiees_ce_run"]==0
+          assert r["positions_nfkc_texte_source"] is None
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Refuser certification automatique meme apres relecture SHA
+        run: |
+          set +e
+          python scripts/verifier_archive_publique_figee_nova_p54t.py \
+            --verifier-fichiers-figes --exiger-certification
+          rc=$?
+          set -e
+          test "$rc" -eq 3
+      - name: Artefact limite aux bilans publics sans ZIP ni PDF
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54t-archives-json-publics-haches
+          path: |
+            p54t_bilan_initial.json
+            p54t_relecture_publique.json
+          if-no-files-found: ignore
+          retention-days: 7

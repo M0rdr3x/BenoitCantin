@@ -1,0 +1,49 @@
+name: Projet Nova P56P - Base budgetaire officielle 2026-2031 et limites VGQ
+on:
+  pull_request:
+    paths:
+      - 'projets/projet-nova/etudes/P56P_*'
+      - 'scripts/rapprocher_rapport_preelectoral_2026_nova_p56p.py'
+      - 'scripts/tests/test_rapprocher_rapport_preelectoral_2026_nova_p56p.py'
+      - 'projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json'
+      - 'projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json'
+      - 'projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json'
+      - '.github/workflows/validate-nova-p56p.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rapprocher-cadre-public-p56p:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tester 55 controles P56O et 61 controles P56P
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_evaluer_cloture_programme_nova_p56o.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_rapprocher_rapport_preelectoral_2026_nova_p56p.py' -v
+      - name: Rapprocher les comptes, provisions, ecarts et balances legales
+        shell: bash
+        run: |
+          python scripts/rapprocher_rapport_preelectoral_2026_nova_p56p.py \
+            --base projets/projet-nova/etudes/P56P_BASE_BUDGET_PREELECTORALE_2026_2031_VGQ_ET_ECARTS.json \
+            --p52b projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json | python -c 'import json,sys; x=json.load(sys.stdin); assert x["previsions_gouv_2026_2027_revenus_mcad"]=="168389" and x["previsions_gouv_2027_2028_depenses_sans_provision_mcad"]=="175919" and x["ecarts_conditionnels_2028_2031_mcad"]=="5850" and x["p52b_montants_encore_inconnus"]==600 and x["score_estime_pourcent"]==53 and x["budget_nova_adopte"] is False and x["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Refuser certification automatique du budget Nova
+        shell: bash
+        run: |
+          set +e
+          python scripts/rapprocher_rapport_preelectoral_2026_nova_p56p.py \
+            --base projets/projet-nova/etudes/P56P_BASE_BUDGET_PREELECTORALE_2026_2031_VGQ_ET_ECARTS.json \
+            --p52b projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --exiger-budget-nova-certifie
+          exit_code=$?
+          set -e
+          test "$exit_code" -eq 3

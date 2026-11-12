@@ -1,0 +1,227 @@
+{
+  "schema_version": "P56D-1",
+  "objet": "EXEMPLE_ANONYME_DE_CONSOLIDATION_INTERENTITES",
+  "annee": "2026-2027",
+  "territoire": "QUEBEC_DANS_CANADA",
+  "nature": "FICTIF_NON_OBSERVE",
+  "unite": "M_CAD",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "statut": "SCENARIO_DIDACTIQUE_NON_RECETTE_PUBLIQUE",
+  "cadres": {
+    "ETAT_QUEBEC": "Périmètre provincial fictif (organismes de l Etat inclus), ne constitue pas l inventaire officiel des entités",
+    "SECTEUR_PUBLIC_QC_ELARGI": "Vue analytique fictive province + deux municipalités, qui n est PAS un périmètre officiel des Comptes publics"
+  },
+  "sources_cadre_non_monetaires": [
+    {
+      "objet": "Différence entre volumes 1 et 2 et élimination des opérations internes",
+      "url": "https://www.quebec.ca/gouvernement/finances-publiques/budget-comptes-publics/comptes-publics/volumes-comptes-publics"
+    },
+    {
+      "objet": "Consolidation des organismes municipaux selon leur propre périmètre",
+      "url": "https://www.quebec.ca/gouvernement/gestion-municipale/finances-fiscalite-municipales/information-financiere/presentation/normes-comptables"
+    },
+    {
+      "objet": "Fiscalité foncière, tarification et pouvoir de taxation municipaux",
+      "url": "https://www.quebec.ca/gouvernement/gestion-municipale/finances-fiscalite-municipales/fiscalite/encadrement"
+    },
+    {
+      "objet": "Budget 2026-2027, section F.73, transferts fiscaux municipaux environ 1,7 G$/an",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_PlanBudgetaire.pdf"
+    }
+  ],
+  "entites": [
+    {
+      "id": "CANADA",
+      "categorie": "FEDERAL",
+      "dans_etat_quebec": false,
+      "dans_secteur_public_qc_elargi_fictif": false,
+      "affectation_protegee": false
+    },
+    {
+      "id": "QUEBEC",
+      "categorie": "ETAT_QUEBEC",
+      "dans_etat_quebec": true,
+      "dans_secteur_public_qc_elargi_fictif": true,
+      "affectation_protegee": false
+    },
+    {
+      "id": "ORGANISME_QC",
+      "categorie": "ORGANISME_ETAT",
+      "dans_etat_quebec": true,
+      "dans_secteur_public_qc_elargi_fictif": true,
+      "affectation_protegee": false
+    },
+    {
+      "id": "FONDS_ETAT_AFFECTE",
+      "categorie": "FONDS_AFFECTE",
+      "dans_etat_quebec": true,
+      "dans_secteur_public_qc_elargi_fictif": true,
+      "affectation_protegee": true
+    },
+    {
+      "id": "VILLE_A",
+      "categorie": "MUNICIPALITE",
+      "dans_etat_quebec": false,
+      "dans_secteur_public_qc_elargi_fictif": true,
+      "affectation_protegee": false
+    },
+    {
+      "id": "VILLE_B",
+      "categorie": "MUNICIPALITE",
+      "dans_etat_quebec": false,
+      "dans_secteur_public_qc_elargi_fictif": true,
+      "affectation_protegee": false
+    },
+    {
+      "id": "FOURNISSEUR",
+      "categorie": "TIERS",
+      "dans_etat_quebec": false,
+      "dans_secteur_public_qc_elargi_fictif": false,
+      "affectation_protegee": false
+    },
+    {
+      "id": "MENAGES",
+      "categorie": "TIERS",
+      "dans_etat_quebec": false,
+      "dans_secteur_public_qc_elargi_fictif": false,
+      "affectation_protegee": false
+    },
+    {
+      "id": "CREANCIER",
+      "categorie": "TIERS",
+      "dans_etat_quebec": false,
+      "dans_secteur_public_qc_elargi_fictif": false,
+      "affectation_protegee": false
+    }
+  ],
+  "flux": [
+    {
+      "id": "F01",
+      "source": "CANADA",
+      "destination": "QUEBEC",
+      "nature": "TRANSFERT",
+      "montant_mcad": "40.00",
+      "provenance": "HYPOTHESE_FICTIVE_NON_SOURCE",
+      "droit_financement_a_preserver": false
+    },
+    {
+      "id": "F02",
+      "source": "QUEBEC",
+      "destination": "VILLE_A",
+      "nature": "TRANSFERT",
+      "montant_mcad": "100.00",
+      "provenance": "HYPOTHESE_FICTIVE_NON_SOURCE",
+      "droit_financement_a_preserver": false
+    },
+    {
+      "id": "F03",
+      "source": "QUEBEC",
+      "destination": "ORGANISME_QC",
+      "nature": "TRANSFERT",
+      "montant_mcad": "25.00",
+      "provenance": "HYPOTHESE_FICTIVE_NON_SOURCE",
+      "droit_financement_a_preserver": false
+    },
+    {
+      "id": "F04",
+      "source": "VILLE_A",
+      "destination": "FOURNISSEUR",
+      "nature": "SERVICE_EXTERNE",
+      "montant_mcad": "80.00",
+      "provenance": "HYPOTHESE_FICTIVE_NON_SOURCE",
+      "droit_financement_a_preserver": false
+    },
+    {
+      "id": "F05",
+      "source": "VILLE_A",
+      "destination": "MENAGES",
+      "nature": "REMUNERATION",
+      "montant_mcad": "20.00",
+      "provenance": "HYPOTHESE_FICTIVE_NON_SOURCE",
+      "droit_financement_a_preserver": false
+    },
+    {
+      "id": "F06",
+      "source": "MENAGES",
+      "destination": "VILLE_A",
+      "nature": "IMPOT_MUNICIPAL_EXISTANT",
+      "montant_mcad": "200.00",
+      "provenance": "HYPOTHESE_FICTIVE_NON_SOURCE",
+      "droit_financement_a_preserver": true
+    },
+    {
+      "id": "F07",
+      "source": "CANADA",
+      "destination": "VILLE_A",
+      "nature": "TRANSFERT",
+      "montant_mcad": "10.00",
+      "provenance": "HYPOTHESE_FICTIVE_NON_SOURCE",
+      "droit_financement_a_preserver": false
+    },
+    {
+      "id": "F08",
+      "source": "QUEBEC",
+      "destination": "FOURNISSEUR",
+      "nature": "SERVICE_EXTERNE",
+      "montant_mcad": "55.00",
+      "provenance": "HYPOTHESE_FICTIVE_NON_SOURCE",
+      "droit_financement_a_preserver": false
+    },
+    {
+      "id": "F09",
+      "source": "CREANCIER",
+      "destination": "QUEBEC",
+      "nature": "EMPRUNT",
+      "montant_mcad": "20.00",
+      "provenance": "HYPOTHESE_FICTIVE_NON_SOURCE",
+      "droit_financement_a_preserver": false
+    },
+    {
+      "id": "F10",
+      "source": "QUEBEC",
+      "destination": "FONDS_ETAT_AFFECTE",
+      "nature": "TRANSFERT_AFFECTE",
+      "montant_mcad": "5.00",
+      "provenance": "HYPOTHESE_FICTIVE_NON_SOURCE",
+      "droit_financement_a_preserver": true
+    },
+    {
+      "id": "F11",
+      "source": "VILLE_A",
+      "destination": "VILLE_B",
+      "nature": "TRANSFERT",
+      "montant_mcad": "12.00",
+      "provenance": "HYPOTHESE_FICTIVE_NON_SOURCE",
+      "droit_financement_a_preserver": false
+    },
+    {
+      "id": "F12",
+      "source": "VILLE_B",
+      "destination": "FOURNISSEUR",
+      "nature": "SERVICE_EXTERNE",
+      "montant_mcad": "12.00",
+      "provenance": "HYPOTHESE_FICTIVE_NON_SOURCE",
+      "droit_financement_a_preserver": false
+    }
+  ],
+  "sources_financieres_reelles_authentifiees": 0,
+  "regles": [
+    "Les transferts internes sont éliminés uniquement dans la vue où les deux entités sont dans le même périmètre",
+    "Un transfert du Québec à une municipalité reste une dépense de l État du Québec si la municipalité est hors de son périmètre",
+    "Une élimination entre entités n est JAMAIS une économie budgétaire",
+    "Un emprunt est un financement et non un revenu courant",
+    "Un paiement à un fournisseur externe ou une rémunération reste une dépense de services",
+    "Un fonds affecté ne devient pas une économie parce que le transfert interne est éliminé",
+    "Les impôts municipaux restent des obligations légales à financer ou à remplacer légalement",
+    "Un taux budgété moyen ou une enveloppe indicative n est pas une somme de comptabilité auditée",
+    "Tout flux fictif ne peut être transposé aux exercices P52B ni au Québec souverain sans preuve"
+  ],
+  "p52b_inconnues": 600,
+  "p52d_incidences_inconnues": 720,
+  "p55n_score_estimatif": 53,
+  "verification_juridique": false,
+  "certification_independante": false,
+  "projections_p52b_modifiees": false,
+  "economies_nova_certifiees_mcad": null,
+  "autorisation_de_reforme": false
+}

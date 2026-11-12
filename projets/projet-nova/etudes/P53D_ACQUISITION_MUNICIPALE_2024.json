@@ -1,0 +1,94 @@
+{
+  "schema_version": "P53D-1",
+  "jalon": "P53D",
+  "date_reference": "2026-10-21",
+  "statut": "CAPTURE_CSV_MAMH_2024_AGREGE_CODAGE_A_DECODER",
+  "objet": "Archive de travail de l'extrait CSV municipal officiel MAMH 2024; aucun total fiscal municipal encore authentifié.",
+  "sources": {
+    "mamH": {
+      "organisme": "Ministère des Affaires municipales et de l'Habitation",
+      "ressource": "Profil financier des municipalités 2024-2025, données de 2024 agrégées pour le Québec",
+      "fiche": "https://www.donneesquebec.ca/recherche/dataset/profil-financier-des-municipalites-locales/resource/5dec077d-4ef9-4e22-99e9-0c4f3a6dd52d",
+      "url_csv": "https://mamh.gouv.qc.ca/fichiersdonneesouvertes/PF-2024-2024-Prov.csv",
+      "licence_fiche": "CC-BY 4.0",
+      "edition": 2024,
+      "annee_donnee": 2024,
+      "geographie_code": "PROV",
+      "chemin_extrait_captured": "projets/projet-nova/etudes/sources/P53D_MAMH_PROFIL_2024_AGREGAT_QUEBEC_CAPTURE.csv",
+      "nature_capture": "TRANSCRIPTION_TEXTE_CSV_PAR_EXTRACTION_TIERCE_NON_HACHAGE_DU_FICHIER_ORIGINAL",
+      "sha_git_du_texte_capture": "6acff78c6fd6122d6630f0a8f8eea7e59e265946",
+      "octets_source_origine_authentifies": false,
+      "sha256_fichier_original": null,
+      "nombre_lignes_donnees": 1,
+      "nombre_colonnes": 41,
+      "nombre_identifiants": 3,
+      "nombre_champs_numeriques_codes": 38,
+      "valeurs_de_revenu_municipal_reconciliees": 0,
+      "dictionnaire_38_champs_valide": false,
+      "derniere_modification_fiche_resource": "2026-09-01"
+    },
+    "statcan": {
+      "tableau": "10-10-0020-01",
+      "source_documentation": "https://www.statcan.gc.ca/en/developers/wds/user-guide",
+      "url_zip": "https://www150.statcan.gc.ca/n1/tbl/csv/10100020-fra.zip",
+      "url_service_wds": "https://www150.statcan.gc.ca/t1/wds/rest/getFullTableDownloadCSV/10100020/fr",
+      "etat_zip": "INACCESSIBLE_OU_REPONSE_HTML_LORS_DES_ESSAIS",
+      "octets_zip_authentifies": false,
+      "sha256_zip_original": null,
+      "toutes_variables_geo_2024_extraites": false,
+      "remplacement_automatique_par_donnees_mamh_interdit": true
+    }
+  },
+  "references": {
+    "p53c": "projets/projet-nova/etudes/P53C_SOURCE_PRIMAIRE_ARC_ET_LACUNES_MUNICIPALES.json",
+    "p53b": "projets/projet-nova/etudes/P53B_SOURCES_ET_COTISATIONS_2026.json",
+    "lacunes": "projets/projet-nova/etudes/P53A_LACUNES_HORS_PERIMETRE.json",
+    "p53a": "projets/projet-nova/etudes/P53A_REGISTRE_RECETTES_ET_COMPETENCES.json",
+    "p52a": "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+  },
+  "lignes_ciblees": [
+    {
+      "id": "E04",
+      "poste": "Taxes foncières municipales Québec 2024",
+      "montant_mcad": null,
+      "source_agregat_statcan_certifiee": false,
+      "donnee_mamh_convertible_en_montant_fiscal": false,
+      "travail": "Obtenir le tableau StatCan ZIP officiel ou un jeu MAMH avec codes de revenus, unités et couverture vérifiés."
+    },
+    {
+      "id": "E05",
+      "poste": "Autres revenus municipaux Québec 2024",
+      "montant_mcad": null,
+      "source_agregat_statcan_certifiee": false,
+      "donnee_mamh_convertible_en_montant_fiscal": false,
+      "travail": "Ventiler fiscalité locale, tarification, entreprises municipales, compensations et transferts avant agrégation."
+    }
+  ],
+  "garde_fous": {
+    "code_PROV_ne_demontre_pas_recettes_consolidees": true,
+    "champs_CIALC_CIAIC_CIIIC_sans_dictionnaire_pas_taxes": true,
+    "fichier_mamh_2024_pas_memes_definitions_que_statcan": true,
+    "source_capture_non_equivalente_a_archive_octets_originaux": true,
+    "absence_SHA256_original_doit_rester_visible": true,
+    "annee_municipale_2024_distincte_budget_quebec_2026_2027": true,
+    "transferts_entre_paliers_a_exclure_du_cumul": true,
+    "taxe_scolaire_budget_Quebec_pas_taxe_municipale": true,
+    "impot_federal_net_2024_pas_taxe_municipale": true,
+    "pas_d_imputation_depuis_taux_ou_ratios": true,
+    "donnees_provisoires_pas_certification_independante": true
+  },
+  "bilan": {
+    "sources_municipales_capturees_en_texte": 1,
+    "sources_originales_zip_statcan_recues": 0,
+    "champs_numeriques_codes_a_qualifier": 38,
+    "lignes_provinciales_mamh_2024": 1,
+    "montants_municipaux_foncier_reels_certifies": 0,
+    "montants_municipaux_autres_revenus_certifies": 0,
+    "preuves_F01_F20_validees": 0,
+    "valeurs_nova_inconnues": 1320,
+    "publication_autorisee": false,
+    "fusion_autorisee": false,
+    "adoption_autorisee": false,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

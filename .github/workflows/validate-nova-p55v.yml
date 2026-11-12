@@ -1,0 +1,101 @@
+name: Projet Nova P55V - Comparateur fiscal avant-apres sans GO
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p55v.yml"
+      - "scripts/comparer_cas_fiscaux_nova_p55v.py"
+      - "scripts/tests/test_comparer_cas_fiscaux_nova_p55v.py"
+      - "scripts/mesurer_couverture_incidences_nova_p55s.py"
+      - "scripts/evaluer_completude_programme_nova_p55n.py"
+      - "projets/projet-nova/etudes/P55V_*"
+      - "projets/projet-nova/etudes/P55S_*"
+      - "projets/projet-nova/etudes/P55N_*"
+      - "projets/projet-nova/etudes/P52D_GABARIT_INCIDENCE_MENAGES_ENTREPRISES.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  comparer-exemples-et-refuser-fausse-validation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Verifier 55 tests du comparateur reellement executable
+        run: |
+          python -m py_compile scripts/comparer_cas_fiscaux_nova_p55v.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_comparer_cas_fiscaux_nova_p55v.py")
+          assert suite.countTestCases()==55,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Calculer deux cas strictement fictifs sans gain public
+        run: |
+          python scripts/comparer_cas_fiscaux_nova_p55v.py \
+            --bilan-public p55v_bilan_public.json \
+            --rapport-technique p55v_technique_non_archive.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          b=json.loads(Path("p55v_bilan_public.json").read_text("utf-8"))
+          t=json.loads(Path("p55v_technique_non_archive.json").read_text("utf-8"))
+          assert b["schema_version"]=="P55V-BILAN-PUBLIC-1"
+          assert b["jeu"]=="FICTIF"
+          assert b["nombre_cas"]==2
+          assert b["cas_calculables_arithmetiquement"]==2
+          assert b["montants_inconnus_du_jeu"]==0
+          assert "resultats" not in b
+          assert b["resultats_numeriques_de_cas_non_publies"] is True
+          assert b["taux_nova_propose_pct"] is None
+          assert b["gain_general_pouvoir_achat_demontre"] is False
+          assert b["financement_2027_2036_demontre"] is False
+          assert b["p52d_valeurs_inconnues"]==720
+          assert b["p52b_valeurs_inconnues"]==600
+          assert b["score_programme_estime_pct"]==53
+          assert b["decision"]=="NO_GO_AUTOMATIQUE"
+          assert t["resultats"][0]["variation_flux_partiel_cad"]=="300.00"
+          assert t["resultats"][1]["variation_flux_partiel_cad"]=="1500.00"
+          assert t["sources_non_auditees"] is True
+          assert t["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Les sources officielles partielles ne sont pas des projections
+        run: |
+          python scripts/comparer_cas_fiscaux_nova_p55v.py \
+            --jeu projets/projet-nova/etudes/P55V_CAS_PARTIEL_OFFICIEL_2026_A_COMPLETER.json \
+            --bilan-public p55v_partiel_public.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path("p55v_partiel_public.json").read_text("utf-8"))
+          assert p["jeu"]=="DECLARATION_CANDIDATE_NON_AUDITEE"
+          assert p["nombre_cas"]==1
+          assert p["cas_calculables_arithmetiquement"]==0
+          assert p["cas_incomplets"]==1
+          assert p["montants_inconnus_du_jeu"]==15
+          assert p["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Refuser GO artificiel
+        run: |
+          set +e
+          python scripts/comparer_cas_fiscaux_nova_p55v.py --exiger-faisabilite
+          rc=$?
+          set -e
+          test "$rc" -eq 3
+      - name: N'archiver que les deux bilans non certifiants
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p55v-bilans-publics-sans-gains-fictifs
+          path: |
+            p55v_bilan_public.json
+            p55v_partiel_public.json
+          retention-days: 7

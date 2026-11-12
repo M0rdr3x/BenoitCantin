@@ -1,0 +1,80 @@
+{
+  "controles_p54b_non_attestes": 96,
+  "controles_p54c_non_attestes": 8,
+  "copies_exactes_verifiees": 2,
+  "decision": "NO_GO_AUTOMATIQUE",
+  "dossiers_p54e_ouverts": 4,
+  "economies_certifiees_cad": null,
+  "exercice": 2024,
+  "expertises_independantes_signees": 0,
+  "fusion_main_autorisee": false,
+  "limite_offsets": "CARACTERES_TEXTE_PYPDF_NORMALISE_NFKC_NON_COORDONNEES_VISUELLES",
+  "occurrence_date_probable_non_certifiee": 1,
+  "occurrences_localisees_automatiquement": 5,
+  "originaux_confidentiels_publies": 0,
+  "pdf_sources_deja_attestes_par_emetteur": false,
+  "positions_caracteres_sur_texte_extrait": [
+    {
+      "aucune_conclusion_financiere": true,
+      "classification_indicative": "INDETERMINE",
+      "dossier": "P54E-V-001",
+      "index_observation_p54d": 0,
+      "longueur_texte_normalise_nfkc": 2364,
+      "offset_texte_extrait": 2359,
+      "pdf_index_zero": 102,
+      "source": "ville",
+      "zone_confirmee_par_parseur": "FIN"
+    },
+    {
+      "aucune_conclusion_financiere": true,
+      "classification_indicative": "INDETERMINE",
+      "dossier": "P54E-M-001",
+      "index_observation_p54d": 1,
+      "longueur_texte_normalise_nfkc": 2439,
+      "offset_texte_extrait": 18,
+      "pdf_index_zero": 162,
+      "source": "mamh",
+      "zone_confirmee_par_parseur": "DEBUT"
+    },
+    {
+      "aucune_conclusion_financiere": true,
+      "classification_indicative": "ANNEE_DATE_PROBABLE",
+      "dossier": null,
+      "index_observation_p54d": 2,
+      "longueur_texte_normalise_nfkc": 2439,
+      "offset_texte_extrait": 2420,
+      "pdf_index_zero": 162,
+      "source": "mamh",
+      "zone_confirmee_par_parseur": "FIN"
+    },
+    {
+      "aucune_conclusion_financiere": true,
+      "classification_indicative": "INDETERMINE",
+      "dossier": "P54E-M-002",
+      "index_observation_p54d": 3,
+      "longueur_texte_normalise_nfkc": 2439,
+      "offset_texte_extrait": 2430,
+      "pdf_index_zero": 162,
+      "source": "mamh",
+      "zone_confirmee_par_parseur": "FIN"
+    },
+    {
+      "aucune_conclusion_financiere": true,
+      "classification_indicative": "INDETERMINE",
+      "dossier": "P54E-M-003",
+      "index_observation_p54d": 4,
+      "longueur_texte_normalise_nfkc": 2439,
+      "offset_texte_extrait": 2436,
+      "pdf_index_zero": 162,
+      "source": "mamh",
+      "zone_confirmee_par_parseur": "FIN"
+    }
+  ],
+  "schema_version": "P54P-BILAN-1",
+  "sources": {
+    "mamh": "REPRODUCTION_TECHNIQUE_SANS_ATTESTATION",
+    "ville": "REPRODUCTION_TECHNIQUE_SANS_ATTESTATION"
+  },
+  "statut_capture": "REPRODUCTION_TECHNIQUE_SANS_ATTESTATION",
+  "tokens_bruts_publies": 0
+}

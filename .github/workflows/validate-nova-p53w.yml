@@ -1,0 +1,82 @@
+name: Projet Nova P53W - Dossier public Quebec RTC 2024
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p53w.yml"
+      - "scripts/constituer_dossier_pilote_nova_p53w.py"
+      - "scripts/tests/test_constituer_dossier_pilote_nova_p53w.py"
+      - "scripts/reconcilier_ecarts_nova_p53v.py"
+      - "scripts/verifier_separation_controles_nova_p53u.py"
+      - "scripts/verifier_integrite_locale_nova_p53t.py"
+      - "scripts/suivre_demandes_acces_nova_p53s.py"
+      - "scripts/preparer_demandes_acces_nova_p53r.py"
+      - "scripts/inventorier_pieces_primaires_nova_p53q.py"
+      - "scripts/constituer_dossiers_institutionnels_nova_p53p.py"
+      - "projets/projet-nova/etudes/P53W_*"
+      - "projets/projet-nova/etudes/P53V_REGISTRE_ECARTS_ET_CORRECTIFS.json"
+      - "projets/projet-nova/etudes/P53U_GRILLE_INDEPENDANCE_REVUE_PROBATOIRE.json"
+      - "projets/projet-nova/etudes/P53T_PROTOCOLE_INTEGRITE_PROVENANCE.json"
+      - "projets/projet-nova/etudes/P53S_REGISTRE_SUIVI_ET_RECOURS.json"
+      - "projets/projet-nova/etudes/P53R_PROJETS_DEMANDES_ACCES_2024.json"
+      - "projets/projet-nova/etudes/P53Q_INVENTAIRE_PIECES_ET_CONTREPARTIES.json"
+      - "projets/projet-nova/etudes/P53P_DOSSIERS_INSTITUTIONNELS_2024.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-document-pilot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout without stored credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Verify 56 source anchoring tests
+        run: |
+          python -m py_compile scripts/constituer_dossier_pilote_nova_p53w.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_constituer_dossier_pilote_nova_p53w.py")
+          assert suite.countTestCases()==56,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Generate report and enforce evidence limits
+        run: |
+          python scripts/constituer_dossier_pilote_nova_p53w.py --bilan p53w_bilan.json --dossier p53w_dossier.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          b=json.loads(Path("p53w_bilan.json").read_text("utf-8"))
+          d=json.loads(Path("p53w_dossier.json").read_text("utf-8"))
+          assert len(d["constats"])==8
+          assert len(d["sources"])==3
+          assert len(d["questions_bloquantes"])==6
+          assert d["sources"]["ville"]["sha256_fichier"] is None
+          assert d["sources"]["mamh"]["versions_confrontees"] is False
+          assert b["pieces_transactionnelles_origines_authentifiees"]==0
+          assert b["economies_certifiees_cad"] is None
+          assert b["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+          set +e
+          python scripts/constituer_dossier_pilote_nova_p53w.py --exiger-gain-certifie --bilan p53w_refus.json
+          n=$?
+          set -e
+          test "$n" -eq 3
+      - name: Preserve aggregate result, not documents
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p53w-no-go-public-only
+          path: |
+            p53w_bilan.json
+            p53w_refus.json
+          if-no-files-found: ignore
+          retention-days: 7

@@ -1,0 +1,309 @@
+{
+  "schema_version": "P56J-1",
+  "date_dossier": "2026-11-07",
+  "objet": "EXPOSITION_FISCALE_HISTORIQUE_AVANT_REFORME_A_DEUX_PRELEVEMENTS",
+  "statut": "ETUDE_CONTRAFACTUELLE_STATIQUE_NON_PREVISION",
+  "territoire_reference": "QUEBEC_DANS_CANADA",
+  "exercice_historique": "2025-2026",
+  "unite": "M_CAD",
+  "sources_principales": {
+    "P56C": "projets/projet-nova/etudes/P56C_TABLE_PASSAGE_COMPTES_PUBLICS_VERS_P52B_2025_2026.json",
+    "P56B": "projets/projet-nova/etudes/P56B_SNAPSHOTS_FINANCES_2025_2026_SOURCES_OFFICIELLES.json",
+    "COMPTES_OFFICIELS": {
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Comptes-publics/FR/CPTFR_vol1-2025-2026.pdf",
+      "pages_pdf_indices_zero": [
+        11,
+        18
+      ],
+      "type": "COMPTES_PUBLICS_ETATS_FINANCIERS_2025_2026"
+    },
+    "DEPENSES_FISCALES": {
+      "url": "https://www.budget.finances.gouv.qc.ca/Budget/outils/depenses-fiscales/portrait-portrait.asp",
+      "type": "ESTIMATION_DEPENSES_FISCALES_2025_PERIMETRE_DISTINCT",
+      "montant_ajoute_au_revenu_nova_mcad": null
+    },
+    "P52A": "projets/projet-nova/etudes/P52A_FAISABILITE_FISCALE_DEUX_REGIMES.md"
+  },
+  "groupes_de_repartition": [
+    {
+      "id": "IMPOTS_REVENU_EXISTANTS",
+      "postes_p56c": [
+        "impot_particuliers",
+        "impots_societes"
+      ],
+      "nature": "RECETTES_HISTORIQUES_DU_SYSTEME_ACTUEL",
+      "reforme_adoptee": false,
+      "assiette_nouvelle_prouvee": false
+    },
+    {
+      "id": "PRELEVEMENTS_EXISTANTS_A_REMPLACER_SI_ABOLIS",
+      "postes_p56c": [
+        "cotisations_services_sante",
+        "impot_foncier_scolaire",
+        "taxes_consommation"
+      ],
+      "nature": "POSTES_SOUSTRAITS_DANS_TEST_MECANIQUE_SEULEMENT",
+      "reforme_adoptee": false,
+      "remplacement_valide": false
+    },
+    {
+      "id": "RECETTES_MIXTES_A_CLARIFIER",
+      "postes_p56c": [
+        "droits_permis_redevances",
+        "revenus_divers",
+        "revenus_entreprises_gouvernement"
+      ],
+      "nature": "RECETTES_MIXTES_ET_NON_FISCALES_SOUS_RESERVES",
+      "ventilation_complete": false,
+      "librement_disponible": false
+    },
+    {
+      "id": "TRANSFERTS_FEDERAUX_DANS_CANADA",
+      "postes_p56c": [
+        "transferts_gouvernement_federal"
+      ],
+      "nature": "RECETTES_HISTORIQUES_SOUS_COMPETENCE_FEDERALE",
+      "maintien_en_souverainete_non_prouve": true
+    }
+  ],
+  "contre_factuel": {
+    "etat": "ILLUSTRATION_STATIQUE_SANS_REACTIONS_COMPORTEMENTALES",
+    "annee_cible_p52b": null,
+    "hypothese": "Retrait comptable en bloc des trois catégories explicites à remplacer, tous les autres postes inchangés, y compris dépenses et transferts fédéraux; pas une proposition de politique",
+    "supprime_effectivement_les_prelevements": false,
+    "pretend_que_ces_categories_sont_tous_prelevements_a_remplacer": false,
+    "services_et_depenses_constantes_dans_illustration": true,
+    "somme_des_postes_a_remplacer_prevision_validee": false,
+    "aucun_montant_depenses_supprime": true,
+    "recettes_nouveaux_prelevements_certifiees_mcad": null,
+    "revenus_anti_evasion_supposes_nets_mcad": "0",
+    "base_de_calcul_taux_imposition_candidat": null,
+    "montant_reel_economie_certifiee_mcad": null
+  },
+  "regimes": {
+    "QUEBEC_DANS_CANADA": {
+      "scenario": "TEST_DE_RETRAIT_COMPTABLE_HISTORIQUE_PROVINCIAL_SEULEMENT",
+      "federal_TPS_et_impot_demeurent": true,
+      "libre_reforme_tous_prelevements": false,
+      "deficit_2027_2036_prevu_mcad": null,
+      "taux_propose": null,
+      "decision": "NO_GO"
+    },
+    "QUEBEC_SOUVERAIN": {
+      "scenario": "NON_CHIFFRABLE_SANS_RECETTES_FEDERALES_ET_FONCTIONS_TRANSFEREES",
+      "montants_2025_2026_directement_transferables_mcad": null,
+      "recettes_federales_reprises_mcad": null,
+      "transferts_federaux_continues_mcad": null,
+      "defense_frontieres_dette_pensions_couts_mcad": null,
+      "solde_previsionnel_mcad": null,
+      "taux_propose": null,
+      "decision": "NO_GO"
+    }
+  },
+  "conditions_prudence": {
+    "solde_budgetaire_annee_precedente_minimum_mcad": "0",
+    "ratio_dette_nette_pib_maximum_pourcent": "45",
+    "budget_precedent_nova_valide": false,
+    "ratio_2027_2036_nova_valide": false,
+    "autorisation_automatique": false
+  },
+  "preuves_a_obtenir": [
+    {
+      "id": "J01",
+      "controle": "QUALIFIER_COTISATIONS_FSS",
+      "secteur": "Santé",
+      "preuve_attendue": "Nature légale des cotisations, remplacement soutenable et éventuelles obligations affectées",
+      "regime": "QUEBEC",
+      "statut": "NON_OBTENU",
+      "preuve_url": null,
+      "avis_independant": null,
+      "montant_reconcilie_mcad": null
+    },
+    {
+      "id": "J02",
+      "controle": "GARANTIR_FINANCEMENT_SCOLAIRE",
+      "secteur": "Éducation",
+      "preuve_attendue": "Remplacement de l'impôt foncier scolaire et obligations du réseau",
+      "regime": "QUEBEC",
+      "statut": "NON_OBTENU",
+      "preuve_url": null,
+      "avis_independant": null,
+      "montant_reconcilie_mcad": null
+    },
+    {
+      "id": "J03",
+      "controle": "GARANTIR_FINANCEMENT_MUNICIPAL",
+      "secteur": "Municipalités",
+      "preuve_attendue": "Autonomie locale, taxe foncière, transferts, compensation et services",
+      "regime": "QUEBEC_ET_MUNICIPAL",
+      "statut": "NON_OBTENU",
+      "preuve_url": null,
+      "avis_independant": null,
+      "montant_reconcilie_mcad": null
+    },
+    {
+      "id": "J04",
+      "controle": "CLASSIFIER_TAXES_CONSOMMATION",
+      "secteur": "Fiscalité",
+      "preuve_attendue": "TVQ, carburants, tabac, alcools et autres; retraits possibles et règles applicables",
+      "regime": "QUEBEC",
+      "statut": "NON_OBTENU",
+      "preuve_url": null,
+      "avis_independant": null,
+      "montant_reconcilie_mcad": null
+    },
+    {
+      "id": "J05",
+      "controle": "VENTILER_DROITS_PERMIS_REDEVANCES",
+      "secteur": "Fiscalité",
+      "preuve_attendue": "Séparer taxe obligatoire, redevance, frais de service et revenus affectés",
+      "regime": "QUEBEC",
+      "statut": "NON_OBTENU",
+      "preuve_url": null,
+      "avis_independant": null,
+      "montant_reconcilie_mcad": null
+    },
+    {
+      "id": "J06",
+      "controle": "VENTILER_REVENUS_DIVERS",
+      "secteur": "Comptabilité",
+      "preuve_attendue": "Comptabiliser remboursements, cessions, services, fonds affectés et éléments non récurrents",
+      "regime": "QUEBEC",
+      "statut": "NON_OBTENU",
+      "preuve_url": null,
+      "avis_independant": null,
+      "montant_reconcilie_mcad": null
+    },
+    {
+      "id": "J07",
+      "controle": "VALIDER_ASSIETTES_IMPOT_REVENU",
+      "secteur": "Fiscalité",
+      "preuve_attendue": "Revenus imposables réels des ménages et bénéfices des entreprises, pertes et crédits",
+      "regime": "QUEBEC",
+      "statut": "NON_OBTENU",
+      "preuve_url": null,
+      "avis_independant": null,
+      "montant_reconcilie_mcad": null
+    },
+    {
+      "id": "J08",
+      "controle": "MESURER_DEPENSES_FISCALES_CREDITS",
+      "secteur": "Fiscalité sociale",
+      "preuve_attendue": "Crédits remboursables et non remboursables par ménage et entreprise; ne pas prétendre récupérer toutes les dépenses fiscales",
+      "regime": "QUEBEC",
+      "statut": "NON_OBTENU",
+      "preuve_url": null,
+      "avis_independant": null,
+      "montant_reconcilie_mcad": null
+    },
+    {
+      "id": "J09",
+      "controle": "ETUDIER_INCIDENTE_MENAGES",
+      "secteur": "Pouvoir d'achat",
+      "preuve_attendue": "Effets distributifs déciles, ménages, personnes handicapées, pensions et régions",
+      "regime": "QUEBEC",
+      "statut": "NON_OBTENU",
+      "preuve_url": null,
+      "avis_independant": null,
+      "montant_reconcilie_mcad": null
+    },
+    {
+      "id": "J10",
+      "controle": "ETUDIER_INCIDENTE_ENTREPRISES",
+      "secteur": "PME et emplois",
+      "preuve_attendue": "Taux effectifs, charges de paie, PME, multinationales, emploi et compétitivité",
+      "regime": "QUEBEC",
+      "statut": "NON_OBTENU",
+      "preuve_url": null,
+      "avis_independant": null,
+      "montant_reconcilie_mcad": null
+    },
+    {
+      "id": "J11",
+      "controle": "EXPERTISER_ANTI_PARADIS_FISCAUX",
+      "secteur": "Anti-évasion",
+      "preuve_attendue": "Fait générateur, chevauchement avec impôt sur le revenu, international et recouvrement; rendement nul par défaut",
+      "regime": "QUEBEC_ET_FEDERAL",
+      "statut": "NON_OBTENU",
+      "preuve_url": null,
+      "avis_independant": null,
+      "montant_reconcilie_mcad": null
+    },
+    {
+      "id": "J12",
+      "controle": "PROTEGER_COMPETENCES_FEDERALES",
+      "secteur": "Constitution",
+      "preuve_attendue": "Le Québec provincial ne peut supprimer TPS, impôt fédéral, assurance-emploi et droits de douane unilatéralement",
+      "regime": "CANADA",
+      "statut": "NON_OBTENU",
+      "preuve_url": null,
+      "avis_independant": null,
+      "montant_reconcilie_mcad": null
+    },
+    {
+      "id": "J13",
+      "controle": "PREVOIR_CHARGES_SOUVERAINES",
+      "secteur": "Souveraineté",
+      "preuve_attendue": "Défense, frontières, retraite, dette, actifs, monnaie, international et droits acquis à négocier",
+      "regime": "SOUVERAIN_HYPOTHETIQUE",
+      "statut": "NON_OBTENU",
+      "preuve_url": null,
+      "avis_independant": null,
+      "montant_reconcilie_mcad": null
+    },
+    {
+      "id": "J14",
+      "controle": "RECONCILIER_BUDGETS_DECENNAUX",
+      "secteur": "Finances",
+      "preuve_attendue": "Deux régimes, trois trajectoires, dix ans; soldes, coûts, transferts et dette sans doublon",
+      "regime": "DEUX_REGIMES",
+      "statut": "NON_OBTENU",
+      "preuve_url": null,
+      "avis_independant": null,
+      "montant_reconcilie_mcad": null
+    },
+    {
+      "id": "J15",
+      "controle": "OBTENIR_REVUES_INDEPENDANTES",
+      "secteur": "Assurance",
+      "preuve_attendue": "Expertises économiques, actuarielles, juridiques et comptables signées",
+      "regime": "DEUX_REGIMES",
+      "statut": "NON_OBTENU",
+      "preuve_url": null,
+      "avis_independant": null,
+      "montant_reconcilie_mcad": null
+    },
+    {
+      "id": "J16",
+      "controle": "PROTEGER_SECTEURS_EMPLOIS",
+      "secteur": "Services",
+      "preuve_attendue": "Santé, éducation, municipalités, travailleurs, pensions et continuité chiffrés",
+      "regime": "DEUX_REGIMES",
+      "statut": "NON_OBTENU",
+      "preuve_url": null,
+      "avis_independant": null,
+      "montant_reconcilie_mcad": null
+    },
+    {
+      "id": "J17",
+      "controle": "VALIDER_CONDITIONS_PRUDENCE",
+      "secteur": "Gouvernance",
+      "preuve_attendue": "Solde précédent >= 0 et dette nette/PIB <= 45 %, sans activation automatique",
+      "regime": "DEUX_REGIMES",
+      "statut": "NON_OBTENU",
+      "preuve_url": null,
+      "avis_independant": null,
+      "montant_reconcilie_mcad": null
+    }
+  ],
+  "nb_preuves_obligatoires": 17,
+  "p52b_champs_monetaires_inconnus": 600,
+  "p52d_incidences_inconnues": 720,
+  "p52a_preuves_non_validees": 20,
+  "p55n_score_estimatif": 53,
+  "projections_p52b_alterees": false,
+  "suppression_fiscale_adoptee": false,
+  "economie_nova_certifiee_mcad": null,
+  "avis_independant_nova": false,
+  "decision": "NO_GO_AUTOMATIQUE"
+}

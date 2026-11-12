@@ -1,0 +1,437 @@
+{
+  "schema_version": "P52I-1",
+  "jalon": "P52I",
+  "date_reference": "2026-10-19",
+  "projet": "Projet Nova",
+  "statut": "DOSSIER_DE_RECHERCHE_NON_ADOPTE",
+  "publication_autorisee": false,
+  "fusion_autorisee": false,
+  "etude_source": "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json",
+  "source_revue_independante": false,
+  "donnees_extraites_certifiees": false,
+  "sources": [
+    {
+      "id": "S01",
+      "organisme": "Ministère des Finances du Québec",
+      "intitule": "Portail Budget 2026-2027",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/",
+      "usage": "Piste de documents de prévision provinciale; ne certifie aucun poste transcrit",
+      "type": "PISTE_OFFICIELLE_A_EXAMINER",
+      "preuve_validee": false,
+      "extraction_chiffree": null,
+      "expert_independant": null
+    },
+    {
+      "id": "S02",
+      "organisme": "Ministère des Finances du Québec",
+      "intitule": "Plan budgétaire 2026-2027",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_PlanBudgetaire.pdf",
+      "usage": "Document primaire à contrôler manuellement, tableau/page/unité/arrondis compris",
+      "type": "PISTE_OFFICIELLE_A_EXAMINER",
+      "preuve_validee": false,
+      "extraction_chiffree": null,
+      "expert_independant": null
+    },
+    {
+      "id": "S03",
+      "organisme": "Institut de la statistique du Québec",
+      "intitule": "Inégalité de revenu des ménages et particuliers",
+      "url": "https://statistique.quebec.ca/fr/document/inegalite-revenu-menages-et-particuliers",
+      "usage": "Tableaux de déciles/quintiles; ne remplacent pas un échantillon microsimulé",
+      "type": "PISTE_OFFICIELLE_A_EXAMINER",
+      "preuve_validee": false,
+      "extraction_chiffree": null,
+      "expert_independant": null
+    },
+    {
+      "id": "S04",
+      "organisme": "Institut de la statistique du Québec",
+      "intitule": "Revenu des ménages et des particuliers",
+      "url": "https://statistique.quebec.ca/fr/document/revenu-menages-et-particuliers",
+      "usage": "Distribution des revenus par catégories québécoises; vérification année et définitions requise",
+      "type": "PISTE_OFFICIELLE_A_EXAMINER",
+      "preuve_validee": false,
+      "extraction_chiffree": null,
+      "expert_independant": null
+    },
+    {
+      "id": "S05",
+      "organisme": "Statistique Canada",
+      "intitule": "BD/MSPS : microsimulation fiscale et transferts",
+      "url": "https://www.statcan.gc.ca/fr/microsimulation/bdmsps/bdmsps",
+      "usage": "Méthode potentielle représentative pour le régime canadien; licence signée et opérateur indépendant requis; modèle statique",
+      "type": "PISTE_OFFICIELLE_A_EXAMINER",
+      "preuve_validee": false,
+      "extraction_chiffree": null,
+      "expert_independant": null
+    },
+    {
+      "id": "S06",
+      "organisme": "Statistique Canada",
+      "intitule": "Finances publiques locales 10-10-0020-01",
+      "url": "https://www150.statcan.gc.ca/n1/fr/catalogue/1010002001",
+      "usage": "Piste municipale; isoler transferts internes et double compte avant addition",
+      "type": "PISTE_OFFICIELLE_A_EXAMINER",
+      "preuve_validee": false,
+      "extraction_chiffree": null,
+      "expert_independant": null
+    },
+    {
+      "id": "S07",
+      "organisme": "Ministère des Finances du Canada",
+      "intitule": "Documents d'information 2026",
+      "url": "https://www.canada.ca/fr/ministere-finances/organisation/transparence/documents-information/2026.html",
+      "usage": "Entrée fédérale de repérage; ne constitue pas un compte consolidé ni un plan souverain",
+      "type": "PISTE_OFFICIELLE_A_EXAMINER",
+      "preuve_validee": false,
+      "extraction_chiffree": null,
+      "expert_independant": null
+    },
+    {
+      "id": "S08",
+      "organisme": "Institut de la statistique du Québec",
+      "intitule": "Revenu disponible par territoire",
+      "url": "https://statistique.quebec.ca/fr/document/revenu-disponible",
+      "usage": "Séries territoriales agrégées; ne mesurent pas seules l'incidence causale d'une réforme",
+      "type": "PISTE_OFFICIELLE_A_EXAMINER",
+      "preuve_validee": false,
+      "extraction_chiffree": null,
+      "expert_independant": null
+    }
+  ],
+  "plan_preuves": [
+    {
+      "id": "F01",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "Compétence de modifier la TVQ et autres impôts québécois",
+      "objet_preuve": "Avis juridique provincial indépendant et tableau des lois à modifier",
+      "responsable_fonctionnel": "Juriste fiscal et constitutionnel",
+      "source_ids_candidats": [],
+      "statut": "NON_ATTESTEE",
+      "piece_expertise_independante": null,
+      "reviseur_independant": null,
+      "validation_juridique": null,
+      "montant_certifie": null,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F02",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "TPS et impôt fédéral demeurent distincts",
+      "objet_preuve": "Avis sur les limites de compétence provinciale et les ententes d'administration",
+      "responsable_fonctionnel": "Juriste constitutionnel",
+      "source_ids_candidats": [],
+      "statut": "NON_ATTESTEE",
+      "piece_expertise_independante": null,
+      "reviseur_independant": null,
+      "validation_juridique": null,
+      "montant_certifie": null,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F03",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "Tarifs douaniers et contre-tarifs fédéraux",
+      "objet_preuve": "Table des décisions réservées au gouvernement fédéral; formulation honnête des engagements politiques provinciaux",
+      "responsable_fonctionnel": "Spécialiste droit commercial",
+      "source_ids_candidats": [],
+      "statut": "NON_ATTESTEE",
+      "piece_expertise_independante": null,
+      "reviseur_independant": null,
+      "validation_juridique": null,
+      "montant_certifie": null,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F04",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "Fiscalité municipale et taxes scolaires et foncières",
+      "objet_preuve": "Inventaire des taxes, transferts et services par municipalité; coût de remplacement",
+      "responsable_fonctionnel": "Expert finances municipales",
+      "source_ids_candidats": [
+        "S06"
+      ],
+      "statut": "NON_ATTESTEE",
+      "piece_expertise_independante": null,
+      "reviseur_independant": null,
+      "validation_juridique": null,
+      "montant_certifie": null,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F05",
+      "regime": "TOUS",
+      "theme": "Définition du prélèvement sur les revenus",
+      "objet_preuve": "Assiettes individuelles et d'entreprises; crédits; non-imposition de subsistance; pertes reportables",
+      "responsable_fonctionnel": "Fiscaliste et économiste",
+      "source_ids_candidats": [],
+      "statut": "NON_ATTESTEE",
+      "piece_expertise_independante": null,
+      "reviseur_independant": null,
+      "validation_juridique": null,
+      "montant_certifie": null,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F06",
+      "regime": "TOUS",
+      "theme": "Définition du prélèvement anti-paradis fiscaux",
+      "objet_preuve": "Fait générateur, territorialité, droits de contestation, absence de double comptage et interactions internationales",
+      "responsable_fonctionnel": "Fiscaliste international",
+      "source_ids_candidats": [],
+      "statut": "NON_ATTESTEE",
+      "piece_expertise_independante": null,
+      "reviseur_independant": null,
+      "validation_juridique": null,
+      "montant_certifie": null,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F07",
+      "regime": "TOUS",
+      "theme": "Inventaire de tous les prélèvements obligatoires",
+      "objet_preuve": "Registre exhaustif distinguant taxe, impôt, cotisation, redevance et frais réels avec compétence",
+      "responsable_fonctionnel": "Comptabilité publique",
+      "source_ids_candidats": [],
+      "statut": "NON_ATTESTEE",
+      "piece_expertise_independante": null,
+      "reviseur_independant": null,
+      "validation_juridique": null,
+      "montant_certifie": null,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F08",
+      "regime": "TOUS",
+      "theme": "Rendement d'impôt anti-évasion",
+      "objet_preuve": "Estimation indépendante nette et défendable; scénario de base reste à zéro sans preuve",
+      "responsable_fonctionnel": "Expert fiscal indépendant",
+      "source_ids_candidats": [],
+      "statut": "NON_ATTESTEE",
+      "piece_expertise_independante": null,
+      "reviseur_independant": null,
+      "validation_juridique": null,
+      "montant_certifie": null,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F09",
+      "regime": "TOUS",
+      "theme": "Sources budgétaires et réconciliation",
+      "objet_preuve": "Rapprochement 2026-2027 des données du modèle Nova avec comptes budgétaires officiels",
+      "responsable_fonctionnel": "Comptable finances publiques",
+      "source_ids_candidats": [
+        "S01",
+        "S02",
+        "S07"
+      ],
+      "statut": "NON_ATTESTEE",
+      "piece_expertise_independante": null,
+      "reviseur_independant": null,
+      "validation_juridique": null,
+      "montant_certifie": null,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F10",
+      "regime": "TOUS",
+      "theme": "Modèle décennal et scénarios",
+      "objet_preuve": "Solde, encours de dette, liquidité, intérêts, financement des services, stress 1/3/5/10 ans",
+      "responsable_fonctionnel": "Économiste finances publiques",
+      "source_ids_candidats": [
+        "S02",
+        "S07"
+      ],
+      "statut": "NON_ATTESTEE",
+      "piece_expertise_independante": null,
+      "reviseur_independant": null,
+      "validation_juridique": null,
+      "montant_certifie": null,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F11",
+      "regime": "TOUS",
+      "theme": "Équité et pouvoir d'achat",
+      "objet_preuve": "Variation du revenu disponible par décile/quintile, famille, région; bilan des entreprises",
+      "responsable_fonctionnel": "Économiste distribution",
+      "source_ids_candidats": [
+        "S03",
+        "S04",
+        "S05",
+        "S08"
+      ],
+      "statut": "NON_ATTESTEE",
+      "piece_expertise_independante": null,
+      "reviseur_independant": null,
+      "validation_juridique": null,
+      "montant_certifie": null,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F12",
+      "regime": "TOUS",
+      "theme": "Emploi, services et économies réelles",
+      "objet_preuve": "Audit par programme protégeant services et travailleurs; exclusion des transferts de coûts",
+      "responsable_fonctionnel": "Audit opérationnel et travail",
+      "source_ids_candidats": [],
+      "statut": "NON_ATTESTEE",
+      "piece_expertise_independante": null,
+      "reviseur_independant": null,
+      "validation_juridique": null,
+      "montant_certifie": null,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F13",
+      "regime": "TOUS",
+      "theme": "Aides aux entreprises limitées dans le temps",
+      "objet_preuve": "Registre des aides avec dates de fin, bénéficiaires admissibles, reddition et récupération",
+      "responsable_fonctionnel": "Auditeur subventions",
+      "source_ids_candidats": [],
+      "statut": "NON_ATTESTEE",
+      "piece_expertise_independante": null,
+      "reviseur_independant": null,
+      "validation_juridique": null,
+      "montant_certifie": null,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F14",
+      "regime": "TRANSITION_CONSTITUTIONNELLE",
+      "theme": "Continuité des services et droits",
+      "objet_preuve": "Plan de trésorerie, pensions, prestations, contrats, droits, paie et transition fiscale",
+      "responsable_fonctionnel": "Juridique et finances",
+      "source_ids_candidats": [],
+      "statut": "NON_ATTESTEE",
+      "piece_expertise_independante": null,
+      "reviseur_independant": null,
+      "validation_juridique": null,
+      "montant_certifie": null,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F15",
+      "regime": "QUEBEC_SOUVERAIN",
+      "theme": "Partage de dette et actifs",
+      "objet_preuve": "Trois hypothèses documentées; aucune quote-part ou entente supposée acquise",
+      "responsable_fonctionnel": "Négociateurs et économistes",
+      "source_ids_candidats": [],
+      "statut": "NON_ATTESTEE",
+      "piece_expertise_independante": null,
+      "reviseur_independant": null,
+      "validation_juridique": null,
+      "montant_certifie": null,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F16",
+      "regime": "QUEBEC_SOUVERAIN",
+      "theme": "Reprise fonctions fédérales",
+      "objet_preuve": "Coûts complets défense, frontières, pension, diplomatie, immigration, systèmes et recouvrement",
+      "responsable_fonctionnel": "Audit intergouvernemental",
+      "source_ids_candidats": [
+        "S07"
+      ],
+      "statut": "NON_ATTESTEE",
+      "piece_expertise_independante": null,
+      "reviseur_independant": null,
+      "validation_juridique": null,
+      "montant_certifie": null,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F17",
+      "regime": "QUEBEC_SOUVERAIN",
+      "theme": "Monnaie, fiscalité transfrontalière et traités",
+      "objet_preuve": "Scénarios monétaires, fiscalité internationale, administration douanière et continuité contrats",
+      "responsable_fonctionnel": "Spécialistes monétaires et juridiques",
+      "source_ids_candidats": [],
+      "statut": "NON_ATTESTEE",
+      "piece_expertise_independante": null,
+      "reviseur_independant": null,
+      "validation_juridique": null,
+      "montant_certifie": null,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F18",
+      "regime": "TOUS",
+      "theme": "Discipline avant abolition de prélèvements",
+      "objet_preuve": "Preuve du surplus/équilibre antérieur et dette nette au plus 45 % du PIB",
+      "responsable_fonctionnel": "Vérification budgétaire indépendante",
+      "source_ids_candidats": [
+        "S02"
+      ],
+      "statut": "NON_ATTESTEE",
+      "piece_expertise_independante": null,
+      "reviseur_independant": null,
+      "validation_juridique": null,
+      "montant_certifie": null,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F19",
+      "regime": "TOUS",
+      "theme": "Décision et adoption démocratiques",
+      "objet_preuve": "Autorité formellement compétente, consultation, version officielle signée et registre d'adoption",
+      "responsable_fonctionnel": "Gouvernance constitutionnelle",
+      "source_ids_candidats": [],
+      "statut": "NON_ATTESTEE",
+      "piece_expertise_independante": null,
+      "reviseur_independant": null,
+      "validation_juridique": null,
+      "montant_certifie": null,
+      "adoption_autorisee": false
+    },
+    {
+      "id": "F20",
+      "regime": "TOUS",
+      "theme": "Vie privée et droits de recours fiscaux",
+      "objet_preuve": "Analyse protection des données, opposition, délai de recours et contrôle indépendant",
+      "responsable_fonctionnel": "Vie privée et juriste administratif",
+      "source_ids_candidats": [],
+      "statut": "NON_ATTESTEE",
+      "piece_expertise_independante": null,
+      "reviseur_independant": null,
+      "validation_juridique": null,
+      "montant_certifie": null,
+      "adoption_autorisee": false
+    }
+  ],
+  "perimetres_budgetaires": [
+    {
+      "niveau": "QUEBEC_PROVINCIAL",
+      "conciliation": "NON_EFFECTUEE",
+      "montants_certifies": null
+    },
+    {
+      "niveau": "CANADA_FEDERAL",
+      "conciliation": "NON_EFFECTUEE",
+      "montants_certifies": null
+    },
+    {
+      "niveau": "MUNICIPAL_LOCAL",
+      "conciliation": "NON_EFFECTUEE",
+      "montants_certifies": null
+    }
+  ],
+  "representativite": {
+    "outil_candidat": "STATCAN_BD_MSPS",
+    "licence_signee": false,
+    "microdonnees_utilisees": false,
+    "echantillon_quebec_calibre": false,
+    "poids_population_valides": false,
+    "revision_independante": false,
+    "effets_comportementaux_modelises": false,
+    "pertes_population_demonstrees_absentes": false
+  },
+  "limite_modele": "Outil statique canadien; ses capacités ne certifient pas les charges d'un Québec souverain ni les réactions économiques.",
+  "revendications_interdites": [
+    "20_PREUVES_VALIDES",
+    "1320_INCONNUES_RESOLUES",
+    "GAIN_UNIVERSEL",
+    "TAUX_FISCAL_ADOPTE",
+    "FINANCEMENT_SOUVERAIN_CERTIFIE"
+  ]
+}

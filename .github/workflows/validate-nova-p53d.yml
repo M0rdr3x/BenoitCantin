@@ -1,0 +1,76 @@
+name: Projet Nova P53D - Donnees municipales MAMH 2024 sans recettes inventees
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p53d.yml"
+      - "scripts/auditer_donnees_municipales_nova_p53d.py"
+      - "scripts/tests/test_auditer_donnees_municipales_nova_p53d.py"
+      - "projets/projet-nova/etudes/P53D_*"
+      - "projets/projet-nova/etudes/sources/P53D_*"
+      - "projets/projet-nova/etudes/P53A_*"
+      - "projets/projet-nova/etudes/P53B_*"
+      - "projets/projet-nova/etudes/P53C_*"
+      - "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controle-profil-municipal-non-monetise:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Lecture seule des sources du profil financier
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: 55 tests de source capturee et refus de taux monetaires fictifs
+        run: |
+          python -m py_compile scripts/auditer_donnees_municipales_nova_p53d.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_auditer_donnees_municipales_nova_p53d.py")
+          assert suite.countTestCases()==55,suite.countTestCases()
+          results=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert results.wasSuccessful()
+          PY
+      - name: Bilan et inventaire de 38 champs codes
+        run: |
+          python scripts/auditer_donnees_municipales_nova_p53d.py --rapport p53d_bilan.json --export-csv p53d_champs_mamh.csv
+          python - <<'PY'
+          import csv,json
+          from pathlib import Path
+          summary=json.loads(Path("p53d_bilan.json").read_text(encoding="utf-8"))
+          assert summary["champs_codes_non_qualifies"]==38
+          assert summary["montants_municipaux_certifies"]==0
+          assert summary["statcan_zip_acquis"] is False
+          assert summary["octets_originaux_mamh_sha256_verifies"] is False
+          assert summary["decision"]=="NO_GO_AUTOMATIQUE"
+          with Path("p53d_champs_mamh.csv").open(encoding="utf-8") as f:
+            data=list(csv.reader(f))
+          assert len(data)==39
+          assert all(row[4]=="" for row in data[1:])
+          PY
+      - name: Rejeter les recettes municipales non encore acquises
+        run: |
+          set +e
+          python scripts/auditer_donnees_municipales_nova_p53d.py --exiger-recettes-municipales --rapport p53d_recettes_no_go.json
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Rapports agreges sans adoption politique
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p53d-mamh-2024-capture-38-indicateurs-no-go
+          path: |
+            p53d_bilan.json
+            p53d_champs_mamh.csv
+            p53d_recettes_no_go.json
+          retention-days: 7
+          if-no-files-found: ignore

@@ -1,0 +1,102 @@
+name: Projet Nova P54A - Analyse reelle des versions Ville MAMH 2024
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54a.yml"
+      - "scripts/analyser_ecarts_publications_nova_p54a.py"
+      - "scripts/tests/test_analyser_ecarts_publications_nova_p54a.py"
+      - "scripts/acquerir_publications_nova_p53z.py"
+      - "scripts/comparer_versions_pdf_nova_p53x.py"
+      - "scripts/constituer_dossier_pilote_nova_p53w.py"
+      - "scripts/reconcilier_ecarts_nova_p53v.py"
+      - "scripts/verifier_separation_controles_nova_p53u.py"
+      - "scripts/verifier_integrite_locale_nova_p53t.py"
+      - "projets/projet-nova/etudes/P54A_*"
+      - "projets/projet-nova/etudes/P53Z_ACQUISITION_PUBLICATIONS_OFFICIELLES.json"
+      - "projets/projet-nova/etudes/P53X_PROTOCOLE_COMPARAISON_DEUX_PDF_2024.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reanalyse-source-publique:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - name: Checkout without persistent credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Install pinned PDF library
+        run: python -m pip install pypdf==5.9.0
+      - name: Verify 48 synthetic tests and immutable P53Z evidence
+        run: |
+          python -m py_compile scripts/analyser_ecarts_publications_nova_p54a.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_analyser_ecarts_publications_nova_p54a.py")
+          assert suite.countTestCases()==48,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Validate recorded original P53Z measurements
+        run: |
+          python scripts/analyser_ecarts_publications_nova_p54a.py --bilan p54a_reference_p53z.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p54a_reference_p53z.json").read_text("utf-8"))
+          assert d["pages_capture_p53z"]=={"ville":230,"mamh":177}
+          assert d["pages_texte_strictement_identique_p53z"]==0
+          assert d["capture_p53z_sources"]==2
+          assert d["anomalies_comptables_certifiees"]==0
+          assert d["economies_certifiees_cad"] is None
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Recapture official HTTPS PDFs and find heuristic page candidates
+        shell: bash
+        run: |
+          set +e
+          python scripts/analyser_ecarts_publications_nova_p54a.py --reanalyser-publications --bilan p54a_candidats.json
+          status=$?
+          set -e
+          echo "Code nouvelle acquisition : $status" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$status" -ne 0 ] && [ "$status" -ne 4 ]; then
+            echo "Erreur technique non attendue" >&2
+            exit 1
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p54a_candidats.json").read_text("utf-8"))
+          assert r["anomalies_comptables_certifiees"]==0
+          assert r["conclusions_sur_version_officielle_authentifiees"]==0
+          assert r["economies_certifiees_cad"] is None
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          print("Sources actualisées:",r["captures_actualisees"],"/2")
+          print("Analyse approximative effectuée:",r["reanalyse_textuelle_reussie"])
+          print("Pages candidates:",r["pages_approximativement_appariees_heuristique"])
+          PY
+      - name: Require refusal of invented financial anomaly certification
+        run: |
+          set +e
+          python scripts/analyser_ecarts_publications_nova_p54a.py --exiger-anomalie-certifiee --bilan p54a_refus.json
+          result=$?
+          set -e
+          test "$result" -eq 3
+      - name: Retain summaries only, never downloaded PDF bytes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54a-source-p53z-et-candidats-pages
+          path: |
+            p54a_reference_p53z.json
+            p54a_candidats.json
+            p54a_refus.json
+          if-no-files-found: ignore
+          retention-days: 7

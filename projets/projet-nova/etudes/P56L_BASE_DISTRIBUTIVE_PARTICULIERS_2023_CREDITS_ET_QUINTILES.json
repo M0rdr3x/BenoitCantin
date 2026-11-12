@@ -1,0 +1,359 @@
+{
+  "schema_version": "P56L-1",
+  "date_revision": "2026-11-07",
+  "objet": "BASE_DISTRIBUTIVE_OBSERVEE_DES_PARTICULIERS_ET_PORTES_DE_PROTECTION_DU_POUVOIR_ACHAT",
+  "statut": "OBSERVATIONS_2023_PUBLICATIONS_OFFICIELLES_NON_INCIDENTE_FISCALE_NOVA",
+  "territoire": "QUEBEC_DANS_CANADA",
+  "annee_observee": 2023,
+  "unite_montants": "M_CAD",
+  "sources": {
+    "A14": {
+      "url": "https://www.budget.finances.gouv.qc.ca/Budget/outils/statistiques-fiscales/somm-impot-a-payer.asp",
+      "organisme": "Ministère des Finances du Québec",
+      "tableau": "A.14",
+      "annee": 2023,
+      "type": "IMPOT_ET_CREDITS_PAR_TRANCHE_DE_REVENU_TOTAL",
+      "note": "Totaux et tranches arrondis en millions $"
+    },
+    "A3": {
+      "url": "https://www.budget.finances.gouv.qc.ca/Budget/outils/statistiques-fiscales/resume.asp",
+      "organisme": "Ministère des Finances du Québec",
+      "tableau": "A.3",
+      "annee": 2023,
+      "type": "PARTS_DU_REVENU_TOTAL_ET_DE_L_IMPOT_A_PAYER_PAR_QUINTILE_DE_DECLARANTS",
+      "note": "Quintiles de personnes déclarantes, pas ménages; parts arrondies en %"
+    },
+    "P56K": {
+      "repo_path": "projets/projet-nova/etudes/P56K_ASSIETTES_PARTICULIERS_SOCIETES_CREDITS_SOURCES_OFFICIELLES.json",
+      "annee_personnes": 2023,
+      "annee_societes": 2021,
+      "validation_automatique_p56k": "SUCCESS",
+      "note": "Ne pas utiliser le revenu imposable des sociétés 2021 pour une incidence de ménages 2023"
+    }
+  },
+  "tranches_a14": [
+    {
+      "id": "R00_09999",
+      "tranche_revenu_total": "Moins de 10 000 $",
+      "revenu_total_mcad": "2532",
+      "impot_sur_revenu_imposable_mcad": "335",
+      "credits_non_remboursables_mcad": "333",
+      "impot_a_payer_mcad": "2",
+      "credits_remboursables_mcad": "777",
+      "impot_net_apres_credits_remboursables_mcad": "-775",
+      "statut": "AGREGATS_STATISTIQUES_PARTICULIERS_2023_ARRONDIS",
+      "revenu_imposable_de_la_tranche_mcad": null,
+      "nombre_foyers_beneficiaires": null,
+      "incidence_nova_par_tranche_mcad": null
+    },
+    {
+      "id": "R10_19999",
+      "tranche_revenu_total": "10 000 à 19 999 $",
+      "revenu_total_mcad": "12615",
+      "impot_sur_revenu_imposable_mcad": "1505",
+      "credits_non_remboursables_mcad": "1495",
+      "impot_a_payer_mcad": "10",
+      "credits_remboursables_mcad": "1118",
+      "impot_net_apres_credits_remboursables_mcad": "-1108",
+      "statut": "AGREGATS_STATISTIQUES_PARTICULIERS_2023_ARRONDIS",
+      "revenu_imposable_de_la_tranche_mcad": null,
+      "nombre_foyers_beneficiaires": null,
+      "incidence_nova_par_tranche_mcad": null
+    },
+    {
+      "id": "R20_29999",
+      "tranche_revenu_total": "20 000 à 29 999 $",
+      "revenu_total_mcad": "26507",
+      "impot_sur_revenu_imposable_mcad": "2940",
+      "credits_non_remboursables_mcad": "2666",
+      "impot_a_payer_mcad": "273",
+      "credits_remboursables_mcad": "2306",
+      "impot_net_apres_credits_remboursables_mcad": "-2033",
+      "statut": "AGREGATS_STATISTIQUES_PARTICULIERS_2023_ARRONDIS",
+      "revenu_imposable_de_la_tranche_mcad": null,
+      "nombre_foyers_beneficiaires": null,
+      "incidence_nova_par_tranche_mcad": null
+    },
+    {
+      "id": "R30_49999",
+      "tranche_revenu_total": "30 000 à 49 999 $",
+      "revenu_total_mcad": "59789",
+      "impot_sur_revenu_imposable_mcad": "7470",
+      "credits_non_remboursables_mcad": "4654",
+      "impot_a_payer_mcad": "2816",
+      "credits_remboursables_mcad": "2275",
+      "impot_net_apres_credits_remboursables_mcad": "541",
+      "statut": "AGREGATS_STATISTIQUES_PARTICULIERS_2023_ARRONDIS",
+      "revenu_imposable_de_la_tranche_mcad": null,
+      "nombre_foyers_beneficiaires": null,
+      "incidence_nova_par_tranche_mcad": null
+    },
+    {
+      "id": "R50_99999",
+      "tranche_revenu_total": "50 000 à 99 999 $",
+      "revenu_total_mcad": "159483",
+      "impot_sur_revenu_imposable_mcad": "21553",
+      "credits_non_remboursables_mcad": "7188",
+      "impot_a_payer_mcad": "14365",
+      "credits_remboursables_mcad": "2145",
+      "impot_net_apres_credits_remboursables_mcad": "12220",
+      "statut": "AGREGATS_STATISTIQUES_PARTICULIERS_2023_ARRONDIS",
+      "revenu_imposable_de_la_tranche_mcad": null,
+      "nombre_foyers_beneficiaires": null,
+      "incidence_nova_par_tranche_mcad": null
+    },
+    {
+      "id": "R100_PLUS",
+      "tranche_revenu_total": "100 000 $ ou plus",
+      "revenu_total_mcad": "166989",
+      "impot_sur_revenu_imposable_mcad": "28346",
+      "credits_non_remboursables_mcad": "5022",
+      "impot_a_payer_mcad": "23324",
+      "credits_remboursables_mcad": "683",
+      "impot_net_apres_credits_remboursables_mcad": "22640",
+      "statut": "AGREGATS_STATISTIQUES_PARTICULIERS_2023_ARRONDIS",
+      "revenu_imposable_de_la_tranche_mcad": null,
+      "nombre_foyers_beneficiaires": null,
+      "incidence_nova_par_tranche_mcad": null
+    }
+  ],
+  "totaux_publies_a14": {
+    "revenu_total_mcad": "427915",
+    "impot_sur_revenu_imposable_mcad": "62148",
+    "credits_non_remboursables_mcad": "21358",
+    "impot_a_payer_mcad": "40790",
+    "credits_remboursables_mcad": "9305",
+    "impot_net_apres_credits_remboursables_mcad": "31485"
+  },
+  "reconciliation_arrondis": {
+    "ecart_somme_lignes_moins_total_imposition_brute_mcad": "1",
+    "ecart_somme_lignes_moins_total_credits_remboursables_mcad": "-1",
+    "ecart_calcul_net_100k_plus_moins_valeur_publiee_mcad": "1",
+    "ecart_somme_lignes_moins_total_net_mcad": "0",
+    "erreur_arrondi_par_poste_toleree_mcad": "1",
+    "interdiction_de_forcer_les_lignes_pour_faire_correspondre_les_totaux": true
+  },
+  "agregat_sensible_moins_30000": {
+    "group_ids": [
+      "R00_09999",
+      "R10_19999",
+      "R20_29999"
+    ],
+    "revenu_total_mcad": "41654",
+    "impot_a_payer_mcad": "285",
+    "credits_remboursables_mcad": "4201",
+    "impot_net_apres_credits_remboursables_mcad": "-3916",
+    "part_du_total_credits_remboursables_pourcent_arrondi": "45.1",
+    "nature": "NET_FISCAL_AGREGE_DE_DECLARANTS_PAR_REVENU_TOTAL_PAS_REVENU_DISPONIBLE",
+    "somme_fiscale_a_supprimer_dans_nova": false,
+    "beneficiaires_uniques_identifies": false,
+    "aide_reelle_par_menage": null,
+    "niveau_protection_finance_nova": null
+  },
+  "quintiles_a3": [
+    {
+      "id": "Q1",
+      "tranche_revenu_total": "Moins de 19 713 $",
+      "part_revenu_total_pourcent": "3.43",
+      "part_impot_a_payer_pourcent": "0.03",
+      "revenu_apres_impot_et_transferts": null,
+      "part_credits_remboursables": null,
+      "simulation_nova_nette": null
+    },
+    {
+      "id": "Q2",
+      "tranche_revenu_total": "19 713 $ à 34 580 $",
+      "part_revenu_total_pourcent": "8.91",
+      "part_impot_a_payer_pourcent": "1.46",
+      "revenu_apres_impot_et_transferts": null,
+      "part_credits_remboursables": null,
+      "simulation_nova_nette": null
+    },
+    {
+      "id": "Q3",
+      "tranche_revenu_total": "34 581 $ à 54 178 $",
+      "part_revenu_total_pourcent": "14.99",
+      "part_impot_a_payer_pourcent": "8.64",
+      "revenu_apres_impot_et_transferts": null,
+      "part_credits_remboursables": null,
+      "simulation_nova_nette": null
+    },
+    {
+      "id": "Q4",
+      "tranche_revenu_total": "54 179 $ à 82 785 $",
+      "part_revenu_total_pourcent": "22.57",
+      "part_impot_a_payer_pourcent": "20.45",
+      "revenu_apres_impot_et_transferts": null,
+      "part_credits_remboursables": null,
+      "simulation_nova_nette": null
+    },
+    {
+      "id": "Q5",
+      "tranche_revenu_total": "82 786 $ ou plus",
+      "part_revenu_total_pourcent": "50.10",
+      "part_impot_a_payer_pourcent": "69.41",
+      "revenu_apres_impot_et_transferts": null,
+      "part_credits_remboursables": null,
+      "simulation_nova_nette": null
+    }
+  ],
+  "indicateurs_quintiles": {
+    "q5_part_revenu_total_pourcent": "50.10",
+    "q5_part_impot_a_payer_pourcent": "69.41",
+    "q1_part_revenu_total_pourcent": "3.43",
+    "q1_part_impot_a_payer_pourcent": "0.03",
+    "type": "DISTRIBUTION_STATISTIQUE_NON_EFFET_D_UNE_POLITIQUE"
+  },
+  "comparabilite_et_controles": {
+    "tranches_a14_et_quintiles_a3_recoupements_non_reconstructibles": true,
+    "statistique_unite": "DECLARANTS_PERSONNES",
+    "statistique_unite_n_est_pas": "FOYERS",
+    "revenu_total_n_est_pas_revenu_disponible": true,
+    "net_negatif_de_tranche_n_est_pas_paiement_individuel_universel": true,
+    "les_credits_remboursables_ne_sont_pas_integralement_recettes_potentielles": true,
+    "les_credits_fiscaux_ne_sont_pas_tous_des_versements_en_especes": true,
+    "taux_nova_2027_2036_deduit_de_2023": false,
+    "analyse_causale_reforme_nova_effectuee": false,
+    "credits_et_impots_federaux_par_tranche_connus": false,
+    "assiettes_societes_2021_alignees_sur_particuliers_2023": false
+  },
+  "regimes": {
+    "QUEBEC_DANS_CANADA": {
+      "assiettes_droits_2027_2036_observes": false,
+      "taxes_federales_sous_controle_quebec": false,
+      "comparaison_menages_apres_TPS_federale": null,
+      "simulation_reforme_nova": null
+    },
+    "QUEBEC_SOUVERAIN": {
+      "hypothese": "COMPETENCES_ET_COUTS_A_NEGOCIER",
+      "assiettes_personnes_et_societes_2027_2036": null,
+      "prestations_transferees_net_mcad": null,
+      "financement_fonctions_federales_mcad": null,
+      "simulation_reforme_nova": null
+    }
+  },
+  "portes_protection": [
+    {
+      "id": "L01",
+      "exigence": "Maintenir la valeur et l'accès effectif des crédits remboursables pertinents ou démontrer une compensation au moins équivalente pour les bénéficiaires",
+      "dimension": "DECILES_ET_MENAGES",
+      "statut": "NON_DEMONTRE",
+      "preuve_id": null,
+      "avis_independant_id": null,
+      "mesure_nova_calculee": null
+    },
+    {
+      "id": "L02",
+      "exigence": "Mesurer revenu disponible après impôts fédéraux et provinciaux, cotisations, crédits, prestations et aides directes",
+      "dimension": "MENAGES_TYPES_ET_REGIONS",
+      "statut": "NON_DEMONTRE",
+      "preuve_id": null,
+      "avis_independant_id": null,
+      "mesure_nova_calculee": null
+    },
+    {
+      "id": "L03",
+      "exigence": "Prendre en compte l'effet de la suppression éventuelle de taxes à la consommation sur les prix payés sans supposer transmission intégrale",
+      "dimension": "MENAGES_ET_MARCHES",
+      "statut": "NON_DEMONTRE",
+      "preuve_id": null,
+      "avis_independant_id": null,
+      "mesure_nova_calculee": null
+    },
+    {
+      "id": "L04",
+      "exigence": "Mesurer incidence sur familles, personnes seules, personnes aînées, retraités, étudiants, personnes handicapées et ménages modestes",
+      "dimension": "MENAGES_VULNERABLES",
+      "statut": "NON_DEMONTRE",
+      "preuve_id": null,
+      "avis_independant_id": null,
+      "mesure_nova_calculee": null
+    },
+    {
+      "id": "L05",
+      "exigence": "Préserver financement récurrent des services de santé, éducation, municipalités, eau potable, transport, justice et logement",
+      "dimension": "SERVICES_PUBLICS",
+      "statut": "NON_DEMONTRE",
+      "preuve_id": null,
+      "avis_independant_id": null,
+      "mesure_nova_calculee": null
+    },
+    {
+      "id": "L06",
+      "exigence": "Séparer individus, ménages et unités fiscales; ne pas appeler quintile de déclarants un quintile de ménages",
+      "dimension": "DENOMINATEURS",
+      "statut": "NON_DEMONTRE",
+      "preuve_id": null,
+      "avis_independant_id": null,
+      "mesure_nova_calculee": null
+    },
+    {
+      "id": "L07",
+      "exigence": "Répartir incidence entreprise selon bénéfices imposables, pertes, crédit, cotisations FSS, taille et emplois existants",
+      "dimension": "ENTREPRISES_ET_EMPLOIS",
+      "statut": "NON_DEMONTRE",
+      "preuve_id": null,
+      "avis_independant_id": null,
+      "mesure_nova_calculee": null
+    },
+    {
+      "id": "L08",
+      "exigence": "Maintenir compétences fédérales dans le Canada et construire un bilan distinct des obligations souveraines hypothétiques",
+      "dimension": "DEUX_REGIMES",
+      "statut": "NON_DEMONTRE",
+      "preuve_id": null,
+      "avis_independant_id": null,
+      "mesure_nova_calculee": null
+    },
+    {
+      "id": "L09",
+      "exigence": "Démontrer assiettes 2027–2036, élasticités, recettes nettes et taux candidats sans faire de 2023 un budget futur",
+      "dimension": "FINANCES_DECENNALES",
+      "statut": "NON_DEMONTRE",
+      "preuve_id": null,
+      "avis_independant_id": null,
+      "mesure_nova_calculee": null
+    },
+    {
+      "id": "L10",
+      "exigence": "Obtenir revue indépendante et consultation publique documentée avant modifier P52B/P52D ou annoncer une économie",
+      "dimension": "CONTROLE_ET_ADOPTION",
+      "statut": "NON_DEMONTRE",
+      "preuve_id": null,
+      "avis_independant_id": null,
+      "mesure_nova_calculee": null
+    }
+  ],
+  "nombre_portes": 10,
+  "scenarios_a_etudier": [
+    {
+      "id": "BASE_DROITS_ACTUELS",
+      "type": "FUTUR_CONTREFACTUEL_A_ESTIMER",
+      "solde_menage": null,
+      "solde_entreprise": null
+    },
+    {
+      "id": "DEUX_PRELEVEMENTS_QUEBEC_CANADA",
+      "type": "HYPOTHESE_NON_ADOPTEE",
+      "solde_menage": null,
+      "solde_entreprise": null
+    },
+    {
+      "id": "DEUX_PRELEVEMENTS_QUEBEC_SOUVERAIN",
+      "type": "HYPOTHESE_CONDITIONNEE",
+      "solde_menage": null,
+      "solde_entreprise": null
+    }
+  ],
+  "p52b_montants_inconnus": 600,
+  "p52d_incidences_inconnues": 720,
+  "p52a_preuves_non_validees": 20,
+  "p55n_score_estimatif": 53,
+  "taux_nova_adopte": false,
+  "nouvelles_recettes_certifiees_mcad": null,
+  "economies_nova_certifiees_mcad": null,
+  "avis_independants_signes": 0,
+  "budget_decennal_valide": false,
+  "declaration_amelioration_universelle_pouvoir_achat_autorisee": false,
+  "decision": "NO_GO_AUTOMATIQUE"
+}

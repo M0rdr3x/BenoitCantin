@@ -1,0 +1,82 @@
+name: Projet Nova P55R - Millesime fiscal commun 2021 sans taux invente
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p55r.yml"
+      - "scripts/rapprocher_millesime_fiscal_2021_nova_p55r.py"
+      - "scripts/tests/test_rapprocher_millesime_fiscal_2021_nova_p55r.py"
+      - "scripts/controler_assiettes_historiques_nova_p55q.py"
+      - "scripts/calculer_exposition_prelevements_nova_p55p.py"
+      - "projets/projet-nova/etudes/P55R_*"
+      - "projets/projet-nova/etudes/P55Q_*"
+      - "projets/projet-nova/etudes/P55P_*"
+      - "projets/projet-nova/etudes/P55O_*"
+      - "projets/projet-nova/etudes/P55N_*"
+      - "projets/projet-nova/etudes/P52A_*"
+      - "projets/projet-nova/etudes/P52B_*"
+      - "projets/projet-nova/etudes/P52C_*"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controles-historiques-non-certifiants:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Lire les fichiers de la branche sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Executer exactement 38 tests du millesime 2021
+        run: |
+          python -m py_compile scripts/rapprocher_millesime_fiscal_2021_nova_p55r.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+              "scripts/tests", pattern="test_rapprocher_millesime_fiscal_2021_nova_p55r.py")
+          assert suite.countTestCases()==38, suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Emettre un bilan public historique sans taux propose
+        run: |
+          python scripts/rapprocher_millesime_fiscal_2021_nova_p55r.py \
+            --rapport-public p55r_bilan_neutre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p55r_bilan_neutre.json").read_text("utf-8"))
+          assert r["schema_version"]=="P55R-BILAN-PUBLIC-1"
+          assert r["annee_fiscale_commune"]==2021
+          assert r["revenu_imposable_personnes_2021_mcad"]==333898
+          assert r["revenu_imposable_societes_quebec_2021_mcad"]==95784
+          assert r["non_imposes_personnes_pct"]=="29.4"
+          assert r["non_imposees_societes_pct"]=="57.0"
+          assert r["credits_exceptionnels_2021_non_recurrents"] is True
+          assert r["assiette_nova_harmonisee_mcad"] is None
+          assert r["taux_nova_pct"] is None
+          assert r["recettes_anti_paradis_certifiees_mcad"] is None
+          assert r["maturite_estimee_pct"]==53
+          assert r["financement_p52b_montants_inconnus"]==600
+          assert r["preuves_ouvertes"]==8
+          assert r["economies_certifiees_mcad"] is None
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Refuser automatiquement tout taux fiscal auto-certifie
+        run: |
+          set +e
+          python scripts/rapprocher_millesime_fiscal_2021_nova_p55r.py --exiger-taux-certifie
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Archiver seulement le bilan public neutre
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p55r-2021-sources-historiques-non-certifiees
+          path: p55r_bilan_neutre.json
+          retention-days: 7

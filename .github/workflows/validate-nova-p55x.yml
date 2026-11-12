@@ -1,0 +1,31 @@
+name: Projet Nova P55X - Charges patronales 2026 et refus de certification
+on:
+  pull_request:
+    paths:
+      - 'scripts/calculer_charges_employeur_nova_p55x.py'
+      - 'scripts/tests/test_calculer_charges_employeur_nova_p55x.py'
+      - 'projets/projet-nova/etudes/P55X_*'
+      - '.github/workflows/validate-nova-p55x.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validation-p55x:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tests synthétiques P55X
+        run: python -m unittest discover -s scripts/tests -p 'test_calculer_charges_employeur_nova_p55x.py' -v
+      - name: Vérifier le refus de faisabilité
+        shell: bash
+        run: |
+          set +e
+          python scripts/calculer_charges_employeur_nova_p55x.py --salaire 50000.00 --effectif 10 --secteur general --hypotheses-confirmees --exiger-faisabilite
+          code=$?
+          set -e
+          test "$code" -eq 3

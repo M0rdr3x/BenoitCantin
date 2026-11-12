@@ -1,0 +1,82 @@
+name: Projet Nova P53O - Priorisation des sources officielles
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p53o.yml"
+      - "scripts/prioriser_sources_officielles_nova_p53o.py"
+      - "scripts/tests/test_prioriser_sources_officielles_nova_p53o.py"
+      - "scripts/preparer_acquisition_preuves_nova_p53n.py"
+      - "scripts/construire_registre_couts_evitables_nova_p53m.py"
+      - "scripts/evaluer_hypotheses_economies_nova_p53l.py"
+      - "scripts/preparer_controles_probatoires_nova_p53k.py"
+      - "scripts/auditer_appariements_municipaux_nova_p53j.py"
+      - "projets/projet-nova/etudes/P53O_*"
+      - "projets/projet-nova/etudes/P53N_PLAN_ACQUISITION_PREUVES.json"
+      - "projets/projet-nova/etudes/P53M_CRITERES_COUTS_EVITABLES.json"
+      - "projets/projet-nova/etudes/P53L_CADRE_EVALUATION_ECONOMIES.json"
+      - "projets/projet-nova/etudes/P53K_EXIGENCES_PROBATOIRES.json"
+      - "projets/projet-nova/etudes/P53I_SOURCES_REVISION_ET_CHARGES_2024.json"
+      - "projets/projet-nova/etudes/P53H_PRIORITES_VERIFICATION_2024.json"
+      - "projets/projet-nova/etudes/sources/P53I_MAMH_2024_1344_RECETTES_CHARGES_SELECTION.csv"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  matrice-sources-et-refus-financier:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Depot sans droit ecriture
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Tests P53O - 44 cas
+        run: |
+          python -m py_compile scripts/prioriser_sources_officielles_nova_p53o.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_prioriser_sources_officielles_nova_p53o.py")
+          assert suite.countTestCases()==44,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Verifier 12 fiches et aucune economie
+        run: |
+          python scripts/prioriser_sources_officielles_nova_p53o.py --bilan p53o_bilan.json --matrice p53o_matrice.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          b=json.loads(Path("p53o_bilan.json").read_text("utf-8"))
+          f=json.loads(Path("p53o_matrice.json").read_text("utf-8"))["fiches"]
+          assert b["fiches_orientees"]==12
+          assert b["pages_officielles_repertoiriees"]==7
+          assert b["documents_p53n_toujours_a_documenter"]==144
+          assert b["economies_annuelles_certifiees_cad"] is None
+          assert b["publications_transactionnelles_originales_telechargees"]==0
+          assert b["demandes_acces_envoyees"]==0
+          assert b["decision"]=="NO_GO_AUTOMATIQUE"
+          assert len(f)==12
+          assert all(row["priorite_procedurale"].startswith("P0") for row in f)
+          PY
+          set +e
+          python scripts/prioriser_sources_officielles_nova_p53o.py --exiger-economies-certifiees --bilan p53o_refus.json
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Conserver uniquement rapports et matrice non confidentiels
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p53o-sources-officielles-no-go
+          path: |
+            p53o_bilan.json
+            p53o_refus.json
+            p53o_matrice.json
+          if-no-files-found: ignore
+          retention-days: 7

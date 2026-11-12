@@ -1,0 +1,1663 @@
+{
+  "schema_version": "P52B-1",
+  "statut": "ETUDE_NON_ADOPTEE",
+  "reference_main_sha": "9ed5f70cbe7022f25a679346a1288701f3b09067",
+  "unite": "G_CAD",
+  "authorization": {
+    "legal": false,
+    "publication": false,
+    "fusion": false
+  },
+  "reference_2026_2027": {
+    "statut": "MODELE_NON_CERTIFIE",
+    "revenus_consolides": "166.492",
+    "depenses_consolidees": "170.757",
+    "service_dette_indicatif": "10.268",
+    "dette_nette_initiale": "245.335"
+  },
+  "regimes": {
+    "QUEBEC_DANS_CANADA": {
+      "objectif_deux_prelevements": "PROVINCIAL_SEULEMENT_FEDERAL_DEMEURE",
+      "trajectoires": {
+        "central": [
+          {
+            "exercice_debut": 2027,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2028,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2029,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2030,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2031,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2032,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2033,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2034,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2035,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2036,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          }
+        ],
+        "prudent": [
+          {
+            "exercice_debut": 2027,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2028,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2029,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2030,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2031,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2032,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2033,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2034,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2035,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2036,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          }
+        ],
+        "stress": [
+          {
+            "exercice_debut": 2027,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2028,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2029,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2030,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2031,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2032,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2033,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2034,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2035,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2036,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          }
+        ]
+      }
+    },
+    "QUEBEC_SOUVERAIN": {
+      "objectif_deux_prelevements": "CONDITIONNE_A_SOUVERAINETE_LEGALE",
+      "trajectoires": {
+        "central": [
+          {
+            "exercice_debut": 2027,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2028,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2029,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2030,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2031,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2032,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2033,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2034,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2035,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2036,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          }
+        ],
+        "prudent": [
+          {
+            "exercice_debut": 2027,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2028,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2029,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2030,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2031,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2032,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2033,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2034,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2035,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2036,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          }
+        ],
+        "stress": [
+          {
+            "exercice_debut": 2027,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2028,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2029,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2030,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2031,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2032,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2033,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2034,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2035,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          },
+          {
+            "exercice_debut": 2036,
+            "recettes": {
+              "impot_revenu_net": null,
+              "anti_evasion_additionnelle_nette": "0",
+              "revenus_non_fiscaux_nets": null,
+              "transferts_federaux_nets": null,
+              "autres_prelevements_provinciaux_nets": null
+            },
+            "depenses": {
+              "services_existants_hors_dette_et_municipal_nets": null,
+              "service_dette_net": null,
+              "transferts_municipaux_nets": null,
+              "fonctions_souveraines_nouvelles_nettes": null,
+              "couts_transition_nets": null,
+              "provision_crises_nette": null
+            },
+            "sources": {
+              "anti_evasion_additionnelle_nette": "HYPOTHESE_PRUDENTE_ZERO_NON_CERTIFIEE"
+            },
+            "solde_budgetaire_precedent": null,
+            "ratio_dette_nette_pib_pct": null,
+            "perimetre_reconcilie": false,
+            "incidence_menages_validee": false,
+            "emplois_et_services_valides": false,
+            "inventaire_prelevements_valide": false
+          }
+        ]
+      }
+    }
+  },
+  "note": "Les 60 lignes 2027-2036 sont volontairement INCOMPLETES. Le seul zero chiffre est l'hypothese prudente non certifiee de rendement supplementaire anti-evasion. Les impots federaux demeurent hors controle unilateral du Quebec au Canada. Aucun taux, aucune economie, aucun revenu propre aux nouvelles fonctions souveraines n'est suppose."
+}

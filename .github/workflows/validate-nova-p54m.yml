@@ -1,0 +1,91 @@
+name: Projet Nova P54M - Recevabilite preparatoire sans attestation professionnelle
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54m.yml"
+      - "scripts/evaluer_recevabilite_authentifications_nova_p54m.py"
+      - "scripts/tests/test_evaluer_recevabilite_authentifications_nova_p54m.py"
+      - "scripts/tests/test_recevoir_preuves_externes_nova_p54l.py"
+      - "scripts/recevoir_preuves_externes_nova_p54l.py"
+      - "scripts/verifier_habilitations_signatures_nova_p54k.py"
+      - "scripts/qualifier_contradictions_avis_nova_p54j.py"
+      - "scripts/recevoir_mandats_et_avis_nova_p54i.py"
+      - "projets/projet-nova/etudes/P54M_*"
+      - "projets/projet-nova/etudes/P54L_PREUVES_EXTERNES_A_AUTHENTIFIER_2024.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  evaluation-non-certifiante:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Dependances de la chaine PDF
+        run: python -m pip install pypdf==5.9.0
+      - name: 72 tests P54M - preuves 100 pour cent synthetiques
+        run: |
+          python -m py_compile scripts/evaluer_recevabilite_authentifications_nova_p54m.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_evaluer_recevabilite_authentifications_nova_p54m.py")
+          assert suite.countTestCases()==72,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Bilan initial sans avis authentifie ni economie
+        run: |
+          python scripts/evaluer_recevabilite_authentifications_nova_p54m.py --bilan p54m_bilan_neutre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p54m_bilan_neutre.json").read_text("utf-8"))
+          assert len(r["dossiers"])==4
+          assert r["statuts_recevabilite"]=={"NON_INSTRUIT":4}
+          assert r["evaluations_preparatoires_non_certifiantes"]==0
+          assert r["authentifications_officielles_executees"]==0
+          assert r["signatures_authentifiees"]==0
+          assert r["verifications_permis_certifiees"]==0
+          assert r["avis_independants_certifies"]==0
+          assert r["dossiers_clos"]==0
+          assert r["controles_p54b_restants"]==96
+          assert r["controles_p54c_restants"]==8
+          assert r["economies_certifiees_cad"] is None
+          assert r["fusion_main_autorisee"] is False
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Modele prive uniquement temporaire
+        run: |
+          python scripts/evaluer_recevabilite_authentifications_nova_p54m.py --modele-prive "$RUNNER_TEMP/p54m_modele_prive.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path(os.environ["RUNNER_TEMP"])/"p54m_modele_prive.json"
+          assert p.is_file() and (p.stat().st_mode & 0o777)==0o600
+          assert json.loads(p.read_text("utf-8"))["evaluations"]==[]
+          p.unlink()
+          PY
+      - name: Refuser pretention de decision officielle
+        run: |
+          set +e
+          python scripts/evaluer_recevabilite_authentifications_nova_p54m.py --exiger-decision
+          code=$?
+          set -e
+          test "$code" -eq 3
+      - name: Archiver le seul bilan public non certifiant
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54m-matrice-recevabilite-non-authentifiee
+          path: p54m_bilan_neutre.json
+          if-no-files-found: ignore
+          retention-days: 7

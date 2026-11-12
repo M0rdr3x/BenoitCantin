@@ -1,0 +1,668 @@
+{
+  "schema_version": "P52O-1",
+  "jalon": "P52O",
+  "date_reference": "2026-10-19",
+  "projet": "Projet Nova",
+  "statut": "PLAN_D_ACQUISITION_NON_ENGAGE",
+  "refs": {
+    "p52a": "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json",
+    "p52m": "projets/projet-nova/etudes/P52M_MANDATS_COMITES_ET_RISQUES.json",
+    "p52n": "projets/projet-nova/etudes/P52N_CAHIER_MANDATS_ET_CONSULTATION.json",
+    "sources": "projets/projet-nova/etudes/P52O_SOURCES_OFFICIELLES_REPEREES.json",
+    "quotes": "projets/projet-nova/etudes/P52O_SIMULATIONS_DEVIS_VIDES.json"
+  },
+  "methodologie_priorisation": "Dépendances de recherche et de rédaction proposées, sans caractère légal et sans adoption; préparation non contractuelle et parallélisable",
+  "vagues": [
+    {
+      "id": "V1",
+      "objectif": "Légalité provinciale/fédérale, fiscalité locale, bases du budget, démocratie et confidentialité",
+      "preuves": [
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "F07",
+        "F09",
+        "F19",
+        "F20"
+      ]
+    },
+    {
+      "id": "V2",
+      "objectif": "Assiettes fiscales, réglementation anti-abus, subventions, continuité, hypothèses dette-actifs",
+      "preuves": [
+        "F05",
+        "F06",
+        "F13",
+        "F14",
+        "F15"
+      ]
+    },
+    {
+      "id": "V3",
+      "objectif": "Rendement anti-évasion, nouvelles fonctions publiques et relations monétaires",
+      "preuves": [
+        "F08",
+        "F16",
+        "F17"
+      ]
+    },
+    {
+      "id": "V4",
+      "objectif": "Scénarios financiers décennaux sans supposer recettes nettes nouvelles",
+      "preuves": [
+        "F10"
+      ]
+    },
+    {
+      "id": "V5",
+      "objectif": "Distribution des revenus et critères d'abolition prudente",
+      "preuves": [
+        "F11",
+        "F18"
+      ]
+    },
+    {
+      "id": "V6",
+      "objectif": "Audit final de l'emploi, des services et des économies vérifiables",
+      "preuves": [
+        "F12"
+      ]
+    }
+  ],
+  "preuves": [
+    {
+      "id": "F01",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "Compétence de modifier la TVQ et autres impôts québécois",
+      "comite_pilote": "CJF",
+      "criticite_provisoire": "CRITIQUE",
+      "vague": "V1",
+      "dependances_techniques": [],
+      "sources_preliminaires": [
+        "REF01",
+        "REF04"
+      ],
+      "livrable_attendu": "Avis juridique sourcé distinguant droits et limites de la fiscalité provinciale, et inventaire des textes à modifier",
+      "preuve_independante_obtenue": false,
+      "cout_total_prevu_cad": null,
+      "avis_professionnel_signee": false,
+      "devis_reels_conformes": 0,
+      "mandat_attribue": false,
+      "decision": "NO_GO"
+    },
+    {
+      "id": "F02",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "TPS et impôt fédéral demeurent distincts",
+      "comite_pilote": "CJF",
+      "criticite_provisoire": "CRITIQUE",
+      "vague": "V1",
+      "dependances_techniques": [],
+      "sources_preliminaires": [
+        "REF01"
+      ],
+      "livrable_attendu": "Note constitutionnelle des prélèvements fédéraux qui demeurent, y compris TPS et impôt fédéral",
+      "preuve_independante_obtenue": false,
+      "cout_total_prevu_cad": null,
+      "avis_professionnel_signee": false,
+      "devis_reels_conformes": 0,
+      "mandat_attribue": false,
+      "decision": "NO_GO"
+    },
+    {
+      "id": "F03",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "Tarifs douaniers et contre-tarifs fédéraux",
+      "comite_pilote": "CJF",
+      "criticite_provisoire": "ELEVE",
+      "vague": "V1",
+      "dependances_techniques": [],
+      "sources_preliminaires": [
+        "REF02"
+      ],
+      "livrable_attendu": "Analyse de compétence sur les tarifs, contre-tarifs et engagements commerciaux",
+      "preuve_independante_obtenue": false,
+      "cout_total_prevu_cad": null,
+      "avis_professionnel_signee": false,
+      "devis_reels_conformes": 0,
+      "mandat_attribue": false,
+      "decision": "NO_GO"
+    },
+    {
+      "id": "F04",
+      "regime": "QUEBEC_DANS_CANADA",
+      "theme": "Fiscalité municipale et taxes scolaires et foncières",
+      "comite_pilote": "CFP",
+      "criticite_provisoire": "CRITIQUE",
+      "vague": "V1",
+      "dependances_techniques": [],
+      "sources_preliminaires": [
+        "REF06"
+      ],
+      "livrable_attendu": "Table de consolidation et de compensation des recettes et services municipaux et scolaires",
+      "preuve_independante_obtenue": false,
+      "cout_total_prevu_cad": null,
+      "avis_professionnel_signee": false,
+      "devis_reels_conformes": 0,
+      "mandat_attribue": false,
+      "decision": "NO_GO"
+    },
+    {
+      "id": "F05",
+      "regime": "TOUS",
+      "theme": "Définition du prélèvement sur les revenus",
+      "comite_pilote": "CJF",
+      "criticite_provisoire": "CRITIQUE",
+      "vague": "V2",
+      "dependances_techniques": [
+        "F01",
+        "F02",
+        "F07"
+      ],
+      "sources_preliminaires": [
+        "REF07"
+      ],
+      "livrable_attendu": "Architecture de l'assiette de revenu, seuil de subsistance, pertes et crédits",
+      "preuve_independante_obtenue": false,
+      "cout_total_prevu_cad": null,
+      "avis_professionnel_signee": false,
+      "devis_reels_conformes": 0,
+      "mandat_attribue": false,
+      "decision": "NO_GO"
+    },
+    {
+      "id": "F06",
+      "regime": "TOUS",
+      "theme": "Définition du prélèvement anti-paradis fiscaux",
+      "comite_pilote": "CJF",
+      "criticite_provisoire": "CRITIQUE",
+      "vague": "V2",
+      "dependances_techniques": [
+        "F01",
+        "F02",
+        "F03",
+        "F07"
+      ],
+      "sources_preliminaires": [],
+      "livrable_attendu": "Définition du fait générateur anti-transfert abusif, traitement de la double imposition et recours",
+      "preuve_independante_obtenue": false,
+      "cout_total_prevu_cad": null,
+      "avis_professionnel_signee": false,
+      "devis_reels_conformes": 0,
+      "mandat_attribue": false,
+      "decision": "NO_GO"
+    },
+    {
+      "id": "F07",
+      "regime": "TOUS",
+      "theme": "Inventaire de tous les prélèvements obligatoires",
+      "comite_pilote": "CJF",
+      "criticite_provisoire": "ELEVE",
+      "vague": "V1",
+      "dependances_techniques": [],
+      "sources_preliminaires": [
+        "REF03",
+        "REF04",
+        "REF06"
+      ],
+      "livrable_attendu": "Inventaire des prélèvements de tous niveaux et de leurs fondements juridiques",
+      "preuve_independante_obtenue": false,
+      "cout_total_prevu_cad": null,
+      "avis_professionnel_signee": false,
+      "devis_reels_conformes": 0,
+      "mandat_attribue": false,
+      "decision": "NO_GO"
+    },
+    {
+      "id": "F08",
+      "regime": "TOUS",
+      "theme": "Rendement d'impôt anti-évasion",
+      "comite_pilote": "CFP",
+      "criticite_provisoire": "CRITIQUE",
+      "vague": "V3",
+      "dependances_techniques": [
+        "F06",
+        "F07",
+        "F09"
+      ],
+      "sources_preliminaires": [],
+      "livrable_attendu": "Étude prudente du rendement net anti-évasion, coûts, contestations et intervalle d'incertitude",
+      "preuve_independante_obtenue": false,
+      "cout_total_prevu_cad": null,
+      "avis_professionnel_signee": false,
+      "devis_reels_conformes": 0,
+      "mandat_attribue": false,
+      "decision": "NO_GO"
+    },
+    {
+      "id": "F09",
+      "regime": "TOUS",
+      "theme": "Sources budgétaires et réconciliation",
+      "comite_pilote": "CFP",
+      "criticite_provisoire": "CRITIQUE",
+      "vague": "V1",
+      "dependances_techniques": [],
+      "sources_preliminaires": [
+        "REF05"
+      ],
+      "livrable_attendu": "Réconciliation documentée des postes 2026-2027, versions officielles et consolidation des périmètres",
+      "preuve_independante_obtenue": false,
+      "cout_total_prevu_cad": null,
+      "avis_professionnel_signee": false,
+      "devis_reels_conformes": 0,
+      "mandat_attribue": false,
+      "decision": "NO_GO"
+    },
+    {
+      "id": "F10",
+      "regime": "TOUS",
+      "theme": "Modèle décennal et scénarios",
+      "comite_pilote": "CFP",
+      "criticite_provisoire": "CRITIQUE",
+      "vague": "V4",
+      "dependances_techniques": [
+        "F05",
+        "F08",
+        "F09",
+        "F13",
+        "F14",
+        "F16",
+        "F17"
+      ],
+      "sources_preliminaires": [
+        "REF05"
+      ],
+      "livrable_attendu": "Modèle sur dix exercices pour deux statuts juridiques et scénarios défavorables avec audit des hypothèses",
+      "preuve_independante_obtenue": false,
+      "cout_total_prevu_cad": null,
+      "avis_professionnel_signee": false,
+      "devis_reels_conformes": 0,
+      "mandat_attribue": false,
+      "decision": "NO_GO"
+    },
+    {
+      "id": "F11",
+      "regime": "TOUS",
+      "theme": "Équité et pouvoir d'achat",
+      "comite_pilote": "CSD",
+      "criticite_provisoire": "CRITIQUE",
+      "vague": "V5",
+      "dependances_techniques": [
+        "F05",
+        "F09",
+        "F10",
+        "F20"
+      ],
+      "sources_preliminaires": [
+        "REF07",
+        "REF08"
+      ],
+      "livrable_attendu": "Étude distributive représentative avec poids, déciles, effets indirects et confidentialité",
+      "preuve_independante_obtenue": false,
+      "cout_total_prevu_cad": null,
+      "avis_professionnel_signee": false,
+      "devis_reels_conformes": 0,
+      "mandat_attribue": false,
+      "decision": "NO_GO"
+    },
+    {
+      "id": "F12",
+      "regime": "TOUS",
+      "theme": "Emploi, services et économies réelles",
+      "comite_pilote": "CSD",
+      "criticite_provisoire": "CRITIQUE",
+      "vague": "V6",
+      "dependances_techniques": [
+        "F10",
+        "F11",
+        "F14"
+      ],
+      "sources_preliminaires": [],
+      "livrable_attendu": "Audit indépendant des services, emplois, transferts de coûts et économies vérifiables",
+      "preuve_independante_obtenue": false,
+      "cout_total_prevu_cad": null,
+      "avis_professionnel_signee": false,
+      "devis_reels_conformes": 0,
+      "mandat_attribue": false,
+      "decision": "NO_GO"
+    },
+    {
+      "id": "F13",
+      "regime": "TOUS",
+      "theme": "Aides aux entreprises limitées dans le temps",
+      "comite_pilote": "CFP",
+      "criticite_provisoire": "ELEVE",
+      "vague": "V2",
+      "dependances_techniques": [
+        "F07",
+        "F09"
+      ],
+      "sources_preliminaires": [],
+      "livrable_attendu": "Inventaire des soutiens temporaires aux entreprises, échéances, critères et remboursement",
+      "preuve_independante_obtenue": false,
+      "cout_total_prevu_cad": null,
+      "avis_professionnel_signee": false,
+      "devis_reels_conformes": 0,
+      "mandat_attribue": false,
+      "decision": "NO_GO"
+    },
+    {
+      "id": "F14",
+      "regime": "TRANSITION_CONSTITUTIONNELLE",
+      "theme": "Continuité des services et droits",
+      "comite_pilote": "CSD",
+      "criticite_provisoire": "CRITIQUE",
+      "vague": "V2",
+      "dependances_techniques": [
+        "F04",
+        "F09",
+        "F20"
+      ],
+      "sources_preliminaires": [],
+      "livrable_attendu": "Plan de continuité des salaires, pensions, prestations, contrats, trésorerie et droits",
+      "preuve_independante_obtenue": false,
+      "cout_total_prevu_cad": null,
+      "avis_professionnel_signee": false,
+      "devis_reels_conformes": 0,
+      "mandat_attribue": false,
+      "decision": "NO_GO"
+    },
+    {
+      "id": "F15",
+      "regime": "QUEBEC_SOUVERAIN",
+      "theme": "Partage de dette et actifs",
+      "comite_pilote": "CTE",
+      "criticite_provisoire": "CRITIQUE",
+      "vague": "V2",
+      "dependances_techniques": [
+        "F02",
+        "F03",
+        "F09"
+      ],
+      "sources_preliminaires": [],
+      "livrable_attendu": "Trois hypothèses sourcées de partage d'actifs et de dette sans présumer une entente",
+      "preuve_independante_obtenue": false,
+      "cout_total_prevu_cad": null,
+      "avis_professionnel_signee": false,
+      "devis_reels_conformes": 0,
+      "mandat_attribue": false,
+      "decision": "NO_GO"
+    },
+    {
+      "id": "F16",
+      "regime": "QUEBEC_SOUVERAIN",
+      "theme": "Reprise fonctions fédérales",
+      "comite_pilote": "CTE",
+      "criticite_provisoire": "CRITIQUE",
+      "vague": "V3",
+      "dependances_techniques": [
+        "F04",
+        "F09",
+        "F14",
+        "F15"
+      ],
+      "sources_preliminaires": [],
+      "livrable_attendu": "Coût brut et net des fonctions fédérales à reprendre, avec scénarios de transition",
+      "preuve_independante_obtenue": false,
+      "cout_total_prevu_cad": null,
+      "avis_professionnel_signee": false,
+      "devis_reels_conformes": 0,
+      "mandat_attribue": false,
+      "decision": "NO_GO"
+    },
+    {
+      "id": "F17",
+      "regime": "QUEBEC_SOUVERAIN",
+      "theme": "Monnaie, fiscalité transfrontalière et traités",
+      "comite_pilote": "CTE",
+      "criticite_provisoire": "CRITIQUE",
+      "vague": "V3",
+      "dependances_techniques": [
+        "F02",
+        "F03",
+        "F15"
+      ],
+      "sources_preliminaires": [
+        "REF02"
+      ],
+      "livrable_attendu": "Étude des options monétaires, douanières, traités et risques transfrontaliers",
+      "preuve_independante_obtenue": false,
+      "cout_total_prevu_cad": null,
+      "avis_professionnel_signee": false,
+      "devis_reels_conformes": 0,
+      "mandat_attribue": false,
+      "decision": "NO_GO"
+    },
+    {
+      "id": "F18",
+      "regime": "TOUS",
+      "theme": "Discipline avant abolition de prélèvements",
+      "comite_pilote": "CFP",
+      "criticite_provisoire": "CRITIQUE",
+      "vague": "V5",
+      "dependances_techniques": [
+        "F09",
+        "F10",
+        "F16"
+      ],
+      "sources_preliminaires": [
+        "REF05"
+      ],
+      "livrable_attendu": "Vérification externe de l'équilibre/surplus antérieur et dette nette au plus 45 % du PIB",
+      "preuve_independante_obtenue": false,
+      "cout_total_prevu_cad": null,
+      "avis_professionnel_signee": false,
+      "devis_reels_conformes": 0,
+      "mandat_attribue": false,
+      "decision": "NO_GO"
+    },
+    {
+      "id": "F19",
+      "regime": "TOUS",
+      "theme": "Décision et adoption démocratiques",
+      "comite_pilote": "CDE",
+      "criticite_provisoire": "CRITIQUE",
+      "vague": "V1",
+      "dependances_techniques": [],
+      "sources_preliminaires": [],
+      "livrable_attendu": "Matrice des autorités compétentes, consultations, adoption et contrôle démocratique",
+      "preuve_independante_obtenue": false,
+      "cout_total_prevu_cad": null,
+      "avis_professionnel_signee": false,
+      "devis_reels_conformes": 0,
+      "mandat_attribue": false,
+      "decision": "NO_GO"
+    },
+    {
+      "id": "F20",
+      "regime": "TOUS",
+      "theme": "Vie privée et droits de recours fiscaux",
+      "comite_pilote": "CSD",
+      "criticite_provisoire": "CRITIQUE",
+      "vague": "V1",
+      "dependances_techniques": [],
+      "sources_preliminaires": [
+        "REF03"
+      ],
+      "livrable_attendu": "Évaluation de vie privée, droits d'opposition, recours, conservation et contrôle indépendant",
+      "preuve_independante_obtenue": false,
+      "cout_total_prevu_cad": null,
+      "avis_professionnel_signee": false,
+      "devis_reels_conformes": 0,
+      "mandat_attribue": false,
+      "decision": "NO_GO"
+    }
+  ],
+  "lot_expertises": [
+    {
+      "id": "B-JUR",
+      "objectif": "Conseil juridique, constitutionnel et fiscal",
+      "preuve_ids": [
+        "F01",
+        "F02",
+        "F03",
+        "F05",
+        "F06",
+        "F07",
+        "F19",
+        "F20"
+      ],
+      "jours_professionnels": null,
+      "taux_journalier_cad": null,
+      "frais_acces_licence_cad": null,
+      "frais_controle_qualite_cad": null,
+      "frais_de_deplacement_cad": null,
+      "autres_frais_et_conformite_cad": null,
+      "provision_risque_cad": null,
+      "taxes_et_traitement_fiscal_cad": null,
+      "coute_estime_total_cad": null,
+      "devis_verifiables_recus": 0,
+      "devis_minimum_comparaison_candidats": 2,
+      "mandat_signe": false,
+      "financement_approuve": false,
+      "avis_marches_publics_si_applicable_verifie": false
+    },
+    {
+      "id": "B-BUD",
+      "objectif": "Finances du Québec et municipalités, comptabilité, historique",
+      "preuve_ids": [
+        "F04",
+        "F09",
+        "F10",
+        "F18"
+      ],
+      "jours_professionnels": null,
+      "taux_journalier_cad": null,
+      "frais_acces_licence_cad": null,
+      "frais_controle_qualite_cad": null,
+      "frais_de_deplacement_cad": null,
+      "autres_frais_et_conformite_cad": null,
+      "provision_risque_cad": null,
+      "taxes_et_traitement_fiscal_cad": null,
+      "coute_estime_total_cad": null,
+      "devis_verifiables_recus": 0,
+      "devis_minimum_comparaison_candidats": 2,
+      "mandat_signe": false,
+      "financement_approuve": false,
+      "avis_marches_publics_si_applicable_verifie": false
+    },
+    {
+      "id": "B-ANT",
+      "objectif": "Fiscalité internationale et rendement anti-abus",
+      "preuve_ids": [
+        "F06",
+        "F08"
+      ],
+      "jours_professionnels": null,
+      "taux_journalier_cad": null,
+      "frais_acces_licence_cad": null,
+      "frais_controle_qualite_cad": null,
+      "frais_de_deplacement_cad": null,
+      "autres_frais_et_conformite_cad": null,
+      "provision_risque_cad": null,
+      "taxes_et_traitement_fiscal_cad": null,
+      "coute_estime_total_cad": null,
+      "devis_verifiables_recus": 0,
+      "devis_minimum_comparaison_candidats": 2,
+      "mandat_signe": false,
+      "financement_approuve": false,
+      "avis_marches_publics_si_applicable_verifie": false
+    },
+    {
+      "id": "B-SOC",
+      "objectif": "Revenu disponible, données et droit social",
+      "preuve_ids": [
+        "F11",
+        "F12",
+        "F14"
+      ],
+      "jours_professionnels": null,
+      "taux_journalier_cad": null,
+      "frais_acces_licence_cad": null,
+      "frais_controle_qualite_cad": null,
+      "frais_de_deplacement_cad": null,
+      "autres_frais_et_conformite_cad": null,
+      "provision_risque_cad": null,
+      "taxes_et_traitement_fiscal_cad": null,
+      "coute_estime_total_cad": null,
+      "devis_verifiables_recus": 0,
+      "devis_minimum_comparaison_candidats": 2,
+      "mandat_signe": false,
+      "financement_approuve": false,
+      "avis_marches_publics_si_applicable_verifie": false
+    },
+    {
+      "id": "B-TRA",
+      "objectif": "Dette, actifs, fonctions fédérales et monnaie",
+      "preuve_ids": [
+        "F15",
+        "F16",
+        "F17"
+      ],
+      "jours_professionnels": null,
+      "taux_journalier_cad": null,
+      "frais_acces_licence_cad": null,
+      "frais_controle_qualite_cad": null,
+      "frais_de_deplacement_cad": null,
+      "autres_frais_et_conformite_cad": null,
+      "provision_risque_cad": null,
+      "taxes_et_traitement_fiscal_cad": null,
+      "coute_estime_total_cad": null,
+      "devis_verifiables_recus": 0,
+      "devis_minimum_comparaison_candidats": 2,
+      "mandat_signe": false,
+      "financement_approuve": false,
+      "avis_marches_publics_si_applicable_verifie": false
+    },
+    {
+      "id": "B-SUB",
+      "objectif": "Audit des aides et conditions de financement",
+      "preuve_ids": [
+        "F13"
+      ],
+      "jours_professionnels": null,
+      "taux_journalier_cad": null,
+      "frais_acces_licence_cad": null,
+      "frais_controle_qualite_cad": null,
+      "frais_de_deplacement_cad": null,
+      "autres_frais_et_conformite_cad": null,
+      "provision_risque_cad": null,
+      "taxes_et_traitement_fiscal_cad": null,
+      "coute_estime_total_cad": null,
+      "devis_verifiables_recus": 0,
+      "devis_minimum_comparaison_candidats": 2,
+      "mandat_signe": false,
+      "financement_approuve": false,
+      "avis_marches_publics_si_applicable_verifie": false
+    }
+  ],
+  "regles_acquisition": {
+    "budgets_monetaires_reels_obtenus": false,
+    "devis_reels_recus": 0,
+    "contrats_reels_signes": 0,
+    "prix_du_marche_observes_dans_ce_jalon": false,
+    "prix_a_zero_assumes": false,
+    "consultation_legale_regime_de_contrat_a_verifier": true,
+    "obligations_SEAO_uniquement_si_organisme_assujetti": true,
+    "prix_de_microsimulation_BDMSPS_produit_gratuit_sous_licence_signee": true,
+    "couts_execution_et_expertise_BDMSPS_non_chiffres": true,
+    "microdonnees_ou_donnees_identifiantes_dans_git": false,
+    "double_devis_prevu_non_obtenu": true,
+    "aucune_depense_sans_financement_et_competence_legale": true
+  },
+  "gouvernance": {
+    "main_techniquement_protegee": false,
+    "experts_independants_mandates": 0,
+    "preuves_certifiees": 0,
+    "variables_financieres_inconnues": 1320,
+    "licences_de_microsimulation_obtenues": false,
+    "couverture_municipale_consolidee": false,
+    "revenu_supplementaire_anti_evasion_certifie": false,
+    "adoption_democratique_realisee": false,
+    "publication_autorisee": false,
+    "fusion_autorisee": false,
+    "sollicitation_reelle_autorisee": false,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

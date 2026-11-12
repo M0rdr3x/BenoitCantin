@@ -1,0 +1,65 @@
+name: Projet Nova P54Z - Passation controlee non certifiante
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54z.yml"
+      - "scripts/preparer_passation_controlee_nova_p54z.py"
+      - "scripts/tests/test_preparer_passation_controlee_nova_p54z.py"
+      - "projets/projet-nova/etudes/P54Z_*"
+      - "projets/projet-nova/etudes/P54W_*"
+      - "projets/projet-nova/etudes/P54X_*"
+      - "projets/projet-nova/etudes/P54Y_*"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  controle-preparation-pas-certification:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Tester 40 invariants de passation
+        run: |
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover("scripts/tests", pattern="test_preparer_passation_controlee_nova_p54z.py")
+          assert suite.countTestCases()==40, suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Generer uniquement le bilan public agregé
+        run: |
+          python scripts/preparer_passation_controlee_nova_p54z.py --bilan-public p54z_bilan.json
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          d=json.loads(Path("p54z_bilan.json").read_text("utf-8"))
+          assert d["controles_prepares"]==40
+          assert d["occurrences_non_certifiees"]==5
+          assert d["revues_humaines_authentifiees"]==0
+          assert d["signatures_professionnelles_verifiees"]==0
+          assert d["economies_certifiees_cad"] is None
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          assert not d["certification_autorisee"]
+          assert not d["transmission_autorisee"]
+          assert not d["fusion_main_autorisee"]
+          PY
+      - name: Tester refus de toute autorisation automatique
+        run: |
+          set +e
+          python scripts/preparer_passation_controlee_nova_p54z.py --exiger-go
+          status=$?
+          set -e
+          test "$status" -eq 3
+      - name: Archiver exclusivement le bilan non nominatif
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54z-bilan-non-certifiant
+          path: p54z_bilan.json
+          retention-days: 7

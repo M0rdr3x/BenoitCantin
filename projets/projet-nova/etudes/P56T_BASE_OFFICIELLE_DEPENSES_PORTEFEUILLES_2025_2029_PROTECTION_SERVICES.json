@@ -1,0 +1,412 @@
+{
+  "schema_version": "P56T-1",
+  "date_revision": "2026-11-08",
+  "objet": "ANCRAGE_DEPENSES_PAR_PORTEFEUILLE_POUR_GARANTIES_SERVICES_PUBLICS_NOVA",
+  "statut": "BUDGET_GOUVERNEMENTAL_EXISTANT_QUATRE_EXERCICES_NON_BUDGET_NOVA",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "source": {
+    "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Rapport_preelectoral/FR/MINFR_RP_2026.pdf",
+    "titre": "Rapport préélectoral sur l'état des finances publiques du Québec – Août 2026",
+    "date_publication": "2026-08-17",
+    "tableau": 25,
+    "page_pdf_index_zero": 83,
+    "page_imprimee": 81,
+    "statut_verification": "TABLEAU_25_EXAMINE_VISUELLEMENT_2026_11_08",
+    "source_octets_hash_sha256": null
+  },
+  "categories": [
+    {
+      "id": "SANTE",
+      "nom": "Santé et Services sociaux",
+      "risque_de_continuite": "SOINS_DROITS_PERSONNES_ET_EQUIPEMENTS",
+      "montants_par_exercice_mcad": {
+        "2025-2026": "65945",
+        "2026-2027": "69991",
+        "2027-2028": "72744",
+        "2028-2029": "75389"
+      },
+      "critere_continuite": "LE_POSTE_EST_UNE_DEPENSE_DU_GOUVERNEMENT_ACTUEL_ET_NON_UNE_ECONOMIE_NOVA",
+      "date_revision_juridique": null,
+      "cout_reforme_nova_mcad": null,
+      "service_renforce_ou_reduit_par_nova": false,
+      "statut": "REFERENCE_NON_RECONCILIEE_A_LA_POLITIQUE_NOVA"
+    },
+    {
+      "id": "EDUCATION",
+      "nom": "Éducation",
+      "risque_de_continuite": "ENSEIGNEMENT_PRIMAIRE_SECONDAIRE_ET_RESEAU",
+      "montants_par_exercice_mcad": {
+        "2025-2026": "23541",
+        "2026-2027": "24411",
+        "2027-2028": "25068",
+        "2028-2029": "25561"
+      },
+      "critere_continuite": "LE_POSTE_EST_UNE_DEPENSE_DU_GOUVERNEMENT_ACTUEL_ET_NON_UNE_ECONOMIE_NOVA",
+      "date_revision_juridique": null,
+      "cout_reforme_nova_mcad": null,
+      "service_renforce_ou_reduit_par_nova": false,
+      "statut": "REFERENCE_NON_RECONCILIEE_A_LA_POLITIQUE_NOVA"
+    },
+    {
+      "id": "SUPERIEUR",
+      "nom": "Enseignement supérieur",
+      "risque_de_continuite": "CEGEPS_UNIVERSITES_ET_FORMATION",
+      "montants_par_exercice_mcad": {
+        "2025-2026": "11183",
+        "2026-2027": "11847",
+        "2027-2028": "12339",
+        "2028-2029": "12588"
+      },
+      "critere_continuite": "LE_POSTE_EST_UNE_DEPENSE_DU_GOUVERNEMENT_ACTUEL_ET_NON_UNE_ECONOMIE_NOVA",
+      "date_revision_juridique": null,
+      "cout_reforme_nova_mcad": null,
+      "service_renforce_ou_reduit_par_nova": false,
+      "statut": "REFERENCE_NON_RECONCILIEE_A_LA_POLITIQUE_NOVA"
+    },
+    {
+      "id": "FAMILLE",
+      "nom": "Famille",
+      "risque_de_continuite": "PRESTATIONS_GARDE_ET_SOUTIEN_FAMILIAL",
+      "montants_par_exercice_mcad": {
+        "2025-2026": "9633",
+        "2026-2027": "10067",
+        "2027-2028": "10282",
+        "2028-2029": "10238"
+      },
+      "critere_continuite": "LE_POSTE_EST_UNE_DEPENSE_DU_GOUVERNEMENT_ACTUEL_ET_NON_UNE_ECONOMIE_NOVA",
+      "date_revision_juridique": null,
+      "cout_reforme_nova_mcad": null,
+      "service_renforce_ou_reduit_par_nova": false,
+      "statut": "REFERENCE_NON_RECONCILIEE_A_LA_POLITIQUE_NOVA"
+    },
+    {
+      "id": "TRANSPORTS",
+      "nom": "Transports et Mobilité durable",
+      "risque_de_continuite": "INFRASTRUCTURES_ET_SERVICE_DE_MOBILITE",
+      "montants_par_exercice_mcad": {
+        "2025-2026": "9176",
+        "2026-2027": "7869",
+        "2027-2028": "8843",
+        "2028-2029": "8516"
+      },
+      "critere_continuite": "LE_POSTE_EST_UNE_DEPENSE_DU_GOUVERNEMENT_ACTUEL_ET_NON_UNE_ECONOMIE_NOVA",
+      "date_revision_juridique": null,
+      "cout_reforme_nova_mcad": null,
+      "service_renforce_ou_reduit_par_nova": false,
+      "statut": "REFERENCE_NON_RECONCILIEE_A_LA_POLITIQUE_NOVA"
+    },
+    {
+      "id": "EMPLOI",
+      "nom": "Emploi et Solidarité sociale",
+      "risque_de_continuite": "SOUTIEN_REVENUS_FORMATION_ET_INSERTION",
+      "montants_par_exercice_mcad": {
+        "2025-2026": "5811",
+        "2026-2027": "6358",
+        "2027-2028": "5939",
+        "2028-2029": "5808"
+      },
+      "critere_continuite": "LE_POSTE_EST_UNE_DEPENSE_DU_GOUVERNEMENT_ACTUEL_ET_NON_UNE_ECONOMIE_NOVA",
+      "date_revision_juridique": null,
+      "cout_reforme_nova_mcad": null,
+      "service_renforce_ou_reduit_par_nova": false,
+      "statut": "REFERENCE_NON_RECONCILIEE_A_LA_POLITIQUE_NOVA"
+    },
+    {
+      "id": "MUNICIPAL",
+      "nom": "Affaires municipales et Habitation",
+      "risque_de_continuite": "LOGEMENT_TRANSFERTS_MUNICIPAUX_ET_SERVICES",
+      "montants_par_exercice_mcad": {
+        "2025-2026": "5253",
+        "2026-2027": "5863",
+        "2027-2028": "5442",
+        "2028-2029": "4794"
+      },
+      "critere_continuite": "LE_POSTE_EST_UNE_DEPENSE_DU_GOUVERNEMENT_ACTUEL_ET_NON_UNE_ECONOMIE_NOVA",
+      "date_revision_juridique": null,
+      "cout_reforme_nova_mcad": null,
+      "service_renforce_ou_reduit_par_nova": false,
+      "statut": "REFERENCE_NON_RECONCILIEE_A_LA_POLITIQUE_NOVA"
+    },
+    {
+      "id": "ECONOMIE",
+      "nom": "Économie, Innovation et Énergie",
+      "risque_de_continuite": "INVESTISSEMENT_ET_MESURES_SECTORIELLES",
+      "montants_par_exercice_mcad": {
+        "2025-2026": "4365",
+        "2026-2027": "4506",
+        "2027-2028": "4165",
+        "2028-2029": "3566"
+      },
+      "critere_continuite": "LE_POSTE_EST_UNE_DEPENSE_DU_GOUVERNEMENT_ACTUEL_ET_NON_UNE_ECONOMIE_NOVA",
+      "date_revision_juridique": null,
+      "cout_reforme_nova_mcad": null,
+      "service_renforce_ou_reduit_par_nova": false,
+      "statut": "REFERENCE_NON_RECONCILIEE_A_LA_POLITIQUE_NOVA"
+    },
+    {
+      "id": "ENVIRONNEMENT",
+      "nom": "Environnement, Lutte contre les changements climatiques, Faune et Parcs",
+      "risque_de_continuite": "CLIMAT_EAU_ENVIRONNEMENT_ET_RISQUES",
+      "montants_par_exercice_mcad": {
+        "2025-2026": "1802",
+        "2026-2027": "1979",
+        "2027-2028": "2168",
+        "2028-2029": "2131"
+      },
+      "critere_continuite": "LE_POSTE_EST_UNE_DEPENSE_DU_GOUVERNEMENT_ACTUEL_ET_NON_UNE_ECONOMIE_NOVA",
+      "date_revision_juridique": null,
+      "cout_reforme_nova_mcad": null,
+      "service_renforce_ou_reduit_par_nova": false,
+      "statut": "REFERENCE_NON_RECONCILIEE_A_LA_POLITIQUE_NOVA"
+    },
+    {
+      "id": "AUTRES",
+      "nom": "Autres portefeuilles",
+      "risque_de_continuite": "AGREGAT_AUTRES_MINISTERES_A_VENTILER",
+      "montants_par_exercice_mcad": {
+        "2025-2026": "19073",
+        "2026-2027": "18790",
+        "2027-2028": "18659",
+        "2028-2029": "18675"
+      },
+      "critere_continuite": "LE_POSTE_EST_UNE_DEPENSE_DU_GOUVERNEMENT_ACTUEL_ET_NON_UNE_ECONOMIE_NOVA",
+      "date_revision_juridique": null,
+      "cout_reforme_nova_mcad": null,
+      "service_renforce_ou_reduit_par_nova": false,
+      "statut": "REFERENCE_NON_RECONCILIEE_A_LA_POLITIQUE_NOVA"
+    },
+    {
+      "id": "REALLOCATION",
+      "nom": "Réallocation des dépenses en cours d’exercice",
+      "risque_de_continuite": "AJUSTEMENT_BUDGETAIRE_NON_DEPENSE_POSITIVE_A_PROTEGER",
+      "montants_par_exercice_mcad": {
+        "2025-2026": "0",
+        "2026-2027": "-600",
+        "2027-2028": "-600",
+        "2028-2029": "-600"
+      },
+      "critere_continuite": "LE_POSTE_EST_UNE_DEPENSE_DU_GOUVERNEMENT_ACTUEL_ET_NON_UNE_ECONOMIE_NOVA",
+      "date_revision_juridique": null,
+      "cout_reforme_nova_mcad": null,
+      "service_renforce_ou_reduit_par_nova": false,
+      "statut": "REFERENCE_NON_RECONCILIEE_A_LA_POLITIQUE_NOVA"
+    }
+  ],
+  "annees": [
+    {
+      "exercice": "2025-2026",
+      "statut": "COMPTES_PUBLICS_2025_2026_AUDITES",
+      "depenses_portefeuilles_mcad": {
+        "SANTE": "65945",
+        "EDUCATION": "23541",
+        "SUPERIEUR": "11183",
+        "FAMILLE": "9633",
+        "TRANSPORTS": "9176",
+        "EMPLOI": "5811",
+        "MUNICIPAL": "5253",
+        "ECONOMIE": "4365",
+        "ENVIRONNEMENT": "1802",
+        "AUTRES": "19073",
+        "REALLOCATION": "0"
+      },
+      "total_portefeuilles_publie_mcad": "155782",
+      "somme_postes_y_compris_reallocation_mcad": "155782",
+      "noyau_sante_education_superieur_famille_mcad": "110302",
+      "noyau_sept_services_sante_education_superieur_famille_transport_emploi_municipal_mcad": "130542",
+      "service_de_la_dette_deja_dans_p56p_non_ajoute_ici": true,
+      "transfert_et_depense_organisme_consolide_non_double_compte": true,
+      "cout_de_continuite_nova_propre_non_mesure_mcad": null,
+      "economies_nova_reelles_certifiees_mcad": null,
+      "emploi_public_maintenu_economiquement_demontre": false
+    },
+    {
+      "exercice": "2026-2027",
+      "statut": "PREVISIONS_GOUVERNEMENT_AOUT_2026",
+      "depenses_portefeuilles_mcad": {
+        "SANTE": "69991",
+        "EDUCATION": "24411",
+        "SUPERIEUR": "11847",
+        "FAMILLE": "10067",
+        "TRANSPORTS": "7869",
+        "EMPLOI": "6358",
+        "MUNICIPAL": "5863",
+        "ECONOMIE": "4506",
+        "ENVIRONNEMENT": "1979",
+        "AUTRES": "18790",
+        "REALLOCATION": "-600"
+      },
+      "total_portefeuilles_publie_mcad": "161081",
+      "somme_postes_y_compris_reallocation_mcad": "161081",
+      "noyau_sante_education_superieur_famille_mcad": "116316",
+      "noyau_sept_services_sante_education_superieur_famille_transport_emploi_municipal_mcad": "136406",
+      "service_de_la_dette_deja_dans_p56p_non_ajoute_ici": true,
+      "transfert_et_depense_organisme_consolide_non_double_compte": true,
+      "cout_de_continuite_nova_propre_non_mesure_mcad": null,
+      "economies_nova_reelles_certifiees_mcad": null,
+      "emploi_public_maintenu_economiquement_demontre": false
+    },
+    {
+      "exercice": "2027-2028",
+      "statut": "PREVISIONS_GOUVERNEMENT_AOUT_2026",
+      "depenses_portefeuilles_mcad": {
+        "SANTE": "72744",
+        "EDUCATION": "25068",
+        "SUPERIEUR": "12339",
+        "FAMILLE": "10282",
+        "TRANSPORTS": "8843",
+        "EMPLOI": "5939",
+        "MUNICIPAL": "5442",
+        "ECONOMIE": "4165",
+        "ENVIRONNEMENT": "2168",
+        "AUTRES": "18659",
+        "REALLOCATION": "-600"
+      },
+      "total_portefeuilles_publie_mcad": "165049",
+      "somme_postes_y_compris_reallocation_mcad": "165049",
+      "noyau_sante_education_superieur_famille_mcad": "120433",
+      "noyau_sept_services_sante_education_superieur_famille_transport_emploi_municipal_mcad": "140657",
+      "service_de_la_dette_deja_dans_p56p_non_ajoute_ici": true,
+      "transfert_et_depense_organisme_consolide_non_double_compte": true,
+      "cout_de_continuite_nova_propre_non_mesure_mcad": null,
+      "economies_nova_reelles_certifiees_mcad": null,
+      "emploi_public_maintenu_economiquement_demontre": false
+    },
+    {
+      "exercice": "2028-2029",
+      "statut": "PREVISIONS_GOUVERNEMENT_AOUT_2026",
+      "depenses_portefeuilles_mcad": {
+        "SANTE": "75389",
+        "EDUCATION": "25561",
+        "SUPERIEUR": "12588",
+        "FAMILLE": "10238",
+        "TRANSPORTS": "8516",
+        "EMPLOI": "5808",
+        "MUNICIPAL": "4794",
+        "ECONOMIE": "3566",
+        "ENVIRONNEMENT": "2131",
+        "AUTRES": "18675",
+        "REALLOCATION": "-600"
+      },
+      "total_portefeuilles_publie_mcad": "166666",
+      "somme_postes_y_compris_reallocation_mcad": "166666",
+      "noyau_sante_education_superieur_famille_mcad": "123776",
+      "noyau_sept_services_sante_education_superieur_famille_transport_emploi_municipal_mcad": "142894",
+      "service_de_la_dette_deja_dans_p56p_non_ajoute_ici": true,
+      "transfert_et_depense_organisme_consolide_non_double_compte": true,
+      "cout_de_continuite_nova_propre_non_mesure_mcad": null,
+      "economies_nova_reelles_certifiees_mcad": null,
+      "emploi_public_maintenu_economiquement_demontre": false
+    }
+  ],
+  "perimetre": {
+    "regime": "QUEBEC_DANS_CANADA",
+    "services_regime_souverain_estimes": false,
+    "annees_detail_budget_officiel": [
+      "2025-2026",
+      "2026-2027",
+      "2027-2028",
+      "2028-2029"
+    ],
+    "annees_horizon_nova_non_couvertes": [
+      "2029-2030",
+      "2030-2031",
+      "2031-2032",
+      "2032-2033",
+      "2033-2034",
+      "2034-2035",
+      "2035-2036",
+      "2036-2037"
+    ],
+    "annees_provenance_comptes_publics": [
+      "2025-2026"
+    ],
+    "annees_de_previsions": [
+      "2026-2027",
+      "2027-2028",
+      "2028-2029"
+    ],
+    "previsions_2029_2031_totaux_p56p_disponibles_sans_decomposition_porte_feuille": true,
+    "portefeuilles_ne_sont_pas_un_bilan_de_cout_sous_services": true,
+    "ajustement_reallocation_est_une_ligne_negative": true,
+    "non_suppression_services_au_debut_de_la_transition": true
+  },
+  "points_critiques": [
+    {
+      "code": "T01",
+      "tache": "Chiffrer la continuité des services et droits en santé, soins de longue durée et santé mentale",
+      "validation": "NON_DEMONTREE",
+      "piece_id": null
+    },
+    {
+      "code": "T02",
+      "tache": "Établir les effectifs, la rémunération et le coût d'éducation et d'enseignement supérieur",
+      "validation": "NON_DEMONTREE",
+      "piece_id": null
+    },
+    {
+      "code": "T03",
+      "tache": "Documenter les crédits remboursables, allocations, soutien au revenu et prestations des familles",
+      "validation": "NON_DEMONTREE",
+      "piece_id": null
+    },
+    {
+      "code": "T04",
+      "tache": "Rapprocher infrastructures, transports, actifs et déficits de maintien des ouvrages publics",
+      "validation": "NON_DEMONTREE",
+      "piece_id": null
+    },
+    {
+      "code": "T05",
+      "tache": "Rapprocher financements provinciaux, municipaux et scolaire sans double comptage des transferts",
+      "validation": "NON_DEMONTREE",
+      "piece_id": null
+    },
+    {
+      "code": "T06",
+      "tache": "Ventiler la rubrique Autres portefeuilles et le budget de sécurité et de justice",
+      "validation": "NON_DEMONTREE",
+      "piece_id": null
+    },
+    {
+      "code": "T07",
+      "tache": "Chiffrer la réforme fiscale sur les frais administratifs hors salaires plutôt qu'inventer économies",
+      "validation": "NON_DEMONTREE",
+      "piece_id": null
+    },
+    {
+      "code": "T08",
+      "tache": "Documenter coûts de continuité et de transfert des fonctions fédérales du Québec souverain",
+      "validation": "NON_DEMONTREE",
+      "piece_id": null
+    },
+    {
+      "code": "T09",
+      "tache": "Concilier tous les scénarios 2027-2036 et la capacité de revenu de deux prélèvements",
+      "validation": "NON_DEMONTREE",
+      "piece_id": null
+    },
+    {
+      "code": "T10",
+      "tache": "Obtenir avis comptables et sectoriels contradictoires signés avant déclaration de fin",
+      "validation": "NON_DEMONTREE",
+      "piece_id": null
+    }
+  ],
+  "validation": {
+    "p56p": "projets/projet-nova/etudes/P56P_BASE_BUDGET_PREELECTORALE_2026_2031_VGQ_ET_ECARTS.json",
+    "p56s": "projets/projet-nova/etudes/P56S_TROIS_OPTIONS_FISCALES_2027_2031_ET_CONDITIONS_PROTECTION.json",
+    "p56o": "projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json",
+    "p55n": "projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json",
+    "p52b_inconnus": 600,
+    "p52d_inconnus": 720,
+    "p52a_preuves_non_validees": 20,
+    "score_estime": 53,
+    "points_estimes_restants": 47,
+    "portes_p56o_demontrees": 0,
+    "previsions_nova_2027_2036_calculees": 0,
+    "remplacement_recettes_certifie": false,
+    "avis_externes_nova_signes": 0,
+    "programme_nova_termine": false
+  },
+  "decision_finale": "NO_GO_AUTOMATIQUE"
+}

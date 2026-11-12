@@ -1,0 +1,53 @@
+name: Projet Nova P56Q - Risque fiscal provincial 2027-2031 et status Excel amende
+on:
+  pull_request:
+    paths:
+      - 'projets/projet-nova/etudes/P56Q_*'
+      - 'scripts/mesurer_pont_recettes_fiscales_nova_p56q.py'
+      - 'scripts/tests/test_mesurer_pont_recettes_fiscales_nova_p56q.py'
+      - 'scripts/rapprocher_rapport_preelectoral_2026_nova_p56p.py'
+      - 'projets/projet-nova/etudes/P56P_BASE_BUDGET_PREELECTORALE_2026_2031_VGQ_ET_ECARTS.json'
+      - 'projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json'
+      - 'projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json'
+      - 'projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json'
+      - '.github/workflows/validate-nova-p56q.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  analyse-risque-recettes-p56q:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Executer 61 tests P56P et 54 tests P56Q
+        run: |
+          python -m unittest discover -s scripts/tests -p 'test_rapprocher_rapport_preelectoral_2026_nova_p56p.py' -v
+          python -m unittest discover -s scripts/tests -p 'test_mesurer_pont_recettes_fiscales_nova_p56q.py' -v
+      - name: Verifier le compte de passage fiscal et les fonds non obtenus
+        shell: bash
+        run: |
+          python scripts/mesurer_pont_recettes_fiscales_nova_p56q.py \
+            --pont projets/projet-nova/etudes/P56Q_PONT_CONTREFACTUEL_RECETTES_2027_2031_SIMULATEUR_AMENDE.json \
+            --p56p projets/projet-nova/etudes/P56P_BASE_BUDGET_PREELECTORALE_2026_2031_VGQ_ET_ECARTS.json \
+            --p52b projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json | python -c 'import json,sys; x=json.load(sys.stdin); y=x["fiscal_2027_2028"]; assert y["risque_trois_catégories_mcad"]=="42875" and y["solde_statique_si_retrait_sans_remplacement_avec_ecart_mcad"]=="-48570" and x["simulateur_officiel_amende_feuille_verifiee"] is False and x["budget_nova_2027_2036_valide"] is False and x["p52b_montants_manquants"]==600 and x["score_estime_p55n"]==53 and x["decision"]=="NO_GO_AUTOMATIQUE"'
+      - name: Refuser certification budget Nova sans assiettes et actes
+        shell: bash
+        run: |
+          set +e
+          python scripts/mesurer_pont_recettes_fiscales_nova_p56q.py \
+            --pont projets/projet-nova/etudes/P56Q_PONT_CONTREFACTUEL_RECETTES_2027_2031_SIMULATEUR_AMENDE.json \
+            --p56p projets/projet-nova/etudes/P56P_BASE_BUDGET_PREELECTORALE_2026_2031_VGQ_ET_ECARTS.json \
+            --p52b projets/projet-nova/etudes/P52B_GABARIT_MODELE_DECENNAL.json \
+            --barometre projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json \
+            --p56o projets/projet-nova/etudes/P56O_TABLEAU_CLOTURE_PROGRAMME_DEFINITION_100_POURCENT.json \
+            --exiger-budget-nova-certifie
+          outcome=$?
+          set -e
+          test "$outcome" -eq 3

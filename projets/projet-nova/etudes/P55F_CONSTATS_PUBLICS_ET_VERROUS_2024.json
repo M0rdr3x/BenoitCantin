@@ -1,0 +1,117 @@
+{
+  "schema_version": "P55F-1",
+  "date_reference": "2026-11-03",
+  "exercice": 2024,
+  "ancrages": [
+    "P54Q",
+    "P55B",
+    "P55C",
+    "P55D",
+    "P55E"
+  ],
+  "sources_publiques": [
+    {
+      "code": "VILLE_QUEBEC_2024",
+      "url": "https://www.ville.quebec.qc.ca/publications/docs_ville/Rapport_financier_2024.pdf",
+      "mode": "LECTURE_TEXTE_PUBLIC_EN_LIGNE",
+      "etat_octets_actuels": "NON_VERIFIES_DANS_CE_JALON"
+    },
+    {
+      "code": "MAMH_23027_2024",
+      "url": "https://www.mamh.gouv.qc.ca/documentsfinanciersweb/Rapport-financier-2024-et-autres-23027.pdf",
+      "mode": "INDEXATION_TEXTE_PUBLIC_ET_REFERENCE_P54Q",
+      "etat_octets_actuels": "NON_VERIFIES_DANS_CE_JALON"
+    },
+    {
+      "code": "DONNEES_QUEBEC_MAMH",
+      "url": "https://www.donneesquebec.ca/recherche/dataset/rapport-financier-des-organismes-municipaux-et-autres-documents",
+      "mode": "NOTICE_PUBLIQUE_SUR_RETRANSMISSION",
+      "etat_octets_actuels": "SANS_OBJET_AVIS_DE_VERSION"
+    }
+  ],
+  "constats_contextuels": [
+    {
+      "code": "CONTEXTE_DEPENSES_MIXTES",
+      "source": "VILLE_QUEBEC_2024",
+      "localisation": "PAGE_NOTES_COMPLEMENTAIRES_106",
+      "fait_descriptif": "VENTILATION_SELON_RAVQ_1435",
+      "limite": "CONTEXTE_LEGAL_NON_CONCLUSION_D_ECONOMIE",
+      "niveau_preuve": "TEXTE_PUBLIC_NON_AUTHENTIFIANT"
+    },
+    {
+      "code": "REDRESSEMENT_COMPARATIF",
+      "source": "VILLE_QUEBEC_2024",
+      "localisation": "PAGE_NOTES_COMPLEMENTAIRES_106",
+      "fait_descriptif": "EXERCICE_COMPARATIF_DIMINUE_1825176_CAD",
+      "limite": "REDRESSEMENT_2023_PAS_ECONOMIE_NOUVELLE_2024",
+      "niveau_preuve": "TEXTE_PUBLIC_NON_AUTHENTIFIANT"
+    },
+    {
+      "code": "COLONNE_ELIMINATIONS",
+      "source": "MAMH_23027_2024",
+      "localisation": "TABLE_VENTILATION_DEPENSES_MIXTES_S50",
+      "fait_descriptif": "COLONNE_ELIMINATIONS_PRESENTE",
+      "limite": "NE_PAS_RECOMPTER_LES_ELIMINATIONS_EXISTANTES",
+      "niveau_preuve": "TEXTE_PUBLIC_NON_AUTHENTIFIANT"
+    },
+    {
+      "code": "RETRANSMISSIONS_POSSIBLES",
+      "source": "DONNEES_QUEBEC_MAMH",
+      "localisation": "NOTICE_JEU_DONNEES_OUVERTES",
+      "fait_descriptif": "RAPPORTS_ET_DONNEES_PEUVENT_ETRE_MODIFIES",
+      "limite": "UNE_URL_NE_PROUVE_PAS_UNE_VERSION_IDENTIQUE",
+      "niveau_preuve": "TEXTE_PUBLIC_NON_AUTHENTIFIANT"
+    }
+  ],
+  "verrous_interpretation": {
+    "redressement_comparatif_2023_cad": 1825176,
+    "economies_certifiees_cad": null,
+    "eliminations_comme_gain_autorisees": false,
+    "correction_comparative_comme_gain_autorisee": false,
+    "comparaison_sans_edition_exacte_autorisee": false
+  },
+  "protections": {
+    "liens_publics_et_textes_ne_certifient_pas_octets": true,
+    "lecture_textuelle_ne_remplace_pas_page_visuelle": true,
+    "sha_historiques_p54q_ne_provent_pas_emetteur": true,
+    "actualite_des_versions_reste_a_reverifier": true,
+    "redressement_2023_non_assimile_economie_nouvelle": true,
+    "eliminations_existantes_ne_sont_pas_nouvelles_economies": true,
+    "unites_dates_exercices_perimetres_distincts": true,
+    "meme_montant_sur_deux_publications_pas_deux_gains": true,
+    "seuil_preuves_originales_2_avec_sha": true,
+    "reproduction_nfkc_cinq_observations_prealable": true,
+    "rapprochement_p55e_reutilise": true,
+    "aucune_reduction_d_effectifs_ou_de_services": true,
+    "protection_pouvoir_achat": true,
+    "deux_scenarios_constitutionnels_separes": true,
+    "aucun_telechargement_automatique": true,
+    "aucune_communication_avec_institutions": true,
+    "aucune_piece_origine_dans_git": true,
+    "aucun_identifiant_ou_texte_prive_dans_rapports": true,
+    "aucune_economie_certifiee_cad": true,
+    "mandats_p54h_non_signes": true,
+    "quatre_dossiers_p54e_ouverts": true,
+    "date_probable_non_certifiee": true,
+    "p54n_40_p54o_10_en_attente": true,
+    "p54b_96_p54c_8_non_attestes": true,
+    "aucune_fusion_main": true,
+    "sinjira_inchange": true,
+    "no_go_automatique": true
+  },
+  "etat_initial": {
+    "textes_publics_contextualises": 4,
+    "copies_2024_verifiees_par_nouveau_sha": 0,
+    "positions_nfkc_reproduites_p55f": 0,
+    "avis_independants_authentifies": 0,
+    "mandats_signes": 0,
+    "dossiers_p54e_ouverts": 4,
+    "date_probable_non_certifiee": 1,
+    "taches_p54n_non_attestees": 40,
+    "blocages_p54o_non_leves": 10,
+    "controles_p54b_non_attestes": 96,
+    "controles_p54c_non_attestes": 8,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}

@@ -1,0 +1,88 @@
+name: Projet Nova P54L - Preuves externes locales sans authentification inventee
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p54l.yml"
+      - "scripts/recevoir_preuves_externes_nova_p54l.py"
+      - "scripts/tests/test_recevoir_preuves_externes_nova_p54l.py"
+      - "scripts/tests/test_verifier_habilitations_signatures_nova_p54k.py"
+      - "scripts/verifier_habilitations_signatures_nova_p54k.py"
+      - "scripts/qualifier_contradictions_avis_nova_p54j.py"
+      - "scripts/recevoir_mandats_et_avis_nova_p54i.py"
+      - "projets/projet-nova/etudes/P54L_*"
+      - "projets/projet-nova/etudes/P54K_VERIFICATION_HUMAINE_AVIS_2024.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integrite-documentaire-sans-attestation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Installer parseur PDF de la chaine documentaire
+        run: python -m pip install pypdf==5.9.0
+      - name: Tests P54L avec preuves entierement synthetiques
+        run: |
+          python -m py_compile scripts/recevoir_preuves_externes_nova_p54l.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_recevoir_preuves_externes_nova_p54l.py")
+          assert suite.countTestCases()==73,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Confirmer baseline 4 dossiers sans documents officiels
+        run: |
+          python scripts/recevoir_preuves_externes_nova_p54l.py --bilan p54l_bilan_public_neutre.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path("p54l_bilan_public_neutre.json").read_text("utf-8"))
+          assert len(d["dossiers"])==4
+          assert d["etats"]=={"AUCUNE_PIECE_LOCALE":4}
+          assert d["verifications_officielles_executees"]==0
+          assert d["identites_et_permis_authentifies"]==0
+          assert d["signatures_professionnelles_authentifiees"]==0
+          assert d["avis_professionnels_certifies"]==0
+          assert d["dossiers_clos"]==0
+          assert d["controles_p54b_restants"]==96
+          assert d["controles_p54c_restants"]==8
+          assert d["economies_certifiees_cad"] is None
+          assert d["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Modele de fiche privee cree et efface sur le runner
+        run: |
+          python scripts/recevoir_preuves_externes_nova_p54l.py --modele-prive "$RUNNER_TEMP/p54l_prive.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path(os.environ["RUNNER_TEMP"])/"p54l_prive.json"
+          assert p.exists() and (p.stat().st_mode & 0o777)==0o600
+          assert json.loads(p.read_text("utf-8"))["observations"]==[]
+          p.unlink()
+          PY
+      - name: Refuser toute authenticite reelle inventee
+        run: |
+          set +e
+          python scripts/recevoir_preuves_externes_nova_p54l.py --exiger-authenticite
+          rc=$?
+          set -e
+          test "$rc" -eq 3
+      - name: Archiver uniquement le bilan anonyme initial
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p54l-preuves-externes-non-authentifiees
+          path: p54l_bilan_public_neutre.json
+          if-no-files-found: ignore
+          retention-days: 7

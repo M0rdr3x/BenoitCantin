@@ -1,0 +1,225 @@
+{
+  "schema_version": "P55U-1",
+  "date_reference": "2026-11-07",
+  "objet": "ETALONNAGE_MULTIPROFILS_QUEBEC_ANNEE_2026_SOURCES_DE_PERIMETRES_DISTINCTS",
+  "statut": "ETUDE_CANDIDATE_NON_ADOPTEE",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "sources": {
+    "mise_a_jour_2025": {
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Mise_a_jour_economique/2025/FR/AUTFR_lepointNov2025.pdf",
+      "titre": "LE_POINT_SUR_LA_SITUATION_ECONOMIQUE_ET_FINANCIERE_DU_QUEBEC_AUTOMNE_2025",
+      "date": "2025-11-25",
+      "table_menages": "B.8",
+      "page_menages": "B.14",
+      "table_pme": "B.14",
+      "page_pme": "B.28",
+      "preuve": "EXTRACTION_TEXTE_PDF_PAR_MOTEUR_WEB_CAPTURE_VISUELLE_ECHOUEE_CACHE_MISS_SANS_SHA_ORIGINAL",
+      "objet": "INDEXATION_FISCALE_ET_BAISSE_COTISATIONS_ANNONCEES_AUTOMNE_2025"
+    },
+    "simulation_2026_actualisee": {
+      "url": "https://www.quebec.ca/finances-impots-et-taxes/credits-impots-deductions/estimer-revenu-disponible",
+      "date_mise_a_jour": "2026-06-17",
+      "preuve": "PAGE_HTML_OFFICIELLE",
+      "objet": "EXEMPLE_PLUS_RECENT_AVEC_MESURES_FEDERALES_ET_AIDE_PONCTUELLE_2026"
+    },
+    "cadre_p55t": "projets/projet-nova/etudes/P55T_TEMOIN_REVENU_DISPONIBLE_2026_ET_TAUX_ACTUELS.json",
+    "matrice_p52d": "projets/projet-nova/etudes/P52D_GABARIT_INCIDENCE_MENAGES_ENTREPRISES.json"
+  },
+  "profils_menages_automne_2025": [
+    {
+      "id": "U01",
+      "categorie": "PERSONNE_SEULE_AIDE_SOCIALE",
+      "revenu_travail_annuel_cad": 0,
+      "nb_adultes": 1,
+      "nb_enfants_moins_4_ans": 0,
+      "montants": {
+        "impot_revenu": null,
+        "prestations_aide_sociale": 192,
+        "credit_solidarite": 25,
+        "allocation_famille": null,
+        "rrq": null,
+        "rqap": null
+      },
+      "gain_publie_cad": 217,
+      "pertinence_nova": "PROTECTION_PERSONNES_FAIBLE_REVENU"
+    },
+    {
+      "id": "U02",
+      "categorie": "TRAVAILLEUR_SEUL",
+      "revenu_travail_annuel_cad": 50000,
+      "nb_adultes": 1,
+      "nb_enfants_moins_4_ans": 0,
+      "montants": {
+        "impot_revenu": 87,
+        "prestations_aide_sociale": null,
+        "credit_solidarite": 79,
+        "allocation_famille": null,
+        "rrq": 47,
+        "rqap": 32
+      },
+      "gain_publie_cad": 245,
+      "pertinence_nova": "PROTECTION_SALAIRE_MEDIAN_ET_PRIX"
+    },
+    {
+      "id": "U03",
+      "categorie": "FAMILLE_MONOPARENTALE_ENFANT",
+      "revenu_travail_annuel_cad": 50000,
+      "nb_adultes": 1,
+      "nb_enfants_moins_4_ans": 1,
+      "montants": {
+        "impot_revenu": 87,
+        "prestations_aide_sociale": null,
+        "credit_solidarite": 82,
+        "allocation_famille": 115,
+        "rrq": 47,
+        "rqap": 32
+      },
+      "gain_publie_cad": 363,
+      "pertinence_nova": "FAMILLES_MONOPARENTALES_PRESTATIONS_ENFANTS"
+    },
+    {
+      "id": "U04",
+      "categorie": "COUPLE_DEUX_JEUNES_ENFANTS",
+      "revenu_travail_annuel_cad": 100000,
+      "nb_adultes": 2,
+      "nb_enfants_moins_4_ans": 2,
+      "repartition_revenus_individuels_cad": [
+        50000,
+        50000
+      ],
+      "montants": {
+        "impot_revenu": 115,
+        "prestations_aide_sociale": null,
+        "credit_solidarite": null,
+        "allocation_famille": 168,
+        "rrq": 93,
+        "rqap": 64
+      },
+      "gain_publie_cad": 440,
+      "pertinence_nova": "FAMILLE_DEUX_SALAIRES_PRESTATIONS_ENFANTS"
+    }
+  ],
+  "temoin_plus_recent_2026": {
+    "identifiant": "P55T_PERSONNE_VIVANT_SEULE_50000",
+    "revenu_annuel_cad": 50000,
+    "gain_publie_cad": 847,
+    "somme_composantes_publiées_cad": 846,
+    "ecart_non_explique_cad": 1,
+    "comparable_directement_avec_U02": false,
+    "difference_entre_les_deux_gains_interpretable_comme_effet_de_politique_nova": false,
+    "raison_non_comparabilite": "PERIMETRE_MESURES_ET_DATE_PUBLICATION_DIFFERENTS_GAIN_2026_VERSUS_2025_N_EST_PAS_LA_MEME_SIMULATION",
+    "total_revenu_disponible_actuel_cad": null,
+    "total_revenu_disponible_nova_cad": null
+  },
+  "cas_pme_automne_2025": {
+    "profil": "PME_10_EMPLOYES_55000_CAD_PAR_EMPLOYE",
+    "employes": 10,
+    "salaire_unitaire_annuel_cad": 55000,
+    "annee_reference": 2025,
+    "annee_comparee": 2026,
+    "rrq_employeur_2025_cad": 27810,
+    "rrq_employeur_2026_cad": 27295,
+    "rqap_employeur_2025_cad": 3806,
+    "rqap_employeur_2026_cad": 3311,
+    "rrq_variation_reduction_cad": 515,
+    "rqap_variation_reduction_cad": 495,
+    "cotisations_totales_2025_cad": 31616,
+    "cotisations_totales_2026_cad": 30606,
+    "reduction_cotisations_cad": 1010,
+    "condition": "BAISSES_COTISATIONS_RRQ_RQAP_QUEBEC_ACTUEL_NON_GAIN_NOVA",
+    "non_projection_emplois_salaire_et_prix": true
+  },
+  "couverture": {
+    "nb_menages_documentes_sur_la_table_source": 4,
+    "nb_pme_illustratives_sur_la_table_source": 1,
+    "nb_composantes_menages": 6,
+    "limite": "GAIN_DU_SYSTEME_ACTUEL_NON_SIMULATION_COMPARATIVE_NOVA",
+    "modeles_p52d_complets": 0,
+    "montants_incidence_p52d_inconnus": 720,
+    "postes_budgetaires_p52b_inconnus": 600,
+    "pourcentage_programme_estime_inchange": 53,
+    "acteurs_representatifs_de_la_population": false,
+    "revenu_disponible_2026_pour_tous_les_profils_cad": null,
+    "taux_de_deux_prelevements_nova_pct": null,
+    "gains_nova_attribuables_cad": null,
+    "financement_annuel_soutenable_demontre": false
+  },
+  "preuves_necessaires": [
+    {
+      "id": "U01",
+      "objet": "MILLE_SIX_PROFILS_OFFICIELS_A_VERIFIER_AVEC_BAREMES_ACTUALISES",
+      "statut": "OUVERT",
+      "critere": "RECONCILIER_2026_SOUMIS_A_MEMES_CREDITS_ET_MILLESIMES"
+    },
+    {
+      "id": "U02",
+      "objet": "DETAILS_FAMILLES_MONOPARENTALES_ET_COUPLES",
+      "statut": "OUVERT",
+      "critere": "PLEIN_CALCUL_IMPOTS_ET_PRESTATIONS_FEDERALES_ET_QUEBEC"
+    },
+    {
+      "id": "U03",
+      "objet": "AVANT_APRES_NOVA_PAR_MEME_PROFIL",
+      "statut": "OUVERT",
+      "critere": "ASSIETTES_CREDITS_PROPOSES_VALIDES_PAR_EXPERTS"
+    },
+    {
+      "id": "U04",
+      "objet": "EFFECTIFS_ET_POIDS_REGIONAUX",
+      "statut": "OUVERT",
+      "critere": "DONNEES_ANONYMES_REPRESENTATIVES_PAR_DECILE_ET_REGION"
+    },
+    {
+      "id": "U05",
+      "objet": "MECANISMES_DE_PRIX_TVA_ET_TARIFS",
+      "statut": "OUVERT",
+      "critere": "EFFETS_COUT_DE_VIE_ET_REPERCUSSION_PRIX_EXPLICITES"
+    },
+    {
+      "id": "U06",
+      "objet": "COUTS_SERVICES_PME",
+      "statut": "OUVERT",
+      "critere": "SCENARIOS_EMPLOI_SALAIRES_FSS_RRQ_RQAP_LOIS_ET_PRESTATIONS"
+    },
+    {
+      "id": "U07",
+      "objet": "COUTS_PUBLIQUES_DEUX_TRAJECTOIRES",
+      "statut": "OUVERT",
+      "critere": "LIAISON_P52B_REVENUS_DEPENSES_TOUTES_PROTECTIONS"
+    },
+    {
+      "id": "U08",
+      "objet": "CONTRE_EXPERTISE_INDEPENDANTE",
+      "statut": "OUVERT",
+      "critere": "AVIS_INDEPENDANTS_SIGNES_CREDIBILITE_TRANSPARENCE"
+    }
+  ],
+  "garde_fous": {
+    "sources_de_dates_differentes_distinctes": true,
+    "gains_245_et_847_non_directement_comparables": true,
+    "ne_pas_soustraire_pour_deduire_effet_nova": true,
+    "aide_sociale_non_traitée_comme_salaire": true,
+    "cases_absentes_table_publiee_ne_valent_pas_zero": true,
+    "un_profils_gagnant_ne_prouve_pas_gain_general": true,
+    "aides_de_printemps_2026_non_incluses_table_automne_2025": true,
+    "rrq_rqap_reduction_pme_non_economie_du_gouvernement_nova": true,
+    "pme_1010_ne_pas_multiplier_par_nombre_pme": true,
+    "aucun_total_gains_profils_comme_impact_budgetaire": true,
+    "aide_ponctuelle_2026_non_recurrente": true,
+    "federal_reste_competent_dans_canada": true,
+    "scenario_souverain_hypothetique_distinct": true,
+    "services_essentiels_et_emplois_proteges": true,
+    "protection_du_pouvoir_achat_non_demontrée_nova": true,
+    "p52d_720_valeurs_inconnues_inchangees": true,
+    "p52b_600_valeurs_inconnues_inchangees": true,
+    "p55n_53_pourcent_inchange": true,
+    "aucun_taux_nova_nouveau": true,
+    "aucune_economie_certifiee": true,
+    "aucun_sha_pdf_certifie": true,
+    "pdf_visualisation_echouee_declaree": true,
+    "aucune_depense_ou_contact": true,
+    "aucune_modification_sinjira": true,
+    "aucune_fusion_main": true,
+    "no_go_automatique": true
+  }
+}

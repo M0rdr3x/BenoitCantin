@@ -1,0 +1,217 @@
+{
+  "schema_version": "P52U-1",
+  "jalon": "P52U",
+  "date_reference": "2026-10-20",
+  "statut": "RELECTURE_AUTOMATISEE_DES_PAGES_A_VERIFIER",
+  "decision": "NO_GO_AUTOMATIQUE",
+  "references": {
+    "p52j": "projets/projet-nova/etudes/P52J_RELECTURE_PRIMAIRE_BUDGET_2026_2027.json",
+    "p52s": "projets/projet-nova/etudes/P52S_RECEPISSES_HTTPS_OBSERVES_2026_10_20.json",
+    "p52k": "projets/projet-nova/etudes/P52K_REGISTRE_PROVENANCE_BUDGET.json",
+    "p52a": "projets/projet-nova/etudes/P52A_REGISTRE_PREUVES_FISCALES.json",
+    "p52t": "projets/projet-nova/etudes/P52T_PROCEDURE_DOUBLE_CAPTURE.json"
+  },
+  "documents": [
+    {
+      "id": "DISC2026_T3",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_Discours.pdf",
+      "pages_attendues": 34,
+      "page_tableau_pdf_zero": 29,
+      "titre_tableau": "TABLEAU 3",
+      "sha256_attendu_octets_recus": "cf89d3d8d448cfa4155e2370be8226a904d393205f64962d23f45a40749acbfa",
+      "taille_attendue_octets": 2109269,
+      "valeurs_attendues": [
+        {
+          "id": "impot_particuliers",
+          "valeur_mcad": "50800"
+        },
+        {
+          "id": "cotisations_sante",
+          "valeur_mcad": "9412"
+        },
+        {
+          "id": "impot_societes",
+          "valeur_mcad": "14527"
+        },
+        {
+          "id": "foncier_scolaire",
+          "valeur_mcad": "1311"
+        },
+        {
+          "id": "taxes_vente",
+          "valeur_mcad": "26349"
+        },
+        {
+          "id": "carburants",
+          "valeur_mcad": "2097"
+        },
+        {
+          "id": "tabac",
+          "valeur_mcad": "830"
+        },
+        {
+          "id": "alcool",
+          "valeur_mcad": "574"
+        },
+        {
+          "id": "consommation_autres",
+          "valeur_mcad": "158"
+        },
+        {
+          "id": "hydro",
+          "valeur_mcad": "2445"
+        },
+        {
+          "id": "loto",
+          "valeur_mcad": "1557"
+        },
+        {
+          "id": "saq",
+          "valeur_mcad": "1406"
+        },
+        {
+          "id": "iq",
+          "valeur_mcad": "292"
+        },
+        {
+          "id": "sqdc",
+          "valeur_mcad": "146"
+        },
+        {
+          "id": "entreprises_autres",
+          "valeur_mcad": "7"
+        },
+        {
+          "id": "droits_redevances",
+          "valeur_mcad": "6542"
+        },
+        {
+          "id": "revenus_divers",
+          "valeur_mcad": "15908"
+        },
+        {
+          "id": "perequation",
+          "valeur_mcad": "13907"
+        },
+        {
+          "id": "sante_federal",
+          "valeur_mcad": "9265"
+        },
+        {
+          "id": "social_federal",
+          "valeur_mcad": "1392"
+        },
+        {
+          "id": "autres_federaux",
+          "valeur_mcad": "7567"
+        },
+        {
+          "id": "impots_sur_revenu_et_biens",
+          "valeur_mcad": "76050"
+        },
+        {
+          "id": "taxes_consommation",
+          "valeur_mcad": "30008"
+        },
+        {
+          "id": "entreprises_gouvernement",
+          "valeur_mcad": "5853"
+        },
+        {
+          "id": "droits_permis_redevances",
+          "valeur_mcad": "6542"
+        },
+        {
+          "id": "revenus_divers",
+          "valeur_mcad": "15908"
+        },
+        {
+          "id": "transferts_federaux",
+          "valeur_mcad": "32131"
+        },
+        {
+          "id": "revenus_autonomes",
+          "valeur_mcad": "134361"
+        },
+        {
+          "id": "revenus_totaux",
+          "valeur_mcad": "166492"
+        }
+      ],
+      "statut": "A_VERIFIER_DANS_OCTETS_PDF"
+    },
+    {
+      "id": "PLAN2026_F2",
+      "url": "https://www.finances.gouv.qc.ca/Budget_et_mise_a_jour/budget/documents/Budget2627_PlanBudgetaire.pdf",
+      "pages_attendues": 426,
+      "page_tableau_pdf_zero": 277,
+      "titre_tableau": "TABLEAU F.2",
+      "sha256_attendu_octets_recus": "a0efb80f1a75984d7f0933d7dd6630bc3306e91410a8cfbaa9005e72f788e0e0",
+      "taille_attendue_octets": 5341975,
+      "valeurs_attendues": [
+        {
+          "id": "revenus_autonomes",
+          "valeur_mcad": "134361"
+        },
+        {
+          "id": "transferts_federaux",
+          "valeur_mcad": "32131"
+        },
+        {
+          "id": "revenus_totaux",
+          "valeur_mcad": "166492"
+        },
+        {
+          "id": "depenses_portefeuilles",
+          "valeur_mcad": "-160489"
+        },
+        {
+          "id": "service_dette",
+          "valeur_mcad": "-10268"
+        },
+        {
+          "id": "depenses_totales",
+          "valeur_mcad": "-170757"
+        },
+        {
+          "id": "provision_eventualites",
+          "valeur_mcad": "-2000"
+        },
+        {
+          "id": "deficit_comptable",
+          "valeur_mcad": "-6265"
+        },
+        {
+          "id": "versements_fonds_generations",
+          "valeur_mcad": "-2347"
+        },
+        {
+          "id": "solde_budgetaire_loi_equilibre",
+          "valeur_mcad": "-8612"
+        }
+      ],
+      "statut": "A_VERIFIER_DANS_OCTETS_PDF"
+    }
+  ],
+  "relecture_humaine": {
+    "statut": "A_MANDATER",
+    "nom_du_relecteur": null,
+    "mandat_reel_verifie": false,
+    "declaration_interets_recue": false,
+    "avis_independant_signe": false,
+    "relecture_contradictoire_terminee": false,
+    "decision_competente_obtenue": false,
+    "livrables": [
+      "Accès licite et archives indépendantes des deux PDF, datés et traçables",
+      "Examen contradictoire et indépendant des 39 lignes et de leurs unités",
+      "Comparaison avec les mises à jour et comptes réalisés, par exercice et périmètre",
+      "Validation des transferts fédéraux, des services et du Fonds des générations",
+      "Expertise signée et réserves motivées; droits de contestation et autorisation humaine"
+    ]
+  },
+  "autorisations": {
+    "publication": false,
+    "fusion": false,
+    "adoption": false
+  }
+}

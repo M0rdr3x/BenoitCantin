@@ -1,0 +1,85 @@
+name: Projet Nova P55W - Cotisations salariales 2026 Quebec avec plafond et protections
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p55w.yml"
+      - "scripts/calculer_cotisations_salariales_nova_p55w.py"
+      - "scripts/tests/test_calculer_cotisations_salariales_nova_p55w.py"
+      - "scripts/mesurer_couverture_incidences_nova_p55s.py"
+      - "scripts/evaluer_completude_programme_nova_p55n.py"
+      - "projets/projet-nova/etudes/P55W_*"
+      - "projets/projet-nova/etudes/P52D_GABARIT_INCIDENCE_MENAGES_ENTREPRISES.json"
+      - "projets/projet-nova/etudes/P55N_BAROMETRE_COMPLETUDE_PROGRAMME_2026.json"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verificatifs-baremes-et-exclusions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Executer exactement 65 tests des taux et limites 2026
+        run: |
+          python -m py_compile scripts/calculer_cotisations_salariales_nova_p55w.py
+          python - <<'PY'
+          import unittest
+          suite=unittest.defaultTestLoader.discover(
+            "scripts/tests",pattern="test_calculer_cotisations_salariales_nova_p55w.py")
+          assert suite.countTestCases()==65,suite.countTestCases()
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful()
+          PY
+      - name: Chiffrage conditionnel du salaire fictif et controle de refus
+        run: |
+          python scripts/calculer_cotisations_salariales_nova_p55w.py \
+            --salaire 50000.00 \
+            --bilan-public p55w_2026_bilan_exemple.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p55w_2026_bilan_exemple.json").read_text("utf-8"))
+          assert r["schema_version"]=="P55W-BILAN-PUBLIC-1"
+          assert r["nature"]=="EXEMPLE_PURE_HYPOTHESE_SALARIE_QUEBEC_2026"
+          s=r["cotisations_conditionnelles"]
+          assert s["salaire_admissible_hypothese_cad"]=="50000.00"
+          assert s["rrq_salarie_cad"]=="2929.50"
+          assert s["rqap_salarie_cad"]=="215.00"
+          assert s["ae_salarie_cad"]=="650.00"
+          assert s["total_salarie_trois_regimes_cad"]=="3794.50"
+          assert s["rrq_employeur_cad"]=="2929.50"
+          assert s["rqap_employeur_cad"]=="301.00"
+          assert s["ae_employeur_cad"]=="910.00"
+          assert s["total_employeur_trois_regimes_cad"]=="4140.50"
+          assert s["montants_reels_garantis"] is False
+          assert s["fss_et_autres_cotisations_employeur_inclus"] is False
+          assert s["impot_revenu_et_prestations_inclus"] is False
+          assert r["comparaison_avec_847_P55T_autorisee"] is False
+          assert r["taux_nova_propose_pct"] is None
+          assert r["protection_et_financement_regimes_demontres"] is False
+          assert r["p52d_montants_inconnus"]==720
+          assert r["p52b_montants_inconnus"]==600
+          assert r["score_completude_estime_pct"]==53
+          assert r["decision"]=="NO_GO_AUTOMATIQUE"
+          PY
+      - name: Bloquer GO fiscal sans preuve juridique et actuarielle
+        run: |
+          set +e
+          python scripts/calculer_cotisations_salariales_nova_p55w.py --exiger-faisabilite
+          rc=$?
+          set -e
+          test "$rc" -eq 3
+      - name: Archiver un bilan non certifiant uniquement
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p55w-salaire-50000-2026-non-certifie
+          path: p55w_2026_bilan_exemple.json
+          retention-days: 7

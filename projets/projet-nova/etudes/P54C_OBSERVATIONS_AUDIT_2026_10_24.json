@@ -1,0 +1,75 @@
+{
+  "schema_version": "P54C-OBSERVATIONS-1",
+  "date_reference": "2026-10-24",
+  "source_run": 40119313052,
+  "source_job_id": 120947176733,
+  "artefact_id": 12570109480,
+  "artefact_archive_sha256": "f466f35a8432056c0dcf73bdc4ed9e95a944c60e57d0c8e39b6f5e935964a958",
+  "source_pdf_p53z_hash_stables": true,
+  "pages": {
+    "ville": 102,
+    "mamh": 162
+  },
+  "marqueurs_documentaires": {
+    "rapport_auditeurs": {
+      "ville": true,
+      "mamh": true
+    },
+    "ventilation_depenses_mixtes": {
+      "ville": true,
+      "mamh": true
+    },
+    "competences_locales": {
+      "ville": true,
+      "mamh": true
+    },
+    "competences_agglomeration": {
+      "ville": true,
+      "mamh": true
+    },
+    "exercice_2024": {
+      "ville": true,
+      "mamh": true
+    },
+    "referentiel_ravq": {
+      "ville": true,
+      "mamh": true
+    },
+    "opinion": {
+      "ville": true,
+      "mamh": true
+    }
+  },
+  "conclusion_contextuelle": "MEME_TYPE_DE_RAPPORT_AUDIT_SPECIALISE_PROBABLE_NON_CERTIFIE",
+  "comparaison_lexicale": {
+    "jetons_ville": 10,
+    "jetons_mamh": 13,
+    "communs": 9,
+    "non_apparies_ville": 1,
+    "non_apparies_mamh": 4,
+    "score_dice": 0.7826,
+    "statut": "NON_QUALIFIE_COMME_MONTANT"
+  },
+  "reserves": {
+    "mise_en_page_notes_coordonnees_pourraient_expliquer_les_variations": true,
+    "cause_des_differences_numeriques_non_demontrée": true,
+    "aucun_montant_extrait_ni_publie": true,
+    "rapport_au_perimetre_specifique_non_expertise_Nova": true,
+    "pas_d_anomalie_financiere_demontree": true,
+    "deux_pdfs_copies_https_pas_signatures_editeurs": true,
+    "questions_p54b_96_restent_a_instruire": true,
+    "protection_emplois_services": true,
+    "eliminations_anterieures_non_economies": true,
+    "pas_de_fusion_automatique": true
+  },
+  "etat": {
+    "examens_techniques_pages": 2,
+    "marqueurs_correspondants": 7,
+    "differences_numeric_lexical_non_classees": 5,
+    "controles_professionnels_a_instruire": 8,
+    "expertises_independantes_signees_pour_nova": 0,
+    "montants_comptables_certifies": 0,
+    "economies_certifiees_cad": null,
+    "decision": "NO_GO_AUTOMATIQUE"
+  }
+}
