@@ -101,7 +101,7 @@ def main() -> int:
         "readPrivateLifeStoryPdf({",
         "maxBytes: MAX_PDF_BYTES",
         "'../_shared/private-life-story-pdf.mjs'",
-        "String.fromCharCode(...head)==='%PDF-'",
+        "String.fromCharCode(...bytes.subarray(0,5))==='%PDF-'",
         "service.rpc('service_life_story_register_download'",
         'allowedOrigin(req)',
         "'https://www.benoitcantin.com'",
