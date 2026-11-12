@@ -634,6 +634,13 @@ def render_standalone_redirects() -> str:
         lines.append(f"{source} {target} {status_token}")
     return "\n".join(lines).rstrip() + "\n"
 
+def validate_sw_http_cache_header(values: object, provider: str) -> list[str]:
+    """Refuser tout cache HTTP du script pilotant les mises à jour PWA."""
+    if not isinstance(values, dict) or values.get("Cache-Control") != "no-store":
+        return [f"{provider}: /sw.js doit déclarer Cache-Control: no-store exactement."]
+    return []
+
+
 def validate_vercel_config() -> list[str]:
     errors: list[str] = []
     if not VERCEL_CONFIG.is_file():
@@ -687,6 +694,10 @@ def validate_vercel_config() -> list[str]:
                 errors.append(f"Preview Vercel: directive CSP requise absente: {directive}.")
         if "https://www.bubblav.com" in csp:
             errors.append("Preview Vercel: BubblaV doit rester bloqué dans la CSP.")
+
+    if sum(1 for rule in (data.get("headers") or []) if rule.get("source") == "/sw.js") != 1:
+        errors.append("Preview Vercel: exactement une règle /sw.js obligatoire.")
+    errors.extend(validate_sw_http_cache_header(header_rules.get("/sw.js"), "Preview Vercel"))
 
     for source in (
         "/.well-known/release.json",
@@ -877,6 +888,10 @@ def validate_netlify_config() -> list[str]:
         for rule in headers
         if isinstance(rule, dict) and isinstance(rule.get("for"), str)
     }
+    if sum(1 for rule in headers if rule.get("for") == "/sw.js") != 1:
+        errors.append("Netlify: exactement une règle /sw.js obligatoire.")
+    errors.extend(validate_sw_http_cache_header(header_rules.get("/sw.js"), "Netlify"))
+
     release_values = header_rules.get("/.well-known/release.json")
     if release_values is None:
         errors.append("En-têtes Netlify du marqueur release.json absents.")
