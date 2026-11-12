@@ -137,30 +137,41 @@ production, la correction est uniquement fusionnée dans GitHub.**
 
 ### Protection SQL AAL2 des photos privées — revue préalable au déploiement
 
-Audit de production (lecture seule, 10 novembre 2026) : le bucket
-`sinjira-character-sources` est **privé** et vide ; les politiques existantes
-`char_source_insert_own`, `char_source_select_own` et
-`char_source_delete_own` restreignent les chemins au propriétaire.
-**Ces règles ne vérifient pas elles-mêmes le niveau AAL2 du JWT.**
-Le navigateur #981 impose déjà AAL2 avant l'upload et l'Edge Function le
-réexige avant de créer un dossier, mais un appel direct de l'API Storage peut
-contourner le contrôle du navigateur.
+Audit de production (lecture seule, 11 novembre 2026) : **deux buckets
+privés et vides** contiennent les photographies du Registre :
+`sinjira-character-sources` (utilisé par le navigateur) et
+`sinjira-character-submissions` (ancien compartiment). Sept politiques
+RLS existantes imposent le dossier propriétaire sur ces deux buckets,
+mais **ne requièrent pas AAL2**. Un client authentifié AAL1 pourrait donc,
+via l'API Storage directe, consulter, téléverser ou supprimer ses propres
+photos ; le bucket historique expose également un UPDATE propriétaire.
+La protection du formulaire #981 et de l'Edge Function ne suffit pas à
+contraindre ces appels Storage directs.
 
-Le SQL de durcissement est versionné dans
-`scripts/sql/sinjira_character_sources_insert_requires_aal2.sql`.
-Il ajoute une politique Postgres **`AS RESTRICTIVE FOR INSERT TO authenticated`**
-qui impose `auth.jwt()->>'aal' = 'aal2'` au **seul** bucket source. Les règles
-permissives de propriété existantes continuent de s'appliquer ; les autres
-buckets restent inchangés. CI : test statique sur le SQL et simulation
-des valeurs `aal2`, `aal1`, jeton sans `aal` et autres buckets.
+Le correctif à déployer, dans le fichier historique
+`scripts/sql/sinjira_character_sources_insert_requires_aal2.sql`, ajoute
+**quatre politiques RESTRICTIVE `TO authenticated` sur
+`storage.objects`** : SELECT, INSERT, UPDATE (avec `USING` et
+`WITH CHECK`) et DELETE. Chacune exige `auth.jwt()->>'aal' = 'aal2'`
+pour **les deux buckets**. Leur caractère restrictif préserve
+les règles propriétaires permissives existantes ; aucune permission
+supplémentaire n'est accordée et les autres buckets sont inchangés.
+La transaction vérifie RLS, le caractère privé des deux buckets,
+les sept règles propriétaires et l'absence des quatre politiques
+avant toute modification. Les tests CI couvrent les quatre opérations,
+les deux buckets, AAL1/AAL2, JWT sans `aal` et les autres buckets.
 
-**Attention : la CI ne déploie pas cette politique.**
-Pour la mise en production, effectuer une migration Supabase enregistrée,
-avec revue de l'environnement autorisé, puis contrôler `pg_policies` pour
-le nom exact, `cmd=INSERT`, `permissive=RESTRICTIVE` et la condition
-`auth.jwt()->>'aal' = 'aal2'`. Un test Storage authentifié AAL1 (refus)
-et AAL2 (accepté dans le dossier propre seulement), sans exposer de fichiers
-réels, reste nécessaire pour sa certification opérationnelle.
+**Attention : aucun changement SQL n'est appliqué en production par cette PR
+ou par la CI.** Déployer uniquement par migration Supabase ciblée, revue,
+enregistrée et autorisée, indépendamment du workflow Edge. Avant validation,
+inspecter `pg_policies` : **quatre politiques**, toutes
+`permissive=RESTRICTIVE`, toutes avec condition JWT AAL2 ; UPDATE
+doit avoir `USING` et `WITH CHECK`. Vérifier pour chaque bucket,
+avec des comptes de test contrôlés, **SELECT, INSERT, UPDATE si autorisé
+par les règles propriétaires, et DELETE** : AAL1 refusé, AAL2 limité
+au propriétaire, sans modifier de photo d'un tiers. Aucune intervention
+sur `storage.objects` à la main. Un HTTP 200 ou une CI verte ne prouvent
+pas l'application ni l'efficacité des politiques hébergées.
 Aucune modification des données `storage.objects` à la main.
 Un simple HTTP 200 ou une CI verte **n'est pas** une preuve de l'application
 de cette politique en production.
