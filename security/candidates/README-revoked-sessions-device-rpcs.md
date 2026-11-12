@@ -46,6 +46,45 @@ unique instruction. La CI rejette donc également toute altération
 inattendue de la logique métier copiée : elle ne peut pas se contenter
 de conserver quelques marqueurs de sécurité.
 
+## Réconciliation des définitions de production — 11 novembre 2026
+
+Comparaison **en lecture seule** des SHA-256 de huit définitions
+`pg_get_functiondef(...)` du projet Supabase actif aux empreintes dans
+`scripts/validate_revoked_session_rpc_candidate.py`.
+
+- **Une dérive a été détectée** : `security_set_device_trust` en production
+  possède désormais `and c.request_session_id=v_session` dans la recherche
+  du challenge approuvé. Le premier candidat ne possédait pas ce prédicat.
+  Son exécution aurait donc pu **réintroduire la réutilisation d'une
+  confirmation depuis une autre session**, protection déjà active côté serveur.
+- Le candidat SQL a été **réconcilié** en conservant exactement ce prédicat,
+  et son SHA d'origine attendu est mis à jour. Le validateur refuse désormais
+  explicitement sa suppression et comprend une mutation négative dédiée.
+- **8/8 empreintes actives correspondent** aux huit empreintes de référence
+  après réconciliation. Cette concordance est une observation ponctuelle :
+  la comparaison doit être **refaite juste avant** de préparer toute migration.
+
+Le correctif de révocation n'est **pas déployé** en production : au moment
+de la vérification, aucune des huit fonctions déployées n'appelle le nouveau
+garde. Cette réconciliation évite d'effacer un autre correctif de sécurité;
+elle ne résout pas le risque critique #725 à elle seule.
+
+## Validation fonctionnelle locale (signatures réelles et HTTP)
+
+Le job GitHub Actions vérifie **44 assertions pgTAP** puis installe une copie
+du candidat dans **sa seule base Supabase locale éphémère**. Un nouveau compte
+fictif passe par GoTrue et le MFA TOTP jusqu'à un JWT réellement signé AAL2.
+Après une opération sensible autorisée, le test déconnecte la session via
+`/auth/v1/logout?scope=local` et vérifie sa suppression de `auth.sessions`.
+Il réutilise ensuite l'ancien JWT sur les **8 points d'entrée HTTP PostgREST**
+pour vérifier les refus `42501 / AUTH_SESSION_INVALID`. Une nouvelle session
+MFA valide doit rester autorisée.
+
+**Ce smoke n'écrit jamais sur Supabase hébergé** : host et ports locaux
+fixés, `CI=true` et opt-in explicite, aucun secret distant. L'épreuve locale
+ne remplace ni les essais de staging ni les validations des migrations et
+du retour arrière avant promotion.
+
 ## Nouveau garde
 
 La fonction `private.security_require_current_auth_session(uuid)` :
