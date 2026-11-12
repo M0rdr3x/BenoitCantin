@@ -469,6 +469,7 @@ begin
          and resolver.revoked_at is null
         where c.user_id=v_user
           and c.request_device_id=v_row.id
+          and c.request_session_id=v_session
           and c.status='approved'
           and c.resolved_at is not null
           and c.resolved_at>now()-interval '30 minutes'
