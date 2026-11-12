@@ -26,7 +26,7 @@ Les pourcentages ne sont donc **pas additifs**, et ne représentent ni une proba
 
 **Boussole/sondage.** Les deux pourcentages sont des **portions de portes d'homologation** : 75 % n'est pas un taux d'adhésion citoyenne, et 54,5 % n'est pas un résultat de votes. La comparaison de partis dans la boussole demeure désactivée. Le sondage ne doit pas être déclaré ouvert.
 
-**SINJIRA.** Les améliorations de liseuse V52–V58 ne changent pas automatiquement le 66,5 %. La [PR d'intégration #983](https://github.com/M0rdr3x/BenoitCantin/pull/983) est passée en tests Chromium et WebKit sur la vraie page avec un livre fictif; elle reste **DRAFT et non déployée**. La [PR candidate V59 sur les droits de sauvegarde](https://github.com/M0rdr3x/BenoitCantin/pull/986) a passé ses contrôles PostgreSQL **locaux et fictifs**, mais la migration serveur reste non homologuée, issue [#955](https://github.com/M0rdr3x/BenoitCantin/issues/955) ouverte. Aucune de ces avancées ne permet d'affirmer une sortie production.
+**SINJIRA.** Les travaux candidats V52–V66 de liseuse ne changent **pas automatiquement** le 66,5 %. **Actualisation technique du 12 novembre 2026, distincte de l'audit du 8 novembre :** [PR unique d'intégration #1000](https://github.com/M0rdr3x/BenoitCantin/pull/1000), **DRAFT, non fusionnée dans `main` et non déployée**. Elle regroupe les gestes gauche/droite, l'affichage mobile, la continuité de lecture lors des rotations et les protections V66 contre les faux balayages après défilement vertical. [CI V66 #43325893287](https://github.com/M0rdr3x/BenoitCantin/actions/runs/43325893287) : **75/75 tests Node**, **Chromium et WebKit réussis** avec un livre fictif; [V65](https://github.com/M0rdr3x/BenoitCantin/actions/runs/43325893332) couvre les événements tactiles émis par Chromium. La [PR candidate V59 sur les droits de sauvegarde](https://github.com/M0rdr3x/BenoitCantin/pull/986) a passé ses contrôles PostgreSQL **locaux et fictifs**, mais la migration serveur reste non homologuée et l'issue [#955](https://github.com/M0rdr3x/BenoitCantin/issues/955) reste ouverte. Aucune de ces avancées ne constitue une réception sur appareil physique ni un GO de production.
 
 ## Suite logique, ordonnée par dépendance
 
@@ -36,7 +36,7 @@ Les pourcentages ne sont donc **pas additifs**, et ne représentent ni une proba
 
 **Boussole et sondage :** finaliser les examens documentaires indépendants, les vérifications d'accessibilité sur appareils, les essais de confidentialité et de sécurité avec consentement; rendre la comparaison des partis possible seulement avec les sources indépendantes dûment vérifiées. Ne pas ouvrir de vote public sur une simple réussite de tests techniques.
 
-**SINJIRA :** revoir les PR V52–V58 et la V59 V51 séparément; évaluer la liseuse sur de vrais téléphones, puis le contrôle des comptes, les droits sur les romans intégraux, la synchronisation sur deux appareils, les lecteurs d'écran, les fichiers réels et les caches de l'application. Une validation de production exige une approbation humaine explicite.
+**SINJIRA :** revoir la PR candidate unique de liseuse V64–V66 #1000 et le chantier distinct V51/V59 de sécurité #986; évaluer la liseuse sur de vrais téléphones, puis le contrôle des comptes, les droits sur les romans intégraux, la synchronisation sur deux appareils, les lecteurs d'écran, les fichiers réels et les caches de l'application. Une validation de production exige une approbation humaine explicite.
 
 ## Sources de référence versionnées
 
@@ -44,6 +44,7 @@ Les pourcentages ne sont donc **pas additifs**, et ne représentent ni une proba
 - [Registre des services Nova–Sinjira](../projets/projet-nova/data/registre-donnees-services-nova-sinjira.json)
 - [Réception de la boussole et du sondage](nova-sondages/reception-sondage-boussole-2026-11-08.json)
 - [Maturité et 13 portes SINJIRA](sinjira/programme-readiness-2026-11-08.json)
-- [Préparation sécuritaire de la liseuse V58 — PR candidate #983](https://github.com/M0rdr3x/BenoitCantin/blob/review/sinjira-liseuse-mobile-v58-main-aligned-20261110/docs/sinjira/SINJIRA_LISEUSE_V58_INTEGRATION_ET_RECEPTION_2026-11-10.md) (non fusionnée)
+- [Réception de la liseuse tactile V64 — PR candidate #1000](https://github.com/M0rdr3x/BenoitCantin/blob/review/sinjira-liseuse-mobile-v64-integration-main-20261111/docs/sinjira/SINJIRA_LISEUSE_V64_RECEPTION_2026-11-11.md) (non fusionnée dans `main`)
+- [Protection contre les faux glissements V66](https://github.com/M0rdr3x/BenoitCantin/blob/review/sinjira-liseuse-mobile-v64-integration-main-20261111/docs/sinjira/SINJIRA_LISEUSE_V66_TRAJECTOIRE_2026-11-12.md) (testée, non publiée)
 
 Le script `scripts/validate_quatre_programmes_baseline_20261110.mjs` et ses **8 tests Node** recalculent et vérifient directement les valeurs à partir des quatre fichiers JSON originaux. Ce document est un **instantané daté** : toute nouvelle mesure devra être enregistrée et vérifiée par les registres sources avant de remplacer cette référence.
