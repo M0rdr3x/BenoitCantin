@@ -75,7 +75,7 @@ SOURCE_SHA256 = {
     "security_resolve_connection_challenge": "ca24404955fb7ee9a3c0f75e6171beb0e7000f00841e256070802b0d31c09f07",
     "security_resolve_connection_challenge_mfa": "41717bb023f0415f8a986e7cf7b5f704e587e4d8877d39a3bc715f2fe0f35c10",
     "security_revoke_device": "fcdf34e4f92a076cd3e8237a6ec17b4d9a784ed6ae116305a8595a7ab5340bbd",
-    "security_set_device_trust": "83ef68e2b45f4153c03f40f3d35532794f2ee189d31d6f91242d8a400810cd61",
+    "security_set_device_trust": "9993426ee89dff625687c09a529776d1b9f3809412f3affa3945b26a83179c84",
     "security_update_settings": "c11672c4df85e1a1ee3bb9e26b7bdfe46a2fd6776aa5f8062bc8dad5ba3a9dc2",
 }
 
@@ -135,6 +135,8 @@ def inspect(source: str) -> list[str]:
             errors.append("Contrôle de session non unique : " + name)
         if IMMEDIATE_GUARD not in part:
             errors.append("Contrôle de session non immédiat après AUTH_REQUIRED : " + name)
+        if name == "security_set_device_trust" and "and c.request_session_id=v_session" not in part:
+            errors.append("Confirmation de confiance non liée à la session demandeuse")
         if "v_user uuid := auth.uid()" not in part:
             errors.append("Identité auth.uid() historique absente : " + name)
         if "RETURNS jsonb" not in part:
@@ -182,6 +184,8 @@ def self_test(source: str) -> None:
         ("grants publics introduits", "ROLLBACK;",
          "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA private TO PUBLIC;\nROLLBACK;"),
         ("double rollback", "ROLLBACK;", "ROLLBACK;\nROLLBACK;"),
+        ("challenge d'une autre session utilisé pour accorder la confiance",
+         "and c.request_session_id=v_session", "and c.request_session_id is not null"),
         ("logique métier historique modifiée",
          "where id=p_device_id and user_id=v_user",
          "where user_id=v_user"),
