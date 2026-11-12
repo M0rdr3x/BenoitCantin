@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {classifyReaderSwipe,bindReaderTouchNavigation} from '../assets/js/sinjira-liseuse-touch-v52.mjs';
+import {classifyReaderSwipe,bindReaderTouchNavigation,isReaderSystemEdgeGesture} from '../assets/js/sinjira-liseuse-touch-v52.mjs';
 
 const gesture=(overrides={})=>classifyReaderSwipe({
   dx:-92,dy:8,durationMs:240,viewerWidth:375,...overrides
@@ -60,12 +60,13 @@ function fixture({selected=false}={}){
     getSelectedText:()=>selection,clock:()=>time,Observer:null
   });
   const swipe=(dx,dy=5,options={})=>{
-    const touch={identifier:7,clientX:170,clientY:190};
+    const x=options.startX??170;
+    const touch={identifier:7,clientX:x,clientY:190};
     viewer.emit('touchstart',{touches:options.multiple?[touch,{identifier:8,clientX:200,clientY:220}]:[touch],target:options.interactive?{closest:()=>({})}:{closest:()=>null}});
     time+=options.elapsed??200;
     for(const [mx,my] of options.moves||[]){
       viewer.emit('touchmove',{touches:[{
-        identifier:7,clientX:170+mx,clientY:190+my
+        identifier:7,clientX:x+mx,clientY:190+my
       }]});
     }
     if(options.scrollDuring){
@@ -77,11 +78,44 @@ function fixture({selected=false}={}){
     if(options.moveMultiple)viewer.emit('touchmove',{touches:[touch,{identifier:8}]});
     viewer.emit('touchend',{touches:[],changedTouches:[{
       identifier:options.wrongId?9:7,
-      clientX:170+dx,clientY:190+dy
+      clientX:x+dx,clientY:190+dy
     }],defaultPrevented:Boolean(options.prevented)});
   };
   return {viewer,previous,next,mobilePrevious,mobileNext,release,swipe,setSelected:v=>{selection=v}};
 }
+test('V67 : réserver 24 px de chaque bord pour le retour du navigateur',()=>{
+  assert.equal(isReaderSystemEdgeGesture({clientX:0,viewportWidth:390}),true);
+  assert.equal(isReaderSystemEdgeGesture({clientX:24,viewportWidth:390}),true);
+  assert.equal(isReaderSystemEdgeGesture({clientX:366,viewportWidth:390}),true);
+  assert.equal(isReaderSystemEdgeGesture({clientX:12,viewportWidth:390}),true);
+  assert.equal(isReaderSystemEdgeGesture({clientX:25,viewportWidth:390}),false);
+  assert.equal(isReaderSystemEdgeGesture({clientX:365,viewportWidth:390}),false);
+  assert.equal(isReaderSystemEdgeGesture({clientX:220,viewportWidth:390}),false);
+});
+test('V67 : largeur absente ou invalide ne bloque pas le mouvement au doigt',()=>{
+  assert.equal(isReaderSystemEdgeGesture({clientX:8,viewportWidth:undefined}),false);
+  assert.equal(isReaderSystemEdgeGesture({clientX:8,viewportWidth:0}),false);
+  assert.equal(isReaderSystemEdgeGesture({clientX:8,viewportWidth:70}),false);
+  assert.equal(isReaderSystemEdgeGesture({clientX:NaN,viewportWidth:390}),false);
+});
+test('V67 : départ au bord gauche/droit ne tourne pas le PDF, centre reste actif',()=>{
+  const oldWindow=globalThis.window;
+  globalThis.window={innerWidth:390};
+  const x=fixture();
+  try{
+    x.swipe(130,3,{startX:9});
+    x.swipe(-130,3,{startX:381});
+    assert.equal(x.previous.clicks,0);
+    assert.equal(x.next.clicks,0);
+    x.swipe(-130,3,{startX:250});
+    x.swipe(130,3,{startX:120});
+    assert.equal(x.previous.clicks,1);
+    assert.equal(x.next.clicks,1);
+  }finally{
+    x.release();
+    globalThis.window=oldWindow;
+  }
+});
 test('intégration : les gestes cliquent uniquement les commandes officielles',()=>{
   const x=fixture();x.swipe(-90);x.swipe(90);
   assert.equal(x.next.clicks,1);
