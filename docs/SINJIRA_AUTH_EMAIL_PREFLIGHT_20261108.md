@@ -63,6 +63,16 @@ et doit être revérifié au moment du sign-off.
   TOTP dans `/compte/securite.html` → **vérification réelle du facteur et
   `currentLevel=aal2`** → Registre → sauvegarde observable dans
   `character_submissions` → comportement idempotent et absence de doublon.
+  Une collision simultanée de deux onglets doit produire le même refus
+  `HTTP 409 / ONE_CHARACTER_PER_ACCOUNT` **seulement après** avoir
+  revérifié qu'un dossier est effectivement enregistré pour le compte.
+  L'erreur PostgreSQL `23505` seule ne suffit pas ; si la seconde lecture
+  échoue ou ne trouve aucun dossier, garder `CHARACTER_SUBMISSION_WRITE_FAILED`
+  sans notifier, sans marquer un faux succès et sans nettoyer une photo
+  potentiellement référencée. Le correctif Edge est identifié par
+  `VERSION='24.5.3'` ; il n'est actif qu'après un déploiement vérifié.
+  Le test hors ligne sur le véritable module est
+  `scripts/test_sinjira_registry_unique_conflict.cjs`.
   Un refus explicite `HTTP 409 / ONE_CHARACTER_PER_ACCOUNT` bloque
   un second envoi et propose « Mon personnage », tout en supprimant
   uniquement la photo temporaire de la tentative rejetée. Une erreur

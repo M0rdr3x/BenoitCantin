@@ -61,6 +61,8 @@ def validate(source: str) -> list[str]:
     need("          node-version: '22.16.0'", 'Node de CI non épinglé.')
     need('node scripts/test_sinjira_character_photo_path.cjs',
          'Test de l’authenticité du validateur Edge absent.')
+    need('node scripts/test_sinjira_registry_unique_conflict.cjs',
+         'Test du conflit SQL unique du Registre absent.')
     need('python3 scripts/verify_sinjira_registry_edge_deployment.py --self-test',
          'Autotest des versions Edge absent.')
     need('python3 scripts/verify_sinjira_registry_edge_deployment.py',
@@ -75,6 +77,8 @@ def validate(source: str) -> list[str]:
          'Parité exacte du source Edge distant absente.')
     need('node scripts/test_sinjira_character_photo_path.cjs --source "$downloaded"',
          'Test adversarial du code réellement récupéré absent.')
+    need('node scripts/test_sinjira_registry_unique_conflict.cjs --source "$downloaded"',
+         'Test réel du conflit unique sur Edge distant absent.')
     need('trap \'rm -rf "$temp"\' EXIT',
          'Nettoyage sécurisé du workspace source distant absent.')
     need('python3 scripts/validate_sinjira_registry_edge_scoped_deploy.py --self-test',
@@ -139,6 +143,9 @@ def self_test() -> None:
             'true', 1),
         'remplacer le test du code distant': original.replace(
             'node scripts/test_sinjira_character_photo_path.cjs --source "$downloaded"',
+            'true', 1),
+        'retirer le test de conflit Edge distant': original.replace(
+            'node scripts/test_sinjira_registry_unique_conflict.cjs --source "$downloaded"',
             'true', 1),
         'ne plus télécharger le code distant': original.replace(
             'supabase functions download submit-character-questionnaire --project-ref "$PROJECT_ID" --use-api',

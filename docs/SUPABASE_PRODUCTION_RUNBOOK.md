@@ -152,7 +152,11 @@ La voie GitHub distincte est :
    Le job télécharge donc également **uniquement** le source de cette fonction
    dans un dossier temporaire avec `supabase functions download --use-api`,
    compare le `index.ts` au fichier du commit GitHub testé et rejoue les
-   tests adversariaux du chemin photo sur le code téléchargé. Une différence
+   tests adversariaux du chemin photo **et des collisions d'INSERT
+   PostgreSQL `23505`** sur le code téléchargé. Cette seconde vérification
+   doit prouver qu'un refus 409 `ONE_CHARACTER_PER_ACCOUNT` n'est produit
+   qu'après lecture d'un dossier persistant du même compte, jamais sur
+   une erreur réseau ou un échec de lecture. Une différence
    d'octets, un téléchargement indisponible ou un test négatif font échouer
    le job sans annoncer un déploiement certifié. Le CLI peut éventuellement
    restituer un source reconstitué différent : dans ce cas, faire une

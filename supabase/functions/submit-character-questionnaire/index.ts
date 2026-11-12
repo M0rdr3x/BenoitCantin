@@ -5,7 +5,7 @@ import {sendFormspreeNotice} from '../_shared/sinjira-formspree.ts';
 import {SINJIRA_CANON_PUBLIC_GUIDE} from '../_shared/sinjira-canon-public.ts';
 import {loadSinjiraCanonContext,canonPrompt} from '../_shared/sinjira-canon-context.ts';
 
-const VERSION='24.5.2';
+const VERSION='24.5.3';
 const MAX_REQUEST_BYTES=2*1024*1024;
 const MAX_ANSWERS_CHARS=500000;
 // Ces deux intégrations restent préparées mais inactives. Une activation future
@@ -52,6 +52,18 @@ function isCanonicalRegistryPhotoPath(raw:unknown,userId:string):boolean{
   const prefix=`${userId}/`;
   if(!raw.startsWith(prefix)||raw.length>prefix.length+41)return false;
   return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpg|png|webp|avif|gif)$/.test(raw.slice(prefix.length));
+}
+
+// Une violation UNIQUE peut venir d'un autre onglet ayant inséré entre notre
+// lecture d'état et l'INSERT. Ne renvoyer 409 qu'après avoir RELU un dossier
+// effectivement persistant pour ce même utilisateur. Toute lecture incertaine
+// reste une erreur de sauvegarde (jamais un faux succès ou un faux doublon).
+async function hasConfirmedConcurrentSubmission(service:any,userId:string,writeError:unknown):Promise<boolean>{
+  if(!writeError||typeof writeError!=='object'||!('code' in writeError)||writeError.code!=='23505')return false;
+  try{
+    const {data,error}=await service.from('character_submissions').select('id').eq('user_id',userId).maybeSingle();
+    return !error&&typeof data?.id==='string'&&data.id.length>0;
+  }catch{return false}
 }
 
 const escapeHtml=(v:unknown)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[c]||c));
@@ -118,7 +130,15 @@ Deno.serve(async(req)=>{
     }
 
     const {data:sub,error}=await service.from('character_submissions').insert({user_id:user.id,account_pseudo:p?.pseudo||p?.display_name||'',account_email:user.email||'',source_payload:answers,photo_path:photo_path||null,status:'submitted'}).select('*').single();
-    if(error)throw new Error('CHARACTER_SUBMISSION_WRITE_FAILED');
+    if(error){
+      if(await hasConfirmedConcurrentSubmission(service,user.id,error)){
+        // L'INSERT de cette tentative a été rejeté, sans créer de dossier.
+        // Le client pourra présenter « Mon personnage » et nettoyer la photo
+        // temporaire propre à ce nouvel essai, jamais une écriture incertaine.
+        return privateJson({ok:false,error:'Ce Compte SINJIRA possède déjà une demande ou son unique personnage. Modifiez votre dossier existant au lieu d’en créer un deuxième.',code:'ONE_CHARACTER_PER_ACCOUNT',version:VERSION},409);
+      }
+      throw new Error('CHARACTER_SUBMISSION_WRITE_FAILED');
+    }
     const n=await notify(service,sub,user,p,answers as Record<string,unknown>,false);
     const formspree=answers.formspree_receipt_opt_in==='yes'
         ? await sendFormspreeNotice(service,'registre_enregistre',sub.id,{email:user.email||'',answers:answers as Record<string,unknown>})
