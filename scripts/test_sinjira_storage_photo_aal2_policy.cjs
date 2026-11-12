@@ -50,7 +50,11 @@ const expectedOwnerRows=ownerNames.map(([name,cmd,bucket])=>
 const ownerScope=source.split('AS expected(policy_name,policy_cmd,owner_predicate)')[0].split('      VALUES\n').pop();
 assert.ok(ownerScope&&!ownerScope.includes('CREATE POLICY'),'Owner VALUES block present');
 const ownerRows=ownerScope.split('\n').map(s=>s.trim().replace(/,$/,'')).filter(s=>s.startsWith("('"));
-assert.deepEqual(ownerRows,expectedOwnerRows,'All seven owner policy predicates must be exact');
+function assertExactOwnerRows(rows){
+  assert.deepEqual(rows,expectedOwnerRows,
+    'All seven owner policies must exactly match their audited predicates');
+}
+assertExactOwnerRows(ownerRows);
 assertions++;
 for(const text of [
   "p.roles=ARRAY['authenticated'::name]",
@@ -69,7 +73,9 @@ for(const [label,mutator] of [
   ['owner user removed',rows=>rows.map((s,i)=>i===1?s.replace("auth.uid()","'fixed-user'"):s)]
 ]){
   const mutated=mutator(ownerRows);
-  assert.notDeepEqual(mutated,expectedOwnerRows,'Mutation should alter the owner ACL: '+label);
+  assert.notDeepEqual(mutated,ownerRows,'Mutation must alter the current owner ACL: '+label);
+  assert.throws(()=>assertExactOwnerRows(mutated),assert.AssertionError,
+    'Unsafe owner-policy mutation must fail the same strict check: '+label);
   assertions++;
 }
 
