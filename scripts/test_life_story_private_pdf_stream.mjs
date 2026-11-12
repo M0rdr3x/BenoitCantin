@@ -94,6 +94,21 @@ test('le fetch privé est interrompu au délai sans exposer de données',async()
  assert.ok(Date.now()-started<1500);
 });
 
+test('une échéance globale unique couvre la connexion et le flux du PDF privé',async()=>{
+ const started=Date.now();
+ const result=await readPrivateLifeStoryPdf(args(async()=>{
+  await new Promise(resolve=>setTimeout(resolve,170));
+  return new Response(new ReadableStream({
+   start(controller){controller.enqueue(bytes.subarray(0,3));},
+   cancel(){return new Promise(()=>{});}
+  }));
+ },{timeoutMs:300}));
+ assert.deepEqual(result,{ok:false});
+ // Sans budget restant, fetch (170 ms) + lecture (300 ms) prendraient
+ // environ 470 ms. La protection doit plafonner l'ensemble à ~300 ms.
+ assert.ok(Date.now()-started<420,'deadline unique sur fetch + lecture');
+});
+
 test('aucune origine externe, credentials URL ou endpoint non sûr accepté',async()=>{
  const inputs=[
  'https://evil.invalid', 'https://gpvivleexywljowcqkru.supabase.co.evil.invalid',
@@ -160,6 +175,8 @@ test('la remise réelle ne charge plus un Blob arbitraire avant la vérification
  assert.ok(!src.includes("storage.from('sinjira-life-story-exports').download("));
  assert.ok(!src.includes('await file.arrayBuffer()'));
  assert.ok(src.includes('MAX_PDF_BYTES = 15 * 1024 * 1024'));
+ const helper=readFileSync(resolve(root,'supabase/functions/_shared/private-life-story-pdf.mjs'),'utf8');
+ assert.ok(helper.includes('Math.floor(timeoutMs - (performance.now() - startedAt))'));
  assert.ok(src.includes("if (!pdf.ok) return errorResponse(req, 410)"));
  assert.ok(src.includes("'Cache-Control': 'private, no-store, max-age=0'"));
 });
