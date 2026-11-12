@@ -69,6 +69,38 @@ class PublicArtifactExtensionAllowlist(unittest.TestCase):
             with self.subTest(path=expected_public):
                 self.assertTrue(builder.relative_path_allowed(expected_public))
 
+    def test_private_and_admin_shells_require_exact_path_approval(self):
+        # These pages are public JavaScript/HTML shells, not private data.
+        # Adding any new shell under account/admin/app must require review.
+        roots = ("Admin", "admin", "app", "compte", "histoire-de-vie")
+        approved = builder.PUBLIC_PRIVATE_SHELL_FILES
+        self.assertEqual(len(approved), 58)
+        self.assertTrue(all(path.suffix == ".html" for path in approved))
+        self.assertEqual({path.parts[0] for path in approved}, set(roots))
+        present = {
+            path.relative_to(ROOT)
+            for folder in roots
+            for path in (ROOT / folder).rglob("*")
+            if path.is_file()
+        }
+        self.assertEqual(present, approved)
+        for path in approved:
+            with self.subTest(approved=path):
+                self.assertTrue(builder.relative_path_allowed(path))
+
+        for root in roots:
+            for added in (
+                "debug.html", "backup/identifiants.html", "session-export.js",
+                "internal-profile.webp", "raw-votes.svg",
+                "support/staff-notes.html", "credentials.json",
+                "assets/private-dashboard.mjs", "reader-full.html",
+            ):
+                with self.subTest(directory=root,attempt=added):
+                    self.assertFalse(builder.relative_path_allowed(Path(root) / added))
+
+        # Shared assets outside these folders remain on their normal policy.
+        self.assertTrue(builder.relative_path_allowed(Path("assets/js/site.js")))
+
     def test_published_runtime_still_allowed(self):
         for name in (
             "assets/js/site.js", "assets/css/ai-transparency.css",

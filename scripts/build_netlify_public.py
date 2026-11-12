@@ -175,6 +175,71 @@ RESTRICTED_RUNTIME_DIRS = {
     "histoire-de-vie",
 }
 
+# La structure HTML de ces espaces est publique, mais le contenu et les actions
+# des utilisateurs ne doivent jamais être intégrés au site statique. Un nouveau
+# fichier même .html/.js/.svg dans ces dossiers doit être validé explicitement.
+# Toute autorisation réelle reste impérativement côté serveur (Auth, RLS, Edge).
+PUBLIC_PRIVATE_SHELL_FILES = frozenset({
+    Path("Admin/sinjira-analytics.html"),
+    Path("Admin/sinjira/index.html"),
+    Path("Admin/sinjira/licences.html"),
+    Path("admin/index.html"),
+    Path("admin/sinjira-analytics.html"),
+    Path("admin/sinjira/heritage.html"),
+    Path("admin/sinjira/index.html"),
+    Path("admin/sinjira/licences.html"),
+    Path("admin/sinjira/precommandes-readiness.html"),
+    Path("admin/sinjira/precommandes.html"),
+    Path("app/index.html"),
+    Path("compte/bibliotheque-jeux.html"),
+    Path("compte/bibliotheque-ressources.html"),
+    Path("compte/bibliotheque-romans.html"),
+    Path("compte/bibliotheque.html"),
+    Path("compte/blocages.html"),
+    Path("compte/communaute.html"),
+    Path("compte/confidentialite-joueur.html"),
+    Path("compte/connexion.html"),
+    Path("compte/contributions.html"),
+    Path("compte/documents.html"),
+    Path("compte/emploi.html"),
+    Path("compte/histoire-de-vie.html"),
+    Path("compte/index.html"),
+    Path("compte/inscription.html"),
+    Path("compte/jetons.html"),
+    Path("compte/licences.html"),
+    Path("compte/liseuse.html"),
+    Path("compte/marche.html"),
+    Path("compte/mes-achats.html"),
+    Path("compte/mes-commentaires.html"),
+    Path("compte/mes-lectures.html"),
+    Path("compte/mes-parties.html"),
+    Path("compte/mes-personnages.html"),
+    Path("compte/messages-personnage.html"),
+    Path("compte/messages-reels.html"),
+    Path("compte/messages.html"),
+    Path("compte/mfa.html"),
+    Path("compte/moderation.html"),
+    Path("compte/mon-ia.html"),
+    Path("compte/mon-personnage.html"),
+    Path("compte/monde-parallele.html"),
+    Path("compte/mot-de-passe-oublie.html"),
+    Path("compte/notifications.html"),
+    Path("compte/parametres.html"),
+    Path("compte/playtests.html"),
+    Path("compte/profil.html"),
+    Path("compte/projet.html"),
+    Path("compte/registre-personnel.html"),
+    Path("compte/regles-communaute.html"),
+    Path("compte/reinitialiser-mot-de-passe.html"),
+    Path("compte/relations.html"),
+    Path("compte/rencontres.html"),
+    Path("compte/reseau-personnage.html"),
+    Path("compte/securite.html"),
+    Path("compte/signaler-deces.html"),
+    Path("compte/vie-privee.html"),
+    Path("histoire-de-vie/remise.html"),
+})
+
 RUNTIME_WEB_SUFFIXES = {
     ".html",
     ".htm",
@@ -517,7 +582,7 @@ def relative_path_allowed(rel: Path) -> bool:
     # accepter par défaut un futur artefact de maintenance, de configuration
     # ou de données techniques.
     if parts[0] in RESTRICTED_RUNTIME_DIRS:
-        return rel.suffix.lower() in RUNTIME_WEB_SUFFIXES
+        return rel in PUBLIC_PRIVATE_SHELL_FILES
 
     # Les assets runtime ne doivent pas embarquer leurs README de maintenance.
     if parts[0] == "assets" and rel.suffix.lower() in {".md", ".txt", ".toml"}:
