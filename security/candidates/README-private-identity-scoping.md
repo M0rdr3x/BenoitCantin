@@ -72,6 +72,44 @@ Le garde Python associé ne teste que la **structure SQL** et six
 mutations artificielles. Il ne prouve aucune des assertions
 d'intégration précédentes.
 
+## Tests SQL fonctionnels supplémentaires — 11 novembre 2026
+
+La PR #843 contient désormais un banc **pgTAP Supabase local** généré à
+partir du candidat. Le générateur interdit toute sortie arbitraire, contrôle
+la structure rollback-only du candidat et place les essais sous une unique
+transaction `BEGIN ... ROLLBACK`. L'exécution autonome de la fixture est
+bloquée par un contrôle d'`application_name`. **Aucun rôle ou compte réel
+du projet hébergé n'est interrogé.**
+
+- **24 assertions** vérifient les privilèges et les résultats effectifs de
+  `private.is_sinjira_admin` et `private.project_access_rank` sous les
+  rôles SQL `anon`, `authenticated` et `service_role`. Les identités
+  et les projets sont fictifs. Le compte propriétaire de la fixture
+  respecte l'exigence du trigger sans publier l'adresse du propriétaire.
+- **4 assertions RLS** évaluent les lectures de `public.projects` :
+  anonyme (projets publics seuls), testeur, joueur et administrateur.
+- Les migrations locales actuelles **ne reproduisent pas complètement les
+  droits et politiques en production** : le premier essai RLS a rencontré
+  l'absence du `GRANT SELECT` local pour `anon` ; le second, un appel de
+  `project_access_rank` sans le droit nécessaire depuis une ancienne
+  politique de test. **Nous n'avons accordé aucun droit supplémentaire
+  au serveur de production et n'avons pas rendu l'autre helper exécutable
+  par `anon`.**
+- Les quatre assertions RLS sont donc exercées avec une **copie
+  transactionnelle des deux politiques de lecture projets et du GRANT
+  actuellement observés dans les catalogues du projet hébergé**, et tous
+  ces changements sont annulés au `ROLLBACK` final.
+- **Cette configuration vérifie le candidat contre un instantané des
+  politiques de production; elle ne prouve pas la convergence des
+  migrations locales et de l'hébergement.** La correction durable de
+  cette divergence de migrations, suivie d'un test de staging non
+  simulé, constitue un blocage distinct lié à #438.
+
+Les résultats du job GitHub Actions et toute erreur doivent être
+conservés dans la PR. Même si pgTAP réussit, ne jamais promouvoir ce SQL
+sans essai de vrai JWT signé, vérification des permissions HTTP/GraphQL et
+validation des politiques RLS effectivement déployées.
+
 ## Conditions avant tout déploiement
 
 Un responsable doit confirmer les appels indirects sous contexte
