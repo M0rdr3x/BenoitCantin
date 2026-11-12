@@ -118,8 +118,8 @@ def active_rpc(token: str) -> None:
     })
     require(200 <= result.status < 300,
             f"une session AAL2 ACTIVE doit modifier ses paramètres, HTTP {result.status}")
-    require(isinstance(result.body, dict) and result.body.get("ok") is True,
-            "la RPC active ne renvoie pas de confirmation valide")
+    require(isinstance(result.body, dict) and result.body.get("notify_high_risk") is True,
+            "la RPC active ne renvoie pas ses paramètres mis à jour")
 
 
 def revoked_rpcs(token: str) -> None:
