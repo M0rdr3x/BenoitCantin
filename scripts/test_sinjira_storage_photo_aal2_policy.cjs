@@ -43,10 +43,10 @@ for(const [verb,name,clauses] of policies){
 }
 for(const bucket of buckets)ok(source.includes("id IN ('sinjira-character-sources','sinjira-character-submissions')"),
   'Preflight includes '+bucket);
-no(/\bDROP\s+POLICY\b/i.test(source),'Never drop existing owner rules');
-no(/\bALTER\s+TABLE[^;]*DISABLE\s+ROW\s+LEVEL\s+SECURITY\b/i.test(source),'Never disable RLS');
-no(/\bGRANT\s+/i.test(source),'Never grant permissions');
-no(/\bservice_role\s*=|\bservice_role\b.+WITH CHECK/i.test(source),'No service-role access override');
+no(/\bDROP\s+POLICY\b/i.test(clean),'Never drop existing owner rules');
+no(/\bALTER\s+TABLE[^;]*DISABLE\s+ROW\s+LEVEL\s+SECURITY\b/i.test(clean),'Never disable RLS');
+no(/\bGRANT\s+/i.test(clean),'Never grant permissions');
+no(/\bservice_role\s*=|\bservice_role\b.+WITH CHECK/i.test(clean),'No service-role access override');
 no(/\buser_metadata\b|\braw_user_meta_data\b/i.test(source),'No user-editable authorization claims');
 no(/\bCREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\b/i.test(source),'No privileged helper functions');
 no(/\bUPDATE\s+storage\.objects\b|\bDELETE\s+FROM\s+storage\.objects\b/i.test(source),'No manual Storage changes');
