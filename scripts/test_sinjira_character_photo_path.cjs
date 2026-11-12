@@ -62,8 +62,14 @@ assert.match(file,/const photo_path=body\.photo_path\?\?null/);
 assert.match(file,/photo_path!==null && !isCanonicalRegistryPhotoPath\(photo_path,user\.id\)/);
 assert.match(file,/code:'INVALID_CHARACTER_PHOTO_PATH'/);
 assert.doesNotMatch(file,/String\(photo_path\)\.startsWith/);
-assert.ok(file.indexOf('isCanonicalRegistryPhotoPath(photo_path,user.id)') <
- file.indexOf("service.from('character_submissions')"),
- 'Vérifier le chemin avant une écriture ou lecture de dossier');
+// Contrôler l'ordre DANS le handler HTTP : les helpers de diagnostic peuvent
+// relire des dossiers, mais ne reçoivent jamais une photo brute du client.
+const serveStart=file.indexOf('Deno.serve(async(req)=>{');
+assert.ok(serveStart>=0,'Gestionnaire HTTP du Registre présent');
+const route=file.slice(serveStart);
+const photoGuard=route.indexOf('isCanonicalRegistryPhotoPath(photo_path,user.id)');
+const firstStateRead=route.indexOf("service.from('character_submissions')");
+assert.ok(photoGuard>=0&&firstStateRead>=0&&photoGuard<firstStateRead,
+ 'Vérifier le chemin photo avant toute lecture ou écriture du dossier dans le handler');
 console.log('PASS SINJIRA photo source Edge : '+assertions+
   ' assertions sur la vraie fonction, sans requête ou écriture réelle.');
