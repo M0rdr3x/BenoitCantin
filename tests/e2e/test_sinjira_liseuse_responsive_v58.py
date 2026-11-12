@@ -140,11 +140,26 @@ def run(playwright, engine, origin):
           window.__v63Anchor=anchor;
           const bounds=viewer.getBoundingClientRect();
           const pageBounds=text.getBoundingClientRect();
+          const style=getComputedStyle(text);
+          const px=Math.min(pageBounds.right-8,Math.max(
+            pageBounds.left+8,pageBounds.left+parseFloat(style.paddingLeft)+18));
+          const py=Math.min(bounds.bottom-12,bounds.top+
+            Math.max(24,Math.min(85,bounds.height*.14)));
+          const pos=document.caretPositionFromPoint?.(px,py);
+          const fallback=document.caretRangeFromPoint?.(px,py);
           return {available:Boolean(anchor),offset:anchor?.offset||0,
             position:viewer.scrollTop,viewerTop:bounds.top,
             viewerBottom:bounds.bottom,viewportHeight:innerHeight,
             textLeft:pageBounds.left,textRight:pageBounds.right,
-            textNodes:text.childNodes.length};
+            textNodes:text.childNodes.length,x:px,y:py,
+            caretNodeType:pos?.offsetNode?.nodeType,
+            caretInside:pos?.offsetNode?text.contains(pos.offsetNode):null,
+            caretOffset:pos?.offset,
+            fallbackNodeType:fallback?.startContainer?.nodeType,
+            fallbackInside:fallback?.startContainer?
+              text.contains(fallback.startContainer):null,
+            caretApi:typeof document.caretPositionFromPoint,
+            rangeApi:typeof document.caretRangeFromPoint};
         }""")
         assert anchored["available"],("V63: caret incapable de repérer le texte",anchored)
         assert anchored["position"]>300,anchored
