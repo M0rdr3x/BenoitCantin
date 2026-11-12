@@ -1,0 +1,544 @@
+{
+  "schema": "nova-matrice-juridique-p0/v1",
+  "date": "2026-11-08",
+  "status": "INVENTAIRE_CANDIDAT_NON_ADOPTE",
+  "audit_reference": "data/audit-completude-programme-nova-2026-11-05.json",
+  "baseline_points": 47,
+  "maximum_points": 100,
+  "increment_at_creation": 0,
+  "independent_juridical_audit_completed": false,
+  "jurisdictions": [
+    "QUEBEC_DANS_CANADA",
+    "QUEBEC_SOUVERAIN_HYPOTHETIQUE"
+  ],
+  "interpretation": "Une proposition, un contrôle automatisé ou une référence externe ne prouve pas la conformité juridique. Les avis signés, décisions et preuves restent à obtenir.",
+  "cases": [
+    {
+      "id": "J01",
+      "objet": "Fiscalité provinciale et deux instruments",
+      "domaine": "FINANCES",
+      "source": "official/reference/finances.md",
+      "priority": "P0_REVUE",
+      "statut": "A_EXAMINER",
+      "QUEBEC_DANS_CANADA": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Préciser les prélèvements que Québec peut légalement modifier sans abolir les impôts fédéraux.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "QUEBEC_SOUVERAIN_HYPOTHETIQUE": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Distinguer une compétence fiscale nationale hypothétique de toute compétence déjà acquise.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "required_evidence": "Inventaire G0.16x; avis de compétence; assiettes et budget décennal.",
+      "affected_rights_and_recourses_reviewed": null,
+      "budget_and_workforce_reviewed": null,
+      "consultations_completed": null,
+      "independent_legal_opinion": null,
+      "adoption_decision": null,
+      "evidence_urls": [],
+      "owner_real_name": null,
+      "deadline_authorized": null
+    },
+    {
+      "id": "J02",
+      "objet": "Mécanisme contre l'évasion et les paradis fiscaux",
+      "domaine": "FINANCES",
+      "source": "official/working/avant-projet-loi-cadre-transition-fiscale-nova-g0-16y-v1.md",
+      "priority": "P0_REVUE",
+      "statut": "A_EXAMINER",
+      "QUEBEC_DANS_CANADA": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Examiner compétence provinciale, recouvrement net et interaction avec les lois fédérales.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "QUEBEC_SOUVERAIN_HYPOTHETIQUE": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Examiner régime fiscal international et conventions éventuelles sans présumer de recettes.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "required_evidence": "Base légale; rendement net incrémental; coûts de perception; contestations; audit.",
+      "affected_rights_and_recourses_reviewed": null,
+      "budget_and_workforce_reviewed": null,
+      "consultations_completed": null,
+      "independent_legal_opinion": null,
+      "adoption_decision": null,
+      "evidence_urls": [],
+      "owner_real_name": null,
+      "deadline_authorized": null
+    },
+    {
+      "id": "J03",
+      "objet": "Taxes municipales et financement des réseaux",
+      "domaine": "FINANCES",
+      "source": "official/working/rapport-g0-16x-concordance-fiscale-et-gouvernance-2026-v1.md",
+      "priority": "P0_REVUE",
+      "statut": "A_EXAMINER",
+      "QUEBEC_DANS_CANADA": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Examiner pouvoirs municipaux délégués et continuité des budgets, de l'eau et des infrastructures.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "QUEBEC_SOUVERAIN_HYPOTHETIQUE": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Définir les pouvoirs locaux éventuels et le mécanisme de financement dans le régime proposé.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "required_evidence": "Comptes locaux; transferts éliminés en consolidation; entretien; avis des municipalités.",
+      "affected_rights_and_recourses_reviewed": null,
+      "budget_and_workforce_reviewed": null,
+      "consultations_completed": null,
+      "independent_legal_opinion": null,
+      "adoption_decision": null,
+      "evidence_urls": [],
+      "owner_real_name": null,
+      "deadline_authorized": null
+    },
+    {
+      "id": "J04",
+      "objet": "Pensions, cotisations et droits acquis",
+      "domaine": "DROITS",
+      "source": "official/working/avant-projet-loi-cadre-transition-fiscale-nova-g0-16y-v1.md",
+      "priority": "P0_REVUE",
+      "statut": "A_EXAMINER",
+      "QUEBEC_DANS_CANADA": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Conserver les compétences et obligations fédérales/provinciales actuelles; vérifier prestations et droits.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "QUEBEC_SOUVERAIN_HYPOTHETIQUE": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Établir succession et financement des pensions, prestations et régimes contributifs.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "required_evidence": "Études actuarielles; risques; mécanismes de recours; plan de paiement continu.",
+      "affected_rights_and_recourses_reviewed": null,
+      "budget_and_workforce_reviewed": null,
+      "consultations_completed": null,
+      "independent_legal_opinion": null,
+      "adoption_decision": null,
+      "evidence_urls": [],
+      "owner_real_name": null,
+      "deadline_authorized": null
+    },
+    {
+      "id": "J05",
+      "objet": "Réforme électorale à deux tours",
+      "domaine": "INSTITUTIONS",
+      "source": "official/reference/programme.md",
+      "priority": "P0_REVUE",
+      "statut": "A_EXAMINER",
+      "QUEBEC_DANS_CANADA": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Vérifier les modifications législatives nécessaires et la compatibilité avec les garanties démocratiques.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "QUEBEC_SOUVERAIN_HYPOTHETIQUE": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Réévaluer l'ensemble du cadre constitutionnel électoral proposé et ses garanties.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "required_evidence": "Simulation 127 sièges, régions, égalité de représentation et avis indépendant.",
+      "affected_rights_and_recourses_reviewed": null,
+      "budget_and_workforce_reviewed": null,
+      "consultations_completed": null,
+      "independent_legal_opinion": null,
+      "adoption_decision": null,
+      "evidence_urls": [],
+      "owner_real_name": null,
+      "deadline_authorized": null
+    },
+    {
+      "id": "J06",
+      "objet": "Vote à distance et preuve du scrutin",
+      "domaine": "INSTITUTIONS",
+      "source": "official/reference/corpus.md",
+      "priority": "P0_REVUE",
+      "statut": "A_EXAMINER",
+      "QUEBEC_DANS_CANADA": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Ne pas activer sans autorisation, audit indépendant, sécurité du secret et recours.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "QUEBEC_SOUVERAIN_HYPOTHETIQUE": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Même exigence de vérifiabilité et de secret; préciser l'autorité de certification.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "required_evidence": "Modèle de menace; tests contradictoires; solution papier; plan de panne.",
+      "affected_rights_and_recourses_reviewed": null,
+      "budget_and_workforce_reviewed": null,
+      "consultations_completed": null,
+      "independent_legal_opinion": null,
+      "adoption_decision": null,
+      "evidence_urls": [],
+      "owner_real_name": null,
+      "deadline_authorized": null
+    },
+    {
+      "id": "J07",
+      "objet": "Référendums, pétitions et révocation",
+      "domaine": "INSTITUTIONS",
+      "source": "official/reference/corpus.md",
+      "priority": "P0_REVUE",
+      "statut": "A_EXAMINER",
+      "QUEBEC_DANS_CANADA": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Vérifier compétence, seuils légaux, protection contre l'arbitraire et procédures judiciaires.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "QUEBEC_SOUVERAIN_HYPOTHETIQUE": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Prévoir équilibre des pouvoirs, seuils et protection des minorités constitutionnelles.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "required_evidence": "Textes de procédure; étude de proportionnalité; droit à contestation; consultation.",
+      "affected_rights_and_recourses_reviewed": null,
+      "budget_and_workforce_reviewed": null,
+      "consultations_completed": null,
+      "independent_legal_opinion": null,
+      "adoption_decision": null,
+      "evidence_urls": [],
+      "owner_real_name": null,
+      "deadline_authorized": null
+    },
+    {
+      "id": "J08",
+      "objet": "Services de santé et main-d'œuvre",
+      "domaine": "SERVICES",
+      "source": "official/working/plan-execution-nova-sinjira-v1.md",
+      "priority": "P0_REVUE",
+      "statut": "A_EXAMINER",
+      "QUEBEC_DANS_CANADA": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Vérifier RAMQ, Loi canadienne sur la santé, contrats, conventions et accès régional.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "QUEBEC_SOUVERAIN_HYPOTHETIQUE": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Prévoir continuité, régime de financement et garanties d'accès sans rupture.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "required_evidence": "Coûts complets; plan RH; accès régional; consultations professionnelles; droits des patients.",
+      "affected_rights_and_recourses_reviewed": null,
+      "budget_and_workforce_reviewed": null,
+      "consultations_completed": null,
+      "independent_legal_opinion": null,
+      "adoption_decision": null,
+      "evidence_urls": [],
+      "owner_real_name": null,
+      "deadline_authorized": null
+    },
+    {
+      "id": "J09",
+      "objet": "Égalité, langue, vie privée et droits numériques",
+      "domaine": "DROITS",
+      "source": "official/reference/corpus.md",
+      "priority": "P0_REVUE",
+      "statut": "A_EXAMINER",
+      "QUEBEC_DANS_CANADA": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Contrôler les mesures selon les chartes, la protection des renseignements et les recours.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "QUEBEC_SOUVERAIN_HYPOTHETIQUE": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Formuler protections constitutionnelles proposées avec contrôle indépendant.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "required_evidence": "Analyse d'impact sur les droits; proportionnalité; voies de recours; confidentialité.",
+      "affected_rights_and_recourses_reviewed": null,
+      "budget_and_workforce_reviewed": null,
+      "consultations_completed": null,
+      "independent_legal_opinion": null,
+      "adoption_decision": null,
+      "evidence_urls": [],
+      "owner_real_name": null,
+      "deadline_authorized": null
+    },
+    {
+      "id": "J10",
+      "objet": "Premières Nations, territoire et ressources",
+      "domaine": "DROITS",
+      "source": "official/reference/corpus.md",
+      "priority": "P0_REVUE",
+      "statut": "A_EXAMINER",
+      "QUEBEC_DANS_CANADA": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Vérifier droits ancestraux et issus de traités ainsi que les obligations de consultation applicables.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "QUEBEC_SOUVERAIN_HYPOTHETIQUE": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Préciser par négociation les relations et garanties avec les nations concernées.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "required_evidence": "Avis juridique spécialisé; participation des nations concernées; droits et traités.",
+      "affected_rights_and_recourses_reviewed": null,
+      "budget_and_workforce_reviewed": null,
+      "consultations_completed": null,
+      "independent_legal_opinion": null,
+      "adoption_decision": null,
+      "evidence_urls": [],
+      "owner_real_name": null,
+      "deadline_authorized": null
+    },
+    {
+      "id": "J11",
+      "objet": "Transition souveraine, actifs, dette et reconnaissance",
+      "domaine": "SOUVERAINETE",
+      "source": "official/working/feuille-route-completude-47-100-nova-v1.md",
+      "priority": "P0_REVUE",
+      "statut": "A_EXAMINER",
+      "QUEBEC_DANS_CANADA": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Aucune activation unilatérale présumée; examiner les procédures et obligations existantes.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "QUEBEC_SOUVERAIN_HYPOTHETIQUE": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Évaluer mandat démocratique, négociations, succession, monnaie, frontières et traités.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "required_evidence": "Renvoi relatif à la sécession; bilans négociés; dépenses; tests de continuité.",
+      "affected_rights_and_recourses_reviewed": null,
+      "budget_and_workforce_reviewed": null,
+      "consultations_completed": null,
+      "independent_legal_opinion": null,
+      "adoption_decision": null,
+      "evidence_urls": [],
+      "owner_real_name": null,
+      "deadline_authorized": null
+    },
+    {
+      "id": "J12",
+      "objet": "Statuts, autorisation électorale et financement partisan",
+      "domaine": "ADOPTION",
+      "source": "official/reference/statuts.md",
+      "priority": "P0_REVUE",
+      "statut": "A_EXAMINER",
+      "QUEBEC_DANS_CANADA": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Vérifier autorisation auprès d'Élections Québec, nominations, membres et financement.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "QUEBEC_SOUVERAIN_HYPOTHETIQUE": {
+        "legal_status": "NON_VERIFIE",
+        "question": "Distinguer toute nouvelle autorité électorale hypothétique du droit actuel applicable tant que province.",
+        "review_evidence": {
+          "opinion_reference_url": null,
+          "opinion_date": null,
+          "independent_reviewer_mandate_reference_url": null,
+          "reviewer_independence_checked": null,
+          "rights_and_remedies_reference_url": null,
+          "budget_and_workforce_reference_url": null,
+          "consultations_report_reference_url": null
+        }
+      },
+      "required_evidence": "Décisions d'assemblée, pièce d'autorisation, responsabilités et avis de conformité.",
+      "affected_rights_and_recourses_reviewed": null,
+      "budget_and_workforce_reviewed": null,
+      "consultations_completed": null,
+      "independent_legal_opinion": null,
+      "adoption_decision": null,
+      "evidence_urls": [],
+      "owner_real_name": null,
+      "deadline_authorized": null
+    }
+  ],
+  "external_reference_urls": [
+    "https://laws-lois.justice.gc.ca/fra/const/TexteComplet.html?wbdisable=true",
+    "https://decisions.scc-csc.ca/scc-csc/scc-csc/fr/1643/1/document.do",
+    "https://www.electionsquebec.qc.ca/comprendre/comprendre-le-financement-politique/obtenir-le-droit-de-collecter-des-contributions-ou-de-faire-des-depenses/"
+  ],
+  "completion_rule": "Une ligne n'est franchie qu'après avis juridique indépendant daté, analyse de droits/recours, analyse budgétaire et RH, consultation applicable et décision de l'autorité compétente; les deux scénarios sont évalués séparément.",
+  "quality_gate": "assets/matrice-juridique-p0-core.mjs",
+  "review_status_semantics": "Une conclusion est seulement déclarée documentée après la vérification syntaxique des sources et métadonnées. Aucun contrôle automatique ne certifie leur authenticité ni la conformité juridique.",
+  "reviewed_contexts_documented_at_creation": 0,
+  "independent_juridical_audit_reference_url": null,
+  "independent_juridical_audit_date": null
+}
