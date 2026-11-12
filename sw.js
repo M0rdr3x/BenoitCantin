@@ -1,4 +1,4 @@
-const CACHE='benoitcantin-v24-4-95-public-3';
+const CACHE='benoitcantin-v24-4-96-private-cache-guard';
 const CORE=[
   '/','/offline.html','/manifest.webmanifest','/transparence-ia.html',
   '/assets/css/site.css','/assets/css/browser-compat-v24-4-22.css','/assets/css/ai-transparency.css','/assets/css/home-v24-4-12.css','/assets/css/v19-pro.css','/assets/css/v24-platform.css','/assets/css/v24-3-2-fixes.css','/assets/css/v24-3-3-fixes.css','/assets/css/fracture-engine.css','/assets/css/sinjira-assistant.css','/assets/css/sinjira-mobile-app-v24-4-94.css','/assets/css/sinjira-mobile-account-shell-v24-4-95.css',
@@ -6,18 +6,102 @@ const CORE=[
   '/assets/icons/benoit-sigil.svg','/android-chrome-192x192.png','/android-chrome-512x512.png','/assets/media/sinjira-emblem.webp','/assets/media/sinjira-registre.webp','/assets/media/nova-logo.webp','/assets/media/sinjira-livre-1-cover-480.webp','/assets/media/fracture-card-back.webp',
   '/projets/sinjira/','/projets/sinjira/romans/','/projets/sinjira/romans/lire-demo.html','/projets/sinjira/registre/','/projets/sinjira/communaute/','/projets/sinjira/codex/','/projets/sinjira/monde-parallele/','/projets/sinjira/marche/','/projets/sinjira/jeux/fracture-du-reseau-mere/','/projets/projet-nova/'
 ];
-function cacheableResponse(resp){const cc=String(resp.headers.get('Cache-Control')||'').toLowerCase();return resp.ok&&cc.indexOf('no-store')===-1}
-self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
-self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
+// Ne jamais mettre en cache un chemin privé, même sans en-tête HTTP protecteur.
+function isPrivatePath(pathname){
+  const path=pathname.toLowerCase();
+  if(path==='/administration'||path==='/administration.html')return true;
+  return ['/app','/compte','/admin','/histoire-de-vie','/supabase','/api','/auth','/.netlify/functions'].some(prefix=>path===prefix||path.startsWith(prefix+'/'));
+}
+// Liste fermée : pas de cache opportuniste d'API, de JSON ou de PDF privé.
+function isPublicCachePath(pathname){
+  if(CORE.includes(pathname))return true;
+  return /^\/(?:assets\/|projets\/)/.test(pathname)
+    && /\.(?:css|js|mjs|png|jpe?g|gif|webp|avif|svg|ico|woff2?|ttf|otf|mp3|ogg|wav|mp4|webm|webmanifest)$/i.test(pathname);
+}
+function cacheableResponse(request,resp){
+  // Une réponse associée à des cookies/session ne doit jamais être persistée.
+  if(request.credentials!=='omit')return false;
+  if(!resp||!resp.ok||resp.status!==200||resp.redirected||['opaque','opaqueredirect','error'].includes(resp.type))return false;
+  const url=new URL(request.url);
+  if(url.origin!==location.origin||url.search||url.pathname.includes('%')||isPrivatePath(url.pathname)||!isPublicCachePath(url.pathname))return false;
+  if(request.headers.has('authorization'))return false;
+  if(resp.url){
+    try{if(new URL(resp.url).origin!==url.origin)return false}
+    catch(_error){return false}
+  }
+  const cc=String(resp.headers.get('Cache-Control')||'');
+  const surrogate=String(resp.headers.get('Surrogate-Control')||'');
+  if(/(?:^|,)\s*(?:no-store|no-cache|private)\b/i.test(cc)||/(?:^|,)\s*(?:no-store|no-cache|private)\b/i.test(surrogate))return false;
+  if(/\bno-cache\b/i.test(String(resp.headers.get('Pragma')||'')))return false;
+  const vary=String(resp.headers.get('Vary')||'').toLowerCase().split(',').map(x=>x.trim());
+  if(vary.some(x=>x==='*'||x==='authorization'||x==='cookie'))return false;
+  if(resp.headers.get('Set-Cookie'))return false;
+  return true;
+}
+// Lire exclusivement le cache appartenant à cette version du site.
+function cachedPublic(request){return caches.open(CACHE).then(cache=>cache.match(request));}
+function anonymousPublicRequest(request){return new Request(request,{cache:'no-store',credentials:'omit',redirect:'error'});}
+self.addEventListener('install',e=>e.waitUntil(
+  caches.open(CACHE).then(async cache=>{
+    // Attendre tous les téléchargements avant de refuser l'installation.
+    // Un précache incomplet ne doit jamais devenir une version active.
+    const results=await Promise.allSettled(CORE.map(async path=>{
+      const request=anonymousPublicRequest(new URL(path,location.origin));
+      const response=await fetch(request);
+      if(!cacheableResponse(request,response))throw new Error('précache public non admissible');
+      await cache.put(request,response);
+    }));
+    if(results.some(result=>result.status!=='fulfilled')){
+      await caches.delete(CACHE);
+      throw new Error('précache public incomplet ou non admissible');
+    }
+  }).then(()=>self.skipWaiting())
+));
+self.addEventListener('activate',e=>e.waitUntil(
+  caches.keys().then(keys=>Promise.all(keys
+    .filter(k=>k.startsWith('benoitcantin-')&&k!==CACHE)
+    .map(k=>caches.delete(k)))).then(()=>self.clients.claim())
+));
 self.addEventListener('fetch',e=>{
   const r=e.request,u=new URL(r.url);
   if(r.method!=='GET'||u.origin!==location.origin)return;
-  const privatePath=u.pathname==='/app'||u.pathname.startsWith('/app/')||u.pathname==='/compte'||u.pathname.startsWith('/compte/')||u.pathname==='/Admin'||u.pathname.startsWith('/Admin/')||u.pathname==='/admin'||u.pathname.startsWith('/admin/')||u.pathname==='/histoire-de-vie'||u.pathname.startsWith('/histoire-de-vie/')||u.pathname==='/supabase'||u.pathname.startsWith('/supabase/');
-  if(privatePath){e.respondWith(fetch(new Request(r,{cache:'no-store'})).catch(()=>caches.match('/offline.html')));return}
-  if(r.destination==='document'){
-    e.respondWith(fetch(new Request(r,{cache:'no-store'})).then(resp=>{if(cacheableResponse(resp)){const cp=resp.clone();caches.open(CACHE).then(c=>c.put(r,cp))}return resp}).catch(()=>caches.match(r).then(x=>x||caches.match('/offline.html'))));return;
+  // Les chemins inconnus, URL encodées, requêtes avec token et API passent
+  // seulement par le réseau, sans lecture ni écriture dans Cache Storage.
+  if(isPrivatePath(u.pathname)||!isPublicCachePath(u.pathname)||u.search||
+      u.pathname.includes('%')||r.headers.has('authorization')||
+      r.headers.has('range')||r.cache==='no-store'||r.cache==='no-cache'){
+    e.respondWith(fetch(new Request(r,{cache:'no-store'})).catch(error=>{
+      // Une API privée ne doit pas recevoir offline.html en remplacement de JSON.
+      if(r.mode!=='navigate')throw error;
+      return cachedPublic('/offline.html').then(page=>{if(page)return page;throw error;});
+    }));
+    return;
   }
-  const liveAsset=/\/assets\/(?:js|css)\//.test(u.pathname);
-  if(liveAsset){e.respondWith(fetch(new Request(r,{cache:'no-store'})).then(resp=>{if(cacheableResponse(resp))caches.open(CACHE).then(c=>c.put(r,resp.clone()));return resp}).catch(()=>caches.match(r).then(x=>x||caches.match(u.pathname))));return}
-  e.respondWith(caches.match(r).then(cached=>cached||fetch(r).then(resp=>{if(cacheableResponse(resp)&&u.pathname.indexOf('/documents/')===-1)caches.open(CACHE).then(c=>c.put(r,resp.clone()));return resp})));
+  if(r.destination==='document'){
+    const publicRequest=anonymousPublicRequest(r);
+    e.respondWith(fetch(publicRequest).then(resp=>{
+      if(cacheableResponse(publicRequest,resp)){
+        const cp=resp.clone();
+        caches.open(CACHE).then(c=>c.put(r,cp));
+      }
+      return resp;
+    }).catch(()=>cachedPublic(r).then(x=>x||cachedPublic('/offline.html'))));
+    return;
+  }
+  // Le code JS/CSS doit rester network-first : une correction de sécurité ne
+  // doit pas être masquée par une version ancienne en Cache Storage.
+  const liveAsset=/\.(?:js|mjs|css)$/i.test(u.pathname);
+  if(liveAsset){
+    const publicRequest=anonymousPublicRequest(r);
+    e.respondWith(fetch(publicRequest).then(resp=>{
+      if(cacheableResponse(publicRequest,resp))caches.open(CACHE).then(c=>c.put(r,resp.clone()));
+      return resp;
+    }).catch(()=>cachedPublic(r).then(x=>x||cachedPublic(u.pathname))));
+    return;
+  }
+  const publicRequest=anonymousPublicRequest(r);
+  e.respondWith(cachedPublic(r).then(cached=>cached||fetch(publicRequest).then(resp=>{
+    if(cacheableResponse(publicRequest,resp))caches.open(CACHE).then(c=>c.put(r,resp.clone()));
+    return resp;
+  })).catch(()=>cachedPublic('/offline.html')));
 });
