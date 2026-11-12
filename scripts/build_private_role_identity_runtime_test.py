@@ -25,10 +25,10 @@ def render() -> str:
     if not re.search(r"(?i)\bROLLBACK\s*;\s*$", source):
         raise ValueError("Candidat non rollback-only")
     checks = ASSERTIONS.read_text(encoding="utf-8", errors="strict").strip()
-    if not re.search(r"(?m)^SELECT plan\(24\);$", checks):
+    if not re.search(r"(?m)^SELECT plan\(28\);$", checks):
         raise ValueError("Plan pgTAP local incohérent")
-    if len(re.findall(r"(?m)^SELECT (?:ok|is)\(", checks)) != 24:
-        raise ValueError("Couverture de 24 assertions modifiée")
+    if len(re.findall(r"(?m)^SELECT (?:ok|is)\(", checks)) != 28:
+        raise ValueError("Couverture de 28 assertions modifiée")
     if re.search(r"(?im)^\s*(?:BEGIN|COMMIT|ROLLBACK)\s*;", checks):
         raise ValueError("Transaction interdite dans les assertions")
     if not checks.endswith("SELECT * FROM finish();"):
@@ -45,8 +45,8 @@ def self_test() -> None:
     assert "CREATE OR REPLACE FUNCTION private.project_access_rank" in sql
     assert "INSERT INTO auth.users" in sql
     assert "SET LOCAL ROLE" in sql
-    assert "SELECT plan(24);" in sql
-    print("OK : 24 assertions préparées dans une transaction rollback-only.")
+    assert "SELECT plan(28);" in sql
+    print("OK : 28 assertions préparées dans une transaction rollback-only.")
 
 
 def main() -> int:
