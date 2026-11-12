@@ -205,6 +205,48 @@ def run(playwright, engine, origin):
         assert large["documentWidth"]<=323,large
         assert large["articleWidth"]<=large["viewerWidth"]+3,large
         assert snapshot(page)["page"]==3,snapshot(page)
+
+        # V64 : après une police agrandie, changer l'orientation du téléphone
+        # doit conserver le caractère lu, pas uniquement un ratio d'écran.
+        before_rotation=page.evaluate("""async()=>{
+          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.10.1');
+          const viewer=document.querySelector('#reader-viewer');
+          const text=document.querySelector('#reader-text');
+          const anchor=m.captureReaderTextAnchor({viewer,text});
+          window.__v64RotateAnchor=anchor;
+          return {valid:Boolean(anchor),scroll:viewer.scrollTop};
+        }""")
+        assert before_rotation["valid"],(
+            "V64: ancre indisponible avant rotation",before_rotation
+        )
+        page.set_viewport_size({"width":568,"height":320})
+        page.wait_for_function("""()=>{
+          const v=document.querySelector('#reader-viewer');
+          return innerWidth===568&&v.dataset.readerLayout==='screens';
+        }""")
+        page.wait_for_timeout(220)
+        after_rotation=page.evaluate("""()=>{
+          const a=window.__v64RotateAnchor;
+          const viewer=document.querySelector('#reader-viewer');
+          if(!a?.node?.isConnected)return {valid:false};
+          const range=document.createRange();
+          range.setStart(a.node,a.offset);range.setEnd(a.node,a.offset+1);
+          const rect=Array.from(range.getClientRects()).find(r=>r.height>0);
+          return {
+            valid:Boolean(rect),
+            displacement:rect?Math.abs(
+              rect.top-viewer.getBoundingClientRect().top-a.relativeY):999,
+            scroll:viewer.scrollTop
+          };
+        }""")
+        assert after_rotation["valid"] and after_rotation["displacement"]<35,(
+            "V64: le passage lu se perd après une rotation simulée",
+            before_rotation,after_rotation
+        )
+        assert snapshot(page)["page"]==3,snapshot(page)
+        page.set_viewport_size({"width":320,"height":568})
+        page.wait_for_timeout(140)
+
         page.evaluate("document.querySelector('#reader-viewer').scrollTop=0")
         result=swipe(page,-130)
         assert result["consumed"] and snapshot(page)["page"]==3,result
