@@ -29,7 +29,7 @@ function check(text){
   // SQL preflight ends its VALUES rows with a parenthesis that closes the CTE.
   const preflightOwners=base(text,startQ,'\n),\nowner_rules AS (', 'owner query');
   assert.equal(preflightOwners,migrationOwners,'Les 7 expressions propriétaire doivent être identiques à la migration source');
-  const owners=(migrationOwners.match(/\('(?:char_source_|sinjira character photo own )/g)||[]).length;
+  const owners=(migrationOwners.match(/\('[^']+','(?:INSERT|SELECT|UPDATE|DELETE)','/g)||[]).length;
   assert.equal(owners,7,'Les 7 politiques propriétaires requises');
   for(const marker of [
     "p.roles=ARRAY['authenticated'::name]",
