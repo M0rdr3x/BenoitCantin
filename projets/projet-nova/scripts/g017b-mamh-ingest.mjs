@@ -82,6 +82,9 @@ async function main(){
     lineage[yr]={csvSha256:hash(dataB),descriptionSha256:hash(dictB),missingListSha256:hash(missingB),
       rowsInFile:panel.rawRowCount,municipalityRowsSelected:panel.localMunicipalitiesIncluded,
       missingCodesFromFile:missingCodes.length,
+      // Un SHA-256 calculé localement ne certifie pas la provenance de l'URL du MAMH.
+      publisherSourceAuthenticatedIndependently:false,
+      sourceHashMatchedAgainstIndependentPublishedReceipt:false,
       percentCoverageClaimAuthorized:false};
   }
   const compared=compareMamhPanels(panels[0],panels[1],{
@@ -99,6 +102,10 @@ async function main(){
       matchedMunicipalities:compared.matchedMunicipalities,
       unmatched2024:compared.unmatched2024,unmatched2025:compared.unmatched2025,
       officialNationalAggregationPermitted:compared.provinceWideConclusionAuthorized,
+      technicallyComparableCohortOnly:compared.technicalCohortComparable,
+      sourceOriginalityIndependentlyVerified:false,
+      proofOfProvinceMunicipalityTransferCancellation:false,
+      rawFileHashAloneProvesPublisher:false,
       annualAccountingValuesForMatchedMunicipalities:compared.matchedRows,
       aggregateOnlyIfAllGatesSatisfied:compared.aggregate,
       intergovernmentalTransferEliminationPerformed:false,
@@ -106,13 +113,21 @@ async function main(){
       auditableMeaningAndSourceBeforePolicy:true
     },
     programCompletionScoreChange:0,
-    actualMunicipalDataParsed:true,
+    localInputCsvParsed:true,
+    sourceYearsDeclaredByCaller:true,
+    realOfficialMamhCsvAuthenticated:false,
+    actualMunicipalDataParsed:false,
+    // L'appelant peut fournir des fichiers de test ou des fichiers non officiels :
+    // l'outil ne peut pas authentifier l'éditeur et interdit toute diffusion certifiée.
+    inputsFromOfficialPublisherIndependentlyAuthenticated:false,
+    officialProvincialMunicipalTotalsCertified:false,
     twoLevySystemFinanced:false,
     legalAndIndependentCertification:false
   };
   await writeFile(args.output,JSON.stringify(audit,null,2)+"\n","utf8");
   process.stdout.write(JSON.stringify({reportPath:args.output,years:[2024,2025],
     matchedMunicipalities:compared.matchedMunicipalities,verifiedProvinceWideAggregation:compared.provinceWideConclusionAuthorized,
+    independentPublisherAuthentication:false,
     taxRateEstablished:false})+"\n");
 }
 main().catch(e=>{process.stderr.write("Import rejected: "+e.message+"\n");process.exitCode=1;});

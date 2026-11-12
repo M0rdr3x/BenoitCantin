@@ -108,7 +108,12 @@ export function inspectMamhPanel({csvText,year,config,provenance,missingOrganism
   const missing=new Set(missingOrganismCodes);
   must([...missing].every(isCode),"INVALID_MISSING_CODE");
   must(!entities.some(x=>missing.has(x.code)),"MISSING_BUT_PRESENT_ORGANISM");
-  const completenessReady = Boolean(provenance.missingListCompleteForSamePeriod===true&&provenance.officialDictionaryChecked===true&&inspectedReal);
+  // Statut technique uniquement : ces déclarations sont fournies par le
+  // chargeur, non authentifiées par un reçu d'éditeur indépendant.
+  const technicalCompletenessReady=Boolean(
+    provenance.missingListCompleteForSamePeriod===true&&
+    provenance.officialDictionaryChecked===true&&inspectedReal);
+  const completenessReady=false; // Exhaustivité nationale non auditée.
   const metrics=config.metrics.map(x=>({id:x.id,accountCode:x.accountCode,meaning:x.meaning,basis:x.basis,consolidation:x.consolidation,unit:x.unit}));
   return {
     year,kind:provenance.kind,grain:config.grain,basis:config.basis,consolidation:config.consolidation,
@@ -116,8 +121,14 @@ export function inspectMamhPanel({csvText,year,config,provenance,missingOrganism
     rawRowCount:csv.rowCount,localMunicipalitiesIncluded:entities.length,
     missingMunicipalityCodes:[...missing].sort(),
     completenessReady,
+    technicalCompletenessReady,
     sourceFingerprint:inspectedReal?provenance.csvSha256:null,
-    officialSourceRecordImported:inspectedReal,
+    sourceBytesPresentedAsOfficialByCaller:inspectedReal,
+    officialSourceRecordImported:false,
+    // Un hachage des octets importés n'authentifie PAS leur origine MAMH.
+    // Une personne peut fournir une fixture et lui donner le type OFFICIAL_CSV_BYTES.
+    sourceOriginIndependentlyAuthenticated:false,
+    evidenceOfOriginalDownloadExternallyVerified:false,
     amountsUnit:"CAD_CENTS_EXACT",
     nationalPopulationCoverageVerified:false,
     novaFiscalModelAudited:false
@@ -149,12 +160,17 @@ export function compareMamhPanels(a,b,{dictionaryComparabilityApproved=false,cov
   const codesA=new Set(a.entities.map(x=>x.code)),codesB=new Set(b.entities.map(x=>x.code));
   const unmatched2024=[...codesA].filter(x=>!codesB.has(x)).sort();
   const unmatched2025=[...codesB].filter(x=>!codesA.has(x)).sort();
-  const comparable=Boolean(dictionaryComparabilityApproved&&coverageReviewed&&a.completenessReady&&b.completenessReady
-    &&a.officialSourceRecordImported&&b.officialSourceRecordImported
+  const comparable=Boolean(dictionaryComparabilityApproved&&coverageReviewed&&
+    a.technicalCompletenessReady&&b.technicalCompletenessReady&&
+    a.sourceBytesPresentedAsOfficialByCaller&&b.sourceBytesPresentedAsOfficialByCaller
     &&a.sourceFingerprint!==b.sourceFingerprint
     &&unmatched2024.length===0&&unmatched2025.length===0
     &&a.missingMunicipalityCodes.length===0&&b.missingMunicipalityCodes.length===0);
-  const aggregate=comparable?Object.fromEntries(a.metrics.map(m=>{
+  // Les critères ci-dessus vérifient la comparabilité technique d'un panel,
+  // mais PAS la provenance officielle, les comptes non locaux, les transferts,
+  // la complétude nationale ni la revue comptable indépendante.
+  // Cette fonction n'a aucune preuve indépendante de ces étapes.
+  const candidateAggregate=comparable?Object.fromEntries(a.metrics.map(m=>{
     const vals=matched.map(x=>x.metrics[m.id]);
     const hasMissing=vals.some(x=>x.year2024CadCents===null||x.year2025CadCents===null);
     const sum0=hasMissing?null:vals.reduce((s,x)=>s+x.year2024CadCents,0);
@@ -163,8 +179,17 @@ export function compareMamhPanels(a,b,{dictionaryComparabilityApproved=false,cov
       changeCadCents:sum0===null||sum1===null?null:sum1-sum0}];
   })):null;
   return {year2024:2024,year2025:2025,matchedMunicipalities:matched.length,unmatched2024,unmatched2025,
-    matchedRows:matched,aggregate,
-    provinceWideConclusionAuthorized:comparable,
+    matchedRows:matched,
+    // Réserver les agrégats non certifiés à un flux de travail explicite
+    // distinct; ne jamais les libérer comme agrégats provinciaux officiels ici.
+    aggregate:null,
+    technicalCohortComparable:comparable,
+    technicalCandidateAggregateUncertified:candidateAggregate,
+    provinceWideConclusionAuthorized:false,
+    officialSourceAuthenticityIndependentlyVerified:false,
+    intraGovernmentTransfersEliminated:false,
+    independentFiscalReviewSigned:false,
+    reasonForWithheldProvinceWideClaim:"PROVENANCE_ET_CONSOLIDATION_SANS_RECEPTION_INDEPENDANTE",
     verified2026NovaReplacementRevenueCad:null,
     official2026MunicipalForecastCad:null,
     doubleCountedProvinceToMunicipalTransfersEliminated:false,

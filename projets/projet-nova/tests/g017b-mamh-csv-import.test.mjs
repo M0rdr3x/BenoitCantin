@@ -70,3 +70,63 @@ test("Comparison: changed account code without dictionary approval rejected",()=
 test("Comparison: no sovereign or Nova budget invented",()=>assert.equal(compareMamhPanels(a,b).verified2026NovaReplacementRevenueCad,null));
 test("Comparison: transfer cancellation not automatically assumed",()=>assert.equal(compareMamhPanels(a,b).doubleCountedProvinceToMunicipalTransfersEliminated,false));
 test("Comparison: no score increment inferred",()=>assert.equal(compareMamhPanels(a,b).scoreIncrementEarned,false));
+
+test("une empreinte SHA-256 ne certifie pas l'origine officielle sans réception indépendante",()=>{
+ const alleged=(year,sha)=>({
+  kind:"OFFICIAL_CSV_BYTES",
+  csvSha256:sha.repeat(64),descriptionSha256:"c".repeat(64),
+  missingListSha256:"d".repeat(64),
+  downloadedYear:year,dictionaryYear:year,
+  retrievedAt:"2026-11-09",
+  officialDictionaryChecked:true,missingListCompleteForSamePeriod:true
+ });
+ // Ces octets sont EXACTEMENT les fixtures synthétiques du fichier de tests,
+ // même si un appelant les étiquette à tort "OFFICIAL_CSV_BYTES".
+ const p24=inspectMamhPanel({csvText:C24,year:2024,config,
+  provenance:alleged(2024,"a"),missingOrganismCodes:[]});
+ const p25=inspectMamhPanel({csvText:C24,year:2025,config,
+  provenance:alleged(2025,"b"),missingOrganismCodes:[]});
+ assert.equal(p24.technicalCompletenessReady,true);
+ assert.equal(p25.technicalCompletenessReady,true);
+ assert.equal(p24.completenessReady,false);
+ assert.equal(p25.completenessReady,false);
+ assert.equal(p24.sourceBytesPresentedAsOfficialByCaller,true);
+ assert.equal(p24.officialSourceRecordImported,false);
+ assert.equal(p25.officialSourceRecordImported,false);
+ assert.equal(p24.sourceOriginIndependentlyAuthenticated,false);
+ assert.equal(p25.evidenceOfOriginalDownloadExternallyVerified,false);
+ const compared=compareMamhPanels(p24,p25,{dictionaryComparabilityApproved:true,coverageReviewed:true});
+ assert.equal(compared.technicalCohortComparable,true);
+ assert.ok(compared.technicalCandidateAggregateUncertified.REVENUS);
+ assert.equal(compared.provinceWideConclusionAuthorized,false);
+ assert.equal(compared.aggregate,null);
+ assert.equal(compared.officialSourceAuthenticityIndependentlyVerified,false);
+ assert.equal(compared.intraGovernmentTransfersEliminated,false);
+ assert.equal(compared.independentFiscalReviewSigned,false);
+ assert.equal(compared.reasonForWithheldProvinceWideClaim,
+  "PROVENANCE_ET_CONSOLIDATION_SANS_RECEPTION_INDEPENDANTE");
+});
+test("modifier des drapeaux fournis par l'appelant ne vaut pas une approbation",()=>{
+ const official=(year,digest)=>inspectMamhPanel({csvText:C24,year,config,
+  provenance:{kind:"OFFICIAL_CSV_BYTES",csvSha256:digest.repeat(64),
+  descriptionSha256:"c".repeat(64),missingListSha256:"d".repeat(64),
+  downloadedYear:year,dictionaryYear:year,retrievedAt:"2026-11-09",
+  officialDictionaryChecked:true,missingListCompleteForSamePeriod:true},
+  missingOrganismCodes:[]});
+ const x=official(2024,"a"),y=official(2025,"b");
+ x.sourceOriginIndependentlyAuthenticated=true;
+ y.sourceOriginIndependentlyAuthenticated=true;
+ const r=compareMamhPanels(x,y,{dictionaryComparabilityApproved:true,coverageReviewed:true,
+  sourceReceiptsVerified:true,independentFiscalReviewSigned:true,
+  intergovernmentalTransfersEliminated:true});
+ assert.equal(r.technicalCohortComparable,true);
+ assert.equal(r.provinceWideConclusionAuthorized,false);
+ assert.equal(r.aggregate,null);
+});
+test("la comparaison des fixtures non officielles n'autorise aucune diffusion de total",()=>{
+ const r=compareMamhPanels(a,b,{dictionaryComparabilityApproved:true,coverageReviewed:true});
+ assert.equal(r.technicalCohortComparable,false);
+ assert.equal(r.technicalCandidateAggregateUncertified,null);
+ assert.equal(r.provinceWideConclusionAuthorized,false);
+ assert.equal(r.aggregate,null);
+});

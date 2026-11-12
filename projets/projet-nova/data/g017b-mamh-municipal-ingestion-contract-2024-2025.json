@@ -71,7 +71,10 @@
     "local_2024_csv_download_attempted": false,
     "data_catalog_visible_in_search": true,
     "web_pdf_guide_screenshot_error": "CACHE_MISS",
-    "no_silent_data_generation": true
+    "no_silent_data_generation": true,
+    "local_2024_profile_csv_download_attempted": true,
+    "local_2024_profile_download_error": "DNS_RESOLUTION_FAILURE_ON_MAMH_GOUV_QC_CA_IN_LOCAL_RUNTIME",
+    "profile_2024_catalog_metadata_visible": true
   },
   "accounting_controls": {
     "require_distinct_source_SHA256_per_year": true,
@@ -161,5 +164,62 @@
     "programme_score_increment": 0,
     "status": "BLOCKED_BY_UNFETCHED_RAW_OFFICIAL_FILES"
   },
-  "successor": "G0.17c : charger effectivement les fichiers MAMH, calculer les agrégats codifiés et rapprocher le périmètre de population; audit externe nécessaire avant tout score accru"
+  "successor": "G0.17c : charger effectivement les fichiers MAMH, calculer les agrégats codifiés et rapprocher le périmètre de population; audit externe nécessaire avant tout score accru",
+  "profile_financier_crosscheck_2024": {
+    "role": "COMPLEMENTARY_MUNICIPAL_LOCAL_PROFILE_NOT_ENTIRE_MUNICIPAL_ORGANIZATIONS",
+    "publication": "MAMH / Données Québec — Profil financier des municipalités locales",
+    "dataset_url": "https://www.donneesquebec.ca/recherche/dataset/profil-financier-des-municipalites-locales",
+    "resource_id": "5dec077d-4ef9-4e22-99e9-0c4f3a6dd52d",
+    "resource_page": "https://www.donneesquebec.ca/recherche/dataset/profil-financier-des-municipalites-locales/resource/5dec077d-4ef9-4e22-99e9-0c4f3a6dd52d",
+    "source_csv_url": "https://mamh.gouv.qc.ca/fichiersdonneesouvertes/PF-2024-2024-Prov.csv",
+    "source_year": 2024,
+    "edition": "2024-2025",
+    "variable_period_for_this_resource": "FINANCIAL_STATEMENTS_2024_NOT_2025_REVENUE",
+    "resource_last_updated_metadata": "2026-09-01",
+    "dataset_catalog_latest_metadata": "2026-11-07",
+    "license": "CC-BY 4.0",
+    "limitations": [
+      "Les données ne couvrent que les municipalités locales dont les pièces ont été reçues, selon la portée du profil; ne pas extrapoler automatiquement aux MRC, régies, communautés et organismes de transport.",
+      "Le fichier agrégé provincial est une source secondaire de contrôle : ne pas le sommer une seconde fois avec les rapports bruts 2024.",
+      "L'édition 2024-2025 ne signifie pas que les comptes réels de 2025 sont dans la ressource 2024.",
+      "Les postes comptables et les colonnes n'ont pas été interprétés ni vérifiés dans les octets source.",
+      "La disponibilité d'une URL dans le catalogue n'établit ni le téléchargement, ni une somme vérifiée, ni une certification de Nova."
+    ],
+    "downloaded_bytes_available": false,
+    "file_sha256": null,
+    "csv_rows_inspected": 0,
+    "account_code_mapping_confirmed": false,
+    "independent_review_complete": false,
+    "verified_2024_municipal_revenue_cad": null,
+    "verified_2024_municipal_expenditure_cad": null,
+    "crosscheck_completed": false,
+    "reason_not_processed": "RUNTIME_DNS_FAILURE_TO_MAMH_DIRECT_SOURCE_AND_UNSUPPORTED_CSV_TEXT_BROWSER",
+    "next_action": "Acquérir les octets du CSV, figer SHA-256/date, comparer les agrégats au sous-ensemble des municipalités locales du rapport brut 2024 après contrôle des postes et des organismes absents."
+  },
+  "provenance_and_aggregation_gate_2026_11_09": {
+    "phase": "G0.17b",
+    "reviewed_at": "2026-11-09",
+    "source": "Catalogue MAMH et contrôle logiciel local; aucun téléchargement CSV authentifié",
+    "source_catalog_url": "https://www.donneesquebec.ca/recherche/dataset/rapport-financier-des-organismes-municipaux-et-autres-documents",
+    "official_files_are_updated_regularly": true,
+    "catalog_metadata_is_not_verified_csv_bytes": true,
+    "three_sha256_digests_prove_integrity_not_origin": true,
+    "observed_sha256_for_real_2024_csv": null,
+    "observed_sha256_for_real_2025_csv": null,
+    "independent_matching_of_2024_publisher_digest": false,
+    "independent_matching_of_2025_publisher_digest": false,
+    "independent_municipality_population_completeness_review": false,
+    "province_to_municipality_transfer_elimination_verified": false,
+    "independent_financial_audit_signed": false,
+    "technical_candidate_aggregation_is_not_public_total": true,
+    "official_province_wide_aggregation_allowed": false,
+    "applied_code_paths": [
+      "assets/g017b-mamh-csv-import-core.mjs",
+      "scripts/g017b-mamh-ingest.mjs",
+      "tests/g017b-mamh-csv-import.test.mjs",
+      "tests/g017b-mamh-cli-provenance.test.mjs"
+    ],
+    "policy_score_authorized_increment": 0,
+    "analysis_note": "Deux fichiers CSV inventés et marqués par l'appelant comme officiels ne doivent jamais générer une totalisation provinciale publiable. Aucune preuve d'origine indépendante ni de transferts internes annulés n'existe ici."
+  }
 }
