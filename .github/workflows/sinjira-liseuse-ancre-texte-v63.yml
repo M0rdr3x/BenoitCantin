@@ -1,0 +1,48 @@
+name: "SINJIRA V63 — préserver le passage lu après réagencement"
+on:
+  pull_request:
+    branches:
+      - review/sinjira-liseuse-mobile-v62-consolidee-20261111
+      - main
+    paths:
+      - 'assets/js/sinjira-liseuse-reflow-v53.mjs'
+      - 'tests/sinjira-liseuse-reflow-v53.test.mjs'
+      - 'tests/e2e/test_sinjira_liseuse_responsive_v58.py'
+      - '.github/workflows/sinjira-liseuse-ancre-texte-v63.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-liseuse-reflow-v53.mjs'
+      - 'tests/e2e/test_sinjira_liseuse_responsive_v58.py'
+permissions:
+  contents: read
+jobs:
+  anchor:
+    name: "Ancre texte en mobile — ${{ matrix.browser }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - name: Checkout sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Vérifier JavaScript et Python
+        run: |
+          node --check assets/js/sinjira-liseuse-reflow-v53.mjs
+          node --check assets/js/sinjira-liseuse-touch-v52.mjs
+          python3 -m py_compile tests/e2e/test_sinjira_liseuse_mobile_v54.py tests/e2e/test_sinjira_liseuse_real_page_v57.py tests/e2e/test_sinjira_liseuse_responsive_v58.py
+      - name: Régressions unitaires du lecteur complet
+        run: node --test tests/sinjira-liseuse-reflow-v53.test.mjs tests/sinjira-liseuse-touch-v52.test.mjs
+      - name: Recette vraie liseuse, livres et comptes fictifs
+        run: |
+          python3 -m venv .venv-reader-v63
+          . .venv-reader-v63/bin/activate
+          python -m pip install --disable-pip-version-check playwright==1.57.0
+          python -m playwright install --with-deps ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_mobile_v54.py --browser ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_real_page_v57.py --browser ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_responsive_v58.py --browser ${{ matrix.browser }}
