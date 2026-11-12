@@ -165,12 +165,20 @@ La voie GitHub distincte est :
    refusé en HTTP 400 avant toute écriture, qu'un JWT invalide échoue et que le
    parcours AAL2 + dossier autorisé fonctionne. La seule sortie de
    `supabase functions list` confirme la présence, **pas la parité source**.
-5. **Cette voie ne déploie pas la politique SQL AAL2 des photos**.
-   Celle-ci est préparée dans
-   `scripts/sql/sinjira_character_sources_insert_requires_aal2.sql`.
-   Appliquer la politique exclusivement via migration ciblée revue et
-   enregistrée, puis vérifier `pg_policies` et le comportement Storage
-   authentifié AAL1 refusé / AAL2 autorisé. Réconcilier le ledger réel avant
+5. **Cette voie ne déploie pas les quatre politiques SQL AAL2 des photos**.
+   Le SQL est préparé dans
+   `scripts/sql/sinjira_character_sources_insert_requires_aal2.sql`
+   (nom historique conservé). Il concerne **deux buckets privés** :
+   `sinjira-character-sources` et `sinjira-character-submissions`.
+   Appliquer les quatre politiques `AS RESTRICTIVE` SELECT, INSERT,
+   UPDATE (avec `USING` + `WITH CHECK`) et DELETE **dans une seule
+   migration ciblée, revue et enregistrée** ; ne jamais lancer le lot
+   global des migrations en attente pour ce seul correctif.
+   Vérifier `pg_policies` pour les quatre noms et conditions AAL2,
+   puis effectuer des essais AAL1 refusé / AAL2 autorisé pour les quatre
+   opérations applicables dans chacun des buckets, uniquement avec des
+   comptes et fichiers de test consentis. Les politiques propriétaires
+   existantes restent obligatoires. Réconcilier le ledger réel avant
    toute autre synchronisation générique.
 
 Ces validations de déploiement sont distinctes des preuves de réception
