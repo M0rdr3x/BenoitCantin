@@ -80,6 +80,36 @@ class PublicArtifactExtensionAllowlist(unittest.TestCase):
             with self.subTest(path=name):
                 self.assertTrue(builder.relative_path_allowed(Path(name)))
 
+    def test_novel_library_only_exposes_reviewed_pages(self):
+        public = builder.SINJIRA_PUBLIC_NOVEL_PAGES
+        self.assertEqual(len(public), 4)
+        for expected in public:
+            with self.subTest(approved=expected):
+                self.assertTrue((ROOT / expected).is_file())
+                self.assertTrue(builder.relative_path_allowed(expected))
+        novel_root = ROOT / "projets/sinjira/romans"
+        for file in novel_root.rglob("*"):
+            if not file.is_file():
+                continue
+            relative = file.relative_to(ROOT)
+            with self.subTest(existing=relative):
+                self.assertEqual(builder.relative_path_allowed(relative), relative in public)
+
+        # Future HTML pages and images must never inherit extension-based
+        # publication rules. The full edition is served only via authorized
+        # signed access outside this static publishing boundary.
+        for future in (
+            "texte-integral.html", "livre-1-complet.html",
+            "chapitres/integrale.html", "brouillons/chapitre1.html",
+            "cover-internal.webp", "private-notes.svg",
+            "integration.js", "liseuse-dev.mjs",
+            "livre-1-release.json", "chapter/metadata.json",
+            "export-livre-i.pdf",
+        ):
+            with self.subTest(denied=future):
+                rel = Path("projets/sinjira/romans") / future
+                self.assertFalse(builder.relative_path_allowed(rel))
+
     def test_explicitly_approved_documents_remain_available(self):
         for name in (
             "projets/projet-nova/data/boussole-partis-2026.json",
