@@ -1,0 +1,58 @@
+name: Projet Nova P50S - revue humaine et GO interdit
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p50s.yml"
+      - "scripts/inspect_nova_review_readiness_p50s.py"
+      - "scripts/tests/test_inspect_nova_review_readiness_p50s.py"
+      - "projets/projet-nova/controles/P50S_*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: read
+  actions: read
+
+jobs:
+  constat-revues-sans-action:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Lire les scripts de verification
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Configurer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compiler et tester le releveur P50S
+        run: |
+          python -m py_compile scripts/inspect_nova_review_readiness_p50s.py
+          python -m unittest discover -s scripts/tests -p 'test_inspect_nova_review_readiness_p50s.py' -v
+      - name: Inspecter les vraies revues GitHub sans mutation
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/inspect_nova_review_readiness_p50s.py --rapport p50s_releve.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=json.loads(Path("p50s_releve.json").read_text(encoding="utf-8"))
+          assert p["structure"]=="RELEVE_EFFECTUE", p
+          assert p["decision"]=="NO_GO_AUTOMATIQUE", p
+          assert not p["autorisation_publication"], p
+          print("P50S — PR sans approbations GitHub sur leurs SHA :",p["nombre_pr_sans_approbation_github"])
+          print("P50S — preuves CI antérieures :",p["ci"])
+          print("P50S — obstacles documentés :",p["obstacles"])
+          print("P50S — AUCUN GO, aucune approbation donnée et aucune fusion")
+          PY
+      - name: Stocker le rapport purement statistique
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p50s-etat-revues-no-go
+          path: p50s_releve.json
+          if-no-files-found: ignore
+          retention-days: 7
