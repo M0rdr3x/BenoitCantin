@@ -206,8 +206,9 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
     globalThis.window=oldWindow;globalThis.document=oldDocument;
   }
   function swipe(dx,dy=3,options={}){
-    const begin={identifier:1,clientX:175,clientY:140};
-    const end={identifier:1,clientX:175+dx,clientY:140+dy};
+    const startX=options.startX??175;
+    const begin={identifier:1,clientX:startX,clientY:140};
+    const end={identifier:1,clientX:startX+dx,clientY:140+dy};
     const started={touches:[begin],target:{closest:()=>null}};
     const finished={
       touches:[],changedTouches:[end],defaultPrevented:false,
@@ -216,7 +217,7 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
     viewer.emit('touchstart',started);
     for(const [mx,my] of options.moves||[]){
       viewer.emit('touchmove',{touches:[{
-        identifier:1,clientX:175+mx,clientY:140+my
+        identifier:1,clientX:startX+mx,clientY:140+my
       }]});
     }
     if(options.scrollDuring){
@@ -235,6 +236,34 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
     flushFrames,getStatusWrites:()=>statusWrites,
     setSelected:v=>{selected=v}};
 }
+test('V67 : une amorce au bord du téléphone laisse le geste au système en mode écran',()=>{
+  const f=fixture();
+  try{
+    f.windowMock.innerWidth=390;
+    const initial=f.viewer.scrollTop;
+    const back=f.swipe(130,3,{startX:10});
+    const ahead=f.swipe(-130,3,{startX:380});
+    assert.equal(back.defaultPrevented,false);
+    assert.equal(ahead.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,initial);
+    assert.equal(f.previous.clicks,0);
+    assert.equal(f.next.clicks,0);
+    const inside=f.swipe(-130,3,{startX:230});
+    assert.equal(inside.defaultPrevented,true);
+    assert.ok(f.viewer.scrollTop>0);
+  }finally{f.restore()}
+});
+test('V67 : la zone système est bornée par la largeur actuelle après rotation',()=>{
+  const f=fixture();
+  try{
+    f.windowMock.innerWidth=568;
+    const edge=f.swipe(-130,2,{startX:557});
+    assert.equal(edge.defaultPrevented,false);
+    const content=f.swipe(-130,2,{startX:400});
+    assert.equal(content.defaultPrevented,true);
+    assert.ok(f.viewer.scrollTop>0);
+  }finally{f.restore()}
+});
 test('V66 : trajet texte vertical puis gauche ne provoque aucun changement écran',()=>{
   const f=fixture();
   try{
