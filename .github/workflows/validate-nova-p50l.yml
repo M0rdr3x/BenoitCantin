@@ -1,0 +1,32 @@
+name: Projet Nova P50L - source publique et preuve non verifiee
+on:
+  pull_request:
+    paths:
+      - "projets/projet-nova/controles/P50L_*"
+      - "scripts/audit_nova_messagerie_publique_p50l.py"
+      - "scripts/tests/test_audit_nova_messagerie_publique_p50l.py"
+      - ".github/workflows/validate-nova-p50l.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-source-sans-donnees-privees:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compiler le vérificateur
+        run: python -m py_compile scripts/audit_nova_messagerie_publique_p50l.py
+      - name: Tests unitaires sur textes fictifs
+        run: python -m unittest discover -s scripts/tests -p "test_audit_nova_messagerie_publique_p50l.py" -v
+      - name: Audit documentaire en lecture seule (écarts possibles et NO_GO systématique)
+        run: |
+          python scripts/audit_nova_messagerie_publique_p50l.py --rapport p50l_source_report.json
+          python -c "import json; r=json.load(open('p50l_source_report.json')); assert r['decision']=='NO_GO_AUTOMATIQUE'; print('ECARTS_EDITO', r['pages_avec_alertes_redactionnelles']); print('AUCUNE_PREUVE_MESSAGERIE')"

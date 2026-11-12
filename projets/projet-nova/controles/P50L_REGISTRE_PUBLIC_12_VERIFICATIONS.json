@@ -1,0 +1,169 @@
+{
+  "schema_version": "P50L-1",
+  "type": "MODELE_PUBLIC_NON_PROBANT",
+  "observation_date": "2026-10-14",
+  "main_sha": "9ed5f70cbe7022f25a679346a1288701f3b09067",
+  "identity": "Projet Nova",
+  "future_identity_conditional": "Parti Nova",
+  "source_pages": [
+    {
+      "page": "contact.html",
+      "sha": "4f85cc33bc7d7e33ab26a4d4f8e64b9bd78857d7",
+      "state": "CONTACT_COURRIEL_DECLARE"
+    },
+    {
+      "page": "recrutement.html",
+      "sha": "c2d1ad33fbf1938cd5680c7dcefe5ef11cc86c3c",
+      "state": "CONTACT_MINIMAL_DECLARE"
+    },
+    {
+      "page": "confidentialite.html",
+      "sha": "92ecc95c6d2ee0348f1cd0ec4b8ed4e98b08c17d",
+      "state": "POLITIQUE_DECLAREE"
+    },
+    {
+      "page": "participer.html",
+      "sha": "832a73caf4d1a7490523422c9d677974df0bc8f0",
+      "state": "MENTION_FORMULAIRE_OBSOLETE"
+    },
+    {
+      "page": "avis-legal.html",
+      "sha": "4f35dba55c01f744fad9247354e77cd51c9d7a3c",
+      "state": "FORMULATION_FORMULAIRES_OBSOLETE"
+    }
+  ],
+  "requirements": [
+    {
+      "id": "M01",
+      "topic": "Qualification du porteur et du régime juridique",
+      "role_target": "juridique",
+      "state": "NON_DOCUMENTE",
+      "private_evidence_received": false,
+      "verified_real_world": false,
+      "public_evidence_reference": ""
+    },
+    {
+      "id": "M02",
+      "topic": "Titularité et responsabilité de la messagerie",
+      "role_target": "gouvernance",
+      "state": "NON_DOCUMENTE",
+      "private_evidence_received": false,
+      "verified_real_world": false,
+      "public_evidence_reference": ""
+    },
+    {
+      "id": "M03",
+      "topic": "Contrôle des accès, MFA, appareils et sessions",
+      "role_target": "securite",
+      "state": "NON_DOCUMENTE",
+      "private_evidence_received": false,
+      "verified_real_world": false,
+      "public_evidence_reference": ""
+    },
+    {
+      "id": "M04",
+      "topic": "Applications tierces, délégations et redirections",
+      "role_target": "securite",
+      "state": "NON_DOCUMENTE",
+      "private_evidence_received": false,
+      "verified_real_world": false,
+      "public_evidence_reference": ""
+    },
+    {
+      "id": "M05",
+      "topic": "Prestataire, stockage, assistance et juridictions",
+      "role_target": "confidentialite",
+      "state": "NON_DOCUMENTE",
+      "private_evidence_received": false,
+      "verified_real_world": false,
+      "public_evidence_reference": ""
+    },
+    {
+      "id": "M06",
+      "topic": "Finalités, nécessité et catégories de messages",
+      "role_target": "confidentialite",
+      "state": "NON_DOCUMENTE",
+      "private_evidence_received": false,
+      "verified_real_world": false,
+      "public_evidence_reference": ""
+    },
+    {
+      "id": "M07",
+      "topic": "Réception spontanée de données sensibles et tri",
+      "role_target": "confidentialite",
+      "state": "NON_DOCUMENTE",
+      "private_evidence_received": false,
+      "verified_real_world": false,
+      "public_evidence_reference": ""
+    },
+    {
+      "id": "M08",
+      "topic": "Demandes d'accès, rectification et suppression",
+      "role_target": "confidentialite",
+      "state": "NON_DOCUMENTE",
+      "private_evidence_received": false,
+      "verified_real_world": false,
+      "public_evidence_reference": ""
+    },
+    {
+      "id": "M09",
+      "topic": "Conservation, purge et sauvegardes",
+      "role_target": "exploitation",
+      "state": "NON_DOCUMENTE",
+      "private_evidence_received": false,
+      "verified_real_world": false,
+      "public_evidence_reference": ""
+    },
+    {
+      "id": "M10",
+      "topic": "Traitements hors Québec et EFVP applicable",
+      "role_target": "juridique",
+      "state": "NON_DOCUMENTE",
+      "private_evidence_received": false,
+      "verified_real_world": false,
+      "public_evidence_reference": ""
+    },
+    {
+      "id": "M11",
+      "topic": "Incidents, registre et notifications",
+      "role_target": "securite",
+      "state": "NON_DOCUMENTE",
+      "private_evidence_received": false,
+      "verified_real_world": false,
+      "public_evidence_reference": ""
+    },
+    {
+      "id": "M12",
+      "topic": "Cohérence publique, revues et recette de déploiement",
+      "role_target": "publication",
+      "state": "NON_DOCUMENTE",
+      "private_evidence_received": false,
+      "verified_real_world": false,
+      "public_evidence_reference": ""
+    }
+  ],
+  "constraints": {
+    "inbox_read": false,
+    "messages_collected": 0,
+    "real_evidence_authenticated": 0,
+    "mailbox_provider_verified": false,
+    "mailbox_location_verified": false,
+    "mailbox_retention_verified": false,
+    "privacy_officer_mandate_verified": false,
+    "legal_regime_verified": false,
+    "formal_efvp_signed": false,
+    "deployment_proven": false,
+    "form_reactivation_authorized": false,
+    "financial_collection_authorized": false
+  },
+  "frozen_guards": [
+    "NE_PAS_FUSIONNER_PR_640",
+    "AUCUN_FORMULAIRE_REACTIVE",
+    "AUCUN_MESSAGE_PRIVE_OU_JOURNAL_DANS_GITHUB",
+    "CI_NON_EQUIVALENT_AUTORISATION",
+    "V3_40_INCHANGEE",
+    "NO_GO_PREUVES_NON_ATTESTEES"
+  ],
+  "decision": "NO_GO",
+  "caveat": "L'état de source du code ne prouve ni les flux reels de courriel, ni les droits techniques, ni le déploiement effectif."
+}
