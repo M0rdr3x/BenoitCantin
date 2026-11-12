@@ -9,12 +9,13 @@
 const INTERACTIVE='a, button, input, select, textarea, summary, [contenteditable], [role="button"], [role="link"], [data-reader-no-swipe]';
 
 export function classifyReaderSwipe({
-  dx,dy,durationMs,viewerWidth=360,hasSelection=false,horizontalOverflow=false
+  dx,dy,durationMs,viewerWidth=360,hasSelection=false,horizontalOverflow=false,
+  maxVerticalTravel=0,scrolledDuringGesture=false
 }={}){
-  if(hasSelection||horizontalOverflow||
-     ![dx,dy,durationMs,viewerWidth].every(Number.isFinite)||
-     durationMs<0||durationMs>850||viewerWidth<=0)return null;
-  const distance=Math.abs(dx),vertical=Math.abs(dy);
+  if(hasSelection||horizontalOverflow||scrolledDuringGesture||
+     ![dx,dy,durationMs,viewerWidth,maxVerticalTravel].every(Number.isFinite)||
+     maxVerticalTravel<0||durationMs<0||durationMs>850||viewerWidth<=0)return null;
+  const distance=Math.abs(dx),vertical=Math.max(Math.abs(dy),maxVerticalTravel);
   // Résiste aux gestes accidentels, au défilement vertical et aux diagonales.
   const threshold=Math.max(56,Math.min(100,viewerWidth*0.14));
   if(distance<threshold||distance<vertical*1.65)return null;
@@ -41,11 +42,24 @@ export function bindReaderTouchNavigation({
     if(event.touches?.length!==1||isInteractiveTarget(event.target))return;
     const touch=event.touches[0];
     if(!Number.isFinite(touch.clientX)||!Number.isFinite(touch.clientY))return;
-    origin={id:touch.identifier,x:touch.clientX,y:touch.clientY,time:clock()};
+    origin={
+      id:touch.identifier,x:touch.clientX,y:touch.clientY,time:clock(),
+      scrollTop:viewer.scrollTop||0,maxVerticalTravel:0,scrolled:false
+    };
   };
   const move=event=>{
-    // Multi-touch/pincement : jamais assimilé à une commande de page.
-    if(event.touches?.length!==1)origin=null;
+    // V66 : un défilement vertical intermédiaire puis un retour au point de
+    // départ ne doit jamais être interprété comme une page tournée.
+    if(!origin)return;
+    if(event.touches?.length!==1){origin=null;return}
+    const touch=event.touches[0];
+    if(touch.identifier!==origin.id||!Number.isFinite(touch.clientY)){
+      origin=null;return;
+    }
+    origin.maxVerticalTravel=Math.max(
+      origin.maxVerticalTravel,Math.abs(touch.clientY-origin.y)
+    );
+    if(Math.abs((viewer.scrollTop||0)-origin.scrollTop)>8)origin.scrolled=true;
   };
   const cancel=()=>{origin=null};
   const end=event=>{
@@ -62,7 +76,10 @@ export function bindReaderTouchNavigation({
       dx:touch.clientX-initial.x,dy:touch.clientY-initial.y,
       durationMs:clock()-initial.time,viewerWidth:viewer.clientWidth,
       hasSelection:Boolean(getSelectedText()?.trim()),
-      horizontalOverflow:viewer.scrollWidth>viewer.clientWidth+4
+      horizontalOverflow:viewer.scrollWidth>viewer.clientWidth+4,
+      maxVerticalTravel:initial.maxVerticalTravel,
+      scrolledDuringGesture:initial.scrolled||
+        Math.abs((viewer.scrollTop||0)-initial.scrollTop)>8
     });
     const button=direction==='next'?next:direction==='previous'?previous:null;
     if(button&&!button.disabled)button.click();
