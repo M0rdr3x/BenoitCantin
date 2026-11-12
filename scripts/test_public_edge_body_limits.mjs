@@ -48,6 +48,34 @@ async function run() {
 
   const empty = new Request('https://example.invalid/edge', { method: 'POST' });
   assert.deepEqual(await readLimitedUtf8Body(empty, 8), { ok: true, raw: '' });
+  // Flux bloqué après un premier fragment : expiration de durée, sans
+  // attendre le fournisseur malveillant qui ne termine jamais cancel().
+  const neverFinishes = new Request('https://example.invalid/edge', {
+    method: 'POST', duplex: 'half',
+    body: new ReadableStream({
+      start(controller) { controller.enqueue(encoder.encode('part')); },
+      cancel() { return new Promise(() => {}); }
+    })
+  });
+  const startedAt = Date.now();
+  assert.deepEqual(await readLimitedUtf8Body(neverFinishes, 8, 30), { ok: false });
+  assert.ok(Date.now() - startedAt < 1000, 'La lecture bloquée doit être interrompue.');
+
+  // L'abandon du client doit interrompre immédiatement la lecture partielle.
+  const abort = new AbortController();
+  const abandoned = new Request('https://example.invalid/edge', {
+    method: 'POST', duplex: 'half', signal: abort.signal,
+    body: new ReadableStream({ start(controller) { controller.enqueue(encoder.encode('abc')); } })
+  });
+  const pending = readLimitedUtf8Body(abandoned, 8, 1000);
+  abort.abort();
+  assert.deepEqual(await pending, { ok: false });
+
+  await assert.rejects(readLimitedUtf8Body(streamRequest([encoder.encode('x')]), 8, 0), TypeError);
+
+  const reportSource = readFileSync(resolve(root, 'supabase/functions/send-game-report/index.ts'), 'utf8');
+  assert.ok(reportSource.includes('AbortSignal.timeout(MAX_TEMPLATE_FETCH_MS)'),
+    'Le téléchargement PDF doit avoir une durée totale maximale.');
 
   for (const [path, marker] of [
     ['supabase/functions/get-document-url/index.ts', 'readLimitedUtf8Body(req,MAX_REQUEST_BYTES)'],

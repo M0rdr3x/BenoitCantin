@@ -1,4 +1,5 @@
 import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
+import { readPrivateLifeStoryPdf } from '../_shared/private-life-story-pdf.mjs';
 import { createClient } from 'npm:@supabase/supabase-js@2.119.0';
 
 const MAX_REQUEST_BYTES = 256;
@@ -63,10 +64,9 @@ function preflight(req: Request) {
     },
   });
 }
-function hasPdfSignature(bytes: ArrayBuffer) {
+function hasPdfSignature(bytes: Uint8Array) {
   if (bytes.byteLength < 5) return false;
-  const head = new Uint8Array(bytes, 0, 5);
-  return String.fromCharCode(...head) === '%PDF-';
+  return String.fromCharCode(...bytes.subarray(0, 5)) === '%PDF-';
 }
 
 Deno.serve(async (req) => {
@@ -108,11 +108,17 @@ Deno.serve(async (req) => {
       .maybeSingle();
     if (exportError || !record || !['generated', 'delivered'].includes(record.status) || record.storage_bucket !== 'sinjira-life-story-exports' || !record.storage_path) return errorResponse(req);
 
-    const { data: file, error: downloadError } = await service.storage.from('sinjira-life-story-exports').download(record.storage_path);
-    if (downloadError || !file) return errorResponse(req, 410);
-    if (file.size <= 0 || file.size > MAX_PDF_BYTES) return errorResponse(req, 410);
-
-    const bytes = await file.arrayBuffer();
+    // L'ancien storage.download() allouait le Blob entier AVANT de tester
+    // file.size : une réponse Storage trop grande pouvait épuiser la mémoire.
+    // Désormais le GET privé est limité pendant la réception (octets + temps).
+    const pdf = await readPrivateLifeStoryPdf({
+      projectUrl: Deno.env.get('SUPABASE_URL') || '',
+      serviceKey: serverKey(),
+      objectPath: record.storage_path,
+      maxBytes: MAX_PDF_BYTES
+    });
+    if (!pdf.ok) return errorResponse(req, 410);
+    const bytes = pdf.bytes;
     if (bytes.byteLength <= 0 || bytes.byteLength > MAX_PDF_BYTES || !hasPdfSignature(bytes)) return errorResponse(req, 410);
 
     const { error: countError } = await service.rpc('service_life_story_register_download', { p_link_id: link.id });
