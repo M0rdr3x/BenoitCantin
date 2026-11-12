@@ -105,6 +105,40 @@ Ne jamais substituer à cette procédure un `db push --include-all`, `supabase m
 
 Le constructeur ne peut effacer qu'un workspace CI à `.prod-workspace/supabase` ou une copie de test éphémère et isolée réservée au validateur du ledger. Les mises à jour des fonctions exclues doivent suivre une procédure **par slug**, avec revue de leurs contrôles d'authentification, tests négatifs, plan de retour arrière et vérification des versions distantes, et non un déploiement global implicite.
 
+## SINJIRA™ — prévol SQL Storage AAL2 en lecture seule
+
+Avant de soumettre à approbation la migration ciblée des quatre politiques
+Storage AAL2, exécuter en **lecture seule** la requête versionnée
+`scripts/sql/sinjira_character_photo_aal2_preflight_read_only.sql` via
+Supabase SQL Editor ou un exécuteur SQL autorisé. Elle n'exécute que
+`WITH ... SELECT`, ne modifie aucun utilisateur, objet ni schéma et n'expose
+aucune donnée personnelle. L'exécution est volontaire : le workflow CI
+sur pull request valide uniquement le **contrat** de cette requête hors réseau.
+
+Les indicateurs attendus sont `owner_rules_valid=7`,
+`private_buckets=2`, `storage_rls_active=true` et
+`existing_new_policies=0`. Un résultat `READY_FOR_REVIEW`
+signifie seulement que ces quatre prérequis du SQL versionné sont
+**actuellement** réunis ; un résultat `BLOCKED` interdit l'application
+jusqu'à investigation. Les conditions peuvent changer entre ce relevé et
+la migration : relancer les vérifications **immédiatement avant** toute
+application. Le nombre `current_photo_objects` est indicatif, jamais une
+preuve d'autorisation d'accès.
+
+**Relevé READ-ONLY du 12 novembre 2026 :**
+`owner_rules_valid=7`, `private_buckets=2`,
+`storage_rls_active=true`, `existing_new_policies=0`,
+`current_photo_objects=0`, `READY_FOR_REVIEW`. Ce relevé
+**ne vaut ni déploiement, ni permission de déployer**, et ne remplace pas
+la migration enregistrée et les essais réels AAL1 refusé / AAL2
+propriétaire autorisé. Ne pas appliquer le lot général des migrations
+en attente pour cette correction isolée.
+
+Le test `scripts/test_sinjira_photo_aal2_readiness.cjs` compare
+les sept expressions SQL propriétaires au fichier de migration et
+rejette neuf affaiblissements simulés de la requête. Il s'exécute
+dans le prévol Auth sur GitHub, sans accès à la production.
+
 ## SINJIRA™ — déploiement ciblé de la seule fonction du Registre
 
 La **PR #988** a durci la validation du chemin des photos dans

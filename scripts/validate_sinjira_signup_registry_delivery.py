@@ -148,6 +148,19 @@ def main()->int:
     ])
     if 'DROP POLICY' in storage_sql.upper() or 'DISABLE ROW LEVEL SECURITY' in storage_sql.upper():
         errors.append('Registre : script AAL2 ne doit supprimer aucune politique RLS.')
+    check('scripts/sql/sinjira_character_photo_aal2_preflight_read_only.sql',[
+        'WITH expected (policy_name,cmd,predicate) AS',
+        'owner_rules_valid=7 AND private_buckets=2',
+        'storage_rls_active AND existing_new_policies=0',
+        "'READY_FOR_REVIEW' ELSE 'BLOCKED'",
+        'p.roles=ARRAY',
+        'storage_rls_active',
+    ])
+    check('scripts/test_sinjira_photo_aal2_readiness.cjs',[
+        'check(query)',
+        'assert.throws(()=>check(mutated)',
+        'Les 7 expressions propriétaire',
+    ])
     check('scripts/test_sinjira_storage_photo_aal2_policy.cjs',[
         'Exactly four restrictive policies', 'Never drop existing owner rules',
         'sinjira-character-submissions', 'sans base de données',
