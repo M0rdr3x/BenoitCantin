@@ -132,16 +132,25 @@ def main()->int:
     ])
     storage_sql=check('scripts/sql/sinjira_character_sources_insert_requires_aal2.sql',[
         'CREATE POLICY sinjira_character_sources_insert_requires_aal2',
-        'ON storage.objects', 'AS RESTRICTIVE', 'FOR INSERT', 'TO authenticated',
-        "bucket_id <> 'sinjira-character-sources'",
+        'CREATE POLICY sinjira_character_photos_select_requires_aal2',
+        'CREATE POLICY sinjira_character_photos_update_requires_aal2',
+        'CREATE POLICY sinjira_character_photos_delete_requires_aal2',
+        'ON storage.objects AS RESTRICTIVE FOR INSERT TO authenticated',
+        'ON storage.objects AS RESTRICTIVE FOR SELECT TO authenticated',
+        'ON storage.objects AS RESTRICTIVE FOR UPDATE TO authenticated',
+        'ON storage.objects AS RESTRICTIVE FOR DELETE TO authenticated',
+        "bucket_id NOT IN ('sinjira-character-sources','sinjira-character-submissions')",
         "auth.jwt()->>'aal'", "'aal2'",
-        'char_source_insert_own', "public=false",
+        'char_source_insert_own', 'char_source_select_own', 'char_source_delete_own',
+        'sinjira character photo own insert', 'sinjira character photo own select',
+        'sinjira character photo own update', 'sinjira character photo own delete',
+        "public=false",
     ])
     if 'DROP POLICY' in storage_sql.upper() or 'DISABLE ROW LEVEL SECURITY' in storage_sql.upper():
         errors.append('Registre : script AAL2 ne doit supprimer aucune politique RLS.')
     check('scripts/test_sinjira_storage_photo_aal2_policy.cjs',[
-        'Restrictive INSERT only', 'Never drop an owner policy',
-        'sans base de données',
+        'Exactly four restrictive policies', 'Never drop existing owner rules',
+        'sinjira-character-submissions', 'sans base de données',
     ])
     check('supabase/config.toml',[
         '[functions.notify-account-confirmation]', 'verify_jwt = true',
