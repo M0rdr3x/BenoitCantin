@@ -41,6 +41,71 @@ for(const [verb,name,clauses] of policies){
     ok(copies.length===2,'UPDATE protects both old and new row identities');
   }
 }
+// Le contrôle "la chaîne contient aal2" peut être trompé par un OR TRUE.
+// Comparer l'expression complète de chaque branche RLS à une liste fermée,
+// puis prouver par mutations que les simplifications dangereuses échouent.
+const signedGuard =
+  "bucket_id NOT IN ('sinjira-character-sources','sinjira-character-submissions') "+
+  "OR ((SELECT auth.jwt()->>'aal') = 'aal2')";
+const expectedConditions={
+  INSERT:'WITH CHECK ('+signedGuard+')',
+  SELECT:'USING ('+signedGuard+')',
+  UPDATE:'USING ('+signedGuard+') WITH CHECK ('+signedGuard+')',
+  DELETE:'USING ('+signedGuard+')'
+};
+const policyPattern=/CREATE POLICY ([a-z0-9_]+)\s+ON storage\.objects AS RESTRICTIVE FOR (SELECT|INSERT|UPDATE|DELETE) TO authenticated\s+([\s\S]*?);/g;
+const exact=(value)=>value.replace(/\s+/g,'');
+function assertExactPolicyGuards(sql){
+  const withoutComments=sql.replace(/--[^\n]*/g,'');
+  const entries=[...withoutComments.matchAll(policyPattern)];
+  assert.equal(entries.length,policies.length,'Four restrictive policy declarations required');
+  for(const [operation,policyName] of policies){
+    const matching=entries.filter(p=>p[1]===policyName&&p[2]===operation);
+    assert.equal(matching.length,1,operation+' exact policy name and verb required');
+    assert.equal(exact(matching[0][3]),exact(expectedConditions[operation]),
+      operation+' must enforce the exact two-bucket signed AAL2 predicate in every clause');
+  }
+}
+assertExactPolicyGuards(source);
+const mutatedPolicies=[
+  ['OR TRUE before JWT',source.replace(
+    "OR ((SELECT auth.jwt()->>'aal') = 'aal2')",
+    "OR TRUE OR ((SELECT auth.jwt()->>'aal') = 'aal2')")],
+  ['JWT AAL1 accepted',source.replace(
+    "OR ((SELECT auth.jwt()->>'aal') = 'aal2')",
+    "OR ((SELECT auth.jwt()->>'aal') IN ('aal1','aal2'))")],
+  ['Legacy bucket exempted',source.replace(
+    "bucket_id NOT IN ('sinjira-character-sources','sinjira-character-submissions')",
+    "bucket_id NOT IN ('sinjira-character-sources')")],
+  ['Extra role-based bypass',source.replace(
+    "OR ((SELECT auth.jwt()->>'aal') = 'aal2')",
+    "OR (SELECT auth.jwt()->>'role') = 'authenticated' OR ((SELECT auth.jwt()->>'aal') = 'aal2')")],
+  ['Any AAL JWT accepted',source.replace(
+    "OR ((SELECT auth.jwt()->>'aal') = 'aal2')",
+    "OR ((SELECT auth.jwt()->>'aal') IS NOT NULL)")],
+  ['AAL2 guard negated',source.replace(
+    "OR ((SELECT auth.jwt()->>'aal') = 'aal2')",
+    "OR ((SELECT auth.jwt()->>'aal') <> 'aal2')")],
+  ['DELETE using clause bypass',source.replace(
+    "CREATE POLICY sinjira_character_photos_delete_requires_aal2\nON storage.objects AS RESTRICTIVE FOR DELETE TO authenticated\nUSING (\n  bucket_id NOT IN ('sinjira-character-sources','sinjira-character-submissions')\n  OR ((SELECT auth.jwt()->>'aal') = 'aal2')\n);",
+    "CREATE POLICY sinjira_character_photos_delete_requires_aal2\nON storage.objects AS RESTRICTIVE FOR DELETE TO authenticated\nUSING (TRUE);")],
+  ['UPDATE new-row constraint removed',source.replace(
+    "WITH CHECK (\n  bucket_id NOT IN ('sinjira-character-sources','sinjira-character-submissions')\n  OR ((SELECT auth.jwt()->>'aal') = 'aal2')\n);\n\nCREATE POLICY sinjira_character_photos_delete_requires_aal2",
+    "WITH CHECK (TRUE);\n\nCREATE POLICY sinjira_character_photos_delete_requires_aal2")],
+  ['UPDATE old-row constraint removed',source.replace(
+    "ON storage.objects AS RESTRICTIVE FOR UPDATE TO authenticated\nUSING (\n  bucket_id NOT IN ('sinjira-character-sources','sinjira-character-submissions')\n  OR ((SELECT auth.jwt()->>'aal') = 'aal2')\n)",
+    "ON storage.objects AS RESTRICTIVE FOR UPDATE TO authenticated\nUSING (TRUE)")],
+  ['Unsigned JWT metadata used',source.replace(
+    "OR ((SELECT auth.jwt()->>'aal') = 'aal2')",
+    "OR ((SELECT auth.jwt()->'user_metadata'->>'aal') = 'aal2')")]
+];
+for(const [label,badSql] of mutatedPolicies){
+  assert.notEqual(badSql,source,'Mutation must actually alter SQL: '+label);
+  assert.throws(()=>assertExactPolicyGuards(badSql),assert.AssertionError,
+    'Security regression must be rejected: '+label);
+  assertions++;
+}
+
 for(const bucket of buckets)ok(source.includes("id IN ('sinjira-character-sources','sinjira-character-submissions')"),
   'Preflight includes '+bucket);
 no(/\bDROP\s+POLICY\b/i.test(clean),'Never drop existing owner rules');
