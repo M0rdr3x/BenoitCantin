@@ -125,6 +125,21 @@ def run(playwright, engine, origin):
         # Test typographique extrême réellement prévu dans l'interface :
         # les plus grands caractères doivent reflow et la page reste navigable.
         page.set_viewport_size({"width":320,"height":568})
+        # V63 : mesurer un caractère effectivement visible AVANT la
+        # modification du CSS. L'ancre reste en mémoire navigateur uniquement.
+        anchored=page.evaluate("""async()=>{
+          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.10.1');
+          const viewer=document.querySelector('#reader-viewer');
+          const text=document.querySelector('#reader-text');
+          viewer.scrollTop=Math.min(1850,viewer.scrollHeight-viewer.clientHeight-300);
+          await new Promise(resolve=>requestAnimationFrame(resolve));
+          const anchor=m.captureReaderTextAnchor({viewer,text});
+          window.__v63Anchor=anchor;
+          return {available:Boolean(anchor),offset:anchor?.offset||0,
+            position:viewer.scrollTop};
+        }""")
+        assert anchored["available"],("V63: caret incapable de repérer le texte",anchored)
+        assert anchored["position"]>300,anchored
         page.evaluate("""()=>{
           const size=document.querySelector('#reader-size');
           size.value='34';size.dispatchEvent(new Event('input',{bubbles:true}));
@@ -135,7 +150,27 @@ def run(playwright, engine, origin):
           const t=document.querySelector('#reader-text');
           return Math.abs(parseFloat(getComputedStyle(t).fontSize)-34)<.01;
         }""")
-        page.wait_for_timeout(100)
+        page.wait_for_timeout(180)
+        # Le même caractère doit conserver son emplacement dans la zone du
+        # livre malgré le passage à 34 px; un ratio seul ne suffit pas.
+        preserved=page.evaluate("""()=>{
+          const a=window.__v63Anchor;
+          const viewer=document.querySelector('#reader-viewer');
+          const node=a?.node;
+          if(!node||!node.isConnected)return {valid:false};
+          const range=document.createRange();
+          range.setStart(node,a.offset);range.setEnd(node,a.offset+1);
+          const rect=Array.from(range.getClientRects()).find(r=>r.height>0);
+          return {
+            valid:Boolean(rect),
+            displacement:rect?Math.abs(
+              rect.top-viewer.getBoundingClientRect().top-a.relativeY):999,
+            scroll:viewer.scrollTop
+          };
+        }""")
+        assert preserved["valid"] and preserved["displacement"]<24,(
+            "V63: perte du caractère lu à l'agrandissement",anchored,preserved
+        )
         large=geometry(page)
         assert large["textFont"]==34,large
         assert large["documentWidth"]<=323,large
