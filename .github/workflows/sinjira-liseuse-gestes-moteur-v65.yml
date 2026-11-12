@@ -45,4 +45,5 @@ jobs:
           python -m playwright install --with-deps chromium
           python tests/e2e/test_sinjira_liseuse_native_touch_v65.py --browser chromium
       - name: Conclusion du laboratoire
-        run: echo "V65-LAB-PASS : aucun téléphone physique ni service de roman privé utilisé"
+        run: |
+          echo "V65-LAB-PASS : aucun téléphone physique ni service de roman privé utilisé"
