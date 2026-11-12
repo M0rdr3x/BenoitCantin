@@ -16,7 +16,10 @@ INSERT INTO auth.users(id,aud,role,email,raw_user_meta_data,created_at,updated_a
 VALUES
 ('11111111-1111-4111-8111-111111111111','authenticated','authenticated','local-role-0@example.invalid','{"birth_date":"1990-01-15","date_of_birth":"1990-01-15","gender":"Homme","sex":"male"}'::jsonb,now(),now()),
 ('22222222-2222-4222-8222-222222222222','authenticated','authenticated','local-role-1@example.invalid','{"birth_date":"1990-01-15","date_of_birth":"1990-01-15","gender":"Homme","sex":"male"}'::jsonb,now(),now()),
-('33333333-3333-4333-8333-333333333333','authenticated','authenticated','local-role-2@example.invalid','{"birth_date":"1990-01-15","date_of_birth":"1990-01-15","gender":"Homme","sex":"male"}'::jsonb,now(),now());
+('33333333-3333-4333-8333-333333333333','authenticated','authenticated',
+  (SELECT (regexp_match(
+    pg_catalog.pg_get_functiondef('public.enforce_sinjira_single_admin()'::regprocedure),
+    $pattern$lower\('([^']+)'\)$pattern$))[1]),'{"birth_date":"1990-01-15","date_of_birth":"1990-01-15","gender":"Homme","sex":"male"}'::jsonb,now(),now());
 INSERT INTO public.internal_admin_users(user_id,role) VALUES ('33333333-3333-4333-8333-333333333333','admin');
 INSERT INTO public.projects(id,slug,name,visibility) VALUES
 ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','local-security-rank-restricted','Fixture de sécurité restricted','restricted'),
