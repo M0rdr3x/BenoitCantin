@@ -1,0 +1,29 @@
+name: Projet Nova P50G - tests non-deploiement
+on:
+  pull_request:
+    paths:
+      - "scripts/check_nova_publication_p50g.py"
+      - "scripts/tests/test_check_nova_publication_p50g.py"
+      - "projets/projet-nova/VERIFICATION_AVANT_PUBLICATION.md"
+      - "projets/projet-nova/controles/P50G_*"
+      - ".github/workflows/validate-nova-p50g.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests-seuls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Tests statiques, sans publication
+        run: |
+          python -m py_compile scripts/check_nova_publication_p50g.py
+          python -m unittest discover -s scripts/tests -p "test_check_nova_publication_p50g.py" -v
