@@ -63,6 +63,16 @@ function fixture({selected=false}={}){
     const touch={identifier:7,clientX:170,clientY:190};
     viewer.emit('touchstart',{touches:options.multiple?[touch,{identifier:8,clientX:200,clientY:220}]:[touch],target:options.interactive?{closest:()=>({})}:{closest:()=>null}});
     time+=options.elapsed??200;
+    for(const [mx,my] of options.moves||[]){
+      viewer.emit('touchmove',{touches:[{
+        identifier:7,clientX:170+mx,clientY:190+my
+      }]});
+    }
+    if(options.scrollDuring){
+      viewer.scrollTop=(viewer.scrollTop||0)+options.scrollDuring;
+      viewer.emit('touchmove',{touches:[touch]});
+      viewer.scrollTop=0; // même si le scroll revient au départ, refuser
+    }
     if(options.cancel)viewer.emit('touchcancel',{touches:[]});
     if(options.moveMultiple)viewer.emit('touchmove',{touches:[touch,{identifier:8}]});
     viewer.emit('touchend',{touches:[],changedTouches:[{
@@ -116,6 +126,34 @@ test('intégration : sélection, champ interactif et événement annulé',()=>{
   x.setSelected('');x.swipe(-110,0,{interactive:true});
   x.swipe(-110,0,{prevented:true});
   assert.equal(x.next.clicks,0);
+  x.release();
+});
+test('V66 : le classificateur rejette une verticale intermédiaire même si le doigt termine droit',()=>{
+  assert.equal(gesture({dx:-125,dy:3,maxVerticalTravel:112}),null);
+  assert.equal(gesture({dx:-125,dy:3,maxVerticalTravel:14}),'next');
+  assert.equal(gesture({dx:125,dy:4,maxVerticalTravel:120}),null);
+});
+test('V66 : un défilement natif pendant le geste interdit la commande PDF',()=>{
+  assert.equal(gesture({scrolledDuringGesture:true}),null);
+  assert.equal(gesture({maxVerticalTravel:NaN}),null);
+  assert.equal(gesture({maxVerticalTravel:-5}),null);
+});
+test('V66 : trajet vertical puis horizontal de retour ne tourne pas le livre PDF',()=>{
+  const x=fixture();
+  x.swipe(-130,2,{moves:[[-5,110],[-60,12]]});
+  assert.equal(x.next.clicks,0);
+  x.swipe(130,2,{moves:[[5,-120],[65,-10]]});
+  assert.equal(x.previous.clicks,0);
+  x.swipe(-130,2,{moves:[[-70,8]]});
+  assert.equal(x.next.clicks,1); // un véritable balayage reste disponible
+  x.release();
+});
+test('V66 : scroll pendant toucher puis retour en place ne tourne pas le livre PDF',()=>{
+  const x=fixture();
+  x.swipe(-130,3,{scrollDuring:40});
+  assert.equal(x.next.clicks,0);
+  x.swipe(-130,3);
+  assert.equal(x.next.clicks,1);
   x.release();
 });
 test('intégration : pas de swipe si un pincement ou une annulation a commencé',()=>{

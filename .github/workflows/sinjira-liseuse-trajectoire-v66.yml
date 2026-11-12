@@ -1,0 +1,58 @@
+name: "SINJIRA V66 — protéger les vrais gestes de défilement"
+on:
+  pull_request:
+    branches:
+      - review/sinjira-liseuse-mobile-v64-integration-main-20261111
+      - main
+    paths:
+      - 'assets/js/sinjira-liseuse-touch-v52.mjs'
+      - 'assets/js/sinjira-liseuse-reflow-v53.mjs'
+      - 'tests/sinjira-liseuse-touch-v52.test.mjs'
+      - 'tests/sinjira-liseuse-reflow-v53.test.mjs'
+      - 'tests/e2e/test_sinjira_liseuse_trajectory_v66.py'
+      - '.github/workflows/sinjira-liseuse-trajectoire-v66.yml'
+      - 'docs/sinjira/SINJIRA_LISEUSE_V66_TRAJECTOIRE_2026-11-12.md'
+  push:
+    branches: [main]
+    paths:
+      - 'tests/e2e/test_sinjira_liseuse_trajectory_v66.py'
+      - '.github/workflows/sinjira-liseuse-trajectoire-v66.yml'
+permissions:
+  contents: read
+jobs:
+  multi-touch-path:
+    name: "Geste gauche/droite sans faux tournage — ${{ matrix.browser }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - name: Code sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Syntaxe et absence de défaut Python
+        run: |
+          node --check assets/js/sinjira-liseuse-touch-v52.mjs
+          node --check assets/js/sinjira-liseuse-reflow-v53.mjs
+          python3 -m py_compile tests/e2e/test_sinjira_liseuse_mobile_v54.py tests/e2e/test_sinjira_liseuse_real_page_v57.py tests/e2e/test_sinjira_liseuse_responsive_v58.py tests/e2e/test_sinjira_liseuse_trajectory_v66.py
+      - name: Unités V52–V66 — refus de faux geste et vrai balayage maintenu
+        run: node --test tests/sinjira-liseuse-touch-v52.test.mjs tests/sinjira-liseuse-reflow-v53.test.mjs
+      - name: Navigateur isolé, roman fictif et Supabase interdit
+        run: |
+          python3 -m venv .venv-reader-v66
+          . .venv-reader-v66/bin/activate
+          python -m pip install --disable-pip-version-check playwright==1.57.0
+          python -m playwright install --with-deps ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_mobile_v54.py --browser ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_real_page_v57.py --browser ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_responsive_v58.py --browser ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_trajectory_v66.py --browser ${{ matrix.browser }}
+          if [ "${{ matrix.browser }}" = chromium ]; then
+            python tests/e2e/test_sinjira_liseuse_native_touch_v65.py --browser chromium
+          fi
+      - name: Certifier seulement le laboratoire
+        run: |
+          echo "V66-TESTS-ONLY: aucune certification de téléphone physique ni de droits sur les romans"

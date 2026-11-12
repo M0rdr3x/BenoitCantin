@@ -252,9 +252,25 @@ export function bindReaderScreenMode({
     gesture=null;
     if(!isPaged()||event.touches?.length!==1||!isTouchTargetAllowed(event))return;
     const touch=event.touches[0];
-    gesture={id:touch.identifier,x:touch.clientX,y:touch.clientY,start:clock()};
+    gesture={
+      id:touch.identifier,x:touch.clientX,y:touch.clientY,start:clock(),
+      scrollTop:viewer.scrollTop,maxVerticalTravel:0,scrolled:false
+    };
   };
-  const onTouchMove=event=>{if(event.touches?.length!==1)gesture=null};
+  const onTouchMove=event=>{
+    if(!gesture)return;
+    if(event.touches?.length!==1){gesture=null;return}
+    const touch=event.touches[0];
+    if(touch.identifier!==gesture.id||!Number.isFinite(touch.clientY)){
+      gesture=null;return;
+    }
+    // V66 : une verticale importante pendant le geste compte même si le
+    // doigt revient au même Y en fin de mouvement (scroll + flick latéral).
+    gesture.maxVerticalTravel=Math.max(
+      gesture.maxVerticalTravel,Math.abs(touch.clientY-gesture.y)
+    );
+    if(Math.abs(viewer.scrollTop-gesture.scrollTop)>8)gesture.scrolled=true;
+  };
   const onTouchCancel=()=>{gesture=null};
   const onTouchEnd=event=>{
     const start=gesture;gesture=null;
@@ -265,7 +281,10 @@ export function bindReaderScreenMode({
     const direction=classifyReaderSwipe({
       dx:touch.clientX-start.x,dy:touch.clientY-start.y,
       durationMs:clock()-start.start,viewerWidth:viewer.clientWidth,
-      hasSelection:Boolean(getSelectionText().trim()),horizontalOverflow:false
+      hasSelection:Boolean(getSelectionText().trim()),horizontalOverflow:false,
+      maxVerticalTravel:start.maxVerticalTravel,
+      scrolledDuringGesture:start.scrolled||
+        Math.abs(viewer.scrollTop-start.scrollTop)>8
     });
     if(direction){
       // Intercepte uniquement un vrai mouvement horizontal; la sélection et
