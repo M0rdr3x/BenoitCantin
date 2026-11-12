@@ -87,6 +87,56 @@ function textMetrics(element){
     paddingBottom:Math.max(0,value(style.paddingBottom))
   };
 }
+/** V63 : ancre éphémère de caractère du roman, jamais enregistrée. */
+export function captureReaderTextAnchor({viewer,text,doc=globalThis.document}={}){
+  if(!viewer?.getBoundingClientRect||!text?.getBoundingClientRect||!doc?.createRange||
+    (!doc.caretPositionFromPoint&&!doc.caretRangeFromPoint))return null;
+  const box=viewer.getBoundingClientRect(),page=text.getBoundingClientRect();
+  if(box.width<=0||box.height<=0||page.width<=0||text.hidden)return null;
+  const style=globalThis.window?.getComputedStyle?.(text);
+  const padLeft=Math.max(0,Number.parseFloat(style?.paddingLeft)||0);
+  const x=Math.min(page.right-8,Math.max(page.left+8,page.left+padLeft+18));
+  const y=Math.min(box.bottom-12,box.top+Math.max(24,Math.min(85,box.height*.14)));
+  if(x<box.left||x>box.right||y<=box.top||y>=box.bottom)return null;
+  let node=null,offset=0;
+  if(doc.caretPositionFromPoint){
+    const pos=doc.caretPositionFromPoint(x,y);
+    if(pos){node=pos.offsetNode;offset=pos.offset}
+  }
+  if((node?.nodeType!==3||!text.contains?.(node))&&doc.caretRangeFromPoint){
+    const pos=doc.caretRangeFromPoint(x,y);
+    if(pos){node=pos.startContainer;offset=pos.startOffset}
+  }
+  if(node?.nodeType!==3||!text.contains?.(node)||!node.length)return null;
+  const index=Math.max(0,Math.min(node.length-1,Number(offset)||0));
+  try{
+    const range=doc.createRange();
+    range.setStart(node,index);range.setEnd(node,index+1);
+    const rect=Array.from(range.getClientRects()).find(r=>r.height>0);
+    if(!rect||!Number.isFinite(rect.top))return null;
+    if(rect.top<box.top-box.height||rect.top>box.bottom+box.height)return null;
+    return {node,offset:index,relativeY:rect.top-box.top};
+  }catch{return null}
+}
+/** Replace un caractère visible dans l'écran sans persister son texte. */
+export function restoreReaderTextAnchor({viewer,text,anchor,doc=globalThis.document}={}){
+  if(!viewer?.scrollTo||!viewer?.getBoundingClientRect||!doc?.createRange||
+    !anchor?.node||!text?.contains?.(anchor.node)||text.hidden)return false;
+  const node=anchor.node,index=anchor.offset;
+  if(node.nodeType!==3||!Number.isInteger(index)||index<0||index>=node.length||
+    !Number.isFinite(anchor.relativeY))return false;
+  try{
+    const range=doc.createRange();
+    range.setStart(node,index);range.setEnd(node,index+1);
+    const rect=Array.from(range.getClientRects()).find(r=>r.height>0);
+    if(!rect||!Number.isFinite(rect.top))return false;
+    const top=viewer.scrollTop+rect.top-viewer.getBoundingClientRect().top-anchor.relativeY;
+    if(!Number.isFinite(top))return false;
+    const max=Math.max(0,viewer.scrollHeight-viewer.clientHeight);
+    viewer.scrollTo({top:Math.max(0,Math.min(max,top)),left:0,behavior:'auto'});
+    return true;
+  }catch{return false}
+}
 function isInteractive(element){
   return Boolean(element?.closest?.(INTERACTIVE));
 }
@@ -116,6 +166,7 @@ export function bindReaderScreenMode({
     throw new Error('SINJIRA V53 : contrôles nécessaires absents');
   let gesture=null,pendingPreviousPdf=null,lastRatio=0,restoring=false,closed=false;
   let pendingLayoutRatio=null; // V56 : une seule position de référence par réagencement
+  let lastAnchor=null,pendingLayoutAnchor=null; // V63 : ancre locale non persistée
   toggle.checked=localPreference();
   const isPaged=()=>!closed&&media.matches&&toggle.checked&&!text.hidden;
   const metric=()=>readerScreenState({
@@ -151,7 +202,10 @@ export function bindReaderScreenMode({
     if(status.textContent!==announced)status.textContent=announced;
     if(mobilePrevious)mobilePrevious.disabled=!s.hasPreviousScreen&&previous.disabled;
     if(mobileNext)mobileNext.disabled=!s.hasNextScreen&&next.disabled;
-    if(!restoring&&pendingLayoutRatio===null)lastRatio=s.ratio;
+    if(!restoring&&pendingLayoutRatio===null){
+      lastRatio=s.ratio;
+      lastAnchor=active?captureReaderTextAnchor({viewer,text}):null;
+    }
   };
   const scrollToScreen=top=>{
     restoring=true;
@@ -277,15 +331,20 @@ export function bindReaderScreenMode({
    * proportionnelle évite qu'un événement post-reflow remplace l'ancre.
    * Cette ancre est une fraction du PDF courant, pas un identifiant EPUB.
    */
-  const scheduleLayoutRestore=ratio=>{
+  const scheduleLayoutRestore=(ratio,anchor=lastAnchor)=>{
     if(pendingLayoutRatio!==null)return;
     pendingLayoutRatio=Math.max(0,Math.min(1,Number.isFinite(ratio)?ratio:0));
+    pendingLayoutAnchor=anchor;
     raf(()=>raf(()=>{
       if(closed)return;
-      const target=pendingLayoutRatio;
-      pendingLayoutRatio=null;
-      if(isPaged())scrollToScreen(target*Math.max(0,viewer.scrollHeight-viewer.clientHeight));
-      else sync();
+      const target=pendingLayoutRatio,anchored=pendingLayoutAnchor;
+      pendingLayoutRatio=null;pendingLayoutAnchor=null;
+      if(!isPaged()){sync();return}
+      restoring=true;
+      const found=restoreReaderTextAnchor({viewer,text,anchor:anchored});
+      restoring=false;
+      if(found)sync();
+      else scrollToScreen(target*Math.max(0,viewer.scrollHeight-viewer.clientHeight));
     }));
   };
   const onToggle=()=>{
@@ -295,11 +354,13 @@ export function bindReaderScreenMode({
     sync();
     scheduleLayoutRestore(previousRatio);
   };
-  const onResize=()=>scheduleLayoutRestore(lastRatio);
+  const onResize=()=>scheduleLayoutRestore(lastRatio,lastAnchor);
   const onPreferences=event=>{
     if(!isPaged()||!['reader-size','reader-font','reader-line-height',
       'reader-letter-spacing','reader-text-width'].includes(event.target?.id))return;
-    scheduleLayoutRestore(lastRatio);
+    // Phase capture du formulaire : avant le changement CSS de V26.
+    scheduleLayoutRestore(lastRatio,
+      captureReaderTextAnchor({viewer,text})||lastAnchor);
   };
   viewer.addEventListener('touchstart',onTouchStart,{capture:true,passive:true});
   viewer.addEventListener('touchmove',onTouchMove,{capture:true,passive:true});
