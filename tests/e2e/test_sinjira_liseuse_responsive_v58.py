@@ -224,7 +224,24 @@ def run(playwright, engine, origin):
           const v=document.querySelector('#reader-viewer');
           return innerWidth===568&&v.dataset.readerLayout==='screens';
         }""")
-        page.wait_for_timeout(220)
+        # Sur WebKit, le reflow peut finir après deux frames lorsque la CI
+        # lance d'autres moteurs en parallèle. Attendre la vraie CONDITION
+        # fonctionnelle (même caractère à <35 px), sans assouplir le seuil.
+        try:
+            page.wait_for_function("""()=>{
+              const a=window.__v64RotateAnchor;
+              const v=document.querySelector('#reader-viewer');
+              if(!a?.node?.isConnected)return false;
+              const range=document.createRange();
+              range.setStart(a.node,a.offset);
+              range.setEnd(a.node,a.offset+1);
+              const r=Array.from(range.getClientRects()).find(x=>x.height>0);
+              return Boolean(r) && Math.abs(
+                r.top-v.getBoundingClientRect().top-a.relativeY
+              )<35;
+            }""",timeout=6500)
+        except Exception:
+            pass  # conserver l'assertion détaillée ci-dessous
         after_rotation=page.evaluate("""()=>{
           const a=window.__v64RotateAnchor;
           const viewer=document.querySelector('#reader-viewer');
