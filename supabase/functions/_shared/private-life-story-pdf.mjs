@@ -64,6 +64,11 @@ export async function readPrivateLifeStoryPdf({
     '/storage/v1/object/authenticated/' + STORAGE_BUCKET + '/' + path,
     base
   );
+  // Une échéance unique, démarrée AVANT fetch : elle couvre les en-têtes et
+  // toute la réponse. Un timer explicite interrompt aussi les clients simulés
+  // dont le fetch n'entretient aucun événement réseau dans Node.
+  const controller = new AbortController();
+  const deadline = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetchImpl(target.toString(), {
       method: 'GET',
@@ -76,12 +81,14 @@ export async function readPrivateLifeStoryPdf({
       credentials: 'omit',
       redirect: 'error',
       referrerPolicy: 'no-referrer',
-      signal: AbortSignal.timeout(timeoutMs)
+      signal: controller.signal
     });
     if (!response.ok) return { ok: false };
     return await readLimitedBinaryResponse(response, maxBytes, timeoutMs);
   } catch {
     // Aucune exception, requête, URL ou clé n'est reflétée dans la réponse.
     return { ok: false };
+  } finally {
+    clearTimeout(deadline);
   }
 }
