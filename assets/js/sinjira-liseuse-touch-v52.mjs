@@ -22,6 +22,16 @@ export function classifyReaderSwipe({
   return dx<0?'next':'previous';
 }
 
+/**
+ * V67 : laisser au navigateur les gestes qui commencent dans les premiers
+ * ou derniers 24 pixels CSS du viewport (ex. retour Safari iOS).
+ * Si la largeur du viewport n'est pas connue, ne pas bloquer la lecture.
+ */
+export function isReaderSystemEdgeGesture({clientX,viewportWidth,edgePx=24}={}){
+  if(![clientX,viewportWidth,edgePx].every(Number.isFinite)||
+     edgePx<=0||viewportWidth<=edgePx*3)return false;
+  return clientX>=0&&(clientX<=edgePx||clientX>=viewportWidth-edgePx);
+}
 function isInteractiveTarget(target){
   return Boolean(target&&typeof target.closest==='function'&&target.closest(INTERACTIVE));
 }
@@ -42,6 +52,10 @@ export function bindReaderTouchNavigation({
     if(event.touches?.length!==1||isInteractiveTarget(event.target))return;
     const touch=event.touches[0];
     if(!Number.isFinite(touch.clientX)||!Number.isFinite(touch.clientY))return;
+    // Ne pas intercepter un geste de navigation système démarrant sur le bord.
+    if(isReaderSystemEdgeGesture({
+      clientX:touch.clientX,viewportWidth:globalThis.window?.innerWidth
+    }))return;
     origin={
       id:touch.identifier,x:touch.clientX,y:touch.clientY,time:clock(),
       scrollTop:viewer.scrollTop||0,maxVerticalTravel:0,scrolled:false

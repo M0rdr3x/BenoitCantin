@@ -14,9 +14,9 @@ from test_sinjira_liseuse_real_page_v57 import install_isolation, snapshot
 
 
 TRAJECTORY = """
-({dx,dy=3,moves=[],scrollDuring=0})=>{
+({dx,dy=3,moves=[],scrollDuring=0,startX=248})=>{
   const viewer=document.querySelector('#reader-viewer');
-  const base={identifier:42,target:viewer,clientX:248,clientY:242};
+  const base={identifier:42,target:viewer,clientX:startX,clientY:242};
   const fake=(name,touches,changed)=>{
     const ev=new Event(name,{bubbles:true,cancelable:true});
     Object.defineProperties(ev,{
@@ -96,6 +96,18 @@ def run(playwright, engine, url):
                 "V66: scroll transitoire interprété comme balayage horizontal",
                 width,native_scroll
             )
+            # V67 : les 24 px des bords appartiennent aux gestes du
+            # navigateur / du système. Aucune page ne doit tourner.
+            edge_left=page.evaluate(TRAJECTORY,{
+                "dx":135,"dy":2,"startX":8
+            })
+            edge_right=page.evaluate(TRAJECTORY,{
+                "dx":-135,"dy":2,"startX":width-8
+            })
+            for edge in (edge_left,edge_right):
+                assert edge["page"]==3 and edge["scroll"]==0 and not edge["prevented"],(
+                    "V67: le lecteur a capté un geste système",width,edge
+                )
             # Le vrai geste horizontal reste utilisable après les rejets.
             clean=page.evaluate(TRAJECTORY,{
                 "dx":-135,"dy":2,"moves":[[-70,7]]
@@ -118,6 +130,16 @@ def run(playwright, engine, url):
             "dx":-135,"dy":2,"scrollDuring":42
         })
         assert scroll_reject["page"]==3,scroll_reject
+        edge_pdf_left=page.evaluate(TRAJECTORY,{
+            "dx":135,"dy":2,"startX":8
+        })
+        edge_pdf_right=page.evaluate(TRAJECTORY,{
+            "dx":-135,"dy":2,"startX":page.viewport_size["width"]-8
+        })
+        assert edge_pdf_left["page"]==3 and edge_pdf_right["page"]==3,(
+            "V67: mode PDF a capté le geste système",
+            edge_pdf_left,edge_pdf_right
+        )
         allowed=page.evaluate(TRAJECTORY,{
             "dx":-135,"dy":2,"moves":[[-75,7]]
         })
@@ -127,7 +149,7 @@ def run(playwright, engine, url):
         )
         assert not errors,errors
         assert not blocked,blocked
-        print(f"PASS {engine}: V66 trajectoire verticale/scroll transitoire "
+        print(f"PASS {engine}: V66/V67 trajectoire verticale et bord du viewport "
               "ignorés, gestes horizontaux conservés en écrans et PDF")
         context.close()
     finally:
