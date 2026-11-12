@@ -68,10 +68,29 @@ def run(playwright, engine, url):
         assert snapshot(page)["page"]==3
         for width,height in [(390,844),(320,568)]:
             page.set_viewport_size({"width":width,"height":height})
-            page.wait_for_timeout(100)
-            page.evaluate("document.querySelector('#reader-viewer').scrollTop=0")
+            # Le réagencement V63/V64 restaure légitimement le passage lu
+            # après la rotation. Attendre cette restauration AVANT de placer
+            # le scénario V66/V67 au tout début du livre, sinon WebKit peut
+            # restaurer le ratio entre le reset et la première assertion.
+            page.wait_for_function("""(w)=>innerWidth===w &&
+              document.querySelector('#reader-viewer').dataset.readerLayout==='screens'
+            """,arg=width)
+            page.evaluate("""async()=>{
+              const viewer=document.querySelector('#reader-viewer');
+              await new Promise(resolve=>requestAnimationFrame(()=>
+                requestAnimationFrame(resolve)));
+              viewer.scrollTop=0;
+              await new Promise(resolve=>requestAnimationFrame(resolve));
+              viewer.scrollTop=0;
+            }""")
+            page.wait_for_function("""()=>{
+              const viewer=document.querySelector('#reader-viewer');
+              return Math.abs(viewer.scrollTop)<=3;
+            }""")
             start=snapshot(page)
-            assert start["page"]==3 and start["scroll"]==0,start
+            assert start["page"]==3 and start["scroll"]<=3,(
+                "V67: début du test après restauration de mise en page",start["page"],start["scroll"]
+            )
 
             # Le trajet traverse une grande distance verticale, même si
             # l'arrivée semble strictement horizontale.
