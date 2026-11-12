@@ -1,5 +1,15 @@
 -- Assertions pgTAP LOCAL uniquement, assemblées avant ROLLBACK du candidat #843.
 -- UUID et courriels entièrement fictifs; aucune donnée hébergée utilisée.
+-- Refus d'exécution autonome : le générateur ajoute ce marqueur uniquement
+-- à l'intérieur de sa transaction BEGIN ... ROLLBACK locale.
+DO $test_gate$
+BEGIN
+  IF current_setting('application_name', true) <> 'sinjira-local-rls-pgtap' THEN
+    RAISE EXCEPTION 'SINJIRA_PGTAP_LOCAL_ASSEMBLY_REQUIRED';
+  END IF;
+END
+$test_gate$;
+
 CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SET LOCAL search_path = public, extensions;
 -- Les migrations locales ne reproduisent pas encore les GRANT SELECT de
