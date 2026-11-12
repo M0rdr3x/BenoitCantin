@@ -6,6 +6,7 @@ import { optionalUser, serviceClient } from '../_shared/auth.ts';
 const FUNCTION_VERSION='24.5.2';
 const MAX_REQUEST_BYTES=220_000;
 const MAX_TEMPLATE_BYTES=15*1024*1024;
+const MAX_TEMPLATE_FETCH_MS=15_000;
 // Intégration préparée, jamais activée implicitement. Une future activation exige
 // une décision explicite distincte sur le fournisseur et les coûts.
 const PAID_EXTERNAL_SERVICES_ENABLED=false;
@@ -41,7 +42,7 @@ function reportTemplateUrl(){
 }
 
 async function fetchTemplateBytes(){
-  const response=await fetch(reportTemplateUrl(),{cache:'no-store',redirect:'error'});
+  const response=await fetch(reportTemplateUrl(),{cache:'no-store',redirect:'error',signal:AbortSignal.timeout(MAX_TEMPLATE_FETCH_MS)});
   if(!response.ok)throw new Error('REPORT_TEMPLATE_FETCH_FAILED');
   // Limiter le vrai flux binaire, pas seulement Content-Length (non fiable).
   // response.arrayBuffer() permettrait à une origine défaillante de dépasser

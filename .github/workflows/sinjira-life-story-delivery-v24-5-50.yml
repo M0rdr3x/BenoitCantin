@@ -39,6 +39,9 @@ jobs:
       - name: Vérifier la confidentialité des erreurs de remise
         run: python scripts/validate_life_story_delivery_error_security.py
 
+      - name: Vérifier les limites mémoire et temporelles du PDF Histoire de vie privé
+        run: node --test scripts/test_life_story_private_pdf_stream.mjs
+
       - name: Auto-tester la sécurité HTTP de life-story-export
         run: python scripts/validate_life_story_export_request_security.py --self-test
 

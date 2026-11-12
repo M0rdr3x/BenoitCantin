@@ -32,6 +32,7 @@ def validate_text(text: str) -> None:
         '        run: python scripts/validate_life_story_delivery_error_security.py\n',
         '        run: python scripts/validate_life_story_export_request_security.py --self-test\n',
         '        run: python scripts/validate_life_story_export_request_security.py\n',
+        'node --test scripts/test_life_story_private_pdf_stream.mjs',
         'python scripts/validate_life_story_delivery_v24_5_50.py',
         'python scripts/validate_edge_function_inventory.py',
         'python scripts/validate_life_story_legacy_v24_5_2.py',
@@ -122,6 +123,11 @@ def self_test(text: str) -> None:
         'garde export retiré': text.replace(
             '      - name: Vérifier la sécurité HTTP de life-story-export\n'
             '        run: python scripts/validate_life_story_export_request_security.py\n\n',
+            '',
+            1,
+        ),
+        'test PDF privé en flux retiré': text.replace(
+            '        run: node --test scripts/test_life_story_private_pdf_stream.mjs\n\n',
             '',
             1,
         ),
