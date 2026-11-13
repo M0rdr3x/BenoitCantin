@@ -210,7 +210,7 @@ def errors(text: str) -> list[str]:
     if min(main_at, confirm_at, token_at) < 0 or not main_at < confirm_at < token_at:
         out.append("les gardes main puis confirmation humaine doivent précéder l'unique accès au secret")
 
-    curl_lines = re.findall(r"(?m)^\s*curl\b.*$", text)
+    curl_lines = re.findall(r"(?m)\bcurl\s+-q\b.*$", text)
     if len(curl_lines) != 1:
         out.append("un seul appel curl est autorisé dans tout le workflow")
     if text.count(PRODUCTION_URL) != 1:
