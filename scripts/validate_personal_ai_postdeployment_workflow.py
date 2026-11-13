@@ -46,9 +46,9 @@ def main() -> int:
         '20260905150553', 'sinjira_v25_personal_ai_audit_user_index',
         'python3 scripts/validate_personal_ai_production_readiness.py',
         'Exécuter les 36 assertions Mon IA',
-        "curl --proto '=https' --fail-with-body --silent --show-error --request GET",
+        "curl -q --proto '=https' --fail-with-body --silent --show-error --request GET",
         f'--url "{PRODUCTION_URL}"',
-        'Authorization: Bearer $SUPABASE_ACCESS_TOKEN',
+        '--header @-',
         'Vérifier l\'historique distant sans secret',
     ):
         require(marker in text, f'marqueur obligatoire absent: {marker}')
@@ -74,7 +74,7 @@ def main() -> int:
         require(forbidden not in active, f'primitive d écriture/contournement interdite: {forbidden}')
 
     require(active.count(PRODUCTION_URL) == 1, 'une seule URL production Supabase littérale est attendue')
-    require(len(re.findall(r'(?m)^\s*curl\b', active)) == 1, 'un seul appel curl distant est autorisé')
+    require(len(re.findall(r'(?m)\bcurl\s+-q\b', active)) == 1, 'un seul appel curl distant est autorisé')
 
     secret_lines = [line for line in text.splitlines() if '${{ secrets.' in line]
     require(secret_lines == [f'          {TOKEN_REF}'], 'le token Supabase doit être l unique secret et rester borné à une seule étape')
