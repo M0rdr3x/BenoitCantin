@@ -215,7 +215,7 @@ test("les deux outils officiels rendent visible l'état daté sans ouvrir le son
  assert.ok(compassHtml.includes(compassPct));
  assert.ok(pollHtml.includes("6 critères sur 11 validés"));
  assert.ok(compassHtml.includes("9 critères sur 12 validés"));
- assert.ok(compassHtml.includes("assets/boussole-electorale.js?v=3.4.26"),"Cache de la boussole invalidé après correction");
+ assert.ok(compassHtml.includes("assets/boussole-electorale.js?v=3.4.27"),"Cache de la boussole invalidé après correction");
  assert.ok(pollHtml.includes("la collecte reste fermée"));
  for(const html of [pollHtml,compassHtml]){
   assert.ok(html.includes('href="sondages-a-valider.html#etat-validation-outils"'));

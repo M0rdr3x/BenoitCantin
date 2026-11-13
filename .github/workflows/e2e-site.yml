@@ -78,6 +78,7 @@ jobs:
         run: |
           run_suite() {
             python tests/e2e/test_public_site.py &&
+            python tests/e2e/test_nova_compass_keyboard_focus.py &&
             python tests/e2e/test_literature_site.py
           }
           if run_suite; then

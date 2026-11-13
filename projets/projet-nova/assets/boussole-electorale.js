@@ -164,7 +164,9 @@
     updateStepControls();
     // Firefox ne garantit pas focus() sur legend. Le span interne est
     // focalisable sans retirer la sémantique native du fieldset/legend.
-    stage.querySelector("[data-compass-question-focus]")?.focus({preventScroll:true});
+    // Le navigateur DOIT faire défiler vers le focus au changement de question :
+    // preventScroll:true laissait parfois Q02 hors écran sur viewport mobile.
+    stage.querySelector("[data-compass-question-focus]")?.focus();
   }
 
   function updateProgress(){
