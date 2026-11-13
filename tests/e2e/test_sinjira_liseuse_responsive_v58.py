@@ -107,6 +107,10 @@ def run(playwright, engine, origin):
             assert info["navDisplay"]=="flex",(label,info)
             assert min(info["nextHeight"],info["prevHeight"])>=44,(label,info)
             assert info["viewerWidth"]>=280,(label,info)
+            # V68 : écran 390 px de haut, ne pas imposer 340/410 px de lecteur.
+            if label=="téléphone paysage":
+                assert 175<=info["viewerHeight"]<=300,(label,info)
+                assert info["viewerHeight"]<=height-100,(label,info)
             assert info["documentWidth"]<=width+3,(label,info)
             assert info["articleWidth"]<=info["viewerWidth"]+3,(label,info)
             assert info["articleLeft"]>=info["viewerLeft"]-3,(label,info)
@@ -224,6 +228,14 @@ def run(playwright, engine, origin):
           const v=document.querySelector('#reader-viewer');
           return innerWidth===568&&v.dataset.readerLayout==='screens';
         }""")
+        landscape=geometry(page)
+        assert 175<=landscape["viewerHeight"]<=240,(
+            "V68: liseuse trop haute pour téléphone 568×320 en paysage",
+            landscape
+        )
+        assert min(landscape["nextHeight"],landscape["prevHeight"])>=44,(
+            "V68: les commandes tactiles doivent rester grandes",landscape
+        )
         # Sur WebKit, le reflow peut finir après deux frames lorsque la CI
         # lance d'autres moteurs en parallèle. Attendre la vraie CONDITION
         # fonctionnelle (même caractère à <35 px), sans assouplir le seuil.
