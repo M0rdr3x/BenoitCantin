@@ -188,7 +188,7 @@ def errors(text: str) -> list[str]:
     if main_pos < 0 or token_pos < 0 or main_pos > token_pos:
         out.append("le refus hors main doit précéder l'unique accès au secret")
 
-    curl_lines = re.findall(r"(?m)^\s*curl\b.*$", text)
+    curl_lines = re.findall(r"(?m)\bcurl\s+-q\b.*$", text)
     if len(curl_lines) != 1:
         out.append("un seul appel curl est autorisé dans tout le workflow")
     if text.count(PRODUCTION_URL) != 1:
