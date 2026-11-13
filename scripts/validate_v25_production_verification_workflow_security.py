@@ -154,7 +154,7 @@ def validate_workflow(text: str) -> None:
         '--tlsv1.2',
         '--request GET',
         MANAGEMENT_URL,
-        '--header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN"',
+        '--header @-',
         'MIGRATION_HISTORY="$RUNNER_TEMP/v25-migrations.json" python3 - <<\'PY\'',
         'after_names[:len(required)] != required',
         FUNCTIONS_CMD,
@@ -238,7 +238,7 @@ def validate_workflow(text: str) -> None:
     if active.count('https://') != 1:
         fail('aucun autre endpoint HTTPS n’est autorisé dans le workflow production')
     for marker in (
-        'curl --fail-with-body --silent --show-error \\',
+        'curl -q --fail-with-body --silent --show-error \\',
         "--proto '=https' \\",
         '--tlsv1.2 \\',
         '--request GET \\',
@@ -344,7 +344,7 @@ def mutations(workflow: str, harness: str):
     yield 'connect-to ajouté', mutate_step(workflow, download, "            --tlsv1.2 \\\n", "            --tlsv1.2 \\\n            --connect-to api.supabase.com:443:example.invalid:443 \\\n"), harness
     yield 'resolve ajouté', mutate_step(workflow, download, "            --tlsv1.2 \\\n", "            --tlsv1.2 \\\n            --resolve api.supabase.com:443:127.0.0.1 \\\n"), harness
     yield 'HTTP data', mutate_step(workflow, download, "            --request GET \\\n", "            --request GET \\\n            --data '{}' \\\n"), harness
-    yield 'second curl', mutate_step(workflow, download, '          curl --fail-with-body', '          curl https://example.invalid\n          curl --fail-with-body'), harness
+    yield 'second curl', mutate_step(workflow, download, '          printf ', '          curl https://example.invalid\n          curl --fail-with-body'), harness
     yield 'token confirmation', mutate_step(workflow, 'Vérifier la confirmation', '        env:\n', f'        env:\n{TOKEN_LINE}\n'), harness
     yield 'token job-level', workflow.replace('    environment: production\n', '    environment: production\n    env:\n      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}\n', 1), harness
     yield 'token téléchargement retiré', mutate_step(workflow, download, TOKEN_LINE + '\n', ''), harness
