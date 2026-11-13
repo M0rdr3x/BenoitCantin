@@ -747,13 +747,11 @@ def validate_netlify_staging_workflow() -> list[str]:
         "confirmation:",
         "STAGING_ONLY",
         "permissions:\n  contents: read",
-        "startsWith(github.ref, 'refs/heads/a1/web-release-')",
+        "github.ref == 'refs/heads/a1/web-release-transparency'", 
         "secrets.NETLIFY_AUTH_TOKEN",
         "secrets.NETLIFY_SITE_ID",
         "netlify-cli@27.10.2 deploy",
-        "--auth \"$NETLIFY_AUTH_TOKEN\"",
-        "--site \"$NETLIFY_SITE_ID\"",
-        "--dir _preview_site",
+          "--dir _preview_site",
         "--dir _site",
         "--no-build",
         "CONTEXT: deploy-preview",
@@ -775,6 +773,9 @@ def validate_netlify_staging_workflow() -> list[str]:
         "--prod-if-unlocked",
         "netlify deploy --prod",
         "github.ref == 'refs/heads/main'",
+        "startsWith(github.ref, 'refs/heads/a1/web-release-')",
+        '--auth "$NETLIFY_AUTH_TOKEN"',
+        '--site "$NETLIFY_SITE_ID"',
     )
     for marker in forbidden_markers:
         if marker in text:
