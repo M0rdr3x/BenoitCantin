@@ -29,6 +29,9 @@ jobs:
     if: github.ref == 'refs/heads/a1/web-release-transparency'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    # La validation de staging et ses secrets doivent être soumis aux
+    # protections d'environnement configurées dans GitHub Settings.
+    environment: netlify-staging
     env:
       EXPECTED_SHA: ${{ inputs.expected_sha }}
       EXPECTED_SITE_NAME: ${{ inputs.expected_site_name }}
@@ -37,6 +40,16 @@ jobs:
       NPM_CONFIG_FUND: 'false'
       SINJIRA_RELEASE_SHA: ${{ github.sha }}
     steps:
+      - name: Refuser tout staging depuis une branche non protégée
+        # Ce contrôle s'exécute avant checkout et avant accès à un secret.
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_REF_PROTECTED:-false}" != "true" ]; then
+            echo "ERREUR: branche de release non protégée par GitHub; activer Branch protection/Ruleset avant staging." >&2
+            exit 1
+          fi
+
       - name: Récupérer le dépôt sans credentials persistés
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
