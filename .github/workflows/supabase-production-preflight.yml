@@ -132,14 +132,18 @@ jobs:
 
       - name: Vérifier l'intention manuelle
         shell: bash
+        env:
+          APPLY_REQUESTED: ${{ inputs.apply }}
+          PRODUCTION_CONFIRMATION: ${{ inputs.confirmation }}
+          TRIGGER_REF: ${{ github.ref }}
         run: |
           set -euo pipefail
-          if [ "${{ inputs.apply }}" = "true" ]; then
-            if [ "${{ github.ref }}" != "refs/heads/main" ]; then
+          if [ "$APPLY_REQUESTED" = "true" ]; then
+            if [ "$TRIGGER_REF" != "refs/heads/main" ]; then
               echo "Refus: apply=true est autorisé uniquement depuis refs/heads/main."
               exit 64
             fi
-            if [ "${{ inputs.confirmation }}" != "APPLY-SUPABASE-PRODUCTION" ]; then
+            if [ "$PRODUCTION_CONFIRMATION" != "APPLY-SUPABASE-PRODUCTION" ]; then
               echo "Refus: confirmation textuelle de production invalide."
               exit 65
             fi
@@ -304,11 +308,13 @@ jobs:
       - name: ÉTAT PRÉVOL DISTANT
         if: ${{ always() }}
         shell: bash
+        env:
+          APPLY_REQUESTED: ${{ inputs.apply }}
         run: |
           set -euo pipefail
           if [ "${{ steps.auth.outputs.ready }}" != "true" ]; then
             echo '⛔ NON SYNCHRONISÉ : les secrets de connexion Supabase ne sont pas disponibles au lancement manuel. Aucune écriture de production n’a eu lieu.' >> "$GITHUB_STEP_SUMMARY"
-          elif [ "${{ inputs.apply }}" != "true" ]; then
+          elif [ "$APPLY_REQUESTED" != "true" ]; then
             echo '🟡 PRÉVOL MANUEL SEULEMENT : aucune modification de production, car apply=false.' >> "$GITHUB_STEP_SUMMARY"
           else
             echo '🟡 PRÉVOL MANUEL VALIDÉ : apply=true confirmé; l’application reste séparée derrière l’environment GitHub production.' >> "$GITHUB_STEP_SUMMARY"
