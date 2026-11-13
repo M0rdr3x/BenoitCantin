@@ -448,6 +448,38 @@ test('V56 : input puis change de taille de police ne créent pas deux déplaceme
     assert.equal(f.viewer.scrollTop,875); // 50 % de la nouvelle hauteur scrollable
   }finally{f.restore()}
 });
+test('V74 : mode pages écran conserve le swipe malgré débordement masqué du texte',()=>{
+  const f=fixture();
+  try{
+    f.viewer.scrollWidth=f.viewer.clientWidth+130;
+    f.text.scrollWidth=f.text.clientWidth+220;
+    f.windowMock.getComputedStyle=element=>({
+      lineHeight:'35px',fontSize:'20px',
+      overflowX:element===f.viewer?'hidden':element===f.text?'visible':'auto'
+    });
+    const evt=f.swipe(-130,2);
+    assert.equal(evt.defaultPrevented,true);
+    assert.ok(f.viewer.scrollTop>0);
+  }finally{f.restore()}
+});
+test('V74 : sous-conteneur masqué est ignoré, mais auto-scroll empêche le tournage',()=>{
+  const f=fixture();
+  try{
+    const panel={clientWidth:240,scrollWidth:390,cssOverflowX:'hidden',parentElement:f.viewer};
+    const child={parentElement:panel,closest:()=>null};
+    f.windowMock.getComputedStyle=element=>({
+      lineHeight:'35px',fontSize:'20px',overflowX:element.cssOverflowX||'visible'
+    });
+    let evt=f.swipe(-130,2,{target:child});
+    assert.equal(evt.defaultPrevented,true);
+    assert.ok(f.viewer.scrollTop>0);
+    const previous=f.viewer.scrollTop;
+    panel.cssOverflowX='auto';
+    evt=f.swipe(-130,2,{target:child});
+    assert.equal(evt.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,previous);
+  }finally{f.restore()}
+});
 test('V73 : un panneau de notes défilant conserve le geste horizontal en texte paginé',()=>{
   const f=fixture();
   try{

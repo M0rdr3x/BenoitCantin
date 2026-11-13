@@ -39,6 +39,21 @@ export function captureReaderSwipeGeometry(viewer,win=globalThis.window){
     viewportWidth:win?.innerWidth,viewportHeight:win?.innerHeight
   };
 }
+/** V74 : la largeur de contenu ne signifie pas un pan tactile possible.
+ * En mode « pages d'écran », le lecteur utilise overflow-x:hidden; certains
+ * mots, tableaux et ornements restent plus larges que leur boîte sans être
+ * parcourables horizontalement. Ne réservez le swipe au navigateur que si
+ * un conteneur réellement défilable peut recevoir ce geste.
+ * Style indisponible : prudence, ne pas voler un éventuel défilement. */
+export function readerCanPanHorizontally(element,tolerancePx=4,
+  getStyle=globalThis.window?.getComputedStyle?.bind(globalThis.window)){
+  if(!element||!Number.isFinite(tolerancePx)||tolerancePx<0||
+    !Number.isFinite(element.scrollWidth)||!Number.isFinite(element.clientWidth)||
+    element.scrollWidth<=element.clientWidth+tolerancePx)return false;
+  let overflowX;
+  try{overflowX=getStyle?.(element)?.overflowX}catch{/* style inaccessible */}
+  return !['hidden','clip','visible'].includes(String(overflowX||'').toLowerCase());
+}
 /** V73 : le texte peut contenir un tableau ou une annotation défilant
  * horizontalement dans son propre conteneur, sans agrandir le lecteur.
  * Un tel geste doit rester au conteneur, pas tourner une page du roman.
@@ -50,8 +65,7 @@ export function hasReaderNestedHorizontalOverflow(target,viewer,tolerancePx=4){
   while(node&&!visited.has(node)){
     if(node===viewer)return overflow;
     visited.add(node);
-    if(Number.isFinite(node.scrollWidth)&&Number.isFinite(node.clientWidth)&&
-      node.scrollWidth>node.clientWidth+tolerancePx)overflow=true;
+    if(readerCanPanHorizontally(node,tolerancePx))overflow=true;
     node=node.parentElement||node.parentNode;
   }
   return false;
@@ -139,7 +153,7 @@ export function bindReaderTouchNavigation({
       dx:touch.clientX-initial.x,dy:touch.clientY-initial.y,
       durationMs:clock()-initial.time,viewerWidth:viewer.clientWidth,
       hasSelection:Boolean(getSelectedText()?.trim()),
-      horizontalOverflow:viewer.scrollWidth>viewer.clientWidth+4||
+      horizontalOverflow:readerCanPanHorizontally(viewer)||
         initial.nestedHorizontalOverflow,
       maxVerticalTravel:initial.maxVerticalTravel,
       scrolledDuringGesture:initial.scrolled||

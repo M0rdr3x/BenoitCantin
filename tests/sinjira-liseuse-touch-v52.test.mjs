@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {classifyReaderSwipe,bindReaderTouchNavigation,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,hasReaderNestedHorizontalOverflow} from '../assets/js/sinjira-liseuse-touch-v52.mjs';
+import {classifyReaderSwipe,bindReaderTouchNavigation,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,hasReaderNestedHorizontalOverflow,readerCanPanHorizontally} from '../assets/js/sinjira-liseuse-touch-v52.mjs';
 
 const gesture=(overrides={})=>classifyReaderSwipe({
   dx:-92,dy:8,durationMs:240,viewerWidth:375,...overrides
@@ -83,6 +83,46 @@ function fixture({selected=false}={}){
   };
   return {viewer,previous,next,mobilePrevious,mobileNext,release,swipe,setSelected:v=>{selection=v}};
 }
+test('V74 : seulement un overflow-x véritablement défilable réserve le glissement',()=>{
+  const element={clientWidth:300,scrollWidth:440};
+  const style=overflowX=>()=>({overflowX});
+  for(const overflowX of ['hidden','clip','visible'])
+    assert.equal(readerCanPanHorizontally(element,4,style(overflowX)),false);
+  for(const overflowX of ['auto','scroll','overlay'])
+    assert.equal(readerCanPanHorizontally(element,4,style(overflowX)),true);
+  assert.equal(readerCanPanHorizontally(element,4,()=>undefined),true);
+  element.scrollWidth=304;
+  assert.equal(readerCanPanHorizontally(element,4,style('auto')),false);
+  assert.equal(readerCanPanHorizontally(element,NaN,style('auto')),false);
+});
+test('V74 : un tableau coupé par overflow hidden ne bloque pas le swipe PDF',()=>{
+  const previousWindow=globalThis.window;
+  globalThis.window={getComputedStyle:node=>({overflowX:node.cssOverflowX})};
+  const f=fixture();
+  try{
+    const panel={clientWidth:210,scrollWidth:420,cssOverflowX:'hidden',parentElement:f.viewer};
+    const child={parentElement:panel,closest:()=>null};
+    f.swipe(-130,2,{target:child});
+    assert.equal(f.next.clicks,1);
+    panel.cssOverflowX='auto';
+    f.swipe(-130,2,{target:child});
+    assert.equal(f.next.clicks,1);
+  }finally{f.release();globalThis.window=previousWindow}
+});
+test('V74 : PDF avec zone principale non défilable ne bloque pas un geste',()=>{
+  const previousWindow=globalThis.window;
+  globalThis.window={getComputedStyle:node=>({overflowX:node.cssOverflowX})};
+  const f=fixture();
+  try{
+    f.viewer.scrollWidth=600;
+    f.viewer.cssOverflowX='hidden';
+    f.swipe(-130,2);
+    assert.equal(f.next.clicks,1);
+    f.viewer.cssOverflowX='auto';
+    f.swipe(-130,2);
+    assert.equal(f.next.clicks,1);
+  }finally{f.release();globalThis.window=previousWindow}
+});
 test('V73 : conteneur imbriqué débordant, faux débordement et nœud extérieur',()=>{
   const viewer={clientWidth:375,scrollWidth:375};
   const panel={clientWidth:300,scrollWidth:480,parentElement:viewer};
