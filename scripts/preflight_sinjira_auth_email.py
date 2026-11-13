@@ -45,7 +45,8 @@ class ConfirmationLinkParser(HTMLParser):
         # Un href correct mais dans un bloc invisible ne doit pas être
         # considéré comme un bouton de confirmation utilisable.
         local_hidden = (
-            tag in ("template", "head", "script", "style")
+            tag in ("template", "head", "script", "style",
+                    "textarea", "select", "option", "noscript")
             or "hidden" in properties
             or "inert" in properties
             or str(properties.get("aria-hidden") or "").strip().lower() == "true"
@@ -291,6 +292,15 @@ def selftest():
         '<a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email">Confirmer <a href="https://evil.example/" /></a>',
     ]
     deceptive_templates.extend(nested_anchor_templates)
+    # Le navigateur traite le HTML de <textarea> comme du texte, et les
+    # ancres dans <select>/<option> ou <noscript> ne constituent pas des
+    # commandes fiables. Ne jamais certifier un faux bouton masqué.
+    inert_container_templates = [
+        '<textarea><a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email">Confirmer</a></textarea>',
+        '<select><option><a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email">Confirmer</a></option></select>',
+        '<noscript><a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email">Confirmer</a></noscript>',
+    ]
+    deceptive_templates.extend(inert_container_templates)
     for template in deceptive_templates:
         _, failed, _ = audit({**good, "mailer_templates_confirmation_content": template})
         assert "Modèle sécurisé par fragment" in failed, "Faux positif du modèle de courriel"
