@@ -43,7 +43,10 @@ et doit être revérifié au moment du sign-off.
   **liens `<a>` imbriqués** et les balises `<a />` autofermantes : un navigateur
   peut réparer ces structures HTML invalides différemment du parseur statique,
   ce qui rendrait la destination ou le texte cliquable ambigus. Quatre
-  régressions négatives contrôlent ce cas hors ligne.
+  régressions négatives contrôlent ce cas hors ligne. Le prévol refuse
+  aussi un lien placé dans `<textarea>`, `<select>` ou `<noscript>` : son
+  texte ne constitue pas un bouton de confirmation fiable; trois régressions
+  négatives supplémentaires vérifient ce comportement.
   Ce contrôle statique ne peut pas analyser toutes les feuilles de style et
   **n'atteste pas la livraison**.
   Puis confirmer **dans une boîte de test contrôlée** qu'un
