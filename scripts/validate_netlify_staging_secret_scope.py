@@ -31,6 +31,31 @@ def inspect(source: str) -> list[str]:
     if branch_gates != ["github.ref == 'refs/heads/a1/web-release-transparency'"]:
         errors.append("la branche de staging doit être le seul ref explicitement approuvé")
 
+    # GitHub configure GITHUB_REF_PROTECTED=true uniquement si ce ref est
+    # soumis à une protection de branche / ruleset côté serveur. Aucune valeur
+    # de secret ne doit être évaluée avant ce test fail-closed.
+    if source.count("    environment: netlify-staging\n") != 1:
+        errors.append("l'environnement netlify-staging doit être attaché au job")
+    steps = re.findall(r"^      - name: ([^\n]+)$", source, re.MULTILINE)
+    expected_first_step = "Refuser tout staging depuis une branche non protégée"
+    if not steps or steps[0] != expected_first_step:
+        errors.append("le contrôle de branche protégée doit être la toute première étape")
+    gate_start = source.find("      - name: " + expected_first_step + "\n")
+    gate_end = source.find("\n      - name:", gate_start + 1) if gate_start != -1 else -1
+    gate_block = source[gate_start:gate_end] if gate_start >= 0 and gate_end > gate_start else ""
+    expected_guard = 'if [ "${GITHUB_REF_PROTECTED:-false}" != "true" ]; then'
+    if (
+        gate_block.count(expected_guard) != 1
+        or "          set -euo pipefail\n" not in gate_block
+        or not re.search(r"(?m)^            exit 1\s*$", gate_block)
+        or not re.search(r"(?m)^          fi\s*$", gate_block)
+    ):
+        errors.append("fail-closed GITHUB_REF_PROTECTED manquant ou affaibli")
+    if source.count("GITHUB_REF_PROTECTED") != 1:
+        errors.append("le contrôle de branche protégée doit être unique")
+    if gate_start < 0 or gate_start > source.find("secrets.NETLIFY_AUTH_TOKEN"):
+        errors.append("le contrôle de protection doit précéder tout accès aux secrets Netlify")
+
     # Netlify lit NETLIFY_AUTH_TOKEN et NETLIFY_SITE_ID depuis l'environnement.
     # Un jeton en argument --auth est visible dans les arguments des processus.
     cli_commands = re.findall(
@@ -146,6 +171,28 @@ def self_test(source: str) -> None:
         ),
         "removed deployment": source.replace(
             "npx --yes netlify-cli@27.10.2 deploy", "false # deployment removed", 1,
+        ),
+        "staging environment removed": source.replace(
+            "    environment: netlify-staging\n", "", 1,
+        ),
+        "staging environment renamed": source.replace(
+            "    environment: netlify-staging\n", "    environment: staging-unreviewed\n", 1,
+        ),
+        "protected-ref test removed": source.replace(
+            'if [ "${GITHUB_REF_PROTECTED:-false}" != "true" ]; then',
+            'if [ "false" != "true" ]; then', 1,
+        ),
+        "protected-ref check inverted": source.replace(
+            'if [ "${GITHUB_REF_PROTECTED:-false}" != "true" ]; then',
+            'if [ "${GITHUB_REF_PROTECTED:-false}" == "true" ]; then', 1,
+        ),
+        "protected-ref exit removed": source.replace(
+            '            exit 1\n          fi\n\n      - name: Récupérer le dépôt',
+            '            echo "CONTINUE"\n          fi\n\n      - name: Récupérer le dépôt', 1,
+        ),
+        "protected-ref check not first": source.replace(
+            "      - name: Refuser tout staging depuis une branche non protégée\n",
+            "      - name: Contrôle vide\n", 1,
         ),
     }
     for label, mutant in mutants.items():
