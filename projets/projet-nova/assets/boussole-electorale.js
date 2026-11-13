@@ -528,7 +528,7 @@
           ? "0 candidature acceptée au scrutin provincial 2026"
           : `${candidateCount} candidature${candidateCount === 1 ? "" : "s"} acceptée${candidateCount === 1 ? "" : "s"} en 2026`;
       const finalized = finalizedByParty.get(party.id) || 0;
-      const documentary = `${finalized}/${totalQuestions} fiche${finalized === 1 ? "" : "s"} documentaire${finalized === 1 ? "" : "s"} finalisée${finalized === 1 ? "" : "s"}`;
+      const documentary = `${finalized}/${totalQuestions} fiche${finalized === 1 ? "" : "s"} documentaire${finalized === 1 ? "" : "s"} pré-codée${finalized === 1 ? "" : "s"} (avis externe requis)`;
       const comparison = party.comparisonEligible
         ? "Comparaison publique activée"
         : "Comparaison publique non activée";
@@ -632,7 +632,7 @@
         ? parties.filter(party => (matrixStatuses[party.id] || "unknown") !== "unknown")
         : parties;
 
-      status.textContent = `${documentedCount} fiche${documentedCount > 1 ? "s" : ""} documentaire${documentedCount > 1 ? "s" : ""} finalisée${documentedCount > 1 ? "s" : ""}, dont ${indeterminateCount} sans direction certaine; ${unknownCount} formation${unknownCount > 1 ? "s" : ""} non documentée${unknownCount > 1 ? "s" : ""} pour cette proposition; ${visibleParties.length}/${parties.length} formations affichées.${documentedCount === 1 ? " Couverture documentaire limitée : une seule formation dispose d’une preuve finalisée. Cela ne suffit pas pour comparer les formations." : ""} Une fiche finalisée peut conclure à une position indéterminée.`;
+      status.textContent = `${documentedCount} fiche${documentedCount > 1 ? "s" : ""} documentaire${documentedCount > 1 ? "s" : ""} pré-codée${documentedCount > 1 ? "s" : ""}, dont ${indeterminateCount} sans direction certaine; ${unknownCount} formation${unknownCount > 1 ? "s" : ""} non documentée${unknownCount > 1 ? "s" : ""} pour cette proposition; ${visibleParties.length}/${parties.length} formations affichées.${documentedCount === 1 ? " Couverture documentaire limitée : une seule formation dispose d’une preuve pré-codée. Cela ne suffit pas pour comparer les formations." : ""} Une fiche pré-codée peut conclure à une position indéterminée. Aucune relecture IA n’équivaut à une attestation humaine indépendante.`;
 
       host.innerHTML = visibleParties.map(party => {
         const matrixStatus = matrixStatuses[party.id] || "unknown";
@@ -642,7 +642,7 @@
             <article class="compass-evidence-record compass-evidence-record-unknown">
               <h4>${esc(party.name)}</h4>
               <span class="compass-evidence-unknown-label">Non documentée</span>
-              <p>Aucune preuve finalisée ne permet de coder cette formation pour cette proposition. Cela ne signifie ni appui, ni opposition, ni neutralité.</p>
+              <p>Aucune preuve pré-codée ne permet d’établir une position de cette formation pour cette proposition. Cela ne signifie ni appui, ni opposition, ni neutralité.</p>
             </article>
           `;
         }
@@ -658,6 +658,10 @@
         const sourceDate = record.sourceDate || "Date non indiquée dans la source";
         const checkedAt = record.checkedAt || "Date de vérification non indiquée";
         const secondReviewDate = record.secondIndependentReview?.reviewedAt || "Date de révision non indiquée";
+        const reviewIdentity = String(record.secondIndependentReview?.reviewer || "");
+        const reviewKind = /chatgpt|openai|\b(?:ia|ai|llm)\b/i.test(reviewIdentity)
+          ? "Relecture par IA, sans attestation indépendante"
+          : "Relecture déclarée, attestation externe non vérifiée";
         const label = DOCUMENTARY_STATUS_LABELS[record.proposedStatus] || record.proposedStatus;
         const confidence = CONFIDENCE_LABELS[record.confidence] || record.confidence;
         return `
@@ -668,7 +672,8 @@
               <div><dt>Confiance</dt><dd>${esc(confidence)}</dd></div>
               <div><dt>Date source</dt><dd>${esc(sourceDate)}</dd></div>
               <div><dt>Vérifiée le</dt><dd>${esc(checkedAt)}</dd></div>
-              <div><dt>Deuxième révision</dt><dd>${esc(secondReviewDate)}</dd></div>
+              <div><dt>Date de relecture</dt><dd>${esc(secondReviewDate)}</dd></div>
+              <div><dt>Nature de la relecture</dt><dd>${esc(reviewKind)}</dd></div>
             </dl>
             <p><strong>Éléments retenus :</strong> ${esc(record.evidenceSummary)}</p>
             <p><strong>Justification du codage :</strong> ${esc(record.rationale)}</p>
@@ -723,6 +728,9 @@
       Object.values(question?.statuses || {}).filter(value => value !== "unknown").length === 1
     ).length;
     const secondReviewed = records.filter(record => record.secondIndependentReview?.status === "completed").length;
+    const aiReviewed = records.filter(record =>
+      /chatgpt|openai|\b(?:ia|ai|llm)\b/i.test(String(record.secondIndependentReview?.reviewer || ""))
+    ).length;
     const pendingSecond = records.filter(record => record.secondIndependentReview?.status === "pending").length;
     const finalizedByParty = new Map(parties.map(party => [party.id,0]));
     const indeterminateByParty = new Map(parties.map(party => [party.id,0]));
@@ -750,8 +758,8 @@
       ["Questions avec preuve",`${candidateQuestionCount}/${totalQuestionCount}`],
       ["Questions à preuve unique",singleProofQuestionCount],
       ["Preuves candidates",records.length],
-      ["Deuxième révision terminée",secondReviewed],
-      ["Fiches finalisées",finalizedCount],
+      ["Relectures documentaires consignées",secondReviewed],
+      ["Fiches pré-codées",finalizedCount],
       ["Sans direction certaine",indeterminateCount],
       ["Appuis et oppositions documentés",directPositionCount]
     ].map(([label,value]) => `<article><strong>${esc(value)}</strong><span>${esc(label)}</span></article>`).join("");
@@ -764,9 +772,9 @@
       const finalized = finalizedByParty.get(party.id) || 0;
       const indeterminate = indeterminateByParty.get(party.id) || 0;
       const sourceLabel = source.usableForPositionCoding
-        ? "Source politique vérifiée pour le codage"
+        ? "Source répertoriée pour codage provisoire"
         : source.officialSite
-          ? "Site officiel vérifié — corpus politique à compléter"
+          ? "Site déclaré officiel — confirmation indépendante requise"
           : "Registre officiel seulement — source politique à vérifier";
       return `
         <article class="compass-evidence-card">
@@ -774,8 +782,8 @@
           <p class="compass-evidence-source">${esc(sourceLabel)}</p>
           <dl>
             <div><dt>Preuves candidates</dt><dd>${partyRecords.length}</dd></div>
-            <div><dt>2e révision terminée</dt><dd>${reviewed}</dd></div>
-            <div><dt>Fiches finalisées</dt><dd>${finalized}</dd></div>
+            <div><dt>Relectures consignées</dt><dd>${reviewed}</dd></div>
+            <div><dt>Fiches pré-codées</dt><dd>${finalized}</dd></div>
             <div><dt>Sans direction certaine</dt><dd>${indeterminate}</dd></div>
           </dl>
         </article>
@@ -784,7 +792,7 @@
 
     const status = $("#compass-evidence-status");
     if(status){
-      status.textContent = `${coveredQuestionCount}/${totalQuestionCount} questions recherchées; ${candidateQuestionCount}/${totalQuestionCount} avec au moins une preuve candidate; ${noCandidateQuestionCount} encore sans preuve candidate suffisamment exacte; ${singleProofQuestionCount} avec une seule fiche finalisée. L’absence de preuve candidate ne signifie pas absence de position réelle. ${records.length} preuve${records.length > 1 ? "s" : ""} candidate${records.length > 1 ? "s" : ""}; ${pendingSecond} encore en attente d’une deuxième révision indépendante; ${finalizedCount} fiche${finalizedCount > 1 ? "s" : ""} finalisée${finalizedCount > 1 ? "s" : ""}, dont ${indeterminateCount} sans direction certaine et ${directPositionCount} appuis ou oppositions documentés. Les positions mixtes ou conditionnelles sont distinctes des appuis et oppositions explicites. Une preuve révisée ne permet pas toujours de conclure à la position exacte d’un parti. Aucun de ces nombres ne modifie le poids d’un parti dans la boussole.`;
+      status.textContent = `${coveredQuestionCount}/${totalQuestionCount} questions recherchées; ${candidateQuestionCount}/${totalQuestionCount} avec au moins une preuve candidate; ${noCandidateQuestionCount} encore sans preuve candidate suffisamment exacte; ${singleProofQuestionCount} avec une seule fiche pré-codée. L’absence de preuve candidate ne signifie pas absence de position réelle. ${records.length} preuve${records.length > 1 ? "s" : ""} candidate${records.length > 1 ? "s" : ""}; ${pendingSecond} encore en attente d’une relecture documentaire; ${finalizedCount} fiche${finalizedCount > 1 ? "s" : ""} pré-codée${finalizedCount > 1 ? "s" : ""}, dont ${indeterminateCount} sans direction certaine et ${directPositionCount} appuis ou oppositions documentés. Les positions mixtes ou conditionnelles sont distinctes des appuis et oppositions explicites. Une preuve révisée ne permet pas toujours de conclure à la position exacte d’un parti. Les relectures par IA consignées dans ce corpus sont au nombre de ${aiReviewed}; aucune attestation humaine externe n'est fournie ici. La comparaison des partis reste désactivée. Aucun de ces nombres ne modifie le poids d’un parti dans la boussole.`;
     }
   }
 

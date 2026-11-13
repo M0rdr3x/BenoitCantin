@@ -323,7 +323,7 @@ def run() -> None:
                 throw new Error("Corpus de preuves incomplet");
             const statuses = corpus.questions.flatMap(q => Object.values(q.statuses || {}));
             const expected = {
-                "Fiches finalisées": statuses.filter(v => v !== "unknown").length,
+                "Fiches pré-codées": statuses.filter(v => v !== "unknown").length,
                 "Sans direction certaine": statuses.filter(v => v === "ambiguous" || v === "contradictory").length,
                 "Appuis et oppositions documentés": statuses.filter(v => v === "documented_support" || v === "documented_opposition").length
             };
@@ -427,7 +427,7 @@ def run() -> None:
                 f"{BROWSER_NAME}: le raccourci ne sélectionne pas la bonne proposition",
             )
             assert_true(
-                "Couverture documentaire limitée : une seule formation dispose d’une preuve finalisée" in page.locator("#compass-evidence-question-status").inner_text(),
+                "Couverture documentaire limitée : une seule formation dispose d’une preuve pré-codée" in page.locator("#compass-evidence-question-status").inner_text(),
                 f"{BROWSER_NAME}: avertissement de question mono-preuve absent",
             )
         else:
@@ -456,8 +456,12 @@ def run() -> None:
             f"{BROWSER_NAME}: date de vérification absente de l’explorateur",
         )
         assert_true(
-            evidence_question_results.locator("dt", has_text="Deuxième révision").count() >= 1,
+            evidence_question_results.locator("dt", has_text="Date de relecture").count() >= 1,
             f"{BROWSER_NAME}: date de seconde révision absente de l’explorateur",
+        )
+        assert_true(
+            evidence_question_results.locator("dt", has_text="Nature de la relecture").count() >= 1,
+            f"{BROWSER_NAME}: nature IA/non attestée de la relecture absente",
         )
         assert_true(
             evidence_question_results.locator("strong", has_text="Justification du codage").count() >= 1,
@@ -467,7 +471,7 @@ def run() -> None:
         evidence_filter.check()
         assert_true(
             evidence_question_results.locator(".compass-evidence-record-unknown").count() == 0,
-            f"{BROWSER_NAME}: filtre des positions finalisées laisse des positions inconnues",
+            f"{BROWSER_NAME}: filtre des positions pré-codées laisse des positions inconnues",
         )
         assert_true(
             1 <= evidence_question_results.locator(".compass-evidence-record").count() < 22,
