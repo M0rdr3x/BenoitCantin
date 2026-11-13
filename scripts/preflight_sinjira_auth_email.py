@@ -28,18 +28,25 @@ class ConfirmationLinkParser(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.valid_link = False
+        # HTML5 referme implicitement une ancre avant une ancre imbriquée.
+        # HTMLParser ne reproduit pas cette réparation du DOM : refuser
+        # les modèles ambigus plutôt que certifier un faux lien cliquable.
+        self.invalid_anchor_markup = False
         self.visibility_stack = []
         # Un <a href> valide n'est pas utilisable si son contenu est vide.
         # On ne valide l'ancre qu'à sa fermeture, après contrôle du libellé.
         self.pending_links = []
 
     def handle_starttag(self, tag, attrs):
+        if tag == "a" and any(name == "a" for name, _ in self.visibility_stack):
+            self.invalid_anchor_markup = True
         properties = dict(attrs)
         style = str(properties.get("style") or "")
         # Un href correct mais dans un bloc invisible ne doit pas être
         # considéré comme un bouton de confirmation utilisable.
         local_hidden = (
-            tag in ("template", "head", "script", "style")
+            tag in ("template", "head", "script", "style",
+                    "textarea", "select", "option", "noscript")
             or "hidden" in properties
             or "inert" in properties
             or str(properties.get("aria-hidden") or "").strip().lower() == "true"
@@ -99,6 +106,8 @@ class ConfirmationLinkParser(HTMLParser):
     def handle_startendtag(self, tag, attrs):
         # Un <a ... /> sans contenu n'est pas un lien cliquable.
         if tag == "a":
+            # <a /> n'est pas une ancre autofermante HTML valide.
+            self.invalid_anchor_markup = True
             return
         self.handle_starttag(tag, attrs)
         if tag not in self.VOID_TAGS:
@@ -122,7 +131,7 @@ def has_secure_confirmation_link(content):
         parser = ConfirmationLinkParser()
         parser.feed(content)
         parser.close()
-        return parser.valid_link
+        return parser.valid_link and not parser.invalid_anchor_markup
     except ValueError:
         return False
 
@@ -273,6 +282,25 @@ def selftest():
         '<a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email"><img alt="Confirmer"></a>',
     ]
     deceptive_templates.extend(empty_link_templates)
+    # Un parseur HTML5 ferme implicitement le premier <a> avant un <a>
+    # imbriqué. Un parseur permissif peut sinon valider une ancre sans texte
+    # ou un lien trompeur qui n'est pas celui cliqué dans le navigateur.
+    nested_anchor_templates = [
+        '<a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email"><a href="https://evil.example/">Confirmer</a></a>',
+        '<a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email">Confirmer <a href="https://evil.example/">ici</a></a>',
+        '<a href="https://evil.example/">Aide <a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email">Confirmer</a></a>',
+        '<a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email">Confirmer <a href="https://evil.example/" /></a>',
+    ]
+    deceptive_templates.extend(nested_anchor_templates)
+    # Le navigateur traite le HTML de <textarea> comme du texte, et les
+    # ancres dans <select>/<option> ou <noscript> ne constituent pas des
+    # commandes fiables. Ne jamais certifier un faux bouton masqué.
+    inert_container_templates = [
+        '<textarea><a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email">Confirmer</a></textarea>',
+        '<select><option><a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email">Confirmer</a></option></select>',
+        '<noscript><a href="'+CONFIRM+'#token_hash={{ .TokenHash }}&amp;type=email">Confirmer</a></noscript>',
+    ]
+    deceptive_templates.extend(inert_container_templates)
     for template in deceptive_templates:
         _, failed, _ = audit({**good, "mailer_templates_confirmation_content": template})
         assert "Modèle sécurisé par fragment" in failed, "Faux positif du modèle de courriel"
@@ -294,7 +322,7 @@ def selftest():
     assert has_secure_confirmation_link(
         "<span style='display:none'/>" + good["mailer_templates_confirmation_content"])
     print("OK prévol Auth : treize contrats, quinze régressions, "
-          "trente-quatre modèles trompeurs (dont liens vides) et wildcard testés.")
+          f"{len(deceptive_templates)} modèles trompeurs (dont ancres imbriquées) et wildcard testés.")
 
 
 def remote():
