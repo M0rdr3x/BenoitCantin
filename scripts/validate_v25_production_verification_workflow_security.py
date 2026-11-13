@@ -242,7 +242,7 @@ def validate_workflow(text: str) -> None:
         "--proto '=https' \\",
         '--tlsv1.2 \\',
         '--request GET \\',
-        '--header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \\',
+        '--header @- \\',
         "--header 'Accept: application/json' \\",
         '--output "$history" \\',
         f'"{MANAGEMENT_URL}"',
