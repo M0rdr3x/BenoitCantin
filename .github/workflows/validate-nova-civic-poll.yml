@@ -52,6 +52,11 @@ on:
       - 'scripts/normalize_nova_seo.py'
       - 'scripts/check_nova_a1.py'
       - 'scripts/validate_seo_quality.py'
+      - 'tests/security/sql/nova_poll_v7_*.sql'
+      - 'tests/security/test_nova_poll_v7_disposable_contract.py'
+      - 'tests/security/test_nova_poll_v8_concurrency_contract.py'
+      - 'scripts/test_nova_poll_v8_concurrent_local.sh'
+      - '.github/workflows/nova-poll-v7-sql-private-lab.yml'
       - '.github/workflows/validate-nova-civic-poll.yml'
   push:
     branches: [main]
@@ -60,6 +65,12 @@ on:
       - 'supabase/NOVA_POLL_SCHEMA_PREDEPLOY.sql'
       - 'supabase/functions/nova-civic-poll/**'
       - 'scripts/test_nova_civic_poll.py'
+      - 'tests/security/sql/nova_poll_v7_*.sql'
+      - 'tests/security/test_nova_poll_v7_disposable_contract.py'
+      - 'tests/security/test_nova_poll_v8_concurrency_contract.py'
+      - 'scripts/test_nova_poll_v8_concurrent_local.sh'
+      - '.github/workflows/nova-poll-v7-sql-private-lab.yml'
+      - '.github/workflows/validate-nova-civic-poll.yml'
 permissions:
   contents: read
 jobs:
@@ -136,3 +147,47 @@ jobs:
         run: python scripts/validate_nova_release_artifact.py _site
       - name: Vérifier les liens et les fichiers du site
         run: python scripts/validate_site.py
+
+  test-poll-v7-private-sql-isolated:
+    name: Vérifier SQL réel anti-rejeu et lots privés sur PostgreSQL jetable
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_DB: nova_poll_v7_disposable
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - '127.0.0.1:5432:5432'
+        options: >-
+          --health-cmd=pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    steps:
+      - name: Lire les sources de ce commit sans credential persistant
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Contrat statique d'isolation 11 cas
+        run: python3 -m unittest discover -s tests/security -p test_nova_poll_v7_disposable_contract.py -v
+      - name: Préparer le schéma sur PostgreSQL local jetable
+        env:
+          PGCONNECT_TIMEOUT: '10'
+        run: psql --no-psqlrc -h 127.0.0.1 -U postgres -d nova_poll_v7_disposable -v ON_ERROR_STOP=1 -f tests/security/sql/nova_poll_v7_lab_setup.sql
+      - name: Contrôler RLS, rôles et anti-rejeu avec 10 faux bulletins
+        env:
+          PGCONNECT_TIMEOUT: '10'
+        run: psql --no-psqlrc -h 127.0.0.1 -U postgres -d nova_poll_v7_disposable -v ON_ERROR_STOP=1 -f tests/security/sql/nova_poll_v7_security_replay.sql
+      - name: Vérifier le seuil horaire et la suppression des différences 9/1
+        env:
+          PGCONNECT_TIMEOUT: '10'
+        run: psql --no-psqlrc -h 127.0.0.1 -U postgres -d nova_poll_v7_disposable -v ON_ERROR_STOP=1 -f tests/security/sql/nova_poll_v7_private_batches.sql
+      - name: Deux connexions même jeton puis seize connexions distinctes en parallèle
+        run: |
+          python3 -m unittest discover -s tests/security -p test_nova_poll_v8_concurrency_contract.py -v
+          bash -n scripts/test_nova_poll_v8_concurrent_local.sh
+          bash scripts/test_nova_poll_v8_concurrent_local.sh
+      - name: Ne jamais transformer un test en autorisation de vote
+        run: echo 'NO_GO - laboratoire isolé, scrutin non ouvert, aucune donnée réelle'
