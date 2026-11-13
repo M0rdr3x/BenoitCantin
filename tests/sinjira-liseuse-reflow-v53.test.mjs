@@ -209,7 +209,7 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
     const startX=options.startX??175;
     const begin={identifier:1,clientX:startX,clientY:140};
     const end={identifier:1,clientX:startX+dx,clientY:140+dy};
-    const started={touches:[begin],target:{closest:()=>null}};
+    const started={touches:[begin],target:options.target||{closest:()=>null}};
     const finished={
       touches:[],changedTouches:[end],defaultPrevented:false,
       preventDefault(){this.defaultPrevented=true}
@@ -446,6 +446,32 @@ test('V56 : input puis change de taille de police ne créent pas deux déplaceme
     f.documentMock.emit('change',{target:{id:'reader-size'}});
     f.flushFrames();
     assert.equal(f.viewer.scrollTop,875); // 50 % de la nouvelle hauteur scrollable
+  }finally{f.restore()}
+});
+test('V73 : un panneau de notes défilant conserve le geste horizontal en texte paginé',()=>{
+  const f=fixture();
+  try{
+    const scroller={clientWidth:200,scrollWidth:420,parentElement:f.text};
+    f.text.parentElement=f.viewer;
+    const child={parentElement:scroller,closest:()=>null};
+    const ignored=f.swipe(-130,2,{target:child});
+    assert.equal(ignored.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(f.next.clicks,0);
+    // Hors de ce panneau, la même distance avance d'un écran.
+    const page=f.swipe(-130,2);
+    assert.equal(page.defaultPrevented,true);
+    assert.ok(f.viewer.scrollTop>0);
+  }finally{f.restore()}
+});
+test('V73 : un petit dépassement interne ne désactive pas la pagination texte',()=>{
+  const f=fixture();
+  try{
+    const scroller={clientWidth:200,scrollWidth:204,parentElement:f.viewer};
+    const target={parentElement:scroller,closest:()=>null};
+    const page=f.swipe(-130,2,{target});
+    assert.equal(page.defaultPrevented,true);
+    assert.ok(f.viewer.scrollTop>0);
   }finally{f.restore()}
 });
 test('V72 : rotation du cellulaire pendant un geste ne tourne pas l’écran texte',()=>{

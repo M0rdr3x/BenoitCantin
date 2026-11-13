@@ -5,7 +5,7 @@
  * du PDF courant ; une fois le texte terminé, tourner la vraie page du livre.
  * L'enregistrement d'emplacement reste le scroll_ratio historique de la V31.
  */
-import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable} from './sinjira-liseuse-touch-v52.mjs?v=52.11.10.1';
+import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,hasReaderNestedHorizontalOverflow} from './sinjira-liseuse-touch-v52.mjs?v=52.11.10.1';
 
 const PREF_KEY='sinjira:liseuse:lecture-par-ecrans:v53';
 const INTERACTIVE='a,button,input,select,textarea,summary,[contenteditable],[role="button"],[role="link"],[data-reader-no-swipe]';
@@ -271,7 +271,8 @@ export function bindReaderScreenMode({
     gesture={
       id:touch.identifier,x:touch.clientX,y:touch.clientY,start:clock(),
       scrollTop:viewer.scrollTop,maxVerticalTravel:0,scrolled:false,
-      geometry:captureReaderSwipeGeometry(viewer)
+      geometry:captureReaderSwipeGeometry(viewer),
+      nestedHorizontalOverflow:hasReaderNestedHorizontalOverflow(event.target,viewer)
     };
   };
   const onTouchMove=event=>{
@@ -307,7 +308,7 @@ export function bindReaderScreenMode({
       // V70 : ne jamais voler un balayage horizontal natif lorsque la zone
       // de lecture ou son contenu dépasse la largeur visible du cellulaire.
       horizontalOverflow:viewer.scrollWidth>viewer.clientWidth+4||
-        text.scrollWidth>text.clientWidth+4,
+        text.scrollWidth>text.clientWidth+4||start.nestedHorizontalOverflow,
       maxVerticalTravel:start.maxVerticalTravel,
       scrolledDuringGesture:start.scrolled||
         Math.abs(viewer.scrollTop-start.scrollTop)>8

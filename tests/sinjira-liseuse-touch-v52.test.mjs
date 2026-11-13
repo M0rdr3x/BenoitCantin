@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {classifyReaderSwipe,bindReaderTouchNavigation,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable} from '../assets/js/sinjira-liseuse-touch-v52.mjs';
+import {classifyReaderSwipe,bindReaderTouchNavigation,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,hasReaderNestedHorizontalOverflow} from '../assets/js/sinjira-liseuse-touch-v52.mjs';
 
 const gesture=(overrides={})=>classifyReaderSwipe({
   dx:-92,dy:8,durationMs:240,viewerWidth:375,...overrides
@@ -62,7 +62,7 @@ function fixture({selected=false}={}){
   const swipe=(dx,dy=5,options={})=>{
     const x=options.startX??170;
     const touch={identifier:7,clientX:x,clientY:190};
-    viewer.emit('touchstart',{touches:options.multiple?[touch,{identifier:8,clientX:200,clientY:220}]:[touch],target:options.interactive?{closest:()=>({})}:{closest:()=>null}});
+    viewer.emit('touchstart',{touches:options.multiple?[touch,{identifier:8,clientX:200,clientY:220}]:[touch],target:options.target||(options.interactive?{closest:()=>({})}:{closest:()=>null})});
     time+=options.elapsed??200;
     for(const [mx,my] of options.moves||[]){
       viewer.emit('touchmove',{touches:[{
@@ -83,6 +83,33 @@ function fixture({selected=false}={}){
   };
   return {viewer,previous,next,mobilePrevious,mobileNext,release,swipe,setSelected:v=>{selection=v}};
 }
+test('V73 : conteneur imbriqué débordant, faux débordement et nœud extérieur',()=>{
+  const viewer={clientWidth:375,scrollWidth:375};
+  const panel={clientWidth:300,scrollWidth:480,parentElement:viewer};
+  const note={parentElement:panel,closest:()=>null};
+  assert.equal(hasReaderNestedHorizontalOverflow(note,viewer),true);
+  panel.scrollWidth=304;
+  assert.equal(hasReaderNestedHorizontalOverflow(note,viewer),false);
+  panel.scrollWidth=305;
+  assert.equal(hasReaderNestedHorizontalOverflow(note,viewer),true);
+  assert.equal(hasReaderNestedHorizontalOverflow({clientWidth:100,scrollWidth:900},viewer),false);
+  assert.equal(hasReaderNestedHorizontalOverflow(note,viewer,NaN),false);
+});
+test('V73 : un geste sur un panneau PDF défilant ne tourne pas le roman',()=>{
+  const f=fixture();
+  try{
+    const panel={clientWidth:210,scrollWidth:410,parentElement:f.viewer};
+    const child={parentElement:panel,closest:()=>null};
+    f.swipe(-125,2,{target:child});
+    assert.equal(f.next.clicks,0);
+    f.swipe(125,2,{target:child});
+    assert.equal(f.previous.clicks,0);
+    f.swipe(-125,2);
+    assert.equal(f.next.clicks,1);
+    f.mobilePrevious.click();
+    assert.equal(f.previous.clicks,1);
+  }finally{f.release()}
+});
 test('V72 : géométrie stable ou fluctuation sous quatre pixels ne bloque pas le livre',()=>{
   const before={readerWidth:375,readerHeight:600,viewportWidth:390,viewportHeight:850};
   assert.equal(isReaderSwipeGeometryStable(before,{...before,readerHeight:604}),true);

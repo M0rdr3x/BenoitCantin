@@ -39,6 +39,23 @@ export function captureReaderSwipeGeometry(viewer,win=globalThis.window){
     viewportWidth:win?.innerWidth,viewportHeight:win?.innerHeight
   };
 }
+/** V73 : le texte peut contenir un tableau ou une annotation défilant
+ * horizontalement dans son propre conteneur, sans agrandir le lecteur.
+ * Un tel geste doit rester au conteneur, pas tourner une page du roman.
+ * N'inspecter que les ancêtres appartenant effectivement au lecteur. */
+export function hasReaderNestedHorizontalOverflow(target,viewer,tolerancePx=4){
+  if(!target||!viewer||!Number.isFinite(tolerancePx)||tolerancePx<0)return false;
+  const visited=new Set();
+  let overflow=false,node=target;
+  while(node&&!visited.has(node)){
+    if(node===viewer)return overflow;
+    visited.add(node);
+    if(Number.isFinite(node.scrollWidth)&&Number.isFinite(node.clientWidth)&&
+      node.scrollWidth>node.clientWidth+tolerancePx)overflow=true;
+    node=node.parentElement||node.parentNode;
+  }
+  return false;
+}
 export function isReaderSwipeGeometryStable(before,after,tolerancePx=4){
   if(!before||!after||!Number.isFinite(tolerancePx)||tolerancePx<0)return false;
   for(const key of ['readerWidth','readerHeight','viewportWidth','viewportHeight']){
@@ -84,7 +101,8 @@ export function bindReaderTouchNavigation({
     origin={
       id:touch.identifier,x:touch.clientX,y:touch.clientY,time:clock(),
       scrollTop:viewer.scrollTop||0,maxVerticalTravel:0,scrolled:false,
-      geometry:captureReaderSwipeGeometry(viewer)
+      geometry:captureReaderSwipeGeometry(viewer),
+      nestedHorizontalOverflow:hasReaderNestedHorizontalOverflow(event.target,viewer)
     };
   };
   const move=event=>{
@@ -121,7 +139,8 @@ export function bindReaderTouchNavigation({
       dx:touch.clientX-initial.x,dy:touch.clientY-initial.y,
       durationMs:clock()-initial.time,viewerWidth:viewer.clientWidth,
       hasSelection:Boolean(getSelectedText()?.trim()),
-      horizontalOverflow:viewer.scrollWidth>viewer.clientWidth+4,
+      horizontalOverflow:viewer.scrollWidth>viewer.clientWidth+4||
+        initial.nestedHorizontalOverflow,
       maxVerticalTravel:initial.maxVerticalTravel,
       scrolledDuringGesture:initial.scrolled||
         Math.abs((viewer.scrollTop||0)-initial.scrollTop)>8
