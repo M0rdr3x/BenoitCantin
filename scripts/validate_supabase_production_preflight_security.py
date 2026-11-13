@@ -199,9 +199,12 @@ def validate_text(text: str) -> list[str]:
             errors.append("Le prévol distant non mutant ne doit pas franchir la frontière d'application production.")
         intent = step_block(remote, "Vérifier l'intention manuelle")
         for marker in (
-            '[ "${{ inputs.apply }}" = "true" ]',
-            '[ "${{ github.ref }}" != "refs/heads/main" ]',
-            f'[ "${{{{ inputs.confirmation }}}}" != "{CONFIRMATION}" ]',
+            "          APPLY_REQUESTED: ${{ inputs.apply }}",
+            "          PRODUCTION_CONFIRMATION: ${{ inputs.confirmation }}",
+            "          TRIGGER_REF: ${{ github.ref }}",
+            '[ "$APPLY_REQUESTED" = "true" ]',
+            '[ "$TRIGGER_REF" != "refs/heads/main" ]',
+            f'[ "$PRODUCTION_CONFIRMATION" != "{CONFIRMATION}" ]',
             "exit 64",
             "exit 65",
         ):
