@@ -42,4 +42,5 @@ jobs:
               avertissement:d.scope},null,2));
           '
       - name: Publication interdite sans homologation
-        run: echo "CONTROLE_DOCUMENTAIRE_SEULEMENT : aucun secteur pilote ni budget certifié"
+        run: |
+          echo "CONTROLE_DOCUMENTAIRE_SEULEMENT : aucun secteur pilote ni budget certifié"
