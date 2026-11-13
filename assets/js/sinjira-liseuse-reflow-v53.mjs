@@ -296,7 +296,11 @@ export function bindReaderScreenMode({
     const direction=classifyReaderSwipe({
       dx:touch.clientX-start.x,dy:touch.clientY-start.y,
       durationMs:clock()-start.start,viewerWidth:viewer.clientWidth,
-      hasSelection:Boolean(getSelectionText().trim()),horizontalOverflow:false,
+      hasSelection:Boolean(getSelectionText().trim()),
+      // V70 : ne jamais voler un balayage horizontal natif lorsque la zone
+      // de lecture ou son contenu dépasse la largeur visible du cellulaire.
+      horizontalOverflow:viewer.scrollWidth>viewer.clientWidth+4||
+        text.scrollWidth>text.clientWidth+4,
       maxVerticalTravel:start.maxVerticalTravel,
       scrolledDuringGesture:start.scrolled||
         Math.abs(viewer.scrollTop-start.scrollTop)>8

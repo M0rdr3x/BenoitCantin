@@ -448,6 +448,40 @@ test('V56 : input puis change de taille de police ne créent pas deux déplaceme
     assert.equal(f.viewer.scrollTop,875); // 50 % de la nouvelle hauteur scrollable
   }finally{f.restore()}
 });
+test('V70 : le défilement horizontal de la liseuse ne tourne pas une page par balayage',()=>{
+  const f=fixture();
+  try{
+    f.viewer.scrollWidth=f.viewer.clientWidth+160;
+    const swipe=f.swipe(-130,3);
+    assert.equal(swipe.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(f.next.clicks,0);
+    // Les boutons accessibles restent disponibles si le texte est élargi.
+    f.mobileNext.click();
+    assert.ok(f.viewer.scrollTop>0);
+  }finally{f.restore()}
+});
+test('V70 : un contenu texte plus large que son cadre ne vole pas le retour tactile',()=>{
+  const f=fixture();
+  try{
+    f.text.scrollWidth=f.text.clientWidth+120;
+    f.viewer.scrollTop=300;
+    const back=f.swipe(130,2);
+    assert.equal(back.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,300);
+    assert.equal(f.previous.clicks,0);
+  }finally{f.restore()}
+});
+test('V70 : quatre pixels de tolérance ne suppriment pas la pagination tactile normale',()=>{
+  const f=fixture();
+  try{
+    f.viewer.scrollWidth=f.viewer.clientWidth+4;
+    f.text.scrollWidth=f.text.clientWidth+4;
+    const next=f.swipe(-130,2);
+    assert.equal(next.defaultPrevented,true);
+    assert.ok(f.viewer.scrollTop>0);
+  }finally{f.restore()}
+});
 test('intégration : glisser gauche/droite navigue par écran sans changer page PDF',()=>{
   const f=fixture();
   try{
