@@ -5,7 +5,7 @@
  * du PDF courant ; une fois le texte terminé, tourner la vraie page du livre.
  * L'enregistrement d'emplacement reste le scroll_ratio historique de la V31.
  */
-import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,hasReaderNestedHorizontalOverflow,hasReaderNestedVerticalOverflow,readerCanPanHorizontally} from './sinjira-liseuse-touch-v52.mjs?v=52.11.10.1';
+import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,hasReaderNestedHorizontalOverflow,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally} from './sinjira-liseuse-touch-v52.mjs?v=52.11.10.1';
 
 const PREF_KEY='sinjira:liseuse:lecture-par-ecrans:v53';
 const INTERACTIVE='a,button,input,select,textarea,summary,[contenteditable],[role="button"],[role="link"],[data-reader-no-swipe]';
@@ -273,7 +273,8 @@ export function bindReaderScreenMode({
       scrollTop:viewer.scrollTop,maxVerticalTravel:0,scrolled:false,
       geometry:captureReaderSwipeGeometry(viewer),
       nestedHorizontalOverflow:hasReaderNestedHorizontalOverflow(event.target,viewer),
-      nestedVerticalOverflow:hasReaderNestedVerticalOverflow(event.target,viewer)
+      nestedVerticalScroll:captureReaderNestedVerticalScroll(event.target,viewer),
+      nestedScrolled:false
     };
   };
   const onTouchMove=event=>{
@@ -292,6 +293,7 @@ export function bindReaderScreenMode({
       gesture.maxVerticalTravel,Math.abs(touch.clientY-gesture.y)
     );
     if(Math.abs(viewer.scrollTop-gesture.scrollTop)>8)gesture.scrolled=true;
+    if(readerNestedVerticalScrollMoved(gesture.nestedVerticalScroll))gesture.nestedScrolled=true;
   };
   const onTouchCancel=()=>{gesture=null};
   const onTouchEnd=event=>{
@@ -311,8 +313,9 @@ export function bindReaderScreenMode({
       horizontalOverflow:readerCanPanHorizontally(viewer)||
         readerCanPanHorizontally(text)||start.nestedHorizontalOverflow,
       maxVerticalTravel:start.maxVerticalTravel,
-      scrolledDuringGesture:start.nestedVerticalOverflow||start.scrolled||
-        Math.abs(viewer.scrollTop-start.scrollTop)>8
+      scrolledDuringGesture:start.nestedScrolled||
+        readerNestedVerticalScrollMoved(start.nestedVerticalScroll)||
+        start.scrolled||Math.abs(viewer.scrollTop-start.scrollTop)>8
     });
     if(direction){
       // Intercepte uniquement un vrai mouvement horizontal; la sélection et

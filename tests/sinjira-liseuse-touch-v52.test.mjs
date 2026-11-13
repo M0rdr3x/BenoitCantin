@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {classifyReaderSwipe,bindReaderTouchNavigation,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,hasReaderNestedHorizontalOverflow,readerCanPanHorizontally,readerCanPanVertically,hasReaderNestedVerticalOverflow} from '../assets/js/sinjira-liseuse-touch-v52.mjs';
+import {classifyReaderSwipe,bindReaderTouchNavigation,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,hasReaderNestedHorizontalOverflow,readerCanPanHorizontally,readerCanPanVertically,hasReaderNestedVerticalOverflow,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved} from '../assets/js/sinjira-liseuse-touch-v52.mjs';
 
 const gesture=(overrides={})=>classifyReaderSwipe({
   dx:-92,dy:8,durationMs:240,viewerWidth:375,...overrides
@@ -74,6 +74,13 @@ function fixture({selected=false}={}){
       viewer.emit('touchmove',{touches:[touch]});
       viewer.scrollTop=0; // même si le scroll revient au départ, refuser
     }
+    if(options.nestedScrollDuring){
+      const {node,delta}=options.nestedScrollDuring;
+      const before=node.scrollTop||0;
+      node.scrollTop=before+delta;
+      viewer.emit('touchmove',{touches:[{identifier:7,clientX:x-16,clientY:190}]});
+      node.scrollTop=before;
+    }
     if(options.cancel)viewer.emit('touchcancel',{touches:[]});
     if(options.moveMultiple)viewer.emit('touchmove',{touches:[touch,{identifier:8}]});
     viewer.emit('touchend',{touches:[],changedTouches:[{
@@ -83,6 +90,37 @@ function fixture({selected=false}={}){
   };
   return {viewer,previous,next,mobilePrevious,mobileNext,release,swipe,setSelected:v=>{selection=v}};
 }
+test('V76 : une note verticale immobile autorise gauche et droite sur le PDF',()=>{
+  const oldWindow=globalThis.window;
+  globalThis.window={getComputedStyle:el=>({overflowY:el.cssOverflowY||'visible'})};
+  const f=fixture();
+  try{
+    const panel={clientHeight:150,scrollHeight:500,scrollTop:25,cssOverflowY:'auto',parentElement:f.viewer};
+    const child={parentElement:panel,closest:()=>null};
+    f.swipe(-130,2,{target:child});
+    f.swipe(130,2,{target:child});
+    assert.equal(f.next.clicks,1);
+    assert.equal(f.previous.clicks,1);
+  }finally{f.release();globalThis.window=oldWindow}
+});
+test('V76 : détecter le scroll d’une note revenue à son point de départ',()=>{
+  const oldWindow=globalThis.window;
+  globalThis.window={getComputedStyle:el=>({overflowY:el.cssOverflowY||'visible'})};
+  try{
+    const viewer={clientHeight:400,scrollHeight:1200};
+    const panel={clientHeight:140,scrollHeight:400,scrollTop:15,cssOverflowY:'auto',parentElement:viewer};
+    const child={parentElement:panel};
+    const captured=captureReaderNestedVerticalScroll(child,viewer);
+    assert.equal(captured.length,1);
+    assert.equal(readerNestedVerticalScrollMoved(captured),false);
+    panel.scrollTop=18;
+    assert.equal(readerNestedVerticalScrollMoved(captured),false);
+    panel.scrollTop=20;
+    assert.equal(readerNestedVerticalScrollMoved(captured),true);
+    assert.equal(captureReaderNestedVerticalScroll({scrollTop:90},viewer).length,0);
+    assert.equal(readerNestedVerticalScrollMoved(captured,NaN),false);
+  }finally{globalThis.window=oldWindow}
+});
 test('V75 : un panneau vertical est défilable seulement si overflow-y le permet',()=>{
   const panel={clientHeight:210,scrollHeight:440};
   for(const overflowY of ['hidden','clip','visible'])
@@ -115,8 +153,8 @@ test('V75 : glisser sur une note PDF verticalement défilante ne tourne pas le l
   try{
     const panel={clientHeight:120,scrollHeight:550,cssOverflowY:'auto',parentElement:f.viewer};
     const child={parentElement:panel,closest:()=>null};
-    f.swipe(-130,2,{target:child});
-    f.swipe(130,2,{target:child});
+    f.swipe(-130,2,{target:child,nestedScrollDuring:{node:panel,delta:55}});
+    f.swipe(130,2,{target:child,nestedScrollDuring:{node:panel,delta:70}});
     assert.equal(f.next.clicks,0);
     assert.equal(f.previous.clicks,0);
     f.swipe(-130,2);

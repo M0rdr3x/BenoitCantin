@@ -226,6 +226,13 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
       viewer.emit('touchmove',{touches:[begin]});
       viewer.scrollTop=original;
     }
+    if(options.nestedScrollDuring){
+      const {node,delta}=options.nestedScrollDuring;
+      const before=node.scrollTop||0;
+      node.scrollTop=before+delta;
+      viewer.emit('touchmove',{touches:[{identifier:1,clientX:startX-16,clientY:140}]});
+      node.scrollTop=before;
+    }
     now+=options.elapsed??200;
     viewer.emit('touchend',finished);
     return finished;
@@ -448,13 +455,36 @@ test('V56 : input puis change de taille de police ne créent pas deux déplaceme
     assert.equal(f.viewer.scrollTop,875); // 50 % de la nouvelle hauteur scrollable
   }finally{f.restore()}
 });
+test('V76 : balayage horizontal à travers une note immobile tourne l’écran texte',()=>{
+  const f=fixture();
+  try{
+    const panel={clientHeight:120,scrollHeight:480,scrollTop:50,cssOverflowY:'auto',parentElement:f.viewer};
+    const child={parentElement:panel,closest:()=>null};
+    f.windowMock.getComputedStyle=el=>({lineHeight:'35px',fontSize:'20px',overflowY:el.cssOverflowY||'visible'});
+    const evt=f.swipe(-130,2,{target:child});
+    assert.equal(evt.defaultPrevented,true);
+    assert.ok(f.viewer.scrollTop>0);
+  }finally{f.restore()}
+});
+test('V76 : une note qui bouge puis revient ne vole pas la lecture horizontale',()=>{
+  const f=fixture();
+  try{
+    const panel={clientHeight:120,scrollHeight:480,scrollTop:50,cssOverflowY:'auto',parentElement:f.viewer};
+    const child={parentElement:panel,closest:()=>null};
+    f.windowMock.getComputedStyle=el=>({lineHeight:'35px',fontSize:'20px',overflowY:el.cssOverflowY||'visible'});
+    const evt=f.swipe(-130,2,{target:child,nestedScrollDuring:{node:panel,delta:45}});
+    assert.equal(evt.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(panel.scrollTop,50);
+  }finally{f.restore()}
+});
 test('V75 : faire défiler une note verticale ne tourne pas un écran de texte',()=>{
   const f=fixture();
   try{
     const panel={clientHeight:150,scrollHeight:450,cssOverflowY:'auto',parentElement:f.viewer};
     const child={parentElement:panel,closest:()=>null};
     f.windowMock.getComputedStyle=el=>({lineHeight:'35px',fontSize:'20px',overflowY:el.cssOverflowY||'visible'});
-    const stop=f.swipe(-130,2,{target:child});
+    const stop=f.swipe(-130,2,{target:child,nestedScrollDuring:{node:panel,delta:65}});
     assert.equal(stop.defaultPrevented,false);
     assert.equal(f.viewer.scrollTop,0);
     assert.equal(f.next.clicks,0);
