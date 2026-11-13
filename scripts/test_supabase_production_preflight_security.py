@@ -155,13 +155,25 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         self.assertRejected(bad, "prévol distant ne doit jamais déployer")
 
     def test_remote_intent_requires_main_ref(self):
-        bad = self.valid.replace('[ "${{ github.ref }}" != "refs/heads/main" ]', '[ -z "${{ github.ref }}" ]', 1)
+        bad = self.valid.replace('[ "$TRIGGER_REF" != "refs/heads/main" ]', '[ -z "$TRIGGER_REF" ]', 1)
         self.assertRejected(bad, "verrou d'intention")
 
     def test_remote_intent_requires_typed_confirmation(self):
-        marker = f'[ "${{{{ inputs.confirmation }}}}" != "{CONFIRMATION}" ]'
-        bad = self.valid.replace(marker, '[ -z "${{ inputs.confirmation }}" ]', 1)
+        marker = f'[ "$PRODUCTION_CONFIRMATION" != "{CONFIRMATION}" ]'
+        bad = self.valid.replace(marker, '[ -z "$PRODUCTION_CONFIRMATION" ]', 1)
         self.assertRejected(bad, "verrou d'intention")
+
+    def test_remote_intent_requires_env_isolation(self):
+        for name, binding in (
+            ("APPLY_REQUESTED", "inputs.apply"),
+            ("PRODUCTION_CONFIRMATION", "inputs.confirmation"),
+            ("TRIGGER_REF", "github.ref"),
+        ):
+            with self.subTest(name=name):
+                marker = f"          {name}: ${{{{ {binding} }}}}"
+                self.assertIn(marker, self.valid)
+                bad = self.valid.replace(marker, f"          {name}: insecure-default", 1)
+                self.assertRejected(bad, "verrou d'intention")
 
     def test_apply_job_requires_full_gate(self):
         bad = self.valid.replace(
