@@ -1,0 +1,56 @@
+name: "SINJIRA V69 — un geste du lecteur prime sur le reflow"
+on:
+  pull_request:
+    branches:
+      - review/sinjira-liseuse-mobile-v64-integration-main-20261111
+      - main
+    paths:
+      - 'assets/js/sinjira-liseuse-reflow-v53.mjs'
+      - 'tests/sinjira-liseuse-reflow-v53.test.mjs'
+      - 'tests/e2e/test_sinjira_liseuse_responsive_v58.py'
+      - '.github/workflows/sinjira-liseuse-priorite-gestes-v69.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-liseuse-reflow-v53.mjs'
+      - 'tests/e2e/test_sinjira_liseuse_responsive_v58.py'
+permissions:
+  contents: read
+jobs:
+  rotation-and-turn:
+    name: "Lecture conservée, swipe prioritaire — ${{ matrix.browser }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - name: Checkout sans secret
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Syntaxe du moteur et des suites
+        run: |
+          node --check assets/js/sinjira-liseuse-touch-v52.mjs
+          node --check assets/js/sinjira-liseuse-reflow-v53.mjs
+          node --check tests/sinjira-liseuse-reflow-v53.test.mjs
+          python3 -m py_compile tests/e2e/test_sinjira_liseuse_responsive_v58.py tests/e2e/test_sinjira_liseuse_trajectory_v66.py
+      - name: Régressions Node avec V69 gestes pendant resize
+        run: node --test tests/sinjira-liseuse-touch-v52.test.mjs tests/sinjira-liseuse-reflow-v53.test.mjs
+      - name: Vraie page de lecture avec PDF fictif et Supabase interdit
+        run: |
+          python3 -m venv .venv-reader-v69
+          . .venv-reader-v69/bin/activate
+          python -m pip install --disable-pip-version-check playwright==1.57.0
+          python -m playwright install --with-deps ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_mobile_v54.py --browser ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_real_page_v57.py --browser ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_responsive_v58.py --browser ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_trajectory_v66.py --browser ${{ matrix.browser }}
+          if [ "${{ matrix.browser }}" = chromium ]; then
+            python tests/e2e/test_sinjira_liseuse_native_touch_v65.py --browser chromium
+          fi
+      - name: Aucune publication ni migration
+        run: |
+          echo "V69-LAB-ONLY : aucune validation physique ni droit prive certifie"

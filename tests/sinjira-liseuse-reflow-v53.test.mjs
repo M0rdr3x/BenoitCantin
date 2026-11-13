@@ -381,6 +381,48 @@ test('V56 : l’annonce accessible ne se répète pas à chaque scroll de la mê
     assert.equal(f.getStatusWrites(),startingWrites+1);
   }finally{f.restore()}
 });
+test('V69 : un swipe pendant les deux frames du resize gagne sur le ratio ancien',()=>{
+  const f=fixture({deferredRaf:true});
+  try{
+    f.viewer.scrollTo({top:350});
+    f.windowMock.emit('resize',{});
+    f.viewer.scrollHeight=1750;
+    const swipe=f.swipe(-130,2);
+    assert.equal(swipe.defaultPrevented,true);
+    const next=f.viewer.scrollTop;
+    assert.ok(next>350,next);
+    f.flushFrames();
+    assert.equal(f.viewer.scrollTop,next,
+      'une restauration obsolète ne doit pas ramener le lecteur en arrière');
+  }finally{f.restore()}
+});
+test('V69 : le bouton suivant gagne aussi pendant un réagencement',()=>{
+  const f=fixture({deferredRaf:true});
+  try{
+    f.viewer.scrollTo({top:350});
+    f.windowMock.emit('resize',{});
+    f.viewer.scrollHeight=1750;
+    f.mobileNext.click();
+    const target=f.viewer.scrollTop;
+    assert.ok(target>350,target);
+    f.flushFrames();
+    assert.equal(f.viewer.scrollTop,target);
+  }finally{f.restore()}
+});
+test('V69 : toucher la zone du livre annule une restauration différée',()=>{
+  const f=fixture({deferredRaf:true});
+  try{
+    f.viewer.scrollTo({top:350});
+    f.windowMock.emit('resize',{});
+    f.viewer.scrollHeight=1750;
+    f.viewer.emit('touchstart',{
+      touches:[{identifier:1,clientX:175,clientY:140}],
+      target:{closest:()=>null}
+    });
+    f.flushFrames();
+    assert.equal(f.viewer.scrollTop,350);
+  }finally{f.restore()}
+});
 test('V56 : rotation mobile conserve la même proportion malgré événements en double',()=>{
   const f=fixture({deferredRaf:true});
   try{

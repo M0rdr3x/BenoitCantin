@@ -176,6 +176,7 @@ export function bindReaderScreenMode({
   let gesture=null,pendingPreviousPdf=null,lastRatio=0,restoring=false,closed=false;
   let pendingLayoutRatio=null; // V56 : une seule position de référence par réagencement
   let lastAnchor=null,pendingLayoutAnchor=null; // V63 : ancre locale non persistée
+  let layoutRestoreGeneration=0; // V69 : invalider une restitution devenue obsolète
   toggle.checked=localPreference();
   const isPaged=()=>!closed&&media.matches&&toggle.checked&&!text.hidden;
   const metric=()=>readerScreenState({
@@ -224,8 +225,17 @@ export function bindReaderScreenMode({
     // Le gestionnaire V31/V51 de scroll sauvegarde le ratio de progression
     // de la même page PDF, sans nouveau format ni identifiant de lecteur.
   };
+  const cancelPendingLayoutRestore=()=>{
+    // Un vrai geste du lecteur doit primer sur les deux raf du reflow.
+    // Annuler l'ancienne restitution empêche un retour brusque à l'écran 1.
+    if(pendingLayoutRatio===null)return;
+    layoutRestoreGeneration++;
+    pendingLayoutRatio=null;
+    pendingLayoutAnchor=null;
+  };
   const turn=direction=>{
     if(!isPaged())return false;
+    cancelPendingLayoutRestore();
     const p=planReaderScreenTurn({
       direction,scrollTop:viewer.scrollTop,scrollHeight:viewer.scrollHeight,
       clientHeight:viewer.clientHeight,...textMetrics(text)
@@ -256,6 +266,7 @@ export function bindReaderScreenMode({
     if(isReaderSystemEdgeGesture({
       clientX:touch.clientX,viewportWidth:globalThis.window?.innerWidth
     }))return;
+    cancelPendingLayoutRestore();
     gesture={
       id:touch.identifier,x:touch.clientX,y:touch.clientY,start:clock(),
       scrollTop:viewer.scrollTop,maxVerticalTravel:0,scrolled:false
@@ -367,8 +378,9 @@ export function bindReaderScreenMode({
     if(pendingLayoutRatio!==null)return;
     pendingLayoutRatio=Math.max(0,Math.min(1,Number.isFinite(ratio)?ratio:0));
     pendingLayoutAnchor=anchor;
+    const version=++layoutRestoreGeneration;
     raf(()=>raf(()=>{
-      if(closed)return;
+      if(closed||version!==layoutRestoreGeneration)return;
       const target=pendingLayoutRatio,anchored=pendingLayoutAnchor;
       pendingLayoutRatio=null;pendingLayoutAnchor=null;
       if(!isPaged()){sync();return}
