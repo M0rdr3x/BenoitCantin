@@ -23,11 +23,6 @@ export function classifyReaderSwipe({
 }
 
 /**
- * V67 : laisser au navigateur les gestes qui commencent dans les premiers
- * ou derniers 24 pixels CSS du viewport (ex. retour Safari iOS).
- * Si la largeur du viewport n'est pas connue, ne pas bloquer la lecture.
- */
-/**
  * V71 : le zoom par pincement agrandit le viewport visuel sans toujours
  * modifier scrollWidth. Pendant ce zoom, un doigt doit déplacer la page
  * normalement plutôt que déclencher un changement de page PDF/texte.
@@ -35,6 +30,27 @@ export function classifyReaderSwipe({
 export function isReaderViewportZoomed({scale=globalThis.window?.visualViewport?.scale}={}){
   return Number.isFinite(scale)&&scale>1.01;
 }
+/** V72 : un changement d'orientation ou de taille pendant un contact
+ * invalide le balayage pour éviter un faux passage de page. Les dimensions
+ * absentes dans les moteurs anciens sont ignorées, pas extrapolées. */
+export function captureReaderSwipeGeometry(viewer,win=globalThis.window){
+  return {
+    readerWidth:viewer?.clientWidth,readerHeight:viewer?.clientHeight,
+    viewportWidth:win?.innerWidth,viewportHeight:win?.innerHeight
+  };
+}
+export function isReaderSwipeGeometryStable(before,after,tolerancePx=4){
+  if(!before||!after||!Number.isFinite(tolerancePx)||tolerancePx<0)return false;
+  for(const key of ['readerWidth','readerHeight','viewportWidth','viewportHeight']){
+    const first=before[key],last=after[key];
+    const a=Number.isFinite(first),b=Number.isFinite(last);
+    if(a!==b||a&&Math.abs(first-last)>tolerancePx)return false;
+  }
+  return true;
+}
+/**
+ * V67 : préserver les gestes système aux 24 pixels des bords du viewport.
+ */
 export function isReaderSystemEdgeGesture({clientX,viewportWidth,edgePx=24}={}){
   if(![clientX,viewportWidth,edgePx].every(Number.isFinite)||
      edgePx<=0||viewportWidth<=edgePx*3)return false;
@@ -67,14 +83,16 @@ export function bindReaderTouchNavigation({
     }))return;
     origin={
       id:touch.identifier,x:touch.clientX,y:touch.clientY,time:clock(),
-      scrollTop:viewer.scrollTop||0,maxVerticalTravel:0,scrolled:false
+      scrollTop:viewer.scrollTop||0,maxVerticalTravel:0,scrolled:false,
+      geometry:captureReaderSwipeGeometry(viewer)
     };
   };
   const move=event=>{
     // V66 : un défilement vertical intermédiaire puis un retour au point de
     // départ ne doit jamais être interprété comme une page tournée.
     if(!origin)return;
-    if(event.touches?.length!==1||isReaderViewportZoomed()){
+    if(event.touches?.length!==1||isReaderViewportZoomed()||
+      !isReaderSwipeGeometryStable(origin.geometry,captureReaderSwipeGeometry(viewer))){
       origin=null;return;
     }
     const touch=event.touches[0];
@@ -94,8 +112,9 @@ export function bindReaderTouchNavigation({
     // Ne JAMAIS déclencher ici le changement de page PDF quand V53 est actif,
     // même si preventDefault() n'a pas été honoré sur un appareil tactile.
     if(viewer.dataset?.readerLayout==='screens')return;
-    if(!initial||isReaderViewportZoomed()||event.touches?.length!==0||
-      event.changedTouches?.length!==1)return;
+    if(!initial||isReaderViewportZoomed()||
+      !isReaderSwipeGeometryStable(initial.geometry,captureReaderSwipeGeometry(viewer))||
+      event.touches?.length!==0||event.changedTouches?.length!==1)return;
     const touch=event.changedTouches[0];
     if(touch.identifier!==initial.id||event.defaultPrevented)return;
     const direction=classifyReaderSwipe({

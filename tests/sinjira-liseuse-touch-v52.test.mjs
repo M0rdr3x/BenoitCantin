@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {classifyReaderSwipe,bindReaderTouchNavigation,isReaderSystemEdgeGesture,isReaderViewportZoomed} from '../assets/js/sinjira-liseuse-touch-v52.mjs';
+import {classifyReaderSwipe,bindReaderTouchNavigation,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable} from '../assets/js/sinjira-liseuse-touch-v52.mjs';
 
 const gesture=(overrides={})=>classifyReaderSwipe({
   dx:-92,dy:8,durationMs:240,viewerWidth:375,...overrides
@@ -83,6 +83,53 @@ function fixture({selected=false}={}){
   };
   return {viewer,previous,next,mobilePrevious,mobileNext,release,swipe,setSelected:v=>{selection=v}};
 }
+test('V72 : géométrie stable ou fluctuation sous quatre pixels ne bloque pas le livre',()=>{
+  const before={readerWidth:375,readerHeight:600,viewportWidth:390,viewportHeight:850};
+  assert.equal(isReaderSwipeGeometryStable(before,{...before,readerHeight:604}),true);
+  assert.equal(isReaderSwipeGeometryStable(before,{...before,readerWidth:320}),false);
+  assert.equal(isReaderSwipeGeometryStable(before,{...before,viewportWidth:844}),false);
+  assert.equal(isReaderSwipeGeometryStable(before,{...before,viewportHeight:750}),false);
+  assert.equal(isReaderSwipeGeometryStable(before,{...before,readerHeight:undefined}),false);
+  assert.equal(isReaderSwipeGeometryStable(null,before),false);
+  assert.equal(isReaderSwipeGeometryStable(before,before,NaN),false);
+  assert.equal(captureReaderSwipeGeometry({clientWidth:375,clientHeight:600},
+    {innerWidth:390,innerHeight:850}).readerWidth,375);
+});
+test('V72 : une rotation pendant le balayage ne tourne pas la page PDF',()=>{
+  const oldWindow=globalThis.window;
+  globalThis.window={innerWidth:390,innerHeight:850};
+  const f=fixture();
+  try{
+    const touch={identifier:7,clientX:250,clientY:190};
+    f.viewer.emit('touchstart',{touches:[touch],target:{closest:()=>null}});
+    globalThis.window.innerWidth=844;
+    f.viewer.clientWidth=800;
+    f.viewer.emit('touchend',{touches:[],changedTouches:[
+      {...touch,clientX:100,clientY:192}
+    ],defaultPrevented:false});
+    assert.equal(f.next.clicks,0);
+    globalThis.window.innerWidth=390;
+    f.viewer.clientWidth=375;
+    f.swipe(-130);
+    assert.equal(f.next.clicks,1);
+  }finally{f.release();globalThis.window=oldWindow}
+});
+test('V72 : une variation transitoire de taille durant touchmove annule le geste PDF',()=>{
+  const oldWindow=globalThis.window;
+  globalThis.window={innerWidth:390,innerHeight:850};
+  const f=fixture();
+  try{
+    const touch={identifier:7,clientX:250,clientY:190};
+    f.viewer.emit('touchstart',{touches:[touch],target:{closest:()=>null}});
+    globalThis.window.innerHeight=720;
+    f.viewer.emit('touchmove',{touches:[{...touch,clientX:220,clientY:191}]});
+    globalThis.window.innerHeight=850;
+    f.viewer.emit('touchend',{touches:[],changedTouches:[
+      {...touch,clientX:100,clientY:192}
+    ],defaultPrevented:false});
+    assert.equal(f.next.clicks,0);
+  }finally{f.release();globalThis.window=oldWindow}
+});
 test('V71 : le zoom visuel est détecté sans fausses alertes à échelle normale',()=>{
   assert.equal(isReaderViewportZoomed({scale:1}),false);
   assert.equal(isReaderViewportZoomed({scale:1.005}),false);

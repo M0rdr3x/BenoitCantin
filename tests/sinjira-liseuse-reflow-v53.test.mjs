@@ -448,6 +448,45 @@ test('V56 : input puis change de taille de police ne créent pas deux déplaceme
     assert.equal(f.viewer.scrollTop,875); // 50 % de la nouvelle hauteur scrollable
   }finally{f.restore()}
 });
+test('V72 : rotation du cellulaire pendant un geste ne tourne pas l’écran texte',()=>{
+  const f=fixture();
+  try{
+    f.windowMock.innerWidth=390;
+    f.windowMock.innerHeight=840;
+    const touch={identifier:1,clientX:230,clientY:140};
+    f.viewer.emit('touchstart',{touches:[touch],target:{closest:()=>null}});
+    f.viewer.clientWidth=560;
+    f.windowMock.innerWidth=568;
+    const end={touches:[],changedTouches:[{...touch,clientX:90,clientY:143}],
+      defaultPrevented:false,preventDefault(){this.defaultPrevented=true}};
+    f.viewer.emit('touchend',end);
+    assert.equal(end.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(f.next.clicks,0);
+    f.viewer.clientWidth=375;
+    f.windowMock.innerWidth=390;
+    const next=f.swipe(-130);
+    assert.equal(next.defaultPrevented,true);
+    assert.ok(f.viewer.scrollTop>0);
+  }finally{f.restore()}
+});
+test('V72 : changement transitoire de hauteur pendant touchmove invalide le swipe texte',()=>{
+  const f=fixture();
+  try{
+    f.windowMock.innerHeight=840;
+    const touch={identifier:1,clientX:230,clientY:140};
+    f.viewer.emit('touchstart',{touches:[touch],target:{closest:()=>null}});
+    f.windowMock.innerHeight=700;
+    f.viewer.emit('touchmove',{touches:[{...touch,clientX:190,clientY:143}]});
+    f.windowMock.innerHeight=840;
+    const end={touches:[],changedTouches:[{...touch,clientX:80,clientY:143}],
+      defaultPrevented:false,preventDefault(){this.defaultPrevented=true}};
+    f.viewer.emit('touchend',end);
+    assert.equal(end.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(f.next.clicks,0);
+  }finally{f.restore()}
+});
 test('V71 : zoom par pincement sur mobile conserve le défilement natif du texte',()=>{
   const f=fixture();
   try{
