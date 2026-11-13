@@ -14,6 +14,8 @@ on:
       - 'scripts/test_sinjira_signup_response.cjs'
       - 'scripts/test_sinjira_registry_duplicate_response.cjs'
       - 'scripts/test_sinjira_storage_photo_aal2_policy.cjs'
+      - 'scripts/test_sinjira_photo_aal2_readiness.cjs'
+      - 'scripts/sql/sinjira_character_photo_aal2_preflight_read_only.sql'
       - 'scripts/test_sinjira_character_photo_path.cjs'
       - 'scripts/test_sinjira_registry_unique_conflict.cjs'
       - 'supabase/functions/submit-character-questionnaire/index.ts'
@@ -39,6 +41,8 @@ on:
       - 'scripts/test_sinjira_signup_response.cjs'
       - 'scripts/test_sinjira_registry_duplicate_response.cjs'
       - 'scripts/test_sinjira_storage_photo_aal2_policy.cjs'
+      - 'scripts/test_sinjira_photo_aal2_readiness.cjs'
+      - 'scripts/sql/sinjira_character_photo_aal2_preflight_read_only.sql'
       - 'scripts/test_sinjira_character_photo_path.cjs'
       - 'scripts/test_sinjira_registry_unique_conflict.cjs'
       - 'supabase/functions/submit-character-questionnaire/index.ts'
@@ -115,6 +119,8 @@ jobs:
         run: |
           node --check scripts/test_sinjira_storage_photo_aal2_policy.cjs
           node scripts/test_sinjira_storage_photo_aal2_policy.cjs
+          node --check scripts/test_sinjira_photo_aal2_readiness.cjs
+          node scripts/test_sinjira_photo_aal2_readiness.cjs
       - name: Vérifier le chemin canonique des photos du Registre côté Edge
         run: |
           node --check scripts/test_sinjira_character_photo_path.cjs
