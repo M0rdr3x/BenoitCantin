@@ -1,0 +1,83 @@
+name: SINJIRA - liseuse V49/V50 risque et prototype CAS (NO_GO)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-liseuse-v26.js'
+      - 'tests/security/sql/setup_sinjira_reader_v48.sql'
+      - 'tests/security/sql/test_sinjira_reader_v49_*.sql'
+      - 'tests/security/sql/setup_sinjira_reader_v50_cas_local.sql'
+      - 'tests/security/sql/test_sinjira_reader_v50_*.sql'
+      - 'tests/security/test_sinjira_reader_v50_cas_contract.py'
+      - 'tests/security/test_sinjira_reader_v49_race_contract.py'
+      - 'supabase/migrations/20261107185500_sinjira_reader_progress_spot_v32.sql'
+      - 'docs/SINJIRA_READER_V49_SAME_ACCOUNT_RACE.md'
+      - '.github/workflows/sinjira-reader-v49-same-account-race.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-liseuse-v26.js'
+      - 'tests/security/sql/setup_sinjira_reader_v48.sql'
+      - 'tests/security/sql/test_sinjira_reader_v49_*.sql'
+      - 'tests/security/sql/setup_sinjira_reader_v50_cas_local.sql'
+      - 'tests/security/sql/test_sinjira_reader_v50_*.sql'
+      - 'tests/security/test_sinjira_reader_v50_cas_contract.py'
+      - 'tests/security/test_sinjira_reader_v49_race_contract.py'
+      - 'supabase/migrations/20261107185500_sinjira_reader_progress_spot_v32.sql'
+      - 'docs/SINJIRA_READER_V49_SAME_ACCOUNT_RACE.md'
+      - '.github/workflows/sinjira-reader-v49-same-account-race.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-reader-v49-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  reproduce_same_account_race_only:
+    name: Confirmer le risque de sauvegarde tardive, ne pas autoriser la production
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_DB: sinjira_reader_v49_disposable
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - '127.0.0.1:5432:5432'
+        options: >-
+          --health-cmd=pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    steps:
+      - name: Sources de ce commit, aucun credential persiste
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Contrat Python et absence de secrets / liens de production
+        run: python3 -m unittest discover -s tests/security -p test_sinjira_reader_v49_race_contract.py -v
+      - name: Reproduire l'ordre de requetes A ancien B recent A tardif sur une base jetable
+        env:
+          PGCONNECT_TIMEOUT: '10'
+        run: |
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v49_disposable -v ON_ERROR_STOP=1 -f tests/security/sql/setup_sinjira_reader_v48.sql
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v49_disposable -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v49_device_a_start.sql
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v49_disposable -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v49_device_b_fresh.sql
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v49_disposable -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v49_device_a_stale_arrives.sql
+      - name: Tester le contrat V50 sans DDL distant ni changement navigateur
+        run: python3 -m unittest discover -s tests/security -p test_sinjira_reader_v50_cas_contract.py -v
+      - name: Illustrer sur PostgreSQL local une sauvegarde conditionnelle atomique
+        env:
+          PGCONNECT_TIMEOUT: '10'
+        run: |
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v49_disposable -v ON_ERROR_STOP=1 -f tests/security/sql/setup_sinjira_reader_v50_cas_local.sql
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v49_disposable -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v50_device_b_fresh.sql
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v49_disposable -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v50_device_a_stale_rejected.sql
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v49_disposable -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v50_rls_and_reconcile.sql
+      - name: Rappeler l'interdiction de conclure a une disponibilite de la liseuse
+        run: echo 'V49/V50 NO_GO - Le risque est reproduit et le prototype CAS passe seulement en base jetable; le navigateur et la production restent inchanges.'
