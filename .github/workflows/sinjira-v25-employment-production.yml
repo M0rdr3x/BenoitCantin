@@ -77,9 +77,14 @@ jobs:
         run: |
           set -euo pipefail
           test -n "${SUPABASE_ACCESS_TOKEN:-}"
-          curl --proto '=https' --fail-with-body --silent --show-error --request GET \
+          if [[ ! "$SUPABASE_ACCESS_TOKEN" =~ ^[-A-Za-z0-9._~+/=]+$ ]]; then
+            echo "Jeton Supabase invalide pour un en-tête HTTP." >&2
+            exit 1
+          fi
+          # Un en-tête dans stdin : aucun secret dans argv, .curlrc ou fichier temporaire.
+          printf 'Authorization: Bearer %s\n' "$SUPABASE_ACCESS_TOKEN" | curl -q --proto '=https' --fail-with-body --silent --show-error --request GET \
             --url "https://api.supabase.com/v1/projects/gpvivleexywljowcqkru/database/migrations" \
-            --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            --header @- \
             --header 'Accept: application/json' \
             --output "$RUNNER_TEMP/employment-production-migrations.json"
 

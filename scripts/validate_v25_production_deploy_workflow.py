@@ -91,7 +91,7 @@ def main() -> int:
         '--tlsv1.2',
         '--request GET',
         MANAGEMENT_URL,
-        '--header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN"',
+        '--header @-',
         'MIGRATION_HISTORY="$RUNNER_TEMP/v25-migrations.json" python3 - <<\'PY\'',
         'after_names[:len(required)] != required',
         FUNCTIONS_CMD,

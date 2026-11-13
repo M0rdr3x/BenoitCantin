@@ -81,11 +81,16 @@ jobs:
             exit 1
           }
           history="$RUNNER_TEMP/v25-migrations.json"
-          curl --fail-with-body --silent --show-error \
+          if [[ ! "$SUPABASE_ACCESS_TOKEN" =~ ^[-A-Za-z0-9._~+/=]+$ ]]; then
+            echo "Jeton Supabase invalide pour un en-tête HTTP." >&2
+            exit 1
+          fi
+          # Un en-tête dans stdin : aucun secret dans argv, .curlrc ou fichier temporaire.
+          printf 'Authorization: Bearer %s\n' "$SUPABASE_ACCESS_TOKEN" | curl -q --fail-with-body --silent --show-error \
             --proto '=https' \
             --tlsv1.2 \
             --request GET \
-            --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            --header @- \
             --header 'Accept: application/json' \
             --output "$history" \
             "https://api.supabase.com/v1/projects/gpvivleexywljowcqkru/database/migrations"
