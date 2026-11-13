@@ -1,0 +1,171 @@
+name: Sécurité — promotion ciblée des fonctions Edge SINJIRA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/sinjira-targeted-edge-hardening-release.yml'
+      - 'scripts/validate_targeted_edge_promotion_security.py'
+      - 'docs/sinjira-targeted-edge-security-release.md'
+      - 'supabase/functions/revoke-my-contributions/**'
+      - 'supabase/functions/redeem-license-code/**'
+      - 'supabase/config.toml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sinjira-targeted-edge-hardening-release.yml'
+      - 'scripts/validate_targeted_edge_promotion_security.py'
+      - 'docs/sinjira-targeted-edge-security-release.md'
+      - 'supabase/functions/revoke-my-contributions/**'
+      - 'supabase/functions/redeem-license-code/**'
+      - 'supabase/config.toml'
+  workflow_dispatch:
+    inputs:
+      function_slug:
+        description: "Déployer UNE fonction (jamais un déploiement global)"
+        required: true
+        type: choice
+        options:
+          - revoke-my-contributions
+          - redeem-license-code
+      source_commit:
+        description: "SHA complet (40 caractères) du commit main validé par CI"
+        required: true
+        type: string
+      confirmation:
+        description: "Saisir DEPLOY-SINJIRA-EDGE- suivi du nom exact de la fonction"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-targeted-edge-security-promotion-production
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    name: Contrats et régressions sécurité sans identifiants
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Checkout isolé du commit candidat
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python figé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Auto-tests avec mutations malveillantes synthétiques
+        run: python3 scripts/validate_targeted_edge_promotion_security.py --self-test
+      - name: Vérifier les gardes de promotion et JWT dans le dépôt
+        run: python3 scripts/validate_targeted_edge_promotion_security.py --verify-repo
+      - name: Revalider la révocation sécurisée des contributions
+        run: python3 scripts/validate_contribution_revocation_v24_5_52.py
+      - name: Revalider l’activation sécurisée des licences
+        run: |
+          python3 scripts/validate_license_redemption_security.py --self-test
+          python3 scripts/validate_license_redemption_security.py
+      - name: Tester les corps de requêtes et réponses privées sans réseau
+        run: node scripts/test_sensitive_account_streaming.mjs
+
+  release-production:
+    if: github.event_name == 'workflow_dispatch'
+    needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: production
+    steps:
+      - name: Refuser les demandes non autorisées avant le moindre accès secret
+        shell: bash
+        env:
+          FUNCTION_SLUG: ${{ inputs.function_slug }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+          REVIEWED_SHA: ${{ inputs.source_commit }}
+        run: |
+          set -euo pipefail
+          test "$REVIEWED_SHA" = "$GITHUB_SHA" || { echo "NO_GO: SHA non approuvé"; exit 1; }
+          [[ "$REVIEWED_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "NO_GO: SHA malformé"; exit 1; }
+          test "$GITHUB_REF" = "refs/heads/main" || { echo "NO_GO: lancement hors main"; exit 1; }
+          case "$FUNCTION_SLUG" in
+            revoke-my-contributions|redeem-license-code) ;;
+            *) echo "NO_GO: fonction non approuvée"; exit 1 ;;
+          esac
+          test "$CONFIRMATION" = "DEPLOY-SINJIRA-EDGE-$FUNCTION_SLUG" || {
+            echo "NO_GO: confirmation manuelle invalide"; exit 1;
+          }
+      - name: Checkout exact du commit déclenché
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Python figé pour vérifications de sécurité
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Vérifier une deuxième fois la source et les permissions
+        run: python3 scripts/validate_targeted_edge_promotion_security.py --verify-repo
+      - name: Supabase CLI v2 explicitement figée
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
+        with:
+          version: 2.111.0
+          github-token: ${{ github.token }}
+      - name: Contrôler la version active et JWT AVANT tout déploiement
+        shell: bash
+        env:
+          FUNCTION_SLUG: ${{ inputs.function_slug }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_EDGE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_ACCESS_TOKEN" || { echo "NO_GO: secret de déploiement absent"; exit 1; }
+          EXPECTED_VERSION=2
+          echo "Prévol: version attendue $EXPECTED_VERSION (aucune modification de données)"
+          curl --proto '=https' --tlsv1.2 --fail --silent --show-error --max-time 30 \
+            --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            --header 'Accept: application/json' \
+            --output "$RUNNER_TEMP/edge-before.json" \
+            'https://api.supabase.com/v1/projects/gpvivleexywljowcqkru/functions'
+          python3 scripts/validate_targeted_edge_promotion_security.py --phase pre \
+            --slug "$FUNCTION_SLUG" --metadata "$RUNNER_TEMP/edge-before.json"
+      - name: Publier une seule fonction explicitement approuvée
+        shell: bash
+        env:
+          FUNCTION_SLUG: ${{ inputs.function_slug }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_EDGE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_ACCESS_TOKEN" || exit 1
+          # Un re-prévol réduit le risque d'écraser une modification concurrente.
+          curl --proto '=https' --tlsv1.2 --fail --silent --show-error --max-time 30 \
+            --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            --header 'Accept: application/json' \
+            --output "$RUNNER_TEMP/edge-immediate.json" \
+            'https://api.supabase.com/v1/projects/gpvivleexywljowcqkru/functions'
+          python3 scripts/validate_targeted_edge_promotion_security.py --phase pre \
+            --slug "$FUNCTION_SLUG" --metadata "$RUNNER_TEMP/edge-immediate.json"
+          supabase functions deploy "$FUNCTION_SLUG" --project-ref gpvivleexywljowcqkru --use-api
+      - name: Vérifier JWT, évolution de version et source réellement déployée
+        shell: bash
+        env:
+          FUNCTION_SLUG: ${{ inputs.function_slug }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_EDGE_DEPLOY_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_ACCESS_TOKEN" || exit 1
+          curl --proto '=https' --tlsv1.2 --fail --silent --show-error --max-time 30 \
+            --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            --header 'Accept: application/json' \
+            --output "$RUNNER_TEMP/edge-after.json" \
+            'https://api.supabase.com/v1/projects/gpvivleexywljowcqkru/functions'
+          mkdir -p "$RUNNER_TEMP/edge-promoted"
+          cd "$RUNNER_TEMP/edge-promoted"
+          supabase functions download "$FUNCTION_SLUG" --project-ref gpvivleexywljowcqkru
+          cd "$GITHUB_WORKSPACE"
+          python3 scripts/validate_targeted_edge_promotion_security.py --phase post \
+            --slug "$FUNCTION_SLUG" \
+            --metadata "$RUNNER_TEMP/edge-after.json" \
+            --pre-metadata "$RUNNER_TEMP/edge-before.json" \
+            --downloaded-root "$RUNNER_TEMP/edge-promoted"
