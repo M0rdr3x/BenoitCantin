@@ -92,8 +92,8 @@ def is_forbidden_env_file(path: Path) -> bool:
     name = path.name.lower()
     if name in ALLOWED_ENV_FILES:
         return False
-    # Couvre aussi "production.env" et "production.env.local".
-    return name.startswith('.env') or bool(re.search(r'\\.env(?:\\.|$)', name))
+    # Couvre aussi production.env, production.env.local et .env.production.
+    return name.startswith('.env') or name.endswith('.env') or '.env.' in name
 
 
 def is_forbidden_credential_file(path: Path) -> bool:
@@ -102,10 +102,12 @@ def is_forbidden_credential_file(path: Path) -> bool:
         return True
     if path.suffix.lower() in FORBIDDEN_CREDENTIAL_EXTENSIONS:
         return True
-    return bool(re.fullmatch(
-        r'(?:service[-_]?account|credentials)[-_][a-z0-9_-]+\\.json', name
+    # Les fichiers de clés variables restent interdits, quel que soit leur
+    # contenu. Un nom "service-account-prod.json" ne doit pas échapper au garde.
+    return name.endswith('.json') and name.startswith((
+        'service-account-', 'service_account-', 'serviceaccount-',
+        'credentials-', 'credentials_',
     ))
-
 
 def read_text(path: Path) -> str | None:
     try:
