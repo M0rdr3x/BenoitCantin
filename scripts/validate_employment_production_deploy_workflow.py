@@ -103,7 +103,7 @@ def main() -> int:
         require(marker not in active, f'la vérification Emploi doit rester en lecture seule: {marker}')
 
     require(active.count(PRODUCTION_URL) == 1, 'Une seule URL production Supabase littérale est autorisée.')
-    require(len(re.findall(r'(?m)^\s*curl\b', active)) == 1, 'Le workflow Emploi doit effectuer un seul appel curl distant.')
+    require(len(re.findall(r'(?m)\bcurl\s+-q\b', active)) == 1, 'Le workflow Emploi doit effectuer un seul appel curl distant.')
 
     secret_lines = [line for line in workflow.splitlines() if '${{ secrets.' in line]
     require(
