@@ -1,0 +1,94 @@
+name: Sécurité SINJIRA — modération SQL atomique (candidat isolé)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/candidate-migrations/sinjira_moderation_atomic_candidate.sql'
+      - 'supabase/tests/sinjira_moderation_atomic_candidate_fixture.sql'
+      - 'supabase/tests/sinjira_moderation_atomic_candidate.test.sql'
+      - 'supabase/candidate-edge/admin-social-v20/index.ts'
+      - 'scripts/test_sinjira_admin_social_atomic_rpc.cjs'
+      - 'scripts/validate_admin_social_atomic_candidate.py'
+      - 'scripts/test_sinjira_moderation_atomic_concurrency.sh'
+      - '.github/workflows/sinjira-moderation-atomic-candidate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/candidate-migrations/sinjira_moderation_atomic_candidate.sql'
+      - 'supabase/tests/sinjira_moderation_atomic_candidate_fixture.sql'
+      - 'supabase/tests/sinjira_moderation_atomic_candidate.test.sql'
+      - 'supabase/candidate-edge/admin-social-v20/index.ts'
+      - 'scripts/test_sinjira_admin_social_atomic_rpc.cjs'
+      - 'scripts/validate_admin_social_atomic_candidate.py'
+      - 'scripts/test_sinjira_moderation_atomic_concurrency.sh'
+      - '.github/workflows/sinjira-moderation-atomic-candidate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  moderation-atomic-postgres:
+    name: Vérifier SQL, ACL, rollback et accès concurrents sur PostgreSQL fictif
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: sinjira_test
+        ports:
+          - '127.0.0.1:5432:5432'
+        options: >-
+          --health-cmd "pg_isready -U postgres -d sinjira_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGDATABASE: sinjira_test
+      PGUSER: postgres
+    steps:
+      - name: Checkout sans jeton persistant
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Refuser le port PostgreSQL ouvert sur toutes les interfaces
+        run: |
+          binding="$(docker port '${{ job.services.postgres.id }}' 5432/tcp)"
+          if [ "$binding" != '127.0.0.1:5432' ]; then
+            echo "REFUS : la base fictive doit rester accessible sur localhost seulement." >&2
+            exit 1
+          fi
+      - name: Installer Node.js à version épinglée
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+          package-manager-cache: false
+      - name: Exercer les vraies fonctions Edge via RPC fictives
+        run: |
+          node --check scripts/test_sinjira_admin_social_atomic_rpc.cjs
+          node scripts/test_sinjira_admin_social_atomic_rpc.cjs
+      - name: Refuser les régressions de la frontière JWT et SQL Edge
+        run: |
+          python3 scripts/validate_admin_social_atomic_candidate.py
+          python3 scripts/validate_admin_social_atomic_candidate.py --self-test
+      - name: Installer le client PostgreSQL uniquement si nécessaire
+        run: |
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y postgresql-client
+          fi
+      - name: Vérifier le ledger de migration en lecture seule
+        run: python3 scripts/validate_production_migration_ledger.py
+      - name: Charger les rôles et données entièrement fictifs
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/sinjira_moderation_atomic_candidate_fixture.sql
+      - name: Charger la migration candidate dans PostgreSQL éphémère
+        run: psql -v ON_ERROR_STOP=1 -f supabase/candidate-migrations/sinjira_moderation_atomic_candidate.sql
+      - name: Valider les rôles SQL, la transaction et les erreurs simulées
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/sinjira_moderation_atomic_candidate.test.sql
+      - name: Deux sessions simultanées — une seule décision atomique
+        run: bash scripts/test_sinjira_moderation_atomic_concurrency.sh
