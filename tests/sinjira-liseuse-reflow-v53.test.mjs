@@ -448,6 +448,36 @@ test('V56 : input puis change de taille de police ne créent pas deux déplaceme
     assert.equal(f.viewer.scrollTop,875); // 50 % de la nouvelle hauteur scrollable
   }finally{f.restore()}
 });
+test('V71 : zoom par pincement sur mobile conserve le défilement natif du texte',()=>{
+  const f=fixture();
+  try{
+    f.windowMock.visualViewport={scale:2};
+    const start=f.swipe(-130,2);
+    assert.equal(start.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(f.next.clicks,0);
+    f.windowMock.visualViewport.scale=1;
+    const page=f.swipe(-130,2);
+    assert.equal(page.defaultPrevented,true);
+    assert.ok(f.viewer.scrollTop>0);
+  }finally{f.restore()}
+});
+test('V71 : zoom pendant un geste n’interrompt pas la page en cours',()=>{
+  const f=fixture();
+  try{
+    f.windowMock.visualViewport={scale:1};
+    const start={identifier:1,clientX:210,clientY:140};
+    f.viewer.emit('touchstart',{touches:[start],target:{closest:()=>null}});
+    f.windowMock.visualViewport.scale=1.5;
+    const end={touches:[],changedTouches:[
+      {...start,clientX:60,clientY:142}
+    ],defaultPrevented:false,preventDefault(){this.defaultPrevented=true}};
+    f.viewer.emit('touchend',end);
+    assert.equal(end.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(f.next.clicks,0);
+  }finally{f.restore()}
+});
 test('V70 : le défilement horizontal de la liseuse ne tourne pas une page par balayage',()=>{
   const f=fixture();
   try{

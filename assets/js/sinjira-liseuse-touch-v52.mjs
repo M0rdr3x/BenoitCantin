@@ -27,6 +27,14 @@ export function classifyReaderSwipe({
  * ou derniers 24 pixels CSS du viewport (ex. retour Safari iOS).
  * Si la largeur du viewport n'est pas connue, ne pas bloquer la lecture.
  */
+/**
+ * V71 : le zoom par pincement agrandit le viewport visuel sans toujours
+ * modifier scrollWidth. Pendant ce zoom, un doigt doit déplacer la page
+ * normalement plutôt que déclencher un changement de page PDF/texte.
+ */
+export function isReaderViewportZoomed({scale=globalThis.window?.visualViewport?.scale}={}){
+  return Number.isFinite(scale)&&scale>1.01;
+}
 export function isReaderSystemEdgeGesture({clientX,viewportWidth,edgePx=24}={}){
   if(![clientX,viewportWidth,edgePx].every(Number.isFinite)||
      edgePx<=0||viewportWidth<=edgePx*3)return false;
@@ -49,7 +57,8 @@ export function bindReaderTouchNavigation({
   let origin=null;
   const start=event=>{
     origin=null;
-    if(event.touches?.length!==1||isInteractiveTarget(event.target))return;
+    if(event.touches?.length!==1||isInteractiveTarget(event.target)||
+      isReaderViewportZoomed())return;
     const touch=event.touches[0];
     if(!Number.isFinite(touch.clientX)||!Number.isFinite(touch.clientY))return;
     // Ne pas intercepter un geste de navigation système démarrant sur le bord.
@@ -65,7 +74,9 @@ export function bindReaderTouchNavigation({
     // V66 : un défilement vertical intermédiaire puis un retour au point de
     // départ ne doit jamais être interprété comme une page tournée.
     if(!origin)return;
-    if(event.touches?.length!==1){origin=null;return}
+    if(event.touches?.length!==1||isReaderViewportZoomed()){
+      origin=null;return;
+    }
     const touch=event.touches[0];
     if(touch.identifier!==origin.id||!Number.isFinite(touch.clientY)){
       origin=null;return;
@@ -83,7 +94,8 @@ export function bindReaderTouchNavigation({
     // Ne JAMAIS déclencher ici le changement de page PDF quand V53 est actif,
     // même si preventDefault() n'a pas été honoré sur un appareil tactile.
     if(viewer.dataset?.readerLayout==='screens')return;
-    if(!initial||event.touches?.length!==0||event.changedTouches?.length!==1)return;
+    if(!initial||isReaderViewportZoomed()||event.touches?.length!==0||
+      event.changedTouches?.length!==1)return;
     const touch=event.changedTouches[0];
     if(touch.identifier!==initial.id||event.defaultPrevented)return;
     const direction=classifyReaderSwipe({

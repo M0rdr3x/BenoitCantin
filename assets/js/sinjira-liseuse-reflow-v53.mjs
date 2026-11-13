@@ -5,7 +5,7 @@
  * du PDF courant ; une fois le texte terminé, tourner la vraie page du livre.
  * L'enregistrement d'emplacement reste le scroll_ratio historique de la V31.
  */
-import {classifyReaderSwipe,isReaderSystemEdgeGesture} from './sinjira-liseuse-touch-v52.mjs?v=52.11.10.1';
+import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed} from './sinjira-liseuse-touch-v52.mjs?v=52.11.10.1';
 
 const PREF_KEY='sinjira:liseuse:lecture-par-ecrans:v53';
 const INTERACTIVE='a,button,input,select,textarea,summary,[contenteditable],[role="button"],[role="link"],[data-reader-no-swipe]';
@@ -260,7 +260,8 @@ export function bindReaderScreenMode({
   const isTouchTargetAllowed=event=>!isInteractive(event.target);
   const onTouchStart=event=>{
     gesture=null;
-    if(!isPaged()||event.touches?.length!==1||!isTouchTargetAllowed(event))return;
+    if(!isPaged()||event.touches?.length!==1||!isTouchTargetAllowed(event)||
+      isReaderViewportZoomed())return;
     const touch=event.touches[0];
     // V67 : préserver le retour et la navigation système depuis les bords.
     if(isReaderSystemEdgeGesture({
@@ -274,7 +275,9 @@ export function bindReaderScreenMode({
   };
   const onTouchMove=event=>{
     if(!gesture)return;
-    if(event.touches?.length!==1){gesture=null;return}
+    if(event.touches?.length!==1||isReaderViewportZoomed()){
+      gesture=null;return;
+    }
     const touch=event.touches[0];
     if(touch.identifier!==gesture.id||!Number.isFinite(touch.clientY)){
       gesture=null;return;
@@ -289,7 +292,7 @@ export function bindReaderScreenMode({
   const onTouchCancel=()=>{gesture=null};
   const onTouchEnd=event=>{
     const start=gesture;gesture=null;
-    if(!start||!isPaged()||event.defaultPrevented||
+    if(!start||!isPaged()||isReaderViewportZoomed()||event.defaultPrevented||
       event.touches?.length!==0||event.changedTouches?.length!==1)return;
     const touch=event.changedTouches[0];
     if(touch.identifier!==start.id)return;

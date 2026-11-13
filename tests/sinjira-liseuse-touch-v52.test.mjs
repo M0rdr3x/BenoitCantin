@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {classifyReaderSwipe,bindReaderTouchNavigation,isReaderSystemEdgeGesture} from '../assets/js/sinjira-liseuse-touch-v52.mjs';
+import {classifyReaderSwipe,bindReaderTouchNavigation,isReaderSystemEdgeGesture,isReaderViewportZoomed} from '../assets/js/sinjira-liseuse-touch-v52.mjs';
 
 const gesture=(overrides={})=>classifyReaderSwipe({
   dx:-92,dy:8,durationMs:240,viewerWidth:375,...overrides
@@ -83,6 +83,41 @@ function fixture({selected=false}={}){
   };
   return {viewer,previous,next,mobilePrevious,mobileNext,release,swipe,setSelected:v=>{selection=v}};
 }
+test('V71 : le zoom visuel est détecté sans fausses alertes à échelle normale',()=>{
+  assert.equal(isReaderViewportZoomed({scale:1}),false);
+  assert.equal(isReaderViewportZoomed({scale:1.005}),false);
+  assert.equal(isReaderViewportZoomed({scale:1.1}),true);
+  assert.equal(isReaderViewportZoomed({scale:2}),true);
+  assert.equal(isReaderViewportZoomed({scale:undefined}),false);
+});
+test('V71 : en zoom natif, glisser le PDF ne tourne jamais le livre',()=>{
+  const oldWindow=globalThis.window;
+  globalThis.window={innerWidth:390,visualViewport:{scale:1.8}};
+  const f=fixture();
+  try{
+    f.swipe(-125);f.swipe(125);
+    assert.equal(f.next.clicks,0);
+    assert.equal(f.previous.clicks,0);
+    // Revenir à l'échelle 1 restaure la lecture au doigt.
+    globalThis.window.visualViewport.scale=1;
+    f.swipe(-125);
+    assert.equal(f.next.clicks,1);
+  }finally{f.release();globalThis.window=oldWindow}
+});
+test('V71 : si le pincement démarre pendant le geste, le PDF ne tourne pas',()=>{
+  const oldWindow=globalThis.window;
+  globalThis.window={innerWidth:390,visualViewport:{scale:1}};
+  const f=fixture();
+  try{
+    const touch={identifier:7,clientX:200,clientY:190};
+    f.viewer.emit('touchstart',{touches:[touch],target:{closest:()=>null}});
+    globalThis.window.visualViewport.scale=1.7;
+    f.viewer.emit('touchend',{touches:[],changedTouches:[
+      {...touch,clientX:70,clientY:191}
+    ],defaultPrevented:false});
+    assert.equal(f.next.clicks,0);
+  }finally{f.release();globalThis.window=oldWindow}
+});
 test('V67 : réserver 24 px de chaque bord pour le retour du navigateur',()=>{
   assert.equal(isReaderSystemEdgeGesture({clientX:0,viewportWidth:390}),true);
   assert.equal(isReaderSystemEdgeGesture({clientX:24,viewportWidth:390}),true);
