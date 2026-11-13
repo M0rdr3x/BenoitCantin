@@ -1,0 +1,55 @@
+name: Sécurité SINJIRA — frontière DOM console admin
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-admin-console-core.js'
+      - 'assets/js/sinjira-admin-console.js'
+      - 'admin/sinjira/index.html'
+      - 'scripts/test_sinjira_admin_console_dom_boundary.cjs'
+      - 'scripts/validate_project_identifier_ui.py'
+      - '.github/workflows/sinjira-admin-dom-boundary.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-admin-console-core.js'
+      - 'assets/js/sinjira-admin-console.js'
+      - 'admin/sinjira/index.html'
+      - 'scripts/test_sinjira_admin_console_dom_boundary.cjs'
+      - 'scripts/validate_project_identifier_ui.py'
+      - '.github/workflows/sinjira-admin-dom-boundary.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  admin-dom-boundary:
+    name: Refuser injections de réponse et décisions admin falsifiées
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout sans jeton persistant
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Node.js épinglé
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+          package-manager-cache: false
+      - name: Vérifier la syntaxe des modules réels et du banc d'essai
+        run: |
+          node --check assets/js/sinjira-admin-console-core.js
+          node --check assets/js/sinjira-admin-console.js
+          node --check scripts/test_sinjira_admin_console_dom_boundary.cjs
+      - name: Exercer les actions administratives sur données malveillantes simulées
+        run: node scripts/test_sinjira_admin_console_dom_boundary.cjs
+      - name: Contrat Edge administration et accès privés
+        run: |
+          python3 scripts/validate_admin_console_request_security.py
+          python3 scripts/validate_admin_users_privacy.py
+          python3 scripts/validate_admin_sinjira_v18_request_security.py
+      - name: Contrat de l’import versionné du moteur administratif
+        run: python3 scripts/validate_project_identifier_ui.py

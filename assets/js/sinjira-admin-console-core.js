@@ -3,6 +3,13 @@ import {getSupabase,requireUser,escapeHtml,setStatus} from './sinjira-supabase.j
 const status=document.querySelector('[data-admin-status]');
 let projects=[];
 
+// Les identifiants issus d'Edge/Supabase ne deviennent des actions DOM que
+// s'ils ont réellement la forme d'un UUID PostgreSQL. Le contrôle serveur
+// d'autorisation admin/JWT/AAL2 reste obligatoire et indépendant.
+function safeAdminId(value){
+  return typeof value==='string'&&/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(value)?value:'';
+}
+
 async function requireSinjiraAdmin(){
   const s=getSupabase();
   const {data:{user},error:userError}=await s.auth.getUser();
@@ -56,7 +63,7 @@ async function dashboard(){
   Object.entries(map).forEach(([s,v])=>{const n=document.querySelector(s);if(n)n.textContent=String(v??0)});
 }
 async function loadProjects(){
-  projects=(await call('list_projects')).projects||[];
+  projects=((await call('list_projects')).projects||[]).filter(p=>safeAdminId(p.id));
   const list=document.querySelector('[data-admin-project-list]');
   list.innerHTML=projects.map(p=>`<article class="admin-management-row"><div><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(p.slug)} · ${escapeHtml(p.status)} · ${escapeHtml(p.visibility)}</span></div><button class="btn btn-secondary btn-small" data-edit-project="${p.id}">Modifier</button></article>`).join('');
   const opts=projects.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
@@ -73,9 +80,13 @@ function bindProject(){
     try{await call('save_project',{project:obj});setStatus(status,'Projet enregistré.','success');f.reset();await loadProjects();await dashboard()}catch(x){setStatus(status,x.message,'error')}})
 }
 async function loadDocs(){
-  const rows=(await call('list_documents')).documents||[],box=document.querySelector('[data-admin-document-list]');
+  const rows=((await call('list_documents')).documents||[]).filter(d=>safeAdminId(d.id)),box=document.querySelector('[data-admin-document-list]');
   box.innerHTML=rows.map(d=>`<article class="admin-management-row"><div><strong>${escapeHtml(d.title)}</strong><span>${escapeHtml(d.projects?.name||'')} · v${escapeHtml(d.version)} · ${escapeHtml(d.access_level)} · ${escapeHtml(d.status)}</span></div><div class="admin-row-actions">${d.status!=='approved'?`<button class="btn btn-secondary btn-small" data-doc="${d.id}" data-state="approved">Approuver</button>`:''}${d.status!=='archived'?`<button class="btn btn-secondary btn-small" data-doc="${d.id}" data-state="archived">Archiver</button>`:''}</div></article>`).join('')||'<p>Aucun document.</p>';
-  box.querySelectorAll('[data-doc]').forEach(b=>b.addEventListener('click',async()=>{try{await call('set_document_status',{document_id:b.dataset.doc,status:b.dataset.state});await loadDocs();await dashboard()}catch(x){setStatus(status,x.message,'error')}}));
+  box.querySelectorAll('[data-doc]').forEach(b=>b.addEventListener('click',async()=>{
+     const id=safeAdminId(b.dataset.doc),decision=b.dataset.state;
+     if(!id||!['approved','archived'].includes(decision)){setStatus(status,'Référence de document non valide. Rechargez la page.','error');return}
+     try{await call('set_document_status',{document_id:id,status:decision});await loadDocs();await dashboard()}catch(x){setStatus(status,'Impossible de mettre à jour le document.','error')}
+   }));
 }
 function bindUpload(){
   const f=document.querySelector('[data-document-upload-form]');
@@ -93,18 +104,32 @@ function bindUpload(){
 }
 async function loadRequests(){
   const d=await call('list_access_requests'),emails=new Map((d.users||[]).map(u=>[u.id,u.email])),box=document.querySelector('[data-admin-request-list]');
-  box.innerHTML=(d.requests||[]).map(r=>`<article class="admin-management-row"><div><strong>${escapeHtml(emails.get(r.user_id)||r.user_id)}</strong><span>${escapeHtml(r.projects?.name||'')} · ${escapeHtml(r.requested_level)} · ${escapeHtml(r.status)}</span><p>${escapeHtml(r.message||'')}</p></div>${r.status==='pending'?`<div class="admin-row-actions"><button class="btn btn-primary btn-small" data-request="${r.id}" data-decision="approved">Approuver</button><button class="btn btn-secondary btn-small" data-request="${r.id}" data-decision="refused">Refuser</button></div>`:''}</article>`).join('')||'<p>Aucune demande.</p>';
-  box.querySelectorAll('[data-request]').forEach(b=>b.addEventListener('click',async()=>{try{await call('review_access_request',{request_id:b.dataset.request,decision:b.dataset.decision});await loadRequests();await dashboard()}catch(x){setStatus(status,x.message,'error')}}));
+  box.innerHTML=(d.requests||[]).filter(r=>safeAdminId(r.id)).map(r=>`<article class="admin-management-row"><div><strong>${escapeHtml(emails.get(r.user_id)||r.user_id)}</strong><span>${escapeHtml(r.projects?.name||'')} · ${escapeHtml(r.requested_level)} · ${escapeHtml(r.status)}</span><p>${escapeHtml(r.message||'')}</p></div>${r.status==='pending'?`<div class="admin-row-actions"><button class="btn btn-primary btn-small" data-request="${r.id}" data-decision="approved">Approuver</button><button class="btn btn-secondary btn-small" data-request="${r.id}" data-decision="refused">Refuser</button></div>`:''}</article>`).join('')||'<p>Aucune demande.</p>';
+  box.querySelectorAll('[data-request]').forEach(b=>b.addEventListener('click',async()=>{
+     const id=safeAdminId(b.dataset.request),decision=b.dataset.decision;
+     if(!id||!['approved','refused'].includes(decision)){setStatus(status,'Référence de demande non valide. Rechargez la page.','error');return}
+     try{await call('review_access_request',{request_id:id,decision});await loadRequests();await dashboard()}catch(x){setStatus(status,'Impossible de traiter la demande.','error')}
+   }));
 }
 async function loadUsers(){
-  const {data,error}=await getSupabase().functions.invoke('admin-users',{body:{action:'list_users'}});if(error||!data?.ok)throw new Error(data?.error||error?.message||'Impossible de charger les joueurs');const users=data.users||[],box=document.querySelector('[data-admin-user-list]');
+  const {data,error}=await getSupabase().functions.invoke('admin-users',{body:{action:'list_users'}});if(error||!data?.ok)throw new Error(data?.error||error?.message||'Impossible de charger les joueurs');const users=(data.users||[]).filter(u=>safeAdminId(u.id)),box=document.querySelector('[data-admin-user-list]');
   box.innerHTML=users.map(u=>`<article class="admin-user-card"><div class="admin-user-identity"><img class="admin-user-avatar" src="${escapeHtml(adminAvatarUrl(u.avatar_path))}" alt=""><div><strong>${escapeHtml(u.pseudo||u.display_name||u.email||'Joueur')}</strong><span>${escapeHtml(u.email||'')}</span>${u.is_admin?'<span class="role-chip role-chip--admin">Administrateur propriétaire</span>':''}</div></div><div class="role-stack">${(u.access||[]).map(a=>`<span class="role-chip">${escapeHtml(a.projects?.name||'Projet')}: ${escapeHtml(a.access_level)}</span>`).join('')}</div><div class="admin-access-form"><select data-user-project="${u.id}">${projects.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}</select><select data-user-level="${u.id}"><option value="player">Joueur approuvé</option><option value="tester">Testeur</option></select><button class="btn btn-secondary btn-small" data-grant="${u.id}">Accorder</button></div></article>`).join('');
-  box.querySelectorAll('[data-grant]').forEach(b=>b.addEventListener('click',async()=>{const id=b.dataset.grant;try{await call('grant_access',{user_id:id,project_id:box.querySelector(`[data-user-project="${id}"]`).value,access_level:box.querySelector(`[data-user-level="${id}"]`).value});setStatus(status,'Accès accordé.','success');await loadUsers()}catch(x){setStatus(status,x.message,'error')}}));
+  box.querySelectorAll('[data-grant]').forEach(b=>b.addEventListener('click',async()=>{
+     const id=safeAdminId(b.dataset.grant),card=b.closest('.admin-user-card');
+     const projectId=safeAdminId(card?.querySelector('[data-user-project]')?.value);
+     const level=card?.querySelector('[data-user-level]')?.value;
+     if(!id||!projectId||!['player','tester'].includes(level)){setStatus(status,'Référence ou rôle non valide. Rechargez la page.','error');return}
+     try{await call('grant_access',{user_id:id,project_id:projectId,access_level:level});setStatus(status,'Accès accordé.','success');await loadUsers()}catch(x){setStatus(status,'Impossible d’accorder cet accès.','error')}
+   }));
 }
 async function loadPlaytests(){
-  const rows=(await call('list_playtests')).playtests||[],box=document.querySelector('[data-admin-playtest-list]');
-  box.innerHTML=rows.map(p=>`<article class="admin-user-card"><div><strong>${escapeHtml(p.title)}</strong><span>${escapeHtml(p.projects?.name||'')} · ${escapeHtml(p.status)}</span></div><div>${(p.playtest_participants||[]).map(x=>`<div class="admin-participant-row"><span>${escapeHtml(x.user_id)} · ${escapeHtml(x.status)}</span>${x.status==='applied'?`<button class="btn btn-secondary btn-small" data-pt="${p.id}" data-user="${x.user_id}" data-state="approved">Approuver</button><button class="btn btn-secondary btn-small" data-pt="${p.id}" data-user="${x.user_id}" data-state="refused">Refuser</button>`:''}</div>`).join('')||'<small>Aucune candidature.</small>'}</div></article>`).join('')||'<p>Aucun playtest.</p>';
-  box.querySelectorAll('[data-pt]').forEach(b=>b.addEventListener('click',async()=>{try{await call('review_playtest_participant',{playtest_id:b.dataset.pt,user_id:b.dataset.user,status:b.dataset.state});await loadPlaytests()}catch(x){setStatus(status,x.message,'error')}}));
+  const rows=((await call('list_playtests')).playtests||[]).filter(p=>safeAdminId(p.id)),box=document.querySelector('[data-admin-playtest-list]');
+  box.innerHTML=rows.map(p=>`<article class="admin-user-card"><div><strong>${escapeHtml(p.title)}</strong><span>${escapeHtml(p.projects?.name||'')} · ${escapeHtml(p.status)}</span></div><div>${(p.playtest_participants||[]).filter(x=>safeAdminId(x.user_id)).map(x=>`<div class="admin-participant-row"><span>${escapeHtml(x.user_id)} · ${escapeHtml(x.status)}</span>${x.status==='applied'?`<button class="btn btn-secondary btn-small" data-pt="${p.id}" data-user="${x.user_id}" data-state="approved">Approuver</button><button class="btn btn-secondary btn-small" data-pt="${p.id}" data-user="${x.user_id}" data-state="refused">Refuser</button>`:''}</div>`).join('')||'<small>Aucune candidature.</small>'}</div></article>`).join('')||'<p>Aucun playtest.</p>';
+  box.querySelectorAll('[data-pt]').forEach(b=>b.addEventListener('click',async()=>{
+     const playtestId=safeAdminId(b.dataset.pt),userId=safeAdminId(b.dataset.user),decision=b.dataset.state;
+     if(!playtestId||!userId||!['approved','refused'].includes(decision)){setStatus(status,'Référence de playtest non valide. Rechargez la page.','error');return}
+     try{await call('review_playtest_participant',{playtest_id:playtestId,user_id:userId,status:decision});await loadPlaytests()}catch(x){setStatus(status,'Impossible de traiter la candidature.','error')}
+   }));
 }
 function bindPlaytest(){
   const f=document.querySelector('[data-playtest-form]');f.addEventListener('submit',async e=>{e.preventDefault();try{await call('save_playtest',{playtest:Object.fromEntries(new FormData(f).entries())});setStatus(status,'Playtest enregistré.','success');f.reset();await loadPlaytests();await dashboard()}catch(x){setStatus(status,x.message,'error')}})
@@ -149,6 +174,6 @@ async function loadGameReports(){
 
 async function analytics(){
   const d=(await call('analytics')).analytics||{},box=document.querySelector('[data-admin-analytics]');
-  box.innerHTML=Object.entries(d).map(([g,a])=>`<article class="admin-analytics-card"><h3>${escapeHtml(g)}</h3><dl><div><dt>Contributions</dt><dd>${a.count}</dd></div><div><dt>Joueurs moyens</dt><dd>${a.average_players??'—'}</dd></div><div><dt>Durée moyenne</dt><dd>${a.average_duration?`${a.average_duration} min`:'—'}</dd></div><div><dt>Note moyenne</dt><dd>${a.average_rating??'—'}</dd></div></dl></article>`).join('')||'<p>Aucune contribution.</p>';
+  box.innerHTML=Object.entries(d).map(([g,a])=>`<article class="admin-analytics-card"><h3>${escapeHtml(g)}</h3><dl><div><dt>Contributions</dt><dd>${escapeHtml(a?.count??0)}</dd></div><div><dt>Joueurs moyens</dt><dd>${escapeHtml(a?.average_players??'—')}</dd></div><div><dt>Durée moyenne</dt><dd>${a?.average_duration?`${escapeHtml(a.average_duration)} min`:'—'}</dd></div><div><dt>Note moyenne</dt><dd>${escapeHtml(a?.average_rating??'—')}</dd></div></dl></article>`).join('')||'<p>Aucune contribution.</p>';
 }
 (async()=>{try{await requireSinjiraAdmin();tabs();bindProject();bindUpload();bindPlaytest();bindExtension();await dashboard();await loadProjects();await Promise.all([loadDocs(),loadRequests(),loadUsers(),loadPlaytests(),loadExtensions(),loadGameReports(),analytics()]);setStatus(status,'Administration SINJIRA chargée.','success')}catch(x){if(x?.message!=='AUTH_REQUIRED'&&x?.message!=='ADMIN_REQUIRED')setStatus(status,x.message||'Erreur de chargement de l’administration.','error')}})();
