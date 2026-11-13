@@ -16,7 +16,9 @@ const SAFE_LOG_CODES=new Set([
   'REQUEST_TOO_LARGE','INVALID_JSON','UNSUPPORTED_MEDIA_TYPE',
   'CONTENT_TARGET_NOT_REVERSIBLE','TARGET_USER_NOT_FOUND',
   'DATING_REPORT_HAS_NO_REMOVABLE_PUBLIC_CONTENT','INVALID_APPEAL_OUTCOME',
-  'APPEAL_REVIEW_REASON_LENGTH'
+  'APPEAL_REVIEW_REASON_LENGTH', 'INVALID_MODERATION_REFERENCE',
+  'REPORT_NOT_OPEN', 'TARGET_USER_NOT_FOUND', 'INVALID_SUSPENSION_DURATION',
+  'UNVERIFIED_DATING_PROVENANCE'
 ]);
 
 function privateJson(data:unknown,status=200){
@@ -113,25 +115,37 @@ async function notifyDecision(s:any,userId:string|null,decisionId:string,title:s
 }
 
 async function createDecision(s:any,adminId:string,r:any,b:any,action:'hide_content'|'suspend_social'){
-  const subject=await reportTargetUser(s,r);
+  // Ne pas enregistrer une sanction si le signalement est clos ou que
+  // l'identité canonique visée n'existe plus.
+  if(!r||r.status!=='open')throw new Error('REPORT_NOT_OPEN');
+  // La colonne snapshot peut être choisie par le signalant (RLS INSERT).
+  // Ne jamais laisser "dating_profile_id" sélectionner une cible à suspendre
+  // tant que la relation Rencontres n'est pas prouvée par données SQL canoniques.
+  if(r.snapshot?.source==='dating')throw new Error('UNVERIFIED_DATING_PROVENANCE');
   if(action==='hide_content'&&!targetTables?.[r.network]?.[r.target_type])throw new Error('CONTENT_TARGET_NOT_REVERSIBLE');
+  const subject=await reportTargetUser(s,r);
+  if(!subject)throw new Error('TARGET_USER_NOT_FOUND');
   const evidence={report_snapshot:r.snapshot||{},target_snapshot:await targetSnapshot(s,r),report_reason:r.reason,report_created_at:r.created_at};
   const {rule,statement}=policyAndStatement(r,b,action);
   const urgency=['standard','urgent_harm','illegal_content'].includes(String(b.urgency))?String(b.urgency):'standard';
   const row:any={subject_user_id:subject,report_id:r.id,network:r.snapshot?.source==='dating'?'dating':r.network,target_type:r.snapshot?.source==='dating'?'account':r.target_type,target_id:r.target_id,action,status:'active',policy_rule:rule,statement_of_reasons:statement,evidence_snapshot:evidence,urgency,decision_source:'human_admin',decided_by:adminId};
   if(action==='suspend_social'){
-    const days=Math.max(1,Math.min(Number(b.days||7),365));
+    const days=b.days===undefined?7:b.days;
+    if(typeof days!=='number'||!Number.isInteger(days)||days<1||days>365)
+      throw new Error('INVALID_SUSPENSION_DURATION');
     row.ends_at=new Date(Date.now()+days*86400000).toISOString();
   }
   const {data:decision,error}=await s.schema('private').from('moderation_decisions').insert(row).select('id,ends_at').single();
   if(error)throw error;
   if(action==='suspend_social'){
-    if(!subject)throw new Error('TARGET_USER_NOT_FOUND');
     const {error:suspensionError}=await s.from('social_suspensions').upsert({user_id:subject,reason:statement,until_at:decision.ends_at,created_by:adminId,moderation_decision_id:decision.id},{onConflict:'user_id'});
     if(suspensionError)throw suspensionError;
   }
-  const {error:reportError}=await s.from('social_reports').update({status:'resolved',reviewed_at:new Date().toISOString(),reviewed_by:adminId}).eq('id',r.id);
+  const {data:closed,error:reportError}=await s.from('social_reports')
+    .update({status:'resolved',reviewed_at:new Date().toISOString(),reviewed_by:adminId})
+    .eq('id',r.id).eq('status','open').select('id').maybeSingle();
   if(reportError)throw reportError;
+  if(!closed)throw new Error('REPORT_NOT_OPEN');
   await notifyDecision(s,subject,decision.id,action==='hide_content'?'Décision de modération — contenu masqué':'Décision de modération — suspension sociale',statement);
   return decision;
 }
@@ -186,6 +200,13 @@ Deno.serve(async(req)=>{
     requireJsonContentType(req);
     const b=await readLimitedJson(req);
     const a=typeof b.action==='string'?b.action.trim().slice(0,64):'';
+    // Obligatoire aussi pour clients alternatifs et requêtes sans UI.
+    if(['resolve_report','restrict_reported_content','remove_reported_content',
+      'suspend_reported_user','review_appeal'].includes(a)){
+      const reference=a==='review_appeal'?b.appeal_id:b.report_id;
+      if(typeof reference!=='string'||!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(reference))
+        throw new Error('INVALID_MODERATION_REFERENCE');
+    }
     if(a==='dashboard'){
       const [{count:open},{count:susp},{count:appeals}]=await Promise.all([
         s.from('social_reports').select('id',{count:'exact',head:true}).eq('status','open'),
@@ -201,20 +222,25 @@ Deno.serve(async(req)=>{
     }
     if(a==='list_appeals')return privateJson({ok:true,appeals:await listAppeals(s)});
     if(a==='resolve_report'){
-      const {error}=await s.from('social_reports').update({status:'resolved',reviewed_at:new Date().toISOString(),reviewed_by:user.id}).eq('id',b.report_id);
+      const {data:closed,error}=await s.from('social_reports')
+        .update({status:'resolved',reviewed_at:new Date().toISOString(),reviewed_by:user.id})
+        .eq('id',b.report_id).eq('status','open').select('id').maybeSingle();
       if(error)throw error;
+      if(!closed)throw new Error('REPORT_NOT_OPEN');
       return privateJson({ok:true});
     }
     if(a==='restrict_reported_content'||a==='remove_reported_content'){
-      const {data:r,error}=await s.from('social_reports').select('*').eq('id',b.report_id).single();
+      const {data:r,error}=await s.from('social_reports').select('*').eq('id',b.report_id).eq('status','open').maybeSingle();
       if(error)throw error;
+      if(!r)throw new Error('REPORT_NOT_OPEN');
       if(r.snapshot?.source==='dating')throw new Error('DATING_REPORT_HAS_NO_REMOVABLE_PUBLIC_CONTENT');
       const decision=await createDecision(s,user.id,r,b,'hide_content');
       return privateJson({ok:true,decision_id:decision.id,reversible:true});
     }
     if(a==='suspend_reported_user'){
-      const {data:r,error}=await s.from('social_reports').select('*').eq('id',b.report_id).single();
+      const {data:r,error}=await s.from('social_reports').select('*').eq('id',b.report_id).eq('status','open').maybeSingle();
       if(error)throw error;
+      if(!r)throw new Error('REPORT_NOT_OPEN');
       const decision=await createDecision(s,user.id,r,b,'suspend_social');
       return privateJson({ok:true,decision_id:decision.id,until_at:decision.ends_at,reversible:true});
     }
@@ -230,6 +256,14 @@ Deno.serve(async(req)=>{
     if(e?.message==='REQUEST_TOO_LARGE')return privateJson({ok:false,error:'Requête trop volumineuse.',code:'REQUEST_TOO_LARGE'},413);
     if(e?.message==='UNSUPPORTED_MEDIA_TYPE')return privateJson({ok:false,error:'Content-Type application/json requis.',code:'UNSUPPORTED_MEDIA_TYPE'},415);
     if(e?.message==='INVALID_JSON')return privateJson({ok:false,error:'JSON invalide.',code:'INVALID_JSON'},400);
+    if(e?.message==='INVALID_MODERATION_REFERENCE'||e?.message==='INVALID_SUSPENSION_DURATION')
+      return privateJson({ok:false,error:'Paramètres de modération invalides.',code:'INVALID_MODERATION_INPUT'},400);
+    if(e?.message==='REPORT_NOT_OPEN')
+      return privateJson({ok:false,error:'Ce signalement n’est plus ouvert.',code:'REPORT_NOT_OPEN'},409);
+    if(e?.message==='TARGET_USER_NOT_FOUND')
+      return privateJson({ok:false,error:'La cible de cette mesure est introuvable.',code:'TARGET_USER_NOT_FOUND'},409);
+    if(e?.message==='UNVERIFIED_DATING_PROVENANCE')
+      return privateJson({ok:false,error:'La provenance du signalement doit être vérifiée avant toute sanction.',code:'UNVERIFIED_DATING_PROVENANCE'},409);
     return privateJson({ok:false,error:'Erreur de modération sociale.',code:'MODERATION_FAILED'},500);
   }
 });
