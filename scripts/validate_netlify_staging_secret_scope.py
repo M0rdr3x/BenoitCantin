@@ -25,6 +25,36 @@ ASSIGNMENT = re.compile(r"^\s*(NETLIFY_AUTH_TOKEN|NETLIFY_SITE_ID)\s*:")
 def inspect(source: str) -> list[str]:
     errors: list[str] = []
     counts = {(step, secret): 0 for step in APPROVED_STEPS for secret in SECRETS}
+    # Le lancement manuel de staging doit être impossible depuis une
+    # branche de travail quelconque, même avec le bon expected_sha.
+    branch_gates = re.findall(r"^    if:\s*(.*?)\s*$", source, re.MULTILINE)
+    if branch_gates != ["github.ref == 'refs/heads/a1/web-release-transparency'"]:
+        errors.append("la branche de staging doit être le seul ref explicitement approuvé")
+
+    # Netlify lit NETLIFY_AUTH_TOKEN et NETLIFY_SITE_ID depuis l'environnement.
+    # Un jeton en argument --auth est visible dans les arguments des processus.
+    cli_commands = re.findall(
+        r"^\s*npx --yes netlify-cli@27\.10\.2 deploy\b.*$",
+        source, re.MULTILINE,
+    )
+    if len(cli_commands) != 2:
+        errors.append("exactement deux déploiements Netlify draft attendus")
+    for command in cli_commands:
+        if re.search(r"--(?:auth|site|prod|prod-if-unlocked)\b", command):
+            errors.append("arguments de credentials ou promotion live interdits dans netlify deploy")
+        if "--no-build" not in command or "--json" not in command:
+            errors.append("les déploiements staging doivent rester sans build externe et en JSON")
+
+    # Un contrôle de non-vacuité local est le seul usage direct admissible
+    # d'une valeur secrète dans le shell: aucun echo, argv, env-file ou log.
+    shell_secret_lines = [
+        line.strip() for line in source.splitlines()
+        if re.search(r"\$(?:NETLIFY_AUTH_TOKEN|\{NETLIFY_AUTH_TOKEN\})", line)
+        or re.search(r"\$(?:NETLIFY_SITE_ID|\{NETLIFY_SITE_ID\})", line)
+    ]
+    expected_check = 'if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then'
+    if shell_secret_lines != [expected_check]:
+        errors.append("référence shell aux credentials hors du seul prévol de non-vacuité")
     current_step: str | None = None
     in_step_env = False
     for number, line in enumerate(source.splitlines(), 1):
@@ -99,6 +129,23 @@ def self_test(source: str) -> None:
         "token bracket lookup": source.replace(
             "          set -euo pipefail\n",
             "          echo '${{ secrets[\"NETLIFY_AUTH_TOKEN\"] }}'\n          set -euo pipefail\n", 1,
+        ),
+        "branch wildcard restored": source.replace(
+            "    if: github.ref == 'refs/heads/a1/web-release-transparency'",
+            "    if: startsWith(github.ref, 'refs/heads/a1/web-release-')", 1,
+        ),
+        "credential leaked via process args": source.replace(
+            "netlify-cli@27.10.2 deploy", "netlify-cli@27.10.2 deploy --auth \"$NETLIFY_AUTH_TOKEN\"", 1,
+        ),
+        "production promotion flag": source.replace(
+            "netlify-cli@27.10.2 deploy", "netlify-cli@27.10.2 deploy --prod", 1,
+        ),
+        "shell secret echo": source.replace(
+            "          set -euo pipefail\n",
+            "          echo \"$NETLIFY_AUTH_TOKEN\"\n          set -euo pipefail\n", 1,
+        ),
+        "removed deployment": source.replace(
+            "npx --yes netlify-cli@27.10.2 deploy", "false # deployment removed", 1,
         ),
     }
     for label, mutant in mutants.items():
