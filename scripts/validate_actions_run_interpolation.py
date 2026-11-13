@@ -23,7 +23,9 @@ UNTRUSTED = re.compile(
     r'|comment\.body|review\.body'
     r'|discussion\.(?:title|body)'
     r'|workflow_run\.head_branch'
-    r'|inputs\.[a-zA-Z_][\w-]*'
+    r'|release\.(?:name|body)'
+    r'|inputs(?:\.[a-zA-Z_][\w-]*)?'
+    r'|client_payload(?:\.[a-zA-Z_][\w-]*)*'
     r')\b'
     r'|\binputs\.[a-zA-Z_][\w-]*\b)',
     re.IGNORECASE,
@@ -87,6 +89,11 @@ def self_test() -> None:
         'issue body quoted run key': '        "run": echo "${{ github.event.issue.body }}"\n',
         'comment body expression': '        run: echo "${{ format(\'x{0}\', github.event.comment.body) }}"\n',
         'workflow dispatch input': '        run: echo "${{ inputs.deploy_target }}"\n',
+        'event input alias': '        run: echo "${{ github.event.inputs.confirmation }}"\n',
+        'event input object': '        run: echo "${{ toJSON(github.event.inputs) }}"\n',
+        'repository dispatch payload': '        run: echo "${{ github.event.client_payload.command }}"\n',
+        'repository dispatch payload object': '        run: echo "${{ toJSON(github.event.client_payload) }}"\n',
+        'release note': '        run: echo "${{ github.event.release.body }}"\n',
         'ref name': '        run: echo "${{ github.ref_name }}"\n',
         'YAML alias': '        run: *unsafe-script\n',
     }
