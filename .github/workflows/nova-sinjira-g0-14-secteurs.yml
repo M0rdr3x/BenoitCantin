@@ -1,0 +1,48 @@
+name: Nova-Sinjira - inventaire G0 des 14 secteurs sans autocertification
+
+on:
+  pull_request:
+    paths:
+      - 'projets/projet-nova/data/registre-donnees-services-nova-sinjira.json'
+      - 'projets/projet-nova/assets/nova-sinjira-g0-reception-core.mjs'
+      - 'projets/projet-nova/scripts/nova-sinjira-audit-g0-readonly.mjs'
+      - 'projets/projet-nova/tests/nova-sinjira-g0-reception.test.mjs'
+      - 'projets/projet-nova/official/working/nova-sinjira-g0-tableau-preuves-14-secteurs-2026-11-09.md'
+      - '.github/workflows/nova-sinjira-g0-14-secteurs.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'projets/projet-nova/data/registre-donnees-services-nova-sinjira.json'
+      - 'projets/projet-nova/assets/nova-sinjira-g0-reception-core.mjs'
+      - 'projets/projet-nova/scripts/nova-sinjira-audit-g0-readonly.mjs'
+      - 'projets/projet-nova/tests/nova-sinjira-g0-reception.test.mjs'
+      - 'projets/projet-nova/official/working/nova-sinjira-g0-tableau-preuves-14-secteurs-2026-11-09.md'
+      - '.github/workflows/nova-sinjira-g0-14-secteurs.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nova-sinjira-g0-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verification-g0-14-secteurs:
+    name: Vérifier la réception G0 de 14 secteurs, sans décision de lancement
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout lecture seule sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Préparer Node 20 avec action épinglée
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: "20"
+      - name: 17 tests de cohérence, résilience et aucune auto-certification
+        run: node --test projets/projet-nova/tests/nova-sinjira-g0-reception.test.mjs
+      - name: Produire le rapport de lecture seule du registre de référence
+        run: |
+          node projets/projet-nova/scripts/nova-sinjira-audit-g0-readonly.mjs > "$RUNNER_TEMP/nova-sinjira-g0.json"
+          node -e "const x=require(process.env.RUNNER_TEMP+'/nova-sinjira-g0.json'); if(x.total_secteurs!==14 || x.taux_achevement_global!==null || x.G0_independamment_atteste!==0 || x.phase_adoption_autorisee!==false || x.alertes.length!==0) throw new Error('G0_PORTES_AUTOCERTIFIEES_OU_DOSSIERS_INCOMPLETS'); console.log('G0 : inventaire conforme, aucune approbation produite')"
