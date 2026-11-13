@@ -9,6 +9,9 @@ on:
       - 'tests/security/sql/test_sinjira_reader_v48_client_b.sql'
       - 'tests/security/sql/test_sinjira_reader_v48_client_a_return.sql'
       - 'tests/security/test_sinjira_reader_v48_static.py'
+      - 'tests/security/sql/test_sinjira_reader_v49_repeat_v32.sql'
+      - 'tests/security/test_sinjira_reader_v49_repeatable.py'
+      - 'docs/SINJIRA_READER_V49_V32_REPEATABLE_LAB.md'
       - 'supabase/migrations/20261107185500_sinjira_reader_progress_spot_v32.sql'
       - 'docs/SINJIRA_READER_V48_MULTISESSION_TESTS.md'
       - '.github/workflows/sinjira-reader-v48-multisession.yml'
@@ -20,6 +23,9 @@ on:
       - 'tests/security/sql/test_sinjira_reader_v48_client_b.sql'
       - 'tests/security/sql/test_sinjira_reader_v48_client_a_return.sql'
       - 'tests/security/test_sinjira_reader_v48_static.py'
+      - 'tests/security/sql/test_sinjira_reader_v49_repeat_v32.sql'
+      - 'tests/security/test_sinjira_reader_v49_repeatable.py'
+      - 'docs/SINJIRA_READER_V49_V32_REPEATABLE_LAB.md'
       - 'supabase/migrations/20261107185500_sinjira_reader_progress_spot_v32.sql'
       - 'docs/SINJIRA_READER_V48_MULTISESSION_TESTS.md'
       - '.github/workflows/sinjira-reader-v48-multisession.yml'
@@ -64,3 +70,7 @@ jobs:
           psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v48_test_only -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v48_client_a.sql
           psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v48_test_only -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v48_client_b.sql
           psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v48_test_only -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v48_client_a_return.sql
+      - name: Vérifier la réexécution V32 et la protection des trois marque-pages fictifs
+        run: |
+          python3 -m unittest discover -s tests/security -p test_sinjira_reader_v49_repeatable.py -v
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v48_test_only -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v49_repeat_v32.sql
