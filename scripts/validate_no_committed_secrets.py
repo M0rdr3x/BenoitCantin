@@ -16,6 +16,17 @@ MANDATORY_TEXT_EXTENSIONS = frozenset({
 MANDATORY_TEXT_NAMES = frozenset({'Dockerfile', 'Makefile', 'CNAME'})
 
 ALLOWED_ENV_FILES = {'.env.example', '.env.sample', '.env.template'}
+# Les fichiers de credentials ne sont jamais destinés au dépôt public, même
+# si leur format ne contient aucun préfixe reconnu par les regex de secrets.
+FORBIDDEN_CREDENTIAL_EXTENSIONS = frozenset({
+    '.pem', '.p8', '.p12', '.pfx', '.key', '.jks', '.keystore',
+})
+FORBIDDEN_CREDENTIAL_NAMES = frozenset({
+    'credentials.json', 'service-account.json', 'service_account.json',
+    'serviceaccount.json', 'application_default_credentials.json',
+    'id_rsa', 'id_dsa', 'id_ecdsa', 'id_ed25519',
+})
+
 
 SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ('Supabase secret key', re.compile(r'\bsb_secret_[A-Za-z0-9._-]{20,}\b')),
@@ -79,8 +90,24 @@ def tracked_files() -> list[Path]:
 
 def is_forbidden_env_file(path: Path) -> bool:
     name = path.name.lower()
-    return name.startswith('.env') and name not in ALLOWED_ENV_FILES
+    if name in ALLOWED_ENV_FILES:
+        return False
+    # Couvre aussi production.env, production.env.local et .env.production.
+    return name.startswith('.env') or name.endswith('.env') or '.env.' in name
 
+
+def is_forbidden_credential_file(path: Path) -> bool:
+    name = path.name.lower()
+    if name in FORBIDDEN_CREDENTIAL_NAMES:
+        return True
+    if path.suffix.lower() in FORBIDDEN_CREDENTIAL_EXTENSIONS:
+        return True
+    # Les fichiers de clés variables restent interdits, quel que soit leur
+    # contenu. Un nom "service-account-prod.json" ne doit pas échapper au garde.
+    return name.endswith('.json') and name.startswith((
+        'service-account-', 'service_account-', 'serviceaccount-',
+        'credentials-', 'credentials_',
+    ))
 
 def read_text(path: Path) -> str | None:
     try:
@@ -101,6 +128,8 @@ def inspect_file(path: Path, rel: Path) -> list[str]:
     """Refuser tout fichier texte suivi qui n'a pas pu être inspecté."""
     if is_forbidden_env_file(path):
         return [f'{rel}: fichier d’environnement réel versionné']
+    if is_forbidden_credential_file(path):
+        return [f'{rel}: fichier de clé privée ou d’identifiants versionné']
     # Un lien suivi par Git peut pointer hors du dépôt ou vers une source
     # non contrôlée par la PR. Refuser ce type d'entrée AVANT stat()/read().
     if path.is_symlink():
