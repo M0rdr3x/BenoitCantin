@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {classifyReaderSwipe,bindReaderTouchNavigation,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,hasReaderNestedHorizontalOverflow,readerCanPanHorizontally} from '../assets/js/sinjira-liseuse-touch-v52.mjs';
+import {classifyReaderSwipe,bindReaderTouchNavigation,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,hasReaderNestedHorizontalOverflow,readerCanPanHorizontally,readerCanPanVertically,hasReaderNestedVerticalOverflow} from '../assets/js/sinjira-liseuse-touch-v52.mjs';
 
 const gesture=(overrides={})=>classifyReaderSwipe({
   dx:-92,dy:8,durationMs:240,viewerWidth:375,...overrides
@@ -83,6 +83,56 @@ function fixture({selected=false}={}){
   };
   return {viewer,previous,next,mobilePrevious,mobileNext,release,swipe,setSelected:v=>{selection=v}};
 }
+test('V75 : un panneau vertical est défilable seulement si overflow-y le permet',()=>{
+  const panel={clientHeight:210,scrollHeight:440};
+  for(const overflowY of ['hidden','clip','visible'])
+    assert.equal(readerCanPanVertically(panel,4,()=>({overflowY})),false);
+  for(const overflowY of ['auto','scroll','overlay'])
+    assert.equal(readerCanPanVertically(panel,4,()=>({overflowY})),true);
+  assert.equal(readerCanPanVertically(panel,4,()=>undefined),true);
+  panel.scrollHeight=214;
+  assert.equal(readerCanPanVertically(panel,4,()=>({overflowY:'auto'})),false);
+  assert.equal(readerCanPanVertically(panel,NaN,()=>({overflowY:'auto'})),false);
+});
+test('V75 : la détection verticale s’arrête au lecteur, sans capturer ses parents',()=>{
+  const viewer={clientHeight:350,scrollHeight:1000,cssOverflowY:'auto'};
+  const panel={clientHeight:180,scrollHeight:360,cssOverflowY:'auto',parentElement:viewer};
+  const leaf={parentElement:panel};
+  const original=globalThis.window;
+  globalThis.window={getComputedStyle:el=>({overflowY:el.cssOverflowY})};
+  try{
+    assert.equal(hasReaderNestedVerticalOverflow(leaf,viewer),true);
+    panel.cssOverflowY='hidden';
+    assert.equal(hasReaderNestedVerticalOverflow(leaf,viewer),false);
+    assert.equal(hasReaderNestedVerticalOverflow({parentElement:null},viewer),false);
+    assert.equal(hasReaderNestedVerticalOverflow(leaf,viewer,-1),false);
+  }finally{globalThis.window=original}
+});
+test('V75 : glisser sur une note PDF verticalement défilante ne tourne pas le livre',()=>{
+  const oldWindow=globalThis.window;
+  globalThis.window={getComputedStyle:el=>({overflowY:el.cssOverflowY||'visible'})};
+  const f=fixture();
+  try{
+    const panel={clientHeight:120,scrollHeight:550,cssOverflowY:'auto',parentElement:f.viewer};
+    const child={parentElement:panel,closest:()=>null};
+    f.swipe(-130,2,{target:child});
+    f.swipe(130,2,{target:child});
+    assert.equal(f.next.clicks,0);
+    assert.equal(f.previous.clicks,0);
+    f.swipe(-130,2);
+    assert.equal(f.next.clicks,1);
+  }finally{f.release();globalThis.window=oldWindow}
+});
+test('V75 : débordement vertical masqué PDF laisse tourner la page',()=>{
+  const oldWindow=globalThis.window;
+  globalThis.window={getComputedStyle:el=>({overflowY:el.cssOverflowY||'visible'})};
+  const f=fixture();
+  try{
+    const panel={clientHeight:100,scrollHeight:500,cssOverflowY:'hidden',parentElement:f.viewer};
+    f.swipe(-130,2,{target:{parentElement:panel,closest:()=>null}});
+    assert.equal(f.next.clicks,1);
+  }finally{f.release();globalThis.window=oldWindow}
+});
 test('V74 : seulement un overflow-x véritablement défilable réserve le glissement',()=>{
   const element={clientWidth:300,scrollWidth:440};
   const style=overflowX=>()=>({overflowX});

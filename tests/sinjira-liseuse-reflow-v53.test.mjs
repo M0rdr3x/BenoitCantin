@@ -448,6 +448,32 @@ test('V56 : input puis change de taille de police ne créent pas deux déplaceme
     assert.equal(f.viewer.scrollTop,875); // 50 % de la nouvelle hauteur scrollable
   }finally{f.restore()}
 });
+test('V75 : faire défiler une note verticale ne tourne pas un écran de texte',()=>{
+  const f=fixture();
+  try{
+    const panel={clientHeight:150,scrollHeight:450,cssOverflowY:'auto',parentElement:f.viewer};
+    const child={parentElement:panel,closest:()=>null};
+    f.windowMock.getComputedStyle=el=>({lineHeight:'35px',fontSize:'20px',overflowY:el.cssOverflowY||'visible'});
+    const stop=f.swipe(-130,2,{target:child});
+    assert.equal(stop.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(f.next.clicks,0);
+    const normal=f.swipe(-130,2);
+    assert.equal(normal.defaultPrevented,true);
+    assert.ok(f.viewer.scrollTop>0);
+  }finally{f.restore()}
+});
+test('V75 : une note verticalement masquée ne désactive pas les pages écran',()=>{
+  const f=fixture();
+  try{
+    const panel={clientHeight:150,scrollHeight:450,cssOverflowY:'hidden',parentElement:f.viewer};
+    const child={parentElement:panel,closest:()=>null};
+    f.windowMock.getComputedStyle=el=>({lineHeight:'35px',fontSize:'20px',overflowY:el.cssOverflowY||'visible'});
+    const go=f.swipe(-130,2,{target:child});
+    assert.equal(go.defaultPrevented,true);
+    assert.ok(f.viewer.scrollTop>0);
+  }finally{f.restore()}
+});
 test('V74 : mode pages écran conserve le swipe malgré débordement masqué du texte',()=>{
   const f=fixture();
   try{
