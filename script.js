@@ -1,3 +1,15 @@
+// Anti-XSS sur le runtime historique : les données JSON publiques restent du texte.
+const NOVA_LEGACY_ROOT_DOM=Object.freeze({
+  escape(value){
+    const entities={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+    return String(value??'').replace(/[&<>"']/g,ch=>entities[ch]);
+  },
+  pdfHref(value){
+    const link=String(value??'');
+    return /^documents\/[a-z0-9][a-z0-9._-]*\.pdf$/i.test(link)&&!link.includes('..')?link:'';
+  }
+});
+
 (function(){
   function ready(fn){document.readyState !== 'loading' ? fn() : document.addEventListener('DOMContentLoaded', fn);}
   ready(function(){
@@ -46,14 +58,16 @@
         });
       }
       function card(d){
+        const pdf=NOVA_LEGACY_ROOT_DOM.pdfHref(d.path);
+        const download=pdf?`<a class="btn btn-outline" href="${pdf}" download>Télécharger le PDF</a>`:'<span class="btn btn-outline">Document non approuvé</span>';
         return `
           <article class="doc-card">
-            <span class="pill">${d.section}</span>
-            <h3>${d.title}</h3>
-            <p>${d.description}</p>
+            <span class="pill">${NOVA_LEGACY_ROOT_DOM.escape(d.section)}</span>
+            <h3>${NOVA_LEGACY_ROOT_DOM.escape(d.title)}</h3>
+            <p>${NOVA_LEGACY_ROOT_DOM.escape(d.description)}</p>
             <div class="card-actions">
-              <a class="btn btn-primary" href="visionneuse.html?doc=${encodeURIComponent(d.id)}">Visionner sur le site</a>
-              <a class="btn btn-outline" href="${d.path}" download> Télécharger le PDF </a>
+              <a class="btn btn-primary" href="visionneuse.html?doc=${encodeURIComponent(String(d.id??''))}">Visionner sur le site</a>
+              ${download}
             </div>
           </article>`;
       }
@@ -140,7 +154,7 @@
         document.querySelectorAll('[data-finance-total="expense"]').forEach(el=>el.textContent=money(expense));
         document.querySelectorAll('[data-finance-total="balance"]').forEach(el=>el.textContent=money(income-expense));
         if(!entries.length){financeBody.innerHTML='<tr><td colspan="7">Aucune entrée publique publiée pour le moment.</td></tr>'; return;}
-        financeBody.innerHTML=entries.map(e=>`<tr><td>${text(e.date)}</td><td>${text(e.type)}</td><td>${text(e.categorie)}</td><td>${text(e.description)}</td><td>${text(e.fournisseur_ou_source)}</td><td>${money(e.montant)}</td><td>${text(e.statut)}</td></tr>`).join('');
+        financeBody.innerHTML=entries.map(e=>`<tr><td>${NOVA_LEGACY_ROOT_DOM.escape(text(e.date))}</td><td>${NOVA_LEGACY_ROOT_DOM.escape(text(e.type))}</td><td>${NOVA_LEGACY_ROOT_DOM.escape(text(e.categorie))}</td><td>${NOVA_LEGACY_ROOT_DOM.escape(text(e.description))}</td><td>${NOVA_LEGACY_ROOT_DOM.escape(text(e.fournisseur_ou_source))}</td><td>${money(e.montant)}</td><td>${NOVA_LEGACY_ROOT_DOM.escape(text(e.statut))}</td></tr>`).join('');
       }).catch(()=>{financeBody.innerHTML='<tr><td colspan="7">Registre temporairement indisponible.</td></tr>';});
     }
     const meetingsBody=document.querySelector('[data-meetings-table]');
@@ -150,7 +164,7 @@
         document.querySelectorAll('[data-rencontre-count]').forEach(el=>el.textContent=String(entries.length));
         if(meetingsBody){
           if(!entries.length){meetingsBody.innerHTML='<tr><td colspan="7">Aucune rencontre publique publiée pour le moment.</td></tr>'; return;}
-          meetingsBody.innerHTML=entries.map(e=>`<tr><td>${text(e.date)}</td><td>${text(e.type)}</td><td>${text(e.sujet)}</td><td>${text(e.participants_resume)}</td><td>${text(e.resume_public)}</td><td>${text(e.suivi)}</td><td>${text(e.statut_publication)}</td></tr>`).join('');
+          meetingsBody.innerHTML=entries.map(e=>`<tr><td>${NOVA_LEGACY_ROOT_DOM.escape(text(e.date))}</td><td>${NOVA_LEGACY_ROOT_DOM.escape(text(e.type))}</td><td>${NOVA_LEGACY_ROOT_DOM.escape(text(e.sujet))}</td><td>${NOVA_LEGACY_ROOT_DOM.escape(text(e.participants_resume))}</td><td>${NOVA_LEGACY_ROOT_DOM.escape(text(e.resume_public))}</td><td>${NOVA_LEGACY_ROOT_DOM.escape(text(e.suivi))}</td><td>${NOVA_LEGACY_ROOT_DOM.escape(text(e.statut_publication))}</td></tr>`).join('');
         }
       }).catch(()=>{if(meetingsBody) meetingsBody.innerHTML='<tr><td colspan="7">Registre temporairement indisponible.</td></tr>';});
     }
