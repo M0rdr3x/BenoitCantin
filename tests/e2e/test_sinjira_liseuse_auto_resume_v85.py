@@ -78,11 +78,11 @@ def run(p,engine,url):
         # Un navigateur qui refuse le stockage ne doit PAS afficher un
         # message mensonger « Page mémorisée ». Le livre doit rester lisible.
         denied_context=browser.new_context(**opts)
-        denied_context.add_init_script("""()=>{
+        denied_context.add_init_script("""(() => {
           Storage.prototype.setItem=function(){
             throw new DOMException('Storage blocked by browser','SecurityError');
           };
-        }""")
+        })()""")
         denied=denied_context.new_page()
         rejected=install_isolation(denied)
         denied.goto(url,wait_until="load")
