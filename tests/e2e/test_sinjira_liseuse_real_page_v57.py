@@ -48,8 +48,16 @@ export async function requireUser(){throw Error('V57: unexpected sign-in')};
 export function safeInternalDestination(x){return x};
 """
 
-def install_isolation(page):
+def install_isolation(page, image_only_pages=()):
+    """La page fictive peut simuler une page PDF sans texte extractible."""
     requests=[]
+    mock_pdf = MOCK_PDF_JS
+    if image_only_pages:
+        pages = "[" + ",".join(str(int(n)) for n in image_only_pages) + "]"
+        mock_pdf = MOCK_PDF_JS.replace(
+            "const items=Array.from(",
+            f"const items={pages}.includes(pageNumber)?[]:Array.from(", 1
+        )
     def intercept(route):
         url=route.request.url
         parsed=urlparse(url)
@@ -58,7 +66,7 @@ def install_isolation(page):
             route.fulfill(status=200,content_type="text/javascript",
                           body=SUPABASE_STUB)
         elif "pdfjs-dist@4.9.155/build/pdf.min.mjs" in url:
-            route.fulfill(status=200,content_type="text/javascript",body=MOCK_PDF_JS)
+            route.fulfill(status=200,content_type="text/javascript",body=mock_pdf)
         elif path == "/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf":
             route.fulfill(status=200,content_type="application/pdf",
                           body=b"%PDF-1.4 V57 synthetic only " + b"0"*2400)

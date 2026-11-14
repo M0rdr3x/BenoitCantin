@@ -418,16 +418,31 @@ function renderPage(){
     if(version!==state.renderVersion||!state.pdf)return;
     const page=await state.pdf.getPage(state.page);
     if(version!==state.renderVersion)return;
+    const readerText=$('reader-text'),fallback=$('reader-image-fallback');
     if(state.mode==='texte'){
       const text=await page.getTextContent();
       if(version!==state.renderVersion)return;
       const readable=pdfTextToParagraphs(text.items);
-      $('reader-text').textContent=readable||'Cette page contient surtout des images ou du texte non sélectionnable. Utilisez « Afficher le PDF » pour consulter sa mise en page.';
-      $('reader-canvas').hidden=true;
-      $('reader-text').hidden=false;
-      companion?.onTextRendered();
-      restoreScrollAfterRender(version);
+      if(readable.trim()){
+        // V81 : le texte reste sélectionnable et repaginé dès qu'il existe.
+        readerText.textContent=readable;
+        fallback.hidden=true;
+        $('reader-canvas').hidden=true;
+        readerText.hidden=false;
+        companion?.onTextRendered();
+        restoreScrollAfterRender(version);
+        return;
+      }
+      // V81 : une page illustrée doit être VUE, pas remplacée par un texte
+      // indiquant que le PDF existe. La préférence texte reste inchangée :
+      // la page suivante avec du texte reprend automatiquement le reflow.
+      readerText.textContent='';
+      readerText.hidden=true;
+      fallback.hidden=false;
     }else{
+      fallback.hidden=true;
+    }
+    {
       const viewer=$('reader-viewer');
       const baseWidth=Math.max(280,Math.min(1150,viewer.clientWidth-40));
       const viewport=page.getViewport({scale:1});
@@ -441,7 +456,8 @@ function renderPage(){
       canvas.style.height=Math.round(drawing.height)+'px';
       await page.render({canvasContext:context,viewport:drawing,
         transform:pixelRatio===1?undefined:[pixelRatio,0,0,pixelRatio,0,0]}).promise;
-      $('reader-text').hidden=true;
+      if(version!==state.renderVersion)return;
+      readerText.hidden=true;
       canvas.hidden=false;
       restoreScrollAfterRender(version);
     }
