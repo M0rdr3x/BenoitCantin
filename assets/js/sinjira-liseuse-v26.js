@@ -45,7 +45,8 @@ const state={pdf:null,page:1,mode:'texte',theme:'sepia',size:20,zoom:1,
   accessEpoch:0,accessInvalidated:false,
   loadController:null,authSubscription:null,cloudSpotSupported:null,
   positionRatio:0,restorePending:null,restoringScroll:false,scrollTimer:null,resumeSource:'debut',
-  bfcacheSpot:null};
+  bfcacheSpot:null,privatePaused:false,privateReturnGeneration:0,
+  privateReturnInFlight:false};
 const speech={active:false,paused:false,token:0,chunks:[],index:0,voices:[],utterance:null};
 const speechReady='speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
 const storageKey='sinjira:liseuse:'+edition+':la-cendre-du-jugement';
@@ -621,29 +622,23 @@ function bindControls(){
   window.addEventListener('online',()=>{void retryCloudProgress()});
   window.addEventListener('pagehide',event=>{
     flushScrollPosition();stopNarration(false);flushProgress();
-    // V92 : un retour depuis le BFCache conserve la MÊME instance JS.
-    // Ne pas fermer définitivement les repères de la démo lorsque la page
-    // est simplement mise en cache : close() est irréversible pour V28.
+    // V92 : le cache de navigation garde une instance JS, y compris ses
+    // commandes de marque-pages. Ne pas fermer le compagnon de la démo.
     if(!event.persisted)companion?.close();
-    if(isFull){
-      // Ne laisser aucun contenu intégral visible dans une page conservée
-      // par le navigateur tant que les droits n'ont pas été revérifiés.
-      if(state.pdf&&!state.accessInvalidated){
-        const viewer=$('reader-viewer');
-        state.bfcacheSpot={page:state.page,ratio:ratioFromScroll(
-          viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight)};
-      }
-      $('reader-content').hidden=true;
-    }
+    if(isFull)suspendPrivateReaderForReturn();
   });
   window.addEventListener('pageshow',event=>{
-    if(event.persisted&&isFull)void revalidatePrivateReaderFromBfcache();
+    if(event.persisted&&isFull)void revalidatePrivateReaderAfterReturn();
   });
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='hidden'){
       flushScrollPosition();flushProgress();
+      // V93 : un simple changement d'application (sans pagehide) doit
+      // également masquer le roman privé jusqu'à nouvelle autorisation.
+      if(isFull)suspendPrivateReaderForReturn();
     }else if(document.visibilityState==='visible'){
-      void retryCloudProgress();
+      if(isFull&&state.privatePaused)void revalidatePrivateReaderAfterReturn();
+      else void retryCloudProgress();
     }
   });
   $('reader-zoom').addEventListener('change',event=>{
@@ -684,14 +679,36 @@ function assertPrivateAccess(epoch){
     throw new Error('SESSION_CHANGED');
   }
 }
-/** V92 : après retour BFCache, authentifier à nouveau et demander au serveur
-    une nouvelle autorisation du roman intégral AVANT de réafficher le PDF.
-    Échec réseau, droit révoqué ou changement de compte : fermer le contenu. */
-async function revalidatePrivateReaderFromBfcache(){
-  if(!isFull||state.accessInvalidated||!state.pdf||!state.user)return;
+/** V93 : dès que la page privée quitte le premier plan, masquer aussi
+    les repères et notes de la barre latérale. Une ancienne vérification
+    asynchrone ne pourra plus dévoiler le texte après une seconde suspension. */
+function suspendPrivateReaderForReturn(){
+  if(!isFull||state.accessInvalidated)return;
+  ++state.privateReturnGeneration;
+  if(state.pdf&&!state.privatePaused){
+    const viewer=$('reader-viewer');
+    state.bfcacheSpot={page:state.page,ratio:ratioFromScroll(
+      viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight)};
+  }
+  if(state.pdf)state.privatePaused=true;
+  $('reader-content').hidden=true;
+  const sidebar=document.querySelector('.reader-sidebar');
+  if(sidebar)sidebar.hidden=true;
+}
+/** V93 : retour BFCache OU retour d'une application mobile à l'avant-plan.
+    Session + droit serveur revérifiés avant de rendre du texte privé.
+    La génération empêche une réponse ancienne de réouvrir la liseuse. */
+async function revalidatePrivateReaderAfterReturn(){
+  if(!isFull||!state.privatePaused||state.privateReturnInFlight||
+     state.accessInvalidated||!state.pdf||!state.user||
+     document.visibilityState==='hidden')return;
+  state.privateReturnInFlight=true;
   const epoch=state.accessEpoch,userId=state.user.id,pdf=state.pdf;
+  const generation=state.privateReturnGeneration;
   const sameSession=()=>!state.accessInvalidated&&state.accessEpoch===epoch&&
-    state.user?.id===userId&&state.pdf===pdf;
+    state.user?.id===userId&&state.pdf===pdf&&state.privatePaused&&
+    state.privateReturnGeneration===generation&&
+    document.visibilityState!=='hidden';
   try{
     const {data:auth,error:authError}=await getSupabase().auth.getUser();
     if(!sameSession())return;
@@ -702,26 +719,39 @@ async function revalidatePrivateReaderFromBfcache(){
     if(!sameSession())return;
     if(error||data?.ok!==true||typeof data.url!=='string')
       throw new Error('RIGHTS_REVOKED');
-    // Le serveur ne doit délivrer qu'un lien signé sur notre origine prévue.
+    // Contrôle strict du domaine signé avant d'exposer la page conservée.
     const url=new URL(data.url);
     if(url.protocol!=='https:'||url.origin!==SIGNED_ORIGIN||
        !url.pathname.startsWith('/storage/v1/object/sign/'))
       throw new Error('INVALID_SIGNED_URL');
-    $('reader-content').hidden=false;
+    if(!sameSession())return;
     const spot=state.bfcacheSpot;
     state.bfcacheSpot=null;
-    // La mise en cache peut avoir réinitialisé le scroll de l'élément caché.
-    // Retrouver le même ratio sans créer une écriture de progression fantôme.
+    state.privatePaused=false;
+    $('reader-content').hidden=false;
+    const sidebar=document.querySelector('.reader-sidebar');
+    if(sidebar)sidebar.hidden=false;
+    // Conserver le passage numérique, sans le persister ni copier le roman.
     if(spot?.page===state.page){
       requestAnimationFrame(()=>{
-        if(!sameSession())return;
+        if(state.accessInvalidated||state.privatePaused||
+           state.privateReturnGeneration!==generation||state.pdf!==pdf)return;
         const viewer=$('reader-viewer');
         viewer.scrollTop=scrollTopForRatio(
           spot.ratio,viewer.scrollHeight,viewer.clientHeight);
       });
     }
+    void retryCloudProgress();
   }catch{
     if(sameSession())lockPrivateReader();
+  }finally{
+    state.privateReturnInFlight=false;
+    // Si un nouveau premier plan est arrivé PENDANT les requêtes réseau,
+    // une seconde vérification est nécessaire; l'ancienne est périmée.
+    if(state.privatePaused&&!state.accessInvalidated&&
+       state.privateReturnGeneration!==generation&&
+       document.visibilityState==='visible')
+      void revalidatePrivateReaderAfterReturn();
   }
 }
 function lockPrivateReader(){
@@ -736,6 +766,8 @@ function lockPrivateReader(){
   clearTimeout(state.scrollTimer);state.scrollTimer=null;
   state.cloudDirty=false;state.cloudRetrying=false;
   state.bfcacheSpot=null;
+  state.privatePaused=false;
+  ++state.privateReturnGeneration;
   $('reader-position-status').textContent='';
   stopNarration(false);
   companion?.close();companion=null;
