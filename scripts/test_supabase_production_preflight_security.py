@@ -140,8 +140,8 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         self.assertRejected(bad, "prévol distant doit être réservé")
 
     def test_remote_preflight_cannot_write_database(self):
-        dry = '(cd .prod-workspace && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD")'
-        write = '(cd .prod-workspace && supabase db push --linked --password "$SUPABASE_DB_PASSWORD")'
+        dry = '(cd .prod-workspace && supabase db push --linked --dry-run)'
+        write = '(cd .prod-workspace && supabase db push --linked)'
         bad = self.valid.replace(dry, write, 1)
         self.assertRejected(bad, "prévol distant ne doit jamais exécuter db push")
 
@@ -184,7 +184,7 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         self.assertRejected(bad, "prévols local et distant")
 
     def test_post_environment_revalidation_requires_dry_run(self):
-        marker = '(cd .prod-workspace && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-dry-run-approval.txt'
+        marker = '(cd .prod-workspace && supabase db push --linked --dry-run) | tee /tmp/sinjira-dry-run-approval.txt'
         bad = self.valid.replace(marker, "echo dry-run-retire", 1)
         self.assertRejected(bad, "Revalidation post-environment incomplète")
 
@@ -207,9 +207,46 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
 
     def test_db_write_must_not_escape_apply_job(self):
         marker = "          python scripts/validate_production_migration_ledger.py"
-        write = '          (cd .prod-workspace && supabase db push --linked --password "$SUPABASE_DB_PASSWORD")'
+        write = '          (cd .prod-workspace && supabase db push --linked)'
         bad = self.valid.replace(marker, marker + "\n" + write, 1)
         self.assertRejected(bad, "Primitive mutante hors job apply-production")
+
+    def test_db_password_is_never_exposed_in_cli_arguments(self):
+        self.assertNotIn(' --password "$SUPABASE_DB_PASSWORD"', self.valid)
+        self.assertNotIn(' -p "$SUPABASE_DB_PASSWORD"', self.valid)
+        operations = [
+            '(cd .prod-workspace && supabase link --project-ref "$PROJECT_ID")',
+            '(cd .prod-workspace && supabase migration list --linked)',
+            '(cd .prod-workspace && supabase db push --linked --dry-run)',
+            '(cd .prod-workspace && supabase db push --linked)',
+        ]
+        for command in operations:
+            with self.subTest(command=command):
+                self.assertIn(command, self.valid)
+                for option in ('--password "$SUPABASE_DB_PASSWORD"',
+                               '-p "$SUPABASE_DB_PASSWORD"',
+                               '--db-url "postgres://user:secret@example.invalid/database"'):
+                    mutated = command[:-1] + " " + option + ")"
+                    bad = self.valid.replace(command, mutated, 1)
+                    self.assertRejected(bad, "Mot de passe DB interdit dans argv")
+
+    def test_db_password_env_binding_is_mandatory_at_each_cli_step(self):
+        for marker in (
+            "      - name: Lier le projet de production dans le workspace protégé",
+            "      - name: Comparer l'historique des migrations",
+            "      - name: Prévisualiser les migrations sans modifier la production",
+            "      - name: Revalider la cible production après approbation",
+            "      - name: Appliquer les migrations de production depuis le workspace protégé",
+            "      - name: Vérifier l'historique et le dry-run après déploiement",
+        ):
+            with self.subTest(step=marker):
+                start = self.valid.index(marker)
+                end = self.valid.find("\n      - name: ", start + len(marker))
+                block = self.valid[start:] if end < 0 else self.valid[start:end]
+                secret = '          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}\n'
+                self.assertIn(secret, block)
+                bad = self.valid[:start] + block.replace(secret, "", 1) + self.valid[start + len(block):]
+                self.assertRejected(bad, "SUPABASE_DB_PASSWORD non borné")
 
     def test_confirmation_default_must_remain_non_mutating(self):
         bad = self.valid.replace('default: "PREFLIGHT_ONLY"', f'default: "{CONFIRMATION}"', 1)
