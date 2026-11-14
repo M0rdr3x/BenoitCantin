@@ -428,6 +428,15 @@ export function bindReaderScreenMode({
     scheduleLayoutRestore(previousRatio);
   };
   const onResize=()=>scheduleLayoutRestore(lastRatio,lastAnchor);
+  // V88 : le bouton « Lecture plein écran » modifie la hauteur du conteneur
+  // sans déclencher window.resize. Capturer l'ancre AVANT la bascule CSS,
+  // puis restaurer après deux frames comme pour le changement de police.
+  const onFocusLayoutChange=()=>{
+    if(!isPaged())return;
+    gesture=null;
+    scheduleLayoutRestore(metric().ratio,
+      captureReaderTextAnchor({viewer,text})||lastAnchor);
+  };
   const onPreferences=event=>{
     if(!isPaged()||!['reader-size','reader-font','reader-line-height',
       'reader-letter-spacing','reader-text-width'].includes(event.target?.id))return;
@@ -449,6 +458,7 @@ export function bindReaderScreenMode({
   document.addEventListener('change',onPreferences,true);
   toggle.addEventListener('change',onToggle);
   window.addEventListener('resize',onResize,{passive:true});
+  window.addEventListener('sinjira:reader-layout-will-change',onFocusLayoutChange);
   media.addEventListener?.('change',onResize);
   sync();
   return ()=>{
@@ -467,6 +477,7 @@ export function bindReaderScreenMode({
     document.removeEventListener('change',onPreferences,true);
     toggle.removeEventListener('change',onToggle);
     window.removeEventListener('resize',onResize);
+    window.removeEventListener('sinjira:reader-layout-will-change',onFocusLayoutChange);
     media.removeEventListener?.('change',onResize);
     observer?.disconnect();buttonsObserver?.disconnect();
   };
