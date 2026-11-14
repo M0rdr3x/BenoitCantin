@@ -69,6 +69,10 @@ function hideSetup(){
   enrollForm?.reset();
 }
 
+// Le secret TOTP et le QR ne doivent pas rester dans le DOM en cas de
+// navigation arrière ou restauration de la page depuis le cache navigateur.
+window.addEventListener('pagehide',hideSetup);
+
 try{
   const user=await requireUser();
   const s=getSupabase();
@@ -87,7 +91,7 @@ try{
       if(error)throw error;
       setStatus(status,'Les autres sessions ont été révoquées. Cet appareil reste connecté.','success');
     }catch(error){
-      console.warn('[SINJIRA sessions others]',error);
+      console.warn('[SINJIRA sessions others] opération indisponible.');
       setStatus(status,'Impossible de révoquer les autres sessions pour le moment.','error');
     }finally{
       signOutOthersButton.disabled=false;
@@ -104,7 +108,7 @@ try{
       if(error)throw error;
       location.replace('/compte/connexion.html?sessions=closed');
     }catch(error){
-      console.warn('[SINJIRA sessions global]',error);
+      console.warn('[SINJIRA sessions global] opération indisponible.');
       signOutGlobalButton.disabled=false;
       if(signOutOthersButton)signOutOthersButton.disabled=false;
       setStatus(status,'Impossible de fermer toutes les sessions pour le moment.','error');
@@ -142,7 +146,7 @@ try{
       if(setup)setup.hidden=false;
       setStatus(status,'Scannez le QR ou saisissez le secret, puis entrez le code à 6 chiffres pour terminer l’activation.','info');
     }catch(error){
-      console.warn('[SINJIRA MFA enroll]',error);
+      console.warn('[SINJIRA MFA enroll] opération indisponible.');
       enrollButton.disabled=false;
       setStatus(status,error?.message==='TOTP_FACTOR_LIMIT'?'Le nombre maximal de facteurs TOTP est déjà atteint.':'Impossible de démarrer l’activation TOTP pour le moment.','error');
     }
@@ -197,18 +201,36 @@ try{
   });
 
   cancelButton?.addEventListener('click',async()=>{
+    // Ne pas annuler un facteur pendant sa vérification TOTP : la
+    // confirmation du challenge et la désinscription ne doivent pas courir.
+    if(cancelButton.disabled||enrollForm?.querySelector('[type="submit"]')?.disabled)return;
     const factorId=pendingFactorId;
+    if(!factorId)return;
     cancelButton.disabled=true;
-    if(factorId){
-      const {error}=await s.auth.mfa.unenroll({factorId});
-      if(error)console.warn('[SINJIRA MFA cancel]',error);
+    try{
+      const response=await s.auth.mfa.unenroll({factorId});
+      if(!response||response.error!==null){
+        throw new Error('MFA_UNENROLL_UNCONFIRMED');
+      }
+      // Ce n'est qu'après la confirmation Auth que les secrets TOTP locaux
+      // et le facteur en attente sont retirés de l'interface.
+      hideSetup();
+      try{
+        await loadFactors(s);
+        setStatus(status,'Activation TOTP annulée.','info');
+      }catch{
+        setStatus(status,'Facteur TOTP annulé; impossible d’actualiser la liste. Rechargez la page pour vérifier l’état de sécurité.','info');
+      }
+    }catch{
+      // Conserver l'écran TOTP : l'annulation peut avoir échoué côté Auth.
+      // Ne jamais afficher ni journaliser un message d'erreur serveur.
+      console.warn('[SINJIRA MFA cancel] annulation non confirmée.');
+      setStatus(status,'Annulation TOTP non confirmée. Le facteur en attente reste affiché; réessayez ou vérifiez l’état de sécurité.','error');
+    }finally{
+      cancelButton.disabled=false;
     }
-    hideSetup();
-    cancelButton.disabled=false;
-    await loadFactors(s).catch(()=>{});
-    setStatus(status,'Activation TOTP annulée.','info');
   });
 }catch(error){
-  console.warn('[SINJIRA security]',error);
+  console.warn('[SINJIRA security] opération indisponible.');
   setStatus(status,'Impossible de lire ou modifier l’état de sécurité pour le moment.','error');
 }
