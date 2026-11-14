@@ -209,17 +209,47 @@ def self_test(source: str) -> None:
             "    if: startsWith(github.ref, 'refs/heads/a1/web-release-')", 1,
         ),
         "credential leaked via process args": source.replace(
-            "netlify-cli@27.10.2 deploy", "netlify-cli@27.10.2 deploy --auth \"$NETLIFY_AUTH_TOKEN\"", 1,
+            CLI_BIN + " deploy", CLI_BIN + ' deploy --auth "$NETLIFY_AUTH_TOKEN"', 1,
         ),
         "production promotion flag": source.replace(
-            "netlify-cli@27.10.2 deploy", "netlify-cli@27.10.2 deploy --prod", 1,
+            CLI_BIN + " deploy", CLI_BIN + " deploy --prod", 1,
         ),
         "shell secret echo": source.replace(
             "          set -euo pipefail\n",
             "          echo \"$NETLIFY_AUTH_TOKEN\"\n          set -euo pipefail\n", 1,
         ),
         "removed deployment": source.replace(
-            "npx --yes netlify-cli@27.10.2 deploy", "false # deployment removed", 1,
+            CLI_BIN + " deploy", "false # deployment removed", 1,
+        ),
+        "installation retirée": source.replace(
+            "      - name: " + INSTALL_STEP + "\n", "      - name: Installation non vérifiée\n", 1,
+        ),
+        "installation après les secrets": source.replace(
+            "      - name: " + INSTALL_STEP + "\n", "      - name: CLI installée ailleurs\n", 1,
+        ),
+        "scripts npm autorisés": source.replace(
+            "npm install --no-save --ignore-scripts", "npm install --no-save", 1,
+        ),
+        "dépôt npm inconnu": source.replace(
+            "--registry=https://registry.npmjs.org/", "--registry=https://example.invalid/", 1,
+        ),
+        "npmrc utilisateur accessible": source.replace(
+            "--userconfig=/dev/null", "--userconfig=$HOME/.npmrc", 1,
+        ),
+        "binaire CLI détourné": source.replace(
+            CLI_BIN + " deploy", "netlify deploy", 1,
+        ),
+        "npm offline désactivé": source.replace(OFFLINE_LINE + "\n", "", 1),
+        "npm avec secrets": source.replace(
+            "      - name: " + INSTALL_STEP + "\n",
+            "      - name: " + INSTALL_STEP + "\n        env:\n"
+            + "          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}\n", 1,
+        ),
+        "npx pendant déploiement": source.replace(
+            CLI_BIN + " deploy", "npx --yes netlify-cli@27.10.2 deploy", 1,
+        ),
+        "version binaire modifiée": source.replace(
+            "manifest.version !== '27.10.2'", "manifest.version !== '999.0.0'", 1,
         ),
         "staging environment removed": source.replace(
             "    environment: netlify-staging\n", "", 1,
