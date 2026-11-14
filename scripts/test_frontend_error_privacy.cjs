@@ -113,8 +113,8 @@ function social(){
   const node={textContent:'',dataset:{},hidden:true};
   context.__social.socialErrorStatus(node,{code:'UNKNOWN',message:secret},
     'Action impossible. Réessayez plus tard.');
-  equal(node.textContent,'Action impossible. Réessayez plus tard.',
-    'Erreur SQL inconnue remplacée par texte sûr');
+  equal(node.textContent,'Votre session doit être renouvelée. Reconnectez-vous au Compte SINJIRA™.',
+    'Erreur contenant JWT normalisée en message de reconnexion sûr');
   noSecret(node.textContent,'Message social non divulgué');
   equal(node.dataset.statusType,'error','Statut de sécurité conservé');
   context.__social.socialErrorStatus(node,{code:'42501',message:secret},
