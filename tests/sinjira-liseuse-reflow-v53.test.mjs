@@ -226,6 +226,13 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
       viewer.emit('touchmove',{touches:[begin]});
       viewer.scrollTop=original;
     }
+    if(options.nestedHorizontalScrollDuring){
+      const {node,delta}=options.nestedHorizontalScrollDuring;
+      const before=node.scrollLeft||0;
+      node.scrollLeft=before+delta;
+      viewer.emit('touchmove',{touches:[{identifier:1,clientX:startX-16,clientY:140}]});
+      node.scrollLeft=before;
+    }
     if(options.nestedScrollDuring){
       const {node,delta}=options.nestedScrollDuring;
       const before=node.scrollTop||0;
@@ -455,6 +462,30 @@ test('V56 : input puis change de taille de police ne créent pas deux déplaceme
     assert.equal(f.viewer.scrollTop,875); // 50 % de la nouvelle hauteur scrollable
   }finally{f.restore()}
 });
+test('V77 : texte paginé tourne la page sur un tableau horizontal immobile',()=>{
+  const f=fixture();
+  try{
+    const table={clientWidth:190,scrollWidth:460,scrollLeft:70,parentElement:f.viewer};
+    const child={parentElement:table,closest:()=>null};
+    const evt=f.swipe(-130,2,{target:child});
+    assert.equal(evt.defaultPrevented,true);
+    assert.ok(f.viewer.scrollTop>0);
+  }finally{f.restore()}
+});
+test('V77 : un tableau de texte défilé puis revenu ne provoque pas de fausse page',()=>{
+  const f=fixture();
+  try{
+    const table={clientWidth:180,scrollWidth:460,scrollLeft:60,parentElement:f.viewer};
+    const child={parentElement:table,closest:()=>null};
+    const ignored=f.swipe(-130,2,{target:child,nestedHorizontalScrollDuring:{node:table,delta:70}});
+    assert.equal(ignored.defaultPrevented,false);
+    assert.equal(table.scrollLeft,60);
+    assert.equal(f.viewer.scrollTop,0);
+    const resumed=f.swipe(-130,2,{target:child});
+    assert.equal(resumed.defaultPrevented,true);
+    assert.ok(f.viewer.scrollTop>0);
+  }finally{f.restore()}
+});
 test('V76 : balayage horizontal à travers une note immobile tourne l’écran texte',()=>{
   const f=fixture();
   try{
@@ -531,7 +562,7 @@ test('V74 : sous-conteneur masqué est ignoré, mais auto-scroll empêche le tou
     assert.ok(f.viewer.scrollTop>0);
     const previous=f.viewer.scrollTop;
     panel.cssOverflowX='auto';
-    evt=f.swipe(-130,2,{target:child});
+    evt=f.swipe(-130,2,{target:child,nestedHorizontalScrollDuring:{node:panel,delta:70}});
     assert.equal(evt.defaultPrevented,false);
     assert.equal(f.viewer.scrollTop,previous);
   }finally{f.restore()}
@@ -542,7 +573,7 @@ test('V73 : un panneau de notes défilant conserve le geste horizontal en texte 
     const scroller={clientWidth:200,scrollWidth:420,parentElement:f.text};
     f.text.parentElement=f.viewer;
     const child={parentElement:scroller,closest:()=>null};
-    const ignored=f.swipe(-130,2,{target:child});
+    const ignored=f.swipe(-130,2,{target:child,nestedHorizontalScrollDuring:{node:scroller,delta:65}});
     assert.equal(ignored.defaultPrevented,false);
     assert.equal(f.viewer.scrollTop,0);
     assert.equal(f.next.clicks,0);

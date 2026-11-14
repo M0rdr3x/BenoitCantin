@@ -54,6 +54,28 @@ export function readerCanPanHorizontally(element,tolerancePx=4,
   try{overflowX=getStyle?.(element)?.overflowX}catch{/* style inaccessible */}
   return !['hidden','clip','visible'].includes(String(overflowX||'').toLowerCase());
 }
+/** V77 : mémoriser les véritables déplacements latéraux des tableaux et
+ * encadrés imbriqués sans bloquer les pages sur un panneau immobile.
+ * Ne jamais inspecter hors de la zone de lecture. */
+export function captureReaderNestedHorizontalScroll(target,viewer,tolerancePx=4){
+  if(!target||!viewer||!Number.isFinite(tolerancePx)||tolerancePx<0)return [];
+  const seen=new Set(),captured=[];
+  let node=target;
+  while(node&&!seen.has(node)){
+    if(node===viewer)return captured;
+    seen.add(node);
+    if(readerCanPanHorizontally(node,tolerancePx))
+      captured.push({node,scrollLeft:Number.isFinite(node.scrollLeft)?node.scrollLeft:0});
+    node=node.parentElement||node.parentNode;
+  }
+  return [];
+}
+export function readerNestedHorizontalScrollMoved(captured,tolerancePx=4){
+  if(!Array.isArray(captured)||!Number.isFinite(tolerancePx)||tolerancePx<0)return false;
+  return captured.some(({node,scrollLeft})=>
+    Number.isFinite(node?.scrollLeft)&&Math.abs(node.scrollLeft-scrollLeft)>tolerancePx
+  );
+}
 /** V75 : un panneau vertical à l'intérieur d'une page ne doit pas
  * provoquer un changement de page quand on le fait défiler au doigt.
  * Les débordements CSS masqués n'ont pas de défilement tactile natif. */
@@ -164,7 +186,8 @@ export function bindReaderTouchNavigation({
       id:touch.identifier,x:touch.clientX,y:touch.clientY,time:clock(),
       scrollTop:viewer.scrollTop||0,maxVerticalTravel:0,scrolled:false,
       geometry:captureReaderSwipeGeometry(viewer),
-      nestedHorizontalOverflow:hasReaderNestedHorizontalOverflow(event.target,viewer),
+      nestedHorizontalScroll:captureReaderNestedHorizontalScroll(event.target,viewer),
+      nestedHorizontalScrolled:false,
       nestedVerticalScroll:captureReaderNestedVerticalScroll(event.target,viewer),
       nestedScrolled:false
     };
@@ -186,6 +209,8 @@ export function bindReaderTouchNavigation({
     );
     if(Math.abs((viewer.scrollTop||0)-origin.scrollTop)>8)origin.scrolled=true;
     if(readerNestedVerticalScrollMoved(origin.nestedVerticalScroll))origin.nestedScrolled=true;
+    if(readerNestedHorizontalScrollMoved(origin.nestedHorizontalScroll))
+      origin.nestedHorizontalScrolled=true;
   };
   const cancel=()=>{origin=null};
   const end=event=>{
@@ -205,7 +230,8 @@ export function bindReaderTouchNavigation({
       durationMs:clock()-initial.time,viewerWidth:viewer.clientWidth,
       hasSelection:Boolean(getSelectedText()?.trim()),
       horizontalOverflow:readerCanPanHorizontally(viewer)||
-        initial.nestedHorizontalOverflow,
+        initial.nestedHorizontalScrolled||
+        readerNestedHorizontalScrollMoved(initial.nestedHorizontalScroll),
       maxVerticalTravel:initial.maxVerticalTravel,
       scrolledDuringGesture:initial.nestedScrolled||
         readerNestedVerticalScrollMoved(initial.nestedVerticalScroll)||

@@ -5,7 +5,7 @@
  * du PDF courant ; une fois le texte terminé, tourner la vraie page du livre.
  * L'enregistrement d'emplacement reste le scroll_ratio historique de la V31.
  */
-import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,hasReaderNestedHorizontalOverflow,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally} from './sinjira-liseuse-touch-v52.mjs?v=52.11.10.1';
+import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally} from './sinjira-liseuse-touch-v52.mjs?v=52.11.10.1';
 
 const PREF_KEY='sinjira:liseuse:lecture-par-ecrans:v53';
 const INTERACTIVE='a,button,input,select,textarea,summary,[contenteditable],[role="button"],[role="link"],[data-reader-no-swipe]';
@@ -272,7 +272,8 @@ export function bindReaderScreenMode({
       id:touch.identifier,x:touch.clientX,y:touch.clientY,start:clock(),
       scrollTop:viewer.scrollTop,maxVerticalTravel:0,scrolled:false,
       geometry:captureReaderSwipeGeometry(viewer),
-      nestedHorizontalOverflow:hasReaderNestedHorizontalOverflow(event.target,viewer),
+      nestedHorizontalScroll:captureReaderNestedHorizontalScroll(event.target,viewer),
+      nestedHorizontalScrolled:false,
       nestedVerticalScroll:captureReaderNestedVerticalScroll(event.target,viewer),
       nestedScrolled:false
     };
@@ -294,6 +295,8 @@ export function bindReaderScreenMode({
     );
     if(Math.abs(viewer.scrollTop-gesture.scrollTop)>8)gesture.scrolled=true;
     if(readerNestedVerticalScrollMoved(gesture.nestedVerticalScroll))gesture.nestedScrolled=true;
+    if(readerNestedHorizontalScrollMoved(gesture.nestedHorizontalScroll))
+      gesture.nestedHorizontalScrolled=true;
   };
   const onTouchCancel=()=>{gesture=null};
   const onTouchEnd=event=>{
@@ -311,7 +314,8 @@ export function bindReaderScreenMode({
       // V70 : ne jamais voler un balayage horizontal natif lorsque la zone
       // de lecture ou son contenu dépasse la largeur visible du cellulaire.
       horizontalOverflow:readerCanPanHorizontally(viewer)||
-        readerCanPanHorizontally(text)||start.nestedHorizontalOverflow,
+        readerCanPanHorizontally(text)||start.nestedHorizontalScrolled||
+        readerNestedHorizontalScrollMoved(start.nestedHorizontalScroll),
       maxVerticalTravel:start.maxVerticalTravel,
       scrolledDuringGesture:start.nestedScrolled||
         readerNestedVerticalScrollMoved(start.nestedVerticalScroll)||

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {classifyReaderSwipe,bindReaderTouchNavigation,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,hasReaderNestedHorizontalOverflow,readerCanPanHorizontally,readerCanPanVertically,hasReaderNestedVerticalOverflow,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved} from '../assets/js/sinjira-liseuse-touch-v52.mjs';
+import {classifyReaderSwipe,bindReaderTouchNavigation,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,hasReaderNestedHorizontalOverflow,readerCanPanHorizontally,readerCanPanVertically,hasReaderNestedVerticalOverflow,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved} from '../assets/js/sinjira-liseuse-touch-v52.mjs';
 
 const gesture=(overrides={})=>classifyReaderSwipe({
   dx:-92,dy:8,durationMs:240,viewerWidth:375,...overrides
@@ -74,6 +74,13 @@ function fixture({selected=false}={}){
       viewer.emit('touchmove',{touches:[touch]});
       viewer.scrollTop=0; // même si le scroll revient au départ, refuser
     }
+    if(options.nestedHorizontalScrollDuring){
+      const {node,delta}=options.nestedHorizontalScrollDuring;
+      const before=node.scrollLeft||0;
+      node.scrollLeft=before+delta;
+      viewer.emit('touchmove',{touches:[{identifier:7,clientX:x-16,clientY:190}]});
+      node.scrollLeft=before;
+    }
     if(options.nestedScrollDuring){
       const {node,delta}=options.nestedScrollDuring;
       const before=node.scrollTop||0;
@@ -90,6 +97,44 @@ function fixture({selected=false}={}){
   };
   return {viewer,previous,next,mobilePrevious,mobileNext,release,swipe,setSelected:v=>{selection=v}};
 }
+test('V77 : un tableau horizontal immobile autorise gauche et droite en PDF',()=>{
+  const f=fixture();
+  try{
+    const table={clientWidth:185,scrollWidth:480,scrollLeft:85,parentElement:f.viewer};
+    const child={parentElement:table,closest:()=>null};
+    f.swipe(-130,2,{target:child});
+    f.swipe(130,2,{target:child});
+    assert.equal(f.next.clicks,1);
+    assert.equal(f.previous.clicks,1);
+  }finally{f.release()}
+});
+test('V77 : déplacement horizontal transitoire du tableau PDF annule le swipe',()=>{
+  const f=fixture();
+  try{
+    const table={clientWidth:195,scrollWidth:430,scrollLeft:55,parentElement:f.viewer};
+    const child={parentElement:table,closest:()=>null};
+    f.swipe(-130,2,{target:child,nestedHorizontalScrollDuring:{node:table,delta:60}});
+    assert.equal(table.scrollLeft,55);
+    assert.equal(f.next.clicks,0);
+    f.swipe(-130,2,{target:child});
+    assert.equal(f.next.clicks,1);
+  }finally{f.release()}
+});
+test('V77 : capture horizontale limitée aux éléments imbriqués défilables',()=>{
+  const root={clientWidth:360,scrollWidth:700,scrollLeft:33};
+  const outer={clientWidth:240,scrollWidth:450,scrollLeft:21,parentElement:root};
+  const inner={clientWidth:140,scrollWidth:270,scrollLeft:5,parentElement:outer};
+  const node={parentElement:inner};
+  const history=captureReaderNestedHorizontalScroll(node,root);
+  assert.equal(history.length,2);
+  assert.equal(readerNestedHorizontalScrollMoved(history),false);
+  inner.scrollLeft=9;
+  assert.equal(readerNestedHorizontalScrollMoved(history),false);
+  inner.scrollLeft=10;
+  assert.equal(readerNestedHorizontalScrollMoved(history),true);
+  assert.equal(captureReaderNestedHorizontalScroll({scrollLeft:90},root).length,0);
+  assert.equal(readerNestedHorizontalScrollMoved(history,NaN),false);
+});
 test('V76 : une note verticale immobile autorise gauche et droite sur le PDF',()=>{
   const oldWindow=globalThis.window;
   globalThis.window={getComputedStyle:el=>({overflowY:el.cssOverflowY||'visible'})};
@@ -193,7 +238,7 @@ test('V74 : un tableau coupé par overflow hidden ne bloque pas le swipe PDF',()
     f.swipe(-130,2,{target:child});
     assert.equal(f.next.clicks,1);
     panel.cssOverflowX='auto';
-    f.swipe(-130,2,{target:child});
+    f.swipe(-130,2,{target:child,nestedHorizontalScrollDuring:{node:panel,delta:60}});
     assert.equal(f.next.clicks,1);
   }finally{f.release();globalThis.window=previousWindow}
 });
@@ -228,9 +273,9 @@ test('V73 : un geste sur un panneau PDF défilant ne tourne pas le roman',()=>{
   try{
     const panel={clientWidth:210,scrollWidth:410,parentElement:f.viewer};
     const child={parentElement:panel,closest:()=>null};
-    f.swipe(-125,2,{target:child});
+    f.swipe(-125,2,{target:child,nestedHorizontalScrollDuring:{node:panel,delta:75}});
     assert.equal(f.next.clicks,0);
-    f.swipe(125,2,{target:child});
+    f.swipe(125,2,{target:child,nestedHorizontalScrollDuring:{node:panel,delta:65}});
     assert.equal(f.previous.clicks,0);
     f.swipe(-125,2);
     assert.equal(f.next.clicks,1);
