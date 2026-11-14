@@ -56,6 +56,22 @@ le fichier workflow sur une branche non protégée pourrait retirer son garde.
      d'origine est exempt de code malveillant. La revue des éditeurs et
      dépendances, l'analyse des vulnérabilités publiées et la limitation
      des jetons restent requises.
+   - **Audit des vulnérabilités (14 novembre 2026)** : la version précédente
+     `netlify-cli@27.10.2` comptait 2 avis élevés, 15 modérés et 2 faibles
+     selon npm audit. La mise à jour `27.19.0` a **éliminé les deux avis
+     élevés** : 0 critique, 0 élevé, mais **16 modérés et 2 faibles**
+     restent à analyser. Ce résultat décrit uniquement le graphe npm et
+     ne prouve pas une absence de risque en exécution.
+   - La CI et le staging exécutent `npm audit --json --omit=dev` avec
+     `scripts/validate_netlify_cli_audit.py`. **Tout avis élevé ou
+     critique, toute absence de rapport valide ou toute erreur d'audit
+     bloque** le job avant injection des identifiants Netlify. Le scan
+     GitHub Actions est également programmé chaque lundi.
+   - `.github/dependabot.yml` couvre maintenant `/tools/netlify-cli`
+     par des PR hebdomadaires sans fusion automatique. Les nouvelles
+     versions doivent être revues, puis la valeur attendue du SHA-256,
+     le nombre de paquets et l'empreinte SRI de la CLI doivent être
+     réexaminés avant la mise à jour du garde verrouillé.
 5. Faire relire la PR, valider la CI du commit exact et tester en
    staging avec des données fictives. Ne lancer aucune promotion live
    par déduction d'un test réussi.
@@ -68,6 +84,8 @@ le fichier workflow sur une branche non protégée pourrait retirer son garde.
 - Job lié à l'environnement `netlify-staging`.
 - Credentials uniquement injectés dans les trois étapes autorisées;
   **jamais dans la ligne de commande CLI ni les résumés GitHub**.
+- Audit des avis de sécurité npm exécuté dans une étape sans secrets,
+  après npm ci et avant leur injection ; blocage des niveaux élevé/critique.
 - Installation npm ci reproductible, scripts désactivés, manifest et lockfile
   validés avec 1 015 SRI; exécution du binaire local après installation,
   hors gestionnaire de paquets, avec npm configuré hors ligne.
