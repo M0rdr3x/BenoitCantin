@@ -199,8 +199,10 @@ function friendlySecurityError(error){
 }
 
 async function boot(){
-  const meta=deviceMetadata();
   try{
+    // L’absence de Web Crypto ne doit jamais lancer un enregistrement
+    // prévisible ni rejeter la promesse boot() hors du garde d'erreur.
+    const meta=deviceMetadata();
     await requireUser();
     status('Initialisation du Centre de sécurité…');
     const contextResult=await registerContext(meta);
