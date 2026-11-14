@@ -338,6 +338,38 @@ def run_browser(playwright, engine, origin):
         page.wait_for_function("""() =>
           document.querySelector('#reader-viewer').dataset.readerLayout==='scroll'""")
         before_pdf = state(page)
+
+        # V97 : un PDF se tourne aussi par tapotement des marges intérieures.
+        # La page source doit avancer puis revenir exactement une fois ;
+        # le centre reste disponible pour les gestes ordinaires.
+        pdf_taps=page.evaluate("""()=>{
+          const viewer=document.querySelector('#reader-viewer');
+          const rect=viewer.getBoundingClientRect();
+          const tap=portion=>{
+            const x=rect.left+rect.width*portion;
+            const y=rect.top+Math.min(100,rect.height*.5);
+            const t={identifier:97,target:viewer,clientX:x,clientY:y};
+            const fire=(type,touches)=>{
+              const event=new Event(type,{bubbles:true,cancelable:true});
+              Object.defineProperties(event,{
+                touches:{value:touches},targetTouches:{value:touches},
+                changedTouches:{value:[t]}
+              });
+              viewer.dispatchEvent(event);
+            };
+            fire('touchstart',[t]);fire('touchend',[]);
+            return Number(document.querySelector('#reader-page').value);
+          };
+          return {before:Number(document.querySelector('#reader-page').value),
+            forward:tap(.85),middle:tap(.5),back:tap(.15),
+            changes:[...window.__readerFixture.changes]};
+        }""")
+        assert pdf_taps["before"]==before_pdf["page"],pdf_taps
+        assert pdf_taps["forward"]==before_pdf["page"]+1,pdf_taps
+        assert pdf_taps["middle"]==pdf_taps["forward"],pdf_taps
+        assert pdf_taps["back"]==before_pdf["page"],pdf_taps
+        assert len(pdf_taps["changes"])==len(before_pdf["changes"])+2,pdf_taps
+
         pdf_swipe = swipe(page, -130)
         assert pdf_swipe["page"] == before_pdf["page"] + 1, (before_pdf, pdf_swipe)
         assert len(pdf_swipe["changes"]) == len(before_pdf["changes"]) + 1, pdf_swipe
