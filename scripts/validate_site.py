@@ -34,6 +34,18 @@ ACTIVE_URI_ATTRS = {
     'script': ('src',), 'link': ('href',),
 }
 UNSAFE_ACTIVE_URI_SCHEMES = frozenset({'javascript', 'vbscript', 'data', 'file', 'blob'})
+# Une action de formulaire peut transférer mots de passe, courriels et autres
+# données privées : ces destinations doivent toujours utiliser HTTPS.
+TLS_REQUIRED_URI_ATTRS = {
+    'form': ('action',), 'button': ('formaction',), 'input': ('formaction',),
+    'base': ('href',),
+}
+
+
+def is_insecure_transport_uri(raw: str) -> bool:
+    """Détecter les destinations HTTP, même avec entités ou contrôles ASCII."""
+    normalized = re.sub(r'[\\x00-\\x20\\x7f]', '', raw)
+    return normalized.lower().startswith('http:')
 
 
 def is_unsafe_active_uri(raw: str) -> bool:
@@ -144,8 +156,12 @@ class Parser(HTMLParser):
         d = dict(attrs)
         for attribute in ACTIVE_URI_ATTRS.get(tag, ()):
             raw_url = d.get(attribute)
-            if isinstance(raw_url, str) and is_unsafe_active_uri(raw_url):
+            if not isinstance(raw_url, str):
+                continue
+            if is_unsafe_active_uri(raw_url):
                 self.unsafe_active_urls.append(f'{tag}[{attribute}]')
+            if attribute in TLS_REQUIRED_URI_ATTRS.get(tag, ()) and is_insecure_transport_uri(raw_url):
+                self.unsafe_active_urls.append(f'{tag}[{attribute}]:HTTP')
         # srcdoc contient du HTML actif, qui ne doit pas être introduit dans
         # les pages du site en contournant la validation des URL.
         if tag == 'iframe' and 'srcdoc' in d:
@@ -201,6 +217,8 @@ class Parser(HTMLParser):
                 self.refs.append(('meta-refresh', target))
                 if is_unsafe_active_uri(target):
                     self.unsafe_active_urls.append('meta[refresh]')
+                if is_insecure_transport_uri(target):
+                    self.unsafe_active_urls.append('meta[refresh]:HTTP')
 
         if tag == 'button':
             named = bool((d.get('aria-label') or '').strip() if isinstance(d.get('aria-label'), str) else d.get('aria-label'))
@@ -400,6 +418,9 @@ def test_active_html_url_contract() -> list[str]:
         '<a href="https://www.benoitcantin.com/">Accueil</a>'
         '<a href="mailto:contact@example.org">Contact</a>'
         '<form action="/compte/reinitialiser.html"></form>'
+        '<form action="https://www.benoitcantin.com/compte/"></form>'
+        '<button formaction="/compte/">Continuer</button>'
+        '<a href="http://example.org/">Lien externe historique</a>'
         '<iframe src="/document.html"></iframe>'
         '<img src="data:image/png;base64,AAAA" alt="Fixture">'
     )
@@ -418,6 +439,13 @@ def test_active_html_url_contract() -> list[str]:
         'javascript script': '<script src="javascript:alert(1)"></script>',
         'meta refresh': '<meta http-equiv="refresh" content="0;url=javascript:alert(1)">',
         'iframe srcdoc': '<iframe srcdoc="&lt;script&gt;alert(1)&lt;/script&gt;"></iframe>',
+        'form HTTP': '<form action="http://example.org/receive"></form>',
+        'form HTTP encodé': '<form action="&#104;ttp://example.org/receive"></form>',
+        'form HTTP avec contrôle': '<form action="ht&#9;tp://example.org/receive"></form>',
+        'override HTTP': '<button formaction="HTTP://example.org/receive">Confirmer</button>',
+        'input HTTP': '<input type="submit" formaction="http://example.org/receive">',
+        'base HTTP': '<base href="http://example.org/">',
+        'refresh HTTP': '<meta http-equiv="refresh" content="0;url=http://example.org/">',
     }
     for label, html in cases.items():
         parsed = Parser()
