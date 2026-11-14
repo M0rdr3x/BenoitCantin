@@ -125,9 +125,100 @@ function social(){
   context.__social.socialErrorStatus(null,{message:secret},
     'Action impossible. Réessayez plus tard.');
 }
+async function legacyComments(){
+  // La page « Mes commentaires » utilisait alert(error.message) sur UPDATE
+  // et DELETE, et affichait le diagnostic serveur lors du chargement initial.
+  const source=read('assets/js/sinjira-account-v18.js');
+  check(!source.includes('alert(error.message)'),'Le compte legacy ne montre plus une erreur SQL brute');
+  check(!source.includes("st(e?.message||"),'Le chargement legacy ne renvoie pas les diagnostics serveur');
+  const status={textContent:'',dataset:{},hidden:true};
+  const displayed={innerHTML:'',querySelectorAll(name){
+    return name==='[data-edit-comment]'?[editButton]
+      :name==='[data-delete-comment]'?[deleteButton]:[];
+  }};
+  const makeButton=()=>({listeners:{},addEventListener(name,callback){this.listeners[name]=callback},
+    closest(){return {dataset:{commentId:'comment-1'}}}});
+  const editButton=makeButton(),deleteButton=makeButton();
+  const row={id:'comment-1',body:'Texte existant',status:'pending',
+    contains_spoilers:false,created_at:'2026-11-14',novels:{title:'Roman test'}};
+  const alerts=[];
+  let operation='error',mutationCalls=0;
+  function mutation(){
+    let n=0;
+    return {eq(){
+      n++;
+      if(n<2)return this;
+      mutationCalls++;
+      if(operation==='throw')return Promise.reject(new Error(secret));
+      return Promise.resolve({error:operation==='error'?{message:secret,code:'PGRST500'}:null});
+    }};
+  }
+  const db={from(name){
+    equal(name,'novel_comments','Table de commentaires self-only');
+    return {
+      select(){return this},
+      eq(){return this},
+      order(){return Promise.resolve({data:[row],error:null})},
+      update(){return mutation()},
+      delete(){return mutation()}
+    };
+  }};
+  const context=vm.createContext({
+    document:{body:{dataset:{v18Page:'comments'}},querySelector(sel){
+      if(sel==='[data-v18-status]')return status;
+      if(sel==='[data-my-comments]')return displayed;
+      return null;
+    }},
+    getSupabase:()=>db,
+    requireUser:async()=>({id:'user-1'}),
+    escapeHtml:s=>String(s??''),formatDate:()=> 'Date',
+    prompt:()=> 'Texte mis à jour suffisamment long',
+    confirm:()=>true,
+    alert:message=>alerts.push(message),
+    console:{warn(){throw Error('Journal privé refusé')},error(){throw Error('Journal privé refusé')}}
+  });
+  const script=importedSource(source),cut=script.lastIndexOf('\n(async()=>');
+  check(cut>0,'Point de lancement legacy reconnu');
+  vm.runInContext(script.slice(0,cut)+'\nglobalThis.__legacy={comments,st};',context,
+    {filename:'sinjira-account-v18.js',timeout:2000});
+  const api=context.__legacy;
+  api.st(secret,'error');
+  equal(status.textContent,'Impossible de charger cette rubrique pour le moment.',
+    'Échec initial standardisé');
+  noSecret(status.textContent,'Échec initial legacy');
+  api.st('Opération réussie.','success');
+  equal(status.textContent,'Opération réussie.','Statut non-error préservé');
+  await api.comments({id:'user-1'});
+  check(typeof editButton.listeners.click==='function','Handler édition réel enregistré');
+  check(typeof deleteButton.listeners.click==='function','Handler suppression réel enregistré');
+
+  for(const type of ['edit','delete']){
+    for(const mode of ['error','throw','success']){
+      operation=mode;
+      const before=alerts.length;
+      const button=type==='edit'?editButton:deleteButton;
+      await button.listeners.click();
+      if(mode==='success'){
+        equal(alerts.length,before,'Opération réussie sans fausse erreur: '+type);
+      }else{
+        equal(alerts.length,before+1,'Échec signalé: '+type+'/'+mode);
+        equal(alerts.at(-1),type==='edit'
+          ?'Impossible de modifier ce commentaire pour le moment.'
+          :'Impossible de supprimer ce commentaire pour le moment.',
+          'Diagnostic sans fuite: '+type+'/'+mode);
+        noSecret(alerts.at(-1),'Alerte SQL legacy '+type+'/'+mode);
+      }
+    }
+  }
+  equal(mutationCalls,6,'Les six écritures backend sont effectivement simulées');
+  const page=read('compte/mes-commentaires.html');
+  check(page.includes('sinjira-account-v18.js?v=24.1-error-privacy'),
+    'Cache invalidé sur la page Mes commentaires');
+}
 async function main(){
   await reader();
   social();
-  console.log('PASS: '+checks+' assertions de confidentialité sur vrais modules lecteur/social.');
+  await legacyComments();
+  console.log('PASS: '+checks+' assertions de confidentialité sur vrais modules lecteur/social/commentaires legacy.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1});
