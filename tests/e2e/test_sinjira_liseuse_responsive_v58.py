@@ -311,6 +311,12 @@ def run(playwright, engine, origin):
           return Boolean(rect)&&Math.abs(
             rect.top-v.getBoundingClientRect().top-a.relativeY)<35;
         }""",timeout=7000)
+        # En mode plein écran, le bouton peut reprendre le focus et faire
+        # défiler le DOCUMENT extérieur, sans déplacer le scroll du livre.
+        # Pour tester la capture caret, replacer le livre dans le viewport.
+        page.locator("#reader-viewer").scroll_into_view_if_needed()
+        page.evaluate("""()=>new Promise(done=>
+          requestAnimationFrame(()=>requestAnimationFrame(done)))""")
         focus_during=page.evaluate("""async()=>{
           const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.10.1');
           const v=document.querySelector('#reader-viewer');
