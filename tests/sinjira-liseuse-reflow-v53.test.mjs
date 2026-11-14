@@ -437,6 +437,36 @@ test('V69 : toucher la zone du livre annule une restauration différée',()=>{
     assert.equal(f.viewer.scrollTop,350);
   }finally{f.restore()}
 });
+test('V89 : désactiver puis réactiver les écrans invalide une ancienne restitution',()=>{
+  const f=fixture({deferredRaf:true});
+  try{
+    f.viewer.scrollTo({top:350});
+    f.toggle.checked=false;
+    f.toggle.emit('change',{});
+    assert.equal(f.viewer.dataset.readerLayout,'scroll');
+    // L'utilisateur continue en mode libre avant la fin des deux frames.
+    f.viewer.scrollTo({top:560});
+    f.toggle.checked=true;
+    f.toggle.emit('change',{});
+    f.flushFrames();
+    assert.equal(f.viewer.dataset.readerLayout,'screens');
+    assert.equal(f.viewer.scrollTop,560,
+      'un ancien ratio de pagination ne doit pas effacer la lecture en continu');
+  }finally{f.restore()}
+});
+test('V89 : retour au mode pages après lecture continue conserve le ratio actuel',()=>{
+  const f=fixture({deferredRaf:true});
+  try{
+    f.viewer.scrollTo({top:350});
+    f.toggle.checked=false;f.toggle.emit('change',{});
+    f.flushFrames();
+    f.viewer.scrollTo({top:560});
+    f.toggle.checked=true;f.toggle.emit('change',{});
+    f.flushFrames();
+    assert.equal(f.viewer.dataset.readerLayout,'screens');
+    assert.equal(f.viewer.scrollTop,560);
+  }finally{f.restore()}
+});
 test('V56 : rotation mobile conserve la même proportion malgré événements en double',()=>{
   const f=fixture({deferredRaf:true});
   try{
