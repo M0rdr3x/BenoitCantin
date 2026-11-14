@@ -277,7 +277,7 @@ async function main(){
   const html=read('compte/histoire-de-vie.html');
   yes(html.includes('sinjira-life-story-v24-5-0.js?v=24.5.2-owner-security'),
     'Cache du module principal actualisé');
-  yes(html.includes('sinjira-life-story-v24-5-2.js?v=24.5.2-owner-security'),
+  yes(html.includes('sinjira-life-story-v24-5-2.js?v=24.5.2-code-privacy'),
     'Cache de gestion des codes actualisé');
   yes(!source.includes("console.warn('[SINJIRA life story]',error)"),
     'Aucune exception Supabase privée en clair dans les logs');
