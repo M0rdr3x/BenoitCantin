@@ -65,6 +65,27 @@ jobs:
         with:
           node-version: '22.23.2'
 
+      - name: Installer Netlify CLI sans identifiants
+        # L'installation npm (et ses dépendances transitives) est toujours
+        # exécutée AVANT l'injection de NETLIFY_AUTH_TOKEN / NETLIFY_SITE_ID.
+        shell: bash
+        run: |
+          set -euo pipefail
+          cli_root="$RUNNER_TEMP/netlify-cli-27.10.2"
+          mkdir -p "$cli_root"
+          cd "$cli_root"
+          npm install --no-save --ignore-scripts --no-audit --no-fund \
+            --userconfig=/dev/null --globalconfig=/dev/null \
+            --registry=https://registry.npmjs.org/ netlify-cli@27.10.2
+          test -x "$cli_root/node_modules/.bin/netlify"
+          node - "$cli_root/node_modules/netlify-cli/package.json" <<'NODE'
+          const fs = require('node:fs');
+          const manifest = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          if (manifest.name !== 'netlify-cli' || manifest.version !== '27.10.2') {
+            throw new Error('Version Netlify CLI inattendue: refus du déploiement');
+          }
+          NODE
+
       - name: Verrouiller ref, SHA, site et secrets
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
@@ -108,13 +129,14 @@ jobs:
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NPM_CONFIG_OFFLINE: 'true'
         id: preview_deploy
         shell: bash
         run: |
           set -euo pipefail
           json="$(mktemp)"
           trap 'rm -f "$json"' EXIT
-          npx --yes netlify-cli@27.10.2 deploy             --dir _preview_site             --no-build             --json             --message "SINJIRA staging preview $GITHUB_SHA" > "$json"
+          "$RUNNER_TEMP/netlify-cli-27.10.2/node_modules/.bin/netlify" deploy             --dir _preview_site             --no-build             --json             --message "SINJIRA staging preview $GITHUB_SHA" > "$json"
           python3 - "$json" "$EXPECTED_SITE_NAME" <<'PY'
           import json, os, re, sys
           from urllib.parse import urlparse
@@ -159,13 +181,14 @@ jobs:
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NPM_CONFIG_OFFLINE: 'true'
         id: production_deploy
         shell: bash
         run: |
           set -euo pipefail
           json="$(mktemp)"
           trap 'rm -f "$json"' EXIT
-          npx --yes netlify-cli@27.10.2 deploy             --dir _site             --no-build             --json             --message "SINJIRA staging production-candidate $GITHUB_SHA" > "$json"
+          "$RUNNER_TEMP/netlify-cli-27.10.2/node_modules/.bin/netlify" deploy             --dir _site             --no-build             --json             --message "SINJIRA staging production-candidate $GITHUB_SHA" > "$json"
           python3 - "$json" "$EXPECTED_SITE_NAME" <<'PY'
           import json, os, re, sys
           from urllib.parse import urlparse
