@@ -28,11 +28,12 @@ def forbid(text: str, markers: list[str], label: str) -> None:
 class ScriptSourceCollector(HTMLParser):
     def __init__(self) -> None:
         super().__init__()
-        self.sources: list[str] = []
+        self.sources: list[tuple[str, str]] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         if tag == 'script':
-            self.sources.append(dict(attrs).get('src') or '')
+            attributes = dict(attrs)
+            self.sources.append((attributes.get('src') or '', attributes.get('type') or ''))
 
 
 def require_fresh_security_script(page: str) -> None:
@@ -40,17 +41,41 @@ def require_fresh_security_script(page: str) -> None:
     parser = ScriptSourceCollector()
     parser.feed(page)
     parser.close()
-    candidates = [src for src in parser.sources if 'v24-security.js' in src]
+    candidates = [(url, kind) for url, kind in parser.sources if 'v24-security.js' in url]
     if len(candidates) != 1:
         raise AssertionError('interface sécurité sessions: module v24-security.js absent ou dupliqué')
-    match = re.fullmatch(r'\.\./assets/js/v24-security\.js\?v=(\d+)\.(\d+)\.(\d+)', candidates[0])
+    url, kind = candidates[0]
+    match = re.fullmatch(r'\.\./assets/js/v24-security\.js\?v=(\d+)\.(\d+)\.(\d+)', url)
     if not match:
         raise AssertionError('interface sécurité sessions: URL du module de sécurité non canonique')
+    if kind != 'module':
+        raise AssertionError('interface sécurité sessions: le script TOTP doit être exécuté en module')
     if tuple(map(int, match.groups())) < (24, 4, 69):
         raise AssertionError('interface sécurité sessions: version obsolète du module TOTP')
 
 
+def self_test() -> None:
+    """Mutations synthétiques : la CI doit refuser une régression du chargement MFA."""
+    safe = '<script src="../assets/js/v24-security.js?v=24.4.70" type="module"></script>'
+    require_fresh_security_script(safe)
+    mutations = {
+        'module absent': '<script src="../assets/js/site.js?v=1" type="module"></script>',
+        'module dupliqué': safe + safe,
+        'version TOTP révoquée': safe.replace('24.4.70', '24.4.68'),
+        'script distant': safe.replace('../assets/js/', 'https://untrusted.example/'),
+        'version flottante': safe.replace('?v=24.4.70', '?v=latest'),
+        'module désactivé': safe.replace('type="module"', 'type="text/javascript"'),
+    }
+    for label, invalid in mutations.items():
+        try:
+            require_fresh_security_script(invalid)
+        except AssertionError:
+            continue
+        raise AssertionError(f'Auto-test défectueux: régression non détectée : {label}')
+
+
 def main() -> int:
+    self_test()
     core = read('assets/js/sinjira-supabase.js')
     security = read('assets/js/v24-security.js')
     page = read('compte/securite.html')
