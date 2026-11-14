@@ -836,7 +836,12 @@ async function init(){
     updateToolbar();renderPage();updateSpeechControls();
     const origin=state.resumeSource==='compte'?'depuis votre compte'
       :state.resumeSource==='appareil'?'depuis cet appareil':'au début du roman';
-    positionNotice('Lecture prête : page '+state.page+' reprise '+origin+'. Enregistrement automatique actif'+(isFull?' sur votre compte et votre appareil.': ' sur cet appareil.'));
+    // V86 : la disponibilité du stockage ne peut pas être certifiée à
+    // l'ouverture. Elle ne l'est qu'après une écriture réellement réussie.
+    // Pour le compte privé, la synchronisation serveur reste distincte.
+    positionNotice('Lecture prête : page '+state.page+' reprise '+origin+
+      '. Nouvelle sauvegarde non encore confirmée : elle sera vérifiée lors du prochain changement de position.'+
+      (isFull?' Synchronisation du compte à confirmer séparément.':''));
     // L'indisponibilité de la synchronisation des notes ne bloque pas la lecture.
     companion.ready().catch(()=>message('La liseuse fonctionne, mais les repères personnels ne sont pas disponibles.','warning'));
     $('reader-status').hidden=true;
