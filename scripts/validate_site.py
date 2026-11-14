@@ -38,7 +38,7 @@ UNSAFE_ACTIVE_URI_SCHEMES = frozenset({'javascript', 'vbscript', 'data', 'file',
 
 def is_unsafe_active_uri(raw: str) -> bool:
     """Refuser les URL exécutables, y compris entités et contrôles obfusqués."""
-    normalized = re.sub(r'[\\x00-\\x20\\x7f]', '', raw)
+    normalized = re.sub(r'[\x00-\x20\x7f]', '', raw)
     scheme, separator, _ = normalized.partition(':')
     return bool(separator and scheme.lower() in UNSAFE_ACTIVE_URI_SCHEMES)
 
