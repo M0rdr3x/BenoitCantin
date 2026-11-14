@@ -176,9 +176,13 @@ export function bindReaderTouchNavigation({
   // propriétaire du geste, que le lecteur soit en mode PDF ou écran texte.
   if(viewer.dataset)viewer.dataset.readerTouchManaged='v52';
   let origin=null;
+  // V96 : les PDF (édition intégrale incluse) ne doivent pas changer de page
+  // tant que le contenu parent est masqué ou que l'onglet est suspendu.
+  const canNavigate=()=>!globalThis.document?.hidden&&
+    !viewer.closest?.('[hidden]');
   const start=event=>{
     origin=null;
-    if(event.touches?.length!==1||isInteractiveTarget(event.target)||
+    if(!canNavigate()||event.touches?.length!==1||isInteractiveTarget(event.target)||
       isReaderViewportZoomed())return;
     const touch=event.touches[0];
     if(!Number.isFinite(touch.clientX)||!Number.isFinite(touch.clientY))return;
@@ -226,7 +230,7 @@ export function bindReaderTouchNavigation({
     // Ne JAMAIS déclencher ici le changement de page PDF quand V53 est actif,
     // même si preventDefault() n'a pas été honoré sur un appareil tactile.
     if(viewer.dataset?.readerLayout==='screens')return;
-    if(!initial||isReaderViewportZoomed()||
+    if(!initial||!canNavigate()||isReaderViewportZoomed()||
       initial.readerLayout!==(viewer.dataset?.readerLayout||'scroll')||
       !isReaderSwipeGeometryStable(initial.geometry,captureReaderSwipeGeometry(viewer))||
       event.touches?.length!==0||event.changedTouches?.length!==1)return;
@@ -262,10 +266,10 @@ export function bindReaderTouchNavigation({
   globalThis.window?.addEventListener?.('pagehide',cancel);
 
   const mobileBack=()=>{
-    if(viewer.dataset?.readerLayout!=='screens'&&!previous.disabled)previous.click();
+    if(canNavigate()&&viewer.dataset?.readerLayout!=='screens'&&!previous.disabled)previous.click();
   };
   const mobileForward=()=>{
-    if(viewer.dataset?.readerLayout!=='screens'&&!next.disabled)next.click();
+    if(canNavigate()&&viewer.dataset?.readerLayout!=='screens'&&!next.disabled)next.click();
   };
   mobilePrevious?.addEventListener('click',mobileBack);
   mobileNext?.addEventListener('click',mobileForward);
