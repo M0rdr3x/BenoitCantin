@@ -142,6 +142,42 @@ def run_browser(playwright, engine, origin):
         assert interrupted["before"]==interrupted["after"]==0,interrupted
         assert interrupted["page"]==3,interrupted
 
+        # V95 : une vraie zone du lecteur sur la page mobile tourne un écran
+        # au tapotement de marge, sans changer la page source PDF.
+        # On n'utilise aucun service privé ni système de stockage.
+        taps=page.evaluate("""()=>{
+          const viewer=document.querySelector('#reader-viewer');
+          const rect=viewer.getBoundingClientRect();
+          const el=document.querySelector('#reader-text');
+          const tap=(relativeX)=>{
+            const x=rect.left+rect.width*relativeX;
+            const y=rect.top+Math.min(rect.height*.5,180);
+            const touch={identifier:31,target:el,clientX:x,clientY:y};
+            const ev=(type,touches)=>{
+              const e=new Event(type,{bubbles:true,cancelable:true});
+              Object.defineProperties(e,{
+                touches:{value:touches},targetTouches:{value:touches},
+                changedTouches:{value:[touch]}
+              });
+              el.dispatchEvent(e);
+              return e.defaultPrevented;
+            };
+            ev('touchstart',[touch]);
+            return ev('touchend',[]);
+          };
+          const before=viewer.scrollTop;
+          const forward=tap(.85),afterForward=viewer.scrollTop;
+          const center=tap(.5),afterCenter=viewer.scrollTop;
+          const backward=tap(.15),afterBack=viewer.scrollTop;
+          return {before,forward,afterForward,center,afterCenter,
+            backward,afterBack,
+            pdfPage:Number(document.querySelector('#reader-page').value)};
+        }""")
+        assert taps["before"]==0 and taps["afterForward"]>0,taps
+        assert taps["forward"] and taps["backward"],taps
+        assert taps["afterCenter"]==taps["afterForward"] and not taps["center"],taps
+        assert taps["afterBack"]==0 and taps["pdfPage"]==3,taps
+
         # Balayages gauche/droite : c'est un écran du texte, pas la page PDF.
         one = swipe(page, -120)
         assert one["consumed"] and one["page"] == 3, one
