@@ -421,11 +421,16 @@ export function bindReaderScreenMode({
     // V78 : tout changement de mode rend périmé le contact tactile en cours.
     // Même si l'utilisateur rebascule aussitôt, ne pas tourner une ancienne page.
     gesture=null;
-    // Un mode continu peut avoir une proportion différente de lastRatio.
+    // V89 : une lecture en mode continu peut se déplacer loin de l'ancienne
+    // ancre paginée. Capturer le passage COURANT avant de changer le CSS,
+    // puis invalider toute restitution déjà en attente (bascule très rapide).
+    // Le contenu du roman n'est ni copié ni persisté : ancre mémoire éphémère.
     const previousRatio=metric().ratio;
+    const currentAnchor=captureReaderTextAnchor({viewer,text});
+    cancelPendingLayoutRestore();
     savePreference(toggle.checked);
     sync();
-    scheduleLayoutRestore(previousRatio);
+    scheduleLayoutRestore(previousRatio,currentAnchor);
   };
   const onResize=()=>scheduleLayoutRestore(lastRatio,lastAnchor);
   // V88 : le bouton « Lecture plein écran » modifie la hauteur du conteneur
