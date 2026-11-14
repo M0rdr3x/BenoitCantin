@@ -433,6 +433,15 @@ export function bindReaderScreenMode({
     scheduleLayoutRestore(previousRatio,currentAnchor);
   };
   const onResize=()=>scheduleLayoutRestore(lastRatio,lastAnchor);
+  // V90 : Safari iOS / Chrome Android peuvent modifier le viewport visuel
+  // quand les barres d'interface apparaissent ou disparaissent sans déclencher
+  // window.resize. La hauteur CSS en dvh varie et peut déplacer la ligne lue.
+  // Ne pas intercepter la navigation par pincement : au zoom > 1, le
+  // navigateur reste seul propriétaire de l'exploration du document.
+  const onVisualViewportResize=()=>{
+    if(!isPaged()||isReaderViewportZoomed())return;
+    onResize();
+  };
   // V88 : le bouton « Lecture plein écran » modifie la hauteur du conteneur
   // sans déclencher window.resize. Capturer l'ancre AVANT la bascule CSS,
   // puis restaurer après deux frames comme pour le changement de police.
@@ -463,6 +472,7 @@ export function bindReaderScreenMode({
   document.addEventListener('change',onPreferences,true);
   toggle.addEventListener('change',onToggle);
   window.addEventListener('resize',onResize,{passive:true});
+  window.visualViewport?.addEventListener?.('resize',onVisualViewportResize,{passive:true});
   window.addEventListener('sinjira:reader-layout-will-change',onFocusLayoutChange);
   media.addEventListener?.('change',onResize);
   sync();
@@ -482,6 +492,7 @@ export function bindReaderScreenMode({
     document.removeEventListener('change',onPreferences,true);
     toggle.removeEventListener('change',onToggle);
     window.removeEventListener('resize',onResize);
+    window.visualViewport?.removeEventListener?.('resize',onVisualViewportResize);
     window.removeEventListener('sinjira:reader-layout-will-change',onFocusLayoutChange);
     media.removeEventListener?.('change',onResize);
     observer?.disconnect();buttonsObserver?.disconnect();
