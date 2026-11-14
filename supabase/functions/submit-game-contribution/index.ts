@@ -103,11 +103,12 @@ Deno.serve(async(req)=>{
 
     return privateJson({ok:true,submitted:true,source:'endgame_only'});
   }catch(e){
-    console.error('[submit-game-contribution]',e);
     if(e?.message==='AUTH_REQUIRED')return privateJson({ok:false,error:'Connexion requise.',code:'AUTH_REQUIRED'},401);
     if(e?.message==='JSON_REQUIRED')return privateJson({ok:false,error:'Corps JSON requis.',code:'JSON_REQUIRED'},415);
     if(e?.message==='REQUEST_TOO_LARGE')return privateJson({ok:false,error:'Requête trop volumineuse.',code:'REQUEST_TOO_LARGE'},413);
     if(e?.message==='INVALID_JSON')return privateJson({ok:false,error:'JSON invalide.',code:'INVALID_JSON'},400);
+    // Les erreurs de base/RPC peuvent porter des détails personnels dans leur message.
+    console.error('[submit-game-contribution]',{code:'SUBMISSION_FAILED'});
     return privateJson({ok:false,error:'Erreur de transmission.',code:'SUBMISSION_FAILED'},500);
   }
 });

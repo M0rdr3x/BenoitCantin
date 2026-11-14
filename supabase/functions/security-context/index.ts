@@ -271,8 +271,10 @@ Deno.serve(async (req) => {
       }
     });
   } catch (error) {
-    console.error('[security-context]', error);
     if (error?.message === 'AUTH_REQUIRED') return privateJson({ ok: false, error: 'Connexion requise.', code: 'AUTH_REQUIRED' }, 401);
+    // Les exceptions (PostgREST, fournisseur push, JWT) peuvent contenir des données
+    // sensibles. Ne jamais journaliser l'objet d'erreur, son message ou sa pile.
+    console.error('[security-context]', { code: 'SECURITY_CONTEXT_UNAVAILABLE' });
     return privateJson({ ok: false, error: 'Le contexte de sécurité est temporairement indisponible.' }, 500);
   }
 });
