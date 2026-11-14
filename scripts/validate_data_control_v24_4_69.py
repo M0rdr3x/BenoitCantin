@@ -44,11 +44,28 @@ def main():
 
     forbid(runtime,["s.from('private_profiles')","s.from('family_relationships')","s.from('character_questionnaire_drafts')","s.from('market_listings')","s.from('token_ledger')","s.from('parallel_responses')","s.from('parallel_state')"],'aucune source export obsolète')
 
+    # Aucun diagnostic SQL ou Edge non contrôlé ne peut être envoyé dans un
+    # export JSON local ou affiché lors d'un refus de suppression de compte.
+    require(runtime,[
+        'function safeError(error)',
+        "typeof error?.code==='string'",
+        "code==='42501'",
+        "code==='PGRST301'",
+        "code==='EXPORT_TOO_LARGE'",
+        "if(error)throw error;",
+        "setStatus(status,'Suppression impossible pour le moment. Consultez le Centre Vie privée.','error');",
+    ],'confidentialité des diagnostics export/suppression')
+    forbid(runtime,[
+        "String(error?.message||'Erreur serveur')",
+        "setStatus(status,data?.error||",
+        "console.warn('[SINJIRA delete account]',error)",
+    ],'aucune erreur privée brute dans export et suppression')
+
     if 'data-account-page="settings-v69"' not in page and 'data-account-page="settings-v70"' not in page:
         raise AssertionError('page paramètres: version settings V69+ absente')
     require(page,[
         'sinjira-account.js?v=24.4.69','Les comptes propriétaire et administrateur sont protégés',
-        'L’export indique explicitement s’il est complet','v24-data-control.js?v=24.4.83',
+        'L’export indique explicitement s’il est complet','v24-data-control.js?v=24.4.84-private-export',
         'Points SINJIRA™','Rencontres/Safe Meet','Centre Vie privée'
     ],'page paramètres V24.4.83')
 
