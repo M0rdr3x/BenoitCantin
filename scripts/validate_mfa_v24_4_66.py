@@ -50,9 +50,21 @@ def main():
         "security_resolve_connection_challenge_mfa",
         "aal?.currentLevel!=='aal2'",
         "signOut({scope:'local'})",
-        'PENDING_CHALLENGE_STORAGE'
+        'PENDING_CHALLENGE_STORAGE',
+        'if(verifying||navigationBlocked||submit?.disabled)return',
+        'verifiedSession?.access_token',
+        "aal?.currentLevel!=='aal2'",
+        'validChallengeId(challengeId)',
+        'strongDeviceKey(deviceKey)',
+        'result.error===null',
+        'La déconnexion locale n’a pas pu être confirmée'
     ],'challenge MFA')
-    forbid(challenge,['factorSelect.innerHTML'], 'challenge MFA')
+    forbid(challenge,[
+        'factorSelect.innerHTML',
+        "console.warn('[SINJIRA MFA challenge]',error)",
+        "console.warn('[SINJIRA security MFA approval]',error)",
+        "await s.auth.signOut();",
+    ], 'challenge MFA non vérifié, fuite de diagnostics ou logout global')
 
     require(security,[
         'MAX_TOTP_FACTORS=10',
@@ -76,7 +88,11 @@ def main():
         "signOut({scope:'local'})"
     ],'Bouclier au login')
 
-    require(page,['data-mfa-challenge-form','data-mfa-factor','sinjira-mfa-v24-4-66.js?v=24.4.98'],'page challenge MFA')
+    require(page,['data-mfa-challenge-form','data-mfa-factor','sinjira-mfa-v24-4-66.js?v=24.4.100'],'page challenge MFA')
+    forbid(page,[
+        'sinjira-mfa-v24-4-66.js?v=24.4.98',
+        'sinjira-mfa-v24-4-66.js?v=24.4.99',
+    ], 'script MFA obsolète interdit')
     require(login_page,['sinjira-auth-pages.js?v=24.4.98'],'page connexion Bouclier')
     # Le runtime de sécurité continue d’évoluer après V24.4.66; ce contrat vérifie
     # le bon fichier et la promesse utilisateur, sans figer les autres composants.
