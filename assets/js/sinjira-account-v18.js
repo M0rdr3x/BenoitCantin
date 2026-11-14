@@ -1,4 +1,5 @@
 import {getSupabase,requireUser,escapeHtml,formatDate} from './sinjira-supabase.js';
+import {safeNovelHref} from './sinjira-novel-href.mjs';
 const page=document.body.dataset.v18Page||'',status=document.querySelector('[data-v18-status]');
 function st(msg,type='info'){if(!status)return;status.textContent=msg;status.dataset.statusType=type;status.hidden=false}
 const rows=v=>Array.isArray(v)?v:[];
@@ -17,7 +18,7 @@ async function reads(user){
   const novels=rows(novelRes.data),lib=rows(libRes.data),m=new Map(lib.map(x=>[x.novel_id,x]));
   const box=document.querySelector('[data-reader-library]');
   if(!box)return;
-  box.innerHTML=novels.map(n=>{const r=m.get(n.id),progress=Number(r?.progress_percent||0);return `<article class="reader-book-card"><span class="eyebrow">${escapeHtml(n.volume_label||'SINJIRA')}</span><h2>${escapeHtml(n.title)}</h2><p>${escapeHtml(n.description||'')}</p><div class="v19-progress-track"><span style="width:${Math.max(0,Math.min(100,progress))}%"></span></div><p>${r?`Progression mémorisée : ${progress}%${r.last_page?` · page ${r.last_page}`:''}`:'Pas encore ouvert avec ce compte.'}</p><div class="hero-actions">${n.demo_path?`<a class="btn btn-primary" href="${escapeHtml(n.demo_path)}">${r?.last_page>1?'Continuer ma lecture':'Lire la démo'}</a>`:''}<a class="btn btn-secondary" href="${escapeHtml(n.public_path||'/projets/sinjira/romans/')}">Page du roman</a></div></article>`}).join('')||'<p>Aucun roman disponible.</p>';
+  box.innerHTML=novels.map(n=>{const r=m.get(n.id),progress=Number(r?.progress_percent||0);const demoHref=safeNovelHref(n.demo_path,location.origin),publicHref=safeNovelHref(n.public_path,location.origin)||'/projets/sinjira/romans/';return `<article class="reader-book-card"><span class="eyebrow">${escapeHtml(n.volume_label||'SINJIRA')}</span><h2>${escapeHtml(n.title)}</h2><p>${escapeHtml(n.description||'')}</p><div class="v19-progress-track"><span style="width:${Math.max(0,Math.min(100,progress))}%"></span></div><p>${r?`Progression mémorisée : ${progress}%${r.last_page?` · page ${r.last_page}`:''}`:'Pas encore ouvert avec ce compte.'}</p><div class="hero-actions">${demoHref?`<a class="btn btn-primary" href="${escapeHtml(demoHref)}">${r?.last_page>1?'Continuer ma lecture':'Lire la démo'}</a>`:''}<a class="btn btn-secondary" href="${escapeHtml(publicHref)}">Page du roman</a></div></article>`}).join('')||'<p>Aucun roman disponible.</p>';
 }
 
 async function comments(user){

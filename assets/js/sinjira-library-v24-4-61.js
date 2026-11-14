@@ -1,7 +1,22 @@
-import {getSupabase,requireUser,escapeHtml,setStatus,projectStatusLabel} from './sinjira-supabase.js';
+import {getSupabase,requireUser,escapeHtml,setStatus,projectStatusLabel,SINJIRA_CONFIG} from './sinjira-supabase.js';
+import {resolveDocumentUrl} from './sinjira-document-url-policy.mjs';
 
 const status=document.querySelector('[data-library-status]');
 const rows=value=>Array.isArray(value)?value:[];
+function safeLibraryHref(value){
+  // Des attributs HTML échappés n'empêchent pas les protocoles javascript:.
+  if(typeof value!=='string'||value.length>2048||!value.startsWith('/')||
+     value.startsWith('//')||/[\u0000-\u0020\u007f\\]/.test(value))return '';
+  try{
+    const target=new URL(value,location.origin);
+    const rawPath=value.split(/[?#]/,1)[0];
+    // Refuser /../ et ses variantes percent-encodées, normalisées par URL.
+    if(target.origin!==location.origin||target.pathname!==rawPath||
+       target.username||target.password)return '';
+    return target.pathname+target.search+target.hash;
+  }catch{return ''}
+}
+
 const BOOK_ONE_SLUG='sinjira-livre-01-la-cendre-du-jugement';
 
 function cover(project){
@@ -39,6 +54,7 @@ function renderProjects(projects,documents,accessRows,pendingRows,isOwner,isAdmi
     const waiting=pending.has(project.id);
     const tester=isOwner||isAdmin||right?.access_level==='tester';
     const canRequest=!isOwner&&!isAdmin&&!tester&&project.allow_tester_requests;
+    const playHref=safeLibraryHref(project.play_path);
     return `<article class="library-project-card">
       <div class="library-project-art"><img src="${escapeHtml(cover(project))}" alt=""></div>
       <div class="library-project-body">
@@ -46,7 +62,7 @@ function renderProjects(projects,documents,accessRows,pendingRows,isOwner,isAdmi
         <h2>${escapeHtml(project.name)}</h2>
         <p>${escapeHtml(project.description||'')}</p>
         <div class="library-project-stats"><span>${docCount} document${docCount===1?'':'s'} accessible${docCount===1?'':'s'}</span><span>${escapeHtml(project.visibility==='restricted'?'Accès restreint':project.visibility==='account'?'Compte requis':'Page publique')}</span></div>
-        <div class="hero-actions"><a class="btn btn-primary" href="/compte/projet.html?slug=${encodeURIComponent(project.slug)}">Ouvrir l’espace</a>${project.play_path?`<a class="btn btn-secondary" href="${escapeHtml(project.play_path)}">Jouer</a>`:''}${canRequest?`<button class="btn btn-secondary" type="button" data-v2461-request-tester="${project.id}" ${waiting?'disabled':''}>${waiting?'Demande testeur en attente':'Demander accès testeur'}</button>`:''}</div>
+        <div class="hero-actions"><a class="btn btn-primary" href="/compte/projet.html?slug=${encodeURIComponent(project.slug)}">Ouvrir l’espace</a>${playHref?`<a class="btn btn-secondary" href="${escapeHtml(playHref)}">Jouer</a>`:''}${canRequest?`<button class="btn btn-secondary" type="button" data-v2461-request-tester="${project.id}" ${waiting?'disabled':''}>${waiting?'Demande testeur en attente':'Demander accès testeur'}</button>`:''}</div>
       </div>
     </article>`;
   }).join('')||'<div class="notice"><strong>Aucun espace disponible pour ce compte.</strong></div>';
@@ -59,13 +75,14 @@ function renderReads(libraryRows){
     const novel=row.sinjira_novels;
     if(!novel)return '';
     const progress=Math.max(0,Math.min(100,Number(row.progress_percent||0)));
+    const demoHref=safeLibraryHref(novel.demo_path),publicHref=safeLibraryHref(novel.public_path)||'/projets/sinjira/romans/';
     return `<article class="reader-book-card">
       <span class="eyebrow">Lecture suivie</span>
       <h2>${escapeHtml(novel.title||'Roman SINJIRA™')}</h2>
       <p>${escapeHtml(novel.description||'')}</p>
       <div class="v19-progress-track"><span style="width:${progress}%"></span></div>
       <p>Progression : ${progress}%${row.last_page?` · page ${Number(row.last_page)}`:''}</p>
-      <div class="hero-actions">${novel.demo_path?`<a class="btn btn-primary" href="${escapeHtml(novel.demo_path)}">${progress>0?'Continuer la lecture':'Lire la démo'}</a>`:''}<a class="btn btn-secondary" href="${escapeHtml(novel.public_path||'/projets/sinjira/romans/')}">Page du roman</a></div>
+      <div class="hero-actions">${demoHref?`<a class="btn btn-primary" href="${escapeHtml(demoHref)}">${progress>0?'Continuer la lecture':'Lire la démo'}</a>`:''}<a class="btn btn-secondary" href="${escapeHtml(publicHref)}">Page du roman</a></div>
     </article>`;
   }).join('')||'<div class="notice"><strong>Aucun roman suivi.</strong><p>Les romans ajoutés à votre bibliothèque apparaîtront ici avec leur progression.</p></div>';
 }
@@ -80,7 +97,13 @@ async function openFullNovel(button){
       setStatus(status,message,data?.code==='FILE_NOT_READY'?'info':'error');
       return;
     }
-    window.open(data.url,'_blank','noopener');
+    if(data.protected!==true){setStatus(status,'Le serveur a refusé la livraison privée du roman.','error');return}
+    const destination=resolveDocumentUrl(data.url,{
+      siteOrigin:location.origin,storageOrigin:SINJIRA_CONFIG.supabaseUrl,
+      protectedDocument:true
+    });
+    if(!destination){setStatus(status,'Le serveur a renvoyé un lien privé non autorisé.','error');return}
+    window.open(destination,'_blank','noopener,noreferrer');
     setStatus(status,'Édition intégrale ouverte avec un lien privé temporaire de 10 minutes.','success');
   }finally{
     if(button)button.disabled=false;
