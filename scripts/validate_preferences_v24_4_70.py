@@ -86,7 +86,14 @@ def main():
         'name="allow_ai_personal_data"',
         'disabled="" name="allow_ai_personal_data"'
     ],'page paramètres')
-    if 'v24-data-control.js?v=24.4.70' not in page and 'v24-data-control.js?v=24.4.83' not in page:
+    # Le module V24.4.84 masque les diagnostics privés lors des exports
+    # et refus de suppression. Conserver les versions historiques du contrat
+    # tout en reconnaissant l'URL de cache sécurisée actuelle.
+    if not any(marker in page for marker in (
+        'v24-data-control.js?v=24.4.70',
+        'v24-data-control.js?v=24.4.83',
+        'v24-data-control.js?v=24.4.84-private-export',
+    )):
         raise AssertionError('page paramètres: runtime contrôle des données V70+ absent')
 
     require(ledger,[
