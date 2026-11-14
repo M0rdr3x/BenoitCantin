@@ -39,18 +39,38 @@ document.addEventListener('click',async event=>{
   const button=event.target.closest?.('[data-device-lost]');
   if(!button)return;
   const id=String(button.dataset.deviceLost||'');
-  if(!id)return;
-  if(!globalThis.confirm('Déclarer cet appareil perdu ? SINJIRA retirera sa confiance, désactivera ses notifications de sécurité et fermera les autres sessions du compte.'))return;
+  // L'ID reste une donnée de DOM, jamais une preuve d'autorisation :
+  // la RPC vérifie impérativement l'appartenance de l'appareil au compte.
+  if(!/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id))return;
+  if(button.disabled)return;
+  if(!globalThis.confirm('Déclarer cet appareil perdu ? SINJIRA retirera sa confiance, désactivera ses notifications de sécurité et tentera de fermer les autres sessions du compte.'))return;
   button.disabled=true;
+  let deviceRevoked=false;
   try{
-    const {error}=await s.rpc('security_report_lost_device',{p_device_id:id});
+    const {data,error}=await s.rpc('security_report_lost_device',{p_device_id:id});
     if(error)throw error;
-    await s.auth.signOut({scope:'others'});
-    report('Appareil déclaré perdu. Sa confiance et ses notifications ont été révoquées; les autres sessions ont été fermées.','success');
+    // Un résultat sans erreur n'est pas une preuve de révocation. Le serveur
+    // indique explicitement qu'une révocation Auth reste nécessaire.
+    if(data?.ok!==true || data?.session_revocation_required!==true){
+      throw new Error('DEVICE_REVOKE_UNCONFIRMED');
+    }
+    deviceRevoked=true;
+    const signOutResult=await s.auth.signOut({scope:'others'});
+    if(!signOutResult || signOutResult.error!==null){
+      throw new Error('OTHER_SESSIONS_NOT_REVOKED');
+    }
+    report('Appareil déclaré perdu. Sa confiance et ses notifications ont été révoquées; la déconnexion des autres sessions a été confirmée.','success');
     setTimeout(()=>location.reload(),900);
   }catch(error){
-    console.warn('[SINJIRA lost device]',error);
-    report(error?.message==='AAL2_REQUIRED'?'Vérification MFA requise avant de déclarer cet appareil perdu.':'Impossible de terminer la protection de cet appareil pour le moment.','error');
+    // Ne pas exposer les erreurs Supabase/Postgres/JWT dans la console.
+    console.warn('[SINJIRA lost device] opération de protection incomplète.');
+    if(deviceRevoked){
+      report('Cet appareil a été révoqué, mais la fermeture des autres sessions n’a pas pu être confirmée. Utilisez « Déconnecter tous les appareils » dans Ma sécurité et vérifiez votre compte.','error');
+    }else{
+      report(error?.message==='AAL2_REQUIRED'
+        ? 'Vérification MFA requise avant de déclarer cet appareil perdu.'
+        : 'La révocation de cet appareil n’a pas été confirmée. Réessayez depuis Ma sécurité.','error');
+    }
     button.disabled=false;
   }
 });
