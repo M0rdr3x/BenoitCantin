@@ -39,6 +39,10 @@ def run(p,engine,url):
         blocked=install_isolation(page,image_only_pages=(4,))
         page.goto(url,wait_until="load")
         ready(page)
+        # V86 : l'ouverture seule ne certifie aucune nouvelle sauvegarde.
+        initial_status=page.locator("#reader-position-status").inner_text()
+        assert "Nouvelle sauvegarde non encore confirmée" in initial_status,initial_status
+        assert "Enregistrement automatique actif" not in initial_status,initial_status
         assert snapshot(page)["scroll"]==0
 
         # V85 : avancer par le doigt doit enregistrer la portion d'écran
@@ -87,6 +91,13 @@ def run(p,engine,url):
         rejected=install_isolation(denied)
         denied.goto(url,wait_until="load")
         ready(denied,3,True)
+        # V86 : le stockage refusé ne doit pas être annoncé fonctionnel
+        # pendant les instants précédant le premier changement de page.
+        denied_initial=denied.locator("#reader-position-status").inner_text()
+        assert "Nouvelle sauvegarde non encore confirmée" in denied_initial,denied_initial
+        assert "Enregistrement automatique actif" not in denied_initial,denied_initial
+        assert "sans écraser une progression" not in denied.locator(
+            "#reader-position-help").inner_text()
         # En mode pages d'écran, le bouton Suivante avance d'abord une
         # portion de texte. Aller explicitement à la page PDF suivante pour
         # exercer changePage() et la notification de stockage refusé.
@@ -100,8 +111,8 @@ def run(p,engine,url):
         assert denied.evaluate("""key=>localStorage.getItem(key)""",SPOT_KEY) is None
         assert not rejected,rejected
         denied_context.close()
-        print(f"PASS {engine} V85: sauvegarde automatique après swipe et reprise "
-              "au rechargement; refus du stockage annoncé sans fausse réussite")
+        print(f"PASS {engine} V85/V86: sauvegarde automatique après swipe et reprise "
+              "au rechargement; statut initial non certifié et refus du stockage honnête")
     finally:
         browser.close()
 
