@@ -14,7 +14,7 @@ from test_sinjira_liseuse_mobile_v54 import serve_fixture
 from test_sinjira_liseuse_real_page_v57 import install_isolation, snapshot
 
 
-def native_swipe(page, cdp, direction="left", vertical=False):
+def native_swipe(page, cdp, direction="left", vertical=False, duration_ms=84):
     rect = page.locator("#reader-viewer").bounding_box()
     assert rect is not None, "V65: zone de lecture invisible"
     left = max(5, rect["x"] + 8)
@@ -51,7 +51,9 @@ def native_swipe(page, cdp, direction="left", vertical=False):
             round(x1 + (x2 - x1) * t),
             round(y1 + (y2 - y1) * t),
         )])
-        page.wait_for_timeout(14)
+        # V80 : la durée est réellement écoulée entre les messages CDP,
+        # et non seulement inscrite dans un événement Javascript simulé.
+        page.wait_for_timeout(max(1, duration_ms / 6))
     send("touchEnd", [])
     page.wait_for_timeout(90)
     return {"from": (x1, y1), "to": (x2, y2)}
@@ -116,6 +118,19 @@ def run(playwright, url):
             {"page": backward["page"], "scroll": backward["scroll"]},
         )
 
+        # V80 : vérifier sur la vraie page HTML qu'un glissement volontaire
+        # de 1,2 à 1,5 seconde fonctionne, sans fausse transition PDF.
+        native_swipe(page, cdp, direction="left", duration_ms=1200)
+        slow_forward = snapshot(page)
+        assert slow_forward["page"] == 3 and slow_forward["scroll"] > 0, (
+            "V80: geste gauche lent natif n'avance pas l'écran", slow_forward
+        )
+        native_swipe(page, cdp, direction="right", duration_ms=1500)
+        slow_backward = snapshot(page)
+        assert slow_backward["page"] == 3 and slow_backward["scroll"] <= 3, (
+            "V80: geste droit lent natif ne revient pas", slow_backward
+        )
+
         # Un geste vertical est laissé au défilement natif et ne tourne
         # pas une page PDF source.
         native_swipe(page, cdp, vertical=True)
@@ -153,6 +168,19 @@ def run(playwright, url):
             "V65: double changement PDF en mode défilement libre"
         )
 
+        # V80 : la navigation lente fonctionne aussi en PDF, et une
+        # trajectoire trop longue est rejetée sans seconde page involontaire.
+        native_swipe(page, cdp, direction="right", duration_ms=1250)
+        page.wait_for_function("""()=>Number(document.querySelector('#reader-page').value)===3""")
+        assert snapshot(page)["page"] == 3, "V80: retour PDF lent impossible"
+        native_swipe(page, cdp, direction="left", duration_ms=1550)
+        page.wait_for_function("""()=>Number(document.querySelector('#reader-page').value)===4""")
+        assert snapshot(page)["page"] == 4, "V80: avance PDF lente impossible"
+        native_swipe(page, cdp, direction="left", duration_ms=1900)
+        assert snapshot(page)["page"] == 4, (
+            "V80: un mouvement > 1800 ms a tourné une page PDF à tort"
+        )
+
         evidence = page.evaluate("window.__v65Trusted")
         assert any(e["type"] == "touchstart" and e["trusted"] for e in evidence)
         assert any(e["type"] == "touchend" and e["trusted"] for e in evidence)
@@ -162,8 +190,9 @@ def run(playwright, url):
         )
         assert not page_errors, page_errors
         assert not blocked, blocked
-        print("PASS chromium: Input.dispatchTouchEvent natif isTrusted; "
-              "écran avant/arrière, vertical, 320 px, défilement libre sans double PDF")
+        print("PASS chromium V80: Input.dispatchTouchEvent isTrusted; "
+              "écrans et PDF gauche/droite à vitesse normale et 1,2-1,55 s, "
+              "rejet > 1,8 s, vertical, 320 px et absence de double page")
         context.close()
     finally:
         browser.close()

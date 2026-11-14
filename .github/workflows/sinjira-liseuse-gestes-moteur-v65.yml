@@ -35,9 +35,9 @@ jobs:
           node --check assets/js/sinjira-liseuse-touch-v52.mjs
           node --check assets/js/sinjira-liseuse-reflow-v53.mjs
           python3 -m py_compile tests/e2e/test_sinjira_liseuse_native_touch_v65.py
-      - name: Régressions 68 tests de lecture
+      - name: Régressions Node du lecteur V52/V53 (nombre actualisé automatiquement)
         run: node --test tests/sinjira-liseuse-reflow-v53.test.mjs tests/sinjira-liseuse-touch-v52.test.mjs
-      - name: Émettre les événements tactiles du moteur dans la vraie liseuse
+      - name: Gestes natifs Chromium V80 (rapides, lents et limites)
         run: |
           python3 -m venv .venv-reader-v65
           . .venv-reader-v65/bin/activate
