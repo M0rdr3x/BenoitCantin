@@ -216,6 +216,8 @@ jobs:
           echo "Fonctions retirées physiquement présentes avant synchronisation: $retired_found" >> "$GITHUB_STEP_SUMMARY"
           test "$missing" -eq 0
 
+      # SUPABASE_DB_PASSWORD est transmis exclusivement via l'environnement
+      # de l'étape : ne jamais le placer dans argv (--password) ni dans les logs.
       - name: Lier le projet de production dans le workspace protégé
         if: ${{ github.event_name == 'workflow_dispatch' && steps.auth.outputs.ready == 'true' }}
         env:
@@ -224,7 +226,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          (cd .prod-workspace && supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD")
+          (cd .prod-workspace && supabase link --project-ref "$PROJECT_ID")
 
       - name: Exporter l'historique exact des migrations de production
         if: ${{ github.event_name == 'workflow_dispatch' && steps.auth.outputs.ready == 'true' }}
@@ -281,7 +283,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          (cd .prod-workspace && supabase migration list --linked --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-migrations-before.txt
+          (cd .prod-workspace && supabase migration list --linked) | tee /tmp/sinjira-migrations-before.txt
           echo '### Historique Supabase avant synchronisation' >> "$GITHUB_STEP_SUMMARY"
           echo '```text' >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/sinjira-migrations-before.txt >> "$GITHUB_STEP_SUMMARY"
@@ -295,7 +297,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          (cd .prod-workspace && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-dry-run.txt
+          (cd .prod-workspace && supabase db push --linked --dry-run) | tee /tmp/sinjira-dry-run.txt
           echo '### Dry-run base de données depuis le workspace protégé' >> "$GITHUB_STEP_SUMMARY"
           echo '```text' >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/sinjira-dry-run.txt >> "$GITHUB_STEP_SUMMARY"
@@ -381,10 +383,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          (cd .prod-workspace && supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD")
+          (cd .prod-workspace && supabase link --project-ref "$PROJECT_ID")
           (cd .prod-workspace && supabase db lint --linked --schema public --level error --fail-on error) | tee /tmp/sinjira-db-lint-approval.txt
-          (cd .prod-workspace && supabase migration list --linked --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-migrations-approval.txt
-          (cd .prod-workspace && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-dry-run-approval.txt
+          (cd .prod-workspace && supabase migration list --linked) | tee /tmp/sinjira-migrations-approval.txt
+          (cd .prod-workspace && supabase db push --linked --dry-run) | tee /tmp/sinjira-dry-run-approval.txt
 
       - name: Appliquer les migrations de production depuis le workspace protégé
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}
@@ -394,7 +396,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          (cd .prod-workspace && supabase db push --linked --password "$SUPABASE_DB_PASSWORD")
+          (cd .prod-workspace && supabase db push --linked)
 
       - name: Auditer les fonctions SQL après migrations
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}
@@ -479,8 +481,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          (cd .prod-workspace && supabase migration list --linked --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-migrations-after.txt
-          (cd .prod-workspace && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-dry-run-after.txt
+          (cd .prod-workspace && supabase migration list --linked) | tee /tmp/sinjira-migrations-after.txt
+          (cd .prod-workspace && supabase db push --linked --dry-run) | tee /tmp/sinjira-dry-run-after.txt
           echo '### Vérification finale Supabase depuis le workspace protégé' >> "$GITHUB_STEP_SUMMARY"
           echo '```text' >> "$GITHUB_STEP_SUMMARY"
           cat /tmp/sinjira-migrations-after.txt >> "$GITHUB_STEP_SUMMARY"
