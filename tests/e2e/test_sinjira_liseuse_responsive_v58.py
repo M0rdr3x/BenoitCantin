@@ -280,18 +280,60 @@ def run(playwright, engine, origin):
         result=swipe(page,-130)
         assert result["consumed"] and snapshot(page)["page"]==3,result
 
-        # Focus lecture : même avec les panneaux secondaires cachés, il doit
-        # être possible de sortir via le bouton et d'utiliser la navigation.
-        page.locator("#reader-focus").click()
+        # V88 : le mode lecture plein écran change la hauteur du conteneur
+        # sans événement window.resize. Conserver le CARACTÈRE LU lors de
+        # l'activation et de la désactivation, pas seulement le numéro PDF.
+        page.locator("#reader-viewer").scroll_into_view_if_needed()
+        focus_start=page.evaluate("""async()=>{
+          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.10.1');
+          const v=document.querySelector('#reader-viewer');
+          const t=document.querySelector('#reader-text');
+          v.scrollTop=Math.min(1400,v.scrollHeight-v.clientHeight-400);
+          await new Promise(resolve=>requestAnimationFrame(resolve));
+          const anchor=mod.captureReaderTextAnchor({viewer:v,text:t});
+          window.__v88BeforeFocus=anchor;
+          return {captured:Boolean(anchor),scroll:v.scrollTop};
+        }""")
+        assert focus_start["captured"] and focus_start["scroll"]>200,focus_start
+        page.locator("#reader-focus").evaluate("(node)=>node.click()")
         assert page.locator("body").evaluate(
             "(node)=>node.classList.contains('reader-focus-mode')"
         ),"Mode lecture plein écran inaccessible"
         focused=geometry(page)
         assert focused["viewerHeight"]>=280,focused
-        page.locator("#reader-focus").click()
+        page.wait_for_function("""()=>{
+          const a=window.__v88BeforeFocus;
+          if(!a?.node?.isConnected)return false;
+          const v=document.querySelector('#reader-viewer');
+          const r=document.createRange();r.setStart(a.node,a.offset);
+          r.setEnd(a.node,a.offset+1);
+          const rect=Array.from(r.getClientRects()).find(box=>box.height>0);
+          return Boolean(rect)&&Math.abs(
+            rect.top-v.getBoundingClientRect().top-a.relativeY)<35;
+        }""",timeout=7000)
+        focus_during=page.evaluate("""async()=>{
+          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.10.1');
+          const v=document.querySelector('#reader-viewer');
+          const t=document.querySelector('#reader-text');
+          const anchor=mod.captureReaderTextAnchor({viewer:v,text:t});
+          window.__v88DuringFocus=anchor;
+          return {captured:Boolean(anchor),scroll:v.scrollTop};
+        }""")
+        assert focus_during["captured"],focus_during
+        page.locator("#reader-focus").evaluate("(node)=>node.click()")
         assert not page.locator("body").evaluate(
             "(node)=>node.classList.contains('reader-focus-mode')"
         ),"Impossible de quitter le plein écran"
+        page.wait_for_function("""()=>{
+          const a=window.__v88DuringFocus;
+          if(!a?.node?.isConnected)return false;
+          const v=document.querySelector('#reader-viewer');
+          const r=document.createRange();r.setStart(a.node,a.offset);
+          r.setEnd(a.node,a.offset+1);
+          const rect=Array.from(r.getClientRects()).find(box=>box.height>0);
+          return Boolean(rect)&&Math.abs(
+            rect.top-v.getBoundingClientRect().top-a.relativeY)<35;
+        }""",timeout=7000)
 
         # V61 : les libellés d'aide changent quand on quitte le mode paginé.
         page.locator("#reader-screens-enabled").uncheck()
