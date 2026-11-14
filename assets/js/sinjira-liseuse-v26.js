@@ -65,8 +65,22 @@ function message(value,type='info'){
 }
 function positionNotice(value,type='info'){
   const node=$('reader-position-status');
-  node.textContent=value;
-  node.dataset.type=type;
+  // V87 : les positions sont écrites au défilement. Ne pas réannoncer à
+  // VoiceOver/TalkBack une phrase identique à chaque événement scroll.
+  if(node.textContent!==value)node.textContent=value;
+  if(node.dataset.type!==type)node.dataset.type=type;
+}
+function automaticPositionNotice(savedLocally){
+  // Une sauvegarde locale réussie n'est PAS une confirmation serveur.
+  if(savedLocally){
+    positionNotice(isFull
+      ?'Position enregistrée sur cet appareil. Synchronisation du compte à confirmer.'
+      :'Position enregistrée sur cet appareil.', 'success');
+  }else{
+    positionNotice(isFull
+      ?'Sauvegarde locale indisponible : synchronisation du compte à confirmer.'
+      :'Position non enregistrée : autorisez le stockage du navigateur pour reprendre ici.', 'warning');
+  }
 }
 function savePreferences(){
   // Seules les préférences de présentation sont mémorisées, jamais le texte privé.
@@ -544,9 +558,8 @@ function bindControls(){
     clearTimeout(state.scrollTimer);state.scrollTimer=null;
     const viewer=$('reader-viewer');
     state.positionRatio=ratioFromScroll(viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight);
-    if(!persist({syncCloud:true}))positionNotice(isFull
-      ?'Sauvegarde locale indisponible : synchronisation du compte à vérifier.'
-      :'Enregistrement automatique indisponible dans ce navigateur.','warning');
+    // V87 : après un écran tourné, annoncer le résultat réel de persist().
+    automaticPositionNotice(persist({syncCloud:true}));
   });
   $('reader-viewer').addEventListener('scroll',()=>{
     if(!state.pdf||state.restoringScroll)return;
@@ -556,11 +569,9 @@ function bindControls(){
       if(!state.pdf||state.restoringScroll)return;
       const viewer=$('reader-viewer');
       state.positionRatio=ratioFromScroll(viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight);
-      if(!persist({syncCloud:true})){
-        positionNotice(isFull
-          ?'Sauvegarde locale indisponible : tentative de synchronisation sur votre compte en cours.'
-          :'Enregistrement automatique indisponible dans ce navigateur.','warning');
-      }
+      // V87 : même résultat honnête en défilement libre ou en PDF.
+      // positionNotice évite les annonces vocales répétées au même statut.
+      automaticPositionNotice(persist({syncCloud:true}));
     },650);
   },{passive:true});
   $('reader-previous').addEventListener('click',()=>changePage(state.page-1));
