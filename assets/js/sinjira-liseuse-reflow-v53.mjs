@@ -304,6 +304,10 @@ export function bindReaderScreenMode({
       gesture.nestedHorizontalScrolled=true;
   };
   const onTouchCancel=()=>{gesture=null};
+  // V91 : un changement d'application, une fermeture d'onglet ou la perte
+  // de focus interrompent un balayage même sans événement touchcancel.
+  // Ne pas déclencher une page au retour à l'écran.
+  const onVisibilityChange=()=>{if(document.hidden)onTouchCancel()};
   const onTouchEnd=event=>{
     const start=gesture;gesture=null;
     if(!start||!isPaged()||isReaderViewportZoomed()||
@@ -462,6 +466,9 @@ export function bindReaderScreenMode({
   viewer.addEventListener('touchmove',onTouchMove,{capture:true,passive:true});
   viewer.addEventListener('touchcancel',onTouchCancel,{capture:true,passive:true});
   viewer.addEventListener('touchend',onTouchEnd,{capture:true,passive:false});
+  document.addEventListener('visibilitychange',onVisibilityChange);
+  window.addEventListener('blur',onTouchCancel);
+  window.addEventListener('pagehide',onTouchCancel);
   viewer.addEventListener('scroll',onScroll,{passive:true});
   previous.addEventListener('click',onPrev,true);
   next.addEventListener('click',onNext,true);
@@ -482,6 +489,9 @@ export function bindReaderScreenMode({
     viewer.removeEventListener('touchmove',onTouchMove,true);
     viewer.removeEventListener('touchcancel',onTouchCancel,true);
     viewer.removeEventListener('touchend',onTouchEnd,true);
+    document.removeEventListener('visibilitychange',onVisibilityChange);
+    window.removeEventListener('blur',onTouchCancel);
+    window.removeEventListener('pagehide',onTouchCancel);
     viewer.removeEventListener('scroll',onScroll);
     previous.removeEventListener('click',onPrev,true);
     next.removeEventListener('click',onNext,true);
