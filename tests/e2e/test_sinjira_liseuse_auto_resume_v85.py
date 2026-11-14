@@ -45,6 +45,26 @@ def run(p,engine,url):
         assert "Enregistrement automatique actif" not in initial_status,initial_status
         assert snapshot(page)["scroll"]==0
 
+        # V92 : la navigation Retour peut restaurer une page BFCache.
+        # Le module des repères de la démo NE doit pas être fermé par pagehide
+        # persisted=true, sans quoi ses boutons restent visibles mais inertes.
+        # Aucun réseau privé : événement navigateur synthétique.
+        resumed=page.evaluate("""()=>{
+          const hide=new Event('pagehide');
+          Object.defineProperty(hide,'persisted',{value:true});
+          window.dispatchEvent(hide);
+          const show=new Event('pageshow');
+          Object.defineProperty(show,'persisted',{value:true});
+          window.dispatchEvent(show);
+          document.querySelector('#reader-bookmark-add').click();
+          const marks=JSON.parse(localStorage.getItem(
+            'sinjira:liseuse:demo:marks:v28')||'[]');
+          return {page:Number(document.querySelector('#reader-page').value),
+            count:marks.filter(m=>m.kind==='bookmark'&&m.page===3).length,
+            contentVisible:!document.querySelector('#reader-content').hidden};
+        }""")
+        assert resumed["page"]==3 and resumed["count"]==1 and resumed["contentVisible"],resumed
+
         # V85 : avancer par le doigt doit enregistrer la portion d'écran
         # automatiquement, sans cliquer sur « Enregistrer ma position ».
         consumed=swipe(page,-130)
