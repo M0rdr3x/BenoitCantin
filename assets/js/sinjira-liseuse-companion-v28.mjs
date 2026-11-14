@@ -293,6 +293,10 @@ export function createReaderCompanion({
     renderMarks();
   }
   function focusMode(toggle){
+    // V88 : prévenir le moteur des écrans AVANT de modifier la hauteur du
+    // livre. Ainsi l'ancre du passage lu est mesurée dans l'ancien layout.
+    // Aucun texte ni position n'est envoyé hors du navigateur.
+    window.dispatchEvent(new Event('sinjira:reader-layout-will-change'));
     state.focus=Boolean(toggle);
     document.body.classList.toggle('reader-focus-mode',state.focus);
     $('reader-focus').setAttribute('aria-pressed',String(state.focus));
