@@ -62,6 +62,15 @@ le fichier workflow sur une branche non protégée pourrait retirer son garde.
      élevés** : 0 critique, 0 élevé, mais **16 modérés et 2 faibles**
      restent à analyser. Ce résultat décrit uniquement le graphe npm et
      ne prouve pas une absence de risque en exécution.
+   - Le 14 novembre 2026, `npm audit fix --package-lock-only`, exécuté
+     **sans scripts et sans secrets** sur une copie isolée du verrouillage
+     `27.19.0`, n'a **corrigé aucune vulnérabilité supplémentaire** :
+     16 modérées et 2 faibles subsistent, avec un SHA-256 identique.
+     Des conseils de npm suggèrent pour plusieurs chemins une régression
+     vers `netlify-cli@2.23.0` avec rupture de version majeure : cette
+     rétrogradation n'a pas été appliquée, car ses effets sur la compatibilité
+     et la sécurité ne sont pas établis. Examiner manuellement les avis
+     ou migrer vers un outillage moins exposé après tests indépendants.
    - La CI et le staging exécutent `npm audit --json --omit=dev` avec
      `scripts/validate_netlify_cli_audit.py`. **Tout avis élevé ou
      critique, toute absence de rapport valide ou toute erreur d'audit
