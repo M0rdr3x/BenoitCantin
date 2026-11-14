@@ -372,7 +372,9 @@ def run_browser(playwright, engine, origin):
 
         pdf_swipe = swipe(page, -130)
         assert pdf_swipe["page"] == before_pdf["page"] + 1, (before_pdf, pdf_swipe)
-        assert len(pdf_swipe["changes"]) == len(before_pdf["changes"]) + 1, pdf_swipe
+        # V97 : les deux taps précédents ont volontairement tourné
+        # deux pages source; ce balayage ne doit en ajouter qu'une.
+        assert len(pdf_swipe["changes"]) == len(pdf_taps["changes"]) + 1, pdf_swipe
 
         # Le choix du défilement libre reste disponible.
         page.evaluate("""() => {
