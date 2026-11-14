@@ -153,6 +153,24 @@ class Parser(HTMLParser):
         self.unnamed_buttons = 0
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        # Les navigateurs retiennent généralement le PREMIER attribut dupliqué,
+        # alors que dict(attrs) garde le DERNIER. Ne jamais laisser cette
+        # différence dissimuler une destination ou un script dangereux.
+        inspected = set(ACTIVE_URI_ATTRS.get(tag, ()))
+        if tag == 'meta':
+            inspected.update(('http-equiv', 'content'))
+        if tag == 'iframe':
+            inspected.add('srcdoc')
+        seen = set()
+        for attribute, _ in attrs:
+            if attribute in inspected:
+                if attribute in seen:
+                    self.unsafe_active_urls.append(f'{tag}[{attribute}]:duplicated')
+                seen.add(attribute)
+        # Toute balise base peut détourner les URL relatives, y compris les
+        # actions des formulaires; aucune page publique n'en a besoin.
+        if tag == 'base':
+            self.unsafe_active_urls.append('base:forbidden')
         d = dict(attrs)
         for attribute in ACTIVE_URI_ATTRS.get(tag, ()):
             raw_url = d.get(attribute)
@@ -446,6 +464,16 @@ def test_active_html_url_contract() -> list[str]:
         'input HTTP': '<input type="submit" formaction="http://example.org/receive">',
         'base HTTP': '<base href="http://example.org/">',
         'refresh HTTP': '<meta http-equiv="refresh" content="0;url=http://example.org/">',
+        'base HTTPS externe': '<base href="https://evil.invalid/">',
+        'base local': '<base href="/compte/">',
+        'base target': '<base target="_blank">',
+        'href dupliqué': '<a href="javascript:alert(1)" href="/compte/">x</a>',
+        'href dupliqué inoffensif': '<a href="/compte/" href="/compte/">x</a>',
+        'action dupliquée': '<form action="http://evil.invalid/" action="/compte/"></form>',
+        'formaction dupliquée': '<button formaction="javascript:alert(1)" formaction="/compte/">Go</button>',
+        'script dupliqué': '<script src="data:text/javascript,alert(1)" src="/assets/js/site.js"></script>',
+        'meta dupliquée': '<meta http-equiv="refresh" http-equiv="content-type" content="0;url=/compte/">',
+        'iframe srcdoc dupliqué': '<iframe srcdoc="&lt;script&gt;alert(1)&lt;/script&gt;" srcdoc="">',
     }
     for label, html in cases.items():
         parsed = Parser()
