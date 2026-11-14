@@ -38,6 +38,11 @@ jobs:
         run: python3 scripts/test_nova_nested_netlify_security.py
       - name: Vérifier la CSP stricte et l'absence de JavaScript inline sur les routes privées
         run: python3 scripts/test_private_route_csp_security.py
+      - name: Refuser les identités d'appareils Mon IA prévisibles et diagnostics privés
+        run: |
+          node --check assets/js/sinjira-personal-ai-v25.js
+          node --check scripts/test_personal_ai_device_key_security.cjs
+          node scripts/test_personal_ai_device_key_security.cjs
       - name: Valider les preuves Bash des déploiements Pages et Netlify
         run: python3 scripts/test_web_release_summary_shell.py
       - name: Vérifier les en-têtes privés et les anciens chemins Admin sans masquer les liens dangereux
