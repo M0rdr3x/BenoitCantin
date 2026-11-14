@@ -114,7 +114,7 @@ def inspect(source: str) -> list[str]:
     # Netlify lit NETLIFY_AUTH_TOKEN et NETLIFY_SITE_ID depuis l'environnement.
     # Un jeton en argument --auth est visible dans les arguments des processus.
     cli_commands = re.findall(
-        r'^\s*"\$RUNNER_TEMP/netlify-cli-27\.10\.2/node_modules/\.bin/netlify" deploy\b.*$',
+        r'^\s*"\$RUNNER_TEMP/netlify-cli-27\.19\.0/node_modules/\.bin/netlify" deploy\b.*$',
         source, re.MULTILINE,
     )
     if len(cli_commands) != 2:
