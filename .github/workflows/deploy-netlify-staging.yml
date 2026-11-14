@@ -73,7 +73,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/validate_netlify_cli_lock.py
-          cli_root="$RUNNER_TEMP/netlify-cli-27.10.2"
+          cli_root="$RUNNER_TEMP/netlify-cli-27.19.0"
           mkdir -p "$cli_root"
           cp "$GITHUB_WORKSPACE/tools/netlify-cli/package.json" "$cli_root/package.json"
           cp "$GITHUB_WORKSPACE/tools/netlify-cli/package-lock.json" "$cli_root/package-lock.json"
@@ -87,7 +87,7 @@ jobs:
           node - "$cli_root/node_modules/netlify-cli/package.json" <<'NODE'
           const fs = require('node:fs');
           const manifest = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
-          if (manifest.name !== 'netlify-cli' || manifest.version !== '27.10.2') {
+          if (manifest.name !== 'netlify-cli' || manifest.version !== '27.19.0') {
             throw new Error('Version Netlify CLI inattendue: refus du déploiement');
           }
           NODE
@@ -143,7 +143,7 @@ jobs:
           set -euo pipefail
           json="$(mktemp)"
           trap 'rm -f "$json"' EXIT
-          "$RUNNER_TEMP/netlify-cli-27.10.2/node_modules/.bin/netlify" deploy             --dir _preview_site             --no-build             --json             --message "SINJIRA staging preview $GITHUB_SHA" > "$json"
+          "$RUNNER_TEMP/netlify-cli-27.19.0/node_modules/.bin/netlify" deploy             --dir _preview_site             --no-build             --json             --message "SINJIRA staging preview $GITHUB_SHA" > "$json"
           python3 - "$json" "$EXPECTED_SITE_NAME" <<'PY'
           import json, os, re, sys
           from urllib.parse import urlparse
@@ -195,7 +195,7 @@ jobs:
           set -euo pipefail
           json="$(mktemp)"
           trap 'rm -f "$json"' EXIT
-          "$RUNNER_TEMP/netlify-cli-27.10.2/node_modules/.bin/netlify" deploy             --dir _site             --no-build             --json             --message "SINJIRA staging production-candidate $GITHUB_SHA" > "$json"
+          "$RUNNER_TEMP/netlify-cli-27.19.0/node_modules/.bin/netlify" deploy             --dir _site             --no-build             --json             --message "SINJIRA staging production-candidate $GITHUB_SHA" > "$json"
           python3 - "$json" "$EXPECTED_SITE_NAME" <<'PY'
           import json, os, re, sys
           from urllib.parse import urlparse
