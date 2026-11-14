@@ -54,6 +54,16 @@ def run(p,engine,url):
           return s?.page===3 && s.ratio>.005 && s.ratio<.95;
         }""",arg=SPOT_KEY,timeout=10000)
         saved=page.evaluate("""key=>JSON.parse(localStorage.getItem(key))""",SPOT_KEY)
+        # V87 : confirmation locale seulement APRÈS l'écriture réussie,
+        # et non lors de l'affichage initial. La synchronisation distante
+        # n'est jamais annoncée par le scénario fictif.
+        successful=page.locator("#reader-position-status")
+        page.wait_for_function("""()=>{
+          const s=document.querySelector('#reader-position-status');
+          return s.dataset.type==='success' &&
+                 s.textContent.includes('Position enregistrée sur cet appareil.');
+        }""",timeout=10000)
+        assert "compte" not in successful.inner_text(),successful.inner_text()
         page.reload(wait_until="load")
         ready(page)
         page.wait_for_function("""expected=>{
@@ -98,6 +108,18 @@ def run(p,engine,url):
         assert "Enregistrement automatique actif" not in denied_initial,denied_initial
         assert "sans écraser une progression" not in denied.locator(
             "#reader-position-help").inner_text()
+        # V87 : l'échec d'un swipe sur écran doit afficher un avertissement
+        # explicite, même si la navigation elle-même reste possible.
+        denied_swipe=swipe(denied,-130)
+        assert denied_swipe["consumed"],denied_swipe
+        denied.wait_for_function("""()=>{
+          const s=document.querySelector('#reader-position-status');
+          return s.dataset.type==='warning' &&
+                 s.textContent.includes('Position non enregistrée');
+        }""",timeout=10000)
+        assert denied.locator("#reader-position-status").get_attribute(
+            "data-type")=="warning"
+        assert snapshot(denied)["scroll"]>50
         # En mode pages d'écran, le bouton Suivante avance d'abord une
         # portion de texte. Aller explicitement à la page PDF suivante pour
         # exercer changePage() et la notification de stockage refusé.
@@ -111,8 +133,8 @@ def run(p,engine,url):
         assert denied.evaluate("""key=>localStorage.getItem(key)""",SPOT_KEY) is None
         assert not rejected,rejected
         denied_context.close()
-        print(f"PASS {engine} V85/V86: sauvegarde automatique après swipe et reprise "
-              "au rechargement; statut initial non certifié et refus du stockage honnête")
+        print(f"PASS {engine} V85/V86/V87: sauvegarde après swipe confirmée "
+              "sur cet appareil, reprise après rechargement, stockage refusé signalé")
     finally:
         browser.close()
 
