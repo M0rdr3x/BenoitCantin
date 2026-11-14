@@ -253,6 +253,13 @@ export function bindReaderTouchNavigation({
   viewer.addEventListener('touchmove',move,{passive:true});
   viewer.addEventListener('touchcancel',cancel,{passive:true});
   viewer.addEventListener('touchend',end,{passive:true});
+  // V91 : iOS/Android peuvent suspendre une application ou perdre le focus
+  // sans émettre touchcancel. Une reprise ne doit jamais tourner une page
+  // depuis une ancienne position de doigt.
+  const onVisibilityChange=()=>{if(globalThis.document?.hidden)cancel()};
+  globalThis.document?.addEventListener?.('visibilitychange',onVisibilityChange);
+  globalThis.window?.addEventListener?.('blur',cancel);
+  globalThis.window?.addEventListener?.('pagehide',cancel);
 
   const mobileBack=()=>{
     if(viewer.dataset?.readerLayout!=='screens'&&!previous.disabled)previous.click();
@@ -278,6 +285,9 @@ export function bindReaderTouchNavigation({
     viewer.removeEventListener('touchmove',move);
     viewer.removeEventListener('touchcancel',cancel);
     viewer.removeEventListener('touchend',end);
+    globalThis.document?.removeEventListener?.('visibilitychange',onVisibilityChange);
+    globalThis.window?.removeEventListener?.('blur',cancel);
+    globalThis.window?.removeEventListener?.('pagehide',cancel);
     mobilePrevious?.removeEventListener('click',mobileBack);
     mobileNext?.removeEventListener('click',mobileForward);
     observer?.disconnect();
