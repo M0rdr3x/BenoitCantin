@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
+from html.parser import HTMLParser
+import re
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -21,6 +23,31 @@ def forbid(text: str, markers: list[str], label: str) -> None:
     found = [m for m in markers if m in text]
     if found:
         raise AssertionError(f'{label}: marqueurs interdits: {found}')
+
+
+class ScriptSourceCollector(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.sources: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag == 'script':
+            self.sources.append(dict(attrs).get('src') or '')
+
+
+def require_fresh_security_script(page: str) -> None:
+    """Assurer une unique référence de module authentique, avec cache-bust non obsolète."""
+    parser = ScriptSourceCollector()
+    parser.feed(page)
+    parser.close()
+    candidates = [src for src in parser.sources if 'v24-security.js' in src]
+    if len(candidates) != 1:
+        raise AssertionError('interface sécurité sessions: module v24-security.js absent ou dupliqué')
+    match = re.fullmatch(r'\.\./assets/js/v24-security\.js\?v=(\d+)\.(\d+)\.(\d+)', candidates[0])
+    if not match:
+        raise AssertionError('interface sécurité sessions: URL du module de sécurité non canonique')
+    if tuple(map(int, match.groups())) < (24, 4, 69):
+        raise AssertionError('interface sécurité sessions: version obsolète du module TOTP')
 
 
 def main() -> int:
@@ -52,8 +79,9 @@ def main() -> int:
         'Déconnecter tous les appareils',
         'Déconnexion ordinaire limitée à l’appareil courant.',
         'sinjira-account.js?v=24.4.68',
-        'v24-security.js?v=24.4.69',
     ], 'interface sécurité sessions')
+
+    require_fresh_security_script(page)
 
     # Une ancienne URL de cache pourrait masquer la correction TOTP déployée.
     forbid(page, [
