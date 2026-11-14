@@ -73,7 +73,7 @@ async function registerContext(meta){
     if(error)throw error;
     return {registered,context:data};
   }catch(error){
-    console.warn('[SINJIRA security-context]',error?.message||error);
+    console.warn('[SINJIRA security-context] service indisponible.');
     return {registered,context:null};
   }
 }
@@ -187,13 +187,15 @@ async function createTravel(form){
 function confirmAction(message){return globalThis.confirm(message)}
 
 function friendlySecurityError(error){
-  const message=error?.message||String(error||'Erreur de sécurité.');
+  // Un diagnostic PostgreSQL peut contenir du SQL, des identifiants,
+  // des emails ou une partie du JWT. Ne jamais le renvoyer dans le DOM.
+  const message=typeof error?.message==='string'?error.message:'';
   if(message.includes('TRUST_CONFIRMATION_REQUIRED'))return 'Cet appareil doit d’abord être autorisé depuis un autre appareil déjà fiable.';
   if(message.includes('CURRENT_DEVICE_REQUIRED'))return 'Seul l’appareil que vous utilisez actuellement peut être marqué comme fiable.';
   if(message.includes('AAL2_REQUIRED'))return 'Une vérification MFA récente est requise pour modifier la confiance des appareils.';
   if(message.includes('SECURE_RANDOM_REQUIRED'))return 'Ce navigateur ne permet pas de générer un identifiant d’appareil sécurisé.';
   if(message.includes('SECURITY_RECORD_ID_INVALID'))return 'Identifiant de sécurité invalide. Actualisez le Centre de sécurité.';
-  return message;
+  return 'Le Centre de sécurité ne peut pas terminer cette opération. Réessayez ou vérifiez votre compte.';
 }
 
 async function boot(){
@@ -208,8 +210,40 @@ async function boot(){
     qs('[data-security-travel-form]')?.addEventListener('submit',async e=>{e.preventDefault();try{await createTravel(e.currentTarget);state=await loadState(meta,contextResult.context)}catch(err){status(friendlySecurityError(err),'error')}});
     qs('[data-security-refresh]')?.addEventListener('click',async()=>{try{state=await loadState(meta,contextResult.context);status('État de sécurité actualisé.','success')}catch(e){status(friendlySecurityError(e),'error')}});
     qs('[data-security-compromised]')?.addEventListener('click',async()=>{
-      if(!confirmAction('Révoquer les autres appareils SINJIRA et fermer leurs sessions ?'))return;
-      try{await rpc('security_compromise_account',{p_current_device_key:meta.device_key});await getSupabase().auth.signOut({scope:'others'});state=await loadState(meta,contextResult.context);status('Mesures d’urgence appliquées : autres appareils révoqués et autres sessions fermées.','success')}catch(e){status(friendlySecurityError(e),'error')}
+      const action=qs('[data-security-compromised]');
+      if(action?.disabled)return;
+      if(!confirmAction('Révoquer les autres appareils SINJIRA et tenter de fermer leurs sessions ?'))return;
+      if(action)action.disabled=true;
+      let devicesRevoked=false;
+      let sessionsClosed=false;
+      try{
+        const result=await rpc('security_compromise_account',{p_current_device_key:meta.device_key});
+        // Le backend rend {ok:true,revoked_devices:...}. Une RPC résolue
+        // avec data:null n'est pas une confirmation de protection.
+        if(result?.ok!==true)throw new Error('ACCOUNT_REVOCATION_UNCONFIRMED');
+        devicesRevoked=true;
+        const signOut=await getSupabase().auth.signOut({scope:'others'});
+        if(!signOut||signOut.error!==null)throw new Error('SESSION_REVOCATION_UNCONFIRMED');
+        sessionsClosed=true;
+        status('Mesures d’urgence confirmées : autres appareils révoqués et autres sessions fermées.','success');
+      }catch(error){
+        // Ne jamais annoncer des sessions fermées quand Supabase Auth échoue.
+        console.warn('[SINJIRA security center] protection du compte incomplète.');
+        status(devicesRevoked
+          ? 'Les autres appareils ont été révoqués, mais la fermeture de leurs sessions n’a pas été confirmée. Utilisez « Déconnecter tous les appareils » puis vérifiez votre compte.'
+          : 'La révocation des autres appareils n’a pas été confirmée. Vérifiez votre compte et réessayez.','error');
+      }finally{
+        if(action)action.disabled=false;
+      }
+      if(devicesRevoked){
+        try{
+          state=await loadState(meta,contextResult.context);
+        }catch{
+          status(sessionsClosed
+            ? 'Protection d’urgence confirmée, mais l’affichage ne peut pas être actualisé. Rechargez le Centre de sécurité pour vérifier.'
+            : 'Révocation des appareils confirmée, fermeture des sessions non confirmée et actualisation indisponible. Vérifiez votre compte.','error');
+        }
+      }
     });
 
     document.addEventListener('click',async e=>{
@@ -228,7 +262,7 @@ async function boot(){
     });
 
     status('Centre de sécurité prêt.','success');
-  }catch(error){console.error('[SINJIRA security center]',error);status(friendlySecurityError(error),'error')}
+  }catch(error){console.warn('[SINJIRA security center] initialisation indisponible.');status(friendlySecurityError(error),'error')}
 }
 
 boot();
