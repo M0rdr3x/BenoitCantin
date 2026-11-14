@@ -76,7 +76,9 @@ def inspect(source: str) -> list[str]:
         '          cli_root="$RUNNER_TEMP/netlify-cli-27.10.2"',
         '          cd "$cli_root"',
         "          npm install --no-save --ignore-scripts --no-audit --no-fund \\",
-        "            --userconfig=/dev/null --globalconfig=/dev/null \\",
+        '          : > "$cli_root/npm-user.conf"',
+        '          : > "$cli_root/npm-global.conf"',
+        '            --userconfig="$cli_root/npm-user.conf" --globalconfig="$cli_root/npm-global.conf" \\',
         "            --registry=https://registry.npmjs.org/ netlify-cli@27.10.2",
         '          test -x "$cli_root/node_modules/.bin/netlify"',
         "manifest.version !== '27.10.2'",
@@ -234,7 +236,7 @@ def self_test(source: str) -> None:
             "--registry=https://registry.npmjs.org/", "--registry=https://example.invalid/", 1,
         ),
         "npmrc utilisateur accessible": source.replace(
-            "--userconfig=/dev/null", "--userconfig=$HOME/.npmrc", 1,
+            '--userconfig="$cli_root/npm-user.conf"', '--userconfig=$HOME/.npmrc', 1,
         ),
         "binaire CLI détourné": source.replace(
             CLI_BIN + " deploy", "netlify deploy", 1,
