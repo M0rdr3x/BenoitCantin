@@ -7,10 +7,12 @@ const contestForm = document.querySelector('[data-life-story-contest-form]');
 const fmt = new Intl.DateTimeFormat('fr-CA', { dateStyle: 'long', timeStyle: 'short' });
 const s = getSupabase();
 let revealedReportCodeInput = null;
+let reportCodeRevealEpoch = 0;
 
 // Un code privé 256 bits ne doit pas rester dans le DOM après un changement
 // d'onglet, une navigation ou le clic explicite sur « Masquer ».
 function clearReportCode() {
+  reportCodeRevealEpoch += 1;
   if (revealedReportCodeInput) revealedReportCodeInput.value = '';
   revealedReportCodeInput = null;
   const once = document.querySelector('[data-report-code-once]');
@@ -113,6 +115,7 @@ async function createReportCode(event) {
   if (!label) return;
   // Masquer tout jeton précédent avant d'entamer une nouvelle création.
   clearReportCode();
+  const currentRevealEpoch = reportCodeRevealEpoch;
   const button = form.querySelector('button[type="submit"]'); if (button) button.disabled = true;
   try {
     const { data, error } = await s.rpc('life_story_create_report_code', { p_label: label });
@@ -122,6 +125,13 @@ async function createReportCode(event) {
     if(data?.display_once!==true || !isSafeDeathReportCode(data?.code))
       throw new Error('REPORT_CODE_INVALID');
     form.reset();
+    // Une réponse asynchrone après un passage en arrière-plan ou pagehide
+    // ne doit jamais réinsérer le secret dans le DOM, même lors du retour.
+    if (document.hidden || currentRevealEpoch !== reportCodeRevealEpoch) {
+      showStatus('Le code a été créé mais son affichage a été annulé après un changement de page. Révoquez-le puis créez-en un nouveau pour le copier.', 'error');
+      await loadReportCodes();
+      return;
+    }
     const once = document.querySelector('[data-report-code-once]');
     if (once) {
       once.hidden = false;
