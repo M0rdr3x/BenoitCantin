@@ -75,7 +75,7 @@ def main():
     ],'déclaration appareil perdu : double confirmation RPC + Auth')
     forbid(security,[
         "console.warn('[SINJIRA lost device]',error)",
-        "await s.auth.signOut({scope:'others'});",
+        "    await s.auth.signOut({scope:'others'});",
     ],'déclaration appareil perdu : diagnostics bruts ou déconnexion non confirmée')
 
     reset=read('compte/reinitialiser-mot-de-passe.html')
