@@ -373,6 +373,45 @@ def run(playwright, engine, origin):
         }""",timeout=7000)
         assert "Écran suivant" in page.locator("#reader-touch-next").get_attribute("aria-label")
 
+        # V90 : simuler le changement de hauteur dvh dû aux barres système
+        # sans window.resize, sur le vrai lecteur avec sa vraie pagination.
+        # Ne pas accéder au réseau ou au contenu privé.
+        page.locator("#reader-viewer").scroll_into_view_if_needed()
+        before_chrome=page.evaluate("""async()=>{
+          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.10.1');
+          const viewer=document.querySelector('#reader-viewer');
+          const text=document.querySelector('#reader-text');
+          viewer.scrollTop=Math.min(1750,Math.max(0,viewer.scrollHeight-viewer.clientHeight-350));
+          await new Promise(done=>requestAnimationFrame(done));
+          const a=mod.captureReaderTextAnchor({viewer,text});
+          window.__v90ChromeAnchor=a;
+          return {captured:Boolean(a),scroll:viewer.scrollTop,height:viewer.clientHeight,
+            hasViewport:Boolean(window.visualViewport)};
+        }""")
+        assert before_chrome["captured"] and before_chrome["scroll"]>200,before_chrome
+        # Le moteur doit conserver le caractère lu même si window.resize
+        # ne se produit pas. L'événement visualViewport est émis explicitement.
+        page.evaluate("""()=>{
+          const v=document.querySelector('#reader-viewer');
+          v.style.height=Math.max(180,v.clientHeight-65)+'px';
+          window.visualViewport?.dispatchEvent(new Event('resize'));
+        }""")
+        page.wait_for_function("""()=>{
+          const a=window.__v90ChromeAnchor;
+          if(!a?.node?.isConnected)return false;
+          const v=document.querySelector('#reader-viewer');
+          const r=document.createRange();r.setStart(a.node,a.offset);
+          r.setEnd(a.node,a.offset+1);
+          const rect=Array.from(r.getClientRects()).find(x=>x.height>0);
+          return Boolean(rect)&&Math.abs(
+            rect.top-v.getBoundingClientRect().top-a.relativeY)<35;
+        }""",timeout=7000)
+        page.evaluate("""()=>{
+          const v=document.querySelector('#reader-viewer');
+          v.style.height='';
+          window.visualViewport?.dispatchEvent(new Event('resize'));
+        }""")
+
         # V60: le vrai moteur JS chargé sur cette page ne doit pas demander
         # un balayage pour seulement 10 px supplémentaires à la fin.
         tail=page.evaluate("""async ()=>{
