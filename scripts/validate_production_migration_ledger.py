@@ -159,9 +159,9 @@ def validate_production_workflow(errors):
         # Le mot de passe DB reste dans l'env d'étape, jamais dans argv du CLI.
         import re
         exposed = re.search(
-            r"(?m)^\\s*\\(cd \\.prod-workspace && supabase "
-            r"(?:link|migration\\s+list|db\\s+push)\\b[^\\n]*"
-            r"(?:--password|--db-url|\\s-p\\s)",
+            r"(?m)^\s*\(cd \.prod-workspace && supabase "
+            r"(?:link|migration\s+list|db\s+push)\b[^\n]*"
+            r"(?:--password|--db-url|\s-p\s)",
             text,
         )
         if exposed:
