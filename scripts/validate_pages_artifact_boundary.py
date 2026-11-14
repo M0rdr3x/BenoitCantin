@@ -112,7 +112,8 @@ def manual_job_gate(source: str, name: str) -> bool:
     # Vérifier la condition réellement évaluée, et pas la présence de mots
     # clés. Un « || true », « ! », une fonction always() ou une deuxième
     # clé if: pourraient rendre les trois garde-fous facultatifs.
-    expressions = re.findall(r"(?m)^    if:[ \\t]*([^\\r\\n]*)$", rest)
+    expressions = [line[len("    if:"):] for line in rest.splitlines()
+                   if line.startswith("    if:")]
     if len(expressions) != 1:
         return False
     expression = expressions[0].split(" #", 1)[0].strip()
