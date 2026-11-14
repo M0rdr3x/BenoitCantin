@@ -36,6 +36,11 @@ jobs:
         run: python3 scripts/test_web_public_extension_allowlist.py
       - name: Refuser toute publication brute depuis le Netlify de Projet NOVA
         run: python3 scripts/test_nova_nested_netlify_security.py
+      - name: Tester l’annulation MFA fail-closed et l’effacement des secrets TOTP
+        run: |
+          node --check assets/js/v24-security.js
+          node --check scripts/test_mfa_cancel_failclosed_privacy.cjs
+          node scripts/test_mfa_cancel_failclosed_privacy.cjs
       - name: Vérifier la CSP stricte et l'absence de JavaScript inline sur les routes privées
         run: python3 scripts/test_private_route_csp_security.py
       - name: Valider les preuves Bash des déploiements Pages et Netlify
