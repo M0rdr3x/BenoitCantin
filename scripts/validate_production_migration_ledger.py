@@ -150,12 +150,23 @@ def validate_production_workflow(errors):
             '(cd .prod-workspace && supabase db lint --linked',
             '(cd .prod-workspace && supabase migration list --linked',
             '(cd .prod-workspace && supabase db push --linked --dry-run',
-            '(cd .prod-workspace && supabase db push --linked --password',
+            '(cd .prod-workspace && supabase db push --linked)',
             '(cd .prod-workspace && supabase functions deploy --project-ref',
         )
         for marker in required:
             if marker not in text:
                 errors.append(f'Workflow production sans garde workspace attendu: {marker}')
+        # Le mot de passe DB reste dans l'env d'étape, jamais dans argv du CLI.
+        import re
+        exposed = re.search(
+            r"(?m)^\s*\(cd \.prod-workspace && supabase "
+            r"(?:link|migration\s+list|db\s+push)\b[^\n]*"
+            r"(?:--password|--db-url|\s-p\s)",
+            text,
+        )
+        if exposed:
+            errors.append('Workflow production: secret DB interdit dans les arguments Supabase CLI.')
+
 
         visibility_required = (
             'name: Supabase production — prévol / synchronisation contrôlée',
