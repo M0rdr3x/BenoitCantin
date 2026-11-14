@@ -146,7 +146,7 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         self.assertRejected(bad, "prévol distant ne doit jamais exécuter db push")
 
     def test_remote_preflight_cannot_deploy_functions(self):
-        marker = "          (cd .prod-workspace && supabase db push --linked --dry-run --password \"$SUPABASE_DB_PASSWORD\") | tee /tmp/sinjira-dry-run.txt"
+        marker = "          (cd .prod-workspace && supabase db push --linked --dry-run) | tee /tmp/sinjira-dry-run.txt"
         bad = self.valid.replace(
             marker,
             marker + "\n          (cd .prod-workspace && supabase functions deploy --project-ref \"$PROJECT_ID\" --use-api)",
