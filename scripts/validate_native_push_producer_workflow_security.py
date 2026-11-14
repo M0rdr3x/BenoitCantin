@@ -19,6 +19,7 @@ HISTORICAL = (
     'node scripts/test_security_push_policy_v25.mjs',
     'node scripts/test_security_push_receipts_v25.mjs',
     'node scripts/test_security_push_network_v25.mjs',
+    'node scripts/test_security_push_bridge_privacy.cjs',
 )
 TRIGGER_PATHS = (
     "      - 'supabase/functions/**'",
@@ -29,6 +30,7 @@ TRIGGER_PATHS = (
     "      - 'scripts/test_security_push_policy_v25.mjs'",
     "      - 'scripts/test_security_push_receipts_v25.mjs'",
     "      - 'scripts/test_security_push_network_v25.mjs'",
+    "      - 'scripts/test_security_push_bridge_privacy.cjs'",
     "      - 'scripts/validate_native_push_producer_boundary_v25.py'",
     "      - 'scripts/validate_security_push_background_v25.py'",
     "      - 'scripts/validate_native_push_producer_workflow_security.py'",
@@ -122,6 +124,8 @@ def mutation_cases(text: str) -> tuple[tuple[str, str], ...]:
         ('payload retiré', text.replace(run_line(HISTORICAL[2]), '', 1)),
         ('reçus retirés', text.replace(run_line(HISTORICAL[3]), '', 1)),
         ('réseau retiré', text.replace(run_line(HISTORICAL[4]), '', 1)),
+        ('test bridge retiré', text.replace(run_line(HISTORICAL[5]), '', 1)),
+        ('chemin test bridge retiré', text.replace("      - 'scripts/test_security_push_bridge_privacy.cjs'\n", '', 1)),
     )
 
 
