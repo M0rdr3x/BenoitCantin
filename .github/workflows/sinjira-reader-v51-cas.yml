@@ -1,0 +1,80 @@
+name: SINJIRA — V51 écriture atomique CAS sur PostgreSQL isolé
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/review-candidates/20261110011500_sinjira_reader_progress_revision_cas_v51.sql'
+      - 'assets/js/sinjira-liseuse-v26.js'
+      - 'assets/js/sinjira-reader-progress-v24-4-61.js'
+      - 'tests/security/sql/test_sinjira_reader_v51_cas.sql'
+      - 'scripts/test_sinjira_reader_v51_concurrent_local.sh'
+      - 'tests/security/test_sinjira_reader_v51_cas_contract.py'
+      - 'docs/SINJIRA_READER_V51_CAS_RELEASE_GATE.md'
+      - '.github/workflows/sinjira-reader-v51-cas.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/review-candidates/20261110011500_sinjira_reader_progress_revision_cas_v51.sql'
+      - 'assets/js/sinjira-liseuse-v26.js'
+      - 'assets/js/sinjira-reader-progress-v24-4-61.js'
+      - 'tests/security/sql/test_sinjira_reader_v51_cas.sql'
+      - 'scripts/test_sinjira_reader_v51_concurrent_local.sh'
+      - 'tests/security/test_sinjira_reader_v51_cas_contract.py'
+      - 'docs/SINJIRA_READER_V51_CAS_RELEASE_GATE.md'
+      - '.github/workflows/sinjira-reader-v51-cas.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-reader-v51-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cas-revision-atomic:
+    name: Protéger la page 42 contre la page 13 sur SQL original local
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_DB: sinjira_reader_v51_lab
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - '127.0.0.1:5432:5432'
+        options: >-
+          --health-cmd=pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    steps:
+      - name: Checkout des seules sources du commit sans secrets persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Contrats du périmètre de sécurité et syntaxe navigateur
+        run: |
+          python3 -m unittest discover -s tests/security -p test_sinjira_reader_v51_cas_contract.py -v
+          node --input-type=module --check < assets/js/sinjira-liseuse-v26.js
+          node --input-type=module --check < assets/js/sinjira-reader-progress-v24-4-61.js
+      - name: Installer les deux lignes fictives avec la V32 originale et A B A
+        env:
+          PGCONNECT_TIMEOUT: '10'
+        run: |
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v51_lab -v ON_ERROR_STOP=1 -f tests/security/sql/setup_sinjira_reader_v48.sql
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v51_lab -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v48_client_a.sql
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v51_lab -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v48_client_b.sql
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v51_lab -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v48_client_a_return.sql
+      - name: V51 conflit et privilèges, aucun compte ou roman réel
+        env:
+          PGCONNECT_TIMEOUT: '10'
+        run: |
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v51_lab -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v51_cas.sql
+      - name: Tester deux connexions PostgreSQL vraiment concurrentes du meme compte fictif
+        run: |
+          bash -n scripts/test_sinjira_reader_v51_concurrent_local.sh
+          bash scripts/test_sinjira_reader_v51_concurrent_local.sh
+      - name: Validation limitée — NO_GO production sans approbation humaine
+        run: echo "V51-LAB-PASS-NO_GO — test SQL local uniquement, migration non appliquée à Supabase."

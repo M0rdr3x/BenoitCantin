@@ -44,7 +44,8 @@ const state={pdf:null,page:1,mode:'texte',theme:'sepia',size:20,zoom:1,
   progressQueue:Promise.resolve(),progressRevision:0,cloudDirty:false,cloudRetrying:false,
   accessEpoch:0,accessInvalidated:false,
   loadController:null,authSubscription:null,cloudSpotSupported:null,
-  positionRatio:0,restorePending:null,restoringScroll:false,scrollTimer:null,resumeSource:'debut'};
+  positionRatio:0,restorePending:null,restoringScroll:false,scrollTimer:null,resumeSource:'debut',
+  cloudRevision:null,cloudRevisionReady:false,cloudConflict:false};
 const speech={active:false,paused:false,token:0,chunks:[],index:0,voices:[],utterance:null};
 const speechReady='speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
 const storageKey='sinjira:liseuse:'+edition+':la-cendre-du-jugement';
@@ -139,35 +140,50 @@ function isMissingCloudSpotColumn(error){
     /scroll_ratio.*(?:column|schema cache|does not exist)|(?:column|schema cache|does not exist).*scroll_ratio/i
       .test(String(error.message||''))));
 }
+function isMissingCloudRevisionColumn(error){
+  return Boolean(error&&(['PGRST204','42703'].includes(error.code)||
+    /revision.*(?:column|schema cache|does not exist)|(?:column|schema cache|does not exist).*revision/i
+      .test(String(error.message||''))));
+}
 function syncProgress(){
   if(!isFull||!state.user||!state.novelId||!state.pdf||state.accessInvalidated){
     return Promise.resolve(false);
   }
-  // La file d'écriture évite qu'une ancienne requête écrase la dernière page.
+  // Ne jamais revenir à l'UPSERT non conditionnel si V51 est absente
+  // ou si un autre appareil a enregistré une révision plus récente.
+  if(!state.cloudRevisionReady||state.cloudConflict){
+    state.cloudDirty=true;
+    positionNotice(state.cloudConflict
+      ?'Conflit entre appareils : votre position locale est conservée. Rechargez pour comparer les sauvegardes.'
+      :'Synchronisation protégée en attente : votre page reste sur cet appareil.','warning');
+    return Promise.resolve(false);
+  }
   const userId=state.user.id,novelId=state.novelId,pdf=state.pdf;
   const send=async()=>{
-    if(!state.pdf||state.pdf!==pdf||state.user?.id!==userId||state.novelId!==novelId)return false;
-    const page=state.page,updatedAt=new Date().toISOString();
-    const revision=state.progressRevision;
-    const payload={user_id:userId,novel_id:novelId,
-      last_page:page,scroll_ratio:readingRatio(state.positionRatio),
-      progress_percent:Math.round(page/pdf.numPages*100),
-      last_opened_at:updatedAt,updated_at:updatedAt};
+    if(state.pdf!==pdf||state.user?.id!==userId||
+       state.novelId!==novelId||state.accessInvalidated||
+       state.cloudConflict||!state.cloudRevisionReady)return false;
+    const page=state.page,localRevision=state.progressRevision;
+    const expectedRevision=state.cloudRevision;
     try{
-      if(state.cloudSpotSupported===false)delete payload.scroll_ratio;
-      let {error}=await getSupabase().from('sinjira_reader_library')
-        .upsert(payload,{onConflict:'user_id,novel_id'});
-      if(error&&payload.scroll_ratio!==undefined&&isMissingCloudSpotColumn(error)){
-        state.cloudSpotSupported=false;
-        delete payload.scroll_ratio;
-        ({error}=await getSupabase().from('sinjira_reader_library')
-          .upsert(payload,{onConflict:'user_id,novel_id'}));
-      }
+      const {data,error}=await getSupabase().rpc('sinjira_reader_save_progress_cas',{
+        p_novel_id:novelId,p_expected_revision:expectedRevision,
+        p_last_page:page,p_progress_percent:Math.round(page/pdf.numPages*100),
+        p_scroll_ratio:readingRatio(state.positionRatio)
+      }).single();
       if(error)throw error;
-      if(state.pdf!==pdf||state.user?.id!==userId||state.accessInvalidated)return false;
-      if(payload.scroll_ratio!==undefined)state.cloudSpotSupported=true;
-      // Un succès n'efface pas un changement local arrivé pendant l'écriture.
-      if(state.progressRevision===revision){
+      if(state.pdf!==pdf||state.user?.id!==userId||
+         state.novelId!==novelId||state.accessInvalidated)return false;
+      if(data?.result_status==='conflict'){
+        state.cloudConflict=true;state.cloudDirty=true;
+        positionNotice('Une progression récente a été enregistrée ailleurs. Votre position reste sur cet appareil; le compte n’a pas été écrasé. Rechargez le lecteur pour comparer.','warning');
+        return false;
+      }
+      const nextRevision=Number(data?.result_revision);
+      if(data?.result_status!=='saved'||!Number.isSafeInteger(nextRevision)||
+         nextRevision<0)throw new Error('Révision serveur non vérifiable');
+      state.cloudRevision=nextRevision;
+      if(state.progressRevision===localRevision){
         state.cloudDirty=false;
         safeLocalRemove(pageStorageKey()+':pending');
       }
@@ -175,7 +191,7 @@ function syncProgress(){
     }catch{
       if(state.pdf===pdf&&state.user?.id===userId&&!state.accessInvalidated){
         state.cloudDirty=true;
-        message('La synchronisation a échoué. Votre page reste enregistrée sur cet appareil.','warning');
+        message('Synchronisation sécurisée indisponible. Votre page reste sur cet appareil; aucune écriture non protégée n’a été tentée.','warning');
       }
       return false;
     }
@@ -188,7 +204,7 @@ function syncProgress(){
 async function retryCloudProgress(){
   if(!isFull||!state.cloudDirty||state.cloudRetrying||!state.pdf||
      !state.user||!state.novelId||state.accessInvalidated||
-     navigator.onLine===false)return;
+     !state.cloudRevisionReady||state.cloudConflict||navigator.onLine===false)return;
   const userId=state.user.id,novelId=state.novelId,pdf=state.pdf;
   const key=pageStorageKey(),pendingAt=safeLocalGet(key+':pending');
   if(!pendingAt)return;
@@ -286,7 +302,9 @@ async function saveCurrentPosition(){
             ?'Position enregistrée : page '+state.page+' et emplacement précis synchronisés sur votre compte et cet appareil.'
             :'Position enregistrée : page '+state.page+' et emplacement précis synchronisés sur votre compte.')
         :localSaved
-          ?'Page '+state.page+' enregistrée sur cet appareil. Synchronisation du compte indisponible : réessayez.'
+          ?(state.cloudConflict
+            ?'Conflit entre appareils : la position de cet appareil est conservée localement et n’a pas écrasé votre compte. Rechargez pour choisir la bonne progression.'
+            :'Page '+state.page+' enregistrée sur cet appareil. Synchronisation du compte indisponible : réessayez.')
           :'Impossible d’enregistrer la position. Vérifiez la connexion et les paramètres du navigateur.',
         cloudSaved?'success':'warning');
     }else{
@@ -566,6 +584,7 @@ function lockPrivateReader(){
   clearTimeout(state.saveTimer);state.saveTimer=null;
   clearTimeout(state.scrollTimer);state.scrollTimer=null;
   state.cloudDirty=false;state.cloudRetrying=false;
+  state.cloudRevision=null;state.cloudRevisionReady=false;state.cloudConflict=false;
   $('reader-position-status').textContent='';
   stopNarration(false);
   companion?.close();companion=null;
@@ -628,9 +647,15 @@ async function restorePage(){
     if(!novelError&&novel?.id){
       state.novelId=novel.id;
       let {data:progress,error:progressError}=await getSupabase().from('sinjira_reader_library')
-        .select('last_page,scroll_ratio,updated_at').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle();
+        .select('last_page,scroll_ratio,updated_at,revision').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle();
       if(progressError&&isMissingCloudSpotColumn(progressError)){
         state.cloudSpotSupported=false;
+        ({data:progress,error:progressError}=await getSupabase().from('sinjira_reader_library')
+          .select('last_page,updated_at,revision').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle());
+      }
+      if(progressError&&isMissingCloudRevisionColumn(progressError)){
+        // Lire les anciennes pages, mais ne jamais en déduire un droit
+        // d'écriture cloud : la version atomique V51 n'est pas déployée.
         ({data:progress,error:progressError}=await getSupabase().from('sinjira_reader_library')
           .select('last_page,updated_at').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle());
       }
@@ -639,6 +664,14 @@ async function restorePage(){
         serverRatio=progress?.scroll_ratio??null;
         serverUpdatedAt=progress?.updated_at;
         if(state.cloudSpotSupported!==false)state.cloudSpotSupported=true;
+        // V51 : NULL en lecture signifie création initiale, une ligne historique
+        // déjà présente possède revision=0. Jamais de repli vers UPSERT.
+        const number=Number(progress?.revision);
+        if(!progress||(progress.revision!==null&&progress.revision!==undefined&&
+            Number.isSafeInteger(number)&&number>=0)){
+          state.cloudRevision=progress?number:null;
+          state.cloudRevisionReady=true;
+        }
       }
     }
   }
@@ -736,7 +769,13 @@ async function init(){
     updateToolbar();renderPage();updateSpeechControls();
     const origin=state.resumeSource==='compte'?'depuis votre compte'
       :state.resumeSource==='appareil'?'depuis cet appareil':'au début du roman';
-    positionNotice('Lecture prête : page '+state.page+' reprise '+origin+'. Enregistrement automatique actif'+(isFull?' sur votre compte et votre appareil.': ' sur cet appareil.'));
+    positionNotice('Lecture prête : page '+state.page+' reprise '+origin+'. '+
+      (isFull
+        ?(state.cloudRevisionReady
+          ?'Enregistrement automatique protégé sur votre compte et votre appareil.'
+          :'Enregistrement sur cet appareil uniquement; synchronisation cloud protégée en attente.')
+        :'Enregistrement automatique sur cet appareil.'),
+      state.cloudRevisionReady||!isFull?'info':'warning');
     // L'indisponibilité de la synchronisation des notes ne bloque pas la lecture.
     companion.ready().catch(()=>message('La liseuse fonctionne, mais les repères personnels ne sont pas disponibles.','warning'));
     $('reader-status').hidden=true;
