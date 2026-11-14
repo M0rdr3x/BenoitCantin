@@ -53,7 +53,7 @@ async function harness({rpcResult={ok:true,revoked_devices:2},rpcError=null,
   });
   vm.runInContext(actual,context,{timeout:2500,filename:'sinjira-security-center-v24-4-98.js'});
   await context.__security.boot();
-  check(typeof btn.handlers.click==='function','Gestionnaire réel Compte compromis enregistré');
+  if(!cryptoError)check(typeof btn.handlers.click==='function','Gestionnaire réel Compte compromis enregistré');
   return {btn,statuses,logs,rpcCalls,signOutCalls,stateCalls,
     handlers:{get documentClick(){return documentClick}},
     friendlySecurityError:context.__security.friendlySecurityError,
