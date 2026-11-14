@@ -89,7 +89,7 @@ async function main(){
 
   const generated=good.api.randomDeviceKey();
   yes(generated.startsWith('sinjira-'),'Clé de 192 bits générée avec Web Crypto');
-  eq(generated.length,55,'24 octets : préfixe de 7 caractères et 48 hex');
+  eq(generated.length,56,'24 octets : préfixe de 8 caractères et 48 hex');
   yes(good.api.isStrongDeviceKey(generated),'Clé aléatoire forte conforme');
 
   const uuid=fixture({crypto:{randomUUID:()=>VALID_UUID}});
