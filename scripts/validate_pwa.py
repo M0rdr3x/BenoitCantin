@@ -242,6 +242,15 @@ def validate_service_worker(errors: list[str]) -> None:
             "!isPublicCachePath(u.pathname)" not in text or
             "fetch(new Request(r,{cache:'no-store'}))" not in text):
         errors.append('sw.js: les chemins privés/dynamiques ne sont plus réseau-only/no-store.')
+    # Les clients peuvent authentifier via X-Api-Key ou X-Session-Token :
+    # le clone Request(credentials='omit') conserve les en-têtes personnalisés.
+    # Toute requête portant un tel en-tête doit rester réseau-only.
+    if ('function isSensitiveHeaderName(name)' not in text or
+            'function hasSensitiveRequestHeaders(headers)' not in text or
+            'hasSensitiveRequestHeaders(request.headers)' not in text or
+            'hasSensitiveRequestHeaders(r.headers)' not in text or
+            'isSensitiveHeaderName(x)' not in text):
+        errors.append('sw.js: en-têtes de jetons personnalisés ou Vary privés non exclus du cache.')
     # Le précache doit refuser explicitement les réponses inadmissibles puis
     # effacer son cache provisoire. Les lectures publiques restent sans cookies.
     if ("Promise.allSettled(CORE.map(" not in text or
