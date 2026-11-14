@@ -23,6 +23,25 @@ ACTIVE_SINJIRA_PREFIXES = ('projets/sinjira/', 'compte/', 'admin/')
 # Le validateur du site statique ne doit donc pas interpréter ses imports npm
 # ou sa résolution .ts/.tsx comme des dépendances de fichiers du site Web.
 NATIVE_MOBILE_PREFIX = 'mobile-native/'
+# Schémas exécutables ou opaques interdits dans les destinations HTML actives.
+# HTMLParser décode les entités; les navigateurs ignorent aussi certains
+# caractères ASCII de contrôle dans les URL avant d'interpréter le schéma.
+ACTIVE_URI_ATTRS = {
+    'a': ('href',), 'area': ('href',), 'form': ('action',),
+    'button': ('formaction',), 'input': ('formaction',),
+    'iframe': ('src',), 'frame': ('src',), 'embed': ('src',),
+    'object': ('data',), 'base': ('href',),
+    'script': ('src',), 'link': ('href',),
+}
+UNSAFE_ACTIVE_URI_SCHEMES = frozenset({'javascript', 'vbscript', 'data', 'file', 'blob'})
+
+
+def is_unsafe_active_uri(raw: str) -> bool:
+    """Refuser les URL exécutables, y compris entités et contrôles obfusqués."""
+    normalized = re.sub(r'[\x00-\x20\x7f]', '', raw)
+    scheme, separator, _ = normalized.partition(':')
+    return bool(separator and scheme.lower() in UNSAFE_ACTIVE_URI_SCHEMES)
+
 # Ces deux fichiers gardent volontairement la casse legacy /Admin/ uniquement pour
 # protéger/réécrire d'anciens favoris et caches. Ils ne constituent pas des liens actifs.
 LEGACY_ADMIN_COMPAT_FILES = {'sw.js', 'assets/js/v24-3-3-runtime.js'}
@@ -116,12 +135,21 @@ class Parser(HTMLParser):
         self.fragment_refs: list[str] = []
         self.missing_alt: list[str] = []
         self.unsafe_blank: list[str] = []
+        self.unsafe_active_urls: list[str] = []
         self.refreshes: list[str] = []
         self._buttons: list[dict[str, object]] = []
         self.unnamed_buttons = 0
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         d = dict(attrs)
+        for attribute in ACTIVE_URI_ATTRS.get(tag, ()):
+            raw_url = d.get(attribute)
+            if isinstance(raw_url, str) and is_unsafe_active_uri(raw_url):
+                self.unsafe_active_urls.append(f'{tag}[{attribute}]')
+        # srcdoc contient du HTML actif, qui ne doit pas être introduit dans
+        # les pages du site en contournant la validation des URL.
+        if tag == 'iframe' and 'srcdoc' in d:
+            self.unsafe_active_urls.append('iframe[srcdoc]')
         if d.get('id'):
             self.ids.append(str(d['id']))
         # Les ancres HTML historiques <a name="..."> sont également
@@ -171,6 +199,8 @@ class Parser(HTMLParser):
                 target = m.group(1).strip()
                 self.refreshes.append(target)
                 self.refs.append(('meta-refresh', target))
+                if is_unsafe_active_uri(target):
+                    self.unsafe_active_urls.append('meta[refresh]')
 
         if tag == 'button':
             named = bool((d.get('aria-label') or '').strip() if isinstance(d.get('aria-label'), str) else d.get('aria-label'))
@@ -362,11 +392,47 @@ def test_srcset_contract() -> list[str]:
     return errors
 
 
+def test_active_html_url_contract() -> list[str]:
+    """Tests de mutation XSS entièrement synthétiques, sans requête réseau."""
+    good = Parser()
+    good.feed(
+        '<a href="/compte/">Compte</a>'
+        '<a href="https://www.benoitcantin.com/">Accueil</a>'
+        '<a href="mailto:contact@example.org">Contact</a>'
+        '<form action="/compte/reinitialiser.html"></form>'
+        '<iframe src="/document.html"></iframe>'
+        '<img src="data:image/png;base64,AAAA" alt="Fixture">'
+    )
+    if good.unsafe_active_urls:
+        return ['Auto-test sécurité HTML: URL inoffensive refusée']
+    cases = {
+        'javascript href': '<a href="javascript:alert(1)">x</a>',
+        'javascript entité': '<a href="java&#x09;script:alert(1)">x</a>',
+        'javascript casse': '<area href="JaVaScRiPt:alert(1)">',
+        'javascript saut de ligne': '<a href="java&#10;script:alert(1)">x</a>',
+        'data navigation': '<a href="data:text/html,%3Cscript%3E">x</a>',
+        'blob iframe': '<iframe src="blob:https://example.org/id"></iframe>',
+        'file form': '<form action="file:///etc/passwd"></form>',
+        'vbscript form': '<input formaction="vbscript:msgbox(1)">',
+        'data object': '<object data="data:text/html,active"></object>',
+        'javascript script': '<script src="javascript:alert(1)"></script>',
+        'meta refresh': '<meta http-equiv="refresh" content="0;url=javascript:alert(1)">',
+        'iframe srcdoc': '<iframe srcdoc="&lt;script&gt;alert(1)&lt;/script&gt;"></iframe>',
+    }
+    for label, html in cases.items():
+        parsed = Parser()
+        parsed.feed(html)
+        if not parsed.unsafe_active_urls:
+            return [f'Auto-test sécurité HTML: URL exécutable non détectée ({label})']
+    return []
+
+
 def main() -> int:
     errors: list[str] = (
         test_cross_page_fragment_contract()
         + test_official_link_resolution_contract()
         + test_srcset_contract()
+        + test_active_html_url_contract()
     )
     files = all_files()
     htmls = [p for p in files if p.suffix.lower() == '.html']
@@ -433,6 +499,11 @@ def main() -> int:
             errors.append(f"Image(s) sans attribut alt dans {rel}: {', '.join(parser.missing_alt[:8])}")
         if parser.unsafe_blank:
             errors.append(f"Lien(s) target=_blank sans rel=noopener dans {rel}: {', '.join(parser.unsafe_blank[:8])}")
+        if parser.unsafe_active_urls:
+            errors.append(
+                f"Schéma actif ou HTML embarqué interdit dans {rel}: "
+                f"{', '.join(parser.unsafe_active_urls[:8])}"
+            )
         if parser.unnamed_buttons:
             errors.append(f"Bouton(s) sans nom accessible détecté(s) dans {rel}: {parser.unnamed_buttons}")
 
