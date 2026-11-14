@@ -511,8 +511,17 @@ function changePage(value){
   state.restorePending=0;
   state.restoringScroll=true;
   $('reader-viewer').scrollTo({top:0,left:0,behavior:'auto'});
-  updateToolbar();persist();renderPage();
-  positionNotice('Page '+state.page+' mémorisée automatiquement. Vous pouvez aussi l’enregistrer maintenant.');
+  updateToolbar();
+  const savedLocally=persist();
+  renderPage();
+  // V85 : un navigateur privé ou aux permissions restreintes peut refuser
+  // localStorage. Ne jamais annoncer une sauvegarde qui a échoué.
+  positionNotice(savedLocally
+    ?'Page '+state.page+' mémorisée automatiquement. Vous pouvez aussi l’enregistrer maintenant.'
+    :isFull&&state.user&&state.novelId
+      ?'Page '+state.page+' ouverte, mais la sauvegarde locale est indisponible. Une synchronisation avec le compte sera tentée.'
+      :'Page '+state.page+' ouverte, mais non enregistrée : autorisez le stockage du navigateur pour reprendre ici.',
+    savedLocally?'success':'warning');
   companion?.onPageChange();
 }
 function bindControls(){

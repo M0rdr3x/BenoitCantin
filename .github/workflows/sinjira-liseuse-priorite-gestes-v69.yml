@@ -35,7 +35,7 @@ jobs:
           node --check assets/js/sinjira-liseuse-touch-v52.mjs
           node --check assets/js/sinjira-liseuse-reflow-v53.mjs
           node --check tests/sinjira-liseuse-reflow-v53.test.mjs
-          python3 -m py_compile tests/e2e/test_sinjira_liseuse_responsive_v58.py tests/e2e/test_sinjira_liseuse_trajectory_v66.py tests/e2e/test_sinjira_liseuse_image_fallback_v81.py tests/e2e/test_sinjira_liseuse_extract_error_v82.py
+          python3 -m py_compile tests/e2e/test_sinjira_liseuse_responsive_v58.py tests/e2e/test_sinjira_liseuse_trajectory_v66.py tests/e2e/test_sinjira_liseuse_image_fallback_v81.py tests/e2e/test_sinjira_liseuse_extract_error_v82.py tests/e2e/test_sinjira_liseuse_auto_resume_v85.py
       - name: Régressions Node avec V69 gestes pendant resize
         run: node --test tests/sinjira-liseuse-touch-v52.test.mjs tests/sinjira-liseuse-reflow-v53.test.mjs
       - name: Vraie page de lecture avec PDF fictif et Supabase interdit
@@ -48,6 +48,7 @@ jobs:
           python tests/e2e/test_sinjira_liseuse_real_page_v57.py --browser ${{ matrix.browser }}
           python tests/e2e/test_sinjira_liseuse_image_fallback_v81.py --browser ${{ matrix.browser }}
           python tests/e2e/test_sinjira_liseuse_extract_error_v82.py --browser ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_auto_resume_v85.py --browser ${{ matrix.browser }}
           python tests/e2e/test_sinjira_liseuse_responsive_v58.py --browser ${{ matrix.browser }}
           python tests/e2e/test_sinjira_liseuse_trajectory_v66.py --browser ${{ matrix.browser }}
           if [ "${{ matrix.browser }}" = chromium ]; then
