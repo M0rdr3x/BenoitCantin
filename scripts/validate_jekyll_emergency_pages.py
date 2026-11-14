@@ -24,6 +24,8 @@ BLOCKED = (
     "netlify.toml",
     "vercel.json",
     "package.json",
+    "tools/netlify-cli/package.json",
+    "tools/netlify-cli/package-lock.json",
     "_config.yml",
     "projets/projet-nova/official/versions/V322/V322_CURRENT_STATE.json",
     "projets/projet-nova/official/versions/V316/README.md",
@@ -72,7 +74,7 @@ BLOCKED_EXTS = {
     ".7z", ".rar", ".tar", ".gz",
 }
 BLOCKED_DIRS = (
-    "supabase/", "tests/", "mobile-native/", "scripts/", "docs/",
+    "supabase/", "tests/", "mobile-native/", "scripts/", "docs/", "tools/",
     ".github/", ".git/", "projets/projet-nova/official/versions/",
 )
 # Le Codex public possède une seule page HTML approuvée. Un futur export,
@@ -175,7 +177,7 @@ def validate_source() -> list[str]:
                     errors.append("JSON NOVA non approuvé inclus dans Jekyll : " + item)
     for key in (
         "exclude:", "include:", "- \"supabase\"", "- \"scripts\"",
-        "- \"tests\"", "- \"mobile-native\"", "- \"docs\"",
+        "- \"tests\"", "- \"mobile-native\"", "- \"docs\"", "- \"tools\"",
         "- \"projets/projet-nova/official/versions\"",
         "- \"**/*.csv\"", "- \"**/*.ts\"", "- \"**/*.tsx\"",
         "- \"**/*.py\"", "- \"**/*.toml\"",
