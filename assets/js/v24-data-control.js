@@ -9,8 +9,14 @@ const user=await requireUser();
 const s=getSupabase();
 
 function safeError(error){
-  const text=String(error?.message||'Erreur serveur').replace(/\s+/g,' ').trim();
-  return text.length>180?`${text.slice(0,177)}…`:text;
+  // L'export lui-même contient des données personnelles autorisées, mais ses
+  // diagnostics ne doivent jamais recopier SQL, JWT, adresse ou trace serveur.
+  // Seuls des codes explicitement reconnus déterminent le message affiché.
+  const code=typeof error?.code==='string'?error.code.toUpperCase():'';
+  if(code==='42501')return 'Accès à cette section refusé.';
+  if(code==='PGRST301'||code==='PGRST302'||code==='401')return 'Session expirée ou non autorisée.';
+  if(code==='EXPORT_TOO_LARGE')return 'Cette section dépasse la limite de l’export du navigateur.';
+  return 'Cette section n’a pas pu être récupérée.';
 }
 
 async function fetchAll(label,build){
@@ -18,13 +24,15 @@ async function fetchAll(label,build){
   let from=0;
   for(let page=0;page<100;page++){
     const {data,error}=await build().range(from,from+PAGE_SIZE-1);
-    if(error)throw new Error(`${label}: ${safeError(error)}`);
+    if(error)throw error;
     const batch=data||[];
     rows.push(...batch);
     if(batch.length<PAGE_SIZE)return rows;
     from+=PAGE_SIZE;
   }
-  throw new Error(`${label}: export trop volumineux pour le navigateur.`);
+  const limit=new Error('EXPORT_TOO_LARGE');
+  limit.code='EXPORT_TOO_LARGE';
+  throw limit;
 }
 
 function queries(uid){
@@ -144,7 +152,7 @@ async function deleteAccount(){
       }else if(data?.code==='LEGAL_HOLD_ACTIVE'){
         setStatus(status,'La suppression automatique est temporairement bloquée par une obligation de conservation documentée. Ouvrez le Centre Vie privée pour suivre la demande.','error');
       }else{
-        setStatus(status,data?.error||'Suppression impossible.','error');
+        setStatus(status,'Suppression impossible pour le moment. Consultez le Centre Vie privée.','error');
       }
       deleteButton.disabled=false;
       return;
@@ -152,7 +160,8 @@ async function deleteAccount(){
     await s.auth.signOut({scope:'local'}).catch(()=>{});
     location.replace('/compte/connexion.html?deleted=1');
   }catch(error){
-    console.warn('[SINJIRA delete account]',error);
+    // L'objet d'erreur Edge/Supabase peut contenir des détails privés :
+    // ne pas l'écrire dans la console du navigateur.
     setStatus(status,'Suppression impossible pour le moment. Aucune suppression supplémentaire n’a été demandée depuis cette page.','error');
     deleteButton.disabled=false;
   }
