@@ -751,9 +751,14 @@ def validate_netlify_staging_workflow() -> list[str]:
         "    environment: netlify-staging",
         'if [ "${GITHUB_REF_PROTECTED:-false}" != "true" ]; then',
         "Refuser tout staging depuis une branche non protégée",
+        "Installer Netlify CLI sans identifiants",
+        "npm install --no-save --ignore-scripts --no-audit --no-fund",
+        "--userconfig=/dev/null --globalconfig=/dev/null",
+        "--registry=https://registry.npmjs.org/ netlify-cli@27.10.2",
+        "NPM_CONFIG_OFFLINE: 'true'",
         "secrets.NETLIFY_AUTH_TOKEN",
         "secrets.NETLIFY_SITE_ID",
-        "netlify-cli@27.10.2 deploy",
+        '"$RUNNER_TEMP/netlify-cli-27.10.2/node_modules/.bin/netlify" deploy',
         "--dir _preview_site",
         "--dir _site",
         "--no-build",
@@ -784,7 +789,7 @@ def validate_netlify_staging_workflow() -> list[str]:
         if marker in text:
             errors.append(f"Workflow staging Netlify: comportement interdit détecté: {marker.strip()}")
 
-    deploy_count = text.count("netlify-cli@27.10.2 deploy")
+    deploy_count = text.count('"$RUNNER_TEMP/netlify-cli-27.10.2/node_modules/.bin/netlify" deploy')
     if deploy_count != 2:
         errors.append(
             f"Workflow staging Netlify: exactement 2 deploys brouillon requis, observé={deploy_count}."
