@@ -48,8 +48,8 @@ export async function requireUser(){throw Error('V57: unexpected sign-in')};
 export function safeInternalDestination(x){return x};
 """
 
-def install_isolation(page, image_only_pages=()):
-    """La page fictive peut simuler une page PDF sans texte extractible."""
+def install_isolation(page, image_only_pages=(), text_error_pages=()):
+    """Simule un PDF sans texte ou un échec d'extraction sans accès externe."""
     requests=[]
     mock_pdf = MOCK_PDF_JS
     if image_only_pages:
@@ -57,6 +57,15 @@ def install_isolation(page, image_only_pages=()):
         mock_pdf = MOCK_PDF_JS.replace(
             "const items=Array.from(",
             f"const items={pages}.includes(pageNumber)?[]:Array.from(", 1
+        )
+    if text_error_pages:
+        pages = "[" + ",".join(str(int(n)) for n in text_error_pages) + "]"
+        mock_pdf = mock_pdf.replace(
+            "    async getTextContent(){",
+            "    async getTextContent(){\\n"
+            + f"      if({pages}.includes(pageNumber)) "
+            + "throw Error('V82 simulated extraction unavailable');",
+            1
         )
     def intercept(route):
         url=route.request.url

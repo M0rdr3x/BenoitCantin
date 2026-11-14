@@ -420,9 +420,18 @@ function renderPage(){
     if(version!==state.renderVersion)return;
     const readerText=$('reader-text'),fallback=$('reader-image-fallback');
     if(state.mode==='texte'){
-      const text=await page.getTextContent();
-      if(version!==state.renderVersion)return;
-      const readable=pdfTextToParagraphs(text.items);
+      let readable='';
+      try{
+        const text=await page.getTextContent();
+        if(version!==state.renderVersion)return;
+        // V82 : l'extraction PDF peut rejeter (scan, police ou structure non
+        // prise en charge) alors que le rendu de la page reste possible.
+        readable=pdfTextToParagraphs(text?.items||[]);
+      }catch{
+        if(version!==state.renderVersion)return;
+        // Ne jamais journaliser les données PDF ou l'erreur contenant un
+        // fragment de texte privé. Le rendu canvas ci-dessous fait le repli.
+      }
       if(readable.trim()){
         // V81 : le texte reste sélectionnable et repaginé dès qu'il existe.
         readerText.textContent=readable;
@@ -433,9 +442,9 @@ function renderPage(){
         restoreScrollAfterRender(version);
         return;
       }
-      // V81 : une page illustrée doit être VUE, pas remplacée par un texte
-      // indiquant que le PDF existe. La préférence texte reste inchangée :
-      // la page suivante avec du texte reprend automatiquement le reflow.
+      // V81/V82 : page illustrée OU extraction en échec : afficher le PDF
+      // original, sans désactiver la préférence texte pour les autres pages.
+      // La page suivante avec du texte reprend automatiquement le reflow.
       readerText.textContent='';
       readerText.hidden=true;
       fallback.hidden=false;
