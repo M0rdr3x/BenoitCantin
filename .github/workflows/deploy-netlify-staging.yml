@@ -93,6 +93,22 @@ jobs:
           NODE
           "$cli_root/node_modules/.bin/netlify" --version
 
+      - name: Refuser les vulnérabilités graves Netlify avant tout secret
+        # Audit réseau autorisé uniquement dans cette étape sans credentials.
+        shell: bash
+        run: |
+          set -euo pipefail
+          cli_root="$RUNNER_TEMP/netlify-cli-27.19.0"
+          cd "$cli_root"
+          audit_status=0
+          npm audit --json --omit=dev \
+            --userconfig="$cli_root/npm-user.conf" \
+            --globalconfig="$cli_root/npm-global.conf" \
+            --registry=https://registry.npmjs.org/ \
+            > "$cli_root/netlify-audit.json" || audit_status=$?
+          python3 "$GITHUB_WORKSPACE/scripts/validate_netlify_cli_audit.py" \
+            "$cli_root/netlify-audit.json" --exit-status "$audit_status"
+
       - name: Verrouiller ref, SHA, site et secrets
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
