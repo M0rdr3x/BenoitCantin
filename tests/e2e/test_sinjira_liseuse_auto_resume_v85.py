@@ -65,12 +65,22 @@ export async function requireUser(){return {id:mock.userId}}
 export function safeInternalDestination(x){return x}
 """
 
-def install_private_isolation(page):
+def install_private_isolation(page, delay_first_pdf=False):
     """Sécurité privée, PDF fictif de 520 pages et aucun vrai appel Supabase."""
     blocked=[]
     pdf=MOCK_PDF_JS.replace("numPages:82","numPages:520").replace(
         "n>82","n>520"
     )
+    if delay_first_pdf:
+        # V94 : le PDF reste téléchargé mais son analyse attend un signal
+        # externe. La page peut passer en arrière-plan AVANT state.pdf.
+        pdf=pdf.replace(
+            "return {promise:Promise.resolve({",
+            "globalThis.__v94PdfRequested=true;\\n"
+            "  return {promise:new Promise(resolve=>{\\n"
+            "    globalThis.__v94ReleasePdf=()=>resolve({",
+            1
+        ).replace("  })};\\n}","  });\\n  })};\\n}",1)
     def intercept(route):
         url=route.request.url
         parsed=urlparse(url)
@@ -190,6 +200,72 @@ def validate_private_mobile_return(browser,opts,url):
         context.close()
 
 
+
+def validate_private_pause_during_load(browser,opts,url):
+    """V94 : ne jamais démasquer le roman chargé hors du premier plan."""
+    context=browser.new_context(**opts)
+    try:
+        page=context.new_page()
+        errors=[]
+        page.on("pageerror",lambda error:errors.append(str(error)))
+        blocked=install_private_isolation(page,delay_first_pdf=True)
+        page.goto(url.replace("edition=demo","edition=integrale"),wait_until="load")
+        page.wait_for_function("()=>typeof window.__v94ReleasePdf==='function'",
+                               timeout=15000)
+        # Le moteur PDF existe mais sa promesse attend encore : state.pdf
+        # est null pendant l'événement hidden.
+        paused=page.evaluate("""()=>{
+          Object.defineProperty(document,'visibilityState',{
+            configurable:true,value:'hidden'
+          });
+          document.dispatchEvent(new Event('visibilitychange'));
+          const reader=document.querySelector('#reader-content');
+          const sidebar=document.querySelector('.reader-sidebar');
+          return {
+            readerHidden:reader.hidden,
+            sidebarHidden:sidebar.hidden,
+            signedChecks:window.__v93Private.rightsCalls
+          };
+        }""")
+        assert paused["readerHidden"] and paused["sidebarHidden"],paused
+        assert paused["signedChecks"]==1,paused
+
+        page.evaluate("()=>window.__v94ReleasePdf()")
+        page.wait_for_function("""()=>{
+          const t=document.querySelector('#reader-text');
+          return t.textContent.includes('LIVRE DE TEST · Page 4');
+        }""",timeout=15000)
+        # Les octets de test sont arrivés; le moteur a fini de préparer
+        # le texte mais la page ET les notes doivent rester invisibles.
+        during=page.evaluate("""()=>({
+          contentHidden:document.querySelector('#reader-content').hidden,
+          sidebarHidden:document.querySelector('.reader-sidebar').hidden,
+          rightsChecks:window.__v93Private.rightsCalls
+        })""")
+        assert during["contentHidden"] and during["sidebarHidden"],during
+        assert during["rightsChecks"]==1,during
+
+        # Le droit est révoqué PENDANT le chargement masqué : après
+        # le retour, aucune réapparition de passage ne doit être permise.
+        page.evaluate("""()=>{
+          window.__v93Private.allowed=false;
+          Object.defineProperty(document,'visibilityState',{
+            configurable:true,value:'visible'
+          });
+          document.dispatchEvent(new Event('visibilitychange'));
+        }""")
+        page.wait_for_function("""()=>{
+          return window.__v93Private.rightsCalls>=2 &&
+            document.querySelector('#reader-content').hidden &&
+            document.querySelector('#reader-text').textContent==='' &&
+            document.querySelector('.reader-sidebar').hidden &&
+            !document.querySelector('#reader-error').hidden;
+        }""",timeout=10000)
+        assert not errors,errors
+        assert not blocked,blocked
+    finally:
+        context.close()
+
 def ready(page, pdf_page=3, text=True):
     page.wait_for_function("""({pdfPage,hasText})=>{
       const viewer=document.querySelector('#reader-viewer');
@@ -289,6 +365,7 @@ def run(p,engine,url):
         # V93 : vraie page HTML en édition privée SIMULÉE, droits serveur
         # révoqués et reprise asynchrone après deux mises en arrière-plan.
         validate_private_mobile_return(browser,opts,url)
+        validate_private_pause_during_load(browser,opts,url)
 
         # Un navigateur qui refuse le stockage ne doit PAS afficher un
         # message mensonger « Page mémorisée ». Le livre doit rester lisible.
@@ -334,7 +411,7 @@ def run(p,engine,url):
         assert denied.evaluate("""key=>localStorage.getItem(key)""",SPOT_KEY) is None
         assert not rejected,rejected
         denied_context.close()
-        print(f"PASS {engine} V85/V86/V87/V92/V93: reprise privée vérifiée en mock, "
+        print(f"PASS {engine} V85/V86/V87/V92/V93/V94: reprise privée et "
               "sur cet appareil, reprise après rechargement, stockage refusé signalé")
     finally:
         browser.close()
