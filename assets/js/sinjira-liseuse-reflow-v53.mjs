@@ -217,11 +217,14 @@ export function bindReaderScreenMode({
       lastAnchor=active?captureReaderTextAnchor({viewer,text}):null;
     }
   };
-  const scrollToScreen=top=>{
+  const scrollToScreen=(top,{userInitiated=false}={})=>{
     restoring=true;
     viewer.scrollTo({top,left:0,behavior:'auto'});
     restoring=false;
     sync();
+    // V85 : priorité aux gestes réels sur une restauration de position en
+    // attente dans le lecteur principal; aucun texte privé n'est transmis.
+    if(userInitiated)viewer.dispatchEvent?.(new Event('sinjira:reader-screen-turn'));
     // Le gestionnaire V31/V51 de scroll sauvegarde le ratio de progression
     // de la même page PDF, sans nouveau format ni identifiant de lecteur.
   };
@@ -241,7 +244,7 @@ export function bindReaderScreenMode({
       clientHeight:viewer.clientHeight,...textMetrics(text)
     });
     if(p?.type==='screen'){
-      scrollToScreen(p.top);
+      scrollToScreen(p.top,{userInitiated:true});
       return true;
     }
     if(p?.type==='document'){
@@ -373,7 +376,7 @@ export function bindReaderScreenMode({
       if(closed)return;
       if(expected!==null&&Number(pageField.value)===expected){
         pendingPreviousPdf=null;
-        scrollToScreen(Math.max(0,viewer.scrollHeight-viewer.clientHeight));
+        scrollToScreen(Math.max(0,viewer.scrollHeight-viewer.clientHeight),{userInitiated:true});
       }else if(expected===null){
         // Le moteur natif restoreScrollAfterRender replace scrollTop selon
         // le scroll_ratio. Ici on ne l'écrase pas après son propre rappel.

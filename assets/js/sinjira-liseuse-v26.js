@@ -51,6 +51,9 @@ const storageKey='sinjira:liseuse:'+edition+':la-cendre-du-jugement';
 const themeKey='sinjira:liseuse:preferences';
 const pageStorageKey=()=>isFull?storageKey+':'+(state.user?.id||'non-connecte'):storageKey;
 let companion=null;
+// V85 : jeton d'invalidation des restitutions rAF dès qu'un geste utilisateur
+// a réellement tourné l'écran. Évite une ancienne position qui écrase le swipe.
+let scrollRestoreGeneration=0;
 
 function safeLocalGet(key){try{return localStorage.getItem(key)}catch{return null}}
 function safeLocalSet(key,value){try{localStorage.setItem(key,value);return true}catch{return false}}
@@ -256,12 +259,15 @@ function restoreScrollAfterRender(version){
   const ratio=state.restorePending;
   state.restorePending=null;
   state.restoringScroll=true;
+  const generation=++scrollRestoreGeneration;
   requestAnimationFrame(()=>{
-    if(!state.pdf||version!==state.renderVersion)return;
+    if(!state.pdf||version!==state.renderVersion||
+      generation!==scrollRestoreGeneration)return;
     const viewer=$('reader-viewer');
     viewer.scrollTop=scrollTopForRatio(ratio,viewer.scrollHeight,viewer.clientHeight);
     requestAnimationFrame(()=>{
-      if(version===state.renderVersion)state.restoringScroll=false;
+      if(version===state.renderVersion&&generation===scrollRestoreGeneration)
+        state.restoringScroll=false;
     });
   });
 }
@@ -526,6 +532,22 @@ function changePage(value){
 }
 function bindControls(){
   $('reader-save-position').addEventListener('click',()=>{void saveCurrentPosition()});
+  // V85 : le moteur de pagination émet cet événement uniquement après une
+  // action explicite (doigt, clavier ou boutons) qui déplace un écran texte.
+  // Le geste gagne sur toute restitution rAF en cours et sa position devient
+  // immédiatement persistée, même si le scroll natif est différé.
+  $('reader-viewer').addEventListener('sinjira:reader-screen-turn',()=>{
+    if(!state.pdf||(isFull&&state.accessInvalidated))return;
+    ++scrollRestoreGeneration;
+    state.restorePending=null;
+    state.restoringScroll=false;
+    clearTimeout(state.scrollTimer);state.scrollTimer=null;
+    const viewer=$('reader-viewer');
+    state.positionRatio=ratioFromScroll(viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight);
+    if(!persist({syncCloud:true}))positionNotice(isFull
+      ?'Sauvegarde locale indisponible : synchronisation du compte à vérifier.'
+      :'Enregistrement automatique indisponible dans ce navigateur.','warning');
+  });
   $('reader-viewer').addEventListener('scroll',()=>{
     if(!state.pdf||state.restoringScroll)return;
     clearTimeout(state.scrollTimer);

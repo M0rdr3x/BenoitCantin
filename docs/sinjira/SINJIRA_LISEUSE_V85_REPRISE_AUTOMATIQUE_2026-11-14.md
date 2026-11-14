@@ -26,3 +26,11 @@ Le scénario `tests/e2e/test_sinjira_liseuse_auto_resume_v85.py` est ajouté au 
 **Important :** la réussite de ces tests n'atteste **pas** la synchronisation réelle de l'emplacement du roman intégral entre deux appareils. Le déploiement exige aussi la migration V32 autorisée, la revue des droits et l'essai physique Safari iPhone / Chrome Android, VoiceOver/TalkBack et les critères de lancement.
 
 **Statut : NO-GO**, SINJIRA programme complet **66,5 % estimés ±10 points** et **13 portes de lancement ouvertes**, date finale inconnue.
+
+## Correction V85 de concurrence découverte en CI
+
+La première exécution du nouveau test a révélé un risque de **restitution asynchrone** : une personne peut glisser dès que le texte apparaît, alors que les deux `requestAnimationFrame` de restitution initiale n'ont pas encore fini. Le gestionnaire de `scroll` pouvait ignorer ce geste (`restoringScroll=true`), et une restitution ancienne pouvait ensuite ramener le livre à sa position précédente.
+
+**Réparation :** V53 signale explicitement les tours d'écran initiés par l'utilisateur à V26 via un événement DOM local, sans données ni contenu du livre. V26 invalide les rAF de restitution périmés, retire le verrou, calcule le ratio réellement atteint et le sauvegarde sans attendre le défilement asynchrone. L'événement n'est pas envoyé par les restaurations de mise en page automatiques. La transition vers la dernière portion de la page PDF précédente est également traitée comme un tour demandé.
+
+Les tests de la branche doivent être **relancés sur le SHA contenant cette réparation**, et non crédités comme réussis avec les anciens commits V85. Ceci reste une validation du laboratoire et non une preuve de synchronisation serveur en production.

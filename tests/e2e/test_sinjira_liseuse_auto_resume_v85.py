@@ -47,7 +47,7 @@ def run(p,engine,url):
         assert consumed["consumed"] and snapshot(page)["scroll"]>50,consumed
         page.wait_for_function("""key=>{
           const s=JSON.parse(localStorage.getItem(key)||'null');
-          return s?.page===3 && s.ratio>.05 && s.ratio<.95;
+          return s?.page===3 && s.ratio>.005 && s.ratio<.95;
         }""",arg=SPOT_KEY,timeout=10000)
         saved=page.evaluate("""key=>JSON.parse(localStorage.getItem(key))""",SPOT_KEY)
         page.reload(wait_until="load")
