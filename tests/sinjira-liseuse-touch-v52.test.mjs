@@ -43,7 +43,7 @@ test('valeurs erronées ou durée impossible sont rejetées',()=>{
 function target(){
   const events=new Map();
   return {
-    disabled:false,clicks:0,clientWidth:375,scrollWidth:375,
+    disabled:false,clicks:0,clientWidth:375,scrollWidth:375,scrollTop:0,scrollLeft:0,
     addEventListener(name,callback){events.set(name,callback)},
     removeEventListener(name,callback){if(events.get(name)===callback)events.delete(name)},
     emit(name,event={}){events.get(name)?.(event)},
@@ -65,6 +65,11 @@ function fixture({selected=false}={}){
     time+=options.elapsed??200;
     if(options.cancel)viewer.emit('touchcancel',{touches:[]});
     if(options.moveMultiple)viewer.emit('touchmove',{touches:[touch,{identifier:8}]});
+    for(const [stepX,stepY] of options.path||[]){
+      viewer.emit('touchmove',{touches:[{...touch,clientX:170+stepX,clientY:190+stepY}]});
+    }
+    if(options.scrollTop!==undefined)viewer.scrollTop=options.scrollTop;
+    if(options.scrollLeft!==undefined)viewer.scrollLeft=options.scrollLeft;
     viewer.emit('touchend',{touches:[],changedTouches:[{
       identifier:options.wrongId?9:7,
       clientX:170+dx,clientY:190+dy
@@ -115,6 +120,26 @@ test('intégration : glissement vertical conserve la page et le scroll',()=>{
   const x=fixture();x.swipe(-20,115);
   assert.equal(x.next.clicks,0);
   assert.equal(x.previous.clicks,0);
+  x.release();
+});
+test('intégration : un scroll vertical commencé puis corrigé ne tourne pas la page',()=>{
+  const x=fixture();
+  x.swipe(-110,2,{path:[[0,42],[-90,8]]});
+  assert.equal(x.next.clicks,0);
+  x.release();
+});
+test('intégration : un scroll réel du conteneur annule la navigation',()=>{
+  const x=fixture();
+  x.swipe(-110,0,{scrollTop:18});
+  x.swipe(110,0,{scrollLeft:11});
+  assert.equal(x.next.clicks,0);
+  assert.equal(x.previous.clicks,0);
+  x.release();
+});
+test('intégration : un glissement horizontal progressif valide reste autorisé',()=>{
+  const x=fixture();
+  x.swipe(-110,4,{path:[[-30,4],[-82,6]]});
+  assert.equal(x.next.clicks,1);
   x.release();
 });
 test('intégration : PDF large en zoom conserve le défilement horizontal',()=>{
