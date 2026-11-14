@@ -94,6 +94,62 @@ test('Cache-Control private et directives sensibles ne sont jamais persistés', 
   }
 });
 
+test('les en-têtes de jeton personnalisés empêchent le cache, même sur une URL publique', () => {
+  const sw = harness();
+  for (const name of [
+    'Authorization', 'Proxy-Authorization', 'Cookie', 'X-Api-Key',
+    'ApiKey', 'X-Session-Token', 'X-CSRF-Token', 'X-Auth-Token',
+    'X-User-Secret', 'X-Custom-Header', 'X-Requested-With',
+  ]) {
+    const r = request('/assets/js/site.js', {
+      credentials: 'omit',
+      headers: {[name]: 'synthetic'},
+    });
+    assert.equal(sw.cacheableResponse(r, response({
+      'Cache-Control': 'public, max-age=600',
+    })), false, name);
+  }
+  const clean = request('/assets/js/site.js', {
+    credentials: 'omit',
+    headers: {Accept: 'text/javascript', 'Accept-Language': 'fr-CA'},
+  });
+  assert.equal(sw.cacheableResponse(clean, response({
+    'Cache-Control': 'public, max-age=600',
+  })), true, 'une requête publique sans jeton reste cachable');
+});
+
+test('Vary sur un identifiant privé ou un X-* refuse toute persistance', () => {
+  const sw = harness();
+  const r = request('/assets/js/site.js', {credentials: 'omit'});
+  for (const name of [
+    'X-Api-Key', 'x-session-token', 'X-User-Secret',
+    'Proxy-Authorization', 'ApiKey', 'x-custom',
+  ]) {
+    assert.equal(sw.cacheableResponse(r, response({
+      Vary: 'Accept-Encoding, ' + name,
+    })), false, name);
+  }
+  assert.equal(sw.cacheableResponse(r, response({Vary: 'Accept-Encoding'})),
+    true, 'la variation de compression demeure publique');
+});
+
+test('fetch avec jeton personnalisé contourne lecture et écriture du cache', async () => {
+  for (const asset of ['/assets/js/site.js', '/assets/media/example.webp']) {
+    for (const header of ['X-Api-Key', 'X-Session-Token', 'X-Custom-Header', 'ApiKey']) {
+      const sw = harness(() => response({'Cache-Control': 'public, max-age=600'}));
+      const r = request(asset, {headers: {[header]: 'synthetic'}});
+      const event = eventFor(r);
+      sw.listeners.fetch(event);
+      await event.result;
+      assert.equal(sw.fetches.length, 1, asset + ' ' + header);
+      assert.equal(sw.fetches[0].cache, 'no-store', asset + ' ' + header);
+      assert.equal(sw.fetches[0].headers.get(header), 'synthetic');
+      assert.equal(sw.matches.length, 0, asset + ' ' + header);
+      assert.equal(sw.puts.length, 0, asset + ' ' + header);
+    }
+  }
+});
+
 test('les URL à token, ambiguës, détournées ou partielles restent hors cache', () => {
   const sw = harness();
   for (const r of [
