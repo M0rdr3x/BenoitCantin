@@ -26,19 +26,28 @@ function reportInvalid(form){
   return true;
 }
 function randomDeviceKey(){
-  if(globalThis.crypto?.randomUUID)return globalThis.crypto.randomUUID();
-  const bytes=new Uint8Array(24);globalThis.crypto?.getRandomValues?.(bytes);
+  const cryptoApi=globalThis.crypto;
+  if(typeof cryptoApi?.randomUUID==='function')return cryptoApi.randomUUID();
+  if(typeof cryptoApi?.getRandomValues!=='function')throw new Error('SECURE_RANDOM_UNAVAILABLE');
+  const bytes=new Uint8Array(24);
+  cryptoApi.getRandomValues(bytes);
+  if(bytes.every(byte=>byte===0))throw new Error('SECURE_RANDOM_UNAVAILABLE');
   return `sinjira-${Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}-${Date.now().toString(36)}`;
+}
+
+function unusableDeviceKey(value){
+  const key=String(value||'');
+  return !key||key.length<16||key.length>128||/^sinjira-0{48}(?:-|$)/i.test(key);
 }
 function securityDeviceKey(){
   try{
     let value=localStorage.getItem(DEVICE_KEY_STORAGE);
-    if(!value){value=randomDeviceKey();localStorage.setItem(DEVICE_KEY_STORAGE,value)}
+    if(unusableDeviceKey(value)){value=randomDeviceKey();localStorage.setItem(DEVICE_KEY_STORAGE,value)}
     return value;
   }catch{
     try{
       let value=sessionStorage.getItem(DEVICE_KEY_STORAGE);
-      if(!value){value=randomDeviceKey();sessionStorage.setItem(DEVICE_KEY_STORAGE,value)}
+      if(unusableDeviceKey(value)){value=randomDeviceKey();sessionStorage.setItem(DEVICE_KEY_STORAGE,value)}
       return value;
     }catch{return randomDeviceKey()}
   }
@@ -93,14 +102,19 @@ async function login(){
         evaluated=await evaluateLoginSecurity();
       }catch(securityError){
         console.warn('[SINJIRA login shield unavailable]',securityError);
-        // Le moteur contextuel est une couche supplémentaire. Une panne de cette
-        // couche ne doit pas verrouiller tout le compte; les zones extrêmement
-        // sensibles conservent leur propre contrôle MFA côté serveur.
-        location.replace(next);
+        // Aucun accès via ce parcours lorsque le serveur de sécurité est
+        // indisponible. L'utilisateur peut réessayer après rétablissement.
+        await getSupabase().auth.signOut({scope:'local'}).catch(()=>{});
+        setStatus(status,'La vérification de sécurité de la connexion est indisponible. Aucune ouverture de session n’est autorisée depuis cette page; réessayez plus tard.','error');
         return;
       }
 
-      const outcome=String(evaluated.security?.outcome||'allow');
+      const outcome=String(evaluated.security?.outcome||'');
+      if(!['allow','block','challenge'].includes(outcome)){
+        await getSupabase().auth.signOut({scope:'local'}).catch(()=>{});
+        setStatus(status,'La réponse du contrôle de sécurité est invalide. Connexion refusée par précaution.','error');
+        return;
+      }
       if(outcome==='block'){
         await getSupabase().auth.signOut({scope:'local'}).catch(()=>{});
         setStatus(status,'Connexion refusée : cet appareil a été révoqué dans Ma sécurité. Utilisez un appareil fiable pour vérifier votre compte.','error');
