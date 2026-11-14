@@ -220,7 +220,7 @@ async function main(){
   await logoutError.logout();
   eq(logoutError.navigation.length,0,'Échec de déconnexion bloquant');
   eq(logoutError.signOut.disabled,false,'Réessai logout possible');
-  yes(logoutError.statuses.at(-1).message.includes('non confirmée'),
+  yes(logoutError.statuses.at(-1).message.includes('n’a pas pu être confirmée'),
     'Interface honnête si logout refusé');
   logoutError.logs.forEach(x=>redacted(x,'Erreur logout'));
 
