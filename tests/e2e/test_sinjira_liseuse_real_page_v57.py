@@ -304,6 +304,63 @@ def run(playwright, browser_type, url):
         assert pdf_right["clickCounts"]=={"next":1,"previous":1},pdf_right
         assert snapshot(page)["page"]==4,snapshot(page)
 
+        # V99 : les tests V98 construisent des TouchEvent. Vérifier EN PLUS
+        # une vraie séquence tactile du navigateur mobile Playwright, avec
+        # isMobile/hasTouch, sur le DOM réel (PDF entièrement synthétique).
+        # Un tap natif émet aussi un click : aucune double navigation PDF.
+        page.evaluate("""()=>{
+          window.__v99NativeTouches=[];
+          document.querySelector('#reader-viewer').addEventListener('touchstart',event=>{
+            window.__v99NativeTouches.push({
+              trusted:event.isTrusted,kind:event.type,
+              count:event.touches.length
+            });
+          },{capture:true,passive:true});
+        }""")
+
+        def tap_native_pdf(portion):
+            page.locator("#reader-viewer").scroll_into_view_if_needed()
+            location=page.evaluate("""portion=>{
+              const viewer=document.querySelector('#reader-viewer');
+              const rect=viewer.getBoundingClientRect();
+              // Rechercher un point visible loin des barres du navigateur
+              // et du début de page, mais toujours dans le vrai lecteur.
+              const x=rect.left+rect.width*portion;
+              const y=Math.min(window.innerHeight-35,
+                Math.max(35,rect.top+Math.min(115,rect.height*.45)));
+              const under=document.elementFromPoint(x,y);
+              return {x,y,inside:Boolean(under&&
+                (under===viewer||viewer.contains(under))),
+                target:under?.id||under?.tagName||null,
+                top:rect.top,bottom:rect.bottom,width:rect.width};
+            }""",portion)
+            assert location["inside"],location
+            page.touchscreen.tap(location["x"],location["y"])
+            return snapshot(page),page.evaluate("""()=>({
+              clicks:{...window.__v98Clicks},
+              touches:[...window.__v99NativeTouches]
+            })""")
+
+        # Le centre de l'écran PDF ne doit rien tourner.
+        center_native,center_events=tap_native_pdf(.5)
+        assert center_native["page"]==4,center_native
+        assert center_events["clicks"]=={"next":1,"previous":1},center_events
+
+        # Tap natif côté gauche : une seule page en arrière.
+        native_left,native_left_events=tap_native_pdf(.15)
+        page.wait_for_function("""()=>document.querySelector('#reader-page').value==='3'""")
+        assert native_left["page"]==3,native_left
+        assert native_left_events["clicks"]=={"next":1,"previous":2},native_left_events
+
+        # Tap natif côté droit : une seule page en avant.
+        native_right,native_right_events=tap_native_pdf(.85)
+        page.wait_for_function("""()=>document.querySelector('#reader-page').value==='4'""")
+        assert native_right["page"]==4,native_right
+        assert native_right_events["clicks"]=={"next":2,"previous":2},native_right_events
+        assert len(native_right_events["touches"])==3,native_right_events
+        assert all(t["trusted"] and t["count"]==1
+                   for t in native_right_events["touches"]),native_right_events
+
         # Repasser au texte et à la mise en page mobile.
         page.locator("#reader-mode").click()
         # MutationObserver V53 rétablit le mode paginé après que le moteur
