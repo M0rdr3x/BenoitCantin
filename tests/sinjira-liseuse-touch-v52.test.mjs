@@ -530,6 +530,36 @@ test('V66 : scroll pendant toucher puis retour en place ne tourne pas le livre P
   assert.equal(x.next.clicks,1);
   x.release();
 });
+test('V91 : un balayage PDF interrompu par blur, pagehide ou onglet masqué est annulé',()=>{
+  const oldWindow=globalThis.window,oldDocument=globalThis.document;
+  const win=target(),doc=target();
+  win.innerWidth=390;win.innerHeight=844;doc.hidden=false;
+  globalThis.window=win;globalThis.document=doc;
+  const f=fixture();
+  try{
+    const start={identifier:7,clientX:250,clientY:190};
+    const finish=()=>{
+      f.viewer.emit('touchend',{touches:[],changedTouches:[{
+        ...start,clientX:110,clientY:192
+      }],defaultPrevented:false});
+    };
+    const begin=()=>f.viewer.emit('touchstart',{
+      touches:[start],target:{closest:()=>null}
+    });
+    begin();win.emit('blur',{});finish();
+    begin();win.emit('pagehide',{});finish();
+    begin();doc.hidden=true;doc.emit('visibilitychange',{});finish();
+    assert.equal(f.next.clicks,0,'aucune page ne doit être tournée après interruption');
+    doc.hidden=false;
+    begin();doc.emit('visibilitychange',{});finish();
+    assert.equal(f.next.clicks,1,'un onglet visible conserve les gestes normaux');
+  }finally{
+    f.release();
+    assert.equal(win.events.size,0,'listeners de fenêtre nettoyés');
+    assert.equal(doc.events.size,0,'listener de visibilité nettoyé');
+    globalThis.window=oldWindow;globalThis.document=oldDocument;
+  }
+});
 test('intégration : pas de swipe si un pincement ou une annulation a commencé',()=>{
   const x=fixture();
   x.swipe(-110,0,{multiple:true});
