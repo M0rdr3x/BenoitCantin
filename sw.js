@@ -12,6 +12,18 @@ function isPrivatePath(pathname){
   if(path==='/administration'||path==='/administration.html')return true;
   return ['/app','/compte','/admin','/histoire-de-vie','/supabase','/api','/auth','/.netlify/functions'].some(prefix=>path===prefix||path.startsWith(prefix+'/'));
 }
+// Headers d'authentification alternatifs : jamais de mise en cache
+// pour une requête personnalisée, même sur un chemin de ressource publique.
+// Traiter tout X-* comme non public : la famille des jetons n'est pas fermée.
+function isSensitiveHeaderName(name){
+  const key=String(name||'').toLowerCase();
+  return key.startsWith('x-')||
+    /(?:^|[-_])(?:authorization|authentication|auth|bearer|token|secret|api[-_]?key|key|session|csrf|xsrf|credentials?|cookies?)(?:$|[-_])/.test(key);
+}
+function hasSensitiveRequestHeaders(headers){
+  for(const [name] of headers){if(isSensitiveHeaderName(name))return true;}
+  return false;
+}
 // Liste fermée : pas de cache opportuniste d'API, de JSON ou de PDF privé.
 function isPublicCachePath(pathname){
   if(CORE.includes(pathname))return true;
@@ -24,7 +36,7 @@ function cacheableResponse(request,resp){
   if(!resp||!resp.ok||resp.status!==200||resp.redirected||['opaque','opaqueredirect','error'].includes(resp.type))return false;
   const url=new URL(request.url);
   if(url.origin!==location.origin||url.search||url.pathname.includes('%')||isPrivatePath(url.pathname)||!isPublicCachePath(url.pathname))return false;
-  if(request.headers.has('authorization'))return false;
+  if(hasSensitiveRequestHeaders(request.headers))return false;
   if(resp.url){
     try{if(new URL(resp.url).origin!==url.origin)return false}
     catch(_error){return false}
@@ -34,7 +46,7 @@ function cacheableResponse(request,resp){
   if(/(?:^|,)\s*(?:no-store|no-cache|private)\b/i.test(cc)||/(?:^|,)\s*(?:no-store|no-cache|private)\b/i.test(surrogate))return false;
   if(/\bno-cache\b/i.test(String(resp.headers.get('Pragma')||'')))return false;
   const vary=String(resp.headers.get('Vary')||'').toLowerCase().split(',').map(x=>x.trim());
-  if(vary.some(x=>x==='*'||x==='authorization'||x==='cookie'))return false;
+  if(vary.some(x=>x==='*'||isSensitiveHeaderName(x)))return false;
   if(resp.headers.get('Set-Cookie'))return false;
   return true;
 }
@@ -68,7 +80,7 @@ self.addEventListener('fetch',e=>{
   // Les chemins inconnus, URL encodées, requêtes avec token et API passent
   // seulement par le réseau, sans lecture ni écriture dans Cache Storage.
   if(isPrivatePath(u.pathname)||!isPublicCachePath(u.pathname)||u.search||
-      u.pathname.includes('%')||r.headers.has('authorization')||
+      u.pathname.includes('%')||hasSensitiveRequestHeaders(r.headers)||
       r.headers.has('range')||r.cache==='no-store'||r.cache==='no-cache'){
     e.respondWith(fetch(new Request(r,{cache:'no-store'})).catch(error=>{
       // Une API privée ne doit pas recevoir offline.html en remplacement de JSON.
