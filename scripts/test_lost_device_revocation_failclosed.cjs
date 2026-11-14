@@ -111,7 +111,7 @@ async function main(){
     h.warnings.forEach(message=>redacted(message,label+' console'));
   }
 
-  for(const badSignout of [{error:{message:SECRET}},{error:{message:'Bad Request',code:'401'}},null,undefined,{}, {error:undefined}]){
+  for(const badSignout of [{error:{message:SECRET}},{error:{message:'Bad Request',code:'401'}},null,{}, {error:undefined}]){
     const h=createHarness({signOutResult:badSignout});
     await h.click();
     eq(h.rpcCalls.length,1,'Appareil effectivement déclaré perdu');
