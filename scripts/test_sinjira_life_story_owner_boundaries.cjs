@@ -21,6 +21,7 @@ function lacks(html,value,label){yes(!html.includes(value),label)}
 function domNode(){
   return {innerHTML:'',hidden:false,textContent:'',dataset:{},children:[],value:'',disabled:false,
     options:[],append(...nodes){this.children.push(...nodes)},
+    replaceChildren(...nodes){this.children=nodes;this.innerHTML='';},
     addEventListener(name,fn){this[name]=fn},setAttribute(k,v){this[k]=v},
     reset(){this.wasReset=true},select(){this.selected=true},querySelector(){return domNode()}
   };
@@ -171,11 +172,16 @@ async function main(){
       return {data:{},error:null};
     }
   };
+  const documentHandlers=new Map(),windowHandlers=new Map();
+  const document2={
+    hidden:false,
+    querySelector(sel){return els.get(sel)||null},
+    createElement(){return domNode()},
+    addEventListener(name,handler){documentHandlers.set(name,handler)}
+  };
   const s2=vm.createContext({
-    document:{
-      querySelector(sel){return els.get(sel)||null},
-      createElement(){return domNode()}
-    },
+    document:document2,
+    window:{addEventListener(name,handler){windowHandlers.set(name,handler)}},
     getSupabase:()=>shared,
     requireUser:async()=>({id}),
     friendlyBackendMessage:(_message,fallback)=>fallback,
@@ -229,8 +235,45 @@ async function main(){
   }
   rpcCode={code,display_once:true};
   await codes.createReportCode({preventDefault(){},currentTarget:form});
-  eq(codeOnce.children.length,3,'Code valide affiché une seule fois');
+  eq(codeOnce.children.length,4,'Code valide, copie et masquage présents');
   eq(codeOnce.children[1].value,code,'Jeton hexadécimal exact remis au propriétaire');
+  eq(codeOnce.hidden,false,'Code privé visible pendant la session active');
+  yes(documentHandlers.has('visibilitychange'),'Effacement lors de la mise en arrière-plan enregistré');
+  yes(windowHandlers.has('pagehide'),'Effacement avant navigation enregistré');
+
+  const firstInput=codeOnce.children[1];
+  document2.hidden=true;
+  documentHandlers.get('visibilitychange')();
+  eq(firstInput.value,'','Jeton vidé dans le champ lors du changement d’onglet');
+  eq(codeOnce.children.length,0,'Jeton retiré du DOM après arrière-plan');
+  eq(codeOnce.hidden,true,'Panneau privé masqué après arrière-plan');
+
+  document2.hidden=false;
+  await codes.createReportCode({preventDefault(){},currentTarget:form});
+  const secondInput=codeOnce.children[1];
+  codeOnce.children[3].click();
+  eq(secondInput.value,'','Bouton Masquer vide la mémoire du champ privé');
+  eq(codeOnce.children.length,0,'Bouton Masquer retire le jeton du DOM');
+
+  await codes.createReportCode({preventDefault(){},currentTarget:form});
+  const thirdInput=codeOnce.children[1];
+  windowHandlers.get('pagehide')();
+  eq(thirdInput.value,'','Navigation vide immédiatement le champ privé');
+  eq(codeOnce.children.length,0,'Navigation efface le DOM privé');
+
+  await codes.createReportCode({preventDefault(){},currentTarget:form});
+  const fourthInput=codeOnce.children[1];
+  rpcCode={code:'invalid',display_once:false};
+  await codes.createReportCode({preventDefault(){},currentTarget:form});
+  eq(fourthInput.value,'','Nouvelle tentative invalide efface le code précédent');
+  eq(codeOnce.children.length,0,'Échec de création ne conserve jamais un ancien jeton');
+
+  rpcCode={code,display_once:true};
+  await codes.createReportCode({preventDefault(){},currentTarget:form});
+  const fifthInput=codeOnce.children[1];
+  await codes.revokeReportCode({target:{closest(){return codeList.children[1].children.at(-1)}}});
+  eq(fifthInput.value,'','Révocation efface le dernier jeton révélé');
+  eq(codeOnce.children.length,0,'Révocation masque le code privé dans le DOM');
   const html=read('compte/histoire-de-vie.html');
   yes(html.includes('sinjira-life-story-v24-5-0.js?v=24.5.2-owner-security'),
     'Cache du module principal actualisé');
