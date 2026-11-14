@@ -36,13 +36,13 @@ le fichier workflow sur une branche non protégée pourrait retirer son garde.
    Limiter le jeton à un site et des droits de staging lorsque Netlify
    permet cette restriction. Révoquer les jetons non nécessaires.
 4. **Vérifier la chaîne d'approvisionnement npm Netlify verrouillée** :
-   - Le manifeste `tools/netlify-cli/package.json` fixe uniquement `netlify-cli@27.10.2`.
+   - Le manifeste `tools/netlify-cli/package.json` fixe uniquement `netlify-cli@27.19.0`.
    - `tools/netlify-cli/package-lock.json` (lockfile npm v3) a été produit
      par GitHub Actions **sans secret** depuis le registre npm officiel.
-     Il fige **1 080 dépendances** avec des URL HTTPS de ce registre et des
+     Il fige **1 015 dépendances** avec des URL HTTPS de ce registre et des
      empreintes d'intégrité SRI SHA-512.
    - Le SHA-256 de ce lockfile est
-     `d005ee5f5d983920a11ce7aa3c0eb96b2637364ce32ad2b1e70b6221f49f3d1a`.
+     `6a21a830c8f3adc799db04bfca9a8c09ea6d864b6903e4f333c7abfdd9535bd4`.
      `scripts/validate_netlify_cli_lock.py` vérifie l'empreinte globale,
      le registre autorisé, les SRI, les versions et des mutations adversariales.
    - Avant toute exposition des secrets, le workflow valide ce contrat,
@@ -69,7 +69,7 @@ le fichier workflow sur une branche non protégée pourrait retirer son garde.
 - Credentials uniquement injectés dans les trois étapes autorisées;
   **jamais dans la ligne de commande CLI ni les résumés GitHub**.
 - Installation npm ci reproductible, scripts désactivés, manifest et lockfile
-  validés avec 1 080 SRI; exécution du binaire local après installation,
+  validés avec 1 015 SRI; exécution du binaire local après installation,
   hors gestionnaire de paquets, avec npm configuré hors ligne.
 - Avant toute activation réelle du staging : essai en environnement isolé
   pour confirmer que la CLI fonctionne sans scripts d'installation,
