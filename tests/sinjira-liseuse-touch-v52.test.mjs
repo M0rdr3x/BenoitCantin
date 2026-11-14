@@ -560,6 +560,31 @@ test('V91 : un balayage PDF interrompu par blur, pagehide ou onglet masqué est 
     globalThis.window=oldWindow;globalThis.document=oldDocument;
   }
 });
+test('V96 : aucune page PDF ni bouton mobile actif sous un livre masqué',()=>{
+  const oldDocument=globalThis.document;
+  const doc=target();
+  doc.hidden=false;
+  globalThis.document=doc;
+  const f=fixture();
+  try{
+    let hidden=true;
+    f.viewer.closest=selector=>selector==='[hidden]'&&hidden?{hidden:true}:null;
+    f.swipe(-130,3);
+    f.mobileNext.emit('click');
+    assert.equal(f.next.clicks,0);
+    doc.hidden=true;hidden=false;
+    f.swipe(-130,3);
+    f.mobileNext.emit('click');
+    assert.equal(f.next.clicks,0,'onglet caché sans ancêtre masqué');
+    doc.hidden=false;
+    f.swipe(-130,3);
+    f.mobileNext.emit('click');
+    assert.equal(f.next.clicks,2,'une reprise visible rétablit les gestes');
+  }finally{
+    f.release();
+    globalThis.document=oldDocument;
+  }
+});
 test('intégration : pas de swipe si un pincement ou une annulation a commencé',()=>{
   const x=fixture();
   x.swipe(-110,0,{multiple:true});
