@@ -1,10 +1,29 @@
 import { getSupabase, requireUser, friendlyBackendMessage } from './sinjira-supabase.js';
+import {isSafeLifeStoryId,isSafeDeathReportCode} from './sinjira-life-story-owner-boundaries.mjs';
 
 const statusNode = document.querySelector('[data-life-story-posthumous-status]');
 const panel = document.querySelector('[data-life-story-posthumous-case]');
 const contestForm = document.querySelector('[data-life-story-contest-form]');
 const fmt = new Intl.DateTimeFormat('fr-CA', { dateStyle: 'long', timeStyle: 'short' });
 const s = getSupabase();
+let revealedReportCodeInput = null;
+let reportCodeRevealEpoch = 0;
+
+// Un code privé 256 bits ne doit pas rester dans le DOM après un changement
+// d'onglet, une navigation ou le clic explicite sur « Masquer ».
+function clearReportCode() {
+  reportCodeRevealEpoch += 1;
+  if (revealedReportCodeInput) revealedReportCodeInput.value = '';
+  revealedReportCodeInput = null;
+  const once = document.querySelector('[data-report-code-once]');
+  if (!once) return;
+  once.hidden = true;
+  once.replaceChildren();
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) clearReportCode();
+});
+window.addEventListener('pagehide', clearReportCode);
 
 function showStatus(message, kind = '') {
   if (!statusNode) return;
@@ -49,8 +68,8 @@ async function loadCase() {
     : 'Aucun PDF ne peut être préparé avant la fin du délai et une deuxième validation humaine.';
   panel.append(title, details, guard);
   if (contestForm) {
-    contestForm.hidden = !current.can_contest;
-    contestForm.dataset.caseId = current.case_id || '';
+    contestForm.hidden = !(current.can_contest && isSafeLifeStoryId(current.case_id));
+    contestForm.dataset.caseId = isSafeLifeStoryId(current.case_id) ? current.case_id : '';
   }
 }
 
@@ -82,7 +101,7 @@ async function loadReportCodes() {
     const title = document.createElement('strong'); title.textContent = row.label || 'Code privé';
     const meta = document.createElement('p'); meta.textContent = `${row.status === 'active' ? 'Actif' : row.status === 'used' ? 'Utilisé' : 'Révoqué'} · créé ${dateTime(row.created_at)}`;
     card.append(title, meta);
-    if (row.status === 'active') {
+    if (row.status === 'active' && isSafeLifeStoryId(row.id)) {
       const button = document.createElement('button'); button.type = 'button'; button.className = 'btn btn-secondary'; button.dataset.revokeReportCode = row.id; button.textContent = 'Révoquer ce code'; card.append(button);
     }
     list.append(card);
@@ -94,19 +113,42 @@ async function createReportCode(event) {
   const form = event.currentTarget;
   const label = String(new FormData(form).get('label') || '').trim();
   if (!label) return;
+  // Masquer tout jeton précédent avant d'entamer une nouvelle création.
+  clearReportCode();
+  const currentRevealEpoch = reportCodeRevealEpoch;
   const button = form.querySelector('button[type="submit"]'); if (button) button.disabled = true;
   try {
     const { data, error } = await s.rpc('life_story_create_report_code', { p_label: label });
     if (error) throw error;
+    // Le code brut est un secret affiché une seule fois. Refuser toute
+    // réponse non conforme au contrat SQL (32 octets hex / display_once).
+    if(data?.display_once!==true || !isSafeDeathReportCode(data?.code))
+      throw new Error('REPORT_CODE_INVALID');
     form.reset();
+    // Une réponse asynchrone après un passage en arrière-plan ou pagehide
+    // ne doit jamais réinsérer le secret dans le DOM, même lors du retour.
+    if (document.hidden || currentRevealEpoch !== reportCodeRevealEpoch) {
+      showStatus('Le code a été créé mais son affichage a été annulé après un changement de page. Révoquez-le puis créez-en un nouveau pour le copier.', 'error');
+      await loadReportCodes();
+      return;
+    }
     const once = document.querySelector('[data-report-code-once]');
     if (once) {
-      once.hidden = false; once.innerHTML = '';
-      const strong = document.createElement('strong'); strong.textContent = 'Copiez ce code maintenant — SINJIRA ne pourra pas l’afficher de nouveau.';
-      const input = document.createElement('input'); input.readOnly = true; input.value = String(data?.code || ''); input.setAttribute('aria-label', 'Code privé de signalement');
+      once.hidden = false;
+      once.replaceChildren();
+      const strong = document.createElement('strong'); strong.textContent = 'Copiez ce code maintenant — il sera masqué si vous quittez cet onglet.';
+      const input = document.createElement('input'); input.readOnly = true; input.value = data.code; input.setAttribute('aria-label', 'Code privé de signalement');
+      revealedReportCodeInput = input;
       const copy = document.createElement('button'); copy.type = 'button'; copy.className = 'btn btn-primary'; copy.textContent = 'Copier le code';
-      copy.addEventListener('click', async () => { try { await navigator.clipboard.writeText(input.value); copy.textContent = 'Copié'; } catch { input.select(); } });
-      once.append(strong, input, copy);
+      copy.addEventListener('click', async () => {
+        const value = input.value;
+        if (!value || document.hidden) return;
+        try { await navigator.clipboard.writeText(value); copy.textContent = 'Copié'; }
+        catch { if (input.value) input.select(); }
+      });
+      const hide = document.createElement('button'); hide.type = 'button'; hide.className = 'btn btn-secondary'; hide.textContent = 'Masquer';
+      hide.addEventListener('click', clearReportCode);
+      once.append(strong, input, copy, hide);
     }
     await loadReportCodes();
   } catch (error) {
@@ -117,7 +159,12 @@ async function createReportCode(event) {
 async function revokeReportCode(event) {
   const button = event.target.closest('[data-revoke-report-code]');
   if (!button) return;
+  if (!isSafeLifeStoryId(button.dataset.revokeReportCode)){
+    showStatus('Référence de code non valide. Actualisez la liste.', 'error');
+    return;
+  }
   if (!confirm('Révoquer ce code ? Il ne pourra plus servir à signaler un décès.')) return;
+  clearReportCode();
   button.disabled = true;
   try {
     const { error } = await s.rpc('life_story_revoke_report_code', { p_code_id: button.dataset.revokeReportCode });
@@ -133,7 +180,7 @@ contestForm?.addEventListener('submit', async (event) => {
   event.preventDefault();
   const caseId = contestForm.dataset.caseId || '';
   const reason = String(new FormData(contestForm).get('reason') || '').trim();
-  if (!caseId || reason.length < 5) {
+  if (!isSafeLifeStoryId(caseId) || reason.length < 5) {
     showStatus('Expliquez brièvement pourquoi cette déclaration est incorrecte.', 'error');
     return;
   }
