@@ -62,12 +62,19 @@ def inspect(source: str) -> list[str]:
     # Les dépendances npm doivent être installées avant l'injection des secrets.
     # Le binaire local s'exécute ensuite sans lancer un gestionnaire de paquets.
     install_header = "      - name: " + INSTALL_STEP + "\n"
+    audit_header = "      - name: Refuser les vulnérabilités graves Netlify avant tout secret\n"
     preflight_header = "      - name: Verrouiller ref, SHA, site et secrets\n"
     install_at = source.find(install_header)
+    audit_at = source.find(audit_header)
     preflight_at = source.find(preflight_header)
-    if source.count(install_header) != 1 or install_at < 0 or not install_at < preflight_at:
-        errors.append("installation CLI pré-secrets obligatoire et unique")
-    install_block = source[install_at:preflight_at] if install_at >= 0 and preflight_at > install_at else ""
+    if (
+        source.count(install_header) != 1
+        or source.count(audit_header) != 1
+        or not (0 <= install_at < audit_at < preflight_at)
+    ):
+        errors.append("installation et audit npm doivent précéder les secrets, dans cet ordre")
+    install_block = source[install_at:audit_at] if 0 <= install_at < audit_at else ""
+    audit_block = source[audit_at:preflight_at] if 0 <= audit_at < preflight_at else ""
     install_active = "\n".join(
         line for line in install_block.splitlines() if not line.lstrip().startswith("#")
     )
@@ -92,6 +99,27 @@ def inspect(source: str) -> list[str]:
             errors.append("installation Netlify sans secrets non conforme: " + marker)
     if "secrets." in install_active or re.search(r"(?m)^ *NETLIFY_(?:AUTH_TOKEN|SITE_ID):", install_active):
         errors.append("secrets injectés dans l'étape d'installation npm")
+    # Le scan des avis publiés se produit lui aussi AVANT tout secret.
+    audit_required = (
+        "          set -euo pipefail",
+        '          cli_root="$RUNNER_TEMP/netlify-cli-27.19.0"',
+        "          audit_status=0",
+        "          npm audit --json --omit=dev \\",
+        "            --registry=https://registry.npmjs.org/ \\",
+        '            > "$cli_root/netlify-audit.json" || audit_status=$?',
+        '          python3 "$GITHUB_WORKSPACE/scripts/validate_netlify_cli_audit.py" \\',
+        '            "$cli_root/netlify-audit.json" --exit-status "$audit_status"',
+    )
+    for item in audit_required:
+        if audit_block.count(item) != 1:
+            errors.append("audit npm pré-secret manquant ou affaibli : " + item)
+    if (
+        "secrets." in audit_block
+        or re.search(r"(?m)^ *NETLIFY_(?:AUTH_TOKEN|SITE_ID):", audit_block)
+        or "|| true" in audit_block
+        or "continue-on-error: true" in source
+    ):
+        errors.append("audit npm doit être sans secrets et fail-closed")
     active_lines = [
         line for line in source.splitlines() if not line.lstrip().startswith("#")
     ]
@@ -248,6 +276,26 @@ def self_test(source: str) -> None:
         ),
         "smoke CLI supprimé": source.replace(
             '"$cli_root/node_modules/.bin/netlify" --version', "true # no CLI smoke", 1,
+        ),
+        "audit npm étape supprimée": source.replace(
+            "      - name: Refuser les vulnérabilités graves Netlify avant tout secret",
+            "      - name: Ne rien auditer", 1,
+        ),
+        "audit npm commande supprimée": source.replace(
+            "npm audit --json --omit=dev", "echo audit skipped", 1,
+        ),
+        "audit npm parseur supprimé": source.replace(
+            'python3 "$GITHUB_WORKSPACE/scripts/validate_netlify_cli_audit.py"',
+            "true # audit bypassed", 1,
+        ),
+        "audit npm exit ignoré": source.replace(
+            "|| audit_status=$?", "|| true", 1,
+        ),
+        "audit npm jeton injecté": source.replace(
+            "      - name: Refuser les vulnérabilités graves Netlify avant tout secret\n",
+            "      - name: Refuser les vulnérabilités graves Netlify avant tout secret\n"
+            + "        env:\n"
+            + "          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}\n", 1,
         ),
         "dépôt npm inconnu": source.replace(
             "--registry=https://registry.npmjs.org/", "--registry=https://example.invalid/", 1,
