@@ -38,6 +38,7 @@ jobs:
       CONFIRMATION: ${{ inputs.confirmation }}
       NPM_CONFIG_AUDIT: 'false'
       NPM_CONFIG_FUND: 'false'
+      NETLIFY_CLI_TELEMETRY_DISABLED: '1'
       SINJIRA_RELEASE_SHA: ${{ github.sha }}
     steps:
       - name: Refuser tout staging depuis une branche non protégée
@@ -71,14 +72,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python3 scripts/validate_netlify_cli_lock.py
           cli_root="$RUNNER_TEMP/netlify-cli-27.10.2"
           mkdir -p "$cli_root"
+          cp "$GITHUB_WORKSPACE/tools/netlify-cli/package.json" "$cli_root/package.json"
+          cp "$GITHUB_WORKSPACE/tools/netlify-cli/package-lock.json" "$cli_root/package-lock.json"
           cd "$cli_root"
           : > "$cli_root/npm-user.conf"
           : > "$cli_root/npm-global.conf"
-          npm install --no-save --ignore-scripts --no-audit --no-fund \
+          npm ci --ignore-scripts --no-audit --no-fund \
             --userconfig="$cli_root/npm-user.conf" --globalconfig="$cli_root/npm-global.conf" \
-            --registry=https://registry.npmjs.org/ netlify-cli@27.10.2
+            --registry=https://registry.npmjs.org/
           test -x "$cli_root/node_modules/.bin/netlify"
           node - "$cli_root/node_modules/netlify-cli/package.json" <<'NODE'
           const fs = require('node:fs');
@@ -87,6 +91,7 @@ jobs:
             throw new Error('Version Netlify CLI inattendue: refus du déploiement');
           }
           NODE
+          "$cli_root/node_modules/.bin/netlify" --version
 
       - name: Verrouiller ref, SHA, site et secrets
         env:
