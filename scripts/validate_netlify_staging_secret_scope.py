@@ -74,14 +74,18 @@ def inspect(source: str) -> list[str]:
     required_install = (
         "          set -euo pipefail",
         '          cli_root="$RUNNER_TEMP/netlify-cli-27.10.2"',
+        '          python3 scripts/validate_netlify_cli_lock.py',
+        '          cp "$GITHUB_WORKSPACE/tools/netlify-cli/package.json" "$cli_root/package.json"',
+        '          cp "$GITHUB_WORKSPACE/tools/netlify-cli/package-lock.json" "$cli_root/package-lock.json"',
         '          cd "$cli_root"',
-        "          npm install --no-save --ignore-scripts --no-audit --no-fund \\",
+        "          npm ci --ignore-scripts --no-audit --no-fund \\",
         '          : > "$cli_root/npm-user.conf"',
         '          : > "$cli_root/npm-global.conf"',
         '            --userconfig="$cli_root/npm-user.conf" --globalconfig="$cli_root/npm-global.conf" \\',
-        "            --registry=https://registry.npmjs.org/ netlify-cli@27.10.2",
+        "            --registry=https://registry.npmjs.org/",
         '          test -x "$cli_root/node_modules/.bin/netlify"',
         "manifest.version !== '27.10.2'",
+        '          "$cli_root/node_modules/.bin/netlify" --version',
     )
     for marker in required_install:
         if install_active.count(marker) != 1:
@@ -91,11 +95,11 @@ def inspect(source: str) -> list[str]:
     active_lines = [
         line for line in source.splitlines() if not line.lstrip().startswith("#")
     ]
-    npm_lines = [line for line in active_lines if re.search(r"(?<![\w-])npm\s+install\b", line)]
-    if len(npm_lines) != 1 or "npm install --no-save --ignore-scripts" not in npm_lines[0]:
-        errors.append("npm install doit apparaître une fois avant les secrets")
-    if any(re.search(r"(?<![\w-])(?:npx|npm\s+exec|pnpm|yarn|corepack)\b", line) for line in active_lines):
-        errors.append("gestionnaire de paquets dynamique non autorisé")
+    npm_lines = [line for line in active_lines if re.search(r"(?<![\w-])npm\s+ci\b", line)]
+    if len(npm_lines) != 1 or "npm ci --ignore-scripts --no-audit --no-fund" not in npm_lines[0]:
+        errors.append("npm ci avec lockfile et scripts désactivés doit être unique")
+    if any(re.search(r"(?<![\w-])(?:npx|npm\s+install|npm\s+exec|pnpm|yarn|corepack)\b", line) for line in active_lines):
+        errors.append("installation ou gestionnaire de paquets dynamique interdit")
 
     for step_name in APPROVED_STEPS[1:]:
         header = "      - name: " + step_name + "\n"
@@ -230,7 +234,20 @@ def self_test(source: str) -> None:
             "      - name: " + INSTALL_STEP + "\n", "      - name: CLI installée ailleurs\n", 1,
         ),
         "scripts npm autorisés": source.replace(
-            "npm install --no-save --ignore-scripts", "npm install --no-save", 1,
+            "npm ci --ignore-scripts", "npm ci", 1,
+        ),
+        "lockfile non validé": source.replace(
+            "python3 scripts/validate_netlify_cli_lock.py", "true # audit skipped", 1,
+        ),
+        "lockfile non copié": source.replace(
+            'cp "$GITHUB_WORKSPACE/tools/netlify-cli/package-lock.json" "$cli_root/package-lock.json"',
+            'echo "lockfile missing"', 1,
+        ),
+        "npm ci remplacé par install": source.replace(
+            "npm ci --ignore-scripts", "npm install --ignore-scripts", 1,
+        ),
+        "smoke CLI supprimé": source.replace(
+            '"$cli_root/node_modules/.bin/netlify" --version', "true # no CLI smoke", 1,
         ),
         "dépôt npm inconnu": source.replace(
             "--registry=https://registry.npmjs.org/", "--registry=https://example.invalid/", 1,
