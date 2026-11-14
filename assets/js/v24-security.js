@@ -71,7 +71,7 @@ function hideSetup(){
 
 // Le secret TOTP et le QR ne doivent pas rester dans le DOM en cas de
 // navigation arrière ou restauration de la page depuis le cache navigateur.
-window.addEventListener('pagehide',hideSetup);
+globalThis.addEventListener?.('pagehide',hideSetup);
 
 try{
   const user=await requireUser();
