@@ -467,6 +467,52 @@ test('V91 : un swipe texte est annulé si la liseuse perd le focus ou devient ca
     assert.equal((d.handlers.get('visibilitychange')||[]).length,0);
   }
 });
+test('V96 : livre privé masqué, aucun tap, swipe, clavier ou bouton ne tourne un écran',()=>{
+  const f=fixture();
+  try{
+    // La visibilité de l'ancêtre est vérifiée au moment de chaque commande.
+    let hidden=true;
+    f.viewer.closest=selector=>selector==='[hidden]'&&hidden?{hidden:true}:null;
+    const before=f.viewer.scrollTop;
+    const tap=f.swipe(0,0,{startX:315,elapsed:100});
+    const swipe=f.swipe(-125,3);
+    assert.equal(tap.defaultPrevented,false);
+    assert.equal(swipe.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,before);
+    const e={key:'ArrowRight',defaultPrevented:false,altKey:false,ctrlKey:false,
+      metaKey:false,shiftKey:false,preventDefault(){this.defaultPrevented=true},
+      stopImmediatePropagation(){}};
+    f.documentMock.emit('keydown',e);
+    assert.equal(e.defaultPrevented,false);
+    const click={defaultPrevented:false,preventDefault(){this.defaultPrevented=true},
+      stopImmediatePropagation(){}};
+    f.next.emit('click',click);
+    f.mobileNext.emit('click',click);
+    assert.equal(click.defaultPrevented,true,
+      'le bouton canonique est intercepté avant son gestionnaire historique');
+    assert.equal(f.viewer.scrollTop,before);
+    assert.equal(f.next.clicks,0);
+    // Le texte reste mesuré : un retour n'exige ni changement de mode,
+    // ni téléchargement du livre, ni écriture de progression fantôme.
+    assert.equal(f.viewer.dataset.readerLayout,'screens');
+    hidden=false;
+    assert.equal(f.swipe(-125,3).defaultPrevented,true);
+    assert.ok(f.viewer.scrollTop>0);
+    assert.equal(f.next.clicks,0);
+  }finally{f.restore()}
+});
+test('V96 : onglet masqué, refus de tout nouveau geste même sans touchcancel',()=>{
+  const f=fixture();
+  try{
+    f.documentMock.hidden=true;
+    assert.equal(f.swipe(-125).defaultPrevented,false);
+    assert.equal(f.swipe(0,0,{startX:315,elapsed:100}).defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,0);
+    f.documentMock.hidden=false;
+    assert.equal(f.swipe(-125).defaultPrevented,true);
+    assert.ok(f.viewer.scrollTop>0);
+  }finally{f.restore()}
+});
 test('V89 : désactiver puis réactiver les écrans invalide une ancienne restitution',()=>{
   const f=fixture({deferredRaf:true});
   try{
