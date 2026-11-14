@@ -74,8 +74,10 @@ jobs:
           cli_root="$RUNNER_TEMP/netlify-cli-27.10.2"
           mkdir -p "$cli_root"
           cd "$cli_root"
+          : > "$cli_root/npm-user.conf"
+          : > "$cli_root/npm-global.conf"
           npm install --no-save --ignore-scripts --no-audit --no-fund \
-            --userconfig=/dev/null --globalconfig=/dev/null \
+            --userconfig="$cli_root/npm-user.conf" --globalconfig="$cli_root/npm-global.conf" \
             --registry=https://registry.npmjs.org/ netlify-cli@27.10.2
           test -x "$cli_root/node_modules/.bin/netlify"
           node - "$cli_root/node_modules/netlify-cli/package.json" <<'NODE'
