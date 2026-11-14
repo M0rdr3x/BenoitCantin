@@ -17,11 +17,11 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "tools/netlify-cli/package.json"
 LOCKFILE = ROOT / "tools/netlify-cli/package-lock.json"
 
-VERSION = "27.10.2"
+VERSION = "27.19.0"
 NAME = "sinjira-netlify-cli-toolchain"
-EXPECTED_SHA256 = "d005ee5f5d983920a11ce7aa3c0eb96b2637364ce32ad2b1e70b6221f49f3d1a"
-EXPECTED_PACKAGE_COUNT = 1080
-CLI_SRI = "sha512-2qQRJf3OufakXPIgKn/U1cqqWydwA6X7OBAVxRldM/D6H7uAmk7awXsJ5EypV4w1ElCdW9GtDFVkeY3N7I5M9w=="
+EXPECTED_SHA256 = "6a21a830c8f3adc799db04bfca9a8c09ea6d864b6903e4f333c7abfdd9535bd4"
+EXPECTED_PACKAGE_COUNT = 1015
+CLI_SRI = "sha512-tsJuEmTWH1rbg7JSKYUwCfO4jQtd++VDVdH5HdOiZTteMPFWqWU2y/SHD3hFjxlHhdMWILST6eymwTY3HUCTOg=="
 SRI = re.compile(r"sha512-[A-Za-z0-9+/]+={0,2}\Z")
 
 
@@ -94,7 +94,7 @@ def self_test(manifest: bytes, lock: bytes) -> None:
         update(data)
         mutants[label] = (manifest, json.dumps(data).encode())
 
-    changed("version CLI", lambda d: d["packages"]["node_modules/netlify-cli"].__setitem__("version", "27.10.3"))
+    changed("version CLI", lambda d: d["packages"]["node_modules/netlify-cli"].__setitem__("version", "27.19.1"))
     changed("SRI CLI", lambda d: d["packages"]["node_modules/netlify-cli"].__setitem__("integrity", "sha512-fausse"))
     changed("URL exfiltration", lambda d: d["packages"]["node_modules/netlify-cli"].__setitem__("resolved", "https://evil.example/a.tgz"))
     changed("HTTP", lambda d: d["packages"]["node_modules/netlify-cli"].__setitem__("resolved", "http://registry.npmjs.org/a.tgz"))
@@ -105,7 +105,7 @@ def self_test(manifest: bytes, lock: bytes) -> None:
     changed("lockfile v2", lambda d: d.__setitem__("lockfileVersion", 2))
     changed("dépendance directe mobile", lambda d: d["packages"][""]["dependencies"].__setitem__("netlify-cli", "*"))
     mutants["manifest mobile"] = (
-        manifest.replace(b'"27.10.2"', b'"*"'), lock
+        manifest.replace(b'"27.19.0"', b'"*"'), lock
     )
     mutants["manifest autre paquet"] = (
         manifest.replace(b'"netlify-cli"', b'"other-cli"'), lock
