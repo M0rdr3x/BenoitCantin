@@ -8,6 +8,23 @@
 import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally} from './sinjira-liseuse-touch-v52.mjs?v=52.11.10.1';
 
 const PREF_KEY='sinjira:liseuse:lecture-par-ecrans:v53';
+
+/** V95 — les tapotements sur les marges facilitent la lecture d'une main.
+ * Les bords extrêmes restent réservés au système; le centre du texte, la
+ * sélection, la longue pression et tout mouvement conservent leurs gestes.
+ * Coordonnées locales au conteneur pour les tablettes et mises en page centrées.
+ */
+export function classifyReaderEdgeTap({x,viewerWidth,durationMs,dx=0,dy=0,
+  maxTravel=0,hasSelection=false,scrolled=false}={}){
+  if(hasSelection||scrolled||![x,viewerWidth,durationMs,dx,dy,maxTravel]
+    .every(Number.isFinite)||viewerWidth<240||durationMs<0||durationMs>300||
+    Math.abs(dx)>12||Math.abs(dy)>12||maxTravel>12)return null;
+  const margin=Math.max(28,viewerWidth*.07);
+  const band=viewerWidth*.26;
+  if(x>=margin&&x<=band)return 'previous';
+  if(x>=viewerWidth-band&&x<=viewerWidth-margin)return 'next';
+  return null;
+}
 const INTERACTIVE='a,button,input,select,textarea,summary,[contenteditable],[role="button"],[role="link"],[data-reader-no-swipe]';
 
 /** Empêche un saut de ligne masquée au bord de l'écran.
@@ -273,7 +290,7 @@ export function bindReaderScreenMode({
     cancelPendingLayoutRestore();
     gesture={
       id:touch.identifier,x:touch.clientX,y:touch.clientY,start:clock(),
-      scrollTop:viewer.scrollTop,maxVerticalTravel:0,scrolled:false,
+      scrollTop:viewer.scrollTop,maxVerticalTravel:0,maxTravel:0,scrolled:false,
       readerLayout:viewer.dataset?.readerLayout,
       geometry:captureReaderSwipeGeometry(viewer),
       nestedHorizontalScroll:captureReaderNestedHorizontalScroll(event.target,viewer),
@@ -298,6 +315,8 @@ export function bindReaderScreenMode({
     gesture.maxVerticalTravel=Math.max(
       gesture.maxVerticalTravel,Math.abs(touch.clientY-gesture.y)
     );
+    gesture.maxTravel=Math.max(gesture.maxTravel,
+      Math.abs(touch.clientX-gesture.x),Math.abs(touch.clientY-gesture.y));
     if(Math.abs(viewer.scrollTop-gesture.scrollTop)>8)gesture.scrolled=true;
     if(readerNestedVerticalScrollMoved(gesture.nestedVerticalScroll))gesture.nestedScrolled=true;
     if(readerNestedHorizontalScrollMoved(gesture.nestedHorizontalScroll))
@@ -336,6 +355,28 @@ export function bindReaderScreenMode({
       // les gestes verticaux restent accessibles au navigateur.
       event.preventDefault();
       turn(direction);
+      return;
+    }
+    // V95 : tapotement volontaire dans une marge, sans mouvement ni zoom.
+    // N'agit que sur le texte paginé, jamais sur le PDF ou le mode continu.
+    const rect=viewer.getBoundingClientRect?.();
+    if(!rect)return;
+    const tap=classifyReaderEdgeTap({
+      x:start.x-rect.left,viewerWidth:rect.width,
+      durationMs:clock()-start.start,
+      dx:touch.clientX-start.x,dy:touch.clientY-start.y,
+      maxTravel:start.maxTravel,
+      hasSelection:Boolean(getSelectionText().trim()),
+      scrolled:start.nestedScrolled||
+        readerNestedVerticalScrollMoved(start.nestedVerticalScroll)||
+        start.nestedHorizontalScrolled||
+        readerNestedHorizontalScrollMoved(start.nestedHorizontalScroll)||
+        start.scrolled||Math.abs(viewer.scrollTop-start.scrollTop)>8||
+        readerCanPanHorizontally(viewer)||readerCanPanHorizontally(text)
+    });
+    if(tap){
+      event.preventDefault();
+      turn(tap);
     }
   };
   const handleNav=(direction,event)=>{
