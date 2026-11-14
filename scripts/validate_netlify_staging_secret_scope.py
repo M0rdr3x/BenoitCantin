@@ -18,7 +18,7 @@ APPROVED_STEPS = (
     "Déployer le production-candidate sans promotion",
 )
 INSTALL_STEP = "Installer Netlify CLI sans identifiants"
-CLI_BIN = '"$RUNNER_TEMP/netlify-cli-27.10.2/node_modules/.bin/netlify"'
+CLI_BIN = '"$RUNNER_TEMP/netlify-cli-27.19.0/node_modules/.bin/netlify"'
 OFFLINE_LINE = "          NPM_CONFIG_OFFLINE: 'true'"
 STEP_LINE = re.compile(r"^      - name: ([^\n]+)$")
 EXPRESSION = re.compile(r"\$\{\{\s*secrets\.(NETLIFY_AUTH_TOKEN|NETLIFY_SITE_ID)\s*\}\}")
@@ -73,7 +73,7 @@ def inspect(source: str) -> list[str]:
     )
     required_install = (
         "          set -euo pipefail",
-        '          cli_root="$RUNNER_TEMP/netlify-cli-27.10.2"',
+        '          cli_root="$RUNNER_TEMP/netlify-cli-27.19.0"',
         '          python3 scripts/validate_netlify_cli_lock.py',
         '          cp "$GITHUB_WORKSPACE/tools/netlify-cli/package.json" "$cli_root/package.json"',
         '          cp "$GITHUB_WORKSPACE/tools/netlify-cli/package-lock.json" "$cli_root/package-lock.json"',
@@ -84,7 +84,7 @@ def inspect(source: str) -> list[str]:
         '            --userconfig="$cli_root/npm-user.conf" --globalconfig="$cli_root/npm-global.conf" \\',
         "            --registry=https://registry.npmjs.org/",
         '          test -x "$cli_root/node_modules/.bin/netlify"',
-        "manifest.version !== '27.10.2'",
+        "manifest.version !== '27.19.0'",
         '          "$cli_root/node_modules/.bin/netlify" --version',
     )
     for marker in required_install:
@@ -265,10 +265,10 @@ def self_test(source: str) -> None:
             + "          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}\n", 1,
         ),
         "npx pendant déploiement": source.replace(
-            CLI_BIN + " deploy", "npx --yes netlify-cli@27.10.2 deploy", 1,
+            CLI_BIN + " deploy", "npx --yes netlify-cli@27.19.0 deploy", 1,
         ),
         "version binaire modifiée": source.replace(
-            "manifest.version !== '27.10.2'", "manifest.version !== '999.0.0'", 1,
+            "manifest.version !== '27.19.0'", "manifest.version !== '999.0.0'", 1,
         ),
         "staging environment removed": source.replace(
             "    environment: netlify-staging\n", "", 1,
