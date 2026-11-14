@@ -6,25 +6,56 @@ let state=null;
 
 const q=(selector)=>document.querySelector(selector);
 
+// Une identité d'appareil n'est jamais une preuve d'autorisation : JWT, AAL2
+// et les décisions côté serveur demeurent obligatoires. Ne jamais fabriquer
+// une identité prévisible ou éphémère lorsque Web Crypto / Storage échoue.
+function isStrongDeviceKey(value){
+  if(typeof value!=='string')return false;
+  if(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value))return true;
+  const match=/^sinjira-([0-9a-f]{48})(?:-[0-9a-z]{1,15})?$/i.exec(value);
+  return Boolean(match && !/^0{48}$/.test(match[1]));
+}
+function deviceKeyUnavailable(){
+  const error=new Error('DEVICE_KEY_UNAVAILABLE');
+  error.code='DEVICE_KEY_UNAVAILABLE';
+  return error;
+}
 function randomDeviceKey(){
-  if(globalThis.crypto?.randomUUID)return globalThis.crypto.randomUUID();
+  const secureCrypto=globalThis.crypto;
+  if(typeof secureCrypto?.randomUUID==='function'){
+    try{
+      const uuid=secureCrypto.randomUUID();
+      if(isStrongDeviceKey(uuid))return uuid;
+    }catch{
+      // Un fournisseur cryptographique non fonctionnel ne justifie pas
+      // un repli vers Math.random, Date.now ou des octets non initialisés.
+    }
+  }
+  if(typeof secureCrypto?.getRandomValues!=='function')throw deviceKeyUnavailable();
   const bytes=new Uint8Array(24);
-  globalThis.crypto?.getRandomValues?.(bytes);
-  return `sinjira-${Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}-${Date.now().toString(36)}`;
+  try{secureCrypto.getRandomValues(bytes)}catch{throw deviceKeyUnavailable()}
+  if(!bytes.some(byte=>byte!==0))throw deviceKeyUnavailable();
+  return `sinjira-${Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}`;
 }
 
 function deviceKey(){
-  try{
-    let value=localStorage.getItem(DEVICE_KEY_STORAGE);
-    if(!value){value=randomDeviceKey();localStorage.setItem(DEVICE_KEY_STORAGE,value)}
-    return value;
-  }catch{
+  // Le même appareil doit conserver une clé valide entre deux requêtes. Une
+  // clé ancienne, trop courte, nulle ou altérée est remplacée, pas réutilisée.
+  for(const storageName of ['localStorage','sessionStorage']){
     try{
-      let value=sessionStorage.getItem(DEVICE_KEY_STORAGE);
-      if(!value){value=randomDeviceKey();sessionStorage.setItem(DEVICE_KEY_STORAGE,value)}
-      return value;
-    }catch{return randomDeviceKey()}
+      const storage=globalThis[storageName];
+      if(!storage || typeof storage.getItem!=='function' || typeof storage.setItem!=='function')continue;
+      const previous=storage.getItem(DEVICE_KEY_STORAGE);
+      if(isStrongDeviceKey(previous))return previous;
+      const fresh=randomDeviceKey();
+      storage.setItem(DEVICE_KEY_STORAGE,fresh);
+      if(storage.getItem(DEVICE_KEY_STORAGE)!==fresh)continue;
+      return fresh;
+    }catch{
+      // Storage peut être désactivé ou inaccessible; essayer l'autre portée.
+    }
   }
+  throw deviceKeyUnavailable();
 }
 
 function deviceMetadata(){
@@ -57,13 +88,13 @@ async function invokePersonalAi(body){
   const {data,error}=await getSupabase().functions.invoke('personal-ai',{body:{...deviceMetadata(),...body}});
   if(error){
     const payload=await errorPayload(error,data);
-    const wrapped=new Error(String(payload?.error||error.message||'Opération Mon IA refusée.'));
+    const wrapped=new Error('Opération Mon IA refusée.');
     wrapped.code=String(payload?.code||'PERSONAL_AI_OPERATION_REFUSED');
     wrapped.security=payload?.security||null;
     throw wrapped;
   }
   if(!data?.ok){
-    const wrapped=new Error(String(data?.error||'Opération Mon IA refusée.'));
+    const wrapped=new Error('Opération Mon IA refusée.');
     wrapped.code=String(data?.code||'PERSONAL_AI_OPERATION_REFUSED');
     wrapped.security=data?.security||null;
     throw wrapped;
@@ -76,13 +107,16 @@ function friendlyError(error){
   if(code==='MFA_SETUP_REQUIRED')return 'Configurez d’abord l’authentification renforcée dans Ma sécurité. Mon IA privée exige toujours AAL2.';
   if(code==='MFA_REQUIRED')return 'Une vérification MFA récente est requise avant d’ouvrir ou modifier Mon IA.';
   if(code==='SECURITY_CHALLENGE_REQUIRED'){
-    const display=String(error?.security?.display_code||'').trim();
-    return `Cet appareil doit être confirmé depuis un autre appareil fiable.${display?` Code de confirmation : ${display}.`:''}`;
+    const display=String(error?.security?.display_code||'').trim().toUpperCase();
+    // Ne jamais reprendre une valeur arbitraire du backend dans l'interface.
+    const safeCode=/^[A-Z0-9]{6,12}$/.test(display)?display:'';
+    return `Cet appareil doit être confirmé depuis un autre appareil fiable.${safeCode?` Code de confirmation : ${safeCode}.`:''}`;
   }
   if(code==='SECURITY_BLOCKED')return 'La protection du compte bloque temporairement Mon IA. Consultez Ma sécurité avant de réessayer.';
   if(code==='AUTH_REQUIRED')return 'Reconnectez-vous à votre compte SINJIRA.';
   if(code==='MFA_STATE_UNAVAILABLE'||code==='SECURITY_DECISION_INVALID')return 'La protection de Mon IA ne peut pas être vérifiée pour le moment. Aucun accès n’a été accordé.';
-  return String(error?.message||'Opération Mon IA refusée.');
+  if(code==='DEVICE_KEY_UNAVAILABLE')return 'Mon IA ne peut pas créer un identifiant d’appareil fiable dans ce navigateur. Activez un stockage sécurisé et réessayez.';
+  return 'L’opération Mon IA n’a pas pu être terminée. Aucun accès privé supplémentaire n’a été accordé.';
 }
 
 function permissionGranted(source){
