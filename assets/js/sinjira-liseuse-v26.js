@@ -46,7 +46,7 @@ const state={pdf:null,page:1,mode:'texte',theme:'sepia',size:20,zoom:1,
   loadController:null,authSubscription:null,cloudSpotSupported:null,
   positionRatio:0,restorePending:null,restoringScroll:false,scrollTimer:null,resumeSource:'debut',
   bfcacheSpot:null,privatePaused:false,privateReturnGeneration:0,
-  privateReturnInFlight:false};
+  privateReturnInFlight:false,privateReaderReady:false};
 const speech={active:false,paused:false,token:0,chunks:[],index:0,voices:[],utterance:null};
 const speechReady='speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
 const storageKey='sinjira:liseuse:'+edition+':la-cendre-du-jugement';
@@ -690,7 +690,10 @@ function suspendPrivateReaderForReturn(){
     state.bfcacheSpot={page:state.page,ratio:ratioFromScroll(
       viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight)};
   }
-  if(state.pdf)state.privatePaused=true;
+  // V94 : pendant le chargement initial, state.pdf est encore null.
+  // La suspension doit toutefois survivre à l'arrivée des octets PDF ;
+  // autrement init() les afficherait en arrière-plan sans revalidation.
+  state.privatePaused=true;
   $('reader-content').hidden=true;
   const sidebar=document.querySelector('.reader-sidebar');
   if(sidebar)sidebar.hidden=true;
@@ -700,7 +703,7 @@ function suspendPrivateReaderForReturn(){
     La génération empêche une réponse ancienne de réouvrir la liseuse. */
 async function revalidatePrivateReaderAfterReturn(){
   if(!isFull||!state.privatePaused||state.privateReturnInFlight||
-     state.accessInvalidated||!state.pdf||!state.user||
+     !state.privateReaderReady||state.accessInvalidated||!state.pdf||!state.user||
      document.visibilityState==='hidden')return;
   state.privateReturnInFlight=true;
   const epoch=state.accessEpoch,userId=state.user.id,pdf=state.pdf;
@@ -725,7 +728,11 @@ async function revalidatePrivateReaderAfterReturn(){
        !url.pathname.startsWith('/storage/v1/object/sign/'))
       throw new Error('INVALID_SIGNED_URL');
     if(!sameSession())return;
-    const spot=state.bfcacheSpot;
+    // Si la suspension précédait le premier PDF, aucun spot capturé
+    // n'existe : retrouver alors le ratio choisi par restorePage().
+    const spot=state.bfcacheSpot||{
+      page:state.page,ratio:state.positionRatio
+    };
     state.bfcacheSpot=null;
     state.privatePaused=false;
     $('reader-content').hidden=false;
@@ -767,6 +774,7 @@ function lockPrivateReader(){
   state.cloudDirty=false;state.cloudRetrying=false;
   state.bfcacheSpot=null;
   state.privatePaused=false;
+  state.privateReaderReady=false;
   ++state.privateReturnGeneration;
   $('reader-position-status').textContent='';
   stopNarration(false);
@@ -934,7 +942,9 @@ async function init(){
       },
     });
     $('reader-loading').hidden=true;
-    $('reader-content').hidden=false;
+    // V94 : ne jamais dévoiler le roman intégral pendant une suspension
+    // déclenchée avant la fin du chargement (PDF encore absent).
+    $('reader-content').hidden=isFull&&state.privatePaused;
     updateToolbar();renderPage();updateSpeechControls();
     const origin=state.resumeSource==='compte'?'depuis votre compte'
       :state.resumeSource==='appareil'?'depuis cet appareil':'au début du roman';
@@ -947,7 +957,15 @@ async function init(){
     // L'indisponibilité de la synchronisation des notes ne bloque pas la lecture.
     companion.ready().catch(()=>message('La liseuse fonctionne, mais les repères personnels ne sont pas disponibles.','warning'));
     $('reader-status').hidden=true;
-    if(isFull&&state.cloudDirty)void retryCloudProgress();
+    if(isFull){
+      state.privateReaderReady=true;
+      if(state.privatePaused){
+        // L'onglet peut être redevenu visible entre deux await d'init().
+        // Revalider droits et compte, même sans deuxième événement visible.
+        if(document.visibilityState!=='hidden')
+          void revalidatePrivateReaderAfterReturn();
+      }else if(state.cloudDirty)void retryCloudProgress();
+    }
   }catch(error){
     state.loadController=null;
     if(loadedPdf){
