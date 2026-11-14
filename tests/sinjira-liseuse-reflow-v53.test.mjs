@@ -166,6 +166,8 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
   const oldWindow=globalThis.window,oldDocument=globalThis.document;
   const windowMock=mockTarget();
   windowMock.getComputedStyle=()=>({lineHeight:'35px',fontSize:'20px'});
+  windowMock.visualViewport=mockTarget();
+  windowMock.visualViewport.scale=1;
   globalThis.window=windowMock;
   const documentMock=mockTarget();
   documentMock.activeElement=null;
@@ -465,6 +467,56 @@ test('V89 : retour au mode pages après lecture continue conserve le ratio actue
     f.flushFrames();
     assert.equal(f.viewer.dataset.readerLayout,'screens');
     assert.equal(f.viewer.scrollTop,560);
+  }finally{f.restore()}
+});
+test('V90 : barre du navigateur mobile réajuste les écrans sans window.resize',()=>{
+  const f=fixture({deferredRaf:true});
+  try{
+    f.viewer.scrollTo({top:350});
+    // Le CSS 100dvh a changé la hauteur et le nombre de lignes visibles ;
+    // seul visualViewport a notifié le changement.
+    f.viewer.clientHeight=300;
+    f.viewer.scrollHeight=1100;
+    f.windowMock.visualViewport.emit('resize',{});
+    f.flushFrames();
+    assert.equal(f.viewer.scrollTop,400);
+    assert.match(f.status.textContent,/Écran/);
+  }finally{f.restore()}
+});
+test('V90 : le pinch-zoom ne repositionne pas le roman et libère son listener',()=>{
+  const f=fixture({deferredRaf:true});
+  const visual=f.windowMock.visualViewport;
+  try{
+    f.viewer.scrollTo({top:350});
+    visual.scale=1.6;
+    f.viewer.clientHeight=300;
+    f.viewer.scrollHeight=1100;
+    visual.emit('resize',{});
+    f.flushFrames();
+    assert.equal(f.viewer.scrollTop,350,
+      'le redimensionnement du viewport en zoom ne doit pas modifier le scroll');
+    visual.scale=1;
+    visual.emit('resize',{});
+    f.flushFrames();
+    assert.equal(f.viewer.scrollTop,400);
+  }finally{
+    f.restore();
+    assert.equal((visual.handlers.get('resize')||[]).length,0,
+      'pas de listener visualViewport orphelin après fermeture du lecteur');
+  }
+});
+test('V90 : un vrai swipe prime sur un redimensionnement visualViewport',()=>{
+  const f=fixture({deferredRaf:true});
+  try{
+    f.viewer.scrollTo({top:350});
+    f.windowMock.visualViewport.emit('resize',{});
+    f.viewer.scrollHeight=1750;
+    const gesture=f.swipe(-130,2);
+    assert.equal(gesture.defaultPrevented,true);
+    const location=f.viewer.scrollTop;
+    assert.ok(location>350,location);
+    f.flushFrames();
+    assert.equal(f.viewer.scrollTop,location);
   }finally{f.restore()}
 });
 test('V56 : rotation mobile conserve la même proportion malgré événements en double',()=>{
