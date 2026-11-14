@@ -56,6 +56,16 @@ for marker in ('Aucun moteur conversationnel n’est encore activé','aucune con
 for marker in ('localStorage.setItem(\'personal_ai','sessionStorage.setItem(\'personal_ai','indexedDB'):
     forbid(JS,marker,f'Web: persistance Mon IA locale interdite {marker}')
 need(JS,"functions.invoke('personal-ai'",'Web: doit utiliser l Edge privée')
+# Mon IA ne doit jamais synthétiser une identité prévisible ou éphémère,
+# ni renvoyer dans la page des diagnostics serveur inconnus.
+for marker in ('isStrongDeviceKey', 'deviceKeyUnavailable', 'secureCrypto.getRandomValues(bytes)',
+               'storage.setItem(DEVICE_KEY_STORAGE,fresh)', "code==='DEVICE_KEY_UNAVAILABLE'"):
+    need(JS,marker,f'Web: frontière identité appareil absente: {marker}')
+for marker in ('globalThis.crypto?.getRandomValues?.(bytes)', 'catch{return randomDeviceKey()}',
+               "return String(error?.message", "new Error(String(data?.error", "new Error(String(payload?.error"):
+    forbid(JS,marker,f'Web: repli non fiable ou diagnostic brut: {marker}')
+need(HTML,'sinjira-personal-ai-v25.js?v=25.0-device-security',
+     'Web: nouvelle version du module identité non chargée')
 for marker in (".from('personal_ai",'.from("personal_ai'):
     forbid(JS,marker,'Web: accès direct aux tables Mon IA interdit')
 
