@@ -41,6 +41,10 @@ def main() -> int:
     # La page de sécurité doit continuer à charger le Centre de sécurité contrôlé ici.
     require('sinjira-security-center-v24-4-98.js' in page,
             'la page Ma sécurité ne charge plus le Centre de sécurité attendu')
+    require('sinjira-security-center-v24-4-98.js?v=24.5.2' in page,
+            'le cache du Centre de sécurité n’a pas été invalidé après le correctif Compte compromis')
+    forbid(page, 'sinjira-security-center-v24-4-98.js?v=24.5.1',
+           'ancienne version non sécurisée du Centre de sécurité')
 
     # Web: une approbation ou un refus passe uniquement par le résolveur multi-appareils
     # et présente la clé de l’appareil courant, jamais une clé choisie ailleurs.
