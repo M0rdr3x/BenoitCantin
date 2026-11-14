@@ -46,6 +46,10 @@ jobs:
         run: python3 scripts/build_netlify_public.py --check
       - name: Auditer le confinement GitHub Pages
         run: python3 scripts/build_netlify_public.py --check --security-containment
+      - name: Refuser les workflows qui publieraient la racine technique sur Pages
+        run: |
+          python3 scripts/validate_pages_artifact_boundary.py --self-test
+          python3 scripts/validate_pages_artifact_boundary.py
       - name: Construire l'artefact netlify autonome
         run: python3 scripts/build_netlify_public.py --output _site --standalone-netlify
       - name: Refuser les dossiers techniques et les fichiers non publics
