@@ -5,12 +5,189 @@ PDF fictif, Chromium/WebKit simulés, aucun roman privé ni accès Supabase.
 La reprise est testée après un swipe sans bouton de sauvegarde manuelle.
 """
 import argparse
+from urllib.parse import urlparse
 from playwright.sync_api import sync_playwright
 
 from test_sinjira_liseuse_mobile_v54 import serve_fixture, swipe
-from test_sinjira_liseuse_real_page_v57 import install_isolation, snapshot
+from test_sinjira_liseuse_real_page_v57 import install_isolation, snapshot, MOCK_PDF_JS
 
 SPOT_KEY="sinjira:liseuse:demo:la-cendre-du-jugement:spot"
+
+
+PRIVATE_SIGNED_URL = (
+    "https://gpvivleexywljowcqkru.supabase.co/"
+    "storage/v1/object/sign/sinjira-private/test-v93.pdf"
+)
+
+PRIVATE_SUPABASE_STUB = """
+const mock=globalThis.__v93Private={
+  allowed:true,userId:'v93-user',deferAuth:false,
+  releaseAuth:null,authCalls:0,rightsCalls:0
+};
+const authResult=()=>({data:{user:{id:mock.userId}},error:null});
+const client={
+  auth:{
+    getUser(){
+      mock.authCalls++;
+      if(mock.deferAuth)return new Promise(resolve=>{
+        mock.releaseAuth=()=>{mock.releaseAuth=null;resolve(authResult())};
+      });
+      return Promise.resolve(authResult());
+    },
+    onAuthStateChange(){return {data:{subscription:{unsubscribe(){}}}}}
+  },
+  functions:{
+    async invoke(){
+      mock.rightsCalls++;
+      if(!mock.allowed)return {data:{ok:false},error:{message:'RIGHTS_REVOKED'}};
+      return {data:{ok:true,url:'https://gpvivleexywljowcqkru.supabase.co/storage/v1/object/sign/sinjira-private/test-v93.pdf'},error:null};
+    }
+  },
+  from(table){
+    const chain={
+      select(){return chain},
+      eq(){return chain},
+      order(){return chain},
+      limit(){return Promise.resolve({data:[],error:null})},
+      maybeSingle(){
+        if(table==='sinjira_novels')return Promise.resolve({
+          data:{id:'v93-novel'},error:null
+        });
+        return Promise.resolve({data:null,error:null});
+      },
+      upsert(){return Promise.resolve({error:null})}
+    };
+    return chain;
+  }
+};
+export function getSupabase(){return client}
+export async function requireUser(){return {id:mock.userId}}
+export function safeInternalDestination(x){return x}
+"""
+
+def install_private_isolation(page):
+    """Sécurité privée, PDF fictif de 520 pages et aucun vrai appel Supabase."""
+    blocked=[]
+    pdf=MOCK_PDF_JS.replace("numPages:82","numPages:520").replace(
+        "n>82","n>520"
+    )
+    def intercept(route):
+        url=route.request.url
+        parsed=urlparse(url)
+        path=parsed.path
+        if path=="/assets/js/sinjira-supabase.js":
+            route.fulfill(status=200,content_type="text/javascript",
+                          body=PRIVATE_SUPABASE_STUB)
+        elif "pdfjs-dist@4.9.155/build/pdf.min.mjs" in url:
+            route.fulfill(status=200,content_type="text/javascript",body=pdf)
+        elif url==PRIVATE_SIGNED_URL:
+            route.fulfill(status=200,content_type="application/pdf",
+                          headers={"access-control-allow-origin":"*"},
+                          body=b"%PDF-1.4 V93 private synthetic " + b"0"*2400)
+        elif path=="/assets/js/site.js":
+            route.fulfill(status=200,content_type="text/javascript",
+                          body="// V93 isolated")
+        elif parsed.hostname in ("127.0.0.1","localhost"):
+            route.continue_()
+        else:
+            blocked.append(url)
+            route.abort()
+    page.route("**/*",intercept)
+    return blocked
+
+def validate_private_mobile_return(browser,opts,url):
+    """V93 : retour d'application; droits révoqués et auth async périmée."""
+    context=browser.new_context(**opts)
+    try:
+        page=context.new_page()
+        problems=[]
+        page.on("pageerror",lambda e:problems.append(str(e)))
+        blocked=install_private_isolation(page)
+        private_url=url.replace("edition=demo","edition=integrale")
+        page.goto(private_url,wait_until="load")
+        page.wait_for_function("""()=>{
+          const content=document.querySelector('#reader-content');
+          const text=document.querySelector('#reader-text');
+          return !content.hidden&&!text.hidden&&
+            text.textContent.includes('LIVRE DE TEST · Page 4')
+        }""",timeout=15000)
+
+        # Révocation : masquer la page ET la barre latérale dès la sortie;
+        # interdire le retour d'un ancien texte avec un droit serveur refusé.
+        private_denied=page.evaluate("""()=>{
+          Object.defineProperty(document,'visibilityState',{
+            configurable:true,value:'hidden'
+          });
+          document.dispatchEvent(new Event('visibilitychange'));
+          const c=document.querySelector('#reader-content');
+          const sidebar=document.querySelector('.reader-sidebar');
+          const hidden={content:c.hidden,sidebar:sidebar.hidden};
+          window.__v93Private.allowed=false;
+          Object.defineProperty(document,'visibilityState',{
+            configurable:true,value:'visible'
+          });
+          document.dispatchEvent(new Event('visibilitychange'));
+          return hidden;
+        }""")
+        assert private_denied=={"content":True,"sidebar":True},private_denied
+        page.wait_for_function("""()=>{
+          const c=document.querySelector('#reader-content');
+          const t=document.querySelector('#reader-text');
+          return c.hidden&&t.textContent===''&&
+            !document.querySelector('#reader-error').hidden;
+        }""",timeout=10000)
+        assert page.locator(".reader-sidebar").is_hidden()
+
+        # Une requête d'auth initiée avant une DEUXIÈME suspension ne doit pas
+        # réafficher le PDF lorsqu'elle se termine : token d'invalidation.
+        page.reload(wait_until="load")
+        page.wait_for_function("""()=>!document.querySelector(
+          '#reader-content').hidden&&document.querySelector(
+          '#reader-text').textContent.includes('LIVRE DE TEST · Page 4')""",
+          timeout=15000)
+        page.evaluate("""()=>{
+          Object.defineProperty(document,'visibilityState',{
+            configurable:true,value:'hidden'
+          });
+          document.dispatchEvent(new Event('visibilitychange'));
+          window.__v93Private.deferAuth=true;
+          Object.defineProperty(document,'visibilityState',{
+            configurable:true,value:'visible'
+          });
+          document.dispatchEvent(new Event('visibilitychange'));
+        }""")
+        page.wait_for_function("()=>typeof window.__v93Private.releaseAuth==='function'")
+        page.evaluate("""()=>{
+          Object.defineProperty(document,'visibilityState',{
+            configurable:true,value:'hidden'
+          });
+          document.dispatchEvent(new Event('visibilitychange'));
+          window.__v93Private.deferAuth=false;
+          window.__v93Private.releaseAuth();
+        }""")
+        page.wait_for_timeout(50)
+        still_hidden=page.evaluate("""()=>({
+          content:document.querySelector('#reader-content').hidden,
+          sidebar:document.querySelector('.reader-sidebar').hidden,
+          rightsCalls:window.__v93Private.rightsCalls
+        })""")
+        assert still_hidden["content"] and still_hidden["sidebar"],still_hidden
+        # Retour normal : une nouvelle double vérification doit fonctionner.
+        page.evaluate("""()=>{
+          Object.defineProperty(document,'visibilityState',{
+            configurable:true,value:'visible'
+          });
+          document.dispatchEvent(new Event('visibilitychange'));
+        }""")
+        page.wait_for_function("""()=>{
+          return !document.querySelector('#reader-content').hidden&&
+            !document.querySelector('.reader-sidebar').hidden&&
+            window.__v93Private.rightsCalls>=2;
+        }""",timeout=10000)
+        assert not problems,problems
+        assert not blocked,blocked
+    finally:
+        context.close()
 
 
 def ready(page, pdf_page=3, text=True):
@@ -109,6 +286,10 @@ def run(p,engine,url):
         assert not blocked,blocked
         context.close()
 
+        # V93 : vraie page HTML en édition privée SIMULÉE, droits serveur
+        # révoqués et reprise asynchrone après deux mises en arrière-plan.
+        validate_private_mobile_return(browser,opts,url)
+
         # Un navigateur qui refuse le stockage ne doit PAS afficher un
         # message mensonger « Page mémorisée ». Le livre doit rester lisible.
         denied_context=browser.new_context(**opts)
@@ -153,7 +334,7 @@ def run(p,engine,url):
         assert denied.evaluate("""key=>localStorage.getItem(key)""",SPOT_KEY) is None
         assert not rejected,rejected
         denied_context.close()
-        print(f"PASS {engine} V85/V86/V87: sauvegarde après swipe confirmée "
+        print(f"PASS {engine} V85/V86/V87/V92/V93: reprise privée vérifiée en mock, "
               "sur cet appareil, reprise après rechargement, stockage refusé signalé")
     finally:
         browser.close()
