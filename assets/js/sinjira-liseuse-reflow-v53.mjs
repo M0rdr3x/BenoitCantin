@@ -5,26 +5,12 @@
  * du PDF courant ; une fois le texte terminé, tourner la vraie page du livre.
  * L'enregistrement d'emplacement reste le scroll_ratio historique de la V31.
  */
-import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally} from './sinjira-liseuse-touch-v52.mjs?v=52.11.14.96';
+import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally,classifyReaderEdgeTap} from './sinjira-liseuse-touch-v52.mjs?v=52.11.14.97';
 
 const PREF_KEY='sinjira:liseuse:lecture-par-ecrans:v53';
 
-/** V95 — les tapotements sur les marges facilitent la lecture d'une main.
- * Les bords extrêmes restent réservés au système; le centre du texte, la
- * sélection, la longue pression et tout mouvement conservent leurs gestes.
- * Coordonnées locales au conteneur pour les tablettes et mises en page centrées.
- */
-export function classifyReaderEdgeTap({x,viewerWidth,durationMs,dx=0,dy=0,
-  maxTravel=0,hasSelection=false,scrolled=false}={}){
-  if(hasSelection||scrolled||![x,viewerWidth,durationMs,dx,dy,maxTravel]
-    .every(Number.isFinite)||viewerWidth<240||durationMs<0||durationMs>300||
-    Math.abs(dx)>12||Math.abs(dy)>12||maxTravel>12)return null;
-  const margin=Math.max(28,viewerWidth*.07);
-  const band=viewerWidth*.26;
-  if(x>=margin&&x<=band)return 'previous';
-  if(x>=viewerWidth-band&&x<=viewerWidth-margin)return 'next';
-  return null;
-}
+// V97 : un seul classificateur commun aux marges texte paginé et PDF.
+export {classifyReaderEdgeTap};
 const INTERACTIVE='a,button,input,select,textarea,summary,[contenteditable],[role="button"],[role="link"],[data-reader-no-swipe]';
 
 /** Empêche un saut de ligne masquée au bord de l'écran.
