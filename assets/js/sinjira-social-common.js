@@ -96,6 +96,7 @@ export function socialErrorMessage(error,fallback='Action impossible pour le mom
 }
 
 export function socialErrorStatus(node,error,fallback){
-  console.error('[SINJIRA social]',error);
+  // Ne jamais imprimer l'objet d'erreur Supabase dans la console du navigateur :
+  // il pourrait contenir des détails SQL, des identifiants ou un jeton.
   socialStatus(node,socialErrorMessage(error,fallback),'error');
 }
