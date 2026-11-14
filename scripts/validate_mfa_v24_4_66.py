@@ -83,9 +83,23 @@ def main():
     require(security_page,[
         'data-mfa-enroll',
         'data-mfa-factors',
-        'v24-security.js?v=24.4.70',
+        'v24-security.js?v=24.4.100',
         'aucun SMS, aucun numéro de téléphone et aucun fournisseur payant n’est requis'
     ],'page sécurité MFA')
+    forbid(security_page,[
+        'v24-security.js?v=24.4.68',
+        'v24-security.js?v=24.4.69',
+        'v24-security.js?v=24.4.70',
+    ], 'cache MFA historique refusé')
+    require(security,[
+        'response.error!==null',
+        'Annulation TOTP non confirmée.',
+        "globalThis.addEventListener?.('pagehide',hideSetup)",
+    ], 'annulation TOTP confirmée et secret nettoyé')
+    forbid(security,[
+        "console.warn('[SINJIRA MFA cancel]',error)",
+    ], 'aucun message Supabase brut en log MFA')
+
 
     print('OK MFA V24.4.98: TOTP gratuit, AAL2 fail-closed, Bouclier au login, redirections internes, rendu sans XSS et facteurs de secours autorisés.')
     return 0
