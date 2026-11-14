@@ -1,0 +1,38 @@
+name: SINJIRA — intégrité cryptographique du Centre de sécurité
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-device-integrity-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  device-integrity:
+    name: Refuser les appareils prévisibles et références de sécurité injectées
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Node.js épinglé
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.16.0'
+          check-latest: false
+      - name: Syntaxe des sources
+        run: |
+          node --check assets/js/sinjira-security-center-v24-4-98.js
+          node --check scripts/test_sinjira_security_center_device_integrity.cjs
+      - name: Exécuter les défenses contre la perte de crypto et les identifiants malveillants
+        run: node scripts/test_sinjira_security_center_device_integrity.cjs
