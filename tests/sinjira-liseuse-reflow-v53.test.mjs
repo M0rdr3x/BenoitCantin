@@ -439,6 +439,33 @@ test('V69 : toucher la zone du livre annule une restauration différée',()=>{
     assert.equal(f.viewer.scrollTop,350);
   }finally{f.restore()}
 });
+test('V91 : un swipe texte est annulé si la liseuse perd le focus ou devient cachée',()=>{
+  const f=fixture();
+  try{
+    const touch={identifier:1,clientX:250,clientY:140};
+    const begin=()=>f.viewer.emit('touchstart',{
+      touches:[touch],target:{closest:()=>null}
+    });
+    const finish=()=>f.viewer.emit('touchend',{
+      touches:[],changedTouches:[{...touch,clientX:120,clientY:142}],
+      defaultPrevented:false,preventDefault(){this.defaultPrevented=true}
+    });
+    begin();f.windowMock.emit('blur',{});finish();
+    begin();f.windowMock.emit('pagehide',{});finish();
+    begin();f.documentMock.hidden=true;
+    f.documentMock.emit('visibilitychange',{});finish();
+    assert.equal(f.viewer.scrollTop,0,'aucune navigation après interruption du geste');
+    f.documentMock.hidden=false;
+    begin();f.documentMock.emit('visibilitychange',{});finish();
+    assert.ok(f.viewer.scrollTop>0,'navigation active dans un onglet visible');
+  }finally{
+    const w=f.windowMock,d=f.documentMock;
+    f.restore();
+    assert.equal((w.handlers.get('blur')||[]).length,0);
+    assert.equal((w.handlers.get('pagehide')||[]).length,0);
+    assert.equal((d.handlers.get('visibilitychange')||[]).length,0);
+  }
+});
 test('V89 : désactiver puis réactiver les écrans invalide une ancienne restitution',()=>{
   const f=fixture({deferredRaf:true});
   try{
