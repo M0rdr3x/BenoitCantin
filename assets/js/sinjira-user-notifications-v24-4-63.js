@@ -1,4 +1,5 @@
 import {getSupabase,requireUser,escapeHtml,formatDate,setStatus} from './sinjira-supabase.js';
+import {safeSocialDestination} from './sinjira-social-navigation-guard.mjs';
 
 const s=getSupabase();
 const pageStatus=document.querySelector('[data-notifications-status]');
@@ -15,8 +16,9 @@ const typeLabel=type=>({
 }[type]||'SINJIRA™');
 
 function safeActionPath(value){
-  const path=String(value||'');
-  return path.startsWith('/compte/')||path.startsWith('/projets/sinjira/')?path:'';
+  return safeSocialDestination(value,{
+    origin:location.origin,scopes:['/compte/','/projets/sinjira/']
+  });
 }
 
 function notificationCard(item,{compact=false}={}){
