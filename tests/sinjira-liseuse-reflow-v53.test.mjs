@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {
   measureReaderScreen,readerScreenState,planReaderScreenTurn,bindReaderScreenMode,parseReaderLineHeight,
-  captureReaderTextAnchor,restoreReaderTextAnchor
+  captureReaderTextAnchor,restoreReaderTextAnchor,classifyReaderEdgeTap
 } from '../assets/js/sinjira-liseuse-reflow-v53.mjs';
 
 const setup={scrollHeight:1050,clientHeight:350,lineHeight:35};
@@ -149,6 +149,7 @@ function mockTarget(opts={}){
     emit(name,event={}){for(const fn of handlers.get(name)||[])fn(event)},
     click(){if(this.disabled)return;this.clicks++;this.emit('click',{preventDefault(){},stopImmediatePropagation(){}})},
     scrollTo({top}){this.scrollTop=top;this.emit('scroll',{})},
+    getBoundingClientRect(){return {left:0,width:this.clientWidth}},
     getAttribute(name){return attributes.get(name)??null},
     setAttribute(name,value){attributes.set(name,String(value))},
     contains(node){return node===this},
@@ -865,6 +866,57 @@ test('intégration : glisser gauche/droite navigue par écran sans changer page 
     assert.equal(right.defaultPrevented,true);
     assert.equal(f.viewer.scrollTop,0);
     assert.equal(f.previous.clicks,0);
+  }finally{f.restore()}
+});
+test('V95 : zones de tapotement : gauche revient, droite avance, centre ne tourne pas',()=>{
+  const c={viewerWidth:375,durationMs:150};
+  assert.equal(classifyReaderEdgeTap({...c,x:62}),'previous');
+  assert.equal(classifyReaderEdgeTap({...c,x:320}),'next');
+  assert.equal(classifyReaderEdgeTap({...c,x:185}),null);
+  assert.equal(classifyReaderEdgeTap({...c,x:9}),null,'bord système réservé');
+  assert.equal(classifyReaderEdgeTap({...c,x:369}),null,'bord système réservé');
+  assert.equal(classifyReaderEdgeTap({...c,x:60,viewerWidth:200}),null,'écran trop étroit');
+  assert.equal(classifyReaderEdgeTap({...c,x:NaN}),null);
+});
+test('V95 : pression longue, mouvement, sélection et scroll annulent les taps',()=>{
+  const c={x:65,viewerWidth:375,durationMs:150};
+  assert.equal(classifyReaderEdgeTap({...c,durationMs:400}),null);
+  assert.equal(classifyReaderEdgeTap({...c,dx:20}),null);
+  assert.equal(classifyReaderEdgeTap({...c,dy:15}),null);
+  assert.equal(classifyReaderEdgeTap({...c,maxTravel:55}),null);
+  assert.equal(classifyReaderEdgeTap({...c,hasSelection:true}),null);
+  assert.equal(classifyReaderEdgeTap({...c,scrolled:true}),null);
+});
+test('V95 : tapotement mobile tourne les écrans sans double changement PDF',()=>{
+  const f=fixture();
+  try{
+    const forward=f.swipe(0,0,{startX:315,elapsed:100});
+    assert.equal(forward.defaultPrevented,true);
+    assert.equal(f.viewer.scrollTop,315);
+    assert.equal(f.next.clicks,0);
+    const back=f.swipe(0,0,{startX:65,elapsed:100});
+    assert.equal(back.defaultPrevented,true);
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(f.previous.clicks,0);
+    const center=f.swipe(0,0,{startX:180,elapsed:100});
+    assert.equal(center.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,0);
+  }finally{f.restore()}
+});
+test('V95 : tapotement annulé après glissement, sélection, zoom ou mode continu',()=>{
+  const f=fixture();
+  try{
+    assert.equal(f.swipe(0,0,{startX:65,elapsed:500}).defaultPrevented,false);
+    assert.equal(f.swipe(0,0,{startX:65,moves:[[90,0]],elapsed:120}).defaultPrevented,false);
+    f.setSelected('Texte sélectionné');
+    assert.equal(f.swipe(0,0,{startX:315}).defaultPrevented,false);
+    f.setSelected('');
+    f.windowMock.visualViewport.scale=1.6;
+    assert.equal(f.swipe(0,0,{startX:315}).defaultPrevented,false);
+    f.windowMock.visualViewport.scale=1;
+    f.toggle.checked=false;f.toggle.emit('change',{});
+    assert.equal(f.swipe(0,0,{startX:315}).defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,0);
   }finally{f.restore()}
 });
 test('intégration : les boutons mobiles parcourent les écrans',()=>{
