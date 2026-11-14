@@ -6,6 +6,22 @@ const panel = document.querySelector('[data-life-story-posthumous-case]');
 const contestForm = document.querySelector('[data-life-story-contest-form]');
 const fmt = new Intl.DateTimeFormat('fr-CA', { dateStyle: 'long', timeStyle: 'short' });
 const s = getSupabase();
+let revealedReportCodeInput = null;
+
+// Un code privé 256 bits ne doit pas rester dans le DOM après un changement
+// d'onglet, une navigation ou le clic explicite sur « Masquer ».
+function clearReportCode() {
+  if (revealedReportCodeInput) revealedReportCodeInput.value = '';
+  revealedReportCodeInput = null;
+  const once = document.querySelector('[data-report-code-once]');
+  if (!once) return;
+  once.hidden = true;
+  once.replaceChildren();
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) clearReportCode();
+});
+window.addEventListener('pagehide', clearReportCode);
 
 function showStatus(message, kind = '') {
   if (!statusNode) return;
@@ -95,6 +111,8 @@ async function createReportCode(event) {
   const form = event.currentTarget;
   const label = String(new FormData(form).get('label') || '').trim();
   if (!label) return;
+  // Masquer tout jeton précédent avant d'entamer une nouvelle création.
+  clearReportCode();
   const button = form.querySelector('button[type="submit"]'); if (button) button.disabled = true;
   try {
     const { data, error } = await s.rpc('life_story_create_report_code', { p_label: label });
@@ -106,12 +124,21 @@ async function createReportCode(event) {
     form.reset();
     const once = document.querySelector('[data-report-code-once]');
     if (once) {
-      once.hidden = false; once.innerHTML = '';
-      const strong = document.createElement('strong'); strong.textContent = 'Copiez ce code maintenant — SINJIRA ne pourra pas l’afficher de nouveau.';
+      once.hidden = false;
+      once.replaceChildren();
+      const strong = document.createElement('strong'); strong.textContent = 'Copiez ce code maintenant — il sera masqué si vous quittez cet onglet.';
       const input = document.createElement('input'); input.readOnly = true; input.value = data.code; input.setAttribute('aria-label', 'Code privé de signalement');
+      revealedReportCodeInput = input;
       const copy = document.createElement('button'); copy.type = 'button'; copy.className = 'btn btn-primary'; copy.textContent = 'Copier le code';
-      copy.addEventListener('click', async () => { try { await navigator.clipboard.writeText(input.value); copy.textContent = 'Copié'; } catch { input.select(); } });
-      once.append(strong, input, copy);
+      copy.addEventListener('click', async () => {
+        const value = input.value;
+        if (!value || document.hidden) return;
+        try { await navigator.clipboard.writeText(value); copy.textContent = 'Copié'; }
+        catch { if (input.value) input.select(); }
+      });
+      const hide = document.createElement('button'); hide.type = 'button'; hide.className = 'btn btn-secondary'; hide.textContent = 'Masquer';
+      hide.addEventListener('click', clearReportCode);
+      once.append(strong, input, copy, hide);
     }
     await loadReportCodes();
   } catch (error) {
@@ -127,6 +154,7 @@ async function revokeReportCode(event) {
     return;
   }
   if (!confirm('Révoquer ce code ? Il ne pourra plus servir à signaler un décès.')) return;
+  clearReportCode();
   button.disabled = true;
   try {
     const { error } = await s.rpc('life_story_revoke_report_code', { p_code_id: button.dataset.revokeReportCode });
