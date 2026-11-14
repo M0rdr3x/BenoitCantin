@@ -35,21 +35,27 @@ le fichier workflow sur une branche non protégée pourrait retirer son garde.
    conservées au niveau dépôt ne confèrent pas des droits inutiles.
    Limiter le jeton à un site et des droits de staging lorsque Netlify
    permet cette restriction. Révoquer les jetons non nécessaires.
-4. Examiner la **chaîne d'approvisionnement npm Netlify** :
-   le workflow installe `netlify-cli@27.10.2` dans un répertoire temporaire
-   **avant toute étape recevant les identifiants**. Il passe
-   `--ignore-scripts` et neutralise les fichiers npmrc utilisateur/global,
-   puis vérifie la version du paquet avant utilisation. Les deux étapes
-   avec secrets invoquent le binaire local et définissent
-   `NPM_CONFIG_OFFLINE=true`, sans `npx` ni `npm install`.
-   **Risque restant :** les dépendances transitives ne sont pas encore
-   figées par un `package-lock.json` avec empreintes d'intégrité revues,
-   et le binaire installé s'exécute toujours avec un jeton lors du déploiement.
-   Pour une chaîne reproductible, fournir un lockfile authentique généré
-   depuis le registre officiel, revu indépendamment, puis remplacer
-   l'installation dynamique par `npm ci --ignore-scripts`.
-   Ne pas fabriquer d'empreintes ni assimiler ce correctif à une
-   attestation complète des dépendances.
+4. **Vérifier la chaîne d'approvisionnement npm Netlify verrouillée** :
+   - Le manifeste `tools/netlify-cli/package.json` fixe uniquement `netlify-cli@27.10.2`.
+   - `tools/netlify-cli/package-lock.json` (lockfile npm v3) a été produit
+     par GitHub Actions **sans secret** depuis le registre npm officiel.
+     Il fige **1 080 dépendances** avec des URL HTTPS de ce registre et des
+     empreintes d'intégrité SRI SHA-512.
+   - Le SHA-256 de ce lockfile est
+     `d005ee5f5d983920a11ce7aa3c0eb96b2637364ce32ad2b1e70b6221f49f3d1a`.
+     `scripts/validate_netlify_cli_lock.py` vérifie l'empreinte globale,
+     le registre autorisé, les SRI, les versions et des mutations adversariales.
+   - Avant toute exposition des secrets, le workflow valide ce contrat,
+     copie manifest/lockfile dans le répertoire temporaire, puis exécute
+     `npm ci --ignore-scripts --no-audit --no-fund` avec des configurations
+     npm vides et distinctes. Le binaire local est soumis à un test
+     `--version`. Pendant les deux déploiements, aucun `npx` ni
+     `npm install` n'est exécuté et npm est configuré hors ligne.
+   - **Risque restant :** un lockfile authentique et contrôlé empêche
+     les variations non autorisées du graphe, mais ne prouve pas qu'un paquet
+     d'origine est exempt de code malveillant. La revue des éditeurs et
+     dépendances, l'analyse des vulnérabilités publiées et la limitation
+     des jetons restent requises.
 5. Faire relire la PR, valider la CI du commit exact et tester en
    staging avec des données fictives. Ne lancer aucune promotion live
    par déduction d'un test réussi.
@@ -62,8 +68,8 @@ le fichier workflow sur une branche non protégée pourrait retirer son garde.
 - Job lié à l'environnement `netlify-staging`.
 - Credentials uniquement injectés dans les trois étapes autorisées;
   **jamais dans la ligne de commande CLI ni les résumés GitHub**.
-- Installation npm unique, avec scripts d'installation désactivés et sans
-  secrets; exécution du binaire local seulement après installation,
+- Installation npm ci reproductible, scripts désactivés, manifest et lockfile
+  validés avec 1 080 SRI; exécution du binaire local après installation,
   hors gestionnaire de paquets, avec npm configuré hors ligne.
 - Avant toute activation réelle du staging : essai en environnement isolé
   pour confirmer que la CLI fonctionne sans scripts d'installation,
