@@ -1,0 +1,453 @@
+#!/usr/bin/env python3
+"""SINJIRA V58 : contrôle des tailles mobiles de la vraie page liseuse.
+
+Navigateur réel (Chromium/WebKit), mais écran tactile simulé et PDF synthétique
+de 82 pages. Aucune donnée privée, aucun accès Supabase ou réseau externe.
+"""
+import argparse
+
+from playwright.sync_api import sync_playwright
+from test_sinjira_liseuse_mobile_v54 import serve_fixture, swipe
+from test_sinjira_liseuse_real_page_v57 import install_isolation, snapshot
+
+
+VIEWPORTS = (
+    ("petit téléphone portrait", 320, 568),
+    ("téléphone standard portrait", 390, 844),
+    ("téléphone paysage", 844, 390),
+    ("tablette portrait", 768, 1024),
+    ("grande tablette portrait", 820, 1180),
+)
+
+
+def geometry(page):
+    return page.evaluate("""()=>{
+      const viewer=document.querySelector('#reader-viewer');
+      const text=document.querySelector('#reader-text');
+      const nav=document.querySelector('.reader-touch-nav');
+      const prev=document.querySelector('#reader-touch-prev');
+      const next=document.querySelector('#reader-touch-next');
+      const readerStyle=getComputedStyle(text);
+      const layout=getComputedStyle(viewer);
+      const navStyle=getComputedStyle(nav);
+      const box=viewer.getBoundingClientRect();
+      const article=text.getBoundingClientRect();
+      return {
+        screenWidth:innerWidth, screenHeight:innerHeight,
+        documentWidth:document.documentElement.scrollWidth,
+        viewerWidth:viewer.clientWidth,
+        viewerHeight:viewer.clientHeight,
+        articleWidth:article.width,articleLeft:article.left,articleRight:article.right,
+        viewerLeft:box.left,viewerRight:box.right,
+        textFont:parseFloat(readerStyle.fontSize),
+        textPaddingLeft:parseFloat(readerStyle.paddingLeft),
+        textPaddingRight:parseFloat(readerStyle.paddingRight),
+        nextHeight:next.getBoundingClientRect().height,
+        prevHeight:prev.getBoundingClientRect().height,
+        navDisplay:navStyle.display,
+        overflowX:layout.overflowX,
+        overflowY:layout.overflowY,
+        mode:viewer.dataset.readerLayout,
+        textLength:text.textContent.length
+      };
+    }""")
+
+
+def run(playwright, engine, origin):
+    browser=getattr(playwright,engine).launch()
+    try:
+        context=browser.new_context(
+            viewport={"width":390,"height":844},
+            is_mobile=True,has_touch=True,locale="fr-CA",
+            device_scale_factor=2,service_workers="block",
+            reduced_motion="reduce"
+        )
+        page=context.new_page()
+        errors=[]
+        page.on("pageerror",lambda e:errors.append(str(e)))
+        blocked=install_isolation(page)
+        page.goto(origin,wait_until="load")
+        page.wait_for_function("""()=>!document.querySelector('#reader-content').hidden&&
+          document.querySelector('#reader-viewer').dataset.readerLayout==='screens'&&
+          document.querySelector('#reader-text').textContent.includes('LIVRE DE TEST')""")
+        assert snapshot(page)["page"]==3,snapshot(page)
+
+        # V61 : les touches de lecture n'interceptent pas la navigation du site.
+        page.evaluate("document.querySelector('#reader-viewer').blur()")
+        page.keyboard.press("ArrowRight")
+        away=snapshot(page)
+        assert away["page"]==3 and away["scroll"]==0,away
+        # Après entrée explicite dans la zone de livre, les flèches agissent
+        # par portions d'écran et respectent le retour arrière.
+        page.locator("#reader-viewer").focus()
+        page.keyboard.press("ArrowRight")
+        on_reader=snapshot(page)
+        assert on_reader["page"]==3 and on_reader["scroll"]>0,on_reader
+        page.keyboard.press("ArrowLeft")
+        back=snapshot(page)
+        assert back["page"]==3 and back["scroll"]==0,back
+        # Un champ de réglage peut récupérer le focus sans tourner le roman.
+        page.locator("#reader-page").focus()
+        page.keyboard.press("ArrowRight")
+        input_focus=snapshot(page)
+        assert input_focus["page"]==3 and input_focus["scroll"]==0,input_focus
+        assert "Écran suivant" in page.locator("#reader-touch-next").get_attribute("aria-label")
+        assert "Écran précédent" in page.locator("#reader-touch-prev").get_attribute("aria-label")
+
+        # Chaque taille conserve le livre, les boutons accessibles, le texte
+        # réorganisé et une navigation par portion plutôt que par page PDF.
+        for label,width,height in VIEWPORTS:
+            page.set_viewport_size({"width":width,"height":height})
+            page.wait_for_function("""()=>document.querySelector('#reader-viewer')
+              .dataset.readerLayout==='screens'""")
+            page.wait_for_timeout(80)
+            info=geometry(page)
+            assert info["mode"]=="screens",(label,info)
+            assert info["textLength"]>2000,(label,info)
+            assert info["navDisplay"]=="flex",(label,info)
+            assert min(info["nextHeight"],info["prevHeight"])>=44,(label,info)
+            assert info["viewerWidth"]>=280,(label,info)
+            # V68 : écran 390 px de haut, ne pas imposer 340/410 px de lecteur.
+            if label=="téléphone paysage":
+                assert 175<=info["viewerHeight"]<=300,(label,info)
+                assert info["viewerHeight"]<=height-100,(label,info)
+            assert info["documentWidth"]<=width+3,(label,info)
+            assert info["articleWidth"]<=info["viewerWidth"]+3,(label,info)
+            assert info["articleLeft"]>=info["viewerLeft"]-3,(label,info)
+            assert info["articleRight"]<=info["viewerRight"]+3,(label,info)
+            assert not errors,(label,errors)
+
+            # Le code doit avancer l'écran sans changer la source PDF.
+            page.evaluate("document.querySelector('#reader-viewer').scrollTop=0")
+            turn=swipe(page,-130)
+            after=snapshot(page)
+            assert turn["consumed"] and after["page"]==3 and after["scroll"]>0,(
+                label,turn,{"page":after["page"],"scroll":after["scroll"]}
+            )
+            page.evaluate("document.querySelector('#reader-viewer').scrollTop=0")
+
+        # Test typographique extrême réellement prévu dans l'interface :
+        # les plus grands caractères doivent reflow et la page reste navigable.
+        page.set_viewport_size({"width":320,"height":568})
+        # Les coordonnées caret*FromPoint sont relatives à la fenêtre.
+        # Afficher réellement le livre avant d'évaluer un texte visible.
+        page.locator("#reader-viewer").scroll_into_view_if_needed()
+        # V63 : mesurer un caractère effectivement visible AVANT la
+        # modification du CSS. L'ancre reste en mémoire navigateur uniquement.
+        anchored=page.evaluate("""async()=>{
+          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.14.97');
+          const viewer=document.querySelector('#reader-viewer');
+          const text=document.querySelector('#reader-text');
+          viewer.scrollTop=Math.min(1850,viewer.scrollHeight-viewer.clientHeight-300);
+          await new Promise(resolve=>requestAnimationFrame(resolve));
+          const anchor=m.captureReaderTextAnchor({viewer,text});
+          window.__v63Anchor=anchor;
+          const bounds=viewer.getBoundingClientRect();
+          const pageBounds=text.getBoundingClientRect();
+          const style=getComputedStyle(text);
+          const px=Math.min(pageBounds.right-8,Math.max(
+            pageBounds.left+8,pageBounds.left+parseFloat(style.paddingLeft)+18));
+          const py=Math.min(bounds.bottom-12,bounds.top+
+            Math.max(24,Math.min(85,bounds.height*.14)));
+          const pos=document.caretPositionFromPoint?.(px,py);
+          const fallback=document.caretRangeFromPoint?.(px,py);
+          return {available:Boolean(anchor),offset:anchor?.offset||0,
+            position:viewer.scrollTop,viewerTop:bounds.top,
+            viewerBottom:bounds.bottom,viewportHeight:innerHeight,
+            textLeft:pageBounds.left,textRight:pageBounds.right,
+            textNodes:text.childNodes.length,x:px,y:py,
+            caretNodeType:pos?.offsetNode?.nodeType,
+            caretInside:pos?.offsetNode?text.contains(pos.offsetNode):null,
+            caretOffset:pos?.offset,
+            fallbackNodeType:fallback?.startContainer?.nodeType,
+            fallbackInside:fallback?.startContainer?
+              text.contains(fallback.startContainer):null,
+            caretApi:typeof document.caretPositionFromPoint,
+            rangeApi:typeof document.caretRangeFromPoint,
+            caretParent:pos?.offsetNode?.parentElement?.id||pos?.offsetNode?.parentElement?.className,
+            fallbackParent:fallback?.startContainer?.parentElement?.id||
+              fallback?.startContainer?.parentElement?.className,
+            elementAtPoint:document.elementFromPoint(px,py)?.id||
+              document.elementFromPoint(px,py)?.className,
+            textTop:pageBounds.top,textBottom:pageBounds.bottom};
+        }""")
+        assert anchored["available"],("V63: caret incapable de repérer le texte",anchored)
+        assert anchored["position"]>300,anchored
+        page.evaluate("""()=>{
+          const size=document.querySelector('#reader-size');
+          size.value='34';size.dispatchEvent(new Event('input',{bubbles:true}));
+          const line=document.querySelector('#reader-line-height');
+          line.value='2.1';line.dispatchEvent(new Event('change',{bubbles:true}));
+        }""")
+        page.wait_for_function("""()=>{
+          const t=document.querySelector('#reader-text');
+          return Math.abs(parseFloat(getComputedStyle(t).fontSize)-34)<.01;
+        }""")
+        page.wait_for_timeout(180)
+        # Le même caractère doit conserver son emplacement dans la zone du
+        # livre malgré le passage à 34 px; un ratio seul ne suffit pas.
+        preserved=page.evaluate("""()=>{
+          const a=window.__v63Anchor;
+          const viewer=document.querySelector('#reader-viewer');
+          const node=a?.node;
+          if(!node||!node.isConnected)return {valid:false};
+          const range=document.createRange();
+          range.setStart(node,a.offset);range.setEnd(node,a.offset+1);
+          const rect=Array.from(range.getClientRects()).find(r=>r.height>0);
+          return {
+            valid:Boolean(rect),
+            displacement:rect?Math.abs(
+              rect.top-viewer.getBoundingClientRect().top-a.relativeY):999,
+            scroll:viewer.scrollTop
+          };
+        }""")
+        assert preserved["valid"] and preserved["displacement"]<24,(
+            "V63: perte du caractère lu à l'agrandissement",anchored,preserved
+        )
+        large=geometry(page)
+        assert large["textFont"]==34,large
+        assert large["documentWidth"]<=323,large
+        assert large["articleWidth"]<=large["viewerWidth"]+3,large
+        assert snapshot(page)["page"]==3,snapshot(page)
+
+        # V64 : après une police agrandie, changer l'orientation du téléphone
+        # doit conserver le caractère lu, pas uniquement un ratio d'écran.
+        before_rotation=page.evaluate("""async()=>{
+          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.14.97');
+          const viewer=document.querySelector('#reader-viewer');
+          const text=document.querySelector('#reader-text');
+          const anchor=m.captureReaderTextAnchor({viewer,text});
+          window.__v64RotateAnchor=anchor;
+          return {valid:Boolean(anchor),scroll:viewer.scrollTop};
+        }""")
+        assert before_rotation["valid"],(
+            "V64: ancre indisponible avant rotation",before_rotation
+        )
+        page.set_viewport_size({"width":568,"height":320})
+        page.wait_for_function("""()=>{
+          const v=document.querySelector('#reader-viewer');
+          return innerWidth===568&&v.dataset.readerLayout==='screens';
+        }""")
+        landscape=geometry(page)
+        assert 175<=landscape["viewerHeight"]<=240,(
+            "V68: liseuse trop haute pour téléphone 568×320 en paysage",
+            landscape
+        )
+        assert min(landscape["nextHeight"],landscape["prevHeight"])>=44,(
+            "V68: les commandes tactiles doivent rester grandes",landscape
+        )
+        # Sur WebKit, le reflow peut finir après deux frames lorsque la CI
+        # lance d'autres moteurs en parallèle. Attendre la vraie CONDITION
+        # fonctionnelle (même caractère à <35 px), sans assouplir le seuil.
+        try:
+            page.wait_for_function("""()=>{
+              const a=window.__v64RotateAnchor;
+              const v=document.querySelector('#reader-viewer');
+              if(!a?.node?.isConnected)return false;
+              const range=document.createRange();
+              range.setStart(a.node,a.offset);
+              range.setEnd(a.node,a.offset+1);
+              const r=Array.from(range.getClientRects()).find(x=>x.height>0);
+              return Boolean(r) && Math.abs(
+                r.top-v.getBoundingClientRect().top-a.relativeY
+              )<35;
+            }""",timeout=6500)
+        except Exception:
+            pass  # conserver l'assertion détaillée ci-dessous
+        after_rotation=page.evaluate("""()=>{
+          const a=window.__v64RotateAnchor;
+          const viewer=document.querySelector('#reader-viewer');
+          if(!a?.node?.isConnected)return {valid:false};
+          const range=document.createRange();
+          range.setStart(a.node,a.offset);range.setEnd(a.node,a.offset+1);
+          const rect=Array.from(range.getClientRects()).find(r=>r.height>0);
+          return {
+            valid:Boolean(rect),
+            displacement:rect?Math.abs(
+              rect.top-viewer.getBoundingClientRect().top-a.relativeY):999,
+            scroll:viewer.scrollTop
+          };
+        }""")
+        assert after_rotation["valid"] and after_rotation["displacement"]<35,(
+            "V64: le passage lu se perd après une rotation simulée",
+            before_rotation,after_rotation
+        )
+        assert snapshot(page)["page"]==3,snapshot(page)
+        page.set_viewport_size({"width":320,"height":568})
+        page.wait_for_timeout(140)
+
+        page.evaluate("document.querySelector('#reader-viewer').scrollTop=0")
+        result=swipe(page,-130)
+        assert result["consumed"] and snapshot(page)["page"]==3,result
+
+        # V88 : le mode lecture plein écran change la hauteur du conteneur
+        # sans événement window.resize. Conserver le CARACTÈRE LU lors de
+        # l'activation et de la désactivation, pas seulement le numéro PDF.
+        page.locator("#reader-viewer").scroll_into_view_if_needed()
+        focus_start=page.evaluate("""async()=>{
+          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.14.97');
+          const v=document.querySelector('#reader-viewer');
+          const t=document.querySelector('#reader-text');
+          v.scrollTop=Math.min(1400,v.scrollHeight-v.clientHeight-400);
+          await new Promise(resolve=>requestAnimationFrame(resolve));
+          const anchor=mod.captureReaderTextAnchor({viewer:v,text:t});
+          window.__v88BeforeFocus=anchor;
+          return {captured:Boolean(anchor),scroll:v.scrollTop};
+        }""")
+        assert focus_start["captured"] and focus_start["scroll"]>200,focus_start
+        page.locator("#reader-focus").evaluate("(node)=>node.click()")
+        assert page.locator("body").evaluate(
+            "(node)=>node.classList.contains('reader-focus-mode')"
+        ),"Mode lecture plein écran inaccessible"
+        focused=geometry(page)
+        assert focused["viewerHeight"]>=280,focused
+        page.wait_for_function("""()=>{
+          const a=window.__v88BeforeFocus;
+          if(!a?.node?.isConnected)return false;
+          const v=document.querySelector('#reader-viewer');
+          const r=document.createRange();r.setStart(a.node,a.offset);
+          r.setEnd(a.node,a.offset+1);
+          const rect=Array.from(r.getClientRects()).find(box=>box.height>0);
+          return Boolean(rect)&&Math.abs(
+            rect.top-v.getBoundingClientRect().top-a.relativeY)<35;
+        }""",timeout=7000)
+        # En mode plein écran, le bouton peut reprendre le focus et faire
+        # défiler le DOCUMENT extérieur, sans déplacer le scroll du livre.
+        # Pour tester la capture caret, replacer le livre dans le viewport.
+        page.locator("#reader-viewer").scroll_into_view_if_needed()
+        page.evaluate("""()=>new Promise(done=>
+          requestAnimationFrame(()=>requestAnimationFrame(done)))""")
+        focus_during=page.evaluate("""async()=>{
+          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.14.97');
+          const v=document.querySelector('#reader-viewer');
+          const t=document.querySelector('#reader-text');
+          const anchor=mod.captureReaderTextAnchor({viewer:v,text:t});
+          window.__v88DuringFocus=anchor;
+          return {captured:Boolean(anchor),scroll:v.scrollTop};
+        }""")
+        assert focus_during["captured"],focus_during
+        page.locator("#reader-focus").evaluate("(node)=>node.click()")
+        assert not page.locator("body").evaluate(
+            "(node)=>node.classList.contains('reader-focus-mode')"
+        ),"Impossible de quitter le plein écran"
+        page.wait_for_function("""()=>{
+          const a=window.__v88DuringFocus;
+          if(!a?.node?.isConnected)return false;
+          const v=document.querySelector('#reader-viewer');
+          const r=document.createRange();r.setStart(a.node,a.offset);
+          r.setEnd(a.node,a.offset+1);
+          const rect=Array.from(r.getClientRects()).find(box=>box.height>0);
+          return Boolean(rect)&&Math.abs(
+            rect.top-v.getBoundingClientRect().top-a.relativeY)<35;
+        }""",timeout=7000)
+
+        # V89 : le texte lu en défilement continu doit rester au même endroit
+        # lorsque l'utilisateur réactive les pages d'écran (pas d'ancre
+        # ancienne restée en mémoire depuis le mode paginé).
+        page.locator("#reader-screens-enabled").uncheck()
+        assert page.locator("#reader-touch-next").get_attribute("aria-label")=="Page du livre suivante"
+        assert page.locator("#reader-touch-prev").get_attribute("aria-label")=="Page du livre précédente"
+        page.locator("#reader-viewer").scroll_into_view_if_needed()
+        continuous=page.evaluate("""async()=>{
+          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.14.97');
+          const v=document.querySelector('#reader-viewer');
+          const t=document.querySelector('#reader-text');
+          v.scrollTop=Math.min(2200,Math.max(0,v.scrollHeight-v.clientHeight-300));
+          await new Promise(done=>requestAnimationFrame(done));
+          const anchor=m.captureReaderTextAnchor({viewer:v,text:t});
+          window.__v89ContinuousAnchor=anchor;
+          return {captured:Boolean(anchor),scroll:v.scrollTop};
+        }""")
+        assert continuous["captured"] and continuous["scroll"]>200,continuous
+        page.locator("#reader-screens-enabled").check()
+        page.wait_for_function("""()=>{
+          const a=window.__v89ContinuousAnchor;
+          if(!a?.node?.isConnected)return false;
+          const v=document.querySelector('#reader-viewer');
+          if(v.dataset.readerLayout!=='screens')return false;
+          const r=document.createRange();
+          r.setStart(a.node,a.offset);r.setEnd(a.node,a.offset+1);
+          const rect=Array.from(r.getClientRects()).find(x=>x.height>0);
+          return Boolean(rect)&&Math.abs(
+            rect.top-v.getBoundingClientRect().top-a.relativeY)<35;
+        }""",timeout=7000)
+        assert "Écran suivant" in page.locator("#reader-touch-next").get_attribute("aria-label")
+
+        # V90 : simuler le changement de hauteur dvh dû aux barres système
+        # sans window.resize, sur le vrai lecteur avec sa vraie pagination.
+        # Ne pas accéder au réseau ou au contenu privé.
+        page.locator("#reader-viewer").scroll_into_view_if_needed()
+        before_chrome=page.evaluate("""async()=>{
+          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.14.97');
+          const viewer=document.querySelector('#reader-viewer');
+          const text=document.querySelector('#reader-text');
+          viewer.scrollTop=Math.min(1750,Math.max(0,viewer.scrollHeight-viewer.clientHeight-350));
+          await new Promise(done=>requestAnimationFrame(done));
+          const a=mod.captureReaderTextAnchor({viewer,text});
+          window.__v90ChromeAnchor=a;
+          return {captured:Boolean(a),scroll:viewer.scrollTop,height:viewer.clientHeight,
+            hasViewport:Boolean(window.visualViewport)};
+        }""")
+        assert before_chrome["captured"] and before_chrome["scroll"]>200,before_chrome
+        # Le moteur doit conserver le caractère lu même si window.resize
+        # ne se produit pas. L'événement visualViewport est émis explicitement.
+        page.evaluate("""()=>{
+          const v=document.querySelector('#reader-viewer');
+          v.style.height=Math.max(180,v.clientHeight-65)+'px';
+          window.visualViewport?.dispatchEvent(new Event('resize'));
+        }""")
+        page.wait_for_function("""()=>{
+          const a=window.__v90ChromeAnchor;
+          if(!a?.node?.isConnected)return false;
+          const v=document.querySelector('#reader-viewer');
+          const r=document.createRange();r.setStart(a.node,a.offset);
+          r.setEnd(a.node,a.offset+1);
+          const rect=Array.from(r.getClientRects()).find(x=>x.height>0);
+          return Boolean(rect)&&Math.abs(
+            rect.top-v.getBoundingClientRect().top-a.relativeY)<35;
+        }""",timeout=7000)
+        page.evaluate("""()=>{
+          const v=document.querySelector('#reader-viewer');
+          v.style.height='';
+          window.visualViewport?.dispatchEvent(new Event('resize'));
+        }""")
+
+        # V60: le vrai moteur JS chargé sur cette page ne doit pas demander
+        # un balayage pour seulement 10 px supplémentaires à la fin.
+        tail=page.evaluate("""async ()=>{
+          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.14.97');
+          const p={scrollHeight:850,clientHeight:350,lineHeight:35,
+            paddingTop:22,paddingBottom:22};
+          return {
+            screens:m.readerScreenState({...p,scrollTop:0}).screens,
+            forward:m.planReaderScreenTurn({...p,scrollTop:245,direction:'next'}),
+            backward:m.planReaderScreenTurn({...p,scrollTop:500,direction:'previous'}),
+            end:m.planReaderScreenTurn({...p,scrollTop:500,direction:'next'})
+          };
+        }""")
+        assert tail["screens"]==3,tail
+        assert tail["forward"]["top"]==500,tail
+        assert tail["backward"]["top"]==245,tail
+        assert tail["end"]["type"]=="document",tail
+
+        assert not blocked,blocked
+        assert not errors,errors
+        context.close()
+        print(f"PASS {engine}: 320px, 390px, paysage, tablettes, police 34px, "
+              "interligne 2.1, contrôles 44px, focus lecteur")
+    finally:
+        browser.close()
+
+
+def main():
+    parser=argparse.ArgumentParser()
+    parser.add_argument("--browser",choices=("chromium","webkit"),required=True)
+    args=parser.parse_args()
+    with serve_fixture() as fixture:
+        local=fixture.split("/tests/e2e/fixtures/")[0]
+        with sync_playwright() as p:
+            run(p,args.browser,local+"/compte/liseuse.html?edition=demo")
+
+
+if __name__=="__main__":
+    main()

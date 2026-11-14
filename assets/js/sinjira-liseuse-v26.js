@@ -44,13 +44,18 @@ const state={pdf:null,page:1,mode:'texte',theme:'sepia',size:20,zoom:1,
   progressQueue:Promise.resolve(),progressRevision:0,cloudDirty:false,cloudRetrying:false,
   accessEpoch:0,accessInvalidated:false,
   loadController:null,authSubscription:null,cloudSpotSupported:null,
-  positionRatio:0,restorePending:null,restoringScroll:false,scrollTimer:null,resumeSource:'debut'};
+  positionRatio:0,restorePending:null,restoringScroll:false,scrollTimer:null,resumeSource:'debut',
+  bfcacheSpot:null,privatePaused:false,privateReturnGeneration:0,
+  privateReturnInFlight:false,privateReaderReady:false};
 const speech={active:false,paused:false,token:0,chunks:[],index:0,voices:[],utterance:null};
 const speechReady='speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
 const storageKey='sinjira:liseuse:'+edition+':la-cendre-du-jugement';
 const themeKey='sinjira:liseuse:preferences';
 const pageStorageKey=()=>isFull?storageKey+':'+(state.user?.id||'non-connecte'):storageKey;
 let companion=null;
+// V85 : jeton d'invalidation des restitutions rAF dès qu'un geste utilisateur
+// a réellement tourné l'écran. Évite une ancienne position qui écrase le swipe.
+let scrollRestoreGeneration=0;
 
 function safeLocalGet(key){try{return localStorage.getItem(key)}catch{return null}}
 function safeLocalSet(key,value){try{localStorage.setItem(key,value);return true}catch{return false}}
@@ -62,8 +67,22 @@ function message(value,type='info'){
 }
 function positionNotice(value,type='info'){
   const node=$('reader-position-status');
-  node.textContent=value;
-  node.dataset.type=type;
+  // V87 : les positions sont écrites au défilement. Ne pas réannoncer à
+  // VoiceOver/TalkBack une phrase identique à chaque événement scroll.
+  if(node.textContent!==value)node.textContent=value;
+  if(node.dataset.type!==type)node.dataset.type=type;
+}
+function automaticPositionNotice(savedLocally){
+  // Une sauvegarde locale réussie n'est PAS une confirmation serveur.
+  if(savedLocally){
+    positionNotice(isFull
+      ?'Position enregistrée sur cet appareil. Synchronisation du compte à confirmer.'
+      :'Position enregistrée sur cet appareil.', 'success');
+  }else{
+    positionNotice(isFull
+      ?'Sauvegarde locale indisponible : synchronisation du compte à confirmer.'
+      :'Position non enregistrée : autorisez le stockage du navigateur pour reprendre ici.', 'warning');
+  }
 }
 function savePreferences(){
   // Seules les préférences de présentation sont mémorisées, jamais le texte privé.
@@ -256,12 +275,15 @@ function restoreScrollAfterRender(version){
   const ratio=state.restorePending;
   state.restorePending=null;
   state.restoringScroll=true;
+  const generation=++scrollRestoreGeneration;
   requestAnimationFrame(()=>{
-    if(!state.pdf||version!==state.renderVersion)return;
+    if(!state.pdf||version!==state.renderVersion||
+      generation!==scrollRestoreGeneration)return;
     const viewer=$('reader-viewer');
     viewer.scrollTop=scrollTopForRatio(ratio,viewer.scrollHeight,viewer.clientHeight);
     requestAnimationFrame(()=>{
-      if(version===state.renderVersion)state.restoringScroll=false;
+      if(version===state.renderVersion&&generation===scrollRestoreGeneration)
+        state.restoringScroll=false;
     });
   });
 }
@@ -412,24 +434,69 @@ function toggleSpeechPause(){
   }
 }
 
+// V84 : le PDF provisoire (couverture/illustration) doit aussi réagir au
+// zoom et à la rotation sans perdre l'endroit lu sur cette page.
+function isAutomaticPdfFallbackVisible(){
+  return state.mode==='texte'&&!$('reader-image-fallback').hidden&&
+    $('reader-text').hidden&&!$('reader-canvas').hidden;
+}
+function refreshVisiblePdfPreservingSpot(){
+  if(!state.pdf)return;
+  const viewer=$('reader-viewer');
+  // Une position 0 en attente après un changement de page est prioritaire.
+  if(state.restorePending===null){
+    state.restorePending=ratioFromScroll(viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight);
+  }
+  state.restoringScroll=true;
+  renderPage();
+}
 function renderPage(){
   const version=++state.renderVersion;
   state.renderQueue=state.renderQueue.catch(()=>{}).then(async()=>{
     if(version!==state.renderVersion||!state.pdf)return;
     const page=await state.pdf.getPage(state.page);
     if(version!==state.renderVersion)return;
+    const readerText=$('reader-text'),fallback=$('reader-image-fallback');
     if(state.mode==='texte'){
-      const text=await page.getTextContent();
-      if(version!==state.renderVersion)return;
-      const readable=pdfTextToParagraphs(text.items);
-      $('reader-text').textContent=readable||'Cette page contient surtout des images ou du texte non sélectionnable. Utilisez « Afficher le PDF » pour consulter sa mise en page.';
-      $('reader-canvas').hidden=true;
-      $('reader-text').hidden=false;
-      companion?.onTextRendered();
-      restoreScrollAfterRender(version);
+      let readable='';
+      try{
+        const text=await page.getTextContent();
+        if(version!==state.renderVersion)return;
+        // V82 : l'extraction PDF peut rejeter (scan, police ou structure non
+        // prise en charge) alors que le rendu de la page reste possible.
+        readable=pdfTextToParagraphs(text?.items||[]);
+      }catch{
+        if(version!==state.renderVersion)return;
+        // Ne jamais journaliser les données PDF ou l'erreur contenant un
+        // fragment de texte privé. Le rendu canvas ci-dessous fait le repli.
+      }
+      if(readable.trim()){
+        // V81 : le texte reste sélectionnable et repaginé dès qu'il existe.
+        readerText.textContent=readable;
+        fallback.hidden=true;
+        $('reader-canvas').hidden=true;
+        readerText.hidden=false;
+        companion?.onTextRendered();
+        restoreScrollAfterRender(version);
+        return;
+      }
+      // V81/V82 : page illustrée OU extraction en échec : afficher le PDF
+      // original, sans désactiver la préférence texte pour les autres pages.
+      // La page suivante avec du texte reprend automatiquement le reflow.
+      readerText.textContent='';
+      readerText.hidden=true;
+      fallback.hidden=false;
     }else{
+      fallback.hidden=true;
+    }
+    {
       const viewer=$('reader-viewer');
-      const baseWidth=Math.max(280,Math.min(1150,viewer.clientWidth-40));
+      // V83 : largeur réellement disponible, padding compris. La largeur
+      // minimum artificielle de 280 px causait du pan horizontal sur petits
+      // téléphones, et empêchait alors les gestes de changement de page.
+      const style=window.getComputedStyle(viewer);
+      const padding=(parseFloat(style.paddingLeft)||0)+(parseFloat(style.paddingRight)||0);
+      const baseWidth=Math.min(1150,Math.max(1,viewer.clientWidth-padding-8));
       const viewport=page.getViewport({scale:1});
       const scale=(baseWidth/viewport.width)*state.zoom;
       const drawing=page.getViewport({scale});
@@ -441,11 +508,19 @@ function renderPage(){
       canvas.style.height=Math.round(drawing.height)+'px';
       await page.render({canvasContext:context,viewport:drawing,
         transform:pixelRatio===1?undefined:[pixelRatio,0,0,pixelRatio,0,0]}).promise;
-      $('reader-text').hidden=true;
+      if(version!==state.renderVersion)return;
+      readerText.hidden=true;
       canvas.hidden=false;
       restoreScrollAfterRender(version);
     }
-  }).catch(error=>message('Impossible d’afficher cette page. Réessayez ou utilisez le lecteur PDF de secours.','error'));
+  }).catch(()=>{
+    if(version!==state.renderVersion)return;
+    // V84 : ne pas laisser les sauvegardes de position bloquées après
+    // un rendu échoué lors d'un zoom ou d'une rotation.
+    state.restoringScroll=false;
+    state.restorePending=null;
+    message('Impossible d’afficher cette page. Réessayez ou utilisez le lecteur PDF de secours.','error');
+  });
 }
 function changePage(value){
   if(!state.pdf)return;
@@ -458,12 +533,36 @@ function changePage(value){
   state.restorePending=0;
   state.restoringScroll=true;
   $('reader-viewer').scrollTo({top:0,left:0,behavior:'auto'});
-  updateToolbar();persist();renderPage();
-  positionNotice('Page '+state.page+' mémorisée automatiquement. Vous pouvez aussi l’enregistrer maintenant.');
+  updateToolbar();
+  const savedLocally=persist();
+  renderPage();
+  // V85 : un navigateur privé ou aux permissions restreintes peut refuser
+  // localStorage. Ne jamais annoncer une sauvegarde qui a échoué.
+  positionNotice(savedLocally
+    ?'Page '+state.page+' mémorisée automatiquement. Vous pouvez aussi l’enregistrer maintenant.'
+    :isFull&&state.user&&state.novelId
+      ?'Page '+state.page+' ouverte, mais la sauvegarde locale est indisponible. Une synchronisation avec le compte sera tentée.'
+      :'Page '+state.page+' ouverte, mais non enregistrée : autorisez le stockage du navigateur pour reprendre ici.',
+    savedLocally?'success':'warning');
   companion?.onPageChange();
 }
 function bindControls(){
   $('reader-save-position').addEventListener('click',()=>{void saveCurrentPosition()});
+  // V85 : le moteur de pagination émet cet événement uniquement après une
+  // action explicite (doigt, clavier ou boutons) qui déplace un écran texte.
+  // Le geste gagne sur toute restitution rAF en cours et sa position devient
+  // immédiatement persistée, même si le scroll natif est différé.
+  $('reader-viewer').addEventListener('sinjira:reader-screen-turn',()=>{
+    if(!state.pdf||(isFull&&state.accessInvalidated))return;
+    ++scrollRestoreGeneration;
+    state.restorePending=null;
+    state.restoringScroll=false;
+    clearTimeout(state.scrollTimer);state.scrollTimer=null;
+    const viewer=$('reader-viewer');
+    state.positionRatio=ratioFromScroll(viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight);
+    // V87 : après un écran tourné, annoncer le résultat réel de persist().
+    automaticPositionNotice(persist({syncCloud:true}));
+  });
   $('reader-viewer').addEventListener('scroll',()=>{
     if(!state.pdf||state.restoringScroll)return;
     clearTimeout(state.scrollTimer);
@@ -472,11 +571,9 @@ function bindControls(){
       if(!state.pdf||state.restoringScroll)return;
       const viewer=$('reader-viewer');
       state.positionRatio=ratioFromScroll(viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight);
-      if(!persist({syncCloud:true})){
-        positionNotice(isFull
-          ?'Sauvegarde locale indisponible : tentative de synchronisation sur votre compte en cours.'
-          :'Enregistrement automatique indisponible dans ce navigateur.','warning');
-      }
+      // V87 : même résultat honnête en défilement libre ou en PDF.
+      // positionNotice évite les annonces vocales répétées au même statut.
+      automaticPositionNotice(persist({syncCloud:true}));
     },650);
   },{passive:true});
   $('reader-previous').addEventListener('click',()=>changePage(state.page-1));
@@ -523,36 +620,145 @@ function bindControls(){
   $('reader-voice-pause').addEventListener('click',toggleSpeechPause);
   $('reader-voice-stop').addEventListener('click',()=>stopNarration());
   window.addEventListener('online',()=>{void retryCloudProgress()});
-  window.addEventListener('pagehide',()=>{
-    flushScrollPosition();stopNarration(false);flushProgress();companion?.close();
+  window.addEventListener('pagehide',event=>{
+    flushScrollPosition();stopNarration(false);flushProgress();
+    // V92 : le cache de navigation garde une instance JS, y compris ses
+    // commandes de marque-pages. Ne pas fermer le compagnon de la démo.
+    if(!event.persisted)companion?.close();
+    if(isFull)suspendPrivateReaderForReturn();
+  });
+  window.addEventListener('pageshow',event=>{
+    if(event.persisted&&isFull)void revalidatePrivateReaderAfterReturn();
   });
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='hidden'){
       flushScrollPosition();flushProgress();
+      // V93 : un simple changement d'application (sans pagehide) doit
+      // également masquer le roman privé jusqu'à nouvelle autorisation.
+      if(isFull)suspendPrivateReaderForReturn();
     }else if(document.visibilityState==='visible'){
-      void retryCloudProgress();
+      if(isFull&&state.privatePaused)void revalidatePrivateReaderAfterReturn();
+      else void retryCloudProgress();
     }
   });
   $('reader-zoom').addEventListener('change',event=>{
+    const visiblePdf=state.mode==='page'||isAutomaticPdfFallbackVisible();
     state.zoom=clamp(event.target.value,.8,1.5);setTheme();
-    if(state.mode==='page')renderPage();
+    if(visiblePdf)refreshVisiblePdfPreservingSpot();
   });
   document.addEventListener('keydown',event=>{
-    const tag=document.activeElement?.tagName||'';
-    if(['INPUT','SELECT','TEXTAREA','BUTTON'].includes(tag)||event.altKey||event.ctrlKey||event.metaKey)return;
-    if(event.key==='ArrowRight'||event.key==='PageDown'){event.preventDefault();changePage(state.page+1)}
-    if(event.key==='ArrowLeft'||event.key==='PageUp'){event.preventDefault();changePage(state.page-1)}
+    // V61: le moteur historique ne doit pas changer le PDF depuis n'importe
+    // quelle zone du site ni contredire la pagination V53 par écrans.
+    if(event.defaultPrevented||event.altKey||event.ctrlKey||event.metaKey||
+       event.shiftKey)return;
+    const viewer=$('reader-viewer');
+    const focused=document.activeElement;
+    if(!focused||(focused!==viewer&&!viewer.contains(focused)))return;
+    const tag=focused.tagName||'';
+    if(['INPUT','SELECT','TEXTAREA','BUTTON','A'].includes(tag)||
+       focused.isContentEditable||window.getSelection?.()?.toString()?.trim())return;
+    if(viewer.dataset.readerLayout==='screens')return;
+    if(event.key==='ArrowRight'||event.key==='PageDown'){
+      event.preventDefault();changePage(state.page+1);
+    }
+    if(event.key==='ArrowLeft'||event.key==='PageUp'){
+      event.preventDefault();changePage(state.page-1);
+    }
   });
   let resizeTimer;
   window.addEventListener('resize',()=>{
-    if(state.mode!=='page')return;
+    // V83 : une illustration montrée automatiquement en PDF garde la
+    // préférence « texte »; elle doit pourtant se recalculer à la rotation.
+    if(state.mode!=='page'&&!isAutomaticPdfFallbackVisible())return;
     clearTimeout(resizeTimer);
-    resizeTimer=setTimeout(renderPage,250);
+    resizeTimer=setTimeout(refreshVisiblePdfPreservingSpot,250);
   });
 }
 function assertPrivateAccess(epoch){
   if(isFull&&(state.accessInvalidated||state.accessEpoch!==epoch||!state.user)){
     throw new Error('SESSION_CHANGED');
+  }
+}
+/** V93 : dès que la page privée quitte le premier plan, masquer aussi
+    les repères et notes de la barre latérale. Une ancienne vérification
+    asynchrone ne pourra plus dévoiler le texte après une seconde suspension. */
+function suspendPrivateReaderForReturn(){
+  if(!isFull||state.accessInvalidated)return;
+  ++state.privateReturnGeneration;
+  if(state.pdf&&!state.privatePaused){
+    const viewer=$('reader-viewer');
+    state.bfcacheSpot={page:state.page,ratio:ratioFromScroll(
+      viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight)};
+  }
+  // V94 : pendant le chargement initial, state.pdf est encore null.
+  // La suspension doit toutefois survivre à l'arrivée des octets PDF ;
+  // autrement init() les afficherait en arrière-plan sans revalidation.
+  state.privatePaused=true;
+  $('reader-content').hidden=true;
+  const sidebar=document.querySelector('.reader-sidebar');
+  if(sidebar)sidebar.hidden=true;
+}
+/** V93 : retour BFCache OU retour d'une application mobile à l'avant-plan.
+    Session + droit serveur revérifiés avant de rendre du texte privé.
+    La génération empêche une réponse ancienne de réouvrir la liseuse. */
+async function revalidatePrivateReaderAfterReturn(){
+  if(!isFull||!state.privatePaused||state.privateReturnInFlight||
+     !state.privateReaderReady||state.accessInvalidated||!state.pdf||!state.user||
+     document.visibilityState==='hidden')return;
+  state.privateReturnInFlight=true;
+  const epoch=state.accessEpoch,userId=state.user.id,pdf=state.pdf;
+  const generation=state.privateReturnGeneration;
+  const sameSession=()=>!state.accessInvalidated&&state.accessEpoch===epoch&&
+    state.user?.id===userId&&state.pdf===pdf&&state.privatePaused&&
+    state.privateReturnGeneration===generation&&
+    document.visibilityState!=='hidden';
+  try{
+    const {data:auth,error:authError}=await getSupabase().auth.getUser();
+    if(!sameSession())return;
+    if(authError||auth?.user?.id!==userId)throw new Error('SESSION_CHANGED');
+    const {data,error}=await getSupabase().functions.invoke('get-novel-file-url',{
+      body:{slug:NOVEL_SLUG}
+    });
+    if(!sameSession())return;
+    if(error||data?.ok!==true||typeof data.url!=='string')
+      throw new Error('RIGHTS_REVOKED');
+    // Contrôle strict du domaine signé avant d'exposer la page conservée.
+    const url=new URL(data.url);
+    if(url.protocol!=='https:'||url.origin!==SIGNED_ORIGIN||
+       !url.pathname.startsWith('/storage/v1/object/sign/'))
+      throw new Error('INVALID_SIGNED_URL');
+    if(!sameSession())return;
+    // Si la suspension précédait le premier PDF, aucun spot capturé
+    // n'existe : retrouver alors le ratio choisi par restorePage().
+    const spot=state.bfcacheSpot||{
+      page:state.page,ratio:state.positionRatio
+    };
+    state.bfcacheSpot=null;
+    state.privatePaused=false;
+    $('reader-content').hidden=false;
+    const sidebar=document.querySelector('.reader-sidebar');
+    if(sidebar)sidebar.hidden=false;
+    // Conserver le passage numérique, sans le persister ni copier le roman.
+    if(spot?.page===state.page){
+      requestAnimationFrame(()=>{
+        if(state.accessInvalidated||state.privatePaused||
+           state.privateReturnGeneration!==generation||state.pdf!==pdf)return;
+        const viewer=$('reader-viewer');
+        viewer.scrollTop=scrollTopForRatio(
+          spot.ratio,viewer.scrollHeight,viewer.clientHeight);
+      });
+    }
+    void retryCloudProgress();
+  }catch{
+    if(sameSession())lockPrivateReader();
+  }finally{
+    state.privateReturnInFlight=false;
+    // Si un nouveau premier plan est arrivé PENDANT les requêtes réseau,
+    // une seconde vérification est nécessaire; l'ancienne est périmée.
+    if(state.privatePaused&&!state.accessInvalidated&&
+       state.privateReturnGeneration!==generation&&
+       document.visibilityState==='visible')
+      void revalidatePrivateReaderAfterReturn();
   }
 }
 function lockPrivateReader(){
@@ -566,6 +772,10 @@ function lockPrivateReader(){
   clearTimeout(state.saveTimer);state.saveTimer=null;
   clearTimeout(state.scrollTimer);state.scrollTimer=null;
   state.cloudDirty=false;state.cloudRetrying=false;
+  state.bfcacheSpot=null;
+  state.privatePaused=false;
+  state.privateReaderReady=false;
+  ++state.privateReturnGeneration;
   $('reader-position-status').textContent='';
   stopNarration(false);
   companion?.close();companion=null;
@@ -732,15 +942,30 @@ async function init(){
       },
     });
     $('reader-loading').hidden=true;
-    $('reader-content').hidden=false;
+    // V94 : ne jamais dévoiler le roman intégral pendant une suspension
+    // déclenchée avant la fin du chargement (PDF encore absent).
+    $('reader-content').hidden=isFull&&state.privatePaused;
     updateToolbar();renderPage();updateSpeechControls();
     const origin=state.resumeSource==='compte'?'depuis votre compte'
       :state.resumeSource==='appareil'?'depuis cet appareil':'au début du roman';
-    positionNotice('Lecture prête : page '+state.page+' reprise '+origin+'. Enregistrement automatique actif'+(isFull?' sur votre compte et votre appareil.': ' sur cet appareil.'));
+    // V86 : la disponibilité du stockage ne peut pas être certifiée à
+    // l'ouverture. Elle ne l'est qu'après une écriture réellement réussie.
+    // Pour le compte privé, la synchronisation serveur reste distincte.
+    positionNotice('Lecture prête : page '+state.page+' reprise '+origin+
+      '. Nouvelle sauvegarde non encore confirmée : elle sera vérifiée lors du prochain changement de position.'+
+      (isFull?' Synchronisation du compte à confirmer séparément.':''));
     // L'indisponibilité de la synchronisation des notes ne bloque pas la lecture.
     companion.ready().catch(()=>message('La liseuse fonctionne, mais les repères personnels ne sont pas disponibles.','warning'));
     $('reader-status').hidden=true;
-    if(isFull&&state.cloudDirty)void retryCloudProgress();
+    if(isFull){
+      state.privateReaderReady=true;
+      if(state.privatePaused){
+        // L'onglet peut être redevenu visible entre deux await d'init().
+        // Revalider droits et compte, même sans deuxième événement visible.
+        if(document.visibilityState!=='hidden')
+          void revalidatePrivateReaderAfterReturn();
+      }else if(state.cloudDirty)void retryCloudProgress();
+    }
   }catch(error){
     state.loadController=null;
     if(loadedPdf){

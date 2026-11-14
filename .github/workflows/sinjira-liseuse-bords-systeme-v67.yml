@@ -1,0 +1,61 @@
+name: "SINJIRA V67 — préserver les gestes système aux bords du téléphone"
+on:
+  pull_request:
+    branches:
+      - review/sinjira-liseuse-mobile-v64-integration-main-20261111
+      - main
+    paths:
+      - 'assets/js/sinjira-liseuse-touch-v52.mjs'
+      - 'assets/js/sinjira-liseuse-reflow-v53.mjs'
+      - 'tests/sinjira-liseuse-touch-v52.test.mjs'
+      - 'tests/sinjira-liseuse-reflow-v53.test.mjs'
+      - 'tests/e2e/test_sinjira_liseuse_trajectory_v66.py'
+      - '.github/workflows/sinjira-liseuse-bords-systeme-v67.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-liseuse-touch-v52.mjs'
+      - 'assets/js/sinjira-liseuse-reflow-v53.mjs'
+      - '.github/workflows/sinjira-liseuse-bords-systeme-v67.yml'
+permissions:
+  contents: read
+
+jobs:
+  reader-edge:
+    name: "Navigation système et lecture mobile — ${{ matrix.browser }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - name: Checkout sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Contrôler la syntaxe JavaScript et Python
+        run: |
+          node --check assets/js/sinjira-liseuse-touch-v52.mjs
+          node --check assets/js/sinjira-liseuse-reflow-v53.mjs
+          node --check tests/sinjira-liseuse-touch-v52.test.mjs
+          node --check tests/sinjira-liseuse-reflow-v53.test.mjs
+          python3 -m py_compile tests/e2e/test_sinjira_liseuse_mobile_v54.py tests/e2e/test_sinjira_liseuse_real_page_v57.py tests/e2e/test_sinjira_liseuse_responsive_v58.py tests/e2e/test_sinjira_liseuse_trajectory_v66.py tests/e2e/test_sinjira_liseuse_native_touch_v65.py
+      - name: Tests Node des gestes, bords, reflow et reprise
+        run: node --test tests/sinjira-liseuse-touch-v52.test.mjs tests/sinjira-liseuse-reflow-v53.test.mjs
+      - name: Parcours de la vraie page avec compte bloqué et roman fictif
+        run: |
+          python3 -m venv .venv-reader-v67
+          . .venv-reader-v67/bin/activate
+          python -m pip install --disable-pip-version-check playwright==1.57.0
+          python -m playwright install --with-deps ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_mobile_v54.py --browser ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_real_page_v57.py --browser ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_responsive_v58.py --browser ${{ matrix.browser }}
+          python tests/e2e/test_sinjira_liseuse_trajectory_v66.py --browser ${{ matrix.browser }}
+          if [ "${{ matrix.browser }}" = chromium ]; then
+            python tests/e2e/test_sinjira_liseuse_native_touch_v65.py --browser chromium
+          fi
+      - name: Tests uniquement, aucune autorisation de déploiement
+        run: |
+          echo "V67-NO_GO production : tests tactiles navigateur, pas d'appareil réel ni de roman privé"
