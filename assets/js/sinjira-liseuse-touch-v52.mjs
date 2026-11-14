@@ -14,11 +14,15 @@ export function classifyReaderSwipe({
 }={}){
   if(hasSelection||horizontalOverflow||scrolledDuringGesture||
      ![dx,dy,durationMs,viewerWidth,maxVerticalTravel].every(Number.isFinite)||
-     maxVerticalTravel<0||durationMs<0||durationMs>850||viewerWidth<=0)return null;
+     maxVerticalTravel<0||durationMs<0||durationMs>1800||viewerWidth<=0)return null;
   const distance=Math.abs(dx),vertical=Math.max(Math.abs(dy),maxVerticalTravel);
-  // Résiste aux gestes accidentels, au défilement vertical et aux diagonales.
+  // V79 : conserver les gestes lents volontaires. Exiger un mouvement plus
+  // ample et plus horizontal après 850 ms pour refuser les longues pressions.
   const threshold=Math.max(56,Math.min(100,viewerWidth*0.14));
-  if(distance<threshold||distance<vertical*1.65)return null;
+  const slow=durationMs>850;
+  const requiredDistance=slow?Math.max(112,threshold*1.5):threshold;
+  const requiredDirection=slow?2.2:1.65;
+  if(distance<requiredDistance||distance<vertical*requiredDirection)return null;
   return dx<0?'next':'previous';
 }
 

@@ -18,10 +18,24 @@ test('défilement vertical ne déclenche pas le changement de page',()=>{
 test('déplacement diagonal reste une navigation libre',()=>{
   assert.equal(gesture({dx:-92,dy:75}),null);
 });
-test('petit déplacement, tap et longue pression sont ignorés',()=>{
+test('petit déplacement, tap et longue pression sans glissement net sont ignorés',()=>{
   assert.equal(gesture({dx:-20}),null);
   assert.equal(gesture({dx:0,dy:0}),null);
   assert.equal(gesture({durationMs:860}),null);
+});
+test('V79 : glissement plus lent et volontaire reste utilisable sur téléphone',()=>{
+  assert.equal(gesture({dx:-130,dy:3,durationMs:1200}),'next');
+  assert.equal(gesture({dx:130,dy:3,durationMs:1500}),'previous');
+  assert.equal(gesture({dx:-130,dy:3,durationMs:1800}),'next');
+});
+test('V79 : pression longue, déplacement court et diagonale lente sont refusés',()=>{
+  assert.equal(gesture({dx:-92,durationMs:900}),null);
+  assert.equal(gesture({dx:-105,durationMs:1500}),null);
+  assert.equal(gesture({dx:-160,dy:90,durationMs:1250}),null);
+  assert.equal(gesture({dx:-150,dy:3,durationMs:1801}),null);
+  assert.equal(gesture({dx:-145,durationMs:1400,hasSelection:true}),null);
+  assert.equal(gesture({dx:-145,durationMs:1400,horizontalOverflow:true}),null);
+  assert.equal(gesture({dx:-145,durationMs:1400,scrolledDuringGesture:true}),null);
 });
 test('seuil s’adapte à la largeur du téléphone ou tablette',()=>{
   assert.equal(gesture({dx:-57,viewerWidth:320}),'next');
@@ -97,6 +111,18 @@ function fixture({selected=false}={}){
   };
   return {viewer,previous,next,mobilePrevious,mobileNext,release,swipe,setSelected:v=>{selection=v}};
 }
+test('V79 : un mouvement lent mais clairement horizontal tourne les pages PDF',()=>{
+  const f=fixture();
+  try{
+    f.swipe(-135,3,{elapsed:1300});
+    f.swipe(135,3,{elapsed:1500});
+    assert.equal(f.next.clicks,1);
+    assert.equal(f.previous.clicks,1);
+    f.swipe(-95,3,{elapsed:1000});
+    f.swipe(-150,3,{elapsed:1900});
+    assert.equal(f.next.clicks,1);
+  }finally{f.release()}
+});
 test('V78 : passer de texte paginé à PDF pendant un geste ne tourne pas le PDF',()=>{
   const f=fixture();
   try{

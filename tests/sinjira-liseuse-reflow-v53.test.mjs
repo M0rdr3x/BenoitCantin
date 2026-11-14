@@ -462,6 +462,20 @@ test('V56 : input puis change de taille de police ne créent pas deux déplaceme
     assert.equal(f.viewer.scrollTop,875); // 50 % de la nouvelle hauteur scrollable
   }finally{f.restore()}
 });
+test('V79 : la lecture paginée accepte un swipe lent et net puis un retour lent',()=>{
+  const f=fixture();
+  try{
+    const forward=f.swipe(-135,3,{elapsed:1400});
+    assert.equal(forward.defaultPrevented,true);
+    assert.ok(f.viewer.scrollTop>0);
+    const reverse=f.swipe(135,3,{elapsed:1600});
+    assert.equal(reverse.defaultPrevented,true);
+    assert.equal(f.viewer.scrollTop,0);
+    const hold=f.swipe(-135,3,{elapsed:1900});
+    assert.equal(hold.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,0);
+  }finally{f.restore()}
+});
 test('V78 : bascule texte/continu pendant contact puis retour annule le swipe périmé',()=>{
   const f=fixture();
   try{
