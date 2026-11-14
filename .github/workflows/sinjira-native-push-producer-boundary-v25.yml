@@ -12,6 +12,7 @@ on:
       - 'scripts/test_security_push_policy_v25.mjs'
       - 'scripts/test_security_push_receipts_v25.mjs'
       - 'scripts/test_security_push_network_v25.mjs'
+      - 'scripts/test_security_push_bridge_privacy.cjs'
       - 'scripts/validate_native_push_producer_boundary_v25.py'
       - 'scripts/validate_security_push_background_v25.py'
       - 'scripts/validate_native_push_producer_workflow_security.py'
@@ -27,6 +28,7 @@ on:
       - 'scripts/test_security_push_policy_v25.mjs'
       - 'scripts/test_security_push_receipts_v25.mjs'
       - 'scripts/test_security_push_network_v25.mjs'
+      - 'scripts/test_security_push_bridge_privacy.cjs'
       - 'scripts/validate_native_push_producer_boundary_v25.py'
       - 'scripts/validate_security_push_background_v25.py'
       - 'scripts/validate_native_push_producer_workflow_security.py'
@@ -76,3 +78,5 @@ jobs:
 
       - name: Tester le réseau Expo borné
         run: node scripts/test_security_push_network_v25.mjs
+      - name: Tester l'identité du bridge et le retrait du consentement push
+        run: node scripts/test_security_push_bridge_privacy.cjs

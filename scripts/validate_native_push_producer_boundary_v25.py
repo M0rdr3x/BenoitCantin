@@ -265,6 +265,18 @@ def validate_bridge() -> None:
     assert_contains(text, "rpc('security_register_push_endpoint'", "enregistrement via RPC")
     assert_contains(text, "rpc('security_disable_push_for_device'", "désactivation via RPC")
     assert_contains(text, "p_expo_push_token:token", "token transmis uniquement au RPC")
+    # La WebView doit refuser les identifiants faibles et les faux jetons,
+    # sans afficher les diagnostics SQL lors d'une défaillance Supabase.
+    for marker in ("function isStrongDeviceKey(", "function isExpoPushToken(",
+                   "if(!isStrongDeviceKey(deviceKey))return",
+                   "enabled==='1'&&isExpoPushToken(token)",
+                   "enabled==='0'", "function schedulePushSync()",
+                   "while(syncPending)", "syncInFlight=true"):
+        assert_contains(text, marker, "identité/consentement push stricts")
+    for forbidden in ("if(deviceKey.length<16)return", "error?.message||error",
+                      "console.warn('[SINJIRA push bridge]',error"):
+        if forbidden in text:
+            fail(f"bridge WebView exposant les données ou acceptant les clés faibles: {forbidden}")
     if re.search(r"\bfetch\s*\(", text):
         fail("le bridge push ne doit pas envoyer directement le token avec fetch()")
     hits = producer_hits(text)

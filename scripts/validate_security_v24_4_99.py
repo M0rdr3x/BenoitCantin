@@ -93,8 +93,11 @@ def main():
         "'sinjira.com'",
         "'www.sinjira.com'",
         'Application mobile · V',
-        'v=24.4.99',
+        'sinjira-security-push-bridge-v24-4-98.js?v=24.4.100-security',
     ],'runtime mobile')
+    forbid(native,[
+        'sinjira-security-push-bridge-v24-4-98.js?v=24.4.99',
+    ],'ancien bridge push vulnérable en cache')
 
     domain_plan=read('DOMAIN_MIGRATION_SINJIRA.md')
     require(domain_plan,[

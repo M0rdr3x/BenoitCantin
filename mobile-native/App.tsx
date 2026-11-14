@@ -274,7 +274,7 @@ export default function App() {
     if (!nativeDeviceKey) return 'true;';
     const enabled = pushEnabled ? '1' : '0';
     const platform = Platform.OS;
-    return `try{localStorage.setItem(${JSON.stringify(WEB_DEVICE_KEY_STORAGE)},${JSON.stringify(nativeDeviceKey)});localStorage.setItem(${JSON.stringify(WEB_PUSH_ENABLED_STORAGE)},${JSON.stringify(enabled)});localStorage.setItem(${JSON.stringify(WEB_PUSH_PLATFORM_STORAGE)},${JSON.stringify(platform)});${pushToken ? `localStorage.setItem(${JSON.stringify(WEB_PUSH_TOKEN_STORAGE)},${JSON.stringify(pushToken)});` : `localStorage.removeItem(${JSON.stringify(WEB_PUSH_TOKEN_STORAGE)});`}setTimeout(()=>import('/assets/js/sinjira-security-push-bridge-v24-4-98.js?v=24.4.99').catch(()=>{}),0);}catch(e){};true;`;
+    return `try{localStorage.setItem(${JSON.stringify(WEB_DEVICE_KEY_STORAGE)},${JSON.stringify(nativeDeviceKey)});localStorage.setItem(${JSON.stringify(WEB_PUSH_ENABLED_STORAGE)},${JSON.stringify(enabled)});localStorage.setItem(${JSON.stringify(WEB_PUSH_PLATFORM_STORAGE)},${JSON.stringify(platform)});${pushToken ? `localStorage.setItem(${JSON.stringify(WEB_PUSH_TOKEN_STORAGE)},${JSON.stringify(pushToken)});` : `localStorage.removeItem(${JSON.stringify(WEB_PUSH_TOKEN_STORAGE)});`}setTimeout(()=>import('/assets/js/sinjira-security-push-bridge-v24-4-98.js?v=24.4.100-security').catch(()=>{}),0);}catch(e){};true;`;
   }, [nativeDeviceKey, pushEnabled, pushToken]);
 
   const syncPushToWeb = (enabled: boolean, token: string) => {
