@@ -62,7 +62,7 @@ def install_isolation(page, image_only_pages=(), text_error_pages=()):
         pages = "[" + ",".join(str(int(n)) for n in text_error_pages) + "]"
         mock_pdf = mock_pdf.replace(
             "    async getTextContent(){",
-            "    async getTextContent(){\\n"
+            "    async getTextContent(){\n"
             + f"      if({pages}.includes(pageNumber)) "
             + "throw Error('V82 simulated extraction unavailable');",
             1
