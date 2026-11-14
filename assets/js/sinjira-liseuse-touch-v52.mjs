@@ -185,6 +185,7 @@ export function bindReaderTouchNavigation({
     origin={
       id:touch.identifier,x:touch.clientX,y:touch.clientY,time:clock(),
       scrollTop:viewer.scrollTop||0,maxVerticalTravel:0,scrolled:false,
+      readerLayout:viewer.dataset?.readerLayout||'scroll',
       geometry:captureReaderSwipeGeometry(viewer),
       nestedHorizontalScroll:captureReaderNestedHorizontalScroll(event.target,viewer),
       nestedHorizontalScrolled:false,
@@ -197,6 +198,7 @@ export function bindReaderTouchNavigation({
     // départ ne doit jamais être interprété comme une page tournée.
     if(!origin)return;
     if(event.touches?.length!==1||isReaderViewportZoomed()||
+      origin.readerLayout!==(viewer.dataset?.readerLayout||'scroll')||
       !isReaderSwipeGeometryStable(origin.geometry,captureReaderSwipeGeometry(viewer))){
       origin=null;return;
     }
@@ -221,6 +223,7 @@ export function bindReaderTouchNavigation({
     // même si preventDefault() n'a pas été honoré sur un appareil tactile.
     if(viewer.dataset?.readerLayout==='screens')return;
     if(!initial||isReaderViewportZoomed()||
+      initial.readerLayout!==(viewer.dataset?.readerLayout||'scroll')||
       !isReaderSwipeGeometryStable(initial.geometry,captureReaderSwipeGeometry(viewer))||
       event.touches?.length!==0||event.changedTouches?.length!==1)return;
     const touch=event.changedTouches[0];

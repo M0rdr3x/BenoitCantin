@@ -462,6 +462,41 @@ test('V56 : input puis change de taille de police ne créent pas deux déplaceme
     assert.equal(f.viewer.scrollTop,875); // 50 % de la nouvelle hauteur scrollable
   }finally{f.restore()}
 });
+test('V78 : bascule texte/continu pendant contact puis retour annule le swipe périmé',()=>{
+  const f=fixture();
+  try{
+    const start={identifier:1,clientX:230,clientY:140};
+    f.viewer.emit('touchstart',{touches:[start],target:{closest:()=>null}});
+    f.toggle.checked=false;
+    f.toggle.emit('change',{});
+    f.toggle.checked=true;
+    f.toggle.emit('change',{});
+    const ended={touches:[],changedTouches:[{...start,clientX:90,clientY:142}],
+      defaultPrevented:false,preventDefault(){this.defaultPrevented=true}};
+    f.viewer.emit('touchend',ended);
+    assert.equal(ended.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,0);
+    const resumed=f.swipe(-130,2);
+    assert.equal(resumed.defaultPrevented,true);
+    assert.ok(f.viewer.scrollTop>0);
+  }finally{f.restore()}
+});
+test('V78 : disparition du mode écrans pendant touchmove annule définitivement le contact',()=>{
+  const f=fixture();
+  try{
+    const start={identifier:1,clientX:230,clientY:140};
+    f.viewer.emit('touchstart',{touches:[start],target:{closest:()=>null}});
+    f.viewer.dataset.readerLayout='scroll';
+    f.viewer.emit('touchmove',{touches:[{...start,clientX:205,clientY:141}]});
+    f.viewer.dataset.readerLayout='screens';
+    const ended={touches:[],changedTouches:[{...start,clientX:90,clientY:143}],
+      defaultPrevented:false,preventDefault(){this.defaultPrevented=true}};
+    f.viewer.emit('touchend',ended);
+    assert.equal(ended.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(f.swipe(-130,2).defaultPrevented,true);
+  }finally{f.restore()}
+});
 test('V77 : texte paginé tourne la page sur un tableau horizontal immobile',()=>{
   const f=fixture();
   try{

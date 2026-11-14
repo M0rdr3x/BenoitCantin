@@ -97,6 +97,38 @@ function fixture({selected=false}={}){
   };
   return {viewer,previous,next,mobilePrevious,mobileNext,release,swipe,setSelected:v=>{selection=v}};
 }
+test('V78 : passer de texte paginé à PDF pendant un geste ne tourne pas le PDF',()=>{
+  const f=fixture();
+  try{
+    const touch={identifier:7,clientX:245,clientY:190};
+    f.viewer.dataset.readerLayout='screens';
+    f.viewer.emit('touchstart',{touches:[touch],target:{closest:()=>null}});
+    f.viewer.dataset.readerLayout='scroll';
+    f.viewer.emit('touchend',{touches:[],changedTouches:[
+      {...touch,clientX:105,clientY:192}
+    ],defaultPrevented:false});
+    assert.equal(f.next.clicks,0);
+    f.swipe(-130,2);
+    assert.equal(f.next.clicks,1);
+  }finally{f.release()}
+});
+test('V78 : changer de mode puis revenir durant touchmove annule le geste PDF',()=>{
+  const f=fixture();
+  try{
+    const touch={identifier:7,clientX:245,clientY:190};
+    f.viewer.dataset.readerLayout='scroll';
+    f.viewer.emit('touchstart',{touches:[touch],target:{closest:()=>null}});
+    f.viewer.dataset.readerLayout='screens';
+    f.viewer.emit('touchmove',{touches:[{...touch,clientX:220,clientY:191}]});
+    f.viewer.dataset.readerLayout='scroll';
+    f.viewer.emit('touchend',{touches:[],changedTouches:[
+      {...touch,clientX:95,clientY:192}
+    ],defaultPrevented:false});
+    assert.equal(f.next.clicks,0);
+    f.swipe(-130,2);
+    assert.equal(f.next.clicks,1);
+  }finally{f.release()}
+});
 test('V77 : un tableau horizontal immobile autorise gauche et droite en PDF',()=>{
   const f=fixture();
   try{

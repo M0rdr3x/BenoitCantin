@@ -271,6 +271,7 @@ export function bindReaderScreenMode({
     gesture={
       id:touch.identifier,x:touch.clientX,y:touch.clientY,start:clock(),
       scrollTop:viewer.scrollTop,maxVerticalTravel:0,scrolled:false,
+      readerLayout:viewer.dataset?.readerLayout,
       geometry:captureReaderSwipeGeometry(viewer),
       nestedHorizontalScroll:captureReaderNestedHorizontalScroll(event.target,viewer),
       nestedHorizontalScrolled:false,
@@ -280,7 +281,8 @@ export function bindReaderScreenMode({
   };
   const onTouchMove=event=>{
     if(!gesture)return;
-    if(event.touches?.length!==1||isReaderViewportZoomed()||
+    if(event.touches?.length!==1||!isPaged()||isReaderViewportZoomed()||
+      gesture.readerLayout!==viewer.dataset?.readerLayout||
       !isReaderSwipeGeometryStable(gesture.geometry,captureReaderSwipeGeometry(viewer))){
       gesture=null;return;
     }
@@ -302,6 +304,7 @@ export function bindReaderScreenMode({
   const onTouchEnd=event=>{
     const start=gesture;gesture=null;
     if(!start||!isPaged()||isReaderViewportZoomed()||
+      start.readerLayout!==viewer.dataset?.readerLayout||
       !isReaderSwipeGeometryStable(start.geometry,captureReaderSwipeGeometry(viewer))||
       event.defaultPrevented||event.touches?.length!==0||
       event.changedTouches?.length!==1)return;
@@ -412,6 +415,9 @@ export function bindReaderScreenMode({
     }));
   };
   const onToggle=()=>{
+    // V78 : tout changement de mode rend périmé le contact tactile en cours.
+    // Même si l'utilisateur rebascule aussitôt, ne pas tourner une ancienne page.
+    gesture=null;
     // Un mode continu peut avoir une proportion différente de lastRatio.
     const previousRatio=metric().ratio;
     savePreference(toggle.checked);
