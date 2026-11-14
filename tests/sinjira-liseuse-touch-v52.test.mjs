@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {classifyReaderSwipe,bindReaderTouchNavigation,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,hasReaderNestedHorizontalOverflow,readerCanPanHorizontally,readerCanPanVertically,hasReaderNestedVerticalOverflow,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved} from '../assets/js/sinjira-liseuse-touch-v52.mjs';
+import {classifyReaderSwipe,classifyReaderEdgeTap,bindReaderTouchNavigation,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,hasReaderNestedHorizontalOverflow,readerCanPanHorizontally,readerCanPanVertically,hasReaderNestedVerticalOverflow,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved} from '../assets/js/sinjira-liseuse-touch-v52.mjs';
 
 const gesture=(overrides={})=>classifyReaderSwipe({
   dx:-92,dy:8,durationMs:240,viewerWidth:375,...overrides
@@ -58,6 +58,7 @@ function target(){
   const events=new Map();
   return {
     disabled:false,clicks:0,clientWidth:375,scrollWidth:375,dataset:{},
+    getBoundingClientRect(){return {left:0,width:this.clientWidth}},
     addEventListener(name,callback){events.set(name,callback)},
     removeEventListener(name,callback){if(events.get(name)===callback)events.delete(name)},
     emit(name,event={}){events.get(name)?.(event)},
@@ -68,7 +69,8 @@ function target(){
 function fixture({selected=false}={}){
   const viewer=target(),previous=target(),next=target(),
         mobilePrevious=target(),mobileNext=target();
-  let time=0,selection=selected?'Sélection de citation':'';
+  let time=0,selection=selected?'Sélection de citation':'',pdfMode=false;
+  viewer.querySelector=sel=>sel==='#reader-text'?{hidden:pdfMode}:null;
   const release=bindReaderTouchNavigation({
     viewer,previous,next,mobilePrevious,mobileNext,
     getSelectedText:()=>selection,clock:()=>time,Observer:null
@@ -109,8 +111,79 @@ function fixture({selected=false}={}){
       clientX:x+dx,clientY:190+dy
     }],defaultPrevented:Boolean(options.prevented)});
   };
-  return {viewer,previous,next,mobilePrevious,mobileNext,release,swipe,setSelected:v=>{selection=v}};
+  return {viewer,previous,next,mobilePrevious,mobileNext,release,swipe,
+    setSelected:v=>{selection=v},setPdfMode:v=>{pdfMode=v}};
 }
+test('V97 : marges PDF et texte partagent les mêmes limites',()=>{
+  const p={x:318,viewerWidth:375,durationMs:160};
+  assert.equal(classifyReaderEdgeTap(p),'next');
+  assert.equal(classifyReaderEdgeTap({...p,x:62}),'previous');
+  assert.equal(classifyReaderEdgeTap({...p,x:188}),null);
+  assert.equal(classifyReaderEdgeTap({...p,x:10}),null);
+  assert.equal(classifyReaderEdgeTap({...p,x:370}),null);
+  assert.equal(classifyReaderEdgeTap({...p,durationMs:400}),null);
+  assert.equal(classifyReaderEdgeTap({...p,maxTravel:40}),null);
+  assert.equal(classifyReaderEdgeTap({...p,hasSelection:true}),null);
+  assert.equal(classifyReaderEdgeTap({...p,scrolled:true}),null);
+});
+test('V97 : en PDF, tap marge droite puis gauche = une page chacune',()=>{
+  const f=fixture();
+  try{
+    f.setPdfMode(true);
+    f.swipe(0,0,{startX:315,elapsed:120});
+    f.swipe(0,0,{startX:65,elapsed:120});
+    assert.equal(f.next.clicks,1);
+    assert.equal(f.previous.clicks,1);
+    // Le milieu et les bordures réservées au système ne tournent rien.
+    f.swipe(0,0,{startX:185,elapsed:120});
+    f.swipe(0,0,{startX:9,elapsed:120});
+    assert.equal(f.next.clicks,1);
+    assert.equal(f.previous.clicks,1);
+  }finally{f.release()}
+});
+test('V97 : seul le PDF autorise les taps, jamais le texte continu',()=>{
+  const f=fixture();
+  try{
+    f.swipe(0,0,{startX:315,elapsed:100});
+    assert.equal(f.next.clicks,0);
+    f.setPdfMode(true);
+    f.swipe(0,0,{startX:315,elapsed:100});
+    assert.equal(f.next.clicks,1);
+    f.setPdfMode(false);
+    f.swipe(0,0,{startX:315,elapsed:100});
+    assert.equal(f.next.clicks,1);
+  }finally{f.release()}
+});
+test('V97 : protéger le PDF contre appui long, retour du doigt et zoom',()=>{
+  const f=fixture();
+  const oldWindow=globalThis.window;
+  try{
+    f.setPdfMode(true);
+    f.swipe(0,0,{startX:315,elapsed:450});
+    f.swipe(0,0,{startX:315,elapsed:100,moves:[[60,0]]});
+    f.swipe(0,0,{startX:315,elapsed:100,scrollDuring:45});
+    f.setSelected('Citation PDF');
+    f.swipe(0,0,{startX:315,elapsed:100});
+    f.setSelected('');
+    globalThis.window={visualViewport:{scale:1.5}};
+    f.swipe(0,0,{startX:315,elapsed:100});
+    assert.equal(f.next.clicks,0);
+    globalThis.window=oldWindow;
+    f.swipe(0,0,{startX:315,elapsed:100});
+    assert.equal(f.next.clicks,1);
+  }finally{globalThis.window=oldWindow;f.release()}
+});
+test('V97 : un contact commençant en texte et finissant en PDF ne tourne pas',()=>{
+  const f=fixture();
+  try{
+    f.setPdfMode(false);
+    const touch={identifier:7,clientX:315,clientY:190};
+    f.viewer.emit('touchstart',{touches:[touch],target:{closest:()=>null}});
+    f.setPdfMode(true);
+    f.viewer.emit('touchend',{touches:[],changedTouches:[touch],defaultPrevented:false});
+    assert.equal(f.next.clicks,0);
+  }finally{f.release()}
+});
 test('V79 : un mouvement lent mais clairement horizontal tourne les pages PDF',()=>{
   const f=fixture();
   try{
