@@ -107,6 +107,41 @@ def run_browser(playwright, engine, origin):
         assert initial["max"] > 500, initial
         assert initial["layout"] == "screens", initial
 
+        # V91 : sur la vraie page HTML, un touchend après interruption du
+        # geste par blur/pagehide/visibilitychange ne doit PAS changer d'écran.
+        # Les événements sont synthétiques; aucun livre privé n'est chargé.
+        interrupted=page.evaluate("""()=>{
+          const v=document.querySelector('#reader-viewer');
+          const s={identifier:9,target:v,clientX:255,clientY:250};
+          const e={...s,clientX:125,clientY:253};
+          const fire=(type,touches,changed)=>{
+            const ev=new Event(type,{bubbles:true,cancelable:true});
+            Object.defineProperties(ev,{
+              touches:{value:touches},targetTouches:{value:touches},
+              changedTouches:{value:changed}
+            });
+            v.dispatchEvent(ev);
+            return ev.defaultPrevented;
+          };
+          const before=v.scrollTop;
+          for(const kind of ['blur','visibilitychange']){
+            fire('touchstart',[s],[s]);
+            if(kind==='visibilitychange'){
+              // Simuler document.hidden via événement avec lecture temporaire.
+              const old=Object.getOwnPropertyDescriptor(document,'hidden');
+              Object.defineProperty(document,'hidden',{configurable:true,value:true});
+              document.dispatchEvent(new Event('visibilitychange'));
+              if(old)Object.defineProperty(document,'hidden',old);
+              else delete document.hidden;
+            }else window.dispatchEvent(new Event('blur'));
+            fire('touchend',[],[e]);
+          }
+          return {before,after:v.scrollTop,page:Number(
+            document.querySelector('#reader-page').value)};
+        }""")
+        assert interrupted["before"]==interrupted["after"]==0,interrupted
+        assert interrupted["page"]==3,interrupted
+
         # Balayages gauche/droite : c'est un écran du texte, pas la page PDF.
         one = swipe(page, -120)
         assert one["consumed"] and one["page"] == 3, one
