@@ -196,6 +196,12 @@ export function bindReaderScreenMode({
   let layoutRestoreGeneration=0; // V69 : invalider une restitution devenue obsolète
   toggle.checked=localPreference();
   const isPaged=()=>!closed&&media.matches&&toggle.checked&&!text.hidden;
+  // V96 : conserver le calcul des écrans pendant la suspension, MAIS
+  // interdire toute commande quand le livre est réellement masqué (V93/V94).
+  // Ne pas intégrer ce test à isPaged() : sync() pourrait désactiver le mode
+  // écran pendant une mise en arrière-plan et fausser le retour du lecteur.
+  const canNavigate=()=>!closed&&!globalThis.document?.hidden&&
+    !viewer.closest?.('[hidden]');
   const metric=()=>readerScreenState({
     scrollTop:viewer.scrollTop,scrollHeight:viewer.scrollHeight,
     clientHeight:viewer.clientHeight,...textMetrics(text)
@@ -254,7 +260,7 @@ export function bindReaderScreenMode({
     pendingLayoutAnchor=null;
   };
   const turn=direction=>{
-    if(!isPaged())return false;
+    if(!isPaged()||!canNavigate())return false;
     cancelPendingLayoutRestore();
     const p=planReaderScreenTurn({
       direction,scrollTop:viewer.scrollTop,scrollHeight:viewer.scrollHeight,
@@ -280,7 +286,7 @@ export function bindReaderScreenMode({
   const isTouchTargetAllowed=event=>!isInteractive(event.target);
   const onTouchStart=event=>{
     gesture=null;
-    if(!isPaged()||event.touches?.length!==1||!isTouchTargetAllowed(event)||
+    if(!isPaged()||!canNavigate()||event.touches?.length!==1||!isTouchTargetAllowed(event)||
       isReaderViewportZoomed())return;
     const touch=event.touches[0];
     // V67 : préserver le retour et la navigation système depuis les bords.
@@ -301,7 +307,7 @@ export function bindReaderScreenMode({
   };
   const onTouchMove=event=>{
     if(!gesture)return;
-    if(event.touches?.length!==1||!isPaged()||isReaderViewportZoomed()||
+    if(event.touches?.length!==1||!isPaged()||!canNavigate()||isReaderViewportZoomed()||
       gesture.readerLayout!==viewer.dataset?.readerLayout||
       !isReaderSwipeGeometryStable(gesture.geometry,captureReaderSwipeGeometry(viewer))){
       gesture=null;return;
@@ -329,7 +335,7 @@ export function bindReaderScreenMode({
   const onVisibilityChange=()=>{if(document.hidden)onTouchCancel()};
   const onTouchEnd=event=>{
     const start=gesture;gesture=null;
-    if(!start||!isPaged()||isReaderViewportZoomed()||
+    if(!start||!isPaged()||!canNavigate()||isReaderViewportZoomed()||
       start.readerLayout!==viewer.dataset?.readerLayout||
       !isReaderSwipeGeometryStable(start.geometry,captureReaderSwipeGeometry(viewer))||
       event.defaultPrevented||event.touches?.length!==0||
@@ -380,6 +386,13 @@ export function bindReaderScreenMode({
     }
   };
   const handleNav=(direction,event)=>{
+    // V96 : éviter qu'un click résiduel sur la commande canonique
+    // n'atteigne V26 pendant que l'accès intégral reste masqué.
+    if(!canNavigate()){
+      event?.preventDefault?.();
+      event?.stopImmediatePropagation?.();
+      return;
+    }
     if(!isPaged())return;
     const state=metric();
     if(direction==='next'&&state.hasNextScreen||
@@ -394,15 +407,21 @@ export function bindReaderScreenMode({
   const onPrev=event=>handleNav('previous',event);
   const onNext=event=>handleNav('next',event);
   const onMobilePrev=event=>{
+    if(!canNavigate()){
+      event?.preventDefault?.();event?.stopImmediatePropagation?.();return;
+    }
     if(!isPaged())return;
     event.preventDefault();event.stopImmediatePropagation();turn('previous');
   };
   const onMobileNext=event=>{
+    if(!canNavigate()){
+      event?.preventDefault?.();event?.stopImmediatePropagation?.();return;
+    }
     if(!isPaged())return;
     event.preventDefault();event.stopImmediatePropagation();turn('next');
   };
   const onKeyboard=event=>{
-    if(!isPaged()||event.defaultPrevented||event.altKey||event.ctrlKey||
+    if(!isPaged()||!canNavigate()||event.defaultPrevented||event.altKey||event.ctrlKey||
       event.metaKey||event.shiftKey||isInteractive(document.activeElement))return;
     // V61 : les flèches sont des raccourcis de la LISEUSE, pas du site.
     // Hors du focus du livre, conserver les raccourcis du navigateur,
