@@ -55,6 +55,32 @@ def run(playwright, engine, url):
         illustrated = snapshot(page)
         assert illustrated["page"] == 4 and illustrated["textHidden"]
 
+        # V83 : une illustration affichée automatiquement en PDF se recalcule
+        # lorsque le téléphone passe en petit portrait (320 px), sans créer
+        # un dépassement horizontal qui volerait le swipe du lecteur.
+        regular_width=page.evaluate("""()=>document.querySelector('#reader-canvas')
+          .getBoundingClientRect().width""")
+        page.set_viewport_size({"width":320,"height":568})
+        page.wait_for_function("""previous=>{
+          const v=document.querySelector('#reader-viewer');
+          const c=document.querySelector('#reader-canvas');
+          const style=getComputedStyle(v);
+          const available=v.clientWidth-parseFloat(style.paddingLeft)-
+            parseFloat(style.paddingRight);
+          return !c.hidden && c.getBoundingClientRect().width<previous-12 &&
+            c.getBoundingClientRect().width<=available+2 &&
+            v.scrollWidth-v.clientWidth<=4;
+        }""",arg=regular_width,timeout=10000)
+        small=page.evaluate("""()=>{
+          const v=document.querySelector('#reader-viewer');
+          const c=document.querySelector('#reader-canvas');
+          return {viewport:innerWidth,viewer:v.clientWidth,
+            overflow:v.scrollWidth-v.clientWidth,pdf:c.getBoundingClientRect().width,
+            doc:document.documentElement.scrollWidth};
+        }""")
+        assert small["overflow"]<=4 and small["doc"]<=323,small
+        assert snapshot(page)["page"]==4
+
         # Le geste gauche doit encore passer la page PDF suivante.
         left = swipe(page, -130)
         page.wait_for_function("""()=>{
@@ -76,6 +102,22 @@ def run(playwright, engine, url):
         page.wait_for_function("""()=>document.querySelector('#reader-page').value==='4' &&
           !document.querySelector('#reader-canvas').hidden &&
           document.querySelector('#reader-viewer').dataset.readerLayout==='scroll'""")
+        # V83 : le même fallback doit reprendre la largeur en paysage,
+        # pas conserver le vieux canvas 320 px et une grande zone vide.
+        portrait_width=page.evaluate("""()=>document.querySelector('#reader-canvas')
+          .getBoundingClientRect().width""")
+        page.set_viewport_size({"width":844,"height":390})
+        page.wait_for_function("""previous=>{
+          const v=document.querySelector('#reader-viewer');
+          const c=document.querySelector('#reader-canvas');
+          const style=getComputedStyle(v);
+          const available=v.clientWidth-parseFloat(style.paddingLeft)-
+            parseFloat(style.paddingRight);
+          return !c.hidden && c.getBoundingClientRect().width>previous+80 &&
+            c.getBoundingClientRect().width<=available+2 &&
+            v.scrollWidth-v.clientWidth<=4;
+        }""",arg=portrait_width,timeout=10000)
+        assert snapshot(page)["page"]==4
         swipe(page, 130)
         page.wait_for_function("""()=>document.querySelector('#reader-page').value==='3' &&
           !document.querySelector('#reader-text').hidden &&
@@ -100,8 +142,8 @@ def run(playwright, engine, url):
         assert page.locator("#reader-image-fallback").is_hidden()
         assert not errors, errors
         assert not blocked, blocked
-        print(f"PASS {engine} V81: illustration auto-PDF, gauche/droite, "
-              "retour texte reflow et choix PDF explicite, sans Supabase")
+        print(f"PASS {engine} V83: illustrations ajustées 320px/paysage, "
+              "swipes gauche/droite, reflow et choix PDF explicite, sans Supabase")
         context.close()
     finally:
         browser.close()

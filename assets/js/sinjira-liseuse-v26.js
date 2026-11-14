@@ -453,7 +453,12 @@ function renderPage(){
     }
     {
       const viewer=$('reader-viewer');
-      const baseWidth=Math.max(280,Math.min(1150,viewer.clientWidth-40));
+      // V83 : largeur réellement disponible, padding compris. La largeur
+      // minimum artificielle de 280 px causait du pan horizontal sur petits
+      // téléphones, et empêchait alors les gestes de changement de page.
+      const style=window.getComputedStyle(viewer);
+      const padding=(parseFloat(style.paddingLeft)||0)+(parseFloat(style.paddingRight)||0);
+      const baseWidth=Math.min(1150,Math.max(1,viewer.clientWidth-padding-8));
       const viewport=page.getViewport({scale:1});
       const scale=(baseWidth/viewport.width)*state.zoom;
       const drawing=page.getViewport({scale});
@@ -583,7 +588,12 @@ function bindControls(){
   });
   let resizeTimer;
   window.addEventListener('resize',()=>{
-    if(state.mode!=='page')return;
+    // V83 : une illustration montrée automatiquement en PDF garde la
+    // préférence « texte »; elle doit pourtant se recalculer à la rotation.
+    const imageFallback=state.mode==='texte'&&
+      !$('reader-image-fallback').hidden&&
+      !$('reader-canvas').hidden&&$('reader-text').hidden;
+    if(state.mode!=='page'&&!imageFallback)return;
     clearTimeout(resizeTimer);
     resizeTimer=setTimeout(renderPage,250);
   });
