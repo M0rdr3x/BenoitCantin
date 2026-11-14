@@ -341,11 +341,36 @@ def run(playwright, engine, origin):
             rect.top-v.getBoundingClientRect().top-a.relativeY)<35;
         }""",timeout=7000)
 
-        # V61 : les libellés d'aide changent quand on quitte le mode paginé.
+        # V89 : le texte lu en défilement continu doit rester au même endroit
+        # lorsque l'utilisateur réactive les pages d'écran (pas d'ancre
+        # ancienne restée en mémoire depuis le mode paginé).
         page.locator("#reader-screens-enabled").uncheck()
         assert page.locator("#reader-touch-next").get_attribute("aria-label")=="Page du livre suivante"
         assert page.locator("#reader-touch-prev").get_attribute("aria-label")=="Page du livre précédente"
+        page.locator("#reader-viewer").scroll_into_view_if_needed()
+        continuous=page.evaluate("""async()=>{
+          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.10.1');
+          const v=document.querySelector('#reader-viewer');
+          const t=document.querySelector('#reader-text');
+          v.scrollTop=Math.min(2200,Math.max(0,v.scrollHeight-v.clientHeight-300));
+          await new Promise(done=>requestAnimationFrame(done));
+          const anchor=m.captureReaderTextAnchor({viewer:v,text:t});
+          window.__v89ContinuousAnchor=anchor;
+          return {captured:Boolean(anchor),scroll:v.scrollTop};
+        }""")
+        assert continuous["captured"] and continuous["scroll"]>200,continuous
         page.locator("#reader-screens-enabled").check()
+        page.wait_for_function("""()=>{
+          const a=window.__v89ContinuousAnchor;
+          if(!a?.node?.isConnected)return false;
+          const v=document.querySelector('#reader-viewer');
+          if(v.dataset.readerLayout!=='screens')return false;
+          const r=document.createRange();
+          r.setStart(a.node,a.offset);r.setEnd(a.node,a.offset+1);
+          const rect=Array.from(r.getClientRects()).find(x=>x.height>0);
+          return Boolean(rect)&&Math.abs(
+            rect.top-v.getBoundingClientRect().top-a.relativeY)<35;
+        }""",timeout=7000)
         assert "Écran suivant" in page.locator("#reader-touch-next").get_attribute("aria-label")
 
         # V60: le vrai moteur JS chargé sur cette page ne doit pas demander
