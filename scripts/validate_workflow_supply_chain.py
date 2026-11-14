@@ -45,7 +45,9 @@ def has_privileged_pr_trigger(source: str) -> bool:
 
 def inspect_workflow(name: str, source: str) -> list[str]:
     errors: list[str] = []
-    if not re.search(r"^\s*permissions\s*:", source, flags=re.MULTILINE):
+    # Seule une déclaration racine borne les droits implicites de TOUS les jobs.
+    # Une déclaration au niveau d’un seul job ne protège pas les autres.
+    if not re.search(r"^permissions\s*:", source, flags=re.MULTILINE):
         errors.append(f"{name}: permissions explicites manquantes")
     if has_privileged_pr_trigger(source):
         errors.append(f"{name}: déclencheur privilégié pull_request_target interdit")
@@ -82,6 +84,7 @@ def self_test() -> None:
         "branche mobile": good.replace("@d23441a48e516b6c34aea4fa41551a30e30af803", "@main"),
         "permission implicite": good.replace("permissions:\n  contents: read\n", ""),
         "droits larges": good.replace("permissions:\n  contents: read", "permissions: write-all"),
+        "permissions seulement dans un job": good.replace("permissions:\n  contents: read\n", "").replace("jobs:\n  verify:\n    steps:\n", "jobs:\n  verify:\n    permissions:\n      contents: read\n    steps:\n"),
         "déclencheur privilégié": good.replace("  pull_request:", "  pull_request_target:"),
     }
     for label, altered in mutants.items():
