@@ -244,6 +244,66 @@ def run(playwright, browser_type, url):
             "V57: double saut de PDF",before_pdf,snapshot(page)
         )
 
+        # V98 : homologuer les tapotements PDF SUR LA VRAIE PAGE HTML,
+        # et pas uniquement sur la fixture simplifiée V54. Le canvas est
+        # la véritable cible dans la zone PDF; les événements remontent
+        # jusqu'au gestionnaire de la liseuse. PDF et identité synthétiques.
+        page.evaluate("""()=>{
+          window.__v98Clicks={next:0,previous:0};
+          document.querySelector('#reader-next').addEventListener('click',()=>{
+            window.__v98Clicks.next++;
+          },true);
+          document.querySelector('#reader-previous').addEventListener('click',()=>{
+            window.__v98Clicks.previous++;
+          },true);
+        }""")
+
+        def tap_pdf_edge(portion):
+            return page.evaluate("""portion=>{
+              const viewer=document.querySelector('#reader-viewer');
+              const canvas=document.querySelector('#reader-canvas');
+              const rect=viewer.getBoundingClientRect();
+              const touch={identifier:98,target:canvas,
+                clientX:rect.left+rect.width*portion,
+                clientY:rect.top+Math.min(120,rect.height*.45)};
+              const fire=(kind,touches)=>{
+                const event=new Event(kind,{bubbles:true,cancelable:true});
+                Object.defineProperties(event,{
+                  touches:{value:touches},targetTouches:{value:touches},
+                  changedTouches:{value:[touch]}
+                });
+                canvas.dispatchEvent(event);
+              };
+              fire('touchstart',[touch]);
+              fire('touchend',[]);
+              return {page:Number(document.querySelector('#reader-page').value),
+                layout:viewer.dataset.readerLayout,
+                textHidden:document.querySelector('#reader-text').hidden,
+                clickCounts:{...window.__v98Clicks}};
+            }""",portion)
+
+        # Depuis la page 4, toucher la marge gauche ramène à la page 3.
+        pdf_left=tap_pdf_edge(.15)
+        page.wait_for_function("""()=>document.querySelector('#reader-page').value==='3'&&
+          document.querySelector('#reader-text').hidden===true""")
+        assert pdf_left["page"]==3 and pdf_left["layout"]=="scroll",pdf_left
+        assert pdf_left["clickCounts"]=={"next":0,"previous":1},pdf_left
+
+        # Le centre et les bords système ne changent ni page ni compteur.
+        pdf_middle=tap_pdf_edge(.5)
+        pdf_os_edge=tap_pdf_edge(.02)
+        assert pdf_middle["page"]==3 and pdf_os_edge["page"]==3,(pdf_middle,pdf_os_edge)
+        assert pdf_os_edge["clickCounts"]=={"next":0,"previous":1},pdf_os_edge
+
+        # La marge droite avance exactement UNE page, et l'article PDF
+        # reste caché : pas de bascule intempestive vers le texte paginé.
+        pdf_right=tap_pdf_edge(.85)
+        page.wait_for_function("""()=>document.querySelector('#reader-page').value==='4'&&
+          document.querySelector('#reader-text').hidden===true""")
+        assert pdf_right["page"]==4 and pdf_right["layout"]=="scroll",pdf_right
+        assert pdf_right["clickCounts"]=={"next":1,"previous":1},pdf_right
+        assert snapshot(page)["page"]==4,snapshot(page)
+
         # Repasser au texte et à la mise en page mobile.
         page.locator("#reader-mode").click()
         # MutationObserver V53 rétablit le mode paginé après que le moteur
