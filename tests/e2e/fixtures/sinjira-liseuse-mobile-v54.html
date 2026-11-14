@@ -23,6 +23,8 @@ button:disabled{opacity:.35}
 </head>
 <body>
 <header><strong>SINJIRA — simulation locale (aucun roman réel, aucun compte)</strong></header>
+<!-- V96 : la vraie liseuse enferme commandes et PDF dans reader-content. -->
+<div id="reader-content">
 <div id="controls">
   <button id="reader-previous" type="button">Page PDF précédente</button>
   <label for="reader-page">Page source</label>
@@ -41,6 +43,7 @@ button:disabled{opacity:.35}
   <button id="reader-touch-prev" type="button">← Précédente</button>
   <button id="reader-touch-next" type="button">Suivante →</button>
 </div>
+</div><!-- /reader-content -->
 <p id="result" aria-live="polite">Prêt</p>
 <script>
 (function(){
