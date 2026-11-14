@@ -109,15 +109,20 @@ def manual_job_gate(source: str, name: str) -> bool:
     next_job = re.search(r"(?m)^  [a-zA-Z][a-zA-Z0-9_-]*:\s*$", rest)
     if next_job:
         rest = rest[:next_job.start()]
-    match = re.search(r"(?m)^    if:\s*(.+)$", rest)
-    if not match:
+    # Vérifier la condition réellement évaluée, et pas la présence de mots
+    # clés. Un « || true », « ! », une fonction always() ou une deuxième
+    # clé if: pourraient rendre les trois garde-fous facultatifs.
+    expressions = re.findall(r"(?m)^    if:[ \\t]*([^\\r\\n]*)$", rest)
+    if len(expressions) != 1:
         return False
-    expression = match.group(1).split(" #", 1)[0]
-    return all(token in expression for token in (
-        "github.ref == 'refs/heads/main'",
-        "inputs.confirm_containment == 'CONTAIN'",
-        "inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'",
-    ))
+    expression = expressions[0].split(" #", 1)[0].strip()
+    # Pour cette opération P0, la seule condition approuvée est la triple
+    # conjonction exacte : ni OR, ni négation, ni branche alternative.
+    return expression == (
+        "github.ref == 'refs/heads/main' && "
+        "inputs.confirm_containment == 'CONTAIN' && "
+        "inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'"
+    )
 
 
 def inspect_workflows(files: dict[str, str]) -> list[str]:
@@ -209,6 +214,26 @@ def self_test() -> None:
         ("no SHA compare", good.replace('"$EXPECTED_SHA" != "$GITHUB_SHA"', "true")),
         ("unknown automatic event", good.replace("  workflow_dispatch:\n", "  workflow_dispatch:\n  workflow_run:\n")),
         ("manual event merely commented", good.replace("  workflow_dispatch:\n", "  push:\n  # workflow_dispatch:\n")),
+        ("always true bypass", good.replace(
+            "inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'",
+            "inputs.acknowledge_header_gap == 'ACK_HEADER_GAP' || true", 1,
+        )),
+        ("OR fallback bypass", good.replace(
+            "github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN'",
+            "github.ref == 'refs/heads/main' || inputs.confirm_containment == 'CONTAIN'", 1,
+        )),
+        ("negated guard", good.replace(
+            "github.ref == 'refs/heads/main'",
+            "!(github.ref == 'refs/heads/main')", 1,
+        )),
+        ("duplicate job if override", good.replace(
+            "    if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'\n",
+            "    if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'\n    if: always()\n",1,
+        )),
+        ("always function bypass", good.replace(
+            "github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN'",
+            "always() || (github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN')",1,
+        )),
         ("missing build confirmation", good.replace(
             "if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' &&",
             "if: github.ref == 'refs/heads/main' && true &&", 1,
@@ -226,7 +251,7 @@ def self_test() -> None:
     for label, altered in mutants:
         assert inspect_workflows({APPROVED: altered}), "Dangerous Pages fixture accepted: " + label
     assert inspect_workflows({APPROVED: good, "extra.yml": good})
-    print("OK : 21 mutations Pages refusées; upload _site direct et double garde obligatoire.")
+    print(f"OK : {len(mutants)} mutations Pages refusées; upload _site direct et double garde obligatoire.")
 
 
 def main() -> int:
