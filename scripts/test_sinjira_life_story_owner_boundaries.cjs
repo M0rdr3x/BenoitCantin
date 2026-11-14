@@ -160,13 +160,17 @@ async function main(){
     ['[data-report-code-once]',codeOnce]
   ]);
   let rpcCode={code,display_once:true};
+  let delayedCodeResponse=null;
   let currentCase={case_id:bad,status:'verified_hold',can_contest:true};
   let reportRows=[{id:bad,label:'Faux code',status:'active'},{id:recipient,label:'Code fiable',status:'active'}];
   const rpc=[];
   const shared={
     async rpc(name,args){
       rpc.push({name,args});
-      if(name==='life_story_create_report_code')return {data:rpcCode,error:null};
+      if(name==='life_story_create_report_code'){
+        if(delayedCodeResponse)return delayedCodeResponse;
+        return {data:rpcCode,error:null};
+      }
       if(name==='life_story_my_posthumous_case')return {data:currentCase,error:null};
       if(name==='life_story_list_report_codes')return {data:reportRows,error:null};
       return {data:{},error:null};
@@ -274,6 +278,30 @@ async function main(){
   await codes.revokeReportCode({target:{closest(){return codeList.children[1].children.at(-1)}}});
   eq(fifthInput.value,'','Révocation efface le dernier jeton révélé');
   eq(codeOnce.children.length,0,'Révocation masque le code privé dans le DOM');
+
+  // Régression async : un retour serveur tardif ne doit pas réafficher un
+  // secret une fois l'onglet caché, puis réactivé.
+  let resolveDelayedCode;
+  delayedCodeResponse=new Promise(resolve=>{resolveDelayedCode=resolve;});
+  const inFlight=codes.createReportCode({preventDefault(){},currentTarget:form});
+  document2.hidden=true;
+  documentHandlers.get('visibilitychange')();
+  document2.hidden=false;
+  resolveDelayedCode({data:{code,display_once:true},error:null});
+  await inFlight;
+  eq(codeOnce.children.length,0,'Réponse tardive après onglet caché refusée même si onglet réactivé');
+  eq(codeOnce.hidden,true,'La réponse différée ne découvre jamais le panneau');
+  eq(status.dataset.kind,'error','Réponse tardive accompagnée d’une instruction de recréation');
+  delayedCodeResponse=null;
+
+  // Même règle lorsque l'utilisateur quitte la page avant le retour RPC.
+  delayedCodeResponse=new Promise(resolve=>{resolveDelayedCode=resolve;});
+  const afterNavigation=codes.createReportCode({preventDefault(){},currentTarget:form});
+  windowHandlers.get('pagehide')();
+  resolveDelayedCode({data:{code,display_once:true},error:null});
+  await afterNavigation;
+  eq(codeOnce.children.length,0,'Réponse arrivée après navigation supprimée');
+  delayedCodeResponse=null;
   const html=read('compte/histoire-de-vie.html');
   yes(html.includes('sinjira-life-story-v24-5-0.js?v=24.5.2-owner-security'),
     'Cache du module principal actualisé');
