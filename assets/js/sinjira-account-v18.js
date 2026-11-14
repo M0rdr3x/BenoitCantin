@@ -1,6 +1,15 @@
 import {getSupabase,requireUser,escapeHtml,formatDate} from './sinjira-supabase.js';
 const page=document.body.dataset.v18Page||'',status=document.querySelector('[data-v18-status]');
-function st(msg,type='info'){if(!status)return;status.textContent=msg;status.dataset.statusType=type;status.hidden=false}
+function st(msg,type='info'){
+  if(!status)return;
+  // Un diagnostic Postgres/Supabase peut contenir SQL, courriel ou jeton.
+  // Les erreurs reçues du serveur ne doivent jamais être affichées brutes.
+  status.textContent=type==='error'
+    ? 'Impossible de charger cette rubrique pour le moment.'
+    : String(msg??'');
+  status.dataset.statusType=type;
+  status.hidden=false;
+}
 const rows=v=>Array.isArray(v)?v:[];
 const statusLabel=s=>({submitted:'Questionnaire reçu',ai_draft:'Brouillon IA',author_review:'Révision de Benoit',approved:'Approuvé',assigned:'Roman attribué',future:'En attente d’un futur roman',published:'Publié',refused:'Refusé',archived:'Archivé'})[s]||s||'—';
 
@@ -27,8 +36,8 @@ async function comments(user){
     if(r.error)throw r.error;
     const data=rows(r.data),box=document.querySelector('[data-my-comments]');if(!box)return;
     box.innerHTML=data.map(c=>`<article class="reader-comment" data-comment-id="${c.id}"><header><strong>${escapeHtml(c.novels?.title||'Roman SINJIRA')}</strong><span class="character-status" data-status="${escapeHtml(c.status)}">${escapeHtml(c.status==='pending'?'En attente':c.status==='approved'?'Publié':c.status==='refused'?'Refusé':c.status)}</span></header><p>${escapeHtml(c.body)}</p>${c.contains_spoilers?'<small>Contient des divulgâcheurs</small>':''}<time>${escapeHtml(formatDate(c.created_at))}</time>${c.status==='pending'?`<div class="hero-actions"><button class="btn btn-secondary btn-small" type="button" data-edit-comment>Modifier</button><button class="btn btn-secondary btn-small" type="button" data-delete-comment>Supprimer</button></div>`:''}</article>`).join('')||'<p>Vous n’avez encore publié aucun commentaire.</p>';
-    box.querySelectorAll('[data-edit-comment]').forEach(b=>b.addEventListener('click',async()=>{const card=b.closest('[data-comment-id]'),row=data.find(x=>x.id===card.dataset.commentId),next=prompt('Modifier votre commentaire en attente :',row?.body||'');if(next===null)return;const body=next.trim();if(body.length<3)return alert('Commentaire trop court.');const {error}=await s.from('novel_comments').update({body}).eq('id',row.id).eq('status','pending');if(error)return alert(error.message);await load()}));
-    box.querySelectorAll('[data-delete-comment]').forEach(b=>b.addEventListener('click',async()=>{const id=b.closest('[data-comment-id]').dataset.commentId;if(!confirm('Supprimer ce commentaire en attente?'))return;const {error}=await s.from('novel_comments').delete().eq('id',id).eq('status','pending');if(error)return alert(error.message);await load()}));
+    box.querySelectorAll('[data-edit-comment]').forEach(b=>b.addEventListener('click',async()=>{const card=b.closest('[data-comment-id]'),row=data.find(x=>x.id===card.dataset.commentId),next=prompt('Modifier votre commentaire en attente :',row?.body||'');if(next===null)return;const body=next.trim();if(body.length<3)return alert('Commentaire trop court.');try{const {error}=await s.from('novel_comments').update({body}).eq('id',row.id).eq('status','pending');if(error)throw error;await load()}catch(_){alert('Impossible de modifier ce commentaire pour le moment.')}}));
+    box.querySelectorAll('[data-delete-comment]').forEach(b=>b.addEventListener('click',async()=>{const id=b.closest('[data-comment-id]').dataset.commentId;if(!confirm('Supprimer ce commentaire en attente?'))return;try{const {error}=await s.from('novel_comments').delete().eq('id',id).eq('status','pending');if(error)throw error;await load()}catch(_){alert('Impossible de supprimer ce commentaire pour le moment.')}}));
   };
   await load();
 }
@@ -49,4 +58,4 @@ async function characters(user){
   box.innerHTML=html||'<article class="character-account-card"><h2>Aucun dossier</h2><p>Remplissez le questionnaire du Registre des Consciences pour commencer.</p></article>';
 }
 
-(async()=>{try{const user=await requireUser('/compte/connexion.html');if(page==='reads')await reads(user);if(page==='comments')await comments(user);if(page==='characters')await characters(user)}catch(e){if(e?.message!=='Connexion requise')st(e?.message||'Erreur du compte.','error')}})();
+(async()=>{try{const user=await requireUser('/compte/connexion.html');if(page==='reads')await reads(user);if(page==='comments')await comments(user);if(page==='characters')await characters(user)}catch(e){if(e?.message!=='Connexion requise')st('Impossible de charger cette rubrique pour le moment.','error')}})();
