@@ -76,11 +76,11 @@ def install_private_isolation(page, delay_first_pdf=False):
         # externe. La page peut passer en arrière-plan AVANT state.pdf.
         pdf=pdf.replace(
             "return {promise:Promise.resolve({",
-            "globalThis.__v94PdfRequested=true;\\n"
-            "  return {promise:new Promise(resolve=>{\\n"
+            "globalThis.__v94PdfRequested=true;\n"
+            "  return {promise:new Promise(resolve=>{\n"
             "    globalThis.__v94ReleasePdf=()=>resolve({",
             1
-        ).replace("  })};\\n}","  });\\n  })};\\n}",1)
+        ).replace("  })};\n}","  });\n  })};\n}",1)
     def intercept(route):
         url=route.request.url
         parsed=urlparse(url)
