@@ -44,7 +44,7 @@ TLS_REQUIRED_URI_ATTRS = {
 
 def is_insecure_transport_uri(raw: str) -> bool:
     """Détecter les destinations HTTP, même avec entités ou contrôles ASCII."""
-    normalized = re.sub(r'[\\x00-\\x20\\x7f]', '', raw)
+    normalized = re.sub(r'[\x00-\x20\x7f]', '', raw)
     return normalized.lower().startswith('http:')
 
 
