@@ -142,6 +142,42 @@ def run_browser(playwright, engine, origin):
         assert interrupted["before"]==interrupted["after"]==0,interrupted
         assert interrupted["page"]==3,interrupted
 
+        # V96 : l'édition privée cache #reader-content à la suspension.
+        # Même si du code conserve le focus, ni un touchend résiduel ni
+        # une touche ni un click de bouton ne doivent tourner le roman.
+        hidden_navigation=page.evaluate("""()=>{
+          const root=document.querySelector('#reader-content');
+          const viewer=document.querySelector('#reader-viewer');
+          const pageField=document.querySelector('#reader-page');
+          const start={identifier:42,clientX:270,clientY:220};
+          const end={...start,clientX:130,clientY:222};
+          const fire=(type,touches,changed)=>{
+            const event=new Event(type,{bubbles:true,cancelable:true});
+            Object.defineProperties(event,{
+              touches:{value:touches},targetTouches:{value:touches},
+              changedTouches:{value:changed}
+            });
+            viewer.dispatchEvent(event);
+            return event.defaultPrevented;
+          };
+          const before={scroll:viewer.scrollTop,page:Number(pageField.value),
+            layout:viewer.dataset.readerLayout};
+          root.hidden=true;
+          const moved=fire('touchstart',[start],[start]);
+          const ended=fire('touchend',[],[end]);
+          viewer.dispatchEvent(new KeyboardEvent('keydown',{
+            key:'ArrowRight',bubbles:true,cancelable:true
+          }));
+          document.querySelector('#reader-next').click();
+          document.querySelector('#reader-touch-next').click();
+          const after={scroll:viewer.scrollTop,page:Number(pageField.value),
+            layout:viewer.dataset.readerLayout};
+          root.hidden=false;
+          return {before,after,moved,ended};
+        }""")
+        assert hidden_navigation["before"]==hidden_navigation["after"],hidden_navigation
+        assert not hidden_navigation["moved"] and not hidden_navigation["ended"],hidden_navigation
+
         # V95 : une vraie zone du lecteur sur la page mobile tourne un écran
         # au tapotement de marge, sans changer la page source PDF.
         # On n'utilise aucun service privé ni système de stockage.
