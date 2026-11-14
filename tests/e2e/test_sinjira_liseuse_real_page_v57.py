@@ -369,6 +369,30 @@ def run(playwright, browser_type, url):
           document.querySelector('#reader-text').hidden===false &&
           document.querySelector('#reader-viewer').dataset.readerLayout==='screens'""")
         assert snapshot(page)["layout"]=="screens",snapshot(page)
+
+        # V99 : les mêmes vrais tapotements doivent naviguer entre les
+        # portions de TEXTE, jamais changer la page source PDF.
+        # Laisser finir la restitution asynchrone du retour au texte.
+        page.wait_for_timeout(120)
+        page.evaluate("document.querySelector('#reader-viewer').scrollTop=0")
+        before_text_native=snapshot(page)
+        assert before_text_native["page"]==4 and before_text_native["scroll"]<2, (
+            "V99 : écran texte initial incorrect",before_text_native
+        )
+        text_native_next,text_events_next=tap_native_pdf(.85)
+        assert text_native_next["page"]==4 and text_native_next["scroll"]>0, (
+            "V99 : tap natif sur la marge du texte ne fait pas avancer l'écran",
+            text_native_next,text_events_next
+        )
+        text_native_back,text_events_back=tap_native_pdf(.15)
+        assert text_native_back["page"]==4 and text_native_back["scroll"]<2, (
+            "V99 : tap natif sur la marge du texte ne revient pas à l'écran",
+            text_native_back,text_events_back
+        )
+        assert text_events_back["clicks"]=={"next":2,"previous":2},(
+            "V99 : un tap texte ne doit pas tourner la page PDF",text_events_back
+        )
+        assert len(text_events_back["touches"])==5,text_events_back
         assert not failures,failures
         assert not rejected,rejected
         context.close()
