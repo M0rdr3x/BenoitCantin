@@ -38,17 +38,29 @@ export function bindReaderTouchNavigation({
     if(event.touches?.length!==1||isInteractiveTarget(event.target))return;
     const touch=event.touches[0];
     if(!Number.isFinite(touch.clientX)||!Number.isFinite(touch.clientY))return;
-    origin={id:touch.identifier,x:touch.clientX,y:touch.clientY,time:clock()};
+    origin={id:touch.identifier,x:touch.clientX,y:touch.clientY,time:clock(),
+      scrollTop:viewer.scrollTop||0,scrollLeft:viewer.scrollLeft||0};
   };
+  const viewportMoved=initial=>
+    Math.abs((viewer.scrollTop||0)-initial.scrollTop)>3||
+    Math.abs((viewer.scrollLeft||0)-initial.scrollLeft)>3;
   const move=event=>{
-    // Multi-touch/pincement : jamais assimilé à une commande de page.
-    if(event.touches?.length!==1)origin=null;
+    // Un scroll vertical déjà engagé ne doit jamais se transformer en page,
+    // même si le doigt revient ensuite sur son axe Y initial.
+    if(!origin)return;
+    if(event.touches?.length!==1){origin=null;return;}
+    const touch=event.touches[0];
+    if(touch.identifier!==origin.id){origin=null;return;}
+    const dx=touch.clientX-origin.x,dy=touch.clientY-origin.y;
+    if(!Number.isFinite(dx)||!Number.isFinite(dy)||viewportMoved(origin)||
+      (Math.abs(dy)>22&&Math.abs(dy)>Math.abs(dx)*1.25))origin=null;
   };
   const cancel=()=>{origin=null};
   const end=event=>{
     const initial=origin;
     origin=null;
-    if(!initial||event.touches?.length!==0||event.changedTouches?.length!==1)return;
+    if(!initial||event.touches?.length!==0||event.changedTouches?.length!==1||
+      viewportMoved(initial))return;
     const touch=event.changedTouches[0];
     if(touch.identifier!==initial.id||event.defaultPrevented)return;
     const direction=classifyReaderSwipe({
