@@ -185,7 +185,8 @@ for path, (asset, runtime_version, shell_version) in social_pages.items():
                     f'{path.relative_to(ROOT)} utilise un shell privé antérieur à V{shell_version}.')
 
 sw = (ROOT / 'sw.js').read_text('utf-8', errors='ignore') if (ROOT / 'sw.js').exists() else ''
-cache = re.search(r"const\s+CACHE\s*=\s*['\"]benoitcantin-v([0-9-]+)-public-[0-9]+['\"]", sw)
+# Enforcer la version minimale sans dépendre du suffixe descriptif du cache.
+cache = re.search(r"const\s+CACHE\s*=\s*['\"]benoitcantin-v(\d+-\d+-\d+)-[a-z0-9-]+['\"]", sw)
 cache_version = cache.group(1).replace('-', '.') if cache else ''
 require(bool(cache) and version_at_least(cache_version, CACHE_MIN_VERSION),
         f'Le cache du service worker doit être au moins V{CACHE_MIN_VERSION} après les correctifs sociaux/PWA.')

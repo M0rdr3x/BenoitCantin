@@ -42,6 +42,8 @@ jobs:
         run: python3 scripts/test_web_release_summary_shell.py
       - name: Vérifier les en-têtes privés et les anciens chemins Admin sans masquer les liens dangereux
         run: python3 scripts/test_vercel_legacy_admin_header_policy.py
+      - name: Tester la confidentialité du cache PWA et les routes privées
+        run: node --test scripts/test_service_worker_cache_boundary.cjs
       - name: Construire et auditer tous les contextes sans déployer
         run: python3 scripts/build_netlify_public.py --check
       - name: Auditer le confinement GitHub Pages
