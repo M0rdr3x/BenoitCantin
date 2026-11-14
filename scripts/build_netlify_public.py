@@ -753,7 +753,7 @@ def validate_netlify_staging_workflow() -> list[str]:
         "Refuser tout staging depuis une branche non protégée",
         "Installer Netlify CLI sans identifiants",
         "npm install --no-save --ignore-scripts --no-audit --no-fund",
-        "--userconfig=/dev/null --globalconfig=/dev/null",
+        '--userconfig="$cli_root/npm-user.conf" --globalconfig="$cli_root/npm-global.conf"',
         "--registry=https://registry.npmjs.org/ netlify-cli@27.10.2",
         "NPM_CONFIG_OFFLINE: 'true'",
         "secrets.NETLIFY_AUTH_TOKEN",
