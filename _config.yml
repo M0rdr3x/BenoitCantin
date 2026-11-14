@@ -53,6 +53,8 @@ exclude:
   - "supabase"
   - "tests"
   - "scripts"
+  # Outils npm du pipeline Netlify : jamais servis par GitHub Pages/Jekyll.
+  - "tools"
   - "mobile-native"
   - "docs"
   - "node_modules"
