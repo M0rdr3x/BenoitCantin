@@ -26,6 +26,20 @@ export function classifyReaderSwipe({
   return dx<0?'next':'previous';
 }
 
+/** V97 — classificateur partagé des tapotements de marge pour texte et PDF.
+ * Réserve le centre pour la sélection et les bords extérieurs aux gestes OS. */
+export function classifyReaderEdgeTap({x,viewerWidth,durationMs,dx=0,dy=0,
+  maxTravel=0,hasSelection=false,scrolled=false}={}){
+  if(hasSelection||scrolled||![x,viewerWidth,durationMs,dx,dy,maxTravel]
+    .every(Number.isFinite)||viewerWidth<240||durationMs<0||durationMs>300||
+    Math.abs(dx)>12||Math.abs(dy)>12||maxTravel>12)return null;
+  const margin=Math.max(28,viewerWidth*.07);
+  const band=viewerWidth*.26;
+  if(x>=margin&&x<=band)return 'previous';
+  if(x>=viewerWidth-band&&x<=viewerWidth-margin)return 'next';
+  return null;
+}
+
 /**
  * V71 : le zoom par pincement agrandit le viewport visuel sans toujours
  * modifier scrollWidth. Pendant ce zoom, un doigt doit déplacer la page
@@ -192,7 +206,8 @@ export function bindReaderTouchNavigation({
     }))return;
     origin={
       id:touch.identifier,x:touch.clientX,y:touch.clientY,time:clock(),
-      scrollTop:viewer.scrollTop||0,maxVerticalTravel:0,scrolled:false,
+      scrollTop:viewer.scrollTop||0,maxVerticalTravel:0,maxTravel:0,scrolled:false,
+      pdfMode:viewer.querySelector?.('#reader-text')?.hidden===true,
       readerLayout:viewer.dataset?.readerLayout||'scroll',
       geometry:captureReaderSwipeGeometry(viewer),
       nestedHorizontalScroll:captureReaderNestedHorizontalScroll(event.target,viewer),
@@ -217,6 +232,8 @@ export function bindReaderTouchNavigation({
     origin.maxVerticalTravel=Math.max(
       origin.maxVerticalTravel,Math.abs(touch.clientY-origin.y)
     );
+    origin.maxTravel=Math.max(origin.maxTravel,
+      Math.abs(touch.clientX-origin.x),Math.abs(touch.clientY-origin.y));
     if(Math.abs((viewer.scrollTop||0)-origin.scrollTop)>8)origin.scrolled=true;
     if(readerNestedVerticalScrollMoved(origin.nestedVerticalScroll))origin.nestedScrolled=true;
     if(readerNestedHorizontalScrollMoved(origin.nestedHorizontalScroll))
@@ -236,19 +253,40 @@ export function bindReaderTouchNavigation({
       event.touches?.length!==0||event.changedTouches?.length!==1)return;
     const touch=event.changedTouches[0];
     if(touch.identifier!==initial.id||event.defaultPrevented)return;
+    const selected=Boolean(getSelectedText()?.trim());
+    const horizontalOverflow=readerCanPanHorizontally(viewer)||
+      initial.nestedHorizontalScrolled||
+      readerNestedHorizontalScrollMoved(initial.nestedHorizontalScroll);
+    const scrolled=initial.nestedScrolled||
+      readerNestedVerticalScrollMoved(initial.nestedVerticalScroll)||
+      initial.scrolled||Math.abs((viewer.scrollTop||0)-initial.scrollTop)>8;
     const direction=classifyReaderSwipe({
       dx:touch.clientX-initial.x,dy:touch.clientY-initial.y,
       durationMs:clock()-initial.time,viewerWidth:viewer.clientWidth,
-      hasSelection:Boolean(getSelectedText()?.trim()),
-      horizontalOverflow:readerCanPanHorizontally(viewer)||
-        initial.nestedHorizontalScrolled||
-        readerNestedHorizontalScrollMoved(initial.nestedHorizontalScroll),
+      hasSelection:selected,horizontalOverflow,
       maxVerticalTravel:initial.maxVerticalTravel,
-      scrolledDuringGesture:initial.nestedScrolled||
-        readerNestedVerticalScrollMoved(initial.nestedVerticalScroll)||
-        initial.scrolled||Math.abs((viewer.scrollTop||0)-initial.scrollTop)>8
+      scrolledDuringGesture:scrolled
     });
-    const button=direction==='next'?next:direction==='previous'?previous:null;
+    if(direction){
+      const button=direction==='next'?next:previous;
+      if(!button.disabled)button.click();
+      return;
+    }
+    // V97 : en PDF uniquement, un tap de marge tourne la page comme en
+    // texte paginé. En mode texte continu, le centre et les bords ne
+    // deviennent jamais des zones de navigation par tapotement.
+    if(!initial.pdfMode||viewer.querySelector?.('#reader-text')?.hidden!==true)
+      return;
+    const rect=viewer.getBoundingClientRect?.();
+    if(!rect)return;
+    const tap=classifyReaderEdgeTap({
+      x:initial.x-rect.left,viewerWidth:rect.width,
+      durationMs:clock()-initial.time,
+      dx:touch.clientX-initial.x,dy:touch.clientY-initial.y,
+      maxTravel:initial.maxTravel,hasSelection:selected,
+      scrolled:scrolled||horizontalOverflow
+    });
+    const button=tap==='next'?next:tap==='previous'?previous:null;
     if(button&&!button.disabled)button.click();
   };
   // Listeners passifs : conserver le scroll vertical, le pinch-to-zoom,
