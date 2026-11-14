@@ -81,6 +81,45 @@ def run(playwright, engine, url):
         assert small["overflow"]<=4 and small["doc"]<=323,small
         assert snapshot(page)["page"]==4
 
+        # V84 : l'option Zoom doit agir également sur un PDF affiché
+        # automatiquement (préférence texte inchangée). La fraction de
+        # défilement reste stable avant/après le zoom et son rétablissement.
+        initial=page.evaluate("""()=>{
+          const v=document.querySelector('#reader-viewer');
+          const c=document.querySelector('#reader-canvas');
+          const max=Math.max(0,v.scrollHeight-v.clientHeight);
+          v.scrollTop=max*.45;
+          return {max,ratio:max?v.scrollTop/max:0,width:c.getBoundingClientRect().width};
+        }""")
+        assert initial["max"]>15,initial
+        page.evaluate("""()=>{
+          const z=document.querySelector('#reader-zoom');
+          z.value='1.5';z.dispatchEvent(new Event('change',{bubbles:true}));
+        }""")
+        page.wait_for_function("""prior=>{
+          const v=document.querySelector('#reader-viewer');
+          const c=document.querySelector('#reader-canvas');
+          const max=Math.max(0,v.scrollHeight-v.clientHeight);
+          return !c.hidden && max>10 &&
+            c.getBoundingClientRect().width>prior.width*1.35 &&
+            Math.abs(v.scrollTop/max-prior.ratio)<.12;
+        }""",arg=initial,timeout=10000)
+        assert page.locator('#reader-mode').get_attribute('aria-pressed')=='false'
+        page.evaluate("""()=>{
+          const z=document.querySelector('#reader-zoom');
+          z.value='1';z.dispatchEvent(new Event('change',{bubbles:true}));
+        }""")
+        page.wait_for_function("""prior=>{
+          const v=document.querySelector('#reader-viewer');
+          const c=document.querySelector('#reader-canvas');
+          const max=Math.max(0,v.scrollHeight-v.clientHeight);
+          return !c.hidden && max>15 &&
+            Math.abs(c.getBoundingClientRect().width-prior.width)<3 &&
+            Math.abs(v.scrollTop/max-prior.ratio)<.12 &&
+            v.scrollWidth-v.clientWidth<=4;
+        }""",arg=initial,timeout=10000)
+        assert snapshot(page)['page']==4
+
         # Le geste gauche doit encore passer la page PDF suivante.
         left = swipe(page, -130)
         page.wait_for_function("""()=>{
@@ -142,8 +181,8 @@ def run(playwright, engine, url):
         assert page.locator("#reader-image-fallback").is_hidden()
         assert not errors, errors
         assert not blocked, blocked
-        print(f"PASS {engine} V83: illustrations ajustées 320px/paysage, "
-              "swipes gauche/droite, reflow et choix PDF explicite, sans Supabase")
+        print(f"PASS {engine} V84: zoom PDF automatique et position préservée, "
+              "320px/paysage, swipes, reflow, PDF manuel, sans Supabase")
         context.close()
     finally:
         browser.close()

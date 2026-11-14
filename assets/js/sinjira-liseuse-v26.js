@@ -412,6 +412,22 @@ function toggleSpeechPause(){
   }
 }
 
+// V84 : le PDF provisoire (couverture/illustration) doit aussi réagir au
+// zoom et à la rotation sans perdre l'endroit lu sur cette page.
+function isAutomaticPdfFallbackVisible(){
+  return state.mode==='texte'&&!$('reader-image-fallback').hidden&&
+    $('reader-text').hidden&&!$('reader-canvas').hidden;
+}
+function refreshVisiblePdfPreservingSpot(){
+  if(!state.pdf)return;
+  const viewer=$('reader-viewer');
+  // Une position 0 en attente après un changement de page est prioritaire.
+  if(state.restorePending===null){
+    state.restorePending=ratioFromScroll(viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight);
+  }
+  state.restoringScroll=true;
+  renderPage();
+}
 function renderPage(){
   const version=++state.renderVersion;
   state.renderQueue=state.renderQueue.catch(()=>{}).then(async()=>{
@@ -475,7 +491,14 @@ function renderPage(){
       canvas.hidden=false;
       restoreScrollAfterRender(version);
     }
-  }).catch(error=>message('Impossible d’afficher cette page. Réessayez ou utilisez le lecteur PDF de secours.','error'));
+  }).catch(()=>{
+    if(version!==state.renderVersion)return;
+    // V84 : ne pas laisser les sauvegardes de position bloquées après
+    // un rendu échoué lors d'un zoom ou d'une rotation.
+    state.restoringScroll=false;
+    state.restorePending=null;
+    message('Impossible d’afficher cette page. Réessayez ou utilisez le lecteur PDF de secours.','error');
+  });
 }
 function changePage(value){
   if(!state.pdf)return;
@@ -564,8 +587,9 @@ function bindControls(){
     }
   });
   $('reader-zoom').addEventListener('change',event=>{
+    const visiblePdf=state.mode==='page'||isAutomaticPdfFallbackVisible();
     state.zoom=clamp(event.target.value,.8,1.5);setTheme();
-    if(state.mode==='page')renderPage();
+    if(visiblePdf)refreshVisiblePdfPreservingSpot();
   });
   document.addEventListener('keydown',event=>{
     // V61: le moteur historique ne doit pas changer le PDF depuis n'importe
@@ -590,12 +614,9 @@ function bindControls(){
   window.addEventListener('resize',()=>{
     // V83 : une illustration montrée automatiquement en PDF garde la
     // préférence « texte »; elle doit pourtant se recalculer à la rotation.
-    const imageFallback=state.mode==='texte'&&
-      !$('reader-image-fallback').hidden&&
-      !$('reader-canvas').hidden&&$('reader-text').hidden;
-    if(state.mode!=='page'&&!imageFallback)return;
+    if(state.mode!=='page'&&!isAutomaticPdfFallbackVisible())return;
     clearTimeout(resizeTimer);
-    resizeTimer=setTimeout(renderPage,250);
+    resizeTimer=setTimeout(refreshVisiblePdfPreservingSpot,250);
   });
 }
 function assertPrivateAccess(epoch){
