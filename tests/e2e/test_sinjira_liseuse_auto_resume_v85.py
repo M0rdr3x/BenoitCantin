@@ -87,7 +87,11 @@ def run(p,engine,url):
         rejected=install_isolation(denied)
         denied.goto(url,wait_until="load")
         ready(denied,3,True)
-        denied.locator("#reader-next").click()
+        # En mode pages d'écran, le bouton Suivante avance d'abord une
+        # portion de texte. Aller explicitement à la page PDF suivante pour
+        # exercer changePage() et la notification de stockage refusé.
+        denied.locator("#reader-page").fill("4")
+        denied.locator("#reader-page").dispatch_event("change")
         ready(denied,4,True)
         warning=denied.locator("#reader-position-status")
         assert warning.get_attribute("data-type")=="warning",warning.inner_text()
