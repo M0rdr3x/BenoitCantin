@@ -747,12 +747,21 @@ def validate_netlify_staging_workflow() -> list[str]:
         "confirmation:",
         "STAGING_ONLY",
         "permissions:\n  contents: read",
-        "startsWith(github.ref, 'refs/heads/a1/web-release-')",
+        "github.ref == 'refs/heads/a1/web-release-transparency'",
+        "    environment: netlify-staging",
+        'if [ "${GITHUB_REF_PROTECTED:-false}" != "true" ]; then',
+        "Refuser tout staging depuis une branche non protégée",
+        "Installer Netlify CLI sans identifiants",
+        "python3 scripts/validate_netlify_cli_lock.py",
+        'cp "$GITHUB_WORKSPACE/tools/netlify-cli/package.json" "$cli_root/package.json"',
+        'cp "$GITHUB_WORKSPACE/tools/netlify-cli/package-lock.json" "$cli_root/package-lock.json"',
+        "npm ci --ignore-scripts --no-audit --no-fund",
+        '--userconfig="$cli_root/npm-user.conf" --globalconfig="$cli_root/npm-global.conf"',
+        "--registry=https://registry.npmjs.org/",
+        "NPM_CONFIG_OFFLINE: 'true'",
         "secrets.NETLIFY_AUTH_TOKEN",
         "secrets.NETLIFY_SITE_ID",
-        "netlify-cli@27.10.2 deploy",
-        "--auth \"$NETLIFY_AUTH_TOKEN\"",
-        "--site \"$NETLIFY_SITE_ID\"",
+        '"$RUNNER_TEMP/netlify-cli-27.19.0/node_modules/.bin/netlify" deploy',
         "--dir _preview_site",
         "--dir _site",
         "--no-build",
@@ -775,12 +784,17 @@ def validate_netlify_staging_workflow() -> list[str]:
         "--prod-if-unlocked",
         "netlify deploy --prod",
         "github.ref == 'refs/heads/main'",
+        "startsWith(github.ref, 'refs/heads/a1/web-release-')",
+        "npx --yes netlify-cli@",
+        "npm install --no-save",
+        '--auth "$NETLIFY_AUTH_TOKEN"',
+        '--site "$NETLIFY_SITE_ID"',
     )
     for marker in forbidden_markers:
         if marker in text:
             errors.append(f"Workflow staging Netlify: comportement interdit détecté: {marker.strip()}")
 
-    deploy_count = text.count("netlify-cli@27.10.2 deploy")
+    deploy_count = text.count('"$RUNNER_TEMP/netlify-cli-27.19.0/node_modules/.bin/netlify" deploy')
     if deploy_count != 2:
         errors.append(
             f"Workflow staging Netlify: exactement 2 deploys brouillon requis, observé={deploy_count}."
