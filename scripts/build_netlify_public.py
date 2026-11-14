@@ -761,7 +761,7 @@ def validate_netlify_staging_workflow() -> list[str]:
         "NPM_CONFIG_OFFLINE: 'true'",
         "secrets.NETLIFY_AUTH_TOKEN",
         "secrets.NETLIFY_SITE_ID",
-        '"$RUNNER_TEMP/netlify-cli-27.10.2/node_modules/.bin/netlify" deploy',
+        '"$RUNNER_TEMP/netlify-cli-27.19.0/node_modules/.bin/netlify" deploy',
         "--dir _preview_site",
         "--dir _site",
         "--no-build",
@@ -794,7 +794,7 @@ def validate_netlify_staging_workflow() -> list[str]:
         if marker in text:
             errors.append(f"Workflow staging Netlify: comportement interdit détecté: {marker.strip()}")
 
-    deploy_count = text.count('"$RUNNER_TEMP/netlify-cli-27.10.2/node_modules/.bin/netlify" deploy')
+    deploy_count = text.count('"$RUNNER_TEMP/netlify-cli-27.19.0/node_modules/.bin/netlify" deploy')
     if deploy_count != 2:
         errors.append(
             f"Workflow staging Netlify: exactement 2 deploys brouillon requis, observé={deploy_count}."
