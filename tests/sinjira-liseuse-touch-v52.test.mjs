@@ -71,7 +71,7 @@ test('V119 : une navigation PDF montre un repère, jamais un swipe refusé',()=>
   assert.equal(f.next.events.has('click'),false);
   assert.equal(f.previous.events.has('click'),false);
 });
-test('V122 : basculer PDF et texte pendant un swipe n'avance jamais une autre vue',()=>{
+test('V122 : changement PDF texte pendant un swipe sans page fantome',()=>{
   const f=fixture();
   try{
     f.setPdfMode(true);
