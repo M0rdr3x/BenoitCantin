@@ -48,8 +48,8 @@ REQUIRED_HELPER = {
 REQUIRED_WORKFLOW = (
     "'supabase/functions/admin-console/**'",
     "'scripts/validate_admin_document_upload_security.py'",
-    'run: python3 scripts/validate_admin_document_upload_security.py --self-test',
-    'run: python3 scripts/validate_admin_document_upload_security.py',
+    '        run: python3 scripts/validate_admin_document_upload_security.py --self-test\n',
+    '        run: python3 scripts/validate_admin_document_upload_security.py\n',
 )
 
 def audit(admin: str, helper: str, workflow: str) -> list[str]:
@@ -114,11 +114,11 @@ def self_test(admin: str, helper: str, workflow: str) -> int:
         'bucket non privé': ('helper', 'metadata.public === false', 'metadata.public !== undefined'),
         'identité bucket ignorée': ('helper', 'metadata.id === expectedBucketId', 'true'),
         'CI auto-test retiré': ('workflow',
-                                 'run: python3 scripts/validate_admin_document_upload_security.py --self-test',
-                                 'run: echo skipped-admin-upload-autotest'),
+                                 '        run: python3 scripts/validate_admin_document_upload_security.py --self-test\n',
+                                 '        run: echo skipped-admin-upload-autotest\n'),
         'CI vérification retirée': ('workflow',
-                                    'run: python3 scripts/validate_admin_document_upload_security.py',
-                                    'run: echo skipped-admin-upload-validation'),
+                                    '        run: python3 scripts/validate_admin_document_upload_security.py\n',
+                                    '        run: echo skipped-admin-upload-validation\n'),
     }
     for label, (target, old, new) in mutants.items():
         source = {'admin':admin, 'helper':helper, 'workflow':workflow}[target]
