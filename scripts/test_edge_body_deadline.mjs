@@ -67,6 +67,7 @@ test('both sensitive Edge endpoints enforce a total 8-second deadline and reject
     assert.match(source, /total > MAX_REQUEST_BYTES/);
     assert.match(source, /new TextDecoder\('utf-8', \{ fatal: true \}\)/);
     assert.match(source, /REQUEST_TIMEOUT/);
+    assert.match(source, /try \{ reader\.releaseLock\(\); \} catch/);
     assert.match(source, /408/);
   }
 });
