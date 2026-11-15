@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / '.github/workflows/sinjira-delete-account-v24-5-51.yml'
 CHECKOUT_SHA = 'd23441a48e516b6c34aea4fa41551a30e30af803'
+SETUP_NODE_SHA = '249970729cb0ef3589644e2896645e5dc5ba9c38'
 PYTHON_RUN_CHECK = """python3 -c 'import sys; assert sys.version_info[:2] == (3, 12), "Python 3.12 requis"'"""
 
 
@@ -38,10 +39,16 @@ def validate_text(text: str) -> list[str]:
     require(errors, text.count('persist-credentials: false') == 1, 'checkout doit désactiver les credentials persistés')
     require(errors, 'persist-credentials: true' not in text, 'persist-credentials=true interdit')
     require(errors, 'actions/setup-python@' not in text, 'téléchargement setup-python inutile interdit')
+    require(errors, text.count(f'uses: actions/setup-node@{SETUP_NODE_SHA}') == 1,
+            'setup-node doit rester épinglé sur une référence immuable vérifiée')
+    require(errors, text.count("node-version: '22.23.2'") == 1,
+            'la version exacte de Node 22 doit être conservée')
+    require(errors, text.count('node --test scripts/test_delete_account_storage_ownership.mjs') == 1,
+            'le test de non-suppression des fichiers étrangers est obligatoire')
     require(errors, text.count(PYTHON_RUN_CHECK) == 1, 'Python 3.12 du runner doit être vérifié')
 
     targets = action_targets(text)
-    require(errors, len(targets) == 1, f'nombre inattendu d’actions réutilisables: {len(targets)}')
+    require(errors, len(targets) == 2, f'nombre inattendu d’actions réutilisables: {len(targets)}')
     for target in targets:
         require(errors, re.search(r'@[0-9a-f]{40}$', target) is not None, f'référence d’action non immuable: {target}')
 
@@ -69,6 +76,9 @@ def run_self_tests(text: str) -> None:
         'suppression retirée': text.replace('          python3 scripts/validate_delete_account_v24_5_51.py\n', '', 1),
         'inventaire Edge retiré': text.replace('          python3 scripts/validate_edge_function_inventory.py\n', '', 1),
         'ledger retiré': text.replace('          python3 scripts/validate_production_migration_ledger.py\n', '', 1),
+        'Node non épinglé': text.replace(f'actions/setup-node@{SETUP_NODE_SHA}', 'actions/setup-node@v4', 1),
+        'Node non déterministe': text.replace("node-version: '22.23.2'", "node-version: '22'", 1),
+        'test Storage retiré': text.replace('        run: node --test scripts/test_delete_account_storage_ownership.mjs\n', '', 1),
     }
     for name, mutated in cases.items():
         if not validate_text(mutated):
