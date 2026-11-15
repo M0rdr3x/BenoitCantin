@@ -212,7 +212,7 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
     next=mockTarget({disabled:lastBookPage}),
     mobilePrevious=mockTarget(),mobileNext=mockTarget(),
     toggle=mockTarget(),status=mockTarget(),pageField=mockTarget(),
-    mobileHint=mockTarget(),totalPages=mockTarget();
+    mobileHint=mockTarget(),totalPages=mockTarget(),screenJump=mockTarget();
   totalPages.textContent='20';
   documentMock.activeElement=viewer; // le clavier du test possède le focus du livre
   const media=mockTarget();media.matches=true;
@@ -237,7 +237,7 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
   });
   const teardown=bindReaderScreenMode({
     viewer,text,previous,next,mobilePrevious,mobileNext,toggle,status,
-    pageField,mobileHint,totalPages,media,getSelectionText:()=>selected,
+    pageField,mobileHint,totalPages,screenJump,media,getSelectionText:()=>selected,
     clock:()=>now,raf,Observer:observe?FakeObserver:null
   });
   function restore(){
@@ -284,7 +284,7 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
     return finished;
   }
   return {viewer,text,previous,next,mobilePrevious,mobileNext,toggle,status,
-    pageField,mobileHint,totalPages,documentMock,windowMock,media,restore,swipe,
+    pageField,mobileHint,totalPages,screenJump,documentMock,windowMock,media,restore,swipe,
     notifyText:()=>observed.find(x=>x.target===text)?.emit([{type:'childList'}]),
     flushFrames,getStatusWrites:()=>statusWrites,
     setSelected:v=>{selected=v}};
@@ -1111,6 +1111,57 @@ test('V61 : les raccourcis de lecture n’interceptent pas les flèches hors du 
     assert.equal(f.viewer.scrollTop,315);
   }finally{f.restore()}
 });
+test('V104 : curseur tactile navigue entre écrans sans changer le PDF',()=>{
+  const f=fixture();
+  try{
+    assert.equal(f.screenJump.hidden,false);
+    assert.equal(f.screenJump.max,'4');
+    assert.equal(f.screenJump.value,'1');
+    assert.match(f.screenJump.getAttribute('aria-valuetext'),/Écran 1 sur 4 · page 4/);
+    f.screenJump.value='3';
+    f.screenJump.emit('input',{target:f.screenJump});
+    assert.equal(f.viewer.scrollTop,630);
+    assert.equal(f.screenJump.value,'3');
+    assert.match(f.mobileHint.textContent,/Écr. 3\/4/);
+    assert.match(f.screenJump.getAttribute('aria-valuetext'),/Écran 3 sur 4 · page 4/);
+    assert.equal(f.previous.clicks,0);
+    assert.equal(f.next.clicks,0);
+    f.screenJump.value='4';
+    f.screenJump.emit('input',{target:f.screenJump});
+    assert.equal(f.viewer.scrollTop,700); // fin réelle d'une page source
+    assert.equal(f.screenJump.value,'4');
+    f.screenJump.value='1';
+    f.screenJump.emit('input',{target:f.screenJump});
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(f.pageField.value,'4');
+    for(const invalid of ['0','7','NaN','2.2']){
+      f.screenJump.value=invalid;
+      f.screenJump.emit('input',{target:f.screenJump});
+      assert.equal(f.viewer.scrollTop,0);
+    }
+  }finally{f.restore()}
+});
+test('V104 : le curseur est désactivé en PDF ou en texte continu',()=>{
+  const f=fixture();
+  try{
+    f.text.hidden=true;
+    f.viewer.emit('sinjira:reader-page-change',{});
+    assert.equal(f.screenJump.hidden,true);
+    f.screenJump.value='3';
+    f.screenJump.emit('input',{target:f.screenJump});
+    assert.equal(f.viewer.scrollTop,0);
+    f.text.hidden=false;
+    f.toggle.checked=false;
+    f.toggle.emit('change',{});
+    assert.equal(f.screenJump.hidden,true);
+    f.screenJump.value='3';
+    f.screenJump.emit('input',{target:f.screenJump});
+    assert.equal(f.viewer.scrollTop,0);
+    f.toggle.checked=true;
+    f.toggle.emit('change',{});
+    assert.equal(f.screenJump.hidden,false);
+  }finally{f.restore()}
+});
 test('V102 : barre mobile reflète écran, PDF, texte continu et page source',()=>{
   const f=fixture();
   try{
@@ -1173,7 +1224,7 @@ test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
   assert.match(h,/id="reader-screen-count"/);
-  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.14\.103/);
+  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.14\.104/);
   assert.match(h,/sinjira-liseuse-v26\.js\?v=34\.11\.14\.102/);
 });
 test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=>{
