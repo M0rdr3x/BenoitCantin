@@ -1,6 +1,6 @@
 /**
  * Frontière d'autorisation réservée au propriétaire du Registre.
- * Jamais de privilège dérivé d'un courriel, pseudonyme ou user_metadata.
+ * Jamais de privilège dérivé d'un courriel, pseudonyme ou claims modifiables.
  * L'identité UUID est celle du JWT vérifié par requiredVaultUser (AAL2).
  *
  * La fonction is_sinjira_owner s'appuie sur public.internal_admin_users :
