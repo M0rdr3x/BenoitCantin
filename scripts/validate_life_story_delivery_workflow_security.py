@@ -34,8 +34,8 @@ def validate_text(text: str) -> None:
         '        run: python scripts/validate_life_story_export_request_security.py\n',
         'node --test scripts/test_life_story_private_pdf_stream.mjs',
         'node --test scripts/test_life_story_private_bucket.mjs',
-        'python scripts/validate_life_story_atomic_rotation.py --self-test',
-        'python scripts/validate_life_story_atomic_rotation.py',
+        '        run: python scripts/validate_life_story_atomic_rotation.py --self-test\n',
+        '        run: python scripts/validate_life_story_atomic_rotation.py\n',
         'supabase/tests/life_story_delivery_rotation_v25.test.sql',
         'python scripts/validate_life_story_private_bucket_security.py --self-test',
         'python scripts/validate_life_story_private_bucket_security.py\n',
@@ -145,7 +145,7 @@ def self_test(text: str) -> None:
             '        run: python scripts/validate_life_story_atomic_rotation.py --self-test\n', '',
             1,
         ),
-                'test garde bucket retiré': text.replace(
+        'test garde bucket retiré': text.replace(
             '        run: node --test scripts/test_life_story_private_bucket.mjs\n',
             '',
             1,
