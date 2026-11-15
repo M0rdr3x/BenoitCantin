@@ -79,8 +79,14 @@ def run(playwright, engine, origin):
           const v=document.querySelector('#reader-viewer');
           v.__oldAnimate=v.animate;
           v.animate=function(frames,options){
-            window.__v119Frames.push({frame:frames[0].boxShadow,duration:options.duration});
-            return {cancel(){}};
+            const record={frame:frames[0].boxShadow,duration:options.duration,
+              cancellations:0};
+            const listeners=new Map();
+            window.__v119Frames.push(record);
+            return {
+              addEventListener:(name,cb)=>listeners.set(name,cb),
+              cancel(){record.cancellations++;listeners.get('cancel')?.()}
+            };
           };
         }""")
         page.emulate_media(reduced_motion="no-preference")
@@ -92,11 +98,17 @@ def run(playwright, engine, origin):
         assert len(flashes)==2,flashes
         assert "inset -26px" in flashes[0]["frame"],flashes
         assert "inset 26px" in flashes[1]["frame"],flashes
+        assert flashes[0]["cancellations"]==1,(
+            "V120 : pas de deux effets empilés lors de swipes successifs",flashes
+        )
         page.emulate_media(reduced_motion="reduce")
         ignored=swipe(page,-130)
         assert ignored["consumed"]
         assert len(page.evaluate("window.__v119Frames"))==2,(
             "V119 : le choix de réduire les animations doit être respecté"
+        )
+        assert page.evaluate("window.__v119Frames[1].cancellations")==1,(
+            "V120 : le passage à reduce coupe l'effet encore en cours"
         )
         recovered=swipe(page,130)
         assert recovered["consumed"] and snapshot(page)["scroll"]==0
@@ -356,7 +368,7 @@ def run(playwright, engine, origin):
         # V63 : mesurer un caractère effectivement visible AVANT la
         # modification du CSS. L'ancre reste en mémoire navigateur uniquement.
         anchored=page.evaluate("""async()=>{
-          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.119');
+          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.120');
           const viewer=document.querySelector('#reader-viewer');
           const text=document.querySelector('#reader-text');
           viewer.scrollTop=Math.min(1850,viewer.scrollHeight-viewer.clientHeight-300);
@@ -434,7 +446,7 @@ def run(playwright, engine, origin):
         # V64 : après une police agrandie, changer l'orientation du téléphone
         # doit conserver le caractère lu, pas uniquement un ratio d'écran.
         before_rotation=page.evaluate("""async()=>{
-          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.119');
+          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.120');
           const viewer=document.querySelector('#reader-viewer');
           const text=document.querySelector('#reader-text');
           const anchor=m.captureReaderTextAnchor({viewer,text});
@@ -506,7 +518,7 @@ def run(playwright, engine, origin):
         # l'activation et de la désactivation, pas seulement le numéro PDF.
         page.locator("#reader-viewer").scroll_into_view_if_needed()
         focus_start=page.evaluate("""async()=>{
-          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.119');
+          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.120');
           const v=document.querySelector('#reader-viewer');
           const t=document.querySelector('#reader-text');
           v.scrollTop=Math.min(1400,v.scrollHeight-v.clientHeight-400);
@@ -539,7 +551,7 @@ def run(playwright, engine, origin):
         page.evaluate("""()=>new Promise(done=>
           requestAnimationFrame(()=>requestAnimationFrame(done)))""")
         focus_during=page.evaluate("""async()=>{
-          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.119');
+          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.120');
           const v=document.querySelector('#reader-viewer');
           const t=document.querySelector('#reader-text');
           const anchor=mod.captureReaderTextAnchor({viewer:v,text:t});
@@ -570,7 +582,7 @@ def run(playwright, engine, origin):
         assert page.locator("#reader-touch-prev").get_attribute("aria-label")=="Page du livre précédente"
         page.locator("#reader-viewer").scroll_into_view_if_needed()
         continuous=page.evaluate("""async()=>{
-          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.119');
+          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.120');
           const v=document.querySelector('#reader-viewer');
           const t=document.querySelector('#reader-text');
           v.scrollTop=Math.min(2200,Math.max(0,v.scrollHeight-v.clientHeight-300));
@@ -599,7 +611,7 @@ def run(playwright, engine, origin):
         # Ne pas accéder au réseau ou au contenu privé.
         page.locator("#reader-viewer").scroll_into_view_if_needed()
         before_chrome=page.evaluate("""async()=>{
-          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.119');
+          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.120');
           const viewer=document.querySelector('#reader-viewer');
           const text=document.querySelector('#reader-text');
           viewer.scrollTop=Math.min(1750,Math.max(0,viewer.scrollHeight-viewer.clientHeight-350));
@@ -636,7 +648,7 @@ def run(playwright, engine, origin):
         # V60: le vrai moteur JS chargé sur cette page ne doit pas demander
         # un balayage pour seulement 10 px supplémentaires à la fin.
         tail=page.evaluate("""async ()=>{
-          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.119');
+          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.120');
           const p={scrollHeight:850,clientHeight:350,lineHeight:35,
             paddingTop:22,paddingBottom:22};
           return {

@@ -1,10 +1,41 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {flashReaderPageTurn,classifyReaderSwipe,classifyReaderEdgeTap,bindReaderTouchNavigation,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,hasReaderNestedHorizontalOverflow,readerCanPanHorizontally,readerCanPanVertically,hasReaderNestedVerticalOverflow,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved} from '../assets/js/sinjira-liseuse-touch-v52.mjs';
+import {flashReaderPageTurn,cancelReaderPageTurnFlash,classifyReaderSwipe,classifyReaderEdgeTap,bindReaderTouchNavigation,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,hasReaderNestedHorizontalOverflow,readerCanPanHorizontally,readerCanPanVertically,hasReaderNestedVerticalOverflow,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved} from '../assets/js/sinjira-liseuse-touch-v52.mjs';
 
 const gesture=(overrides={})=>classifyReaderSwipe({
   dx:-92,dy:8,durationMs:240,viewerWidth:375,...overrides
+});
+test('V120 : gestes rapides annulent l ancien effet et respectent reduce en direct',()=>{
+  const effects=[];
+  const viewer={animate(){
+    const listeners=new Map();
+    const effect={cancels:0,addEventListener:(event,cb)=>listeners.set(event,cb),
+      cancel(){this.cancels++;listeners.get('cancel')?.()},
+      finish(){listeners.get('finish')?.()}};
+    effects.push(effect);
+    return effect;
+  }};
+  let reduce=false;
+  const win={matchMedia:()=>({matches:reduce})};
+  assert.equal(flashReaderPageTurn(viewer,'next',{win}),true);
+  assert.equal(flashReaderPageTurn(viewer,'previous',{win}),true);
+  assert.equal(effects.length,2);
+  assert.equal(effects[0].cancels,1,'le geste suivant annule le liseré précédent');
+  assert.equal(effects[1].cancels,0);
+  reduce=true;
+  assert.equal(flashReaderPageTurn(viewer,'next',{win}),false);
+  assert.equal(effects.length,2,'ne plus lancer d animation quand reduce est demandé');
+  assert.equal(effects[1].cancels,1,'arrêter aussi le liseré déjà visible');
+  assert.equal(cancelReaderPageTurnFlash(viewer),false,'aucune animation orpheline');
+  reduce=false;
+  assert.equal(flashReaderPageTurn(viewer,'next',{win}),true);
+  effects[2].finish();
+  assert.equal(cancelReaderPageTurnFlash(viewer),false,'effet terminé libéré');
+  assert.equal(flashReaderPageTurn(viewer,'previous',{win}),true);
+  assert.equal(cancelReaderPageTurnFlash(viewer),true);
+  assert.equal(effects[3].cancels,1);
+  assert.equal(cancelReaderPageTurnFlash(viewer),false);
 });
 test('V119 : effet discret, directionnel et annulé si animation réduite',()=>{
   const shots=[];
@@ -920,7 +951,7 @@ test('intégration : les boutons mobiles reflètent le statut initial des bouton
 test('contrat HTML/CSS : module autonome et gestes expliqués',()=>{
   const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
-  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.15\.119/);
+  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.15\.120/);
   assert.match(html,/id="reader-touch-prev"/);
   assert.match(html,/id="reader-touch-next"/);
   assert.match(html,/aria-describedby="reader-swipe-help"/);

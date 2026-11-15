@@ -5,7 +5,7 @@
  * du PDF courant ; une fois le texte terminé, tourner la vraie page du livre.
  * L'enregistrement d'emplacement reste le scroll_ratio historique de la V31.
  */
-import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally,classifyReaderEdgeTap,flashReaderPageTurn} from './sinjira-liseuse-touch-v52.mjs?v=52.11.15.119';
+import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally,classifyReaderEdgeTap,flashReaderPageTurn,cancelReaderPageTurnFlash} from './sinjira-liseuse-touch-v52.mjs?v=52.11.15.120';
 
 const PREF_KEY='sinjira:liseuse:lecture-par-ecrans:v53';
 
@@ -468,7 +468,10 @@ export function bindReaderScreenMode({
   // V91 : un changement d'application, une fermeture d'onglet ou la perte
   // de focus interrompent un balayage même sans événement touchcancel.
   // Ne pas déclencher une page au retour à l'écran.
-  const onVisibilityChange=()=>{if(document.hidden)onTouchCancel()};
+  const onVisibilityChange=()=>{if(document.hidden){
+    onTouchCancel();
+    cancelReaderPageTurnFlash(viewer);
+  }};
   const onTouchEnd=event=>{
     const start=gesture;gesture=null;
     if(!start||!isPaged()||!canNavigate()||isReaderViewportZoomed()||
@@ -704,6 +707,7 @@ export function bindReaderScreenMode({
   sync();
   return ()=>{
     closed=true;gesture=null;
+    cancelReaderPageTurnFlash(viewer);
     viewer.removeEventListener('touchstart',onTouchStart,true);
     viewer.removeEventListener('touchmove',onTouchMove,true);
     viewer.removeEventListener('touchcancel',onTouchCancel,true);

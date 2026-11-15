@@ -8,20 +8,43 @@
  */
 const INTERACTIVE='a, button, input, select, textarea, summary, [contenteditable], [role="button"], [role="link"], [data-reader-no-swipe]';
 
-/** V119 : retour visuel léger de page tournée, sans déplacer le roman.
+// V120 : une seule indication de changement de page à la fois.
+const activePageTurnFlashes=new WeakMap();
+export function cancelReaderPageTurnFlash(viewer){
+  if(!viewer)return false;
+  const active=activePageTurnFlashes.get(viewer);
+  if(!active)return false;
+  activePageTurnFlashes.delete(viewer);
+  try{active.cancel?.()}catch{/* annulation facultative, pas d'impact sur la lecture */}
+  return true;
+}
+/** V119/V120 : retour visuel léger de page tournée, sans déplacer le roman.
  * Seuls les bords de la zone de lecture s'éclairent; aucun texte n'est lu,
  * aucune position n'est sauvegardée. Les préférences d'accessibilité
  * « réduire les animations » priment, aussi sur WebKit/iOS. */
 export function flashReaderPageTurn(viewer,direction,{win=globalThis.window}={}){
   if((direction!=='next'&&direction!=='previous')||
-     typeof viewer?.animate!=='function'||
-     win?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches)return false;
+     typeof viewer?.animate!=='function')return false;
+  // V120 : annuler la précédente lumière avant toute nouvelle direction.
+  // Si la préférence « réduire les animations » a changé entre-temps,
+  // retirer aussi immédiatement l'effet précédent, sans en créer d'autre.
+  cancelReaderPageTurnFlash(viewer);
+  if(win?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches)return false;
   const edge=direction==='next'?-26:26;
   try{
-    viewer.animate([
+    const animation=viewer.animate([
       {boxShadow:`inset ${edge}px 0 0 rgba(108, 218, 204, .22)`},
       {boxShadow:'inset 0px 0 0 rgba(108, 218, 204, 0)'}
     ],{duration:180,easing:'ease-out'});
+    if(animation&&typeof animation==='object'){
+      activePageTurnFlashes.set(viewer,animation);
+      const clear=()=>{
+        if(activePageTurnFlashes.get(viewer)===animation)
+          activePageTurnFlashes.delete(viewer);
+      };
+      animation.addEventListener?.('finish',clear,{once:true});
+      animation.addEventListener?.('cancel',clear,{once:true});
+    }
     return true;
   }catch{return false}
 }
@@ -406,7 +429,7 @@ export function bindReaderTouchNavigation({
   // V91 : iOS/Android peuvent suspendre une application ou perdre le focus
   // sans émettre touchcancel. Une reprise ne doit jamais tourner une page
   // depuis une ancienne position de doigt.
-  const cancelAll=()=>{cancel();pointerCancel()};
+  const cancelAll=()=>{cancel();pointerCancel();cancelReaderPageTurnFlash(viewer)};
   // V118 : le moteur V26 peut charger une nouvelle page (ou réinitialiser
   // le roman) en conservant temporairement la même valeur #reader-page.
   // Un contact de l'ancienne page devient immédiatement invalide.
@@ -444,6 +467,7 @@ export function bindReaderTouchNavigation({
   reflectDisabled();
   return ()=>{
     origin=null;pointerOrigin=null;
+    cancelReaderPageTurnFlash(viewer);
     if(viewer.dataset?.readerTouchManaged==='v52')delete viewer.dataset.readerTouchManaged;
     viewer.removeEventListener('touchstart',start);
     viewer.removeEventListener('touchmove',move);
