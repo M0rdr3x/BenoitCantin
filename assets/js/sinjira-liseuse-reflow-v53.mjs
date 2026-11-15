@@ -5,7 +5,7 @@
  * du PDF courant ; une fois le texte terminé, tourner la vraie page du livre.
  * L'enregistrement d'emplacement reste le scroll_ratio historique de la V31.
  */
-import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally,classifyReaderEdgeTap} from './sinjira-liseuse-touch-v52.mjs?v=52.11.15.118';
+import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally,classifyReaderEdgeTap,flashReaderPageTurn} from './sinjira-liseuse-touch-v52.mjs?v=52.11.15.119';
 
 const PREF_KEY='sinjira:liseuse:lecture-par-ecrans:v53';
 
@@ -379,6 +379,7 @@ export function bindReaderScreenMode({
     });
     if(p?.type==='screen'){
       scrollToScreen(p.top,{userInitiated:true});
+      flashReaderPageTurn(viewer,direction);
       return true;
     }
     if(p?.type==='document'){
@@ -386,9 +387,11 @@ export function bindReaderScreenMode({
         if(previous.disabled)return true; // début du livre
         pendingPreviousPdf=Number(pageField.value)-1;
         previous.click();
+        flashReaderPageTurn(viewer,direction);
       }else if(!next.disabled){
         pendingPreviousPdf=null;
         next.click();
+        flashReaderPageTurn(viewer,direction);
       }
       return true;
     }

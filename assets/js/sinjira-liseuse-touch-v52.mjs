@@ -8,6 +8,24 @@
  */
 const INTERACTIVE='a, button, input, select, textarea, summary, [contenteditable], [role="button"], [role="link"], [data-reader-no-swipe]';
 
+/** V119 : retour visuel léger de page tournée, sans déplacer le roman.
+ * Seuls les bords de la zone de lecture s'éclairent; aucun texte n'est lu,
+ * aucune position n'est sauvegardée. Les préférences d'accessibilité
+ * « réduire les animations » priment, aussi sur WebKit/iOS. */
+export function flashReaderPageTurn(viewer,direction,{win=globalThis.window}={}){
+  if((direction!=='next'&&direction!=='previous')||
+     typeof viewer?.animate!=='function'||
+     win?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches)return false;
+  const edge=direction==='next'?-26:26;
+  try{
+    viewer.animate([
+      {boxShadow:`inset ${edge}px 0 0 rgba(108, 218, 204, .22)`},
+      {boxShadow:'inset 0px 0 0 rgba(108, 218, 204, 0)'}
+    ],{duration:180,easing:'ease-out'});
+    return true;
+  }catch{return false}
+}
+
 export function classifyReaderSwipe({
   dx,dy,durationMs,viewerWidth=360,hasSelection=false,horizontalOverflow=false,
   maxVerticalTravel=0,maxLeftTravel=0,maxRightTravel=0,scrolledDuringGesture=false
@@ -412,6 +430,14 @@ export function bindReaderTouchNavigation({
     if(mobilePrevious)mobilePrevious.disabled=previous.disabled;
     if(mobileNext)mobileNext.disabled=next.disabled;
   };
+  // V119 : observer les commandes canoniques plutôt que les gestes eux-mêmes :
+  // un swipe PDF, un tap de marge ou un bouton n'anime qu'une seule fois.
+  const onPageBackward=()=>{if(canNavigate()&&viewer.dataset?.readerLayout!=='screens')
+    flashReaderPageTurn(viewer,'previous')};
+  const onPageForward=()=>{if(canNavigate()&&viewer.dataset?.readerLayout!=='screens')
+    flashReaderPageTurn(viewer,'next')};
+  previous.addEventListener('click',onPageBackward);
+  next.addEventListener('click',onPageForward);
   const observer=Observer?new Observer(reflectDisabled):null;
   observer?.observe(previous,{attributes:true,attributeFilter:['disabled']});
   observer?.observe(next,{attributes:true,attributeFilter:['disabled']});
@@ -434,6 +460,8 @@ export function bindReaderTouchNavigation({
     globalThis.window?.removeEventListener?.('pagehide',cancelAll);
     mobilePrevious?.removeEventListener('click',mobileBack);
     mobileNext?.removeEventListener('click',mobileForward);
+    previous.removeEventListener('click',onPageBackward);
+    next.removeEventListener('click',onPageForward);
     observer?.disconnect();
   };
 }

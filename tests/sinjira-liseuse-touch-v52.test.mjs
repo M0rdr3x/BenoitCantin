@@ -1,10 +1,44 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {classifyReaderSwipe,classifyReaderEdgeTap,bindReaderTouchNavigation,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,hasReaderNestedHorizontalOverflow,readerCanPanHorizontally,readerCanPanVertically,hasReaderNestedVerticalOverflow,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved} from '../assets/js/sinjira-liseuse-touch-v52.mjs';
+import {flashReaderPageTurn,classifyReaderSwipe,classifyReaderEdgeTap,bindReaderTouchNavigation,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,hasReaderNestedHorizontalOverflow,readerCanPanHorizontally,readerCanPanVertically,hasReaderNestedVerticalOverflow,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved} from '../assets/js/sinjira-liseuse-touch-v52.mjs';
 
 const gesture=(overrides={})=>classifyReaderSwipe({
   dx:-92,dy:8,durationMs:240,viewerWidth:375,...overrides
+});
+test('V119 : effet discret, directionnel et annulé si animation réduite',()=>{
+  const shots=[];
+  const viewer={animate(keyframes,options){shots.push({keyframes,options})}};
+  const normal={matchMedia:()=>({matches:false})};
+  const reduce={matchMedia:()=>({matches:true})};
+  assert.equal(flashReaderPageTurn(viewer,'next',{win:normal}),true);
+  assert.equal(flashReaderPageTurn(viewer,'previous',{win:normal}),true);
+  assert.equal(shots.length,2);
+  assert.match(shots[0].keyframes[0].boxShadow,/inset -26px/);
+  assert.match(shots[1].keyframes[0].boxShadow,/inset 26px/);
+  assert.equal(shots[0].options.duration,180);
+  assert.equal(flashReaderPageTurn(viewer,'next',{win:reduce}),false);
+  assert.equal(flashReaderPageTurn(viewer,'invalid',{win:normal}),false);
+  assert.equal(flashReaderPageTurn({},'next',{win:normal}),false);
+  assert.equal(shots.length,2);
+  const broken={animate(){throw Error('API unavailable')}};
+  assert.equal(flashReaderPageTurn(broken,'next',{win:normal}),false);
+});
+test('V119 : une navigation PDF montre un repère, jamais un swipe refusé',()=>{
+  const f=fixture(),animation=[];
+  f.viewer.animate=(frames)=>{animation.push(frames[0].boxShadow)};
+  try{
+    f.setPdfMode(true);
+    f.swipe(-130,3);
+    f.swipe(130,3);
+    assert.equal(animation.length,2);
+    assert.match(animation[0],/inset -26px/);
+    assert.match(animation[1],/inset 26px/);
+    f.swipe(-12,80);
+    assert.equal(animation.length,2);
+  }finally{f.release()}
+  assert.equal(f.next.events.has('click'),false);
+  assert.equal(f.previous.events.has('click'),false);
 });
 test('V118 : notification de changement sans nouveau numéro annule un toucher PDF',()=>{
   const f=fixture();
@@ -886,7 +920,7 @@ test('intégration : les boutons mobiles reflètent le statut initial des bouton
 test('contrat HTML/CSS : module autonome et gestes expliqués',()=>{
   const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
-  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.15\.118/);
+  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.15\.119/);
   assert.match(html,/id="reader-touch-prev"/);
   assert.match(html,/id="reader-touch-next"/);
   assert.match(html,/aria-describedby="reader-swipe-help"/);
