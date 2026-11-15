@@ -68,9 +68,11 @@ function target(){
 }
 function fixture({selected=false}={}){
   const viewer=target(),previous=target(),next=target(),
-        mobilePrevious=target(),mobileNext=target();
+        mobilePrevious=target(),mobileNext=target(),canvas=target();
+  canvas.id='reader-canvas';
   let time=0,selection=selected?'Sélection de citation':'',pdfMode=false;
-  viewer.querySelector=sel=>sel==='#reader-text'?{hidden:pdfMode}:null;
+  viewer.querySelector=sel=>sel==='#reader-text'?{hidden:pdfMode}:
+    sel==='#reader-canvas'?canvas:null;
   const release=bindReaderTouchNavigation({
     viewer,previous,next,mobilePrevious,mobileNext,
     getSelectedText:()=>selection,clock:()=>time,Observer:null
@@ -111,9 +113,86 @@ function fixture({selected=false}={}){
       clientX:x+dx,clientY:190+dy
     }],defaultPrevented:Boolean(options.prevented)});
   };
-  return {viewer,previous,next,mobilePrevious,mobileNext,release,swipe,
+  return {viewer,canvas,previous,next,mobilePrevious,mobileNext,release,swipe,
+    advance:ms=>{time+=ms},
     setSelected:v=>{selection=v},setPdfMode:v=>{pdfMode=v}};
 }
+test('V101 : glisser le PDF à la souris avance et revient exactement une fois',()=>{
+  const f=fixture();
+  const pointer=(kind,x,y=190,extra={})=>f.viewer.emit(kind,{
+    pointerType:'mouse',pointerId:101,button:0,buttons:1,isPrimary:true,
+    clientX:x,clientY:y,target:f.canvas,defaultPrevented:false,
+    preventDefault(){this.defaultPrevented=true},...extra
+  });
+  try{
+    f.setPdfMode(true);
+    pointer('pointerdown',260);
+    pointer('pointermove',180);
+    f.advance(210);
+    pointer('pointerup',95,{},{});
+    assert.equal(f.next.clicks,1);
+    pointer('pointerdown',95);
+    pointer('pointermove',175);
+    f.advance(210);
+    pointer('pointerup',260);
+    assert.equal(f.previous.clicks,1);
+  }finally{f.release()}
+});
+test('V101 : la sélection du texte, les taps, le PDF masqué et le scroll restent sûrs',()=>{
+  const f=fixture();
+  const event=(kind,x,extra={})=>f.viewer.emit(kind,{
+    pointerType:'mouse',pointerId:102,button:0,buttons:1,isPrimary:true,
+    clientX:x,clientY:190,target:f.canvas,defaultPrevented:false,
+    preventDefault(){this.defaultPrevented=true},...extra
+  });
+  try{
+    // Un clic sans mouvement et une glissade en TEXTE ne font rien.
+    f.setPdfMode(true);
+    event('pointerdown',240);f.advance(120);event('pointerup',240);
+    f.setPdfMode(false);
+    event('pointerdown',250);f.advance(130);event('pointerup',90);
+    // Touch et stylet restent au gestionnaire de gestes tactile.
+    f.setPdfMode(true);
+    event('pointerdown',250,{pointerType:'touch'});
+    f.advance(100);event('pointerup',90,{pointerType:'touch'});
+    event('pointerdown',250,{pointerType:'pen'});
+    f.advance(100);event('pointerup',90,{pointerType:'pen'});
+    // La sélection ne doit jamais être écrasée.
+    f.setSelected('Texte sélectionné');
+    event('pointerdown',250);f.advance(120);event('pointerup',90);
+    f.setSelected('');
+    // Un vrai défilement intermédiaire annule le changement.
+    event('pointerdown',250);
+    f.viewer.scrollTop=28;event('pointermove',180);
+    f.viewer.scrollTop=0;f.advance(120);event('pointerup',90);
+    // La fermeture du livre durant le glissement annule le geste.
+    event('pointerdown',250);f.setPdfMode(false);
+    f.advance(120);event('pointerup',90);
+    // Les gestes diagonaux et les longues pressions sont refusés.
+    f.setPdfMode(true);
+    event('pointerdown',250);f.advance(100);event('pointerup',90,{clientY:285});
+    event('pointerdown',250);f.advance(2000);event('pointerup',90);
+    assert.equal(f.next.clicks,0);
+    assert.equal(f.previous.clicks,0);
+  }finally{f.release()}
+});
+test('V101 : ancien touch PDF et souris PDF coexistent sans double déclenchement',()=>{
+  const f=fixture();
+  try{
+    f.setPdfMode(true);
+    f.viewer.emit('pointerdown',{
+      pointerType:'touch',pointerId:9,button:0,clientX:260,clientY:190,
+      target:f.canvas
+    });
+    f.swipe(-130,4,{startX:240,elapsed:100});
+    f.viewer.emit('pointerup',{
+      pointerType:'touch',pointerId:9,button:0,clientX:100,clientY:194,
+      target:f.canvas
+    });
+    assert.equal(f.next.clicks,1);
+    assert.equal(f.previous.clicks,0);
+  }finally{f.release()}
+});
 test('V97 : marges PDF et texte partagent les mêmes limites',()=>{
   const p={x:318,viewerWidth:375,durationMs:160};
   assert.equal(classifyReaderEdgeTap(p),'next');
