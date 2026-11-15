@@ -149,6 +149,34 @@ def run(playwright, browser_type, url):
         assert page.locator("#reader-viewer").get_attribute("role")=="region"
         assert "écran 1 sur " in label_start and f"page 3 sur {source_pages}" in label_start, label_start
         assert "LIVRE DE TEST" not in label_start,label_start
+
+        # V104 : le curseur de navigation atteint une portion de texte
+        # éloignée sans appeler les boutons de changement de page source.
+        jump=page.locator("#reader-screen-jump")
+        page.wait_for_function("""()=>{
+          const slider=document.querySelector('#reader-screen-jump');
+          return !slider.hidden && Number(slider.max)>=4 && slider.value==='1';
+        }""")
+        jump_forward=page.evaluate("""()=>{
+          const el=document.querySelector('#reader-screen-jump');
+          el.value='3';el.dispatchEvent(new Event('input',{bubbles:true}));
+          const v=document.querySelector('#reader-viewer');
+          return {source:document.querySelector('#reader-page').value,
+            top:v.scrollTop,max:v.scrollHeight-v.clientHeight,
+            range:el.value,accessible:el.getAttribute('aria-valuetext'),
+            label:document.querySelector('#reader-touch-location').textContent};
+        }""")
+        assert jump_forward["source"]=="3" and jump_forward["top"]>100 and (
+            jump_forward["range"]=="3"
+        ),jump_forward
+        assert "Écran 3 sur " in jump_forward["accessible"],jump_forward
+        assert jump_forward["label"].startswith("Écr. 3/"),jump_forward
+        page.evaluate("""()=>{
+          const el=document.querySelector('#reader-screen-jump');
+          el.value='1';el.dispatchEvent(new Event('input',{bubbles:true}));
+        }""")
+        assert snapshot(page)["scroll"]==0,snapshot(page)
+        assert snapshot(page)["page"]==3,snapshot(page)
         assert not rejected,rejected
 
         # Diagnostic de régression : retracer toute tentative de déclencher
@@ -264,6 +292,8 @@ def run(playwright, browser_type, url):
         page.wait_for_function("""()=>document.querySelector('#reader-text').hidden===true""")
         before_pdf=snapshot(page)
         assert page.locator("#reader-touch-location").text_content()==f"PDF · p. 3 / {source_pages}"
+        assert page.locator("#reader-screen-jump").is_hidden(), (
+            "V104: curseur d'écran affiché dans le PDF")
         label_pdf=accessible_reader_label()
         assert f"PDF : page 3 sur {source_pages}" in label_pdf,label_pdf
         assert "texte adaptable" in label_pdf,label_pdf
