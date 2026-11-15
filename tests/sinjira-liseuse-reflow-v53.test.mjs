@@ -1190,6 +1190,47 @@ test('V106 : glissement du curseur prévisualise sans déplacer le texte ni mult
     assert.equal(f.screenJump.value,'2');
   }finally{f.restore()}
 });
+test('V107 : un change tardif du curseur ne réactive pas une navigation annulée',()=>{
+  const f=fixture();
+  try{
+    let turns=0;
+    f.viewer.dispatchEvent=event=>{
+      if(event.type==='sinjira:reader-screen-turn')turns++;
+      return true;
+    };
+    const preview=value=>{
+      f.screenJump.value=String(value);
+      f.screenJump.emit('input',{target:f.screenJump});
+    };
+    const commit=()=>f.screenJump.emit('change',{target:f.screenJump});
+    preview(3);
+    f.windowMock.emit('resize',{});
+    f.screenJump.value='3'; // relâchement natif retardé après rotation
+    commit();
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(turns,0);
+    assert.equal(f.screenJump.value,'1');
+    preview(3);commit();
+    assert.equal(f.viewer.scrollTop,630);
+    assert.equal(turns,1);
+    preview(4);
+    f.viewer.emit('sinjira:reader-page-change',{});
+    f.screenJump.value='4'; // ancienne sélection réémise par le navigateur
+    commit();
+    assert.equal(f.viewer.scrollTop,630);
+    assert.equal(turns,1);
+    preview(4);
+    f.swipe(95); // un geste plus récent prime sur le curseur
+    const afterSwipe=f.viewer.scrollTop;
+    assert.notEqual(afterSwipe,630);
+    f.screenJump.value='4';commit();
+    assert.equal(f.viewer.scrollTop,afterSwipe);
+    assert.equal(turns,2);
+    preview(4);commit(); // nouvelle action volontaire toujours possible
+    assert.equal(f.viewer.scrollTop,700);
+    assert.equal(turns,3);
+  }finally{f.restore()}
+});
 test('V104 : curseur tactile navigue entre écrans sans changer le PDF',()=>{
   const f=fixture();
   try{
