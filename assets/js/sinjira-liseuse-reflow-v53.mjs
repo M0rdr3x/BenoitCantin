@@ -32,6 +32,29 @@ export function formatReaderMobileLocation({mode='pdf',screen=1,screens=1,page,t
   return 'PDF · '+source;
 }
 
+/** V103 — description intégrale de la zone focusable, pour retrouver sa
+ * place au clavier ou avec une technologie d'assistance. Pas d'aria-live
+ * supplémentaire : la zone d'annonce V53/V28 reste unique pour chaque mode.
+ * Aucun texte du livre, identifiant de compte ou secret n'est inclus. */
+export function formatReaderAccessibleLocation({mode='pdf',screen=1,screens=1,page,total}={}){
+  const positive=value=>{
+    if(value===null||value===undefined||String(value).trim()==='')return null;
+    const n=Number(value);
+    return Number.isSafeInteger(n)&&n>0?n:null;
+  };
+  const pageNumber=positive(page),totalPages=positive(total);
+  const place=pageNumber?'page '+pageNumber+(totalPages?' sur '+totalPages:''):'page inconnue';
+  if(mode==='screens'){
+    const count=positive(screens)||1,current=Math.min(positive(screen)||1,count);
+    return 'Lecture du roman, texte adapté : écran '+current+' sur '+count+
+      ', '+place+'.';
+  }
+  if(mode==='continuous')
+    return 'Lecture du roman, texte adaptable en défilement continu : '+place+'.';
+  return 'Lecture du roman en PDF : '+place+
+    '. Pour une lecture accessible, choisissez le texte adaptable.';
+}
+
 /** Empêche un saut de ligne masquée au bord de l'écran.
  * Le padding réduit la hauteur utile et une ligne reste visible à la jonction. */
 export function measureReaderScreen({
@@ -235,16 +258,22 @@ export function bindReaderScreenMode({
     // une deuxième annonce vocale à chaque page tournée.
     const page=pageField.value;
     const total=totalPages?.textContent||pageField.max;
-    const location=active
-      ?formatReaderMobileLocation({mode:'screens',...metric(),page,total})
-      :formatReaderMobileLocation({mode:text.hidden?'pdf':'continuous',page,total});
+    const mode=active?'screens':text.hidden?'pdf':'continuous';
+    const screenInfo=active?metric():null;
+    const position=screenInfo?{...screenInfo,page,total,mode}:{page,total,mode};
+    const location=formatReaderMobileLocation(position);
     if(mobileHint&&mobileHint.textContent!==location)mobileHint.textContent=location;
+    // V103 : la zone tabindex=0 décrit l'écran courant QUAND on y entre,
+    // sans provoquer une deuxième annonce vocale lors de chaque swipe.
+    const accessibleLabel=formatReaderAccessibleLocation(position);
+    if(viewer.getAttribute?.('aria-label')!==accessibleLabel)
+      viewer.setAttribute?.('aria-label',accessibleLabel);
     if(!active){
       if(mobilePrevious)mobilePrevious.disabled=previous.disabled;
       if(mobileNext)mobileNext.disabled=next.disabled;
       return;
     }
-    const s=metric();
+    const s=screenInfo;
     const announced='Écran '+s.screen+' sur '+s.screens+' · page '+pageField.value+' du livre';
     // Une zone aria-live ne doit pas annoncer la même phrase à chaque scroll.
     if(status.textContent!==announced)status.textContent=announced;
