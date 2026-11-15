@@ -189,7 +189,7 @@ export function bindReaderTouchNavigation({
   // Marqueur partagé avec le module historique V28 : V52 devient l'unique
   // propriétaire du geste, que le lecteur soit en mode PDF ou écran texte.
   if(viewer.dataset)viewer.dataset.readerTouchManaged='v52';
-  let origin=null;
+  let origin=null,pointerOrigin=null;
   // V96 : les PDF (édition intégrale incluse) ne doivent pas changer de page
   // tant que le contenu parent est masqué ou que l'onglet est suspendu.
   const canNavigate=()=>!globalThis.document?.hidden&&
@@ -289,6 +289,76 @@ export function bindReaderTouchNavigation({
     const button=tap==='next'?next:tap==='previous'?previous:null;
     if(button&&!button.disabled)button.click();
   };
+  // V101 : faire glisser à la SOURIS une page PDF sur ordinateur. Le
+  // texte adaptable reste sélectionnable, et les pointeurs touch/pen sont
+  // laissés aux gestionnaires tactiles existants (pas de double tournage).
+  const isPdfCanvas=event=>event?.target===viewer.querySelector?.('#reader-canvas')&&
+    viewer.querySelector?.('#reader-text')?.hidden===true;
+  const pointerDown=event=>{
+    pointerOrigin=null;
+    if(!canNavigate()||viewer.dataset?.readerLayout==='screens'||
+      event?.pointerType!=='mouse'||event.button!==0||event.isPrimary===false||
+      isReaderViewportZoomed()||!isPdfCanvas(event)||isInteractiveTarget(event.target))
+      return;
+    if(![event.clientX,event.clientY,event.pointerId].every(Number.isFinite))return;
+    pointerOrigin={
+      id:event.pointerId,x:event.clientX,y:event.clientY,time:clock(),
+      scrollTop:viewer.scrollTop||0,maxVerticalTravel:0,scrolled:false,
+      geometry:captureReaderSwipeGeometry(viewer),
+      readerLayout:viewer.dataset?.readerLayout||'scroll'
+    };
+    try{viewer.setPointerCapture?.(event.pointerId)}
+    catch{/* perte de capture possible; le pointerup local reste utilisable */}
+  };
+  const pointerMove=event=>{
+    const initial=pointerOrigin;
+    if(!initial)return;
+    if(!canNavigate()||!isPdfCanvas({target:viewer.querySelector?.('#reader-canvas')})||
+      event.pointerId!==initial.id||event.pointerType!=='mouse'||
+      event.buttons!==undefined&&event.buttons!==1||
+      initial.readerLayout!==(viewer.dataset?.readerLayout||'scroll')||
+      !isReaderSwipeGeometryStable(initial.geometry,captureReaderSwipeGeometry(viewer))){
+      pointerOrigin=null;return;
+    }
+    if(![event.clientX,event.clientY].every(Number.isFinite)){
+      pointerOrigin=null;return;
+    }
+    initial.maxVerticalTravel=Math.max(initial.maxVerticalTravel,
+      Math.abs(event.clientY-initial.y));
+    if(Math.abs((viewer.scrollTop||0)-initial.scrollTop)>8)initial.scrolled=true;
+  };
+  const pointerCancel=()=>{pointerOrigin=null};
+  const pointerUp=event=>{
+    const initial=pointerOrigin;
+    pointerOrigin=null;
+    if(!initial||!canNavigate()||event.pointerType!=='mouse'||
+      event.pointerId!==initial.id||event.button!==0||event.defaultPrevented||
+      viewer.dataset?.readerLayout==='screens'||
+      !viewer.querySelector?.('#reader-text')?.hidden||
+      initial.readerLayout!==(viewer.dataset?.readerLayout||'scroll')||
+      !isReaderSwipeGeometryStable(initial.geometry,captureReaderSwipeGeometry(viewer))||
+      isReaderViewportZoomed()||
+      ![event.clientX,event.clientY].every(Number.isFinite))return;
+    const direction=classifyReaderSwipe({
+      dx:event.clientX-initial.x,dy:event.clientY-initial.y,
+      durationMs:clock()-initial.time,viewerWidth:viewer.clientWidth,
+      hasSelection:Boolean(getSelectedText()?.trim()),
+      horizontalOverflow:readerCanPanHorizontally(viewer),
+      maxVerticalTravel:initial.maxVerticalTravel,
+      scrolledDuringGesture:initial.scrolled||
+        Math.abs((viewer.scrollTop||0)-initial.scrollTop)>8
+    });
+    const button=direction==='next'?next:direction==='previous'?previous:null;
+    if(button&&!button.disabled){
+      event.preventDefault?.();
+      button.click();
+    }
+  };
+  viewer.addEventListener('pointerdown',pointerDown);
+  viewer.addEventListener('pointermove',pointerMove);
+  viewer.addEventListener('pointerup',pointerUp);
+  viewer.addEventListener('pointercancel',pointerCancel);
+  viewer.addEventListener('lostpointercapture',pointerCancel);
   // Listeners passifs : conserver le scroll vertical, le pinch-to-zoom,
   // le menu de sélection et les gestes des technologies d'assistance.
   viewer.addEventListener('touchstart',start,{passive:true});
@@ -298,10 +368,11 @@ export function bindReaderTouchNavigation({
   // V91 : iOS/Android peuvent suspendre une application ou perdre le focus
   // sans émettre touchcancel. Une reprise ne doit jamais tourner une page
   // depuis une ancienne position de doigt.
-  const onVisibilityChange=()=>{if(globalThis.document?.hidden)cancel()};
+  const cancelAll=()=>{cancel();pointerCancel()};
+  const onVisibilityChange=()=>{if(globalThis.document?.hidden)cancelAll()};
   globalThis.document?.addEventListener?.('visibilitychange',onVisibilityChange);
-  globalThis.window?.addEventListener?.('blur',cancel);
-  globalThis.window?.addEventListener?.('pagehide',cancel);
+  globalThis.window?.addEventListener?.('blur',cancelAll);
+  globalThis.window?.addEventListener?.('pagehide',cancelAll);
 
   const mobileBack=()=>{
     if(canNavigate()&&viewer.dataset?.readerLayout!=='screens'&&!previous.disabled)previous.click();
@@ -321,15 +392,20 @@ export function bindReaderTouchNavigation({
   observer?.observe(next,{attributes:true,attributeFilter:['disabled']});
   reflectDisabled();
   return ()=>{
-    origin=null;
+    origin=null;pointerOrigin=null;
     if(viewer.dataset?.readerTouchManaged==='v52')delete viewer.dataset.readerTouchManaged;
     viewer.removeEventListener('touchstart',start);
     viewer.removeEventListener('touchmove',move);
     viewer.removeEventListener('touchcancel',cancel);
     viewer.removeEventListener('touchend',end);
+    viewer.removeEventListener('pointerdown',pointerDown);
+    viewer.removeEventListener('pointermove',pointerMove);
+    viewer.removeEventListener('pointerup',pointerUp);
+    viewer.removeEventListener('pointercancel',pointerCancel);
+    viewer.removeEventListener('lostpointercapture',pointerCancel);
     globalThis.document?.removeEventListener?.('visibilitychange',onVisibilityChange);
-    globalThis.window?.removeEventListener?.('blur',cancel);
-    globalThis.window?.removeEventListener?.('pagehide',cancel);
+    globalThis.window?.removeEventListener?.('blur',cancelAll);
+    globalThis.window?.removeEventListener?.('pagehide',cancelAll);
     mobilePrevious?.removeEventListener('click',mobileBack);
     mobileNext?.removeEventListener('click',mobileForward);
     observer?.disconnect();
