@@ -206,6 +206,40 @@ def run(playwright, browser_type, url):
         assert jump_back["preview"]>100 and jump_back["top"]<2 and (
             jump_back["signals"]==2
         ),jump_back
+        # V108 : après perte de focus pendant le drag, le navigateur peut
+        # produire un change tardif : il ne doit pas tourner le livre.
+        interrupted=page.evaluate("""()=>{
+          const el=document.querySelector('#reader-screen-jump');
+          const viewer=document.querySelector('#reader-viewer');
+          const selection=screen=>{
+            el.value=String(screen);
+            el.dispatchEvent(new Event('input',{bubbles:true}));
+          };
+          const confirm=()=>el.dispatchEvent(new Event('change',{bubbles:true}));
+          selection(3);
+          const preview={top:viewer.scrollTop,signals:window.__v106JumpSignals};
+          window.dispatchEvent(new Event('blur'));
+          el.value='3';confirm(); // confirmation obsolète
+          const ignored={top:viewer.scrollTop,signals:window.__v106JumpSignals,
+            range:el.value};
+          selection(2);confirm(); // nouvelle demande intentionnelle
+          const resumed={top:viewer.scrollTop,signals:window.__v106JumpSignals};
+          selection(1);confirm(); // restaurer la page avant les swipes
+          const restored={top:viewer.scrollTop,signals:window.__v106JumpSignals};
+          return {preview,ignored,resumed,restored,
+            page:document.querySelector('#reader-page').value};
+        }""")
+        assert interrupted["preview"]["top"]<2 and (
+            interrupted["ignored"]["top"]<2 and
+            interrupted["ignored"]["signals"]==2 and
+            interrupted["ignored"]["range"]=="1"
+        ),("V108 : confirmation tardive après perte de focus",interrupted)
+        assert interrupted["resumed"]["top"]>50 and (
+            interrupted["resumed"]["signals"]==3 and
+            interrupted["restored"]["top"]<2 and
+            interrupted["restored"]["signals"]==4 and
+            interrupted["page"]=="3"
+        ),("V108 : le curseur doit rester utilisable après retour",interrupted)
         assert snapshot(page)["page"]==3,snapshot(page)
         assert not rejected,rejected
 

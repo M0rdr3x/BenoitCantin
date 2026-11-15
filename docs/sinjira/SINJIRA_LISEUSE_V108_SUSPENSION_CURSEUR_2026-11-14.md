@@ -11,6 +11,7 @@ Le module V53 réutilise désormais le gestionnaire d’annulation déjà appel�
 ## Preuves techniques
 
 - Un test Node dans `tests/sinjira-liseuse-reflow-v53.test.mjs` couvre les trois interruptions : perte de focus, arrière-plan de l’onglet et fermeture/navigation, puis une nouvelle sélection normale.
+- Le parcours Playwright de la page réelle `tests/e2e/test_sinjira_liseuse_real_page_v57.py` contrôle aussi le `change` tardif après `window.blur`, puis le retour à une navigation normale sur Chromium/WebKit, avec livre synthétique et réseau privé bloqué.
 - URL cache V53 alignée sur `53.11.14.108` dans `compte/liseuse.html`, la fixture et les tests responsive.
 - Aucune modification des romans, droits d’accès privés, authentification, RLS, migrations ou stockage local du texte.
 
