@@ -56,20 +56,34 @@ function securityDeviceMetadata(){
 async function evaluateLoginSecurity(){
   const meta=securityDeviceMetadata();
   const {data,error}=await getSupabase().functions.invoke('security-context',{body:{...meta,action:'login'}});
-  if(error||!data?.ok||!data?.security)throw new Error(data?.error||error?.message||'SECURITY_CONTEXT_UNAVAILABLE');
+  if(error||!data?.ok||!data?.security)throw new Error('SECURITY_CONTEXT_UNAVAILABLE');
   return {meta,security:data.security};
 }
 function storePendingChallenge(challengeId,next){
   try{
     sessionStorage.setItem(PENDING_CHALLENGE_STORAGE,String(challengeId));
     sessionStorage.setItem(PENDING_DESTINATION_STORAGE,String(next));
-  }catch(error){console.warn('[SINJIRA security challenge storage]',error)}
+  }catch{console.warn('[SINJIRA security challenge storage]')}
 }
 function clearPendingChallenge(){
   try{
     sessionStorage.removeItem(PENDING_CHALLENGE_STORAGE);
     sessionStorage.removeItem(PENDING_DESTINATION_STORAGE);
   }catch{}
+}
+
+// Refus côté client et tentative de révocation locale après une évaluation
+// indéterminée. L'autorisation finale doit aussi rester côté serveur (RLS/RPC).
+async function rejectUnverifiedLogin(){
+  let signOutConfirmed=false;
+  try{
+    const {error}=await getSupabase().auth.signOut({scope:'local'});
+    signOutConfirmed=!error;
+  }catch{}
+  setStatus(status,signOutConfirmed
+    ? 'Connexion interrompue : vérification de sécurité indisponible. Réessayez plus tard.'
+    : 'Connexion interrompue : déconnexion locale non confirmée. Fermez cette session et réessayez plus tard.',
+    'error');
 }
 
 async function login(){
@@ -91,16 +105,20 @@ async function login(){
       let evaluated=null;
       try{
         evaluated=await evaluateLoginSecurity();
-      }catch(securityError){
-        console.warn('[SINJIRA login shield unavailable]',securityError);
-        // Le moteur contextuel est une couche supplémentaire. Une panne de cette
-        // couche ne doit pas verrouiller tout le compte; les zones extrêmement
-        // sensibles conservent leur propre contrôle MFA côté serveur.
-        location.replace(next);
+      }catch{
+        console.warn('[SINJIRA login shield unavailable]');
+        // Aucune connexion ne doit être acceptée si le moteur de sécurité
+        // est indisponible ou si sa réponse ne peut pas être vérifiée.
+        await rejectUnverifiedLogin();
         return;
       }
 
-      const outcome=String(evaluated.security?.outcome||'allow');
+      const outcome=evaluated.security?.outcome;
+      if(outcome!=='allow'&&outcome!=='block'&&outcome!=='challenge'){
+        console.warn('[SINJIRA login shield invalid response]');
+        await rejectUnverifiedLogin();
+        return;
+      }
       if(outcome==='block'){
         await getSupabase().auth.signOut({scope:'local'}).catch(()=>{});
         setStatus(status,'Connexion refusée : cet appareil a été révoqué dans Ma sécurité. Utilisez un appareil fiable pour vérifier votre compte.','error');
@@ -130,7 +148,7 @@ async function login(){
 
       location.replace(next);
     }catch(err){
-      console.warn('[SINJIRA auth login]',err);
+      console.warn('[SINJIRA auth login]');
       setStatus(status,'Connexion impossible pour le moment. Réessayez dans quelques instants.','error');
     }finally{setBusy(form,false)}
   });
@@ -147,13 +165,13 @@ async function forgot(){
     try{
       const {error}=await getSupabase().auth.resetPasswordForEmail(email,{redirectTo:`${SINJIRA_CONFIG.siteUrl}/compte/reinitialiser-mot-de-passe.html`});
       if(error){
-        console.warn('[SINJIRA auth recovery]',error);
+        console.warn('[SINJIRA auth recovery]');
         return setStatus(status,'La demande de récupération n’a pas pu être traitée pour le moment. Réessayez plus tard.','error');
       }
       setStatus(status,'Si un compte correspond à cette adresse, un lien de récupération sera envoyé.','success');
       form.reset();
     }catch(err){
-      console.warn('[SINJIRA auth recovery]',err);
+      console.warn('[SINJIRA auth recovery]');
       setStatus(status,'La demande de récupération n’a pas pu être traitée pour le moment. Réessayez plus tard.','error');
     }finally{setBusy(form,false)}
   });
@@ -181,7 +199,7 @@ async function reset(){
       setStatus(status,'Mot de passe mis à jour. Toutes les sessions ont été fermées; reconnectez-vous avec le nouveau mot de passe.','success');
       setTimeout(()=>location.replace('/compte/connexion.html?reset=1'),900);
     }catch(err){
-      console.warn('[SINJIRA auth reset]',err);
+      console.warn('[SINJIRA auth reset]');
       setStatus(status,'Impossible de mettre à jour le mot de passe pour le moment. Demandez un nouveau lien si le problème persiste.','error');
     }finally{setBusy(form,false)}
   });
@@ -192,4 +210,4 @@ try{
   if(page==='login')await login();
   else if(page==='forgot')await forgot();
   else if(page==='reset')await reset();
-}catch(err){console.warn('[SINJIRA auth init]',err);setStatus(status,'Le service d’authentification n’a pas pu terminer cette opération.','error')}
+}catch(err){console.warn('[SINJIRA auth init]');setStatus(status,'Le service d’authentification n’a pas pu terminer cette opération.','error')}
