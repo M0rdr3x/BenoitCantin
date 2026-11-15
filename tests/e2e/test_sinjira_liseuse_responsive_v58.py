@@ -71,6 +71,27 @@ def run(playwright, engine, origin):
           document.querySelector('#reader-viewer').dataset.readerLayout==='screens'&&
           document.querySelector('#reader-text').textContent.includes('LIVRE DE TEST')""")
         assert snapshot(page)["page"]==3,snapshot(page)
+        # V113 : les gestes restent annoncés dans une seule ligne d'aide
+        # tandis que les explications sont dépliables au toucher/clavier.
+        guide=page.locator(".reader-swipe-help")
+        guide_summary=guide.locator("summary")
+        guide_text=guide.locator("p")
+        assert guide.is_visible(),"V113 : le mode d'emploi mobile est invisible"
+        assert not guide.evaluate("(el)=>el.open"),"V113 : aide longue ouverte au départ"
+        assert not guide_text.is_visible(),"V113 : long paragraphe encombre le roman"
+        assert guide_summary.evaluate("(el)=>el.getBoundingClientRect().height")>=44
+        assert "gauche pour avancer" in guide_summary.inner_text()
+        assert "droite pour revenir" in guide_summary.inner_text()
+        guide_summary.click()
+        assert guide.evaluate("(el)=>el.open")
+        assert guide_text.is_visible()
+        guide_summary.focus()
+        page.keyboard.press("Enter")
+        assert not guide.evaluate("(el)=>el.open"),(
+            "V113 : impossible de replier l'aide au clavier"
+        )
+        assert snapshot(page)["page"]==3,snapshot(page)
+
         # V110 : sur téléphone les panneaux ne font pas défiler le livre
         # hors du premier écran. Le lien direct est tactile et au clavier.
         assert not page.locator(".reader-settings").evaluate("(el)=>el.open")

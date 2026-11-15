@@ -10,6 +10,18 @@ import {
 
 const setup={scrollHeight:1050,clientHeight:350,lineHeight:35};
 
+test('V113 : aide tactile compacte, repliable et annoncée au lecteur',()=>{
+  const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
+  assert.match(html,/aria-describedby="reader-swipe-help"/);
+  assert.match(html,/<details class="reader-swipe-help">\s*<summary id="reader-swipe-help">/);
+  assert.doesNotMatch(html,/<details class="reader-swipe-help" open>/);
+  assert.match(html,/Glissez à gauche pour avancer, à droite pour revenir/);
+  assert.match(html,/<\/summary>\s*<p>Sur téléphone ou tablette/);
+  assert.match(html,/Les déplacements intermédiaires n’entraînent pas de sauvegarde/);
+  assert.match(css,/\.reader-swipe-help summary\{[\s\S]*?min-height:44px/);
+  assert.match(css,/\.reader-swipe-help summary:focus-visible\{/);
+});
 test('V112 : lien de lecture mobile masqué tant que V26 masque le livre',()=>{
   const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
