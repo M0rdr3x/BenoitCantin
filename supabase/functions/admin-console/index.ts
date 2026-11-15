@@ -2,6 +2,7 @@ import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredAdmin } from '../_shared/auth.ts';
 import { isVerifiedPrivateDocumentBucket, privateAdminDocumentUploadPath } from '../_shared/private-document-storage.mjs';
+import { validProjectAccessReviewDecision, isReviewableProjectAccessRequest } from '../_shared/project-access-review-guard.mjs';
 
 const MAX_REQUEST_BYTES=32768;
 const DOCUMENT_BUCKET='sinjira-private-documents';
@@ -17,7 +18,8 @@ const PRIVATE_HEADERS={
 const SAFE_LOG_CODES=new Set([
   'AUTH_REQUIRED','ADMIN_REQUIRED','MFA_REQUIRED','MFA_SETUP_REQUIRED','MFA_STATE_UNAVAILABLE',
   'JSON_REQUIRED','REQUEST_TOO_LARGE','INVALID_JSON',
-  'PLAYTEST_ACCESS_GRANT_FAILED','PLAYTEST_REVIEW_ROLLBACK_FAILED'
+  'PLAYTEST_ACCESS_GRANT_FAILED','PLAYTEST_REVIEW_ROLLBACK_FAILED',
+  'ACCESS_REVIEW_LOOKUP_FAILED','ACCESS_REVIEW_TRANSITION_FAILED','ACCESS_REVIEW_GRANT_FAILED','ACCESS_REVIEW_ROLLBACK_FAILED'
 ]);
 
 function privateJson(data:unknown,status=200){
@@ -153,16 +155,42 @@ Deno.serve(async(req)=>{
     }
 
     if(action==='review_access_request'){
-      const {data:r,error:rerr}=await service.from('access_requests').select('*').eq('id',body.request_id).single();
-      if(rerr)throw rerr;const decision=body.decision==='approved'?'approved':'refused';
-      if(decision==='approved'){
-        const {error}=await service.from('project_access').upsert({
-          user_id:r.user_id,project_id:r.project_id,access_level:r.requested_level,granted_by:user.id,source:'request'
-        },{onConflict:'user_id,project_id'});if(error)throw error;
+      const requestId=typeof body.request_id==='string'?body.request_id:'';
+      if(!UUID_RE.test(requestId)||!validProjectAccessReviewDecision(body.decision)){
+        return privateJson({ok:false,error:'Décision ou demande invalide.',code:'ACCESS_REVIEW_INVALID'},400);
       }
-      const {error}=await service.from('access_requests').update({
+      const {data:r,error:rerr}=await service.from('access_requests')
+        .select('id,user_id,project_id,requested_level,status,reviewed_by,reviewed_at,review_note')
+        .eq('id',requestId).maybeSingle();
+      if(rerr)throw new Error('ACCESS_REVIEW_LOOKUP_FAILED');
+      if(!r)return privateJson({ok:false,error:'Demande introuvable.',code:'ACCESS_REQUEST_NOT_FOUND'},404);
+      // Refus strict des demandes déjà approuvées, refusées ou annulées.
+      if(!isReviewableProjectAccessRequest(r)){
+        return privateJson({ok:false,error:'Cette demande ne peut plus être traitée.',code:'ACCESS_REQUEST_NOT_PENDING'},409);
+      }
+      const decision=body.decision;
+      // Compare-and-set avant d'accorder des privilèges : une demande annulée
+      // entre la lecture et l'écriture ne peut pas être réapprouvée.
+      const {data:transition,error:transitionError}=await service.from('access_requests').update({
         status:decision,reviewed_by:user.id,reviewed_at:new Date().toISOString(),review_note:String(body.review_note||'').slice(0,1500)
-      }).eq('id',r.id);if(error)throw error;return privateJson({ok:true});
+      }).eq('id',r.id).eq('status','pending').select('id').maybeSingle();
+      if(transitionError)throw new Error('ACCESS_REVIEW_TRANSITION_FAILED');
+      if(!transition)return privateJson({ok:false,error:'Cette demande a changé. Actualisez la liste.',code:'ACCESS_REQUEST_CHANGED'},409);
+      if(decision==='approved'){
+        const {error:grantError}=await service.from('project_access').upsert({
+          user_id:r.user_id,project_id:r.project_id,access_level:r.requested_level,granted_by:user.id,source:'request'
+        },{onConflict:'user_id,project_id'});
+        if(grantError){
+          // Refus fermé en cas d'échec : tenter de restituer l'état précédent
+          // et signaler sans exposer le détail PostgreSQL.
+          const {error:rollbackError}=await service.from('access_requests').update({
+            status:'pending',reviewed_by:r.reviewed_by??null,reviewed_at:r.reviewed_at??null,review_note:r.review_note??null
+          }).eq('id',r.id).eq('status','approved');
+          if(rollbackError)throw new Error('ACCESS_REVIEW_ROLLBACK_FAILED');
+          throw new Error('ACCESS_REVIEW_GRANT_FAILED');
+        }
+      }
+      return privateJson({ok:true});
     }
 
     if(action==='list_users'){
