@@ -43,6 +43,12 @@ export async function collectNovelBodyBytes(req, maxBytes, timeoutMs = 8_000) {
     }
     if (interrupted || req.signal.aborted) throw new Error('REQUEST_INTERRUPTED');
     return bytes;
+  } catch (error) {
+    // Préserver le code 413 sur dépassement; les autres rejets après abandon
+    // restent un délai/interruption 408, sans corps partiel ni détails de flux.
+    if (error instanceof Error && error.message === 'REQUEST_TOO_LARGE') throw error;
+    if (interrupted || req.signal.aborted) throw new Error('REQUEST_INTERRUPTED');
+    throw error;
   } finally {
     clearTimeout(deadline);
     req.signal.removeEventListener('abort', interrupt);
