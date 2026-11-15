@@ -242,7 +242,19 @@ class PrivateRoutesCspSecurityTests(unittest.TestCase):
         audit.feed(page)
         audit.close()
         self.assertEqual(audit.errors, [])
-        self.assertIn('http-equiv="Content-Security-Policy"', page)
+        marker = 'http-equiv="Content-Security-Policy" content="'
+        self.assertEqual(page.count(marker), 1, "Une seule CSP meta est autorisée")
+        start = page.index(marker) + len(marker)
+        meta_policy = page[start:].split('"', 1)[0]
+        # frame-ancestors n'est pris en charge que par les en-têtes HTTP.
+        expected_meta = "; ".join(
+            directive for directive in expected.split("; ")
+            if not directive.startswith("frame-ancestors ")
+        )
+        self.assertEqual(meta_policy, expected_meta, "La CSP meta doit suivre la CSP HTTP")
+        self.assertLess(page.index(marker), page.index("<script "), "CSP avant le script")
+        self.assertNotIn("frame-ancestors", meta_policy)
+
 
     def test_mutants_dangereux_sont_detectes(self) -> None:
         safe = ("default-src 'self'; script-src 'self'; script-src-attr 'none'; "
