@@ -220,6 +220,9 @@ export function bindReaderScreenMode({
   if(!viewer||!text||!previous||!next||!toggle||!status||!pageField)
     throw new Error('SINJIRA V53 : contrôles nécessaires absents');
   let gesture=null,pendingPreviousPdf=null,lastRatio=0,restoring=false,closed=false;
+  // V106 : garder la sélection d'écran pendant le drag sans persister ni
+  // modifier la zone lue tant que le curseur n'a pas été relâché.
+  let jumpPreview=null;
   let pendingLayoutRatio=null; // V56 : une seule position de référence par réagencement
   let lastAnchor=null,pendingLayoutAnchor=null; // V63 : ancre locale non persistée
   let layoutRestoreGeneration=0; // V69 : invalider une restitution devenue obsolète
@@ -264,6 +267,8 @@ export function bindReaderScreenMode({
     const mode=active?'screens':text.hidden?'pdf':'continuous';
     const screenInfo=active?metric():null;
     const jumpVisible=Boolean(active&&screenInfo.screens>1);
+    if(!jumpVisible||jumpPreview!==null&&jumpPreview>screenInfo.screens)
+      jumpPreview=null;
     if(screenJump)screenJump.hidden=!jumpVisible;
     if(screenJumpLabel)screenJumpLabel.hidden=!jumpVisible;
     const position=screenInfo?{...screenInfo,page,total,mode}:{page,total,mode};
@@ -282,11 +287,14 @@ export function bindReaderScreenMode({
     const s=screenInfo;
     const announced='Écran '+s.screen+' sur '+s.screens+' · page '+pageField.value+' du livre';
     if(screenJump){
-      const max=String(s.screens),current=String(s.screen);
+      const max=String(s.screens),current=String(jumpPreview??s.screen);
       if(screenJump.max!==max)screenJump.max=max;
       if(screenJump.value!==current)screenJump.value=current;
-      if(screenJump.getAttribute?.('aria-valuetext')!==announced)
-        screenJump.setAttribute?.('aria-valuetext',announced);
+      const description=jumpPreview===null?announced:
+        'Écran '+jumpPreview+' sur '+s.screens+' · page '+pageField.value+
+        ' du livre · relâcher pour lire cet écran';
+      if(screenJump.getAttribute?.('aria-valuetext')!==description)
+        screenJump.setAttribute?.('aria-valuetext',description);
     }
     // Une zone aria-live ne doit pas annoncer la même phrase à chaque scroll.
     if(status.textContent!==announced)status.textContent=announced;
@@ -298,6 +306,7 @@ export function bindReaderScreenMode({
     }
   };
   const scrollToScreen=(top,{userInitiated=false}={})=>{
+    jumpPreview=null;
     restoring=true;
     viewer.scrollTo({top,left:0,behavior:'auto'});
     restoring=false;
@@ -308,10 +317,28 @@ export function bindReaderScreenMode({
     // Le gestionnaire V31/V51 de scroll sauvegarde le ratio de progression
     // de la même page PDF, sans nouveau format ni identifiant de lecteur.
   };
-  const onScreenJump=()=>{
+  const onScreenJumpPreview=()=>{
     if(!screenJump||!isPaged()||!canNavigate())return;
     const selected=Number(screenJump.value),s=metric();
-    if(s.screens<=1||!Number.isSafeInteger(selected)||selected<1||selected>s.screens)return;
+    if(s.screens<=1||!Number.isSafeInteger(selected)||selected<1||selected>s.screens){
+      jumpPreview=null;sync();return;
+    }
+    jumpPreview=selected;
+    // Un seul changement du texte ARIA, sans scroll ni événement de
+    // sauvegarde durant les mouvements successifs du pouce.
+    sync();
+  };
+  const onScreenJumpCommit=()=>{
+    if(!screenJump)return;
+    const selected=Number(screenJump.value);
+    jumpPreview=null;
+    if(!isPaged()||!canNavigate()){sync();return}
+    const s=metric();
+    if(s.screens<=1||!Number.isSafeInteger(selected)||selected<1||selected>s.screens){
+      sync();return;
+    }
+    // Aucun écrit supplémentaire lorsqu'on relâche sur l'écran déjà lu.
+    if(selected===s.screen){sync();return}
     cancelPendingLayoutRestore();
     // La dernière portion peut être plus courte qu'un interligne :
     // rejoindre la véritable fin plutôt qu'une page fictive additionnelle.
@@ -525,7 +552,7 @@ export function bindReaderScreenMode({
   const buttonsObserver=Observer?new Observer(()=>sync()):null;
   buttonsObserver?.observe(previous,{attributes:true,attributeFilter:['disabled']});
   buttonsObserver?.observe(next,{attributes:true,attributeFilter:['disabled']});
-  const onScroll=()=>{if(!closed)sync()};
+  const onScroll=()=>{if(!closed){jumpPreview=null;sync()}};
   /**
    * V56 : un changement de police déclenche souvent input puis change; et une
    * rotation provoque resize puis media.change. Capturer une SEULE position
@@ -550,6 +577,7 @@ export function bindReaderScreenMode({
     }));
   };
   const onToggle=()=>{
+    jumpPreview=null;
     // V78 : tout changement de mode rend périmé le contact tactile en cours.
     // Même si l'utilisateur rebascule aussitôt, ne pas tourner une ancienne page.
     gesture=null;
@@ -564,7 +592,7 @@ export function bindReaderScreenMode({
     sync();
     scheduleLayoutRestore(previousRatio,currentAnchor);
   };
-  const onResize=()=>scheduleLayoutRestore(lastRatio,lastAnchor);
+  const onResize=()=>{jumpPreview=null;scheduleLayoutRestore(lastRatio,lastAnchor)};
   // V90 : Safari iOS / Chrome Android peuvent modifier le viewport visuel
   // quand les barres d'interface apparaissent ou disparaissent sans déclencher
   // window.resize. La hauteur CSS en dvh varie et peut déplacer la ligne lue.
@@ -600,7 +628,8 @@ export function bindReaderScreenMode({
   viewer.addEventListener('scroll',onScroll,{passive:true});
   // Le moteur V26 émet cet événement APRÈS la mise à jour de la page
   // canonique : le statut mobile reflète aussitôt une nouvelle page PDF.
-  viewer.addEventListener('sinjira:reader-page-change',sync);
+  const onBookPageChange=()=>{jumpPreview=null;sync()};
+  viewer.addEventListener('sinjira:reader-page-change',onBookPageChange);
   previous.addEventListener('click',onPrev,true);
   next.addEventListener('click',onNext,true);
   mobilePrevious?.addEventListener('click',onMobilePrev,true);
@@ -609,7 +638,8 @@ export function bindReaderScreenMode({
   document.addEventListener('input',onPreferences,true);
   document.addEventListener('change',onPreferences,true);
   toggle.addEventListener('change',onToggle);
-  screenJump?.addEventListener('input',onScreenJump);
+  screenJump?.addEventListener('input',onScreenJumpPreview);
+  screenJump?.addEventListener('change',onScreenJumpCommit);
   window.addEventListener('resize',onResize,{passive:true});
   window.visualViewport?.addEventListener?.('resize',onVisualViewportResize,{passive:true});
   window.addEventListener('sinjira:reader-layout-will-change',onFocusLayoutChange);
@@ -625,7 +655,7 @@ export function bindReaderScreenMode({
     window.removeEventListener('blur',onTouchCancel);
     window.removeEventListener('pagehide',onTouchCancel);
     viewer.removeEventListener('scroll',onScroll);
-    viewer.removeEventListener('sinjira:reader-page-change',sync);
+    viewer.removeEventListener('sinjira:reader-page-change',onBookPageChange);
     previous.removeEventListener('click',onPrev,true);
     next.removeEventListener('click',onNext,true);
     mobilePrevious?.removeEventListener('click',onMobilePrev,true);
@@ -634,7 +664,8 @@ export function bindReaderScreenMode({
     document.removeEventListener('input',onPreferences,true);
     document.removeEventListener('change',onPreferences,true);
     toggle.removeEventListener('change',onToggle);
-    screenJump?.removeEventListener('input',onScreenJump);
+    screenJump?.removeEventListener('input',onScreenJumpPreview);
+    screenJump?.removeEventListener('change',onScreenJumpCommit);
     window.removeEventListener('resize',onResize);
     window.visualViewport?.removeEventListener?.('resize',onVisualViewportResize);
     window.removeEventListener('sinjira:reader-layout-will-change',onFocusLayoutChange);
