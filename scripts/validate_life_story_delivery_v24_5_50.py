@@ -98,7 +98,10 @@ def main() -> int:
         'download_count',
         "record.storage_bucket!=='sinjira-life-story-exports'",
         'hasPdfSignature(bytes)',
-        "String.fromCharCode(...head)==='%PDF-'",
+        "readPrivateLifeStoryPdf({",
+        "maxBytes: MAX_PDF_BYTES",
+        "'../_shared/private-life-story-pdf.mjs'",
+        "String.fromCharCode(...bytes.subarray(0,5))==='%PDF-'",
         "service.rpc('service_life_story_register_download'",
         'allowedOrigin(req)',
         "'https://www.benoitcantin.com'",
@@ -110,6 +113,13 @@ def main() -> int:
     for marker in delivery_markers:
         if compact(marker) not in delivery_flat:
             errors.append(f'Edge delivery incomplète: {marker}')
+    for forbidden in (
+        "storage.from('sinjira-life-story-exports').download(",
+        "await file.arrayBuffer()",
+        "createSignedUrl(",
+    ):
+        if forbidden in delivery:
+            errors.append(f"Lecture non bornée / lien public interdit: {forbidden}")
     if "searchparams.get('token')" in delivery.lower() or 'searchparams.get("token")' in delivery.lower():
         errors.append('Le backend ne doit jamais lire le jeton depuis la query string.')
     validate_pos = delivery.find('hasPdfSignature(bytes)')
@@ -122,7 +132,6 @@ def main() -> int:
         '`${DELIVERY_PAGE}#${raw}`',
         'crypto.getRandomValues(new Uint8Array(32))',
         'sha256Hex(raw)',
-        'token_hash: tokenHash',
         'source_boundary',
         'registry_access_prohibited',
         "transport: 'manual_or_future_sender'",
@@ -130,6 +139,21 @@ def main() -> int:
     for marker in export_markers:
         if marker not in export:
             errors.append(f'Edge export incomplète: {marker}')
+    # Le contrat de 2026 conserve le hash SHA-256, mais la rotation de jetons
+    # est maintenant atomique dans PostgreSQL et non une insertion Edge.
+    if 'token_hash: tokenHash' not in export:
+        for marker in (
+            'const tokenHash = await sha256Hex(raw);',
+            'tokenHashes.push(tokenHash)',
+            "service.rpc('service_life_story_rotate_delivery_links'",
+            'p_export_id: exportId, p_token_hashes: tokenHashes',
+        ):
+            if marker not in export:
+                errors.append(f'Edge export: rotation atomique des hashes absente: {marker}')
+        if "from('life_story_delivery_links').delete()" in export or (
+            "from('life_story_delivery_links').insert(" in export
+        ):
+            errors.append('Edge export: ancienne rotation non atomique interdite.')
     if '?token=' in export:
         errors.append('life-story-export ne doit plus générer de jeton dans la query string.')
     for forbidden in ('reader_characters', 'registry_account_links'):

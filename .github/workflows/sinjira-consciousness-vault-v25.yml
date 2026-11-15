@@ -6,6 +6,7 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'supabase/tests/personal_consciousness_vault_v25.test.sql'
+      - 'supabase/tests/life_story_delivery_rotation_v25.test.sql'
       - 'supabase/functions/conscience-vault/**'
       - 'supabase/functions/_shared/auth.ts'
       - 'supabase/config.toml'
@@ -29,6 +30,7 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'supabase/tests/personal_consciousness_vault_v25.test.sql'
+      - 'supabase/tests/life_story_delivery_rotation_v25.test.sql'
       - 'supabase/functions/conscience-vault/**'
       - 'supabase/functions/_shared/auth.ts'
       - 'supabase/config.toml'
@@ -107,6 +109,12 @@ jobs:
         run: |
           set -euo pipefail
           supabase test db supabase/tests/personal_consciousness_vault_v25.test.sql --local
+
+      - name: Exécuter les assertions SQL de la rotation atomique Histoire de vie
+        shell: bash
+        run: |
+          set -euo pipefail
+          supabase test db supabase/tests/life_story_delivery_rotation_v25.test.sql --local
 
       - name: Arrêter la base locale
         if: always()

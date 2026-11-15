@@ -71,6 +71,17 @@ async function run() {
 
   rejectResult(await readLimitedBinaryResponse(streamResponse([]), pdf.byteLength));
   rejectResult(await readLimitedBinaryResponse(new Response(null), pdf.byteLength));
+  // Un producteur distant peut cesser d'émettre et même refuser de
+  // terminer sa promesse cancel(). La lecture doit refuser le PDF partiel.
+  const stalledBinary = new Response(new ReadableStream({
+    start(controller) { controller.enqueue(pdf.subarray(0, 3)); },
+    cancel() { return new Promise(() => {}); }
+  }));
+  const began = Date.now();
+  rejectResult(await readLimitedBinaryResponse(stalledBinary, pdf.byteLength, 30));
+  assert.ok(Date.now() - began < 1000, 'Le modèle PDF suspendu doit expirer');
+
+  await assert.rejects(readLimitedBinaryResponse(streamResponse([pdf]), pdf.byteLength, 0), TypeError);
 
   const interrupted = new Response(new ReadableStream({
     start(controller) {

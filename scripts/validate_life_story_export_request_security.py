@@ -21,7 +21,6 @@ REQUIRED = {
     'frontière Histoire de vie': 'assertLifeStoryBoundary(record);',
     'interdiction Registre': 'registry_access_prohibited',
     'jeton de remise en fragment': '`${DELIVERY_PAGE}#${raw}`',
-    'stockage du hash du jeton': 'token_hash: tokenHash',
     'transport humain/manual': "transport: 'manual_or_future_sender'",
     'réponse privée succès': 'return privateJson({ ok: true,',
     'réponse privée erreur': "return privateJson({ ok: false, error: 'Opération Histoire de vie refusée.'",
@@ -70,6 +69,27 @@ def validate(path: Path) -> list[str]:
     for label, pattern in REQUIRED_PATTERNS.items():
         if not pattern.search(source):
             errors.append(f'Garde life-story-export absent ou affaibli: {label}.')
+    # Compatibilité du contrat historique : une nouvelle version sérialise
+    # exclusivement les hashes SHA-256 dans une RPC PostgreSQL atomique.
+    # Ne jamais accepter un chemin RPC qui transmettrait le jeton brut.
+    if "service.rpc('service_life_story_rotate_delivery_links'" in source:
+        required_atomic = (
+            'sha256Hex(raw)',
+            'tokenHashes.push(tokenHash)',
+            'p_export_id: exportId, p_token_hashes: tokenHashes',
+            'if (rotationError || !rotation || rotation.link_count !== tokenHashes.length',
+        )
+        for marker in required_atomic:
+            if marker not in source:
+                errors.append('Garde life-story-export absent: rotation hash-only via SQL atomique.')
+        if not re.search(r'\bconst\s+tokenHash\s*=\s*await\s+sha256Hex\(raw\)\s*;', source):
+            errors.append('Garde life-story-export absent: le tokenHash doit être SHA-256 du jeton.')
+        if "from('life_story_delivery_links').delete()" in source or (
+            "from('life_story_delivery_links').insert(" in source
+        ):
+            errors.append('Rotation transactionnelle: écritures séparées interdites.')
+    elif 'token_hash: tokenHash' not in source:
+        errors.append('Garde life-story-export absent: empreinte du jeton avant stockage.')
     lowered = source.lower()
     for label, marker in FORBIDDEN.items():
         if marker.lower() in lowered:
@@ -154,6 +174,34 @@ privateJson({});
         clean = validate(path)
         if clean:
             raise AssertionError('Le cas sain doit passer: ' + ' | '.join(clean))
+
+        # Une variante atomique sûre doit aussi être acceptée par le validateur.
+        atomic = safe.replace(
+            "  const tokenHash='b';",
+            "  const tokenHash = await sha256Hex(raw);",
+        ).replace(
+            "  const rows=[{token_hash: tokenHash}];",
+            "  const tokenHashes=[];\n"
+            "  tokenHashes.push(tokenHash);\n"
+            "  const {data:rotation,error:rotationError}=await service.rpc("
+            "'service_life_story_rotate_delivery_links', "
+            "{ p_export_id: exportId, p_token_hashes: tokenHashes });\n"
+            "  if (rotationError || !rotation || rotation.link_count !== tokenHashes.length) throw Error('refused');",
+        )
+        if atomic == safe:
+            raise AssertionError('Fixture RPC hash-only invalide.')
+        path.write_text(atomic, encoding='utf-8')
+        if unexpected := validate(path):
+            raise AssertionError('Le nouveau flux atomique sain doit passer: ' + ' | '.join(unexpected))
+        path.write_text(atomic.replace('tokenHashes.push(tokenHash)', 'tokenHashes.push(raw)'), encoding='utf-8')
+        if not any('rotation hash-only' in item for item in validate(path)):
+            raise AssertionError('Le transfert des jetons bruts à PostgreSQL doit être refusé.')
+        path.write_text(atomic.replace('p_token_hashes: tokenHashes', 'p_token_hashes: [raw]'), encoding='utf-8')
+        if not any('rotation hash-only' in item for item in validate(path)):
+            raise AssertionError('La RPC ne peut jamais recevoir les jetons bruts.')
+        path.write_text(atomic.replace('const tokenHash = await sha256Hex(raw);', 'const tokenHash = raw;'), encoding='utf-8')
+        if not any('doit être SHA-256' in item for item in validate(path)):
+            raise AssertionError('Un hash fictif ou un jeton non haché doit être refusé.')
 
         path.write_text(safe.replace('const parsed = await readLimitedJson(req);', 'const parsed = {body: await req.json()};'), encoding='utf-8')
         direct = validate(path)

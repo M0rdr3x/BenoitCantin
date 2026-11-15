@@ -158,9 +158,27 @@ def main() -> int:
         'requiredAdmin', 'admin_life_story_get_export', 'pdf-lib',
         'service_life_story_mark_export_generated', 'sha256Hex',
         'create_delivery_links', 'crypto.getRandomValues(new Uint8Array(32))',
-        'token_hash', 'max_downloads: 3',
+        'token_hash',
         "transport: 'manual_or_future_sender'",
     ], 'Edge export')
+    # V24.5.2 écrivait max_downloads: 3 dans les rows JavaScript.
+    # La rotation atomique le fixe maintenant dans une RPC SQL.
+    # Préserver exactement le plafond historique de 3 téléchargements.
+    if 'max_downloads: 3' not in export:
+        atomic_sql = ROOT / 'supabase/migrations/20261115040500_sinjira_life_story_atomic_delivery_link_rotation.sql'
+        sql = atomic_sql.read_text('utf-8') if atomic_sql.is_file() else ''
+        if (
+            "service.rpc('service_life_story_rotate_delivery_links'" not in export
+            or not re.search(
+                r'(?s)insert\s+into\s+public\.life_story_delivery_links'
+                r'.*?\bmax_downloads\)\s+select\b'
+                r'.*?\bv_expires_at\s*,\s*3\s+from\b',
+                sql,
+                re.I,
+            )
+        ):
+            errors.append('Edge export/SQL: max_downloads=3 obligatoire dans la transaction de rotation.')
+
     forbid(errors, export, REGISTRY_MARKERS, 'Edge export')
     if ".from('life_story_entries')" in export or '.from("life_story_entries")' in export:
         errors.append('Edge export: le générateur doit lire uniquement l’instantané serveur, pas les souvenirs sources.')
