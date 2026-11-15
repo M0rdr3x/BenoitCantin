@@ -72,7 +72,7 @@ def main() -> None:
         (privacy, "DOCURL",
          "parsed.username||parsed.password", "false"),
         (privacy, "DOCURL",
-         "relative&&parsed.origin!==DOCUMENT_URL_BASE", "false"),
+         "if(parsed.origin!==DOCUMENT_URL_BASE)return false;", "if(false)return false;"),
         (privacy, "DOCURL",
          r"\u0000-\u0020", "a-z"),
     ]
