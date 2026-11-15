@@ -67,7 +67,7 @@ test('rejects unsafe MIME, malformed UTF-8, JSON arrays and invalid JSON', async
   assert.equal(await readBoundedSecurityPushJson(new Response('[1,2,3]'), DEFAULT_LIMIT), null);
   assert.equal(await readBoundedSecurityPushJson(new Response('{malformed'), DEFAULT_LIMIT), null);
   assert.equal(await readBoundedSecurityPushJson(new Response('null'), DEFAULT_LIMIT), null);
-  assert.equal(await readBoundedSecurityPushJson(new Response('', { status: 204 }), DEFAULT_LIMIT), null);
+  assert.equal(await readBoundedSecurityPushJson(new Response(null, { status: 204 }), DEFAULT_LIMIT), null);
 });
 
 test('non-200 or missing provider bodies are ignored', async () => {
