@@ -111,7 +111,9 @@ def self_test() -> None:
         'erreur octroi ignorée': real.replace(
             "if(state==='approved'){\n        const {error:grantError}=await service.from('project_access').upsert",
             "if(state==='approved'){\n        await service.from('project_access').upsert", 1),
-        'contrôle octroi retiré': real.replace('if(grantError){', 'if(false){', 1),
+        'contrôle octroi retiré': real.replace(
+            "if(grantError){\n          const {error:rollbackError}=await service.from('playtest_participants').update(previousReview)",
+            "if(false){\n          const {error:rollbackError}=await service.from('playtest_participants').update(previousReview)", 1),
         'rollback retiré': real.replace("const {error:rollbackError}=await service.from('playtest_participants').update(previousReview)", "const rollbackError=null; await service.from('playtest_participants').update({})", 1),
         'contrôle rollback retiré': real.replace("if(rollbackError)throw new Error('PLAYTEST_REVIEW_ROLLBACK_FAILED');", '', 1),
         'erreur octroi masquée': real.replace("throw new Error('PLAYTEST_ACCESS_GRANT_FAILED');", 'return privateJson({ok:true});', 1),
