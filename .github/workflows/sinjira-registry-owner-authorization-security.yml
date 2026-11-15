@@ -1,0 +1,56 @@
+name: SINJIRA — Registre, rôle propriétaire vérifié en base
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'supabase/functions/submit-character-questionnaire/**'
+      - 'supabase/functions/_shared/registry-owner-authorization.mjs'
+      - 'scripts/test_registry_owner_authorization.mjs'
+      - 'scripts/validate_character_questionnaire_security.py'
+      - '.github/workflows/sinjira-registry-owner-authorization-security.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'supabase/functions/submit-character-questionnaire/**'
+      - 'supabase/functions/_shared/registry-owner-authorization.mjs'
+      - 'scripts/test_registry_owner_authorization.mjs'
+      - 'scripts/validate_character_questionnaire_security.py'
+      - '.github/workflows/sinjira-registry-owner-authorization-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-registry-owner-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-owner-role:
+    name: Refuser toute élévation propriétaire par courriel
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Récupérer le commit sans conserver de credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Fixer Python 3.12
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+
+      - name: Tester le contrôle réel du rôle propriétaire
+        run: node --test scripts/test_registry_owner_authorization.mjs
+
+      - name: Détecter les mutations d'autorisation du questionnaire
+        run: python scripts/validate_character_questionnaire_security.py --self-test
+
+      - name: Confirmer AAL2, unicité et refus des emails propriétaires
+        run: python scripts/validate_character_questionnaire_security.py
+
+      - name: Vérifier la compatibilité de la configuration Supabase
+        run: python scripts/validate_supabase.py

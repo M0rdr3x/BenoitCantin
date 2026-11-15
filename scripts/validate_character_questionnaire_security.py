@@ -15,6 +15,9 @@ REQUIRED = {
     'version fonctionnelle stable': "const VERSION='24.5.3';",
     'POST uniquement': "req.method!=='POST'",
     'auth AAL2 obligatoire du Registre': 'requiredVaultUser(req)',
+    'autorisation du rôle propriétaire via SQL': 'const owner=update_existing?await isVerifiedRegistryOwner(service,user.id):false;',
+    'helper de rôle serveur importé': "import {isVerifiedRegistryOwner} from '../_shared/registry-owner-authorization.mjs';",
+    'erreur de rôle propriétaire en mode fermé': "if(e?.message==='REGISTRY_OWNER_CHECK_FAILED')return privateJson(",
     'lecture JSON bornée': 'readBoundedJson(req)',
     'content-type JSON strict': "if(contentType!=='application/json')throw new Error('JSON_REQUIRED');",
     'taille UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
@@ -62,6 +65,7 @@ FORBIDDEN = {
     'log participant backend brut': "console.warn('participant resend',await r.text())",
     'erreur génération brute persistée': "error_text:String(e?.message||e)",
     'ancien contrôle photo permissif': 'String(photo_path).startsWith',
+    'propriétaire déduit d’un courriel': 'const owner=String(user?.email',
     'ancien contrôle traversée permissif': "String(photo_path).includes('..')",
 }
 
@@ -93,7 +97,10 @@ def validate(path: Path) -> list[str]:
     elif auth_pos > body_pos:
         errors.append('Le questionnaire ne doit pas être lu avant auth/JWT/MFA.')
 
+    owner_check = source.find('const owner=update_existing?await isVerifiedRegistryOwner(service,user.id):false;')
     state_check = source.find("if(submissionResult.error||characterResult.error)throw new Error('CHARACTER_STATE_LOOKUP_FAILED');")
+    if owner_check < 0 or state_check < 0 or owner_check > state_check:
+        errors.append('Le rôle SQL propriétaire doit être vérifié avant les autorisations de dossier.')
     if source.count("code:'ONE_CHARACTER_PER_ACCOUNT'") != 2:
         errors.append('Registre : le refus 409 doit être identique avant INSERT et après conflit confirmé.')
     uniqueness = source.find("code:'ONE_CHARACTER_PER_ACCOUNT'")
@@ -129,6 +136,15 @@ def self_test() -> None:
         ),
         'erreurs état ignorées': real.replace("    if(submissionResult.error||characterResult.error)throw new Error('CHARACTER_STATE_LOOKUP_FAILED');\n", '', 1),
         'unicité retirée': real.replace("code:'ONE_CHARACTER_PER_ACCOUNT'", "code:'DUPLICATE_ALLOWED'", 1),
+        'rôle propriétaire remplacé par courriel': real.replace(
+            'const owner=update_existing?await isVerifiedRegistryOwner(service,user.id):false;',
+            "const owner=String(user?.email||'').toLowerCase()==='owner@example.test';", 1),
+        'propriétaire accordé sans vérification SQL': real.replace(
+            'const owner=update_existing?await isVerifiedRegistryOwner(service,user.id):false;',
+            'const owner=update_existing?true:false;', 1),
+        'erreur de rôle propriétaire ignorée': real.replace(
+            "if(e?.message==='REGISTRY_OWNER_CHECK_FAILED')return privateJson(",
+            "if(false)return privateJson(", 1),
         'conflit reclassé sans preuve': real.replace(
             "if(await hasConfirmedConcurrentSubmission(service,user.id,error))",
             "if(error.code==='23505')", 1,
