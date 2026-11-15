@@ -33,6 +33,8 @@ ADMIN_REQUIRED = (
     "'Cache-Control':'private, no-store, max-age=0'",
     "if(rerr)throw new Error('ACCESS_REVIEW_LOOKUP_FAILED');",
     "if(!r)return privateJson(",
+    "code:'ACCESS_REQUEST_NOT_PENDING'},409)",
+    "code:'ACCESS_REQUEST_CHANGED'},409)",
     "if(transitionError)throw new Error('ACCESS_REVIEW_TRANSITION_FAILED');",
     "if(grantError){",
     "status:'pending',reviewed_by:r.reviewed_by??null,reviewed_at:r.reviewed_at??null,review_note:r.review_note??null",
