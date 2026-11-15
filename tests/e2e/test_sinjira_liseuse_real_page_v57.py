@@ -154,9 +154,9 @@ def run(playwright, browser_type, url):
         # éloignée sans appeler les boutons de changement de page source.
         jump=page.locator("#reader-screen-jump")
         jump_label=page.locator("#reader-screen-jump-label")
-        // V105 : attendre que le moteur ait recalculé le nombre d'écrans.
-        // WebKit peut avoir fini le chargement du texte avant le retour de
-        // l'observateur MutationObserver responsable du libellé.
+        # V105 : attendre que le moteur ait recalculé le nombre d'écrans.
+        # WebKit peut avoir fini le chargement du texte avant le retour de
+        # l'observateur MutationObserver responsable du libellé.
         page.wait_for_function("""()=>{
           const slider=document.querySelector('#reader-screen-jump');
           const label=document.querySelector('#reader-screen-jump-label');
