@@ -71,6 +71,38 @@ def run(playwright, engine, origin):
           document.querySelector('#reader-viewer').dataset.readerLayout==='screens'&&
           document.querySelector('#reader-text').textContent.includes('LIVRE DE TEST')""")
         assert snapshot(page)["page"]==3,snapshot(page)
+        # V122 : basculement PDF vers texte continu pendant un contact,
+        # sans changer le numéro ni émettre sinjira:reader-page-change.
+        mode_transition=page.evaluate("""()=>{
+          const v=document.querySelector('#reader-viewer');
+          const text=document.querySelector('#reader-text');
+          const field=document.querySelector('#reader-page');
+          const paged=document.querySelector('#reader-screens-enabled');
+          const before=field.value;
+          paged.checked=false;
+          paged.dispatchEvent(new Event('change',{bubbles:true}));
+          text.hidden=true;
+          const start={identifier:122,target:v,clientX:260,clientY:224};
+          const end={...start,clientX:112,clientY:227};
+          const fire=(type,touches,changed)=>{
+            const ev=new Event(type,{bubbles:true,cancelable:true});
+            Object.defineProperties(ev,{
+              touches:{value:touches},targetTouches:{value:touches},
+              changedTouches:{value:changed}
+            });
+            v.dispatchEvent(ev);return ev.defaultPrevented;
+          };
+          fire('touchstart',[start],[start]);
+          text.hidden=false;
+          const consumed=fire('touchend',[],[end]);
+          const after=field.value;
+          paged.checked=true;
+          paged.dispatchEvent(new Event('change',{bubbles:true}));
+          return {consumed,after,before,layout:v.dataset.readerLayout};
+        }""")
+        assert mode_transition=={
+            "consumed":False,"after":"3","before":"3","layout":"screens"
+        },mode_transition
         # V121 : le PDF dispose d'un statut vocal sans doublonner les
         # écrans de texte, et sa région est visuellement dissimulée.
         spoken=page.evaluate("""()=>{

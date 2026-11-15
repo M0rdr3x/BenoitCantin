@@ -238,6 +238,9 @@ export function bindReaderTouchNavigation({
   // V117 : une fin de geste sur la page source remplacée est périmée.
   // Valeur du champ de page, sans contenu de livre ou identité.
   const currentPage=()=>pageField?.value==null?null:String(pageField.value);
+  // V122 : ne pas appliquer un toucher PDF à la vue texte, ni l'inverse,
+  // si le mode a changé sans numéro de page ou événement canonique.
+  const isPdfMode=()=>viewer.querySelector?.('#reader-text')?.hidden===true;
   // V96 : les PDF (édition intégrale incluse) ne doivent pas changer de page
   // tant que le contenu parent est masqué ou que l'onglet est suspendu.
   const canNavigate=()=>!globalThis.document?.hidden&&
@@ -256,7 +259,7 @@ export function bindReaderTouchNavigation({
       id:touch.identifier,x:touch.clientX,y:touch.clientY,time:clock(),
       bookPage:currentPage(),
       scrollTop:viewer.scrollTop||0,maxVerticalTravel:0,maxTravel:0,maxLeftTravel:0,maxRightTravel:0,scrolled:false,
-      pdfMode:viewer.querySelector?.('#reader-text')?.hidden===true,
+      pdfMode:isPdfMode(),
       readerLayout:viewer.dataset?.readerLayout||'scroll',
       geometry:captureReaderSwipeGeometry(viewer),
       nestedHorizontalScroll:captureReaderNestedHorizontalScroll(event.target,viewer),
@@ -270,7 +273,7 @@ export function bindReaderTouchNavigation({
     // départ ne doit jamais être interprété comme une page tournée.
     if(!origin)return;
     if(event.touches?.length!==1||isReaderViewportZoomed()||
-      origin.bookPage!==currentPage()||
+      origin.bookPage!==currentPage()||origin.pdfMode!==isPdfMode()||
       origin.readerLayout!==(viewer.dataset?.readerLayout||'scroll')||
       !isReaderSwipeGeometryStable(origin.geometry,captureReaderSwipeGeometry(viewer))){
       origin=null;return;
@@ -301,7 +304,7 @@ export function bindReaderTouchNavigation({
     // même si preventDefault() n'a pas été honoré sur un appareil tactile.
     if(viewer.dataset?.readerLayout==='screens')return;
     if(!initial||!canNavigate()||isReaderViewportZoomed()||
-      initial.bookPage!==currentPage()||
+      initial.bookPage!==currentPage()||initial.pdfMode!==isPdfMode()||
       initial.readerLayout!==(viewer.dataset?.readerLayout||'scroll')||
       !isReaderSwipeGeometryStable(initial.geometry,captureReaderSwipeGeometry(viewer))||
       event.touches?.length!==0||event.changedTouches?.length!==1)return;
@@ -330,7 +333,7 @@ export function bindReaderTouchNavigation({
     // V97 : en PDF uniquement, un tap de marge tourne la page comme en
     // texte paginé. En mode texte continu, le centre et les bords ne
     // deviennent jamais des zones de navigation par tapotement.
-    if(!initial.pdfMode||viewer.querySelector?.('#reader-text')?.hidden!==true)
+    if(!initial.pdfMode||!isPdfMode())
       return;
     const rect=viewer.getBoundingClientRect?.();
     if(!rect)return;

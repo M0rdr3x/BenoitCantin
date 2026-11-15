@@ -71,6 +71,38 @@ test('V119 : une navigation PDF montre un repère, jamais un swipe refusé',()=>
   assert.equal(f.next.events.has('click'),false);
   assert.equal(f.previous.events.has('click'),false);
 });
+test('V122 : basculer PDF et texte pendant un swipe n'avance jamais une autre vue',()=>{
+  const f=fixture();
+  try{
+    f.setPdfMode(true);
+    f.swipe(-130,3,{switchPdfMode:false});
+    assert.equal(f.next.clicks,0,'PDF vers texte continu ne tourne pas');
+    f.swipe(130,3,{switchPdfMode:true});
+    assert.equal(f.previous.clicks,0,'texte continu vers PDF ne tourne pas');
+    assert.equal(f.pageField.value,'3');
+    f.swipe(-130,3);
+    f.swipe(130,3);
+    assert.equal(f.next.clicks,1,'gauche sur PDF avance toujours');
+    assert.equal(f.previous.clicks,1,'droite sur PDF revient toujours');
+  }finally{f.release()}
+});
+test('V122 : PDF vers texte puis PDF pendant touchmove invalide le swipe',()=>{
+  const f=fixture();
+  const start={identifier:7,clientX:245,clientY:190};
+  try{
+    f.setPdfMode(true);
+    f.viewer.emit('touchstart',{touches:[start],target:{closest:()=>null}});
+    f.setPdfMode(false);
+    f.viewer.emit('touchmove',{touches:[{...start,clientX:160,clientY:192}]});
+    f.setPdfMode(true);
+    f.advance(180);
+    f.viewer.emit('touchend',{touches:[],changedTouches:[
+      {...start,clientX:90,clientY:193}],defaultPrevented:false});
+    assert.equal(f.next.clicks,0);
+    f.swipe(-130,3);
+    assert.equal(f.next.clicks,1);
+  }finally{f.release()}
+});
 test('V118 : notification de changement sans nouveau numéro annule un toucher PDF',()=>{
   const f=fixture();
   try{
@@ -269,6 +301,7 @@ function fixture({selected=false}={}){
       viewer.emit('touchmove',{touches:[{identifier:7,clientX:x-16,clientY:190}]});
       node.scrollTop=before;
     }
+    if(options.switchPdfMode!==undefined)pdfMode=Boolean(options.switchPdfMode);
     if(options.changePage)pageField.value=String(options.changePage);
     if(options.emitPageChange)viewer.emit('sinjira:reader-page-change');
     if(options.cancel)viewer.emit('touchcancel',{touches:[]});
@@ -951,7 +984,7 @@ test('intégration : les boutons mobiles reflètent le statut initial des bouton
 test('contrat HTML/CSS : module autonome et gestes expliqués',()=>{
   const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
-  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.15\.120/);
+  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.15\.122/);
   assert.match(html,/id="reader-touch-prev"/);
   assert.match(html,/id="reader-touch-next"/);
   assert.match(html,/aria-describedby="reader-swipe-help"/);
