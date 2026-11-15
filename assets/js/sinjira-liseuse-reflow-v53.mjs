@@ -766,11 +766,25 @@ export function bindReaderResponsivePanels({media,panels=[]}={}){
       summary.removeEventListener?.('click',listener);
   };
 }
+/** V112: le lien mobile suit seulement l'état du livre contrôlé par V26. */
+export function bindReaderQuickAccess({
+  link,content,Observer=typeof MutationObserver!=='undefined'?MutationObserver:null
+}={}){
+  if(!link||!content)return ()=>{};
+  const sync=()=>{link.hidden=Boolean(content.hidden)};
+  const observer=Observer?new Observer(sync):null;
+  observer?.observe(content,{attributes:true,attributeFilter:['hidden']});
+  sync();
+  return ()=>observer?.disconnect();
+}
 function initReaderScreens(){
   const id=name=>document.getElementById(name);
   const required=['reader-viewer','reader-text','reader-previous','reader-next',
     'reader-screens-enabled','reader-screen-count','reader-page'];
   if(required.some(name=>!id(name)))return;
+  bindReaderQuickAccess({
+    link:id('reader-mobile-read-link'),content:id('reader-content')
+  });
   // Les panneaux sont initialement fermés en HTML : zéro flash de menus
   // dépliés sur téléphone, y compris si le moteur est chargé tardivement.
   bindReaderResponsivePanels({

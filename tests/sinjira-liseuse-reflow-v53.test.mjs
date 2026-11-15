@@ -4,12 +4,39 @@ import {readFileSync} from 'node:fs';
 import {
   measureReaderScreen,readerScreenState,planReaderScreenTurn,bindReaderScreenMode,parseReaderLineHeight,
   captureReaderTextAnchor,restoreReaderTextAnchor,classifyReaderEdgeTap,
-  prepareReaderPreferencePanels,bindReaderResponsivePanels,
+  prepareReaderPreferencePanels,bindReaderResponsivePanels,bindReaderQuickAccess,
   formatReaderMobileLocation,formatReaderAccessibleLocation
 } from '../assets/js/sinjira-liseuse-reflow-v53.mjs';
 
 const setup={scrollHeight:1050,clientHeight:350,lineHeight:35};
 
+test('V112 : lien de lecture mobile masqué tant que V26 masque le livre',()=>{
+  const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
+  assert.match(html,/id="reader-mobile-read-link" href="#reader-viewer" hidden/);
+  assert.match(css,/\.reader-mobile-read-link\[hidden\]\{display:none!important\}/);
+  const link={hidden:false},content={hidden:true};
+  let callback=null,disconnected=false,observed=null;
+  class FakeObserver{
+    constructor(fn){callback=fn}
+    observe(node,options){observed={node,options}}
+    disconnect(){disconnected=true}
+  }
+  const release=bindReaderQuickAccess({link,content,Observer:FakeObserver});
+  try{
+    assert.equal(link.hidden,true);
+    assert.equal(observed.node,content);
+    assert.deepEqual(observed.options,{attributes:true,attributeFilter:['hidden']});
+    content.hidden=false;callback();
+    assert.equal(link.hidden,false);
+    content.hidden=true;callback();
+    assert.equal(link.hidden,true);
+    content.hidden=false;callback();
+    assert.equal(link.hidden,false);
+  }finally{release()}
+  assert.equal(disconnected,true);
+  assert.equal(typeof bindReaderQuickAccess({}), 'function');
+});
 test('V111 : bascule ordinateur-tablette protège les choix de réglages volontaires',()=>{
   function fakeTarget(){
     const hooks=new Map();
@@ -57,7 +84,7 @@ test('V110 : les réglages mobiles sont repliés au premier rendu, jamais verrou
   assert.match(html,/<details class="reader-settings">/);
   assert.match(html,/<details class="reader-audio-settings">/);
   assert.doesNotMatch(html,/<details class="reader-(?:settings|audio-settings)" open>/);
-  assert.match(html,/class="reader-mobile-read-link" href="#reader-viewer"/);
+  assert.match(html,/class="reader-mobile-read-link" id="reader-mobile-read-link" href="#reader-viewer"/);
   assert.match(css,/\.reader-mobile-read-link:focus-visible/);
   assert.match(css,/\.reader-mobile-read-link\{[\s\S]*?min-height:48px/);
   const font={open:false},voice={open:false};
@@ -1488,7 +1515,7 @@ test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
   assert.match(h,/id="reader-screen-count"/);
-  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.14\.111/);
+  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.14\.112/);
   assert.match(h,/sinjira-liseuse-v26\.js\?v=34\.11\.14\.102/);
 });
 test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=>{

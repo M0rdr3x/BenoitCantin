@@ -443,6 +443,7 @@
 /* V110 — accès direct au roman sans faire défiler deux formulaires ouverts.
    Cible tactile >=44px, lisible au clavier, invisible sur grand écran. */
 .sinjira-liseuse .reader-mobile-read-link{display:none}
+.sinjira-liseuse .reader-mobile-read-link[hidden]{display:none!important}
 @media(max-width:980px){
   .sinjira-liseuse .reader-mobile-read-link{
     display:flex;
