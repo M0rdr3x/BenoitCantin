@@ -166,23 +166,46 @@ def run(playwright, browser_type, url):
         assert jump_label.is_visible(),("V105 : l'étiquette du curseur est invisible en pagination")
         jump_forward=page.evaluate("""()=>{
           const el=document.querySelector('#reader-screen-jump');
-          el.value='3';el.dispatchEvent(new Event('input',{bubbles:true}));
           const v=document.querySelector('#reader-viewer');
-          return {source:document.querySelector('#reader-page').value,
+          window.__v106JumpSignals=0;
+          v.addEventListener('sinjira:reader-screen-turn',()=>{
+            window.__v106JumpSignals++;
+          });
+          for(const screen of ['2','3','2','3']){
+            el.value=screen;
+            el.dispatchEvent(new Event('input',{bubbles:true}));
+          }
+          const preview={top:v.scrollTop,signals:window.__v106JumpSignals,
+            status:document.querySelector('#reader-screen-count').textContent,
+            accessible:el.getAttribute('aria-valuetext')};
+          el.dispatchEvent(new Event('change',{bubbles:true}));
+          return {preview,source:document.querySelector('#reader-page').value,
             top:v.scrollTop,max:v.scrollHeight-v.clientHeight,
-            range:el.value,accessible:el.getAttribute('aria-valuetext'),
+            signals:window.__v106JumpSignals,range:el.value,
+            accessible:el.getAttribute('aria-valuetext'),
             label:document.querySelector('#reader-touch-location').textContent};
         }""")
+        assert jump_forward["preview"]["top"]<2 and jump_forward["preview"]["signals"]==0,(
+            "V106 : le curseur déclenche une sauvegarde avant relâche",jump_forward)
+        assert "relâcher" in jump_forward["preview"]["accessible"],jump_forward
         assert jump_forward["source"]=="3" and jump_forward["top"]>100 and (
-            jump_forward["range"]=="3"
+            jump_forward["range"]=="3" and jump_forward["signals"]==1
         ),jump_forward
         assert "Écran 3 sur " in jump_forward["accessible"],jump_forward
         assert jump_forward["label"].startswith("Écr. 3/"),jump_forward
-        page.evaluate("""()=>{
+        jump_back=page.evaluate("""()=>{
           const el=document.querySelector('#reader-screen-jump');
-          el.value='1';el.dispatchEvent(new Event('input',{bubbles:true}));
+          const viewer=document.querySelector('#reader-viewer');
+          el.value='1';
+          el.dispatchEvent(new Event('input',{bubbles:true}));
+          const preview=viewer.scrollTop;
+          el.dispatchEvent(new Event('change',{bubbles:true}));
+          return {preview,top:viewer.scrollTop,
+            signals:window.__v106JumpSignals};
         }""")
-        assert snapshot(page)["scroll"]==0,snapshot(page)
+        assert jump_back["preview"]>100 and jump_back["top"]<2 and (
+            jump_back["signals"]==2
+        ),jump_back
         assert snapshot(page)["page"]==3,snapshot(page)
         assert not rejected,rejected
 
