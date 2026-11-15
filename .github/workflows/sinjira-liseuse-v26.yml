@@ -19,6 +19,9 @@ on:
       - 'assets/js/sinjira-reads-v24-4-61.js'
       - 'assets/css/sinjira-liseuse-v26.css'
       - 'scripts/validate_sinjira_liseuse_v26.py'
+      - 'supabase/functions/get-novel-file-url/**'
+      - 'supabase/config.toml'
+      - 'scripts/validate_get_novel_file_url_security.py'
       - '.github/workflows/sinjira-liseuse-v26.yml'
   push:
     branches: [main]
@@ -38,6 +41,9 @@ on:
       - 'assets/js/sinjira-reads-v24-4-61.js'
       - 'assets/css/sinjira-liseuse-v26.css'
       - 'scripts/validate_sinjira_liseuse_v26.py'
+      - 'supabase/functions/get-novel-file-url/**'
+      - 'supabase/config.toml'
+      - 'scripts/validate_get_novel_file_url_security.py'
       - '.github/workflows/sinjira-liseuse-v26.yml'
   workflow_dispatch:
 
@@ -74,3 +80,7 @@ jobs:
         run: python3 scripts/validate_sinjira_livre_i_delivery.py
       - name: Vérifier les droits numériques en lecture seule
         run: python3 scripts/validate_livre_i_entitlement_boundary.py
+      - name: Auto-tester la frontière du roman privé
+        run: python3 scripts/validate_get_novel_file_url_security.py --self-test
+      - name: Vérifier les requêtes, le JWT et les droits de lecture des romans
+        run: python3 scripts/validate_get_novel_file_url_security.py
