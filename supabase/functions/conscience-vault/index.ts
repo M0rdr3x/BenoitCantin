@@ -1,10 +1,12 @@
 import { corsHeaders } from '../_shared/cors.ts';
+import { readChunkWithDeadline } from '../_shared/read-chunk-deadline.mjs';
 import { requiredVaultUser } from '../_shared/auth.ts';
 
 const MAX_CONTENT_BYTES = 1024 * 1024;
 // Un JSON peut représenter un même texte avec des séquences \uXXXX plus longues.
 // La limite de transport reste bornée tout en permettant une entrée décodée de 1 Mio.
 const MAX_REQUEST_BYTES = MAX_CONTENT_BYTES * 6 + 64 * 1024;
+const BODY_READ_TIMEOUT_MS = 8_000;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const PRIVATE_HEADERS = {
   ...corsHeaders,
@@ -24,23 +26,24 @@ async function readBoundedJson(req: Request) {
   if (contentType !== 'application/json') throw new Error('JSON_REQUIRED');
 
   const declaredRaw = req.headers.get('content-length');
-  if (declaredRaw) {
-    const declared = Number(declaredRaw);
-    if (Number.isFinite(declared) && declared > MAX_REQUEST_BYTES) throw new Error('REQUEST_TOO_LARGE');
-  }
+  if (declaredRaw !== null &&
+      (!/^(0|[1-9][0-9]*)$/.test(declaredRaw) ||
+       !Number.isSafeInteger(Number(declaredRaw)) ||
+       Number(declaredRaw) > MAX_REQUEST_BYTES)) throw new Error('REQUEST_TOO_LARGE');
 
   if (!req.body) throw new Error('INVALID_JSON');
   const reader = req.body.getReader();
+  const deadlineAt = performance.now() + BODY_READ_TIMEOUT_MS;
   const chunks: Uint8Array[] = [];
   let total = 0;
   try {
     while (true) {
-      const { value, done } = await reader.read();
+      const { value, done } = await readChunkWithDeadline(reader, req.signal, deadlineAt);
       if (done) break;
       if (!value) continue;
       total += value.byteLength;
       if (total > MAX_REQUEST_BYTES) {
-        await reader.cancel('REQUEST_TOO_LARGE').catch(() => undefined);
+        void reader.cancel('REQUEST_TOO_LARGE').catch(() => undefined);
         throw new Error('REQUEST_TOO_LARGE');
       }
       chunks.push(value);
@@ -183,6 +186,7 @@ function errorCode(error: unknown) {
     'MFA_STATE_UNAVAILABLE',
     'JSON_REQUIRED',
     'REQUEST_TOO_LARGE',
+    'REQUEST_TIMEOUT',
     'INVALID_JSON',
     'CLIENT_IDENTITY_FORBIDDEN',
     'VAULT_SESSION_REQUIRED',
@@ -376,6 +380,9 @@ Deno.serve(async (req) => {
     }
     if (code === 'REQUEST_TOO_LARGE') {
       return privateJson({ ok: false, error: 'Requête trop volumineuse.', code }, 413);
+    }
+    if (code === 'REQUEST_TIMEOUT') {
+      return privateJson({ ok: false, error: 'Délai de transmission dépassé.', code }, 408);
     }
     if (code === 'INVALID_JSON') {
       return privateJson({ ok: false, error: 'JSON invalide.', code }, 400);
