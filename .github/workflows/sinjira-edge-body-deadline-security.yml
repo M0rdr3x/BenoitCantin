@@ -7,6 +7,8 @@ on:
       - 'supabase/functions/_shared/read-chunk-deadline.mjs'
       - 'supabase/functions/personal-ai/index.ts'
       - 'supabase/functions/conscience-vault/index.ts'
+      - 'supabase/functions/nova-civic-poll/index.ts'
+      - 'scripts/test_nova_poll_body_read.cjs'
       - 'scripts/test_edge_body_deadline.mjs'
       - '.github/workflows/sinjira-edge-body-deadline-security.yml'
   push:
@@ -15,6 +17,8 @@ on:
       - 'supabase/functions/_shared/read-chunk-deadline.mjs'
       - 'supabase/functions/personal-ai/index.ts'
       - 'supabase/functions/conscience-vault/index.ts'
+      - 'supabase/functions/nova-civic-poll/index.ts'
+      - 'scripts/test_nova_poll_body_read.cjs'
       - 'scripts/test_edge_body_deadline.mjs'
       - '.github/workflows/sinjira-edge-body-deadline-security.yml'
   workflow_dispatch:
@@ -36,3 +40,4 @@ jobs:
         run: |
           node --version
           node --test scripts/test_edge_body_deadline.mjs
+          node scripts/test_nova_poll_body_read.cjs
