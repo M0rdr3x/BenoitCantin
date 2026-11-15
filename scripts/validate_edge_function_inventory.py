@@ -84,7 +84,8 @@ JWT_SENSITIVE_GUARDS = {
     ),
     "get-novel-file-url": (
         "req.method==='OPTIONS'", "req.method!=='POST'", "MAX_REQUEST_BYTES=2048",
-        "readBoundedJson", "req.body.getReader()", "REQUEST_TOO_LARGE", "INVALID_JSON",
+        "readBoundedJson", "collectNovelBodyBytes", "REQUEST_TOO_LARGE", "REQUEST_INTERRUPTED", "INVALID_JSON",
+        "privateBookLocationValid", "isVerifiedPrivateBucket", "service.storage.getBucket",
         "requiredUser(req)", "sinjira_novels", "is_sinjira_owner", "is_sinjira_admin",
         "user_entitlements", "file_ready", "createSignedUrl", "expires_in:600",
         "Cache-Control", "private, no-store", "X-Content-Type-Options", "nosniff",
@@ -322,6 +323,44 @@ def main() -> int:
                 errors.append(f"{slug}: garde-fou HTTP/destructif manquant: {marker}.")
         if "await req.json()" in source or "await req.json (" in source:
             errors.append(f"{slug}: lecture JSON directe non bornée interdite.")
+
+    # Le lecteur de romans est désormais partagé : vérifier que la vraie
+    # implémentation reste bornée et annulable, plutôt que chercher un
+    # getReader() intégré à l'endpoint (garde legacy devenu incorrect).
+    novel_entry = read_security_text(FUNCTIONS / "get-novel-file-url" / "index.ts")
+    novel_reader = read_security_text(FUNCTIONS / "_shared" / "novel-request-bytes.mjs")
+    for marker in (
+        "export async function collectNovelBodyBytes",
+        "req.body.getReader()",
+        "await reader.read()",
+        "value.byteLength > maxBytes - total",
+        "const deadline = setTimeout(interrupt, timeoutMs);",
+        "req.signal.addEventListener('abort', interrupt, {once:true});",
+        "void reader.cancel().catch(() => {});",
+        "if (interrupted || req.signal.aborted) throw new Error('REQUEST_INTERRUPTED');",
+        "clearTimeout(deadline);",
+        "req.signal.removeEventListener('abort', interrupt);",
+        "reader.releaseLock();",
+    ):
+        if marker not in novel_reader:
+            errors.append(f"get-novel-file-url: protection du lecteur partagé absente: {marker}.")
+    if "novel-request-bytes.mjs" not in novel_entry or (
+            "collectNovelBodyBytes(req,MAX_REQUEST_BYTES)" not in novel_entry):
+        errors.append("get-novel-file-url: lecteur partagé borné non utilisé.")
+    if "await req.text()" in novel_entry or "await req.json()" in novel_entry:
+        errors.append("get-novel-file-url: lecture JSON directe non bornée interdite.")
+    novel_auth = novel_entry.find("const user=await requiredUser(req);")
+    novel_parse = novel_entry.find("const body=await readBoundedJson(req);")
+    novel_read = novel_entry.find("const bytes=await collectNovelBodyBytes(req,MAX_REQUEST_BYTES);")
+    if not (0 <= novel_auth < novel_parse):
+        errors.append("get-novel-file-url: authentification avant lecture obligatoire.")
+    if not (0 <= novel_read < novel_parse):
+        # readBoundedJson est une fonction nommée ; son invocation se trouve
+        # nécessairement après la définition, qui contient le lecteur.
+        # Contrôler l'appel dans la définition, pas l'ordre dans le fichier.
+        inside = novel_entry.split("async function readBoundedJson(req:Request)", 1)
+        if len(inside) != 2 or "const bytes=await collectNovelBodyBytes(req,MAX_REQUEST_BYTES);" not in inside[1].split("\nDeno.serve(", 1)[0]:
+            errors.append("get-novel-file-url: le parseur JSON doit appeler le lecteur borné.")
 
     for slug, (auth, consumer) in STREAMED_REQUEST_ROUTES.items():
         src = read_security_text(FUNCTIONS / slug / "index.ts")

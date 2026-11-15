@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
+from html.parser import HTMLParser
+import re
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -23,7 +25,57 @@ def forbid(text: str, markers: list[str], label: str) -> None:
         raise AssertionError(f'{label}: marqueurs interdits: {found}')
 
 
+class ScriptSourceCollector(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.sources: list[tuple[str, str]] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag == 'script':
+            attributes = dict(attrs)
+            self.sources.append((attributes.get('src') or '', attributes.get('type') or ''))
+
+
+def require_fresh_security_script(page: str) -> None:
+    """Assurer une unique référence de module authentique, avec cache-bust non obsolète."""
+    parser = ScriptSourceCollector()
+    parser.feed(page)
+    parser.close()
+    candidates = [(url, kind) for url, kind in parser.sources if 'v24-security.js' in url]
+    if len(candidates) != 1:
+        raise AssertionError('interface sécurité sessions: module v24-security.js absent ou dupliqué')
+    url, kind = candidates[0]
+    match = re.fullmatch(r'\.\./assets/js/v24-security\.js\?v=(\d+)\.(\d+)\.(\d+)', url)
+    if not match:
+        raise AssertionError('interface sécurité sessions: URL du module de sécurité non canonique')
+    if kind != 'module':
+        raise AssertionError('interface sécurité sessions: le script TOTP doit être exécuté en module')
+    if tuple(map(int, match.groups())) < (24, 4, 69):
+        raise AssertionError('interface sécurité sessions: version obsolète du module TOTP')
+
+
+def self_test() -> None:
+    """Mutations synthétiques : la CI doit refuser une régression du chargement MFA."""
+    safe = '<script src="../assets/js/v24-security.js?v=24.4.70" type="module"></script>'
+    require_fresh_security_script(safe)
+    mutations = {
+        'module absent': '<script src="../assets/js/site.js?v=1" type="module"></script>',
+        'module dupliqué': safe + safe,
+        'version TOTP révoquée': safe.replace('24.4.70', '24.4.68'),
+        'script distant': safe.replace('../assets/js/', 'https://untrusted.example/'),
+        'version flottante': safe.replace('?v=24.4.70', '?v=latest'),
+        'module désactivé': safe.replace('type="module"', 'type="text/javascript"'),
+    }
+    for label, invalid in mutations.items():
+        try:
+            require_fresh_security_script(invalid)
+        except AssertionError:
+            continue
+        raise AssertionError(f'Auto-test défectueux: régression non détectée : {label}')
+
+
 def main() -> int:
+    self_test()
     core = read('assets/js/sinjira-supabase.js')
     security = read('assets/js/v24-security.js')
     page = read('compte/securite.html')
@@ -52,8 +104,9 @@ def main() -> int:
         'Déconnecter tous les appareils',
         'Déconnexion ordinaire limitée à l’appareil courant.',
         'sinjira-account.js?v=24.4.68',
-        'v24-security.js?v=24.4.69',
     ], 'interface sécurité sessions')
+
+    require_fresh_security_script(page)
 
     # Une ancienne URL de cache pourrait masquer la correction TOTP déployée.
     forbid(page, [
