@@ -132,8 +132,12 @@ def run(playwright, browser_type, url):
         assert "LIVRE DE TEST · Page 3" in first["text"]
         # V102 : l'emplacement du lecteur est visible dans les commandes
         # mobiles et indépendant des extraits privés du texte.
+        # La démo réelle possède 82 pages ; la fixture simplifiée en a 5.
+        # Ne jamais figer le nombre de pages dans ce test de page réelle.
+        source_pages=page.locator("#reader-total").text_content().strip()
+        assert source_pages.isdecimal() and int(source_pages)>=5,source_pages
         hint_start=page.locator("#reader-touch-location").text_content()
-        assert hint_start.startswith("Écr. 1/") and "p. 3 / 5" in hint_start,(
+        assert hint_start.startswith("Écr. 1/") and f"p. 3 / {source_pages}" in hint_start,
             "V102 : lecture sans repère de progression",hint_start
         )
         assert not rejected,rejected
@@ -190,7 +194,7 @@ def run(playwright, browser_type, url):
             "trace":page.evaluate("window.__readerSwipeTrace")}
         assert second["scroll"]>first["scroll"],(first,second)
         hint_next=page.locator("#reader-touch-location").text_content()
-        assert hint_next.startswith("Écr. 2/") and "p. 3 / 5" in hint_next,(
+        assert hint_next.startswith("Écr. 2/") and f"p. 3 / {source_pages}" in hint_next,
             "V102 : barre de progression non actualisée après le swipe",
             hint_start,hint_next
         )
@@ -248,7 +252,7 @@ def run(playwright, browser_type, url):
         page.locator("#reader-mode").click()
         page.wait_for_function("""()=>document.querySelector('#reader-text').hidden===true""")
         before_pdf=snapshot(page)
-        assert page.locator("#reader-touch-location").text_content()=="PDF · p. 3 / 5"
+        assert page.locator("#reader-touch-location").text_content()==f"PDF · p. 3 / {source_pages}"
         swipe(page,-130)
         page.wait_for_function("""before=>Number(document.querySelector('#reader-page').value)===before+1""",
                                arg=before_pdf["page"])
@@ -315,7 +319,7 @@ def run(playwright, browser_type, url):
         assert pdf_right["page"]==4 and pdf_right["layout"]=="scroll",pdf_right
         assert pdf_right["clickCounts"]=={"next":1,"previous":1},pdf_right
         assert snapshot(page)["page"]==4,snapshot(page)
-        assert page.locator("#reader-touch-location").text_content()=="PDF · p. 4 / 5"
+        assert page.locator("#reader-touch-location").text_content()==f"PDF · p. 4 / {source_pages}"
 
         # V99 : les tests V98 construisent des TouchEvent. Vérifier EN PLUS
         # une vraie séquence tactile du navigateur mobile Playwright, avec
@@ -476,7 +480,7 @@ def run(playwright, browser_type, url):
             nextHeight:next.getBoundingClientRect().height};
         }""")
         assert narrow["mode"]=="grid" and narrow["hint"]!="none",narrow
-        assert narrow["label"]=="PDF · p. 4 / 5",narrow
+        assert narrow["label"]==f"PDF · p. 4 / {source_pages}",narrow
         assert narrow["width"]<=323,narrow
         assert narrow["barTop"]>=0 and narrow["barBottom"]<=569,narrow
         assert narrow["top"]>=narrow["barTop"] and narrow["bottom"]<=569,narrow
