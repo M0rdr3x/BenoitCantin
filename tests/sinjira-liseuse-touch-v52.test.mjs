@@ -6,6 +6,35 @@ import {classifyReaderSwipe,classifyReaderEdgeTap,bindReaderTouchNavigation,isRe
 const gesture=(overrides={})=>classifyReaderSwipe({
   dx:-92,dy:8,durationMs:240,viewerWidth:375,...overrides
 });
+test('V117 : changement de page pendant un swipe PDF interdit le tournage',()=>{
+  const f=fixture();
+  try{
+    f.setPdfMode(true);
+    f.swipe(-130,2,{changePage:'4'});
+    f.swipe(130,2,{changePage:'5'});
+    assert.equal(f.next.clicks,0);
+    assert.equal(f.previous.clicks,0);
+    f.swipe(-130,2);
+    assert.equal(f.next.clicks,1);
+  }finally{f.release()}
+});
+test('V117 : changement de page pendant un drag souris PDF annule le geste',()=>{
+  const f=fixture();
+  const pointer=(name,x)=>f.viewer.emit(name,{
+    pointerType:'mouse',pointerId:145,button:0,buttons:1,isPrimary:true,
+    clientX:x,clientY:190,target:f.canvas,defaultPrevented:false,
+    preventDefault(){this.defaultPrevented=true}
+  });
+  try{
+    f.setPdfMode(true);
+    pointer('pointerdown',260);pointer('pointermove',170);
+    f.pageField.value='4';f.advance(180);pointer('pointerup',80);
+    assert.equal(f.next.clicks,0);
+    pointer('pointerdown',260);pointer('pointermove',180);
+    f.advance(180);pointer('pointerup',100);
+    assert.equal(f.next.clicks,1);
+  }finally{f.release()}
+});
 test('V116 : une trajectoire contradictoire ne tourne pas le PDF',()=>{
   assert.equal(gesture({dx:-130,maxRightTravel:80}),null);
   assert.equal(gesture({dx:130,maxLeftTravel:80}),null);
@@ -104,12 +133,13 @@ function target(){
 function fixture({selected=false}={}){
   const viewer=target(),previous=target(),next=target(),
         mobilePrevious=target(),mobileNext=target(),canvas=target();
+  const pageField={value:'3'};
   canvas.id='reader-canvas';
   let time=0,selection=selected?'Sélection de citation':'',pdfMode=false;
   viewer.querySelector=sel=>sel==='#reader-text'?{hidden:pdfMode}:
     sel==='#reader-canvas'?canvas:null;
   const release=bindReaderTouchNavigation({
-    viewer,previous,next,mobilePrevious,mobileNext,
+    viewer,previous,next,mobilePrevious,mobileNext,pageField,
     getSelectedText:()=>selection,clock:()=>time,Observer:null
   });
   const swipe=(dx,dy=5,options={})=>{
@@ -141,6 +171,7 @@ function fixture({selected=false}={}){
       viewer.emit('touchmove',{touches:[{identifier:7,clientX:x-16,clientY:190}]});
       node.scrollTop=before;
     }
+    if(options.changePage)pageField.value=String(options.changePage);
     if(options.cancel)viewer.emit('touchcancel',{touches:[]});
     if(options.moveMultiple)viewer.emit('touchmove',{touches:[touch,{identifier:8}]});
     viewer.emit('touchend',{touches:[],changedTouches:[{
@@ -148,7 +179,7 @@ function fixture({selected=false}={}){
       clientX:x+dx,clientY:190+dy
     }],defaultPrevented:Boolean(options.prevented)});
   };
-  return {viewer,canvas,previous,next,mobilePrevious,mobileNext,release,swipe,
+  return {viewer,canvas,previous,next,mobilePrevious,mobileNext,pageField,release,swipe,
     advance:ms=>{time+=ms},
     setSelected:v=>{selection=v},setPdfMode:v=>{pdfMode=v}};
 }
@@ -821,7 +852,7 @@ test('intégration : les boutons mobiles reflètent le statut initial des bouton
 test('contrat HTML/CSS : module autonome et gestes expliqués',()=>{
   const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
-  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.15\.116/);
+  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.15\.117/);
   assert.match(html,/id="reader-touch-prev"/);
   assert.match(html,/id="reader-touch-next"/);
   assert.match(html,/aria-describedby="reader-swipe-help"/);

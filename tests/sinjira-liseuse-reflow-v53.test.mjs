@@ -447,6 +447,26 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
     flushFrames,getStatusWrites:()=>statusWrites,
     setSelected:v=>{selected=v}};
 }
+test('V117 : changer la page pendant un swipe ne tourne pas le nouveau roman',()=>{
+  const f=fixture();
+  try{
+    const start={identifier:19,clientX:255,clientY:160};
+    f.viewer.emit('touchstart',{touches:[start],target:{closest:()=>null}});
+    f.pageField.value='5';
+    let prevented=false;
+    f.viewer.emit('touchend',{
+      touches:[],changedTouches:[{...start,clientX:110,clientY:163}],
+      defaultPrevented:false,preventDefault(){prevented=true}
+    });
+    assert.equal(prevented,false);
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(f.next.clicks,0);
+    assert.equal(f.previous.clicks,0);
+    const fresh=f.swipe(-130,3);
+    assert.equal(fresh.defaultPrevented,true);
+    assert.ok(f.viewer.scrollTop>0);
+  }finally{f.restore()}
+});
 test('V116 : un doigt qui revient sur sa trajectoire ne tourne pas l écran',()=>{
   const f=fixture();
   try{
@@ -1602,7 +1622,7 @@ test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
   assert.match(h,/id="reader-screen-count"/);
-  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.15\.116/);
+  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.15\.117/);
   assert.match(h,/sinjira-liseuse-v26\.js\?v=34\.11\.14\.102/);
 });
 test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=>{
@@ -1615,8 +1635,8 @@ test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=
 test('V52 singleton: import V53 et script HTML ont exactement la même URL cache-bustée',()=>{
   const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   const module=readFileSync(new URL('../assets/js/sinjira-liseuse-reflow-v53.mjs',import.meta.url),'utf8');
-  const htmlUrl='/assets/js/sinjira-liseuse-touch-v52.mjs?v=52.11.15.116';
-  const importedUrl='./sinjira-liseuse-touch-v52.mjs?v=52.11.15.116';
+  const htmlUrl='/assets/js/sinjira-liseuse-touch-v52.mjs?v=52.11.15.117';
+  const importedUrl='./sinjira-liseuse-touch-v52.mjs?v=52.11.15.117';
   assert.ok(html.includes('src="'+htmlUrl+'"'));
   assert.ok(module.includes("'"+importedUrl+"'"));
   assert.equal(html.split('sinjira-liseuse-touch-v52.mjs').length-1,1);

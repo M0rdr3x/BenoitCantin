@@ -184,7 +184,7 @@ function isInteractiveTarget(target){
 }
 
 export function bindReaderTouchNavigation({
-  viewer,previous,next,mobilePrevious=null,mobileNext=null,
+  viewer,previous,next,mobilePrevious=null,mobileNext=null,pageField=null,
   getSelectedText=()=>typeof window==='undefined'?'':String(window.getSelection?.()?.toString()||''),
   clock=()=>typeof performance!=='undefined'?performance.now():Date.now(),
   Observer=typeof MutationObserver!=='undefined'?MutationObserver:null
@@ -194,6 +194,9 @@ export function bindReaderTouchNavigation({
   // propriétaire du geste, que le lecteur soit en mode PDF ou écran texte.
   if(viewer.dataset)viewer.dataset.readerTouchManaged='v52';
   let origin=null,pointerOrigin=null;
+  // V117 : une fin de geste sur la page source remplacée est périmée.
+  // Valeur du champ de page, sans contenu de livre ou identité.
+  const currentPage=()=>pageField?.value==null?null:String(pageField.value);
   // V96 : les PDF (édition intégrale incluse) ne doivent pas changer de page
   // tant que le contenu parent est masqué ou que l'onglet est suspendu.
   const canNavigate=()=>!globalThis.document?.hidden&&
@@ -210,6 +213,7 @@ export function bindReaderTouchNavigation({
     }))return;
     origin={
       id:touch.identifier,x:touch.clientX,y:touch.clientY,time:clock(),
+      bookPage:currentPage(),
       scrollTop:viewer.scrollTop||0,maxVerticalTravel:0,maxTravel:0,maxLeftTravel:0,maxRightTravel:0,scrolled:false,
       pdfMode:viewer.querySelector?.('#reader-text')?.hidden===true,
       readerLayout:viewer.dataset?.readerLayout||'scroll',
@@ -225,6 +229,7 @@ export function bindReaderTouchNavigation({
     // départ ne doit jamais être interprété comme une page tournée.
     if(!origin)return;
     if(event.touches?.length!==1||isReaderViewportZoomed()||
+      origin.bookPage!==currentPage()||
       origin.readerLayout!==(viewer.dataset?.readerLayout||'scroll')||
       !isReaderSwipeGeometryStable(origin.geometry,captureReaderSwipeGeometry(viewer))){
       origin=null;return;
@@ -255,6 +260,7 @@ export function bindReaderTouchNavigation({
     // même si preventDefault() n'a pas été honoré sur un appareil tactile.
     if(viewer.dataset?.readerLayout==='screens')return;
     if(!initial||!canNavigate()||isReaderViewportZoomed()||
+      initial.bookPage!==currentPage()||
       initial.readerLayout!==(viewer.dataset?.readerLayout||'scroll')||
       !isReaderSwipeGeometryStable(initial.geometry,captureReaderSwipeGeometry(viewer))||
       event.touches?.length!==0||event.changedTouches?.length!==1)return;
@@ -311,6 +317,7 @@ export function bindReaderTouchNavigation({
     if(![event.clientX,event.clientY,event.pointerId].every(Number.isFinite))return;
     pointerOrigin={
       id:event.pointerId,x:event.clientX,y:event.clientY,time:clock(),
+      bookPage:currentPage(),
       scrollTop:viewer.scrollTop||0,maxVerticalTravel:0,maxLeftTravel:0,maxRightTravel:0,scrolled:false,
       geometry:captureReaderSwipeGeometry(viewer),
       readerLayout:viewer.dataset?.readerLayout||'scroll'
@@ -322,6 +329,7 @@ export function bindReaderTouchNavigation({
     const initial=pointerOrigin;
     if(!initial)return;
     if(!canNavigate()||!isPdfCanvas({target:viewer.querySelector?.('#reader-canvas')})||
+      initial.bookPage!==currentPage()||
       event.pointerId!==initial.id||event.pointerType!=='mouse'||
       event.buttons!==undefined&&event.buttons!==1||
       initial.readerLayout!==(viewer.dataset?.readerLayout||'scroll')||
@@ -342,6 +350,7 @@ export function bindReaderTouchNavigation({
     const initial=pointerOrigin;
     pointerOrigin=null;
     if(!initial||!canNavigate()||event.pointerType!=='mouse'||
+      initial.bookPage!==currentPage()||
       event.pointerId!==initial.id||event.button!==0||event.defaultPrevented||
       viewer.dataset?.readerLayout==='screens'||
       !viewer.querySelector?.('#reader-text')?.hidden||
@@ -428,7 +437,7 @@ function initTouchReader(){
   const next=document.getElementById('reader-next');
   if(!viewer||!previous||!next)return;
   bindReaderTouchNavigation({
-    viewer,previous,next,
+    viewer,previous,next,pageField:document.getElementById('reader-page'),
     mobilePrevious:document.getElementById('reader-touch-prev'),
     mobileNext:document.getElementById('reader-touch-next')
   });

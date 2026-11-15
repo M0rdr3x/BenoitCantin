@@ -5,7 +5,7 @@
  * du PDF courant ; une fois le texte terminé, tourner la vraie page du livre.
  * L'enregistrement d'emplacement reste le scroll_ratio historique de la V31.
  */
-import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally,classifyReaderEdgeTap} from './sinjira-liseuse-touch-v52.mjs?v=52.11.15.116';
+import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally,classifyReaderEdgeTap} from './sinjira-liseuse-touch-v52.mjs?v=52.11.15.117';
 
 const PREF_KEY='sinjira:liseuse:lecture-par-ecrans:v53';
 
@@ -412,6 +412,7 @@ export function bindReaderScreenMode({
     }
     gesture={
       id:touch.identifier,x:touch.clientX,y:touch.clientY,start:clock(),
+      bookPage:String(pageField.value),
       scrollTop:viewer.scrollTop,maxVerticalTravel:0,maxTravel:0,maxLeftTravel:0,maxRightTravel:0,scrolled:false,
       readerLayout:viewer.dataset?.readerLayout,
       geometry:captureReaderSwipeGeometry(viewer),
@@ -424,6 +425,7 @@ export function bindReaderScreenMode({
   const onTouchMove=event=>{
     if(!gesture)return;
     if(event.touches?.length!==1||!isPaged()||!canNavigate()||isReaderViewportZoomed()||
+      gesture.bookPage!==String(pageField.value)||
       gesture.readerLayout!==viewer.dataset?.readerLayout||
       !isReaderSwipeGeometryStable(gesture.geometry,captureReaderSwipeGeometry(viewer))){
       gesture=null;return;
@@ -467,6 +469,7 @@ export function bindReaderScreenMode({
   const onTouchEnd=event=>{
     const start=gesture;gesture=null;
     if(!start||!isPaged()||!canNavigate()||isReaderViewportZoomed()||
+      start.bookPage!==String(pageField.value)||
       start.readerLayout!==viewer.dataset?.readerLayout||
       !isReaderSwipeGeometryStable(start.geometry,captureReaderSwipeGeometry(viewer))||
       event.defaultPrevented||event.touches?.length!==0||
