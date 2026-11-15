@@ -19,11 +19,11 @@ begin
   if coalesce(auth.jwt()->>'role','') <> 'service_role' then
     raise exception 'SERVICE_ROLE_REQUIRED';
   end if;
-  if p_export_id is null or pg_catalog.jsonb_typeof(p_token_hashes) <> 'array' then
+  if p_export_id is null or pg_catalog.jsonb_typeof(p_token_hashes) is distinct from 'array' then
     raise exception 'INVALID_DELIVERY_LINKS';
   end if;
   v_count := pg_catalog.jsonb_array_length(p_token_hashes);
-  if v_count < 1 or v_count > 128 then
+  if v_count is null or v_count < 1 or v_count > 128 then
     raise exception 'INVALID_DELIVERY_LINKS';
   end if;
   if exists (
@@ -41,13 +41,13 @@ begin
   where e.id = p_export_id
   for update;
   if not found or v_export.status <> 'generated'
-      or v_export.storage_bucket <> 'sinjira-life-story-exports'
+      or v_export.storage_bucket is distinct from 'sinjira-life-story-exports'
       or coalesce(v_export.storage_path, '') = ''
       or v_export.source_boundary <> 'life_story_only'
       or v_export.registry_access_prohibited is distinct from true then
     raise exception 'EXPORT_NOT_GENERATED';
   end if;
-  if pg_catalog.jsonb_typeof(v_export.recipients_snapshot) <> 'array'
+  if pg_catalog.jsonb_typeof(v_export.recipients_snapshot) is distinct from 'array'
       or pg_catalog.jsonb_array_length(v_export.recipients_snapshot) <> v_count then
     raise exception 'RECIPIENT_SNAPSHOT_MISMATCH';
   end if;
