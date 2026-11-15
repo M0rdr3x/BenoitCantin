@@ -1,8 +1,11 @@
 import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredAdmin } from '../_shared/auth.ts';
+import { isVerifiedPrivateDocumentBucket, privateAdminDocumentUploadPath } from '../_shared/private-document-storage.mjs';
 
 const MAX_REQUEST_BYTES=32768;
+const DOCUMENT_BUCKET='sinjira-private-documents';
+const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const PRIVATE_HEADERS={
   ...corsHeaders,
   'Content-Type':'application/json; charset=utf-8',
@@ -96,20 +99,37 @@ Deno.serve(async(req)=>{
     }
 
     if(action==='prepare_document_upload'){
-      const x=body.document||{},original=safeName(x.filename||'document.pdf');
+      // Ne faire confiance ni au nom du bucket ni au slug envoyés par le client.
+      const x=body.document||{};
+      const projectId=typeof x.project_id==='string'?x.project_id:'';
+      if(!UUID_RE.test(projectId))return privateJson({ok:false,error:'Projet de document invalide.',code:'DOCUMENT_PROJECT_INVALID'},400);
+      const {data:project,error:projectError}=await service.from('projects')
+        .select('slug').eq('id',projectId).maybeSingle();
+      if(projectError||!project||typeof project.slug!=='string'){
+        return privateJson({ok:false,error:'Projet de document introuvable.',code:'DOCUMENT_PROJECT_INVALID'},400);
+      }
+      const original=safeName(x.filename||'document.pdf');
       const ext=original.includes('.')?original.split('.').pop():'bin';
-      const path=`${x.project_slug||'sinjira'}/${crypto.randomUUID()}/${safeName(x.title||'document')}.${ext}`;
-      const bucket='sinjira-private-documents';
+      const bucket=DOCUMENT_BUCKET;
+      const path=privateAdminDocumentUploadPath(bucket,project.slug,safeName(x.title||'document'),ext,crypto.randomUUID());
+      if(!path)return privateJson({ok:false,error:'Chemin de document invalide.',code:'DOCUMENT_UPLOAD_PATH_INVALID'},400);
+      // Une URL de téléversement signée ne protège PAS un bucket devenu public.
+      // Refuser avant toute signature et insertion en base si Storage est ambigu.
+      const {data:bucketMetadata,error:bucketMetadataError}=await service.storage.getBucket(bucket);
+      if(bucketMetadataError||!isVerifiedPrivateDocumentBucket(bucketMetadata,bucket)){
+        console.error('[admin-console]',{code:'DOCUMENT_UPLOAD_BUCKET_UNVERIFIED'});
+        return privateJson({ok:false,error:'Stockage privé indisponible.',code:'DOCUMENT_PRIVATE_STORAGE_UNAVAILABLE'},503);
+      }
       const {data:upload,error:uploadError}=await service.storage.from(bucket).createSignedUploadUrl(path);
-      if(uploadError||!upload?.token)throw uploadError||new Error('Token upload absent');
+      if(uploadError||!upload?.token)throw new Error('DOCUMENT_UPLOAD_SIGN_FAILED');
       const {data:row,error:rowError}=await service.from('documents').insert({
-        project_id:x.project_id,title:String(x.title||'').trim(),description:String(x.description||'').slice(0,5000),
+        project_id:projectId,title:String(x.title||'').trim(),description:String(x.description||'').slice(0,5000),
         document_type:x.document_type||'document',version:x.version||'1.0',status:'draft',
         access_level:x.access_level||'account',storage_bucket:bucket,storage_path:path,
         mime_type:x.mime_type||'application/octet-stream',file_size_bytes:Number(x.file_size_bytes||0)||null,
         sort_order:Number(x.sort_order||100),created_by:user.id
       }).select('*').single();
-      if(rowError){await service.storage.from(bucket).remove([path]);throw rowError}
+      if(rowError){await service.storage.from(bucket).remove([path]);throw new Error('DOCUMENT_UPLOAD_RECORD_FAILED')}
       return privateJson({ok:true,document:row,upload:{path,token:upload.token,bucket}});
     }
 
