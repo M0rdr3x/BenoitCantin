@@ -59,6 +59,11 @@ def check(sql: str, edge: str, test: str, workflow: str) -> list[str]:
     for label, marker in EDGE_MARKERS.items():
         if marker not in edge:
             errors.append("Edge: "+label)
+    # Le même garde doit protéger les DEUX flux: génération du PDF et liens.
+    # Un simple test "marker in edge" ne détecte pas sa perte dans un flux.
+    private_check = "await hasVerifiedPrivateLifeStoryBucket(service.storage)"
+    if edge.count(private_check) != 2:
+        errors.append("Edge: exactement deux gardes de bucket privé exigés")
     for forbidden in ("from('life_story_delivery_links').delete()",
                       "from('life_story_delivery_links').insert(",
                       "createSignedUrl(", "getPublicUrl("):
@@ -102,6 +107,12 @@ def self_test(sql,edge,test,workflow):
         if edge.count(marker)<1:
             raise AssertionError("Mutation Edge impossible: "+label)
         mutants.append((label,check(sql,edge.replace(marker,"/* interdit */",1),test,workflow)))
+    # Le second garde doit résister indépendamment d'une mutation du premier.
+    marker = "await hasVerifiedPrivateLifeStoryBucket(service.storage)"
+    pivot = edge.rfind(marker)
+    assert pivot > edge.find(marker), "Deux branches privées attendues"
+    mutated_link_guard = edge[:pivot] + "/* verification removed */" + edge[pivot+len(marker):]
+    mutants.append(("garde privé liens retiré",check(sql,mutated_link_guard,test,workflow)))
     mutants.append(("ancien DELETE",check(sql,edge+"\nfrom('life_story_delivery_links').delete()",test,workflow)))
     mutants.append(("ancien INSERT",check(sql,edge+"\nfrom('life_story_delivery_links').insert(",test,workflow)))
     mutants.append(("CI désactivée",check(sql,edge,test,workflow.replace(WORKFLOW_MARKERS[0],''))))
