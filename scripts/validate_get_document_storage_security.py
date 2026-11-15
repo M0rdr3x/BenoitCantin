@@ -58,6 +58,8 @@ def audit(edge: str, guard: str, config: str) -> list[str]:
             errors.append("Source documentaire interdit une primitive dangereuse : " + prohibited)
     if edge.count("createSignedUrl(") != 1 or edge.count("service.storage.getBucket(") != 1:
         errors.append("Exactement une vérification du bucket et une signature autorisées")
+    if edge.count("return privateJson({ok:false,error:'Stockage privé indisponible.'},503);") != 2:
+        errors.append("Les deux erreurs de configuration et de bucket doivent refuser la signature")
 
     gates = [
         "const service=serviceClient(),user=await optionalUser(req);",
@@ -92,7 +94,7 @@ def self_test(edge: str, guard: str, config: str) -> int:
         "bucket jamais consulté": ("service.storage.getBucket(doc.storage_bucket)", "Promise.resolve({data:{public:false}})"),
         "bucket public accepté": ("!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket)", "false"),
         "erreur bucket masquée": ("if(bucketMetadataError||!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket))", "if(false)"),
-        "refus 503 désactivé": ("return privateJson({ok:false,error:'Stockage privé indisponible.'},503);", "return privateJson({ok:true},200);"),
+        "refus 503 désactivé": ("      return privateJson({ok:false,error:'Stockage privé indisponible.'},503);\n    }\n\n    const {data:signed,error:signedError}=", "      return privateJson({ok:true},200);\n    }\n\n    const {data:signed,error:signedError}="),
         "TTL élargi": ("createSignedUrl(doc.storage_path,600)", "createSignedUrl(doc.storage_path,3600)"),
         "lien public Storage": ("createSignedUrl(doc.storage_path,600)", "getPublicUrl(doc.storage_path)"),
         "log brut": ("console.error('[get-document-url]',{code:'DOCUMENT_PRIVATE_BUCKET_UNVERIFIED'});", "console.error(bucketMetadataError);"),
