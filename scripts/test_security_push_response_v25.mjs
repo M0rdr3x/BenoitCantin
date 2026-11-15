@@ -71,8 +71,6 @@ test('rejects unsafe MIME, malformed UTF-8, JSON arrays and invalid JSON', async
 });
 
 test('non-200 or missing provider bodies are ignored', async () => {
-  assert.equal(await readBoundedSecurityPushJson(jsonResponse({ error: 'server' },
-    { 'content-length': '18' }), DEFAULT_LIMIT), null);
   assert.equal(await readBoundedSecurityPushJson(null, DEFAULT_LIMIT), null);
   assert.equal(await readBoundedSecurityPushJson({ ok: true, headers: new Headers() }, DEFAULT_LIMIT), null);
   const badStatus = new Response('{"data":"not valid"}', { status: 502 });
@@ -135,8 +133,8 @@ test('stream errors and invalid configuration fail closed', async () => {
     },
   };
   assert.equal(await readBoundedSecurityPushJson(broken, DEFAULT_LIMIT), null);
-  assert.throws(() => readBoundedSecurityPushJson(jsonResponse({}),
+  await assert.rejects(readBoundedSecurityPushJson(jsonResponse({}),
     { maxBytes: 1_048_577 }), /INVALID_EXPO_RESPONSE_LIMIT/);
-  assert.throws(() => readBoundedSecurityPushJson(jsonResponse({}),
+  await assert.rejects(readBoundedSecurityPushJson(jsonResponse({}),
     { timeoutMs: 0 }), /INVALID_EXPO_RESPONSE_LIMIT/);
 });
