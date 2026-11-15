@@ -153,6 +153,8 @@ def run(playwright, browser_type, url):
         # V104 : le curseur de navigation atteint une portion de texte
         # éloignée sans appeler les boutons de changement de page source.
         jump=page.locator("#reader-screen-jump")
+        jump_label=page.locator("#reader-screen-jump-label")
+        assert jump_label.is_visible(),("V105 : l'étiquette du curseur est invisible en pagination")
         page.wait_for_function("""()=>{
           const slider=document.querySelector('#reader-screen-jump');
           return !slider.hidden && Number(slider.max)>=4 && slider.value==='1';
@@ -294,6 +296,8 @@ def run(playwright, browser_type, url):
         assert page.locator("#reader-touch-location").text_content()==f"PDF · p. 3 / {source_pages}"
         assert page.locator("#reader-screen-jump").is_hidden(), (
             "V104: curseur d'écran affiché dans le PDF")
+        assert jump_label.is_hidden(), (
+            "V105 : étiquette orpheline visible alors que le PDF est actif")
         label_pdf=accessible_reader_label()
         assert f"PDF : page 3 sur {source_pages}" in label_pdf,label_pdf
         assert "texte adaptable" in label_pdf,label_pdf
