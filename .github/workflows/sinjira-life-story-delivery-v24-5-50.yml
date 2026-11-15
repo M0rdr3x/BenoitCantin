@@ -42,6 +42,15 @@ jobs:
       - name: Vérifier les limites mémoire et temporelles du PDF Histoire de vie privé
         run: node --test scripts/test_life_story_private_pdf_stream.mjs
 
+      - name: Tester le statut réel privé du bucket Histoire de vie
+        run: node --test scripts/test_life_story_private_bucket.mjs
+
+      - name: Tester les régressions sur le bucket personnel
+        run: python scripts/validate_life_story_private_bucket_security.py --self-test
+
+      - name: Refuser un export ou lien vers un bucket public
+        run: python scripts/validate_life_story_private_bucket_security.py
+
       - name: Auto-tester la sécurité HTTP de life-story-export
         run: python scripts/validate_life_story_export_request_security.py --self-test
 

@@ -1,5 +1,6 @@
 import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import { readPrivateLifeStoryPdf } from '../_shared/private-life-story-pdf.mjs';
+import { hasVerifiedPrivateLifeStoryBucket } from '../_shared/private-life-story-bucket.mjs';
 import { createClient } from 'npm:@supabase/supabase-js@2.119.0';
 
 const MAX_REQUEST_BYTES = 256;
@@ -107,6 +108,8 @@ Deno.serve(async (req) => {
       .eq('id', link.export_id)
       .maybeSingle();
     if (exportError || !record || !['generated', 'delivered'].includes(record.status) || record.storage_bucket !== 'sinjira-life-story-exports' || !record.storage_path) return errorResponse(req);
+    // Le jeton opaque ne suffit pas : refuser la remise si Storage est public.
+    if (!(await hasVerifiedPrivateLifeStoryBucket(service.storage))) return errorResponse(req, 410);
 
     // L'ancien storage.download() allouait le Blob entier AVANT de tester
     // file.size : une réponse Storage trop grande pouvait épuiser la mémoire.

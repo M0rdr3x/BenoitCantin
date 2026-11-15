@@ -2,6 +2,7 @@ import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import { PDFDocument, StandardFonts, rgb } from 'npm:pdf-lib@1.17.1';
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredAdmin } from '../_shared/auth.ts';
+import { hasVerifiedPrivateLifeStoryBucket } from '../_shared/private-life-story-bucket.mjs';
 
 const BUCKET = 'sinjira-life-story-exports';
 const DELIVERY_PAGE = 'https://www.benoitcantin.com/histoire-de-vie/remise.html';
@@ -157,6 +158,8 @@ Deno.serve(async (req) => {
       if (error) throw error;
       if (!record || !['prepared', 'generated'].includes(record.status)) throw new Error('EXPORT_NOT_GENERATABLE');
       assertLifeStoryBoundary(record);
+      // Ne générer aucun PDF si son bucket est devenu public ou invérifiable.
+      if (!(await hasVerifiedPrivateLifeStoryBucket(service.storage))) throw new Error('PRIVATE_STORAGE_UNVERIFIED');
       if (record.status === 'generated' && record.storage_path) return privateJson({ ok: true, export_id: exportId, status: 'generated', sha256: record.sha256 });
       const bytes = await buildPdf(record.content_snapshot);
       const digest = await sha256Hex(bytes);
@@ -173,6 +176,8 @@ Deno.serve(async (req) => {
       if (error) throw error;
       if (!record || record.status !== 'generated' || !record.storage_path) throw new Error('EXPORT_NOT_GENERATED');
       assertLifeStoryBoundary(record);
+      // Ne distribuer aucun jeton lorsque l'objet peut être lu publiquement.
+      if (!(await hasVerifiedPrivateLifeStoryBucket(service.storage))) throw new Error('PRIVATE_STORAGE_UNVERIFIED');
       const recipients = Array.isArray(record.recipients_snapshot) ? record.recipients_snapshot : [];
       if (!recipients.length) throw new Error('NO_RECIPIENTS');
       await service.from('life_story_delivery_links').delete().eq('export_id', exportId);

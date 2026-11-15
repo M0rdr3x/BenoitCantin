@@ -33,6 +33,9 @@ def validate_text(text: str) -> None:
         '        run: python scripts/validate_life_story_export_request_security.py --self-test\n',
         '        run: python scripts/validate_life_story_export_request_security.py\n',
         'node --test scripts/test_life_story_private_pdf_stream.mjs',
+        'node --test scripts/test_life_story_private_bucket.mjs',
+        'python scripts/validate_life_story_private_bucket_security.py --self-test',
+        'python scripts/validate_life_story_private_bucket_security.py\n',
         'python scripts/validate_life_story_delivery_v24_5_50.py',
         'python scripts/validate_edge_function_inventory.py',
         'python scripts/validate_life_story_legacy_v24_5_2.py',
@@ -123,6 +126,16 @@ def self_test(text: str) -> None:
         'garde export retiré': text.replace(
             '      - name: Vérifier la sécurité HTTP de life-story-export\n'
             '        run: python scripts/validate_life_story_export_request_security.py\n\n',
+            '',
+            1,
+        ),
+        'nouveau garde Storage privé retiré': text.replace(
+            '        run: python scripts/validate_life_story_private_bucket_security.py\n',
+            '',
+            1,
+        ),
+        'test garde bucket retiré': text.replace(
+            '        run: node --test scripts/test_life_story_private_bucket.mjs\n',
             '',
             1,
         ),
