@@ -82,6 +82,8 @@ def validate(path: Path) -> list[str]:
         for marker in required_atomic:
             if marker not in source:
                 errors.append('Garde life-story-export absent: rotation hash-only via SQL atomique.')
+        if not re.search(r'\bconst\s+tokenHash\s*=\s*await\s+sha256Hex\(raw\)\s*;', source):
+            errors.append('Garde life-story-export absent: le tokenHash doit être SHA-256 du jeton.')
         if "from('life_story_delivery_links').delete()" in source or (
             "from('life_story_delivery_links').insert(" in source
         ):
@@ -175,9 +177,11 @@ privateJson({});
 
         # Une variante atomique sûre doit aussi être acceptée par le validateur.
         atomic = safe.replace(
+            "  const tokenHash='b';",
+            "  const tokenHash = await sha256Hex(raw);",
+        ).replace(
             "  const rows=[{token_hash: tokenHash}];",
             "  const tokenHashes=[];\n"
-            "  const digest = await sha256Hex(raw);\n"
             "  tokenHashes.push(tokenHash);\n"
             "  const {data:rotation,error:rotationError}=await service.rpc("
             "'service_life_story_rotate_delivery_links', "
@@ -195,6 +199,9 @@ privateJson({});
         path.write_text(atomic.replace('p_token_hashes: tokenHashes', 'p_token_hashes: [raw]'), encoding='utf-8')
         if not any('rotation hash-only' in item for item in validate(path)):
             raise AssertionError('La RPC ne peut jamais recevoir les jetons bruts.')
+        path.write_text(atomic.replace('const tokenHash = await sha256Hex(raw);', 'const tokenHash = raw;'), encoding='utf-8')
+        if not any('doit être SHA-256' in item for item in validate(path)):
+            raise AssertionError('Un hash fictif ou un jeton non haché doit être refusé.')
 
         path.write_text(safe.replace('const parsed = await readLimitedJson(req);', 'const parsed = {body: await req.json()};'), encoding='utf-8')
         direct = validate(path)
