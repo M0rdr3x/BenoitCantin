@@ -212,7 +212,8 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
     next=mockTarget({disabled:lastBookPage}),
     mobilePrevious=mockTarget(),mobileNext=mockTarget(),
     toggle=mockTarget(),status=mockTarget(),pageField=mockTarget(),
-    mobileHint=mockTarget(),totalPages=mockTarget(),screenJump=mockTarget();
+    mobileHint=mockTarget(),totalPages=mockTarget(),
+    screenJump=mockTarget(),screenJumpLabel=mockTarget();
   totalPages.textContent='20';
   documentMock.activeElement=viewer; // le clavier du test possède le focus du livre
   const media=mockTarget();media.matches=true;
@@ -237,7 +238,7 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
   });
   const teardown=bindReaderScreenMode({
     viewer,text,previous,next,mobilePrevious,mobileNext,toggle,status,
-    pageField,mobileHint,totalPages,screenJump,media,getSelectionText:()=>selected,
+    pageField,mobileHint,totalPages,screenJump,screenJumpLabel,media,getSelectionText:()=>selected,
     clock:()=>now,raf,Observer:observe?FakeObserver:null
   });
   function restore(){
@@ -284,7 +285,8 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
     return finished;
   }
   return {viewer,text,previous,next,mobilePrevious,mobileNext,toggle,status,
-    pageField,mobileHint,totalPages,screenJump,documentMock,windowMock,media,restore,swipe,
+    pageField,mobileHint,totalPages,screenJump,screenJumpLabel,
+    documentMock,windowMock,media,restore,swipe,
     notifyText:()=>observed.find(x=>x.target===text)?.emit([{type:'childList'}]),
     flushFrames,getStatusWrites:()=>statusWrites,
     setSelected:v=>{selected=v}};
@@ -1111,6 +1113,45 @@ test('V61 : les raccourcis de lecture n’interceptent pas les flèches hors du 
     assert.equal(f.viewer.scrollTop,315);
   }finally{f.restore()}
 });
+test('V105 : le curseur et son libellé disparaissent ensemble selon le mode et la longueur',()=>{
+  const f=fixture();
+  try{
+    assert.equal(f.screenJump.hidden,false);
+    assert.equal(f.screenJumpLabel.hidden,false);
+    f.text.hidden=true;
+    f.viewer.emit('sinjira:reader-page-change',{});
+    assert.equal(f.screenJump.hidden,true);
+    assert.equal(f.screenJumpLabel.hidden,true);
+    f.text.hidden=false;
+    f.toggle.checked=false;
+    f.toggle.emit('change',{});
+    assert.equal(f.screenJump.hidden,true);
+    assert.equal(f.screenJumpLabel.hidden,true);
+    f.toggle.checked=true;
+    f.toggle.emit('change',{});
+    assert.equal(f.screenJump.hidden,false);
+    assert.equal(f.screenJumpLabel.hidden,false);
+    // Une courte page de texte tient en entier dans la zone visible.
+    f.viewer.scrollHeight=f.viewer.clientHeight;
+    f.viewer.scrollTop=0;
+    f.viewer.emit('scroll',{});
+    assert.equal(f.screenJump.hidden,true);
+    assert.equal(f.screenJumpLabel.hidden,true);
+    const source=f.pageField.value;
+    f.screenJump.value='2';
+    f.screenJump.emit('input',{target:f.screenJump});
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(f.pageField.value,source);
+    assert.equal(f.previous.clicks,0);
+    assert.equal(f.next.clicks,0);
+    // Un nouveau passage plus long restaure correctement la commande.
+    f.viewer.scrollHeight=1050;
+    f.viewer.emit('scroll',{});
+    assert.equal(f.screenJump.hidden,false);
+    assert.equal(f.screenJumpLabel.hidden,false);
+    assert.equal(f.screenJump.max,'4');
+  }finally{f.restore()}
+});
 test('V104 : curseur tactile navigue entre écrans sans changer le PDF',()=>{
   const f=fixture();
   try{
@@ -1224,7 +1265,7 @@ test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
   assert.match(h,/id="reader-screen-count"/);
-  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.14\.104/);
+  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.14\.105/);
   assert.match(h,/sinjira-liseuse-v26\.js\?v=34\.11\.14\.102/);
 });
 test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=>{
