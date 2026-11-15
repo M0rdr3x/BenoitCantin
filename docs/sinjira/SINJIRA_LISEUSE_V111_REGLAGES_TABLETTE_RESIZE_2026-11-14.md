@@ -19,3 +19,7 @@ Le nouveau `bindReaderResponsivePanels` écoute uniquement les changements du `m
 - Version cache V53 du HTML, de la fixture et des tests : `53.11.14.111`.
 
 **Release : NO-GO**. Tests physiques Safari iPhone / Chrome Android, VoiceOver/TalkBack, accès aux romans intégraux autorisés, synchronisation réelle entre appareils, sécurité et approbation humaine restent obligatoires. Les quatre pourcentages de programme et la non-mesurabilité des 14 secteurs ne changent pas.
+
+## Réparation du scénario d'homologation V111
+
+La première tentative CI V111 a révélé une erreur dans le **test**, pas un défaut confirmé du lecteur : le test V110 ouvrait puis refermait manuellement les paramètres avant de demander au test V111 qu'un redimensionnement les rouvre automatiquement, ce qui violait la priorité donnée à l'utilisateur. Le test a été précisé : il vérifie d'abord que la fermeture manuelle survit au passage sur ordinateur, recharge la page pour retrouver des panneaux non modifiés par l'utilisateur, puis vérifie les transitions automatiques ordinateur → tablette et la priorité aux ouvertures manuelles. Les suites du commit corrigé doivent être revalidées séparément.

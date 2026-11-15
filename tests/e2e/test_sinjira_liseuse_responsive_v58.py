@@ -90,7 +90,15 @@ def run(playwright, engine, origin):
         # les panneaux automatiques se replient sans toucher à la page lue.
         # Une ouverture choisie à la main reste prioritaire à chaque resize.
         page.set_viewport_size({"width":1280,"height":900})
-        page.wait_for_function("""()=>document.querySelector('.reader-settings').open&&
+        # Le premier panneau vient d'être fermé MANUELLEMENT ci-dessus :
+        # le redimensionnement ne doit surtout pas écraser ce choix.
+        page.wait_for_function("""()=>!document.querySelector('.reader-settings').open&&
+          document.querySelector('.reader-audio-settings').open""")
+        # Pour vérifier la transition automatique des DEUX panneaux, il faut
+        # une nouvelle session de page avant toute interaction utilisateur.
+        page.reload(wait_until="load")
+        page.wait_for_function("""()=>!document.querySelector('#reader-content').hidden&&
+          document.querySelector('.reader-settings').open&&
           document.querySelector('.reader-audio-settings').open""")
         page.set_viewport_size({"width":820,"height":1180})
         page.wait_for_function("""()=>!document.querySelector('.reader-settings').open&&
