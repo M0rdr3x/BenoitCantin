@@ -262,25 +262,6 @@
     line-height:1.55;
     background:#0b1a27;
   }
-  /* V113 : aide courte au repos; l'explication complète reste disponible
-     via un élément natif details/summary au toucher, au clavier et avec AT. */
-  .sinjira-liseuse .reader-swipe-help summary{
-    cursor:pointer;
-    min-height:44px;
-    display:list-item;
-    padding:11px 6px;
-    font-weight:700;
-    text-align:left;
-    -webkit-tap-highlight-color:transparent;
-  }
-  .sinjira-liseuse .reader-swipe-help summary:focus-visible{
-    outline:3px solid #b9fff2;
-    outline-offset:2px;
-  }
-  .sinjira-liseuse .reader-swipe-help p{
-    margin:8px 0 2px;
-    text-align:left;
-  }
   .sinjira-liseuse .reader-touch-nav{
     display:flex;
     position:fixed;
@@ -457,6 +438,28 @@
   }
 }
 
+/* V114 : la lecture paginée et les boutons tactiles sont aussi disponibles
+   sur tablette (761–980 px). L'aide repliable y conserve une cible de 44 px,
+   le focus clavier et des consignes longues réellement consultables. */
+@media(max-width:980px){
+  .sinjira-liseuse .reader-swipe-help summary{
+    cursor:pointer;
+    min-height:44px;
+    display:list-item;
+    padding:11px 6px;
+    font-weight:700;
+    text-align:left;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .sinjira-liseuse .reader-swipe-help summary:focus-visible{
+    outline:3px solid #b9fff2;
+    outline-offset:2px;
+  }
+  .sinjira-liseuse .reader-swipe-help p{
+    margin:8px 0 2px;
+    text-align:left;
+  }
+}
 
 /* V110 — accès direct au roman sans faire défiler deux formulaires ouverts.
    Cible tactile >=44px, lisible au clavier, invisible sur grand écran. */

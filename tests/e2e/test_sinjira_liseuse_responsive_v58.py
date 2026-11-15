@@ -188,6 +188,22 @@ def run(playwright, engine, origin):
             # la barre conserve sa présentation horizontale historique.
             expected_display="grid" if width<=400 else "flex"
             assert info["navDisplay"]==expected_display,(label,info)
+            # V114 : même sur iPad portrait (768/820 px), l'aide doit rester
+            # facile à ouvrir et la longue notice repliée au premier affichage.
+            guide=page.locator(".reader-swipe-help")
+            summary=guide.locator("summary")
+            assert guide.is_visible(),(label,"guide de lecture absent")
+            assert not guide.evaluate("(el)=>el.open"),(label,"aide ouverte")
+            assert not guide.locator("p").is_visible(),(label,"texte encombrant")
+            assert summary.evaluate("(el)=>el.getBoundingClientRect().height")>=44,(
+                label,"cible tactile insuffisante")
+            if width in (768,820):
+                summary.click()
+                assert guide.evaluate("(el)=>el.open"),(label,"aide impossible à ouvrir")
+                assert guide.locator("p").is_visible(),(label,"notice inaccessible")
+                summary.click()
+                assert not guide.evaluate("(el)=>el.open"),(label,"aide impossible à refermer")
+                assert snapshot(page)["page"]==3,(label,snapshot(page))
             assert min(info["nextHeight"],info["prevHeight"])>=44,(label,info)
             assert info["viewerWidth"]>=280,(label,info)
             # V68 : écran 390 px de haut, ne pas imposer 340/410 px de lecteur.

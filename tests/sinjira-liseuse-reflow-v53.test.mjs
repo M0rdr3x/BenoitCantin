@@ -10,6 +10,20 @@ import {
 
 const setup={scrollHeight:1050,clientHeight:350,lineHeight:35};
 
+test('V114 : le guide tactile concerne aussi les tablettes de 768 et 820 px',()=>{
+  const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
+  const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
+  const tabletIndex=css.indexOf('/* V114 :');
+  const desktopIndex=css.indexOf('/* V110',tabletIndex);
+  assert.ok(tabletIndex>0&&desktopIndex>tabletIndex);
+  const responsive=css.slice(tabletIndex,desktopIndex);
+  assert.match(responsive,/@media\(max-width:980px\)\{/);
+  assert.match(responsive,/\.reader-swipe-help summary\{[\s\S]*?min-height:44px/);
+  assert.match(responsive,/\.reader-swipe-help summary:focus-visible\{/);
+  assert.match(responsive,/\.reader-swipe-help p\{[\s\S]*?text-align:left/);
+  assert.match(html,/sinjira-liseuse-v26\.css\?v=53\.11\.14\.114/);
+  assert.match(html,/aria-describedby="reader-swipe-help"/);
+});
 test('V113 : aide tactile compacte, repliable et annoncée au lecteur',()=>{
   const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
