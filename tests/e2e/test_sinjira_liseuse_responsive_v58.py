@@ -139,6 +139,42 @@ def run(playwright, engine, origin):
         assert transient_mode=={
             "consumed":False,"after":"3","before":"3","layout":"screens"
         },transient_mode
+        # V125 : cette fois AUCUN await entre PDF->texte->PDF et
+        # touchend. MutationObserver n'a pas encore été appelé :
+        # takeRecords doit invalider le contact dans la même tâche JS.
+        synchronous_mode=page.evaluate("""async()=>{
+          const v=document.querySelector('#reader-viewer');
+          const text=document.querySelector('#reader-text');
+          const field=document.querySelector('#reader-page');
+          const paged=document.querySelector('#reader-screens-enabled');
+          const before=field.value;
+          paged.checked=false;
+          paged.dispatchEvent(new Event('change',{bubbles:true}));
+          text.hidden=true;
+          await Promise.resolve();
+          const start={identifier:125,target:v,clientX:250,clientY:225};
+          const end={...start,clientX:100,clientY:228};
+          const fire=(type,touches,changed)=>{
+            const ev=new Event(type,{bubbles:true,cancelable:true});
+            Object.defineProperties(ev,{
+              touches:{value:touches},targetTouches:{value:touches},
+              changedTouches:{value:changed}
+            });
+            v.dispatchEvent(ev);return ev.defaultPrevented;
+          };
+          fire('touchstart',[start],[start]);
+          text.hidden=false;
+          text.hidden=true;
+          const consumed=fire('touchend',[],[end]);
+          const after=field.value;
+          text.hidden=false;
+          paged.checked=true;
+          paged.dispatchEvent(new Event('change',{bubbles:true}));
+          return {consumed,before,after,layout:v.dataset.readerLayout};
+        }""")
+        assert synchronous_mode=={
+            "consumed":False,"before":"3","after":"3","layout":"screens"
+        },synchronous_mode
         # V121 : le PDF dispose d'un statut vocal sans doublonner les
         # écrans de texte, et sa région est visuellement dissimulée.
         spoken=page.evaluate("""()=>{

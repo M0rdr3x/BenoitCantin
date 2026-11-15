@@ -71,12 +71,78 @@ test('V119 : une navigation PDF montre un repère, jamais un swipe refusé',()=>
   assert.equal(f.next.events.has('click'),false);
   assert.equal(f.previous.events.has('click'),false);
 });
+test('V125 : mutations synchrones PDF texte PDF sont détectées avant touchend',()=>{
+  const observers=[];
+  class FakeObserver{
+    constructor(fn){this.fn=fn;this.targets=[];this.pending=[];this.closed=false;observers.push(this)}
+    observe(node,options){this.targets.push({node,options})}
+    takeRecords(){return this.pending.splice(0)}
+    disconnect(){this.closed=true}
+  }
+  const f=fixture({Observer:FakeObserver});
+  const watcher=observers.find(o=>o.targets.some(x=>x.node===f.readingText));
+  assert.ok(watcher);
+  const start={identifier:7,clientX:250,clientY:190};
+  const end={...start,clientX:100,clientY:192};
+  const fireStart=()=>f.viewer.emit('touchstart',{
+    touches:[start],target:{closest:()=>null}});
+  const fireEnd=()=>f.viewer.emit('touchend',{
+    touches:[],changedTouches:[end],defaultPrevented:false});
+  try{
+    f.setPdfMode(true);
+    fireStart();
+    f.setPdfMode(false);f.setPdfMode(true);
+    watcher.pending.push(
+      {type:'attributes',attributeName:'hidden',target:f.readingText},
+      {type:'attributes',attributeName:'hidden',target:f.readingText});
+    f.advance(180);
+    fireEnd();
+    assert.equal(f.next.clicks,0,'une vraie tâche synchrone ne change pas de page');
+    assert.equal(watcher.pending.length,0,'mutations consommées avant le callback');
+    fireStart();
+    f.readingContent.hidden=true;f.readingContent.hidden=false;
+    watcher.pending.push(
+      {type:'attributes',attributeName:'hidden',target:f.readingContent});
+    f.advance(180);
+    fireEnd();
+    assert.equal(f.next.clicks,0,'masquage synchrone du livre annule le toucher');
+    // Les événements avant le nouveau contact ne doivent pas annuler
+    // un vrai nouveau swipe vers la gauche, ou vers la droite.
+    watcher.pending.push(
+      {type:'attributes',attributeName:'hidden',target:f.readingText});
+    f.swipe(-130,3);
+    f.swipe(130,3);
+    assert.equal(f.next.clicks,1,'gauche avance après purge initiale');
+    assert.equal(f.previous.clicks,1,'droite revient après purge initiale');
+    // Une mutation sans rapport (classe) ne modifie pas la navigation.
+    fireStart();
+    watcher.pending.push({type:'attributes',attributeName:'class'});
+    f.advance(180);
+    fireEnd();
+    assert.equal(f.next.clicks,2,'un changement class ne bloque pas le PDF');
+    // Le drag souris doit avoir la même protection que le toucher.
+    const pointer=(type,x)=>f.viewer.emit(type,{
+      pointerType:'mouse',pointerId:125,button:0,buttons:1,isPrimary:true,
+      clientX:x,clientY:190,target:f.canvas,defaultPrevented:false,
+      preventDefault(){this.defaultPrevented=true}
+    });
+    pointer('pointerdown',250);
+    watcher.pending.push({type:'attributes',attributeName:'hidden'});
+    f.advance(200);pointer('pointerup',95);
+    assert.equal(f.next.clicks,2,'pas de saut de page après drag souris interrompu');
+    pointer('pointerdown',250);f.advance(200);pointer('pointerup',95);
+    assert.equal(f.next.clicks,3,'nouveau drag souris PDF utilisable');
+  }finally{f.release()}
+  assert.equal(watcher.closed,true,'l observateur est déconnecté');
+});
 test('V123 : mutation cachée PDF vers texte puis PDF annule un geste tactile',()=>{
   const observers=[];
   class FakeObserver{
-    constructor(fn){this.fn=fn;this.watched=[];this.closed=false;observers.push(this)}
+    constructor(fn){this.fn=fn;this.watched=[];this.closed=false;this.pending=[];observers.push(this)}
     observe(node,options){this.watched.push({node,options})}
     disconnect(){this.closed=true}
+    takeRecords(){return this.pending.splice(0)}
+    queue(records){this.pending.push(...records)}
     notify(records){if(!this.closed)this.fn(records)}
   }
   const f=fixture({Observer:FakeObserver});

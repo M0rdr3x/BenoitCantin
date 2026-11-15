@@ -247,6 +247,8 @@ export function bindReaderTouchNavigation({
     !viewer.closest?.('[hidden]');
   const start=event=>{
     origin=null;
+    // V125 : ne pas reporter les mutations antérieures à un nouveau doigt.
+    contentObserver?.takeRecords?.();
     if(!canNavigate()||event.touches?.length!==1||isInteractiveTarget(event.target)||
       isReaderViewportZoomed())return;
     const touch=event.touches[0];
@@ -269,6 +271,9 @@ export function bindReaderTouchNavigation({
     };
   };
   const move=event=>{
+    // V125 : le callback MutationObserver est différé; une fin de geste
+    // peut précéder la micro-tâche si l'affichage bascule deux fois de suite.
+    if(cancelPendingContentChanges())return;
     // V66 : un défilement vertical intermédiaire puis un retour au point de
     // départ ne doit jamais être interprété comme une page tournée.
     if(!origin)return;
@@ -297,6 +302,8 @@ export function bindReaderTouchNavigation({
   };
   const cancel=()=>{origin=null};
   const end=event=>{
+    // V125 : vider immédiatement les records avant d'utiliser une origine.
+    if(cancelPendingContentChanges())return;
     const initial=origin;
     origin=null;
     // Le mode V53 « pages d'écran » possède son propre gestionnaire tactile.
@@ -354,6 +361,7 @@ export function bindReaderTouchNavigation({
     viewer.querySelector?.('#reader-text')?.hidden===true;
   const pointerDown=event=>{
     pointerOrigin=null;
+    contentObserver?.takeRecords?.();
     if(!canNavigate()||viewer.dataset?.readerLayout==='screens'||
       event?.pointerType!=='mouse'||event.button!==0||event.isPrimary===false||
       isReaderViewportZoomed()||!isPdfCanvas(event)||isInteractiveTarget(event.target))
@@ -370,6 +378,7 @@ export function bindReaderTouchNavigation({
     catch{/* perte de capture possible; le pointerup local reste utilisable */}
   };
   const pointerMove=event=>{
+    if(cancelPendingContentChanges())return;
     const initial=pointerOrigin;
     if(!initial)return;
     if(!canNavigate()||!isPdfCanvas({target:viewer.querySelector?.('#reader-canvas')})||
@@ -391,6 +400,7 @@ export function bindReaderTouchNavigation({
   };
   const pointerCancel=()=>{pointerOrigin=null};
   const pointerUp=event=>{
+    if(cancelPendingContentChanges())return;
     const initial=pointerOrigin;
     pointerOrigin=null;
     if(!initial||!canNavigate()||event.pointerType!=='mouse'||
@@ -444,12 +454,22 @@ export function bindReaderTouchNavigation({
   // N'annuler que les contacts en cours : aucun livre ou statut n'est lu.
   const readingText=viewer.querySelector?.('#reader-text');
   const readingContent=viewer.closest?.('#reader-content');
+  const isContentHiddenChange=records=>records?.some(record=>
+    record.type==='attributes'&&record.attributeName==='hidden');
   const contentObserver=Observer?new Observer(records=>{
-    if(records.some(record=>record.type==='attributes'&&
-      record.attributeName==='hidden')){
+    if(isContentHiddenChange(records)){
       cancel();pointerCancel();
     }
   }):null;
+  // V125 : takeRecords capture des mutations déjà écrites dans la même
+  // tâche JS, avant que le navigateur puisse appeler le callback différé.
+  // Examen des seuls attributs hidden surveillés, jamais du roman lui-même.
+  const cancelPendingContentChanges=()=>{
+    const records=contentObserver?.takeRecords?.();
+    if(!isContentHiddenChange(records))return false;
+    cancel();pointerCancel();
+    return true;
+  };
   if(readingText)contentObserver?.observe(readingText,{
     attributes:true,attributeFilter:['hidden']
   });

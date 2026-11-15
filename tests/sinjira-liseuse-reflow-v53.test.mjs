@@ -1753,8 +1753,8 @@ test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=
 test('V52 singleton: import V53 et script HTML ont exactement la même URL cache-bustée',()=>{
   const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   const module=readFileSync(new URL('../assets/js/sinjira-liseuse-reflow-v53.mjs',import.meta.url),'utf8');
-  const htmlUrl='/assets/js/sinjira-liseuse-touch-v52.mjs?v=52.11.15.123';
-  const importedUrl='./sinjira-liseuse-touch-v52.mjs?v=52.11.15.123';
+  const htmlUrl='/assets/js/sinjira-liseuse-touch-v52.mjs?v=52.11.15.125';
+  const importedUrl='./sinjira-liseuse-touch-v52.mjs?v=52.11.15.125';
   assert.ok(html.includes('src="'+htmlUrl+'"'));
   assert.ok(module.includes("'"+importedUrl+"'"));
   assert.equal(html.split('sinjira-liseuse-touch-v52.mjs').length-1,1);
