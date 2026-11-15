@@ -150,6 +150,10 @@ function updateToolbar(){
   const chapter=currentChapter();
   $('reader-chapter-label').textContent=chapter[1];
   $('reader-chapters').value=String(chapter[0]);
+  // V102 : signal DOM limité à l'emplacement numérique. La barre mobile
+  // peut refléter la page courante même si les boutons restent activés.
+  // Aucun extrait du roman, compte ou position privée n'est transmis.
+  $('reader-viewer')?.dispatchEvent(new Event('sinjira:reader-page-change'));
 }
 function isMissingCloudSpotColumn(error){
   // Compatibilité avec l'ancienne API REST tant que la migration V32
