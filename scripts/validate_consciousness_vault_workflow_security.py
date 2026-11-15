@@ -26,6 +26,7 @@ PROD_SELF_CHECK_LINE = f'        run: {PROD_SELF_CHECK}'
 TRIGGER_PATHS = (
     "'supabase/migrations/**'",
     "'supabase/tests/personal_consciousness_vault_v25.test.sql'",
+    "'supabase/tests/life_story_delivery_rotation_v25.test.sql'",
     "'supabase/functions/conscience-vault/**'",
     "'supabase/functions/_shared/auth.ts'",
     "'supabase/config.toml'",
@@ -55,6 +56,7 @@ STATIC_CHECKS = (
 )
 
 PGTAP = 'supabase test db supabase/tests/personal_consciousness_vault_v25.test.sql --local'
+LIFE_STORY_PGTAP = 'supabase test db supabase/tests/life_story_delivery_rotation_v25.test.sql --local'
 DB_START = 'supabase db start'
 STOP = 'run: supabase stop --no-backup || true'
 
@@ -190,6 +192,8 @@ def validate_text(text: str) -> None:
         fail('démarrage PostgreSQL Supabase local doit apparaître exactement une fois')
     if active.count(PGTAP) != 1:
         fail('preuve 32 pgTAP locale doit apparaître exactement une fois')
+    if active.count(LIFE_STORY_PGTAP) != 1:
+        fail('preuve pgTAP transactionnelle Histoire de vie absente ou dupliquée')
     if exact_line_count(text, '        if: always()') != 1 or exact_line_count(text, f'        {STOP}') != 1:
         fail('arrêt Supabase local always doit rester exact et unique')
 
@@ -201,16 +205,18 @@ def validate_text(text: str) -> None:
     cli_index = text.index(f'uses: {SETUP_CLI}')
     start_index = text.index(DB_START)
     test_index = text.index(PGTAP)
+    life_story_index = text.index(LIFE_STORY_PGTAP)
     stop_index = text.index(STOP)
     if not (
         self_test_index < self_check_index < prod_self_test_index < prod_self_check_index
-        < min(static_indexes) <= max(static_indexes) < cli_index < start_index < test_index < stop_index
+        < min(static_indexes) <= max(static_indexes) < cli_index < start_index < test_index < life_story_index < stop_index
     ):
         fail('ordre obligatoire: auto-test local → garde local → auto-test prod → garde prod → statique → CLI → db start → pgTAP → stop')
 
 
 def mutations(text: str):
     yield 'trigger supplémentaire', text.replace('  workflow_dispatch:\n', '  pull_request_target:\n  workflow_dispatch:\n', 1)
+    yield 'test pgTAP Histoire de vie retiré', text.replace(LIFE_STORY_PGTAP, 'echo skipped', 1)
     yield 'PR main retirée', text.replace('  pull_request:\n    branches: [main]\n', '  pull_request:\n    branches: [develop]\n', 1)
     yield 'push main retiré', text.replace('  push:\n    branches: [main]\n', '  push:\n    branches: [develop]\n', 1)
     yield 'path garde PR retiré', mutate_section(text, '  pull_request:', '  push:', "      - 'scripts/validate_consciousness_vault_workflow_security.py'\n", '')
