@@ -10,6 +10,48 @@ import {
 
 const setup={scrollHeight:1050,clientHeight:350,lineHeight:35};
 
+test('V115 : accès au livre donne le focus pour tourner au clavier sans contourner V26',()=>{
+  const handlers=new Map(),link={
+    hidden:true,
+    addEventListener(name,fn){handlers.set(name,fn)},
+    removeEventListener(name,fn){if(handlers.get(name)===fn)handlers.delete(name)}
+  };
+  const content={hidden:true};
+  let notification=null,disconnected=false,focusCount=0,options=null;
+  const viewer={focus(opts){focusCount++;options=opts}};
+  class Observer{
+    constructor(fn){notification=fn}
+    observe(node,opts){assert.equal(node,content);assert.deepEqual(opts,{
+      attributes:true,attributeFilter:['hidden']
+    })}
+    disconnect(){disconnected=true}
+  }
+  const release=bindReaderQuickAccess({link,content,viewer,Observer});
+  function click(){
+    let prevented=false;
+    handlers.get('click')?.({preventDefault(){prevented=true}});
+    return prevented;
+  }
+  try{
+    assert.equal(link.hidden,true);
+    assert.equal(click(),true,'un clic programmatique ne doit pas ouvrir une édition masquée');
+    assert.equal(focusCount,0);
+    content.hidden=false;notification();
+    assert.equal(link.hidden,false);
+    assert.equal(click(),false,'conserver le lien natif et son fragment');
+    assert.equal(focusCount,1);
+    assert.deepEqual(options,{preventScroll:true});
+    content.hidden=true;notification();
+    assert.equal(link.hidden,true);
+    assert.equal(click(),true,'le lien redevient inactif lors de la suspension');
+    assert.equal(focusCount,1);
+    content.hidden=false;notification();
+    assert.equal(click(),false);
+    assert.equal(focusCount,2);
+  }finally{release()}
+  assert.equal(handlers.size,0,'retirer l écouteur après destruction');
+  assert.equal(disconnected,true);
+});
 test('V114 : le guide tactile concerne aussi les tablettes de 768 et 820 px',()=>{
   const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
   const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
@@ -1541,7 +1583,7 @@ test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
   assert.match(h,/id="reader-screen-count"/);
-  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.14\.112/);
+  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.14\.115/);
   assert.match(h,/sinjira-liseuse-v26\.js\?v=34\.11\.14\.102/);
 });
 test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=>{

@@ -766,16 +766,32 @@ export function bindReaderResponsivePanels({media,panels=[]}={}){
       summary.removeEventListener?.('click',listener);
   };
 }
-/** V112: le lien mobile suit seulement l'état du livre contrôlé par V26. */
+/** V115 : raccourci mobile accessible uniquement quand V26 affiche le livre.
+ * Après activation volontaire, donner aussi le focus clavier à la zone
+ * de lecture (flèches / PageUp / PageDown) sans empêcher le lien ancre natif.
+ * Aucun accès au texte, aux droits serveur ou à la position du roman. */
 export function bindReaderQuickAccess({
-  link,content,Observer=typeof MutationObserver!=='undefined'?MutationObserver:null
+  link,content,viewer,Observer=typeof MutationObserver!=='undefined'?MutationObserver:null
 }={}){
   if(!link||!content)return ()=>{};
   const sync=()=>{link.hidden=Boolean(content.hidden)};
+  const onClick=event=>{
+    // Un click synthétique peut se déclencher même sur un lien caché :
+    // ne jamais déplacer le focus vers une édition masquée ou suspendue.
+    if(link.hidden||content.hidden||globalThis.document?.hidden){
+      event?.preventDefault?.();
+      return;
+    }
+    viewer?.focus?.({preventScroll:true});
+  };
   const observer=Observer?new Observer(sync):null;
+  link.addEventListener?.('click',onClick);
   observer?.observe(content,{attributes:true,attributeFilter:['hidden']});
   sync();
-  return ()=>observer?.disconnect();
+  return ()=>{
+    link.removeEventListener?.('click',onClick);
+    observer?.disconnect();
+  };
 }
 function initReaderScreens(){
   const id=name=>document.getElementById(name);
@@ -783,7 +799,8 @@ function initReaderScreens(){
     'reader-screens-enabled','reader-screen-count','reader-page'];
   if(required.some(name=>!id(name)))return;
   bindReaderQuickAccess({
-    link:id('reader-mobile-read-link'),content:id('reader-content')
+    link:id('reader-mobile-read-link'),content:id('reader-content'),
+    viewer:id('reader-viewer')
   });
   // Les panneaux sont initialement fermés en HTML : zéro flash de menus
   // dépliés sur téléphone, y compris si le moteur est chargé tardivement.
