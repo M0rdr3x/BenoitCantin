@@ -60,11 +60,13 @@ test('la création et la distribution ne peuvent précéder la vérification du 
   const generateGuard=exportSource.indexOf('await hasVerifiedPrivateLifeStoryBucket(service.storage)',first);
   const linkGuard=exportSource.indexOf('await hasVerifiedPrivateLifeStoryBucket(service.storage)',second);
   const upload=exportSource.indexOf('service.storage.from(BUCKET).upload(',first);
-  const deleteTokens=exportSource.indexOf("from('life_story_delivery_links').delete()",second);
-  const errorCheck=exportSource.indexOf("if (revokeExistingError) throw new Error('LIFE_STORY_LINK_ROTATION_FAILED');",second);
   const tokenCreate=exportSource.indexOf('crypto.getRandomValues(new Uint8Array(32))',second);
+  const atomic=exportSource.indexOf("service.rpc('service_life_story_rotate_delivery_links'",second);
+  const atomicError=exportSource.indexOf("if (rotationError || !rotation || rotation.link_count !== tokenHashes.length",second);
   assert.ok(first<generateGuard && generateGuard<upload && upload<second);
-  assert.ok(second<linkGuard && linkGuard<deleteTokens && deleteTokens<errorCheck && errorCheck<tokenCreate && tokenCreate<third);
+  assert.ok(second<linkGuard && linkGuard<tokenCreate && tokenCreate<atomic && atomic<atomicError && atomicError<third);
+  assert.ok(!exportSource.includes("from('life_story_delivery_links').delete()"));
+  assert.ok(!exportSource.includes("from('life_story_delivery_links').insert("));
   assert.equal(exportSource.match(/await hasVerifiedPrivateLifeStoryBucket\(service\.storage\)/g)?.length,2);
 });
 test('la remise valide les métadonnées après jeton/référence et avant la lecture PDF',()=>{
