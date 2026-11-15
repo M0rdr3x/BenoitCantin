@@ -130,6 +130,12 @@ def run(playwright, browser_type, url):
             "reason":"Page initiale PDF incorrectement repositionnée",
             "scroll":first["scroll"],"max":first["max"],"page":first["page"]}
         assert "LIVRE DE TEST · Page 3" in first["text"]
+        # V102 : l'emplacement du lecteur est visible dans les commandes
+        # mobiles et indépendant des extraits privés du texte.
+        hint_start=page.locator("#reader-touch-location").text_content()
+        assert hint_start.startswith("Écr. 1/") and "p. 3 / 5" in hint_start,(
+            "V102 : lecture sans repère de progression",hint_start
+        )
         assert not rejected,rejected
 
         # Diagnostic de régression : retracer toute tentative de déclencher
@@ -183,6 +189,11 @@ def run(playwright, browser_type, url):
             "second_scroll":second["scroll"],"second_screen":second["screen"],
             "trace":page.evaluate("window.__readerSwipeTrace")}
         assert second["scroll"]>first["scroll"],(first,second)
+        hint_next=page.locator("#reader-touch-location").text_content()
+        assert hint_next.startswith("Écr. 2/") and "p. 3 / 5" in hint_next,(
+            "V102 : barre de progression non actualisée après le swipe",
+            hint_start,hint_next
+        )
         reverse=swipe(page,130)
         rewind=snapshot(page)
         assert reverse["consumed"] and rewind["scroll"]==0,rewind
@@ -237,6 +248,7 @@ def run(playwright, browser_type, url):
         page.locator("#reader-mode").click()
         page.wait_for_function("""()=>document.querySelector('#reader-text').hidden===true""")
         before_pdf=snapshot(page)
+        assert page.locator("#reader-touch-location").text_content()=="PDF · p. 3 / 5"
         swipe(page,-130)
         page.wait_for_function("""before=>Number(document.querySelector('#reader-page').value)===before+1""",
                                arg=before_pdf["page"])
@@ -303,6 +315,7 @@ def run(playwright, browser_type, url):
         assert pdf_right["page"]==4 and pdf_right["layout"]=="scroll",pdf_right
         assert pdf_right["clickCounts"]=={"next":1,"previous":1},pdf_right
         assert snapshot(page)["page"]==4,snapshot(page)
+        assert page.locator("#reader-touch-location").text_content()=="PDF · p. 4 / 5"
 
         # V99 : les tests V98 construisent des TouchEvent. Vérifier EN PLUS
         # une vraie séquence tactile du navigateur mobile Playwright, avec
@@ -441,6 +454,33 @@ def run(playwright, browser_type, url):
             "next":3,"previous":3
         },("V101: souris droite = une page précédente",
             pdf_mouse_back,mouse_counts_back)
+
+        # V102 : la barre tactile affiche également la position à 320 px,
+        # au lieu de disparaître sous les deux gros boutons de navigation.
+        page.set_viewport_size({"width":320,"height":568})
+        page.wait_for_function("""()=>getComputedStyle(
+          document.querySelector('.reader-touch-nav')).display==='grid'""")
+        narrow=page.evaluate("""()=>{
+          const nav=document.querySelector('.reader-touch-nav');
+          const hint=document.querySelector('#reader-touch-location');
+          const prev=document.querySelector('#reader-touch-prev');
+          const next=document.querySelector('#reader-touch-next');
+          const label=hint.getBoundingClientRect();
+          const bar=nav.getBoundingClientRect();
+          return {width:document.documentElement.scrollWidth,
+            mode:getComputedStyle(nav).display,
+            hint:getComputedStyle(hint).display,
+            label:hint.textContent,top:label.top,bottom:label.bottom,
+            barTop:bar.top,barBottom:bar.bottom,
+            prevHeight:prev.getBoundingClientRect().height,
+            nextHeight:next.getBoundingClientRect().height};
+        }""")
+        assert narrow["mode"]=="grid" and narrow["hint"]!="none",narrow
+        assert narrow["label"]=="PDF · p. 4 / 5",narrow
+        assert narrow["width"]<=323,narrow
+        assert narrow["barTop"]>=0 and narrow["barBottom"]<=569,narrow
+        assert narrow["top"]>=narrow["barTop"] and narrow["bottom"]<=569,narrow
+        assert min(narrow["prevHeight"],narrow["nextHeight"])>=48,narrow
         assert not failures,failures
         assert not rejected,rejected
         context.close()
