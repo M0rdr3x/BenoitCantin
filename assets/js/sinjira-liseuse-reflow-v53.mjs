@@ -415,14 +415,24 @@ export function bindReaderScreenMode({
   // appliquer le réagencement prévu lorsque takeRecords() est consommé.
   const flushPendingTextMutation=()=>{
     const changes=observer?.takeRecords?.();
-    if(!changes?.length)return false;
+    // V127 : la fermeture/rouverture du roman peut conserver le même
+    // numéro et le même mode. V53 intercepte touchend AVANT le module PDF
+    // V52, il faut donc vider aussi ses propres records de visibilité.
+    const visibility=contentObserver?.takeRecords?.();
+    const contentChanged=visibility?.some(m=>m.type==='attributes'&&
+      m.attributeName==='hidden')||false;
+    if(contentChanged){
+      gesture=null;
+      if(readingContent?.hidden)clearPageAnnouncement();
+    }
+    if(!changes?.length)return contentChanged;
     const changed=changes.some(m=>m.attributeName==='hidden'||
       m.type==='childList'||m.type==='characterData');
     if(changed){
       gesture=null;
       afterTextChanged();
     }else sync();
-    return changed;
+    return changed||contentChanged;
   };
   const isTouchTargetAllowed=event=>!isInteractive(event.target);
   const onTouchStart=event=>{
@@ -621,6 +631,9 @@ export function bindReaderScreenMode({
   };
   const observer=Observer?new Observer(mutations=>{
     if(mutations.some(m=>m.attributeName==='hidden'||m.type==='childList'||m.type==='characterData')){
+      // V127 : même quand la micro-tâche MutationObserver a DÉJÀ tourné,
+      // le contact sur le texte précédent ne doit plus tourner d'écran.
+      gesture=null;
       afterTextChanged();
     }else sync();
   }):null;
@@ -629,8 +642,12 @@ export function bindReaderScreenMode({
   // effacer tout statut de l'ancien roman avant de révéler le suivant.
   const readingContent=viewer.closest?.('#reader-content');
   const contentObserver=readingContent&&Observer?new Observer(mutations=>{
-    if(readingContent.hidden&&mutations.some(m=>m.type==='attributes'&&
-      m.attributeName==='hidden'))clearPageAnnouncement();
+    if(mutations.some(m=>m.type==='attributes'&&m.attributeName==='hidden')){
+      // V127 : le contenu privé peut être masqué puis réaffiché avant
+      // touchend. Annuler le doigt même si le livre est à nouveau visible.
+      gesture=null;
+      if(readingContent.hidden)clearPageAnnouncement();
+    }
   }):null;
   contentObserver?.observe(readingContent,{attributes:true,attributeFilter:['hidden']});
   const buttonsObserver=Observer?new Observer(()=>sync()):null;

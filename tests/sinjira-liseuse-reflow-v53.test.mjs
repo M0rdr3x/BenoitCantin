@@ -63,7 +63,7 @@ test('V114 : le guide tactile concerne aussi les tablettes de 768 et 820 px',()=
   assert.match(responsive,/\.reader-swipe-help summary\{[\s\S]*?min-height:44px/);
   assert.match(responsive,/\.reader-swipe-help summary:focus-visible\{/);
   assert.match(responsive,/\.reader-swipe-help p\{[\s\S]*?text-align:left/);
-  assert.match(html,/sinjira-liseuse-v26\.css\?v=53\.11\.15\.126/);
+  assert.match(html,/sinjira-liseuse-v26\.css\?v=53\.11\.15\.127/);
   assert.match(html,/aria-describedby="reader-swipe-help"/);
 });
 test('V113 : aide tactile compacte, repliable et annoncée au lecteur',()=>{
@@ -452,11 +452,62 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
       {type:'attributes',attributeName:'hidden'}
     ]),
     queueTextMutation:records=>observed.find(x=>x.target===text)?.queue(records),
+    queueContentMutation:records=>observed.find(x=>x.target===readerContent)?.queue(records),
     pendingTextMutations:()=>observed.find(x=>x.target===text)?.pending.length||0,
     notifyText:()=>observed.find(x=>x.target===text)?.emit([{type:'childList'}]),
     flushFrames,getStatusWrites:()=>statusWrites,
     setSelected:v=>{selected=v}};
 }
+test('V127 : observer livré entre touchstart et touchend annule l ancien écran',()=>{
+  const f=fixture({observe:true,withReaderContent:true});
+  const touch={identifier:127,clientX:240,clientY:150};
+  const end={...touch,clientX:80,clientY:152};
+  const begin=()=>f.viewer.emit('touchstart',{
+    touches:[touch],target:{closest:()=>null}});
+  const finish=()=>{
+    const e={touches:[],changedTouches:[end],defaultPrevented:false,
+      preventDefault(){this.defaultPrevented=true}};
+    f.viewer.emit('touchend',e);
+    return e;
+  };
+  try{
+    begin();
+    f.text.hidden=true;f.text.hidden=false;
+    f.notifyText(); // un callback déjà livré et aucun takeRecords en attente
+    assert.equal(finish().defaultPrevented,false,
+      'le callback de texte doit supprimer l origine du geste');
+    assert.equal(f.viewer.scrollTop,0);
+    begin();
+    f.readerContent.hidden=true;f.readerContent.hidden=false;
+    f.notifyContent(); // fermeture/reouverture de livre entre deux événements
+    assert.equal(finish().defaultPrevented,false,
+      'le livre masqué puis réaffiché invalide également le toucher');
+    assert.equal(f.viewer.scrollTop,0);
+    const valid=f.swipe(-130,3);
+    assert.equal(valid.defaultPrevented,true,
+      'la navigation gauche doit toujours fonctionner après annulation');
+    assert.equal(f.viewer.scrollTop,315);
+    f.swipe(130,3);
+    assert.equal(f.viewer.scrollTop,0,
+      'la navigation droite reste disponible');
+  }finally{f.restore()}
+});
+test('V127 : livre masqué synchroniquement avant touchend annule le geste',()=>{
+  const f=fixture({observe:true,withReaderContent:true});
+  const touch={identifier:127,clientX:240,clientY:150};
+  try{
+    f.viewer.emit('touchstart',{touches:[touch],target:{closest:()=>null}});
+    f.readerContent.hidden=true;f.readerContent.hidden=false;
+    f.queueContentMutation?.([{type:'attributes',attributeName:'hidden'}]);
+    const end={touches:[],changedTouches:[{...touch,clientX:80,clientY:152}],
+      defaultPrevented:false,preventDefault(){this.defaultPrevented=true}};
+    f.viewer.emit('touchend',end);
+    assert.equal(end.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(f.swipe(-130,3).defaultPrevented,true);
+    assert.equal(f.viewer.scrollTop,315);
+  }finally{f.restore()}
+});
 test('V126 : transitions texte rapides dans une même tâche ne tournent pas un écran',()=>{
   const f=fixture({observe:true});
   const touch={identifier:126,clientX:240,clientY:150};
@@ -1795,7 +1846,7 @@ test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
   assert.match(h,/id="reader-screen-count"/);
-  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.15\.126/);
+  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.15\.127/);
   assert.match(h,/sinjira-liseuse-v26\.js\?v=34\.11\.14\.102/);
 });
 test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=>{

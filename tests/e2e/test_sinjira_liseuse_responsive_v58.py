@@ -98,6 +98,46 @@ def run(playwright, engine, origin):
         }""")
         assert paged_transition["consumed"] is False,paged_transition
         assert paged_transition["before"]==paged_transition["after"],paged_transition
+        # V127 : le callback MutationObserver (micro-tâche) peut être livré
+        # après la bascule de la vue, MAIS avant touchend. Le geste commencé
+        # sur la représentation précédente ne doit pas tourner une page.
+        asynchronous_transition=page.evaluate("""async()=>{
+          const v=document.querySelector('#reader-viewer');
+          const article=document.querySelector('#reader-text');
+          const content=document.querySelector('#reader-content');
+          const field=document.querySelector('#reader-page');
+          const before={page:field.value,scroll:v.scrollTop,
+            layout:v.dataset.readerLayout};
+          const fire=(type,identifier,touches,changed)=>{
+            const e=new Event(type,{bubbles:true,cancelable:true});
+            Object.defineProperties(e,{
+              touches:{value:touches},targetTouches:{value:touches},
+              changedTouches:{value:changed}
+            });
+            v.dispatchEvent(e);return e.defaultPrevented;
+          };
+          const turn=async(id,mutate)=>{
+            const start={identifier:id,target:v,clientX:250,clientY:225};
+            fire('touchstart',id,[start],[start]);
+            mutate();
+            // Livrer MutationObserver AVANT touchend (aucun record restant).
+            await Promise.resolve();
+            return fire('touchend',id,[],[{...start,clientX:100,clientY:227}]);
+          };
+          const textConsumed=await turn(127,()=>{
+            article.hidden=true;article.hidden=false;
+          });
+          const contentConsumed=await turn(128,()=>{
+            content.hidden=true;content.hidden=false;
+          });
+          return {before,after:{page:field.value,scroll:v.scrollTop,
+            layout:v.dataset.readerLayout},textConsumed,contentConsumed};
+        }""")
+        assert not asynchronous_transition["textConsumed"],asynchronous_transition
+        assert not asynchronous_transition["contentConsumed"],asynchronous_transition
+        assert asynchronous_transition["before"]==asynchronous_transition["after"],(
+            asynchronous_transition
+        )
         # V122 : basculement PDF vers texte continu pendant un contact,
         # sans changer le numéro ni émettre sinjira:reader-page-change.
         mode_transition=page.evaluate("""()=>{
@@ -567,7 +607,7 @@ def run(playwright, engine, origin):
         # V63 : mesurer un caractère effectivement visible AVANT la
         # modification du CSS. L'ancre reste en mémoire navigateur uniquement.
         anchored=page.evaluate("""async()=>{
-          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.126');
+          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.127');
           const viewer=document.querySelector('#reader-viewer');
           const text=document.querySelector('#reader-text');
           viewer.scrollTop=Math.min(1850,viewer.scrollHeight-viewer.clientHeight-300);
@@ -645,7 +685,7 @@ def run(playwright, engine, origin):
         # V64 : après une police agrandie, changer l'orientation du téléphone
         # doit conserver le caractère lu, pas uniquement un ratio d'écran.
         before_rotation=page.evaluate("""async()=>{
-          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.126');
+          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.127');
           const viewer=document.querySelector('#reader-viewer');
           const text=document.querySelector('#reader-text');
           const anchor=m.captureReaderTextAnchor({viewer,text});
@@ -717,7 +757,7 @@ def run(playwright, engine, origin):
         # l'activation et de la désactivation, pas seulement le numéro PDF.
         page.locator("#reader-viewer").scroll_into_view_if_needed()
         focus_start=page.evaluate("""async()=>{
-          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.126');
+          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.127');
           const v=document.querySelector('#reader-viewer');
           const t=document.querySelector('#reader-text');
           v.scrollTop=Math.min(1400,v.scrollHeight-v.clientHeight-400);
@@ -750,7 +790,7 @@ def run(playwright, engine, origin):
         page.evaluate("""()=>new Promise(done=>
           requestAnimationFrame(()=>requestAnimationFrame(done)))""")
         focus_during=page.evaluate("""async()=>{
-          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.126');
+          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.127');
           const v=document.querySelector('#reader-viewer');
           const t=document.querySelector('#reader-text');
           const anchor=mod.captureReaderTextAnchor({viewer:v,text:t});
@@ -781,7 +821,7 @@ def run(playwright, engine, origin):
         assert page.locator("#reader-touch-prev").get_attribute("aria-label")=="Page du livre précédente"
         page.locator("#reader-viewer").scroll_into_view_if_needed()
         continuous=page.evaluate("""async()=>{
-          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.126');
+          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.127');
           const v=document.querySelector('#reader-viewer');
           const t=document.querySelector('#reader-text');
           v.scrollTop=Math.min(2200,Math.max(0,v.scrollHeight-v.clientHeight-300));
@@ -810,7 +850,7 @@ def run(playwright, engine, origin):
         # Ne pas accéder au réseau ou au contenu privé.
         page.locator("#reader-viewer").scroll_into_view_if_needed()
         before_chrome=page.evaluate("""async()=>{
-          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.126');
+          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.127');
           const viewer=document.querySelector('#reader-viewer');
           const text=document.querySelector('#reader-text');
           viewer.scrollTop=Math.min(1750,Math.max(0,viewer.scrollHeight-viewer.clientHeight-350));
@@ -847,7 +887,7 @@ def run(playwright, engine, origin):
         # V60: le vrai moteur JS chargé sur cette page ne doit pas demander
         # un balayage pour seulement 10 px supplémentaires à la fin.
         tail=page.evaluate("""async ()=>{
-          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.126');
+          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.127');
           const p={scrollHeight:850,clientHeight:350,lineHeight:35,
             paddingTop:22,paddingBottom:22};
           return {
