@@ -97,7 +97,12 @@ def run(playwright, engine, origin):
           return {initial,updated,repeated,attrs,page:Number(field.value)};
         }""")
         assert spoken["initial"]=="",spoken
-        assert spoken["updated"]=="Page 4 sur 5 du livre.",spoken
+        # Le parcours V58 utilise un vrai moteur PDF fictif de 82 pages,
+        # tandis que la fixture minimale V54 n'en contient que cinq :
+        # lire le total canonique au lieu d'imposer un nombre de test.
+        expected_total=page.locator("#reader-total").inner_text().strip()
+        assert expected_total.isdigit(),expected_total
+        assert spoken["updated"]==f"Page 4 sur {expected_total} du livre.",spoken
         assert spoken["repeated"]==spoken["updated"],spoken
         assert spoken["attrs"]["role"]=="status" and spoken["attrs"]["live"]=="polite",spoken
         assert spoken["attrs"]["rendered"],spoken
