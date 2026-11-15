@@ -180,19 +180,25 @@ Deno.serve(async (req) => {
       if (!(await hasVerifiedPrivateLifeStoryBucket(service.storage))) throw new Error('PRIVATE_STORAGE_UNVERIFIED');
       const recipients = Array.isArray(record.recipients_snapshot) ? record.recipients_snapshot : [];
       if (!recipients.length) throw new Error('NO_RECIPIENTS');
-      // Ne pas émettre de nouveaux liens si les anciens ne sont pas révoqués.
-      const { error: revokeExistingError } = await service.from('life_story_delivery_links').delete().eq('export_id', exportId);
-      if (revokeExistingError) throw new Error('LIFE_STORY_LINK_ROTATION_FAILED');
-      const rows: any[] = []; const responseLinks: any[] = [];
+      // Jetons bruts uniquement dans la réponse HTTPS après succès SQL.
+      // L'effacement et la recréation des hashes sont une transaction SQL.
+      const tokenHashes: string[] = []; const responseLinks: any[] = [];
+      if (recipients.length > 128) throw new Error('LIFE_STORY_LINK_ROTATION_FAILED');
       for (let i = 0; i < recipients.length; i += 1) {
         const raw = hex(crypto.getRandomValues(new Uint8Array(32)));
         const tokenHash = await sha256Hex(raw);
-        const expiresAt = new Date(Date.now() + 30 * DAY).toISOString();
-        rows.push({ export_id: exportId, recipient_index: i, recipient_label: safeText(recipients[i]?.recipient_label, 160) || `Destinataire ${i + 1}`, token_hash: tokenHash, expires_at: expiresAt, max_downloads: 3 });
-        responseLinks.push({ recipient_label: safeText(recipients[i]?.recipient_label, 160), recipient_email: safeText(recipients[i]?.recipient_email, 254) || null, expires_at: expiresAt, download_url: `${DELIVERY_PAGE}#${raw}` });
+        tokenHashes.push(tokenHash);
+        responseLinks.push({ recipient_label: safeText(recipients[i]?.recipient_label, 160), recipient_email: safeText(recipients[i]?.recipient_email, 254) || null, download_url: `${DELIVERY_PAGE}#${raw}` });
       }
-      const { error: insertError } = await service.from('life_story_delivery_links').insert(rows);
-      if (insertError) throw insertError;
+      const { data: rotation, error: rotationError } = await service.rpc('service_life_story_rotate_delivery_links', {
+        p_export_id: exportId, p_token_hashes: tokenHashes
+      });
+      if (rotationError || !rotation || rotation.link_count !== tokenHashes.length ||
+          typeof rotation.expires_at !== 'string' || !Number.isFinite(Date.parse(rotation.expires_at))) {
+        throw new Error('LIFE_STORY_LINK_ROTATION_FAILED');
+      }
+      // Réponse et base partagent exactement la même échéance SQL.
+      for (const item of responseLinks) item.expires_at = rotation.expires_at;
       return privateJson({ ok: true, export_id: exportId, links: responseLinks, transport: 'manual_or_future_sender', note: 'Les liens sont retournés une seule fois. Le jeton reste dans le fragment du navigateur et aucun courriel externe n est envoyé automatiquement.' });
     }
 
