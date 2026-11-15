@@ -239,6 +239,11 @@ def run(playwright, url):
             v.dataset.readerLayout==='screens';
         }""")
         page.evaluate("document.querySelector('#reader-viewer').scrollTop=0")
+        # Après avoir activé la case et le bouton de mode, la fenêtre de
+        # 320x568 px reste parfois placée sur les commandes et le lecteur
+        # est sous l'écran (rect.y > innerHeight). Le geste natif exige
+        # une cible visible : recentrer explicitement avant le touchStart.
+        page.locator("#reader-viewer").scroll_into_view_if_needed()
         native_swipe(page, cdp, direction="left")
         reflow_after_pdf = snapshot(page)
         assert reflow_after_pdf["page"] == 4 and reflow_after_pdf["scroll"] > 0, (
