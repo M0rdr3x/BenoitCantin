@@ -71,6 +71,42 @@ test('V119 : une navigation PDF montre un repère, jamais un swipe refusé',()=>
   assert.equal(f.next.events.has('click'),false);
   assert.equal(f.previous.events.has('click'),false);
 });
+test('V128 : rotation et viewport transitoires annulent le PDF et la souris',()=>{
+  const win=target(),viewport=target();win.visualViewport=viewport;
+  const f=fixture({win});
+  const start={identifier:7,clientX:250,clientY:190};
+  const touchStart=()=>f.viewer.emit('touchstart',{
+    touches:[start],target:{closest:()=>null}});
+  const touchEnd=()=>f.viewer.emit('touchend',{
+    touches:[],changedTouches:[{...start,clientX:90,clientY:192}],
+    defaultPrevented:false
+  });
+  const pointer=(kind,x)=>f.viewer.emit(kind,{
+    pointerType:'mouse',pointerId:128,button:0,buttons:1,isPrimary:true,
+    clientX:x,clientY:190,target:f.canvas,defaultPrevented:false,
+    preventDefault(){this.defaultPrevented=true}
+  });
+  try{
+    f.setPdfMode(true);
+    for(const name of ['resize','orientationchange']){
+      touchStart();win.emit(name);f.advance(200);touchEnd();
+      assert.equal(f.next.clicks,0,name+' : pas de saut de page');
+    }
+    touchStart();viewport.emit('resize');f.advance(200);touchEnd();
+    assert.equal(f.next.clicks,0,'visualViewport annule aussi');
+    pointer('pointerdown',250);
+    win.emit('orientationchange');
+    f.advance(200);pointer('pointerup',95);
+    assert.equal(f.next.clicks,0,'rotation annule le drag souris PDF');
+    f.swipe(-130,3);f.swipe(130,3);
+    assert.equal(f.next.clicks,1,'gauche avance après rotation');
+    assert.equal(f.previous.clicks,1,'droite revient après rotation');
+    pointer('pointerdown',250);f.advance(200);pointer('pointerup',95);
+    assert.equal(f.next.clicks,2,'nouveau drag PDF utilisable');
+  }finally{f.release()}
+  assert.equal(win.events.size,0,'écouteurs fenêtre libérés');
+  assert.equal(viewport.events.size,0,'écouteurs visualViewport libérés');
+});
 test('V125 : mutations synchrones PDF texte PDF sont détectées avant touchend',()=>{
   const observers=[];
   class FakeObserver{
@@ -364,7 +400,7 @@ function target(){
     events
   };
 }
-function fixture({selected=false,Observer=null}={}){
+function fixture({selected=false,Observer=null,win=globalThis.window}={}){
   const viewer=target(),previous=target(),next=target(),
         mobilePrevious=target(),mobileNext=target(),canvas=target(),
         readingContent=target();
@@ -378,7 +414,7 @@ function fixture({selected=false,Observer=null}={}){
     selector==='[hidden]'&&readingContent.hidden?readingContent:null;
   const release=bindReaderTouchNavigation({
     viewer,previous,next,mobilePrevious,mobileNext,pageField,
-    getSelectedText:()=>selection,clock:()=>time,Observer
+    getSelectedText:()=>selection,clock:()=>time,Observer,win
   });
   const swipe=(dx,dy=5,options={})=>{
     const x=options.startX??170;
@@ -1093,7 +1129,7 @@ test('intégration : les boutons mobiles reflètent le statut initial des bouton
 test('contrat HTML/CSS : module autonome et gestes expliqués',()=>{
   const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
-  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.15\.125/);
+  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.15\.128/);
   assert.match(html,/id="reader-touch-prev"/);
   assert.match(html,/id="reader-touch-next"/);
   assert.match(html,/aria-describedby="reader-swipe-help"/);

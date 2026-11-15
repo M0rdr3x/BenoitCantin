@@ -5,7 +5,7 @@
  * du PDF courant ; une fois le texte terminé, tourner la vraie page du livre.
  * L'enregistrement d'emplacement reste le scroll_ratio historique de la V31.
  */
-import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally,classifyReaderEdgeTap,flashReaderPageTurn,cancelReaderPageTurnFlash} from './sinjira-liseuse-touch-v52.mjs?v=52.11.15.125';
+import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally,classifyReaderEdgeTap,flashReaderPageTurn,cancelReaderPageTurnFlash} from './sinjira-liseuse-touch-v52.mjs?v=52.11.15.128';
 
 const PREF_KEY='sinjira:liseuse:lecture-par-ecrans:v53';
 
@@ -698,6 +698,9 @@ export function bindReaderScreenMode({
     scheduleLayoutRestore(previousRatio,currentAnchor);
   };
   const onResize=()=>{
+    // V128 : un viewport brièvement modifié annule l'ancien contact,
+    // même si la taille finale est la même au relâchement.
+    gesture=null;
     if(jumpPreview!==null)jumpCancelled=true;
     jumpPreview=null;
     scheduleLayoutRestore(lastRatio,lastAnchor);
@@ -708,6 +711,8 @@ export function bindReaderScreenMode({
   // Ne pas intercepter la navigation par pincement : au zoom > 1, le
   // navigateur reste seul propriétaire de l'exploration du document.
   const onVisualViewportResize=()=>{
+    // Un zoom visuel temporaire invalide le doigt, même s'il revient à 1.
+    gesture=null;
     if(!isPaged()||isReaderViewportZoomed())return;
     onResize();
   };
@@ -767,6 +772,7 @@ export function bindReaderScreenMode({
   screenJump?.addEventListener('input',onScreenJumpPreview);
   screenJump?.addEventListener('change',onScreenJumpCommit);
   window.addEventListener('resize',onResize,{passive:true});
+  window.addEventListener('orientationchange',onResize,{passive:true});
   window.visualViewport?.addEventListener?.('resize',onVisualViewportResize,{passive:true});
   window.addEventListener('sinjira:reader-layout-will-change',onFocusLayoutChange);
   media.addEventListener?.('change',onResize);
@@ -794,6 +800,7 @@ export function bindReaderScreenMode({
     screenJump?.removeEventListener('input',onScreenJumpPreview);
     screenJump?.removeEventListener('change',onScreenJumpCommit);
     window.removeEventListener('resize',onResize);
+    window.removeEventListener('orientationchange',onResize);
     window.visualViewport?.removeEventListener?.('resize',onVisualViewportResize);
     window.removeEventListener('sinjira:reader-layout-will-change',onFocusLayoutChange);
     media.removeEventListener?.('change',onResize);

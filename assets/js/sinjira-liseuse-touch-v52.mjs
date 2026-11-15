@@ -228,7 +228,8 @@ export function bindReaderTouchNavigation({
   viewer,previous,next,mobilePrevious=null,mobileNext=null,pageField=null,
   getSelectedText=()=>typeof window==='undefined'?'':String(window.getSelection?.()?.toString()||''),
   clock=()=>typeof performance!=='undefined'?performance.now():Date.now(),
-  Observer=typeof MutationObserver!=='undefined'?MutationObserver:null
+  Observer=typeof MutationObserver!=='undefined'?MutationObserver:null,
+  win=globalThis.window
 }={}){
   if(!viewer||!previous||!next)throw new Error('V52: zone ou boutons de lecture absents');
   // Marqueur partagé avec le module historique V28 : V52 devient l'unique
@@ -480,6 +481,12 @@ export function bindReaderTouchNavigation({
   globalThis.document?.addEventListener?.('visibilitychange',onVisibilityChange);
   globalThis.window?.addEventListener?.('blur',cancelAll);
   globalThis.window?.addEventListener?.('pagehide',cancelAll);
+  // V128 : une rotation ou un resize visuel peut revenir à la géométrie
+  // initiale avant touchend. Annuler immédiatement les anciens contacts.
+  const onViewportChange=()=>{cancel();pointerCancel()};
+  win?.addEventListener?.('resize',onViewportChange,{passive:true});
+  win?.addEventListener?.('orientationchange',onViewportChange,{passive:true});
+  win?.visualViewport?.addEventListener?.('resize',onViewportChange,{passive:true});
 
   const mobileBack=()=>{
     if(canNavigate()&&viewer.dataset?.readerLayout!=='screens'&&!previous.disabled)previous.click();
@@ -523,6 +530,9 @@ export function bindReaderTouchNavigation({
     globalThis.document?.removeEventListener?.('visibilitychange',onVisibilityChange);
     globalThis.window?.removeEventListener?.('blur',cancelAll);
     globalThis.window?.removeEventListener?.('pagehide',cancelAll);
+    win?.removeEventListener?.('resize',onViewportChange);
+    win?.removeEventListener?.('orientationchange',onViewportChange);
+    win?.visualViewport?.removeEventListener?.('resize',onViewportChange);
     mobilePrevious?.removeEventListener('click',mobileBack);
     mobileNext?.removeEventListener('click',mobileForward);
     previous.removeEventListener('click',onPageBackward);
