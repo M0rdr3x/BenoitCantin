@@ -6,6 +6,39 @@ import {classifyReaderSwipe,classifyReaderEdgeTap,bindReaderTouchNavigation,isRe
 const gesture=(overrides={})=>classifyReaderSwipe({
   dx:-92,dy:8,durationMs:240,viewerWidth:375,...overrides
 });
+test('V118 : notification de changement sans nouveau numéro annule un toucher PDF',()=>{
+  const f=fixture();
+  try{
+    f.setPdfMode(true);
+    f.swipe(-130,3,{emitPageChange:true});
+    f.swipe(130,3,{emitPageChange:true});
+    assert.equal(f.pageField.value,'3');
+    assert.equal(f.next.clicks,0);
+    assert.equal(f.previous.clicks,0);
+    f.swipe(-130,3);
+    assert.equal(f.next.clicks,1,'la lecture reste possible sur la page remplacée');
+  }finally{f.release()}
+  assert.equal(f.viewer.events.has('sinjira:reader-page-change'),false,
+    'la destruction libère aussi l écouteur de changement de page');
+});
+test('V118 : notification de nouvelle page annule le drag souris PDF',()=>{
+  const f=fixture();
+  const pointer=(kind,x)=>f.viewer.emit(kind,{
+    pointerType:'mouse',pointerId:118,button:0,buttons:1,isPrimary:true,
+    clientX:x,clientY:190,target:f.canvas,defaultPrevented:false,
+    preventDefault(){this.defaultPrevented=true}
+  });
+  try{
+    f.setPdfMode(true);
+    pointer('pointerdown',260);pointer('pointermove',180);
+    f.viewer.emit('sinjira:reader-page-change');
+    f.advance(200);pointer('pointerup',100);
+    assert.equal(f.next.clicks,0);
+    pointer('pointerdown',260);pointer('pointermove',180);
+    f.advance(200);pointer('pointerup',100);
+    assert.equal(f.next.clicks,1);
+  }finally{f.release()}
+});
 test('V117 : changement de page pendant un swipe PDF interdit le tournage',()=>{
   const f=fixture();
   try{
@@ -172,6 +205,7 @@ function fixture({selected=false}={}){
       node.scrollTop=before;
     }
     if(options.changePage)pageField.value=String(options.changePage);
+    if(options.emitPageChange)viewer.emit('sinjira:reader-page-change');
     if(options.cancel)viewer.emit('touchcancel',{touches:[]});
     if(options.moveMultiple)viewer.emit('touchmove',{touches:[touch,{identifier:8}]});
     viewer.emit('touchend',{touches:[],changedTouches:[{
@@ -852,7 +886,7 @@ test('intégration : les boutons mobiles reflètent le statut initial des bouton
 test('contrat HTML/CSS : module autonome et gestes expliqués',()=>{
   const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
-  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.15\.117/);
+  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.15\.118/);
   assert.match(html,/id="reader-touch-prev"/);
   assert.match(html,/id="reader-touch-next"/);
   assert.match(html,/aria-describedby="reader-swipe-help"/);

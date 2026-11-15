@@ -389,6 +389,11 @@ export function bindReaderTouchNavigation({
   // sans émettre touchcancel. Une reprise ne doit jamais tourner une page
   // depuis une ancienne position de doigt.
   const cancelAll=()=>{cancel();pointerCancel()};
+  // V118 : le moteur V26 peut charger une nouvelle page (ou réinitialiser
+  // le roman) en conservant temporairement la même valeur #reader-page.
+  // Un contact de l'ancienne page devient immédiatement invalide.
+  const onBookPageChange=()=>cancelAll();
+  viewer.addEventListener('sinjira:reader-page-change',onBookPageChange);
   const onVisibilityChange=()=>{if(globalThis.document?.hidden)cancelAll()};
   globalThis.document?.addEventListener?.('visibilitychange',onVisibilityChange);
   globalThis.window?.addEventListener?.('blur',cancelAll);
@@ -423,6 +428,7 @@ export function bindReaderTouchNavigation({
     viewer.removeEventListener('pointerup',pointerUp);
     viewer.removeEventListener('pointercancel',pointerCancel);
     viewer.removeEventListener('lostpointercapture',pointerCancel);
+    viewer.removeEventListener('sinjira:reader-page-change',onBookPageChange);
     globalThis.document?.removeEventListener?.('visibilitychange',onVisibilityChange);
     globalThis.window?.removeEventListener?.('blur',cancelAll);
     globalThis.window?.removeEventListener?.('pagehide',cancelAll);

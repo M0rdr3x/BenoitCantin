@@ -5,7 +5,7 @@
  * du PDF courant ; une fois le texte terminé, tourner la vraie page du livre.
  * L'enregistrement d'emplacement reste le scroll_ratio historique de la V31.
  */
-import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally,classifyReaderEdgeTap} from './sinjira-liseuse-touch-v52.mjs?v=52.11.15.117';
+import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally,classifyReaderEdgeTap} from './sinjira-liseuse-touch-v52.mjs?v=52.11.15.118';
 
 const PREF_KEY='sinjira:liseuse:lecture-par-ecrans:v53';
 
@@ -677,6 +677,9 @@ export function bindReaderScreenMode({
   // Le moteur V26 émet cet événement APRÈS la mise à jour de la page
   // canonique : le statut mobile reflète aussitôt une nouvelle page PDF.
   const onBookPageChange=()=>{
+    // V118 : un événement canonique invalide même les gestes démarrés
+    // sur le même numéro, en cas de rechargement ou de changement d'édition.
+    gesture=null;
     if(jumpPreview!==null)jumpCancelled=true;
     jumpPreview=null;sync();
   };
