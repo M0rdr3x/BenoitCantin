@@ -104,7 +104,11 @@ def run(playwright, engine, origin):
             info=geometry(page)
             assert info["mode"]=="screens",(label,info)
             assert info["textLength"]>2000,(label,info)
-            assert info["navDisplay"]=="flex",(label,info)
+            # V102 : 320–400 px => barre à deux lignes (grille) pour
+            # garder la position visible sous les boutons ; au-delà,
+            # la barre conserve sa présentation horizontale historique.
+            expected_display="grid" if width<=400 else "flex"
+            assert info["navDisplay"]==expected_display,(label,info)
             assert min(info["nextHeight"],info["prevHeight"])>=44,(label,info)
             assert info["viewerWidth"]>=280,(label,info)
             # V68 : écran 390 px de haut, ne pas imposer 340/410 px de lecteur.
