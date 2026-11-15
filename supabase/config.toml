@@ -66,6 +66,9 @@ verify_jwt = true
 [functions.submit-character-questionnaire]
 verify_jwt = true
 
+[functions.notify-account-confirmation]
+verify_jwt = true
+
 [functions.admin-sinjira-v18]
 verify_jwt = true
 
@@ -97,4 +100,9 @@ verify_jwt = true
 # Cette fonction applique une authentification propre par jeton opaque 256 bits,
 # dont seul le hash est conservé, avec expiration/révocation/limite de téléchargements.
 [functions.life-story-delivery]
+verify_jwt = false
+
+# Consultation citoyenne publique : JWT non requis, mais contrôle d'origine,
+# CAPTCHA Turnstile, HMAC et vérification d'activation côté fonction.
+[functions.nova-civic-poll]
 verify_jwt = false

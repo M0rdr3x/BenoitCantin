@@ -4,6 +4,7 @@ from __future__ import annotations
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import urlparse, unquote
+import json
 import re
 import subprocess
 
@@ -25,6 +26,52 @@ NATIVE_MOBILE_PREFIX = 'mobile-native/'
 # Ces deux fichiers gardent volontairement la casse legacy /Admin/ uniquement pour
 # protéger/réécrire d'anciens favoris et caches. Ils ne constituent pas des liens actifs.
 LEGACY_ADMIN_COMPAT_FILES = {'sw.js', 'assets/js/v24-3-3-runtime.js'}
+# Le code source et les sorties générées sont audités séparément.
+GENERATED_SITE_DIRS = frozenset({
+    '_site', '_preview_site', '_pages_site', '_containment_site', '_ci_site',
+})
+
+
+def contains_unsafe_legacy_admin_link(rel: str, text: str) -> bool:
+    """Keep rejecting legacy /Admin/ links; allow only protected Vercel headers.
+
+    The pattern /Admin/(.*) is a header matcher, not a public navigation link.
+    An unprotected header, arbitrary redirect or HTML/JS reference stays denied.
+    """
+    if rel in LEGACY_ADMIN_COMPAT_FILES or rel.startswith('Admin/'):
+        return False
+    if rel == 'vercel.json':
+        try:
+            config = json.loads(text)
+            if not isinstance(config, dict):
+                return True
+            headers = config.get('headers', [])
+            if not isinstance(headers, list):
+                return True
+            for rule in headers:
+                if not isinstance(rule, dict) or rule.get('source') != '/Admin/(.*)':
+                    continue
+                entries = rule.get('headers')
+                if not isinstance(entries, list):
+                    return True
+                values = {
+                    item.get('key'): item.get('value')
+                    for item in entries if isinstance(item, dict)
+                    and isinstance(item.get('key'), str)
+                }
+                if (
+                    values.get('Cache-Control') != 'no-store'
+                    or values.get('Referrer-Policy') != 'no-referrer'
+                    or values.get('Pragma') != 'no-cache'
+                ):
+                    return True
+                # Remove only the reviewed legacy header matcher from the
+                # in-memory structure. All redirects/rewrites remain checked.
+                rule['source'] = '/admin/(.*)'
+            text = json.dumps(config, ensure_ascii=False)
+        except (json.JSONDecodeError, TypeError, ValueError):
+            return True
+    return re.search(r"['\\\"]/Admin/", text) is not None
 
 
 def srcset_urls(raw: str) -> list[str]:
@@ -146,6 +193,7 @@ def all_files() -> list[Path]:
     return [
         p for p in ROOT.rglob('*')
         if p.is_file() and '.git' not in p.parts and 'node_modules' not in p.parts
+        and p.relative_to(ROOT).parts[0] not in GENERATED_SITE_DIRS
     ]
 
 
@@ -342,8 +390,22 @@ def main() -> int:
                 if rx.search(text):
                     errors.append(f'Secret potentiel dans {rel}')
             if active_sinjira(rel) and 'formspree' in text.lower():
-                errors.append(f'Formspree encore référencé dans une zone SINJIRA active: {rel}')
-            if rel not in LEGACY_ADMIN_COMPAT_FILES and not rel.startswith('Admin/') and re.search(r"[\'\"]\/Admin\/", text):
+                # Formspree ne peut pas traiter directement les formulaires privés du
+                # navigateur. Seules les mentions explicites d'un transfert facultatif
+                # avec consentement sont autorisées sur ces trois pages connues.
+                consent_pages = {
+                    'compte/inscription.html',
+                    'compte/confidentialite-joueur.html',
+                    'projets/sinjira/registre/index.html',
+                }
+                if rel not in consent_pages:
+                    errors.append(f'Formspree non autorisé dans une zone SINJIRA active: {rel}')
+                else:
+                    if re.search(r'https?://(?:www\.)?formspree\.io', text, re.I):
+                        errors.append(f'Endpoint Formspree interdit dans la page Web privée: {rel}')
+                    if rel != 'compte/confidentialite-joueur.html' and 'name="formspree_receipt_opt_in"' not in text:
+                        errors.append(f'Consentement Formspree absent du formulaire: {rel}')
+            if contains_unsafe_legacy_admin_link(rel, text):
                 errors.append(f'Lien interne legacy /Admin/ dans {rel}')
 
     page_parsers: dict[Path, Parser] = {}

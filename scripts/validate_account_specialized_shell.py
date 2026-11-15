@@ -11,6 +11,7 @@ CATEGORIES = {
     "auth": {
         "compte/connexion.html",
         "compte/inscription.html",
+        "compte/confirmer.html",
         "compte/mot-de-passe-oublie.html",
         "compte/reinitialiser-mot-de-passe.html",
         "compte/mfa.html",
@@ -67,6 +68,13 @@ CATEGORIES = {
     "specialisee": {
         "compte/projet.html",
         "compte/moderation.html",
+    },
+    # Nouvelles pages de lecture Web: aucune autorisation implicite ni sas natif.
+    "bibliotheque-web": {
+        "compte/bibliotheque-romans.html",
+        "compte/bibliotheque-jeux.html",
+        "compte/bibliotheque-ressources.html",
+        "compte/liseuse.html",
     },
 }
 
@@ -142,13 +150,13 @@ def validate_inventory(errors: list[str]) -> None:
             "Inventaire compte: classifications sans fichier: " + ", ".join(stale)
         )
 
-    if len(actual) != 42:
+    if len(actual) != 47:
         errors.append(
-            f"Inventaire compte: 42 pages HTML attendues, {len(actual)} trouvées."
+            f"Inventaire compte: 47 pages HTML attendues, {len(actual)} trouvées."
         )
-    if len(classified) != 42:
+    if len(classified) != 47:
         errors.append(
-            f"Inventaire compte: 42 pages classées attendues, {len(classified)} déclarées."
+            f"Inventaire compte: 47 pages classées attendues, {len(classified)} déclarées."
         )
 
 
@@ -244,7 +252,7 @@ def main() -> int:
         return 1
 
     print(
-        "OK Compte SINJIRA: 42 pages HTML classées explicitement; "
+        "OK Compte SINJIRA: 47 pages HTML classées explicitement; "
         "projet et modération utilisent le shell privé stable sans perdre leurs contrats."
     )
     return 0

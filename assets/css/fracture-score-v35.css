@@ -1,0 +1,106 @@
+/* SINJIRA V35 — feuille de score locale, mobile, clavier et impression. */
+.fracture-score-page .fracture-online-main{max-width:1100px}
+.fracture-score-page .fracture-online-hero{padding-bottom:clamp(25px,4vw,55px)}
+.fracture-score-page .fracture-score-panel{
+  border:1px solid #405870;background:#112035;color:#edf5ff;
+  border-radius:16px;padding:clamp(18px,3vw,30px);margin:22px auto;
+  box-shadow:0 12px 30px rgba(0,0,0,.15);
+}
+.fracture-score-page .fracture-score-panel h2{margin-top:0;color:#fff}
+.fracture-score-page .fracture-score-panel p{max-width:920px}
+.fracture-score-page .fracture-score-config,
+.fracture-score-page .fracture-score-accusations{
+  display:flex;align-items:flex-end;flex-wrap:wrap;gap:16px;margin:20px 0;
+}
+.fracture-score-page .fracture-score-config label,
+.fracture-score-page .fracture-score-accusations label{
+  display:flex;flex-direction:column;gap:8px;font-weight:700;
+}
+.fracture-score-page .fracture-score-config .fracture-score-check{
+  flex-direction:row;align-items:center;max-width:370px;font-weight:500;line-height:1.4;
+}
+.fracture-score-page input[type="number"]{
+  display:block;width:100%;max-width:190px;min-width:100px;
+  min-height:46px;padding:9px 12px;
+  background:#f5f9ff;color:#132138;border:2px solid #7f9bb8;border-radius:9px;
+  font:inherit;font-variant-numeric:tabular-nums;
+}
+.fracture-score-page input[type="number"]:focus-visible,
+.fracture-score-page button:focus-visible,
+.fracture-score-page a:focus-visible{
+  outline:3px solid #96e7d1;outline-offset:3px;
+}
+.fracture-score-page .fracture-score-check input{width:19px;height:19px;accent-color:#62dbc7}
+.fracture-score-page .fracture-score-check:has(input:disabled){opacity:.7}
+.fracture-score-page .fracture-score-facts{font-weight:700;color:#c3f8ec}
+.fracture-score-page .fracture-score-help{font-size:.94rem;line-height:1.6;color:#c3d4e9}
+.fracture-score-page .fracture-score-heading{display:flex;justify-content:space-between;gap:20px;align-items:start}
+.fracture-score-page #fracture-progress{color:#b8f6e8;white-space:nowrap;padding-top:6px}
+.fracture-score-page .fracture-score-table-wrap{max-width:100%;overflow-x:auto}
+.fracture-score-page .fracture-score-table{width:100%;min-width:300px;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.fracture-score-page .fracture-score-table caption{text-align:left;padding:10px 0;color:#c2d6e7;font-size:.9rem}
+.fracture-score-page .fracture-score-table th,
+.fracture-score-page .fracture-score-table td{padding:10px 13px;text-align:left;border-bottom:1px solid #426078}
+.fracture-score-page .fracture-score-table thead th{background:#1d3550;color:#fff;font-weight:800}
+.fracture-score-page .fracture-score-table tbody th{white-space:nowrap}
+.fracture-score-page .fracture-score-table input{max-width:190px}
+.fracture-score-page .fracture-score-table tbody tr:nth-child(even){background:#15283e}
+.fracture-score-page .fracture-score-final{
+  margin:25px 0 5px;padding:18px;border:1px solid #6a8aa5;
+  border-radius:12px;background:#1b3047;
+}
+.fracture-score-page .fracture-score-final legend{font-weight:800;padding:0 9px;color:#c3f8ec}
+.fracture-score-page .fracture-score-final[hidden]{display:none!important}
+.fracture-score-page .fracture-score-status{
+  margin:16px 0;padding:12px 15px;min-height:44px;
+  background:#1c3850;border-left:4px solid #8edbce;border-radius:8px;
+}
+.fracture-score-page .fracture-score-status[data-type="warning"]{
+  border-color:#ffcc72;background:#4d3723;color:#fff4df;
+}
+.fracture-score-page .fracture-score-grand-total{background:#1e4541;font-weight:800}
+.fracture-score-page .fracture-score-conclusion{
+  padding:16px 18px;margin-top:20px;
+  border:1px solid #78b8b4;border-radius:10px;
+  background:#183c3a;color:#f2fffc;font-weight:700;
+}
+.fracture-score-page .fracture-score-actions{display:flex;flex-wrap:wrap;gap:10px}
+.fracture-score-page .fracture-score-privacy{background:#172533}
+@media(max-width:680px){
+  .fracture-score-page .fracture-score-heading{display:block}
+  .fracture-score-page .fracture-score-config,
+  .fracture-score-page .fracture-score-accusations{align-items:stretch;flex-direction:column}
+  .fracture-score-page .fracture-score-table th,
+  .fracture-score-page .fracture-score-table td{padding:8px 6px}
+  .fracture-score-page .fracture-score-table input{min-width:70px;max-width:140px}
+}
+@media print{
+  @page{size:auto;margin:12mm}
+  .fracture-score-page{color:#111;background:#fff!important}
+  .fracture-score-page .site-header,
+  .fracture-score-page .site-footer,
+  .fracture-score-page .skip-link,
+  .fracture-score-page .hero-actions,
+  .fracture-score-page .fracture-score-config,
+  .fracture-score-page .fracture-score-privacy,
+  .fracture-score-page #fracture-score-status{display:none!important}
+  .fracture-score-page .fracture-online-main{max-width:none}
+  .fracture-score-page .fracture-online-hero,
+  .fracture-score-page .fracture-score-panel{
+    border:0!important;box-shadow:none!important;background:#fff!important;color:#111!important;
+    padding:5px!important;margin:5px 0!important;
+  }
+  .fracture-score-page .fracture-score-panel h2,
+  .fracture-score-page .fracture-score-panel p,
+  .fracture-score-page .fracture-score-panel strong,
+  .fracture-score-page .fracture-score-facts,
+  .fracture-score-page .fracture-score-help{color:#111!important}
+  .fracture-score-page .fracture-score-table thead th,
+  .fracture-score-page .fracture-score-grand-total{
+    background:#eee!important;color:#111!important;
+  }
+  .fracture-score-page .fracture-score-table th,
+  .fracture-score-page .fracture-score-table td{border-color:#777!important}
+  .fracture-score-page input[type="number"]{color:#111!important;background:#fff!important;border:1px solid #777!important}
+  .fracture-score-page .fracture-score-conclusion{color:#111!important;background:#fff!important;border-color:#777!important}
+}

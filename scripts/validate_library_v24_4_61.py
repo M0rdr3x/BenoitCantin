@@ -31,13 +31,39 @@ def main()->int:
     reads_js=read('assets/js/sinjira-reads-v24-4-61.js')
     progress_js=read('assets/js/sinjira-reader-progress-v24-4-61.js')
 
+    # La bibliothèque V26 se répartit en 3 catégories Web distinctes.
+    # Le contrat V24 des lectures/droits continue d'être validé sur ses
+    # modules sources; il n'impose plus leur mélange sur l'accueil.
     require(library_html,[
-        'data-library-page="library-v24-4-61"',
-        'sinjira-library-v24-4-61.js?v=',
-        'data-library-reads',
-        'data-library-entitlements',
-        'Aucun achat ou service payant n’est activé actuellement.'
+        'data-library-page="hub-v26"',
+        'sinjira-library-hub-v26.js?v=',
+        'bibliotheque-romans.html',
+        'bibliotheque-jeux.html',
+        'bibliotheque-ressources.html',
+        'liseuse.html?edition=integrale',
+        'Le rôle propriétaire reste distinct des droits numériques attribués aux produits.'
     ],'bibliotheque.html')
+
+    romans_html=read('compte/bibliotheque-romans.html')
+    jeux_html=read('compte/bibliotheque-jeux.html')
+    ressources_html=read('compte/bibliotheque-ressources.html')
+    liseuse_html=read('compte/liseuse.html')
+    require(romans_html,[
+        'data-v18-page="reads-v24-4-61"',
+        'data-reader-library',
+        'sinjira-reads-v24-4-61.js?v=',
+        'liseuse.html?edition=integrale',
+        'liseuse.html?edition=demo',
+    ],'bibliotheque-romans.html')
+    require(jeux_html,['data-library-account-games','sinjira-library-hub-v26.js?v='],
+            'bibliotheque-jeux.html')
+    require(ressources_html,['documents.html','licences.html','playtests.html'],
+            'bibliotheque-ressources.html')
+    require(liseuse_html,[
+        'noindex,nofollow,noarchive',
+        'sinjira-liseuse-v26.js?v=',
+        'reader-canvas','reader-text','reader-chapters'
+    ],'liseuse.html')
 
     require(reads_html,[
         'data-v18-page="reads-v24-4-61"',
@@ -87,7 +113,7 @@ def main()->int:
     ):
         forbid(text,paid_markers,label)
 
-    print('OK bibliothèque V24.4.61+: accès réels, cache-busting évolutif, romans canoniques, droits numériques et progression démo cohérents sans service payant.')
+    print('OK bibliothèque V24/V26: catégories distinctes, accès réels, romans canoniques, droits numériques et progression protégée.')
     return 0
 
 

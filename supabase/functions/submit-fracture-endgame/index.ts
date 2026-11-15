@@ -1,3 +1,4 @@
+import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import { requiredUser, serviceClient } from '../_shared/auth.ts';
 
 const cors = {
@@ -66,7 +67,9 @@ Deno.serve(async (req) => {
     const user = await requiredUser(req);
     const service = serviceClient();
 
-    const rawBody = await req.text();
+    const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);
+    if (!limited.ok) return privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413);
+    const rawBody = limited.raw;
     if (new TextEncoder().encode(rawBody).byteLength > MAX_REQUEST_BYTES) {
       return privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413);
     }

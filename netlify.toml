@@ -1,34 +1,40 @@
 [build]
-  publish = "."
+  command = "python3 scripts/build_netlify_public.py"
+  publish = "_site"
 
 [[headers]]
   for = "/*"
   [headers.values]
     X-Content-Type-Options = "nosniff"
+    Strict-Transport-Security = "max-age=31536000"
+    X-Permitted-Cross-Domain-Policies = "none"
+    Cross-Origin-Opener-Policy = "same-origin-allow-popups"
     X-Frame-Options = "SAMEORIGIN"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
-    Content-Security-Policy = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; font-src 'self'; connect-src 'self'; form-action 'self' https://formspree.io; base-uri 'self'; frame-ancestors 'self'; object-src 'self'"
+    Content-Security-Policy = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://challenges.cloudflare.com; worker-src 'self' blob:; font-src 'self'; connect-src 'self' https://gpvivleexywljowcqkru.supabase.co wss://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; frame-src 'self' https://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; form-action 'self' https://formspree.io; base-uri 'self'; frame-ancestors 'self'; object-src 'self'"
 
 [[headers]]
-  for = "/projets/sinjira/documents/*.pdf"
+  for = "/.well-known/release.json"
   [headers.values]
-    Cache-Control = "public, max-age=3600"
+    Cache-Control = "no-store"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
 
-# Les surfaces privées/authentifiées ne doivent jamais être mises en cache
-# par le navigateur, le CDN ou un intermédiaire partagé.
 [[headers]]
   for = "/compte/*"
   [headers.values]
     Cache-Control = "private, no-store, max-age=0"
+    Content-Security-Policy = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' https://cdn.jsdelivr.net https://challenges.cloudflare.com; script-src-attr 'none'; worker-src 'self' blob:; font-src 'self'; connect-src 'self' https://gpvivleexywljowcqkru.supabase.co wss://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; frame-src 'self' https://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; form-action 'self' https://formspree.io; base-uri 'self'; frame-ancestors 'self'; object-src 'none'; upgrade-insecure-requests"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
-
 
 [[headers]]
   for = "/administration.html"
   [headers.values]
     Cache-Control = "private, no-store, max-age=0"
+    Content-Security-Policy = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' https://cdn.jsdelivr.net https://challenges.cloudflare.com; script-src-attr 'none'; worker-src 'self' blob:; font-src 'self'; connect-src 'self' https://gpvivleexywljowcqkru.supabase.co wss://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; frame-src 'self' https://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; form-action 'self' https://formspree.io; base-uri 'self'; frame-ancestors 'self'; object-src 'none'; upgrade-insecure-requests"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
 
@@ -36,6 +42,8 @@
   for = "/admin/*"
   [headers.values]
     Cache-Control = "private, no-store, max-age=0"
+    Content-Security-Policy = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' https://cdn.jsdelivr.net https://challenges.cloudflare.com; script-src-attr 'none'; worker-src 'self' blob:; font-src 'self'; connect-src 'self' https://gpvivleexywljowcqkru.supabase.co wss://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; frame-src 'self' https://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; form-action 'self' https://formspree.io; base-uri 'self'; frame-ancestors 'self'; object-src 'none'; upgrade-insecure-requests"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
 
@@ -43,6 +51,8 @@
   for = "/Admin/*"
   [headers.values]
     Cache-Control = "private, no-store, max-age=0"
+    Content-Security-Policy = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' https://cdn.jsdelivr.net https://challenges.cloudflare.com; script-src-attr 'none'; worker-src 'self' blob:; font-src 'self'; connect-src 'self' https://gpvivleexywljowcqkru.supabase.co wss://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; frame-src 'self' https://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; form-action 'self' https://formspree.io; base-uri 'self'; frame-ancestors 'self'; object-src 'none'; upgrade-insecure-requests"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
 
@@ -50,16 +60,124 @@
   for = "/app/*"
   [headers.values]
     Cache-Control = "private, no-store, max-age=0"
+    Content-Security-Policy = "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self' https://cdn.jsdelivr.net https://challenges.cloudflare.com; script-src-attr 'none'; worker-src 'self' blob:; font-src 'self'; connect-src 'self' https://gpvivleexywljowcqkru.supabase.co wss://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; frame-src 'self' https://gpvivleexywljowcqkru.supabase.co https://challenges.cloudflare.com; form-action 'self' https://formspree.io; base-uri 'self'; frame-ancestors 'self'; object-src 'none'; upgrade-insecure-requests"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
+
+[[headers]]
+  for = "/histoire-de-vie/*"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    Content-Security-Policy = "default-src 'none'; script-src 'self'; script-src-attr 'none'; style-src 'self'; connect-src https://gpvivleexywljowcqkru.supabase.co; img-src 'self' data:; font-src 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+    Pragma = "no-cache"
+    Referrer-Policy = "no-referrer"
+
+[[headers]]
+  for = "/projets/sinjira/documents/*.pdf"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+# En-tête de compatibilité du sous-site NOVA, centralisé à la racine et
+# généré dans _headers : pas de configuration locale qui publie les sources.
+[[headers]]
+  for = "/projets/projet-nova/documents/*.pdf"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/projets/projet-nova/script.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/projets/projet-nova/assets/portal-return.css"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
 
 [[headers]]
   for = "/supabase/*"
   [headers.values]
     Cache-Control = "private, no-store, max-age=0"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
     Pragma = "no-cache"
     Referrer-Policy = "no-referrer"
 
+[[redirects]]
+  from = "/supabase/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/scripts/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/docs/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/.github/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/tests/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/mobile-native/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+# Défense en profondeur : les fichiers cachés/sources sont aussi exclus
+# de l'artefact isolé par scripts/build_netlify_public.py.
+[[redirects]]
+  from = "/.git/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/.env*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/.gitignore"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/netlify.toml"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/projets/projet-nova/.gitignore"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/projets/projet-nova/.nojekyll"
+  to = "/404.html"
+  status = 404
+  force = true
 
 [[redirects]]
   from = "/nova"
@@ -86,7 +204,9 @@
   to = "/projets/sinjira/index.html"
   status = 301
 
-# Compatibilité des anciennes routes racine de Projet Nova.
+# Compatibilite des anciennes URL du portail et de Projet Nova.
+# Redirections 301 conservees depuis main; les six regles 404
+# techniques restent prioritaires et la sortie build reste _site.
 
 [[redirects]]
   from = "/participer.html"
@@ -147,8 +267,6 @@
   from = "/visionneuse.html"
   to = "/projets/projet-nova/visionneuse.html"
   status = 301
-
-# Deuxième lot d'anciennes routes racine de Projet Nova.
 
 [[redirects]]
   from = "/accessibilite.html"
@@ -240,7 +358,6 @@
   to = "/projets/projet-nova/mission.html"
   status = 301
 
-# Alias historique de l’administration privée.
 [[redirects]]
   from = "/administration"
   to = "/admin/sinjira/"

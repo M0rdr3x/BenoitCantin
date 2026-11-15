@@ -1,0 +1,368 @@
+{
+  "schema": "nova-g016q-port-daniel-budget-2026/v1",
+  "phase": "G0.16q",
+  "date": "2026-11-08",
+  "score_before": 47,
+  "score_after": 47,
+  "adopted": false,
+  "financial_audit_nova": false,
+  "sources": [
+    {
+      "id": "BUDGET_2026",
+      "url": "https://munpdg.ca/wp-content/uploads/2026/02/Document-explicatif-budget-2026.pdf",
+      "issuer": "Port-Daniel–Gascons",
+      "pages_checked_visually": [
+        0,
+        1
+      ],
+      "classification": "OFFICIAL_FORECAST_NOT_ACTUAL"
+    },
+    {
+      "id": "REGLEMENTS_2026",
+      "url": "https://munpdg.ca/reglements/",
+      "classification": "INDEX_REGULATIONS_2026_01_AND_02_NOT_FULL_TEXT"
+    },
+    {
+      "id": "WARWICK_RF_2025",
+      "url": "https://villedewarwick.quebec/reglementation/politiques-et-documentation/",
+      "classification": "FINANCIAL_REPORT_LINK_PUBLISHED_PDF_NOT_READABLE"
+    },
+    {
+      "id": "MAMH_DATA",
+      "url": "https://donneesquebec.ca/recherche/dataset/rapport-financier-des-organismes-municipaux-et-autres-documents",
+      "classification": "OPEN_DATA_SOURCE_FOUND_NO_RECORD_AUDITED"
+    }
+  ],
+  "municipality": "Port-Daniel–Gascons",
+  "fiscal_year": 2026,
+  "budget": {
+    "type": "ADOPTED_FORECAST_NOT_ACTUAL",
+    "revenues": {
+      "taxes": 4619646,
+      "payments_in_lieu": 41200,
+      "transfers": 725626,
+      "other_local": 447285,
+      "services": 679247,
+      "rights_and_interest": 67650
+    },
+    "total_revenue_cad": 6580654,
+    "operating_spending_cad": 6631925,
+    "appropriations_cad": -51271,
+    "balanced_forecast_cad": 0,
+    "actual_receipts_cad": null,
+    "actual_expenses_cad": null,
+    "primeau_cash_receipts_verified_cad": null
+  },
+  "taxes": {
+    "source": "OFFICIAL_TWO_PAGE_BUDGET_EXPLANATION",
+    "full_regulations_reviewed": false,
+    "rates_cad_per_100": {
+      "residential": 0.4,
+      "six_plus": 0.4,
+      "non_residential": 1.1785,
+      "industrial": 1.2585,
+      "agriculture_forestry": 0.4
+    },
+    "fees_cad_per_unit": {
+      "water_port_daniel": 102.64,
+      "sewer_port_daniel": 273.49,
+      "water_gascons": 439.25,
+      "clsc_arena_water": 10,
+      "waste_residential_1_to_4": 350,
+      "waste_5_plus_and_ici": 360,
+      "gascons_water_research": 24.06
+    },
+    "actual_tax_bill_cad": null,
+    "territorial_conditions_apply": true,
+    "other_special_taxes_not_all_checked": true
+  },
+  "capital_plan": {
+    "period": "2026-2028",
+    "total_cad": 33100000,
+    "by_year_cad": {
+      "2026": 30200000,
+      "2027": 1000000,
+      "2028": 1900000
+    },
+    "gascons_water_sewer_2026_cad": 30000000,
+    "final_spending_paid_cad": null,
+    "capital_grants_received_cad": null,
+    "loan_drawn_cad": null,
+    "not_additive_to_2025_borrowing_authorization": true
+  },
+  "verification_rules": {
+    "budget_is_not_actual": true,
+    "transfer_budget_is_not_primeau_payment": true,
+    "pti_is_not_paid_invoices": true,
+    "borrow_authorization_is_not_drawdown": true,
+    "property_tax_is_not_income_tax": true,
+    "capital_budget_2026_not_additive_to_borrowing_2025": true,
+    "unknown_is_not_zero": true,
+    "no_nova_savings_claimed": true,
+    "municipal_case_is_not_provincial_representative": true
+  },
+  "open_proofs": [
+    {
+      "id": "C01",
+      "label": "Rapport financier 2025 audité complet et notes de dette",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "C02",
+      "label": "Grand livre des versements PRIMEAU par projet",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "C03",
+      "label": "Emprunts réellement tirés et service annuel",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "C04",
+      "label": "Factures acquittées et état réel des travaux",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "C05",
+      "label": "Coûts d'exploitation de l'eau et maintien du personnel",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "C06",
+      "label": "Comptes fonciers anonymisés et secteurs de desserte",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "C07",
+      "label": "Conciliation des règlements 2025, du PTI 2026 et des aides",
+      "status": "NOT_VERIFIED"
+    },
+    {
+      "id": "C08",
+      "label": "Revue indépendante des scénarios Québec-Canada et Québec souverain",
+      "status": "NOT_VERIFIED"
+    }
+  ],
+  "ten_year_scenarios": [
+    {
+      "id": "QUEBEC_CANADA",
+      "audited": false,
+      "years": [
+        {
+          "year": 2026,
+          "revenus_reformes_cad": null,
+          "cout_services_cad": null,
+          "dette_tiree_cad": null,
+          "service_dette_cad": null,
+          "transferts_verifies_cad": null,
+          "cout_main_oeuvre_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2027,
+          "revenus_reformes_cad": null,
+          "cout_services_cad": null,
+          "dette_tiree_cad": null,
+          "service_dette_cad": null,
+          "transferts_verifies_cad": null,
+          "cout_main_oeuvre_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2028,
+          "revenus_reformes_cad": null,
+          "cout_services_cad": null,
+          "dette_tiree_cad": null,
+          "service_dette_cad": null,
+          "transferts_verifies_cad": null,
+          "cout_main_oeuvre_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2029,
+          "revenus_reformes_cad": null,
+          "cout_services_cad": null,
+          "dette_tiree_cad": null,
+          "service_dette_cad": null,
+          "transferts_verifies_cad": null,
+          "cout_main_oeuvre_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2030,
+          "revenus_reformes_cad": null,
+          "cout_services_cad": null,
+          "dette_tiree_cad": null,
+          "service_dette_cad": null,
+          "transferts_verifies_cad": null,
+          "cout_main_oeuvre_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2031,
+          "revenus_reformes_cad": null,
+          "cout_services_cad": null,
+          "dette_tiree_cad": null,
+          "service_dette_cad": null,
+          "transferts_verifies_cad": null,
+          "cout_main_oeuvre_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2032,
+          "revenus_reformes_cad": null,
+          "cout_services_cad": null,
+          "dette_tiree_cad": null,
+          "service_dette_cad": null,
+          "transferts_verifies_cad": null,
+          "cout_main_oeuvre_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2033,
+          "revenus_reformes_cad": null,
+          "cout_services_cad": null,
+          "dette_tiree_cad": null,
+          "service_dette_cad": null,
+          "transferts_verifies_cad": null,
+          "cout_main_oeuvre_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2034,
+          "revenus_reformes_cad": null,
+          "cout_services_cad": null,
+          "dette_tiree_cad": null,
+          "service_dette_cad": null,
+          "transferts_verifies_cad": null,
+          "cout_main_oeuvre_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2035,
+          "revenus_reformes_cad": null,
+          "cout_services_cad": null,
+          "dette_tiree_cad": null,
+          "service_dette_cad": null,
+          "transferts_verifies_cad": null,
+          "cout_main_oeuvre_cad": null,
+          "solde_cad": null
+        }
+      ]
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "audited": false,
+      "years": [
+        {
+          "year": 2026,
+          "revenus_reformes_cad": null,
+          "cout_services_cad": null,
+          "dette_tiree_cad": null,
+          "service_dette_cad": null,
+          "transferts_verifies_cad": null,
+          "cout_main_oeuvre_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2027,
+          "revenus_reformes_cad": null,
+          "cout_services_cad": null,
+          "dette_tiree_cad": null,
+          "service_dette_cad": null,
+          "transferts_verifies_cad": null,
+          "cout_main_oeuvre_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2028,
+          "revenus_reformes_cad": null,
+          "cout_services_cad": null,
+          "dette_tiree_cad": null,
+          "service_dette_cad": null,
+          "transferts_verifies_cad": null,
+          "cout_main_oeuvre_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2029,
+          "revenus_reformes_cad": null,
+          "cout_services_cad": null,
+          "dette_tiree_cad": null,
+          "service_dette_cad": null,
+          "transferts_verifies_cad": null,
+          "cout_main_oeuvre_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2030,
+          "revenus_reformes_cad": null,
+          "cout_services_cad": null,
+          "dette_tiree_cad": null,
+          "service_dette_cad": null,
+          "transferts_verifies_cad": null,
+          "cout_main_oeuvre_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2031,
+          "revenus_reformes_cad": null,
+          "cout_services_cad": null,
+          "dette_tiree_cad": null,
+          "service_dette_cad": null,
+          "transferts_verifies_cad": null,
+          "cout_main_oeuvre_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2032,
+          "revenus_reformes_cad": null,
+          "cout_services_cad": null,
+          "dette_tiree_cad": null,
+          "service_dette_cad": null,
+          "transferts_verifies_cad": null,
+          "cout_main_oeuvre_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2033,
+          "revenus_reformes_cad": null,
+          "cout_services_cad": null,
+          "dette_tiree_cad": null,
+          "service_dette_cad": null,
+          "transferts_verifies_cad": null,
+          "cout_main_oeuvre_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2034,
+          "revenus_reformes_cad": null,
+          "cout_services_cad": null,
+          "dette_tiree_cad": null,
+          "service_dette_cad": null,
+          "transferts_verifies_cad": null,
+          "cout_main_oeuvre_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2035,
+          "revenus_reformes_cad": null,
+          "cout_services_cad": null,
+          "dette_tiree_cad": null,
+          "service_dette_cad": null,
+          "transferts_verifies_cad": null,
+          "cout_main_oeuvre_cad": null,
+          "solde_cad": null
+        }
+      ]
+    }
+  ],
+  "decision": {
+    "official_budget_documented": true,
+    "cash_paid_verified": false,
+    "debt_balance_verified": false,
+    "primeau_payment_verified": false,
+    "nova_reform_funded": false,
+    "score_raised": false
+  }
+}

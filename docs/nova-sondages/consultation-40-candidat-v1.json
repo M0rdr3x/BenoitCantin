@@ -1,0 +1,214 @@
+{
+  "id": "nova-orientations-40-v1",
+  "version": "1.0.0",
+  "minimumAge": 18,
+  "type": "consultation_volontaire_non_representative",
+  "collectionOpen": false,
+  "choices": [
+    "pour",
+    "contre",
+    "sans_opinion"
+  ],
+  "questions": [
+    {
+      "id": "q01",
+      "topic": "Souveraineté",
+      "text": "Voulez-vous que le Québec cesse de faire partie du Canada et devienne un État souverain et indépendant?"
+    },
+    {
+      "id": "q02",
+      "topic": "Constitution",
+      "text": "Êtes-vous pour l'adoption d'une Constitution québécoise fondée sur la souveraineté populaire, la séparation des pouvoirs, les droits fondamentaux et le contrôle des institutions, selon le texte intégral soumis au vote?"
+    },
+    {
+      "id": "q03",
+      "topic": "Institutions",
+      "text": "Êtes-vous pour remplacer le modèle actuel de direction gouvernementale par un pouvoir exécutif collégial, avec des responsabilités séparées et des contrôles indépendants?"
+    },
+    {
+      "id": "q04",
+      "topic": "Démocratie",
+      "text": "Êtes-vous pour instaurer le référendum d'initiative citoyenne et un mécanisme de révocation des élus soumis à des règles précises et à des garanties démocratiques?"
+    },
+    {
+      "id": "q05",
+      "topic": "Fiscalité",
+      "text": "Êtes-vous pour remplacer progressivement la fiscalité actuelle par le régime à deux prélèvements proposé par le Projet Nova : un impôt sur le revenu et un prélèvement ciblant le recours aux paradis fiscaux?"
+    },
+    {
+      "id": "q06",
+      "topic": "Services essentiels",
+      "text": "Êtes-vous pour inscrire dans la Constitution la protection et la continuité des services essentiels, notamment la santé, l'éducation, la sécurité, l'eau et l'énergie, sous responsabilité publique?"
+    },
+    {
+      "id": "q07",
+      "topic": "Monnaie",
+      "text": "Êtes-vous pour établir une banque publique nationale chargée de la politique monétaire, selon un modèle dont les règles, les coûts et la transition seraient publiés?"
+    },
+    {
+      "id": "q08",
+      "topic": "Relations internationales",
+      "text": "Êtes-vous pour inscrire dans la Constitution une politique de neutralité militaire permanente, interdisant la participation aux guerres étrangères, tout en maintenant des relations diplomatiques et commerciales pacifiques?"
+    },
+    {
+      "id": "q09",
+      "topic": "Immigration",
+      "text": "Êtes-vous pour adopter une politique québécoise de citoyenneté et d'immigration fondée sur des critères de capacité d'accueil, d'intégration et de protection des réfugiés réellement menacés, dans le respect des droits fondamentaux?"
+    },
+    {
+      "id": "q10",
+      "topic": "Langue française",
+      "text": "Êtes-vous pour reconnaître constitutionnellement le français comme langue officielle et commune du Québec, avec des garanties explicites pour les droits linguistiques protégés?"
+    },
+    {
+      "id": "q11",
+      "topic": "Peuples fondateurs",
+      "text": "Êtes-vous pour créer un Conseil des peuples fondateurs doté de compétences précisément définies concernant le territoire, les ressources, le patrimoine et la culture, dans le respect des droits des peuples autochtones?"
+    },
+    {
+      "id": "q12",
+      "topic": "Protection économique",
+      "text": "Êtes-vous pour adopter un cadre renforcé contre les pratiques commerciales abusives, les ententes anticoncurrentielles et les clauses contractuelles cachées, avec des sanctions proportionnées et un contrôle judiciaire?"
+    },
+    {
+      "id": "q13",
+      "topic": "Autonomie",
+      "text": "Si le Québec demeure dans le Canada, êtes-vous pour que son gouvernement demande officiellement une plus grande autonomie constitutionnelle dans des compétences clairement définies?"
+    },
+    {
+      "id": "q14",
+      "topic": "Constitution provinciale",
+      "text": "Êtes-vous pour l'adoption d'une Constitution propre au Québec, compatible avec le cadre constitutionnel canadien tant que le Québec demeure une province?"
+    },
+    {
+      "id": "q15",
+      "topic": "Transition monétaire",
+      "text": "Dans l'éventualité de l'indépendance, êtes-vous pour que le Québec conserve le dollar canadien pendant une période de transition monétaire définie?"
+    },
+    {
+      "id": "q16",
+      "topic": "Droits acquis",
+      "text": "Êtes-vous pour qu'une éventuelle transition vers l'indépendance soit assujettie à des garanties légales concernant les pensions, les dépôts, les contrats et les prestations déjà acquis?"
+    },
+    {
+      "id": "q17",
+      "topic": "Échanges avec le Canada",
+      "text": "En cas d'indépendance, êtes-vous pour que le Québec cherche à négocier prioritairement des accords maintenant les échanges commerciaux et la circulation des personnes avec le Canada?"
+    },
+    {
+      "id": "q18",
+      "topic": "Ratification de transition",
+      "text": "Êtes-vous pour que les principales ententes conclues dans le cadre d'une éventuelle indépendance soient rendues publiques et soumises à une ratification populaire selon une procédure définie à l'avance?"
+    },
+    {
+      "id": "q19",
+      "topic": "Mode de scrutin",
+      "text": "Êtes-vous pour remplacer le mode de scrutin actuel par un système électoral comportant une représentation proportionnelle, selon une formule rendue publique avant le vote?"
+    },
+    {
+      "id": "q20",
+      "topic": "Limitation des mandats",
+      "text": "Êtes-vous pour limiter à deux mandats consécutifs l'exercice d'une même fonction de direction gouvernementale, selon les règles définies par la loi?"
+    },
+    {
+      "id": "q21",
+      "topic": "Contrats publics",
+      "text": "Êtes-vous pour imposer la publication des contrats publics, de leurs modifications et des coûts réels, sous réserve d'exceptions précises protégeant les renseignements confidentiels légitimes?"
+    },
+    {
+      "id": "q22",
+      "topic": "Grands projets",
+      "text": "Êtes-vous pour rendre obligatoire une évaluation financière indépendante avant l'autorisation définitive des grands projets publics dépassant un seuil fixé par la loi?"
+    },
+    {
+      "id": "q23",
+      "topic": "Lois omnibus",
+      "text": "Êtes-vous pour interdire l'adoption de projets de loi réunissant des modifications législatives sans lien direct entre elles, afin que chaque réforme puisse être examinée distinctement?"
+    },
+    {
+      "id": "q24",
+      "topic": "Dette publique",
+      "text": "Êtes-vous pour établir une limite légale à l'endettement public, assortie d'exceptions strictement encadrées pour les situations d'urgence?"
+    },
+    {
+      "id": "q25",
+      "topic": "Aides aux entreprises",
+      "text": "Êtes-vous pour limiter les aides financières publiques aux entreprises à des périodes déterminées, avec des objectifs vérifiables et une obligation de remboursement en cas de fraude?"
+    },
+    {
+      "id": "q26",
+      "topic": "Logement",
+      "text": "Êtes-vous pour réduire par la loi les délais administratifs de délivrance des permis résidentiels, tout en maintenant les exigences de sécurité et de protection de l'environnement?"
+    },
+    {
+      "id": "q27",
+      "topic": "Justice",
+      "text": "Êtes-vous pour instaurer des objectifs publics de délais de traitement des dossiers judiciaires, accompagnés des ressources nécessaires et sans compromettre l'indépendance des tribunaux?"
+    },
+    {
+      "id": "q28",
+      "topic": "Sollicitations financières",
+      "text": "Êtes-vous pour interdire les demandes directes de transfert d'argent non sollicitées provenant d'inconnus par téléphone, message électronique ou Internet, sous réserve d'exceptions légales clairement définies?"
+    },
+    {
+      "id": "q29",
+      "topic": "Salaire minimum",
+      "text": "Êtes-vous pour prévoir une indexation annuelle automatique du salaire minimum en fonction de l'évolution du coût de la vie?"
+    },
+    {
+      "id": "q30",
+      "topic": "Délais des soins",
+      "text": "Êtes-vous pour obliger le système public de santé à publier ses délais d'attente par région et à mettre en œuvre des mesures correctives lorsque des objectifs établis ne sont pas atteints?"
+    },
+    {
+      "id": "q31",
+      "topic": "Santé régionale",
+      "text": "Êtes-vous pour accorder davantage de responsabilités d'organisation des soins aux établissements régionaux, dans le respect de normes de qualité communes?"
+    },
+    {
+      "id": "q32",
+      "topic": "Éducation",
+      "text": "Êtes-vous pour instaurer une évaluation publique régulière des résultats scolaires en lecture, en écriture et en mathématiques, accompagnée de mesures de soutien et de protection des renseignements personnels?"
+    },
+    {
+      "id": "q33",
+      "topic": "Formation professionnelle",
+      "text": "Êtes-vous pour développer un modèle de formation professionnelle en alternance, combinant enseignement, expérience rémunérée en milieu de travail et certification reconnue?"
+    },
+    {
+      "id": "q34",
+      "topic": "Personnel essentiel",
+      "text": "Êtes-vous pour exiger que toute réforme administrative des services essentiels démontre préalablement qu'elle ne compromettra pas les effectifs nécessaires aux soins, à l'enseignement et à la sécurité publique?"
+    },
+    {
+      "id": "q35",
+      "topic": "Décisions automatisées",
+      "text": "Êtes-vous pour interdire qu'une décision administrative affectant les droits d'une personne soit prise exclusivement par un système automatisé, sans intervention humaine ni possibilité de contestation?"
+    },
+    {
+      "id": "q36",
+      "topic": "Soutien à domicile",
+      "text": "Êtes-vous pour établir des normes minimales opposables de services de soutien à domicile, avec des objectifs d'accès et des budgets publiés chaque année?"
+    },
+    {
+      "id": "q37",
+      "topic": "Droits autochtones",
+      "text": "Êtes-vous pour inscrire dans une éventuelle Constitution québécoise la protection des droits ancestraux et issus de traités des peuples autochtones, ainsi que des mécanismes de participation élaborés avec les nations concernées?"
+    },
+    {
+      "id": "q38",
+      "topic": "Hydroélectricité",
+      "text": "Êtes-vous pour rendre obligatoire une évaluation indépendante des conséquences sur l'approvisionnement et les tarifs québécois avant la conclusion de tout nouvel accord majeur d'exportation d'électricité?"
+    },
+    {
+      "id": "q39",
+      "topic": "Sécurité alimentaire",
+      "text": "Êtes-vous pour créer un système public de réserves alimentaires d'urgence, avec des objectifs de capacité, des inspections régulières et une reddition de comptes annuelle?"
+    },
+    {
+      "id": "q40",
+      "topic": "Environnement",
+      "text": "Êtes-vous pour imposer une évaluation environnementale indépendante et publique avant l'autorisation des projets présentant des risques environnementaux majeurs, selon des critères définis par la loi?"
+    }
+  ]
+}

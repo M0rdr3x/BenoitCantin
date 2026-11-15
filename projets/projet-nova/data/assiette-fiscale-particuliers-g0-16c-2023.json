@@ -1,0 +1,138 @@
+{
+  "schema": "nova-g016c-assiette-particuliers-2023/v1",
+  "project": "Projet Nova",
+  "phase": "G0.16c",
+  "date": "2026-11-07",
+  "status": "AGREGATS_FISCAUX_PUBLICS_TRANSCRITS_NON_CALIBRES",
+  "adopted": false,
+  "programme_percent": 47,
+  "source_year": 2023,
+  "unit": "millions CAD courants 2023 sauf contribuables et pourcentages",
+  "sources": [
+    {
+      "id": "A7",
+      "publisher": "Ministère des Finances du Québec",
+      "url": "https://www.budget.finances.gouv.qc.ca/Budget/outils/statistiques-fiscales/somm-comp-impot.asp",
+      "table": "A.7",
+      "scope": "déclarations de revenus provinciales des particuliers",
+      "year": 2023,
+      "original_binary_imported": false,
+      "second_reviewer_signed_off": false
+    },
+    {
+      "id": "A3",
+      "publisher": "Ministère des Finances du Québec",
+      "url": "https://www.budget.finances.gouv.qc.ca/Budget/outils/statistiques-fiscales/resume.asp",
+      "table": "A.3",
+      "scope": "quintiles de contribuables selon revenu total",
+      "year": 2023,
+      "original_binary_imported": false,
+      "second_reviewer_signed_off": false
+    },
+    {
+      "id": "T4",
+      "publisher": "Ministère des Finances du Québec",
+      "url": "https://www.budget.finances.gouv.qc.ca/Budget/outils/statistiques-fiscales/tableau-4.asp",
+      "table": "4 (ligne 1, 2, 3)",
+      "scope": "nombres de contribuables imposables et non imposables",
+      "year": 2023,
+      "original_binary_imported": false,
+      "second_reviewer_signed_off": false
+    }
+  ],
+  "tax_return_aggregates_mcad": {
+    "total_declared_income": 427915,
+    "net_income_deductions": 40892,
+    "net_income": 387023,
+    "taxable_income_deductions": 14761,
+    "taxable_income": 372261,
+    "tax_on_taxable_income": 62148,
+    "nonrefundable_credits_applied": 21358,
+    "income_tax_payable": 40790,
+    "refundable_credits_applied": 9305,
+    "income_tax_payable_less_refundable_credits": 31485
+  },
+  "reported_mean_tax_rate_percent": 9.5,
+  "taxpayer_counts": {
+    "all_returns": 7220140,
+    "taxable_returns": 4910844,
+    "nontaxable_returns": 2309296
+  },
+  "quintiles_of_tax_filers_by_total_income": [
+    {
+      "quintile": 1,
+      "income_bracket": "Moins de 19 713 $",
+      "income_share_pct": 3.43,
+      "tax_payable_share_pct": 0.03
+    },
+    {
+      "quintile": 2,
+      "income_bracket": "19 713 $ à 34 580 $",
+      "income_share_pct": 8.91,
+      "tax_payable_share_pct": 1.46
+    },
+    {
+      "quintile": 3,
+      "income_bracket": "34 581 $ à 54 178 $",
+      "income_share_pct": 14.99,
+      "tax_payable_share_pct": 8.64
+    },
+    {
+      "quintile": 4,
+      "income_bracket": "54 179 $ à 82 785 $",
+      "income_share_pct": 22.57,
+      "tax_payable_share_pct": 20.45
+    },
+    {
+      "quintile": 5,
+      "income_bracket": "82 786 $ ou plus",
+      "income_share_pct": 50.1,
+      "tax_payable_share_pct": 69.41
+    }
+  ],
+  "rounding": {
+    "million_cad_tolerance": 1,
+    "percentage_points_tolerance": 0.02,
+    "reason": "somme des lignes arrondies peut différer du total publié"
+  },
+  "comparison_constraints": {
+    "is_historical_declared_tax_base": true,
+    "is_projected_2026_2027_tax_revenue": false,
+    "is_2026_tax_base": false,
+    "is_proposed_nova_tax_base": false,
+    "does_not_include_complete_corporate_tax_base": true,
+    "does_not_include_all_federal_taxation": true,
+    "does_not_prove_net_haven_recovery": true,
+    "five_quintiles_not_ten_household_deciles": true,
+    "cannot_join_with_isq_household_deciles": true,
+    "cannot_join_with_statcan_average_expenses": true,
+    "not_a_ten_year_balanced_budget": true,
+    "no_automatic_personal_tax_rate_calculation": true,
+    "no_automatic_tax_repeal": true,
+    "not_authorized_to_calibrate_nova": true
+  },
+  "links": {
+    "source_work": "data/reperes-publics-g0-16b-2023.json",
+    "previous_evidence": "data/matrice-preuves-g0-15-fiscalite.json",
+    "unverified_source_proof": "V05",
+    "quebec_public_budget_baseline": "data/registre-assiettes-fiscales-g0-14-2026-2027.json"
+  },
+  "unverified": {
+    "new_income_tax_rate_pct": null,
+    "revenue_nova_mcad": null,
+    "net_haven_recovery_mcad": null,
+    "household_gain_cad": null,
+    "corporate_tax_base_mcad": null,
+    "federal_functions_cost_mcad": null,
+    "funded_province_ten_year_balance_mcad": null,
+    "funded_sovereign_ten_year_balance_mcad": null
+  },
+  "decision": {
+    "partial_source_transcription_completed": true,
+    "all_proofs_g015_completed": false,
+    "external_validation_completed": false,
+    "microsimulation_calibrated": false,
+    "new_rates_authorized": false,
+    "programme_pct_after": 47
+  }
+}

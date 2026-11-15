@@ -5,6 +5,7 @@
   const PARTY_DATA_URL = "data/boussole-partis-2026.json";
   const PARTY_SOURCE_DATA_URL = "data/boussole-sources-partis-2026.json";
   const EVIDENCE_DATA_URL = "data/boussole-preuves-2026.json";
+  const FALLBACK_TIMEOUT_MS = 10000;
   const RESPONSES = [
     {value:-3,label:"Tout à fait en désaccord"},
     {value:-2,label:"En désaccord"},
@@ -31,6 +32,66 @@
 
   const $ = (sel, root=document) => root.querySelector(sel);
   const esc = value => String(value).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
+  // Lien vers une preuve externe : HTTPS absolu sans identifiants.
+  // Refuser javascript:, data:, liens schéma-relatifs et URL malformées.
+  const safeSourceUrl = value => {
+    const raw=String(value??'');
+    if(!/^https:\/\//i.test(raw))return '';
+    try{
+      const url=new URL(raw);
+      if(url.protocol!=='https:' || url.username || url.password)return '';
+      return url.href;
+    }catch(_error){return '';}
+  };
+
+
+  // Le JSON sert uniquement de repli lorsque le bundle public n'est pas disponible.
+  // Un réseau suspendu ne doit pas figer indéfiniment les boutons Réessayer.
+  async function fetchJsonWithTimeout(url){
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),FALLBACK_TIMEOUT_MS);
+    try{
+      const response=await fetch(url,{cache:"no-store",signal:controller.signal});
+      if(!response.ok) throw new Error("HTTP " + response.status);
+      return await response.json();
+    }finally{
+      clearTimeout(timer);
+    }
+  }
+
+  function validateQuestionnaireCorpus(corpus){
+    // Validation stricte des pôles, directions, poids et règles de neutralité.
+    // Une altération du corpus doit bloquer le calcul plutôt que le biaiser.
+    if(window.__NOVA_CIVIC_INTEGRITY?.inspectCompass(corpus)?.ok !== true){
+      throw new Error("Intégrité du questionnaire non vérifiée");
+    }
+    if(!corpus || !Array.isArray(corpus.axes) || corpus.axes.length!==16
+       || !Array.isArray(corpus.questions) || corpus.questions.length!==64){
+      throw new Error("Questionnaire incomplet");
+    }
+    const axes=new Set();
+    for(const axis of corpus.axes){
+      if(typeof axis?.id!=="string" || !axis.id || axes.has(axis.id)){
+        throw new Error("Dimensions invalides ou dupliquées");
+      }
+      axes.add(axis.id);
+    }
+    const counts=new Map([...axes].map(id=>[id,0]));
+    const ids=new Set();
+    for(const question of corpus.questions){
+      if(typeof question?.id!=="string" || !/^q[0-9]{2}$/.test(question.id)
+         || ids.has(question.id) || typeof question.text!=="string"
+         || !question.text.trim() || !axes.has(question.axis)){
+        throw new Error("Proposition invalide, dupliquée ou sans dimension");
+      }
+      ids.add(question.id);
+      counts.set(question.axis,counts.get(question.axis)+1);
+    }
+    if([...counts.values()].some(total=>total!==4)){
+      throw new Error("Répartition des propositions par dimension invalide");
+    }
+    return corpus;
+  }
 
   function currentQuestion(){
     return state.data?.questions?.[state.currentIndex] || null;
@@ -53,8 +114,8 @@
         <span class="compass-question-counter">Question ${index + 1} sur ${state.data.questions.length}</span>
       </div>
       <div class="compass-response-grid compass-response-stack" role="radiogroup" aria-labelledby="compass-question-title">
-        ${RESPONSES.map(r => `<label><input type="radio" name="${question.id}" value="${r.value}"${saved?.value === r.value ? " checked" : ""}><span>${esc(r.label)}</span></label>`).join("")}
-        <label class="compass-skip"><input type="radio" name="${question.id}" value="skip"${saved && saved.value === null ? " checked" : ""}><span>Sans opinion / passer</span></label>
+        ${RESPONSES.map(r => `<label><input type="radio" name="${esc(question.id)}" value="${r.value}"${saved?.value === r.value ? " checked" : ""}><span>${esc(r.label)}</span></label>`).join("")}
+        <label class="compass-skip"><input type="radio" name="${esc(question.id)}" value="skip"${saved && saved.value === null ? " checked" : ""}><span>Sans opinion / passer</span></label>
       </div>
       <label class="compass-importance">Importance de cette proposition
         <select data-importance>
@@ -76,6 +137,9 @@
         $("#compass-status").textContent = raw === "skip"
           ? "Question marquée « Sans opinion / passer ». Vous pouvez continuer."
           : "Réponse enregistrée localement. Vous pouvez continuer.";
+        // Les résultats et liens de partage doivent refléter les réponses
+        // corrigées, sans imposer de recommencer les 64 étapes.
+        if(state.results !== null) showResults(false);
       }
       if(event.target.matches("[data-importance]")){
         state.importance.set(question.id, event.target.value);
@@ -83,6 +147,7 @@
         if(savedAnswer){
           savedAnswer.importance = event.target.value;
           state.answers.set(question.id, savedAnswer);
+          if(state.results !== null) showResults(false);
         }
       }
     });
@@ -175,43 +240,13 @@
   }
 
   function calculate(){
-    const weightMap = state.data.methodology?.importanceWeights || {faible:0.5,normal:1,forte:1.5};
-    const axes = new Map(state.data.axes.map(axis => [axis.id, {
-      axis, sum:0, max:0, primaryAnswered:0, primaryTotal:0, evidenceWeight:0
-    }]));
-
-    state.data.questions.forEach(question => {
-      const primary = axes.get(question.axis);
-      if(primary) primary.primaryTotal += 1;
-
-      const answer = state.answers.get(question.id);
-      if(!answer || answer.value === null) return;
-      if(primary) primary.primaryAnswered += 1;
-
-      const userWeight = weightMap[answer.importance] ?? 1;
-      const loadings = Array.isArray(question.loadings) && question.loadings.length
-        ? question.loadings
-        : [{axis:question.axis, weight:1, direction:question.direction}];
-
-      loadings.forEach(loading => {
-        const bucket = axes.get(loading.axis);
-        if(!bucket) return;
-        const loadingWeight = Number(loading.weight) || 0;
-        const direction = Number(loading.direction) || 0;
-        bucket.sum += answer.value * direction * userWeight * loadingWeight;
-        bucket.max += 3 * userWeight * loadingWeight;
-        bucket.evidenceWeight += loadingWeight;
-      });
-    });
-
-    return Array.from(axes.values()).map(bucket => ({
-      ...bucket.axis,
-      score: bucket.max ? Math.round((bucket.sum / bucket.max) * 100) : null,
-      answered: bucket.primaryAnswered,
-      total: bucket.primaryTotal,
-      coverage: bucket.primaryTotal ? Math.round(bucket.primaryAnswered / bucket.primaryTotal * 100) : 0,
-      evidenceWeight: Math.round(bucket.evidenceWeight * 100) / 100
-    }));
+    // Un moteur unique, pur et couvert par les tests calcule les 16 dimensions.
+    // Il échoue si une réponse ou une pondération est incohérente.
+    const core=window.__NOVA_CIVIC_INTEGRITY;
+    if(!core || typeof core.scoreCompass!=="function"){
+      throw new Error("Calcul du profil indisponible : contrôle d'intégrité manquant");
+    }
+    return core.scoreCompass(state.data,state.answers);
   }
 
   function resultCard(result){
@@ -219,14 +254,20 @@
     const label = score === null ? "Données insuffisantes" : (score === 0 ? "Équilibre" : score < 0 ? result.negative : result.positive);
     const position = score === null ? 50 : Math.max(0, Math.min(100, (score + 100) / 2));
     const signed = score === null ? "—" : (score > 0 ? "+" + score : String(score));
+    // Un axe sans données suffisantes n'est PAS neutre : ne pas placer
+    // artificiellement son repère au milieu de l'échelle, ni l'annoncer
+    // comme un score calculé aux technologies d'assistance.
+    const scoreA11y = score === null
+      ? "Score indisponible : données insuffisantes"
+      : "Score " + signed + " sur une échelle de moins 100 à plus 100";
     return `
       <article class="compass-result-card">
         <div class="compass-result-head">
           <div><h3>${esc(result.title)}</h3><p>${esc(label)}</p></div>
-          <strong aria-label="Score ${signed} sur une échelle de moins 100 à plus 100">${signed}</strong>
+          <strong aria-label="${esc(scoreA11y)}">${signed}</strong>
         </div>
         <div class="compass-axis-labels"><span>${esc(result.negative)}</span><span>${esc(result.positive)}</span></div>
-        <div class="compass-axis-track" aria-hidden="true"><span class="compass-axis-mid"></span><i style="left:${position}%"></i></div>
+        <div class="compass-axis-track" aria-hidden="true"><span class="compass-axis-mid"></span>${score === null ? "" : `<i style="left:${position}%"></i>`}</div>
         <div class="compass-result-meta">Couverture : ${result.answered}/${result.total} réponses (${result.coverage} %)</div>
       </article>
     `;
@@ -235,40 +276,52 @@
   function renderRadar(results){
     const host = $("#compass-radar");
     if(!host) return;
-    const valid = results.filter(r => r.score !== null);
-    if(valid.length < 3){
-      host.innerHTML = "<p>Il n’y a pas encore assez de dimensions répondues pour afficher la carte complète.</p>";
+    if(!results.some(r => r.score !== null)){
+      host.innerHTML = "<p>Il n’y a pas assez de réponses pour afficher les dimensions.</p>";
       return;
     }
-    const size = 620, center = size / 2, radius = 220;
-    const points = valid.map((r, index) => {
-      const angle = (-Math.PI / 2) + (index * 2 * Math.PI / valid.length);
-      const normalized = (r.score + 100) / 200;
-      const rr = radius * normalized;
+    // Les 16 axes gardent TOUJOURS le même angle, même si certaines questions sont passées.
+    // Une dimension sans score n'est jamais ramenée artificiellement au centre.
+    const size = 680, center = size / 2, radius = 220;
+    const points = results.map((r,index) => {
+      const angle = (-Math.PI / 2) + (index * 2 * Math.PI / results.length);
+      const normalized = r.score === null ? null : (r.score + 100) / 200;
+      const rr = normalized === null ? null : radius * normalized;
       return {
-        x:center + Math.cos(angle) * rr,
-        y:center + Math.sin(angle) * rr,
-        lx:center + Math.cos(angle) * (radius + 64),
-        ly:center + Math.sin(angle) * (radius + 64),
+        x:rr === null ? null : center + Math.cos(angle) * rr,
+        y:rr === null ? null : center + Math.sin(angle) * rr,
+        lx:center + Math.cos(angle) * (radius + 70),
+        ly:center + Math.sin(angle) * (radius + 70),
         sx:center + Math.cos(angle) * radius,
         sy:center + Math.sin(angle) * radius,
         result:r
       };
     });
-    const polygon = points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+    const complete = points.every(p => p.x !== null);
+    const polygon = complete
+      ? `<polygon points="${points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")}"></polygon>`
+      : "";
     const spokes = points.map(p => `<line x1="${center}" y1="${center}" x2="${p.sx.toFixed(1)}" y2="${p.sy.toFixed(1)}"></line>`).join("");
+    const markers = points.filter(p => p.x !== null).map(p =>
+      `<circle class="compass-radar-marker" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="5"></circle>`
+    ).join("");
     const labels = points.map(p => {
       const short = esc(p.result.title).split(" ").slice(0,3).join(" ");
-      return `<text x="${p.lx.toFixed(1)}" y="${p.ly.toFixed(1)}" text-anchor="middle"><tspan>${short}</tspan><tspan x="${p.lx.toFixed(1)}" dy="15">${p.result.score > 0 ? "+" : ""}${p.result.score}</tspan></text>`;
+      const score = p.result.score === null ? "—" : (p.result.score > 0 ? "+" : "") + p.result.score;
+      return `<text x="${p.lx.toFixed(1)}" y="${p.ly.toFixed(1)}" text-anchor="middle"><tspan>${short}</tspan><tspan x="${p.lx.toFixed(1)}" dy="15">${score}</tspan></text>`;
     }).join("");
+    const description = complete
+      ? "Profil sur seize dimensions. Les positions sont conservées dans leur ordre permanent."
+      : "Profil partiel : les seize dimensions conservent leur place. Les dimensions sans réponse sont signalées par un tiret et ne sont pas reliées par un polygone.";
     host.innerHTML = `
       <svg class="compass-radar-svg" viewBox="0 0 ${size} ${size}" role="img" aria-labelledby="compass-radar-title compass-radar-desc">
         <title id="compass-radar-title">Carte multidimensionnelle de votre profil</title>
-        <desc id="compass-radar-desc">Chaque rayon représente une dimension et sa position calculée selon vos réponses.</desc>
+        <desc id="compass-radar-desc">${description}</desc>
         <circle cx="${center}" cy="${center}" r="${radius}"></circle>
         <circle cx="${center}" cy="${center}" r="${radius * .5}"></circle>
         ${spokes}
-        <polygon points="${polygon}"></polygon>
+        ${polygon}
+        ${markers}
         ${labels}
       </svg>`;
   }
@@ -297,7 +350,8 @@
   }
 
   function configureSharing(results){
-    const pageUrl = window.location.href.split("#")[0];
+    // Ne jamais inclure les paramètres (jetons éventuels) ni le fragment dans un partage.
+    const pageUrl = window.location.href.split(/[?#]/,1)[0];
     const compact = buildResultText(results,true);
     const full = buildResultText(results,false);
     const subject = "Mon résultat — Boussole électorale Nova";
@@ -331,7 +385,8 @@
       linkedin.href = `${base}?url=${encodeURIComponent(pageUrl)}`;
     }
 
-    $("#compass-share-native")?.addEventListener("click", async () => {
+    const shareNative = $("#compass-share-native");
+    if(shareNative) shareNative.onclick = async () => {
       if(navigator.share){
         try{
           await navigator.share({title:subject,text:compact,url:pageUrl});
@@ -340,15 +395,24 @@
           if(error?.name !== "AbortError") $("#compass-status").textContent = "Le partage n’a pas pu être ouvert. Vous pouvez copier le résumé.";
         }
       }else{
-        await copyText(compact + "\n" + pageUrl);
-        $("#compass-status").textContent = "Le partage natif n’est pas disponible; le résumé a été copié.";
+        try {
+          await copyText(compact + "\n" + pageUrl);
+          $("#compass-status").textContent = "Le partage natif n’est pas disponible; le résumé a été copié.";
+        } catch(_error) {
+          $("#compass-status").textContent = "Copie impossible : utilisez « Préparer le courriel » pour partager votre résumé.";
+        }
       }
-    }, {once:true});
+    };
 
-    $("#compass-copy-result")?.addEventListener("click", async () => {
-      await copyText(full + "\n\n" + pageUrl);
-      $("#compass-status").textContent = "Résumé copié dans le presse-papiers.";
-    }, {once:true});
+    const copyResult = $("#compass-copy-result");
+    if(copyResult) copyResult.onclick = async () => {
+      try {
+        await copyText(full + "\n\n" + pageUrl);
+        $("#compass-status").textContent = "Résumé copié dans le presse-papiers.";
+      } catch(_error) {
+        $("#compass-status").textContent = "Copie impossible : utilisez « Préparer le courriel » pour partager votre résumé.";
+      }
+    };
   }
 
   async function copyText(text){
@@ -362,19 +426,21 @@
     area.style.position = "fixed";
     area.style.opacity = "0";
     document.body.appendChild(area);
-    area.select();
-    document.execCommand("copy");
-    area.remove();
+    try {
+      area.select();
+      if(document.execCommand("copy") !== true){
+        throw new Error("COPY_UNAVAILABLE");
+      }
+    } finally {
+      area.remove();
+    }
   }
 
-  function showResults(){
+  function showResults(focusAndScroll=true){
+    // Même si toutes les propositions sont passées, le questionnaire se
+    // termine normalement. La conclusion doit expliquer l'absence de score,
+    // sans inventer une position politique et sans piéger l'utilisateur à Q64.
     const answered = Array.from(state.answers.values()).filter(x => x.value !== null).length;
-    if(answered === 0){
-      $("#compass-status").textContent = "Vous avez passé toutes les questions. Répondez à au moins une proposition pour obtenir un profil.";
-      $("#compass-status").focus();
-      return;
-    }
-
     const results = calculate();
     state.results = results;
     $("#compass-results-grid").innerHTML = results.map(resultCard).join("");
@@ -382,17 +448,27 @@
 
     const minimum = Math.ceil(state.data.questions.length * (state.data.methodology?.minimumAnsweredRatio ?? 0.5));
     const coverage = coveragePercent(results);
-    const partial = answered < minimum;
-    $("#compass-summary").textContent = partial
-      ? `Profil partiel : ${answered} propositions répondues sur ${state.data.questions.length}; couverture moyenne ${coverage} %. Les dimensions peu couvertes doivent être interprétées avec prudence.`
-      : `Profil calculé sur ${state.data.axes.length} dimensions; couverture moyenne ${coverage} %. Aucun score global gauche/droite n’est généré.`;
+    const calculableAxes = results.filter(result => result.score !== null).length;
+    const partial = answered < minimum || calculableAxes < state.data.axes.length;
+    $("#compass-summary").textContent = calculableAxes === 0
+      ? `Aucune dimension calculable : ${answered} proposition${answered === 1 ? "" : "s"} répondue${answered === 1 ? "" : "s"} sur ${state.data.questions.length}. Pour obtenir un premier score, répondez à au moins deux propositions principales d’un même thème; utilisez « Précédent » pour revoir vos choix, ou « Recommencer ».`
+      : partial
+        ? `Profil partiel : ${answered} propositions répondues sur ${state.data.questions.length}, ${calculableAxes}/${state.data.axes.length} dimensions calculables; couverture moyenne ${coverage} %. Une dimension nécessite au moins deux réponses principales.`
+        : `Profil calculé sur ${calculableAxes} dimensions; couverture moyenne ${coverage} %. Aucun score global gauche/droite n’est généré.`;
 
     $("#compass-results").hidden = false;
     configureSharing(results);
-    $("#compass-status").textContent = "Votre résultat a été calculé localement dans votre navigateur.";
-    // L'étape finale doit aussi être annoncée au clavier et au lecteur d'écran.
-    $("#compass-results-title")?.focus({preventScroll:true});
-    scrollToSection($("#compass-results"));
+    $("#compass-status").textContent = !focusAndScroll
+      ? "Réponse modifiée : le profil et le partage ont été actualisés localement."
+      : calculableAxes === 0
+        ? "Questionnaire terminé : aucune dimension calculable. Vous pouvez revoir vos réponses."
+        : "Votre résultat a été calculé localement dans votre navigateur.";
+    // Une modification doit rester au clavier dans la question éditée :
+    // seule la consultation initiale des résultats déplace le focus.
+    if(focusAndScroll){
+      $("#compass-results-title")?.focus({preventScroll:true});
+      scrollToSection($("#compass-results"));
+    }
   }
 
   function reset(){
@@ -525,7 +601,8 @@
       priorityLinks.innerHTML = limitedQuestions.map(({question,index}) =>
         `<button type="button" data-compass-priority="${esc(question.id)}" aria-controls="compass-evidence-question-results">Q${String(index + 1).padStart(2,"0")} — ${esc(question.text)}</button>`
       ).join("");
-      priorityLinks.addEventListener("click",event => {
+      // Ne pas empiler les gestionnaires lors de « Réessayer ».
+      priorityLinks.onclick = event => {
         const button = event.target.closest("button[data-compass-priority]");
         if(!button || !priorityLinks.contains(button)) return;
         const questionId = button.dataset.compassPriority;
@@ -533,7 +610,7 @@
         select.value = questionId;
         renderSelected();
         select.focus();
-      });
+      };
     }
 
     function renderSelected(){
@@ -595,14 +672,15 @@
             </dl>
             <p><strong>Éléments retenus :</strong> ${esc(record.evidenceSummary)}</p>
             <p><strong>Justification du codage :</strong> ${esc(record.rationale)}</p>
-            <p><a href="${esc(record.sourceUrl)}" target="_blank" rel="noopener noreferrer">Consulter la source officielle ↗</a></p>
+            ${safeSourceUrl(record.sourceUrl) ? `<p><a href="${esc(safeSourceUrl(record.sourceUrl))}" target="_blank" rel="noopener noreferrer">Consulter la source citée ↗</a></p>` : "<p>Source externe non vérifiée.</p>"}
           </article>
         `;
       }).join("");
     }
 
-    select.addEventListener("change",renderSelected);
-    filter.addEventListener("change",renderSelected);
+    // Réattribuer au lieu d’empiler après chaque rechargement documentaire.
+    select.onchange=renderSelected;
+    filter.onchange=renderSelected;
     const firstWithEvidence = questions.find(question => (recordsByQuestion.get(question.id) || []).length > 0);
     if(firstWithEvidence) select.value = firstWithEvidence.id;
     renderSelected();
@@ -732,6 +810,20 @@
       );
   }
 
+  // Les liens de provenance sont vérifiés avant toute fiche finalisée :
+  // HTTPS avec hôte valide, sans identifiants ni caractères de contrôle.
+  function isSafeEvidenceUrl(value){
+    if(typeof value!=="string" || !value.startsWith("https:"+"/"+"/") ||
+       /[\u0000-\u001f\u007f]/.test(value)) return false;
+    try {
+      const source=new URL(value);
+      return source.protocol==="https:" && source.hostname.includes(".") &&
+        source.username==="" && source.password==="";
+    }catch{
+      return false;
+    }
+  }
+
   function validateDocumentaryCorpora(questionCorpus,partyCorpus,sourceCorpus,evidenceCorpus){
     const questions = questionCorpus?.questions;
     const parties = partyCorpus?.parties;
@@ -774,6 +866,9 @@
     for(const record of records){
       if(record.finalizable !== true ||
          record.secondIndependentReview?.status !== "completed") continue;
+      if(!isSafeEvidenceUrl(record.sourceUrl)){
+        throw new Error("URL de provenance documentaire non sécurisée");
+      }
       const key = record.questionId+"::"+record.partyId;
       if(!matrixByKey.has(key) || validatedRecords.has(key) ||
          record.proposedStatus === "unknown" ||
@@ -806,18 +901,24 @@
     }
     if(status) status.textContent = "Chargement des données documentaires…";
     try{
-      const [partyResponse,sourceResponse,evidenceResponse,questionResponse] = await Promise.all([
-        fetch(PARTY_DATA_URL,{cache:"no-store"}),
-        fetch(PARTY_SOURCE_DATA_URL,{cache:"no-store"}),
-        fetch(EVIDENCE_DATA_URL,{cache:"no-store"}),
-        fetch(DATA_URL,{cache:"no-store"})
-      ]);
-      for(const response of [partyResponse,sourceResponse,evidenceResponse,questionResponse]){
-        if(!response.ok) throw new Error("HTTP " + response.status);
+      // GitHub Pages/Jekyll legacy retire plusieurs JSON publics du site.
+      // Les corpus JS vérifiés en CI donnent le même contenu sans réseau.
+      // En l'absence du bundle, conserver le chemin JSON pour Netlify.
+      const bundled = window.__NOVA_COMPASS_PUBLIC_CORPORA;
+      let partyCorpus,sourceCorpus,evidenceCorpus,questionCorpus;
+      if(bundled?.questionnaire && bundled?.parties && bundled?.sources && bundled?.evidence){
+        ({questionnaire:questionCorpus,parties:partyCorpus,sources:sourceCorpus,evidence:evidenceCorpus}=bundled);
+      }else{
+        [partyCorpus,sourceCorpus,evidenceCorpus,questionCorpus] = await Promise.all([
+          fetchJsonWithTimeout(PARTY_DATA_URL),
+          fetchJsonWithTimeout(PARTY_SOURCE_DATA_URL),
+          fetchJsonWithTimeout(EVIDENCE_DATA_URL),
+          fetchJsonWithTimeout(DATA_URL)
+        ]);
       }
-      const [partyCorpus,sourceCorpus,evidenceCorpus,questionCorpus] = await Promise.all([
-        partyResponse.json(),sourceResponse.json(),evidenceResponse.json(),questionResponse.json()
-      ]);
+      // Même le volet documentaire doit rejeter un questionnaire altéré :
+      // empêcher des fiches de partis attachées à des axes/poids incohérents.
+      validateQuestionnaireCorpus(questionCorpus);
       validateDocumentaryCorpora(questionCorpus,partyCorpus,sourceCorpus,evidenceCorpus);
       renderPartyRegistry(partyCorpus,evidenceCorpus);
       renderDocumentaryStatus(partyCorpus,sourceCorpus,evidenceCorpus);
@@ -854,13 +955,13 @@
     if(start) start.disabled = true;
     if(status) status.textContent = "Chargement du questionnaire local…";
     try{
-      const response = await fetch(DATA_URL,{cache:"no-store"});
-      if(!response.ok) throw new Error("HTTP " + response.status);
-      const corpus = await response.json();
-      if(!Array.isArray(corpus.axes) || corpus.axes.length !== 16 ||
-         !Array.isArray(corpus.questions) || corpus.questions.length !== 64){
-        throw new Error("Questionnaire incomplet");
+      // Le corpus public embarqué est identique au fichier JSON (test d'intégrité).
+      // Le repli JSON reste disponible pour les hébergeurs qui le servent.
+      let corpus = window.__NOVA_COMPASS_PUBLIC_CORPORA?.questionnaire;
+      if(!corpus){
+        corpus = await fetchJsonWithTimeout(DATA_URL);
       }
+      validateQuestionnaireCorpus(corpus);
       if(documentaryBinding && !matchesQuestionnaireBinding(corpus,documentaryBinding)){
         throw new Error("Questionnaire incompatible avec les preuves déjà chargées");
       }
@@ -880,9 +981,17 @@
   }
 
   document.addEventListener("DOMContentLoaded",() => {
+    // Bloquer les soumissions natives, y compris avec Entrée au clavier.
+    // Un gestionnaire JavaScript explicite reste actif sous une CSP stricte,
+    // contrairement à l’ancien attribut HTML inline onsubmit.
+    $("#compass-form")?.addEventListener("submit",event => event.preventDefault());
     $("#compass-start")?.addEventListener("click",startQuestionnaire);
     $("#compass-prev")?.addEventListener("click",goPrevious);
     $("#compass-next")?.addEventListener("click",goNext);
+    $("#compass-preview")?.addEventListener("click",()=>{
+      if(!state.started || !state.data)return;
+      showResults();
+    });
     $("#compass-reset")?.addEventListener("click",reset);
     $("#compass-questionnaire-retry")?.addEventListener("click",init);
     $("#compass-evidence-retry")?.addEventListener("click",loadPoliticalRegistryAndEvidence);

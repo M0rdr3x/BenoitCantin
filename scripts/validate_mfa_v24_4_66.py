@@ -36,7 +36,9 @@ def main():
         'await new Promise(()=>{})',
         "raw.startsWith('//')",
         "raw.includes('\\\\')",
-        "[\\u0000-\\u001f\\u007f]"
+        "[\\u0000-\\u0020\\u007f]",
+        "/%(?:0[0-9a-f]|1[0-9a-f]|2f|5c|7f)/i.test(raw)",
+        "url.pathname!==raw.split(/[?#]/,1)[0]"
     ],'garde MFA central')
 
     require(challenge,[
@@ -57,6 +59,8 @@ def main():
         "factorType:'totp'",
         'friendlyName:`SINJIRA TOTP ${verifiedCount+1}`',
         'challengeAndVerify',
+        "verifiedSession?.access_token",
+        "assurance?.currentLevel!=='aal2'",
         'mfa.unenroll',
         "qrCode.startsWith('data:image/')",
         "verified.length?'Ajouter une application d’authentification de secours'"
@@ -79,7 +83,7 @@ def main():
     require(security_page,[
         'data-mfa-enroll',
         'data-mfa-factors',
-        'v24-security.js?v=',
+        'v24-security.js?v=24.4.70',
         'aucun SMS, aucun numéro de téléphone et aucun fournisseur payant n’est requis'
     ],'page sécurité MFA')
 

@@ -35,7 +35,7 @@ def main() -> int:
 
     questionnaire = (ROOT / "supabase" / "functions" / "submit-character-questionnaire" / "index.ts").read_text("utf-8", errors="ignore")
     for marker in (
-        "requiredUser(req)",
+        "requiredVaultUser(req)",
         "req.method!=='POST'",
         "MAX_REQUEST_BYTES=2*1024*1024",
         "MAX_ANSWERS_CHARS=500000",

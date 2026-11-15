@@ -1195,3 +1195,9 @@ html{scroll-padding-top:120px}body{overflow-x:hidden}.container{width:min(1180px
 .hero-side-link-boussole>img{width:58px;height:58px;object-fit:cover;border-radius:14px;box-shadow:0 8px 18px rgba(6,75,105,.12)}
 .hero-side-link-boussole>span{min-width:0}
 @media(max-width:760px){.nova-compass-entry{padding-top:12px}.nova-compass-entry-link{grid-template-columns:70px minmax(0,1fr);gap:14px;padding:14px 16px}.nova-compass-entry-link>img{width:70px;height:70px;border-radius:16px}.nova-compass-entry-cta{grid-column:1/-1;width:100%}.nav-link-boussole::before{margin-right:.3rem}}
+
+/* Accès direct au sondage : hiérarchie cohérente avec la boussole sans confusion des deux outils. */
+.nova-poll-home-entry{background:#eef5fa;padding-top:18px}
+.nova-poll-home-entry .nova-compass-entry-link{background:linear-gradient(135deg,#0c263d 0%,#124d62 62%,#136a73 100%)}
+.nova-poll-home-entry .nova-compass-entry-copy small{color:#b5fff0}
+.nova-poll-home-entry .nova-compass-entry-link>img{object-fit:contain;background:rgba(255,255,255,.08);padding:10px}

@@ -1,0 +1,218 @@
+{
+  "schema": "nova-sinjira-sante-g0-baseline/v1",
+  "dossier_id": "NOVA-SINJ-G0-SAN-001",
+  "projet": "Projet Nova",
+  "dossier_title": "Soins de première ligne : accès, affiliation et conditions d'une comparaison des modes de prestation",
+  "status": "DIAGNOSTIC_PARTIEL_NON_APPROUVE",
+  "g0_completed": false,
+  "validated_as_of": "2026-11-03",
+  "published_current_values_only": false,
+  "notes": [
+    "Les nombres de l'enquête représentent les adultes visés par le plan d'enquête; ils ne décrivent ni les mineurs ni certains territoires et établissements exclus.",
+    "Les proportions de recours aux urgences sont descriptives et ne sont pas des estimations causales de l'effet d'affiliation.",
+    "Les montants agrégés RAMQ n'établissent aucun coût par consultation ou par mode de prestation.",
+    "Aucun pilote, modification de clinique, contrat, financement ni économie n'est autorisé par ce dossier.",
+    "Les données administratives d'attitration et l'enquête ISQ utilisent des définitions et populations différentes; ne jamais calculer leur variation comme une tendance."
+  ],
+  "diagnostic_population": {
+    "definition": "Personnes de 18 ans et plus vivant en logement non institutionnel au Québec, selon le périmètre de l'EQUSSSS 2025",
+    "excluded": "Logements collectifs institutionnels; régions sociosanitaires Nunavik (17) et Terres-Cries-de-la-Baie-James (18)",
+    "survey_collection_start": "2025-01-06",
+    "survey_collection_end": "2025-05-11",
+    "publication_date": "2026-11-02",
+    "respondents": 9391,
+    "estimated_target_population": 7311000,
+    "source_id": "ISQ_EQUSSSS_2025_20261102"
+  },
+  "sources": [
+    {
+      "id": "ISQ_EQUSSSS_2025_20261102",
+      "institution": "Institut de la statistique du Québec",
+      "title": "Utilisation de certains services de santé et services sociaux de première ligne en 2025",
+      "url": "https://statistique.quebec.ca/fr/document/utilisation-services-sante-et-services-sociaux/publication/utilisation-services-sante-sociaux-premiere-ligne-2025",
+      "published": "2026-11-02",
+      "kind": "observational_survey"
+    },
+    {
+      "id": "SANTE_QUEBEC_INDICATEURS",
+      "institution": "Gouvernement du Québec / Santé Québec",
+      "title": "Performance du réseau de la santé et des services sociaux — définitions des indicateurs",
+      "url": "https://www.quebec.ca/sante/systeme-et-services-de-sante/organisation-des-services/donnees-systeme-sante-quebecois-services/performance-reseau-sante-services-sociaux",
+      "kind": "indicator_definitions",
+      "extract_value": false
+    },
+    {
+      "id": "RAMQ_PARTICIPANTS",
+      "institution": "Régie de l'assurance maladie du Québec",
+      "title": "Professionnels offrant des services couverts",
+      "url": "https://www.ramq.gouv.qc.ca/fr/citoyens/assurance-maladie/professionnels-offrant-services-couverts",
+      "kind": "official_explanation",
+      "extract_value": false
+    },
+    {
+      "id": "RAMQ_COUTS_20242025",
+      "institution": "Régie de l'assurance maladie du Québec",
+      "title": "La RAMQ en quelques chiffres",
+      "url": "https://www.ramq.gouv.qc.ca/fr/donnees-statistiques/ramq-quelques-chiffres",
+      "kind": "aggregated_program_spending",
+      "period": "2024-2025"
+    },
+    {
+      "id": "LCA_SANTE_CANADA",
+      "institution": "Santé Canada",
+      "title": "Loi canadienne sur la santé : Rapport annuel 2024-2025",
+      "url": "https://www.canada.ca/fr/sante-canada/services/publications/systeme-et-services-sante/loi-canadienne-sante-rapport-annuel-2024-2025.html",
+      "kind": "federal_policy_legal_overview"
+    },
+    {
+      "id": "ISQ_2024_MEDECIN_INDIVIDUEL",
+      "institution": "Institut de la statistique du Québec",
+      "title": "Proportion de la population inscrite auprès d'un médecin de famille (2013-2024)",
+      "url": "https://statistique.quebec.ca/docs-ken/vitrine/occupation-vitalite-territoire/documents/services_proximite_03.pdf",
+      "kind": "historical_administrative_context",
+      "report_updated": "2025-08-06"
+    },
+    {
+      "id": "CIRANO_PRIVE_2026",
+      "institution": "CIRANO",
+      "title": "Le privé en santé au Québec : Revue de la recherche scientifique",
+      "url": "https://cirano.qc.ca/index.php/fr/sommaires/2026PR-10",
+      "published": "2026-09-18",
+      "kind": "literature_review"
+    }
+  ],
+  "observations": [
+    {
+      "id": "G0-SAN-01",
+      "label": "Personnes adultes affiliées à un médecin, GMF ou IPS",
+      "value": 82,
+      "unit": "percent",
+      "time_period": "enquête 2025",
+      "population": "Adultes visés par EQUSSSS 2025",
+      "source_id": "ISQ_EQUSSSS_2025_20261102",
+      "precision": "pourcentage arrondi",
+      "comparability": "same_source_only",
+      "scope": "descriptive"
+    },
+    {
+      "id": "G0-SAN-02",
+      "label": "Personnes adultes sans affiliation déclarée",
+      "value": 18,
+      "unit": "percent",
+      "time_period": "enquête 2025",
+      "population": "Adultes visés par EQUSSSS 2025",
+      "source_id": "ISQ_EQUSSSS_2025_20261102",
+      "precision": "pourcentage arrondi",
+      "comparability": "same_source_only",
+      "scope": "descriptive"
+    },
+    {
+      "id": "G0-SAN-03",
+      "label": "Recours aux urgences pour consulter chez les personnes affiliées",
+      "value": 10,
+      "unit": "percent",
+      "time_period": "enquête 2025",
+      "population": "Adultes affiliés visés par EQUSSSS 2025",
+      "source_id": "ISQ_EQUSSSS_2025_20261102",
+      "precision": "environ",
+      "comparability": "same_source_only",
+      "scope": "association_not_causation"
+    },
+    {
+      "id": "G0-SAN-04",
+      "label": "Recours aux urgences pour consulter chez les personnes sans affiliation",
+      "value": 19,
+      "unit": "percent",
+      "time_period": "enquête 2025",
+      "population": "Adultes sans affiliation visés par EQUSSSS 2025",
+      "source_id": "ISQ_EQUSSSS_2025_20261102",
+      "precision": "environ",
+      "comparability": "same_source_only",
+      "scope": "association_not_causation"
+    }
+  ],
+  "context_not_comparable_as_trend": [
+    {
+      "id": "HIST-2024-01",
+      "value": 72,
+      "unit": "percent",
+      "period": "2024-12-31",
+      "definition": "Population assurée inscrite auprès d'un médecin de famille INDIVIDUEL",
+      "source_id": "ISQ_2024_MEDECIN_INDIVIDUEL"
+    },
+    {
+      "id": "HIST-2024-02",
+      "value": 84.3,
+      "unit": "percent",
+      "period": "2024-12-31",
+      "definition": "Population assurée attitrée à médecin individuel, groupe de médecins ou IPS de première ligne",
+      "source_id": "ISQ_2024_MEDECIN_INDIVIDUEL"
+    }
+  ],
+  "finances_context_not_service_unit": [
+    {
+      "id": "RAMQ-AGREGAT-01",
+      "amount": 14232,
+      "unit": "million_CAD",
+      "period": "2024-2025",
+      "definition": "Total des coûts des programmes administrés par la RAMQ; pas les coûts globaux de santé; chevauche le périmètre provincial",
+      "source_id": "RAMQ_COUTS_20242025"
+    }
+  ],
+  "missing_before_g0_complete": [
+    {
+      "id": "M01",
+      "required": "Définition juridique et clinique d'un épisode de soins non urgent ou semi-urgent comparable",
+      "status": "NON_RECU"
+    },
+    {
+      "id": "M02",
+      "required": "Volumes d'épisodes par territoire, gravité, besoin et type de suivi, avec dénominateur et date d'observation",
+      "status": "NON_RECU"
+    },
+    {
+      "id": "M03",
+      "required": "Délais demande-consultation et délais de suivi (médiane, p90), sans biais d'exclusion des demandes non servies",
+      "status": "NON_RECU"
+    },
+    {
+      "id": "M04",
+      "required": "Données de coûts réels par épisode et par opérateur, rapprochées aux montants RAMQ et à la gestion publique",
+      "status": "NON_RECU"
+    },
+    {
+      "id": "M05",
+      "required": "Personnel en équivalents temps plein, entrées/sorties et déplacement entre public/privé par région",
+      "status": "NON_RECU"
+    },
+    {
+      "id": "M06",
+      "required": "Qualité clinique, renvois, urgences, complications et indicateurs de continuité ajustés au risque",
+      "status": "NON_RECU"
+    },
+    {
+      "id": "M07",
+      "required": "Frais additionnels des usagers et proches aidants, conditions de couverture des actes",
+      "status": "NON_RECU"
+    },
+    {
+      "id": "M08",
+      "required": "Capacité de prise en charge des cas complexes, zones éloignées, personnes vulnérables et mécanisme de secours",
+      "status": "NON_RECU"
+    },
+    {
+      "id": "M09",
+      "required": "Avis juridique et méthodologique sur modalités contractuelles et échanges de données",
+      "status": "NON_RECU"
+    }
+  ],
+  "next_gate": "Completer G0 et documenter couts/qualite avant d'entreprendre G1; aucun basculement de statut automatique.",
+  "cost_public_per_episode": null,
+  "cost_private_per_episode": null,
+  "cost_cooperative_per_episode": null,
+  "expected_savings": null,
+  "authorized_pilot": false,
+  "authorized_funding": false,
+  "legal_review_completed": false,
+  "external_audit_completed": false
+}

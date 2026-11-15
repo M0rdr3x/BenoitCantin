@@ -1,0 +1,59 @@
+{
+  "schema": "nova-g013-fiscal-validation-report/v1",
+  "date": "2026-11-05",
+  "project": "Projet Nova",
+  "tested": [
+    "assets/g13-fiscal-readiness-core.mjs",
+    "data/cadre-financier-g0-13-2026-2036.json",
+    "tests/g13-fiscal-readiness.test.mjs"
+  ],
+  "execution": {
+    "node": "v26.12.1",
+    "context": "Environnement externe de vérification temporaire",
+    "github_actions_confirmed": false,
+    "exit_code": 0,
+    "total": 16,
+    "passed": 16,
+    "failed": 0,
+    "skipped": 0
+  },
+  "checks": [
+    "Identités comptables des cinq exercices gouvernementaux",
+    "Composantes des revenus autonomes et transferts",
+    "Écarts budgétaires futurs identifiés comme conditionnels",
+    "Inconnues 2031-2036 conservées null",
+    "Aucune hypothèse de solde Nova fabriquée",
+    "Scénario souverain distinct du provincial",
+    "Rejet des fausses recettes anti-évasion",
+    "Rejet des approbations financières fictives",
+    "Score programme 47% inchangé"
+  ],
+  "findings": {
+    "official_baseline": "Rapport préélectoral du Québec, août 2026, tableau pluriannuel",
+    "official_2026_revenue_millions_cad": 168389,
+    "official_2026_total_expenditures_millions_cad": 171597,
+    "official_2026_accounting_balance_millions_cad": -5208,
+    "official_2026_budgetary_balance_millions_cad": -7690,
+    "official_forecast_years": 5,
+    "long_range_unsourced_years": 5,
+    "nova_scenarios": 2,
+    "nova_10_year_balances_certified": 0,
+    "programme_preparation_score_before": 47,
+    "programme_preparation_score_after": 47
+  },
+  "limitations": [
+    "Tests de validité technique et de réconciliation, pas un audit financier indépendant.",
+    "Le Rapport préélectoral constitue une projection de l'État, non un budget Nova adopté.",
+    "Les années après 2030-2031 ne sont pas extrapolées.",
+    "Les besoins budgétaires du Québec souverain ne sont pas quantifiés.",
+    "La procédure GitHub Actions et le déploiement du site ne sont pas confirmés.",
+    "Le moteur exige que les recettes non évaluées demeurent inconnues : il ne réalise pas de simulation de politique fiscale calibrée."
+  ],
+  "decisions": {
+    "budget_balance_proven": false,
+    "tax_revenue_anti_havens_proven": false,
+    "independent_audit": false,
+    "legal_compliance_verified": false,
+    "g0_passed": false
+  }
+}

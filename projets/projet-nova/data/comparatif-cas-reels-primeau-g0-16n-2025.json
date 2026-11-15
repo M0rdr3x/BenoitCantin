@@ -1,0 +1,531 @@
+{
+  "schema": "nova-g016n-primeau-comparatif-cas-v1",
+  "project": "Projet Nova",
+  "phase": "G0.16n",
+  "as_of": "2026-11-07",
+  "status": "NON_RANDOM_PUBLIC_CASE_COMPARISON_NOT_NOVA_FISCAL_CERTIFICATION",
+  "programme_score_before": 47,
+  "programme_score_after": 47,
+  "adopted": false,
+  "scope": {
+    "list_date": "2025-10-08",
+    "source_document_type": "MAMH_ACCESS_TO_INFORMATION_AWARDED_PROJECT_LIST",
+    "selection": "PURPOSIVE_SEVEN_REGIONS_SEVEN_PROJECTS_NOT_RANDOM_NOT_REPRESENTATIVE",
+    "selected_projects": 7,
+    "distinct_municipalities": 7,
+    "distinct_regions": 7,
+    "region_count_eligible_for_other_projects_not_exhausted": true,
+    "pdf_pages_verified_visually": [
+      3,
+      4
+    ],
+    "subvention_announced_not_disbursed": true,
+    "maximum_eligible_cost_not_total_project_cost": true,
+    "planned_construction_dates_not_actual_completion": true,
+    "local_bylaw_not_actual_borrowing": true,
+    "copy_of_warwick_case_not_extra_project": true,
+    "government_and_municipal_cost_scope_not_identical": true
+  },
+  "sources": [
+    {
+      "id": "MAMH_2025_082",
+      "publisher": "MAMH",
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/documents_administratifs/acces_information/demande_acces/2025/DAI_2025-082_subventions_primeau_2023_2033.pdf",
+      "purpose": "2025-10-08 list selected project rows eligible costs and financial assistance",
+      "visual_pdf_pages_zero_based": [
+        3,
+        4
+      ]
+    },
+    {
+      "id": "PORT_DANIEL_COUNCIL",
+      "publisher": "Municipalité de Port-Daniel-Gascons",
+      "url": "https://munpdg.ca/wp-content/uploads/2025/07/proces-verbal-de-la-seance-ordinaire-du-9-juin.pdf",
+      "purpose": "2025-06-09 council minutes bylaw 2025-01 and budget reconciliation",
+      "visual_pdf_pages_zero_based": [],
+      "screenshot_cache_miss": true
+    },
+    {
+      "id": "PORT_DANIEL_AWARD",
+      "publisher": "Gouvernement du Québec",
+      "url": "https://www.quebec.ca/nouvelles/actualites/details/le-gouvernement-du-quebec-accorde-plus-de-42-m-a-port-daniel-gascons-63791",
+      "purpose": "2025-06-19 award confirmed"
+    },
+    {
+      "id": "GATINEAU_AWARD",
+      "publisher": "Cabinet de la ministre, diffusion CNW",
+      "url": "https://www.newswire.ca/fr/news-releases/programme-d-infrastructures-municipales-d-eau-le-gouvernement-du-quebec-accorde-pres-de-57-m-a-gatineau-898220439.html",
+      "purpose": "2025-01-20 award confirmed"
+    },
+    {
+      "id": "LAVAL_AWARD",
+      "publisher": "Gouvernement du Québec",
+      "url": "https://www.quebec.ca/nouvelles/actualites/details/le-gouvernement-du-quebec-accorde-plus-de-23-m-a-laval-pour-ameliorer-la-resilience-de-ses-infrastructures-deau-62037",
+      "purpose": "2025-04-04 award confirmed"
+    },
+    {
+      "id": "ANTICOSTI_AWARD",
+      "publisher": "Gouvernement du Québec",
+      "url": "https://www.quebec.ca/nouvelles/actualites/details/programme-dinfrastructures-municipales-deau-pres-de-85-m-a-lile-danticosti-pour-ses-infrastructures-deau-potable-58443",
+      "purpose": "2024-09-24 award confirmed"
+    }
+  ],
+  "projects": [
+    {
+      "id": "WARWICK",
+      "municipality": "Warwick",
+      "region": "Centre-du-Québec",
+      "project_type": "EAU_POTABLE_USINE",
+      "title_as_mamh": "Nouvelle usine de production d’eau potable",
+      "source_list_pdf_page_zero_based": 3,
+      "source_subprogramme": "1.2",
+      "scheduled_start_in_2025_list": "2025-05-20",
+      "scheduled_finish_in_2025_list": "2026-12-18",
+      "max_admissible_cost_cad": 15440948,
+      "awarded_financial_aid_cad": 14668901,
+      "ratio_award_to_max_eligible_cost_pct": 95,
+      "grant_status": "LISTED_IN_MAMH_2025_AWARDED_OR_ONGOING_LIST_NOT_PAID_CONFIRMED",
+      "actual_total_project_cost_cad": null,
+      "actual_disbursement_cad": null,
+      "actual_borrowed_cad": null,
+      "completion_date_independently_verified": null,
+      "independent_financial_audit": false,
+      "source_primary_id": "MAMH_2025_082",
+      "prior_case_link": "projets/projet-nova/data/cas-municipal-reel-g0-16m-warwick-eau-2025-2026.json"
+    },
+    {
+      "id": "GATINEAU",
+      "municipality": "Gatineau",
+      "region": "Outaouais",
+      "project_type": "EAU_POTABLE_USINE",
+      "title_as_mamh": "Réfection de l’usine de production d’eau potable du secteur Gatineau",
+      "source_list_pdf_page_zero_based": 4,
+      "source_subprogramme": "1.2",
+      "scheduled_start_in_2025_list": "2024-09-02",
+      "scheduled_finish_in_2025_list": "2027-12-31",
+      "max_admissible_cost_cad": 75942667,
+      "awarded_financial_aid_cad": 56957000,
+      "ratio_award_to_max_eligible_cost_pct": 75,
+      "grant_status": "LISTED_IN_MAMH_2025_AWARDED_OR_ONGOING_LIST_NOT_PAID_CONFIRMED",
+      "actual_total_project_cost_cad": null,
+      "actual_disbursement_cad": null,
+      "actual_borrowed_cad": null,
+      "completion_date_independently_verified": null,
+      "independent_financial_audit": false,
+      "source_primary_id": "MAMH_2025_082",
+      "prior_case_link": null
+    },
+    {
+      "id": "LAVAL",
+      "municipality": "Laval",
+      "region": "Laval",
+      "project_type": "RETENTION_EAUX_PLUVIALES",
+      "title_as_mamh": "Construction d’un bassin de rétention souterrain — réservoir Cartier",
+      "source_list_pdf_page_zero_based": 4,
+      "source_subprogramme": "1.2",
+      "scheduled_start_in_2025_list": "2025-03-03",
+      "scheduled_finish_in_2025_list": "2028-12-31",
+      "max_admissible_cost_cad": 31004168,
+      "awarded_financial_aid_cad": 23253126,
+      "ratio_award_to_max_eligible_cost_pct": 75,
+      "grant_status": "LISTED_IN_MAMH_2025_AWARDED_OR_ONGOING_LIST_NOT_PAID_CONFIRMED",
+      "actual_total_project_cost_cad": null,
+      "actual_disbursement_cad": null,
+      "actual_borrowed_cad": null,
+      "completion_date_independently_verified": null,
+      "independent_financial_audit": false,
+      "source_primary_id": "MAMH_2025_082",
+      "prior_case_link": null
+    },
+    {
+      "id": "PORT_DANIEL_GASCONS",
+      "municipality": "Port-Daniel-Gascons",
+      "region": "Gaspésie–Îles-de-la-Madeleine",
+      "project_type": "EAU_POTABLE_EGOUTS_VOIRIE",
+      "title_as_mamh": "Alimentation et distribution d’eau potable, collecte et traitement des eaux usées",
+      "source_list_pdf_page_zero_based": 4,
+      "source_subprogramme": "1.2",
+      "scheduled_start_in_2025_list": "2024-04-01",
+      "scheduled_finish_in_2025_list": "2025-10-31",
+      "max_admissible_cost_cad": 44528918,
+      "awarded_financial_aid_cad": 42302472,
+      "ratio_award_to_max_eligible_cost_pct": 95,
+      "grant_status": "LISTED_IN_MAMH_2025_AWARDED_OR_ONGOING_LIST_NOT_PAID_CONFIRMED",
+      "actual_total_project_cost_cad": null,
+      "actual_disbursement_cad": null,
+      "actual_borrowed_cad": null,
+      "completion_date_independently_verified": null,
+      "independent_financial_audit": false,
+      "source_primary_id": "MAMH_2025_082",
+      "prior_case_link": null
+    },
+    {
+      "id": "ILE_DANTICOSTI",
+      "municipality": "L’Île-d’Anticosti",
+      "region": "Côte-Nord",
+      "project_type": "EAU_POTABLE_MISE_AUX_NORMES",
+      "title_as_mamh": "Mise aux normes de l’eau potable",
+      "source_list_pdf_page_zero_based": 4,
+      "source_subprogramme": "1.2",
+      "scheduled_start_in_2025_list": "2024-01-05",
+      "scheduled_finish_in_2025_list": "2025-03-28",
+      "max_admissible_cost_cad": 8354735,
+      "awarded_financial_aid_cad": 8354735,
+      "ratio_award_to_max_eligible_cost_pct": 100,
+      "grant_status": "LISTED_IN_MAMH_2025_AWARDED_OR_ONGOING_LIST_NOT_PAID_CONFIRMED",
+      "actual_total_project_cost_cad": null,
+      "actual_disbursement_cad": null,
+      "actual_borrowed_cad": null,
+      "completion_date_independently_verified": null,
+      "independent_financial_audit": false,
+      "source_primary_id": "MAMH_2025_082",
+      "prior_case_link": null
+    },
+    {
+      "id": "VAL_DOR",
+      "municipality": "Val-d’Or",
+      "region": "Abitibi-Témiscamingue",
+      "project_type": "EPURATION_DEPHOSPHATATION",
+      "title_as_mamh": "Déphosphatation et désinfection des eaux usées de la station principale",
+      "source_list_pdf_page_zero_based": 4,
+      "source_subprogramme": "1.2",
+      "scheduled_start_in_2025_list": "2024-04-01",
+      "scheduled_finish_in_2025_list": "2025-04-01",
+      "max_admissible_cost_cad": 12139163,
+      "awarded_financial_aid_cad": 10318289,
+      "ratio_award_to_max_eligible_cost_pct": 85,
+      "grant_status": "LISTED_IN_MAMH_2025_AWARDED_OR_ONGOING_LIST_NOT_PAID_CONFIRMED",
+      "actual_total_project_cost_cad": null,
+      "actual_disbursement_cad": null,
+      "actual_borrowed_cad": null,
+      "completion_date_independently_verified": null,
+      "independent_financial_audit": false,
+      "source_primary_id": "MAMH_2025_082",
+      "prior_case_link": null
+    },
+    {
+      "id": "LA_DORE",
+      "municipality": "La Doré",
+      "region": "Saguenay–Lac-Saint-Jean",
+      "project_type": "TRAITEMENT_EAUX_USEES",
+      "title_as_mamh": "Remplacement du système de traitement Oxycair",
+      "source_list_pdf_page_zero_based": 4,
+      "source_subprogramme": "1.2",
+      "scheduled_start_in_2025_list": "2024-06-01",
+      "scheduled_finish_in_2025_list": "2024-10-31",
+      "max_admissible_cost_cad": 912270,
+      "awarded_financial_aid_cad": 866657,
+      "ratio_award_to_max_eligible_cost_pct": 95,
+      "grant_status": "LISTED_IN_MAMH_2025_AWARDED_OR_ONGOING_LIST_NOT_PAID_CONFIRMED",
+      "actual_total_project_cost_cad": null,
+      "actual_disbursement_cad": null,
+      "actual_borrowed_cad": null,
+      "completion_date_independently_verified": null,
+      "independent_financial_audit": false,
+      "source_primary_id": "MAMH_2025_082",
+      "prior_case_link": null
+    }
+  ],
+  "port_daniel_municipal_bylaw": {
+    "project_id": "PORT_DANIEL_GASCONS",
+    "municipal_pdf_url": "https://munpdg.ca/wp-content/uploads/2025/07/proces-verbal-de-la-seance-ordinaire-du-9-juin.pdf",
+    "municipal_council_meeting": "2025-06-09",
+    "resolution": "2025-06-149",
+    "bylaw": "2025-01",
+    "pdf_screenshot_observed": false,
+    "pdf_text_retrieved": true,
+    "pdf_screenshot_cache_miss": true,
+    "work_scope": "Water distribution and supply, wastewater collection/treatment and roads, Gascons sector",
+    "planned_total_project_spending_cad": 56596000,
+    "promise_applied_to_financing_cad": 42302472,
+    "borrowing_authorized_cad": 14293528,
+    "borrowing_term_years": 40,
+    "government_promise_letter_mentioned": "2025-06-03",
+    "special_general_property_tax_share_borrowing_pct": 14,
+    "special_served_sector_tax_and_compensation_reported": true,
+    "actual_borrowing_drawdown_cad": null,
+    "annual_special_tax_amount_cad": null,
+    "interest_cost_cad": null,
+    "actual_final_project_spending_cad": null,
+    "legal_entry_into_force_independently_verified": false,
+    "need_to_reconcile_different_gov_cost_scope": true
+  },
+  "derived_summary": {
+    "case_count": 7,
+    "distinct_regions": 7,
+    "sum_max_eligible_cad": 188322869,
+    "sum_awarded_cad": 156721180,
+    "sum_max_eligible_minus_awarded_cad": 31601689,
+    "min_award_ratio_pct": 75,
+    "max_award_ratio_pct": 100,
+    "sum_is_sample_only_not_quebec_total": true,
+    "award_less_than_eligible_not_municipal_total_cost_gap": true,
+    "confirmed_paid_sum_cad": null,
+    "budget_savings_nova_cad": null
+  },
+  "fiscal_continuity": {
+    "actual_household_tax_per_project_cad": null,
+    "actual_debt_service_per_year_cad": null,
+    "actual_salaries_and_pensions_cad": null,
+    "municipal_operations_annual_cost_cad": null,
+    "total_project_lifecycle_cost_cad": null,
+    "alternative_two_tax_replacement_verified_cad": null,
+    "independent_review": false,
+    "two_constitutional_scenarios": [
+      {
+        "id": "QUEBEC_CANADA",
+        "legality_confirmed": false,
+        "financing_audited": false,
+        "annual": [
+          {
+            "year": "2026-2027",
+            "municipal_service_cost_cad": null,
+            "grants_paid_cad": null,
+            "local_tax_abolition_cad": null,
+            "replacement_income_cad": null,
+            "borrowing_service_cad": null,
+            "worker_rights_cost_cad": null,
+            "balance_cad": null
+          },
+          {
+            "year": "2027-2028",
+            "municipal_service_cost_cad": null,
+            "grants_paid_cad": null,
+            "local_tax_abolition_cad": null,
+            "replacement_income_cad": null,
+            "borrowing_service_cad": null,
+            "worker_rights_cost_cad": null,
+            "balance_cad": null
+          },
+          {
+            "year": "2028-2029",
+            "municipal_service_cost_cad": null,
+            "grants_paid_cad": null,
+            "local_tax_abolition_cad": null,
+            "replacement_income_cad": null,
+            "borrowing_service_cad": null,
+            "worker_rights_cost_cad": null,
+            "balance_cad": null
+          },
+          {
+            "year": "2029-2030",
+            "municipal_service_cost_cad": null,
+            "grants_paid_cad": null,
+            "local_tax_abolition_cad": null,
+            "replacement_income_cad": null,
+            "borrowing_service_cad": null,
+            "worker_rights_cost_cad": null,
+            "balance_cad": null
+          },
+          {
+            "year": "2030-2031",
+            "municipal_service_cost_cad": null,
+            "grants_paid_cad": null,
+            "local_tax_abolition_cad": null,
+            "replacement_income_cad": null,
+            "borrowing_service_cad": null,
+            "worker_rights_cost_cad": null,
+            "balance_cad": null
+          },
+          {
+            "year": "2031-2032",
+            "municipal_service_cost_cad": null,
+            "grants_paid_cad": null,
+            "local_tax_abolition_cad": null,
+            "replacement_income_cad": null,
+            "borrowing_service_cad": null,
+            "worker_rights_cost_cad": null,
+            "balance_cad": null
+          },
+          {
+            "year": "2032-2033",
+            "municipal_service_cost_cad": null,
+            "grants_paid_cad": null,
+            "local_tax_abolition_cad": null,
+            "replacement_income_cad": null,
+            "borrowing_service_cad": null,
+            "worker_rights_cost_cad": null,
+            "balance_cad": null
+          },
+          {
+            "year": "2033-2034",
+            "municipal_service_cost_cad": null,
+            "grants_paid_cad": null,
+            "local_tax_abolition_cad": null,
+            "replacement_income_cad": null,
+            "borrowing_service_cad": null,
+            "worker_rights_cost_cad": null,
+            "balance_cad": null
+          },
+          {
+            "year": "2034-2035",
+            "municipal_service_cost_cad": null,
+            "grants_paid_cad": null,
+            "local_tax_abolition_cad": null,
+            "replacement_income_cad": null,
+            "borrowing_service_cad": null,
+            "worker_rights_cost_cad": null,
+            "balance_cad": null
+          },
+          {
+            "year": "2035-2036",
+            "municipal_service_cost_cad": null,
+            "grants_paid_cad": null,
+            "local_tax_abolition_cad": null,
+            "replacement_income_cad": null,
+            "borrowing_service_cad": null,
+            "worker_rights_cost_cad": null,
+            "balance_cad": null
+          }
+        ]
+      },
+      {
+        "id": "QUEBEC_SOUVERAIN",
+        "legality_confirmed": false,
+        "financing_audited": false,
+        "annual": [
+          {
+            "year": "2026-2027",
+            "municipal_service_cost_cad": null,
+            "grants_paid_cad": null,
+            "local_tax_abolition_cad": null,
+            "replacement_income_cad": null,
+            "borrowing_service_cad": null,
+            "worker_rights_cost_cad": null,
+            "balance_cad": null
+          },
+          {
+            "year": "2027-2028",
+            "municipal_service_cost_cad": null,
+            "grants_paid_cad": null,
+            "local_tax_abolition_cad": null,
+            "replacement_income_cad": null,
+            "borrowing_service_cad": null,
+            "worker_rights_cost_cad": null,
+            "balance_cad": null
+          },
+          {
+            "year": "2028-2029",
+            "municipal_service_cost_cad": null,
+            "grants_paid_cad": null,
+            "local_tax_abolition_cad": null,
+            "replacement_income_cad": null,
+            "borrowing_service_cad": null,
+            "worker_rights_cost_cad": null,
+            "balance_cad": null
+          },
+          {
+            "year": "2029-2030",
+            "municipal_service_cost_cad": null,
+            "grants_paid_cad": null,
+            "local_tax_abolition_cad": null,
+            "replacement_income_cad": null,
+            "borrowing_service_cad": null,
+            "worker_rights_cost_cad": null,
+            "balance_cad": null
+          },
+          {
+            "year": "2030-2031",
+            "municipal_service_cost_cad": null,
+            "grants_paid_cad": null,
+            "local_tax_abolition_cad": null,
+            "replacement_income_cad": null,
+            "borrowing_service_cad": null,
+            "worker_rights_cost_cad": null,
+            "balance_cad": null
+          },
+          {
+            "year": "2031-2032",
+            "municipal_service_cost_cad": null,
+            "grants_paid_cad": null,
+            "local_tax_abolition_cad": null,
+            "replacement_income_cad": null,
+            "borrowing_service_cad": null,
+            "worker_rights_cost_cad": null,
+            "balance_cad": null
+          },
+          {
+            "year": "2032-2033",
+            "municipal_service_cost_cad": null,
+            "grants_paid_cad": null,
+            "local_tax_abolition_cad": null,
+            "replacement_income_cad": null,
+            "borrowing_service_cad": null,
+            "worker_rights_cost_cad": null,
+            "balance_cad": null
+          },
+          {
+            "year": "2033-2034",
+            "municipal_service_cost_cad": null,
+            "grants_paid_cad": null,
+            "local_tax_abolition_cad": null,
+            "replacement_income_cad": null,
+            "borrowing_service_cad": null,
+            "worker_rights_cost_cad": null,
+            "balance_cad": null
+          },
+          {
+            "year": "2034-2035",
+            "municipal_service_cost_cad": null,
+            "grants_paid_cad": null,
+            "local_tax_abolition_cad": null,
+            "replacement_income_cad": null,
+            "borrowing_service_cad": null,
+            "worker_rights_cost_cad": null,
+            "balance_cad": null
+          },
+          {
+            "year": "2035-2036",
+            "municipal_service_cost_cad": null,
+            "grants_paid_cad": null,
+            "local_tax_abolition_cad": null,
+            "replacement_income_cad": null,
+            "borrowing_service_cad": null,
+            "worker_rights_cost_cad": null,
+            "balance_cad": null
+          }
+        ]
+      }
+    ]
+  },
+  "unresolved_questions": [
+    {
+      "id": "Q01",
+      "question": "Actual payments matched to the announced assistance and audited public accounts",
+      "status": "NOT_YET_VERIFIED"
+    },
+    {
+      "id": "Q02",
+      "question": "Final and lifecycle project costs rather than eligibility ceilings",
+      "status": "NOT_YET_VERIFIED"
+    },
+    {
+      "id": "Q03",
+      "question": "Municipal debt drawdown, effective rate, repayment and local tax incidence",
+      "status": "NOT_YET_VERIFIED"
+    },
+    {
+      "id": "Q04",
+      "question": "Reconciliation of 2025 council bylaw with the 2025 MAMH eligible-cost scope",
+      "status": "NOT_YET_VERIFIED"
+    },
+    {
+      "id": "Q05",
+      "question": "Municipal workforce, operational continuity, water quality and climate resilience",
+      "status": "NOT_YET_VERIFIED"
+    },
+    {
+      "id": "Q06",
+      "question": "Region-level coverage and an independent fiscal and legal audit of two tax scenarios",
+      "status": "NOT_YET_VERIFIED"
+    }
+  ],
+  "decision": {
+    "real_multiple_regions_evidence_added": true,
+    "all_quebec_municipal_project_population_covered": false,
+    "individual_cash_payments_audited": false,
+    "two_tax_financing_proven": false,
+    "external_legal_financial_review_complete": false,
+    "programme_complete": false
+  }
+}

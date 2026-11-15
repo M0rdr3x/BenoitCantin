@@ -1,3 +1,16 @@
+// La variante historique des pages NOVA doit appliquer la même frontière XSS
+// que le runtime principal. Aucune valeur JSON ne devient du HTML actif.
+const NOVA_LEGACY_DOM=Object.freeze({
+  escape(value){
+    const entities={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+    return String(value??'').replace(/[&<>"']/g,ch=>entities[ch]);
+  },
+  pdfHref(value){
+    const link=String(value??'');
+    return /^documents\/[a-z0-9][a-z0-9._-]*\.pdf$/i.test(link)&&!link.includes('..')?link:'';
+  }
+});
+
 (function(){
   function ready(fn){document.readyState !== 'loading' ? fn() : document.addEventListener('DOMContentLoaded', fn);}
   ready(function(){
@@ -22,7 +35,12 @@
       const filterEl=document.querySelector('[data-doc-filter]');
       const sections=[...new Set(docs.map(d=>d.section))];
       if(filterEl){if(!filterEl.innerHTML.includes('Toutes les sections'))filterEl.innerHTML='<option value="">Toutes les sections</option>';sections.forEach(section=>{const option=document.createElement('option');option.value=section;option.textContent=section;filterEl.appendChild(option);});}
-      const card=d=>`<article class="doc-card"><span class="pill">${d.section}</span><h3>${d.title}</h3><p>${d.description}</p><div class="card-actions"><a class="btn btn-primary" href="visionneuse.html?doc=${encodeURIComponent(d.id)}">Visionner l’archive</a><a class="btn btn-outline" href="${d.path}" download>Télécharger le PDF</a></div></article>`;
+      const card=d=>{
+        const safe=NOVA_LEGACY_DOM.escape;
+        const pdf=NOVA_LEGACY_DOM.pdfHref(d.path);
+        const download=pdf?`<a class="btn btn-outline" href="${pdf}" download>Télécharger le PDF</a>`:'<span class="btn btn-outline">Document non approuvé</span>';
+        return `<article class="doc-card"><span class="pill">${safe(d.section)}</span><h3>${safe(d.title)}</h3><p>${safe(d.description)}</p><div class="card-actions"><a class="btn btn-primary" href="visionneuse.html?doc=${encodeURIComponent(String(d.id??''))}">Visionner l’archive</a>${download}</div></article>`;
+      };
       function render(){const term=((searchEl&&searchEl.value)||'').toLowerCase().trim();const filter=(filterEl&&filterEl.value)||'';const filtered=docs.filter(d=>{const hay=[d.order,d.title,d.section,d.description].join(' ').toLowerCase();return(!term||hay.includes(term))&&(!filter||d.section===filter);});listEl.innerHTML=filtered.length?filtered.map(card).join(''):'<article class="doc-card"><h3>Aucun résultat</h3><p>Aucun document ne correspond à votre recherche.</p></article>';}
       if(searchEl)searchEl.addEventListener('input',render);if(filterEl)filterEl.addEventListener('change',render);render();
     }
@@ -35,8 +53,8 @@
   function text(v){return(v===undefined||v===null||v==='')?'—':String(v);}
   ready(function(){
     const financeBody=document.querySelector('[data-finance-table]');
-    if(financeBody){fetch('data/comptabilite.json',{cache:'no-store'}).then(r=>r.json()).then(data=>{const entries=Array.isArray(data.entries)?data.entries:[];const income=entries.filter(e=>e.type==='revenu').reduce((s,e)=>s+Number(e.montant||0),0);const expense=entries.filter(e=>e.type==='depense').reduce((s,e)=>s+Number(e.montant||0),0);document.querySelectorAll('[data-finance-total="income"]').forEach(el=>el.textContent=money(income));document.querySelectorAll('[data-finance-total="expense"]').forEach(el=>el.textContent=money(expense));document.querySelectorAll('[data-finance-total="balance"]').forEach(el=>el.textContent=money(income-expense));if(!entries.length){financeBody.innerHTML='<tr><td colspan="7">Aucune entrée publique publiée pour le moment.</td></tr>';return;}financeBody.innerHTML=entries.map(e=>`<tr><td>${text(e.date)}</td><td>${text(e.type)}</td><td>${text(e.categorie)}</td><td>${text(e.description)}</td><td>${text(e.fournisseur_ou_source)}</td><td>${money(e.montant)}</td><td>${text(e.statut)}</td></tr>`).join('');}).catch(()=>{financeBody.innerHTML='<tr><td colspan="7">Registre temporairement indisponible.</td></tr>';});}
+    if(financeBody){fetch('data/comptabilite.json',{cache:'no-store'}).then(r=>r.json()).then(data=>{const entries=Array.isArray(data.entries)?data.entries:[];const income=entries.filter(e=>e.type==='revenu').reduce((s,e)=>s+Number(e.montant||0),0);const expense=entries.filter(e=>e.type==='depense').reduce((s,e)=>s+Number(e.montant||0),0);document.querySelectorAll('[data-finance-total="income"]').forEach(el=>el.textContent=money(income));document.querySelectorAll('[data-finance-total="expense"]').forEach(el=>el.textContent=money(expense));document.querySelectorAll('[data-finance-total="balance"]').forEach(el=>el.textContent=money(income-expense));if(!entries.length){financeBody.innerHTML='<tr><td colspan="7">Aucune entrée publique publiée pour le moment.</td></tr>';return;}financeBody.innerHTML=entries.map(e=>`<tr><td>${NOVA_LEGACY_DOM.escape(text(e.date))}</td><td>${NOVA_LEGACY_DOM.escape(text(e.type))}</td><td>${NOVA_LEGACY_DOM.escape(text(e.categorie))}</td><td>${NOVA_LEGACY_DOM.escape(text(e.description))}</td><td>${NOVA_LEGACY_DOM.escape(text(e.fournisseur_ou_source))}</td><td>${money(e.montant)}</td><td>${NOVA_LEGACY_DOM.escape(text(e.statut))}</td></tr>`).join('');}).catch(()=>{financeBody.innerHTML='<tr><td colspan="7">Registre temporairement indisponible.</td></tr>';});}
     const meetingsBody=document.querySelector('[data-meetings-table]');
-    if(meetingsBody||document.querySelector('[data-rencontre-count]')){fetch('data/rencontres.json',{cache:'no-store'}).then(r=>r.json()).then(data=>{const entries=Array.isArray(data.entries)?data.entries:[];document.querySelectorAll('[data-rencontre-count]').forEach(el=>el.textContent=String(entries.length));if(meetingsBody){if(!entries.length){meetingsBody.innerHTML='<tr><td colspan="7">Aucune rencontre publique publiée pour le moment.</td></tr>';return;}meetingsBody.innerHTML=entries.map(e=>`<tr><td>${text(e.date)}</td><td>${text(e.type)}</td><td>${text(e.sujet)}</td><td>${text(e.participants_resume)}</td><td>${text(e.resume_public)}</td><td>${text(e.suivi)}</td><td>${text(e.statut_publication)}</td></tr>`).join('');}}).catch(()=>{if(meetingsBody)meetingsBody.innerHTML='<tr><td colspan="7">Registre temporairement indisponible.</td></tr>';});}
+    if(meetingsBody||document.querySelector('[data-rencontre-count]')){fetch('data/rencontres.json',{cache:'no-store'}).then(r=>r.json()).then(data=>{const entries=Array.isArray(data.entries)?data.entries:[];document.querySelectorAll('[data-rencontre-count]').forEach(el=>el.textContent=String(entries.length));if(meetingsBody){if(!entries.length){meetingsBody.innerHTML='<tr><td colspan="7">Aucune rencontre publique publiée pour le moment.</td></tr>';return;}meetingsBody.innerHTML=entries.map(e=>`<tr><td>${NOVA_LEGACY_DOM.escape(text(e.date))}</td><td>${NOVA_LEGACY_DOM.escape(text(e.type))}</td><td>${NOVA_LEGACY_DOM.escape(text(e.sujet))}</td><td>${NOVA_LEGACY_DOM.escape(text(e.participants_resume))}</td><td>${NOVA_LEGACY_DOM.escape(text(e.resume_public))}</td><td>${NOVA_LEGACY_DOM.escape(text(e.suivi))}</td><td>${NOVA_LEGACY_DOM.escape(text(e.statut_publication))}</td></tr>`).join('');}}).catch(()=>{if(meetingsBody)meetingsBody.innerHTML='<tr><td colspan="7">Registre temporairement indisponible.</td></tr>';});}
   });
 })();

@@ -1,0 +1,55 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFile} from "node:fs/promises";
+import {auditG017a,consolidateInternalTransfer} from "../assets/g017a-mamh-transfer-source-gates.mjs";
+const load=async file=>JSON.parse(await readFile(new URL("../data/"+file,import.meta.url),"utf8"));
+const [d,p,f]=await Promise.all([
+ load("g017a-transferts-fiscaux-mamh-controle-versions-2024-2025.json"),
+ load("g016z-controle-versions-source-municipale-mamh.json"),
+ load("g016z-financement-consolide-et-protections-2026-2036.json")
+]);
+const reject=(mut,key)=>{const copy=structuredClone(d);mut(copy);const result=auditG017a(copy,p,f);assert.equal(result.ok,false,result.errors.join("|"));assert.ok(result.errors.includes(key),result.errors.join("|"));};
+test("G0.17a source register passes",()=>assert.equal(auditG017a(d,p,f).ok,true));
+test("Score does not increase beyond 47",()=>assert.equal(auditG017a(d,p,f).score,47));
+test("53 audit points still missing",()=>assert.equal(d.remaining_score_points,53));
+test("Source URL may be replaced by officials",()=>assert.equal(d.source.source_mutable,true));
+test("Official web page lists 2025",()=>assert.equal(d.source.web_page_lists_2025,true));
+test("Web extracted text claims year 2025",()=>assert.equal(d.source.extraction_text_title_year,2025));
+test("Web screenshot actually shows 2024",()=>assert.equal(d.source.screenshot_title_year,2024));
+test("No hash of exact PDF bytes was obtained",()=>assert.equal(d.source.immutable_pdf_sha256,null));
+test("MAMH visually verified 2024 subtotal for selected programmes",()=>assert.equal(d.version2024_visual.total_of_selected_programmes_cad,575605939));
+test("MAMH visually verified 2024 TVQ share subset",()=>assert.equal(d.version2024_visual.tvq_share_component_cad,444999999));
+test("Other 2024 selective programmes total",()=>assert.equal(d.version2024_visual.other_selected_programmes_cad,130605940));
+test("Five 2024 cohort groups match component totals",()=>assert.ok(d.version2024_visual.rows.every(r=>r[1]===r.slice(2).reduce((s,n)=>s+n,0))));
+test("TVQ share and other 2024 programmes reconcile",()=>assert.equal(d.version2024_visual.tvq_share_component_cad+d.version2024_visual.other_selected_programmes_cad,575605939));
+test("2024 sum is not all municipal funding",()=>assert.equal(d.version2024_visual.represents_all_municipal_funding,false));
+test("2025 extracted text number is QUARANTINED",()=>assert.equal(d.version2025_text_quarantined.text_only_aggregate_cad,777824703));
+test("2025 text TVQ share not independently matched",()=>assert.equal(d.version2025_text_quarantined.text_only_tvq_cad,647000012));
+test("2025 text internal row sums pass without visual validation",()=>assert.ok(d.version2025_text_quarantined.rows.every(r=>r[1]===r.slice(2).reduce((s,n)=>s+n,0))));
+test("2025 cannot be called verified",()=>assert.equal(d.version2025_text_quarantined.usable_verified_total_cad,null));
+test("No year over year comparison published",()=>assert.equal(d.comparisons.year2024_2025_change_verified_cad,null));
+test("No growth rate published",()=>assert.equal(d.comparisons.year2024_2025_growth_rate_verified_pct,null));
+test("2026 replacement cost not inferred from 2024",()=>assert.equal(d.comparisons.municipal2026_target_replacement_cad,null));
+test("Source data to be imported for actual 2025 municipal returns",()=>assert.equal(d.related_sources[1].rows_imported,false));
+test("Public services and workers protected",()=>assert.equal(d.controls.municipal_service_worker_and_debt_protection,true));
+test("Province to municipality transfer is internal in consolidation",()=>assert.equal(d.controls.provincial_to_municipal_transfer_is_not_new_consolidated_net_revenue,true));
+test("Two proposed jurisdictions not certified",()=>assert.ok(d.scenarios.every(x=>x.verified_financially_complete===false)));
+test("Explicitly require six source fix steps",()=>assert.equal(d.verification_needed.length,6));
+test("Synthetic transfer neutralization exactly matches two sides",()=>{const x=consolidateInternalTransfer({province_to_municipality_cad:444999999,municipal_receipt_cad:444999999,mode:"SYNTHETIC_ONLY"});assert.equal(x.eliminated_internal_transfer_cad,444999999);assert.equal(x.new_consolidated_revenue_cad,0);assert.equal(x.verified_nova_receipt,false);});
+test("Mismatched transfer cannot be eliminated",()=>assert.throws(()=>consolidateInternalTransfer({province_to_municipality_cad:444999999,municipal_receipt_cad:400000000,mode:"SYNTHETIC_ONLY"}),/UNMATCHED_TRANSFER/));
+test("Synthetic formula cannot be presented as a real policy",()=>assert.throws(()=>consolidateInternalTransfer({province_to_municipality_cad:444999999,municipal_receipt_cad:444999999,mode:"APPROVED_POLICY"}),/SYNTHETIC_VALUES_ONLY/));
+test("Reject invented new completion score",()=>reject(x=>x.score_after=48,"NO_SCORE_GROWTH"));
+test("Reject invented immutable PDF hash",()=>reject(x=>x.source.immutable_pdf_sha256="abcdef","SOURCE_YEAR_CONFLICT"));
+test("Reject falsely resolved source conflict",()=>reject(x=>x.source.version_conflict_resolved=true,"SOURCE_YEAR_CONFLICT"));
+test("Reject swapped actual visual year",()=>reject(x=>x.source.screenshot_title_year=2025,"SOURCE_YEAR_CONFLICT"));
+test("Reject falsified historical TVQ transfer",()=>reject(x=>x.version2024_visual.tvq_share_component_cad=647000012,"VISUAL_2024_RECONCILIATION"));
+test("Reject falsified municipal cohort sum",()=>reject(x=>x.version2024_visual.rows[4][1]=333333333,"VISUAL_2024_RECONCILIATION"));
+test("Reject 2025 provisional text being marketed as confirmed",()=>reject(x=>x.version2025_text_quarantined.usable_verified_total_cad=777824703,"QUARANTINE_2025_TEXT"));
+test("Reject 2025 text falsely matched to visual",()=>reject(x=>x.version2025_text_quarantined.pdf_visual_match=true,"QUARANTINE_2025_TEXT"));
+test("Reject invented 2025 fiscal transfer growth rate",()=>reject(x=>x.comparisons.year2024_2025_growth_rate_verified_pct=35,"NO_IMPUTED_SAVINGS"));
+test("Reject fake 2026 amount taken directly from 2024",()=>reject(x=>x.comparisons.municipal2026_target_replacement_cad=444999999,"NO_IMPUTED_SAVINGS"));
+test("Reject claiming extracted raw open dataset",()=>reject(x=>x.related_sources[1].rows_imported=true,"PUBLIC_DATA_PENDING"));
+test("Reject removal of transfer double count rule",()=>reject(x=>x.controls.do_not_add_same_transfer_twice=false,"NO_IMPUTED_SAVINGS"));
+test("Reject unproved funded sovereign scenario",()=>reject(x=>x.scenarios[1].verified_financially_complete=true,"SCENARIOS_UNFINANCED"));
+test("Reject closing source tasks without proofs",()=>reject(x=>x.verification_needed[0].complete=true,"UNCLOSED_GATES"));
+test("Reject invented independent legal and finance sign-off",()=>reject(x=>x.decision.score_increase_earned=true,"NOT_CERTIFIED"));

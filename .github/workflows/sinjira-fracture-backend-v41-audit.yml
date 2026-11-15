@@ -1,0 +1,36 @@
+name: SINJIRA — Audit serveur Fracture V41 lecture seule
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+    paths:
+      - 'scripts/audits/sinjira_fracture_backend_v41_readonly.sql'
+      - 'tests/security/test_fracture_backend_v41_readonly.py'
+      - 'docs/SINJIRA_FRACTURE_BACKEND_AUDIT_V41.md'
+      - '.github/workflows/sinjira-fracture-backend-v41-audit.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/audits/sinjira_fracture_backend_v41_readonly.sql'
+      - 'tests/security/test_fracture_backend_v41_readonly.py'
+      - 'docs/SINJIRA_FRACTURE_BACKEND_AUDIT_V41.md'
+      - '.github/workflows/sinjira-fracture-backend-v41-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sinjira-fracture-backend-audit-v41-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify_read_only_probe:
+    name: Interdire DML/DDL et données privées dans le prévol V41
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer le dépôt sans identifiants persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Contrôler la requête de catalogue, sans connexion de production
+        run: |
+          python3 -m unittest discover -s tests/security -p test_fracture_backend_v41_readonly.py -v

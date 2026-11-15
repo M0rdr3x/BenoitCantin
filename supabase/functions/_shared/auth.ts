@@ -1,4 +1,4 @@
-import { createClient } from 'npm:@supabase/supabase-js@2';
+import { createClient } from 'npm:@supabase/supabase-js@2.119.0';
 
 const ACTIVE_ADMIN_FUNCTIONS = new Set([
   'admin-analytics',
@@ -26,7 +26,7 @@ function serverSecretKey() {
       );
       if (typeof fallback === 'string') return fallback;
     } catch (error) {
-      console.warn('[SINJIRA auth] SUPABASE_SECRET_KEYS illisible, repli sur la clé legacy.', error);
+      console.warn('[SINJIRA auth]', { code: 'SERVER_KEYS_PARSE_FAILED' });
     }
   }
   return Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
@@ -81,12 +81,13 @@ async function assertAdminMfa(context: Awaited<ReturnType<typeof authenticatedCo
   if (adminError || !isAdmin) throw new Error('ADMIN_REQUIRED');
 
   const aal = await assuranceLevel(context).catch((error) => {
-    console.error('[SINJIRA admin auth] état MFA indisponible', error);
+    console.error('[SINJIRA admin auth]', { code: 'MFA_STATE_UNAVAILABLE' });
     throw error;
   });
-  if (aal.nextLevel === 'aal2' && aal.currentLevel !== 'aal2') {
-    throw new Error('MFA_REQUIRED');
-  }
+  // Les accès administrateur ne doivent jamais retomber en AAL1,
+  // y compris quand aucun facteur n'est encore enregistré.
+  if (aal.nextLevel !== 'aal2') throw new Error('MFA_SETUP_REQUIRED');
+  if (aal.currentLevel !== 'aal2') throw new Error('MFA_REQUIRED');
   return aal;
 }
 
@@ -98,7 +99,7 @@ async function sensitiveStepUpEnabled(context: Awaited<ReturnType<typeof authent
     .eq('user_id', user.id)
     .maybeSingle();
   if (error) {
-    console.error('[SINJIRA sensitive auth] préférences de sécurité indisponibles', error);
+    console.error('[SINJIRA sensitive auth]', { code: 'SECURITY_STATE_UNAVAILABLE' });
     throw new Error('SECURITY_STATE_UNAVAILABLE');
   }
   return data?.sensitive_step_up !== false;
@@ -108,7 +109,7 @@ async function assertSensitiveMfa(context: Awaited<ReturnType<typeof authenticat
   if (!(await sensitiveStepUpEnabled(context))) return null;
 
   const aal = await assuranceLevel(context).catch((error) => {
-    console.error('[SINJIRA sensitive auth] état MFA indisponible', error);
+    console.error('[SINJIRA sensitive auth]', { code: 'MFA_STATE_UNAVAILABLE' });
     throw error;
   });
   if (aal.nextLevel !== 'aal2') throw new Error('MFA_SETUP_REQUIRED');
@@ -200,10 +201,11 @@ export async function requiredSensitiveUser(req: Request) {
 /**
  * Contexte administrateur V24.4.67.
  *
- * Politique MFA progressive :
- * - aucun facteur MFA vérifié -> la session aal1 reste permise;
- * - un facteur vérifié existe et la session peut monter à aal2 -> aal2 devient obligatoire;
- * - état MFA impossible à vérifier -> refus fermé pour une opération administrative.
+ * MFA administrateur obligatoire, sans exception AAL1 :
+ * - sans facteur TOTP vérifié -> MFA_SETUP_REQUIRED (configurer Ma sécurité) ;
+ * - facteur vérifié mais session non revalidée -> MFA_REQUIRED ;
+ * - état MFA indisponible -> refus fermé pour toute opération administrative.
+ * L'inscription TOTP reste accessible depuis /compte/securite.html, hors endpoints admin.
  */
 export async function requiredAdmin(req: Request) {
   const context = await authenticatedContext(req);

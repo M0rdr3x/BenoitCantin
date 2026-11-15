@@ -3,6 +3,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 import json
 import re
+from html.parser import HTMLParser
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,6 +22,24 @@ NOVA_PAGE_NAMES = [
     "comprendre-nova.html",
     "programme.html",
     "boussole-electorale.html",
+    "sondage-citoyen.html",
+    "portrait-regional-g0-sante.html",
+    "preuves-g0-5-sante.html",
+    "capacite-rh-g0-6-sante.html",
+    "acquisition-rh-g0-7-sante.html",
+    "audit-classeur-rh-g0-8-sante.html",
+    "rapprochement-rh-g0-9-sante.html",
+    "portrait-effectifs-rh-g0-10-sante.html",
+    "preuve-source-rh-g0-11-sante.html",
+    "avancement-programme-nova.html",
+    "viabilite-financiere-g0-13.html",
+    "deux-prelevements-g0-14.html",
+    "indicateurs-g0-sante.html",
+    "diagnostic-g0-sante.html",
+    "registre-donnees-nova-sinjira.html",
+    "comparateur-couts-services.html",
+    "architecture-nova-sinjira.html",
+    "mise-en-oeuvre-nova-sinjira.html",
     "finances.html",
     "documents.html",
     "recrutement.html",
@@ -81,19 +100,32 @@ def read_sitemap(path: Path, errors: list[str]) -> list[str]:
     return urls
 
 
+class _MetaAttributeParser(HTMLParser):
+    """Lire les vrais attributs HTML, sans casser les apostrophes dans les valeurs."""
+    def __init__(self, attribute: str, expected: str) -> None:
+        super().__init__(convert_charrefs=True)
+        self.attribute = attribute
+        self.expected = expected.casefold()
+        self.found = ""
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag != "meta":
+            return
+        values = dict(attrs)
+        key = values.get(self.attribute)
+        if isinstance(key, str) and key.casefold() == self.expected:
+            content = values.get("content")
+            if content is not None:
+                self.found = content.strip()
+
+
 def meta_content(html: str, *, name: str | None = None, prop: str | None = None) -> str:
     attr = "name" if name is not None else "property"
     value = name if name is not None else prop
     assert value is not None
-    patterns = [
-        rf"<meta\b(?=[^>]*\b{attr}=[\"']{re.escape(value)}[\"'])[^>]*\bcontent=[\"']([^\"']*)[\"'][^>]*>",
-        rf"<meta\b(?=[^>]*\bcontent=[\"']([^\"']*)[\"'])[^>]*\b{attr}=[\"']{re.escape(value)}[\"'][^>]*>",
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, html, flags=re.I)
-        if match:
-            return match.group(1).strip()
-    return ""
+    parser = _MetaAttributeParser(attr, value)
+    parser.feed(html)
+    return parser.found
 
 
 def link_href(html: str, rel: str, hreflang: str | None = None) -> str:

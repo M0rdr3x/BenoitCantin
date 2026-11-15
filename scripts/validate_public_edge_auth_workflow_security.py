@@ -64,6 +64,9 @@ def validate_text(text: str) -> list[str]:
         'python scripts/validate_public_edge_auth_workflow_security.py --self-test',
         'python scripts/validate_public_edge_auth_workflow_security.py\n',
         'python scripts/validate_public_edge_auth.py',
+        'node scripts/test_public_edge_body_limits.mjs',
+        'node scripts/test_public_edge_binary_limits.mjs',
+        'node scripts/test_document_external_urls.mjs',
         'python scripts/validate_get_document_url_security.py --self-test',
         'python scripts/validate_get_document_url_security.py\n',
         'python scripts/validate_get_private_book_url_security.py --self-test',
@@ -98,6 +101,9 @@ def validate_text(text: str) -> list[str]:
     ]
     for marker in required:
         require(errors, marker in text, f'contrôle CI obligatoire absent: {marker.strip()}')
+    require(errors, text.count("      - 'scripts/test_public_edge_body_limits.mjs'") == 2, 'le test streaming doit déclencher le workflow sur PR et push')
+    require(errors, text.count("      - 'scripts/test_public_edge_binary_limits.mjs'") == 2, 'le test PDF distant borné doit déclencher le workflow sur PR et push')
+    require(errors, text.count("      - 'scripts/test_document_external_urls.mjs'") == 2, 'les liens documentaires doivent être testés sur PR et push')
     require(errors, text.count(GET_DOCUMENT_TRIGGER) == 2, 'le validateur get-document-url doit déclencher le workflow sur pull_request et push')
     require(errors, text.count(GET_PRIVATE_BOOK_TRIGGER) == 2, 'le validateur Livre I privé doit déclencher le workflow sur pull_request et push')
     require(errors, text.count(SEND_GAME_REPORT_TRIGGER) == 2, 'le validateur send-game-report doit déclencher le workflow sur pull_request et push')
@@ -125,6 +131,10 @@ def run_self_tests(text: str) -> None:
         'runner mobile': text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-latest', 1),
         'python large': text.replace(f"python-version: '{PYTHON_VERSION}'", "python-version: '3.12'", 1),
         'contrôle public retiré': text.replace('        run: python scripts/validate_public_edge_auth.py\n', '', 1),
+        'test PDF en flux retiré': text.replace('        run: node scripts/test_public_edge_binary_limits.mjs\n', '', 1),
+        'test URL documentaire retiré': text.replace('        run: node scripts/test_document_external_urls.mjs\n', '', 1),
+        'déclencheur test URL retiré': text.replace("      - 'scripts/test_document_external_urls.mjs'\n", '', 1),
+        'déclencheur test PDF retiré': text.replace("      - 'scripts/test_public_edge_binary_limits.mjs'\n", '', 1),
         'auto-test get-document-url retiré': text.replace('        run: python scripts/validate_get_document_url_security.py --self-test\n', '', 1),
         'contrôle get-document-url retiré': text.replace('        run: python scripts/validate_get_document_url_security.py\n', '', 1),
         'déclencheur get-document-url retiré': text.replace(GET_DOCUMENT_TRIGGER, '', 1),

@@ -1,0 +1,166 @@
+name: SINJIRA — prévol Auth email en lecture seule
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/sinjira-auth-email-production-preflight.yml'
+      - 'scripts/preflight_sinjira_auth_email.py'
+      - 'scripts/test_sinjira_confirmation_manual_click.cjs'
+      - 'scripts/test_sinjira_formspree_transport.cjs'
+      - 'scripts/test_sinjira_confirmation_notice_server.cjs'
+      - 'scripts/test_sinjira_totp_verification_recovery.cjs'
+      - 'scripts/test_sinjira_signup_next_fallback.cjs'
+      - 'scripts/test_sinjira_signup_response.cjs'
+      - 'scripts/test_sinjira_registry_duplicate_response.cjs'
+      - 'scripts/test_sinjira_storage_photo_aal2_policy.cjs'
+      - 'scripts/test_sinjira_photo_aal2_readiness.cjs'
+      - 'scripts/sql/sinjira_character_photo_aal2_preflight_read_only.sql'
+      - 'scripts/test_sinjira_character_photo_path.cjs'
+      - 'scripts/test_sinjira_registry_unique_conflict.cjs'
+      - 'supabase/functions/submit-character-questionnaire/index.ts'
+      - 'scripts/sql/sinjira_character_sources_insert_requires_aal2.sql'
+      - 'assets/js/sinjira-character-registry.js'
+      - 'projets/sinjira/registre/index.html'
+      - 'assets/js/v24-security.js'
+      - 'assets/js/v24-signup.js'
+      - 'supabase/functions/notify-account-confirmation/index.ts'
+      - 'supabase/functions/_shared/sinjira-formspree.ts'
+      - 'assets/js/sinjira-confirm-email.js'
+      - 'docs/SINJIRA_AUTH_EMAIL_PREFLIGHT_20261108.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sinjira-auth-email-production-preflight.yml'
+      - 'scripts/preflight_sinjira_auth_email.py'
+      - 'scripts/test_sinjira_confirmation_manual_click.cjs'
+      - 'scripts/test_sinjira_formspree_transport.cjs'
+      - 'scripts/test_sinjira_confirmation_notice_server.cjs'
+      - 'scripts/test_sinjira_totp_verification_recovery.cjs'
+      - 'scripts/test_sinjira_signup_next_fallback.cjs'
+      - 'scripts/test_sinjira_signup_response.cjs'
+      - 'scripts/test_sinjira_registry_duplicate_response.cjs'
+      - 'scripts/test_sinjira_storage_photo_aal2_policy.cjs'
+      - 'scripts/test_sinjira_photo_aal2_readiness.cjs'
+      - 'scripts/sql/sinjira_character_photo_aal2_preflight_read_only.sql'
+      - 'scripts/test_sinjira_character_photo_path.cjs'
+      - 'scripts/test_sinjira_registry_unique_conflict.cjs'
+      - 'supabase/functions/submit-character-questionnaire/index.ts'
+      - 'scripts/sql/sinjira_character_sources_insert_requires_aal2.sql'
+      - 'assets/js/sinjira-character-registry.js'
+      - 'projets/sinjira/registre/index.html'
+      - 'assets/js/v24-security.js'
+      - 'assets/js/v24-signup.js'
+      - 'supabase/functions/notify-account-confirmation/index.ts'
+      - 'supabase/functions/_shared/sinjira-formspree.ts'
+      - 'assets/js/sinjira-confirm-email.js'
+      - 'docs/SINJIRA_AUTH_EMAIL_PREFLIGHT_20261108.md'
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Saisir exactement PREFLIGHT-READ-ONLY"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-auth-email-readonly-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  contract:
+    name: Test du diagnostic et des garde-fous
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Vérifier Python 3.12 du runner Ubuntu 24.04
+        run: |
+          python3 -c 'import sys; assert sys.version_info[:2] == (3, 12), "Python 3.12 requis"'
+      - name: Auto-tests sans accès production
+        run: |
+          python3 -m py_compile scripts/preflight_sinjira_auth_email.py
+          python3 scripts/preflight_sinjira_auth_email.py --self-test
+      - name: Configurer Node pour les tests du vrai script de confirmation
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '22.16.0'
+          check-latest: false
+      - name: Refuser toute activation du courriel sans clic humain
+        run: |
+          node --check scripts/test_sinjira_confirmation_manual_click.cjs
+          node scripts/test_sinjira_confirmation_manual_click.cjs
+      - name: Vérifier la sécurité des avis Formspree avec le vrai module TS hors ligne
+        run: |
+          node --check scripts/test_sinjira_formspree_transport.cjs
+          node --experimental-strip-types scripts/test_sinjira_formspree_transport.cjs
+      - name: Vérifier sur le vrai contrôleur le consentement après validation Auth
+        run: |
+          node --check scripts/test_sinjira_confirmation_notice_server.cjs
+          node scripts/test_sinjira_confirmation_notice_server.cjs
+      - name: Refuser les redirections non contrôlées à l'inscription
+        run: |
+          node --check scripts/test_sinjira_signup_next_fallback.cjs
+          node scripts/test_sinjira_signup_next_fallback.cjs
+      - name: Refuser les faux succès d'inscription sans utilisateur confirmé
+        run: |
+          node --check scripts/test_sinjira_signup_response.cjs
+          node scripts/test_sinjira_signup_response.cjs
+      - name: Refuser les doublons explicites du Registre sans perdre la protection des erreurs incertaines
+        run: |
+          node --check scripts/test_sinjira_registry_duplicate_response.cjs
+          node scripts/test_sinjira_registry_duplicate_response.cjs
+      - name: Vérifier le contrat SQL RLS AAL2 des photos privées du Registre
+        run: |
+          node --check scripts/test_sinjira_storage_photo_aal2_policy.cjs
+          node scripts/test_sinjira_storage_photo_aal2_policy.cjs
+          node --check scripts/test_sinjira_photo_aal2_readiness.cjs
+          node scripts/test_sinjira_photo_aal2_readiness.cjs
+      - name: Vérifier le chemin canonique des photos du Registre côté Edge
+        run: |
+          node --check scripts/test_sinjira_character_photo_path.cjs
+          node scripts/test_sinjira_character_photo_path.cjs
+      - name: Refuser les faux doublons lors des INSERT simultanés du Registre
+        run: |
+          node --check scripts/test_sinjira_registry_unique_conflict.cjs
+          node scripts/test_sinjira_registry_unique_conflict.cjs
+      - name: Vérifier les erreurs de vérification TOTP sans bloquer le bouton
+        run: |
+          node --check scripts/test_sinjira_totp_verification_recovery.cjs
+          node scripts/test_sinjira_totp_verification_recovery.cjs
+
+  production-inspection:
+    name: Vérification réelle Auth, sans modification
+    needs: contract
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    environment: production
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Confirmation explicite du mode lecture seule
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          test "$CONFIRMATION" = 'PREFLIGHT-READ-ONLY' || {
+            echo "Confirmation incorrecte; aucune opération distante."
+            exit 1
+          }
+      - name: Checkout de main
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Vérifier Python 3.12 du runner Ubuntu 24.04
+        run: |
+          python3 -c 'import sys; assert sys.version_info[:2] == (3, 12), "Python 3.12 requis"'
+      - name: Lire seulement la configuration Auth distante
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: python3 scripts/preflight_sinjira_auth_email.py --remote

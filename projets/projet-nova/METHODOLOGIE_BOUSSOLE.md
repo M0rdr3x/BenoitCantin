@@ -12,7 +12,7 @@ La Boussole Nova produit d’abord un **profil politique multidimensionnel**. El
 4. **Importance personnelle facultative** : 0,5 / 1 / 1,5.
 5. **Questions transversales explicites** : une question peut contribuer secondairement à une autre dimension, mais ce poids secondaire doit être déclaré et rester inférieur ou égal à 0,4.
 6. **Aucune moyenne idéologique globale** : les dimensions restent visibles séparément.
-7. **Couverture affichée** : une dimension insuffisamment répondue ne doit pas être présentée comme précise.
+7. **Couverture affichée** : au moins deux des quatre propositions principales d’une dimension doivent recevoir une réponse non passée (seuil `axisMinimumAnswered: 2`) avant l’affichage d’un score. Les contributions transversales ne permettent pas de contourner cette exigence. Les axes sans score restent dans leur position fixe et ne sont pas remplacés par une valeur neutre.
 8. **Calcul local** : aucune réponse n’est transmise ou stockée de façon persistante par la V2.
 
 ## Rédaction non ambiguë des propositions
@@ -224,3 +224,9 @@ Toute modification du texte d’une proposition exige une migration explicite :
 5. mettre à jour le lien questionnaire ↔ corpus seulement après cette révision.
 
 La CI compare le texte public de chaque question au texte auquel le corpus de preuves est lié. Une différence fait échouer la validation. Ce verrou évite qu’une ancienne branche, une reformulation éditoriale ou une fusion tardive change le sens d’une question tout en conservant des positions codées sur une formulation antérieure.
+
+## Parcours jusqu'à la dernière question
+
+La boussole permet de terminer le parcours même lorsque toutes les propositions sont marquées « Sans opinion / passer ». Dans ce cas, **aucune position politique n'est inventée** : les seize dimensions sont indiquées comme non calculables, le radar ne dessine aucun polygone et un message explique qu'au moins deux réponses principales sur un même thème sont nécessaires pour obtenir un premier score. Les options « Précédent » et « Recommencer » restent disponibles. Un test de navigation dans le moteur réel parcourt les 64 écrans, vérifie les retours et les choix, ainsi que la fin du parcours avec zéro, une ou plusieurs réponses exploitables, sans accès réseau ni stockage local.
+
+Les réponses ou importances modifiées **après** le premier affichage d'un profil recalculent immédiatement la carte, les seize scores et les textes de partage, sans requête réseau et sans déplacer le focus de la question en cours. Le test de parcours vérifie également ce scénario et la récupération d'un profil après 64 choix « Sans opinion ».

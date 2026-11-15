@@ -1,0 +1,530 @@
+{
+  "schema": "nova-g016l-eau-financement-preuves/v1",
+  "project": "Projet Nova",
+  "phase": "G0.16l",
+  "as_of": "2026-11-07",
+  "status": "OFFICIAL_RULES_REGISTERED_NO_LOCAL_GRANTS_VERIFIED",
+  "programme_score_before": 47,
+  "programme_score_after": 47,
+  "underlying_evidence": {
+    "g016k": "data/continuite-actifs-eau-g0-16k-2025.json",
+    "g016j": "data/ventilation-charges-municipales-g0-16j-2024.json",
+    "stock_2025_replacement_gcad": 197.6,
+    "poor_condition_asset_replacement_gcad": 20.6,
+    "historical_water_and_sewer_cost_2024_cad": 2519426792,
+    "not_annual_repair_funding": true,
+    "not_same_municipalities_or_year": true,
+    "underfunding_for_nova_cad": null
+  },
+  "sources": [
+    {
+      "id": "PGA_EAU",
+      "issuer": "Gouvernement du Québec — MAMH",
+      "url": "https://www.quebec.ca/habitation-territoire/infrastructures-municipales/plan-gestion-actif-pga/eau",
+      "type": "government_administrative_guidance",
+      "checked_on": "2026-11-07"
+    },
+    {
+      "id": "PRIMEAU",
+      "issuer": "Gouvernement du Québec — MAMH",
+      "url": "https://www.quebec.ca/habitation-territoire/infrastructures-municipales/programmes/eau-potable-eaux-usees/programme-infrastructures-municipales-eau-primeau",
+      "type": "government_programme_rules",
+      "checked_on": "2026-11-07"
+    },
+    {
+      "id": "TECQ",
+      "issuer": "Gouvernement du Québec — MAMH",
+      "url": "https://www.quebec.ca/habitation-territoire/infrastructures-municipales/programmes/eau-potable-eaux-usees/programme-transfert-infrastructures-eau-collectives-quebec-tecq-2024-2028",
+      "type": "government_programme_rules",
+      "checked_on": "2026-11-07"
+    }
+  ],
+  "official_milestones": [
+    {
+      "id": "PGA_COMMIT",
+      "source": "PGA_EAU",
+      "kind": "municipal_invitation",
+      "date": "2026-12-31",
+      "fact": "Engagement municipal à élaborer un PGA-Eau; démarche, résolution et formulaire transmis au PGAMR",
+      "as_of_status": "UPCOMING",
+      "automatically_mandatory_for_every_city": false,
+      "constitutes_final_plan": false
+    },
+    {
+      "id": "PGA_PLAN",
+      "source": "PGA_EAU",
+      "kind": "plan_and_resolution",
+      "date": null,
+      "fact": "Chiffrier, plan type, résolution d'approbation et transmission par PGAMR à partir de janvier 2026",
+      "as_of_status": "NO_FIXED_COMPLETION_DATE",
+      "automatically_mandatory_for_every_city": false,
+      "constitutes_final_plan": true
+    },
+    {
+      "id": "PGA_FOLLOW_UP",
+      "source": "PGA_EAU",
+      "kind": "annual_follow_up",
+      "date": "2028-01-01",
+      "fact": "Suivi annuel à partir de 2028; mise à jour du plan à partir de 2030 puis tous les quatre ans",
+      "as_of_status": "FUTURE",
+      "automatically_mandatory_for_every_city": false,
+      "constitutes_final_plan": false
+    },
+    {
+      "id": "PRIMEAU_CALL_2026",
+      "source": "PRIMEAU",
+      "kind": "time_limited_call",
+      "date": "2026-10-30",
+      "open_date": "2026-08-31",
+      "fact": "Appel de projets Volet 1 (priorités 1 à 4); clôturé le 30 octobre 2026, volet 2 fermé aux nouvelles demandes",
+      "as_of_status": "PAST_WINDOW",
+      "automatically_mandatory_for_every_city": false,
+      "constitutes_final_plan": false
+    },
+    {
+      "id": "PRIMEAU_PRESELECT_LIMIT",
+      "source": "PRIMEAU",
+      "kind": "program_deadline",
+      "date": "2028-03-31",
+      "fact": "Aucun projet ne peut être présélectionné après cette date, selon règles affichées",
+      "as_of_status": "FUTURE",
+      "automatically_mandatory_for_every_city": false,
+      "constitutes_final_plan": false
+    },
+    {
+      "id": "PRIMEAU_GRANT_LIMIT",
+      "source": "PRIMEAU",
+      "kind": "program_deadline",
+      "date": "2031-03-31",
+      "fact": "Aucune nouvelle promesse d'aide après cette date, selon règles affichées",
+      "as_of_status": "FUTURE",
+      "automatically_mandatory_for_every_city": false,
+      "constitutes_final_plan": false
+    },
+    {
+      "id": "TECQ_UPDATE_WINDOW",
+      "source": "TECQ",
+      "kind": "recurring_submission",
+      "date": "2027-02-15",
+      "open_date": "2026-10-01",
+      "fact": "Mise à jour annuelle de la programmation pendant la période du 1er octobre au 15 février",
+      "as_of_status": "OPEN_WINDOW",
+      "automatically_mandatory_for_every_city": false,
+      "constitutes_final_plan": false
+    },
+    {
+      "id": "TECQ_WORK_ELIGIBILITY_END",
+      "source": "TECQ",
+      "kind": "program_deadline",
+      "date": "2028-12-31",
+      "fact": "Travaux ou études réalisés entre le 1er janvier 2024 et le 31 décembre 2028",
+      "as_of_status": "FUTURE",
+      "automatically_mandatory_for_every_city": false,
+      "constitutes_final_plan": false
+    },
+    {
+      "id": "TECQ_FINAL_ACCOUNTING",
+      "source": "TECQ",
+      "kind": "program_deadline",
+      "date": "2029-06-30",
+      "fact": "Date limite de transmission de la reddition de comptes finale",
+      "as_of_status": "FUTURE",
+      "automatically_mandatory_for_every_city": false,
+      "constitutes_final_plan": false
+    }
+  ],
+  "programme_funding": [
+    {
+      "id": "PRIMEAU",
+      "announced_envelope_cad": 2400000000,
+      "amount_relation": "EQUAL_ANNOUNCED_ENVELOPE",
+      "start_year": 2023,
+      "end_year": 2033,
+      "grant_to_nova_cad": null,
+      "municipality_specific_awards_verified_cad": null,
+      "awaiting_project_approval": true,
+      "not_auto_approved": true,
+      "application_context": "L'appel 2026 était limité au volet 1, priorités 1–4, du 31 août au 30 octobre."
+    },
+    {
+      "id": "TECQ",
+      "announced_envelope_floor_cad": 3300000000,
+      "amount_relation": "MORE_THAN",
+      "start_year": 2024,
+      "end_year": 2028,
+      "grant_to_nova_cad": null,
+      "municipality_specific_awards_verified_cad": null,
+      "awaiting_project_approval": true,
+      "not_auto_approved": true,
+      "application_context": "Contribution conjointe du Canada et du Québec; programmation, résolution et approbation nécessaires."
+    }
+  ],
+  "grant_evidence_stages": [
+    "ANNOUNCED_PROGRAMME",
+    "ELIGIBILITY_UNCHECKED",
+    "APPLICATION_SUBMITTED",
+    "SELECTION_PENDING",
+    "PROMISE_DOCUMENTED",
+    "PAYMENT_DOCUMENTED"
+  ],
+  "project_register": [],
+  "project_schema_contract": {
+    "identity": [
+      "project_id",
+      "municipality_code",
+      "asset_class",
+      "service_criticality",
+      "fiscal_year"
+    ],
+    "local_proof": [
+      "council_resolution_url",
+      "pga_status",
+      "condition_evidence_url",
+      "legal_ownership_evidence_url"
+    ],
+    "cost_proof": [
+      "total_cost_cad",
+      "cost_document_url",
+      "cost_audited"
+    ],
+    "financing_proof": [
+      "commitments",
+      "non_grant_financing_cad",
+      "non_grant_financing_evidence_url"
+    ],
+    "worker_and_rights_proof": [
+      "staff_impact_reviewed",
+      "resident_impact_reviewed"
+    ],
+    "cash_flow": [
+      "projected_operating_change_cad",
+      "debt_service_impact_cad",
+      "appropriation_approved"
+    ],
+    "required_grant_fields": [
+      "programme",
+      "stage",
+      "amount_cad",
+      "award_document_url",
+      "verified_against_issuer"
+    ]
+  },
+  "decision_rules": {
+    "published_envelope_never_considered_awarded_to_project": true,
+    "eligibility_is_not_application": true,
+    "application_is_not_award": true,
+    "promise_is_not_cash_disbursement": true,
+    "no_tax_removal_until_replacement_financing_verified": true,
+    "project_cost_without_documentation_not_known": true,
+    "no_project_cost_from_197_6b_stock": true,
+    "avoid_double_count_tecq_primeau_same_expense": true,
+    "federal_tecq_not_automatic_sovereign_funding": true,
+    "fiscal_years_are_local_and_scenario_specific": true,
+    "missing_cost_is_null_not_zero": true,
+    "legal_and_external_review_still_required": true
+  },
+  "regional_readiness": {
+    "municipality_level_project_costs_imported": 0,
+    "municipality_level_approved_awards_verified": 0,
+    "municipality_level_submitted_pga_documents_verified": 0,
+    "all_municipalities_covered": false,
+    "critical_facilities_with_verified_risk_scores": 0,
+    "real_2026_2036_investment_gap_cad": null
+  },
+  "constitutional_models": [
+    {
+      "id": "QUEBEC_CANADA",
+      "approved": false,
+      "independently_audited": false,
+      "budget_years": [
+        {
+          "year": "2026-2027",
+          "municipal_capex_cad": null,
+          "verified_tecq_awards_cad": null,
+          "verified_primeau_awards_cad": null,
+          "verified_other_financing_cad": null,
+          "local_tax_replacement_cad": null,
+          "worker_costs_cad": null,
+          "operating_impact_cad": null,
+          "net_gap_cad": null,
+          "constitutional_transfer_legality_reviewed": false
+        },
+        {
+          "year": "2027-2028",
+          "municipal_capex_cad": null,
+          "verified_tecq_awards_cad": null,
+          "verified_primeau_awards_cad": null,
+          "verified_other_financing_cad": null,
+          "local_tax_replacement_cad": null,
+          "worker_costs_cad": null,
+          "operating_impact_cad": null,
+          "net_gap_cad": null,
+          "constitutional_transfer_legality_reviewed": false
+        },
+        {
+          "year": "2028-2029",
+          "municipal_capex_cad": null,
+          "verified_tecq_awards_cad": null,
+          "verified_primeau_awards_cad": null,
+          "verified_other_financing_cad": null,
+          "local_tax_replacement_cad": null,
+          "worker_costs_cad": null,
+          "operating_impact_cad": null,
+          "net_gap_cad": null,
+          "constitutional_transfer_legality_reviewed": false
+        },
+        {
+          "year": "2029-2030",
+          "municipal_capex_cad": null,
+          "verified_tecq_awards_cad": null,
+          "verified_primeau_awards_cad": null,
+          "verified_other_financing_cad": null,
+          "local_tax_replacement_cad": null,
+          "worker_costs_cad": null,
+          "operating_impact_cad": null,
+          "net_gap_cad": null,
+          "constitutional_transfer_legality_reviewed": false
+        },
+        {
+          "year": "2030-2031",
+          "municipal_capex_cad": null,
+          "verified_tecq_awards_cad": null,
+          "verified_primeau_awards_cad": null,
+          "verified_other_financing_cad": null,
+          "local_tax_replacement_cad": null,
+          "worker_costs_cad": null,
+          "operating_impact_cad": null,
+          "net_gap_cad": null,
+          "constitutional_transfer_legality_reviewed": false
+        },
+        {
+          "year": "2031-2032",
+          "municipal_capex_cad": null,
+          "verified_tecq_awards_cad": null,
+          "verified_primeau_awards_cad": null,
+          "verified_other_financing_cad": null,
+          "local_tax_replacement_cad": null,
+          "worker_costs_cad": null,
+          "operating_impact_cad": null,
+          "net_gap_cad": null,
+          "constitutional_transfer_legality_reviewed": false
+        },
+        {
+          "year": "2032-2033",
+          "municipal_capex_cad": null,
+          "verified_tecq_awards_cad": null,
+          "verified_primeau_awards_cad": null,
+          "verified_other_financing_cad": null,
+          "local_tax_replacement_cad": null,
+          "worker_costs_cad": null,
+          "operating_impact_cad": null,
+          "net_gap_cad": null,
+          "constitutional_transfer_legality_reviewed": false
+        },
+        {
+          "year": "2033-2034",
+          "municipal_capex_cad": null,
+          "verified_tecq_awards_cad": null,
+          "verified_primeau_awards_cad": null,
+          "verified_other_financing_cad": null,
+          "local_tax_replacement_cad": null,
+          "worker_costs_cad": null,
+          "operating_impact_cad": null,
+          "net_gap_cad": null,
+          "constitutional_transfer_legality_reviewed": false
+        },
+        {
+          "year": "2034-2035",
+          "municipal_capex_cad": null,
+          "verified_tecq_awards_cad": null,
+          "verified_primeau_awards_cad": null,
+          "verified_other_financing_cad": null,
+          "local_tax_replacement_cad": null,
+          "worker_costs_cad": null,
+          "operating_impact_cad": null,
+          "net_gap_cad": null,
+          "constitutional_transfer_legality_reviewed": false
+        },
+        {
+          "year": "2035-2036",
+          "municipal_capex_cad": null,
+          "verified_tecq_awards_cad": null,
+          "verified_primeau_awards_cad": null,
+          "verified_other_financing_cad": null,
+          "local_tax_replacement_cad": null,
+          "worker_costs_cad": null,
+          "operating_impact_cad": null,
+          "net_gap_cad": null,
+          "constitutional_transfer_legality_reviewed": false
+        }
+      ]
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "approved": false,
+      "independently_audited": false,
+      "budget_years": [
+        {
+          "year": "2026-2027",
+          "municipal_capex_cad": null,
+          "verified_tecq_awards_cad": null,
+          "verified_primeau_awards_cad": null,
+          "verified_other_financing_cad": null,
+          "local_tax_replacement_cad": null,
+          "worker_costs_cad": null,
+          "operating_impact_cad": null,
+          "net_gap_cad": null,
+          "constitutional_transfer_legality_reviewed": false
+        },
+        {
+          "year": "2027-2028",
+          "municipal_capex_cad": null,
+          "verified_tecq_awards_cad": null,
+          "verified_primeau_awards_cad": null,
+          "verified_other_financing_cad": null,
+          "local_tax_replacement_cad": null,
+          "worker_costs_cad": null,
+          "operating_impact_cad": null,
+          "net_gap_cad": null,
+          "constitutional_transfer_legality_reviewed": false
+        },
+        {
+          "year": "2028-2029",
+          "municipal_capex_cad": null,
+          "verified_tecq_awards_cad": null,
+          "verified_primeau_awards_cad": null,
+          "verified_other_financing_cad": null,
+          "local_tax_replacement_cad": null,
+          "worker_costs_cad": null,
+          "operating_impact_cad": null,
+          "net_gap_cad": null,
+          "constitutional_transfer_legality_reviewed": false
+        },
+        {
+          "year": "2029-2030",
+          "municipal_capex_cad": null,
+          "verified_tecq_awards_cad": null,
+          "verified_primeau_awards_cad": null,
+          "verified_other_financing_cad": null,
+          "local_tax_replacement_cad": null,
+          "worker_costs_cad": null,
+          "operating_impact_cad": null,
+          "net_gap_cad": null,
+          "constitutional_transfer_legality_reviewed": false
+        },
+        {
+          "year": "2030-2031",
+          "municipal_capex_cad": null,
+          "verified_tecq_awards_cad": null,
+          "verified_primeau_awards_cad": null,
+          "verified_other_financing_cad": null,
+          "local_tax_replacement_cad": null,
+          "worker_costs_cad": null,
+          "operating_impact_cad": null,
+          "net_gap_cad": null,
+          "constitutional_transfer_legality_reviewed": false
+        },
+        {
+          "year": "2031-2032",
+          "municipal_capex_cad": null,
+          "verified_tecq_awards_cad": null,
+          "verified_primeau_awards_cad": null,
+          "verified_other_financing_cad": null,
+          "local_tax_replacement_cad": null,
+          "worker_costs_cad": null,
+          "operating_impact_cad": null,
+          "net_gap_cad": null,
+          "constitutional_transfer_legality_reviewed": false
+        },
+        {
+          "year": "2032-2033",
+          "municipal_capex_cad": null,
+          "verified_tecq_awards_cad": null,
+          "verified_primeau_awards_cad": null,
+          "verified_other_financing_cad": null,
+          "local_tax_replacement_cad": null,
+          "worker_costs_cad": null,
+          "operating_impact_cad": null,
+          "net_gap_cad": null,
+          "constitutional_transfer_legality_reviewed": false
+        },
+        {
+          "year": "2033-2034",
+          "municipal_capex_cad": null,
+          "verified_tecq_awards_cad": null,
+          "verified_primeau_awards_cad": null,
+          "verified_other_financing_cad": null,
+          "local_tax_replacement_cad": null,
+          "worker_costs_cad": null,
+          "operating_impact_cad": null,
+          "net_gap_cad": null,
+          "constitutional_transfer_legality_reviewed": false
+        },
+        {
+          "year": "2034-2035",
+          "municipal_capex_cad": null,
+          "verified_tecq_awards_cad": null,
+          "verified_primeau_awards_cad": null,
+          "verified_other_financing_cad": null,
+          "local_tax_replacement_cad": null,
+          "worker_costs_cad": null,
+          "operating_impact_cad": null,
+          "net_gap_cad": null,
+          "constitutional_transfer_legality_reviewed": false
+        },
+        {
+          "year": "2035-2036",
+          "municipal_capex_cad": null,
+          "verified_tecq_awards_cad": null,
+          "verified_primeau_awards_cad": null,
+          "verified_other_financing_cad": null,
+          "local_tax_replacement_cad": null,
+          "worker_costs_cad": null,
+          "operating_impact_cad": null,
+          "net_gap_cad": null,
+          "constitutional_transfer_legality_reviewed": false
+        }
+      ]
+    }
+  ],
+  "unmet_conditions": [
+    {
+      "id": "GATE_01",
+      "requirement": "Accès aux plans PGA-Eau ou preuves de leur transmission municipale",
+      "status": "NO_EVIDENCE"
+    },
+    {
+      "id": "GATE_02",
+      "requirement": "Dossiers de projets municipaux : état, criticité, risques, coûts de réparation et échéanciers",
+      "status": "NO_EVIDENCE"
+    },
+    {
+      "id": "GATE_03",
+      "requirement": "Promesses PRIMEAU/TECQ attribuées à une commune et à un projet, avec montants vérifiables",
+      "status": "NO_EVIDENCE"
+    },
+    {
+      "id": "GATE_04",
+      "requirement": "Déduplication des dépenses admissibles aux programmes et vérification des transferts",
+      "status": "NO_EVIDENCE"
+    },
+    {
+      "id": "GATE_05",
+      "requirement": "Budget décennal, personnel, dette et continuité par scénario constitutionnel",
+      "status": "NO_EVIDENCE"
+    },
+    {
+      "id": "GATE_06",
+      "requirement": "Contrôle externe légal, financier, environnemental et municipal",
+      "status": "NO_EVIDENCE"
+    }
+  ],
+  "decisions": {
+    "official_programme_rules_documented": true,
+    "local_awards_verified": false,
+    "g016l_financing_certified": false,
+    "programme_complete": false,
+    "legal_tax_changes_adopted": false,
+    "external_audit_signed": false
+  }
+}

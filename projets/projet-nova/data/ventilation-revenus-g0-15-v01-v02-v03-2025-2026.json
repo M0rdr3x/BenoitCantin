@@ -1,0 +1,236 @@
+{
+  "schema": "nova-g015-subcomponents-revenues/v1",
+  "project": "Projet Nova",
+  "phase": "G0.15-V01-V02-V03",
+  "documented_on": "2026-11-08",
+  "status": "PUBLIC_ACCOUNTS_DETAIL_RECONCILED_NO_NOVA_CERTIFICATION",
+  "programme_score_before": 47,
+  "programme_score_after": 47,
+  "source": {
+    "publisher": "Ministère des Finances du Québec",
+    "title": "Comptes publics 2025-2026 — Volume 1",
+    "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Comptes-publics/FR/CPTFR_vol1-2025-2026.pdf",
+    "original_year_end": "2026-03-31",
+    "comparator_year_end": "2025-03-31",
+    "pdf_page_index_zero_based": 108,
+    "printed_page": 102,
+    "note": "4. Revenus — Revenus autonomes par sources",
+    "currency": "M_CAD",
+    "source_is_audited_government_account": true,
+    "nova_reform_independently_audited": false
+  },
+  "groups": [
+    {
+      "id": "V01",
+      "label": "Taxes à la consommation",
+      "year_2024_2025_total_mcad": 28377,
+      "year_2025_2026_total_mcad": 29639,
+      "categories": [
+        {
+          "id": "SALES",
+          "label": "Ventes, nettes du crédit d'impôt pour la solidarité",
+          "year_2024_2025_mcad": 24650,
+          "year_2025_2026_mcad": 25930,
+          "treatment": "FISCAL_SALES_NET_OF_CREDIT"
+        },
+        {
+          "id": "FUEL",
+          "label": "Carburants",
+          "year_2024_2025_mcad": 2135,
+          "year_2025_2026_mcad": 2158,
+          "treatment": "FISCAL_EXCISE"
+        },
+        {
+          "id": "TOBACCO",
+          "label": "Tabac",
+          "year_2024_2025_mcad": 853,
+          "year_2025_2026_mcad": 815,
+          "treatment": "FISCAL_EXCISE"
+        },
+        {
+          "id": "ALCOHOL",
+          "label": "Boissons alcooliques",
+          "year_2024_2025_mcad": 596,
+          "year_2025_2026_mcad": 573,
+          "treatment": "FISCAL_EXCISE"
+        },
+        {
+          "id": "OTHER",
+          "label": "Autres taxes à la consommation",
+          "year_2024_2025_mcad": 143,
+          "year_2025_2026_mcad": 163,
+          "treatment": "FISCAL_MIXED"
+        }
+      ]
+    },
+    {
+      "id": "V02",
+      "label": "Droits, permis et redevances",
+      "year_2024_2025_total_mcad": 6191,
+      "year_2025_2026_total_mcad": 6708,
+      "categories": [
+        {
+          "id": "VEHICLES",
+          "label": "Véhicules automobiles",
+          "year_2024_2025_mcad": 2055,
+          "year_2025_2026_mcad": 2181,
+          "treatment": "REGULATORY_RIGHTS"
+        },
+        {
+          "id": "NATURAL_RESOURCES",
+          "label": "Ressources naturelles",
+          "year_2024_2025_mcad": 1667,
+          "year_2025_2026_mcad": 2229,
+          "treatment": "RESOURCE_ROYALTIES"
+        },
+        {
+          "id": "GHG",
+          "label": "Émissions de gaz à effet de serre",
+          "year_2024_2025_mcad": 1329,
+          "year_2025_2026_mcad": 1123,
+          "treatment": "EMISSIONS_ALLOWANCE_REVENUE"
+        },
+        {
+          "id": "OTHER",
+          "label": "Autres droits, permis et redevances",
+          "year_2024_2025_mcad": 1140,
+          "year_2025_2026_mcad": 1175,
+          "treatment": "MIXED_RIGHTS_AND_FEES"
+        }
+      ]
+    },
+    {
+      "id": "V03",
+      "label": "Revenus divers",
+      "year_2024_2025_total_mcad": 16252,
+      "year_2025_2026_total_mcad": 14922,
+      "services_rendered_subtotal_2024_2025_mcad": 8720,
+      "services_rendered_subtotal_2025_2026_mcad": 9132,
+      "categories": [
+        {
+          "id": "HEALTH_OTHER",
+          "label": "Hébergement et services non assurés en santé",
+          "year_2024_2025_mcad": 1761,
+          "year_2025_2026_mcad": 1857,
+          "treatment": "HEALTH_SERVICE_CHARGES"
+        },
+        {
+          "id": "DRUG_PREMIUMS",
+          "label": "Primes de l'assurance médicaments",
+          "year_2024_2025_mcad": 1672,
+          "year_2025_2026_mcad": 1751,
+          "treatment": "DRUG_INSURANCE_PREMIUMS"
+        },
+        {
+          "id": "TUITION",
+          "label": "Frais de scolarité",
+          "year_2024_2025_mcad": 627,
+          "year_2025_2026_mcad": 655,
+          "treatment": "EDUCATION_FEES"
+        },
+        {
+          "id": "SCHOOL_CHILDCARE",
+          "label": "Garde d'enfants en milieu scolaire",
+          "year_2024_2025_mcad": 522,
+          "year_2025_2026_mcad": 544,
+          "treatment": "SCHOOL_SERVICE_FEES"
+        },
+        {
+          "id": "POLICE",
+          "label": "Services policiers",
+          "year_2024_2025_mcad": 427,
+          "year_2025_2026_mcad": 455,
+          "treatment": "PUBLIC_SERVICE_CHARGES"
+        },
+        {
+          "id": "OTHER_SERVICES",
+          "label": "Autres services rendus",
+          "year_2024_2025_mcad": 3711,
+          "year_2025_2026_mcad": 3870,
+          "treatment": "MIXED_SERVICE_FEES"
+        },
+        {
+          "id": "RECEIVABLES",
+          "label": "Revenus sur les débiteurs et les prêts",
+          "year_2024_2025_mcad": 1979,
+          "year_2025_2026_mcad": 1566,
+          "treatment": "INTEREST_LOAN_INCOME"
+        },
+        {
+          "id": "PENALTIES",
+          "label": "Pénalités, amendes et recouvrements",
+          "year_2024_2025_mcad": 1176,
+          "year_2025_2026_mcad": 1563,
+          "treatment": "ENFORCEMENT_AND_RECOVERIES"
+        },
+        {
+          "id": "DONATIONS",
+          "label": "Donations de tiers",
+          "year_2024_2025_mcad": 1180,
+          "year_2025_2026_mcad": 1186,
+          "treatment": "DONATIONS"
+        },
+        {
+          "id": "INVESTMENTS",
+          "label": "Revenus sur les placements",
+          "year_2024_2025_mcad": 1218,
+          "year_2025_2026_mcad": 1072,
+          "treatment": "INVESTMENT_INCOME"
+        },
+        {
+          "id": "OTHER",
+          "label": "Autres revenus divers",
+          "year_2024_2025_mcad": 1979,
+          "year_2025_2026_mcad": 403,
+          "treatment": "MIXED_MISC_INCOME"
+        }
+      ]
+    }
+  ],
+  "solidarity_credit": {
+    "id": "CREDIT_SOLIDARITE",
+    "year_2024_2025_mcad": 1944,
+    "year_2025_2026_mcad": 1996,
+    "already_deducted_in_sales": true,
+    "add_again_as_new_expense": false,
+    "source_note_page": 102
+  },
+  "crosswalk": {
+    "g015_prior_realized": "data/comptes-publics-reels-g0-15-v02-v03-2025-2026.json",
+    "g014_forecast_year": "2026-2027",
+    "g014_forecast_v01_mcad": 30682,
+    "g014_forecast_v02_mcad": 6484,
+    "g014_forecast_v03_mcad": 15790,
+    "totals_not_additional_to_government_revenue": true,
+    "comparative_2024_2025_is_reclassified": true,
+    "never_add_forecast_to_actuals": true,
+    "nova_tax_reform_funded": false
+  },
+  "evidence": {
+    "v01_primary_detail_identified": true,
+    "v02_primary_detail_identified": true,
+    "v03_primary_detail_identified": true,
+    "v01_full_legal_breakdown_verified": false,
+    "v02_full_legal_breakdown_verified": false,
+    "v03_internal_transfers_eliminated_by_nova_review": false,
+    "v01_reviewed_independently_for_nova": false,
+    "v02_reviewed_independently_for_nova": false,
+    "v03_reviewed_independently_for_nova": false,
+    "all_15_g015_proofs_certified": false,
+    "financed_new_nova_revenue_mcad": null,
+    "policy_rates_authorized": false
+  },
+  "decisions": {
+    "g015_passed": false,
+    "programme_complete": false,
+    "party_political_adoption": false
+  },
+  "limitations": [
+    "Les données sont celles des comptes publics du Québec, non une microsimulation d'un régime fiscal NOVA.",
+    "Le poste Ventes comprend déjà le dégrèvement du crédit d'impôt pour la solidarité; ne pas le comptabiliser deux fois.",
+    "Les droits et redevances comprennent des ressources naturelles et des droits d'émission, pas uniquement des taxes abolissables.",
+    "Les revenus divers comprennent primes d'assurance médicaments, frais de services, dons, intérêts et placements non assimilables automatiquement à une assiette fiscale.",
+    "Les comparatifs 2024-2025 sont reclassés pour correspondre à la présentation 2025-2026 et restent distincts des prévisions 2026-2027.",
+    "La source publique a été auditée pour les comptes de l'État, pas pour un budget NOVA; chaque mesure demande des avis juridiques, des coûts et une revue indépendante."
+  ]
+}

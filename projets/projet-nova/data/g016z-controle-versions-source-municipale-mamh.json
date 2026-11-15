@@ -1,0 +1,95 @@
+{
+  "schema": "nova-g016z-mamh-document-version-conflict/v1",
+  "phase": "G0.16z-source-quality",
+  "date": "2026-11-08",
+  "score_before": 47,
+  "score_after": 47,
+  "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/finances_indicateurs_fiscalite/fiscalite/fiscalite_organismes_municipaux.pdf",
+  "issue": "Un même URL renvoie des représentations divergentes : extraction textuelle 2026 et rendu visuel 2025.",
+  "observations": [
+    {
+      "id": "SCREENSHOT_2025",
+      "method": "WEB_PDF_SCREENSHOT",
+      "pdf_page_index": 0,
+      "document_visible_edition": "MARS 2025",
+      "pdf_page_index_for_data": 5,
+      "data_year": 2023,
+      "values_gcad": {
+        "total_revenues": 29.3,
+        "property_taxes": 14,
+        "government_transfers": 6.2
+      },
+      "visual_data_provenance": "Capture de la page 5 affichant REVENUS POUR 2023",
+      "status": "OBSERVED_VISUAL_2025_VERSION",
+      "confidence": "DIRECT_VISUAL_OF_TOOL_RENDER_BUT_LIVE_URL_NOT_IMMUTABLE"
+    },
+    {
+      "id": "EXTRACT_2026",
+      "method": "WEB_PDF_TEXT_EXTRACTION",
+      "document_text_edition": "SEPTEMBRE 2026",
+      "pdf_page_index_for_data": 5,
+      "data_year": 2024,
+      "values_gcad": {
+        "total_revenues": 31.3,
+        "property_taxes": 15,
+        "government_transfers_reported": 7.4
+      },
+      "text_data_provenance": "Texte du PDF, pages 0, 2 et 5, inclut annexe 2024",
+      "status": "OBSERVED_TEXT_2026_VERSION",
+      "confidence": "EXTRACTED_TEXT_NO_MATCHING_2026_SCREENSHOT"
+    }
+  ],
+  "conflict": {
+    "same_original_url": true,
+    "representations_differ": true,
+    "directly_verified_2024_pdf_visual": false,
+    "known_fixed_download_sha256_for_either_variant": null,
+    "official_version_date_to_source_2023_values": "2025-03",
+    "live_original_url_may_be_replaced": true,
+    "year_2023_values_still_historical_not_2026_fiscal_reference": true,
+    "year_2024_values_must_not_replace_year_2023_without_rebaselining": true,
+    "cannot_state_current_pdf_visual_matches_2026_text": true,
+    "cannot_conclude_one_version_incorrect": true
+  },
+  "required_reconciliation": [
+    {
+      "id": "Q01",
+      "task": "Obtenir des copies figées, nommées par millésime, de la publication 2025 et 2026",
+      "done": false
+    },
+    {
+      "id": "Q02",
+      "task": "Capturer la même version visuellement et par extraction texte puis calculer son empreinte SHA-256",
+      "done": false
+    },
+    {
+      "id": "Q03",
+      "task": "Obtenir annexe consolidée 2024 et vérifier les 31,3 G$, 15,0 G$ et 7,4 G$ dans le même document",
+      "done": false
+    },
+    {
+      "id": "Q04",
+      "task": "Recalculer les séries 2023/2024 et leur évolution avec classement et périmètres comparables",
+      "done": false
+    },
+    {
+      "id": "Q05",
+      "task": "Obtenir données municipales 2026 ou un pont révisé avant consolidation avec Québec 2026-2027",
+      "done": false
+    },
+    {
+      "id": "Q06",
+      "task": "Mettre à jour les preuves et test de provenance G0.16w/x/z après version archivée",
+      "done": false
+    }
+  ],
+  "impact": {
+    "prior_2023_reference_from_march2025_visual_kept": true,
+    "new_2024_reference_not_added_to_nova_2026_model": true,
+    "municipal_property_replacement_cost_2026_still_null": true,
+    "no_change_to_2026_quebec_provincial_reference": true,
+    "provisional_nova_tax_rate_still_null": true,
+    "programme_point_gain_earned": false
+  },
+  "decision": "OPEN_PROVENANCE_ANOMALY_REQUIRING_ARCHIVED_VERSION_AND_SAME_VERSION_REVIEW"
+}

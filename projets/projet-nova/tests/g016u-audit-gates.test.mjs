@@ -1,0 +1,51 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {readFile} from "node:fs/promises";
+import {inspectG016u} from "../assets/g016u-audit-gates-core.mjs";
+const read=async x=>JSON.parse(await readFile(new URL("../data/"+x,import.meta.url),"utf8"));
+const [d,a,t]=await Promise.all([
+ read("g016u-plan-acces-preuves-et-fermeture-53-points.json"),
+ read("audit-completude-programme-nova-2026-11-05.json"),
+ read("engagements-et-decomptes-gascons-g0-16t-2025-2026.json")
+]);
+const reject=(mut,label)=>{const x=structuredClone(d);mut(x);const y=inspectG016u(x,a,t);assert.equal(y.ok,false,y.errors.join("|"));assert.ok(y.errors.includes(label),y.errors.join("|"));};
+test("G0.16u: registre et historique concordants",()=>assert.equal(inspectG016u(d,a,t).ok,true));
+test("Score de départ 47",()=>assert.equal(d.program_score_before,47));
+test("Score de sortie 47",()=>assert.equal(d.program_score_after,47));
+test("53 points restants exactement",()=>assert.equal(d.dimensions.reduce((s,x)=>s+x.remaining_points,0),53));
+test("Maximum 100 points exactement",()=>assert.equal(d.dimensions.reduce((s,x)=>s+x.max_points,0),100));
+test("Finance : déficit de 13 points",()=>assert.equal(d.dimensions.find(x=>x.id==="FINANCES").remaining_points,13));
+test("Services : déficit de 7",()=>assert.equal(d.dimensions.find(x=>x.id==="SERVICES").remaining_points,7));
+test("Économie : déficit de 7",()=>assert.equal(d.dimensions.find(x=>x.id==="ECONOMIE").remaining_points,7));
+test("Vision complète sur la grille interne",()=>assert.equal(d.dimensions.find(x=>x.id==="VISION").remaining_points,0));
+test("Accès par écrit en priorité",()=>assert.equal(d.access_procedure.prefer_written_request,true));
+test("Délai ordinaire de 20 jours civils",()=>assert.equal(d.access_procedure.standard_reply_days_calendar,20));
+test("Prolongation possible de 10 jours civils",()=>assert.equal(d.access_procedure.possible_extension_days_calendar,10));
+test("Délai non déclenché avant accusé",()=>assert.equal(d.access_procedure.statutory_deadline,null));
+test("Aucun envoi de demande attesté",()=>assert.ok(d.requests.every(x=>x.sent===false)));
+test("Aucune réception institutionnelle attestée",()=>assert.ok(d.requests.every(x=>x.receipt_verified===false)));
+test("Municipalité : site public vérifié",()=>assert.equal(d.requests[0].official_site,"https://munpdg.ca/nous-joindre/"));
+test("Pas de courriel municipal d'accès inventé",()=>assert.equal(d.requests[0].verified_specific_responsible_email,null));
+test("MAMH : courriel officiel vérifié",()=>assert.equal(d.requests[1].verified_email,"accesinfo@mamh.gouv.qc.ca"));
+test("Demandes préparées dans deux documents séparés",()=>assert.equal(d.requests.length,2));
+test("Historique autorisation avant taxes 18 621 734,12",()=>assert.equal(d.evidence_chain[0].authorized_selected_pre_tax_cad,18621734.12));
+test("Historique engagement PRIMEAU 42 302 472",()=>assert.equal(d.evidence_chain[1].committed_total_cad,42302472));
+test("Pièce bancaire de décaissement municipale absente",()=>assert.equal(d.evidence_chain[0].verified_aggregate_cad,null));
+test("Virement PRIMEAU effectivement reçu non documenté",()=>assert.equal(d.evidence_chain[1].verified_aggregate_cad,null));
+test("Huit preuves supplémentaires manquantes",()=>assert.equal(d.evidence_gaps.length,8));
+test("Aucune validation indépendante réalisée",()=>assert.equal(d.outcomes.external_reviews_completed,0));
+test("Aucune hausse artificielle du score",()=>assert.equal(d.outcomes.programme_score_increment,0));
+test("Fausse hausse du score refusée",()=>reject(x=>x.program_score_after=48,"FALSE_PROGRESS"));
+test("Faux total de points restants refusé",()=>reject(x=>x.dimensions[5].remaining_points=12,"53_POINT_GATE"));
+test("Score finance non autorisé refusé",()=>reject(x=>x.dimensions[5].earned_points=4,"53_POINT_GATE"));
+test("Demande municipale fictivement envoyée refusée",()=>reject(x=>x.requests[0].sent=true,"DRAFTS_NOT_SUBMITTED"));
+test("Demande au ministère fictivement reçue refusée",()=>reject(x=>x.requests[1].receipt_verified=true,"DRAFTS_NOT_SUBMITTED"));
+test("Faux délai légal déclenché refusé",()=>reject(x=>x.access_procedure.statutory_deadline="2026-11-28","ACCESS_LAW_TIMING"));
+test("Faux paiement municipal individuel refusé",()=>reject(x=>x.evidence_chain[0].verified_aggregate_cad=18621734.12,"CHAIN_NOT_BANK_RECONCILED"));
+test("Aide engagée artificiellement déclarée reçue refusée",()=>reject(x=>x.evidence_chain[1].verified_aggregate_cad=42302472,"CHAIN_NOT_BANK_RECONCILED"));
+test("Faux document retrouvé refusé",()=>reject(x=>x.evidence_gaps[0].status="PROVEN","MISSING_DOCUMENTS"));
+test("Protection des comptes privés ne peut être retirée",()=>reject(x=>x.falsifiable_controls.must_protect_personal_and_banking_data=false,"ANTI_FALSE_PROOF"));
+test("Réserve de l'auditeur conservée",()=>assert.equal(d.falsifiable_controls.must_retain_qualified_opinion_of_municipal_2025_financials,true));
+test("Courriel ministère ne peut être falsifié",()=>reject(x=>x.requests[1].verified_email="invented@example.com","DRAFTS_NOT_SUBMITTED"));
+test("Demande réalisée fictivement refusée",()=>reject(x=>x.outcomes.requests_sent=1,"NO_OUTPUT_PROOF_YET"));
+test("Certification du programme fictive refusée",()=>reject(x=>x.independent_program_validation=true,"FALSE_PROGRESS"));

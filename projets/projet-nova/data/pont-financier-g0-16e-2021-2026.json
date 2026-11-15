@@ -1,0 +1,491 @@
+{
+  "schema": "nova-g016e-pont-financier/v1",
+  "project": "Projet Nova",
+  "phase": "G0.16e",
+  "date": "2026-11-07",
+  "status": "RAPPROCHEMENT_DOCUMENTAIRE_NON_CALIBRE",
+  "adopted": false,
+  "programme_score_before": 47,
+  "programme_score_after": 47,
+  "source_principles": {
+    "fiscal_returns_are_not_budget_receipts": true,
+    "different_tax_years_cannot_be_summed": true,
+    "taxable_profit_and_payroll_are_separate": true,
+    "provincial_federal_municipal_competences_separate": true,
+    "government_baseline_is_not_nova_fiscal_plan": true,
+    "two_tax_system_is_hypothesis_not_adopted": true,
+    "anti_haven_recovery_cannot_be_assumed": true,
+    "source_assumptions_need_external_audit": true,
+    "government_report_url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/finances/publications-adm/Rapport_preelectoral/FR/MINFR_RP_2026.pdf",
+    "independent_fiscal_comparison_method_url": "https://cffp.recherche.usherbrooke.ca/elections-du-quebec-2026-synthese-des-cadres-financiers-des-partis-politiques/"
+  },
+  "historic_and_forecast_ledger": [
+    {
+      "id": "PERSONAL_2023",
+      "measure": "REVENU_IMPOSABLE_PARTICULIERS",
+      "year": 2023,
+      "scope": "DECLARATIONS_FISCALES_PERSONNES",
+      "type": "ASSIETTE_IMPOSABLE",
+      "amount_mcad": 372261,
+      "source": "data/assiette-fiscale-particuliers-g0-16c-2023.json",
+      "can_directly_fund_nova": false
+    },
+    {
+      "id": "CORPORATE_2021",
+      "measure": "REVENU_IMPOSABLE_SOCIETES",
+      "year": 2021,
+      "scope": "DECLARATIONS_FISCALES_SOCIETES",
+      "type": "ASSIETTE_IMPOSABLE",
+      "amount_mcad": 95784,
+      "source": "data/assiette-societes-g0-16d-2021.json",
+      "can_directly_fund_nova": false
+    },
+    {
+      "id": "FSS_PAYROLL_2021",
+      "measure": "SALAIRES_FSS_SOCIETES",
+      "year": 2021,
+      "scope": "DECLARATIONS_FISCALES_SOCIETES",
+      "type": "MASSE_SALARIALE_COTISABLE",
+      "amount_mcad": 155850,
+      "source": "data/assiette-societes-g0-16d-2021.json",
+      "can_directly_fund_nova": false
+    },
+    {
+      "id": "PERSONAL_REVENUE_2026",
+      "measure": "IMPOT_PARTICULIERS_PREVISION",
+      "year": 2026,
+      "scope": "BUDGET_GOUVERNEMENTAL_2026_2027",
+      "type": "RECETTE_PREVISIONNELLE",
+      "amount_mcad": 50942,
+      "source": "data/registre-assiettes-fiscales-g0-14-2026-2027.json",
+      "can_directly_fund_nova": false
+    },
+    {
+      "id": "CORPORATE_REVENUE_2026",
+      "measure": "IMPOTS_SOCIETES_AGREGES_PREVISION",
+      "year": 2026,
+      "scope": "BUDGET_GOUVERNEMENTAL_2026_2027",
+      "type": "RECETTE_PREVISIONNELLE",
+      "amount_mcad": 14698,
+      "source": "data/registre-assiettes-fiscales-g0-14-2026-2027.json",
+      "can_directly_fund_nova": false
+    },
+    {
+      "id": "FSS_REVENUE_2026",
+      "measure": "COTISATIONS_SANTE_PREVISION",
+      "year": 2026,
+      "scope": "BUDGET_GOUVERNEMENTAL_2026_2027",
+      "type": "RECETTE_PREVISIONNELLE",
+      "amount_mcad": 9538,
+      "source": "data/registre-assiettes-fiscales-g0-14-2026-2027.json",
+      "can_directly_fund_nova": false
+    }
+  ],
+  "official_baseline_2026_2027": {
+    "year": "2026-2027",
+    "own_revenue_mcad": 135343,
+    "federal_transfers_mcad": 33046,
+    "total_revenue_mcad": 168389,
+    "portfolio_expenditures_mcad": 161081,
+    "debt_service_mcad": 10516,
+    "total_expenditures_mcad": 171597,
+    "contingency_reserve_mcad": 2000,
+    "generations_fund_deposits_mcad": 2482,
+    "accounting_balance_mcad": -5208,
+    "budgetary_balance_mcad": -7690,
+    "source": "data/registre-assiettes-fiscales-g0-14-2026-2027.json",
+    "status": "GOUVERNEMENT_2026_PROJECTION_NOT_NOVA"
+  },
+  "revenue_exposure_illustration": {
+    "removed_revenue_ids": [
+      "COTISATIONS_SANTE",
+      "FONCIER_SCOLAIRE",
+      "TAXES_CONSOMMATION"
+    ],
+    "fss_mcad": 9538,
+    "school_tax_mcad": 1301,
+    "consumption_taxes_mcad": 30682,
+    "total_at_risk_mcad": 41521,
+    "frozen_accounting_balance_mcad": -46729,
+    "frozen_budgetary_balance_mcad": -49211,
+    "stability_replacement_needed_mcad": 41521,
+    "mechanical_zero_gap_mcad": 49211,
+    "status": "HYPOTHETIQUE_ARITHMETIQUE_FIGEE_NON_PREVISION",
+    "continuity_proven": false,
+    "behavioural_response_estimated": false,
+    "nova_policy_decided": false
+  },
+  "continuity": [
+    {
+      "code": "RRQ",
+      "source_type": "REGIME_ASSURANCE_SOCIALE",
+      "assured_financing_mcad": null,
+      "legal_review_done": false
+    },
+    {
+      "code": "RQAP",
+      "source_type": "REGIME_ASSURANCE_PARENTAL",
+      "assured_financing_mcad": null,
+      "legal_review_done": false
+    },
+    {
+      "code": "FSS",
+      "source_type": "FINANCEMENT_SANTE_COTISATIONS",
+      "assured_financing_mcad": null,
+      "legal_review_done": false
+    },
+    {
+      "code": "MEDICAMENTS",
+      "source_type": "PROGRAMME_ASSURANCE_ET_COUTS",
+      "assured_financing_mcad": null,
+      "legal_review_done": false
+    },
+    {
+      "code": "EDUCATION",
+      "source_type": "OBLIGATIONS_EDUCATION",
+      "assured_financing_mcad": null,
+      "legal_review_done": false
+    },
+    {
+      "code": "MUNICIPALITES",
+      "source_type": "FINANCEMENT_COMPETENCES_LOCALES",
+      "assured_financing_mcad": null,
+      "legal_review_done": false
+    },
+    {
+      "code": "EMPLOIS",
+      "source_type": "PROTECTION_DROITS_DES_TRAVAILLEURS",
+      "assured_financing_mcad": null,
+      "legal_review_done": false
+    },
+    {
+      "code": "DETTE",
+      "source_type": "SERVICE_DETTE_ET_ALLOCATION",
+      "assured_financing_mcad": null,
+      "legal_review_done": false
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "QUEBEC_CANADA",
+      "legal_authority_verified": false,
+      "independent_fiscal_review": false,
+      "revenue_base_calibrated": false,
+      "federal_transfers_assumed_retained": false,
+      "annual": [
+        {
+          "year": "2026-2027",
+          "nova_income_tax_revenue_mcad": null,
+          "net_haven_yield_mcad": null,
+          "other_retained_revenues_mcad": null,
+          "provincial_services_cost_mcad": null,
+          "federal_functions_cost_mcad": null,
+          "debt_service_mcad": null,
+          "social_continuity_cost_mcad": null,
+          "net_balance_mcad": null,
+          "external_audit_completed": false
+        },
+        {
+          "year": "2027-2028",
+          "nova_income_tax_revenue_mcad": null,
+          "net_haven_yield_mcad": null,
+          "other_retained_revenues_mcad": null,
+          "provincial_services_cost_mcad": null,
+          "federal_functions_cost_mcad": null,
+          "debt_service_mcad": null,
+          "social_continuity_cost_mcad": null,
+          "net_balance_mcad": null,
+          "external_audit_completed": false
+        },
+        {
+          "year": "2028-2029",
+          "nova_income_tax_revenue_mcad": null,
+          "net_haven_yield_mcad": null,
+          "other_retained_revenues_mcad": null,
+          "provincial_services_cost_mcad": null,
+          "federal_functions_cost_mcad": null,
+          "debt_service_mcad": null,
+          "social_continuity_cost_mcad": null,
+          "net_balance_mcad": null,
+          "external_audit_completed": false
+        },
+        {
+          "year": "2029-2030",
+          "nova_income_tax_revenue_mcad": null,
+          "net_haven_yield_mcad": null,
+          "other_retained_revenues_mcad": null,
+          "provincial_services_cost_mcad": null,
+          "federal_functions_cost_mcad": null,
+          "debt_service_mcad": null,
+          "social_continuity_cost_mcad": null,
+          "net_balance_mcad": null,
+          "external_audit_completed": false
+        },
+        {
+          "year": "2030-2031",
+          "nova_income_tax_revenue_mcad": null,
+          "net_haven_yield_mcad": null,
+          "other_retained_revenues_mcad": null,
+          "provincial_services_cost_mcad": null,
+          "federal_functions_cost_mcad": null,
+          "debt_service_mcad": null,
+          "social_continuity_cost_mcad": null,
+          "net_balance_mcad": null,
+          "external_audit_completed": false
+        },
+        {
+          "year": "2031-2032",
+          "nova_income_tax_revenue_mcad": null,
+          "net_haven_yield_mcad": null,
+          "other_retained_revenues_mcad": null,
+          "provincial_services_cost_mcad": null,
+          "federal_functions_cost_mcad": null,
+          "debt_service_mcad": null,
+          "social_continuity_cost_mcad": null,
+          "net_balance_mcad": null,
+          "external_audit_completed": false
+        },
+        {
+          "year": "2032-2033",
+          "nova_income_tax_revenue_mcad": null,
+          "net_haven_yield_mcad": null,
+          "other_retained_revenues_mcad": null,
+          "provincial_services_cost_mcad": null,
+          "federal_functions_cost_mcad": null,
+          "debt_service_mcad": null,
+          "social_continuity_cost_mcad": null,
+          "net_balance_mcad": null,
+          "external_audit_completed": false
+        },
+        {
+          "year": "2033-2034",
+          "nova_income_tax_revenue_mcad": null,
+          "net_haven_yield_mcad": null,
+          "other_retained_revenues_mcad": null,
+          "provincial_services_cost_mcad": null,
+          "federal_functions_cost_mcad": null,
+          "debt_service_mcad": null,
+          "social_continuity_cost_mcad": null,
+          "net_balance_mcad": null,
+          "external_audit_completed": false
+        },
+        {
+          "year": "2034-2035",
+          "nova_income_tax_revenue_mcad": null,
+          "net_haven_yield_mcad": null,
+          "other_retained_revenues_mcad": null,
+          "provincial_services_cost_mcad": null,
+          "federal_functions_cost_mcad": null,
+          "debt_service_mcad": null,
+          "social_continuity_cost_mcad": null,
+          "net_balance_mcad": null,
+          "external_audit_completed": false
+        },
+        {
+          "year": "2035-2036",
+          "nova_income_tax_revenue_mcad": null,
+          "net_haven_yield_mcad": null,
+          "other_retained_revenues_mcad": null,
+          "provincial_services_cost_mcad": null,
+          "federal_functions_cost_mcad": null,
+          "debt_service_mcad": null,
+          "social_continuity_cost_mcad": null,
+          "net_balance_mcad": null,
+          "external_audit_completed": false
+        }
+      ]
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "legal_authority_verified": false,
+      "independent_fiscal_review": false,
+      "revenue_base_calibrated": false,
+      "federal_transfers_assumed_retained": false,
+      "annual": [
+        {
+          "year": "2026-2027",
+          "nova_income_tax_revenue_mcad": null,
+          "net_haven_yield_mcad": null,
+          "other_retained_revenues_mcad": null,
+          "provincial_services_cost_mcad": null,
+          "federal_functions_cost_mcad": null,
+          "debt_service_mcad": null,
+          "social_continuity_cost_mcad": null,
+          "net_balance_mcad": null,
+          "external_audit_completed": false
+        },
+        {
+          "year": "2027-2028",
+          "nova_income_tax_revenue_mcad": null,
+          "net_haven_yield_mcad": null,
+          "other_retained_revenues_mcad": null,
+          "provincial_services_cost_mcad": null,
+          "federal_functions_cost_mcad": null,
+          "debt_service_mcad": null,
+          "social_continuity_cost_mcad": null,
+          "net_balance_mcad": null,
+          "external_audit_completed": false
+        },
+        {
+          "year": "2028-2029",
+          "nova_income_tax_revenue_mcad": null,
+          "net_haven_yield_mcad": null,
+          "other_retained_revenues_mcad": null,
+          "provincial_services_cost_mcad": null,
+          "federal_functions_cost_mcad": null,
+          "debt_service_mcad": null,
+          "social_continuity_cost_mcad": null,
+          "net_balance_mcad": null,
+          "external_audit_completed": false
+        },
+        {
+          "year": "2029-2030",
+          "nova_income_tax_revenue_mcad": null,
+          "net_haven_yield_mcad": null,
+          "other_retained_revenues_mcad": null,
+          "provincial_services_cost_mcad": null,
+          "federal_functions_cost_mcad": null,
+          "debt_service_mcad": null,
+          "social_continuity_cost_mcad": null,
+          "net_balance_mcad": null,
+          "external_audit_completed": false
+        },
+        {
+          "year": "2030-2031",
+          "nova_income_tax_revenue_mcad": null,
+          "net_haven_yield_mcad": null,
+          "other_retained_revenues_mcad": null,
+          "provincial_services_cost_mcad": null,
+          "federal_functions_cost_mcad": null,
+          "debt_service_mcad": null,
+          "social_continuity_cost_mcad": null,
+          "net_balance_mcad": null,
+          "external_audit_completed": false
+        },
+        {
+          "year": "2031-2032",
+          "nova_income_tax_revenue_mcad": null,
+          "net_haven_yield_mcad": null,
+          "other_retained_revenues_mcad": null,
+          "provincial_services_cost_mcad": null,
+          "federal_functions_cost_mcad": null,
+          "debt_service_mcad": null,
+          "social_continuity_cost_mcad": null,
+          "net_balance_mcad": null,
+          "external_audit_completed": false
+        },
+        {
+          "year": "2032-2033",
+          "nova_income_tax_revenue_mcad": null,
+          "net_haven_yield_mcad": null,
+          "other_retained_revenues_mcad": null,
+          "provincial_services_cost_mcad": null,
+          "federal_functions_cost_mcad": null,
+          "debt_service_mcad": null,
+          "social_continuity_cost_mcad": null,
+          "net_balance_mcad": null,
+          "external_audit_completed": false
+        },
+        {
+          "year": "2033-2034",
+          "nova_income_tax_revenue_mcad": null,
+          "net_haven_yield_mcad": null,
+          "other_retained_revenues_mcad": null,
+          "provincial_services_cost_mcad": null,
+          "federal_functions_cost_mcad": null,
+          "debt_service_mcad": null,
+          "social_continuity_cost_mcad": null,
+          "net_balance_mcad": null,
+          "external_audit_completed": false
+        },
+        {
+          "year": "2034-2035",
+          "nova_income_tax_revenue_mcad": null,
+          "net_haven_yield_mcad": null,
+          "other_retained_revenues_mcad": null,
+          "provincial_services_cost_mcad": null,
+          "federal_functions_cost_mcad": null,
+          "debt_service_mcad": null,
+          "social_continuity_cost_mcad": null,
+          "net_balance_mcad": null,
+          "external_audit_completed": false
+        },
+        {
+          "year": "2035-2036",
+          "nova_income_tax_revenue_mcad": null,
+          "net_haven_yield_mcad": null,
+          "other_retained_revenues_mcad": null,
+          "provincial_services_cost_mcad": null,
+          "federal_functions_cost_mcad": null,
+          "debt_service_mcad": null,
+          "social_continuity_cost_mcad": null,
+          "net_balance_mcad": null,
+          "external_audit_completed": false
+        }
+      ]
+    }
+  ],
+  "required_g015_evidence_ids": [
+    "V01",
+    "V02",
+    "V03",
+    "V04",
+    "V05",
+    "V06",
+    "V07",
+    "V08",
+    "V09",
+    "V10",
+    "V11",
+    "V12",
+    "V13",
+    "V14",
+    "V15"
+  ],
+  "open_research": [
+    {
+      "code": "TAX_BASE_2026",
+      "status": "NON_ETABLI",
+      "proof": "V05"
+    },
+    {
+      "code": "CORPORATE_TAX_BASE_2026",
+      "status": "NON_ETABLI",
+      "proof": "V06"
+    },
+    {
+      "code": "PROTECTED_SOCIAL_FUNDS",
+      "status": "NON_ETABLI",
+      "proof": "V07-V10"
+    },
+    {
+      "code": "TAX_HAVEN_NET_NEW_ONLY",
+      "status": "NON_ETABLI",
+      "proof": "V11"
+    },
+    {
+      "code": "DISTRIBUTIONAL_IMPACT",
+      "status": "NON_ETABLI",
+      "proof": "V12-V13"
+    },
+    {
+      "code": "SOVEREIGN_JURISDICTION_COSTS",
+      "status": "NON_ETABLI",
+      "proof": "V14"
+    },
+    {
+      "code": "TEN_YEAR_BALANCED_FRAMEWORK",
+      "status": "NON_ETABLI",
+      "proof": "V15"
+    }
+  ],
+  "decision": {
+    "g015_passed": false,
+    "g016e_passed": false,
+    "full_nova_budget_certified": false,
+    "actual_savings_verified": false,
+    "finance_minimum_services_verified": false,
+    "tax_rate_recommended": false,
+    "programme_ready_to_govern": false
+  }
+}

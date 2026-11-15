@@ -1,0 +1,1240 @@
+{
+  "schema": "nova-g016x-multilevel-fiscal-concordance/v1",
+  "phase": "G0.16x",
+  "date": "2026-11-08",
+  "score_before": 47,
+  "score_after": 47,
+  "remaining": 53,
+  "independent_legal_and_fiscal_signoff": false,
+  "political_adoption_verified": false,
+  "sources": [
+    {
+      "id": "CONST",
+      "url": "https://laws-lois.justice.gc.ca/fra/const/TexteComplet.html?wbdisable=true",
+      "kind": "OFFICIAL_WEB"
+    },
+    {
+      "id": "POWERS",
+      "url": "https://www.canada.ca/fr/affaires-intergouvernementales/services/federation/partage-pouvoirs-legislatifs.html",
+      "kind": "OFFICIAL_WEB"
+    },
+    {
+      "id": "TAX",
+      "url": "https://www.revenuquebec.ca/fr/entreprises/taxes/",
+      "kind": "OFFICIAL_WEB"
+    },
+    {
+      "id": "SOCIAL",
+      "url": "https://www.revenuquebec.ca/fr/citoyens/declaration-de-revenus/payer-ou-etre-rembourse/paiement-des-cotisations/",
+      "kind": "OFFICIAL_WEB"
+    },
+    {
+      "id": "MUNI",
+      "url": "https://www.quebec.ca/gouvernement/gestion-municipale/finances-fiscalite-municipales/fiscalite/encadrement",
+      "kind": "OFFICIAL_WEB"
+    },
+    {
+      "id": "MUT",
+      "url": "https://www.quebec.ca/gouvernement/gestion-municipale/finances-fiscalite-municipales/fiscalite/droits-mutations-immobilieres",
+      "kind": "OFFICIAL_WEB"
+    },
+    {
+      "id": "SCHOOL",
+      "url": "https://www.quebec.ca/education/prescolaire-primaire-et-secondaire/administration-encadrements/financement/taxe-scolaire",
+      "kind": "OFFICIAL_WEB"
+    },
+    {
+      "id": "QPP",
+      "url": "https://www.retraitequebec.gouv.qc.ca/fr/programmes/regime-rentes-quebec",
+      "kind": "OFFICIAL_WEB"
+    },
+    {
+      "id": "PARENT",
+      "url": "https://www.quebec.ca/entreprises-et-travailleurs-autonomes/administrer-gerer/embauche-gestion-personnel/assurance-parentale/taux-cotisations",
+      "kind": "OFFICIAL_WEB"
+    },
+    {
+      "id": "GLO",
+      "url": "https://www.canada.ca/fr/services/impots/taxes-daccise-droits-et-prelevements/impot-minimum-mondial.html",
+      "kind": "OFFICIAL_WEB"
+    },
+    {
+      "id": "ECO",
+      "url": "https://www.quebec.ca/gouvernement/finances-publiques/revenus/donnees-fiscales/fiscalite-environnementale",
+      "kind": "OFFICIAL_WEB"
+    },
+    {
+      "id": "FED",
+      "url": "https://www.budget.canada.ca/2026/report-rapport/anx1-fr.html",
+      "kind": "OFFICIAL_WEB"
+    },
+    {
+      "id": "QC",
+      "url": "data/cadre-financier-fiscal-g0-16v-aout-2026.json",
+      "kind": "INTERNAL_SOURCE_BACKED_RECORD"
+    },
+    {
+      "id": "LOCAL",
+      "url": "data/g016w-assiettes-fiscales-et-garanties-distributives-2023-2024.json",
+      "kind": "INTERNAL_SOURCE_BACKED_RECORD"
+    }
+  ],
+  "rows": [
+    {
+      "id": "QC_PIT",
+      "label": "Impôt québécois des particuliers",
+      "current_jurisdiction": "QUEBEC",
+      "current_legal_category": "TAX_INCOME",
+      "nova_decision_status": "REWORK_INCOME",
+      "protected_service": "Services et redistribution",
+      "source_ids": [
+        "QC",
+        "CONST"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "personal",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "QC_CORP",
+      "label": "Impôt sur le revenu des sociétés au Québec",
+      "current_jurisdiction": "QUEBEC",
+      "current_legal_category": "TAX_INCOME",
+      "nova_decision_status": "REWORK_INCOME",
+      "protected_service": "Budget et emplois",
+      "source_ids": [
+        "QC",
+        "CONST"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "corporate",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "QC_FSS",
+      "label": "Fonds des services de santé",
+      "current_jurisdiction": "QUEBEC",
+      "current_legal_category": "PAYROLL_LEVY",
+      "nova_decision_status": "REPLACE_ONLY_IF_FUNDED",
+      "protected_service": "Soins, entreprises, main-d'œuvre",
+      "source_ids": [
+        "SOCIAL",
+        "QC"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "health",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "QC_TVQ",
+      "label": "Taxe de vente du Québec",
+      "current_jurisdiction": "QUEBEC",
+      "current_legal_category": "CONSUMPTION_TAX",
+      "nova_decision_status": "REPLACE_ONLY_IF_FUNDED",
+      "protected_service": "Services publics, prix aux consommateurs",
+      "source_ids": [
+        "TAX",
+        "QC"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "consumption",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "QC_FUEL",
+      "label": "Taxe sur les carburants",
+      "current_jurisdiction": "QUEBEC",
+      "current_legal_category": "EXCISE_TAX",
+      "nova_decision_status": "REPLACE_ONLY_IF_FUNDED",
+      "protected_service": "Transport, écofiscalité",
+      "source_ids": [
+        "TAX",
+        "ECO"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "consumption",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "QC_TOBACCO",
+      "label": "Taxe sur les produits du tabac",
+      "current_jurisdiction": "QUEBEC",
+      "current_legal_category": "EXCISE_TAX",
+      "nova_decision_status": "REPLACE_ONLY_IF_FUNDED",
+      "protected_service": "Santé publique et recettes",
+      "source_ids": [
+        "TAX"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "consumption",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "QC_ALCOHOL",
+      "label": "Taxe spécifique sur les boissons alcooliques",
+      "current_jurisdiction": "QUEBEC",
+      "current_legal_category": "EXCISE_TAX",
+      "nova_decision_status": "REPLACE_ONLY_IF_FUNDED",
+      "protected_service": "Santé, recettes fiscales",
+      "source_ids": [
+        "TAX"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "consumption",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "QC_INSURANCE",
+      "label": "Taxe sur les primes d'assurance",
+      "current_jurisdiction": "QUEBEC",
+      "current_legal_category": "SPECIFIC_TAX",
+      "nova_decision_status": "REPLACE_ONLY_IF_FUNDED",
+      "protected_service": "Assurés et budget",
+      "source_ids": [
+        "TAX"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "consumption",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "QC_HOTEL",
+      "label": "Taxe sur l'hébergement",
+      "current_jurisdiction": "QUEBEC",
+      "current_legal_category": "SECTORAL_TAX",
+      "nova_decision_status": "REPLACE_ONLY_IF_FUNDED",
+      "protected_service": "Tourisme, recettes affectées",
+      "source_ids": [
+        "TAX"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "consumption",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "QC_TIRE",
+      "label": "Droit sur les pneus neufs",
+      "current_jurisdiction": "QUEBEC",
+      "current_legal_category": "LEVY_OR_FEE",
+      "nova_decision_status": "CLASSIFY_THEN_DESIGN",
+      "protected_service": "Recyclage et environnement",
+      "source_ids": [
+        "TAX",
+        "ECO"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "consumption",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "QC_WAGER",
+      "label": "Taxe sur le pari mutuel",
+      "current_jurisdiction": "QUEBEC",
+      "current_legal_category": "SPECIFIC_TAX",
+      "nova_decision_status": "REPLACE_ONLY_IF_FUNDED",
+      "protected_service": "Revenu public de secteur",
+      "source_ids": [
+        "TAX"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "consumption",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "QC_SCHOOL",
+      "label": "Taxe foncière scolaire",
+      "current_jurisdiction": "QUEBEC_SCHOOL",
+      "current_legal_category": "PROPERTY_TAX",
+      "nova_decision_status": "REPLACE_ONLY_IF_FUNDED",
+      "protected_service": "Écoles, entretien, gestion et transport",
+      "source_ids": [
+        "SCHOOL",
+        "QC"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "school",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "QC_QPP",
+      "label": "Cotisation Régime de rentes du Québec",
+      "current_jurisdiction": "QUEBEC_SOCIAL",
+      "current_legal_category": "CONTRIBUTORY_INSURANCE",
+      "nova_decision_status": "PRESERVE_BENEFITS",
+      "protected_service": "Prestations de retraite, invalidité et survivants",
+      "source_ids": [
+        "SOCIAL",
+        "QPP"
+      ],
+      "qc_provincial_macro_bucket_2026_27": null,
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "QC_RQAP",
+      "label": "Cotisation Régime québécois d'assurance parentale",
+      "current_jurisdiction": "QUEBEC_SOCIAL",
+      "current_legal_category": "CONTRIBUTORY_INSURANCE",
+      "nova_decision_status": "PRESERVE_BENEFITS",
+      "protected_service": "Congés parentaux et droits acquis",
+      "source_ids": [
+        "SOCIAL",
+        "PARENT"
+      ],
+      "qc_provincial_macro_bucket_2026_27": null,
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "QC_PHARMA",
+      "label": "Contribution régime public assurance médicaments",
+      "current_jurisdiction": "QUEBEC_SOCIAL",
+      "current_legal_category": "CONTRIBUTORY_PREMIUM",
+      "nova_decision_status": "PRESERVE_BENEFITS",
+      "protected_service": "Accès aux médicaments",
+      "source_ids": [
+        "SOCIAL"
+      ],
+      "qc_provincial_macro_bucket_2026_27": null,
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "QC_CARBON",
+      "label": "Permis et droits environnementaux, SPEDE",
+      "current_jurisdiction": "QUEBEC",
+      "current_legal_category": "REGULATORY_CHARGE",
+      "nova_decision_status": "CLASSIFY_THEN_DESIGN",
+      "protected_service": "Régulation climatique et transition",
+      "source_ids": [
+        "ECO"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "rights",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "QC_RESOURCE",
+      "label": "Redevances sur ressources naturelles",
+      "current_jurisdiction": "QUEBEC",
+      "current_legal_category": "RESOURCE_ROYALTY",
+      "nova_decision_status": "CLASSIFY_THEN_DESIGN",
+      "protected_service": "Patrimoine naturel et restauration",
+      "source_ids": [
+        "ECO",
+        "QC"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "rights",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "QC_LICENSE",
+      "label": "Droits de permis et d'immatriculation",
+      "current_jurisdiction": "QUEBEC",
+      "current_legal_category": "REGULATORY_FEE",
+      "nova_decision_status": "CLASSIFY_THEN_DESIGN",
+      "protected_service": "Régulation, voirie, administrations",
+      "source_ids": [
+        "ECO",
+        "QC"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "rights",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "QC_PUBLIC_COMPANIES",
+      "label": "Dividendes des sociétés d'État",
+      "current_jurisdiction": "QUEBEC",
+      "current_legal_category": "NON_TAX_RECEIPT",
+      "nova_decision_status": "RETAIN_WITH_AUDIT",
+      "protected_service": "Hydro, SAQ, Loto-Québec et autres",
+      "source_ids": [
+        "QC"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "state",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "QC_MISC",
+      "label": "Revenus divers et fonds spéciaux",
+      "current_jurisdiction": "QUEBEC",
+      "current_legal_category": "MIXED_REVENUE",
+      "nova_decision_status": "CLASSIFY_THEN_DESIGN",
+      "protected_service": "Services, fonds spéciaux et droits",
+      "source_ids": [
+        "QC"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "misc",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "MUNI_PROPERTY",
+      "label": "Taxe foncière municipale générale et de secteur",
+      "current_jurisdiction": "MUNICIPAL",
+      "current_legal_category": "PROPERTY_TAX",
+      "nova_decision_status": "REPLACE_ONLY_IF_FUNDED",
+      "protected_service": "Voirie, eau, police, dette et employés",
+      "source_ids": [
+        "MUNI",
+        "LOCAL"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "municipal_property",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "MUNI_MUTATION",
+      "label": "Droit de mutation immobilière",
+      "current_jurisdiction": "MUNICIPAL",
+      "current_legal_category": "TRANSACTION_TAX",
+      "nova_decision_status": "REPLACE_ONLY_IF_FUNDED",
+      "protected_service": "Revenus municipaux autonomes",
+      "source_ids": [
+        "MUT"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "municipal_other",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "MUNI_WATER",
+      "label": "Facture et tarification eau/égout/déchets",
+      "current_jurisdiction": "MUNICIPAL",
+      "current_legal_category": "TAX_OR_USER_CHARGE",
+      "nova_decision_status": "CLASSIFY_THEN_DESIGN",
+      "protected_service": "Réseaux, maintenance et hygiène",
+      "source_ids": [
+        "MUNI"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "municipal_other",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "MUNI_REG",
+      "label": "Redevances municipales réglementaires",
+      "current_jurisdiction": "MUNICIPAL",
+      "current_legal_category": "REGULATORY_FEE",
+      "nova_decision_status": "CLASSIFY_THEN_DESIGN",
+      "protected_service": "Régulation et environnement",
+      "source_ids": [
+        "MUNI"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "municipal_other",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "MUNI_911",
+      "label": "Taxe municipale 9-1-1",
+      "current_jurisdiction": "MUNICIPAL",
+      "current_legal_category": "SPECIFIC_TAX",
+      "nova_decision_status": "REPLACE_ONLY_IF_FUNDED",
+      "protected_service": "Urgence et communications",
+      "source_ids": [
+        "TAX",
+        "MUNI"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "municipal_other",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "MUNI_TRANSFER",
+      "label": "Transferts aux municipalités",
+      "current_jurisdiction": "INTERGOV",
+      "current_legal_category": "TRANSFER",
+      "nova_decision_status": "PRESERVE_NO_DOUBLE_COUNT",
+      "protected_service": "Équilibre régional et infrastructures",
+      "source_ids": [
+        "MUNI",
+        "LOCAL"
+      ],
+      "qc_provincial_macro_bucket_2026_27": null,
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "FED_PIT",
+      "label": "Impôt fédéral des particuliers",
+      "current_jurisdiction": "FEDERAL",
+      "current_legal_category": "INCOME_TAX",
+      "nova_decision_status": "FEDERAL_NOT_UNILATERAL",
+      "protected_service": "Services et transferts fédéraux",
+      "source_ids": [
+        "CONST",
+        "FED"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "federal",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": false,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "MUST_RESPECT_FEDERAL_COMPETENCE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "FED_CORP",
+      "label": "Impôt fédéral des sociétés",
+      "current_jurisdiction": "FEDERAL",
+      "current_legal_category": "INCOME_TAX",
+      "nova_decision_status": "FEDERAL_NOT_UNILATERAL",
+      "protected_service": "Budget fédéral",
+      "source_ids": [
+        "CONST",
+        "FED"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "federal",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": false,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "MUST_RESPECT_FEDERAL_COMPETENCE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "FED_GST",
+      "label": "Taxe sur produits et services (TPS)",
+      "current_jurisdiction": "FEDERAL",
+      "current_legal_category": "CONSUMPTION_TAX",
+      "nova_decision_status": "FEDERAL_NOT_UNILATERAL",
+      "protected_service": "Recettes fédérales",
+      "source_ids": [
+        "TAX",
+        "CONST",
+        "FED"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "federal",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": false,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "MUST_RESPECT_FEDERAL_COMPETENCE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "FED_EXCISE",
+      "label": "Taxes et droits d'accise fédéraux",
+      "current_jurisdiction": "FEDERAL",
+      "current_legal_category": "EXCISE_TAX",
+      "nova_decision_status": "FEDERAL_NOT_UNILATERAL",
+      "protected_service": "Recettes et réglementation fédérales",
+      "source_ids": [
+        "FED",
+        "CONST"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "federal",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": false,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "MUST_RESPECT_FEDERAL_COMPETENCE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "FED_CUSTOMS",
+      "label": "Droits de douane ordinaires fédéraux",
+      "current_jurisdiction": "FEDERAL",
+      "current_legal_category": "CUSTOMS_DUTY",
+      "nova_decision_status": "FEDERAL_NOT_UNILATERAL",
+      "protected_service": "Commerce et recettes fédérales",
+      "source_ids": [
+        "FED",
+        "CONST"
+      ],
+      "qc_provincial_macro_bucket_2026_27": "federal",
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": false,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "MUST_RESPECT_FEDERAL_COMPETENCE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "FED_EI",
+      "label": "Cotisations assurance-emploi",
+      "current_jurisdiction": "FEDERAL_SOCIAL",
+      "current_legal_category": "CONTRIBUTORY_INSURANCE",
+      "nova_decision_status": "PRESERVE_BENEFITS",
+      "protected_service": "Protection chômage et ententes RQAP",
+      "source_ids": [
+        "FED",
+        "CONST"
+      ],
+      "qc_provincial_macro_bucket_2026_27": null,
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": false,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "MUST_RESPECT_FEDERAL_COMPETENCE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "FED_MIN",
+      "label": "Impôt minimum mondial canadien",
+      "current_jurisdiction": "FEDERAL",
+      "current_legal_category": "CORPORATE_ANTI_AVOIDANCE",
+      "nova_decision_status": "NO_DOUBLE_COUNT",
+      "protected_service": "Fiscalité de groupes multinationaux admissibles",
+      "source_ids": [
+        "GLO",
+        "CONST"
+      ],
+      "qc_provincial_macro_bucket_2026_27": null,
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": false,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "MUST_RESPECT_FEDERAL_COMPETENCE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "FED_TRANSFER",
+      "label": "Transferts fédéraux au Québec",
+      "current_jurisdiction": "INTERGOV",
+      "current_legal_category": "TRANSFER",
+      "nova_decision_status": "CONDITIONAL_INTERGOV_TRANSFER",
+      "protected_service": "Santé, social, péréquation et autres",
+      "source_ids": [
+        "QC",
+        "FED"
+      ],
+      "qc_provincial_macro_bucket_2026_27": null,
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": true,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "NOVA_INCOME",
+      "label": "Projet Nova : prélèvement unique sur le revenu",
+      "current_jurisdiction": "PROPOSED",
+      "current_legal_category": "NEW_INCOME_POLICY",
+      "nova_decision_status": "NOT_ENACTED",
+      "protected_service": "Protection de services et progressivité",
+      "source_ids": [
+        "QC",
+        "CONST"
+      ],
+      "qc_provincial_macro_bucket_2026_27": null,
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": false,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    },
+    {
+      "id": "NOVA_ANTIHAVEN",
+      "label": "Projet Nova : prélèvement ciblé contre paradis fiscaux",
+      "current_jurisdiction": "PROPOSED",
+      "current_legal_category": "NEW_ANTI_AVOIDANCE_POLICY",
+      "nova_decision_status": "NOT_ENACTED",
+      "protected_service": "Recettes additionnelles non encore prouvées",
+      "source_ids": [
+        "GLO",
+        "CONST"
+      ],
+      "qc_provincial_macro_bucket_2026_27": null,
+      "individual_revenue_2026_27_mcad": null,
+      "verifiable_net_replacement_mcad": null,
+      "constitutional_review_passed": false,
+      "municipal_service_continuity_proven": false,
+      "distributive_audit_passed": false,
+      "quebec_in_canada": {
+        "can_unilaterally_repeal": false,
+        "legal_change_complete": false,
+        "if_federal_tax_or_insurance": "NOT_APPLICABLE"
+      },
+      "quebec_sovereign": {
+        "tax_and_debt_succession_verified": false,
+        "program_continuity_verified": false,
+        "treaty_or_negotiation_status": "UNVERIFIED"
+      }
+    }
+  ],
+  "macro": {
+    "source_file": "data/cadre-financier-fiscal-g0-16v-aout-2026.json",
+    "unit": "MILLIONS_CAD",
+    "year": "2026-2027",
+    "qc_personal": 50942,
+    "qc_corporate": 14698,
+    "qc_fss": 9538,
+    "qc_school": 1301,
+    "qc_consumption_aggregate": 30682,
+    "qc_enterprises": 5908,
+    "qc_rights_aggregate": 6484,
+    "qc_misc": 15790,
+    "federal_transfers_to_qc": 33046,
+    "qc_total_revenue": 168389,
+    "qc_expenditure": 171597,
+    "qc_reserve": 2000,
+    "conditional_two_levy_need": 112369,
+    "distinct_2023_municipal": {
+      "source_file": "data/g016w-assiettes-fiscales-et-garanties-distributives-2023-2024.json",
+      "municipal_total_gcad": 29.3,
+      "property_taxes_gcad": 14,
+      "intergov_transfers_gcad": 6.2
+    },
+    "individual_specific_tax_revenues_NOT_SEPARATELY_KNOWN": true,
+    "federal_2026_budget_QUEBEC_ALLOCATED_REVENUE": null
+  },
+  "gates": [
+    {
+      "id": "G01",
+      "label": "Légalité de chaque prélèvement",
+      "verification_needed": "Distinguer taxe, redevance, cotisation et prix réel",
+      "verified": false,
+      "validator": null
+    },
+    {
+      "id": "G02",
+      "label": "Modèle fiscal multi-niveaux",
+      "verification_needed": "Consolider Québec, fédéral, municipal et social",
+      "verified": false,
+      "validator": null
+    },
+    {
+      "id": "G03",
+      "label": "Compétence Québec dans Canada",
+      "verification_needed": "Pas d'abolition des impôts fédéraux par simple loi provinciale",
+      "verified": false,
+      "validator": null
+    },
+    {
+      "id": "G04",
+      "label": "Continuité des régimes contributifs",
+      "verification_needed": "Maintenir RRQ, RQAP, médicaments, AE et prestations acquises",
+      "verified": false,
+      "validator": null
+    },
+    {
+      "id": "G05",
+      "label": "Financement municipal et scolaire",
+      "verification_needed": "Remplacer foncier et droits sans couper les services",
+      "verified": false,
+      "validator": null
+    },
+    {
+      "id": "G06",
+      "label": "Rendement fiscal contre paradis fiscaux",
+      "verification_needed": "Distinguer les revenus supplémentaires de l'impôt minimum mondial",
+      "verified": false,
+      "validator": null
+    },
+    {
+      "id": "G07",
+      "label": "Économie réelle et fiscalité écologique",
+      "verification_needed": "Quantifier effets sur investissements, prix et environnement",
+      "verified": false,
+      "validator": null
+    },
+    {
+      "id": "G08",
+      "label": "Pouvoir d'achat de chaque groupe",
+      "verification_needed": "Conserver crédits remboursables et tester les ménages",
+      "verified": false,
+      "validator": null
+    },
+    {
+      "id": "G09",
+      "label": "Souveraineté, dette et transition",
+      "verification_needed": "Modèle distinct de la succession financière et juridique",
+      "verified": false,
+      "validator": null
+    },
+    {
+      "id": "G10",
+      "label": "Audits indépendants et adoption",
+      "verification_needed": "Validation externe puis décision citoyenne",
+      "verified": false,
+      "validator": null
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "QUEBEC_CANADA",
+      "federal_taxes_repealed_by_quebec": false,
+      "municipal_replacement_requires_statute": true,
+      "real_public_balance_for_10_years": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "legally_approved": false
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "federal_transfers_automatically_continued": false,
+      "federal_functions_and_debt_costed": false,
+      "real_public_balance_for_10_years": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      "legally_approved": false
+    }
+  ],
+  "rules": {
+    "no_classify_contribution_as_optional_tax": true,
+    "no_unilateral_repeal_federal_tax": true,
+    "no_double_count_intergovernmental_transfers": true,
+    "no_double_count_global_minimum_tax_and_anti_haven_yield": true,
+    "no_add_2023_municipal_to_2026_provincial_wholesale": true,
+    "no_split_aggregate_consumption_without_source": true,
+    "no_claim_2026_federal_allocation_without_data": true,
+    "no_ignore_school_tax_service_replacement": true,
+    "no_abolish_renters_refundable_credits_without_simulation": true,
+    "no_claim_two_levies_are_the_only_possible_payment_for_services": true,
+    "no_tax_savings_just_from_count_of_taxes": true,
+    "no_raise_score_from_document_count": true
+  },
+  "decision": {
+    "rows_verified_source_mapped": 36,
+    "practical_repeal_of_all_existing_taxes_proven": false,
+    "anti_haven_extra_revenue_proven": false,
+    "household_purchasing_power_proven": false,
+    "two_tax_fiscal_sustainability_proven": false,
+    "score_point_earned": false
+  },
+  "next_phase": "G0.16y: matrice de financement consolidé, transferts internes et amortissement des services avec portes juridiques."
+}

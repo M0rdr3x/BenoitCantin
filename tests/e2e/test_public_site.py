@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 import os
+from pathlib import Path
 from urllib.parse import urljoin, urlparse
 
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_playwright
@@ -20,6 +21,7 @@ PUBLIC_ROUTES = [
     "projets/sinjira/monde-parallele/",
     "projets/projet-nova/",
     "projets/projet-nova/boussole-electorale.html",
+    "projets/projet-nova/sondage-citoyen.html",
     "projets/sinjira/jeux/",
     "projets/sinjira/jeux/fracture-du-reseau-mere/",
 ]
@@ -69,10 +71,50 @@ def run() -> None:
             locale="fr-CA",
             viewport={"width": 1440, "height": 1000},
             reduced_motion="reduce",
+            service_workers="block",
         )
         page = context.new_page()
         page_errors = []
         register_error_capture(page, page_errors)
+
+        # L'E2E isole toujours l'API externe du vote, même sur le domaine public.
+        # Le GET réel est couvert par le smoke de la fonction Edge séparé.
+        # Aucune méthode d'écriture politique ne peut être exécutée en E2E.
+        poll_corpus_path = Path(__file__).resolve().parents[2] / "projets/projet-nova/data/sondage-citoyen-v1.json"
+        poll_corpus = json.loads(poll_corpus_path.read_text(encoding="utf-8"))
+        assert_true(poll_corpus["published"] is False, "Le corpus de sondage est provisoire")
+        poll_public_snapshot = json.dumps({
+            "version": poll_corpus["version"],
+            "open": False,
+            "siteKey": None,
+            "minPublicBallots": 10,
+            "resultsVisible": False,
+            "ballots": None,
+            "publishedAt": None,
+            "questions": [
+                {"id": q["id"], "ordinal": q["ordinal"], "text": q["text"], "counts": None}
+                for q in poll_corpus["questions"]
+            ],
+        }, ensure_ascii=False)
+        unexpected_poll_writes = []
+
+        def serve_closed_poll_snapshot(route):
+            if route.request.method != "GET":
+                unexpected_poll_writes.append(route.request.method)
+                route.fulfill(status=405, content_type="application/json", body='{"error":"vote_interdit_en_test"}')
+                return
+            route.fulfill(
+                status=200,
+                content_type="application/json",
+                headers={
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET",
+                    "Cache-Control": "no-store",
+                },
+                body=poll_public_snapshot,
+            )
+
+        context.route("**/functions/v1/nova-civic-poll*", serve_closed_poll_snapshot)
 
         for route in PUBLIC_ROUTES:
             url = urljoin(BASE_URL, route)
@@ -82,6 +124,38 @@ def run() -> None:
             assert_true(page.locator("main").count() >= 1, f"Repère main absent: {url}")
             assert_true(page.locator("h1").count() >= 1, f"H1 absent: {url}")
             assert_true(bool(page.title().strip()), f"Titre absent: {url}")
+
+        # Canaux officiels SINJIRA : liens réels et icône YouTube visible.
+        page.goto(urljoin(BASE_URL, "projets/sinjira/"), wait_until="domcontentloaded", timeout=30_000)
+        official_channels = page.locator(".sinjira-official-channels")
+        assert_true(official_channels.count() == 1 and official_channels.is_visible(),
+                    f"{BROWSER_NAME}: accès officiels SINJIRA absents")
+        youtube = official_channels.locator(".sinjira-official-channel-youtube")
+        assert_true(youtube.count() == 1 and youtube.is_visible(),
+                    f"{BROWSER_NAME}: chaîne YouTube SINJIRA absente")
+        assert_true(youtube.get_attribute("href") == "https://www.youtube.com/@SinjiraOfficiel",
+                    f"{BROWSER_NAME}: lien YouTube SINJIRA incorrect")
+        assert_true(youtube.locator("svg.sinjira-channel-icon path").count() == 1,
+                    f"{BROWSER_NAME}: icône YouTube SINJIRA manquante")
+        email_link = official_channels.locator('.sinjira-official-channel-email')
+        assert_true(email_link.count() == 1 and email_link.is_visible(),
+                    f"{BROWSER_NAME}: courriel SINJIRA non visible")
+        assert_true(email_link.get_attribute("href") == "mailto:sinjiraofficiel@gmail.com",
+                    f"{BROWSER_NAME}: adresse courriel SINJIRA incorrecte")
+        assert_true(
+            page.locator('footer a[href="mailto:sinjiraofficiel@gmail.com"]').count() == 1,
+            f"{BROWSER_NAME}: contact officiel absent du pied de page SINJIRA",
+        )
+
+        page.goto(urljoin(BASE_URL, "contact.html"), wait_until="domcontentloaded", timeout=30_000)
+        assert_true(
+            page.locator('a[href="mailto:sinjiraofficiel@gmail.com"]').count() >= 2,
+            f"{BROWSER_NAME}: page Contact ne propose pas le courriel officiel SINJIRA",
+        )
+        assert_true(
+            page.locator('a[href="/projets/projet-nova/contact.html"]').count() >= 1,
+            f"{BROWSER_NAME}: canal distinct Projet Nova indisponible",
+        )
 
         page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30_000)
         page.wait_for_function(
@@ -144,7 +218,26 @@ def run() -> None:
             page.locator('a[href="boussole-electorale.html"]').count() >= 3,
             f"{BROWSER_NAME}: la Boussole doit avoir au moins trois accès depuis l’accueil Nova",
         )
-        nova_compass_entry = page.locator(".nova-compass-entry .nova-compass-entry-link")
+        # Les deux outils partagent volontairement le style de carte, mais pas
+        # leur rôle : chaque sélecteur doit être propre à son accès public.
+        assert_true(
+            page.locator('a[href="sondage-citoyen.html"]').count() >= 3,
+            f"{BROWSER_NAME}: le sondage doit avoir au moins trois accès depuis l’accueil Nova",
+        )
+        nova_poll_entry = page.locator(".nova-poll-home-entry .nova-compass-entry-link")
+        assert_true(nova_poll_entry.count() == 1, f"{BROWSER_NAME}: accès prioritaire Sondage absent de Nova")
+        assert_true(nova_poll_entry.is_visible(), f"{BROWSER_NAME}: accès prioritaire Sondage non visible")
+        assert_true(
+            nova_poll_entry.locator('img[src="assets/sondage-citoyen.svg"]').count() == 1,
+            f"{BROWSER_NAME}: illustration du sondage absente de l’accès prioritaire",
+        )
+        assert_true(
+            page.locator('a.hero-side-link-sondage img[src="assets/sondage-citoyen.svg"]').count() == 1,
+            f"{BROWSER_NAME}: illustration du sondage absente des accès rapides",
+        )
+        nova_compass_entry = page.locator(
+            ".nova-compass-entry:not(.nova-poll-home-entry) .nova-compass-entry-link"
+        )
         assert_true(nova_compass_entry.count() == 1, f"{BROWSER_NAME}: accès prioritaire Boussole absent en haut de Nova")
         assert_true(nova_compass_entry.is_visible(), f"{BROWSER_NAME}: accès prioritaire Boussole non visible")
         assert_true(
@@ -154,6 +247,34 @@ def run() -> None:
         assert_true(
             page.locator('nav .nav-link-boussole').inner_text().strip() == "Boussole électorale",
             f"{BROWSER_NAME}: libellé complet Boussole électorale absent de la navigation Nova",
+        )
+
+        # Le questionnaire politique doit rester en lecture seule tant que
+        # la version n'a pas été explicitement approuvée. Aucun bulletin de
+        # production n'est envoyé par cette vérification navigateur.
+        page.goto(urljoin(BASE_URL, "projets/projet-nova/sondage-citoyen.html"), wait_until="domcontentloaded", timeout=30_000)
+        page.wait_for_function(
+            """() => {
+              const corpus = window.__NOVA_POLL_PUBLIC_CORPUS;
+              return !!corpus && corpus.published === false &&
+                corpus.questions?.length === 8 && corpus.options?.length === 6;
+            }""",
+            timeout=10_000,
+        )
+        assert_true(page.locator("#poll-form").count() == 1, f"{BROWSER_NAME}: formulaire sondage absent")
+        assert_true(page.locator("#poll-send").is_disabled(), f"{BROWSER_NAME}: collecte provisoire ouverte par erreur")
+        assert_true(
+            page.locator('a[href="sondages-a-valider.html"]').count() >= 1,
+            f"{BROWSER_NAME}: questionnaires candidats 40/64 non accessibles",
+        )
+        assert_true(
+            page.locator("#poll-results").count() == 1,
+            f"{BROWSER_NAME}: zone des résultats agrégés absente",
+        )
+
+        assert_true(
+            not unexpected_poll_writes,
+            f"{BROWSER_NAME}: une écriture politique a été tentée pendant un test en lecture seule",
         )
 
         page.goto(urljoin(BASE_URL, "projets/projet-nova/boussole-electorale.html"), wait_until="domcontentloaded", timeout=30_000)
@@ -190,9 +311,16 @@ def run() -> None:
         # Vérifier les chiffres affichés à partir de la matrice, sans total figé
         # (les sources et statuts peuvent évoluer d'une PR à l'autre).
         documentary_metrics = page.evaluate("""async () => {
-            const response = await fetch("data/boussole-preuves-2026.json", {cache:"no-store"});
-            if(!response.ok) throw new Error("Corpus de preuves indisponible");
-            const corpus = await response.json();
+            // Pages legacy héberge le corpus JS versionné, non les JSON.
+            // Utiliser la même source que le runtime; JSON reste le repli Netlify.
+            let corpus = window.__NOVA_COMPASS_PUBLIC_CORPORA?.evidence;
+            if(!corpus){
+                const response = await fetch("data/boussole-preuves-2026.json", {cache:"no-store"});
+                if(!response.ok) throw new Error("Corpus de preuves indisponible");
+                corpus = await response.json();
+            }
+            if(!Array.isArray(corpus.questions) || corpus.questions.length !== 64)
+                throw new Error("Corpus de preuves incomplet");
             const statuses = corpus.questions.flatMap(q => Object.values(q.statuses || {}));
             const expected = {
                 "Fiches finalisées": statuses.filter(v => v !== "unknown").length,
@@ -250,9 +378,12 @@ def run() -> None:
             f"{BROWSER_NAME}: menu documentaire contient des intitulés trop longs",
         )
         document_question_sync = page.evaluate("""async () => {
-            const response = await fetch("data/boussole-electorale-v2.json", {cache:"no-store"});
-            if(!response.ok) return false;
-            const corpus = await response.json();
+            let corpus = window.__NOVA_COMPASS_PUBLIC_CORPORA?.questionnaire;
+            if(!corpus){
+                const response = await fetch("data/boussole-electorale-v2.json", {cache:"no-store"});
+                if(!response.ok) return false;
+                corpus = await response.json();
+            }
             const select = document.querySelector("#compass-evidence-question");
             const text = document.querySelector("#compass-evidence-selected-question");
             const first = corpus.questions.find(q => q.id === "q01");
@@ -355,8 +486,27 @@ def run() -> None:
         assert_true(evidence_alphabetical, f"{BROWSER_NAME}: état documentaire non alphabétique")
         page.locator("#compass-start").wait_for(state="visible", timeout=10_000)
         assert_true(not page.locator("#compass-start").is_disabled(), f"{BROWSER_NAME}: démarrage Boussole indisponible")
+        # Observer tout le parcours politique : aucun appel réseau vers un
+        # tiers, aucun POST, beacon, PUT ou DELETE ne doit contenir les réponses.
+        # Le chargement initial des corpus publics est déjà terminé.
+        compass_requests = []
+        if IS_LOCAL:
+            page.on("request", lambda req: compass_requests.append({
+                "method": req.method, "url": req.url,
+            }))
         page.locator("#compass-start").click()
         page.locator("#compass-question-stage .compass-question").wait_for(state="visible", timeout=10_000)
+        assert_true(
+            page.evaluate(
+                """() => {
+                  const form = document.querySelector("#compass-form");
+                  const event = new Event("submit", {bubbles: true, cancelable: true});
+                  form.dispatchEvent(event);
+                  return event.defaultPrevented;
+                }"""
+            ),
+            f"{BROWSER_NAME}: la soumission clavier de la Boussole doit être interceptée sans code HTML inline",
+        )
         assert_true(
             page.locator("#compass-question-stage .compass-question").count() == 1,
             f"{BROWSER_NAME}: une seule question doit être visible à la fois",
@@ -429,6 +579,304 @@ def run() -> None:
             parcours_64_questions["valid"],
             f"{BROWSER_NAME}: parcours guidé ou focus des résultats incorrect: {parcours_64_questions}",
         )
+
+        # Scénario navigateur distinct : 64 choix « Sans opinion » doivent
+        # se terminer sans score inventé, puis revenir à zéro. Aucun POST.
+        # On utilise les véritables événements DOM, sans API privée de test.
+        profil_sans_opinion = page.evaluate("""() => {
+            const panel = document.querySelector("#compass-start-panel");
+            const stepper = document.querySelector("#compass-stepper");
+            const results = document.querySelector("#compass-results");
+            const reset = document.querySelector("#compass-reset");
+            const start = document.querySelector("#compass-start");
+            if(!panel || !stepper || !results || !reset || !start){
+                return {ok:false,stage:"missing_controls"};
+            }
+            reset.click();
+            if(panel.hidden || !stepper.hidden || !results.hidden || start.disabled){
+                return {ok:false,stage:"initial_reset"};
+            }
+            start.click();
+            let visited=0;
+            for(let step=1;step<=64;step++){
+                const fieldset = document.querySelector("#compass-question-stage fieldset");
+                const progress = document.querySelector("#compass-progress-track");
+                const skip = fieldset?.querySelector('input[type="radio"][value="skip"]');
+                const next = document.querySelector("#compass-next");
+                if(!skip || progress?.getAttribute("aria-valuenow")!==String(step) ||
+                   !next || !next.disabled){
+                    return {ok:false,stage:"question",step,visited};
+                }
+                skip.click();
+                if(next.disabled || !skip.checked){
+                    return {ok:false,stage:"skip",step,visited};
+                }
+                next.click();
+                visited++;
+            }
+            const cards = [...document.querySelectorAll("#compass-results-grid .compass-result-card")];
+            const summary = document.querySelector("#compass-summary")?.textContent || "";
+            const radar = document.querySelector("#compass-radar");
+            const noArtificialScores = cards.length===16 &&
+                cards.every(card => card.querySelector("strong")?.textContent.trim()==="—") &&
+                !radar?.querySelector("polygon") &&
+                summary.includes("Aucune dimension calculable") &&
+                !results.hidden;
+            reset.click();
+            const zeroed = !panel.hidden && stepper.hidden && results.hidden &&
+                document.querySelector("#compass-progress-track")?.getAttribute("aria-valuenow")==="1";
+            return {ok:noArtificialScores&&zeroed&&visited===64,visited,
+                noArtificialScores,zeroed,summary};
+        }""")
+        assert_true(
+            profil_sans_opinion["ok"],
+            f"{BROWSER_NAME}: 64 « Sans opinion », résultats non artificiels ou réinitialisation: {profil_sans_opinion}",
+        )
+
+        # Réception du profil partiel dans le VRAI DOM : à une seule réponse,
+        # aucun score et aucun marqueur. À deux questions principales du même
+        # axe, exactement un score. Le contrôle sur la version locale évite
+        # de présumer que le nouveau JS est déjà publié en production.
+        if IS_LOCAL:
+            partial_profile = page.evaluate("""() => {
+                const reset = document.querySelector("#compass-reset");
+                const start = document.querySelector("#compass-start");
+                const next = document.querySelector("#compass-next");
+                const preview = document.querySelector("#compass-preview");
+                const stage = document.querySelector("#compass-question-stage");
+                const results = document.querySelector("#compass-results");
+                if(!reset || !start || !next || !preview || !stage || !results)
+                    return {ok:false,where:"missing_controls"};
+                reset.click();
+                start.click();
+                const first = stage.querySelector('input[type="radio"]');
+                if(!first) return {ok:false,where:"q01_missing"};
+                first.click();
+                preview.click();
+                const cardsOne = [...document.querySelectorAll("#compass-results-grid .compass-result-card")];
+                const noScore = cardsOne.length===16 &&
+                    cardsOne.every(card =>
+                        card.querySelector("strong")?.getAttribute("aria-label")==="Score indisponible : données insuffisantes" &&
+                        !card.querySelector(".compass-axis-track i")) &&
+                    document.querySelector("#compass-summary")?.textContent.includes("Aucune dimension calculable") &&
+                    !results.hidden;
+                next.click();
+                const second = stage.querySelector('input[type="radio"]');
+                if(!second) return {ok:false,where:"q02_missing",noScore};
+                second.click();
+                preview.click();
+                const cardsTwo = [...document.querySelectorAll("#compass-results-grid .compass-result-card")];
+                const oneScore = cardsTwo.length===16 &&
+                    cardsTwo.filter(card=>!!card.querySelector(".compass-axis-track i")).length===1 &&
+                    cardsTwo.filter(card=>
+                        card.querySelector("strong")?.getAttribute("aria-label")==="Score indisponible : données insuffisantes"
+                    ).length===15 &&
+                    document.querySelector("#compass-summary")?.textContent.includes("Profil partiel");
+                reset.click();
+                return {
+                    ok:noScore&&oneScore&&!document.querySelector("#compass-start-panel").hidden,
+                    noScore,oneScore,returnedToStart:!document.querySelector("#compass-start-panel").hidden
+                };
+            }""")
+            assert_true(
+                partial_profile["ok"],
+                f"{BROWSER_NAME}: profil partiel avec 1/2 réponses, repères et accessibilité incorrects: {partial_profile}",
+            )
+
+        # Scénario de pondération sur les vrais éléments de formulaire.
+        # Les 16 scores, les réponses passées et les partages restent locaux.
+        # Ce contrôle est réservé au serveur de test et ne vote jamais.
+        if IS_LOCAL:
+            weighted_journey = page.evaluate("""() => {
+                const el = selector => document.querySelector(selector);
+                const reset = el("#compass-reset");
+                const start = el("#compass-start");
+                const next = el("#compass-next");
+                const previous = el("#compass-prev");
+                const preview = el("#compass-preview");
+                const results = el("#compass-results");
+                if (![reset, start, next, previous, preview, results].every(Boolean))
+                    return {ok:false, stage:"missing_controls"};
+
+                const score = () => el("#compass-results-grid .compass-result-card strong")?.textContent.trim();
+                const markers = () => document.querySelectorAll("#compass-results-grid .compass-axis-track i").length;
+                const importance = () => el("#compass-question-stage select[data-importance]");
+                const choose = (value, weight) => {
+                    const input = el('#compass-question-stage input[type="radio"][value="' + value + '"]');
+                    const select = importance();
+                    if (!input || !select) return false;
+                    select.value = weight;
+                    select.dispatchEvent(new Event("change", {bubbles:true}));
+                    input.click();
+                    return true;
+                };
+
+                reset.click();
+                start.click();
+                if (!choose("3", "forte")) return {ok:false, stage:"q01"};
+                next.click();
+                if (el("#compass-question-stage fieldset")?.dataset.questionId !== "q02" ||
+                    !choose("3", "faible")) return {ok:false, stage:"q02"};
+                preview.click();
+                // q01 et q02 ont des directions opposées :
+                // (3*1,5 - 3*0,5) / (3*(1,5+0,5)) = +50.
+                const weighted = score() === "+50" && markers() === 1 &&
+                    el("#compass-summary")?.textContent.includes("Profil partiel") && !results.hidden;
+
+                const control = importance();
+                control.focus();
+                control.value = "forte";
+                control.dispatchEvent(new Event("change", {bubbles:true}));
+                const liveUpdate = score() === "0" && markers() === 1 &&
+                    document.activeElement === control &&
+                    el("#compass-status")?.textContent.includes("actualisés localement");
+
+                previous.click();
+                const back = el("#compass-question-stage fieldset")?.dataset.questionId === "q01" &&
+                    importance()?.value === "forte";
+                if (!choose("skip", "normal")) return {ok:false, stage:"skip"};
+                const skipped = score() === "—" && markers() === 0 &&
+                    el("#compass-results-grid .compass-result-card strong")
+                      ?.getAttribute("aria-label") === "Score indisponible : données insuffisantes";
+                if (!choose("3", "faible")) return {ok:false, stage:"restore"};
+                // q01 faible et q02 forte : le score est maintenant -50.
+                const restored = score() === "-50" && markers() === 1;
+
+                reset.click();
+                start.click();
+                const cleared = results.hidden && next.disabled &&
+                    importance()?.value === "normal" &&
+                    document.querySelectorAll("#compass-question-stage input[type='radio']:checked").length === 0 &&
+                    el("#compass-progress-track")?.getAttribute("aria-valuenow") === "1";
+                reset.click();
+
+                return {ok:weighted && liveUpdate && back && skipped && restored && cleared,
+                    weighted, liveUpdate, back, skipped, restored, cleared};
+            }""")
+            assert_true(
+                weighted_journey["ok"],
+                f"{BROWSER_NAME}: pondération, modification en direct, retour, sans opinion, reprise ou remise à zéro incorrects: {weighted_journey}",
+            )
+
+        # Sécurité du partage : aucun jeton en query/fragment et aucun
+        # appel aux plateformes. Le partage natif et le presse-papiers sont
+        # remplacés par des doubles de test, uniquement sur le serveur local.
+        if IS_LOCAL:
+            sharing_journey = page.evaluate("""async () => {
+                const get = id => document.getElementById(id);
+                const reset = get("compass-reset");
+                const start = get("compass-start");
+                const next = get("compass-next");
+                const preview = get("compass-preview");
+                const origin = window.location.href.split(/[?#]/,1)[0];
+                const canary = "JETON_PRIVE_FICTIF_12345";
+                const failures = [];
+                const check = (condition,label) => {if (!condition) failures.push(label);};
+                // Simuler un URL porteur de données confidentielles.
+                history.replaceState(null,"",location.pathname+"?jeton="+canary+"#fragment-prive");
+                reset.click();
+                start.click();
+                get("compass-question-stage").querySelector('input[type="radio"][value="3"]')?.click();
+                next.click();
+                get("compass-question-stage").querySelector('input[type="radio"][value="-3"]')?.click();
+                preview.click();
+                const ids=["compass-share-email","compass-share-facebook","compass-share-x","compass-share-linkedin"];
+                const links=()=>ids.map(id=>get(id)?.href||"");
+                const initialLinks=links();
+                check(initialLinks.length===4&&initialLinks.every(href=>href.includes(encodeURIComponent(origin)) ||
+                  href.includes(origin)), "liens canoniques manquants");
+                check(initialLinks.every(href=>!decodeURIComponent(href).includes(canary) &&
+                  !decodeURIComponent(href).includes("fragment-prive")), "fuite du jeton dans les liens");
+                const initialEmail=decodeURIComponent(get("compass-share-email").href);
+                check(initialEmail.includes("+100"), "résumé pondéré initial manquant");
+
+                const email=get("compass-email-recipient");
+                email.value="adresse-test@example.invalid";
+                email.dispatchEvent(new Event("input",{bubbles:true}));
+                check(decodeURIComponent(get("compass-share-email").href)
+                  .startsWith("mailto:adresse-test@example.invalid?"), "destinataire de test non ajouté");
+
+                let nativePayload=null;
+                let clipboardPayload=null;
+                Object.defineProperty(navigator,"share",{configurable:true,value:async payload=>{nativePayload=payload;}});
+                Object.defineProperty(navigator,"clipboard",{configurable:true,value:{
+                  writeText:async value=>{clipboardPayload=value;}
+                }});
+                await get("compass-share-native").onclick();
+                check(nativePayload?.url===origin &&
+                  !JSON.stringify(nativePayload).includes(canary) &&
+                  !JSON.stringify(nativePayload).includes("fragment-prive"),"partage natif non canonique");
+                await get("compass-copy-result").onclick();
+                check(clipboardPayload?.includes(origin) &&
+                  clipboardPayload?.includes("+100") &&
+                  !clipboardPayload?.includes(canary), "copie initiale incomplète");
+
+                const before=get("compass-share-email").href;
+                const input=get("compass-question-stage").querySelector('input[type="radio"][value="3"]');
+                input?.click();  // q02 passe de -3 à +3 : score +100 -> 0
+                const updated=decodeURIComponent(get("compass-share-email").href);
+                check(get("compass-results-grid").querySelector("strong")?.textContent.trim()==="0",
+                  "score non recalculé");
+                check(before!==get("compass-share-email").href &&
+                  updated.includes("Équilibre") &&
+                  !updated.includes("+100"),"courriel périmé après modification");
+                clipboardPayload=null;
+                await get("compass-copy-result").onclick();
+                check(clipboardPayload?.includes("Équilibre") &&
+                  !clipboardPayload?.includes("+100") &&
+                  !clipboardPayload?.includes(canary),"presse-papiers périmé");
+                // Refus d'autorisation : ne jamais annoncer une copie réussie.
+                Object.defineProperty(navigator,"clipboard",{configurable:true,value:{
+                  writeText:async () => {throw new Error("NotAllowedError");}
+                }});
+                await get("compass-copy-result").onclick();
+                check(get("compass-status")?.textContent.includes("Copie impossible"),
+                  "copie refusée annoncée comme réussie");
+                Object.defineProperty(navigator,"share",{configurable:true,value:undefined});
+                await get("compass-share-native").onclick();
+                check(get("compass-status")?.textContent.includes("Copie impossible"),
+                  "partage de repli annoncé comme réussi malgré un refus");
+                // Vieux navigateurs sans API Clipboard : execCommand(false)
+                // doit signaler l'échec et supprimer le textarea temporaire.
+                Object.defineProperty(navigator,"clipboard",{configurable:true,value:undefined});
+                const oldExec=document.execCommand;
+                const oldTextareas=document.querySelectorAll("textarea").length;
+                document.execCommand=()=>false;
+                try{
+                    await get("compass-copy-result").onclick();
+                    check(get("compass-status")?.textContent.includes("Copie impossible") &&
+                      document.querySelectorAll("textarea").length===oldTextareas,
+                      "repli clipboard faux-positif ou élément temporaire conservé");
+                }finally{
+                    document.execCommand=oldExec;
+                }
+                const clean=history.state;
+                history.replaceState(clean,"",origin);
+                reset.click();
+                return {ok:failures.length===0,failures,channels:ids.length,
+                    nativeShareMocked:!!nativePayload,clipboardMocked:!!clipboardPayload};
+            }""")
+            assert_true(
+                sharing_journey["ok"],
+                f"{BROWSER_NAME}: fuite de confidentialité, résultat périmé ou erreur de partage: {sharing_journey}",
+            )
+
+        if IS_LOCAL:
+            site_host = urlparse(BASE_URL).hostname
+            unexpected_compass_requests = [
+                request for request in compass_requests
+                if request["method"].upper() != "GET"
+                or (
+                    urlparse(request["url"]).scheme in ("http", "https")
+                    and urlparse(request["url"]).hostname != site_host
+                )
+            ]
+            assert_true(
+                not unexpected_compass_requests,
+                f"{BROWSER_NAME}: le parcours Boussole a déclenché un transfert "
+                f"de données ou un appel réseau tiers: {unexpected_compass_requests}",
+            )
+
         home_text = page.locator("main").inner_text().lower()
         for retired_name in ("lumina", "futurax", "chroniques de l’ombre", "chroniques de l'ombre"):
             assert_true(retired_name not in home_text, f"Accueil: univers secondaire remis au premier plan: {retired_name}")
@@ -596,9 +1044,10 @@ def run() -> None:
             assert_true(page.evaluate("window.__SINJIRA_ASSISTANT__.contextLabel") == "Projet Nova", f"{BROWSER_NAME}: contexte Projet Nova invalide")
 
         if IS_LOCAL:
-            # Simuler une indisponibilité réelle du questionnaire JSON.
-            # Le registre utilise le même fichier : les deux reprises doivent
-            # rester indépendantes, sans recharger la page ni lever l'erreur.
+            # Simuler la panne des JSON en forçant le chemin de secours :
+            # en production le corpus JS versionné est normalement prioritaire.
+            # Sans neutraliser ce bundle dans le test, le routage des JSON ne
+            # serait jamais utilisé et les boutons de reprise resteraient cachés.
             retry_context = browser.new_context(
                 locale="fr-CA",
                 viewport={"width": 1440, "height": 1000},
@@ -615,6 +1064,14 @@ def run() -> None:
                 rejected_requests.append(route.request.url)
                 route.fulfill(status=503, content_type="application/json", body="{}")
 
+            retry_page.route(
+                "**/assets/boussole-public-corpus.js*",
+                lambda route: route.fulfill(
+                    status=200,
+                    content_type="application/javascript",
+                    body="window.__NOVA_COMPASS_PUBLIC_CORPORA = null;",
+                ),
+            )
             retry_page.route(corpus_pattern, reject_compass_corpus)
             retry_page.goto(
                 urljoin(BASE_URL, "projets/projet-nova/boussole-electorale.html"),
@@ -693,6 +1150,14 @@ def run() -> None:
                     body=json.dumps(payload, ensure_ascii=False),
                 )
 
+            mismatch_page.route(
+                "**/assets/boussole-public-corpus.js*",
+                lambda route: route.fulfill(
+                    status=200,
+                    content_type="application/javascript",
+                    body="window.__NOVA_COMPASS_PUBLIC_CORPORA = null;",
+                ),
+            )
             mismatch_page.route(mismatch_pattern, corrupt_evidence_binding)
             mismatch_page.goto(
                 urljoin(BASE_URL, "projets/projet-nova/boussole-electorale.html"),
@@ -734,7 +1199,9 @@ def run() -> None:
             viewport={"width": 390, "height": 844},
             has_touch=True,
             reduced_motion="reduce",
+            service_workers="block",
         )
+        mobile.route("**/functions/v1/nova-civic-poll*", serve_closed_poll_snapshot)
         mobile_page = mobile.new_page()
         mobile_errors = []
         register_error_capture(mobile_page, mobile_errors)

@@ -1,0 +1,224 @@
+{
+  "schema": "sinjira-programme-readiness/v1",
+  "reference_date": "2026-11-08",
+  "scope": "SINJIRA_ONLY_EXCLUDES_PROJET_NOVA",
+  "baseline_source": "docs/SINJIRA_PROGRAMME_AVANCEMENT_2026-11-07.md",
+  "estimate_uncertainty_percentage_points": 10,
+  "forecast": {
+    "estimated_completion_date": null,
+    "reason": "Durées et preuves du chemin critique non mesurées; aucune date fiable."
+  },
+  "launch": {
+    "approved": false,
+    "complete": false,
+    "approved_at": null
+  },
+  "domains": [
+    {
+      "id": "site_public",
+      "label": "Site public et navigation",
+      "weight": 10,
+      "maturity": 95,
+      "missing_evidence": "Navigation et version publique: recettes mobiles et accessibilité finales"
+    },
+    {
+      "id": "auth_securite",
+      "label": "Comptes, identité, confidentialité et sécurité",
+      "weight": 15,
+      "maturity": 75,
+      "missing_evidence": "Protection de comptes: sessions, CSP et droits serveur à valider réellement"
+    },
+    {
+      "id": "romans_lecture",
+      "label": "Romans, bibliothèque et liseuse",
+      "weight": 15,
+      "maturity": 90,
+      "missing_evidence": "Livre I/II: validations éditoriales; V32 position intrapage absente en production"
+    },
+    {
+      "id": "registre_personnages",
+      "label": "Registre des Consciences et personnages",
+      "weight": 10,
+      "maturity": 75,
+      "missing_evidence": "Consentements, permissions, rectification et retrait à tester"
+    },
+    {
+      "id": "jeux",
+      "label": "Jeux, dont Fracture et Résistance",
+      "weight": 15,
+      "maturity": 55,
+      "missing_evidence": "Fracture serveur NO_GO; arbitrage score, sièges invisibles, tests multicomptes"
+    },
+    {
+      "id": "communaute",
+      "label": "Communauté et modération",
+      "weight": 10,
+      "maturity": 60,
+      "missing_evidence": "Recettes multi-comptes, signalement, appels et modération"
+    },
+    {
+      "id": "monde_codex",
+      "label": "Monde parallèle et Codex",
+      "weight": 10,
+      "maturity": 50,
+      "missing_evidence": "Cycles de continuité narrative, droits et reprise à prouver"
+    },
+    {
+      "id": "commerce",
+      "label": "Commerce, précommandes et livraisons",
+      "weight": 5,
+      "maturity": 25,
+      "missing_evidence": "Prix, conditions, fiscalité, livraison et remboursement non approuvés"
+    },
+    {
+      "id": "mon_ia",
+      "label": "Mon IA et services avancés",
+      "weight": 5,
+      "maturity": 20,
+      "missing_evidence": "Périmètre, consentement, coût et sécurité du moteur à décider"
+    },
+    {
+      "id": "qa_lancement",
+      "label": "Tests, exploitation, lancement et conformité",
+      "weight": 5,
+      "maturity": 65,
+      "missing_evidence": "Recette finale, protections de production, supervision et validation de lancement"
+    }
+  ],
+  "gates": [
+    {
+      "id": "reader_v32_prod",
+      "priority": "P0",
+      "acceptance": "Synchronisation intrapage V32 appliquée avec RLS vérifiée",
+      "status": "OPEN",
+      "evidence_url": null,
+      "validated_at": null,
+      "tracking_url": "https://github.com/M0rdr3x/BenoitCantin/issues/826"
+    },
+    {
+      "id": "reader_two_devices",
+      "priority": "P0",
+      "acceptance": "Lecture page et scroll reprise sur deux appareils avec même compte autorisé",
+      "status": "OPEN",
+      "evidence_url": null,
+      "validated_at": null,
+      "tracking_url": "https://github.com/M0rdr3x/BenoitCantin/issues/826"
+    },
+    {
+      "id": "private_book_access",
+      "priority": "P0",
+      "acceptance": "Roman intégral: droits serveur, expiration de session et absence de fuite",
+      "status": "OPEN",
+      "evidence_url": null,
+      "validated_at": null,
+      "tracking_url": "https://github.com/M0rdr3x/BenoitCantin/issues/826"
+    },
+    {
+      "id": "fracture_rpc_rls",
+      "priority": "P0",
+      "acceptance": "Quarantaine RPC V45 et politiques UPDATE V42 vérifiées en production",
+      "status": "OPEN",
+      "evidence_url": null,
+      "validated_at": null,
+      "tracking_url": "https://github.com/M0rdr3x/BenoitCantin/issues/872"
+    },
+    {
+      "id": "fracture_rules_server",
+      "priority": "P0",
+      "acceptance": "Règles Fracture V36–V43 alignées au moteur, arbitrage score final",
+      "status": "OPEN",
+      "evidence_url": null,
+      "validated_at": null,
+      "tracking_url": "https://github.com/M0rdr3x/BenoitCantin/issues/857"
+    },
+    {
+      "id": "security_sessions",
+      "priority": "P0",
+      "acceptance": "Sessions révoquées, MFA et privilèges testés sur comptes isolés",
+      "status": "OPEN",
+      "evidence_url": null,
+      "validated_at": null,
+      "tracking_url": "https://github.com/M0rdr3x/BenoitCantin/issues/872"
+    },
+    {
+      "id": "mobile_csp_performance",
+      "priority": "P0",
+      "acceptance": "CSP privée et recettes navigateur/mobile conformes aux seuils",
+      "status": "OPEN",
+      "evidence_url": null,
+      "validated_at": null,
+      "tracking_url": "https://github.com/M0rdr3x/BenoitCantin/pull/887"
+    },
+    {
+      "id": "community_moderation",
+      "priority": "P1",
+      "acceptance": "Communauté et modération validées en multi-comptes",
+      "status": "OPEN",
+      "evidence_url": null,
+      "validated_at": null,
+      "tracking_url": "https://github.com/M0rdr3x/BenoitCantin/issues/826"
+    },
+    {
+      "id": "world_register",
+      "priority": "P1",
+      "acceptance": "Cycles Monde parallèle, Codex et Registre validés",
+      "status": "OPEN",
+      "evidence_url": null,
+      "validated_at": null,
+      "tracking_url": "https://github.com/M0rdr3x/BenoitCantin/issues/826"
+    },
+    {
+      "id": "editorial_approval",
+      "priority": "P1",
+      "acceptance": "Édition finale des romans examinée et approuvée par responsable",
+      "status": "OPEN",
+      "evidence_url": null,
+      "validated_at": null,
+      "tracking_url": "https://github.com/M0rdr3x/BenoitCantin/issues/878"
+    },
+    {
+      "id": "commerce_legal",
+      "priority": "P2",
+      "acceptance": "Commerce/conditions/prix ou exclusion formelle approuvée",
+      "status": "OPEN",
+      "evidence_url": null,
+      "validated_at": null,
+      "tracking_url": "https://github.com/M0rdr3x/BenoitCantin/issues/826"
+    },
+    {
+      "id": "ai_privacy",
+      "priority": "P2",
+      "acceptance": "Mon IA: activation contrôlée ou exclusion formelle approuvée",
+      "status": "OPEN",
+      "evidence_url": null,
+      "validated_at": null,
+      "tracking_url": "https://github.com/M0rdr3x/BenoitCantin/issues/826"
+    },
+    {
+      "id": "release_acceptance",
+      "priority": "P0",
+      "acceptance": "Décision de lancement, surveillance, retour arrière et recette complète signés",
+      "status": "OPEN",
+      "evidence_url": null,
+      "validated_at": null,
+      "tracking_url": "https://github.com/M0rdr3x/BenoitCantin/issues/826"
+    }
+  ],
+  "recent_verified_deliveries": [
+    {
+      "pr": 885,
+      "merge_commit": "df1a55d0524207b279d92d5e1c447dd00335fec0",
+      "scope": "Candidat quarantaine 10 RPC, non appliqué à Supabase."
+    },
+    {
+      "pr": 869,
+      "merge_commit": "45eb8ac45e7e21efc17d6f8925cbc8aedcb66fda",
+      "scope": "Suivi éditorial livres, sans manuscrit intégral publié."
+    },
+    {
+      "pr": 888,
+      "merge_commit": "20f8532b1397a11c0f4b115a2913fe8dc6737406",
+      "scope": "Prévol V46: 6 PASS, 3 BLOCK, NO_GO."
+    }
+  ]
+}

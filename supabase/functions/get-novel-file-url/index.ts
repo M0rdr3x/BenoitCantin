@@ -58,7 +58,7 @@ Deno.serve(async(req)=>{
     if(message==='AUTH_REQUIRED')return json({ok:false,error:'Connexion requise.'},401);
     if(message==='REQUEST_TOO_LARGE')return json({ok:false,error:'Requête trop volumineuse.'},413);
     if(message==='INVALID_JSON')return json({ok:false,error:'Corps JSON invalide.'},400);
-    console.error(error);
+    console.error('[get-novel-file-url]',{code:'NOVEL_ACCESS_FAILED'});
     return json({ok:false,error:'Erreur lors de l’accès au roman.'},500);
   }
 });

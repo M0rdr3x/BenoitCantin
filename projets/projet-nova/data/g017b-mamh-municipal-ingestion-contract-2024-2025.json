@@ -1,0 +1,165 @@
+{
+  "schema": "nova-g017b-mamh-2024-2025-import-contract/v1",
+  "phase": "G0.17b",
+  "date": "2026-11-08",
+  "score_before": 47,
+  "score_after": 47,
+  "points_remaining": 53,
+  "work_type": "OFFICIAL_DATA_INGESTION_INFRASTRUCTURE_NOT_REAL_DATA_ANALYSIS",
+  "official_catalog": {
+    "name": "Rapport financier des organismes municipaux et autres documents connexes",
+    "url": "https://www.donneesquebec.ca/recherche/dataset/rapport-financier-des-organismes-municipaux-et-autres-documents",
+    "organization": "Ministère des Affaires municipales et de l'Habitation",
+    "resource_count_on_catalog": 189,
+    "metadata_updated": "2026-11-07",
+    "license": "CC-BY 4.0",
+    "current_data_may_change_after_submission": true
+  },
+  "official_method": {
+    "name": "Guide d'utilisation MAMH — Données Québec (mai 2025)",
+    "url": "https://www.donneesquebec.ca/recherche/dataset/20673c5c-f672-4387-ae9d-378ac6fa8be0/resource/3212100b-f281-439b-9c65-511b568e0e27/download/gui_donneesquebec2025_vf.pdf",
+    "csv_delimiter": ",",
+    "accountant_codes_need_correct_year_codified_form": true,
+    "row_layout": "One organization per row, several coded accounts in columns, dataset-specific metadata columns",
+    "versions_modifiable": true,
+    "pdf_screen_attempted": true,
+    "pdf_screen_succeeded": false,
+    "official_guide_text_used": true
+  },
+  "datasets": [
+    {
+      "year": 2024,
+      "label": "Données réelles 2024, Simple occurrence",
+      "resource_id": null,
+      "resource_catalog_url": "https://www.donneesquebec.ca/recherche/dataset/rapport-financier-des-organismes-municipaux-et-autres-documents",
+      "direct_csv_url": null,
+      "official_account_description_resource": "Données réelles 2024 Description poste CSV",
+      "official_missing_list_resource": "Données réelles 2024 Organisme absent CSV",
+      "official_codified_form": "Rapport financier 2024, formulaire codifié XLSX",
+      "csv_size_approx_mb": 19,
+      "local_csv_imported": false,
+      "file_sha256": null,
+      "local_rows_loaded": 0,
+      "local_headers_inspected": false,
+      "data_grain": "ORGANISM_YEAR_WIDE_CODED_ACCOUNT",
+      "fiscal_period": "2024-01-01/2024-12-31",
+      "audit_status": "CATALOG_ONLY_NOT_MUNICIPAL_CSV_READ"
+    },
+    {
+      "year": 2025,
+      "label": "Données réelles 2025, Simple occurrence",
+      "resource_id": "24af5b06-089a-44a6-9adf-eddcb9a266a4",
+      "resource_catalog_url": "https://www.donneesquebec.ca/recherche/dataset/rapport-financier-des-organismes-municipaux-et-autres-documents/resource/24af5b06-089a-44a6-9adf-eddcb9a266a4",
+      "direct_csv_url": "https://mamh.gouv.qc.ca/fichiersdonneesouvertes/Données-réelles-2025-SimpleOccurrence.csv",
+      "official_account_description_resource": "Données réelles 2025, Description des postes CSV",
+      "official_missing_list_resource": "Données réelles 2025, Organisme absent CSV",
+      "official_codified_form": "Rapport financier 2025, formulaire codifié XLSX",
+      "csv_size_approx_mb": 18,
+      "local_csv_imported": false,
+      "file_sha256": null,
+      "local_rows_loaded": 0,
+      "local_headers_inspected": false,
+      "data_grain": "ORGANISM_YEAR_WIDE_CODED_ACCOUNT",
+      "fiscal_period": "2025-01-01/2025-12-31",
+      "audit_status": "CATALOG_ONLY_NOT_MUNICIPAL_CSV_READ"
+    }
+  ],
+  "access_restrictions": {
+    "attempted_2025_direct_download": true,
+    "actual_2025_download_error": "DNS_RESOLUTION_FAILURE_ON_MAMH_GOUV_QC_CA_IN_LOCAL_RUNTIME",
+    "web_csv_fetch_error": "UNSUPPORTED_APPLICATION_OCTET_STREAM",
+    "local_2024_csv_download_attempted": false,
+    "data_catalog_visible_in_search": true,
+    "web_pdf_guide_screenshot_error": "CACHE_MISS",
+    "no_silent_data_generation": true
+  },
+  "accounting_controls": {
+    "require_distinct_source_SHA256_per_year": true,
+    "require_original_file_date_and_retrieval_date": true,
+    "require_explicit_column_map_from_real_headers": true,
+    "require_codified_account_descriptions_per_year": true,
+    "require_declared_local_municipality_only_population": true,
+    "require_agglomeration_versus_local_scope_exclusivity": true,
+    "require_missing_organism_lists": true,
+    "require_unique_municipality_code_per_year": true,
+    "no_sum_of_provincial_municipal_internal_transfer_twice": true,
+    "no_merge_between_provincial_april_march_and_municipal_calendar_without_bridge": true,
+    "unknown_amount_not_zero": true,
+    "no_assumption_that_one_municipality_represents_all": true,
+    "no_tax_replacement_rate_without_legal_and_fiscal_review": true
+  },
+  "scripts": {
+    "reader": "assets/g017b-mamh-csv-import-core.mjs",
+    "cli": "scripts/g017b-mamh-ingest.mjs",
+    "tests": "tests/g017b-mamh-csv-import.test.mjs"
+  },
+  "pending_receipts": [
+    {
+      "id": "IN01",
+      "name": "Real CSV file 2024, bytes and SHA-256",
+      "status": "NOT_DOWNLOADED"
+    },
+    {
+      "id": "IN02",
+      "name": "Real CSV file 2025, bytes and SHA-256",
+      "status": "NOT_DOWNLOADED"
+    },
+    {
+      "id": "IN03",
+      "name": "Year-specific account descriptions",
+      "status": "NOT_DOWNLOADED"
+    },
+    {
+      "id": "IN04",
+      "name": "Year-specific missing-organization lists",
+      "status": "NOT_DOWNLOADED"
+    },
+    {
+      "id": "IN05",
+      "name": "Mapping coded columns and identification of agglomerations",
+      "status": "NOT_VALIDATED"
+    },
+    {
+      "id": "IN06",
+      "name": "Account-level reconciliations and aggregation of municipalities",
+      "status": "NOT_VALIDATED"
+    },
+    {
+      "id": "IN07",
+      "name": "Independent fiscal reconciliation with provincial accounts",
+      "status": "NOT_VALIDATED"
+    }
+  ],
+  "evidence_that_does_exist": [
+    {
+      "id": "E01",
+      "name": "2025 municipal audited statement for Port-Daniel–Gascons",
+      "path": "data/reconciliation-financiere-port-daniel-g0-16r-2025.json",
+      "scope": "SINGLE_MUNICIPAL_CASE_WITH_QUALIFIED_OPINION"
+    },
+    {
+      "id": "E02",
+      "name": "Source-version conflict MAMH 2024/2025",
+      "path": "data/g017a-transferts-fiscaux-mamh-controle-versions-2024-2025.json",
+      "scope": "SOURCE_VERSION_RISK_NOT_PROOF_OF_2025_TOTAL"
+    },
+    {
+      "id": "E03",
+      "name": "Provincial 2026-2031 reference forecasts",
+      "path": "data/cadre-financier-fiscal-g0-16v-aout-2026.json",
+      "scope": "PROVINCIAL_ONLY_FISCAL_FORECAST"
+    }
+  ],
+  "intended_output": {
+    "verified_2024_municipal_expenditure_cad": null,
+    "verified_2025_municipal_expenditure_cad": null,
+    "verified_2024_municipal_revenue_cad": null,
+    "verified_2025_municipal_revenue_cad": null,
+    "verified_municipal_services_cost_cad": null,
+    "verified_same_scope_annual_growth_pct": null,
+    "validated_net_new_fiscal_need_two_levies_cad": null,
+    "programme_score_increment": 0,
+    "status": "BLOCKED_BY_UNFETCHED_RAW_OFFICIAL_FILES"
+  },
+  "successor": "G0.17c : charger effectivement les fichiers MAMH, calculer les agrégats codifiés et rapprocher le périmètre de population; audit externe nécessaire avant tout score accru"
+}

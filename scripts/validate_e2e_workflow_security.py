@@ -8,9 +8,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / '.github/workflows/e2e-site.yml'
 CHECKOUT_SHA = 'd23441a48e516b6c34aea4fa41551a30e30af803'
-SETUP_PYTHON_SHA = 'ece7cb06caefa5fff74198d8649806c4678c61a1'
 SETUP_NODE_SHA = '249970729cb0ef3589644e2896645e5dc5ba9c38'
-PYTHON_VERSION = '3.12.14'
+PYTHON_RUN_CHECK = """python3 -c 'import sys; assert sys.version_info[:2] == (3, 12), "Python 3.12 requis"'"""
 NODE_VERSION = '22.23.2'
 LIGHTHOUSE_VERSION = '13.4.1'
 PLAYWRIGHT_IMAGE = (
@@ -53,11 +52,12 @@ def validate_text(text: str) -> list[str]:
     require(errors, text.count(f'uses: actions/checkout@{CHECKOUT_SHA}') == 3, 'les trois checkouts doivent être épinglés au SHA vérifié')
     require(errors, text.count('persist-credentials: false') == 3, 'les trois checkouts doivent désactiver la persistance des credentials')
     require(errors, 'persist-credentials: true' not in text, 'persist-credentials=true interdit')
-    require(errors, text.count(f'uses: actions/setup-python@{SETUP_PYTHON_SHA}') == 2, 'les deux setup-python doivent être épinglés au SHA vérifié')
+    require(errors, 'actions/setup-python@' not in text, 'setup-python externe interdit sur runtime préinstallé')
+    require(errors, text.count(PYTHON_RUN_CHECK) == 2, 'Python 3.12 du runner/conteneur doit être vérifié deux fois')
     require(errors, text.count(f'uses: actions/setup-node@{SETUP_NODE_SHA}') == 1, 'setup-node doit être épinglé au SHA vérifié')
 
     targets = action_targets(text)
-    require(errors, len(targets) == 6, f'nombre inattendu d’actions réutilisables: {len(targets)}')
+    require(errors, len(targets) == 4, f'nombre inattendu d’actions réutilisables: {len(targets)}')
     for target in targets:
         require(errors, re.search(r'@[0-9a-f]{40}$', target) is not None, f'référence d’action non immuable: {target}')
 
@@ -65,7 +65,6 @@ def validate_text(text: str) -> list[str]:
     require(errors, 'runs-on: ubuntu-latest' not in text, 'ubuntu-latest est interdit pour les tests E2E reproductibles')
     require(errors, f'image: {PLAYWRIGHT_IMAGE}' in text, 'l’image Playwright doit être épinglée au digest Microsoft vérifié')
     require(errors, 'image: mcr.microsoft.com/playwright/python:v1.61.0-noble\n' not in text, 'le tag Playwright sans digest est interdit')
-    require(errors, text.count(f"python-version: '{PYTHON_VERSION}'") == 2, f'Python doit rester figé à {PYTHON_VERSION}')
     require(errors, f"node-version: '{NODE_VERSION}'" in text, f'Node doit rester figé à {NODE_VERSION}')
     require(errors, f'npx --yes lighthouse@{LIGHTHOUSE_VERSION} ' in text, f'Lighthouse doit rester figé à {LIGHTHOUSE_VERSION}')
     require(errors, 'npx --yes lighthouse http' not in text, 'Lighthouse sans version explicite est interdit')
@@ -99,14 +98,14 @@ def run_self_tests(text: str) -> None:
 
     cases = {
         'checkout mobile': text.replace(f'actions/checkout@{CHECKOUT_SHA}', 'actions/checkout@v6', 1),
-        'setup-python mobile': text.replace(f'actions/setup-python@{SETUP_PYTHON_SHA}', 'actions/setup-python@v6', 1),
+        'vérification Python retirée': text.replace(PYTHON_RUN_CHECK, 'echo test-absent', 1),
         'setup-node mobile': text.replace(f'actions/setup-node@{SETUP_NODE_SHA}', 'actions/setup-node@v6', 1),
         'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),
         'secret ajouté': text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-24.04\n    env:\n      TOKEN: ${{ secrets.TEST_TOKEN }}', 1),
         'dépendance contrat retirée': text.replace('    needs: workflow-contract\n', '', 1),
         'runner mobile': text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-latest', 1),
         'image Playwright sans digest': text.replace(PLAYWRIGHT_IMAGE, 'mcr.microsoft.com/playwright/python:v1.61.0-noble', 1),
-        'Python non figé': text.replace(f"python-version: '{PYTHON_VERSION}'", "python-version: '3.12'", 1),
+        'Python dégradé': text.replace(PYTHON_RUN_CHECK, PYTHON_RUN_CHECK.replace('(3, 12)', '(3, 11)'), 1),
         'Node non figé': text.replace(f"node-version: '{NODE_VERSION}'", "node-version: '22'", 1),
         'Lighthouse non figé': text.replace(f'lighthouse@{LIGHTHOUSE_VERSION}', 'lighthouse', 1),
         'cache npm ajouté': text.replace(f"node-version: '{NODE_VERSION}'", f"node-version: '{NODE_VERSION}'\n          cache: npm", 1),
@@ -141,7 +140,7 @@ def main() -> int:
         return 1
     print(
         'OK sécurité E2E: actions immuables, credentials Git non persistés, aucun secret, '
-        'Ubuntu/Python/Node/Lighthouse figés, aucun cache npm sans lockfile et contrat Littérature actif.'
+        'Ubuntu/Python 3.12 vérifié/Node/Lighthouse figés, aucun cache npm sans lockfile et contrat Littérature actif.'
     )
     return 0
 

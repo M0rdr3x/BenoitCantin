@@ -6,9 +6,27 @@ import {
 const page=document.body.dataset.accountPage||'';
 const status=document.querySelector('[data-account-status]');
 
+// Refuser les destinations externes et les chemins ambigus apres authentification.
+// Ce module historique doit conserver la même frontière d'origine que
+// sinjira-auth-route.js, y compris quand ce dernier n'est pas chargé.
+function safeLocalNavigation(value,fallback='/compte/index.html'){
+  const safeFallback=String(fallback||'/compte/index.html');
+  const raw=String(value||'').trim();
+  if(!raw||!raw.startsWith('/')||raw.startsWith('//')||raw.includes('\\')||
+     /[\u0000-\u001f\u007f]/.test(raw)||/%(?:0[0-9a-f]|1[0-9a-f]|2f|5c|7f)/i.test(raw)){
+    return safeFallback;
+  }
+  try{
+    const url=new URL(raw,location.origin);
+    if(url.origin!==location.origin||!url.pathname.startsWith('/')||url.username||url.password){
+      return safeFallback;
+    }
+    return url.pathname+url.search+url.hash;
+  }catch{return safeFallback}
+}
+
 function nextDestination(def='/compte/index.html'){
-  const n=new URLSearchParams(location.search).get('next');
-  return n&&n.startsWith('/')?n:def;
+  return safeLocalNavigation(new URLSearchParams(location.search).get('next'),def);
 }
 function backendNotice(){
   document.querySelectorAll('[data-backend-state]').forEach(n=>{
@@ -30,7 +48,7 @@ function sessionUrl(s){
       ? `/projets/sinjira/jeux/fracture-du-reseau-mere/partie.html?code=${encodeURIComponent(s.party_code)}`
       : '/projets/sinjira/jeux/fracture-du-reseau-mere/jouer.html';
   }
-  return s.projects?.public_path||'/compte/bibliotheque.html';
+  return safeLocalNavigation(s.projects?.public_path,'/compte/bibliotheque.html');
 }
 function avatarPublicUrl(path){
   if(!path) return '../assets/media/sinjira-emblem.webp';
@@ -160,7 +178,7 @@ async function dashboard(){
   set('[data-stat-projects]',projects.length);set('[data-stat-documents]',docs.length);set('[data-stat-requests]',reqs.length);
   const cs=document.querySelector('[data-contribution-status]');if(cs)cs.textContent=c.participate?'Programme Contributeur activé':'Programme Contributeur désactivé';
   const recent=document.querySelector('[data-recent-sessions]');
-  if(recent)recent.innerHTML=sessions.length?sessions.map(x=>`<article class="account-session-row"><div><strong>${escapeHtml(x.title||x.projects?.name||'Partie SINJIRA')}</strong><span>${x.status==='finished'?'Terminée':'En cours'} · ${formatDate(x.updated_at)}</span></div><a class="btn btn-secondary btn-small" href="${sessionUrl(x)}">${x.status==='finished'?'Consulter':'Continuer'}</a></article>`).join(''):'<p>Aucune partie sauvegardée.</p>';
+  if(recent)recent.innerHTML=sessions.length?sessions.map(x=>`<article class="account-session-row"><div><strong>${escapeHtml(x.title||x.projects?.name||'Partie SINJIRA')}</strong><span>${x.status==='finished'?'Terminée':'En cours'} · ${formatDate(x.updated_at)}</span></div><a class="btn btn-secondary btn-small" href="${escapeHtml(sessionUrl(x))}">${x.status==='finished'?'Consulter':'Continuer'}</a></article>`).join(''):'<p>Aucune partie sauvegardée.</p>';
   const mini=document.querySelector('[data-dashboard-projects]');
   if(mini)mini.innerHTML=projects.slice(0,4).map(x=>`<a class="account-mini-project" href="/compte/projet.html?slug=${encodeURIComponent(x.slug)}"><span>${escapeHtml(x.name)}</span><small>${escapeHtml(projectStatusLabel(x.status))}</small></a>`).join('');
 }
@@ -169,7 +187,7 @@ async function games(){
   const {data=[],error}=await s.from('game_sessions').select('*,projects(name,slug,public_path,play_path)').eq('user_id',user.id).order('updated_at',{ascending:false});
   if(error){setStatus(status,error.message,'error');return}
   const box=document.querySelector('[data-sessions-list]');
-  box.innerHTML=data.length?data.map(x=>`<article class="account-game-card"><div class="account-game-card-top"><span class="status-badge">${x.status==='finished'?'Terminée':'En cours'}</span><span>${formatDate(x.updated_at)}</span></div><p class="game-kicker">${escapeHtml(x.projects?.name||x.game_slug)}</p><h2>${escapeHtml(x.title||'Partie SINJIRA')}</h2><p>${x.player_count?`${x.player_count} joueurs`:'Nombre de joueurs non indiqué'}${x.duration_minutes?` · ${x.duration_minutes} min`:''}</p><div class="hero-actions"><a class="btn btn-primary" href="${sessionUrl(x)}">${x.status==='finished'?'Voir':'Continuer'}</a>${x.projects?.slug?`<a class="btn btn-secondary" href="/compte/projet.html?slug=${encodeURIComponent(x.projects.slug)}">Projet</a>`:''}<button class="btn btn-secondary" type="button" data-export-session="${x.id}">Exporter</button></div></article>`).join(''):'<div class="notice"><strong>Aucune partie</strong><p>Choisissez un jeu dans votre bibliothèque.</p></div>';
+  box.innerHTML=data.length?data.map(x=>`<article class="account-game-card"><div class="account-game-card-top"><span class="status-badge">${x.status==='finished'?'Terminée':'En cours'}</span><span>${formatDate(x.updated_at)}</span></div><p class="game-kicker">${escapeHtml(x.projects?.name||x.game_slug)}</p><h2>${escapeHtml(x.title||'Partie SINJIRA')}</h2><p>${x.player_count?`${x.player_count} joueurs`:'Nombre de joueurs non indiqué'}${x.duration_minutes?` · ${x.duration_minutes} min`:''}</p><div class="hero-actions"><a class="btn btn-primary" href="${escapeHtml(sessionUrl(x))}">${x.status==='finished'?'Voir':'Continuer'}</a>${x.projects?.slug?`<a class="btn btn-secondary" href="/compte/projet.html?slug=${encodeURIComponent(x.projects.slug)}">Projet</a>`:''}<button class="btn btn-secondary" type="button" data-export-session="${x.id}">Exporter</button></div></article>`).join(''):'<div class="notice"><strong>Aucune partie</strong><p>Choisissez un jeu dans votre bibliothèque.</p></div>';
   box.querySelectorAll('[data-export-session]').forEach(b=>b.addEventListener('click',async()=>{const id=b.dataset.exportSession;const session=data.find(x=>x.id===id);const [sheets,endgame]=await Promise.all([s.from('player_sheets').select('*').eq('session_id',id).eq('user_id',user.id),s.from('endgame_sheets').select('*').eq('session_id',id).eq('user_id',user.id)]);const payload={format:'SINJIRA_GAME_SAVE_V1',exported_at:new Date().toISOString(),session,player_sheets:sheets.data||[],endgame_sheets:endgame.data||[]};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`sinjira-partie-${session.party_code||id}.json`;a.click();URL.revokeObjectURL(url)}));
   const input=document.querySelector('[data-import-session]'),button=document.querySelector('[data-import-session-button]');button?.addEventListener('click',async()=>{const file=input?.files?.[0];if(!file)return setStatus(status,'Choisissez un fichier JSON de sauvegarde.','error');try{const payload=JSON.parse(await file.text());if(payload.format!=='SINJIRA_GAME_SAVE_V1'||!payload.session)throw new Error('Format de sauvegarde incompatible.');const src=payload.session;const clone={user_id:user.id,game_slug:src.game_slug,title:`${src.title||'Partie SINJIRA'} — importée`,status:'in_progress',player_count:src.player_count,human_player_count:src.human_player_count,effective_player_count:src.effective_player_count,play_mode:src.play_mode,duration_minutes:src.duration_minutes,party_code:`IMP-${Date.now().toString(36).toUpperCase()}`};const {data:newSession,error}=await s.from('game_sessions').insert(clone).select('id').single();if(error)throw error;for(const sh of payload.player_sheets||[]){await s.from('player_sheets').insert({session_id:newSession.id,user_id:user.id,sheet_key:sh.sheet_key,sheet_label:sh.sheet_label,fields:sh.fields||{}})}setStatus(status,'Sauvegarde importée comme nouvelle partie privée.','success');setTimeout(()=>location.reload(),800)}catch(e){setStatus(status,e.message||'Import impossible.','error')}});
 }

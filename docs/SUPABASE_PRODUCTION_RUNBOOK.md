@@ -101,6 +101,125 @@ Dans ce cas :
 
 Ne jamais substituer à cette procédure un `db push --include-all`, `supabase migration repair`, `supabase db reset --linked` ou un déploiement global d’Edge Functions non borné.
 
+**Interdiction renforcée sur la CLI Edge :** ne jamais ajouter `--prune` ni `--no-verify-jwt` à une commande de synchronisation production. L'option `--prune` supprimerait les fonctions distantes absentes du workspace temporaire : or `security-context`, `nova-civic-poll`, `get-document-url`, `send-game-report` et `life-story-delivery` en sont volontairement exclues jusqu'à leur revue individuelle. Chaque nouvelle fonction `verify_jwt=false` doit également être examinée et expressément autorisée avant toute publication.
+
+Le constructeur ne peut effacer qu'un workspace CI à `.prod-workspace/supabase` ou une copie de test éphémère et isolée réservée au validateur du ledger. Les mises à jour des fonctions exclues doivent suivre une procédure **par slug**, avec revue de leurs contrôles d'authentification, tests négatifs, plan de retour arrière et vérification des versions distantes, et non un déploiement global implicite.
+
+## SINJIRA™ — prévol SQL Storage AAL2 en lecture seule
+
+Avant de soumettre à approbation la migration ciblée des quatre politiques
+Storage AAL2, exécuter en **lecture seule** la requête versionnée
+`scripts/sql/sinjira_character_photo_aal2_preflight_read_only.sql` via
+Supabase SQL Editor ou un exécuteur SQL autorisé. Elle n'exécute que
+`WITH ... SELECT`, ne modifie aucun utilisateur, objet ni schéma et n'expose
+aucune donnée personnelle. L'exécution est volontaire : le workflow CI
+sur pull request valide uniquement le **contrat** de cette requête hors réseau.
+
+Les indicateurs attendus sont `owner_rules_valid=7`,
+`private_buckets=2`, `storage_rls_active=true` et
+`existing_new_policies=0`. Un résultat `READY_FOR_REVIEW`
+signifie seulement que ces quatre prérequis du SQL versionné sont
+**actuellement** réunis ; un résultat `BLOCKED` interdit l'application
+jusqu'à investigation. Les conditions peuvent changer entre ce relevé et
+la migration : relancer les vérifications **immédiatement avant** toute
+application. Le nombre `current_photo_objects` est indicatif, jamais une
+preuve d'autorisation d'accès.
+
+**Relevé READ-ONLY du 12 novembre 2026 :**
+`owner_rules_valid=7`, `private_buckets=2`,
+`storage_rls_active=true`, `existing_new_policies=0`,
+`current_photo_objects=0`, `READY_FOR_REVIEW`. Ce relevé
+**ne vaut ni déploiement, ni permission de déployer**, et ne remplace pas
+la migration enregistrée et les essais réels AAL1 refusé / AAL2
+propriétaire autorisé. Ne pas appliquer le lot général des migrations
+en attente pour cette correction isolée.
+
+Le test `scripts/test_sinjira_photo_aal2_readiness.cjs` compare
+les sept expressions SQL propriétaires au fichier de migration et
+rejette neuf affaiblissements simulés de la requête. Il s'exécute
+dans le prévol Auth sur GitHub, sans accès à la production.
+
+## SINJIRA™ — déploiement ciblé de la seule fonction du Registre
+
+La **PR #988** a durci la validation du chemin des photos dans
+`supabase/functions/submit-character-questionnaire/index.ts`.
+Une fusion GitHub ne déploie pas automatiquement cette fonction.
+La fonction Supabase hébergée reste à vérifier par comparaison de son code
+réel avec `main` et de sa configuration `verify_jwt=true`.
+
+**Ne pas utiliser le déploiement générique `apply=true` pour ce seul correctif.**
+Le fichier `supabase/production-reviewed-migration-batch.txt` contient
+actuellement **17 migrations futures distinctes** (chiffre constaté au
+10 novembre 2026) qui seraient candidates à une application globale.
+L'activation de tout ce lot n'est pas une étape de recette SMTP/Registre.
+
+La voie GitHub distincte est :
+
+`.github/workflows/sinjira-registry-edge-scoped-deploy.yml`
+
+1. Sur GitHub Actions, ouvrir « SINJIRA — déploiement ciblé Edge Registre »,
+   sélectionner **`main`**, et lancer d'abord `apply=false`.
+   Ce mode n'utilise aucun secret et n'exécute que les tests locaux.
+2. Inspecter les validations GitHub de `main` : le véritable validateur photo
+   doit refuser les chemins arbitraires ; l'authentification JWT et AAL2 du
+   serveur doivent rester obligatoires. Confirmer la configuration effective
+   des reviewers GitHub de l'Environment `production` plutôt que de présumer
+   leur existence du seul YAML.
+3. Avec autorisation explicite de la personne responsable, lancer manuellement
+   depuis **`main`** le même workflow avec `apply=true` et la valeur
+   exacte `DEPLOY-SINJIRA-REGISTRY-EDGE`. Le job `deploy` doit franchir
+   l'Environment `production` et disposer du secret
+   `SUPABASE_ACCESS_TOKEN`. Le checkout utilise **le commit exact
+   `github.sha` déjà validé par le job de tests**, jamais la référence
+   mouvante `main`, et vérifie `git rev-parse HEAD = GITHUB_SHA`
+   après approbation. Il déploie **seulement**
+   `submit-character-questionnaire`, sans `--prune`,
+   sans `--no-verify-jwt`, sans migration SQL et sans autre fonction.
+   Une erreur du job ne doit jamais être interprétée comme un déploiement réussi.
+4. Après exécution, vérifier la **nouvelle version réellement déployée**,
+   `verify_jwt=true` et **la présence de
+   `isCanonicalRegistryPhotoPath(photo_path,user.id)` dans le code hébergé**.
+   Le workflow compare aussi la version **ACTIVE** remontée par
+   `supabase functions list` avant/après et refuse un déploiement sans
+   incrément de version. Ce contrôle détecte un échec de publication silencieux,
+   mais **une version supérieure ne prouve pas à elle seule le contenu exécuté**.
+   Le job télécharge donc également **uniquement** le source de cette fonction
+   dans un dossier temporaire avec `supabase functions download --use-api`,
+   compare le `index.ts` au fichier du commit GitHub testé et rejoue les
+   tests adversariaux du chemin photo **et des collisions d'INSERT
+   PostgreSQL `23505`** sur le code téléchargé. Cette seconde vérification
+   doit prouver qu'un refus 409 `ONE_CHARACTER_PER_ACCOUNT` n'est produit
+   qu'après lecture d'un dossier persistant du même compte, jamais sur
+   une erreur réseau ou un échec de lecture. Une différence
+   d'octets, un téléchargement indisponible ou un test négatif font échouer
+   le job sans annoncer un déploiement certifié. Le CLI peut éventuellement
+   restituer un source reconstitué différent : dans ce cas, faire une
+   revue manuelle explicite, plutôt que d'assouplir silencieusement le test.
+   Vérifier avec des comptes de test consentants qu'un chemin non canonique est
+   refusé en HTTP 400 avant toute écriture, qu'un JWT invalide échoue et que le
+   parcours AAL2 + dossier autorisé fonctionne. La seule sortie de
+   `supabase functions list` confirme la présence, **pas la parité source**.
+5. **Cette voie ne déploie pas les quatre politiques SQL AAL2 des photos**.
+   Le SQL est préparé dans
+   `scripts/sql/sinjira_character_sources_insert_requires_aal2.sql`
+   (nom historique conservé). Il concerne **deux buckets privés** :
+   `sinjira-character-sources` et `sinjira-character-submissions`.
+   Appliquer les quatre politiques `AS RESTRICTIVE` SELECT, INSERT,
+   UPDATE (avec `USING` + `WITH CHECK`) et DELETE **dans une seule
+   migration ciblée, revue et enregistrée** ; ne jamais lancer le lot
+   global des migrations en attente pour ce seul correctif.
+   Vérifier `pg_policies` pour les quatre noms et conditions AAL2,
+   puis effectuer des essais AAL1 refusé / AAL2 autorisé pour les quatre
+   opérations applicables dans chacun des buckets, uniquement avec des
+   comptes et fichiers de test consentis. Les politiques propriétaires
+   existantes restent obligatoires. Réconcilier le ledger réel avant
+   toute autre synchronisation générique.
+
+Ces validations de déploiement sont distinctes des preuves de réception
+SMTP, de consentement/réception Formspree et du parcours TOTP AAL2/Registre
+complet requis par l'issue #850. Le taux de 84 % estimés n'augmente pas
+sur la seule base d'une CI ou d'une demande de déploiement.
+
 ## Secrets GitHub Actions requis
 
 À configurer hors dépôt dans :

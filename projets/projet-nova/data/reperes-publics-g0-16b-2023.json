@@ -1,0 +1,168 @@
+{
+  "schema": "nova-g016b-reperes-publics/v1",
+  "project": "Projet Nova",
+  "phase": "G0.16b",
+  "created_on": "2026-11-07",
+  "status": "REPERES_HISTORIQUES_PUBLICS_NON_CALIBRES",
+  "programme_percent": 47,
+  "adopted": false,
+  "approved_for_microsimulation": false,
+  "individual_data_collected": false,
+  "source_spreadsheets_imported": false,
+  "measurement_limits": {
+    "not_scenario_estimates": true,
+    "not_microsimulation": true,
+    "not_current_2026_household_values": true,
+    "not_2026_tax_base": true,
+    "do_not_join_income_and_spending_by_decile": true,
+    "independent_statistical_review_completed": false,
+    "legal_tax_base_verified": false,
+    "price_rebase_completed": false,
+    "regional_model_complete": false,
+    "validation_of_15_g015_proofs_complete": false
+  },
+  "datasets": {
+    "household_decile_thresholds": {
+      "source_id": "ISQ_ECR_2023_EQUIVALIZED_AFTER_TAX_DECILES",
+      "publisher": "Institut de la statistique du Québec",
+      "survey_origin": "Statistique Canada, Enquête canadienne sur le revenu 2023",
+      "source_url": "https://statistique.quebec.ca/fr/produit/tableau/limite-superieure-deciles-revenu-repartition-menages-deciles-type-revenu-menage-revenu-ajuste-taille-menage",
+      "reference_year": 2023,
+      "publication_date": "2025-10-20",
+      "last_verified_date": "2026-11-07",
+      "geography": "QUEBEC",
+      "unit": "CAD_COURANTS_2023_PAR_EQUIVALENT_MENAGE",
+      "variable": "REVENU_APRES_IMPOT_AJUSTE_TAILLE_MENAGE",
+      "equivalence_rule": "revenu_total_apres_impots_federal_et_provincial / sqrt(nombre_de_personnes_du_menage)",
+      "statistic": "LIMITE_SUPERIEURE_DE_DECILE",
+      "deciles": [
+        {
+          "decile": 1,
+          "upper_bound_cad": 25500,
+          "published_marker": null
+        },
+        {
+          "decile": 2,
+          "upper_bound_cad": 32300,
+          "published_marker": null
+        },
+        {
+          "decile": 3,
+          "upper_bound_cad": 39400,
+          "published_marker": null
+        },
+        {
+          "decile": 4,
+          "upper_bound_cad": 45700,
+          "published_marker": null
+        },
+        {
+          "decile": 5,
+          "upper_bound_cad": 52200,
+          "published_marker": null
+        },
+        {
+          "decile": 6,
+          "upper_bound_cad": 58800,
+          "published_marker": null
+        },
+        {
+          "decile": 7,
+          "upper_bound_cad": 66800,
+          "published_marker": null
+        },
+        {
+          "decile": 8,
+          "upper_bound_cad": 77300,
+          "published_marker": null
+        },
+        {
+          "decile": 9,
+          "upper_bound_cad": 94900,
+          "published_marker": null
+        },
+        {
+          "decile": 10,
+          "upper_bound_cad": null,
+          "published_marker": "x"
+        }
+      ],
+      "statistical_caveat": "D10 n'a aucune limite supérieure numérique publiée (marqueur x); limite de décile ≠ revenu moyen, ni revenu brut, ni assiette taxable, ni observation en 2026.",
+      "imported_original_binary": false,
+      "second_reviewer_signed_off": false,
+      "fit_for_tax_calibration": false
+    },
+    "household_spending_provincial": {
+      "source_id": "STATCAN_SHS_2023_QUEBEC_EXPENDITURE",
+      "publisher": "Statistique Canada",
+      "source_url": "https://www150.statcan.gc.ca/n1/daily-quotidien/250521/t001a-fra.htm",
+      "reference_year": 2023,
+      "publication_date": "2025-05-21",
+      "last_verified_date": "2026-11-07",
+      "geography": "QUEBEC",
+      "statistic": "DEPENSES_MOYENNES_DES_MENAGES_EN_BIENS_ET_SERVICES",
+      "unit": "CAD_COURANTS_2023_PAR_MENAGE",
+      "average_spending_cad": 65344,
+      "shares_pct": {
+        "housing": 27.1,
+        "transport": 16.9,
+        "food": 17.3
+      },
+      "share_denominator": "total des dépenses moyennes en biens et services",
+      "by_income_decile": false,
+      "by_region": false,
+      "statistical_caveat": "Moyenne par ménage non ajustée; parts en pourcentage du total, pas frais imputés à chaque décile; aucune jointure individuelle avec l'enquête sur le revenu.",
+      "imported_original_binary": false,
+      "second_reviewer_signed_off": false,
+      "fit_for_tax_calibration": false
+    }
+  },
+  "candidates": [
+    {
+      "source_id": "QUEBEC_FINANCES_FISCAL_2023",
+      "publisher": "Ministère des Finances du Québec",
+      "source_url": "https://www.quebec.ca/gouvernement/ministeres-organismes/finances/publications",
+      "latest_examined_tax_year": 2023,
+      "type": "STATISTIQUES_FISCALES_PARTICULIERS_XLSX_CATALOGUE",
+      "observation": "Le répertoire annonce un tableau XLSX d'impôt des particuliers année d'imposition 2023.",
+      "content_imported": false,
+      "assiettes_verified": false
+    },
+    {
+      "source_id": "ISQ_REGIONAL_INCOME_2024",
+      "publisher": "Institut de la statistique du Québec",
+      "source_url": "https://statistique.quebec.ca/fr/document/revenu-disponible-par-habitant-regions-administratives-et-mrc",
+      "latest_examined_tax_year": 2024,
+      "type": "REVENU_DISPONIBLE_PAR_HABITANT_17_REGIONS_104_MRC",
+      "observation": "Un portrait régional publié en 2026 décrit des données 2024; aucun tableau de valeurs de région n'est transcrit ici.",
+      "content_imported": false,
+      "assiettes_verified": false
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "QUEBEC_CANADA",
+      "model_estimated": false,
+      "annual_household_gain_cad": null,
+      "annual_fiscal_balance_mcad": null,
+      "proposed_tax_rate_pct": null
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "model_estimated": false,
+      "annual_household_gain_cad": null,
+      "annual_fiscal_balance_mcad": null,
+      "proposed_tax_rate_pct": null
+    }
+  ],
+  "decision": {
+    "g016b_benchmark_transcription_present": true,
+    "g016b_calibration_complete": false,
+    "g016_preflight_passed": false,
+    "policy_rate_authorized": false,
+    "new_nova_revenue_estimated": false,
+    "new_nova_savings_estimated": false,
+    "ready_to_govern": false,
+    "programme_percent_after": 47
+  }
+}

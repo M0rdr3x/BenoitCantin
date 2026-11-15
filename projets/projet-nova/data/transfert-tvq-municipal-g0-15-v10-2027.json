@@ -1,0 +1,65 @@
+{
+  "schema": "nova-g015-v10-transfert-tvq-municipal-2027/v1",
+  "project": "Projet Nova",
+  "phase": "G0.15-V10",
+  "compiled_on": "2026-11-08",
+  "status": "REFERENCE_PUBLIQUE_2027_NON_CERTIFIEE_POUR_NOVA",
+  "programme_score_before": 47,
+  "programme_score_after": 47,
+  "source": {
+    "publisher": "Gouvernement du Québec (Affaires municipales)",
+    "page_title": "Préparation du budget municipal 2027",
+    "url": "https://www.quebec.ca/gouvernement/gestion-municipale/finances-fiscalite-municipales/information-financiere/preparation-budget",
+    "last_updated": "2026-10-26",
+    "checked_on": "2026-11-08",
+    "based_on_data_through": "2026-09",
+    "official_page_checked": true,
+    "independent_nova_review": false
+  },
+  "announced_allocation": {
+    "reference_year": 2027,
+    "unit": "M_CAD",
+    "program": "Répartition de la croissance d’une partie de la TVQ",
+    "total_mcad": 821,
+    "component_I_share_pct": 93.5,
+    "component_II_share_pct": 6.5,
+    "amount_is_estimate": true,
+    "component_amounts_source_verified": false,
+    "payments_reconciled": false,
+    "allocations_are_nova_revenue": false
+  },
+  "budget_treatment": {
+    "government_origin": "EXISTING_TVQ_GROWTH",
+    "recipient": "QUEBEC_LOCAL_GOVERNMENTS",
+    "flow": "INTERGOVERNMENTAL_TRANSFER",
+    "add_to_provincial_revenues": false,
+    "add_to_2024_municipal_revenues": false,
+    "replace_municipal_taxes_without_new_proof": false,
+    "all_2027_municipal_transfers_covered": false,
+    "forecast_is_actual_payment": false,
+    "zero_duplicate_counting_required": true
+  },
+  "missing_evidence": {
+    "destination_level_amounts_verified": false,
+    "reconciliation_to_provincial_taxes": false,
+    "reconciliation_to_municipal_financial_statements": false,
+    "legal_continuity_review": false,
+    "financing_of_new_nova_policy": false,
+    "additional_nova_revenue_mcad": null,
+    "municipal_tax_replacement_mcad": null
+  },
+  "decisions": {
+    "v10_independently_validated": false,
+    "two_tax_policy_certified": false,
+    "programme_complete": false,
+    "adopted": false
+  },
+  "methodological_limits": [
+    "821 M$ est une enveloppe de transfert prévue pour 2027 financée par la croissance d'une partie de la TVQ, pas une nouvelle recette fiscale NOVA.",
+    "Les sommes reposent sur les données disponibles en septembre 2026; les montants réellement versés peuvent varier.",
+    "Les parts des volets I et II ne sont pas des montants publiés séparément; aucun montant par municipalité n'est calculé dans ce registre.",
+    "Les transferts figurent déjà dans les revenus municipaux consolidés 2024 de G0.16h; 2027 et 2024 ne sont pas des exercices à additionner.",
+    "La seule enveloppe de croissance TVQ n'établit pas l'ensemble du financement municipal de 2027 ni un remplacement des taxes.",
+    "G0.15 V10 demeure non franchie sans rapprochement de comptabilité, continuité scolaire et municipale et revue indépendante."
+  ]
+}

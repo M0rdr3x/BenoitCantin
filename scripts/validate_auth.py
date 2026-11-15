@@ -30,12 +30,19 @@ def main():
     module=max(src.find('sinjira-auth-pages.js'),src.find('v24-signup.js'),src.find('sinjira-recovery-v24-4-99.js'))
     if guard<0: errors.append(f'Garde de redirection auth absent: {rel}')
     elif module>=0 and guard>module: errors.append(f'Garde auth chargé après le module dans {rel}')
+    if 'sinjira-auth-route.js?v=24.4.13' not in src:
+      errors.append(f'Garde Auth pas actualisé après durcissement des destinations: {rel}')
 
   helper=text('assets/js/sinjira-auth-route.js')
   for required in ["raw.startsWith('//')","raw.includes('\\\\')","url.origin !== location.origin"]:
     if required not in helper: errors.append(f'Garde anti-open-redirect incomplet: {required}')
 
   signup_html=text('compte/inscription.html')
+  confirmation_html=text('compte/confirmer.html')
+  if 'sinjira-confirm-email.js?v=4' not in confirmation_html or 'sinjira-confirm-email.js?v=3' in confirmation_html:
+    errors.append('Confirmation: l’ancienne révision du module Auth peut rester en cache.')
+  if 'v24-signup.js?v=24.5.6' not in signup_html or 'v24-signup.js?v=24.5.5' in signup_html:
+    errors.append('Inscription: l’ancienne révision du module Auth peut rester en cache.')
   if len(re.findall(r'minlength=["\']12["\']',signup_html))<2:
     errors.append('Inscription: les deux champs mot de passe doivent imposer minlength=12.')
   if len(re.findall(r'autocomplete=["\']new-password["\']',signup_html))<2:

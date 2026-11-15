@@ -129,6 +129,67 @@ def main() -> int:
             if marker not in text:
                 errors.append(f"Métadonnée {marker} absente: {rel}")
 
+    # Cohérence des contacts SINJIRA : vérifier l'ensemble des pages
+    # publiques de l'univers, sans réécrire les champs courriel des comptes,
+    # les adresses privées ni le canal indépendant de Projet Nova.
+    sinjira_root = ROOT / "projets" / "sinjira"
+    official_email = "sinjiraofficiel@gmail.com"
+    official_mailto = f'mailto:{official_email}'
+    official_youtube = "https://www.youtube.com/@SinjiraOfficiel"
+    checked_channels = 0
+    for path in sorted(sinjira_root.rglob("*.html")):
+        rel = path.relative_to(ROOT).as_posix()
+        page = path.read_text(encoding="utf-8")
+        visible_addresses = re.findall(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", page)
+        for address in visible_addresses:
+            if address.lower() != official_email:
+                errors.append(f"Courriel public SINJIRA non officiel ({address}) : {rel}")
+
+        footer_match = re.search(r"<footer\b[\s\S]*?</footer>", page, re.I)
+        if footer_match and 'href="/contact.html"' in footer_match.group(0):
+            checked_channels += 1
+            footer = footer_match.group(0)
+            if f'href="{official_mailto}"' not in footer:
+                errors.append(f"Courriel officiel SINJIRA absent du pied de page : {rel}")
+            youtube_tag = find_tag(footer, r'<a\b[^>]*href="https://www\.youtube\.com/@SinjiraOfficiel"[^>]*>')
+            if not youtube_tag or 'target="_blank"' not in youtube_tag or (
+                "noopener" not in youtube_tag or "noreferrer" not in youtube_tag
+            ):
+                errors.append(f"Lien YouTube SINJIRA non sécurisé dans le pied de page : {rel}")
+
+    home = (sinjira_root / "index.html").read_text(encoding="utf-8")
+    if 'class="sinjira-official-channels"' not in home:
+        errors.append("Bloc des canaux officiels absent de l’accueil SINJIRA")
+    youtube_icon_link = find_tag(
+        home, r'<a\b[^>]*class="sinjira-official-channel sinjira-official-channel-youtube"[^>]*>',
+    )
+    if not youtube_icon_link or f'href="{official_youtube}"' not in youtube_icon_link:
+        errors.append("Accès prioritaire à la chaîne YouTube SINJIRA absent")
+    if not re.search(r'<svg\b[^>]*class="sinjira-channel-icon"[^>]*>[\s\S]*?</svg>', home):
+        errors.append("Icône SVG YouTube inaccessible ou absente")
+    if f'href="{official_mailto}"' not in home:
+        errors.append("Courriel SINJIRA absent de l’accueil")
+    if 'sinjira.css?v=24.4.13' not in home:
+        errors.append("Feuille de style des canaux SINJIRA non actualisée")
+
+    contact = (ROOT / "contact.html").read_text(encoding="utf-8")
+    if contact.count(f'href="{official_mailto}"') < 2:
+        errors.append("Adresse officielle SINJIRA insuffisamment visible sur Contact")
+    if f'href="{official_youtube}"' not in contact:
+        errors.append("Chaîne YouTube SINJIRA absente de Contact")
+    if '<option value="SINJIRA" disabled>' not in contact:
+        errors.append("Le formulaire personnel pourrait router un message SINJIRA vers le mauvais canal")
+    if '<option value="Registre des Consciences" disabled>' not in contact:
+        errors.append("Le formulaire personnel pourrait router le Registre vers le mauvais canal")
+    if 'href="/projets/projet-nova/contact.html"' not in contact:
+        errors.append("Le canal séparé de Projet Nova est absent de Contact")
+    nova_contact = (ROOT / "projets" / "projet-nova" / "contact.html").read_text(encoding="utf-8")
+    if "officiellenovaparti@gmail.com" not in nova_contact or official_email in nova_contact:
+        errors.append("Isolation des contacts Projet Nova / SINJIRA non respectée")
+
+    if checked_channels < 10:
+        errors.append("Le contrôle des canaux officiels ne couvre pas assez de pieds de page SINJIRA")
+
     for rel, (target, canonical) in LEGACY_REDIRECTS.items():
         path = ROOT / rel
         if not path.is_file():

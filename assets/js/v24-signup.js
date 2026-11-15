@@ -30,10 +30,10 @@ function localDateString(date=new Date()){
   return `${y}-${m}-${d}`;
 }
 function nextDestination(def='/compte/index.html'){
-  if(window.SINJIRA_AUTH_ROUTE?.next)return window.SINJIRA_AUTH_ROUTE.next(def);
-  const value=new URLSearchParams(location.search).get('next');
-  if(!value||!value.startsWith('/')||value.startsWith('//')||value.includes('\\')||/[\u0000-\u001f\u007f]/.test(value))return def;
-  try{const url=new URL(value,location.origin);return url.origin===location.origin?`${url.pathname}${url.search}${url.hash}`:def}catch{return def}
+  // Le garde de redirection partagé est l'autorité. En son absence, aucun
+  // paramètre next de l'URL ne doit devenir une destination de navigation.
+  const trustedNext=window.SINJIRA_AUTH_ROUTE?.next;
+  return typeof trustedNext==='function'?trustedNext(def):def;
 }
 function normalizeGuardianCode(value=''){return String(value).trim().toUpperCase().replace(/\s+/g,'')}
 function isCanada(value=''){return ['canada','ca','can'].includes(String(value).trim().toLowerCase())}
@@ -63,6 +63,8 @@ if(birthInput){
 }
 syncYouthControls();
 ready();
+// La page HTML désactive le bouton par défaut : aucun envoi natif si le module échoue.
+setBusy(!isSinjiraBackendConfigured());
 
 if(form){
   form.addEventListener('submit',async e=>{
@@ -121,12 +123,13 @@ if(form){
       account_age_band:minor?'minor_13_17':'adult_18_plus',
       guardian_controls_required:minor,
       initial_contributor_opt_in:contributor,
+      formspree_receipt_opt_in:d.get('formspree_receipt_opt_in')==='yes',
       initial_share_free_text:contributor&&d.get('share_free_text')==='yes'
     };
     const destination=wantsQuestionnaire?'/projets/sinjira/registre/':nextDestination();
     setBusy(true);
     try{
-      const {data,error}=await getSupabase().auth.signUp({email,password,options:{emailRedirectTo:`${SINJIRA_CONFIG.siteUrl}${destination}`,data:metadata}});
+      const {data,error}=await getSupabase().auth.signUp({email,password,options:{emailRedirectTo:`${SINJIRA_CONFIG.siteUrl}/compte/confirmer.html`,data:metadata}});
       if(error){
         const raw=String(error.message||'');
         if(/GUARDIAN_AUTHORIZATION_REQUIRED_UNDER_14|INVALID_OR_EXPIRED_GUARDIAN_CODE|ADULT_GUARDIAN_REQUIRED/i.test(raw)){
@@ -136,9 +139,18 @@ if(form){
         }else setStatus(status,'Création du compte impossible. Vérifiez les renseignements ou utilisez une autre adresse courriel.','error');
         return;
       }
+      // Un résultat sans erreur mais sans utilisateur identifié ne prouve
+      // pas la création du compte. Préserver le formulaire et refuser le
+      // faux succès plutôt que de promettre un courriel non confirmé.
+      if(!data?.user || typeof data.user.id!=='string' || !data.user.id.trim()){
+        setStatus(status,'Le service n’a pas confirmé la création de votre compte. Vos renseignements restent dans le formulaire; réessayez plus tard.','error');
+        return;
+      }
       if(data.session){location.assign(destination);return}
       const youthNote=age>=14&&age<18&&!guardianCode?' Les fonctions sociales resteront protégées jusqu’à la vérification d’un parent ou tuteur.':'';
-      setStatus(status,(wantsQuestionnaire?'Compte créé. Confirmez votre adresse courriel; le lien de confirmation vous mènera ensuite au questionnaire complet du Registre.':'Compte créé. Vérifiez votre courriel pour confirmer votre adresse.')+youthNote,'success');
+      // signUp peut renvoyer un utilisateur masqué quand l'adresse existe déjà.
+      // Ce résultat ne prouve ni la création d'un compte ni la livraison SMTP.
+      setStatus(status,(wantsQuestionnaire?'Votre demande d’inscription a été prise en compte. Si elle peut être traitée, vous recevrez un courriel SINJIRA™ : ouvrez-le puis cliquez sur « Confirmer mon compte ». Pour accéder au questionnaire du Registre, vous devrez ensuite activer et valider la double authentification (AAL2) dans Ma sécurité.':'Votre demande d’inscription a été prise en compte. Si elle peut être traitée, vous recevrez un courriel SINJIRA™ : ouvrez-le puis cliquez sur « Confirmer mon compte ». Si aucun courriel n’arrive, vérifiez les indésirables ou essayez la connexion et la récupération de mot de passe.')+youthNote,'success');
       form.reset();syncYouthControls();
     }catch(err){
       console.warn('[SINJIRA signup]',err);

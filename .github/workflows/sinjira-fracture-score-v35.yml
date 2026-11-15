@@ -1,0 +1,83 @@
+name: SINJIRA — Fracture feuille de score V35
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'projets/sinjira/jeux/**'
+      - 'compte/bibliotheque-jeux.html'
+      - 'assets/js/sinjira-fracture-score-v35.mjs'
+      - 'assets/js/sinjira-fracture-score-page-v35.mjs'
+      - 'assets/js/sinjira-library-hub-v26.js'
+      - 'assets/css/fracture-score-v35.css'
+      - 'tests/games/test_fracture_score_v35.mjs'
+      - 'tests/e2e/test_fracture_score_v35.py'
+      - 'scripts/validate_fracture_score_v35.py'
+      - '.github/workflows/sinjira-fracture-score-v35.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'projets/sinjira/jeux/**'
+      - 'compte/bibliotheque-jeux.html'
+      - 'assets/js/sinjira-fracture-score-v35.mjs'
+      - 'assets/js/sinjira-fracture-score-page-v35.mjs'
+      - 'assets/js/sinjira-library-hub-v26.js'
+      - 'assets/css/fracture-score-v35.css'
+      - 'tests/games/test_fracture_score_v35.mjs'
+      - 'tests/e2e/test_fracture_score_v35.py'
+      - 'scripts/validate_fracture_score_v35.py'
+      - '.github/workflows/sinjira-fracture-score-v35.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sinjira-fracture-score-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Récupérer le dépôt sans jeton persistant
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Configurer Node
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+          package-manager-cache: false
+      - name: Vérifier la syntaxe des modules et les règles officielles
+        run: |
+          node --check assets/js/sinjira-fracture-score-v35.mjs
+          node --check assets/js/sinjira-fracture-score-page-v35.mjs
+          node --test tests/games/test_fracture_score_v35.mjs
+      - name: Vérifier l'accès public, les règles et l'absence de données privées
+        run: python3 scripts/validate_fracture_score_v35.py
+  browsers:
+    needs: contracts
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.61.0-noble@sha256:a9731514f24121d1dcd25d58d0a38146646d290a5998fd80d3e533e7b5e21c69
+    env:
+      BROWSER: ${{ matrix.browser }}
+      BASE_URL: http://127.0.0.1:4173/
+    steps:
+      - name: Récupérer le dépôt sans jeton persistant
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Installer le client Playwright de version définie
+        run: python3 -m pip install --disable-pip-version-check --no-cache-dir playwright==1.61.0
+      - name: Vérifier la feuille de score sur le site exact de la PR
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/fracture-score-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          HOME=/root python3 tests/e2e/test_fracture_score_v35.py

@@ -1,0 +1,307 @@
+// Projet Nova — consultation publique agrégée (écritures interdites si secrets / contrôle anti-bot absents).
+// Aucun bulletin individuel, identité, IP ou choix politique n'est journalisé ou enregistré.
+const VERSION = "nova-consultation-v1";
+const ORIGINS = new Set(["https://www.benoitcantin.com","https://benoitcantin.com"]);
+const MAX_BODY_BYTES = 8192;
+const BODY_READ_TIMEOUT_MS = 8000;
+const OPTIONS = new Set([-2,-1,0,1,2,9]);
+const MIN_PUBLIC_BALLOTS = 10;
+const MIN_NONZERO_CELL = 5;
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
+const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+const CAPTCHA_SECRET = Deno.env.get("NOVA_POLL_TURNSTILE_SECRET") || "";
+const CAPTCHA_SITE_KEY = Deno.env.get("NOVA_POLL_TURNSTILE_SITE_KEY") || "";
+const HMAC_KEY = Deno.env.get("NOVA_POLL_HMAC_KEY") || "";
+// Une activation accidentelle du flag ne suffit jamais : le corpus final
+// doit avoir été approuvé explicitement dans la configuration serveur.
+const isOpen = () => Deno.env.get("NOVA_POLL_APPROVED_VERSION") === VERSION
+  && Deno.env.get("NOVA_POLL_ENABLED") === "true"
+  && !!CAPTCHA_SECRET && !!CAPTCHA_SITE_KEY && HMAC_KEY.length >= 32 && !!SERVICE_KEY;
+
+// Contrat éditorial immuable : la base peut être altérée indépendamment du
+// questionnaire publié. Ni résultats ni écritures ne sont autorisés si le
+// texte, l'ordre ou l'identifiant des huit questions dérivent.
+const CANONICAL_QUESTIONS = Object.freeze([
+  {
+    "question_id": "q02",
+    "ordinal": 1,
+    "question_text": "Le gouvernement du Québec devrait réduire les restrictions à l’entrée de nouvelles entreprises dans les secteurs actuellement réglementés."
+  },
+  {
+    "question_id": "q09",
+    "ordinal": 2,
+    "question_text": "La majorité des soins de première ligne financés par l’État devrait être fournie par des établissements publics."
+  },
+  {
+    "question_id": "q17",
+    "ordinal": 3,
+    "question_text": "Le gouvernement du Québec devrait augmenter le financement consacré aux logements sociaux, coopératifs et sans but lucratif."
+  },
+  {
+    "question_id": "q22",
+    "ordinal": 4,
+    "question_text": "Le gouvernement du Québec devrait renoncer à une nouvelle norme environnementale si son analyse d’impact prévoit une hausse du coût de biens essentiels."
+  },
+  {
+    "question_id": "q29",
+    "ordinal": 5,
+    "question_text": "Les organismes publics ne devraient pas pouvoir élargir la surveillance numérique sans autorisation judiciaire préalable, sauf dans une urgence prévue par la loi."
+  },
+  {
+    "question_id": "q33",
+    "ordinal": 6,
+    "question_text": "Une pétition atteignant un seuil prévu par la loi devrait pouvoir déclencher un référendum provincial obligatoire."
+  },
+  {
+    "question_id": "q47",
+    "ordinal": 7,
+    "question_text": "Le gouvernement du Québec devrait préparer les conditions permettant la tenue d’un référendum sur la souveraineté."
+  },
+  {
+    "question_id": "q61",
+    "ordinal": 8,
+    "question_text": "Toute décision administrative importante prise à l’aide d’un système d’IA devrait pouvoir être expliquée à la personne concernée."
+  }
+]);
+function matchesApprovedQuestions(rows: unknown): boolean {
+  return Array.isArray(rows) && rows.length === CANONICAL_QUESTIONS.length
+    && rows.every((row,index) => {
+      const expected=CANONICAL_QUESTIONS[index];
+      return row!==null && typeof row==="object"
+        && row.question_id===expected.question_id
+        && row.ordinal===expected.ordinal
+        && row.question_text===expected.question_text;
+    });
+}
+
+function respond(status: number, data: unknown, origin: string | null): Response {
+  const headers = new Headers({
+    "Content-Type":"application/json; charset=utf-8",
+    "Cache-Control":"no-store, private",
+    "X-Content-Type-Options":"nosniff",
+    "Referrer-Policy":"no-referrer",
+    "Vary":"Origin"
+  });
+  if(origin && ORIGINS.has(origin)) {
+    headers.set("Access-Control-Allow-Origin",origin);
+    headers.set("Access-Control-Allow-Methods","GET, POST, OPTIONS");
+    headers.set("Access-Control-Allow-Headers","content-type");
+  }
+  return new Response(status===204 ? null : JSON.stringify(data),{status,headers});
+}
+async function readLimitedJson(req: Request): Promise<unknown> {
+  if(!req.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
+    throw new Error("type");
+  }
+  // Rejeter un corps annoncé trop grand avant de réserver un lecteur.
+  // La limite est aussi appliquée aux octets réellement transmis.
+  const declared = req.headers.get("content-length");
+  if(declared !== null && (!/^\d+$/.test(declared) ||
+      !Number.isSafeInteger(Number(declared)) || Number(declared)>MAX_BODY_BYTES)) {
+    throw new Error("size");
+  }
+  const reader = req.body?.getReader();
+  if(!reader) throw new Error("body");
+  let size=0; const chunks: Uint8Array[]=[];
+  let interrupted=false;
+  // Une source qui envoie quelques octets puis s'arrête ne doit pas retenir
+  // indéfiniment une invocation Edge. Annuler le lecteur débloque read().
+  // Ne jamais attendre cancel() lors d'un dépassement de limite.
+  const interrupt = () => {
+    interrupted=true;
+    try { void reader.cancel().catch(()=>{}); } catch { /* lecteur déjà clos */ }
+  };
+  const timeout=setTimeout(interrupt,BODY_READ_TIMEOUT_MS);
+  req.signal.addEventListener("abort",interrupt,{once:true});
+  try {
+    if(req.signal.aborted) throw new Error("body_interrupted");
+    while(true) {
+      const {done,value}=await reader.read();
+      if(interrupted || req.signal.aborted) throw new Error("body_interrupted");
+      if(done) break;
+      size+=value.byteLength;
+      if(size>MAX_BODY_BYTES) {
+        interrupt();
+        throw new Error("size");
+      }
+      chunks.push(value);
+    }
+  } finally {
+    clearTimeout(timeout);
+    req.signal.removeEventListener("abort",interrupt);
+    reader.releaseLock();
+  }
+  const buffer = new Uint8Array(size); let offset=0;
+  for(const chunk of chunks) {buffer.set(chunk,offset);offset+=chunk.byteLength;}
+  return JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(buffer));
+}
+async function db(path: string, init: RequestInit={}) {
+  if(!SUPABASE_URL || !SERVICE_KEY) throw new Error("backend_unavailable");
+  const url=SUPABASE_URL.replace(/\/$/,"")+"/rest/v1/"+path;
+  const response=await fetch(url,{
+    ...init,
+    headers:{
+      "apikey":SERVICE_KEY,"Authorization":"Bearer "+SERVICE_KEY,
+      "Content-Type":"application/json","Accept":"application/json",...(init.headers||{})
+    },
+    signal:AbortSignal.timeout(7000)
+  });
+  if(!response.ok) throw new Error("database_unavailable");
+  return response.status === 204 ? null : response.json();
+}
+// Les tables publiques et l'état de publication sont lus séparément via
+// PostgREST. Une publication SQL atomique peut tomber ENTRE ces lectures.
+// Refuser tout instantané mélangé plutôt que divulguer des totaux inexactes.
+function verifyPublishedCounts(
+  questions: {question_id:string}[],
+  counts: {question_id:string,option_value:number,total:number|string}[],
+  ballotCount: number
+): Map<string,number[]> {
+  if(!Array.isArray(questions) || questions.length!==8 || !Array.isArray(counts)
+    || !Number.isSafeInteger(ballotCount) || ballotCount<0) {
+    throw new Error("invalid_snapshot");
+  }
+  const values=[-2,-1,0,1,2,9];
+  const countsById = new Map<string,number[]>();
+  const seen = new Set<string>();
+  for(const q of questions) {
+    if(typeof q?.question_id!=="string" || countsById.has(q.question_id)) throw new Error("invalid_snapshot_questions");
+    countsById.set(q.question_id,Array(6).fill(0));
+  }
+  for(const row of counts) {
+    const id=row?.question_id;
+    const ix=values.indexOf(Number(row?.option_value));
+    const count=Number(row?.total);
+    const key=String(id)+":"+String(row?.option_value);
+    if(!countsById.has(id) || ix<0 || !Number.isSafeInteger(count) || count<0 || seen.has(key)) {
+      throw new Error("invalid_snapshot_counts");
+    }
+    seen.add(key);
+    countsById.get(id)![ix]=count;
+  }
+  for(const amounts of countsById.values()) {
+    const sum=amounts.reduce((a,b)=>a+b,0);
+    if(!Number.isSafeInteger(sum) || sum!==ballotCount) throw new Error("inconsistent_public_snapshot");
+  }
+  return countsById;
+}
+
+// Une catégorie de 1 à 4 répondants serait dévoilée même si le total
+// global dépasse dix. Tout le tableau est supprimé, pas seulement la cellule,
+// afin de ne pas pouvoir la reconstituer par soustraction du total.
+function canPublishCells(counts: Map<string,number[]>): boolean {
+  return counts.size===8 && [...counts.values()].every(values =>
+    values.length===6 && values.every(n =>
+      Number.isSafeInteger(n) && n>=0 && (n===0 || n>=MIN_NONZERO_CELL)));
+}
+
+async function publicResults() {
+  const [questions,counts,publications] = await Promise.all([
+    db("nova_poll_questions?poll_version=eq."+VERSION+"&select=question_id,ordinal,question_text&order=ordinal.asc"),
+    db("nova_poll_public_counts?poll_version=eq."+VERSION+"&select=question_id,option_value,total"),
+    db("nova_poll_publication_state?poll_version=eq."+VERSION+"&select=published_ballots,published_at")
+  ]);
+  if(!matchesApprovedQuestions(questions) || !Array.isArray(counts)
+     || !Array.isArray(publications) || publications.length!==1) throw new Error("not_ready");
+  const snapshot=publications[0];
+  const ballotCount=Number(snapshot.published_ballots);
+  if(!Number.isSafeInteger(ballotCount) || ballotCount<0) throw new Error("invalid_publication");
+  const values=[-2,-1,0,1,2,9];
+  // Fail-closed : un état de publication et des compteurs lus à des instants
+  // différents ne doivent jamais produire des statistiques trompeuses.
+  const countsById=verifyPublishedCounts(questions,counts,ballotCount);
+  const showCounts=ballotCount>=MIN_PUBLIC_BALLOTS && canPublishCells(countsById);
+  return {
+    version: VERSION, open:isOpen(), siteKey:isOpen()?CAPTCHA_SITE_KEY:null,
+    eligibility:"18+ déclaré", method:"consultation ouverte non probabiliste",
+    minPublicBallots:MIN_PUBLIC_BALLOTS, ballots:showCounts?ballotCount:null,
+    resultsVisible:showCounts,
+    publishedAt:showCounts ? snapshot.published_at : null,
+    publication: "lots d au moins dix nouveaux bulletins; publication au plus une fois par six heures",
+    questions:questions.map(q=>({
+      id:q.question_id,ordinal:q.ordinal,text:q.question_text,
+      counts:showCounts?Object.fromEntries(values.map((v,i)=>[String(v),countsById.get(q.question_id)![i]])):null
+    }))
+  };
+}
+// Le formulaire affiche deux décisions DISTINCTES : âge auto-déclaré et
+// consentement explicite au traitement d'opinions politiques. Un POST direct
+// ne doit pas contourner la case de consentement du navigateur.
+// Cette déclaration n'est pas une preuve indépendante du consentement :
+// aucun identifiant ni bulletin individuel n'est conservé.
+function validBallotEnvelope(payload: unknown): boolean {
+  if(!payload || typeof payload!=="object" || Array.isArray(payload)) return false;
+  const ballot=payload as Record<string,unknown>;
+  if(ballot.version!==VERSION || ballot.ageConfirmed!==true ||
+     ballot.consentConfirmed!==true || typeof ballot.ballotToken!=="string" ||
+     !/^[0-9a-f]{48}$/.test(ballot.ballotToken) ||
+     typeof ballot.captchaToken!=="string" ||
+     ballot.captchaToken.length<10 || ballot.captchaToken.length>4096 ||
+     !ballot.answers || typeof ballot.answers!=="object" || Array.isArray(ballot.answers)) {
+    return false;
+  }
+  const answers=ballot.answers as Record<string,unknown>;
+  return Object.keys(answers).length===8 &&
+    Object.values(answers).every(value=>typeof value==="number" && OPTIONS.has(value));
+}
+async function confirmCaptcha(token: string) {
+  const params=new URLSearchParams({secret:CAPTCHA_SECRET,response:token});
+  const response=await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify",{
+    method:"POST",body:params,signal:AbortSignal.timeout(7000)
+  });
+  if(!response.ok) return false;
+  const result=await response.json();
+  return result.success===true
+    && (result.hostname==="www.benoitcantin.com" || result.hostname==="benoitcantin.com")
+    && result.action==="nova_poll_vote";
+}
+async function hashToken(token: string) {
+  const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(HMAC_KEY),
+    {name:"HMAC",hash:"SHA-256"},false,["sign"]);
+  const bytes=new Uint8Array(await crypto.subtle.sign("HMAC",key,new TextEncoder().encode(VERSION+":"+token)));
+  return Array.from(bytes,b=>b.toString(16).padStart(2,"0")).join("");
+}
+Deno.serve(async (req:Request)=>{
+  const origin=req.headers.get("origin");
+  // N'autoriser que les origines de l'interface publique; aucune intégration tierce.
+  if(!origin || !ORIGINS.has(origin)) return respond(403,{error:"origine_non_autorisee"},null);
+  if(req.method==="OPTIONS") return respond(204,null,origin);
+  if(req.method==="GET") {
+    try { return respond(200,await publicResults(),origin); }
+    catch { return respond(503,{error:"resultats_temporairement_indisponibles"},origin); }
+  }
+  if(req.method!=="POST") return respond(405,{error:"methode_non_autorisee"},origin);
+  if(!isOpen()) return respond(503,{error:"consultation_non_ouverte"},origin);
+  let payload: any;
+  try { payload=await readLimitedJson(req); }
+  catch { return respond(400,{error:"bulletin_invalide"},origin); }
+  if(!validBallotEnvelope(payload)) {
+    return respond(400,{error:"bulletin_invalide"},origin);
+  }
+  try {
+    // Contrôle anti-robot AVANT tout accès privilégié à PostgREST :
+    // Origin ne remplace pas l'authentification d'une requête.
+    if(!await confirmCaptcha(payload.captchaToken)) return respond(403,{error:"verification_anti_robot_echouee"},origin);
+    const questions=await db("nova_poll_questions?poll_version=eq."+VERSION+
+      "&select=question_id,ordinal,question_text&order=ordinal.asc");
+    if(!matchesApprovedQuestions(questions)) {
+      // Une divergence du registre serveur est une panne de configuration,
+      // jamais une réponse du participant à accepter ou à publier.
+      return respond(503,{error:"questionnaire_non_approuve"},origin);
+    }
+    const expected=new Set(questions.map((q:any)=>q.question_id));
+    if(Object.keys(payload.answers).some(key=>!expected.has(key))) {
+      return respond(400,{error:"questions_incompatibles"},origin);
+    }
+    const tokenHash=await hashToken(payload.ballotToken);
+    const result=await db("rpc/nova_poll_submit",{
+      method:"POST",
+      body:JSON.stringify({p_version:VERSION,p_token_hash:tokenHash,p_answers:payload.answers})
+    });
+    if(result==="duplicate") return respond(409,{error:"bulletin_deja_recu"},origin);
+    if(result!=="accepted") throw new Error("submission_failure");
+    return respond(201,{status:"accepted"},origin);
+  } catch {
+    return respond(503,{error:"soumission_temporairement_indisponible"},origin);
+  }
+});

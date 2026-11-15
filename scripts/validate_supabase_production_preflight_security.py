@@ -151,6 +151,7 @@ def validate_text(text: str) -> list[str]:
     for trigger_path in (
         "      - 'scripts/validate_supabase_production_preflight_security.py'",
         "      - 'scripts/test_supabase_production_preflight_security.py'",
+        "      - 'scripts/test_production_edge_quarantine.py'",
         "      - '.github/workflows/supabase-production-preflight.yml'",
         "      - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'",
     ):
@@ -178,6 +179,8 @@ def validate_text(text: str) -> list[str]:
             errors.append("La chaîne locale Python → auto-test → contrat → validations est incomplète.")
         elif not setup_at < self_test_at < self_check_at < validate_at:
             errors.append("L'ordre doit rester Python → auto-test sécurité → contrat sécurité → validations Supabase.")
+        if "python scripts/test_production_edge_quarantine.py" not in local:
+            errors.append("Tests de quarantaine Edge absents du prévol local.")
         for command in (
             "python scripts/validate_supabase.py",
             "python scripts/validate_edge_function_inventory.py",
@@ -292,7 +295,11 @@ def validate_text(text: str) -> list[str]:
         if marker not in text:
             errors.append(f"Résumé production sans frontière de confiance attendue: {marker}")
 
-    for forbidden in ("--include-all", "supabase migration repair", "supabase db reset --linked"):
+    # Les cinq fonctions absentes du workspace doivent rester actives en
+    # production : --prune les supprimerait, --no-verify-jwt contournerait
+    # la configuration d'authentification revue.
+    for forbidden in ("--include-all", "--prune", "--no-verify-jwt",
+                      "supabase migration repair", "supabase db reset --linked"):
         if forbidden in text:
             errors.append(f"Primitive interdite dans le workflow production: {forbidden}")
 

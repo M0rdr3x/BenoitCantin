@@ -1,0 +1,363 @@
+{
+  "schema": "nova-g016u-evidence-requests-and-completion-gates/v1",
+  "phase": "G0.16u",
+  "date": "2026-11-08",
+  "current_audit_file": "data/audit-completude-programme-nova-2026-11-05.json",
+  "program_score_before": 47,
+  "program_score_after": 47,
+  "program_percent_remaining": 53,
+  "score_is_internal_provisional": true,
+  "independent_program_validation": false,
+  "party_adopted_programme": false,
+  "version_of_last_completed_phase": "G0.16t",
+  "purpose": "Passer des preuves publiques partielles à un chemin d'audit documentaire et à des critères de préparation des 53 points restants",
+  "dimensions": [
+    {
+      "id": "VISION",
+      "max_points": 8,
+      "earned_points": 8,
+      "remaining_points": 0,
+      "gate": "Principes, arbitrages et version politique adoptable",
+      "evidence": "Énoncés stabilisés et contrôles de cohérence",
+      "owner": "Équipe programme",
+      "priority": "MAINTIEN",
+      "externally_certified": false,
+      "score_increment_suggested_now": 0
+    },
+    {
+      "id": "INSTITUTIONS",
+      "max_points": 12,
+      "earned_points": 8,
+      "remaining_points": 4,
+      "gate": "Compétences institutionnelles, démocratie et surveillance",
+      "evidence": "Avis constitutionnels et comparatif des pouvoirs",
+      "owner": "Juristes indépendants",
+      "priority": "P1",
+      "externally_certified": false,
+      "score_increment_suggested_now": 0
+    },
+    {
+      "id": "DROITS",
+      "max_points": 10,
+      "earned_points": 6,
+      "remaining_points": 4,
+      "gate": "Compatibilité avec les chartes, droits fondamentaux et contrôles",
+      "evidence": "Avis de compatibilité détaillé et mesures correctrices",
+      "owner": "Juristes en droits",
+      "priority": "P1",
+      "externally_certified": false,
+      "score_increment_suggested_now": 0
+    },
+    {
+      "id": "SERVICES",
+      "max_points": 12,
+      "earned_points": 5,
+      "remaining_points": 7,
+      "gate": "Coûts complets, continuité, garanties de service et main-d'œuvre",
+      "evidence": "Chiffrage sectoriel audité, effectifs, maintenance et scénarios",
+      "owner": "Équipes sectorielles et auditeurs",
+      "priority": "P1",
+      "externally_certified": false,
+      "score_increment_suggested_now": 0
+    },
+    {
+      "id": "ECONOMIE",
+      "max_points": 12,
+      "earned_points": 5,
+      "remaining_points": 7,
+      "gate": "Incidence sur ménages, entreprises, régions et emplois",
+      "evidence": "Microsimulation sur données adéquates, risques et distributions",
+      "owner": "Économistes et fiscalistes",
+      "priority": "P1",
+      "externally_certified": false,
+      "score_increment_suggested_now": 0
+    },
+    {
+      "id": "FINANCES",
+      "max_points": 16,
+      "earned_points": 3,
+      "remaining_points": 13,
+      "gate": "Deux prélèvements proposés : assiettes, recettes, dette et équilibre décennal",
+      "evidence": "Budgets annuels Québec dans le Canada et souverain avec analyses de sensibilité indépendantes",
+      "owner": "Fiscalistes, comptables et auditeurs",
+      "priority": "P0",
+      "externally_certified": false,
+      "score_increment_suggested_now": 0
+    },
+    {
+      "id": "SOUVERAINETE",
+      "max_points": 10,
+      "earned_points": 4,
+      "remaining_points": 6,
+      "gate": "Transition de compétences, dette, pensions, monnaie, traités et transferts",
+      "evidence": "Scénario de continuité juridico-financière, négociations et risques",
+      "owner": "Constitutionnalistes, financiers, experts sectoriels",
+      "priority": "P1",
+      "externally_certified": false,
+      "score_increment_suggested_now": 0
+    },
+    {
+      "id": "EXECUTION",
+      "max_points": 8,
+      "earned_points": 4,
+      "remaining_points": 4,
+      "gate": "Capacité de déploiement, calendrier, responsabilité et indicateurs",
+      "evidence": "Plan de 10 ans phasé, responsabilités, coûts, dépendances et risques",
+      "owner": "Gestionnaires publics et audit opérationnel",
+      "priority": "P1",
+      "externally_certified": false,
+      "score_increment_suggested_now": 0
+    },
+    {
+      "id": "PREUVES",
+      "max_points": 7,
+      "earned_points": 3,
+      "remaining_points": 4,
+      "gate": "Traçabilité des sources et vérification indépendante",
+      "evidence": "Données reproductibles, audits externes, dossier de corrections",
+      "owner": "Auditeurs de données et juristes",
+      "priority": "P0",
+      "externally_certified": false,
+      "score_increment_suggested_now": 0
+    },
+    {
+      "id": "ADOPTION",
+      "max_points": 5,
+      "earned_points": 1,
+      "remaining_points": 4,
+      "gate": "Consultation, approbation politique et gouvernance",
+      "evidence": "Processus transparent de consultation, adoption formelle, conformité des mécanismes",
+      "owner": "Responsables du programme et citoyens",
+      "priority": "P2",
+      "externally_certified": false,
+      "score_increment_suggested_now": 0
+    }
+  ],
+  "primary_sources": [
+    {
+      "id": "QUEBEC_ACCESS",
+      "url": "https://www.quebec.ca/acces-information",
+      "classification": "OFFICIAL_RIGHT_TO_ACCESS_PROCESS"
+    },
+    {
+      "id": "CAI_PROCESS",
+      "url": "https://www.cai.gouv.qc.ca/acces-documents-organismes-publics/citoyens-acces-documents-publics/comment-acceder-documents-organismes-publics",
+      "classification": "OFFICIAL_PROCEDURE_RIGHT_TO_REVIEW"
+    },
+    {
+      "id": "MAMH_ACCESS",
+      "url": "https://www.quebec.ca/gouvernement/ministeres-organismes/affaires-municipales/cadre-legal-transparence/acces-information",
+      "classification": "MAMH_OFFICIAL_ACCESS_PERSON_AND_CONTACT"
+    },
+    {
+      "id": "MAMH_DISCLOSURES",
+      "url": "https://www.quebec.ca/gouvernement/ministeres-organismes/affaires-municipales/cadre-legal-transparence/acces-information/demande-acces",
+      "classification": "OFFICIAL_PREVIOUS_PRIMEAU_CASE_DISCLOSED"
+    },
+    {
+      "id": "MUNICIPAL_CONTACT",
+      "url": "https://munpdg.ca/nous-joindre/",
+      "classification": "MUNICIPALITY_OFFICIAL_CONTACT"
+    },
+    {
+      "id": "FINANCIAL_2025",
+      "url": "https://www.mamh.gouv.qc.ca/documentsfinanciersweb/Rapport-financier-2025-et-autres-02047.pdf",
+      "classification": "AUDITED_WITH_QUALIFICATION_NOT_GASCONS_ONLY"
+    },
+    {
+      "id": "MINISTRY_COMMITMENT",
+      "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/documents_administratifs/acces_information/engagements_financiers/2025/LIS_engagements_juin_2025.pdf",
+      "classification": "PUBLIC_COMMITMENT_NO_PAID_AMOUNT_VERIFIED"
+    },
+    {
+      "id": "PROJECT_DASHBOARD",
+      "url": "https://www.tresor.gouv.qc.ca/infrastructures-publiques/tableau-de-bord/1321-p1",
+      "classification": "APPROVED_PARAMETERS_NOT_BANK_CASH"
+    }
+  ],
+  "access_procedure": {
+    "prefer_written_request": true,
+    "recipient": "Responsable de l'accès aux documents de l'organisme détenteur",
+    "standard_reply_days_calendar": 20,
+    "possible_extension_days_calendar": 10,
+    "clock_starts_on_proven_receipt": true,
+    "draft_is_not_sent": true,
+    "date_submitted": null,
+    "date_received_by_institution": null,
+    "statutory_deadline": null,
+    "response_received_date": null,
+    "review_possible_after_written_request": true,
+    "review_deadline_days_in_general": 30,
+    "no_automatic_unconditional_disclosure": true,
+    "third_party_privacy_redactions_possible": true,
+    "ask_existing_documents_only": true,
+    "avoid_identifying_private_bank_account_numbers": true,
+    "fees_may_apply": true,
+    "legal_sources": [
+      "QUEBEC_ACCESS",
+      "CAI_PROCESS"
+    ]
+  },
+  "requests": [
+    {
+      "id": "REQ_MUNI",
+      "institution": "Municipalité de Port-Daniel–Gascons",
+      "recipient": "Responsable de l'accès aux documents (attention)",
+      "official_site": "https://munpdg.ca/nous-joindre/",
+      "verified_postal_address": "494, route 132, Port-Daniel–Gascons (Québec) G0C 2N0",
+      "verified_specific_responsible_email": null,
+      "draft_file": "official/working/demande-acces-municipalite-g0-16u.md",
+      "prepared": true,
+      "sent": false,
+      "date_sent": null,
+      "receipt_verified": false,
+      "scope": "Factures, décomptes, attestations de paiement, relevés expurgés et conciliations existantes pour aqueduc/égout secteur Gascons, 2025-01-01 au 2026-11-08",
+      "sought_document_classes": [
+        "CERTIFICAT_1",
+        "CERTIFICATS_2_A_8",
+        "FACTURES_ANNEXES",
+        "PREUVES_PAYEES",
+        "AVENANTS_ET_RETENUES",
+        "ETAT_DES_EMPRUNTS_TRESORERIE",
+        "DEMANDES_PRIMEAU_ET_DEPOTS",
+        "CHARGES_EXPLOITATION"
+      ],
+      "result": "DOCUMENTS_NOT_REQUESTED"
+    },
+    {
+      "id": "REQ_MAMH",
+      "institution": "Ministère des Affaires municipales et de l'Habitation",
+      "recipient": "Responsable de l'accès aux documents",
+      "verified_email": "accesinfo@mamh.gouv.qc.ca",
+      "official_site": "https://www.quebec.ca/gouvernement/ministeres-organismes/affaires-municipales/cadre-legal-transparence/acces-information",
+      "draft_file": "official/working/demande-acces-mamh-g0-16u.md",
+      "prepared": true,
+      "sent": false,
+      "date_sent": null,
+      "receipt_verified": false,
+      "scope": "Dossier PRIMEAU 2023 référence 2036036, engagements juin 2025, décisions de financement et pièces de versement jusqu'au 2026-11-08",
+      "sought_document_classes": [
+        "CONVENTION_D_AIDE",
+        "RECLAMATIONS_PARTIELLES",
+        "CALCUL_ADMISSIBILITE",
+        "AVIS_DE_VERSEMENT",
+        "DATES_ET_MONTANTS_VERSES",
+        "RETENUES",
+        "TABLEAU_COUT_ET_PERIMETRE",
+        "ETAT_DES_ENGAGEMENTS"
+      ],
+      "result": "DOCUMENTS_NOT_REQUESTED"
+    }
+  ],
+  "evidence_chain": [
+    {
+      "id": "CHAIN_PAYABLE",
+      "source": "G0.16t",
+      "from": "CERTIFICAT_NUMEROTE",
+      "steps": [
+        "DECOMPTE",
+        "FACTURE",
+        "APPROBATION",
+        "DATE_ECRITURE",
+        "AUTORISATION_DE_PAIEMENT",
+        "RELEVE_DE_COMPTE_EXPURGE",
+        "DEBIT_DE_TRESORERIE"
+      ],
+      "validated_bank_last_step": false,
+      "all_documents_available": false,
+      "verified_aggregate_cad": null,
+      "authorized_selected_pre_tax_cad": 18621734.12,
+      "caution": "Ce total concerne une sélection d'autorisations Action Progex nos 2-8 avant taxes et non tous les paiements."
+    },
+    {
+      "id": "CHAIN_GRANT",
+      "source": "G0.16t",
+      "from": "MAMH_REFERENCE_2036036",
+      "steps": [
+        "CONVENTION_PRIMEAU",
+        "ENGAGEMENT_BUDGETAIRE",
+        "RECLAMATION",
+        "ANALYSE_ADMISSIBILITE",
+        "AVIS_VERSEMENT",
+        "DATE_PAIEMENT_MINISTERE",
+        "RECEPTION_BANQUE_MUNICIPALE"
+      ],
+      "validated_bank_last_step": false,
+      "all_documents_available": false,
+      "verified_aggregate_cad": null,
+      "committed_total_cad": 42302472,
+      "caution": "Engagement de 24,7 M$ en 2025-2026 et 17 602 472 $ en 2026-2027; aucun virement vérifié."
+    }
+  ],
+  "evidence_gaps": [
+    {
+      "id": "G1",
+      "target": "Décompte no 1 et son association ou non à la facture d'août 2025 de 450 368,10 $",
+      "status": "NOT_PROVEN",
+      "request": "REQ_MUNI"
+    },
+    {
+      "id": "G2",
+      "target": "Débits bancaires expurgés rapprochés des certificats nos 2 à 8",
+      "status": "NOT_PROVEN",
+      "request": "REQ_MUNI"
+    },
+    {
+      "id": "G3",
+      "target": "Encaissements des versements PRIMEAU comparés aux engagements 2025-2027",
+      "status": "NOT_PROVEN",
+      "request": "REQ_MAMH"
+    },
+    {
+      "id": "G4",
+      "target": "Justification écrite des périmètres de 44,5 M$, 53,679 M$ et 56,596 M$",
+      "status": "NOT_PROVEN",
+      "request": "REQ_MAMH"
+    },
+    {
+      "id": "G5",
+      "target": "Avenants, retenues, taxes admissibles et factures finales",
+      "status": "NOT_PROVEN",
+      "request": "REQ_MUNI"
+    },
+    {
+      "id": "G6",
+      "target": "Audit de service, continuité des emplois et obligations de fin de vie des actifs",
+      "status": "NOT_PROVEN",
+      "request": "REQ_MUNI"
+    },
+    {
+      "id": "G7",
+      "target": "Échantillons anonymisés de factures et études distributives ménages",
+      "status": "NOT_PROVEN",
+      "request": "REQ_MUNI"
+    },
+    {
+      "id": "G8",
+      "target": "Revue indépendante des scénarios Québec au Canada / souverain sur dix ans",
+      "status": "NOT_PROVEN",
+      "request": null
+    }
+  ],
+  "planned_next": "G0.16v : obtenir effectivement des pièces existantes et concilier leur portée, puis évaluer indépendamment les deux modèles fiscaux",
+  "falsifiable_controls": {
+    "cannot_mark_request_sent_until_evidence": true,
+    "cannot_start_reply_clock_before_proven_receipt": true,
+    "cannot_mark_payment_cleared_without_bank_level_evidence": true,
+    "cannot_turn_commitment_into_cash": true,
+    "cannot_replace_missing_number_one_with_assumed_amount": true,
+    "cannot_combine_pre_tax_contract_billed_with_tax_inclusive_award": true,
+    "cannot_impute_savings_from_new_documents": true,
+    "cannot_increment_program_score_without_re_audit": true,
+    "must_protect_personal_and_banking_data": true,
+    "must_retain_qualified_opinion_of_municipal_2025_financials": true
+  },
+  "outcomes": {
+    "requests_prepared": 2,
+    "requests_sent": 0,
+    "receipts_received": 0,
+    "external_reviews_completed": 0,
+    "bank_level_payments_confirmed": 0,
+    "programme_score_increment": 0
+  }
+}

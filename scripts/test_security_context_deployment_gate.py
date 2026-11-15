@@ -101,6 +101,28 @@ class EdgeContractTests(unittest.TestCase):
                + "\n" + step)
         self.assertTrue(validate_workflow(bad))
 
+    def test_token_never_enters_curl_argv(self):
+        self.assertEqual(validate_workflow(self.workflow), [])
+        pipe = "printf 'Authorization: Bearer %s\\n' \"$SUPABASE_ACCESS_TOKEN\" | curl -q"
+        self.assertIn(pipe, self.workflow)
+        for mutated in (
+            'curl -q --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN"',
+            'printf \'Authorization: Bearer %s\\n\' "$SUPABASE_ACCESS_TOKEN" | curl -q --verbose',
+            'printf \'Authorization: Bearer %s\\n\' "$SUPABASE_ACCESS_TOKEN" | curl -q --insecure',
+        ):
+            with self.subTest(mutated=mutated):
+                self.assertTrue(validate_workflow(self.workflow.replace(pipe,mutated,1)))
+
+    def test_token_format_guard_and_stdin_header_are_mandatory(self):
+        for marker in (
+            'if [[ ! "$SUPABASE_ACCESS_TOKEN" =~ ^[A-Za-z0-9._~-]{16,512}$ ]]',
+            '--header @-',
+            'curl -q',
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker,self.workflow)
+                self.assertTrue(validate_workflow(self.workflow.replace(marker,'removed-security-guard',1)))
+
     def test_workflow_refuses_write_enabled_query(self):
         self.assertTrue(validate_workflow(
             self.workflow.replace("/database/query/read-only", "/database/query", 1)

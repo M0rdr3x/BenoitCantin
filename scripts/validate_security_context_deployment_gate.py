@@ -98,6 +98,10 @@ def validate_workflow(text: str) -> list[str]:
         "scripts/validate_security_context_deployment_gate.py --check-source",
         "scripts/validate_security_context_deployment_gate.py --write-request",
         "scripts/validate_security_context_deployment_gate.py --check-response",
+        "printf 'Authorization: Bearer %s\\n' \"$SUPABASE_ACCESS_TOKEN\" | curl -q",
+        "if [[ ! \"$SUPABASE_ACCESS_TOKEN\" =~ ^[A-Za-z0-9._~-]{16,512}$ ]]",
+        "--header @-",
+        "--request POST",
         "--proto '=https'",
         "--tlsv1.2",
         "--fail-with-body",
@@ -107,6 +111,15 @@ def validate_workflow(text: str) -> list[str]:
     for marker in conditions:
         if marker not in step:
             errors.append("Vérification RPC non fail-closed ou incomplète")
+    # Le jeton n'est transmis que par le builtin shell printf -> stdin de curl.
+    # Refuser les entêtes en argv et les modes de trace pouvant révéler le jeton.
+    if step.count("$SUPABASE_ACCESS_TOKEN") != 2:
+        errors.append("Jeton Supabase transmis par une voie inattendue.")
+    if any(bad in step for bad in (
+        '--header "Authorization: Bearer', "--header 'Authorization: Bearer",
+        "--trace", "--verbose", "curl -v ", "curl --config", "--insecure", "-k ",
+    )):
+        errors.append("En-tête Auth exposé ou journalisation réseau non sûre.")
     if any(bad in step for bad in ("continue-on-error:", "|| true", "set +e")):
         errors.append("Erreur RPC ignorée : interdiction")
     if text.count("supabase functions deploy --project-ref") != 1:

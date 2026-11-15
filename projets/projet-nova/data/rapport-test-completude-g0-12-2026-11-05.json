@@ -1,0 +1,34 @@
+{
+  "schema": "nova-programme-completude-test-report/v1",
+  "project": "Projet Nova",
+  "date": "2026-11-05",
+  "audited_dataset": "data/audit-completude-programme-nova-2026-11-05.json",
+  "validator": "assets/audit-completude-programme-core.mjs",
+  "test_suite": "tests/audit-completude-programme.test.mjs",
+  "execution": {
+    "environment": "Node.js v26.12.1 — externe, session de vérification éphémère",
+    "command": "node --test tests/audit-completude-programme.test.mjs",
+    "exit_code": 0,
+    "total": 12,
+    "passed": 12,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "github_actions_verified": false
+  },
+  "outcomes": {
+    "estimated_completion": 47,
+    "max": 100,
+    "domains": 10,
+    "sectors": 14,
+    "primary_priority": "P0 — cadre fiscal, conformité juridique, transition souveraineté",
+    "approved_or_certified": false,
+    "program_reference_changed": false
+  },
+  "limitations": [
+    "Les tests démontrent la conformité de la grille à ses règles, non la justesse objective des scores attribués.",
+    "Le score reste une appréciation de suivi, à revoir à l'arrivée de nouvelles preuves.",
+    "L'exécution n'est pas un journal GitHub Actions; le déploiement public du tableau n'est pas confirmé.",
+    "Le programme, le cadre financier, le corpus et les statuts demeurent candidats, non adoptés."
+  ]
+}

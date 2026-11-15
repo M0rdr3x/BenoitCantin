@@ -1,0 +1,29 @@
+# Maintenance préventive : PR uniquement, jamais de fusion ou déploiement automatique.
+# Les mises à jour sensibles des actions, d’Expo et de React nécessitent
+# une revue humaine et une CI réussie avant toute promotion sur main.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    groups:
+      github-actions-compatible:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "npm"
+    directory: "/mobile-native"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    groups:
+      mobile-native-patches:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"

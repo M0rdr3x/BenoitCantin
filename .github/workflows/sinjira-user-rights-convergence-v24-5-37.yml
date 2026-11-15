@@ -12,14 +12,16 @@ permissions:
 
 jobs:
   user-rights-convergence-contract:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Récupérer le dépôt
-        uses: actions/checkout@v4
-      - name: Configurer Python
-        uses: actions/setup-python@v5
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
-          python-version: '3.12'
+          persist-credentials: false
+      - name: Configurer Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
       - name: Vérifier V24.5.37
         run: python scripts/validate_user_rights_convergence_v24_5_37.py
       - name: Vérifier V24.5.36 historique

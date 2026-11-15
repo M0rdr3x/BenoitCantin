@@ -24,8 +24,9 @@ REQUIRED = {
     'Bearer explicite': "authorization.startsWith('Bearer ')",
     'JWT revérifié côté fonction': 'client.auth.getUser(token)',
     'JSON explicite': "contentType.startsWith('application/json')",
-    'lecture corps par texte': 'const raw=await req.text();',
-    'mesure UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
+    'lecture HTTP en flux': 'const limited=await readLimitedUtf8Body(req,MAX_BODY_BYTES);',
+    "refus de flux dépassant la borne": "if(!limited.ok)",
+    'corps extrait après borne': 'const raw=limited.raw;',
     'réponse privée': "'Cache-Control':'private, no-store, max-age=0'",
     'pragma no-cache': "'Pragma':'no-cache'",
     'protection MIME': "'X-Content-Type-Options':'nosniff'",
@@ -41,6 +42,7 @@ REQUIRED = {
 
 FORBIDDEN = {
     'JSON direct non borné': 'await req.json()',
+    'texte HTTP non borné': 'await req.text()',
     'helper JSON public partagé': "import { corsHeaders, json }",
     'retour helper JSON public': 'return json(',
     'log message action brut': 'console.warn(\'[Fracture gateway action]\'',
@@ -87,11 +89,12 @@ def validate_text(source: str, config: str) -> list[str]:
     require(errors, auth_pos >= 0 and body_pos >= 0 and auth_pos < body_pos,
             'Le JWT doit être vérifié avant toute lecture/parsing du corps.')
 
-    text_pos = source.find('const raw=await req.text();')
-    utf8_pos = source.find('new TextEncoder().encode(raw).byteLength')
+    stream_pos = source.find('await readLimitedUtf8Body(req,MAX_BODY_BYTES)')
+    rejected_pos = source.find('if(!limited.ok)')
+    raw_pos = source.find('const raw=limited.raw;')
     parse_pos = source.find("JSON.parse(raw||'{}')")
-    require(errors, text_pos >= 0 and utf8_pos > text_pos and parse_pos > utf8_pos,
-            'Le corps doit être lu comme texte, mesuré en octets UTF-8, puis seulement parsé en JSON.')
+    require(errors, 0 <= stream_pos < rejected_pos < raw_pos < parse_pos,
+            'Le corps doit être lu par flux strict, rejeté si hors limite, puis seulement parsé en JSON.')
 
     action_pos = source.find('const {error:actionError}=await client.rpc(action,args);')
     safe_state_pos = source.find("client.rpc('fracture_engine_get_state_safe',{p_party_code:partyCode})")
@@ -137,8 +140,9 @@ def self_test() -> None:
 
     source_mutations = {
         'content-type retiré': source.replace("contentType.startsWith('application/json')", "contentType.startsWith('text/plain')", 1),
-        'req.json direct': source.replace('const raw=await req.text();', 'const raw=JSON.stringify(await req.json());', 1),
-        'mesure UTF-8 retirée': source.replace('new TextEncoder().encode(raw).byteLength', 'raw.length', 1),
+        'req.json direct': source.replace('const limited=await readLimitedUtf8Body(req,MAX_BODY_BYTES);', 'const limited={ok:true,raw:JSON.stringify(await req.json())};', 1),
+        'texte non borné': source.replace('const limited=await readLimitedUtf8Body(req,MAX_BODY_BYTES);', 'const limited={ok:true,raw:await req.text()};', 1),
+        'refus dépassement retiré': source.replace('if(!limited.ok)', 'if(false)', 1),
         'limite augmentée': source.replace('MAX_BODY_BYTES=32_000;', 'MAX_BODY_BYTES=320_000;', 1),
         'auth après corps': source.replace(
             '    const token=authorization.slice(7);',

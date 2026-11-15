@@ -42,6 +42,408 @@ def block_embedded_pdf(context) -> None:
     )
 
 
+
+
+def mock_web_reader(context) -> None:
+    """Liseuse en situation navigateur, sans accès serveur privé ni réseau CDN."""
+    context.unroute(f"**/{DEMO_BASENAME}")
+    context.route(
+        f"**/{DEMO_BASENAME}",
+        lambda route: route.fulfill(
+            status=200, content_type="application/pdf",
+            body=b"%PDF-1.7\n" + b"0" * 2048,
+        ),
+    )
+    context.route(
+        "**/npm/@supabase/supabase-js@2.119.0/+esm*",
+        lambda route: route.fulfill(
+            status=200,
+            content_type="text/javascript",
+            headers={"access-control-allow-origin": "*"},
+            body="export function createClient(){throw Error('Supabase privé non disponible au test démo')}",
+        ),
+    )
+    fake_pdfjs = """
+      export const GlobalWorkerOptions={workerSrc:''};
+      export function getDocument(){
+        return {promise:Promise.resolve({
+          numPages:82,
+          async getPage(pageNumber){
+            return {
+              async getTextContent(){
+                return {items:[
+                  {str:'Page '+pageNumber,transform:[1,0,0,1,10,500],width:80,height:12,hasEOL:true},
+                  {str:'Le texte est lisible dans la page.',transform:[1,0,0,1,10,482],width:180,height:12,hasEOL:true}
+                ]};
+              },
+              getViewport({scale}){return {width:600*scale,height:900*scale}},
+              render(){return {promise:Promise.resolve()}}
+            };
+          }
+        })};
+      }
+    """
+    context.route(
+        "**/pdfjs-dist@4.9.155/build/pdf.min.mjs*",
+        lambda route: route.fulfill(
+            status=200, content_type="text/javascript",
+            headers={"access-control-allow-origin": "*"},
+            body=fake_pdfjs,
+        ),
+    )
+    context.add_init_script("""
+      document.addEventListener('DOMContentLoaded',()=>{
+        if(!location.pathname.endsWith('/compte/liseuse.html'))return;
+        const style=document.createElement('style');
+        style.textContent='#reader-viewer{height:300px!important;min-height:300px!important} #reader-text{min-height:1800px!important}';
+        document.head.append(style);
+      });
+    """)
+
+
+
+def mock_private_reader(context) -> None:
+    """Essai exclusivement simulé : utilisateur fictif, aucun jeton/roman réel."""
+    fake_supabase = """
+      const user={id:'ci-fictitious-owner',email:'test@example.invalid'};
+      export function createClient(){
+        return {
+          auth:{
+            async getUser(){return {data:{user},error:null}},
+            mfa:{async getAuthenticatorAssuranceLevel(){
+              return {data:{currentLevel:'aal1',nextLevel:'aal1'},error:null};
+            }},
+            onAuthStateChange(callback){
+              window.__testReaderSignOut=()=>callback('SIGNED_OUT',null);
+              return {data:{subscription:{unsubscribe(){}}}};
+            }
+          },
+          functions:{async invoke(){
+            return {data:{ok:true,url:'https://gpvivleexywljowcqkru.supabase.co/storage/v1/object/sign/romans/test.pdf?token=fictitious'},error:null};
+          }},
+          from(){throw Error('Ne jamais interroger les tables pendant ce test')}
+        };
+      }
+    """
+    fake_pdfjs = """
+      export const GlobalWorkerOptions={workerSrc:''};
+      export function getDocument(){
+        window.__testPdfParsingStarted=true;
+        return {promise:new Promise(resolve=>{
+          window.__testCompletePdfParsing=()=>resolve({
+            numPages:520,
+            async destroy(){window.__testPdfDestroyed=true},
+            async getPage(){throw Error('Un PDF verrouillé ne doit jamais être affiché')}
+          });
+        })};
+      }
+    """
+    def javascript(route,body):
+        route.fulfill(status=200,content_type='text/javascript',
+            headers={'access-control-allow-origin':'*'},body=body)
+    context.route('**/npm/@supabase/supabase-js@2.119.0/+esm*',
+        lambda route: javascript(route,fake_supabase))
+    context.route('**/pdfjs-dist@4.9.155/build/pdf.min.mjs*',
+        lambda route: javascript(route,fake_pdfjs))
+    context.route('https://gpvivleexywljowcqkru.supabase.co/storage/v1/object/sign/**',
+        lambda route: route.fulfill(status=200, content_type='application/pdf',
+                                  headers={'access-control-allow-origin':'*'},
+                                  body=b'%PDF-1.7\n' + b'0'*2048))
+
+
+def assert_private_signout_during_load(browser):
+    """Déconnexion durant l'analyse PDF : le roman ne doit jamais apparaître."""
+    private_context=browser.new_context(locale='fr-CA',
+        viewport={'width':1440,'height':900})
+    mock_private_reader(private_context)
+    private_page=private_context.new_page()
+    errs=[]
+    collect_page_errors(private_page,errs)
+    try:
+        response=private_page.goto(urljoin(BASE_URL,'compte/liseuse.html?edition=integrale'),
+            wait_until='domcontentloaded',timeout=30_000)
+        assert_true(response is not None and response.status<400,
+            f'{BROWSER_NAME}: route intégrale privée introuvable')
+        private_page.wait_for_function(
+            '() => window.__testPdfParsingStarted===true && typeof window.__testReaderSignOut==="function"',
+            timeout=25_000)
+        assert_true(private_page.locator('#reader-content').is_hidden(),
+            f'{BROWSER_NAME}: contenu intégral visible avant autorisation finale')
+        private_page.evaluate('window.__testReaderSignOut()')
+        private_page.evaluate('window.__testCompletePdfParsing()')
+        private_page.wait_for_function(
+            '() => document.getElementById("reader-status")?.textContent.includes("Reconnectez-vous")',
+            timeout=12_000)
+        assert_true(private_page.locator('#reader-content').is_hidden(),
+            f'{BROWSER_NAME}: fuite visuelle après déconnexion durant le chargement')
+        assert_true(private_page.locator('#reader-text').text_content()=='',
+            f'{BROWSER_NAME}: contenu privé persistant après déconnexion')
+        assert_true(private_page.locator('#reader-error').is_visible(),
+            f'{BROWSER_NAME}: refus de session non signalé')
+        assert_true(private_page.evaluate(
+            "() => !Object.keys(localStorage).some(k => k.includes('roman-integral-pdf'))"),
+            f'{BROWSER_NAME}: livre privé stocké localement')
+        assert_true(private_page.evaluate('window.__testPdfDestroyed===true'),
+            f'{BROWSER_NAME}: ressources PDF non détruites après annulation')
+        assert_true(not errs, f'{BROWSER_NAME}: erreur JavaScript privée : {errs[:3]}')
+    finally:
+        private_context.close()
+
+
+
+def assert_private_cross_device_resume_mock(browser) -> None:
+    """V33 : deux navigateurs indépendants et un backend *simulé*.
+    Aucun compte réel, aucun PDF intégral, aucune opération en production.
+    Les contrôles RLS réels restent à vérifier séparément sur Supabase.
+    """
+    cloud = {}
+    schema = {"legacy": False}
+    network = {"online": True}
+    owner = "ci-fictional-reader-a"
+    other = "ci-fictional-reader-b"
+
+    def fake_backend(request):
+        table = request.get("table")
+        actor = request.get("actor")
+        method = request.get("method")
+        if table == "sinjira_novels" and method == "single":
+            return {"data": {"id": "ci-fictional-novel"}, "error": None}
+        if table != "sinjira_reader_library":
+            raise AssertionError("Table privée non prévue dans le test : " + str(table))
+        if method == "single":
+            columns = str(request.get("columns") or "")
+            if schema["legacy"] and "scroll_ratio" in columns:
+                return {"data": None, "error": {
+                    "code": "42703", "message": "column scroll_ratio does not exist"
+                }}
+            data = cloud.get(actor)
+            if data and schema["legacy"]:
+                data = {key: val for key, val in data.items() if key != "scroll_ratio"}
+            return {"data": data, "error": None}
+        if method == "upsert":
+            if not network["online"]:
+                return {"data": None, "error": {"code": "NETWORK_ERROR",
+                                              "message": "Simulated network outage"}}
+            payload = request.get("payload") or {}
+            if payload.get("user_id") != actor:
+                return {"error": {"code": "42501", "message": "RLS fake deny"}}
+            if schema["legacy"] and "scroll_ratio" in payload:
+                return {"error": {"code": "PGRST204",
+                                  "message": "Could not find the scroll_ratio column"}}
+            cloud[actor] = {**cloud.get(actor, {}), **payload}
+            if schema["legacy"]:
+                cloud[actor].pop("scroll_ratio", None)
+            return {"data": None, "error": None}
+        raise AssertionError("Opération de test inattendue : " + str(request))
+
+    fake_supabase = r"""
+const actor = __TEST_USER__;
+class Builder {
+  constructor(table){this.table=table;this.columns='';this.filters={};}
+  select(cols){this.columns=cols;return this;}
+  eq(key,value){this.filters[key]=value;return this;}
+  order(){return this;}
+  limit(){return Promise.resolve({data:[],error:null});}
+  maybeSingle(){return window.__sinjiraTestDb({
+    table:this.table,actor,method:'single',columns:this.columns,filters:this.filters
+  });}
+  upsert(payload){return window.__sinjiraTestDb({
+    table:this.table,actor,method:'upsert',payload
+  });}
+}
+export function createClient(){
+  const user={id:actor,email:'fictional@example.invalid'};
+  return {
+    auth:{
+      async getUser(){return {data:{user},error:null};},
+      mfa:{async getAuthenticatorAssuranceLevel(){
+        return {data:{currentLevel:'aal1',nextLevel:'aal1'},error:null};
+      }},
+      onAuthStateChange(){return {data:{subscription:{unsubscribe(){}}}};}
+    },
+    functions:{async invoke(name){
+      if(name!=='get-novel-file-url')throw Error('Unexpected function');
+      return {data:{ok:true,url:'https://gpvivleexywljowcqkru.supabase.co/storage/v1/object/sign/romans/ci-test.pdf?token=fictitious'},error:null};
+    }},
+    from(table){return new Builder(table);}
+  };
+}
+"""
+    fake_pdfjs = r"""
+export const GlobalWorkerOptions={workerSrc:''};
+export function getDocument(){
+  return {promise:Promise.resolve({
+    numPages:520,
+    async destroy(){},
+    async getPage(pageNumber){
+      return {
+        async getTextContent(){return {items:[
+          {str:'Page '+pageNumber,transform:[1,0,0,1,10,500],width:80,height:12,hasEOL:true},
+          {str:'Contenu artificiel pour le test de position.',transform:[1,0,0,1,10,480],width:250,height:12}
+        ]};},
+        getViewport({scale}){return {width:600*scale,height:900*scale};},
+        render(){return {promise:Promise.resolve()};}
+      };
+    }
+  })};
+}
+"""
+    contexts = []
+
+    def open_device(actor):
+        ctx = browser.new_context(locale="fr-CA", viewport={"width": 1440, "height": 920})
+        contexts.append(ctx)
+        ctx.route("**/npm/@supabase/supabase-js@2.119.0/+esm*",
+                  lambda route: route.fulfill(
+                      status=200, content_type="text/javascript",
+                      headers={"access-control-allow-origin": "*"},
+                      body=fake_supabase.replace("__TEST_USER__", json.dumps(actor))))
+        ctx.route("**/pdfjs-dist@4.9.155/build/pdf.min.mjs*",
+                  lambda route: route.fulfill(
+                      status=200, content_type="text/javascript",
+                      headers={"access-control-allow-origin": "*"}, body=fake_pdfjs))
+        ctx.route("https://gpvivleexywljowcqkru.supabase.co/storage/v1/object/sign/**",
+                  lambda route: route.fulfill(
+                      status=200, content_type="application/pdf",
+                      headers={"access-control-allow-origin": "*"},
+                      body=b"%PDF-1.7\n" + b"0" * 2048))
+        ctx.add_init_script("""
+          document.addEventListener('DOMContentLoaded',()=>{
+            const style=document.createElement('style');
+            style.textContent='#reader-viewer{height:300px!important;min-height:300px!important} #reader-text{min-height:1800px!important}';
+            document.head.append(style);
+          });
+        """)
+        page = ctx.new_page()
+        page.expose_function("__sinjiraTestDb", fake_backend)
+        response = page.goto(
+            urljoin(BASE_URL, "compte/liseuse.html?edition=integrale"),
+            wait_until="domcontentloaded", timeout=30_000)
+        assert_true(response is not None and response.status < 400,
+                    f"{BROWSER_NAME}: page privée simulée indisponible")
+        page.locator("#reader-content:not([hidden])").wait_for(timeout=25_000)
+        return page
+
+    try:
+        first = open_device(owner)
+        first.locator("#reader-page").fill("37")
+        first.locator("#reader-page").dispatch_event("change")
+        first.wait_for_function(
+            "() => document.getElementById('reader-text')?.textContent.includes('Page 37')")
+        # La restauration réinitialise temporairement le défilement :
+        # attendre ses frames avant une interaction réelle simulée.
+        first.evaluate("""() => new Promise(resolve =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)))""")
+        first.locator("#reader-viewer").evaluate("""(el) => {
+            el.style.setProperty('height','300px','important');
+            el.style.setProperty('min-height','300px','important');
+            el.style.setProperty('max-height','300px','important');
+            el.style.setProperty('overflow-y','auto','important');
+            document.getElementById('reader-text').style.setProperty('min-height','1800px','important');
+            el.scrollTop=420;
+            el.dispatchEvent(new Event('scroll'));
+        }""")
+        assert_true(first.locator("#reader-viewer").evaluate("(el) => el.scrollTop > 0"),
+                    f"{BROWSER_NAME}: impossible de simuler le défilement privé")
+        first.locator("#reader-save-position").click()
+        first.wait_for_function(
+            "() => document.getElementById('reader-position-status')?.textContent.includes('synchronisés sur votre compte')",
+            timeout=15_000)
+        saved = cloud.get(owner)
+        assert_true(saved is not None and saved.get("last_page") == 37
+                    and 0 < saved.get("scroll_ratio", 0) < 1,
+                    f"{BROWSER_NAME}: position précise du compte non enregistrée "
+                    f"(last_page={saved.get('last_page') if saved else None}, "
+                    f"scroll_ratio={saved.get('scroll_ratio') if saved else None})")
+        assert_true("text" not in saved and "content" not in saved,
+                    f"{BROWSER_NAME}: le texte privé ne doit pas être enregistré")
+        ratio = saved["scroll_ratio"]
+        second = open_device(owner)
+        assert_true(second.locator("#reader-page").input_value() == "37",
+                    f"{BROWSER_NAME}: la page du compte n'est pas reprise sur appareil B")
+        assert_true("reprise depuis votre compte" in
+                    second.locator("#reader-position-status").inner_text(),
+                    f"{BROWSER_NAME}: origine cloud non identifiée")
+        second.wait_for_function(
+            "() => document.getElementById('reader-viewer')?.scrollTop > 0",
+            timeout=15_000)
+        restored = second.locator("#reader-viewer").evaluate(
+            "(el) => el.scrollTop / Math.max(1,el.scrollHeight-el.clientHeight)")
+        assert_true(abs(restored - ratio) < 0.04,
+                    f"{BROWSER_NAME}: défilement cloud non repris ({restored} ≠ {ratio})")
+        third = open_device(other)
+        assert_true(third.locator("#reader-page").input_value() == "4",
+                    f"{BROWSER_NAME}: progression d'un autre utilisateur exposée par le mock")
+        assert_true(other not in cloud,
+                    f"{BROWSER_NAME}: donnée de lecture attribuée au mauvais compte")
+
+        # V34 : une panne réseau ne doit ni effacer la page locale ni exposer
+        # un autre compte. À la reconnexion, comparer d'abord les dates.
+        network["online"] = False
+        first.locator("#reader-page").fill("42")
+        first.locator("#reader-page").dispatch_event("change")
+        first.wait_for_function(
+            "() => document.getElementById('reader-text')?.textContent.includes('Page 42')")
+        first.locator("#reader-save-position").click()
+        first.wait_for_function(
+            "() => document.getElementById('reader-position-status')?.textContent.includes('Synchronisation du compte indisponible')",
+            timeout=15_000)
+        assert_true(cloud[owner]["last_page"] == 37,
+                    f"{BROWSER_NAME}: données distantes modifiées pendant coupure")
+        pending = first.evaluate(
+            "() => localStorage.getItem('sinjira:liseuse:integrale:la-cendre-du-jugement:ci-fictional-reader-a:pending')")
+        assert_true(bool(pending),
+                    f"{BROWSER_NAME}: sauvegarde locale en attente absente")
+        network["online"] = True
+        first.evaluate("window.dispatchEvent(new Event('online'))")
+        first.wait_for_function(
+            "() => document.getElementById('reader-position-status')?.textContent.includes('Connexion rétablie')",
+            timeout=15_000)
+        assert_true(cloud[owner]["last_page"] == 42,
+                    f"{BROWSER_NAME}: reprise automatique après coupure non synchronisée")
+        assert_true(first.evaluate(
+            "() => localStorage.getItem('sinjira:liseuse:integrale:la-cendre-du-jugement:ci-fictional-reader-a:pending')") is None,
+            f"{BROWSER_NAME}: marqueur de synchronisation non purgé après succès")
+
+        # Compatibilité avec la version serveur qui ne possède que last_page.
+        schema["legacy"] = True
+        legacy = open_device(owner)
+        assert_true(legacy.locator("#reader-page").input_value() == "42",
+                    f"{BROWSER_NAME}: ancienne sauvegarde serveur non reprise")
+        legacy.locator("#reader-page").fill("39")
+        legacy.locator("#reader-page").dispatch_event("change")
+        legacy.locator("#reader-save-position").click()
+        legacy.wait_for_function(
+            "() => document.getElementById('reader-position-status')?.textContent.includes('Page synchronisée avec votre compte')",
+            timeout=15_000)
+        assert_true(cloud[owner]["last_page"] == 39 and
+                    "scroll_ratio" not in cloud[owner],
+                    f"{BROWSER_NAME}: fallback V31 n'a pas préservé la sauvegarde serveur")
+
+        # V34 : le compte plus récent ne doit pas être écrasé au retour du réseau.
+        network["online"] = False
+        legacy.locator("#reader-page").fill("40")
+        legacy.locator("#reader-page").dispatch_event("change")
+        legacy.wait_for_function(
+            "() => document.getElementById('reader-text')?.textContent.includes('Page 40')")
+        legacy.locator("#reader-save-position").click()
+        legacy.wait_for_function(
+            "() => document.getElementById('reader-position-status')?.textContent.includes('Synchronisation du compte indisponible')",
+            timeout=15_000)
+        cloud[owner] = {**cloud[owner], "last_page": 77,
+                        "updated_at": "2099-11-07T20:00:00.000Z"}
+        network["online"] = True
+        legacy.evaluate("window.dispatchEvent(new Event('online'))")
+        legacy.wait_for_function(
+            "() => document.getElementById('reader-position-status')?.textContent.includes('Une progression plus récente')",
+            timeout=15_000)
+        assert_true(cloud[owner]["last_page"] == 77,
+                    f"{BROWSER_NAME}: la reconnexion a écrasé une progression serveur plus récente")
+    finally:
+        for ctx in contexts:
+            ctx.close()
+
+
 def json_ld_graph(page) -> list[dict]:
     nodes: list[dict] = []
     scripts = page.locator('script[type="application/ld+json"]')
@@ -124,7 +526,9 @@ def run() -> None:
         download_link = page.locator(f'a[download="{DEMO_BASENAME}"]')
         assert_true(download_link.count() == 1, f"{BROWSER_NAME}: téléchargement PDF nommé absent ou dupliqué")
         assert_true(download_link.get_attribute("type") == "application/pdf", f"{BROWSER_NAME}: type PDF du téléchargement absent")
-        assert_true(page.locator('a[href="/compte/bibliotheque.html#livre-i"]').count() == 1, f"{BROWSER_NAME}: accès privé Livre I absent de la fiche")
+        assert_true(page.locator('a[href="/compte/liseuse.html?edition=integrale"]').count() == 1, f"{BROWSER_NAME}: accès privé Livre I absent de la fiche")
+        assert_true(page.locator('a[href="/compte/liseuse.html?edition=demo"]').count() >= 1,
+                    f"{BROWSER_NAME}: lien vers la liseuse gratuite absent")
         assert_no_full_edition_link(page, "Littérature")
 
         pdf_head = context.request.head(urljoin(BASE_URL, DEMO_ROUTE), timeout=30_000)
@@ -176,7 +580,7 @@ def run() -> None:
         assert_true(FULL_BASENAME not in page.content(), f"{BROWSER_NAME}: nom du fichier intégral exposé dans le lecteur")
 
         assert_true(page.locator('body[data-reader-total-pages="82"]').count() == 1, f"{BROWSER_NAME}: pagination canonique 82 pages absente du lecteur")
-        assert_true(page.locator('a[href="/compte/bibliotheque.html#livre-i"]').count() == 1, f"{BROWSER_NAME}: accès privé Livre I absent du lecteur")
+        assert_true(page.locator('a[href="/compte/liseuse.html?edition=integrale"]').count() == 1, f"{BROWSER_NAME}: accès privé Livre I absent du lecteur")
         assert_true(page.locator('input[data-reader-page-number][aria-label="Numéro de page"]').count() == 1, f"{BROWSER_NAME}: champ de page lecteur non nommé")
         assert_true(page.locator("input[data-reader-page-number]").get_attribute("max") == "82", f"{BROWSER_NAME}: maximum du lecteur différent de 82")
         assert_true(page.locator('[data-reader-resume][aria-live="polite"]').count() == 1, f"{BROWSER_NAME}: reprise lecteur non annoncée aux aides techniques")
@@ -185,6 +589,134 @@ def run() -> None:
         assert_true(DEMO_BASENAME in (frame.get_attribute("src") or ""), f"{BROWSER_NAME}: iframe ne pointe plus vers la démo stable")
         assert_true("82 pages" in page.locator("main").inner_text(), f"{BROWSER_NAME}: lecteur ne décrit plus la démo 82 pages")
         assert_no_full_edition_link(page, "lecteur")
+
+        # Nouvelle liseuse Web : aucune URL signée privée, aucune dépendance serveur réelle.
+        mock_web_reader(context)
+        response=page.goto(urljoin(BASE_URL,"compte/liseuse.html?edition=demo"),
+                           wait_until="domcontentloaded",timeout=30_000)
+        assert_true(response is not None and response.status < 400,
+                    f"{BROWSER_NAME}: nouvelle liseuse inaccessible")
+        page.locator("#reader-content:not([hidden])").wait_for(timeout=20_000)
+        try:
+            page.wait_for_function(
+                "() => (document.getElementById('reader-text')?.textContent?.trim().length || 0) > 20",
+                timeout=25_000,
+            )
+        except Exception as exc:
+            debug=page.evaluate("""() => ({
+              mode:document.getElementById('reader-mode')?.textContent,
+              text:document.getElementById('reader-text')?.textContent?.slice(0,220),
+              hidden:document.getElementById('reader-text')?.hidden,
+              status:document.getElementById('reader-status')?.textContent,
+              page:document.getElementById('reader-page')?.value
+            })""")
+            raise AssertionError(f"{BROWSER_NAME}: texte non affiché; debug={debug}; erreurs={errors[-5:]}") from exc
+        initial_text=page.locator("#reader-text").text_content() or ""
+        assert_true(len(initial_text.strip())>20,
+                    f"{BROWSER_NAME}: texte reformatable absent de la liseuse")
+        assert_true(not page.locator("#reader-text").is_hidden(),
+                    f"{BROWSER_NAME}: le texte n'est pas le mode de lecture par défaut")
+        page.locator("#reader-size").evaluate(
+            "(el) => {el.value='28';el.dispatchEvent(new Event('input',{bubbles:true}));}"
+        )
+        assert_true(page.locator("#reader-size-value").inner_text()=="28 px",
+                    f"{BROWSER_NAME}: taille du texte non personnalisable")
+        page.locator("#reader-font").select_option("sans")
+        assert_true(page.locator("#reader-text").evaluate(
+                    "e => getComputedStyle(e).fontFamily.includes('system-ui')"),
+                    f"{BROWSER_NAME}: choix de police non appliqué")
+        page.locator("#reader-line-height").select_option("2.1")
+        page.locator("#reader-theme").select_option("nuit")
+        assert_true(page.locator("body").get_attribute("data-read-theme")=="nuit",
+                    f"{BROWSER_NAME}: thème de lecture non appliqué")
+        initial_page=int(page.locator("#reader-page").input_value())
+        page.locator("#reader-next").click()
+        next_page=initial_page+1
+        assert_true(page.locator("#reader-page").input_value()==str(next_page),
+                    f"{BROWSER_NAME}: pagination de la liseuse défectueuse")
+        page.wait_for_function(
+            "(previous) => {const t=document.getElementById('reader-text')?.textContent || ''; return t.trim().length>20 && t!==previous}",
+            arg=initial_text, timeout=15_000,
+        )
+        assert_true((page.locator("#reader-text").text_content() or "")!=initial_text,
+                    f"{BROWSER_NAME}: texte de la page suivante non affiché")
+        # V31 : enregistrer explicitement sa position et la retrouver après fermeture.
+        # V33 : attendre la fin du rendu et des deux frames de restauration avant de défiler.
+        # Sur Chromium/WebKit, la pose du style de test peut précéder le layout final.
+        page.wait_for_function("""() => document.getElementById('reader-text')?.textContent.trim().length>20""")
+        page.evaluate("""() => new Promise(resolve =>
+          requestAnimationFrame(() => requestAnimationFrame(resolve)))""")
+        page.locator("#reader-viewer").evaluate("""(el) => {
+            el.style.setProperty('height','300px','important');
+            el.style.setProperty('min-height','300px','important');
+            el.style.setProperty('max-height','300px','important');
+            el.style.setProperty('overflow-y','auto','important');
+            document.getElementById('reader-text').style.setProperty('min-height','1800px','important');
+            el.scrollTop=450;
+            el.dispatchEvent(new Event('scroll'));
+        }""")
+        assert_true(page.locator("#reader-viewer").evaluate("(el) => el.scrollTop > 0"),
+                    f"{BROWSER_NAME}: impossible de tester la position intrapage")
+        assert_true(page.locator("#reader-save-position").count()==1,
+                    f"{BROWSER_NAME}: sauvegarde de lecture absente")
+        page.locator("#reader-save-position").click()
+        assert_true("Position enregistrée" in page.locator("#reader-position-status").inner_text(),
+                    f"{BROWSER_NAME}: accusé de sauvegarde manuelle absent")
+        saved_page=int(page.locator("#reader-page").input_value())
+        saved_spot=page.evaluate("""() => JSON.parse(localStorage.getItem(
+            'sinjira:liseuse:demo:la-cendre-du-jugement:spot'))""")
+        assert_true(saved_spot is not None and saved_spot["page"]==saved_page
+                    and 0<saved_spot["ratio"]<=1,
+                    f"{BROWSER_NAME}: position locale invalide")
+        assert_true("text" not in saved_spot and "content" not in saved_spot,
+                    f"{BROWSER_NAME}: le texte du roman ne doit pas être sauvegardé")
+        page.reload(wait_until="domcontentloaded",timeout=30_000)
+        page.locator("#reader-content:not([hidden])").wait_for(timeout=20_000)
+        assert_true(page.locator("#reader-page").input_value()==str(saved_page),
+                    f"{BROWSER_NAME}: la position n'est pas reprise à la réouverture")
+        assert_true("reprise depuis cet appareil" in page.locator("#reader-position-status").inner_text(),
+                    f"{BROWSER_NAME}: retour à la dernière position non confirmé")
+        page.wait_for_function(
+            "() => document.getElementById('reader-viewer')?.scrollTop > 0",
+            timeout=15_000)
+        assert_true(page.locator("#reader-viewer").evaluate("(el) => el.scrollTop > 0"),
+                    f"{BROWSER_NAME}: le défilement intrapage n'a pas été restauré")
+
+        for control in ("reader-voice-play","reader-voice-pause","reader-voice-stop",
+                        "reader-voice","reader-speed","reader-voice-auto"):
+            assert_true(page.locator("#"+control).count()==1,
+                        f"{BROWSER_NAME}: commande vocale absente : "+control)
+        assert_no_full_edition_link(page,"nouvelle liseuse")
+
+        # V28 : repères de la démo, mode concentré, recherche et confidentialité.
+        for control in ("reader-bookmark-add","reader-highlight-save","reader-note-input",
+                        "reader-note-save","reader-marks-list","reader-search-field",
+                        "reader-search-submit","reader-search-cancel","reader-search-results",
+                        "reader-reading-stats","reader-focus","reader-chapter-next"):
+            assert_true(page.locator("#"+control).count()==1,
+                        f"{BROWSER_NAME}: commande V28 absente : "+control)
+        page.locator(".reader-bookmarks summary").click()
+        page.locator("#reader-bookmark-add").click()
+        assert_true("Signet" in page.locator("#reader-marks-list").inner_text(),
+                    f"{BROWSER_NAME}: marque-page de démo non créé")
+        page.locator("#reader-note-input").fill("Mon repère privé de test.")
+        page.locator("#reader-note-save").click()
+        assert_true("Mon repère privé de test." in page.locator("#reader-marks-list").inner_text(),
+                    f"{BROWSER_NAME}: note personnelle non enregistrée")
+        saved_marks=page.evaluate("localStorage.getItem('sinjira:liseuse:demo:marks:v28')")
+        assert_true("Mon repère privé de test." in (saved_marks or ""),
+                    f"{BROWSER_NAME}: la démo ne conserve pas les notes sur cet appareil")
+        page.locator("#reader-focus").click()
+        assert_true("reader-focus-mode" in (page.locator("body").get_attribute("class") or ""),
+                    f"{BROWSER_NAME}: mode lecture concentré inactif")
+        page.locator("#reader-focus").click()
+        assert_true("reader-focus-mode" not in (page.locator("body").get_attribute("class") or ""),
+                    f"{BROWSER_NAME}: impossible de quitter le mode concentré")
+
+
+        # Protéger aussi l'édition intégrale pendant une déconnexion en vol.
+        assert_private_signout_during_load(browser)
+        assert_private_cross_device_resume_mock(browser)
 
         mobile = browser.new_context(
             locale="fr-CA",

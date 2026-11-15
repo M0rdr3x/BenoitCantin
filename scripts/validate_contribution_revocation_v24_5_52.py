@@ -27,7 +27,8 @@ def main() -> int:
         "req.method !== 'POST'",
         'MAX_REQUEST_BYTES=2048',
         'readBoundedJson',
-        'TextEncoder',
+        'readLimitedUtf8Body',
+        'limited-body.mjs',
         'JSON_REQUIRED',
         'REQUEST_TOO_LARGE',
         'INVALID_JSON',
@@ -47,6 +48,12 @@ def main() -> int:
     for marker in markers:
         if marker not in source:
             errors.append(f'Garde-fou V24.5.52 absent: {marker}')
+
+    if 'await req.text()' in source:
+        errors.append('Lecture HTTP complète avant limite de taille interdite.')
+    if "console.error('[delete-player-account]',error)" in source or (
+            "console.error('[revoke-my-contributions]',error)" in source):
+        errors.append('Journalisation d’erreur fournisseur brute interdite.')
 
     if 'await req.json()' in source:
         errors.append('Lecture JSON directe non bornée interdite.')

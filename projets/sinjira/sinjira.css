@@ -85,3 +85,19 @@
   border-radius:18px;
   background:#05070c;
 }
+
+/* Canaux officiels SINJIRA — lisibles sur mobile et navigables au clavier. */
+.sinjira-official-channels{padding:clamp(24px,4vw,44px) 0;background:linear-gradient(110deg,rgba(255,104,77,.09),rgba(255,255,255,.025));border-block:1px solid rgba(255,255,255,.08)}
+.sinjira-official-channels-inner{display:grid;grid-template-columns:minmax(220px,.85fr) minmax(0,1.15fr);gap:clamp(18px,4vw,42px);align-items:center}
+.sinjira-official-channels-heading h2{margin:.25rem 0;font-size:clamp(1.35rem,2.5vw,1.85rem)}
+.sinjira-official-channels-heading p{margin:.4rem 0 0;color:var(--muted,#c9c9d1)}
+.sinjira-official-channels-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.sinjira-official-channel{display:flex;align-items:center;gap:14px;min-width:0;min-height:76px;padding:16px;border:1px solid rgba(255,255,255,.17);border-radius:18px;background:rgba(12,15,23,.86);color:#fff;text-decoration:none;overflow-wrap:anywhere}
+.sinjira-official-channel:hover{border-color:rgba(255,176,116,.78);background:rgba(28,31,42,.92)}
+.sinjira-official-channel:focus-visible{outline:3px solid #ffb074;outline-offset:3px}
+.sinjira-channel-icon{display:block;width:36px;height:36px;flex:0 0 36px}
+.sinjira-official-channel span{display:grid;gap:3px;min-width:0}
+.sinjira-official-channel strong{font-size:1rem;line-height:1.3}
+.sinjira-official-channel small{font-size:.86rem;line-height:1.4;color:#dadbe3;overflow-wrap:anywhere}
+@media(max-width:900px){.sinjira-official-channels-inner{grid-template-columns:1fr}}
+@media(max-width:530px){.sinjira-official-channels-links{grid-template-columns:1fr}.sinjira-official-channel{min-height:68px}}

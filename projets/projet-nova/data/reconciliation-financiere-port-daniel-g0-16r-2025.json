@@ -1,0 +1,406 @@
+{
+  "schema": "nova-g016r-port-daniel-2025-audited-qualified/v1",
+  "phase": "G0.16r",
+  "date": "2026-11-08",
+  "score_before": 47,
+  "score_after": 47,
+  "case": "PORT_DANIEL_GASCONS_02047",
+  "source": {
+    "url": "https://www.mamh.gouv.qc.ca/documentsfinanciersweb/Rapport-financier-2025-et-autres-02047.pdf",
+    "name": "Rapport financier 2025 et autres documents de Port-Daniel–Gascons",
+    "end_date": "2025-12-31",
+    "treasurer_sign_date": "2026-06-08",
+    "auditor_report_date": "2026-06-08",
+    "auditor": "Raymond Chabot Grant Thornton S.E.N.C.R.L.",
+    "auditor_opinion": "QUALIFIED",
+    "qualified_reason": "Obligations de mise hors service d'immobilisations non évaluées, non comptabilisées et non divulguées; incidences non quantifiées.",
+    "pages_zero_index": {
+      "opinion": 3,
+      "operations": 7,
+      "position": 8,
+      "cash_flow": 10,
+      "interest": 15,
+      "receivables": 16,
+      "temporary_borrowing": 17,
+      "debt": 18,
+      "capital_assets": 21,
+      "non_audited_debt_analysis": 63
+    },
+    "pdf_screenshot_attempted": true,
+    "pdf_screenshot_outcome": "CACHE_MISS",
+    "verification": "OFFICIAL_PDF_TEXT_EXTRACTED_SCREENSHOT_UNAVAILABLE",
+    "nontarget_supplementary_schedules_unqualified": false,
+    "independent_audit_of_projet_nova": false
+  },
+  "realized_2025": {
+    "classification": "AUDITED_ACCRUAL_WITH_QUALIFIED_OPINION",
+    "revenues_total_cad": 25730544,
+    "expenses_total_cad": 7021908,
+    "accrual_surplus_cad": 18708636,
+    "recognized_tax_revenue_cad": 4525681,
+    "recognized_transfer_revenue_cad": 20524044,
+    "recognized_financing_cost_cad": 668007,
+    "transfer_revenues_confirmed_cash_cad": null,
+    "primeau_specific_paid_cad": null,
+    "gascons_specific_capital_cad": null
+  },
+  "position_2025": {
+    "classification": "AGGREGATE_MUNICIPAL_BALANCE_NOT_SPECIFIC_TO_GASCONS",
+    "cash_end_cad": 1999351,
+    "receivables_cad": 29672283,
+    "quebec_government_receivables_cad": 28617428,
+    "mamh_other_receivables_cad": 26909292,
+    "financial_assets_cad": 31671634,
+    "temporary_borrowings_end_cad": 18571000,
+    "accounts_payable_cad": 6145462,
+    "capital_payable_cad": 5612444,
+    "long_term_debt_gross_cad": 17430500,
+    "long_term_debt_net_deferred_fees_cad": 17291559,
+    "total_liabilities_cad": 42198356,
+    "financial_net_debt_cad": 10526722,
+    "tangible_capital_assets_net_cad": 58329564,
+    "asset_retirement_obligations_quantified_cad": null
+  },
+  "cash_flow_2025": {
+    "classification": "AUDITED_AGGREGATE_CASH_FLOW_WITH_QUALIFICATION",
+    "opening_cash_cad": 549175,
+    "operating_cad": 2095979,
+    "capital_acquisition_outflow_cad": 16969080,
+    "financing_cad": 16323277,
+    "change_in_cash_cad": 1450176,
+    "closing_cash_cad": 1999351,
+    "new_long_term_borrowings_cad": 650000,
+    "principal_repayments_cad": 1690200,
+    "temporary_borrowings_net_change_cad": 17429000,
+    "interest_paid_cad": 617674,
+    "primeau_project_specific_cash_receipts_cad": null,
+    "gascons_specific_invoice_payments_cad": null
+  },
+  "reconciliation": {
+    "recognized_capital_additions_cad": 22581524,
+    "capital_work_in_progress_additions_cad": 22138647,
+    "capital_payable_cad": 5612444,
+    "capital_cash_outflow_cad": 16969080,
+    "identity": "22581524 - 5612444 = 16969080",
+    "identity_is_accounting_not_project_certification": true
+  },
+  "debt": {
+    "temporary_end_2024_cad": 1142000,
+    "temporary_end_2025_cad": 18571000,
+    "temporary_net_change_2025_cad": 17429000,
+    "long_term_debt_end_2024_cad": 18470700,
+    "long_term_debt_issued_2025_cad": 650000,
+    "principal_paid_2025_cad": 1690200,
+    "long_term_debt_end_2025_cad": 17430500,
+    "temporary_credit_authorized_investment_ceiling_cad": 56596000,
+    "authorization_is_not_drawn": true,
+    "net_draw_is_not_gross_tranche": true,
+    "project_allocation_not_verified": true,
+    "not_additive_to_2026_pti": true
+  },
+  "context_2026_forecast": {
+    "previous_file": "data/preuves-budget-port-daniel-g0-16q-2026.json",
+    "revenues_cad": 6580654,
+    "operating_expenses_cad": 6631925,
+    "pti_2026_2028_cad": 33100000,
+    "classification": "2026_ADOPTED_FORECAST_NOT_2025_ACTUAL_OR_2026_PAID"
+  },
+  "scope_controls": [
+    "2025 recognized government transfers are NOT proof of cash disbursements or project-specific PRIMEAU payments",
+    "2025 accrued surplus is NOT a cash surplus",
+    "2025 capital spending cash is municipality-wide, NOT attributable to the Gascons construction without ledger",
+    "2025 qualified audit does NOT certify the Projet Nova program",
+    "Asset retirement obligations remain unquantified and may alter reported costs and obligations",
+    "2025 temporary borrowing balances are NOT the 2025 borrowing ceiling",
+    "2026 municipal budget is a forecast and 2026 capital plan is a planned authorization",
+    "Do NOT aggregate 2025 borrowing authorization with 2026 PTI",
+    "Unknown project cash payment is NOT zero payment",
+    "No 2-levy tax rate, Nova savings, or funded 10-year model is established"
+  ],
+  "outstanding": [
+    {
+      "id": "R01",
+      "name": "Primeau project-level agreement, remittance advice and deposit evidence",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "R02",
+      "name": "Breakdown of municipality-wide 2025 paid capital invoices by contract and Gascons project",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "R03",
+      "name": "Temporary debt loan statements, amortization and draw schedule",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "R04",
+      "name": "2026 actual annual financial statements when available",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "R05",
+      "name": "Valuation of asset retirement obligations causing audit qualification",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "R06",
+      "name": "Water services and ongoing staffing obligations",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "R07",
+      "name": "Anonymised bills and income distributions",
+      "status": "UNVERIFIED"
+    },
+    {
+      "id": "R08",
+      "name": "External audit of Nova Québec-in-Canada and sovereign ten-year scenarios",
+      "status": "UNVERIFIED"
+    }
+  ],
+  "models": [
+    {
+      "id": "QUEBEC_CANADA",
+      "financial_audit_passed": false,
+      "years": [
+        {
+          "year": 2026,
+          "revenu_impot_nova_cad": null,
+          "prelevement_paradis_fiscaux_cad": null,
+          "financement_municipal_cad": null,
+          "charges_services_cad": null,
+          "emploi_et_droits_cad": null,
+          "dette_service_cad": null,
+          "soutien_federal_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2027,
+          "revenu_impot_nova_cad": null,
+          "prelevement_paradis_fiscaux_cad": null,
+          "financement_municipal_cad": null,
+          "charges_services_cad": null,
+          "emploi_et_droits_cad": null,
+          "dette_service_cad": null,
+          "soutien_federal_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2028,
+          "revenu_impot_nova_cad": null,
+          "prelevement_paradis_fiscaux_cad": null,
+          "financement_municipal_cad": null,
+          "charges_services_cad": null,
+          "emploi_et_droits_cad": null,
+          "dette_service_cad": null,
+          "soutien_federal_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2029,
+          "revenu_impot_nova_cad": null,
+          "prelevement_paradis_fiscaux_cad": null,
+          "financement_municipal_cad": null,
+          "charges_services_cad": null,
+          "emploi_et_droits_cad": null,
+          "dette_service_cad": null,
+          "soutien_federal_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2030,
+          "revenu_impot_nova_cad": null,
+          "prelevement_paradis_fiscaux_cad": null,
+          "financement_municipal_cad": null,
+          "charges_services_cad": null,
+          "emploi_et_droits_cad": null,
+          "dette_service_cad": null,
+          "soutien_federal_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2031,
+          "revenu_impot_nova_cad": null,
+          "prelevement_paradis_fiscaux_cad": null,
+          "financement_municipal_cad": null,
+          "charges_services_cad": null,
+          "emploi_et_droits_cad": null,
+          "dette_service_cad": null,
+          "soutien_federal_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2032,
+          "revenu_impot_nova_cad": null,
+          "prelevement_paradis_fiscaux_cad": null,
+          "financement_municipal_cad": null,
+          "charges_services_cad": null,
+          "emploi_et_droits_cad": null,
+          "dette_service_cad": null,
+          "soutien_federal_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2033,
+          "revenu_impot_nova_cad": null,
+          "prelevement_paradis_fiscaux_cad": null,
+          "financement_municipal_cad": null,
+          "charges_services_cad": null,
+          "emploi_et_droits_cad": null,
+          "dette_service_cad": null,
+          "soutien_federal_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2034,
+          "revenu_impot_nova_cad": null,
+          "prelevement_paradis_fiscaux_cad": null,
+          "financement_municipal_cad": null,
+          "charges_services_cad": null,
+          "emploi_et_droits_cad": null,
+          "dette_service_cad": null,
+          "soutien_federal_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2035,
+          "revenu_impot_nova_cad": null,
+          "prelevement_paradis_fiscaux_cad": null,
+          "financement_municipal_cad": null,
+          "charges_services_cad": null,
+          "emploi_et_droits_cad": null,
+          "dette_service_cad": null,
+          "soutien_federal_cad": null,
+          "solde_cad": null
+        }
+      ]
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "financial_audit_passed": false,
+      "years": [
+        {
+          "year": 2026,
+          "revenu_impot_nova_cad": null,
+          "prelevement_paradis_fiscaux_cad": null,
+          "financement_municipal_cad": null,
+          "charges_services_cad": null,
+          "emploi_et_droits_cad": null,
+          "dette_service_cad": null,
+          "soutien_federal_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2027,
+          "revenu_impot_nova_cad": null,
+          "prelevement_paradis_fiscaux_cad": null,
+          "financement_municipal_cad": null,
+          "charges_services_cad": null,
+          "emploi_et_droits_cad": null,
+          "dette_service_cad": null,
+          "soutien_federal_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2028,
+          "revenu_impot_nova_cad": null,
+          "prelevement_paradis_fiscaux_cad": null,
+          "financement_municipal_cad": null,
+          "charges_services_cad": null,
+          "emploi_et_droits_cad": null,
+          "dette_service_cad": null,
+          "soutien_federal_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2029,
+          "revenu_impot_nova_cad": null,
+          "prelevement_paradis_fiscaux_cad": null,
+          "financement_municipal_cad": null,
+          "charges_services_cad": null,
+          "emploi_et_droits_cad": null,
+          "dette_service_cad": null,
+          "soutien_federal_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2030,
+          "revenu_impot_nova_cad": null,
+          "prelevement_paradis_fiscaux_cad": null,
+          "financement_municipal_cad": null,
+          "charges_services_cad": null,
+          "emploi_et_droits_cad": null,
+          "dette_service_cad": null,
+          "soutien_federal_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2031,
+          "revenu_impot_nova_cad": null,
+          "prelevement_paradis_fiscaux_cad": null,
+          "financement_municipal_cad": null,
+          "charges_services_cad": null,
+          "emploi_et_droits_cad": null,
+          "dette_service_cad": null,
+          "soutien_federal_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2032,
+          "revenu_impot_nova_cad": null,
+          "prelevement_paradis_fiscaux_cad": null,
+          "financement_municipal_cad": null,
+          "charges_services_cad": null,
+          "emploi_et_droits_cad": null,
+          "dette_service_cad": null,
+          "soutien_federal_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2033,
+          "revenu_impot_nova_cad": null,
+          "prelevement_paradis_fiscaux_cad": null,
+          "financement_municipal_cad": null,
+          "charges_services_cad": null,
+          "emploi_et_droits_cad": null,
+          "dette_service_cad": null,
+          "soutien_federal_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2034,
+          "revenu_impot_nova_cad": null,
+          "prelevement_paradis_fiscaux_cad": null,
+          "financement_municipal_cad": null,
+          "charges_services_cad": null,
+          "emploi_et_droits_cad": null,
+          "dette_service_cad": null,
+          "soutien_federal_cad": null,
+          "solde_cad": null
+        },
+        {
+          "year": 2035,
+          "revenu_impot_nova_cad": null,
+          "prelevement_paradis_fiscaux_cad": null,
+          "financement_municipal_cad": null,
+          "charges_services_cad": null,
+          "emploi_et_droits_cad": null,
+          "dette_service_cad": null,
+          "soutien_federal_cad": null,
+          "solde_cad": null
+        }
+      ]
+    }
+  ],
+  "decision": {
+    "municipal_2025_audited_statement_found": true,
+    "qualified_audit_disclosed": true,
+    "actual_aggregate_cash_flows_observed": true,
+    "primeau_grant_cash_proven": false,
+    "gascons_project_ledger_verified": false,
+    "nova_financial_viability_proven": false,
+    "independent_nova_audit": false,
+    "earned_new_score_point": false
+  }
+}

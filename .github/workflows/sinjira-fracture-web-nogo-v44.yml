@@ -1,0 +1,43 @@
+name: SINJIRA — Fracture V44 garde anti-réactivation Web
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+    paths:
+      - 'projets/sinjira/jeux/fracture-du-reseau-mere/jouer.html'
+      - 'projets/sinjira/jeux/fracture-du-reseau-mere/index.html'
+      - 'scripts/validate_fracture_web_nogo_v44.py'
+      - 'tests/security/test_fracture_web_nogo_v44.py'
+      - 'docs/SINJIRA_FRACTURE_WEB_NOGO_V44.md'
+      - '.github/workflows/sinjira-fracture-web-nogo-v44.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'projets/sinjira/jeux/fracture-du-reseau-mere/jouer.html'
+      - 'projets/sinjira/jeux/fracture-du-reseau-mere/index.html'
+      - 'scripts/validate_fracture_web_nogo_v44.py'
+      - 'tests/security/test_fracture_web_nogo_v44.py'
+      - 'docs/SINJIRA_FRACTURE_WEB_NOGO_V44.md'
+      - '.github/workflows/sinjira-fracture-web-nogo-v44.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: sinjira-fracture-web-nogo-v44-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  fail_closed_public_gate:
+    name: Écarter formulaire, ancien moteur et activation accidentelle
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Vérifier les fichiers de la PR sans conserver de secrets
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Contrôler la page de jeu suspendue
+        run: python3 scripts/validate_fracture_web_nogo_v44.py
+      - name: Tester les tentatives adversariales d'activation
+        run: python3 -m unittest discover -s tests/security -p test_fracture_web_nogo_v44.py -v
+      - name: Régression des règles physiques V36
+        run: python3 scripts/validate_fracture_mechanics_v36.py

@@ -1,0 +1,782 @@
+{
+  "schema": "nova-g016j-municipal-service-costs/v1",
+  "project": "Projet Nova",
+  "stage": "G0.16j",
+  "record_date": "2026-11-07",
+  "status": "HISTORICAL_EXPENSE_RECONCILIATION_ONLY",
+  "adopted": false,
+  "score_before": 47,
+  "score_after": 47,
+  "primary_pdf": {
+    "url": "https://cdn-contenu.quebec.ca/cdn-contenu/adm/min/affaires-municipales/publications/finances_indicateurs_fiscalite/information_financiere/rapports_financiers_organismes_municipaux/2024/RAP_financier_2024_sommation_municipalites_locales.pdf",
+    "publisher": "Ministère des Affaires municipales et de l'Habitation",
+    "year": 2024,
+    "comparison_year": 2023,
+    "municipalities_count": 1056,
+    "non_exhaustive": true,
+    "pages": [
+      {
+        "pdf_page_zero_based": 7,
+        "printed_page": "S7 / 3",
+        "content": "État consolidé des résultats",
+        "section_detailed_not_audited": false
+      },
+      {
+        "pdf_page_zero_based": 51,
+        "printed_page": "S28 / 47",
+        "content": "Analyse des charges consolidées — sécurité et transports",
+        "section_detailed_not_audited": true
+      },
+      {
+        "pdf_page_zero_based": 52,
+        "printed_page": "S28 / 48",
+        "content": "Analyse des charges consolidées — hygiène et santé",
+        "section_detailed_not_audited": true
+      }
+    ],
+    "images_reviewed_by_analyst": true,
+    "external_independent_reviewer_for_nova": false,
+    "population_by_municipality_not_available": true,
+    "municipal_level_records_imported": false,
+    "comparison_perimeter_identical_years_not_proven": true,
+    "source_date_scope": "Somme de municipalités locales incluses; aucun autre organisme municipal sans consolidation séparée"
+  },
+  "reference_total": {
+    "y2024": 28366959822,
+    "y2023": 26469048805,
+    "revenues2024": 32109026468,
+    "financing_already_in_expenses2024": 1332060734
+  },
+  "functions": [
+    {
+      "id": "ADMIN",
+      "y2024": 3441813458,
+      "y2023": 3115734876,
+      "already_in_total": true
+    },
+    {
+      "id": "SECURITE",
+      "y2024": 4510158652,
+      "y2023": 4218784701,
+      "already_in_total": true
+    },
+    {
+      "id": "TRANSPORT",
+      "y2024": 8699354143,
+      "y2023": 8336293056,
+      "already_in_total": true
+    },
+    {
+      "id": "MILIEU",
+      "y2024": 4178810239,
+      "y2023": 3889761273,
+      "already_in_total": true
+    },
+    {
+      "id": "SANTE_BIEN_ETRE",
+      "y2024": 599704334,
+      "y2023": 519887878,
+      "already_in_total": true
+    },
+    {
+      "id": "AMENAGEMENT",
+      "y2024": 1368707794,
+      "y2023": 1236665107,
+      "already_in_total": true
+    },
+    {
+      "id": "LOISIRS_CULTURE",
+      "y2024": 3813614056,
+      "y2023": 3569750989,
+      "already_in_total": true
+    },
+    {
+      "id": "ELECTRICITE",
+      "y2024": 409672407,
+      "y2023": 398862206,
+      "already_in_total": true
+    },
+    {
+      "id": "FINANCEMENT",
+      "y2024": 1332060734,
+      "y2023": 1181427913,
+      "already_in_total": true
+    },
+    {
+      "id": "RESTRUCTURATION",
+      "y2024": 13064005,
+      "y2023": 1880806,
+      "already_in_total": true
+    }
+  ],
+  "details": [
+    {
+      "id": "POLICE",
+      "group": "SECURITE",
+      "y2024": 2769781797,
+      "y2023": 2587664526,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "INCENDIE_PREMIERS_REPONDANTS",
+      "group": "SECURITE",
+      "y2024": 52861631,
+      "y2023": 21029770,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "INCENDIE_AUTRES",
+      "group": "SECURITE",
+      "y2024": 1480250246,
+      "y2023": 1418116899,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "SECURITE_CIVILE",
+      "group": "SECURITE",
+      "y2024": 79409647,
+      "y2023": 78764232,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "SECURITE_AUTRES",
+      "group": "SECURITE",
+      "y2024": 127855331,
+      "y2023": 113209274,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "VOIRIE",
+      "group": "TRANSPORT",
+      "y2024": 2551882022,
+      "y2023": 2385469323,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "DENEIGEMENT",
+      "group": "TRANSPORT",
+      "y2024": 1159992215,
+      "y2023": 1254057731,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "ECLAIRAGE_RUES",
+      "group": "TRANSPORT",
+      "y2024": 168759751,
+      "y2023": 165711268,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "CIRCULATION_STATIONNEMENT",
+      "group": "TRANSPORT",
+      "y2024": 359607348,
+      "y2023": 332660965,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "TRANSPORT_EN_COMMUN",
+      "group": "TRANSPORT",
+      "y2024": 4187478816,
+      "y2023": 3951481215,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "TRANSPORT_AERIEN",
+      "group": "TRANSPORT",
+      "y2024": 34863926,
+      "y2023": 34082448,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "TRANSPORT_PAR_EAU",
+      "group": "TRANSPORT",
+      "y2024": 12742609,
+      "y2023": 9533192,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "TRANSPORT_AUTRES",
+      "group": "TRANSPORT",
+      "y2024": 224027456,
+      "y2023": 203296914,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "EAU_PRODUCTION_TRAITEMENT",
+      "group": "MILIEU",
+      "y2024": 587281926,
+      "y2023": 546634669,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "EAU_DISTRIBUTION",
+      "group": "MILIEU",
+      "y2024": 766770167,
+      "y2023": 716850281,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "EAUX_USEES_TRAITEMENT",
+      "group": "MILIEU",
+      "y2024": 564654613,
+      "y2023": 532890376,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "EGOUTS_RESEAUX",
+      "group": "MILIEU",
+      "y2024": 600720086,
+      "y2023": 567450270,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "DECHETS_COLLECTE",
+      "group": "MILIEU",
+      "y2024": 367252365,
+      "y2023": 337354509,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "DECHETS_ELIMINATION",
+      "group": "MILIEU",
+      "y2024": 332486829,
+      "y2023": 304828031,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "RECYCLABLES_COLLECTE",
+      "group": "MILIEU",
+      "y2024": 233009434,
+      "y2023": 215967254,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "RECYCLABLES_TRI",
+      "group": "MILIEU",
+      "y2024": 93884030,
+      "y2023": 90652717,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "ORGANIQUES_COLLECTE",
+      "group": "MILIEU",
+      "y2024": 160884577,
+      "y2023": 157866211,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "ORGANIQUES_TRAITEMENT",
+      "group": "MILIEU",
+      "y2024": 80526043,
+      "y2023": 68077484,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "MATERIAUX_SECS",
+      "group": "MILIEU",
+      "y2024": 116921150,
+      "y2023": 101632727,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "MATIERES_AUTRES",
+      "group": "MILIEU",
+      "y2024": 31070266,
+      "y2023": 27119993,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "PLAN_GESTION",
+      "group": "MILIEU",
+      "y2024": 14588137,
+      "y2023": 5973511,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "PLAN_AUTRES",
+      "group": "MILIEU",
+      "y2024": 26696517,
+      "y2023": 17627292,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "COURS_EAU",
+      "group": "MILIEU",
+      "y2024": 19322370,
+      "y2023": 15584475,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "PROTECTION_ENVIRONNEMENT",
+      "group": "MILIEU",
+      "y2024": 132671390,
+      "y2023": 119152977,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "MILIEU_AUTRES",
+      "group": "MILIEU",
+      "y2024": 50070339,
+      "y2023": 64098496,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "LOGEMENT_SOCIAL",
+      "group": "SANTE_BIEN_ETRE",
+      "y2024": 399545604,
+      "y2023": 330884904,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "HABITATION_AUTRES",
+      "group": "SANTE_BIEN_ETRE",
+      "y2024": 46812442,
+      "y2023": 52579056,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "SECURITE_REVENU",
+      "group": "SANTE_BIEN_ETRE",
+      "y2024": 9385555,
+      "y2023": 10148706,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    },
+    {
+      "id": "BIEN_ETRE_AUTRES",
+      "group": "SANTE_BIEN_ETRE",
+      "y2024": 143960733,
+      "y2023": 126275212,
+      "parent_includes_this": true,
+      "extra_future_financing_need": null
+    }
+  ],
+  "non_overlapping_observed_subsets": [
+    {
+      "id": "EAU_EGOUTS",
+      "members": [
+        "EAU_PRODUCTION_TRAITEMENT",
+        "EAU_DISTRIBUTION",
+        "EAUX_USEES_TRAITEMENT",
+        "EGOUTS_RESEAUX"
+      ],
+      "claim": "Water and sewer historical expenses, not costs of future replacement.",
+      "y2024": 2519426792,
+      "y2023": 2363825596,
+      "extra_sum_on_function_expenses": false
+    },
+    {
+      "id": "VOIRIE_DENEIGEMENT",
+      "members": [
+        "VOIRIE",
+        "DENEIGEMENT"
+      ],
+      "claim": "Road maintenance and snow removal only, included in transport.",
+      "y2024": 3711874237,
+      "y2023": 3639527054,
+      "extra_sum_on_function_expenses": false
+    },
+    {
+      "id": "INCENDIE",
+      "members": [
+        "INCENDIE_PREMIERS_REPONDANTS",
+        "INCENDIE_AUTRES"
+      ],
+      "claim": "Fire-services category, already included in public safety.",
+      "y2024": 1533111877,
+      "y2023": 1439146669,
+      "extra_sum_on_function_expenses": false
+    }
+  ],
+  "maturity": {
+    "historic_functions_reconciled": true,
+    "selected_subgroups_reconciled": true,
+    "expenditure_year": "2024",
+    "historical_2023_2024_comparisons_are_not_inflation_adjusted": true,
+    "source_excerpt_detail_non_audited": true,
+    "covers_all_municipalities": false,
+    "annual_2025_financial_values_verified": false,
+    "municipal_and_mrc_transfers_eliminated": false,
+    "expenditure_needs_2026_2036_financed": false,
+    "costs_assignable_to_abolished_taxes": false,
+    "worker_rights_liabilities_verified": false,
+    "independent_public_finance_review": false,
+    "costs_not_automatically_avoidable_if_tax_removed": true,
+    "taxes_school_federal_and_municipal_not_collapsed": true
+  },
+  "baseline_links": {
+    "g016h": "data/finances-municipales-g0-16h-2024.json",
+    "g016i": "data/risque-transition-taxes-locales-g0-16i-2024.json",
+    "from_g016h_reference_expenses_cad": 28366959822,
+    "from_g016i_reference_expenses_cad": 28366959822,
+    "double_count_transport_and_road": false,
+    "double_count_milieu_and_water": false,
+    "finance_charges_already_in_total": true,
+    "other_services_not_zero_cost": true
+  },
+  "service_continuity": [
+    {
+      "category": "EAU_EGOUTS",
+      "historical_2024_used_only_as_reference": true,
+      "service_level_target_approved": false,
+      "service_continuity_cost_per_year_cad": null,
+      "replacement_funding_verified_cad": null,
+      "workers_protection_legal_review": false,
+      "regional_coverage_verified": false
+    },
+    {
+      "category": "VOIRIE_DENEIGEMENT",
+      "historical_2024_used_only_as_reference": true,
+      "service_level_target_approved": false,
+      "service_continuity_cost_per_year_cad": null,
+      "replacement_funding_verified_cad": null,
+      "workers_protection_legal_review": false,
+      "regional_coverage_verified": false
+    },
+    {
+      "category": "INCENDIE",
+      "historical_2024_used_only_as_reference": true,
+      "service_level_target_approved": false,
+      "service_continuity_cost_per_year_cad": null,
+      "replacement_funding_verified_cad": null,
+      "workers_protection_legal_review": false,
+      "regional_coverage_verified": false
+    },
+    {
+      "category": "TRANSPORT_COLLECTIF",
+      "historical_2024_used_only_as_reference": true,
+      "service_level_target_approved": false,
+      "service_continuity_cost_per_year_cad": null,
+      "replacement_funding_verified_cad": null,
+      "workers_protection_legal_review": false,
+      "regional_coverage_verified": false
+    },
+    {
+      "category": "DECHETS",
+      "historical_2024_used_only_as_reference": true,
+      "service_level_target_approved": false,
+      "service_continuity_cost_per_year_cad": null,
+      "replacement_funding_verified_cad": null,
+      "workers_protection_legal_review": false,
+      "regional_coverage_verified": false
+    },
+    {
+      "category": "LOGEMENT_SOCIAL",
+      "historical_2024_used_only_as_reference": true,
+      "service_level_target_approved": false,
+      "service_continuity_cost_per_year_cad": null,
+      "replacement_funding_verified_cad": null,
+      "workers_protection_legal_review": false,
+      "regional_coverage_verified": false
+    },
+    {
+      "category": "ADMINISTRATION",
+      "historical_2024_used_only_as_reference": true,
+      "service_level_target_approved": false,
+      "service_continuity_cost_per_year_cad": null,
+      "replacement_funding_verified_cad": null,
+      "workers_protection_legal_review": false,
+      "regional_coverage_verified": false
+    },
+    {
+      "category": "AUTRES_ET_PENSIONS",
+      "historical_2024_used_only_as_reference": true,
+      "service_level_target_approved": false,
+      "service_continuity_cost_per_year_cad": null,
+      "replacement_funding_verified_cad": null,
+      "workers_protection_legal_review": false,
+      "regional_coverage_verified": false
+    }
+  ],
+  "separate_scenarios": [
+    {
+      "id": "QUEBEC_CANADA",
+      "competence_approved": false,
+      "transfer_elimination_reviewed": false,
+      "independent_budget_reviewed": false,
+      "annual": [
+        {
+          "year": "2026-2027",
+          "municipal_service_cost_cad": null,
+          "local_tax_replacement_revenue_cad": null,
+          "provincial_and_federal_transfer_net_cad": null,
+          "staff_and_pensions_cost_cad": null,
+          "debt_financing_included_verified": false,
+          "net_balance_cad": null,
+          "independent_validation": false
+        },
+        {
+          "year": "2027-2028",
+          "municipal_service_cost_cad": null,
+          "local_tax_replacement_revenue_cad": null,
+          "provincial_and_federal_transfer_net_cad": null,
+          "staff_and_pensions_cost_cad": null,
+          "debt_financing_included_verified": false,
+          "net_balance_cad": null,
+          "independent_validation": false
+        },
+        {
+          "year": "2028-2029",
+          "municipal_service_cost_cad": null,
+          "local_tax_replacement_revenue_cad": null,
+          "provincial_and_federal_transfer_net_cad": null,
+          "staff_and_pensions_cost_cad": null,
+          "debt_financing_included_verified": false,
+          "net_balance_cad": null,
+          "independent_validation": false
+        },
+        {
+          "year": "2029-2030",
+          "municipal_service_cost_cad": null,
+          "local_tax_replacement_revenue_cad": null,
+          "provincial_and_federal_transfer_net_cad": null,
+          "staff_and_pensions_cost_cad": null,
+          "debt_financing_included_verified": false,
+          "net_balance_cad": null,
+          "independent_validation": false
+        },
+        {
+          "year": "2030-2031",
+          "municipal_service_cost_cad": null,
+          "local_tax_replacement_revenue_cad": null,
+          "provincial_and_federal_transfer_net_cad": null,
+          "staff_and_pensions_cost_cad": null,
+          "debt_financing_included_verified": false,
+          "net_balance_cad": null,
+          "independent_validation": false
+        },
+        {
+          "year": "2031-2032",
+          "municipal_service_cost_cad": null,
+          "local_tax_replacement_revenue_cad": null,
+          "provincial_and_federal_transfer_net_cad": null,
+          "staff_and_pensions_cost_cad": null,
+          "debt_financing_included_verified": false,
+          "net_balance_cad": null,
+          "independent_validation": false
+        },
+        {
+          "year": "2032-2033",
+          "municipal_service_cost_cad": null,
+          "local_tax_replacement_revenue_cad": null,
+          "provincial_and_federal_transfer_net_cad": null,
+          "staff_and_pensions_cost_cad": null,
+          "debt_financing_included_verified": false,
+          "net_balance_cad": null,
+          "independent_validation": false
+        },
+        {
+          "year": "2033-2034",
+          "municipal_service_cost_cad": null,
+          "local_tax_replacement_revenue_cad": null,
+          "provincial_and_federal_transfer_net_cad": null,
+          "staff_and_pensions_cost_cad": null,
+          "debt_financing_included_verified": false,
+          "net_balance_cad": null,
+          "independent_validation": false
+        },
+        {
+          "year": "2034-2035",
+          "municipal_service_cost_cad": null,
+          "local_tax_replacement_revenue_cad": null,
+          "provincial_and_federal_transfer_net_cad": null,
+          "staff_and_pensions_cost_cad": null,
+          "debt_financing_included_verified": false,
+          "net_balance_cad": null,
+          "independent_validation": false
+        },
+        {
+          "year": "2035-2036",
+          "municipal_service_cost_cad": null,
+          "local_tax_replacement_revenue_cad": null,
+          "provincial_and_federal_transfer_net_cad": null,
+          "staff_and_pensions_cost_cad": null,
+          "debt_financing_included_verified": false,
+          "net_balance_cad": null,
+          "independent_validation": false
+        }
+      ]
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "competence_approved": false,
+      "transfer_elimination_reviewed": false,
+      "independent_budget_reviewed": false,
+      "annual": [
+        {
+          "year": "2026-2027",
+          "municipal_service_cost_cad": null,
+          "local_tax_replacement_revenue_cad": null,
+          "provincial_and_federal_transfer_net_cad": null,
+          "staff_and_pensions_cost_cad": null,
+          "debt_financing_included_verified": false,
+          "net_balance_cad": null,
+          "independent_validation": false
+        },
+        {
+          "year": "2027-2028",
+          "municipal_service_cost_cad": null,
+          "local_tax_replacement_revenue_cad": null,
+          "provincial_and_federal_transfer_net_cad": null,
+          "staff_and_pensions_cost_cad": null,
+          "debt_financing_included_verified": false,
+          "net_balance_cad": null,
+          "independent_validation": false
+        },
+        {
+          "year": "2028-2029",
+          "municipal_service_cost_cad": null,
+          "local_tax_replacement_revenue_cad": null,
+          "provincial_and_federal_transfer_net_cad": null,
+          "staff_and_pensions_cost_cad": null,
+          "debt_financing_included_verified": false,
+          "net_balance_cad": null,
+          "independent_validation": false
+        },
+        {
+          "year": "2029-2030",
+          "municipal_service_cost_cad": null,
+          "local_tax_replacement_revenue_cad": null,
+          "provincial_and_federal_transfer_net_cad": null,
+          "staff_and_pensions_cost_cad": null,
+          "debt_financing_included_verified": false,
+          "net_balance_cad": null,
+          "independent_validation": false
+        },
+        {
+          "year": "2030-2031",
+          "municipal_service_cost_cad": null,
+          "local_tax_replacement_revenue_cad": null,
+          "provincial_and_federal_transfer_net_cad": null,
+          "staff_and_pensions_cost_cad": null,
+          "debt_financing_included_verified": false,
+          "net_balance_cad": null,
+          "independent_validation": false
+        },
+        {
+          "year": "2031-2032",
+          "municipal_service_cost_cad": null,
+          "local_tax_replacement_revenue_cad": null,
+          "provincial_and_federal_transfer_net_cad": null,
+          "staff_and_pensions_cost_cad": null,
+          "debt_financing_included_verified": false,
+          "net_balance_cad": null,
+          "independent_validation": false
+        },
+        {
+          "year": "2032-2033",
+          "municipal_service_cost_cad": null,
+          "local_tax_replacement_revenue_cad": null,
+          "provincial_and_federal_transfer_net_cad": null,
+          "staff_and_pensions_cost_cad": null,
+          "debt_financing_included_verified": false,
+          "net_balance_cad": null,
+          "independent_validation": false
+        },
+        {
+          "year": "2033-2034",
+          "municipal_service_cost_cad": null,
+          "local_tax_replacement_revenue_cad": null,
+          "provincial_and_federal_transfer_net_cad": null,
+          "staff_and_pensions_cost_cad": null,
+          "debt_financing_included_verified": false,
+          "net_balance_cad": null,
+          "independent_validation": false
+        },
+        {
+          "year": "2034-2035",
+          "municipal_service_cost_cad": null,
+          "local_tax_replacement_revenue_cad": null,
+          "provincial_and_federal_transfer_net_cad": null,
+          "staff_and_pensions_cost_cad": null,
+          "debt_financing_included_verified": false,
+          "net_balance_cad": null,
+          "independent_validation": false
+        },
+        {
+          "year": "2035-2036",
+          "municipal_service_cost_cad": null,
+          "local_tax_replacement_revenue_cad": null,
+          "provincial_and_federal_transfer_net_cad": null,
+          "staff_and_pensions_cost_cad": null,
+          "debt_financing_included_verified": false,
+          "net_balance_cad": null,
+          "independent_validation": false
+        }
+      ]
+    }
+  ],
+  "conditions_for_next_gate": [
+    {
+      "key": "C01",
+      "label": "Valider 2025 et 2026 sur exercices comparables",
+      "complete": false
+    },
+    {
+      "key": "C02",
+      "label": "Importer comptes individuels, manquants, MRC et organismes de transport",
+      "complete": false
+    },
+    {
+      "key": "C03",
+      "label": "Définir normes et besoins de continuité par service et territoire",
+      "complete": false
+    },
+    {
+      "key": "C04",
+      "label": "Rapprocher transferts, effectifs, pensions et dette sans double compte",
+      "complete": false
+    },
+    {
+      "key": "C05",
+      "label": "Simuler deux scénarios décennaux avec revenus de remplacement légaux",
+      "complete": false
+    },
+    {
+      "key": "C06",
+      "label": "Obtenir audit juridique, financier et social indépendant",
+      "complete": false
+    }
+  ],
+  "decision": {
+    "g016j_documentary_reconciliation_completed": true,
+    "g016j_financial_sustainability_passed": false,
+    "tax_removal_authorized": false,
+    "all_municipalities_covered": false,
+    "ten_year_budgets_balanced": false,
+    "staff_rights_proven": false,
+    "programme_ready": false
+  }
+}

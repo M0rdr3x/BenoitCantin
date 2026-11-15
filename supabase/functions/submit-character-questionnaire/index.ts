@@ -1,9 +1,11 @@
+import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import {corsHeaders} from '../_shared/cors.ts';
-import {requiredUser,serviceClient} from '../_shared/auth.ts';
+import {requiredVaultUser,serviceClient} from '../_shared/auth.ts';
+import {sendFormspreeNotice} from '../_shared/sinjira-formspree.ts';
 import {SINJIRA_CANON_PUBLIC_GUIDE} from '../_shared/sinjira-canon-public.ts';
 import {loadSinjiraCanonContext,canonPrompt} from '../_shared/sinjira-canon-context.ts';
 
-const VERSION='24.5.2';
+const VERSION='24.5.3';
 const MAX_REQUEST_BYTES=2*1024*1024;
 const MAX_ANSWERS_CHARS=500000;
 // Ces deux intégrations restent préparées mais inactives. Une activation future
@@ -32,12 +34,36 @@ async function readBoundedJson(req:Request){
   if(rawLength){const declared=Number(rawLength);if(!Number.isFinite(declared)||declared<0||declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE')}
   const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
   if(contentType!=='application/json')throw new Error('JSON_REQUIRED');
-  const raw=await req.text();
+  const limited=await readLimitedUtf8Body(req,MAX_REQUEST_BYTES);
+  if(!limited.ok)throw new Error('REQUEST_TOO_LARGE');
+  const raw=limited.raw;
   if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
   let body:unknown;
   try{body=JSON.parse(raw||'{}')}catch{throw new Error('INVALID_JSON')}
   if(!body||typeof body!=='object'||Array.isArray(body))throw new Error('INVALID_JSON');
   return body as Record<string,unknown>;
+}
+
+// La photo source n'est jamais une URL ni un chemin arbitraire envoyé par le
+// client. Le navigateur utilise exactement `<uid>/<crypto.randomUUID()>.<ext>`.
+// Cette vérification est indépendante de l'RLS Storage et de la MFA serveur.
+function isCanonicalRegistryPhotoPath(raw:unknown,userId:string):boolean{
+  if(typeof raw!=='string')return false;
+  const prefix=`${userId}/`;
+  if(!raw.startsWith(prefix)||raw.length>prefix.length+41)return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpg|png|webp|avif|gif)$/.test(raw.slice(prefix.length));
+}
+
+// Une violation UNIQUE peut venir d'un autre onglet ayant inséré entre notre
+// lecture d'état et l'INSERT. Ne renvoyer 409 qu'après avoir RELU un dossier
+// effectivement persistant pour ce même utilisateur. Toute lecture incertaine
+// reste une erreur de sauvegarde (jamais un faux succès ou un faux doublon).
+async function hasConfirmedConcurrentSubmission(service:any,userId:string,writeError:unknown):Promise<boolean>{
+  if(!writeError||typeof writeError!=='object'||!('code' in writeError)||writeError.code!=='23505')return false;
+  try{
+    const {data,error}=await service.from('character_submissions').select('id').eq('user_id',userId).maybeSingle();
+    return !error&&typeof data?.id==='string'&&data.id.length>0;
+  }catch{return false}
 }
 
 const escapeHtml=(v:unknown)=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[c]||c));
@@ -66,15 +92,16 @@ Deno.serve(async(req)=>{
   if(req.method==='OPTIONS')return new Response('ok',{headers:corsHeaders});
   if(req.method!=='POST')return privateJson({ok:false,error:'Méthode non autorisée.',version:VERSION},405);
   try{
-    const user=await requiredUser(req);
+    const {user}=await requiredVaultUser(req);
     const service=serviceClient();
     const body=await readBoundedJson(req);
     if(body.health===true)return privateJson({ok:true,version:VERSION,persisted:false,remote_ai_enabled:REMOTE_AI_ENABLED,paid_external_services_enabled:PAID_EXTERNAL_SERVICES_ENABLED});
     const answers=body.answers;
     if(!answers||typeof answers!=='object'||Array.isArray(answers))return privateJson({ok:false,error:'Réponses du questionnaire manquantes.',version:VERSION},400);
     if(JSON.stringify(answers).length>MAX_ANSWERS_CHARS)return privateJson({ok:false,error:'Questionnaire trop volumineux.',version:VERSION},413);
-    const photo_path=body.photo_path||null,manual_only=body.manual_only!==false,update_existing=body.update_existing===true;
-    if(photo_path&&(!String(photo_path).startsWith(`${user.id}/`)||String(photo_path).includes('..')))return privateJson({ok:false,error:'Photo de dossier invalide.',version:VERSION},400);
+    const photo_path=body.photo_path??null,manual_only=body.manual_only!==false,update_existing=body.update_existing===true;
+    // Rejet AVANT toute lecture ou écriture de dossier, notification, ou appel externe.
+    if(photo_path!==null && !isCanonicalRegistryPhotoPath(photo_path,user.id))return privateJson({ok:false,error:'Chemin de photo de dossier invalide.',code:'INVALID_CHARACTER_PHOTO_PATH',version:VERSION},400);
     const owner=String(user?.email||'').trim().toLowerCase()==='kingtyrano@gmail.com';
     const [profileResult,submissionResult,characterResult]=await Promise.all([
       service.from('profiles').select('pseudo,display_name').eq('user_id',user.id).maybeSingle(),
@@ -96,12 +123,26 @@ Deno.serve(async(req)=>{
       }
       try{const {error}=await service.rpc('ensure_sinjira_owner_character');if(error)console.warn('[submit-character-questionnaire]','OWNER_CHARACTER_REPAIR_FAILED')}catch{console.warn('[submit-character-questionnaire]','OWNER_CHARACTER_REPAIR_FAILED')}
       const n=await notify(service,sub,user,p,answers as Record<string,unknown>,true);
-      return privateJson(successPayload(sub.id,{character_id:existingCharacter?.id||null,ai_generated:false,updated_existing:true},n));
+      const formspree=answers.formspree_receipt_opt_in==='yes'
+        ? await sendFormspreeNotice(service,'registre_enregistre',sub.id,{email:user.email||'',answers:answers as Record<string,unknown>})
+        : {accepted:false,already:false,configured:false,reason:'NO_FORMSPREE_CONSENT'};
+      return privateJson(successPayload(sub.id,{character_id:existingCharacter?.id||null,ai_generated:false,updated_existing:true,formspree_notification_sent:formspree.accepted},n));
     }
 
     const {data:sub,error}=await service.from('character_submissions').insert({user_id:user.id,account_pseudo:p?.pseudo||p?.display_name||'',account_email:user.email||'',source_payload:answers,photo_path:photo_path||null,status:'submitted'}).select('*').single();
-    if(error)throw new Error('CHARACTER_SUBMISSION_WRITE_FAILED');
+    if(error){
+      if(await hasConfirmedConcurrentSubmission(service,user.id,error)){
+        // L'INSERT de cette tentative a été rejeté, sans créer de dossier.
+        // Le client pourra présenter « Mon personnage » et nettoyer la photo
+        // temporaire propre à ce nouvel essai, jamais une écriture incertaine.
+        return privateJson({ok:false,error:'Ce Compte SINJIRA possède déjà une demande ou son unique personnage. Modifiez votre dossier existant au lieu d’en créer un deuxième.',code:'ONE_CHARACTER_PER_ACCOUNT',version:VERSION},409);
+      }
+      throw new Error('CHARACTER_SUBMISSION_WRITE_FAILED');
+    }
     const n=await notify(service,sub,user,p,answers as Record<string,unknown>,false);
+    const formspree=answers.formspree_receipt_opt_in==='yes'
+        ? await sendFormspreeNotice(service,'registre_enregistre',sub.id,{email:user.email||'',answers:answers as Record<string,unknown>})
+        : {accepted:false,already:false,configured:false,reason:'NO_FORMSPREE_CONSENT'};
     let generated=null;
     if(manual_only!==true&&REMOTE_AI_ENABLED){
       try{generated=await generate(answers as Record<string,unknown>,service)}
@@ -112,9 +153,9 @@ Deno.serve(async(req)=>{
       if(ce)throw new Error('CHARACTER_SUBMISSION_WRITE_FAILED');
       await service.from('character_submissions').update({status:'ai_draft'}).eq('id',sub.id);
       await service.from('character_generation_runs').insert({submission_id:sub.id,character_id:ch.id,model:generated.model,status:'completed'});
-      return privateJson(successPayload(sub.id,{character_id:ch.id,ai_generated:true},n));
+      return privateJson(successPayload(sub.id,{character_id:ch.id,ai_generated:true,formspree_notification_sent:formspree.accepted},n));
     }
-    return privateJson(successPayload(sub.id,{ai_generated:false},n));
+    return privateJson(successPayload(sub.id,{ai_generated:false,formspree_notification_sent:formspree.accepted},n));
   }catch(e){
     console.error('[submit-character-questionnaire]',safeLogCode(e));
     if(e?.message==='AUTH_REQUIRED')return privateJson({ok:false,error:'Connexion requise.',code:'AUTH_REQUIRED',version:VERSION},401);

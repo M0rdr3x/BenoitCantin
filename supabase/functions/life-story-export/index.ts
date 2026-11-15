@@ -1,3 +1,4 @@
+import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import { PDFDocument, StandardFonts, rgb } from 'npm:pdf-lib@1.17.1';
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredAdmin } from '../_shared/auth.ts';
@@ -18,6 +19,7 @@ const SAFE_ERROR_CODES = new Set([
   'AUTH_REQUIRED',
   'ADMIN_REQUIRED',
   'MFA_REQUIRED',
+  'MFA_SETUP_REQUIRED',
   'SOURCE_BOUNDARY_VIOLATION',
   'EXPORT_NOT_GENERATABLE',
   'EXPORT_NOT_GENERATED',
@@ -37,7 +39,9 @@ async function readLimitedJson(req: Request): Promise<{ body?: any; response?: R
     }
   }
 
-  const raw = await req.text();
+  const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);
+  if (!limited.ok) return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
+  const raw = limited.raw;
   if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
     return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
   }
@@ -73,7 +77,7 @@ function classifyExportError(error: unknown) {
   const code = SAFE_ERROR_CODES.has(candidate) ? candidate : 'LIFE_STORY_EXPORT_FAILED';
   const status = code === 'AUTH_REQUIRED'
     ? 401
-    : code === 'ADMIN_REQUIRED' || code === 'MFA_REQUIRED'
+    : code === 'ADMIN_REQUIRED' || code === 'MFA_REQUIRED' || code === 'MFA_SETUP_REQUIRED'
       ? 403
       : code === 'LIFE_STORY_EXPORT_FAILED'
         ? 500

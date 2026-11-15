@@ -15,6 +15,7 @@ on:
       - 'scripts/test_supabase_production_preflight_security.py'
       - 'scripts/validate_security_context_deployment_gate.py'
       - 'scripts/test_security_context_deployment_gate.py'
+      - 'scripts/test_production_edge_quarantine.py'
       - '.github/workflows/supabase-production-preflight.yml'
       - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'
   pull_request:
@@ -30,6 +31,7 @@ on:
       - 'scripts/test_supabase_production_preflight_security.py'
       - 'scripts/validate_security_context_deployment_gate.py'
       - 'scripts/test_security_context_deployment_gate.py'
+      - 'scripts/test_production_edge_quarantine.py'
       - '.github/workflows/supabase-production-preflight.yml'
       - 'docs/SUPABASE_PRODUCTION_RUNBOOK.md'
   workflow_dispatch:
@@ -73,6 +75,7 @@ jobs:
         run: |
           set -euo pipefail
           python scripts/test_supabase_production_preflight_security.py
+          python scripts/test_production_edge_quarantine.py
 
       - name: Vérifier le contrat sécurité du prévol production
         shell: bash
@@ -425,9 +428,15 @@ jobs:
           response="$RUNNER_TEMP/security-context-rpc-response.json"
           python3 scripts/validate_security_context_deployment_gate.py --write-request "$request"
           # Metadata pg_catalog strictement en lecture seule, jamais de données utilisateurs.
-          curl --fail-with-body --silent --show-error --proto '=https' --tlsv1.2 \
+          # Refuser tout caractère CR/LF ou entête injecté dans le jeton;
+          # le secret n'est passé ni en argv, ni en fichier temporaire, ni en log.
+          if [[ ! "$SUPABASE_ACCESS_TOKEN" =~ ^[A-Za-z0-9._~-]{16,512}$ ]]; then
+            echo 'Refus : format du jeton Supabase non autorisé.' >&2
+            exit 1
+          fi
+          printf 'Authorization: Bearer %s\n' "$SUPABASE_ACCESS_TOKEN" | curl -q --fail-with-body --silent --show-error --proto '=https' --tlsv1.2 \
             --request POST \
-            --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            --header @- \
             --header 'Content-Type: application/json' \
             --data-binary "@$request" \
             --output "$response" \

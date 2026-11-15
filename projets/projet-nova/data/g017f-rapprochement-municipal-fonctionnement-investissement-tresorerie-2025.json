@@ -1,0 +1,562 @@
+{
+  "schema": "nova-g017f-municipal-2025-operating-investment-cash-bridge/v1",
+  "phase": "G0.17f",
+  "date": "2026-11-08",
+  "score_before": 47,
+  "score_after": 47,
+  "remaining": 53,
+  "municipality": {
+    "code": "02047",
+    "name": "Port-Daniel–Gascons",
+    "year": 2025,
+    "scope": "ONE_MUNICIPALITY_NOT_QUEBEC"
+  },
+  "sources": {
+    "official_report": "https://www.mamh.gouv.qc.ca/documentsfinanciersweb/Rapport-financier-2025-et-autres-02047.pdf",
+    "pages_zero_index": {
+      "auditor": 3,
+      "results": 7,
+      "balance": 8,
+      "cash": 10,
+      "operating_investment_revenues": 26,
+      "functions": 27,
+      "fiscal_operations": 28,
+      "fiscal_investment": 29,
+      "expense_objects": 30
+    },
+    "screenshot_attempted": true,
+    "screenshot_result": "CACHE_MISS",
+    "pdf_text_reexamined": true,
+    "opinion": "QUALIFIED_ASSET_RETIREMENT_OBLIGATIONS_UNQUANTIFIED",
+    "auditor_date": "2026-06-08",
+    "upstream_prior_report_path": "data/reconciliation-financiere-port-daniel-g0-16r-2025.json",
+    "upstream_tecq_rules_path": "data/g017e-tecq-guide-2026-depenses-admissibles-et-paiements.json",
+    "nova_audit_verified": false
+  },
+  "revenues": {
+    "operating_categories_cad": [
+      [
+        "taxes",
+        4525681
+      ],
+      [
+        "compensations",
+        63631
+      ],
+      [
+        "transferts_fonctionnement",
+        724172
+      ],
+      [
+        "services",
+        363935
+      ],
+      [
+        "droits",
+        51824
+      ],
+      [
+        "amendes",
+        952
+      ],
+      [
+        "interets",
+        39303
+      ],
+      [
+        "autres",
+        161174
+      ]
+    ],
+    "operating_cad": 5930672,
+    "investment_transfers_cad": 19799872,
+    "total_cad": 25730544,
+    "total_grants_recognized_cad": 20524044,
+    "capital_subsidy_cash_received_cad": null,
+    "operating_transfers_are_not_own_source": true,
+    "capital_subsidy_cannot_be_assumed_for_regular_payroll": true
+  },
+  "expenses": {
+    "by_function_cad": [
+      [
+        "administration",
+        1175575
+      ],
+      [
+        "securite",
+        557471
+      ],
+      [
+        "transport",
+        1586898
+      ],
+      [
+        "hygiene_milieu",
+        1201826
+      ],
+      [
+        "sante_bien_etre",
+        33681
+      ],
+      [
+        "amenagement",
+        288714
+      ],
+      [
+        "loisirs_culture",
+        1509736
+      ],
+      [
+        "financement",
+        668007
+      ]
+    ],
+    "by_object_cad": [
+      [
+        "remuneration",
+        1476360
+      ],
+      [
+        "charges_sociales",
+        344428
+      ],
+      [
+        "biens_services",
+        2280274
+      ],
+      [
+        "frais_financement",
+        668007
+      ],
+      [
+        "quotes_parts",
+        769032
+      ],
+      [
+        "amortissement",
+        1483807
+      ]
+    ],
+    "all_expenses_cad": 7021908,
+    "depreciation_cad": 1483807,
+    "non_depreciation_expenses_cad": 5538101,
+    "remuneration_with_social_charges_cad": 1820788,
+    "objects_and_functions_are_two_splits_of_same_expense": true,
+    "normal_payroll_is_not_a_tecq_grant": true
+  },
+  "fiscal_operations": {
+    "revenues_cad": 5930672,
+    "expenses_including_depreciation_cad": 7021908,
+    "pre_fiscal_result_cad": -1091236,
+    "add_back_depreciation_cad": 1483807,
+    "debt_repayment_fiscal_cad": -560996,
+    "net_allocations_fiscal_cad": 236991,
+    "total_adjustments_cad": 1159802,
+    "surplus_cad": 68566,
+    "distinct_from_2025_operating_cashflow": true,
+    "not_spendable_cash": true
+  },
+  "fiscal_investment": {
+    "capital_revenues_cad": 19799872,
+    "accrual_capital_by_function_cad": [
+      [
+        "transport",
+        678478
+      ],
+      [
+        "hygiene_milieu",
+        21542601
+      ],
+      [
+        "sante_bien_etre",
+        7035
+      ],
+      [
+        "amenagement",
+        34419
+      ],
+      [
+        "loisirs_culture",
+        318991
+      ]
+    ],
+    "accrual_additions_cad": 22581524,
+    "new_long_term_funding_cad": 650000,
+    "allocations_cad": 286340,
+    "deficit_cad": -1845312,
+    "deficit_is_not_cash_expense": true,
+    "environmental_investment_not_entirely_attributable_to_Gascons": true
+  },
+  "cashflow": {
+    "opening_cad": 549175,
+    "operating_flow_cad": 2095979,
+    "capital_spend_cad": -16969080,
+    "long_loan_issue_cad": 650000,
+    "long_loan_principal_repaid_cad": -1690200,
+    "temporary_borrowings_net_cad": 17429000,
+    "loan_deferred_fees_change_cad": -65523,
+    "financing_flow_cad": 16323277,
+    "net_change_cad": 1450176,
+    "closing_cad": 1999351,
+    "cash_flow_municipality_wide_not_specific_to_Gascons": true,
+    "capital_accrual_is_not_cash_flow": true
+  },
+  "capital_bridge": {
+    "capital_additions_accrual_cad": 22581524,
+    "capital_accounts_payable_cad": 5612444,
+    "capital_cash_outflow_cad": 16969080,
+    "works_in_progress_additions_cad": 22138647,
+    "unpaid_bills_are_not_cash": true
+  },
+  "balance_sheet": {
+    "assets_financial_cad": 31671634,
+    "liabilities_cad": 42198356,
+    "net_debt_cad": 10526722,
+    "cash_cad": 1999351,
+    "receivables_cad": 29672283,
+    "receivables_quebec_cad": 28617428,
+    "accounts_payable_cad": 6145462,
+    "short_borrowings_cad": 18571000,
+    "long_debt_gross_cad": 17430500,
+    "asset_retirement_liability_cad": null,
+    "liability_unknown_is_not_zero": true
+  },
+  "fiscal_constraints": {
+    "no_fiscal_operations_vs_cash_double_count": true,
+    "no_fiscal_investment_deficit_mislabeled_as_cash_shortfall": true,
+    "no_operating_and_capital_subsidy_conflation": true,
+    "capital_spend_not_attributed_to_single_project_without_invoices": true,
+    "no_tecq_receipts_credited_from_general_envelope": true,
+    "no_2025_full_report_extrapolated_to_all_quebec": true,
+    "no_2026_forecast_equated_to_2025_realizations": true,
+    "no_2025_receivable_called_cash": true,
+    "no_funding_to_a_new_third_tax": true,
+    "no_services_or_workers_cut_assumed": true,
+    "independent_municipal_opinion_qualified_not_nova_audit": true
+  },
+  "nova_scenarios": [
+    {
+      "id": "QUEBEC_CANADA",
+      "ten_year_rows": [
+        {
+          "period": "2026-2027",
+          "operations_costs_cad": null,
+          "personnel_cad": null,
+          "maintenance_cad": null,
+          "capital_needs_cad": null,
+          "debt_repayment_cad": null,
+          "capital_grants_received_cad": null,
+          "intergovernmental_eliminations_cad": null,
+          "real_tax_base_cad": null,
+          "budget_balance_cad": null,
+          "external_audit_approved": false
+        },
+        {
+          "period": "2027-2028",
+          "operations_costs_cad": null,
+          "personnel_cad": null,
+          "maintenance_cad": null,
+          "capital_needs_cad": null,
+          "debt_repayment_cad": null,
+          "capital_grants_received_cad": null,
+          "intergovernmental_eliminations_cad": null,
+          "real_tax_base_cad": null,
+          "budget_balance_cad": null,
+          "external_audit_approved": false
+        },
+        {
+          "period": "2028-2029",
+          "operations_costs_cad": null,
+          "personnel_cad": null,
+          "maintenance_cad": null,
+          "capital_needs_cad": null,
+          "debt_repayment_cad": null,
+          "capital_grants_received_cad": null,
+          "intergovernmental_eliminations_cad": null,
+          "real_tax_base_cad": null,
+          "budget_balance_cad": null,
+          "external_audit_approved": false
+        },
+        {
+          "period": "2029-2030",
+          "operations_costs_cad": null,
+          "personnel_cad": null,
+          "maintenance_cad": null,
+          "capital_needs_cad": null,
+          "debt_repayment_cad": null,
+          "capital_grants_received_cad": null,
+          "intergovernmental_eliminations_cad": null,
+          "real_tax_base_cad": null,
+          "budget_balance_cad": null,
+          "external_audit_approved": false
+        },
+        {
+          "period": "2030-2031",
+          "operations_costs_cad": null,
+          "personnel_cad": null,
+          "maintenance_cad": null,
+          "capital_needs_cad": null,
+          "debt_repayment_cad": null,
+          "capital_grants_received_cad": null,
+          "intergovernmental_eliminations_cad": null,
+          "real_tax_base_cad": null,
+          "budget_balance_cad": null,
+          "external_audit_approved": false
+        },
+        {
+          "period": "2031-2032",
+          "operations_costs_cad": null,
+          "personnel_cad": null,
+          "maintenance_cad": null,
+          "capital_needs_cad": null,
+          "debt_repayment_cad": null,
+          "capital_grants_received_cad": null,
+          "intergovernmental_eliminations_cad": null,
+          "real_tax_base_cad": null,
+          "budget_balance_cad": null,
+          "external_audit_approved": false
+        },
+        {
+          "period": "2032-2033",
+          "operations_costs_cad": null,
+          "personnel_cad": null,
+          "maintenance_cad": null,
+          "capital_needs_cad": null,
+          "debt_repayment_cad": null,
+          "capital_grants_received_cad": null,
+          "intergovernmental_eliminations_cad": null,
+          "real_tax_base_cad": null,
+          "budget_balance_cad": null,
+          "external_audit_approved": false
+        },
+        {
+          "period": "2033-2034",
+          "operations_costs_cad": null,
+          "personnel_cad": null,
+          "maintenance_cad": null,
+          "capital_needs_cad": null,
+          "debt_repayment_cad": null,
+          "capital_grants_received_cad": null,
+          "intergovernmental_eliminations_cad": null,
+          "real_tax_base_cad": null,
+          "budget_balance_cad": null,
+          "external_audit_approved": false
+        },
+        {
+          "period": "2034-2035",
+          "operations_costs_cad": null,
+          "personnel_cad": null,
+          "maintenance_cad": null,
+          "capital_needs_cad": null,
+          "debt_repayment_cad": null,
+          "capital_grants_received_cad": null,
+          "intergovernmental_eliminations_cad": null,
+          "real_tax_base_cad": null,
+          "budget_balance_cad": null,
+          "external_audit_approved": false
+        },
+        {
+          "period": "2035-2036",
+          "operations_costs_cad": null,
+          "personnel_cad": null,
+          "maintenance_cad": null,
+          "capital_needs_cad": null,
+          "debt_repayment_cad": null,
+          "capital_grants_received_cad": null,
+          "intergovernmental_eliminations_cad": null,
+          "real_tax_base_cad": null,
+          "budget_balance_cad": null,
+          "external_audit_approved": false
+        }
+      ],
+      "municipal_levy_replacement_verified_cad": null,
+      "independent_validation": false
+    },
+    {
+      "id": "QUEBEC_SOUVERAIN",
+      "ten_year_rows": [
+        {
+          "period": "2026-2027",
+          "operations_costs_cad": null,
+          "personnel_cad": null,
+          "maintenance_cad": null,
+          "capital_needs_cad": null,
+          "debt_repayment_cad": null,
+          "capital_grants_received_cad": null,
+          "intergovernmental_eliminations_cad": null,
+          "real_tax_base_cad": null,
+          "budget_balance_cad": null,
+          "external_audit_approved": false
+        },
+        {
+          "period": "2027-2028",
+          "operations_costs_cad": null,
+          "personnel_cad": null,
+          "maintenance_cad": null,
+          "capital_needs_cad": null,
+          "debt_repayment_cad": null,
+          "capital_grants_received_cad": null,
+          "intergovernmental_eliminations_cad": null,
+          "real_tax_base_cad": null,
+          "budget_balance_cad": null,
+          "external_audit_approved": false
+        },
+        {
+          "period": "2028-2029",
+          "operations_costs_cad": null,
+          "personnel_cad": null,
+          "maintenance_cad": null,
+          "capital_needs_cad": null,
+          "debt_repayment_cad": null,
+          "capital_grants_received_cad": null,
+          "intergovernmental_eliminations_cad": null,
+          "real_tax_base_cad": null,
+          "budget_balance_cad": null,
+          "external_audit_approved": false
+        },
+        {
+          "period": "2029-2030",
+          "operations_costs_cad": null,
+          "personnel_cad": null,
+          "maintenance_cad": null,
+          "capital_needs_cad": null,
+          "debt_repayment_cad": null,
+          "capital_grants_received_cad": null,
+          "intergovernmental_eliminations_cad": null,
+          "real_tax_base_cad": null,
+          "budget_balance_cad": null,
+          "external_audit_approved": false
+        },
+        {
+          "period": "2030-2031",
+          "operations_costs_cad": null,
+          "personnel_cad": null,
+          "maintenance_cad": null,
+          "capital_needs_cad": null,
+          "debt_repayment_cad": null,
+          "capital_grants_received_cad": null,
+          "intergovernmental_eliminations_cad": null,
+          "real_tax_base_cad": null,
+          "budget_balance_cad": null,
+          "external_audit_approved": false
+        },
+        {
+          "period": "2031-2032",
+          "operations_costs_cad": null,
+          "personnel_cad": null,
+          "maintenance_cad": null,
+          "capital_needs_cad": null,
+          "debt_repayment_cad": null,
+          "capital_grants_received_cad": null,
+          "intergovernmental_eliminations_cad": null,
+          "real_tax_base_cad": null,
+          "budget_balance_cad": null,
+          "external_audit_approved": false
+        },
+        {
+          "period": "2032-2033",
+          "operations_costs_cad": null,
+          "personnel_cad": null,
+          "maintenance_cad": null,
+          "capital_needs_cad": null,
+          "debt_repayment_cad": null,
+          "capital_grants_received_cad": null,
+          "intergovernmental_eliminations_cad": null,
+          "real_tax_base_cad": null,
+          "budget_balance_cad": null,
+          "external_audit_approved": false
+        },
+        {
+          "period": "2033-2034",
+          "operations_costs_cad": null,
+          "personnel_cad": null,
+          "maintenance_cad": null,
+          "capital_needs_cad": null,
+          "debt_repayment_cad": null,
+          "capital_grants_received_cad": null,
+          "intergovernmental_eliminations_cad": null,
+          "real_tax_base_cad": null,
+          "budget_balance_cad": null,
+          "external_audit_approved": false
+        },
+        {
+          "period": "2034-2035",
+          "operations_costs_cad": null,
+          "personnel_cad": null,
+          "maintenance_cad": null,
+          "capital_needs_cad": null,
+          "debt_repayment_cad": null,
+          "capital_grants_received_cad": null,
+          "intergovernmental_eliminations_cad": null,
+          "real_tax_base_cad": null,
+          "budget_balance_cad": null,
+          "external_audit_approved": false
+        },
+        {
+          "period": "2035-2036",
+          "operations_costs_cad": null,
+          "personnel_cad": null,
+          "maintenance_cad": null,
+          "capital_needs_cad": null,
+          "debt_repayment_cad": null,
+          "capital_grants_received_cad": null,
+          "intergovernmental_eliminations_cad": null,
+          "real_tax_base_cad": null,
+          "budget_balance_cad": null,
+          "external_audit_approved": false
+        }
+      ],
+      "municipal_levy_replacement_verified_cad": null,
+      "independent_validation": false
+    }
+  ],
+  "evidence_gates": [
+    {
+      "code": "F1",
+      "name": "Documenter les subventions de fonctionnement et leurs restrictions",
+      "passed": false
+    },
+    {
+      "code": "F2",
+      "name": "Rapprocher factures, créances et versements d'investissement par projet",
+      "passed": false
+    },
+    {
+      "code": "F3",
+      "name": "Mesurer les obligations de mise hors service avec les vérificateurs",
+      "passed": false
+    },
+    {
+      "code": "F4",
+      "name": "Estimer séparément la main-d'œuvre, la maintenance et les actifs sur dix ans",
+      "passed": false
+    },
+    {
+      "code": "F5",
+      "name": "Consolider les comptes Québec–municipalités au même exercice",
+      "passed": false
+    },
+    {
+      "code": "F6",
+      "name": "Tester la fiscalité à deux prélèvements, l'incidence sur les ménages et les entreprises",
+      "passed": false
+    },
+    {
+      "code": "F7",
+      "name": "Obtenir revue indépendante juridique et financière des deux statuts",
+      "passed": false
+    }
+  ],
+  "decisions": {
+    "two_ledgers_reconciled": true,
+    "bank_cashflow_reconciled": true,
+    "expenses_by_nature_validated": true,
+    "fiscal_adjustments_reconciled": true,
+    "source_pdf_visual_screenshot_succeeded": false,
+    "accounting_qualification_resolved": false,
+    "program_fully_financed": false,
+    "bank_project_payments_verified": false,
+    "external_nova_audit_passed": false,
+    "score_increment_earned": false
+  }
+}

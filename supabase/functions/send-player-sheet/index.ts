@@ -1,3 +1,4 @@
+import { readLimitedUtf8Body, readLimitedBinaryResponse } from '../_shared/limited-body.mjs';
 import { PDFDocument, StandardFonts } from 'npm:pdf-lib@1.17.1';
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredUser } from '../_shared/auth.ts';
@@ -47,7 +48,9 @@ async function readLimitedJson(req:Request):Promise<{body?:Record<string,unknown
     }
   }
 
-  const raw=await req.text();
+  const limited=await readLimitedUtf8Body(req,MAX_REQUEST_BYTES);
+  if(!limited.ok)return {response:privateJson({ok:false,error:'Requête trop volumineuse.',code:'REQUEST_TOO_LARGE',function_version:FUNCTION_VERSION},413)};
+  const raw=limited.raw;
   if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES){
     return {response:privateJson({ok:false,error:'Requête trop volumineuse.',code:'REQUEST_TOO_LARGE',function_version:FUNCTION_VERSION},413)};
   }
@@ -81,8 +84,9 @@ async function fetchTemplateBytes(mode:'solo'|'standard'){
   const declared=Number(response.headers.get('content-length')||'0');
   if(Number.isFinite(declared)&&declared>MAX_TEMPLATE_BYTES)throw new Error('PLAYER_SHEET_TEMPLATE_TOO_LARGE');
 
-  const bytes=new Uint8Array(await response.arrayBuffer());
-  if(bytes.byteLength===0||bytes.byteLength>MAX_TEMPLATE_BYTES)throw new Error('PLAYER_SHEET_TEMPLATE_TOO_LARGE');
+  const limitedPdf=await readLimitedBinaryResponse(response,MAX_TEMPLATE_BYTES);
+  if(!limitedPdf.ok)throw new Error('PLAYER_SHEET_TEMPLATE_TOO_LARGE');
+  const bytes=limitedPdf.bytes;
   if(bytes.length<5||String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-')throw new Error('PLAYER_SHEET_TEMPLATE_NOT_PDF');
   return bytes;
 }
