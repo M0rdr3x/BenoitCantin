@@ -6,6 +6,41 @@ import {classifyReaderSwipe,classifyReaderEdgeTap,bindReaderTouchNavigation,isRe
 const gesture=(overrides={})=>classifyReaderSwipe({
   dx:-92,dy:8,durationMs:240,viewerWidth:375,...overrides
 });
+test('V116 : une trajectoire contradictoire ne tourne pas le PDF',()=>{
+  assert.equal(gesture({dx:-130,maxRightTravel:80}),null);
+  assert.equal(gesture({dx:130,maxLeftTravel:80}),null);
+  assert.equal(gesture({dx:-130,maxRightTravel:15}),'next');
+  assert.equal(gesture({dx:130,maxLeftTravel:15}),'previous');
+  assert.equal(gesture({dx:-130,maxRightTravel:NaN}),null);
+  const f=fixture();
+  try{
+    f.swipe(-130,3,{moves:[[75,3],[-45,3]]});
+    f.swipe(130,3,{moves:[[-75,3],[45,3]]});
+    assert.equal(f.next.clicks,0);
+    assert.equal(f.previous.clicks,0);
+    f.swipe(-130,3,{moves:[[-60,3],[-90,3]]});
+    f.swipe(130,3,{moves:[[60,3],[90,3]]});
+    assert.equal(f.next.clicks,1);
+    assert.equal(f.previous.clicks,1);
+  }finally{f.release()}
+});
+test('V116 : souris PDF inversée ne tourne pas le livre',()=>{
+  const f=fixture();
+  const emit=(type,x)=>f.viewer.emit(type,{
+    pointerType:'mouse',pointerId:211,button:0,buttons:1,isPrimary:true,
+    clientX:x,clientY:190,target:f.canvas,
+    defaultPrevented:false,preventDefault(){this.defaultPrevented=true}
+  });
+  try{
+    f.setPdfMode(true);
+    emit('pointerdown',175);emit('pointermove',260);f.advance(160);emit('pointerup',40);
+    emit('pointerdown',175);emit('pointermove',90);f.advance(160);emit('pointerup',310);
+    assert.equal(f.next.clicks,0);
+    assert.equal(f.previous.clicks,0);
+    emit('pointerdown',260);emit('pointermove',180);f.advance(160);emit('pointerup',110);
+    assert.equal(f.next.clicks,1);
+  }finally{f.release()}
+});
 test('balayage de droite à gauche = page suivante',()=>{
   assert.equal(gesture(),'next');
 });
@@ -786,7 +821,7 @@ test('intégration : les boutons mobiles reflètent le statut initial des bouton
 test('contrat HTML/CSS : module autonome et gestes expliqués',()=>{
   const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
-  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.14\.101/);
+  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.15\.116/);
   assert.match(html,/id="reader-touch-prev"/);
   assert.match(html,/id="reader-touch-next"/);
   assert.match(html,/aria-describedby="reader-swipe-help"/);

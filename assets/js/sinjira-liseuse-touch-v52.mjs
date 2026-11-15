@@ -10,15 +10,19 @@ const INTERACTIVE='a, button, input, select, textarea, summary, [contenteditable
 
 export function classifyReaderSwipe({
   dx,dy,durationMs,viewerWidth=360,hasSelection=false,horizontalOverflow=false,
-  maxVerticalTravel=0,scrolledDuringGesture=false
+  maxVerticalTravel=0,maxLeftTravel=0,maxRightTravel=0,scrolledDuringGesture=false
 }={}){
   if(hasSelection||horizontalOverflow||scrolledDuringGesture||
-     ![dx,dy,durationMs,viewerWidth,maxVerticalTravel].every(Number.isFinite)||
-     maxVerticalTravel<0||durationMs<0||durationMs>1800||viewerWidth<=0)return null;
+     ![dx,dy,durationMs,viewerWidth,maxVerticalTravel,maxLeftTravel,maxRightTravel].every(Number.isFinite)||
+     maxVerticalTravel<0||maxLeftTravel<0||maxRightTravel<0||durationMs<0||durationMs>1800||viewerWidth<=0)return null;
   const distance=Math.abs(dx),vertical=Math.max(Math.abs(dy),maxVerticalTravel);
   // V79 : conserver les gestes lents volontaires. Exiger un mouvement plus
   // ample et plus horizontal après 850 ms pour refuser les longues pressions.
   const threshold=Math.max(56,Math.min(100,viewerWidth*0.14));
+  // V116 : un glissement d'abord franc dans le sens contraire de sa
+  // direction finale n'est pas un changement de page volontaire.
+  // Les micro-corrections sous le seuil tactile restent permises.
+  if(dx<0&&maxRightTravel>=threshold||dx>0&&maxLeftTravel>=threshold)return null;
   const slow=durationMs>850;
   const requiredDistance=slow?Math.max(112,threshold*1.5):threshold;
   const requiredDirection=slow?2.2:1.65;
@@ -206,7 +210,7 @@ export function bindReaderTouchNavigation({
     }))return;
     origin={
       id:touch.identifier,x:touch.clientX,y:touch.clientY,time:clock(),
-      scrollTop:viewer.scrollTop||0,maxVerticalTravel:0,maxTravel:0,scrolled:false,
+      scrollTop:viewer.scrollTop||0,maxVerticalTravel:0,maxTravel:0,maxLeftTravel:0,maxRightTravel:0,scrolled:false,
       pdfMode:viewer.querySelector?.('#reader-text')?.hidden===true,
       readerLayout:viewer.dataset?.readerLayout||'scroll',
       geometry:captureReaderSwipeGeometry(viewer),
@@ -232,6 +236,9 @@ export function bindReaderTouchNavigation({
     origin.maxVerticalTravel=Math.max(
       origin.maxVerticalTravel,Math.abs(touch.clientY-origin.y)
     );
+    if(!Number.isFinite(touch.clientX)){origin=null;return}
+    origin.maxLeftTravel=Math.max(origin.maxLeftTravel,origin.x-touch.clientX);
+    origin.maxRightTravel=Math.max(origin.maxRightTravel,touch.clientX-origin.x);
     origin.maxTravel=Math.max(origin.maxTravel,
       Math.abs(touch.clientX-origin.x),Math.abs(touch.clientY-origin.y));
     if(Math.abs((viewer.scrollTop||0)-origin.scrollTop)>8)origin.scrolled=true;
@@ -265,6 +272,7 @@ export function bindReaderTouchNavigation({
       durationMs:clock()-initial.time,viewerWidth:viewer.clientWidth,
       hasSelection:selected,horizontalOverflow,
       maxVerticalTravel:initial.maxVerticalTravel,
+      maxLeftTravel:initial.maxLeftTravel,maxRightTravel:initial.maxRightTravel,
       scrolledDuringGesture:scrolled
     });
     if(direction){
@@ -303,7 +311,7 @@ export function bindReaderTouchNavigation({
     if(![event.clientX,event.clientY,event.pointerId].every(Number.isFinite))return;
     pointerOrigin={
       id:event.pointerId,x:event.clientX,y:event.clientY,time:clock(),
-      scrollTop:viewer.scrollTop||0,maxVerticalTravel:0,scrolled:false,
+      scrollTop:viewer.scrollTop||0,maxVerticalTravel:0,maxLeftTravel:0,maxRightTravel:0,scrolled:false,
       geometry:captureReaderSwipeGeometry(viewer),
       readerLayout:viewer.dataset?.readerLayout||'scroll'
     };
@@ -325,6 +333,8 @@ export function bindReaderTouchNavigation({
     }
     initial.maxVerticalTravel=Math.max(initial.maxVerticalTravel,
       Math.abs(event.clientY-initial.y));
+    initial.maxLeftTravel=Math.max(initial.maxLeftTravel,initial.x-event.clientX);
+    initial.maxRightTravel=Math.max(initial.maxRightTravel,event.clientX-initial.x);
     if(Math.abs((viewer.scrollTop||0)-initial.scrollTop)>8)initial.scrolled=true;
   };
   const pointerCancel=()=>{pointerOrigin=null};
@@ -345,6 +355,7 @@ export function bindReaderTouchNavigation({
       hasSelection:Boolean(getSelectedText()?.trim()),
       horizontalOverflow:readerCanPanHorizontally(viewer),
       maxVerticalTravel:initial.maxVerticalTravel,
+      maxLeftTravel:initial.maxLeftTravel,maxRightTravel:initial.maxRightTravel,
       scrolledDuringGesture:initial.scrolled||
         Math.abs((viewer.scrollTop||0)-initial.scrollTop)>8
     });

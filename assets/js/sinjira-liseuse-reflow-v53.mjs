@@ -5,7 +5,7 @@
  * du PDF courant ; une fois le texte terminé, tourner la vraie page du livre.
  * L'enregistrement d'emplacement reste le scroll_ratio historique de la V31.
  */
-import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally,classifyReaderEdgeTap} from './sinjira-liseuse-touch-v52.mjs?v=52.11.14.101';
+import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally,classifyReaderEdgeTap} from './sinjira-liseuse-touch-v52.mjs?v=52.11.15.116';
 
 const PREF_KEY='sinjira:liseuse:lecture-par-ecrans:v53';
 
@@ -412,7 +412,7 @@ export function bindReaderScreenMode({
     }
     gesture={
       id:touch.identifier,x:touch.clientX,y:touch.clientY,start:clock(),
-      scrollTop:viewer.scrollTop,maxVerticalTravel:0,maxTravel:0,scrolled:false,
+      scrollTop:viewer.scrollTop,maxVerticalTravel:0,maxTravel:0,maxLeftTravel:0,maxRightTravel:0,scrolled:false,
       readerLayout:viewer.dataset?.readerLayout,
       geometry:captureReaderSwipeGeometry(viewer),
       nestedHorizontalScroll:captureReaderNestedHorizontalScroll(event.target,viewer),
@@ -437,6 +437,9 @@ export function bindReaderScreenMode({
     gesture.maxVerticalTravel=Math.max(
       gesture.maxVerticalTravel,Math.abs(touch.clientY-gesture.y)
     );
+    if(!Number.isFinite(touch.clientX)){gesture=null;return}
+    gesture.maxLeftTravel=Math.max(gesture.maxLeftTravel,gesture.x-touch.clientX);
+    gesture.maxRightTravel=Math.max(gesture.maxRightTravel,touch.clientX-gesture.x);
     gesture.maxTravel=Math.max(gesture.maxTravel,
       Math.abs(touch.clientX-gesture.x),Math.abs(touch.clientY-gesture.y));
     if(Math.abs(viewer.scrollTop-gesture.scrollTop)>8)gesture.scrolled=true;
@@ -480,6 +483,7 @@ export function bindReaderScreenMode({
         readerCanPanHorizontally(text)||start.nestedHorizontalScrolled||
         readerNestedHorizontalScrollMoved(start.nestedHorizontalScroll),
       maxVerticalTravel:start.maxVerticalTravel,
+      maxLeftTravel:start.maxLeftTravel,maxRightTravel:start.maxRightTravel,
       scrolledDuringGesture:start.nestedScrolled||
         readerNestedVerticalScrollMoved(start.nestedVerticalScroll)||
         start.scrolled||Math.abs(viewer.scrollTop-start.scrollTop)>8
