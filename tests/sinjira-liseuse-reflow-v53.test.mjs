@@ -4,11 +4,25 @@ import {readFileSync} from 'node:fs';
 import {
   measureReaderScreen,readerScreenState,planReaderScreenTurn,bindReaderScreenMode,parseReaderLineHeight,
   captureReaderTextAnchor,restoreReaderTextAnchor,classifyReaderEdgeTap,
-  formatReaderMobileLocation
+  formatReaderMobileLocation,formatReaderAccessibleLocation
 } from '../assets/js/sinjira-liseuse-reflow-v53.mjs';
 
 const setup={scrollHeight:1050,clientHeight:350,lineHeight:35};
 
+test('V103 : libellé de la zone de lecture sans contenu privé',()=>{
+  assert.equal(formatReaderAccessibleLocation({
+    mode:'screens',screen:3,screens:8,page:4,total:20
+  }),'Lecture du roman, texte adapté : écran 3 sur 8, page 4 sur 20.');
+  assert.equal(formatReaderAccessibleLocation({
+    mode:'pdf',page:5,total:20
+  }),'Lecture du roman en PDF : page 5 sur 20. Pour une lecture accessible, choisissez le texte adaptable.');
+  assert.equal(formatReaderAccessibleLocation({
+    mode:'continuous',page:4,total:20
+  }),'Lecture du roman, texte adaptable en défilement continu : page 4 sur 20.');
+  assert.equal(formatReaderAccessibleLocation({
+    mode:'screens',screen:99,screens:3,page:'',total:undefined
+  }),'Lecture du roman, texte adapté : écran 3 sur 3, page inconnue.');
+});
 test('V102 : progression compacte lisible selon écrans, texte et PDF',()=>{
   assert.equal(formatReaderMobileLocation({
     mode:'screens',screen:3,screens:8,page:4,total:20
@@ -1101,20 +1115,26 @@ test('V102 : barre mobile reflète écran, PDF, texte continu et page source',()
   const f=fixture();
   try{
     assert.equal(f.mobileHint.textContent,'Écr. 1/4 · p. 4 / 20');
+    assert.equal(f.viewer.getAttribute('aria-label'),
+      'Lecture du roman, texte adapté : écran 1 sur 4, page 4 sur 20.');
     const before=f.status.textContent;
     f.swipe(-100);
     assert.equal(f.mobileHint.textContent,'Écr. 2/4 · p. 4 / 20');
+    assert.match(f.viewer.getAttribute('aria-label'),/écran 2 sur 4, page 4 sur 20/);
     assert.notEqual(f.status.textContent,before);
     f.text.hidden=true;
     f.viewer.emit('sinjira:reader-page-change',{});
     assert.equal(f.mobileHint.textContent,'PDF · p. 4 / 20');
+    assert.match(f.viewer.getAttribute('aria-label'),/en PDF : page 4 sur 20/);
     f.pageField.value='5';
     f.viewer.emit('sinjira:reader-page-change',{});
     assert.equal(f.mobileHint.textContent,'PDF · p. 5 / 20');
+    assert.match(f.viewer.getAttribute('aria-label'),/en PDF : page 5 sur 20/);
     f.text.hidden=false;
     f.toggle.checked=false;
     f.toggle.emit('change',{});
     assert.equal(f.mobileHint.textContent,'Continu · p. 5 / 20');
+    assert.match(f.viewer.getAttribute('aria-label'),/défilement continu : page 5 sur 20/);
     f.toggle.checked=true;
     f.toggle.emit('change',{});
     assert.match(f.mobileHint.textContent,/^Écr\. \d+\/4 · p\. 5 \/ 20$/);
@@ -1153,7 +1173,7 @@ test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
   assert.match(h,/id="reader-screen-count"/);
-  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.14\.102/);
+  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.14\.103/);
   assert.match(h,/sinjira-liseuse-v26\.js\?v=34\.11\.14\.102/);
 });
 test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=>{
