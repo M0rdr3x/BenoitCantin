@@ -2,7 +2,8 @@ import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { bearerToken, requiredUser, serviceClient } from '../_shared/auth.ts';
-import { buildSecurityPushMessage, SECURITY_PUSH_MAX_BATCH } from '../_shared/security-push-policy.mjs';
+import { buildSecurityPushBatch, SECURITY_PUSH_MAX_BATCH } from '../_shared/security-push-policy.mjs';
+import { readBoundedSecurityPushJson } from '../_shared/security-push-response.mjs';
 import {
   SECURITY_PUSH_RECEIPT_URL,
   SECURITY_PUSH_SEND_URL,
@@ -135,7 +136,7 @@ async function processSecurityPushReceipts(service: ReturnType<typeof serviceCli
       return;
     }
 
-    const result = await response.json().catch(() => null);
+    const result = await readBoundedSecurityPushJson(response);
     const resolved = resolveSecurityPushReceipts(pending, result?.data);
     if (!resolved.handledReceiptIds.length) return;
 
@@ -180,9 +181,13 @@ async function sendSecurityPush(service: ReturnType<typeof serviceClient>, userI
   const invalidIds: string[] = [];
   for (let offset = 0; offset < endpoints.length; offset += SECURITY_PUSH_MAX_BATCH) {
     const endpointBatch = endpoints.slice(offset, offset + SECURITY_PUSH_MAX_BATCH);
-    const messages = endpointBatch.map((endpoint: any) =>
-      buildSecurityPushMessage(endpoint.expo_push_token, outcome)
-    );
+    // A single malformed token must never suppress legitimate security alerts.
+    // Preserve exact message-to-endpoint indexes for Expo tickets and receipts.
+    const {
+      messages, acceptedEndpoints: validEndpointBatch, invalidEndpointIds
+    } = buildSecurityPushBatch(endpointBatch, outcome);
+    invalidIds.push(...invalidEndpointIds);
+    if (!messages.length) continue;
 
     try {
       const response = await postSecurityPushJson(SECURITY_PUSH_SEND_URL, messages);
@@ -190,9 +195,9 @@ async function sendSecurityPush(service: ReturnType<typeof serviceClient>, userI
         console.warn('[security-context] Expo Push HTTP', response.status);
         continue;
       }
-      const result = await response.json().catch(() => null);
+      const result = await readBoundedSecurityPushJson(response);
       const tickets = Array.isArray(result?.data) ? result.data : [];
-      const resolved = resolveSecurityPushTickets(tickets, endpointBatch);
+      const resolved = resolveSecurityPushTickets(tickets, validEndpointBatch);
       invalidIds.push(...resolved.invalidEndpointIds);
 
       if (resolved.receiptRows.length) {
