@@ -408,9 +408,26 @@ export function bindReaderScreenMode({
     }
     return false;
   };
+  // V126 : le gestionnaire de pages d'écran reçoit touchend AVANT V52.
+  // Une mutation PDF→texte→PDF ou un remplacement de texte dans la même
+  // tâche JS doit interrompre le geste avant que la page ne tourne.
+  // Ne pas perdre la synchronisation de l'ancienne notification :
+  // appliquer le réagencement prévu lorsque takeRecords() est consommé.
+  const flushPendingTextMutation=()=>{
+    const changes=observer?.takeRecords?.();
+    if(!changes?.length)return false;
+    const changed=changes.some(m=>m.attributeName==='hidden'||
+      m.type==='childList'||m.type==='characterData');
+    if(changed){
+      gesture=null;
+      afterTextChanged();
+    }else sync();
+    return changed;
+  };
   const isTouchTargetAllowed=event=>!isInteractive(event.target);
   const onTouchStart=event=>{
     gesture=null;
+    if(flushPendingTextMutation())return;
     if(!isPaged()||!canNavigate()||event.touches?.length!==1||!isTouchTargetAllowed(event)||
       isReaderViewportZoomed())return;
     const touch=event.touches[0];
@@ -437,6 +454,7 @@ export function bindReaderScreenMode({
     };
   };
   const onTouchMove=event=>{
+    if(flushPendingTextMutation())return;
     if(!gesture)return;
     if(event.touches?.length!==1||!isPaged()||!canNavigate()||isReaderViewportZoomed()||
       gesture.bookPage!==String(pageField.value)||
@@ -484,6 +502,7 @@ export function bindReaderScreenMode({
     cancelReaderPageTurnFlash(viewer);
   }};
   const onTouchEnd=event=>{
+    if(flushPendingTextMutation())return;
     const start=gesture;gesture=null;
     if(!start||!isPaged()||!canNavigate()||isReaderViewportZoomed()||
       start.bookPage!==String(pageField.value)||

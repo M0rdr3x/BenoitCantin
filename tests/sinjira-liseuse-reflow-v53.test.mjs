@@ -349,9 +349,11 @@ function mockTarget(opts={}){
 function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=false,deferredRaf=false,withReaderContent=false}={}){
   const observed=[];
   class FakeObserver{
-    constructor(callback){this.callback=callback;observed.push(this)}
+    constructor(callback){this.callback=callback;this.pending=[];observed.push(this)}
     observe(target){this.target=target}
     disconnect(){}
+    takeRecords(){return this.pending.splice(0)}
+    queue(mutations){this.pending.push(...mutations)}
     emit(mutations){this.callback(mutations)}
   }
   const oldWindow=globalThis.window,oldDocument=globalThis.document;
@@ -449,10 +451,63 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
     notifyContent:()=>observed.find(x=>x.target===readerContent)?.emit([
       {type:'attributes',attributeName:'hidden'}
     ]),
+    queueTextMutation:records=>observed.find(x=>x.target===text)?.queue(records),
+    pendingTextMutations:()=>observed.find(x=>x.target===text)?.pending.length||0,
     notifyText:()=>observed.find(x=>x.target===text)?.emit([{type:'childList'}]),
     flushFrames,getStatusWrites:()=>statusWrites,
     setSelected:v=>{selected=v}};
 }
+test('V126 : transitions texte rapides dans une même tâche ne tournent pas un écran',()=>{
+  const f=fixture({observe:true});
+  const touch={identifier:126,clientX:240,clientY:150};
+  const end={...touch,clientX:80,clientY:152};
+  const begin=()=>f.viewer.emit('touchstart',{touches:[touch],
+    target:{closest:()=>null}});
+  const finish=()=>{
+    const event={touches:[],changedTouches:[end],defaultPrevented:false,
+      preventDefault(){this.defaultPrevented=true}};
+    f.viewer.emit('touchend',event);
+    return event;
+  };
+  try{
+    begin();
+    f.text.hidden=true;f.text.hidden=false;
+    f.queueTextMutation([
+      {type:'attributes',attributeName:'hidden'},
+      {type:'attributes',attributeName:'hidden'}
+    ]);
+    assert.equal(finish().defaultPrevented,false,
+      'aucun écran ne doit être tourné depuis la représentation remplacée');
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(f.next.clicks,0);
+    assert.equal(f.pendingTextMutations(),0,'ne pas attendre un callback différé');
+    begin();
+    f.queueTextMutation([{type:'childList'}]);
+    assert.equal(finish().defaultPrevented,false,'texte remplacé pendant le contact');
+    assert.equal(f.viewer.scrollTop,0);
+    // Changement de style non suivi : le geste reste admissible.
+    begin();
+    f.queueTextMutation([{type:'attributes',attributeName:'class'}]);
+    assert.equal(finish().defaultPrevented,true);
+    assert.equal(f.viewer.scrollTop,315,'pas de blocage pour un attribut non pertinent');
+    f.swipe(130,3);
+    assert.equal(f.viewer.scrollTop,0,'le nouveau geste droit reste disponible');
+  }finally{f.restore()}
+});
+test('V126 : des mutations antérieures au touchstart ne déclenchent pas un saut',()=>{
+  const f=fixture({observe:true});
+  try{
+    f.queueTextMutation([{type:'attributes',attributeName:'hidden'}]);
+    const result=f.swipe(-130,3);
+    assert.equal(result.defaultPrevented,false,
+      'contact commencé sur une page en rechargement : ignorer proprement');
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(f.pendingTextMutations(),0);
+    const next=f.swipe(-130,3);
+    assert.equal(next.defaultPrevented,true,'le geste suivant fonctionne');
+    assert.equal(f.viewer.scrollTop,315);
+  }finally{f.restore()}
+});
 test('V119 : repère visible lors d un écran réel, pas sur un geste ignoré',()=>{
   const f=fixture(),animation=[];
   f.viewer.animate=(frames)=>{animation.push(frames[0].boxShadow)};
