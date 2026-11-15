@@ -324,9 +324,13 @@ export function bindReaderScreenMode({
       jumpPreview=null;sync();return;
     }
     jumpPreview=selected;
-    // Un seul changement du texte ARIA, sans scroll ni événement de
-    // sauvegarde durant les mouvements successifs du pouce.
-    sync();
+    // Mettre à jour uniquement le curseur pendant le drag : pas de scroll,
+    // pas de capture d'ancre, pas d'aria-live ni d'écriture de progression
+    // pour chaque pixel parcouru par le pouce sur un long roman.
+    const description='Écran '+selected+' sur '+s.screens+' · page '+
+      pageField.value+' du livre · relâcher pour lire cet écran';
+    if(screenJump.getAttribute?.('aria-valuetext')!==description)
+      screenJump.setAttribute?.('aria-valuetext',description);
   };
   const onScreenJumpCommit=()=>{
     if(!screenJump)return;
