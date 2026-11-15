@@ -356,6 +356,28 @@
   .sinjira-liseuse .reader-screen-settings input:focus-visible{
     outline:3px solid #b2fff0;outline-offset:3px;
   }
+  /* V104 — accès tactile direct à un écran, sans réduire la zone de
+     tapotement du lecteur et sans intercepter les swipes dans le livre. */
+  .sinjira-liseuse .reader-screen-settings .reader-screen-jump-label{
+    flex:1 1 225px;
+    min-width:0;
+    justify-content:center;
+    flex-wrap:wrap;
+    color:#e2f5f4;
+  }
+  .sinjira-liseuse .reader-screen-settings input[type="range"]#reader-screen-jump{
+    display:block;
+    box-sizing:border-box;
+    flex:1 1 140px;
+    width:min(190px,45vw);
+    min-width:110px;
+    max-width:250px;
+    height:44px;
+    min-height:44px;
+    padding:0;
+    cursor:pointer;
+    accent-color:#76dfce;
+  }
   .sinjira-liseuse .reader-screen-settings output{
     min-width:155px;text-align:center;
     font-weight:750;color:#b9eee4;
