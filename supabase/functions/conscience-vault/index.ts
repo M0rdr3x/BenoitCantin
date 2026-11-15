@@ -49,7 +49,8 @@ async function readBoundedJson(req: Request) {
       chunks.push(value);
     }
   } finally {
-    reader.releaseLock();
+    // An aborted read may still be settling; never hide REQUEST_TIMEOUT.
+    try { reader.releaseLock(); } catch { /* cancellation already requested */ }
   }
 
   const bytes = new Uint8Array(total);
