@@ -210,7 +210,7 @@ function savePreference(on){
  */
 export function bindReaderScreenMode({
   viewer,text,previous,next,mobilePrevious,mobileNext,toggle,status,pageField,
-  mobileHint=null,totalPages=null,screenJump=null,
+  mobileHint=null,totalPages=null,screenJump=null,screenJumpLabel=null,
   media=window.matchMedia('(max-width: 980px)'),
   getSelectionText=()=>String(window.getSelection?.()?.toString()||''),
   clock=()=>performance.now(),
@@ -253,9 +253,9 @@ export function bindReaderScreenMode({
     for(const button of [previous,mobilePrevious])describe(button,backLabel);
     for(const button of [next,mobileNext])describe(button,forwardLabel);
     status.hidden=!active;
-    // V104 : accès direct tactile à une portion du texte source, sans
-    // sauter une page PDF ni créer de nouvelle position persistée.
-    if(screenJump)screenJump.hidden=!active;
+    // V105 : ne jamais laisser le LIBELLÉ d'un curseur caché dans les
+    // modes PDF/continu. Une page ayant un seul écran n'a pas non plus
+    // besoin d'un curseur trompeur ou d'une cible tactile inutile.
     // V102 : afficher l'emplacement à portée du pouce, y compris en PDF
     // et en mode texte continu. La barre est aria-hidden : ne pas créer
     // une deuxième annonce vocale à chaque page tournée.
@@ -263,6 +263,9 @@ export function bindReaderScreenMode({
     const total=totalPages?.textContent||pageField.max;
     const mode=active?'screens':text.hidden?'pdf':'continuous';
     const screenInfo=active?metric():null;
+    const jumpVisible=Boolean(active&&screenInfo.screens>1);
+    if(screenJump)screenJump.hidden=!jumpVisible;
+    if(screenJumpLabel)screenJumpLabel.hidden=!jumpVisible;
     const position=screenInfo?{...screenInfo,page,total,mode}:{page,total,mode};
     const location=formatReaderMobileLocation(position);
     if(mobileHint&&mobileHint.textContent!==location)mobileHint.textContent=location;
@@ -308,7 +311,7 @@ export function bindReaderScreenMode({
   const onScreenJump=()=>{
     if(!screenJump||!isPaged()||!canNavigate())return;
     const selected=Number(screenJump.value),s=metric();
-    if(!Number.isSafeInteger(selected)||selected<1||selected>s.screens)return;
+    if(s.screens<=1||!Number.isSafeInteger(selected)||selected<1||selected>s.screens)return;
     cancelPendingLayoutRestore();
     // La dernière portion peut être plus courte qu'un interligne :
     // rejoindre la véritable fin plutôt qu'une page fictive additionnelle.
@@ -650,7 +653,8 @@ function initReaderScreens(){
     mobilePrevious:id('reader-touch-prev'),mobileNext:id('reader-touch-next'),
     toggle:id('reader-screens-enabled'),status:id('reader-screen-count'),pageField:id('reader-page'),
     mobileHint:id('reader-touch-location'),totalPages:id('reader-total'),
-    screenJump:id('reader-screen-jump')
+    screenJump:id('reader-screen-jump'),
+    screenJumpLabel:id('reader-screen-jump-label')
   });
 }
 if(typeof document!=='undefined'){
