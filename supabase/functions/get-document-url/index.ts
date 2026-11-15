@@ -1,6 +1,7 @@
 import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import { corsHeaders } from '../_shared/cors.ts';
 import { optionalUser, serviceClient } from '../_shared/auth.ts';
+import { privateDocumentLocationValid, isVerifiedPrivateDocumentBucket } from '../_shared/private-document-storage.mjs';
 
 const MAX_REQUEST_BYTES=512;
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -82,7 +83,16 @@ Deno.serve(async(req)=>{
       if(!externalUrlAllowed(url))return privateJson({ok:false,error:'URL de document non autorisée.'},500);
       return privateJson({ok:true,url,protected:false,expires_in:null});
     }
-    if(!doc.storage_bucket||!doc.storage_path)return privateJson({ok:false,error:'Fichier non configuré.'},500);
+    // Une URL signée ne protège pas les objets d'un bucket Storage public.
+    // Après la décision d'accès, refuser toute configuration ambiguë ou publique.
+    if(!privateDocumentLocationValid(doc.storage_bucket,doc.storage_path)){
+      return privateJson({ok:false,error:'Stockage privé indisponible.'},503);
+    }
+    const {data:bucketMetadata,error:bucketMetadataError}=await service.storage.getBucket(doc.storage_bucket);
+    if(bucketMetadataError||!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket)){
+      console.error('[get-document-url]',{code:'DOCUMENT_PRIVATE_BUCKET_UNVERIFIED'});
+      return privateJson({ok:false,error:'Stockage privé indisponible.'},503);
+    }
 
     const {data:signed,error:signedError}=await service.storage.from(doc.storage_bucket).createSignedUrl(doc.storage_path,600);
     if(signedError||!signed?.signedUrl)return privateJson({ok:false,error:'Impossible de créer le lien sécurisé.'},500);
