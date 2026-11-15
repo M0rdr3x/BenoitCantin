@@ -1152,6 +1152,44 @@ test('V105 : le curseur et son libellé disparaissent ensemble selon le mode et 
     assert.equal(f.screenJump.max,'4');
   }finally{f.restore()}
 });
+test('V106 : glissement du curseur prévisualise sans déplacer le texte ni multiplier la sauvegarde',()=>{
+  const f=fixture();
+  try{
+    let turns=0;
+    f.viewer.dispatchEvent=event=>{
+      if(event.type==='sinjira:reader-screen-turn')turns++;
+      return true;
+    };
+    const source=f.pageField.value,initialStatus=f.status.textContent;
+    for(const screen of ['2','3','2','3']){
+      f.screenJump.value=screen;
+      f.screenJump.emit('input',{target:f.screenJump});
+      assert.equal(f.viewer.scrollTop,0);
+      assert.equal(f.pageField.value,source);
+      assert.equal(turns,0);
+      assert.equal(f.status.textContent,initialStatus);
+      assert.match(f.screenJump.getAttribute('aria-valuetext'),
+        new RegExp('Écran '+screen+' sur 4.*relâcher pour lire cet écran'));
+    }
+    f.screenJump.emit('change',{target:f.screenJump});
+    assert.equal(f.viewer.scrollTop,630);
+    assert.equal(turns,1);
+    assert.equal(f.screenJump.value,'3');
+    assert.match(f.screenJump.getAttribute('aria-valuetext'),/Écran 3 sur 4/);
+    assert.doesNotMatch(f.screenJump.getAttribute('aria-valuetext'),/relâcher/);
+    assert.equal(f.pageField.value,source);
+    // Confirmer une deuxième fois l'écran courant ne produit aucune écriture.
+    f.screenJump.emit('change',{target:f.screenJump});
+    assert.equal(turns,1);
+    // Une nouvelle interaction abandonnée à la suite d'un swipe revient
+    // à l'écran effectivement lu, sans effacer une position valide.
+    f.screenJump.value='4';
+    f.screenJump.emit('input',{target:f.screenJump});
+    f.swipe(95);
+    assert.equal(turns,2);
+    assert.equal(f.screenJump.value,'2');
+  }finally{f.restore()}
+});
 test('V104 : curseur tactile navigue entre écrans sans changer le PDF',()=>{
   const f=fixture();
   try{
@@ -1161,6 +1199,8 @@ test('V104 : curseur tactile navigue entre écrans sans changer le PDF',()=>{
     assert.match(f.screenJump.getAttribute('aria-valuetext'),/Écran 1 sur 4 · page 4/);
     f.screenJump.value='3';
     f.screenJump.emit('input',{target:f.screenJump});
+    assert.equal(f.viewer.scrollTop,0);
+    f.screenJump.emit('change',{target:f.screenJump});
     assert.equal(f.viewer.scrollTop,630);
     assert.equal(f.screenJump.value,'3');
     assert.match(f.mobileHint.textContent,/Écr. 3\/4/);
@@ -1169,10 +1209,14 @@ test('V104 : curseur tactile navigue entre écrans sans changer le PDF',()=>{
     assert.equal(f.next.clicks,0);
     f.screenJump.value='4';
     f.screenJump.emit('input',{target:f.screenJump});
+    assert.equal(f.viewer.scrollTop,630);
+    f.screenJump.emit('change',{target:f.screenJump});
     assert.equal(f.viewer.scrollTop,700); // fin réelle d'une page source
     assert.equal(f.screenJump.value,'4');
     f.screenJump.value='1';
     f.screenJump.emit('input',{target:f.screenJump});
+    assert.equal(f.viewer.scrollTop,700);
+    f.screenJump.emit('change',{target:f.screenJump});
     assert.equal(f.viewer.scrollTop,0);
     assert.equal(f.pageField.value,'4');
     for(const invalid of ['0','7','NaN','2.2']){
@@ -1265,7 +1309,7 @@ test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
   assert.match(h,/id="reader-screen-count"/);
-  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.14\.105/);
+  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.14\.106/);
   assert.match(h,/sinjira-liseuse-v26\.js\?v=34\.11\.14\.102/);
 });
 test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=>{
