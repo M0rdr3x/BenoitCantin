@@ -211,6 +211,7 @@ function savePreference(on){
 export function bindReaderScreenMode({
   viewer,text,previous,next,mobilePrevious,mobileNext,toggle,status,pageField,
   mobileHint=null,totalPages=null,screenJump=null,screenJumpLabel=null,
+  pageAnnouncement=null,
   media=window.matchMedia('(max-width: 980px)'),
   getSelectionText=()=>String(window.getSelection?.()?.toString()||''),
   clock=()=>performance.now(),
@@ -220,6 +221,8 @@ export function bindReaderScreenMode({
   if(!viewer||!text||!previous||!next||!toggle||!status||!pageField)
     throw new Error('SINJIRA V53 : contrôles nécessaires absents');
   let gesture=null,pendingPreviousPdf=null,lastRatio=0,restoring=false,closed=false;
+  // V121 : ne prononcer que les changements de page source.
+  let lastNotifiedPage=String(pageField.value);
   // V106 : garder la sélection d'écran pendant le drag sans persister ni
   // modifier la zone lue tant que le curseur n'a pas été relâché.
   let jumpPreview=null,jumpCancelled=false;
@@ -683,11 +686,22 @@ export function bindReaderScreenMode({
   // Le moteur V26 émet cet événement APRÈS la mise à jour de la page
   // canonique : le statut mobile reflète aussitôt une nouvelle page PDF.
   const onBookPageChange=()=>{
-    // V118 : un événement canonique invalide même les gestes démarrés
-    // sur le même numéro, en cas de rechargement ou de changement d'édition.
+    // V118 : toute nouvelle page annule aussi les gestes en cours.
     gesture=null;
     if(jumpPreview!==null)jumpCancelled=true;
+    const current=String(pageField.value),changed=current!==lastNotifiedPage;
+    lastNotifiedPage=current;
     jumpPreview=null;sync();
+    // V121 : les écrans texte ont déjà leur statut aria-live. En PDF ou
+    // mode continu, annoncer uniquement un véritable changement du numéro
+    // source, sans dévoiler le contenu d'une lecture privée masquée.
+    if(changed&&!isPaged()&&canNavigate()&&pageAnnouncement){
+      const page=Number(current),total=Number(totalPages?.textContent||pageField.max);
+      if(Number.isSafeInteger(page)&&page>0){
+        const count=Number.isSafeInteger(total)&&total>=page?' sur '+total:'';
+        pageAnnouncement.textContent='Page '+page+count+' du livre.';
+      }
+    }
   };
   viewer.addEventListener('sinjira:reader-page-change',onBookPageChange);
   previous.addEventListener('click',onPrev,true);
@@ -832,6 +846,7 @@ function initReaderScreens(){
     mobilePrevious:id('reader-touch-prev'),mobileNext:id('reader-touch-next'),
     toggle:id('reader-screens-enabled'),status:id('reader-screen-count'),pageField:id('reader-page'),
     mobileHint:id('reader-touch-location'),totalPages:id('reader-total'),
+    pageAnnouncement:id('reader-page-announcement'),
     screenJump:id('reader-screen-jump'),
     screenJumpLabel:id('reader-screen-jump-label')
   });

@@ -369,7 +369,8 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
     mobilePrevious=mockTarget(),mobileNext=mockTarget(),
     toggle=mockTarget(),status=mockTarget(),pageField=mockTarget(),
     mobileHint=mockTarget(),totalPages=mockTarget(),
-    screenJump=mockTarget(),screenJumpLabel=mockTarget();
+    screenJump=mockTarget(),screenJumpLabel=mockTarget(),
+    pageAnnouncement=mockTarget();
   totalPages.textContent='20';
   documentMock.activeElement=viewer; // le clavier du test possède le focus du livre
   const media=mockTarget();media.matches=true;
@@ -394,7 +395,7 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
   });
   const teardown=bindReaderScreenMode({
     viewer,text,previous,next,mobilePrevious,mobileNext,toggle,status,
-    pageField,mobileHint,totalPages,screenJump,screenJumpLabel,media,getSelectionText:()=>selected,
+    pageField,mobileHint,totalPages,screenJump,screenJumpLabel,pageAnnouncement,media,getSelectionText:()=>selected,
     clock:()=>now,raf,Observer:observe?FakeObserver:null
   });
   function restore(){
@@ -441,7 +442,7 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
     return finished;
   }
   return {viewer,text,previous,next,mobilePrevious,mobileNext,toggle,status,
-    pageField,mobileHint,totalPages,screenJump,screenJumpLabel,
+    pageField,mobileHint,totalPages,screenJump,screenJumpLabel,pageAnnouncement,
     documentMock,windowMock,media,restore,swipe,
     notifyText:()=>observed.find(x=>x.target===text)?.emit([{type:'childList'}]),
     flushFrames,getStatusWrites:()=>statusWrites,
@@ -1597,6 +1598,51 @@ test('V104 : le curseur est désactivé en PDF ou en texte continu',()=>{
     f.toggle.emit('change',{});
     assert.equal(f.screenJump.hidden,false);
   }finally{f.restore()}
+});
+test('V121 : PDF annonce seulement une vraie nouvelle page en mode visible',()=>{
+  const f=fixture();
+  try{
+    assert.equal(f.pageAnnouncement.textContent,'');
+    f.text.hidden=true;
+    f.viewer.emit('sinjira:reader-page-change',{});
+    assert.equal(f.pageAnnouncement.textContent,'');
+    f.pageField.value='5';
+    f.viewer.emit('sinjira:reader-page-change',{});
+    assert.equal(f.pageAnnouncement.textContent,'Page 5 sur 20 du livre.');
+    let writes=0,value=f.pageAnnouncement.textContent;
+    Object.defineProperty(f.pageAnnouncement,'textContent',{
+      configurable:true,get:()=>value,set:v=>{writes++;value=v}
+    });
+    f.viewer.emit('sinjira:reader-page-change',{});
+    assert.equal(writes,0,'signal redondant sans nouvelle annonce');
+    f.text.hidden=false;f.toggle.checked=true;f.pageField.value='6';
+    f.viewer.emit('sinjira:reader-page-change',{});
+    assert.equal(writes,0,'les écrans texte annoncent via leur propre statut');
+    assert.match(f.status.textContent,/page 6 du livre/);
+    f.text.hidden=true;
+    f.pageField.value='7';f.documentMock.hidden=true;
+    f.viewer.emit('sinjira:reader-page-change',{});
+    assert.equal(writes,0,'onglet masqué');
+    f.documentMock.hidden=false;
+    f.viewer.emit('sinjira:reader-page-change',{});
+    assert.equal(writes,0,'pas de rattrapage rétroactif');
+    f.pageField.value='8';f.viewer.emit('sinjira:reader-page-change',{});
+    assert.equal(writes,1);
+    assert.equal(value,'Page 8 sur 20 du livre.');
+    f.viewer.closest=()=>({hidden:true});
+    f.pageField.value='9';f.viewer.emit('sinjira:reader-page-change',{});
+    assert.equal(writes,1,'contenu de livre masqué');
+    f.viewer.closest=()=>null;
+    f.pageField.value='NaN';f.viewer.emit('sinjira:reader-page-change',{});
+    assert.equal(writes,1,'numéro invalide');
+  }finally{f.restore()}
+});
+test('V121 : annonce PDF accessible mais visuellement dissimulée',()=>{
+  const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
+  assert.match(html,/id="reader-page-announcement"[^>]*role="status" aria-live="polite"/);
+  assert.match(css,/\.reader-screen-reader-status\{[\s\S]*?clip-path:inset\(50%\)/);
+  assert.doesNotMatch(html,/id="reader-page-announcement"[^>]*aria-hidden="true"/);
 });
 test('V102 : barre mobile reflète écran, PDF, texte continu et page source',()=>{
   const f=fixture();

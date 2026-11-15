@@ -13,6 +13,7 @@ button{min-height:48px;margin:3px;padding:8px;background:#184a50;color:white;bor
 button:disabled{opacity:.35}
 #controls{display:flex;flex-wrap:wrap;align-items:center;padding:5px}
 #reader-screen-count{display:block;min-height:24px}
+.reader-screen-reader-status{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;border:0}
 #reader-viewer{height:310px;width:min(100%,600px);overflow:auto;margin:auto;background:#f3ead5;color:#29251f}
 #reader-viewer[data-reader-layout="screens"]{overflow-x:hidden;overflow-y:hidden;touch-action:pan-y pinch-zoom}
 #reader-text{font-size:20px;line-height:35px;white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%;padding:10px}
@@ -34,6 +35,7 @@ button:disabled{opacity:.35}
     <input id="reader-screens-enabled" type="checkbox" checked> Pages-écran
   </label>
   <output id="reader-screen-count" aria-live="polite">Chargement</output>
+  <p id="reader-page-announcement" class="reader-screen-reader-status" role="status" aria-live="polite" aria-atomic="true"></p>
 </div>
 <div id="reader-viewer" tabindex="0" aria-label="Texte de test">
   <article id="reader-text" aria-label="Texte synthétique"></article>
@@ -75,6 +77,6 @@ button:disabled{opacity:.35}
 })();
 </script>
 <script type="module" src="/assets/js/sinjira-liseuse-touch-v52.mjs?v=52.11.15.120"></script>
-<script type="module" src="/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.120"></script>
+<script type="module" src="/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.15.121"></script>
 </body>
 </html>
