@@ -2,6 +2,7 @@ import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { bearerToken, requiredUser, serviceClient } from '../_shared/auth.ts';
+import { verifiedCoarseGeo } from '../_shared/verified-geo.mjs';
 import { buildSecurityPushMessage, SECURITY_PUSH_MAX_BATCH } from '../_shared/security-push-policy.mjs';
 import {
   SECURITY_PUSH_RECEIPT_URL,
@@ -86,22 +87,15 @@ function sessionIdFromVerifiedRequest(req: Request) {
 }
 
 /**
- * La localisation de sécurité est désactivée par défaut.
- * Elle ne peut être alimentée que lorsqu'un proxy contrôlé par SINJIRA ajoute
- * des en-têtes de géolocalisation approximative et que l'environnement active
- * explicitement SINJIRA_TRUST_GEO_HEADERS=true.
- *
- * On ne lit jamais l'IP du visiteur et aucune donnée GPS n'est demandée.
+ * Location remains disabled if the dedicated ingress does not supply a
+ * time-limited proof bound to this validated JWT session. A direct client
+ * cannot turn cf-ipcountry / x-sinjira-region into trusted security evidence.
  */
-function trustedGeo(req: Request) {
-  if (Deno.env.get('SINJIRA_TRUST_GEO_HEADERS') !== 'true') {
-    return { country: null, region: null };
-  }
-  const countryRaw = req.headers.get('cf-ipcountry') || '';
-  const country = /^[A-Za-z]{2}$/.test(countryRaw) ? countryRaw.toUpperCase() : null;
-  const regionRaw = req.headers.get('x-sinjira-region') || '';
-  const region = regionRaw ? regionRaw.slice(0, 80) : null;
-  return { country, region };
+async function trustedGeo(req: Request, sessionId: string) {
+  return await verifiedCoarseGeo(req, sessionId, {
+    enabled: Deno.env.get('SINJIRA_TRUST_GEO_HEADERS') === 'true',
+    secret: Deno.env.get('SINJIRA_GEO_PROXY_HMAC_SECRET') || ''
+  });
 }
 
 async function processSecurityPushReceipts(service: ReturnType<typeof serviceClient>) {
@@ -242,7 +236,7 @@ Deno.serve(async (req) => {
     const deviceKey = safeText(body?.device_key, 128);
     if (deviceKey.length < 16) return privateJson({ ok: false, error: 'Identifiant d’appareil invalide.' }, 400);
 
-    const geo = trustedGeo(req);
+    const geo = await trustedGeo(req, sessionId);
     const service = serviceClient();
     const { data, error } = await service.rpc('service_security_evaluate_context_session', {
       p_user_id: user.id,
