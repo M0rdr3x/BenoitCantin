@@ -1,5 +1,6 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredUser, serviceClient } from '../_shared/auth.ts';
+import { collectNovelBodyBytes } from '../_shared/novel-request-bytes.mjs';
 import { privateBookLocationValid, isVerifiedPrivateBucket } from '../_shared/private-book-storage-guard.mjs';
 
 const HEADERS={...corsHeaders,'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store, max-age=0','Pragma':'no-cache','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'};
@@ -7,28 +8,20 @@ const MAX_REQUEST_BYTES=2048;
 function json(data:unknown,status=200){return new Response(JSON.stringify(data),{status,headers:HEADERS});}
 
 async function readBoundedJson(req:Request){
-  if(!req.body)return {};
-  const reader=req.body.getReader();
-  const chunks:Uint8Array[]=[];
-  let total=0;
-  while(true){
-    const {done,value}=await reader.read();
-    if(done)break;
-    if(value){
-      total+=value.byteLength;
-      if(total>MAX_REQUEST_BYTES){
-        try{await reader.cancel();}catch{}
-        throw new Error('REQUEST_TOO_LARGE');
-      }
-      chunks.push(value);
-    }
+  const mediaType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
+  if(mediaType!=='application/json')throw new Error('UNSUPPORTED_MEDIA_TYPE');
+  const declaredLength=req.headers.get('content-length');
+  if(declaredLength!==null && (!/^\d+$/.test(declaredLength) || !Number.isSafeInteger(Number(declaredLength)) || Number(declaredLength)>MAX_REQUEST_BYTES)){
+    throw new Error('REQUEST_TOO_LARGE');
   }
-  const bytes=new Uint8Array(total);
-  let offset=0;
-  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+  // Délai de 8 s et annulation sans attente du producteur distant.
+  const bytes=await collectNovelBodyBytes(req,MAX_REQUEST_BYTES);
   if(!bytes.length)return {};
-  try{return JSON.parse(new TextDecoder().decode(bytes));}
-  catch{throw new Error('INVALID_JSON');}
+  try{
+    const body:unknown=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
+    if(body===null||typeof body!=='object'||Array.isArray(body))throw new Error('INVALID_JSON');
+    return body as Record<string,unknown>;
+  }catch{throw new Error('INVALID_JSON');}
 }
 
 Deno.serve(async(req)=>{
@@ -37,7 +30,7 @@ Deno.serve(async(req)=>{
   try{
     const user=await requiredUser(req);
     const body=await readBoundedJson(req);
-    const slug=String(body?.slug||'').trim();
+    const slug=typeof body?.slug==='string'?body.slug.trim():'';
     if(!slug||slug.length>120)return json({ok:false,error:'Roman invalide.'},400);
     const service=serviceClient();
     const {data:novel,error:novelError}=await service.from('sinjira_novels').select('id,slug,title,status,product_id,private_storage_bucket,private_storage_path,page_count,file_version,file_sha256,file_size_bytes,file_ready').eq('slug',slug).maybeSingle();
@@ -67,7 +60,9 @@ Deno.serve(async(req)=>{
     const message=String(error?.message||'');
     if(message==='AUTH_REQUIRED')return json({ok:false,error:'Connexion requise.'},401);
     if(message==='REQUEST_TOO_LARGE')return json({ok:false,error:'Requête trop volumineuse.'},413);
+    if(message==='REQUEST_INTERRUPTED')return json({ok:false,error:'Lecture de la requête interrompue.'},408);
     if(message==='INVALID_JSON')return json({ok:false,error:'Corps JSON invalide.'},400);
+    if(message==='UNSUPPORTED_MEDIA_TYPE')return json({ok:false,error:'Type de contenu non autorisé.'},415);
     console.error('[get-novel-file-url]',{code:'NOVEL_ACCESS_FAILED'});
     return json({ok:false,error:'Erreur lors de l’accès au roman.'},500);
   }
