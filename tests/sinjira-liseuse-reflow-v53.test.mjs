@@ -4,11 +4,31 @@ import {readFileSync} from 'node:fs';
 import {
   measureReaderScreen,readerScreenState,planReaderScreenTurn,bindReaderScreenMode,parseReaderLineHeight,
   captureReaderTextAnchor,restoreReaderTextAnchor,classifyReaderEdgeTap,
+  prepareReaderPreferencePanels,
   formatReaderMobileLocation,formatReaderAccessibleLocation
 } from '../assets/js/sinjira-liseuse-reflow-v53.mjs';
 
 const setup={scrollHeight:1050,clientHeight:350,lineHeight:35};
 
+test('V110 : les réglages mobiles sont repliés au premier rendu, jamais verrouillés',()=>{
+  const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
+  assert.match(html,/<details class="reader-settings">/);
+  assert.match(html,/<details class="reader-audio-settings">/);
+  assert.doesNotMatch(html,/<details class="reader-(?:settings|audio-settings)" open>/);
+  assert.match(html,/class="reader-mobile-read-link" href="#reader-viewer"/);
+  assert.match(css,/\.reader-mobile-read-link:focus-visible/);
+  assert.match(css,/\.reader-mobile-read-link\{[\s\S]*?min-height:48px/);
+  const font={open:false},voice={open:false};
+  assert.equal(prepareReaderPreferencePanels({media:{matches:true},panels:[font,voice]}),0);
+  assert.deepEqual([font.open,voice.open],[false,false]);
+  font.open=true; // l'utilisateur ouvre ses réglages volontairement
+  assert.equal(prepareReaderPreferencePanels({media:{matches:true},panels:[font,voice]}),0);
+  assert.deepEqual([font.open,voice.open],[true,false]);
+  assert.equal(prepareReaderPreferencePanels({media:{matches:false},panels:[font,voice]}),1);
+  assert.deepEqual([font.open,voice.open],[true,true]);
+  assert.equal(prepareReaderPreferencePanels({media:{matches:false},panels:[font,voice]}),0);
+});
 test('V103 : libellé de la zone de lecture sans contenu privé',()=>{
   assert.equal(formatReaderAccessibleLocation({
     mode:'screens',screen:3,screens:8,page:4,total:20
@@ -1427,7 +1447,7 @@ test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
   assert.match(h,/id="reader-screen-count"/);
-  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.14\.109/);
+  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.14\.110/);
   assert.match(h,/sinjira-liseuse-v26\.js\?v=34\.11\.14\.102/);
 });
 test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=>{

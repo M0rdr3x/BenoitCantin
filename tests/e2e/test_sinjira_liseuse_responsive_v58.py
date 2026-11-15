@@ -71,6 +71,20 @@ def run(playwright, engine, origin):
           document.querySelector('#reader-viewer').dataset.readerLayout==='screens'&&
           document.querySelector('#reader-text').textContent.includes('LIVRE DE TEST')""")
         assert snapshot(page)["page"]==3,snapshot(page)
+        # V110 : sur téléphone les panneaux ne font pas défiler le livre
+        # hors du premier écran. Le lien direct est tactile et au clavier.
+        assert not page.locator(".reader-settings").evaluate("(el)=>el.open")
+        assert not page.locator(".reader-audio-settings").evaluate("(el)=>el.open")
+        quick=page.locator(".reader-mobile-read-link")
+        assert quick.is_visible(),"V110: accès rapide au livre invisible sur téléphone"
+        assert quick.evaluate("(el)=>el.getBoundingClientRect().height")>=44
+        quick.click()
+        assert page.evaluate("location.hash")=="#reader-viewer"
+        summary=page.locator(".reader-settings > summary")
+        summary.click()
+        assert page.locator(".reader-settings").evaluate("(el)=>el.open")
+        summary.click()
+        assert not page.locator(".reader-settings").evaluate("(el)=>el.open")
 
         # V61 : les touches de lecture n'interceptent pas la navigation du site.
         page.evaluate("document.querySelector('#reader-viewer').blur()")
@@ -139,7 +153,7 @@ def run(playwright, engine, origin):
         # V63 : mesurer un caractère effectivement visible AVANT la
         # modification du CSS. L'ancre reste en mémoire navigateur uniquement.
         anchored=page.evaluate("""async()=>{
-          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.14.109');
+          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.14.110');
           const viewer=document.querySelector('#reader-viewer');
           const text=document.querySelector('#reader-text');
           viewer.scrollTop=Math.min(1850,viewer.scrollHeight-viewer.clientHeight-300);
@@ -217,7 +231,7 @@ def run(playwright, engine, origin):
         # V64 : après une police agrandie, changer l'orientation du téléphone
         # doit conserver le caractère lu, pas uniquement un ratio d'écran.
         before_rotation=page.evaluate("""async()=>{
-          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.14.109');
+          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.14.110');
           const viewer=document.querySelector('#reader-viewer');
           const text=document.querySelector('#reader-text');
           const anchor=m.captureReaderTextAnchor({viewer,text});
@@ -289,7 +303,7 @@ def run(playwright, engine, origin):
         # l'activation et de la désactivation, pas seulement le numéro PDF.
         page.locator("#reader-viewer").scroll_into_view_if_needed()
         focus_start=page.evaluate("""async()=>{
-          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.14.109');
+          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.14.110');
           const v=document.querySelector('#reader-viewer');
           const t=document.querySelector('#reader-text');
           v.scrollTop=Math.min(1400,v.scrollHeight-v.clientHeight-400);
@@ -322,7 +336,7 @@ def run(playwright, engine, origin):
         page.evaluate("""()=>new Promise(done=>
           requestAnimationFrame(()=>requestAnimationFrame(done)))""")
         focus_during=page.evaluate("""async()=>{
-          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.14.109');
+          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.14.110');
           const v=document.querySelector('#reader-viewer');
           const t=document.querySelector('#reader-text');
           const anchor=mod.captureReaderTextAnchor({viewer:v,text:t});
@@ -353,7 +367,7 @@ def run(playwright, engine, origin):
         assert page.locator("#reader-touch-prev").get_attribute("aria-label")=="Page du livre précédente"
         page.locator("#reader-viewer").scroll_into_view_if_needed()
         continuous=page.evaluate("""async()=>{
-          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.14.109');
+          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.14.110');
           const v=document.querySelector('#reader-viewer');
           const t=document.querySelector('#reader-text');
           v.scrollTop=Math.min(2200,Math.max(0,v.scrollHeight-v.clientHeight-300));
@@ -382,7 +396,7 @@ def run(playwright, engine, origin):
         # Ne pas accéder au réseau ou au contenu privé.
         page.locator("#reader-viewer").scroll_into_view_if_needed()
         before_chrome=page.evaluate("""async()=>{
-          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.14.109');
+          const mod=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.14.110');
           const viewer=document.querySelector('#reader-viewer');
           const text=document.querySelector('#reader-text');
           viewer.scrollTop=Math.min(1750,Math.max(0,viewer.scrollHeight-viewer.clientHeight-350));
@@ -419,7 +433,7 @@ def run(playwright, engine, origin):
         # V60: le vrai moteur JS chargé sur cette page ne doit pas demander
         # un balayage pour seulement 10 px supplémentaires à la fin.
         tail=page.evaluate("""async ()=>{
-          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.14.109');
+          const m=await import('/assets/js/sinjira-liseuse-reflow-v53.mjs?v=53.11.14.110');
           const p={scrollHeight:850,clientHeight:350,lineHeight:35,
             paddingTop:22,paddingBottom:22};
           return {
@@ -435,6 +449,18 @@ def run(playwright, engine, origin):
         assert tail["end"]["type"]=="document",tail
 
         assert not blocked,blocked
+        assert not errors,errors
+
+        # V110 : sur grand écran, après un chargement natif, les deux
+        # panneaux retrouvent l'ouverture historique. Le raccourci mobile
+        # est caché, sans que l'utilisateur perde le contenu du livre.
+        page.set_viewport_size({"width":1280,"height":900})
+        page.reload(wait_until="load")
+        page.wait_for_function("""()=>!document.querySelector('#reader-content').hidden&&
+          document.querySelector('#reader-viewer').dataset.readerLayout==='scroll'""")
+        assert page.locator(".reader-settings").evaluate("(el)=>el.open")
+        assert page.locator(".reader-audio-settings").evaluate("(el)=>el.open")
+        assert not page.locator(".reader-mobile-read-link").is_visible()
         assert not errors,errors
         context.close()
         print(f"PASS {engine}: 320px, 390px, paysage, tablettes, police 34px, "

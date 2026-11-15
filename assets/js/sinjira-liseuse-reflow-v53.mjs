@@ -717,11 +717,34 @@ export function bindReaderScreenMode({
     observer?.disconnect();buttonsObserver?.disconnect();
   };
 }
+/**
+ * V110 — une vraie lecture mobile commence par le livre, pas deux menus
+ * dépliés. Les réglages restent accessibles par leur summary natif.
+ * Sur ordinateur, ils sont dépliés au chargement, conformément à V26.
+ * Une ouverture manuelle ultérieure n'est jamais écrasée.
+ */
+export function prepareReaderPreferencePanels({media,panels=[]}={}){
+  if(!media||!Array.isArray(panels))return 0;
+  let opened=0;
+  if(!media.matches){
+    for(const panel of panels){
+      if(panel&&!panel.open){panel.open=true;opened++}
+    }
+  }
+  return opened;
+}
 function initReaderScreens(){
   const id=name=>document.getElementById(name);
   const required=['reader-viewer','reader-text','reader-previous','reader-next',
     'reader-screens-enabled','reader-screen-count','reader-page'];
   if(required.some(name=>!id(name)))return;
+  // Les panneaux sont initialement fermés en HTML : zéro flash de menus
+  // dépliés sur téléphone, y compris si le moteur est chargé tardivement.
+  prepareReaderPreferencePanels({
+    media:window.matchMedia('(max-width: 980px)'),
+    panels:[document.querySelector('.reader-settings'),
+      document.querySelector('.reader-audio-settings')]
+  });
   bindReaderScreenMode({
     viewer:id('reader-viewer'),text:id('reader-text'),
     previous:id('reader-previous'),next:id('reader-next'),
