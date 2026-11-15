@@ -444,7 +444,16 @@ export function bindReaderScreenMode({
     if(readerNestedHorizontalScrollMoved(gesture.nestedHorizontalScroll))
       gesture.nestedHorizontalScrolled=true;
   };
-  const onTouchCancel=()=>{gesture=null};
+  // V108 : si le lecteur perd le focus ou passe en arrière-plan pendant
+  // le déplacement du curseur, un change natif tardif ne doit pas
+  // sauter vers un écran non confirmé puis enregistrer cette position.
+  const onTouchCancel=()=>{
+    gesture=null;
+    if(jumpPreview!==null){
+      jumpCancelled=true;
+      jumpPreview=null;
+    }
+  };
   // V91 : un changement d'application, une fermeture d'onglet ou la perte
   // de focus interrompent un balayage même sans événement touchcancel.
   // Ne pas déclencher une page au retour à l'écran.
