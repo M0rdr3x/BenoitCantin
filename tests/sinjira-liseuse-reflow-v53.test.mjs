@@ -63,7 +63,7 @@ test('V114 : le guide tactile concerne aussi les tablettes de 768 et 820 px',()=
   assert.match(responsive,/\.reader-swipe-help summary\{[\s\S]*?min-height:44px/);
   assert.match(responsive,/\.reader-swipe-help summary:focus-visible\{/);
   assert.match(responsive,/\.reader-swipe-help p\{[\s\S]*?text-align:left/);
-  assert.match(html,/sinjira-liseuse-v26\.css\?v=53\.11\.15\.121/);
+  assert.match(html,/sinjira-liseuse-v26\.css\?v=53\.11\.15\.124/);
   assert.match(html,/aria-describedby="reader-swipe-help"/);
 });
 test('V113 : aide tactile compacte, repliable et annoncée au lecteur',()=>{
@@ -346,7 +346,7 @@ function mockTarget(opts={}){
     handlers
   };
 }
-function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=false,deferredRaf=false}={}){
+function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=false,deferredRaf=false,withReaderContent=false}={}){
   const observed=[];
   class FakeObserver{
     constructor(callback){this.callback=callback;observed.push(this)}
@@ -363,7 +363,7 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
   const documentMock=mockTarget();
   documentMock.activeElement=null;
   globalThis.document=documentMock;
-  const viewer=mockTarget(),text=mockTarget(),
+  const viewer=mockTarget(),text=mockTarget(),readerContent=mockTarget(),
     previous=mockTarget({disabled:firstBookPage}),
     next=mockTarget({disabled:lastBookPage}),
     mobilePrevious=mockTarget(),mobileNext=mockTarget(),
@@ -372,6 +372,8 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
     screenJump=mockTarget(),screenJumpLabel=mockTarget(),
     pageAnnouncement=mockTarget();
   totalPages.textContent='20';
+  if(withReaderContent)viewer.closest=selector=>selector==='#reader-content'?
+    readerContent:selector==='[hidden]'&&readerContent.hidden?readerContent:null;
   documentMock.activeElement=viewer; // le clavier du test possède le focus du livre
   const media=mockTarget();media.matches=true;
   let now=0;
@@ -441,9 +443,12 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
     viewer.emit('touchend',finished);
     return finished;
   }
-  return {viewer,text,previous,next,mobilePrevious,mobileNext,toggle,status,
+  return {viewer,text,readerContent,previous,next,mobilePrevious,mobileNext,toggle,status,
     pageField,mobileHint,totalPages,screenJump,screenJumpLabel,pageAnnouncement,
     documentMock,windowMock,media,restore,swipe,
+    notifyContent:()=>observed.find(x=>x.target===readerContent)?.emit([
+      {type:'attributes',attributeName:'hidden'}
+    ]),
     notifyText:()=>observed.find(x=>x.target===text)?.emit([{type:'childList'}]),
     flushFrames,getStatusWrites:()=>statusWrites,
     setSelected:v=>{selected=v}};
@@ -1599,6 +1604,33 @@ test('V104 : le curseur est désactivé en PDF ou en texte continu',()=>{
     assert.equal(f.screenJump.hidden,false);
   }finally{f.restore()}
 });
+test('V124 : cacher un roman efface la page annoncée, sans réannoncer une page périmée',()=>{
+  const f=fixture({observe:true,withReaderContent:true});
+  try{
+    assert.equal(f.pageAnnouncement.textContent,'');
+    f.text.hidden=true;
+    f.pageField.value='5';
+    f.viewer.emit('sinjira:reader-page-change');
+    assert.equal(f.pageAnnouncement.textContent,'Page 5 sur 20 du livre.');
+    f.readerContent.hidden=true;
+    f.notifyContent();
+    assert.equal(f.pageAnnouncement.textContent,'','la zone vocale est purgée');
+    f.readerContent.hidden=false;
+    f.notifyContent();
+    assert.equal(f.pageAnnouncement.textContent,'','la réouverture ne ressuscite rien');
+    f.viewer.emit('sinjira:reader-page-change');
+    assert.equal(f.pageAnnouncement.textContent,'','signal identique non annoncé');
+    f.pageField.value='6';
+    f.viewer.emit('sinjira:reader-page-change');
+    assert.equal(f.pageAnnouncement.textContent,'Page 6 sur 20 du livre.',
+      'une vraie page nouvelle reste accessible');
+    f.text.hidden=false;
+    f.toggle.checked=true;
+    f.viewer.emit('sinjira:reader-page-change');
+    assert.equal(f.pageAnnouncement.textContent,'','le mode écran n expose plus le statut PDF');
+    assert.match(f.status.textContent,/page 6 du livre/);
+  }finally{f.restore()}
+});
 test('V121 : PDF annonce seulement une vraie nouvelle page en mode visible',()=>{
   const f=fixture();
   try{
@@ -1617,24 +1649,26 @@ test('V121 : PDF annonce seulement une vraie nouvelle page en mode visible',()=>
     assert.equal(writes,0,'signal redondant sans nouvelle annonce');
     f.text.hidden=false;f.toggle.checked=true;f.pageField.value='6';
     f.viewer.emit('sinjira:reader-page-change',{});
-    assert.equal(writes,0,'les écrans texte annoncent via leur propre statut');
+    assert.equal(writes,1,'le mode écran efface l ancienne annonce PDF');
+    assert.equal(value,'','le numéro de l ancien mode n est plus exposé');
     assert.match(f.status.textContent,/page 6 du livre/);
     f.text.hidden=true;
     f.pageField.value='7';f.documentMock.hidden=true;
     f.viewer.emit('sinjira:reader-page-change',{});
-    assert.equal(writes,0,'onglet masqué');
+    assert.equal(writes,1,'onglet masqué sans nouvelle annonce');
     f.documentMock.hidden=false;
     f.viewer.emit('sinjira:reader-page-change',{});
-    assert.equal(writes,0,'pas de rattrapage rétroactif');
+    assert.equal(writes,1,'pas de rattrapage rétroactif');
     f.pageField.value='8';f.viewer.emit('sinjira:reader-page-change',{});
-    assert.equal(writes,1);
+    assert.equal(writes,2);
     assert.equal(value,'Page 8 sur 20 du livre.');
     f.viewer.closest=()=>({hidden:true});
     f.pageField.value='9';f.viewer.emit('sinjira:reader-page-change',{});
-    assert.equal(writes,1,'contenu de livre masqué');
+    assert.equal(writes,3,'le masquage efface la page précédente sans en annoncer une autre');
+    assert.equal(value,'');
     f.viewer.closest=()=>null;
     f.pageField.value='NaN';f.viewer.emit('sinjira:reader-page-change',{});
-    assert.equal(writes,1,'numéro invalide');
+    assert.equal(writes,3,'numéro invalide');
   }finally{f.restore()}
 });
 test('V121 : annonce PDF accessible mais visuellement dissimulée',()=>{
@@ -1706,7 +1740,7 @@ test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
   assert.match(h,/id="reader-screen-count"/);
-  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.15\.121/);
+  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.15\.124/);
   assert.match(h,/sinjira-liseuse-v26\.js\?v=34\.11\.14\.102/);
 });
 test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=>{

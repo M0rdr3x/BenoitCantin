@@ -237,12 +237,20 @@ export function bindReaderScreenMode({
   // écran pendant une mise en arrière-plan et fausser le retour du lecteur.
   const canNavigate=()=>!closed&&!globalThis.document?.hidden&&
     !viewer.closest?.('[hidden]');
+  // V124 : une annonce du PDF précédent ne doit plus persister dans une
+  // nouvelle vue ou dans le DOM d'un roman privé momentanément masqué.
+  const clearPageAnnouncement=()=>{
+    if(pageAnnouncement?.textContent)pageAnnouncement.textContent='';
+  };
   const metric=()=>readerScreenState({
     scrollTop:viewer.scrollTop,scrollHeight:viewer.scrollHeight,
     clientHeight:viewer.clientHeight,...textMetrics(text)
   });
   const sync=()=>{
     const active=isPaged();
+    // Un écran paginé possède déjà son propre aria-live : supprimer
+    // l'annonce PDF précédente, sans créer une annonce vocale en double.
+    if(active||!canNavigate())clearPageAnnouncement();
     viewer.dataset.readerLayout=active?'screens':'scroll';
     // V61 : les mêmes boutons contrôlent soit les portions de texte, soit
     // les pages PDF. Un libellé statique tromperait un lecteur d'écran.
@@ -598,6 +606,14 @@ export function bindReaderScreenMode({
     }else sync();
   }):null;
   observer?.observe(text,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['hidden']});
+  // V124 : lorsqu'un livre privé est masqué sans événement de nouvelle page,
+  // effacer tout statut de l'ancien roman avant de révéler le suivant.
+  const readingContent=viewer.closest?.('#reader-content');
+  const contentObserver=readingContent&&Observer?new Observer(mutations=>{
+    if(readingContent.hidden&&mutations.some(m=>m.type==='attributes'&&
+      m.attributeName==='hidden'))clearPageAnnouncement();
+  }):null;
+  contentObserver?.observe(readingContent,{attributes:true,attributeFilter:['hidden']});
   const buttonsObserver=Observer?new Observer(()=>sync()):null;
   buttonsObserver?.observe(previous,{attributes:true,attributeFilter:['disabled']});
   buttonsObserver?.observe(next,{attributes:true,attributeFilter:['disabled']});
@@ -745,7 +761,7 @@ export function bindReaderScreenMode({
     window.visualViewport?.removeEventListener?.('resize',onVisualViewportResize);
     window.removeEventListener('sinjira:reader-layout-will-change',onFocusLayoutChange);
     media.removeEventListener?.('change',onResize);
-    observer?.disconnect();buttonsObserver?.disconnect();
+    observer?.disconnect();buttonsObserver?.disconnect();contentObserver?.disconnect();
   };
 }
 /**
