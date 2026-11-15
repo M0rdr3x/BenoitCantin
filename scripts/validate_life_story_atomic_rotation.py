@@ -34,6 +34,7 @@ SQL_MARKERS={
     'insert transactionnel':'insert into public.life_story_delivery_links',
     'comptage strict':'if v_inserted <> v_count then',
     'expiration SQL':"v_expires_at := pg_catalog.clock_timestamp() + interval '30 days';",
+    'trois téléchargements max':"v_expires_at,\n    3\n  from",
 }
 EDGE_MARKERS={
     'identité admin':'await requiredAdmin(req)',
