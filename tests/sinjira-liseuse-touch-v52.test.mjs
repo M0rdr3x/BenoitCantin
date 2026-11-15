@@ -129,7 +129,7 @@ test('V101 : glisser le PDF à la souris avance et revient exactement une fois',
     pointer('pointerdown',260);
     pointer('pointermove',180);
     f.advance(210);
-    pointer('pointerup',95,{},{});
+    pointer('pointerup',95);
     assert.equal(f.next.clicks,1);
     pointer('pointerdown',95);
     pointer('pointermove',175);
