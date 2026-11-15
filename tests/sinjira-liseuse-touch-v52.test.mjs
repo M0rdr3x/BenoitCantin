@@ -71,6 +71,44 @@ test('V119 : une navigation PDF montre un repère, jamais un swipe refusé',()=>
   assert.equal(f.next.events.has('click'),false);
   assert.equal(f.previous.events.has('click'),false);
 });
+test('V123 : mutation cachée PDF vers texte puis PDF annule un geste tactile',()=>{
+  const observers=[];
+  class FakeObserver{
+    constructor(fn){this.fn=fn;this.watched=[];this.closed=false;observers.push(this)}
+    observe(node,options){this.watched.push({node,options})}
+    disconnect(){this.closed=true}
+    notify(records){if(!this.closed)this.fn(records)}
+  }
+  const f=fixture({Observer:FakeObserver});
+  const modeWatcher=observers.find(o=>o.watched.some(x=>x.node===f.readingText));
+  assert.ok(modeWatcher,'surveiller le mode du texte réel');
+  assert.deepEqual(modeWatcher.watched.map(x=>x.options.attributeFilter),[['hidden'],['hidden']]);
+  assert.ok(modeWatcher.watched.some(x=>x.node===f.readingContent),
+    'surveiller aussi le masquage du roman intégral');
+  const start={identifier:7,clientX:245,clientY:190};
+  const end={...start,clientX:95,clientY:193};
+  try{
+    f.setPdfMode(true);
+    f.viewer.emit('touchstart',{touches:[start],target:{closest:()=>null}});
+    f.setPdfMode(false);f.setPdfMode(true);
+    modeWatcher.notify([{type:'attributes',attributeName:'hidden',target:f.readingText}]);
+    f.advance(190);
+    f.viewer.emit('touchend',{touches:[],changedTouches:[end],defaultPrevented:false});
+    assert.equal(f.next.clicks,0,'le mode revenu à PDF ne réactive pas le vieux doigt');
+    f.viewer.emit('touchstart',{touches:[start],target:{closest:()=>null}});
+    f.readingContent.hidden=true;f.readingContent.hidden=false;
+    modeWatcher.notify([{type:'attributes',attributeName:'hidden',target:f.readingContent}]);
+    f.advance(190);
+    f.viewer.emit('touchend',{touches:[],changedTouches:[end],defaultPrevented:false});
+    assert.equal(f.next.clicks,0,'masquer puis révéler un nouveau livre annule le contact');
+    modeWatcher.notify([{type:'attributes',attributeName:'class',target:f.readingText}]);
+    f.swipe(-130,3);f.swipe(130,3);
+    assert.equal(f.next.clicks,1,'le nouveau geste gauche fonctionne');
+    assert.equal(f.previous.clicks,1,'le nouveau geste droit fonctionne');
+  }finally{f.release()}
+  assert.equal(modeWatcher.closed,true,'libérer les observers au démontage');
+  assert.ok(observers.every(x=>x.closed),'aucun observateur résiduel');
+});
 test('V122 : changement PDF texte pendant un swipe sans page fantome',()=>{
   const f=fixture();
   try{
@@ -260,17 +298,21 @@ function target(){
     events
   };
 }
-function fixture({selected=false}={}){
+function fixture({selected=false,Observer=null}={}){
   const viewer=target(),previous=target(),next=target(),
-        mobilePrevious=target(),mobileNext=target(),canvas=target();
+        mobilePrevious=target(),mobileNext=target(),canvas=target(),
+        readingContent=target();
   const pageField={value:'3'};
   canvas.id='reader-canvas';
   let time=0,selection=selected?'Sélection de citation':'',pdfMode=false;
-  viewer.querySelector=sel=>sel==='#reader-text'?{hidden:pdfMode}:
+  const readingText={get hidden(){return pdfMode}};
+  viewer.querySelector=sel=>sel==='#reader-text'?readingText:
     sel==='#reader-canvas'?canvas:null;
+  viewer.closest=selector=>selector==='#reader-content'?readingContent:
+    selector==='[hidden]'&&readingContent.hidden?readingContent:null;
   const release=bindReaderTouchNavigation({
     viewer,previous,next,mobilePrevious,mobileNext,pageField,
-    getSelectedText:()=>selection,clock:()=>time,Observer:null
+    getSelectedText:()=>selection,clock:()=>time,Observer
   });
   const swipe=(dx,dy=5,options={})=>{
     const x=options.startX??170;
@@ -312,6 +354,7 @@ function fixture({selected=false}={}){
     }],defaultPrevented:Boolean(options.prevented)});
   };
   return {viewer,canvas,previous,next,mobilePrevious,mobileNext,pageField,release,swipe,
+    readingText,readingContent,
     advance:ms=>{time+=ms},
     setSelected:v=>{selection=v},setPdfMode:v=>{pdfMode=v}};
 }
@@ -984,7 +1027,7 @@ test('intégration : les boutons mobiles reflètent le statut initial des bouton
 test('contrat HTML/CSS : module autonome et gestes expliqués',()=>{
   const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
-  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.15\.122/);
+  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.15\.123/);
   assert.match(html,/id="reader-touch-prev"/);
   assert.match(html,/id="reader-touch-next"/);
   assert.match(html,/aria-describedby="reader-swipe-help"/);

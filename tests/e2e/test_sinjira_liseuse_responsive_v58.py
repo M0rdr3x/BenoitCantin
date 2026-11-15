@@ -103,6 +103,42 @@ def run(playwright, engine, origin):
         assert mode_transition=={
             "consumed":False,"after":"3","before":"3","layout":"screens"
         },mode_transition
+        # V123 : PDF→texte→PDF avant le relâchement, même page et même
+        # représentation finale. Attendre une micro-tâche pour remettre
+        # l'observateur de mutations entre l'aller-retour et touchend.
+        transient_mode=page.evaluate("""async()=>{
+          const v=document.querySelector('#reader-viewer');
+          const text=document.querySelector('#reader-text');
+          const field=document.querySelector('#reader-page');
+          const paged=document.querySelector('#reader-screens-enabled');
+          const before=field.value;
+          paged.checked=false;
+          paged.dispatchEvent(new Event('change',{bubbles:true}));
+          text.hidden=true;
+          await Promise.resolve();
+          const start={identifier:123,target:v,clientX:260,clientY:225};
+          const end={...start,clientX:100,clientY:228};
+          const fire=(type,touches,changed)=>{
+            const ev=new Event(type,{bubbles:true,cancelable:true});
+            Object.defineProperties(ev,{
+              touches:{value:touches},targetTouches:{value:touches},
+              changedTouches:{value:changed}
+            });
+            v.dispatchEvent(ev);return ev.defaultPrevented;
+          };
+          fire('touchstart',[start],[start]);
+          text.hidden=false;text.hidden=true;
+          await Promise.resolve();
+          const consumed=fire('touchend',[],[end]);
+          const after=field.value;
+          text.hidden=false;
+          paged.checked=true;
+          paged.dispatchEvent(new Event('change',{bubbles:true}));
+          return {consumed,after,before,layout:v.dataset.readerLayout};
+        }""")
+        assert transient_mode=={
+            "consumed":False,"after":"3","before":"3","layout":"screens"
+        },transient_mode
         # V121 : le PDF dispose d'un statut vocal sans doublonner les
         # écrans de texte, et sa région est visuellement dissimulée.
         spoken=page.evaluate("""()=>{

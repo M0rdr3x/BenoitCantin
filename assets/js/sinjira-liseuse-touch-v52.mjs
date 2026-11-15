@@ -438,6 +438,24 @@ export function bindReaderTouchNavigation({
   // Un contact de l'ancienne page devient immédiatement invalide.
   const onBookPageChange=()=>cancelAll();
   viewer.addEventListener('sinjira:reader-page-change',onBookPageChange);
+  // V123 : un passage PDF→texte→PDF (ou livre masqué puis réaffiché)
+  // peut conserver le numéro ET le mode au touchend. MutationObserver
+  // conserve la preuve du basculement, même s'il a déjà été rétabli.
+  // N'annuler que les contacts en cours : aucun livre ou statut n'est lu.
+  const readingText=viewer.querySelector?.('#reader-text');
+  const readingContent=viewer.closest?.('#reader-content');
+  const contentObserver=Observer?new Observer(records=>{
+    if(records.some(record=>record.type==='attributes'&&
+      record.attributeName==='hidden')){
+      cancel();pointerCancel();
+    }
+  }):null;
+  if(readingText)contentObserver?.observe(readingText,{
+    attributes:true,attributeFilter:['hidden']
+  });
+  if(readingContent)contentObserver?.observe(readingContent,{
+    attributes:true,attributeFilter:['hidden']
+  });
   const onVisibilityChange=()=>{if(globalThis.document?.hidden)cancelAll()};
   globalThis.document?.addEventListener?.('visibilitychange',onVisibilityChange);
   globalThis.window?.addEventListener?.('blur',cancelAll);
@@ -489,6 +507,7 @@ export function bindReaderTouchNavigation({
     mobileNext?.removeEventListener('click',mobileForward);
     previous.removeEventListener('click',onPageBackward);
     next.removeEventListener('click',onPageForward);
+    contentObserver?.disconnect();
     observer?.disconnect();
   };
 }
