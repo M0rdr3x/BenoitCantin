@@ -21,6 +21,8 @@ REQUIRED_EDGE = {
     "rang projet côté serveur": "service.rpc('project_access_rank'",
     "refus des accès insuffisants": "if(userRank<(ranks[doc.access_level]||999))",
     "aucun lien externe avant contrôle d'accès": "if(doc.external_url){",
+    "origine du site canonique": "const DOCUMENT_URL_BASE='https://www.benoitcantin.com';",
+    "refus des URL de tiers, même HTTPS": "if(parsed.origin!==DOCUMENT_URL_BASE)return false;",
     "chemin Storage sécurisé": "privateDocumentLocationValid(doc.storage_bucket,doc.storage_path)",
     "lecture du bucket Supabase réel": "service.storage.getBucket(doc.storage_bucket)",
     "vérification de l'identité et du statut privé": "!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket)",
@@ -88,6 +90,7 @@ def self_test(edge: str, guard: str, config: str) -> int:
         raise AssertionError("La version saine est rejetée : " + " ; ".join(errors))
     edge_mutations = {
         "décision du rang ignorée": ("if(userRank<(ranks[doc.access_level]||999))", "if(false)"),
+        "URL HTTPS de tiers permise": ("if(parsed.origin!==DOCUMENT_URL_BASE)return false;", "if(relative&&parsed.origin!==DOCUMENT_URL_BASE)return false;"),
         "statut ignoré": ("doc.status!=='approved'", "false"),
         "projet inactif accepté": ("doc.projects?.status!=='active'", "false"),
         "chemin non vérifié": ("privateDocumentLocationValid(doc.storage_bucket,doc.storage_path)", "true"),
