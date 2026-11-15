@@ -13,6 +13,25 @@ const PREF_KEY='sinjira:liseuse:lecture-par-ecrans:v53';
 export {classifyReaderEdgeTap};
 const INTERACTIVE='a,button,input,select,textarea,summary,[contenteditable],[role="button"],[role="link"],[data-reader-no-swipe]';
 
+/** V102 — libellé compact pour la barre inférieure, sans extrait de roman
+ * ni information sur l'identité du lecteur. Le statut détaillé continue
+ * d'être annoncé par le champ aria-live existant. */
+export function formatReaderMobileLocation({mode='pdf',screen=1,screens=1,page,total}={}){
+  const positive=value=>{
+    const n=Number(value);
+    return Number.isSafeInteger(n)&&n>0?n:null;
+  };
+  const p=positive(page),t=positive(total);
+  const source=p?'p. '+p+(t?' / '+t:''):'page inconnue';
+  if(mode==='screens'){
+    const count=positive(screens)||1;
+    const current=Math.min(positive(screen)||1,count);
+    return 'Écr. '+current+'/'+count+' · '+source;
+  }
+  if(mode==='continuous')return 'Continu · '+source;
+  return 'PDF · '+source;
+}
+
 /** Empêche un saut de ligne masquée au bord de l'écran.
  * Le padding réduit la hauteur utile et une ligne reste visible à la jonction. */
 export function measureReaderScreen({
@@ -168,6 +187,7 @@ function savePreference(on){
  */
 export function bindReaderScreenMode({
   viewer,text,previous,next,mobilePrevious,mobileNext,toggle,status,pageField,
+  mobileHint=null,totalPages=null,
   media=window.matchMedia('(max-width: 980px)'),
   getSelectionText=()=>String(window.getSelection?.()?.toString()||''),
   clock=()=>performance.now(),
@@ -210,6 +230,15 @@ export function bindReaderScreenMode({
     for(const button of [previous,mobilePrevious])describe(button,backLabel);
     for(const button of [next,mobileNext])describe(button,forwardLabel);
     status.hidden=!active;
+    // V102 : afficher l'emplacement à portée du pouce, y compris en PDF
+    // et en mode texte continu. La barre est aria-hidden : ne pas créer
+    // une deuxième annonce vocale à chaque page tournée.
+    const page=pageField.value;
+    const total=totalPages?.textContent||pageField.max;
+    const location=active
+      ?formatReaderMobileLocation({mode:'screens',...metric(),page,total})
+      :formatReaderMobileLocation({mode:text.hidden?'pdf':'continuous',page,total});
+    if(mobileHint&&mobileHint.textContent!==location)mobileHint.textContent=location;
     if(!active){
       if(mobilePrevious)mobilePrevious.disabled=previous.disabled;
       if(mobileNext)mobileNext.disabled=next.disabled;
@@ -516,6 +545,9 @@ export function bindReaderScreenMode({
   window.addEventListener('blur',onTouchCancel);
   window.addEventListener('pagehide',onTouchCancel);
   viewer.addEventListener('scroll',onScroll,{passive:true});
+  // Le moteur V26 émet cet événement APRÈS la mise à jour de la page
+  // canonique : le statut mobile reflète aussitôt une nouvelle page PDF.
+  viewer.addEventListener('sinjira:reader-page-change',sync);
   previous.addEventListener('click',onPrev,true);
   next.addEventListener('click',onNext,true);
   mobilePrevious?.addEventListener('click',onMobilePrev,true);
@@ -539,6 +571,7 @@ export function bindReaderScreenMode({
     window.removeEventListener('blur',onTouchCancel);
     window.removeEventListener('pagehide',onTouchCancel);
     viewer.removeEventListener('scroll',onScroll);
+    viewer.removeEventListener('sinjira:reader-page-change',sync);
     previous.removeEventListener('click',onPrev,true);
     next.removeEventListener('click',onNext,true);
     mobilePrevious?.removeEventListener('click',onMobilePrev,true);
@@ -563,7 +596,8 @@ function initReaderScreens(){
     viewer:id('reader-viewer'),text:id('reader-text'),
     previous:id('reader-previous'),next:id('reader-next'),
     mobilePrevious:id('reader-touch-prev'),mobileNext:id('reader-touch-next'),
-    toggle:id('reader-screens-enabled'),status:id('reader-screen-count'),pageField:id('reader-page')
+    toggle:id('reader-screens-enabled'),status:id('reader-screen-count'),pageField:id('reader-page'),
+    mobileHint:id('reader-touch-location'),totalPages:id('reader-total')
   });
 }
 if(typeof document!=='undefined'){
