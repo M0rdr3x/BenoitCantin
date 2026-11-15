@@ -31,7 +31,7 @@ export function isVerifiedPrivateDocumentBucket(metadata, expectedBucketId) {
  */
 export function privateAdminDocumentUploadPath(bucket, projectSlug, baseName, extension, objectId) {
   if (typeof projectSlug !== 'string' || !/^[a-z0-9][a-z0-9_-]{0,95}$/.test(projectSlug)) return null;
-  if (typeof baseName !== 'string' || !/^[a-z0-9][a-z0-9._-]{0,119}$/.test(baseName)) return null;
+  if (typeof baseName !== 'string' || !/^[a-z0-9][a-z0-9._-]{0,119}$/.test(baseName) || baseName.endsWith('.')) return null;
   if (typeof extension !== 'string' || !/^[a-z0-9]{1,10}$/.test(extension)) return null;
   if (typeof objectId !== 'string' ||
       !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(objectId)) return null;
