@@ -49,6 +49,47 @@ def main() -> int:
         if marker not in source:
             errors.append(f'Garde-fou V24.5.51 absent: {marker}')
 
+    # Les chemins stockés en base sont manipulables par le compte utilisateur.
+    # La clé service_role ne doit donc jamais supprimer un objet sur la seule
+    # base de profiles.avatar_path / character_submissions.photo_path.
+    path_guard = ROOT / 'supabase/functions/_shared/delete-account-storage-ownership.mjs'
+    path_test = ROOT / 'scripts/test_delete_account_storage_ownership.mjs'
+    for path in (path_guard, path_test):
+        if not path.is_file():
+            errors.append(f'Garde Storage propriétaire absent: {path.relative_to(ROOT)}')
+
+    for marker in (
+        "import { planOwnedAccountStorageDeletes }",
+        'const ownedPaths=planOwnedAccountStorageDeletes(user.id,{',
+        "'sinjira-avatars':[profileRes.data?.avatar_path]",
+        "'sinjira-character-sources':(submissionRes.data||[]).map",
+        "'sinjira-character-submissions':(applicationRes.data||[]).map",
+        "ownedPaths['sinjira-avatars']",
+        "ownedPaths['sinjira-character-sources']",
+        "ownedPaths['sinjira-character-submissions']",
+        "STORAGE_PATH_OWNERSHIP_FAILED",
+    ):
+        if marker not in source:
+            errors.append(f'Barrière Storage de suppression manquante: {marker}')
+
+    plan_pos = source.find('const ownedPaths=planOwnedAccountStorageDeletes(user.id,{')
+    delete_pos = source.find("await removeStoragePaths(service,'sinjira-avatars'")
+    if plan_pos < 0 or delete_pos < 0 or plan_pos > delete_pos:
+        errors.append('La totalité des chemins doit être validée avant la première suppression Storage.')
+    if 'removeStoragePaths(service,\'sinjira-avatars\',[profileRes.data?.avatar_path])' in source:
+        errors.append('Suppression directe de chemin de profil non approuvé interdite.')
+    if path_guard.is_file():
+        helper = path_guard.read_text('utf-8')
+        for marker in (
+            "path.startsWith(userId + '/')",
+            "segments[0] !== userId",
+            "segment !== '..'",
+            "PATH_SEGMENT_RE.test(segment)",
+            "throw new Error('STORAGE_PATH_OWNERSHIP_FAILED')",
+        ):
+            if marker not in helper:
+                errors.append(f'Confinement Storage non démontré: {marker}')
+
     if 'await req.text()' in source:
         errors.append('Lecture HTTP complète avant limite de taille interdite.')
     if "console.error('[delete-player-account]',error)" in source or (
