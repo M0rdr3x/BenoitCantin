@@ -58,7 +58,7 @@ test('refuse une absence de service RPC ou de méthode',async()=>{
 
 test('rejette les identifiants invalides avant tout appel SQL',async()=>{
   const {service,calls}=mockOwner(true);
-  for(const uid of ['',null,undefined,{},'not-a-uuid','123e4567-e89b-12d3-a456-426614174000','123e4567-e89b-42d3-a456-426614174000; DROP TABLE x']){
+  for(const uid of ['',null,undefined,{},'not-a-uuid','123e4567-e89b-62d3-a456-426614174000','123e4567-e89b-42d3-a456-426614174000; DROP TABLE x']){
     await assert.rejects(()=>isVerifiedRegistryOwner(service,uid),{message:'REGISTRY_OWNER_CHECK_FAILED'});
   }
   assert.equal(calls.length,0);
