@@ -94,7 +94,9 @@ def self_test(admin: str, helper: str, workflow: str) -> int:
     mutants = {
         'bypass MFA': ('admin', 'const {user,service}=await requiredAdmin(req);', "const service=serviceClient();"),
         'UUID projet accepté': ('admin', 'if(!UUID_RE.test(projectId))', 'if(false)'),
-        'projet SQL ignoré': ('admin', "service.from('projects')", "service.from('bad-projects')"),
+        'projet SQL ignoré': ('admin',
+                                "const {data:project,error:projectError}=await service.from('projects')",
+                                "const {data:project,error:projectError}=await service.from('bad-projects')"),
         'slug fourni par navigateur': ('admin', 'privateAdminDocumentUploadPath(bucket,project.slug,',
                                       'privateAdminDocumentUploadPath(bucket,x.project_slug,'),
         'chemin arbitraire autorisé': ('admin', 'if(!path)return privateJson(', 'if(false)return privateJson('),
