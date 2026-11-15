@@ -137,7 +137,7 @@ def run(playwright, browser_type, url):
         source_pages=page.locator("#reader-total").text_content().strip()
         assert source_pages.isdecimal() and int(source_pages)>=5,source_pages
         hint_start=page.locator("#reader-touch-location").text_content()
-        assert hint_start.startswith("Écr. 1/") and f"p. 3 / {source_pages}" in hint_start,
+        assert hint_start.startswith("Écr. 1/") and f"p. 3 / {source_pages}" in hint_start, (
             "V102 : lecture sans repère de progression",hint_start
         )
         assert not rejected,rejected
@@ -194,7 +194,7 @@ def run(playwright, browser_type, url):
             "trace":page.evaluate("window.__readerSwipeTrace")}
         assert second["scroll"]>first["scroll"],(first,second)
         hint_next=page.locator("#reader-touch-location").text_content()
-        assert hint_next.startswith("Écr. 2/") and f"p. 3 / {source_pages}" in hint_next,
+        assert hint_next.startswith("Écr. 2/") and f"p. 3 / {source_pages}" in hint_next, (
             "V102 : barre de progression non actualisée après le swipe",
             hint_start,hint_next
         )
