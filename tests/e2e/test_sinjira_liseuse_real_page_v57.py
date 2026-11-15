@@ -393,6 +393,54 @@ def run(playwright, browser_type, url):
             "V99 : un tap texte ne doit pas tourner la page PDF",text_events_back
         )
         assert len(text_events_back["touches"])==5,text_events_back
+
+        # V101 : ordinateur / trackpad : glisser la page PDF à la souris.
+        # La sélection de texte et les gestes sur écran tactile conservent
+        # leurs gestionnaires indépendants. Même HTML, PDF entièrement fictif.
+        page.locator("#reader-mode").click()
+        page.wait_for_function("""()=>{
+          return document.querySelector('#reader-text').hidden===true &&
+            !document.querySelector('#reader-canvas').hidden &&
+            document.querySelector('#reader-viewer').dataset.readerLayout==='scroll';
+        }""")
+        page.locator("#reader-viewer").scroll_into_view_if_needed()
+
+        def drag_pdf_with_mouse(direction):
+            coords=page.evaluate("""direction=>{
+              const v=document.querySelector('#reader-viewer');
+              const canvas=document.querySelector('#reader-canvas');
+              const rect=canvas.getBoundingClientRect();
+              const viewer=v.getBoundingClientRect();
+              const from=direction==='next'?.78:.22;
+              const to=direction==='next'?.22:.78;
+              const x1=rect.left+rect.width*from;
+              const x2=rect.left+rect.width*to;
+              const y=Math.max(viewer.top+25,Math.min(viewer.bottom-25,
+                rect.top+Math.min(65,rect.height*.25)));
+              const target=document.elementFromPoint(x1,y);
+              return {x1,x2,y,valid:target===canvas,
+                canvasWidth:rect.width,viewerTop:viewer.top,
+                viewerBottom:viewer.bottom};
+            }""",direction)
+            assert coords["valid"] and abs(coords["x2"]-coords["x1"])>=100,coords
+            page.mouse.move(coords["x1"],coords["y"])
+            page.mouse.down()
+            page.mouse.move(coords["x2"],coords["y"]+3,steps=7)
+            page.mouse.up()
+            return snapshot(page),page.evaluate("({...window.__v98Clicks})")
+
+        pdf_mouse_next,mouse_counts_next=drag_pdf_with_mouse('next')
+        page.wait_for_function("""()=>document.querySelector('#reader-page').value==='5'""")
+        assert pdf_mouse_next["page"]==5 and mouse_counts_next=={
+            "next":3,"previous":2
+        },("V101: un glissement souris doit tourner UNE page PDF",
+            pdf_mouse_next,mouse_counts_next)
+        pdf_mouse_back,mouse_counts_back=drag_pdf_with_mouse('previous')
+        page.wait_for_function("""()=>document.querySelector('#reader-page').value==='4'""")
+        assert pdf_mouse_back["page"]==4 and mouse_counts_back=={
+            "next":3,"previous":3
+        },("V101: souris droite = une page précédente",
+            pdf_mouse_back,mouse_counts_back)
         assert not failures,failures
         assert not rejected,rejected
         context.close()
