@@ -1,5 +1,6 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredUser, serviceClient } from '../_shared/auth.ts';
+import { collectNovelBodyBytes } from '../_shared/novel-request-bytes.mjs';
 
 const HEADERS={...corsHeaders,'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store, max-age=0','Pragma':'no-cache','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'};
 const MAX_REQUEST_BYTES=2048;
@@ -12,25 +13,8 @@ async function readBoundedJson(req:Request){
   if(declaredLength!==null && (!/^\d+$/.test(declaredLength) || !Number.isSafeInteger(Number(declaredLength)) || Number(declaredLength)>MAX_REQUEST_BYTES)){
     throw new Error('REQUEST_TOO_LARGE');
   }
-  if(!req.body)return {};
-  const reader=req.body.getReader();
-  const chunks:Uint8Array[]=[];
-  let total=0;
-  while(true){
-    const {done,value}=await reader.read();
-    if(done)break;
-    if(value){
-      total+=value.byteLength;
-      if(total>MAX_REQUEST_BYTES){
-        try{await reader.cancel();}catch{}
-        throw new Error('REQUEST_TOO_LARGE');
-      }
-      chunks.push(value);
-    }
-  }
-  const bytes=new Uint8Array(total);
-  let offset=0;
-  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+  // Délai de 8 s et annulation sans attente du producteur distant.
+  const bytes=await collectNovelBodyBytes(req,MAX_REQUEST_BYTES);
   if(!bytes.length)return {};
   try{
     const body:unknown=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes));
@@ -66,6 +50,7 @@ Deno.serve(async(req)=>{
     const message=String(error?.message||'');
     if(message==='AUTH_REQUIRED')return json({ok:false,error:'Connexion requise.'},401);
     if(message==='REQUEST_TOO_LARGE')return json({ok:false,error:'Requête trop volumineuse.'},413);
+    if(message==='REQUEST_INTERRUPTED')return json({ok:false,error:'Lecture de la requête interrompue.'},408);
     if(message==='INVALID_JSON')return json({ok:false,error:'Corps JSON invalide.'},400);
     if(message==='UNSUPPORTED_MEDIA_TYPE')return json({ok:false,error:'Type de contenu non autorisé.'},415);
     console.error('[get-novel-file-url]',{code:'NOVEL_ACCESS_FAILED'});
