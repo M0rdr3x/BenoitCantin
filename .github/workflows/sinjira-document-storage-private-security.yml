@@ -5,10 +5,12 @@ on:
     branches: [ main ]
     paths:
       - 'supabase/functions/get-document-url/**'
+      - 'supabase/functions/admin-console/**'
       - 'supabase/functions/_shared/private-document-storage.mjs'
       - 'supabase/config.toml'
       - 'scripts/test_private_document_storage.mjs'
       - 'scripts/validate_get_document_storage_security.py'
+      - 'scripts/validate_admin_document_upload_security.py'
       - 'scripts/validate_get_document_url_security.py'
       - 'scripts/test_document_external_urls.mjs'
       - '.github/workflows/sinjira-document-storage-private-security.yml'
@@ -16,10 +18,12 @@ on:
     branches: [ main ]
     paths:
       - 'supabase/functions/get-document-url/**'
+      - 'supabase/functions/admin-console/**'
       - 'supabase/functions/_shared/private-document-storage.mjs'
       - 'supabase/config.toml'
       - 'scripts/test_private_document_storage.mjs'
       - 'scripts/validate_get_document_storage_security.py'
+      - 'scripts/validate_admin_document_upload_security.py'
       - 'scripts/validate_get_document_url_security.py'
       - 'scripts/test_document_external_urls.mjs'
       - '.github/workflows/sinjira-document-storage-private-security.yml'
@@ -54,6 +58,12 @@ jobs:
 
       - name: Refuser les régressions de confidentialité documentaire
         run: python3 scripts/validate_get_document_storage_security.py --self-test
+
+      - name: Tester la sécurité des téléversements administratifs privés
+        run: python3 scripts/validate_admin_document_upload_security.py --self-test
+
+      - name: Refuser toute signature d'upload sur un bucket public
+        run: python3 scripts/validate_admin_document_upload_security.py
 
       - name: Vérifier l'ordre des contrôles avant toute signature
         run: python3 scripts/validate_get_document_storage_security.py
