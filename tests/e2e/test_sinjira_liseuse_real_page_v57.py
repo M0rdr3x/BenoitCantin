@@ -140,6 +140,15 @@ def run(playwright, browser_type, url):
         assert hint_start.startswith("Écr. 1/") and f"p. 3 / {source_pages}" in hint_start, (
             "V102 : lecture sans repère de progression",hint_start
         )
+        # V103 : le focus sur la région de lecture donne une position
+        # précise, sans exposer le texte fictif ni déclencher une deuxième
+        # région aria-live.
+        def accessible_reader_label():
+            return page.locator("#reader-viewer").get_attribute("aria-label")
+        label_start=accessible_reader_label()
+        assert page.locator("#reader-viewer").get_attribute("role")=="region"
+        assert "écran 1 sur " in label_start and f"page 3 sur {source_pages}" in label_start, label_start
+        assert "LIVRE DE TEST" not in label_start,label_start
         assert not rejected,rejected
 
         # Diagnostic de régression : retracer toute tentative de déclencher
@@ -193,6 +202,8 @@ def run(playwright, browser_type, url):
             "second_scroll":second["scroll"],"second_screen":second["screen"],
             "trace":page.evaluate("window.__readerSwipeTrace")}
         assert second["scroll"]>first["scroll"],(first,second)
+        label_next=accessible_reader_label()
+        assert "écran 2 sur " in label_next and f"page 3 sur {source_pages}" in label_next,label_next
         hint_next=page.locator("#reader-touch-location").text_content()
         assert hint_next.startswith("Écr. 2/") and f"p. 3 / {source_pages}" in hint_next, (
             "V102 : barre de progression non actualisée après le swipe",
@@ -253,6 +264,9 @@ def run(playwright, browser_type, url):
         page.wait_for_function("""()=>document.querySelector('#reader-text').hidden===true""")
         before_pdf=snapshot(page)
         assert page.locator("#reader-touch-location").text_content()==f"PDF · p. 3 / {source_pages}"
+        label_pdf=accessible_reader_label()
+        assert f"PDF : page 3 sur {source_pages}" in label_pdf,label_pdf
+        assert "texte adaptable" in label_pdf,label_pdf
         swipe(page,-130)
         page.wait_for_function("""before=>Number(document.querySelector('#reader-page').value)===before+1""",
                                arg=before_pdf["page"])
@@ -320,6 +334,7 @@ def run(playwright, browser_type, url):
         assert pdf_right["clickCounts"]=={"next":1,"previous":1},pdf_right
         assert snapshot(page)["page"]==4,snapshot(page)
         assert page.locator("#reader-touch-location").text_content()==f"PDF · p. 4 / {source_pages}"
+        assert f"PDF : page 4 sur {source_pages}" in accessible_reader_label()
 
         # V99 : les tests V98 construisent des TouchEvent. Vérifier EN PLUS
         # une vraie séquence tactile du navigateur mobile Playwright, avec
