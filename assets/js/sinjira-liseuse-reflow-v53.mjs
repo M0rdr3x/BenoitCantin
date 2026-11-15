@@ -210,7 +210,7 @@ function savePreference(on){
  */
 export function bindReaderScreenMode({
   viewer,text,previous,next,mobilePrevious,mobileNext,toggle,status,pageField,
-  mobileHint=null,totalPages=null,
+  mobileHint=null,totalPages=null,screenJump=null,
   media=window.matchMedia('(max-width: 980px)'),
   getSelectionText=()=>String(window.getSelection?.()?.toString()||''),
   clock=()=>performance.now(),
@@ -253,6 +253,9 @@ export function bindReaderScreenMode({
     for(const button of [previous,mobilePrevious])describe(button,backLabel);
     for(const button of [next,mobileNext])describe(button,forwardLabel);
     status.hidden=!active;
+    // V104 : accès direct tactile à une portion du texte source, sans
+    // sauter une page PDF ni créer de nouvelle position persistée.
+    if(screenJump)screenJump.hidden=!active;
     // V102 : afficher l'emplacement à portée du pouce, y compris en PDF
     // et en mode texte continu. La barre est aria-hidden : ne pas créer
     // une deuxième annonce vocale à chaque page tournée.
@@ -275,6 +278,13 @@ export function bindReaderScreenMode({
     }
     const s=screenInfo;
     const announced='Écran '+s.screen+' sur '+s.screens+' · page '+pageField.value+' du livre';
+    if(screenJump){
+      const max=String(s.screens),current=String(s.screen);
+      if(screenJump.max!==max)screenJump.max=max;
+      if(screenJump.value!==current)screenJump.value=current;
+      if(screenJump.getAttribute?.('aria-valuetext')!==announced)
+        screenJump.setAttribute?.('aria-valuetext',announced);
+    }
     // Une zone aria-live ne doit pas annoncer la même phrase à chaque scroll.
     if(status.textContent!==announced)status.textContent=announced;
     if(mobilePrevious)mobilePrevious.disabled=!s.hasPreviousScreen&&previous.disabled;
@@ -294,6 +304,17 @@ export function bindReaderScreenMode({
     if(userInitiated)viewer.dispatchEvent?.(new Event('sinjira:reader-screen-turn'));
     // Le gestionnaire V31/V51 de scroll sauvegarde le ratio de progression
     // de la même page PDF, sans nouveau format ni identifiant de lecteur.
+  };
+  const onScreenJump=()=>{
+    if(!screenJump||!isPaged()||!canNavigate())return;
+    const selected=Number(screenJump.value),s=metric();
+    if(!Number.isSafeInteger(selected)||selected<1||selected>s.screens)return;
+    cancelPendingLayoutRestore();
+    // La dernière portion peut être plus courte qu'un interligne :
+    // rejoindre la véritable fin plutôt qu'une page fictive additionnelle.
+    const top=selected>=s.screens?s.max:
+      Math.min(s.max,(selected-1)*s.step);
+    scrollToScreen(top,{userInitiated:true});
   };
   const cancelPendingLayoutRestore=()=>{
     // Un vrai geste du lecteur doit primer sur les deux raf du reflow.
@@ -585,6 +606,7 @@ export function bindReaderScreenMode({
   document.addEventListener('input',onPreferences,true);
   document.addEventListener('change',onPreferences,true);
   toggle.addEventListener('change',onToggle);
+  screenJump?.addEventListener('input',onScreenJump);
   window.addEventListener('resize',onResize,{passive:true});
   window.visualViewport?.addEventListener?.('resize',onVisualViewportResize,{passive:true});
   window.addEventListener('sinjira:reader-layout-will-change',onFocusLayoutChange);
@@ -609,6 +631,7 @@ export function bindReaderScreenMode({
     document.removeEventListener('input',onPreferences,true);
     document.removeEventListener('change',onPreferences,true);
     toggle.removeEventListener('change',onToggle);
+    screenJump?.removeEventListener('input',onScreenJump);
     window.removeEventListener('resize',onResize);
     window.visualViewport?.removeEventListener?.('resize',onVisualViewportResize);
     window.removeEventListener('sinjira:reader-layout-will-change',onFocusLayoutChange);
@@ -626,7 +649,8 @@ function initReaderScreens(){
     previous:id('reader-previous'),next:id('reader-next'),
     mobilePrevious:id('reader-touch-prev'),mobileNext:id('reader-touch-next'),
     toggle:id('reader-screens-enabled'),status:id('reader-screen-count'),pageField:id('reader-page'),
-    mobileHint:id('reader-touch-location'),totalPages:id('reader-total')
+    mobileHint:id('reader-touch-location'),totalPages:id('reader-total'),
+    screenJump:id('reader-screen-jump')
   });
 }
 if(typeof document!=='undefined'){
