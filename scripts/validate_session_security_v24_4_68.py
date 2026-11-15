@@ -52,12 +52,13 @@ def main() -> int:
         'Déconnecter tous les appareils',
         'Déconnexion ordinaire limitée à l’appareil courant.',
         'sinjira-account.js?v=24.4.68',
-        'v24-security.js?v=24.4.69',
+        'v24-security.js?v=24.4.70',
     ], 'interface sécurité sessions')
 
     # Une ancienne URL de cache pourrait masquer la correction TOTP déployée.
     forbid(page, [
         'v24-security.js?v=24.4.68',
+        'v24-security.js?v=24.4.69',
     ], 'ancienne URL TOTP après mise à jour')
 
     # Un changement de mot de passe est une opération de sécurité forte : il doit

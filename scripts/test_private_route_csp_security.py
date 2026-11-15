@@ -31,11 +31,19 @@ class ScriptSurfaceAudit(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.errors: list[str] = []
+        self.csp_meta: list[str] = []
+        self.script_seen = False
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attributes = dict(attrs)
-        if tag == "script" and not attributes.get("src"):
-            self.errors.append("script intégré sans src")
+        if tag == "script":
+            self.script_seen = True
+            if not attributes.get("src"):
+                self.errors.append("script intégré sans src")
+        if tag == "meta" and (attributes.get("http-equiv") or "").lower() == "content-security-policy":
+            self.csp_meta.append(attributes.get("content") or "")
+            if self.script_seen:
+                self.errors.append("CSP meta injectée après le premier script")
         for key, value in attrs:
             key = (key or "").lower()
             if key.startswith("on"):
@@ -242,7 +250,28 @@ class PrivateRoutesCspSecurityTests(unittest.TestCase):
         audit.feed(page)
         audit.close()
         self.assertEqual(audit.errors, [])
-        self.assertIn('http-equiv="Content-Security-Policy"', page)
+        # Sur un hébergement sans en-têtes HTTP personnalisés, la CSP meta
+        # est la seule protection disponible pour cette page de remise privée.
+        # frame-ancestors ne s'applique pas aux balises meta CSP.
+        expected_meta = "; ".join(
+            directive.strip() for directive in expected.split(";")
+            if directive.strip() and not directive.strip().startswith("frame-ancestors")
+        )
+        self.assertEqual(audit.csp_meta, [expected_meta])
+
+        tag = '<meta http-equiv="Content-Security-Policy" content="' + expected_meta + '">'
+        for altered in (
+            page.replace(expected_meta, "default-src *", 1),
+            page.replace(tag, tag + "\n  " + tag, 1),
+            page.replace(tag, "", 1),
+        ):
+            mutant = ScriptSurfaceAudit()
+            mutant.feed(altered)
+            mutant.close()
+            self.assertTrue(
+                mutant.errors or mutant.csp_meta != [expected_meta],
+                "Une meta CSP absente, doublée ou affaiblie doit être refusée.",
+            )
 
     def test_mutants_dangereux_sont_detectes(self) -> None:
         safe = ("default-src 'self'; script-src 'self'; script-src-attr 'none'; "
