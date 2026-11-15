@@ -88,7 +88,8 @@ test('le helper accepte uniquement player/tester avec identité SQL UUID et éta
     assert.equal(isReviewableProjectAccessRequest(request(status)),false,String(status));
   }
   for(const level of ['admin','owner','account','',null,undefined]){
-    assert.equal(isReviewableProjectAccessRequest(request('pending',level)),false,String(level));
+    const bad={...request('pending','tester'),requested_level:level};
+    assert.equal(isReviewableProjectAccessRequest(bad),false,String(level));
   }
   for(const field of ['id','user_id','project_id']){
     assert.equal(isReviewableProjectAccessRequest({...request(),[field]:'../../../foreign'}),false,field);
