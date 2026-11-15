@@ -1,7 +1,9 @@
 import { corsHeaders } from '../_shared/cors.ts';
+import { readChunkWithDeadline } from '../_shared/read-chunk-deadline.mjs';
 import { requiredPersonalAiUser } from '../_shared/auth.ts';
 
 const MAX_REQUEST_BYTES = 16 * 1024;
+const BODY_READ_TIMEOUT_MS = 8_000;
 // Le scope est fixé dans service_personal_ai_evaluate_access; l'Edge ne peut pas le réduire.
 const RISK_SCOPE = 'ai_private';
 // Contrat de fondation : conversation_enabled=false; source_retrieval_enabled=false.
@@ -21,20 +23,24 @@ function privateJson(data: unknown, status = 200) {
 async function readBoundedJson(req: Request) {
   const type = (req.headers.get('content-type') || '').split(';', 1)[0].trim().toLowerCase();
   if (type !== 'application/json') throw new Error('JSON_REQUIRED');
-  const declared = Number(req.headers.get('content-length') || 0);
-  if (Number.isFinite(declared) && declared > MAX_REQUEST_BYTES) throw new Error('REQUEST_TOO_LARGE');
+  const declaredRaw = req.headers.get('content-length');
+  if (declaredRaw !== null &&
+      (!/^(0|[1-9][0-9]*)$/.test(declaredRaw) ||
+       !Number.isSafeInteger(Number(declaredRaw)) ||
+       Number(declaredRaw) > MAX_REQUEST_BYTES)) throw new Error('REQUEST_TOO_LARGE');
   if (!req.body) throw new Error('INVALID_JSON');
   const reader = req.body.getReader();
+  const deadlineAt = performance.now() + BODY_READ_TIMEOUT_MS;
   const chunks: Uint8Array[] = [];
   let total = 0;
   try {
     while (true) {
-      const { value, done } = await reader.read();
+      const { value, done } = await readChunkWithDeadline(reader, req.signal, deadlineAt);
       if (done) break;
       if (!value) continue;
       total += value.byteLength;
       if (total > MAX_REQUEST_BYTES) {
-        await reader.cancel('REQUEST_TOO_LARGE').catch(() => undefined);
+        void reader.cancel('REQUEST_TOO_LARGE').catch(() => undefined);
         throw new Error('REQUEST_TOO_LARGE');
       }
       chunks.push(value);
@@ -88,7 +94,7 @@ function assertDecision(value: any) {
 function errorCode(error: unknown) {
   const code = error instanceof Error ? error.message : '';
   return new Set(['AUTH_REQUIRED','MFA_SETUP_REQUIRED','MFA_REQUIRED','MFA_STATE_UNAVAILABLE','JSON_REQUIRED',
-    'REQUEST_TOO_LARGE','INVALID_JSON','CLIENT_IDENTITY_FORBIDDEN','SECURITY_DECISION_INVALID',
+    'REQUEST_TOO_LARGE','REQUEST_TIMEOUT','INVALID_JSON','CLIENT_IDENTITY_FORBIDDEN','SECURITY_DECISION_INVALID',
     'PERSONAL_AI_SOURCE_FORBIDDEN','PERSONAL_AI_LANGUAGE_INVALID']).has(code)
     ? code : 'PERSONAL_AI_OPERATION_REFUSED';
 }
@@ -160,6 +166,7 @@ Deno.serve(async (req) => {
     if (code==='MFA_STATE_UNAVAILABLE'||code==='SECURITY_DECISION_INVALID') return privateJson({ok:false,code,error:'La protection de Mon IA est temporairement indisponible.'},503);
     if (code==='JSON_REQUIRED') return privateJson({ok:false,code,error:'Corps JSON requis.'},415);
     if (code==='REQUEST_TOO_LARGE') return privateJson({ok:false,code,error:'Requête trop volumineuse.'},413);
+    if (code==='REQUEST_TIMEOUT') return privateJson({ok:false,code,error:'Délai de transmission dépassé.'},408);
     if (['INVALID_JSON','CLIENT_IDENTITY_FORBIDDEN','PERSONAL_AI_SOURCE_FORBIDDEN','PERSONAL_AI_LANGUAGE_INVALID'].includes(code)) return privateJson({ok:false,code,error:'Requête Mon IA invalide.'},400);
     return privateJson({ok:false,code,error:'Opération Mon IA refusée.'},403);
   }
