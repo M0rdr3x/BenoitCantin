@@ -181,6 +181,74 @@ def run(playwright, url):
             "V80: un mouvement > 1800 ms a tourné une page PDF à tort"
         )
 
+        # V100 : le contrôle natif CDP V80 portait sur le défilement libre
+        # du TEXTE, pas sur la page CANVAS du vrai PDF. Tester explicitement
+        # le second mode, après basculement du lecteur de l'édition démo.
+        page.locator("#reader-mode").click()
+        page.wait_for_function("""()=>{
+          const v=document.querySelector('#reader-viewer');
+          return document.querySelector('#reader-text').hidden===true &&
+            v.dataset.readerLayout==='scroll';
+        }""")
+        page.locator("#reader-viewer").scroll_into_view_if_needed()
+        before_canvas = snapshot(page)
+        assert before_canvas["page"] == 4 and before_canvas["textHidden"], (
+            "V100: le vrai mode PDF ne s'est pas ouvert", before_canvas
+        )
+        page.evaluate("""()=>{
+          window.__v100PdfClicks={next:0,previous:0};
+          document.querySelector('#reader-next').addEventListener('click',()=>{
+            window.__v100PdfClicks.next++;
+          },true);
+          document.querySelector('#reader-previous').addEventListener('click',()=>{
+            window.__v100PdfClicks.previous++;
+          },true);
+        }""")
+
+        # Depuis la page 4 : glisser le PDF réel à gauche pour obtenir 5.
+        native_swipe(page, cdp, direction="left")
+        page.wait_for_function("""()=>{
+          return document.querySelector('#reader-page').value==='5' &&
+            document.querySelector('#reader-text').hidden===true;
+        }""")
+        canvas_forward = snapshot(page)
+        counts_forward = page.evaluate("window.__v100PdfClicks")
+        assert canvas_forward["page"] == 5 and counts_forward == {
+            "next":1,"previous":0
+        },("V100: saut multiple en PDF réel gauche",canvas_forward,counts_forward)
+
+        # Glisser à droite doit revenir UNIQUEMENT à la page 4.
+        native_swipe(page, cdp, direction="right")
+        page.wait_for_function("""()=>{
+          return document.querySelector('#reader-page').value==='4' &&
+            document.querySelector('#reader-text').hidden===true;
+        }""")
+        canvas_back = snapshot(page)
+        counts_back = page.evaluate("window.__v100PdfClicks")
+        assert canvas_back["page"] == 4 and counts_back == {
+            "next":1,"previous":1
+        },("V100: saut multiple en PDF réel droite",canvas_back,counts_back)
+
+        # Repasser au texte paginé et contrôler qu'aucun module tactile
+        # PDF supplémentaire ne subsiste après ce changement de mode.
+        page.locator("#reader-screens-enabled").check()
+        page.locator("#reader-mode").click()
+        page.wait_for_function("""()=>{
+          const v=document.querySelector('#reader-viewer');
+          return document.querySelector('#reader-text').hidden===false &&
+            v.dataset.readerLayout==='screens';
+        }""")
+        page.evaluate("document.querySelector('#reader-viewer').scrollTop=0")
+        native_swipe(page, cdp, direction="left")
+        reflow_after_pdf = snapshot(page)
+        assert reflow_after_pdf["page"] == 4 and reflow_after_pdf["scroll"] > 0, (
+            "V100: retour en mode texte paginé sans avance d'un écran",
+            reflow_after_pdf
+        )
+        assert page.evaluate("window.__v100PdfClicks") == {
+            "next":1,"previous":1
+        }, "V100: le retour au texte a fait changer la page source PDF"
+
         evidence = page.evaluate("window.__v65Trusted")
         assert any(e["type"] == "touchstart" and e["trusted"] for e in evidence)
         assert any(e["type"] == "touchend" and e["trusted"] for e in evidence)
