@@ -30,9 +30,12 @@ def validate(export: str, delivery: str, guard: str) -> list[str]:
     links_guard = export.find(HELPER, link)
     upload = export.find("service.storage.from(BUCKET).upload(", generate)
     token_delete = export.find("from('life_story_delivery_links').delete()", link)
+    token_error_check = export.find("if (revokeExistingError) throw new Error('LIFE_STORY_LINK_ROTATION_FAILED');", link)
     token_create = export.find("crypto.getRandomValues(new Uint8Array(32))", link)
-    if not (0 <= generate < gen_guard < upload < link < links_guard < token_delete < token_create < revoke < purge):
+    if not (0 <= generate < gen_guard < upload < link < links_guard < token_delete < token_error_check < token_create < revoke < purge):
         problems.append("Génération et délivrance : vérification préalable obligatoire.")
+    if "const { error: revokeExistingError } = await service.from('life_story_delivery_links').delete().eq('export_id', exportId);" not in export:
+        problems.append("L'erreur de révocation des anciens liens doit être observée.")
     if not (0 <= export.find("await requiredAdmin(req)") < gen_guard):
         problems.append("Le contrôle administrateur doit précéder Storage.")
     # Révoquer les liens ou purger le contenu doit rester possible lors d'un incident Storage.
@@ -81,6 +84,8 @@ def self_test(export: str, delivery: str, guard: str) -> None:
         ("quota avant lecture", export, delivery.replace("service.rpc('service_life_story_register_download'", "service.rpc('ignore_count'", 1), guard),
         ("jetons supprimés avant bucket", export.replace("from('life_story_delivery_links').delete()", "from('bad_delete').delete()", 1), delivery, guard),
         ("mutation des autorisations admin", export.replace("await requiredAdmin(req)", "await Promise.resolve({service})", 1), delivery, guard),
+        ("révocation des anciens liens non confirmée", export.replace("if (revokeExistingError) throw new Error('LIFE_STORY_LINK_ROTATION_FAILED');", "", 1), delivery, guard),
+        ("erreur de suppression ignorée", export.replace("const { error: revokeExistingError } = await service.from('life_story_delivery_links').delete().eq('export_id', exportId);", "await service.from('life_story_delivery_links').delete().eq('export_id', exportId);", 1), delivery, guard),
     ]
     for label, bad_export, bad_delivery, bad_guard in cases:
         if bad_export == export and bad_delivery == delivery and bad_guard == guard:

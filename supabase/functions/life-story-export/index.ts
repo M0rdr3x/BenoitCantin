@@ -180,7 +180,9 @@ Deno.serve(async (req) => {
       if (!(await hasVerifiedPrivateLifeStoryBucket(service.storage))) throw new Error('PRIVATE_STORAGE_UNVERIFIED');
       const recipients = Array.isArray(record.recipients_snapshot) ? record.recipients_snapshot : [];
       if (!recipients.length) throw new Error('NO_RECIPIENTS');
-      await service.from('life_story_delivery_links').delete().eq('export_id', exportId);
+      // Ne pas émettre de nouveaux liens si les anciens ne sont pas révoqués.
+      const { error: revokeExistingError } = await service.from('life_story_delivery_links').delete().eq('export_id', exportId);
+      if (revokeExistingError) throw new Error('LIFE_STORY_LINK_ROTATION_FAILED');
       const rows: any[] = []; const responseLinks: any[] = [];
       for (let i = 0; i < recipients.length; i += 1) {
         const raw = hex(crypto.getRandomValues(new Uint8Array(32)));
