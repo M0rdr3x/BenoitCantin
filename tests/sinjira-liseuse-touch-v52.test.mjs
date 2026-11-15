@@ -170,7 +170,7 @@ test('V101 : la sélection du texte, les taps, le PDF masqué et le scroll reste
     f.advance(120);event('pointerup',90);
     // Les gestes diagonaux et les longues pressions sont refusés.
     f.setPdfMode(true);
-    event('pointerdown',250);f.advance(100);event('pointerup',90,{clientY:285});
+    event('pointerdown',250);f.advance(100);event('pointerup',90,{clientY:315});
     event('pointerdown',250);f.advance(2000);event('pointerup',90);
     assert.equal(f.next.clicks,0);
     assert.equal(f.previous.clicks,0);
