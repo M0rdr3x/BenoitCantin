@@ -450,8 +450,11 @@ export function bindReaderScreenMode({
   const onTouchCancel=()=>{
     gesture=null;
     if(jumpPreview!==null){
+      // V109 : refléter immédiatement la vraie page, même si le navigateur
+      // n'envoie jamais de confirmation de fin de glissement.
       jumpCancelled=true;
       jumpPreview=null;
+      sync();
     }
   };
   // V91 : un changement d'application, une fermeture d'onglet ou la perte

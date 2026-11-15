@@ -219,6 +219,9 @@ def run(playwright, browser_type, url):
           selection(3);
           const preview={top:viewer.scrollTop,signals:window.__v106JumpSignals};
           window.dispatchEvent(new Event('blur'));
+          // V109 : contrôle immédiat avant tout change natif.
+          const instant={top:viewer.scrollTop,signals:window.__v106JumpSignals,
+            range:el.value,accessible:el.getAttribute('aria-valuetext')};
           el.value='3';confirm(); // confirmation obsolète
           const ignored={top:viewer.scrollTop,signals:window.__v106JumpSignals,
             range:el.value};
@@ -226,10 +229,15 @@ def run(playwright, browser_type, url):
           const resumed={top:viewer.scrollTop,signals:window.__v106JumpSignals};
           selection(1);confirm(); // restaurer la page avant les swipes
           const restored={top:viewer.scrollTop,signals:window.__v106JumpSignals};
-          return {preview,ignored,resumed,restored,
+          return {preview,instant,ignored,resumed,restored,
             page:document.querySelector('#reader-page').value};
         }""")
         assert interrupted["preview"]["top"]<2 and (
+            interrupted["instant"]["top"]<2 and
+            interrupted["instant"]["signals"]==2 and
+            interrupted["instant"]["range"]=="1" and
+            "Écran 1 sur" in interrupted["instant"]["accessible"] and
+            "relâcher" not in interrupted["instant"]["accessible"] and
             interrupted["ignored"]["top"]<2 and
             interrupted["ignored"]["signals"]==2 and
             interrupted["ignored"]["range"]=="1"
