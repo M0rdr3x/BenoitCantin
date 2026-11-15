@@ -733,6 +733,39 @@ export function prepareReaderPreferencePanels({media,panels=[]}={}){
   }
   return opened;
 }
+/**
+ * V111 : la tablette passe d'ordinateur à liseuse mobile sans rechargement.
+ * Replier uniquement les panneaux automatiques; conserver toute interaction
+ * volontaire sur un summary, qu'elle vienne d'un clic ou du clavier.
+ * Ne pas écrire de préférence, écouter le contenu ni modifier la lecture.
+ */
+export function bindReaderResponsivePanels({media,panels=[]}={}){
+  if(!media||!Array.isArray(panels))return ()=>{};
+  const valid=panels.filter(Boolean);
+  const automatic=new Set(valid);
+  const listeners=[];
+  for(const panel of valid){
+    const summary=panel.querySelector?.('summary');
+    if(!summary?.addEventListener)continue;
+    const onUserToggle=()=>automatic.delete(panel);
+    summary.addEventListener('click',onUserToggle);
+    listeners.push([summary,onUserToggle]);
+  }
+  let mobile=Boolean(media.matches);
+  prepareReaderPreferencePanels({media,panels:valid});
+  const onMediaChange=()=>{
+    const nextMobile=Boolean(media.matches);
+    if(nextMobile===mobile)return;
+    mobile=nextMobile;
+    for(const panel of automatic)panel.open=!nextMobile;
+  };
+  media.addEventListener?.('change',onMediaChange);
+  return ()=>{
+    media.removeEventListener?.('change',onMediaChange);
+    for(const [summary,listener] of listeners)
+      summary.removeEventListener?.('click',listener);
+  };
+}
 function initReaderScreens(){
   const id=name=>document.getElementById(name);
   const required=['reader-viewer','reader-text','reader-previous','reader-next',
@@ -740,7 +773,7 @@ function initReaderScreens(){
   if(required.some(name=>!id(name)))return;
   // Les panneaux sont initialement fermés en HTML : zéro flash de menus
   // dépliés sur téléphone, y compris si le moteur est chargé tardivement.
-  prepareReaderPreferencePanels({
+  bindReaderResponsivePanels({
     media:window.matchMedia('(max-width: 980px)'),
     panels:[document.querySelector('.reader-settings'),
       document.querySelector('.reader-audio-settings')]

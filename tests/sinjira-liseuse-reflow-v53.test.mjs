@@ -4,12 +4,53 @@ import {readFileSync} from 'node:fs';
 import {
   measureReaderScreen,readerScreenState,planReaderScreenTurn,bindReaderScreenMode,parseReaderLineHeight,
   captureReaderTextAnchor,restoreReaderTextAnchor,classifyReaderEdgeTap,
-  prepareReaderPreferencePanels,
+  prepareReaderPreferencePanels,bindReaderResponsivePanels,
   formatReaderMobileLocation,formatReaderAccessibleLocation
 } from '../assets/js/sinjira-liseuse-reflow-v53.mjs';
 
 const setup={scrollHeight:1050,clientHeight:350,lineHeight:35};
 
+test('V111 : bascule ordinateur-tablette protège les choix de réglages volontaires',()=>{
+  function fakeTarget(){
+    const hooks=new Map();
+    return {
+      addEventListener(type,fn){hooks.set(type,fn)},
+      removeEventListener(type,fn){if(hooks.get(type)===fn)hooks.delete(type)},
+      emit(type){hooks.get(type)?.()},
+      count(){return hooks.size}
+    };
+  }
+  const media=fakeTarget();media.matches=false;
+  const settingsSummary=fakeTarget(),voiceSummary=fakeTarget();
+  const settings={open:false,querySelector:()=>settingsSummary};
+  const voice={open:false,querySelector:()=>voiceSummary};
+  const cleanup=bindReaderResponsivePanels({media,panels:[settings,voice]});
+  try{
+    assert.equal(settings.open,true);
+    assert.equal(voice.open,true);
+    media.matches=true;media.emit('change');
+    assert.equal(settings.open,false);
+    assert.equal(voice.open,false);
+    settingsSummary.emit('click'); // l'utilisateur choisit ses réglages
+    settings.open=true;
+    media.matches=false;media.emit('change');
+    assert.equal(settings.open,true);
+    assert.equal(voice.open,true);
+    media.matches=true;media.emit('change');
+    assert.equal(settings.open,true); // ne pas refermer un réglage demandé
+    assert.equal(voice.open,false);
+    settingsSummary.emit('click');settings.open=false;
+    media.matches=false;media.emit('change');
+    assert.equal(settings.open,false); // respecter aussi sa fermeture
+    assert.equal(voice.open,true);
+    assert.equal(media.count(),1);
+  }finally{cleanup()}
+  assert.equal(media.count(),0);
+  assert.equal(settingsSummary.count(),0);
+  assert.equal(voiceSummary.count(),0);
+  media.matches=true;media.emit('change');
+  assert.equal(voice.open,true); // plus de mutation après cleanup
+});
 test('V110 : les réglages mobiles sont repliés au premier rendu, jamais verrouillés',()=>{
   const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
@@ -1447,7 +1488,7 @@ test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
   assert.match(h,/id="reader-screen-count"/);
-  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.14\.110/);
+  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.14\.111/);
   assert.match(h,/sinjira-liseuse-v26\.js\?v=34\.11\.14\.102/);
 });
 test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=>{
