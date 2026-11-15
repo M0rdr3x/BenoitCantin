@@ -154,11 +154,16 @@ def run(playwright, browser_type, url):
         # éloignée sans appeler les boutons de changement de page source.
         jump=page.locator("#reader-screen-jump")
         jump_label=page.locator("#reader-screen-jump-label")
-        assert jump_label.is_visible(),("V105 : l'étiquette du curseur est invisible en pagination")
+        // V105 : attendre que le moteur ait recalculé le nombre d'écrans.
+        // WebKit peut avoir fini le chargement du texte avant le retour de
+        // l'observateur MutationObserver responsable du libellé.
         page.wait_for_function("""()=>{
           const slider=document.querySelector('#reader-screen-jump');
-          return !slider.hidden && Number(slider.max)>=4 && slider.value==='1';
+          const label=document.querySelector('#reader-screen-jump-label');
+          return !slider.hidden && !label.hidden &&
+            Number(slider.max)>=4 && slider.value==='1';
         }""")
+        assert jump_label.is_visible(),("V105 : l'étiquette du curseur est invisible en pagination")
         jump_forward=page.evaluate("""()=>{
           const el=document.querySelector('#reader-screen-jump');
           el.value='3';el.dispatchEvent(new Event('input',{bubbles:true}));
