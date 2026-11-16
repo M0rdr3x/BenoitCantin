@@ -12,7 +12,7 @@ const PRIVATE_PATH_PREFIXES = ['/app/', '/compte/', '/admin/', '/auth/', '/api/'
 function canonicalPublicSinjiraUrl(candidate: string): string | null {
   try {
     const parsed = new URL(candidate);
-    if (parsed.protocol !== 'https:' || !PUBLIC_SHARE_HOSTS.has(parsed.hostname)) return null;
+    if (parsed.protocol !== 'https:' || parsed.port || parsed.username || parsed.password || !PUBLIC_SHARE_HOSTS.has(parsed.hostname)) return null;
 
     const pathname = parsed.pathname || '/';
     const normalizedPath = pathname.toLowerCase();
