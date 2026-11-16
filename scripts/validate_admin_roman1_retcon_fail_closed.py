@@ -69,7 +69,7 @@ def audit(source: str) -> list[str]:
     id_check = source.find("if(typeof c.novel_id!=='string'", novel)
     rpc = source.find("const {data:novel,error:novelError}=await", novel)
     fail_sql = source.find("if(novelError)throw new Error('NOVEL_LOOKUP_UNAVAILABLE');", rpc)
-    fail_empty = source.find("if(!novel||typeof novel.slug!=='string')", rpc)
+    fail_empty = source.find("if(!novel||typeof novel.slug!=='string'||!novel.slug.trim())", rpc)
     retcon = source.find("if(novel?.slug==='la-cendre-du-jugement'", rpc)
     current_id = source.find("if(typeof c.id!=='string'", retcon)
     current_read = source.find("const {data:current,error:currentError}=await s.from('characters')", current_id)
