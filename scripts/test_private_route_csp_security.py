@@ -6,6 +6,7 @@ Aucun réseau, secret ou donnée utilisateur : validation de fichiers suivis par
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 import sys
 import tomllib
 import unittest
@@ -104,6 +105,66 @@ class PrivateRoutesCspSecurityTests(unittest.TestCase):
                 self.assertEqual(csp_errors(n), [])
                 self.assertIn("no-store", netlify_headers[netlify_path]["Cache-Control"])
                 self.assertIn("no-store", vercel_headers[vercel_path]["Cache-Control"])
+
+    def test_corp_same_origin_des_six_zones_privees_et_mutations(self) -> None:
+        """Refuser les ressources privees integrees depuis une origine externe."""
+        scopes = (
+            ("/compte/*", "/compte/(.*)"),
+            ("/administration.html", "/administration.html"),
+            ("/admin/*", "/admin/(.*)"),
+            ("/Admin/*", "/Admin/(.*)"),
+            ("/app/*", "/app/(.*)"),
+            ("/histoire-de-vie/*", "/histoire-de-vie/(.*)"),
+        )
+
+        def violations(netlify: dict, vercel: dict) -> list[str]:
+            errors = []
+            for netlify_path, vercel_path in scopes:
+                n_rules = [r for r in netlify.get("headers", []) if r.get("for") == netlify_path]
+                v_rules = [r for r in vercel.get("headers", []) if r.get("source") == vercel_path]
+                if len(n_rules) != 1 or len(v_rules) != 1:
+                    errors.append(f"Route privee absente ou dupliquee: {netlify_path}")
+                    continue
+                if n_rules[0].get("values", {}).get("Cross-Origin-Resource-Policy") != "same-origin":
+                    errors.append(f"CORP Netlify fail-open: {netlify_path}")
+                headers = [
+                    h for h in v_rules[0].get("headers", [])
+                    if str(h.get("key", "")).lower() == "cross-origin-resource-policy"
+                ]
+                if len(headers) != 1 or headers[0].get("value") != "same-origin":
+                    errors.append(f"CORP Vercel fail-open: {vercel_path}")
+            return errors
+
+        self.assertEqual(violations(self.netlify, self.vercel), [])
+        rendered = render_standalone_headers(deploy_context="production")
+        for netlify_path, vercel_path in scopes:
+            with self.subTest(route=netlify_path):
+                blocks = rendered.split("\n" + netlify_path + "\n", 1)
+                self.assertEqual(len(blocks), 2)
+                section = blocks[1].split("\n\n", 1)[0]
+                self.assertIn("  Cross-Origin-Resource-Policy: same-origin", section)
+
+                for mutation in ("missing-netlify", "wrong-netlify",
+                                 "missing-vercel", "wrong-vercel", "duplicate-vercel"):
+                    with self.subTest(route=netlify_path, mutation=mutation):
+                        n = deepcopy(self.netlify)
+                        v = deepcopy(self.vercel)
+                        nr = next(r for r in n["headers"] if r["for"] == netlify_path)
+                        vr = next(r for r in v["headers"] if r["source"] == vercel_path)
+                        if mutation == "missing-netlify":
+                            del nr["values"]["Cross-Origin-Resource-Policy"]
+                        elif mutation == "wrong-netlify":
+                            nr["values"]["Cross-Origin-Resource-Policy"] = "cross-origin"
+                        elif mutation == "missing-vercel":
+                            vr["headers"] = [
+                                h for h in vr["headers"]
+                                if h["key"] != "Cross-Origin-Resource-Policy"
+                            ]
+                        elif mutation == "wrong-vercel":
+                            next(h for h in vr["headers"] if h["key"] == "Cross-Origin-Resource-Policy")["value"] = "cross-origin"
+                        else:
+                            vr["headers"].append({"key": "Cross-Origin-Resource-Policy", "value": "same-origin"})
+                        self.assertTrue(violations(n, v))
 
     def test_entetes_produits_conservent_les_csp_privees(self) -> None:
         headers = render_standalone_headers(deploy_context="production")
