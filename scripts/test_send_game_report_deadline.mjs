@@ -110,7 +110,7 @@ function productionPdfDownload(fetchFn, configuredUrl = null) {
     'const TEMPLATE_FETCH_TIMEOUT_MS=45;'
   );
   const start = source.indexOf('function reportTemplateUrl(){');
-  const end = source.indexOf('async function readLimitedJson(', start);
+  const end = source.indexOf('async function readLimitedUtf8Body(', start);
   assert.ok(start !== -1 && end > start, 'Les fonctions PDF réelles doivent rester accessibles');
   const functions = source.slice(start, end).replace('let url:URL;', 'let url;');
   return vm.runInNewContext(
