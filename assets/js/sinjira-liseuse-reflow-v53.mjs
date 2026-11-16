@@ -837,7 +837,18 @@ export function bindReaderScreenMode({
     // V130 : toujours invalider le geste avant le changement de CSS.
     gesture=null;
     // V144 : ne pas capturer une ancre d'un texte masqué.
-    if(!isPaged()||!canNavigate())return;
+    if(!isPaged())return;
+    // V152 : l'événement de plein écran peut être différé par le navigateur
+    // jusqu'au masquage du livre/onglet. La taille CSS change parfois sans
+    // resize supplémentaire : conserver l'ancre et le ratio visibles, puis
+    // restituer le passage seulement à la réouverture autorisée.
+    if(!canNavigate()){
+      if(deferredLayoutRatio===null){
+        deferredLayoutRatio=lastRatio;
+        deferredLayoutAnchor=lastAnchor;
+      }
+      return;
+    }
     scheduleLayoutRestore(metric().ratio,
       captureReaderTextAnchor({viewer,text})||lastAnchor);
   };
