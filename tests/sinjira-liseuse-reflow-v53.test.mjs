@@ -475,6 +475,41 @@ test('V133 : retour BFCache préserve la position lors du changement de hauteur'
     assert.equal(w.handlers.get('pageshow')?.length??0,0);
   }
 });
+test('V152 : plein écran activé pendant le masquage conserve le passage lu',()=>{
+  const f=fixture({observe:true,withReaderContent:true});
+  try{
+    f.viewer.scrollTo({top:350}); // progression valide de 50 %
+    const status=f.status.textContent,writes=f.getStatusWrites();
+    f.readerContent.hidden=true;
+    f.windowMock.emit('sinjira:reader-layout-will-change',{});
+    f.viewer.scrollHeight=1750; // CSS plein écran modifié sans window.resize
+    assert.equal(f.viewer.scrollTop,350,'ne jamais naviguer dans le livre caché');
+    assert.equal(f.getStatusWrites(),writes,'aucune annonce fondée sur un viewport masqué');
+    assert.equal(f.status.textContent,status);
+    f.readerContent.hidden=false;
+    f.notifyContent();
+    assert.equal(f.viewer.scrollTop,700,'retrouver le même passage à 50 %');
+    assert.equal(f.viewer.dataset.readerLayout,'screens');
+    assert.equal(f.swipe(-130,3).defaultPrevented,true,'la lecture reprend au doigt');
+    assert.ok(f.viewer.scrollTop>700);
+  }finally{f.restore()}
+});
+test('V152 : plein écran masqué en arrière-plan restaure le ratio au retour',()=>{
+  const f=fixture();
+  try{
+    f.viewer.scrollTo({top:350});
+    const status=f.status.textContent;
+    f.documentMock.hidden=true;
+    f.windowMock.emit('sinjira:reader-layout-will-change',{});
+    f.viewer.scrollHeight=1750;
+    assert.equal(f.viewer.scrollTop,350);
+    assert.equal(f.status.textContent,status);
+    f.documentMock.hidden=false;
+    f.documentMock.emit('visibilitychange',{});
+    assert.equal(f.viewer.scrollTop,700,'le livre réapparaît au passage lu');
+    assert.equal(f.swipe(130,3).defaultPrevented,true,'balayage droit toujours opérationnel');
+  }finally{f.restore()}
+});
 test('V151 : BFCache masqué restaure le passage après ouverture du roman',()=>{
   const f=fixture({observe:true,withReaderContent:true,deferredRaf:true});
   try{
@@ -2179,7 +2214,7 @@ test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
   assert.match(h,/id="reader-screen-count"/);
-  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.16\.151/);
+  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.16\.152/);
   assert.match(h,/sinjira-liseuse-v26\.js\?v=34\.11\.16\.143/);
 });
 test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=>{
