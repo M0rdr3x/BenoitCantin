@@ -1,10 +1,13 @@
-import { readLimitedUtf8Body, readLimitedBinaryResponse } from '../_shared/limited-body.mjs';
+import { readLimitedBinaryResponse } from '../_shared/limited-body.mjs';
+import { readLimitedUtf8BodyWithDeadline } from '../_shared/read-chunk-deadline.mjs';
 import { PDFDocument, StandardFonts } from 'npm:pdf-lib@1.17.1';
 import { corsHeaders } from '../_shared/cors.ts';
 import { optionalUser, serviceClient } from '../_shared/auth.ts';
 
 const FUNCTION_VERSION='24.5.2';
 const MAX_REQUEST_BYTES=220_000;
+const MAX_REQUEST_READ_TIMEOUT_MS=8_000;
+const TEMPLATE_FETCH_TIMEOUT_MS=12_000;
 const MAX_TEMPLATE_BYTES=15*1024*1024;
 // Intégration préparée, jamais activée implicitement. Une future activation exige
 // une décision explicite distincte sur le fournisseur et les coûts.
@@ -41,7 +44,11 @@ function reportTemplateUrl(){
 }
 
 async function fetchTemplateBytes(){
-  const response=await fetch(reportTemplateUrl(),{cache:'no-store',redirect:'error'});
+  const response=await fetch(reportTemplateUrl(),{
+    cache:'no-store', redirect:'error',
+    // Même délai pour l'établissement de la connexion ET le flux de réponse.
+    signal:AbortSignal.timeout(TEMPLATE_FETCH_TIMEOUT_MS)
+  });
   if(!response.ok)throw new Error('REPORT_TEMPLATE_FETCH_FAILED');
   // Limiter le vrai flux binaire, pas seulement Content-Length (non fiable).
   // response.arrayBuffer() permettrait à une origine défaillante de dépasser
@@ -55,11 +62,19 @@ async function fetchTemplateBytes(){
 
 async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }> {
   const contentType=(req.headers.get('content-type')||'').toLowerCase();
-  if(!contentType.startsWith('application/json')){
+  if(!/^application\/json(?:\s*;|$)/.test(contentType)){
     return { response: privateJson({ ok:false, error:'Type de contenu non autorisé.', function_version:FUNCTION_VERSION }, 415) };
   }
-  const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);
-  if (!limited.ok) return { response: privateJson({ ok:false, error:'Requête trop volumineuse ou invalide.', function_version:FUNCTION_VERSION }, 413) };
+  const limited = await readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS);
+  if (!limited.ok) {
+    const timeout = limited.reason === 'REQUEST_TIMEOUT';
+    return { response: privateJson({
+      ok:false,
+      error:timeout ? 'Délai de transmission dépassé.' : 'Requête trop volumineuse ou invalide.',
+      code:timeout ? 'REQUEST_TIMEOUT' : 'REQUEST_TOO_LARGE',
+      function_version:FUNCTION_VERSION
+    }, timeout ? 408 : 413) };
+  }
   const raw = limited.raw;
 
   try {
