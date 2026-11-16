@@ -820,7 +820,17 @@ export function bindReaderScreenMode({
   const onPageShow=event=>{
     if(!event?.persisted)return;
     onTouchCancel();
-    if(!canNavigate())return; // aucun contenu privé masqué restauré
+    // V151 : pageshow BFCache peut arriver avant qu'un onglet ou un roman
+    // privé ne redevienne visible. La hauteur du lecteur peut déjà changer,
+    // sans nouvel événement resize. Reporter le ratio/ancre validés au
+    // prochain affichage, sans mesurer un livre caché ou exposer son contenu.
+    if(!canNavigate()){
+      if(deferredLayoutRatio===null){
+        deferredLayoutRatio=lastRatio;
+        deferredLayoutAnchor=lastAnchor;
+      }
+      return;
+    }
     onResize();
   };
   const onFocusLayoutChange=()=>{
