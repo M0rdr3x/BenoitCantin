@@ -301,6 +301,61 @@ def run(playwright, browser_type, url):
         page.wait_for_function("""()=>!document.querySelector('#reader-content').hidden&&
           document.querySelector('#reader-viewer').dataset.readerLayout==='screens'""")
 
+        # V143 : un téléphone peut envoyer resize/orientationchange
+        # pendant que le PDF est masqué. Le rendu ne doit pas mesurer
+        # une largeur nulle ni écraser le canvas/spot avant réouverture.
+        page.locator("#reader-mode").click()
+        page.wait_for_function("""()=>document.querySelector('#reader-text').hidden&&
+          !document.querySelector('#reader-canvas').hidden&&
+          document.querySelector('#reader-canvas').width>100""")
+        hidden_pdf_resize=page.evaluate("""async()=>{
+          const root=document.querySelector('#reader-content');
+          const canvas=document.querySelector('#reader-canvas');
+          const viewer=document.querySelector('#reader-viewer');
+          const field=document.querySelector('#reader-page');
+          const key='sinjira:liseuse:demo:la-cendre-du-jugement';
+          const grab=()=>({
+            width:canvas.width,height:canvas.height,
+            styleWidth:canvas.style.width,styleHeight:canvas.style.height,
+            page:field.value,zoom:document.querySelector('#reader-zoom').value,
+            spot:localStorage.getItem(key+':spot'),
+            updated:localStorage.getItem(key+':updated')
+          });
+          const before=grab();
+          try{
+            // Course réelle : resize émis AVANT le masquage, callback APRÈS.
+            window.dispatchEvent(new Event('resize'));
+            root.hidden=true;
+            await new Promise(done=>setTimeout(done,340));
+            const afterPending=grab();
+            // Puis un resize reçu directement pendant la suspension.
+            window.dispatchEvent(new Event('resize'));
+            await new Promise(done=>setTimeout(done,340));
+            const whileHidden=grab();
+            return {before,afterPending,whileHidden,
+              rootHidden:root.hidden,hiddenWidth:viewer.clientWidth};
+          }finally{root.hidden=false}
+        }""")
+        assert hidden_pdf_resize["rootHidden"],hidden_pdf_resize
+        assert hidden_pdf_resize["before"]==hidden_pdf_resize["afterPending"],(
+            "V143: un resize programmé avant la suspension ne doit pas réafficher un PDF caché",
+            hidden_pdf_resize
+        )
+        assert hidden_pdf_resize["before"]==hidden_pdf_resize["whileHidden"],(
+            "V143: un resize reçu pendant la suspension ne doit rien changer",
+            hidden_pdf_resize
+        )
+        page.wait_for_function("""()=>!document.querySelector('#reader-content').hidden""")
+        # Après réouverture, une rotation/resize explicite doit rester
+        # possible, sans désactiver le mode PDF ni le changement de page.
+        page.evaluate("window.dispatchEvent(new Event('resize'))")
+        page.wait_for_function("""()=>document.querySelector('#reader-canvas').width>100&&
+          document.querySelector('#reader-page').value==='3'""")
+        page.locator("#reader-mode").click()
+        page.wait_for_function("""()=>document.querySelector('#reader-viewer')
+          .dataset.readerLayout==='screens'&&
+          !document.querySelector('#reader-text').hidden""")
+
         # V102 : l'emplacement du lecteur est visible dans les commandes
         # mobiles et indépendant des extraits privés du texte.
         # La démo réelle possède 82 pages ; la fixture simplifiée en a 5.

@@ -484,7 +484,11 @@ function isAutomaticPdfFallbackVisible(){
     $('reader-text').hidden&&!$('reader-canvas').hidden;
 }
 function refreshVisiblePdfPreservingSpot(){
-  if(!state.pdf)return;
+  // V143 : resize/orientationchange peut être livré APRÈS le masquage
+  // du roman, même si un délai de rendu a été programmé en premier plan.
+  // Ne pas mesurer un viewport caché (largeur ~0), altérer le spot, ni
+  // demander un rendu PDF sans droit de lecture privé courant.
+  if(!canRecordReaderInteraction())return;
   const viewer=$('reader-viewer');
   // Une position 0 en attente après un changement de page est prioritaire.
   if(state.restorePending===null){
@@ -788,6 +792,9 @@ function bindControls(){
   });
   let resizeTimer;
   window.addEventListener('resize',()=>{
+    // V143 : ignorer immédiatement les changements de viewport d'un
+    // livre caché; revalider AUSSI dans le callback à 250 ms ci-dessus.
+    if(!canRecordReaderInteraction())return;
     // V83 : une illustration montrée automatiquement en PDF garde la
     // préférence « texte »; elle doit pourtant se recalculer à la rotation.
     if(state.mode!=='page'&&!isAutomaticPdfFallbackVisible())return;
