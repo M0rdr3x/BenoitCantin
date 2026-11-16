@@ -21,3 +21,10 @@ Playwright Chromium/WebKit sur le vrai HTML avec PDF synthétique et réseau ext
 Le résultat GitHub Actions doit être confirmé pour **le SHA exact**. Les tests artificiels de masquage ne prouvent pas les droits serveur du roman intégral; ils exigent une homologation sur compte autorisé/révoqué, iPhone/Android physiques et synchronisation réelle.
 
 **NO-GO production : PR #1000 maintenue en brouillon. Les scores Nova/SINJIRA demeurent inchangés.**
+
+
+## Régression découverte lors de la réception du premier commit V138
+
+Le commit `6a852de` a échoué dans le parcours V69, sur Chromium **et** WebKit, au contrôle de présence du curseur de pagination après la simulation de masquage. Les 203 tests Node ont réussi. Le moteur V53 recevait toujours un `scroll` alors que le livre était masqué et appelait `sync()` avec une géométrie réduite à zéro, ce qui masquait son curseur. **Ce n'était pas un problème de sécurité Auth/RLS**, mais une régression d'interface révélée par le nouveau test.
+
+**Réparation :** `onScroll` de V53 refuse les événements lorsque `canNavigate()` est faux, sans modifier la position ou l'affichage mémorisé. Les observateurs de masquage restent actifs pour invalider les anciens gestes. Les versions de cache du script **V53 53.11.16.138** et le contrat HTML/Node/fixture/Playwright sont alignés; le CSS, non modifié, conserve sa version précédente. Le test V57 existant vérifie aussi le curseur après réouverture. **La CI du commit réparé est obligatoire avant qualification.**

@@ -653,10 +653,15 @@ export function bindReaderScreenMode({
   const buttonsObserver=Observer?new Observer(()=>sync()):null;
   buttonsObserver?.observe(previous,{attributes:true,attributeFilter:['disabled']});
   buttonsObserver?.observe(next,{attributes:true,attributeFilter:['disabled']});
-  const onScroll=()=>{if(!closed){
+  // V138 : un événement scroll livré lorsque le roman est masqué peut
+  // mesurer un viewport de hauteur zéro. Ne pas recalculer la pagination
+  // ni masquer le curseur; elle reste en mémoire jusqu'au retour autorisé.
+  // Le changement d'état caché est déjà traité par contentObserver.
+  const onScroll=()=>{
+    if(closed||!canNavigate())return;
     if(jumpPreview!==null)jumpCancelled=true;
     jumpPreview=null;sync();
-  }};
+  };
   /**
    * V56 : un changement de police déclenche souvent input puis change; et une
    * rotation provoque resize puis media.change. Capturer une SEULE position
