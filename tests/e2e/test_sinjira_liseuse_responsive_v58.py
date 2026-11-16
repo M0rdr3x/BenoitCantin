@@ -71,6 +71,64 @@ def run(playwright, engine, origin):
           document.querySelector('#reader-viewer').dataset.readerLayout==='screens'&&
           document.querySelector('#reader-text').textContent.includes('LIVRE DE TEST')""")
         assert snapshot(page)["page"]==3,snapshot(page)
+        # V134 : vraie navigation du navigateur hors du livre, puis Retour.
+        # Certains moteurs conservent la page BFCache, d'autres la rechargent :
+        # vérifier honnêtement les deux chemins, sans prétendre imposer BFCache.
+        navigation_before=page.evaluate("""()=>{
+          const v=document.querySelector('#reader-viewer');
+          v.scrollTop=Math.min(315,v.scrollHeight-v.clientHeight);
+          v.dispatchEvent(new Event('scroll'));
+          window.__v134NavigationEvidence={
+            beforePage:document.querySelector('#reader-page').value,
+            beforeScroll:v.scrollTop,
+            persisted:null
+          };
+          window.addEventListener('pageshow',event=>{
+            window.__v134NavigationEvidence.persisted=Boolean(event.persisted);
+          });
+          return {page:Number(document.querySelector('#reader-page').value),
+            scroll:v.scrollTop,layout:v.dataset.readerLayout};
+        }""")
+        assert navigation_before["page"]==3 and navigation_before["scroll"]>150,navigation_before
+        page.goto(origin+"?reader-v134-navigation-probe=1",wait_until="load")
+        page.wait_for_function("""()=>window.__readerFixture?.ready&&
+          document.querySelector('#reader-viewer')?.dataset.readerLayout==='screens'""")
+        page.go_back(wait_until="domcontentloaded")
+        page.wait_for_function("""()=>window.__readerFixture?.ready&&
+          !document.querySelector('#reader-content').hidden&&
+          document.querySelector('#reader-viewer')?.dataset.readerLayout==='screens'""")
+        # Laisser au moteur deux frames pour rétablir l'ancre après pageshow.
+        navigation_after=page.evaluate("""async()=>{
+          await new Promise(resolve=>requestAnimationFrame(
+            ()=>requestAnimationFrame(resolve)));
+          const v=document.querySelector('#reader-viewer');
+          return {page:Number(document.querySelector('#reader-page').value),
+            scroll:v.scrollTop,layout:v.dataset.readerLayout,
+            evidence:window.__v134NavigationEvidence||null};
+        }""")
+        assert navigation_after["page"]==3 and navigation_after["layout"]=="screens",navigation_after
+        if navigation_after["evidence"] and navigation_after["evidence"]["persisted"] is True:
+            # Un vrai retour BFCache, et non un simple dispatch synthétique.
+            assert abs(navigation_after["scroll"]-navigation_before["scroll"])<80,(
+                navigation_before,navigation_after
+            )
+        else:
+            # Rechargement normal : pas de faux certificat BFCache ; le livre
+            # fictif et les commandes doivent néanmoins être opérationnels.
+            assert navigation_after["scroll"]>=0,navigation_after
+        # Vérifier que les swipes fonctionnent après une vraie navigation.
+        page.evaluate("""()=>{
+          const v=document.querySelector('#reader-viewer');
+          v.scrollTop=0;
+          v.dispatchEvent(new Event('scroll'));
+        }""")
+        navigation_next=swipe(page,-130)
+        assert navigation_next["consumed"] and navigation_next["scroll"]>0,navigation_next
+        navigation_prev=swipe(page,130)
+        assert navigation_prev["consumed"] and navigation_prev["scroll"]==0,navigation_prev
+        assert not blocked,blocked
+        assert not errors,errors
+
         # V129 : régler la police pendant un swipe ancien et revenir à
         # l'ancienne valeur dans la même tâche ne doit pas tourner l'écran.
         preference_gesture=page.evaluate("""()=>{
