@@ -156,7 +156,7 @@ def validate(
         {
             "authentification/résolution utilisateur": "optionalUser(req)",
             "client serveur pour décision d'accès": "serviceClient()",
-            "contrôle du rang d'accès": "userRank<(ranks[doc.access_level]||999)",
+            "contrôle du rang d'accès": "!documentAccessAllowed(doc.access_level,userRank)",
             "URL signée de courte durée": "createSignedUrl(doc.storage_path,600)",
             "réponse privée non mise en cache": "'Cache-Control':'private, no-store, max-age=0'",
             "protection MIME": "'X-Content-Type-Options':'nosniff'",
@@ -242,7 +242,7 @@ def self_test() -> None:
         contract_path.write_text(json.dumps(contract), encoding="utf-8")
 
         edge = """optionalUser(req); serviceClient();
-if(userRank<(ranks[doc.access_level]||999)){}
+if(!documentAccessAllowed(doc.access_level,userRank)){}
 service.storage.from(doc.storage_bucket).createSignedUrl(doc.storage_path,600);
 const h={'Cache-Control':'private, no-store, max-age=0','X-Content-Type-Options':'nosniff'};
 """
