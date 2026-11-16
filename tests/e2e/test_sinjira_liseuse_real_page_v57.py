@@ -171,10 +171,43 @@ def run(playwright, browser_type, url):
               modeText:mode.textContent,zoom:zoom.value,
               page:field.value
             };
+            // V141 : les réglages typographiques ne doivent ni persister
+            // ni préparer un reflow à viewport nul quand le livre est caché.
+            const prefIds=['reader-theme','reader-size','reader-font',
+              'reader-line-height','reader-text-width','reader-letter-spacing'];
+            const values=()=>Object.fromEntries(prefIds.map(id=>
+              [id,document.getElementById(id).value]));
+            const css=()=>({
+              theme:document.body.dataset.readTheme,
+              size:document.body.style.getPropertyValue('--reader-text-size'),
+              font:document.body.style.getPropertyValue('--reader-font'),
+              line:document.body.style.getPropertyValue('--reader-line-height'),
+              measure:document.body.style.getPropertyValue('--reader-measure'),
+              letter:document.body.style.getPropertyValue('--reader-letter-spacing'),
+              sizeLabel:document.querySelector('#reader-size-value').textContent
+            });
+            const beforePrefs={values:values(),css:css(),
+              storage:localStorage.getItem('sinjira:liseuse:preferences')};
+            const attempted={
+              'reader-theme':['clair','change'],
+              'reader-size':['24','input'],
+              'reader-font':['sans','change'],
+              'reader-line-height':['2.1','change'],
+              'reader-text-width':['600','change'],
+              'reader-letter-spacing':['0.035','change']
+            };
+            for(const [id,[value,type]] of Object.entries(attempted)){
+              const el=document.getElementById(id);
+              el.value=value;
+              el.dispatchEvent(new Event(type,{bubbles:true}));
+            }
+            const afterPrefs={values:values(),css:css(),
+              storage:localStorage.getItem('sinjira:liseuse:preferences')};
             return {initial,after:{
               page:field.value,range:range.value,chapters:chapters.value,
               scroll:viewer.scrollTop
-            },beforeDisplay,afterDisplay,contentHidden:content.hidden};
+            },beforeDisplay,afterDisplay,beforePrefs,afterPrefs,
+              contentHidden:content.hidden};
           }finally{content.hidden=false}
         }""")
         assert hidden_direct_navigation["contentHidden"],hidden_direct_navigation
@@ -184,6 +217,10 @@ def run(playwright, browser_type, url):
         )
         assert hidden_direct_navigation["afterDisplay"]==hidden_direct_navigation["beforeDisplay"],(
             "V140: le PDF/texte et le zoom ne doivent pas changer quand le livre est caché",
+            hidden_direct_navigation
+        )
+        assert hidden_direct_navigation["afterPrefs"]==hidden_direct_navigation["beforePrefs"],(
+            "V141: aucun style, réglage ou stockage modifié quand le livre est caché",
             hidden_direct_navigation
         )
         # La vraie navigation doit rester utilisable après réouverture.

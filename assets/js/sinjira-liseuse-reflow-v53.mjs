@@ -750,7 +750,10 @@ export function bindReaderScreenMode({
       captureReaderTextAnchor({viewer,text})||lastAnchor);
   };
   const onPreferences=event=>{
-    if(!isPaged()||!['reader-size','reader-font','reader-line-height',
+    // V141 : cet observateur capte l'événement AVANT le gestionnaire V26.
+    // Un input de police/taille reçu avec le livre masqué ne doit pas
+    // mémoriser une ancre de viewport nul ou préparer un faux reflow.
+    if(!isPaged()||!canNavigate()||!['reader-size','reader-font','reader-line-height',
       'reader-letter-spacing','reader-text-width'].includes(event.target?.id))return;
     // V129 : le réagencement peut revenir à la géométrie initiale
     // (taille 20→34→20) avant touchend ; un ancien doigt n'a alors plus

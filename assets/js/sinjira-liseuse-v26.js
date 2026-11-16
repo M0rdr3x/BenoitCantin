@@ -301,6 +301,14 @@ function canRecordReaderInteraction(){
     !$('reader-content').hidden&&
     (!isFull||(!state.privatePaused&&!state.accessInvalidated));
 }
+// V141 : un changement de typographie reçu après suspension n'est pas une
+// préférence volontaire. Rétablir seulement le champ du formulaire sans
+// toucher au CSS ni écrire les préférences privées/locales.
+function canEditReaderAppearance(event,current){
+  if(canRecordReaderInteraction())return true;
+  event.target.value=String(current);
+  return false;
+}
 async function saveCurrentPosition(){
   if(!canRecordReaderInteraction())return;
   flushScrollPosition();
@@ -649,21 +657,27 @@ function bindControls(){
     companion?.onModeChange();
   });
   $('reader-theme').addEventListener('change',event=>{
+    if(!canEditReaderAppearance(event,state.theme))return;
     state.theme=event.target.value;setTheme();
   });
   $('reader-size').addEventListener('input',event=>{
+    if(!canEditReaderAppearance(event,state.size))return;
     state.size=clamp(event.target.value,16,34);setTheme();
   });
   $('reader-font').addEventListener('change',event=>{
+    if(!canEditReaderAppearance(event,state.font))return;
     if(['serif','sans','accessible'].includes(event.target.value)){state.font=event.target.value;setTheme()}
   });
   $('reader-line-height').addEventListener('change',event=>{
+    if(!canEditReaderAppearance(event,state.lineHeight))return;
     state.lineHeight=Number(event.target.value);setTheme();
   });
   $('reader-text-width').addEventListener('change',event=>{
+    if(!canEditReaderAppearance(event,state.textWidth))return;
     state.textWidth=Number(event.target.value);setTheme();
   });
   $('reader-letter-spacing').addEventListener('change',event=>{
+    if(!canEditReaderAppearance(event,state.letterSpacing))return;
     state.letterSpacing=Number(event.target.value);setTheme();
   });
   $('reader-speed').addEventListener('change',event=>{
