@@ -400,6 +400,63 @@ def run(playwright, browser_type, url):
         }""")
         page.wait_for_function("""()=>document.querySelector('#reader-viewer').scrollTop<2""")
 
+        # V145 : un simple changement d'application cache l'onglet
+        # mais pas nécessairement #reader-content. V144 doit restituer
+        # son ancre au retour via visibilitychange, sans mutation DOM.
+        background_tab_restore=page.evaluate("""async()=>{
+          const viewer=document.querySelector('#reader-viewer');
+          const root=document.querySelector('#reader-content');
+          const field=document.querySelector('#reader-page');
+          const oldHidden=Object.getOwnPropertyDescriptor(document,'hidden');
+          const frame=()=>new Promise(resolve=>requestAnimationFrame(resolve));
+          const settle=async(n)=>{for(let i=0;i<n;i++)await frame()};
+          const visible=()=>Object.defineProperty(document,'hidden',{
+            configurable:true,value:false
+          });
+          const hidden=()=>Object.defineProperty(document,'hidden',{
+            configurable:true,value:true
+          });
+          const restore=()=>{
+            if(oldHidden)Object.defineProperty(document,'hidden',oldHidden);
+            else delete document.hidden;
+          };
+          await settle(5);
+          viewer.scrollTop=Math.min(680,viewer.scrollHeight-viewer.clientHeight-200);
+          viewer.dispatchEvent(new Event('scroll'));
+          await settle(3);
+          const before={page:field.value,scroll:viewer.scrollTop,
+            rootHidden:root.hidden,layout:viewer.dataset.readerLayout};
+          try{
+            hidden();
+            document.dispatchEvent(new Event('visibilitychange'));
+            window.dispatchEvent(new Event('resize')); // V144 mémorise l'ancre
+            viewer.scrollTop=0; // navigateur mobile a perdu son scroll
+            await settle(4);
+            visible();
+            document.dispatchEvent(new Event('visibilitychange'));
+            await settle(12);
+            return {before,after:{
+              page:field.value,scroll:viewer.scrollTop,
+              rootHidden:root.hidden,layout:viewer.dataset.readerLayout
+            }};
+          }finally{restore()}
+        }""")
+        assert not background_tab_restore["before"]["rootHidden"],background_tab_restore
+        assert background_tab_restore["before"]["scroll"]>200,background_tab_restore
+        assert background_tab_restore["after"]["page"]=="3",background_tab_restore
+        assert background_tab_restore["after"]["layout"]=="screens",background_tab_restore
+        assert not background_tab_restore["after"]["rootHidden"],background_tab_restore
+        assert abs(background_tab_restore["after"]["scroll"]-
+                   background_tab_restore["before"]["scroll"])<95,(
+            "V145: retour d'application sans masquage DOM doit retrouver l'écran lu",
+            background_tab_restore
+        )
+        page.evaluate("""()=>{
+          const viewer=document.querySelector('#reader-viewer');
+          viewer.scrollTop=0;viewer.dispatchEvent(new Event('scroll'));
+        }""")
+        page.wait_for_function("""()=>document.querySelector('#reader-viewer').scrollTop<2""")
+
         # V102 : l'emplacement du lecteur est visible dans les commandes
         # mobiles et indépendant des extraits privés du texte.
         # La démo réelle possède 82 pages ; la fixture simplifiée en a 5.

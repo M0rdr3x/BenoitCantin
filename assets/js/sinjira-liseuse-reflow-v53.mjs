@@ -513,10 +513,16 @@ export function bindReaderScreenMode({
   // V91 : un changement d'application, une fermeture d'onglet ou la perte
   // de focus interrompent un balayage même sans événement touchcancel.
   // Ne pas déclencher une page au retour à l'écran.
-  const onVisibilityChange=()=>{if(document.hidden){
-    onTouchCancel();
-    cancelReaderPageTurnFlash(viewer);
-  }};
+  const onVisibilityChange=()=>{
+    if(document.hidden){
+      onTouchCancel();
+      cancelReaderPageTurnFlash(viewer);
+    }else{
+      // V145 : une simple réapparition d'onglet ne modifie pas l'attribut
+      // hidden du roman. Réactiver le rappel V144 dans ce cas aussi.
+      resumeDeferredLayout();
+    }
+  };
   const onTouchEnd=event=>{
     if(flushPendingTextMutation())return;
     const start=gesture;gesture=null;
@@ -647,30 +653,24 @@ export function bindReaderScreenMode({
   // V124 : lorsqu'un livre privé est masqué sans événement de nouvelle page,
   // effacer tout statut de l'ancien roman avant de révéler le suivant.
   const readingContent=viewer.closest?.('#reader-content');
+  // V145 : dans la démo et sur certains retours d'application mobile,
+  // document.hidden change SANS mutation de #reader-content[hidden].
+  // Un seul chemin rétablit le dernier passage, après deux frames, depuis
+  // l'observateur du contenu OU l'événement visibilitychange.
+  const resumeDeferredLayout=()=>raf(()=>raf(()=>{
+    if(closed||!canNavigate())return;
+    if(deferredLayoutRatio!==null){
+      const ratio=deferredLayoutRatio,anchor=deferredLayoutAnchor;
+      deferredLayoutRatio=null;deferredLayoutAnchor=null;
+      scheduleLayoutRestore(ratio,anchor);
+    }else sync();
+  }));
   const contentObserver=readingContent&&Observer?new Observer(mutations=>{
     if(mutations.some(m=>m.type==='attributes'&&m.attributeName==='hidden')){
-      // V127 : le contenu privé peut être masqué puis réaffiché avant
-      // touchend. Annuler le doigt même si le livre est à nouveau visible.
+      // V127 : ne jamais réutiliser le doigt d'un affichage antérieur.
       gesture=null;
-      if(readingContent.hidden){
-        clearPageAnnouncement();
-      }else{
-        // V138 : après un masquage répété, WebKit ne garantit pas un
-        // événement scroll/resize à la réouverture. Réinitialiser les
-        // libellés et le curseur APRÈS le réagencement (2 frames) sans
-        // changer de page ni sauvegarder une progression.
-        raf(()=>raf(()=>{
-          if(closed||!canNavigate())return;
-          // V144 : au retour du roman privé, restaurer UNIQUEMENT la
-          // dernière ancre visible avant suspension, une fois le layout
-          // recalculable. Un geste de lecture ultérieur annule ce rappel.
-          if(deferredLayoutRatio!==null){
-            const ratio=deferredLayoutRatio,anchor=deferredLayoutAnchor;
-            deferredLayoutRatio=null;deferredLayoutAnchor=null;
-            scheduleLayoutRestore(ratio,anchor);
-          }else sync();
-        }));
-      }
+      if(readingContent.hidden)clearPageAnnouncement();
+      else resumeDeferredLayout();
     }
   }):null;
   contentObserver?.observe(readingContent,{attributes:true,attributeFilter:['hidden']});
