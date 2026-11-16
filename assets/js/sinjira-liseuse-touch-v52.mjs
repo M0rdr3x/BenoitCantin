@@ -445,6 +445,9 @@ export function bindReaderTouchNavigation({
   // sans émettre touchcancel. Une reprise ne doit jamais tourner une page
   // depuis une ancienne position de doigt.
   const cancelAll=()=>{cancel();pointerCancel();cancelReaderPageTurnFlash(viewer)};
+  // V131 : un menu de sélection peut s'ouvrir sans événement touchcancel.
+  // Ne jamais réutiliser l'ancien doigt/drag, sans bloquer le menu natif.
+  viewer.addEventListener('contextmenu',cancelAll,{passive:true});
   // V118 : le moteur V26 peut charger une nouvelle page (ou réinitialiser
   // le roman) en conservant temporairement la même valeur #reader-page.
   // Un contact de l'ancienne page devient immédiatement invalide.
@@ -535,6 +538,7 @@ export function bindReaderTouchNavigation({
     viewer.removeEventListener('touchmove',move);
     viewer.removeEventListener('touchcancel',cancel);
     viewer.removeEventListener('touchend',end);
+    viewer.removeEventListener('contextmenu',cancelAll);
     viewer.removeEventListener('pointerdown',pointerDown);
     viewer.removeEventListener('pointermove',pointerMove);
     viewer.removeEventListener('pointerup',pointerUp);

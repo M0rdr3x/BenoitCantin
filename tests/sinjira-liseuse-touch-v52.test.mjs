@@ -71,6 +71,30 @@ test('V119 : une navigation PDF montre un repère, jamais un swipe refusé',()=>
   assert.equal(f.next.events.has('click'),false);
   assert.equal(f.previous.events.has('click'),false);
 });
+test('V131 : menu contextuel annule ancien toucher et drag PDF sans bloquer menu',()=>{
+  const f=fixture(),start={identifier:131,clientX:250,clientY:190};
+  const begin=()=>f.viewer.emit('touchstart',{touches:[start],target:{closest:()=>null}});
+  const end=()=>f.viewer.emit('touchend',{touches:[],
+    changedTouches:[{...start,clientX:95,clientY:192}],defaultPrevented:false});
+  const pointer=(kind,x)=>f.viewer.emit(kind,{
+    pointerType:'mouse',pointerId:131,button:0,buttons:1,isPrimary:true,
+    clientX:x,clientY:190,target:f.canvas,defaultPrevented:false,
+    preventDefault(){this.defaultPrevented=true}
+  });
+  const menu={defaultPrevented:false,preventDefault(){this.defaultPrevented=true}};
+  try{
+    f.setPdfMode(true);
+    begin();f.viewer.emit('contextmenu',menu);f.advance(200);end();
+    assert.equal(f.next.clicks,0,'pas de page fantôme après appui long');
+    assert.equal(menu.defaultPrevented,false,'menu natif disponible');
+    pointer('pointerdown',250);f.viewer.emit('contextmenu',menu);
+    f.advance(200);pointer('pointerup',95);
+    assert.equal(f.next.clicks,0,'drag souris périmé annulé');
+    f.swipe(-130,3);f.swipe(130,3);
+    assert.equal(f.next.clicks,1);assert.equal(f.previous.clicks,1);
+  }finally{f.release()}
+  assert.equal(f.viewer.events.has('contextmenu'),false);
+});
 test('V130 : plein écran annule les anciennes trajectoires PDF',()=>{
   const win=target(),f=fixture({win});
   const start={identifier:130,clientX:250,clientY:190};
@@ -1190,7 +1214,7 @@ test('intégration : les boutons mobiles reflètent le statut initial des bouton
 test('contrat HTML/CSS : module autonome et gestes expliqués',()=>{
   const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
-  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.15\.130/);
+  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.16\.131/);
   assert.match(html,/id="reader-touch-prev"/);
   assert.match(html,/id="reader-touch-next"/);
   assert.match(html,/aria-describedby="reader-swipe-help"/);

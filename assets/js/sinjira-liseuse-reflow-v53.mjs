@@ -5,7 +5,7 @@
  * du PDF courant ; une fois le texte terminé, tourner la vraie page du livre.
  * L'enregistrement d'emplacement reste le scroll_ratio historique de la V31.
  */
-import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally,classifyReaderEdgeTap,flashReaderPageTurn,cancelReaderPageTurnFlash} from './sinjira-liseuse-touch-v52.mjs?v=52.11.15.130';
+import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally,classifyReaderEdgeTap,flashReaderPageTurn,cancelReaderPageTurnFlash} from './sinjira-liseuse-touch-v52.mjs?v=52.11.16.131';
 
 const PREF_KEY='sinjira:liseuse:lecture-par-ecrans:v53';
 
@@ -740,6 +740,8 @@ export function bindReaderScreenMode({
   viewer.addEventListener('touchstart',onTouchStart,{capture:true,passive:true});
   viewer.addEventListener('touchmove',onTouchMove,{capture:true,passive:true});
   viewer.addEventListener('touchcancel',onTouchCancel,{capture:true,passive:true});
+  // V131 : le menu de sélection annule le geste mais reste accessible.
+  viewer.addEventListener('contextmenu',onTouchCancel,{capture:true,passive:true});
   viewer.addEventListener('touchend',onTouchEnd,{capture:true,passive:false});
   document.addEventListener('visibilitychange',onVisibilityChange);
   window.addEventListener('blur',onTouchCancel);
@@ -788,6 +790,7 @@ export function bindReaderScreenMode({
     viewer.removeEventListener('touchstart',onTouchStart,true);
     viewer.removeEventListener('touchmove',onTouchMove,true);
     viewer.removeEventListener('touchcancel',onTouchCancel,true);
+    viewer.removeEventListener('contextmenu',onTouchCancel,true);
     viewer.removeEventListener('touchend',onTouchEnd,true);
     document.removeEventListener('visibilitychange',onVisibilityChange);
     window.removeEventListener('blur',onTouchCancel);
