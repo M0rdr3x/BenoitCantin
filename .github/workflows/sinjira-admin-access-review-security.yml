@@ -1,0 +1,56 @@
+name: SINJIRA — administration des droits, anti-rejeu et état pending
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'supabase/functions/admin-console/**'
+      - 'supabase/functions/_shared/project-access-review-guard.mjs'
+      - 'scripts/test_admin_access_review_security.mjs'
+      - 'scripts/validate_admin_access_review_security.py'
+      - '.github/workflows/sinjira-admin-access-review-security.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'supabase/functions/admin-console/**'
+      - 'supabase/functions/_shared/project-access-review-guard.mjs'
+      - 'scripts/test_admin_access_review_security.mjs'
+      - 'scripts/validate_admin_access_review_security.py'
+      - '.github/workflows/sinjira-admin-access-review-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-admin-access-review-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-admin-access-review:
+    name: Tester anti-rejeu des permissions des projets
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Récupérer le dépôt sans credentials GitHub persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Python 3.12 fixe pour les assertions négatives
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+
+      - name: Exécuter la vraie branche admin de revue des accès
+        run: node --test scripts/test_admin_access_review_security.mjs
+
+      - name: Auto-tester les régressions anti-rejeu et privilèges
+        run: python3 scripts/validate_admin_access_review_security.py --self-test
+
+      - name: Vérifier les gardes d'accès projet sur le HEAD exact
+        run: python3 scripts/validate_admin_access_review_security.py
+
+      - name: Vérifier les autres règles Supabase
+        run: python3 scripts/validate_supabase.py
