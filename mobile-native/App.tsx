@@ -123,6 +123,8 @@ function shareableSinjiraUrl(url: string): string | null {
     // Le navigateur peut décoder les caractères de chemin à différents niveaux.
     // Une ambiguïté (encodage imbriqué, slash encodé, contrôle) échoue fermée.
     let normalizedPath: string;
+    // Un séparateur encodé peut être réinterprété après le contrôle du chemin.
+    if (/%(?:2f|5c)/i.test(pathname)) return null;
     try { normalizedPath = decodeURIComponent(pathname).toLowerCase(); }
     catch { return null; }
     if (/[\\%\u0000-\u001f\u007f]/.test(normalizedPath) || normalizedPath.startsWith('//')) return null;
