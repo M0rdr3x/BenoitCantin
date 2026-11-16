@@ -71,6 +71,30 @@ test('V119 : une navigation PDF montre un repère, jamais un swipe refusé',()=>
   assert.equal(f.next.events.has('click'),false);
   assert.equal(f.previous.events.has('click'),false);
 });
+test('V130 : plein écran annule les anciennes trajectoires PDF',()=>{
+  const win=target(),f=fixture({win});
+  const start={identifier:130,clientX:250,clientY:190};
+  const begin=()=>f.viewer.emit('touchstart',{touches:[start],target:{closest:()=>null}});
+  const finish=()=>f.viewer.emit('touchend',{touches:[],
+    changedTouches:[{...start,clientX:95,clientY:192}],defaultPrevented:false});
+  const pointer=(type,x)=>f.viewer.emit(type,{
+    pointerType:'mouse',pointerId:130,button:0,buttons:1,isPrimary:true,
+    clientX:x,clientY:190,target:f.canvas,defaultPrevented:false,
+    preventDefault(){this.defaultPrevented=true}
+  });
+  try{
+    f.setPdfMode(true);
+    begin();win.emit('sinjira:reader-layout-will-change');
+    f.advance(200);finish();
+    assert.equal(f.next.clicks,0);
+    pointer('pointerdown',250);win.emit('sinjira:reader-layout-will-change');
+    f.advance(200);pointer('pointerup',95);
+    assert.equal(f.next.clicks,0);
+    f.swipe(-130,3);f.swipe(130,3);
+    assert.equal(f.next.clicks,1);assert.equal(f.previous.clicks,1);
+  }finally{f.release()}
+  assert.equal(win.events.size,0,'nettoyage de l événement plein écran');
+});
 test('V129 : changement typographique annule le PDF et le drag, pas les nouveaux swipes',()=>{
   const doc=target();
   const f=fixture({doc});

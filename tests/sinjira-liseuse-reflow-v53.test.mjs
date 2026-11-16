@@ -458,6 +458,22 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
     flushFrames,getStatusWrites:()=>statusWrites,
     setSelected:v=>{selected=v}};
 }
+test('V130 : plein écran annule les anciens gestes de texte',()=>{
+  const f=fixture(),start={identifier:130,clientX:240,clientY:145};
+  const begin=()=>f.viewer.emit('touchstart',{touches:[start],target:{closest:()=>null}});
+  const finish=()=>{
+    const e={touches:[],changedTouches:[{...start,clientX:80,clientY:147}],
+      defaultPrevented:false,preventDefault(){this.defaultPrevented=true}};
+    f.viewer.emit('touchend',e);return e;
+  };
+  try{
+    begin();f.windowMock.emit('sinjira:reader-layout-will-change');
+    assert.equal(finish().defaultPrevented,false);assert.equal(f.viewer.scrollTop,0);
+    f.swipe(-130,3);assert.equal(f.viewer.scrollTop,315);
+    f.swipe(130,3);assert.equal(f.viewer.scrollTop,0);
+  }finally{f.restore()}
+  assert.equal(f.windowMock.handlers.get('sinjira:reader-layout-will-change')?.length??0,0);
+});
 test('V129 : changement de police pendant le balayage annule l ancien écran',()=>{
   const f=fixture();
   const start={identifier:129,clientX:235,clientY:140};
@@ -1920,8 +1936,8 @@ test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=
 test('V52 singleton: import V53 et script HTML ont exactement la même URL cache-bustée',()=>{
   const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   const module=readFileSync(new URL('../assets/js/sinjira-liseuse-reflow-v53.mjs',import.meta.url),'utf8');
-  const htmlUrl='/assets/js/sinjira-liseuse-touch-v52.mjs?v=52.11.15.129';
-  const importedUrl='./sinjira-liseuse-touch-v52.mjs?v=52.11.15.129';
+  const htmlUrl='/assets/js/sinjira-liseuse-touch-v52.mjs?v=52.11.15.130';
+  const importedUrl='./sinjira-liseuse-touch-v52.mjs?v=52.11.15.130';
   assert.ok(html.includes('src="'+htmlUrl+'"'));
   assert.ok(module.includes("'"+importedUrl+"'"));
   assert.equal(html.split('sinjira-liseuse-touch-v52.mjs').length-1,1);

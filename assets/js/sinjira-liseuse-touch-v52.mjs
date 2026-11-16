@@ -488,6 +488,9 @@ export function bindReaderTouchNavigation({
   win?.addEventListener?.('resize',onViewportChange,{passive:true});
   win?.addEventListener?.('orientationchange',onViewportChange,{passive:true});
   win?.visualViewport?.addEventListener?.('resize',onViewportChange,{passive:true});
+  // V130 : le plein écran V28 peut changer les dimensions CSS sans resize.
+  // Annuler les anciennes trajectoires tactiles et les drags souris PDF.
+  win?.addEventListener?.('sinjira:reader-layout-will-change',onViewportChange);
   // V129 : changer la police/interligne peut réorganiser le roman sans
   // événement de scroll, de changement de mode ni de page source.
   // Un doigt/drag commencé avant cette modification doit être ignoré.
@@ -544,6 +547,7 @@ export function bindReaderTouchNavigation({
     win?.removeEventListener?.('resize',onViewportChange);
     win?.removeEventListener?.('orientationchange',onViewportChange);
     win?.visualViewport?.removeEventListener?.('resize',onViewportChange);
+    win?.removeEventListener?.('sinjira:reader-layout-will-change',onViewportChange);
     doc?.removeEventListener?.('input',onReadingPreferenceChange,true);
     doc?.removeEventListener?.('change',onReadingPreferenceChange,true);
     mobilePrevious?.removeEventListener('click',mobileBack);
