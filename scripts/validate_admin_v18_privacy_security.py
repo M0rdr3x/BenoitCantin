@@ -24,7 +24,9 @@ EDGE_REQUIRED = {
     'log allowlisté': 'SAFE_LOG_CODES',
     'fallback backend fixe': "'ADMIN_V18_BACKEND_FAILED'",
     'confirmation purge serveur': 'b.author_confirmed_source_purge!==true',
-    'état purge chargé': "select('photo_path,source_purged_at')",
+    'état purge chargé': "select('user_id,photo_path,source_purged_at')",
+    'photo propriétaire obligatoire avant signature': "isCanonicalRegistrySourcePhotoPath(sub.photo_path,sub.user_id)",
+    'erreur de chemin invalide': "SOURCE_PURGE_PATH_INVALID",
     'purge déjà faite refusée': "if(sub.source_purged_at)throw new Error('SOURCE_PURGED')",
     'erreur Storage capturée': "const {error:storageError}=await s.storage.from('sinjira-character-sources').remove([sub.photo_path])",
     'échec Storage fermé': "if(storageError)throw new Error('SOURCE_PURGE_STORAGE_FAILED')",
@@ -82,14 +84,15 @@ def validate(edge_path: Path, client_path: Path) -> list[str]:
         errors.append('Le corps V18 ne doit pas être lu avant admin/JWT/AAL2.')
 
     confirm_pos = edge.find('b.author_confirmed_source_purge!==true')
-    select_pos = edge.find("select('photo_path,source_purged_at')")
+    select_pos = edge.find("select('user_id,photo_path,source_purged_at')")
     already_pos = edge.find("if(sub.source_purged_at)throw new Error('SOURCE_PURGED')")
+    ownership_pos = edge.find("if(!isCanonicalRegistrySourcePhotoPath(sub.photo_path,sub.user_id))", purge_pos)
     remove_pos = edge.find("remove([sub.photo_path])")
     storage_check_pos = edge.find("if(storageError)throw new Error('SOURCE_PURGE_STORAGE_FAILED')")
     db_update_pos = edge.find("update({source_payload:null,photo_path:null,source_purged_at:new Date().toISOString()})")
-    if min(confirm_pos, select_pos, already_pos, remove_pos, storage_check_pos, db_update_pos) < 0:
+    if min(confirm_pos, select_pos, already_pos, ownership_pos, remove_pos, storage_check_pos, db_update_pos) < 0:
         errors.append('Ordre de purge V18 impossible à vérifier.')
-    elif not (confirm_pos < select_pos < already_pos < remove_pos < storage_check_pos < db_update_pos):
+    elif not (confirm_pos < select_pos < already_pos < ownership_pos < remove_pos < storage_check_pos < db_update_pos):
         errors.append('La purge doit confirmer, vérifier l’état, supprimer Storage avec contrôle d’erreur, puis seulement purger la DB.')
 
     safe_log_pos = edge.find("console.error('[admin-sinjira-v18]',adminV18LogCode(e))")
@@ -129,6 +132,8 @@ def self_test() -> None:
         'confirmation purge serveur retirée': edge.replace("if(b.author_confirmed_source_purge!==true)throw new Error('SOURCE_PURGE_CONFIRMATION_REQUIRED');", '', 1),
         'idempotence purge retirée': edge.replace("if(sub.source_purged_at)throw new Error('SOURCE_PURGED');", '', 1),
         'erreur Storage ignorée': edge.replace("if(storageError)throw new Error('SOURCE_PURGE_STORAGE_FAILED');", '', 1),
+        'vérification du propriétaire retirée': edge.replace("if(!isCanonicalRegistrySourcePhotoPath(sub.photo_path,sub.user_id))throw new Error('SOURCE_PURGE_PATH_INVALID');", '', 1),
+        'identité du propriétaire non lue': edge.replace("select('user_id,photo_path,source_purged_at')", "select('photo_path,source_purged_at')", 1),
         'log backend brut': edge.replace("console.error('[admin-sinjira-v18]',adminV18LogCode(e));", "console.error('[admin-sinjira-v18]',e);", 1),
         'message santé brut': edge.replace("code:error?'CHECK_FAILED':null", 'error:error?.message||null', 1),
         'no-store retiré': edge.replace("'Cache-Control':'private, no-store, max-age=0',", '', 1),
