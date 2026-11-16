@@ -90,13 +90,14 @@ def run(playwright, engine, origin):
             scroll:v.scrollTop,layout:v.dataset.readerLayout};
         }""")
         assert navigation_before["page"]==3 and navigation_before["scroll"]>150,navigation_before
-        page.goto(origin+"?reader-v134-navigation-probe=1",wait_until="load")
-        page.wait_for_function("""()=>window.__readerFixture?.ready&&
-          document.querySelector('#reader-viewer')?.dataset.readerLayout==='screens'""")
+        page.goto(origin+"&reader-v134-navigation-probe=1",wait_until="load")
+        page.wait_for_function("""()=>!document.querySelector('#reader-content').hidden&&
+          document.querySelector('#reader-viewer')?.dataset.readerLayout==='screens'&&
+          document.querySelector('#reader-text').textContent.includes('LIVRE DE TEST')""")
         page.go_back(wait_until="domcontentloaded")
-        page.wait_for_function("""()=>window.__readerFixture?.ready&&
-          !document.querySelector('#reader-content').hidden&&
-          document.querySelector('#reader-viewer')?.dataset.readerLayout==='screens'""")
+        page.wait_for_function("""()=>!document.querySelector('#reader-content').hidden&&
+          document.querySelector('#reader-viewer')?.dataset.readerLayout==='screens'&&
+          document.querySelector('#reader-text').textContent.includes('LIVRE DE TEST')""")
         # Laisser au moteur deux frames pour rétablir l'ancre après pageshow.
         navigation_after=page.evaluate("""async()=>{
           await new Promise(resolve=>requestAnimationFrame(
