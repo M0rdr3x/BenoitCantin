@@ -63,6 +63,26 @@ def run(playwright, engine, origin):
             reduced_motion="reduce"
         )
         page=context.new_page()
+        # V135 : la voix de test ne joue aucun son et n'appelle aucun
+        # service de synthèse externe ; elle mesure les ordres speak/cancel.
+        # La simulation est injectée AVANT le chargement de V26 dans le
+        # vrai HTML pour que le support speechReady soit déterministe.
+        page.add_init_script("""(()=>{
+          const voice={
+            speakCount:0,cancelCount:0,lastUtterance:null,
+            getVoices(){return [{lang:'fr-CA',name:'Voix fictive',voiceURI:'v135-test'}]},
+            speak(utterance){this.speakCount++;this.lastUtterance=utterance},
+            cancel(){this.cancelCount++},
+            pause(){},resume(){},addEventListener(){},removeEventListener(){}
+          };
+          Object.defineProperty(window,'speechSynthesis',{
+            value:voice,configurable:true
+          });
+          Object.defineProperty(window,'SpeechSynthesisUtterance',{
+            value:class{constructor(text){this.text=text}},configurable:true
+          });
+          window.__v135VoiceLab=voice;
+        })()""")
         errors=[]
         page.on("pageerror",lambda e:errors.append(str(e)))
         blocked=install_isolation(page)
@@ -127,6 +147,39 @@ def run(playwright, engine, origin):
         assert navigation_next["consumed"] and navigation_next["scroll"]>0,navigation_next
         navigation_prev=swipe(page,130)
         assert navigation_prev["consumed"] and navigation_prev["scroll"]==0,navigation_prev
+        assert not blocked,blocked
+        assert not errors,errors
+
+        # V135 : changer d'application sans pagehide coupe immédiatement
+        # la synthèse vocale, même si le navigateur garde l'onglet en mémoire.
+        # La voix est un mock muet, jamais un périphérique audio réel.
+        page.locator("#reader-voice-play").evaluate("(node)=>node.click()")
+        page.wait_for_function("""()=>window.__v135VoiceLab?.speakCount>0""")
+        interrupted_voice=page.evaluate("""()=>{
+          const lab=window.__v135VoiceLab;
+          const previousUtterance=lab.lastUtterance;
+          const beforeSpeak=lab.speakCount, beforeCancel=lab.cancelCount;
+          const old=Object.getOwnPropertyDescriptor(document,'visibilityState');
+          Object.defineProperty(document,'visibilityState',{
+            configurable:true,value:'hidden'
+          });
+          document.dispatchEvent(new Event('visibilitychange'));
+          const afterCancel=lab.cancelCount;
+          previousUtterance?.onend?.(); // événement tardif d'une voix annulée
+          if(old)Object.defineProperty(document,'visibilityState',old);
+          else delete document.visibilityState;
+          return {
+            beforeSpeak,afterSpeak:lab.speakCount,beforeCancel,afterCancel,
+            stopDisabled:document.querySelector('#reader-voice-stop').disabled,
+            status:document.querySelector('#reader-voice-status').textContent
+          };
+        }""")
+        assert interrupted_voice["afterCancel"]>interrupted_voice["beforeCancel"],interrupted_voice
+        assert interrupted_voice["afterSpeak"]==interrupted_voice["beforeSpeak"],interrupted_voice
+        assert interrupted_voice["stopDisabled"],interrupted_voice
+        assert "arrière-plan" in interrupted_voice["status"],interrupted_voice
+        # Les événements d'arrière-plan ne reprennent jamais la narration
+        # automatiquement. La personne doit appuyer sur Écouter.
         assert not blocked,blocked
         assert not errors,errors
 

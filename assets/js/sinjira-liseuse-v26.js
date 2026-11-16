@@ -636,6 +636,16 @@ function bindControls(){
   });
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='hidden'){
+      // V135 : un simple changement d'application mobile n'émet pas
+      // toujours pagehide. Couper aussi la voix pour éviter qu'un passage
+      // privé continue d'être lu alors que l'écran est verrouillé.
+      // L'invalidation du jeton stoppe également une extraction audio
+      // asynchrone commencée juste avant la suspension.
+      const wasNarrating=speech.active||speech.paused;
+      stopNarration(false);
+      if(wasNarrating)speechStatus(
+        'Lecture vocale interrompue en arrière-plan. Relancez-la pour poursuivre.'
+      );
       flushScrollPosition();flushProgress();
       // V93 : un simple changement d'application (sans pagehide) doit
       // également masquer le roman privé jusqu'à nouvelle autorisation.
