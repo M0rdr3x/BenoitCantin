@@ -43,7 +43,7 @@ for(const value of rejected){
   assert.equal(externalUrlAllowed(value),false,'Unsafe document URL allowed: '+JSON.stringify(value).slice(0,130));
 }
 // Server-side access decisions must still precede either kind of document link.
-const access=edge.indexOf('if(userRank<(ranks[doc.access_level]||999))');
+const access=edge.indexOf('if(!documentAccessAllowed(doc.access_level,userRank))');
 const external=edge.indexOf('if(doc.external_url){');
 const signed=edge.indexOf('createSignedUrl(doc.storage_path,600)');
 assert.ok(access>0&&external>access&&signed>external,'Access gate must precede document links');
