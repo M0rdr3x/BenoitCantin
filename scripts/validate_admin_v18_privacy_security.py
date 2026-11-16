@@ -86,7 +86,7 @@ def validate(edge_path: Path, client_path: Path) -> list[str]:
     confirm_pos = edge.find('b.author_confirmed_source_purge!==true')
     select_pos = edge.find("select('user_id,photo_path,source_purged_at')")
     already_pos = edge.find("if(sub.source_purged_at)throw new Error('SOURCE_PURGED')")
-    ownership_pos = edge.find("if(!isCanonicalRegistrySourcePhotoPath(sub.photo_path,sub.user_id))", purge_pos)
+    ownership_pos = edge.find("if(!isCanonicalRegistrySourcePhotoPath(sub.photo_path,sub.user_id))", select_pos)
     remove_pos = edge.find("remove([sub.photo_path])")
     storage_check_pos = edge.find("if(storageError)throw new Error('SOURCE_PURGE_STORAGE_FAILED')")
     db_update_pos = edge.find("update({source_payload:null,photo_path:null,source_purged_at:new Date().toISOString()})")
