@@ -71,6 +71,31 @@ test('V119 : une navigation PDF montre un repère, jamais un swipe refusé',()=>
   assert.equal(f.next.events.has('click'),false);
   assert.equal(f.previous.events.has('click'),false);
 });
+test('V132 : sélection modifiée annule un toucher PDF et un drag souris',()=>{
+  const doc=target(),f=fixture({doc});
+  const start={identifier:132,clientX:250,clientY:190};
+  const begin=()=>f.viewer.emit('touchstart',{touches:[start],target:{closest:()=>null}});
+  const end=()=>f.viewer.emit('touchend',{touches:[],
+    changedTouches:[{...start,clientX:95,clientY:193}],defaultPrevented:false});
+  const pointer=(kind,x)=>f.viewer.emit(kind,{
+    pointerType:'mouse',pointerId:132,button:0,buttons:1,isPrimary:true,
+    clientX:x,clientY:190,target:f.canvas,defaultPrevented:false,
+    preventDefault(){this.defaultPrevented=true}
+  });
+  try{
+    f.setPdfMode(true);
+    begin();doc.emit('selectionchange');f.advance(200);end();
+    assert.equal(f.next.clicks,0,'sélection mobile : aucune page fantôme');
+    pointer('pointerdown',250);doc.emit('selectionchange');
+    f.advance(200);pointer('pointerup',95);
+    assert.equal(f.next.clicks,0,'sélection souris : aucun ancien drag');
+    doc.emit('selectionchange'); // aucune origine active
+    f.swipe(-130,3);f.swipe(130,3);
+    assert.equal(f.next.clicks,1,'gauche avance après la sélection');
+    assert.equal(f.previous.clicks,1,'droite revient après la sélection');
+  }finally{f.release()}
+  assert.equal(doc.events.size,0,'écouteur selectionchange retiré');
+});
 test('V131 : menu contextuel annule ancien toucher et drag PDF sans bloquer menu',()=>{
   const f=fixture(),start={identifier:131,clientX:250,clientY:190};
   const begin=()=>f.viewer.emit('touchstart',{touches:[start],target:{closest:()=>null}});
@@ -1214,7 +1239,7 @@ test('intégration : les boutons mobiles reflètent le statut initial des bouton
 test('contrat HTML/CSS : module autonome et gestes expliqués',()=>{
   const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
-  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.16\.131/);
+  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.16\.132/);
   assert.match(html,/id="reader-touch-prev"/);
   assert.match(html,/id="reader-touch-next"/);
   assert.match(html,/aria-describedby="reader-swipe-help"/);

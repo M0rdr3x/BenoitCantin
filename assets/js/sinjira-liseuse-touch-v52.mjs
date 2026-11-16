@@ -448,6 +448,11 @@ export function bindReaderTouchNavigation({
   // V131 : un menu de sélection peut s'ouvrir sans événement touchcancel.
   // Ne jamais réutiliser l'ancien doigt/drag, sans bloquer le menu natif.
   viewer.addEventListener('contextmenu',cancelAll,{passive:true});
+  // V132 : la sélection peut changer sans ouvrir de menu (poignées iOS).
+  // Un contact en cours devient périmé, sans lire la sélection ni bloquer
+  // ses interactions natives. Les autres déplacements restent possibles.
+  const onSelectionChange=()=>{if(origin||pointerOrigin){cancel();pointerCancel()}};
+  doc?.addEventListener?.('selectionchange',onSelectionChange);
   // V118 : le moteur V26 peut charger une nouvelle page (ou réinitialiser
   // le roman) en conservant temporairement la même valeur #reader-page.
   // Un contact de l'ancienne page devient immédiatement invalide.
@@ -539,6 +544,7 @@ export function bindReaderTouchNavigation({
     viewer.removeEventListener('touchcancel',cancel);
     viewer.removeEventListener('touchend',end);
     viewer.removeEventListener('contextmenu',cancelAll);
+    doc?.removeEventListener?.('selectionchange',onSelectionChange);
     viewer.removeEventListener('pointerdown',pointerDown);
     viewer.removeEventListener('pointermove',pointerMove);
     viewer.removeEventListener('pointerup',pointerUp);
