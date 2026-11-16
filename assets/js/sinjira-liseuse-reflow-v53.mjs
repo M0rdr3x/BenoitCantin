@@ -353,7 +353,17 @@ export function bindReaderScreenMode({
     // de la même page PDF, sans nouveau format ni identifiant de lecteur.
   };
   const onScreenJumpPreview=()=>{
-    if(!screenJump||!isPaged()||!canNavigate())return;
+    if(!screenJump)return;
+    // V150 : un « input » natif peut être livré sur un roman masqué,
+    // puis son « change » seulement après réouverture. Marquer le geste
+    // comme annulé SANS mesurer le viewport ni déplacer la lecture :
+    // la confirmation tardive ne doit jamais devenir un nouveau saut.
+    if(!canNavigate()){
+      jumpCancelled=true;
+      jumpPreview=null;
+      return;
+    }
+    if(!isPaged())return;
     const selected=Number(screenJump.value),s=metric();
     if(s.screens<=1||!Number.isSafeInteger(selected)||selected<1||selected>s.screens){
       jumpPreview=null;sync();return;
