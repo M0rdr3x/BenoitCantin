@@ -457,6 +457,65 @@ def run(playwright, browser_type, url):
         }""")
         page.wait_for_function("""()=>document.querySelector('#reader-viewer').scrollTop<2""")
 
+        # V146 : même si la case « Lire par pages d'écran » reçoit un
+        # change tardif après masquage, elle ne doit ni basculer le mode
+        # ni enregistrer une préférence. La commande doit fonctionner
+        # lorsqu'on ouvre à nouveau la liseuse.
+        hidden_screen_mode=page.evaluate("""async()=>{
+          const content=document.querySelector('#reader-content');
+          const toggle=document.querySelector('#reader-screens-enabled');
+          const viewer=document.querySelector('#reader-viewer');
+          const key='sinjira:liseuse:lecture-par-ecrans:v53';
+          const state=()=>({
+            checked:toggle.checked,mode:viewer.dataset.readerLayout,
+            stored:localStorage.getItem(key),
+            page:document.querySelector('#reader-page').value,
+            screen:document.querySelector('#reader-screen-count').textContent
+          });
+          const before=state();
+          content.hidden=true;
+          try{
+            toggle.checked=!before.checked;
+            toggle.dispatchEvent(new Event('change',{bubbles:true}));
+            const after=state();
+            return {before,after,contentWasHidden:content.hidden};
+          }finally{content.hidden=false}
+        }""")
+        assert hidden_screen_mode["contentWasHidden"],hidden_screen_mode
+        assert hidden_screen_mode["before"]==hidden_screen_mode["after"],(
+            "V146: changement du mode paginé masqué ne doit pas être accepté",
+            hidden_screen_mode
+        )
+        page.wait_for_function("""()=>!document.querySelector('#reader-content').hidden""")
+        visible_screen_mode=page.evaluate("""()=>{
+          const toggle=document.querySelector('#reader-screens-enabled');
+          const viewer=document.querySelector('#reader-viewer');
+          const key='sinjira:liseuse:lecture-par-ecrans:v53';
+          toggle.checked=false;
+          toggle.dispatchEvent(new Event('change',{bubbles:true}));
+          const off={checked:toggle.checked,mode:viewer.dataset.readerLayout,
+            stored:localStorage.getItem(key)};
+          toggle.checked=true;
+          toggle.dispatchEvent(new Event('change',{bubbles:true}));
+          return {off,on:{checked:toggle.checked,mode:viewer.dataset.readerLayout,
+            stored:localStorage.getItem(key)}};
+        }""")
+        assert visible_screen_mode["off"]=={
+            "checked":False,"mode":"scroll","stored":"off"
+        },visible_screen_mode
+        assert visible_screen_mode["on"]=={
+            "checked":True,"mode":"screens","stored":"on"
+        },visible_screen_mode
+        page.wait_for_function("""()=>document.querySelector('#reader-viewer')
+          .dataset.readerLayout==='screens'""")
+        # Le mode normal doit reprendre au début de l'écran pour la
+        # réception des annonces et du curseur qui suit.
+        page.evaluate("""()=>{
+          const viewer=document.querySelector('#reader-viewer');
+          viewer.scrollTop=0;viewer.dispatchEvent(new Event('scroll'));
+        }""")
+        page.wait_for_function("""()=>document.querySelector('#reader-viewer').scrollTop<2""")
+
         # V102 : l'emplacement du lecteur est visible dans les commandes
         # mobiles et indépendant des extraits privés du texte.
         # La démo réelle possède 82 pages ; la fixture simplifiée en a 5.

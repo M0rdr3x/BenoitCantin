@@ -233,6 +233,10 @@ export function bindReaderScreenMode({
   let deferredLayoutRatio=null,deferredLayoutAnchor=null;
   let layoutRestoreGeneration=0; // V69 : invalider une restitution devenue obsolète
   toggle.checked=localPreference();
+  // V146 : le dernier choix validé reste la référence lors des événements
+  // différés survenant pendant la suspension ou le masquage du roman.
+  // Il est conservé en mémoire même si le stockage local est désactivé.
+  let acceptedScreenToggle=toggle.checked;
   const isPaged=()=>!closed&&media.matches&&toggle.checked&&!text.hidden;
   // V96 : conserver le calcul des écrans pendant la suspension, MAIS
   // interdire toute commande quand le livre est réellement masqué (V93/V94).
@@ -718,6 +722,14 @@ export function bindReaderScreenMode({
     }));
   };
   const onToggle=()=>{
+    // V146 : un change tardif d'un contrôle masqué ne doit ni quitter
+    // le mode paginé, ni écrire une préférence, ni lancer un reflow
+    // sans viewport valide. Rétablir la valeur acceptée précédente.
+    if(!canNavigate()){
+      toggle.checked=acceptedScreenToggle;
+      return;
+    }
+    acceptedScreenToggle=toggle.checked;
     if(jumpPreview!==null)jumpCancelled=true;
     jumpPreview=null;
     // V78 : tout changement de mode rend périmé le contact tactile en cours.
