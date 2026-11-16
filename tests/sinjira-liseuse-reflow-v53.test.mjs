@@ -475,6 +475,40 @@ test('V133 : retour BFCache préserve la position lors du changement de hauteur'
     assert.equal(w.handlers.get('pageshow')?.length??0,0);
   }
 });
+test('V151 : BFCache masqué restaure le passage après ouverture du roman',()=>{
+  const f=fixture({observe:true,withReaderContent:true,deferredRaf:true});
+  try{
+    f.viewer.scrollTo({top:350}); // 50 % de progression affichée
+    const before=f.status.textContent,writes=f.getStatusWrites();
+    f.readerContent.hidden=true;
+    f.viewer.clientHeight=0;f.viewer.scrollHeight=0;
+    f.windowMock.emit('pageshow',{persisted:true});
+    f.flushFrames();
+    assert.equal(f.viewer.scrollTop,350,'aucun reflow sur viewport caché');
+    assert.equal(f.status.textContent,before);
+    assert.equal(f.getStatusWrites(),writes,'ne pas annoncer une fausse page');
+    f.viewer.clientHeight=350;f.viewer.scrollHeight=1750;
+    f.readerContent.hidden=false;f.notifyContent();f.flushFrames();
+    assert.equal(f.viewer.scrollTop,700,'reprendre le ratio confirmé de 50 %');
+    assert.equal(f.swipe(-130,3).defaultPrevented,true,'swipe gauche après retour');
+    assert.ok(f.viewer.scrollTop>700);
+  }finally{f.restore()}
+});
+test('V151 : BFCache reçu en arrière-plan est restauré au retour visible',()=>{
+  const f=fixture({deferredRaf:true});
+  try{
+    f.viewer.scrollTo({top:350});
+    f.documentMock.hidden=true;
+    f.windowMock.emit('pageshow',{persisted:true});
+    f.viewer.scrollHeight=1750; // nouveau layout sans resize ultérieur
+    f.flushFrames();
+    assert.equal(f.viewer.scrollTop,350,'rien déplacer pendant la suspension');
+    f.documentMock.hidden=false;
+    f.documentMock.emit('visibilitychange',{});f.flushFrames();
+    assert.equal(f.viewer.scrollTop,700,'dernière position reprise sur nouveau layout');
+    assert.equal(f.swipe(130,3).defaultPrevented,true,'swipe droite après retour');
+  }finally{f.restore()}
+});
 test('V133 : retour BFCache interrompt le doigt commencé avant la reprise',()=>{
   const f=fixture(),finger={identifier:133,clientX:240,clientY:145};
   try{
@@ -2145,7 +2179,7 @@ test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
   assert.match(h,/id="reader-screen-count"/);
-  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.16\.150/);
+  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.16\.151/);
   assert.match(h,/sinjira-liseuse-v26\.js\?v=34\.11\.16\.143/);
 });
 test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=>{
