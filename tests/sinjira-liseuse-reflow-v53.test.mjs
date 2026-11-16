@@ -63,7 +63,7 @@ test('V114 : le guide tactile concerne aussi les tablettes de 768 et 820 px',()=
   assert.match(responsive,/\.reader-swipe-help summary\{[\s\S]*?min-height:44px/);
   assert.match(responsive,/\.reader-swipe-help summary:focus-visible\{/);
   assert.match(responsive,/\.reader-swipe-help p\{[\s\S]*?text-align:left/);
-  assert.match(html,/sinjira-liseuse-v26\.css\?v=53\.11\.15\.128/);
+  assert.match(html,/sinjira-liseuse-v26\.css\?v=53\.11\.15\.129/);
   assert.match(html,/aria-describedby="reader-swipe-help"/);
 });
 test('V113 : aide tactile compacte, repliable et annoncée au lecteur',()=>{
@@ -458,6 +458,35 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
     flushFrames,getStatusWrites:()=>statusWrites,
     setSelected:v=>{selected=v}};
 }
+test('V129 : changement de police pendant le balayage annule l ancien écran',()=>{
+  const f=fixture();
+  const start={identifier:129,clientX:235,clientY:140};
+  const begin=()=>f.viewer.emit('touchstart',{
+    touches:[start],target:{closest:()=>null}});
+  const end=()=>{
+    const ev={touches:[],changedTouches:[{...start,clientX:95,clientY:143}],
+      defaultPrevented:false,preventDefault(){this.defaultPrevented=true}};
+    f.viewer.emit('touchend',ev);return ev;
+  };
+  try{
+    for(const id of ['reader-size','reader-font','reader-line-height',
+      'reader-letter-spacing','reader-text-width']){
+      begin();
+      f.documentMock.emit('input',{target:{id}});
+      f.documentMock.emit('change',{target:{id}});
+      assert.equal(end().defaultPrevented,false,id+' : ancien contact annulé');
+      assert.equal(f.viewer.scrollTop,0,id+' : aucune page fantôme');
+    }
+    begin();
+    f.documentMock.emit('input',{target:{id:'unrelated-search'}});
+    assert.equal(end().defaultPrevented,true,'changement hors lecture ignoré');
+    assert.equal(f.viewer.scrollTop,315);
+    f.swipe(130,3);
+    assert.equal(f.viewer.scrollTop,0,'geste droit suivant fonctionne');
+    f.swipe(-130,3);
+    assert.equal(f.viewer.scrollTop,315,'geste gauche suivant fonctionne');
+  }finally{f.restore()}
+});
 test('V128 : resize et orientation pendant le geste annulent un ancien écran',()=>{
   const f=fixture();
   const touch={identifier:128,clientX:240,clientY:150};
@@ -1878,7 +1907,7 @@ test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
   assert.match(h,/id="reader-screen-count"/);
-  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.15\.128/);
+  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.15\.129/);
   assert.match(h,/sinjira-liseuse-v26\.js\?v=34\.11\.14\.102/);
 });
 test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=>{
@@ -1891,8 +1920,8 @@ test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=
 test('V52 singleton: import V53 et script HTML ont exactement la même URL cache-bustée',()=>{
   const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   const module=readFileSync(new URL('../assets/js/sinjira-liseuse-reflow-v53.mjs',import.meta.url),'utf8');
-  const htmlUrl='/assets/js/sinjira-liseuse-touch-v52.mjs?v=52.11.15.128';
-  const importedUrl='./sinjira-liseuse-touch-v52.mjs?v=52.11.15.128';
+  const htmlUrl='/assets/js/sinjira-liseuse-touch-v52.mjs?v=52.11.15.129';
+  const importedUrl='./sinjira-liseuse-touch-v52.mjs?v=52.11.15.129';
   assert.ok(html.includes('src="'+htmlUrl+'"'));
   assert.ok(module.includes("'"+importedUrl+"'"));
   assert.equal(html.split('sinjira-liseuse-touch-v52.mjs').length-1,1);

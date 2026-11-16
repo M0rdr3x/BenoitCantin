@@ -5,7 +5,7 @@
  * du PDF courant ; une fois le texte terminé, tourner la vraie page du livre.
  * L'enregistrement d'emplacement reste le scroll_ratio historique de la V31.
  */
-import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally,classifyReaderEdgeTap,flashReaderPageTurn,cancelReaderPageTurnFlash} from './sinjira-liseuse-touch-v52.mjs?v=52.11.15.128';
+import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally,classifyReaderEdgeTap,flashReaderPageTurn,cancelReaderPageTurnFlash} from './sinjira-liseuse-touch-v52.mjs?v=52.11.15.129';
 
 const PREF_KEY='sinjira:liseuse:lecture-par-ecrans:v53';
 
@@ -728,6 +728,10 @@ export function bindReaderScreenMode({
   const onPreferences=event=>{
     if(!isPaged()||!['reader-size','reader-font','reader-line-height',
       'reader-letter-spacing','reader-text-width'].includes(event.target?.id))return;
+    // V129 : le réagencement peut revenir à la géométrie initiale
+    // (taille 20→34→20) avant touchend ; un ancien doigt n'a alors plus
+    // le droit de changer d'écran. Garder l'ancrage V63 intact.
+    gesture=null;
     // Phase capture du formulaire : avant le changement CSS de V26.
     scheduleLayoutRestore(lastRatio,
       captureReaderTextAnchor({viewer,text})||lastAnchor);

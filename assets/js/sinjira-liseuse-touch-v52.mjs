@@ -229,7 +229,8 @@ export function bindReaderTouchNavigation({
   getSelectedText=()=>typeof window==='undefined'?'':String(window.getSelection?.()?.toString()||''),
   clock=()=>typeof performance!=='undefined'?performance.now():Date.now(),
   Observer=typeof MutationObserver!=='undefined'?MutationObserver:null,
-  win=globalThis.window
+  win=globalThis.window,
+  doc=globalThis.document
 }={}){
   if(!viewer||!previous||!next)throw new Error('V52: zone ou boutons de lecture absents');
   // Marqueur partagé avec le module historique V28 : V52 devient l'unique
@@ -487,6 +488,16 @@ export function bindReaderTouchNavigation({
   win?.addEventListener?.('resize',onViewportChange,{passive:true});
   win?.addEventListener?.('orientationchange',onViewportChange,{passive:true});
   win?.visualViewport?.addEventListener?.('resize',onViewportChange,{passive:true});
+  // V129 : changer la police/interligne peut réorganiser le roman sans
+  // événement de scroll, de changement de mode ni de page source.
+  // Un doigt/drag commencé avant cette modification doit être ignoré.
+  const onReadingPreferenceChange=event=>{
+    if(['reader-size','reader-font','reader-line-height',
+      'reader-letter-spacing','reader-text-width'].includes(event.target?.id))
+      onViewportChange();
+  };
+  doc?.addEventListener?.('input',onReadingPreferenceChange,true);
+  doc?.addEventListener?.('change',onReadingPreferenceChange,true);
 
   const mobileBack=()=>{
     if(canNavigate()&&viewer.dataset?.readerLayout!=='screens'&&!previous.disabled)previous.click();
@@ -533,6 +544,8 @@ export function bindReaderTouchNavigation({
     win?.removeEventListener?.('resize',onViewportChange);
     win?.removeEventListener?.('orientationchange',onViewportChange);
     win?.visualViewport?.removeEventListener?.('resize',onViewportChange);
+    doc?.removeEventListener?.('input',onReadingPreferenceChange,true);
+    doc?.removeEventListener?.('change',onReadingPreferenceChange,true);
     mobilePrevious?.removeEventListener('click',mobileBack);
     mobileNext?.removeEventListener('click',mobileForward);
     previous.removeEventListener('click',onPageBackward);
