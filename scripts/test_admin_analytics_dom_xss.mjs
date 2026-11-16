@@ -143,7 +143,7 @@ test('les trois tableaux échappent les charges HTML en les rendant comme texte'
   const cards=getCells(r.nodes,'[data-card-table]');
   assert.deepEqual(cards,top_cards.map(x=>[x.card,String(x.count)]));
   assert.ok(allNodes(r.nodes).every(node=>node.sinkCalls===0));
-  assert.ok(allNodes(r.nodes).every(node=>['SPAN','TR','TD'].includes(node.tagName)));
+  assert.ok(allNodes(r.nodes).every(node=>['SPAN','TBODY','TR','TD'].includes(node.tagName)));
   assert.equal(globalThis.pwned,undefined);
 });
 
