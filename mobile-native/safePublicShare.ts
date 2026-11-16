@@ -18,6 +18,8 @@ function canonicalPublicSinjiraUrl(candidate: string): string | null {
 
     const pathname = parsed.pathname || '/';
     let normalizedPath: string;
+    // Un séparateur encodé peut être réinterprété après le contrôle du chemin.
+    if (/%(?:2f|5c)/i.test(pathname)) return null;
     try { normalizedPath = decodeURIComponent(pathname).toLowerCase(); }
     catch { return null; }
     if (/[\\%\u0000-\u001f\u007f]/.test(normalizedPath) || normalizedPath.startsWith('//')) return null;
