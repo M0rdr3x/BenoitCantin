@@ -9,6 +9,7 @@ export function safeCharacterPortraitPath(value) {
   // Ne conserver que les images publiques du site : aucun compte, API ou
   // document privé ne doit être requis pour afficher un portrait.
   if (!value.startsWith('/assets/') && !value.startsWith('/projets/sinjira/')) return '';
+  if (value.includes('//', 1)) return '';
   if (!/\.(?:png|jpe?g|webp|gif|avif)$/i.test(value)) return '';
 
   // La normalisation ne doit pas réécrire les segments de chemin.
