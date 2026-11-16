@@ -356,6 +356,50 @@ def run(playwright, browser_type, url):
           .dataset.readerLayout==='screens'&&
           !document.querySelector('#reader-text').hidden""")
 
+        # V144 : rotation reçue juste avant/après le masquage du livre
+        # en TEXTE paginé. L'ancien reflow dans un viewport nul pouvait
+        # écraser la portion lue. Vérifier la restitution après réouverture.
+        hidden_text_resize=page.evaluate("""async()=>{
+          const content=document.querySelector('#reader-content');
+          const viewer=document.querySelector('#reader-viewer');
+          const field=document.querySelector('#reader-page');
+          const frame=()=>new Promise(resolve=>requestAnimationFrame(resolve));
+          const settle=async n=>{for(let i=0;i<n;i++)await frame()};
+          viewer.scrollTop=Math.min(365,viewer.scrollHeight-viewer.clientHeight-180);
+          viewer.dispatchEvent(new Event('scroll'));
+          await settle(3);
+          const before={page:field.value,scroll:viewer.scrollTop,
+            layout:viewer.dataset.readerLayout};
+          window.dispatchEvent(new Event('resize')); // rappel rAF différé
+          content.hidden=true;
+          try{
+            await settle(4);
+            window.dispatchEvent(new Event('resize')); // rotation cachée
+            await settle(3);
+          }finally{content.hidden=false}
+          await settle(10); // réaffichage, puis restitution différée
+          const after={page:field.value,scroll:viewer.scrollTop,
+            layout:viewer.dataset.readerLayout};
+          return {before,after,hidden:content.hidden};
+        }""")
+        assert not hidden_text_resize["hidden"],hidden_text_resize
+        assert hidden_text_resize["before"]["page"]=="3",hidden_text_resize
+        assert hidden_text_resize["before"]["layout"]=="screens",hidden_text_resize
+        assert hidden_text_resize["before"]["scroll"]>150,hidden_text_resize
+        assert hidden_text_resize["after"]["page"]=="3",hidden_text_resize
+        assert hidden_text_resize["after"]["layout"]=="screens",hidden_text_resize
+        assert abs(hidden_text_resize["after"]["scroll"]-
+                   hidden_text_resize["before"]["scroll"])<90,(
+            "V144: une rotation masquée ne doit pas perdre le passage lu",
+            hidden_text_resize
+        )
+        # Ne pas polluer la suite des contrôles de page et d'accessibilité.
+        page.evaluate("""()=>{
+          const viewer=document.querySelector('#reader-viewer');
+          viewer.scrollTop=0;viewer.dispatchEvent(new Event('scroll'));
+        }""")
+        page.wait_for_function("""()=>document.querySelector('#reader-viewer').scrollTop<2""")
+
         # V102 : l'emplacement du lecteur est visible dans les commandes
         # mobiles et indépendant des extraits privés du texte.
         # La démo réelle possède 82 pages ; la fixture simplifiée en a 5.

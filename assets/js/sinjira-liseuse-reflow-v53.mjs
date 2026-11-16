@@ -228,6 +228,9 @@ export function bindReaderScreenMode({
   let jumpPreview=null,jumpCancelled=false;
   let pendingLayoutRatio=null; // V56 : une seule position de référence par réagencement
   let lastAnchor=null,pendingLayoutAnchor=null; // V63 : ancre locale non persistée
+  // V144 : conserver en mémoire la dernière position légitime pendant une
+  // rotation masquée, sans tenter de reflow sur un viewport nul.
+  let deferredLayoutRatio=null,deferredLayoutAnchor=null;
   let layoutRestoreGeneration=0; // V69 : invalider une restitution devenue obsolète
   toggle.checked=localPreference();
   const isPaged=()=>!closed&&media.matches&&toggle.checked&&!text.hidden;
@@ -374,6 +377,9 @@ export function bindReaderScreenMode({
     scrollToScreen(top,{userInitiated:true});
   };
   const cancelPendingLayoutRestore=()=>{
+    // V144 : un geste réel prime AUSSI sur une restitution différée
+    // pendant la suspension puis la réouverture du livre.
+    deferredLayoutRatio=null;deferredLayoutAnchor=null;
     // Un vrai geste du lecteur doit primer sur les deux raf du reflow.
     // Annuler l'ancienne restitution empêche un retour brusque à l'écran 1.
     if(pendingLayoutRatio===null)return;
@@ -654,7 +660,15 @@ export function bindReaderScreenMode({
         // libellés et le curseur APRÈS le réagencement (2 frames) sans
         // changer de page ni sauvegarder une progression.
         raf(()=>raf(()=>{
-          if(!closed&&canNavigate())sync();
+          if(closed||!canNavigate())return;
+          // V144 : au retour du roman privé, restaurer UNIQUEMENT la
+          // dernière ancre visible avant suspension, une fois le layout
+          // recalculable. Un geste de lecture ultérieur annule ce rappel.
+          if(deferredLayoutRatio!==null){
+            const ratio=deferredLayoutRatio,anchor=deferredLayoutAnchor;
+            deferredLayoutRatio=null;deferredLayoutAnchor=null;
+            scheduleLayoutRestore(ratio,anchor);
+          }else sync();
         }));
       }
     }
@@ -687,6 +701,14 @@ export function bindReaderScreenMode({
       if(closed||version!==layoutRestoreGeneration)return;
       const target=pendingLayoutRatio,anchored=pendingLayoutAnchor;
       pendingLayoutRatio=null;pendingLayoutAnchor=null;
+      // V144 : ne pas exécuter restoreReaderTextAnchor ou scrollToScreen
+      // lorsque l'application est masquée entre deux requestAnimationFrame.
+      if(!canNavigate()){
+        if(deferredLayoutRatio===null){
+          deferredLayoutRatio=target;deferredLayoutAnchor=anchored;
+        }
+        return;
+      }
       if(!isPaged()){sync();return}
       restoring=true;
       const found=restoreReaderTextAnchor({viewer,text,anchor:anchored});
@@ -718,6 +740,14 @@ export function bindReaderScreenMode({
     gesture=null;
     if(jumpPreview!==null)jumpCancelled=true;
     jumpPreview=null;
+    if(!canNavigate()){
+      // Rotation avant ou pendant l'arrière-plan : garder l'ancre
+      // courante, sans mesurer un viewport masqué.
+      if(deferredLayoutRatio===null){
+        deferredLayoutRatio=lastRatio;deferredLayoutAnchor=lastAnchor;
+      }
+      return;
+    }
     scheduleLayoutRestore(lastRatio,lastAnchor);
   };
   // V90 : Safari iOS / Chrome Android peuvent modifier le viewport visuel
@@ -745,7 +775,8 @@ export function bindReaderScreenMode({
   const onFocusLayoutChange=()=>{
     // V130 : toujours invalider le geste avant le changement de CSS.
     gesture=null;
-    if(!isPaged())return;
+    // V144 : ne pas capturer une ancre d'un texte masqué.
+    if(!isPaged()||!canNavigate())return;
     scheduleLayoutRestore(metric().ratio,
       captureReaderTextAnchor({viewer,text})||lastAnchor);
   };

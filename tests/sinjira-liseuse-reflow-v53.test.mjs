@@ -1992,7 +1992,7 @@ test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
   assert.match(h,/id="reader-screen-count"/);
-  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.16\.141/);
+  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.16\.144/);
   assert.match(h,/sinjira-liseuse-v26\.js\?v=34\.11\.16\.143/);
 });
 test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=>{
