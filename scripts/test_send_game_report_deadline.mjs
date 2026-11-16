@@ -12,13 +12,12 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const source = readFileSync(resolve(root, 'supabase/functions/send-game-report/index.ts'), 'utf8');
 
 function productionJsonParser(timeoutMs = 45) {
-  const start = source.indexOf('async function readLimitedJson(');
+  const start = source.indexOf('async function readLimitedUtf8Body(');
   const end = source.indexOf('const MAX_TEXT =', start);
   assert.ok(start !== -1 && end > start, 'Le parser serveur réel doit rester accessible au test');
-  const functionText = source.slice(start, end).replace(
-    'async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }>',
-    'async function readLimitedJson(req)'
-  );
+  const functionText = source.slice(start, end)
+    .replace('async function readLimitedUtf8Body(req: Request, maxBytes: number)', 'async function readLimitedUtf8Body(req, maxBytes)')
+    .replace('async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }>', 'async function readLimitedJson(req)');
   assert.ok(!functionText.includes('req: Request'), 'Retirer uniquement le typage TypeScript de la signature');
   const environment = {
     readLimitedUtf8BodyWithDeadline,
@@ -149,10 +148,15 @@ test('le chargement PDF suspendu expire et le signal est aborté', async () => {
     signal = options.signal;
     signal.addEventListener('abort', () => reject(new Error('REMOTE_ABORTED')), { once: true });
   }));
-  const started = performance.now();
-  await assert.rejects(pdf.fetchTemplateBytes(), /REMOTE_ABORTED/);
-  assert.equal(signal.aborted, true);
-  assert.ok(performance.now() - started < 2000);
+  const keepAlive = setTimeout(() => {}, 300);
+  try {
+    const started = performance.now();
+    await assert.rejects(pdf.fetchTemplateBytes(), /REMOTE_ABORTED/);
+    assert.equal(signal.aborted, true);
+    assert.ok(performance.now() - started < 2000);
+  } finally {
+    clearTimeout(keepAlive);
+  }
 });
 
 test('flux du modèle PDF suspendu est interrompu par le délai réseau', async () => {
@@ -167,7 +171,12 @@ test('flux du modèle PDF suspendu est interrompu par le délai réseau', async 
     });
     return new Response(body);
   });
-  await assert.rejects(pdf.fetchTemplateBytes(), /REPORT_TEMPLATE_TOO_LARGE/);
+  const keepAlive = setTimeout(() => {}, 300);
+  try {
+    await assert.rejects(pdf.fetchTemplateBytes(), /REPORT_TEMPLATE_TOO_LARGE/);
+  } finally {
+    clearTimeout(keepAlive);
+  }
 });
 
 test('une origine externe ne déclenche aucun téléchargement PDF', async () => {
