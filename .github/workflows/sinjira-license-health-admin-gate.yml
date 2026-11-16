@@ -1,0 +1,42 @@
+name: SINJIRA — diagnostic licences réservé admin AAL2
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/functions/redeem-license-code/index.ts'
+      - 'supabase/functions/_shared/auth.ts'
+      - 'scripts/validate_license_redemption_security.py'
+      - '.github/workflows/sinjira-license-health-admin-gate.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/redeem-license-code/index.ts'
+      - 'supabase/functions/_shared/auth.ts'
+      - 'scripts/validate_license_redemption_security.py'
+      - '.github/workflows/sinjira-license-health-admin-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  license-admin-aal2:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sans jeton persistant
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python épinglé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+      - name: Tester les mutations de diagnostic non autorisé
+        run: python3 scripts/validate_license_redemption_security.py --self-test
+      - name: Vérifier l'authentification et le MFA du diagnostic licence
+        run: python3 scripts/validate_license_redemption_security.py
+      - name: Vérifier que l'activation normale demeure intégrée
+        run: python3 scripts/validate_license_activation.py
