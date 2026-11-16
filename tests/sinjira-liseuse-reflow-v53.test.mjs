@@ -63,7 +63,7 @@ test('V114 : le guide tactile concerne aussi les tablettes de 768 et 820 px',()=
   assert.match(responsive,/\.reader-swipe-help summary\{[\s\S]*?min-height:44px/);
   assert.match(responsive,/\.reader-swipe-help summary:focus-visible\{/);
   assert.match(responsive,/\.reader-swipe-help p\{[\s\S]*?text-align:left/);
-  assert.match(html,/sinjira-liseuse-v26\.css\?v=53\.11\.15\.129/);
+  assert.match(html,/sinjira-liseuse-v26\.css\?v=53\.11\.15\.130/);
   assert.match(html,/aria-describedby="reader-swipe-help"/);
 });
 test('V113 : aide tactile compacte, repliable et annoncée au lecteur',()=>{
@@ -1923,7 +1923,7 @@ test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
   assert.match(h,/id="reader-screen-count"/);
-  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.15\.129/);
+  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.15\.130/);
   assert.match(h,/sinjira-liseuse-v26\.js\?v=34\.11\.14\.102/);
 });
 test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=>{
