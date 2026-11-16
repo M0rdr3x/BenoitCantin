@@ -92,7 +92,7 @@ async function main(){
   ]){
     const x=await run({action:'health'},role);
     assert.equal(x.status,expected,role+': statut HTTP attendu');
-    if(code)assert.equal(x.result.code,code,role+': code d'accès');
+    if(code)assert.equal(x.result.code,code,role+": code d'accès");
     assert.equal(x.calls.service,0,role+': le service ne doit pas être interrogé');
     assert.equal(x.calls.pepper,0,role+': aucun secret ne doit être lu');
     assert.deepEqual(x.calls.rpcs,[],role+': aucune RPC avant autorisation');
