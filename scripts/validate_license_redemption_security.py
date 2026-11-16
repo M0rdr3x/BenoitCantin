@@ -98,7 +98,7 @@ Deno.serve(async req=>{
  return s.rpc('redeem_sinjira_activation',{p_code_hash:'x',p_user_id:user.id});
 });
 console.error('[redeem-license-code]',{code:'LICENSE_REDEEM_FAILED'});
-const errorCode={code:'ADMIN_ACCESS_REQUIRED',mfa:'MFA_STATE_UNAVAILABLE'};
+const errorCode={code:'ADMIN_ACCESS_REQUIRED',fallback:{code:'MFA_STATE_UNAVAILABLE'}};
 """
         path.write_text(safe, encoding='utf-8')
         clean = validate(path)
