@@ -227,6 +227,65 @@ def run(playwright, engine, origin):
         assert not blocked,blocked
         assert not errors,errors
 
+        # V139 : un livre peut être masqué sans document.visibilitychange.
+        # Le navigateur doit refuser le démarrage audio, arrêter la voix
+        # active et ignorer les anciens onend, même si le livre revient vite.
+        # La voix est entièrement fictive et muette.
+        hidden_content_voice=page.evaluate("""async()=>{
+          const lab=window.__v135VoiceLab;
+          const content=document.querySelector('#reader-content');
+          const play=document.querySelector('#reader-voice-play');
+          const stop=document.querySelector('#reader-voice-stop');
+          const tick=()=>new Promise(resolve=>setTimeout(resolve,0));
+          const twoFrames=()=>new Promise(resolve=>requestAnimationFrame(
+            ()=>requestAnimationFrame(resolve)));
+          stop.click();
+          const baseline=lab.speakCount;
+          content.hidden=true;
+          try{
+            play.click();
+            await tick();
+            const whileHidden=lab.speakCount;
+            content.hidden=false;
+            await twoFrames();
+            play.click();
+            await tick();
+            const whileVisible=lab.speakCount;
+            const lastUtterance=lab.lastUtterance;
+            const cancelsBefore=lab.cancelCount;
+            content.hidden=true;
+            await tick();
+            lastUtterance?.onend?.();
+            const afterHide=lab.speakCount;
+            const cancelsAfter=lab.cancelCount;
+            content.hidden=false;
+            await twoFrames();
+            play.click(); // chargement voix différé commencé visible
+            content.hidden=true;
+            content.hidden=false; // fenêtre toujours visible, même tâche
+            await tick();
+            const afterRapidToggle=lab.speakCount;
+            await twoFrames();
+            play.click(); // seule une reprise explicite est permise
+            await tick();
+            const explicitResume=lab.speakCount;
+            stop.click();
+            return {baseline,whileHidden,whileVisible,
+              afterHide,cancelsBefore,cancelsAfter,
+              afterRapidToggle,explicitResume};
+          }finally{
+            content.hidden=false;
+          }
+        }""")
+        assert hidden_content_voice["whileHidden"]==hidden_content_voice["baseline"],hidden_content_voice
+        assert hidden_content_voice["whileVisible"]>hidden_content_voice["baseline"],hidden_content_voice
+        assert hidden_content_voice["cancelsAfter"]>hidden_content_voice["cancelsBefore"],hidden_content_voice
+        assert hidden_content_voice["afterHide"]==hidden_content_voice["whileVisible"],hidden_content_voice
+        assert hidden_content_voice["afterRapidToggle"]==hidden_content_voice["afterHide"],hidden_content_voice
+        assert hidden_content_voice["explicitResume"]>hidden_content_voice["afterHide"],hidden_content_voice
+        assert not blocked,blocked
+        assert not errors,errors
+
         # V129 : régler la police pendant un swipe ancien et revenir à
         # l'ancienne valeur dans la même tâche ne doit pas tourner l'écran.
         preference_gesture=page.evaluate("""()=>{

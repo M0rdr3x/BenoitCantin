@@ -382,13 +382,20 @@ function configureSpeech(){
   window.speechSynthesis.addEventListener?.('voiceschanged',listVoices);
   updateSpeechControls();
 }
+// V139 : le contenu peut être masqué par la session/édition/route SANS
+// changement de visibilityState (la fenêtre du téléphone reste visible).
+// Chaque étape asynchrone et chaque nouveau segment doivent revérifier
+// également le DOM. Aucun texte ni droit privé n'est lu ici.
+function canNarrateVisibleBook(){
+  return document.visibilityState!=='hidden'&&!$('reader-content').hidden&&
+    (!isFull||(!state.privatePaused&&!state.accessInvalidated));
+}
 function speakNext(token){
   if(!speechReady||token!==speech.token||!speech.active)return;
   // V136 : même si la transition vers l'arrière-plan ne déclenche pas
   // un visibilitychange observable, un callback audio tardif ne doit pas
   // lire un passage invisible ou devenu privé.
-  if(document.visibilityState==='hidden'||
-     isFull&&(state.privatePaused||state.accessInvalidated)){
+  if(!canNarrateVisibleBook()){
     stopNarration(false);
     return;
   }
@@ -424,16 +431,14 @@ function speakNext(token){
 }
 async function startNarration(){
   // V136 : une commande différée ne peut amorcer la voix hors premier plan.
-  if(!speechReady||!state.pdf||document.visibilityState==='hidden'||
-     isFull&&(state.privatePaused||state.accessInvalidated))return;
+  if(!speechReady||!state.pdf||!canNarrateVisibleBook())return;
   stopNarration(false);
   const token=speech.token;
   const pageNumber=state.page;
   const page=await state.pdf.getPage(pageNumber);
   const content=await page.getTextContent();
   if(token!==speech.token||pageNumber!==state.page||
-     document.visibilityState==='hidden'||
-     isFull&&(state.privatePaused||state.accessInvalidated))return;
+     !canNarrateVisibleBook())return;
   const text=pdfTextToParagraphs(content.items);
   if(!text){
     speechStatus('Cette page ne contient pas de texte lisible par la voix. Essayez la suivante.');
@@ -449,8 +454,7 @@ async function startNarration(){
 }
 function toggleSpeechPause(){
   if(!speechReady||!speech.active)return;
-  if(document.visibilityState==='hidden'||
-     isFull&&(state.privatePaused||state.accessInvalidated)){
+  if(!canNarrateVisibleBook()){
     stopNarration(false);
     return;
   }
@@ -672,6 +676,17 @@ function bindControls(){
   }));
   $('reader-voice-pause').addEventListener('click',toggleSpeechPause);
   $('reader-voice-stop').addEventListener('click',()=>stopNarration());
+  // V139 : l'écran du roman peut disparaître sans visibilitychange.
+  // Invalider immédiatement la voix et ses promesses en attente, y
+  // compris lors d'un masquage/retour rapide dans la même tâche JS.
+  // Le livre est fictif ou privé, mais aucun extrait n'est inspecté.
+  const voiceContentObserver=new MutationObserver(records=>{
+    if(records.some(record=>record.type==='attributes'&&
+       record.attributeName==='hidden'))stopNarration(false);
+  });
+  voiceContentObserver.observe($('reader-content'),{
+    attributes:true,attributeFilter:['hidden']
+  });
   window.addEventListener('online',()=>{void retryCloudProgress()});
   window.addEventListener('pagehide',event=>{
     flushScrollPosition();stopNarration(false);flushProgress();
