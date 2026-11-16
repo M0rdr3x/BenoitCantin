@@ -63,7 +63,7 @@ test('V114 : le guide tactile concerne aussi les tablettes de 768 et 820 px',()=
   assert.match(responsive,/\.reader-swipe-help summary\{[\s\S]*?min-height:44px/);
   assert.match(responsive,/\.reader-swipe-help summary:focus-visible\{/);
   assert.match(responsive,/\.reader-swipe-help p\{[\s\S]*?text-align:left/);
-  assert.match(html,/sinjira-liseuse-v26\.css\?v=53\.11\.16\.132/);
+  assert.match(html,/sinjira-liseuse-v26\.css\?v=53\.11\.16\.133/);
   assert.match(html,/aria-describedby="reader-swipe-help"/);
 });
 test('V113 : aide tactile compacte, repliable et annoncée au lecteur',()=>{
@@ -458,6 +458,38 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
     flushFrames,getStatusWrites:()=>statusWrites,
     setSelected:v=>{selected=v}};
 }
+test('V133 : retour BFCache préserve la position lors du changement de hauteur',()=>{
+  const f=fixture({deferredRaf:true});
+  try{
+    f.viewer.scrollTo({top:350}); // ratio 350/(1050-350) = 0,5
+    f.viewer.scrollHeight=1750; // nouvelle géométrie restaurée par le navigateur
+    f.windowMock.emit('pageshow',{persisted:false});f.flushFrames();
+    assert.equal(f.viewer.scrollTop,350,'pageshow ordinaire sans effet');
+    f.windowMock.emit('pageshow',{persisted:true});f.flushFrames();
+    assert.equal(f.viewer.scrollTop,700,'restaurer le ratio 0,5 sur 1400 px');
+    const turned=f.swipe(-130,3);
+    assert.equal(turned.defaultPrevented,true,'gauche fonctionne après retour');
+    assert.ok(f.viewer.scrollTop>700);
+  }finally{
+    const w=f.windowMock;f.restore();
+    assert.equal(w.handlers.get('pageshow')?.length??0,0);
+  }
+});
+test('V133 : retour BFCache interrompt le doigt commencé avant la reprise',()=>{
+  const f=fixture(),finger={identifier:133,clientX:240,clientY:145};
+  try{
+    f.viewer.emit('touchstart',{touches:[finger],target:{closest:()=>null}});
+    f.windowMock.emit('pageshow',{persisted:true});
+    const end={touches:[],changedTouches:[{...finger,clientX:80,clientY:147}],
+      defaultPrevented:false,preventDefault(){this.defaultPrevented=true}};
+    f.viewer.emit('touchend',end);
+    assert.equal(end.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(f.swipe(-130,3).defaultPrevented,true,'nouveau swipe gauche');
+    assert.equal(f.viewer.scrollTop,315);
+    f.swipe(130,3);assert.equal(f.viewer.scrollTop,0);
+  }finally{f.restore()}
+});
 test('V132 : changement de sélection annule un ancien doigt en pages écran',()=>{
   const f=fixture(),start={identifier:132,clientX:240,clientY:145};
   const begin=()=>f.viewer.emit('touchstart',{touches:[start],target:{closest:()=>null}});
@@ -1960,7 +1992,7 @@ test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
   assert.match(h,/id="reader-screen-count"/);
-  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.16\.132/);
+  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.16\.133/);
   assert.match(h,/sinjira-liseuse-v26\.js\?v=34\.11\.14\.102/);
 });
 test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=>{
@@ -1973,8 +2005,8 @@ test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=
 test('V52 singleton: import V53 et script HTML ont exactement la même URL cache-bustée',()=>{
   const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   const module=readFileSync(new URL('../assets/js/sinjira-liseuse-reflow-v53.mjs',import.meta.url),'utf8');
-  const htmlUrl='/assets/js/sinjira-liseuse-touch-v52.mjs?v=52.11.16.132';
-  const importedUrl='./sinjira-liseuse-touch-v52.mjs?v=52.11.16.132';
+  const htmlUrl='/assets/js/sinjira-liseuse-touch-v52.mjs?v=52.11.16.133';
+  const importedUrl='./sinjira-liseuse-touch-v52.mjs?v=52.11.16.133';
   assert.ok(html.includes('src="'+htmlUrl+'"'));
   assert.ok(module.includes("'"+importedUrl+"'"));
   assert.equal(html.split('sinjira-liseuse-touch-v52.mjs').length-1,1);

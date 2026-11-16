@@ -71,6 +71,22 @@ test('V119 : une navigation PDF montre un repère, jamais un swipe refusé',()=>
   assert.equal(f.next.events.has('click'),false);
   assert.equal(f.previous.events.has('click'),false);
 });
+test('V133 : BFCache invalide le vieux doigt PDF mais pas le pageshow normal',()=>{
+  const win=target(),f=fixture({win});
+  const touch={identifier:133,clientX:250,clientY:190};
+  const begin=()=>f.viewer.emit('touchstart',{touches:[touch],target:{closest:()=>null}});
+  const end=()=>f.viewer.emit('touchend',{touches:[],
+    changedTouches:[{...touch,clientX:95,clientY:193}],defaultPrevented:false});
+  try{
+    f.setPdfMode(true);
+    begin();win.emit('pageshow',{persisted:false});f.advance(200);end();
+    assert.equal(f.next.clicks,1,'reprise normale conserve le geste');
+    begin();win.emit('pageshow',{persisted:true});f.advance(200);end();
+    assert.equal(f.next.clicks,1,'un ancien geste ne tourne pas le PDF');
+    f.swipe(130,3);assert.equal(f.previous.clicks,1,'nouveau geste droit disponible');
+  }finally{f.release()}
+  assert.equal(win.events.size,0,'pageshow est détaché');
+});
 test('V132 : sélection modifiée annule un toucher PDF et un drag souris',()=>{
   const doc=target(),f=fixture({doc});
   const start={identifier:132,clientX:250,clientY:190};
@@ -1239,7 +1255,7 @@ test('intégration : les boutons mobiles reflètent le statut initial des bouton
 test('contrat HTML/CSS : module autonome et gestes expliqués',()=>{
   const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
-  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.16\.132/);
+  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.16\.133/);
   assert.match(html,/id="reader-touch-prev"/);
   assert.match(html,/id="reader-touch-next"/);
   assert.match(html,/aria-describedby="reader-swipe-help"/);

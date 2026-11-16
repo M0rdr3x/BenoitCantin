@@ -5,7 +5,7 @@
  * du PDF courant ; une fois le texte terminé, tourner la vraie page du livre.
  * L'enregistrement d'emplacement reste le scroll_ratio historique de la V31.
  */
-import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally,classifyReaderEdgeTap,flashReaderPageTurn,cancelReaderPageTurnFlash} from './sinjira-liseuse-touch-v52.mjs?v=52.11.16.132';
+import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally,classifyReaderEdgeTap,flashReaderPageTurn,cancelReaderPageTurnFlash} from './sinjira-liseuse-touch-v52.mjs?v=52.11.16.133';
 
 const PREF_KEY='sinjira:liseuse:lecture-par-ecrans:v53';
 
@@ -719,6 +719,14 @@ export function bindReaderScreenMode({
   // V88 : le bouton « Lecture plein écran » modifie la hauteur du conteneur
   // sans déclencher window.resize. Capturer l'ancre AVANT la bascule CSS,
   // puis restaurer après deux frames comme pour le changement de police.
+  // V133 : sur un retour BFCache iOS/Android, le viewport peut changer
+  // sans resize. Réutiliser la restauration de l'ancre après le retour.
+  const onPageShow=event=>{
+    if(!event?.persisted)return;
+    onTouchCancel();
+    if(!canNavigate())return; // aucun contenu privé masqué restauré
+    onResize();
+  };
   const onFocusLayoutChange=()=>{
     // V130 : toujours invalider le geste avant le changement de CSS.
     gesture=null;
@@ -751,6 +759,7 @@ export function bindReaderScreenMode({
   document.addEventListener('visibilitychange',onVisibilityChange);
   window.addEventListener('blur',onTouchCancel);
   window.addEventListener('pagehide',onTouchCancel);
+  window.addEventListener('pageshow',onPageShow);
   viewer.addEventListener('scroll',onScroll,{passive:true});
   // Le moteur V26 émet cet événement APRÈS la mise à jour de la page
   // canonique : le statut mobile reflète aussitôt une nouvelle page PDF.
@@ -801,6 +810,7 @@ export function bindReaderScreenMode({
     document.removeEventListener('visibilitychange',onVisibilityChange);
     window.removeEventListener('blur',onTouchCancel);
     window.removeEventListener('pagehide',onTouchCancel);
+    window.removeEventListener('pageshow',onPageShow);
     viewer.removeEventListener('scroll',onScroll);
     viewer.removeEventListener('sinjira:reader-page-change',onBookPageChange);
     previous.removeEventListener('click',onPrev,true);

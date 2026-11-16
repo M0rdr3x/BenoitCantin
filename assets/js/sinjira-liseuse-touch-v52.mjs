@@ -490,6 +490,10 @@ export function bindReaderTouchNavigation({
   globalThis.document?.addEventListener?.('visibilitychange',onVisibilityChange);
   globalThis.window?.addEventListener?.('blur',cancelAll);
   globalThis.window?.addEventListener?.('pagehide',cancelAll);
+  // V133 : retour du cache avant/arrière du navigateur mobile.
+  // Annuler les contacts d'une ancienne apparition de la page.
+  const onPageShow=event=>{if(event?.persisted)cancelAll()};
+  win?.addEventListener?.('pageshow',onPageShow);
   // V128 : une rotation ou un resize visuel peut revenir à la géométrie
   // initiale avant touchend. Annuler immédiatement les anciens contacts.
   const onViewportChange=()=>{cancel();pointerCancel()};
@@ -554,6 +558,7 @@ export function bindReaderTouchNavigation({
     globalThis.document?.removeEventListener?.('visibilitychange',onVisibilityChange);
     globalThis.window?.removeEventListener?.('blur',cancelAll);
     globalThis.window?.removeEventListener?.('pagehide',cancelAll);
+    win?.removeEventListener?.('pageshow',onPageShow);
     win?.removeEventListener?.('resize',onViewportChange);
     win?.removeEventListener?.('orientationchange',onViewportChange);
     win?.visualViewport?.removeEventListener?.('resize',onViewportChange);
