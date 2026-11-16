@@ -140,7 +140,7 @@ test('erreur SQL : refus fermé même si data contredit error',async()=>{
 });
 
 test('roman absent ou slug incohérent : refus avant UPDATE',async()=>{
-  for(const data of [null,{}, {slug:null}, {slug:42}]){
+  for(const data of [null,{}, {slug:null}, {slug:42}, {slug:''}, {slug:'  '}]){
     const result=await execute({novel_id:ROMAN_I}, {data,error:null});
     await assert.rejects(result.promise,e=>e?.message==='NOVEL_NOT_FOUND');
     noWrite(result.calls);
@@ -231,16 +231,10 @@ test('lecture du rattachement courant indisponible : aucun UPDATE',async()=>{
 });
 
 test('relation du roman courant inconnue ou incohérente : refus fermé',async()=>{
-  for(const currentNovelSlug of [undefined,null,{},42,'']){
+  for(const currentNovelSlug of [null,{},42,'', '   ']){
     const result=await execute({novel_id:null},{
       currentNovelId:ROMAN_I,currentNovelSlug
     });
-    if(currentNovelSlug===''){
-      // Valeur de type chaîne vide : refus conservateur, aucun nom connu ;
-      // la validation du type est satisfaite mais la branche retcon n'est pas
-      // déclenchée. Ne pas tester ce cas tant que le schéma interdit le vide.
-      continue;
-    }
     await assert.rejects(result.promise,e=>e?.message==='CHARACTER_NOVEL_UNAVAILABLE');
     noWrite(result.calls);
   }
