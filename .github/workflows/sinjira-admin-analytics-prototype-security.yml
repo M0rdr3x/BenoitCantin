@@ -1,0 +1,52 @@
+name: Sécurité administrateur — statistiques sans pollution de prototype
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/functions/admin-analytics/index.ts'
+      - 'supabase/functions/admin-console/index.ts'
+      - 'scripts/test_admin_analytics_prototype_safety.mjs'
+      - 'scripts/validate_admin_analytics_prototype_security.py'
+      - '.github/workflows/sinjira-admin-analytics-prototype-security.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/admin-analytics/index.ts'
+      - 'supabase/functions/admin-console/index.ts'
+      - 'scripts/test_admin_analytics_prototype_safety.mjs'
+      - 'scripts/validate_admin_analytics_prototype_security.py'
+      - '.github/workflows/sinjira-admin-analytics-prototype-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  admin-aggregate-security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Checkout sans jeton persistant
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Node.js figé
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+
+      - name: Exécuter les vrais agrégats avec clés hostiles
+        run: node --test scripts/test_admin_analytics_prototype_safety.mjs
+
+      - name: Muter les protections contre les propriétés héritées
+        run: |
+          python3 scripts/validate_admin_analytics_prototype_security.py --self-test
+          python3 scripts/validate_admin_analytics_prototype_security.py
+
+      - name: Vérifier la sécurité du tableau de bord existant
+        run: |
+          python3 scripts/validate_admin_console_security.py --self-test
+          python3 scripts/validate_admin_console_security.py
+          python3 scripts/validate_edge_function_inventory.py
