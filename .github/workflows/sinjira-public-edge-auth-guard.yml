@@ -9,6 +9,7 @@ on:
       - 'supabase/migrations/20260911225500_sinjira_v25_fracture_endgame_atomic_submit.sql'
       - 'scripts/validate_public_edge_auth.py'
       - 'scripts/validate_public_edge_auth_workflow_security.py'
+      - 'scripts/validate_edge_runtime_log_privacy.py'
       - 'scripts/test_public_edge_body_limits.mjs'
       - 'scripts/test_sensitive_account_streaming.mjs'
       - 'scripts/test_public_edge_binary_limits.mjs'
@@ -37,6 +38,7 @@ on:
       - 'supabase/migrations/20260911225500_sinjira_v25_fracture_endgame_atomic_submit.sql'
       - 'scripts/validate_public_edge_auth.py'
       - 'scripts/validate_public_edge_auth_workflow_security.py'
+      - 'scripts/validate_edge_runtime_log_privacy.py'
       - 'scripts/test_public_edge_body_limits.mjs'
       - 'scripts/test_sensitive_account_streaming.mjs'
       - 'scripts/test_public_edge_binary_limits.mjs'
@@ -79,6 +81,10 @@ jobs:
         run: python scripts/validate_public_edge_auth_workflow_security.py
       - name: Vérifier les exceptions verify_jwt=false
         run: python scripts/validate_public_edge_auth.py
+      - name: Auto-tester le contrat de confidentialité des journaux Edge
+        run: python scripts/validate_edge_runtime_log_privacy.py --self-test
+      - name: Refuser toute exception brute dans les logs des fonctions Edge
+        run: python scripts/validate_edge_runtime_log_privacy.py
       - name: Auto-tester les bornes de lecture HTTP des trois fonctions publiques
         run: node scripts/test_public_edge_body_limits.mjs
       - name: Auto-tester les corps JSON bornés et journaux expurgés des comptes sensibles
