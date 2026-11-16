@@ -81,7 +81,7 @@ const approvedHttpsCases = [
   ['https://www.sinjira.com/app/', '/app/'],
   ['https://benoitcantin.com/compte/messages.html', '/compte/messages.html'],
   ['https://www.benoitcantin.com//evil.example/path', '//evil.example/path'],
-  ['https://user:password@sinjira.com/compte/profil.html', '/compte/profil.html'],
+  ['https://sinjira.com:443/compte/profil.html', '/compte/profil.html'],
 ];
 for (const [rawUrl, expected] of approvedHttpsCases) {
   assertPinnedToSinjiraOrigin(rawUrl, expected);
@@ -91,6 +91,11 @@ const rejectedInputs = [
   null,
   '',
   'sinjira:compte/profil.html',
+  // Le normaliseur refuse ces entrées, même s'il aurait pu supprimer userinfo :
+  // une origine non standard et une identité intégrée ne sont pas des liens approuvés.
+  'https://user:password@sinjira.com/compte/profil.html',
+  'https://sinjira.com:8443/compte/profil.html',
+  'https://www.benoitcantin.com:8080/app/',
   'https://evil.example/compte/profil.html',
   'http://sinjira.com/compte/profil.html',
   '//evil.example/compte/profil.html',
