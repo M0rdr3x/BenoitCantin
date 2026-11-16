@@ -16,7 +16,7 @@ function between(text, start, end) {
 
 function compileAndRun(source, sandbox) {
   const output = ts.transpileModule(source, {
-    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None, strict: true },
+    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022, strict: true },
     reportDiagnostics: true,
   });
   const errors = (output.diagnostics || []).filter(d => d.category === ts.DiagnosticCategory.Error);
