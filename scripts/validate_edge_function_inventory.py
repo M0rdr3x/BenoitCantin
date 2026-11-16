@@ -65,7 +65,8 @@ STREAMED_REQUEST_ROUTES = {
 
 JWT_SENSITIVE_GUARDS = {
     "fracture-engine-gateway": (
-        "MAX_BODY_BYTES=32_000", "readLimitedUtf8Body(req,MAX_BODY_BYTES)",
+        "MAX_BODY_BYTES=32_000", "BODY_READ_TIMEOUT_MS=8_000",
+        "readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,BODY_READ_TIMEOUT_MS)", "REQUEST_TIMEOUT",
         "client.auth.getUser(token)", "ALLOWED_ACTIONS", "fracture_engine_get_state_safe",
         "Cache-Control", "private, no-store", "Content-Type", "privateJson",
     ),
@@ -148,13 +149,16 @@ def fracture_gateway_body_boundary_valid(source: str) -> bool:
     """Un corps hostile ne doit être lu ni avant JWT, ni sans borne en flux."""
     if "await req.text()" in source or "await req.json()" in source:
         return False
-    bounded_reader = source.find("await readLimitedUtf8Body(req,MAX_BODY_BYTES)")
+    bounded_reader = source.find("await readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,BODY_READ_TIMEOUT_MS)")
     authenticated = source.find("await client.auth.getUser(token)")
     body_invoked = source.find("await readLimitedJson(req)")
     privileged = source.find("await client.rpc(action,args)")
     # Définir le lecteur plus haut dans le fichier n'est pas un appel réseau.
     # Dans le gestionnaire HTTP, JWT -> lecture bornée -> action RPC.
-    return bounded_reader >= 0 and 0 <= authenticated < body_invoked < privileged
+    return (bounded_reader >= 0 and 0 <= authenticated < body_invoked < privileged
+            and "BODY_READ_TIMEOUT_MS=8_000" in source
+            and "limited.reason==='REQUEST_TIMEOUT'" in source
+            and "code:'REQUEST_TIMEOUT',gateway_version:GATEWAY_VERSION},408" in source)
 
 
 class UnsafeSource(Exception):
