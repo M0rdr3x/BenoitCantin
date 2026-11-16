@@ -124,8 +124,8 @@ async function notifyDecision(s:any,userId:string|null,decisionId:string,title:s
 }
 
 async function createDecision(s:any,adminId:string,r:any,b:any,action:'hide_content'|'suspend_social'){
-  const subject=await reportTargetUser(s,r);
   if(action==='hide_content'&&!moderationTargetTable(r.network,r.target_type))throw new Error('CONTENT_TARGET_NOT_REVERSIBLE');
+  const subject=await reportTargetUser(s,r);
   const evidence={report_snapshot:r.snapshot||{},target_snapshot:await targetSnapshot(s,r),report_reason:r.reason,report_created_at:r.created_at};
   const {rule,statement}=policyAndStatement(r,b,action);
   const urgency=['standard','urgent_harm','illegal_content'].includes(String(b.urgency))?String(b.urgency):'standard';
