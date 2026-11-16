@@ -11,8 +11,11 @@ EDGE = ROOT / 'supabase/functions/send-game-report/index.ts'
 
 REQUIRED = {
     'POST uniquement': "req.method !== 'POST'",
-    'JSON explicite': "contentType.startsWith('application/json')",
-    'lecture corps par flux borné': 'const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);',
+    'JSON explicite exact': r"/^application\/json(?:\s*;|$)/.test(contentType)",
+    'lecture corps avec délai absolu': 'const limited = await readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS);',
+    'constante délai JSON': 'MAX_REQUEST_READ_TIMEOUT_MS=8_000;',
+    'détection timeout': "limited.reason === 'REQUEST_TIMEOUT'",
+    'HTTP 408': 'timeout ? 408 : 413',
     'refus des flux trop longs': 'if (!limited.ok) return',
     'réponse privée': "'Cache-Control': 'private, no-store, max-age=0'",
     'protection MIME': "'X-Content-Type-Options': 'nosniff'",
@@ -21,6 +24,8 @@ REQUIRED = {
     'texte fiche borné': 'const MAX_TEXT = 6000;',
     'modèle PDF origine fixe': "const TEMPLATE_ORIGIN='https://www.benoitcantin.com';",
     'redirections modèle refusées': "redirect:'error'",
+    'constante délai modèle': 'TEMPLATE_FETCH_TIMEOUT_MS=12_000;',
+    'signal abort modèle': 'signal:AbortSignal.timeout(TEMPLATE_FETCH_TIMEOUT_MS)',
     'taille modèle bornée': 'const MAX_TEMPLATE_BYTES=15*1024*1024;',
     'lecture modèle PDF bornée par flux': 'readLimitedBinaryResponse(response,MAX_TEMPLATE_BYTES)',
     'rejet flux PDF trop lourd': "if(!limited.ok)throw new Error('REPORT_TEMPLATE_TOO_LARGE')",
@@ -99,6 +104,8 @@ def self_test() -> None:
     safe = """
 const FUNCTION_VERSION='24.5.2';
 const MAX_REQUEST_BYTES=220_000;
+const MAX_REQUEST_READ_TIMEOUT_MS=8_000;
+const TEMPLATE_FETCH_TIMEOUT_MS=12_000;
 const MAX_TEMPLATE_BYTES=15*1024*1024;
 const MAX_TEXT = 6000;
 const PAID_EXTERNAL_SERVICES_ENABLED=false;
@@ -110,7 +117,7 @@ const PRIVATE_JSON_HEADERS = {
   'Referrer-Policy': 'no-referrer'
 };
 async function fetchTemplateBytes(){
- const response=await fetch('https://www.benoitcantin.com/x.pdf',{cache:'no-store',redirect:'error'});
+ const response=await fetch('https://www.benoitcantin.com/x.pdf',{cache:'no-store',redirect:'error',signal:AbortSignal.timeout(TEMPLATE_FETCH_TIMEOUT_MS)});
  const limited=await readLimitedBinaryResponse(response,MAX_TEMPLATE_BYTES);
  if(!limited.ok)throw new Error('REPORT_TEMPLATE_TOO_LARGE');
  const bytes=limited.bytes;
@@ -119,9 +126,9 @@ async function fetchTemplateBytes(){
 }
 async function readLimitedJson(req){
  const contentType=(req.headers.get('content-type')||'').toLowerCase();
- if(!contentType.startsWith('application/json')) return {response:new Response('',{status:415})};
- const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);
- if (!limited.ok) return {response:new Response('',{status:413})};
+ if(!/^application\/json(?:\s*;|$)/.test(contentType)) return {response:new Response('',{status:415})};
+ const limited = await readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS);
+ if (!limited.ok) { const timeout = limited.reason === 'REQUEST_TIMEOUT'; return {response:new Response('',{status:timeout ? 408 : 413})}; }
  const raw = limited.raw;
  return {body:JSON.parse(raw||'{}')};
 }
@@ -162,15 +169,18 @@ Deno.serve(async(req)=>{
             raise AssertionError('Le cas sain doit passer: ' + ' | '.join(clean))
 
         mutations = {
-            'content-type retiré': safe.replace(" if(!contentType.startsWith('application/json')) return {response:new Response('',{status:415})};\n", ''),
-            'req.json direct': safe.replace(' const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);', ' const bodyDirect = await req.json();'),
-            'lecture non bornée': safe.replace(' const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);', ' const raw = await req.text();'),
+            'content-type retiré': safe.replace(" if(!/^application\/json(?:\s*;|$)/.test(contentType)) return {response:new Response('',{status:415})};\n", ''),
+            'req.json direct': safe.replace(' const limited = await readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS);', ' const bodyDirect = await req.json();'),
+            'lecture non bornée': safe.replace(' const limited = await readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS);', ' const raw = await req.text();'),
             'lecture PDF entière': safe.replace(' const limited=await readLimitedBinaryResponse(response,MAX_TEMPLATE_BYTES);', ' const limited={ok:true,bytes:new Uint8Array(await response.arrayBuffer())};'),
             'no-store retiré': safe.replace("  'Cache-Control': 'private, no-store, max-age=0',\n", ''),
             'services payants activés': safe.replace('PAID_EXTERNAL_SERVICES_ENABLED=false', 'PAID_EXTERNAL_SERVICES_ENABLED=true'),
             'log livraison brut': safe.replace("console.warn('[SINJIRA report]', { code:'REPORT_DELIVERY_RECORD_FAILED' });", "console.warn('[SINJIRA report]', error.message);"),
             'réponse fournisseur lue': safe.replace("console.error('[SINJIRA report]', { code:'REPORT_EMAIL_PROVIDER_FAILED', status:resendResponse.status });", "const details=await resendResponse.text(); console.error('Resend:',details);"),
             'catch brut': safe.replace("} catch {\n  console.error('[SINJIRA report]', { code:'SEND_GAME_REPORT_FAILED' });", "} catch (error) {\n  console.error(error);"),
+            'délai JSON retiré': safe.replace('readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS)', 'readLimitedUtf8Body(req, MAX_REQUEST_BYTES)'),
+            'délai PDF retiré': safe.replace(',signal:AbortSignal.timeout(TEMPLATE_FETCH_TIMEOUT_MS)', ''),
+            '408 remplacé par 413': safe.replace('status:timeout ? 408 : 413', 'status:413'),
             'limite augmentée': safe.replace('MAX_REQUEST_BYTES=220_000;', 'MAX_REQUEST_BYTES=2_200_000;'),
             'destinataire arbitraire': safe.replace('to: [user.email]', 'to: [body.email]'),
             'précondition courriel trop tardive': safe.replace("  if (mode === 'email' && !PAID_EXTERNAL_SERVICES_ENABLED) return new Response('',{status:503});\n", ''),
