@@ -554,6 +554,28 @@ def run(playwright, browser_type, url):
             "V148 : signal PDF masqué a écrasé la pagination ou le statut mobile",
             hidden_page_event
         )
+        # V150 : input du curseur reçu avec le roman masqué, puis change
+        # différé après la réouverture : ne jamais tourner une page fantôme.
+        stale_slider=page.evaluate("""()=>{
+          const content=document.querySelector('#reader-content');
+          const viewer=document.querySelector('#reader-viewer');
+          const slider=document.querySelector('#reader-screen-jump');
+          const status=document.querySelector('#reader-screen-count');
+          const before={top:viewer.scrollTop,screen:status.textContent};
+          content.hidden=true;
+          try{
+            slider.value=slider.max;
+            slider.dispatchEvent(new Event('input',{bubbles:true}));
+          }finally{content.hidden=false}
+          slider.dispatchEvent(new Event('change',{bubbles:true}));
+          return {before,after:{top:viewer.scrollTop,screen:status.textContent},
+            slider:slider.value,max:slider.max};
+        }""")
+        assert int(stale_slider["max"])>1,stale_slider
+        assert stale_slider["before"]==stale_slider["after"],(
+            "V150 : confirmation tardive d'un slider masqué a tourné le livre",
+            stale_slider
+        )
         # Le mode normal doit reprendre au début de l'écran pour la
         # réception des annonces et du curseur qui suit.
         page.evaluate("""()=>{
