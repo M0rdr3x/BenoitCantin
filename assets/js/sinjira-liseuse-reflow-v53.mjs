@@ -646,7 +646,17 @@ export function bindReaderScreenMode({
       // V127 : le contenu privé peut être masqué puis réaffiché avant
       // touchend. Annuler le doigt même si le livre est à nouveau visible.
       gesture=null;
-      if(readingContent.hidden)clearPageAnnouncement();
+      if(readingContent.hidden){
+        clearPageAnnouncement();
+      }else{
+        // V138 : après un masquage répété, WebKit ne garantit pas un
+        // événement scroll/resize à la réouverture. Réinitialiser les
+        // libellés et le curseur APRÈS le réagencement (2 frames) sans
+        // changer de page ni sauvegarder une progression.
+        raf(()=>raf(()=>{
+          if(!closed&&canNavigate())sync();
+        }));
+      }
     }
   }):null;
   contentObserver?.observe(readingContent,{attributes:true,attributeFilter:['hidden']});
