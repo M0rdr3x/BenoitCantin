@@ -42,9 +42,13 @@ async function scenario(response, options = {}) {
         if (options.signOutThrows) throw new Error('private sign-out failure');
         return {error: options.signOutError ? new Error('private sign-out failure') : null};
       },
-      mfa: {getAuthenticatorAssuranceLevel: async () => ({
-        data: {nextLevel: 'aal2'}, error: null
-      })}
+      mfa: {getAuthenticatorAssuranceLevel: async () => {
+        if(options.mfaThrows)throw new Error('private MFA service failure');
+        return {
+          data: {nextLevel: options.mfaNextLevel || 'aal2'},
+          error: options.mfaError ? new Error('private MFA error') : null
+        };
+      }}
     },
     functions: {
       invoke: async (name) => {
@@ -64,7 +68,10 @@ async function scenario(response, options = {}) {
     navigator: {userAgent: 'Test Chrome', platform: 'Testing'},
     crypto: {randomUUID: () => 'synthetic-device-key'},
     localStorage: storage,
-    sessionStorage: storage,
+    sessionStorage: options.challengeStorageThrows ? {
+      ...storage,
+      setItem() {throw new Error('private storage access failure');}
+    } : storage,
     getSupabase: () => client,
     getCurrentUser: async () => null,
     isSinjiraBackendConfigured: () => true,
@@ -133,7 +140,40 @@ async function main() {
     assert.match(unresolved.statuses.at(-1)?.message || '', /non confirmée/);
     count++;
   }
-  console.log('PASS: ' + count + ' scénarios Auth sécurité (fail-closed, redaction, blocage, MFA).');
+
+  const challenge = {data: {ok: true, security: {
+    outcome: 'challenge', challenge_id: 'synthetic-challenge'
+  }}};
+  for(const options of [
+    {mfaThrows: true},
+    {mfaError: true},
+    {mfaNextLevel: 'aal1'},
+    {challengeStorageThrows: true}
+  ]){
+    const failedChallenge = await scenario(challenge, options);
+    assert.deepEqual(failedChallenge.navigations, [], 'MFA indéterminé ne doit pas poursuivre la connexion');
+    assert.deepEqual(failedChallenge.signOutCalls, ['local'], 'Session ouverte révoquée après erreur MFA/stockage');
+    assert.equal(failedChallenge.statuses.at(-1)?.kind, 'error');
+    count++;
+  }
+
+  const blockedFailedSignout = await scenario(
+    {data: {ok: true, security: {outcome: 'block'}}},
+    {signOutError: true}
+  );
+  assert.deepEqual(blockedFailedSignout.navigations, []);
+  assert.match(blockedFailedSignout.statuses.at(-1)?.message || '', /non confirmée/);
+  count++;
+
+  const invalidChallengeFailedSignout = await scenario(
+    {data: {ok: true, security: {outcome: 'challenge'}}},
+    {signOutThrows: true}
+  );
+  assert.deepEqual(invalidChallengeFailedSignout.navigations, []);
+  assert.match(invalidChallengeFailedSignout.statuses.at(-1)?.message || '', /non confirmée/);
+  count++;
+
+  console.log('PASS: ' + count + ' scénarios Auth sécurité (fail-closed, erreurs MFA, déconnexion, confidentialité).');
 }
 
 main().catch(error => {
