@@ -531,6 +531,29 @@ def run(playwright, browser_type, url):
             "V147 : le curseur d'un livre masqué a modifié l'annonce ou la page",
             hidden_slider
         )
+        # V148 : un événement tardif de changement de page PDF lors du
+        # masquage ne doit écraser ni compteur, ni libellé, ni curseur.
+        hidden_page_event=page.evaluate("""()=>{
+          const content=document.querySelector('#reader-content');
+          const viewer=document.querySelector('#reader-viewer');
+          const slider=document.querySelector('#reader-screen-jump');
+          const status=document.querySelector('#reader-screen-count');
+          const location=document.querySelector('#reader-touch-location');
+          const read=()=>({counter:status.textContent,slider:slider.value,
+            sliderMax:slider.max,sliderHidden:slider.hidden,
+            label:viewer.getAttribute('aria-label'),location:location.textContent,
+            layout:viewer.dataset.readerLayout});
+          const before=read();
+          content.hidden=true;
+          try{
+            viewer.dispatchEvent(new Event('sinjira:reader-page-change'));
+            return {before,after:read(),hidden:content.hidden};
+          }finally{content.hidden=false}
+        }""")
+        assert hidden_page_event["hidden"] and hidden_page_event["before"]==hidden_page_event["after"],(
+            "V148 : signal PDF masqué a écrasé la pagination ou le statut mobile",
+            hidden_page_event
+        )
         # Le mode normal doit reprendre au début de l'écran pour la
         # réception des annonces et du curseur qui suit.
         page.evaluate("""()=>{
