@@ -60,12 +60,17 @@ async function fetchTemplateBytes(){
   return bytes;
 }
 
+// Interface publique historique conservée; l'implémentation est désormais bornée dans le temps.
+async function readLimitedUtf8Body(req: Request, maxBytes: number) {
+  return readLimitedUtf8BodyWithDeadline(req, maxBytes, MAX_REQUEST_READ_TIMEOUT_MS);
+}
+
 async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }> {
   const contentType=(req.headers.get('content-type')||'').toLowerCase();
   if(!/^application\/json(?:\s*;|$)/.test(contentType)){
     return { response: privateJson({ ok:false, error:'Type de contenu non autorisé.', function_version:FUNCTION_VERSION }, 415) };
   }
-  const limited = await readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS);
+  const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);
   if (!limited.ok) {
     const timeout = limited.reason === 'REQUEST_TIMEOUT';
     return { response: privateJson({
