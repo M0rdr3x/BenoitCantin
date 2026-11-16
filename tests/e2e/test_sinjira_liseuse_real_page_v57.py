@@ -508,6 +508,29 @@ def run(playwright, browser_type, url):
         },visible_screen_mode
         page.wait_for_function("""()=>document.querySelector('#reader-viewer')
           .dataset.readerLayout==='screens'""")
+        # V147 : un « change » retardé du curseur ne doit pas mesurer
+        # la zone d'un roman caché, qui vaut zéro sur les vrais navigateurs.
+        hidden_slider=page.evaluate("""()=>{
+          const content=document.querySelector('#reader-content');
+          const slider=document.querySelector('#reader-screen-jump');
+          const viewer=document.querySelector('#reader-viewer');
+          const status=document.querySelector('#reader-screen-count');
+          const pageField=document.querySelector('#reader-page');
+          const read=()=>({status:status.textContent,
+            label:viewer.getAttribute('aria-label'),
+            page:pageField.value,mode:viewer.dataset.readerLayout});
+          const before=read();
+          content.hidden=true;
+          try{
+            slider.value=slider.max;
+            slider.dispatchEvent(new Event('change',{bubbles:true}));
+            return {before,after:read(),hidden:content.hidden};
+          }finally{content.hidden=false}
+        }""")
+        assert hidden_slider["hidden"] and hidden_slider["before"]==hidden_slider["after"],(
+            "V147 : le curseur d'un livre masqué a modifié l'annonce ou la page",
+            hidden_slider
+        )
         # Le mode normal doit reprendre au début de l'écran pour la
         # réception des annonces et du curseur qui suit.
         page.evaluate("""()=>{
