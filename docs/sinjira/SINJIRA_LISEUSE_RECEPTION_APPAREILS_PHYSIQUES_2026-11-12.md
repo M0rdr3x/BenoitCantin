@@ -4,7 +4,7 @@
 
 ## Décision de lancement
 
-**Statut : NON VALIDÉ / NO_GO.** La [PR #1000](https://github.com/M0rdr3x/BenoitCantin/pull/1000) contient la liseuse mobile tactile V52–V67, mais le succès de Chromium/WebKit Playwright ne démontre pas à lui seul le comportement d'un véritable écran tactile, des lecteurs d'écran, du cache navigateur ou des contrôles d'accès au PDF privé. Cette fiche prépare la **réception manuelle reproductible** sans attribuer fictivement une réussite.
+**Statut : NON VALIDÉ / NO_GO.** La [PR #1000](https://github.com/M0rdr3x/BenoitCantin/pull/1000) contient la liseuse mobile tactile V52–V146, mais le succès de Chromium/WebKit Playwright ne démontre pas à lui seul le comportement d'un véritable écran tactile, des lecteurs d'écran, du cache navigateur ou des contrôles d'accès au PDF privé. Cette fiche prépare la **réception manuelle reproductible** sans attribuer fictivement une réussite.
 
 ## Préparation et précautions
 
@@ -57,6 +57,26 @@ Pour chaque appareil disponible :
 | A11Y-ANDROID | Non renseigné | Non renseigné | ND | Non renseigné | Non renseigné |
 
 **Règle :** une ligne non renseignée reste **ND** (non démontrée) et non PASS. En cas de défaut bloquant, associer les étapes exactes et une capture expurgée au ticket GitHub; ne pas marquer comme terminé.
+
+## Complément de réception V146 — 16 novembre 2026
+
+**Preuve automatisée limitée, avant cette mise à jour documentaire :** sur le SHA de la PR #1000 `656fb4e03ca05679ff87696c94e9cb2694259fb9`, l'API GitHub a retourné **50 check-runs terminés : 36 SUCCESS, 14 SKIPPED et 0 FAILURE**. Ce bilan ne prouve pas un test physique, ni une autorisation serveur. Tout nouveau SHA, y compris un commit documentaire, nécessite sa propre vérification CI avant promotion. La branche candidate était **2 commits derrière `main`** à la comparaison; les fusionner sans réexamen des contrôles serait imprudent.
+
+### Nouveaux scénarios de non-régression à exécuter sur matériel physique
+
+| ID | Scénario et vérification PASS | Statut |
+| --- | --- | --- |
+| TOUCH-SELECT | Faire une sélection longue, ouvrir le menu contextuel, déplacer les poignées de sélection, puis relâcher; aucune page ne doit tourner et la sélection native doit rester disponible. | ND |
+| TOUCH-RESUME | Commencer un geste, changer d'onglet ou d'application, revenir, puis relâcher. Refaire avec retour arrière/avant (BFCache); aucun ancien doigt ne tourne une page. Un nouveau geste fonctionne. | ND |
+| TOUCH-ROTATE | Commencer un balayage puis pivoter le téléphone ou modifier la taille du viewport : le geste obsolète ne change pas d'écran. Après stabilisation, les gestes fonctionnent et le passage lu reste visible. | ND |
+| REFLOW-PAGE | À 320 px et sur tablette, grossir la police, espacer les lignes, changer de mode et faire 20 allers-retours. Le texte demeure sélectionnable, sans ligne sautée ni perte de passage. | ND |
+| REFLOW-HIDDEN | Masquer le livre, puis tenter une modification retardée de « Lire par pages d’écran ». La préférence confirmée ne change pas; au retour, la position est conservée. Répéter avec les réglages typographiques et le curseur d'écran. | ND |
+| VOICE-HIDDEN | Lancer la voix, masquer le livre ou passer en arrière-plan : aucune lecture de contenu privé masqué; retour sans départ vocal involontaire. Vérifier VoiceOver et TalkBack séparément. | ND |
+| PAGE-INVALID | Essayer une page invalide, vide, fractionnaire, hors bornes puis revenir aux boutons de lecture. Aucun saut ni écriture d'une position incorrecte. | ND |
+| PDF-ILLUSTRATED | Page illustrée ou extraction impossible : mode PDF fidèle, pincement/zoom et rotation possibles; retour au texte adaptable sur la page extractible suivante. | ND |
+| SECURITY-REVOKE | Avec deux comptes fictifs de test et autorisation serveur homologuée seulement : lecture autorisée/refusée, déconnexion, révocation, cache et reprise entre appareils; aucun accès après révocation. | ND |
+
+Pour chaque scénario, consigner appareil, navigateur, version d'OS, SHA exact, étapes observées, verdict PASS/FAIL/ND et preuve expurgée. **ND ne compte jamais comme PASS.** Exécuter en préproduction avec des œuvres fictives autorisées; ne pas publier de roman, jeton, URL signée ni identité personnelle.
 
 ## Portes de publication
 
