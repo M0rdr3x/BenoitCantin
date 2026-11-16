@@ -1835,6 +1835,43 @@ test('V104 : curseur tactile navigue entre écrans sans changer le PDF',()=>{
     }
   }finally{f.restore()}
 });
+test('V149 : typographie modifiée quand le livre est masqué conserve le passage',()=>{
+  const f=fixture({observe:true,withReaderContent:true});
+  try{
+    f.viewer.scrollTo({top:350}); // ratio légitime 350 / 700 = 50 %
+    const before=f.status.textContent,writes=f.getStatusWrites();
+    f.readerContent.hidden=true;
+    f.documentMock.emit('input',{target:{id:'reader-size'}});
+    f.documentMock.emit('change',{target:{id:'reader-line-height'}});
+    assert.equal(f.viewer.scrollTop,350,'ne pas naviguer sur livre caché');
+    assert.equal(f.getStatusWrites(),writes,'aucune annonce depuis un viewport masqué');
+    assert.equal(f.status.textContent,before);
+    f.viewer.scrollHeight=1750; // reflow CSS sans événement window.resize
+    f.readerContent.hidden=false;
+    f.notifyContent();
+    assert.equal(f.viewer.scrollTop,700,'conserver le ratio validé de 50 %');
+    assert.equal(f.viewer.dataset.readerLayout,'screens');
+    assert.equal(f.swipe(-130,3).defaultPrevented,true,'la page suivante fonctionne');
+    assert.ok(f.viewer.scrollTop>700);
+  }finally{f.restore()}
+});
+test('V149 : changement typographique en arrière-plan restauré au retour',()=>{
+  const f=fixture();
+  try{
+    f.viewer.scrollTo({top:350});
+    const before=f.status.textContent,writes=f.getStatusWrites();
+    f.documentMock.hidden=true;
+    f.documentMock.emit('input',{target:{id:'reader-font'}});
+    f.viewer.scrollHeight=1750;
+    assert.equal(f.viewer.scrollTop,350);
+    assert.equal(f.getStatusWrites(),writes);
+    assert.equal(f.status.textContent,before);
+    f.documentMock.hidden=false;
+    f.documentMock.emit('visibilitychange',{});
+    assert.equal(f.viewer.scrollTop,700,'restaurer le passage après retour onglet');
+    assert.equal(f.swipe(130,3).defaultPrevented,true,'revenir par balayage droite');
+  }finally{f.restore()}
+});
 test('V148 : événement de page pendant un masquage ne détruit pas la dernière position',()=>{
   const f=fixture({observe:true,withReaderContent:true});
   try{
@@ -2072,7 +2109,7 @@ test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
   assert.match(h,/id="reader-screen-count"/);
-  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.16\.148/);
+  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.16\.149/);
   assert.match(h,/sinjira-liseuse-v26\.js\?v=34\.11\.16\.143/);
 });
 test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=>{
