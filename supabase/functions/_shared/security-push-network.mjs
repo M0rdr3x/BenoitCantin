@@ -26,6 +26,11 @@ export async function postSecurityPushJson(url, payload, fetchImpl = globalThis.
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify(payload),
+    // A 307/308 to another host would retransmit private Expo device tokens.
+    // Never follow redirects or send ambient credentials to an upstream.
+    redirect: 'error',
+    credentials: 'omit',
+    referrerPolicy: 'no-referrer',
     signal: createSecurityPushAbortSignal(),
   });
 }
