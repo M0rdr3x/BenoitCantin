@@ -13,6 +13,7 @@ on:
       - 'scripts/validate_admin_document_upload_security.py'
       - 'scripts/validate_get_document_url_security.py'
       - 'scripts/test_document_external_urls.mjs'
+      - 'scripts/test_document_access_rank_security.mjs'
       - '.github/workflows/sinjira-document-storage-private-security.yml'
   push:
     branches: [ main ]
@@ -26,6 +27,7 @@ on:
       - 'scripts/validate_admin_document_upload_security.py'
       - 'scripts/validate_get_document_url_security.py'
       - 'scripts/test_document_external_urls.mjs'
+      - 'scripts/test_document_access_rank_security.mjs'
       - '.github/workflows/sinjira-document-storage-private-security.yml'
   workflow_dispatch:
 
@@ -67,6 +69,9 @@ jobs:
 
       - name: Vérifier l'ordre des contrôles avant toute signature
         run: python3 scripts/validate_get_document_storage_security.py
+
+      - name: Exécuter les vérifications d'accès sur le vrai handler documentaire
+        run: node --test scripts/test_document_access_rank_security.mjs
 
       - name: Garder la compatibilité des liens externes publics approuvés
         run: node scripts/test_document_external_urls.mjs
