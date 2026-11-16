@@ -19,7 +19,11 @@ REQUIRED_EDGE = {
     "validation du statut approuvé": "doc.status!=='approved'",
     "validation du projet actif": "doc.projects?.status!=='active'",
     "rang projet côté serveur": "service.rpc('project_access_rank'",
-    "refus des accès insuffisants": "if(userRank<(ranks[doc.access_level]||999))",
+    "refus des accès insuffisants": "if(!documentAccessAllowed(doc.access_level,userRank))",
+    "niveau d'accès de type texte": "typeof accessLevel==='string'",
+    "niveau d'accès explicitement déclaré": "Object.prototype.hasOwnProperty.call(ranks,accessLevel)",
+    "rang RPC fini": "Number.isFinite(userRank)",
+    "comparaison du rang réel": "userRank>=ranks[accessLevel]",
     "aucun lien externe avant contrôle d'accès": "if(doc.external_url){",
     "origine du site canonique": "const DOCUMENT_URL_BASE='https://www.benoitcantin.com';",
     "refus des URL de tiers, même HTTPS": "if(parsed.origin!==DOCUMENT_URL_BASE)return false;",
@@ -65,7 +69,7 @@ def audit(edge: str, guard: str, config: str) -> list[str]:
 
     gates = [
         "const service=serviceClient(),user=await optionalUser(req);",
-        "if(userRank<(ranks[doc.access_level]||999))",
+        "if(!documentAccessAllowed(doc.access_level,userRank))",
         "if(doc.external_url){",
         "privateDocumentLocationValid(doc.storage_bucket,doc.storage_path)",
         "service.storage.getBucket(doc.storage_bucket)",
@@ -89,7 +93,11 @@ def self_test(edge: str, guard: str, config: str) -> int:
     if errors := audit(edge, guard, config):
         raise AssertionError("La version saine est rejetée : " + " ; ".join(errors))
     edge_mutations = {
-        "décision du rang ignorée": ("if(userRank<(ranks[doc.access_level]||999))", "if(false)"),
+        "décision du rang ignorée": ("if(!documentAccessAllowed(doc.access_level,userRank))", "if(false)"),
+        "niveau prototypal accepté": ("Object.prototype.hasOwnProperty.call(ranks,accessLevel)", "true"),
+        "rang NaN ou infini accepté": ("Number.isFinite(userRank)", "true"),
+        "comparaison de rang contournée": ("userRank>=ranks[accessLevel]", "true"),
+        "niveau typé supprimé": ("typeof accessLevel==='string'", "true"),
         "URL HTTPS de tiers permise": ("if(parsed.origin!==DOCUMENT_URL_BASE)return false;", "if(relative&&parsed.origin!==DOCUMENT_URL_BASE)return false;"),
         "statut ignoré": ("doc.status!=='approved'", "false"),
         "projet inactif accepté": ("doc.projects?.status!=='active'", "false"),
