@@ -1835,6 +1835,40 @@ test('V104 : curseur tactile navigue entre écrans sans changer le PDF',()=>{
     }
   }finally{f.restore()}
 });
+test('V148 : événement de page pendant un masquage ne détruit pas la dernière position',()=>{
+  const f=fixture({observe:true,withReaderContent:true});
+  try{
+    f.viewer.scrollTo({top:350}); // 50 % du PDF courant
+    const before={status:f.status.textContent,location:f.mobileHint.textContent,
+      slider:f.screenJump.value,max:f.screenJump.max,
+      label:f.viewer.getAttribute('aria-label'),writes:f.getStatusWrites()};
+    assert.match(before.status,/Écran 2 sur 4/);
+    f.readerContent.hidden=true;
+    f.viewer.clientHeight=0;
+    f.viewer.scrollHeight=0;
+    f.viewer.emit('sinjira:reader-page-change',{});
+    // Une mise à jour des contrôles pendant un volet caché est possible
+    // dans le navigateur : elle ne doit pas mémoriser « écran 1 sur 1 ».
+    assert.equal(f.status.textContent,before.status);
+    assert.equal(f.mobileHint.textContent,before.location);
+    assert.equal(f.screenJump.hidden,false);
+    assert.equal(f.screenJump.value,before.slider);
+    assert.equal(f.screenJump.max,before.max);
+    assert.equal(f.viewer.getAttribute('aria-label'),before.label);
+    assert.equal(f.getStatusWrites(),before.writes);
+    f.windowMock.emit('resize',{}); // rotation du téléphone masqué
+    f.viewer.clientHeight=350;
+    f.viewer.scrollHeight=1750; // 1400 px de plage après rotation
+    f.readerContent.hidden=false;
+    f.notifyContent();
+    assert.equal(f.viewer.scrollTop,700,'restaurer le ratio 50 % plutôt que revenir au début');
+    assert.equal(f.viewer.dataset.readerLayout,'screens');
+    assert.match(f.status.textContent,/Écran/);
+    const after=f.swipe(-130,3);
+    assert.equal(after.defaultPrevented,true,'la navigation tactile reste disponible');
+    assert.ok(f.viewer.scrollTop>700);
+  }finally{f.restore()}
+});
 test('V147 : une confirmation du curseur dans un livre masqué ne mesure pas de viewport nul',()=>{
   const f=fixture({observe:true,withReaderContent:true});
   try{
@@ -2038,7 +2072,7 @@ test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
   assert.match(h,/id="reader-screen-count"/);
-  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.16\.147/);
+  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.16\.148/);
   assert.match(h,/sinjira-liseuse-v26\.js\?v=34\.11\.16\.143/);
 });
 test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=>{
