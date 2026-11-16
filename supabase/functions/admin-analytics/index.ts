@@ -88,9 +88,9 @@ Deno.serve(async (req) => {
 
     if (error) throw error;
 
-    const results: Record<string, number> = {};
-    const difficulty: Record<string, number> = {};
-    const cardCounts: Record<string, number> = {};
+    const results: Record<string, number> = Object.create(null);
+    const difficulty: Record<string, number> = Object.create(null);
+    const cardCounts: Record<string, number> = Object.create(null);
     let playersTotal = 0, playersCount = 0;
     let durationTotal = 0, durationCount = 0;
     let ratingTotal = 0, ratingCount = 0;
