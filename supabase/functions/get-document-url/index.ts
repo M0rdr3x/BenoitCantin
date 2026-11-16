@@ -6,6 +6,14 @@ import { privateDocumentLocationValid, isVerifiedPrivateDocumentBucket } from '.
 const MAX_REQUEST_BYTES=512;
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ranks:Record<string,number>={public:1,account:10,player:20,tester:30,admin:100};
+// Autoriser uniquement les niveaux déclarés : les propriétés héritées
+// (constructor, __proto__, toString...) ne représentent JAMAIS un droit.
+function documentAccessAllowed(accessLevel:unknown,userRank:number){
+  return typeof accessLevel==='string'
+    && Object.prototype.hasOwnProperty.call(ranks,accessLevel)
+    && Number.isFinite(userRank)
+    && userRank>=ranks[accessLevel];
+}
 const PRIVATE_JSON_HEADERS={
   ...corsHeaders,
   'Content-Type':'application/json; charset=utf-8',
@@ -76,7 +84,7 @@ Deno.serve(async(req)=>{
       }
     }else if(doc.projects?.visibility==='public')userRank=1;
 
-    if(userRank<(ranks[doc.access_level]||999)){
+    if(!documentAccessAllowed(doc.access_level,userRank)){
       return privateJson({ok:false,error:'Votre compte ne possède pas le niveau d’accès requis.'},403);
     }
 
