@@ -110,7 +110,7 @@ def self_test(source: str) -> None:
         ('résultat SQL sans error', "const {data:novel,error:novelError}=await", "const {data:novel}=await"),
         ('erreur SQL ignorée', "if(novelError)throw new Error('NOVEL_LOOKUP_UNAVAILABLE');", "if(novelError){}"),
         ('roman absent accepté', "if(!novel||typeof novel.slug!=='string'||!novel.slug.trim())throw new Error('NOVEL_NOT_FOUND');", ""),
-        ('roman I sans accord', "&&c.author_confirmed_retcon!==true", ""),
+        ('roman I cible sans accord', "if(novel?.slug==='la-cendre-du-jugement'&&c.author_confirmed_retcon!==true)throw new Error('ROMAN1_LOCKED');", ""),
         ('validation UUID retirée', "if(typeof c.novel_id!=='string'||!NOVEL_UUID_RE.test(c.novel_id))throw new Error('NOVEL_ID_INVALID');", ""),
         ('erreur SQL après écriture', "if(novelError)throw new Error('NOVEL_LOOKUP_UNAVAILABLE');",
          "if(false)throw new Error('NOVEL_LOOKUP_UNAVAILABLE');"),
