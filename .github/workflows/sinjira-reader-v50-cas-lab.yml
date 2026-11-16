@@ -1,0 +1,75 @@
+name: SINJIRA — liseuse V50 détecter écrasement ancien et tester CAS local
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-liseuse-v26.js'
+      - 'tests/security/sql/test_sinjira_reader_v50_stale_overwrite.sql'
+      - 'tests/security/test_sinjira_reader_v50_cas_lab.py'
+      - 'tests/security/sql/setup_sinjira_reader_v48.sql'
+      - 'tests/security/sql/test_sinjira_reader_v48_client_a.sql'
+      - 'tests/security/sql/test_sinjira_reader_v48_client_b.sql'
+      - 'tests/security/sql/test_sinjira_reader_v48_client_a_return.sql'
+      - 'docs/SINJIRA_READER_V50_STALE_WRITE_RISK_AND_CAS_LAB.md'
+      - '.github/workflows/sinjira-reader-v50-cas-lab.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-liseuse-v26.js'
+      - 'tests/security/sql/test_sinjira_reader_v50_stale_overwrite.sql'
+      - 'tests/security/test_sinjira_reader_v50_cas_lab.py'
+      - 'tests/security/sql/setup_sinjira_reader_v48.sql'
+      - 'tests/security/sql/test_sinjira_reader_v48_client_a.sql'
+      - 'tests/security/sql/test_sinjira_reader_v48_client_b.sql'
+      - 'tests/security/sql/test_sinjira_reader_v48_client_a_return.sql'
+      - 'docs/SINJIRA_READER_V50_STALE_WRITE_RISK_AND_CAS_LAB.md'
+      - '.github/workflows/sinjira-reader-v50-cas-lab.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-reader-v50-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  stale-write-v50:
+    name: Reproduire perte de page et confirmer un CAS fictif sans production
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17.6
+        env:
+          POSTGRES_DB: sinjira_reader_v50_lab
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - '127.0.0.1:5432:5432'
+        options: >-
+          --health-cmd=pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 8
+    steps:
+      - name: Checkout sans persistence de credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Contrat statique de huit tests, aucune connexion distante
+        run: python3 -m unittest discover -s tests/security -p test_sinjira_reader_v50_cas_lab.py -v
+      - name: Appliquer la migration V32 originale sur base fictive, puis A/B/A
+        env:
+          PGCONNECT_TIMEOUT: '10'
+        run: |
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v50_lab -v ON_ERROR_STOP=1 -f tests/security/sql/setup_sinjira_reader_v48.sql
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v50_lab -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v48_client_a.sql
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v50_lab -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v48_client_b.sql
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v50_lab -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v48_client_a_return.sql
+      - name: Prouver écrasement de page 42 par sauvegarde périmée et refus CAS de laboratoire
+        env:
+          PGCONNECT_TIMEOUT: '10'
+        run: |
+          psql --no-psqlrc -h 127.0.0.1 -U postgres -d sinjira_reader_v50_lab -v ON_ERROR_STOP=1 -f tests/security/sql/test_sinjira_reader_v50_stale_overwrite.sql
+      - name: Décision — risque du client encore ouvert, aucune migration autorisée
+        run: echo "V50-NO_GO — le banc prouve le risque et teste une protection possible; aucune correction produit ni migration production."
