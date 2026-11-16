@@ -673,7 +673,7 @@ export default function App() {
       return false;
     }
 
-    if (parsed.protocol === 'https:' && allowedHosts.has(parsed.hostname) && !parsed.port) {
+    if (parsed.protocol === 'https:' && allowedHosts.has(parsed.hostname)) {
       if (isVaultUrl(url) && Date.now() >= vaultLocalGateUntilRef.current) {
         void navigate(VAULT_PATH);
         return false;
