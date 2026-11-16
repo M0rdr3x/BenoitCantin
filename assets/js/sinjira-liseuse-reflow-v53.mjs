@@ -226,6 +226,9 @@ export function bindReaderScreenMode({
   // V106 : garder la sélection d'écran pendant le drag sans persister ni
   // modifier la zone lue tant que le curseur n'a pas été relâché.
   let jumpPreview=null,jumpCancelled=false;
+  // V148 : derniere position du curseur confirmee SUR un viewport visible.
+  // Un touchcancel en arriere-plan doit pouvoir la rendre sans mesurer 0 px.
+  let committedJump=null;
   let pendingLayoutRatio=null; // V56 : une seule position de référence par réagencement
   let lastAnchor=null,pendingLayoutAnchor=null; // V63 : ancre locale non persistée
   // V144 : conserver en mémoire la dernière position légitime pendant une
@@ -325,6 +328,7 @@ export function bindReaderScreenMode({
         ' du livre · relâcher pour lire cet écran';
       if(screenJump.getAttribute?.('aria-valuetext')!==description)
         screenJump.setAttribute?.('aria-valuetext',description);
+      if(jumpPreview===null)committedJump={value:current,description};
     }
     // Une zone aria-live ne doit pas annoncer la même phrase à chaque scroll.
     if(status.textContent!==announced)status.textContent=announced;
@@ -529,7 +533,14 @@ export function bindReaderScreenMode({
       // n'envoie jamais de confirmation de fin de glissement.
       jumpCancelled=true;
       jumpPreview=null;
-      sync();
+      if(canNavigate())sync();
+      else if(screenJump&&committedJump){
+        // Ne restaurer que le contrôle tactile ; garder le statut, le ratio
+        // et l'ancre du livre intacts pendant sa suspension.
+        screenJump.value=committedJump.value;
+        if(screenJump.getAttribute?.('aria-valuetext')!==committedJump.description)
+          screenJump.setAttribute?.('aria-valuetext',committedJump.description);
+      }
     }
   };
   // V91 : un changement d'application, une fermeture d'onglet ou la perte
