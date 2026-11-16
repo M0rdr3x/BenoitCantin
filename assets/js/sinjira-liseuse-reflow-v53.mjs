@@ -825,8 +825,20 @@ export function bindReaderScreenMode({
     // V141 : cet observateur capte l'événement AVANT le gestionnaire V26.
     // Un input de police/taille reçu avec le livre masqué ne doit pas
     // mémoriser une ancre de viewport nul ou préparer un faux reflow.
-    if(!isPaged()||!canNavigate()||!['reader-size','reader-font','reader-line-height',
+    if(!isPaged()||!['reader-size','reader-font','reader-line-height',
       'reader-letter-spacing','reader-text-width'].includes(event.target?.id))return;
+    // V149 : une préférence chargée/modifiée pendant que le livre ou l'onglet
+    // est masqué peut modifier les dimensions CSS sans déclencher resize.
+    // Différer le retour au passage lu depuis le DERNIER ratio/ancre visibles;
+    // ne jamais inspecter le DOM du roman caché ni mesurer un viewport nul.
+    if(!canNavigate()){
+      gesture=null;
+      if(deferredLayoutRatio===null){
+        deferredLayoutRatio=lastRatio;
+        deferredLayoutAnchor=lastAnchor;
+      }
+      return;
+    }
     // V129 : le réagencement peut revenir à la géométrie initiale
     // (taille 20→34→20) avant touchend ; un ancien doigt n'a alors plus
     // le droit de changer d'écran. Garder l'ancrage V63 intact.
