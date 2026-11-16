@@ -39,14 +39,22 @@ Deno.serve(async (req) => {
     const user = await requiredUser(req);
     const body = await readBoundedJson(req);
 
-    if('all' in body && typeof body.all!=='boolean'){
+    // Toute suppression globale exige une portée explicite et non ambiguë.
+    // Les champs inconnus et toute présence de session_id, même null, vide
+    // ou mal typée, interdisent la révocation de toutes les contributions.
+    const hasAll=Object.prototype.hasOwnProperty.call(body,'all');
+    const hasSessionId=Object.prototype.hasOwnProperty.call(body,'session_id');
+    if(Object.keys(body).some(key=>key!=='all'&&key!=='session_id')){
+      return privateJson({ok:false,error:'Portée de révocation invalide.',code:'INVALID_SCOPE'},400);
+    }
+    if(hasAll && typeof body.all!=='boolean'){
       return privateJson({ok:false,error:'Le champ all doit être booléen.',code:'INVALID_SCOPE'},400);
     }
 
-    const revokeAll=body.all===true;
-    const sessionId=typeof body.session_id==='string'?body.session_id.trim():'';
+    const revokeAll=hasAll && body.all===true;
+    const sessionId=hasSessionId&&typeof body.session_id==='string'?body.session_id.trim():'';
 
-    if(revokeAll && sessionId){
+    if(revokeAll && hasSessionId){
       return privateJson({ok:false,error:'Choisissez soit toutes les contributions, soit une session précise.',code:'AMBIGUOUS_SCOPE'},400);
     }
     if(!revokeAll && !UUID_RE.test(sessionId)){
