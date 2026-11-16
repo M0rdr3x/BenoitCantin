@@ -552,7 +552,13 @@ function changePage(value){
   // champs modifiés par le navigateur à leur numéro de page canonique.
   if(document.visibilityState==='hidden'||$('reader-content').hidden||
      isFull&&(state.privatePaused||state.accessInvalidated)){
-    updateToolbar();
+    // V137 : remettre les trois champs à jour sans déclencher le signal
+    // général page-change. Celui-ci repaginerait le viewer masqué
+    // (clientHeight=0) et laisserait parfois le curseur d'écran invisible
+    // à la réouverture (régression Chromium lors de la réception V137).
+    $('reader-page').value=String(state.page);
+    $('reader-range').value=String(state.page);
+    $('reader-chapters').value=String(currentChapter()[0]);
     return;
   }
   const next=clamp(Math.round(value),1,state.pdf.numPages);

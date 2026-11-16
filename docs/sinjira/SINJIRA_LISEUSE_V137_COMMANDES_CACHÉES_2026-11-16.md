@@ -9,7 +9,7 @@ Les gestes tactiles du moteur V52/V53 vérifient déjà si le livre est masqué,
 ## Correction
 
 - Au point d'entrée commun `changePage()`, refuser la navigation lorsque `visibilityState === 'hidden'`, lorsque `#reader-content` est masqué, ou lorsque l'édition intégrale est suspendue/révoquée.
-- Ne pas écrire de nouvelle progression, ne pas lancer de rendu ni changer la page. Re-synchroniser uniquement les contrôles de page avec la valeur canonique pour éviter une fausse page affichée après une action refusée.
+- Ne pas écrire de nouvelle progression, ne pas lancer de rendu ni changer la page. Restaurer directement le champ numérique, le curseur et le chapitre à leur valeur canonique, **sans émettre de signal global de changement de page pendant que le lecteur est masqué**. Une première tentative déclenchait une repagination avec hauteur nulle et laissait le curseur d'écran caché sur Chromium après la réouverture.
 - Aucune nouvelle permission ou API privée; les contrôles d'autorisation serveur et les gestes précédemment validés restent inchangés.
 
 ## Régression
