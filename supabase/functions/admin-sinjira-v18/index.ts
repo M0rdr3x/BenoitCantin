@@ -4,6 +4,7 @@ import {requiredAdmin} from '../_shared/auth.ts';
 import {loadSinjiraCanonContext} from '../_shared/sinjira-canon-context.ts';
 
 const MAX_REQUEST_BYTES=262144;
+const NOVEL_UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PRIVATE_HEADERS={
   ...corsHeaders,
   'Content-Type':'application/json; charset=utf-8',
@@ -16,7 +17,8 @@ const SAFE_LOG_CODES=new Set([
   'AUTH_REQUIRED','ADMIN_REQUIRED','MFA_REQUIRED','MFA_SETUP_REQUIRED','MFA_STATE_UNAVAILABLE',
   'JSON_REQUIRED','REQUEST_TOO_LARGE','INVALID_JSON','SOURCE_PURGED',
   'SOURCE_PURGE_CONFIRMATION_REQUIRED','SOURCE_PURGE_STORAGE_FAILED',
-  'CANON_CONFIRMATION_REQUIRED','NOTIFICATION_ID_REQUIRED','ROMAN1_LOCKED'
+  'CANON_CONFIRMATION_REQUIRED','NOTIFICATION_ID_REQUIRED','ROMAN1_LOCKED',
+  'NOVEL_ID_INVALID','NOVEL_LOOKUP_UNAVAILABLE','NOVEL_NOT_FOUND'
 ]);
 
 function privateJson(data:unknown,status=200){
@@ -173,7 +175,14 @@ Deno.serve(async(req)=>{
       const c=b.character||{};
       const canonStatus=['PROVISOIRE','CANON','SECRET_AUTEUR','A_ARBITRER'].includes(c.canon_status)?c.canon_status:'PROVISOIRE';
       if(canonStatus==='CANON'&&c.author_confirmed_canon!==true)throw new Error('CANON_CONFIRMATION_REQUIRED');
-      if(c.novel_id){const {data:novel}=await s.from('novels').select('slug').eq('id',c.novel_id).maybeSingle();if(novel?.slug==='la-cendre-du-jugement'&&c.author_confirmed_retcon!==true)throw new Error('ROMAN1_LOCKED')}
+      if(c.novel_id){
+        // Refus par défaut : une panne SQL ne signifie pas que le Roman I est déverrouillé.
+        if(typeof c.novel_id!=='string'||!NOVEL_UUID_RE.test(c.novel_id))throw new Error('NOVEL_ID_INVALID');
+        const {data:novel,error:novelError}=await s.from('novels').select('slug').eq('id',c.novel_id).maybeSingle();
+        if(novelError)throw new Error('NOVEL_LOOKUP_UNAVAILABLE');
+        if(!novel||typeof novel.slug!=='string')throw new Error('NOVEL_NOT_FOUND');
+        if(novel?.slug==='la-cendre-du-jugement'&&c.author_confirmed_retcon!==true)throw new Error('ROMAN1_LOCKED');
+      }
       const payload={public_name:String(c.public_name||'').slice(0,160),public_description:String(c.public_description||'').slice(0,8000),status:c.status||'author_review',novel_id:c.novel_id||null,novel_note:String(c.novel_note||'').slice(0,500),visible_to_user:Boolean(c.visible_to_user),canon_status:canonStatus,canon_version:String(c.canon_version||'v1.0').slice(0,30),bible:c.bible||{}};
       const {data,error}=await s.from('characters').update(payload).eq('id',c.id).select('*').single();if(error)throw error;
       if(data?.submission_id){await s.from('character_submissions').update({status:payload.status}).eq('id',data.submission_id);await statusEvent(s,data.submission_id,data.user_id,payload.status,payload.novel_id?'Roman attribué / statut mis à jour.':'Statut du personnage mis à jour.')}
@@ -198,6 +207,9 @@ Deno.serve(async(req)=>{
     if(e?.message==='CANON_CONFIRMATION_REQUIRED')return privateJson({ok:false,error:'Confirmez explicitement que ce personnage est établi par un manuscrit officiel finalisé avant de le passer CANON.'},409);
     if(e?.message==='NOTIFICATION_ID_REQUIRED')return privateJson({ok:false,error:'Identifiant de notification requis.'},400);
     if(e?.message==='ROMAN1_LOCKED')return privateJson({ok:false,error:'Le Roman 1 est verrouillé. Pour y attribuer rétroactivement un nouveau personnage, confirmez explicitement la décision auteur / retcon.'},409);
+    if(e?.message==='NOVEL_ID_INVALID')return privateJson({ok:false,error:'Identifiant de roman invalide.',code:'NOVEL_ID_INVALID'},400);
+    if(e?.message==='NOVEL_NOT_FOUND')return privateJson({ok:false,error:'Roman introuvable ou incohérent.',code:'NOVEL_NOT_FOUND'},400);
+    if(e?.message==='NOVEL_LOOKUP_UNAVAILABLE')return privateJson({ok:false,error:'Vérification du roman temporairement indisponible. Aucune modification effectuée.',code:'NOVEL_LOOKUP_UNAVAILABLE'},503);
     return privateJson({ok:false,error:'Erreur administration V18.',code:'ADMIN_V18_FAILED'},500);
   }
 });
