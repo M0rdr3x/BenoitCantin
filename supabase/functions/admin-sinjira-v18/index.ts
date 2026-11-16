@@ -181,7 +181,7 @@ Deno.serve(async(req)=>{
         if(typeof c.novel_id!=='string'||!NOVEL_UUID_RE.test(c.novel_id))throw new Error('NOVEL_ID_INVALID');
         const {data:novel,error:novelError}=await s.from('novels').select('slug').eq('id',c.novel_id).maybeSingle();
         if(novelError)throw new Error('NOVEL_LOOKUP_UNAVAILABLE');
-        if(!novel||typeof novel.slug!=='string')throw new Error('NOVEL_NOT_FOUND');
+        if(!novel||typeof novel.slug!=='string'||!novel.slug.trim())throw new Error('NOVEL_NOT_FOUND');
         if(novel?.slug==='la-cendre-du-jugement'&&c.author_confirmed_retcon!==true)throw new Error('ROMAN1_LOCKED');
       }
       // Vérifier aussi le roman ACTUEL : retirer un personnage du Roman I ou
@@ -192,7 +192,7 @@ Deno.serve(async(req)=>{
       if(currentError)throw new Error('CHARACTER_LOOKUP_UNAVAILABLE');
       if(!current||current.id!==c.id)throw new Error('CHARACTER_NOT_FOUND');
       if(current.novel_id){
-        if(typeof current.novels?.slug!=='string')throw new Error('CHARACTER_NOVEL_UNAVAILABLE');
+        if(typeof current.novels?.slug!=='string'||!current.novels.slug.trim())throw new Error('CHARACTER_NOVEL_UNAVAILABLE');
         if(current.novels.slug==='la-cendre-du-jugement'&&c.author_confirmed_retcon!==true)throw new Error('ROMAN1_LOCKED');
       }
       const payload={public_name:String(c.public_name||'').slice(0,160),public_description:String(c.public_description||'').slice(0,8000),status:c.status||'author_review',novel_id:c.novel_id||null,novel_note:String(c.novel_note||'').slice(0,500),visible_to_user:Boolean(c.visible_to_user),canon_status:canonStatus,canon_version:String(c.canon_version||'v1.0').slice(0,30),bible:c.bible||{}};
