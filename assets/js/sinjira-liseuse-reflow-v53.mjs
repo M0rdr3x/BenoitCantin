@@ -254,6 +254,16 @@ export function bindReaderScreenMode({
     clientHeight:viewer.clientHeight,...textMetrics(text)
   });
   const sync=()=>{
+    // V148 : les événements PDF, boutons et préférences peuvent être livrés
+    // pendant que la fenêtre ou le livre est masqué. Une mesure à hauteur
+    // nulle remplacerait la position valide par « écran 1 sur 1 » et
+    // écraserait le dernier ratio et la dernière ancre de lecture.
+    // Seule l'annonce privée antérieure est effacée; le retour visible
+    // recalculera la présentation depuis la dernière position légitime.
+    if(!canNavigate()){
+      clearPageAnnouncement();
+      return;
+    }
     const active=isPaged();
     // Un écran paginé possède déjà son propre aria-live : supprimer
     // l'annonce PDF précédente, sans créer une annonce vocale en double.
