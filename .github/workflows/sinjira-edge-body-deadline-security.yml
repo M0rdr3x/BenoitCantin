@@ -8,6 +8,9 @@ on:
       - 'supabase/functions/personal-ai/index.ts'
       - 'supabase/functions/conscience-vault/index.ts'
       - 'supabase/functions/nova-civic-poll/index.ts'
+      - 'supabase/functions/fracture-engine-gateway/index.ts'
+      - 'scripts/validate_fracture_engine_gateway_security.py'
+      - 'scripts/test_fracture_gateway_body_deadline.mjs'
       - 'scripts/test_nova_poll_body_read.cjs'
       - 'scripts/test_edge_body_deadline.mjs'
       - '.github/workflows/sinjira-edge-body-deadline-security.yml'
@@ -18,6 +21,9 @@ on:
       - 'supabase/functions/personal-ai/index.ts'
       - 'supabase/functions/conscience-vault/index.ts'
       - 'supabase/functions/nova-civic-poll/index.ts'
+      - 'supabase/functions/fracture-engine-gateway/index.ts'
+      - 'scripts/validate_fracture_engine_gateway_security.py'
+      - 'scripts/test_fracture_gateway_body_deadline.mjs'
       - 'scripts/test_nova_poll_body_read.cjs'
       - 'scripts/test_edge_body_deadline.mjs'
       - '.github/workflows/sinjira-edge-body-deadline-security.yml'
@@ -39,5 +45,7 @@ jobs:
       - name: Tester les délais, interruptions et refus des corps invalides
         run: |
           node --version
-          node --test scripts/test_edge_body_deadline.mjs
+          node --test scripts/test_edge_body_deadline.mjs scripts/test_fracture_gateway_body_deadline.mjs
           node scripts/test_nova_poll_body_read.cjs
+          python3 scripts/validate_fracture_engine_gateway_security.py --self-test
+          python3 scripts/validate_fracture_engine_gateway_security.py
