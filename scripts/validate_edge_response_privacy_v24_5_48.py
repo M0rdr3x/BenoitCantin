@@ -85,11 +85,15 @@ def main()->int:
         'Number(declared) > maxBytes',
         'byteCount > maxBytes',
         "new TextDecoder('utf-8', { fatal: true })",
-        'await reader.cancel().catch(() => {})',
+        'function cancelReaderWithoutWaiting(reader)',
+        'void Promise.resolve(reader.cancel()).catch(() => {})',
+        'cancelReaderWithoutWaiting(reader);',
     ]
     for marker in shared_markers:
         if marker not in limited:
             errors.append(f'Lecteur HTTP en flux non borné: {marker}')
+    if re.search(r'\bawait\s+reader\.cancel\s*\(', limited):
+        errors.append('Lecteur HTTP: attente bloquante de cancel() interdite.')
 
     for function_name, code in [('send-game-report',report),('get-document-url',docurl)]:
         for unsafe in ('await req.text()', 'await req.json()'):

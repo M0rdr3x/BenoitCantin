@@ -1,0 +1,59 @@
+name: Sécurité Edge — annulations HTTP non bloquantes
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/functions/_shared/limited-body.mjs'
+      - 'scripts/test_edge_nonblocking_cancel.mjs'
+      - 'scripts/test_public_edge_body_limits.mjs'
+      - 'scripts/test_public_edge_binary_limits.mjs'
+      - 'scripts/validate_edge_response_privacy_v24_5_48.py'
+      - 'scripts/validate_edge_template_fetch_v24_5_49.py'
+      - 'scripts/test_streaming_edge_legacy_guard_regressions.py'
+      - '.github/workflows/sinjira-edge-nonblocking-cancel-security.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/_shared/limited-body.mjs'
+      - 'scripts/test_edge_nonblocking_cancel.mjs'
+      - 'scripts/test_public_edge_body_limits.mjs'
+      - 'scripts/test_public_edge_binary_limits.mjs'
+      - 'scripts/validate_edge_response_privacy_v24_5_48.py'
+      - 'scripts/validate_edge_template_fetch_v24_5_49.py'
+      - 'scripts/test_streaming_edge_legacy_guard_regressions.py'
+      - '.github/workflows/sinjira-edge-nonblocking-cancel-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  nonblocking-cancel:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Checkout sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Node.js figé
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+
+      - name: Tester le refus lorsque cancel ne se termine jamais
+        run: node --test scripts/test_edge_nonblocking_cancel.mjs
+
+      - name: Préserver la lecture JSON bornée du site
+        run: node scripts/test_public_edge_body_limits.mjs
+
+      - name: Préserver la lecture binaire bornée des PDF
+        run: node scripts/test_public_edge_binary_limits.mjs
+
+      - name: Vérifier le contrat de confidentialité historique
+        run: |
+          python3 scripts/validate_edge_response_privacy_v24_5_48.py
+          python3 scripts/validate_edge_template_fetch_v24_5_49.py
+          python3 scripts/test_streaming_edge_legacy_guard_regressions.py
