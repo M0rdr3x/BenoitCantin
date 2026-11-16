@@ -20,7 +20,7 @@ function compileAndRun(source, sandbox) {
     reportDiagnostics: true,
   });
   const errors = (output.diagnostics || []).filter(d => d.category === ts.DiagnosticCategory.Error);
-  assert.equal(errors.length, 0, 'Les fonctions de sécurité extraites doivent compiler');
+  assert.equal(errors.length, 0, 'Les fonctions de sécurité extraites doivent compiler: ' + errors.map(e => ts.flattenDiagnosticMessageText(e.messageText, '\n')).join(' | '));
   vm.runInNewContext(output.outputText, sandbox, { filename: 'sinjira-real-origin-guards.js' });
   return sandbox.__boundary;
 }
