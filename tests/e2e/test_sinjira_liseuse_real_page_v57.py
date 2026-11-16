@@ -153,15 +153,37 @@ def run(playwright, browser_type, url):
             change(chapters,'25');
             document.querySelector('#reader-next').click();
             document.querySelector('#reader-previous').click();
+            // V140 : mode et zoom sont des chemins de rendu indépendants
+            // de changePage(). Une transition hors écran doit aussi les
+            // laisser inchangés, y compris le libellé d'accessibilité.
+            const mode=document.querySelector('#reader-mode');
+            const zoom=document.querySelector('#reader-zoom');
+            const beforeDisplay={
+              mode:mode.getAttribute('aria-pressed'),
+              modeText:mode.textContent,zoom:zoom.value,
+              page:field.value
+            };
+            mode.click();
+            zoom.value='1.5';
+            zoom.dispatchEvent(new Event('change',{bubbles:true}));
+            const afterDisplay={
+              mode:mode.getAttribute('aria-pressed'),
+              modeText:mode.textContent,zoom:zoom.value,
+              page:field.value
+            };
             return {initial,after:{
               page:field.value,range:range.value,chapters:chapters.value,
               scroll:viewer.scrollTop
-            },contentHidden:content.hidden};
+            },beforeDisplay,afterDisplay,contentHidden:content.hidden};
           }finally{content.hidden=false}
         }""")
         assert hidden_direct_navigation["contentHidden"],hidden_direct_navigation
         assert hidden_direct_navigation["after"]==hidden_direct_navigation["initial"],(
             "V137: aucune navigation directe ni valeur trompeuse lorsque le livre est masqué",
+            hidden_direct_navigation
+        )
+        assert hidden_direct_navigation["afterDisplay"]==hidden_direct_navigation["beforeDisplay"],(
+            "V140: le PDF/texte et le zoom ne doivent pas changer quand le livre est caché",
             hidden_direct_navigation
         )
         # La vraie navigation doit rester utilisable après réouverture.

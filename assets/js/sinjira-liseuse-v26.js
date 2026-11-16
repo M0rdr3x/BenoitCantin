@@ -639,6 +639,10 @@ function bindControls(){
   $('reader-range').addEventListener('change',event=>changePage(event.target.value));
   $('reader-chapters').addEventListener('change',event=>changePage(event.target.value));
   $('reader-mode').addEventListener('click',()=>{
+    // V140 : pendant la suspension d'un roman privé ou le masquage de
+    // l'écran, une commande tardive ne doit pas provoquer l'extraction
+    // PDF/texte ni modifier le mode de lecture choisi auparavant.
+    if(!canRecordReaderInteraction())return;
     stopNarration(false);
     state.mode=state.mode==='page'?'texte':'page';
     setTheme();renderPage();
@@ -720,6 +724,12 @@ function bindControls(){
     }
   });
   $('reader-zoom').addEventListener('change',event=>{
+    // V140 : un contrôle de zoom caché ne doit pas faire re-rendre un
+    // PDF intégral pendant la suspension de son autorisation.
+    if(!canRecordReaderInteraction()){
+      event.target.value=String(state.zoom);
+      return;
+    }
     const visiblePdf=state.mode==='page'||isAutomaticPdfFallbackVisible();
     state.zoom=clamp(event.target.value,.8,1.5);setTheme();
     if(visiblePdf)refreshVisiblePdfPreservingSpot();
