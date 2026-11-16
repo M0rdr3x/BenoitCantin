@@ -1835,6 +1835,52 @@ test('V104 : curseur tactile navigue entre écrans sans changer le PDF',()=>{
     }
   }finally{f.restore()}
 });
+test('V147 : une confirmation du curseur dans un livre masqué ne mesure pas de viewport nul',()=>{
+  const f=fixture({observe:true,withReaderContent:true});
+  try{
+    let turns=0;
+    f.viewer.dispatchEvent=event=>{
+      if(event.type==='sinjira:reader-screen-turn')turns++;
+      return true;
+    };
+    f.viewer.scrollTop=315;
+    f.viewer.emit('scroll',{});
+    const beforeStatus=f.status.textContent;
+    const beforeLabel=f.viewer.getAttribute('aria-label');
+    const beforeWrites=f.getStatusWrites();
+    assert.match(beforeStatus,/Écran 2 sur 4/);
+    f.readerContent.hidden=true;
+    f.notifyContent();
+    // La géométrie d'une page display:none peut être nulle au moment
+    // où iOS/Android émet un ancien événement change du curseur.
+    f.viewer.clientHeight=0;
+    f.viewer.scrollHeight=0;
+    f.screenJump.value='4';
+    f.screenJump.emit('change',{target:f.screenJump});
+    assert.equal(f.getStatusWrites(),beforeWrites);
+    assert.equal(f.status.textContent,beforeStatus);
+    assert.equal(f.viewer.getAttribute('aria-label'),beforeLabel);
+    assert.equal(turns,0);
+    assert.equal(f.pageField.value,'4');
+    // Même cas quand seul l'onglet est en arrière-plan.
+    f.readerContent.hidden=false;
+    f.documentMock.hidden=true;
+    f.screenJump.emit('change',{target:f.screenJump});
+    assert.equal(f.getStatusWrites(),beforeWrites);
+    assert.equal(turns,0);
+    f.viewer.clientHeight=350;
+    f.viewer.scrollHeight=1050;
+    f.documentMock.hidden=false;
+    f.notifyContent();
+    assert.equal(f.screenJump.value,'2','réafficher la position réellement lue');
+    assert.equal(f.viewer.scrollTop,315);
+    f.screenJump.value='3';
+    f.screenJump.emit('input',{target:f.screenJump});
+    f.screenJump.emit('change',{target:f.screenJump});
+    assert.equal(f.viewer.scrollTop,630,'nouvelle interaction volontaire acceptée');
+    assert.equal(turns,1);
+  }finally{f.restore()}
+});
 test('V104 : le curseur est désactivé en PDF ou en texte continu',()=>{
   const f=fixture();
   try{
