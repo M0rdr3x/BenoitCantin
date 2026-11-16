@@ -545,6 +545,16 @@ function renderPage(){
 }
 function changePage(value){
   if(!state.pdf)return;
+  // V137 : boutons, champ numérique, curseur, chapitres et repères
+  // appellent cette même commande. Un contrôle direct ne peut contourner
+  // le verrou de l'édition privée pendant la suspension ou la révocation.
+  // Ne rien persister, ne pas solliciter le rendu privé, et rétablir les
+  // champs modifiés par le navigateur à leur numéro de page canonique.
+  if(document.visibilityState==='hidden'||$('reader-content').hidden||
+     isFull&&(state.privatePaused||state.accessInvalidated)){
+    updateToolbar();
+    return;
+  }
   const next=clamp(Math.round(value),1,state.pdf.numPages);
   if(next===state.page)return;
   flushScrollPosition();

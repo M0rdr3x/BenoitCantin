@@ -130,6 +130,44 @@ def run(playwright, browser_type, url):
             "reason":"Page initiale PDF incorrectement repositionnée",
             "scroll":first["scroll"],"max":first["max"],"page":first["page"]}
         assert "LIVRE DE TEST · Page 3" in first["text"]
+        # V137 : les éléments de navigation qui appellent V26 directement
+        # (champ de page, curseur, chapitres) ne doivent ni tourner ni
+        # persister une position quand le roman est masqué. En mode écran
+        # tactile, les swipes restent déjà bloqués par V52/V53.
+        hidden_direct_navigation=page.evaluate("""()=>{
+          const content=document.querySelector('#reader-content');
+          const field=document.querySelector('#reader-page');
+          const range=document.querySelector('#reader-range');
+          const chapters=document.querySelector('#reader-chapters');
+          const viewer=document.querySelector('#reader-viewer');
+          const initial={page:field.value,range:range.value,chapters:chapters.value,
+            scroll:viewer.scrollTop};
+          content.hidden=true;
+          const change=(el,value)=>{
+            el.value=value;
+            el.dispatchEvent(new Event('change',{bubbles:true}));
+          };
+          try{
+            change(field,'17');
+            change(range,'19');
+            change(chapters,'25');
+            document.querySelector('#reader-next').click();
+            document.querySelector('#reader-previous').click();
+            return {initial,after:{
+              page:field.value,range:range.value,chapters:chapters.value,
+              scroll:viewer.scrollTop
+            },contentHidden:content.hidden};
+          }finally{content.hidden=false}
+        }""")
+        assert hidden_direct_navigation["contentHidden"],hidden_direct_navigation
+        assert hidden_direct_navigation["after"]==hidden_direct_navigation["initial"],(
+            "V137: aucune navigation directe ni valeur trompeuse lorsque le livre est masqué",
+            hidden_direct_navigation
+        )
+        # La vraie navigation doit rester utilisable après réouverture.
+        page.wait_for_function("""()=>!document.querySelector('#reader-content').hidden&&
+          document.querySelector('#reader-viewer').dataset.readerLayout==='screens'""")
+
         # V102 : l'emplacement du lecteur est visible dans les commandes
         # mobiles et indépendant des extraits privés du texte.
         # La démo réelle possède 82 pages ; la fixture simplifiée en a 5.
