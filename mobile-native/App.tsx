@@ -50,7 +50,7 @@ function configuredWebOrigin() {
   const raw = String(Constants.expoConfig?.extra?.webOrigin || DEFAULT_ORIGIN).replace(/\/+$/, '');
   try {
     const parsed = new URL(raw);
-    if (parsed.protocol === 'https:' && ALLOWED_WEB_HOSTS.has(parsed.hostname)) return parsed.origin;
+    if (parsed.protocol === 'https:' && !parsed.port && !parsed.username && !parsed.password && ALLOWED_WEB_HOSTS.has(parsed.hostname)) return parsed.origin;
   } catch {}
   return DEFAULT_ORIGIN;
 }
@@ -103,7 +103,7 @@ function normalizeSinjiraUrl(url: string | null): string | null {
   }
   try {
     const parsed = new URL(url);
-    if (parsed.protocol === 'https:' && ALLOWED_WEB_HOSTS.has(parsed.hostname)) {
+    if (parsed.protocol === 'https:' && !parsed.port && !parsed.username && !parsed.password && ALLOWED_WEB_HOSTS.has(parsed.hostname)) {
       return `${ORIGIN}${parsed.pathname}${parsed.search}${parsed.hash}`;
     }
   } catch {
@@ -115,7 +115,7 @@ function normalizeSinjiraUrl(url: string | null): string | null {
 function shareableSinjiraUrl(url: string): string | null {
   try {
     const parsed = new URL(url, ORIGIN);
-    if (parsed.protocol !== 'https:' || !ALLOWED_WEB_HOSTS.has(parsed.hostname)) return null;
+    if (parsed.protocol !== 'https:' || parsed.port || parsed.username || parsed.password || !ALLOWED_WEB_HOSTS.has(parsed.hostname)) return null;
     const pathname = parsed.pathname || '/';
     const normalizedPath = pathname.toLowerCase();
     const privatePath = PRIVATE_SHARE_PATH_PREFIXES.some((prefix) => {
@@ -227,7 +227,7 @@ function isPersonalAiUrl(url: string) {
 function isNativeHomeUrl(url: string) {
   try {
     const parsed = new URL(url, ORIGIN);
-    return parsed.protocol === 'https:' && ALLOWED_WEB_HOSTS.has(parsed.hostname)
+    return parsed.protocol === 'https:' && !parsed.port && !parsed.username && !parsed.password && ALLOWED_WEB_HOSTS.has(parsed.hostname)
       && parsed.pathname === '/app/' && !parsed.search && !parsed.hash;
   } catch {
     return false;
@@ -666,7 +666,14 @@ export default function App() {
       return false;
     }
 
-    if (parsed.protocol === 'https:' && allowedHosts.has(parsed.hostname)) {
+    // Un port HTTPS non standard est une origine différente. La WebView injecte
+    // des clés locales et des tokens push : ne jamais la charger sur ce port.
+    if (parsed.protocol === 'https:' && allowedHosts.has(parsed.hostname) && parsed.port) {
+      setNativeMessage('Navigation bloquée : port HTTPS non standard sur un domaine SINJIRA.');
+      return false;
+    }
+
+    if (parsed.protocol === 'https:' && allowedHosts.has(parsed.hostname) && !parsed.port) {
       if (isVaultUrl(url) && Date.now() >= vaultLocalGateUntilRef.current) {
         void navigate(VAULT_PATH);
         return false;
