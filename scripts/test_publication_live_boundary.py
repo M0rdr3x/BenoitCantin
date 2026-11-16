@@ -57,6 +57,14 @@ REQUIRED_ROUTES = (
     "/projets/projet-nova/official/versions/V317/V317_REGISTRE_CHANGEMENTS_SECURITE_CONFIGURATIONS_MODELE.csv",
     "/projets/projet-nova/official/versions/V316/V316_FINAL_INDEPENDENT_VERIFICATION.json",
     "/ADMINISTRATION_FORMULAIRES.md",
+    # Routes privées/legacy supplémentaires, vérifiées en production à HTTP 404.
+    "/script.js",
+    "/.env",
+    "/.env.production",
+    "/.git/config",
+    "/projets/sinjira/romans/livre-1-release.json",
+    "/projets/projet-nova/netlify.toml",
+    "/projets/projet-nova/data/sondage-individuel.json",
 )
 
 
