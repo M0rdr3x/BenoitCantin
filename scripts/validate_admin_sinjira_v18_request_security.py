@@ -28,7 +28,8 @@ REQUIRED = {
     'effacement payload source': 'source_payload:null,photo_path:null,source_purged_at:new Date().toISOString()',
     'confirmation humaine CANON': "canonStatus==='CANON'&&c.author_confirmed_canon!==true",
     'erreur confirmation CANON': 'CANON_CONFIRMATION_REQUIRED',
-    'Livre I verrouillé': "novel?.slug==='la-cendre-du-jugement'",
+    'Livre I verrouillé à l’arrivée': "if(novel?.slug==='la-cendre-du-jugement'&&c.author_confirmed_retcon!==true)throw new Error('ROMAN1_LOCKED');",
+    'Livre I verrouillé au départ': "if(current.novels.slug==='la-cendre-du-jugement'&&c.author_confirmed_retcon!==true)throw new Error('ROMAN1_LOCKED');",
     'confirmation humaine retcon': 'c.author_confirmed_retcon!==true',
     'erreur retcon Livre I': 'ROMAN1_LOCKED',
     'IA distante désactivée': 'REMOTE_AI_DISABLED_FREE_ONLY',
@@ -132,7 +133,8 @@ def self_test() -> None:
         'purge payload retirée': real.replace('source_payload:null,photo_path:null,source_purged_at:new Date().toISOString()', 'source_purged_at:new Date().toISOString()', 1),
         'suppression photo retirée': real.replace("remove([sub.photo_path])", "list(sub.photo_path)", 1),
         'confirmation CANON retirée': real.replace("if(canonStatus==='CANON'&&c.author_confirmed_canon!==true)throw new Error('CANON_CONFIRMATION_REQUIRED');", '', 1),
-        'confirmation retcon retirée': real.replace("&&c.author_confirmed_retcon!==true", '', 1),
+        'confirmation retcon destination retirée': real.replace("if(novel?.slug==='la-cendre-du-jugement'&&c.author_confirmed_retcon!==true)throw new Error('ROMAN1_LOCKED');", '', 1),
+        'confirmation retcon origine retirée': real.replace("if(current.novels.slug==='la-cendre-du-jugement'&&c.author_confirmed_retcon!==true)throw new Error('ROMAN1_LOCKED');", '', 1),
         'IA distante réactivée': real.replace('REMOTE_AI_DISABLED_FREE_ONLY', 'REMOTE_AI_ENABLED', 1),
     }
 

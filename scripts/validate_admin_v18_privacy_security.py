@@ -29,7 +29,8 @@ EDGE_REQUIRED = {
     'erreur Storage capturée': "const {error:storageError}=await s.storage.from('sinjira-character-sources').remove([sub.photo_path])",
     'échec Storage fermé': "if(storageError)throw new Error('SOURCE_PURGE_STORAGE_FAILED')",
     'confirmation CANON': "canonStatus==='CANON'&&c.author_confirmed_canon!==true",
-    'verrou retcon Roman I': "novel?.slug==='la-cendre-du-jugement'&&c.author_confirmed_retcon!==true",
+    'verrou retcon Roman I destination': "novel?.slug==='la-cendre-du-jugement'&&c.author_confirmed_retcon!==true",
+    'verrou retcon Roman I origine': "current.novels.slug==='la-cendre-du-jugement'&&c.author_confirmed_retcon!==true",
     'IA distante désactivée': "code:'REMOTE_AI_DISABLED_FREE_ONLY'",
     'photo signée courte': "createSignedUrl(sub.photo_path,600)",
     'santé backend sanitizée': "code:error?'CHECK_FAILED':null",
@@ -107,8 +108,8 @@ def validate(edge_path: Path, client_path: Path) -> list[str]:
 
     if edge.count("author_confirmed_canon!==true") != 1:
         errors.append('La confirmation humaine CANON doit rester unique et obligatoire.')
-    if edge.count("author_confirmed_retcon!==true") != 1:
-        errors.append('La confirmation humaine retcon Roman I doit rester unique et obligatoire.')
+    if edge.count("author_confirmed_retcon!==true") != 2:
+        errors.append('Les deux confirmations retcon Roman I (destination et origine) sont obligatoires.')
     return errors
 
 
@@ -133,7 +134,8 @@ def self_test() -> None:
         'message santé brut': edge.replace("code:error?'CHECK_FAILED':null", 'error:error?.message||null', 1),
         'no-store retiré': edge.replace("'Cache-Control':'private, no-store, max-age=0',", '', 1),
         'confirmation CANON retirée': edge.replace("if(canonStatus==='CANON'&&c.author_confirmed_canon!==true)throw new Error('CANON_CONFIRMATION_REQUIRED');", '', 1),
-        'verrou retcon retiré': edge.replace("&&c.author_confirmed_retcon!==true", '', 1),
+        'verrou retcon destination retiré': edge.replace("if(novel?.slug==='la-cendre-du-jugement'&&c.author_confirmed_retcon!==true)throw new Error('ROMAN1_LOCKED');", '', 1),
+        'verrou retcon origine retiré': edge.replace("if(current.novels.slug==='la-cendre-du-jugement'&&c.author_confirmed_retcon!==true)throw new Error('ROMAN1_LOCKED');", '', 1),
         'IA distante réactivée': edge.replace("code:'REMOTE_AI_DISABLED_FREE_ONLY'", "code:'REMOTE_AI_ENABLED'", 1),
         'durée photo signée augmentée': edge.replace('createSignedUrl(sub.photo_path,600)', 'createSignedUrl(sub.photo_path,86400)', 1),
     }
