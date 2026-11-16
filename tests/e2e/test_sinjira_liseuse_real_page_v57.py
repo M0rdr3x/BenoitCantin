@@ -227,6 +227,43 @@ def run(playwright, browser_type, url):
         page.wait_for_function("""()=>!document.querySelector('#reader-content').hidden&&
           document.querySelector('#reader-viewer').dataset.readerLayout==='screens'""")
 
+        # V142 : un numéro de page incomplet ne doit pas téléporter
+        # la lecture à la première page ni effacer la progression. Un
+        # effacement provisoire est fréquent sur un clavier de téléphone.
+        invalid_page_input=page.evaluate("""()=>{
+          const field=document.querySelector('#reader-page');
+          const range=document.querySelector('#reader-range');
+          const chapter=document.querySelector('#reader-chapters');
+          const viewer=document.querySelector('#reader-viewer');
+          const status=document.querySelector('#reader-position-status');
+          const key='sinjira:liseuse:demo:la-cendre-du-jugement';
+          let pageSignals=0;
+          viewer.addEventListener('sinjira:reader-page-change',
+            ()=>pageSignals++);
+          const state=()=>({
+            page:field.value,range:range.value,chapter:chapter.value,
+            scroll:viewer.scrollTop,notice:status.textContent,
+            storage:localStorage.getItem(key),
+            updated:localStorage.getItem(key+':updated'),
+            spot:localStorage.getItem(key+':spot')
+          });
+          const before=state();
+          const attempts=[];
+          for(const candidate of ['', '0', '-1', '3.5', '1e500']){
+            field.value=candidate;
+            field.dispatchEvent(new Event('change',{bubbles:true}));
+            attempts.push({candidate,after:state()});
+          }
+          return {before,attempts,pageSignals};
+        }""")
+        assert invalid_page_input["before"]["page"]=="3",invalid_page_input
+        assert invalid_page_input["pageSignals"]==0,invalid_page_input
+        for attempt in invalid_page_input["attempts"]:
+            assert attempt["after"]==invalid_page_input["before"],(
+                "V142: saisie de page invalide ne doit pas effacer l'endroit lu",
+                attempt,invalid_page_input
+            )
+
         # V138 : un scroll retardé ou un signal screen-turn sur un roman
         # déjà masqué ne doit ni modifier l'horodatage local ni afficher
         # une sauvegarde fictive. Même la commande explicite « Enregistrer »

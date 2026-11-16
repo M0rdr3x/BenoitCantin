@@ -583,8 +583,27 @@ function changePage(value){
     $('reader-chapters').value=String(currentChapter()[0]);
     return;
   }
-  const next=clamp(Math.round(value),1,state.pdf.numPages);
-  if(next===state.page)return;
+  // V142 : Number('') et Number(' ') valent 0 : l'ancien clamp ramenait
+  // silencieusement le lecteur à la page 1 pendant l'édition du champ.
+  // Une page n'est ni une fraction ni une exponentielle invalide. Refuser
+  // toute saisie incomplète sans toucher au passage lu ni à sa sauvegarde.
+  const raw=String(value??'').trim();
+  const requested=raw?Number(raw):NaN;
+  if(!Number.isSafeInteger(requested)||requested<1){
+    $('reader-page').value=String(state.page);
+    $('reader-range').value=String(state.page);
+    $('reader-chapters').value=String(currentChapter()[0]);
+    return;
+  }
+  const next=clamp(requested,1,state.pdf.numPages);
+  if(next===state.page){
+    // Un nombre accepté (ex. 999 au-delà du PDF) doit aussi laisser un
+    // champ cohérent si le navigateur avait gardé la valeur tapée.
+    $('reader-page').value=String(state.page);
+    $('reader-range').value=String(state.page);
+    $('reader-chapters').value=String(currentChapter()[0]);
+    return;
+  }
   flushScrollPosition();
   stopNarration(false);
   state.page=next;
