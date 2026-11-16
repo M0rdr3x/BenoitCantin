@@ -31,7 +31,7 @@ def validate_security_script_version(page: str) -> None:
     exactement 24.4.69 cassait la CI après la révision sécuritaire 24.4.70.
     """
     versions = re.findall(
-        r'<script\\b[^>]*\\ssrc="\\.\\./assets/js/v24-security\\.js\\?v=(\\d+\\.\\d+\\.\\d+)"[^>]*>',
+        r'<script\b[^>]*\ssrc="\.\./assets/js/v24-security\.js\?v=(\d+\.\d+\.\d+)"[^>]*>',
         page,
     )
     if len(versions) != 1:
