@@ -41,6 +41,9 @@ const SENSITIVE_EXTERNAL_PARAMS = new Set([
   'password',
 ]);
 const PRIVATE_SHARE_PATH_PREFIXES = ['/app/', '/compte/', '/admin/', '/auth/', '/api/'] as const;
+// Les mêmes zones privées que les règles d'hébergement (Netlify/Vercel).
+const PRIVATE_SHARE_EXTRA_PREFIXES = ['/histoire-de-vie/', '/supabase/'] as const;
+const PRIVATE_SHARE_EXACT_PATHS = new Set(['/administration.html']);
 const VAULT_PATH = '/compte/registre-personnel.html';
 const PERSONAL_AI_PATH = '/compte/mon-ia.html';
 const ACCOUNT_HOME_PATH = '/compte/index.html';
@@ -117,11 +120,19 @@ function shareableSinjiraUrl(url: string): string | null {
     const parsed = new URL(url, ORIGIN);
     if (parsed.protocol !== 'https:' || parsed.port || parsed.username || parsed.password || !ALLOWED_WEB_HOSTS.has(parsed.hostname)) return null;
     const pathname = parsed.pathname || '/';
-    const normalizedPath = pathname.toLowerCase();
+    // Le navigateur peut décoder les caractères de chemin à différents niveaux.
+    // Une ambiguïté (encodage imbriqué, slash encodé, contrôle) échoue fermée.
+    let normalizedPath: string;
+    try { normalizedPath = decodeURIComponent(pathname).toLowerCase(); }
+    catch { return null; }
+    if (/[\\%\u0000-\u001f\u007f]/.test(normalizedPath) || normalizedPath.startsWith('//')) return null;
     const privatePath = PRIVATE_SHARE_PATH_PREFIXES.some((prefix) => {
       const root = prefix.slice(0, -1);
       return normalizedPath === root || normalizedPath.startsWith(prefix);
-    });
+    }) || PRIVATE_SHARE_EXTRA_PREFIXES.some((prefix) => {
+      const root = prefix.slice(0, -1);
+      return normalizedPath === root || normalizedPath.startsWith(prefix);
+    }) || PRIVATE_SHARE_EXACT_PATHS.has(normalizedPath);
     if (privatePath) return null;
     return `${ORIGIN}${pathname}`;
   } catch {
