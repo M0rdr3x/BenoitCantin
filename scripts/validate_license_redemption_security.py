@@ -12,6 +12,9 @@ EDGE = ROOT / 'supabase/functions/redeem-license-code/index.ts'
 REQUIRED = {
     'POST uniquement': "req.method!=='POST'",
     'authentification obligatoire': 'requiredUser(req)',
+    'diagnostic admin AAL2': "if(body?.action==='health')await requiredAdmin(req);",
+    'refus admin explicite': "code:'ADMIN_ACCESS_REQUIRED'",
+    'MFA indisponible sans erreur privée': "code:'MFA_STATE_UNAVAILABLE'", 
     'lecture JSON bornée': 'readLimitedJson(req)',
     'lecture bornée en flux': 'readLimitedUtf8Body(req,MAX_REQUEST_BYTES)',
     'lecteur partagé': 'limited-body.mjs',
@@ -59,9 +62,15 @@ def validate(path: Path) -> list[str]:
 
     if "body?.action==='health'" in source:
         auth_pos = source.find('requiredUser(req)')
-        health_pos = source.find("body?.action==='health'")
-        if auth_pos < 0 or auth_pos > health_pos:
-            errors.append("L'action health ne doit pas contourner l'authentification.")
+        health_pos = source.find("if(body?.action==='health')await requiredAdmin(req);")
+        health_result = source.find("if(body?.action==='health'){", health_pos)
+        schema_pos = source.find('const health=await licenseHealth(s)')
+        if auth_pos < 0 or health_pos < auth_pos or health_result < health_pos:
+            errors.append("Le diagnostic health doit exiger un JWT et le rôle admin AAL2 AVANT la réponse.")
+        if schema_pos >= 0 and health_pos >= schema_pos:
+            errors.append("Le diagnostic health doit contrôler l'admin avant la lecture du schéma.")
+    else:
+        errors.append("Le diagnostic de licence health doit être administrateur et AAL2.")
 
     return errors
 
@@ -80,17 +89,26 @@ Deno.serve(async req=>{
  if(req.method!=='POST')return null;
  const user=await requiredUser(req);
  const parsed=await readLimitedJson(req);
+ const body=parsed.body||{};
+ if(body?.action==='health')await requiredAdmin(req);
  const pepper=Deno.env.get('SINJIRA_LICENSE_PEPPER');
  const s=serviceClient();
- if(parsed.body?.action==='health')return null;
+ const health=await licenseHealth(s);
+ if(body?.action==='health'){return null;}
  return s.rpc('redeem_sinjira_activation',{p_code_hash:'x',p_user_id:user.id});
 });
 console.error('[redeem-license-code]',{code:'LICENSE_REDEEM_FAILED'});
+const errorCode={code:'ADMIN_ACCESS_REQUIRED',mfa:'MFA_STATE_UNAVAILABLE'};
 """
         path.write_text(safe, encoding='utf-8')
         clean = validate(path)
         if clean:
             raise AssertionError('Le cas sain doit passer: ' + ' | '.join(clean))
+
+        path.write_text(safe.replace("if(body?.action==='health')await requiredAdmin(req);", "if(body?.action==='health')await requiredUser(req);"), encoding='utf-8')
+        without_admin = validate(path)
+        if not any('admin AAL2' in item or 'rôle admin' in item for item in without_admin):
+            raise AssertionError('La substitution du rôle admin par un simple JWT doit être rejetée.')
 
         path.write_text(safe.replace('readLimitedUtf8Body(req,MAX_REQUEST_BYTES)', 'req.text()'), encoding='utf-8')
         raw_body = validate(path)
