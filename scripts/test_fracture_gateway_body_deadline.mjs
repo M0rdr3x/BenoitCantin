@@ -91,7 +91,14 @@ test('Fracture: octets réellement reçus contrôlés sans confiance envers Cont
 
 test('Fracture: UTF-8 invalide et flux brisé refusés sans refléter les données',async()=>{
   const invalid=new Request('https://edge.test',{
-    method:'POST',body:Uint8Array.of(0xc3,0x28),duplex:'half'
+    method:'POST',
+    body:new ReadableStream({
+      start(controller){
+        controller.enqueue(Uint8Array.of(0xc3,0x28));
+        controller.close();
+      }
+    }),
+    duplex:'half'
   });
   assert.deepEqual(await readLimitedUtf8BodyWithDeadline(invalid,32_000,400),
     {ok:false,reason:'INVALID_BODY'});
