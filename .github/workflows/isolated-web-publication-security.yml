@@ -32,6 +32,8 @@ jobs:
         run: python3 -m py_compile scripts/build_netlify_public.py scripts/validate_web_release_http.py
       - name: Simuler les fichiers cachés les symlinks et les documents privés
         run: python3 scripts/build_netlify_public.py --self-test-security
+      - name: Empêcher les clés individuelles masquées dans les exports publics Nova
+        run: python3 scripts/test_nova_public_json_privacy.py
       - name: Vérifier les formats publics et refuser archives et sources non approuvées
         run: python3 scripts/test_web_public_extension_allowlist.py
       - name: Refuser toute publication brute depuis le Netlify de Projet NOVA
