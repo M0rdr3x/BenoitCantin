@@ -183,6 +183,50 @@ def run(playwright, engine, origin):
         assert not blocked,blocked
         assert not errors,errors
 
+        # V136 : tentative programmée pendant que la page est cachée,
+        # puis course entre lancement asynchrone et visibilité cachée.
+        # Aucune voix ne doit être jouée dans les deux situations.
+        hidden_voice=page.evaluate("""async()=>{
+          const lab=window.__v135VoiceLab;
+          const play=document.querySelector('#reader-voice-play');
+          const old=Object.getOwnPropertyDescriptor(document,'visibilityState');
+          const hidden=()=>{
+            Object.defineProperty(document,'visibilityState',{
+              configurable:true,value:'hidden'
+            });
+          };
+          const visible=()=>{
+            if(old)Object.defineProperty(document,'visibilityState',old);
+            else delete document.visibilityState;
+          };
+          try{
+            hidden();
+            const baseline=lab.speakCount;
+            play.click();
+            await Promise.resolve();
+            await Promise.resolve();
+            const hiddenStart=lab.speakCount;
+            visible();
+            play.click();
+            hidden(); // les await de la voix ne sont pas encore terminés
+            await Promise.resolve();
+            await Promise.resolve();
+            await new Promise(done=>setTimeout(done,0));
+            const lateStart=lab.speakCount;
+            visible();
+            play.click(); // reprise EXPLICITE en premier plan
+            await new Promise(done=>setTimeout(done,0));
+            const visibleStart=lab.speakCount;
+            return {baseline,hiddenStart,lateStart,visibleStart};
+          }finally{visible()}
+        }""")
+        assert hidden_voice["hiddenStart"]==hidden_voice["baseline"],hidden_voice
+        assert hidden_voice["lateStart"]==hidden_voice["baseline"],hidden_voice
+        assert hidden_voice["visibleStart"]>hidden_voice["baseline"],hidden_voice
+        page.locator("#reader-voice-stop").evaluate("(node)=>node.click()")
+        assert not blocked,blocked
+        assert not errors,errors
+
         # V129 : régler la police pendant un swipe ancien et revenir à
         # l'ancienne valeur dans la même tâche ne doit pas tourner l'écran.
         preference_gesture=page.evaluate("""()=>{

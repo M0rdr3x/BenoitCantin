@@ -374,6 +374,14 @@ function configureSpeech(){
 }
 function speakNext(token){
   if(!speechReady||token!==speech.token||!speech.active)return;
+  // V136 : même si la transition vers l'arrière-plan ne déclenche pas
+  // un visibilitychange observable, un callback audio tardif ne doit pas
+  // lire un passage invisible ou devenu privé.
+  if(document.visibilityState==='hidden'||
+     isFull&&(state.privatePaused||state.accessInvalidated)){
+    stopNarration(false);
+    return;
+  }
   if(speech.index>=speech.chunks.length){
     const continueReading=state.autoSpeech&&state.page<state.pdf.numPages;
     stopNarration(false);
@@ -405,13 +413,17 @@ function speakNext(token){
   window.speechSynthesis.speak(utterance);
 }
 async function startNarration(){
-  if(!speechReady||!state.pdf)return;
+  // V136 : une commande différée ne peut amorcer la voix hors premier plan.
+  if(!speechReady||!state.pdf||document.visibilityState==='hidden'||
+     isFull&&(state.privatePaused||state.accessInvalidated))return;
   stopNarration(false);
   const token=speech.token;
   const pageNumber=state.page;
   const page=await state.pdf.getPage(pageNumber);
   const content=await page.getTextContent();
-  if(token!==speech.token||pageNumber!==state.page)return;
+  if(token!==speech.token||pageNumber!==state.page||
+     document.visibilityState==='hidden'||
+     isFull&&(state.privatePaused||state.accessInvalidated))return;
   const text=pdfTextToParagraphs(content.items);
   if(!text){
     speechStatus('Cette page ne contient pas de texte lisible par la voix. Essayez la suivante.');
@@ -427,6 +439,11 @@ async function startNarration(){
 }
 function toggleSpeechPause(){
   if(!speechReady||!speech.active)return;
+  if(document.visibilityState==='hidden'||
+     isFull&&(state.privatePaused||state.accessInvalidated)){
+    stopNarration(false);
+    return;
+  }
   if(speech.paused){
     window.speechSynthesis.resume();
     speech.paused=false;
