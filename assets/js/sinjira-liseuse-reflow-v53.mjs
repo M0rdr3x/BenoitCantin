@@ -356,6 +356,14 @@ export function bindReaderScreenMode({
   };
   const onScreenJumpCommit=()=>{
     if(!screenJump)return;
+    // V147 : ne pas mesurer un viewport devenu nul pendant la suspension
+    // ni écraser l'ancre/ratio en mémoire avec une ancienne confirmation.
+    // Le prochain affichage synchronisera le curseur avec l'écran réel.
+    if(!canNavigate()){
+      jumpCancelled=true;
+      jumpPreview=null;
+      return;
+    }
     // V107 : un change tardif du curseur annulé ne doit pas tourner
     // la page après rotation, swipe, changement de PDF ou défilement.
     if(jumpCancelled){
