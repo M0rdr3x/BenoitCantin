@@ -168,6 +168,43 @@ def run(playwright, browser_type, url):
         page.wait_for_function("""()=>!document.querySelector('#reader-content').hidden&&
           document.querySelector('#reader-viewer').dataset.readerLayout==='screens'""")
 
+        # V138 : un scroll retardé ou un signal screen-turn sur un roman
+        # déjà masqué ne doit ni modifier l'horodatage local ni afficher
+        # une sauvegarde fictive. Même la commande explicite « Enregistrer »
+        # doit respecter l'état du lecteur privé.
+        hidden_progress=page.evaluate("""async()=>{
+          const content=document.querySelector('#reader-content');
+          const viewer=document.querySelector('#reader-viewer');
+          const key='sinjira:liseuse:demo:la-cendre-du-jugement';
+          const status=document.querySelector('#reader-position-status');
+          const read=()=>({
+            page:localStorage.getItem(key),
+            updated:localStorage.getItem(key+':updated'),
+            spot:localStorage.getItem(key+':spot'),
+            notice:status.textContent,
+            screen:document.querySelector('#reader-page').value
+          });
+          // Terminer les éventuelles écritures légitimes de l'initialisation.
+          await new Promise(done=>setTimeout(done,720));
+          const before=read();
+          content.hidden=true;
+          try{
+            viewer.dispatchEvent(new Event('sinjira:reader-screen-turn'));
+            viewer.dispatchEvent(new Event('scroll'));
+            document.querySelector('#reader-save-position').click();
+            // La persistance différée interviendrait normalement à 650 ms.
+            await new Promise(done=>setTimeout(done,740));
+            return {before,after:read(),hidden:content.hidden};
+          }finally{content.hidden=false}
+        }""")
+        assert hidden_progress["hidden"],hidden_progress
+        assert hidden_progress["after"]==hidden_progress["before"],(
+            "V138: la lecture masquée ne doit pas enregistrer une progression différée",
+            hidden_progress
+        )
+        page.wait_for_function("""()=>!document.querySelector('#reader-content').hidden&&
+          document.querySelector('#reader-viewer').dataset.readerLayout==='screens'""")
+
         # V102 : l'emplacement du lecteur est visible dans les commandes
         # mobiles et indépendant des extraits privés du texte.
         # La démo réelle possède 82 pages ; la fixture simplifiée en a 5.

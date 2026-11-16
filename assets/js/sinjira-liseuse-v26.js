@@ -291,8 +291,18 @@ function restoreScrollAfterRender(version){
     });
   });
 }
+// V138 : le navigateur peut livrer tardivement scroll, screen-turn ou
+// un clic après la suspension de l'écran. Ces signaux ne sont pas une
+// nouvelle progression volontaire. Le flush de pagehide/visibilitychange
+// reste distinct et peut sauvegarder la dernière vraie position AVANT de
+// masquer l'édition privée.
+function canRecordReaderInteraction(){
+  return Boolean(state.pdf)&&document.visibilityState!=='hidden'&&
+    !$('reader-content').hidden&&
+    (!isFull||(!state.privatePaused&&!state.accessInvalidated));
+}
 async function saveCurrentPosition(){
-  if(!state.pdf)return;
+  if(!canRecordReaderInteraction())return;
   flushScrollPosition();
   const viewer=$('reader-viewer');
   state.positionRatio=ratioFromScroll(viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight);
@@ -590,7 +600,7 @@ function bindControls(){
   // Le geste gagne sur toute restitution rAF en cours et sa position devient
   // immédiatement persistée, même si le scroll natif est différé.
   $('reader-viewer').addEventListener('sinjira:reader-screen-turn',()=>{
-    if(!state.pdf||(isFull&&state.accessInvalidated))return;
+    if(!canRecordReaderInteraction())return;
     ++scrollRestoreGeneration;
     state.restorePending=null;
     state.restoringScroll=false;
@@ -601,11 +611,17 @@ function bindControls(){
     automaticPositionNotice(persist({syncCloud:true}));
   });
   $('reader-viewer').addEventListener('scroll',()=>{
-    if(!state.pdf||state.restoringScroll)return;
+    // V138 : une transition vers hidden peut provoquer un événement scroll
+    // après disparition du viewport. Ne jamais inscrire ce ratio fictif.
+    if(!canRecordReaderInteraction()){
+      clearTimeout(state.scrollTimer);state.scrollTimer=null;
+      return;
+    }
+    if(state.restoringScroll)return;
     clearTimeout(state.scrollTimer);
     state.scrollTimer=setTimeout(()=>{
       state.scrollTimer=null;
-      if(!state.pdf||state.restoringScroll)return;
+      if(!canRecordReaderInteraction()||state.restoringScroll)return;
       const viewer=$('reader-viewer');
       state.positionRatio=ratioFromScroll(viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight);
       // V87 : même résultat honnête en défilement libre ou en PDF.
