@@ -10,6 +10,7 @@ on:
       - 'supabase/functions/nova-civic-poll/index.ts'
       - 'supabase/functions/fracture-engine-gateway/index.ts'
       - 'scripts/validate_fracture_engine_gateway_security.py'
+      - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/test_fracture_gateway_body_deadline.mjs'
       - 'scripts/test_nova_poll_body_read.cjs'
       - 'scripts/test_edge_body_deadline.mjs'
@@ -23,6 +24,7 @@ on:
       - 'supabase/functions/nova-civic-poll/index.ts'
       - 'supabase/functions/fracture-engine-gateway/index.ts'
       - 'scripts/validate_fracture_engine_gateway_security.py'
+      - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/test_fracture_gateway_body_deadline.mjs'
       - 'scripts/test_nova_poll_body_read.cjs'
       - 'scripts/test_edge_body_deadline.mjs'
@@ -49,3 +51,4 @@ jobs:
           node scripts/test_nova_poll_body_read.cjs
           python3 scripts/validate_fracture_engine_gateway_security.py --self-test
           python3 scripts/validate_fracture_engine_gateway_security.py
+          python3 scripts/validate_edge_function_inventory.py
