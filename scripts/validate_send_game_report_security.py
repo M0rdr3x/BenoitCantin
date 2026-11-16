@@ -16,7 +16,7 @@ REQUIRED = {
     'constante délai JSON': 'MAX_REQUEST_READ_TIMEOUT_MS=8_000;',
     'détection timeout': "limited.reason === 'REQUEST_TIMEOUT'",
     'HTTP 408': 'timeout ? 408 : 413',
-    'refus des flux trop longs': 'if (!limited.ok) return',
+    'refus des flux trop longs': 'if (!limited.ok) {',
     'réponse privée': "'Cache-Control': 'private, no-store, max-age=0'",
     'protection MIME': "'X-Content-Type-Options': 'nosniff'",
     'référent masqué': "'Referrer-Policy': 'no-referrer'",
@@ -207,7 +207,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK send-game-report: POST JSON borné, réponses no-store, PDF validé, transport payant désactivé et logs backend sanitizés.')
+    print('OK send-game-report: délais absolus JSON/PDF, HTTP 408, POST JSON borné, no-store, services payants désactivés et logs expurgés.')
     return 0
 
 
