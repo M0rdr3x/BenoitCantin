@@ -1835,6 +1835,42 @@ test('V104 : curseur tactile navigue entre écrans sans changer le PDF',()=>{
     }
   }finally{f.restore()}
 });
+test('V150 : curseur modifié dans un livre masqué puis confirmé au retour ne saute pas',()=>{
+  const f=fixture({observe:true,withReaderContent:true});
+  try{
+    let turns=0;
+    f.viewer.dispatchEvent=e=>{
+      if(e.type==='sinjira:reader-screen-turn')turns++;
+      return true;
+    };
+    f.viewer.scrollTo({top:315});
+    const status=f.status.textContent;
+    const commit=()=>f.screenJump.emit('change',{target:f.screenJump});
+    const preview=screen=>{
+      f.screenJump.value=String(screen);
+      f.screenJump.emit('input',{target:f.screenJump});
+    };
+    // input reçu pendant que le livre est caché; change arrive au retour.
+    f.readerContent.hidden=true;
+    preview(4);
+    f.readerContent.hidden=false;
+    commit();
+    assert.equal(f.viewer.scrollTop,315,'aucun saut automatique lors de la réouverture');
+    assert.equal(f.status.textContent,status);
+    assert.equal(f.screenJump.value,'2','restaurer le dernier écran confirmé');
+    assert.equal(turns,0);
+    // Même scénario avec un onglet en arrière-plan.
+    f.documentMock.hidden=true;
+    preview(4);
+    f.documentMock.hidden=false;
+    commit();
+    assert.equal(f.viewer.scrollTop,315);
+    assert.equal(turns,0);
+    preview(3);commit();
+    assert.equal(f.viewer.scrollTop,630,'un nouveau geste valide navigue bien');
+    assert.equal(turns,1);
+  }finally{f.restore()}
+});
 test('V149 : typographie modifiée quand le livre est masqué conserve le passage',()=>{
   const f=fixture({observe:true,withReaderContent:true});
   try{
@@ -2109,7 +2145,7 @@ test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
   assert.match(h,/id="reader-screen-count"/);
-  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.16\.149/);
+  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.16\.150/);
   assert.match(h,/sinjira-liseuse-v26\.js\?v=34\.11\.16\.143/);
 });
 test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=>{
