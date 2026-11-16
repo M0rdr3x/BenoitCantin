@@ -56,7 +56,7 @@ function safeHttpUrl(value) {
   // Refuser HTTPS non garanti, userinfo, normalisations ambiguës et troncature.
   if (typeof value !== 'string' || !value || value.length > 2048 ||
       value !== value.trim() || /[\u0000-\u0020\u007f\\]/.test(value) ||
-      !/^https:\/\//i.test(value)) return null;
+      !/^https:\/\/[^/]/i.test(value)) return null;
   try {
     const url = new URL(value);
     if (url.protocol !== 'https:' || !url.hostname ||
