@@ -52,12 +52,16 @@ function parseSkills(value) {
 }
 
 function safeHttpUrl(value) {
-  const raw = String(value ?? '').trim();
-  if (!raw) return null;
+  // Les URL conservées dans le suivi privé restent des données non fiables.
+  // Refuser HTTPS non garanti, userinfo, normalisations ambiguës et troncature.
+  if (typeof value !== 'string' || !value || value.length > 2048 ||
+      value !== value.trim() || /[\u0000-\u0020\u007f\\]/.test(value) ||
+      !/^https:\/\//i.test(value)) return null;
   try {
-    const url = new URL(raw);
-    if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
-    return url.toString().slice(0, 2048);
+    const url = new URL(value);
+    if (url.protocol !== 'https:' || !url.hostname ||
+        url.username || url.password || url.href.length > 2048) return null;
+    return url.href;
   } catch (_) {
     return null;
   }
@@ -263,7 +267,7 @@ async function init() {
     const sourceInput = fieldValue(applicationForm, 'source_url').trim();
     const sourceUrl = safeHttpUrl(sourceInput);
     if (sourceInput && !sourceUrl) {
-      showStatus('Le lien source doit commencer par http:// ou https://.', 'error');
+      showStatus('Le lien source doit être une adresse HTTPS valide, sans identifiant intégré.', 'error');
       return;
     }
     const employerName = cleanNullable(fieldValue(applicationForm, 'employer_name'), 160);
