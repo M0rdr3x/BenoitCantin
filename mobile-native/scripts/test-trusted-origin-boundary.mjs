@@ -91,4 +91,33 @@ assert.equal(sent.length, 1);
 assert.equal(sent[0].url, 'https://sinjira.com/projets/sinjira/');
 assert.ok(!sent[0].message.includes('private') && !sent[0].message.includes('frag'));
 
-console.log('OK origines natives : ports HTTPS non standards et userinfo refusés avant WebView / liens profonds / partage, domaines HTTPS normaux préservés.');
+// Les trois routes sont déclarées privées côté Netlify/Vercel mais n'étaient
+// pas couvertes par l'ancienne liste de partage natif.
+const privateShareCandidates = [
+  'https://www.benoitcantin.com/administration.html',
+  'https://sinjira.com/ADMINISTRATION.HTML?user=private',
+  'https://www.benoitcantin.com/histoire-de-vie/remise.html',
+  'https://www.sinjira.com/histoire-de-vie',
+  'https://www.benoitcantin.com/supabase/config.json',
+  'https://sinjira.com/supabase',
+  'https://sinjira.com/%63ompte/profil.html',
+  'https://sinjira.com/%2563ompte/profil.html',
+  'https://sinjira.com/%61dministration.html',
+  'https://sinjira.com/histoire-de-vie%2Fremise.html',
+  'https://sinjira.com/supabase%252Fconfig.json',
+  'https://sinjira.com/projets/%2fconfidentiel',
+  'https://sinjira.com/projets/%ZZinvalide',
+];
+for (const candidate of privateShareCandidates) {
+  assert.equal(native.shareableSinjiraUrl(candidate), null, `Le shell partage une route privée/ambiguë : ${candidate}`);
+  assert.equal(isolated.canonicalPublicSinjiraUrl(candidate), null, `Le module partage une route privée/ambiguë : ${candidate}`);
+  await assert.rejects(isolated.sharePublicSinjiraUrl(candidate), /PUBLIC_SHARE_URL_REQUIRED/);
+}
+assert.equal(sent.length, 1, 'Un rejet ultérieur ne doit pas déclencher un second partage');
+const publicUnicodePath = 'https://sinjira.com/projets/sinjira/%C3%A9dition.html?confidentialite=retiree';
+assert.equal(native.shareableSinjiraUrl(publicUnicodePath),
+  'https://www.benoitcantin.com/projets/sinjira/%C3%A9dition.html');
+assert.equal(isolated.canonicalPublicSinjiraUrl(publicUnicodePath),
+  'https://sinjira.com/projets/sinjira/%C3%A9dition.html');
+
+console.log('OK origines natives et confidentialité du partage : ports non standards, URL userinfo et routes privées/encodées refusés; chemins publics normaux préservés.');
