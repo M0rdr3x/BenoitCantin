@@ -51,6 +51,8 @@ FORBIDDEN = (
     "console.error('[admin-sinjira-v18]',novelError)",
     "error:novelError.message",
     "error:novelError?.message",
+    "error:currentError.message",
+    "error:currentError?.message",
 )
 
 
