@@ -37,9 +37,11 @@ La [PR #1000](https://github.com/M0rdr3x/BenoitCantin/pull/1000) demeure **DRAFT
 
 Avant fusion et publication : [matrice d'essais sur appareils physiques](https://github.com/M0rdr3x/BenoitCantin/blob/review/sinjira-liseuse-mobile-v64-integration-main-20261111/docs/sinjira/SINJIRA_LISEUSE_RECEPTION_APPAREILS_PHYSIQUES_2026-11-12.md), VoiceOver/TalkBack, PDF autorisés, droits serveur et révocation de l'accès privé, synchronisation entre deux appareils, validation d'une éventuelle migration avec approbation explicite et revue indépendante. Ne pas toucher aux secrets, au backend de production ou aux données réelles depuis le bilan.
 
+**Intégrité du contrôle de sécurité (16 novembre 2026) :** la [PR #1051](https://github.com/M0rdr3x/BenoitCantin/pull/1051) a été fusionnée dans `main` au commit `851c9b28a790b799b6fe262811bb8140df5960fb` après **25 workflows réussis sur 25**. Elle corrige un validateur qui rejetait à tort le script MFA `24.4.70` en exigeant exactement `24.4.69`. Le garde-fou exige toujours une version au moins égale à `24.4.69` et refuse les doublons et versions absentes. Aucun score de complétude n'est modifié par cette maintenance CI. Le présent rapport attend sa propre validation de branche avant toute fusion.
+
 ## Ordre de livraison recommandé
 
-1. **P0 sécurité et intégrité :** traiter les droits des livres intégrals (notamment [#955](https://github.com/M0rdr3x/BenoitCantin/issues/955)), l'autorisation et les contrats serveur, sans déploiement implicite.
+1. **P0 sécurité et intégrité :** traiter les droits des livres intégraux (notamment [#955](https://github.com/M0rdr3x/BenoitCantin/issues/955)), l'autorisation et les contrats serveur, sans déploiement implicite.
 2. **P0 liseuse :** terminer l'homologation multi-appareils de la PR #1000 et documenter chaque scénario PASS/FAIL avec SHA et navigateur.
 3. **P0 données de programme :** réduire les lacunes de preuve de la dimension finances Nova et des 14 secteurs sans inventer des coûts.
 4. **P1 outils civiques :** revue indépendante et prévol privé du sondage; conserver la collecte fermée jusqu'à approbation.
