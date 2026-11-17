@@ -404,6 +404,26 @@ for (const rawUrl of [
   );
 }
 
+// Une WebView partage des données d'appareil avec ses pages internes : même
+// domaine + port différent ne doit jamais être traité comme une origine interne.
+for (const url of [
+  'https://www.benoitcantin.com:8443/app/',
+  'https://sinjira.com:8080/compte/profil.html',
+  'https://www.sinjira.com:4443/compte/registre-personnel.html',
+]) {
+  const harness = createShouldStartHarness();
+  assert.equal(harness.shouldStart({ url }), false, `Port HTTPS non standard accepté: ${url}`);
+  assert.match(harness.messages.at(-1) || '', /port HTTPS non standard/i);
+  assert.deepEqual(harness.openedUrls, [], 'Les ports non standards du domaine officiel ne doivent pas être ouverts dans le système');
+  assert.deepEqual(harness.navigatedPaths, [], 'Aucun accès privé ne doit être engagé sur ce port');
+}
+{
+  const harness = createShouldStartHarness();
+  assert.equal(harness.shouldStart({ url: 'https://sinjira.com:443/compte/profil.html' }), true,
+    'Le port HTTPS 443 canonique doit rester autorisé');
+  assert.deepEqual(harness.openedUrls, []);
+}
+
 console.log(
   `OK frontière navigation V25: ${blockedUrls.length} cas dangereux refusés, ` +
   `${allowedUrls.length} cas légitimes permis, ${blockedMailtoUrls.length} formes mailto dangereuses bloquées, ` +

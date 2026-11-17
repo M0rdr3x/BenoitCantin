@@ -1,0 +1,49 @@
+name: Sécurité SINJIRA — délai HTTP et génération de rapports PDF
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/functions/_shared/read-chunk-deadline.mjs'
+      - 'supabase/functions/_shared/limited-body.mjs'
+      - 'supabase/functions/send-game-report/index.ts'
+      - 'scripts/test_send_game_report_deadline.mjs'
+      - 'scripts/validate_send_game_report_security.py'
+      - '.github/workflows/sinjira-report-http-deadline-security.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/_shared/read-chunk-deadline.mjs'
+      - 'supabase/functions/_shared/limited-body.mjs'
+      - 'supabase/functions/send-game-report/index.ts'
+      - 'scripts/test_send_game_report_deadline.mjs'
+      - 'scripts/validate_send_game_report_security.py'
+      - '.github/workflows/sinjira-report-http-deadline-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  report-http-boundary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Préparer Node.js épinglé
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+
+      - name: Tester les flux adverses et délais HTTP réels
+        run: node --test scripts/test_send_game_report_deadline.mjs
+
+      - name: Auto-test du contrat de sécurité du rapport
+        run: python3 scripts/validate_send_game_report_security.py --self-test
+
+      - name: Valider le contrat de sécurité du rapport
+        run: python3 scripts/validate_send_game_report_security.py

@@ -55,6 +55,17 @@ const targetTables:any={
   character:{post:['social_character_posts','user_id'],comment:['social_character_comments','user_id'],message:['social_character_messages','sender_user_id']}
 };
 
+// Les réseaux et types viennent des signalements : ne jamais résoudre une
+// propriété héritée (__proto__, constructor, toString) en tant que table SQL.
+function moderationTargetTable(network:unknown,targetType:unknown):[string,string]|null{
+  if(typeof network!=='string'||!Object.prototype.hasOwnProperty.call(targetTables,network))return null;
+  const types=targetTables[network];
+  if(typeof targetType!=='string'||!Object.prototype.hasOwnProperty.call(types,targetType))return null;
+  const pair=types[targetType];
+  return Array.isArray(pair)&&pair.length===2&&typeof pair[0]==='string'&&typeof pair[1]==='string'
+    ? pair as [string,string] : null;
+}
+
 async function canonicalUser(s:any,table:string,idColumn:string,userColumn:string,id:string){
   const {data,error}=await s.from(table).select(userColumn).eq(idColumn,id).maybeSingle();
   if(error)throw error;
@@ -84,7 +95,7 @@ async function reportTargetUser(s:any,r:any){
 }
 
 async function targetSnapshot(s:any,r:any){
-  const pair=targetTables?.[r.network]?.[r.target_type];
+  const pair=moderationTargetTable(r.network,r.target_type);
   if(!pair)return null;
   const {data,error}=await s.from(pair[0]).select('*').eq('id',r.target_id).maybeSingle();
   if(error)throw error;
@@ -113,8 +124,10 @@ async function notifyDecision(s:any,userId:string|null,decisionId:string,title:s
 }
 
 async function createDecision(s:any,adminId:string,r:any,b:any,action:'hide_content'|'suspend_social'){
+  if(action==='hide_content'&&!moderationTargetTable(r.network,r.target_type))throw new Error('CONTENT_TARGET_NOT_REVERSIBLE');
   const subject=await reportTargetUser(s,r);
-  if(action==='hide_content'&&!targetTables?.[r.network]?.[r.target_type])throw new Error('CONTENT_TARGET_NOT_REVERSIBLE');
+  // Sans identité canonique, ne jamais créer une décision de suspension orpheline.
+  if(action==='suspend_social'&&!subject)throw new Error('TARGET_USER_NOT_FOUND');
   const evidence={report_snapshot:r.snapshot||{},target_snapshot:await targetSnapshot(s,r),report_reason:r.reason,report_created_at:r.created_at};
   const {rule,statement}=policyAndStatement(r,b,action);
   const urgency=['standard','urgent_harm','illegal_content'].includes(String(b.urgency))?String(b.urgency):'standard';
@@ -126,7 +139,6 @@ async function createDecision(s:any,adminId:string,r:any,b:any,action:'hide_cont
   const {data:decision,error}=await s.schema('private').from('moderation_decisions').insert(row).select('id,ends_at').single();
   if(error)throw error;
   if(action==='suspend_social'){
-    if(!subject)throw new Error('TARGET_USER_NOT_FOUND');
     const {error:suspensionError}=await s.from('social_suspensions').upsert({user_id:subject,reason:statement,until_at:decision.ends_at,created_by:adminId,moderation_decision_id:decision.id},{onConflict:'user_id'});
     if(suspensionError)throw suspensionError;
   }

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import re
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -21,6 +22,27 @@ def forbid(text: str, markers: list[str], label: str) -> None:
     found = [m for m in markers if m in text]
     if found:
         raise AssertionError(f'{label}: marqueurs interdits: {found}')
+
+
+def validate_security_script_version(page: str) -> None:
+    """Imposer un fichier JS versionné, unique, sans régression TOTP.
+
+    Les révisions de cache supérieures à 24.4.69 sont valides; exiger
+    exactement 24.4.69 cassait la CI après la révision sécuritaire 24.4.70.
+    """
+    versions = re.findall(
+        r'<script\b[^>]*\ssrc="\.\./assets/js/v24-security\.js\?v=(\d+\.\d+\.\d+)"[^>]*>',
+        page,
+    )
+    if len(versions) != 1:
+        raise AssertionError(
+            f'interface sécurité sessions: exactement un script v24-security versionné attendu, obtenu: {versions}'
+        )
+    version = tuple(int(component) for component in versions[0].split('.'))
+    if version < (24, 4, 69):
+        raise AssertionError(
+            f'interface sécurité sessions: version JS TOTP trop ancienne: {versions[0]}'
+        )
 
 
 def main() -> int:
@@ -52,8 +74,9 @@ def main() -> int:
         'Déconnecter tous les appareils',
         'Déconnexion ordinaire limitée à l’appareil courant.',
         'sinjira-account.js?v=24.4.68',
-        'v24-security.js?v=24.4.69',
     ], 'interface sécurité sessions')
+
+    validate_security_script_version(page)
 
     # Une ancienne URL de cache pourrait masquer la correction TOTP déployée.
     forbid(page, [
