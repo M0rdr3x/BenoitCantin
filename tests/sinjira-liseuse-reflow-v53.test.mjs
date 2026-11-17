@@ -1646,6 +1646,30 @@ test('intégration : clavier flèche droite pagine sans double passage PDF',()=>
     assert.equal(f.next.clicks,0);
   }finally{f.restore()}
 });
+test('V154 : une touche maintenue tourne au plus un écran par nouvel appui',()=>{
+  const f=fixture();
+  const key=(value,repeat)=>({key:value,repeat,defaultPrevented:false,
+    altKey:false,ctrlKey:false,metaKey:false,shiftKey:false,
+    preventDefault(){this.defaultPrevented=true},
+    stopImmediatePropagation(){}});
+  try{
+    const heldBefore=key('ArrowRight',true);
+    f.documentMock.emit('keydown',heldBefore);
+    assert.equal(heldBefore.defaultPrevented,true);
+    assert.equal(f.viewer.scrollTop,0);
+    const pressed=key('ArrowRight',false);
+    f.documentMock.emit('keydown',pressed);
+    assert.equal(pressed.defaultPrevented,true);
+    assert.equal(f.viewer.scrollTop,315);
+    const heldAfter=key('PageDown',true);
+    f.documentMock.emit('keydown',heldAfter);
+    assert.equal(heldAfter.defaultPrevented,true);
+    assert.equal(f.viewer.scrollTop,315);
+    const newPress=key('ArrowRight',false);
+    f.documentMock.emit('keydown',newPress);
+    assert.equal(f.viewer.scrollTop,630);
+  }finally{f.restore()}
+});
 test('V61 : les raccourcis de lecture n’interceptent pas les flèches hors du livre',()=>{
   const f=fixture();
   const key=key=>({key,defaultPrevented:false,altKey:false,ctrlKey:false,
