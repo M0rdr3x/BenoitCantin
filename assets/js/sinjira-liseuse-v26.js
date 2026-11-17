@@ -800,10 +800,13 @@ function bindControls(){
        focused.isContentEditable||window.getSelection?.()?.toString()?.trim())return;
     if(viewer.dataset.readerLayout==='screens')return;
     if(event.key==='ArrowRight'||event.key==='PageDown'){
-      event.preventDefault();changePage(state.page+1);
+      event.preventDefault();
+      // V154 : un maintien de touche ne doit pas tourner le roman en rafale.
+      if(!event.repeat)changePage(state.page+1);
     }
     if(event.key==='ArrowLeft'||event.key==='PageUp'){
-      event.preventDefault();changePage(state.page-1);
+      event.preventDefault();
+      if(!event.repeat)changePage(state.page-1);
     }
   });
   let resizeTimer;
