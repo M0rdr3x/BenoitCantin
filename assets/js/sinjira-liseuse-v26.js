@@ -499,21 +499,27 @@ function refreshVisiblePdfPreservingSpot(){
 }
 function renderPage(){
   const version=++state.renderVersion;
+  // V153 : une page privée en cours d'extraction ne doit jamais réinjecter
+  // du texte ou des pixels pendant la suspension d'une session mobile.
+  // La revalidation des droits relance explicitement le rendu autorisé.
+  const canRender=()=>version===state.renderVersion&&Boolean(state.pdf)&&
+    (!isFull||(!state.privatePaused&&!state.accessInvalidated&&
+      document.visibilityState!=='hidden'&&!$('reader-content').hidden));
   state.renderQueue=state.renderQueue.catch(()=>{}).then(async()=>{
-    if(version!==state.renderVersion||!state.pdf)return;
+    if(!canRender())return;
     const page=await state.pdf.getPage(state.page);
-    if(version!==state.renderVersion)return;
+    if(!canRender())return;
     const readerText=$('reader-text'),fallback=$('reader-image-fallback');
     if(state.mode==='texte'){
       let readable='';
       try{
         const text=await page.getTextContent();
-        if(version!==state.renderVersion)return;
+        if(!canRender())return;
         // V82 : l'extraction PDF peut rejeter (scan, police ou structure non
         // prise en charge) alors que le rendu de la page reste possible.
         readable=pdfTextToParagraphs(text?.items||[]);
       }catch{
-        if(version!==state.renderVersion)return;
+        if(!canRender())return;
         // Ne jamais journaliser les données PDF ou l'erreur contenant un
         // fragment de texte privé. Le rendu canvas ci-dessous fait le repli.
       }
@@ -555,7 +561,7 @@ function renderPage(){
       canvas.style.height=Math.round(drawing.height)+'px';
       await page.render({canvasContext:context,viewport:drawing,
         transform:pixelRatio===1?undefined:[pixelRatio,0,0,pixelRatio,0,0]}).promise;
-      if(version!==state.renderVersion)return;
+      if(!canRender())return;
       readerText.hidden=true;
       canvas.hidden=false;
       restoreScrollAfterRender(version);
@@ -823,6 +829,13 @@ function suspendPrivateReaderForReturn(){
   // autrement init() les afficherait en arrière-plan sans revalidation.
   state.privatePaused=true;
   $('reader-content').hidden=true;
+  // V153 : invalider une extraction/rasterisation déjà démarrée, puis
+  // effacer les surfaces privées. Aucun passage masqué ne doit être
+  // réinséré après la suspension, même si une promesse PDF se termine.
+  ++state.renderVersion;
+  $('reader-text').textContent='';
+  const canvas=$('reader-canvas');
+  canvas.width=0;canvas.height=0;
   const sidebar=document.querySelector('.reader-sidebar');
   if(sidebar)sidebar.hidden=true;
 }
@@ -866,16 +879,15 @@ async function revalidatePrivateReaderAfterReturn(){
     $('reader-content').hidden=false;
     const sidebar=document.querySelector('.reader-sidebar');
     if(sidebar)sidebar.hidden=false;
-    // Conserver le passage numérique, sans le persister ni copier le roman.
+    // V153 : la suspension a annulé le rendu et effacé le texte privé.
+    // Recréer la page SEULEMENT après vérification du compte et des droits.
+    // Le moteur restaure le ratio après le rendu réel, pas dans un viewport
+    // encore vide (évite de reprendre à tort au début du livre).
     if(spot?.page===state.page){
-      requestAnimationFrame(()=>{
-        if(state.accessInvalidated||state.privatePaused||
-           state.privateReturnGeneration!==generation||state.pdf!==pdf)return;
-        const viewer=$('reader-viewer');
-        viewer.scrollTop=scrollTopForRatio(
-          spot.ratio,viewer.scrollHeight,viewer.clientHeight);
-      });
+      state.restorePending=spot.ratio;
+      state.restoringScroll=true;
     }
+    renderPage();
     void retryCloudProgress();
   }catch{
     if(sameSession())lockPrivateReader();
