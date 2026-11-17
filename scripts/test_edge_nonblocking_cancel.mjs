@@ -156,3 +156,42 @@ test('flux valides préservés et Content-Length trompeur refusé avant lecture'
   );
   assert.equal(neverRead.state.reads, 0);
 });
+
+function stalledReader() {
+  const state = { reads: 0, cancels: 0, released: 0 };
+  const reader = {
+    read() { state.reads++; return new Promise(() => {}); },
+    cancel() { state.cancels++; return new Promise(() => {}); },
+    releaseLock() { state.released++; },
+  };
+  return { state, body: { getReader: () => reader } };
+}
+
+test('les lecteurs partagent une échéance totale explicite', () => {
+  assert.match(source, /performance\.now\(\) \+ 8_000/);
+  assert.match(source, /performance\.now\(\) \+ 30_000/);
+  assert.match(source, /readChunkWithDeadline\(reader, req\.signal, deadlineAt\)/);
+  assert.match(source, /readChunkWithDeadline\(reader, null, deadlineAt\)/);
+  assert.equal((source.match(/await reader\.read\(\)/g) || []).length, 0);
+});
+
+test('une requête interrompue ne monopolise pas un lecteur bloqué', async () => {
+  const stuck = stalledReader();
+  const controller = new AbortController();
+  const pending = promptly(
+    () => readLimitedUtf8Body({
+      headers: new Headers(), body: stuck.body, signal: controller.signal,
+    }, 1024),
+    'lecture HTTP interrompue'
+  );
+  setTimeout(() => controller.abort(), 20);
+  assert.deepEqual(await pending, { ok: false });
+  assert.equal(stuck.state.reads, 1);
+  assert.ok(stuck.state.cancels >= 1);
+  assert.equal(stuck.state.released, 1);
+});
+
+test('la réponse binaire conserve une limite de lecture totale', () => {
+  assert.match(source, /export async function readLimitedBinaryResponse\(response, maxBytes\)/);
+  assert.match(source, /readChunkWithDeadline\(reader, null, deadlineAt\)/);
+});

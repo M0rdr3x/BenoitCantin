@@ -37,3 +37,11 @@ jobs:
           python3 scripts/validate_delete_account_v24_5_51.py
           python3 scripts/validate_edge_function_inventory.py
           python3 scripts/validate_production_migration_ledger.py
+
+      - name: Configurer Node.js vérifié pour les tests Storage
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+
+      - name: Refuser la suppression de fichiers hors du compte authentifié
+        run: node --test scripts/test_delete_account_storage_ownership.mjs
