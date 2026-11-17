@@ -664,6 +664,11 @@ export function bindReaderScreenMode({
     // les zones de réglage et la navigation des technologies d'assistance.
     const focused=document.activeElement;
     if(!focused||(focused!==viewer&&!viewer.contains?.(focused)))return;
+    // V156 : lorsqu'un passage est sélectionné (copie/annotation), laisser
+    // au navigateur les flèches et Home/End pour déplacer ou fermer la
+    // sélection, sans tourner involontairement l'écran du roman.
+    // Aucun texte sélectionné n'est enregistré ni transmis.
+    if(String(getSelectionText()||'').trim())return;
     const direction=event.key==='ArrowLeft'||event.key==='PageUp'?'previous'
       :event.key==='ArrowRight'||event.key==='PageDown'?'next':null;
     // V155 : Home/End changent d'écran DANS la page courante, et ne
