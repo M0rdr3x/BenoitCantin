@@ -28,8 +28,10 @@ def validate_text(text: str) -> None:
         'python3 scripts/validate_edge_response_privacy_workflow_security.py',
         'python3 scripts/validate_edge_response_privacy_v24_5_48.py',
         'python3 scripts/validate_edge_function_inventory.py',
-        'python3 scripts/validate_security_context_request_security.py --self-test',
-        'python3 scripts/validate_security_context_request_security.py',
+        '      - name: Auto-tester la confidentialité des journaux Security Context\n'
+        '        run: python3 scripts/validate_security_context_request_security.py --self-test\n',
+        '      - name: Vérifier les journaux Security Context\n'
+        '        run: python3 scripts/validate_security_context_request_security.py\n',
     ]
     for needle in required:
         if needle not in text:
