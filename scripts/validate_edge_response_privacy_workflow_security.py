@@ -28,6 +28,8 @@ def validate_text(text: str) -> None:
         'python3 scripts/validate_edge_response_privacy_workflow_security.py',
         'python3 scripts/validate_edge_response_privacy_v24_5_48.py',
         'python3 scripts/validate_edge_function_inventory.py',
+        'python3 scripts/validate_security_context_request_security.py --self-test',
+        'python3 scripts/validate_security_context_request_security.py',
     ]
     for needle in required:
         if needle not in text:
@@ -83,6 +85,11 @@ def self_test(text: str) -> None:
         ),
         'contrôle confidentialité retiré': text.replace(
             '          python3 scripts/validate_edge_response_privacy_v24_5_48.py\n', '', 1
+        ),
+        'garde journaux Security Context retiré': text.replace(
+            '      - name: Vérifier les journaux Security Context\\n'
+            '        run: python3 scripts/validate_security_context_request_security.py\\n\\n',
+            '', 1
         ),
         'inventaire Edge retiré': text.replace(
             '          python3 scripts/validate_edge_function_inventory.py\n', '', 1
