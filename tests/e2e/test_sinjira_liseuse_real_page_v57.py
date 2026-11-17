@@ -767,6 +767,49 @@ def run(playwright, browser_type, url):
         rewind=snapshot(page)
         assert reverse["consumed"] and rewind["scroll"]==0,rewind
 
+        # V156 : copier/sélectionner un passage ne doit pas transformer
+        # les flèches et End en une commande de changement d'écran.
+        selection_keyboard=page.evaluate("""()=>{
+          const viewer=document.querySelector('#reader-viewer');
+          const text=document.querySelector('#reader-text');
+          const pageField=document.querySelector('#reader-page');
+          viewer.focus({preventScroll:true});
+          const walker=document.createTreeWalker(text,NodeFilter.SHOW_TEXT);
+          let node=null;
+          while((node=walker.nextNode())&&(!node.textContent||
+            node.textContent.trim().length<10)){}
+          if(!node)return {found:false};
+          const selection=window.getSelection();
+          selection.removeAllRanges();
+          const range=document.createRange();
+          range.setStart(node,0);
+          range.setEnd(node,Math.min(10,node.length));
+          selection.addRange(range);
+          const before={page:pageField.value,top:viewer.scrollTop,
+            selected:selection.toString().trim().length>0};
+          const fire=key=>{
+            const event=new KeyboardEvent('keydown',{
+              bubbles:true,cancelable:true,key
+            });
+            document.dispatchEvent(event);
+            return {blocked:event.defaultPrevented,
+              page:pageField.value,top:viewer.scrollTop};
+          };
+          const right=fire('ArrowRight'),end=fire('End');
+          selection.removeAllRanges();
+          return {found:true,before,right,end};
+        }""")
+        assert selection_keyboard["found"] and (
+            selection_keyboard["before"]["selected"]
+        ),selection_keyboard
+        for key in ("right","end"):
+            assert not selection_keyboard[key]["blocked"] and (
+                selection_keyboard[key]["page"]==
+                selection_keyboard["before"]["page"] and
+                selection_keyboard[key]["top"]==
+                selection_keyboard["before"]["top"]
+            ),selection_keyboard
+
         # Une page source complète ne doit pas être sautée; lorsque toutes
         # ses portions sont lues, une seule autre page PDF est chargée.
         crossed=False
