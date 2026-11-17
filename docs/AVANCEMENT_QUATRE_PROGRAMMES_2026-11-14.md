@@ -58,3 +58,25 @@ Avant fusion et publication : [matrice d'essais sur appareils physiques](https:/
 - [PR #1000, liseuse mobile candidate](https://github.com/M0rdr3x/BenoitCantin/pull/1000)
 
 **Limite méthodologique :** aucun pourcentage n'est issu d'un décompte homogène d'issues/PR, d'une durée de travail mesurée ou d'une certification indépendante. L'avancement du code sur une branche de préproduction n'est pas un déploiement en service.
+
+
+## Qualification technique complémentaire — 16 novembre 2026 (V146)
+
+**Mise à jour postérieure au bilan du 14 novembre; les indicateurs de référence ne changent pas.**
+La [PR de liseuse tactile #1000](https://github.com/M0rdr3x/BenoitCantin/pull/1000) demeure **ouverte en brouillon et non fusionnée**. Son HEAD examiné est `d666ef994b9f6e342bc1d0296e73d0b9d9bccc97` (V146). L'application publiée depuis `main` ne doit donc pas être présentée comme disposant déjà de cette version.
+
+### Preuves GitHub au SHA V146
+
+- **40 workflows terminés** sur le SHA exact : **31 `success`**, **9 `skipped`**, **0 `failure`**. Les workflows pertinents incluent V64 (mobile), V65 (gestes natifs Chromium), V66 (trajectoires), V67 (bords du navigateur), V68 (paysage) et V69 (priorité des gestes).
+- La PR contient le balayage **gauche → écran/page suivante** et **droite → écran/page précédente**, la pagination du texte par écran, le PDF, les options de police et d'espacement, les modes portrait/paysage, les commandes tactiles/clavier et la sauvegarde de position. Les protections contre les gestes verticaux, la sélection de texte et l'état masqué ont été renforcées jusqu'à V146.
+- La comparaison `main...branche V146` lors de ce contrôle signale **272 commits d'avance et 10 de retard** : la branche doit être rapprochée de `main` avec revue des changements et nouvelle CI avant toute fusion.
+- Les tests automatisés avec moteurs Chromium/WebKit et PDF fictif **ne remplacent pas** des essais sur iPhone/iPad et Android physiques, ni une vérification de Safari iOS, VoiceOver et TalkBack.
+
+### Portes de publication toujours fermées
+
+1. **Essais physiques et accessibilité** : balayage dans les deux sens, pagination sur téléphone, zoom PDF, sélection de texte, geste système de retour, rotation, petite hauteur paysage, lecteur d'écran et réduction des animations; enregistrer appareils, versions et PASS/FAIL dans la [matrice de réception](https://github.com/M0rdr3x/BenoitCantin/blob/review/sinjira-liseuse-mobile-v64-integration-main-20261111/docs/sinjira/SINJIRA_LISEUSE_RECEPTION_APPAREILS_PHYSIQUES_2026-11-12.md).
+2. **Sécurité du Livre I intégral** : accès autorisé puis révoqué, expiration de session, retour d'onglet/bfcache, absence de fuite du PDF privé ou de ses données dans le dépôt et le stockage local; vérifier les contrôles serveur et le coffre privé avant de publier.
+3. **Synchronisation et robustesse** : reprise entre deux appareils réels, réseau instable/hors ligne, changement de police/rotation pendant lecture, sauvegarde et reprise après fermeture.
+4. **Publication contrôlée** : rebaser/synchroniser proprement sur le `main` le plus récent, relancer toutes les CI au SHA final, revoir les différences, prévoir le retour arrière et obtenir une décision humaine explicite.
+
+**Statut : NO-GO production** tant que ces preuves ne sont pas réunies. **Nova 47 %, Nova–SINJIRA non mesurable, boussole 75 %, sondage 54,5 %, SINJIRA 66,5 % ±10 points** : aucun taux n'est relevé du seul fait de ces travaux candidats. La cible politique conditionnelle du 31 décembre 2027 n'est pas une date de mise en production de SINJIRA.
