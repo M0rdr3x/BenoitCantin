@@ -382,7 +382,7 @@ def validate_private_pause_during_load(browser,opts,url):
           rightsChecks:window.__v93Private.rightsCalls
         })""")
         assert during["contentHidden"] and during["sidebarHidden"],during
-        assert during["privateText"]==='' and during["canvasPixels"]==0,during
+        assert during["privateText"]=="" and during["canvasPixels"]==0,during
         assert during["rightsChecks"]==1,during
 
         # V153 : une reprise autorisée reconstruit la page masquée et
