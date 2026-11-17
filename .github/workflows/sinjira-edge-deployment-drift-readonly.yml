@@ -1,0 +1,106 @@
+name: Sécurité — détecter les dérives Edge en lecture seule
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/audit_edge_deployed_source_readonly.py'
+      - 'supabase/retired-edge-tombstones.json'
+      - 'supabase/config.toml'
+      - 'supabase/functions/**'
+      - '.github/workflows/sinjira-edge-deployment-drift-readonly.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/audit_edge_deployed_source_readonly.py'
+      - 'supabase/retired-edge-tombstones.json'
+      - 'supabase/config.toml'
+      - 'supabase/functions/**'
+      - '.github/workflows/sinjira-edge-deployment-drift-readonly.yml'
+  schedule:
+    - cron: '17 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: edge-security-readonly-audit-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify-fixtures:
+    name: Tester la détection de dérive sans aucun secret
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python figé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Tester la matrice des dérives déployées
+        run: python3 scripts/audit_edge_deployed_source_readonly.py --self-test
+      - name: Exiger les sources et permissions JWT de tous les services déployés
+        run: python3 scripts/audit_edge_deployed_source_readonly.py --verify-repo
+
+  compare-deployed:
+    name: Contrôler l'inventaire complet des trente-deux fonctions Edge actives
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: verify-fixtures
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout de la version approuvée sur main
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+          ref: main
+      - name: Python figé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Installer CLI Supabase figée pour téléchargements en lecture seule
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
+        with:
+          version: 2.111.0
+          github-token: ${{ github.token }}
+      - name: Refuser tout lancement avec jeton Edge lecture seule absent
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_EDGE_READONLY_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
+            echo "::error::SUPABASE_EDGE_READONLY_TOKEN absent : vérifier un jeton Supabase limité à edge_functions:read."
+            exit 1
+          fi
+      - name: Télécharger uniquement les métadonnées des fonctions Edge
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_EDGE_READONLY_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --proto '=https' --tlsv1.2 --fail --silent --show-error             --max-time 30 --retry 2             --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN"             --header 'Accept: application/json'             --output "$RUNNER_TEMP/edge-inventory.json"             'https://api.supabase.com/v1/projects/gpvivleexywljowcqkru/functions'
+      - name: Télécharger 32 bundles séparés, y compris leurs dépendances partagées
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_EDGE_READONLY_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/edge-live"
+          for slug in admin-analytics admin-console admin-license-codes admin-literary admin-reader admin-reports admin-sinjira-v18 admin-social-v20 admin-users conscience-vault create-youth-account delete-player-account fracture-engine-gateway generate-sinjira-character get-document-url get-novel-file-url guardian-create-youth-v22 life-story-delivery life-story-export notify-account-confirmation nova-civic-poll personal-ai redeem-license-code revoke-my-contributions security-context send-game-report send-player-sheet sinjira-maintenance-upload-20261007 submit-character-questionnaire submit-fracture-endgame submit-game-contribution validate-phone-v22; do
+            # Un dossier par fonction conserve sa version de _shared/auth.ts ;
+            # télécharger en commun pourrait masquer une dépendance vulnérable.
+            mkdir -p "$RUNNER_TEMP/edge-live/$slug"
+            cd "$RUNNER_TEMP/edge-live/$slug"
+            supabase functions download "$slug" --project-ref gpvivleexywljowcqkru
+          done
+      - name: Échouer si ACL JWT ou source déployée diverge
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/audit_edge_deployed_source_readonly.py             --local-root "$GITHUB_WORKSPACE"             --downloaded-root "$RUNNER_TEMP/edge-live"             --metadata "$RUNNER_TEMP/edge-inventory.json"
