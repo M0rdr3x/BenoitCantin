@@ -46,13 +46,10 @@ jobs:
           . .venv-reader-v66/bin/activate
           python -m pip install --disable-pip-version-check playwright==1.57.0
           python -m playwright install --with-deps ${{ matrix.browser }}
+          # V157 : cibler le défilement réel et la trajectoire; V64 conserve
+          # les tests page complète/reflow, et V65 les gestes Chromium natifs.
           python tests/e2e/test_sinjira_liseuse_mobile_v54.py --browser ${{ matrix.browser }}
-          python tests/e2e/test_sinjira_liseuse_real_page_v57.py --browser ${{ matrix.browser }}
-          python tests/e2e/test_sinjira_liseuse_responsive_v58.py --browser ${{ matrix.browser }}
           python tests/e2e/test_sinjira_liseuse_trajectory_v66.py --browser ${{ matrix.browser }}
-          if [ "${{ matrix.browser }}" = chromium ]; then
-            python tests/e2e/test_sinjira_liseuse_native_touch_v65.py --browser chromium
-          fi
       - name: Certifier seulement le laboratoire
         run: |
           echo "V66-TESTS-ONLY: aucune certification de téléphone physique ni de droits sur les romans"
