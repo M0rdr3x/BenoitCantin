@@ -667,7 +667,12 @@ export function bindReaderScreenMode({
     const direction=event.key==='ArrowLeft'||event.key==='PageUp'?'previous'
       :event.key==='ArrowRight'||event.key==='PageDown'?'next':null;
     if(!direction)return;
-    event.preventDefault();event.stopImmediatePropagation();turn(direction);
+    // V154 : une touche maintenue génère keydown.repeat sur les claviers
+    // Bluetooth et accessibles. Un appui = un écran, sans feuilleter
+    // accidentellement une dizaine de passages en une seconde.
+    event.preventDefault();event.stopImmediatePropagation();
+    if(event.repeat)return;
+    turn(direction);
   };
   const afterTextChanged=()=>{
     if(!isPaged()){sync();return}
