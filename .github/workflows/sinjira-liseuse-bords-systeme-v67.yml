@@ -49,13 +49,9 @@ jobs:
           . .venv-reader-v67/bin/activate
           python -m pip install --disable-pip-version-check playwright==1.57.0
           python -m playwright install --with-deps ${{ matrix.browser }}
-          python tests/e2e/test_sinjira_liseuse_mobile_v54.py --browser ${{ matrix.browser }}
-          python tests/e2e/test_sinjira_liseuse_real_page_v57.py --browser ${{ matrix.browser }}
-          python tests/e2e/test_sinjira_liseuse_responsive_v58.py --browser ${{ matrix.browser }}
+          # V157 : trajet et bord système uniquement. Les parcours HTML
+          # complets restent réceptionnés en Chromium/WebKit par V64.
           python tests/e2e/test_sinjira_liseuse_trajectory_v66.py --browser ${{ matrix.browser }}
-          if [ "${{ matrix.browser }}" = chromium ]; then
-            python tests/e2e/test_sinjira_liseuse_native_touch_v65.py --browser chromium
-          fi
       - name: Tests uniquement, aucune autorisation de déploiement
         run: |
           echo "V67-NO_GO production : tests tactiles navigateur, pas d'appareil réel ni de roman privé"
