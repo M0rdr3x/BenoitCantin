@@ -65,7 +65,8 @@ export async function requireUser(){return {id:mock.userId}}
 export function safeInternalDestination(x){return x}
 """
 
-def install_private_isolation(page, delay_first_pdf=False, delay_first_text=False):
+def install_private_isolation(page, delay_first_pdf=False, delay_first_text=False,
+                              delay_first_render=False):
     """Sécurité privée, PDF fictif de 520 pages et aucun vrai appel Supabase."""
     blocked=[]
     pdf=MOCK_PDF_JS.replace("numPages:82","numPages:520").replace(
@@ -90,6 +91,26 @@ def install_private_isolation(page, delay_first_pdf=False, delay_first_text=Fals
         globalThis.__v153TextRequested=true;
         await new Promise(resolve=>{globalThis.__v153ReleaseText=resolve});
       }""", 1
+        )
+    if delay_first_render:
+        # Simuler une page PDF illustrée avec rasterisation encore en cours.
+        # Le faux moteur rend observable cancel() sans document privé.
+        pdf=pdf.replace("      return {items};","      return {items:[]};",1)
+        pdf=pdf.replace(
+            "render(){return {promise:Promise.resolve()}}",
+            """render(){
+      if(!globalThis.__v153RasterStarted){
+        globalThis.__v153RasterStarted=true;
+        let finish,reject;
+        const promise=new Promise((yes,no)=>{finish=yes;reject=no});
+        globalThis.__v153FinishRaster=()=>finish();
+        return {promise,cancel(){
+          globalThis.__v153CancelCount=(globalThis.__v153CancelCount||0)+1;
+          reject(new Error('RenderingCancelledException'));
+        }};
+      }
+      return {promise:Promise.resolve(),cancel(){}};
+    }""",1
         )
     def intercept(route):
         url=route.request.url
@@ -256,6 +277,60 @@ def validate_private_suspend_during_text_extract(browser,opts,url):
           return !document.querySelector('#reader-content').hidden &&
             document.querySelector('#reader-text').textContent.includes(
               'LIVRE DE TEST · Page 4') &&
+            window.__v93Private.rightsCalls>=2;
+        }""",timeout=15000)
+        assert not errors,errors
+        assert not blocked,blocked
+    finally:
+        context.close()
+
+
+def validate_private_suspend_during_pdf_render(browser,opts,url):
+    """V153 : arrêter une rasterisation privée à la suspension."""
+    context=browser.new_context(**opts)
+    try:
+        page=context.new_page()
+        errors=[]
+        page.on("pageerror",lambda error:errors.append(str(error)))
+        blocked=install_private_isolation(page,delay_first_render=True)
+        page.goto(url.replace("edition=demo","edition=integrale"),wait_until="load")
+        page.wait_for_function(
+            "()=>window.__v153RasterStarted===true",timeout=15000
+        )
+        paused=page.evaluate("""()=>{
+          Object.defineProperty(document,'visibilityState',{
+            configurable:true,value:'hidden'
+          });
+          document.dispatchEvent(new Event('visibilitychange'));
+          return {
+            hidden:document.querySelector('#reader-content').hidden,
+            text:document.querySelector('#reader-text').textContent,
+            canvas:document.querySelector('#reader-canvas').width,
+            cancels:window.__v153CancelCount||0
+          };
+        }""")
+        assert paused=={"hidden":True,"text":"","canvas":0,"cancels":1},paused
+        # Une fin de rendu périmée ne doit rien réafficher.
+        page.evaluate("()=>window.__v153FinishRaster()")
+        page.wait_for_timeout(80)
+        after=page.evaluate("""()=>({
+          hidden:document.querySelector('#reader-content').hidden,
+          text:document.querySelector('#reader-text').textContent,
+          canvas:document.querySelector('#reader-canvas').width,
+          cancels:window.__v153CancelCount||0
+        })""")
+        assert after==paused,(paused,after)
+        # Un nouveau rendu n'est possible qu'après autorisation renouvelée.
+        page.evaluate("""()=>{
+          Object.defineProperty(document,'visibilityState',{
+            configurable:true,value:'visible'
+          });
+          document.dispatchEvent(new Event('visibilitychange'));
+        }""")
+        page.wait_for_function("""()=>{
+          const content=document.querySelector('#reader-content');
+          const canvas=document.querySelector('#reader-canvas');
+          return !content.hidden&&!canvas.hidden&&canvas.width>0 &&
             window.__v93Private.rightsCalls>=2;
         }""",timeout=15000)
         assert not errors,errors
@@ -451,6 +526,7 @@ def run(p,engine,url):
         validate_private_mobile_return(browser,opts,url)
         validate_private_pause_during_load(browser,opts,url)
         validate_private_suspend_during_text_extract(browser,opts,url)
+        validate_private_suspend_during_pdf_render(browser,opts,url)
 
         # Un navigateur qui refuse le stockage ne doit PAS afficher un
         # message mensonger « Page mémorisée ». Le livre doit rester lisible.
