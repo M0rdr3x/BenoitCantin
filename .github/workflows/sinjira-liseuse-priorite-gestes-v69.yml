@@ -44,16 +44,12 @@ jobs:
           . .venv-reader-v69/bin/activate
           python -m pip install --disable-pip-version-check playwright==1.57.0
           python -m playwright install --with-deps ${{ matrix.browser }}
-          python tests/e2e/test_sinjira_liseuse_mobile_v54.py --browser ${{ matrix.browser }}
-          python tests/e2e/test_sinjira_liseuse_real_page_v57.py --browser ${{ matrix.browser }}
+          # V157 : garder reflow, erreurs d'extraction et PDF illustré.
+          # Le parcours complet et la reprise privée sont en V64; la
+          # trajectoire en V66/V67 et les gestes natifs en V65.
           python tests/e2e/test_sinjira_liseuse_image_fallback_v81.py --browser ${{ matrix.browser }}
           python tests/e2e/test_sinjira_liseuse_extract_error_v82.py --browser ${{ matrix.browser }}
-          python tests/e2e/test_sinjira_liseuse_auto_resume_v85.py --browser ${{ matrix.browser }}
           python tests/e2e/test_sinjira_liseuse_responsive_v58.py --browser ${{ matrix.browser }}
-          python tests/e2e/test_sinjira_liseuse_trajectory_v66.py --browser ${{ matrix.browser }}
-          if [ "${{ matrix.browser }}" = chromium ]; then
-            python tests/e2e/test_sinjira_liseuse_native_touch_v65.py --browser chromium
-          fi
       - name: Aucune publication ni migration
         run: |
           echo "V69-LAB-ONLY : aucune validation physique ni droit prive certifie"
