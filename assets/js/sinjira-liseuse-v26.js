@@ -40,7 +40,7 @@ const $=id=>document.getElementById(id);
 const state={pdf:null,page:1,mode:'texte',theme:'sepia',size:20,zoom:1,
   font:'serif',lineHeight:1.75,textWidth:780,letterSpacing:0,
   voiceURI:'',speed:1,autoSpeech:false,
-  user:null,novelId:null,renderVersion:0,renderQueue:Promise.resolve(),saveTimer:null,
+  user:null,novelId:null,renderVersion:0,renderQueue:Promise.resolve(),renderTask:null,saveTimer:null,
   progressQueue:Promise.resolve(),progressRevision:0,cloudDirty:false,cloudRetrying:false,
   accessEpoch:0,accessInvalidated:false,
   loadController:null,authSubscription:null,cloudSpotSupported:null,
@@ -497,6 +497,13 @@ function refreshVisiblePdfPreservingSpot(){
   state.restoringScroll=true;
   renderPage();
 }
+function cancelPrivateRenderTask(){
+  // PDF.js peut poursuivre la rasterisation après la suspension. Arrêter
+  // explicitement sa tâche plutôt que compter seulement sur [hidden].
+  const task=state.renderTask;
+  state.renderTask=null;
+  try{task?.cancel?.()}catch{/* annulation facultative du moteur PDF */}
+}
 function renderPage(){
   const version=++state.renderVersion;
   // V153 : une page privée en cours d'extraction ne doit jamais réinjecter
@@ -559,8 +566,11 @@ function renderPage(){
       canvas.height=Math.round(drawing.height*pixelRatio);
       canvas.style.width=Math.round(drawing.width)+'px';
       canvas.style.height=Math.round(drawing.height)+'px';
-      await page.render({canvasContext:context,viewport:drawing,
-        transform:pixelRatio===1?undefined:[pixelRatio,0,0,pixelRatio,0,0]}).promise;
+      const task=page.render({canvasContext:context,viewport:drawing,
+        transform:pixelRatio===1?undefined:[pixelRatio,0,0,pixelRatio,0,0]});
+      state.renderTask=task;
+      try{await task.promise}
+      finally{if(state.renderTask===task)state.renderTask=null}
       if(!canRender())return;
       readerText.hidden=true;
       canvas.hidden=false;
@@ -833,6 +843,7 @@ function suspendPrivateReaderForReturn(){
   // effacer les surfaces privées. Aucun passage masqué ne doit être
   // réinséré après la suspension, même si une promesse PDF se termine.
   ++state.renderVersion;
+  cancelPrivateRenderTask();
   $('reader-text').textContent='';
   const canvas=$('reader-canvas');
   canvas.width=0;canvas.height=0;
@@ -922,6 +933,7 @@ function lockPrivateReader(){
   const book=state.pdf;
   state.pdf=null;state.user=null;state.novelId=null;
   state.renderVersion++;
+  cancelPrivateRenderTask();
   // Aucun texte/citation privé ne reste visible après changement de compte.
   $('reader-text').textContent='';
   $('reader-marks-list').replaceChildren();
