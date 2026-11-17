@@ -26,11 +26,20 @@ REQUIRED = {
     'réponse succès privée': 'return privateJson({\n      ok: true,',
     'contrat confidentialité IP': 'raw_ip_stored: false',
     'contrat confidentialité GPS': 'gps_used: false',
+    'diagnostic de sécurité sans détail fournisseur': "console.error('[security-context]', { code: 'SECURITY_CONTEXT_FAILED' });",
 }
 
 REQUIRED_PATTERNS = {
     'requête bornée exactement à 4096 octets': re.compile(r'\bMAX_REQUEST_BYTES\s*=\s*4_?096\s*;'),
 }
+
+# Les journaux de l'Edge ne doivent jamais enregistrer une exception SDK,
+# y compris son message/stack, même si le navigateur reçoit déjà un 500 générique.
+RAW_ERROR_LOG = re.compile(
+    r"\\bconsole\\.(?:warn|error|info|log|debug)\\s*\\([^;\\n]{0,240},\\s*"
+    r"(?:error|err|exception)(?:\\.(?:message|stack))?\\s*[,)]",
+    re.IGNORECASE,
+)
 
 FORBIDDEN = {
     'lecture JSON directe non bornée': 'await req.json()',
@@ -57,6 +66,9 @@ def validate(path: Path) -> list[str]:
     for label, marker in FORBIDDEN.items():
         if marker in source.lower():
             errors.append(f'Garde security-context violé: {label}.')
+
+    if RAW_ERROR_LOG.search(source):
+        errors.append('Journal de sécurité: exception ou diagnostic fournisseur brut interdit.')
 
     parsed_pos = source.find('const parsed = await readLimitedJson(req)')
     auth_pos = source.find('const user = await requiredUser(req)')
@@ -113,6 +125,7 @@ Deno.serve(async (req) => {
 });
 privateJson({});
 privateJson({});
+console.error('[security-context]', { code: 'SECURITY_CONTEXT_FAILED' });
 """
         path.write_text(safe, encoding='utf-8')
         clean = validate(path)
@@ -143,6 +156,17 @@ privateJson({});
         auth_order = validate(path)
         if not any('avant la validation' in item for item in auth_order):
             raise AssertionError('La lecture du corps avant le JWT doit être bloquée.')
+
+        safe_log = "console.error('[security-context]', { code: 'SECURITY_CONTEXT_FAILED' });"
+        for unsafe_log in (
+            "console.error('[security-context]', error);",
+            "console.warn('[security-context]', err.message);",
+            "console.log('[security-context]', exception.stack);",
+        ):
+            path.write_text(safe.replace(safe_log, unsafe_log), encoding='utf-8')
+            diagnostics = validate(path)
+            if not any('exception ou diagnostic fournisseur brut' in item for item in diagnostics):
+                raise AssertionError('Un journal d’exception brute doit être refusé: ' + unsafe_log)
 
 
 def main() -> int:
