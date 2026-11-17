@@ -14,6 +14,7 @@ on:
       - 'tests/e2e/test_sinjira_liseuse_mobile_v54.py'
       - 'tests/e2e/test_sinjira_liseuse_real_page_v57.py'
       - 'tests/e2e/test_sinjira_liseuse_responsive_v58.py'
+      - 'tests/e2e/test_sinjira_liseuse_auto_resume_v85.py'
       - 'tests/sinjira-liseuse-touch-v52.test.mjs'
       - 'tests/sinjira-liseuse-reflow-v53.test.mjs'
       - '.github/workflows/sinjira-liseuse-mobile-v64-integration.yml'
@@ -49,7 +50,7 @@ jobs:
           node --check assets/js/sinjira-liseuse-touch-v52.mjs
           node --check assets/js/sinjira-liseuse-reflow-v53.mjs
           node --check tests/sinjira-liseuse-reflow-v53.test.mjs
-          python3 -m py_compile tests/e2e/test_sinjira_liseuse_mobile_v54.py tests/e2e/test_sinjira_liseuse_real_page_v57.py tests/e2e/test_sinjira_liseuse_responsive_v58.py
+          python3 -m py_compile tests/e2e/test_sinjira_liseuse_mobile_v54.py tests/e2e/test_sinjira_liseuse_real_page_v57.py tests/e2e/test_sinjira_liseuse_responsive_v58.py tests/e2e/test_sinjira_liseuse_auto_resume_v85.py
       - name: Vérifier 68 tests de gestes, reflow, accessibilité et ancre
         run: node --test tests/sinjira-liseuse-reflow-v53.test.mjs tests/sinjira-liseuse-touch-v52.test.mjs
       - name: Réception de la vraie page avec faux livre et comptes bloqués
@@ -61,5 +62,8 @@ jobs:
           python tests/e2e/test_sinjira_liseuse_mobile_v54.py --browser ${{ matrix.browser }}
           python tests/e2e/test_sinjira_liseuse_real_page_v57.py --browser ${{ matrix.browser }}
           python tests/e2e/test_sinjira_liseuse_responsive_v58.py --browser ${{ matrix.browser }}
+          # V153 : le roman privé doit rester hors DOM pendant une suspension,
+          # y compris quand la promesse PDF se termine après visibilitychange.
+          python tests/e2e/test_sinjira_liseuse_auto_resume_v85.py --browser ${{ matrix.browser }}
       - name: Fin de recette sans publication ni migration
         run: echo "SINJIRA_V64_TESTS_ONLY_NO_PRODUCTION_GO"
