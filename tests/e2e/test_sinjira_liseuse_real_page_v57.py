@@ -1032,6 +1032,37 @@ def run(playwright, browser_type, url):
         },("V101: souris droite = une page précédente",
             pdf_mouse_back,mouse_counts_back)
 
+        # V154 : un clavier physique tenu enfoncé ne doit pas faire sauter
+        # plusieurs pages du livre. Vérifier aussi les raccourcis PDF V26.
+        repeated_keyboard=page.evaluate("""()=>{
+          const viewer=document.querySelector('#reader-viewer');
+          const field=document.querySelector('#reader-page');
+          viewer.focus({preventScroll:true});
+          const fire=(key,repeat)=>{
+            const event=new KeyboardEvent('keydown',{
+              bubbles:true,cancelable:true,key,repeat
+            });
+            document.dispatchEvent(event);
+            return {page:Number(field.value),blocked:event.defaultPrevented};
+          };
+          return {
+            before:Number(field.value),
+            heldNext:fire('ArrowRight',true),
+            pressNext:fire('ArrowRight',false),
+            heldBack:fire('PageUp',true),
+            pressBack:fire('ArrowLeft',false)
+          };
+        }""")
+        assert repeated_keyboard=={
+            "before":4,
+            "heldNext":{"page":4,"blocked":True},
+            "pressNext":{"page":5,"blocked":True},
+            "heldBack":{"page":5,"blocked":True},
+            "pressBack":{"page":4,"blocked":True}
+        },repeated_keyboard
+        page.wait_for_function("""()=>document.querySelector('#reader-page').value==='4' &&
+          !document.querySelector('#reader-canvas').hidden""")
+
         # V102 : la barre tactile affiche également la position à 320 px,
         # au lieu de disparaître sous les deux gros boutons de navigation.
         page.set_viewport_size({"width":320,"height":568})
