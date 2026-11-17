@@ -781,6 +781,45 @@ def run(playwright, browser_type, url):
         assert snapshot(page)["page"]==4,snapshot(page)
         assert snapshot(page)["scroll"]==0,snapshot(page)
 
+        # V155 : les raccourcis Home/End d'une vraie page paginée ne
+        # sautent pas le document PDF et n'interfèrent pas avec le swipe.
+        screen_edges=page.evaluate("""()=>{
+          const v=document.querySelector('#reader-viewer');
+          const source=document.querySelector('#reader-page');
+          v.focus({preventScroll:true});
+          const fire=(key,repeat=false)=>{
+            const event=new KeyboardEvent('keydown',{
+              bubbles:true,cancelable:true,key,repeat
+            });
+            document.dispatchEvent(event);
+            return {scroll:v.scrollTop,blocked:event.defaultPrevented,
+              source:source.value};
+          };
+          const before={source:source.value,layout:v.dataset.readerLayout,
+            max:v.scrollHeight-v.clientHeight,top:v.scrollTop};
+          const end=fire('End');
+          const held=fire('Home',true);
+          const home=fire('Home');
+          return {before,end,held,home};
+        }""")
+        assert screen_edges["before"]["source"]=="4" and (
+            screen_edges["before"]["layout"]=="screens" and
+            screen_edges["before"]["max"]>200
+        ),screen_edges
+        assert screen_edges["end"]["blocked"] and (
+            abs(screen_edges["end"]["scroll"]-
+                screen_edges["before"]["max"])<4
+        ),screen_edges
+        assert screen_edges["held"]["blocked"] and (
+            abs(screen_edges["held"]["scroll"]-
+                screen_edges["end"]["scroll"])<4
+        ),screen_edges
+        assert screen_edges["home"]["blocked"] and (
+            screen_edges["home"]["scroll"]<3
+        ),screen_edges
+        assert all(screen_edges[x]["source"]=="4"
+                   for x in ("end","held","home")),screen_edges
+
         # Le retour depuis le premier écran d'une autre page doit exposer
         # la dernière portion de la page PDF précédente.
         swipe(page,130)
