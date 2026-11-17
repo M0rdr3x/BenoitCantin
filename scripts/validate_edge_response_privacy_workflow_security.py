@@ -87,8 +87,8 @@ def self_test(text: str) -> None:
             '          python3 scripts/validate_edge_response_privacy_v24_5_48.py\n', '', 1
         ),
         'garde journaux Security Context retiré': text.replace(
-            '      - name: Vérifier les journaux Security Context\\n'
-            '        run: python3 scripts/validate_security_context_request_security.py\\n\\n',
+            '      - name: Vérifier les journaux Security Context\n'
+            '        run: python3 scripts/validate_security_context_request_security.py\n\n',
             '', 1
         ),
         'inventaire Edge retiré': text.replace(
