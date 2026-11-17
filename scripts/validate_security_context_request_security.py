@@ -36,8 +36,8 @@ REQUIRED_PATTERNS = {
 # Les journaux de l'Edge ne doivent jamais enregistrer une exception SDK,
 # y compris son message/stack, même si le navigateur reçoit déjà un 500 générique.
 RAW_ERROR_LOG = re.compile(
-    r"\\bconsole\\.(?:warn|error|info|log|debug)\\s*\\([^;\\n]{0,240},\\s*"
-    r"(?:error|err|exception)(?:\\.(?:message|stack))?\\s*[,)]",
+    r"\bconsole\.(?:warn|error|info|log|debug)\s*\([^;\n]{0,240},\s*"
+    r"(?:error|err|exception)(?:\.(?:message|stack))?\s*[,)]",
     re.IGNORECASE,
 )
 
