@@ -1670,6 +1670,51 @@ test('V154 : une touche maintenue tourne au plus un écran par nouvel appui',()=
     assert.equal(f.viewer.scrollTop,630);
   }finally{f.restore()}
 });
+test('V155 : Home/End vont au début et à la fin de la page texte courante',()=>{
+  const f=fixture();
+  const key=(value,repeat=false)=>({key:value,repeat,defaultPrevented:false,
+    altKey:false,ctrlKey:false,metaKey:false,shiftKey:false,
+    preventDefault(){this.defaultPrevented=true},
+    stopImmediatePropagation(){}});
+  try{
+    assert.equal(f.pageField.value,'4');
+    const end=key('End');
+    f.documentMock.emit('keydown',end);
+    assert.equal(end.defaultPrevented,true);
+    assert.equal(f.viewer.scrollTop,700);
+    assert.equal(f.pageField.value,'4');
+    const held=key('Home',true);
+    f.documentMock.emit('keydown',held);
+    assert.equal(held.defaultPrevented,true);
+    assert.equal(f.viewer.scrollTop,700);
+    const home=key('Home');
+    f.documentMock.emit('keydown',home);
+    assert.equal(home.defaultPrevented,true);
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(f.previous.clicks+f.next.clicks,0);
+  }finally{f.restore()}
+});
+test('V155 : Home/End restent natifs hors du texte paginé',()=>{
+  const f=fixture();
+  const key=value=>({key:value,defaultPrevented:false,
+    altKey:false,ctrlKey:false,metaKey:false,shiftKey:false,
+    preventDefault(){this.defaultPrevented=true},
+    stopImmediatePropagation(){}});
+  try{
+    f.documentMock.activeElement=f.documentMock;
+    const outside=key('End');f.documentMock.emit('keydown',outside);
+    assert.equal(outside.defaultPrevented,false);
+    f.documentMock.activeElement=f.viewer;
+    f.text.hidden=true;
+    f.viewer.emit('sinjira:reader-page-change',{});
+    const pdf=key('End');f.documentMock.emit('keydown',pdf);
+    assert.equal(pdf.defaultPrevented,false);
+    f.text.hidden=false;
+    f.toggle.checked=false;f.toggle.emit('change',{});
+    const continuous=key('Home');f.documentMock.emit('keydown',continuous);
+    assert.equal(continuous.defaultPrevented,false);
+  }finally{f.restore()}
+});
 test('V61 : les raccourcis de lecture n’interceptent pas les flèches hors du livre',()=>{
   const f=fixture();
   const key=key=>({key,defaultPrevented:false,altKey:false,ctrlKey:false,
@@ -2223,7 +2268,7 @@ test('V61 : boutons de lecture annoncent écran ou page du livre selon le mode',
 test('V61 : indications des raccourcis et focus visible existent dans la vraie page',()=>{
   const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
-  assert.match(html,/aria-keyshortcuts="ArrowLeft ArrowRight PageUp PageDown"/);
+  assert.match(html,/aria-keyshortcuts="ArrowLeft ArrowRight PageUp PageDown Home End"/);
   assert.match(html,/placez d’abord le focus dans la zone du livre/);
   assert.match(css,/\.reader-viewer:focus-visible\{outline:3px solid/);
 });
@@ -2238,7 +2283,7 @@ test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
   assert.match(h,/id="reader-screen-count"/);
-  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.16\.154/);
+  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.16\.155/);
   assert.match(h,/sinjira-liseuse-v26\.js\?v=34\.11\.16\.154/);
 });
 test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=>{
