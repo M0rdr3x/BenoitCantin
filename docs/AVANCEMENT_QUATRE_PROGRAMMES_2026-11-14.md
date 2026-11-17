@@ -80,3 +80,10 @@ La [PR de liseuse tactile #1000](https://github.com/M0rdr3x/BenoitCantin/pull/10
 4. **Publication contrôlée** : rebaser/synchroniser proprement sur le `main` le plus récent, relancer toutes les CI au SHA final, revoir les différences, prévoir le retour arrière et obtenir une décision humaine explicite.
 
 **Statut : NO-GO production** tant que ces preuves ne sont pas réunies. **Nova 47 %, Nova–SINJIRA non mesurable, boussole 75 %, sondage 54,5 %, SINJIRA 66,5 % ±10 points** : aucun taux n'est relevé du seul fait de ces travaux candidats. La cible politique conditionnelle du 31 décembre 2027 n'est pas une date de mise en production de SINJIRA.
+
+
+### Actualisation technique du 16 novembre 2026 — synchronisation V152
+
+La [PR #1085](https://github.com/M0rdr3x/BenoitCantin/pull/1085) a **fusionné `main` dans la branche candidate de la liseuse #1000**, sans fusion de #1000 dans `main` et sans publication du livre. Le commit de synchronisation est `22b40e3341d45e8e24ecef8c35123711915e4dd7`. Cette opération apporte **10 commits récents** de `main`, contenant des protections et tests de sécurité, tout en conservant les changements de la liseuse (moteur de pagination **V152**). Le contrôle `compare main...branche-liseuse` après fusion indique **273 commits d'avance et 0 de retard**. Les 44 fichiers de `main` ayant changé depuis la base commune ne chevauchaient aucun des 107 chemins modifiés dans la branche de la liseuse.
+
+**Réception CI :** au premier contrôle sur ce nouveau SHA, les 40 workflows avaient été créés, dont **9 SKIPPED**, les autres étant encore en attente ou en cours. **Ne pas réutiliser les 31 succès de V146 pour certifier V152** : seul le résultat final sur `22b40e3...` permettra la clôture de cette étape. La PR #1000 reste **DRAFT / NO-GO production**. Restent les essais sur iOS/Android physiques, VoiceOver/TalkBack, les droits sur livres privés et la reprise multiappareil. Aucun des cinq indicateurs de complétude du bilan n'est augmenté automatiquement.
