@@ -1,6 +1,7 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { bearerToken, requiredUser, serviceClient } from '../_shared/auth.ts';
 import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
+import { planOwnedAccountStorageDeletes } from '../_shared/delete-account-storage-ownership.mjs';
 
 const CONFIRM_PHRASE='SUPPRIMER MON COMPTE';
 const MAX_REQUEST_BYTES=1024;
@@ -81,9 +82,17 @@ Deno.serve(async (req) => {
     ]);
     if(profileRes.error||submissionRes.error||applicationRes.error)throw new Error('STORAGE_PATH_LOOKUP_FAILED');
 
-    await removeStoragePaths(service,'sinjira-avatars',[profileRes.data?.avatar_path]);
-    await removeStoragePaths(service,'sinjira-character-sources',(submissionRes.data||[]).map((row:any)=>row.photo_path));
-    await removeStoragePaths(service,'sinjira-character-submissions',(applicationRes.data||[]).map((row:any)=>row.photo_path));
+    // Every database path is untrusted, including profiles.avatar_path, which
+    // the signed-in user may edit. Validate all three buckets atomically BEFORE
+    // any service_role Storage deletion; refuse cross-account paths and URLs.
+    const ownedPaths=planOwnedAccountStorageDeletes(user.id,{
+      'sinjira-avatars':[profileRes.data?.avatar_path],
+      'sinjira-character-sources':(submissionRes.data||[]).map((row:any)=>row.photo_path),
+      'sinjira-character-submissions':(applicationRes.data||[]).map((row:any)=>row.photo_path)
+    });
+    await removeStoragePaths(service,'sinjira-avatars',ownedPaths['sinjira-avatars']);
+    await removeStoragePaths(service,'sinjira-character-sources',ownedPaths['sinjira-character-sources']);
+    await removeStoragePaths(service,'sinjira-character-submissions',ownedPaths['sinjira-character-submissions']);
 
     const {error:revokeError}=await service.rpc('revoke_sinjira_contributions', {
       p_user_id: user.id,
@@ -105,6 +114,7 @@ Deno.serve(async (req) => {
     if(error?.message==='INVALID_JSON')return privateJson({ok:false,error:'JSON invalide.',code:'INVALID_JSON'},400);
     if(error?.message==='ADMIN_CHECK_FAILED')return privateJson({ok:false,error:'Vérification du rôle impossible.',code:'ADMIN_CHECK_FAILED'},503);
     if(error?.message==='LEGAL_HOLD_CHECK_FAILED')return privateJson({ok:false,error:'La vérification des obligations de conservation est temporairement indisponible. Aucune suppression n’a été effectuée.',code:'LEGAL_HOLD_CHECK_FAILED'},503);
+    if(error?.message==='STORAGE_PATH_OWNERSHIP_FAILED')return privateJson({ok:false,error:'Certains chemins de fichiers personnels ne peuvent pas être vérifiés. Le compte n’a pas été supprimé; contactez le support Vie privée.',code:'STORAGE_PATH_OWNERSHIP_FAILED'},409);
     if(error?.message==='STORAGE_DELETE_FAILED'||error?.message==='STORAGE_PATH_LOOKUP_FAILED')return privateJson({ok:false,error:'Les fichiers personnels n’ont pas pu être préparés pour suppression. Le compte n’a pas été supprimé.',code:error.message},503);
     if(error?.message==='CONTRIBUTION_REVOKE_FAILED')return privateJson({ok:false,error:'Les contributions liées au compte n’ont pas pu être révoquées. Le compte n’a pas été supprimé.',code:'CONTRIBUTION_REVOKE_FAILED'},503);
     return privateJson({ok:false,error:'Suppression impossible.',code:'DELETE_FAILED'},500);

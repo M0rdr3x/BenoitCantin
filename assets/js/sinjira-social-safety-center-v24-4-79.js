@@ -51,7 +51,7 @@ async function loadBlocks(){
         if(unblockError)throw unblockError;
         status('Membre débloqué.','success');
         await loadBlocks();
-      }catch(error){console.error(error);status('Impossible de débloquer ce membre pour le moment.','error');}
+      }catch{console.warn('[SINJIRA social safety unblock failed]');status('Impossible de débloquer ce membre pour le moment.','error');}
       finally{if(button)button.disabled=false;}
     });
   });
@@ -69,8 +69,8 @@ async function loadReports(){
     await requireUser('/compte/connexion.html');
     ensureModerationLink();
     await Promise.all([loadBlocks(),loadReports()]);
-  }catch(error){
-    console.error(error);
+  }catch{
+    console.warn('[SINJIRA social safety initialization failed]');
     status('Le centre de sécurité communautaire n’a pas pu charger vos données.','error');
   }
 })();
