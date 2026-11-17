@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""V85 : vraie lecture mobile, reprise automatique et sauvegarde refusée.
+"""V153 : lecture mobile, rendu privé suspendu et reprise après validation des droits.
 
 PDF fictif, Chromium/WebKit simulés, aucun roman privé ni accès Supabase.
 La reprise est testée après un swipe sans bouton de sauvegarde manuelle.
@@ -231,24 +231,25 @@ def validate_private_pause_during_load(browser,opts,url):
         assert paused["signedChecks"]==1,paused
 
         page.evaluate("()=>window.__v94ReleasePdf()")
-        page.wait_for_function("""()=>{
-          const t=document.querySelector('#reader-text');
-          return t.textContent.includes('LIVRE DE TEST · Page 4');
-        }""",timeout=15000)
-        # Les octets de test sont arrivés; le moteur a fini de préparer
-        # le texte mais la page ET les notes doivent rester invisibles.
+        page.wait_for_function("""()=>document.querySelector('#reader-loading').hidden""",
+                               timeout=15000)
+        # V153 : même si le PDF entier est arrivé, aucun texte privé ne
+        # doit être extrait/inséré dans le DOM avant une nouvelle preuve
+        # d'accès; le canvas est également purgé lors de la suspension.
         during=page.evaluate("""()=>({
           contentHidden:document.querySelector('#reader-content').hidden,
           sidebarHidden:document.querySelector('.reader-sidebar').hidden,
+          privateText:document.querySelector('#reader-text').textContent,
+          canvasPixels:document.querySelector('#reader-canvas').width,
           rightsChecks:window.__v93Private.rightsCalls
         })""")
         assert during["contentHidden"] and during["sidebarHidden"],during
+        assert during["privateText"]==='' and during["canvasPixels"]==0,during
         assert during["rightsChecks"]==1,during
 
-        # Le droit est révoqué PENDANT le chargement masqué : après
-        # le retour, aucune réapparition de passage ne doit être permise.
+        # V153 : une reprise autorisée reconstruit la page masquée et
+        # affiche de nouveau exactement le passage lu, sans rechargement.
         page.evaluate("""()=>{
-          window.__v93Private.allowed=false;
           Object.defineProperty(document,'visibilityState',{
             configurable:true,value:'visible'
           });
@@ -256,11 +257,31 @@ def validate_private_pause_during_load(browser,opts,url):
         }""")
         page.wait_for_function("""()=>{
           return window.__v93Private.rightsCalls>=2 &&
+            !document.querySelector('#reader-content').hidden &&
+            document.querySelector('#reader-text').textContent.includes(
+              'LIVRE DE TEST · Page 4');
+        }""",timeout=15000)
+
+        # Après une NOUVELLE suspension, le droit est révoqué. La
+        # revalidation ne doit jamais redévoiler le texte résiduel.
+        page.evaluate("""()=>{
+          Object.defineProperty(document,'visibilityState',{
+            configurable:true,value:'hidden'
+          });
+          document.dispatchEvent(new Event('visibilitychange'));
+          window.__v93Private.allowed=false;
+          Object.defineProperty(document,'visibilityState',{
+            configurable:true,value:'visible'
+          });
+          document.dispatchEvent(new Event('visibilitychange'));
+        }""")
+        page.wait_for_function("""()=>{
+          return window.__v93Private.rightsCalls>=3 &&
             document.querySelector('#reader-content').hidden &&
             document.querySelector('#reader-text').textContent==='' &&
             document.querySelector('.reader-sidebar').hidden &&
             !document.querySelector('#reader-error').hidden;
-        }""",timeout=10000)
+        }""",timeout=15000)
         assert not errors,errors
         assert not blocked,blocked
     finally:
@@ -411,7 +432,7 @@ def run(p,engine,url):
         assert denied.evaluate("""key=>localStorage.getItem(key)""",SPOT_KEY) is None
         assert not rejected,rejected
         denied_context.close()
-        print(f"PASS {engine} V85/V86/V87/V92/V93/V94: reprise privée et "
+        print(f"PASS {engine} V85–V94/V153: reprise privée sécurisée et "
               "sur cet appareil, reprise après rechargement, stockage refusé signalé")
     finally:
         browser.close()
