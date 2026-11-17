@@ -103,3 +103,16 @@ Le moteur V26 sur la branche candidate interrompt désormais le rendu PDF privé
 ## Complément ergonomie V154 — 16 novembre 2026
 
 La branche candidate limite les événements clavier `keydown.repeat` aux commandes de lecture focalisées, afin qu'une touche tenue enfoncée ne déroule pas plusieurs passages. Les balayages tactiles gauche→suivant et droite→précédent restent inchangés. Le contrat est testé en mode texte paginé et sur la page PDF réelle simulée; **la réception Bluetooth/assistive sur appareil physique demeure ND et ne devient pas PASS sur la seule base de GitHub Actions.**
+
+## Contrôles ciblés GitHub Actions V157 — 17 novembre 2026
+
+Après une annulation de job WebKit à la limite d'exécution de **25 minutes** sur V156, les suites redondantes ont été réparties sans supprimer la couverture primaire :
+
+- **V64** conserve les parcours HTML réels avec faux PDF en Chromium et WebKit : mobile V54, vraie page V57 (y compris sélection clavier V156), reflow V58 et reprise privée V85.
+- **V65** conserve les gestes natifs du moteur Chromium.
+- **V66** vérifie la navigation mobile V54 et les trajectoires V66, en Chromium et WebKit.
+- **V67** vérifie les trajectoires et bords système V66, en Chromium et WebKit.
+- **V68** conserve la lecture mobile en paysage.
+- **V69** vérifie le reflow V58 et les replis PDF illustré V81 / extraction impossible V82, en Chromium et WebKit.
+
+Les tests unitaires Node du toucher et du reflow sont conservés dans chaque workflow concerné. Ce partage **n'atteste aucune réussite des nouvelles exécutions** avant lecture des résultats de GitHub Actions au SHA V157 final. L'annulation V156 ne doit **pas** être comptée comme PASS. L'ensemble de ces tests utilise des documents fictifs et **ne remplace pas** les essais physiques, VoiceOver/TalkBack ni la preuve indépendante des droits privés et de la reprise entre appareils.
