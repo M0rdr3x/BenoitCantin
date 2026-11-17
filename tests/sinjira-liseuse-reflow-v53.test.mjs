@@ -1715,6 +1715,48 @@ test('V155 : Home/End restent natifs hors du texte paginé',()=>{
     assert.equal(continuous.defaultPrevented,false);
   }finally{f.restore()}
 });
+test('V156 : texte sélectionné garde les flèches et Home/End natifs',()=>{
+  const f=fixture({selected:'Passage sélectionné du livre'});
+  const key=value=>({key:value,defaultPrevented:false,altKey:false,
+    ctrlKey:false,metaKey:false,shiftKey:false,
+    preventDefault(){this.defaultPrevented=true},
+    stopImmediatePropagation(){}});
+  try{
+    for(const name of ['ArrowRight','ArrowLeft','PageUp','PageDown','Home','End']){
+      const event=key(name);
+      f.documentMock.emit('keydown',event);
+      assert.equal(event.defaultPrevented,false,name+' reste natif');
+      assert.equal(f.viewer.scrollTop,0,'aucune navigation sur '+name);
+    }
+    assert.equal(f.next.clicks+f.previous.clicks,0);
+    f.setSelected('');
+    const next=key('ArrowRight');
+    f.documentMock.emit('keydown',next);
+    assert.equal(next.defaultPrevented,true);
+    assert.equal(f.viewer.scrollTop,315);
+  }finally{f.restore()}
+});
+test('V156 : clavier ne change pas la page tant que le livre privé est masqué',()=>{
+  const f=fixture({withReaderContent:true});
+  const key=value=>({key:value,defaultPrevented:false,altKey:false,
+    ctrlKey:false,metaKey:false,shiftKey:false,
+    preventDefault(){this.defaultPrevented=true},
+    stopImmediatePropagation(){}});
+  try{
+    f.readerContent.hidden=true;
+    for(const name of ['End','ArrowRight','Home','PageDown']){
+      const event=key(name);
+      f.documentMock.emit('keydown',event);
+      assert.equal(event.defaultPrevented,false);
+      assert.equal(f.viewer.scrollTop,0);
+    }
+    f.readerContent.hidden=false;
+    const event=key('End');
+    f.documentMock.emit('keydown',event);
+    assert.equal(event.defaultPrevented,true);
+    assert.equal(f.viewer.scrollTop,700);
+  }finally{f.restore()}
+});
 test('V61 : les raccourcis de lecture n’interceptent pas les flèches hors du livre',()=>{
   const f=fixture();
   const key=key=>({key,defaultPrevented:false,altKey:false,ctrlKey:false,
@@ -2283,7 +2325,7 @@ test('contrat du HTML : le choix paginé et le mode PDF restent distincts',()=>{
   const h=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(h,/id="reader-screens-enabled"/);
   assert.match(h,/id="reader-screen-count"/);
-  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.16\.155/);
+  assert.match(h,/sinjira-liseuse-reflow-v53\.mjs\?v=53\.11\.17\.156/);
   assert.match(h,/sinjira-liseuse-v26\.js\?v=34\.11\.16\.154/);
 });
 test('contrat CSS : texte responsive, mode continu, grands boutons tablette',()=>{
