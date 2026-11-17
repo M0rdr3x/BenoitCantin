@@ -666,12 +666,25 @@ export function bindReaderScreenMode({
     if(!focused||(focused!==viewer&&!viewer.contains?.(focused)))return;
     const direction=event.key==='ArrowLeft'||event.key==='PageUp'?'previous'
       :event.key==='ArrowRight'||event.key==='PageDown'?'next':null;
-    if(!direction)return;
+    // V155 : Home/End changent d'écran DANS la page courante, et ne
+    // permettent pas d'accéder à une page source ou à un livre masqué.
+    // Ce comportement est réservé au focus du texte paginé : les champs
+    // de saisie, le site et le mode PDF gardent leurs touches natives.
+    const edge=event.key==='Home'?'first':event.key==='End'?'last':null;
+    if(!direction&&!edge)return;
     // V154 : une touche maintenue génère keydown.repeat sur les claviers
     // Bluetooth et accessibles. Un appui = un écran, sans feuilleter
     // accidentellement une dizaine de passages en une seconde.
     event.preventDefault();event.stopImmediatePropagation();
     if(event.repeat)return;
+    if(edge){
+      const target=edge==='first'?0:metric().max;
+      if(Math.abs(viewer.scrollTop-target)>2){
+        cancelPendingLayoutRestore();
+        scrollToScreen(target,{userInitiated:true});
+      }
+      return;
+    }
     turn(direction);
   };
   const afterTextChanged=()=>{
