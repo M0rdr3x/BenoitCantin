@@ -1,0 +1,54 @@
+name: Sécurité Edge — délai absolu des requêtes privées
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/functions/_shared/read-chunk-deadline.mjs'
+      - 'supabase/functions/personal-ai/index.ts'
+      - 'supabase/functions/conscience-vault/index.ts'
+      - 'supabase/functions/nova-civic-poll/index.ts'
+      - 'supabase/functions/fracture-engine-gateway/index.ts'
+      - 'scripts/validate_fracture_engine_gateway_security.py'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/test_fracture_gateway_body_deadline.mjs'
+      - 'scripts/test_nova_poll_body_read.cjs'
+      - 'scripts/test_edge_body_deadline.mjs'
+      - '.github/workflows/sinjira-edge-body-deadline-security.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/_shared/read-chunk-deadline.mjs'
+      - 'supabase/functions/personal-ai/index.ts'
+      - 'supabase/functions/conscience-vault/index.ts'
+      - 'supabase/functions/nova-civic-poll/index.ts'
+      - 'supabase/functions/fracture-engine-gateway/index.ts'
+      - 'scripts/validate_fracture_engine_gateway_security.py'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/test_fracture_gateway_body_deadline.mjs'
+      - 'scripts/test_nova_poll_body_read.cjs'
+      - 'scripts/test_edge_body_deadline.mjs'
+      - '.github/workflows/sinjira-edge-body-deadline-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-request-read:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sans identifiants conservés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Tester les délais, interruptions et refus des corps invalides
+        run: |
+          node --version
+          node --test scripts/test_edge_body_deadline.mjs scripts/test_fracture_gateway_body_deadline.mjs
+          node scripts/test_nova_poll_body_read.cjs
+          python3 scripts/validate_fracture_engine_gateway_security.py --self-test
+          python3 scripts/validate_fracture_engine_gateway_security.py
+          python3 scripts/validate_edge_function_inventory.py
