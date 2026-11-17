@@ -16,6 +16,17 @@ const SCHEMA='nova-sinjira-registre-donnees-service/v1';
 const nonempty=v=>v!==null&&v!==undefined&&
   (typeof v!=='string'||v.trim()!=='')&&
   (!Array.isArray(v)||v.length>0);
+// Une URL candidate ou un objet vide ne constitue pas un jeu précis cité.
+const preciseSource=v=>typeof v==='string'&&v.trim().length>0;
+// Le montant zéro peut être réel, mais doit être EXPLICITE : unité et
+// valeur numérique finie, non négative. Éviter les objets vides, chaînes
+// et propriétés héritées qui simulaient jusqu'ici un coût documenté.
+export function isDocumentedModeCost(value){
+  return Boolean(value&&typeof value==='object'&&!Array.isArray(value)&&
+    Object.hasOwn(value,'valeur')&&Object.hasOwn(value,'unite')&&
+    typeof value.valeur==='number'&&Number.isFinite(value.valeur)&&
+    value.valeur>=0&&typeof value.unite==='string'&&value.unite.trim());
+}
 export function inspectSectorRegister(data){
   const errors=[];
   if(!data||typeof data!=='object'||Array.isArray(data))
@@ -38,16 +49,18 @@ export function inspectSectorRegister(data){
     seen.add(id);
     if(!nonempty(d.domaine)||!nonempty(d.unite_comparaison_proposee))
       errors.push(`${expected}: nom de domaine et unité nécessaires`);
-    const missing=EVIDENCE.filter(field=>!nonempty(d[field]));
+    const missing=EVIDENCE.filter(field=>field==='source_de_jeu_de_donnees_precis'
+      ?!preciseSource(d[field]):!nonempty(d[field]));
     for(const gate of HUMAN_GATES)
       if(typeof d[gate]!=='boolean')errors.push(`${expected}: ${gate} doit être booléen`);
-    if(!d.couts_par_mode||typeof d.couts_par_mode!=='object'){
-      errors.push(`${expected}: couts_par_mode attendu`);
-    }else if(MODES.some(mode=>!(mode in d.couts_par_mode))){
+    const costs=d.couts_par_mode;
+    if(!costs||typeof costs!=='object'||Array.isArray(costs)){
+      errors.push(`${expected}: couts_par_mode attendu sous forme d'objet`);
+    }else if(MODES.some(mode=>!Object.hasOwn(costs,mode))){
       errors.push(`${expected}: les cinq modes de comparaison doivent être présents`);
     }
     const costModesMissing=MODES.filter(mode=>
-      !d.couts_par_mode||!nonempty(d.couts_par_mode[mode]));
+      !costs||!Object.hasOwn(costs,mode)||!isDocumentedModeCost(costs[mode]));
     if(d.chiffrage_valide&&(missing.length||costModesMissing.length||!d.qualite_verifiee))
       errors.push(`${expected}: chiffrage déclaré validé sans source, comparaisons complètes et contrôle de qualité`);
     if(d.affectation_personnel_validee&&missing.length)
@@ -57,7 +70,7 @@ export function inspectSectorRegister(data){
       humanMissing.length===0;
     rows.push({
       id:d.id,domaine:d.domaine||'Non précisé',
-      source_precise:nonempty(d.source_de_jeu_de_donnees_precis),
+      source_precise:preciseSource(d.source_de_jeu_de_donnees_precis),
       qualite_verifiee:d.qualite_verifiee===true,
       chiffrage_valide:d.chiffrage_valide===true,
       personnel_valide:d.affectation_personnel_validee===true,
