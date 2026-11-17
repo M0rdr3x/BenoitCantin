@@ -65,7 +65,7 @@ export async function requireUser(){return {id:mock.userId}}
 export function safeInternalDestination(x){return x}
 """
 
-def install_private_isolation(page, delay_first_pdf=False):
+def install_private_isolation(page, delay_first_pdf=False, delay_first_text=False):
     """Sécurité privée, PDF fictif de 520 pages et aucun vrai appel Supabase."""
     blocked=[]
     pdf=MOCK_PDF_JS.replace("numPages:82","numPages:520").replace(
@@ -81,6 +81,16 @@ def install_private_isolation(page, delay_first_pdf=False):
             "    globalThis.__v94ReleasePdf=()=>resolve({",
             1
         ).replace("  })};\n}","  });\n  })};\n}",1)
+    if delay_first_text:
+        # V153 : simuler une extraction qui se termine APRÈS la suspension.
+        pdf=pdf.replace(
+            "    async getTextContent(){",
+            """    async getTextContent(){
+      if(!globalThis.__v153TextRequested){
+        globalThis.__v153TextRequested=true;
+        await new Promise(resolve=>{globalThis.__v153ReleaseText=resolve});
+      }""", 1
+        )
     def intercept(route):
         url=route.request.url
         parsed=urlparse(url)
@@ -199,6 +209,59 @@ def validate_private_mobile_return(browser,opts,url):
     finally:
         context.close()
 
+
+
+def validate_private_suspend_during_text_extract(browser,opts,url):
+    """V153 : une extraction asynchrone périmée ne remplit pas le DOM privé."""
+    context=browser.new_context(**opts)
+    try:
+        page=context.new_page()
+        errors=[]
+        page.on("pageerror",lambda error:errors.append(str(error)))
+        blocked=install_private_isolation(page,delay_first_text=True)
+        page.goto(url.replace("edition=demo","edition=integrale"),wait_until="load")
+        page.wait_for_function(
+            "()=>typeof window.__v153ReleaseText==='function'",timeout=15000
+        )
+        pause=page.evaluate("""()=>{
+          Object.defineProperty(document,'visibilityState',{
+            configurable:true,value:'hidden'
+          });
+          document.dispatchEvent(new Event('visibilitychange'));
+          return {
+            hidden:document.querySelector('#reader-content').hidden,
+            text:document.querySelector('#reader-text').textContent,
+            canvas:document.querySelector('#reader-canvas').width
+          };
+        }""")
+        assert pause=={"hidden":True,"text":"","canvas":0},pause
+        page.evaluate("()=>window.__v153ReleaseText()")
+        # Le résultat de getTextContent arrive après l'invalidation du rendu.
+        # Aucune mutation de roman masqué, même quand la promesse se résout.
+        page.wait_for_timeout(80)
+        result=page.evaluate("""()=>({
+          hidden:document.querySelector('#reader-content').hidden,
+          text:document.querySelector('#reader-text').textContent,
+          canvas:document.querySelector('#reader-canvas').width
+        })""")
+        assert result==pause,(pause,result)
+        # Seul le retour avec vérification des droits affiche le passage.
+        page.evaluate("""()=>{
+          Object.defineProperty(document,'visibilityState',{
+            configurable:true,value:'visible'
+          });
+          document.dispatchEvent(new Event('visibilitychange'));
+        }""")
+        page.wait_for_function("""()=>{
+          return !document.querySelector('#reader-content').hidden &&
+            document.querySelector('#reader-text').textContent.includes(
+              'LIVRE DE TEST · Page 4') &&
+            window.__v93Private.rightsCalls>=2;
+        }""",timeout=15000)
+        assert not errors,errors
+        assert not blocked,blocked
+    finally:
+        context.close()
 
 
 def validate_private_pause_during_load(browser,opts,url):
@@ -387,6 +450,7 @@ def run(p,engine,url):
         # révoqués et reprise asynchrone après deux mises en arrière-plan.
         validate_private_mobile_return(browser,opts,url)
         validate_private_pause_during_load(browser,opts,url)
+        validate_private_suspend_during_text_extract(browser,opts,url)
 
         # Un navigateur qui refuse le stockage ne doit PAS afficher un
         # message mensonger « Page mémorisée ». Le livre doit rester lisible.
