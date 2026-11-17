@@ -4,7 +4,7 @@
 
 ## Décision de lancement
 
-**Statut : NON VALIDÉ / NO_GO.** La [PR #1000](https://github.com/M0rdr3x/BenoitCantin/pull/1000) contient la liseuse mobile tactile V52–V146, mais le succès de Chromium/WebKit Playwright ne démontre pas à lui seul le comportement d'un véritable écran tactile, des lecteurs d'écran, du cache navigateur ou des contrôles d'accès au PDF privé. Cette fiche prépare la **réception manuelle reproductible** sans attribuer fictivement une réussite.
+**Statut : NON VALIDÉ / NO_GO.** La [PR #1000](https://github.com/M0rdr3x/BenoitCantin/pull/1000) contient la liseuse mobile tactile V52–V153, mais le succès de Chromium/WebKit Playwright ne démontre pas à lui seul le comportement d'un véritable écran tactile, des lecteurs d'écran, du cache navigateur ou des contrôles d'accès au PDF privé. Cette fiche prépare la **réception manuelle reproductible** sans attribuer fictivement une réussite.
 
 ## Préparation et précautions
 
@@ -75,6 +75,7 @@ Pour chaque appareil disponible :
 | PAGE-INVALID | Essayer une page invalide, vide, fractionnaire, hors bornes puis revenir aux boutons de lecture. Aucun saut ni écriture d'une position incorrecte. | ND |
 | PDF-ILLUSTRATED | Page illustrée ou extraction impossible : mode PDF fidèle, pincement/zoom et rotation possibles; retour au texte adaptable sur la page extractible suivante. | ND |
 | SECURITY-REVOKE | Avec deux comptes fictifs de test et autorisation serveur homologuée seulement : lecture autorisée/refusée, déconnexion, révocation, cache et reprise entre appareils; aucun accès après révocation. | ND |
+| PRIVATE-ASYNC-PAUSE | Sur compte de laboratoire autorisé en préproduction, suspendre l'application pendant le chargement d'un PDF et pendant l'extraction différée de texte; vérifier que le texte masqué et le canevas privé sont purgés, qu'aucun rendu périmé ne les reconstitue avant revalidation, puis que le retour autorisé restaure le passage. Répéter avec droits révoqués, sans exposer le livre ni les jetons. | ND |
 
 Pour chaque scénario, consigner appareil, navigateur, version d'OS, SHA exact, étapes observées, verdict PASS/FAIL/ND et preuve expurgée. **ND ne compte jamais comme PASS.** Exécuter en préproduction avec des œuvres fictives autorisées; ne pas publier de roman, jeton, URL signée ni identité personnelle.
 
@@ -89,3 +90,9 @@ Pour chaque scénario, consigner appareil, navigateur, version d'OS, SHA exact, 
 - [ ] Responsable de publication et plan de retour arrière approuvés.
 
 **Tant que les cases restent ouvertes, aucune déclaration « terminé », aucune augmentation mécanique du 66,5 % global et aucune date de lancement certifiée.** Source historique : [bilan de référence des quatre programmes](https://github.com/M0rdr3x/BenoitCantin/blob/main/docs/AVANCEMENT_QUATRE_PROGRAMMES_2026-11-10.md).
+
+## Complément de sécurité V153 — 16 novembre 2026
+
+Le moteur V26 sur la branche candidate interrompt désormais le rendu PDF privé lors de la suspension et ne reconstruit la page qu'après une nouvelle vérification de l'identité et des droits. Un scénario navigateur simulé couvre aussi une extraction de texte encore en attente au moment du masquage; le chargement du PDF et le rechargement après retour autorisé sont également testés sur des documents fictifs.
+
+**Limite de preuve :** il s'agit de code et de tests automatisés candidats. Les essais sur appareils physiques et la révocation serveur réelle restent **ND / NO-GO**. Le test `PRIVATE-ASYNC-PAUSE` ne doit être marqué `PASS` qu'après vérification manuelle expurgée et examen du SHA exact en préproduction.
