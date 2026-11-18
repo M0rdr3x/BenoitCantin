@@ -32,6 +32,36 @@ class ReaderV51CasContract(unittest.TestCase):
         self.assertIn("library.user_id=v_user",MIGRATION)
         self.assertIn("WHERE user_id=v_user AND novel_id=p_novel_id",MIGRATION)
         self.assertNotIn("p_user_id",MIGRATION)
+    def test_v51_1_requires_real_book_entitlement_not_merely_auth_uid(self):
+        # V51.1 / #955 : SECURITY DEFINER ne bénéficie pas de la RLS.
+        # Interdire toute sauvegarde d'un livre non publié ou sans droit.
+        for token in (
+            "novel.status='published'",
+            "public.is_sinjira_owner(v_user)",
+            "public.is_sinjira_admin(v_user)",
+            "public.user_entitlements entitlement",
+            "public.products product",
+            "product.active IS TRUE",
+            "entitlement.user_id=v_user",
+            "entitlement.product_id=novel.product_id",
+            "'unavailable'::text",
+        ):
+            with self.subTest(token=token):
+                self.assertIn(token,MIGRATION)
+        # Les titres non autorisés, révoqués, non publiés et les comptes
+        # sans licence ont maintenant des scénarios SQL JWT distincts.
+        for marker in (
+            "V51.1: titre non autorise",
+            "V51.1: le marque-page existe, mais le droit est revoque",
+            "V51.1: compte B enregistre un roman non attribue",
+            "V51.1: admin autorise",
+            "V51.1: un roman annonce reste interdit meme aux admins",
+            "V51.1: proprietaire autorise",
+            "v51_before_revocation",
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker,SQL)
+
     def test_revoke_bypass_grants_and_no_anon_rpc(self):
         for term in (
           "REVOKE INSERT,UPDATE ON public.sinjira_reader_library FROM PUBLIC",
