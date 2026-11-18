@@ -458,6 +458,95 @@ function fixture({selected='',lastBookPage=false,firstBookPage=false,observe=fal
     flushFrames,getStatusWrites:()=>statusWrites,
     setSelected:v=>{selected=v}};
 }
+test('V160 : PointerEvent seul au doigt ou au stylet tourne les écrans texte',()=>{
+  const f=fixture();
+  const pointer=(kind,x,type='touch',extra={})=>{
+    const event={
+      pointerType:type,pointerId:160,button:0,
+      buttons:kind==='pointerup'?0:1,isPrimary:true,
+      clientX:x,clientY:140,target:{closest:()=>null},
+      defaultPrevented:false,
+      preventDefault(){this.defaultPrevented=true},...extra
+    };
+    f.viewer.emit(kind,event);
+    return event;
+  };
+  try{
+    assert.equal(f.viewer.dataset.readerLayout,'screens');
+    pointer('pointerdown',280);
+    pointer('pointermove',185);
+    const next=pointer('pointerup',95);
+    assert.equal(next.defaultPrevented,true);
+    assert.equal(f.viewer.scrollTop,315);
+    assert.equal(f.pageField.value,'4','page PDF inchangée');
+    pointer('pointerdown',95,'pen');
+    pointer('pointermove',180,'pen');
+    const prev=pointer('pointerup',280,'pen');
+    assert.equal(prev.defaultPrevented,true);
+    assert.equal(f.viewer.scrollTop,0);
+    assert.equal(f.next.clicks+f.previous.clicks,0);
+  }finally{f.restore()}
+});
+test('V160 : TouchEvent réel annule PointerEvent pour éviter la double page',()=>{
+  const f=fixture();
+  const pointer=(kind,x)=>{
+    const event={pointerType:'touch',pointerId:160,button:0,
+      buttons:kind==='pointerup'?0:1,isPrimary:true,clientX:x,clientY:140,
+      target:{closest:()=>null},defaultPrevented:false,
+      preventDefault(){this.defaultPrevented=true}};
+    f.viewer.emit(kind,event);
+    return event;
+  };
+  try{
+    pointer('pointerdown',280);
+    const native=f.swipe(-110,2,{startX:280});
+    assert.equal(native.defaultPrevented,true);
+    assert.equal(f.viewer.scrollTop,315,'un seul écran après TouchEvent');
+    const delayed=pointer('pointerup',80);
+    assert.equal(delayed.defaultPrevented,false);
+    assert.equal(f.viewer.scrollTop,315,'PointerEvent tardif ignoré');
+    assert.equal(f.next.clicks+f.previous.clicks,0);
+  }finally{f.restore()}
+});
+test('V160 : sélection, zoom, livre masqué et mode continu protègent les gestes pointeur',()=>{
+  const f=fixture({withReaderContent:true});
+  const pointer=(kind,x,extra={})=>f.viewer.emit(kind,{
+    pointerType:'touch',pointerId:161,button:0,
+    buttons:kind==='pointerup'?0:1,isPrimary:true,clientX:x,clientY:140,
+    target:{closest:()=>null},defaultPrevented:false,
+    preventDefault(){this.defaultPrevented=true},...extra
+  });
+  try{
+    f.setSelected('Passage du roman');
+    pointer('pointerdown',280);pointer('pointerup',90);
+    assert.equal(f.viewer.scrollTop,0,'sélection intacte');
+    f.setSelected('');
+    pointer('pointerdown',280);
+    f.documentMock.emit('selectionchange',{});
+    pointer('pointerup',90);
+    assert.equal(f.viewer.scrollTop,0,'poignées de sélection');
+    f.windowMock.visualViewport.scale=1.5;
+    pointer('pointerdown',280);pointer('pointerup',90);
+    assert.equal(f.viewer.scrollTop,0,'zoom natif intact');
+    f.windowMock.visualViewport.scale=1;
+    pointer('pointerdown',280);
+    f.readerContent.hidden=true;
+    pointer('pointerup',90);
+    assert.equal(f.viewer.scrollTop,0,'roman privé caché');
+    f.readerContent.hidden=false;
+    pointer('pointerdown',280);
+    f.toggle.checked=false;f.toggle.emit('change',{});
+    pointer('pointerup',90);
+    assert.equal(f.viewer.scrollTop,0,'mode continu non intercepté');
+    f.toggle.checked=true;f.toggle.emit('change',{});
+    pointer('pointerdown',280, {isPrimary:false});
+    pointer('pointerup',90);
+    assert.equal(f.viewer.scrollTop,0,'pointeur secondaire ignoré');
+    pointer('pointerdown',5);
+    pointer('pointerup',170);
+    assert.equal(f.viewer.scrollTop,0,'geste système au bord');
+  }finally{f.restore()}
+});
 test('V133 : retour BFCache préserve la position lors du changement de hauteur',()=>{
   const f=fixture({deferredRaf:true});
   try{
