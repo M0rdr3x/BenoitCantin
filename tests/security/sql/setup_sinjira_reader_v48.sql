@@ -10,7 +10,44 @@ AS $$ SELECT nullif(current_setting('request.jwt.claim.sub', true),'')::uuid $$;
 GRANT USAGE ON SCHEMA auth TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION auth.uid() TO anon, authenticated;
 
-CREATE TABLE public.sinjira_novels (id uuid PRIMARY KEY);
+-- V51.1 : modèle FICTIF d'habilitations, calqué sur les colonnes réelles
+-- vérifiées sur le projet Supabase en lecture seule le 18 novembre 2026.
+-- Aucun titre, acheteur ou administrateur réel.
+CREATE TABLE public.products (
+ id uuid PRIMARY KEY, active boolean NOT NULL DEFAULT false
+);
+CREATE TABLE public.sinjira_novels (
+ id uuid PRIMARY KEY,
+ status text NOT NULL DEFAULT 'draft',
+ product_id uuid REFERENCES public.products(id)
+);
+CREATE TABLE public.user_entitlements (
+ user_id uuid NOT NULL REFERENCES auth.users(id),
+ product_id uuid NOT NULL REFERENCES public.products(id),
+ PRIMARY KEY(user_id,product_id)
+);
+CREATE TABLE public.internal_admin_users (
+ user_id uuid PRIMARY KEY REFERENCES auth.users(id),
+ role text NOT NULL CHECK(role IN ('owner','admin'))
+);
+CREATE FUNCTION public.is_sinjira_owner(p_user_id uuid)
+RETURNS boolean LANGUAGE sql STABLE AS $owner$
+ SELECT p_user_id IS NOT NULL AND p_user_id=(SELECT auth.uid())
+   AND EXISTS(SELECT 1 FROM public.internal_admin_users a
+              WHERE a.user_id=p_user_id AND a.role='owner');
+$owner$;
+CREATE FUNCTION public.is_sinjira_admin(p_user_id uuid)
+RETURNS boolean LANGUAGE sql STABLE AS $admin$
+ SELECT p_user_id IS NOT NULL AND p_user_id=(SELECT auth.uid())
+   AND EXISTS(SELECT 1 FROM public.internal_admin_users a
+              WHERE a.user_id=p_user_id);
+$admin$;
+-- Simuler le fait que les tables métier sont protégées par RLS.
+ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sinjira_novels ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_entitlements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.internal_admin_users ENABLE ROW LEVEL SECURITY;
+
 CREATE TABLE public.sinjira_reader_library (
  user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
  novel_id uuid NOT NULL REFERENCES public.sinjira_novels(id) ON DELETE CASCADE,
@@ -35,9 +72,32 @@ GRANT SELECT,INSERT,UPDATE,DELETE ON public.sinjira_reader_library TO anon, auth
 INSERT INTO auth.users(id) VALUES
  ('00000000-0000-0000-0000-000000000001'),
  ('00000000-0000-0000-0000-000000000002');
-INSERT INTO public.sinjira_novels(id) VALUES
- ('10000000-0000-0000-0000-000000000001'),
- ('10000000-0000-0000-0000-000000000002');
+-- 1 : titre publié / A et B autorisés; 2 : publié / A autorisé seul.
+-- 3 : publié / personne autorisée; 4 : annoncé / A possède le produit.
+-- 5 : publié / produit inactif même si A dispose d'un entitlement.
+INSERT INTO public.products(id,active) VALUES
+ ('20000000-0000-0000-0000-000000000001',true),
+ ('20000000-0000-0000-0000-000000000002',true),
+ ('20000000-0000-0000-0000-000000000003',true),
+ ('20000000-0000-0000-0000-000000000004',true),
+ ('20000000-0000-0000-0000-000000000005',false);
+INSERT INTO public.sinjira_novels(id,status,product_id) VALUES
+ ('10000000-0000-0000-0000-000000000001','published',
+  '20000000-0000-0000-0000-000000000001'),
+ ('10000000-0000-0000-0000-000000000002','published',
+  '20000000-0000-0000-0000-000000000002'),
+ ('10000000-0000-0000-0000-000000000003','published',
+  '20000000-0000-0000-0000-000000000003'),
+ ('10000000-0000-0000-0000-000000000004','announced',
+  '20000000-0000-0000-0000-000000000004'),
+ ('10000000-0000-0000-0000-000000000005','published',
+  '20000000-0000-0000-0000-000000000005');
+INSERT INTO public.user_entitlements(user_id,product_id) VALUES
+ ('00000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001'),
+ ('00000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000002'),
+ ('00000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000004'),
+ ('00000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000005'),
+ ('00000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001');
 
 -- Progressions héritées avant V32, NULL implicite attendu après migration.
 INSERT INTO public.sinjira_reader_library(user_id,novel_id,last_page,progress_percent)
