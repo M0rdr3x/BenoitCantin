@@ -68,6 +68,14 @@ BEGIN
   -- téléchargement intégral : publication du roman ET propriétaire/admin
   -- OU produit actif attribué à ce compte.
   --
+  -- V51.2 : sérialiser la sauvegarde face à une révocation concurrente.
+  -- Sans verrou, une requête peut lire une attribution active à T1 puis
+  -- enregistrer sa page APRES sa suppression/archivage à T2.
+  -- FOR SHARE attend une suppression ou désactivation déjà en cours et
+  -- conserve les lignes d'autorisation jusqu'à la fin de la transaction.
+  -- Les administrateurs doivent encore être reçus en préproduction,
+  -- notamment face à la révocation simultanée du rôle.
+  --
   -- Ne dévoiler ni l'existence, ni la progression d'un titre inaccessible.
   -- Le même statut 'unavailable' couvre roman inexistant, non publié,
   -- licence absente ou révoquée et produit désactivé.
@@ -86,8 +94,10 @@ BEGIN
               AND product.active IS TRUE
             WHERE entitlement.user_id=v_user
               AND entitlement.product_id=novel.product_id
+            FOR SHARE OF entitlement, product
          )
        )
+     FOR SHARE OF novel
   ) THEN
     RETURN QUERY SELECT 'unavailable'::text,NULL::bigint,NULL::integer,
       NULL::numeric,NULL::timestamptz;
