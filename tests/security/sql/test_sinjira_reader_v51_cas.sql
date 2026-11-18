@@ -93,6 +93,34 @@ BEGIN
  END IF;
 END $newbook$;
 
+-- V51.1 / #955 : l'identité A ne donne AUCUN droit aux livres 3/4/5
+-- ni à un roman UUID inexistant. Aucun statut ne doit divulguer leur état.
+DO $access$
+DECLARE novel uuid;s text;r bigint;p integer;ratio numeric;at timestamptz;
+BEGIN
+ FOREACH novel IN ARRAY ARRAY[
+  '10000000-0000-0000-0000-000000000003'::uuid,
+  '10000000-0000-0000-0000-000000000004'::uuid,
+  '10000000-0000-0000-0000-000000000005'::uuid,
+  '10000000-0000-0000-0000-000000000099'::uuid]
+ LOOP
+  SELECT result_status,result_revision,result_page,result_ratio,result_updated_at
+   INTO s,r,p,ratio,at FROM public.sinjira_reader_save_progress_cas(
+     novel,NULL,6,10,0.1000);
+  IF s IS DISTINCT FROM 'unavailable' OR r IS NOT NULL
+   OR p IS NOT NULL OR ratio IS NOT NULL OR at IS NOT NULL THEN
+   RAISE EXCEPTION 'V51.1: titre non autorise expose ou modifie (%)',novel;
+  END IF;
+ END LOOP;
+ IF EXISTS(SELECT 1 FROM public.sinjira_reader_library
+   WHERE user_id=auth.uid() AND novel_id IN (
+    '10000000-0000-0000-0000-000000000003',
+    '10000000-0000-0000-0000-000000000004',
+    '10000000-0000-0000-0000-000000000005')) THEN
+  RAISE EXCEPTION 'V51.1: marque-page cree sans droit de lecture';
+ END IF;
+END $access$;
+
 -- Entrées incorrectes ne modifient pas la table.
 DO $invalid$
 DECLARE denied boolean;
@@ -113,6 +141,52 @@ BEGIN
  IF NOT denied THEN RAISE EXCEPTION 'V51: ratio invalide accepté'; END IF;
 END $invalid$;
 RESET ROLE;
+
+-- V51.1 : une révocation doit bloquer AUSSI le changement d'un
+-- marque-page existant et garder sa page, sa revision et ses dates.
+CREATE TEMP TABLE v51_before_revocation AS
+ SELECT user_id,novel_id,last_page,progress_percent,scroll_ratio,
+        revision,created_at,updated_at,last_opened_at
+ FROM public.sinjira_reader_library
+ WHERE user_id='00000000-0000-0000-0000-000000000001'
+ AND novel_id='10000000-0000-0000-0000-000000000002';
+DELETE FROM public.user_entitlements
+ WHERE user_id='00000000-0000-0000-0000-000000000001'
+ AND product_id='20000000-0000-0000-0000-000000000002';
+SET ROLE authenticated;
+SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
+DO $revoked$
+DECLARE s text;r bigint;p integer;ratio numeric;at timestamptz;
+BEGIN
+ SELECT result_status,result_revision,result_page,result_ratio,result_updated_at
+  INTO s,r,p,ratio,at FROM public.sinjira_reader_save_progress_cas(
+   '10000000-0000-0000-0000-000000000002',0,99,90,0.5000);
+ IF s IS DISTINCT FROM 'unavailable' OR r IS NOT NULL OR
+    p IS NOT NULL OR ratio IS NOT NULL OR at IS NOT NULL THEN
+   RAISE EXCEPTION 'V51.1: le marque-page existe, mais le droit est revoque';
+ END IF;
+END $revoked$;
+RESET ROLE;
+DO $revocation_integrity$
+BEGIN
+ IF EXISTS(
+  SELECT user_id,novel_id,last_page,progress_percent,scroll_ratio,
+         revision,created_at,updated_at,last_opened_at
+  FROM public.sinjira_reader_library
+  WHERE user_id='00000000-0000-0000-0000-000000000001'
+    AND novel_id='10000000-0000-0000-0000-000000000002'
+  EXCEPT SELECT * FROM v51_before_revocation
+ ) OR EXISTS(
+  SELECT * FROM v51_before_revocation
+  EXCEPT SELECT user_id,novel_id,last_page,progress_percent,scroll_ratio,
+    revision,created_at,updated_at,last_opened_at
+  FROM public.sinjira_reader_library
+  WHERE user_id='00000000-0000-0000-0000-000000000001'
+    AND novel_id='10000000-0000-0000-0000-000000000002'
+ ) THEN
+  RAISE EXCEPTION 'V51.1: révocation a altéré le marque-page existant';
+ END IF;
+END $revocation_integrity$;
 
 -- Aucune identité anonyme n'a le droit d'appeler le RPC.
 SET ROLE anon;
@@ -143,6 +217,13 @@ BEGIN
  END IF;
  IF (SELECT count(*) FROM public.sinjira_reader_library)<>1 THEN
   RAISE EXCEPTION 'V51: compte B lit des lignes du compte A';
+ END IF;
+ -- B n'a pas de licence sur le roman 2, contrairement au compte A.
+ SELECT result_status,result_revision,result_page INTO s,r,p
+ FROM public.sinjira_reader_save_progress_cas(
+  '10000000-0000-0000-0000-000000000002',NULL,99,90,0.1);
+ IF s IS DISTINCT FROM 'unavailable' OR r IS NOT NULL OR p IS NOT NULL THEN
+  RAISE EXCEPTION 'V51.1: compte B enregistre un roman non attribue';
  END IF;
 END $isolate$;
 RESET ROLE;
