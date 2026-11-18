@@ -46,8 +46,10 @@ class InventorySourceIntegrityTests(unittest.TestCase):
 
     def test_fracture_gateway_rejects_unbounded_or_preauth_body(self):
         secure = (
+            "const BODY_READ_TIMEOUT_MS=8_000;\\n"
             "async function readLimitedJson(req) {\\n"
-            "  await readLimitedUtf8Body(req,MAX_BODY_BYTES);\\n"
+            "  await readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,BODY_READ_TIMEOUT_MS);\\n"
+            "  if(limited.reason==='REQUEST_TIMEOUT') return {code:'REQUEST_TIMEOUT',gateway_version:GATEWAY_VERSION},408;\\n"
             "}\\n"
             "await client.auth.getUser(token);\\n"
             "const body=await readLimitedJson(req);\\n"
@@ -55,8 +57,11 @@ class InventorySourceIntegrityTests(unittest.TestCase):
         )
         self.assertTrue(fracture_gateway_body_boundary_valid(secure))
         for unsafe in (
-            secure.replace("await readLimitedUtf8Body(req,MAX_BODY_BYTES)", "await req.text()"),
-            secure.replace("await readLimitedUtf8Body(req,MAX_BODY_BYTES)", "await req.json()"),
+            secure.replace("BODY_READ_TIMEOUT_MS=8_000", "BODY_READ_TIMEOUT_MS=800_000"),
+            secure.replace("limited.reason==='REQUEST_TIMEOUT'", "limited.reason==='IGNORE_TIMEOUT'"),
+            secure.replace("gateway_version:GATEWAY_VERSION},408", "gateway_version:GATEWAY_VERSION},200"),
+            secure.replace("await readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,BODY_READ_TIMEOUT_MS)", "await req.text()"),
+            secure.replace("await readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,BODY_READ_TIMEOUT_MS)", "await req.json()"),
             secure.replace("await readLimitedJson(req)", "await req.text()"),
             secure.replace("await client.auth.getUser(token)", "if(token){}"),
             secure.replace(
