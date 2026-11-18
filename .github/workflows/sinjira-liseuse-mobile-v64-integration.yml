@@ -55,15 +55,20 @@ jobs:
         run: node --test tests/sinjira-liseuse-reflow-v53.test.mjs tests/sinjira-liseuse-touch-v52.test.mjs
       - name: Réception de la vraie page avec faux livre et comptes bloqués
         run: |
-          python3 -m venv .venv-sinjira-v64
-          . .venv-sinjira-v64/bin/activate
+          # V159 : utiliser l'image Microsoft Playwright 1.57.0 contenant
+          # WebKit/Chromium et leurs bibliothèques, sans apt --with-deps.
+          # Les tests Node/syntaxe précédents restent sur le runner hôte.
+          docker run --rm --interactive --init --ipc=host \
+            --volume "$PWD:/workspace" --workdir /workspace \
+            mcr.microsoft.com/playwright/python:v1.57.0-noble \
+            /bin/bash -e -s -- <<'SINJIRA_PLAYWRIGHT_TESTS'
           python -m pip install --disable-pip-version-check playwright==1.57.0
-          python -m playwright install --with-deps ${{ matrix.browser }}
           python tests/e2e/test_sinjira_liseuse_mobile_v54.py --browser ${{ matrix.browser }}
           python tests/e2e/test_sinjira_liseuse_real_page_v57.py --browser ${{ matrix.browser }}
           python tests/e2e/test_sinjira_liseuse_responsive_v58.py --browser ${{ matrix.browser }}
           # V153 : le roman privé doit rester hors DOM pendant une suspension,
           # y compris quand la promesse PDF se termine après visibilitychange.
           python tests/e2e/test_sinjira_liseuse_auto_resume_v85.py --browser ${{ matrix.browser }}
+          SINJIRA_PLAYWRIGHT_TESTS
       - name: Fin de recette sans publication ni migration
         run: echo "SINJIRA_V64_TESTS_ONLY_NO_PRODUCTION_GO"
