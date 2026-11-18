@@ -9,6 +9,7 @@ SQL=(ROOT/"tests/security/sql/test_sinjira_reader_v51_cas.sql").read_text(encodi
 CLIENT=(ROOT/"assets/js/sinjira-liseuse-v26.js").read_text(encoding="utf-8")
 LEGACY=(ROOT/"assets/js/sinjira-reader-progress-v24-4-61.js").read_text(encoding="utf-8")
 WORKFLOW=(ROOT/".github/workflows/sinjira-reader-v51-cas.yml").read_text(encoding="utf-8")
+CONCURRENT=(ROOT/"scripts/test_sinjira_reader_v51_concurrent_local.sh").read_text(encoding="utf-8")
 
 class ReaderV51CasContract(unittest.TestCase):
     def test_additive_migration_preserves_v32_and_existing_positions(self):
@@ -61,6 +62,19 @@ class ReaderV51CasContract(unittest.TestCase):
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker,SQL)
+
+    def test_v51_2_serializes_revocation_and_save_across_sessions(self):
+        # Le contrôle de droit doit survivre à un DELETE ou à une mise
+        # hors ligne simultanés. Un simple EXISTS sans verrou est insuffisant.
+        self.assertIn("FOR SHARE OF novel",MIGRATION)
+        self.assertIn("FOR SHARE OF entitlement, product",MIGRATION)
+        self.assertIn("V51-REVOKER-LOCK-HELD",CONCURRENT)
+        self.assertIn("SELECT pg_sleep(4)",CONCURRENT)
+        self.assertIn("V51.2-REVOCATION-PASS",CONCURRENT)
+        self.assertIn("unavailable||",CONCURRENT)
+        self.assertIn("rev<>3 OR page NOT IN (51,52)",CONCURRENT)
+        self.assertIn("PGOPTIONS",CONCURRENT)
+        self.assertNotIn("SUPABASE_SERVICE_ROLE_KEY",CONCURRENT)
 
     def test_revoke_bypass_grants_and_no_anon_rpc(self):
         for term in (
