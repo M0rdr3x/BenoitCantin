@@ -228,6 +228,42 @@ BEGIN
 END $isolate$;
 RESET ROLE;
 
+-- V51.1 : propriétaire et administrateur authentifiés peuvent sauvegarder
+-- un roman PUBLIE même sans achat. La transaction jetable annule les droits
+-- et les marque-pages de démonstration; la suite garde exactement 3 lignes.
+BEGIN;
+INSERT INTO public.internal_admin_users(user_id,role) VALUES
+ ('00000000-0000-0000-0000-000000000001','admin'),
+ ('00000000-0000-0000-0000-000000000002','owner');
+SET ROLE authenticated;
+SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
+DO $admin_grant$
+DECLARE s text;
+BEGIN
+ SELECT result_status INTO s FROM public.sinjira_reader_save_progress_cas(
+  '10000000-0000-0000-0000-000000000003',NULL,5,7,0.1000);
+ IF s IS DISTINCT FROM 'saved' THEN
+  RAISE EXCEPTION 'V51.1: admin autorise doit pouvoir marquer un roman publie';
+ END IF;
+ SELECT result_status INTO s FROM public.sinjira_reader_save_progress_cas(
+  '10000000-0000-0000-0000-000000000004',NULL,5,7,0.1000);
+ IF s IS DISTINCT FROM 'unavailable' THEN
+  RAISE EXCEPTION 'V51.1: un roman annonce reste interdit meme aux admins';
+ END IF;
+END $admin_grant$;
+SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000002';
+DO $owner_grant$
+DECLARE s text;
+BEGIN
+ SELECT result_status INTO s FROM public.sinjira_reader_save_progress_cas(
+  '10000000-0000-0000-0000-000000000003',NULL,6,8,0.2000);
+ IF s IS DISTINCT FROM 'saved' THEN
+  RAISE EXCEPTION 'V51.1: proprietaire autorise doit pouvoir marquer un titre publie';
+ END IF;
+END $owner_grant$;
+RESET ROLE;
+ROLLBACK;
+
 -- Vérifier que les deux anciens marque-pages + une nouvelle ligne sont intacts.
 CREATE TEMP TABLE v51_before_replay AS
  SELECT user_id,novel_id,last_page,progress_percent,scroll_ratio,
