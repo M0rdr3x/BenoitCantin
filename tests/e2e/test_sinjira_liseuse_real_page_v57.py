@@ -1114,6 +1114,44 @@ def run(playwright, browser_type, url):
         },("V101: souris droite = une page précédente",
             pdf_mouse_back,mouse_counts_back)
 
+        # V158 : sur une page PDF réelle, certains appareils transmettent
+        # uniquement PointerEvent (doigt ou stylet). Un glissement horizontal
+        # doit avancer/reculer une page, sans nécessiter de TouchEvent.
+        def pointer_only_pdf(direction,kind):
+            return page.evaluate("""({direction,kind})=>{
+              const v=document.querySelector('#reader-viewer');
+              const canvas=document.querySelector('#reader-canvas');
+              const r=v.getBoundingClientRect();
+              const from=direction==='next'?.75:.25;
+              const to=direction==='next'?.25:.75;
+              const y=r.top+Math.min(65,Math.max(25,r.height*.25));
+              const dispatch=(name,x,buttons)=>{
+                canvas.dispatchEvent(new PointerEvent(name,{
+                  bubbles:true,cancelable:true,pointerType:kind,pointerId:158,
+                  isPrimary:true,button:0,buttons,
+                  clientX:r.left+r.width*x,clientY:y
+                }));
+              };
+              dispatch('pointerdown',from,1);
+              dispatch('pointermove',to,1);
+              dispatch('pointerup',to,0);
+              return {page:document.querySelector('#reader-page').value,
+                clicks:{...window.__v98Clicks}};
+            }""",{"direction":direction,"kind":kind})
+
+        pointer_touch=pointer_only_pdf('next','touch')
+        page.wait_for_function("""()=>document.querySelector('#reader-page').value==='5'""")
+        assert pointer_touch["page"]=="5" and pointer_touch["clicks"]=={
+            "next":4,"previous":3
+        },("V158 : PointerEvent tactile sans TouchEvent doit avancer une fois",
+           pointer_touch)
+        pointer_pen=pointer_only_pdf('previous','pen')
+        page.wait_for_function("""()=>document.querySelector('#reader-page').value==='4'""")
+        assert pointer_pen["page"]=="4" and pointer_pen["clicks"]=={
+            "next":4,"previous":4
+        },("V158 : stylet PointerEvent seul doit reculer une fois",
+           pointer_pen)
+
         # V154 : un clavier physique tenu enfoncé ne doit pas faire sauter
         # plusieurs pages du livre. Vérifier aussi les raccourcis PDF V26.
         repeated_keyboard=page.evaluate("""()=>{
