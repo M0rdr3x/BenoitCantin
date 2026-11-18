@@ -58,3 +58,17 @@ Une fenêtre de transition contrôlée peut devoir être annoncée aux lecteurs 
 **Boussole électorale** : 9 critères sur 12; **sondage** : 6 critères sur 11, fermé.
 
 **Références GitHub** : issue P0 <https://github.com/M0rdr3x/BenoitCantin/issues/945>, banc précédent <https://github.com/M0rdr3x/BenoitCantin/pull/944>, et registre central <https://github.com/M0rdr3x/BenoitCantin/issues/840>. Pas de fusion avant revue de sécurité et de l'ordre d'exploitation.
+
+## Correctif V51.1 — homologation des droits sur le roman avant CAS (18 novembre 2026)
+
+**Statut : correctif en PR #947 / NON FUSIONNÉ / NON APPLIQUÉ À SUPABASE.** Le code candidat V51 original vérifiait `auth.uid()` et l'existence de `sinjira_novels.id`, sans vérifier le droit de lecture. La fonction `SECURITY DEFINER` pouvait donc enregistrer une progression pour un titre non attribué. Ce rapport décrit une **lacune d'autorisation du code candidat**, pas une fuite constatée en production.
+
+**Changement apporté à la migration candidate :** avant toute insertion, mise à jour ou lecture du conflit CAS, exiger (1) `sinjira_novels.status='published'` et (2) une habilitation serveur actuelle : propriétaire `is_sinjira_owner(auth.uid())`, administrateur `is_sinjira_admin(auth.uid())` ou attribution `user_entitlements(user_id,product_id)` liée à un `products.active=true`. La règle est alignée sur `supabase/functions/get-novel-file-url/index.ts`. Les titres inconnus, non publiés, sans licence, désactivés et révoqués retournent tous le même `result_status='unavailable'`, sans titre, progression ou horodatage. Aucun marque-page ne doit être écrit par ce chemin en cas de refus.
+
+**Preuves de schéma consultées en lecture seule, sans modification de base :** Supabase `public.sinjira_novels.status/product_id`, `public.products.id/active`, `public.user_entitlements.user_id/product_id`, et fonctions `public.is_sinjira_owner(p_user_id uuid)` / `public.is_sinjira_admin(p_user_id uuid)`. Les RLS des tables métier ne dispensent pas du contrôle dans une fonction `SECURITY DEFINER`.
+
+**Tests ajoutés en laboratoire PostgreSQL jetable :** comptes fictifs A/B, titre autorisé publié, roman publié non attribué, roman annoncé malgré attribution, produit inactif, UUID inconnu, révocation d'un droit après une sauvegarde existante, absence de modification de la page/révision/date lors du refus, et permissions administrateur/propriétaire sur un roman publié. Les anciens tests CAS page 42 contre page 13, appels concurrents, privilèges, comptes séparés et migration répétée sont conservés. **Les tests GitHub doivent réussir sur le nouveau SHA; ce paragraphe ne prétend pas qu'ils ont réussi.**
+
+**Risques et décisions restant à homologuer avant GO :** révocation concurrente à l'écriture, fonctionnement réel des deux fonctions d'administration sous Supabase Auth/JWT, changement de statut ou produit, lien entre droit d'enregistrer et droit de télécharger le fichier intégral, lecture des anciens marque-pages d'un titre révoqué, test d'adversaire sur un vrai environnement de préproduction, approbation humaine de la migration, plan pour les anciens clients UPSERT et recette réseau de deux appareils. La vérification sur la base Supabase de production n'a été qu'une inspection de métadonnées en lecture seule : ni DDL, ni migration, ni données d'utilisateurs n'y ont été modifiées.
+
+**NO-GO conservé** pour `reader_v32_prod`, `reader_two_devices` et la plateforme SINJIRA; aucune date de livraison ni augmentation du 66,5 % ±10 points.
