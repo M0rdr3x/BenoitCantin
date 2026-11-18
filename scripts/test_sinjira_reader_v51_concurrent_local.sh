@@ -86,8 +86,7 @@ SQL
 revoker_pid=$!
 lock_seen=false
 for _ in $(seq 1 100); do
-  if grep -q '^V51-REVOKER-LOCK-HELD
- "$revoker_log" 2>/dev/null; then
+  if grep -Fq 'V51-REVOKER-LOCK-HELD' "$revoker_log" 2>/dev/null; then
     lock_seen=true
     break
   fi
