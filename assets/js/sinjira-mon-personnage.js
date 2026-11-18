@@ -1,4 +1,5 @@
 import {getSupabase,requireUser,escapeHtml,formatDate,isSinjiraOwner} from './sinjira-supabase.js';
+import {safeCharacterPortraitPath} from './sinjira-character-portrait-url.mjs';
 
 const UI_VERSION='24.4.85';
 const OWNER_REPAIR_CONTRACT='24.4.20';
@@ -18,8 +19,9 @@ function setStatus(message,type='info'){
 }
 
 function portrait(src,name){
-  if(!src)return '';
-  return `<div class="character-account-portrait"><img src="${escapeHtml(src)}" alt="Portrait du personnage ${escapeHtml(name||'SINJIRA™')}" loading="eager"></div>`;
+  const safePath=safeCharacterPortraitPath(src);
+  if(!safePath)return '';
+  return `<div class="character-account-portrait"><img src="${escapeHtml(safePath)}" alt="Portrait du personnage ${escapeHtml(name||'SINJIRA™')}" loading="eager"></div>`;
 }
 
 function timeline(submission,ch){

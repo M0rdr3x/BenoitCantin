@@ -1,5 +1,7 @@
 // Projet Nova — consultation publique agrégée (écritures interdites si secrets / contrôle anti-bot absents).
 // Aucun bulletin individuel, identité, IP ou choix politique n'est journalisé ou enregistré.
+import { readChunkWithDeadline } from '../_shared/read-chunk-deadline.mjs';
+
 const VERSION = "nova-consultation-v1";
 const ORIGINS = new Set(["https://www.benoitcantin.com","https://benoitcantin.com"]);
 const MAX_BODY_BYTES = 8192;
@@ -90,48 +92,39 @@ function respond(status: number, data: unknown, origin: string | null): Response
   return new Response(status===204 ? null : JSON.stringify(data),{status,headers});
 }
 async function readLimitedJson(req: Request): Promise<unknown> {
-  if(!req.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
-    throw new Error("type");
-  }
-  // Rejeter un corps annoncé trop grand avant de réserver un lecteur.
-  // La limite est aussi appliquée aux octets réellement transmis.
-  const declared = req.headers.get("content-length");
-  if(declared !== null && (!/^\d+$/.test(declared) ||
+  const type=(req.headers.get("content-type")||"").split(";",1)[0].trim().toLowerCase();
+  if(type!=="application/json") throw new Error("type");
+
+  // Content-Length is advisory: validate it early, then enforce actual bytes.
+  const declared=req.headers.get("content-length");
+  if(declared!==null && (!/^(0|[1-9][0-9]*)$/.test(declared) ||
       !Number.isSafeInteger(Number(declared)) || Number(declared)>MAX_BODY_BYTES)) {
     throw new Error("size");
   }
-  const reader = req.body?.getReader();
+
+  const reader=req.body?.getReader();
   if(!reader) throw new Error("body");
+  const deadlineAt=performance.now()+BODY_READ_TIMEOUT_MS;
   let size=0; const chunks: Uint8Array[]=[];
-  let interrupted=false;
-  // Une source qui envoie quelques octets puis s'arrête ne doit pas retenir
-  // indéfiniment une invocation Edge. Annuler le lecteur débloque read().
-  // Ne jamais attendre cancel() lors d'un dépassement de limite.
-  const interrupt = () => {
-    interrupted=true;
-    try { void reader.cancel().catch(()=>{}); } catch { /* lecteur déjà clos */ }
-  };
-  const timeout=setTimeout(interrupt,BODY_READ_TIMEOUT_MS);
-  req.signal.addEventListener("abort",interrupt,{once:true});
   try {
-    if(req.signal.aborted) throw new Error("body_interrupted");
     while(true) {
-      const {done,value}=await reader.read();
-      if(interrupted || req.signal.aborted) throw new Error("body_interrupted");
+      // This single deadline survives slow/trickled chunks and hanging cancel().
+      const {done,value}=await readChunkWithDeadline(reader,req.signal,deadlineAt);
       if(done) break;
+      if(!(value instanceof Uint8Array)) throw new Error("body");
+      if(value.byteLength>MAX_BODY_BYTES-size) throw new Error("size");
       size+=value.byteLength;
-      if(size>MAX_BODY_BYTES) {
-        interrupt();
-        throw new Error("size");
-      }
       chunks.push(value);
     }
+  } catch(error) {
+    // Cancel best-effort; a stalled source must never hold the response open.
+    try { void Promise.resolve(reader.cancel()).catch(()=>{}); } catch { /* already closed */ }
+    throw error;
   } finally {
-    clearTimeout(timeout);
-    req.signal.removeEventListener("abort",interrupt);
-    reader.releaseLock();
+    try { reader.releaseLock(); } catch { /* read cancellation is still settling */ }
   }
-  const buffer = new Uint8Array(size); let offset=0;
+
+  const buffer=new Uint8Array(size); let offset=0;
   for(const chunk of chunks) {buffer.set(chunk,offset);offset+=chunk.byteLength;}
   return JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(buffer));
 }
@@ -274,7 +267,10 @@ Deno.serve(async (req:Request)=>{
   if(!isOpen()) return respond(503,{error:"consultation_non_ouverte"},origin);
   let payload: any;
   try { payload=await readLimitedJson(req); }
-  catch { return respond(400,{error:"bulletin_invalide"},origin); }
+  catch(error) {
+    const timedOut=error instanceof Error && error.message==="REQUEST_TIMEOUT";
+    return respond(timedOut?408:400,{error:timedOut?"transmission_expiree":"bulletin_invalide"},origin);
+  }
   if(!validBallotEnvelope(payload)) {
     return respond(400,{error:"bulletin_invalide"},origin);
   }

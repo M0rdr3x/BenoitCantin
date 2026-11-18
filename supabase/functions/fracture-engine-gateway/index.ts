@@ -1,9 +1,10 @@
-import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
+import { readLimitedUtf8BodyWithDeadline } from '../_shared/read-chunk-deadline.mjs';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.119.0';
 import { corsHeaders } from '../_shared/cors.ts';
 
 const GATEWAY_VERSION='24.4.15';
 const MAX_BODY_BYTES=32_000;
+const BODY_READ_TIMEOUT_MS=8_000;
 const PARTY_RE=/^FRM-[A-Z0-9]{6}$/;
 
 const ALLOWED_ACTIONS=new Set([
@@ -101,15 +102,19 @@ async function readLimitedJson(req:Request):Promise<{body?:JsonRecord;response?:
   const rawLength=req.headers.get('content-length');
   if(rawLength!==null){
     const declaredLength=Number(rawLength);
-    if(Number.isFinite(declaredLength)&&declaredLength>MAX_BODY_BYTES){
+    if(!/^(0|[1-9][0-9]*)$/.test(rawLength) ||
+       !Number.isSafeInteger(declaredLength) || declaredLength>MAX_BODY_BYTES){
       return {response:privateJson({ok:false,error:'Requête trop volumineuse.',gateway_version:GATEWAY_VERSION},413)};
     }
   }
 
   // La limite est vérifiée à chaque fragment; Content-Length n'est pas fiable.
   // Ne pas appeler req.text()/req.json() sur un corps contrôlé par le client.
-  const limited=await readLimitedUtf8Body(req,MAX_BODY_BYTES);
+  const limited=await readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,BODY_READ_TIMEOUT_MS);
   if(!limited.ok){
+    if(limited.reason==='REQUEST_TIMEOUT'){
+      return {response:privateJson({ok:false,error:'Délai de lecture dépassé.',code:'REQUEST_TIMEOUT',gateway_version:GATEWAY_VERSION},408)};
+    }
     return {response:privateJson({ok:false,error:'Corps invalide ou requête trop volumineuse.',gateway_version:GATEWAY_VERSION},413)};
   }
   const raw=limited.raw;
