@@ -40,16 +40,21 @@ jobs:
         run: node --test tests/sinjira-liseuse-touch-v52.test.mjs tests/sinjira-liseuse-reflow-v53.test.mjs
       - name: Vraie page de lecture avec PDF fictif et Supabase interdit
         run: |
-          python3 -m venv .venv-reader-v69
-          . .venv-reader-v69/bin/activate
+          # V159 : utiliser l'image Microsoft Playwright 1.57.0 contenant
+          # WebKit/Chromium et leurs bibliothèques, sans apt --with-deps.
+          # Les tests Node/syntaxe précédents restent sur le runner hôte.
+          docker run --rm --interactive --init --ipc=host \
+            --volume "$PWD:/workspace" --workdir /workspace \
+            mcr.microsoft.com/playwright/python:v1.57.0-noble \
+            /bin/bash -e -s -- <<'SINJIRA_PLAYWRIGHT_TESTS'
           python -m pip install --disable-pip-version-check playwright==1.57.0
-          python -m playwright install --with-deps ${{ matrix.browser }}
           # V157 : garder reflow, erreurs d'extraction et PDF illustré.
           # Le parcours complet et la reprise privée sont en V64; la
           # trajectoire en V66/V67 et les gestes natifs en V65.
           python tests/e2e/test_sinjira_liseuse_image_fallback_v81.py --browser ${{ matrix.browser }}
           python tests/e2e/test_sinjira_liseuse_extract_error_v82.py --browser ${{ matrix.browser }}
           python tests/e2e/test_sinjira_liseuse_responsive_v58.py --browser ${{ matrix.browser }}
+          SINJIRA_PLAYWRIGHT_TESTS
       - name: Aucune publication ni migration
         run: |
           echo "V69-LAB-ONLY : aucune validation physique ni droit prive certifie"
