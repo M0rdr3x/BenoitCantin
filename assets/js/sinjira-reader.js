@@ -6,9 +6,18 @@ const status=document.querySelector('[data-reader-status]');
 const configuredTotalPages=Number(document.body.dataset.readerTotalPages||82);
 const totalPages=Number.isFinite(configuredTotalPages)&&configuredTotalPages>0?Math.floor(configuredTotalPages):82;
 
+// Les erreurs Supabase peuvent contenir SQL, UUID, courriels ou jetons.
+// Aucune chaîne d'erreur reçue du backend ne doit être rendue telle quelle.
+const SAFE_READER_ERRORS=new Set([
+  'Le commentaire est trop court.',
+  'Impossible de publier le commentaire pour le moment.',
+  'Le lecteur est temporairement indisponible. Réessayez plus tard.'
+]);
 function setStatus(msg,type='info'){
   if(!status)return;
-  status.textContent=msg;
+  status.textContent=type==='error'
+    ? (SAFE_READER_ERRORS.has(msg)?msg:'Le lecteur est temporairement indisponible. Réessayez plus tard.')
+    : String(msg??'');
   status.dataset.statusType=type;
   status.hidden=false;
 }
@@ -60,10 +69,14 @@ async function comments(){
     e.preventDefault();
     const fd=new FormData(form),body=String(fd.get('body')||'').trim();
     if(body.length<3)return setStatus('Le commentaire est trop court.','error');
-    const {error}=await s.from('novel_comments').insert({novel_id:novel.id,user_id:user.id,display_name_snapshot:p?.pseudo||p?.display_name||'Lecteur SINJIRA',body,contains_spoilers:fd.get('contains_spoilers')==='yes',status:'pending'});
-    if(error)return setStatus(error.message,'error');
-    form.reset();
-    setStatus('Commentaire envoyé. Il apparaîtra après approbation.','success');
+    try{
+      const {error}=await s.from('novel_comments').insert({novel_id:novel.id,user_id:user.id,display_name_snapshot:p?.pseudo||p?.display_name||'Lecteur SINJIRA',body,contains_spoilers:fd.get('contains_spoilers')==='yes',status:'pending'});
+      if(error)throw error;
+      form.reset();
+      setStatus('Commentaire envoyé. Il apparaîtra après approbation.','success');
+    }catch(_){
+      setStatus('Impossible de publier le commentaire pour le moment.','error');
+    }
   });
 }
 
@@ -103,7 +116,7 @@ async function demo(){
     if(!slug)return;
     if(page==='novel')await comments();
     if(page==='demo')await demo();
-  }catch(e){
-    setStatus(e?.message||'Erreur lecteur.','error');
+  }catch(_){
+    setStatus('Le lecteur est temporairement indisponible. Réessayez plus tard.','error');
   }
 })();

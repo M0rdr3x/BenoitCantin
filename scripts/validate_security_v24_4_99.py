@@ -64,11 +64,24 @@ def main():
         "non activé",
     ],'Centre sécurité V24.4.99')
     forbid(security,['navigator.credentials.create','navigator.credentials.get'],'passkeys avant domaine final')
+    require(security,[
+        'data?.ok!==true',
+        'data?.session_revocation_required!==true',
+        "s.auth.signOut({scope:'others'})",
+        'signOutResult.error!==null',
+        'deviceRevoked=true',
+        'Déconnecter tous les appareils',
+        "if(button.disabled)return",
+    ],'déclaration appareil perdu : double confirmation RPC + Auth')
+    forbid(security,[
+        "console.warn('[SINJIRA lost device]',error)",
+        "    await s.auth.signOut({scope:'others'});",
+    ],'déclaration appareil perdu : diagnostics bruts ou déconnexion non confirmée')
 
     reset=read('compte/reinitialiser-mot-de-passe.html')
     require(reset,['sinjira-recovery-v24-4-99.js?v=24.4.99','second facteur'],'page récupération')
     center=read('compte/securite.html')
-    require(center,['sinjira-security-v24-4-99.js?v=24.4.99','Déclarer perdu','aucun SMS, aucun numéro de téléphone et aucun fournisseur payant n’est requis'],'page Ma sécurité')
+    require(center,['sinjira-security-v24-4-99.js?v=24.4.100-lost-device','Déclarer perdu','aucun SMS, aucun numéro de téléphone et aucun fournisseur payant n’est requis'],'page Ma sécurité')
 
     app=json.loads(read('mobile-native/app.json'))['expo']
     version=numeric_version(app.get('version'))
