@@ -1,6 +1,7 @@
 import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import {corsHeaders} from '../_shared/cors.ts';
 import {requiredVaultUser,serviceClient} from '../_shared/auth.ts';
+import {isVerifiedRegistryOwner} from '../_shared/registry-owner-authorization.mjs';
 import {sendFormspreeNotice} from '../_shared/sinjira-formspree.ts';
 import {SINJIRA_CANON_PUBLIC_GUIDE} from '../_shared/sinjira-canon-public.ts';
 import {loadSinjiraCanonContext,canonPrompt} from '../_shared/sinjira-canon-context.ts';
@@ -16,7 +17,8 @@ const PRIVATE_KEYS=['prenom_legal','nom_legal','courriel','telephone','date_nais
 const SAFE_LOG_CODES=new Set([
   'AUTH_REQUIRED','MFA_SETUP_REQUIRED','MFA_REQUIRED','MFA_STATE_UNAVAILABLE','SECURITY_STATE_UNAVAILABLE',
   'REQUEST_TOO_LARGE','JSON_REQUIRED','INVALID_JSON','CHARACTER_STATE_LOOKUP_FAILED',
-  'CHARACTER_SUBMISSION_WRITE_FAILED','OWNER_CHARACTER_REPAIR_FAILED','CHARACTER_GENERATION_FAILED'
+  'CHARACTER_SUBMISSION_WRITE_FAILED','OWNER_CHARACTER_REPAIR_FAILED','CHARACTER_GENERATION_FAILED',
+  'REGISTRY_OWNER_CHECK_FAILED'
 ]);
 const PRIVATE_HEADERS={
   ...corsHeaders,
@@ -102,7 +104,9 @@ Deno.serve(async(req)=>{
     const photo_path=body.photo_path??null,manual_only=body.manual_only!==false,update_existing=body.update_existing===true;
     // Rejet AVANT toute lecture ou écriture de dossier, notification, ou appel externe.
     if(photo_path!==null && !isCanonicalRegistryPhotoPath(photo_path,user.id))return privateJson({ok:false,error:'Chemin de photo de dossier invalide.',code:'INVALID_CHARACTER_PHOTO_PATH',version:VERSION},400);
-    const owner=String(user?.email||'').trim().toLowerCase()==='kingtyrano@gmail.com';
+    // Une adresse courriel ne constitue pas une preuve du rôle propriétaire.
+    // Si une exception est demandée, consulter le rôle officiel en base via le JWT validé.
+    const owner=update_existing?await isVerifiedRegistryOwner(service,user.id):false;
     const [profileResult,submissionResult,characterResult]=await Promise.all([
       service.from('profiles').select('pseudo,display_name').eq('user_id',user.id).maybeSingle(),
       service.from('character_submissions').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(1).maybeSingle(),
@@ -165,6 +169,7 @@ Deno.serve(async(req)=>{
     if(e?.message==='REQUEST_TOO_LARGE')return privateJson({ok:false,error:'Questionnaire trop volumineux.',code:'REQUEST_TOO_LARGE',version:VERSION},413);
     if(e?.message==='JSON_REQUIRED')return privateJson({ok:false,error:'Corps JSON requis.',code:'JSON_REQUIRED',version:VERSION},415);
     if(e?.message==='INVALID_JSON')return privateJson({ok:false,error:'JSON invalide.',code:'INVALID_JSON',version:VERSION},400);
+    if(e?.message==='REGISTRY_OWNER_CHECK_FAILED')return privateJson({ok:false,error:'La vérification du rôle propriétaire est temporairement indisponible.',code:'REGISTRY_OWNER_CHECK_FAILED',version:VERSION},503);
     if(e?.message==='CHARACTER_STATE_LOOKUP_FAILED')return privateJson({ok:false,error:'L’état de votre dossier ne peut pas être vérifié pour le moment.',code:'CHARACTER_STATE_LOOKUP_FAILED',version:VERSION},503);
     if(e?.message==='CHARACTER_SUBMISSION_WRITE_FAILED')return privateJson({ok:false,error:'Impossible d’enregistrer le questionnaire pour le moment.',code:'CHARACTER_SUBMISSION_WRITE_FAILED',version:VERSION},500);
     return privateJson({ok:false,error:'Impossible de transmettre le questionnaire.',code:'CHARACTER_QUESTIONNAIRE_FAILED',version:VERSION},500);

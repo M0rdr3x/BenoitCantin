@@ -1,4 +1,5 @@
 import {getSupabase,requireCommunityUser,escapeHtml,formatDate,socialStatus,socialErrorStatus} from './sinjira-social-common.js?v=24.4.79';
+import {safeCharacterPortraitPath} from './sinjira-character-portrait-url.mjs';
 import {editOwnContent,deleteOwnContent,editedSuffix} from './sinjira-social-self-content.js?v=24.4.72';
 import {openSocialReport} from './sinjira-social-safety-v24-4-79.js?v=24.4.79';
 
@@ -11,8 +12,7 @@ const lock=document.querySelector('[data-character-network-lock]');
 let user,me;
 
 function portrait(profile={}){
-  const path=String(profile.portrait_path||'').trim();
-  return path.startsWith('/')?path:'/assets/media/sinjira-emblem.webp';
+  return safeCharacterPortraitPath(profile.portrait_path)||'/assets/media/sinjira-emblem.webp';
 }
 
 function fail(error,fallback='Action impossible dans le Réseau personnage.'){
