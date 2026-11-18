@@ -62,8 +62,33 @@ BEGIN
       USING ERRCODE = '22023';
   END IF;
 
-  -- Un UUID de roman fictif ne doit pas pouvoir créer une ligne orpheline.
-  IF NOT EXISTS(SELECT 1 FROM public.sinjira_novels WHERE id=p_novel_id) THEN
+  -- V51.1 / P0 #955 : SECURITY DEFINER contourne la RLS des tables.
+  -- L'identité seule ne donne PAS le droit d'enregistrer un marque-page
+  -- pour un roman sans licence. Aligner le droit d'accès sur celui du
+  -- téléchargement intégral : publication du roman ET propriétaire/admin
+  -- OU produit actif attribué à ce compte.
+  --
+  -- Ne dévoiler ni l'existence, ni la progression d'un titre inaccessible.
+  -- Le même statut 'unavailable' couvre roman inexistant, non publié,
+  -- licence absente ou révoquée et produit désactivé.
+  IF NOT EXISTS(
+    SELECT 1 FROM public.sinjira_novels novel
+     WHERE novel.id=p_novel_id
+       AND novel.status='published'
+       AND (
+         public.is_sinjira_owner(v_user)
+         OR public.is_sinjira_admin(v_user)
+         OR EXISTS(
+           SELECT 1
+             FROM public.user_entitlements entitlement
+             JOIN public.products product
+               ON product.id=entitlement.product_id
+              AND product.active IS TRUE
+            WHERE entitlement.user_id=v_user
+              AND entitlement.product_id=novel.product_id
+         )
+       )
+  ) THEN
     RETURN QUERY SELECT 'unavailable'::text,NULL::bigint,NULL::integer,
       NULL::numeric,NULL::timestamptz;
     RETURN;
