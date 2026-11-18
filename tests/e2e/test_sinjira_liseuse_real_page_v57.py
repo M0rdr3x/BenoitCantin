@@ -130,6 +130,46 @@ def run(playwright, browser_type, url):
             "reason":"Page initiale PDF incorrectement repositionnée",
             "scroll":first["scroll"],"max":first["max"],"page":first["page"]}
         assert "LIVRE DE TEST · Page 3" in first["text"]
+        # V160 : certains appareils mobiles et stylets ne fournissent que
+        # PointerEvent, sans TouchEvent. Le texte paginé doit tourner un écran
+        # (pas une nouvelle page PDF), exactement une fois.
+        def pointer_only_text(direction,kind):
+            return page.evaluate("""({direction,kind})=>{
+              const viewer=document.querySelector('#reader-viewer');
+              const text=document.querySelector('#reader-text');
+              const r=viewer.getBoundingClientRect();
+              const x1=direction==='next'?.75:.25;
+              const x2=direction==='next'?.25:.75;
+              const y=r.top+Math.min(85,Math.max(25,r.height*.28));
+              const emit=(name,x,buttons)=>{
+                const event=new PointerEvent(name,{
+                  bubbles:true,cancelable:true,pointerType:kind,pointerId:160,
+                  button:0,buttons,isPrimary:true,
+                  clientX:r.left+r.width*x,clientY:y
+                });
+                text.dispatchEvent(event);
+                return event.defaultPrevented;
+              };
+              emit('pointerdown',x1,1);
+              emit('pointermove',x2,1);
+              const blocked=emit('pointerup',x2,0);
+              return {blocked,page:document.querySelector('#reader-page').value,
+                top:viewer.scrollTop,layout:viewer.dataset.readerLayout};
+            }""",{"direction":direction,"kind":kind})
+
+        pointer_text_next=pointer_only_text('next','touch')
+        page.wait_for_function("""()=>document.querySelector('#reader-viewer')
+          .scrollTop>100""")
+        assert (pointer_text_next["blocked"] and
+                pointer_text_next["page"]=="3" and
+                pointer_text_next["layout"]=="screens"),pointer_text_next
+        pointer_text_back=pointer_only_text('previous','pen')
+        page.wait_for_function("""()=>document.querySelector('#reader-viewer')
+          .scrollTop<2""")
+        assert (pointer_text_back["blocked"] and
+                pointer_text_back["page"]=="3" and
+                pointer_text_back["layout"]=="screens"),pointer_text_back
+
         # V137 : les éléments de navigation qui appellent V26 directement
         # (champ de page, curseur, chapitres) ne doivent ni tourner ni
         # persister une position quand le roman est masqué. En mode écran
