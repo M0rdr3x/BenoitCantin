@@ -249,6 +249,10 @@ export function bindReaderTouchNavigation({
     !viewer.closest?.('[hidden]');
   const start=event=>{
     origin=null;
+    // V158 : si le navigateur émet PointerEvent puis TouchEvent pour un
+    // même doigt/stylet, le flux tactile devient seul propriétaire du geste.
+    // Sinon le fallback pointeur peut tourner le PDF une seconde fois.
+    if(pointerOrigin?.pointerType!=='mouse')pointerOrigin=null;
     // V125 : ne pas reporter les mutations antérieures à un nouveau doigt.
     contentObserver?.takeRecords?.();
     if(!canNavigate()||event.touches?.length!==1||isInteractiveTarget(event.target)||
@@ -356,21 +360,29 @@ export function bindReaderTouchNavigation({
     const button=tap==='next'?next:tap==='previous'?previous:null;
     if(button&&!button.disabled)button.click();
   };
-  // V101 : faire glisser à la SOURIS une page PDF sur ordinateur. Le
-  // texte adaptable reste sélectionnable, et les pointeurs touch/pen sont
-  // laissés aux gestionnaires tactiles existants (pas de double tournage).
+  // V158 : glisser une page PDF à la souris ou avec un pointeur tactile/stylet
+  // sur les navigateurs qui n'émettent aucun TouchEvent natif.
+  // Les TouchEvents réels priment toujours : pas de double changement de page.
+  // Le texte adaptable reste sélectionnable, les gestes système préservés.
   const isPdfCanvas=event=>event?.target===viewer.querySelector?.('#reader-canvas')&&
     viewer.querySelector?.('#reader-text')?.hidden===true;
   const pointerDown=event=>{
     pointerOrigin=null;
     contentObserver?.takeRecords?.();
     if(!canNavigate()||viewer.dataset?.readerLayout==='screens'||
-      event?.pointerType!=='mouse'||event.button!==0||event.isPrimary===false||
+      !['mouse','touch','pen'].includes(event?.pointerType)||
+      event.button!==0||event.isPrimary===false||
+      // Une vraie séquence TouchEvent a déjà son propre gestionnaire.
+      (origin&&event.pointerType!=='mouse')||
       isReaderViewportZoomed()||!isPdfCanvas(event)||isInteractiveTarget(event.target))
       return;
     if(![event.clientX,event.clientY,event.pointerId].every(Number.isFinite))return;
+    if(event.pointerType!=='mouse'&&isReaderSystemEdgeGesture({
+      clientX:event.clientX,viewportWidth:globalThis.window?.innerWidth
+    }))return;
     pointerOrigin={
-      id:event.pointerId,x:event.clientX,y:event.clientY,time:clock(),
+      id:event.pointerId,pointerType:event.pointerType,
+      x:event.clientX,y:event.clientY,time:clock(),
       bookPage:currentPage(),
       scrollTop:viewer.scrollTop||0,maxVerticalTravel:0,maxLeftTravel:0,maxRightTravel:0,scrolled:false,
       geometry:captureReaderSwipeGeometry(viewer),
@@ -385,7 +397,7 @@ export function bindReaderTouchNavigation({
     if(!initial)return;
     if(!canNavigate()||!isPdfCanvas({target:viewer.querySelector?.('#reader-canvas')})||
       initial.bookPage!==currentPage()||
-      event.pointerId!==initial.id||event.pointerType!=='mouse'||
+      event.pointerId!==initial.id||event.pointerType!==initial.pointerType||
       event.buttons!==undefined&&event.buttons!==1||
       initial.readerLayout!==(viewer.dataset?.readerLayout||'scroll')||
       !isReaderSwipeGeometryStable(initial.geometry,captureReaderSwipeGeometry(viewer))){
@@ -405,7 +417,7 @@ export function bindReaderTouchNavigation({
     if(cancelPendingContentChanges())return;
     const initial=pointerOrigin;
     pointerOrigin=null;
-    if(!initial||!canNavigate()||event.pointerType!=='mouse'||
+    if(!initial||!canNavigate()||event.pointerType!==initial.pointerType||
       initial.bookPage!==currentPage()||
       event.pointerId!==initial.id||event.button!==0||event.defaultPrevented||
       viewer.dataset?.readerLayout==='screens'||
