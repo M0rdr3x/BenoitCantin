@@ -220,7 +220,7 @@ export function bindReaderScreenMode({
 }={}){
   if(!viewer||!text||!previous||!next||!toggle||!status||!pageField)
     throw new Error('SINJIRA V53 : contrôles nécessaires absents');
-  let gesture=null,pendingPreviousPdf=null,lastRatio=0,restoring=false,closed=false;
+  let gesture=null,pointerGesture=null,pendingPreviousPdf=null,lastRatio=0,restoring=false,closed=false;
   // V121 : ne prononcer que les changements de page source.
   let lastNotifiedPage=String(pageField.value);
   // V106 : garder la sélection d'écran pendant le drag sans persister ni
@@ -477,8 +477,11 @@ export function bindReaderScreenMode({
     return changed||contentChanged;
   };
   const isTouchTargetAllowed=event=>!isInteractive(event.target);
-  const onTouchStart=event=>{
+  const onTouchStart=(event,fromPointer=false)=>{
     gesture=null;
+    // V160 : un vrai TouchEvent devient propriétaire du mouvement et annule
+    // le secours PointerEvent (doigt/stylet) commencé avant lui.
+    if(!fromPointer)pointerGesture=null;
     if(flushPendingTextMutation())return;
     if(!isPaged()||!canNavigate()||event.touches?.length!==1||!isTouchTargetAllowed(event)||
       isReaderViewportZoomed())return;
@@ -537,7 +540,7 @@ export function bindReaderScreenMode({
   // le déplacement du curseur, un change natif tardif ne doit pas
   // sauter vers un écran non confirmé puis enregistrer cette position.
   const onTouchCancel=()=>{
-    gesture=null;
+    gesture=null;pointerGesture=null;
     if(jumpPreview!==null){
       // V109 : refléter immédiatement la vraie page, même si le navigateur
       // n'envoie jamais de confirmation de fin de glissement.
@@ -566,7 +569,8 @@ export function bindReaderScreenMode({
       resumeDeferredLayout();
     }
   };
-  const onTouchEnd=event=>{
+  const onTouchEnd=(event,fromPointer=false)=>{
+    if(!fromPointer)pointerGesture=null;
     if(flushPendingTextMutation())return;
     const start=gesture;gesture=null;
     if(!start||!isPaged()||!canNavigate()||isReaderViewportZoomed()||
@@ -901,6 +905,55 @@ export function bindReaderScreenMode({
     scheduleLayoutRestore(lastRatio,
       captureReaderTextAnchor({viewer,text})||lastAnchor);
   };
+  // V160 : les navigateurs/tablettes qui ne livrent que PointerEvent ont
+  // aussi droit aux pages d'écran texte. On réutilise exactement la
+  // classification tactile V53 (scroll, zoom, sélection, gestes système,
+  // reflow). TouchEvent natif prend la priorité et annule ce secours.
+  // Le PDF et le mode continu restent exclusivement gérés par V52.
+  const onPointerDown=event=>{
+    pointerGesture=null;
+    if(!isPaged()||!canNavigate()||
+      !['touch','pen'].includes(event?.pointerType)||
+      event.isPrimary===false||event.button!==0||
+      ![event.pointerId,event.clientX,event.clientY].every(Number.isFinite))
+      return;
+    const id=event.pointerId;
+    onTouchStart({touches:[{
+      identifier:id,clientX:event.clientX,clientY:event.clientY
+    }],target:event.target},true);
+    if(gesture)pointerGesture={id,pointerType:event.pointerType};
+  };
+  const onPointerMove=event=>{
+    const p=pointerGesture;
+    if(!p||p.id!==event.pointerId||p.pointerType!==event.pointerType)return;
+    if(event.buttons!==undefined&&event.buttons!==1){
+      onTouchCancel();return;
+    }
+    onTouchMove({touches:[{
+      identifier:p.id,clientX:event.clientX,clientY:event.clientY
+    }]});
+    if(!gesture)pointerGesture=null;
+  };
+  const onPointerUp=event=>{
+    const p=pointerGesture;
+    pointerGesture=null;
+    if(!p||p.id!==event.pointerId||p.pointerType!==event.pointerType||
+      event.button!==0||!gesture)return;
+    onTouchEnd({
+      touches:[],changedTouches:[{
+        identifier:p.id,clientX:event.clientX,clientY:event.clientY
+      }],defaultPrevented:event.defaultPrevented,
+      preventDefault:()=>event.preventDefault?.()
+    },true);
+  };
+  const onPointerCancel=event=>{
+    if(pointerGesture?.id===event.pointerId)onTouchCancel();
+  };
+  viewer.addEventListener('pointerdown',onPointerDown,{capture:true,passive:true});
+  viewer.addEventListener('pointermove',onPointerMove,{capture:true,passive:true});
+  viewer.addEventListener('pointerup',onPointerUp,{capture:true,passive:false});
+  viewer.addEventListener('pointercancel',onPointerCancel,{capture:true,passive:true});
+  viewer.addEventListener('lostpointercapture',onPointerCancel,{capture:true,passive:true});
   viewer.addEventListener('touchstart',onTouchStart,{capture:true,passive:true});
   viewer.addEventListener('touchmove',onTouchMove,{capture:true,passive:true});
   viewer.addEventListener('touchcancel',onTouchCancel,{capture:true,passive:true});
@@ -909,7 +962,7 @@ export function bindReaderScreenMode({
   // V132 : les poignées de sélection du texte sur téléphone peuvent
   // émettre selectionchange sans menu contextuel. Ne pas conserver l'ancien
   // doigt pour tourner l'écran; ne pas lire ni stocker le texte sélectionné.
-  const onSelectionChange=()=>{if(gesture)gesture=null};
+  const onSelectionChange=()=>{gesture=null;pointerGesture=null};
   document.addEventListener('selectionchange',onSelectionChange);
   viewer.addEventListener('touchend',onTouchEnd,{capture:true,passive:false});
   document.addEventListener('visibilitychange',onVisibilityChange);
@@ -957,6 +1010,11 @@ export function bindReaderScreenMode({
   return ()=>{
     closed=true;gesture=null;
     cancelReaderPageTurnFlash(viewer);
+    viewer.removeEventListener('pointerdown',onPointerDown,true);
+    viewer.removeEventListener('pointermove',onPointerMove,true);
+    viewer.removeEventListener('pointerup',onPointerUp,true);
+    viewer.removeEventListener('pointercancel',onPointerCancel,true);
+    viewer.removeEventListener('lostpointercapture',onPointerCancel,true);
     viewer.removeEventListener('touchstart',onTouchStart,true);
     viewer.removeEventListener('touchmove',onTouchMove,true);
     viewer.removeEventListener('touchcancel',onTouchCancel,true);
