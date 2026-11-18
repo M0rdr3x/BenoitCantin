@@ -620,12 +620,8 @@ test('V101 : la sélection du texte, les taps, le PDF masqué et le scroll reste
     event('pointerdown',240);f.advance(120);event('pointerup',240);
     f.setPdfMode(false);
     event('pointerdown',250);f.advance(130);event('pointerup',90);
-    // Touch et stylet restent au gestionnaire de gestes tactile.
+    // Le fallback tactile/stylet PDF est vérifié isolément en V158.
     f.setPdfMode(true);
-    event('pointerdown',250,{pointerType:'touch'});
-    f.advance(100);event('pointerup',90,{pointerType:'touch'});
-    event('pointerdown',250,{pointerType:'pen'});
-    f.advance(100);event('pointerup',90,{pointerType:'pen'});
     // La sélection ne doit jamais être écrasée.
     f.setSelected('Texte sélectionné');
     event('pointerdown',250);f.advance(120);event('pointerup',90);
@@ -643,6 +639,82 @@ test('V101 : la sélection du texte, les taps, le PDF masqué et le scroll reste
     event('pointerdown',250);f.advance(2000);event('pointerup',90);
     assert.equal(f.next.clicks,0);
     assert.equal(f.previous.clicks,0);
+  }finally{f.release()}
+});
+test('V158 : pointeur tactile sans TouchEvents tourne le PDF une seule fois',()=>{
+  const f=fixture();
+  const pointer=(kind,x,y=190,extra={})=>f.viewer.emit(kind,{
+    pointerType:'touch',pointerId:158,button:0,buttons:1,isPrimary:true,
+    clientX:x,clientY:y,target:f.canvas,defaultPrevented:false,
+    preventDefault(){this.defaultPrevented=true},...extra
+  });
+  try{
+    f.setPdfMode(true);
+    pointer('pointerdown',260);
+    pointer('pointermove',180);
+    f.advance(180);
+    pointer('pointerup',95);
+    assert.equal(f.next.clicks,1);
+    pointer('pointerdown',95);
+    pointer('pointermove',175);
+    f.advance(180);
+    pointer('pointerup',260);
+    assert.equal(f.previous.clicks,1);
+    // Ni appui court ni geste dont le navigateur a fait défiler le PDF.
+    pointer('pointerdown',260);
+    f.advance(80);
+    pointer('pointerup',260);
+    pointer('pointerdown',260);
+    f.viewer.scrollTop=35;
+    pointer('pointermove',180);
+    f.viewer.scrollTop=0;
+    f.advance(150);
+    pointer('pointerup',90);
+    assert.equal(f.next.clicks,1);
+    f.setSelected('Extrait annoté');
+    pointer('pointerdown',260);
+    f.advance(150);
+    pointer('pointerup',95);
+    assert.equal(f.next.clicks,1);
+    f.setSelected('');
+    // Le fallback ne touche jamais le mode texte ni le pointeur secondaire.
+    f.setPdfMode(false);
+    pointer('pointerdown',260);
+    f.advance(150);
+    pointer('pointerup',95);
+    assert.equal(f.next.clicks,1);
+  }finally{f.release()}
+});
+test('V158 : stylet sans TouchEvents et séquence couplée ne doublent pas le PDF',()=>{
+  const f=fixture();
+  const pointer=(kind,x,y=190,extra={})=>f.viewer.emit(kind,{
+    pointerType:'pen',pointerId:159,button:0,buttons:1,isPrimary:true,
+    clientX:x,clientY:y,target:f.canvas,defaultPrevented:false,
+    preventDefault(){this.defaultPrevented=true},...extra
+  });
+  try{
+    f.setPdfMode(true);
+    pointer('pointerdown',260);
+    pointer('pointermove',180);
+    f.advance(190);
+    pointer('pointerup',95);
+    assert.equal(f.next.clicks,1,'stylet seul = une page');
+    // Le navigateur émet ensuite les TouchEvents d'un même contact :
+    // le flux tactile prime, pointerup ne doit pas cliquer une seconde fois.
+    pointer('pointerdown',260);
+    const touch={identifier:7,clientX:260,clientY:190};
+    f.viewer.emit('touchstart',{touches:[touch],target:f.canvas});
+    f.advance(180);
+    f.viewer.emit('touchmove',{touches:[{identifier:7,clientX:180,clientY:192}]});
+    f.viewer.emit('touchend',{touches:[],changedTouches:[{
+      identifier:7,clientX:95,clientY:194
+    }],defaultPrevented:false});
+    pointer('pointerup',95);
+    assert.equal(f.next.clicks,2,'couplage TouchEvent + PointerEvent = une page');
+    pointer('pointerdown',260,190,{isPrimary:false});
+    f.advance(150);
+    pointer('pointerup',95);
+    assert.equal(f.next.clicks,2,'pointeur secondaire sans effet');
   }finally{f.release()}
 });
 test('V101 : ancien touch PDF et souris PDF coexistent sans double déclenchement',()=>{
@@ -1255,7 +1327,7 @@ test('intégration : les boutons mobiles reflètent le statut initial des bouton
 test('contrat HTML/CSS : module autonome et gestes expliqués',()=>{
   const html=readFileSync(new URL('../compte/liseuse.html',import.meta.url),'utf8');
   const css=readFileSync(new URL('../assets/css/sinjira-liseuse-v26.css',import.meta.url),'utf8');
-  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.16\.133/);
+  assert.match(html,/sinjira-liseuse-touch-v52\.mjs\?v=52\.11\.18\.158/);
   assert.match(html,/id="reader-touch-prev"/);
   assert.match(html,/id="reader-touch-next"/);
   assert.match(html,/aria-describedby="reader-swipe-help"/);
