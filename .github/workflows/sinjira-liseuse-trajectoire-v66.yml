@@ -42,14 +42,19 @@ jobs:
         run: node --test tests/sinjira-liseuse-touch-v52.test.mjs tests/sinjira-liseuse-reflow-v53.test.mjs
       - name: Navigateur isolé, roman fictif et Supabase interdit
         run: |
-          python3 -m venv .venv-reader-v66
-          . .venv-reader-v66/bin/activate
+          # V159 : utiliser l'image Microsoft Playwright 1.57.0 contenant
+          # WebKit/Chromium et leurs bibliothèques, sans apt --with-deps.
+          # Les tests Node/syntaxe précédents restent sur le runner hôte.
+          docker run --rm --interactive --init --ipc=host \
+            --volume "$PWD:/workspace" --workdir /workspace \
+            mcr.microsoft.com/playwright/python:v1.57.0-noble \
+            /bin/bash -e -s -- <<'SINJIRA_PLAYWRIGHT_TESTS'
           python -m pip install --disable-pip-version-check playwright==1.57.0
-          python -m playwright install --with-deps ${{ matrix.browser }}
           # V157 : cibler le défilement réel et la trajectoire; V64 conserve
           # les tests page complète/reflow, et V65 les gestes Chromium natifs.
           python tests/e2e/test_sinjira_liseuse_mobile_v54.py --browser ${{ matrix.browser }}
           python tests/e2e/test_sinjira_liseuse_trajectory_v66.py --browser ${{ matrix.browser }}
+          SINJIRA_PLAYWRIGHT_TESTS
       - name: Certifier seulement le laboratoire
         run: |
           echo "V66-TESTS-ONLY: aucune certification de téléphone physique ni de droits sur les romans"
