@@ -96,6 +96,32 @@ class ReaderV51CasContract(unittest.TestCase):
         self.assertIn("FOR SHARE OF entitlement, product",MIGRATION)
         self.assertIn("FOR SHARE OF novel",MIGRATION)
 
+    def test_v51_4_role_revocation_is_serialized_under_lock(self):
+        # Une fonction STABLE d'administration sans verrou ne protège pas
+        # contre le DELETE d'un rôle pendant une sauvegarde CAS.
+        for token in (
+            "public.internal_admin_users staff",
+            "staff.user_id=v_user",
+            "staff.role IN ('owner','admin')",
+            "public.is_sinjira_owner(v_user)",
+            "public.is_sinjira_admin(v_user)",
+            "FOR SHARE OF staff",
+        ):
+            with self.subTest(token=token):
+                self.assertIn(token,MIGRATION)
+        for token in (
+            "V51.4-$label-ROLE-LOCK-HELD",
+            "revoke_staff_during_save 'ADMIN'",
+            "revoke_staff_during_save 'OWNER'",
+            "DELETE FROM public.internal_admin_users",
+            "V51.4-ROLE-REVOCATION-PASS",
+            "V51.4: page altérée après révocation de rôle",
+            "last_page=14 AND revision=0",
+            "unavailable||",
+        ):
+            with self.subTest(token=token):
+                self.assertIn(token,CONCURRENT)
+
     def test_revoke_bypass_grants_and_no_anon_rpc(self):
         for term in (
           "REVOKE INSERT,UPDATE ON public.sinjira_reader_library FROM PUBLIC",
