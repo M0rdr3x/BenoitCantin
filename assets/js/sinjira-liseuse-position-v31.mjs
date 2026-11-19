@@ -60,3 +60,23 @@ export function shouldReplayReadingProgress(pendingAt,serverUpdatedAt){
   const remote=Date.parse(serverUpdatedAt);
   return Number.isFinite(remote)&&remote>0&&local>=remote;
 }
+
+/** V51.5 : une sauvegarde CAS doit être rejouée selon la révision SERVEUR,
+    jamais selon l'horloge locale. 'current' signifie que l'écriture CAS peut
+    être tentée, pas qu'elle est définitivement autorisée : une autre session
+    peut encore agir, et l'UPDATE atomique serveur fera foi. */
+export function cloudRevisionDecision(expectedRevision,remoteRecord){
+  const normalize=value=>{
+    if(value===null)return null;
+    if((typeof value!=='number'&&typeof value!=='string')||value==='')return undefined;
+    const n=Number(value);
+    return Number.isSafeInteger(n)&&n>=0?n:undefined;
+  };
+  const expected=normalize(expectedRevision);
+  if(expected===undefined)return 'invalid';
+  if(remoteRecord===null)return expected===null?'current':'conflict';
+  if(!remoteRecord||typeof remoteRecord!=='object')return 'invalid';
+  const actual=normalize(remoteRecord.revision);
+  if(actual===undefined||actual===null)return 'invalid';
+  return expected===actual?'current':'conflict';
+}
