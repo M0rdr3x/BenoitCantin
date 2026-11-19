@@ -373,7 +373,10 @@ export function bindReaderTouchNavigation({
   // de capturer un clic de navigation hors de la page.
   const isPdfPointerStart=event=>isPdfCanvas(event)||
     (event?.target===viewer&&['touch','pen'].includes(event.pointerType)&&
-     viewer.querySelector?.('#reader-text')?.hidden===true);
+     viewer.querySelector?.('#reader-text')?.hidden===true&&
+     // Une marge vide pendant un changement de mode/chargement ne doit pas
+     // permettre de feuilleter un canvas PDF actuellement masqué.
+     viewer.querySelector?.('#reader-canvas')?.hidden!==true);
   const pointerDown=event=>{
     pointerOrigin=null;
     contentObserver?.takeRecords?.();
