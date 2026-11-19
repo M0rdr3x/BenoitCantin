@@ -250,4 +250,102 @@ END $validate$;
 SQL
 echo 'V51.3-CATALOGUE-PASS: désactivation produit et dépublication roman refusent toute sauvegarde tardive'
 
+
+# V51.4 / #955 : révocation concurrente d'un rôle privilégié.
+# Deux comptes entièrement fictifs : A=admin, B=owner. Les romans testés
+# n'ont aucune habilitation d'achat active. Le rôle est donc le SEUL accès.
+db <<'SQL'
+INSERT INTO public.internal_admin_users(user_id,role) VALUES
+ ('00000000-0000-0000-0000-000000000001','admin'),
+ ('00000000-0000-0000-0000-000000000002','owner');
+SQL
+
+# A possède déjà un marque-page sur le livre 3, produit devenu inactif.
+# B doit créer le sien sur le livre 2 (sans entitlement) avant la révocation.
+db -c "SET ROLE authenticated;
+ SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000002';
+ SELECT result_status,result_revision,result_page
+ FROM public.sinjira_reader_save_progress_cas(
+  '10000000-0000-0000-0000-000000000002',NULL,14,25,0.2000
+ );" >"$work/v51_4_owner_initial.output"
+if [[ "$(grep -E '^saved\|' "$work/v51_4_owner_initial.output" | tail -1 || true)" != 'saved|0|14' ]]; then
+ echo 'V51.4-REFUS: préparation du marque-page propriétaire' >&2
+ cat "$work/v51_4_owner_initial.output" >&2
+ exit 10
+fi
+
+revoke_staff_during_save() {
+  local label="$1" identity="$2" book="$3"
+  local log="$work/v51_4_$label.revoker.output"
+  local err="$work/v51_4_$label.revoker.error"
+  stdbuf -oL psql --no-psqlrc -qAt -v ON_ERROR_STOP=1 \
+    -h "$HOST" -U postgres -d "$DB" >"$log" 2>"$err" <<SQL &
+BEGIN;
+DELETE FROM public.internal_admin_users
+ WHERE user_id='$identity';
+\echo V51.4-$label-ROLE-LOCK-HELD
+SELECT pg_sleep(3);
+COMMIT;
+SQL
+  local pid=$! locked=false
+  for _ in $(seq 1 100); do
+    if grep -Fq "V51.4-$label-ROLE-LOCK-HELD" "$log" 2>/dev/null; then
+      locked=true
+      break
+    fi
+    if ! kill -0 "$pid" 2>/dev/null; then break; fi
+    sleep 0.05
+  done
+  if [[ "$locked" != true ]]; then
+    echo "V51.4-REFUS: $label DELETE non verrouillé" >&2
+    cat "$log" "$err" >&2
+    wait "$pid" || true
+    exit 11
+  fi
+  db -c "SET ROLE authenticated;
+   SET request.jwt.claim.sub='$identity';
+   SELECT result_status,result_revision,result_page
+   FROM public.sinjira_reader_save_progress_cas(
+    '$book',0,99,99,0.9000
+   );" >"$work/v51_4_$label.save.output" 2>"$work/v51_4_$label.save.error"
+  wait "$pid"
+  local result
+  result="$(grep -E '^(saved|conflict|unavailable)\|' "$work/v51_4_$label.save.output" | tail -1 || true)"
+  if [[ "$result" != 'unavailable||' ]]; then
+    echo "V51.4-REFUS: $label résultat=$result, attendu unavailable" >&2
+    cat "$work/v51_4_$label.save.error" "$err" >&2
+    exit 12
+  fi
+  echo "V51.4-$label-PASS: rôle révoqué, sauvegarde concurrente refusée"
+}
+revoke_staff_during_save 'ADMIN' \
+ '00000000-0000-0000-0000-000000000001' \
+ '10000000-0000-0000-0000-000000000003'
+revoke_staff_during_save 'OWNER' \
+ '00000000-0000-0000-0000-000000000002' \
+ '10000000-0000-0000-0000-000000000002'
+
+db <<'SQL'
+DO $roles$
+DECLARE n integer;
+BEGIN
+ SELECT count(*) INTO n FROM public.internal_admin_users;
+ IF n<>0 THEN RAISE EXCEPTION 'V51.4: rôles fictifs non révoqués'; END IF;
+ SELECT count(*) INTO n FROM public.sinjira_reader_library
+ WHERE (user_id='00000000-0000-0000-0000-000000000001'
+  AND novel_id='10000000-0000-0000-0000-000000000003'
+  AND last_page=12 AND revision=0)
+ OR (user_id='00000000-0000-0000-0000-000000000002'
+  AND novel_id='10000000-0000-0000-0000-000000000002'
+  AND last_page=14 AND revision=0);
+ IF n<>2 THEN RAISE EXCEPTION 'V51.4: page altérée après révocation de rôle'; END IF;
+ SELECT count(*) INTO n FROM public.sinjira_reader_library
+ WHERE user_id='00000000-0000-0000-0000-000000000002'
+   AND novel_id='10000000-0000-0000-0000-000000000001'
+   AND last_page=8 AND revision=1;
+ IF n<>1 THEN RAISE EXCEPTION 'V51.4: progression indépendante altérée'; END IF;
+END $roles$;
+SQL
+echo 'V51.4-ROLE-REVOCATION-PASS: rôles admin et owner révoqués sans sauvegarde tardive ni altération'
+
 echo 'V51-CONCURRENT-NO_GO: comptes fictifs seulement, aucune attestation production'
