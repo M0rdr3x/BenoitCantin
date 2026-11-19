@@ -145,7 +145,7 @@ class ReaderV51CasContract(unittest.TestCase):
             "première sauvegarde sans ligne",
             "révision concurrente",
             "fail closed",
-            "Numbe" if False else "numéro sûr accepté",
+            "numéro sûr accepté",
         ):
             with self.subTest(token=token):
                 self.assertIn(token,REPLAY_TEST)
