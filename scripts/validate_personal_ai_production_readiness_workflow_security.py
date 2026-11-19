@@ -32,9 +32,14 @@ TOKEN_STEP = f'''\
         run: |
           set -euo pipefail
           test -n "${{SUPABASE_ACCESS_TOKEN:-}}"
-          curl --proto '=https' --fail-with-body --silent --show-error --request GET \\
+          if [[ ! "$SUPABASE_ACCESS_TOKEN" =~ ^[-A-Za-z0-9._~+/=]+$ ]]; then
+            echo "Jeton Supabase invalide pour un en-tête HTTP." >&2
+            exit 1
+          fi
+          # Un en-tête dans stdin : aucun secret dans argv, .curlrc ou fichier temporaire.
+          printf 'Authorization: Bearer %s\\n' "$SUPABASE_ACCESS_TOKEN" | curl -q --proto '=https' --fail-with-body --silent --show-error --request GET \\
             --url "{PRODUCTION_URL}" \\
-            --header "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \\
+            --header @- \\
             --header 'Accept: application/json' \\
             --output "$RUNNER_TEMP/personal-ai-production-migrations.json"
 '''
@@ -183,7 +188,7 @@ def errors(text: str) -> list[str]:
     if main_pos < 0 or token_pos < 0 or main_pos > token_pos:
         out.append("le refus hors main doit précéder l'unique accès au secret")
 
-    curl_lines = re.findall(r"(?m)^\s*curl\b.*$", text)
+    curl_lines = re.findall(r"(?m)\bcurl\s+-q\b.*$", text)
     if len(curl_lines) != 1:
         out.append("un seul appel curl est autorisé dans tout le workflow")
     if text.count(PRODUCTION_URL) != 1:
