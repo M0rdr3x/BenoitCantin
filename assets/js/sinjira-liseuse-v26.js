@@ -174,6 +174,14 @@ function syncProgress(){
       if(error)throw error;
       if(state.pdf!==pdf||state.user?.id!==userId||
          state.novelId!==novelId||state.accessInvalidated)return false;
+      // V51.6 : le serveur connaît désormais une révocation du roman.
+      // Un échec 'unavailable' est un REFUS d'accès, pas une panne réseau :
+      // masquer immédiatement le PDF déjà chargé, le texte extrait,
+      // les annotations et arrêter toute narration/écriture ultérieure.
+      if(data?.result_status==='unavailable'){
+        lockPrivateReader('rights');
+        return false;
+      }
       if(data?.result_status==='conflict'){
         state.cloudConflict=true;state.cloudDirty=true;
         positionNotice('Une progression récente a été enregistrée ailleurs. Votre position reste sur cet appareil; le compte n’a pas été écrasé. Rechargez le lecteur pour comparer.','warning');
@@ -584,7 +592,7 @@ function assertPrivateAccess(epoch){
     throw new Error('SESSION_CHANGED');
   }
 }
-function lockPrivateReader(){
+function lockPrivateReader(reason='session'){
   // Bloque aussi une déconnexion PENDANT la vérification, le téléchargement
   // ou l'analyse du PDF, avant même son premier affichage.
   if(!isFull||state.accessInvalidated)return;
@@ -612,7 +620,9 @@ function lockPrivateReader(){
   $('reader-canvas').width=0;$('reader-canvas').height=0;
   $('reader-content').hidden=true;
   $('reader-loading').hidden=true;$('reader-error').hidden=false;
-  message('Votre session a changé. Reconnectez-vous pour rouvrir le roman intégral.','error');
+  message(reason==='rights'
+    ?'Votre droit d’accès à ce roman n’est plus disponible. Le contenu privé a été fermé; vérifiez vos droits numériques avant de le rouvrir.'
+    :'Votre session a changé. Reconnectez-vous pour rouvrir le roman intégral.','error');
   try{Promise.resolve(book?.destroy?.()).catch(()=>{})}catch{/* PDF fermé */}
 }
 function watchPrivateSession(){
