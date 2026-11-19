@@ -12,6 +12,11 @@
 --
 -- IMPORTANT : ceci recense les references dans la BD, pas tous les fichiers
 -- potentiellement deja publies sur GitHub Pages / Netlify / Vercel.
+-- Les routes HTML peuvent n'etre que des interfaces publiques sans donnees
+-- privees integrees. Auditer chaque page et ses appels API avant d'en conclure
+-- a une fuite; ne pas migrer une route HTML comme si c'etait un PDF.
+-- Les PDF restreints exigent un support prive et la suppression des copies
+-- publiques lorsqu'une exposition est confirmee.
 
 BEGIN TRANSACTION READ ONLY;
 
@@ -37,6 +42,41 @@ SELECT
   d.status AS document_status,
   d.access_level,
   p.visibility AS project_visibility,
+  CASE
+    WHEN d.external_url ~* '\\.pdf([?#].*)? THEN 'PROJECT_NOT_FOUND'
+    WHEN d.access_level IS DISTINCT FROM 'public' THEN 'RESTRICTED_DOCUMENT_STATIC_LINK'
+    ELSE 'NONPUBLIC_PROJECT_STATIC_LINK'
+  END AS risk_code
+FROM public.documents AS d
+LEFT JOIN public.projects AS p ON p.id = d.project_id
+WHERE NULLIF(btrim(d.external_url), '') IS NOT NULL
+  AND (
+    d.access_level IS DISTINCT FROM 'public'
+    OR p.visibility IS DISTINCT FROM 'public'
+  )
+ORDER BY d.id
+LIMIT 1000;
+
+COMMIT;
+ THEN 'PDF_FILE'
+    WHEN d.external_url ~* '\\.html?([?#].*)? THEN 'PROJECT_NOT_FOUND'
+    WHEN d.access_level IS DISTINCT FROM 'public' THEN 'RESTRICTED_DOCUMENT_STATIC_LINK'
+    ELSE 'NONPUBLIC_PROJECT_STATIC_LINK'
+  END AS risk_code
+FROM public.documents AS d
+LEFT JOIN public.projects AS p ON p.id = d.project_id
+WHERE NULLIF(btrim(d.external_url), '') IS NOT NULL
+  AND (
+    d.access_level IS DISTINCT FROM 'public'
+    OR p.visibility IS DISTINCT FROM 'public'
+  )
+ORDER BY d.id
+LIMIT 1000;
+
+COMMIT;
+ THEN 'HTML_ROUTE'
+    ELSE 'OTHER_RESOURCE'
+  END AS resource_kind,
   CASE
     WHEN p.id IS NULL THEN 'PROJECT_NOT_FOUND'
     WHEN d.access_level IS DISTINCT FROM 'public' THEN 'RESTRICTED_DOCUMENT_STATIC_LINK'
