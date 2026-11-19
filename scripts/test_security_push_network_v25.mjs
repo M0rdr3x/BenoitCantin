@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
+import { once } from 'node:events';
 import {
   SECURITY_PUSH_NETWORK_TIMEOUT_MS,
   SECURITY_PUSH_RECEIPT_URL,
@@ -32,6 +34,9 @@ assert.equal(captured.url, SECURITY_PUSH_SEND_URL);
 assert.equal(captured.init.method, 'POST');
 assert.equal(captured.init.headers['Content-Type'], 'application/json');
 assert.equal(captured.init.headers.Accept, 'application/json');
+assert.equal(captured.init.redirect, 'error', 'Aucun renvoi de token via HTTP 307/308');
+assert.equal(captured.init.credentials, 'omit', 'Aucun cookie implicite vers Expo');
+assert.equal(captured.init.referrerPolicy, 'no-referrer', 'Aucun référent externe');
 assert.ok(captured.init.signal instanceof AbortSignal);
 assert.equal(captured.init.signal.aborted, false);
 assert.match(captured.init.body, /ExponentPushToken/);
@@ -63,4 +68,42 @@ await assert.rejects(
   /INVALID_SECURITY_PUSH_FETCH/,
 );
 
-console.log('OK security push network V25: endpoints Expo exacts, POST JSON centralisé, signal transmis et timeout 4s réellement observé.');
+// Test d'intégration isolé : un fournisseur simulé renvoie 307 vers un
+// second serveur local. Un POST de jeton ne doit JAMAIS atteindre ce serveur.
+let forwardedRequests = 0;
+const destination = createServer((req, res) => {
+  forwardedRequests += 1;
+  req.resume();
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end('{}');
+});
+const redirector = createServer((_req, res) => {
+  res.writeHead(307, { Location: `http://127.0.0.1:${destination.address().port}/capture` });
+  res.end();
+});
+try {
+  destination.listen(0, '127.0.0.1');
+  await once(destination, 'listening');
+  redirector.listen(0, '127.0.0.1');
+  await once(redirector, 'listening');
+  const origin = `http://127.0.0.1:${redirector.address().port}/push`;
+  const sensitiveToken = 'ExponentPushToken[synthetic-never-real]';
+  await assert.rejects(
+    () => postSecurityPushJson(
+      SECURITY_PUSH_SEND_URL,
+      [{ to: sensitiveToken }],
+      (_url, init) => fetch(origin, init),
+    ),
+    /fetch failed|redirect|network|TypeError/i,
+    'Une redirection HTTP 307 doit faire échouer un POST de notifications',
+  );
+  assert.equal(forwardedRequests, 0,
+    'Aucun jeton de notification ne doit être retransmis à la destination de la redirection');
+} finally {
+  redirector.closeAllConnections();
+  destination.closeAllConnections();
+  if (redirector.listening) await new Promise(resolve => redirector.close(resolve));
+  if (destination.listening) await new Promise(resolve => destination.close(resolve));
+}
+
+console.log('OK security push network V25: endpoints Expo exacts, POST JSON centralisé, pas de redirection/cookies/référents, tests HTTP 307 local et timeout 4s réellement observé.');
