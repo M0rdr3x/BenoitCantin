@@ -69,6 +69,33 @@ class SecretGuardTests(unittest.TestCase):
             self.assertTrue(any('lien symbolique' in item for item in findings))
             self.assertEqual(target.read_text(encoding='utf-8'), 'synthetic content')
 
+    def test_credential_filenames_are_refused_even_with_innocent_content(self):
+        forbidden = (
+            'production.env', 'production.env.local', '.env.production',
+            'service-account.json', 'service_account-prod.json',
+            'credentials.json', 'credentials-prod.json',
+            'application_default_credentials.json', 'id_rsa', 'id_ed25519',
+            'tls.key', 'tls.pem', 'signing.p8', 'client.p12',
+            'client.pfx', 'android.jks', 'release.keystore',
+        )
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            for name in forbidden:
+                with self.subTest(name=name):
+                    file = root / name
+                    file.write_text('synthetic harmless data', encoding='utf-8')
+                    self.assertTrue(guard.inspect_file(file, Path(name)))
+
+    def test_env_templates_and_public_certificate_remain_allowed(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            for name in ('.env.example', '.env.sample', '.env.template',
+                         'certificate.crt', 'site.pub', 'config.json'):
+                with self.subTest(name=name):
+                    file = root / name
+                    file.write_text('synthetic harmless data', encoding='utf-8')
+                    self.assertEqual(guard.inspect_file(file, Path(name)), [])
+
     def test_big_binary_file_is_not_treated_as_text(self):
         with tempfile.TemporaryDirectory() as d:
             image = Path(d) / 'image.png'
