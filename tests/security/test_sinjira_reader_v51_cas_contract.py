@@ -80,10 +80,10 @@ class ReaderV51CasContract(unittest.TestCase):
         # Pas de validation par simple inspection d'un statut avant l'UPDATE.
         # Deux vraies transactions doivent concurrencer une écriture CAS.
         for token in (
-            "V51.3-PRODUCT-LOCK-HELD",
-            "V51.3-NOVEL-LOCK-HELD",
-            "V51.3-PRODUCT-PASS",
-            "V51.3-NOVEL-PASS",
+            "V51.3-$label-LOCK-HELD",
+            "revoke_during_save 'NOVEL'",
+            "revoke_during_save 'PRODUCT'",
+            "V51.3-$label-PASS",
             "V51.3-CATALOGUE-PASS",
             "UPDATE public.products SET active=false",
             "UPDATE public.sinjira_novels SET status='archived'",
