@@ -97,6 +97,13 @@ Deno.serve(async(req)=>{
     }
 
     if(doc.external_url){
+      // Une URL statique sur le site est accessible sans passer par cette
+      // fonction. Elle ne peut donc jamais constituer un document privé.
+      // Les documents non publics doivent utiliser uniquement un bucket
+      // Supabase PRIVE et une URL signee apres controle des droits.
+      if(doc.access_level!=='public'||doc.projects?.visibility!=='public'){
+        return privateJson({ok:false,error:'Document privé non disponible par lien public.'},503);
+      }
       const url=String(doc.external_url).trim();
       if(!externalUrlAllowed(url))return privateJson({ok:false,error:'URL de document non autorisée.'},500);
       return privateJson({ok:true,url,protected:false,expires_in:null});
