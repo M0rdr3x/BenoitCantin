@@ -15,7 +15,14 @@ WORKFLOWS = ROOT / ".github" / "workflows"
 APPROVED = "deploy-github-pages-isolated.yml"
 UPLOAD = "actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa"
 DEPLOY = "actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346"
-USES = re.compile(r"^\s*(?:-\s*)?uses:\s*([^\s#]+)", re.I)
+# Les clés YAML citées et les espaces autour de ':' ont le même effet qu'un
+# "uses:" ordinaire dans GitHub Actions : ne pas laisser ces variantes échapper.
+USES = re.compile(r"""^\s*(?:-\s*)?(?:uses|"uses"|'uses')\s*:\s*(.*?)\s*$""", re.I)
+INLINE_PAGE_USE = re.compile(
+    r"""(?:^|[\s,{])(?:uses|"uses"|'uses')\s*:\s*['"]?(actions/(?:upload-pages-artifact|deploy-pages))@""",
+    re.I,
+)
+INLINE_CONTAINER = re.compile(r"""^\s*(?:(?:-\s*)?[\[{]|(?:steps|jobs)\s*:\s*[\[{])""", re.I)
 PAGES_ACTION = re.compile(r"(?:^|/)(?:upload-pages-artifact|deploy-pages)$", re.I)
 GATES = (
     "workflow_dispatch:",
@@ -30,12 +37,24 @@ GATES = (
 
 
 def page_uses(source: str) -> list[tuple[int, str]]:
-    return [
-        (i, match.group(1))
-        for i, line in enumerate(source.splitlines())
-        if (match := USES.match(line))
-        and PAGES_ACTION.search(match.group(1).split("@", 1)[0])
-    ]
+    actions: list[tuple[int, str]] = []
+    for i, line in enumerate(source.splitlines()):
+        # L'usage de maps/listes inline n'est pas admissible pour la
+        # publication Pages : le validateur refuse explicitement ces formes.
+        if INLINE_CONTAINER.match(line):
+            embedded = INLINE_PAGE_USE.search(line)
+            if embedded:
+                actions.append((i, embedded.group(1) + "@INLINE_MAP_REJECTED"))
+                continue
+        match = USES.match(line)
+        if not match:
+            continue
+        action = re.sub(r"\s+#.*$", "", match.group(1)).strip()
+        if len(action) >= 2 and action[0] in ("'", '"') and action[-1] == action[0]:
+            action = action[1:-1]
+        if PAGES_ACTION.search(action.split("@", 1)[0]):
+            actions.append((i, action))
+    return actions
 
 
 def path_of_action(source: str, index: int) -> str | None:
@@ -188,6 +207,12 @@ def self_test() -> None:
     )
     assert inspect_workflows({APPROVED: good}) == []
     assert path_of_action(good, next(i for i, _ in page_uses(good))) == "_site"
+    # Une action parfaitement épinglée avec une clé YAML citée doit rester
+    # contrôlée (et non être ignorée comme si elle n'existait pas).
+    quoted_good = good.replace(
+        "uses: " + UPLOAD, "'uses' : '" + UPLOAD + "'",
+    )
+    assert inspect_workflows({APPROVED: quoted_good}) == []
     mutants = (
         ("publish root", good.replace("path: _site", "path: .")),
         ("publish ancestor", good.replace("path: _site", "path: _site/..")),
@@ -208,6 +233,15 @@ def self_test() -> None:
             "        with:\n            path: _site\n",
         )),
         ("wrong SHA", good.replace(UPLOAD, UPLOAD.split("@")[0] + "@v3")),
+        ("quoted key wrong SHA", good.replace(
+            "uses: " + UPLOAD, "'uses': '" + UPLOAD.split("@")[0] + "@v3'",
+        )),
+        ("double quoted key wrong SHA", good.replace(
+            "uses: " + UPLOAD, '"uses" : "' + UPLOAD.split("@")[0] + '@main"',
+        )),
+        ("inline Pages upload", good.replace(
+            "        uses: " + UPLOAD, "        { uses: " + UPLOAD + " }",
+        )),
         ("missing review", good.replace("confirm_containment:", "not_confirmed:")),
         ("missing main", good.replace("github.ref == 'refs/heads/main'", "true")),
         ("auto deploy", good.replace("  workflow_dispatch:", "  push:")),
@@ -252,7 +286,21 @@ def self_test() -> None:
     for label, altered in mutants:
         assert inspect_workflows({APPROVED: altered}), "Dangerous Pages fixture accepted: " + label
     assert inspect_workflows({APPROVED: good, "extra.yml": good})
-    print(f"OK : {len(mutants)} mutations Pages refusées; upload _site direct et double garde obligatoire.")
+    # Un second workflow avec une action Pages pourtant épinglée ne doit
+    # jamais passer inaperçu via une clé YAML entre guillemets ou une map.
+    rogue_forms = (
+        "- 'uses' : '" + UPLOAD + "'",
+        '- "uses": "' + DEPLOY + '"',
+        "- uses : " + UPLOAD,
+        "- { uses: " + UPLOAD + " }",
+        "steps: [{ uses: " + DEPLOY + " }]",
+    )
+    for n, rogue_step in enumerate(rogue_forms):
+        rogue = "name: Tentative externe\njobs:\n  evil:\n    steps:\n      " + rogue_step + "\n"
+        assert inspect_workflows({APPROVED: good, f"rogue-{n}.yml": rogue}), (
+            "Workflow Pages hors allowlist accepté : " + rogue_step
+        )
+    print(f"OK : {len(mutants)} mutations Pages + {len(rogue_forms)} workflows étrangers refusés.")
 
 
 def main() -> int:
