@@ -11,7 +11,9 @@ EDGE = ROOT / 'supabase/functions/get-document-url/index.ts'
 
 REQUIRED = {
     'POST uniquement': "req.method!=='POST'",
-    'JSON explicite': "contentType.startsWith('application/json')",
+    'MIME JSON exact': "contentType!=='application/json'",
+    'analyse MIME avant le séparateur': ".split(';',1)[0].trim().toLowerCase()",
+    'racine JSON de type objet': "if(!body||typeof body!=='object'||Array.isArray(body))",
     'lecture bornée par flux': 'const limited=await readLimitedUtf8Body(req,MAX_REQUEST_BYTES);',
     'refus du dépassement de flux': 'if(!limited.ok)return',
     'UUID strict': 'const UUID_RE=',
@@ -88,12 +90,14 @@ const PRIVATE_JSON_HEADERS={
 function privateJson(data,status=200){return new Response(JSON.stringify(data),{status,headers:PRIVATE_JSON_HEADERS});}
 function externalUrlAllowed(url){return true;}
 async function readLimitedJson(req){
- const contentType=(req.headers.get('content-type')||'').toLowerCase();
- if(!contentType.startsWith('application/json')) return {response:privateJson({},415)};
+ const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
+ if(contentType!=='application/json') return {response:privateJson({},415)};
  const limited=await readLimitedUtf8Body(req,MAX_REQUEST_BYTES);
  if(!limited.ok)return {response:privateJson({},413)};
  const raw=limited.raw;
- return {body:JSON.parse(raw||'{}')};
+ const body=JSON.parse(raw||'{}');
+ if(!body||typeof body!=='object'||Array.isArray(body)) return {response:privateJson({},400)};
+ return {body};
 }
 Deno.serve(async(req)=>{
  if(req.method!=='POST')return privateJson({},405);
@@ -123,7 +127,10 @@ Deno.serve(async(req)=>{
 
         mutations = {
             'limite augmentée': safe.replace('MAX_REQUEST_BYTES=512;', 'MAX_REQUEST_BYTES=8192;'),
-            'type JSON retiré': safe.replace("if(!contentType.startsWith('application/json')) return {response:privateJson({},415)};", ''),
+            'type JSON retiré': safe.replace("if(contentType!=='application/json') return {response:privateJson({},415)};", ''),
+            'MIME JSON préfixe permis': safe.replace("if(contentType!=='application/json')", "if(!contentType.startsWith('application/json'))"),
+            'analyse sans séparation MIME': safe.replace(".split(';',1)[0].trim().toLowerCase()", ".toLowerCase()"),
+            'racine JSON non vérifiée': safe.replace("if(!body||typeof body!=='object'||Array.isArray(body)) return {response:privateJson({},400)};", ''),
             'req.json direct': safe.replace('const limited=await readLimitedUtf8Body(req,MAX_REQUEST_BYTES);', 'const body=await req.json();'),
             'lecture non bornée': safe.replace('const limited=await readLimitedUtf8Body(req,MAX_REQUEST_BYTES);', 'const raw=await req.text();'),
             'coercition document_id': safe.replace("typeof parsed.body?.document_id==='string'?parsed.body.document_id.trim():''", "String(parsed.body?.document_id||'').trim()"),
