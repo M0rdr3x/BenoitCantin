@@ -366,6 +366,14 @@ export function bindReaderTouchNavigation({
   // Le texte adaptable reste sélectionnable, les gestes système préservés.
   const isPdfCanvas=event=>event?.target===viewer.querySelector?.('#reader-canvas')&&
     viewer.querySelector?.('#reader-text')?.hidden===true;
+  // V161 : la marge vide du lecteur PDF appartient au livre sur téléphone.
+  // Les appareils qui n'émettent que PointerEvent peuvent commencer un
+  // glissement tactile/stylet sur cette marge, mais jamais depuis un bouton
+  // ou un contenu interne. La souris reste limitée au canvas pour éviter
+  // de capturer un clic de navigation hors de la page.
+  const isPdfPointerStart=event=>isPdfCanvas(event)||
+    (event?.target===viewer&&['touch','pen'].includes(event.pointerType)&&
+     viewer.querySelector?.('#reader-text')?.hidden===true);
   const pointerDown=event=>{
     pointerOrigin=null;
     contentObserver?.takeRecords?.();
@@ -374,7 +382,7 @@ export function bindReaderTouchNavigation({
       event.button!==0||event.isPrimary===false||
       // Une vraie séquence TouchEvent a déjà son propre gestionnaire.
       (origin&&event.pointerType!=='mouse')||
-      isReaderViewportZoomed()||!isPdfCanvas(event)||isInteractiveTarget(event.target))
+      isReaderViewportZoomed()||!isPdfPointerStart(event)||isInteractiveTarget(event.target))
       return;
     if(![event.clientX,event.clientY,event.pointerId].every(Number.isFinite))return;
     if(event.pointerType!=='mouse'&&isReaderSystemEdgeGesture({
