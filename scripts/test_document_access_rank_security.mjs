@@ -44,6 +44,8 @@ async function invoke({
   user = null,
   approved = true,
   active = true,
+  mime = 'application/json',
+  requestBody = JSON.stringify({ document_id: UUID }),
 }) {
   const counters = { documentReads: 0, signedUrls: 0, bucketReads: 0, rpcCalls: [] };
   const doc = {
@@ -115,8 +117,8 @@ async function invoke({
 
   const request = new Request('https://edge.example.invalid/functions/v1/get-document-url', {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ document_id: UUID }),
+    headers: { 'content-type': mime },
+    body: requestBody,
   });
   const response = await runtime.handler(request);
   assert.equal(response.headers.get('Cache-Control'), 'private, no-store, max-age=0');
@@ -201,4 +203,28 @@ test('un projet non approuvé ou inactif demeure inaccessible', async () => {
   assert.equal(pending.response.status, 404);
   const archived = await invoke({ accessLevel: 'public', visibility: 'public', active: false });
   assert.equal(archived.response.status, 404);
+});
+
+test('type MIME strict et forme JSON refusés avant tout accès service_role', async () => {
+  for (const mime of [
+    'application/jsonp', 'application/json-evil', 'text/plain',
+    'application/x-www-form-urlencoded', 'application/JSON+extra',
+  ]) {
+    const result = await invoke({ accessLevel: 'public', visibility: 'public', mime });
+    assert.equal(result.response.status, 415, mime);
+    assert.equal(result.counters.documentReads, 0, mime + ' ne doit pas interroger documents');
+    assert.equal(result.counters.signedUrls, 0, mime + ' ne doit pas signer de lien');
+  }
+  const charset = await invoke({
+    accessLevel: 'public', visibility: 'public', mime: 'application/json; charset=utf-8',
+  });
+  assert.equal(charset.response.status, 200, 'JSON avec paramètre charset doit fonctionner');
+
+  for (const requestBody of ['null', '[]', '"texte"', '123', 'true']) {
+    const result = await invoke({ accessLevel: 'public', visibility: 'public', requestBody });
+    assert.equal(result.response.status, 400, requestBody);
+    assert.equal(result.payload.error, 'Corps JSON invalide.', requestBody);
+    assert.equal(result.counters.documentReads, 0, requestBody + ' ne doit pas interroger documents');
+    assert.equal(result.counters.signedUrls, 0, requestBody + ' ne doit pas signer de lien');
+  }
 });
