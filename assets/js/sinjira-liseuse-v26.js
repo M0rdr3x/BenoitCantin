@@ -1,7 +1,7 @@
 import { getSupabase, requireUser } from './sinjira-supabase.js';
 import { pdfTextToParagraphs, speechTextChunks } from './sinjira-liseuse-text-v27.mjs';
 import { createReaderCompanion } from './sinjira-liseuse-companion-v28.mjs';
-import { chooseReadingPosition, ratioFromScroll, scrollTopForRatio, readingRatio, shouldReplayReadingProgress } from './sinjira-liseuse-position-v31.mjs?v=34.11.07.1';
+import { chooseReadingPosition, ratioFromScroll, scrollTopForRatio, readingRatio, cloudRevisionDecision } from './sinjira-liseuse-position-v31.mjs?v=51.11.18.5';
 
 /* SINJIRA 2026 — liseuse : le PDF intégral n'entre jamais dans le dépôt public
    ni dans localStorage. Le serveur attribue le droit de lecture avant de signer l'accès. */
@@ -44,7 +44,8 @@ const state={pdf:null,page:1,mode:'texte',theme:'sepia',size:20,zoom:1,
   progressQueue:Promise.resolve(),progressRevision:0,cloudDirty:false,cloudRetrying:false,
   accessEpoch:0,accessInvalidated:false,
   loadController:null,authSubscription:null,cloudSpotSupported:null,
-  positionRatio:0,restorePending:null,restoringScroll:false,scrollTimer:null,resumeSource:'debut'};
+  positionRatio:0,restorePending:null,restoringScroll:false,scrollTimer:null,resumeSource:'debut',
+  cloudRevision:null,cloudRevisionReady:false,cloudConflict:false};
 const speech={active:false,paused:false,token:0,chunks:[],index:0,voices:[],utterance:null};
 const speechReady='speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
 const storageKey='sinjira:liseuse:'+edition+':la-cendre-du-jugement';
@@ -139,35 +140,58 @@ function isMissingCloudSpotColumn(error){
     /scroll_ratio.*(?:column|schema cache|does not exist)|(?:column|schema cache|does not exist).*scroll_ratio/i
       .test(String(error.message||''))));
 }
+function isMissingCloudRevisionColumn(error){
+  return Boolean(error&&(['PGRST204','42703'].includes(error.code)||
+    /revision.*(?:column|schema cache|does not exist)|(?:column|schema cache|does not exist).*revision/i
+      .test(String(error.message||''))));
+}
 function syncProgress(){
   if(!isFull||!state.user||!state.novelId||!state.pdf||state.accessInvalidated){
     return Promise.resolve(false);
   }
-  // La file d'écriture évite qu'une ancienne requête écrase la dernière page.
+  // Ne jamais revenir à l'UPSERT non conditionnel si V51 est absente
+  // ou si un autre appareil a enregistré une révision plus récente.
+  if(!state.cloudRevisionReady||state.cloudConflict){
+    state.cloudDirty=true;
+    positionNotice(state.cloudConflict
+      ?'Conflit entre appareils : votre position locale est conservée. Rechargez pour comparer les sauvegardes.'
+      :'Synchronisation protégée en attente : votre page reste sur cet appareil.','warning');
+    return Promise.resolve(false);
+  }
   const userId=state.user.id,novelId=state.novelId,pdf=state.pdf;
   const send=async()=>{
-    if(!state.pdf||state.pdf!==pdf||state.user?.id!==userId||state.novelId!==novelId)return false;
-    const page=state.page,updatedAt=new Date().toISOString();
-    const revision=state.progressRevision;
-    const payload={user_id:userId,novel_id:novelId,
-      last_page:page,scroll_ratio:readingRatio(state.positionRatio),
-      progress_percent:Math.round(page/pdf.numPages*100),
-      last_opened_at:updatedAt,updated_at:updatedAt};
+    if(state.pdf!==pdf||state.user?.id!==userId||
+       state.novelId!==novelId||state.accessInvalidated||
+       state.cloudConflict||!state.cloudRevisionReady)return false;
+    const page=state.page,localRevision=state.progressRevision;
+    const expectedRevision=state.cloudRevision;
     try{
-      if(state.cloudSpotSupported===false)delete payload.scroll_ratio;
-      let {error}=await getSupabase().from('sinjira_reader_library')
-        .upsert(payload,{onConflict:'user_id,novel_id'});
-      if(error&&payload.scroll_ratio!==undefined&&isMissingCloudSpotColumn(error)){
-        state.cloudSpotSupported=false;
-        delete payload.scroll_ratio;
-        ({error}=await getSupabase().from('sinjira_reader_library')
-          .upsert(payload,{onConflict:'user_id,novel_id'}));
-      }
+      const {data,error}=await getSupabase().rpc('sinjira_reader_save_progress_cas',{
+        p_novel_id:novelId,p_expected_revision:expectedRevision,
+        p_last_page:page,p_progress_percent:Math.round(page/pdf.numPages*100),
+        p_scroll_ratio:readingRatio(state.positionRatio)
+      }).single();
       if(error)throw error;
-      if(state.pdf!==pdf||state.user?.id!==userId||state.accessInvalidated)return false;
-      if(payload.scroll_ratio!==undefined)state.cloudSpotSupported=true;
-      // Un succès n'efface pas un changement local arrivé pendant l'écriture.
-      if(state.progressRevision===revision){
+      if(state.pdf!==pdf||state.user?.id!==userId||
+         state.novelId!==novelId||state.accessInvalidated)return false;
+      // V51.6 : le serveur connaît désormais une révocation du roman.
+      // Un échec 'unavailable' est un REFUS d'accès, pas une panne réseau :
+      // masquer immédiatement le PDF déjà chargé, le texte extrait,
+      // les annotations et arrêter toute narration/écriture ultérieure.
+      if(data?.result_status==='unavailable'){
+        lockPrivateReader('rights');
+        return false;
+      }
+      if(data?.result_status==='conflict'){
+        state.cloudConflict=true;state.cloudDirty=true;
+        positionNotice('Une progression récente a été enregistrée ailleurs. Votre position reste sur cet appareil; le compte n’a pas été écrasé. Rechargez le lecteur pour comparer.','warning');
+        return false;
+      }
+      const nextRevision=Number(data?.result_revision);
+      if(data?.result_status!=='saved'||!Number.isSafeInteger(nextRevision)||
+         nextRevision<0)throw new Error('Révision serveur non vérifiable');
+      state.cloudRevision=nextRevision;
+      if(state.progressRevision===localRevision){
         state.cloudDirty=false;
         safeLocalRemove(pageStorageKey()+':pending');
       }
@@ -175,7 +199,7 @@ function syncProgress(){
     }catch{
       if(state.pdf===pdf&&state.user?.id===userId&&!state.accessInvalidated){
         state.cloudDirty=true;
-        message('La synchronisation a échoué. Votre page reste enregistrée sur cet appareil.','warning');
+        message('Synchronisation sécurisée indisponible. Votre page reste sur cet appareil; aucune écriture non protégée n’a été tentée.','warning');
       }
       return false;
     }
@@ -183,12 +207,13 @@ function syncProgress(){
   state.progressQueue=state.progressQueue.catch(()=>false).then(send);
   return state.progressQueue;
 }
-/** Après une coupure, contrôler la session ET l'horodatage serveur avant toute
-    réécriture. Un autre appareil plus récent n'est jamais écrasé automatiquement. */
+/** V51.5 : après une coupure, contrôler la session ET la révision serveur.
+    Les horloges de deux téléphones peuvent différer : la seule autorité
+    d'écriture reste la révision CAS atomique vérifiée par PostgreSQL. */
 async function retryCloudProgress(){
   if(!isFull||!state.cloudDirty||state.cloudRetrying||!state.pdf||
      !state.user||!state.novelId||state.accessInvalidated||
-     navigator.onLine===false)return;
+     !state.cloudRevisionReady||state.cloudConflict||navigator.onLine===false)return;
   const userId=state.user.id,novelId=state.novelId,pdf=state.pdf;
   const key=pageStorageKey(),pendingAt=safeLocalGet(key+':pending');
   if(!pendingAt)return;
@@ -199,15 +224,25 @@ async function retryCloudProgress(){
     const {data:auth,error:authError}=await getSupabase().auth.getUser();
     if(authError||auth?.user?.id!==userId||!stillAuthorized())return;
     const {data:remote,error}=await getSupabase().from('sinjira_reader_library')
-      .select('updated_at').eq('user_id',userId).eq('novel_id',novelId).maybeSingle();
+      .select('revision').eq('user_id',userId).eq('novel_id',novelId).maybeSingle();
     if(error||!stillAuthorized()||safeLocalGet(key+':pending')!==pendingAt)return;
-    if(!shouldReplayReadingProgress(pendingAt,remote?.updated_at)){
-      // Ne pas déplacer le lecteur en cours de lecture; respecter le compte.
-      state.cloudDirty=false;
-      safeLocalRemove(key+':pending');
-      positionNotice('Une progression plus récente existe sur votre compte. La position de cet appareil n’a pas écrasé le compte.','warning');
+    const decision=cloudRevisionDecision(state.cloudRevision,remote);
+    if(decision==='invalid'){
+      // Un serveur ancien ou une révision non vérifiable ne doit déclencher
+      // ni UPSERT, ni conversion silencieuse en écriture non protégée.
+      positionNotice('Révision de synchronisation non vérifiable : votre progression reste enregistrée sur cet appareil.','warning');
       return;
     }
+    if(decision==='conflict'){
+      // Ne jamais supprimer le marque-page local : il faudra comparer les
+      // deux appareils avant de relancer une nouvelle sauvegarde CAS.
+      state.cloudConflict=true;
+      state.cloudDirty=true;
+      positionNotice('Une autre progression existe sur votre compte. Votre position reste sur cet appareil sans écraser l’autre sauvegarde.','warning');
+      return;
+    }
+    // Même après la lecture de révision, une autre session peut écrire :
+    // syncProgress vérifie à nouveau dans le RPC PostgreSQL atomique.
     const restored=await syncProgress();
     if(restored&&stillAuthorized()&&!state.cloudDirty){
       positionNotice(state.cloudSpotSupported===false
@@ -286,7 +321,9 @@ async function saveCurrentPosition(){
             ?'Position enregistrée : page '+state.page+' et emplacement précis synchronisés sur votre compte et cet appareil.'
             :'Position enregistrée : page '+state.page+' et emplacement précis synchronisés sur votre compte.')
         :localSaved
-          ?'Page '+state.page+' enregistrée sur cet appareil. Synchronisation du compte indisponible : réessayez.'
+          ?(state.cloudConflict
+            ?'Conflit entre appareils : la position de cet appareil est conservée localement et n’a pas écrasé votre compte. Rechargez pour choisir la bonne progression.'
+            :'Page '+state.page+' enregistrée sur cet appareil. Synchronisation du compte indisponible : réessayez.')
           :'Impossible d’enregistrer la position. Vérifiez la connexion et les paramètres du navigateur.',
         cloudSaved?'success':'warning');
     }else{
@@ -555,7 +592,7 @@ function assertPrivateAccess(epoch){
     throw new Error('SESSION_CHANGED');
   }
 }
-function lockPrivateReader(){
+function lockPrivateReader(reason='session'){
   // Bloque aussi une déconnexion PENDANT la vérification, le téléchargement
   // ou l'analyse du PDF, avant même son premier affichage.
   if(!isFull||state.accessInvalidated)return;
@@ -566,6 +603,7 @@ function lockPrivateReader(){
   clearTimeout(state.saveTimer);state.saveTimer=null;
   clearTimeout(state.scrollTimer);state.scrollTimer=null;
   state.cloudDirty=false;state.cloudRetrying=false;
+  state.cloudRevision=null;state.cloudRevisionReady=false;state.cloudConflict=false;
   $('reader-position-status').textContent='';
   stopNarration(false);
   companion?.close();companion=null;
@@ -582,7 +620,9 @@ function lockPrivateReader(){
   $('reader-canvas').width=0;$('reader-canvas').height=0;
   $('reader-content').hidden=true;
   $('reader-loading').hidden=true;$('reader-error').hidden=false;
-  message('Votre session a changé. Reconnectez-vous pour rouvrir le roman intégral.','error');
+  message(reason==='rights'
+    ?'Votre droit d’accès à ce roman n’est plus disponible. Le contenu privé a été fermé; vérifiez vos droits numériques avant de le rouvrir.'
+    :'Votre session a changé. Reconnectez-vous pour rouvrir le roman intégral.','error');
   try{Promise.resolve(book?.destroy?.()).catch(()=>{})}catch{/* PDF fermé */}
 }
 function watchPrivateSession(){
@@ -628,9 +668,15 @@ async function restorePage(){
     if(!novelError&&novel?.id){
       state.novelId=novel.id;
       let {data:progress,error:progressError}=await getSupabase().from('sinjira_reader_library')
-        .select('last_page,scroll_ratio,updated_at').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle();
+        .select('last_page,scroll_ratio,updated_at,revision').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle();
       if(progressError&&isMissingCloudSpotColumn(progressError)){
         state.cloudSpotSupported=false;
+        ({data:progress,error:progressError}=await getSupabase().from('sinjira_reader_library')
+          .select('last_page,updated_at,revision').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle());
+      }
+      if(progressError&&isMissingCloudRevisionColumn(progressError)){
+        // Lire les anciennes pages, mais ne jamais en déduire un droit
+        // d'écriture cloud : la version atomique V51 n'est pas déployée.
         ({data:progress,error:progressError}=await getSupabase().from('sinjira_reader_library')
           .select('last_page,updated_at').eq('user_id',state.user.id).eq('novel_id',novel.id).maybeSingle());
       }
@@ -639,6 +685,14 @@ async function restorePage(){
         serverRatio=progress?.scroll_ratio??null;
         serverUpdatedAt=progress?.updated_at;
         if(state.cloudSpotSupported!==false)state.cloudSpotSupported=true;
+        // V51 : NULL en lecture signifie création initiale, une ligne historique
+        // déjà présente possède revision=0. Jamais de repli vers UPSERT.
+        const number=Number(progress?.revision);
+        if(!progress||(progress.revision!==null&&progress.revision!==undefined&&
+            Number.isSafeInteger(number)&&number>=0)){
+          state.cloudRevision=progress?number:null;
+          state.cloudRevisionReady=true;
+        }
       }
     }
   }
@@ -736,7 +790,13 @@ async function init(){
     updateToolbar();renderPage();updateSpeechControls();
     const origin=state.resumeSource==='compte'?'depuis votre compte'
       :state.resumeSource==='appareil'?'depuis cet appareil':'au début du roman';
-    positionNotice('Lecture prête : page '+state.page+' reprise '+origin+'. Enregistrement automatique actif'+(isFull?' sur votre compte et votre appareil.': ' sur cet appareil.'));
+    positionNotice('Lecture prête : page '+state.page+' reprise '+origin+'. '+
+      (isFull
+        ?(state.cloudRevisionReady
+          ?'Enregistrement automatique protégé sur votre compte et votre appareil.'
+          :'Enregistrement sur cet appareil uniquement; synchronisation cloud protégée en attente.')
+        :'Enregistrement automatique sur cet appareil.'),
+      state.cloudRevisionReady||!isFull?'info':'warning');
     // L'indisponibilité de la synchronisation des notes ne bloque pas la lecture.
     companion.ready().catch(()=>message('La liseuse fonctionne, mais les repères personnels ne sont pas disponibles.','warning'));
     $('reader-status').hidden=true;

@@ -4,21 +4,27 @@ const slug=document.body.dataset.novelSlug||'';
 const page=document.body.dataset.readerPage||'';
 
 async function syncCanonicalPage(user,novel,pageNumber){
+  // L'ancien UPSERT contournerait la révision du lecteur intégral.
+  // Toutes les sauvegardes canoniques doivent passer par l'écriture CAS V51.
+  const s=getSupabase();
   const pageValue=Math.max(1,Number(pageNumber)||1);
   const progress=Math.max(0,Math.min(100,Math.round((pageValue/83)*100)));
-  await getSupabase().from('sinjira_reader_library').upsert({
-    user_id:user.id,
-    novel_id:novel.id,
-    last_opened_at:new Date().toISOString(),
-    last_page:pageValue,
-    progress_percent:progress,
-    updated_at:new Date().toISOString()
-  },{onConflict:'user_id,novel_id'});
+  const {data:current,error:readError}=await s.from('sinjira_reader_library')
+    .select('revision,scroll_ratio').eq('user_id',user.id).eq('novel_id',novel.id).maybeSingle();
+  if(readError)return false; // V51 absente : ne pas tenter un UPSERT aveugle.
+  const expected=current?Number(current.revision):null;
+  if(current&&(!Number.isSafeInteger(expected)||expected<0))return false;
+  const {data,error}=await s.rpc('sinjira_reader_save_progress_cas',{
+    p_novel_id:novel.id,p_expected_revision:expected,
+    p_last_page:pageValue,p_progress_percent:progress,p_scroll_ratio:current?.scroll_ratio??null
+  }).single();
+  // Conflit (autre appareil) ou RPC absente : ne jamais écraser une ligne.
+  return !error&&data?.result_status==='saved';
 }
 
 async function initialCanonicalSync(user,canonicalNovel){
   const s=getSupabase();
-  const existing=await s.from('sinjira_reader_library').select('novel_id,last_page,progress_percent').eq('user_id',user.id).eq('novel_id',canonicalNovel.id).maybeSingle();
+  const existing=await s.from('sinjira_reader_library').select('novel_id,last_page,progress_percent,revision').eq('user_id',user.id).eq('novel_id',canonicalNovel.id).maybeSingle();
   if(existing.error||existing.data)return;
 
   let pageValue=1;
