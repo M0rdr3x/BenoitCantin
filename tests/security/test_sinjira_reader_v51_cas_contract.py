@@ -76,6 +76,26 @@ class ReaderV51CasContract(unittest.TestCase):
         self.assertIn("PGOPTIONS",CONCURRENT)
         self.assertNotIn("SUPABASE_SERVICE_ROLE_KEY",CONCURRENT)
 
+    def test_v51_3_serializes_catalog_status_and_product_deactivation(self):
+        # Pas de validation par simple inspection d'un statut avant l'UPDATE.
+        # Deux vraies transactions doivent concurrencer une écriture CAS.
+        for token in (
+            "V51.3-PRODUCT-LOCK-HELD",
+            "V51.3-NOVEL-LOCK-HELD",
+            "V51.3-PRODUCT-PASS",
+            "V51.3-NOVEL-PASS",
+            "V51.3-CATALOGUE-PASS",
+            "UPDATE public.products SET active=false",
+            "UPDATE public.sinjira_novels SET status='archived'",
+            "unavailable||",
+            "last_page=12 AND revision=0",
+            "V51.3: progression du compte B modifiée",
+        ):
+            with self.subTest(token=token):
+                self.assertIn(token,CONCURRENT)
+        self.assertIn("FOR SHARE OF entitlement, product",MIGRATION)
+        self.assertIn("FOR SHARE OF novel",MIGRATION)
+
     def test_revoke_bypass_grants_and_no_anon_rpc(self):
         for term in (
           "REVOKE INSERT,UPDATE ON public.sinjira_reader_library FROM PUBLIC",
