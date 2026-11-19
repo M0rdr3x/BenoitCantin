@@ -151,6 +151,29 @@ class ReaderV51CasContract(unittest.TestCase):
                 self.assertIn(token,REPLAY_TEST)
         self.assertIn("node --test tests/sinjira-reader-cas-retry-v51.test.mjs",WORKFLOW)
 
+    def test_v51_6_revoked_access_closes_previously_loaded_private_pdf(self):
+        # Le statut SQL 'unavailable' est un refus de droits, pas une panne.
+        # Le lecteur doit retirer immédiatement le texte et le PDF en RAM,
+        # tout en gardant le brouillon de progression strictement numérique.
+        for token in (
+            "if(data?.result_status==='unavailable'){",
+            "lockPrivateReader('rights');",
+            "function lockPrivateReader(reason='session')",
+            "state.accessInvalidated=true",
+            "state.loadController?.abort()",
+            "stopNarration(false)",
+            "companion?.close()",
+            "state.pdf=null;state.user=null;state.novelId=null",
+            "$('reader-text').textContent=''",
+            "$('reader-canvas').width=0",
+            "$('reader-content').hidden=true",
+            "book?.destroy?.()",
+            "Votre droit d’accès à ce roman n’est plus disponible",
+        ):
+            with self.subTest(token=token):
+                self.assertIn(token,CLIENT)
+        self.assertIn("node --test tests/security/test_sinjira_reader_revocation_lock_v51.test.mjs",WORKFLOW)
+
     def test_revoke_bypass_grants_and_no_anon_rpc(self):
         for term in (
           "REVOKE INSERT,UPDATE ON public.sinjira_reader_library FROM PUBLIC",
