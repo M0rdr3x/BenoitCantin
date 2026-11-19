@@ -130,3 +130,36 @@ Des tests unitaires et un scénario du navigateur sur PDF fictif en Chromium/Web
 Le moteur paginé V53 de la PR #1000 reçoit aussi le secours `PointerEvent` pour `pointerType=touch|pen`, lorsque l'appareil n'émet aucun `TouchEvent`. Le gestionnaire de `TouchEvent` natif garde la priorité et annule le secours en attente pour éviter la double pagination. Les mêmes protections de navigation V53 restent actives : sélection du texte, zoom, scroll, limite de page PDF, contenu privé masqué, rotation, changement de mise en page et gestes système sur les bords.
 
 Des tests d'intégration Node et un scénario navigateur sur le vrai HTML avec PDF **fictif** sont ajoutés. Le contrôle `POINTER-ONLY-TEXTE` demeure **ND** jusqu'à exécution sur matériel et journal de réception. **Aucune habilitation serveur, migration CAS ni publication n'est modifiée.**
+
+
+## V161 — preuve CI et feuille de route de réception (18 novembre 2026)
+
+### Résultat vérifiable sur le code candidat
+
+Au commit applicatif [`bbd1eb385b1558f22364068d0ba9286bb49af374`](https://github.com/M0rdr3x/BenoitCantin/commit/bbd1eb385b1558f22364068d0ba9286bb49af374), l'API GitHub Actions rapporte **40 workflows terminés : 31 SUCCESS, 9 SKIPPED conditionnels, 0 FAILURE**. Les suites de la liseuse **V64 à V69** sont toutes **SUCCESS**. Le correctif règle une assertion de version de cache devenue obsolète (`52.11.18.158` dans le test, `52.11.18.161` dans le HTML) sans modifier les droits d'accès ni le moteur du roman.
+
+Cette preuve concerne **uniquement ce SHA applicatif**. Le présent ajout documentaire créera un **nouveau SHA**, qui devra être vérifié séparément pour toute décision de fusion. Ni les workflows ignorés ni les navigateurs automatisés ne constituent une réception physique ou une homologation de sécurité.
+
+### Parcours minimal pour un véritable lecteur mobile
+
+Réaliser séparément les scénarios ci-dessous sur **iPhone Safari, Android Chrome et tablette**, en portrait puis paysage, avec un PDF fictif autorisé. Pour chaque appareil, consigner OS, navigateur, largeur CSS, URL de préproduction, SHA exact, résultat et preuve expurgée.
+
+| Code | Action réelle sur l'appareil | Critère de succès | État |
+| --- | --- | --- | --- |
+| MOBILE-PAGE-FWD | Texte paginé : glisser au centre de droite à gauche 20 fois | **Un geste = un écran suivant**; aucune ligne perdue, aucun saut double | ND |
+| MOBILE-PAGE-BACK | Glisser au centre de gauche à droite 20 fois | **Un geste = un écran précédent**; retour au même passage | ND |
+| MOBILE-SOURCE | Rejoindre le dernier écran d'une page PDF, puis revenir | Avance vers la page source suivante; retour vers le dernier écran de la précédente | ND |
+| MOBILE-PDF | Basculer en PDF puis balayer dans les deux sens, y compris la marge vide du viewer | Avance/recul d'exactement **une page PDF**; jamais deux si événements tactiles et pointeur coexistent | ND |
+| MOBILE-NATIVE | Défiler verticalement, sélectionner du texte, pincer pour zoomer, commencer un geste depuis les bords système | Aucun changement involontaire d'écran; gestes natifs préservés | ND |
+| MOBILE-REFLOW | À mi-livre : changer police/interligne, orientation et plein écran puis reprendre | Texte adaptable au viewport, lisible et sélectionnable, sans perdre le passage | ND |
+| MOBILE-RESUME | Verrouiller, masquer, revenir, puis utiliser de nouveau la navigation | Ancien geste annulé; pas de page tournée au réveil; retour à l'emplacement autorisé | ND |
+| MOBILE-A11Y | Utiliser VoiceOver/TalkBack, boutons et clavier externe si présent | Boutons annoncés clairement, focus visible, page/écran annoncé sans répétition ni fuite | ND |
+
+**Interdiction de conclure PASS sans exécution sur appareil réel.** Les simulations Chromium/WebKit ne valent pas vérification matérielle. Ne jamais enregistrer de contenu d'œuvre privée, de jeton d'authentification ou d'URL de téléchargement signée dans une capture.
+
+### Conditions de sécurité et décision
+
+1. **Lecture privée :** revue et preuve indépendante des droits, de la révocation serveur et des protections RLS/CAS sur comptes de laboratoire avant d'essayer une édition intégrale ([issue #955](https://github.com/M0rdr3x/BenoitCantin/issues/955)). Ne pas déployer automatiquement les migrations SQL candidates.
+2. **Synchronisation :** démontrer l'enregistrement et la reprise après conflit réel entre deux appareils, puis déconnexion et révocation; séparer les tests de l'extrait gratuit de ceux des livres privés.
+3. **Publication :** revue du différentiel, validation CI sur le **SHA final**, matrice matérielle documentée, revue accessibilité, approbation du responsable et possibilité de retour arrière.
+4. **Décision actuelle : NO-GO.** La [PR #1000](https://github.com/M0rdr3x/BenoitCantin/pull/1000) demeure **DRAFT**, non fusionnée et non déployée. Les preuves automatiques réussies font progresser la qualification technique mais ne permettent pas de déclarer les critères matériels ou de sécurité terminés.
