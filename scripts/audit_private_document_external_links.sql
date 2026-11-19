@@ -1,22 +1,20 @@
 -- P0 SINJIRA : inventaire en lecture seule des liens statiques non prives.
 --
--- Executez MANUELLEMENT dans l'editeur SQL Supabase, avec une session admin
--- autorisee. Ne publiez pas les resultats et ne les copiez pas dans les logs CI.
--- Cette requete ne modifie aucun droit, objet ou fichier.
+-- Executer MANUELLEMENT dans l'editeur SQL Supabase avec une session admin
+-- autorisee. Ne pas publier les resultats ni copier des URL dans les logs CI.
+-- Cette requete ne modifie aucun droit, objet, compte ou fichier.
 --
--- Un document reserve qui pointe vers une URL statique peut rester consultable
--- sans identite sur le CDN, meme si get-document-url refuse le lien.
--- Pour chaque ligne ci-dessous : verifier l'URL avec une session anonyme,
--- retirer l'artefact de l'hebergeur / purger son cache si necessaire,
--- migrer le contenu vers Storage prive et configurer les droits cote serveur.
+-- Une URL statique peut etre accessible sans identite sur le CDN, meme lorsque
+-- get-document-url refuse le lien apres controle du niveau d'acces.
+-- Pour chaque reference signalee, verifier en navigation anonyme si l'origine
+-- et les caches CDN exposent le fichier. Retirer toute copie privee exposee.
 --
--- IMPORTANT : ceci recense les references dans la BD, pas tous les fichiers
--- potentiellement deja publies sur GitHub Pages / Netlify / Vercel.
--- Les routes HTML peuvent n'etre que des interfaces publiques sans donnees
--- privees integrees. Auditer chaque page et ses appels API avant d'en conclure
--- a une fuite; ne pas migrer une route HTML comme si c'etait un PDF.
--- Les PDF restreints exigent un support prive et la suppression des copies
--- publiques lorsqu'une exposition est confirmee.
+-- IMPORTANT : l'inventaire ne constitue pas un scan de tous les fichiers
+-- deja publies sur GitHub Pages, Netlify ou Vercel.
+-- Une page HTML peut etre une simple interface publique sans contenu sensible;
+-- verifier son HTML et ses API avant de conclure a une fuite. Ne pas migrer une
+-- interface HTML comme s'il s'agissait d'un PDF confidentiel.
+-- Un PDF restreint doit etre diffuse exclusivement en stockage prive signe.
 
 BEGIN TRANSACTION READ ONLY;
 
@@ -35,7 +33,7 @@ FROM public.documents AS d
 LEFT JOIN public.projects AS p ON p.id = d.project_id
 WHERE NULLIF(btrim(d.external_url), '') IS NOT NULL;
 
--- Identifiants uniquement : ne jamais exposer publiquement les URL suspectes.
+-- Ne publier aucun chemin complet. La categorie aide a la remediation.
 SELECT
   d.id AS document_id,
   d.project_id,
@@ -43,38 +41,8 @@ SELECT
   d.access_level,
   p.visibility AS project_visibility,
   CASE
-    WHEN d.external_url ~* '\\.pdf([?#].*)? THEN 'PROJECT_NOT_FOUND'
-    WHEN d.access_level IS DISTINCT FROM 'public' THEN 'RESTRICTED_DOCUMENT_STATIC_LINK'
-    ELSE 'NONPUBLIC_PROJECT_STATIC_LINK'
-  END AS risk_code
-FROM public.documents AS d
-LEFT JOIN public.projects AS p ON p.id = d.project_id
-WHERE NULLIF(btrim(d.external_url), '') IS NOT NULL
-  AND (
-    d.access_level IS DISTINCT FROM 'public'
-    OR p.visibility IS DISTINCT FROM 'public'
-  )
-ORDER BY d.id
-LIMIT 1000;
-
-COMMIT;
- THEN 'PDF_FILE'
-    WHEN d.external_url ~* '\\.html?([?#].*)? THEN 'PROJECT_NOT_FOUND'
-    WHEN d.access_level IS DISTINCT FROM 'public' THEN 'RESTRICTED_DOCUMENT_STATIC_LINK'
-    ELSE 'NONPUBLIC_PROJECT_STATIC_LINK'
-  END AS risk_code
-FROM public.documents AS d
-LEFT JOIN public.projects AS p ON p.id = d.project_id
-WHERE NULLIF(btrim(d.external_url), '') IS NOT NULL
-  AND (
-    d.access_level IS DISTINCT FROM 'public'
-    OR p.visibility IS DISTINCT FROM 'public'
-  )
-ORDER BY d.id
-LIMIT 1000;
-
-COMMIT;
- THEN 'HTML_ROUTE'
+    WHEN d.external_url ~* '\.pdf([?#].*)?$' THEN 'PDF_FILE'
+    WHEN d.external_url ~* '\.html?([?#].*)?$' THEN 'HTML_ROUTE'
     ELSE 'OTHER_RESOURCE'
   END AS resource_kind,
   CASE
