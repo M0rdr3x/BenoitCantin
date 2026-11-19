@@ -10,6 +10,8 @@ CLIENT=(ROOT/"assets/js/sinjira-liseuse-v26.js").read_text(encoding="utf-8")
 LEGACY=(ROOT/"assets/js/sinjira-reader-progress-v24-4-61.js").read_text(encoding="utf-8")
 WORKFLOW=(ROOT/".github/workflows/sinjira-reader-v51-cas.yml").read_text(encoding="utf-8")
 CONCURRENT=(ROOT/"scripts/test_sinjira_reader_v51_concurrent_local.sh").read_text(encoding="utf-8")
+REPLAY=(ROOT/"assets/js/sinjira-liseuse-position-v31.mjs").read_text(encoding="utf-8")
+REPLAY_TEST=(ROOT/"tests/sinjira-reader-cas-retry-v51.test.mjs").read_text(encoding="utf-8")
 
 class ReaderV51CasContract(unittest.TestCase):
     def test_additive_migration_preserves_v32_and_existing_positions(self):
@@ -121,6 +123,33 @@ class ReaderV51CasContract(unittest.TestCase):
         ):
             with self.subTest(token=token):
                 self.assertIn(token,CONCURRENT)
+
+    def test_v51_5_offline_retry_uses_server_revision_not_device_time(self):
+        # À la reconnexion, la date de l'appareil est un simple marqueur
+        # de brouillon local. Seule la révision PostgreSQL fait foi.
+        for token in (
+            "cloudRevisionDecision(state.cloudRevision,remote)",
+            ".select('revision')",
+            "decision==='conflict'",
+            "decision==='invalid'",
+            "state.cloudConflict=true",
+            "const restored=await syncProgress()",
+            "safeLocalGet(key+':pending')!==pendingAt",
+        ):
+            with self.subTest(token=token):
+                self.assertIn(token,CLIENT)
+        self.assertNotIn("shouldReplayReadingProgress(pendingAt",CLIENT)
+        self.assertNotIn(".select('updated_at')",CLIENT)
+        self.assertIn("export function cloudRevisionDecision(",REPLAY)
+        for token in (
+            "première sauvegarde sans ligne",
+            "révision concurrente",
+            "fail closed",
+            "Numbe" if False else "numéro sûr accepté",
+        ):
+            with self.subTest(token=token):
+                self.assertIn(token,REPLAY_TEST)
+        self.assertIn("node --test tests/sinjira-reader-cas-retry-v51.test.mjs",WORKFLOW)
 
     def test_revoke_bypass_grants_and_no_anon_rpc(self):
         for term in (
