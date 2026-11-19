@@ -84,8 +84,19 @@ BEGIN
      WHERE novel.id=p_novel_id
        AND novel.status='published'
        AND (
-         public.is_sinjira_owner(v_user)
-         OR public.is_sinjira_admin(v_user)
+         -- V51.4 : la vérification owner/admin doit aussi verrouiller
+         -- la ligne du rôle. Sinon un DELETE ou une rétrogradation peut
+         -- devenir effectif entre le contrôle et la sauvegarde.
+         -- Les fonctions de rôle existantes conservent leur sémantique,
+         -- mais une lecture FOR SHARE sérialise le retrait simultané.
+         EXISTS(
+           SELECT 1 FROM public.internal_admin_users staff
+            WHERE staff.user_id=v_user
+              AND staff.role IN ('owner','admin')
+              AND (public.is_sinjira_owner(v_user)
+                   OR public.is_sinjira_admin(v_user))
+            FOR SHARE OF staff
+         )
          OR EXISTS(
            SELECT 1
              FROM public.user_entitlements entitlement
