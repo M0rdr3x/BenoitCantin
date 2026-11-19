@@ -734,6 +734,85 @@ test('V101 : ancien touch PDF et souris PDF coexistent sans double déclenchemen
     assert.equal(f.previous.clicks,0);
   }finally{f.release()}
 });
+test('V161 : toucher la gouttière vide du PDF peut avancer et revenir au doigt',()=>{
+  const f=fixture();
+  const pointer=(name,x,extra={})=>f.viewer.emit(name,{
+    pointerType:'touch',pointerId:161,button:0,buttons:1,isPrimary:true,
+    clientX:x,clientY:190,target:f.viewer,defaultPrevented:false,
+    preventDefault(){this.defaultPrevented=true},...extra
+  });
+  try{
+    f.setPdfMode(true);
+    pointer('pointerdown',260);pointer('pointermove',175);
+    f.advance(170);pointer('pointerup',90);
+    assert.equal(f.next.clicks,1,'glisser à gauche depuis la marge avance');
+    pointer('pointerdown',95);pointer('pointermove',185);
+    f.advance(170);pointer('pointerup',260);
+    assert.equal(f.previous.clicks,1,'glisser à droite depuis la marge revient');
+    // Un tap sans déplacement ne tourne pas le PDF par PointerEvent.
+    pointer('pointerdown',260);f.advance(80);pointer('pointerup',260);
+    assert.equal(f.next.clicks,1);
+    // Le texte paginé/continu reste géré uniquement par V53.
+    f.setPdfMode(false);
+    pointer('pointerdown',260);f.advance(150);pointer('pointerup',90);
+    assert.equal(f.next.clicks,1);
+  }finally{f.release()}
+});
+test('V161 : stylet sur gouttière PDF fonctionne sans doubler les TouchEvents',()=>{
+  const f=fixture();
+  const pointer=(name,x)=>f.viewer.emit(name,{
+    pointerType:'pen',pointerId:162,button:0,buttons:1,isPrimary:true,
+    clientX:x,clientY:190,target:f.viewer,defaultPrevented:false,
+    preventDefault(){this.defaultPrevented=true}
+  });
+  try{
+    f.setPdfMode(true);
+    pointer('pointerdown',260);pointer('pointermove',175);
+    f.advance(190);pointer('pointerup',95);
+    assert.equal(f.next.clicks,1);
+    // Lors d'une séquence jumelée, le vrai TouchEvent conserve la priorité.
+    pointer('pointerdown',260);
+    const touch={identifier:22,clientX:260,clientY:190};
+    f.viewer.emit('touchstart',{touches:[touch],target:f.viewer});
+    f.advance(190);
+    f.viewer.emit('touchend',{touches:[],changedTouches:[
+      {identifier:22,clientX:95,clientY:190}
+    ],defaultPrevented:false});
+    pointer('pointerup',95);
+    assert.equal(f.next.clicks,2,'une seule page par séquence couplée');
+  }finally{f.release()}
+});
+test('V161 : ni souris en marge ni enfant interactif ne volent la navigation PDF',()=>{
+  const f=fixture();
+  const pointer=(name,x,target,pointerType='touch')=>f.viewer.emit(name,{
+    pointerType,pointerId:163,button:0,buttons:1,isPrimary:true,
+    clientX:x,clientY:190,target,defaultPrevented:false,
+    preventDefault(){this.defaultPrevented=true}
+  });
+  try{
+    f.setPdfMode(true);
+    pointer('pointerdown',260,f.viewer,'mouse');
+    f.advance(180);pointer('pointerup',95,f.viewer,'mouse');
+    assert.equal(f.next.clicks,0,'la souris ne tourne que depuis le canvas');
+    const button={closest:()=>({nodeName:'BUTTON'})};
+    pointer('pointerdown',260,button);
+    f.advance(180);pointer('pointerup',95,button);
+    assert.equal(f.next.clicks,0,'bouton/zone interne non capturé');
+    const child={closest:()=>null};
+    pointer('pointerdown',260,child);
+    f.advance(180);pointer('pointerup',95,child);
+    assert.equal(f.next.clicks,0,'autre contenu interne non capturé');
+    pointer('pointerdown',260,f.viewer);
+    f.viewer.emit('pointercancel',{pointerId:163});
+    f.advance(180);pointer('pointerup',95,f.viewer);
+    assert.equal(f.next.clicks,0,'pointercancel retire le geste en cours');
+    f.setSelected('citation sélectionnée');
+    pointer('pointerdown',260,f.viewer);
+    f.advance(180);pointer('pointerup',95,f.viewer);
+    assert.equal(f.next.clicks,0,'la sélection du roman reste intacte');
+  }finally{f.release()}
+});
+
 test('V97 : marges PDF et texte partagent les mêmes limites',()=>{
   const p={x:318,viewerWidth:375,durationMs:160};
   assert.equal(classifyReaderEdgeTap(p),'next');
