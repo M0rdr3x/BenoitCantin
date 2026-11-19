@@ -142,4 +142,112 @@ END $verify$;
 SQL
 echo 'V51.2-REVOCATION-PASS: DELETE concurrent attendue, RPC unavailable, revision=3 et compte B intacts'
 
+
+# V51.3 : deux autres courses entre catalogue et sauvegarde d'une progression.
+# Un produit désactivé OU un roman dépublié pendant la sauvegarde ne doit
+# pas autoriser l'écriture sous l'ancienne autorisation. Base jetable seulement.
+# La fixture comprend déjà les romans fictifs 3 (publié) et 4 (annoncé).
+db <<'SQL'
+INSERT INTO public.user_entitlements(user_id,product_id)
+VALUES ('00000000-0000-0000-0000-000000000001',
+        '20000000-0000-0000-0000-000000000003');
+UPDATE public.sinjira_novels SET status='published'
+ WHERE id='10000000-0000-0000-0000-000000000004';
+SQL
+
+make_progress() {
+  local book="$1" outfile="$2"
+  db -c "SET ROLE authenticated;
+    SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
+    SELECT result_status,result_revision,result_page
+    FROM public.sinjira_reader_save_progress_cas(
+     '$book',NULL,12,25,0.2000
+    );" >"$outfile"
+  if [[ "$(grep -E '^saved\|' "$outfile" | tail -1 || true)" != 'saved|0|12' ]]; then
+    echo 'V51.3-REFUS: préparation du marque-page fictif échouée' >&2
+    cat "$outfile" >&2
+    exit 7
+  fi
+}
+book3='10000000-0000-0000-0000-000000000003'
+book4='10000000-0000-0000-0000-000000000004'
+make_progress "$book3" "$work/progress3.output"
+make_progress "$book4" "$work/progress4.output"
+
+# Action SQL volontairement bornée à deux UPDATE prédéterminés en laboratoire;
+# aucune commande de production ni identifiant externe n'est accepté.
+revoke_during_save() {
+  local label="$1" book="$2" statement="$3"
+  local out="$work/$label.revoker.output" err="$work/$label.revoker.error"
+  stdbuf -oL psql --no-psqlrc -qAt -v ON_ERROR_STOP=1 \
+    -h "$HOST" -U postgres -d "$DB" >"$out" 2>"$err" <<SQL &
+BEGIN;
+$statement
+\\echo V51.3-$label-LOCK-HELD
+SELECT pg_sleep(3);
+COMMIT;
+SQL
+  local pid=$! locked=false
+  for _ in $(seq 1 100); do
+    if grep -Fq "V51.3-$label-LOCK-HELD" "$out" 2>/dev/null; then
+      locked=true
+      break
+    fi
+    if ! kill -0 "$pid" 2>/dev/null; then break; fi
+    sleep 0.05
+  done
+  if [[ "$locked" != true ]]; then
+    echo "V51.3-REFUS: $label n'a pas acquis son verrou" >&2
+    cat "$out" "$err" >&2
+    wait "$pid" || true
+    exit 8
+  fi
+  db -c "SET ROLE authenticated;
+    SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
+    SELECT result_status,result_revision,result_page
+    FROM public.sinjira_reader_save_progress_cas(
+      '$book',0,99,99,0.9900
+    );" >"$work/$label.save.output" 2>"$work/$label.save.error"
+  wait "$pid"
+  local verdict
+  verdict="$(grep -E '^(saved|conflict|unavailable)\|' "$work/$label.save.output" | tail -1 || true)"
+  if [[ "$verdict" != 'unavailable||' ]]; then
+    echo "V51.3-REFUS: $label CAS $verdict (attendu unavailable)" >&2
+    cat "$work/$label.save.error" "$err" >&2
+    exit 9
+  fi
+  echo "V51.3-$label-PASS: verrou observé, refus après modification du catalogue"
+}
+
+revoke_during_save 'PRODUCT' "$book3" \
+ "UPDATE public.products SET active=false WHERE id='20000000-0000-0000-0000-000000000003';"
+revoke_during_save 'NOVEL' "$book4" \
+ "UPDATE public.sinjira_novels SET status='archived' WHERE id='10000000-0000-0000-0000-000000000004';"
+db <<'SQL'
+DO $validate$
+DECLARE n integer;
+BEGIN
+ SELECT count(*) INTO n FROM public.sinjira_reader_library
+  WHERE user_id='00000000-0000-0000-0000-000000000001'
+    AND novel_id IN (
+      '10000000-0000-0000-0000-000000000003',
+      '10000000-0000-0000-0000-000000000004')
+    AND last_page=12 AND revision=0;
+ IF n<>2 THEN
+   RAISE EXCEPTION 'V51.3: produit désactivé/roman archivé a modifié une page';
+ END IF;
+ SELECT count(*) INTO n FROM public.products
+  WHERE id='20000000-0000-0000-0000-000000000003' AND active=false;
+ IF n<>1 THEN RAISE EXCEPTION 'V51.3: produit encore actif'; END IF;
+ SELECT count(*) INTO n FROM public.sinjira_novels
+  WHERE id='10000000-0000-0000-0000-000000000004' AND status='archived';
+ IF n<>1 THEN RAISE EXCEPTION 'V51.3: roman encore publié'; END IF;
+ SELECT count(*) INTO n FROM public.sinjira_reader_library
+  WHERE user_id='00000000-0000-0000-0000-000000000002'
+    AND last_page=8 AND revision=1;
+ IF n<>1 THEN RAISE EXCEPTION 'V51.3: progression du compte B modifiée'; END IF;
+END $validate$;
+SQL
+echo 'V51.3-CATALOGUE-PASS: désactivation produit et dépublication roman refusent toute sauvegarde tardive'
+
 echo 'V51-CONCURRENT-NO_GO: comptes fictifs seulement, aucune attestation production'
