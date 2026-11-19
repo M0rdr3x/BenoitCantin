@@ -12,7 +12,11 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
-ACTION_LINE = re.compile(r"^\s*(?:-\s*)?uses:\s*(\S+)")
+# "uses" est une cle YAML valide, avec ou sans guillemets / espace avant ':'.
+# Ne jamais ignorer silencieusement une action parce que sa syntaxe differe.
+ACTION_LINE = re.compile(r"""^\s*(?:-\s*)?(?:uses|"uses"|'uses')\s*:\s*(.*?)\s*$""")
+FLOW_ACTION_KEY = re.compile(r"""(?:^|[\s,{])(?:uses|"uses"|'uses')\s*:""")
+FLOW_MAPPING = re.compile(r"""^\s*(?:(?:-\s*)?[\[{]|(?:steps|jobs)\s*:\s*[\[{])""")
 IMMUTABLE_ACTION = re.compile(r"^[^@\s]+@[a-f0-9]{40}$")
 IMMUTABLE_DOCKER = re.compile(r"^docker://[^@\s]+@sha256:[a-f0-9]{64}$")
 
@@ -52,10 +56,20 @@ def inspect_workflow(name: str, source: str) -> list[str]:
     if re.search(r"^\s*permissions\s*:\s*write-all\b", source, flags=re.MULTILINE):
         errors.append(f"{name}: permissions write-all interdites")
     for lineno, raw in enumerate(source.splitlines(), 1):
+        # Une map inline peut aussi contenir un "uses". Son refus explicite
+        # est plus sur qu'une analyse partielle qui laisserait passer @main.
+        if FLOW_MAPPING.match(raw) and FLOW_ACTION_KEY.search(raw):
+            errors.append(f"{name}:{lineno}: action en syntaxe YAML inline interdite")
+            continue
         match = ACTION_LINE.match(raw)
         if not match:
             continue
-        action = match.group(1)
+        action = re.sub(r"\s+#.*$", "", match.group(1)).strip()
+        if len(action) >= 2 and action[0] in ("'", '"') and action[-1] == action[0]:
+            action = action[1:-1]
+        if not action:
+            errors.append(f"{name}:{lineno}: référence d'action vide ou multi-ligne interdite")
+            continue
         if action.startswith("./"):
             continue
         if action.startswith("docker://"):
@@ -77,12 +91,23 @@ def self_test() -> None:
         "      - uses: ./.github/actions/local-safe\n"
     )
     assert inspect_workflow("safe.yml", good) == []
+    safe_quoted = good.replace(
+        "uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803",
+        '"uses": "actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803" # SHA fixe',
+    )
+    assert inspect_workflow("safe-quoted.yml", safe_quoted) == []
     mutants = {
         "étiquette mobile": good.replace("@d23441a48e516b6c34aea4fa41551a30e30af803", "@v6"),
         "branche mobile": good.replace("@d23441a48e516b6c34aea4fa41551a30e30af803", "@main"),
         "permission implicite": good.replace("permissions:\n  contents: read\n", ""),
         "droits larges": good.replace("permissions:\n  contents: read", "permissions: write-all"),
         "déclencheur privilégié": good.replace("  pull_request:", "  pull_request_target:"),
+        "cle YAML simple citee": good.replace("- uses: actions/checkout@", "- 'uses': actions/checkout@").replace("@d23441a48e516b6c34aea4fa41551a30e30af803", "@v6"),
+        "cle YAML doublement citee": good.replace("- uses: actions/checkout@", '- "uses": actions/checkout@').replace("@d23441a48e516b6c34aea4fa41551a30e30af803", "@main"),
+        "separateur YAML avec espace": good.replace("uses: actions/checkout@", "uses : actions/checkout@").replace("@d23441a48e516b6c34aea4fa41551a30e30af803", "@v6"),
+        "action manquante": good.replace("uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803", "uses:"),
+        "action map inline": good.replace("- uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803", "- { uses: actions/checkout@main }"),
+        "action liste inline": good.replace("    steps:\n      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803", "    steps: [{ uses: actions/checkout@main }]"),
     }
     for label, altered in mutants.items():
         if not inspect_workflow(label, altered):
