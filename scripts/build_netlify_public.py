@@ -1087,6 +1087,15 @@ def output_location_error(output: Path) -> str | None:
             "seuls les quatre dossiers de build publics dédiés sont admis "
             "directement à la racine du dépôt."
         )
+    # Hors du checkout, n'autoriser que des sous-dossiers du repertoire
+    # temporaire systeme. Un argument --output /etc, /usr ou ~/Documents
+    # ne doit jamais pouvoir entrainer un shutil.rmtree() destructeur.
+    temp_root = Path(tempfile.gettempdir()).resolve()
+    if ROOT not in resolved.parents and temp_root not in resolved.parents:
+        return (
+            f"Sortie externe non temporaire interdite: {resolved}; "
+            "utiliser un dossier temporaire ou une sortie CI autorisee."
+        )
     return None
 
 
@@ -1215,7 +1224,10 @@ def self_test_public_filesystem_boundary() -> list[str]:
         ROOT.parent.parent.parent,
         Path.home(),
         Path.home().parent,
+        Path.home() / "Documents" / "site",
         Path("/"),
+        Path("/etc") / "site",
+        Path("/usr") / "local" / "site",
         ROOT / "assets",
         ROOT / "assets" / "danger",
         ROOT / "scripts",
