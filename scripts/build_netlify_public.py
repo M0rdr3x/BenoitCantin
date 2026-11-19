@@ -1069,9 +1069,18 @@ def output_location_error(output: Path) -> str | None:
     if original.is_symlink():
         return f"Sortie symbolique refusée: {original}"
     resolved = original.resolve()
-    if resolved == ROOT or (
-        ROOT in resolved.parents
-        and (resolved.parent != ROOT or resolved.name not in SAFE_CHECKOUT_OUTPUT_DIRS)
+    # rmtree() supprime recursivement la sortie : interdire egalement les
+    # ancetres du depot et les dossiers racines du systeme utilisateur.
+    # Sans cette protection, --output .. ou /home/runner pourrait effacer
+    # le checkout et d'autres donnees hors des dossiers de publication.
+    if (
+        resolved == ROOT
+        or resolved in ROOT.parents
+        or resolved in {Path.home(), Path.home().parent}
+        or (
+            ROOT in resolved.parents
+            and (resolved.parent != ROOT or resolved.name not in SAFE_CHECKOUT_OUTPUT_DIRS)
+        )
     ):
         return (
             f"Sortie située dans les sources Git interdite: {resolved}; "
@@ -1201,6 +1210,12 @@ def self_test_public_filesystem_boundary() -> list[str]:
 
     forbidden_outputs = (
         ROOT,
+        ROOT.parent,
+        ROOT.parent.parent,
+        ROOT.parent.parent.parent,
+        Path.home(),
+        Path.home().parent,
+        Path("/"),
         ROOT / "assets",
         ROOT / "assets" / "danger",
         ROOT / "scripts",
