@@ -27,3 +27,18 @@ updates:
           - "*"
         update-types:
           - "patch"
+
+  # Outil Netlify isolé : Dependabot ne fusionne pas les mises à jour.
+  # Revoir l'audit, les SRI et le SHA-256 du lockfile avant approbation.
+  - package-ecosystem: "npm"
+    directory: "/tools/netlify-cli"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    groups:
+      netlify-toolchain-compatible:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
