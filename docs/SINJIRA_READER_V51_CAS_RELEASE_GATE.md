@@ -81,3 +81,13 @@ Un contrôle d'habilitation sans verrou est insuffisant dans un scénario **rév
 
 **Limites / NO-GO :** ce scénario ne démontre pas encore la concurrence d'une révocation des rôles d'administration avec une sauvegarde ni l'isolation réelle sous les sessions Supabase/JWT. Les fonctions owner/admin, l'ordre de verrouillage, les transitions `published` et `products.active`, la politique métier de sauvegarde des marque-pages après remboursement, ainsi que le chemin de **lecture** des anciens marque-pages nécessitent une revue en préproduction. Aucun code SQL n'a été appliqué à Supabase, aucune modification de données réelles et aucune autorisation de publication.
 
+## V51.3 — retrait de publication et désactivation produit concurrents
+
+**Portée candidate, aucune migration de production.** La fonction CAS de V51.2 verrouille déjà le roman et, pour les droits d'achat, les lignes d'attribution et de produit. V51.3 ajoute au banc de concurrence PostgreSQL isolé deux scénarios de validation supplémentaires :
+
+- **Produit inactivé pendant la sauvegarde** : une transaction commence `UPDATE products SET active=false` sur un produit fictif auquel le compte A est attribué. Avant son `COMMIT`, une autre connexion essaie de remplacer la progression existante du roman publié. Le résultat attendu est `unavailable`, et la page 12 / révision 0 doit rester intacte.
+- **Roman dépublié pendant la sauvegarde** : une transaction commence `UPDATE sinjira_novels SET status='archived'` sur un roman fictif jusque-là publié. Une seconde connexion tente un CAS au même moment. Le résultat attendu est encore `unavailable`, sans changement de page ni de révision.
+
+Les scénarios réutilisent l'hôte local `127.0.0.1`, la base jetable `sinjira_reader_v51_lab` et des UUID uniquement fictifs; ils n'accèdent jamais à Supabase hébergé. Un contrôle final vérifie également l'absence de modification de la progression du compte B.
+
+**Ces nouveaux essais doivent être marqués PASS seulement après lecture du journal GitHub Actions sur le SHA correspondant.** Ils ne certifient pas le comportement d'une session Auth réelle, la révocation des rôles owner/admin, les clients hors ligne ni la migration de production. Les décisions de droits, l'audit RLS, la compatibilité des anciens lecteurs et les tests sur deux téléphones restent requis. **PR #947 DRAFT / NO-GO.**
