@@ -100,3 +100,14 @@ Les scénarios réutilisent l'hôte local `127.0.0.1`, la base jetable `sinjira_
 
 **Limites importantes** : le PASS du banc local n'établit pas un PASS Supabase Auth réel, ni la révocation des JWT, la lecture ou le téléchargement des fichiers PDF par d'autres fonctions, ni la politique métier concernant le statut du contenu. L'intégration des branches PR #947 et #1000, l'absence de régressions sur `main`, la réception de deux appareils physiques et l'approbation des migrations demeurent nécessaires. **NO-GO production** maintenu.
 
+
+## V51.5 — reprise hors ligne par révision serveur (18 novembre 2026)
+
+**Correctif candidat de la liseuse et de ses tests ; non fusionné, non déployé.** Le chemin `retryCloudProgress()` comparait auparavant une date de sauvegarde générée par le téléphone (`:pending`) à l'horodatage du compte distant. Deux appareils dont les horloges sont décalées pouvaient donc déclarer à tort la progression locale comme périmée, la supprimer du lot en attente et ne jamais tenter la sauvegarde CAS, même si la révision du compte n'avait pas changé.
+
+**V51.5 :** la reconnexion vérifie d'abord la session Supabase, l'identité et le livre encore chargé, puis récupère **`revision`** de `sinjira_reader_library`. Le nouvel utilitaire pur `cloudRevisionDecision(expectedRevision,remoteRecord)` classe les cas `current` (essai de RPC CAS autorisé), `conflict` (une autre écriture est arrivée ou une ligne attendue a disparu) et `invalid` (donnée non vérifiable, refus de réécrire). En conflit, la progression locale et le marqueur `:pending` sont conservés ; **aucune écriture UPSERT de secours**. Une révision identique permet d'essayer la RPC, qui garantit à nouveau l'atomicité si une nouvelle sauvegarde concurrente arrive entre le SELECT et l'UPDATE.
+
+Les dates restent utilisées pour proposer une position de départ et pour identifier un brouillon local, **jamais comme autorité de réécriture après reconnexion**. Les tests Node `tests/sinjira-reader-cas-retry-v51.test.mjs`, l'inventaire statique et le workflow PostgreSQL isolé couvrent : première sauvegarde sans ligne, conflits, révisions numériques sûres ou invalides, et date de téléphone sans effet sur le verdict de sauvegarde. Le cache de la page `compte/liseuse.html` force le nouveau module V51.5.
+
+**Risques encore ouverts :** la reprise automatique ne doit pas être présentée comme un stockage cloud certifié avant migration V51 approuvée. Tester en préproduction Auth/JWT, réseau réellement coupé, conflits multiappareils, vieux clients en cache, lisibilité hors ligne et révocation en cours. Le contrôle de production doit rester NO-GO et bloquer le déploiement si la RPC est absente des migrations approuvées.
+
