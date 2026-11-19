@@ -45,14 +45,22 @@ function externalUrlAllowed(value:string){
 }
 
 async function readLimitedJson(req:Request):Promise<{body?:any;response?:Response}>{
-  const contentType=(req.headers.get('content-type')||'').toLowerCase();
-  if(!contentType.startsWith('application/json')){
+  // Refuser application/jsonp, application/json-malicious, etc. Le suffixe
+  // charset est autorisé, mais le type MIME doit être exactement JSON.
+  const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
+  if(contentType!=='application/json'){
     return {response:privateJson({ok:false,error:'Type de contenu non autorisé.'},415)};
   }
   const limited=await readLimitedUtf8Body(req,MAX_REQUEST_BYTES);
   if(!limited.ok)return {response:privateJson({ok:false,error:'Requête trop volumineuse ou invalide.'},413)};
   const raw=limited.raw;
-  try{return {body:JSON.parse(raw||'{}')}}catch{return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)}}
+  try{
+    const body=JSON.parse(raw||'{}');
+    if(!body||typeof body!=='object'||Array.isArray(body)){
+      return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)};
+    }
+    return {body};
+  }catch{return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)}}
 }
 
 Deno.serve(async(req)=>{
