@@ -1,7 +1,7 @@
 import { getSupabase, requireUser } from './sinjira-supabase.js';
 import { pdfTextToParagraphs, speechTextChunks } from './sinjira-liseuse-text-v27.mjs';
 import { createReaderCompanion } from './sinjira-liseuse-companion-v28.mjs';
-import { chooseReadingPosition, ratioFromScroll, scrollTopForRatio, readingRatio, shouldReplayReadingProgress } from './sinjira-liseuse-position-v31.mjs?v=34.11.07.1';
+import { chooseReadingPosition, ratioFromScroll, scrollTopForRatio, readingRatio, cloudRevisionDecision } from './sinjira-liseuse-position-v31.mjs?v=51.11.18.5';
 
 /* SINJIRA 2026 — liseuse : le PDF intégral n'entre jamais dans le dépôt public
    ni dans localStorage. Le serveur attribue le droit de lecture avant de signer l'accès. */
@@ -199,8 +199,9 @@ function syncProgress(){
   state.progressQueue=state.progressQueue.catch(()=>false).then(send);
   return state.progressQueue;
 }
-/** Après une coupure, contrôler la session ET l'horodatage serveur avant toute
-    réécriture. Un autre appareil plus récent n'est jamais écrasé automatiquement. */
+/** V51.5 : après une coupure, contrôler la session ET la révision serveur.
+    Les horloges de deux téléphones peuvent différer : la seule autorité
+    d'écriture reste la révision CAS atomique vérifiée par PostgreSQL. */
 async function retryCloudProgress(){
   if(!isFull||!state.cloudDirty||state.cloudRetrying||!state.pdf||
      !state.user||!state.novelId||state.accessInvalidated||
@@ -215,15 +216,25 @@ async function retryCloudProgress(){
     const {data:auth,error:authError}=await getSupabase().auth.getUser();
     if(authError||auth?.user?.id!==userId||!stillAuthorized())return;
     const {data:remote,error}=await getSupabase().from('sinjira_reader_library')
-      .select('updated_at').eq('user_id',userId).eq('novel_id',novelId).maybeSingle();
+      .select('revision').eq('user_id',userId).eq('novel_id',novelId).maybeSingle();
     if(error||!stillAuthorized()||safeLocalGet(key+':pending')!==pendingAt)return;
-    if(!shouldReplayReadingProgress(pendingAt,remote?.updated_at)){
-      // Ne pas déplacer le lecteur en cours de lecture; respecter le compte.
-      state.cloudDirty=false;
-      safeLocalRemove(key+':pending');
-      positionNotice('Une progression plus récente existe sur votre compte. La position de cet appareil n’a pas écrasé le compte.','warning');
+    const decision=cloudRevisionDecision(state.cloudRevision,remote);
+    if(decision==='invalid'){
+      // Un serveur ancien ou une révision non vérifiable ne doit déclencher
+      // ni UPSERT, ni conversion silencieuse en écriture non protégée.
+      positionNotice('Révision de synchronisation non vérifiable : votre progression reste enregistrée sur cet appareil.','warning');
       return;
     }
+    if(decision==='conflict'){
+      // Ne jamais supprimer le marque-page local : il faudra comparer les
+      // deux appareils avant de relancer une nouvelle sauvegarde CAS.
+      state.cloudConflict=true;
+      state.cloudDirty=true;
+      positionNotice('Une autre progression existe sur votre compte. Votre position reste sur cet appareil sans écraser l’autre sauvegarde.','warning');
+      return;
+    }
+    // Même après la lecture de révision, une autre session peut écrire :
+    // syncProgress vérifie à nouveau dans le RPC PostgreSQL atomique.
     const restored=await syncProgress();
     if(restored&&stillAuthorized()&&!state.cloudDirty){
       positionNotice(state.cloudSpotSupported===false
