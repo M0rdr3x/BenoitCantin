@@ -1,0 +1,48 @@
+name: Sécurité — nouvelles migrations SQL, RLS et privilèges API
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'scripts/validate_new_supabase_api_privileges.py'
+      - '.github/workflows/sinjira-future-sql-api-privileges-security.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'scripts/validate_new_supabase_api_privileges.py'
+      - '.github/workflows/sinjira-future-sql-api-privileges-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fail-closed-public-api:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Charger l'historique Git sans persister les credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Python immuable
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Tester les mutations SQL dangereuses, sans réseau ni données
+        run: python3 scripts/validate_new_supabase_api_privileges.py --self-test
+      - name: Vérifier uniquement les nouvelles migrations du commit
+        if: ${{ github.event_name != 'workflow_dispatch' }}
+        env:
+          BASE_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$BASE_REF" ] || [ "$BASE_REF" = "0000000000000000000000000000000000000000" ]; then
+            echo "::error::Base Git absente : refus fail-closed."
+            exit 1
+          fi
+          python3 scripts/validate_new_supabase_api_privileges.py --base-ref "$BASE_REF"

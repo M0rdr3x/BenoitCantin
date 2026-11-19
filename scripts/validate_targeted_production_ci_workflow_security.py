@@ -22,11 +22,14 @@ TARGET_PATHS = (
     "'scripts/validate_targeted_production_workflow_security.py'",
     "'scripts/test_targeted_production_workflow_security.py'",
     "'scripts/validate_targeted_production_ci_workflow_security.py'",
+    "'scripts/validate_supabase_management_bearer_argv.py'",
 )
 
 HISTORICAL = (
     'python3 scripts/validate_targeted_production_workflow_security.py',
     'python3 scripts/test_targeted_production_workflow_security.py',
+    'python3 scripts/validate_supabase_management_bearer_argv.py --self-test',
+    'python3 scripts/validate_supabase_management_bearer_argv.py',
 )
 
 FORBIDDEN = (

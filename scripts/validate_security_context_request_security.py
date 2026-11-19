@@ -18,19 +18,30 @@ REQUIRED = {
     'réponse privée': "'Cache-Control': 'private, no-store, max-age=0'",
     'protection MIME': "'X-Content-Type-Options': 'nosniff'",
     'référent masqué': "'Referrer-Policy': 'no-referrer'",
-    'géolocalisation explicite opt-in infrastructure': "Deno.env.get('SINJIRA_TRUST_GEO_HEADERS') !== 'true'",
-    'pays approximatif seulement': "req.headers.get('cf-ipcountry')",
-    'région approximative seulement': "req.headers.get('x-sinjira-region')",
+    'géolocalisation explicite opt-in infrastructure': "Deno.env.get('SINJIRA_TRUST_GEO_HEADERS') === 'true'",
+    'clé privée d’attestation du proxy': "Deno.env.get('SINJIRA_GEO_PROXY_HMAC_SECRET')",
+    'module de vérification cryptographique': "import { verifiedCoarseGeo } from '../_shared/verified-geo.mjs';",
+    'vérification du proxy liée à la session': "verifiedCoarseGeo(req, sessionId,",
+    'attendre le contrôle cryptographique': 'const geo = await trustedGeo(req, sessionId);',
     'RPC contexte session canonique': "service.rpc('service_security_evaluate_context_session'",
     'session imposée au RPC': 'p_session_id: sessionId',
     'réponse succès privée': 'return privateJson({\n      ok: true,',
     'contrat confidentialité IP': 'raw_ip_stored: false',
     'contrat confidentialité GPS': 'gps_used: false',
+    'diagnostic de sécurité sans détail fournisseur': "console.error('[security-context]', { code: 'SECURITY_CONTEXT_FAILED' });",
 }
 
 REQUIRED_PATTERNS = {
     'requête bornée exactement à 4096 octets': re.compile(r'\bMAX_REQUEST_BYTES\s*=\s*4_?096\s*;'),
 }
+
+# Les journaux de l'Edge ne doivent jamais enregistrer une exception SDK,
+# y compris son message/stack, même si le navigateur reçoit déjà un 500 générique.
+RAW_ERROR_LOG = re.compile(
+    r"\bconsole\.(?:warn|error|info|log|debug)\s*\([^;\n]{0,240},\s*"
+    r"(?:error|err|exception)(?:\.(?:message|stack))?\s*[,)]",
+    re.IGNORECASE,
+)
 
 FORBIDDEN = {
     'lecture JSON directe non bornée': 'await req.json()',
@@ -58,6 +69,9 @@ def validate(path: Path) -> list[str]:
         if marker in source.lower():
             errors.append(f'Garde security-context violé: {label}.')
 
+    if RAW_ERROR_LOG.search(source):
+        errors.append('Journal de sécurité: exception ou diagnostic fournisseur brut interdit.')
+
     parsed_pos = source.find('const parsed = await readLimitedJson(req)')
     auth_pos = source.find('const user = await requiredUser(req)')
     if parsed_pos >= 0 and auth_pos >= 0 and auth_pos > parsed_pos:
@@ -65,6 +79,25 @@ def validate(path: Path) -> list[str]:
 
     if source.count('privateJson(') < 6:
         errors.append('Les réponses sensibles doivent rester uniformément privées et non cachables.')
+
+    # Les en-têtes bruts ne doivent plus être interprétés directement dans la
+    # route. Seul le helper HMAC, dont la sortie est fail-closed, peut les lire.
+    if "req.headers.get('cf-ipcountry')" in source or "req.headers.get('x-sinjira-region')" in source:
+        errors.append('La géolocalisation ne doit pas lire d’en-tête brut avant authentification.')
+
+    helper = ROOT / 'supabase/functions/_shared/verified-geo.mjs'
+    try:
+        helper_code = helper.read_text(encoding='utf-8')
+    except OSError:
+        errors.append('Le module de preuve HMAC est absent.')
+    else:
+        for marker in ("crypto.subtle.verify(", "sessionId.toLowerCase()",
+                       "sinjira-geo/v1", "MAX_PROOF_AGE_MS = 60_000",
+                       "options.enabled !== true", "return EMPTY_GEO",
+                       "req.headers.get('cf-ipcountry')",
+                       "req.headers.get('x-sinjira-region')"):
+            if marker not in helper_code:
+                errors.append('Preuve HMAC incomplète: ' + marker)
 
     return errors
 
@@ -87,11 +120,12 @@ async function readLimitedJson(req){
  return {body:{}};
 }
 function sessionIdFromVerifiedRequest(req){return req}
-function trustedGeo(req){
- if (Deno.env.get('SINJIRA_TRUST_GEO_HEADERS') !== 'true') return {country:null,region:null};
- const country=req.headers.get('cf-ipcountry');
- const region=req.headers.get('x-sinjira-region');
- return {country,region};
+import { verifiedCoarseGeo } from '../_shared/verified-geo.mjs';
+async function trustedGeo(req, sessionId){
+ return verifiedCoarseGeo(req, sessionId, {
+  enabled: Deno.env.get('SINJIRA_TRUST_GEO_HEADERS') === 'true',
+  secret: Deno.env.get('SINJIRA_GEO_PROXY_HMAC_SECRET') || ''
+ });
 }
 Deno.serve(async (req) => {
  if (req.method !== 'POST') return privateJson({},405);
@@ -100,7 +134,7 @@ Deno.serve(async (req) => {
  const parsed = await readLimitedJson(req);
  if (parsed.response) return parsed.response;
  if (!parsed.body) return privateJson({},400);
- const geo=trustedGeo(req);
+ const geo = await trustedGeo(req, sessionId);
  const service=serviceClient();
  const {data}=await service.rpc('service_security_evaluate_context_session',{p_session_id: sessionId});
  if(!data)return privateJson({},500);
@@ -113,6 +147,7 @@ Deno.serve(async (req) => {
 });
 privateJson({});
 privateJson({});
+console.error('[security-context]', { code: 'SECURITY_CONTEXT_FAILED' });
 """
         path.write_text(safe, encoding='utf-8')
         clean = validate(path)
@@ -134,16 +169,39 @@ privateJson({});
         if not any('4096 octets' in item for item in body_size):
             raise AssertionError('Une limite de corps affaiblie doit être bloquée.')
 
-        path.write_text(safe.replace("const country=req.headers.get('cf-ipcountry');", "const country=req.headers.get('cf-connecting-ip');"), encoding='utf-8')
+        path.write_text(safe.replace("const geo = await trustedGeo(req, sessionId);", "const geo = req.headers.get('cf-connecting-ip');"), encoding='utf-8')
         raw_ip = validate(path)
         if not any('IP brute' in item for item in raw_ip):
             raise AssertionError('La lecture d’une IP brute doit être bloquée.')
+
+        path.write_text(safe.replace("const geo = await trustedGeo(req, sessionId);",
+                                     "const geo = req.headers.get('cf-ipcountry');"), encoding='utf-8')
+        forged = validate(path)
+        if not any('en-tête brut' in item for item in forged):
+            raise AssertionError('La confiance dans une localisation sans HMAC doit être bloquée.')
+
+        path.write_text(safe.replace("verifiedCoarseGeo(req, sessionId,",
+                                     "unverifiedGeo(req, sessionId,"), encoding='utf-8')
+        bypass = validate(path)
+        if not any('vérification du proxy' in item for item in bypass):
+            raise AssertionError('La suppression du contrôle HMAC doit être bloquée.')
 
         path.write_text(safe.replace('const user = await requiredUser(req);\n const sessionId', 'const parsed = await readLimitedJson(req);\n const user = await requiredUser(req);\n const sessionId').replace(' const parsed = await readLimitedJson(req);\n if (parsed.response)', ' if (parsed.response)'), encoding='utf-8')
         auth_order = validate(path)
         if not any('avant la validation' in item for item in auth_order):
             raise AssertionError('La lecture du corps avant le JWT doit être bloquée.')
 
+
+        safe_log = "console.error('[security-context]', { code: 'SECURITY_CONTEXT_FAILED' });"
+        for unsafe_log in (
+            "console.error('[security-context]', error);",
+            "console.warn('[security-context]', err.message);",
+            "console.log('[security-context]', exception.stack);",
+        ):
+            path.write_text(safe.replace(safe_log, unsafe_log), encoding='utf-8')
+            diagnostics = validate(path)
+            if not any('exception ou diagnostic fournisseur brut' in item for item in diagnostics):
+                raise AssertionError('Un journal d’exception brute doit être refusé: ' + unsafe_log)
 
 def main() -> int:
     parser = argparse.ArgumentParser(description='Valide les bornes HTTP et la confidentialité de security-context.')
@@ -160,7 +218,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK security-context: JWT avant corps, JSON 4 KiB, réponses no-store et aucune IP brute/GPS.')
+    print('OK security-context: JWT avant corps, JSON 4 KiB, no-store, HMAC proxy et journaux sans exception brute.')
     return 0
 
 

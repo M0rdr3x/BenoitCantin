@@ -1,0 +1,8 @@
+{
+  "name": "sinjira-netlify-cli-toolchain",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "netlify-cli": "27.19.0"
+  }
+}

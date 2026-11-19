@@ -46,8 +46,8 @@ async function load(){
   });
 }
 
-load().catch(error=>{
-  console.error('[SINJIRA moderation appeals]',error);
+load().catch(()=>{
+  console.warn('[SINJIRA moderation appeals unavailable]');
   if(list)list.innerHTML='<div class="v24-empty">Impossible de charger les décisions de modération.</div>';
   setStatus(status,'Centre des appels temporairement indisponible.','error');
 });

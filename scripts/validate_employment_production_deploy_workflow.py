@@ -64,9 +64,9 @@ def main() -> int:
         'EXPECTED_EMPLOYMENT_NAME: sinjira_v25_employment_foundation',
         'ref: main',
         'persist-credentials: false',
-        "curl --proto '=https' --fail-with-body --silent --show-error --request GET",
+        "curl -q --proto '=https' --fail-with-body --silent --show-error --request GET",
         f'--url "{PRODUCTION_URL}"',
-        'Authorization: Bearer $SUPABASE_ACCESS_TOKEN',
+        '--header @-',
         "Vérifier l'historique Emploi sans secret",
         'MIGRATION_HISTORY="$RUNNER_TEMP/employment-production-migrations.json"',
         'if observed != employment:',
@@ -103,7 +103,7 @@ def main() -> int:
         require(marker not in active, f'la vérification Emploi doit rester en lecture seule: {marker}')
 
     require(active.count(PRODUCTION_URL) == 1, 'Une seule URL production Supabase littérale est autorisée.')
-    require(len(re.findall(r'(?m)^\s*curl\b', active)) == 1, 'Le workflow Emploi doit effectuer un seul appel curl distant.')
+    require(len(re.findall(r'(?m)\bcurl\s+-q\b', active)) == 1, 'Le workflow Emploi doit effectuer un seul appel curl distant.')
 
     secret_lines = [line for line in workflow.splitlines() if '${{ secrets.' in line]
     require(

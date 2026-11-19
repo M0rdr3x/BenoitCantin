@@ -26,19 +26,31 @@ concurrency:
 jobs:
   staging:
     name: Déployer preview + production-candidate sans promotion
-    if: startsWith(github.ref, 'refs/heads/a1/web-release-')
+    if: github.ref == 'refs/heads/a1/web-release-transparency'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    # La validation de staging et ses secrets doivent être soumis aux
+    # protections d'environnement configurées dans GitHub Settings.
+    environment: netlify-staging
     env:
-      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
       EXPECTED_SHA: ${{ inputs.expected_sha }}
       EXPECTED_SITE_NAME: ${{ inputs.expected_site_name }}
       CONFIRMATION: ${{ inputs.confirmation }}
       NPM_CONFIG_AUDIT: 'false'
       NPM_CONFIG_FUND: 'false'
+      NETLIFY_CLI_TELEMETRY_DISABLED: '1'
       SINJIRA_RELEASE_SHA: ${{ github.sha }}
     steps:
+      - name: Refuser tout staging depuis une branche non protégée
+        # Ce contrôle s'exécute avant checkout et avant accès à un secret.
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_REF_PROTECTED:-false}" != "true" ]; then
+            echo "ERREUR: branche de release non protégée par GitHub; activer Branch protection/Ruleset avant staging." >&2
+            exit 1
+          fi
+
       - name: Récupérer le dépôt sans credentials persistés
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
@@ -54,7 +66,53 @@ jobs:
         with:
           node-version: '22.23.2'
 
+      - name: Installer Netlify CLI sans identifiants
+        # L'installation npm (et ses dépendances transitives) est toujours
+        # exécutée AVANT l'injection de NETLIFY_AUTH_TOKEN / NETLIFY_SITE_ID.
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_netlify_cli_lock.py
+          cli_root="$RUNNER_TEMP/netlify-cli-27.19.0"
+          mkdir -p "$cli_root"
+          cp "$GITHUB_WORKSPACE/tools/netlify-cli/package.json" "$cli_root/package.json"
+          cp "$GITHUB_WORKSPACE/tools/netlify-cli/package-lock.json" "$cli_root/package-lock.json"
+          cd "$cli_root"
+          : > "$cli_root/npm-user.conf"
+          : > "$cli_root/npm-global.conf"
+          npm ci --ignore-scripts --no-audit --no-fund \
+            --userconfig="$cli_root/npm-user.conf" --globalconfig="$cli_root/npm-global.conf" \
+            --registry=https://registry.npmjs.org/
+          test -x "$cli_root/node_modules/.bin/netlify"
+          node - "$cli_root/node_modules/netlify-cli/package.json" <<'NODE'
+          const fs = require('node:fs');
+          const manifest = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          if (manifest.name !== 'netlify-cli' || manifest.version !== '27.19.0') {
+            throw new Error('Version Netlify CLI inattendue: refus du déploiement');
+          }
+          NODE
+          "$cli_root/node_modules/.bin/netlify" --version
+
+      - name: Refuser les vulnérabilités graves Netlify avant tout secret
+        # Audit réseau autorisé uniquement dans cette étape sans credentials.
+        shell: bash
+        run: |
+          set -euo pipefail
+          cli_root="$RUNNER_TEMP/netlify-cli-27.19.0"
+          cd "$cli_root"
+          audit_status=0
+          npm audit --json --omit=dev \
+            --userconfig="$cli_root/npm-user.conf" \
+            --globalconfig="$cli_root/npm-global.conf" \
+            --registry=https://registry.npmjs.org/ \
+            > "$cli_root/netlify-audit.json" || audit_status=$?
+          python3 "$GITHUB_WORKSPACE/scripts/validate_netlify_cli_audit.py" \
+            "$cli_root/netlify-audit.json" --exit-status "$audit_status"
+
       - name: Verrouiller ref, SHA, site et secrets
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         shell: bash
         run: |
           set -euo pipefail
@@ -91,13 +149,17 @@ jobs:
         run: python3 scripts/build_netlify_public.py --output _preview_site --standalone-netlify
 
       - name: Déployer le preview staging sans promotion
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NPM_CONFIG_OFFLINE: 'true'
         id: preview_deploy
         shell: bash
         run: |
           set -euo pipefail
           json="$(mktemp)"
           trap 'rm -f "$json"' EXIT
-          npx --yes netlify-cli@27.10.2 deploy             --auth "$NETLIFY_AUTH_TOKEN"             --site "$NETLIFY_SITE_ID"             --dir _preview_site             --no-build             --json             --message "SINJIRA staging preview $GITHUB_SHA" > "$json"
+          "$RUNNER_TEMP/netlify-cli-27.19.0/node_modules/.bin/netlify" deploy             --dir _preview_site             --no-build             --json             --message "SINJIRA staging preview $GITHUB_SHA" > "$json"
           python3 - "$json" "$EXPECTED_SITE_NAME" <<'PY'
           import json, os, re, sys
           from urllib.parse import urlparse
@@ -139,13 +201,17 @@ jobs:
         run: python3 scripts/build_netlify_public.py --output _site --standalone-netlify
 
       - name: Déployer le production-candidate sans promotion
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NPM_CONFIG_OFFLINE: 'true'
         id: production_deploy
         shell: bash
         run: |
           set -euo pipefail
           json="$(mktemp)"
           trap 'rm -f "$json"' EXIT
-          npx --yes netlify-cli@27.10.2 deploy             --auth "$NETLIFY_AUTH_TOKEN"             --site "$NETLIFY_SITE_ID"             --dir _site             --no-build             --json             --message "SINJIRA staging production-candidate $GITHUB_SHA" > "$json"
+          "$RUNNER_TEMP/netlify-cli-27.19.0/node_modules/.bin/netlify" deploy             --dir _site             --no-build             --json             --message "SINJIRA staging production-candidate $GITHUB_SHA" > "$json"
           python3 - "$json" "$EXPECTED_SITE_NAME" <<'PY'
           import json, os, re, sys
           from urllib.parse import urlparse

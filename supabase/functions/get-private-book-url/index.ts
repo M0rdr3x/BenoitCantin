@@ -1,5 +1,6 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredUser, serviceClient } from '../_shared/auth.ts';
+import { privateBookLocationValid, isVerifiedPrivateBucket } from '../_shared/private-book-storage-guard.mjs';
 
 const PRODUCT_SLUG='sinjira-livre-01-la-cendre-du-jugement';
 const SIGNED_URL_SECONDS=300;
@@ -21,7 +22,7 @@ function privateStorageConfig(){
   const bucket=(Deno.env.get('SINJIRA_LIVRE_I_PRIVATE_BUCKET')||'').trim();
   const storagePath=(Deno.env.get('SINJIRA_LIVRE_I_PRIVATE_PATH')||'').trim();
   if(!enabled)return {enabled:false,bucket:'',storagePath:''};
-  if(!bucket||!storagePath||storagePath.startsWith('/')||storagePath.includes('://')){
+  if(!privateBookLocationValid(bucket,storagePath)){
     throw new Error('PRIVATE_STORAGE_NOT_CONFIGURED');
   }
   return {enabled:true,bucket,storagePath};
@@ -64,6 +65,14 @@ Deno.serve(async(req)=>{
     }
     if(!entitlement){
       return privateJson({ok:false,error:'Votre compte ne possède pas ce livre.'},403);
+    }
+
+    // Une URL signée ne protège pas un objet déjà disponible dans un bucket PUBLIC.
+    // Vérification réelle via Storage après les droits du compte, avant signature.
+    const {data:bucketMetadata,error:bucketMetadataError}=await service.storage.getBucket(storage.bucket);
+    if(bucketMetadataError||!isVerifiedPrivateBucket(bucketMetadata,storage.bucket)){
+      console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_BUCKET_UNVERIFIED'});
+      return privateJson({ok:false,error:'Stockage privé indisponible.'},503);
     }
 
     const {data:signed,error:signedError}=await service.storage

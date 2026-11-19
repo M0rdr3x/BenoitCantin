@@ -1,5 +1,5 @@
 import {corsHeaders} from '../_shared/cors.ts';
-import {requiredUser,serviceClient} from '../_shared/auth.ts';
+import {requiredAdmin,requiredUser,serviceClient} from '../_shared/auth.ts';
 import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 
 const VERSION='24.4.49';
@@ -49,6 +49,9 @@ Deno.serve(async req=>{
     const parsed=await readLimitedJson(req);
     if(parsed.response)return parsed.response;
     const body=parsed.body||{};
+    // Le diagnostic retourne des informations sur les tables et RPC internes.
+    // Un JWT utilisateur ordinaire ne suffit pas : rôle admin et AAL2 exigés.
+    if(body?.action==='health')await requiredAdmin(req);
 
     const pepper=Deno.env.get('SINJIRA_LICENSE_PEPPER');
     if(!pepper)return privateJson({ok:false,error:'Service de licence indisponible.',code:'LICENSE_PEPPER_MISSING'},503);
@@ -77,6 +80,12 @@ Deno.serve(async req=>{
   }catch(e){
     console.error('[redeem-license-code]',{code:'LICENSE_UNEXPECTED_ERROR'});
     if(e?.message==='AUTH_REQUIRED')return privateJson({ok:false,error:'Connexion requise.'},401);
+    if(['ADMIN_REQUIRED','MFA_REQUIRED','MFA_SETUP_REQUIRED'].includes(e?.message)){
+      return privateJson({ok:false,error:'Diagnostic réservé à une administration vérifiée.',code:'ADMIN_ACCESS_REQUIRED'},403);
+    }
+    if(e?.message==='MFA_STATE_UNAVAILABLE'){
+      return privateJson({ok:false,error:'Vérification renforcée temporairement indisponible.',code:'MFA_STATE_UNAVAILABLE'},503);
+    }
     return privateJson({ok:false,error:'Activation impossible.',code:'LICENSE_UNEXPECTED_ERROR'},500);
   }
 });

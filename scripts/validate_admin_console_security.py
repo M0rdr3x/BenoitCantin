@@ -108,8 +108,12 @@ def self_test() -> None:
         'no-store retiré': real.replace("'Cache-Control':'private, no-store, max-age=0',", '', 1),
         'log backend brut': real.replace("console.error('[admin-console]',adminConsoleLogCode(e));", "console.error('[admin-console]',e);", 1),
         'état précédent retiré': real.replace('const previousReview={status:row.status,reviewed_by:row.reviewed_by??null,reviewed_at:row.reviewed_at??null};', '', 1),
-        'erreur octroi ignorée': real.replace("const {error:grantError}=await service.from('project_access').upsert", "await service.from('project_access').upsert", 1),
-        'contrôle octroi retiré': real.replace('if(grantError){', 'if(false){', 1),
+        'erreur octroi ignorée': real.replace(
+            "if(state==='approved'){\n        const {error:grantError}=await service.from('project_access').upsert",
+            "if(state==='approved'){\n        await service.from('project_access').upsert", 1),
+        'contrôle octroi retiré': real.replace(
+            "if(grantError){\n          const {error:rollbackError}=await service.from('playtest_participants').update(previousReview)",
+            "if(false){\n          const {error:rollbackError}=await service.from('playtest_participants').update(previousReview)", 1),
         'rollback retiré': real.replace("const {error:rollbackError}=await service.from('playtest_participants').update(previousReview)", "const rollbackError=null; await service.from('playtest_participants').update({})", 1),
         'contrôle rollback retiré': real.replace("if(rollbackError)throw new Error('PLAYTEST_REVIEW_ROLLBACK_FAILED');", '', 1),
         'erreur octroi masquée': real.replace("throw new Error('PLAYTEST_ACCESS_GRANT_FAILED');", 'return privateJson({ok:true});', 1),

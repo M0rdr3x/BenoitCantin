@@ -1,4 +1,5 @@
 import {getSupabase,requireCommunityUser,escapeHtml,formatDate,reportContent,socialStatus,socialErrorStatus} from './sinjira-social-common.js?v=24.4.42';
+import {safeCharacterPortraitPath} from './sinjira-character-portrait-url.mjs';
 import {unreadCounts,markConversationRead} from './sinjira-message-read-state.js?v=24.4.71';
 
 const UI_VERSION='24.4.71';
@@ -13,8 +14,7 @@ const shell=document.querySelector('.v20-message-shell');
 let user,me,all=[],peer=null,channel=null,unreadByCharacter=new Map();
 
 function portrait(profile={}){
-  const path=String(profile.portrait_path||'').trim();
-  return path.startsWith('/')?path:'/assets/media/sinjira-emblem.webp';
+  return safeCharacterPortraitPath(profile.portrait_path)||'/assets/media/sinjira-emblem.webp';
 }
 
 function fail(error,fallback='Action impossible dans la messagerie personnage.'){

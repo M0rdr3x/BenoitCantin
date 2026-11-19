@@ -9,6 +9,7 @@ import re
 import shutil
 import tempfile
 import tomllib
+import unicodedata
 from pathlib import Path
 from urllib.parse import urlparse
 import xml.etree.ElementTree as ET
@@ -415,6 +416,46 @@ NOVA_PRIVATE_DATA_KEYS = frozenset({
     "ballot", "vote", "votes", "choice", "choix", "reponses",
     "responses", "raw_responses",
 })
+# Les documents de données publiques peuvent provenir d'exports manipulés
+# par d'autres applications. Comparer aussi les alias camelCase/kebab-case :
+# userId, user-id et user_id doivent TOUS être traités comme « user_id ».
+# Les clés non ASCII sont refusées dans ce format d'échange contrôlé afin
+# qu'un caractère confusable ne puisse pas masquer un champ individuel.
+NOVA_PRIVATE_DATA_KEY_ALIASES = frozenset({
+    "email_address", "contact_email", "user_email", "mail_address",
+    "phone_number", "telephone_number", "mobile_phone", "contact_phone",
+    "client_ip", "remote_ip", "ip_address", "user_ip",
+    "user_uuid", "account_id", "device_id", "device_fingerprint",
+    "voter_uuid", "respondent_uuid", "participant_uuid",
+    "ballot_id", "ballot_token", "ballot_choices", "ballot_answers",
+    "raw_ballots", "raw_votes", "vote_choices", "voter_choices",
+    "survey_answers", "survey_responses", "questionnaire_answers",
+    "questionnaire_responses", "individual_responses", "personal_answers",
+    "oauth_token", "login_token", "session_token", "bearer_token",
+    "api_key", "secret_key", "password_hash", "mfa_secret",
+    "totp_secret", "recovery_code", "recovery_codes",
+    "birth_date", "date_naissance", "date_de_naissance", "dob",
+    "home_address", "postal_address", "precise_location",
+    "credit_card_number", "payment_token", "social_insurance_number",
+    "national_id", "passport_number", "first_name", "last_name",
+    "full_name",
+})
+
+
+def canonical_public_data_key(key: str) -> str:
+    """Supprimer les séparateurs et accents pour comparaison de confidentialité."""
+    decomposed = unicodedata.normalize("NFKD", key)
+    without_marks = "".join(
+        char for char in decomposed if not unicodedata.combining(char)
+    )
+    return re.sub(r"[^a-z0-9]", "", without_marks.casefold())
+
+
+NOVA_PRIVATE_DATA_KEY_CANONICAL = frozenset(
+    canonical_public_data_key(key)
+    for key in NOVA_PRIVATE_DATA_KEYS | NOVA_PRIVATE_DATA_KEY_ALIASES
+)
+
 NOVA_PUBLIC_JSON_MAX_BYTES = 1_500_000
 NOVA_PUBLIC_JSON_MAX_NODES = 50_000
 NOVA_PUBLIC_JSON_MAX_DEPTH = 32
@@ -436,7 +477,9 @@ def public_data_payload_violations(data: object) -> list[str]:
                 if not isinstance(key, str):
                     errors.append("clé de données publiques non textuelle")
                     continue
-                if key.casefold() in NOVA_PRIVATE_DATA_KEYS:
+                if not key.isascii():
+                    errors.append("clé de donnée publique non ASCII, audit requis")
+                if canonical_public_data_key(key) in NOVA_PRIVATE_DATA_KEY_CANONICAL:
                     errors.append("clé de donnée individuelle interdite")
                 stack.append((value, depth + 1))
         elif isinstance(node, list):
@@ -747,12 +790,21 @@ def validate_netlify_staging_workflow() -> list[str]:
         "confirmation:",
         "STAGING_ONLY",
         "permissions:\n  contents: read",
-        "startsWith(github.ref, 'refs/heads/a1/web-release-')",
+        "github.ref == 'refs/heads/a1/web-release-transparency'",
+        "    environment: netlify-staging",
+        'if [ "${GITHUB_REF_PROTECTED:-false}" != "true" ]; then',
+        "Refuser tout staging depuis une branche non protégée",
+        "Installer Netlify CLI sans identifiants",
+        "python3 scripts/validate_netlify_cli_lock.py",
+        'cp "$GITHUB_WORKSPACE/tools/netlify-cli/package.json" "$cli_root/package.json"',
+        'cp "$GITHUB_WORKSPACE/tools/netlify-cli/package-lock.json" "$cli_root/package-lock.json"',
+        "npm ci --ignore-scripts --no-audit --no-fund",
+        '--userconfig="$cli_root/npm-user.conf" --globalconfig="$cli_root/npm-global.conf"',
+        "--registry=https://registry.npmjs.org/",
+        "NPM_CONFIG_OFFLINE: 'true'",
         "secrets.NETLIFY_AUTH_TOKEN",
         "secrets.NETLIFY_SITE_ID",
-        "netlify-cli@27.10.2 deploy",
-        "--auth \"$NETLIFY_AUTH_TOKEN\"",
-        "--site \"$NETLIFY_SITE_ID\"",
+        '"$RUNNER_TEMP/netlify-cli-27.19.0/node_modules/.bin/netlify" deploy',
         "--dir _preview_site",
         "--dir _site",
         "--no-build",
@@ -775,12 +827,17 @@ def validate_netlify_staging_workflow() -> list[str]:
         "--prod-if-unlocked",
         "netlify deploy --prod",
         "github.ref == 'refs/heads/main'",
+        "startsWith(github.ref, 'refs/heads/a1/web-release-')",
+        "npx --yes netlify-cli@",
+        "npm install --no-save",
+        '--auth "$NETLIFY_AUTH_TOKEN"',
+        '--site "$NETLIFY_SITE_ID"',
     )
     for marker in forbidden_markers:
         if marker in text:
             errors.append(f"Workflow staging Netlify: comportement interdit détecté: {marker.strip()}")
 
-    deploy_count = text.count("netlify-cli@27.10.2 deploy")
+    deploy_count = text.count('"$RUNNER_TEMP/netlify-cli-27.19.0/node_modules/.bin/netlify" deploy')
     if deploy_count != 2:
         errors.append(
             f"Workflow staging Netlify: exactement 2 deploys brouillon requis, observé={deploy_count}."
@@ -1012,14 +1069,32 @@ def output_location_error(output: Path) -> str | None:
     if original.is_symlink():
         return f"Sortie symbolique refusée: {original}"
     resolved = original.resolve()
-    if resolved == ROOT or (
-        ROOT in resolved.parents
-        and (resolved.parent != ROOT or resolved.name not in SAFE_CHECKOUT_OUTPUT_DIRS)
+    # rmtree() supprime recursivement la sortie : interdire egalement les
+    # ancetres du depot et les dossiers racines du systeme utilisateur.
+    # Sans cette protection, --output .. ou /home/runner pourrait effacer
+    # le checkout et d'autres donnees hors des dossiers de publication.
+    if (
+        resolved == ROOT
+        or resolved in ROOT.parents
+        or resolved in {Path.home(), Path.home().parent}
+        or (
+            ROOT in resolved.parents
+            and (resolved.parent != ROOT or resolved.name not in SAFE_CHECKOUT_OUTPUT_DIRS)
+        )
     ):
         return (
             f"Sortie située dans les sources Git interdite: {resolved}; "
             "seuls les quatre dossiers de build publics dédiés sont admis "
             "directement à la racine du dépôt."
+        )
+    # Hors du checkout, n'autoriser que des sous-dossiers du repertoire
+    # temporaire systeme. Un argument --output /etc, /usr ou ~/Documents
+    # ne doit jamais pouvoir entrainer un shutil.rmtree() destructeur.
+    temp_root = Path(tempfile.gettempdir()).resolve()
+    if ROOT not in resolved.parents and temp_root not in resolved.parents:
+        return (
+            f"Sortie externe non temporaire interdite: {resolved}; "
+            "utiliser un dossier temporaire ou une sortie CI autorisee."
         )
     return None
 
@@ -1144,6 +1219,15 @@ def self_test_public_filesystem_boundary() -> list[str]:
 
     forbidden_outputs = (
         ROOT,
+        ROOT.parent,
+        ROOT.parent.parent,
+        ROOT.parent.parent.parent,
+        Path.home(),
+        Path.home().parent,
+        Path.home() / "Documents" / "site",
+        Path("/"),
+        Path("/etc") / "site",
+        Path("/usr") / "local" / "site",
         ROOT / "assets",
         ROOT / "assets" / "danger",
         ROOT / "scripts",

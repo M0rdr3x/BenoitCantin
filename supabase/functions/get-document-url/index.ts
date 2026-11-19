@@ -1,12 +1,13 @@
 import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import { corsHeaders } from '../_shared/cors.ts';
 import { optionalUser, serviceClient } from '../_shared/auth.ts';
+import { privateDocumentLocationValid, isVerifiedPrivateDocumentBucket } from '../_shared/private-document-storage.mjs';
 
 const MAX_REQUEST_BYTES=512;
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ranks:Record<string,number>={public:1,account:10,player:20,tester:30,admin:100};
-// Les propriétés héritées de Object.prototype ne sont pas des niveaux d'accès.
-// Même un rang RPC inattendu (NaN/Infinity) ne doit jamais autoriser de lien.
+// Autoriser uniquement les niveaux déclarés : les propriétés héritées
+// (constructor, __proto__, toString...) ne représentent JAMAIS un droit.
 function documentAccessAllowed(accessLevel:unknown,userRank:number){
   return typeof accessLevel==='string'
     && Object.prototype.hasOwnProperty.call(ranks,accessLevel)
@@ -36,20 +37,30 @@ function externalUrlAllowed(value:string){
     if(relative&&value.startsWith('//'))return false;
     const parsed=relative?new URL(value,DOCUMENT_URL_BASE):new URL(value);
     if(parsed.protocol!=='https:'||parsed.username||parsed.password)return false;
-    if(relative&&parsed.origin!==DOCUMENT_URL_BASE)return false;
+    // Un document du catalogue ne doit jamais devenir un renvoi vers un tiers.
+    // Les URL relatives et absolues doivent viser l'origine officielle exacte.
+    if(parsed.origin!==DOCUMENT_URL_BASE)return false;
     return true;
   }catch{return false}
 }
 
 async function readLimitedJson(req:Request):Promise<{body?:any;response?:Response}>{
-  const contentType=(req.headers.get('content-type')||'').toLowerCase();
-  if(!contentType.startsWith('application/json')){
+  // Refuser application/jsonp, application/json-malicious, etc. Le suffixe
+  // charset est autorisé, mais le type MIME doit être exactement JSON.
+  const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
+  if(contentType!=='application/json'){
     return {response:privateJson({ok:false,error:'Type de contenu non autorisé.'},415)};
   }
   const limited=await readLimitedUtf8Body(req,MAX_REQUEST_BYTES);
   if(!limited.ok)return {response:privateJson({ok:false,error:'Requête trop volumineuse ou invalide.'},413)};
   const raw=limited.raw;
-  try{return {body:JSON.parse(raw||'{}')}}catch{return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)}}
+  try{
+    const body=JSON.parse(raw||'{}');
+    if(!body||typeof body!=='object'||Array.isArray(body)){
+      return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)};
+    }
+    return {body};
+  }catch{return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)}}
 }
 
 Deno.serve(async(req)=>{
@@ -86,11 +97,27 @@ Deno.serve(async(req)=>{
     }
 
     if(doc.external_url){
+      // Une URL statique sur le site est accessible sans passer par cette
+      // fonction. Elle ne peut donc jamais constituer un document privé.
+      // Les documents non publics doivent utiliser uniquement un bucket
+      // Supabase PRIVE et une URL signee apres controle des droits.
+      if(doc.access_level!=='public'||doc.projects?.visibility!=='public'){
+        return privateJson({ok:false,error:'Document privé non disponible par lien public.'},503);
+      }
       const url=String(doc.external_url).trim();
       if(!externalUrlAllowed(url))return privateJson({ok:false,error:'URL de document non autorisée.'},500);
       return privateJson({ok:true,url,protected:false,expires_in:null});
     }
-    if(!doc.storage_bucket||!doc.storage_path)return privateJson({ok:false,error:'Fichier non configuré.'},500);
+    // Une URL signée ne protège pas les objets d'un bucket Storage public.
+    // Après la décision d'accès, refuser toute configuration ambiguë ou publique.
+    if(!privateDocumentLocationValid(doc.storage_bucket,doc.storage_path)){
+      return privateJson({ok:false,error:'Stockage privé indisponible.'},503);
+    }
+    const {data:bucketMetadata,error:bucketMetadataError}=await service.storage.getBucket(doc.storage_bucket);
+    if(bucketMetadataError||!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket)){
+      console.error('[get-document-url]',{code:'DOCUMENT_PRIVATE_BUCKET_UNVERIFIED'});
+      return privateJson({ok:false,error:'Stockage privé indisponible.'},503);
+    }
 
     const {data:signed,error:signedError}=await service.storage.from(doc.storage_bucket).createSignedUrl(doc.storage_path,600);
     if(signedError||!signed?.signedUrl)return privateJson({ok:false,error:'Impossible de créer le lien sécurisé.'},500);
