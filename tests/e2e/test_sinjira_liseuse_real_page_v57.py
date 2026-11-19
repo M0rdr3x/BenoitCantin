@@ -1192,6 +1192,50 @@ def run(playwright, browser_type, url):
         },("V158 : stylet PointerEvent seul doit reculer une fois",
            pointer_pen)
 
+        # V161 : PointerEvent tactile/stylet peut partir du fond du lecteur
+        # PDF (gouttière non couverte par le canvas). Le navigateur doit
+        # continuer à ignorer la souris en marge, sans inventer de TouchEvent.
+        def pointer_pdf_gutter(direction,kind):
+            return page.evaluate("""({direction,kind})=>{
+              const viewer=document.querySelector('#reader-viewer');
+              const box=viewer.getBoundingClientRect();
+              const x1=direction==='next'?.78:.22;
+              const x2=direction==='next'?.22:.78;
+              const y=box.top+Math.min(70,Math.max(25,box.height*.2));
+              const dispatch=(name,x,buttons)=>{
+                const evt=new PointerEvent(name,{
+                  bubbles:true,cancelable:true,pointerType:kind,
+                  pointerId:161,isPrimary:true,button:0,buttons,
+                  clientX:box.left+x*box.width,clientY:y
+                });
+                viewer.dispatchEvent(evt);
+                return evt.defaultPrevented;
+              };
+              dispatch('pointerdown',x1,1);
+              dispatch('pointermove',x2,1);
+              const blocked=dispatch('pointerup',x2,0);
+              return {page:document.querySelector('#reader-page').value,
+                blocked,clicks:{...window.__v98Clicks}};
+            }""",{"direction":direction,"kind":kind})
+
+        gutter_touch=pointer_pdf_gutter('next','touch')
+        page.wait_for_function("""()=>document.querySelector('#reader-page').value==='5'""")
+        assert gutter_touch=={
+            "page":"5","blocked":True,
+            "clicks":{"next":5,"previous":4}
+        },("V161: doigt sur gouttière PDF = une seule page suivante",gutter_touch)
+        gutter_pen=pointer_pdf_gutter('previous','pen')
+        page.wait_for_function("""()=>document.querySelector('#reader-page').value==='4'""")
+        assert gutter_pen=={
+            "page":"4","blocked":True,
+            "clicks":{"next":5,"previous":5}
+        },("V161: stylet sur gouttière PDF = une seule page précédente",gutter_pen)
+        gutter_mouse=pointer_pdf_gutter('next','mouse')
+        assert gutter_mouse=={
+            "page":"4","blocked":False,
+            "clicks":{"next":5,"previous":5}
+        },("V161: souris sur fond non-canvas n'intercepte pas la page",gutter_mouse)
+
         # V154 : un clavier physique tenu enfoncé ne doit pas faire sauter
         # plusieurs pages du livre. Vérifier aussi les raccourcis PDF V26.
         repeated_keyboard=page.evaluate("""()=>{
