@@ -75,7 +75,7 @@ def validate():
                   "select('last_page,scroll_ratio,updated_at,revision')",
                   'serverRatio=progress?.scroll_ratio??null',
                   'persist({syncCloud:true})',
-                  "safeLocalSet(key+':pending',at)", "select('updated_at')",
+                  "safeLocalSet(key+':pending',at)", "select('revision')",
                   "window.addEventListener('online'", "safeLocalRemove(key+':pending')"]:
         if token not in main:
             errors.append('Synchronisation intrapage V32 manquante: '+token)
