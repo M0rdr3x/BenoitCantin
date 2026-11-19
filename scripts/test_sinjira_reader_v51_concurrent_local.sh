@@ -183,7 +183,7 @@ revoke_during_save() {
     -h "$HOST" -U postgres -d "$DB" >"$out" 2>"$err" <<SQL &
 BEGIN;
 $statement
-\\echo V51.3-$label-LOCK-HELD
+\echo V51.3-$label-LOCK-HELD
 SELECT pg_sleep(3);
 COMMIT;
 SQL
