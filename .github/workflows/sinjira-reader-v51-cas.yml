@@ -6,6 +6,8 @@ on:
     paths:
       - 'supabase/review-candidates/20261110011500_sinjira_reader_progress_revision_cas_v51.sql'
       - 'assets/js/sinjira-liseuse-v26.js'
+      - 'assets/js/sinjira-liseuse-position-v31.mjs'
+      - 'tests/sinjira-reader-cas-retry-v51.test.mjs'
       - 'assets/js/sinjira-reader-progress-v24-4-61.js'
       - 'tests/security/sql/test_sinjira_reader_v51_cas.sql'
       - 'scripts/test_sinjira_reader_v51_concurrent_local.sh'
@@ -17,6 +19,8 @@ on:
     paths:
       - 'supabase/review-candidates/20261110011500_sinjira_reader_progress_revision_cas_v51.sql'
       - 'assets/js/sinjira-liseuse-v26.js'
+      - 'assets/js/sinjira-liseuse-position-v31.mjs'
+      - 'tests/sinjira-reader-cas-retry-v51.test.mjs'
       - 'assets/js/sinjira-reader-progress-v24-4-61.js'
       - 'tests/security/sql/test_sinjira_reader_v51_cas.sql'
       - 'scripts/test_sinjira_reader_v51_concurrent_local.sh'
@@ -58,6 +62,7 @@ jobs:
         run: |
           python3 -m unittest discover -s tests/security -p test_sinjira_reader_v51_cas_contract.py -v
           node --input-type=module --check < assets/js/sinjira-liseuse-v26.js
+          node --test tests/sinjira-reader-cas-retry-v51.test.mjs
           node --input-type=module --check < assets/js/sinjira-reader-progress-v24-4-61.js
       - name: Installer les deux lignes fictives avec la V32 originale et A B A
         env:
