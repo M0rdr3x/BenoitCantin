@@ -810,6 +810,11 @@ test('V161 : ni souris en marge ni enfant interactif ne volent la navigation PDF
     pointer('pointerdown',260,f.viewer);
     f.advance(180);pointer('pointerup',95,f.viewer);
     assert.equal(f.next.clicks,0,'la sélection du roman reste intacte');
+    f.setSelected('');
+    f.canvas.hidden=true;
+    pointer('pointerdown',260,f.viewer);
+    f.advance(180);pointer('pointerup',95,f.viewer);
+    assert.equal(f.next.clicks,0,'canvas PDF masqué : marges non interactives');
   }finally{f.release()}
 });
 
