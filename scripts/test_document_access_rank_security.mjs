@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import vm from 'node:vm';
 
-import { readLimitedUtf8Body } from '../supabase/functions/_shared/limited-body.mjs';
+import { readLimitedUtf8BodyWithDeadline } from '../supabase/functions/_shared/read-chunk-deadline.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const source = readFileSync(resolve(root, 'supabase/functions/get-document-url/index.ts'), 'utf8');
@@ -98,7 +98,7 @@ async function invoke({
   const runtime = {
     Request, Response, URL, Number, Object,
     console: { error() { throw new Error('Unexpected server logging'); } },
-    readLimitedUtf8Body,
+    readLimitedUtf8BodyWithDeadline,
     corsHeaders: {
       'Access-Control-Allow-Origin': 'https://www.benoitcantin.com',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
