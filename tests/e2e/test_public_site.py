@@ -961,6 +961,10 @@ def run() -> None:
 
             # Ergonomie du compte : la révélation reste volontaire, le type
             # password revient après Masquer, et aucun envoi n'est effectué.
+            page.wait_for_function(
+                "() => document.querySelectorAll('[data-password-visibility]').length === 2",
+                timeout=10_000,
+            )
             pwd_toggles = page.locator('[data-password-visibility]')
             assert_true(pwd_toggles.count() == 2, f"{BROWSER_NAME}: boutons afficher/masquer absents à l'inscription")
             pwd_toggles.first.click()
@@ -992,6 +996,10 @@ def run() -> None:
                 f"{BROWSER_NAME}: contrôles d'âge obligatoires masqués",
             )
             page.goto(urljoin(BASE_URL, "compte/connexion.html"), wait_until="domcontentloaded", timeout=30_000)
+            page.wait_for_function(
+                "() => document.querySelectorAll('[data-password-visibility]').length === 1",
+                timeout=10_000,
+            )
             login_toggle = page.locator('[data-password-visibility]')
             assert_true(login_toggle.count() == 1, f"{BROWSER_NAME}: visibilité du mot de passe de connexion absente")
             login_toggle.click()
