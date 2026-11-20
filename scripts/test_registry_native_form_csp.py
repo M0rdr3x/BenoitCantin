@@ -18,8 +18,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 from build_netlify_public import render_standalone_headers  # noqa: E402
 
-NETLIFY_PATH = "/projets/sinjira/registre/*"
-VERCEL_PATH = "/projets/sinjira/registre/(.*)"
+NETLIFY_PATHS = ("/projets/sinjira/registre", "/projets/sinjira/registre/*")
+VERCEL_PATHS = ("/projets/sinjira/registre", "/projets/sinjira/registre/(.*)")
 FORM_ACTION = "/projets/sinjira/registre/"
 
 
@@ -131,26 +131,33 @@ class RegistryNativeSubmissionSecurityTests(unittest.TestCase):
         self.assertEqual(markup_errors(self.html), [])
 
     def test_netlify_vercel_headers_match_and_deny_native_posts(self) -> None:
-        netlify = scoped_headers(self.netlify["headers"], "for", NETLIFY_PATH)
-        vercel = scoped_headers(self.vercel["headers"], "source", VERCEL_PATH)
-        self.assertEqual(netlify["Content-Security-Policy"], vercel["Content-Security-Policy"])
-        self.assertEqual(policy_errors(netlify["Content-Security-Policy"]), [])
-        for value in (netlify, vercel):
-            self.assertIn("no-store", value["Cache-Control"])
-            self.assertEqual(value["Referrer-Policy"], "no-referrer")
-            self.assertIn("noindex", value["X-Robots-Tag"])
+        active_policies = set()
+        for netlify_path, vercel_path in zip(NETLIFY_PATHS, VERCEL_PATHS):
+            with self.subTest(netlify=netlify_path, vercel=vercel_path):
+                netlify = scoped_headers(self.netlify["headers"], "for", netlify_path)
+                vercel = scoped_headers(self.vercel["headers"], "source", vercel_path)
+                self.assertEqual(netlify["Content-Security-Policy"], vercel["Content-Security-Policy"])
+                self.assertEqual(policy_errors(netlify["Content-Security-Policy"]), [])
+                active_policies.add(netlify["Content-Security-Policy"])
+                for value in (netlify, vercel):
+                    self.assertIn("no-store", value["Cache-Control"])
+                    self.assertEqual(value["Referrer-Policy"], "no-referrer")
+                    self.assertIn("noindex", value["X-Robots-Tag"])
+        self.assertEqual(len(active_policies), 1, "Pas de divergence CSP slash / sans slash")
 
     def test_standalone_netlify_artifact_emits_scoped_csp(self) -> None:
         generated = render_standalone_headers(deploy_context="production")
-        parts = generated.split("\n" + NETLIFY_PATH + "\n", 1)
-        self.assertEqual(len(parts), 2)
-        block = parts[1].split("\n\n", 1)[0]
-        self.assertIn("form-action 'none'", block)
-        self.assertIn("Content-Security-Policy:", block)
-        self.assertIn("Cache-Control: private, no-store", block)
+        for path in NETLIFY_PATHS:
+            with self.subTest(path=path):
+                parts = generated.split("\n" + path + "\n", 1)
+                self.assertEqual(len(parts), 2)
+                block = parts[1].split("\n\n", 1)[0]
+                self.assertIn("form-action 'none'", block)
+                self.assertIn("Content-Security-Policy:", block)
+                self.assertIn("Cache-Control: private, no-store", block)
 
     def test_adversarial_regressions_are_caught(self) -> None:
-        netlify = scoped_headers(self.netlify["headers"], "for", NETLIFY_PATH)
+        netlify = scoped_headers(self.netlify["headers"], "for", NETLIFY_PATHS[1])
         good_policy = netlify["Content-Security-Policy"]
         self.assertEqual(policy_errors(good_policy), [])
         for mutation in (
