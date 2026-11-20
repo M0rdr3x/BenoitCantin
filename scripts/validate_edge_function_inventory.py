@@ -35,7 +35,9 @@ CUSTOM_AUTH = {
     "get-document-url": (
         "optionalUser", "project_access_rank", "doc.status!=='approved'",
         "doc.projects?.status!=='active'", "createSignedUrl", "MAX_REQUEST_BYTES", "UUID_RE",
-        "externalUrlAllowed", "readLimitedUtf8Body", "Cache-Control", "no-store", "Referrer-Policy",
+        "externalUrlAllowed", "readLimitedUtf8BodyWithDeadline",
+        "MAX_REQUEST_READ_TIMEOUT_MS=4_000;", "timeout?408:413",
+        "Cache-Control", "no-store", "Referrer-Policy",
     ),
     "send-game-report": (
         "optionalUser", "!user?.email", "to: [user.email]", "MAX_REQUEST_BYTES", "readLimitedUtf8Body",
@@ -304,7 +306,15 @@ def main() -> int:
         entry = FUNCTIONS / slug / "index.ts"
         if entry.is_file():
             source = read_security_text(entry)
-            if "readLimitedUtf8Body" not in source or "limited-body.mjs" not in source:
+            if slug == "get-document-url":
+                # La route publique a migré vers le lecteur à délai ABSOLU.
+                # Refuser un retour à la lecture sans timeout.
+                expected_reader = "readLimitedUtf8BodyWithDeadline(req,MAX_REQUEST_BYTES,MAX_REQUEST_READ_TIMEOUT_MS)"
+                if (expected_reader not in source
+                        or "read-chunk-deadline.mjs" not in source
+                        or "MAX_REQUEST_READ_TIMEOUT_MS=4_000;" not in source):
+                    errors.append(f"{slug}: lecteur HTTP borné avec deadline absente.")
+            elif "readLimitedUtf8Body" not in source or "limited-body.mjs" not in source:
                 errors.append(f"{slug}: utilisation du lecteur HTTP partagé absente.")
             if "await req.text()" in source or "await req.json()" in source:
                 errors.append(f"{slug}: lecture directe d'un corps non borné interdite.")

@@ -71,8 +71,10 @@ def audit(source: str, config: str) -> list[str]:
 
     if any(x in source for x in ("await req.json()", "await req.text()")):
         errors.append("Lecture du corps HTTP non bornée interdite.")
-    if "readLimitedUtf8Body(req,MAX_REQUEST_BYTES)" not in source:
-        errors.append("Limite des requêtes serveur supprimée.")
+    if ("readLimitedUtf8BodyWithDeadline(req,MAX_REQUEST_BYTES,MAX_REQUEST_READ_TIMEOUT_MS)" not in source
+            or "MAX_REQUEST_READ_TIMEOUT_MS=4_000;" not in source
+            or "timeout?408:413" not in source):
+        errors.append("Limite de taille et délai absolu des requêtes serveur supprimés.")
     return errors
 
 
@@ -101,6 +103,11 @@ def self_test(source: str, config: str) -> None:
             ("createSignedUrl(doc.storage_path,600)", "createSignedUrl(doc.storage_path,3600)"),
         "cache privé retiré":
             ("'Cache-Control':'private, no-store, max-age=0'", "'Cache-Control':'public, max-age=3600'"),
+        "délai de lecture supprimé":
+            ("MAX_REQUEST_READ_TIMEOUT_MS=4_000;", "MAX_REQUEST_READ_TIMEOUT_MS=0;"),
+        "lecteur sans deadline réintroduit":
+            ("readLimitedUtf8BodyWithDeadline(req,MAX_REQUEST_BYTES,MAX_REQUEST_READ_TIMEOUT_MS)",
+             "readLimitedUtf8Body(req,MAX_REQUEST_BYTES)"),
         "ancien contrôle réintroduit":
             ("if(!documentAccessAllowed(doc.access_level,userRank))", "if(userRank<(ranks[doc.access_level]||999))"),
     }

@@ -137,7 +137,10 @@ def quarantine_unreviewed_edge_deploys(workspace: Path) -> tuple[str, ...]:
             # un deploy global ne doit jamais les remplacer implicitement.
             public_guards = {
                 'get-document-url': ('optionalUser(req)', 'project_access_rank',
-                                     'createSignedUrl', 'MAX_REQUEST_BYTES'),
+                                     'createSignedUrl', 'MAX_REQUEST_BYTES',
+                                     'MAX_REQUEST_READ_TIMEOUT_MS=4_000;',
+                                     "timeout?408:413",
+                                     r"/^application\/json(?:\s*;|$)/.test(contentType)"),
                 'send-game-report': ('optionalUser(req)',
                                      'PAID_EXTERNAL_SERVICES_ENABLED=false',
                                      'to: [user.email]', 'MAX_REQUEST_BYTES'),
@@ -147,8 +150,11 @@ def quarantine_unreviewed_edge_deploys(workspace: Path) -> tuple[str, ...]:
             }
             expected = public_guards[slug]
             # Vérifier l'APPEL du lecteur borné, non sa simple importation.
+            # La route documentaire possède en plus un délai absolu par requête.
+            reader = ('readLimitedUtf8BodyWithDeadline' if slug == 'get-document-url'
+                      else 'readLimitedUtf8Body')
             if (any(marker not in source for marker in expected)
-                    or not re.search(r'\bawait\s+readLimitedUtf8Body\s*\(', source)
+                    or not re.search(rf'\bawait\s+{reader}\s*\(', source)
                     or (slug == 'send-game-report' and not re.search(
                         r'\bawait\s+readLimitedBinaryResponse\s*\(', source))):
                 raise SystemExit(f'Contrat public {slug} modifié : revue obligatoire.')
