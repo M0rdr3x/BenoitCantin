@@ -1,0 +1,86 @@
+/* SINJIRA — ergonomie transversale V1, isolée des archives Nova.
+ * Le sélecteur explicite évite d'altérer les formulaires et les pages legacy.
+ * 20 novembre 2026 — clavier, petits écrans, menus et compte.
+ */
+body[data-sinjira-ux="v1"]{--ux-focus:#a1f4ec;--ux-tap:46px}
+body[data-sinjira-ux="v1"] :where(main,section,article,aside){min-width:0}
+body[data-sinjira-ux="v1"] :where(img,video,canvas){max-width:100%}
+body[data-sinjira-ux="v1"] :where(a,button,input,select,textarea,summary):focus-visible{
+  outline:3px solid var(--ux-focus);outline-offset:3px
+}
+body[data-sinjira-ux="v1"] :where(h1,h2,h3){overflow-wrap:break-word}
+body[data-sinjira-ux="v1"] :where(.btn,.nav-cta){min-height:var(--ux-tap)}
+body[data-sinjira-ux="v1"] :where(.main-nav a,.account-nav a,.account-nav button){min-height:var(--ux-tap);display:inline-flex;align-items:center}
+body[data-sinjira-ux="v1"] :where(.hero-actions,.account-quick-actions){row-gap:12px}
+body[data-sinjira-ux="v1"] :where(main [id],section[id]){scroll-margin-top:94px}
+body[data-sinjira-ux="v1"] .main-nav a[aria-current]{
+  color:#fff;background:rgba(145,248,238,.13);box-shadow:inset 0 0 0 1px rgba(145,248,238,.2)
+}
+body[data-sinjira-ux="v1"] .account-quick-access{
+  margin:20px 0 8px;padding:clamp(17px,2.8vw,26px);
+  background:linear-gradient(145deg,rgba(22,29,52,.95),rgba(8,12,26,.97));
+  border:1px solid rgba(145,248,238,.19);border-radius:20px
+}
+body[data-sinjira-ux="v1"] .account-quick-access h2{font-size:clamp(1.12rem,2vw,1.4rem);margin:0 0 5px;color:#fff}
+body[data-sinjira-ux="v1"] .account-quick-access p{margin:0 0 15px;color:var(--muted);font-size:.93rem}
+body[data-sinjira-ux="v1"] .account-quick-actions{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:10px
+}
+body[data-sinjira-ux="v1"] .account-quick-actions a{
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  min-height:52px;padding:11px 12px;border-radius:13px;
+  background:rgba(145,248,238,.07);border:1px solid rgba(145,248,238,.20);
+  text-decoration:none;color:#f7fbff;font-weight:750;line-height:1.32;
+  transition:background-color .17s ease,border-color .17s ease
+}
+body[data-sinjira-ux="v1"] .account-quick-actions a:is(:hover,:focus-visible){
+  background:rgba(145,248,238,.14);border-color:rgba(145,248,238,.55)
+}
+/* Une navigation complète sur tablette peut dépasser l'espace de la marque. */
+@media(max-width:1020px){
+  body[data-sinjira-ux="v1"] .nav-shell{min-height:70px;gap:12px}
+  body[data-sinjira-ux="v1"] .menu-toggle{
+    display:block;flex:0 0 48px;width:48px;height:48px;cursor:pointer
+  }
+  body[data-sinjira-ux="v1"] .main-nav{
+    display:none;position:absolute;top:calc(100% + 1px);
+    left:0;right:0;flex-direction:column;align-items:stretch;
+    gap:5px;padding:12px max(14px,env(safe-area-inset-right,0px))
+      calc(14px + env(safe-area-inset-bottom,0px))
+      max(14px,env(safe-area-inset-left,0px));
+    background:#0a1020;border-bottom:1px solid rgba(190,205,255,.24);
+    max-height:calc(100vh - 74px);max-height:calc(100dvh - 74px);
+    overflow-y:auto;overscroll-behavior:contain;box-shadow:0 22px 40px rgba(0,0,0,.35)
+  }
+  body[data-sinjira-ux="v1"] .main-nav.open{display:flex}
+  body[data-sinjira-ux="v1"] .main-nav a{
+    min-height:48px;padding:12px 16px;border-radius:12px
+  }
+  body[data-sinjira-ux="v1"] .account-nav-scroll{
+    overflow-x:auto!important;overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;scrollbar-width:thin;
+    scrollbar-color:rgba(145,248,238,.65) transparent;
+    scroll-padding-inline:16px;
+  }
+  body[data-sinjira-ux="v1"] .account-nav{
+    display:flex!important;flex-wrap:nowrap!important;
+    min-width:max-content!important;padding-bottom:8px
+  }
+  body[data-sinjira-ux="v1"] .account-nav a,
+  body[data-sinjira-ux="v1"] .account-nav button{
+    flex:0 0 auto;white-space:nowrap;scroll-snap-align:start
+  }
+}
+@media(max-width:600px){
+  body[data-sinjira-ux="v1"] .container{width:min(calc(100% - 28px),var(--max))}
+  body[data-sinjira-ux="v1"] :where(.account-card,.v24-panel){max-width:100%}
+  body[data-sinjira-ux="v1"] .account-quick-access{margin:14px 0 4px;padding:16px}
+  body[data-sinjira-ux="v1"] .account-quick-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+  body[data-sinjira-ux="v1"] .account-quick-actions a{font-size:.88rem;min-height:56px}
+}
+@media(max-width:340px){
+  body[data-sinjira-ux="v1"] .account-quick-actions{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){
+  body[data-sinjira-ux="v1"] .account-quick-actions a{transition:none}
+}

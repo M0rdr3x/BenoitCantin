@@ -103,9 +103,21 @@
       setNavOpen(false);
     });
 
-    // Ne pas conserver une ouverture mobile lors du retour au bureau.
+    // Une navigation mobile ne doit pas rester ouverte lorsque le focus
+    // clavier sort du menu : elle masquerait sinon la page suivante.
+    doc.addEventListener('focusin', function (event) {
+      if (toggle.getAttribute('aria-expanded') !== 'true') return;
+      if (toggle.contains(event.target) || nav.contains(event.target)) return;
+      setNavOpen(false);
+    });
+
+    // L'ergonomie SINJIRA V1 conserve le menu compact sur tablette.
+    // Les pages historiques qui n'adoptent pas cette version gardent 821px.
     window.addEventListener('resize', function () {
-      if (window.matchMedia('(min-width: 821px)').matches &&
+      var isUnified = doc.body &&
+        doc.body.getAttribute('data-sinjira-ux') === 'v1';
+      var desktopQuery = isUnified ? '(min-width: 1021px)' : '(min-width: 821px)';
+      if (window.matchMedia(desktopQuery).matches &&
           toggle.getAttribute('aria-expanded') === 'true') setNavOpen(false);
     });
   }

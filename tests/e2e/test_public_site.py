@@ -1251,7 +1251,14 @@ def run() -> None:
 
         # L'état du menu ne doit pas rester ouvert si on passe au bureau.
         toggle.tap()
+        # La tablette (1000 px) utilise maintenant le menu compact;
+        # seule la largeur bureau (>=1021 px) doit refermer ce panneau.
         mobile_page.set_viewport_size({"width": 1000, "height": 844})
+        assert_true(
+            toggle.get_attribute("aria-expanded") == "true",
+            f"{BROWSER_NAME}: le menu tablette s'est refermé avant 1021 px",
+        )
+        mobile_page.set_viewport_size({"width": 1080, "height": 844})
         mobile_page.wait_for_function(
             "document.querySelector('[data-menu-toggle]').getAttribute('aria-expanded') === 'false'",
             timeout=5_000,
@@ -1289,12 +1296,12 @@ def run() -> None:
         # Navigation de continuité : les pages secondaires et les pages 404
         # doivent utiliser les mêmes correctifs clavier que les accueils.
         for route, script_version in (
-            ("404.html", "site.js?v=24.4.100"),
-            ("univers.html", "site.js?v=24.4.100"),
-            ("transparence-ia.html", "site.js?v=24.4.100"),
-            ("confidentialite.html", "site.js?v=24.4.100"),
-            ("gouvernance-vie-privee.html", "site.js?v=24.4.100"),
-            ("avis-legal.html", "site.js?v=24.4.100"),
+            ("404.html", "site.js?v=24.4.101"),
+            ("univers.html", "site.js?v=24.4.101"),
+            ("transparence-ia.html", "site.js?v=24.4.101"),
+            ("confidentialite.html", "site.js?v=24.4.101"),
+            ("gouvernance-vie-privee.html", "site.js?v=24.4.101"),
+            ("avis-legal.html", "site.js?v=24.4.101"),
             ("projets/projet-nova/registre-rencontres.html", "script.js?v=26.1.0"),
             ("projets/projet-nova/visionneuse.html?doc=resume", "script.js?v=26.1.0"),
             ("projets/projet-nova/document.html?doc=corpus", "script.js?v=26.1.0"),

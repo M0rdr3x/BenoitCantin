@@ -1,0 +1,48 @@
+name: UX SINJIRA — Navigation harmonisée mobile et PC
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'compte/**'
+      - 'projets/sinjira/**'
+      - 'assets/css/site-ux-sinjira-v1.css'
+      - 'assets/js/site.js'
+      - 'scripts/validate_sinjira_ux_v1.py'
+      - '.github/workflows/sinjira-ux-navigation-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'compte/**'
+      - 'projets/sinjira/**'
+      - 'assets/css/site-ux-sinjira-v1.css'
+      - 'assets/js/site.js'
+      - 'scripts/validate_sinjira_ux_v1.py'
+      - '.github/workflows/sinjira-ux-navigation-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verifier-ergonomie:
+    name: Vérifier la cohérence UX SINJIRA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Récupérer le dépôt sans stocker les identifiants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Valider les menus et les raccourcis
+        run: python3 scripts/validate_sinjira_ux_v1.py
+      - name: Vérifier le rendu de l'accueil centré sur SINJIRA
+        run: python3 scripts/validate_home_focus.py
+      - name: Contrôler les budgets de performance
+        run: python3 scripts/validate_performance_budget.py
+      - name: Contrôler les éléments accessibles
+        run: python3 scripts/validate_accessibility.py
+      - name: Vérifier la syntaxe du menu JavaScript
+        run: node --check assets/js/site.js
