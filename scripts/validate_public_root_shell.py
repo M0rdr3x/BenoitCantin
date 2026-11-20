@@ -63,9 +63,16 @@ def validate_page(rel: str, errors: list[str]) -> None:
         ):
             if marker not in shell:
                 errors.append(f"{rel}: contrat mobile/public absent: {marker}")
-        for href in GLOBAL_NAV:
+        # L'accueil présente SINJIRA seul depuis la mise en retrait de Nova.
+        # Les anciennes pages racines peuvent conserver leurs liens historiques
+        # sans imposer ce lien à la nouvelle page d'entrée.
+        links = tuple(h for h in GLOBAL_NAV if rel != "index.html"
+                      or h != "/projets/projet-nova/")
+        for href in links:
             if f'href="{href}"' not in shell and f"href='{href}'" not in shell:
                 errors.append(f"{rel}: lien public principal absent: {href}")
+        if rel == "index.html" and '/projets/projet-nova/' in shell:
+            errors.append("index.html: Projet Nova ne doit plus figurer au menu.")
 
     if not re.search(r'<link\b[^>]*rel=[\"\']canonical[\"\']', html, re.I):
         errors.append(f"{rel}: canonical absent.")
