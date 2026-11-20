@@ -25,8 +25,21 @@ EXTRA_SHARED = {
     "tests/e2e/test_public_site.py",
     "scripts/validate_public_root_shell.py",
 }
-FORBIDDEN_NAMES = {".env", ".env.local", ".env.production", "credentials.json"}
-FORBIDDEN_SUFFIXES = {".pem", ".p12", ".pfx", ".key", ".sqlite3"}
+FORBIDDEN_NAMES = {
+    ".npmrc", ".pypirc", ".netrc", ".git-credentials",
+    "credentials.json", "service-account.json", "service_account.json",
+    "secrets.json", "kubeconfig", "id_rsa", "id_ed25519",
+}
+FORBIDDEN_SUFFIXES = {
+    ".pem", ".p12", ".pfx", ".key", ".sqlite", ".sqlite3",
+    ".db", ".age", ".gpg", ".asc", ".keystore", ".jks",
+}
+FORBIDDEN_DIRS = {".ssh", ".aws", ".azure", ".git", ".config"}
+WINDOWS_UNSAFE = re.compile(r'[\\:<>?"|*\x00-\x1f\x7f]')
+WINDOWS_DEVICE_NAME = re.compile(
+    r"^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$", re.I
+)
+SECRET_ENV_NAME = re.compile(r"^\.env(?:$|[._-])", re.I)
 
 
 def git(*args: str) -> bytes:
@@ -48,14 +61,86 @@ def is_relevant(p: str) -> bool:
     )
 
 
+
+def validated_archive_source_path(relative: str) -> PurePosixPath:
+    """Protect ZIP consumers on Unix AND Windows from ambiguous Git paths.
+
+    A Git filename can legally contain backslashes, colons and control
+    characters. Some Windows extractors treat these as path separators,
+    alternate streams or reserved filenames. Never serialize them in a ZIP.
+    """
+    if not isinstance(relative, str) or not relative:
+        raise ValueError("Chemin Git vide ou non textuel")
+    candidate = PurePosixPath(relative)
+    if (
+        candidate.is_absolute()
+        or candidate.as_posix() != relative
+        or ".." in candidate.parts
+        or not candidate.parts
+    ):
+        raise ValueError("Chemin Git non canonique ou traversal refuse")
+    for part in relative.split("/"):
+        lower = part.lower()
+        if (
+            not part
+            or part in {".", ".."}
+            or part[-1] in {".", " "}
+            or WINDOWS_UNSAFE.search(part)
+            or WINDOWS_DEVICE_NAME.fullmatch(part)
+        ):
+            raise ValueError("Nom d'entree ZIP incompatible ou ambigu")
+        if (
+            SECRET_ENV_NAME.match(part)
+            or lower in FORBIDDEN_NAMES
+            or lower in FORBIDDEN_DIRS
+            or PurePosixPath(part).suffix.lower() in FORBIDDEN_SUFFIXES
+        ):
+            raise ValueError("Fichier de secret ou de donnees locales non exportable")
+    return candidate
+
+
+def self_test_archive_path_boundary() -> None:
+    for safe in (
+        "projets/projet-nova/index.html",
+        "projets/projet-nova/official/référence.md",
+        "docs/nova-sondages/synthèse-publique.json",
+    ):
+        if validated_archive_source_path(safe).as_posix() != safe:
+            raise AssertionError("Chemin public legitime rejete")
+    for bad in (
+        "../secrets.txt",
+        "/projets/projet-nova/index.html",
+        "projets/projet-nova/../../private.txt",
+        r"projets/projet-nova/..\..\secrets.txt",
+        "projets/projet-nova//index.html",
+        "projets/projet-nova/./index.html",
+        "projets/projet-nova/C:stream.txt",
+        "projets/projet-nova/CON.txt",
+        "projets/projet-nova/nul",
+        "projets/projet-nova/trailing.",
+        "projets/projet-nova/trailing ",
+        "projets/projet-nova/name\n.txt",
+        "projets/projet-nova/.env",
+        "projets/projet-nova/.env.staging.local",
+        "projets/projet-nova/.npmrc",
+        "projets/projet-nova/.ssh/id_rsa",
+        "projets/projet-nova/service-account.json",
+        "projets/projet-nova/private.pem",
+        "projets/projet-nova/cache.sqlite",
+    ):
+        try:
+            validated_archive_source_path(bad)
+        except ValueError:
+            continue
+        raise AssertionError("Chemin ZIP dangereux accepte: " + repr(bad))
+
+
 def selected_paths() -> list[str]:
     found = []
     for relative in tracked_paths():
         if not is_relevant(relative):
             continue
-        candidate = PurePosixPath(relative)
-        if candidate.is_absolute() or ".." in candidate.parts:
-            raise ValueError("Chemin Git non sûr")
+        candidate = validated_archive_source_path(relative)
         path = ROOT.joinpath(*candidate.parts)
         if not path.is_file() or path.is_symlink():
             raise ValueError("Entrée Git manquante ou lien symbolique: " + relative)
@@ -141,7 +226,8 @@ def main() -> int:
         print(f"Inventaire suspect : seulement {len(candidates)} fichiers", file=sys.stderr)
         return 2
     if args.self_test:
-        print(json.dumps({"self_test": "OK", "file_count": len(candidates),
+        self_test_archive_path_boundary()
+        print(json.dumps({"self_test": "OK", "zip_path_security": "PASS", "file_count": len(candidates),
                           "examples": expected}, ensure_ascii=False))
         return 0
     if not args.output:
