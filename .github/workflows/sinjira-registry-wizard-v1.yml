@@ -8,6 +8,10 @@ on:
       - 'assets/js/sinjira-registry-wizard-v1.js'
       - 'assets/css/sinjira-registry-wizard-v1.css'
       - 'scripts/validate_registry_wizard_v1.py'
+      - 'scripts/test_registry_native_form_csp.py'
+      - 'netlify.toml'
+      - 'vercel.json'
+      - 'scripts/build_netlify_public.py'
       - 'tests/e2e/test_public_site.py'
       - '.github/workflows/sinjira-registry-wizard-v1.yml'
   push:
@@ -17,6 +21,10 @@ on:
       - 'assets/js/sinjira-registry-wizard-v1.js'
       - 'assets/css/sinjira-registry-wizard-v1.css'
       - 'scripts/validate_registry_wizard_v1.py'
+      - 'scripts/test_registry_native_form_csp.py'
+      - 'netlify.toml'
+      - 'vercel.json'
+      - 'scripts/build_netlify_public.py'
       - 'tests/e2e/test_public_site.py'
       - '.github/workflows/sinjira-registry-wizard-v1.yml'
   workflow_dispatch:
@@ -37,5 +45,7 @@ jobs:
         run: python3 scripts/validate_registry_wizard_v1.py
       - name: Vérifier la syntaxe du script
         run: node --check assets/js/sinjira-registry-wizard-v1.js
+      - name: Verrouiller le formulaire privé contre les POST natifs et les dérives CSP
+        run: python3 scripts/test_registry_native_form_csp.py
       - name: Valider les contrats métier du Registre
         run: python3 scripts/validate_sinjira_signup_registry_delivery.py
