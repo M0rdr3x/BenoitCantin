@@ -1,0 +1,1155 @@
+/**
+ * SINJIRA V53 — livre à pages d'écran, texte adaptable au mobile.
+ * Superposé à la V52 sans toucher au code d'authentification ni au schéma V51.
+ * Un "écran" = un déplacement vertical d'un nombre entier de lignes du texte
+ * du PDF courant ; une fois le texte terminé, tourner la vraie page du livre.
+ * L'enregistrement d'emplacement reste le scroll_ratio historique de la V31.
+ */
+import {classifyReaderSwipe,isReaderSystemEdgeGesture,isReaderViewportZoomed,captureReaderSwipeGeometry,isReaderSwipeGeometryStable,captureReaderNestedHorizontalScroll,readerNestedHorizontalScrollMoved,captureReaderNestedVerticalScroll,readerNestedVerticalScrollMoved,readerCanPanHorizontally,classifyReaderEdgeTap,flashReaderPageTurn,cancelReaderPageTurnFlash} from './sinjira-liseuse-touch-v52.mjs?v=52.11.18.161';
+
+const PREF_KEY='sinjira:liseuse:lecture-par-ecrans:v53';
+
+// V97 : un seul classificateur commun aux marges texte paginé et PDF.
+export {classifyReaderEdgeTap};
+const INTERACTIVE='a,button,input,select,textarea,summary,[contenteditable],[role="button"],[role="link"],[data-reader-no-swipe]';
+
+/** V102 — libellé compact pour la barre inférieure, sans extrait de roman
+ * ni information sur l'identité du lecteur. Le statut détaillé continue
+ * d'être annoncé par le champ aria-live existant. */
+export function formatReaderMobileLocation({mode='pdf',screen=1,screens=1,page,total}={}){
+  const positive=value=>{
+    const n=Number(value);
+    return Number.isSafeInteger(n)&&n>0?n:null;
+  };
+  const p=positive(page),t=positive(total);
+  const source=p?'p. '+p+(t?' / '+t:''):'page inconnue';
+  if(mode==='screens'){
+    const count=positive(screens)||1;
+    const current=Math.min(positive(screen)||1,count);
+    return 'Écr. '+current+'/'+count+' · '+source;
+  }
+  if(mode==='continuous')return 'Continu · '+source;
+  return 'PDF · '+source;
+}
+
+/** V103 — description intégrale de la zone focusable, pour retrouver sa
+ * place au clavier ou avec une technologie d'assistance. Pas d'aria-live
+ * supplémentaire : la zone d'annonce V53/V28 reste unique pour chaque mode.
+ * Aucun texte du livre, identifiant de compte ou secret n'est inclus. */
+export function formatReaderAccessibleLocation({mode='pdf',screen=1,screens=1,page,total}={}){
+  const positive=value=>{
+    if(value===null||value===undefined||String(value).trim()==='')return null;
+    const n=Number(value);
+    return Number.isSafeInteger(n)&&n>0?n:null;
+  };
+  const pageNumber=positive(page),totalPages=positive(total);
+  const place=pageNumber?'page '+pageNumber+(totalPages?' sur '+totalPages:''):'page inconnue';
+  if(mode==='screens'){
+    const count=positive(screens)||1,current=Math.min(positive(screen)||1,count);
+    return 'Lecture du roman, texte adapté : écran '+current+' sur '+count+
+      ', '+place+'.';
+  }
+  if(mode==='continuous')
+    return 'Lecture du roman, texte adaptable en défilement continu : '+place+'.';
+  return 'Lecture du roman en PDF : '+place+
+    '. Pour une lecture accessible, choisissez le texte adaptable.';
+}
+
+/** Empêche un saut de ligne masquée au bord de l'écran.
+ * Le padding réduit la hauteur utile et une ligne reste visible à la jonction. */
+export function measureReaderScreen({
+  clientHeight,lineHeight,paddingTop=0,paddingBottom=0
+}){
+  if(!Number.isFinite(clientHeight)||clientHeight<=0)return 1;
+  const line=Number.isFinite(lineHeight)&&lineHeight>0?lineHeight:30;
+  const top=Number.isFinite(paddingTop)?Math.max(0,paddingTop):0;
+  const bottom=Number.isFinite(paddingBottom)?Math.max(0,paddingBottom):0;
+  const available=Math.max(1,clientHeight-top-bottom);
+  const lines=Math.max(1,Math.floor((available-8)/line));
+  const overlap=top+bottom>0&&lines>1?1:0;
+  const safeStep=Math.min(available,(lines-overlap)*line);
+  return Math.max(1,Math.min(clientHeight,Math.round(safeStep)));
+}
+/**
+ * V60 : quand il reste moins d'un interligne à lire au-delà du dernier pas
+ * complet, ne pas générer un « écran final » qui n'avance que de 2 à 30 px.
+ * Le saut supplémentaire est borné par la hauteur d'une ligne, et préserve
+ * donc le recouvrement utile de V55 sans masquer un passage entier.
+ */
+function readerShortTail({max,step,lineHeight}){
+  if(!Number.isFinite(max)||!Number.isFinite(step)||max<=0||step<=0)return null;
+  const fullSteps=Math.floor(max/step);
+  if(fullSteps<1)return null;
+  const tail=max-fullSteps*step;
+  const limit=Math.min(step*0.18,Number.isFinite(lineHeight)&&lineHeight>0?lineHeight:30);
+  return tail>0&&tail<=limit
+    ?{omitted:fullSteps*step,previous:(fullSteps-1)*step}:null;
+}
+export function readerScreenState({scrollTop=0,scrollHeight=0,clientHeight=0,lineHeight=30,paddingTop=0,paddingBottom=0}={}){
+  const max=Math.max(0,scrollHeight-clientHeight);
+  const top=Math.max(0,Math.min(max,Number.isFinite(scrollTop)?scrollTop:0));
+  const step=measureReaderScreen({clientHeight,lineHeight,paddingTop,paddingBottom});
+  const shortTail=readerShortTail({max,step,lineHeight});
+  const screens=Math.max(1,Math.ceil(max/step)+1-(shortTail?1:0));
+  const screen=top>=max-2?screens:Math.max(1,Math.min(screens,Math.floor((top+2)/step)+1));
+  return {top,max,step,screens,screen,shortTail,ratio:max>0?top/max:0,
+    hasPreviousScreen:top>2,hasNextScreen:top<max-2};
+}
+export function planReaderScreenTurn({direction,scrollTop,scrollHeight,clientHeight,lineHeight,paddingTop=0,paddingBottom=0}){
+  if(!['next','previous'].includes(direction))return null;
+  const s=readerScreenState({scrollTop,scrollHeight,clientHeight,lineHeight,paddingTop,paddingBottom});
+  if(direction==='next'){
+    if(!s.hasNextScreen)return {type:'document',direction};
+    const next=(Math.floor((s.top+2)/s.step)+1)*s.step;
+    if(s.shortTail&&next>=s.shortTail.omitted-2)
+      return {type:'screen',direction,top:s.max};
+    return {type:'screen',direction,top:Math.min(s.max,next)};
+  }
+  if(!s.hasPreviousScreen)return {type:'document',direction};
+  if(s.shortTail&&s.top>=s.max-2)
+    return {type:'screen',direction,top:s.shortTail.previous};
+  const prevIndex=Math.max(0,Math.ceil((s.top-2)/s.step)-1);
+  return {type:'screen',direction,top:Math.max(0,prevIndex*s.step)};
+}
+
+export function parseReaderLineHeight({lineHeight,fontSize}={}){
+  const font=Number.parseFloat(fontSize)||20;
+  const raw=String(lineHeight??'').trim();
+  const number=Number.parseFloat(raw);
+  if(!Number.isFinite(number)||number<=0)return font*1.75;
+  if(raw.endsWith('px'))return number;
+  // CSS line-height sans unité: ex. 1.75 signifie 1.75 × font-size,
+  // et non 1.75 px. Important pour ne pas couper une ligne sur Safari.
+  if(Number.isFinite(Number(raw)))return number*font;
+  return font*1.75;
+}
+function textMetrics(element){
+  const style=window.getComputedStyle(element);
+  const value=raw=>Number.parseFloat(raw)||0;
+  return {
+    lineHeight:parseReaderLineHeight({lineHeight:style.lineHeight,fontSize:style.fontSize}),
+    paddingTop:Math.max(0,value(style.paddingTop)),
+    paddingBottom:Math.max(0,value(style.paddingBottom))
+  };
+}
+/** V63 : ancre éphémère de caractère du roman, jamais enregistrée. */
+export function captureReaderTextAnchor({viewer,text,doc=globalThis.document}={}){
+  if(!viewer?.getBoundingClientRect||!text?.getBoundingClientRect||!doc?.createRange||
+    (!doc.caretPositionFromPoint&&!doc.caretRangeFromPoint))return null;
+  const box=viewer.getBoundingClientRect(),page=text.getBoundingClientRect();
+  if(box.width<=0||box.height<=0||page.width<=0||text.hidden)return null;
+  const style=globalThis.window?.getComputedStyle?.(text);
+  const padLeft=Math.max(0,Number.parseFloat(style?.paddingLeft)||0);
+  const x=Math.min(page.right-8,Math.max(page.left+8,page.left+padLeft+18));
+  if(x<box.left||x>box.right)return null;
+  // V63 : sur un petit cellulaire, la barre supérieure « sticky » peut
+  // recouvrir les premières lignes visibles de la zone de lecture. Ne pas
+  // prendre un caractère du logo/titre comme ancre du livre.
+  for(const fraction of [.14,.27,.40,.56,.72,.87]){
+    const y=Math.min(box.bottom-12,box.top+Math.max(24,box.height*fraction));
+    if(y<=box.top||y>=box.bottom)continue;
+    const layer=doc.elementFromPoint?.(x,y);
+    if(layer&&!text.contains?.(layer))continue;
+    let node=null,offset=0;
+    if(doc.caretPositionFromPoint){
+      const pos=doc.caretPositionFromPoint(x,y);
+      if(pos){node=pos.offsetNode;offset=pos.offset}
+    }
+    if((node?.nodeType!==3||!text.contains?.(node))&&doc.caretRangeFromPoint){
+      const pos=doc.caretRangeFromPoint(x,y);
+      if(pos){node=pos.startContainer;offset=pos.startOffset}
+    }
+    if(node?.nodeType!==3||!text.contains?.(node)||!node.length)continue;
+    const index=Math.max(0,Math.min(node.length-1,Number(offset)||0));
+    try{
+      const range=doc.createRange();
+      range.setStart(node,index);range.setEnd(node,index+1);
+      const rect=Array.from(range.getClientRects()).find(r=>r.height>0);
+      if(!rect||!Number.isFinite(rect.top))continue;
+      if(rect.top<box.top-box.height||rect.top>box.bottom+box.height)continue;
+      return {node,offset:index,relativeY:rect.top-box.top};
+    }catch{/* autre portion visible ou repli ratio */}
+  }
+  return null;
+}
+/** Replace un caractère visible dans l'écran sans persister son texte. */
+export function restoreReaderTextAnchor({viewer,text,anchor,doc=globalThis.document}={}){
+  if(!viewer?.scrollTo||!viewer?.getBoundingClientRect||!doc?.createRange||
+    !anchor?.node||!text?.contains?.(anchor.node)||text.hidden)return false;
+  const node=anchor.node,index=anchor.offset;
+  if(node.nodeType!==3||!Number.isInteger(index)||index<0||index>=node.length||
+    !Number.isFinite(anchor.relativeY))return false;
+  try{
+    const range=doc.createRange();
+    range.setStart(node,index);range.setEnd(node,index+1);
+    const rect=Array.from(range.getClientRects()).find(r=>r.height>0);
+    if(!rect||!Number.isFinite(rect.top))return false;
+    const top=viewer.scrollTop+rect.top-viewer.getBoundingClientRect().top-anchor.relativeY;
+    if(!Number.isFinite(top))return false;
+    const max=Math.max(0,viewer.scrollHeight-viewer.clientHeight);
+    viewer.scrollTo({top:Math.max(0,Math.min(max,top)),left:0,behavior:'auto'});
+    return true;
+  }catch{return false}
+}
+function isInteractive(element){
+  return Boolean(element?.closest?.(INTERACTIVE));
+}
+function localPreference(){
+  try{const value=localStorage.getItem(PREF_KEY);return value!=='off'}
+  catch{return true}
+}
+function savePreference(on){
+  try{localStorage.setItem(PREF_KEY,on?'on':'off')}catch{/* préférence facultative */}
+}
+
+/**
+ * N'envoie pas de texte ni de position hors du navigateur.
+ * previous/next restent les contrôles canoniques du moteur PDF (et V51 CAS).
+ * Un événement touchend est capturé avant le gestionnaire V52 ; preventDefault
+ * indique à la V52 de ne PAS doubler le mouvement.
+ */
+export function bindReaderScreenMode({
+  viewer,text,previous,next,mobilePrevious,mobileNext,toggle,status,pageField,
+  mobileHint=null,totalPages=null,screenJump=null,screenJumpLabel=null,
+  pageAnnouncement=null,
+  media=window.matchMedia('(max-width: 980px)'),
+  getSelectionText=()=>String(window.getSelection?.()?.toString()||''),
+  clock=()=>performance.now(),
+  raf=callback=>requestAnimationFrame(callback),
+  Observer=MutationObserver
+}={}){
+  if(!viewer||!text||!previous||!next||!toggle||!status||!pageField)
+    throw new Error('SINJIRA V53 : contrôles nécessaires absents');
+  let gesture=null,pointerGesture=null,pendingPreviousPdf=null,lastRatio=0,restoring=false,closed=false;
+  // V121 : ne prononcer que les changements de page source.
+  let lastNotifiedPage=String(pageField.value);
+  // V106 : garder la sélection d'écran pendant le drag sans persister ni
+  // modifier la zone lue tant que le curseur n'a pas été relâché.
+  let jumpPreview=null,jumpCancelled=false;
+  // V148 : derniere position du curseur confirmee SUR un viewport visible.
+  // Un touchcancel en arriere-plan doit pouvoir la rendre sans mesurer 0 px.
+  let committedJump=null;
+  let pendingLayoutRatio=null; // V56 : une seule position de référence par réagencement
+  let lastAnchor=null,pendingLayoutAnchor=null; // V63 : ancre locale non persistée
+  // V144 : conserver en mémoire la dernière position légitime pendant une
+  // rotation masquée, sans tenter de reflow sur un viewport nul.
+  let deferredLayoutRatio=null,deferredLayoutAnchor=null;
+  let layoutRestoreGeneration=0; // V69 : invalider une restitution devenue obsolète
+  toggle.checked=localPreference();
+  // V146 : le dernier choix validé reste la référence lors des événements
+  // différés survenant pendant la suspension ou le masquage du roman.
+  // Il est conservé en mémoire même si le stockage local est désactivé.
+  let acceptedScreenToggle=toggle.checked;
+  const isPaged=()=>!closed&&media.matches&&toggle.checked&&!text.hidden;
+  // V96 : conserver le calcul des écrans pendant la suspension, MAIS
+  // interdire toute commande quand le livre est réellement masqué (V93/V94).
+  // Ne pas intégrer ce test à isPaged() : sync() pourrait désactiver le mode
+  // écran pendant une mise en arrière-plan et fausser le retour du lecteur.
+  const canNavigate=()=>!closed&&!globalThis.document?.hidden&&
+    !viewer.closest?.('[hidden]');
+  // V124 : une annonce du PDF précédent ne doit plus persister dans une
+  // nouvelle vue ou dans le DOM d'un roman privé momentanément masqué.
+  const clearPageAnnouncement=()=>{
+    if(pageAnnouncement?.textContent)pageAnnouncement.textContent='';
+  };
+  const metric=()=>readerScreenState({
+    scrollTop:viewer.scrollTop,scrollHeight:viewer.scrollHeight,
+    clientHeight:viewer.clientHeight,...textMetrics(text)
+  });
+  const sync=()=>{
+    // V148 : les événements PDF, boutons et préférences peuvent être livrés
+    // pendant que la fenêtre ou le livre est masqué. Une mesure à hauteur
+    // nulle remplacerait la position valide par « écran 1 sur 1 » et
+    // écraserait le dernier ratio et la dernière ancre de lecture.
+    // Seule l'annonce privée antérieure est effacée; le retour visible
+    // recalculera la présentation depuis la dernière position légitime.
+    if(!canNavigate()){
+      clearPageAnnouncement();
+      return;
+    }
+    const active=isPaged();
+    // Un écran paginé possède déjà son propre aria-live : supprimer
+    // l'annonce PDF précédente, sans créer une annonce vocale en double.
+    if(active||!canNavigate())clearPageAnnouncement();
+    viewer.dataset.readerLayout=active?'screens':'scroll';
+    // V61 : les mêmes boutons contrôlent soit les portions de texte, soit
+    // les pages PDF. Un libellé statique tromperait un lecteur d'écran.
+    const backLabel=active
+      ?'Écran précédent, ou page du livre précédente au début'
+      :'Page du livre précédente';
+    const forwardLabel=active
+      ?'Écran suivant, ou page du livre suivante à la fin'
+      :'Page du livre suivante';
+    const describe=(button,label)=>{
+      if(button?.getAttribute?.('aria-label')!==label)
+        button?.setAttribute?.('aria-label',label);
+    };
+    for(const button of [previous,mobilePrevious])describe(button,backLabel);
+    for(const button of [next,mobileNext])describe(button,forwardLabel);
+    status.hidden=!active;
+    // V105 : ne jamais laisser le LIBELLÉ d'un curseur caché dans les
+    // modes PDF/continu. Une page ayant un seul écran n'a pas non plus
+    // besoin d'un curseur trompeur ou d'une cible tactile inutile.
+    // V102 : afficher l'emplacement à portée du pouce, y compris en PDF
+    // et en mode texte continu. La barre est aria-hidden : ne pas créer
+    // une deuxième annonce vocale à chaque page tournée.
+    const page=pageField.value;
+    const total=totalPages?.textContent||pageField.max;
+    const mode=active?'screens':text.hidden?'pdf':'continuous';
+    const screenInfo=active?metric():null;
+    const jumpVisible=Boolean(active&&screenInfo.screens>1);
+    if(!jumpVisible||jumpPreview!==null&&jumpPreview>screenInfo.screens){
+      if(jumpPreview!==null)jumpCancelled=true;
+      jumpPreview=null;
+    }
+    if(screenJump)screenJump.hidden=!jumpVisible;
+    if(screenJumpLabel)screenJumpLabel.hidden=!jumpVisible;
+    const position=screenInfo?{...screenInfo,page,total,mode}:{page,total,mode};
+    const location=formatReaderMobileLocation(position);
+    if(mobileHint&&mobileHint.textContent!==location)mobileHint.textContent=location;
+    // V103 : la zone tabindex=0 décrit l'écran courant QUAND on y entre,
+    // sans provoquer une deuxième annonce vocale lors de chaque swipe.
+    const accessibleLabel=formatReaderAccessibleLocation(position);
+    if(viewer.getAttribute?.('aria-label')!==accessibleLabel)
+      viewer.setAttribute?.('aria-label',accessibleLabel);
+    if(!active){
+      if(mobilePrevious)mobilePrevious.disabled=previous.disabled;
+      if(mobileNext)mobileNext.disabled=next.disabled;
+      return;
+    }
+    const s=screenInfo;
+    const announced='Écran '+s.screen+' sur '+s.screens+' · page '+pageField.value+' du livre';
+    if(screenJump){
+      const max=String(s.screens),current=String(jumpPreview??s.screen);
+      if(screenJump.max!==max)screenJump.max=max;
+      if(screenJump.value!==current)screenJump.value=current;
+      const description=jumpPreview===null?announced:
+        'Écran '+jumpPreview+' sur '+s.screens+' · page '+pageField.value+
+        ' du livre · relâcher pour lire cet écran';
+      if(screenJump.getAttribute?.('aria-valuetext')!==description)
+        screenJump.setAttribute?.('aria-valuetext',description);
+      if(jumpPreview===null)committedJump={value:current,description};
+    }
+    // Une zone aria-live ne doit pas annoncer la même phrase à chaque scroll.
+    if(status.textContent!==announced)status.textContent=announced;
+    if(mobilePrevious)mobilePrevious.disabled=!s.hasPreviousScreen&&previous.disabled;
+    if(mobileNext)mobileNext.disabled=!s.hasNextScreen&&next.disabled;
+    if(!restoring&&pendingLayoutRatio===null){
+      lastRatio=s.ratio;
+      lastAnchor=active?captureReaderTextAnchor({viewer,text}):null;
+    }
+  };
+  const scrollToScreen=(top,{userInitiated=false}={})=>{
+    if(jumpPreview!==null)jumpCancelled=true;
+    jumpPreview=null;
+    restoring=true;
+    viewer.scrollTo({top,left:0,behavior:'auto'});
+    restoring=false;
+    sync();
+    // V85 : priorité aux gestes réels sur une restauration de position en
+    // attente dans le lecteur principal; aucun texte privé n'est transmis.
+    if(userInitiated)viewer.dispatchEvent?.(new Event('sinjira:reader-screen-turn'));
+    // Le gestionnaire V31/V51 de scroll sauvegarde le ratio de progression
+    // de la même page PDF, sans nouveau format ni identifiant de lecteur.
+  };
+  const onScreenJumpPreview=()=>{
+    if(!screenJump)return;
+    // V150 : un « input » natif peut être livré sur un roman masqué,
+    // puis son « change » seulement après réouverture. Marquer le geste
+    // comme annulé SANS mesurer le viewport ni déplacer la lecture :
+    // la confirmation tardive ne doit jamais devenir un nouveau saut.
+    if(!canNavigate()){
+      jumpCancelled=true;
+      jumpPreview=null;
+      return;
+    }
+    if(!isPaged())return;
+    const selected=Number(screenJump.value),s=metric();
+    if(s.screens<=1||!Number.isSafeInteger(selected)||selected<1||selected>s.screens){
+      jumpPreview=null;sync();return;
+    }
+    jumpCancelled=false;
+    jumpPreview=selected;
+    // Mettre à jour uniquement le curseur pendant le drag : pas de scroll,
+    // pas de capture d'ancre, pas d'aria-live ni d'écriture de progression
+    // pour chaque pixel parcouru par le pouce sur un long roman.
+    const description='Écran '+selected+' sur '+s.screens+' · page '+
+      pageField.value+' du livre · relâcher pour lire cet écran';
+    if(screenJump.getAttribute?.('aria-valuetext')!==description)
+      screenJump.setAttribute?.('aria-valuetext',description);
+  };
+  const onScreenJumpCommit=()=>{
+    if(!screenJump)return;
+    // V147 : ne pas mesurer un viewport devenu nul pendant la suspension
+    // ni écraser l'ancre/ratio en mémoire avec une ancienne confirmation.
+    // Le prochain affichage synchronisera le curseur avec l'écran réel.
+    if(!canNavigate()){
+      jumpCancelled=true;
+      jumpPreview=null;
+      return;
+    }
+    // V107 : un change tardif du curseur annulé ne doit pas tourner
+    // la page après rotation, swipe, changement de PDF ou défilement.
+    if(jumpCancelled){
+      jumpCancelled=false;
+      jumpPreview=null;
+      sync();
+      return;
+    }
+    const selected=Number(screenJump.value);
+    jumpPreview=null;
+    if(!isPaged()||!canNavigate()){sync();return}
+    const s=metric();
+    if(s.screens<=1||!Number.isSafeInteger(selected)||selected<1||selected>s.screens){
+      sync();return;
+    }
+    // Aucun écrit supplémentaire lorsqu'on relâche sur l'écran déjà lu.
+    if(selected===s.screen){sync();return}
+    cancelPendingLayoutRestore();
+    // La dernière portion peut être plus courte qu'un interligne :
+    // rejoindre la véritable fin plutôt qu'une page fictive additionnelle.
+    const top=selected>=s.screens?s.max:
+      Math.min(s.max,(selected-1)*s.step);
+    scrollToScreen(top,{userInitiated:true});
+  };
+  const cancelPendingLayoutRestore=()=>{
+    // V144 : un geste réel prime AUSSI sur une restitution différée
+    // pendant la suspension puis la réouverture du livre.
+    deferredLayoutRatio=null;deferredLayoutAnchor=null;
+    // Un vrai geste du lecteur doit primer sur les deux raf du reflow.
+    // Annuler l'ancienne restitution empêche un retour brusque à l'écran 1.
+    if(pendingLayoutRatio===null)return;
+    layoutRestoreGeneration++;
+    pendingLayoutRatio=null;
+    pendingLayoutAnchor=null;
+  };
+  const turn=direction=>{
+    if(!isPaged()||!canNavigate())return false;
+    cancelPendingLayoutRestore();
+    const p=planReaderScreenTurn({
+      direction,scrollTop:viewer.scrollTop,scrollHeight:viewer.scrollHeight,
+      clientHeight:viewer.clientHeight,...textMetrics(text)
+    });
+    if(p?.type==='screen'){
+      scrollToScreen(p.top,{userInitiated:true});
+      flashReaderPageTurn(viewer,direction);
+      return true;
+    }
+    if(p?.type==='document'){
+      if(direction==='previous'){
+        if(previous.disabled)return true; // début du livre
+        pendingPreviousPdf=Number(pageField.value)-1;
+        previous.click();
+        flashReaderPageTurn(viewer,direction);
+      }else if(!next.disabled){
+        pendingPreviousPdf=null;
+        next.click();
+        flashReaderPageTurn(viewer,direction);
+      }
+      return true;
+    }
+    return false;
+  };
+  // V126 : le gestionnaire de pages d'écran reçoit touchend AVANT V52.
+  // Une mutation PDF→texte→PDF ou un remplacement de texte dans la même
+  // tâche JS doit interrompre le geste avant que la page ne tourne.
+  // Ne pas perdre la synchronisation de l'ancienne notification :
+  // appliquer le réagencement prévu lorsque takeRecords() est consommé.
+  const flushPendingTextMutation=()=>{
+    const changes=observer?.takeRecords?.();
+    // V127 : la fermeture/rouverture du roman peut conserver le même
+    // numéro et le même mode. V53 intercepte touchend AVANT le module PDF
+    // V52, il faut donc vider aussi ses propres records de visibilité.
+    const visibility=contentObserver?.takeRecords?.();
+    const contentChanged=visibility?.some(m=>m.type==='attributes'&&
+      m.attributeName==='hidden')||false;
+    if(contentChanged){
+      gesture=null;
+      if(readingContent?.hidden)clearPageAnnouncement();
+    }
+    if(!changes?.length)return contentChanged;
+    const changed=changes.some(m=>m.attributeName==='hidden'||
+      m.type==='childList'||m.type==='characterData');
+    if(changed){
+      gesture=null;
+      afterTextChanged();
+    }else sync();
+    return changed||contentChanged;
+  };
+  const isTouchTargetAllowed=event=>!isInteractive(event.target);
+  const onTouchStart=(event,fromPointer=false)=>{
+    gesture=null;
+    // V160 : un vrai TouchEvent devient propriétaire du mouvement et annule
+    // le secours PointerEvent (doigt/stylet) commencé avant lui.
+    if(!fromPointer)pointerGesture=null;
+    if(flushPendingTextMutation())return;
+    if(!isPaged()||!canNavigate()||event.touches?.length!==1||!isTouchTargetAllowed(event)||
+      isReaderViewportZoomed())return;
+    const touch=event.touches[0];
+    // V67 : préserver le retour et la navigation système depuis les bords.
+    if(isReaderSystemEdgeGesture({
+      clientX:touch.clientX,viewportWidth:globalThis.window?.innerWidth
+    }))return;
+    cancelPendingLayoutRestore();
+    if(jumpPreview!==null){
+      jumpCancelled=true;
+      jumpPreview=null;
+      sync();
+    }
+    gesture={
+      id:touch.identifier,x:touch.clientX,y:touch.clientY,start:clock(),
+      bookPage:String(pageField.value),
+      scrollTop:viewer.scrollTop,maxVerticalTravel:0,maxTravel:0,maxLeftTravel:0,maxRightTravel:0,scrolled:false,
+      readerLayout:viewer.dataset?.readerLayout,
+      geometry:captureReaderSwipeGeometry(viewer),
+      nestedHorizontalScroll:captureReaderNestedHorizontalScroll(event.target,viewer),
+      nestedHorizontalScrolled:false,
+      nestedVerticalScroll:captureReaderNestedVerticalScroll(event.target,viewer),
+      nestedScrolled:false
+    };
+  };
+  const onTouchMove=event=>{
+    if(flushPendingTextMutation())return;
+    if(!gesture)return;
+    if(event.touches?.length!==1||!isPaged()||!canNavigate()||isReaderViewportZoomed()||
+      gesture.bookPage!==String(pageField.value)||
+      gesture.readerLayout!==viewer.dataset?.readerLayout||
+      !isReaderSwipeGeometryStable(gesture.geometry,captureReaderSwipeGeometry(viewer))){
+      gesture=null;return;
+    }
+    const touch=event.touches[0];
+    if(touch.identifier!==gesture.id||!Number.isFinite(touch.clientY)){
+      gesture=null;return;
+    }
+    // V66 : une verticale importante pendant le geste compte même si le
+    // doigt revient au même Y en fin de mouvement (scroll + flick latéral).
+    gesture.maxVerticalTravel=Math.max(
+      gesture.maxVerticalTravel,Math.abs(touch.clientY-gesture.y)
+    );
+    if(!Number.isFinite(touch.clientX)){gesture=null;return}
+    gesture.maxLeftTravel=Math.max(gesture.maxLeftTravel,gesture.x-touch.clientX);
+    gesture.maxRightTravel=Math.max(gesture.maxRightTravel,touch.clientX-gesture.x);
+    gesture.maxTravel=Math.max(gesture.maxTravel,
+      Math.abs(touch.clientX-gesture.x),Math.abs(touch.clientY-gesture.y));
+    if(Math.abs(viewer.scrollTop-gesture.scrollTop)>8)gesture.scrolled=true;
+    if(readerNestedVerticalScrollMoved(gesture.nestedVerticalScroll))gesture.nestedScrolled=true;
+    if(readerNestedHorizontalScrollMoved(gesture.nestedHorizontalScroll))
+      gesture.nestedHorizontalScrolled=true;
+  };
+  // V108 : si le lecteur perd le focus ou passe en arrière-plan pendant
+  // le déplacement du curseur, un change natif tardif ne doit pas
+  // sauter vers un écran non confirmé puis enregistrer cette position.
+  const onTouchCancel=()=>{
+    gesture=null;pointerGesture=null;
+    if(jumpPreview!==null){
+      // V109 : refléter immédiatement la vraie page, même si le navigateur
+      // n'envoie jamais de confirmation de fin de glissement.
+      jumpCancelled=true;
+      jumpPreview=null;
+      if(canNavigate())sync();
+      else if(screenJump&&committedJump){
+        // Ne restaurer que le contrôle tactile ; garder le statut, le ratio
+        // et l'ancre du livre intacts pendant sa suspension.
+        screenJump.value=committedJump.value;
+        if(screenJump.getAttribute?.('aria-valuetext')!==committedJump.description)
+          screenJump.setAttribute?.('aria-valuetext',committedJump.description);
+      }
+    }
+  };
+  // V91 : un changement d'application, une fermeture d'onglet ou la perte
+  // de focus interrompent un balayage même sans événement touchcancel.
+  // Ne pas déclencher une page au retour à l'écran.
+  const onVisibilityChange=()=>{
+    if(document.hidden){
+      onTouchCancel();
+      cancelReaderPageTurnFlash(viewer);
+    }else{
+      // V145 : une simple réapparition d'onglet ne modifie pas l'attribut
+      // hidden du roman. Réactiver le rappel V144 dans ce cas aussi.
+      resumeDeferredLayout();
+    }
+  };
+  const onTouchEnd=(event,fromPointer=false)=>{
+    if(!fromPointer)pointerGesture=null;
+    if(flushPendingTextMutation())return;
+    const start=gesture;gesture=null;
+    if(!start||!isPaged()||!canNavigate()||isReaderViewportZoomed()||
+      start.bookPage!==String(pageField.value)||
+      start.readerLayout!==viewer.dataset?.readerLayout||
+      !isReaderSwipeGeometryStable(start.geometry,captureReaderSwipeGeometry(viewer))||
+      event.defaultPrevented||event.touches?.length!==0||
+      event.changedTouches?.length!==1)return;
+    const touch=event.changedTouches[0];
+    if(touch.identifier!==start.id)return;
+    const direction=classifyReaderSwipe({
+      dx:touch.clientX-start.x,dy:touch.clientY-start.y,
+      durationMs:clock()-start.start,viewerWidth:viewer.clientWidth,
+      hasSelection:Boolean(getSelectionText().trim()),
+      // V70 : ne jamais voler un balayage horizontal natif lorsque la zone
+      // de lecture ou son contenu dépasse la largeur visible du cellulaire.
+      horizontalOverflow:readerCanPanHorizontally(viewer)||
+        readerCanPanHorizontally(text)||start.nestedHorizontalScrolled||
+        readerNestedHorizontalScrollMoved(start.nestedHorizontalScroll),
+      maxVerticalTravel:start.maxVerticalTravel,
+      maxLeftTravel:start.maxLeftTravel,maxRightTravel:start.maxRightTravel,
+      scrolledDuringGesture:start.nestedScrolled||
+        readerNestedVerticalScrollMoved(start.nestedVerticalScroll)||
+        start.scrolled||Math.abs(viewer.scrollTop-start.scrollTop)>8
+    });
+    if(direction){
+      // Intercepte uniquement un vrai mouvement horizontal; la sélection et
+      // les gestes verticaux restent accessibles au navigateur.
+      event.preventDefault();
+      turn(direction);
+      return;
+    }
+    // V95 : tapotement volontaire dans une marge, sans mouvement ni zoom.
+    // N'agit que sur le texte paginé, jamais sur le PDF ou le mode continu.
+    const rect=viewer.getBoundingClientRect?.();
+    if(!rect)return;
+    const tap=classifyReaderEdgeTap({
+      x:start.x-rect.left,viewerWidth:rect.width,
+      durationMs:clock()-start.start,
+      dx:touch.clientX-start.x,dy:touch.clientY-start.y,
+      maxTravel:start.maxTravel,
+      hasSelection:Boolean(getSelectionText().trim()),
+      scrolled:start.nestedScrolled||
+        readerNestedVerticalScrollMoved(start.nestedVerticalScroll)||
+        start.nestedHorizontalScrolled||
+        readerNestedHorizontalScrollMoved(start.nestedHorizontalScroll)||
+        start.scrolled||Math.abs(viewer.scrollTop-start.scrollTop)>8||
+        readerCanPanHorizontally(viewer)||readerCanPanHorizontally(text)
+    });
+    if(tap){
+      event.preventDefault();
+      turn(tap);
+    }
+  };
+  const handleNav=(direction,event)=>{
+    // V96 : éviter qu'un click résiduel sur la commande canonique
+    // n'atteigne V26 pendant que l'accès intégral reste masqué.
+    if(!canNavigate()){
+      event?.preventDefault?.();
+      event?.stopImmediatePropagation?.();
+      return;
+    }
+    if(!isPaged())return;
+    const state=metric();
+    if(direction==='next'&&state.hasNextScreen||
+       direction==='previous'&&state.hasPreviousScreen){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      turn(direction);
+    }else if(direction==='previous'&&!previous.disabled){
+      pendingPreviousPdf=Number(pageField.value)-1;
+    }
+  };
+  const onPrev=event=>handleNav('previous',event);
+  const onNext=event=>handleNav('next',event);
+  const onMobilePrev=event=>{
+    if(!canNavigate()){
+      event?.preventDefault?.();event?.stopImmediatePropagation?.();return;
+    }
+    if(!isPaged())return;
+    event.preventDefault();event.stopImmediatePropagation();turn('previous');
+  };
+  const onMobileNext=event=>{
+    if(!canNavigate()){
+      event?.preventDefault?.();event?.stopImmediatePropagation?.();return;
+    }
+    if(!isPaged())return;
+    event.preventDefault();event.stopImmediatePropagation();turn('next');
+  };
+  const onKeyboard=event=>{
+    if(!isPaged()||!canNavigate()||event.defaultPrevented||event.altKey||event.ctrlKey||
+      event.metaKey||event.shiftKey||isInteractive(document.activeElement))return;
+    // V61 : les flèches sont des raccourcis de la LISEUSE, pas du site.
+    // Hors du focus du livre, conserver les raccourcis du navigateur,
+    // les zones de réglage et la navigation des technologies d'assistance.
+    const focused=document.activeElement;
+    if(!focused||(focused!==viewer&&!viewer.contains?.(focused)))return;
+    // V156 : lorsqu'un passage est sélectionné (copie/annotation), laisser
+    // au navigateur les flèches et Home/End pour déplacer ou fermer la
+    // sélection, sans tourner involontairement l'écran du roman.
+    // Aucun texte sélectionné n'est enregistré ni transmis.
+    if(String(getSelectionText()||'').trim())return;
+    const direction=event.key==='ArrowLeft'||event.key==='PageUp'?'previous'
+      :event.key==='ArrowRight'||event.key==='PageDown'?'next':null;
+    // V155 : Home/End changent d'écran DANS la page courante, et ne
+    // permettent pas d'accéder à une page source ou à un livre masqué.
+    // Ce comportement est réservé au focus du texte paginé : les champs
+    // de saisie, le site et le mode PDF gardent leurs touches natives.
+    const edge=event.key==='Home'?'first':event.key==='End'?'last':null;
+    if(!direction&&!edge)return;
+    // V154 : une touche maintenue génère keydown.repeat sur les claviers
+    // Bluetooth et accessibles. Un appui = un écran, sans feuilleter
+    // accidentellement une dizaine de passages en une seconde.
+    event.preventDefault();event.stopImmediatePropagation();
+    if(event.repeat)return;
+    if(edge){
+      const target=edge==='first'?0:metric().max;
+      if(Math.abs(viewer.scrollTop-target)>2){
+        cancelPendingLayoutRestore();
+        scrollToScreen(target,{userInitiated:true});
+      }
+      return;
+    }
+    turn(direction);
+  };
+  const afterTextChanged=()=>{
+    if(!isPaged()){sync();return}
+    const expected=pendingPreviousPdf;
+    raf(()=>raf(()=>{
+      if(closed)return;
+      if(expected!==null&&Number(pageField.value)===expected){
+        pendingPreviousPdf=null;
+        scrollToScreen(Math.max(0,viewer.scrollHeight-viewer.clientHeight),{userInitiated:true});
+      }else if(expected===null){
+        // Le moteur natif restoreScrollAfterRender replace scrollTop selon
+        // le scroll_ratio. Ici on ne l'écrase pas après son propre rappel.
+        sync();
+      }
+    }));
+  };
+  const observer=Observer?new Observer(mutations=>{
+    if(mutations.some(m=>m.attributeName==='hidden'||m.type==='childList'||m.type==='characterData')){
+      // V127 : même quand la micro-tâche MutationObserver a DÉJÀ tourné,
+      // le contact sur le texte précédent ne doit plus tourner d'écran.
+      gesture=null;
+      afterTextChanged();
+    }else sync();
+  }):null;
+  observer?.observe(text,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['hidden']});
+  // V124 : lorsqu'un livre privé est masqué sans événement de nouvelle page,
+  // effacer tout statut de l'ancien roman avant de révéler le suivant.
+  const readingContent=viewer.closest?.('#reader-content');
+  // V145 : dans la démo et sur certains retours d'application mobile,
+  // document.hidden change SANS mutation de #reader-content[hidden].
+  // Un seul chemin rétablit le dernier passage, après deux frames, depuis
+  // l'observateur du contenu OU l'événement visibilitychange.
+  const resumeDeferredLayout=()=>raf(()=>raf(()=>{
+    if(closed||!canNavigate())return;
+    if(deferredLayoutRatio!==null){
+      const ratio=deferredLayoutRatio,anchor=deferredLayoutAnchor;
+      deferredLayoutRatio=null;deferredLayoutAnchor=null;
+      scheduleLayoutRestore(ratio,anchor);
+    }else sync();
+  }));
+  const contentObserver=readingContent&&Observer?new Observer(mutations=>{
+    if(mutations.some(m=>m.type==='attributes'&&m.attributeName==='hidden')){
+      // V127 : ne jamais réutiliser le doigt d'un affichage antérieur.
+      gesture=null;
+      if(readingContent.hidden)clearPageAnnouncement();
+      else resumeDeferredLayout();
+    }
+  }):null;
+  contentObserver?.observe(readingContent,{attributes:true,attributeFilter:['hidden']});
+  const buttonsObserver=Observer?new Observer(()=>sync()):null;
+  buttonsObserver?.observe(previous,{attributes:true,attributeFilter:['disabled']});
+  buttonsObserver?.observe(next,{attributes:true,attributeFilter:['disabled']});
+  // V138 : un événement scroll livré lorsque le roman est masqué peut
+  // mesurer un viewport de hauteur zéro. Ne pas recalculer la pagination
+  // ni masquer le curseur; elle reste en mémoire jusqu'au retour autorisé.
+  // Le changement d'état caché est déjà traité par contentObserver.
+  const onScroll=()=>{
+    if(closed||!canNavigate())return;
+    if(jumpPreview!==null)jumpCancelled=true;
+    jumpPreview=null;sync();
+  };
+  /**
+   * V56 : un changement de police déclenche souvent input puis change; et une
+   * rotation provoque resize puis media.change. Capturer une SEULE position
+   * proportionnelle évite qu'un événement post-reflow remplace l'ancre.
+   * Cette ancre est une fraction du PDF courant, pas un identifiant EPUB.
+   */
+  const scheduleLayoutRestore=(ratio,anchor=lastAnchor)=>{
+    if(pendingLayoutRatio!==null)return;
+    pendingLayoutRatio=Math.max(0,Math.min(1,Number.isFinite(ratio)?ratio:0));
+    pendingLayoutAnchor=anchor;
+    const version=++layoutRestoreGeneration;
+    raf(()=>raf(()=>{
+      if(closed||version!==layoutRestoreGeneration)return;
+      const target=pendingLayoutRatio,anchored=pendingLayoutAnchor;
+      pendingLayoutRatio=null;pendingLayoutAnchor=null;
+      // V144 : ne pas exécuter restoreReaderTextAnchor ou scrollToScreen
+      // lorsque l'application est masquée entre deux requestAnimationFrame.
+      if(!canNavigate()){
+        if(deferredLayoutRatio===null){
+          deferredLayoutRatio=target;deferredLayoutAnchor=anchored;
+        }
+        return;
+      }
+      if(!isPaged()){sync();return}
+      restoring=true;
+      const found=restoreReaderTextAnchor({viewer,text,anchor:anchored});
+      restoring=false;
+      if(found)sync();
+      else scrollToScreen(target*Math.max(0,viewer.scrollHeight-viewer.clientHeight));
+    }));
+  };
+  const onToggle=()=>{
+    // V146 : un change tardif d'un contrôle masqué ne doit ni quitter
+    // le mode paginé, ni écrire une préférence, ni lancer un reflow
+    // sans viewport valide. Rétablir la valeur acceptée précédente.
+    if(!canNavigate()){
+      toggle.checked=acceptedScreenToggle;
+      return;
+    }
+    acceptedScreenToggle=toggle.checked;
+    if(jumpPreview!==null)jumpCancelled=true;
+    jumpPreview=null;
+    // V78 : tout changement de mode rend périmé le contact tactile en cours.
+    // Même si l'utilisateur rebascule aussitôt, ne pas tourner une ancienne page.
+    gesture=null;
+    // V89 : une lecture en mode continu peut se déplacer loin de l'ancienne
+    // ancre paginée. Capturer le passage COURANT avant de changer le CSS,
+    // puis invalider toute restitution déjà en attente (bascule très rapide).
+    // Le contenu du roman n'est ni copié ni persisté : ancre mémoire éphémère.
+    const previousRatio=metric().ratio;
+    const currentAnchor=captureReaderTextAnchor({viewer,text});
+    cancelPendingLayoutRestore();
+    savePreference(toggle.checked);
+    sync();
+    scheduleLayoutRestore(previousRatio,currentAnchor);
+  };
+  const onResize=()=>{
+    // V128 : un viewport brièvement modifié annule l'ancien contact,
+    // même si la taille finale est la même au relâchement.
+    gesture=null;
+    if(jumpPreview!==null)jumpCancelled=true;
+    jumpPreview=null;
+    if(!canNavigate()){
+      // Rotation avant ou pendant l'arrière-plan : garder l'ancre
+      // courante, sans mesurer un viewport masqué.
+      if(deferredLayoutRatio===null){
+        deferredLayoutRatio=lastRatio;deferredLayoutAnchor=lastAnchor;
+      }
+      return;
+    }
+    scheduleLayoutRestore(lastRatio,lastAnchor);
+  };
+  // V90 : Safari iOS / Chrome Android peuvent modifier le viewport visuel
+  // quand les barres d'interface apparaissent ou disparaissent sans déclencher
+  // window.resize. La hauteur CSS en dvh varie et peut déplacer la ligne lue.
+  // Ne pas intercepter la navigation par pincement : au zoom > 1, le
+  // navigateur reste seul propriétaire de l'exploration du document.
+  const onVisualViewportResize=()=>{
+    // Un zoom visuel temporaire invalide le doigt, même s'il revient à 1.
+    gesture=null;
+    if(!isPaged()||isReaderViewportZoomed())return;
+    onResize();
+  };
+  // V88 : le bouton « Lecture plein écran » modifie la hauteur du conteneur
+  // sans déclencher window.resize. Capturer l'ancre AVANT la bascule CSS,
+  // puis restaurer après deux frames comme pour le changement de police.
+  // V133 : sur un retour BFCache iOS/Android, le viewport peut changer
+  // sans resize. Réutiliser la restauration de l'ancre après le retour.
+  const onPageShow=event=>{
+    if(!event?.persisted)return;
+    onTouchCancel();
+    // V151 : pageshow BFCache peut arriver avant qu'un onglet ou un roman
+    // privé ne redevienne visible. La hauteur du lecteur peut déjà changer,
+    // sans nouvel événement resize. Reporter le ratio/ancre validés au
+    // prochain affichage, sans mesurer un livre caché ou exposer son contenu.
+    if(!canNavigate()){
+      if(deferredLayoutRatio===null){
+        deferredLayoutRatio=lastRatio;
+        deferredLayoutAnchor=lastAnchor;
+      }
+      return;
+    }
+    onResize();
+  };
+  const onFocusLayoutChange=()=>{
+    // V130 : toujours invalider le geste avant le changement de CSS.
+    gesture=null;
+    // V144 : ne pas capturer une ancre d'un texte masqué.
+    if(!isPaged())return;
+    // V152 : l'événement de plein écran peut être différé par le navigateur
+    // jusqu'au masquage du livre/onglet. La taille CSS change parfois sans
+    // resize supplémentaire : conserver l'ancre et le ratio visibles, puis
+    // restituer le passage seulement à la réouverture autorisée.
+    if(!canNavigate()){
+      if(deferredLayoutRatio===null){
+        deferredLayoutRatio=lastRatio;
+        deferredLayoutAnchor=lastAnchor;
+      }
+      return;
+    }
+    scheduleLayoutRestore(metric().ratio,
+      captureReaderTextAnchor({viewer,text})||lastAnchor);
+  };
+  const onPreferences=event=>{
+    // V141 : cet observateur capte l'événement AVANT le gestionnaire V26.
+    // Un input de police/taille reçu avec le livre masqué ne doit pas
+    // mémoriser une ancre de viewport nul ou préparer un faux reflow.
+    if(!isPaged()||!['reader-size','reader-font','reader-line-height',
+      'reader-letter-spacing','reader-text-width'].includes(event.target?.id))return;
+    // V149 : une préférence chargée/modifiée pendant que le livre ou l'onglet
+    // est masqué peut modifier les dimensions CSS sans déclencher resize.
+    // Différer le retour au passage lu depuis le DERNIER ratio/ancre visibles;
+    // ne jamais inspecter le DOM du roman caché ni mesurer un viewport nul.
+    if(!canNavigate()){
+      gesture=null;
+      if(deferredLayoutRatio===null){
+        deferredLayoutRatio=lastRatio;
+        deferredLayoutAnchor=lastAnchor;
+      }
+      return;
+    }
+    // V129 : le réagencement peut revenir à la géométrie initiale
+    // (taille 20→34→20) avant touchend ; un ancien doigt n'a alors plus
+    // le droit de changer d'écran. Garder l'ancrage V63 intact.
+    gesture=null;
+    // Phase capture du formulaire : avant le changement CSS de V26.
+    scheduleLayoutRestore(lastRatio,
+      captureReaderTextAnchor({viewer,text})||lastAnchor);
+  };
+  // V160 : les navigateurs/tablettes qui ne livrent que PointerEvent ont
+  // aussi droit aux pages d'écran texte. On réutilise exactement la
+  // classification tactile V53 (scroll, zoom, sélection, gestes système,
+  // reflow). TouchEvent natif prend la priorité et annule ce secours.
+  // Le PDF et le mode continu restent exclusivement gérés par V52.
+  const onPointerDown=event=>{
+    pointerGesture=null;
+    if(!isPaged()||!canNavigate()||
+      !['touch','pen'].includes(event?.pointerType)||
+      event.isPrimary===false||event.button!==0||
+      ![event.pointerId,event.clientX,event.clientY].every(Number.isFinite))
+      return;
+    const id=event.pointerId;
+    onTouchStart({touches:[{
+      identifier:id,clientX:event.clientX,clientY:event.clientY
+    }],target:event.target},true);
+    if(gesture)pointerGesture={id,pointerType:event.pointerType};
+  };
+  const onPointerMove=event=>{
+    const p=pointerGesture;
+    if(!p||p.id!==event.pointerId||p.pointerType!==event.pointerType)return;
+    if(event.buttons!==undefined&&event.buttons!==1){
+      onTouchCancel();return;
+    }
+    onTouchMove({touches:[{
+      identifier:p.id,clientX:event.clientX,clientY:event.clientY
+    }]});
+    if(!gesture)pointerGesture=null;
+  };
+  const onPointerUp=event=>{
+    const p=pointerGesture;
+    pointerGesture=null;
+    if(!p||p.id!==event.pointerId||p.pointerType!==event.pointerType||
+      event.button!==0||!gesture)return;
+    onTouchEnd({
+      touches:[],changedTouches:[{
+        identifier:p.id,clientX:event.clientX,clientY:event.clientY
+      }],defaultPrevented:event.defaultPrevented,
+      preventDefault:()=>event.preventDefault?.()
+    },true);
+  };
+  const onPointerCancel=event=>{
+    if(pointerGesture?.id===event.pointerId)onTouchCancel();
+  };
+  viewer.addEventListener('pointerdown',onPointerDown,{capture:true,passive:true});
+  viewer.addEventListener('pointermove',onPointerMove,{capture:true,passive:true});
+  viewer.addEventListener('pointerup',onPointerUp,{capture:true,passive:false});
+  viewer.addEventListener('pointercancel',onPointerCancel,{capture:true,passive:true});
+  viewer.addEventListener('lostpointercapture',onPointerCancel,{capture:true,passive:true});
+  viewer.addEventListener('touchstart',onTouchStart,{capture:true,passive:true});
+  viewer.addEventListener('touchmove',onTouchMove,{capture:true,passive:true});
+  viewer.addEventListener('touchcancel',onTouchCancel,{capture:true,passive:true});
+  // V131 : le menu de sélection annule le geste mais reste accessible.
+  viewer.addEventListener('contextmenu',onTouchCancel,{capture:true,passive:true});
+  // V132 : les poignées de sélection du texte sur téléphone peuvent
+  // émettre selectionchange sans menu contextuel. Ne pas conserver l'ancien
+  // doigt pour tourner l'écran; ne pas lire ni stocker le texte sélectionné.
+  const onSelectionChange=()=>{gesture=null;pointerGesture=null};
+  document.addEventListener('selectionchange',onSelectionChange);
+  viewer.addEventListener('touchend',onTouchEnd,{capture:true,passive:false});
+  document.addEventListener('visibilitychange',onVisibilityChange);
+  window.addEventListener('blur',onTouchCancel);
+  window.addEventListener('pagehide',onTouchCancel);
+  window.addEventListener('pageshow',onPageShow);
+  viewer.addEventListener('scroll',onScroll,{passive:true});
+  // Le moteur V26 émet cet événement APRÈS la mise à jour de la page
+  // canonique : le statut mobile reflète aussitôt une nouvelle page PDF.
+  const onBookPageChange=()=>{
+    // V118 : toute nouvelle page annule aussi les gestes en cours.
+    gesture=null;
+    if(jumpPreview!==null)jumpCancelled=true;
+    const current=String(pageField.value),changed=current!==lastNotifiedPage;
+    lastNotifiedPage=current;
+    jumpPreview=null;sync();
+    // V121 : les écrans texte ont déjà leur statut aria-live. En PDF ou
+    // mode continu, annoncer uniquement un véritable changement du numéro
+    // source, sans dévoiler le contenu d'une lecture privée masquée.
+    if(changed&&!isPaged()&&canNavigate()&&pageAnnouncement){
+      const page=Number(current),total=Number(totalPages?.textContent||pageField.max);
+      if(Number.isSafeInteger(page)&&page>0){
+        const count=Number.isSafeInteger(total)&&total>=page?' sur '+total:'';
+        pageAnnouncement.textContent='Page '+page+count+' du livre.';
+      }
+    }
+  };
+  viewer.addEventListener('sinjira:reader-page-change',onBookPageChange);
+  previous.addEventListener('click',onPrev,true);
+  next.addEventListener('click',onNext,true);
+  mobilePrevious?.addEventListener('click',onMobilePrev,true);
+  mobileNext?.addEventListener('click',onMobileNext,true);
+  document.addEventListener('keydown',onKeyboard,true);
+  document.addEventListener('input',onPreferences,true);
+  document.addEventListener('change',onPreferences,true);
+  toggle.addEventListener('change',onToggle);
+  screenJump?.addEventListener('input',onScreenJumpPreview);
+  screenJump?.addEventListener('change',onScreenJumpCommit);
+  window.addEventListener('resize',onResize,{passive:true});
+  window.addEventListener('orientationchange',onResize,{passive:true});
+  window.visualViewport?.addEventListener?.('resize',onVisualViewportResize,{passive:true});
+  window.addEventListener('sinjira:reader-layout-will-change',onFocusLayoutChange);
+  media.addEventListener?.('change',onResize);
+  sync();
+  return ()=>{
+    closed=true;gesture=null;
+    cancelReaderPageTurnFlash(viewer);
+    viewer.removeEventListener('pointerdown',onPointerDown,true);
+    viewer.removeEventListener('pointermove',onPointerMove,true);
+    viewer.removeEventListener('pointerup',onPointerUp,true);
+    viewer.removeEventListener('pointercancel',onPointerCancel,true);
+    viewer.removeEventListener('lostpointercapture',onPointerCancel,true);
+    viewer.removeEventListener('touchstart',onTouchStart,true);
+    viewer.removeEventListener('touchmove',onTouchMove,true);
+    viewer.removeEventListener('touchcancel',onTouchCancel,true);
+    viewer.removeEventListener('contextmenu',onTouchCancel,true);
+    document.removeEventListener('selectionchange',onSelectionChange);
+    viewer.removeEventListener('touchend',onTouchEnd,true);
+    document.removeEventListener('visibilitychange',onVisibilityChange);
+    window.removeEventListener('blur',onTouchCancel);
+    window.removeEventListener('pagehide',onTouchCancel);
+    window.removeEventListener('pageshow',onPageShow);
+    viewer.removeEventListener('scroll',onScroll);
+    viewer.removeEventListener('sinjira:reader-page-change',onBookPageChange);
+    previous.removeEventListener('click',onPrev,true);
+    next.removeEventListener('click',onNext,true);
+    mobilePrevious?.removeEventListener('click',onMobilePrev,true);
+    mobileNext?.removeEventListener('click',onMobileNext,true);
+    document.removeEventListener('keydown',onKeyboard,true);
+    document.removeEventListener('input',onPreferences,true);
+    document.removeEventListener('change',onPreferences,true);
+    toggle.removeEventListener('change',onToggle);
+    screenJump?.removeEventListener('input',onScreenJumpPreview);
+    screenJump?.removeEventListener('change',onScreenJumpCommit);
+    window.removeEventListener('resize',onResize);
+    window.removeEventListener('orientationchange',onResize);
+    window.visualViewport?.removeEventListener?.('resize',onVisualViewportResize);
+    window.removeEventListener('sinjira:reader-layout-will-change',onFocusLayoutChange);
+    media.removeEventListener?.('change',onResize);
+    observer?.disconnect();buttonsObserver?.disconnect();contentObserver?.disconnect();
+  };
+}
+/**
+ * V110 — une vraie lecture mobile commence par le livre, pas deux menus
+ * dépliés. Les réglages restent accessibles par leur summary natif.
+ * Sur ordinateur, ils sont dépliés au chargement, conformément à V26.
+ * Une ouverture manuelle ultérieure n'est jamais écrasée.
+ */
+export function prepareReaderPreferencePanels({media,panels=[]}={}){
+  if(!media||!Array.isArray(panels))return 0;
+  let opened=0;
+  if(!media.matches){
+    for(const panel of panels){
+      if(panel&&!panel.open){panel.open=true;opened++}
+    }
+  }
+  return opened;
+}
+/**
+ * V111 : la tablette passe d'ordinateur à liseuse mobile sans rechargement.
+ * Replier uniquement les panneaux automatiques; conserver toute interaction
+ * volontaire sur un summary, qu'elle vienne d'un clic ou du clavier.
+ * Ne pas écrire de préférence, écouter le contenu ni modifier la lecture.
+ */
+export function bindReaderResponsivePanels({media,panels=[]}={}){
+  if(!media||!Array.isArray(panels))return ()=>{};
+  const valid=panels.filter(Boolean);
+  const automatic=new Set(valid);
+  const listeners=[];
+  for(const panel of valid){
+    const summary=panel.querySelector?.('summary');
+    if(!summary?.addEventListener)continue;
+    const onUserToggle=()=>automatic.delete(panel);
+    summary.addEventListener('click',onUserToggle);
+    listeners.push([summary,onUserToggle]);
+  }
+  let mobile=Boolean(media.matches);
+  prepareReaderPreferencePanels({media,panels:valid});
+  const onMediaChange=()=>{
+    const nextMobile=Boolean(media.matches);
+    if(nextMobile===mobile)return;
+    mobile=nextMobile;
+    for(const panel of automatic)panel.open=!nextMobile;
+  };
+  media.addEventListener?.('change',onMediaChange);
+  return ()=>{
+    media.removeEventListener?.('change',onMediaChange);
+    for(const [summary,listener] of listeners)
+      summary.removeEventListener?.('click',listener);
+  };
+}
+/** V115 : raccourci mobile accessible uniquement quand V26 affiche le livre.
+ * Après activation volontaire, donner aussi le focus clavier à la zone
+ * de lecture (flèches / PageUp / PageDown) sans empêcher le lien ancre natif.
+ * Aucun accès au texte, aux droits serveur ou à la position du roman. */
+export function bindReaderQuickAccess({
+  link,content,viewer,Observer=typeof MutationObserver!=='undefined'?MutationObserver:null
+}={}){
+  if(!link||!content)return ()=>{};
+  const sync=()=>{link.hidden=Boolean(content.hidden)};
+  const onClick=event=>{
+    // Un click synthétique peut se déclencher même sur un lien caché :
+    // ne jamais déplacer le focus vers une édition masquée ou suspendue.
+    if(link.hidden||content.hidden||globalThis.document?.hidden){
+      event?.preventDefault?.();
+      return;
+    }
+    viewer?.focus?.({preventScroll:true});
+  };
+  const observer=Observer?new Observer(sync):null;
+  link.addEventListener?.('click',onClick);
+  observer?.observe(content,{attributes:true,attributeFilter:['hidden']});
+  sync();
+  return ()=>{
+    link.removeEventListener?.('click',onClick);
+    observer?.disconnect();
+  };
+}
+function initReaderScreens(){
+  const id=name=>document.getElementById(name);
+  const required=['reader-viewer','reader-text','reader-previous','reader-next',
+    'reader-screens-enabled','reader-screen-count','reader-page'];
+  if(required.some(name=>!id(name)))return;
+  bindReaderQuickAccess({
+    link:id('reader-mobile-read-link'),content:id('reader-content'),
+    viewer:id('reader-viewer')
+  });
+  // Les panneaux sont initialement fermés en HTML : zéro flash de menus
+  // dépliés sur téléphone, y compris si le moteur est chargé tardivement.
+  bindReaderResponsivePanels({
+    media:window.matchMedia('(max-width: 980px)'),
+    panels:[document.querySelector('.reader-settings'),
+      document.querySelector('.reader-audio-settings')]
+  });
+  bindReaderScreenMode({
+    viewer:id('reader-viewer'),text:id('reader-text'),
+    previous:id('reader-previous'),next:id('reader-next'),
+    mobilePrevious:id('reader-touch-prev'),mobileNext:id('reader-touch-next'),
+    toggle:id('reader-screens-enabled'),status:id('reader-screen-count'),pageField:id('reader-page'),
+    mobileHint:id('reader-touch-location'),totalPages:id('reader-total'),
+    pageAnnouncement:id('reader-page-announcement'),
+    screenJump:id('reader-screen-jump'),
+    screenJumpLabel:id('reader-screen-jump-label')
+  });
+}
+if(typeof document!=='undefined'){
+  if(document.readyState==='loading')
+    document.addEventListener('DOMContentLoaded',initReaderScreens,{once:true});
+  else initReaderScreens();
+}

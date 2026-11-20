@@ -1,0 +1,165 @@
+# SINJIRA™ — Réception de la liseuse sur appareils physiques
+
+**12 novembre 2026 — protocole à exécuter, aucun essai physique déclaré comme réalisé.**
+
+## Décision de lancement
+
+**Statut : NON VALIDÉ / NO_GO.** La [PR #1000](https://github.com/M0rdr3x/BenoitCantin/pull/1000) contient la liseuse mobile tactile V52–V153, mais le succès de Chromium/WebKit Playwright ne démontre pas à lui seul le comportement d'un véritable écran tactile, des lecteurs d'écran, du cache navigateur ou des contrôles d'accès au PDF privé. Cette fiche prépare la **réception manuelle reproductible** sans attribuer fictivement une réussite.
+
+## Préparation et précautions
+
+1. Tester une URL de préproduction issue **du commit exact de la PR #1000**, jamais une version locale non identifiée. Noter le SHA Git et l'environnement de test dans le procès-verbal.
+2. Utiliser d'abord **une œuvre entièrement fictive / autorisée** suffisamment longue, avec de petits paragraphes, un grand paragraphe, des titres et une image; **aucun roman privé de client** dans les captures ou les journaux.
+3. Pour les tests de droits, utiliser seulement **des comptes de laboratoire autorisés**, un compte sans achat et un compte détenteur de droit fictif. Les tests de révocation serveur ne sont autorisés qu'après revue et application contrôlée de la politique V51/V59; **ne pas déployer le SQL candidate par ce protocole**.
+4. Ne jamais enregistrer de jeton, URL signée, courriel personnel, numéro de compte ou texte intégral dans un rapport public.
+
+## Matrice minimale : vrais appareils
+
+| Identifiant | Appareil / navigateur | État |
+|---|---|---|
+| IOS-SMALL | iPhone de petite largeur, Safari iOS à jour | À exécuter |
+| IOS-RECENT | iPhone récent, Safari iOS à jour | À exécuter |
+| ANDROID-SMALL | Android 320–360 px CSS, Chrome à jour | À exécuter |
+| ANDROID-RECENT | Android 390–440 px CSS, Chrome à jour | À exécuter |
+| TABLET-IOS | iPad Safari, portrait et paysage | À exécuter |
+| TABLET-ANDROID | Tablette Android Chrome, portrait et paysage | À exécuter |
+| A11Y-IOS | VoiceOver iOS, lecture au toucher et au clavier si disponible | À exécuter |
+| A11Y-ANDROID | TalkBack Android, lecture au toucher | À exécuter |
+
+Noter les **versions exactes du système, du navigateur et du navigateur intégré**, ainsi que la largeur du viewport. Ne pas inventer de résultats si le matériel n'est pas disponible.
+
+## Procédure et critères d'acceptation
+
+Pour chaque appareil disponible :
+
+1. **Démarrage** — ouvrir le livre de test en mode pages d'écran; vérifier que le texte reste dans le viewport sans barre de défilement horizontale. Les boutons de navigation font au minimum 44 px dans les formats testés.
+2. **Un geste = un écran** — balayer **vers la gauche** au centre : une seule portion de texte avance, sans perdre ni répéter une ligne entière. Balayer **vers la droite** : revenir au passage précédent. Faire 20 aller-retour sur de courts et longs paragraphes; noter tout double saut.
+3. **Fin de page source** — parcourir une page PDF extraite jusqu'à la fin : le geste suivant avance à la page source suivante; revenir tout de suite avec un geste droit restitue la dernière portion de la page précédente.
+4. **Défilement naturel et annulation** — réaliser un défilement vertical, une diagonale, une sélection, un appui long et un zoom multi-doigts : aucun ne doit déclencher un changement involontaire de page.
+5. **Geste système** — commencer un mouvement de retour dans les 24 px CSS depuis les bords : la liseuse ne doit pas le capter. Vérifier séparément que le navigateur ou le système exécute ses propres gestes selon l'appareil. Répéter après orientation.
+6. **Rotation et typographie** — au milieu du livre, augmenter la police jusqu'à 34 px, modifier l'interligne à 2,1 et tourner portrait/paysage : vérifier la lisibilité, l'absence de texte masqué et le maintien du passage actuellement lu.
+7. **Reprise** — fermer et rouvrir la lecture de test : retrouver le numéro de page source PDF et la position locale. Recommencer après bascule de mode PDF/texte libre.
+8. **Accessibilité** — tester les boutons au clavier (Tab, Enter, flèches **uniquement lorsque le livre a le focus**) et les annonces « écran X sur Y », page source, précédent/suivant avec VoiceOver ou TalkBack. Vérifier que le focus est visible et qu'aucune annonce n'est répétée en boucle.
+9. **Performance et stabilité** — feuilleter durant 15 minutes : pas de page blanche persistante, de plantage du navigateur, de boucle de défilement ou de ralentissement bloquant. Réduire la vitesse réseau, verrouiller/déverrouiller puis reprendre.
+10. **Sécurité privée** — seulement lorsque la chaîne d'autorisations serveur a été homologuée : vérifier le refus d'accès sans droit, la révocation, les fichiers cache et la synchronisation entre deux appareils. Le lecteur ne doit pas conserver un URL signé utilisable après révocation.
+
+## Feuille de résultats à renseigner
+
+| ID test | Version OS / navigateur | SHA candidat | Scénarios 1–10 (PASS/FAIL/ND) | Défaut + étapes | Réviseur + date |
+|---|---|---|---|---|---|
+| IOS-SMALL | Non renseigné | Non renseigné | ND | Non renseigné | Non renseigné |
+| IOS-RECENT | Non renseigné | Non renseigné | ND | Non renseigné | Non renseigné |
+| ANDROID-SMALL | Non renseigné | Non renseigné | ND | Non renseigné | Non renseigné |
+| ANDROID-RECENT | Non renseigné | Non renseigné | ND | Non renseigné | Non renseigné |
+| TABLET-IOS | Non renseigné | Non renseigné | ND | Non renseigné | Non renseigné |
+| TABLET-ANDROID | Non renseigné | Non renseigné | ND | Non renseigné | Non renseigné |
+| A11Y-IOS | Non renseigné | Non renseigné | ND | Non renseigné | Non renseigné |
+| A11Y-ANDROID | Non renseigné | Non renseigné | ND | Non renseigné | Non renseigné |
+
+**Règle :** une ligne non renseignée reste **ND** (non démontrée) et non PASS. En cas de défaut bloquant, associer les étapes exactes et une capture expurgée au ticket GitHub; ne pas marquer comme terminé.
+
+## Complément de réception V146 — 16 novembre 2026
+
+**Preuve automatisée limitée, avant cette mise à jour documentaire :** sur le SHA de la PR #1000 `656fb4e03ca05679ff87696c94e9cb2694259fb9`, l'API GitHub a retourné **50 check-runs terminés : 36 SUCCESS, 14 SKIPPED et 0 FAILURE**. Ce bilan ne prouve pas un test physique, ni une autorisation serveur. Tout nouveau SHA, y compris un commit documentaire, nécessite sa propre vérification CI avant promotion. La branche candidate était **2 commits derrière `main`** à la comparaison; les fusionner sans réexamen des contrôles serait imprudent.
+
+### Nouveaux scénarios de non-régression à exécuter sur matériel physique
+
+| ID | Scénario et vérification PASS | Statut |
+| --- | --- | --- |
+| TOUCH-SELECT | Faire une sélection longue, ouvrir le menu contextuel, déplacer les poignées de sélection, puis relâcher; aucune page ne doit tourner et la sélection native doit rester disponible. | ND |
+| TOUCH-RESUME | Commencer un geste, changer d'onglet ou d'application, revenir, puis relâcher. Refaire avec retour arrière/avant (BFCache); aucun ancien doigt ne tourne une page. Un nouveau geste fonctionne. | ND |
+| TOUCH-ROTATE | Commencer un balayage puis pivoter le téléphone ou modifier la taille du viewport : le geste obsolète ne change pas d'écran. Après stabilisation, les gestes fonctionnent et le passage lu reste visible. | ND |
+| REFLOW-PAGE | À 320 px et sur tablette, grossir la police, espacer les lignes, changer de mode et faire 20 allers-retours. Le texte demeure sélectionnable, sans ligne sautée ni perte de passage. | ND |
+| REFLOW-HIDDEN | Masquer le livre, puis tenter une modification retardée de « Lire par pages d’écran ». La préférence confirmée ne change pas; au retour, la position est conservée. Répéter avec les réglages typographiques et le curseur d'écran. | ND |
+| VOICE-HIDDEN | Lancer la voix, masquer le livre ou passer en arrière-plan : aucune lecture de contenu privé masqué; retour sans départ vocal involontaire. Vérifier VoiceOver et TalkBack séparément. | ND |
+| PAGE-INVALID | Essayer une page invalide, vide, fractionnaire, hors bornes puis revenir aux boutons de lecture. Aucun saut ni écriture d'une position incorrecte. | ND |
+| PDF-ILLUSTRATED | Page illustrée ou extraction impossible : mode PDF fidèle, pincement/zoom et rotation possibles; retour au texte adaptable sur la page extractible suivante. | ND |
+| SECURITY-REVOKE | Avec deux comptes fictifs de test et autorisation serveur homologuée seulement : lecture autorisée/refusée, déconnexion, révocation, cache et reprise entre appareils; aucun accès après révocation. | ND |
+| PRIVATE-ASYNC-PAUSE | Sur compte de laboratoire autorisé en préproduction, suspendre l'application pendant le chargement d'un PDF et pendant l'extraction différée de texte; vérifier que le texte masqué et le canevas privé sont purgés, qu'aucun rendu périmé ne les reconstitue avant revalidation, puis que le retour autorisé restaure le passage. Répéter avec droits révoqués, sans exposer le livre ni les jetons. | ND |
+| KEY-REPEAT | Avec un clavier Bluetooth/physique en mode pages d’écran et PDF, maintenir la flèche droite, gauche, PageUp ou PageDown. Un seul appui volontaire tourne un écran ou une page, tandis que les événements automatiques de répétition ne provoquent aucun saut. Recommencer en mode VoiceOver/TalkBack sans empêcher les raccourcis hors de la zone du livre. | ND |
+| KEY-HOME-END | Sur un vrai téléphone ou une tablette avec clavier Bluetooth, mettre le focus dans le texte paginé : Home revient au premier écran et End au dernier écran **de la même page source**; un maintien ne provoque pas plusieurs sauts. Vérifier qu'en PDF, en mode continu et hors du livre, ces touches conservent leur comportement natif et ne révèlent jamais un roman masqué. Reprendre avec VoiceOver et TalkBack. | ND |
+| TEXT-SELECTION-KEYBOARD | Sur téléphone et tablette avec clavier Bluetooth, sélectionner plusieurs mots du roman dans le texte paginé, puis essayer les flèches gauche/droite, PageUp/Down et Home/End. La sélection reste contrôlée par le système : aucun écran ni page du livre ne tourne. Désélectionner et confirmer que la pagination reprend. Répéter avec VoiceOver/TalkBack et sur une page privée de laboratoire autorisée, sans extraire de texte en preuve. | ND |
+| POINTER-ONLY-PDF | Sur tablette/portable tactile et stylet, comparer (1) glissement natif TouchEvent, (2) glissement livré seulement comme PointerEvent tactile et (3) PointerEvent stylet. Gauche avance exactement une page PDF, droite recule exactement une page, jamais deux. Avec PointerEvent et TouchEvent du même contact, une seule commande est acceptée. Vérifier bords système, sélection, rotation, zoom/pincement, scroll et texte paginé sans double événement. Consigner iPadOS/Safari, Android/Chrome et versions. | ND |
+| POINTER-ONLY-TEXTE | En texte paginé sur téléphone et tablette, tester un contact qui émet uniquement PointerEvent (doigt ou stylet), puis un contact émettant aussi TouchEvent. Gauche avance exactement un écran dans la même page source, droite revient exactement un écran, sans double tournage. Sélection, zoom/pincement, mode continu, livre masqué et bords système ne doivent jamais déclencher une page involontaire. Vérifier Android/Chrome, Safari iOS/iPadOS et périphérique stylet réel; noter version, preuve expurgée et PASS/FAIL/ND. | ND |
+
+Pour chaque scénario, consigner appareil, navigateur, version d'OS, SHA exact, étapes observées, verdict PASS/FAIL/ND et preuve expurgée. **ND ne compte jamais comme PASS.** Exécuter en préproduction avec des œuvres fictives autorisées; ne pas publier de roman, jeton, URL signée ni identité personnelle.
+
+## Portes de publication
+
+- [ ] CI complète verte sur le SHA final après synchronisation avec `main`.
+- [ ] Revue du différentiel des moteurs V26/V28/V52/V53.
+- [ ] Matrice d'appareils physiques couverte, avec preuve de résultat et décision.
+- [ ] Revue indépendante de l'accessibilité tactile et des lecteurs d'écran.
+- [ ] Droits et révocation des romans privés prouvés côté serveur, sans migrer le candidat SQL par inadvertance.
+- [ ] Synchronisation réelle entre deux appareils, hors ligne et après conflits, testée.
+- [ ] Responsable de publication et plan de retour arrière approuvés.
+
+**Tant que les cases restent ouvertes, aucune déclaration « terminé », aucune augmentation mécanique du 66,5 % global et aucune date de lancement certifiée.** Source historique : [bilan de référence des quatre programmes](https://github.com/M0rdr3x/BenoitCantin/blob/main/docs/AVANCEMENT_QUATRE_PROGRAMMES_2026-11-10.md).
+
+## Complément de sécurité V153 — 16 novembre 2026
+
+Le moteur V26 sur la branche candidate interrompt désormais le rendu PDF privé lors de la suspension et ne reconstruit la page qu'après une nouvelle vérification de l'identité et des droits. Un scénario navigateur simulé couvre aussi une extraction de texte encore en attente au moment du masquage; le chargement du PDF et le rechargement après retour autorisé sont également testés sur des documents fictifs.
+
+**Limite de preuve :** il s'agit de code et de tests automatisés candidats. Les essais sur appareils physiques et la révocation serveur réelle restent **ND / NO-GO**. Le test `PRIVATE-ASYNC-PAUSE` ne doit être marqué `PASS` qu'après vérification manuelle expurgée et examen du SHA exact en préproduction.
+
+## Complément ergonomie V154 — 16 novembre 2026
+
+La branche candidate limite les événements clavier `keydown.repeat` aux commandes de lecture focalisées, afin qu'une touche tenue enfoncée ne déroule pas plusieurs passages. Les balayages tactiles gauche→suivant et droite→précédent restent inchangés. Le contrat est testé en mode texte paginé et sur la page PDF réelle simulée; **la réception Bluetooth/assistive sur appareil physique demeure ND et ne devient pas PASS sur la seule base de GitHub Actions.**
+
+## Contrôles ciblés GitHub Actions V157 — 17 novembre 2026
+
+Après une annulation de job WebKit à la limite d'exécution de **25 minutes** sur V156, les suites redondantes ont été réparties sans supprimer la couverture primaire :
+
+- **V64** conserve les parcours HTML réels avec faux PDF en Chromium et WebKit : mobile V54, vraie page V57 (y compris sélection clavier V156), reflow V58 et reprise privée V85.
+- **V65** conserve les gestes natifs du moteur Chromium.
+- **V66** vérifie la navigation mobile V54 et les trajectoires V66, en Chromium et WebKit.
+- **V67** vérifie les trajectoires et bords système V66, en Chromium et WebKit.
+- **V68** conserve la lecture mobile en paysage.
+- **V69** vérifie le reflow V58 et les replis PDF illustré V81 / extraction impossible V82, en Chromium et WebKit.
+
+Les tests unitaires Node du toucher et du reflow sont conservés dans chaque workflow concerné. Ce partage **n'atteste aucune réussite des nouvelles exécutions** avant lecture des résultats de GitHub Actions au SHA V157 final. L'annulation V156 ne doit **pas** être comptée comme PASS. L'ensemble de ces tests utilise des documents fictifs et **ne remplace pas** les essais physiques, VoiceOver/TalkBack ni la preuve indépendante des droits privés et de la reprise entre appareils.
+
+## V158 — secours des pointeurs tactiles et stylet PDF (18 novembre 2026)
+
+Dans la [PR #1000](https://github.com/M0rdr3x/BenoitCantin/pull/1000), le lecteur PDF possède désormais un secours de balayage lorsque l'appareil n'émet que des `PointerEvent` de type `touch` ou `pen`. Le gestionnaire `TouchEvent` reste prioritaire dès qu'il est présent et invalide le geste pointeur associé pour **éviter deux pages pour un mouvement**. Cette voie reste limitée au canevas PDF : le texte sélectionnable, le zoom, les gestes systèmes aux bords et la pagination texte V53 conservent leurs contrôles.
+
+Des tests unitaires et un scénario du navigateur sur PDF fictif en Chromium/WebKit ont été ajoutés. **Aucun résultat physique n'est inféré des simulations** : le critère `POINTER-ONLY-PDF` demeure ND jusqu'à consignation de preuves sur matériel. Aucune mutation du schéma, des droits serveur ou du contenu privé du roman.
+
+## V160 — pointeur uniquement en mode texte paginé (18 novembre 2026)
+
+Le moteur paginé V53 de la PR #1000 reçoit aussi le secours `PointerEvent` pour `pointerType=touch|pen`, lorsque l'appareil n'émet aucun `TouchEvent`. Le gestionnaire de `TouchEvent` natif garde la priorité et annule le secours en attente pour éviter la double pagination. Les mêmes protections de navigation V53 restent actives : sélection du texte, zoom, scroll, limite de page PDF, contenu privé masqué, rotation, changement de mise en page et gestes système sur les bords.
+
+Des tests d'intégration Node et un scénario navigateur sur le vrai HTML avec PDF **fictif** sont ajoutés. Le contrôle `POINTER-ONLY-TEXTE` demeure **ND** jusqu'à exécution sur matériel et journal de réception. **Aucune habilitation serveur, migration CAS ni publication n'est modifiée.**
+
+
+## V161 — preuve CI et feuille de route de réception (18 novembre 2026)
+
+### Résultat vérifiable sur le code candidat
+
+Au commit applicatif [`bbd1eb385b1558f22364068d0ba9286bb49af374`](https://github.com/M0rdr3x/BenoitCantin/commit/bbd1eb385b1558f22364068d0ba9286bb49af374), l'API GitHub Actions rapporte **40 workflows terminés : 31 SUCCESS, 9 SKIPPED conditionnels, 0 FAILURE**. Les suites de la liseuse **V64 à V69** sont toutes **SUCCESS**. Le correctif règle une assertion de version de cache devenue obsolète (`52.11.18.158` dans le test, `52.11.18.161` dans le HTML) sans modifier les droits d'accès ni le moteur du roman.
+
+Cette preuve concerne **uniquement ce SHA applicatif**. Le présent ajout documentaire créera un **nouveau SHA**, qui devra être vérifié séparément pour toute décision de fusion. Ni les workflows ignorés ni les navigateurs automatisés ne constituent une réception physique ou une homologation de sécurité.
+
+### Parcours minimal pour un véritable lecteur mobile
+
+Réaliser séparément les scénarios ci-dessous sur **iPhone Safari, Android Chrome et tablette**, en portrait puis paysage, avec un PDF fictif autorisé. Pour chaque appareil, consigner OS, navigateur, largeur CSS, URL de préproduction, SHA exact, résultat et preuve expurgée.
+
+| Code | Action réelle sur l'appareil | Critère de succès | État |
+| --- | --- | --- | --- |
+| MOBILE-PAGE-FWD | Texte paginé : glisser au centre de droite à gauche 20 fois | **Un geste = un écran suivant**; aucune ligne perdue, aucun saut double | ND |
+| MOBILE-PAGE-BACK | Glisser au centre de gauche à droite 20 fois | **Un geste = un écran précédent**; retour au même passage | ND |
+| MOBILE-SOURCE | Rejoindre le dernier écran d'une page PDF, puis revenir | Avance vers la page source suivante; retour vers le dernier écran de la précédente | ND |
+| MOBILE-PDF | Basculer en PDF puis balayer dans les deux sens, y compris la marge vide du viewer | Avance/recul d'exactement **une page PDF**; jamais deux si événements tactiles et pointeur coexistent | ND |
+| MOBILE-NATIVE | Défiler verticalement, sélectionner du texte, pincer pour zoomer, commencer un geste depuis les bords système | Aucun changement involontaire d'écran; gestes natifs préservés | ND |
+| MOBILE-REFLOW | À mi-livre : changer police/interligne, orientation et plein écran puis reprendre | Texte adaptable au viewport, lisible et sélectionnable, sans perdre le passage | ND |
+| MOBILE-RESUME | Verrouiller, masquer, revenir, puis utiliser de nouveau la navigation | Ancien geste annulé; pas de page tournée au réveil; retour à l'emplacement autorisé | ND |
+| MOBILE-A11Y | Utiliser VoiceOver/TalkBack, boutons et clavier externe si présent | Boutons annoncés clairement, focus visible, page/écran annoncé sans répétition ni fuite | ND |
+
+**Interdiction de conclure PASS sans exécution sur appareil réel.** Les simulations Chromium/WebKit ne valent pas vérification matérielle. Ne jamais enregistrer de contenu d'œuvre privée, de jeton d'authentification ou d'URL de téléchargement signée dans une capture.
+
+### Conditions de sécurité et décision
+
+1. **Lecture privée :** revue et preuve indépendante des droits, de la révocation serveur et des protections RLS/CAS sur comptes de laboratoire avant d'essayer une édition intégrale ([issue #955](https://github.com/M0rdr3x/BenoitCantin/issues/955)). Ne pas déployer automatiquement les migrations SQL candidates.
+2. **Synchronisation :** démontrer l'enregistrement et la reprise après conflit réel entre deux appareils, puis déconnexion et révocation; séparer les tests de l'extrait gratuit de ceux des livres privés.
+3. **Publication :** revue du différentiel, validation CI sur le **SHA final**, matrice matérielle documentée, revue accessibilité, approbation du responsable et possibilité de retour arrière.
+4. **Décision actuelle : NO-GO.** La [PR #1000](https://github.com/M0rdr3x/BenoitCantin/pull/1000) demeure **DRAFT**, non fusionnée et non déployée. Les preuves automatiques réussies font progresser la qualification technique mais ne permettent pas de déclarer les critères matériels ou de sécurité terminés.
