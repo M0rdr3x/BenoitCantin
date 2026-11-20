@@ -31,11 +31,11 @@ AUTH_ROUTES = [
     "compte/mot-de-passe-oublie.html",
     "compte/reinitialiser-mot-de-passe.html",
 ]
-EXPECTED_DOORS = {
-    "/projets/sinjira/",
+EXPECTED_FEATURES = {
+    "/projets/sinjira/romans/",
     "/projets/sinjira/registre/",
-    "/projets/projet-nova/",
-    "/projets/projet-nova/boussole-electorale.html",
+    "/projets/sinjira/jeux/",
+    "/projets/sinjira/communaute/",
 }
 IS_LOCAL = (urlparse(BASE_URL).hostname or "").lower() in {"127.0.0.1", "localhost"}
 
@@ -168,50 +168,42 @@ def run() -> None:
         runtime_version = page.evaluate("window.__SINJIRA_RUNTIME__ && window.__SINJIRA_RUNTIME__.version")
         assert_true(runtime_version == "24.4.22", f"Runtime public inattendu: {runtime_version!r}")
 
-        cards = page.locator("a.home-project")
-        assert_true(cards.count() == 4, f"Accueil: 4 accès attendus, trouvé {cards.count()}")
-        hrefs = {cards.nth(i).get_attribute("href") for i in range(cards.count())}
-        assert_true(hrefs == EXPECTED_DOORS, f"Accueil: portes inattendues: {hrefs}")
-        orbit_nodes = page.locator(".home-cosmos a.orbit-node")
-        assert_true(orbit_nodes.count() == 4, f"Accueil: 4 portes orbitales attendues, trouvé {orbit_nodes.count()}")
-        compass_orbit = page.locator(".home-cosmos .node-boussole-home")
-        assert_true(compass_orbit.count() == 1, f"{BROWSER_NAME}: porte orbitale Boussole absente")
-        assert_true(
-            compass_orbit.get_attribute("href") == "/projets/projet-nova/boussole-electorale.html",
-            f"{BROWSER_NAME}: cible de la porte orbitale Boussole incorrecte",
-        )
-        compass_image = compass_orbit.locator('img[src^="/assets/media/nova-boussole-electorale.webp"]')
-        assert_true(
-            compass_image.count() == 1,
-            f"{BROWSER_NAME}: visuel officiel absent de la porte Boussole",
-        )
-        assert_true(
-            "?v=20261013-fix" in (compass_image.get_attribute("src") or ""),
-            f"{BROWSER_NAME}: ancienne image Boussole encore en cache",
-        )
-        compass_image.scroll_into_view_if_needed()
+        # Accueil recentré : un seul projet visuellement dans le cercle.
+        # Les quatre liens ci-dessous sont des rubriques du même univers,
+        # pas d'autres projets.
+        page.locator("body.home-sinjira-only").wait_for(state="attached")
+        orbit = page.locator(".home-cosmos a.sinjira-orbit")
+        assert_true(orbit.count() == 1 and orbit.is_visible(),
+                    f"{BROWSER_NAME}: SINJIRA doit être seul dans le cercle")
+        assert_true(orbit.get_attribute("href") == "/projets/sinjira/",
+                    f"{BROWSER_NAME}: porte unique SINJIRA incorrecte")
+        orbit_img = orbit.locator('img[src="/assets/media/sinjira-emblem.webp"]')
+        assert_true(orbit_img.count() == 1,
+                    f"{BROWSER_NAME}: visuel SINJIRA absent du cercle")
+        orbit_img.scroll_into_view_if_needed()
         page.wait_for_function(
             """() => {
-                const image = document.querySelector('.node-boussole-home img');
-                return image && image.complete &&
-                       image.naturalWidth >= 128 && image.naturalHeight >= 128;
+                const image = document.querySelector('.home-cosmos .sinjira-orbit img');
+                return !!image && image.complete && image.naturalWidth > 0;
             }""",
             timeout=15_000,
         )
-        assert_true(
-            page.locator('a[href="/projets/projet-nova/boussole-electorale.html"]').count() >= 4,
-            f"{BROWSER_NAME}: accès directs à la Boussole insuffisants sur l’accueil principal",
-        )
-
-        for selector, min_width in (
-            (".node-registre-home img", 120),
-            (".node-sinjira-home img", 120),
-            (".node-nova-home img", 120),
-            (".node-boussole-home img", 125),
-        ):
-            icon = page.locator(selector)
-            box = icon.bounding_box()
-            assert_true(box is not None and box["width"] >= min_width, f"{BROWSER_NAME}: icône principale trop petite: {selector}")
+        assert_true(page.locator(".home-cosmos .orbit-node").count() == 0,
+                    f"{BROWSER_NAME}: anciennes portes encore présentes dans le cercle")
+        cards = page.locator("a.home-project")
+        assert_true(cards.count() == 4,
+                    f"{BROWSER_NAME}: 4 rubriques SINJIRA attendues, trouvé {cards.count()}")
+        hrefs = {cards.nth(i).get_attribute("href") for i in range(cards.count())}
+        assert_true(hrefs == EXPECTED_FEATURES,
+                    f"{BROWSER_NAME}: rubriques SINJIRA inattendues: {hrefs}")
+        assert_true(page.locator('body.home-sinjira-only a[href^="/projets/projet-nova"]').count() == 0,
+                    f"{BROWSER_NAME}: lien Nova encore affiché sur la page d'accueil")
+        assert_true("Projet Nova" not in page.locator("main").inner_text(),
+                    f"{BROWSER_NAME}: Nova encore présenté dans la section principale")
+        assert_true("Boussole électorale" not in page.locator("main").inner_text(),
+                    f"{BROWSER_NAME}: Boussole encore présentée dans l'accueil")
+        assert_true(page.locator('link[href*="home-sinjira-only-v1.css"]').count() == 1,
+                    f"{BROWSER_NAME}: styles ergonomiques de l'accueil absents")
 
         page.goto(urljoin(BASE_URL, "projets/projet-nova/"), wait_until="domcontentloaded", timeout=30_000)
         assert_true(
