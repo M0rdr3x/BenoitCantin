@@ -18,8 +18,9 @@ PAGES = {
 GLOBAL_NAV = (
     "/",
     "/projets/sinjira/",
-    "/projets/projet-nova/",
-    "/a-propos.html",
+    "/projets/sinjira/romans/",
+    "/projets/sinjira/registre/",
+    "/projets/sinjira/communaute/",
     "/compte/",
 )
 
