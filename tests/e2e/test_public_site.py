@@ -1235,7 +1235,15 @@ def run() -> None:
         # Fermer au toucher hors du panneau, sans attendre un nouveau clic
         # sur le bouton. Le bas de page est hors du menu en surimpression.
         toggle.tap()
-        mobile_page.locator("footer").tap()
+        # V1 accueil SINJIRA : toucher un lien du pied de page pourrait
+        # naviguer vers une autre section (et y charger l'assistant) au
+        # lieu de valider la fermeture du menu. La zone copyright n'a
+        # aucun lien : le test reste un VRAI tap en dehors du panneau.
+        mobile_page.locator("footer .footer-bottom > span").first.tap()
+        assert_true(
+            mobile_page.url.rstrip("/") == BASE_URL.rstrip("/"),
+            f"{BROWSER_NAME}: le tap hors menu a navigué au lieu de rester sur l'accueil: {mobile_page.url}",
+        )
         assert_true(
             toggle.get_attribute("aria-expanded") == "false",
             f"{BROWSER_NAME}: toucher hors du menu ne le ferme pas",
