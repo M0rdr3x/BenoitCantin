@@ -1074,6 +1074,23 @@ def run() -> None:
                 and page.locator('label[for="registry-email"]').count() == 1,
                 f"{BROWSER_NAME}: labels du compte Registre non associés",
             )
+            # Un submit synthétique avant la dernière étape ne doit atteindre
+            # aucun listener métier; il ne réalise aucun envoi réseau.
+            blocked_early_submit = page.evaluate("""() => {
+                const form = document.querySelector('[data-character-form]');
+                let reachedBusiness = false;
+                const observer = () => { reachedBusiness = true; };
+                form.addEventListener('submit', observer);
+                const event = new Event('submit', {bubbles: true, cancelable: true});
+                form.dispatchEvent(event);
+                form.removeEventListener('submit', observer);
+                return event.defaultPrevented && !reachedBusiness;
+            }""")
+            assert_true(
+                blocked_early_submit,
+                f"{BROWSER_NAME}: soumission prématurée du Registre non interceptée",
+            )
+            page.locator('[data-registry-wizard-back]').click()
             wait_for_assistant(page)
             assert_true(page.evaluate("window.__SINJIRA_ASSISTANT__.contextLabel") == "Registre des Consciences", f"{BROWSER_NAME}: contexte Registre invalide")
             page.locator(".sinjira-assistant-toggle").click()
