@@ -85,7 +85,7 @@ def main():
         'steps.length !== 9', "consent.length !== 2", 'button[type="submit"]',
         'fieldset.hidden = i !== current', 'submit.hidden = !last',
         'form.addEventListener(\'invalid\'', 'form.addEventListener(\'submit\'',
-        "event.preventDefault()", 'checkValidity()', 'reportValidity()',
+        "event.preventDefault()", "event.stopImmediatePropagation()", 'checkValidity()', 'reportValidity()',
         "10 * 1024 * 1024", "data-max-select", "prefers-reduced-motion",
     ):
         if marker not in js:
