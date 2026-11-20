@@ -958,6 +958,57 @@ def run() -> None:
 
             page.goto(urljoin(BASE_URL, "compte/inscription.html"), wait_until="domcontentloaded", timeout=30_000)
             assert_true(page.locator('input[type="password"][minlength="12"]').count() == 2, f"{BROWSER_NAME}: politique 12 caractères incohérente à l'inscription")
+
+            # Ergonomie du compte : la révélation reste volontaire, le type
+            # password revient après Masquer, et aucun envoi n'est effectué.
+            page.wait_for_function(
+                "() => document.querySelectorAll('[data-password-visibility]').length === 2",
+                timeout=10_000,
+            )
+            pwd_toggles = page.locator('[data-password-visibility]')
+            assert_true(pwd_toggles.count() == 2, f"{BROWSER_NAME}: boutons afficher/masquer absents à l'inscription")
+            pwd_toggles.first.click()
+            assert_true(
+                page.locator('#signup-password').get_attribute('type') == 'text'
+                and pwd_toggles.first.get_attribute('aria-pressed') == 'true',
+                f"{BROWSER_NAME}: affichage accessible du mot de passe inopérant",
+            )
+            pwd_toggles.first.click()
+            assert_true(
+                page.locator('#signup-password').get_attribute('type') == 'password'
+                and pwd_toggles.first.get_attribute('aria-pressed') == 'false',
+                f"{BROWSER_NAME}: masquage du mot de passe inopérant",
+            )
+            signup_optional = page.locator('[data-optional-personal-info]')
+            assert_true(
+                signup_optional.count() == 1 and signup_optional.get_attribute('open') is None,
+                f"{BROWSER_NAME}: section facultative de l'inscription initialement ouverte",
+            )
+            signup_optional.locator('summary').click()
+            assert_true(
+                signup_optional.get_attribute('open') is not None
+                and page.locator('#signup-extra-origin_city').is_visible(),
+                f"{BROWSER_NAME}: champs complémentaires non accessibles au toucher",
+            )
+            assert_true(
+                page.locator('#signup-birth-date').is_visible()
+                and page.locator('#signup-gender').is_visible(),
+                f"{BROWSER_NAME}: contrôles d'âge obligatoires masqués",
+            )
+            page.goto(urljoin(BASE_URL, "compte/connexion.html"), wait_until="domcontentloaded", timeout=30_000)
+            page.wait_for_function(
+                "() => document.querySelectorAll('[data-password-visibility]').length === 1",
+                timeout=10_000,
+            )
+            login_toggle = page.locator('[data-password-visibility]')
+            assert_true(login_toggle.count() == 1, f"{BROWSER_NAME}: visibilité du mot de passe de connexion absente")
+            login_toggle.click()
+            assert_true(page.locator('#login-password').get_attribute('type') == 'text',
+                        f"{BROWSER_NAME}: mot de passe de connexion non affiché après commande")
+            login_toggle.click()
+            assert_true(page.locator('#login-password').get_attribute('type') == 'password',
+                        f"{BROWSER_NAME}: mot de passe de connexion non masqué après commande")
+
             page.goto(urljoin(BASE_URL, "compte/reinitialiser-mot-de-passe.html"), wait_until="domcontentloaded", timeout=30_000)
             assert_true(page.locator('input[type="password"][minlength="12"]').count() == 2, f"{BROWSER_NAME}: politique 12 caractères incohérente à la réinitialisation")
 
