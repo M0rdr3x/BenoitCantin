@@ -2,6 +2,10 @@
   'use strict';
 
   var doc = document;
+  // L'accueil personnel désactive volontairement l'assistant; même si un
+  // chargement différé ou externe injecte ce fichier, respecter ce contrat.
+  if (doc.documentElement &&
+      doc.documentElement.getAttribute('data-disable-sinjira-assistant') === 'true') return;
   var ASSISTANT_VERSION = '24.4.48';
   var PROVIDER_MODE = 'local';
   var EXTERNAL_PROVIDER_ENABLED = false;
