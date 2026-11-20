@@ -86,11 +86,12 @@ def main():
 
     script = JS.read_text("utf-8")
     for marker in (
-        "form[data-login-form], form[data-signup-form]", "input[type=\"password\"][autocomplete]",
+        "form[data-login-form], form[data-signup-form]", "input[type=\"password\"]",
         "button.type = 'button'", "button.dataset.passwordVisibility",
         "button.setAttribute('aria-controls'", "button.setAttribute('aria-pressed'",
         "document.addEventListener('visibilitychange'", "window.addEventListener('pagehide'",
         "form.addEventListener('submit', concealAll, true)",
+        "document.addEventListener('DOMContentLoaded', initialize",
     ):
         if marker not in script:
             problems.append("Affichage des mots de passe : protection manquante " + marker)
