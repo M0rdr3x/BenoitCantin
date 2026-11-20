@@ -57,6 +57,10 @@ def main():
         errors.append("Le Registre doit conserver exactement neuf fieldsets et un formulaire")
     if len(parser.labels) < 25:
         errors.append("Associations explicites des 25 libellés manquantes")
+    # Un id placé après le slash de fermeture d'un input crée du HTML
+    # invalide et peut rendre le label inopérant selon le navigateur.
+    if re.search(r"<input\b[^>]*\/\s+id=", html, re.I):
+        errors.append("Attribut id mal placé après la fermeture de balise input")
     for label_id in parser.labels:
         if parser.ids.count(label_id) != 1:
             errors.append("Libellé sans identifiant de champ unique : " + label_id)
