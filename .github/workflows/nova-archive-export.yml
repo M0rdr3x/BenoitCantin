@@ -23,6 +23,14 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      - name: Valider l'accueil SINJIRA unique, le shell et le SEO
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/validate_home_focus.py
+          python3 scripts/validate_public_root_shell.py
+          python3 scripts/validate_seo_quality.py
+          python3 scripts/validate_site.py
       - name: Prévenir un export incomplet
         run: python3 scripts/build_nova_archive.py --self-test
       - name: Assembler le ZIP sans accès réseau
