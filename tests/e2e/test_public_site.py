@@ -177,7 +177,7 @@ def run() -> None:
                     f"{BROWSER_NAME}: SINJIRA doit être seul dans le cercle")
         assert_true(orbit.get_attribute("href") == "/projets/sinjira/",
                     f"{BROWSER_NAME}: porte unique SINJIRA incorrecte")
-        orbit_img = orbit.locator('img[src="/assets/icons/sinjira.svg"]')
+        orbit_img = orbit.locator('img[src="/assets/icons/sinjira-favicon.png"]')
         assert_true(orbit_img.count() == 1,
                     f"{BROWSER_NAME}: visuel SINJIRA absent du cercle")
         orbit_img.scroll_into_view_if_needed()

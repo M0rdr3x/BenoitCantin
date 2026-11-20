@@ -73,8 +73,10 @@ def main() -> int:
         errors.append("Un lien Nova est encore affiché sur l'accueil.")
     if not any("home-sinjira-only-v1.css" in href for href in parser.css):
         errors.append("Styles SINJIRA de l'accueil absents.")
-    if "/assets/icons/sinjira.svg" not in parser.images:
-        errors.append("Emblème SINJIRA officiel absent du cercle.")
+    if "/assets/icons/sinjira-favicon.png" not in parser.images:
+        errors.append("Le cercle doit utiliser le logo SINJIRA et non une cible.")
+    if "/assets/icons/sinjira.svg" in parser.images:
+        errors.append("L’ancien pictogramme cible doit être absent de l’accueil.")
     for key in (".home-sinjira-cosmos", ".sinjira-orbit", "@media(max-width:700px)",
                 ":focus-visible", "prefers-reduced-motion"):
         if key not in css:
