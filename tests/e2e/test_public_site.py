@@ -1050,12 +1050,20 @@ def run() -> None:
                 "Étape 2 sur 9" in wizard.locator(".registry-wizard-step").inner_text(),
                 f"{BROWSER_NAME}: passage à l'étape 2 impossible",
             )
+            # L'apparence (étape 2) est facultative; la personnalité
+            # (étape 3) contient huit réponses obligatoires.
             page.locator('[data-registry-wizard-next]').click()
             assert_true(
-                "Étape 2 sur 9" in wizard.locator(".registry-wizard-step").inner_text()
+                "Étape 3 sur 9" in wizard.locator(".registry-wizard-step").inner_text(),
+                f"{BROWSER_NAME}: l'apparence facultative ne doit pas bloquer la progression",
+            )
+            page.locator('[data-registry-wizard-next]').click()
+            assert_true(
+                "Étape 3 sur 9" in wizard.locator(".registry-wizard-step").inner_text()
                 and page.locator('[data-registry-wizard-error]').is_visible(),
                 f"{BROWSER_NAME}: le Registre doit bloquer une étape requise incomplète",
             )
+            page.locator('[data-registry-wizard-back]').click()
             page.locator('[data-registry-wizard-back]').click()
             assert_true(
                 "Étape 1 sur 9" in wizard.locator(".registry-wizard-step").inner_text(),
