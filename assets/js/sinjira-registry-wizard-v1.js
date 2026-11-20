@@ -158,9 +158,19 @@
   }, true);
 
   form.addEventListener('submit', function (event) {
-    if (current !== steps.length - 1 || !validateCurrent()) {
+    // L'événement de l'ancien module métier reste intact UNIQUEMENT
+    // lorsque l'utilisateur est à la dernière étape et valide.
+    // preventDefault seul n'arrêterait pas les listeners suivants :
+    // stopImmediatePropagation empêche l'envoi RPC prématuré.
+    if (current !== steps.length - 1) {
       event.preventDefault();
-      if (current !== steps.length - 1 && validateCurrent()) show(current + 1, true);
+      event.stopImmediatePropagation();
+      if (validateCurrent()) show(current + 1, true);
+      return;
+    }
+    if (!validateCurrent()) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
     }
   }, true);
 
