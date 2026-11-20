@@ -1022,7 +1022,50 @@ def run() -> None:
             page.keyboard.press("Escape")
             assert_true(panel.is_hidden(), f"{BROWSER_NAME}: Escape ne ferme pas l’assistant")
 
+
+            # Le Registre SINJIRA est désormais progressif, sans persistance
+            # locale des réponses. Les tests restent anonymes et ne soumettent
+            # jamais le questionnaire ni ne manipulent un compte privé.
             page.goto(urljoin(BASE_URL, "projets/sinjira/registre/"), wait_until="domcontentloaded", timeout=30_000)
+            wizard = page.locator("[data-registry-wizard]")
+            wizard.wait_for(state="visible", timeout=10_000)
+            assert_true(
+                page.locator('form[data-character-form] fieldset[data-registry-wizard-step]').count() == 9,
+                f"{BROWSER_NAME}: le Registre doit contenir neuf étapes",
+            )
+            assert_true(
+                "Étape 1 sur 9" in wizard.locator(".registry-wizard-step").inner_text(),
+                f"{BROWSER_NAME}: progression du Registre absente",
+            )
+            assert_true(
+                page.locator('fieldset[data-registry-wizard-step="2"]').is_hidden(),
+                f"{BROWSER_NAME}: les champs de l'étape suivante sont visibles prématurément",
+            )
+            assert_true(
+                page.locator('form[data-character-form] button[type="submit"]').is_hidden(),
+                f"{BROWSER_NAME}: envoi accessible avant l'écran de consentement",
+            )
+            page.locator('[data-registry-wizard-next]').click()
+            assert_true(
+                "Étape 2 sur 9" in wizard.locator(".registry-wizard-step").inner_text(),
+                f"{BROWSER_NAME}: passage à l'étape 2 impossible",
+            )
+            page.locator('[data-registry-wizard-next]').click()
+            assert_true(
+                "Étape 2 sur 9" in wizard.locator(".registry-wizard-step").inner_text()
+                and page.locator('[data-registry-wizard-error]').is_visible(),
+                f"{BROWSER_NAME}: le Registre doit bloquer une étape requise incomplète",
+            )
+            page.locator('[data-registry-wizard-back]').click()
+            assert_true(
+                "Étape 1 sur 9" in wizard.locator(".registry-wizard-step").inner_text(),
+                f"{BROWSER_NAME}: retour en arrière du Registre impossible",
+            )
+            assert_true(
+                page.locator('label[for="registry-pseudo"]').count() == 1
+                and page.locator('label[for="registry-email"]').count() == 1,
+                f"{BROWSER_NAME}: labels du compte Registre non associés",
+            )
             wait_for_assistant(page)
             assert_true(page.evaluate("window.__SINJIRA_ASSISTANT__.contextLabel") == "Registre des Consciences", f"{BROWSER_NAME}: contexte Registre invalide")
             page.locator(".sinjira-assistant-toggle").click()
