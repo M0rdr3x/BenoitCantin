@@ -71,7 +71,7 @@ async function run() {
   assert.deepEqual(await readLimitedUtf8BodyWithDeadline(stalled, 512, 40), {
     ok: false, reason: 'REQUEST_TIMEOUT'
   });
-  assert.ok(performance.now() - startedAt < 1000, 'l'annulation bloquée ne doit pas retenir la réponse');
+  assert.ok(performance.now() - startedAt < 1000, "l'annulation bloquée ne doit pas retenir la réponse");
 
   for (const [path, marker] of [
     ['supabase/functions/get-document-url/index.ts', 'readLimitedUtf8BodyWithDeadline(req,MAX_REQUEST_BYTES,MAX_REQUEST_READ_TIMEOUT_MS)'],
