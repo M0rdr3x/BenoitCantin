@@ -32,16 +32,21 @@ class RegistryMarkup(HTMLParser):
         self.scripts: list[dict[str, str | None]] = []
         self.inline_handlers: list[str] = []
         self.seen_form = False
+        self.in_head = False
         self.meta_after_form = False
+        self.meta_outside_head = False
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         a = dict(attrs)
+        if tag == "head":
+            self.in_head = True
         for k, value in attrs:
             if (k or "").lower().startswith("on"):
                 self.inline_handlers.append(k)
         if tag == "meta" and (a.get("http-equiv") or "").lower() == "content-security-policy":
             self.meta_policies.append(a.get("content") or "")
             self.meta_after_form |= self.seen_form
+            self.meta_outside_head |= not self.in_head
         elif tag == "form" and "data-character-form" in a:
             self.forms.append(a)
             self.seen_form = True
@@ -49,6 +54,10 @@ class RegistryMarkup(HTMLParser):
             self.submit_buttons.append(a)
         elif tag == "script":
             self.scripts.append(a)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "head":
+            self.in_head = False
 
 
 def policy_directives(policy: str) -> dict[str, list[str]]:
@@ -91,7 +100,8 @@ def markup_errors(html: str) -> list[str]:
     parsed = RegistryMarkup()
     parsed.feed(html)
     errors = []
-    if parsed.meta_policies != ["form-action 'none'"] or parsed.meta_after_form:
+    if (parsed.meta_policies != ["form-action 'none'"] or
+            parsed.meta_after_form or parsed.meta_outside_head):
         errors.append("CSP locale form-action 'none' dans le head requise")
     if len(parsed.forms) != 1:
         errors.append("formulaire unique requis")
@@ -170,10 +180,10 @@ class RegistryNativeSubmissionSecurityTests(unittest.TestCase):
             with self.subTest(mutated=mutation[:80]):
                 self.assertNotEqual(mutation, good_policy)
                 self.assertTrue(policy_errors(mutation))
+        csp_meta = '<meta http-equiv="Content-Security-Policy" content="form-action \'none\'">'
         for mutation in (
-            self.html.replace(
-                '<meta http-equiv="Content-Security-Policy" content="form-action \'none\'">', ""
-            ),
+            self.html.replace(csp_meta, ""),
+            self.html.replace(csp_meta, "").replace("</head>", "</head>" + csp_meta, 1),
             self.html.replace('autocomplete="off" ', ""),
             self.html.replace('type="submit" disabled>', 'type="submit">'),
         ):
