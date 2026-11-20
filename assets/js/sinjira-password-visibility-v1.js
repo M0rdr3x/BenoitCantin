@@ -4,9 +4,13 @@
  */
 (function () {
   'use strict';
+  function initialize() {
   var form = document.querySelector('form[data-login-form], form[data-signup-form]');
   if (!form) return;
-  var fields = Array.from(form.querySelectorAll('input[type="password"][autocomplete]'));
+  // Les attributs autocomplete indiquent l'intention au navigateur, mais
+  // certains moteurs ne les exposent pas uniformément en propriété JS.
+  // Le type réel du champ suffit, dans ces deux formulaires uniquement.
+  var fields = Array.from(form.querySelectorAll('input[type="password"]'));
   if (!fields.length) return;
 
   var toggles = [];
@@ -21,7 +25,7 @@
   }
 
   fields.forEach(function (input) {
-    if (!input.id || !/^(current-password|new-password)$/.test(input.autocomplete)) return;
+    if (!input.id) return;
     var label = form.querySelector('label[for="' + input.id + '"]');
     var labelText = label ? label.textContent.replace(/\*/g, '').trim().toLowerCase() : 'le mot de passe';
     var button = document.createElement('button');
@@ -52,4 +56,10 @@
   });
   window.addEventListener('pagehide', concealAll);
   form.addEventListener('submit', concealAll, true);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialize, {once: true});
+  } else {
+    initialize();
+  }
 })();
