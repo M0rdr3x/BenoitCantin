@@ -39,7 +39,10 @@ WINDOWS_UNSAFE = re.compile(r'[\\:<>?"|*\x00-\x1f\x7f]')
 WINDOWS_DEVICE_NAME = re.compile(
     r"^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$", re.I
 )
-SECRET_ENV_NAME = re.compile(r"^\.env(?:$|[._-])", re.I)
+SECRET_ENV_NAME = re.compile(r"^\.(?:env(?:$|[._-]|rc$)|direnv(?:$|[._-]))", re.I)
+MAX_ARCHIVE_FILES = 2000
+MAX_ARCHIVE_FILE_BYTES = 32 * 1024 * 1024
+MAX_ARCHIVE_SOURCE_BYTES = 128 * 1024 * 1024
 
 
 def git(*args: str) -> bytes:
@@ -122,6 +125,8 @@ def self_test_archive_path_boundary() -> None:
         "projets/projet-nova/name\n.txt",
         "projets/projet-nova/.env",
         "projets/projet-nova/.env.staging.local",
+        "projets/projet-nova/.envrc",
+        "projets/projet-nova/.direnv/session",
         "projets/projet-nova/.npmrc",
         "projets/projet-nova/.ssh/id_rsa",
         "projets/projet-nova/service-account.json",
@@ -150,8 +155,23 @@ def selected_paths() -> list[str]:
     return found
 
 
+def validate_archive_budget(paths: list[str]) -> int:
+    if len(paths) > MAX_ARCHIVE_FILES:
+        raise ValueError("Trop de fichiers a exporter")
+    total = 0
+    for relative in paths:
+        size = (ROOT / relative).stat().st_size
+        if size > MAX_ARCHIVE_FILE_BYTES:
+            raise ValueError("Fichier trop volumineux pour un ZIP de securite")
+        total += size
+        if total > MAX_ARCHIVE_SOURCE_BYTES:
+            raise ValueError("Taille cumulee de l'archive excessive")
+    return total
+
+
 def make_archive(destination: Path) -> dict:
     paths = selected_paths()
+    validate_archive_budget(paths)
     if not any(p.startswith("projets/projet-nova/") for p in paths):
         raise RuntimeError("Sous-arborescence du projet Nova absente")
     revision = git("rev-parse", "HEAD").decode().strip()
@@ -171,8 +191,12 @@ def make_archive(destination: Path) -> dict:
     }
     destination.parent.mkdir(parents=True, exist_ok=True)
     with ZipFile(destination, "w", compression=ZIP_DEFLATED, compresslevel=7, allowZip64=True) as archive:
+        actual_total = 0
         for relative in paths:
             data = (ROOT / relative).read_bytes()
+            actual_total += len(data)
+            if len(data) > MAX_ARCHIVE_FILE_BYTES or actual_total > MAX_ARCHIVE_SOURCE_BYTES:
+                raise ValueError("Budget ZIP depasse pendant la lecture")
             digest = hashlib.sha256(data).hexdigest()
             archive.writestr("SOURCE_GITHUB/" + relative, data)
             manifest["files"].append({"path": relative, "bytes": len(data), "sha256": digest})
@@ -227,6 +251,8 @@ def main() -> int:
         return 2
     if args.self_test:
         self_test_archive_path_boundary()
+        assert 0 < validate_archive_budget(candidates) <= MAX_ARCHIVE_SOURCE_BYTES
+        assert len(candidates) <= MAX_ARCHIVE_FILES
         print(json.dumps({"self_test": "OK", "zip_path_security": "PASS", "file_count": len(candidates),
                           "examples": expected}, ensure_ascii=False))
         return 0
