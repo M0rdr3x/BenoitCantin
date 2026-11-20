@@ -1,8 +1,9 @@
-import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
+import { readLimitedUtf8BodyWithDeadline } from '../_shared/read-chunk-deadline.mjs';
 import { corsHeaders } from '../_shared/cors.ts';
 import { optionalUser, serviceClient } from '../_shared/auth.ts';
 
 const MAX_REQUEST_BYTES=512;
+const MAX_REQUEST_READ_TIMEOUT_MS=4_000;
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ranks:Record<string,number>={public:1,account:10,player:20,tester:30,admin:100};
 // Les propriétés héritées de Object.prototype ne sont pas des niveaux d'accès.
@@ -43,11 +44,14 @@ function externalUrlAllowed(value:string){
 
 async function readLimitedJson(req:Request):Promise<{body?:any;response?:Response}>{
   const contentType=(req.headers.get('content-type')||'').toLowerCase();
-  if(!contentType.startsWith('application/json')){
+  if(!/^application\/json(?:\s*;|$)/.test(contentType)){
     return {response:privateJson({ok:false,error:'Type de contenu non autorisé.'},415)};
   }
-  const limited=await readLimitedUtf8Body(req,MAX_REQUEST_BYTES);
-  if(!limited.ok)return {response:privateJson({ok:false,error:'Requête trop volumineuse ou invalide.'},413)};
+  const limited=await readLimitedUtf8BodyWithDeadline(req,MAX_REQUEST_BYTES,MAX_REQUEST_READ_TIMEOUT_MS);
+  if(!limited.ok){
+    const timeout=limited.reason==='REQUEST_TIMEOUT';
+    return {response:privateJson({ok:false,error:timeout?'Délai de transmission dépassé.':'Requête trop volumineuse ou invalide.'},timeout?408:413)};
+  }
   const raw=limited.raw;
   try{return {body:JSON.parse(raw||'{}')}}catch{return {response:privateJson({ok:false,error:'Corps JSON invalide.'},400)}}
 }
