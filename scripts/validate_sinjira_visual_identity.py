@@ -5,6 +5,7 @@ On ne remplace pas les couvertures de livres, les illustrations de jeu ou
 les images du Registre : seules les marques/icônes globales sont concernées.
 """
 from pathlib import Path
+import base64
 import re
 import struct
 import sys
@@ -53,6 +54,23 @@ def validate() -> list[str]:
         problems.append("Le dessin en cible est toujours présent dans le SVG.")
     if '<title id="sinjira-brand-title">Emblème SINJIRA</title>' not in svg:
         problems.append("Le SVG n'a pas de nom accessible.")
+    embedded = re.search(r'data:image/png;base64,([A-Za-z0-9+/=]+)', svg)
+    if embedded:
+        try:
+            if base64.b64decode(embedded.group(1), validate=True) != data:
+                problems.append("Le SVG ne contient pas le logo PNG source exact.")
+        except ValueError:
+            problems.append("Le SVG contient des données PNG invalides.")
+
+    # Toutes les pages SINJIRA et les écrans du compte doivent désormais
+    # afficher la même icône compacte lorsqu'il s'agit du logo de marque.
+    # Le fichier haute définition reste archivé mais ne doit plus être
+    # téléchargé comme une petite icône de 47–58 pixels.
+    for folder in (ROOT / "projets/sinjira", ROOT / "compte"):
+        for page in folder.rglob("*.html"):
+            text = page.read_text("utf-8")
+            if "sinjira-emblem.webp" in text:
+                problems.append(f"{page.relative_to(ROOT)} : ancienne image de marque lourde.")
 
     for relative in SMALL_BRAND_PAGES:
         file = ROOT / relative
