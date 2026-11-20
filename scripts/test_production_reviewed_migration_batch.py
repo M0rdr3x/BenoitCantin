@@ -62,7 +62,7 @@ class ReviewedProductionMigrationBatchTests(unittest.TestCase):
                 'optionalUser(req)', 'project_access_rank', 'createSignedUrl',
                 'MAX_REQUEST_BYTES', 'await readLimitedUtf8BodyWithDeadline(',
                 'MAX_REQUEST_READ_TIMEOUT_MS=4_000;', 'timeout?408:413',
-                r'/^application\\/json(?:\\s*;|$)/.test(contentType)',
+                r'/^application\/json(?:\s*;|$)/.test(contentType)',
             ),
             'send-game-report': (
                 'optionalUser(req)', 'PAID_EXTERNAL_SERVICES_ENABLED=false',
