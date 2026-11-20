@@ -95,7 +95,7 @@ def check():
     if count < 50:
         problems.append(f"Seulement {count} pages équipées; couverture suspecte")
     home = (ROOT / "index.html").read_text("utf-8")
-    if len(re.findall(r"<link\\b[^>]*rel=[\"']stylesheet[\"']", home, re.I)) > 8:
+    if len(re.findall(r"<link\b[^>]*rel=[\"']stylesheet[\"']", home, re.I)) > 8:
         problems.append("Budget styles de l'accueil dépassé")
     dashboard = (ROOT / "compte/index.html").read_text("utf-8")
     for href in (
