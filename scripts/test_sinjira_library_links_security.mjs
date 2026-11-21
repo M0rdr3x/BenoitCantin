@@ -110,8 +110,11 @@ test('cartes bibliothèques : aucune URL active ni tierce ne devient cliquable',
 });
 
 test('mutation négative : un retour aux liens bruts fait échouer le contrat', async () => {
-  assert.ok(body.includes('href="${escapeHtml(demoHref)}"'));
-  const mutated = body.replace('href="${escapeHtml(demoHref)}"', 'href="${escapeHtml(n.demo_path)}"');
+  assert.ok(body.includes("const demoHref=safeInternalDestination(n.demo_path,'');"));
+  const mutated = body.replace(
+    "const demoHref=safeInternalDestination(n.demo_path,'');",
+    "const demoHref=n.demo_path;"
+  );
   assert.notEqual(mutated, body, 'Mutation inactive');
   const html = await render(mutated, novels);
   assert.match(html, /href="javascript:alert\(1\)"/);
