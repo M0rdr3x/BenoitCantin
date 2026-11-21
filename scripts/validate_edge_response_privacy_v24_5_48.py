@@ -61,7 +61,9 @@ def main()->int:
 
     doc_markers=[
         'UUID_RE=',
-        'readLimitedUtf8Body(req,MAX_REQUEST_BYTES)',
+        'readLimitedUtf8BodyWithDeadline(req,MAX_REQUEST_BYTES,MAX_REQUEST_READ_TIMEOUT_MS)',
+        'MAX_REQUEST_READ_TIMEOUT_MS=4_000;',
+        "timeout?408:413",
         "doc.status!=='approved'",
         "doc.projects?.status!=='active'",
         'externalUrlAllowed',

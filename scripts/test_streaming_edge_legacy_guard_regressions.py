@@ -74,7 +74,7 @@ def main() -> None:
         (privacy, "REPORT",
          "readLimitedUtf8Body(req, MAX_REQUEST_BYTES)", "await req.text()"),
         (privacy, "DOCURL",
-         "readLimitedUtf8Body(req,MAX_REQUEST_BYTES)", "await req.text()"),
+         "readLimitedUtf8BodyWithDeadline(req,MAX_REQUEST_BYTES,MAX_REQUEST_READ_TIMEOUT_MS)", "await req.text()"),
         (privacy, "DOCURL",
          "parsed.username||parsed.password", "false"),
         (privacy, "DOCURL",

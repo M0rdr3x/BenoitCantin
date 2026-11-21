@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { readLimitedUtf8Body } from '../supabase/functions/_shared/limited-body.mjs';
+import { readLimitedUtf8BodyWithDeadline } from '../supabase/functions/_shared/read-chunk-deadline.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const encoder = new TextEncoder();
@@ -49,17 +50,43 @@ async function run() {
   const empty = new Request('https://example.invalid/edge', { method: 'POST' });
   assert.deepEqual(await readLimitedUtf8Body(empty, 8), { ok: true, raw: '' });
 
+  // La fonction documentaire publique utilise une échéance ABSOLUE : un
+  // client qui s'arrête au milieu du corps ne peut bloquer le worker.
+  const deadlineValid = streamRequest([encoder.encode('{"ok":true}')]);
+  assert.deepEqual(await readLimitedUtf8BodyWithDeadline(deadlineValid, 512, 200), {
+    ok: true, raw: '{"ok":true}'
+  });
+  const deadlineOverflow = streamRequest([encoder.encode('123456789')]);
+  assert.equal((await readLimitedUtf8BodyWithDeadline(deadlineOverflow, 8, 200)).reason, 'REQUEST_TOO_LARGE');
+
+  const stalled = new Request('https://example.invalid/edge', {
+    method: 'POST',
+    duplex: 'half',
+    body: new ReadableStream({
+      pull() { return new Promise(() => {}); },
+      cancel() { return new Promise(() => {}); }
+    })
+  });
+  const startedAt = performance.now();
+  assert.deepEqual(await readLimitedUtf8BodyWithDeadline(stalled, 512, 40), {
+    ok: false, reason: 'REQUEST_TIMEOUT'
+  });
+  assert.ok(performance.now() - startedAt < 1000, "l'annulation bloquée ne doit pas retenir la réponse");
+
   for (const [path, marker] of [
-    ['supabase/functions/get-document-url/index.ts', 'readLimitedUtf8Body(req,MAX_REQUEST_BYTES)'],
+    ['supabase/functions/get-document-url/index.ts', 'readLimitedUtf8BodyWithDeadline(req,MAX_REQUEST_BYTES,MAX_REQUEST_READ_TIMEOUT_MS)'],
     ['supabase/functions/send-game-report/index.ts', 'readLimitedUtf8Body(req, MAX_REQUEST_BYTES)'],
     ['supabase/functions/life-story-delivery/index.ts', 'readLimitedUtf8Body(req, MAX_REQUEST_BYTES)'],
   ]) {
     const source = readFileSync(resolve(root, path), 'utf8');
-    assert.ok(source.includes("limited-body.mjs"), path + ': import absent');
+    const expectedImport = path.includes('/get-document-url/')
+      ? 'read-chunk-deadline.mjs'
+      : 'limited-body.mjs';
+    assert.ok(source.includes(expectedImport), path + ': import absent');
     assert.ok(source.includes(marker), path + ': stream non limité');
     assert.ok(!source.includes('await req.text()'), path + ': lecture non bornée');
     assert.ok(!source.includes('await req.json()'), path + ': JSON non borné');
   }
-  console.log('PASS: limites de corps HTTP en flux, UTF-8, headers trompeurs et intégration des 3 fonctions publiques.');
+  console.log('PASS: limites de corps HTTP en flux, UTF-8, deadline absolue contre slowloris et intégration des 3 fonctions publiques.');
 }
 await run();
