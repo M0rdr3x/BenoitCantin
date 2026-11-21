@@ -9,6 +9,9 @@ on:
       - 'projets/projet-nova/assets/boussole-electorale.js'
       - 'projets/projet-nova/data/boussole-preuves-2026.json'
       - 'projets/projet-nova/assets/documents.js'
+      - 'projets/projet-nova/visionneuse.html'
+      - 'projets/projet-nova/assets/pdf-viewer-native.js'
+      - 'scripts/test_nova_native_pdf_viewer.cjs'
       - 'projets/projet-nova/data/actualites.json'
       - 'projets/projet-nova/data/comptabilite.json'
       - 'projets/projet-nova/data/rencontres.json'
@@ -22,6 +25,9 @@ on:
       - 'projets/projet-nova/assets/boussole-electorale.js'
       - 'projets/projet-nova/data/boussole-preuves-2026.json'
       - 'projets/projet-nova/assets/documents.js'
+      - 'projets/projet-nova/visionneuse.html'
+      - 'projets/projet-nova/assets/pdf-viewer-native.js'
+      - 'scripts/test_nova_native_pdf_viewer.cjs'
       - 'projets/projet-nova/data/actualites.json'
       - 'projets/projet-nova/data/comptabilite.json'
       - 'projets/projet-nova/data/rencontres.json'
@@ -54,3 +60,7 @@ jobs:
         run: node --check projets/projet-nova/assets/boussole-electorale.js
       - name: Exécuter les scénarios de mutation XSS
         run: node scripts/test_nova_public_dom_xss.cjs
+      - name: Tester le vrai lecteur PDF natif (URL locales, XSS, mode sans documents)
+        run: |
+          node --check projets/projet-nova/assets/pdf-viewer-native.js
+          node --test scripts/test_nova_native_pdf_viewer.cjs
