@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / '.github/workflows/sinjira-registry-edge-scoped-deploy.yml'
 GUARD = ("github.event_name == 'workflow_dispatch' && inputs.apply == true && "
          "inputs.confirmation == 'DEPLOY-SINJIRA-REGISTRY-EDGE' && "
-         "github.ref == 'refs/heads/main'")
+         "github.ref == 'refs/heads/main' && github.ref_protected == true")
 COMMAND = 'supabase functions deploy submit-character-questionnaire --project-ref "$PROJECT_ID" --use-api'
 
 
@@ -40,6 +40,8 @@ def validate(source: str) -> list[str]:
     need('          persist-credentials: false', 'Checkout sans identifiants persistants absent.')
     need('          ref: ${{ github.sha }}', 'Checkout du commit exact testé absent.')
     need("test \"$GITHUB_REF\" = 'refs/heads/main'", 'Vérification de branche après approbation absente.')
+    need('test "${GITHUB_REF_PROTECTED:-}" = \'true\'',
+         'Refus d’une référence non protégée après approbation absent.')
     need('test "$(git rev-parse HEAD)" = "$GITHUB_SHA"',
          'Identité du commit entre tests et déploiement non contrôlée.')
     need("test \"$CONFIRMATION\" = 'DEPLOY-SINJIRA-REGISTRY-EDGE'",
@@ -126,6 +128,14 @@ def self_test() -> None:
     mutations = {
         'autoriser PR': original.replace('    if: ${{ ' + GUARD + ' }}',
                                        "    if: ${{ github.event_name == 'pull_request' }}", 1),
+        'retirer protection du job': original.replace(
+            '    if: ${{ ' + GUARD + ' }}',
+            '    if: ${{ ' + GUARD.replace(' && github.ref_protected == true', '') + ' }}', 1),
+        'retirer protection d’une étape': original.replace(
+            '        if: ${{ ' + GUARD + ' }}',
+            '        if: ${{ ' + GUARD.replace(' && github.ref_protected == true', '') + ' }}', 1),
+        'retirer preuve de protection après approbation': original.replace(
+            'test "${GITHUB_REF_PROTECTED:-}" = \'true\'', 'true', 1),
         'retirer environnement': original.replace('    environment: production\n', '', 1),
         'étendre toutes les fonctions': original.replace(COMMAND,
                                                          'supabase functions deploy --project-ref "$PROJECT_ID" --use-api', 1),
