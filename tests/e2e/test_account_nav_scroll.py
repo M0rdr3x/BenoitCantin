@@ -94,6 +94,15 @@ def run():
                                       and b["label"] and b["target"]==state["scrollId"]
                                       for b in state["buttons"]),
                                   f"boutons non accessibles {path} à {width}px : {state}")
+                            page.wait_for_function("""() => {
+                              const scroll=document.querySelector('.account-nav-scroll');
+                              const current=scroll?.querySelector('a[aria-current="page"]');
+                              if(!current) return false;
+                              const a=current.getBoundingClientRect();
+                              const b=scroll.getBoundingClientRect();
+                              return a.left>=b.left-3 && a.right<=b.right+3;
+                            }""", timeout=5_000)
+                            state=snapshot(page)
                             check(state["currentVisible"],
                                   f"rubrique active hors de la zone visible {path} {width}: {state}")
                         else:
