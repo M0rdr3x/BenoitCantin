@@ -31,8 +31,15 @@ def check_page(path, expected):
     text = (ROOT / path).read_text("utf-8")
     if 'data-sinjira-form-ux="v1"' not in text:
         errors.append(f"{path}: activation responsive absente")
-    if "/assets/css/sinjira-forms-ux-v1.css?v=1.0.0" not in text:
+    auth_nav = path in {
+        "compte/connexion.html", "compte/inscription.html",
+        "compte/mot-de-passe-oublie.html", "compte/reinitialiser-mot-de-passe.html",
+    }
+    css_version = "1.0.1" if auth_nav else "1.0.0"
+    if f"/assets/css/sinjira-forms-ux-v1.css?v={css_version}" not in text:
         errors.append(f"{path}: style responsive manquant")
+    if auth_nav and 'sinjira-auth-nav-v1.js?v=1.0.0' not in text:
+        errors.append(f"{path}: commandes de navigation Auth absentes")
     found = list(FIELD.finditer(text))
     if len(found) != expected:
         errors.append(f"{path}: {len(found)} étiquettes de champs au lieu de {expected}")
