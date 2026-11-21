@@ -157,13 +157,20 @@ def run():
                   viewport={"width":320,"height":800})
                 try:
                     p2=fallback.new_page()
-                    p2.goto(urljoin(BASE,PAGES[0]),wait_until="domcontentloaded")
+                    p2.goto(urljoin(BASE,PAGES[0]),wait_until="load")
+                    # WebKit sans JS peut appliquer les feuilles de style après
+                    # DOMContentLoaded : vérifier après la disposition flex réelle.
+                    p2.wait_for_function("""() => {
+                      const el=document.querySelector('.universe-subnav .container');
+                      return el && getComputedStyle(el).display==='flex' &&
+                        el.scrollWidth>el.clientWidth+2;
+                    }""",timeout=5_000)
                     check(p2.evaluate("""() => {
                       const nav=document.querySelector('.universe-subnav');
                       const el=nav?.querySelector('.container');
                       return !!el && !nav.hasAttribute('data-sinjira-auth-nav-ready') &&
                         nav.querySelectorAll('.sinjira-auth-nav-arrow').length===0 &&
-                        el.scrollWidth>el.clientWidth &&
+                        el.scrollWidth>el.clientWidth+2 &&
                         document.documentElement.scrollWidth<=innerWidth+2;
                     }"""),"repli sans JavaScript non défilable")
                 finally:
