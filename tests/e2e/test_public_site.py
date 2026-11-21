@@ -1742,6 +1742,12 @@ def run() -> None:
         assert_true(fallback_page.locator('[data-menu-toggle]').is_hidden(),
                     f"{BROWSER_NAME}: bouton de menu inactif affiché sans JavaScript")
         assert_true(
+            fallback_page.locator('.site-header').evaluate(
+                "(el) => getComputedStyle(el).position !== 'sticky'"
+            ),
+            f"{BROWSER_NAME}: en-tête de repli bloque le défilement mobile",
+        )
+        assert_true(
             fallback_page.evaluate(
                 "document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2"
             ),
