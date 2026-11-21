@@ -11,6 +11,7 @@ on:
       - 'assets/js/site.js'
       - 'assets/js/sinjira-nav-boot-v2.js'
       - 'scripts/validate_sinjira_ux_v1.py'
+      - 'tests/e2e/test_account_nav_scroll.py'
       - '.github/workflows/sinjira-ux-navigation-v1.yml'
   push:
     branches: [main]
@@ -21,6 +22,7 @@ on:
       - 'assets/css/site-ux-sinjira-v1.css'
       - 'assets/js/site.js'
       - 'scripts/validate_sinjira_ux_v1.py'
+      - 'tests/e2e/test_account_nav_scroll.py'
       - '.github/workflows/sinjira-ux-navigation-v1.yml'
   workflow_dispatch:
 
@@ -51,3 +53,44 @@ jobs:
         run: |
           node --check assets/js/site.js
           node --check assets/js/sinjira-nav-boot-v2.js
+
+  verifier-navigation-compte:
+    name: Rubriques compte ${{ matrix.browser }} PC/mobile
+    needs: verifier-ergonomie
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.61.0-noble@sha256:a9731514f24121d1dcd25d58d0a38146646d290a5998fd80d3e533e7b5e21c69
+      options: --user 1001
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    timeout-minutes: 15
+    steps:
+      - name: Récupérer le dépôt sans identifiants persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Contrôler Python 3.12
+        run: python3 -c 'import sys; assert sys.version_info[:2] == (3, 12)'
+      - name: Installer Playwright épinglé
+        run: python -m pip install --disable-pip-version-check "playwright==1.61.0"
+      - name: Démarrer le site en local
+        run: |
+          python -m http.server 4173 --bind 127.0.0.1 > /tmp/account-nav.log 2>&1 &
+          echo $! > /tmp/account-nav.pid
+          for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+            if python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4173/',timeout=1).read(1)" >/dev/null 2>&1; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/account-nav.log
+          exit 1
+      - name: Contrôler 5 pages, 7 résolutions et le mode sans JavaScript
+        env:
+          BASE_URL: http://127.0.0.1:4173/
+          BROWSER: ${{ matrix.browser }}
+        run: python tests/e2e/test_account_nav_scroll.py
+      - name: Arrêter le serveur local
+        if: always()
+        run: |
+          if [ -f /tmp/account-nav.pid ]; then kill "$(cat /tmp/account-nav.pid)" || true; fi
