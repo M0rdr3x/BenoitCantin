@@ -1,6 +1,7 @@
 import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import { corsHeaders } from '../_shared/cors.ts';
 import { optionalUser, serviceClient } from '../_shared/auth.ts';
+import { privateDocumentLocationValid, isVerifiedPrivateDocumentBucket } from '../_shared/private-document-storage.mjs';
 
 const MAX_REQUEST_BYTES=512;
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -36,7 +37,8 @@ function externalUrlAllowed(value:string){
     if(relative&&value.startsWith('//'))return false;
     const parsed=relative?new URL(value,DOCUMENT_URL_BASE):new URL(value);
     if(parsed.protocol!=='https:'||parsed.username||parsed.password)return false;
-    if(relative&&parsed.origin!==DOCUMENT_URL_BASE)return false;
+    // Les URL documentaires externes doivent rester sur l'origine officielle.
+    if(parsed.origin!==DOCUMENT_URL_BASE)return false;
     return true;
   }catch{return false}
 }
@@ -90,7 +92,17 @@ Deno.serve(async(req)=>{
       if(!externalUrlAllowed(url))return privateJson({ok:false,error:'URL de document non autorisée.'},500);
       return privateJson({ok:true,url,protected:false,expires_in:null});
     }
-    if(!doc.storage_bucket||!doc.storage_path)return privateJson({ok:false,error:'Fichier non configuré.'},500);
+    // Une URL signée n'assure aucune confidentialité si Storage est public.
+    // Vérifier les métadonnées réelles du bucket après autorisation du compte,
+    // et échouer sans aucun lien si sa configuration est inconnue ou dangereuse.
+    if(!privateDocumentLocationValid(doc.storage_bucket,doc.storage_path)){
+      return privateJson({ok:false,error:'Stockage privé indisponible.'},503);
+    }
+    const {data:bucketMetadata,error:bucketMetadataError}=await service.storage.getBucket(doc.storage_bucket);
+    if(bucketMetadataError||!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket)){
+      console.error('[get-document-url]',{code:'DOCUMENT_PRIVATE_BUCKET_UNVERIFIED'});
+      return privateJson({ok:false,error:'Stockage privé indisponible.'},503);
+    }
 
     const {data:signed,error:signedError}=await service.storage.from(doc.storage_bucket).createSignedUrl(doc.storage_path,600);
     if(signedError||!signed?.signedUrl)return privateJson({ok:false,error:'Impossible de créer le lien sécurisé.'},500);
