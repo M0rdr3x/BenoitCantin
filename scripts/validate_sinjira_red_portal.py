@@ -41,7 +41,7 @@ def check():
             err.append("Ancien halo mauve encore présent : " + old)
     if 'home-sinjira-only-v1.css?v=1.1.0' not in html:
         err.append("Cache CSS pas invalidé")
-    if 'src="/assets/icons/sinjira-favicon.png"' not in html or "sinjira.svg" in html:
+    if 'src="/assets/icons/sinjira-officiel-20261120.png"' not in html or "sinjira.svg" in html:
         err.append("Image officielle absente ou ancienne cible encore présente")
     glows = re.findall(r'--card-glow:(rgba?\([^)]+\))', html)
     if len(glows) != 4 or not all(is_red(glow) for glow in glows):

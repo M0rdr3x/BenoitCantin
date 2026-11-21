@@ -1,0 +1,131 @@
+/* SINJIRA — commentaires Livre I : ergonomie et accessibilité, bureau et mobile.
+ * Isolation : cette feuille ne touche ni Nova, ni les autres écrans du compte. */
+body[data-reader-page="novel"] #commentaires{overflow-x:clip}
+body[data-reader-page="novel"] #commentaires .container{min-width:0}
+body[data-reader-page="novel"] .reader-comment-shell{
+  box-sizing:border-box;max-width:980px;width:100%;margin-inline:auto;
+  padding:clamp(20px,4vw,42px)!important;min-width:0;
+  border:1px solid rgba(239,86,78,.38);border-radius:clamp(16px,2vw,25px);
+  background:linear-gradient(150deg,rgba(17,22,40,.98),rgba(8,11,24,.98));
+  box-shadow:0 22px 68px rgba(0,0,0,.25)
+}
+body[data-reader-page="novel"] .reader-comment-shell>h2{
+  margin:.75rem 0 1rem;color:#fff;
+  font-size:clamp(1.4rem,3vw,2.1rem);line-height:1.23;text-wrap:balance
+}
+body[data-reader-page="novel"] .reader-comment-shell>p{
+  margin:0 0 1.3rem;max-width:70ch;color:#d6dcec;line-height:1.65
+}
+body[data-reader-page="novel"] .reader-comments{
+  display:grid;gap:12px;min-width:0;margin:clamp(18px,3vw,28px) 0
+}
+body[data-reader-page="novel"] .reader-comment{
+  box-sizing:border-box;min-width:0;padding:clamp(15px,2.6vw,22px);
+  border:1px solid rgba(208,215,237,.2);border-radius:16px;
+  background:rgba(16,22,39,.68);overflow-wrap:anywhere
+}
+body[data-reader-page="novel"] .reader-comment header{
+  display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;margin-bottom:.55rem
+}
+body[data-reader-page="novel"] .reader-comment time{color:#c9cfe1;font-size:.86rem}
+body[data-reader-page="novel"] .reader-comment p{line-height:1.65;margin:.4rem 0}
+body[data-reader-page="novel"] .reader-login-note{
+  padding:14px 18px;border-radius:13px;background:rgba(255,255,255,.035);
+  border:1px solid rgba(233,235,246,.13);line-height:1.55;overflow-wrap:anywhere
+}
+body[data-reader-page="novel"] .reader-comment-form{
+  width:100%;max-width:860px;min-width:0;
+  margin:clamp(20px,3vw,30px) auto 0;
+  display:grid;grid-template-columns:minmax(0,1fr);gap:12px
+}
+body[data-reader-page="novel"] .reader-comment-form[hidden]{display:none!important}
+body[data-reader-page="novel"] .reader-comment-form .reader-comment-label{
+  display:block;width:100%;font-weight:700;color:#fff;font-size:1.05rem
+}
+body[data-reader-page="novel"] .reader-comment-form textarea{
+  box-sizing:border-box;display:block;min-width:0;width:100%;max-width:100%;
+  min-height:180px;max-height:75vh;max-height:75dvh;padding:16px 18px;
+  resize:vertical;line-height:1.6;font:inherit;font-size:max(16px,1rem);
+  border-radius:15px;border:1px solid rgba(255,129,116,.62);
+  color:#f8f9ff;background:#141a2c;caret-color:#ffb6a9;
+  box-shadow:0 0 0 1px rgba(210,47,54,.04)
+}
+body[data-reader-page="novel"] .reader-comment-form textarea::placeholder{color:#b9bdcd;opacity:1}
+body[data-reader-page="novel"] .reader-comment-form textarea:focus-visible{
+  outline:3px solid #ffb8a8;outline-offset:2px;border-color:#ffb8a8
+}
+body[data-reader-page="novel"] .reader-comment-help{
+  color:#c8ccda;font-size:.88rem;line-height:1.45;margin:0
+}
+body[data-reader-page="novel"] .reader-comment-form .account-check{
+  display:flex;align-items:center;gap:12px;min-height:48px;
+  width:100%;margin:2px 0;line-height:1.5;cursor:pointer
+}
+body[data-reader-page="novel"] .reader-comment-form .account-check input{
+  flex:0 0 auto;width:22px;height:22px;accent-color:#d82738;cursor:pointer
+}
+body[data-reader-page="novel"] .reader-comment-form .account-check span{min-width:0;overflow-wrap:anywhere}
+body[data-reader-page="novel"] .reader-comment-form button[type="submit"]{
+  box-sizing:border-box;width:100%;max-width:100%;min-height:54px;
+  margin:2px 0 0;white-space:normal;line-height:1.35;
+  padding:13px 16px;text-align:center;border-radius:15px;
+  background:linear-gradient(120deg,#a1122b,#da2639,#b61530);
+  color:#fff;font-weight:750;border:1px solid #ff8f9a
+}
+body[data-reader-page="novel"] .reader-comment-form button[disabled]{
+  cursor:progress;opacity:.66
+}
+body[data-reader-page="novel"] [data-reader-status]{
+  box-sizing:border-box;max-width:860px;width:100%;margin:16px auto 0;
+  padding:14px 16px;line-height:1.55;border-radius:12px;
+  color:#f2f5ff;background:#1a2238;overflow-wrap:anywhere
+}
+body[data-reader-page="novel"] [data-reader-status][hidden]{display:none!important}
+body[data-reader-page="novel"] [data-reader-status][data-status-type="error"]{
+  border:1px solid rgba(255,132,132,.6)
+}
+body[data-reader-page="novel"] [data-reader-status][data-status-type="success"]{
+  border:1px solid rgba(133,227,174,.48)
+}
+@media(max-width:600px){
+  body[data-reader-page="novel"] .reader-comment-shell{padding:16px!important;border-radius:18px}
+  body[data-reader-page="novel"] .reader-comment-form{gap:10px}
+  body[data-reader-page="novel"] .reader-comment-form textarea{min-height:168px;padding:13px 14px}
+  body[data-reader-page="novel"] .reader-comment-form button[type="submit"]{min-height:52px}
+}
+@media(prefers-reduced-motion:reduce){
+  body[data-reader-page="novel"] .reader-comment-form *{scroll-behavior:auto;transition:none!important}
+}
+
+/* Espace personnel : liste, modification et suppression des commentaires. */
+body[data-v18-page="comments"] .reader-comments{min-width:0;display:grid;gap:16px}
+body[data-v18-page="comments"] .reader-comment{
+  min-width:0;overflow-wrap:anywhere;padding:clamp(16px,3vw,24px);
+  border:1px solid rgba(225,115,110,.3);border-radius:16px;
+  background:rgba(15,20,37,.94);line-height:1.6
+}
+body[data-v18-page="comments"] .reader-comment header{
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px;margin-bottom:8px
+}
+body[data-v18-page="comments"] .reader-comment :where(p,small,time){display:block;max-width:100%;overflow-wrap:anywhere}
+body[data-v18-page="comments"] .reader-comment-inline-edit{
+  display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-top:16px
+}
+body[data-v18-page="comments"] .reader-comment-inline-edit label{font-weight:700}
+body[data-v18-page="comments"] .reader-comment-inline-edit textarea{
+  box-sizing:border-box;display:block;width:100%;max-width:100%;
+  min-width:0;min-height:150px;resize:vertical;
+  background:#121a2d;border:1px solid rgba(255,149,141,.72);
+  color:#fff;border-radius:12px;padding:14px;
+  font:inherit;font-size:max(16px,1rem);line-height:1.55
+}
+body[data-v18-page="comments"] .reader-comment-inline-edit textarea:focus-visible{
+  outline:3px solid #ffb6a5;outline-offset:2px
+}
+body[data-v18-page="comments"] .reader-comment :where(button,a){min-height:46px}
+@media(max-width:520px){
+  body[data-v18-page="comments"] .reader-comment-inline-edit .hero-actions{
+    display:grid;grid-template-columns:1fr
+  }
+  body[data-v18-page="comments"] .reader-comment-inline-edit button{width:100%}
+}

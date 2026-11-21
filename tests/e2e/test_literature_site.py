@@ -474,6 +474,33 @@ def assert_no_horizontal_overflow(page, label: str) -> None:
     assert_true(fits, f"{BROWSER_NAME}: débordement horizontal en 390 px sur {label}")
 
 
+def assert_comment_editor_responsive(page, label: str) -> None:
+    # Mesurer le formulaire avec un compte simulé uniquement côté DOM :
+    # aucune soumission, aucun jeton et aucune requête privée.
+    sizing = page.evaluate("""() => {
+        const form = document.querySelector('[data-comment-form]');
+        const textarea = document.getElementById('sinjira-commentaire-texte');
+        const button = form?.querySelector('button[type=submit]');
+        if (!form || !textarea || !button) return {ok:false, reason:'elements missing'};
+        form.hidden = false;
+        const textBox = textarea.getBoundingClientRect();
+        const buttonBox = button.getBoundingClientRect();
+        const viewport = window.innerWidth;
+        return {
+            ok: textBox.width >= Math.min(240, viewport * .65) &&
+                textBox.height >= (viewport <= 600 ? 168 : 180) &&
+                textBox.left >= -1 && textBox.right <= viewport + 1 &&
+                Math.abs(buttonBox.width - textBox.width) <= 3 &&
+                getComputedStyle(textarea).fontSize === '16px',
+            viewport, width: textBox.width, height: textBox.height,
+            buttonWidth: buttonBox.width, left: textBox.left,
+            right: textBox.right,
+            font: getComputedStyle(textarea).fontSize
+        };
+    }""")
+    assert_true(sizing.get("ok"), f"{BROWSER_NAME}: formulaire mal dimensionné sur {label}: {sizing}")
+
+
 def run() -> None:
     assert_true(BROWSER_NAME in SUPPORTED_BROWSERS, f"Navigateur Playwright inconnu: {BROWSER_NAME}")
 
@@ -493,6 +520,7 @@ def run() -> None:
         response = page.goto(literature_url, wait_until="domcontentloaded", timeout=30_000)
         assert_true(response is not None and response.status < 400, f"{BROWSER_NAME}: page Littérature inaccessible")
         assert_true(page.locator("main#contenu").count() == 1, f"{BROWSER_NAME}: main Littérature absent")
+        assert_comment_editor_responsive(page, 'ordinateur 1440px')
         assert_true(page.locator("h1").inner_text().strip() == "Littérature.", f"{BROWSER_NAME}: H1 Littérature inattendu")
         assert_true(
             page.locator('link[rel="canonical"]').get_attribute("href") == CANONICAL,
@@ -733,6 +761,11 @@ def run() -> None:
             response = mobile_page.goto(urljoin(BASE_URL, route), wait_until="domcontentloaded", timeout=30_000)
             assert_true(response is not None and response.status < 400, f"{BROWSER_NAME}: {label} inaccessible sur mobile")
             assert_no_horizontal_overflow(mobile_page, label)
+            if route == LITERATURE_ROUTE:
+                assert_comment_editor_responsive(mobile_page, 'cellulaire 390px')
+                mobile_page.set_viewport_size({"width": 320, "height": 720})
+                assert_comment_editor_responsive(mobile_page, 'cellulaire 320px')
+                mobile_page.set_viewport_size({"width": 390, "height": 844})
 
         assert_true(mobile_page.locator("iframe[data-pdf-reader]").count() == 1, f"{BROWSER_NAME}: iframe lecteur mobile absente")
         assert_true(mobile_page.locator('a[download="SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"]').count() == 1, f"{BROWSER_NAME}: téléchargement lecteur mobile absent")

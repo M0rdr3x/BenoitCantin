@@ -12,6 +12,7 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 LOGO = ROOT / "assets/icons/sinjira-favicon.png"
+OFFICIAL = ROOT / "assets/icons/sinjira-officiel-20261120.png"
 HOME = ROOT / "index.html"
 SVG = ROOT / "assets/icons/sinjira.svg"
 SMALL_BRAND_PAGES = [
@@ -42,8 +43,10 @@ def validate() -> list[str]:
 
     html = HOME.read_text("utf-8")
     orbit = re.search(r'<a\s+class="sinjira-orbit"[^>]*>[\s\S]*?</a>', html)
-    if not orbit or 'src="/assets/icons/sinjira-favicon.png"' not in orbit.group(0):
+    if not orbit or 'src="/assets/icons/sinjira-officiel-20261120.png"' not in orbit.group(0):
         problems.append("L'accueil n'utilise pas le logo SINJIRA dans son cercle central.")
+    if not OFFICIAL.exists() or OFFICIAL.read_bytes() != data:
+        problems.append("L'icône officielle versionnée diverge de la marque globale.")
     if 'src="/assets/icons/sinjira.svg"' in html:
         problems.append("La cible SVG historique est toujours montrée sur l'accueil.")
 
@@ -80,7 +83,7 @@ def validate() -> list[str]:
         text = file.read_text("utf-8")
         if "sinjira-emblem.webp" in text:
             problems.append(f"{relative} : image de marque trop lourde encore chargée.")
-        if "/assets/icons/sinjira-favicon.png" not in text:
+        if "/assets/icons/sinjira-favicon.png" not in text and "/assets/icons/sinjira-officiel-20261120.png" not in text:
             problems.append(f"{relative} : logo harmonisé absent.")
     return problems
 

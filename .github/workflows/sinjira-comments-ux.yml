@@ -1,0 +1,38 @@
+name: SINJIRA — Commentaires modérés et ergonomie mobile
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-reader.js'
+      - 'assets/css/sinjira-comments-responsive-v2.css'
+      - 'projets/sinjira/romans/index.html'
+      - 'scripts/validate_sinjira_comments_ux.py'
+      - '.github/workflows/sinjira-comments-ux.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-reader.js'
+      - 'assets/css/sinjira-comments-responsive-v2.css'
+      - 'projets/sinjira/romans/index.html'
+      - 'scripts/validate_sinjira_comments_ux.py'
+      - '.github/workflows/sinjira-comments-ux.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contrats-commentaires:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Vérifier structure, confidentialité et responsive
+        run: python3 scripts/validate_sinjira_comments_ux.py
+      - name: Vérifier syntaxe du module commentaires
+        run: node --check assets/js/sinjira-reader.js
+      - name: Vérifier contrat de sécurité de lecture publique
+        run: python3 scripts/validate_public_comment_security.py
