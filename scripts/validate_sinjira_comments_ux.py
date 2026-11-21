@@ -25,19 +25,25 @@ for marker in [
     "submit.disabled=false",
     "aria-expanded",
     "form.hidden=false",
+    "aria-controls=",
+    "content.hidden=!revealed",
+    "textarea?.addEventListener('input',updateCount)",
+    "form.reset();\n      updateCount();",
 ]:
     check(marker in reader, "Contrat commentaires absent : " + marker)
 for forbidden in ["from('novel_comments')", "contains_spoilers:", "display_name_snapshot:", "setStatus(error.message", "insert({novel_id:novel.id,user_id:user.id,display_name_snapshot"]:
     check(forbidden not in reader, "Ancienne API ou risque sécurité : " + forbidden)
 for marker in [
     'data-reader-page="novel"',
-    'sinjira-comments-responsive-v2.css?v=2.0.0',
-    'sinjira-reader.js?v=25.1.2',
+    'sinjira-comments-responsive-v2.css?v=2.1.0',
+    'sinjira-reader.js?v=25.1.3',
     'id="sinjira-commentaire-texte"',
     'for="sinjira-commentaire-texte"',
     'minlength="3"',
     'maxlength="3000"',
     'rows="6"',
+    'aria-describedby="commentaire-aide commentaire-compteur"',
+    'data-comment-count',
     'aria-live="polite"',
 ]:
     check(marker in html, "HTML commentaires manquant : " + marker)
@@ -48,6 +54,9 @@ for marker in [
     'font-size:max(16px,1rem)', 'button[type="submit"]',
     '@media(max-width:600px)', 'prefers-reduced-motion:reduce',
     'textarea:focus-visible',
+    '[data-spoiler-content][hidden]',
+    '.reader-comment-helper-row',
+    '.reader-comment-counter',
 ]:
     check(marker in css, "CSS ergonomique manquant : " + marker)
 for marker in ["from('sinjira_novel_comments')", "sinjira_novels(title)", "reader-comment-inline-edit", "friendlyBackendMessage("]:
