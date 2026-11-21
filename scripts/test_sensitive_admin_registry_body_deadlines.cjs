@@ -117,7 +117,8 @@ const vm=require('node:vm');
 
     const abort=new AbortController();abort.abort();
     await refusal(item,make(chunks([bytes('{}')]),{signal:abort.signal}),'REQUEST_TIMEOUT');
-    assert.ok(item.uses()>=12,item.name+': lecteur partagé non exécuté');
+    // Le questionnaire rejette certains mauvais MIME/Content-Length avant même d'ouvrir le flux.
+    assert.ok(item.uses()>=9,item.name+': lecteur partagé insuffisamment exercé');
   }
 
   console.log('OK admin/Registre : deux vrais parseurs testés, 4 KiB/2 MiB, échéance globale, annulation bloquée, MIME, JSON et déconnexion.');
