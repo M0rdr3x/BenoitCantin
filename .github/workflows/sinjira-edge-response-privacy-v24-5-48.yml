@@ -32,6 +32,12 @@ jobs:
       - name: Vérifier le contrat CI confidentialité Edge
         run: python3 scripts/validate_edge_response_privacy_workflow_security.py
 
+      - name: Auto-tester la confidentialité des journaux Security Context
+        run: python3 scripts/validate_security_context_request_security.py --self-test
+
+      - name: Vérifier les journaux Security Context
+        run: python3 scripts/validate_security_context_request_security.py
+
       - name: Vérifier V24.5.48
         run: |
           python3 scripts/validate_edge_response_privacy_v24_5_48.py
