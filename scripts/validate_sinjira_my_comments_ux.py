@@ -65,6 +65,7 @@ def validate() -> list[str]:
         '.reader-comment-inline-edit .reader-comment-counter',
         '.reader-comment-inline-edit .reader-comment-counter.near-limit',
         '.reader-comment:focus',
+        'min-height:48px!important',
         '@media(max-width:520px)',
         'grid-template-columns:repeat(2,minmax(0,1fr))',
     ):
