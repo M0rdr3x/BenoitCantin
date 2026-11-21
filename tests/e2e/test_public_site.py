@@ -1718,6 +1718,37 @@ def run() -> None:
 
         mobile.close()
 
+        # Même lorsque le JavaScript principal ne charge pas, les liens
+        # publics SINJIRA doivent rester accessibles au clavier et au toucher.
+        # Aucune session privée n'est utilisée pour ce test de repli.
+        fallback = browser.new_context(
+            locale="fr-CA",
+            viewport={"width": 320, "height": 720},
+            reduced_motion="reduce",
+        )
+        fallback.route("**/assets/js/site.js*", lambda route: route.abort())
+        fallback_page = fallback.new_page()
+        response = fallback_page.goto(
+            urljoin(BASE_URL, "projets/sinjira/romans/"),
+            wait_until="domcontentloaded", timeout=30_000,
+        )
+        assert_true(response is not None and response.status < 400,
+                    f"{BROWSER_NAME}: fiche Romans inaccessible sans site.js")
+        public_nav = fallback_page.locator('[data-main-nav]')
+        assert_true(public_nav.is_visible(),
+                    f"{BROWSER_NAME}: navigation masquée lorsque site.js est bloqué")
+        assert_true(public_nav.locator('a[href="/projets/sinjira/"]').is_visible(),
+                    f"{BROWSER_NAME}: lien portail SINJIRA masqué sans JavaScript")
+        assert_true(fallback_page.locator('[data-menu-toggle]').is_hidden(),
+                    f"{BROWSER_NAME}: bouton de menu inactif affiché sans JavaScript")
+        assert_true(
+            fallback_page.evaluate(
+                "document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2"
+            ),
+            f"{BROWSER_NAME}: débordement horizontal du menu de repli à 320px",
+        )
+        fallback.close()
+
         account_url = urljoin(BASE_URL, "compte/")
         account_response = context.request.get(account_url, timeout=30_000)
         assert_true(account_response.ok, f"{BROWSER_NAME}: page compte inaccessible")
