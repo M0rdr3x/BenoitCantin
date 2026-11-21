@@ -139,6 +139,14 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         bad = self.valid.replace(REMOTE_JOB_GUARD, "    if: ${{ always() }}", 1)
         self.assertRejected(bad, "prévol distant doit être réservé")
 
+    def test_remote_job_requires_server_branch_protection(self):
+        bad = self.valid.replace(
+            " && github.ref_protected == true }}",
+            " }}",
+            1,
+        )
+        self.assertRejected(bad, "prévol distant doit exiger")
+
     def test_remote_preflight_cannot_write_database(self):
         dry = '(cd .prod-workspace && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD")'
         write = '(cd .prod-workspace && supabase db push --linked --password "$SUPABASE_DB_PASSWORD")'
@@ -167,6 +175,14 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         bad = self.valid.replace(
             APPLY_JOB_GUARD,
             "    if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true }}",
+            1,
+        )
+        self.assertRejected(bad, "job d'application doit exiger")
+
+    def test_apply_job_requires_server_branch_protection(self):
+        bad = self.valid.replace(
+            APPLY_JOB_GUARD,
+            APPLY_JOB_GUARD.replace(" && github.ref_protected == true", ""),
             1,
         )
         self.assertRejected(bad, "job d'application doit exiger")
