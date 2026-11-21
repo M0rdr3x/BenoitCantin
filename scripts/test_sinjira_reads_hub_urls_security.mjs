@@ -143,6 +143,18 @@ test('vrai hub : refuse la navigation externe et conserve les requêtes internes
   assert.match(html,/&lt;svg onload=alert\(1\)&gt;/);
 });
 
+test('hub : l’ancien mode Jouer Fracture reste indisponible même avec un chemin valide',async()=>{
+  const fixture={projects:[{
+    ...validProject,slug:'fracture-du-reseau-mere',
+    play_path:'/projets/sinjira/jeux/fracture-du-reseau-mere/jouer.html'
+  }],project_access:[],access_requests:[]};
+  const app=harness(hub,'init',fixture);
+  await app.run();
+  const html=app.html('[data-library-account-games]');
+  requireSafeAnchors(html);
+  assert.doesNotMatch(html,/>Jouer<\/a>/);
+});
+
 test('mutation : un lien public brut est détecté comme régression XSS',async()=>{
   const snippet="const publicHref=safeInternalDestination(novel.public_path,'/projets/sinjira/romans/');";
   assert.ok(reads.includes(snippet));
