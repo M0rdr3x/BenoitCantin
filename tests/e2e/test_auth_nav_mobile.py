@@ -95,6 +95,14 @@ def run():
                     for width in WIDTHS:
                         page.set_viewport_size({"width":width,"height":800})
                         page.wait_for_timeout(80)
+                        # WebKit diffère parfois l'observation de layout. Ne
+                        # vérifier les flèches qu'après synchronisation.
+                        page.wait_for_function("""() => {
+                          const nav=document.querySelector('.universe-subnav');
+                          const track=nav?.querySelector('.container');
+                          return nav && track && (!nav.classList.contains('is-scrollable') ||
+                            track.scrollWidth>track.clientWidth+2);
+                        }""",timeout=5_000)
                         state=snapshot(page)
                         check(not state["docOverflow"],
                               f"débordement global {path} {width}px: {state}")
