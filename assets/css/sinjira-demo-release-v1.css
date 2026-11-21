@@ -2,7 +2,7 @@
  * Les règles sont volontairement limitées à cette page. Aucune modification
  * du lecteur intégral privé ni des archives NOVA.
  */
-body[data-reader-page="demo-pending"] .sinjira-release-main{
+body[data-reader-page="demo-pending"] .site-header .brand img{border-radius:50%}\nbody[data-reader-page="demo-pending"] .sinjira-release-main{
   padding:clamp(28px,6vw,72px) 0 70px;
   min-height:65vh;
   width:100%;
