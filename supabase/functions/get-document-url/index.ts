@@ -37,7 +37,8 @@ function externalUrlAllowed(value:string){
     if(relative&&value.startsWith('//'))return false;
     const parsed=relative?new URL(value,DOCUMENT_URL_BASE):new URL(value);
     if(parsed.protocol!=='https:'||parsed.username||parsed.password)return false;
-    if(relative&&parsed.origin!==DOCUMENT_URL_BASE)return false;
+    // Interdire tout renvoi de document public vers un domaine tiers.
+    if(parsed.origin!==DOCUMENT_URL_BASE)return false;
     return true;
   }catch{return false}
 }
