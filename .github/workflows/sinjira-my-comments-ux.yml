@@ -1,0 +1,43 @@
+name: SINJIRA — Mes commentaires PC et mobile
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-account-v18.js'
+      - 'assets/css/sinjira-comments-responsive-v2.css'
+      - 'compte/mes-commentaires.html'
+      - 'scripts/validate_sinjira_my_comments_ux.py'
+      - '.github/workflows/sinjira-my-comments-ux.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-account-v18.js'
+      - 'assets/css/sinjira-comments-responsive-v2.css'
+      - 'compte/mes-commentaires.html'
+      - 'scripts/validate_sinjira_my_comments_ux.py'
+      - '.github/workflows/sinjira-my-comments-ux.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-my-comments-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  comments-ux:
+    name: Compteur, édition, suppression et ergonomie mobile
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Contrôler la syntaxe JS et Python
+        run: |
+          node --input-type=module --check < assets/js/sinjira-account-v18.js
+          python3 -m py_compile scripts/validate_sinjira_my_comments_ux.py
+      - name: Valider la liste et le formulaire de commentaires
+        run: python3 scripts/validate_sinjira_my_comments_ux.py
