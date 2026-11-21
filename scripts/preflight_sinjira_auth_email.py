@@ -181,7 +181,7 @@ def selftest():
     assert "actions/setup-python@" not in workflow
     assert workflow.count("python3 -c 'import sys; assert sys.version_info[:2] == (3, 12)") == 2
     assert workflow.count("environment: production") == 1
-    assert workflow.count("github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'") == 1
+    assert workflow.count("github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.ref_protected == true") == 1
     assert workflow.count("secrets.SUPABASE_ACCESS_TOKEN") == 1
     assert workflow.count("python3 scripts/preflight_sinjira_auth_email.py --remote") == 1
     for illegal in ("--request PATCH","--request POST","--request DELETE","--request PUT","supabase db"):
