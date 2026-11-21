@@ -1,32 +1,26 @@
+import { readLimitedUtf8BodyWithDeadline } from '../_shared/read-chunk-deadline.mjs';
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredUser, serviceClient } from '../_shared/auth.ts';
 
 const HEADERS={...corsHeaders,'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store, max-age=0','Pragma':'no-cache','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'};
 const MAX_REQUEST_BYTES=2048;
+const MAX_REQUEST_READ_TIMEOUT_MS=4_000;
 function json(data:unknown,status=200){return new Response(JSON.stringify(data),{status,headers:HEADERS});}
 
 async function readBoundedJson(req:Request){
-  if(!req.body)return {};
-  const reader=req.body.getReader();
-  const chunks:Uint8Array[]=[];
-  let total=0;
-  while(true){
-    const {done,value}=await reader.read();
-    if(done)break;
-    if(value){
-      total+=value.byteLength;
-      if(total>MAX_REQUEST_BYTES){
-        try{await reader.cancel();}catch{}
-        throw new Error('REQUEST_TOO_LARGE');
-      }
-      chunks.push(value);
-    }
+  const contentType=(req.headers.get('content-type')||'').toLowerCase();
+  if(!/^application\/json(?:\s*;|$)/.test(contentType))throw new Error('UNSUPPORTED_MEDIA_TYPE');
+
+  // Échéance absolue pour tous les fragments : aucun read() ou cancel()
+  // bloqué ne doit retenir la fonction. Le nombre réel d'octets est limité.
+  const limited=await readLimitedUtf8BodyWithDeadline(req,MAX_REQUEST_BYTES,MAX_REQUEST_READ_TIMEOUT_MS);
+  if(!limited.ok){
+    if(limited.reason==='REQUEST_TIMEOUT')throw new Error('REQUEST_TIMEOUT');
+    if(limited.reason==='REQUEST_TOO_LARGE')throw new Error('REQUEST_TOO_LARGE');
+    throw new Error('INVALID_JSON');
   }
-  const bytes=new Uint8Array(total);
-  let offset=0;
-  for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
-  if(!bytes.length)return {};
-  try{return JSON.parse(new TextDecoder().decode(bytes));}
+  if(!limited.raw)return {};
+  try{return JSON.parse(limited.raw);}
   catch{throw new Error('INVALID_JSON');}
 }
 
@@ -57,6 +51,8 @@ Deno.serve(async(req)=>{
     const message=String(error?.message||'');
     if(message==='AUTH_REQUIRED')return json({ok:false,error:'Connexion requise.'},401);
     if(message==='REQUEST_TOO_LARGE')return json({ok:false,error:'Requête trop volumineuse.'},413);
+    if(message==='REQUEST_TIMEOUT')return json({ok:false,error:'Délai de transmission dépassé.'},408);
+    if(message==='UNSUPPORTED_MEDIA_TYPE')return json({ok:false,error:'Content-Type application/json requis.'},415);
     if(message==='INVALID_JSON')return json({ok:false,error:'Corps JSON invalide.'},400);
     console.error('[get-novel-file-url]',{code:'NOVEL_ACCESS_FAILED'});
     return json({ok:false,error:'Erreur lors de l’accès au roman.'},500);
