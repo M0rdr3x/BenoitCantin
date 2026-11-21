@@ -1,0 +1,150 @@
+#!/usr/bin/env python3
+"""Recette du véritable accueil SINJIRA, sans session ni service externe.
+
+Vérifie l'ergonomie PC/mobile, le logo officiel, le menu au clavier,
+et le repli de la navigation lorsque JavaScript est désactivé.
+"""
+import os
+from urllib.parse import urlparse
+from playwright.sync_api import sync_playwright
+
+BASE = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
+BROWSER = os.environ.get("BROWSER", "chromium").strip().lower()
+WIDTHS = (320, 390, 420, 600, 768, 1020, 1024, 1440)
+LOGO = "/assets/icons/sinjira-officiel-20261120.png"
+
+
+def verify(condition, message):
+    if not condition:
+        raise AssertionError(f"{BROWSER}: {message}")
+
+
+def geometry(page):
+    return page.evaluate("""() => {
+      const box = element => {
+        const b = element.getBoundingClientRect();
+        return {left:b.left,right:b.right,top:b.top,bottom:b.bottom,
+                width:b.width,height:b.height};
+      };
+      const orbit=document.querySelector('.home-sinjira-cosmos .sinjira-orbit');
+      const cosmos=document.querySelector('.home-sinjira-cosmos');
+      const label=document.querySelector('.home-sinjira-cosmos .cosmos-label');
+      const note=document.querySelector('.home-sinjira-note');
+      const cards=[...document.querySelectorAll('.home-project')];
+      return {
+        width:innerWidth,
+        overflow:document.documentElement.scrollWidth > innerWidth + 2,
+        logo:orbit?.querySelector('img')?.getAttribute('src'),
+        orbit:box(orbit),cosmos:box(cosmos),label:box(label),
+        children:[...orbit.children].map(box),
+        noteMargin:parseFloat(getComputedStyle(note).marginTop),
+        cards:cards.map(box)
+      };
+    }""")
+
+
+def test_home(page):
+    response = page.goto(BASE, wait_until="domcontentloaded", timeout=30_000)
+    verify(response is not None and response.status < 400, "accueil local inaccessible")
+    page.wait_for_function(
+        "() => document.documentElement.hasAttribute('data-sinjira-nav-initialized')",
+        timeout=12_000,
+    )
+    nav = page.locator("[data-main-nav]")
+    toggle = page.locator("[data-menu-toggle]")
+    verify(page.locator(".home-project").count() == 4,
+           "les quatre accès directs SINJIRA doivent rester présents")
+
+    for width in WIDTHS:
+        page.set_viewport_size({"width": width, "height": 760})
+        state = geometry(page)
+        verify(not state["overflow"], f"débordement horizontal à {width}px : {state}")
+        verify(state["logo"] == LOGO, "logo officiel du cercle remplacé")
+        verify(state["orbit"]["left"] >= -2 and state["orbit"]["right"] <= width + 2,
+               f"cercle hors écran à {width}px : {state}")
+        verify(abs((state["label"]["left"] + state["label"]["right"]) / 2
+                   - (state["cosmos"]["left"] + state["cosmos"]["right"]) / 2) <= 3,
+               f"légende du cercle non centrée à {width}px : {state}")
+        verify(state["noteMargin"] >= 12,
+               f"espacement du texte d'aide supprimé à {width}px : {state}")
+        for child in state["children"]:
+            verify(child["left"] >= state["orbit"]["left"] - 3 and
+                   child["right"] <= state["orbit"]["right"] + 3 and
+                   child["top"] >= state["orbit"]["top"] - 3 and
+                   child["bottom"] <= state["orbit"]["bottom"] + 3,
+                   f"contenu du cercle tronqué ou débordant à {width}px : {state}")
+        for card in state["cards"]:
+            verify(card["left"] >= -2 and card["right"] <= width + 2,
+                   f"carte de rubrique débordante à {width}px : {state}")
+
+        if width <= 1020:
+            verify(toggle.is_visible() and not nav.is_visible(),
+                   f"menu mobile non replié à {width}px")
+            toggle.click()
+            verify(nav.is_visible() and toggle.get_attribute("aria-expanded") == "true",
+                   f"menu impossible à ouvrir à {width}px")
+            page.keyboard.press("Escape")
+            verify(not nav.is_visible() and
+                   toggle.get_attribute("aria-expanded") == "false",
+                   f"Échap ne ferme pas le menu à {width}px")
+            verify(toggle.evaluate("(el) => document.activeElement === el"),
+                   f"focus non restauré sur la commande à {width}px")
+        else:
+            verify(nav.is_visible() and not toggle.is_visible(),
+                   f"menu bureau incorrect à {width}px")
+
+    verify(page.locator(".home-cosmos a.sinjira-orbit").get_attribute("href")
+           == "/projets/sinjira/", "destination officielle SINJIRA incorrecte")
+
+
+def test_without_javascript(browser):
+    context = browser.new_context(
+        java_script_enabled=False, service_workers="block", locale="fr-CA",
+        reduced_motion="reduce", viewport={"width": 320, "height": 760},
+    )
+    try:
+        page = context.new_page()
+        response = page.goto(BASE, wait_until="domcontentloaded", timeout=30_000)
+        verify(response is not None and response.status < 400,
+               "accueil sans JavaScript inaccessible")
+        nav = page.locator("[data-main-nav]")
+        for width in (320, 768, 1024):
+            page.set_viewport_size({"width": width, "height": 760})
+            verify(nav.is_visible(), f"liens inaccessibles sans JS à {width}px")
+            verify(nav.locator("a").count() == 6,
+                   f"navigation de repli incomplète à {width}px")
+            state = page.evaluate("""() => ({
+              overflow:document.documentElement.scrollWidth > innerWidth + 2,
+              left:document.querySelector('[data-main-nav]').getBoundingClientRect().left,
+              right:document.querySelector('[data-main-nav]').getBoundingClientRect().right
+            })""")
+            verify(not state["overflow"] and state["left"] >= -2
+                   and state["right"] <= width + 2,
+                   f"navigation sans JS hors écran à {width}px : {state}")
+    finally:
+        context.close()
+
+
+def run():
+    verify(BROWSER in {"chromium", "firefox", "webkit"}, "navigateur inconnu")
+    verify((urlparse(BASE).hostname or "") in {"localhost", "127.0.0.1"},
+           "la recette responsive ne doit tester que le site local")
+    with sync_playwright() as playwright:
+        browser = getattr(playwright, BROWSER).launch()
+        try:
+            context = browser.new_context(
+                locale="fr-CA", viewport={"width": 390, "height": 760},
+                reduced_motion="reduce", service_workers="block",
+            )
+            try:
+                test_home(context.new_page())
+            finally:
+                context.close()
+            test_without_javascript(browser)
+        finally:
+            browser.close()
+    print(f"OK {BROWSER}: accueil SINJIRA, 8 largeurs, clavier, mobile et sans JS")
+
+
+if __name__ == "__main__":
+    run()
