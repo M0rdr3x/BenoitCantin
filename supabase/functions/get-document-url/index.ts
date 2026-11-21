@@ -6,6 +6,7 @@ import { privateDocumentLocationValid, isVerifiedPrivateDocumentBucket } from '.
 const MAX_REQUEST_BYTES=512;
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ranks:Record<string,number>={public:1,account:10,player:20,tester:30,admin:100};
+const CANONICAL_PROJECT_RANKS=new Set([0,1,10,20,30]);
 // Les propriétés héritées de Object.prototype ne sont pas des niveaux d'accès.
 // Même un rang RPC inattendu (NaN/Infinity) ne doit jamais autoriser de lien.
 function documentAccessAllowed(accessLevel:unknown,userRank:number){
@@ -75,11 +76,22 @@ Deno.serve(async(req)=>{
 
     let userRank=0;
     if(user){
-      const {data:isAdmin}=await service.rpc('is_sinjira_admin',{p_user_id:user.id});
-      if(isAdmin)userRank=100;
+      const adminCheck=await service.rpc('is_sinjira_admin',{p_user_id:user.id});
+      // Une RPC en erreur ou un résultat non booléen ne confère jamais
+      // des privilèges, même lorsque sa valeur est truthy.
+      if(!adminCheck||adminCheck.error!==null||typeof adminCheck.data!=='boolean'){
+        return privateJson({ok:false,error:'Vérification des droits indisponible.'},503);
+      }
+      if(adminCheck.data===true)userRank=100;
       else{
-        const {data:accessRank}=await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user.id});
-        userRank=Number(accessRank||0);
+        const rankCheck=await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user.id});
+        // Ce SQL retourne un entier 0,1,10,20,30 pour les non-admins.
+        // Le niveau 100 exigerait une confirmation admin déjà obtenue.
+        if(!rankCheck||rankCheck.error!==null||typeof rankCheck.data!=='number'||
+          !Number.isSafeInteger(rankCheck.data)||!CANONICAL_PROJECT_RANKS.has(rankCheck.data)){
+          return privateJson({ok:false,error:'Vérification des droits indisponible.'},503);
+        }
+        userRank=rankCheck.data;
       }
     }else if(doc.projects?.visibility==='public')userRank=1;
 
