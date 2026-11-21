@@ -1,0 +1,44 @@
+name: Sécurité — empreinte de commit des workflows production
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/sinjira-v25-production-deploy.yml'
+      - '.github/workflows/sinjira-v25-auth-password-hardening.yml'
+      - '.github/workflows/sinjira-v25-employment-production.yml'
+      - '.github/workflows/sinjira-v25-personal-ai-production-readiness.yml'
+      - '.github/workflows/production-checkout-sha-lease-security.yml'
+      - 'scripts/validate_production_checkout_sha_lease.py'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sinjira-v25-production-deploy.yml'
+      - '.github/workflows/sinjira-v25-auth-password-hardening.yml'
+      - '.github/workflows/sinjira-v25-employment-production.yml'
+      - '.github/workflows/sinjira-v25-personal-ai-production-readiness.yml'
+      - '.github/workflows/production-checkout-sha-lease-security.yml'
+      - 'scripts/validate_production_checkout_sha_lease.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  commit-lease:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sans credentials persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.12 épinglé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+      - name: Détecter les mutations et simuler les changements de main
+        run: python3 scripts/validate_production_checkout_sha_lease.py --self-test
+      - name: Exiger la frontière SHA des quatre workflows
+        run: python3 scripts/validate_production_checkout_sha_lease.py
