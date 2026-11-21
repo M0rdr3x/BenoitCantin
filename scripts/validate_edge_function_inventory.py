@@ -326,9 +326,13 @@ def main() -> int:
     for slug, (auth, consumer) in STREAMED_REQUEST_ROUTES.items():
         src = read_security_text(FUNCTIONS / slug / "index.ts")
         compact = re.sub(r"\s+", "", src)
+        expected_reader = (
+            "awaitreadLimitedUtf8BodyWithDeadline(req,MAX_REQUEST_BYTES,MAX_REQUEST_READ_TIMEOUT_MS)"
+            if slug == "security-context"
+            else "awaitreadLimitedUtf8Body(req,MAX_REQUEST_BYTES)"
+        )
         if ("awaitreq.text()" in compact or "awaitreq.json()" in compact or
-                "awaitreadLimitedUtf8Body(req,MAX_REQUEST_BYTES)" not in compact or
-                "if(!limited.ok)" not in compact):
+                expected_reader not in compact or "if(!limited.ok)" not in compact):
             errors.append(f"{slug}: lecteur HTTP non borné, ou erreur de flux non refusée.")
         auth_call = src.find(f"await {auth}(req)")
         body_call = src.find(f"await {consumer}(req")
