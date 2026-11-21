@@ -1,4 +1,4 @@
-import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
+import { readLimitedUtf8BodyWithDeadline } from '../_shared/read-chunk-deadline.mjs';
 import {corsHeaders} from '../_shared/cors.ts';
 import {requiredVaultUser,serviceClient} from '../_shared/auth.ts';
 import {sendFormspreeNotice} from '../_shared/sinjira-formspree.ts';
@@ -7,6 +7,7 @@ import {loadSinjiraCanonContext,canonPrompt} from '../_shared/sinjira-canon-cont
 
 const VERSION='24.5.3';
 const MAX_REQUEST_BYTES=2*1024*1024;
+const MAX_REQUEST_READ_TIMEOUT_MS=20_000;
 const MAX_ANSWERS_CHARS=500000;
 // Ces deux intégrations restent préparées mais inactives. Une activation future
 // exige une décision explicite distincte sur le fournisseur, les données et le coût.
@@ -15,7 +16,7 @@ const REMOTE_AI_ENABLED=false;
 const PRIVATE_KEYS=['prenom_legal','nom_legal','courriel','telephone','date_naissance','region','courriel_retrait','nom_signature','parent_nom','parent_courriel','parent_telephone','parent_signature','compte_courriel','compte_pseudo'];
 const SAFE_LOG_CODES=new Set([
   'AUTH_REQUIRED','MFA_SETUP_REQUIRED','MFA_REQUIRED','MFA_STATE_UNAVAILABLE','SECURITY_STATE_UNAVAILABLE',
-  'REQUEST_TOO_LARGE','JSON_REQUIRED','INVALID_JSON','CHARACTER_STATE_LOOKUP_FAILED',
+  'REQUEST_TOO_LARGE','REQUEST_TIMEOUT','JSON_REQUIRED','INVALID_JSON','CHARACTER_STATE_LOOKUP_FAILED',
   'CHARACTER_SUBMISSION_WRITE_FAILED','OWNER_CHARACTER_REPAIR_FAILED','CHARACTER_GENERATION_FAILED'
 ]);
 const PRIVATE_HEADERS={
@@ -34,8 +35,13 @@ async function readBoundedJson(req:Request){
   if(rawLength){const declared=Number(rawLength);if(!Number.isFinite(declared)||declared<0||declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE')}
   const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
   if(contentType!=='application/json')throw new Error('JSON_REQUIRED');
-  const limited=await readLimitedUtf8Body(req,MAX_REQUEST_BYTES);
-  if(!limited.ok)throw new Error('REQUEST_TOO_LARGE');
+  // Délai ABSOLU, indépendant du nombre de fragments transmis.
+  const limited=await readLimitedUtf8BodyWithDeadline(req,MAX_REQUEST_BYTES,MAX_REQUEST_READ_TIMEOUT_MS);
+  if(!limited.ok){
+    if(limited.reason==='REQUEST_TIMEOUT')throw new Error('REQUEST_TIMEOUT');
+    if(limited.reason==='REQUEST_TOO_LARGE')throw new Error('REQUEST_TOO_LARGE');
+    throw new Error('INVALID_JSON');
+  }
   const raw=limited.raw;
   if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
   let body:unknown;
@@ -163,6 +169,7 @@ Deno.serve(async(req)=>{
     if(e?.message==='MFA_REQUIRED')return privateJson({ok:false,error:'Une vérification renforcée est requise avant cette opération du Registre.',code:'MFA_REQUIRED',version:VERSION},403);
     if(e?.message==='MFA_STATE_UNAVAILABLE'||e?.message==='SECURITY_STATE_UNAVAILABLE')return privateJson({ok:false,error:'L’état de sécurité de votre compte ne peut pas être vérifié pour le moment. Réessayez plus tard.',code:e.message,version:VERSION},503);
     if(e?.message==='REQUEST_TOO_LARGE')return privateJson({ok:false,error:'Questionnaire trop volumineux.',code:'REQUEST_TOO_LARGE',version:VERSION},413);
+    if(e?.message==='REQUEST_TIMEOUT')return privateJson({ok:false,error:'Délai de transmission dépassé.',code:'REQUEST_TIMEOUT',version:VERSION},408);
     if(e?.message==='JSON_REQUIRED')return privateJson({ok:false,error:'Corps JSON requis.',code:'JSON_REQUIRED',version:VERSION},415);
     if(e?.message==='INVALID_JSON')return privateJson({ok:false,error:'JSON invalide.',code:'INVALID_JSON',version:VERSION},400);
     if(e?.message==='CHARACTER_STATE_LOOKUP_FAILED')return privateJson({ok:false,error:'L’état de votre dossier ne peut pas être vérifié pour le moment.',code:'CHARACTER_STATE_LOOKUP_FAILED',version:VERSION},503);
