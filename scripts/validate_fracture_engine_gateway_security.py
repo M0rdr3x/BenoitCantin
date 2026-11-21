@@ -24,7 +24,9 @@ REQUIRED = {
     'Bearer explicite': "authorization.startsWith('Bearer ')",
     'JWT revérifié côté fonction': 'client.auth.getUser(token)',
     'JSON explicite': "contentType.startsWith('application/json')",
-    'lecture HTTP en flux': 'const limited=await readLimitedUtf8Body(req,MAX_BODY_BYTES);',
+    'lecture HTTP en flux': 'const limited=await readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,BODY_READ_TIMEOUT_MS);',
+    'délai absolu 8 secondes': 'const BODY_READ_TIMEOUT_MS=8_000;',
+    'erreur de délai 408': "code:'REQUEST_TIMEOUT',gateway_version:GATEWAY_VERSION},408", 
     "refus de flux dépassant la borne": "if(!limited.ok)",
     'corps extrait après borne': 'const raw=limited.raw;',
     'réponse privée': "'Cache-Control':'private, no-store, max-age=0'",
@@ -75,6 +77,8 @@ def validate_text(source: str, config: str) -> list[str]:
     for label, marker in FORBIDDEN.items():
         require(errors, marker not in source, f'Garde fracture-engine-gateway violé: {label}.')
     require(errors, MAX_BODY_RE.search(source) is not None, 'MAX_BODY_BYTES doit rester exactement à 32000 octets.')
+    require(errors, "const BODY_READ_TIMEOUT_MS=8_000;" in source,
+            'Le délai absolu doit rester à 8 secondes.')
 
     match = ACTIONS_RE.search(source)
     if not match:
@@ -89,7 +93,7 @@ def validate_text(source: str, config: str) -> list[str]:
     require(errors, auth_pos >= 0 and body_pos >= 0 and auth_pos < body_pos,
             'Le JWT doit être vérifié avant toute lecture/parsing du corps.')
 
-    stream_pos = source.find('await readLimitedUtf8Body(req,MAX_BODY_BYTES)')
+    stream_pos = source.find('await readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,BODY_READ_TIMEOUT_MS)')
     rejected_pos = source.find('if(!limited.ok)')
     raw_pos = source.find('const raw=limited.raw;')
     parse_pos = source.find("JSON.parse(raw||'{}')")
@@ -140,10 +144,13 @@ def self_test() -> None:
 
     source_mutations = {
         'content-type retiré': source.replace("contentType.startsWith('application/json')", "contentType.startsWith('text/plain')", 1),
-        'req.json direct': source.replace('const limited=await readLimitedUtf8Body(req,MAX_BODY_BYTES);', 'const limited={ok:true,raw:JSON.stringify(await req.json())};', 1),
-        'texte non borné': source.replace('const limited=await readLimitedUtf8Body(req,MAX_BODY_BYTES);', 'const limited={ok:true,raw:await req.text()};', 1),
+        'req.json direct': source.replace('const limited=await readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,BODY_READ_TIMEOUT_MS);', 'const limited={ok:true,raw:JSON.stringify(await req.json())};', 1),
+        'texte non borné': source.replace('const limited=await readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,BODY_READ_TIMEOUT_MS);', 'const limited={ok:true,raw:await req.text()};', 1),
         'refus dépassement retiré': source.replace('if(!limited.ok)', 'if(false)', 1),
         'limite augmentée': source.replace('MAX_BODY_BYTES=32_000;', 'MAX_BODY_BYTES=320_000;', 1),
+        'délai retiré': source.replace('const BODY_READ_TIMEOUT_MS=8_000;', 'const BODY_READ_TIMEOUT_MS=8_000_000;', 1),
+        'helper sans délai': source.replace('readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,BODY_READ_TIMEOUT_MS)', 'readLimitedUtf8Body(req,MAX_BODY_BYTES)', 1),
+        'réponse 408 retirée': source.replace("code:'REQUEST_TIMEOUT',gateway_version:GATEWAY_VERSION},408", "code:'REQUEST_TIMEOUT',gateway_version:GATEWAY_VERSION},400", 1),
         'auth après corps': source.replace(
             '    const token=authorization.slice(7);',
             '    const earlyParsed=await readLimitedJson(req);\n    if(earlyParsed.response) return earlyParsed.response;\n    const token=authorization.slice(7);',
