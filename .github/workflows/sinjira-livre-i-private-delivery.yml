@@ -13,6 +13,11 @@ on:
       - 'supabase/tests/livre_i_entitlements_read_only_a1.test.sql'
       - 'supabase/functions/get-document-url/**'
       - 'supabase/functions/get-private-book-url/**'
+      - 'supabase/functions/get-novel-file-url/**'
+      - 'scripts/validate_novel_storage_security.py'
+      - 'supabase/functions/_shared/private-book-storage-guard.mjs'
+      - 'scripts/test_private_book_storage_guard.mjs'
+      - 'scripts/validate_get_private_book_url_security.py'
       - 'scripts/validate_sinjira_livre_i_delivery.py'
       - 'scripts/validate_livre_i_entitlement_boundary.py'
       - 'scripts/validate_livre_i_entitlement_ui.py'
@@ -33,6 +38,11 @@ on:
       - 'supabase/tests/livre_i_entitlements_read_only_a1.test.sql'
       - 'supabase/functions/get-document-url/**'
       - 'supabase/functions/get-private-book-url/**'
+      - 'supabase/functions/get-novel-file-url/**'
+      - 'scripts/validate_novel_storage_security.py'
+      - 'supabase/functions/_shared/private-book-storage-guard.mjs'
+      - 'scripts/test_private_book_storage_guard.mjs'
+      - 'scripts/validate_get_private_book_url_security.py'
       - 'scripts/validate_sinjira_livre_i_delivery.py'
       - 'scripts/validate_livre_i_entitlement_boundary.py'
       - 'scripts/validate_livre_i_entitlement_ui.py'
@@ -82,3 +92,13 @@ jobs:
 
       - name: Vérifier rôle propriétaire, droits réels et diffusion non activée
         run: python3 scripts/validate_livre_i_entitlement_ui.py
+      - name: Tester en exécution les chemins PDF et buckets privés
+        run: node --test scripts/test_private_book_storage_guard.mjs
+      - name: Auto-tester la frontière Storage du Livre I
+        run: python3 scripts/validate_get_private_book_url_security.py --self-test
+      - name: Vérifier le bucket privé avant chaque lien signé
+        run: python3 scripts/validate_get_private_book_url_security.py
+      - name: Auto-tester l'accès au bucket des romans privés
+        run: python3 scripts/validate_novel_storage_security.py --self-test
+      - name: Vérifier la sécurité des URLs signées de romans privés
+        run: python3 scripts/validate_novel_storage_security.py

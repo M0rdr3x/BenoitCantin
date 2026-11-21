@@ -1,0 +1,82 @@
+name: SINJIRA — documents privés Storage fail-closed
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'supabase/functions/get-document-url/**'
+      - 'supabase/functions/admin-console/**'
+      - 'supabase/functions/_shared/private-document-storage.mjs'
+      - 'supabase/config.toml'
+      - 'scripts/test_private_document_storage.mjs'
+      - 'scripts/validate_get_document_storage_security.py'
+      - 'scripts/validate_admin_document_upload_security.py'
+      - 'scripts/validate_get_document_url_security.py'
+      - 'scripts/test_document_external_urls.mjs'
+      - 'scripts/test_document_access_rank_security.mjs'
+      - '.github/workflows/sinjira-document-storage-private-security.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'supabase/functions/get-document-url/**'
+      - 'supabase/functions/admin-console/**'
+      - 'supabase/functions/_shared/private-document-storage.mjs'
+      - 'supabase/config.toml'
+      - 'scripts/test_private_document_storage.mjs'
+      - 'scripts/validate_get_document_storage_security.py'
+      - 'scripts/validate_admin_document_upload_security.py'
+      - 'scripts/validate_get_document_url_security.py'
+      - 'scripts/test_document_external_urls.mjs'
+      - 'scripts/test_document_access_rank_security.mjs'
+      - '.github/workflows/sinjira-document-storage-private-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-document-private-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-document-storage:
+    name: Vérifier droits et Storage des documents
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - name: Récupérer les sources sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python fixe
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+
+      - name: Tester les métadonnées et chemins réels du module Storage
+        run: node --test scripts/test_private_document_storage.mjs
+
+      - name: Refuser les régressions de confidentialité documentaire
+        run: python3 scripts/validate_get_document_storage_security.py --self-test
+
+      - name: Tester la sécurité des téléversements administratifs privés
+        run: python3 scripts/validate_admin_document_upload_security.py --self-test
+
+      - name: Refuser toute signature d'upload sur un bucket public
+        run: python3 scripts/validate_admin_document_upload_security.py
+
+      - name: Vérifier l'ordre des contrôles avant toute signature
+        run: python3 scripts/validate_get_document_storage_security.py
+
+      - name: Exécuter les vérifications d'accès sur le vrai handler documentaire
+        run: node --test scripts/test_document_access_rank_security.mjs
+
+      - name: Garder la compatibilité des liens externes publics approuvés
+        run: node scripts/test_document_external_urls.mjs
+
+      - name: Préserver les contrôles HTTP et d'accès historiques
+        run: |
+          python3 scripts/validate_get_document_url_security.py --self-test
+          python3 scripts/validate_get_document_url_security.py
