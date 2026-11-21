@@ -33,6 +33,12 @@ jobs:
       - name: Vérifier le contrat CI contribution jeu
         run: python scripts/validate_game_contribution_workflow_security.py
 
+      - name: Tester le vrai lecteur HTTP borné et la confidentialité des logs
+        run: node scripts/test_game_contribution_request_boundary.mjs
+
+      - name: Auto-tester les régressions de la contribution joueur
+        run: python scripts/validate_game_contribution_v24_5_53.py --self-test
+
       - name: Vérifier V24.5.53
         run: |
           python scripts/validate_game_contribution_v24_5_53.py
