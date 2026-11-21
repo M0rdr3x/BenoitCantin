@@ -151,6 +151,26 @@ jobs:
             echo 'Fonction cible non trouvée sur le projet attendu; refus.'
             exit 3
           }
+      - name: Revalider protection serveur et SHA juste avant le déploiement
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        with:
+          script: |
+            if (process.env.GITHUB_REF_PROTECTED !== 'true') {
+              core.setFailed('Refus du déploiement : ref non protégée au déclenchement.');
+              return;
+            }
+            const { owner, repo } = context.repo;
+            const { data: branch } = await github.rest.repos.getBranch({ owner, repo, branch: 'main' });
+            if (branch.protected !== true) {
+              core.setFailed('Refus du déploiement : main ne dispose plus d’une protection GitHub.');
+              return;
+            }
+            if (branch.commit?.sha !== context.sha) {
+              core.setFailed('Refus du déploiement : SHA de main changé depuis le prévol.');
+              return;
+            }
+            core.info('Branche protégée et SHA de publication inchangé.');
+
       - name: Déployer uniquement submit-character-questionnaire
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && inputs.confirmation == 'DEPLOY-SINJIRA-REGISTRY-EDGE' && github.ref == 'refs/heads/main' && github.ref_protected == true }}
         shell: bash
