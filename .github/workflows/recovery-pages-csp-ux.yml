@@ -1,0 +1,68 @@
+name: UX — pages 404 et hors ligne avec CSP stricte
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '404.html'
+      - 'offline.html'
+      - 'assets/js/sinjira-404-aliases-v1.js'
+      - 'assets/css/site-ux-sinjira-v1.css'
+      - 'tests/e2e/test_recovery_pages_csp.py'
+      - '.github/workflows/recovery-pages-csp-ux.yml'
+  push:
+    branches: [main]
+    paths:
+      - '404.html'
+      - 'offline.html'
+      - 'assets/js/sinjira-404-aliases-v1.js'
+      - 'assets/css/site-ux-sinjira-v1.css'
+      - 'tests/e2e/test_recovery_pages_csp.py'
+      - '.github/workflows/recovery-pages-csp-ux.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recovery-pages:
+    name: Reprise 404/hors ligne ${{ matrix.browser }}
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.61.0-noble@sha256:a9731514f24121d1dcd25d58d0a38146646d290a5998fd80d3e533e7b5e21c69
+      options: --user 1001
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - name: Récupérer le code avec droits minimaux
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Installer le client navigateur épinglé
+        run: python -m pip install --disable-pip-version-check "playwright==1.61.0"
+      - name: Vérifier la syntaxe du test
+        run: python -m py_compile tests/e2e/test_recovery_pages_csp.py
+      - name: Démarrer un serveur statique local
+        run: |
+          python -m http.server 4173 --bind 127.0.0.1 > /tmp/recovery-pages.log 2>&1 &
+          echo $! > /tmp/recovery-pages.pid
+          i=0
+          while [ "$i" -lt 20 ]; do
+            if python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4173/', timeout=1).read(1)" >/dev/null 2>&1; then exit 0; fi
+            i=$((i + 1))
+            sleep 1
+          done
+          cat /tmp/recovery-pages.log
+          exit 1
+      - name: Tester la récupération et la redirection sous CSP
+        env:
+          BASE_URL: http://127.0.0.1:4173/
+          BROWSER: ${{ matrix.browser }}
+        run: python tests/e2e/test_recovery_pages_csp.py
+      - name: Fermer le serveur
+        if: always()
+        run: |
+          if [ -f /tmp/recovery-pages.pid ]; then kill "$(cat /tmp/recovery-pages.pid)" || true; fi
