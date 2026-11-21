@@ -6,6 +6,8 @@ root = Path(__file__).resolve().parents[1]
 reader = (root / "assets/js/sinjira-reader.js").read_text(encoding="utf-8")
 html = (root / "projets/sinjira/romans/index.html").read_text(encoding="utf-8")
 css = (root / "assets/css/sinjira-comments-responsive-v2.css").read_text(encoding="utf-8")
+account_js = (root / "assets/js/sinjira-account-v18.js").read_text(encoding="utf-8")
+account_html = (root / "compte/mes-commentaires.html").read_text(encoding="utf-8")
 errors = []
 
 def check(ok, message):
@@ -48,6 +50,14 @@ for marker in [
     'textarea:focus-visible',
 ]:
     check(marker in css, "CSS ergonomique manquant : " + marker)
+for marker in ["from('sinjira_novel_comments')", "sinjira_novels(title)", "reader-comment-inline-edit", "friendlyBackendMessage("]:
+    check(marker in account_js, "Compte commentaires incomplet : " + marker)
+for forbidden in ["from('novel_comments')", "contains_spoilers", "prompt('Modifier"]:
+    check(forbidden not in account_js, "Ancienne API ou édition modale dans le compte : " + forbidden)
+for marker in ["data-v18-page=\"comments\"", "sinjira-comments-responsive-v2.css?v=2.0.1", 'aria-live="polite"']:
+    check(marker in account_html, "Compte commentaires HTML incomplet : " + marker)
+check('reader-comment-inline-edit' in css, "Éditeur tactile non stylé")
+check((root / "assets/icons/sinjira-officiel-20261120.png").is_file(), "Logo officiel SINJIRA introuvable")
 if errors:
     print("ECHEC ergonomie/commentaires SINJIRA :")
     for problem in errors:
