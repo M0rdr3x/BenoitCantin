@@ -52,7 +52,14 @@ def main():
         "signOut({scope:'global'})",
         's.auth.getUser()',
     ],'client récupération')
-    forbid(recovery,['auth.getSession()'],'récupération serveur-vérifiée')
+    forbid(recovery,['auth.getSession()','randomDeviceKey','getRandomValues?.('],
+           'récupération serveur-vérifiée sans nouvel appareil non prouvé')
+    require(recovery,[
+        'globalSignoutOk=Boolean(result&&result.error===null);',
+        'cleanupOk=!cleanupError&&data?.ok===true;',
+        "signOut({scope:'local'})",
+        'return null;',
+    ],'révocation après récupération : confirmation et défaut strict')
 
     security=read('assets/js/sinjira-security-v24-4-99.js')
     require(security,[
@@ -63,12 +70,25 @@ def main():
         "RP ID définitif",
         "non activé",
     ],'Centre sécurité V24.4.99')
-    forbid(security,['navigator.credentials.create','navigator.credentials.get'],'passkeys avant domaine final')
+    forbid(security,['navigator.credentials.create','navigator.credentials.get'],
+           'passkeys avant domaine final')
+    require(security,[
+        'data?.ok!==true',
+        'data?.session_revocation_required!==true',
+        "s.auth.signOut({scope:'others'})",
+        'signOutResult.error!==null',
+        'deviceRevoked=true',
+        'if(button.disabled)return',
+    ],'appareil perdu : preuve RPC et Auth avant message de réussite')
+    forbid(security,[
+        "console.warn('[SINJIRA lost device]',error)",
+        "    await s.auth.signOut({scope:'others'});",
+    ],'appareil perdu : diagnostic privé et accusé de réception absent')
 
     reset=read('compte/reinitialiser-mot-de-passe.html')
-    require(reset,['sinjira-recovery-v24-4-99.js?v=24.4.99','second facteur'],'page récupération')
+    require(reset,['sinjira-recovery-v24-4-99.js?v=24.4.101-revocation','second facteur'],'page récupération')
     center=read('compte/securite.html')
-    require(center,['sinjira-security-v24-4-99.js?v=24.4.99','Déclarer perdu','aucun SMS, aucun numéro de téléphone et aucun fournisseur payant n’est requis'],'page Ma sécurité')
+    require(center,['sinjira-security-v24-4-99.js?v=24.4.101-revocation','Déclarer perdu','aucun SMS, aucun numéro de téléphone et aucun fournisseur payant n’est requis'],'page Ma sécurité')
 
     app=json.loads(read('mobile-native/app.json'))['expo']
     version=numeric_version(app.get('version'))
