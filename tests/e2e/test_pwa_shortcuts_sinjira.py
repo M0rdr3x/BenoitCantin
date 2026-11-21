@@ -85,7 +85,7 @@ def verify_browser(browser, expected: dict) -> None:
                 for entry in expected["shortcuts"]:
                     res = ctx.request.get(urljoin(BASE, entry["url"].lstrip("/")), timeout=15000)
                     assert res.status == 200, (ENGINE, width, entry["url"], res.status)
-            print(f"OK {ENGINE}: {width}px, PWA installable vers des pages existantes")
+            print(f"OK {ENGINE}: {width}px, manifeste PWA et raccourcis vers des pages existantes")
         finally:
             ctx.close()
 
