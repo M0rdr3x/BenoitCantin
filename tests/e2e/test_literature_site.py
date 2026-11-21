@@ -566,7 +566,7 @@ def run() -> None:
         assert_true(sitemap_response.status < 400, f"{BROWSER_NAME}: sitemap inaccessible (HTTP {sitemap_response.status})")
         sitemap_text = sitemap_response.text()
         reader_loc = f"<loc>{READER_CANONICAL}</loc>"
-        assert_true(sitemap_text.count(reader_loc) == 1, f"{BROWSER_NAME}: canonical du lecteur absente ou dupliquée dans le sitemap")
+        assert_true(sitemap_text.count(reader_loc) == 0, f"{BROWSER_NAME}: page noindex de démo encore présente dans le sitemap")
         assert_true(DEMO_BASENAME not in sitemap_text, f"{BROWSER_NAME}: le PDF démo ne doit pas être indexé directement par le sitemap")
         assert_true(FULL_BASENAME not in sitemap_text, f"{BROWSER_NAME}: édition intégrale exposée dans le sitemap")
 
