@@ -1,8 +1,9 @@
-import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
+import { readLimitedUtf8BodyWithDeadline } from '../_shared/read-chunk-deadline.mjs';
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredUser, serviceClient } from '../_shared/auth.ts';
 
 const MAX_REQUEST_BYTES=2048;
+const MAX_REQUEST_READ_TIMEOUT_MS=4_000;
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const PRIVATE_HEADERS={
   ...corsHeaders,
@@ -25,8 +26,12 @@ async function readBoundedJson(req:Request){
     const declared=Number(declaredRaw);
     if(Number.isFinite(declared)&&declared>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
   }
-  const limited=await readLimitedUtf8Body(req,MAX_REQUEST_BYTES);
-  if(!limited.ok)throw new Error('REQUEST_TOO_LARGE');
+  const limited=await readLimitedUtf8BodyWithDeadline(req,MAX_REQUEST_BYTES,MAX_REQUEST_READ_TIMEOUT_MS);
+  if(!limited.ok){
+    if(limited.reason==='REQUEST_TIMEOUT')throw new Error('REQUEST_TIMEOUT');
+    if(limited.reason==='REQUEST_TOO_LARGE')throw new Error('REQUEST_TOO_LARGE');
+    throw new Error('INVALID_JSON');
+  }
   const raw=limited.raw;
   if(new TextEncoder().encode(raw).byteLength>MAX_REQUEST_BYTES)throw new Error('REQUEST_TOO_LARGE');
   let body:unknown;
@@ -103,11 +108,15 @@ Deno.serve(async(req)=>{
 
     return privateJson({ok:true,submitted:true,source:'endgame_only'});
   }catch(e){
-    console.error('[submit-game-contribution]',e);
-    if(e?.message==='AUTH_REQUIRED')return privateJson({ok:false,error:'Connexion requise.',code:'AUTH_REQUIRED'},401);
-    if(e?.message==='JSON_REQUIRED')return privateJson({ok:false,error:'Corps JSON requis.',code:'JSON_REQUIRED'},415);
-    if(e?.message==='REQUEST_TOO_LARGE')return privateJson({ok:false,error:'Requête trop volumineuse.',code:'REQUEST_TOO_LARGE'},413);
-    if(e?.message==='INVALID_JSON')return privateJson({ok:false,error:'JSON invalide.',code:'INVALID_JSON'},400);
+    // Ne jamais journaliser la requête, l'exception ou le message Supabase :
+    // ils peuvent contenir des métadonnées privées de session.
+    const code=e instanceof Error?e.message:'';
+    if(code==='AUTH_REQUIRED')return privateJson({ok:false,error:'Connexion requise.',code:'AUTH_REQUIRED'},401);
+    if(code==='JSON_REQUIRED')return privateJson({ok:false,error:'Corps JSON requis.',code:'JSON_REQUIRED'},415);
+    if(code==='REQUEST_TOO_LARGE')return privateJson({ok:false,error:'Requête trop volumineuse.',code:'REQUEST_TOO_LARGE'},413);
+    if(code==='REQUEST_TIMEOUT')return privateJson({ok:false,error:'Délai de transmission dépassé.',code:'REQUEST_TIMEOUT'},408);
+    if(code==='INVALID_JSON')return privateJson({ok:false,error:'JSON invalide.',code:'INVALID_JSON'},400);
+    console.error('[submit-game-contribution]',{code:'GAME_CONTRIBUTION_FAILED'});
     return privateJson({ok:false,error:'Erreur de transmission.',code:'SUBMISSION_FAILED'},500);
   }
 });
