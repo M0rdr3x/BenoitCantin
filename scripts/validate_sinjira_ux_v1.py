@@ -151,6 +151,34 @@ def check():
         ):
             if token not in css:
                 problems.append("CSS ergonomique: protection manquante " + token)
+        for token in (
+            '.sinjira-account-nav-frame.is-scrollable',
+            '.sinjira-account-nav-arrow',
+            '.account-nav [hidden]',
+        ):
+            if token not in css:
+                problems.append("Navigation horizontale du compte: CSS absent " + token)
+        for token in (
+            "Rubriques précédentes du compte",
+            "Rubriques suivantes du compte",
+            "accountScroll.scrollBy(",
+            "currentTab.offsetLeft",
+            "data-sinjira-account-scroll-ready",
+        ):
+            if token not in js:
+                problems.append("Navigation horizontale du compte: JS absent " + token)
+        for path in (
+            "compte/index.html", "compte/bibliotheque.html",
+            "compte/mes-lectures.html", "compte/securite.html",
+            "compte/profil.html",
+        ):
+            page = (ROOT / path).read_text("utf-8")
+            for version in (
+                "site-ux-sinjira-v1.css?v=1.0.1",
+                "site.js?v=24.4.102",
+            ):
+                if version not in page:
+                    problems.append(f"{path}: ressource de navigation non rechargée: {version}")
         if "data-sinjira-nav-ready" not in js:
             problems.append("Menu JavaScript: activation progressive absente")
         boot_path = ROOT / "assets/js/sinjira-nav-boot-v2.js"
