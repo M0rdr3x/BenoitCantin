@@ -40,6 +40,8 @@ REQUIRED = {
         "service.rpc('project_access_rank'",
     "lien externe après accès":
         "if(doc.external_url){",
+    "lien statique uniquement lorsque document et projet sont publics":
+        "if(doc.access_level!=='public'||doc.projects?.visibility!=='public'){",
     "lien signé après accès":
         "createSignedUrl(doc.storage_path,600)",
     "cache privé":
@@ -60,6 +62,7 @@ def audit(source: str, config: str) -> list[str]:
         "const service=serviceClient(),user=await optionalUser(req);",
         "if(!documentAccessAllowed(doc.access_level,userRank))",
         "if(doc.external_url){",
+        "if(doc.access_level!=='public'||doc.projects?.visibility!=='public'){",
         "createSignedUrl(doc.storage_path,600)",
     ]
     pos = [source.find(x) for x in checks]
@@ -97,6 +100,10 @@ def self_test(source: str, config: str) -> None:
             ("doc.projects?.status!=='active'", "false"),
         "signature avant autorisation":
             ("if(doc.external_url){", "if(false){"),
+        "liens privés statiques acceptés":
+            ("if(doc.access_level!=='public'||doc.projects?.visibility!=='public'){", "if(false){"),
+        "projet privé seul accepté":
+            ("if(doc.access_level!=='public'||doc.projects?.visibility!=='public'){", "if(doc.access_level!=='public'&&doc.projects?.visibility!=='public'){"),
         "lien signé trop long":
             ("createSignedUrl(doc.storage_path,600)", "createSignedUrl(doc.storage_path,3600)"),
         "cache privé retiré":
