@@ -174,11 +174,18 @@
     }
     function slideAccount(direction) {
       var distance = Math.max(160, Math.round(accountScroll.clientWidth * .7));
+      var max = Math.max(0, accountScroll.scrollWidth - accountScroll.clientWidth);
+      var target = Math.max(0, Math.min(max,
+        accountScroll.scrollLeft + direction * distance));
       var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      accountScroll.scrollBy({
-        left: direction * distance,
-        behavior: reduce ? 'instant' : 'smooth'
+      // "instant" n'est pas un ScrollBehavior interoperable sur tous les
+      // moteurs : "auto" respecte la preference sans bloquer WebKit.
+      accountScroll.scrollTo({
+        left: target,
+        behavior: reduce ? 'auto' : 'smooth'
       });
+      scrollLimits();
+      window.requestAnimationFrame(scrollLimits);
     }
     back.addEventListener('click', function () { slideAccount(-1); });
     forward.addEventListener('click', function () { slideAccount(1); });
