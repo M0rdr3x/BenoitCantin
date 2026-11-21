@@ -41,6 +41,10 @@ async function invoke({
   accessLevel,
   visibility = 'private',
   rank = 0,
+  adminData = undefined,
+  adminError = false,
+  rankData = undefined,
+  rankError = false,
   signed = false,
   user = null,
   approved = true,
@@ -75,8 +79,14 @@ async function invoke({
     },
     async rpc(name) {
       counters.rpcCalls.push(name);
-      if (name === 'is_sinjira_admin') return { data: rank === 100, error: null };
-      if (name === 'project_access_rank') return { data: rank, error: null };
+      if (name === 'is_sinjira_admin') return {
+        data: adminData === undefined ? rank === 100 : adminData,
+        error: adminError ? new Error('Simulated admin RPC error') : null,
+      };
+      if (name === 'project_access_rank') return {
+        data: rankData === undefined ? rank : rankData,
+        error: rankError ? new Error('Simulated rank RPC error') : null,
+      };
       throw new Error('Unexpected RPC');
     },
     storage: {
@@ -156,10 +166,61 @@ test('valeurs inconnues, non typées et rangs non finis refusés', async () => {
     assertDenied(await invoke({ accessLevel }), 'niveau non déclaré : ' + String(accessLevel));
   }
   for (const rank of ['Infinity', '-Infinity', 'NaN']) {
-    assertDenied(await invoke({
+    const result = await invoke({
       accessLevel: 'account', rank, user: { id: UUID }, signed: true,
-    }), 'rang RPC non fini : ' + rank);
+    });
+    assert.equal(result.response.status, 503, 'rang RPC non fini : ' + rank);
+    assert.equal(result.payload.ok, false);
+    assert.equal('url' in result.payload, false);
+    assert.equal(result.counters.bucketReads, 0);
+    assert.equal(result.counters.signedUrls, 0);
   }
+});
+
+test('une RPC refusée ou mal typée ne peut jamais autoriser un document', async () => {
+  const cases = [
+    { adminData: 'false' }, { adminData: 'true' },
+    { adminData: 1 }, { adminData: null },
+    { adminData: { is_admin: true } },
+    { adminData: true, adminError: true },
+    { adminData: false, adminError: true },
+    { rankData: '30' }, { rankData: 30.5 }, { rankData: NaN },
+    { rankData: Infinity }, { rankData: -1 }, { rankData: 31 },
+    { rankData: 100 }, { rankData: null }, { rankData: true },
+    { rankData: { rank: 30 } }, { rankData: [30] },
+    { rankData: 30, rankError: true },
+  ];
+  for (const options of cases) {
+    const result = await invoke({
+      accessLevel: 'account', visibility: 'private',
+      user: { id: UUID }, signed: true, rank: 10, ...options,
+    });
+    assert.equal(result.response.status, 503, JSON.stringify(options));
+    assert.equal(result.payload.ok, false);
+    assert.equal('url' in result.payload, false);
+    assert.equal(result.counters.bucketReads, 0);
+    assert.equal(result.counters.signedUrls, 0);
+    assert.equal(result.counters.rpcCalls.length,
+      ('adminData' in options || 'adminError' in options) ? 1 : 2);
+  }
+});
+
+test('rangs exacts et administrateur confirmé conservent leurs accès', async () => {
+  for (const rank of [0,1,10,20,30]) {
+    const result = await invoke({
+      accessLevel: 'public', visibility: 'public', rank,
+      user: { id: UUID }, signed: true,
+    });
+    assert.equal(result.response.status, rank===0?403:200, String(rank));
+    assert.equal(result.counters.rpcCalls.length, 2);
+  }
+  const admin = await invoke({
+    accessLevel: 'admin', visibility: 'private', signed: true,
+    rank: 100, user: { id: UUID },
+  });
+  assert.equal(admin.response.status, 200);
+  assert.equal(admin.payload.protected, true);
+  assert.deepEqual(admin.counters.rpcCalls, ['is_sinjira_admin']);
 });
 
 test('droits des niveaux canoniques préservés à leurs seuils exacts', async () => {
@@ -183,7 +244,7 @@ test('droits des niveaux canoniques préservés à leurs seuils exacts', async (
     }
     if (required > 1) {
       assertDenied(await invoke({
-        accessLevel, rank: required - 1, user: { id: UUID },
+        accessLevel, rank: ({ 10:1, 20:10, 30:20, 100:30 })[required], user: { id: UUID },
       }), 'rang insuffisant pour ' + accessLevel);
     }
   }
