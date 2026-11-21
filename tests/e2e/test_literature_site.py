@@ -609,7 +609,7 @@ def run() -> None:
 
         assert_true(page.locator('body[data-reader-total-pages="82"]').count() == 1, f"{BROWSER_NAME}: pagination canonique 82 pages absente du lecteur")
         assert_true(page.locator('a[href="/compte/liseuse.html?edition=integrale"]').count() == 1, f"{BROWSER_NAME}: accès privé Livre I absent du lecteur")
-        assert_true(page.locator('input[data-reader-page-number][aria-label="Numéro de page"]').count() == 1, f"{BROWSER_NAME}: champ de page lecteur non nommé")
+        assert_true(page.locator('input[data-reader-page-number][aria-label="Numéro de page de la démo"]').count() == 1, f"{BROWSER_NAME}: champ de page lecteur non nommé")
         assert_true(page.locator("input[data-reader-page-number]").get_attribute("max") == "82", f"{BROWSER_NAME}: maximum du lecteur différent de 82")
         assert_true(page.locator('[data-reader-resume][aria-live="polite"]').count() == 1, f"{BROWSER_NAME}: reprise lecteur non annoncée aux aides techniques")
         frame = page.locator("iframe[data-pdf-reader]")

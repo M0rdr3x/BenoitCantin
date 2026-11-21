@@ -98,12 +98,25 @@ def main()->int:
         "onConflict:'user_id,novel_id'"
     ],'sinjira-reader-progress-v24-4-61.js')
 
+    # Le lecteur PDF public doit désormais être chargé indépendamment de
+    # Supabase (le client d'authentification est importé ensuite, si disponible).
     require(demo_html,[
-        'sinjira-reader.js?v=',
+        'sinjira-demo-bootstrap-v1.mjs?v=',
         'sinjira-reader-progress-v24-4-61.js?v='
     ],'lire-demo.html')
-    if demo_html.index('sinjira-reader.js?v=') > demo_html.index('sinjira-reader-progress-v24-4-61.js?v='):
-        raise AssertionError('lire-demo.html: le synchroniseur canonique doit être chargé après le lecteur existant.')
+    if 'sinjira-reader.js?v=' in demo_html:
+        raise AssertionError('lire-demo.html: ancien bootstrap Supabase bloquant restauré.')
+    if demo_html.index('sinjira-demo-bootstrap-v1.mjs?v=') > demo_html.index('sinjira-reader-progress-v24-4-61.js?v='):
+        raise AssertionError('lire-demo.html: le synchroniseur canonique doit suivre le bootstrap autonome.')
+    bootstrap_path=ROOT/'assets/js/sinjira-demo-bootstrap-v1.mjs'
+    if not bootstrap_path.is_file():
+        raise AssertionError('lire-demo.html: bootstrap autonome absent.')
+    bootstrap=bootstrap_path.read_text('utf-8')
+    require(bootstrap,[
+        "import {startDemoNavigation} from './sinjira-demo-navigation-v1.mjs'",
+        'startDemoNavigation({',
+        "await import('./sinjira-supabase.js')",
+    ],'sinjira-demo-bootstrap-v1.mjs')
 
     paid_markers=['stripe','openai','anthropic','twilio','paypal','lemonsqueezy','paddle','replicate']
     for label,text in (
