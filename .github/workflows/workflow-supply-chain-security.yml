@@ -5,11 +5,19 @@ on:
     paths:
       - '.github/workflows/**'
       - 'scripts/validate_workflow_supply_chain.py'
+      - 'scripts/validate_browser_supabase_supply_chain.py'
+      - 'assets/js/**'
+      - 'compte/**'
+      - 'projets/sinjira/**'
   push:
     branches: [main]
     paths:
       - '.github/workflows/**'
       - 'scripts/validate_workflow_supply_chain.py'
+      - 'scripts/validate_browser_supabase_supply_chain.py'
+      - 'assets/js/**'
+      - 'compte/**'
+      - 'projets/sinjira/**'
   workflow_dispatch:
 
 permissions:
@@ -33,3 +41,7 @@ jobs:
         run: python scripts/validate_workflow_supply_chain.py --self-test
       - name: Vérifier chaque workflow du dépôt
         run: python scripts/validate_workflow_supply_chain.py
+      - name: Tester les refus de versions SDK flottantes sans réseau
+        run: python scripts/validate_browser_supabase_supply_chain.py --self-test
+      - name: Refuser les SDK de session non figés dans les pages publiques
+        run: python scripts/validate_browser_supabase_supply_chain.py
