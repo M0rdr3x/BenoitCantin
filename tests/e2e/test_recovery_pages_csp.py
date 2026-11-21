@@ -61,6 +61,9 @@ def retry_offline(browser, js_enabled):
         viewport={"width": 240, "height": 760},
         java_script_enabled=js_enabled,
         reduced_motion="reduce",
+        # Les routes réseau simulées doivent rester contrôlées par Playwright.
+        # Le service worker est testé séparément dans la CI PWA.
+        service_workers="block",
     )
     try:
         page = context.new_page()
@@ -95,7 +98,7 @@ def retry_offline(browser, js_enabled):
 
 
 def legacy_alias(browser):
-    context = browser.new_context(viewport={"width": 320, "height": 760})
+    context = browser.new_context(viewport={"width": 320, "height": 760}, service_workers="block")
     try:
         page = context.new_page()
         html = (ROOT / "404.html").read_text("utf-8")
