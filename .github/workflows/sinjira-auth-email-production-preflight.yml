@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/sinjira-auth-email-production-preflight.yml'
       - 'scripts/preflight_sinjira_auth_email.py'
+      - 'scripts/validate_auth_email_preflight_protection.py'
       - 'scripts/test_sinjira_confirmation_manual_click.cjs'
       - 'scripts/test_sinjira_formspree_transport.cjs'
       - 'scripts/test_sinjira_confirmation_notice_server.cjs'
@@ -33,6 +34,7 @@ on:
     paths:
       - '.github/workflows/sinjira-auth-email-production-preflight.yml'
       - 'scripts/preflight_sinjira_auth_email.py'
+      - 'scripts/validate_auth_email_preflight_protection.py'
       - 'scripts/test_sinjira_confirmation_manual_click.cjs'
       - 'scripts/test_sinjira_formspree_transport.cjs'
       - 'scripts/test_sinjira_confirmation_notice_server.cjs'
@@ -86,6 +88,8 @@ jobs:
         run: |
           python3 -m py_compile scripts/preflight_sinjira_auth_email.py
           python3 scripts/preflight_sinjira_auth_email.py --self-test
+          python3 scripts/validate_auth_email_preflight_protection.py --self-test
+          python3 scripts/validate_auth_email_preflight_protection.py
       - name: Configurer Node pour les tests du vrai script de confirmation
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
         with:
@@ -137,7 +141,7 @@ jobs:
   production-inspection:
     name: Vérification réelle Auth, sans modification
     needs: contract
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.ref_protected == true }}
     environment: production
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -152,14 +156,48 @@ jobs:
             echo "Confirmation incorrecte; aucune opération distante."
             exit 1
           }
+      - name: Refuser toute référence de production non protégée
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = 'refs/heads/main'
+          test "${GITHUB_REF_PROTECTED:-}" = 'true'
+
       - name: Checkout de main
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
-          ref: main
+          ref: ${{ github.sha }}
           persist-credentials: false
+
+      - name: Vérifier l'empreinte exacte du checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse --verify HEAD)" = "$GITHUB_SHA"
+          test "${GITHUB_REF_PROTECTED:-}" = 'true'
       - name: Vérifier Python 3.12 du runner Ubuntu 24.04
         run: |
           python3 -c 'import sys; assert sys.version_info[:2] == (3, 12), "Python 3.12 requis"'
+      - name: Vérifier la protection GitHub et SHA live avant tout jeton
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        with:
+          script: |
+            if (process.env.GITHUB_REF_PROTECTED !== 'true') {
+              core.setFailed('Refus du prévol Auth : ref non protégée au déclenchement.');
+              return;
+            }
+            const { owner, repo } = context.repo;
+            const { data: branch } = await github.rest.repos.getBranch({ owner, repo, branch: 'main' });
+            if (branch.protected !== true) {
+              core.setFailed('Refus du prévol Auth : main n’est plus protégée.');
+              return;
+            }
+            if (branch.commit?.sha !== context.sha) {
+              core.setFailed('Refus du prévol Auth : main a changé depuis la validation.');
+              return;
+            }
+            core.info('Branche principale protégée et SHA inchangé avant accès au jeton Auth.');
+
       - name: Lire seulement la configuration Auth distante
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
