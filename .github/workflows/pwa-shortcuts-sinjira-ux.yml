@@ -1,0 +1,72 @@
+name: UX PWA — raccourcis SINJIRA PC/mobile
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'manifest.webmanifest'
+      - 'site.webmanifest'
+      - 'sw.js'
+      - 'scripts/validate_pwa.py'
+      - 'tests/e2e/test_pwa_shortcuts_sinjira.py'
+      - '.github/workflows/pwa-shortcuts-sinjira-ux.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'manifest.webmanifest'
+      - 'site.webmanifest'
+      - 'sw.js'
+      - 'scripts/validate_pwa.py'
+      - 'tests/e2e/test_pwa_shortcuts_sinjira.py'
+      - '.github/workflows/pwa-shortcuts-sinjira-ux.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  shortcuts:
+    name: Raccourcis SINJIRA ${{ matrix.browser }}
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.61.0-noble@sha256:a9731514f24121d1dcd25d58d0a38146646d290a5998fd80d3e533e7b5e21c69
+      options: --user 1001
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - name: Récupérer le dépôt sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Installer Playwright épinglé
+        run: python -m pip install --disable-pip-version-check "playwright==1.61.0"
+      - name: Vérifier la syntaxe des contrats
+        run: |
+          python -m py_compile scripts/validate_pwa.py
+          python -m py_compile tests/e2e/test_pwa_shortcuts_sinjira.py
+      - name: Contrôler les exigences PWA existantes
+        run: python scripts/validate_pwa.py
+      - name: Démarrer le serveur statique local
+        run: |
+          python -m http.server 4173 --bind 127.0.0.1 > /tmp/pwa-shortcuts-http.log 2>&1 &
+          echo $! > /tmp/pwa-shortcuts-http.pid
+          i=0
+          while [ "$i" -lt 20 ]; do
+            if python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4173/', timeout=1).read(1)" >/dev/null 2>&1; then exit 0; fi
+            i=$((i + 1))
+            sleep 1
+          done
+          cat /tmp/pwa-shortcuts-http.log
+          exit 1
+      - name: Tester les raccourcis sur PC et téléphone
+        env:
+          BASE_URL: http://127.0.0.1:4173
+          BROWSER: ${{ matrix.browser }}
+        run: python tests/e2e/test_pwa_shortcuts_sinjira.py
+      - name: Arrêter le serveur
+        if: always()
+        run: |
+          if [ -f /tmp/pwa-shortcuts-http.pid ]; then kill "$(cat /tmp/pwa-shortcuts-http.pid)" || true; fi

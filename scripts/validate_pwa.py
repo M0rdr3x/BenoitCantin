@@ -27,9 +27,11 @@ REQUIRED_OFFLINE_ROUTES = {
     '/projets/sinjira/monde-parallele/',
 }
 REQUIRED_SHORTCUTS = {
+    '/projets/sinjira/',
     '/app/',
     '/projets/sinjira/romans/',
     '/projets/sinjira/registre/',
+    '/projets/sinjira/communaute/',
     '/projets/sinjira/monde-parallele/',
 }
 CACHE_PREFIX = 'benoitcantin-v24-4-95-'
@@ -115,16 +117,33 @@ def validate_manifests(errors: list[str]) -> None:
         if not isinstance(shortcuts, list) or not shortcuts:
             errors.append(f'{path.name}: raccourcis PWA absents.')
         else:
-            urls = {str(item.get('url') or '') for item in shortcuts if isinstance(item, dict)}
-            missing = sorted(REQUIRED_SHORTCUTS - urls)
+            urls = [str(item.get('url') or '') for item in shortcuts if isinstance(item, dict)]
+            if len(urls) != len(shortcuts):
+                errors.append(f'{path.name}: entrée de raccourci PWA invalide.')
+            if len(set(urls)) != len(urls):
+                errors.append(f'{path.name}: raccourcis PWA dupliqués.')
+            missing = sorted(REQUIRED_SHORTCUTS - set(urls))
             if missing:
                 errors.append(f'{path.name}: raccourcis SINJIRA™ manquants: ' + ', '.join(missing))
-            for url in urls:
+            for item in shortcuts:
+                if not isinstance(item, dict):
+                    continue
+                url = str(item.get('url') or '')
+                name = str(item.get('name') or '').strip()
+                short_name = str(item.get('short_name') or '').strip()
+                if not name or not short_name:
+                    errors.append(f'{path.name}: raccourci sans nom accessible: {url or "—"}')
+                if 'démo' in name.lower() or 'demo' in name.lower():
+                    errors.append(f'{path.name}: raccourci vers une édition de démonstration retirée: {name}')
+                if not url.startswith('/') or url.startswith('//'):
+                    errors.append(f'{path.name}: raccourci hors origine: {url or "—"}')
                 target = local_target(url, path.parent)
                 if target is None or not target.exists():
                     errors.append(f'{path.name}: raccourci introuvable: {url or "—"}')
-                if url.lower().startswith(('/compte/', '/admin/', '/supabase/')):
-                    errors.append(f'{path.name}: raccourci PWA privé interdit: {url}')
+                if url.lower().startswith(('/compte/', '/admin/', '/supabase/', '/projets/projet-nova/')):
+                    errors.append(f'{path.name}: raccourci PWA hors périmètre public SINJIRA: {url}')
+                if url == '/projets/sinjira/romans/lire-demo.html':
+                    errors.append(f'{path.name}: ancien statut de démo interdit comme raccourci: {url}')
 
     if all(data for _, data in loaded):
         canonical = loaded[0][1]
