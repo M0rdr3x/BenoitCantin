@@ -1,0 +1,114 @@
+/* SINJIRA — statut de la démo retirée, responsive et sans dépendance CSS inline.
+ * Les règles sont volontairement limitées à cette page. Aucune modification
+ * du lecteur intégral privé ni des archives NOVA.
+ */
+body[data-reader-page="demo-pending"] .sinjira-release-main{
+  padding:clamp(28px,6vw,72px) 0 70px;
+  min-height:65vh;
+  width:100%;
+  min-width:0;
+}
+body[data-reader-page="demo-pending"] .container.sinjira-release-layout{
+  display:grid;
+  grid-template-columns:minmax(0,300px) minmax(0,1fr);
+  align-items:start;
+  gap:clamp(20px,4vw,46px);
+  min-width:0;
+  max-width:100%;
+}
+body[data-reader-page="demo-pending"] .sinjira-release-cover{
+  margin:0;
+  min-width:0;
+  width:100%;
+  max-width:100%;
+  border-radius:20px;
+  overflow:hidden;
+  border:1px solid rgba(240,240,255,.2);
+  box-shadow:0 22px 54px rgba(0,0,0,.3);
+}
+body[data-reader-page="demo-pending"] .sinjira-release-cover img{
+  width:100%;
+  max-width:100%;
+  height:auto;
+  display:block;
+}
+body[data-reader-page="demo-pending"] .sinjira-release-card{
+  min-width:0;
+  max-width:100%;
+  padding:clamp(20px,4vw,38px);
+  box-sizing:border-box;
+  border-radius:20px;
+  background:#111626;
+  border:1px solid rgba(190,205,255,.22);
+  overflow-wrap:anywhere;
+}
+body[data-reader-page="demo-pending"] .sinjira-release-card h1{
+  font-size:clamp(1.5rem,3.3vw,2.5rem);
+  line-height:1.2;
+  margin:4px 0 16px;
+  text-wrap:balance;
+}
+body[data-reader-page="demo-pending"] .sinjira-release-card p{
+  max-width:68ch;
+  line-height:1.7;
+  color:#d6deee;
+}
+body[data-reader-page="demo-pending"] .sinjira-release-card .eyebrow{
+  color:#f3ada4;
+  font-weight:750;
+  letter-spacing:.06em;
+}
+body[data-reader-page="demo-pending"] .sinjira-release-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  min-width:0;
+  max-width:100%;
+  margin-top:24px;
+}
+body[data-reader-page="demo-pending"] .sinjira-release-actions .btn{
+  box-sizing:border-box;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:48px;
+  min-width:0;
+  max-width:100%;
+  text-align:center;
+  overflow-wrap:anywhere;
+}
+body[data-reader-page="demo-pending"] .footer-bottom{
+  flex-wrap:wrap;
+  min-width:0;
+}
+@media(max-width:700px){
+  body[data-reader-page="demo-pending"] .container.sinjira-release-layout{
+    grid-template-columns:minmax(0,1fr);
+  }
+  body[data-reader-page="demo-pending"] .sinjira-release-cover{
+    max-width:min(240px,100%);
+    margin-inline:auto;
+  }
+  body[data-reader-page="demo-pending"] .sinjira-release-actions{
+    display:grid;
+    width:100%;
+    grid-template-columns:minmax(0,1fr);
+  }
+  body[data-reader-page="demo-pending"] .sinjira-release-actions .btn{
+    width:100%;
+    white-space:normal;
+  }
+}
+@media(max-width:390px){
+  body[data-reader-page="demo-pending"] .container.sinjira-release-layout{
+    gap:18px;
+  }
+  body[data-reader-page="demo-pending"] .sinjira-release-card{
+    padding:18px;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  body[data-reader-page="demo-pending"] .sinjira-release-actions .btn{
+    transition:none;
+  }
+}
