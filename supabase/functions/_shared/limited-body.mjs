@@ -1,3 +1,5 @@
+import { readChunkWithDeadline } from './read-chunk-deadline.mjs';
+
 /**
  * Read a public Edge request incrementally. Never call Request.text()/json()
  * before enforcing a byte ceiling: Content-Length is optional and untrusted.
@@ -32,12 +34,14 @@ export async function readLimitedUtf8Body(req, maxBytes) {
 
   if (!req.body) return { ok: true, raw: '' };
   const reader = req.body.getReader();
+  // Budget monotone de 8 secondes, partagé par tous les fragments.
+  const deadlineAt = performance.now() + 8_000;
   const decoder = new TextDecoder('utf-8', { fatal: true });
   let byteCount = 0;
   let text = '';
   try {
     while (true) {
-      const { done, value } = await reader.read();
+      const { done, value } = await readChunkWithDeadline(reader, req.signal, deadlineAt);
       if (done) break;
       byteCount += value.byteLength;
       if (byteCount > maxBytes) {
@@ -82,11 +86,13 @@ export async function readLimitedBinaryResponse(response, maxBytes) {
 
   if (!response.body) return { ok: false };
   const reader = response.body.getReader();
+  // Les PDF distants ne peuvent pas immobiliser indéfiniment la fonction.
+  const deadlineAt = performance.now() + 30_000;
   const chunks = [];
   let byteCount = 0;
   try {
     while (true) {
-      const { done, value } = await reader.read();
+      const { done, value } = await readChunkWithDeadline(reader, null, deadlineAt);
       if (done) break;
       if (!(value instanceof Uint8Array) ||
           value.byteLength > maxBytes - byteCount) {
