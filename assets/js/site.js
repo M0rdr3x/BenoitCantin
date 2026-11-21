@@ -208,11 +208,9 @@
       revealCurrentTab();
       scrollLimits();
     });
-    window.addEventListener('load', function () {
-      scrollLimits();
-      revealCurrentTab();
-      scrollLimits();
-    }, { once: true });
+    // L'affichage initial est calculé dès que le menu est monté.
+    // Ne pas le refaire à window.load : les images peuvent finir de charger
+    // après que l'utilisateur a déjà fait défiler les rubriques.
     revealCurrentTab();
     scrollLimits();
     if (typeof ResizeObserver !== 'undefined') {
