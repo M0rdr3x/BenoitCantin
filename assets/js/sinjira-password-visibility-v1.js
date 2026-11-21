@@ -5,7 +5,7 @@
 (function () {
   'use strict';
   function initialize() {
-  var form = document.querySelector('form[data-login-form], form[data-signup-form]');
+  var form = document.querySelector('form[data-login-form], form[data-signup-form], form[data-reset-form]');
   if (!form) return;
   // Les attributs autocomplete indiquent l'intention au navigateur, mais
   // certains moteurs ne les exposent pas uniformément en propriété JS.

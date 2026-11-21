@@ -11,6 +11,8 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 PAGES = {
     "compte/connexion.html": 2,
+    "compte/mot-de-passe-oublie.html": 1,
+    "compte/reinitialiser-mot-de-passe.html": 2,
     "compte/inscription.html": 16,
     "compte/profil.html": 14,
     "compte/parametres.html": 2,
@@ -69,8 +71,8 @@ def check_page(path, expected):
                        'data-delete-account'):
             if marker not in text:
                 errors.append("Paramètres : contrôle sensible manquant " + marker)
-    if path.endswith(("connexion.html", "inscription.html")):
-        if "sinjira-password-visibility-v1.js?v=1.0.0" not in text:
+    if path.endswith(("connexion.html", "inscription.html", "reinitialiser-mot-de-passe.html")):
+        if not re.search(r"sinjira-password-visibility-v1\.js\?v=1\.0\.[0-9]+", text):
             errors.append(path + ": assistance mot de passe manquante")
     return errors
 
@@ -92,6 +94,7 @@ def main():
         "document.addEventListener('visibilitychange'", "window.addEventListener('pagehide'",
         "form.addEventListener('submit', concealAll, true)",
         "document.addEventListener('DOMContentLoaded', initialize",
+        "form[data-reset-form]",
     ):
         if marker not in script:
             problems.append("Affichage des mots de passe : protection manquante " + marker)
@@ -111,7 +114,7 @@ def main():
         for problem in problems:
             print("- " + problem)
         return 1
-    print("OK : 34 libellés liés, sections facultatives, saisie 16 px, mots de passe sans stockage ni transmission")
+    print("OK : 37 libellés liés, six formulaires, saisie 16 px et assistance sécurisée du mot de passe")
     return 0
 
 
