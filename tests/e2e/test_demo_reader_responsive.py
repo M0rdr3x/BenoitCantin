@@ -72,6 +72,16 @@ def run():
                         img: document.querySelector('.site-header .brand img')?.getAttribute('src'),
                         toolbarTargets: [...document.querySelectorAll('.sinjira-reader-actions .btn')]
                             .map(el => el.getBoundingClientRect().height),
+                        scrollWidth: document.documentElement.scrollWidth,
+                        offenders: [...document.querySelectorAll('body *')]
+                            .map(el => {
+                                const r = el.getBoundingClientRect();
+                                return {tag:el.tagName.toLowerCase(), cls:String(el.className || '').slice(0,75),
+                                        id:el.id || '', left:Math.round(r.left), right:Math.round(r.right),
+                                        width:Math.round(r.width)};
+                            })
+                            .filter(el => el.right > w + 2 || el.left < -2)
+                            .sort((a,b) => b.right - a.right).slice(0,12),
                     };
                 }""")
                 check(state["within"], f"commandes hors écran {width}px: {state}")
