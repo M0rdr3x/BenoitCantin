@@ -162,7 +162,7 @@ def check():
             "Rubriques précédentes du compte",
             "Rubriques suivantes du compte",
             "accountScroll.scrollBy(",
-            "currentTab.offsetLeft",
+            "revealCurrentTab()",
             "data-sinjira-account-scroll-ready",
         ):
             if token not in js:
