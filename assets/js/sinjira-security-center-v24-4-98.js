@@ -69,7 +69,7 @@ async function registerContext(meta){
     if(error)throw error;
     return {registered,context:data};
   }catch(error){
-    console.warn('[SINJIRA security-context]',error?.message||error);
+    console.warn('[SINJIRA security-context] Vérification de contexte indisponible.');
     return {registered,context:null};
   }
 }
@@ -180,11 +180,16 @@ async function createTravel(form){
 function confirmAction(message){return globalThis.confirm(message)}
 
 function friendlySecurityError(error){
-  const message=error?.message||String(error||'Erreur de sécurité.');
+  // Le message RPC/PostgREST peut contenir des valeurs privées ou une
+  // requête SQL : utiliser exclusivement des réponses locales maîtrisées.
+  const message=typeof error?.message==='string'?error.message:'';
   if(message.includes('TRUST_CONFIRMATION_REQUIRED'))return 'Cet appareil doit d’abord être autorisé depuis un autre appareil déjà fiable.';
   if(message.includes('CURRENT_DEVICE_REQUIRED'))return 'Seul l’appareil que vous utilisez actuellement peut être marqué comme fiable.';
   if(message.includes('AAL2_REQUIRED'))return 'Une vérification MFA récente est requise pour modifier la confiance des appareils.';
-  return message;
+  if(/AUTH_SESSION_INVALID|SESSION_REVOKED/.test(message))return 'Votre session de sécurité n’est plus valide. Reconnectez-vous.';
+  if(message.includes('SECURE_RANDOM_UNAVAILABLE'))return 'La protection cryptographique de ce navigateur est indisponible. Utilisez un navigateur à jour.';
+  if(message==='Indiquez une période et au moins une destination approximative.')return message;
+  return 'Le Centre de sécurité ne peut pas terminer cette opération. Réessayez ou reconnectez-vous.';
 }
 
 async function boot(){
@@ -219,7 +224,7 @@ async function boot(){
     });
 
     status('Centre de sécurité prêt.','success');
-  }catch(error){console.error('[SINJIRA security center]',error);status(friendlySecurityError(error),'error')}
+  }catch(error){console.error('[SINJIRA security center] Initialisation indisponible.');status(friendlySecurityError(error),'error')}
 }
 
 boot();
