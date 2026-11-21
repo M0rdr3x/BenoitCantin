@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+"""Vérifier la mise à jour du cache visuel SINJIRA sans toucher aux données privées."""
+from pathlib import Path
+import re
+
+ROOT = Path(__file__).resolve().parents[1]
+source = (ROOT / "sw.js").read_text("utf-8")
+errors = []
+cache = re.search(r"const CACHE='([^']+)'", source)
+if not cache or not cache.group(1).endswith("-public-4"):
+    errors.append("Le cache public n'a pas été renouvelé pour la nouvelle identité.")
+for asset in (
+    "/assets/icons/sinjira-favicon.png",
+    "/assets/css/home-sinjira-only-v1.css",
+    "/assets/css/site-ux-sinjira-v1.css",
+):
+    if f"'{asset}'" not in source:
+        errors.append(f"Actif de marque non précaché : {asset}")
+    if not (ROOT / asset.lstrip("/")).is_file():
+        errors.append(f"Actif inexistant : {asset}")
+for forbidden in (
+    "/assets/media/sinjira-emblem.webp",
+    "/assets/media/nova-logo.webp",
+    "'/projets/projet-nova/'",
+):
+    if forbidden in source:
+        errors.append(f"Ressource non essentielle conservée dans le cache public : {forbidden}")
+for security_guard in (
+    "const privatePath=", "cache:'no-store'", "if(privatePath)",
+    "if(r.destination==='document')", "const liveAsset=",
+):
+    if security_guard not in source:
+        errors.append(f"Protection de cache privée ou réseau absente : {security_guard}")
+if errors:
+    print("ÉCHEC cache SINJIRA :")
+    for error in errors:
+        print("- " + error)
+    raise SystemExit(1)
+print("OK : cache renouvelé, nouvelle marque précachée et données privées hors cache.")
