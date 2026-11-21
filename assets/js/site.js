@@ -85,6 +85,7 @@
     // compacte n'est masquée qu'après initialisation de sa commande accessible.
     if (doc.body && doc.body.getAttribute('data-sinjira-ux') === 'v1') {
       doc.documentElement.setAttribute('data-sinjira-nav-ready', 'true');
+      doc.documentElement.setAttribute('data-sinjira-nav-initialized', 'true');
     }
     toggle.addEventListener('click', function () {
       setNavOpen(toggle.getAttribute('aria-expanded') !== 'true');
