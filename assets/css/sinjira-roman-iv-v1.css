@@ -1,7 +1,7 @@
 /* SINJIRA — Roman IV : fiche et listes ergonomiques, statuts de diffusion stricts. */
 .sinjira-novel-iv-card{display:grid;grid-template-columns:minmax(0,132px) minmax(0,1fr);gap:clamp(16px,3vw,28px);align-items:start}
 .sinjira-novel-iv-mark{margin:0;display:grid;place-items:center;min-height:160px;padding:20px;border:1px solid rgba(255,153,145,.32);border-radius:18px;background:linear-gradient(150deg,#13192b,#231724);text-align:center}
-.sinjira-novel-iv-mark img{max-width:80px;width:100%;height:auto;border-radius:50%}
+.sinjira-novel-iv-mark img{max-width:80px;width:100%;height:auto;aspect-ratio:1/1;object-fit:contain;border-radius:50%}
 .sinjira-novel-iv-mark figcaption{font-size:.84rem;color:#e8d6df;line-height:1.4}
 .sinjira-novel-iv-card :where(h2,h3,p){overflow-wrap:anywhere}
 .sinjira-novel-iv-card .hero-actions{display:flex;flex-wrap:wrap;gap:12px}
