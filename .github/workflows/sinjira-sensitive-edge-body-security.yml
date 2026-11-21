@@ -12,6 +12,7 @@ on:
       - 'scripts/validate_personal_ai_v25.py'
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/test_sensitive_edge_stream_deadlines.mjs'
+      - 'scripts/test_sensitive_edge_parser_runtime.mjs'
       - '.github/workflows/sinjira-sensitive-edge-body-security.yml'
   push:
     branches: [main]
@@ -24,6 +25,7 @@ on:
       - 'scripts/validate_personal_ai_v25.py'
       - 'scripts/validate_edge_function_inventory.py'
       - 'scripts/test_sensitive_edge_stream_deadlines.mjs'
+      - 'scripts/test_sensitive_edge_parser_runtime.mjs'
       - '.github/workflows/sinjira-sensitive-edge-body-security.yml'
   workflow_dispatch:
 
@@ -48,7 +50,9 @@ jobs:
         with:
           python-version: '3.12.14'
       - name: Tester le vrai lecteur contre les flux bloqués et les octets invalides
-        run: node scripts/test_sensitive_edge_stream_deadlines.mjs
+        run: |
+          node scripts/test_sensitive_edge_stream_deadlines.mjs
+          node scripts/test_sensitive_edge_parser_runtime.mjs
       - name: Contrôler le coffre AAL2 et ses garanties anti-fuite
         run: python3 scripts/validate_conscience_vault_edge_v25.py
       - name: Contrôler Mon IA AAL2 et les accès aux données
