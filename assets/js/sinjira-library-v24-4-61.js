@@ -1,4 +1,5 @@
-import {getSupabase,requireUser,escapeHtml,setStatus,projectStatusLabel,safeInternalDestination} from './sinjira-supabase.js';
+import {getSupabase,requireUser,escapeHtml,setStatus,projectStatusLabel,safeInternalDestination,SINJIRA_CONFIG} from './sinjira-supabase.js';
+import {resolveDocumentUrl} from './sinjira-document-url-policy.mjs';
 
 const status=document.querySelector('[data-library-status]');
 const rows=value=>Array.isArray(value)?value:[];
@@ -84,7 +85,16 @@ async function openFullNovel(button){
       setStatus(status,message,data?.code==='FILE_NOT_READY'?'info':'error');
       return;
     }
-    window.open(data.url,'_blank','noopener');
+    // Refus absolu d'une URL non signée ou non issue du Storage privé attendu.
+    const destination=resolveDocumentUrl(data.url,{
+      siteOrigin:location.origin,storageOrigin:SINJIRA_CONFIG.supabaseUrl,
+      protectedDocument:data.protected
+    });
+    if(data.protected!==true||!destination){
+      setStatus(status,'Le serveur a renvoyé un lien privé de roman non autorisé.','error');
+      return;
+    }
+    window.open(destination,'_blank','noopener,noreferrer');
     setStatus(status,'Édition intégrale ouverte avec un lien privé temporaire de 10 minutes.','success');
   }finally{
     if(button)button.disabled=false;
