@@ -13,15 +13,27 @@ ROOT = Path(__file__).resolve().parents[1]
 NOVA = ROOT / "projets" / "projet-nova"
 errors: list[str] = []
 
-# Portail principal : Projet Nova doit utiliser l'asset optimisé pour le portail.
+# Le portail principal est désormais exclusivement SINJIRA. L'ancien contrôle
+# « trois logos NOVA en accueil » fausse le résultat CI et retarde la
+# correction de PDF.js vulnérable, sans tester une protection de sécurité.
+# En contrepartie, refuser le retour accidentel de NOVA dans cet accueil.
 portal_home = ROOT / "index.html"
 portal_home_css = ROOT / "assets" / "css" / "home-v24-4-12.css"
 if portal_home.is_file():
     portal_home_text = portal_home.read_text(encoding="utf-8", errors="replace")
-    if portal_home_text.count("/assets/media/nova-logo.webp") < 3:
-        errors.append("accueil: le logo Nova optimisé doit être utilisé dans la porte, l’aperçu central et la carte Projet Nova")
-    if "/projets/projet-nova/assets/logo-nova.webp" in portal_home_text:
-        errors.append("accueil: le logo Nova interne ne doit plus être utilisé dans les cartes du portail")
+    if 'class="home-page home-sinjira-only"' in portal_home_text:
+        if "/assets/media/nova-logo.webp" in portal_home_text or (
+            "/projets/projet-nova/assets/logo-nova.webp" in portal_home_text
+        ):
+            errors.append("accueil SINJIRA: une image NOVA ne doit pas réapparaître")
+        if re.search(r'href=["\']/?projets/projet-nova/', portal_home_text, re.I):
+            errors.append("accueil SINJIRA: lien direct NOVA inattendu")
+        if 'class="sinjira-orbit"' not in portal_home_text:
+            errors.append("accueil SINJIRA: emplacement du projet SINJIRA absent")
+        if '/projets/sinjira/' not in portal_home_text:
+            errors.append("accueil SINJIRA: navigation vers SINJIRA absente")
+    else:
+        errors.append("accueil: le mode SINJIRA uniquement doit rester explicite")
 else:
     errors.append("accueil: index.html absent")
 if portal_home_css.is_file():
