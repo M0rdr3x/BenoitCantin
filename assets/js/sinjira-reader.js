@@ -1,4 +1,5 @@
 import {getSupabase,getCurrentUser,escapeHtml,formatDate,friendlyBackendMessage} from './sinjira-supabase.js';
+import {startDemoNavigation} from './sinjira-demo-navigation-v1.mjs';
 
 const page=document.body.dataset.readerPage||'';
 const slug=document.body.dataset.novelSlug||'';
@@ -27,7 +28,8 @@ async function markReading(user,novel,lastPage){
     payload.last_page=safePage;
     payload.progress_percent=Math.round((safePage/totalPages)*100);
   }
-  await getSupabase().from('reader_library').upsert(payload,{onConflict:'user_id,novel_id'});
+  const {error}=await getSupabase().from('reader_library').upsert(payload,{onConflict:'user_id,novel_id'});
+  if(error)throw error;
 }
 
 
@@ -125,32 +127,33 @@ async function comments(){
 async function demo(){
   const frame=document.querySelector('[data-pdf-reader]');
   if(!frame)return;
-  const user=await getCurrentUser(),novel=await getNovel(),input=document.querySelector('[data-reader-page-number]'),bar=document.querySelector('[data-reader-progress-bar]'),progress=document.querySelector('[data-reader-progress-native]'),resume=document.querySelector('[data-reader-resume]');
-  let saved=Number(localStorage.getItem(`sinjira-reader-${slug}`)||1);
-  if(user){
-    const {data}=await getSupabase().from('reader_library').select('last_page').eq('user_id',user.id).eq('novel_id',novel.id).maybeSingle();
-    if(data?.last_page)saved=Number(data.last_page);
+  let user=null;
+  let novel=null;
+
+  // Initialiser la lecture locale immédiatement, sans dépendre d'un serveur.
+  const reader=startDemoNavigation({
+    document,frame,slug,totalPages,
+    onBookmark:async pageNumber=>{
+      if(!user||!novel)return false;
+      await markReading(user,novel,pageNumber);
+      return true;
+    }
+  });
+
+  // La reprise multiappareil est un enrichissement : une panne d'authentification
+  // ou de base ne doit pas bloquer la lecture de la démonstration publique.
+  try{
+    user=await getCurrentUser();
+    if(!user)return;
+    novel=await getNovel();
+    if(!novel)return;
+    const {data,error}=await getSupabase().from('reader_library')
+      .select('last_page').eq('user_id',user.id).eq('novel_id',novel.id)
+      .maybeSingle();
+    if(!error&&data?.last_page)reader.restoreRemotePage(data.last_page);
+  }catch(_){
+    // La navigation et les marque-pages locaux restent opérationnels.
   }
-  let current=Math.min(totalPages,Math.max(1,saved));
-  const render=()=>{
-    const percent=Math.round(current/totalPages*100);
-    if(input){input.max=String(totalPages);input.value=current;}
-    if(bar)bar.style.width=`${percent}%`;
-    if(progress){progress.max=totalPages;progress.value=current;progress.textContent=`${current} sur ${totalPages}`;}
-    if(resume)resume.textContent=`Page mémorisée : ${current} · ${percent} %`;
-    frame.src=`../documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf#page=${current}&zoom=page-width&view=FitH`;
-  };
-  const save=async()=>{
-    localStorage.setItem(`sinjira-reader-${slug}`,String(current));
-    if(user)await markReading(user,novel,current);
-    if(resume)resume.textContent=`Page ${current} sauvegardée.`;
-  };
-  document.querySelector('[data-reader-prev]')?.addEventListener('click',()=>{current=Math.max(1,current-1);render();});
-  document.querySelector('[data-reader-next]')?.addEventListener('click',()=>{current=Math.min(totalPages,current+1);render();});
-  input?.addEventListener('change',()=>{current=Math.min(totalPages,Math.max(1,Number(input.value)||1));render();});
-  document.querySelector('[data-reader-bookmark]')?.addEventListener('click',()=>save().catch(()=>{}));
-  render();
-  await markReading(user,novel,current);
 }
 
 (async()=>{
