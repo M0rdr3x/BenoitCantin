@@ -9,6 +9,7 @@ on:
       - 'projets/sinjira/**'
       - 'assets/css/site-ux-sinjira-v1.css'
       - 'assets/js/site.js'
+      - 'assets/js/sinjira-nav-boot-v2.js'
       - 'scripts/validate_sinjira_ux_v1.py'
       - '.github/workflows/sinjira-ux-navigation-v1.yml'
   push:
@@ -45,4 +46,6 @@ jobs:
       - name: Contrôler les éléments accessibles
         run: python3 scripts/validate_accessibility.py
       - name: Vérifier la syntaxe du menu JavaScript
-        run: node --check assets/js/site.js
+        run: |
+          node --check assets/js/site.js
+          node --check assets/js/sinjira-nav-boot-v2.js

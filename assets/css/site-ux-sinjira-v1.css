@@ -106,3 +106,28 @@ body[data-reader-page="novel"][data-sinjira-ux="v1"] .main-nav a[aria-current]{
 @media(max-width:350px){
   body[data-sinjira-ux="v1"] .brand-text span{display:none}
 }
+
+/* Dégradation progressive : sur mobile, les liens restent accessibles si
+   le navigateur bloque site.js (mode strict, panne CDN ou erreur réseau).
+   Le menu compact n'est activé qu'après initialisation réelle de son bouton. */
+@media(max-width:1020px){
+  /* Le menu de repli est plus haut : il doit défiler avec la page et
+     ne jamais recouvrir durablement le contenu sur les petits écrans. */
+  html:not([data-sinjira-nav-ready]) body[data-sinjira-ux="v1"] .site-header{
+    position:relative
+  }
+  html:not([data-sinjira-nav-ready]) body[data-sinjira-ux="v1"] .nav-shell{
+    flex-wrap:wrap;align-content:center;padding-block:12px
+  }
+  html:not([data-sinjira-nav-ready]) body[data-sinjira-ux="v1"] .menu-toggle{
+    display:none
+  }
+  html:not([data-sinjira-nav-ready]) body[data-sinjira-ux="v1"] .main-nav{
+    display:flex;position:static;flex:1 0 100%;width:100%;min-width:0;
+    max-height:none;overflow:visible;box-shadow:none;
+    padding:8px 0 2px;background:transparent;border-bottom:0
+  }
+  html:not([data-sinjira-nav-ready]) body[data-sinjira-ux="v1"] .main-nav a{
+    white-space:normal;overflow-wrap:anywhere
+  }
+}

@@ -90,6 +90,21 @@ def check():
             problems.append(f"{relative}: configuration de l'interface mobile absente")
         if "/assets/css/site-ux-sinjira-v1.css?v=1.0.0" not in text:
             problems.append(f"{relative}: feuille de style adaptée absente")
+        boot = '/assets/js/sinjira-nav-boot-v2.js?v=2.0.0'
+        if relative == "projets/sinjira/jeux/fracture-du-reseau-mere/jouer.html":
+            # Garde V44 : mode Web désactivé, liste fermée à deux scripts.
+            # L'ajout d'un troisième script contournerait une protection volontaire.
+            if boot in text:
+                problems.append(f"{relative}: boot non approuvé sur mode Web suspendu")
+            continue
+        if text.count(boot) != 1:
+            problems.append(f"{relative}: préchargement du menu absent ou dupliqué")
+        else:
+            head = text.split("</head>", 1)[0]
+            if boot not in head:
+                problems.append(f"{relative}: préchargement du menu en dehors du head")
+            elif head.find(boot) > head.find("site-ux-sinjira-v1.css"):
+                problems.append(f"{relative}: préchargement du menu après le CSS (risque CLS)")
         if "Projet Nova" in text[text.find("data-main-nav"):text.find("</nav>", text.find("data-main-nav"))]:
             problems.append(f"{relative}: ancien lien Nova toujours présent dans le menu")
     if count < 50:
@@ -119,6 +134,20 @@ def check():
         ):
             if token not in css:
                 problems.append("CSS ergonomique: protection manquante " + token)
+        if "data-sinjira-nav-ready" not in js:
+            problems.append("Menu JavaScript: activation progressive absente")
+        boot_path = ROOT / "assets/js/sinjira-nav-boot-v2.js"
+        if not boot_path.is_file():
+            problems.append("Script de préchargement SINJIRA absent")
+        else:
+            boot_js = boot_path.read_text("utf-8")
+            for token in ("data-sinjira-nav-ready", "data-sinjira-nav-initialized", "DOMContentLoaded", "addEventListener('error'"):
+                if token not in boot_js:
+                    problems.append("Script de préchargement incomplet : " + token)
+        if "data-sinjira-nav-initialized" not in js:
+            problems.append("Menu JavaScript: accusé d'initialisation absent")
+        if "html:not([data-sinjira-nav-ready])" not in css or "position:static" not in css:
+            problems.append("Menu mobile: navigation sans JavaScript non prévue")
         if "(min-width: 1021px)" not in js or "focusin" not in js:
             problems.append("Menu JavaScript: tablette ou sortie du focus non traitée")
     return count, problems
