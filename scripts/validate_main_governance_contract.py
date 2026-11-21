@@ -94,6 +94,9 @@ def validate_governance_text(text):
         ("core.setFailed('La branche main n’est pas protégée", 'absence du refus fail-closed de main non protégée'),
         ("process.env.GITHUB_REF_PROTECTED === 'true'", 'état serveur GITHUB_REF_PROTECTED non contrôlé'),
         ('Cet échec de CI ne remplace pas la configuration GitHub Settings > Branches/Rulesets', 'la limite de preuve serveur doit rester explicite'),
+        ('github.rest.repos.getBranch({ owner, repo, branch: \'main\' })', 'vérification API du statut main absente'),
+        ('liveMain.protected !== true', 'contrôle protection serveur GitHub absent'),
+        ('liveMain.commit?.sha !== sha', 'contrôle SHA HEAD de main absent'),
     ):
         require(errors, marker in text, message)
 
@@ -106,6 +109,22 @@ def validate_governance_text(text):
         errors,
         re.search(r'if \(!protectedRef\)\s*\{\s*core\.setFailed\(', text) is not None,
         'le refus des refs non protégés doit rester bloquant',
+    )
+
+    require(
+        errors,
+        re.search(r'if \(liveMain\.protected !== true\)\s*\{\s*core\.setFailed\(', text) is not None,
+        'la confirmation API de la protection de main doit être bloquante',
+    )
+    require(
+        errors,
+        re.search(r'if \(liveMain\.commit\?\.sha !== sha\)\s*\{\s*core\.setFailed\(', text) is not None,
+        'la vérification SHA doit être bloquante',
+    )
+    require(
+        errors,
+        re.search(r'github\.rest\.repos\.getBranch\(\{ owner, repo, branch: \'main\' \}\)', text) is not None,
+        'appel API du statut main non vérifié',
     )
 
     validate_common_local_ci(errors, text, 'workflow gouvernance main')
@@ -193,6 +212,11 @@ def run_self_tests(governance, readme, contract):
         'sans échec push direct': governance.replace('core.setFailed(', 'core.info(', 1),
         'main non protégée seulement signalée': governance.replace("core.setFailed('La branche main n’est pas protégée", "core.warning('La branche main n’est pas protégée", 1),
         'test branche protégée inversé': governance.replace('if (!protectedRef)', 'if (protectedRef)', 1),
+        'appel API main retiré': governance.replace("github.rest.repos.getBranch({ owner, repo, branch: 'main' })", "github.rest.repos.getCommit({ owner, repo, ref: sha })", 1),
+        'contrôle API protection inversé': governance.replace('if (liveMain.protected !== true)', 'if (liveMain.protected === true)', 1),
+        'API protection simplement avertie': governance.replace("core.setFailed('La branche main n’est pas protégée selon l’API GitHub", "core.warning('La branche main n’est pas protégée selon l’API GitHub", 1),
+        'SHA mobile accepté': governance.replace('if (liveMain.commit?.sha !== sha)', 'if (liveMain.commit?.sha === sha)', 1),
+        'SHA déplacé simplement averti': governance.replace("core.setFailed('La branche main a changé depuis le déclenchement", "core.warning('La branche main a changé depuis le déclenchement", 1),
         'PR non fusionnée': governance.replace("pr.merged_at && pr.base?.ref === 'main'", "pr.base?.ref === 'main'", 1),
         'permission écriture': governance.replace('contents: read', 'contents: write', 1),
         'contrôle protection retiré': governance.replace("process.env.GITHUB_REF_PROTECTED === 'true'", "'true' === 'true'", 1),
