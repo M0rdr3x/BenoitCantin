@@ -187,6 +187,10 @@ body[data-v18-page="comments"] .reader-comments-loading{
   border-radius:14px;background:rgba(15,20,37,.94);
   color:#e5e8f2;line-height:1.55
 }
+body[data-v18-page="comments"] .reader-comment .hero-actions > button{
+  box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;
+  min-height:48px;padding:10px 14px;line-height:1.35
+}
 body[data-v18-page="comments"] .reader-comment .hero-actions > button:disabled{
   cursor:not-allowed;opacity:.62
 }
