@@ -42,6 +42,16 @@ REQUIRED = {
         "if(doc.external_url){",
     "lien statique uniquement lorsque document et projet sont publics":
         "if(doc.access_level!=='public'||doc.projects?.visibility!=='public'){",
+    "chemin de Storage strict avant signature":
+        "privateDocumentLocationValid(doc.storage_bucket,doc.storage_path)",
+    "lecture du statut réel du bucket":
+        "service.storage.getBucket(doc.storage_bucket)",
+    "identité et statut privé du bucket":
+        "!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket)",
+    "refus d'erreur API Storage":
+        "if(bucketMetadataError||!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket))",
+    "erreur de stockage sans URL":
+        "return privateJson({ok:false,error:'Stockage privé indisponible.'},503);",
     "lien signé après accès":
         "createSignedUrl(doc.storage_path,600)",
     "cache privé":
@@ -63,6 +73,9 @@ def audit(source: str, config: str) -> list[str]:
         "if(!documentAccessAllowed(doc.access_level,userRank))",
         "if(doc.external_url){",
         "if(doc.access_level!=='public'||doc.projects?.visibility!=='public'){",
+        "privateDocumentLocationValid(doc.storage_bucket,doc.storage_path)",
+        "service.storage.getBucket(doc.storage_bucket)",
+        "!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket)",
         "createSignedUrl(doc.storage_path,600)",
     ]
     pos = [source.find(x) for x in checks]
@@ -104,6 +117,14 @@ def self_test(source: str, config: str) -> None:
             ("if(doc.access_level!=='public'||doc.projects?.visibility!=='public'){", "if(false){"),
         "projet privé seul accepté":
             ("if(doc.access_level!=='public'||doc.projects?.visibility!=='public'){", "if(doc.access_level!=='public'&&doc.projects?.visibility!=='public'){"),
+        "chemin de stockage non contrôlé":
+            ("privateDocumentLocationValid(doc.storage_bucket,doc.storage_path)", "true"),
+        "bucket non consulté":
+            ("service.storage.getBucket(doc.storage_bucket)", "Promise.resolve({data:{public:false}})"),
+        "bucket public admis":
+            ("!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket)", "false"),
+        "erreur de lecture bucket ignorée":
+            ("if(bucketMetadataError||!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket))", "if(false)"),
         "lien signé trop long":
             ("createSignedUrl(doc.storage_path,600)", "createSignedUrl(doc.storage_path,3600)"),
         "cache privé retiré":
