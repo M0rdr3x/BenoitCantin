@@ -51,6 +51,9 @@ def validate() -> list[str]:
     for marker in (
         "sinjira-comments-responsive-v2.css?v=2.0.3",
         "sinjira-account-v18.js?v=24.1.4",
+        # Les flèches du compte sont apportées par la PR UX #1160.
+        "site-ux-sinjira-v1.css?v=1.0.1",
+        "site.js?v=24.4.102",
         'data-v18-page="comments"',
         'data-my-comments',
         'aria-busy="true"',
