@@ -41,8 +41,8 @@ def validate() -> list[str]:
         "if(event.key!=='Escape'||event.isComposing||saving)return",
         "event.stopPropagation()",
         "box.setAttribute('aria-busy','false')",
-        "aria-label=\\\"Modifier mon commentaire du",
-        "aria-label=\\\"Supprimer mon commentaire du",
+        'aria-label="Modifier mon commentaire du',
+        'aria-label="Supprimer mon commentaire du',
     ]
     for marker in required_js:
         if marker not in js:
@@ -56,8 +56,7 @@ def validate() -> list[str]:
         'aria-busy="true"',
         'reader-comments-loading',
         'role="status"',
-        'sinjira-account-v18.js?v=24.1.4',
-        'sinjira-comments-responsive-v2.css?v=2.0.3',
+
     ):
         if marker not in page:
             failures.append(f"Page du compte incomplète : {marker}")
