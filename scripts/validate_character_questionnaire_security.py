@@ -16,6 +16,12 @@ REQUIRED = {
     'POST uniquement': "req.method!=='POST'",
     'auth AAL2 obligatoire du Registre': 'requiredVaultUser(req)',
     'lecture JSON bornée': 'readBoundedJson(req)',
+    'plafond temps absolu 20 secondes': 'MAX_REQUEST_READ_TIMEOUT_MS=20_000;',
+    'lecteur sécurisé de flux': "from '../_shared/read-chunk-deadline.mjs';",
+    'appel lecteur avec échéance': 'readLimitedUtf8BodyWithDeadline(req,MAX_REQUEST_BYTES,MAX_REQUEST_READ_TIMEOUT_MS)',
+    'délai différencié': "limited.reason==='REQUEST_TIMEOUT'",
+    'corps surdimensionné différencié': "limited.reason==='REQUEST_TOO_LARGE'",
+    'HTTP 408 explicite': "code:'REQUEST_TIMEOUT',version:VERSION},408)",
     'content-type JSON strict': "if(contentType!=='application/json')throw new Error('JSON_REQUIRED');",
     'taille UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
     'réponse privée': "'Cache-Control':'private, no-store, max-age=0'",
@@ -53,6 +59,9 @@ REQUIRED = {
 
 FORBIDDEN = {
     'lecture JSON directe non bornée': 'await req.json()',
+    'lecture sans échéance': 'readLimitedUtf8Body(req,MAX_REQUEST_BYTES)',
+    'lecture directe sans deadline': 'await reader.read()',
+    'annulation bloquante': 'await reader.cancel(',
     'helper JSON générique': 'return json(',
     'import helper JSON générique': 'corsHeaders,json',
     'log erreur principal brut': 'console.error(e)',
@@ -120,6 +129,11 @@ def self_test() -> None:
         'content-type retiré': real.replace("  if(contentType!=='application/json')throw new Error('JSON_REQUIRED');\n", '', 1),
         'no-store retiré': real.replace("'Cache-Control':'private, no-store, max-age=0',", '', 1),
         'limite HTTP augmentée': real.replace('MAX_REQUEST_BYTES=2*1024*1024;', 'MAX_REQUEST_BYTES=20*1024*1024;', 1),
+        'délai supprimé': real.replace('MAX_REQUEST_READ_TIMEOUT_MS=20_000;', '', 1),
+        'ancien lecteur sans délai': real.replace(
+            'readLimitedUtf8BodyWithDeadline(req,MAX_REQUEST_BYTES,MAX_REQUEST_READ_TIMEOUT_MS)',
+            'readLimitedUtf8Body(req,MAX_REQUEST_BYTES)', 1),
+        'statut HTTP lent détourné': real.replace("code:'REQUEST_TIMEOUT',version:VERSION},408)", "code:'REQUEST_TIMEOUT',version:VERSION},413)", 1),
         'limite réponses augmentée': real.replace('MAX_ANSWERS_CHARS=500000;', 'MAX_ANSWERS_CHARS=5000000;', 1),
         'MFA obligataire contournée': real.replace('const {user}=await requiredVaultUser(req);', 'const user=await requiredUser(req);', 1),
         'ordre auth inversé': real.replace(
@@ -175,7 +189,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK questionnaire Registre: AAL2 obligatoire côté serveur avant corps, JSON 2 MiB, réponses privées, unicité fail-closed, IA distante désactivée et canon humain préservé.')
+    print('OK questionnaire Registre: AAL2 obligatoire avant corps, JSON 2 MiB/20 s, HTTP 408, réponses privées, unicité fail-closed, IA distante désactivée.')
     return 0
 
 
