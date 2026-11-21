@@ -84,7 +84,8 @@ JWT_SENSITIVE_GUARDS = {
     ),
     "get-novel-file-url": (
         "req.method==='OPTIONS'", "req.method!=='POST'", "MAX_REQUEST_BYTES=2048",
-        "readBoundedJson", "req.body.getReader()", "REQUEST_TOO_LARGE", "INVALID_JSON",
+        "readBoundedJson", "readLimitedUtf8BodyWithDeadline", "REQUEST_TIMEOUT",
+        "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON",
         "requiredUser(req)", "sinjira_novels", "is_sinjira_owner", "is_sinjira_admin",
         "user_entitlements", "file_ready", "createSignedUrl", "expires_in:600",
         "Cache-Control", "private, no-store", "X-Content-Type-Options", "nosniff",
