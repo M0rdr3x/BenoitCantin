@@ -90,12 +90,23 @@ def validate_governance_text(text):
         ('commit_sha: sha', 'le SHA courant doit être utilisé pour la recherche de PR'),
         ("pr.merged_at && pr.base?.ref === 'main'", 'la PR doit être fusionnée explicitement vers main'),
         ('if (!mergedToMain)', 'branche de refus des pushes directs absente'),
-        ('core.setFailed(', 'un push direct doit faire échouer le job'),
+        ("if (!protectedRef)", "la branche main non protégée doit déclencher un refus"),
+        ("core.setFailed('La branche main n’est pas protégée", 'absence du refus fail-closed de main non protégée'),
         ("process.env.GITHUB_REF_PROTECTED === 'true'", 'état serveur GITHUB_REF_PROTECTED non contrôlé'),
-        ("core.warning('La branche main n’est pas protégée", 'alerte main non protégée absente'),
-        ('Cette alerte ne remplace pas la configuration GitHub Settings > Branches/Rulesets.', 'la limite de preuve serveur doit rester explicite'),
+        ('Cet échec de CI ne remplace pas la configuration GitHub Settings > Branches/Rulesets.', 'la limite de preuve serveur doit rester explicite'),
     ):
         require(errors, marker in text, message)
+
+    require(
+        errors,
+        re.search(r'if \(!mergedToMain\)\s*\{\s*core\.setFailed\(', text) is not None,
+        'le refus des pushes directs doit rester bloquant',
+    )
+    require(
+        errors,
+        re.search(r'if \(!protectedRef\)\s*\{\s*core\.setFailed\(', text) is not None,
+        'le refus des refs non protégés doit rester bloquant',
+    )
 
     validate_common_local_ci(errors, text, 'workflow gouvernance main')
     return errors
@@ -179,11 +190,13 @@ def run_self_tests(governance, readme, contract):
         'avec filtre paths': governance.replace('    branches: [main]\n', '    branches: [main]\n    paths: ["scripts/**"]\n', 1),
         'runner mobile': governance.replace(f'runs-on: {RUNNER}', 'runs-on: ubuntu-latest', 1),
         'timeout retiré': governance.replace(f'    timeout-minutes: {TIMEOUT_MINUTES}\n', '', 1),
-        'sans échec': governance.replace('core.setFailed(', 'core.info(', 1),
+        'sans échec push direct': governance.replace('core.setFailed(', 'core.info(', 1),
+        'main non protégée seulement signalée': governance.replace("core.setFailed('La branche main n’est pas protégée", "core.warning('La branche main n’est pas protégée", 1),
+        'test branche protégée inversé': governance.replace('if (!protectedRef)', 'if (protectedRef)', 1),
         'PR non fusionnée': governance.replace("pr.merged_at && pr.base?.ref === 'main'", "pr.base?.ref === 'main'", 1),
         'permission écriture': governance.replace('contents: read', 'contents: write', 1),
         'contrôle protection retiré': governance.replace("process.env.GITHUB_REF_PROTECTED === 'true'", "'true' === 'true'", 1),
-        'limite preuve serveur retirée': governance.replace('Cette alerte ne remplace pas la configuration GitHub Settings > Branches/Rulesets.', 'Protection serveur confirmée.', 1),
+        'limite preuve serveur retirée': governance.replace('Cet échec de CI ne remplace pas la configuration GitHub Settings > Branches/Rulesets.', 'Protection serveur confirmée.', 1),
         'github-script mobile': governance.replace(f'actions/github-script@{GITHUB_SCRIPT_SHA}', 'actions/github-script@v8', 1),
         'secret injecté': governance.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}\n    steps:\n', 1),
     }
@@ -254,7 +267,7 @@ def main():
 
     print(
         'OK contrat gouvernance main: détection locale des pushes main, principes obligatoires, '
-        'runtimes/actions immuables et alerte GITHUB_REF_PROTECTED conservés; '
+        'runtimes/actions immuables et refus fail-closed si GITHUB_REF_PROTECTED=false; '
         'ce contrat ne prouve pas la protection serveur de main.'
     )
     return 0
