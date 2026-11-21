@@ -65,7 +65,10 @@ STREAMED_REQUEST_ROUTES = {
 
 JWT_SENSITIVE_GUARDS = {
     "fracture-engine-gateway": (
-        "MAX_BODY_BYTES=32_000", "readLimitedUtf8Body(req,MAX_BODY_BYTES)",
+        "MAX_BODY_BYTES=32_000", "MAX_BODY_READ_TIMEOUT_MS=4_000",
+        "readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,MAX_BODY_READ_TIMEOUT_MS)",
+        "read-chunk-deadline.mjs", "REQUEST_TIMEOUT", "REQUEST_TOO_LARGE",
+        "if(contentType!=='application/json')",
         "client.auth.getUser(token)", "ALLOWED_ACTIONS", "fracture_engine_get_state_safe",
         "Cache-Control", "private, no-store", "Content-Type", "privateJson",
     ),
@@ -146,9 +149,12 @@ def has_unsanitized_auth_error_log(source: str) -> bool:
 
 def fracture_gateway_body_boundary_valid(source: str) -> bool:
     """Un corps hostile ne doit être lu ni avant JWT, ni sans borne en flux."""
-    if "await req.text()" in source or "await req.json()" in source:
+    if ("await req.text()" in source or "await req.json()" in source or
+            "contentType.startsWith('application/json')" in source or
+            "readLimitedUtf8Body(req,MAX_BODY_BYTES)" in source or
+            "await reader.cancel(" in source):
         return False
-    bounded_reader = source.find("await readLimitedUtf8Body(req,MAX_BODY_BYTES)")
+    bounded_reader = source.find("await readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,MAX_BODY_READ_TIMEOUT_MS)")
     authenticated = source.find("await client.auth.getUser(token)")
     body_invoked = source.find("await readLimitedJson(req)")
     privileged = source.find("await client.rpc(action,args)")
