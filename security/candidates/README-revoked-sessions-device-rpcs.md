@@ -129,6 +129,50 @@ d'identité, suppression du garde, contrôle tardif, divulgation de
 droits et absence de `ROLLBACK`. **Un test statique ne prouve pas la
 compatibilité réelle des RPC.**
 
+## Vérification de dérive du catalogue SQL — 21 novembre 2026
+
+Avant toute migration, utiliser le garde read-only
+`scripts/preflight_revoked_session_rpc_catalog.py` :
+
+```sh
+# Émet un SELECT de métadonnées, n'accède pas directement à Supabase.
+python3 scripts/preflight_revoked_session_rpc_catalog.py --emit-sql
+
+# Après exécution MANUELLE du SELECT en lecture seule sur le projet visé,
+# enregistrer seulement la valeur JSON de sa colonne "snapshot" :
+python3 scripts/preflight_revoked_session_rpc_catalog.py --verify-json snapshot.json
+
+# Après une future promotion préalablement autorisée :
+python3 scripts/preflight_revoked_session_rpc_catalog.py --verify-json snapshot-apres.json --postflight
+
+# Vérification autonome des refus de dérive, sans réseau ni base :
+python3 scripts/preflight_revoked_session_rpc_catalog.py --self-test
+```
+
+Le script n'exécute aucun SQL et ne demande aucun secret.
+Le SELECT n'interroge que `pg_catalog.pg_proc`, `pg_catalog.pg_namespace`
+et `pg_catalog.pg_attribute` ; il ne lit **aucune ligne**
+de `auth.sessions` ni aucune donnée utilisateur.
+
+- **Avant :** exactement huit RPC internes, empreintes SHA-256 identiques
+  à `SOURCE_SHA256`, `SECURITY DEFINER` inchangé, accès `anon`
+  refusé, contrat `authenticated` identique, colonnes
+  `auth.sessions(id,user_id,not_after)` présentes avec types attendus
+  et nouveau garde **encore absent**. Le candidat doit être réconcilié
+  si un seul résultat diffère.
+- **Après :** les huit RPC doivent porter le garde et conserver les mêmes
+  frontières de privilèges et le contrat des colonnes. **Ce contrôle
+  postflight ne suffit pas** à attester l'intégrité de tout le corps SQL :
+  comparer séparément le diff de définition et exécuter les tests HTTP
+  authentifiés avec un JWT révoqué.
+- **Audit de production read-only du 21 novembre 2026 :** les huit
+  empreintes originales correspondent 8/8 et le nouveau garde est absent
+  8/8. Pas de migration, lecture de session ni modification de production.
+
+Les tests de mutation du préflight sont exécutés par le workflow existant,
+sans identifiant de connexion Supabase. Les permissions de `main` et les
+migrations restent bloquées par les mêmes portes de revue humaine.
+
 ## Contrôles de déploiement
 
 - Ce fichier débute par `BEGIN;` et se termine obligatoirement par
