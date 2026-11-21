@@ -49,12 +49,17 @@
   }
   .sinjira-reader-file-fallback a{color:#ffb8a8;overflow-wrap:anywhere}
   @media(max-width:540px){
-    .v19-reader-progress{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-    .v19-reader-progress label{display:flex;align-items:center;justify-content:center;gap:8px}
+    .v19-reader-progress{
+      display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;
+      grid-template-areas:"prev next" "page page" "bookmark bookmark" "track track" "resume resume"
+    }
+    .v19-reader-progress [data-reader-prev]{grid-area:prev}
+    .v19-reader-progress [data-reader-next]{grid-area:next}
+    .v19-reader-progress label{grid-area:page;display:flex;align-items:center;justify-content:center;gap:8px}
     .v19-reader-progress input[type=number]{width:70px}
-    .v19-reader-progress [data-reader-bookmark],
-    .v19-reader-progress .v19-progress-track,
-    .v19-reader-progress [data-reader-resume]{grid-column:1/-1}
+    .v19-reader-progress [data-reader-bookmark]{grid-area:bookmark}
+    .v19-reader-progress .v19-progress-track{grid-area:track}
+    .v19-reader-progress [data-reader-resume]{grid-area:resume}
     .v19-reader-progress :is([data-reader-prev],[data-reader-next]){font-size:.88rem;white-space:normal}
   }
   @media(max-width:760px){.sinjira-reader-toolbar .container{align-items:flex-start;flex-direction:column}.sinjira-reader-actions{width:100%;justify-content:flex-start}.sinjira-reader-actions .btn{flex:1 1 auto;text-align:center}.sinjira-reader-frame{height:calc(100vh - 190px);min-height:560px}}
