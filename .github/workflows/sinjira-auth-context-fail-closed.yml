@@ -1,0 +1,39 @@
+name: SINJIRA — vérification de connexion fail-closed
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auth-context-fail-closed-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  auth-context-security:
+    name: Refuser la connexion sans contrôle de sécurité
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Node avec version épinglée
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '22.16.0'
+          check-latest: false
+      - name: Vérifier les modules
+        run: |
+          node --check assets/js/sinjira-auth-pages.js
+          node --check assets/js/sinjira-security-center-v24-4-98.js
+          node --check scripts/test_auth_context_fail_closed.cjs
+      - name: Exécuter les simulations de panne et d'appareils non sûrs
+        run: node scripts/test_auth_context_fail_closed.cjs
