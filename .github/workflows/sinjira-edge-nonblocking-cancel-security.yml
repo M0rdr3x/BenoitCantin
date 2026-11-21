@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'supabase/functions/_shared/limited-body.mjs'
+      - 'supabase/functions/_shared/read-chunk-deadline.mjs'
       - 'scripts/test_edge_nonblocking_cancel.mjs'
       - 'scripts/test_public_edge_body_limits.mjs'
       - 'scripts/test_public_edge_binary_limits.mjs'
@@ -16,6 +17,7 @@ on:
     branches: [main]
     paths:
       - 'supabase/functions/_shared/limited-body.mjs'
+      - 'supabase/functions/_shared/read-chunk-deadline.mjs'
       - 'scripts/test_edge_nonblocking_cancel.mjs'
       - 'scripts/test_public_edge_body_limits.mjs'
       - 'scripts/test_public_edge_binary_limits.mjs'

@@ -156,3 +156,52 @@ test('flux valides préservés et Content-Length trompeur refusé avant lecture'
   );
   assert.equal(neverRead.state.reads, 0);
 });
+
+
+function blockedReader() {
+  const stats = { reads: 0, cancels: 0, released: 0 };
+  const reader = {
+    read() { stats.reads++; return new Promise(() => {}); },
+    cancel() { stats.cancels++; return new Promise(() => {}); },
+    releaseLock() { stats.released++; },
+  };
+  return { stats, body: { getReader: () => reader } };
+}
+
+test('une échéance absolue protège les requêtes et les réponses PDF', () => {
+  assert.match(source, /readChunkWithDeadline\(reader, req\.signal, deadlineAt\)/);
+  assert.match(source, /readChunkWithDeadline\(reader, null, deadlineAt\)/);
+  assert.match(source, /performance\.now\(\) \+ \(maxBytes > 262_144 \? 20_000 : 8_000\)/);
+  assert.match(source, /performance\.now\(\) \+ 30_000/);
+  assert.ok(!source.includes('await reader.read()'), 'Lecteur historique sans échéance interdit');
+});
+
+test('un client déconnecté libère le traitement même si lecture et annulation restent bloquées', async () => {
+  const stuck = blockedReader();
+  const controller = new AbortController();
+  const pending = promptly(
+    () => readLimitedUtf8Body({
+      headers: new Headers(), body: stuck.body, signal: controller.signal,
+    }, 1024),
+    'signal client déconnecté'
+  );
+  const timer = setTimeout(() => controller.abort(), 25);
+  try {
+    assert.deepEqual(await pending, { ok: false });
+    assert.equal(stuck.stats.reads, 1);
+    assert.ok(stuck.stats.cancels >= 1);
+    assert.equal(stuck.stats.released, 1);
+  } finally {
+    clearTimeout(timer);
+  }
+});
+
+test('un signal déjà interrompu est refusé avant toute lecture', async () => {
+  const stuck = blockedReader();
+  const controller = new AbortController();
+  controller.abort();
+  assert.deepEqual(await readLimitedUtf8Body({
+    headers: new Headers(), body: stuck.body, signal: controller.signal,
+  }, 1024), { ok: false });
+  assert.equal(stuck.stats.reads, 0);
+});
