@@ -36,18 +36,26 @@ def validate() -> list[str]:
         "if(status){status.tabIndex=-1;status.focus({preventScroll:true});}",
         "Commentaire enregistré, mais la liste ne peut pas être actualisée.",
         "Commentaire supprimé, mais la liste ne peut pas être actualisée.",
+        "if(deleteButton)deleteButton.disabled=true",
+        "if(deleteButton)deleteButton.disabled=false",
+        "if(event.key!=='Escape'||event.isComposing||saving)return",
+        "event.stopPropagation()",
+        "box.setAttribute('aria-busy','false')",
+        "aria-label=\\\"Modifier mon commentaire du",
+        "aria-label=\\\"Supprimer mon commentaire du",
     ]
     for marker in required_js:
         if marker not in js:
             failures.append(f"JS sans garde UX : {marker}")
 
     for marker in (
-        "sinjira-comments-responsive-v2.css?v=2.0.2",
-        "sinjira-account-v18.js?v=24.1.3",
+        "sinjira-comments-responsive-v2.css?v=2.0.3",
+        "sinjira-account-v18.js?v=24.1.4",
         'data-v18-page="comments"',
         'data-my-comments',
         'aria-busy="true"',
         'reader-comments-loading',
+        'role="status"',
         'sinjira-account-v18.js?v=24.1.4',
         'sinjira-comments-responsive-v2.css?v=2.0.3',
     ):
