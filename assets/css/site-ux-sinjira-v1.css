@@ -170,6 +170,13 @@ body.site-not-found-page .recovery-title{
   overflow-wrap:anywhere;
 }
 body.site-not-found-page .recovery-actions{justify-content:center}
+body.site-offline-page .recovery-retry-form{
+  display:flex;
+  min-width:0;
+  max-width:100%;
+  margin:0;
+}
+body.site-offline-page .recovery-retry-form .btn{max-width:100%}
 body.site-recovery-page .recovery-status{
   margin-top:18px;
   color:var(--muted);
@@ -191,4 +198,5 @@ body.site-recovery-page .hero-actions .btn{
     gap:10px;
   }
   body.site-recovery-page .hero-actions .btn{width:100%}
+  body.site-offline-page .recovery-retry-form{width:100%}
 }
