@@ -96,6 +96,19 @@ def validate() -> list[str]:
     for part in forbidden:
         if part in reader:
             problems.append("Fichier intégral ou privilège exposé en JavaScript : " + part[:35])
+    screen_helper = ROOT / "assets/js/sinjira-liseuse-screen-turn-v54.mjs"
+    if not screen_helper.is_file():
+        problems.append("Navigation par écran V54 absente")
+    elif "export function planReaderScreenTurn(" not in screen_helper.read_text("utf-8"):
+        problems.append("Contrat de navigation V54 absent")
+    for marker in ("planReaderScreenTurn", "turnVisibleReadingScreen", "swipeViewer.addEventListener('keydown'", "state.restorePending=end?1:0"):
+        if marker not in reader:
+            problems.append("Navigation accessible V54 manquante : " + marker)
+    page_html = (ROOT / "compte/liseuse.html").read_text("utf-8")
+    if 'aria-describedby="reader-turn-help"' not in page_html or 'id="reader-turn-help"' not in page_html:
+        problems.append("Instructions de navigation du lecteur non associées")
+    if "document.addEventListener('keydown'" in reader:
+        problems.append("La navigation du livre détourne encore le clavier sur tout le site")
     if not (ROOT / "assets/js/sinjira-liseuse-text-v27.mjs").is_file():
         problems.append("Moteur de texte reformatable absent")
     else:
