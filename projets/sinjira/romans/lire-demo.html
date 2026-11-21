@@ -49,14 +49,15 @@
   }
   .sinjira-reader-file-fallback a{color:#ffb8a8;overflow-wrap:anywhere}
   @media(max-width:540px){
-    .v19-reader-progress{
+    /* Plus spécifique que v19-pro.css chargé après ce bloc <style>. */
+    body[data-reader-page="demo"] .v19-reader-progress{
       display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;
       grid-template-areas:"prev next" "page page" "bookmark bookmark" "track track" "resume resume"
     }
     .v19-reader-progress [data-reader-prev]{grid-area:prev}
     .v19-reader-progress [data-reader-next]{grid-area:next}
     .v19-reader-progress label{grid-area:page;display:flex;align-items:center;justify-content:center;gap:8px}
-    .v19-reader-progress input[type=number]{width:70px}
+    body[data-reader-page="demo"] .v19-reader-progress input[type=number]{width:70px}
     .v19-reader-progress [data-reader-bookmark]{grid-area:bookmark}
     .v19-reader-progress .v19-progress-track{grid-area:track}
     .v19-reader-progress [data-reader-resume]{grid-area:resume}
