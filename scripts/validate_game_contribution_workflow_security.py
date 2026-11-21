@@ -28,7 +28,7 @@ def validate_text(text: str) -> None:
         f"python-version: '{PYTHON_VERSION}'",
         'python scripts/validate_game_contribution_workflow_security.py --self-test',
         'python scripts/validate_game_contribution_workflow_security.py',
-        'python scripts/validate_game_contribution_v24_5_53.py',
+        '          python scripts/validate_game_contribution_v24_5_53.py\n',
         'python scripts/validate_game_contribution_v24_5_53.py --self-test',
         'node scripts/test_game_contribution_request_boundary.mjs',
         'python scripts/validate_contribution_revocation_v24_5_52.py',
