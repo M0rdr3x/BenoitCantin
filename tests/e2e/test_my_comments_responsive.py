@@ -125,7 +125,7 @@ def run():
                     check_geometry(page,width)
                     edit.click()
                     textarea=page.locator('[data-inline-edit] textarea')
-                    verify(textarea.is_focused(),
+                    verify(textarea.evaluate('(el) => document.activeElement === el'),
                            f"champ d'édition sans focus à {width}px")
                     verify(edit.is_disabled() and delete.is_disabled(),
                            f"actions concurrentes encore actives à {width}px")
@@ -135,7 +135,7 @@ def run():
                     textarea.press("Escape")
                     verify(page.locator('[data-inline-edit]').count()==0,
                            f"Échap ne ferme pas l'édition à {width}px")
-                    verify(edit.is_focused() and not edit.is_disabled() and
+                    verify(edit.evaluate('(el) => document.activeElement === el') and not edit.is_disabled() and
                            not delete.is_disabled(),
                            f"le focus ou les actions ne sont pas restaurés à {width}px")
 
@@ -151,7 +151,7 @@ def run():
                 page.wait_for_function("() => document.querySelectorAll('[data-comment-id]').length===1")
                 verify(page.locator('[data-comment-id]').count()==1,
                        "suppression de la ligne fictive non répercutée")
-                verify(page.locator('[data-v18-status]').is_focused(),
+                verify(page.locator('[data-v18-status]').evaluate('(el) => document.activeElement === el'),
                        "focus non rétabli sur le statut après suppression")
                 verify(page.locator('[data-comment-id]').first.get_attribute('data-comment-id')==
                        "fictional-approved-b", "un commentaire publié a été modifié")
