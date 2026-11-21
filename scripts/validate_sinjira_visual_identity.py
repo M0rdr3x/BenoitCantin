@@ -83,7 +83,7 @@ def validate() -> list[str]:
         text = file.read_text("utf-8")
         if "sinjira-emblem.webp" in text:
             problems.append(f"{relative} : image de marque trop lourde encore chargée.")
-        if "/assets/icons/sinjira-favicon.png" not in text:
+        if "/assets/icons/sinjira-favicon.png" not in text and "/assets/icons/sinjira-officiel-20261120.png" not in text:
             problems.append(f"{relative} : logo harmonisé absent.")
     return problems
 
