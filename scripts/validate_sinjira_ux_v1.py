@@ -11,6 +11,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 import re
 import sys
+from urllib.parse import urljoin, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 CSS = ROOT / "assets/css/site-ux-sinjira-v1.css"
@@ -70,6 +71,16 @@ def candidate_pages():
     return sorted(set(pages))
 
 
+def is_approved_ux_stylesheet(href: str, page: str) -> bool:
+    """Vérifie une URL CSS locale, avec chemin absolu ou relatif et cache versionné."""
+    parsed = urlsplit(href)
+    if parsed.scheme or parsed.netloc or parsed.fragment:
+        return False
+    if not re.fullmatch(r"v=[0-9]+(?:\\.[0-9]+)*", parsed.query):
+        return False
+    return urljoin("/" + page, parsed.path) == "/assets/css/site-ux-sinjira-v1.css"
+
+
 def check():
     problems = []
     count = 0
@@ -93,7 +104,7 @@ def check():
             problems.append(f"{relative}: configuration de l'interface mobile absente")
         # Accepter une nouvelle version de cache sans relâcher le chemin exact
         # du CSS ni la vérification d'un vrai élément <link rel=stylesheet>.
-        if not any(re.fullmatch(r"/assets/css/site-ux-sinjira-v1\.css\?v=[0-9]+(?:\.[0-9]+)*", href)
+        if not any(is_approved_ux_stylesheet(href, relative)
                    for href in parser.stylesheets):
             problems.append(f"{relative}: feuille de style adaptée absente")
         boot = '/assets/js/sinjira-nav-boot-v2.js?v=2.0.0'
