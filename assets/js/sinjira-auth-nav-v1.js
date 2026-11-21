@@ -30,7 +30,19 @@
     nav.setAttribute('data-sinjira-auth-nav-ready', '');
     function refresh() {
       var max = Math.max(0, scroll.scrollWidth - scroll.clientWidth);
-      var active = window.matchMedia('(max-width: 680px)').matches && max > 2;
+      // Calculer le besoin de flèches sans dépendre de leur affichage :
+      // la grille réduisait elle-même la zone défilante sur WebKit.
+      var links = scroll.querySelectorAll('a');
+      var styles = window.getComputedStyle(scroll);
+      var gap = parseFloat(styles.columnGap) || 0;
+      var total = Math.max(0, links.length - 1) * gap;
+      Array.prototype.forEach.call(links, function (link) {
+        total += link.getBoundingClientRect().width;
+      });
+      // La largeur native .container est calc(100% - 40px).
+      var available = Math.max(0, nav.clientWidth - 40);
+      var active = window.matchMedia('(max-width: 680px)').matches &&
+        total > available + 2;
       nav.classList.toggle('is-scrollable', active);
       back.hidden = !active;
       forward.hidden = !active;
