@@ -35,6 +35,8 @@ async function invoke({
   fileReady = true,
   isOwner = false,
   isAdmin = false,
+  ownerError = false,
+  adminError = false,
   entitlement = true,
   productActive = true,
   privateBucket = true,
@@ -80,8 +82,8 @@ async function invoke({
     async rpc(functionName, params) {
       assert.equal(params.p_user_id, user.id);
       calls.rpc.push(functionName);
-      if (functionName === 'is_sinjira_owner') return { data: isOwner, error: null };
-      if (functionName === 'is_sinjira_admin') return { data: isAdmin, error: null };
+      if (functionName === 'is_sinjira_owner') return { data: isOwner, error: ownerError ? { code: 'SIMULATED_FAILURE' } : null };
+      if (functionName === 'is_sinjira_admin') return { data: isAdmin, error: adminError ? { code: 'SIMULATED_FAILURE' } : null };
       throw Error('Unexpected RPC');
     },
     storage: {
@@ -201,6 +203,21 @@ test('un compte autorisé ne reçoit une URL signée qu’après preuve du bucke
   assert.equal(r.calls.buckets, 1);
   assert.equal(r.calls.signed, 1);
   assert.ok(r.data.url.includes('/object/sign/'));
+});
+
+test('une réponse RPC truthy non booléenne ou en erreur ne confère aucun privilège', async () => {
+  for (const options of [
+    { isOwner: 'false', isAdmin: false, entitlement: false },
+    { isOwner: false, isAdmin: 'false', entitlement: false },
+    { isOwner: { active: false }, isAdmin: false, entitlement: false },
+    { isOwner: 1, isAdmin: 0, entitlement: false },
+    { isOwner: true, ownerError: true, entitlement: false },
+    { isAdmin: true, adminError: true, entitlement: false },
+  ]) {
+    const r = await invoke(options);
+    denied(r, 403);
+    assert.equal(r.calls.buckets, 0);
+  }
 });
 
 test('le droit propriétaire conserve la lecture sans entitlement marchand', async () => {
