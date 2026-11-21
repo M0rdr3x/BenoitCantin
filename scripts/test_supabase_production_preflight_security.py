@@ -82,6 +82,7 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
             "actions/setup-python": "v6",
             "supabase/setup-cli": "v2",
             "actions/upload-artifact": "v4",
+            "actions/github-script": "v8",
         }
         for action, sha in PINNED_ACTIONS.items():
             pinned = f"{action}@{sha}"
