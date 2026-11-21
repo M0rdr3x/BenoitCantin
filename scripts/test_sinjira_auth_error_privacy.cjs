@@ -157,7 +157,76 @@ async function bootError(){
   for(const args of logs)for(const item of args)checkSafe(item,'Journal erreur Centre de sécurité');
   assert.equal(shown.at(-1),'Le Centre de sécurité ne peut pas terminer cette opération. Réessayez ou reconnectez-vous.');
 }
+
+function testHtmlAttributeInjection(){
+  // Les valeurs de RPC traversent un rendu innerHTML. Test sur les vraies
+  // fonctions, avec la vraie fonction escapeHtml du module partagé.
+  const common=fs.readFileSync(path.join(ROOT,'assets/js/sinjira-supabase.js'),'utf8');
+  const actualEscape=section(common,'export function escapeHtml(','\nexport function formatDate(').replace('export function','function');
+  const injectedId='id" autofocus onfocus="alert(1)';
+  const blocks=[
+    section(center,'function renderDevices(devices){','\nfunction renderSessions('),
+    section(center,'function renderTravel(rows){','\nfunction renderChallenges('),
+    section(center,'function renderChallenges(rows,devices){','\nfunction fillSettings('),
+  ].join('\n');
+  const node={innerHTML:''};
+  const sandbox={
+    qs:()=>node, Date,
+    pill:()=>'<span>État</span>',
+    empty:()=>'<p>Vide</p>',
+    formatDate:()=>'date',
+  };
+  vm.runInNewContext(actualEscape+'\n'+blocks+
+    '\nglobalThis.renderers={renderDevices,renderTravel,renderChallenges,escapeHtml};',
+    sandbox,{timeout:1500});
+  const {renderDevices,renderTravel,renderChallenges,escapeHtml}=sandbox.renderers;
+  const expected=escapeHtml(injectedId);
+  assert.ok(expected.includes('&quot;'),'Garde d’échappement des guillemets indisponible');
+
+  const data={
+    id:injectedId,
+    display_name:'Appareil de test',
+    last_seen_at:'2026-11-20T00:00:00Z',
+    device_type:'browser',platform:'test',revoked_at:null,
+    is_primary:false,
+  };
+  renderDevices([
+    {...data,is_current:true,is_trusted:false},
+    {...data,is_current:false,is_trusted:true},
+  ]);
+  for(const attr of ['data-device-id','data-device-trust','data-device-primary',
+                     'data-device-untrust','data-device-revoke']){
+    assert.ok(node.innerHTML.includes(attr+'="'+expected+'"'),
+      'ID non échappé dans l’attribut '+attr);
+    assert.ok(!node.innerHTML.includes(attr+'="'+injectedId+'"'),
+      'Injection de guillemet dans '+attr);
+    checks+=2;
+  }
+  renderTravel([{
+    id:injectedId,status:'active',destinations:['Test'],
+    starts_at:'2026-11-20',ends_at:'2026-11-21',delete_after:'2026-11-22',
+  }]);
+  assert.ok(node.innerHTML.includes('data-travel-cancel="'+expected+'"'),
+    'ID de voyage non échappé');
+  checks++;
+
+  renderChallenges([{
+    id:injectedId,status:'pending',expires_at:'2099-01-01T00:00:00Z',
+    request_device_id:'other',display_code:'TEST-CODE',
+  }],[{id:'device-current',is_current:true,is_trusted:true,revoked_at:null}]);
+  for(const attr of ['data-challenge-approve','data-challenge-deny']){
+    assert.ok(node.innerHTML.includes(attr+'="'+expected+'"'),
+      'ID de challenge non échappé pour '+attr);
+    assert.ok(!node.innerHTML.includes(attr+'="'+injectedId+'"'));
+    checks+=2;
+  }
+  assert.ok(!node.innerHTML.includes('onfocus="alert(1)"'),
+    'Attribut événementiel injecté dans un bouton de confirmation');
+  checks++;
+}
+
 (async()=>{
+  testHtmlAttributeInjection();
   await contextError();
   await authScenario('login','throw');
   await authScenario('forgot','return');
