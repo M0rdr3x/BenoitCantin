@@ -39,8 +39,11 @@ Deno.serve(async(req)=>{
     const service=serviceClient();
     const {data:novel,error:novelError}=await service.from('sinjira_novels').select('id,slug,title,status,product_id,private_storage_bucket,private_storage_path,page_count,file_version,file_sha256,file_size_bytes,file_ready').eq('slug',slug).maybeSingle();
     if(novelError||!novel||novel.status!=='published')return json({ok:false,error:'Roman introuvable.'},404);
-    const [{data:isOwner},{data:isAdmin}]=await Promise.all([service.rpc('is_sinjira_owner',{p_user_id:user.id}),service.rpc('is_sinjira_admin',{p_user_id:user.id})]);
-    let entitled=Boolean(isOwner||isAdmin);
+    const [ownerCheck,adminCheck]=await Promise.all([service.rpc('is_sinjira_owner',{p_user_id:user.id}),service.rpc('is_sinjira_admin',{p_user_id:user.id})]);
+    // Un booléen SQL explicite, jamais une chaîne « false » ou un objet truthy.
+    // Un diagnostic RPC non nul ne doit pas devenir une preuve de privilège.
+    let entitled=(ownerCheck?.error==null&&ownerCheck?.data===true)||
+      (adminCheck?.error==null&&adminCheck?.data===true);
     if(!entitled&&novel.product_id){
       const {data:entitlement}=await service.from('user_entitlements').select('product_id').eq('user_id',user.id).eq('product_id',novel.product_id).maybeSingle();
       if(entitlement){const {data:product}=await service.from('products').select('active').eq('id',novel.product_id).maybeSingle();entitled=product?.active===true;}
