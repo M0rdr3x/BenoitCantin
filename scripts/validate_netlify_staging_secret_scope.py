@@ -11,6 +11,19 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github/workflows/deploy-netlify-staging.yml"
+DEPENDABOT = ROOT / ".github/dependabot.yml"
+NETLIFY_DEPENDABOT_ENTRY = """  - package-ecosystem: "npm"
+    directory: "/tools/netlify-cli"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    groups:
+      netlify-cli-security-patches:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+"""
 SECRETS = ("NETLIFY_AUTH_TOKEN", "NETLIFY_SITE_ID")
 JOB_GUARD = "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/a1/web-release-transparency' && github.ref_protected == true"
 LIVE_HEADER = "      - name: Revalider branche GitHub protégée et SHA live avant secrets\n"
@@ -27,6 +40,45 @@ OFFLINE_LINE = "          NPM_CONFIG_OFFLINE: 'true'"
 STEP_LINE = re.compile(r"^      - name: ([^\n]+)$")
 EXPRESSION = re.compile(r"\$\{\{\s*secrets\.(NETLIFY_AUTH_TOKEN|NETLIFY_SITE_ID)\s*\}\}")
 ASSIGNMENT = re.compile(r"^\s*(NETLIFY_AUTH_TOKEN|NETLIFY_SITE_ID)\s*:")
+
+
+def inspect_netlify_dependabot(config: str) -> list[str]:
+    """Proposer des PR de sécurité pour la CLI, jamais des déploiements automatiques."""
+    errors: list[str] = []
+    blocks = re.split(r"(?=^  - package-ecosystem:)", config, flags=re.MULTILINE)
+    matches = [block for block in blocks if 'directory: "/tools/netlify-cli"' in block]
+    if len(matches) != 1:
+        errors.append("Dependabot doit suivre une fois le répertoire Netlify CLI")
+    elif NETLIFY_DEPENDABOT_ENTRY not in matches[0]:
+        errors.append("Dependabot Netlify : npm, hebdomadaire, PR limitées et patches obligatoires")
+    if config.count('directory: "/tools/netlify-cli"') != 1:
+        errors.append("Dependabot : répertoire Netlify absent ou doublonné")
+    return errors
+
+
+def self_test_netlify_dependabot(config: str) -> None:
+    if issues := inspect_netlify_dependabot(config):
+        raise AssertionError("Configuration Dependabot non conforme: " + "; ".join(issues))
+    mutations = {
+        "supprimer le suivi Netlify": config.replace(NETLIFY_DEPENDABOT_ENTRY, "", 1),
+        "changer le répertoire": config.replace(
+            'directory: "/tools/netlify-cli"', 'directory: "/mobile-native"', 1,
+        ),
+        "désactiver npm": config.replace(NETLIFY_DEPENDABOT_ENTRY,
+            NETLIFY_DEPENDABOT_ENTRY.replace('package-ecosystem: "npm"',
+                                            'package-ecosystem: "github-actions"'), 1),
+        "retirer la récurrence": config.replace(NETLIFY_DEPENDABOT_ENTRY,
+            NETLIFY_DEPENDABOT_ENTRY.replace('interval: "weekly"', 'interval: "monthly"'), 1),
+        "bloquer toutes les PR": config.replace(NETLIFY_DEPENDABOT_ENTRY,
+            NETLIFY_DEPENDABOT_ENTRY.replace('open-pull-requests-limit: 3',
+                                            'open-pull-requests-limit: 0'), 1),
+        "retirer la couverture des patches": config.replace(NETLIFY_DEPENDABOT_ENTRY,
+            NETLIFY_DEPENDABOT_ENTRY.replace('          - "patch"', '          - "major"'), 1),
+    }
+    for label, modified in mutations.items():
+        if modified == config or not inspect_netlify_dependabot(modified):
+            raise AssertionError("Modification Dependabot dangereuse non détectée: " + label)
+    print(f"OK: Dependabot Netlify et {len(mutations)} régressions de dépendances bloquées.")
 
 
 def inspect(source: str) -> list[str]:
@@ -423,10 +475,12 @@ def main() -> int:
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
     source = WORKFLOW.read_text(encoding="utf-8")
+    config = DEPENDABOT.read_text(encoding="utf-8")
     if args.self_test:
         self_test(source)
+        self_test_netlify_dependabot(config)
         return 0
-    errors = inspect(source)
+    errors = inspect(source) + inspect_netlify_dependabot(config)
     for error in errors:
         print("ERREUR:", error)
     if errors:
