@@ -44,8 +44,11 @@ async function invoke({
   user = null,
   approved = true,
   active = true,
+  bucketPublic = false,
+  bucketReadError = false,
+  bucketMismatch = false,
 }) {
-  const counters = { documentReads: 0, signedUrls: 0, bucketReads: 0, rpcCalls: [] };
+  const counters = { documentReads: 0, signedUrls: 0, bucketReads: 0, rpcCalls: [], logs: [] };
   const doc = {
     project_id: UUID,
     status: approved ? 'approved' : 'pending',
@@ -76,7 +79,8 @@ async function invoke({
       async getBucket(bucket) {
         counters.bucketReads += 1;
         assert.equal(bucket, doc.storage_bucket);
-        return { data: { id: bucket, public: false }, error: null };
+        if(bucketReadError)return {data:null,error:{code:'STORAGE_UNAVAILABLE'}};
+        return { data: { id: bucketMismatch?'other-bucket':bucket, public: bucketPublic }, error: null };
       },
       from(bucket) {
         assert.equal(bucket, doc.storage_bucket);
@@ -97,7 +101,11 @@ async function invoke({
 
   const runtime = {
     Request, Response, URL, Number, Object,
-    console: { error() { throw new Error('Unexpected server logging'); } },
+    console: { error(label,entry) {
+      assert.equal(label,'[get-document-url]','seuls les codes de journal approuvés sont permis');
+      assert.equal(entry?.code,'DOCUMENT_PRIVATE_BUCKET_UNVERIFIED');
+      counters.logs.push(entry.code);
+    } },
     readLimitedUtf8Body,
     corsHeaders: {
       'Access-Control-Allow-Origin': 'https://www.benoitcantin.com',
@@ -191,8 +199,7 @@ test('signature Storage privée conservée uniquement après autorisation', asyn
   assert.equal(allowed.response.status, 200);
   assert.equal(allowed.payload.protected, true);
   assert.equal(allowed.payload.expires_in, 600);
-  // Le contrôle du statut privé du bucket est une protection additionnelle en PR #1037.
-  // Cette PR cible uniquement le refus des liens AVANT tout accès au Storage.
+  assert.equal(allowed.counters.bucketReads, 1, 'bucket vérifié après autorisation');
   assert.equal(allowed.counters.signedUrls, 1);
 });
 
@@ -201,4 +208,20 @@ test('un projet non approuvé ou inactif demeure inaccessible', async () => {
   assert.equal(pending.response.status, 404);
   const archived = await invoke({ accessLevel: 'public', visibility: 'public', active: false });
   assert.equal(archived.response.status, 404);
+});
+
+test('aucune URL signée lorsque le bucket est public, introuvable ou en erreur', async () => {
+  for(const options of [
+    {bucketPublic:true},
+    {bucketReadError:true},
+    {bucketMismatch:true},
+  ]){
+    const result=await invoke({accessLevel:'admin',signed:true,rank:100,user:{id:UUID},...options});
+    assert.equal(result.response.status,503,'le fichier privé doit rester indisponible');
+    assert.equal(result.payload.ok,false);
+    assert.equal('url' in result.payload,false);
+    assert.equal(result.counters.bucketReads,1,'métadonnées réelles vérifiées');
+    assert.equal(result.counters.signedUrls,0,'aucune signature sur bucket non privé');
+    assert.deepEqual(result.counters.logs,['DOCUMENT_PRIVATE_BUCKET_UNVERIFIED']);
+  }
 });
