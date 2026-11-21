@@ -16,6 +16,11 @@ CONFIG = ROOT / "supabase/config.toml"
 
 REQUIRED = {
     "authentification": "const user=await requiredUser(req);",
+    "requête JSON explicite": "if(!/^application",
+    "lecteur à échéance absolue": "readLimitedUtf8BodyWithDeadline(req,MAX_REQUEST_BYTES,8000)",
+    "code délai refusé": "if(message==='REQUEST_TIMEOUT')",
+    "code MIME refusé": "if(message==='JSON_REQUIRED')",
+    "slug chaîne stricte": "typeof body.slug==='string'",
     "POST seulement": "if(req.method!=='POST')",
     "état publié": "novel.status!=='published'",
     "droit propriétaire ou administrateur": "let entitled=Boolean(isOwner||isAdmin);",
@@ -34,7 +39,9 @@ REQUIRED = {
     "anti sniff": "'X-Content-Type-Options':'nosniff'",
     "aucun référent": "'Referrer-Policy':'no-referrer'",
 }
-FORBIDDEN = ("getPublicUrl(", "console.error(error)", "console.error(bucketMetadataError)")
+FORBIDDEN = ("getPublicUrl(", "console.error(error)", "console.error(bucketMetadataError)",
+             "await reader.read()", "await reader.cancel(", "await req.text()", "await req.json()",
+             "String(body?.slug")
 
 def check_source(source: str, guard: str, config: str) -> list[str]:
     errors: list[str] = []
@@ -75,6 +82,9 @@ def self_test(source: str, guard: str, config: str) -> None:
         raise AssertionError("Source saine rejetée : " + "; ".join(errors))
     mutations = {
         "auth supprimée": ("const user=await requiredUser(req);", "const user={id:'spoofed'};"),
+        "délai lecture supprimé": ("readLimitedUtf8BodyWithDeadline(req,MAX_REQUEST_BYTES,8000)", "readLimitedUtf8Body(req,MAX_REQUEST_BYTES)"),
+        "type du slug ignoré": ("typeof body.slug==='string'", "String(body.slug)"),
+        "erreur d'attente supprimée": ("if(message==='REQUEST_TIMEOUT')", "if(false)"),
         "POST retiré": ("if(req.method!=='POST')", "if(false)"),
         "statut publié ignoré": ("novel.status!=='published'", "false"),
         "entitlement absent": ("if(!entitled)return json(", "if(false)return json("),
@@ -105,7 +115,7 @@ def self_test(source: str, guard: str, config: str) -> None:
                                 "[functions.get-novel-file-url]\nverify_jwt = false", 1)
     if bad_config == config or not check_source(source, guard, bad_config):
         raise AssertionError("Désactivation JWT non détectée")
-    print("OK : 18 mutations négatives refusées (droits, bucket, chemin, JWT, TTL, cache et journal)")
+    print("OK : 21 mutations négatives refusées (droits, flux avec délai, bucket, JWT, TTL, cache et journal)")
 
 def main() -> int:
     p = argparse.ArgumentParser()
