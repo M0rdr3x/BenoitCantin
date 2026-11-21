@@ -13,6 +13,10 @@ on:
       - 'supabase/tests/livre_i_entitlements_read_only_a1.test.sql'
       - 'supabase/functions/get-document-url/**'
       - 'supabase/functions/get-private-book-url/**'
+      - 'supabase/functions/_shared/private-book-storage-guard.mjs'
+      - 'scripts/test_private_book_storage_guard.mjs'
+      - 'scripts/test_livre_i_private_delivery_runtime.mjs'
+      - 'scripts/validate_get_private_book_url_security.py'
       - 'scripts/validate_sinjira_livre_i_delivery.py'
       - 'scripts/validate_livre_i_entitlement_boundary.py'
       - 'scripts/validate_livre_i_entitlement_ui.py'
@@ -33,6 +37,10 @@ on:
       - 'supabase/tests/livre_i_entitlements_read_only_a1.test.sql'
       - 'supabase/functions/get-document-url/**'
       - 'supabase/functions/get-private-book-url/**'
+      - 'supabase/functions/_shared/private-book-storage-guard.mjs'
+      - 'scripts/test_private_book_storage_guard.mjs'
+      - 'scripts/test_livre_i_private_delivery_runtime.mjs'
+      - 'scripts/validate_get_private_book_url_security.py'
       - 'scripts/validate_sinjira_livre_i_delivery.py'
       - 'scripts/validate_livre_i_entitlement_boundary.py'
       - 'scripts/validate_livre_i_entitlement_ui.py'
@@ -64,6 +72,22 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: '3.12.14'
+
+      - name: Configurer Node.js version verrouillée
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+          check-latest: false
+
+      - name: Tester le vrai handler Livre I, les buckets privés et les chemins PDF
+        run: |
+          node --check scripts/test_livre_i_private_delivery_runtime.mjs
+          node --test scripts/test_private_book_storage_guard.mjs scripts/test_livre_i_private_delivery_runtime.mjs
+
+      - name: Tester les régressions de signature privée du Livre I
+        run: |
+          python3 scripts/validate_get_private_book_url_security.py --self-test
+          python3 scripts/validate_get_private_book_url_security.py
 
       - name: Auto-tester le validateur de diffusion
         run: python3 scripts/validate_sinjira_livre_i_delivery.py --self-test
