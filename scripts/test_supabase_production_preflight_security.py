@@ -204,6 +204,61 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
         bad = self.valid.replace(marker, "echo dry-run-retire", 1)
         self.assertRejected(bad, "Revalidation post-environment incomplète")
 
+    def test_production_checkout_cannot_follow_floating_main(self):
+        marker = "          ref: ${{ github.sha }}\n"
+        self.assertIn(marker, self.valid)
+        bad = self.valid.replace(marker, "          ref: main\n", 1)
+        self.assertRejected(bad, "checkout production doit cibler explicitement")
+
+    def test_missing_live_git_verification_is_rejected(self):
+        marker = "      - name: Revalider GitHub juste avant écriture production\n"
+        self.assertIn(marker, self.valid)
+        bad = self.valid.replace(marker, "      - name: Verification retiree\n", 1)
+        self.assertRejected(bad, "Revalidation live GitHub absente")
+
+    def test_live_main_protection_cannot_be_removed(self):
+        marker = "branch.protected !== true"
+        self.assertIn(marker, self.valid)
+        bad = self.valid.replace(marker, "false", 1)
+        self.assertRejected(bad, "Revalidation live GitHub incomplète")
+
+    def test_live_main_sha_cannot_be_removed(self):
+        marker = "branch.commit?.sha !== context.sha"
+        self.assertIn(marker, self.valid)
+        bad = self.valid.replace(marker, "false", 1)
+        self.assertRejected(bad, "Revalidation live GitHub incomplète")
+
+    def test_live_ref_protected_cannot_be_removed(self):
+        marker = "process.env.GITHUB_REF_PROTECTED !== 'true'"
+        self.assertIn(marker, self.valid)
+        bad = self.valid.replace(marker, "false", 1)
+        self.assertRejected(bad, "Revalidation live GitHub incomplète")
+
+    def test_live_git_action_must_be_immutable(self):
+        marker = "uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd"
+        self.assertIn(marker, self.valid)
+        bad = self.valid.replace(marker, "uses: actions/github-script@v7", 1)
+        self.assertRejected(bad, "Action réutilisable non approuvée")
+
+    def test_live_check_must_precede_first_mutation(self):
+        live = "      - name: Revalider GitHub juste avant écriture production\n"
+        mutate = "      - name: Appliquer les migrations de production depuis le workspace protégé\n"
+        start = self.valid.index(live)
+        end = self.valid.index(mutate, start)
+        block = self.valid[start:end]
+        bad = self.valid[:start] + self.valid[end:]
+        position = bad.index(mutate)
+        # Reinsert immediately after the first mutation, which must be rejected.
+        next_step = bad.index("      - name: Auditer les fonctions SQL après migrations\n", position)
+        bad = bad[:next_step] + block + bad[next_step:]
+        self.assertRejected(bad, "doit précéder la première écriture")
+
+    def test_live_git_failure_must_be_fail_closed(self):
+        marker = "core.setFailed('Refus de la production : protection de main absente ou retirée.')"
+        self.assertIn(marker, self.valid)
+        bad = self.valid.replace(marker, "core.info('Protection ignorée.')", 1)
+        self.assertRejected(bad, "doit refuser trois écarts")
+
     def test_apply_step_keeps_redundant_fail_closed_gate(self):
         marker = "      - name: Appliquer les migrations de production depuis le workspace protégé\n"
         start = self.valid.index(marker)
