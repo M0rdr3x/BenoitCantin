@@ -34,5 +34,7 @@ jobs:
         run: python3 scripts/validate_sinjira_comments_ux.py
       - name: Vérifier syntaxe du module commentaires
         run: node --check assets/js/sinjira-reader.js
+      - name: Tester la révélation volontaire et le compteur accessible
+        run: node --test scripts/test_sinjira_comments_accessibility.mjs
       - name: Vérifier contrat de sécurité de lecture publique
         run: python3 scripts/validate_public_comment_security.py
