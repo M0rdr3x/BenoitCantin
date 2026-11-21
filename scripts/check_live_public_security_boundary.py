@@ -27,6 +27,19 @@ FORBIDDEN = (
     "/.env",
     "/projets/projet-nova/official/versions/V316/README.md",
     "/projets/sinjira/codex/livre-i-delivery-contract.json",
+    # Fonctions Edge et migration : des programmes serveur, jamais des assets web.
+    "/supabase/functions/security-context/index.ts",
+    "/supabase/functions/get-novel-file-url/index.ts",
+    "/supabase/migrations/20260910193000_sinjira_v25_device_challenge_session_binding.sql",
+    # Audits / workflow GitHub internes.
+    "/scripts/validate_jekyll_emergency_pages.py",
+    "/.github/workflows/emergency-jekyll-pages-guard.yml",
+    # Contrats de publication et corpus de travail, explicitement exclus du site.
+    "/projets/sinjira/romans/livre-1-release.json",
+    "/projets/sinjira/romans/roman-4-release.json",
+    "/projets/projet-nova/official/versions/V322/V322_CURRENT_STATE.json",
+    "/projets/projet-nova/data/registre-donnees-services-nova-sinjira.json",
+    "/projets/projet-nova/data/diagnostic-g0-sante-premiere-ligne-2025.json",
 )
 EXPECTED_PUBLIC = (
     "/",
@@ -84,7 +97,7 @@ def validate_statuses(statuses: dict[str, int]) -> list[str]:
 
 def self_test() -> None:
     assert BASE == "https://www.benoitcantin.com"
-    assert len(FORBIDDEN) >= 10
+    assert len(FORBIDDEN) == 22, "La liste des sources techniques surveillées ne doit pas rétrécir"
     assert len(set(FORBIDDEN + EXPECTED_PUBLIC)) == len(FORBIDDEN + EXPECTED_PUBLIC)
     for path in FORBIDDEN + EXPECTED_PUBLIC:
         assert path.startswith("/") and not path.startswith("//")
@@ -94,17 +107,25 @@ def self_test() -> None:
     safe = {path: 404 for path in FORBIDDEN}
     safe.update({path: 200 for path in EXPECTED_PUBLIC})
     assert not validate_statuses(safe)
-    for status in (403, 404, 410):
-        attempt = {**safe, FORBIDDEN[0]: status}
-        assert not validate_statuses(attempt)
-    for status in (200, 206, 301, 302, 307, 308, 429, 500, None):
-        attempt = {**safe, FORBIDDEN[0]: status}
-        assert validate_statuses(attempt), f"Exposition {status} non détectée"
-    for status in (403, 404, 410, 500, None):
-        attempt = {**safe, EXPECTED_PUBLIC[0]: status}
-        assert validate_statuses(attempt), f"Panne publique {status} non détectée"
+    mutations = 0
+    # Chaque chemin technique DOIT être refusé ; ne pas seulement
+    # vérifier le premier élément de la liste.
+    for path in FORBIDDEN:
+        for status in (403, 404, 410):
+            attempt = {**safe, path: status}
+            assert not validate_statuses(attempt), f"Refus légitime de {path} rejeté"
+            mutations += 1
+        for status in (200, 206, 301, 302, 307, 308, 429, 500, None):
+            attempt = {**safe, path: status}
+            assert validate_statuses(attempt), f"{path} HTTP {status} non détecté"
+            mutations += 1
+    for path in EXPECTED_PUBLIC:
+        for status in (301, 302, 403, 404, 410, 429, 500, None):
+            attempt = {**safe, path: status}
+            assert validate_statuses(attempt), f"Panne publique {path} HTTP {status} non détectée"
+            mutations += 1
     assert not NoRedirect().redirect_request(None, None, 301, "", {}, "https://evil.example/")
-    print("OK frontière publique : 12 chemins privés, 4 pages publiques, refus des redirects et mutations HTTP.")
+    print(f"OK frontière publique : {len(FORBIDDEN)} chemins techniques, {len(EXPECTED_PUBLIC)} pages publiques, {mutations} mutations HTTP validées.")
 
 
 def check_live() -> int:
@@ -123,7 +144,7 @@ def check_live() -> int:
         print(error)
     if errors:
         return 1
-    print("OK : aucune des 12 routes techniques testées n'est accessible; 4 pages publiques disponibles.")
+    print(f"OK : aucune des {len(FORBIDDEN)} routes techniques testées n'est accessible; {len(EXPECTED_PUBLIC)} pages publiques disponibles.")
     return 0
 
 
