@@ -6,6 +6,7 @@ on:
     paths:
       - 'supabase/functions/get-document-url/index.ts'
       - 'scripts/test_private_document_storage.mjs'
+      - 'scripts/test_document_external_urls.mjs'
       - 'supabase/functions/_shared/private-document-storage.mjs'
       - 'scripts/test_document_access_rank_security.mjs'
       - 'scripts/validate_document_access_rank_security.py'
@@ -15,6 +16,7 @@ on:
     paths:
       - 'supabase/functions/get-document-url/index.ts'
       - 'scripts/test_private_document_storage.mjs'
+      - 'scripts/test_document_external_urls.mjs'
       - 'supabase/functions/_shared/private-document-storage.mjs'
       - 'scripts/test_document_access_rank_security.mjs'
       - 'scripts/validate_document_access_rank_security.py'
@@ -41,6 +43,8 @@ jobs:
 
       - name: Tester le véritable handler, les ACL et les buckets privés
         run: node --test scripts/test_document_access_rank_security.mjs scripts/test_private_document_storage.mjs
+      - name: Interdire les liens documentaires externes non approuvés
+        run: node scripts/test_document_external_urls.mjs
 
       - name: Rejeter les régressions d'autorisation
         run: |
