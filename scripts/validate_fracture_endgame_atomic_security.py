@@ -16,11 +16,15 @@ EDGE_REQUIRED = {
     'auth partagée': "import { requiredUser, serviceClient } from '../_shared/auth.ts';",
     'POST uniquement': "req.method !== 'POST'",
     'auth avant traitement': 'const user = await requiredUser(req);',
-    'lecture HTTP bornée en flux': 'const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);',
+    'délai absolu de réception': 'const MAX_REQUEST_READ_TIMEOUT_MS = 4_000;',
+    'lecteur HTTP borné avec délai': 'const limited = await readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS);',
+    'lecteur partagé non bloquant': "import { readLimitedUtf8BodyWithDeadline } from '../_shared/read-chunk-deadline.mjs';",
+    'refus HTTP 408 en cas de délai': "limited.reason === 'REQUEST_TIMEOUT'",
+    'statut HTTP 408': "return privateJson({ ok: false, error: 'Délai de transmission dépassé.' }, 408);",
     'rejet dépassement en flux': 'if (!limited.ok)',
     'parsing après limite': 'const rawBody = limited.raw;',
     'taille UTF-8 réelle': 'new TextEncoder().encode(rawBody).byteLength',
-    'content-type JSON': "contentType.startsWith('application/json')",
+    'content-type JSON strict': r"/^application\/json(?:\s*;|$)/.test(contentType)",
     'réponse privée': "'Cache-Control': 'private, no-store, max-age=0'",
     'pragma no-cache': "'Pragma': 'no-cache'",
     'nosniff': "'X-Content-Type-Options': 'nosniff'",
@@ -42,6 +46,7 @@ EDGE_REQUIRED = {
 EDGE_FORBIDDEN = {
     'JSON direct non borné': 'await req.json()',
     'texte HTTP non borné': 'await req.text()',
+    'ancien lecteur sans délai': 'readLimitedUtf8Body(req, MAX_REQUEST_BYTES)',
     'insert contribution direct': ".from('internal_gameplay_contributions').insert",
     'update rapport direct': ".from('fracture_endgame_reports').update",
     'update partie direct': ".from('fracture_parties').update",
@@ -102,7 +107,7 @@ def validate(edge_path: Path, migration_path: Path) -> list[str]:
             errors.append(f'Garde Edge Fracture violé: {label}.')
 
     auth_pos = edge.find('const user = await requiredUser(req);')
-    body_pos = edge.find('const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);')
+    body_pos = edge.find('const limited = await readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS);')
     if auth_pos < 0 or body_pos < 0:
         errors.append('Ordre auth/corps Fracture impossible à vérifier.')
     elif auth_pos > body_pos:
@@ -141,10 +146,22 @@ def self_test() -> None:
         raise AssertionError('Les fichiers réels sains doivent passer: ' + ' | '.join(clean))
 
     edge_cases = {
-        'JSON direct': real_edge.replace('const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);', 'const limited = {ok:true,raw:JSON.stringify(await req.json())};', 1),
-        'texte non borné': real_edge.replace('const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);', 'const limited = {ok:true,raw:await req.text()};', 1),
+        'JSON direct': real_edge.replace('const limited = await readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS);', 'const limited = {ok:true,raw:JSON.stringify(await req.json())};', 1),
+        'texte non borné': real_edge.replace('const limited = await readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS);', 'const limited = {ok:true,raw:await req.text()};', 1),
         'limite HTTP augmentée': real_edge.replace('MAX_REQUEST_BYTES = 4096;', 'MAX_REQUEST_BYTES = 40960;', 1),
-        'content-type retiré': real_edge.replace("    if (!contentType.startsWith('application/json')) {", "    if (false) {", 1),
+        'content-type retiré': real_edge.replace("    if (!/^application\/json(?:\s*;|$)/.test(contentType)) {", "    if (false) {", 1),
+        'content-type préfixe trompeur': real_edge.replace(
+            r"/^application\/json(?:\s*;|$)/.test(contentType)", "contentType.startsWith('application/json')", 1
+        ),
+        'lecteur sans délai': real_edge.replace(
+            'readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS)',
+            'readLimitedUtf8Body(req, MAX_REQUEST_BYTES)', 1
+        ),
+        'délai supprimé': real_edge.replace('const MAX_REQUEST_READ_TIMEOUT_MS = 4_000;', '', 1),
+        'HTTP 408 retiré': real_edge.replace(
+            "return privateJson({ ok: false, error: 'Délai de transmission dépassé.' }, 408);",
+            "return privateJson({ ok: false, error: 'Délai de transmission dépassé.' }, 413);", 1
+        ),
         'no-store retiré': real_edge.replace("      'Cache-Control': 'private, no-store, max-age=0',\n", '', 1),
         'auth retirée': real_edge.replace('    const user = await requiredUser(req);\n', '', 1),
         'code partie relâché': real_edge.replace('const PARTY_CODE_RE = /^FRM-[A-Z0-9]{6}$/;', 'const PARTY_CODE_RE = /^FRM-/;', 1),

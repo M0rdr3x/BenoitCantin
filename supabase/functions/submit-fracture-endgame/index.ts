@@ -1,4 +1,4 @@
-import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
+import { readLimitedUtf8BodyWithDeadline } from '../_shared/read-chunk-deadline.mjs';
 import { requiredUser, serviceClient } from '../_shared/auth.ts';
 
 const cors = {
@@ -8,6 +8,7 @@ const cors = {
   'Vary': 'Origin'
 };
 const MAX_REQUEST_BYTES = 4096;
+const MAX_REQUEST_READ_TIMEOUT_MS = 4_000;
 const PARTY_CODE_RE = /^FRM-[A-Z0-9]{6}$/;
 const PAID_EXTERNAL_SERVICES_ENABLED = false;
 
@@ -56,7 +57,7 @@ Deno.serve(async (req) => {
 
   try {
     const contentType = (req.headers.get('content-type') || '').toLowerCase();
-    if (!contentType.startsWith('application/json')) {
+    if (!/^application\/json(?:\s*;|$)/.test(contentType)) {
       return privateJson({ ok: false, error: 'Corps JSON requis.' }, 415);
     }
     const declaredLength = Number(req.headers.get('content-length') || '0');
@@ -67,8 +68,13 @@ Deno.serve(async (req) => {
     const user = await requiredUser(req);
     const service = serviceClient();
 
-    const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);
-    if (!limited.ok) return privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413);
+    const limited = await readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS);
+    if (!limited.ok) {
+      if (limited.reason === 'REQUEST_TIMEOUT') {
+        return privateJson({ ok: false, error: 'Délai de transmission dépassé.' }, 408);
+      }
+      return privateJson({ ok: false, error: 'Requête trop volumineuse ou invalide.' }, 413);
+    }
     const rawBody = limited.raw;
     if (new TextEncoder().encode(rawBody).byteLength > MAX_REQUEST_BYTES) {
       return privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413);
