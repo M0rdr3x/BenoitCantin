@@ -128,7 +128,14 @@ def quarantine_unreviewed_edge_deploys(workspace: Path) -> tuple[str, ...]:
         elif slug == 'nova-civic-poll':
             # Une fonction publique utilisant service_role ne doit jamais
             # devenir déployable par la synchronisation générique implicite.
-            expected = ('Deno.env.get("NOVA_POLL_ENABLED") === "true"', 'if(!await confirmCaptcha(payload.captchaToken))', 'SUPABASE_SERVICE_ROLE_KEY')
+            expected = (
+                'Deno.env.get("NOVA_POLL_ENABLED") === "true"',
+                'if(!await confirmCaptcha(payload.captchaToken))',
+                'SUPABASE_SERVICE_ROLE_KEY',
+                'readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,BODY_READ_TIMEOUT_MS)',
+                "BODY_READ_TIMEOUT_MS = 8000",
+                r'/^application\/json(?:\s*;|$)/.test(type)',
+            )
             if any(marker not in source for marker in expected):
                 raise SystemExit('Contrat public NOVA modifié : revue indépendante obligatoire.')
         else:
