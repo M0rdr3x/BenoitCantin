@@ -78,12 +78,14 @@ def validate(path: str, status: int | None,
         failures.append("Referrer-Policy insuffisante")
     policy, csp_errors = csp_directives(headers.get("content-security-policy", ""))
     failures.extend(csp_errors)
-    if "'self'" not in policy.get("default-src", ()):
-        failures.append("CSP default-src self absent")
-    if not ({"'self'", "'none'"} & set(policy.get("frame-ancestors", ()))):
-        failures.append("CSP frame-ancestors absent")
-    if not ({"'self'", "'none'"} & set(policy.get("base-uri", ()))):
-        failures.append("CSP base-uri absent")
+    # Les directives mixtes comme "'self' https://tiers" élargissent les
+    # privilèges. Un préfixe sûr ne rend pas une politique permissive sûre.
+    if policy.get("default-src") != ("'self'",):
+        failures.append("CSP default-src self exclusif requis")
+    if policy.get("frame-ancestors") not in (("'self'",), ("'none'",)):
+        failures.append("CSP frame-ancestors exclusif requis")
+    if policy.get("base-uri") not in (("'self'",), ("'none'",)):
+        failures.append("CSP base-uri exclusif requis")
     if "'unsafe-eval'" in policy.get("script-src", ()):
         failures.append("CSP unsafe-eval interdit")
     if any(t in ("*", "http:") for t in policy.get("default-src", ())):
@@ -157,6 +159,15 @@ def self_test() -> None:
         ("/", public, "content-security-policy", "", "default-src"),
         ("/", public, "content-security-policy", "default-src *", "default-src"),
         ("/", public, "content-security-policy",
+         "default-src 'self' https://untrusted.invalid; frame-ancestors 'self'; base-uri 'self'",
+         "default-src"),
+        ("/", public, "content-security-policy",
+         "default-src 'self'; frame-ancestors 'self' https://untrusted.invalid; base-uri 'self'",
+         "frame-ancestors"),
+        ("/", public, "content-security-policy",
+         "default-src 'self'; frame-ancestors 'self'; base-uri 'self' https://untrusted.invalid",
+         "base-uri"),
+        ("/", public, "content-security-policy",
          public["content-security-policy"] + "; script-src 'self' 'unsafe-eval'", "unsafe-eval"),
         ("/compte/", private, "cache-control", "public, max-age=30", "no-store"),
         ("/compte/", private, "referrer-policy", "same-origin", "no-referrer"),
@@ -182,7 +193,7 @@ def self_test() -> None:
     assert errors
     assert NoRedirect().redirect_request(None, None, 302, "", {},
                                          "https://untrusted.invalid") is None
-    print("PASS : 3 routes, 11 mutations et refus des réponses ambiguës.")
+    print("PASS : 3 routes, 14 mutations et refus des réponses ambiguës.")
 
 
 def live() -> int:
