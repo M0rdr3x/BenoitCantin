@@ -27,10 +27,9 @@ def static_contracts():
     aliases = ROOT / "assets/js/sinjira-404-aliases-v1.js"
     css = (ROOT / "assets/css/site-ux-sinjira-v1.css").read_text("utf-8")
 
-    assert '<a class="btn btn-primary" href="" data-offline-retry>Réessayer la connexion</a>' in offline
-    runtime = (ROOT / "assets/js/site.js").read_text("utf-8")
-    assert "offlineRetry.addEventListener('click'" in runtime
-    assert "window.location.reload()" in runtime
+    assert '<form method="get" action="" class="recovery-retry-form">' in offline
+    assert '<button class="btn btn-primary" type="submit">Réessayer la connexion</button>' in offline
+    assert 'data-offline-retry' not in offline
     assert "onclick=" not in offline and "style=" not in offline
     assert 'class="site-recovery-page site-offline-page"' in offline
     assert 'class="site-recovery-page site-not-found-page"' in not_found
@@ -88,7 +87,7 @@ def retry_offline(browser, js_enabled):
                 )
         page.route("**/temoin-connexion/", serve_recovery)
         page.goto(BASE + "/temoin-connexion/", wait_until="domcontentloaded")
-        page.get_by_role("link", name="Réessayer la connexion").click()
+        page.get_by_role("button", name="Réessayer la connexion").click()
         page.get_by_role("heading", name="Connexion rétablie").wait_for()
         assert counter["total"] == 2, counter
         assert page.url == BASE + "/temoin-connexion/"
