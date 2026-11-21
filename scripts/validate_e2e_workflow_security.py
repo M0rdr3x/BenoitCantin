@@ -24,6 +24,7 @@ LITERATURE_TEST_COMMAND = 'python tests/e2e/test_literature_site.py'
 DEMO_UX_TEST_COMMAND = 'python tests/e2e/test_demo_reader_responsive.py'
 ROMAN_IV_UX_TEST_COMMAND = 'python tests/e2e/test_roman_iv_responsive.py'
 AUTH_UX_TEST_COMMAND = 'python tests/e2e/test_auth_forms_responsive.py'
+READER_CONTROLS_TEST_COMMAND = 'python tests/e2e/test_reader_controls_responsive.py'
 MOBILE_DOCK_TEST_COMMAND = 'python tests/e2e/test_mobile_bottom_navigation.py'
 
 
@@ -89,6 +90,7 @@ def validate_text(text: str) -> list[str]:
     require(errors, text.count(DEMO_UX_TEST_COMMAND) == 1, 'la grille mobile du PDF doit être vérifiée dans les 3 navigateurs locaux')
     require(errors, text.count(ROMAN_IV_UX_TEST_COMMAND) == 1, 'le Roman IV doit être vérifié sur mobile/ordinateur dans les 3 navigateurs locaux')
     require(errors, text.count(AUTH_UX_TEST_COMMAND) == 1, 'les formulaires Auth doivent être vérifiés sur 3 navigateurs et 5 largeurs')
+    require(errors, text.count(READER_CONTROLS_TEST_COMMAND) == 1, 'les commandes de liseuse doivent être testées sur 3 navigateurs et 6 largeurs')
     require(errors, text.count(MOBILE_DOCK_TEST_COMMAND) == 1, 'le dock mobile et le bandeau PWA doivent rester testés dans les 3 navigateurs')
 
     for marker in ('browser-smoke:', 'lighthouse-mobile:'):
@@ -122,6 +124,7 @@ def run_self_tests(text: str) -> None:
         'test ergonomie PDF retiré': text.replace(f'            {DEMO_UX_TEST_COMMAND} &&\n', '', 1),
         'test Roman IV retiré': text.replace(f'            {ROMAN_IV_UX_TEST_COMMAND} &&\n', '', 1),
         'test formulaire Auth retiré': text.replace(f'            {AUTH_UX_TEST_COMMAND} &&\n', '', 1),
+        'test commandes liseuse retiré': text.replace(f'            {READER_CONTROLS_TEST_COMMAND} &&\n', '', 1),
         'test dock mobile retiré': text.replace(f'            {MOBILE_DOCK_TEST_COMMAND} &&\n', '', 1),
         'validation contrat retirée': text.replace(f'run: {VALIDATE_COMMAND}\n', 'run: echo validation-retirée\n', 1),
         'continue-on-error ajouté': text.replace('timeout-minutes: 5', 'timeout-minutes: 5\n    continue-on-error: true', 1),
