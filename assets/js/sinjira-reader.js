@@ -31,9 +31,13 @@ async function markReading(user,novel,lastPage){
 }
 
 
-function spoiler(c){
+function spoiler(c,index){
   const body=`<p data-spoiler-content>${escapeHtml(c.body)}</p>`;
-  return c.spoiler?`<div class="v19-spoiler"><button class="btn btn-secondary btn-small" type="button" data-reveal-spoiler aria-expanded="false">Afficher le divulgâcheur</button>${body}</div>`:body;
+  // Le contenu sensible reste absent de la lecture et de la navigation
+  // tant que la personne n'a pas expressément choisi de le dévoiler.
+  if(!c.spoiler)return body;
+  const id=`sinjira-divulgacheur-${index}`;
+  return `<div class="v19-spoiler"><button class="btn btn-secondary btn-small" type="button" data-reveal-spoiler aria-controls="${id}" aria-expanded="false">Afficher le divulgâcheur</button><p id="${id}" data-spoiler-content hidden>${escapeHtml(c.body)}</p></div>`;
 }
 
 async function comments(){
@@ -54,10 +58,14 @@ async function comments(){
   const {data,error}=await s.rpc('list_sinjira_novel_comments',{p_novel_slug:slug});
   if(error)throw error;
   const rows=Array.isArray(data)?data.slice(0,100):[];
-  list.innerHTML=rows.length?rows.map(c=>`<article class="reader-comment"><header><strong>${escapeHtml(c.pseudo||'Lecteur SINJIRA')}</strong><time>${escapeHtml(formatDate(c.created_at))}</time></header>${spoiler(c)}</article>`).join(''):'<p>Aucun commentaire publié pour le moment. Soyez la première personne à participer.</p>';
+  list.innerHTML=rows.length?rows.map((c,index)=>`<article class="reader-comment"><header><strong>${escapeHtml(c.pseudo||'Lecteur SINJIRA')}</strong><time>${escapeHtml(formatDate(c.created_at))}</time></header>${spoiler(c,index)}</article>`).join(''):'<p>Aucun commentaire publié pour le moment. Soyez la première personne à participer.</p>';
   list.querySelectorAll('[data-reveal-spoiler]').forEach(button=>button.addEventListener('click',()=>{
     const item=button.closest('.v19-spoiler');
-    const revealed=item.classList.toggle('is-revealed');
+    const content=item?.querySelector('[data-spoiler-content]');
+    if(!content)return;
+    const revealed=content.hidden;
+    content.hidden=!revealed;
+    item.classList.toggle('is-revealed',revealed);
     button.textContent=revealed?'Masquer le divulgâcheur':'Afficher le divulgâcheur';
     button.setAttribute('aria-expanded',String(revealed));
   }));
@@ -70,6 +78,16 @@ async function comments(){
   const {data:profile}=await s.from('profiles').select('pseudo,display_name').eq('user_id',user.id).maybeSingle();
   account.innerHTML=`<div class="reader-login-note">Commentaire associé au compte <strong>${escapeHtml(profile?.pseudo||profile?.display_name||'Lecteur SINJIRA')}</strong>. Publication après modération.</div>`;
   form.hidden=false;
+  const textarea=form.elements.namedItem('body');
+  const counter=form.querySelector('[data-comment-count]');
+  const updateCount=()=>{
+    if(!textarea||!counter)return;
+    const length=textarea.value.length;
+    counter.textContent=`${length.toLocaleString('fr-CA')} / 3 000 caractères`;
+    counter.classList.toggle('near-limit',length>=2700);
+  };
+  textarea?.addEventListener('input',updateCount);
+  updateCount();
   const submit=form.querySelector('button[type="submit"]');
   let submitting=false;
   form.addEventListener('submit',async event=>{
@@ -93,6 +111,7 @@ async function comments(){
       });
       if(insertError)throw insertError;
       form.reset();
+      updateCount();
       setStatus('Commentaire reçu. Il sera visible après modération.','success');
     }catch(err){
       setStatus(friendlyBackendMessage(err?.message,'Impossible d’envoyer le commentaire pour le moment.'),'error');
