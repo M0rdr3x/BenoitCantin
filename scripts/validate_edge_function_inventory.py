@@ -48,7 +48,10 @@ CUSTOM_AUTH = {
     "life-story-delivery": (
         "token_hash", "sha256Hex", "expires_at", "max_downloads",
         "service_life_story_register_download", "req.method !== 'POST'", "requestUrl.search",
-        "MAX_REQUEST_BYTES", "MAX_PDF_BYTES", "hasPdfSignature", "allowedOrigin",
+        "MAX_REQUEST_BYTES", "MAX_REQUEST_READ_TIMEOUT_MS = 4_000;",
+        "readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS)",
+        "limited.reason === 'REQUEST_TIMEOUT' ? 408 : 413",
+        "MAX_PDF_BYTES", "hasPdfSignature", "allowedOrigin",
         "Content-Security-Policy", "Cache-Control", "no-store",
     ),
 }
@@ -304,7 +307,14 @@ def main() -> int:
         entry = FUNCTIONS / slug / "index.ts"
         if entry.is_file():
             source = read_security_text(entry)
-            if "readLimitedUtf8Body" not in source or "limited-body.mjs" not in source:
+            if slug == "life-story-delivery":
+                # Le jeton de remise ne doit pas permettre de ralentir
+                # indéfiniment une Edge Function publique.
+                if ("readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS)" not in source
+                        or "read-chunk-deadline.mjs" not in source
+                        or "MAX_REQUEST_READ_TIMEOUT_MS = 4_000;" not in source):
+                    errors.append(f"{slug}: lecteur borné avec délai absolu absent.")
+            elif "readLimitedUtf8Body" not in source or "limited-body.mjs" not in source:
                 errors.append(f"{slug}: utilisation du lecteur HTTP partagé absente.")
             if "await req.text()" in source or "await req.json()" in source:
                 errors.append(f"{slug}: lecture directe d'un corps non borné interdite.")

@@ -143,12 +143,17 @@ def quarantine_unreviewed_edge_deploys(workspace: Path) -> tuple[str, ...]:
                                      'to: [user.email]', 'MAX_REQUEST_BYTES'),
                 'life-story-delivery': ('allowedOrigin(req)', 'sha256Hex',
                                         'token_hash', 'service_life_story_register_download',
-                                        'MAX_PDF_BYTES'),
+                                        'MAX_PDF_BYTES', 'MAX_REQUEST_READ_TIMEOUT_MS = 4_000;',
+                                        "limited.reason === 'REQUEST_TIMEOUT' ? 408 : 413",
+                                        r"/^application\/json(?:\s*;|$)/.test(type)"),
             }
             expected = public_guards[slug]
             # Vérifier l'APPEL du lecteur borné, non sa simple importation.
+            # La route publique de remise d'une histoire de vie exige un délai absolu.
+            reader = ('readLimitedUtf8BodyWithDeadline' if slug == 'life-story-delivery'
+                      else 'readLimitedUtf8Body')
             if (any(marker not in source for marker in expected)
-                    or not re.search(r'\bawait\s+readLimitedUtf8Body\s*\(', source)
+                    or not re.search(rf'\bawait\s+{reader}\s*\(', source)
                     or (slug == 'send-game-report' and not re.search(
                         r'\bawait\s+readLimitedBinaryResponse\s*\(', source))):
                 raise SystemExit(f'Contrat public {slug} modifié : revue obligatoire.')

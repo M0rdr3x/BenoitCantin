@@ -70,7 +70,10 @@ class ReviewedProductionMigrationBatchTests(unittest.TestCase):
             'life-story-delivery': (
                 'allowedOrigin(req)', 'sha256Hex', 'token_hash',
                 'service_life_story_register_download', 'MAX_PDF_BYTES',
-                'await readLimitedUtf8Body(',
+                'MAX_REQUEST_READ_TIMEOUT_MS = 4_000;',
+                "limited.reason === 'REQUEST_TIMEOUT' ? 408 : 413",
+                r'/^application\/json(?:\s*;|$)/.test(type)',
+                'await readLimitedUtf8BodyWithDeadline(',
             ),
         }
         for slug, guards in other_guards.items():

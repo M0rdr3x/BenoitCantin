@@ -1,7 +1,8 @@
-import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
+import { readLimitedUtf8BodyWithDeadline } from '../_shared/read-chunk-deadline.mjs';
 import { createClient } from 'npm:@supabase/supabase-js@2.119.0';
 
 const MAX_REQUEST_BYTES = 256;
+const MAX_REQUEST_READ_TIMEOUT_MS = 4_000;
 const MAX_PDF_BYTES = 15 * 1024 * 1024;
 const ALLOWED_ORIGINS = new Set([
   'https://www.benoitcantin.com',
@@ -79,9 +80,9 @@ Deno.serve(async (req) => {
     if (requestUrl.search) return errorResponse(req, 400);
 
     const type = (req.headers.get('content-type') || '').toLowerCase();
-    if (!type.startsWith('application/json')) return errorResponse(req, 415);
-    const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);
-    if (!limited.ok) return errorResponse(req, 413);
+    if (!/^application\/json(?:\s*;|$)/.test(type)) return errorResponse(req, 415);
+    const limited = await readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS);
+    if (!limited.ok) return errorResponse(req, limited.reason === 'REQUEST_TIMEOUT' ? 408 : 413);
     const rawBody = limited.raw;
 
     let payload: unknown;

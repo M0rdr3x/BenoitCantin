@@ -16,8 +16,10 @@ REQUIRED = {
     'réponse non cachable': "'Cache-Control': 'private, no-store, max-age=0'",
     'référent masqué': "'Referrer-Policy': 'no-referrer'",
     'requête bornée': 'const MAX_REQUEST_BYTES = 256;',
-    'lecture bornée par flux': 'const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);',
-    'refus dépassement en flux': 'if (!limited.ok) return errorResponse(req, 413);',
+    'délai absolu de lecture': 'const MAX_REQUEST_READ_TIMEOUT_MS = 4_000;',
+    'lecture bornée avec délai': 'const limited = await readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS);',
+    'réponse HTTP 408 en cas de délai': "limited.reason === 'REQUEST_TIMEOUT' ? 408 : 413",
+    'type MIME JSON strict': r"/^application\/json(?:\s*;|$)/.test(type)",
     'jeton strict 256 bits hex': '/^[a-f0-9]{64}$/',
 }
 
@@ -25,6 +27,7 @@ FORBIDDEN = {
     'message d’exception brut': 'error.message',
     'lecture non bornée': 'await req.text()',
     'JSON non borné': 'await req.json()',
+    'ancien lecteur sans limite de temps': 'readLimitedUtf8Body(req, MAX_REQUEST_BYTES)',
     'conversion brute de l’erreur': 'String(error)',
     'sérialisation brute de l’erreur': 'JSON.stringify(error)',
     'objet erreur brut journalisé': "console.error('[life-story-delivery]', error)",
@@ -69,6 +72,7 @@ def validate(path: Path) -> list[str]:
 def self_test() -> None:
     safe = """
 const MAX_REQUEST_BYTES = 256;
+const MAX_REQUEST_READ_TIMEOUT_MS = 4_000;
 const token = 'a';
 const headers = {
   'Cache-Control': 'private, no-store, max-age=0',
@@ -80,8 +84,10 @@ function errorResponse(req, status = 404) {
 Deno.serve(async (req) => {
   if (!/^[a-f0-9]{64}$/.test(token)) return errorResponse(req);
   try {
-    const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);
-    if (!limited.ok) return errorResponse(req, 413);
+    const type = (req.headers.get('content-type') || '').toLowerCase();
+    if (!/^application\/json(?:\s*;|$)/.test(type)) return errorResponse(req, 415);
+    const limited = await readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS);
+    if (!limited.ok) return errorResponse(req, limited.reason === 'REQUEST_TIMEOUT' ? 408 : 413);
     return new Response('ok');
   } catch {
     console.error('[life-story-delivery]', { code: 'LIFE_STORY_DELIVERY_FAILED' });
@@ -120,8 +126,12 @@ Deno.serve(async (req) => {
             ),
             'code fixe retiré': safe.replace(FIXED_LOG, "console.error('[life-story-delivery]');"),
             'réponse 500 retirée': safe.replace('return errorResponse(req, 500);', 'return errorResponse(req, 400);'),
-            'lecture directe': safe.replace('const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);', 'const raw = await req.text();'),
-            'refus du dépassement retiré': safe.replace('if (!limited.ok) return errorResponse(req, 413);', ''),
+            'lecture directe': safe.replace('const limited = await readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS);', 'const raw = await req.text();'),
+            'délai supprimé': safe.replace('const MAX_REQUEST_READ_TIMEOUT_MS = 4_000;', ''),
+            'lecteur sans deadline': safe.replace('readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS)', 'readLimitedUtf8Body(req, MAX_REQUEST_BYTES)'),
+            'faux MIME JSON accepté': safe.replace(r"/^application\/json(?:\s*;|$)/.test(type)", "type.startsWith('application/json')"),
+            'timeout non distingué': safe.replace("limited.reason === 'REQUEST_TIMEOUT' ? 408 : 413", "limited.reason === 'REQUEST_TIMEOUT' ? 413 : 413"),
+            'refus du dépassement retiré': safe.replace("if (!limited.ok) return errorResponse(req, limited.reason === 'REQUEST_TIMEOUT' ? 408 : 413);", ''),
             'no-store retiré': safe.replace("  'Cache-Control': 'private, no-store, max-age=0',\n", ''),
         }
 
