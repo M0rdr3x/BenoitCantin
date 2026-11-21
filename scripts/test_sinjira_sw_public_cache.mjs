@@ -12,7 +12,7 @@ function harness() {
   const writes = [];
   const requests = [];
   let online = true;
-  let reply = () => new Response('public', { status: 200 });
+  let reply = req => new Response('precache:' + new URL(req.url).pathname, { status: 200 });
   const key = request => new URL(typeof request === 'string' ? request : request.url, ORIGIN).href;
   const open = async name => {
     if (!stores.has(name)) stores.set(name, new Map());
@@ -64,25 +64,29 @@ test('installation publique et nettoyage limité aux caches de ce site', async (
   const h = harness();
   h.stores.set('benoitcantin-v24-4-95-public-4', new Map());
   h.stores.set('benoitcantin-v24-4-95-public-6', new Map());
+  h.stores.set('benoitcantin-v24-4-95-public-7', new Map());
   await h.lifecycle('install');
   await h.lifecycle('activate');
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-4'), false);
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-6'), false);
+  assert.equal(h.stores.has('benoitcantin-v24-4-95-public-7'), false);
   assert.equal(await (await h.caches.match('/assets/icons/sinjira-officiel-20261120.png')).text(), 'precache:/assets/icons/sinjira-officiel-20261120.png');
   assert.equal(h.stores.has('another-app-cache'), true);
   assert.equal(await (await h.caches.match('/')).text(), 'precache:/');
   assert.equal(await h.caches.match('/compte/'), undefined);
 });
 
-test('seules les pages publiques approuvées sont cachées', async () => {
+test('les pages HTML ne sont jamais ajoutées au cache pendant la navigation', async () => {
   const h = harness(); await h.lifecycle('install'); h.writes.length = 0;
   await h.request('/');
-  assert.equal(h.writes.length, 1);
+  assert.equal(h.writes.length, 0);
   for (const path of ['/profil-prive-inconnu/', '/app/', '/compte/connexion.html', '/admin/', '/supabase/', '/histoire-de-vie/']) {
     await h.request(path);
   }
-  assert.equal(h.writes.length, 1);
+  assert.equal(h.writes.length, 0);
   assert.equal(h.requests.at(-1).cache, 'no-store');
+  h.setOnline(false);
+  assert.equal(await (await h.request('/')).text(), 'precache:/');
 });
 
 test('GET JSON, URL à paramètres et headers sensibles ne sont jamais cachés', async () => {
@@ -100,8 +104,15 @@ test('les réponses privées, non stockables, partielles ou redirigées sont ref
   for (const init of [
     { headers: { 'Cache-Control': 'private, max-age=30' } },
     { headers: { 'Cache-Control': 'no-store' } },
+    { headers: { 'Cache-Control': 'no-cache, max-age=300' } },
+    { headers: { 'Cache-Control': 'public, no-cache="Set-Cookie"' } },
+    { headers: { Pragma: 'no-cache' } },
     { headers: { 'Set-Cookie': 'session=fictive' } },
     { headers: { Vary: '*' } },
+    { headers: { Vary: 'Cookie' } },
+    { headers: { Vary: 'Accept-Language, AUTHORIZATION' } },
+    { headers: { Vary: 'Proxy-Authorization' } },
+    { headers: { Vary: 'Set-Cookie' } },
     { status: 206 },
   ]) {
     h.setReply(() => new Response('non public', { status: init.status ?? 200, headers: init.headers }));
@@ -123,4 +134,53 @@ test('hors ligne, le CSS versionné précaché reste disponible sans cacher la q
   assert.equal(await css.text(), 'precache:/assets/css/home-sinjira-only-v1.css');
   assert.equal(h.writes.length, 0);
   assert.equal(await (await h.request('/accueil-non-precachee.html')).text(), 'precache:/offline.html');
+});
+
+test('précache sans cookie : toutes les requêtes sont anonymes et non stockées côté HTTP', async () => {
+  const h = harness();
+  await h.lifecycle('install');
+  assert.ok(h.requests.length >= 20, 'CORE précharge plusieurs fichiers publics');
+  for (const req of h.requests) {
+    assert.equal(req.credentials, 'omit', 'aucun cookie/session pour le précache');
+    assert.equal(req.cache, 'no-store');
+    assert.equal(req.redirect, 'error', 'aucune redirection vers une autre origine');
+  }
+  assert.equal(await (await h.caches.match('/')).text(), 'precache:/');
+});
+
+test('le précache échoue fermement si une page publique reçoit une réponse privée', async () => {
+  for (const headers of [
+    { 'Cache-Control': 'private, max-age=300' },
+    { 'Cache-Control': 'no-store' },
+    { 'Cache-Control': 'no-cache, max-age=60' },
+    { Pragma: 'no-cache' },
+    { Vary: 'Accept-Language, Cookie' },
+    { Vary: 'Authorization' },
+    { 'Set-Cookie': 'session=synthetic' },
+  ]) {
+    const h = harness();
+    h.setReply(req => new Response('synthetic', {
+      status: 200,
+      headers: new URL(req.url).pathname === '/' ? headers : {},
+    }));
+    await assert.rejects(h.lifecycle('install'), /Réponse non publique refusée au précache/);
+    assert.equal(await h.caches.match('/'), undefined,
+      'une page personnalisée ne doit jamais apparaître dans CacheStorage');
+  }
+});
+
+test('une ressource statique est téléchargée sans cookies; le chemin privé garde sa session', async () => {
+  const h = harness(); await h.lifecycle('install'); h.writes.length = 0;
+  const requests = [];
+  h.setReply(req => {
+    requests.push(req);
+    return new Response('anonymous asset');
+  });
+  await h.request('/assets/js/site.js', { destination: 'script' });
+  assert.equal(requests.at(-1).credentials, 'omit');
+  assert.equal(h.writes.length, 1, 'le JS public peut être mémorisé après validation');
+  await h.request('/compte/index.html', { destination: 'document' });
+  assert.equal(requests.at(-1).credentials, 'same-origin',
+    'les accès privés doivent conserver les credentials pour le serveur');
+  assert.equal(h.writes.length, 1, 'aucune donnée privée n’est mémorisée');
 });
