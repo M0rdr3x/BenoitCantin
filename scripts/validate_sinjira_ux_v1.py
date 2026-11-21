@@ -92,8 +92,8 @@ def check():
         if 'data-sinjira-ux="v1"' not in text:
             problems.append(f"{relative}: configuration de l'interface mobile absente")
         # Accepter une nouvelle version de cache sans relâcher le chemin exact
-        # du CSS ni la vérification d\'un vrai élément <link rel=stylesheet>.
-        if not any(re.fullmatch(r"/assets/css/site-ux-sinjira-v1\\.css\\?v=[0-9]+(?:\\.[0-9]+)*", href)
+        # du CSS ni la vérification d'un vrai élément <link rel=stylesheet>.
+        if not any(re.fullmatch(r"/assets/css/site-ux-sinjira-v1\.css\?v=[0-9]+(?:\.[0-9]+)*", href)
                    for href in parser.stylesheets):
             problems.append(f"{relative}: feuille de style adaptée absente")
         boot = '/assets/js/sinjira-nav-boot-v2.js?v=2.0.0'
