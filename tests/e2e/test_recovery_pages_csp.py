@@ -89,7 +89,7 @@ def retry_offline(browser, js_enabled):
                 )
         # Un formulaire GET peut ajouter un « ? » final, qui reste la même
         # route HTTP mais ne correspond pas à un motif glob littéral.
-        pattern = re.compile(re.escape(BASE + "/temoin-connexion/") + r"(?:\\?.*)?$")
+        pattern = re.compile(re.escape(BASE + "/temoin-connexion/") + r"(?:\?.*)?$")
         page.route(pattern, serve_recovery)
         page.goto(BASE + "/temoin-connexion/", wait_until="domcontentloaded")
         page.get_by_role("button", name="Réessayer la connexion").click()
