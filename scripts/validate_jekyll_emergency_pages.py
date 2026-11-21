@@ -24,6 +24,8 @@ BLOCKED = (
     "netlify.toml",
     "vercel.json",
     "package.json",
+    "tools/netlify-cli/package.json",
+    "tools/netlify-cli/package-lock.json",
     "_config.yml",
     "projets/projet-nova/official/versions/V322/V322_CURRENT_STATE.json",
     "projets/projet-nova/official/versions/V316/README.md",
@@ -71,7 +73,7 @@ BLOCKED_EXTS = {
     ".7z", ".rar", ".tar", ".gz",
 }
 BLOCKED_DIRS = (
-    "supabase/", "tests/", "mobile-native/", "scripts/", "docs/",
+    "supabase/", "tests/", "mobile-native/", "scripts/", "docs/", "tools/",
     ".github/", ".git/", "projets/projet-nova/official/versions/",
 )
 # Le Codex public possède une seule page HTML approuvée. Un futur export,
@@ -173,7 +175,7 @@ def validate_source() -> list[str]:
                 for item in sorted(included - expected):
                     errors.append("JSON NOVA non approuvé inclus dans Jekyll : " + item)
     for key in (
-        "exclude:", "include:", "- \"supabase\"", "- \"scripts\"",
+        "exclude:", "include:", "- \"supabase\"", "- \"scripts\"", "- \"tools\"",
         "- \"tests\"", "- \"mobile-native\"", "- \"docs\"",
         "- \"projets/projet-nova/official/versions\"",
         "- \"**/*.csv\"", "- \"**/*.ts\"", "- \"**/*.tsx\"",
@@ -203,6 +205,14 @@ def self_test() -> None:
             errors = validate(root, require_all=False)
             assert any(item in x for x in errors), ("Exposition non détectée", item)
             path.unlink()
+        # Un fichier au format apparemment public dans tools/ reste interdit.
+        staged_tool = root / "tools/netlify-cli/fake-public.html"
+        staged_tool.parent.mkdir(parents=True, exist_ok=True)
+        staged_tool.write_text("synthetic", "utf-8")
+        violations = validate(root, require_all=False)
+        assert any("Répertoire technique publié : tools/netlify-cli/fake-public.html" in x
+                   for x in violations), "La publication de tools/ doit être bloquée."
+        staged_tool.unlink()
         safe = root / "index.html"
         safe.write_text("<!doctype html><title>Site test</title>", "utf-8")
         assert validate(root, require_all=False) == [], "Page de test légitime refusée"
