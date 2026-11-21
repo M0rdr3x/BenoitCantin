@@ -182,17 +182,31 @@
     }
     back.addEventListener('click', function () { slideAccount(-1); });
     forward.addEventListener('click', function () { slideAccount(1); });
-    accountScroll.addEventListener('scroll', scrollLimits, { passive: true });
-    window.addEventListener('resize', scrollLimits);
-    window.addEventListener('load', scrollLimits, { once: true });
-
-    // Afficher immédiatement la rubrique courante sans déplacer la page.
-    var currentTab = accountNav.querySelector('a[aria-current="page"]');
-    if (currentTab) {
-      var left = currentTab.offsetLeft - accountNav.offsetLeft;
-      accountScroll.scrollLeft = Math.max(0,
-        left - Math.round(accountScroll.clientWidth * .28));
+    // Le passage bureau -> mobile doit également replacer la rubrique
+    // active dans la zone visible (elle pouvait rester hors écran).
+    function revealCurrentTab() {
+      if (!window.matchMedia('(max-width: 1020px)').matches) return;
+      var currentTab = accountNav.querySelector('a[aria-current="page"]');
+      if (!currentTab) return;
+      var activeRect = currentTab.getBoundingClientRect();
+      var viewportRect = accountScroll.getBoundingClientRect();
+      if (activeRect.left >= viewportRect.left + 2 &&
+          activeRect.right <= viewportRect.right - 2) return;
+      accountScroll.scrollLeft += activeRect.left - viewportRect.left -
+        Math.max(0, Math.round((accountScroll.clientWidth - activeRect.width) / 2));
     }
+    accountScroll.addEventListener('scroll', scrollLimits, { passive: true });
+    window.addEventListener('resize', function () {
+      scrollLimits();
+      revealCurrentTab();
+      scrollLimits();
+    });
+    window.addEventListener('load', function () {
+      scrollLimits();
+      revealCurrentTab();
+      scrollLimits();
+    }, { once: true });
+    revealCurrentTab();
     scrollLimits();
     if (typeof ResizeObserver !== 'undefined') {
       new ResizeObserver(scrollLimits).observe(accountNav);
