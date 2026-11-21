@@ -6,7 +6,9 @@ Tests passifs : site local uniquement, aucune authentification ni donnée privé
 from __future__ import annotations
 
 import os
+import re
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from playwright.sync_api import sync_playwright
 
@@ -85,12 +87,21 @@ def retry_offline(browser, js_enabled):
                     body="<html lang='fr'><title>Reprise</title>"
                          "<main><h1>Connexion rétablie</h1></main></html>",
                 )
-        page.route("**/temoin-connexion/", serve_recovery)
+        # Un formulaire GET peut ajouter un « ? » final, qui reste la même
+        # route HTTP mais ne correspond pas à un motif glob littéral.
+        pattern = re.compile(re.escape(BASE + "/temoin-connexion/") + r"(?:\\?.*)?$")
+        page.route(pattern, serve_recovery)
         page.goto(BASE + "/temoin-connexion/", wait_until="domcontentloaded")
         page.get_by_role("button", name="Réessayer la connexion").click()
-        page.get_by_role("heading", name="Connexion rétablie").wait_for()
+        try:
+            page.get_by_role("heading", name="Connexion rétablie").wait_for(timeout=8000)
+        except Exception as exc:
+            raise AssertionError(
+                f"Reprise non confirmée : visites={counter['total']}, URL={page.url}, "
+                f"titres={page.locator('h1').all_text_contents()}"
+            ) from exc
         assert counter["total"] == 2, counter
-        assert page.url == BASE + "/temoin-connexion/"
+        assert urlsplit(page.url).path == "/temoin-connexion/"
         print(f"OK {ENGINE}: reprise réseau au même URL (JavaScript {'actif' if js_enabled else 'désactivé'})")
     finally:
         context.close()
