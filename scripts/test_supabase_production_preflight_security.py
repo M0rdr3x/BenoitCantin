@@ -137,7 +137,7 @@ class SupabaseProductionPreflightSecurityTests(unittest.TestCase):
 
     def test_remote_job_must_be_manual_only(self):
         bad = self.valid.replace(REMOTE_JOB_GUARD, "    if: ${{ always() }}", 1)
-        self.assertRejected(bad, "prévol distant doit être réservé")
+        self.assertRejected(bad, "prévol distant doit exiger")
 
     def test_remote_job_requires_server_branch_protection(self):
         bad = self.valid.replace(
