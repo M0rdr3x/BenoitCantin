@@ -21,10 +21,12 @@ PINNED_ACTIONS = {
     "actions/upload-artifact": "ea165f8d65b6e75b540449e92b4886f43607fa02",
 }
 
-REMOTE_JOB_GUARD = "    if: ${{ github.event_name == 'workflow_dispatch' }}"
+REMOTE_JOB_GUARD = ("    if: ${{ github.event_name == 'workflow_dispatch' && "
+    "github.ref == 'refs/heads/main' && github.ref_protected == true }}")
 APPLY_JOB_GUARD = (
     "    if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && "
-    "inputs.confirmation == 'APPLY-SUPABASE-PRODUCTION' && github.ref == 'refs/heads/main' }}"
+    "inputs.confirmation == 'APPLY-SUPABASE-PRODUCTION' && github.ref == 'refs/heads/main' && "
+    "github.ref_protected == true }}"
 )
 REMOTE_STEP_GUARD = "if: ${{ github.event_name == 'workflow_dispatch' && steps.auth.outputs.ready == 'true' }}"
 APPLY_STEP_GUARD = "if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}"
@@ -194,7 +196,7 @@ def validate_text(text: str) -> list[str]:
     remote = jobs["remote-preflight"]
     if remote:
         if not has_exact_line(remote, REMOTE_JOB_GUARD):
-            errors.append("Le prévol distant doit être réservé au workflow_dispatch manuel au niveau exact du job.")
+            errors.append("Le prévol distant doit exiger workflow_dispatch, main et une branche protégée au niveau exact du job.")
         if "environment: production" in remote:
             errors.append("Le prévol distant non mutant ne doit pas franchir la frontière d'application production.")
         intent = step_block(remote, "Vérifier l'intention manuelle")
@@ -228,7 +230,7 @@ def validate_text(text: str) -> list[str]:
     apply = jobs["apply-production"]
     if apply:
         if not has_exact_line(apply, APPLY_JOB_GUARD):
-            errors.append("Le job d'application doit exiger workflow_dispatch + apply=true + confirmation + main au niveau exact du job.")
+            errors.append("Le job d'application doit exiger workflow_dispatch + apply=true + confirmation + main protégé au niveau exact du job.")
         if not has_exact_line(apply, "    environment: production"):
             errors.append("Le job d'application doit être attaché à l'environment GitHub production.")
         if not has_exact_line(apply, "    needs: [local-preflight, remote-preflight]"):
