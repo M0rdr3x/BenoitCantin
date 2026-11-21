@@ -45,7 +45,9 @@ function handler({authenticate=async()=>({id:'user-1'}),query=()=>{throw Error('
 
 const endpoint='https://project.supabase.co/functions/v1/get-novel-file-url';
 function request(body,extraHeaders={}){
-  return new Request(endpoint,{method:'POST',headers:{'Content-Type':'application/json',...extraHeaders},
+  const headers=new Headers({'content-type':'application/json'});
+  for(const [name,value] of Object.entries(extraHeaders))headers.set(name,value);
+  return new Request(endpoint,{method:'POST',headers,
     body:typeof body==='string'?body:JSON.stringify(body)});
 }
 async function status(server,req,want){
