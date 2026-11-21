@@ -16,6 +16,8 @@ async function init(){
     setStatus(status,'Les projets associés à votre compte ne peuvent pas être chargés. Les liens publics ci-dessus restent disponibles.','error');
     return;
   }
+  // Conserver le contrat du moteur Fracture désactivé, avec le filtre d'origine strict.
+  const safeLink=value=>safeInternalDestination(value,'');
   const [accessResult,pendingResult,ownerResult,adminResult]=await Promise.all([
     s.from('project_access').select('project_id,access_level,expires_at').eq('user_id',user.id),
     s.from('access_requests').select('project_id,status').eq('user_id',user.id).eq('status','pending'),
@@ -30,7 +32,7 @@ async function init(){
     const path=safeInternalDestination(project.public_path,'/projets/sinjira/jeux/');
     // L'ancien moteur Fracture ne respecte pas encore l'édition Déduction
     // simplifiée : ne jamais présenter son ancien accès comme un jeu jouable.
-    const play=project.slug==='fracture-du-reseau-mere'?'':safeInternalDestination(project.play_path,'');
+    const play=project.slug==='fracture-du-reseau-mere'?null:safeLink(project.play_path);
     const grant=access.get(project.id);
     const active=grant&&(!grant.expires_at||Date.parse(grant.expires_at)>Date.now());
     const isTester=elevated||(active&&grant.access_level==='tester');
