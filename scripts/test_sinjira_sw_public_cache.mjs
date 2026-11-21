@@ -113,6 +113,8 @@ test('les réponses privées, non stockables, partielles ou redirigées sont ref
     { headers: { Vary: 'Accept-Language, AUTHORIZATION' } },
     { headers: { Vary: 'Proxy-Authorization' } },
     { headers: { Vary: 'Set-Cookie' } },
+    { headers: { Vary: 'X-Account-Id' } },
+    { headers: { Vary: 'Origin' } },
     { status: 206 },
   ]) {
     h.setReply(() => new Response('non public', { status: init.status ?? 200, headers: init.headers }));
@@ -134,6 +136,21 @@ test('hors ligne, le CSS versionné précaché reste disponible sans cacher la q
   assert.equal(await css.text(), 'precache:/assets/css/home-sinjira-only-v1.css');
   assert.equal(h.writes.length, 0);
   assert.equal(await (await h.request('/accueil-non-precachee.html')).text(), 'precache:/offline.html');
+});
+
+test('seuls les en-têtes Vary de contenu public permettent le cache statique', async () => {
+  const h = harness(); await h.lifecycle('install'); h.writes.length = 0;
+  h.setReply(() => new Response('public negotiated', {
+    headers: { Vary: 'Accept-Encoding, Accept-Language' },
+  }));
+  await h.request('/assets/js/site.js', { destination: 'script' });
+  assert.equal(h.writes.length, 1, 'négociation publique bénigne autorisée');
+  h.writes.length = 0;
+  h.setReply(() => new Response('session-bound', {
+    headers: { Vary: 'X-Tenant-ID' },
+  }));
+  await h.request('/assets/js/site.js', { destination: 'script' });
+  assert.equal(h.writes.length, 0, 'un en-tête de personnalisation inconnu reste privé');
 });
 
 test('précache sans cookie : toutes les requêtes sont anonymes et non stockées côté HTTP', async () => {
