@@ -73,9 +73,7 @@ def self_test(source: str) -> int:
 
     weakened_guard = JOB_GUARD.replace(" && github.ref_protected == true", "")
     scenarios = {
-        "build sans protection": source.replace(
-            "\n  build:\n" + JOB_GUARD, "\n  build:\n" + weakened_guard, 1
-        ),
+        "build sans protection": source.replace(JOB_GUARD, weakened_guard, 1),
         "deploy sans protection": source.replace(
             "\n  deploy:\n", "\n  deploy:\n", 1
         ).replace("\n" + JOB_GUARD + "\n    permissions:\n      contents: read\n      pages: write",
