@@ -30,7 +30,19 @@
   ],
   "shortcuts": [
     {
-      "name": "App sociale",
+      "name": "Découvrir SINJIRA™",
+      "short_name": "SINJIRA™",
+      "url": "/projets/sinjira/",
+      "icons": [
+        {
+          "src": "/android-chrome-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "App sociale SINJIRA™",
       "short_name": "Fil",
       "url": "/app/",
       "icons": [
@@ -42,19 +54,7 @@
       ]
     },
     {
-      "name": "Statut de la démo du Livre I",
-      "short_name": "Démo en révision",
-      "url": "/projets/sinjira/romans/lire-demo.html",
-      "icons": [
-        {
-          "src": "/android-chrome-192x192.png",
-          "sizes": "192x192",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Romans",
+      "name": "Les romans",
       "short_name": "Romans",
       "url": "/projets/sinjira/romans/",
       "icons": [
@@ -78,8 +78,20 @@
       ]
     },
     {
+      "name": "Communauté SINJIRA™",
+      "short_name": "Communauté",
+      "url": "/projets/sinjira/communaute/",
+      "icons": [
+        {
+          "src": "/android-chrome-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
       "name": "Monde parallèle",
-      "short_name": "Monde parallèle",
+      "short_name": "Monde",
       "url": "/projets/sinjira/monde-parallele/",
       "icons": [
         {
