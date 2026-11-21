@@ -1,10 +1,12 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredVaultUser } from '../_shared/auth.ts';
+import { readLimitedUtf8BodyWithDeadline } from '../_shared/read-chunk-deadline.mjs';
 
 const MAX_CONTENT_BYTES = 1024 * 1024;
 // Un JSON peut représenter un même texte avec des séquences \uXXXX plus longues.
 // La limite de transport reste bornée tout en permettant une entrée décodée de 1 Mio.
 const MAX_REQUEST_BYTES = MAX_CONTENT_BYTES * 6 + 64 * 1024;
+const MAX_REQUEST_READ_TIMEOUT_MS = 20_000;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const PRIVATE_HEADERS = {
   ...corsHeaders,
@@ -22,43 +24,22 @@ function privateJson(data: unknown, status = 200) {
 async function readBoundedJson(req: Request) {
   const contentType = (req.headers.get('content-type') || '').split(';', 1)[0].trim().toLowerCase();
   if (contentType !== 'application/json') throw new Error('JSON_REQUIRED');
-
-  const declaredRaw = req.headers.get('content-length');
-  if (declaredRaw) {
-    const declared = Number(declaredRaw);
-    if (Number.isFinite(declared) && declared > MAX_REQUEST_BYTES) throw new Error('REQUEST_TOO_LARGE');
-  }
-
   if (!req.body) throw new Error('INVALID_JSON');
-  const reader = req.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  try {
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      if (!value) continue;
-      total += value.byteLength;
-      if (total > MAX_REQUEST_BYTES) {
-        await reader.cancel('REQUEST_TOO_LARGE').catch(() => undefined);
-        throw new Error('REQUEST_TOO_LARGE');
-      }
-      chunks.push(value);
-    }
-  } finally {
-    reader.releaseLock();
-  }
 
-  const bytes = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
+  // Une échéance absolue protège les données du coffre contre les flux
+  // maintenus ouverts. L'annulation du lecteur ne doit jamais être attendue.
+  const limited = await readLimitedUtf8BodyWithDeadline(
+    req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS
+  );
+  if (!limited.ok) {
+    if (limited.reason === 'REQUEST_TIMEOUT') throw new Error('REQUEST_TIMEOUT');
+    if (limited.reason === 'REQUEST_TOO_LARGE') throw new Error('REQUEST_TOO_LARGE');
+    throw new Error('INVALID_JSON');
   }
 
   let parsed: unknown;
   try {
-    parsed = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+    parsed = JSON.parse(limited.raw);
   } catch {
     throw new Error('INVALID_JSON');
   }
@@ -183,6 +164,7 @@ function errorCode(error: unknown) {
     'MFA_STATE_UNAVAILABLE',
     'JSON_REQUIRED',
     'REQUEST_TOO_LARGE',
+    'REQUEST_TIMEOUT',
     'INVALID_JSON',
     'CLIENT_IDENTITY_FORBIDDEN',
     'VAULT_SESSION_REQUIRED',
@@ -376,6 +358,9 @@ Deno.serve(async (req) => {
     }
     if (code === 'REQUEST_TOO_LARGE') {
       return privateJson({ ok: false, error: 'Requête trop volumineuse.', code }, 413);
+    }
+    if (code === 'REQUEST_TIMEOUT') {
+      return privateJson({ ok: false, error: 'Délai de transmission dépassé.', code }, 408);
     }
     if (code === 'INVALID_JSON') {
       return privateJson({ ok: false, error: 'JSON invalide.', code }, 400);

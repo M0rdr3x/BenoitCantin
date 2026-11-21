@@ -20,13 +20,17 @@ def need_ci(text,marker,label):
 def forbid(text,marker,label):
     if marker in text: errors.append(label)
 
-for marker in ('requiredPersonalAiUser','readBoundedJson','req.body.getReader()','service_personal_ai_evaluate_access','CLIENT_IDENTITY_FORBIDDEN','private, no-store','X-Content-Type-Options','Referrer-Policy'):
+for marker in ('requiredPersonalAiUser','readBoundedJson','readLimitedUtf8BodyWithDeadline','MAX_REQUEST_READ_TIMEOUT_MS = 4_000','REQUEST_TIMEOUT','code,error', 'service_personal_ai_evaluate_access','CLIENT_IDENTITY_FORBIDDEN','private, no-store','X-Content-Type-Options','Referrer-Policy'):
     need(EDGE,marker,f'Edge: garde manquante {marker}')
+need(EDGE,"req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS",'Edge: lecture avec limite absolue absente')
+need(EDGE,"code==='REQUEST_TIMEOUT') return privateJson({ok:false,code,error:'Délai de transmission dépassé.'},408)",'Edge: HTTP 408 de requête lente absent')
+need(EDGE,"limited.reason === 'REQUEST_TIMEOUT'",'Edge: erreur de lecture lente non distinguée')
+need(EDGE,"limited.reason === 'REQUEST_TOO_LARGE'",'Edge: octets de requête non bornés')
 need(EDGE,"service_personal_ai_get_state",'Edge: RPC état absente')
 need(EDGE,"service_personal_ai_update_settings",'Edge: RPC réglages absente')
 need(EDGE,"service_personal_ai_set_source_permission",'Edge: RPC consentement absente')
 need(EDGE,"service_personal_ai_delete_data",'Edge: RPC suppression absente')
-for marker in ("await req.json()","service.rpc('security_evaluate_context'","conscience_entries","service_conscience_","life_story_entries","employment_profiles","employment_applications"):
+for marker in ("await req.json()","req.body.getReader()","await reader.read()","await reader.cancel(","service.rpc('security_evaluate_context'","conscience_entries","service_conscience_","life_story_entries","employment_profiles","employment_applications"):
     forbid(EDGE,marker,f'Edge: accès/lecture interdite détectée {marker}')
 for action in ("'chat'","'memory'","'retrieve_source'","'complete'","'generate'"):
     forbid(EDGE,action,f'Edge: runtime IA prématuré détecté {action}')

@@ -1,7 +1,9 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredPersonalAiUser } from '../_shared/auth.ts';
+import { readLimitedUtf8BodyWithDeadline } from '../_shared/read-chunk-deadline.mjs';
 
 const MAX_REQUEST_BYTES = 16 * 1024;
+const MAX_REQUEST_READ_TIMEOUT_MS = 4_000;
 // Le scope est fixé dans service_personal_ai_evaluate_access; l'Edge ne peut pas le réduire.
 const RISK_SCOPE = 'ai_private';
 // Contrat de fondation : conversation_enabled=false; source_retrieval_enabled=false.
@@ -21,30 +23,20 @@ function privateJson(data: unknown, status = 200) {
 async function readBoundedJson(req: Request) {
   const type = (req.headers.get('content-type') || '').split(';', 1)[0].trim().toLowerCase();
   if (type !== 'application/json') throw new Error('JSON_REQUIRED');
-  const declared = Number(req.headers.get('content-length') || 0);
-  if (Number.isFinite(declared) && declared > MAX_REQUEST_BYTES) throw new Error('REQUEST_TOO_LARGE');
   if (!req.body) throw new Error('INVALID_JSON');
-  const reader = req.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
+
+  // Même délai absolu sur tous les fragments, jamais une durée renouvelée
+  // par chaque fragment reçu. L'annulation reste consultative et non bloquante.
+  const limited = await readLimitedUtf8BodyWithDeadline(
+    req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS
+  );
+  if (!limited.ok) {
+    if (limited.reason === 'REQUEST_TIMEOUT') throw new Error('REQUEST_TIMEOUT');
+    if (limited.reason === 'REQUEST_TOO_LARGE') throw new Error('REQUEST_TOO_LARGE');
+    throw new Error('INVALID_JSON');
+  }
   try {
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      if (!value) continue;
-      total += value.byteLength;
-      if (total > MAX_REQUEST_BYTES) {
-        await reader.cancel('REQUEST_TOO_LARGE').catch(() => undefined);
-        throw new Error('REQUEST_TOO_LARGE');
-      }
-      chunks.push(value);
-    }
-  } finally { reader.releaseLock(); }
-  const bytes = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
-  try {
-    const parsed = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+    const parsed = JSON.parse(limited.raw);
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error();
     return parsed as Record<string, unknown>;
   } catch { throw new Error('INVALID_JSON'); }
@@ -88,7 +80,7 @@ function assertDecision(value: any) {
 function errorCode(error: unknown) {
   const code = error instanceof Error ? error.message : '';
   return new Set(['AUTH_REQUIRED','MFA_SETUP_REQUIRED','MFA_REQUIRED','MFA_STATE_UNAVAILABLE','JSON_REQUIRED',
-    'REQUEST_TOO_LARGE','INVALID_JSON','CLIENT_IDENTITY_FORBIDDEN','SECURITY_DECISION_INVALID',
+    'REQUEST_TOO_LARGE','REQUEST_TIMEOUT','INVALID_JSON','CLIENT_IDENTITY_FORBIDDEN','SECURITY_DECISION_INVALID',
     'PERSONAL_AI_SOURCE_FORBIDDEN','PERSONAL_AI_LANGUAGE_INVALID']).has(code)
     ? code : 'PERSONAL_AI_OPERATION_REFUSED';
 }
@@ -160,6 +152,7 @@ Deno.serve(async (req) => {
     if (code==='MFA_STATE_UNAVAILABLE'||code==='SECURITY_DECISION_INVALID') return privateJson({ok:false,code,error:'La protection de Mon IA est temporairement indisponible.'},503);
     if (code==='JSON_REQUIRED') return privateJson({ok:false,code,error:'Corps JSON requis.'},415);
     if (code==='REQUEST_TOO_LARGE') return privateJson({ok:false,code,error:'Requête trop volumineuse.'},413);
+    if (code==='REQUEST_TIMEOUT') return privateJson({ok:false,code,error:'Délai de transmission dépassé.'},408);
     if (['INVALID_JSON','CLIENT_IDENTITY_FORBIDDEN','PERSONAL_AI_SOURCE_FORBIDDEN','PERSONAL_AI_LANGUAGE_INVALID'].includes(code)) return privateJson({ok:false,code,error:'Requête Mon IA invalide.'},400);
     return privateJson({ok:false,code,error:'Opération Mon IA refusée.'},403);
   }
