@@ -108,27 +108,26 @@ def run():
                     region.evaluate("(el) => el.scrollLeft=0")
                     page.wait_for_function("""() => {
                       const x=document.querySelector('.account-nav-scroll');
-                      return x.scrollLeft<=2;
-                    }""")
+                      const left=document.querySelector('.sinjira-account-nav-arrow');
+                      return x && left && x.scrollLeft<=2 && left.disabled;
+                    }""", timeout=5_000)
                     check(previous_button.is_disabled(),
                           f"flèche précédente disponible au bord gauche : {path}")
                     next_button.focus()
                     next_button.press("Enter")
                     page.wait_for_function("""() => {
                       const x=document.querySelector('.account-nav-scroll');
-                      return x.scrollLeft>20;
-                    }""")
-                    page.wait_for_function("""() => {
-                      const button=document.querySelector('.sinjira-account-nav-arrow');
-                      return button && !button.disabled;
-                    }""")
+                      const left=document.querySelector('.sinjira-account-nav-arrow');
+                      return x && left && x.scrollLeft>20 && !left.disabled;
+                    }""", timeout=5_000)
                     check(previous_button.is_enabled(),
                           f"la flèche précédente n'est pas réactivée : {path}")
                     previous_button.click()
                     page.wait_for_function("""() => {
                       const x=document.querySelector('.account-nav-scroll');
-                      return x.scrollLeft<=2;
-                    }""")
+                      const left=document.querySelector('.sinjira-account-nav-arrow');
+                      return x && left && x.scrollLeft<=2 && left.disabled;
+                    }""", timeout=5_000)
                 # Si JS ne fonctionne pas, les liens originaux restent défilables.
                 nojs=browser.new_context(java_script_enabled=False,
                                          viewport={"width":320,"height":720})
