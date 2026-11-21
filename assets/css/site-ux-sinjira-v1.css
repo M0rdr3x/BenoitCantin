@@ -131,3 +131,28 @@ body[data-reader-page="novel"][data-sinjira-ux="v1"] .main-nav a[aria-current]{
     white-space:normal;overflow-wrap:anywhere
   }
 }
+
+
+/* Romans et commentaires : largeur maîtrisée sur ordinateur comme sur téléphone. */
+body[data-reader-page="novel"] #commentaires .container{min-width:0}
+body[data-reader-page="novel"] #commentaires .sinjira-comments-panel{
+ width:min(100%,960px);max-width:100%;min-width:0;margin-inline:auto;
+ box-sizing:border-box;padding:clamp(18px,4vw,36px)
+}
+body[data-reader-page="novel"] #commentaires .reader-comment-form{
+ width:100%;max-width:100%;min-width:0;display:grid;gap:12px;box-sizing:border-box
+}
+body[data-reader-page="novel"] #commentaires .reader-comment-form[hidden]{display:none!important}
+body[data-reader-page="novel"] #commentaires textarea{
+ box-sizing:border-box;display:block;width:100%;max-width:100%;min-width:0;
+ min-height:148px;padding:14px 16px;resize:vertical;
+ font:inherit;font-size:max(16px,1rem);line-height:1.6
+}
+body[data-reader-page="novel"] #commentaires :where(button,.btn){min-height:48px;max-width:100%}
+body[data-reader-page="novel"] #commentaires :where(textarea,button):focus-visible{
+ outline:3px solid #ffb8a8;outline-offset:3px
+}
+@media(max-width:600px){
+ body[data-reader-page="novel"] #commentaires .reader-comment-form>button{width:100%}
+ body[data-reader-page="novel"] #commentaires .sinjira-comments-panel{padding:18px}
+}
