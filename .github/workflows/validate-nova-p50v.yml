@@ -1,0 +1,53 @@
+name: Projet Nova P50V - valider une proposition de ruleset desactive
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p50v.yml"
+      - "scripts/validate_nova_ruleset_candidate_p50v.py"
+      - "scripts/tests/test_validate_nova_ruleset_candidate_p50v.py"
+      - "projets/projet-nova/controles/P50V_*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verifier-modele-hors-ligne:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Lire la proposition sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Installer Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Verifier les regles et les 21 tests adversariaux
+        run: |
+          python -m py_compile scripts/validate_nova_ruleset_candidate_p50v.py
+          python -m unittest discover -s scripts/tests -p test_validate_nova_ruleset_candidate_p50v.py -v
+      - name: Confronter le candidat aux trois workflows de main
+        run: |
+          python scripts/validate_nova_ruleset_candidate_p50v.py --output p50v_resultat.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report=json.loads(Path("p50v_resultat.json").read_text("utf-8"))
+          assert report["validation_du_candidat"]=="CANDIDAT_CONFORME_EN_LECTURE_SEULE",report
+          assert report["decision"]=="NO_GO_AUTOMATIQUE",report
+          assert report["ruleset_installe"] is False,report
+          assert report["publication_autorisee"] is False,report
+          print("P50V : modele DESACTIVE, 3 checks universels verifies, origin GitHub Actions 15368.")
+          print("P50V : AUCUNE protection serveur installee ni GO institutionnel.")
+          PY
+      - name: Archiver uniquement un constat non nominatif
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p50v-ruleset-candidat-no-go
+          path: p50v_resultat.json
+          if-no-files-found: ignore
+          retention-days: 7
