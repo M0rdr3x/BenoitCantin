@@ -15,7 +15,8 @@ const externalUrlAllowed=new Function(implementation+'\nreturn externalUrlAllowe
 
 for(const value of [
   '/', '/projets/sinjira/documents/roman.pdf', '/compte/securite.html?tab=2#titre',
-  'https://www.benoitcantin.com/projets/sinjira/', 'https://example.org/public.pdf',
+  'https://www.benoitcantin.com/projets/sinjira/',
+  'https://www.benoitcantin.com:443/projets/sinjira/',
   '/'+ 'a'.repeat(2047)
 ]){
   assert.equal(externalUrlAllowed(value),true,'Legitimate document URL rejected: '+value.slice(0,90));
@@ -30,7 +31,7 @@ const rejected=[
   'https://example.org\\@untrusted.example/a',
   '/bad\npath', '/bad\rpath', '/bad\tpath', '/bad\u0000path',
   '/bad\u007fpath', ' /projets/sinjira/', '/projets/sinjira/ ',
-  'https://example.org/path\n', '/'+ 'x'.repeat(2048)
+  'https://example.org/path\n', 'https://example.org/public.pdf', '/'+ 'x'.repeat(2048)
 ];
 for(const value of rejected){
   assert.equal(externalUrlAllowed(value),false,'Unsafe document URL allowed: '+JSON.stringify(value).slice(0,130));
