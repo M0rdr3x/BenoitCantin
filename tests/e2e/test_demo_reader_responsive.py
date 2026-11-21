@@ -10,7 +10,7 @@ from playwright.sync_api import sync_playwright
 
 BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
 BROWSER = os.environ.get("BROWSER", "chromium").strip().lower()
-VIEWPORTS = (320, 390, 540, 768, 1280)
+VIEWPORTS = (320, 390, 430, 540, 700, 768, 1280)
 PAGE = "projets/sinjira/romans/lire-demo.html"
 OLD_DOCUMENT = "SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"
 
@@ -36,6 +36,7 @@ def run():
                                      wait_until="domcontentloaded", timeout=30_000)
                 check(response is not None and response.status < 400,
                       f"page de retrait inaccessible à {width} px")
+                page.evaluate("() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))")
                 state = page.evaluate("""() => {
                     const actions=[...document.querySelectorAll('.sinjira-release-actions .btn')];
                     const logo=document.querySelector('.site-header .brand img');
@@ -44,6 +45,9 @@ def run():
                     return {
                         overflow:document.documentElement.scrollWidth>innerWidth+2,
                         width:innerWidth, layout:getComputedStyle(wrap).gridTemplateColumns,
+                        layoutDisplay:getComputedStyle(wrap).display,
+                        stylesheet:[...document.querySelectorAll('link[rel="stylesheet"]')]
+                          .some(el=>el.getAttribute('href')?.startsWith('/assets/css/sinjira-demo-release-v1.css')),
                         targets:actions.map(el=>el.getBoundingClientRect().height),
                         offscreen:actions.some(el=>{
                             const r=el.getBoundingClientRect();
@@ -55,6 +59,8 @@ def run():
                         status:document.querySelector('main')?.textContent||''
                     };
                 }""")
+                check(state["stylesheet"] and state["layoutDisplay"] == "grid",
+                      f"CSS responsive SINJIRA absent ou inactif à {width} px : {state}")
                 check(not state["overflow"], f"débordement à {width} px : {state}")
                 check(not state["offscreen"], f"bouton hors écran à {width} px : {state}")
                 check(len(state["targets"]) >= 2 and all(h >= 44 for h in state["targets"]),
@@ -69,7 +75,7 @@ def run():
                       f"nouvelle version de validation mal décrite à {width} px")
                 check("pas encore hébergées" in state["status"],
                       f"nouvelle démo annoncée à tort comme publiée à {width} px")
-            print(f"OK {BROWSER}: retrait explicite, identité, absence de PDF périmé et ergonomie 320-1280 px")
+            print(f"OK {BROWSER}: retrait explicite, identité, absence de PDF périmé et ergonomie 320-1280 px et CSS externe")
         finally:
             context.close()
             browser.close()
