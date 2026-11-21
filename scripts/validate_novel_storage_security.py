@@ -23,7 +23,8 @@ REQUIRED = {
     "slug chaîne stricte": "typeof body.slug==='string'",
     "POST seulement": "if(req.method!=='POST')",
     "état publié": "novel.status!=='published'",
-    "droit propriétaire ou administrateur": "let entitled=Boolean(isOwner||isAdmin);",
+    "droits propriétaire et admin sans coercition": "let entitled=(ownerCheck?.error==null&&ownerCheck?.data===true)||",
+    "droit admin booléen strict": "(adminCheck?.error==null&&adminCheck?.data===true);",
     "vérification achat propriétaire": ".eq('user_id',user.id)",
     "vérification produit": ".eq('product_id',novel.product_id)",
     "rejet droit absent": "if(!entitled)return json(",
@@ -87,6 +88,8 @@ def self_test(source: str, guard: str, config: str) -> None:
         "erreur d'attente supprimée": ("if(message==='REQUEST_TIMEOUT')", "if(false)"),
         "POST retiré": ("if(req.method!=='POST')", "if(false)"),
         "statut publié ignoré": ("novel.status!=='published'", "false"),
+        "RPC propriétaire non booléenne": ("let entitled=(ownerCheck?.error==null&&ownerCheck?.data===true)||", "let entitled=(ownerCheck?.error==null&&Boolean(ownerCheck?.data))||"),
+        "RPC admin non booléenne": ("(adminCheck?.error==null&&adminCheck?.data===true);", "(adminCheck?.error==null&&Boolean(adminCheck?.data));"),
         "entitlement absent": ("if(!entitled)return json(", "if(false)return json("),
         "filtre utilisateur absent": (".eq('user_id',user.id)", ".eq('user_id','anonymous')"),
         "filtre produit absent": (".eq('product_id',novel.product_id)", ".eq('product_id','arbitrary')"),
@@ -115,7 +118,7 @@ def self_test(source: str, guard: str, config: str) -> None:
                                 "[functions.get-novel-file-url]\nverify_jwt = false", 1)
     if bad_config == config or not check_source(source, guard, bad_config):
         raise AssertionError("Désactivation JWT non détectée")
-    print("OK : 21 mutations négatives refusées (droits, flux avec délai, bucket, JWT, TTL, cache et journal)")
+    print("OK : 23 mutations négatives refusées (droits RPC stricts, flux avec délai, bucket, JWT, TTL, cache et journal)")
 
 def main() -> int:
     p = argparse.ArgumentParser()
