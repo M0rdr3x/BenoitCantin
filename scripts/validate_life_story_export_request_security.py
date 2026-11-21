@@ -13,7 +13,13 @@ REQUIRED = {
     'POST uniquement': "req.method !== 'POST'",
     'administrateur authentifié': 'requiredAdmin(req)',
     'lecture JSON bornée': 'readLimitedJson(req)',
-    'mesure UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
+    'plafond lecture HTTP 4 secondes': 'MAX_REQUEST_READ_TIMEOUT_MS = 4_000;',
+    'lecteur HTTP à échéance absolue': 'readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS)',
+    'lecteur partagé': "from '../_shared/read-chunk-deadline.mjs';",
+    'MIME JSON strict': "contentType !== 'application/json'",
+    'délai de transfert reconnu': "limited.reason === 'REQUEST_TIMEOUT'",
+    'taille réelle refusée': "limited.reason === 'REQUEST_TOO_LARGE'",
+    'HTTP 408 explicite': "Délai de transmission dépassé.' }, 408)",
     'réponse privée': "'Cache-Control': 'private, no-store, max-age=0'",
     'désactivation cache historique': "'Pragma': 'no-cache'",
     'protection MIME': "'X-Content-Type-Options': 'nosniff'",
@@ -47,6 +53,10 @@ REQUIRED_PATTERNS = {
 FORBIDDEN = {
     'lecture JSON directe non bornée': 'await req.json()',
     'lecture JSON directe non bornée espacée': 'await req.json (',
+    'lecture texte non bornée': 'await req.text()',
+    'ancien lecteur sans échéance': 'readLimitedUtf8Body(req, MAX_REQUEST_BYTES)',
+    'lecture directe sans deadline': 'await reader.read()',
+    'annulation bloquante': 'await reader.cancel(',
     'jeton dans la query string': '?token=',
     'lecture du Registre reader_characters': 'reader_characters',
     'lecture du Registre registry_account_links': 'registry_account_links',
@@ -93,6 +103,8 @@ def self_test() -> None:
         path = Path(raw) / 'index.ts'
         safe = """
 const MAX_REQUEST_BYTES = 4096;
+const MAX_REQUEST_READ_TIMEOUT_MS = 4_000;
+import { readLimitedUtf8BodyWithDeadline } from '../_shared/read-chunk-deadline.mjs';
 const DELIVERY_PAGE = 'https://www.benoitcantin.com/histoire-de-vie/remise.html';
 const PRIVATE_HEADERS = {
   'Cache-Control': 'private, no-store, max-age=0',
@@ -106,9 +118,14 @@ const SAFE_ERROR_CODES = new Set([
 ]);
 function privateJson(data, status=200){return new Response(JSON.stringify(data),{status,headers:PRIVATE_HEADERS})}
 async function readLimitedJson(req){
- const rawLength=req.headers.get('content-length');
- const raw=await req.text();
- new TextEncoder().encode(raw).byteLength;
+ const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
+ if (contentType !== 'application/json') return {response:privateJson({},415)};
+ const limited=await readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS);
+ if(!limited.ok) {
+   if(limited.reason === 'REQUEST_TIMEOUT') return {response:privateJson({error:'Délai de transmission dépassé.' }, 408)};
+   if(limited.reason === 'REQUEST_TOO_LARGE') return {response:privateJson({},413)};
+   return {response:privateJson({},400)};
+ }
  return {body:{}};
 }
 function classifyExportError(error) {
@@ -169,6 +186,23 @@ privateJson({});
         body_size = validate(path)
         if not any('4096 octets' in item for item in body_size):
             raise AssertionError('Une limite de corps affaiblie doit être bloquée.')
+
+        security_mutations = {
+            'délai supprimé': ('MAX_REQUEST_READ_TIMEOUT_MS = 4_000;', ''),
+            'lecteur non temporisé': (
+                'readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS)',
+                'readLimitedUtf8Body(req, MAX_REQUEST_BYTES)'
+            ),
+            'MIME contourné': ("contentType !== 'application/json'", 'false'),
+            'HTTP 408 retiré': ("Délai de transmission dépassé.' }, 408)", "Délai de transmission dépassé.' }, 413)"),
+            'erreur taille ignorée': ("limited.reason === 'REQUEST_TOO_LARGE'", 'false'),
+        }
+        for label, (marker, replacement) in security_mutations.items():
+            if marker not in safe:
+                raise AssertionError(f'Mutation invalide sans ancre: {label}')
+            path.write_text(safe.replace(marker, replacement, 1), encoding='utf-8')
+            if not validate(path):
+                raise AssertionError(f'Mutation de sécurité non détectée: {label}')
 
         path.write_text(safe.replace('assertLifeStoryBoundary(record);', '// boundary removed'), encoding='utf-8')
         boundary = validate(path)
@@ -236,7 +270,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK life-story-export: admin/JWT avant corps, JSON 4 KiB, réponses no-store, frontière Histoire de vie et erreurs backend sanitizées.')
+    print('OK life-story-export: admin/JWT avant corps, JSON strict 4 KiB/4 s, HTTP 408, no-store, frontière de données, erreurs nettoyées.')
     return 0
 
 
