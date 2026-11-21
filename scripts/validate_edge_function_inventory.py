@@ -113,7 +113,10 @@ JWT_SENSITIVE_GUARDS = {
         "Referrer-Policy", "no-referrer",
     ),
     "submit-game-contribution": (
-        "req.method!=='POST'", "MAX_REQUEST_BYTES=2048", "readBoundedJson", "TextEncoder",
+        "req.method!=='POST'", "MAX_REQUEST_BYTES=2048", "MAX_REQUEST_READ_TIMEOUT_MS=4_000",
+        "readBoundedJson", "read-chunk-deadline.mjs",
+        "readLimitedUtf8BodyWithDeadline(req,MAX_REQUEST_BYTES,MAX_REQUEST_READ_TIMEOUT_MS)",
+        "REQUEST_TIMEOUT", "TextEncoder",
         "JSON_REQUIRED", "REQUEST_TOO_LARGE", "INVALID_JSON", "UUID_RE", "INVALID_SESSION",
         "p_user_id:user.id", "select('id,game_slug,play_mode,human_player_count,effective_player_count,player_count,duration_minutes')",
         "submitted:true", "Cache-Control", "private, no-store", "X-Content-Type-Options",
@@ -326,9 +329,13 @@ def main() -> int:
     for slug, (auth, consumer) in STREAMED_REQUEST_ROUTES.items():
         src = read_security_text(FUNCTIONS / slug / "index.ts")
         compact = re.sub(r"\s+", "", src)
+        expected_reader = (
+            "awaitreadLimitedUtf8BodyWithDeadline(req,MAX_REQUEST_BYTES,MAX_REQUEST_READ_TIMEOUT_MS)"
+            if slug == "submit-game-contribution"
+            else "awaitreadLimitedUtf8Body(req,MAX_REQUEST_BYTES)"
+        )
         if ("awaitreq.text()" in compact or "awaitreq.json()" in compact or
-                "awaitreadLimitedUtf8Body(req,MAX_REQUEST_BYTES)" not in compact or
-                "if(!limited.ok)" not in compact):
+                expected_reader not in compact or "if(!limited.ok)" not in compact):
             errors.append(f"{slug}: lecteur HTTP non borné, ou erreur de flux non refusée.")
         auth_call = src.find(f"await {auth}(req)")
         body_call = src.find(f"await {consumer}(req")
@@ -376,6 +383,11 @@ def main() -> int:
             errors.append(f"personal-ai: lecture directe de source interdite dans la fondation V25: {forbidden}.")
 
     contribution_source = read_tree_text(FUNCTIONS / "submit-game-contribution")
+    if ("console.error('[submit-game-contribution]',{code:'GAME_CONTRIBUTION_FAILED'})"
+            not in contribution_source or
+            "console.error('[submit-game-contribution]',e)" in contribution_source or
+            "console.error(e)" in contribution_source):
+        errors.append("submit-game-contribution: journal d'exception brut ou garde d'expurgation absent.")
     if "contribution_id" in contribution_source:
         errors.append("submit-game-contribution: un UUID interne de contribution ne doit pas sortir vers le client.")
     if ".select('*')" in contribution_source:

@@ -28,7 +28,9 @@ def validate_text(text: str) -> None:
         f"python-version: '{PYTHON_VERSION}'",
         'python scripts/validate_game_contribution_workflow_security.py --self-test',
         'python scripts/validate_game_contribution_workflow_security.py',
-        'python scripts/validate_game_contribution_v24_5_53.py',
+        '          python scripts/validate_game_contribution_v24_5_53.py\n',
+        'python scripts/validate_game_contribution_v24_5_53.py --self-test',
+        'node scripts/test_game_contribution_request_boundary.mjs',
         'python scripts/validate_contribution_revocation_v24_5_52.py',
         'python scripts/validate_delete_account_v24_5_51.py',
         'python scripts/validate_edge_function_inventory.py',
@@ -93,6 +95,10 @@ def self_test(text: str) -> None:
             1,
         ),
         'contrôle UUID retiré': text.replace('          python scripts/validate_game_contribution_v24_5_53.py\n', '', 1),
+        'test réel HTTP retiré': text.replace(
+            '        run: node scripts/test_game_contribution_request_boundary.mjs\n', '', 1),
+        'mutations de sécurité retirées': text.replace(
+            '        run: python scripts/validate_game_contribution_v24_5_53.py --self-test\n', '', 1),
         'révocation retirée': text.replace('          python scripts/validate_contribution_revocation_v24_5_52.py\n', '', 1),
         'suppression de compte retirée': text.replace('          python scripts/validate_delete_account_v24_5_51.py\n', '', 1),
         'inventaire Edge retiré': text.replace('          python scripts/validate_edge_function_inventory.py\n', '', 1),

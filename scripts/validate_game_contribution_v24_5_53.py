@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import argparse
 import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -9,7 +10,77 @@ CONFIG = ROOT / 'supabase/config.toml'
 MIGRATIONS = ROOT / 'supabase/migrations'
 
 
+def validate_request_privacy(source: str) -> list[str]:
+    """Regression guard for the real authenticated HTTP request boundary."""
+    required = {
+        'délai 4 secondes': 'MAX_REQUEST_READ_TIMEOUT_MS=4_000;',
+        'lecteur partagé à échéance absolue': "from '../_shared/read-chunk-deadline.mjs';",
+        'appel du lecteur sécurisé': 'readLimitedUtf8BodyWithDeadline(req,MAX_REQUEST_BYTES,MAX_REQUEST_READ_TIMEOUT_MS)',
+        'délai de lecture signalé': "limited.reason==='REQUEST_TIMEOUT'",
+        'HTTP 408 explicite': "code:'REQUEST_TIMEOUT'},408)",
+        'rejet des octets excédentaires': "limited.reason==='REQUEST_TOO_LARGE'",
+        'authentification': "const user=await requiredUser(req);",
+        'corps JSON typé': "contentType!=='application/json'",
+        'log fixe, sans exception': "console.error('[submit-game-contribution]',{code:'GAME_CONTRIBUTION_FAILED'});",
+    }
+    errors = [f'Contributions : garde absent : {label}'
+              for label, marker in required.items() if marker not in source]
+    forbidden = (
+        'await req.text()', 'await req.json()',
+        'await readLimitedUtf8Body(req,MAX_REQUEST_BYTES)',
+        "console.error('[submit-game-contribution]',e)",
+        'console.error(e)', 'console.warn(e)',
+        "console.error('[submit-game-contribution]',error)",
+    )
+    for marker in forbidden:
+        if marker in source:
+            errors.append(f'Contributions : accès ou journal dangereux : {marker}')
+    auth_at = source.find("const user=await requiredUser(req);")
+    read_at = source.find("const body=await readBoundedJson(req);")
+    if auth_at < 0 or read_at <= auth_at:
+        errors.append("Contributions : authentification obligatoire avant lecture de l'entrée.")
+    return errors
+
+
+def self_test() -> None:
+    clean = FN.read_text('utf-8', errors='strict')
+    problems = validate_request_privacy(clean)
+    if problems:
+        raise AssertionError("Le code actuel doit passer : " + " | ".join(problems))
+    mutations = {
+        'délai retiré': clean.replace('MAX_REQUEST_READ_TIMEOUT_MS=4_000;', '', 1),
+        'ancien lecteur sans échéance': clean.replace(
+            'readLimitedUtf8BodyWithDeadline(req,MAX_REQUEST_BYTES,MAX_REQUEST_READ_TIMEOUT_MS)',
+            'readLimitedUtf8Body(req,MAX_REQUEST_BYTES)', 1),
+        'délai masqué en 413': clean.replace(
+            "code:'REQUEST_TIMEOUT'},408)", "code:'REQUEST_TIMEOUT'},413)", 1),
+        'erreur brute journalisée': clean.replace(
+            "console.error('[submit-game-contribution]',{code:'GAME_CONTRIBUTION_FAILED'});",
+            "console.error('[submit-game-contribution]',e);", 1),
+        'authentification après le corps': clean.replace(
+            "const user=await requiredUser(req);\n    const body=await readBoundedJson(req);",
+            "const body=await readBoundedJson(req);\n    const user=await requiredUser(req);", 1),
+        'lecture non bornée': clean.replace(
+            'readLimitedUtf8BodyWithDeadline(req,MAX_REQUEST_BYTES,MAX_REQUEST_READ_TIMEOUT_MS)',
+            'await req.json()', 1),
+        'corps MIME non vérifié': clean.replace(
+            "contentType!=='application/json'", "false", 1),
+    }
+    for label, broken in mutations.items():
+        if broken == clean:
+            raise AssertionError(f'Mutation incorrecte : {label}')
+        if not validate_request_privacy(broken):
+            raise AssertionError(f'Mutation non détectée : {label}')
+    print(f'OK: {len(mutations)} régressions de sécurité rejetées sans accéder aux comptes réels.')
+
+
 def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--self-test', action='store_true')
+    args = parser.parse_args()
+    if args.self_test:
+        self_test()
+        return 0
     errors = []
     for path in (FN, DOC, CONFIG):
         if not path.exists():
@@ -20,6 +91,7 @@ def main() -> int:
         return 1
 
     source = FN.read_text('utf-8', errors='ignore')
+    errors.extend(validate_request_privacy(source))
     doc = DOC.read_text('utf-8', errors='ignore').lower()
     config = tomllib.loads(CONFIG.read_text('utf-8'))
 
