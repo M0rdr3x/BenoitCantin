@@ -8,7 +8,7 @@ const CORE=[
   '/projets/sinjira/','/projets/sinjira/romans/','/projets/sinjira/romans/lire-demo.html','/projets/sinjira/registre/','/projets/sinjira/communaute/','/projets/sinjira/codex/','/projets/sinjira/monde-parallele/','/projets/sinjira/marche/','/projets/sinjira/jeux/fracture-du-reseau-mere/'
 ];
 const PUBLIC_DOCUMENTS=new Set(CORE.filter(path=>path==='/'||path.endsWith('/')||path.endsWith('.html')));
-const PUBLIC_ASSET=/^\/(?:assets\/(?:css|js|icons|media)\/|android-chrome-\d+x\d+\.png$|manifest\.webmanifest$)/;
+const PUBLIC_ASSET=/^\/(?:assets\/(?:css\/[^/]+\.css|js\/[^/]+\.(?:js|mjs)|icons\/[^/]+\.(?:svg|png|ico|webp)|media\/[^/]+\.(?:png|jpe?g|webp|avif|svg))|android-chrome-\d+x\d+\.png|manifest\.webmanifest)$/i;
 function cacheableResponse(resp){
   if(!resp||resp.status!==200||resp.type==='opaque'||resp.redirected)return false;
   const cc=String(resp.headers.get('Cache-Control')||'').toLowerCase();
