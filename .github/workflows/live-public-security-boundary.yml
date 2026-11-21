@@ -41,9 +41,9 @@ jobs:
         run: python3 scripts/check_live_public_security_boundary.py --self-test
 
   live-boundary:
-    name: Refuser toute réapparition de sources techniques en production
+    name: Vérifier la frontière technique en production après chaque push et quotidiennement
     needs: deterministic-contract
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 6
     steps:
