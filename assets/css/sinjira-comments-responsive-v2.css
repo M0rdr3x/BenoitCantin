@@ -129,3 +129,27 @@ body[data-v18-page="comments"] .reader-comment :where(button,a){min-height:46px}
   }
   body[data-v18-page="comments"] .reader-comment-inline-edit button{width:100%}
 }
+
+/* Confirmation de lecture volontaire : le flou ne suffit pas aux lecteurs
+   d'écran. L'attribut hidden masque réellement le texte non dévoilé. */
+body[data-reader-page="novel"] .v19-spoiler [data-spoiler-content][hidden]{
+  display:none!important
+}
+body[data-reader-page="novel"] .reader-comment-helper-row{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  flex-wrap:wrap;gap:6px 16px;min-width:0
+}
+body[data-reader-page="novel"] .reader-comment-helper-row .reader-comment-help{
+  flex:1 1 220px
+}
+body[data-reader-page="novel"] .reader-comment-counter{
+  display:block;flex:0 0 auto;color:#d7dce9;
+  font-variant-numeric:tabular-nums;font-size:.88rem;line-height:1.5
+}
+body[data-reader-page="novel"] .reader-comment-counter.near-limit{
+  color:#ffb8a8;font-weight:750
+}
+@media(max-width:600px){
+  body[data-reader-page="novel"] .reader-comment-helper-row{flex-direction:column;align-items:stretch}
+  body[data-reader-page="novel"] .reader-comment-counter{align-self:flex-end}
+}
