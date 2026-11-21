@@ -1,9 +1,10 @@
-import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
+import { readLimitedUtf8BodyWithDeadline } from '../_shared/read-chunk-deadline.mjs';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.119.0';
 import { corsHeaders } from '../_shared/cors.ts';
 
 const GATEWAY_VERSION='24.4.15';
 const MAX_BODY_BYTES=32_000;
+const MAX_BODY_READ_TIMEOUT_MS=4_000;
 const PARTY_RE=/^FRM-[A-Z0-9]{6}$/;
 
 const ALLOWED_ACTIONS=new Set([
@@ -93,24 +94,23 @@ function publicError(message:string){
 }
 
 async function readLimitedJson(req:Request):Promise<{body?:JsonRecord;response?:Response}>{
-  const contentType=(req.headers.get('content-type')||'').toLowerCase();
-  if(!contentType.startsWith('application/json')){
+  const contentType=(req.headers.get('content-type')||'').split(';',1)[0].trim().toLowerCase();
+  if(contentType!=='application/json'){
     return {response:privateJson({ok:false,error:'Content-Type application/json requis.',gateway_version:GATEWAY_VERSION},415)};
   }
 
-  const rawLength=req.headers.get('content-length');
-  if(rawLength!==null){
-    const declaredLength=Number(rawLength);
-    if(Number.isFinite(declaredLength)&&declaredLength>MAX_BODY_BYTES){
+  // La limite de 32 Ko est vérifiée sur les octets réels, sans croire Content-Length.
+  // La même échéance ABSOLUE couvre tous les fragments; cancel() n'est jamais attendu.
+  // Ne pas appeler req.text()/req.json() sur un corps contrôlé par le client.
+  const limited=await readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,MAX_BODY_READ_TIMEOUT_MS);
+  if(!limited.ok){
+    if(limited.reason==='REQUEST_TIMEOUT'){
+      return {response:privateJson({ok:false,error:'Délai de transmission dépassé.',gateway_version:GATEWAY_VERSION},408)};
+    }
+    if(limited.reason==='REQUEST_TOO_LARGE'){
       return {response:privateJson({ok:false,error:'Requête trop volumineuse.',gateway_version:GATEWAY_VERSION},413)};
     }
-  }
-
-  // La limite est vérifiée à chaque fragment; Content-Length n'est pas fiable.
-  // Ne pas appeler req.text()/req.json() sur un corps contrôlé par le client.
-  const limited=await readLimitedUtf8Body(req,MAX_BODY_BYTES);
-  if(!limited.ok){
-    return {response:privateJson({ok:false,error:'Corps invalide ou requête trop volumineuse.',gateway_version:GATEWAY_VERSION},413)};
+    return {response:privateJson({ok:false,error:'Corps JSON invalide.',gateway_version:GATEWAY_VERSION},400)};
   }
   const raw=limited.raw;
 

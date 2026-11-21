@@ -23,8 +23,16 @@ REQUIRED = {
     'POST uniquement': "req.method!=='POST'",
     'Bearer explicite': "authorization.startsWith('Bearer ')",
     'JWT revérifié côté fonction': 'client.auth.getUser(token)',
-    'JSON explicite': "contentType.startsWith('application/json')",
-    'lecture HTTP en flux': 'const limited=await readLimitedUtf8Body(req,MAX_BODY_BYTES);',
+    'JSON strict sans type MIME trompeur': "if(contentType!=='application/json')",
+    'JSON normalisé sans confondre les paramètres MIME': ".split(';',1)[0].trim().toLowerCase()",
+    'lecteur partagé à échéance absolue': "from '../_shared/read-chunk-deadline.mjs';",
+    'durée de lecture non renouvelable': 'const MAX_BODY_READ_TIMEOUT_MS=4_000;',
+    'lecture HTTP avec délai absolu': 'const limited=await readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,MAX_BODY_READ_TIMEOUT_MS);',
+    'erreur HTTP 408 sur flux suspendu': "limited.reason==='REQUEST_TIMEOUT'",
+    'erreur HTTP 413 sur volume excessif': "limited.reason==='REQUEST_TOO_LARGE'",
+    'HTTP 408 explicite': "gateway_version:GATEWAY_VERSION},408)",
+    'HTTP 413 explicite': "gateway_version:GATEWAY_VERSION},413)",
+    'HTTP 400 sur UTF-8 illisible': "Corps JSON invalide.',gateway_version:GATEWAY_VERSION},400)",
     "refus de flux dépassant la borne": "if(!limited.ok)",
     'corps extrait après borne': 'const raw=limited.raw;',
     'réponse privée': "'Cache-Control':'private, no-store, max-age=0'",
@@ -43,6 +51,10 @@ REQUIRED = {
 FORBIDDEN = {
     'JSON direct non borné': 'await req.json()',
     'texte HTTP non borné': 'await req.text()',
+    'préfixe MIME trompeur': "contentType.startsWith('application/json')",
+    'ancien lecteur sans durée': 'readLimitedUtf8Body(req,MAX_BODY_BYTES)',
+    'lecteur direct pouvant bloquer': 'await reader.read()',
+    'annulation attendue pouvant bloquer': 'await reader.cancel(',
     'helper JSON public partagé': "import { corsHeaders, json }",
     'retour helper JSON public': 'return json(',
     'log message action brut': 'console.warn(\'[Fracture gateway action]\'',
@@ -89,7 +101,7 @@ def validate_text(source: str, config: str) -> list[str]:
     require(errors, auth_pos >= 0 and body_pos >= 0 and auth_pos < body_pos,
             'Le JWT doit être vérifié avant toute lecture/parsing du corps.')
 
-    stream_pos = source.find('await readLimitedUtf8Body(req,MAX_BODY_BYTES)')
+    stream_pos = source.find('await readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,MAX_BODY_READ_TIMEOUT_MS)')
     rejected_pos = source.find('if(!limited.ok)')
     raw_pos = source.find('const raw=limited.raw;')
     parse_pos = source.find("JSON.parse(raw||'{}')")
@@ -139,9 +151,17 @@ def self_test() -> None:
         raise AssertionError('Le cas réel sain doit passer: ' + ' | '.join(clean))
 
     source_mutations = {
-        'content-type retiré': source.replace("contentType.startsWith('application/json')", "contentType.startsWith('text/plain')", 1),
-        'req.json direct': source.replace('const limited=await readLimitedUtf8Body(req,MAX_BODY_BYTES);', 'const limited={ok:true,raw:JSON.stringify(await req.json())};', 1),
-        'texte non borné': source.replace('const limited=await readLimitedUtf8Body(req,MAX_BODY_BYTES);', 'const limited={ok:true,raw:await req.text()};', 1),
+        'content-type retiré': source.replace("if(contentType!=='application/json')", "if(false)", 1),
+        'MIME préfixe trop permissif': source.replace("if(contentType!=='application/json')", "if(!contentType.startsWith('application/json'))", 1),
+        'req.json direct': source.replace('const limited=await readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,MAX_BODY_READ_TIMEOUT_MS);', 'const limited={ok:true,raw:JSON.stringify(await req.json())};', 1),
+        'texte non borné': source.replace('const limited=await readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,MAX_BODY_READ_TIMEOUT_MS);', 'const limited={ok:true,raw:await req.text()};', 1),
+        'délai supprimé': source.replace('const MAX_BODY_READ_TIMEOUT_MS=4_000;', '', 1),
+        'lecture sans limite de temps': source.replace(
+            'readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,MAX_BODY_READ_TIMEOUT_MS)',
+            'readLimitedUtf8Body(req,MAX_BODY_BYTES)',1),
+        'timeout client ignoré': source.replace("limited.reason==='REQUEST_TIMEOUT'", 'false',1),
+        'débordement client ignoré': source.replace("limited.reason==='REQUEST_TOO_LARGE'", 'false',1),
+        'HTTP 408 reclassé': source.replace("gateway_version:GATEWAY_VERSION},408)", "gateway_version:GATEWAY_VERSION},413)",1),
         'refus dépassement retiré': source.replace('if(!limited.ok)', 'if(false)', 1),
         'limite augmentée': source.replace('MAX_BODY_BYTES=32_000;', 'MAX_BODY_BYTES=320_000;', 1),
         'auth après corps': source.replace(
@@ -210,7 +230,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK fracture-engine-gateway: JWT avant corps, POST JSON 32 Ko réel, allowlist fermée, état assaini, réponses no-store et logs sanitizés.')
+    print('OK fracture-engine-gateway: JWT avant corps, POST JSON strict 32 Ko/4 s, timeout 408, allowlist fermée, état assaini, no-store et logs sanitizés.')
     return 0
 
 
