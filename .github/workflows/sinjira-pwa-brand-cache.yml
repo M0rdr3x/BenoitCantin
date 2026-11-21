@@ -6,12 +6,14 @@ on:
     paths:
       - 'sw.js'
       - 'scripts/validate_sinjira_pwa_brand_cache.py'
+      - 'scripts/test_sinjira_sw_public_cache.mjs'
       - '.github/workflows/sinjira-pwa-brand-cache.yml'
   push:
     branches: [main]
     paths:
       - 'sw.js'
       - 'scripts/validate_sinjira_pwa_brand_cache.py'
+      - 'scripts/test_sinjira_sw_public_cache.mjs'
       - '.github/workflows/sinjira-pwa-brand-cache.yml'
   workflow_dispatch:
 
@@ -30,5 +32,7 @@ jobs:
         run: python3 scripts/validate_sinjira_pwa_brand_cache.py
       - name: Contrats PWA, cache et SEO
         run: python3 scripts/validate_pwa.py
+      - name: Régression runtime cache public / accès privés
+        run: node --test scripts/test_sinjira_sw_public_cache.mjs
       - name: Syntaxe du service worker
         run: node --check sw.js
