@@ -15,6 +15,11 @@ GUARD = ("github.event_name == 'workflow_dispatch' && inputs.apply == true && "
          "inputs.confirmation == 'DEPLOY-SINJIRA-REGISTRY-EDGE' && "
          "github.ref == 'refs/heads/main' && github.ref_protected == true")
 COMMAND = 'supabase functions deploy submit-character-questionnaire --project-ref "$PROJECT_ID" --use-api'
+LIVE_STEP = '      - name: Revalider protection serveur et SHA juste avant le déploiement\n'
+LIVE_ACTION = 'uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd'
+LIVE_REF_CHECK = "process.env.GITHUB_REF_PROTECTED !== 'true'"
+LIVE_BRANCH_CHECK = 'branch.protected !== true'
+LIVE_SHA_CHECK = 'branch.commit?.sha !== context.sha'
 
 
 def validate(source: str) -> list[str]:
@@ -111,6 +116,26 @@ def validate(source: str) -> list[str]:
         if not deploy.startswith('    name: Application manuelle du SEUL contrôleur Registre\n'):
             errors.append('Job d’application ciblé incorrect.')
 
+        live_at = deploy.find(LIVE_STEP)
+        mutate_at = deploy.find('      - name: Déployer uniquement submit-character-questionnaire\n')
+        if live_at < 0 or mutate_at < 0 or live_at >= mutate_at:
+            errors.append('Contrôle live protection/SHA absent ou situé après le déploiement.')
+        else:
+            live_block = deploy[live_at:mutate_at]
+            for name, needle in (
+                ('Action GitHub immuable', LIVE_ACTION),
+                ('Lecture serveur de main', "github.rest.repos.getBranch({ owner, repo, branch: 'main' })"),
+                ('Protection GitHub au déclenchement', LIVE_REF_CHECK),
+                ('Protection GitHub courante', LIVE_BRANCH_CHECK),
+                ('SHA courant inchangé', LIVE_SHA_CHECK),
+            ):
+                if needle not in live_block:
+                    errors.append('Contrôle live incomplet: ' + name)
+            if live_block.count('core.setFailed(') != 3:
+                errors.append('Contrôle live doit refuser chacune des trois défaillances.')
+        if deploy.count(LIVE_STEP) != 1:
+            errors.append('Une seule revalidation live est autorisée.')
+
     for forbidden in (
         'supabase db push', 'supabase migration repair', 'supabase db reset',
         '--include-all', '--prune', '--no-verify-jwt', 'supabase secrets set',
@@ -136,6 +161,17 @@ def self_test() -> None:
             '        if: ${{ ' + GUARD.replace(' && github.ref_protected == true', '') + ' }}', 1),
         'retirer preuve de protection après approbation': original.replace(
             'test "${GITHUB_REF_PROTECTED:-}" = \'true\'', 'true', 1),
+        'retirer contrôle live de ref': original.replace(
+            LIVE_REF_CHECK, 'false', 1),
+        'retirer contrôle live de protection': original.replace(
+            LIVE_BRANCH_CHECK, 'false', 1),
+        'retirer contrôle live du SHA': original.replace(
+            LIVE_SHA_CHECK, 'false', 1),
+        'retirer le refus live du SHA': original.replace(
+            "core.setFailed('Refus du déploiement : SHA de main changé depuis le prévol.')",
+            "core.info('SHA non valide, mais on laisse passer.')", 1),
+        'désépingler contrôle live': original.replace(
+            LIVE_ACTION, 'uses: actions/github-script@v7', 1),
         'retirer environnement': original.replace('    environment: production\n', '', 1),
         'étendre toutes les fonctions': original.replace(COMMAND,
                                                          'supabase functions deploy --project-ref "$PROJECT_ID" --use-api', 1),
