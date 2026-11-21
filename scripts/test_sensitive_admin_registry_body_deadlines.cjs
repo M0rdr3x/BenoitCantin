@@ -30,7 +30,7 @@ const vm=require('node:vm');
       ? 'async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }> {'
       : 'async function readBoundedJson(req:Request){';
     const start=source.indexOf(marker);
-    const end=source.indexOf('\nfunction safeText(',start);
+    const end=source.indexOf(slug==='life-story-export' ? '\nfunction safeText(' : '\n// La photo source',start);
     assert.ok(start>=0&&end>start,slug+': vrai parseur non trouvé');
     let block=source.slice(start,end);
     if(slug==='life-story-export'){
