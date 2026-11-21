@@ -470,8 +470,33 @@ def assert_no_full_edition_link(page, label: str) -> None:
 
 
 def assert_no_horizontal_overflow(page, label: str) -> None:
-    fits = page.evaluate("document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2")
-    assert_true(fits, f"{BROWSER_NAME}: débordement horizontal en 390 px sur {label}")
+    # Mesurer après la finalisation du layout (fonts/styles et deux frames).
+    # En cas d'échec production Safari, remonter les éléments hors viewport.
+    page.evaluate("() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))")
+    measure = page.evaluate("""() => {
+        const width = Math.ceil(window.innerWidth);
+        const scrollWidth = document.documentElement.scrollWidth;
+        const offenders = [...document.body.querySelectorAll('*')]
+          .filter(el => {
+            const r = el.getBoundingClientRect();
+            return r.width > 0 && (r.right > width + 2 || r.left < -2);
+          })
+          .slice(0, 8)
+          .map(el => {
+            const r = el.getBoundingClientRect();
+            return {
+              tag: el.tagName.toLowerCase(),
+              className: typeof el.className === 'string' ? el.className.slice(0, 80) : '',
+              left: Math.round(r.left), right: Math.round(r.right),
+              scrollWidth: el.scrollWidth,
+            };
+          });
+        return {width, scrollWidth, offenders};
+    }""")
+    assert_true(
+        measure["scrollWidth"] <= measure["width"] + 2,
+        f"{BROWSER_NAME}: débordement horizontal sur {label}: {measure}",
+    )
 
 
 def assert_comment_editor_responsive(page, label: str) -> None:
