@@ -92,10 +92,64 @@ async function rejectUnverifiedLogin(message='Connexion interrompue : vérificat
     'error');
 }
 
+// Une session déjà présente ne doit pas contourner le même contrôle que
+// l'authentification par mot de passe. La décision finale et l'accès aux
+// données privées restent sous l'autorité du serveur (RLS/RPC).
+async function completeVerifiedSession(next){
+  let evaluated;
+  try{
+    evaluated=await evaluateLoginSecurity();
+  }catch{
+    console.warn('[SINJIRA login shield unavailable]');
+    await rejectUnverifiedLogin();
+    return;
+  }
+  const outcome=evaluated.security?.outcome;
+  if(outcome!=='allow'&&outcome!=='block'&&outcome!=='challenge'){
+    console.warn('[SINJIRA login shield invalid response]');
+    await rejectUnverifiedLogin();
+    return;
+  }
+  if(outcome==='block'){
+    await rejectUnverifiedLogin('Connexion refusée : cet appareil a été révoqué dans Ma sécurité. Utilisez un appareil fiable pour vérifier votre compte.');
+    return;
+  }
+  if(outcome==='challenge'){
+    const challengeId=String(evaluated.security?.challenge_id||'');
+    if(!challengeId){
+      await rejectUnverifiedLogin('Connexion inhabituelle détectée, mais la confirmation de sécurité n’a pas pu être créée. Réessayez.');
+      return;
+    }
+    const {data:aal,error:aalError}=await getSupabase().auth.mfa.getAuthenticatorAssuranceLevel();
+    if(!aalError&&aal?.nextLevel==='aal2'){
+      if(!storePendingChallenge(challengeId,next)){
+        await rejectUnverifiedLogin('Connexion inhabituelle détectée, mais la vérification de sécurité ne peut pas être préparée sur cet appareil. Réessayez.');
+        return;
+      }
+      setStatus(status,'Connexion inhabituelle détectée. Une vérification renforcée est requise avant de continuer.','info');
+      location.replace(`/compte/mfa.html?security=1&next=${encodeURIComponent(next)}`);
+      return;
+    }
+    await rejectUnverifiedLogin('Connexion inhabituelle détectée. Autorisez cette tentative depuis un autre appareil déjà marqué comme fiable dans Ma sécurité, puis reconnectez-vous.');
+    return;
+  }
+  location.replace(next);
+}
+
 async function login(){
   const form=document.querySelector('[data-login-form]');if(!form)return;
   const existing=await getCurrentUser();
-  if(existing){location.replace(destination());return}
+  if(existing){
+    // Ancien raccourci corrigé : la validation getUser ne remplace pas
+    // le moteur de confiance d'appareil / contexte de sécurité.
+    try{
+      await completeVerifiedSession(destination());
+    }catch{
+      console.warn('[SINJIRA existing session verification]');
+      await rejectUnverifiedLogin();
+    }
+    return;
+  }
   form.addEventListener('submit',async e=>{
     e.preventDefault();
     if(reportInvalid(form))return;
@@ -109,52 +163,7 @@ async function login(){
       const {error}=await getSupabase().auth.signInWithPassword({email:String(d.get('email')||'').trim(),password:String(d.get('password')||'')});
       if(error)return setStatus(status,'Connexion impossible. Vérifiez vos informations et la confirmation du courriel.','error');
       sessionEstablished=true;
-
-      let evaluated=null;
-      try{
-        evaluated=await evaluateLoginSecurity();
-      }catch{
-        console.warn('[SINJIRA login shield unavailable]');
-        // Aucune connexion ne doit être acceptée si le moteur de sécurité
-        // est indisponible ou si sa réponse ne peut pas être vérifiée.
-        await rejectUnverifiedLogin();
-        return;
-      }
-
-      const outcome=evaluated.security?.outcome;
-      if(outcome!=='allow'&&outcome!=='block'&&outcome!=='challenge'){
-        console.warn('[SINJIRA login shield invalid response]');
-        await rejectUnverifiedLogin();
-        return;
-      }
-      if(outcome==='block'){
-        await rejectUnverifiedLogin('Connexion refusée : cet appareil a été révoqué dans Ma sécurité. Utilisez un appareil fiable pour vérifier votre compte.');
-        return;
-      }
-
-      if(outcome==='challenge'){
-        const challengeId=String(evaluated.security?.challenge_id||'');
-        if(!challengeId){
-          await rejectUnverifiedLogin('Connexion inhabituelle détectée, mais la confirmation de sécurité n’a pas pu être créée. Réessayez.');
-          return;
-        }
-
-        const {data:aal,error:aalError}=await getSupabase().auth.mfa.getAuthenticatorAssuranceLevel();
-        if(!aalError&&aal?.nextLevel==='aal2'){
-          if(!storePendingChallenge(challengeId,next)){
-            await rejectUnverifiedLogin('Connexion inhabituelle détectée, mais la vérification de sécurité ne peut pas être préparée sur cet appareil. Réessayez.');
-            return;
-          }
-          setStatus(status,'Connexion inhabituelle détectée. Une vérification renforcée est requise avant de continuer.','info');
-          location.replace(`/compte/mfa.html?security=1&next=${encodeURIComponent(next)}`);
-          return;
-        }
-
-        await rejectUnverifiedLogin('Connexion inhabituelle détectée. Autorisez cette tentative depuis un autre appareil déjà marqué comme fiable dans Ma sécurité, puis reconnectez-vous.');
-        return;
-      }
-
-      location.replace(next);
+      await completeVerifiedSession(next);
     }catch{
       console.warn('[SINJIRA auth login]');
       if(sessionEstablished){
