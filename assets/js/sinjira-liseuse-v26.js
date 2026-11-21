@@ -2,6 +2,7 @@ import { getSupabase, requireUser } from './sinjira-supabase.js';
 import { pdfTextToParagraphs, speechTextChunks } from './sinjira-liseuse-text-v27.mjs';
 import { createReaderCompanion } from './sinjira-liseuse-companion-v28.mjs';
 import { chooseReadingPosition, ratioFromScroll, scrollTopForRatio, readingRatio, shouldReplayReadingProgress } from './sinjira-liseuse-position-v31.mjs?v=34.11.07.1';
+import { planReaderScreenTurn } from './sinjira-liseuse-screen-turn-v54.mjs';
 
 /* SINJIRA 2026 — liseuse : le PDF intégral n'entre jamais dans le dépôt public
    ni dans localStorage. Le serveur attribue le droit de lecture avant de signer l'accès. */
@@ -448,20 +449,37 @@ function renderPage(){
     }
   }).catch(error=>message('Impossible d’afficher cette page. Réessayez ou utilisez le lecteur PDF de secours.','error'));
 }
-function changePage(value){
+function changePage(value,{end=false}={}){
   if(!state.pdf)return;
   const next=clamp(Math.round(value),1,state.pdf.numPages);
   if(next===state.page)return;
   flushScrollPosition();
   stopNarration(false);
   state.page=next;
-  state.positionRatio=0;
-  state.restorePending=0;
+  // En revenant par balayage depuis le début d'une page PDF, reprendre
+  // à la fin de la précédente plutôt que d'en sauter la dernière portion.
+  state.positionRatio=end?1:0;
+  state.restorePending=end?1:0;
   state.restoringScroll=true;
   $('reader-viewer').scrollTo({top:0,left:0,behavior:'auto'});
   updateToolbar();persist();renderPage();
   positionNotice('Page '+state.page+' mémorisée automatiquement. Vous pouvez aussi l’enregistrer maintenant.');
   companion?.onPageChange();
+}
+function turnVisibleReadingScreen(direction){
+  if(!state.pdf)return;
+  const viewer=$('reader-viewer');
+  const next=planReaderScreenTurn({
+    direction,mode:state.mode,scrollTop:viewer.scrollTop,
+    scrollHeight:viewer.scrollHeight,clientHeight:viewer.clientHeight
+  });
+  if(next.kind==='scroll'){
+    // La zone de lecture garde le texte sélectionnable. Le scroll existant
+    // synchronise le ratio de lecture sans sauvegarder de contenu du roman.
+    viewer.scrollTo({top:next.top,left:0,behavior:'auto'});
+  }else if(next.kind==='page'){
+    changePage(state.page+next.delta,{end:next.end});
+  }
 }
 function bindControls(){
   $('reader-save-position').addEventListener('click',()=>{void saveCurrentPosition()});
@@ -502,7 +520,7 @@ function bindControls(){
        Math.abs(dx)<=Math.abs(dy)*1.5)return;
     if(state.mode==='page'&&swipeViewer.scrollWidth>swipeViewer.clientWidth+8)return;
     if(window.getSelection()?.toString())return;
-    changePage(state.page+(dx<0?1:-1));
+    turnVisibleReadingScreen(dx<0?1:-1);
   },{passive:true});
   swipeViewer.addEventListener('touchcancel',()=>{swipeStart=null},{passive:true});
   $('reader-previous').addEventListener('click',()=>changePage(state.page-1));
@@ -563,11 +581,17 @@ function bindControls(){
     state.zoom=clamp(event.target.value,.8,1.5);setTheme();
     if(state.mode==='page')renderPage();
   });
-  document.addEventListener('keydown',event=>{
-    const tag=document.activeElement?.tagName||'';
-    if(['INPUT','SELECT','TEXTAREA','BUTTON'].includes(tag)||event.altKey||event.ctrlKey||event.metaKey)return;
-    if(event.key==='ArrowRight'||event.key==='PageDown'){event.preventDefault();changePage(state.page+1)}
-    if(event.key==='ArrowLeft'||event.key==='PageUp'){event.preventDefault();changePage(state.page-1)}
+  // Les flèches n'interceptent plus le défilement et la navigation du reste
+  // du site : le lecteur (tabindex=0) doit avoir le focus explicitement.
+  swipeViewer.addEventListener('keydown',event=>{
+    if(event.defaultPrevented||event.altKey||event.ctrlKey||event.metaKey||
+       event.shiftKey||event.target.closest('a,button,input,select,textarea,[contenteditable]'))return;
+    if(event.key==='ArrowRight'||event.key==='PageDown'){
+      event.preventDefault();turnVisibleReadingScreen(1);
+    }
+    if(event.key==='ArrowLeft'||event.key==='PageUp'){
+      event.preventDefault();turnVisibleReadingScreen(-1);
+    }
   });
   let resizeTimer;
   window.addEventListener('resize',()=>{
