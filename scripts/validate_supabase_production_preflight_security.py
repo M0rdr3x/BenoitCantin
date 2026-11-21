@@ -130,6 +130,24 @@ def validate_text(text: str) -> list[str]:
         if not block:
             errors.append(f"Job de frontière obligatoire absent: {name}")
 
+    # Le mot de passe Postgres provient uniquement de l'env d'étape.
+    # La CLI v2 supporte SUPABASE_DB_PASSWORD pour le projet lié.
+    # Refuser les options qui injectent des identifiants dans /proc/.../cmdline
+    # (y compris si un futur contributeur remet une option courte -p).
+    cli_lines = [
+        line for line in text.splitlines()
+        if re.search(r"\bsupabase\s+(?:link|migration\s+list|db\s+push)\b", line)
+        and not line.lstrip().startswith("#")
+    ]
+    if len(cli_lines) != 9:
+        errors.append("Neuf opérations Supabase liées attendues, sans injection de mot de passe en argv.")
+    for line in cli_lines:
+        if re.search(r"(?<!\S)(?:--password|-p|--db-url)(?=\s|=|$)", line):
+            errors.append("Mot de passe DB interdit dans argv de la CLI Supabase.")
+        if "$SUPABASE_DB_PASSWORD" in line or "${{ secrets." in line:
+            errors.append("Secret DB interdit dans une ligne de commande Supabase.")
+
+
     if text.count(EXPECTED_RUNNER) != 3:
         errors.append("Les trois jobs doivent utiliser exactement ubuntu-24.04.")
     if text.count(EXPECTED_PYTHON) != 3:
@@ -219,10 +237,10 @@ def validate_text(text: str) -> list[str]:
             errors.append("Le prévol distant ne doit jamais modifier les secrets Supabase.")
         if "supabase functions deploy" in remote:
             errors.append("Le prévol distant ne doit jamais déployer d'Edge Function.")
-        write_push = '(cd .prod-workspace && supabase db push --linked --password "$SUPABASE_DB_PASSWORD")'
+        write_push = '(cd .prod-workspace && supabase db push --linked)'
         if write_push in remote:
             errors.append("Le prévol distant ne doit jamais exécuter db push en écriture.")
-        if '(cd .prod-workspace && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD")' not in remote:
+        if '(cd .prod-workspace && supabase db push --linked --dry-run)' not in remote:
             errors.append("Le prévol distant doit conserver le dry-run borné au workspace protégé.")
 
     apply = jobs["apply-production"]
@@ -240,10 +258,10 @@ def validate_text(text: str) -> list[str]:
 
         approval = step_block(apply, "Revalider la cible production après approbation")
         for marker in (
-            '(cd .prod-workspace && supabase link --project-ref "$PROJECT_ID" --password "$SUPABASE_DB_PASSWORD")',
+            '(cd .prod-workspace && supabase link --project-ref "$PROJECT_ID")',
             '(cd .prod-workspace && supabase db lint --linked --schema public --level error --fail-on error)',
-            '(cd .prod-workspace && supabase migration list --linked --password "$SUPABASE_DB_PASSWORD")',
-            '(cd .prod-workspace && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD")',
+            '(cd .prod-workspace && supabase migration list --linked)',
+            '(cd .prod-workspace && supabase db push --linked --dry-run)',
         ):
             if marker not in approval:
                 errors.append(f"Revalidation post-environment incomplète: {marker}")
@@ -261,7 +279,7 @@ def validate_text(text: str) -> list[str]:
         if "SUPABASE_DB_PASSWORD:" in secret_step:
             errors.append("Le mot de passe DB ne doit pas être exposé à l'étape des secrets Edge Functions.")
         apply_db = step_block(apply, "Appliquer les migrations de production depuis le workspace protégé")
-        if '(cd .prod-workspace && supabase db push --linked --password "$SUPABASE_DB_PASSWORD")' not in apply_db:
+        if '(cd .prod-workspace && supabase db push --linked)' not in apply_db:
             errors.append("Le db push production doit rester borné au workspace protégé dans le job d'application.")
         deploy = step_block(apply, "Déployer toutes les Edge Functions du workspace protégé")
         if '(cd .prod-workspace && supabase functions deploy --project-ref "$PROJECT_ID" --use-api)' not in deploy:
@@ -270,7 +288,7 @@ def validate_text(text: str) -> list[str]:
     outside_apply = text.replace(apply, "", 1) if apply else text
     for marker, label in (
         ('supabase secrets set', "écriture de secrets"),
-        ('(cd .prod-workspace && supabase db push --linked --password "$SUPABASE_DB_PASSWORD")', "db push en écriture"),
+        ('(cd .prod-workspace && supabase db push --linked)', "db push en écriture"),
         ('supabase functions deploy', "déploiement Edge Functions"),
     ):
         if marker in outside_apply:
