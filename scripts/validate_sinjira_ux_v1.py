@@ -119,6 +119,10 @@ def check():
         ):
             if token not in css:
                 problems.append("CSS ergonomique: protection manquante " + token)
+        if "data-sinjira-nav-ready" not in js:
+            problems.append("Menu JavaScript: activation progressive absente")
+        if "html:not([data-sinjira-nav-ready])" not in css or "position:static" not in css:
+            problems.append("Menu mobile: navigation sans JavaScript non prévue")
         if "(min-width: 1021px)" not in js or "focusin" not in js:
             problems.append("Menu JavaScript: tablette ou sortie du focus non traitée")
     return count, problems
