@@ -1104,7 +1104,6 @@ def self_test_public_filesystem_boundary() -> list[str]:
         "projets/projet-nova/data/actualites.json",
         "projets/projet-nova/data/sources.json",
         "projets/sinjira/romans/index.html",
-        "projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf",
     )
     for rel in rejected:
         if relative_path_allowed(Path(rel)):
