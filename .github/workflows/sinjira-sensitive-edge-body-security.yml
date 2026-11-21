@@ -1,0 +1,61 @@
+name: SINJIRA — corps HTTP AAL2 sensibles avec échéance absolue
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/functions/conscience-vault/**'
+      - 'supabase/functions/personal-ai/**'
+      - 'supabase/functions/_shared/read-chunk-deadline.mjs'
+      - 'supabase/functions/_shared/auth.ts'
+      - 'scripts/validate_conscience_vault_edge_v25.py'
+      - 'scripts/validate_personal_ai_v25.py'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/test_sensitive_edge_stream_deadlines.mjs'
+      - 'scripts/test_sensitive_edge_parser_runtime.mjs'
+      - '.github/workflows/sinjira-sensitive-edge-body-security.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/conscience-vault/**'
+      - 'supabase/functions/personal-ai/**'
+      - 'supabase/functions/_shared/read-chunk-deadline.mjs'
+      - 'supabase/functions/_shared/auth.ts'
+      - 'scripts/validate_conscience_vault_edge_v25.py'
+      - 'scripts/validate_personal_ai_v25.py'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'scripts/test_sensitive_edge_stream_deadlines.mjs'
+      - 'scripts/test_sensitive_edge_parser_runtime.mjs'
+      - '.github/workflows/sinjira-sensitive-edge-body-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sensitive-edge-stream-boundary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout sans secret persistant
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Node.js version figée
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+      - name: Python version figée
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Tester le vrai lecteur contre les flux bloqués et les octets invalides
+        run: |
+          node scripts/test_sensitive_edge_stream_deadlines.mjs
+          node scripts/test_sensitive_edge_parser_runtime.mjs
+      - name: Contrôler le coffre AAL2 et ses garanties anti-fuite
+        run: python3 scripts/validate_conscience_vault_edge_v25.py
+      - name: Contrôler Mon IA AAL2 et les accès aux données
+        run: python3 scripts/validate_personal_ai_v25.py
+      - name: Contrôler les routes Supabase et interdire les lectures dangereuses
+        run: python3 scripts/validate_edge_function_inventory.py
