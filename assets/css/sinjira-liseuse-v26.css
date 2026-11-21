@@ -225,3 +225,13 @@
   .sinjira-liseuse .reader-position-status{text-align:center}
   .sinjira-liseuse #reader-save-position{min-height:48px}
 }
+
+/* Liseuse : commandes tactiles confortables et absence de défilement horizontal parasite. */
+.sinjira-liseuse .reader-viewer{min-width:0;overscroll-behavior-x:contain}
+.sinjira-liseuse #reader-previous,.sinjira-liseuse #reader-next{min-height:48px}
+@media(max-width:560px){
+ .sinjira-liseuse .reader-tools{min-width:0}
+ .sinjira-liseuse .reader-tools input{font-size:16px}
+ .sinjira-liseuse #reader-previous,.sinjira-liseuse #reader-next{flex:1 1 125px}
+ .sinjira-liseuse .reader-footer{line-height:1.55}
+}
