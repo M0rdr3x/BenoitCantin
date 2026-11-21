@@ -111,6 +111,11 @@ body[data-reader-page="novel"][data-sinjira-ux="v1"] .main-nav a[aria-current]{
    le navigateur bloque site.js (mode strict, panne CDN ou erreur réseau).
    Le menu compact n'est activé qu'après initialisation réelle de son bouton. */
 @media(max-width:1020px){
+  /* Le menu de repli est plus haut : il doit défiler avec la page et
+     ne jamais recouvrir durablement le contenu sur les petits écrans. */
+  html:not([data-sinjira-nav-ready]) body[data-sinjira-ux="v1"] .site-header{
+    position:relative
+  }
   html:not([data-sinjira-nav-ready]) body[data-sinjira-ux="v1"] .nav-shell{
     flex-wrap:wrap;align-content:center;padding-block:12px
   }
