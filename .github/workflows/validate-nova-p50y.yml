@@ -1,0 +1,55 @@
+name: Projet Nova P50Y - cahier de recette admin et trois canaris
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/validate-nova-p50y.yml"
+      - "scripts/validate_nova_admin_canaries_p50y.py"
+      - "scripts/tests/test_validate_nova_admin_canaries_p50y.py"
+      - "projets/projet-nova/controles/P50Y_*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qualite-cahier-recette:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Lire les propositions, sans droit d'ecriture GitHub
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Configurer Python 3.11
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.11"
+      - name: Tester 125 scénarios intégrés et compiler Python
+        run: |
+          python -m py_compile scripts/validate_nova_admin_canaries_p50y.py
+          python -m unittest discover -s scripts/tests -p "test_validate_nova_admin_canaries_p50y.py" -v
+      - name: Verifier la grille vierge, SANS feindre une recette effectuee
+        run: |
+          python scripts/validate_nova_admin_canaries_p50y.py \
+            --dossier projets/projet-nova/controles/P50Y_PROCES_VERBAL_RECETTE_A_COMPLETER.json \
+            --rapport p50y_situation.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("p50y_situation.json").read_text(encoding="utf-8"))
+          assert r["statut_dossier"]=="RECETTE_REQUISE",r
+          assert r["decision"]=="NO_GO_AUTOMATIQUE",r
+          assert all(v=="A_EXECUTER" for v in r["cases"].values()),r
+          assert not r["protection_main_installee_par_ce_programme"],r
+          assert not r["fusion_autorisee"] and not r["publication_autorisee"],r
+          print("P50Y : 3 essais admin NON EXECUTES; NO_GO; aucune activation.")
+          PY
+      - name: Archiver le compte rendu non nominatif
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nova-p50y-cahier-recette-non-executee
+          path: p50y_situation.json
+          if-no-files-found: ignore
+          retention-days: 7
