@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 source = (ROOT / "sw.js").read_text("utf-8")
 errors = []
 cache = re.search(r"const CACHE='([^']+)'", source)
-if not cache or not cache.group(1).endswith("-public-4"):
+if not cache or not cache.group(1).endswith("-public-5"):
     errors.append("Le cache public n'a pas été renouvelé pour la nouvelle identité.")
 for asset in (
     "/assets/icons/sinjira-favicon.png",
@@ -26,8 +26,12 @@ for forbidden in (
     if forbidden in source:
         errors.append(f"Ressource non essentielle conservée dans le cache public : {forbidden}")
 for security_guard in (
-    "const privatePath=", "cache:'no-store'", "if(privatePath)",
-    "if(r.destination==='document')", "const liveAsset=",
+    "const privatePath=", "cache:'no-store'", "if(privatePath||r.headers.has('Authorization')",
+    "const PUBLIC_DOCUMENTS=", "const PUBLIC_ASSET=",
+    "isPublicDocument", "if(u.search)", "resp.redirected",
+    "resp.status!==200", "'Set-Cookie'",
+    "r.headers.has('Authorization')", "r.headers.has('Range')",
+    "keys.filter(k=>k.startsWith('benoitcantin-')", "const liveAsset=",
 ):
     if security_guard not in source:
         errors.append(f"Protection de cache privée ou réseau absente : {security_guard}")
