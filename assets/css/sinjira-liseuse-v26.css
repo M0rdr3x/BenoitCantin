@@ -235,3 +235,16 @@
  .sinjira-liseuse #reader-previous,.sinjira-liseuse #reader-next{flex:1 1 125px}
  .sinjira-liseuse .reader-footer{line-height:1.55}
 }
+
+/* V54 — repère clavier et consigne explicite pour tourner les écrans de texte. */
+.sinjira-liseuse .reader-viewer:focus-visible{
+  outline:3px solid #9cefe0;outline-offset:-3px;
+}
+.sinjira-liseuse .reader-turn-help{
+  margin:0;padding:12px clamp(14px,3vw,24px);
+  background:#132538;color:#e6f5fa;text-align:center;
+  font-size:clamp(.9rem,1.8vw,1rem);line-height:1.5;
+}
+@media(max-width:600px){
+  .sinjira-liseuse .reader-turn-help{text-align:left;padding:13px 16px}
+}
