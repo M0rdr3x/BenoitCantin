@@ -1,0 +1,91 @@
+name: UX SINJIRA — Sous-navigation Auth PC et mobile
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'compte/connexion.html'
+      - 'compte/inscription.html'
+      - 'compte/mot-de-passe-oublie.html'
+      - 'compte/reinitialiser-mot-de-passe.html'
+      - 'assets/css/sinjira-forms-ux-v1.css'
+      - 'assets/js/sinjira-auth-nav-v1.js'
+      - 'scripts/validate_sinjira_account_forms_ux_v1.py'
+      - 'tests/e2e/test_auth_nav_mobile.py'
+      - 'tests/e2e/test_auth_forms_responsive.py'
+      - '.github/workflows/sinjira-auth-nav-mobile-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'compte/connexion.html'
+      - 'compte/inscription.html'
+      - 'compte/mot-de-passe-oublie.html'
+      - 'compte/reinitialiser-mot-de-passe.html'
+      - 'assets/css/sinjira-forms-ux-v1.css'
+      - 'assets/js/sinjira-auth-nav-v1.js'
+      - 'scripts/validate_sinjira_account_forms_ux_v1.py'
+      - 'tests/e2e/test_auth_nav_mobile.py'
+      - 'tests/e2e/test_auth_forms_responsive.py'
+      - '.github/workflows/sinjira-auth-nav-mobile-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verifier-contrat:
+    name: Vérifier les liens et le code Auth sans données privées
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Contrats formulaires et liens
+        run: python3 scripts/validate_sinjira_account_forms_ux_v1.py
+      - name: Syntaxe JavaScript sans accès réseau
+        run: node --check assets/js/sinjira-auth-nav-v1.js
+
+  verifier-navigation-auth:
+    name: Auth ${{ matrix.browser }} 240-1440px et clavier
+    needs: verifier-contrat
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.61.0-noble@sha256:a9731514f24121d1dcd25d58d0a38146646d290a5998fd80d3e533e7b5e21c69
+      options: --user 1001
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    timeout-minutes: 18
+    steps:
+      - name: Récupérer le dépôt sans identifiants persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Installer Playwright épinglé
+        run: python -m pip install --disable-pip-version-check "playwright==1.61.0"
+      - name: Démarrer le serveur statique local
+        run: |
+          python -m http.server 4173 --bind 127.0.0.1 > /tmp/sinjira-auth-nav.log 2>&1 &
+          echo $! > /tmp/sinjira-auth-nav.pid
+          for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+            if python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4173/',timeout=1).read(1)" >/dev/null 2>&1; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/sinjira-auth-nav.log
+          exit 1
+      - name: Sous-menus réels, clavier, tactile et repli sans JavaScript
+        env:
+          BASE_URL: http://127.0.0.1:4173/
+          BROWSER: ${{ matrix.browser }}
+        run: python tests/e2e/test_auth_nav_mobile.py
+      - name: Champs de connexion et récupération, petits écrans
+        env:
+          BASE_URL: http://127.0.0.1:4173/
+          BROWSER: ${{ matrix.browser }}
+        run: python tests/e2e/test_auth_forms_responsive.py
+      - name: Arrêter le serveur
+        if: always()
+        run: |
+          if [ -f /tmp/sinjira-auth-nav.pid ]; then kill "$(cat /tmp/sinjira-auth-nav.pid)" || true; fi
