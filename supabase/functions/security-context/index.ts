@@ -1,4 +1,4 @@
-import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
+import { readLimitedUtf8BodyWithDeadline } from '../_shared/read-chunk-deadline.mjs';
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { bearerToken, requiredUser, serviceClient } from '../_shared/auth.ts';
@@ -17,6 +17,7 @@ import {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_REQUEST_BYTES = 4096;
+const MAX_REQUEST_READ_TIMEOUT_MS = 4_000;
 const PRIVATE_HEADERS = {
   ...corsHeaders,
   'Content-Type': 'application/json; charset=utf-8',
@@ -31,23 +32,31 @@ function privateJson(data: unknown, status = 200) {
 }
 
 async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }> {
-  const rawLength = req.headers.get('content-length');
-  if (rawLength) {
-    const declared = Number(rawLength);
-    if (!Number.isFinite(declared) || declared < 0 || declared > MAX_REQUEST_BYTES) {
-      return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
-    }
+  // Refuser tout type de corps ambigu avant de lire une donnée privée.
+  const contentType = (req.headers.get('content-type') || '').split(';', 1)[0].trim().toLowerCase();
+  if (contentType !== 'application/json') {
+    return { response: privateJson({ ok: false, error: 'Corps JSON requis.' }, 415) };
   }
 
-  const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);
-  if (!limited.ok) return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
-  const raw = limited.raw;
-  if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
-    return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
+  // Le lecteur partagé impose la taille en octets réels, une échéance absolue
+  // sur TOUS les fragments, et n'attend jamais un cancel() qui ne se termine pas.
+  const limited = await readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS);
+  if (!limited.ok) {
+    if (limited.reason === 'REQUEST_TIMEOUT') {
+      return { response: privateJson({ ok: false, error: 'Délai de transmission dépassé.' }, 408) };
+    }
+    if (limited.reason === 'REQUEST_TOO_LARGE') {
+      return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
+    }
+    return { response: privateJson({ ok: false, error: 'Corps JSON invalide.' }, 400) };
   }
 
   try {
-    return { body: JSON.parse(raw || '{}') };
+    const body: unknown = JSON.parse(limited.raw);
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return { response: privateJson({ ok: false, error: 'Corps JSON invalide.' }, 400) };
+    }
+    return { body };
   } catch {
     return { response: privateJson({ ok: false, error: 'Corps JSON invalide.' }, 400) };
   }
@@ -271,7 +280,8 @@ Deno.serve(async (req) => {
       }
     });
   } catch (error) {
-    console.error('[security-context]', error);
+    // Ne jamais journaliser les erreurs fournisseur : elles peuvent contenir des identifiants de session.
+    console.error('[security-context]', { code: 'SECURITY_CONTEXT_FAILED' });
     if (error?.message === 'AUTH_REQUIRED') return privateJson({ ok: false, error: 'Connexion requise.', code: 'AUTH_REQUIRED' }, 401);
     return privateJson({ ok: false, error: 'Le contexte de sécurité est temporairement indisponible.' }, 500);
   }
