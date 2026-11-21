@@ -91,6 +91,12 @@ def check():
         if "/assets/css/site-ux-sinjira-v1.css?v=1.0.0" not in text:
             problems.append(f"{relative}: feuille de style adaptée absente")
         boot = '/assets/js/sinjira-nav-boot-v2.js?v=2.0.0'
+        if relative == "projets/sinjira/jeux/fracture-du-reseau-mere/jouer.html":
+            # Garde V44 : mode Web désactivé, liste fermée à deux scripts.
+            # L'ajout d'un troisième script contournerait une protection volontaire.
+            if boot in text:
+                problems.append(f"{relative}: boot non approuvé sur mode Web suspendu")
+            continue
         if text.count(boot) != 1:
             problems.append(f"{relative}: préchargement du menu absent ou dupliqué")
         else:
