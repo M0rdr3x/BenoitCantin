@@ -29,7 +29,8 @@ jobs:
 
             const protectedRef = process.env.GITHUB_REF_PROTECTED === 'true';
             if (!protectedRef) {
-              core.warning('La branche main n’est pas protégée par une branch protection ou un ruleset. Cette alerte ne remplace pas la configuration GitHub Settings > Branches/Rulesets.');
+              core.setFailed('La branche main n’est pas protégée par une branch protection ou un ruleset. Cet échec de CI ne remplace pas la configuration GitHub Settings > Branches/Rulesets : activer une protection native avant toute fusion ou publication.');
+              return;
             } else {
               core.info('La branche main est protégée par une branch protection ou un ruleset.');
             }
