@@ -128,6 +128,18 @@
     });
   }
 
+  // Le lien HTML fonctionne sans JavaScript; une fois le runtime chargé,
+  // forcer une vraie nouvelle requête plutôt qu'une navigation de même document.
+  var offlineRetry = doc.querySelector('[data-offline-retry]');
+  if (offlineRetry) {
+    offlineRetry.addEventListener('click', function (event) {
+      if (event.defaultPrevented || event.button !== 0 ||
+          event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      window.location.reload();
+    });
+  }
+
   var core = doc.querySelector('[data-core-preview]');
   if (core) {
     var coreImage = core.querySelector('img');
