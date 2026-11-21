@@ -43,6 +43,11 @@
       var available = Math.max(0, nav.clientWidth - 40);
       var active = window.matchMedia('(max-width: 680px)').matches &&
         total > available + 2;
+      // Quand les liens tiennent déjà dans la grille, ne jamais laisser
+      // des flèches inertes : Safari termine parfois ce reflow tardivement.
+      if (active && nav.classList.contains('is-scrollable') && max <= 2) {
+        active = false;
+      }
       nav.classList.toggle('is-scrollable', active);
       back.hidden = !active;
       forward.hidden = !active;
@@ -78,6 +83,8 @@
         refresh();
         revealActive();
         refresh();
+        // Safari peut disposer les flex items au frame suivant.
+        window.requestAnimationFrame(refresh);
       });
     }
     window.addEventListener('resize', onLayoutChange);
