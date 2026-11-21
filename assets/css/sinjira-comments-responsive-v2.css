@@ -189,7 +189,7 @@ body[data-v18-page="comments"] .reader-comments-loading{
 }
 body[data-v18-page="comments"] .reader-comment .hero-actions > button{
   box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;
-  min-height:48px;padding:10px 14px;line-height:1.35
+  min-height:48px!important;padding:10px 14px;line-height:1.35
 }
 body[data-v18-page="comments"] .reader-comment .hero-actions > button:disabled{
   cursor:not-allowed;opacity:.62
