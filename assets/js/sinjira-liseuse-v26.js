@@ -5,7 +5,8 @@ import { chooseReadingPosition, ratioFromScroll, scrollTopForRatio, readingRatio
 
 /* SINJIRA 2026 — liseuse : le PDF intégral n'entre jamais dans le dépôt public
    ni dans localStorage. Le serveur attribue le droit de lecture avant de signer l'accès. */
-const DEMO_URL='/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf';
+// Le PDF précédent a été retiré. L'extrait de validation (62 pages) n'est pas hébergé.
+const DEMO_URL=null;
 const SIGNED_ORIGIN='https://gpvivleexywljowcqkru.supabase.co';
 const PDFJS='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.9.155/build/pdf.min.mjs';
 const PDF_WORKER='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.9.155/build/pdf.worker.min.mjs';
@@ -34,7 +35,7 @@ const chaptersFull=[
 const chaptersDemo=[
   [1,'Couverture et mentions légales'],[3,'Prologue'],
   [25,'Chapitre 1 — Le matin qui hésite'],[41,'Chapitre 2 — Les choses normales'],
-  [61,'Chapitre 3 — Une erreur qui regarde']
+  [61,'Fin de l’extrait']
 ];
 const $=id=>document.getElementById(id);
 const state={pdf:null,page:1,mode:'texte',theme:'sepia',size:20,zoom:1,
@@ -664,6 +665,19 @@ async function restorePage(){
   }
 }
 async function init(){
+  // Ne pas lancer un PDF retiré ni importer le lecteur PDF.js pour la démo.
+  // L'intégrale conserve son accès privé et son contrat d'authentification.
+  if(!isFull){
+    $('reader-edition').textContent='Démo de 62 pages · en validation';
+    $('reader-privacy').textContent='L’ancienne édition a été retirée. La nouvelle démo de 62 pages n’est pas encore publiée sur le site.';
+    $('reader-demo-link').hidden=true;
+    $('reader-download-demo').hidden=true;
+    $('reader-native-demo').hidden=true;
+    $('reader-loading').hidden=true;
+    $('reader-error').hidden=false;
+    message('Démo temporairement indisponible : la nouvelle édition de validation n’est pas encore distribuée.','info');
+    return;
+  }
   loadPreferences();setTheme();bindControls();configureSpeech();
   if(window.matchMedia?.('(max-width: 980px)').matches){
     document.querySelectorAll('.reader-sidebar details').forEach(detail=>{detail.open=false});
@@ -675,11 +689,11 @@ async function init(){
     option.value=String(page);option.textContent=label;
     picker.append(option);
   }
-  $('reader-edition').textContent=isFull?'Édition intégrale privée · 520 pages':'Démo gratuite · 82 pages';
+  $('reader-edition').textContent=isFull?'Édition intégrale privée · 520 pages' :'Démo de 62 pages · en validation';
   $('reader-demo-link').hidden=!isFull;
   $('reader-privacy').textContent=isFull
     ?'Lecture intégrale : une session authentifiée et un droit validé par le serveur sont nécessaires. Le fichier n’est pas enregistré dans le site public.'
-    :'Démo officielle : prologue et chapitres 1 à 3. Vous pouvez aussi télécharger le PDF gratuit.';
+     :'Démo de validation : prologue et chapitres 1 et 2. Publication en attente.';
   $('reader-download-demo').hidden=isFull;
   message(isFull?'Vérification de votre accès privé…':'Chargement de la démo officielle…');
   let loadedPdf=null;
@@ -702,7 +716,7 @@ async function init(){
     pdfjs.GlobalWorkerOptions.workerSrc=PDF_WORKER;
     loadedPdf=await pdfjs.getDocument({data,isEvalSupported:false,useSystemFonts:true}).promise;
     assertPrivateAccess(loadEpoch);
-    if(loadedPdf.numPages!==(isFull?520:82))throw new Error('Le nombre de pages de ce document ne correspond pas à l’édition attendue.');
+    if(loadedPdf.numPages!==(isFull?520:62))throw new Error('Le nombre de pages de ce document ne correspond pas à l’édition attendue.');
     state.pdf=loadedPdf;
     await restorePage();
     assertPrivateAccess(loadEpoch);
@@ -755,11 +769,7 @@ async function init(){
       message(error?.message||'Lecture actuellement indisponible.','error');
     }
     $('reader-error').hidden=false;
-    if(!isFull){
-      const link=$('reader-native-demo');
-      link.href=DEMO_URL;
-      link.hidden=false;
-    }
+    // Aucun lien public de repli vers l'ancien PDF retiré.
   }
 }
 init().catch(()=>message('La liseuse ne peut pas démarrer actuellement.','error'));
