@@ -121,19 +121,52 @@ def validate_page(rel: str, cfg: dict[str, object], errors: list[str]) -> None:
     if rel == "404.html" and 'href="/contact.html"' not in html:
         errors.append("404: lien de contact absent.")
 
+    # Un hébergement CSP strict peut refuser scripts et attributs inline.
+    # Les pages de récupération ne doivent jamais en dépendre.
+    if re.search(r"<script\\b(?![^>]*\\bsrc\\s*=)[^>]*>", html, re.I):
+        errors.append(f"{rel}: script inline incompatible avec la CSP.")
+    if re.search(r"\\b(?:onclick|onsubmit|onerror|onload|style)\\s*=", html, re.I):
+        errors.append(f"{rel}: gestionnaire ou style inline non permis.")
+
     if rel == "404.html":
-        for legacy, target in (
-            ("'/sinjira'", "'/projets/sinjira/'"),
-            ("'/admin'", "'/admin/sinjira/'"),
-        ):
-            if legacy not in html or target not in html:
-                errors.append(f"{rel}: redirection de compatibilité perdue: {legacy} -> {target}")
+        # La redirection est dans un script externe même origine, non dans HTML.
+        script = "/assets/js/sinjira-404-aliases-v1.js"
+        if html.count('src="' + script + '?v=1.0.0"') != 1:
+            errors.append(f"{rel}: script de compatibilité externe absent/dupliqué.")
+        source = ROOT / script.lstrip("/")
+        if not source.is_file():
+            errors.append(f"{rel}: script d'alias local introuvable.")
+        else:
+            aliases = source.read_text("utf-8")
+            for legacy, target in (
+                ("'/sinjira'", "'/projets/sinjira/'"),
+                ("'/admin'", "'/admin/sinjira/'"),
+            ):
+                if legacy not in aliases or target not in aliases:
+                    errors.append(f"{rel}: redirection de compatibilité perdue: {legacy} -> {target}")
+            if "if(aliases[p])location.replace(aliases[p]+location.search+location.hash)" not in aliases:
+                errors.append(f"{rel}: redirection fermée ou paramètres non conservés.")
 
     if rel == "offline.html":
         if 'role="status"' not in html or 'aria-live="polite"' not in html:
             errors.append(f"{rel}: annonce accessible de reprise réseau absente.")
-        if "location.reload()" not in html:
-            errors.append(f"{rel}: action de nouvelle tentative absente.")
+        # Un GET natif force une nouvelle requête même si JavaScript est
+        # désactivé. Aucun formulaire contenant des données privées n'est admis.
+        retry = re.search(r'<form\\b([^>]*)>([\\s\\S]*?)</form>', html, re.I)
+        if not retry:
+            errors.append(f"{rel}: formulaire de nouvelle tentative absent.")
+        else:
+            attrs, body = retry.group(1), retry.group(2)
+            if not (
+                re.search(r'\\bmethod=[\\\'"]get[\\\'"]', attrs, re.I)
+                and re.search(r'\\baction=[\\\'"][\\\'"]', attrs, re.I)
+                and 'recovery-retry-form' in attrs
+                and re.search(r'<button\\b[^>]*\\btype=[\\\'"]submit[\\\'"][^>]*>', body, re.I)
+                and "Réessayer la connexion" in body
+            ):
+                errors.append(f"{rel}: action de nouvelle tentative GET non conforme.")
+            if re.search(r'<(?:input|textarea|select)\\b', body, re.I):
+                errors.append(f"{rel}: données interdites dans le formulaire de reprise.")
 
 
 def main() -> int:
