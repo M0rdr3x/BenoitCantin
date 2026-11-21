@@ -50,13 +50,14 @@ async function invoke({
   bucketMismatch = false,
   storagePath = 'projets/exemple.pdf',
   storageBucket = 'sinjira-private-documents',
+  externalUrl = '/projets/sinjira/documents/example.pdf',
 }) {
   const counters = { documentReads: 0, signedUrls: 0, bucketReads: 0, rpcCalls: [], logs: [] };
   const doc = {
     project_id: UUID,
     status: approved ? 'approved' : 'pending',
     access_level: accessLevel,
-    external_url: signed ? null : '/projets/sinjira/documents/example.pdf',
+    external_url: signed ? null : externalUrl,
     storage_bucket: storageBucket,
     storage_path: storagePath,
     projects: { visibility, status: active ? 'active' : 'archived' },
@@ -213,6 +214,22 @@ test('un lien statique restreint ne doit jamais être livré même à un adminis
     assert.equal(result.counters.signedUrls, 0, JSON.stringify(scenario));
     assert.equal(result.counters.bucketReads, 0, JSON.stringify(scenario));
   }
+});
+
+test('un document public refuse la redirection vers un domaine tiers même si HTTPS', async () => {
+  const result = await invoke({
+    accessLevel: 'public', visibility: 'public',
+    externalUrl: 'https://example.org/trusted-looking-document.pdf',
+  });
+  assert.equal(result.response.status, 500);
+  assert.equal(result.payload.ok, false);
+  assert.equal('url' in result.payload, false);
+  const canonical = await invoke({
+    accessLevel: 'public', visibility: 'public',
+    externalUrl: 'https://www.benoitcantin.com/projets/sinjira/documents/exemple.pdf',
+  });
+  assert.equal(canonical.response.status, 200);
+  assert.equal(canonical.payload.protected, false);
 });
 
 test('document réellement public conserve une URL statique, fichier restreint migré conserve un lien signé', async () => {
