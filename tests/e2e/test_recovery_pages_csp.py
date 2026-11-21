@@ -27,7 +27,10 @@ def static_contracts():
     aliases = ROOT / "assets/js/sinjira-404-aliases-v1.js"
     css = (ROOT / "assets/css/site-ux-sinjira-v1.css").read_text("utf-8")
 
-    assert '<a class="btn btn-primary" href="">Réessayer la connexion</a>' in offline
+    assert '<a class="btn btn-primary" href="" data-offline-retry>Réessayer la connexion</a>' in offline
+    runtime = (ROOT / "assets/js/site.js").read_text("utf-8")
+    assert "offlineRetry.addEventListener('click'" in runtime
+    assert "window.location.reload()" in runtime
     assert "onclick=" not in offline and "style=" not in offline
     assert 'class="site-recovery-page site-offline-page"' in offline
     assert 'class="site-recovery-page site-not-found-page"' in not_found
