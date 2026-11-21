@@ -19,12 +19,15 @@ PINNED_ACTIONS = {
     "actions/setup-python": "ece7cb06caefa5fff74198d8649806c4678c61a1",
     "supabase/setup-cli": "3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf",
     "actions/upload-artifact": "ea165f8d65b6e75b540449e92b4886f43607fa02",
+    "actions/github-script": "ed597411d8f924073f98dfc5c65a23a2325f34cd",
 }
 
-REMOTE_JOB_GUARD = "    if: ${{ github.event_name == 'workflow_dispatch' }}"
+REMOTE_JOB_GUARD = ("    if: ${{ github.event_name == 'workflow_dispatch' && "
+    "github.ref == 'refs/heads/main' && github.ref_protected == true }}")
 APPLY_JOB_GUARD = (
     "    if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && "
-    "inputs.confirmation == 'APPLY-SUPABASE-PRODUCTION' && github.ref == 'refs/heads/main' }}"
+    "inputs.confirmation == 'APPLY-SUPABASE-PRODUCTION' && github.ref == 'refs/heads/main' && "
+    "github.ref_protected == true }}"
 )
 REMOTE_STEP_GUARD = "if: ${{ github.event_name == 'workflow_dispatch' && steps.auth.outputs.ready == 'true' }}"
 APPLY_STEP_GUARD = "if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}"
@@ -194,7 +197,7 @@ def validate_text(text: str) -> list[str]:
     remote = jobs["remote-preflight"]
     if remote:
         if not has_exact_line(remote, REMOTE_JOB_GUARD):
-            errors.append("Le prévol distant doit être réservé au workflow_dispatch manuel au niveau exact du job.")
+            errors.append("Le prévol distant doit exiger workflow_dispatch, main et une branche protégée au niveau exact du job.")
         if "environment: production" in remote:
             errors.append("Le prévol distant non mutant ne doit pas franchir la frontière d'application production.")
         intent = step_block(remote, "Vérifier l'intention manuelle")
@@ -228,7 +231,7 @@ def validate_text(text: str) -> list[str]:
     apply = jobs["apply-production"]
     if apply:
         if not has_exact_line(apply, APPLY_JOB_GUARD):
-            errors.append("Le job d'application doit exiger workflow_dispatch + apply=true + confirmation + main au niveau exact du job.")
+            errors.append("Le job d'application doit exiger workflow_dispatch + apply=true + confirmation + main protégé au niveau exact du job.")
         if not has_exact_line(apply, "    environment: production"):
             errors.append("Le job d'application doit être attaché à l'environment GitHub production.")
         if not has_exact_line(apply, "    needs: [local-preflight, remote-preflight]"):
@@ -237,6 +240,10 @@ def validate_text(text: str) -> list[str]:
             errors.append("L'application doit revalider le ledger après la frontière d'environment.")
         if "python scripts/build_supabase_production_workspace.py --output .prod-workspace/supabase" not in apply:
             errors.append("L'application doit reconstruire le workspace protégé après la frontière d'environment.")
+
+        checkout = step_block(apply, "Checkout")
+        if "          ref: ${{ github.sha }}" not in checkout:
+            errors.append("Le checkout production doit cibler explicitement le SHA déclenché.")
 
         approval = step_block(apply, "Revalider la cible production après approbation")
         for marker in (
@@ -247,6 +254,31 @@ def validate_text(text: str) -> list[str]:
         ):
             if marker not in approval:
                 errors.append(f"Revalidation post-environment incomplète: {marker}")
+
+        live_name = "Revalider GitHub juste avant écriture production"
+        live = step_block(apply, live_name)
+        if not live:
+            errors.append("Revalidation live GitHub absente avant toute écriture production.")
+        else:
+            for label, marker in (
+                ("action immuable", "uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd"),
+                ("référence protégée au déclenchement", "process.env.GITHUB_REF_PROTECTED !== 'true'"),
+                ("lecture GitHub de main", "github.rest.repos.getBranch({ owner, repo, branch: 'main' })"),
+                ("protection serveur active", "branch.protected !== true"),
+                ("SHA courant inchangé", "branch.commit?.sha !== context.sha"),
+            ):
+                if marker not in live:
+                    errors.append("Revalidation live GitHub incomplète: " + label)
+            if live.count("core.setFailed(") != 3:
+                errors.append("Revalidation live GitHub doit refuser trois écarts.")
+            if "secrets." in live:
+                errors.append("La revalidation GitHub ne doit jamais accéder à un secret de production.")
+
+        approval_at = apply.find("      - name: Revalider la cible production après approbation\\n".replace("\\n", "\n"))
+        live_at = apply.find("      - name: " + live_name + "\n")
+        mutation_at = apply.find("      - name: Appliquer les migrations de production depuis le workspace protégé\n")
+        if min(approval_at, live_at, mutation_at) < 0 or not approval_at < live_at < mutation_at:
+            errors.append("Revalidation live GitHub doit précéder la première écriture et suivre le dry-run.")
 
         for name in APPLY_STEPS:
             block = step_block(apply, name)

@@ -114,7 +114,7 @@ jobs:
   remote-preflight:
     name: Prévol distant Supabase production
     needs: local-preflight
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.ref_protected == true }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
@@ -317,7 +317,7 @@ jobs:
   apply-production:
     name: Application Supabase production
     needs: [local-preflight, remote-preflight]
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && inputs.confirmation == 'APPLY-SUPABASE-PRODUCTION' && github.ref == 'refs/heads/main' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && inputs.confirmation == 'APPLY-SUPABASE-PRODUCTION' && github.ref == 'refs/heads/main' && github.ref_protected == true }}
     environment: production
     runs-on: ubuntu-24.04
     timeout-minutes: 25
@@ -327,6 +327,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6 vérifié le 2026-09-08
         with:
+          ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Configurer Python
@@ -385,6 +386,26 @@ jobs:
           (cd .prod-workspace && supabase db lint --linked --schema public --level error --fail-on error) | tee /tmp/sinjira-db-lint-approval.txt
           (cd .prod-workspace && supabase migration list --linked --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-migrations-approval.txt
           (cd .prod-workspace && supabase db push --linked --dry-run --password "$SUPABASE_DB_PASSWORD") | tee /tmp/sinjira-dry-run-approval.txt
+
+      - name: Revalider GitHub juste avant écriture production
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        with:
+          script: |
+            if (process.env.GITHUB_REF_PROTECTED !== 'true') {
+              core.setFailed('Refus de la production : référence non protégée au déclenchement.');
+              return;
+            }
+            const { owner, repo } = context.repo;
+            const { data: branch } = await github.rest.repos.getBranch({ owner, repo, branch: 'main' });
+            if (branch.protected !== true) {
+              core.setFailed('Refus de la production : protection de main absente ou retirée.');
+              return;
+            }
+            if (branch.commit?.sha !== context.sha) {
+              core.setFailed('Refus de la production : main a changé depuis les validations.');
+              return;
+            }
+            core.info('Référence protégée et commit de main vérifiés avant toute écriture.');
 
       - name: Appliquer les migrations de production depuis le workspace protégé
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.apply == true && steps.auth.outputs.ready == 'true' }}
