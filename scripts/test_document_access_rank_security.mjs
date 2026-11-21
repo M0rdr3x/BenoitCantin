@@ -9,6 +9,7 @@ import { dirname, resolve } from 'node:path';
 import vm from 'node:vm';
 
 import { readLimitedUtf8Body } from '../supabase/functions/_shared/limited-body.mjs';
+import { privateDocumentLocationValid, isVerifiedPrivateDocumentBucket } from '../supabase/functions/_shared/private-document-storage.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const source = readFileSync(resolve(root, 'supabase/functions/get-document-url/index.ts'), 'utf8');
@@ -44,15 +45,20 @@ async function invoke({
   user = null,
   approved = true,
   active = true,
+  bucketPublic = false,
+  bucketReadError = false,
+  bucketMismatch = false,
+  storagePath = 'projets/exemple.pdf',
+  storageBucket = 'sinjira-private-documents',
 }) {
-  const counters = { documentReads: 0, signedUrls: 0, bucketReads: 0, rpcCalls: [] };
+  const counters = { documentReads: 0, signedUrls: 0, bucketReads: 0, rpcCalls: [], logs: [] };
   const doc = {
     project_id: UUID,
     status: approved ? 'approved' : 'pending',
     access_level: accessLevel,
     external_url: signed ? null : '/projets/sinjira/documents/example.pdf',
-    storage_bucket: 'sinjira-private-documents',
-    storage_path: 'projets/exemple.pdf',
+    storage_bucket: storageBucket,
+    storage_path: storagePath,
     projects: { visibility, status: active ? 'active' : 'archived' },
   };
 
@@ -76,7 +82,8 @@ async function invoke({
       async getBucket(bucket) {
         counters.bucketReads += 1;
         assert.equal(bucket, doc.storage_bucket);
-        return { data: { id: bucket, public: false }, error: null };
+        if (bucketReadError) return { data: null, error: new Error('simulated provider unavailable') };
+        return { data: { id: bucketMismatch ? 'other-bucket' : bucket, public: bucketPublic }, error: null };
       },
       from(bucket) {
         assert.equal(bucket, doc.storage_bucket);
@@ -97,7 +104,7 @@ async function invoke({
 
   const runtime = {
     Request, Response, URL, Number, Object,
-    console: { error() { throw new Error('Unexpected server logging'); } },
+    console: { error(label, detail) { counters.logs.push([label, detail]); } },
     readLimitedUtf8Body,
     corsHeaders: {
       'Access-Control-Allow-Origin': 'https://www.benoitcantin.com',
@@ -105,9 +112,8 @@ async function invoke({
     },
     serviceClient: () => service,
     optionalUser: async () => user,
-    privateDocumentLocationValid: () => true,
-    isVerifiedPrivateDocumentBucket: metadata =>
-      metadata?.public === false && metadata?.id === doc.storage_bucket,
+    privateDocumentLocationValid,
+    isVerifiedPrivateDocumentBucket,
   };
   runtime.Deno = { serve(handler) { runtime.handler = handler; } };
   vm.runInNewContext(runtimeCode, runtime, { timeout: 1000 });
@@ -234,6 +240,55 @@ test('signature Storage privée conservée uniquement après autorisation', asyn
   // Le contrôle du statut privé du bucket est une protection additionnelle en PR #1037.
   // Cette PR cible uniquement le refus des liens AVANT tout accès au Storage.
   assert.equal(allowed.counters.signedUrls, 1);
+});
+
+
+test('la signature exige un bucket réellement privé, identité exacte et aucune erreur fournisseur', async () => {
+  for (const options of [
+    { bucketPublic: true },
+    { bucketReadError: true },
+    { bucketMismatch: true },
+  ]) {
+    const result = await invoke({
+      accessLevel: 'account', visibility: 'private', signed: true,
+      rank: 10, user: { id: UUID }, ...options,
+    });
+    assert.equal(result.response.status, 503, JSON.stringify(options));
+    assert.equal(result.payload.ok, false);
+    assert.equal('url' in result.payload, false);
+    assert.equal(result.counters.bucketReads, 1);
+    assert.equal(result.counters.signedUrls, 0);
+    assert.equal(result.counters.logs.length, 1);
+    assert.equal(result.counters.logs[0][1].code, 'DOCUMENT_PRIVATE_BUCKET_UNVERIFIED');
+  }
+});
+
+test('aucune consultation Storage et aucun lien pour les chemins invalides', async () => {
+  for (const storagePath of [
+    '', '../secret.pdf', 'docs/../secret.pdf', '/other.pdf',
+    'docs//file.pdf', 'docs/file.pdf?token=x', 'docs/file%2epdf',
+  ]) {
+    const result = await invoke({
+      accessLevel: 'account', visibility: 'private', signed: true,
+      rank: 10, user: { id: UUID }, storagePath,
+    });
+    assert.equal(result.response.status, 503, storagePath);
+    assert.equal(result.payload.ok, false, storagePath);
+    assert.equal('url' in result.payload, false, storagePath);
+    assert.equal(result.counters.bucketReads, 0, storagePath);
+    assert.equal(result.counters.signedUrls, 0, storagePath);
+  }
+});
+
+test('la signature autorisée passe par une lecture du bucket privé avant signature', async () => {
+  const result = await invoke({
+    accessLevel: 'account', visibility: 'private', signed: true,
+    rank: 10, user: { id: UUID },
+  });
+  assert.equal(result.response.status, 200);
+  assert.equal(result.payload.protected, true);
+  assert.equal(result.counters.bucketReads, 1);
+  assert.equal(result.counters.signedUrls, 1);
 });
 
 test('un projet non approuvé ou inactif demeure inaccessible', async () => {
