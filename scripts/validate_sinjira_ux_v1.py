@@ -161,7 +161,7 @@ def check():
         for token in (
             "Rubriques précédentes du compte",
             "Rubriques suivantes du compte",
-            "accountScroll.scrollBy(",
+            "accountScroll.scrollTo(",
             "revealCurrentTab()",
             "data-sinjira-account-scroll-ready",
         ):
