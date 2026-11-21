@@ -22,6 +22,7 @@ SELF_TEST_RUN_LINE = f'run: {SELF_TEST_COMMAND}'
 VALIDATE_RUN_LINE = f'run: {VALIDATE_COMMAND}'
 LITERATURE_TEST_COMMAND = 'python tests/e2e/test_literature_site.py'
 DEMO_UX_TEST_COMMAND = 'python tests/e2e/test_demo_reader_responsive.py'
+ROMAN_IV_UX_TEST_COMMAND = 'python tests/e2e/test_roman_iv_responsive.py'
 
 
 def require(errors: list[str], condition: bool, message: str) -> None:
@@ -84,6 +85,7 @@ def validate_text(text: str) -> list[str]:
     require(errors, text.count('python tests/e2e/test_public_site.py') == 2, 'le smoke test public doit couvrir le dépôt local et le site déployé')
     require(errors, count_exact_stripped(text, LITERATURE_TEST_COMMAND) == 2, 'le contrat Littérature doit couvrir le dépôt local et le site déployé')
     require(errors, text.count(DEMO_UX_TEST_COMMAND) == 1, 'la grille mobile du PDF doit être vérifiée dans les 3 navigateurs locaux')
+    require(errors, text.count(ROMAN_IV_UX_TEST_COMMAND) == 1, 'le Roman IV doit être vérifié sur mobile/ordinateur dans les 3 navigateurs locaux')
 
     for marker in ('browser-smoke:', 'lighthouse-mobile:'):
         require(errors, marker in text, f'job E2E attendu absent: {marker}')
@@ -114,6 +116,7 @@ def run_self_tests(text: str) -> None:
         'cache false ajouté': text.replace(f"node-version: '{NODE_VERSION}'", f"node-version: '{NODE_VERSION}'\n          package-manager-cache: false", 1),
         'test Littérature retiré': text.replace(f'            {LITERATURE_TEST_COMMAND}\n', '', 1),
         'test ergonomie PDF retiré': text.replace(f'            {DEMO_UX_TEST_COMMAND} &&\n', '', 1),
+        'test Roman IV retiré': text.replace(f'            {ROMAN_IV_UX_TEST_COMMAND} &&\n', '', 1),
         'validation contrat retirée': text.replace(f'run: {VALIDATE_COMMAND}\n', 'run: echo validation-retirée\n', 1),
         'continue-on-error ajouté': text.replace('timeout-minutes: 5', 'timeout-minutes: 5\n    continue-on-error: true', 1),
         'set -x ajouté': text.replace('          run_suite() {', '          set -x\n          run_suite() {', 1),
