@@ -84,8 +84,9 @@ def retry_offline(browser, js_enabled):
                 route.fulfill(
                     status=200,
                     content_type="text/html; charset=utf-8",
-                    body="<html lang='fr'><title>Reprise</title>"
-                         "<main><h1>Connexion rétablie</h1></main></html>",
+                    body="<html lang='fr'><head><meta charset='utf-8'>"
+                         "<title>Reprise</title></head><body>"
+                         "<main><h1>Connexion rétablie</h1></main></body></html>",
                 )
         # Un formulaire GET peut ajouter un « ? » final, qui reste la même
         # route HTTP mais ne correspond pas à un motif glob littéral.
