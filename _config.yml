@@ -129,6 +129,7 @@ exclude:
   - "projets/projet-nova/*.txt"
   - "projets/sinjira/codex/livre-i-delivery-contract.json"
   - "projets/sinjira/romans/livre-1-release.json"
+  - "projets/sinjira/romans/roman-4-release.json"
   - "assets/icons/README.md"
   - "**/README.md"
   - "**/*.csv"
