@@ -480,6 +480,31 @@ function bindControls(){
       }
     },650);
   },{passive:true});
+  /* Geste mobile : tourner une page sans détourner le défilement vertical,
+     la sélection du texte ni le déplacement horizontal d'un PDF agrandi. */
+  let swipeStart=null;
+  const swipeViewer=$('reader-viewer');
+  swipeViewer.addEventListener('touchstart',event=>{
+    if(!state.pdf||event.touches.length!==1||
+       event.target.closest('a,button,input,select,textarea,[contenteditable]')){
+      swipeStart=null;return;
+    }
+    const touch=event.touches[0];
+    swipeStart={x:touch.clientX,y:touch.clientY,page:state.page};
+  },{passive:true});
+  swipeViewer.addEventListener('touchend',event=>{
+    const start=swipeStart;swipeStart=null;
+    if(!start||!state.pdf||event.touches.length||
+       event.changedTouches.length!==1||start.page!==state.page)return;
+    const touch=event.changedTouches[0];
+    const dx=touch.clientX-start.x,dy=touch.clientY-start.y;
+    if(Math.abs(dx)<Math.max(55,swipeViewer.clientWidth*.12)||
+       Math.abs(dx)<=Math.abs(dy)*1.5)return;
+    if(state.mode==='page'&&swipeViewer.scrollWidth>swipeViewer.clientWidth+8)return;
+    if(window.getSelection()?.toString())return;
+    changePage(state.page+(dx<0?1:-1));
+  },{passive:true});
+  swipeViewer.addEventListener('touchcancel',()=>{swipeStart=null},{passive:true});
   $('reader-previous').addEventListener('click',()=>changePage(state.page-1));
   $('reader-next').addEventListener('click',()=>changePage(state.page+1));
   $('reader-page').addEventListener('change',event=>changePage(event.target.value));
