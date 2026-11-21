@@ -1,0 +1,75 @@
+name: SINJIRA — romans privés, preuve Storage et limite HTTP
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/functions/get-novel-file-url/index.ts'
+      - 'supabase/functions/_shared/private-book-storage-guard.mjs'
+      - 'supabase/functions/_shared/read-chunk-deadline.mjs'
+      - 'scripts/test_novel_http_deadline_security.mjs'
+      - 'scripts/test_novel_private_bucket_runtime.mjs'
+      - 'scripts/test_private_book_storage_guard.mjs'
+      - 'scripts/validate_novel_storage_security.py'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'supabase/config.toml'
+      - '.github/workflows/sinjira-novel-private-storage-security.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/get-novel-file-url/index.ts'
+      - 'supabase/functions/_shared/private-book-storage-guard.mjs'
+      - 'supabase/functions/_shared/read-chunk-deadline.mjs'
+      - 'scripts/test_novel_http_deadline_security.mjs'
+      - 'scripts/test_novel_private_bucket_runtime.mjs'
+      - 'scripts/test_private_book_storage_guard.mjs'
+      - 'scripts/validate_novel_storage_security.py'
+      - 'scripts/validate_edge_function_inventory.py'
+      - 'supabase/config.toml'
+      - '.github/workflows/sinjira-novel-private-storage-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  private-novel-storage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Python épinglé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+
+      - name: Node.js épinglé
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+          check-latest: false
+
+      - name: Vérifier la syntaxe des scripts de test
+        run: |
+          node --check scripts/test_novel_http_deadline_security.mjs
+          node --check scripts/test_novel_private_bucket_runtime.mjs
+          node --check scripts/test_private_book_storage_guard.mjs
+
+      - name: Tester le véritable handler, les accès privés et les requêtes lentes
+        run: |
+          node --test scripts/test_private_book_storage_guard.mjs \
+            scripts/test_novel_http_deadline_security.mjs \
+            scripts/test_novel_private_bucket_runtime.mjs
+
+      - name: Bloquer les régressions JWT, ACL, buckets publics et délais
+        run: |
+          python3 scripts/validate_novel_storage_security.py --self-test
+          python3 scripts/validate_novel_storage_security.py
+
+      - name: Valider le contrat complet des Edge Functions
+        run: python3 scripts/validate_edge_function_inventory.py
