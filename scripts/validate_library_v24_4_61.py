@@ -53,7 +53,7 @@ def main()->int:
         'data-reader-library',
         'sinjira-reads-v24-4-61.js?v=',
         'liseuse.html?edition=integrale',
-        'liseuse.html?edition=demo',
+        '/projets/sinjira/romans/lire-demo.html',
     ],'bibliotheque-romans.html')
     require(jeux_html,['data-library-account-games','sinjira-library-hub-v26.js?v='],
             'bibliotheque-jeux.html')
