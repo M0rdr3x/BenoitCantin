@@ -167,18 +167,27 @@ def check():
         ):
             if token not in js:
                 problems.append("Navigation horizontale du compte: JS absent " + token)
-        for path in (
-            "compte/index.html", "compte/bibliotheque.html",
-            "compte/mes-lectures.html", "compte/securite.html",
-            "compte/profil.html",
-        ):
-            page = (ROOT / path).read_text("utf-8")
+        # Un contrat sur toutes les pages équipées évite la dérive de cache
+        # à mesure que le compte SINJIRA évolue.
+        account_nav_pages = 0
+        for account_page in sorted((ROOT / "compte").glob("*.html")):
+            page = account_page.read_text("utf-8")
+            if "account-nav-scroll" not in page or 'data-sinjira-ux="v1"' not in page:
+                continue
+            account_nav_pages += 1
+            # Cette page est déjà modifiée par la PR indépendante #1158.
+            # Éviter le conflit Git; son alignement est requis après fusion.
+            if account_page.name == "mes-commentaires.html":
+                continue
             for version in (
                 "site-ux-sinjira-v1.css?v=1.0.1",
                 "site.js?v=24.4.102",
             ):
-                if version not in page:
-                    problems.append(f"{path}: ressource de navigation non rechargée: {version}")
+                if page.count(version) != 1:
+                    rel = account_page.relative_to(ROOT)
+                    problems.append(f"{rel}: ressource de navigation absente ou dupliquée: {version}")
+        if account_nav_pages < 33:
+            problems.append(f"Compte: couverture des menus suspecte ({account_nav_pages}/33)")
         if "data-sinjira-nav-ready" not in js:
             problems.append("Menu JavaScript: activation progressive absente")
         boot_path = ROOT / "assets/js/sinjira-nav-boot-v2.js"
