@@ -1,3 +1,5 @@
+import { readLimitedUtf8BodyWithDeadline } from '../_shared/read-chunk-deadline.mjs';
+
 // Projet Nova — consultation publique agrégée (écritures interdites si secrets / contrôle anti-bot absents).
 // Aucun bulletin individuel, identité, IP ou choix politique n'est journalisé ou enregistré.
 const VERSION = "nova-consultation-v1";
@@ -90,50 +92,19 @@ function respond(status: number, data: unknown, origin: string | null): Response
   return new Response(status===204 ? null : JSON.stringify(data),{status,headers});
 }
 async function readLimitedJson(req: Request): Promise<unknown> {
-  if(!req.headers.get("content-type")?.toLowerCase().startsWith("application/json")) {
-    throw new Error("type");
+  const type=(req.headers.get("content-type")||"").toLowerCase();
+  // "application/json-malformed" n'est jamais un vrai type MIME JSON.
+  if(!/^application\/json(?:\s*;|$)/.test(type)) throw new Error("type");
+
+  // Le lecteur partagé impose une échéance MONOTONE pour la transmission
+  // entière, même si read() ou cancel() ne se termine jamais. La limite porte
+  // sur les vrais octets reçus, pas uniquement sur Content-Length.
+  const limited=await readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,BODY_READ_TIMEOUT_MS);
+  if(!limited.ok) {
+    throw new Error(limited.reason==="REQUEST_TIMEOUT"?"body_interrupted":"size");
   }
-  // Rejeter un corps annoncé trop grand avant de réserver un lecteur.
-  // La limite est aussi appliquée aux octets réellement transmis.
-  const declared = req.headers.get("content-length");
-  if(declared !== null && (!/^\d+$/.test(declared) ||
-      !Number.isSafeInteger(Number(declared)) || Number(declared)>MAX_BODY_BYTES)) {
-    throw new Error("size");
-  }
-  const reader = req.body?.getReader();
-  if(!reader) throw new Error("body");
-  let size=0; const chunks: Uint8Array[]=[];
-  let interrupted=false;
-  // Une source qui envoie quelques octets puis s'arrête ne doit pas retenir
-  // indéfiniment une invocation Edge. Annuler le lecteur débloque read().
-  // Ne jamais attendre cancel() lors d'un dépassement de limite.
-  const interrupt = () => {
-    interrupted=true;
-    try { void reader.cancel().catch(()=>{}); } catch { /* lecteur déjà clos */ }
-  };
-  const timeout=setTimeout(interrupt,BODY_READ_TIMEOUT_MS);
-  req.signal.addEventListener("abort",interrupt,{once:true});
-  try {
-    if(req.signal.aborted) throw new Error("body_interrupted");
-    while(true) {
-      const {done,value}=await reader.read();
-      if(interrupted || req.signal.aborted) throw new Error("body_interrupted");
-      if(done) break;
-      size+=value.byteLength;
-      if(size>MAX_BODY_BYTES) {
-        interrupt();
-        throw new Error("size");
-      }
-      chunks.push(value);
-    }
-  } finally {
-    clearTimeout(timeout);
-    req.signal.removeEventListener("abort",interrupt);
-    reader.releaseLock();
-  }
-  const buffer = new Uint8Array(size); let offset=0;
-  for(const chunk of chunks) {buffer.set(chunk,offset);offset+=chunk.byteLength;}
-  return JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(buffer));
+  if(!limited.raw) throw new Error("body");
+  return JSON.parse(limited.raw);
 }
 async function db(path: string, init: RequestInit={}) {
   if(!SUPABASE_URL || !SERVICE_KEY) throw new Error("backend_unavailable");

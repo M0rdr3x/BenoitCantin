@@ -26,7 +26,9 @@ CUSTOM_AUTH = {
     "nova-civic-poll": (
         "NOVA_POLL_ENABLED", "NOVA_POLL_APPROVED_VERSION", "NOVA_POLL_TURNSTILE_SECRET",
         "NOVA_POLL_TURNSTILE_SITE_KEY", "NOVA_POLL_HMAC_KEY",
-        "MAX_BODY_BYTES", "readLimitedJson", "confirmCaptcha",
+        "MAX_BODY_BYTES", "BODY_READ_TIMEOUT_MS = 8000", "readLimitedJson", "confirmCaptcha",
+        "readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,BODY_READ_TIMEOUT_MS)",
+        "read-chunk-deadline.mjs", r"/^application\/json(?:\s*;|$)/.test(type)",
         "hashToken", "ORIGINS", "nova_poll_public_counts",
         "nova_poll_publication_state", "MIN_PUBLIC_BALLOTS",
         "if(!isOpen()) return respond(503",

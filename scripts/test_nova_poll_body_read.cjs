@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 "use strict";
-// Exécuter le VRAI parseur de corps du service Edge dans une VM sans réseau.
-// Aucun formulaire réel, aucune opinion, aucune requête Supabase.
+// Exécuter le VRAI parseur du sondage, sans réseau ni données politiques.
+// En particulier, une source dont read() ET cancel() ne finissent jamais
+// ne doit pas retenir une fonction Edge publique au-delà de son délai absolu.
 const assert=require("node:assert/strict");
 const fs=require("node:fs");
 const path=require("node:path");
@@ -9,100 +10,93 @@ const vm=require("node:vm");
 const edge=fs.readFileSync(path.resolve(__dirname,
   "../supabase/functions/nova-civic-poll/index.ts"),"utf8");
 const match=edge.match(/async function readLimitedJson\(req: Request\): Promise<unknown> \{[\s\S]*?\n\}\n(?=async function db\()/);
-assert.ok(match,"Parser Edge de corps limité introuvable");
-const js=match[0]
-  .replace("readLimitedJson(req: Request): Promise<unknown>","readLimitedJson(req)")
-  .replace("const chunks: Uint8Array[]=[]","const chunks=[]");
-assert.equal(js.includes("Promise<unknown>"),false);
+assert.ok(match,"Parseur Edge NOVA introuvable");
+const js=match[0].replace("readLimitedJson(req: Request): Promise<unknown>","readLimitedJson(req)");
+assert.match(edge,/const MAX_BODY_BYTES = 8192;/);
 assert.match(edge,/const BODY_READ_TIMEOUT_MS = 8000;/);
-assert.match(js,/reader\.cancel\(\)/,"Le délai doit débloquer le lecteur suspendu");
-assert.match(js,/req\.signal\.addEventListener\("abort"/,"Déconnexion client traitée");
-
-const scheduled=[],cleared=[];
-let timerId=0;
-const context={
-  Uint8Array,TextDecoder,Headers,ReadableStream,
-  setTimeout(fn,ms){const id=++timerId;scheduled.push({id,fn,ms});return id;},
-  clearTimeout(id){cleared.push(id);}
-};
-const read=vm.runInNewContext("const MAX_BODY_BYTES=8192; const BODY_READ_TIMEOUT_MS=8000;\n"
-  +js+"\nglobalThis.__read=readLimitedJson; __read",context,{timeout:3000});
+assert.match(edge,/from '..\/_shared\/read-chunk-deadline.mjs'/);
+assert.match(js,/readLimitedUtf8BodyWithDeadline\(req,MAX_BODY_BYTES,BODY_READ_TIMEOUT_MS\)/);
+assert.match(js,/\/\^application\\\/json/);
+assert.doesNotMatch(js,/\.startsWith\(["']application\/json/);
+assert.doesNotMatch(js,/await req\.(?:json|text)\(/);
+assert.doesNotMatch(js,/await reader\.read\(/);
+assert.doesNotMatch(js,/await reader\.cancel\(/);
 const encoder=new TextEncoder();
+const bytes=s=>encoder.encode(s);
+const full=s=>new ReadableStream({start(c){c.enqueue(bytes(s));c.close();}});
 const make=(body,{mime="application/json",length,controller=new AbortController()}={})=>{
   const headers=new Headers({"content-type":mime});
   if(length!==undefined)headers.set("content-length",length);
   return {body,headers,signal:controller.signal,controller};
 };
-const bytes=text=>encoder.encode(text);
-const full=text=>new ReadableStream({start(s){s.enqueue(bytes(text));s.close();}});
-async function rejected(req,reason){
-  await assert.rejects(read(req),reason);
-}
+
 (async()=>{
-  let req=make(full('{"x":true,"number":3}'),{length:"21"});
-  const data=await read(req);
-  assert.equal(data.x,true);
-  assert.equal(data.number,3);
-  assert.equal(cleared.at(-1),scheduled.at(-1).id,"Délai libéré après succès");
-  assert.equal(scheduled.at(-1).ms,8000,"Durée maximum de lecture");
+  const {readLimitedUtf8BodyWithDeadline}=await import(
+    "../supabase/functions/_shared/read-chunk-deadline.mjs");
+  let calls=0;
+  const sharedReader=(req,max,ms)=>{
+    calls++;
+    assert.equal(max,8192,"Limite réelle du corps NOVA conservée");
+    assert.equal(ms,8000,"Délai absolu du sondage inchangé");
+    // Réduire le temps de test en gardant la VRAIE primitive de production.
+    return readLimitedUtf8BodyWithDeadline(req,max,40);
+  };
+  const context={sharedReader};
+  const read=vm.runInNewContext(
+    "const MAX_BODY_BYTES=8192;const BODY_READ_TIMEOUT_MS=8000;"+
+    "const readLimitedUtf8BodyWithDeadline=sharedReader;\n"+
+    js+"\nglobalThis.__read=readLimitedJson;__read",
+    context,{timeout:3000}
+  );
+  const rejected=async(req,pattern)=>assert.rejects(read(req),pattern);
 
-  req=make(full('{"x":1}'),{mime:"text/plain"});
-  await rejected(req,/type/);
-  req=make(full('{"x":1}'),{length:"999999"});
-  await rejected(req,/size/);
-  req=make(full('{"x":1}'),{length:"pas-un-nombre"});
-  await rejected(req,/size/);
-  req=make(full('{"x":1}'),{length:"9007199254740992"});
-  await rejected(req,/size/);
-  req=make(full('pas du JSON'));
-  await rejected(req,/SyntaxError|Unexpected token|JSON/);
-  // Le décodeur fatal refuse les octets illisibles avant toute décision.
-  req=make(new ReadableStream({start(s){
-    s.enqueue(new Uint8Array([0xc3,0x28]));s.close();
-  }}));
-  await rejected(req,/TypeError|encoded data|encoding|UTF-8/);
+  const value=await read(make(full('{"x":true,"number":3}'),{length:"21"}));
+  assert.equal(value.x,true);
+  assert.equal(value.number,3);
+  assert.equal((await read(make(full('{"name":"été"}'),
+    {mime:"application/json; charset=utf-8"}))).name,"été");
 
-  let cancelled=0;
-  const large=new ReadableStream({
-    start(s){s.enqueue(new Uint8Array(8193));},
-    cancel(){cancelled++;}
+  await rejected(make(full("{}"),{mime:"text/plain"}),/type/);
+  await rejected(make(full("{}"),{mime:"application/json-evil"}),/type/);
+  await rejected(make(full("{}"),{mime:"application/jsonx"}),/type/);
+  await rejected(make(full("{}"),{length:"8193"}),/size/);
+  await rejected(make(full("{}"),{length:"NaN"}),/size/);
+  await rejected(make(full("{}"),{length:"9007199254740992"}),/size/);
+  await rejected(make(full("{}"),{length:"01"}),/size/);
+  await rejected(make(full("invalide")),/SyntaxError|Unexpected token|JSON/);
+  await rejected(make(new ReadableStream({
+    start(c){c.enqueue(new Uint8Array([0xc3,0x28]));c.close();}
+  })),/size/);
+  await rejected(make(full("")),/body/);
+  await rejected(make(new ReadableStream({
+    start(c){c.enqueue(new Uint8Array(8193));c.close();}
+  })),/size/);
+
+  let cancelCount=0;
+  const stalled=new ReadableStream({
+    pull(){return new Promise(()=>{});},
+    cancel(){cancelCount++;return new Promise(()=>{});}
   });
-  await rejected(make(large),/size/);
-  assert.equal(cancelled,1,"Dépassement du volume : annulation du lecteur");
-  assert.equal(cleared.at(-1),scheduled.at(-1).id);
+  const start=performance.now();
+  await rejected(make(stalled),/body_interrupted/);
+  const elapsed=performance.now()-start;
+  assert.ok(elapsed<1000,"Une annulation bloquée ne doit jamais suspendre la réponse");
+  assert.ok(cancelCount>0,"La primitive doit tenter d'annuler la source au délai");
 
-  cancelled=0;
-  const slow=new ReadableStream({
-    start(s){s.enqueue(bytes('{"x":'));},
-    cancel(){cancelled++;}
+  // Même après un fragment valide, l'échéance reste absolue.
+  const partial=new ReadableStream({
+    start(c){c.enqueue(bytes('{"x":'));},
+    pull(){return new Promise(()=>{});},
+    cancel(){return new Promise(()=>{});}
   });
-  const pending=read(make(slow));
-  // Laisser la première portion être reçue; ensuite aucun octet n'arrive.
-  await Promise.resolve();await Promise.resolve();await Promise.resolve();
-  const deadline=scheduled.at(-1);
-  assert.equal(cleared.includes(deadline.id),false,"Lecture bloquée encore sous délai");
-  deadline.fn();
-  await assert.rejects(pending,/body_interrupted/,
-    "Une transmission suspendue doit se terminer après le délai");
-  assert.equal(cancelled,1,"Le lecteur partiel est annulé au délai");
-  assert.equal(cleared.at(-1),deadline.id);
+  const partialStart=performance.now();
+  await rejected(make(partial),/body_interrupted/);
+  assert.ok(performance.now()-partialStart<1000);
 
-  cancelled=0;
-  const controller=new AbortController();
-  const disconnected=new ReadableStream({
-    start(s){s.enqueue(bytes('{"x":'));},
-    cancel(){cancelled++;}
-  });
-  const session=make(disconnected,{controller});
-  const interrupted=read(session);
-  await Promise.resolve();await Promise.resolve();
-  controller.abort();
-  await assert.rejects(interrupted,/body_interrupted/,"Déconnexion client traitée");
-  assert.equal(cancelled,1);
-  assert.equal(cleared.at(-1),scheduled.at(-1).id);
+  const aborted=new AbortController();
+  aborted.abort();
+  await rejected(make(full("{}"),{controller:aborted}),/body_interrupted/);
 
-  const already=new AbortController();already.abort();
-  await rejected(make(full('{"x":1}'),{controller:already}),/body_interrupted/);
-  assert.equal(cleared.length,scheduled.length,"Tous les délais de lecture sont nettoyés");
-  console.log("OK NOVA : corps JSON valides, MIME/longueur/UTF8, surcharge, flux suspendu, abandon client et temporisateurs sans aucun vote.");
+  assert.ok(calls>=10,"Les contrôles réels doivent passer par le lecteur partagé");
+  console.log("OK NOVA: MIME strict, UTF-8, longueur, flux gelé, cancel bloquant, deadline absolue et déconnexion (sans aucun vote).");
 })().catch(error=>{console.error(error);process.exitCode=1;});

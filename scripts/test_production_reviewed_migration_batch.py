@@ -52,7 +52,10 @@ class ReviewedProductionMigrationBatchTests(unittest.TestCase):
         (functions / 'nova-civic-poll/index.ts').write_text(
             '// Fixture activation: Deno.env.get("NOVA_POLL_ENABLED") === "true"\n'
             '// Fixture CAPTCHA: if(!await confirmCaptcha(payload.captchaToken))\n'
-            '// Fixture privileged role: SUPABASE_SERVICE_ROLE_KEY\n',
+            '// Fixture privileged role: SUPABASE_SERVICE_ROLE_KEY\n'
+            '// Fixture body: readLimitedUtf8BodyWithDeadline(req,MAX_BODY_BYTES,BODY_READ_TIMEOUT_MS)\n'
+            '// Fixture deadline: BODY_READ_TIMEOUT_MS = 8000\n'
+            r'// Fixture MIME: /^application\/json(?:\s*;|$)/.test(type)' + '\n',
             encoding='utf-8',
         )
         # Les fragments suivants ne contiennent aucune donnée utilisateur.
