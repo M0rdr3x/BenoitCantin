@@ -26,7 +26,7 @@ for forbidden in (
     if forbidden in source:
         errors.append(f"Ressource non essentielle conservée dans le cache public : {forbidden}")
 for security_guard in (
-    "const privatePath=", "cache:'no-store'", "if(privatePath)",
+    "const privatePath=", "cache:'no-store'", "if(privatePath||r.headers.has('Authorization')",
     "const PUBLIC_DOCUMENTS=", "const PUBLIC_ASSET=",
     "isPublicDocument", "if(u.search)", "resp.redirected",
     "resp.status!==200", "'Set-Cookie'",
