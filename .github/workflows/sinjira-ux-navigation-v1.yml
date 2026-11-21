@@ -39,6 +39,8 @@ jobs:
           persist-credentials: false
       - name: Valider les menus et les raccourcis
         run: python3 scripts/validate_sinjira_ux_v1.py
+      - name: Vérifier les chemins CSS locaux et le cache versionné
+        run: python3 tests/ux/test_sinjira_ux_stylesheet.py
       - name: Vérifier le rendu de l'accueil centré sur SINJIRA
         run: python3 scripts/validate_home_focus.py
       - name: Contrôler les budgets de performance
