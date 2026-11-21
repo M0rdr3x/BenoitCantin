@@ -12,6 +12,10 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github/workflows/deploy-netlify-staging.yml"
 SECRETS = ("NETLIFY_AUTH_TOKEN", "NETLIFY_SITE_ID")
+JOB_GUARD = "github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/a1/web-release-transparency' && github.ref_protected == true"
+LIVE_HEADER = "      - name: Revalider branche GitHub protégée et SHA live avant secrets\n"
+LIVE_ACTION = "uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd"
+SHA_CHECKOUT_HEADER = "      - name: Rejeter checkout différent du SHA déclencheur\n"
 APPROVED_STEPS = (
     "Verrouiller ref, SHA, site et secrets",
     "Déployer le preview staging sans promotion",
@@ -31,7 +35,7 @@ def inspect(source: str) -> list[str]:
     # Le lancement manuel de staging doit être impossible depuis une
     # branche de travail quelconque, même avec le bon expected_sha.
     branch_gates = re.findall(r"^    if:\s*(.*?)\s*$", source, re.MULTILINE)
-    if branch_gates != ["github.ref == 'refs/heads/a1/web-release-transparency'"]:
+    if branch_gates != ["${{ " + JOB_GUARD + " }}"]:
         errors.append("la branche de staging doit être le seul ref explicitement approuvé")
 
     # GitHub configure GITHUB_REF_PROTECTED=true uniquement si ce ref est
@@ -54,10 +58,31 @@ def inspect(source: str) -> list[str]:
         or not re.search(r"(?m)^          fi\s*$", gate_block)
     ):
         errors.append("fail-closed GITHUB_REF_PROTECTED manquant ou affaibli")
-    if source.count("GITHUB_REF_PROTECTED") != 1:
+    if source.count("GITHUB_REF_PROTECTED") != 3:
         errors.append("le contrôle de branche protégée doit être unique")
     if gate_start < 0 or gate_start > source.find("secrets.NETLIFY_AUTH_TOKEN"):
         errors.append("le contrôle de protection doit précéder tout accès aux secrets Netlify")
+
+    checkout_header = "      - name: Récupérer le dépôt sans credentials persistés\n"
+    python_header = "      - name: Configurer Python\n"
+    checkout_at = source.find(checkout_header)
+    sha_header_at = source.find(SHA_CHECKOUT_HEADER)
+    python_at = source.find(python_header)
+    if min(checkout_at, sha_header_at, python_at) < 0 or not checkout_at < sha_header_at < python_at:
+        errors.append("checkout figé et vérification SHA doivent précéder l'exécution du dépôt")
+    checkout_block = source[checkout_at:sha_header_at] if 0 <= checkout_at < sha_header_at else ""
+    sha_block = source[sha_header_at:python_at] if 0 <= sha_header_at < python_at else ""
+    if "          ref: ${{ github.sha }}\n" not in checkout_block:
+        errors.append("checkout doit figer le SHA du déclenchement")
+    for required in (
+        'test "$(git rev-parse --verify HEAD)" = "$GITHUB_SHA"',
+        'test "${GITHUB_REF_PROTECTED:-}" = \'true\'',
+        "test \"$GITHUB_REF\" = 'refs/heads/a1/web-release-transparency'",
+    ):
+        if required not in sha_block:
+            errors.append("vérification SHA / branche avant code manquante: " + required)
+    if "secrets." in sha_block:
+        errors.append("contrôle SHA ne doit pas avoir accès aux secrets Netlify")
 
     # Les dépendances npm doivent être installées avant l'injection des secrets.
     # Le binaire local s'exécute ensuite sans lancer un gestionnaire de paquets.
@@ -67,6 +92,21 @@ def inspect(source: str) -> list[str]:
     install_at = source.find(install_header)
     audit_at = source.find(audit_header)
     preflight_at = source.find(preflight_header)
+    live_at = source.find(LIVE_HEADER)
+    if min(audit_at, live_at, preflight_at) < 0 or not audit_at < live_at < preflight_at:
+        errors.append("revalidation GitHub live doit suivre l'audit npm et précéder les secrets")
+    live_block = source[live_at:preflight_at] if 0 <= live_at < preflight_at else ""
+    for label, check in (
+        ("action immuable", LIVE_ACTION),
+        ("ref protégée au lancement", "process.env.GITHUB_REF_PROTECTED !== 'true'"),
+        ("lecture GitHub du ref", "github.rest.repos.getBranch({ owner, repo, branch: 'a1/web-release-transparency' })"),
+        ("protection serveur courante", "branch.protected !== true"),
+        ("SHA de release inchangé", "branch.commit?.sha !== context.sha"),
+    ):
+        if check not in live_block:
+            errors.append("revalidation GitHub live incomplète: " + label)
+    if live_block.count("core.setFailed(") != 3 or "secrets." in live_block:
+        errors.append("revalidation GitHub live doit refuser les écarts sans accéder aux secrets")
     if (
         source.count(install_header) != 1
         or source.count(audit_header) != 1
@@ -239,9 +279,40 @@ def self_test(source: str) -> None:
             "          echo '${{ secrets[\"NETLIFY_AUTH_TOKEN\"] }}'\n          set -euo pipefail\n", 1,
         ),
         "branch wildcard restored": source.replace(
-            "    if: github.ref == 'refs/heads/a1/web-release-transparency'",
+            "    if: ${{ " + JOB_GUARD + " }}",
             "    if: startsWith(github.ref, 'refs/heads/a1/web-release-')", 1,
         ),
+        "job sans protection serveur": source.replace(
+            "    if: ${{ " + JOB_GUARD + " }}",
+            "    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/a1/web-release-transparency' }}", 1,
+        ),
+        "checkout main flottant": source.replace("          ref: ${{ github.sha }}", "          ref: main", 1),
+        "contrôle SHA checkout contourné": source.replace(
+            'test "$(git rev-parse --verify HEAD)" = "$GITHUB_SHA"', 'true', 1,
+        ),
+        "controle SHA non protégé": source.replace(
+            'test "${GITHUB_REF_PROTECTED:-}" = \'true\'', 'true', 1,
+        ),
+        "action live dé-épinglée": source.replace(
+            LIVE_ACTION, "uses: actions/github-script@v8", 1,
+        ),
+        "étape live manquante": source.replace(
+            LIVE_HEADER, "      - name: Vérification GitHub retirée\n", 1,
+        ),
+        "live protection serveur supprimée": source.replace(
+            "branch.protected !== true", "false", 1,
+        ),
+        "live SHA ignoré": source.replace(
+            "branch.commit?.sha !== context.sha", "false", 1,
+        ),
+        "live ref protection ignorée": source.replace(
+            "process.env.GITHUB_REF_PROTECTED !== 'true'", "false", 1,
+        ),
+        "live bloqueur supprimé": source.replace(
+            "core.setFailed('Staging interdit : la release a changé depuis les validations.')",
+            "core.info('SHA ignoré')", 1,
+        ),
+
         "credential leaked via process args": source.replace(
             CLI_BIN + " deploy", CLI_BIN + ' deploy --auth "$NETLIFY_AUTH_TOKEN"', 1,
         ),
