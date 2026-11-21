@@ -15,6 +15,10 @@ REQUIRED = {
     'stockage après auth': 'const storage=privateStorageConfig();',
     'drapeau activation privé': "SINJIRA_LIVRE_I_PRIVATE_DELIVERY_ENABLED",
     'bucket privé serveur': 'SINJIRA_LIVRE_I_PRIVATE_BUCKET',
+    'objet PDF normalisé': 'privateBookLocationValid(bucket,storagePath)',
+    'interrogation métadonnées Storage': 'service.storage.getBucket(storage.bucket)',
+    'refus du bucket public': '!isVerifiedPrivateBucket(bucketMetadata,storage.bucket)',
+    'journal fixe bucket non privé': "console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_BUCKET_UNVERIFIED'});",
     'chemin privé serveur': 'SINJIRA_LIVRE_I_PRIVATE_PATH',
     'slug Livre I exact': "const PRODUCT_SLUG='sinjira-livre-01-la-cendre-du-jugement';",
     'TTL signé exact': 'const SIGNED_URL_SECONDS=300;',
@@ -71,13 +75,15 @@ def validate_text(source: str, config: str) -> list[str]:
             'Le client service ne doit être construit qu’après auth et validation du stockage privé.')
 
     entitlement_pos = source.find(".from('user_entitlements')")
+    bucket_pos = source.find('service.storage.getBucket(storage.bucket)')
     signed_pos = source.find('.createSignedUrl(storage.storagePath,SIGNED_URL_SECONDS')
-    require(errors, entitlement_pos > service_pos and signed_pos > entitlement_pos,
-            'L’URL signée doit être créée seulement après validation de l’entitlement du compte.')
+    require(errors, entitlement_pos > service_pos and bucket_pos > entitlement_pos and signed_pos > bucket_pos,
+            'L’URL signée doit être créée seulement après validation de l’entitlement ET du bucket Storage privé.')
 
     console_lines = [line.strip() for line in source.splitlines() if 'console.' in line]
     expected_console_lines = [
         "console.error('[get-private-book-url]',{code:'BOOK_ENTITLEMENT_CHECK_FAILED'});",
+        "console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_BUCKET_UNVERIFIED'});",
         "console.error('[get-private-book-url]',{code:'BOOK_SIGNED_URL_FAILED'});",
         "console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_STORAGE_NOT_CONFIGURED'});",
         "console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_DELIVERY_FAILED'});",
@@ -126,6 +132,12 @@ def self_test() -> None:
         'TTL élargi': source.replace('SIGNED_URL_SECONDS=300', 'SIGNED_URL_SECONDS=3600', 1),
         'filtre utilisateur retiré': source.replace("      .eq('user_id',user.id)\n", '', 1),
         'filtre produit retiré': source.replace("      .eq('product_id',product.id)\n", '', 1),
+        'validation du chemin retirée': source.replace(
+            'privateBookLocationValid(bucket,storagePath)', 'true', 1),
+        'bucket Supabase non consulté': source.replace(
+            'service.storage.getBucket(storage.bucket)', "Promise.resolve({data:{id:storage.bucket,public:false}})", 1),
+        'acceptation du bucket public': source.replace(
+            '!isVerifiedPrivateBucket(bucketMetadata,storage.bucket)', 'false', 1),
         'activation privée retirée': source.replace("  const enabled=Deno.env.get('SINJIRA_LIVRE_I_PRIVATE_DELIVERY_ENABLED')==='true';\n", "  const enabled=true;\n", 1),
         'repli public ajouté': source.replace('    return privateJson({\n      ok:true,', "    service.storage.from(storage.bucket).getPublicUrl(storage.storagePath);\n    return privateJson({\n      ok:true,", 1),
         'log entitlement brut': source.replace("console.error('[get-private-book-url]',{code:'BOOK_ENTITLEMENT_CHECK_FAILED'});", "console.error(entitlementError);", 1),
@@ -181,7 +193,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK Livre I privé: auth avant état du stockage, entitlement compte/produit, URL signée 300 s, aucun repli public et logs sanitizés.')
+    print('OK Livre I privé: auth, entitlement compte/produit, confirmation bucket Supabase public=false, chemin PDF sûr, URL signée 300 s et logs sanitizés.')
     return 0
 
 
