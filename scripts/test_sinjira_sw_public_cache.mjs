@@ -85,6 +85,7 @@ test('seules les pages publiques approuvées sont cachées', async () => {
 test('GET JSON, URL à paramètres et headers sensibles ne sont jamais cachés', async () => {
   const h = harness(); await h.lifecycle('install'); h.writes.length = 0;
   await h.request('/api/profil.json', { destination: '' });
+  await h.request('/assets/media/roman-prive.pdf', { destination: '' });
   await h.request('/assets/js/site.js?token=confidentiel', { destination: 'script' });
   await h.request('/assets/js/site.js', { destination: 'script', headers: { Authorization: 'Bearer fictif' } });
   await h.request('/assets/media/sinjira-registre.webp', { destination: 'image', headers: { Range: 'bytes=0-10' } });
