@@ -14,7 +14,14 @@ REQUIRED = {
     'authentification obligatoire': 'requiredUser(req)',
     'session issue du JWT validé': 'sessionIdFromVerifiedRequest(req)',
     'lecture JSON bornée': 'readLimitedJson(req)',
-    'mesure UTF-8 réelle': 'new TextEncoder().encode(raw).byteLength',
+    'lecteur HTTP borné par échéance': 'readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS)',
+    'délai absolu de 4 secondes': 'MAX_REQUEST_READ_TIMEOUT_MS = 4_000;',
+    'lecteur partagé contrôlé': "from '../_shared/read-chunk-deadline.mjs';",
+    'MIME JSON strict': "contentType !== 'application/json'",
+    'dépassement de délai détecté': "limited.reason === 'REQUEST_TIMEOUT'",
+    'dépassement réel en octets détecté': "limited.reason === 'REQUEST_TOO_LARGE'",
+    'HTTP 408 pour transmission bloquée': "Délai de transmission dépassé.' }, 408)",
+    'journal privé expurgé': "console.error('[security-context]', { code: 'SECURITY_CONTEXT_FAILED' });",
     'réponse privée': "'Cache-Control': 'private, no-store, max-age=0'",
     'protection MIME': "'X-Content-Type-Options': 'nosniff'",
     'référent masqué': "'Referrer-Policy': 'no-referrer'",
@@ -35,6 +42,12 @@ REQUIRED_PATTERNS = {
 FORBIDDEN = {
     'lecture JSON directe non bornée': 'await req.json()',
     'lecture JSON directe non bornée espacée': 'await req.json (',
+    'lecture texte directe non bornée': 'await req.text()',
+    'ancien lecteur sans échéance': 'readLimitedUtf8Body(req, MAX_REQUEST_BYTES)',
+    'lecteur HTTP direct sans échéance': 'await reader.read()',
+    'attente annulation bloquante': 'await reader.cancel(',
+    'journal brut de fournisseur': "console.error('[security-context]', error)",
+    'journal erreur brute': 'console.error(error)',
     'lecture IP brute Cloudflare': 'cf-connecting-ip',
     'lecture IP brute proxy': 'x-forwarded-for',
     'lecture IP brute générique': 'x-real-ip',
@@ -70,79 +83,49 @@ def validate(path: Path) -> list[str]:
 
 
 def self_test() -> None:
-    with TemporaryDirectory() as raw:
-        path = Path(raw) / 'index.ts'
-        safe = """
-const MAX_REQUEST_BYTES = 4096;
-const PRIVATE_HEADERS = {
-  'Cache-Control': 'private, no-store, max-age=0',
-  'X-Content-Type-Options': 'nosniff',
-  'Referrer-Policy': 'no-referrer',
-};
-function privateJson(data, status=200){return new Response(JSON.stringify(data),{status,headers:PRIVATE_HEADERS})}
-async function readLimitedJson(req){
- const rawLength=req.headers.get('content-length');
- const raw=await req.text();
- new TextEncoder().encode(raw).byteLength;
- return {body:{}};
-}
-function sessionIdFromVerifiedRequest(req){return req}
-function trustedGeo(req){
- if (Deno.env.get('SINJIRA_TRUST_GEO_HEADERS') !== 'true') return {country:null,region:null};
- const country=req.headers.get('cf-ipcountry');
- const region=req.headers.get('x-sinjira-region');
- return {country,region};
-}
-Deno.serve(async (req) => {
- if (req.method !== 'POST') return privateJson({},405);
- const user = await requiredUser(req);
- const sessionId = sessionIdFromVerifiedRequest(req);
- const parsed = await readLimitedJson(req);
- if (parsed.response) return parsed.response;
- if (!parsed.body) return privateJson({},400);
- const geo=trustedGeo(req);
- const service=serviceClient();
- const {data}=await service.rpc('service_security_evaluate_context_session',{p_session_id: sessionId});
- if(!data)return privateJson({},500);
- const privacy={raw_ip_stored: false,gps_used: false};
- return privateJson({
-      ok: true,
-      privacy,
-      geo
- });
-});
-privateJson({});
-privateJson({});
-"""
-        path.write_text(safe, encoding='utf-8')
-        clean = validate(path)
-        if clean:
-            raise AssertionError('Le cas sain doit passer: ' + ' | '.join(clean))
+    """Mutations sur le VRAI code Edge, sans secrets ni base externe."""
+    original = EDGE.read_text('utf-8', errors='strict')
+    assert not validate(EDGE), 'Le contrat courant doit réussir avant les mutations.'
+    mutations = {
+        'limite HTTP relâchée': ('MAX_REQUEST_BYTES = 4096;', 'MAX_REQUEST_BYTES = 40960;'),
+        'échéance supprimée': ('MAX_REQUEST_READ_TIMEOUT_MS = 4_000;', ''),
+        'ancien lecteur sans deadline': (
+            'readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS)',
+            'readLimitedUtf8Body(req, MAX_REQUEST_BYTES)'
+        ),
+        'requête sans MIME JSON': ("contentType !== 'application/json'", 'false'),
+        'HTTP 408 supprimé': ("Délai de transmission dépassé.' }, 408)", "Délai de transmission dépassé.' }, 413)"),
+        'dépassement HTTP non détecté': ("limited.reason === 'REQUEST_TOO_LARGE'", 'false'),
+        'erreur brute écrite en logs': (
+            "console.error('[security-context]', { code: 'SECURITY_CONTEXT_FAILED' });",
+            "console.error('[security-context]', error);"
+        ),
+        'JSON directement non borné': (
+            'const parsed = await readLimitedJson(req);',
+            'const parsed = { body: await req.json() };'
+        ),
+        'texte directement non borné': (
+            'const parsed = await readLimitedJson(req);',
+            'const parsed = { body: await req.text() };'
+        ),
+        'réponse privée supprimée': ("'Cache-Control': 'private, no-store, max-age=0',", ''),
+        'IP brute réintroduite': ("req.headers.get('cf-ipcountry')", "req.headers.get('cf-connecting-ip')"),
+        'JWT validé après la lecture': (
+            'const user = await requiredUser(req);\n    const sessionId = sessionIdFromVerifiedRequest(req);\n    const parsed = await readLimitedJson(req);',
+            'const parsed = await readLimitedJson(req);\n    const user = await requiredUser(req);\n    const sessionId = sessionIdFromVerifiedRequest(req);'
+        ),
+    }
+    with TemporaryDirectory(prefix='security-context-contract-') as temporary:
+        p = Path(temporary) / 'index.ts'
+        for name, (needle, replacement) in mutations.items():
+            assert original.count(needle) >= 1, f'Mutation invalide {name}: ancre absente.'
+            changed = original.replace(needle, replacement, 1)
+            assert changed != original, f'Mutation invalide {name}: source identique.'
+            p.write_text(changed, encoding='utf-8')
+            detected = validate(p)
+            assert detected, f'Mutation de sécurité indétectée : {name}.'
+    print(f'OK {len(mutations)} mutations négatives sur le code réel security-context.')
 
-        path.write_text(safe.replace('const parsed = await readLimitedJson(req);', 'const parsed = {body: await req.json()};'), encoding='utf-8')
-        direct = validate(path)
-        if not any('lecture JSON directe' in item for item in direct):
-            raise AssertionError('La lecture JSON directe doit être bloquée.')
-
-        path.write_text(safe.replace("'Cache-Control': 'private, no-store, max-age=0',", ''), encoding='utf-8')
-        cache = validate(path)
-        if not any('réponse privée' in item for item in cache):
-            raise AssertionError('La suppression de no-store doit être bloquée.')
-
-        path.write_text(safe.replace('MAX_REQUEST_BYTES = 4096;', 'MAX_REQUEST_BYTES = 40960;'), encoding='utf-8')
-        body_size = validate(path)
-        if not any('4096 octets' in item for item in body_size):
-            raise AssertionError('Une limite de corps affaiblie doit être bloquée.')
-
-        path.write_text(safe.replace("const country=req.headers.get('cf-ipcountry');", "const country=req.headers.get('cf-connecting-ip');"), encoding='utf-8')
-        raw_ip = validate(path)
-        if not any('IP brute' in item for item in raw_ip):
-            raise AssertionError('La lecture d’une IP brute doit être bloquée.')
-
-        path.write_text(safe.replace('const user = await requiredUser(req);\n const sessionId', 'const parsed = await readLimitedJson(req);\n const user = await requiredUser(req);\n const sessionId').replace(' const parsed = await readLimitedJson(req);\n if (parsed.response)', ' if (parsed.response)'), encoding='utf-8')
-        auth_order = validate(path)
-        if not any('avant la validation' in item for item in auth_order):
-            raise AssertionError('La lecture du corps avant le JWT doit être bloquée.')
 
 
 def main() -> int:
@@ -160,7 +143,7 @@ def main() -> int:
         for error in errors:
             print('- ' + error)
         return 1
-    print('OK security-context: JWT avant corps, JSON 4 KiB, réponses no-store et aucune IP brute/GPS.')
+    print('OK security-context: JWT avant corps, JSON strict 4 KiB/4 s, logs expurgés, no-store et aucune IP brute/GPS.')
     return 0
 
 
