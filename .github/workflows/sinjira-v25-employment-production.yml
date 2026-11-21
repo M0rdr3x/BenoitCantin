@@ -24,6 +24,7 @@ env:
 jobs:
   verify-employment-v25:
     name: Vérifier Emploi V25 en production
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.ref_protected == true }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     environment: production
@@ -35,6 +36,10 @@ jobs:
           set -euo pipefail
           test "$GITHUB_REF" = "refs/heads/main" || {
             echo "Ce workflow production doit être lancé depuis main." >&2
+            exit 1
+          }
+          test "${GITHUB_REF_PROTECTED:-}" = "true" || {
+            echo "SECURITE : branche main non protégée; refus de l’accès production." >&2
             exit 1
           }
 
@@ -61,6 +66,7 @@ jobs:
         run: |
           set -euo pipefail
           if [ "$GITHUB_REF" != "refs/heads/main" ] ||
+             [ "${GITHUB_REF_PROTECTED:-}" != "true" ] ||
              [[ ! "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]] ||
              [ "$(git rev-parse --verify HEAD)" != "$GITHUB_SHA" ]; then
             echo "SECURITE : checkout différent du commit de déclenchement; arrêt sans exécuter le code récupéré." >&2
