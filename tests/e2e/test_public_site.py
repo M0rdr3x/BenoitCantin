@@ -205,6 +205,39 @@ def run() -> None:
         assert_true(page.locator('link[href*="home-sinjira-only-v1.css"]').count() == 1,
                     f"{BROWSER_NAME}: styles ergonomiques de l'accueil absents")
 
+        # La nouvelle orbite SINJIRA doit être rouge/noire, et non mauve.
+        # Tester les couleurs calculées, pas seulement la présence du CSS.
+        portal = page.evaluate("""() => {
+            const cosmos = document.querySelector(".home-sinjira-cosmos");
+            const orbit = cosmos?.querySelector(".sinjira-orbit");
+            if (!cosmos || !orbit) return {ok:false, reason:"missing elements"};
+            const before = getComputedStyle(cosmos, "::before");
+            const after = getComputedStyle(cosmos, "::after");
+            const center = getComputedStyle(orbit);
+            const crimson = (value) => {
+                const match = value.match(/rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/);
+                if (!match) return false;
+                const [red, green, blue] = match.slice(1, 4).map(Number);
+                return red >= 150 && red > green * 1.45 && red > blue * 1.35;
+            };
+            return {
+                ok: crimson(before.borderTopColor) &&
+                    crimson(after.borderTopColor) &&
+                    crimson(center.borderTopColor) &&
+                    before.backgroundImage.includes("radial-gradient") &&
+                    after.backgroundImage.includes("radial-gradient") &&
+                    center.backgroundImage.includes("radial-gradient"),
+                outer: before.borderTopColor,
+                middle: after.borderTopColor,
+                center: center.borderTopColor
+            };
+        }""")
+        assert_true(
+            portal["ok"],
+            f"{BROWSER_NAME}: portail mauve ou sans éclairage rouge sur SINJIRA: {portal}",
+        )
+
+
         page.goto(urljoin(BASE_URL, "projets/projet-nova/"), wait_until="domcontentloaded", timeout=30_000)
         assert_true(
             page.locator('a[href="boussole-electorale.html"]').count() >= 3,
