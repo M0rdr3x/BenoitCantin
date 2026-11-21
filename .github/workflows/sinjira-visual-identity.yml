@@ -12,6 +12,7 @@ on:
       - 'compte/**'
       - 'scripts/validate_home_focus.py'
       - 'scripts/validate_sinjira_visual_identity.py'
+      - 'scripts/validate_sinjira_red_portal.py'
       - '.github/workflows/sinjira-visual-identity.yml'
   push:
     branches: [main]
@@ -24,6 +25,7 @@ on:
       - 'compte/**'
       - 'scripts/validate_home_focus.py'
       - 'scripts/validate_sinjira_visual_identity.py'
+      - 'scripts/validate_sinjira_red_portal.py'
       - '.github/workflows/sinjira-visual-identity.yml'
   workflow_dispatch:
 
@@ -43,5 +45,7 @@ jobs:
         run: python3 scripts/validate_sinjira_visual_identity.py
       - name: Vérifier le cercle principal et la navigation
         run: python3 scripts/validate_home_focus.py
+      - name: Interdire le retour du halo mauve dans l'accueil
+        run: python3 scripts/validate_sinjira_red_portal.py
       - name: Vérifier le budget de performance
         run: python3 scripts/validate_performance_budget.py
