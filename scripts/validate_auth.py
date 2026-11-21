@@ -128,8 +128,14 @@ def main():
     errors.append('Réinitialisation: les deux champs doivent imposer minlength=12.')
   if len(re.findall(r'autocomplete=["\']new-password["\']',reset))<2:
     errors.append('Réinitialisation: autocomplete=new-password absent sur les deux champs.')
-  if 'second facteur' not in reset or 'sinjira-recovery-v24-4-99.js?v=24.4.99' not in reset:
-    errors.append('Réinitialisation: explication MFA ou module V24.4.99 absent.')
+  if ('second facteur' not in reset or
+      'sinjira-recovery-v24-4-99.js?v=24.4.101-revocation' not in reset or
+      'sinjira-recovery-v24-4-99.js?v=24.4.99"' in reset):
+    errors.append('Réinitialisation: explication MFA ou version sécurisée du module absente.')
+  if 'globalSignoutOk=Boolean(result&&result.error===null);' not in recovery:
+    errors.append('Réinitialisation: accusé de déconnexion globale non strict.')
+  if 'randomDeviceKey' in recovery:
+    errors.append('Réinitialisation: création non autorisée d’une nouvelle clé appareil.')
 
   login=text('compte/connexion.html')
   if 'autocomplete="current-password"' not in login and "autocomplete='current-password'" not in login:
