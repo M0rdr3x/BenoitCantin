@@ -80,6 +80,7 @@ jobs:
             python tests/e2e/test_public_site.py &&
             python tests/e2e/test_demo_reader_responsive.py &&
             python tests/e2e/test_auth_forms_responsive.py &&
+            python tests/e2e/test_mobile_bottom_navigation.py &&
             python tests/e2e/test_roman_iv_responsive.py &&
             python tests/e2e/test_literature_site.py
           }

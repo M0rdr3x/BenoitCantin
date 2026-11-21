@@ -63,9 +63,12 @@ function harness() {
 test('installation publique et nettoyage limité aux caches de ce site', async () => {
   const h = harness();
   h.stores.set('benoitcantin-v24-4-95-public-4', new Map());
+  h.stores.set('benoitcantin-v24-4-95-public-6', new Map());
   await h.lifecycle('install');
   await h.lifecycle('activate');
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-4'), false);
+  assert.equal(h.stores.has('benoitcantin-v24-4-95-public-6'), false);
+  assert.equal(await (await h.caches.match('/assets/icons/sinjira-officiel-20261120.png')).text(), 'precache:/assets/icons/sinjira-officiel-20261120.png');
   assert.equal(h.stores.has('another-app-cache'), true);
   assert.equal(await (await h.caches.match('/')).text(), 'precache:/');
   assert.equal(await h.caches.match('/compte/'), undefined);
