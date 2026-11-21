@@ -2,7 +2,7 @@ import { getSupabase, requireUser } from './sinjira-supabase.js';
 import { pdfTextToParagraphs, speechTextChunks } from './sinjira-liseuse-text-v27.mjs';
 import { createReaderCompanion } from './sinjira-liseuse-companion-v28.mjs';
 import { chooseReadingPosition, ratioFromScroll, scrollTopForRatio, readingRatio, shouldReplayReadingProgress } from './sinjira-liseuse-position-v31.mjs?v=34.11.07.1';
-import { planReaderScreenTurn } from './sinjira-liseuse-screen-turn-v54.mjs';
+import { planReaderScreenTurn, canTurnReaderScreen } from './sinjira-liseuse-screen-turn-v54.mjs';
 
 /* SINJIRA 2026 — liseuse : le PDF intégral n'entre jamais dans le dépôt public
    ni dans localStorage. Le serveur attribue le droit de lecture avant de signer l'accès. */
@@ -112,11 +112,26 @@ function setTheme(){
   $('reader-voice-auto').checked=state.autoSpeech;
   $('reader-mode').textContent=state.mode==='texte'?'Afficher le PDF':'Texte adaptable';
   $('reader-mode').setAttribute('aria-pressed',String(state.mode==='page'));
+  updateScreenControls();
   savePreferences();
 }
 function currentChapter(){
   const chapters=isFull?chaptersFull:chaptersDemo;
   return [...chapters].reverse().find(chapter=>chapter[0]<=state.page)||chapters[0];
+}
+function updateScreenControls(){
+  if(!state.pdf)return;
+  const viewer=$('reader-viewer'),isText=state.mode==='texte';
+  const previous=$('reader-previous'),next=$('reader-next');
+  previous.textContent=isText?'← Écran précédent':'← Page PDF précédente';
+  next.textContent=isText?'Écran suivant →':'Page PDF suivante →';
+  const common={
+    mode:state.mode,scrollTop:viewer.scrollTop,
+    scrollHeight:viewer.scrollHeight,clientHeight:viewer.clientHeight,
+    page:state.page,totalPages:state.pdf.numPages
+  };
+  previous.disabled=!canTurnReaderScreen({...common,direction:-1});
+  next.disabled=!canTurnReaderScreen({...common,direction:1});
 }
 function updateToolbar(){
   if(!state.pdf)return;
@@ -128,8 +143,7 @@ function updateToolbar(){
   $('reader-total').textContent=String(max);
   $('reader-percent').textContent=percentage+' %';
   $('reader-bar').style.width=percentage+'%';
-  $('reader-previous').disabled=state.page<=1;
-  $('reader-next').disabled=state.page>=max;
+  updateScreenControls();
   const chapter=currentChapter();
   $('reader-chapter-label').textContent=chapter[1];
   $('reader-chapters').value=String(chapter[0]);
@@ -263,7 +277,10 @@ function restoreScrollAfterRender(version){
     const viewer=$('reader-viewer');
     viewer.scrollTop=scrollTopForRatio(ratio,viewer.scrollHeight,viewer.clientHeight);
     requestAnimationFrame(()=>{
-      if(version===state.renderVersion)state.restoringScroll=false;
+      if(version===state.renderVersion){
+        state.restoringScroll=false;
+        updateScreenControls();
+      }
     });
   });
 }
@@ -477,6 +494,7 @@ function turnVisibleReadingScreen(direction){
     // La zone de lecture garde le texte sélectionnable. Le scroll existant
     // synchronise le ratio de lecture sans sauvegarder de contenu du roman.
     viewer.scrollTo({top:next.top,left:0,behavior:'auto'});
+    updateScreenControls();
   }else if(next.kind==='page'){
     changePage(state.page+next.delta,{end:next.end});
   }
@@ -484,7 +502,9 @@ function turnVisibleReadingScreen(direction){
 function bindControls(){
   $('reader-save-position').addEventListener('click',()=>{void saveCurrentPosition()});
   $('reader-viewer').addEventListener('scroll',()=>{
-    if(!state.pdf||state.restoringScroll)return;
+    if(!state.pdf)return;
+    if(!state.restoringScroll)updateScreenControls();
+    if(state.restoringScroll)return;
     clearTimeout(state.scrollTimer);
     state.scrollTimer=setTimeout(()=>{
       state.scrollTimer=null;
@@ -523,8 +543,10 @@ function bindControls(){
     turnVisibleReadingScreen(dx<0?1:-1);
   },{passive:true});
   swipeViewer.addEventListener('touchcancel',()=>{swipeStart=null},{passive:true});
-  $('reader-previous').addEventListener('click',()=>changePage(state.page-1));
-  $('reader-next').addEventListener('click',()=>changePage(state.page+1));
+  // Le bouton, le clavier et le geste tactile accomplissent le même mouvement.
+  // Le numéro et la barre de progression gardent l'accès direct aux pages PDF.
+  $('reader-previous').addEventListener('click',()=>turnVisibleReadingScreen(-1));
+  $('reader-next').addEventListener('click',()=>turnVisibleReadingScreen(1));
   $('reader-page').addEventListener('change',event=>changePage(event.target.value));
   $('reader-range').addEventListener('change',event=>changePage(event.target.value));
   $('reader-chapters').addEventListener('change',event=>changePage(event.target.value));

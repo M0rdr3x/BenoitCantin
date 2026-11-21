@@ -93,6 +93,21 @@ def validate() -> list[str]:
         "getPublicUrl(", ".from('user_entitlements').insert(",
         ".from('user_entitlements').upsert(",
     )
+    # V55 : le bouton visible doit suivre le texte comme le geste tactile;
+    # les sélecteurs de page explicites conservent la navigation PDF directe.
+    for marker in (
+        "canTurnReaderScreen", "function updateScreenControls(){",
+        "previous.disabled=!canTurnReaderScreen(", "next.disabled=!canTurnReaderScreen(",
+        "addEventListener('click',()=>turnVisibleReadingScreen(-1))",
+        "addEventListener('click',()=>turnVisibleReadingScreen(1))",
+    ):
+        if marker not in reader:
+            problems.append("Contrôles de liseuse V55 incohérents : " + marker)
+    reader_html=(ROOT / "compte/liseuse.html").read_text("utf-8")
+    if reader_html.count('aria-controls="reader-viewer"')<2:
+        problems.append("Commandes de navigation du lecteur sans aria-controls")
+    if "/assets/icons/sinjira-officiel-20261120.png" not in reader_html:
+        problems.append("Icône officielle SINJIRA absente de la liseuse")
     for part in forbidden:
         if part in reader:
             problems.append("Fichier intégral ou privilège exposé en JavaScript : " + part[:35])
