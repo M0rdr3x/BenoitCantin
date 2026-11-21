@@ -121,15 +121,13 @@ def validate_page(rel: str, cfg: dict[str, object], errors: list[str]) -> None:
     if rel == "404.html" and 'href="/contact.html"' not in html:
         errors.append("404: lien de contact absent.")
 
-    # Un hébergement CSP strict peut refuser scripts et attributs inline.
-    # Les pages de récupération ne doivent jamais en dépendre.
-    if re.search(r"<script\\b(?![^>]*\\bsrc\\s*=)[^>]*>", html, re.I):
+    # La récupération fonctionne même sous une CSP qui refuse le code inline.
+    if re.search(r"<script\b(?![^>]*\bsrc\s*=)[^>]*>", html, re.I):
         errors.append(f"{rel}: script inline incompatible avec la CSP.")
-    if re.search(r"\\b(?:onclick|onsubmit|onerror|onload|style)\\s*=", html, re.I):
+    if re.search(r"\b(?:onclick|onsubmit|onerror|onload|style)\s*=", html, re.I):
         errors.append(f"{rel}: gestionnaire ou style inline non permis.")
 
     if rel == "404.html":
-        # La redirection est dans un script externe même origine, non dans HTML.
         script = "/assets/js/sinjira-404-aliases-v1.js"
         if html.count('src="' + script + '?v=1.0.0"') != 1:
             errors.append(f"{rel}: script de compatibilité externe absent/dupliqué.")
@@ -150,22 +148,20 @@ def validate_page(rel: str, cfg: dict[str, object], errors: list[str]) -> None:
     if rel == "offline.html":
         if 'role="status"' not in html or 'aria-live="polite"' not in html:
             errors.append(f"{rel}: annonce accessible de reprise réseau absente.")
-        # Un GET natif force une nouvelle requête même si JavaScript est
-        # désactivé. Aucun formulaire contenant des données privées n'est admis.
-        retry = re.search(r'<form\\b([^>]*)>([\\s\\S]*?)</form>', html, re.I)
+        retry = re.search(r'<form\b([^>]*)>([\s\S]*?)</form>', html, re.I)
         if not retry:
             errors.append(f"{rel}: formulaire de nouvelle tentative absent.")
         else:
             attrs, body = retry.group(1), retry.group(2)
             if not (
-                re.search(r'\\bmethod=[\\\'"]get[\\\'"]', attrs, re.I)
-                and re.search(r'\\baction=[\\\'"][\\\'"]', attrs, re.I)
-                and 'recovery-retry-form' in attrs
-                and re.search(r'<button\\b[^>]*\\btype=[\\\'"]submit[\\\'"][^>]*>', body, re.I)
+                'method="get"' in attrs
+                and 'action=""' in attrs
+                and 'class="recovery-retry-form"' in attrs
+                and '<button class="btn btn-primary" type="submit">' in body
                 and "Réessayer la connexion" in body
             ):
                 errors.append(f"{rel}: action de nouvelle tentative GET non conforme.")
-            if re.search(r'<(?:input|textarea|select)\\b', body, re.I):
+            if re.search(r'<(?:input|textarea|select)\b', body, re.I):
                 errors.append(f"{rel}: données interdites dans le formulaire de reprise.")
 
 
