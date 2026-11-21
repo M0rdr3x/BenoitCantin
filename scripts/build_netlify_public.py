@@ -9,6 +9,7 @@ import re
 import shutil
 import tempfile
 import tomllib
+import unicodedata
 from pathlib import Path
 from urllib.parse import urlparse
 import xml.etree.ElementTree as ET
@@ -412,6 +413,46 @@ NOVA_PRIVATE_DATA_KEYS = frozenset({
     "ballot", "vote", "votes", "choice", "choix", "reponses",
     "responses", "raw_responses",
 })
+# Les documents de données publiques peuvent provenir d'exports manipulés
+# par d'autres applications. Comparer aussi les alias camelCase/kebab-case :
+# userId, user-id et user_id doivent TOUS être traités comme « user_id ».
+# Les clés non ASCII sont refusées dans ce format d'échange contrôlé afin
+# qu'un caractère confusable ne puisse pas masquer un champ individuel.
+NOVA_PRIVATE_DATA_KEY_ALIASES = frozenset({
+    "email_address", "contact_email", "user_email", "mail_address",
+    "phone_number", "telephone_number", "mobile_phone", "contact_phone",
+    "client_ip", "remote_ip", "ip_address", "user_ip",
+    "user_uuid", "account_id", "device_id", "device_fingerprint",
+    "voter_uuid", "respondent_uuid", "participant_uuid",
+    "ballot_id", "ballot_token", "ballot_choices", "ballot_answers",
+    "raw_ballots", "raw_votes", "vote_choices", "voter_choices",
+    "survey_answers", "survey_responses", "questionnaire_answers",
+    "questionnaire_responses", "individual_responses", "personal_answers",
+    "oauth_token", "login_token", "session_token", "bearer_token",
+    "api_key", "secret_key", "password_hash", "mfa_secret",
+    "totp_secret", "recovery_code", "recovery_codes",
+    "birth_date", "date_naissance", "date_de_naissance", "dob",
+    "home_address", "postal_address", "precise_location",
+    "credit_card_number", "payment_token", "social_insurance_number",
+    "national_id", "passport_number", "first_name", "last_name",
+    "full_name",
+})
+
+
+def canonical_public_data_key(key: str) -> str:
+    """Supprimer les séparateurs et accents pour comparaison de confidentialité."""
+    decomposed = unicodedata.normalize("NFKD", key)
+    without_marks = "".join(
+        char for char in decomposed if not unicodedata.combining(char)
+    )
+    return re.sub(r"[^a-z0-9]", "", without_marks.casefold())
+
+
+NOVA_PRIVATE_DATA_KEY_CANONICAL = frozenset(
+    canonical_public_data_key(key)
+    for key in NOVA_PRIVATE_DATA_KEYS | NOVA_PRIVATE_DATA_KEY_ALIASES
+)
+
 NOVA_PUBLIC_JSON_MAX_BYTES = 1_500_000
 NOVA_PUBLIC_JSON_MAX_NODES = 50_000
 NOVA_PUBLIC_JSON_MAX_DEPTH = 32
@@ -433,7 +474,9 @@ def public_data_payload_violations(data: object) -> list[str]:
                 if not isinstance(key, str):
                     errors.append("clé de données publiques non textuelle")
                     continue
-                if key.casefold() in NOVA_PRIVATE_DATA_KEYS:
+                if not key.isascii():
+                    errors.append("clé de donnée publique non ASCII, audit requis")
+                if canonical_public_data_key(key) in NOVA_PRIVATE_DATA_KEY_CANONICAL:
                     errors.append("clé de donnée individuelle interdite")
                 stack.append((value, depth + 1))
         elif isinstance(node, list):
