@@ -1,0 +1,255 @@
+'use strict';
+// Vérifie le parcours de connexion réel sans réseau, secrets ni compte de test.
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+
+const SOURCE = fs.readFileSync(
+  path.join(__dirname, '..', 'assets/js/sinjira-auth-pages.js'), 'utf8'
+);
+assert.match(SOURCE, /^import \{getSupabase,/);
+const body = SOURCE.replace(/^import[^\n]*\n/, '');
+const script = new vm.Script('(async function(){\n' + body + '\n})()', {
+  filename: 'sinjira-auth-pages.js'
+});
+
+async function scenario(response, options = {}) {
+  let submit;
+  const navigations = [];
+  const signOutCalls = [];
+  const signInCalls = [];
+  const securityContextCalls = [];
+  const statuses = [];
+  const warnings = [];
+  const store = new Map();
+  const storage = {
+    getItem: key => store.get(key) || null,
+    setItem: (key, value) => store.set(key, value),
+    removeItem: key => store.delete(key)
+  };
+  const form = {
+    checkValidity: () => true,
+    setAttribute: () => {},
+    querySelector: () => ({disabled: false}),
+    addEventListener: (name, callback) => {
+      if (name === 'submit') submit = callback;
+    }
+  };
+  const client = {
+    auth: {
+      signInWithPassword: async () => {signInCalls.push('password');return {error: null}},
+      signOut: async ({scope}) => {
+        signOutCalls.push(scope);
+        if (options.signOutThrows) throw new Error('private sign-out failure');
+        return {error: options.signOutError ? new Error('private sign-out failure') : null};
+      },
+      mfa: {getAuthenticatorAssuranceLevel: async () => {
+        if(options.mfaThrows)throw new Error('private MFA service failure');
+        return {
+          data: {nextLevel: options.mfaNextLevel || 'aal2'},
+          error: options.mfaError ? new Error('private MFA error') : null
+        };
+      }}
+    },
+    functions: {
+      invoke: async (name) => {
+        assert.equal(name, 'security-context');
+        securityContextCalls.push(name);
+        if (response instanceof Error) throw response;
+        return response;
+      }
+    }
+  };
+  const context = {
+    document: {
+      body: {dataset: {accountPage: 'login'}},
+      querySelector: selector => selector === '[data-login-form]' ? form : null
+    },
+    window: {SINJIRA_AUTH_ROUTE: {next: () => '/compte/index.html'}},
+    location: {replace: dest => navigations.push(dest)},
+    navigator: {userAgent: 'Test Chrome', platform: 'Testing'},
+    crypto: {randomUUID: () => 'synthetic-device-key'},
+    localStorage: storage,
+    sessionStorage: options.challengeStorageThrows ? {
+      ...storage,
+      setItem() {throw new Error('private storage access failure');}
+    } : storage,
+    getSupabase: () => client,
+    getCurrentUser: async () => options.existingUser ? {id: 'synthetic-existing-user'} : null,
+    isSinjiraBackendConfigured: () => true,
+    SINJIRA_CONFIG: {siteUrl: 'https://example.test'},
+    setStatus: (_, message, kind) => statuses.push({message, kind}),
+    FormData: class {
+      get(key) {
+        return key === 'email' ? 'synthetic@example.test' : 'synthetic-password';
+      }
+    },
+    console: {warn: (...values) => warnings.push(values)},
+    Uint8Array,
+    setTimeout: () => {}
+  };
+  await script.runInNewContext(context, {timeout: 1500});
+  if (options.existingUser) {
+    assert.equal(submit, undefined, 'Session existante : éviter une soumission de mot de passe');
+  } else {
+    assert.equal(typeof submit, 'function', 'Le flux login doit déclarer son handler');
+    await submit({preventDefault() {}});
+  }
+  for (const args of warnings) {
+    assert.equal(args.length, 1, 'Ne jamais journaliser des erreurs Auth ou des objets privés');
+    assert.equal(typeof args[0], 'string');
+    assert.ok(!args[0].includes('synthetic@example.test'));
+    assert.ok(!args[0].includes('private'));
+  }
+  return {navigations, signOutCalls, signInCalls, securityContextCalls, statuses, warnings};
+}
+
+async function main() {
+  let count = 0;
+  for (const response of [
+    new Error('private network failure synthetic@example.test'),
+    {data: null, error: {message: 'private backend message'}},
+    {data: {ok: false, error: 'private server error'}},
+    {data: {ok: true, security: {}}},
+    {data: {ok: true, security: {outcome: 'unexpected'}}},
+    {data: {ok: true, security: {outcome: null}}}
+  ]) {
+    const result = await scenario(response);
+    assert.deepEqual(result.navigations, [], 'Le contrôle indéterminé ne doit jamais ouvrir le compte');
+    assert.deepEqual(result.signOutCalls, ['local'], 'Révocation locale demandée');
+    assert.equal(result.statuses.at(-1)?.kind, 'error', 'Message non technique obligatoire');
+    count++;
+  }
+
+  const allow = await scenario({data: {ok: true, security: {outcome: 'allow'}}});
+  assert.deepEqual(allow.navigations, ['/compte/index.html']);
+  assert.deepEqual(allow.signOutCalls, []);
+  count++;
+
+  const blocked = await scenario({data: {ok: true, security: {outcome: 'block'}}});
+  assert.deepEqual(blocked.navigations, []);
+  assert.deepEqual(blocked.signOutCalls, ['local']);
+  count++;
+
+  const challenged = await scenario({
+    data: {ok: true, security: {outcome: 'challenge', challenge_id: 'synthetic-challenge'}}
+  });
+  assert.equal(challenged.navigations.length, 1);
+  assert.match(challenged.navigations[0], /^\/compte\/mfa\.html\?security=1&next=/);
+  assert.deepEqual(challenged.signOutCalls, []);
+  count++;
+
+  for (const options of [{signOutThrows: true}, {signOutError: true}]) {
+    const unresolved = await scenario(new Error('private unexpected failure'), options);
+    assert.deepEqual(unresolved.navigations, []);
+    assert.deepEqual(unresolved.signOutCalls, ['local']);
+    assert.match(unresolved.statuses.at(-1)?.message || '', /non confirmée/);
+    count++;
+  }
+
+  const challenge = {data: {ok: true, security: {
+    outcome: 'challenge', challenge_id: 'synthetic-challenge'
+  }}};
+  for(const options of [
+    {mfaThrows: true},
+    {mfaError: true},
+    {mfaNextLevel: 'aal1'},
+    {challengeStorageThrows: true}
+  ]){
+    const failedChallenge = await scenario(challenge, options);
+    assert.deepEqual(failedChallenge.navigations, [], 'MFA indéterminé ne doit pas poursuivre la connexion');
+    assert.deepEqual(failedChallenge.signOutCalls, ['local'], 'Session ouverte révoquée après erreur MFA/stockage');
+    assert.equal(failedChallenge.statuses.at(-1)?.kind, 'error');
+    count++;
+  }
+
+  const blockedFailedSignout = await scenario(
+    {data: {ok: true, security: {outcome: 'block'}}},
+    {signOutError: true}
+  );
+  assert.deepEqual(blockedFailedSignout.navigations, []);
+  assert.match(blockedFailedSignout.statuses.at(-1)?.message || '', /non confirmée/);
+  count++;
+
+  const invalidChallengeFailedSignout = await scenario(
+    {data: {ok: true, security: {outcome: 'challenge'}}},
+    {signOutThrows: true}
+  );
+  assert.deepEqual(invalidChallengeFailedSignout.navigations, []);
+  assert.match(invalidChallengeFailedSignout.statuses.at(-1)?.message || '', /non confirmée/);
+  count++;
+
+
+  // Une session déjà valide ne peut plus passer directement à /compte.
+  // getUser() valide l'identité, mais ne remplace pas la décision contextuelle.
+  const existingAllow = await scenario(
+    {data: {ok: true, security: {outcome: 'allow'}}}, {existingUser: true}
+  );
+  assert.deepEqual(existingAllow.navigations, ['/compte/index.html']);
+  assert.deepEqual(existingAllow.signInCalls, [], 'Session existante : aucune nouvelle authentification');
+  assert.deepEqual(existingAllow.securityContextCalls, ['security-context']);
+  count++;
+
+  for (const response of [
+    new Error('private existing session error synthetic@example.test'),
+    {data: null, error: {message: 'private existing-user backend failure'}},
+    {data: {ok: false}},
+    {data: {ok: true, security: {outcome: 'unknown'}}},
+    {data: {ok: true, security: {outcome: 'block'}}},
+    {data: {ok: true, security: {outcome: 'challenge'}}},
+  ]) {
+    const existing = await scenario(response, {existingUser: true});
+    assert.deepEqual(existing.navigations, [],
+      'Une session déjà établie ne doit pas ignorer un refus ou un défi');
+    assert.deepEqual(existing.signOutCalls, ['local'],
+      'La session existante non validée doit demander sa révocation');
+    assert.deepEqual(existing.signInCalls, []);
+    assert.deepEqual(existing.securityContextCalls, ['security-context']);
+    assert.equal(existing.statuses.at(-1)?.kind, 'error');
+    count++;
+  }
+
+  const existingChallenged = await scenario(
+    {data: {ok: true, security: {outcome: 'challenge', challenge_id: 'existing-challenge'}}},
+    {existingUser: true}
+  );
+  assert.equal(existingChallenged.navigations.length, 1);
+  assert.match(existingChallenged.navigations[0], /^\/compte\/mfa\.html\?security=1&next=/);
+  assert.deepEqual(existingChallenged.signInCalls, []);
+  assert.deepEqual(existingChallenged.signOutCalls, []);
+  count++;
+
+  for (const options of [
+    {existingUser: true, mfaThrows: true},
+    {existingUser: true, mfaError: true},
+    {existingUser: true, mfaNextLevel: 'aal1'},
+    {existingUser: true, challengeStorageThrows: true},
+  ]) {
+    const existing = await scenario(
+      {data: {ok: true, security: {outcome: 'challenge', challenge_id: 'existing-challenge'}}},
+      options
+    );
+    assert.deepEqual(existing.navigations, [],
+      'Session déjà ouverte : erreur MFA ou stockage doit bloquer la navigation');
+    assert.deepEqual(existing.signOutCalls, ['local']);
+    assert.equal(existing.statuses.at(-1)?.kind, 'error');
+    count++;
+  }
+
+  const existingSignOutError = await scenario(
+    new Error('private revoked session'),
+    {existingUser: true, signOutError: true}
+  );
+  assert.deepEqual(existingSignOutError.navigations, []);
+  assert.match(existingSignOutError.statuses.at(-1)?.message || '', /non confirmée/);
+  assert.deepEqual(existingSignOutError.signInCalls, []);
+  count++;
+
+  console.log('PASS: ' + count + ' scénarios Auth sécurité (fail-closed, erreurs MFA, déconnexion, confidentialité).');
+}
+
+main().catch(error => {
+  console.error('FAIL: invariant d’authentification non satisfait', error);
+  process.exitCode = 1;
+});
