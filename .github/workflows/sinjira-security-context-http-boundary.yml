@@ -1,0 +1,59 @@
+name: SINJIRA — contexte de session, frontière HTTP sécurisée
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/functions/security-context/**'
+      - 'supabase/functions/_shared/read-chunk-deadline.mjs'
+      - 'supabase/functions/_shared/auth.ts'
+      - 'scripts/validate_security_context_request_security.py'
+      - 'scripts/test_security_context_real_body_parser.cjs'
+      - 'scripts/validate_edge_function_inventory.py'
+      - '.github/workflows/sinjira-security-context-http-boundary.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/security-context/**'
+      - 'supabase/functions/_shared/read-chunk-deadline.mjs'
+      - 'supabase/functions/_shared/auth.ts'
+      - 'scripts/validate_security_context_request_security.py'
+      - 'scripts/test_security_context_real_body_parser.cjs'
+      - 'scripts/validate_edge_function_inventory.py'
+      - '.github/workflows/sinjira-security-context-http-boundary.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  session-risk-http-boundary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Installer Node.js figé
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+
+      - name: Installer Python figé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+
+      - name: Tester le vrai parseur et les flux bloqués
+        run: node scripts/test_security_context_real_body_parser.cjs
+
+      - name: Exécuter les mutations négatives de confidentialité
+        run: python3 scripts/validate_security_context_request_security.py --self-test
+
+      - name: Vérifier la sécurité de session et l'absence de fuite IP
+        run: python3 scripts/validate_security_context_request_security.py
+
+      - name: Vérifier le contrat de toutes les fonctions Edge
+        run: python3 scripts/validate_edge_function_inventory.py
