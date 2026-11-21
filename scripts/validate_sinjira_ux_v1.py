@@ -76,7 +76,7 @@ def is_approved_ux_stylesheet(href: str, page: str) -> bool:
     parsed = urlsplit(href)
     if parsed.scheme or parsed.netloc or parsed.fragment:
         return False
-    if not re.fullmatch(r"v=[0-9]+(?:\\.[0-9]+)*", parsed.query):
+    if not re.fullmatch(r"v=[0-9]+(?:\.[0-9]+)*", parsed.query):
         return False
     return urljoin("/" + page, parsed.path) == "/assets/css/site-ux-sinjira-v1.css"
 
