@@ -86,6 +86,11 @@ Deno.serve(async(req)=>{
     }
 
     if(doc.external_url){
+      // Une autorisation API ne peut pas rendre confidentielle une URL statique.
+      // Les fichiers restreints exigent un bucket privé et une URL signée.
+      if(doc.access_level!=='public'||doc.projects?.visibility!=='public'){
+        return privateJson({ok:false,error:'Document privé sans stockage sécurisé.'},500);
+      }
       const url=String(doc.external_url).trim();
       if(!externalUrlAllowed(url))return privateJson({ok:false,error:'URL de document non autorisée.'},500);
       return privateJson({ok:true,url,protected:false,expires_in:null});
