@@ -85,7 +85,7 @@ jobs:
           done
           cat /tmp/account-nav.log
           exit 1
-      - name: Contrôler 5 pages, 7 résolutions et le mode sans JavaScript
+      - name: Contrôler 18 pages, 7 résolutions et le mode sans JavaScript
         env:
           BASE_URL: http://127.0.0.1:4173/
           BROWSER: ${{ matrix.browser }}
