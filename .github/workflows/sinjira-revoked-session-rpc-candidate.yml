@@ -6,6 +6,7 @@ on:
     paths:
       - 'security/candidates/sinjira_revoked_auth_session_device_rpcs.sql'
       - 'scripts/validate_revoked_session_rpc_candidate.py'
+      - 'scripts/preflight_revoked_session_rpc_catalog.py'
       - 'scripts/build_revoked_session_rpc_runtime_test.py'
       - 'scripts/smoke_revoked_session_http_local.py'
       - 'security/candidates/sinjira_revoked_auth_session_runtime_assertions.sql'
@@ -15,6 +16,7 @@ on:
     paths:
       - 'security/candidates/sinjira_revoked_auth_session_device_rpcs.sql'
       - 'scripts/validate_revoked_session_rpc_candidate.py'
+      - 'scripts/preflight_revoked_session_rpc_catalog.py'
       - 'scripts/build_revoked_session_rpc_runtime_test.py'
       - 'scripts/smoke_revoked_session_http_local.py'
       - 'security/candidates/sinjira_revoked_auth_session_runtime_assertions.sql'
@@ -41,6 +43,13 @@ jobs:
         run: python3 scripts/validate_revoked_session_rpc_candidate.py --self-test
       - name: Vérifier le candidat SQL sans connexion Supabase
         run: python3 scripts/validate_revoked_session_rpc_candidate.py
+      - name: Simuler les dérives du catalogue et des permissions avant et après déploiement
+        run: python3 scripts/preflight_revoked_session_rpc_catalog.py --self-test
+      - name: Valider la requête read-only sans se connecter à la base
+        run: |
+          python3 scripts/preflight_revoked_session_rpc_catalog.py --emit-sql > /tmp/sinjira_rpc_catalog_preflight.sql
+          grep -q 'pg_catalog.pg_proc' /tmp/sinjira_rpc_catalog_preflight.sql
+          grep -q 'auth.sessions' /tmp/sinjira_rpc_catalog_preflight.sql
 
   local-runtime-revoked-sessions:
     name: Tester les sessions révoquées dans Supabase local (pgTAP)
