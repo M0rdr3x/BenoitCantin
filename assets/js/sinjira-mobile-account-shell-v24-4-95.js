@@ -33,8 +33,34 @@
     var item=items[i],a=document.createElement('a');
     a.href=item.href;
     a.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true">'+item.icon+'</svg><span>'+item.label+'</span>';
-    if(item.key===active)a.setAttribute('aria-current','page');
+    // aria-current=page seulement si ce lien pointe vers la page exacte.
+    // Une page liée (p. ex. Sécurité > Profil) conserve l'accent visuel
+    // sans être annoncée à tort comme la page courante.
+    if(item.key===active){
+      if(path===item.href || (item.href==='/app/' && path==='/app/index.html')){
+        a.setAttribute('aria-current','page');
+      }else{
+        a.setAttribute('data-current-section','');
+      }
+    }
     nav.appendChild(a);
   }
   document.body.appendChild(nav);
+
+  // Le dock peut grandir lorsque la police est agrandie : réserver sa
+  // hauteur réelle au contenu et au bandeau d'installation PWA.
+  var lastHeight=0;
+  function syncNavHeight(){
+    var height=Math.ceil(nav.getBoundingClientRect().height);
+    if(!height || height===lastHeight)return;
+    lastHeight=height;
+    document.body.style.setProperty('--sinjira-account-mobile-nav-height',height+'px');
+  }
+  syncNavHeight();
+  if('ResizeObserver' in window){
+    var navObserver=new ResizeObserver(syncNavHeight);
+    navObserver.observe(nav);
+  }else{
+    window.addEventListener('resize',syncNavHeight);
+  }
 }());
