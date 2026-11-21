@@ -163,10 +163,17 @@ test('droits des niveaux canoniques préservés à leurs seuils exacts', async (
   for (const [accessLevel, required] of levels) {
     const allowed = await invoke({
       accessLevel, rank: required, user: { id: UUID },
+      visibility: 'public', signed: accessLevel !== 'public',
     });
     assert.equal(allowed.response.status, 200, accessLevel);
     assert.equal(allowed.payload.ok, true, accessLevel);
-    assert.ok(allowed.payload.url.startsWith('/projets/'), accessLevel);
+    if(accessLevel === 'public'){
+      assert.ok(allowed.payload.url.startsWith('/projets/'), accessLevel);
+      assert.equal(allowed.payload.protected, false);
+    }else{
+      assert.equal(allowed.payload.protected, true, accessLevel);
+      assert.equal(allowed.counters.signedUrls, 1, accessLevel);
+    }
     if (required > 1) {
       assertDenied(await invoke({
         accessLevel, rank: required - 1, user: { id: UUID },
@@ -181,6 +188,39 @@ test('document public anonyme préservé, accès privé anonyme refusé', async 
   assert.equal(publicDoc.payload.protected, false);
   assertDenied(await invoke({ accessLevel: 'public', visibility: 'private' }), 'public sur projet privé');
   assertDenied(await invoke({ accessLevel: 'account', visibility: 'public' }), 'compte sans connexion');
+});
+
+test('un lien statique restreint ne doit jamais être livré même à un administrateur', async () => {
+  const user = { id: UUID };
+  const cases = [
+    { accessLevel: 'account', visibility: 'public' },
+    { accessLevel: 'player', visibility: 'public' },
+    { accessLevel: 'tester', visibility: 'public' },
+    { accessLevel: 'admin', visibility: 'private' },
+    { accessLevel: 'public', visibility: 'private' },
+  ];
+  for (const scenario of cases) {
+    const result = await invoke({ ...scenario, user, rank: 100, signed: false });
+    assert.equal(result.response.status, 500, JSON.stringify(scenario));
+    assert.equal(result.payload.ok, false, JSON.stringify(scenario));
+    assert.equal('url' in result.payload, false, JSON.stringify(scenario));
+    assert.equal(result.counters.signedUrls, 0, JSON.stringify(scenario));
+    assert.equal(result.counters.bucketReads, 0, JSON.stringify(scenario));
+  }
+});
+
+test('document réellement public conserve une URL statique, fichier restreint migré conserve un lien signé', async () => {
+  const allowed = await invoke({ accessLevel: 'public', visibility: 'public', signed: false });
+  assert.equal(allowed.response.status, 200);
+  assert.equal(allowed.payload.protected, false);
+  assert.ok(allowed.payload.url.startsWith('/projets/'));
+  const privateSigned = await invoke({
+    accessLevel: 'account', visibility: 'private', signed: true, rank: 10, user: { id: UUID },
+  });
+  assert.equal(privateSigned.response.status, 200);
+  assert.equal(privateSigned.payload.protected, true);
+  assert.equal(privateSigned.payload.expires_in, 600);
+  assert.equal(privateSigned.counters.signedUrls, 1);
 });
 
 test('signature Storage privée conservée uniquement après autorisation', async () => {
