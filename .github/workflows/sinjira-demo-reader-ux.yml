@@ -1,0 +1,54 @@
+name: SINJIRA — Navigation de la démo PDF sur mobile
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-reader.js'
+      - 'assets/js/sinjira-demo-navigation-v1.mjs'
+      - 'projets/sinjira/romans/lire-demo.html'
+      - 'scripts/test_sinjira_demo_navigation_v1.mjs'
+      - '.github/workflows/sinjira-demo-reader-ux.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-reader.js'
+      - 'assets/js/sinjira-demo-navigation-v1.mjs'
+      - 'projets/sinjira/romans/lire-demo.html'
+      - 'scripts/test_sinjira_demo_navigation_v1.mjs'
+      - '.github/workflows/sinjira-demo-reader-ux.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  demo-reader-ux:
+    name: Lecture démo sans compte, bornes et clavier
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Vérifier syntaxe de la navigation et du lecteur
+        run: |
+          node --check assets/js/sinjira-demo-navigation-v1.mjs
+          node --input-type=module --check < assets/js/sinjira-reader.js
+      - name: Tester les interactions, le stockage et le mode hors connexion
+        run: node --test scripts/test_sinjira_demo_navigation_v1.mjs
+      - name: Contrôler le lecteur HTML et l'absence de diffusion privée
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          html = Path('projets/sinjira/romans/lire-demo.html').read_text('utf-8')
+          js = Path('assets/js/sinjira-reader.js').read_text('utf-8')
+          assert 'data-reader-page="demo"' in html
+          assert 'data-reader-total-pages="82"' in html
+          assert 'sinjira-reader-file-fallback' in html
+          assert 'aria-label="Numéro de page de la démo"' in html
+          assert 'sinjira-demo-navigation-v1.mjs' in js
+          assert 'startDemoNavigation(' in js
+          assert 'SINJIRA_LIVRE_I_LA_CENDRE_DU_JUGEMENT.pdf' not in html
+          print('OK : page de démonstration publique, navigation et repli mobile')
+          PY
