@@ -18,7 +18,10 @@ function cacheableResponse(resp){
   if(/(?:^|[,\s])(?:private|no-store|no-cache)(?:$|[,\s;=])/.test(cc))return false;
   if(/(?:^|[,\s])no-cache(?:$|[,\s])/.test(String(resp.headers.get('Pragma')||'').toLowerCase()))return false;
   const vary=String(resp.headers.get('Vary')||'');
-  if(vary.split(',').some(field=>['*','cookie','authorization','proxy-authorization','set-cookie'].includes(field.trim().toLowerCase())))return false;
+  // Allowlist stricte : tout autre Vary pourrait dépendre d'une identité ou
+  // d'un droit utilisateur (X-Account-ID, Origin, Authorization, Cookie...).
+  const harmlessVary=['accept','accept-encoding','accept-language'];
+  if(vary.split(',').some(field=>field.trim()&&!harmlessVary.includes(field.trim().toLowerCase())))return false;
   return !resp.headers.has('Set-Cookie');
 }
 function publicAsset(path){return PUBLIC_ASSET.test(path)}
