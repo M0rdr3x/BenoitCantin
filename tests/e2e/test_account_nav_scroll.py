@@ -38,7 +38,7 @@ def snapshot(page):
         scrollbar:scroll ? getComputedStyle(scroll).overflowX : 'missing',
         equipped:!!frame?.classList.contains('is-scrollable'),
         buttons:[...arrows].map(button=>({
-          hidden:button.hidden,disabled:button.disabled,
+          hidden:button.hidden,displayed:getComputedStyle(button).display!=='none',disabled:button.disabled,
           height:button.getBoundingClientRect().height,
           width:button.getBoundingClientRect().width,
           label:button.getAttribute('aria-label'),
@@ -97,7 +97,7 @@ def run():
                             check(state["currentVisible"],
                                   f"rubrique active hors de la zone visible {path} {width}: {state}")
                         else:
-                            check(all(b["hidden"] for b in state["buttons"]),
+                            check(all(not b["displayed"] for b in state["buttons"]),
                                   f"commandes mobiles visibles sur PC {path} {width}: {state}")
 
                     # Le sens de lecture et les contrôles restent utilisables au clavier.
@@ -117,6 +117,10 @@ def run():
                     page.wait_for_function("""() => {
                       const x=document.querySelector('.account-nav-scroll');
                       return x.scrollLeft>20;
+                    }""")
+                    page.wait_for_function("""() => {
+                      const button=document.querySelector('.sinjira-account-nav-arrow');
+                      return button && !button.disabled;
                     }""")
                     check(previous_button.is_enabled(),
                           f"la flèche précédente n'est pas réactivée : {path}")
