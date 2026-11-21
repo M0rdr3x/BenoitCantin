@@ -56,6 +56,17 @@ jobs:
           persist-credentials: false
           fetch-depth: 1
 
+      - name: Vérifier le commit immuable avant code et secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_REF" != "refs/heads/main" ] ||
+             [[ ! "$GITHUB_SHA" =~ ^[0-9a-f]{40}$ ]] ||
+             [ "$(git rev-parse --verify HEAD)" != "$GITHUB_SHA" ]; then
+            echo "SECURITE : checkout différent du commit de déclenchement; arrêt sans exécuter le code récupéré." >&2
+            exit 1
+          fi
+
       - name: Configurer Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
