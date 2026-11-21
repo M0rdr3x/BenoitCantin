@@ -1,0 +1,38 @@
+name: SINJIRA — sécurité des liens de bibliothèque
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-account-v18.js'
+      - 'assets/js/sinjira-supabase.js'
+      - 'scripts/test_sinjira_library_links_security.mjs'
+      - '.github/workflows/sinjira-library-links-security.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-account-v18.js'
+      - 'assets/js/sinjira-supabase.js'
+      - 'scripts/test_sinjira_library_links_security.mjs'
+      - '.github/workflows/sinjira-library-links-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  library-url-xss-security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Récupérer les fichiers sans jeton persistant
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Installer Node figé
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+          check-latest: false
+      - name: Refuser les liens dangereux dans les cartes des romans
+        run: node --test scripts/test_sinjira_library_links_security.mjs
