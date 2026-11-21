@@ -51,7 +51,18 @@ def verify_static_manifest() -> dict:
         assert all(icon.get("src") == "/android-chrome-192x192.png" for icon in entry["icons"])
     for icon in data["icons"]:
         assert (ROOT / icon["src"].lstrip("/")).is_file()
-    print("OK : manifestes identiques, démo retirée et 6 destinations SINJIRA valides")
+    # La version du worker doit évoluer : le manifeste est précaché et servi
+    # cache-first, sinon le raccourci retiré resterait visible chez les usagers.
+    sw = (ROOT / "sw.js").read_text("utf-8")
+    assert "const CACHE='benoitcantin-v24-4-95-public-8'" in sw
+    assert "'/manifest.webmanifest'" in sw
+    assert "'/projets/sinjira/romans/lire-demo.html'" not in sw
+    for guard in (
+        "const privatePath=", "const PUBLIC_DOCUMENTS=", "const PUBLIC_ASSET=",
+        "if(privatePath||r.headers.has('Authorization')", "cache:'no-store'",
+    ):
+        assert guard in sw, f"garde de confidentialité du worker perdue : {guard}"
+    print("OK : manifestes identiques, démo retirée, 6 chemins et cache renouvelé")
     return data
 
 
