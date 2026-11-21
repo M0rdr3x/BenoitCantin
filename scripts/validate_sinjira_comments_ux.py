@@ -56,6 +56,10 @@ for forbidden in ["from('novel_comments')", "contains_spoilers", "prompt('Modifi
     check(forbidden not in account_js, "Ancienne API ou édition modale dans le compte : " + forbidden)
 for marker in ["data-v18-page=\"comments\"", "sinjira-comments-responsive-v2.css?v=2.0.1", 'aria-live="polite"']:
     check(marker in account_html, "Compte commentaires HTML incomplet : " + marker)
+check("novels(title)" in account_js and "c.novels?.title" in account_js,
+      "Mes personnages : mauvaise relation pour le titre du roman")
+check("c.sinjira_novels?.title||c.novel_note" not in account_js,
+      "Mes personnages : régression de relation Supabase")
 check('reader-comment-inline-edit' in css, "Éditeur tactile non stylé")
 check((root / "assets/icons/sinjira-officiel-20261120.png").is_file(), "Logo officiel SINJIRA introuvable")
 if errors:
