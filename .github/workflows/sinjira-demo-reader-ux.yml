@@ -1,4 +1,4 @@
-name: SINJIRA — Navigation de la démo PDF sur mobile
+name: SINJIRA — Retrait de la démo et navigation mobile
 
 on:
   pull_request:
@@ -26,7 +26,7 @@ permissions:
 
 jobs:
   demo-reader-ux:
-    name: Lecture démo sans compte, bornes et clavier
+    name: Démo retirée, repli accessible et ancienne navigation isolée
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
@@ -46,15 +46,15 @@ jobs:
           from pathlib import Path
           html = Path('projets/sinjira/romans/lire-demo.html').read_text('utf-8')
           js = Path('assets/js/sinjira-demo-bootstrap-v1.mjs').read_text('utf-8')
-          assert 'data-reader-page="demo"' in html
-          assert 'data-reader-total-pages="82"' in html
-          assert 'sinjira-reader-file-fallback' in html
-          assert 'aria-label="Numéro de page de la démo"' in html
+          assert 'data-reader-page="demo-pending"' in html
+          assert '62 pages' in html
+          assert 'Retour aux romans' in html
+          assert 'sinjira-demo-bootstrap-v1.mjs' not in html
+          assert 'data-pdf-reader' not in html
+          assert 'SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf' not in html
+          assert 'SINJIRA_LIVRE_I_LA_CENDRE_DU_JUGEMENT.pdf' not in html
+          assert not Path('projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf').exists()
           assert 'sinjira-demo-navigation-v1.mjs' in js
           assert 'startDemoNavigation(' in js
-          assert 'await import(' in js
-          assert 'sinjira-demo-bootstrap-v1.mjs' in html
-          assert 'sinjira-reader.js?v=' not in html
-          assert 'SINJIRA_LIVRE_I_LA_CENDRE_DU_JUGEMENT.pdf' not in html
-          print('OK : page de démonstration publique, navigation et repli mobile')
+          print('OK : ancienne démo retirée; statut HTML public et ancien module de navigation isolé')
           PY
