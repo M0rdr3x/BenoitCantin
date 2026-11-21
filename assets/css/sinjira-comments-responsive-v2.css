@@ -153,3 +153,29 @@ body[data-reader-page="novel"] .reader-comment-counter.near-limit{
   body[data-reader-page="novel"] .reader-comment-helper-row{flex-direction:column;align-items:stretch}
   body[data-reader-page="novel"] .reader-comment-counter{align-self:flex-end}
 }
+
+/* Édition des commentaires du compte : compteur, statut et focus clavier. */
+body[data-v18-page="comments"] .reader-comment-inline-edit .reader-comment-counter{
+  justify-self:end;font-size:.9rem;line-height:1.5;
+  color:#d9deec;font-variant-numeric:tabular-nums
+}
+body[data-v18-page="comments"] .reader-comment-inline-edit .reader-comment-counter.near-limit{
+  color:#ffb8a8;font-weight:750
+}
+body[data-v18-page="comments"] .reader-comment:focus{
+  outline:3px solid #ffb8a8;outline-offset:3px
+}
+body[data-v18-page="comments"] :where([data-delete-comment],[data-edit-comment]):disabled{
+  cursor:progress;opacity:.65
+}
+@media(max-width:520px){
+  body[data-v18-page="comments"] .reader-comment .hero-actions{
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px
+  }
+  body[data-v18-page="comments"] .reader-comment .hero-actions > button{
+    width:100%;white-space:normal;overflow-wrap:anywhere
+  }
+  body[data-v18-page="comments"] .reader-comment-inline-edit .hero-actions{
+    grid-template-columns:1fr
+  }
+}
