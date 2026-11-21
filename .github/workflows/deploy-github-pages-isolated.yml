@@ -32,7 +32,7 @@ concurrency:
 jobs:
   build:
     name: Construire l’artefact de confinement Pages
-    if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'
+    if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP' && github.ref_protected == true
     permissions:
       contents: read
     runs-on: ubuntu-24.04
@@ -115,8 +115,9 @@ jobs:
   deploy:
     name: Publier le confinement Pages
     needs: build
-    if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'
+    if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP' && github.ref_protected == true
     permissions:
+      contents: read
       pages: write
       id-token: write
     environment:
@@ -125,6 +126,26 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
+      - name: Confirmer la protection serveur de main et le SHA au dernier moment
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        with:
+          script: |
+            if (process.env.GITHUB_REF_PROTECTED !== 'true') {
+              core.setFailed('Publication interdite : branche non protégée au déclenchement.');
+              return;
+            }
+            const { owner, repo } = context.repo;
+            const { data: branch } = await github.rest.repos.getBranch({ owner, repo, branch: 'main' });
+            if (branch.protected !== true) {
+              core.setFailed('Publication interdite : main ne dispose plus d’une protection GitHub.');
+              return;
+            }
+            if (branch.commit?.sha !== context.sha) {
+              core.setFailed('Publication interdite : main a changé depuis la validation du commit.');
+              return;
+            }
+            core.info('Main protégée et SHA de déploiement inchangé, avant publication.');
+
       - name: Déployer sur GitHub Pages
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346

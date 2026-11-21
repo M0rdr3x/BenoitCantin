@@ -1,0 +1,45 @@
+name: Sécurité Pages — branche protégée et SHA avant publication
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/deploy-github-pages-isolated.yml'
+      - '.github/workflows/pages-protected-release-security.yml'
+      - 'scripts/validate_pages_protected_release.py'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/deploy-github-pages-isolated.yml'
+      - '.github/workflows/pages-protected-release-security.yml'
+      - 'scripts/validate_pages_protected_release.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  protected-pages-contract:
+    name: Refuser un Pages non protégé ou un SHA déplacé
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout en lecture seule
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Python épinglé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+
+      - name: Autotests de régression des verrous Pages
+        run: python3 scripts/validate_pages_protected_release.py --self-test
+
+      - name: Valider les verrous exacts de publication Pages
+        run: python3 scripts/validate_pages_protected_release.py
+
+      - name: Confirmer les preuves Bash des publications
+        run: python3 scripts/test_web_release_summary_shell.py
