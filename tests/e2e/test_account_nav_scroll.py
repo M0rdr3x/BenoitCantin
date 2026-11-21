@@ -102,6 +102,9 @@ def run():
 
                     # Le sens de lecture et les contrôles restent utilisables au clavier.
                     page.set_viewport_size({"width":390,"height":800})
+                    # Le redimensionnement génère un événement asynchrone.
+                    # Attendre la stabilisation avant le repositionnement manuel.
+                    page.wait_for_timeout(120)
                     region=page.locator(".account-nav-scroll")
                     next_button=page.get_by_role("button",name="Rubriques suivantes du compte")
                     previous_button=page.get_by_role("button",name="Rubriques précédentes du compte")
@@ -111,8 +114,8 @@ def run():
                       const left=document.querySelector('.sinjira-account-nav-arrow');
                       return x && left && x.scrollLeft<=2 && left.disabled;
                     }""", timeout=5_000)
-                    check(previous_button.is_disabled(),
-                          f"flèche précédente disponible au bord gauche : {path}")
+                    # Le prédicat précédent vérifie simultanément la position
+                    # et la désactivation, sans fenêtre de course supplémentaire.
                     next_button.focus()
                     next_button.press("Enter")
                     page.wait_for_function("""() => {
