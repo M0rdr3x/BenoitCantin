@@ -42,8 +42,8 @@
       ]
     },
     {
-      "name": "Lire la démo du Livre I",
-      "short_name": "Démo Livre I",
+      "name": "Statut de la démo du Livre I",
+      "short_name": "Démo en révision",
       "url": "/projets/sinjira/romans/lire-demo.html",
       "icons": [
         {
