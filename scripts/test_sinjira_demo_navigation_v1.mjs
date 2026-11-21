@@ -114,3 +114,14 @@ test('le lecteur annonce si le stockage privé interdit une sauvegarde', async (
   await new Promise(r => setImmediate(r));
   assert.match(els['[data-reader-resume]'].textContent, /stockage local indisponible/);
 });
+
+test('le démarrage de la démo ne dépend pas du CDN Supabase', async () => {
+  const {readFileSync} = await import('node:fs');
+  const bootstrap = readFileSync(new URL('../assets/js/sinjira-demo-bootstrap-v1.mjs', import.meta.url), 'utf8');
+  const html = readFileSync(new URL('../projets/sinjira/romans/lire-demo.html', import.meta.url), 'utf8');
+  assert.ok(bootstrap.includes("import {startDemoNavigation} from './sinjira-demo-navigation-v1.mjs'"));
+  assert.ok(bootstrap.includes("await import('./sinjira-supabase.js')"));
+  assert.ok(!bootstrap.includes("import {getSupabase"));
+  assert.ok(html.includes('sinjira-demo-bootstrap-v1.mjs?v=1.0.0'));
+  assert.ok(!html.includes('sinjira-reader.js?v='));
+});
