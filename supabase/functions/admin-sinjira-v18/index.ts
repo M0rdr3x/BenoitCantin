@@ -2,6 +2,7 @@ import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import {corsHeaders} from '../_shared/cors.ts';
 import {requiredAdmin} from '../_shared/auth.ts';
 import {loadSinjiraCanonContext} from '../_shared/sinjira-canon-context.ts';
+import {isCanonicalRegistrySourcePhotoPath} from '../_shared/registry-photo-ownership.mjs';
 
 const MAX_REQUEST_BYTES=262144;
 const PRIVATE_HEADERS={
@@ -15,7 +16,7 @@ const PRIVATE_HEADERS={
 const SAFE_LOG_CODES=new Set([
   'AUTH_REQUIRED','ADMIN_REQUIRED','MFA_REQUIRED','MFA_SETUP_REQUIRED','MFA_STATE_UNAVAILABLE',
   'JSON_REQUIRED','REQUEST_TOO_LARGE','INVALID_JSON','SOURCE_PURGED',
-  'SOURCE_PURGE_CONFIRMATION_REQUIRED','SOURCE_PURGE_STORAGE_FAILED',
+  'SOURCE_PURGE_CONFIRMATION_REQUIRED','SOURCE_PURGE_STORAGE_FAILED','SOURCE_PURGE_PATH_INVALID',
   'CANON_CONFIRMATION_REQUIRED','NOTIFICATION_ID_REQUIRED','ROMAN1_LOCKED'
 ]);
 
@@ -85,7 +86,10 @@ Deno.serve(async(req)=>{
       const rows=[];
       for(const sub of data||[]){
         let photo_url=null;
-        if(sub.photo_path){const {data:signed}=await s.storage.from('sinjira-character-sources').createSignedUrl(sub.photo_path,600);photo_url=signed?.signedUrl||null}
+        if(sub.photo_path&&isCanonicalRegistrySourcePhotoPath(sub.photo_path,sub.user_id)){
+          const {data:signed}=await s.storage.from('sinjira-character-sources').createSignedUrl(sub.photo_path,600);
+          photo_url=signed?.signedUrl||null;
+        }
         rows.push({...sub,photo_url});
       }
       return privateJson({ok:true,submissions:rows});
@@ -144,9 +148,11 @@ Deno.serve(async(req)=>{
 
     if(a==='purge_submission_source'){
       if(b.author_confirmed_source_purge!==true)throw new Error('SOURCE_PURGE_CONFIRMATION_REQUIRED');
-      const {data:sub,error}=await s.from('character_submissions').select('photo_path,source_purged_at').eq('id',b.submission_id).single();if(error)throw error;
+      const {data:sub,error}=await s.from('character_submissions').select('user_id,photo_path,source_purged_at').eq('id',b.submission_id).single();if(error)throw error;
       if(sub.source_purged_at)throw new Error('SOURCE_PURGED');
       if(sub.photo_path){
+        // Aucun fichier d'un autre compte ne peut être supprimé avec service_role.
+        if(!isCanonicalRegistrySourcePhotoPath(sub.photo_path,sub.user_id))throw new Error('SOURCE_PURGE_PATH_INVALID');
         const {error:storageError}=await s.storage.from('sinjira-character-sources').remove([sub.photo_path]);
         if(storageError)throw new Error('SOURCE_PURGE_STORAGE_FAILED');
       }
@@ -195,6 +201,7 @@ Deno.serve(async(req)=>{
     if(e?.message==='SOURCE_PURGE_CONFIRMATION_REQUIRED')return privateJson({ok:false,error:'Confirmation explicite requise avant suppression définitive des sources.',code:'SOURCE_PURGE_CONFIRMATION_REQUIRED'},409);
     if(e?.message==='SOURCE_PURGED')return privateJson({ok:false,error:'Les données sources ont déjà été supprimées.',code:'SOURCE_PURGED'},409);
     if(e?.message==='SOURCE_PURGE_STORAGE_FAILED')return privateJson({ok:false,error:'La suppression du fichier source a échoué; les références ont été conservées.',code:'SOURCE_PURGE_STORAGE_FAILED'},503);
+    if(e?.message==='SOURCE_PURGE_PATH_INVALID')return privateJson({ok:false,error:'Le chemin du fichier source ne correspond pas au dossier. Aucune suppression automatique effectuée.',code:'SOURCE_PURGE_PATH_INVALID'},409);
     if(e?.message==='CANON_CONFIRMATION_REQUIRED')return privateJson({ok:false,error:'Confirmez explicitement que ce personnage est établi par un manuscrit officiel finalisé avant de le passer CANON.'},409);
     if(e?.message==='NOTIFICATION_ID_REQUIRED')return privateJson({ok:false,error:'Identifiant de notification requis.'},400);
     if(e?.message==='ROMAN1_LOCKED')return privateJson({ok:false,error:'Le Roman 1 est verrouillé. Pour y attribuer rétroactivement un nouveau personnage, confirmez explicitement la décision auteur / retcon.'},409);

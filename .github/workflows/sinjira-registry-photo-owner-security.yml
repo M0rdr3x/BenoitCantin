@@ -1,0 +1,59 @@
+name: SINJIRA — photos sources privées liées au compte
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/functions/admin-sinjira-v18/index.ts'
+      - 'supabase/functions/_shared/registry-photo-ownership.mjs'
+      - 'supabase/functions/submit-character-questionnaire/index.ts'
+      - 'scripts/test_admin_registry_photo_ownership.mjs'
+      - 'scripts/validate_admin_registry_photo_ownership.py'
+      - 'scripts/validate_admin_v18_privacy_security.py'
+      - '.github/workflows/sinjira-registry-photo-owner-security.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/admin-sinjira-v18/index.ts'
+      - 'supabase/functions/_shared/registry-photo-ownership.mjs'
+      - 'supabase/functions/submit-character-questionnaire/index.ts'
+      - 'scripts/test_admin_registry_photo_ownership.mjs'
+      - 'scripts/validate_admin_registry_photo_ownership.py'
+      - 'scripts/validate_admin_v18_privacy_security.py'
+      - '.github/workflows/sinjira-registry-photo-owner-security.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-registry-photo-ownership:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout sans credentials persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Configurer Node.js épinglé
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+
+      - name: Tester la propriété des photos dans les vrais handlers admin
+        run: node --test scripts/test_admin_registry_photo_ownership.mjs
+
+      - name: Refuser les mutations de lecture et suppression Storage
+        run: |
+          python3 scripts/validate_admin_registry_photo_ownership.py --self-test
+          python3 scripts/validate_admin_registry_photo_ownership.py
+
+      - name: Préserver les barrières historiques Admin V18 et Registre
+        run: |
+          python3 scripts/validate_admin_sinjira_v18_request_security.py --self-test
+          python3 scripts/validate_admin_sinjira_v18_request_security.py
+          python3 scripts/validate_admin_v18_privacy_security.py --self-test
+          python3 scripts/validate_admin_v18_privacy_security.py
+          python3 scripts/validate_character_questionnaire_security.py
+          python3 scripts/validate_edge_function_inventory.py
