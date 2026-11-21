@@ -203,10 +203,16 @@
         Math.max(0, Math.round((accountScroll.clientWidth - activeRect.width) / 2));
     }
     accountScroll.addEventListener('scroll', scrollLimits, { passive: true });
-    window.addEventListener('resize', function () {
+    function alignCurrentAfterLayout() {
       scrollLimits();
       revealCurrentTab();
       scrollLimits();
+    }
+    window.addEventListener('resize', function () {
+      alignCurrentAfterLayout();
+      // WebKit peut finaliser la largeur effective des onglets au frame
+      // suivant une modification de taille.
+      window.requestAnimationFrame(alignCurrentAfterLayout);
     });
     // L'affichage initial est calculé dès que le menu est monté.
     // Ne pas le refaire à window.load : les images peuvent finir de charger
