@@ -31,6 +31,17 @@ jobs:
             if (!protectedRef) {
               core.setFailed('La branche main n’est pas protégée par une branch protection ou un ruleset. Cet échec de CI ne remplace pas la configuration GitHub Settings > Branches/Rulesets : activer une protection native avant toute fusion ou publication.');
               return;
-            } else {
-              core.info('La branche main est protégée par une branch protection ou un ruleset.');
             }
+
+            // Deuxième source de vérité : vérification REST du serveur au SHA déclencheur.
+            // Un échec API, une branche non protégée ou un SHA déplacé font échouer le job.
+            const { data: liveMain } = await github.rest.repos.getBranch({ owner, repo, branch: 'main' });
+            if (liveMain.protected !== true) {
+              core.setFailed('La branche main n’est pas protégée selon l’API GitHub : activation d’un ruleset ou d’une protection native obligatoire.');
+              return;
+            }
+            if (liveMain.commit?.sha !== sha) {
+              core.setFailed('La branche main a changé depuis le déclenchement : revalider ce commit avant toute publication.');
+              return;
+            }
+            core.info('Protection native de main confirmée par l’API GitHub et SHA du déclenchement inchangé.');
