@@ -128,6 +128,83 @@
     });
   }
 
+
+  // Navigation du compte : rendre visibles les rubriques hors écran.
+  // Le défilement natif fonctionne toujours sans JavaScript, par glissement
+  // tactile ou navigation clavier entre les liens.
+  var accountScroll = doc.querySelector(
+    'body.account-page[data-sinjira-ux="v1"] .account-nav-scroll'
+  );
+  if (accountScroll && accountScroll.querySelector('.account-nav') &&
+      !accountScroll.hasAttribute('data-sinjira-account-scroll-ready')) {
+    var accountNav = accountScroll.querySelector('.account-nav');
+    var frame = doc.createElement('div');
+    frame.className = 'sinjira-account-nav-frame';
+    frame.setAttribute('role', 'group');
+    frame.setAttribute('aria-label', 'Parcourir les rubriques du compte');
+    accountScroll.setAttribute('data-sinjira-account-scroll-ready', '');
+    if (!accountScroll.id) accountScroll.id = 'sinjira-account-nav-scroll';
+    var back = doc.createElement('button');
+    var forward = doc.createElement('button');
+    function makeScrollButton(button, left) {
+      button.type = 'button';
+      button.className = 'sinjira-account-nav-arrow';
+      button.textContent = left ? '‹' : '›';
+      button.setAttribute('aria-label', left ?
+        'Rubriques précédentes du compte' : 'Rubriques suivantes du compte');
+      button.setAttribute('aria-controls', accountScroll.id);
+      button.hidden = true;
+    }
+    makeScrollButton(back, true);
+    makeScrollButton(forward, false);
+    accountScroll.parentNode.insertBefore(frame, accountScroll);
+    frame.appendChild(back);
+    frame.appendChild(accountScroll);
+    frame.appendChild(forward);
+
+    function scrollLimits() {
+      var max = Math.max(0, accountScroll.scrollWidth - accountScroll.clientWidth);
+      var mobile = window.matchMedia('(max-width: 1020px)').matches;
+      var show = mobile && max > 2;
+      frame.classList.toggle('is-scrollable', show);
+      back.hidden = !show;
+      forward.hidden = !show;
+      back.disabled = !show || accountScroll.scrollLeft <= 2;
+      forward.disabled = !show || accountScroll.scrollLeft >= max - 2;
+    }
+    function slideAccount(direction) {
+      var distance = Math.max(160, Math.round(accountScroll.clientWidth * .7));
+      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      accountScroll.scrollBy({
+        left: direction * distance,
+        behavior: reduce ? 'instant' : 'smooth'
+      });
+    }
+    back.addEventListener('click', function () { slideAccount(-1); });
+    forward.addEventListener('click', function () { slideAccount(1); });
+    accountScroll.addEventListener('scroll', scrollLimits, { passive: true });
+    window.addEventListener('resize', scrollLimits);
+    window.addEventListener('load', scrollLimits, { once: true });
+
+    // Afficher immédiatement la rubrique courante sans déplacer la page.
+    var currentTab = accountNav.querySelector('a[aria-current="page"]');
+    if (currentTab) {
+      var left = currentTab.offsetLeft - accountNav.offsetLeft;
+      accountScroll.scrollLeft = Math.max(0,
+        left - Math.round(accountScroll.clientWidth * .28));
+    }
+    scrollLimits();
+    if (typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(scrollLimits).observe(accountNav);
+    }
+    var adminTab = accountNav.querySelector('[data-admin-nav]');
+    if (adminTab && typeof MutationObserver !== 'undefined') {
+      new MutationObserver(scrollLimits).observe(adminTab, {
+        attributes: true, attributeFilter: ['hidden']
+      });
+    }
+  }
+
   var core = doc.querySelector('[data-core-preview]');
   if (core) {
     var coreImage = core.querySelector('img');
