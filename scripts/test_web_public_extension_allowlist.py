@@ -86,7 +86,6 @@ class PublicArtifactExtensionAllowlist(unittest.TestCase):
             "projets/projet-nova/data/sources.json",
             "projets/projet-nova/official/reference/programme.md",
             "projets/projet-nova/PROPOSITIONS_PUBLIQUES.md",
-            "projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf",
         ):
             with self.subTest(path=name):
                 self.assertTrue(builder.relative_path_allowed(Path(name)))
@@ -98,6 +97,7 @@ class PublicArtifactExtensionAllowlist(unittest.TestCase):
             "projets/projet-nova/official/versions/V400/private-state.json",
             "projets/sinjira/romans/Livre-I-complet.pdf",
             "projets/sinjira/documents/Livre-I-edition-privee.pdf",
+            "projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf",
             "assets/diagnostics.js.map",
         ):
             with self.subTest(path=name):

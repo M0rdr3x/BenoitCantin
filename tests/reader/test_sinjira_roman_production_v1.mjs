@@ -38,10 +38,12 @@ test("100 % des chapitres déclarés ne veut pas dire 100 % éditorial ou commer
  assert.equal(x.book1.verified_release_completion_percent,null);
  assert.equal(x.book1.full_edition_publicly_released,false);
 });
-test("82 pages offertes gratuitement ne sont pas 82 % du manuscrit",()=>{
+test("62 pages de validation non publiées ne sont pas 62 % du manuscrit",()=>{
  const x=check();
- assert.equal(x.book1.demo_pages,82);
- assert.equal(x.book1.public_excerpt_page_share_percent,15.8);
+ assert.equal(x.book1.demo_pages,62);
+ assert.equal(x.book1.public_excerpt_page_share_percent,11.9);
+ assert.equal(manifest.demo.publication_state,"not_published_pending_binary_upload");
+ assert.equal(contract.demo.public_url,null);
  assert.equal(report.percent_policy.excerpt_share_is_not_completion,true);
 });
 test("les hashes des démos dans le manifeste et le contrat concordent",()=>{
@@ -137,7 +139,7 @@ test("la bibliothèque montre distinctement les deux livres et les limites des %
  const end=html.indexOf("</section>",start);
  assert.ok(start>0&&end>start);
  const section=html.slice(start,end);
- for(const term of ["520 pages","30 chapitres","82 pages","15,8 %","pourcentage éditorial",
+ for(const term of ["520 pages","30 chapitres","62 pages","11,9 %","pourcentage éditorial",
   "Le Sang du Sauveur","non mesurable","non activée"]){
   assert.ok(section.includes(term),term);
  }

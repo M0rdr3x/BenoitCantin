@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 source = (ROOT / "sw.js").read_text("utf-8")
 errors = []
 cache = re.search(r"const CACHE='([^']+)'", source)
-if not cache or not cache.group(1).endswith("-public-5"):
+if not cache or not re.search(r"-public-(?:[6-9]|[1-9][0-9]+)$",cache.group(1)):
     errors.append("Le cache public n'a pas été renouvelé pour la nouvelle identité.")
 for asset in (
     "/assets/icons/sinjira-favicon.png",

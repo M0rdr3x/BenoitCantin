@@ -122,6 +122,8 @@ test('le démarrage de la démo ne dépend pas du CDN Supabase', async () => {
   assert.ok(bootstrap.includes("import {startDemoNavigation} from './sinjira-demo-navigation-v1.mjs'"));
   assert.ok(bootstrap.includes("await import('./sinjira-supabase.js')"));
   assert.ok(!bootstrap.includes("import {getSupabase"));
-  assert.ok(html.includes('sinjira-demo-bootstrap-v1.mjs?v=1.0.0'));
+  assert.ok(!html.includes('sinjira-demo-bootstrap-v1.mjs?v='));
+  assert.ok(html.includes('data-reader-page="demo-pending"'));
+  assert.ok(html.includes('62 pages'));
   assert.ok(!html.includes('sinjira-reader.js?v='));
 });

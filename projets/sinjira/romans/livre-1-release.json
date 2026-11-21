@@ -1,6 +1,6 @@
 {
   "schema": "sinjira-book-release-manifest-v1",
-  "updated_at": "2026-10-07",
+  "updated_at": "2026-11-21",
   "book": {
     "franchise": "SINJIRA",
     "volume": "Livre I",
@@ -18,16 +18,21 @@
     "public_repository": false
   },
   "demo": {
-    "pages": 82,
-    "contents": "Prologue complet + chapitres 1 à 3",
+    "pages": 62,
+    "contents": "Prologue + chapitres 1 et 2",
     "free": true,
-    "sha256": "0851852f586ea619ee7435a1b70c38087a7997ab6809bb10fdad0ed4bd0c352b",
-    "public_path": "/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"
+    "sha256": "d76be06aca5b1568752f88223f07f7804fc7a54384ccc5bd856b0ce6fdf42dcf",
+    "public_path": null,
+    "publication_state": "not_published_pending_binary_upload",
+    "pdf_bytes": 844420,
+    "epub_fixed_layout_sha256": "d4b466725dd3fd1e1047068e0991c32f87d33e2289ebd17f0500384b2b2baaed",
+    "epub_fixed_layout_bytes": 10170691,
+    "validation_note": "Les deux PDF joints sont binaires identiques. Les fichiers de validation ne sont pas encore transférés sur l'hébergement GitHub Pages."
   },
   "notes": [
     "Le PDF intégral ne doit pas être ajouté au dépôt public.",
     "Le droit de lecture intégrale doit être validé côté serveur avant émission d’un lien temporaire.",
     "L’empreinte SHA-256 canonique de l’édition intégrale est conservée dans le contrat de livraison et les métadonnées privées, pas dans les actifs publics.",
-    "La démo publique doit correspondre au hash SHA-256 déclaré ci-dessus."
+    "Les versions de validation de 62 pages doivent correspondre aux empreintes SHA-256 déclarées avant publication. Aucun ancien PDF 82 pages ne doit être servi."
   ]
 }
