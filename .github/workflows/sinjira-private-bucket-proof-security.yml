@@ -15,6 +15,10 @@ on:
       - 'supabase/functions/get-novel-file-url/index.ts'
       - 'supabase/functions/get-private-book-url/index.ts'
       - 'scripts/test_private_book_storage_guard.mjs'
+      - 'supabase/functions/_shared/read-chunk-deadline.mjs'
+      - 'scripts/test_novel_http_deadline_security.mjs'
+      - 'scripts/validate_edge_response_privacy_v24_5_48.py'
+      - 'scripts/test_streaming_edge_legacy_guard_regressions.py'
       - 'scripts/validate_novel_storage_security.py'
       - 'scripts/validate_get_private_book_url_security.py'
       - 'scripts/validate_edge_function_inventory.py'
@@ -33,6 +37,10 @@ on:
       - 'supabase/functions/get-novel-file-url/index.ts'
       - 'supabase/functions/get-private-book-url/index.ts'
       - 'scripts/test_private_book_storage_guard.mjs'
+      - 'supabase/functions/_shared/read-chunk-deadline.mjs'
+      - 'scripts/test_novel_http_deadline_security.mjs'
+      - 'scripts/validate_edge_response_privacy_v24_5_48.py'
+      - 'scripts/test_streaming_edge_legacy_guard_regressions.py'
       - 'scripts/validate_novel_storage_security.py'
       - 'scripts/validate_get_private_book_url_security.py'
       - 'scripts/validate_edge_function_inventory.py'
@@ -73,6 +81,12 @@ jobs:
           python3 scripts/validate_get_document_storage_security.py
           python3 scripts/validate_get_document_url_security.py --self-test
           python3 scripts/validate_get_document_url_security.py
+      - name: Vérifier les délais HTTP absolus et les corps JSON du roman
+        run: node --test scripts/test_novel_http_deadline_security.mjs
+      - name: Préserver les anciens contrats de confidentialité Edge
+        run: |
+          python3 scripts/validate_edge_response_privacy_v24_5_48.py
+          python3 scripts/test_streaming_edge_legacy_guard_regressions.py
       - name: Tester les mutations de sécurité du roman
         run: |
           python3 scripts/validate_novel_storage_security.py --self-test
