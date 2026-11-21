@@ -1,4 +1,4 @@
-import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
+import { readLimitedUtf8BodyWithDeadline } from '../_shared/read-chunk-deadline.mjs';
 import { PDFDocument, StandardFonts, rgb } from 'npm:pdf-lib@1.17.1';
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredAdmin } from '../_shared/auth.ts';
@@ -7,6 +7,7 @@ const BUCKET = 'sinjira-life-story-exports';
 const DELIVERY_PAGE = 'https://www.benoitcantin.com/histoire-de-vie/remise.html';
 const DAY = 24 * 60 * 60 * 1000;
 const MAX_REQUEST_BYTES = 4096;
+const MAX_REQUEST_READ_TIMEOUT_MS = 4_000;
 const PRIVATE_HEADERS = {
   ...corsHeaders,
   'Content-Type': 'application/json; charset=utf-8',
@@ -31,23 +32,31 @@ function privateJson(data: unknown, status = 200) {
 }
 
 async function readLimitedJson(req: Request): Promise<{ body?: any; response?: Response }> {
-  const rawLength = req.headers.get('content-length');
-  if (rawLength) {
-    const declared = Number(rawLength);
-    if (!Number.isFinite(declared) || declared < 0 || declared > MAX_REQUEST_BYTES) {
-      return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
-    }
+  // Rejeter les types ambigus et préserver l'authentification admin préalable.
+  const contentType = (req.headers.get('content-type') || '').split(';', 1)[0].trim().toLowerCase();
+  if (contentType !== 'application/json') {
+    return { response: privateJson({ ok: false, error: 'Corps JSON requis.' }, 415) };
   }
 
-  const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);
-  if (!limited.ok) return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
-  const raw = limited.raw;
-  if (new TextEncoder().encode(raw).byteLength > MAX_REQUEST_BYTES) {
-    return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
+  // Un délai ABSOLU couvre l'ensemble des fragments. Une annulation bloquée
+  // ne doit jamais empêcher le retour de la réponse privée.
+  const limited = await readLimitedUtf8BodyWithDeadline(req, MAX_REQUEST_BYTES, MAX_REQUEST_READ_TIMEOUT_MS);
+  if (!limited.ok) {
+    if (limited.reason === 'REQUEST_TIMEOUT') {
+      return { response: privateJson({ ok: false, error: 'Délai de transmission dépassé.' }, 408) };
+    }
+    if (limited.reason === 'REQUEST_TOO_LARGE') {
+      return { response: privateJson({ ok: false, error: 'Requête trop volumineuse.' }, 413) };
+    }
+    return { response: privateJson({ ok: false, error: 'Corps JSON invalide.' }, 400) };
   }
 
   try {
-    return { body: JSON.parse(raw || '{}') };
+    const body: unknown = JSON.parse(limited.raw);
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return { response: privateJson({ ok: false, error: 'Corps JSON invalide.' }, 400) };
+    }
+    return { body };
   } catch {
     return { response: privateJson({ ok: false, error: 'Corps JSON invalide.' }, 400) };
   }
