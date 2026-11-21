@@ -1,0 +1,66 @@
+name: Sécurité web — CSP, HSTS et cache privé de production
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/check_live_web_security_headers.py'
+      - '.github/workflows/live-web-security-headers.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/check_live_web_security_headers.py'
+      - '.github/workflows/live-web-security-headers.yml'
+  schedule:
+    - cron: '43 12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-security-headers-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test-sans-reseau:
+    name: Vérifier les refus HTTP sans requête de production
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sans credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Python figé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+
+      - name: Vérifier le code et les mutations CSP/HSTS/cache
+        run: |
+          python3 -m py_compile scripts/check_live_web_security_headers.py
+          python3 scripts/check_live_web_security_headers.py --self-test
+
+  verification-read-only:
+    name: Examiner les en-têtes de production sans corps HTTP
+    needs: test-sans-reseau
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout sans credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+
+      - name: Python figé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+
+      - name: Lecture passive des en-têtes de trois pages approuvées
+        run: python3 scripts/check_live_web_security_headers.py --live
