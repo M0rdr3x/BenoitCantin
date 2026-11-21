@@ -70,12 +70,16 @@ def run():
                         overflow: document.documentElement.scrollWidth > w + 2,
                         nextDisabled: next.disabled,
                         img: document.querySelector('.site-header .brand img')?.getAttribute('src'),
+                        toolbarTargets: [...document.querySelectorAll('.sinjira-reader-actions .btn')]
+                            .map(el => el.getBoundingClientRect().height),
                     };
                 }""")
                 check(state["within"], f"commandes hors écran {width}px: {state}")
                 check(not state["overflow"], f"débordement horizontal {width}px: {state}")
                 check(state["prevHeight"] >= 44 and state["nextHeight"] >= 44,
                       f"zones tactiles trop petites {width}px: {state}")
+                check(bool(state["toolbarTargets"]) and all(h >= 44 for h in state["toolbarTargets"]),
+                      f"liens d'action de lecture trop petits {width}px: {state}")
                 check(not state["nextDisabled"], f"page suivante désactivée à tort {width}px")
                 check(state["img"] == "/assets/icons/sinjira-officiel-20261120.png",
                       f"marque SINJIRA non harmonisée {width}px")
