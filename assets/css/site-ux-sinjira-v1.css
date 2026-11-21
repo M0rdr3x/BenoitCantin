@@ -177,8 +177,8 @@ body.account-page[data-sinjira-ux="v1"] .sinjira-account-nav-arrow[hidden]{
     gap:8px;align-items:start
   }
   body.account-page[data-sinjira-ux="v1"] .sinjira-account-nav-frame .account-nav-scroll{
-    box-sizing:border-box;scroll-snap-type:x proximity;
-    overscroll-behavior-x:contain
+    box-sizing:border-box;scroll-snap-type:none;
+    scroll-behavior:auto;overscroll-behavior-x:contain
   }
   body.account-page[data-sinjira-ux="v1"] .sinjira-account-nav-arrow{
     box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;
