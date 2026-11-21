@@ -154,7 +154,9 @@ def self_test() -> None:
         ("session_guard_present", False),
         ("security_definer", False),
         ("anon_execute", True),
+        ("authenticated_execute", False),
         ("session_contract_ok", False),
+        ("definition_sha256", "invalid"),
     ):
         rows = sample(postflight=True)
         rows[0][field] = value
