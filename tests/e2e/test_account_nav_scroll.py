@@ -11,8 +11,16 @@ from playwright.sync_api import sync_playwright
 
 BASE = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
 ENGINE = os.environ.get("BROWSER", "chromium").strip().lower()
-PAGES = ("compte/index.html", "compte/bibliotheque.html",
-         "compte/mes-lectures.html", "compte/securite.html", "compte/profil.html")
+# Un échantillon transversal de rubriques actives et de sous-pages du compte.
+PAGES = (
+    "compte/index.html", "compte/bibliotheque.html", "compte/mes-lectures.html",
+    "compte/securite.html", "compte/profil.html", "compte/communaute.html",
+    "compte/licences.html", "compte/notifications.html", "compte/messages.html",
+    "compte/parametres.html", "compte/mon-personnage.html", "compte/emploi.html",
+    "compte/registre-personnel.html", "compte/rencontres.html",
+    "compte/moderation.html", "compte/blocages.html", "compte/marche.html",
+    "compte/projet.html",
+)
 WIDTHS = (320, 390, 600, 768, 1020, 1024, 1440)
 
 
@@ -45,6 +53,7 @@ def snapshot(page):
           target:button.getAttribute('aria-controls')
         })),
         scrollId:scroll?.id,
+        currentPresent:!!current,
         currentVisible:!!rect && !!region &&
           rect.left >= region.left - 3 && rect.right <= region.right + 3,
         adminHidden:!admin || getComputedStyle(admin).display==='none',
@@ -94,17 +103,21 @@ def run():
                                       and b["label"] and b["target"]==state["scrollId"]
                                       for b in state["buttons"]),
                                   f"boutons non accessibles {path} à {width}px : {state}")
-                            page.wait_for_function("""() => {
-                              const scroll=document.querySelector('.account-nav-scroll');
-                              const current=scroll?.querySelector('a[aria-current="page"]');
-                              if(!current) return false;
-                              const a=current.getBoundingClientRect();
-                              const b=scroll.getBoundingClientRect();
-                              return a.left>=b.left-3 && a.right<=b.right+3;
-                            }""", timeout=5_000)
-                            state=snapshot(page)
-                            check(state["currentVisible"],
-                                  f"rubrique active hors de la zone visible {path} {width}: {state}")
+                            # Certaines sous-pages n'ont pas de lien exact dans
+                            # la barre; ne pas annoncer une rubrique différente
+                            # comme la page courante.
+                            if state["currentPresent"]:
+                                page.wait_for_function("""() => {
+                                  const scroll=document.querySelector('.account-nav-scroll');
+                                  const current=scroll?.querySelector('a[aria-current="page"]');
+                                  if(!current) return false;
+                                  const a=current.getBoundingClientRect();
+                                  const b=scroll.getBoundingClientRect();
+                                  return a.left>=b.left-3 && a.right<=b.right+3;
+                                }""", timeout=5_000)
+                                state=snapshot(page)
+                                check(state["currentVisible"],
+                                      f"rubrique active hors de la zone visible {path} {width}: {state}")
                         else:
                             check(all(not b["displayed"] for b in state["buttons"]),
                                   f"commandes mobiles visibles sur PC {path} {width}: {state}")
@@ -160,7 +173,7 @@ def run():
                 context.close()
         finally:
             browser.close()
-    print(f"OK {ENGINE}: 5 pages du compte, 7 tailles, clavier, onglet actif et repli sans JS")
+    print(f"OK {ENGINE}: {len(PAGES)} pages du compte, 7 tailles, clavier, onglet actif et repli sans JS")
 
 
 if __name__=="__main__":
