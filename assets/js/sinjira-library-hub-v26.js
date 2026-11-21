@@ -1,4 +1,4 @@
-import {requireUser,getSupabase,escapeHtml,setStatus} from './sinjira-supabase.js';
+import {requireUser,getSupabase,escapeHtml,setStatus,safeInternalDestination} from './sinjira-supabase.js';
 
 /* L'affichage des catégories ne confère aucun droit d'accès :
    les autorisations restent contrôlées par Supabase et les Edge Functions. */
@@ -16,12 +16,8 @@ async function init(){
     setStatus(status,'Les projets associés à votre compte ne peuvent pas être chargés. Les liens publics ci-dessus restent disponibles.','error');
     return;
   }
-  const safeLink=value=>{
-    const raw=String(value||'');
-    if(!raw.startsWith('/')||raw.startsWith('//')||raw.includes('\\'))return null;
-    try{const url=new URL(raw,location.origin);return url.origin===location.origin?url.pathname:null}
-    catch{return null}
-  };
+  // Conserver le contrat du moteur Fracture désactivé, avec le filtre d'origine strict.
+  const safeLink=value=>safeInternalDestination(value,'');
   const [accessResult,pendingResult,ownerResult,adminResult]=await Promise.all([
     s.from('project_access').select('project_id,access_level,expires_at').eq('user_id',user.id),
     s.from('access_requests').select('project_id,status').eq('user_id',user.id).eq('status','pending'),
@@ -33,7 +29,7 @@ async function init(){
   const pending=new Set((pendingResult.data||[]).map(x=>x.project_id));
   const projects=Array.isArray(data)?data:[];
   container.innerHTML=projects.map(project=>{
-    const path=safeLink(project.public_path)||'/projets/sinjira/jeux/';
+    const path=safeInternalDestination(project.public_path,'/projets/sinjira/jeux/');
     // L'ancien moteur Fracture ne respecte pas encore l'édition Déduction
     // simplifiée : ne jamais présenter son ancien accès comme un jeu jouable.
     const play=project.slug==='fracture-du-reseau-mere'?null:safeLink(project.play_path);
@@ -45,8 +41,8 @@ async function init(){
     return '<article class="account-card">'+
       '<span class="eyebrow">Projet SINJIRA™</span><h3>'+escapeHtml(project.name)+'</h3>'+
       '<p>'+escapeHtml(project.description||'')+'</p>'+
-      '<div class="hero-actions"><a class="btn btn-secondary" href="'+path+'">Voir le projet</a>'+
-      (play?'<a class="btn btn-primary" href="'+play+'">Jouer</a>':'')+
+      '<div class="hero-actions"><a class="btn btn-secondary" href="'+escapeHtml(path)+'">Voir le projet</a>'+
+      (play?'<a class="btn btn-primary" href="'+escapeHtml(play)+'">Jouer</a>':'')+
       '<a class="btn btn-secondary" href="/compte/projet.html?slug='+encodeURIComponent(project.slug)+'">Mon espace de projet</a>'+
       (requestAllowed?'<button class="btn btn-secondary" type="button" data-request-tester="'+escapeHtml(project.id)+'"'+(requested?' disabled':'')+'>'+(requested?'Demande testeur en attente':'Demander un accès testeur')+'</button>':'')+
       '</div></article>';
