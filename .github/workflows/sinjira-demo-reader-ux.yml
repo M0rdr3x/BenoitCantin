@@ -15,6 +15,7 @@ on:
     paths:
       - 'assets/js/sinjira-reader.js'
       - 'assets/js/sinjira-demo-navigation-v1.mjs'
+      - 'assets/js/sinjira-demo-bootstrap-v1.mjs'
       - 'projets/sinjira/romans/lire-demo.html'
       - 'scripts/test_sinjira_demo_navigation_v1.mjs'
       - '.github/workflows/sinjira-demo-reader-ux.yml'
