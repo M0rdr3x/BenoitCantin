@@ -34,6 +34,7 @@ class NavLinks(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.in_navigation = 0
         self.links = []
+        self.stylesheets = []
         self.navs = 0
 
     def handle_starttag(self, tag, attrs):
@@ -43,6 +44,8 @@ class NavLinks(HTMLParser):
             self.navs += 1
         elif tag == "a" and self.in_navigation:
             self.links.append(attributes.get("href"))
+        elif tag == "link" and "stylesheet" in (attributes.get("rel") or "").lower().split():
+            self.stylesheets.append(attributes.get("href") or "")
 
     def handle_endtag(self, tag):
         if tag == "nav" and self.in_navigation:
@@ -88,7 +91,10 @@ def check():
             problems.append(f"{relative}: destinations du menu non homogènes: {parser.links}")
         if 'data-sinjira-ux="v1"' not in text:
             problems.append(f"{relative}: configuration de l'interface mobile absente")
-        if "/assets/css/site-ux-sinjira-v1.css?v=1.0.0" not in text:
+        # Accepter une nouvelle version de cache sans relâcher le chemin exact
+        # du CSS ni la vérification d\'un vrai élément <link rel=stylesheet>.
+        if not any(re.fullmatch(r"/assets/css/site-ux-sinjira-v1\\.css\\?v=[0-9]+(?:\\.[0-9]+)*", href)
+                   for href in parser.stylesheets):
             problems.append(f"{relative}: feuille de style adaptée absente")
         boot = '/assets/js/sinjira-nav-boot-v2.js?v=2.0.0'
         if relative == "projets/sinjira/jeux/fracture-du-reseau-mere/jouer.html":
