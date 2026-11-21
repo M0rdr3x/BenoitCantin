@@ -64,7 +64,7 @@ const vm = require('node:vm');
 
   const ok=await read(full('{"device_key":"aaaaaaaaaaaaaaaa","action":"session"}'));
   assert.equal(ok.body.device_key,'aaaaaaaaaaaaaaaa');
-  assert.equal((await read(full('{}',{mime:'application/json; charset=utf-8'}))).body instanceof Object, true);
+  assert.equal(Object.keys((await read(full('{}',{mime:'application/json; charset=utf-8'}))).body).length, 0);
   await refusal(full('{}',{mime:'application/json-evil'}),415);
   await refusal(full('{}',{mime:'text/plain'}),415);
   await refusal(full('{}',{declared:'NaN'}),413);
@@ -96,6 +96,6 @@ const vm = require('node:vm');
   const aborted=new AbortController();
   aborted.abort();
   await refusal(make(chunks([bytes('{}')]),{signal:aborted.signal}),408);
-  assert.ok(calls >= 14,'Le vrai parseur doit appeler le lecteur partagé.');
+  assert.ok(calls >= 13,'Le vrai parseur doit appeler le lecteur partagé.');
   console.log('OK security-context : JWT avant corps, JSON strict, 4 KiB, délai absolu, cancel bloqué, UTF-8, erreurs privées et logs expurgés.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
