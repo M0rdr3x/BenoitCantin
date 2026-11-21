@@ -18,6 +18,8 @@ async function scenario(response, options = {}) {
   let submit;
   const navigations = [];
   const signOutCalls = [];
+  const signInCalls = [];
+  const securityContextCalls = [];
   const statuses = [];
   const warnings = [];
   const store = new Map();
@@ -36,7 +38,7 @@ async function scenario(response, options = {}) {
   };
   const client = {
     auth: {
-      signInWithPassword: async () => ({error: null}),
+      signInWithPassword: async () => {signInCalls.push('password');return {error: null}},
       signOut: async ({scope}) => {
         signOutCalls.push(scope);
         if (options.signOutThrows) throw new Error('private sign-out failure');
@@ -53,6 +55,7 @@ async function scenario(response, options = {}) {
     functions: {
       invoke: async (name) => {
         assert.equal(name, 'security-context');
+        securityContextCalls.push(name);
         if (response instanceof Error) throw response;
         return response;
       }
@@ -73,7 +76,7 @@ async function scenario(response, options = {}) {
       setItem() {throw new Error('private storage access failure');}
     } : storage,
     getSupabase: () => client,
-    getCurrentUser: async () => null,
+    getCurrentUser: async () => options.existingUser ? {id: 'synthetic-existing-user'} : null,
     isSinjiraBackendConfigured: () => true,
     SINJIRA_CONFIG: {siteUrl: 'https://example.test'},
     setStatus: (_, message, kind) => statuses.push({message, kind}),
@@ -87,15 +90,19 @@ async function scenario(response, options = {}) {
     setTimeout: () => {}
   };
   await script.runInNewContext(context, {timeout: 1500});
-  assert.equal(typeof submit, 'function', 'Le flux login doit déclarer son handler');
-  await submit({preventDefault() {}});
+  if (options.existingUser) {
+    assert.equal(submit, undefined, 'Session existante : éviter une soumission de mot de passe');
+  } else {
+    assert.equal(typeof submit, 'function', 'Le flux login doit déclarer son handler');
+    await submit({preventDefault() {}});
+  }
   for (const args of warnings) {
     assert.equal(args.length, 1, 'Ne jamais journaliser des erreurs Auth ou des objets privés');
     assert.equal(typeof args[0], 'string');
     assert.ok(!args[0].includes('synthetic@example.test'));
     assert.ok(!args[0].includes('private'));
   }
-  return {navigations, signOutCalls, statuses, warnings};
+  return {navigations, signOutCalls, signInCalls, securityContextCalls, statuses, warnings};
 }
 
 async function main() {
@@ -171,6 +178,72 @@ async function main() {
   );
   assert.deepEqual(invalidChallengeFailedSignout.navigations, []);
   assert.match(invalidChallengeFailedSignout.statuses.at(-1)?.message || '', /non confirmée/);
+  count++;
+
+
+  // Une session déjà valide ne peut plus passer directement à /compte.
+  // getUser() valide l'identité, mais ne remplace pas la décision contextuelle.
+  const existingAllow = await scenario(
+    {data: {ok: true, security: {outcome: 'allow'}}}, {existingUser: true}
+  );
+  assert.deepEqual(existingAllow.navigations, ['/compte/index.html']);
+  assert.deepEqual(existingAllow.signInCalls, [], 'Session existante : aucune nouvelle authentification');
+  assert.deepEqual(existingAllow.securityContextCalls, ['security-context']);
+  count++;
+
+  for (const response of [
+    new Error('private existing session error synthetic@example.test'),
+    {data: null, error: {message: 'private existing-user backend failure'}},
+    {data: {ok: false}},
+    {data: {ok: true, security: {outcome: 'unknown'}}},
+    {data: {ok: true, security: {outcome: 'block'}}},
+    {data: {ok: true, security: {outcome: 'challenge'}}},
+  ]) {
+    const existing = await scenario(response, {existingUser: true});
+    assert.deepEqual(existing.navigations, [],
+      'Une session déjà établie ne doit pas ignorer un refus ou un défi');
+    assert.deepEqual(existing.signOutCalls, ['local'],
+      'La session existante non validée doit demander sa révocation');
+    assert.deepEqual(existing.signInCalls, []);
+    assert.deepEqual(existing.securityContextCalls, ['security-context']);
+    assert.equal(existing.statuses.at(-1)?.kind, 'error');
+    count++;
+  }
+
+  const existingChallenged = await scenario(
+    {data: {ok: true, security: {outcome: 'challenge', challenge_id: 'existing-challenge'}}},
+    {existingUser: true}
+  );
+  assert.equal(existingChallenged.navigations.length, 1);
+  assert.match(existingChallenged.navigations[0], /^\/compte\/mfa\.html\?security=1&next=/);
+  assert.deepEqual(existingChallenged.signInCalls, []);
+  assert.deepEqual(existingChallenged.signOutCalls, []);
+  count++;
+
+  for (const options of [
+    {existingUser: true, mfaThrows: true},
+    {existingUser: true, mfaError: true},
+    {existingUser: true, mfaNextLevel: 'aal1'},
+    {existingUser: true, challengeStorageThrows: true},
+  ]) {
+    const existing = await scenario(
+      {data: {ok: true, security: {outcome: 'challenge', challenge_id: 'existing-challenge'}}},
+      options
+    );
+    assert.deepEqual(existing.navigations, [],
+      'Session déjà ouverte : erreur MFA ou stockage doit bloquer la navigation');
+    assert.deepEqual(existing.signOutCalls, ['local']);
+    assert.equal(existing.statuses.at(-1)?.kind, 'error');
+    count++;
+  }
+
+  const existingSignOutError = await scenario(
+    new Error('private revoked session'),
+    {existingUser: true, signOutError: true}
+  );
+  assert.deepEqual(existingSignOutError.navigations, []);
+  assert.match(existingSignOutError.statuses.at(-1)?.message || '', /non confirmée/);
+  assert.deepEqual(existingSignOutError.signInCalls, []);
   count++;
 
   console.log('PASS: ' + count + ' scénarios Auth sécurité (fail-closed, erreurs MFA, déconnexion, confidentialité).');
