@@ -29,3 +29,15 @@ export function planReaderScreenTurn({direction,mode,scrollTop,scrollHeight,clie
   }
   return nextPage;
 }
+
+/** Indique si une commande peut avancer/reculer dans la page ou le livre.
+ * Ne reçoit aucun texte privé, seulement des dimensions et les numéros PDF. */
+export function canTurnReaderScreen({direction,mode,scrollTop,scrollHeight,clientHeight,page,totalPages}={}){
+  const plan=planReaderScreenTurn({direction,mode,scrollTop,scrollHeight,clientHeight});
+  if(plan.kind==='scroll')return true;
+  if(plan.kind!=='page')return false;
+  const current=Number(page),total=Number(totalPages);
+  return Number.isInteger(current)&&Number.isInteger(total)&&
+    total>=1&&current>=1&&current<=total&&
+    current+plan.delta>=1&&current+plan.delta<=total;
+}
