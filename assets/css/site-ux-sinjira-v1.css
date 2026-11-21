@@ -156,3 +156,47 @@ body[data-reader-page="novel"] #commentaires :where(textarea,button):focus-visib
  body[data-reader-page="novel"] #commentaires .reader-comment-form>button{width:100%}
  body[data-reader-page="novel"] #commentaires .sinjira-comments-panel{padding:18px}
 }
+
+/* Pages de récupération : lisibilité à fort zoom, actions tactiles et CSP sans style inline. */
+body.site-recovery-page .recovery-card{
+  box-sizing:border-box;
+  max-width:min(100%,850px);
+  min-width:0;
+}
+body.site-not-found-page .recovery-card{text-align:center}
+body.site-not-found-page .recovery-title{
+  font-size:clamp(2.35rem,9vw,6rem);
+  line-height:1.1;
+  overflow-wrap:anywhere;
+}
+body.site-not-found-page .recovery-actions{justify-content:center}
+body.site-offline-page .recovery-retry-form{
+  display:flex;
+  min-width:0;
+  max-width:100%;
+  margin:0;
+}
+body.site-offline-page .recovery-retry-form .btn{max-width:100%}
+body.site-recovery-page .recovery-status{
+  margin-top:18px;
+  color:var(--muted);
+  line-height:1.6;
+}
+body.site-recovery-page .hero-actions .btn{
+  min-height:48px;
+  max-width:100%;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  text-align:center;
+}
+@media(max-width:520px){
+  body.site-recovery-page .page-hero{padding-block:clamp(20px,6vw,40px)}
+  body.site-recovery-page .recovery-card{padding:clamp(16px,5vw,24px)}
+  body.site-recovery-page .hero-actions{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:10px;
+  }
+  body.site-recovery-page .hero-actions .btn{width:100%}
+  body.site-offline-page .recovery-retry-form{width:100%}
+}
