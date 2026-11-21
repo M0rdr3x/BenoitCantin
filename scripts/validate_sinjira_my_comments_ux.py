@@ -46,6 +46,10 @@ def validate() -> list[str]:
         "sinjira-account-v18.js?v=24.1.3",
         'data-v18-page="comments"',
         'data-my-comments',
+        'aria-busy="true"',
+        'reader-comments-loading',
+        'sinjira-account-v18.js?v=24.1.4',
+        'sinjira-comments-responsive-v2.css?v=2.0.3',
     ):
         if marker not in page:
             failures.append(f"Page du compte incomplète : {marker}")
