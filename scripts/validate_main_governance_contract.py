@@ -93,7 +93,7 @@ def validate_governance_text(text):
         ("if (!protectedRef)", "la branche main non protégée doit déclencher un refus"),
         ("core.setFailed('La branche main n’est pas protégée", 'absence du refus fail-closed de main non protégée'),
         ("process.env.GITHUB_REF_PROTECTED === 'true'", 'état serveur GITHUB_REF_PROTECTED non contrôlé'),
-        ('Cet échec de CI ne remplace pas la configuration GitHub Settings > Branches/Rulesets.', 'la limite de preuve serveur doit rester explicite'),
+        ('Cet échec de CI ne remplace pas la configuration GitHub Settings > Branches/Rulesets', 'la limite de preuve serveur doit rester explicite'),
     ):
         require(errors, marker in text, message)
 
@@ -196,7 +196,7 @@ def run_self_tests(governance, readme, contract):
         'PR non fusionnée': governance.replace("pr.merged_at && pr.base?.ref === 'main'", "pr.base?.ref === 'main'", 1),
         'permission écriture': governance.replace('contents: read', 'contents: write', 1),
         'contrôle protection retiré': governance.replace("process.env.GITHUB_REF_PROTECTED === 'true'", "'true' === 'true'", 1),
-        'limite preuve serveur retirée': governance.replace('Cet échec de CI ne remplace pas la configuration GitHub Settings > Branches/Rulesets.', 'Protection serveur confirmée.', 1),
+        'limite preuve serveur retirée': governance.replace('Cet échec de CI ne remplace pas la configuration GitHub Settings > Branches/Rulesets', 'Protection serveur confirmée.', 1),
         'github-script mobile': governance.replace(f'actions/github-script@{GITHUB_SCRIPT_SHA}', 'actions/github-script@v8', 1),
         'secret injecté': governance.replace('    steps:\n', '    env:\n      TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}\n    steps:\n', 1),
     }
