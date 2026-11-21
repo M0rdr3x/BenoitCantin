@@ -74,7 +74,7 @@ function assertSafeMarkup(html) {
   assert.doesNotMatch(html, /tracker\.example|evil\.example|javascript:|data:text\/html/);
 }
 function loadSource(source,dom,{db=null,entry='legacy'}={}) {
-  let executable=source.replace(/^import [^\n]+\n/,'');
+  let executable=source.replace(/^import [^\n]+\n/gm,'');
   assert.notEqual(executable,source,'le test doit charger un fichier ES module réel');
   if(entry==='legacy') {
     executable=executable.replace(/\(async\(\)=>\{user=await requireUser\(\);[\s\S]*$/,'');
