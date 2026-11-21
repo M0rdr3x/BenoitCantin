@@ -1,5 +1,6 @@
 import { corsHeaders } from '../_shared/cors.ts';
 import { requiredUser, serviceClient } from '../_shared/auth.ts';
+import { privateBookLocationValid, isVerifiedPrivateBucket } from '../_shared/private-book-storage-guard.mjs';
 
 const HEADERS={...corsHeaders,'Content-Type':'application/json; charset=utf-8','Cache-Control':'private, no-store, max-age=0','Pragma':'no-cache','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'};
 const MAX_REQUEST_BYTES=2048;
@@ -49,7 +50,16 @@ Deno.serve(async(req)=>{
     }
     if(!entitled)return json({ok:false,error:'Votre compte ne possède pas le droit de lecture intégrale de ce roman.'},403);
     if(!novel.file_ready)return json({ok:false,error:'Le fichier intégral de cette édition n’est pas encore activé dans le stockage privé.',code:'FILE_NOT_READY',metadata:{page_count:novel.page_count,file_version:novel.file_version}},409);
-    if(!novel.private_storage_bucket||!novel.private_storage_path)return json({ok:false,error:'Fichier privé non configuré.'},500);
+    // Une URL signée ne suffit pas à protéger un PDF placé dans un bucket public.
+    // Échec fermé si le chemin ou le statut réel du bucket est ambigu.
+    if(!privateBookLocationValid(novel.private_storage_bucket,novel.private_storage_path)){
+      return json({ok:false,error:'Fichier privé non configuré.'},503);
+    }
+    const {data:bucketMetadata,error:bucketMetadataError}=await service.storage.getBucket(novel.private_storage_bucket);
+    if(bucketMetadataError||!isVerifiedPrivateBucket(bucketMetadata,novel.private_storage_bucket)){
+      console.error('[get-novel-file-url]',{code:'NOVEL_PRIVATE_BUCKET_UNVERIFIED'});
+      return json({ok:false,error:'Stockage privé indisponible.'},503);
+    }
     const {data:signed,error:signedError}=await service.storage.from(novel.private_storage_bucket).createSignedUrl(novel.private_storage_path,600,{download:novel.slug+'.pdf'});
     if(signedError||!signed?.signedUrl)return json({ok:false,error:'Impossible de créer le lien sécurisé.'},500);
     return json({ok:true,url:signed.signedUrl,protected:true,expires_in:600,novel:{slug:novel.slug,title:novel.title,page_count:novel.page_count,file_version:novel.file_version,file_sha256:novel.file_sha256,file_size_bytes:novel.file_size_bytes}});
