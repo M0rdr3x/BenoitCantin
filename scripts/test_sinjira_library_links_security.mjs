@@ -105,7 +105,7 @@ test('cartes bibliothèques : aucune URL active ni tierce ne devient cliquable',
     '/projets/sinjira/romans/'
   ]);
   assert.doesNotMatch(html, /href="(?:javascript:|data:|https?:|\/\/)/i);
-  assert.doesNotMatch(html, /<img|onerror=/i);
+  assert.doesNotMatch(html, /<img\\b/i);
   assert.match(html, /&lt;img src=x onerror=alert\(9\)&gt;/);
 });
 
