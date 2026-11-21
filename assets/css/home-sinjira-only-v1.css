@@ -1,6 +1,6 @@
 /* Accueil SINJIRA — un seul univers en vedette (20 novembre 2026).
    Isolation sous .home-sinjira-only pour ne jamais modifier les pages historiques Nova. */
-.home-page.home-sinjira-only{--sinjira-warm:#ffb08c;--sinjira-glow:rgba(255,119,94,.22)}
+.home-page.home-sinjira-only{--sinjira-warm:#ffb8aa;--sinjira-glow:rgba(216,40,48,.24);--sinjira-crimson:#db202c;--sinjira-ember:#ff5b4e;--sinjira-metal:#ac8781}
 .home-page.home-sinjira-only .hero{overflow:clip;padding:clamp(32px,6vw,80px) 0 clamp(28px,5vw,56px)}
 .home-page.home-sinjira-only .hero-grid{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:clamp(22px,5vw,70px);align-items:center}
 .home-page.home-sinjira-only .hero-copy{max-width:680px;min-width:0}
@@ -8,24 +8,24 @@
 .home-page.home-sinjira-only .hero-copy>p{font-size:clamp(1.03rem,1.5vw,1.16rem);line-height:1.72;max-width:60ch;margin:0;color:#c5cee2}
 .home-page.home-sinjira-only .hero-actions{margin-top:26px;gap:12px}
 .home-page.home-sinjira-only .hero-actions .btn{min-height:52px}
-.home-page.home-sinjira-only .home-eyebrow{color:#ffbba6}
+.home-page.home-sinjira-only .home-eyebrow{color:#ffbaab}
 .home-page.home-sinjira-only .home-eyebrow::before{background:currentColor}
 .home-page.home-sinjira-only .home-sinjira-cosmos{--home-orbit-size:min(100%,480px);position:relative;width:min(100%,480px);aspect-ratio:1;margin:0 auto;display:grid;place-items:center;isolation:isolate}
-.home-page.home-sinjira-only .home-sinjira-cosmos::before{inset:7%;border:1px solid rgba(219,173,247,.2);background:radial-gradient(circle,rgba(166,83,109,.24),rgba(24,18,46,.24) 51%,transparent 72%);box-shadow:0 0 90px rgba(202,83,122,.13) inset}
-.home-page.home-sinjira-only .home-sinjira-cosmos::after{inset:19%;border:1px solid rgba(172,140,239,.17);box-shadow:0 0 60px rgba(134,80,178,.09) inset}
-.home-page.home-sinjira-only .sinjira-orbit{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;width:clamp(196px,50%,270px);aspect-ratio:1;padding:22px;background:radial-gradient(circle at 45% 20%,rgba(120,61,82,.46),rgba(10,12,26,.97) 72%);border:1px solid rgba(255,179,149,.47);border-radius:50%;text-align:center;text-decoration:none;box-shadow:0 16px 52px rgba(0,0,0,.44),0 0 0 8px rgba(232,143,181,.05),0 0 70px rgba(224,100,126,.16);transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease}
-.home-page.home-sinjira-only .sinjira-orbit:hover,.home-page.home-sinjira-only .sinjira-orbit:focus-visible{transform:scale(1.04);border-color:#ffd7c7;box-shadow:0 18px 65px rgba(0,0,0,.47),0 0 75px rgba(224,100,126,.24);outline:3px solid #ffbba6;outline-offset:5px}
-.home-page.home-sinjira-only .sinjira-orbit img{width:min(62%,144px);aspect-ratio:1;object-fit:contain;border-radius:50%;filter:drop-shadow(0 9px 22px rgba(0,0,0,.4))}
+.home-page.home-sinjira-only .home-sinjira-cosmos::before{inset:7%;border:1px solid rgba(186,95,88,.42);background:radial-gradient(circle at 50% 46%,rgba(206,43,42,.13) 0%,rgba(83,17,21,.29) 35%,rgba(18,9,13,.57) 63%,transparent 78%);box-shadow:0 0 0 1px rgba(124,96,92,.06),inset 0 0 86px rgba(183,24,32,.21),0 0 82px rgba(103,17,22,.2)}
+.home-page.home-sinjira-only .home-sinjira-cosmos::after{inset:19%;border:1px solid rgba(188,86,79,.34);background:radial-gradient(circle,rgba(90,18,25,.19),transparent 73%);box-shadow:inset 0 0 58px rgba(197,39,42,.12),0 0 27px rgba(148,29,31,.12)}
+.home-page.home-sinjira-only .sinjira-orbit{position:relative;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;width:clamp(196px,50%,270px);aspect-ratio:1;padding:22px;background:radial-gradient(circle at 49% 20%,rgba(91,26,30,.55),rgba(14,10,17,.97) 70%);border:1px solid rgba(235,93,75,.64);border-radius:50%;text-align:center;text-decoration:none;box-shadow:0 16px 52px rgba(0,0,0,.49),0 0 0 8px rgba(199,52,45,.055),inset 0 0 28px rgba(143,33,34,.16),0 0 68px rgba(212,36,39,.2);transition:transform .22s ease,border-color .22s ease,box-shadow .22s ease}
+.home-page.home-sinjira-only .sinjira-orbit:hover,.home-page.home-sinjira-only .sinjira-orbit:focus-visible{transform:scale(1.035);border-color:#ffd2c5;box-shadow:0 18px 65px rgba(0,0,0,.52),0 0 70px rgba(239,51,50,.29);outline:3px solid #ffcfbd;outline-offset:5px}
+.home-page.home-sinjira-only .sinjira-orbit img{display:block;width:min(68%,156px);height:auto;aspect-ratio:1;object-fit:contain;border-radius:50%;filter:drop-shadow(0 9px 22px rgba(0,0,0,.42)) drop-shadow(0 0 14px rgba(221,51,48,.2))}
 .home-page.home-sinjira-only .sinjira-orbit strong{font-size:clamp(1.18rem,2.4vw,1.6rem);line-height:1.1;letter-spacing:.035em;color:#fff}
-.home-page.home-sinjira-only .sinjira-orbit span{font-size:.76rem;color:#f9cabb;line-height:1.2}
-.home-page.home-sinjira-only .home-sinjira-cosmos .cosmos-label{position:absolute;left:50%;bottom:4%;translate:-50% 0;transform:none;width:min(88%,330px);max-width:none;margin:0;line-height:1.4;text-align:center;color:#c4bbd8;font-size:.72rem;letter-spacing:.11em;pointer-events:none}
+.home-page.home-sinjira-only .sinjira-orbit span{font-size:.76rem;color:#ffd0c0;line-height:1.2}
+.home-page.home-sinjira-only .home-sinjira-cosmos .cosmos-label{position:absolute;left:50%;bottom:4%;translate:-50% 0;transform:none;width:min(88%,330px);max-width:none;margin:0;line-height:1.4;text-align:center;color:#dbc2c0;font-size:.72rem;letter-spacing:.11em;pointer-events:none}
 .home-page.home-sinjira-only .home-projects{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
-.home-page.home-sinjira-only .home-project{min-width:0;min-height:218px;display:grid;grid-template-columns:112px minmax(0,1fr);grid-template-rows:1fr;gap:20px;align-items:center;padding:clamp(18px,2.8vw,28px);text-align:left;border:1px solid rgba(255,255,255,.13)}
+.home-page.home-sinjira-only .home-project{min-width:0;min-height:218px;display:grid;grid-template-columns:112px minmax(0,1fr);grid-template-rows:1fr;gap:20px;align-items:center;padding:clamp(18px,2.8vw,28px);text-align:left;border:1px solid rgba(202,109,95,.2)}
 .home-page.home-sinjira-only .home-project:focus-visible{outline:3px solid #ffbba6;outline-offset:3px}
 .home-page.home-sinjira-only .home-project img{width:112px;height:126px;object-fit:cover;border-radius:18px;padding:0;margin:0}
 .home-page.home-sinjira-only .home-project h3{font-size:clamp(1.1rem,2vw,1.35rem);line-height:1.2}
 .home-page.home-sinjira-only .home-project p{font-size:.92rem;line-height:1.55}
-.home-page.home-sinjira-only .home-project .arrow{color:#ffcab4}
+.home-page.home-sinjira-only .home-project .arrow{color:#ffad9c}
 .home-page.home-sinjira-only .section-head h2{max-width:680px}
 .home-page.home-sinjira-only .home-sinjira-note{max-width:75ch;line-height:1.7;color:var(--muted);margin:18px 0 0}
 .home-page.home-sinjira-only .cta-panel .hero-actions{margin-top:0}
