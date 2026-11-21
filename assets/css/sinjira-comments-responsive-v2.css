@@ -96,3 +96,36 @@ body[data-reader-page="novel"] [data-reader-status][data-status-type="success"]{
 @media(prefers-reduced-motion:reduce){
   body[data-reader-page="novel"] .reader-comment-form *{scroll-behavior:auto;transition:none!important}
 }
+
+/* Espace personnel : liste, modification et suppression des commentaires. */
+body[data-v18-page="comments"] .reader-comments{min-width:0;display:grid;gap:16px}
+body[data-v18-page="comments"] .reader-comment{
+  min-width:0;overflow-wrap:anywhere;padding:clamp(16px,3vw,24px);
+  border:1px solid rgba(225,115,110,.3);border-radius:16px;
+  background:rgba(15,20,37,.94);line-height:1.6
+}
+body[data-v18-page="comments"] .reader-comment header{
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px;margin-bottom:8px
+}
+body[data-v18-page="comments"] .reader-comment :where(p,small,time){display:block;max-width:100%;overflow-wrap:anywhere}
+body[data-v18-page="comments"] .reader-comment-inline-edit{
+  display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-top:16px
+}
+body[data-v18-page="comments"] .reader-comment-inline-edit label{font-weight:700}
+body[data-v18-page="comments"] .reader-comment-inline-edit textarea{
+  box-sizing:border-box;display:block;width:100%;max-width:100%;
+  min-width:0;min-height:150px;resize:vertical;
+  background:#121a2d;border:1px solid rgba(255,149,141,.72);
+  color:#fff;border-radius:12px;padding:14px;
+  font:inherit;font-size:max(16px,1rem);line-height:1.55
+}
+body[data-v18-page="comments"] .reader-comment-inline-edit textarea:focus-visible{
+  outline:3px solid #ffb6a5;outline-offset:2px
+}
+body[data-v18-page="comments"] .reader-comment :where(button,a){min-height:46px}
+@media(max-width:520px){
+  body[data-v18-page="comments"] .reader-comment-inline-edit .hero-actions{
+    display:grid;grid-template-columns:1fr
+  }
+  body[data-v18-page="comments"] .reader-comment-inline-edit button{width:100%}
+}
