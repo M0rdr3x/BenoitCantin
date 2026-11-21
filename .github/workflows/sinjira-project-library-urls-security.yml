@@ -7,6 +7,8 @@ on:
       - 'assets/js/sinjira-library.js'
       - 'assets/js/sinjira-library-v24-4-61.js'
       - 'assets/js/sinjira-supabase.js'
+      - 'assets/js/sinjira-document-url-policy.mjs'
+      - 'scripts/test_sinjira_document_url_boundary.mjs'
       - 'scripts/test_sinjira_project_library_urls_security.mjs'
       - '.github/workflows/sinjira-project-library-urls-security.yml'
   push:
@@ -15,6 +17,8 @@ on:
       - 'assets/js/sinjira-library.js'
       - 'assets/js/sinjira-library-v24-4-61.js'
       - 'assets/js/sinjira-supabase.js'
+      - 'assets/js/sinjira-document-url-policy.mjs'
+      - 'scripts/test_sinjira_document_url_boundary.mjs'
       - 'scripts/test_sinjira_project_library_urls_security.mjs'
       - '.github/workflows/sinjira-project-library-urls-security.yml'
   workflow_dispatch:
@@ -37,4 +41,6 @@ jobs:
           node-version: '22.23.2'
           check-latest: false
       - name: Tester les vues réelles et leurs destinations HTML
-        run: node --test scripts/test_sinjira_project_library_urls_security.mjs
+        run: |
+          node --test scripts/test_sinjira_project_library_urls_security.mjs
+          node scripts/test_sinjira_document_url_boundary.mjs
