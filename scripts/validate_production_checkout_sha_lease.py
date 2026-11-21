@@ -71,6 +71,8 @@ def validate(text: str) -> list[str]:
     secret_at = text.find("secrets.SUPABASE_ACCESS_TOKEN")
     if secret_at >= 0 and (early < 0 or early > secret_at):
         errors.append("contrôle protection préalable doit précéder le premier secret")
+    if secret_at >= 0 and (g < 0 or g > secret_at):
+        errors.append("contrôle SHA immuable doit précéder le premier secret")
     if min(co, g, py) >= 0:
         if not co < g < py:
             errors.append("contrôle du SHA doit suivre checkout et précéder toute exécution Python")
@@ -134,6 +136,11 @@ def mutation_self_test() -> None:
         text = (ROOT / name).read_text(encoding="utf-8")
         assert not validate(text), f"version saine refusée: {name}: {validate(text)}"
         cases = {
+            "secret avant vérification SHA": text.replace(
+                "      - name: Refuser les lancements hors main\n",
+                "      - name: Refuser les lancements hors main\n"
+                "        env:\n"
+                "          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}\n", 1),
             "job protection retirée": text.replace(JOB_GUARD, "", 1),
             "contrôle initial protection retiré": text.replace(EARLY_PROTECTION_GUARD, "", 1),
             "contrôle SHA sans ref protégée": text.replace("             [ \"${GITHUB_REF_PROTECTED:-}\" != \"true\" ] ||\n", "", 1),
@@ -168,7 +175,7 @@ def main() -> int:
     if "--self-test" in sys.argv[1:]:
         mutation_self_test()
         runtime_self_test()
-        print("PASS: 40 mutations critiques détectées; bash testé avec main protégée/non protégée et SHA distincts.")
+        print("PASS: 44 mutations critiques détectées; bash testé avec main protégée/non protégée et SHA distincts.")
     else:
         print("PASS: 4 workflows production refusent tout checkout différent du SHA déclencheur.")
     return 0
