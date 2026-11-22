@@ -92,6 +92,21 @@ class SecretGuardTests(unittest.TestCase):
             with self.subTest(sample=sample[:16]):
                 self.assertEqual(guard.leaked_privileged_jwt_positions(sample), [])
 
+    def test_privileged_jwt_in_public_html_or_json_is_rejected(self):
+        """Publicly served artifacts must never contain privileged JWTs."""
+        secret = self.synthetic_jwt('service_role')
+        for name, content in (
+            ('index.html', '<script>const token="' + secret + '";</script>'),
+            ('config.json', json.dumps({'key': secret})),
+        ):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as d:
+                target = Path(d) / name
+                target.write_text(content, encoding='utf-8')
+                findings = guard.inspect_file(target, Path(name))
+                self.assertEqual(len(findings), 1)
+                self.assertIn('Supabase privileged JWT credential', findings[0])
+                self.assertNotIn(secret, findings[0])
+
     def test_privileged_jwt_on_subsequent_line_reports_only_location(self):
         dummy = self.synthetic_jwt('service_role')
         with tempfile.TemporaryDirectory() as d:
