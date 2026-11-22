@@ -196,3 +196,21 @@ body.account-page[data-sinjira-ux="v1"] .sinjira-account-nav-arrow[hidden]{
     display:none!important
   }
 }
+
+/* Accessibilite mobile : chaque lien d'information du pied de page doit
+   rester facile a toucher meme lorsque les liens passent sur deux lignes. */
+@media(max-width:600px){
+  body[data-sinjira-ux="v1"] .site-footer .footer-col a{
+    display:flex;align-items:center;min-height:44px;
+    padding:8px 0;margin:0
+  }
+}
+
+/* Le defilement global provient de site.css. Respecter la preference
+   systeme de reduction du mouvement, y compris pour les liens d'ancrage. */
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto!important}
+  body[data-sinjira-ux="v1"] :where(.btn,.main-nav a,.menu-toggle,.home-project,.sinjira-orbit){
+    transition:none!important
+  }
+}

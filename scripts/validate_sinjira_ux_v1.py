@@ -147,7 +147,9 @@ def check():
             '@media(max-width:1020px)', 'max-height:calc(100dvh - 74px)',
             '.main-nav.open', 'min-height:48px',
             '.account-nav-scroll', '.account-quick-actions',
+            '.site-footer .footer-col a', 'min-height:44px',
             ':focus-visible', 'prefers-reduced-motion:reduce',
+            'scroll-behavior:auto!important',
         ):
             if token not in css:
                 problems.append("CSS ergonomique: protection manquante " + token)

@@ -67,6 +67,18 @@ def test_home(page):
                f"légende du cercle non centrée à {width}px : {state}")
         verify(state["noteMargin"] >= 12,
                f"espacement du texte d'aide supprimé à {width}px : {state}")
+        # Le contexte navigateur demande explicitement la réduction du mouvement.
+        verify(page.evaluate("() => getComputedStyle(document.documentElement).scrollBehavior")
+               == "auto", f"défilement animé malgré la préférence de mouvement à {width}px")
+        if width <= 600:
+            targets = page.locator(".site-footer .footer-col a")
+            verify(targets.count() >= 5, "liens de pied de page manquants")
+            short_targets = targets.evaluate_all(
+                "(links) => links.filter(a => a.getBoundingClientRect().height < 43.5)"
+                ".map(a => a.textContent.trim())"
+            )
+            verify(not short_targets,
+                   f"liens difficiles à toucher à {width}px : {short_targets}")
         for child in state["children"]:
             verify(child["left"] >= state["orbit"]["left"] - 3 and
                    child["right"] <= state["orbit"]["right"] + 3 and
