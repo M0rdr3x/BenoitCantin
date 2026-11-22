@@ -147,9 +147,11 @@ def main() -> int:
         print("FAIL: historique non entièrement inspecté:", str(error))
         return 1
     if issues:
-        print(f"FAIL: {len(issues)} risque(s) dans {commits} commits de PR.")
-        for issue in issues[:50]:
-            print("FAIL:", issue)
+        # A filename itself may contain a credential or terminal-control text.
+        # Never emit tainted findings to the public CI log, even if the
+        # underlying matcher only records paths and categories.
+        print(f"FAIL: {len(issues)} risque(s) dans {commits} commits de PR. "
+              "Détails masqués pour protéger les identifiants.")
         return 1
     print(f"PASS: {commits} commits, {files} versions de fichiers; "
           "aucun secret reconnu dans l'historique de cette PR.")
