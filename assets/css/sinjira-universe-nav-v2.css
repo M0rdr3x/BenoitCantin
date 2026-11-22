@@ -1,0 +1,47 @@
+/* Navigation secondaire SINJIRA : indicateurs explicites, tactile et clavier.
+ * Le défilement natif reste fonctionnel sans JavaScript. */
+.universe-subnav.has-universe-scroll{
+  display:grid;
+  grid-template-columns:44px minmax(0,1fr) 44px;
+  align-items:center;
+  gap:8px;
+  padding-inline:clamp(8px,2vw,24px);
+}
+.universe-subnav.has-universe-scroll .container{
+  width:100%;
+  min-width:0;
+  max-width:none;
+  margin:0;
+  scroll-padding-inline:12px;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-x:contain;
+}
+.universe-subnav .universe-scroll-button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:44px;
+  height:44px;
+  padding:0;
+  border:1px solid rgba(255,184,168,.38);
+  border-radius:12px;
+  background:rgba(255,255,255,.065);
+  color:#fff;
+  font:inherit;
+  font-size:1.4rem;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+.universe-subnav .universe-scroll-button[hidden]{display:none!important}
+.universe-subnav .universe-scroll-button:disabled{
+  opacity:.36;
+  cursor:default;
+}
+.universe-subnav .universe-scroll-button:focus-visible,
+.universe-subnav .container:focus-visible{
+  outline:3px solid #ffb8a8;
+  outline-offset:2px;
+}
+@media(prefers-reduced-motion:reduce){
+  .universe-subnav .container{scroll-behavior:auto}
+}
