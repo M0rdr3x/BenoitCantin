@@ -5,13 +5,13 @@
 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Portes principales | Benoit Cantin</title>
-<meta name="description" content="Les trois portes actuellement mises au premier plan par Benoit Cantin : SINJIRA™, Registre des Consciences et Projet Nova.">
+<title>Explorer SINJIRA™ | Benoit Cantin</title>
+<meta name="description" content="Découvrez SINJIRA™, l’univers narratif de Benoit Cantin : romans, jeux, Registre des Consciences, communauté, Monde parallèle et Codex.">
 <link rel="icon" href="/assets/icons/favicon.svg" type="image/svg+xml">
 <link rel="canonical" href="https://www.benoitcantin.com/univers.html">
 <meta name="theme-color" content="#070914">
-<meta property="og:title" content="Portes principales | Benoit Cantin">
-<meta property="og:description" content="SINJIRA™, Registre des Consciences et Projet Nova.">
+<meta property="og:title" content="Explorer SINJIRA™ | Benoit Cantin">
+<meta property="og:description" content="Un seul univers à l’honneur : SINJIRA™. Accédez à ses romans, jeux, Registre, communauté et Codex.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://www.benoitcantin.com/univers.html">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -19,8 +19,9 @@
 <link rel="stylesheet" href="/assets/css/browser-compat-v24-4-22.css?v=24.4.22" data-sinjira-browser-compat>
 <link rel="stylesheet" href="/assets/css/v19-pro.css?v=24.4.12">
 <link rel="stylesheet" href="/assets/css/site-ux-sinjira-v1.css?v=1.0.0">
+<link rel="stylesheet" href="/assets/css/univers-sinjira-only-v1.css?v=1.0.0">
 </head>
-<body data-sinjira-ux="v1">
+<body class="univers-sinjira-page" data-sinjira-ux="v1">
 <a class="skip-link" href="#contenu">Aller au contenu</a>
 <header class="site-header">
 <div class="container nav-shell">
@@ -30,14 +31,70 @@
 </div>
 </header>
 <main id="contenu">
-<section class="page-hero"><div class="container"><span class="eyebrow">Priorités actuelles</span><h1>Trois portes au premier plan.</h1><p>Le portail public concentre volontairement l’attention sur SINJIRA™, le Registre des Consciences et Projet Nova. Les autres projets restent en réserve jusqu’à leur retour officiel.</p></div></section>
-<section class="section section-tight"><div class="container project-grid-compact">
-<a class="project-card" href="/projets/sinjira/" style="--card-glow:rgba(255,112,89,.24)"><img src="/assets/media/sinjira-emblem.webp" alt="Emblème officiel SINJIRA™" class="project-icon project-icon-logo"><small>Univers narratif et interactif</small><h2>SINJIRA™</h2><p>Romans, jeux, Communauté, Monde parallèle, identité narrative et Codex.</p><span class="arrow">Entrer dans SINJIRA™ →</span></a>
-<a class="project-card" href="/projets/sinjira/registre/" style="--card-glow:rgba(167,105,255,.26)"><img src="/assets/media/sinjira-registre.webp" alt="Visuel officiel du Registre des Consciences" class="project-icon project-icon-art"><small>Participation des fans</small><h2>Registre des Consciences</h2><p>Questionnaire lié au Compte SINJIRA™, suivi du dossier et préparation du personnage fan.</p><span class="arrow">Ouvrir le Registre →</span></a>
-<a class="project-card" href="/projets/projet-nova/" style="--card-glow:rgba(51,216,232,.24)"><img src="/assets/media/nova-logo.webp" alt="Logo officiel de Projet Nova" class="project-icon project-icon-logo"><small>Projet citoyen</small><h2>Projet Nova</h2><p>Documents, propositions, ressources et démarche publique de Projet Nova.</p><span class="arrow">Accéder à Projet Nova →</span></a>
-</div></section>
+<section class="page-hero" aria-labelledby="univers-sinjira-title">
+  <div class="container univers-hero-grid">
+    <div class="univers-hero-copy">
+      <span class="eyebrow">L’univers créatif de Benoit Cantin</span>
+      <h1 id="univers-sinjira-title">Un seul univers à l’honneur : SINJIRA™.</h1>
+      <p>Romans, jeux, personnages et expériences interactives : tous ces chemins appartiennent à SINJIRA™. Cette page vous aide à trouver directement ce que vous souhaitez explorer, sur téléphone ou ordinateur.</p>
+      <div class="univers-cta">
+        <a class="btn btn-primary" href="/projets/sinjira/">Découvrir SINJIRA™</a>
+        <a class="btn btn-secondary" href="#parcours-sinjira">Choisir une rubrique</a>
+      </div>
+    </div>
+    <div class="univers-orbit-wrap">
+      <a class="univers-main-project" href="/projets/sinjira/" aria-label="Entrer dans SINJIRA, seul projet présenté dans le cercle">
+        <img src="/assets/icons/sinjira-officiel-20261120.png" alt="" width="144" height="144" loading="eager" decoding="async">
+        <strong>SINJIRA™</strong>
+        <span>Entrer dans l’univers</span>
+      </a>
+      <p class="univers-orbit-caption">Un seul projet principal · plusieurs expériences</p>
+    </div>
+  </div>
+</section>
+<section class="section section-tight" id="parcours-sinjira" aria-labelledby="parcours-sinjira-title">
+  <div class="container">
+    <span class="eyebrow">Explorer selon vos envies</span>
+    <h2 id="parcours-sinjira-title">À chaque envie, sa porte d’entrée.</h2>
+    <p class="univers-path-intro">Ces rubriques font toutes partie de SINJIRA™. Choisissez une destination, sans avoir à parcourir des menus complexes.</p>
+    <nav aria-label="Rubriques de SINJIRA">
+      <ul class="univers-path-list">
+        <li><a class="univers-path-link" href="/projets/sinjira/romans/">
+          <span class="univers-path-kicker">Lire</span>
+          <strong class="univers-path-title">Les romans</strong>
+          <span class="univers-path-description">Découvrez les livres et l’univers narratif de SINJIRA.</span>
+        </a></li>
+        <li><a class="univers-path-link" href="/projets/sinjira/jeux/">
+          <span class="univers-path-kicker">Jouer</span>
+          <strong class="univers-path-title">Les jeux</strong>
+          <span class="univers-path-description">Explorez les expériences interactives de l’univers.</span>
+        </a></li>
+        <li><a class="univers-path-link" href="/projets/sinjira/registre/">
+          <span class="univers-path-kicker">Participer</span>
+          <strong class="univers-path-title">Registre des Consciences</strong>
+          <span class="univers-path-description">Découvrez le parcours de création de votre personnage.</span>
+        </a></li>
+        <li><a class="univers-path-link" href="/projets/sinjira/communaute/">
+          <span class="univers-path-kicker">Échanger</span>
+          <strong class="univers-path-title">La communauté</strong>
+          <span class="univers-path-description">Retrouvez les espaces et les règles de participation.</span>
+        </a></li>
+        <li><a class="univers-path-link" href="/projets/sinjira/monde-parallele/">
+          <span class="univers-path-kicker">Imaginer</span>
+          <strong class="univers-path-title">Monde parallèle</strong>
+          <span class="univers-path-description">Comprenez la dimension collective et personnelle de SINJIRA.</span>
+        </a></li>
+        <li><a class="univers-path-link" href="/projets/sinjira/codex/">
+          <span class="univers-path-kicker">Comprendre</span>
+          <strong class="univers-path-title">Le Codex</strong>
+          <span class="univers-path-description">Repérez les personnages, lieux et éléments de l’univers.</span>
+        </a></li>
+      </ul>
+    </nav>
+  </div>
+</section>
 </main>
-<footer class="site-footer"><div class="container"><div class="footer-grid"><div class="footer-brand"><img src="/assets/icons/benoit-sigil.svg" alt="" width="58" height="58"><div><h2>Benoit Cantin</h2><p>Portail officiel de mes univers et projets.</p></div></div><div class="footer-col"><h3>Explorer</h3><a href="/projets/sinjira/">SINJIRA™</a><a href="/projets/sinjira/registre/">Registre des Consciences</a><a href="/projets/projet-nova/">Projet Nova</a></div><div class="footer-col"><h3>Informations</h3><a href="/contact.html">Contact</a><a href="/confidentialite.html">Confidentialité</a><a href="/avis-legal.html">Avis légal</a></div></div><div class="footer-bottom"><span>© <span data-year></span> Benoit Cantin. Tous droits réservés.</span><span>Nom officiel : Benoit Cantin.</span></div></div></footer>
+<footer class="site-footer"><div class="container"><div class="footer-grid"><div class="footer-brand"><img src="/assets/icons/benoit-sigil.svg" alt="" width="58" height="58"><div><h2>Benoit Cantin</h2><p>Portail officiel de mes univers et projets.</p></div></div><div class="footer-col"><h3>Explorer</h3><a href="/projets/sinjira/">SINJIRA™</a><a href="/projets/sinjira/romans/">Romans</a><a href="/projets/sinjira/jeux/">Jeux</a></div><div class="footer-col"><h3>Informations</h3><a href="/contact.html">Contact</a><a href="/confidentialite.html">Confidentialité</a><a href="/avis-legal.html">Avis légal</a></div></div><div class="footer-bottom"><span>© <span data-year></span> Benoit Cantin. Tous droits réservés.</span><span>Nom officiel : Benoit Cantin.</span></div></div></footer>
 <script defer src="/assets/js/site.js?v=24.4.101"></script>
 <script type="module" src="/assets/js/v19-session.js?v=24.4.12"></script>
 </body>
