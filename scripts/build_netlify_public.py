@@ -677,7 +677,7 @@ def validate_vercel_config() -> list[str]:
             "connect-src 'self'",
             "frame-src 'self' https://gpvivleexywljowcqkru.supabase.co",
             "frame-ancestors 'self'",
-            "object-src 'self'",
+            "object-src 'none'",
             "base-uri 'self'",
         ):
             if directive not in csp:
@@ -859,7 +859,7 @@ def validate_netlify_config() -> list[str]:
         for directive in (
             "frame-src 'self' https://gpvivleexywljowcqkru.supabase.co",
             "frame-ancestors 'self'",
-            "object-src 'self'",
+            "object-src 'none'",
             "base-uri 'self'",
         ):
             if directive not in csp:
