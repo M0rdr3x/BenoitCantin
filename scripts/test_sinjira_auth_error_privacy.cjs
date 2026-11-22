@@ -225,6 +225,140 @@ function testHtmlAttributeInjection(){
   checks++;
 }
 
+
+async function compromisedAccountScenario(name,opts={}){
+  // Exécuter le VRAI gestionnaire du centre de sécurité avec des objets RPC
+  // et Auth factices : aucune session, API ou requête réseau réelle.
+  let listener=null,rpcCalls=0,authCalls=0,refreshCalls=0;
+  const shown=[],sent=[];
+  const button={
+    disabled:false,
+    addEventListener(type,fn){
+      assert.equal(type,'click');
+      listener=fn;
+    },
+  };
+  const rpcOk={ok:true,revoked_devices:2,current_device_id:'fake'};
+  const client={
+    auth:{
+      async signOut(args){
+        authCalls++;
+        sent.push(args);
+        if(opts.authThrows)throw new Error(SECRET);
+        return Object.hasOwn(opts,'authResult')?opts.authResult:{error:null};
+      },
+    },
+  };
+  const context={
+    qs(selector){
+      assert.equal(selector,'[data-security-compromised]');
+      return button;
+    },
+    confirmAction:()=>opts.confirm!==false,
+    meta:{device_key:'fake-device-key'},
+    contextResult:{context:{geo_mode:'off'}},
+    async rpc(name,args){
+      rpcCalls++;
+      assert.equal(name,'security_compromise_account');
+      assert.equal(args.p_current_device_key,'fake-device-key');
+      if(opts.rpcThrows)throw new Error(SECRET);
+      return Object.hasOwn(opts,'rpcResult')?opts.rpcResult:rpcOk;
+    },
+    getSupabase:()=>client,
+    async loadState(){
+      refreshCalls++;
+      if(opts.refreshThrows)throw new Error(SECRET);
+      return {ready:true};
+    },
+    status(message,type='info'){shown.push({message,type});},
+    friendlySecurityError:safe,
+    state:null,
+  };
+  const handler=section(
+    center,
+    "    qs('[data-security-compromised]')?.addEventListener('click',async event=>{",
+    "\n\n    document.addEventListener('click',async e=>{"
+  );
+  vm.runInNewContext(handler,context,{timeout:1500});
+  assert.equal(typeof listener,'function',name+': gestionnaire d’urgence absent');
+  await listener({currentTarget:button});
+  for(const entry of shown)checkSafe(entry.message,name+': message utilisateur');
+  const successes=shown.filter(item=>item.type==='success');
+  if(opts.confirm===false){
+    assert.equal(rpcCalls,0,name+': aucun appel après refus');
+    assert.equal(authCalls,0,name+': aucun Auth après refus');
+    assert.equal(shown.length,0,name+': aucun message de succès après refus');
+    assert.equal(button.disabled,false);
+  }else if(opts.rpcFailure){
+    assert.equal(rpcCalls,1,name+': une RPC d’urgence');
+    assert.equal(authCalls,0,name+': aucune révocation Auth si la RPC n’est pas confirmée');
+    assert.equal(refreshCalls,0,name+': aucun refresh après RPC non confirmée');
+    assert.equal(successes.length,0,name+': fausse confirmation de sécurité');
+    assert.ok(shown.some(item=>item.type==='error'),name+': erreur non affichée');
+    assert.equal(button.disabled,false,name+': utilisateur peut réessayer');
+  }else if(opts.authFailure){
+    assert.equal(rpcCalls,1);
+    assert.equal(authCalls,1);
+    assert.equal(sent[0].scope,'others');
+    assert.equal(refreshCalls,0,name+': ne pas actualiser après signOut non confirmé');
+    assert.equal(successes.length,0,name+': fausse fermeture de sessions');
+    assert.ok(shown.some(item=>item.type==='error'
+      &&item.message.includes('n’a pas pu être confirmée')),
+      name+': révocation partielle doit être annoncée');
+    assert.equal(button.disabled,false);
+  }else if(opts.refreshThrows){
+    assert.equal(rpcCalls,1);
+    assert.equal(authCalls,1);
+    assert.equal(refreshCalls,1);
+    assert.ok(successes.length>=1,name+': les mesures Auth sont confirmées');
+    assert.ok(shown.at(-1).message.includes('affichage n’a pas pu être actualisé'),
+      name+': ne pas confondre panne d’affichage et échec Auth');
+    assert.equal(button.disabled,true);
+  }else{
+    assert.equal(rpcCalls,1);
+    assert.equal(authCalls,1);
+    assert.equal(sent[0].scope,'others');
+    assert.equal(refreshCalls,1);
+    assert.equal(successes.length,1,name+': confirmation unique');
+    assert.ok(successes[0].message.includes('expiration'),
+      name+': mention indispensable des JWT déjà émis');
+    assert.equal(button.disabled,true,name+': éviter une nouvelle révocation');
+  }
+  checks+=8;
+}
+
+async function compromisedDoubleClick(){
+  let listener,resolveRpc,rpcCalls=0,authCalls=0;
+  const button={disabled:false,addEventListener(_type,fn){listener=fn;}};
+  const handler=section(
+    center,
+    "    qs('[data-security-compromised]')?.addEventListener('click',async event=>{",
+    "\n\n    document.addEventListener('click',async e=>{"
+  );
+  const rpcPromise=new Promise(resolve=>{resolveRpc=resolve;});
+  const context={
+    qs:()=>button,
+    meta:{device_key:'fake'},
+    contextResult:{context:null},
+    confirmAction:()=>true,
+    rpc:async()=>{rpcCalls++;return rpcPromise;},
+    getSupabase:()=>({auth:{signOut:async()=>{authCalls++;return {error:null};}}}),
+    loadState:async()=>({}),
+    status(){},
+    friendlySecurityError:safe,
+    state:null,
+  };
+  vm.runInNewContext(handler,context,{timeout:1500});
+  const first=listener({currentTarget:button});
+  const second=listener({currentTarget:button});
+  assert.equal(rpcCalls,1,'Double clic : une seule RPC de sécurité');
+  assert.equal(button.disabled,true,'Double clic : verrou actif avant appel réseau');
+  resolveRpc({ok:true,revoked_devices:1});
+  await Promise.all([first,second]);
+  assert.equal(authCalls,1,'Double clic : une seule révocation Auth');
+  checks+=3;
+}
+
 (async()=>{
   testHtmlAttributeInjection();
   await contextError();
@@ -234,5 +368,27 @@ function testHtmlAttributeInjection(){
   await authScenario('reset','throw');
   await storageError();
   await bootError();
-  console.log('PASS: '+checks+' vérifications des erreurs Auth/RPC, messages privés et journaux sans réseau.');
+  await compromisedAccountScenario('Confirmation refusée',{confirm:false});
+  for(const [name,value] of [
+    ['RPC nulle',null],
+    ['RPC vide',{}],
+    ['RPC échec',{ok:false,revoked_devices:1}],
+    ['RPC sans compte',{ok:true}],
+    ['RPC sans nombre',{ok:true,revoked_devices:'2'}],
+    ['RPC négative',{ok:true,revoked_devices:-1}],
+    ['RPC décimale',{ok:true,revoked_devices:1.5}],
+  ])await compromisedAccountScenario(name,{rpcResult:value,rpcFailure:true});
+  await compromisedAccountScenario('RPC exception',{rpcThrows:true,rpcFailure:true});
+  for(const [name,value] of [
+    ['signOut null',null],
+    ['signOut undefined',undefined],
+    ['signOut vide',{}],
+    ['signOut erreur indéfinie',{error:undefined}],
+    ['signOut erreur privée',{error:new Error(SECRET)}],
+  ])await compromisedAccountScenario(name,{authResult:value,authFailure:true});
+  await compromisedAccountScenario('signOut exception',{authThrows:true,authFailure:true});
+  await compromisedAccountScenario('signOut confirmé');
+  await compromisedAccountScenario('Échec actualisation',{refreshThrows:true});
+  await compromisedDoubleClick();
+  console.log('PASS: '+checks+' vérifications des erreurs Auth/RPC, révocation d’urgence, messages privés et journaux sans réseau.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
