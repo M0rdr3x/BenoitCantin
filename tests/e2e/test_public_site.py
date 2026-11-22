@@ -916,6 +916,12 @@ def run() -> None:
         form = page.locator("#contact-general")
         route = page.locator("#contact-route")
         submit = page.locator("#contact-submit")
+        preview = page.locator("#contact-preview")
+        assert_true(preview.count() == 1 and preview.get_attribute("open") is None,
+                    f"{BROWSER_NAME}: l’aperçu désactivé encombre la page Contact")
+        preview.locator("summary").click()
+        assert_true(preview.get_attribute("open") is not None,
+                    f"{BROWSER_NAME}: l’aperçu contact ne s’ouvre pas au clic")
         assert_true(project.locator('option[value="Projet Nova"]').count() == 0, f"{BROWSER_NAME}: Projet Nova encore routé par le formulaire personnel")
         personal_fields = page.locator("#contact-personal-fields")
         assert_true(
@@ -949,9 +955,8 @@ def run() -> None:
         assert_true(form.get_attribute("method") is None, f"{BROWSER_NAME}: POST personnel actif avant configuration")
         assert_true(form.get_attribute("data-personal-formspree-state") == "pending-separate-endpoint", f"{BROWSER_NAME}: état fail-closed Formspree absent")
         assert_true(
-            any("form.getAttribute('data-personal-formspree-state')==='active-separate-endpoint'" in js
-                for js in page.locator("script:not([src])").all_text_contents()),
-            f"{BROWSER_NAME}: double verrou du formulaire personnel absent",
+            page.locator('script[src="/assets/js/sinjira-contact-route-v1.js?v=1.0.0"]').count() == 1,
+            f"{BROWSER_NAME}: runtime externe de verrouillage du contact personnel absent",
         )
         assert_true(submit.is_disabled(), f"{BROWSER_NAME}: bouton personnel actif avant endpoint distinct")
         assert_true("désactivé" in route.inner_text().lower(), f"{BROWSER_NAME}: message fail-closed absent")

@@ -1,0 +1,101 @@
+/* Contact — choix de canal rapide sur petit écran, aperçu non bloquant.
+ * Feuille limitée à contact.html; aucune interaction privée n'est nécessaire. */
+body.contact-ux-page .contact-lead{
+  max-width:72ch;
+  overflow-wrap:anywhere;
+}
+body.contact-ux-page .contact-route-actions{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:stretch;
+  gap:12px;
+  margin-block:18px;
+}
+body.contact-ux-page .contact-route-actions > a{
+  box-sizing:border-box;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:48px;
+  max-width:100%;
+  padding-inline:16px;
+  text-align:center;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+body.contact-ux-page .contact-form-preview{
+  box-sizing:border-box;
+  max-width:100%;
+  margin-top:22px;
+  padding:0 16px;
+  border:1px solid rgba(175,191,232,.45);
+  border-radius:16px;
+  background:rgba(20,26,50,.3);
+}
+body.contact-ux-page .contact-form-preview > summary{
+  box-sizing:border-box;
+  min-height:52px;
+  padding-block:14px;
+  cursor:pointer;
+  font-weight:700;
+  line-height:1.45;
+  overflow-wrap:anywhere;
+}
+body.contact-ux-page .contact-form-preview > summary:focus-visible{
+  outline:3px solid #f7bc6f;
+  outline-offset:4px;
+  border-radius:6px;
+}
+body.contact-ux-page .contact-form-preview[open]{
+  padding-bottom:18px;
+}
+body.contact-ux-page .contact-form-preview > p{
+  margin-block:6px 14px;
+}
+body.contact-ux-page .contact-preview-fields{
+  box-sizing:border-box;
+  min-width:0;
+  max-width:100%;
+  padding:0;
+  margin:0;
+  border:0;
+}
+body.contact-ux-page #contact-general .field,
+body.contact-ux-page #contact-general :is(input,select,textarea){
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+}
+body.contact-ux-page #contact-general textarea{
+  width:100%;
+  resize:vertical;
+  min-height:120px;
+}
+body.contact-ux-page #contact-general .contact-consent{margin-top:16px}
+body.contact-ux-page #contact-general .contact-preview-actions{margin-top:18px}
+body.contact-ux-page #contact-general #contact-submit{
+  min-height:48px;
+  max-width:100%;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+body.contact-ux-page .content-card,
+body.contact-ux-page .highlight-card{
+  min-width:0;
+}
+body.contact-ux-page .content-card a,
+body.contact-ux-page .highlight-card a{overflow-wrap:anywhere}
+@media(max-width:640px){
+  body.contact-ux-page .contact-route-actions{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:10px;
+  }
+  body.contact-ux-page .contact-route-actions > a{width:100%}
+  body.contact-ux-page .contact-form-preview{
+    margin-top:18px;
+    padding-inline:12px;
+  }
+  body.contact-ux-page .contact-form-preview > summary{min-height:48px}
+  body.contact-ux-page .contact-preview-actions .btn{width:100%}
+}
