@@ -14,7 +14,7 @@ from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[2]
 CODEX = ROOT / "projets/sinjira/codex/index.html"
-CSS = ROOT / "projets/sinjira/codex/codex-ux-v1.css"
+CSS = ROOT / "assets/css/codex-ux-v1.css"
 BASE = os.environ.get("BASE_URL", "http://127.0.0.1:4173").rstrip("/")
 BROWSER = os.environ.get("BROWSER", "chromium").lower()
 WIDTHS = (240, 320, 390, 768, 1440)
@@ -40,7 +40,7 @@ def check_sources() -> str:
     assert html.count(DESCRIPTION) == 4, "métadonnées de disponibilité divergentes"
     assert "Codex vivant de SINJIRA™" not in html
     assert '<body class="project-page codex-ux-page"' in html
-    assert 'href="codex-ux-v1.css?v=1.0.0"' in html
+    assert 'href="/assets/css/codex-ux-v1.css?v=1.0.0"' in html
     assert html.count('src="/assets/icons/sinjira-officiel-20261120.png"') == 2
     assert (ROOT / "assets/icons/sinjira-officiel-20261120.png").is_file()
     assert "aucune fiche publique consultable" in html
