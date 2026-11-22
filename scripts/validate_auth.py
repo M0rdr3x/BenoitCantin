@@ -92,8 +92,8 @@ def main():
     'resetPasswordForEmail':'demande de récupération',
     'reportInvalid(form)':'validation HTML avant requête Auth',
     'setBusy(form,true)':'verrou anti-double soumission',
-    "console.warn('[SINJIRA auth login]'":'gestion erreur réseau connexion',
-    "console.warn('[SINJIRA auth recovery]'":'gestion erreur réseau récupération',
+    "console.warn('[SINJIRA auth login] Connexion indisponible.')":'gestion erreur réseau connexion avec journal fixe non divulguant',
+    "console.warn('[SINJIRA auth recovery] Récupération indisponible.')":'gestion erreur réseau récupération avec journal fixe non divulguant',
   }
   for marker,label in auth_requirements.items():
     require(errors, auth, marker, f'Module auth dédié incomplet: {label}.')
