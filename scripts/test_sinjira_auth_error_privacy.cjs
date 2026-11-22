@@ -11,6 +11,16 @@ const auth=fs.readFileSync(path.join(ROOT,'assets/js/sinjira-auth-pages.js'),'ut
 const center=fs.readFileSync(path.join(ROOT,'assets/js/sinjira-security-center-v24-4-98.js'),'utf8');
 const SECRET='session=eyJhbGciOiJIUzI1NiJ9.privatefake.sig; email=private@example.invalid; SELECT * FROM auth.sessions';
 let checks=0;
+const securityPage=fs.readFileSync(path.join(ROOT,'compte/securite.html'),'utf8');
+assert.ok(
+  securityPage.includes('sinjira-security-center-v24-4-98.js?v=24.5.2-compromise'),
+  'Le module d’urgence doit être téléchargé avec sa nouvelle version de cache'
+);
+assert.ok(
+  !securityPage.includes('sinjira-security-center-v24-4-98.js?v=24.5.1'),
+  'Ancien module d’urgence encore accessible via le cache HTML'
+);
+checks+=2;
 
 function section(source,start,end){
   const first=source.indexOf(start);
