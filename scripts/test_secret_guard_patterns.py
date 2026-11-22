@@ -7,6 +7,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from scripts import validate_no_committed_secrets as guard
 
@@ -94,18 +95,23 @@ class SecretGuardTests(unittest.TestCase):
 
     def test_privileged_jwt_in_public_html_or_json_is_rejected(self):
         """Publicly served artifacts must never contain privileged JWTs."""
-        secret = self.synthetic_jwt('service_role')
+        synthetic = self.synthetic_jwt('service_role')
         for name, content in (
-            ('index.html', '<script>const token="' + secret + '";</script>'),
-            ('config.json', json.dumps({'key': secret})),
+            ('index.html', '<script>const token="' + synthetic + '";</script>'),
+            ('config.json', json.dumps({'key': synthetic})),
         ):
             with self.subTest(name=name), tempfile.TemporaryDirectory() as d:
                 target = Path(d) / name
-                target.write_text(content, encoding='utf-8')
-                findings = guard.inspect_file(target, Path(name))
+                # Never persist even a dummy privileged-role JWT as cleartext:
+                # CodeQL correctly treats writing it to disk as a secret sink.
+                # Mock the scanner's text reader while keeping the real file
+                # inspection/extension/size logic exercised.
+                target.touch()
+                with patch.object(guard, 'read_text', return_value=content):
+                    findings = guard.inspect_file(target, Path(name))
                 self.assertEqual(len(findings), 1)
                 self.assertIn('Supabase privileged JWT credential', findings[0])
-                self.assertNotIn(secret, findings[0])
+                self.assertNotIn(synthetic, findings[0])
 
     def test_privileged_jwt_on_subsequent_line_reports_only_location(self):
         dummy = self.synthetic_jwt('service_role')
