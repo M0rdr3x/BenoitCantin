@@ -144,18 +144,18 @@ class PublicArtifactExtensionAllowlist(unittest.TestCase):
     def test_p0_sql_preflight_is_read_only_and_matches_pdf_inventory(self):
         sql_path = ROOT / "scripts/audits/sinjira_restricted_static_document_preflight.sql"
         sql = sql_path.read_text(encoding="utf-8", errors="strict")
-        query = re.sub(r"(?m)^--[^\\n]*", "", sql)
+        query = re.sub(r"(?m)^--[^\n]*", "", sql)
         self.assertEqual(query.count(";"), 2, "Deux requêtes agrégées uniquement")
         self.assertIsNone(re.search(
-            r"\\b(?:insert|update|delete|drop|alter|create|truncate|grant|revoke|"
-            r"copy|call|execute)\\b", query, flags=re.IGNORECASE
+            r"\b(?:insert|update|delete|drop|alter|create|truncate|grant|revoke|"
+            r"copy|call|execute)\b", query, flags=re.IGNORECASE
         ))
         self.assertIn("public.documents", query)
         self.assertIn("public.projects", query)
         self.assertIn("count(*)", query)
         inspected = {
             Path(path) for path in re.findall(
-                r"\\('/(projets/sinjira/jeux/[^']+\\.pdf)'\\)", query
+                r"\('/(projets/sinjira/jeux/[^']+\.pdf)'\)", query
             )
         }
         expected = set(builder.PUBLIC_QUARANTINED_RESTRICTED_PDFS) | {
