@@ -67,6 +67,23 @@ Cette migration conserve le `git push` vers la **seule branche NOVA
 prévue** mais ne constitue pas un déploiement SINJIRA ni une
 réactivation des services NOVA sur le site principal.
 
+**Séparation du contrôle de sécurité et des anciens tests d'interface :**
+le workflow universel `workflow-supply-chain-security.yml` exécute
+désormais aussi **les 32 mutations négatives du writer NOVA** et son
+contrat statique. Il peut donc refuser une régression de credentials
+sur chaque PR même si le workflow historique `Validation Projet Nova`
+échoue pour une raison indépendante.
+
+**Constat de compatibilité :** le workflow `Validation Projet Nova`
+exécute `scripts/check_nova_a1.py`, qui exige encore un logo NOVA sur
+la page d'accueil. Le projet NOVA ayant été retiré de cette page, ce
+contrôle visuel ancien est incompatible avec le site actuel. Ce
+résultat n'est pas une preuve que le nouveau contrôle de credentials
+est défectueux. **Ne pas masquer cette erreur, ne pas remettre NOVA à
+l'accueil et ne pas effacer les règles de sécurité pour obtenir un
+résultat vert**. Une réconciliation séparée des tests historiques
+restera nécessaire avant toute fusion ayant des contrôles obligatoires.
+
 ## Limites et vérifications avant protection de branche
 
 Ce garde réduit l'exposition des credentials aux étapes GitHub Actions,
