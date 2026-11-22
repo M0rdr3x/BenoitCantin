@@ -13,7 +13,10 @@ from pathlib import Path, PurePosixPath
 import re
 import subprocess
 
-from scripts import validate_no_committed_secrets as secrets
+if __package__:
+    from scripts import validate_no_committed_secrets as secrets
+else:
+    import validate_no_committed_secrets as secrets
 
 ROOT = Path(__file__).resolve().parents[1]
 SHA = re.compile(r"[0-9a-f]{40}\Z")
