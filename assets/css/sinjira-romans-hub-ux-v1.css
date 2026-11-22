@@ -4,6 +4,7 @@ body[data-reader-page="novel"]{
   --project-accent:#ff7059;
   --project-accent-2:#d88cff;
 }
+body[data-reader-page="novel"] .site-header .brand img{border-radius:50%}
 body[data-reader-page="novel"] .page-hero .project-back{
   display:inline-flex;
   align-items:center;
