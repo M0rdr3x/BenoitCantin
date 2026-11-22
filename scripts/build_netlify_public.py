@@ -149,10 +149,7 @@ PUBLIC_APPROVED_PDFS = SINJIRA_PUBLIC_DOCUMENTS | {
     Path("projets/projet-nova/documents/09_Dossier_de_Presse_Projet_Nova.pdf"),
     Path("projets/projet-nova/documents/11_Charte_Visuelle_Projet_Nova.pdf"),
     Path("projets/projet-nova/documents/12_Resume_Executif_Officiel_Systeme_Nova.pdf"),
-
     Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Fiche_Joueur_1_Copie_Interactive.pdf"),
-
-
 
 }
 
