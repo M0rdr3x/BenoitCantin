@@ -2,14 +2,10 @@ name: Sécurité — intégrité des workflows GitHub Actions
 
 on:
   pull_request:
-    paths:
-      - '.github/workflows/**'
-      - 'scripts/validate_workflow_supply_chain.py'
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
-    paths:
-      - '.github/workflows/**'
-      - 'scripts/validate_workflow_supply_chain.py'
   workflow_dispatch:
 
 permissions:
