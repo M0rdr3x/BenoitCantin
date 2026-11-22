@@ -7,7 +7,7 @@ Les modules d'authentification et les réseaux privés sont neutralisés.
 import os
 from urllib.parse import urljoin, urlparse
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_playwright
 
 BASE = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
 ENGINE = os.environ.get("BROWSER", "chromium").strip().lower()
@@ -147,7 +147,32 @@ def run():
                     }""", timeout=5_000)
                     check(previous_button.is_enabled(),
                           f"la flèche précédente n'est pas réactivée : {path}")
-                    previous_button.click()
+                    # WebKit peut repositionner une rubrique active après
+                    # redimensionnement. Un clic doit reculer, pas forcément
+                    # atteindre le début du ruban si le navigateur l'a recentré.
+                    # Vérifier aussi que des clics répétés rejoignent la borne.
+                    for backward_step in range(16):
+                        before = region.evaluate("(el) => el.scrollLeft")
+                        if before <= 2:
+                            break
+                        check(previous_button.is_enabled(),
+                              f"flèche précédente désactivée trop tôt {path}: {snapshot(page)}")
+                        previous_button.click()
+                        try:
+                            page.wait_for_function("""(before) => {
+                              const x=document.querySelector('.account-nav-scroll');
+                              return x && x.scrollLeft < before - 1;
+                            }""", arg=before, timeout=5_000)
+                        except PlaywrightTimeoutError as exc:
+                            raise AssertionError(
+                                f"{ENGINE}: flèche précédente immobile pour {path}, "
+                                f"étape {backward_step + 1}: {snapshot(page)}"
+                            ) from exc
+                    else:
+                        raise AssertionError(
+                            f"{ENGINE}: début du menu inaccessible pour {path} "
+                            f"après 16 clics : {snapshot(page)}"
+                        )
                     page.wait_for_function("""() => {
                       const x=document.querySelector('.account-nav-scroll');
                       const left=document.querySelector('.sinjira-account-nav-arrow');
