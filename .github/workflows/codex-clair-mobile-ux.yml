@@ -5,14 +5,14 @@ on:
     branches: [main]
     paths:
       - 'projets/sinjira/codex/index.html'
-      - 'projets/sinjira/codex/codex-ux-v1.css'
+      - 'assets/css/codex-ux-v1.css'
       - 'tests/e2e/test_codex_clarity_mobile.py'
       - '.github/workflows/codex-clair-mobile-ux.yml'
   push:
     branches: [main]
     paths:
       - 'projets/sinjira/codex/index.html'
-      - 'projets/sinjira/codex/codex-ux-v1.css'
+      - 'assets/css/codex-ux-v1.css'
       - 'tests/e2e/test_codex_clarity_mobile.py'
       - '.github/workflows/codex-clair-mobile-ux.yml'
   workflow_dispatch:
