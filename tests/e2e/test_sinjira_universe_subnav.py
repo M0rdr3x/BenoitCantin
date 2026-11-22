@@ -18,6 +18,15 @@ PAGES = (
     "/projets/sinjira/jeux/",
 )
 WIDTHS = (240, 320, 390, 768, 1440)
+DESTINATIONS = (
+    "/projets/sinjira/",
+    "/projets/sinjira/romans/",
+    "/projets/sinjira/jeux/",
+    "/projets/sinjira/registre/",
+    "/projets/sinjira/communaute/",
+    "/projets/sinjira/monde-parallele/",
+    "/projets/sinjira/codex/",
+)
 
 
 def test_sources() -> None:
@@ -58,7 +67,18 @@ def main() -> None:
                             timeout=5000,
                         )
                         strip = nav.locator(".container")
-                        assert strip.locator("a").count() >= 4, (path, width)
+                        links = strip.locator("a")
+                        assert links.count() == len(DESTINATIONS), (path, width)
+                        destinations = links.evaluate_all(
+                            "(elements) => elements.map(link => new URL(link.getAttribute('href'), "
+                            "location.href).pathname)"
+                        )
+                        assert tuple(destinations) == DESTINATIONS, (path, width, destinations)
+                        current = strip.locator('a[aria-current="page"]')
+                        assert current.count() == 1, (path, width)
+                        assert current.evaluate("(link) => new URL(link.href).pathname") == path, (
+                            path, width, "rubrique active incorrecte"
+                        )
                         previous = nav.locator("button.universe-scroll-button").nth(0)
                         following = nav.locator("button.universe-scroll-button").nth(1)
                         assert previous.get_attribute("aria-controls") == strip.get_attribute("id")
@@ -84,20 +104,29 @@ def main() -> None:
                     finally:
                         context.close()
 
-            # Dégradation progressive : les liens restent accessibles sans JavaScript.
+            # Dégradation progressive : les sept rubriques restent accessibles
+            # sur les trois pages, même lorsque JavaScript est désactivé.
             context = browser.new_context(
                 viewport={"width": 240, "height": 820}, java_script_enabled=False
             )
             try:
                 page = context.new_page()
-                response = page.goto(BASE + PAGES[0], wait_until="domcontentloaded")
-                assert response is not None and response.status == 200
-                nav = page.locator("nav.universe-subnav")
-                assert nav.locator("a").count() >= 7
-                assert nav.locator(".container").evaluate(
-                    "(e) => getComputedStyle(e).overflowX === 'auto'"
-                ), "Défilement horizontal natif absent sans JS"
-                print(f"OK {ENGINE}: navigation utilisable sans JS à 240px")
+                for path in PAGES:
+                    response = page.goto(BASE + path, wait_until="domcontentloaded")
+                    assert response is not None and response.status == 200, path
+                    nav = page.locator("nav.universe-subnav")
+                    links = nav.locator(".container a")
+                    assert links.count() == len(DESTINATIONS), path
+                    destinations = links.evaluate_all(
+                        "(elements) => elements.map(link => "
+                        "new URL(link.getAttribute('href'), location.href).pathname)"
+                    )
+                    assert tuple(destinations) == DESTINATIONS, (path, destinations)
+                    assert nav.locator('a[aria-current="page"]').count() == 1, path
+                    assert nav.locator(".container").evaluate(
+                        "(e) => getComputedStyle(e).overflowX === 'auto'"
+                    ), f"Défilement horizontal natif absent sans JS : {path}"
+                    print(f"OK {ENGINE}: {path} sans JS à 240px")
             finally:
                 context.close()
         finally:
