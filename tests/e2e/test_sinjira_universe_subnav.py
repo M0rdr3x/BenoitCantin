@@ -36,7 +36,7 @@ def test_sources() -> None:
     for page in PAGES:
         source = ROOT / page.lstrip("/") / "index.html"
         html = source.read_text(encoding="utf-8")
-        assert html.count("sinjira-universe-nav-v2.css?v=2.0.0") == 1, page
+        assert html.count("sinjira-universe-nav-v2.css?v=2.0.1") == 1, page
         assert html.count("sinjira-universe-nav-v2.js?v=2.0.0") == 1, page
         assert 'class="universe-subnav"' in html, page
         assert 'aria-current="page"' in html, page
@@ -74,6 +74,14 @@ def main() -> None:
                             "location.href).pathname)"
                         )
                         assert tuple(destinations) == DESTINATIONS, (path, width, destinations)
+                        touch_targets = links.evaluate_all(
+                            "(elements) => elements.filter(link => "
+                            "link.getBoundingClientRect().height < 47.5)"
+                            ".map(link => link.textContent.trim())"
+                        )
+                        assert not touch_targets, (
+                            path, width, "cibles tactiles trop petites", touch_targets
+                        )
                         current = strip.locator('a[aria-current="page"]')
                         assert current.count() == 1, (path, width)
                         assert current.evaluate("(link) => new URL(link.href).pathname") == path, (
@@ -122,6 +130,10 @@ def main() -> None:
                         "new URL(link.getAttribute('href'), location.href).pathname)"
                     )
                     assert tuple(destinations) == DESTINATIONS, (path, destinations)
+                    assert links.evaluate_all(
+                        "(elements) => elements.every(link => "
+                        "link.getBoundingClientRect().height >= 47.5)"
+                    ), f"Cibles tactiles sans JS insuffisantes : {path}"
                     assert nav.locator('a[aria-current="page"]').count() == 1, path
                     assert nav.locator(".container").evaluate(
                         "(e) => getComputedStyle(e).overflowX === 'auto'"
