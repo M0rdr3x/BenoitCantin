@@ -91,7 +91,7 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           ref: nova-a1-reference-documents
-          persist-credentials: true
+          persist-credentials: false
 
       - name: Appliquer le correctif borné sans exécuter de code du dépôt
         shell: bash
@@ -122,8 +122,14 @@ jobs:
 
       - name: Enregistrer uniquement les corrections HTML Nova
         shell: bash
+        env:
+          SEO_PUSH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          test -n "${SEO_PUSH_TOKEN:-}" || {
+            echo 'Jeton d’écriture GitHub indisponible.' >&2
+            exit 1
+          }
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -- projets/projet-nova/*.html
@@ -132,4 +138,19 @@ jobs:
             exit 0
           fi
           git commit -m "Projet Nova A1 — normalise les métadonnées SEO [seo-autofix]"
-          git push origin HEAD:nova-a1-reference-documents
+          # Ne pas enregistrer le token dans git config. Il n'existe qu'au
+          # moment du push et le script GIT_ASKPASS est nettoyé à la sortie.
+          askpass="$RUNNER_TEMP/nova-seo-askpass-$"
+          umask 077
+          trap 'rm -f -- "$askpass"' EXIT
+          cat > "$askpass" <<'ASKPASS'
+          #!/usr/bin/env sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$SEO_PUSH_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          ASKPASS
+          chmod 0700 "$askpass"
+          GIT_TERMINAL_PROMPT=0 GIT_ASKPASS="$askpass" \
+            git -c credential.helper= push origin HEAD:nova-a1-reference-documents
