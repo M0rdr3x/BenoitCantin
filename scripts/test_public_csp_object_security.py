@@ -11,7 +11,7 @@ import tomllib
 import unittest
 from pathlib import Path
 
-from scripts.build_netlify_public import render_standalone_headers
+from scripts.build_netlify_public import public_csp_blocks_objects, render_standalone_headers
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -54,6 +54,7 @@ class PublicContentSecurityPolicyTests(unittest.TestCase):
         for origin, policy in zip(("Netlify", "Vercel", "generated _headers"), sources):
             with self.subTest(origin=origin):
                 self.assertEqual(find_object_policy_errors(policy), [])
+                self.assertTrue(public_csp_blocks_objects(policy))
         self.assertEqual(sources[0], sources[1])
         self.assertEqual(sources[0], sources[2])
 
@@ -80,6 +81,7 @@ class PublicContentSecurityPolicyTests(unittest.TestCase):
             with self.subTest(case=label):
                 self.assertNotEqual(broken, good)
                 self.assertTrue(find_object_policy_errors(broken))
+                self.assertFalse(public_csp_blocks_objects(broken))
 
     def test_no_public_policy_allows_active_object(self):
         netlify, vercel, generated = policies()
