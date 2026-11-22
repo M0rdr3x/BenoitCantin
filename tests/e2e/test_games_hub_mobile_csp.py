@@ -81,7 +81,15 @@ def check_browser(browser, html: str, width: int, javascript: bool) -> None:
         page = ctx.new_page()
         response = page.goto(BASE + PATH, wait_until="domcontentloaded", timeout=30000)
         assert response and response.status == 200
-        assert page.get_by_role("heading", level=1).count() == 1
+        h1 = page.locator("main h1")
+        assert h1.count() == 1, (
+            ENGINE, width, "titre H1 absent du DOM", page.url,
+            page.locator("main").count(), page.title()
+        )
+        assert h1.is_visible(), (
+            ENGINE, width, "titre H1 masqué", page.url,
+            h1.evaluate("(el) => ({display:getComputedStyle(el).display, rect:el.getBoundingClientRect().toJSON()})")
+        )
         assert page.locator("main article.game-selection-card").count() == 2
         assert page.locator("main .games-quick-links a").count() == 2
         assert page.locator("main .game-card-actions a").count() == 4
