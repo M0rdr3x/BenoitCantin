@@ -70,8 +70,8 @@ def csp_errors(policy: str) -> list[str]:
         errors.append("object-src 'none' obligatoire")
     if directives.get("base-uri") != ["'self'"]:
         errors.append("base-uri 'self' obligatoire")
-    if directives.get("frame-ancestors") != ["'self'"]:
-        errors.append("frame-ancestors 'self' obligatoire")
+    if directives.get("frame-ancestors") != ["'none'"]:
+        errors.append("frame-ancestors 'none' obligatoire pour bloquer le clickjacking")
     if "upgrade-insecure-requests" not in directives:
         errors.append("upgrade-insecure-requests obligatoire")
     if any(v for v in directives.get("upgrade-insecure-requests", [])):
@@ -246,7 +246,7 @@ class PrivateRoutesCspSecurityTests(unittest.TestCase):
 
     def test_mutants_dangereux_sont_detectes(self) -> None:
         safe = ("default-src 'self'; script-src 'self'; script-src-attr 'none'; "
-                "object-src 'none'; base-uri 'self'; frame-ancestors 'self'; "
+                "object-src 'none'; base-uri 'self'; frame-ancestors 'none'; "
                 "upgrade-insecure-requests")
         self.assertEqual(csp_errors(safe), [])
         mutants = {
@@ -256,6 +256,10 @@ class PrivateRoutesCspSecurityTests(unittest.TestCase):
             "événements inline": safe.replace("script-src-attr 'none'", "script-src-attr 'unsafe-inline'"),
             "objets actifs": safe.replace("object-src 'none'", "object-src 'self'"),
             "base HTML hostile": safe.replace("base-uri 'self'", "base-uri *"),
+            "iframe de même origine autorisée": safe.replace(
+                "frame-ancestors 'none'", "frame-ancestors 'self'"),
+            "iframe toute origine autorisée": safe.replace(
+                "frame-ancestors 'none'", "frame-ancestors *"),
         }
         for name, text in mutants.items():
             with self.subTest(name=name):
