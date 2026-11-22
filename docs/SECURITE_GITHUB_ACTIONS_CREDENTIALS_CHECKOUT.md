@@ -51,10 +51,13 @@ casser l'ancien mécanisme d'écriture :
 - Le checkout du job `commit` passe à `persist-credentials: false`.
 - `contents: write` demeure **uniquement** sur ce job explicitement
   borné à la branche NOVA ; le job de normalisation conserve `read`.
-- Le token `${{ github.token }}` est fourni **seulement à l'étape de
-  `git push`**, sous la variable d'environnement `SEO_PUSH_TOKEN`.
-- Un `GIT_ASKPASS` créé avec `umask 077` et permissions `0700`
-  transmet le jeton pour cette seule opération. Les helpers Git
+- **Deux étapes distinctes** : `git add` / `git commit` sans jeton ;
+  puis `git push`, uniquement si l'étape précédente confirme
+  `changed=true` dans `GITHUB_OUTPUT`. Le token
+  `${{ github.token }}` est injecté **uniquement à l'étape finale
+  de push**, sous la variable d'environnement `SEO_PUSH_TOKEN`.
+- Un `GIT_ASKPASS` créé avec `mktemp` (nom unique), `umask 077`
+  et permissions `0700` transmet le jeton pour cette seule opération. Les helpers Git
   existants sont neutralisés et le script temporaire est supprimé avec
   `trap ... EXIT`, même en cas d'échec.
 - `scripts/validate_nova_seo_workflow_security.py` interdit toute
@@ -74,15 +77,18 @@ contrat statique. Il peut donc refuser une régression de credentials
 sur chaque PR même si le workflow historique `Validation Projet Nova`
 échoue pour une raison indépendante.
 
-**Constat de compatibilité :** le workflow `Validation Projet Nova`
-exécute `scripts/check_nova_a1.py`, qui exige encore un logo NOVA sur
-la page d'accueil. Le projet NOVA ayant été retiré de cette page, ce
-contrôle visuel ancien est incompatible avec le site actuel. Ce
-résultat n'est pas une preuve que le nouveau contrôle de credentials
-est défectueux. **Ne pas masquer cette erreur, ne pas remettre NOVA à
-l'accueil et ne pas effacer les règles de sécurité pour obtenir un
-résultat vert**. Une réconciliation séparée des tests historiques
-restera nécessaire avant toute fusion ayant des contrôles obligatoires.
+**Réconciliation du contrôle historique :** le premier workflow
+`Validation Projet Nova` a échoué parce que `scripts/check_nova_a1.py`
+exigeait trois logos NOVA sur l'accueil, alors que le site présente
+désormais uniquement SINJIRA. La condition obsolète a été remplacée
+par `scripts/validate_nova_home_boundary.py`, un nouveau contrôle
+de **10 réintroductions fictives de liens et ressources NOVA** :
+l'accueil doit conserver son lien SINJIRA et ne pas republier de liens
+vers le projet retiré. Le garde est testé à la fois dans la CI de
+chaîne d'approvisionnement et dans la CI historique NOVA, sans
+désactiver les contrôles de sources, d'intégrité, de redirections ou
+de documents NOVA. Une erreur future sur un autre critère reste
+bloquante; aucune condition n'est masquée pour obtenir du vert.
 
 ## Limites et vérifications avant protection de branche
 
