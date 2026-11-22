@@ -4,13 +4,11 @@ Site public de `www.benoitcantin.com`, publié depuis la branche `main` avec Git
 
 ## Focus public actuel
 
-Le portail met volontairement en avant trois portes principales :
+La page d’accueil met désormais **SINJIRA™ seul** à l’honneur. Ses accès directs conduisent aux romans, au Registre des Consciences, aux jeux et à la communauté.
 
-- **SINJIRA™** — univers narratif, romans, jeux et espaces communautaires;
-- **Registre des Consciences** — création et suivi des personnages liés à SINJIRA™;
-- **Projet Nova** — projet citoyen indépendant.
+**Projet Nova** et les anciens prototypes peuvent rester dans l’historique du dépôt pour continuité technique, mais ils ne constituent plus des projets mis en avant sur la page d’accueil. Cette distinction ne signifie pas que leurs anciens fichiers ou URL ont tous été supprimés.
 
-D’autres prototypes ou expériences peuvent rester présents dans l’historique du dépôt pour continuité technique, sans faire partie du focus public actuel.
+La bibliothèque des romans dispose d’un sommaire interne accessible au clavier et au tactile, utilisable sur ordinateur et sur téléphone.
 
 ## Principes obligatoires
 
