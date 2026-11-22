@@ -39,6 +39,34 @@ sans filtrage `paths:`. Il conserve des permissions `contents: read`,
 une action Checkout et une action Setup Python épinglées à des SHA
 immuables, et ne transmet pas de secrets.
 
+### Exception d'écriture NOVA résolue sans désactiver la fonctionnalité
+
+Le premier scan de 195 workflows a signalé une seule violation :
+`.github/workflows/nova-seo-normalize.yml`, étape de checkout du job
+`commit`, utilisait intentionnellement `persist-credentials: true`
+pour publier les changements SEO sur la branche historique
+`nova-a1-reference-documents`. Plutôt que de désactiver le scan ou de
+casser l'ancien mécanisme d'écriture :
+
+- Le checkout du job `commit` passe à `persist-credentials: false`.
+- `contents: write` demeure **uniquement** sur ce job explicitement
+  borné à la branche NOVA ; le job de normalisation conserve `read`.
+- Le token `${{ github.token }}` est fourni **seulement à l'étape de
+  `git push`**, sous la variable d'environnement `SEO_PUSH_TOKEN`.
+- Un `GIT_ASKPASS` créé avec `umask 077` et permissions `0700`
+  transmet le jeton pour cette seule opération. Les helpers Git
+  existants sont neutralisés et le script temporaire est supprimé avec
+  `trap ... EXIT`, même en cas d'échec.
+- `scripts/validate_nova_seo_workflow_security.py` interdit toute
+  restauration de la persistance, les jetons hors de l'étape finale,
+  la suppression du nettoyage et les permissions faibles du script.
+  Le code de normalisation historique ne s'exécute toujours **jamais**
+  dans le job avec `contents: write`.
+
+Cette migration conserve le `git push` vers la **seule branche NOVA
+prévue** mais ne constitue pas un déploiement SINJIRA ni une
+réactivation des services NOVA sur le site principal.
+
 ## Limites et vérifications avant protection de branche
 
 Ce garde réduit l'exposition des credentials aux étapes GitHub Actions,
