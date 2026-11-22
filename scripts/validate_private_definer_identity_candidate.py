@@ -123,7 +123,9 @@ def render() -> str:
     if errors:
         raise ValueError("Candidat SQL non conforme : " + "; ".join(errors))
     assertions = ASSERTIONS.read_text(encoding="utf-8", errors="strict").strip()
-    if not assertions.startswith("CREATE EXTENSION IF NOT EXISTS pgtap"):
+    # Les commentaires de contexte ne sont pas des instructions pgTAP.
+    clean_assertions = re.sub(r"(?m)^\s*--[^\n]*", "", assertions).strip()
+    if not clean_assertions.startswith("CREATE EXTENSION IF NOT EXISTS pgtap"):
         raise ValueError("Assertions pgTAP manquantes")
     if not re.search(r"(?im)^SELECT \* FROM finish\(\);$", assertions):
         raise ValueError("Assertions pgTAP non terminées")
