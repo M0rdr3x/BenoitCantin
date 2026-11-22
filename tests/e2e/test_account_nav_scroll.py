@@ -157,7 +157,21 @@ def run():
                             break
                         check(previous_button.is_enabled(),
                               f"flèche précédente désactivée trop tôt {path}: {snapshot(page)}")
-                        previous_button.click()
+                        try:
+                            previous_button.click(timeout=2_000)
+                        except PlaywrightTimeoutError as exc:
+                            # WebKit peut atteindre la borne avant le clic et
+                            # désactiver légitimement le bouton entre l'état
+                            # observé et l'action. Ne pas confondre une telle
+                            # convergence avec un blocage de navigation.
+                            settled = snapshot(page)
+                            if (settled["scrollLeft"] <= 2 and
+                                    settled["buttons"][0]["disabled"]):
+                                break
+                            raise AssertionError(
+                                f"{ENGINE}: bouton précédent indisponible "
+                                f"avant la borne pour {path}: {settled}"
+                            ) from exc
                         try:
                             page.wait_for_function("""(before) => {
                               const x=document.querySelector('.account-nav-scroll');

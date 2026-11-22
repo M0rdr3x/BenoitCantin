@@ -180,10 +180,15 @@
       var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       // "instant" n'est pas un ScrollBehavior interoperable sur tous les
       // moteurs : "auto" respecte la preference sans bloquer WebKit.
-      accountScroll.scrollTo({
-        left: target,
-        behavior: reduce ? 'auto' : 'smooth'
-      });
+      // WebKit peut encore reporter un scrollTo({behavior:'auto'}) et
+      // désactiver la flèche opposée pendant le geste suivant.
+      // L'affectation directe garantit l'absence d'animation lorsque la
+      // préférence système demande explicitement moins de mouvement.
+      if (reduce) {
+        accountScroll.scrollLeft = target;
+      } else {
+        accountScroll.scrollTo({ left: target, behavior: 'smooth' });
+      }
       scrollLimits();
       window.requestAnimationFrame(scrollLimits);
     }

@@ -1,11 +1,20 @@
 /* Navigation secondaire SINJIRA : indicateurs explicites, tactile et clavier.
  * Le défilement natif reste fonctionnel sans JavaScript. */
+.universe-subnav a{
+  display:inline-flex;
+  align-items:center;
+  min-height:48px;
+  box-sizing:border-box;
+  line-height:1.25;
+}
 .universe-subnav.has-universe-scroll{
   display:grid;
   grid-template-columns:44px minmax(0,1fr) 44px;
   align-items:center;
   gap:8px;
   padding-inline:clamp(8px,2vw,24px);
+  padding-left:max(clamp(8px,2vw,24px),env(safe-area-inset-left,0px));
+  padding-right:max(clamp(8px,2vw,24px),env(safe-area-inset-right,0px));
 }
 .universe-subnav.has-universe-scroll .container{
   width:100%;

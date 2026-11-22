@@ -140,7 +140,14 @@ def check_browser(browser, html: str, width: int, javascript: bool) -> None:
             assert page.evaluate(
                 "() => document.activeElement?.getAttribute('href') === '#jeu-resistance'"
             ), (ENGINE, "focus clavier absent")
-            page.keyboard.press("Enter")
+            # Sous CSP avec JavaScript, l'activation native de l'ancre peut
+            # finaliser la navigation après le retour de keyboard.press().
+            # Attendre le changement d'URL plutôt que lire immédiatement un
+            # fragment encore vide pendant une navigation asynchrone.
+            anchor.press("Enter")
+            page.wait_for_function(
+                "() => location.hash === '#jeu-resistance'", timeout=5_000
+            )
             assert urlsplit(page.url).fragment == "jeu-resistance", (ENGINE, "ancre clavier", page.url)
             assert page.locator("#jeu-resistance").is_visible()
 
