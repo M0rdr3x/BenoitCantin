@@ -7,6 +7,7 @@ secrets or modification of production files. Run with Python 3.12.
 from __future__ import annotations
 
 import importlib.util
+import re
 from pathlib import Path
 import unittest
 
@@ -139,6 +140,30 @@ class PublicArtifactExtensionAllowlist(unittest.TestCase):
             self.assertTrue(any("Conflit entre PDF publics" in item for item in errors))
         finally:
             builder.PUBLIC_APPROVED_PDFS = old
+
+    def test_p0_sql_preflight_is_read_only_and_matches_pdf_inventory(self):
+        sql_path = ROOT / "scripts/audits/sinjira_restricted_static_document_preflight.sql"
+        sql = sql_path.read_text(encoding="utf-8", errors="strict")
+        query = re.sub(r"(?m)^--[^\\n]*", "", sql)
+        self.assertEqual(query.count(";"), 2, "Deux requêtes agrégées uniquement")
+        self.assertIsNone(re.search(
+            r"\\b(?:insert|update|delete|drop|alter|create|truncate|grant|revoke|"
+            r"copy|call|execute)\\b", query, flags=re.IGNORECASE
+        ))
+        self.assertIn("public.documents", query)
+        self.assertIn("public.projects", query)
+        self.assertIn("count(*)", query)
+        inspected = {
+            Path(path) for path in re.findall(
+                r"\\('/(projets/sinjira/jeux/[^']+\\.pdf)'\\)", query
+            )
+        }
+        expected = set(builder.PUBLIC_QUARANTINED_RESTRICTED_PDFS) | {
+            path for path in builder.PUBLIC_APPROVED_PDFS
+            if path.parts[:3] == ("projets", "sinjira", "jeux")
+        }
+        self.assertEqual(len(inspected), 5)
+        self.assertEqual(inspected, expected, "La requête SQL doit suivre la vraie liste publique")
 
     def test_only_public_document_extensions_are_privileged(self):
         self.assertEqual(builder.PUBLIC_APPROVED_PDFS & builder.SINJIRA_PUBLIC_DOCUMENTS,
