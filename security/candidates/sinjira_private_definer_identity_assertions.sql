@@ -17,8 +17,29 @@ INSERT INTO public.projects(id,slug,name,status,visibility) VALUES
  ('55555555-5555-4555-8555-555555555555','candidate-identity-account-20261121','Compte synthétique','active','account'),
  ('66666666-6666-4666-8666-666666666666','candidate-identity-restricted-20261121','Privé synthétique','active','restricted');
 
+-- Le vrai site réserve le rôle administrateur à son compte propriétaire.
+-- Impossible de semer une identité fictive sans isoler CETTE contrainte
+-- dans une base jetable. Réactivation immédiate avant le moindre test RLS.
+-- Toute la transaction (y compris ces DDL de fixture) se termine par ROLLBACK.
+ALTER TABLE public.internal_admin_users
+  DISABLE TRIGGER enforce_sinjira_single_admin_trigger;
 INSERT INTO public.internal_admin_users(user_id,role)
 VALUES ('22222222-2222-4222-8222-222222222222','admin');
+ALTER TABLE public.internal_admin_users
+  ENABLE TRIGGER enforce_sinjira_single_admin_trigger;
+
+DO $guard$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger
+    WHERE tgrelid='public.internal_admin_users'::regclass
+      AND tgname='enforce_sinjira_single_admin_trigger'
+      AND tgenabled='O'
+  ) THEN
+    RAISE EXCEPTION 'TEST_FIXTURE_SECURITY_TRIGGER_NOT_RESTORED';
+  END IF;
+END;
+$guard$;
 INSERT INTO public.project_access(user_id,project_id,access_level)
 VALUES ('11111111-1111-4111-8111-111111111111',
         '66666666-6666-4666-8666-666666666666','player');
