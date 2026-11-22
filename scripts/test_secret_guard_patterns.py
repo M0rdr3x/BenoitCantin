@@ -2,6 +2,8 @@
 """Tests de mutation sans vrais secrets ni réseau pour le garde Git."""
 from __future__ import annotations
 
+import base64
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -41,6 +43,59 @@ class SecretGuardTests(unittest.TestCase):
         ):
             with self.subTest(sample=sample):
                 self.assertNotIn('Deployment or anti-bot secret assignment', detected_names(sample))
+
+    @staticmethod
+    def synthetic_jwt(role: str, algorithm: str = 'HS256') -> str:
+        """Dummy segments: recognizable JWT structure, NEVER a signed credential."""
+        def encode(data: object) -> str:
+            payload = json.dumps(data, separators=(',', ':')).encode('utf-8')
+            return base64.urlsafe_b64encode(payload).rstrip(b'=').decode('ascii')
+
+        header = encode({'alg': algorithm, 'typ': 'JWT'})
+        claims = encode({'iss': 'synthetic-test', 'role': role, 'sub': 'fake-user'})
+        signature = 'A' * 43
+        return '.'.join((header, claims, signature))
+
+    def test_unlabelled_privileged_jwts_are_caught_without_leaking_them(self):
+        for role in ('service_role', 'supabase_admin', 'postgres'):
+            with self.subTest(role=role):
+                dummy = self.synthetic_jwt(role)
+                self.assertEqual(len(guard.leaked_privileged_jwt_positions(
+                    'const header = "Bearer ' + dummy + '";'
+                )), 1)
+                with tempfile.TemporaryDirectory() as d:
+                    path = Path(d) / 'client.ts'
+                    path.write_text('let value = "' + dummy + '";\n', encoding='utf-8')
+                    findings = guard.inspect_file(path, Path('client.ts'))
+                    self.assertEqual(len(findings), 1)
+                    self.assertIn('Supabase privileged JWT credential', findings[0])
+                    self.assertNotIn(dummy, findings[0])
+                    self.assertNotIn(role, findings[0])
+
+    def test_public_jwt_and_dummy_or_invalid_tokens_do_not_flag(self):
+        for role in ('anon', 'authenticated', 'user', ''):
+            with self.subTest(role=role):
+                self.assertEqual(guard.leaked_privileged_jwt_positions(
+                    self.synthetic_jwt(role)
+                ), [])
+        for sample in (
+            'eyJbm90Ijoiand0In0.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.invalid',
+            self.synthetic_jwt('service_role', algorithm='none'),
+            self.synthetic_jwt('service_role').replace('.', '-', 1),
+            self.synthetic_jwt('service_role').split('.', 1)[0] + '.not_json.' + 'A' * 43,
+        ):
+            with self.subTest(sample=sample[:16]):
+                self.assertEqual(guard.leaked_privileged_jwt_positions(sample), [])
+
+    def test_privileged_jwt_on_subsequent_line_reports_only_location(self):
+        dummy = self.synthetic_jwt('service_role')
+        with tempfile.TemporaryDirectory() as d:
+            file = Path(d) / 'notes.md'
+            file.write_text('Public docs\n' + dummy + '\n', encoding='utf-8')
+            issues = guard.inspect_file(file, Path('notes.md'))
+            self.assertEqual(len(issues), 1)
+            self.assertTrue(issues[0].startswith('notes.md:2:'))
+            self.assertNotIn(dummy, issues[0])
 
     def test_large_text_is_rejected_instead_of_ignored(self):
         with tempfile.TemporaryDirectory() as d:
