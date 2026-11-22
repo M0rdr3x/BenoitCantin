@@ -30,7 +30,7 @@ def validate_contract() -> str:
     assert 'href="/assets/css/about-contact-responsive-v1.css?v=1.0.0"' in html
     assert html.count('<h1>') == 1
     assert 'class="container about-content-grid"' in html
-    assert 'class="cta-panel about-contact-panel"' in html
+    assert 'class="container cta-panel about-contact-panel"' in html
     assert 'aria-label="Canaux de contact disponibles"' in html
     assert 'mailto:sinjiraofficiel@gmail.com' in html
     assert 'href="/contact.html">Choisir un contact</a>' in html
