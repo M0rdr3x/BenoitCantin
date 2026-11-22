@@ -6,11 +6,10 @@ on:
     paths:
       - 'scripts/check_live_public_security_boundary.py'
       - '.github/workflows/live-public-security-boundary.yml'
+  # Contrôler le site public après tout changement livré sur main,
+  # pas seulement si le code du moniteur lui-même a été modifié.
   push:
     branches: [main]
-    paths:
-      - 'scripts/check_live_public_security_boundary.py'
-      - '.github/workflows/live-public-security-boundary.yml'
   schedule:
     - cron: '23 11 * * *'
   workflow_dispatch:
