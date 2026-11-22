@@ -74,7 +74,7 @@ def inspect(src: str) -> list[str]:
     admin, rank = functions
     if "p_user_id IS NOT NULL" not in admin:
         errors.append("L'identité administrateur n'est pas non-nulle")
-    if SERVER_ROLE not in admin or "OR p_user_id = (SELECT auth.uid())" not in admin:
+    if SERVER_ROLE not in admin or "OR p_user_id IS NOT DISTINCT FROM (SELECT auth.uid())" not in admin:
         errors.append("L'identité admin n'est pas liée au JWT")
     if "public.internal_admin_users" not in admin:
         errors.append("Table admin originale modifiée")
@@ -142,7 +142,7 @@ def self_test() -> None:
     mutants = (
         ("refus du tiers retiré", CLIENT_BOUNDARY, "THEN 0"),
         ("rôle serveur autorisé partout", SERVER_ROLE_NEG, "true"),
-        ("lien admin à l'appelant retiré", "OR p_user_id = (SELECT auth.uid())", "OR true"),
+        ("lien admin à l'appelant retiré", "OR p_user_id IS NOT DISTINCT FROM (SELECT auth.uid())", "OR true"),
         ("role admin falsifié", SERVER_ROLE, "coalesce(auth.jwt()->>'role','') = 'authenticated'"),
         ("identité admin nulle", "p_user_id IS NOT NULL", "true"),
         ("table admin remplacée", "public.internal_admin_users", "public.projects"),
