@@ -63,6 +63,7 @@ def static_contract() -> str:
         "L’IA pourra assister certaines tâches plus tard",
         "Les espaces jeunesse et adulte restent séparés",
         "Les correspondances nécessaires à l’autorisation restent côté serveur",
+        "Pare-feu d’identité",
     ):
         assert phrase in main, phrase
     for path in LINKS:
