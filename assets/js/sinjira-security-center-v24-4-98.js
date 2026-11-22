@@ -203,9 +203,43 @@ async function boot(){
     qs('[data-security-settings-save]')?.addEventListener('click',async()=>{try{await saveSettings();state=await loadState(meta,contextResult.context)}catch(e){status(friendlySecurityError(e),'error')}});
     qs('[data-security-travel-form]')?.addEventListener('submit',async e=>{e.preventDefault();try{await createTravel(e.currentTarget);state=await loadState(meta,contextResult.context)}catch(err){status(friendlySecurityError(err),'error')}});
     qs('[data-security-refresh]')?.addEventListener('click',async()=>{try{state=await loadState(meta,contextResult.context);status('État de sécurité actualisé.','success')}catch(e){status(friendlySecurityError(e),'error')}});
-    qs('[data-security-compromised]')?.addEventListener('click',async()=>{
-      if(!confirmAction('Révoquer les autres appareils SINJIRA et fermer leurs sessions ?'))return;
-      try{await rpc('security_compromise_account',{p_current_device_key:meta.device_key});await getSupabase().auth.signOut({scope:'others'});state=await loadState(meta,contextResult.context);status('Mesures d’urgence appliquées : autres appareils révoqués et autres sessions fermées.','success')}catch(e){status(friendlySecurityError(e),'error')}
+    qs('[data-security-compromised]')?.addEventListener('click',async event=>{
+      const button=event.currentTarget;
+      if(button?.disabled)return;
+      if(!confirmAction('Révoquer les autres appareils SINJIRA et tenter de fermer leurs sessions ?'))return;
+      if(button)button.disabled=true;
+      let devicesRevoked=false;
+      try{
+        const confirmation=await rpc('security_compromise_account',{p_current_device_key:meta.device_key});
+        // L'absence d'erreur PostgREST ne confirme pas une révocation :
+        // la RPC retourne {ok:true,revoked_devices:<entier>}.
+        if(confirmation?.ok!==true || !Number.isInteger(confirmation.revoked_devices) || confirmation.revoked_devices<0){
+          throw new Error('COMPROMISE_RPC_UNCONFIRMED');
+        }
+        devicesRevoked=true;
+        const signOutResult=await getSupabase().auth.signOut({scope:'others'});
+        // Supabase Auth renvoie {error:null} en cas de succès. Rejeter
+        // null, undefined, {}, et toute erreur, même sans exception.
+        if(!signOutResult || signOutResult.error!==null){
+          throw new Error('OTHER_SESSIONS_NOT_REVOKED');
+        }
+        status('Autres appareils révoqués. Supabase Auth a confirmé la déconnexion des autres sessions; les jetons d’accès déjà émis peuvent rester valides jusqu’à leur expiration.','success');
+        try{
+          state=await loadState(meta,contextResult.context);
+        }catch{
+          // Un échec de rafraîchissement n'annule pas les confirmations
+          // précédentes : ne pas présenter cela comme un échec Auth.
+          status('Les mesures ont été confirmées, mais l’affichage n’a pas pu être actualisé. Rechargez la page pour vérifier vos appareils. Les jetons d’accès déjà émis peuvent rester valides jusqu’à leur expiration.','error');
+        }
+      }catch(error){
+        // Ne jamais afficher ni journaliser les messages privés de Supabase.
+        if(devicesRevoked){
+          status('Les appareils ont été révoqués, mais la fermeture des autres sessions n’a pas pu être confirmée. Vérifiez la sécurité de votre compte et réessayez la déconnexion.','error');
+        }else{
+          status(friendlySecurityError(error),'error');
+        }
+        if(button)button.disabled=false;
+      }
     });
 
     document.addEventListener('click',async e=>{
