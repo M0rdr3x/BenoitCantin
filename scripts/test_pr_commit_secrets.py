@@ -2,8 +2,12 @@
 """Regression tests for historical PR secret scanning; no real secrets."""
 from __future__ import annotations
 
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 import subprocess
+import sys
+from unittest.mock import patch
 import tempfile
 import unittest
 
@@ -91,6 +95,18 @@ class HistoricalSecretsTests(unittest.TestCase):
             with self.subTest(invalid=invalid[:20]):
                 with self.assertRaisesRegex(ValueError, "SHA"):
                     audit.inspect_range(self.repo, invalid, self.rev())
+
+    def test_ci_log_never_prints_detected_file_or_credential(self):
+        marker = "SENSITIVE_FILENAME_OR_TOKEN_MUST_STAY_PRIVATE"
+        output = StringIO()
+        with patch.object(audit, "inspect_range",
+                          return_value=(2, 1, [marker])), \
+             patch.object(sys, "argv",
+                          ["guard", "--base", self.base, "--head", self.base]), \
+             redirect_stdout(output):
+            self.assertEqual(audit.main(), 1)
+        self.assertIn("Détails masqués", output.getvalue())
+        self.assertNotIn(marker, output.getvalue())
 
     def test_no_commit_changes_fails_closed(self):
         with self.assertRaisesRegex(ValueError, "Aucun commit"):
