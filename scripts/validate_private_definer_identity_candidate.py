@@ -95,9 +95,12 @@ def inspect(src: str) -> list[str]:
         "p.visibility IN('public','account')", "p.visibility='public'",
     ):
         expected = 2 if fragment in (
+            "public.project_access pa",
             "pa.project_id=p_project_id",
             "pa.user_id=p_user_id",
             "pa.expires_at IS NULL OR pa.expires_at>now()",
+            "public.projects p",
+            "p.id=p_project_id",
         ) else 1
         if rank.count(fragment) != expected:
             errors.append("Filtre historique de projet altéré : " + fragment)
