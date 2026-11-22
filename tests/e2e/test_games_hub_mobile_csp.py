@@ -33,6 +33,11 @@ def validate_static() -> str:
     html = (FOLDER / "index.html").read_text("utf-8")
     css = (FOLDER / "games-hub-ux-v1.css").read_text("utf-8")
     assert 'class="project-page games-page games-hub-ux"' in html
+    # Même identité officielle que les romans et les formulaires du compte.
+    assert 'href="/assets/icons/sinjira-officiel-20261120.png" rel="icon"' in html
+    assert html.count('src="/assets/icons/sinjira-officiel-20261120.png"') == 2
+    assert 'sinjira-favicon.png' not in html
+
     assert 'href="games-hub-ux-v1.css?v=1.0.0"' in html
     assert html.count('class="games-quick-links"') == 1
     assert "aria-label=\"Choisir un jeu\"" in html
@@ -90,6 +95,10 @@ def check_browser(browser, html: str, width: int, javascript: bool) -> None:
             ENGINE, width, "titre H1 masqué", page.url,
             h1.evaluate("(el) => ({display:getComputedStyle(el).display, rect:el.getBoundingClientRect().toJSON()})")
         )
+        official_logo = "/assets/icons/sinjira-officiel-20261120.png"
+        assert page.locator("header.site-header a.brand img").get_attribute("src") == official_logo
+        assert page.locator("footer.site-footer .footer-brand img").get_attribute("src") == official_logo
+        assert page.locator('link[rel="icon"]').get_attribute("href") == official_logo
         assert page.locator("main article.game-selection-card").count() == 2
         assert page.locator("main .games-quick-links a").count() == 2
         assert page.locator("main .game-card-actions a").count() == 4
