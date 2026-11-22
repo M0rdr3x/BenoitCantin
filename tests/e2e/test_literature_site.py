@@ -526,6 +526,59 @@ def assert_comment_editor_responsive(page, label: str) -> None:
     assert_true(sizing.get("ok"), f"{BROWSER_NAME}: formulaire mal dimensionné sur {label}: {sizing}")
 
 
+def assert_preorder_public_steps_responsive(browser) -> None:
+    """Parcours public à 240–1440 px, même sans JS, session ou backend."""
+    targets = ("prix-livre-1", "reception-livre-1", "reservation-livre-1")
+    no_js = browser.new_context(
+        locale="fr-CA", viewport={"width": 390, "height": 800},
+        java_script_enabled=False, reduced_motion="reduce", service_workers="block"
+    )
+    try:
+        page = no_js.new_page()
+        for width in (240, 320, 390, 768, 1024, 1440):
+            page.set_viewport_size({"width": width, "height": 800})
+            response = page.goto(
+                urljoin(BASE_URL, "projets/sinjira/romans/precommande.html"),
+                wait_until="domcontentloaded", timeout=30_000
+            )
+            assert_true(response is not None and response.status < 400,
+                        f"{BROWSER_NAME}: précommande indisponible à {width}px")
+            assert_true(page.locator('body[data-preorder-page="livre-1"]').count() == 1,
+                        f"{BROWSER_NAME}: périmètre des styles non activé à {width}px")
+            nav = page.locator('nav.sinjira-preorder-steps')
+            assert_true(nav.count() == 1 and
+                        nav.get_attribute("aria-label") ==
+                        "Étapes de la réservation du Livre I",
+                        f"{BROWSER_NAME}: sommaire sans nom à {width}px")
+            links = nav.locator("a")
+            assert_true(links.count() == len(targets),
+                        f"{BROWSER_NAME}: nombre d'étapes incorrect à {width}px")
+            for i, anchor in enumerate(targets):
+                link = links.nth(i)
+                assert_true(link.get_attribute("href") == f"#{anchor}",
+                            f"{BROWSER_NAME}: destination {anchor} invalide")
+                assert_true(page.locator(f'section#{anchor}[aria-labelledby]').count() == 1,
+                            f"{BROWSER_NAME}: section {anchor} non accessible")
+                assert_true(link.bounding_box()["height"] >= 44,
+                            f"{BROWSER_NAME}: zone tactile trop petite à {width}px")
+            assert_true(page.locator("a[href$='.pdf'],a[href$='.epub']").count() == 0,
+                        f"{BROWSER_NAME}: document privé exposé sur la précommande")
+            assert_true(page.locator('[data-preorder-status][role="status"]').count() == 1,
+                        f"{BROWSER_NAME}: message de réservation non annoncé")
+            assert_true(page.locator('[data-pf-preference-status][role="status"]').count() == 1,
+                        f"{BROWSER_NAME}: message de livraison non annoncé")
+            assert_true(not page.evaluate(
+                "() => document.documentElement.scrollWidth > innerWidth + 2"),
+                f"{BROWSER_NAME}: débordement horizontal de précommande à {width}px")
+            nav.locator('a[href="#reception-livre-1"]').click()
+            assert_true(page.evaluate("location.hash") == "#reception-livre-1",
+                        f"{BROWSER_NAME}: ancre Livraison non fonctionnelle à {width}px")
+        assert_true(page.locator("[data-main-nav] a").count() == 6,
+                    f"{BROWSER_NAME}: navigation principale disparue sans JavaScript")
+    finally:
+        no_js.close()
+
+
 def run() -> None:
     assert_true(BROWSER_NAME in SUPPORTED_BROWSERS, f"Navigateur Playwright inconnu: {BROWSER_NAME}")
 
@@ -633,6 +686,9 @@ def run() -> None:
         assert_true(page.locator('#reader-download-demo').is_hidden(),
                     f"{BROWSER_NAME}: ancien lien PDF de secours encore visible")
         assert_no_full_edition_link(page,"liseuse mise en attente")
+
+        # Vérifier le parcours de précommande de façon isolée et sans réseau privé.
+        assert_preorder_public_steps_responsive(browser)
 
         # Protéger aussi l'édition intégrale pendant une déconnexion en vol.
         assert_private_signout_during_load(browser)
