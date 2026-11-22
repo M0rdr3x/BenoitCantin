@@ -7,6 +7,7 @@ on:
       - 'projets/projet-nova/**'
       - 'scripts/check_nova_a1.py'
       - 'scripts/validate_nova_home_boundary.py'
+      - 'scripts/test_nova_seo_ephemeral_git_auth.py'
       - 'scripts/normalize_nova_seo.py'
       - 'scripts/validate_nova_a1_workflow_security.py'
       - 'scripts/validate_nova_seo_workflow_security.py'
@@ -18,6 +19,7 @@ on:
       - 'projets/projet-nova/**'
       - 'scripts/check_nova_a1.py'
       - 'scripts/validate_nova_home_boundary.py'
+      - 'scripts/test_nova_seo_ephemeral_git_auth.py'
       - 'scripts/normalize_nova_seo.py'
       - 'scripts/validate_nova_a1_workflow_security.py'
       - 'scripts/validate_nova_seo_workflow_security.py'
@@ -54,6 +56,8 @@ jobs:
 
       - name: Vérifier la frontière d'écriture SEO Nova
         run: python3 scripts/validate_nova_seo_workflow_security.py
+      - name: Tester l'authentification Git éphémère sans jeton réel
+        run: python3 scripts/test_nova_seo_ephemeral_git_auth.py
 
       - name: Refuser les anciens liens NOVA sur l'accueil principal
         run: |
