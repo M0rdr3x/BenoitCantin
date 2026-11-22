@@ -5,7 +5,7 @@ import json
 import os
 from urllib.parse import urljoin
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_playwright
 
 BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
 BROWSER_NAME = os.environ.get("BROWSER", "chromium").strip().lower()
@@ -553,6 +553,38 @@ def assert_preorder_public_steps_responsive(browser) -> None:
             links = nav.locator("a")
             assert_true(links.count() == len(targets),
                         f"{BROWSER_NAME}: nombre d'étapes incorrect à {width}px")
+            # Sur le domaine public, Firefox peut recevoir DOMContentLoaded avant
+            # l'application de la feuille CSS distante lorsque JS est désactivé.
+            # Attendre la vraie taille tactile, sans ignorer un CSS en échec.
+            try:
+                page.wait_for_function("""() => {
+                    const anchors = [...document.querySelectorAll(
+                        'nav.sinjira-preorder-steps a'
+                    )];
+                    return anchors.length === 3 && anchors.every(anchor =>
+                        anchor.getBoundingClientRect().height >= 44
+                    );
+                }""", timeout=20_000)
+            except PlaywrightTimeoutError as exc:
+                css_state = page.evaluate("""() => ({
+                    readyState: document.readyState,
+                    links: [...document.querySelectorAll(
+                        'nav.sinjira-preorder-steps a'
+                    )].map(anchor => ({
+                        height: anchor.getBoundingClientRect().height,
+                        minHeight: getComputedStyle(anchor).minHeight,
+                        display: getComputedStyle(anchor).display
+                    })),
+                    stylesheet: [...document.querySelectorAll(
+                        'link[rel="stylesheet"]'
+                    )].filter(link => link.href.includes(
+                        'sinjira-preorder-steps-ux-v1.css'
+                    )).map(link => ({href: link.href, loaded: Boolean(link.sheet)}))
+                })""")
+                raise AssertionError(
+                    f"{BROWSER_NAME}: feuille CSS de précommande non prête "
+                    f"ou zones tactiles sous 44px à {width}px : {css_state}"
+                ) from exc
             for i, anchor in enumerate(targets):
                 link = links.nth(i)
                 assert_true(link.get_attribute("href") == f"#{anchor}",
