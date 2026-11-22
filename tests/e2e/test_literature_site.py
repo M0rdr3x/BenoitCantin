@@ -7,6 +7,7 @@ import time
 from urllib.parse import urljoin
 
 from playwright.sync_api import sync_playwright
+from isolated_supabase_api import install_isolated_supabase_api
 
 BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
 BROWSER_NAME = os.environ.get("BROWSER", "chromium").strip().lower()
@@ -155,7 +156,8 @@ def mock_private_reader(context) -> None:
 def assert_private_signout_during_load(browser):
     """Déconnexion durant l'analyse PDF : le roman ne doit jamais apparaître."""
     private_context=browser.new_context(locale='fr-CA',
-        viewport={'width':1440,'height':900})
+        viewport={'width':1440,'height':900}, service_workers='block')
+    install_isolated_supabase_api(private_context)
     mock_private_reader(private_context)
     private_page=private_context.new_page()
     errs=[]
@@ -292,7 +294,8 @@ export function getDocument(){
     contexts = []
 
     def open_device(actor):
-        ctx = browser.new_context(locale="fr-CA", viewport={"width": 1440, "height": 920})
+        ctx = browser.new_context(locale="fr-CA", viewport={"width": 1440, "height": 920}, service_workers="block")
+        install_isolated_supabase_api(ctx)
         contexts.append(ctx)
         ctx.route("**/npm/@supabase/supabase-js@2.119.0/+esm*",
                   lambda route: route.fulfill(
@@ -534,6 +537,7 @@ def assert_preorder_public_steps_responsive(browser) -> None:
         locale="fr-CA", viewport={"width": 390, "height": 800},
         java_script_enabled=False, reduced_motion="reduce", service_workers="block"
     )
+    install_isolated_supabase_api(no_js)
     try:
         page = no_js.new_page()
         for width in (240, 320, 390, 768, 1024, 1440):
@@ -622,8 +626,9 @@ def run() -> None:
         context = browser.new_context(
             locale="fr-CA",
             viewport={"width": 1440, "height": 1000},
-            reduced_motion="reduce",
+            reduced_motion="reduce", service_workers="block",
         )
+        install_isolated_supabase_api(context)
         block_embedded_pdf(context)
         page = context.new_page()
         errors: list[str] = []
@@ -733,8 +738,9 @@ def run() -> None:
             locale="fr-CA",
             viewport={"width": 390, "height": 844},
             has_touch=True,
-            reduced_motion="reduce",
+            reduced_motion="reduce", service_workers="block",
         )
+        install_isolated_supabase_api(mobile)
         block_embedded_pdf(mobile)
         mobile_page = mobile.new_page()
         mobile_errors: list[str] = []
