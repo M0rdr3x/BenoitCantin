@@ -29,3 +29,7 @@ jobs:
         run: python scripts/validate_workflow_supply_chain.py --self-test
       - name: Vérifier chaque workflow du dépôt
         run: python scripts/validate_workflow_supply_chain.py
+      - name: Tester les 32 régressions du writer historique NOVA
+        run: python scripts/validate_nova_seo_workflow_security.py --self-test
+      - name: Contrôler le writer historique NOVA sans token ni réseau
+        run: python scripts/validate_nova_seo_workflow_security.py
