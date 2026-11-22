@@ -112,7 +112,8 @@ def leaked_privileged_jwt_positions(source: str) -> list[int]:
             "ES256", "ES384", "ES512", "EdDSA",
         }:
             continue
-        if claims.get("role") in PRIVILEGED_JWT_ROLES:
+        role = claims.get("role")
+        if isinstance(role, str) and role in PRIVILEGED_JWT_ROLES:
             found.append(match.start())
     return found
 
