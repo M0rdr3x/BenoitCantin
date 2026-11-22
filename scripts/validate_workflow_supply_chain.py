@@ -168,23 +168,23 @@ def self_test() -> None:
         if not inspect_workflow(label, altered):
             raise SystemExit(f"Auto-test défectueux : {label}")
     checkout_mutants = {
-        "checkout sans with": good.replace("        with:\\n          persist-credentials: false\\n", ""),
+        "checkout sans with": good.replace("        with:\n          persist-credentials: false\n", ""),
         "checkout token true": good.replace("persist-credentials: false", "persist-credentials: true"),
         "checkout champ incorrect": good.replace("persist-credentials: false", "persist_credentials: false"),
         "checkout commentaire": good.replace("persist-credentials: false", "# persist-credentials: false"),
         "checkout champ au mauvais niveau": good.replace("          persist-credentials: false", "        persist-credentials: false"),
-        "checkout champ dans run": good.replace("        with:\\n          persist-credentials: false", "        run: |\\n          persist-credentials: false"),
+        "checkout champ dans run": good.replace("        with:\n          persist-credentials: false", "        run: |\n          persist-credentials: false"),
         "checkout false au step suivant": good.replace(
-            "        with:\\n          persist-credentials: false\\n      - uses: ./.github/actions/local-safe",
-            "      - uses: ./.github/actions/local-safe\\n        with:\\n          persist-credentials: false"
+            "        with:\n          persist-credentials: false\n      - uses: ./.github/actions/local-safe",
+            "      - uses: ./.github/actions/local-safe\n        with:\n          persist-credentials: false"
         ),
         "checkout doublon true et false": good.replace(
             "          persist-credentials: false",
-            "          persist-credentials: false\\n          persist-credentials: true"
+            "          persist-credentials: false\n          persist-credentials: true"
         ),
         "checkout env au lieu de with": good.replace(
-            "        with:\\n          persist-credentials: false",
-            "        env:\\n          persist-credentials: false"
+            "        with:\n          persist-credentials: false",
+            "        env:\n          persist-credentials: false"
         ),
     }
     for label, altered in checkout_mutants.items():
