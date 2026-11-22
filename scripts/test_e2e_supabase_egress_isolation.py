@@ -36,13 +36,28 @@ class DummyRoute:
         raise AssertionError("CI must not fetch production")
 
 
+class DummyWebSocket:
+    def __init__(self):
+        self.closed = False
+
+    def close(self):
+        self.closed = True
+
+    def connect_to_server(self):
+        raise AssertionError("Production WebSocket egress forbidden")
+
+
 class DummyContext:
     def __init__(self):
         self.pattern = None
         self.handler = None
+        self.websockets = {}
 
     def route(self, pattern, handler):
         self.pattern, self.handler = pattern, handler
+
+    def route_web_socket(self, pattern, handler):
+        self.websockets[pattern] = handler
 
 
 class ProductionEgressIsolationTests(unittest.TestCase):
@@ -91,6 +106,14 @@ class ProductionEgressIsolationTests(unittest.TestCase):
         api.install_isolated_supabase_api(context)
         self.assertEqual(
             context.pattern, api.PRODUCTION_SUPABASE_ORIGIN + "/**")
+        self.assertEqual(len(context.websockets), 2)
+        for protocol in ("wss://", "ws://"):
+            pattern = api.PRODUCTION_SUPABASE_ORIGIN.replace(
+                "https://", protocol, 1
+            ) + "/**"
+            socket = DummyWebSocket()
+            context.websockets[pattern](socket)
+            self.assertTrue(socket.closed)
         for method, path, expected in (
             ("GET", api.NOVEL_TABLE, 200),
             ("POST", api.NOVEL_COMMENTS_RPC, 200),
@@ -109,6 +132,7 @@ class ProductionEgressIsolationTests(unittest.TestCase):
         text = TEST_FILE.read_text(encoding="utf-8", errors="strict")
         self.assertEqual(text.count("browser.new_context("), 5)
         self.assertEqual(text.count("install_isolated_supabase_api("), 5)
+        self.assertEqual(text.count("service_workers="), 5)
         self.assertIn("from isolated_supabase_api import install_isolated_supabase_api", text)
         for context in ("private_context", "ctx", "no_js", "context", "mobile"):
             with self.subTest(context=context):
