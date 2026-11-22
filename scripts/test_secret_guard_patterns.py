@@ -81,6 +81,11 @@ class SecretGuardTests(unittest.TestCase):
         for sample in (
             'eyJbm90Ijoiand0In0.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.invalid',
             self.synthetic_jwt('service_role', algorithm='none'),
+            '.'.join((
+                base64.urlsafe_b64encode(b'{"alg":"HS256","typ":"JWT"}').rstrip(b'=').decode(),
+                base64.urlsafe_b64encode(b'{"role":[],"iss":"synthetic-test"}').rstrip(b'=').decode(),
+                'A' * 43,
+            )),
             self.synthetic_jwt('service_role').replace('.', '-', 1),
             self.synthetic_jwt('service_role').split('.', 1)[0] + '.not_json.' + 'A' * 43,
         ):
