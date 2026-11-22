@@ -125,6 +125,17 @@ SINJIRA_PUBLIC_DOCUMENTS = {
 # PDF publies : liste positive sur TOUT le site, pas uniquement les
 # documents de roman. Un nouveau manuscrit, reçu ou document interne ne doit
 # jamais devenir public par son extension ou son emplacement.
+# Quarantaine P0: quatre URL de catalogue a niveau restreint, recoupees
+# avec les fichiers publics du depot (audit Supabase en lecture seule 2026-11-21).
+# AVERTISSEMENT: exclure _site ne retire pas les copies du GitHub PUBLIC,
+# de son historique ou des caches CDN. Migration/reclassification indispensable.
+PUBLIC_QUARANTINED_RESTRICTED_PDFS = frozenset({
+    Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Feuille_de_fin_de_partie_Interactive.pdf"),
+    Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Fiche_Joueur_Interactive.pdf"),
+    Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Fracture_du_Reseau_Mere_Fiche_Joueur_Web.pdf"),
+    Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Mode_Solo_3_Joueurs_Interactive.pdf"),
+})
+
 PUBLIC_APPROVED_PDFS = SINJIRA_PUBLIC_DOCUMENTS | {
     Path("projets/projet-nova/documents/01_Resume_Officiel_1_Page_Projet_Nova.pdf"),
     Path("projets/projet-nova/documents/02_Depliant_Public_4_Pages_Projet_Nova.pdf"),
@@ -138,11 +149,11 @@ PUBLIC_APPROVED_PDFS = SINJIRA_PUBLIC_DOCUMENTS | {
     Path("projets/projet-nova/documents/09_Dossier_de_Presse_Projet_Nova.pdf"),
     Path("projets/projet-nova/documents/11_Charte_Visuelle_Projet_Nova.pdf"),
     Path("projets/projet-nova/documents/12_Resume_Executif_Officiel_Systeme_Nova.pdf"),
-    Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Feuille_de_fin_de_partie_Interactive.pdf"),
+
     Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Fiche_Joueur_1_Copie_Interactive.pdf"),
-    Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Fiche_Joueur_Interactive.pdf"),
-    Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Fracture_du_Reseau_Mere_Fiche_Joueur_Web.pdf"),
-    Path("projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Mode_Solo_3_Joueurs_Interactive.pdf"),
+
+
+
 }
 
 SINJIRA_DOCUMENTS_DIR = Path("projets/sinjira/documents")
@@ -492,6 +503,8 @@ def relative_path_allowed(rel: Path) -> bool:
 
     # Defense globale, aussi pour le repertoire racine, assets, jeux, comptes
     # et tout futur dossier de manuscrits. Une extension .pdf n'accorde rien.
+    if rel in PUBLIC_QUARANTINED_RESTRICTED_PDFS:
+        return False
     if rel.suffix.lower() == ".pdf":
         return rel in PUBLIC_APPROVED_PDFS
 
@@ -1164,6 +1177,12 @@ def self_test_public_filesystem_boundary() -> list[str]:
 
 def validate_plan() -> list[str]:
     errors: list[str] = []
+    # Refuser toute nouvelle publication accidentelle d'un PDF en quarantaine.
+    if PUBLIC_APPROVED_PDFS & PUBLIC_QUARANTINED_RESTRICTED_PDFS:
+        errors.append("Conflit entre PDF publics et ressources restreintes en quarantaine")
+    if not PUBLIC_QUARANTINED_RESTRICTED_PDFS:
+        errors.append("Inventaire de quarantaine P0 vide")
+
     release_sha = configured_release_sha()
     if release_sha and not re_full_git_sha(release_sha):
         errors.append(f"{RELEASE_SHA_ENV} doit être un SHA Git complet de 40 caractères hexadécimaux.")
