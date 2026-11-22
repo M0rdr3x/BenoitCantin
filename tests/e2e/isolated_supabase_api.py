@@ -50,3 +50,12 @@ def install_isolated_supabase_api(context) -> None:
     # No route.continue_(), no route.fetch(): never contact real production.
     # Explicit host matching also avoids intercepting the localhost site.
     context.route(PRODUCTION_SUPABASE_ORIGIN + "/**", intercept)
+
+    # HTTP routes do not intercept WebSocket handshakes. Close them before
+    # contacting the live Realtime service; never call connect_to_server().
+    for protocol in ("wss://", "ws://"):
+        websocket_origin = PRODUCTION_SUPABASE_ORIGIN.replace("https://", protocol, 1)
+        context.route_web_socket(
+            websocket_origin + "/**",
+            lambda websocket: websocket.close(),
+        )
