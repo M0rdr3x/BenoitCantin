@@ -125,7 +125,128 @@ def self_test() -> None:
             assert validate_statuses(attempt), f"Panne publique {path} HTTP {status} non détectée"
             mutations += 1
     assert not NoRedirect().redirect_request(None, None, 301, "", {}, "https://evil.example/")
+    workflow_self_test()
     print(f"OK frontière publique : {len(FORBIDDEN)} chemins techniques, {len(EXPECTED_PUBLIC)} pages publiques, {mutations} mutations HTTP validées.")
+
+
+# Ce contrat empêche les futurs refactorings YAML de désactiver en silence
+# la surveillance sur les pushes portant sur des fichiers non-techniques.
+# Le moniteur lui-même s'autoteste sans accès réseau sur pull_request.
+from pathlib import Path
+
+WORKFLOW = Path(__file__).resolve().parents[1] / ".github/workflows/live-public-security-boundary.yml"
+
+
+def workflow_contract_errors(source: str) -> list[str]:
+    failures: list[str] = []
+    if source.count("\non:\n") != 1 or "\npermissions:\n" not in source:
+        return ["Déclencheurs YAML du moniteur introuvables ou ambigus"]
+    event_yaml = source.split("\non:\n", 1)[1].split("\npermissions:\n", 1)[0]
+    blocks: dict[str, list[str]] = {}
+    current: str | None = None
+    for line in event_yaml.splitlines():
+        if line.startswith("  ") and not line.startswith("    ") and ":" in line and not line.lstrip().startswith("#"):
+            name, sep, rest = line.strip().partition(":")
+            if sep and name in {"pull_request", "push", "schedule", "workflow_dispatch"} and not rest.strip():
+                if name in blocks:
+                    failures.append(f"Déclencheur dupliqué : {name}")
+                blocks[name] = []
+                current = name
+                continue
+            failures.append(f"Déclencheur inattendu : {line.strip()}")
+            current = None
+        elif current is not None:
+            blocks[current].append(line)
+
+    for mandatory in ("pull_request", "push", "schedule", "workflow_dispatch"):
+        if mandatory not in blocks:
+            failures.append(f"Déclencheur obligatoire manquant : {mandatory}")
+    push = "\n".join(blocks.get("push", []))
+    if "    branches: [main]" not in push:
+        failures.append("Tout push sur main doit déclencher la sonde")
+    if any(token in push for token in ("paths:", "paths-ignore:", "tags:", "branches-ignore:")):
+        failures.append("Filtre paths/tags interdit sur push : surveillance de TOUS les commits main")
+    pr = "\n".join(blocks.get("pull_request", []))
+    if "    branches: [main]" not in pr:
+        failures.append("Tests hors réseau obligatoires sur les PR vers main")
+    if "    paths:" not in pr:
+        failures.append("Le périmètre de tests PR doit rester explicite")
+    for required in (
+        "      - 'scripts/check_live_public_security_boundary.py'",
+        "      - '.github/workflows/live-public-security-boundary.yml'",
+    ):
+        if required not in pr:
+            failures.append(f"Chemin de test PR manquant : {required.strip()}")
+    if "pull_request_target:" in source:
+        failures.append("pull_request_target interdit")
+    if "    - cron: '23 11 * * *'" not in "\n".join(blocks.get("schedule", [])):
+        failures.append("Récurrence de contrôle quotidien absente")
+    if "  live-boundary:\n" not in source:
+        failures.append("Job de contrôle HTTPS de production absent")
+    expected_if = (
+        "    if: github.event_name == 'push' || github.event_name == 'schedule' "
+        "|| github.event_name == 'workflow_dispatch'"
+    )
+    if expected_if not in source:
+        failures.append("Sonde réelle interdite sur PR et obligatoire sur push/cron/manual")
+    if "    needs: deterministic-contract" not in source:
+        failures.append("Sonde réelle doit dépendre des tests hors réseau")
+    if "        run: python3 scripts/check_live_public_security_boundary.py --self-test" not in source:
+        failures.append("Contrat hors réseau manquant")
+    if "        run: python3 scripts/check_live_public_security_boundary.py --live" not in source:
+        failures.append("Commande de sonde HTTPS manquante")
+    if source.count("persist-credentials: false") != 2:
+        failures.append("Deux checkouts sans jetons persistants obligatoires")
+    if "permissions:\n  contents: read" not in source:
+        failures.append("Permissions globales read-only requises")
+    return failures
+
+
+def workflow_self_test() -> None:
+    original = WORKFLOW.read_text(encoding="utf-8", errors="strict")
+    errors = workflow_contract_errors(original)
+    if errors:
+        raise AssertionError("Contrat CI non conforme : " + "; ".join(errors))
+    mutations = (
+        ("push limité à deux fichiers",
+         "  push:\n    branches: [main]",
+         "  push:\n    branches: [main]\n    paths:\n      - 'scripts/check_live_public_security_boundary.py'"),
+        ("push limité par paths-ignore",
+         "  push:\n    branches: [main]",
+         "  push:\n    branches: [main]\n    paths-ignore:\n      - 'projets/**'"),
+        ("push non limité à main",
+         "  push:\n    branches: [main]",
+         "  push:\n    branches: [feature]"),
+        ("push supprimé",
+         "  push:\n    branches: [main]\n", ""),
+        ("cron supprimé",
+         "  schedule:\n    - cron: '23 11 * * *'\n", ""),
+        ("dispatch manuel supprimé",
+         "  workflow_dispatch:\n", ""),
+        ("PR privilégiée",
+         "  pull_request:\n", "  pull_request_target:\n"),
+        ("PR de validation absente",
+         "  pull_request:\n", "  only_request:\n"),
+        ("sonde HTTPS exécutée sur PR",
+         "    if: github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'",
+         "    if: github.event_name == 'pull_request' || github.event_name == 'push'"),
+        ("plus de dépendance au test",
+         "    needs: deterministic-contract\n", ""),
+        ("commande live retirée",
+         "        run: python3 scripts/check_live_public_security_boundary.py --live",
+         "        run: echo disabled"),
+        ("credentials persistants",
+         "          persist-credentials: false",
+         "          persist-credentials: true"),
+    )
+    for title, old, replacement in mutations:
+        if old not in original:
+            raise AssertionError(f"Mutation sans cible : {title}")
+        modified = original.replace(old, replacement, 1)
+        if not workflow_contract_errors(modified):
+            raise AssertionError(f"Affaiblissement du moniteur non détecté : {title}")
+    print(f"OK CI : {len(mutations)} régressions de fréquence/droits/interdiction réseau PR rejetées.")
+
 
 
 def check_live() -> int:
