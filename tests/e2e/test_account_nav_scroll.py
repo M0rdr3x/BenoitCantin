@@ -168,6 +168,8 @@ def run():
                                 f"{ENGINE}: flèche précédente immobile pour {path}, "
                                 f"étape {backward_step + 1}: {snapshot(page)}"
                             ) from exc
+                        if region.evaluate("(el) => el.scrollLeft") <= 2:
+                            break
                     else:
                         raise AssertionError(
                             f"{ENGINE}: début du menu inaccessible pour {path} "
