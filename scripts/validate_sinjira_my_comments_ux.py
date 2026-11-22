@@ -36,16 +36,30 @@ def validate() -> list[str]:
         "if(status){status.tabIndex=-1;status.focus({preventScroll:true});}",
         "Commentaire enregistré, mais la liste ne peut pas être actualisée.",
         "Commentaire supprimé, mais la liste ne peut pas être actualisée.",
+        "if(deleteButton)deleteButton.disabled=true",
+        "if(deleteButton)deleteButton.disabled=false",
+        "if(event.key!=='Escape'||event.isComposing||saving)return",
+        "event.stopPropagation()",
+        "box.setAttribute('aria-busy','false')",
+        'aria-label="Modifier mon commentaire du',
+        'aria-label="Supprimer mon commentaire du',
     ]
     for marker in required_js:
         if marker not in js:
             failures.append(f"JS sans garde UX : {marker}")
 
     for marker in (
-        "sinjira-comments-responsive-v2.css?v=2.0.2",
-        "sinjira-account-v18.js?v=24.1.3",
+        "sinjira-comments-responsive-v2.css?v=2.0.3",
+        "sinjira-account-v18.js?v=24.1.4",
+        # Les flèches du compte sont apportées par la PR UX #1160.
+        "site-ux-sinjira-v1.css?v=1.0.1",
+        "site.js?v=24.4.102",
         'data-v18-page="comments"',
         'data-my-comments',
+        'aria-busy="true"',
+        'reader-comments-loading',
+        'role="status"',
+
     ):
         if marker not in page:
             failures.append(f"Page du compte incomplète : {marker}")
@@ -54,6 +68,7 @@ def validate() -> list[str]:
         '.reader-comment-inline-edit .reader-comment-counter',
         '.reader-comment-inline-edit .reader-comment-counter.near-limit',
         '.reader-comment:focus',
+        'min-height:48px!important',
         '@media(max-width:520px)',
         'grid-template-columns:repeat(2,minmax(0,1fr))',
     ):

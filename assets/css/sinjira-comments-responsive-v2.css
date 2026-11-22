@@ -179,3 +179,24 @@ body[data-v18-page="comments"] :where([data-delete-comment],[data-edit-comment])
     grid-template-columns:1fr
   }
 }
+
+/* État explicite lors du chargement des commentaires du compte. */
+body[data-v18-page="comments"] .reader-comments-loading{
+  box-sizing:border-box;width:100%;min-height:68px;margin:0;
+  padding:18px 20px;border:1px solid rgba(225,115,110,.3);
+  border-radius:14px;background:rgba(15,20,37,.94);
+  color:#e5e8f2;line-height:1.55
+}
+body[data-v18-page="comments"] .reader-comment .hero-actions > button{
+  box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;
+  min-height:48px!important;padding:10px 14px;line-height:1.35
+}
+body[data-v18-page="comments"] .reader-comment .hero-actions > button:disabled{
+  cursor:not-allowed;opacity:.62
+}
+body[data-v18-page="comments"] .reader-comment-inline-edit{
+  width:100%;min-width:0;box-sizing:border-box
+}
+body[data-v18-page="comments"] .reader-comment-inline-edit :where(label,output){
+  overflow-wrap:anywhere
+}

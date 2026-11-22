@@ -26,10 +26,12 @@ async function comments(user){
     const r=await s.from('sinjira_novel_comments').select('id,body,status,spoiler,created_at,sinjira_novels(title)').eq('user_id',user.id).order('created_at',{ascending:false}).limit(100);
     if(r.error)throw r.error;
     const data=rows(r.data),box=document.querySelector('[data-my-comments]');if(!box)return;
-    box.innerHTML=data.map(c=>`<article class="reader-comment" data-comment-id="${escapeHtml(c.id)}"><header><strong>${escapeHtml(c.sinjira_novels?.title||'Roman SINJIRA')}</strong><span class="character-status" data-status="${escapeHtml(c.status)}">${escapeHtml(c.status==='pending'?'En attente':c.status==='approved'?'Publié':c.status==='refused'?'Refusé':c.status)}</span></header><p>${escapeHtml(c.body)}</p>${c.spoiler?'<small>Contient des divulgâcheurs</small>':''}<time>${escapeHtml(formatDate(c.created_at))}</time>${c.status==='pending'?`<div class="hero-actions"><button class="btn btn-secondary btn-small" type="button" data-edit-comment>Modifier</button><button class="btn btn-secondary btn-small" type="button" data-delete-comment>Supprimer</button></div>`:''}</article>`).join('')||'<p>Vous n’avez encore publié aucun commentaire.</p>';
+    box.setAttribute('aria-busy','false');
+    box.innerHTML=data.map(c=>`<article class="reader-comment" data-comment-id="${escapeHtml(c.id)}"><header><strong>${escapeHtml(c.sinjira_novels?.title||'Roman SINJIRA')}</strong><span class="character-status" data-status="${escapeHtml(c.status)}">${escapeHtml(c.status==='pending'?'En attente':c.status==='approved'?'Publié':c.status==='refused'?'Refusé':c.status)}</span></header><p>${escapeHtml(c.body)}</p>${c.spoiler?'<small>Contient des divulgâcheurs</small>':''}<time>${escapeHtml(formatDate(c.created_at))}</time>${c.status==='pending'?`<div class="hero-actions"><button class="btn btn-secondary btn-small" type="button" data-edit-comment aria-label="Modifier mon commentaire du ${escapeHtml(formatDate(c.created_at))}">Modifier</button><button class="btn btn-secondary btn-small" type="button" data-delete-comment aria-label="Supprimer mon commentaire du ${escapeHtml(formatDate(c.created_at))}">Supprimer</button></div>`:''}</article>`).join('')||'<p>Vous n’avez encore publié aucun commentaire.</p>';
     box.querySelectorAll('[data-edit-comment]').forEach(button=>button.addEventListener('click',()=>{
       const card=button.closest('[data-comment-id]'),entry=data.find(c=>c.id===card?.dataset.commentId);
-      if(!card||!entry||card.querySelector('[data-inline-edit]'))return;
+      if(button.disabled||!card||!entry||card.querySelector('[data-inline-edit]'))return;
+      const deleteButton=card.querySelector('[data-delete-comment]');
       const form=document.createElement('form');
       form.className='reader-comment-inline-edit';
       form.setAttribute('data-inline-edit','');
@@ -46,9 +48,23 @@ async function comments(user){
       textarea.addEventListener('input',updateCounter);
       card.appendChild(form);
       button.disabled=true;
+      if(deleteButton)deleteButton.disabled=true;
       textarea.focus();
-      form.querySelector('[data-cancel-edit]').addEventListener('click',()=>{form.remove();button.disabled=false;button.focus();});
       let saving=false;
+      const cancelEdit=()=>{
+        if(saving)return;
+        form.remove();
+        button.disabled=false;
+        if(deleteButton)deleteButton.disabled=false;
+        button.focus();
+      };
+      form.querySelector('[data-cancel-edit]').addEventListener('click',cancelEdit);
+      form.addEventListener('keydown',event=>{
+        if(event.key!=='Escape'||event.isComposing||saving)return;
+        event.preventDefault();
+        event.stopPropagation();
+        cancelEdit();
+      });
       form.addEventListener('submit',async event=>{
         event.preventDefault();
         if(saving)return;
@@ -136,4 +152,13 @@ async function characters(user){
   box.innerHTML=html||'<article class="character-account-card"><h2>Aucun dossier</h2><p>Remplissez le questionnaire du Registre des Consciences pour commencer.</p></article>';
 }
 
-(async()=>{try{const user=await requireUser('/compte/connexion.html');if(page==='reads')await reads(user);if(page==='comments')await comments(user);if(page==='characters')await characters(user)}catch(e){if(e?.message!=='Connexion requise')st(e?.message||'Erreur du compte.','error')}})();
+(async()=>{try{const user=await requireUser('/compte/connexion.html');if(page==='reads')await reads(user);if(page==='comments')await comments(user);if(page==='characters')await characters(user)}catch(e){
+  if(page==='comments'&&e?.message!=='Connexion requise'){
+    const box=document.querySelector('[data-my-comments]');
+    if(box&&box.getAttribute('aria-busy')==='true'){
+      box.setAttribute('aria-busy','false');
+      box.textContent='Impossible de charger vos commentaires pour le moment. Veuillez réessayer plus tard.';
+    }
+  }
+  if(e?.message!=='Connexion requise')st(e?.message||'Erreur du compte.','error');
+}})();
