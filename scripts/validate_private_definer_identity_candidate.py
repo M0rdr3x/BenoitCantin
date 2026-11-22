@@ -94,7 +94,12 @@ def inspect(src: str) -> list[str]:
         "public.projects p", "p.id=p_project_id",
         "p.visibility IN('public','account')", "p.visibility='public'",
     ):
-        if fragment not in rank:
+        expected = 2 if fragment in (
+            "pa.project_id=p_project_id",
+            "pa.user_id=p_user_id",
+            "pa.expires_at IS NULL OR pa.expires_at>now()",
+        ) else 1
+        if rank.count(fragment) != expected:
             errors.append("Filtre historique de projet altéré : " + fragment)
     if "REVOKE" in code or "GRANT" in code:
         errors.append("Modification de privilèges non autorisée")
