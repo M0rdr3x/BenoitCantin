@@ -17,7 +17,7 @@ AS $function$
   SELECT p_user_id IS NOT NULL
     AND (
       coalesce(auth.jwt()->>'role','') = 'service_role'
-      OR p_user_id = (SELECT auth.uid())
+      OR p_user_id IS NOT DISTINCT FROM (SELECT auth.uid())
     )
     AND EXISTS(
       SELECT 1 FROM public.internal_admin_users a WHERE a.user_id=p_user_id
