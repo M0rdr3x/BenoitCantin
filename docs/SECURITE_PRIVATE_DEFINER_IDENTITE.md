@@ -62,7 +62,12 @@ modifications non autorisées du contrat et teste seize mutations négatives
 
 Le workflow `sinjira-private-definer-identity-security.yml` construit
 une base Supabase **locale** et injecte des utilisateurs fictifs via une
-transaction annulée : **22 assertions pgTAP** avec les rôles `anon`,
+transaction annulée. Puisque SINJIRA réserve le rôle admin à un compte
+propriétaire réel, la fixture suspend **un seul trigger** pour semer un
+administrateur fictif, le **réactive immédiatement**, vérifie `tgenabled='O'`
+et termine par `ROLLBACK`. Ce contournement n'existe que dans la
+base jetable de CI, jamais dans le candidat de production.
+Les **22 assertions pgTAP** couvrent les rôles `anon`,
 `authenticated` et `service_role`, sur des projets publics,
 restreints et accessibles aux comptes. La réussite locale ne prouve
 pas la compatibilité de tous les chemins en production.
