@@ -3,9 +3,10 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from urllib.parse import urljoin
 
-from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_playwright
+from playwright.sync_api import sync_playwright
 
 BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
 BROWSER_NAME = os.environ.get("BROWSER", "chromium").strip().lower()
@@ -553,19 +554,14 @@ def assert_preorder_public_steps_responsive(browser) -> None:
             links = nav.locator("a")
             assert_true(links.count() == len(targets),
                         f"{BROWSER_NAME}: nombre d'étapes incorrect à {width}px")
-            # Sur le domaine public, Firefox peut recevoir DOMContentLoaded avant
-            # l'application de la feuille CSS distante lorsque JS est désactivé.
-            # Attendre la vraie taille tactile, sans ignorer un CSS en échec.
-            try:
-                page.wait_for_function("""() => {
-                    const anchors = [...document.querySelectorAll(
-                        'nav.sinjira-preorder-steps a'
-                    )];
-                    return anchors.length === 3 && anchors.every(anchor =>
-                        anchor.getBoundingClientRect().height >= 44
-                    );
-                }""", timeout=20_000)
-            except PlaywrightTimeoutError as exc:
+            # Le contexte sans JS permet page.evaluate() via Playwright,
+            # mais wait_for_function() s'appuie sur une tâche dans la page
+            # qui peut ne jamais être exécutée sur Firefox/WebKit en production.
+            # La sonde Python attend le CSS ET une cible tactile >= 44 px,
+            # sans désactiver le mode sans JS ni masquer de vraie régression.
+            css_state = None
+            deadline = time.monotonic() + 20
+            while time.monotonic() < deadline:
                 css_state = page.evaluate("""() => ({
                     readyState: document.readyState,
                     links: [...document.querySelectorAll(
@@ -581,10 +577,17 @@ def assert_preorder_public_steps_responsive(browser) -> None:
                         'sinjira-preorder-steps-ux-v1.css'
                     )).map(link => ({href: link.href, loaded: Boolean(link.sheet)}))
                 })""")
+                if (len(css_state["links"]) == len(targets)
+                    and len(css_state["stylesheet"]) == 1
+                    and css_state["stylesheet"][0]["loaded"]
+                    and all(link["height"] >= 44 for link in css_state["links"])):
+                    break
+                time.sleep(0.25)
+            else:
                 raise AssertionError(
-                    f"{BROWSER_NAME}: feuille CSS de précommande non prête "
-                    f"ou zones tactiles sous 44px à {width}px : {css_state}"
-                ) from exc
+                    f"{BROWSER_NAME}: feuille CSS de précommande absente ou "
+                    f"zones tactiles sous 44px à {width}px : {css_state}"
+                )
             for i, anchor in enumerate(targets):
                 link = links.nth(i)
                 assert_true(link.get_attribute("href") == f"#{anchor}",
