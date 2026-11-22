@@ -7,13 +7,14 @@ No network calls, user data, or production configuration are changed.
 from __future__ import annotations
 
 import json
+import sys
 import tomllib
 import unittest
 from pathlib import Path
 
-from scripts.build_netlify_public import public_csp_blocks_objects, render_standalone_headers
-
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+from build_netlify_public import public_csp_blocks_objects, render_standalone_headers  # noqa: E402
 
 
 def find_object_policy_errors(policy: str) -> list[str]:
