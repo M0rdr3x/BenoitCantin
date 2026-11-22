@@ -106,6 +106,40 @@ class PublicArtifactExtensionAllowlist(unittest.TestCase):
             with self.subTest(path=name):
                 self.assertFalse(builder.relative_path_allowed(Path(name)))
 
+    def test_restricted_catalog_pdfs_are_not_publicly_published(self):
+        # Les quatre URL recoupees en lecture seule avec le catalogue prive
+        # sont exclues, y compris celle dont le document reste "approved".
+        quarantine = builder.PUBLIC_QUARANTINED_RESTRICTED_PDFS
+        self.assertEqual(len(quarantine), 4)
+        self.assertEqual(quarantine & builder.PUBLIC_APPROVED_PDFS, set())
+        self.assertTrue(all(path.suffix == ".pdf" for path in quarantine))
+        for path in sorted(quarantine):
+            with self.subTest(path=path.name):
+                self.assertFalse(builder.relative_path_allowed(path))
+        # La cinquieme fiche publique, sans correspondance restreinte dans
+        # l'inventaire du 2026-11-21, demeure utilisable.
+        public_copy = Path(
+            "projets/sinjira/jeux/fracture-du-reseau-mere/documents/"
+            "SINJIRA_Fiche_Joueur_1_Copie_Interactive.pdf"
+        )
+        self.assertTrue(builder.relative_path_allowed(public_copy))
+        self.assertTrue(builder.relative_path_allowed(Path("compte/index.html")))
+
+    def test_readding_quarantined_pdf_to_public_allowlist_fails_closed(self):
+        old = builder.PUBLIC_APPROVED_PDFS
+        try:
+            builder.PUBLIC_APPROVED_PDFS = set(old)
+            builder.PUBLIC_APPROVED_PDFS.add(
+                sorted(builder.PUBLIC_QUARANTINED_RESTRICTED_PDFS)[0]
+            )
+            self.assertFalse(builder.relative_path_allowed(
+                sorted(builder.PUBLIC_QUARANTINED_RESTRICTED_PDFS)[0]
+            ))
+            errors = builder.validate_plan()
+            self.assertTrue(any("Conflit entre PDF publics" in item for item in errors))
+        finally:
+            builder.PUBLIC_APPROVED_PDFS = old
+
     def test_only_public_document_extensions_are_privileged(self):
         self.assertEqual(builder.PUBLIC_APPROVED_PDFS & builder.SINJIRA_PUBLIC_DOCUMENTS,
                          builder.SINJIRA_PUBLIC_DOCUMENTS)
