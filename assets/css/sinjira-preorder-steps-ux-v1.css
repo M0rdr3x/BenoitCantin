@@ -1,0 +1,73 @@
+/* Réservation Livre I : sommaire et contrôles mobiles, isolés de Nova et du compte. */
+body[data-preorder-page="livre-1"]{
+  --project-accent:#ff7059;
+  --project-accent-2:#d88cff;
+}
+body[data-preorder-page="livre-1"] .site-header .brand img{border-radius:50%}
+body[data-preorder-page="livre-1"] .page-hero .project-back{
+  display:inline-flex;align-items:center;min-height:44px;margin-bottom:26px
+}
+body[data-preorder-page="livre-1"] .sinjira-preorder-steps{
+  border-block:1px solid rgba(255,255,255,.15);
+  background:#0b101e
+}
+body[data-preorder-page="livre-1"] .sinjira-preorder-steps .container{
+  display:flex;align-items:center;gap:10px;padding-block:13px;min-width:0
+}
+body[data-preorder-page="livre-1"] .sinjira-preorder-steps-label{
+  flex:0 0 auto;margin:0 8px 0 0;font-weight:750;color:#e9ecf6;font-size:.92rem
+}
+body[data-preorder-page="livre-1"] .sinjira-preorder-steps a{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:48px;min-width:0;padding:11px 16px;
+  background:rgba(255,112,89,.08);border:1px solid rgba(255,176,157,.35);
+  border-radius:12px;text-decoration:none;color:#fff;font-weight:750;
+  line-height:1.35;text-align:center
+}
+body[data-preorder-page="livre-1"] .sinjira-preorder-steps a:is(:hover,:focus-visible){
+  background:rgba(255,112,89,.2);border-color:#ffb8a8
+}
+body[data-preorder-page="livre-1"] .sinjira-preorder-steps a:focus-visible{
+  outline:3px solid #ffb8a8;outline-offset:2px
+}
+body[data-preorder-page="livre-1"] :is(#prix-livre-1,#reception-livre-1,#reservation-livre-1){
+  scroll-margin-top:140px
+}
+body[data-preorder-page="livre-1"] :is(
+  .sinjira-preorder-hero,.sinjira-preorder-panel,.sinjira-fulfillment-panel,
+  .sinjira-fulfillment-grid,.sinjira-preorder-field,.sinjira-estimator-controls,
+  .sinjira-preorder-notice,.sinjira-shipping-warning,.sinjira-commercial-meta
+){min-width:0;max-width:100%}
+body[data-preorder-page="livre-1"] :where(
+  .sinjira-preorder-notice,.sinjira-shipping-warning,.sinjira-preorder-check,
+  .sinjira-fulfillment-panel,.sinjira-fulfillment-fineprint
+){overflow-wrap:anywhere}
+body[data-preorder-page="livre-1"] :where(
+  [data-pf-zone],[data-pf-quantity],[data-pf-method],
+  [data-pf-pickup-select],[data-preorder-format],[data-preorder-quantity]
+){max-width:100%;min-width:0;min-height:48px;font-size:16px}
+body[data-preorder-page="livre-1"] :where(
+  [data-preorder-submit],[data-preorder-cancel],[data-pf-estimate],[data-pf-save-preference]
+){min-height:48px;max-width:100%;white-space:normal}
+body[data-preorder-page="livre-1"] :where([data-preorder-state],[data-preorder-status],
+  [data-pf-preference-status],[data-pf-estimate-result]){overflow-wrap:anywhere}
+@media(max-width:720px){
+  body[data-preorder-page="livre-1"] .sinjira-preorder-steps .container{
+    overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;scroll-padding-inline:16px
+  }
+  body[data-preorder-page="livre-1"] .sinjira-preorder-steps a{
+    flex:0 0 auto;min-height:48px
+  }
+}
+@media(max-width:360px){
+  body[data-preorder-page="livre-1"] .sinjira-preorder-steps-label{font-size:.82rem}
+  body[data-preorder-page="livre-1"] :is(
+    .sinjira-preorder-notice,.sinjira-shipping-warning,.sinjira-fulfillment-panel,
+    .sinjira-preorder-check,.sinjira-preorder-auth
+  ){padding:14px}
+  body[data-preorder-page="livre-1"] .sinjira-preorder-actions .btn{width:100%}
+}
+@media(prefers-reduced-motion:reduce){
+  body[data-preorder-page="livre-1"] .sinjira-preorder-steps{scroll-behavior:auto}
+}
