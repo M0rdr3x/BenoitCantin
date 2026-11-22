@@ -36,7 +36,10 @@ Fichier `security/candidates/sinjira_private_definer_identity_staging.sql` :
 
 - **Admin :** la fonction ne peut révéler l'appartenance administrateur
   qu'au même `auth.uid()`, sauf lorsque le JWT validé par Supabase
-  porte réellement `role=service_role`. Valeur nulle = faux.
+  porte réellement `role=service_role`. L'égalité
+  `IS NOT DISTINCT FROM` empêche qu'une identité de JWT absente
+  renvoie `NULL` pour un administrateur réel et `false` pour un autre
+  compte (oracle d'appartenance); valeur nulle = faux.
 - **Rang projet :** si `p_user_id` diffère de `auth.uid()` et le
   demandeur ne détient pas un JWT `service_role`, retourne `0`
   avant les requêtes sur `project_access` ou `internal_admin_users`.
