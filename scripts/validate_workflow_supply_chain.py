@@ -43,10 +43,21 @@ def has_privileged_pr_trigger(source: str) -> bool:
     return False
 
 
+def root_permissions_are_explicit(source: str) -> bool:
+    """Reject only-job, embedded-run, missing and duplicate root permissions.
+
+    A job-scoped permission does not establish a least-privilege default for
+    OTHER jobs. Matching indented lines can also mistake `run: |` text for
+    a GitHub Actions permission policy. Scan only column-zero YAML keys.
+    """
+    root_keys = re.findall(r'(?m)^(?:permissions|["\']permissions["\'])\s*:', source)
+    return len(root_keys) == 1
+
+
 def inspect_workflow(name: str, source: str) -> list[str]:
     errors: list[str] = []
-    if not re.search(r"^\s*permissions\s*:", source, flags=re.MULTILINE):
-        errors.append(f"{name}: permissions explicites manquantes")
+    if not root_permissions_are_explicit(source):
+        errors.append(f"{name}: permissions racine explicites et uniques obligatoires")
     if has_privileged_pr_trigger(source):
         errors.append(f"{name}: déclencheur privilégié pull_request_target interdit")
     if re.search(r"^\s*permissions\s*:\s*write-all\b", source, flags=re.MULTILINE):
@@ -77,10 +88,32 @@ def self_test() -> None:
         "      - uses: ./.github/actions/local-safe\n"
     )
     assert inspect_workflow("safe.yml", good) == []
+    # A genuinely root-scoped quoted YAML key must remain acceptable.
+    quoted = good.replace("permissions:", "'permissions':", 1)
+    assert inspect_workflow("quoted-root.yml", quoted) == []
     mutants = {
         "étiquette mobile": good.replace("@d23441a48e516b6c34aea4fa41551a30e30af803", "@v6"),
         "branche mobile": good.replace("@d23441a48e516b6c34aea4fa41551a30e30af803", "@main"),
         "permission implicite": good.replace("permissions:\n  contents: read\n", ""),
+        "permission au niveau job uniquement": good.replace(
+            "permissions:\n  contents: read\n",
+            "",
+        ).replace(
+            "  verify:\n    steps:",
+            "  verify:\n    permissions:\n      contents: read\n    steps:",
+        ),
+        "permission fictive en script": good.replace(
+            "permissions:\n  contents: read\n",
+            "",
+        ).replace(
+            "      - uses: ./.github/actions/local-safe\n",
+            "      - run: |\n          permissions:\n            contents: read\n"
+            "      - uses: ./.github/actions/local-safe\n",
+        ),
+        "permission racine dupliquée": good.replace(
+            "permissions:\n  contents: read\n",
+            "permissions:\n  contents: read\npermissions:\n  actions: write\n",
+        ),
         "droits larges": good.replace("permissions:\n  contents: read", "permissions: write-all"),
         "déclencheur privilégié": good.replace("  pull_request:", "  pull_request_target:"),
     }
