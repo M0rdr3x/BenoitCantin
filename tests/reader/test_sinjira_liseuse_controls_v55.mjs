@@ -61,7 +61,7 @@ test('V56 : les cinq commandes typographiques préservent la position et rafraî
   const js=readFileSync(new URL('../../assets/js/sinjira-liseuse-v26.js',import.meta.url),'utf8');
   const html=readFileSync(new URL('../../compte/liseuse.html',import.meta.url),'utf8');
   assert.match(js,/function updateReaderTypography\(applySetting\)/);
-  assert.match(js,/pendingTextRelayout===transaction/);
+  assert.match(js,/pendingTextRelayout!==transaction/);
   assert.match(js,/state\.pdf!==transaction\.pdf\|\|state\.page!==transaction\.page/);
   assert.match(js,/viewer\.scrollTop=scrollTopForRatio\(transaction\.ratio/);
   assert.match(js,/state\.positionRatio=ratioFromScroll\(viewer\.scrollTop/);
