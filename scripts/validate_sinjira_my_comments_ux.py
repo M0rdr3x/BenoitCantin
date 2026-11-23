@@ -40,6 +40,10 @@ def validate() -> list[str]:
         "if(deleteButton)deleteButton.disabled=false",
         "if(event.key!=='Escape'||event.isComposing||saving)return",
         "event.stopPropagation()",
+        "if(textarea.value!==entry.body&&",
+        "window.confirm('Abandonner les modifications non enregistrées de ce commentaire?')",
+        "textarea.focus();",
+        "if(saving)return",
         "box.setAttribute('aria-busy','false')",
         'aria-label="Modifier mon commentaire du',
         'aria-label="Supprimer mon commentaire du',
@@ -50,7 +54,7 @@ def validate() -> list[str]:
 
     for marker in (
         "sinjira-comments-responsive-v2.css?v=2.0.3",
-        "sinjira-account-v18.js?v=24.1.4",
+        "sinjira-account-v18.js?v=24.1.5",
         # Les flèches du compte sont apportées par la PR UX #1160.
         "site-ux-sinjira-v1.css?v=1.0.1",
         "site.js?v=24.4.102",
@@ -87,7 +91,7 @@ def main() -> int:
         for problem in problems:
             print(" - " + problem)
         return 1
-    print("OK Mes commentaires : compteur, modifications bornées, suppression protégée, retour focus et CSS mobile.")
+    print("OK Mes commentaires : brouillon protégé, compteur, suppression contrôlée, retour focus et CSS mobile.")
     return 0
 
 
