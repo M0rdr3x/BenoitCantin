@@ -9,7 +9,7 @@ from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_pla
 BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
 BROWSER_NAME = os.environ.get("BROWSER", "chromium").strip().lower()
 SUPPORTED_BROWSERS = {"chromium", "firefox", "webkit"}
-ASSISTANT_VERSION = "24.4.49"
+ASSISTANT_VERSION = "24.4.50"
 PUBLIC_ROUTES = [
     "",
     "a-propos.html",
@@ -1081,6 +1081,14 @@ def run() -> None:
             panel = page.locator("#sinjira-assistant-panel")
             assert_true(panel.is_visible(), f"{BROWSER_NAME}: panneau assistant ne s’ouvre pas")
             assert_true(assistant_toggle.get_attribute("aria-expanded") == "true", f"{BROWSER_NAME}: aria-expanded assistant invalide")
+            assert_true(
+                assistant_toggle.evaluate("(el) => getComputedStyle(el).visibility === 'hidden'"),
+                f"{BROWSER_NAME}: commande d'ouverture invisible encore focusable dans le panneau",
+            )
+            assert_true(
+                page.locator("#sinjira-assistant-input").evaluate("(el) => document.activeElement === el"),
+                f"{BROWSER_NAME}: le focus n'arrive pas directement dans le panneau d'aide",
+            )
 
             question = page.locator("#sinjira-assistant-input")
             question.fill("Comment créer mon personnage ?")
@@ -1115,6 +1123,26 @@ def run() -> None:
 
             page.keyboard.press("Escape")
             assert_true(panel.is_hidden(), f"{BROWSER_NAME}: Escape ne ferme pas l’assistant")
+            assert_true(
+                assistant_toggle.evaluate(
+                    "(el) => getComputedStyle(el).visibility === 'visible' && document.activeElement === el"
+                ),
+                f"{BROWSER_NAME}: le focus ne revient pas au bouton visible après Échap",
+            )
+            # Le déclencheur reste accessible au clavier après fermeture, et
+            # la commande Fermer doit rendre le focus au même endroit.
+            assistant_toggle.press("Enter")
+            assert_true(panel.is_visible(), f"{BROWSER_NAME}: réouverture clavier impossible")
+            assert_true(
+                assistant_toggle.evaluate("(el) => getComputedStyle(el).visibility === 'hidden'"),
+                f"{BROWSER_NAME}: bouton masqué toujours focusable après réouverture",
+            )
+            panel.locator(".sinjira-assistant-close").click()
+            assert_true(panel.is_hidden(), f"{BROWSER_NAME}: bouton Fermer inopérant")
+            assert_true(
+                assistant_toggle.evaluate("(el) => document.activeElement === el"),
+                f"{BROWSER_NAME}: Fermer ne restitue pas le focus au déclencheur",
+            )
 
             # Les suggestions doivent suivre la rubrique courante, y compris
             # la page du jeu Fracture. L'archive Nova reste accessible seulement

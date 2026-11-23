@@ -6,7 +6,7 @@ JS = ROOT / "assets/js/sinjira-assistant.js"
 CSS = ROOT / "assets/css/sinjira-assistant.css"
 SITE = ROOT / "assets/js/site.js"
 NOVA_RUNTIME = ROOT / "projets/projet-nova/script.js"
-ASSISTANT_VERSION = "24.4.49"
+ASSISTANT_VERSION = "24.4.50"
 
 errors = []
 
@@ -52,6 +52,10 @@ for marker in (
 require("prefers-reduced-motion" in css, "le style doit respecter prefers-reduced-motion")
 require(":focus-visible" in css, "les contrôles de l’assistant doivent avoir un focus visible")
 require("forced-colors" in css, "le style doit prévoir le mode forced-colors")
+require(".sinjira-assistant.is-open .sinjira-assistant-toggle{visibility:hidden}" in css,
+        "le déclencheur invisible ne doit pas rester focusable")
+require("input.focus();" in js and "window.setTimeout(function () { input.focus();" not in js,
+        "le focus assistant doit être transféré immédiatement sans timer périmé")
 for marker in ("100dvh", "max-height:560px", ".sinjira-assistant-close{min-width:44px",
                ".sinjira-assistant-chip,.sinjira-assistant-link{min-height:44px"):
     require(marker in css, f"accessibilité mobile assistant: garde-fou absent {marker}")

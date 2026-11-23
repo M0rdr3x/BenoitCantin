@@ -6,7 +6,7 @@
   // chargement différé ou externe injecte ce fichier, respecter ce contrat.
   if (doc.documentElement &&
       doc.documentElement.getAttribute('data-disable-sinjira-assistant') === 'true') return;
-  var ASSISTANT_VERSION = '24.4.49';
+  var ASSISTANT_VERSION = '24.4.50';
   var PROVIDER_MODE = 'local';
   var EXTERNAL_PROVIDER_ENABLED = false;
   var MAX_MESSAGE_LENGTH = 500;
@@ -337,7 +337,9 @@
     toggle.setAttribute('aria-expanded', 'true');
     root.className = 'sinjira-assistant is-open';
     if (!log.children.length) appendMessage('assistant', 'Bonjour. Je peux vous aider avec « ' + pageContext.label + ' » ou vous guider vers une autre section du site. Que cherchez-vous ?');
-    window.setTimeout(function () { input.focus(); }, 0);
+    // Transférer le focus dans le dialogue immédiatement : aucun timer ne doit
+    // le renvoyer dans un panneau déjà refermé après une ouverture rapide.
+    input.focus();
   }
 
   function closePanel() {
