@@ -48,8 +48,8 @@ export async function readLimitedUtf8Body(req, maxBytes) {
       const { done, value } = await readChunkWithDeadline(reader, req.signal, deadlineAt);
       if (done) break;
       if (!(value instanceof Uint8Array)) {
-        cancelReaderWithoutWaiting(reader);
-        return { ok: false };
+        // Chemin unique de refus et d'annulation dans catch : pas de second cancel().
+        throw new TypeError('INVALID_STREAM_CHUNK');
       }
       byteCount += value.byteLength;
       if (byteCount > maxBytes) {
