@@ -46,6 +46,34 @@ async function run() {
   const invalidUtf8 = streamRequest([new Uint8Array([0xc3])]);
   assert.deepEqual(await readLimitedUtf8Body(invalidUtf8, 8), { ok: false });
 
+  // Une connexion lente sans fin doit respecter un budget ABSOLU partagé entre
+  // tous les fragments; la première lecture ne peut pas rester pendante.
+  const readerSource = readFileSync(resolve(root, 'supabase/functions/_shared/limited-body.mjs'), 'utf8');
+  assert.match(readerSource, /UTF8_BODY_DEADLINE_MS = 8000/);
+  assert.match(readerSource, /const deadlineAt = performance\.now\(\) \+ UTF8_BODY_DEADLINE_MS/);
+  assert.match(readerSource, /await readChunkWithDeadline\(reader, req\.signal, deadlineAt\)/);
+  assert.doesNotMatch(readerSource, /await reader\.read\(\)/);
+
+  const alreadyAborted = new AbortController();
+  alreadyAborted.abort();
+  const abortedRequest = new Request('https://example.invalid/edge', {
+    method: 'POST', signal: alreadyAborted.signal
+  });
+  assert.deepEqual(await readLimitedUtf8Body(abortedRequest, 8), { ok: false });
+
+  const interrupt = new AbortController();
+  const hangingRequest = new Request('https://example.invalid/edge', {
+    method: 'POST', duplex: 'half', signal: interrupt.signal,
+    body: new ReadableStream({ start(controller) { controller.enqueue(encoder.encode('a')); } })
+  });
+  const pending = readLimitedUtf8Body(hangingRequest, 8);
+  setTimeout(() => interrupt.abort(), 25);
+  const abortResult = await Promise.race([
+    pending,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('abort non borné')), 1500))
+  ]);
+  assert.deepEqual(abortResult, { ok: false });
+
   const empty = new Request('https://example.invalid/edge', { method: 'POST' });
   assert.deepEqual(await readLimitedUtf8Body(empty, 8), { ok: true, raw: '' });
 
