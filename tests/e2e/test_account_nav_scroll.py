@@ -124,13 +124,21 @@ def run():
 
                     # Le sens de lecture et les contrôles restent utilisables au clavier.
                     page.set_viewport_size({"width":390,"height":800})
-                    # Le redimensionnement génère un événement asynchrone.
-                    # Attendre la stabilisation avant le repositionnement manuel.
-                    page.wait_for_timeout(120)
+                    # Les deux requestAnimationFrame du script de navigation
+                    # se terminent après le changement de viewport sur WebKit.
+                    # Attendre le layout puis réinitialiser le scroll pour
+                    # tester les boutons depuis une borne contrôlée.
+                    page.wait_for_timeout(250)
+                    page.evaluate("""() => new Promise(resolve =>
+                      requestAnimationFrame(() => requestAnimationFrame(resolve))
+                    )""")
                     region=page.locator(".account-nav-scroll")
                     next_button=page.get_by_role("button",name="Rubriques suivantes du compte")
                     previous_button=page.get_by_role("button",name="Rubriques précédentes du compte")
-                    region.evaluate("(el) => el.scrollLeft=0")
+                    region.evaluate("""(el) => {
+                      el.scrollLeft = 0;
+                      el.dispatchEvent(new Event('scroll'));
+                    }""")
                     page.wait_for_function("""() => {
                       const x=document.querySelector('.account-nav-scroll');
                       const left=document.querySelector('.sinjira-account-nav-arrow');

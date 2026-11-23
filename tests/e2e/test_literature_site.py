@@ -612,8 +612,16 @@ def assert_preorder_public_steps_responsive(browser) -> None:
             nav.locator('a[href="#reception-livre-1"]').click()
             assert_true(page.evaluate("location.hash") == "#reception-livre-1",
                         f"{BROWSER_NAME}: ancre Livraison non fonctionnelle à {width}px")
-        assert_true(page.locator("[data-main-nav] a").count() == 6,
-                    f"{BROWSER_NAME}: navigation principale disparue sans JavaScript")
+        expected = (
+            "/", "/projets/sinjira/", "/projets/sinjira/romans/",
+            "/projets/sinjira/jeux/", "/projets/sinjira/registre/",
+            "/projets/sinjira/communaute/", "/compte/",
+        )
+        actual = tuple(page.locator("[data-main-nav] a").evaluate_all(
+            "(links) => links.map(a => new URL(a.href).pathname)"
+        ))
+        assert_true(actual == expected,
+                    f"{BROWSER_NAME}: navigation principale incomplète sans JavaScript : {actual}")
     finally:
         no_js.close()
 

@@ -18,7 +18,8 @@ CSS = ROOT / "assets/css/site-ux-sinjira-v1.css"
 SITE_JS = ROOT / "assets/js/site.js"
 EXPECTED = (
     "/", "/projets/sinjira/", "/projets/sinjira/romans/",
-    "/projets/sinjira/registre/", "/projets/sinjira/communaute/", "/compte/",
+    "/projets/sinjira/jeux/", "/projets/sinjira/registre/",
+    "/projets/sinjira/communaute/", "/compte/",
 )
 REQUIRED = (
     "index.html", "compte/index.html", "compte/connexion.html",
@@ -216,7 +217,7 @@ def main():
         for problem in problems:
             print("- " + problem)
         return 1
-    print(f"OK : {count} pages, navigation 6 destinations, contrôle mobile/tablette, "
+    print(f"OK : {count} pages, navigation 7 destinations, contrôle mobile/tablette, "
           "raccourcis et accessibilité statique conformes")
     return 0
 

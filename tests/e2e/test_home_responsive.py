@@ -12,6 +12,11 @@ BASE = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
 BROWSER = os.environ.get("BROWSER", "chromium").strip().lower()
 WIDTHS = (320, 390, 420, 600, 768, 1020, 1024, 1440)
 LOGO = "/assets/icons/sinjira-officiel-20261120.png"
+NAV_PATHS = (
+    "/", "/projets/sinjira/", "/projets/sinjira/romans/",
+    "/projets/sinjira/jeux/", "/projets/sinjira/registre/",
+    "/projets/sinjira/communaute/", "/compte/",
+)
 
 
 def verify(condition, message):
@@ -52,6 +57,9 @@ def test_home(page):
     )
     nav = page.locator("[data-main-nav]")
     toggle = page.locator("[data-menu-toggle]")
+    verify(tuple(nav.locator("a").evaluate_all(
+        "(links) => links.map(a => new URL(a.href).pathname)"
+    )) == NAV_PATHS, "menu principal incomplet ou mal ordonné")
     verify(page.locator(".home-project").count() == 4,
            "les quatre accès directs SINJIRA doivent rester présents")
 
@@ -123,7 +131,9 @@ def test_without_javascript(browser):
         for width in (320, 768, 1024):
             page.set_viewport_size({"width": width, "height": 760})
             verify(nav.is_visible(), f"liens inaccessibles sans JS à {width}px")
-            verify(nav.locator("a").count() == 6,
+            verify(tuple(nav.locator("a").evaluate_all(
+                "(links) => links.map(a => new URL(a.href).pathname)"
+            )) == NAV_PATHS,
                    f"navigation de repli incomplète à {width}px")
             state = page.evaluate("""() => ({
               overflow:document.documentElement.scrollWidth > innerWidth + 2,
