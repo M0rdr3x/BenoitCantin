@@ -46,6 +46,18 @@
     if(d.querySelector('[data-sinjira-pwa-style]'))return;
     var s=d.createElement('style');s.setAttribute('data-sinjira-pwa-style','');
     s.textContent='.sinjira-pwa-install{position:fixed;right:max(14px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));z-index:9997;width:min(390px,calc(100vw - 28px));padding:16px;border:1px solid rgba(255,255,255,.16);border-radius:18px;background:rgba(10,12,22,.96);box-shadow:0 18px 50px rgba(0,0,0,.38);backdrop-filter:blur(14px);color:#fff}.sinjira-pwa-install[hidden]{display:none}.sinjira-pwa-install__top{display:flex;gap:12px;align-items:flex-start}.sinjira-pwa-install__top img{width:44px;height:44px;border-radius:12px}.sinjira-pwa-install h2{font-size:1rem;margin:0 0 5px}.sinjira-pwa-install p{font-size:.88rem;line-height:1.45;margin:0;color:rgba(255,255,255,.78)}.sinjira-pwa-install__actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.sinjira-pwa-install__actions button{min-height:48px}.sinjira-pwa-install__close{position:absolute;right:8px;top:7px;border:0;background:transparent;color:#fff;font-size:1.25rem;min-width:44px;min-height:44px;padding:8px;cursor:pointer}.sinjira-pwa-install__ios{margin-top:10px!important;color:rgba(255,255,255,.9)!important}@media(max-width:600px){.sinjira-pwa-install{left:14px;right:14px;bottom:max(12px,env(safe-area-inset-bottom));width:auto}}';
+
+    // Invitation compacte : l'installation ne masque pas le contenu au chargement.
+    s.textContent += '.sinjira-pwa-install{box-sizing:border-box;max-height:calc(100vh - 24px);overflow-y:auto;overscroll-behavior:contain}' +
+      '.sinjira-pwa-install.is-collapsed{width:auto;max-width:calc(100vw - 28px);padding:8px 50px 8px 8px}' +
+      '.sinjira-pwa-install__reveal{display:inline-flex;align-items:center;justify-content:center;min-height:44px;max-width:100%;padding:8px 12px;border:1px solid rgba(255,255,255,.28);border-radius:11px;background:#182a42;color:#fff;font:700 .87rem/1.25 system-ui,sans-serif;cursor:pointer;white-space:normal}' +
+      '.sinjira-pwa-install__details[hidden]{display:none!important}' +
+      '.sinjira-pwa-install__details{padding-top:10px}' +
+      '.sinjira-pwa-install__top{padding-right:32px}' +
+      '.sinjira-pwa-install :is(button,a):focus-visible{outline:3px solid #9ddcff;outline-offset:2px}' +
+      '@media(max-width:600px){.sinjira-pwa-install.is-collapsed{left:auto;right:max(12px,env(safe-area-inset-right));width:auto}}' +
+      '@supports(height:100dvh){.sinjira-pwa-install{max-height:calc(100dvh - 24px)}}' +
+      '@media(forced-colors:active){.sinjira-pwa-install,.sinjira-pwa-install__reveal{border:1px solid CanvasText}}';
     d.head.appendChild(s);
   }
 
@@ -53,11 +65,34 @@
     if(standalone()||!eligibleRoute()||dismissed())return null;
     var old=d.querySelector('[data-sinjira-pwa-install]');if(old)return old;
     addStyle();
-    var card=d.createElement('aside');card.className='sinjira-pwa-install';card.setAttribute('data-sinjira-pwa-install','');card.setAttribute('aria-label','Installer l’application SINJIRA™');
-    card.innerHTML='<button class="sinjira-pwa-install__close" type="button" aria-label="Masquer cette proposition">×</button><div class="sinjira-pwa-install__top"><img src="/android-chrome-192x192.png" alt=""><div><h2>Installer SINJIRA™</h2><p>Ajoutez SINJIRA™ à votre téléphone comme une application. Aucun magasin d’applications ni service payant n’est nécessaire.</p></div></div><div class="sinjira-pwa-install__actions"><button class="btn btn-primary btn-small" type="button" data-pwa-install-action>Installer</button></div>';
-    if(mode==='ios'){
-      var note=d.createElement('p');note.className='sinjira-pwa-install__ios';note.setAttribute('data-pwa-ios-help','');note.textContent='Sur iPhone/iPad : touchez Partager, puis « Sur l’écran d’accueil ».';card.appendChild(note);
+    var card=d.createElement('aside');card.className='sinjira-pwa-install is-collapsed';
+    card.setAttribute('data-sinjira-pwa-install','');
+    card.setAttribute('aria-label','Installer l’application SINJIRA™');
+    card.innerHTML='<button class="sinjira-pwa-install__close" type="button" aria-label="Masquer cette proposition">×</button>' +
+      '<button class="sinjira-pwa-install__reveal" type="button" data-pwa-install-reveal aria-expanded="false" aria-controls="sinjira-pwa-install-details">Installer SINJIRA™</button>' +
+      '<div class="sinjira-pwa-install__details" id="sinjira-pwa-install-details" hidden>' +
+      '<div class="sinjira-pwa-install__top"><img src="/android-chrome-192x192.png" alt=""><div><h2>Installer SINJIRA™</h2><p>Ajoutez SINJIRA™ à votre téléphone comme une application. Aucun magasin d’applications ni service payant n’est nécessaire.</p></div></div>' +
+      '<div class="sinjira-pwa-install__actions"><button class="btn btn-primary btn-small" type="button" data-pwa-install-action>Installer</button></div></div>';
+    var details=card.querySelector('.sinjira-pwa-install__details');
+    var reveal=card.querySelector('[data-pwa-install-reveal]');
+    function setExpanded(open){
+      details.hidden=!open;
+      reveal.setAttribute('aria-expanded',open?'true':'false');
+      card.className='sinjira-pwa-install'+(open?'':' is-collapsed');
+      if(!open)card.scrollTop=0;
     }
+    if(mode==='ios'){
+      var note=d.createElement('p');note.className='sinjira-pwa-install__ios';
+      note.setAttribute('data-pwa-ios-help','');
+      note.textContent='Sur iPhone/iPad : touchez Partager, puis « Sur l’écran d’accueil ».';
+      details.appendChild(note);
+    }
+    reveal.addEventListener('click',function(){setExpanded(details.hidden);});
+    card.addEventListener('keydown',function(event){
+      if(event.key==='Escape'&&!details.hidden){
+        event.preventDefault();setExpanded(false);reveal.focus();
+      }
+    });
     card.querySelector('.sinjira-pwa-install__close').addEventListener('click',function(){rememberDismiss();card.remove();});
     card.querySelector('[data-pwa-install-action]').addEventListener('click',install);
     d.body.appendChild(card);return card;
