@@ -8,20 +8,19 @@ import sys
 from datetime import date
 from pathlib import Path
 from urllib.parse import urlsplit
+from validate_nova_home_boundary import check_home
 
 ROOT = Path(__file__).resolve().parents[1]
 NOVA = ROOT / "projets" / "projet-nova"
 errors: list[str] = []
 
-# Portail principal : Projet Nova doit utiliser l'asset optimisé pour le portail.
+# Contrat actuel : NOVA est retiré du portail principal.
+# Le corpus historique conserve ses vérifications d'intégrité distinctes.
 portal_home = ROOT / "index.html"
 portal_home_css = ROOT / "assets" / "css" / "home-v24-4-12.css"
 if portal_home.is_file():
     portal_home_text = portal_home.read_text(encoding="utf-8", errors="replace")
-    if portal_home_text.count("/assets/media/nova-logo.webp") < 3:
-        errors.append("accueil: le logo Nova optimisé doit être utilisé dans la porte, l’aperçu central et la carte Projet Nova")
-    if "/projets/projet-nova/assets/logo-nova.webp" in portal_home_text:
-        errors.append("accueil: le logo Nova interne ne doit plus être utilisé dans les cartes du portail")
+    errors.extend(check_home(portal_home_text))
 else:
     errors.append("accueil: index.html absent")
 if portal_home_css.is_file():

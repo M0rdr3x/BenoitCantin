@@ -91,7 +91,7 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
           ref: nova-a1-reference-documents
-          persist-credentials: true
+          persist-credentials: false
 
       - name: Appliquer le correctif borné sans exécuter de code du dépôt
         shell: bash
@@ -121,6 +121,7 @@ jobs:
           git diff --check
 
       - name: Enregistrer uniquement les corrections HTML Nova
+        id: auto_commit
         shell: bash
         run: |
           set -euo pipefail
@@ -129,7 +130,36 @@ jobs:
           git add -- projets/projet-nova/*.html
           if git diff --cached --quiet; then
             echo 'Aucun changement SEO à enregistrer.'
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git commit -m "Projet Nova A1 — normalise les métadonnées SEO [seo-autofix]"
-          git push origin HEAD:nova-a1-reference-documents
+          echo 'changed=true' >> "$GITHUB_OUTPUT"
+
+      - name: Pousser uniquement le commit SEO autorisé
+        if: steps.auto_commit.outputs.changed == 'true'
+        shell: bash
+        env:
+          SEO_PUSH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test -n "${SEO_PUSH_TOKEN:-}" || {
+            echo 'Jeton d’écriture GitHub indisponible.' >&2
+            exit 1
+          }
+          # Le jeton n'est injecté ni pendant l'application du patch, ni
+          # pendant git add/commit, ni dans la configuration Git.
+          umask 077
+          askpass="$(mktemp "$RUNNER_TEMP/nova-seo-askpass.XXXXXXXX")"
+          trap 'rm -f -- "$askpass"' EXIT
+          cat > "$askpass" <<'ASKPASS'
+          #!/usr/bin/env sh
+          case "$1" in
+            *Username*) printf '%s\n' 'x-access-token' ;;
+            *Password*) printf '%s\n' "$SEO_PUSH_TOKEN" ;;
+            *) exit 1 ;;
+          esac
+          ASKPASS
+          chmod 0700 "$askpass"
+          GIT_TERMINAL_PROMPT=0 GIT_ASKPASS="$askpass" \
+            git -c credential.helper= push origin HEAD:nova-a1-reference-documents

@@ -18,6 +18,83 @@ IMMUTABLE_DOCKER = re.compile(r"^docker://[^@\s]+@sha256:[a-f0-9]{64}$")
 
 
 
+# Une action checkout persiste le jeton GitHub par défaut. Les workflows
+# qui exécutent du code fourni par une PR ne doivent jamais le conserver.
+CHECKOUT_ACTION = re.compile(r"^actions/checkout@[a-f0-9]{40}$")
+STEP_START = re.compile(
+    r"^(?P<indent> *)-\s+(?:name|id|uses|if|run|shell|env|with|timeout-minutes|working-directory)\s*:"
+)
+WITH_LINE = re.compile(r"^(?P<indent> *)with\s*:\s*(?:#.*)?$")
+PERSIST_LINE = re.compile(
+    r"^(?P<indent> *)persist-credentials\s*:\s*(?P<value>[^#\n]*?)(?:\s+#.*)?$"
+)
+
+
+def checkout_token_findings(name: str, source: str) -> list[str]:
+    """Inspecter le bloc STEP exact, pas un 'false' dans un autre step.
+
+    L'option checkout doit être sous 'with:' à la bonne indentation.
+    Les valeurs d'un 'run: |', commentaires, doublons et steps voisins
+    ne peuvent pas satisfaire la règle de sécurité.
+    """
+    errors: list[str] = []
+    lines = source.splitlines()
+    for i, raw in enumerate(lines):
+        m = ACTION_LINE.match(raw)
+        if not m or not CHECKOUT_ACTION.fullmatch(m.group(1)):
+            continue
+        use_indent = len(raw) - len(raw.lstrip(" "))
+        start = None
+        step_indent = None
+        for j in range(i, -1, -1):
+            a = STEP_START.match(lines[j])
+            if a and len(a.group("indent")) <= use_indent:
+                start = j
+                step_indent = len(a.group("indent"))
+                break
+        if start is None or step_indent is None:
+            errors.append(f"{name}:{i+1}: checkout hors étape YAML identifiable")
+            continue
+        end = len(lines)
+        for j in range(start + 1, len(lines)):
+            line = lines[j]
+            if not line.strip() or line.lstrip().startswith("#"):
+                continue
+            indent = len(line) - len(line.lstrip(" "))
+            if indent <= step_indent:
+                end = j
+                break
+
+        with_indent = step_indent + 2
+        field_indent = step_indent + 4
+        w = [
+            j for j in range(start, end)
+            if (a := WITH_LINE.match(lines[j])) and len(a.group("indent")) == with_indent
+        ]
+        if len(w) != 1:
+            errors.append(f"{name}:{i+1}: checkout sans bloc with unique")
+            continue
+        fields = []
+        within_with = False
+        for j in range(w[0] + 1, end):
+            line = lines[j]
+            if not line.strip() or line.lstrip().startswith("#"):
+                continue
+            indent = len(line) - len(line.lstrip(" "))
+            if indent <= with_indent:
+                break
+            a = PERSIST_LINE.match(line)
+            if a and indent == field_indent:
+                fields.append(a.group("value").strip().strip("'\""))
+        if len(fields) != 1 or fields[0] != "false":
+            errors.append(
+                f"{name}:{i+1}: checkout doit déclarer un unique "
+                "with.persist-credentials: false (jeton non persistant)"
+            )
+    return errors
+
+
+
 def has_privileged_pr_trigger(source: str) -> bool:
     """Refuser pull_request_target dans les formes YAML bloc, liste et inline.
 
@@ -60,6 +137,7 @@ def inspect_workflow(name: str, source: str) -> list[str]:
         errors.append(f"{name}: permissions racine explicites et uniques obligatoires")
     if has_privileged_pr_trigger(source):
         errors.append(f"{name}: déclencheur privilégié pull_request_target interdit")
+    errors.extend(checkout_token_findings(name, source))
     if re.search(r"^\s*permissions\s*:\s*write-all\b", source, flags=re.MULTILINE):
         errors.append(f"{name}: permissions write-all interdites")
     for lineno, raw in enumerate(source.splitlines(), 1):
@@ -85,6 +163,8 @@ def self_test() -> None:
         "permissions:\n  contents: read\n"
         "jobs:\n  verify:\n    steps:\n"
         "      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803\n"
+        "        with:\n"
+        "          persist-credentials: false\n"
         "      - uses: ./.github/actions/local-safe\n"
     )
     assert inspect_workflow("safe.yml", good) == []
@@ -120,6 +200,32 @@ def self_test() -> None:
     for label, altered in mutants.items():
         if not inspect_workflow(label, altered):
             raise SystemExit(f"Auto-test défectueux : {label}")
+    checkout_mutants = {
+        "checkout sans with": good.replace("        with:\n          persist-credentials: false\n", ""),
+        "checkout token true": good.replace("persist-credentials: false", "persist-credentials: true"),
+        "checkout champ incorrect": good.replace("persist-credentials: false", "persist_credentials: false"),
+        "checkout commentaire": good.replace("persist-credentials: false", "# persist-credentials: false"),
+        "checkout champ au mauvais niveau": good.replace("          persist-credentials: false", "        persist-credentials: false"),
+        "checkout champ dans run": good.replace("        with:\n          persist-credentials: false", "        run: |\n          persist-credentials: false"),
+        "checkout false au step suivant": good.replace(
+            "        with:\n          persist-credentials: false\n      - uses: ./.github/actions/local-safe",
+            "      - uses: ./.github/actions/local-safe\n        with:\n          persist-credentials: false"
+        ),
+        "checkout doublon true et false": good.replace(
+            "          persist-credentials: false",
+            "          persist-credentials: false\n          persist-credentials: true"
+        ),
+        "checkout env au lieu de with": good.replace(
+            "        with:\n          persist-credentials: false",
+            "        env:\n          persist-credentials: false"
+        ),
+    }
+    for label, altered in checkout_mutants.items():
+        found = checkout_token_findings(label, altered)
+        if not found:
+            raise SystemExit(f"Auto-test credentials défectueux : {label}")
+    assert checkout_token_findings("checkout correct", good) == []
+    print(f"OK : {len(checkout_mutants)} mutations de jeton checkout détectées.")
     for bad_event in (
         "on: pull_request_target\n",
         "on: [push, pull_request_target]\n",

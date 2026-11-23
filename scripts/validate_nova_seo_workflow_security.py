@@ -98,8 +98,25 @@ def validate_text(text: str) -> None:
     require('timeout-minutes: 5' in commit, 'Le timeout commit doit rester à 5 minutes.')
     require(f'uses: {CHECKOUT}' in commit, 'Checkout commit doit rester épinglé.')
     require(f'ref: {TARGET_BRANCH}' in commit, 'Le checkout d’écriture doit viser uniquement la branche Nova dédiée.')
-    require('persist-credentials: true' in commit, 'Le checkout d’écriture doit rendre explicite son unique exception de credentials persistés.')
-    require('NOVA_SEO_PATCH_B64: ${{ needs.normalize.outputs.patch_b64 }}' in commit, 'Le job commit doit recevoir uniquement le patch du job read-only.')
+    require('persist-credentials: false' in commit, 'Le checkout d’écriture doit refuser la persistance du jeton GitHub.')
+    require('persist-credentials: true' not in commit, 'La persistance des identifiants est interdite même dans le job d’écriture.')
+    prepare = section(commit, '      - name: Enregistrer uniquement les corrections HTML Nova\n',
+                      '      - name: Pousser uniquement le commit SEO autorisé\n')
+    push = section(commit, '      - name: Pousser uniquement le commit SEO autorisé\n')
+    require('id: auto_commit' in prepare, 'Le commit doit publier son indicateur de changement.')
+    require("echo 'changed=false' >> \"$GITHUB_OUTPUT\"" in prepare,
+            'Le cas sans changement ne doit pas pousser.')
+    require("echo 'changed=true' >> \"$GITHUB_OUTPUT\"" in prepare,
+            'Le commit doit confirmer un changement avant le push.')
+    require('if: steps.auto_commit.outputs.changed == \'true\'' in push,
+            'Le push doit dépendre de la confirmation de commit.')
+    require('env:\n          SEO_PUSH_TOKEN: ${{ github.token }}' in push,
+            'Le jeton d’écriture doit être injecté dans le push seulement.')
+    require('SEO_PUSH_TOKEN' not in prepare, 'Le jeton est interdit pendant git add et git commit.')
+    require('SEO_PUSH_TOKEN:' not in commit.split('      - name: Pousser uniquement le commit SEO autorisé\n')[0],
+            'Le jeton ne doit pas précéder le dernier step push.')
+    require('NOVA_SEO_PATCH_B64: ${{ needs.normalize.outputs.patch_b64 }}' in commit,
+            'Le job commit doit recevoir uniquement le patch du job read-only.')
 
     for forbidden in (
         'python ',
@@ -128,13 +145,30 @@ def validate_text(text: str) -> None:
         'git add -- projets/projet-nova/*.html',
         'git diff --cached --quiet',
         'git commit -m "Projet Nova A1 — normalise les métadonnées SEO [seo-autofix]"',
-        f'git push origin HEAD:{TARGET_BRANCH}',
+        'test -n "${SEO_PUSH_TOKEN:-}"',
+        'askpass="$(mktemp "$RUNNER_TEMP/nova-seo-askpass.XXXXXXXX")"',
+        'umask 077',
+        "trap 'rm -f -- \"$askpass\"' EXIT",
+        "cat > \"$askpass\" <<'ASKPASS'",
+        'chmod 0700 "$askpass"',
+        'GIT_TERMINAL_PROMPT=0 GIT_ASKPASS="$askpass"',
+        f'git -c credential.helper= push origin HEAD:{TARGET_BRANCH}',
     ):
         require(marker in commit, f'Frontière d’écriture SEO absente: {marker}')
 
-    require(commit.count('git push') == 1, 'Un seul push Git est autorisé dans le job commit.')
-    require(commit.count('persist-credentials: true') == 1, 'Une seule persistance de credentials est autorisée dans le job commit.')
-    require(text.count('persist-credentials: false') == 1, 'Le job read-only doit être l’unique checkout sans credentials persistés.')
+    require(commit.count(f'push origin HEAD:{TARGET_BRANCH}') == 1, 'Un seul push Git est autorisé dans le job commit.')
+    require(commit.count('persist-credentials: false') == 1, 'Checkout commit doit refuser les credentials persistés.')
+    require(text.count('persist-credentials: false') == 2, 'Chaque checkout doit désactiver la persistance du jeton.')
+    require('persist-credentials: true' not in active, 'Toute persistance du jeton GitHub est interdite.')
+    require(commit.count('SEO_PUSH_TOKEN: ${{ github.token }}') == 1, 'Un seul accès au jeton pour le push est autorisé.')
+    require('SEO_PUSH_TOKEN:' not in normalize, 'Le job de calcul du patch ne doit pas recevoir de jeton d’écriture.')
+    require('echo "$SEO_PUSH_TOKEN"' not in active, 'Ne jamais journaliser les credentials GitHub.')
+    require('umask 077' in push and 'chmod 0700 "$askpass"' in push,
+            'Le fichier temporaire ne doit jamais être lisible par d’autres.')
+    require('git add --' not in push and 'git commit -m' not in push,
+            'Le push avec token ne doit pas exécuter de préparation de commit.')
+    require('git commit -m' in prepare and 'git add --' in prepare,
+            'La préparation du commit doit être dans l’étape sans jeton.')
 
     expected_actions = [CHECKOUT, SETUP_PYTHON, CHECKOUT]
     require(action_targets(text) == expected_actions, f'Actions autorisées inattendues: {action_targets(text)}')
@@ -187,11 +221,29 @@ def mutation_cases(text: str) -> tuple[tuple[str, str], ...]:
         ('condition changed retirée', text.replace("needs.normalize.outputs.changed == 'true' && ", '', 1)),
         ('permission commit read', text.replace('    permissions:\n      contents: write', '    permissions:\n      contents: read', 1)),
         ('runner commit mobile', text.replace('    runs-on: ubuntu-24.04\n    timeout-minutes: 5', '    runs-on: ubuntu-latest\n    timeout-minutes: 5', 1)),
-        ('credentials commit retirés', text.replace('persist-credentials: true', 'persist-credentials: false', 1)),
+        ('checkout commit persistant', text.replace('ref: nova-a1-reference-documents\n          persist-credentials: false', 'ref: nova-a1-reference-documents\n          persist-credentials: true', 1)),
+        ('jeton final retiré', text.replace('SEO_PUSH_TOKEN: ${{ github.token }}', 'SEO_PUSH_TOKEN: missing-token', 1)),
+        ('jeton injecté pendant git commit', text.replace(
+            '      - name: Enregistrer uniquement les corrections HTML Nova\n',
+            '      - name: Enregistrer uniquement les corrections HTML Nova\n        env:\n          SEO_PUSH_TOKEN: ${{ github.token }}\n', 1)),
+        ('push sans confirmation du commit', text.replace(
+            "if: steps.auto_commit.outputs.changed == 'true'",
+            'if: always()', 1)),
+        ('sortie commit absente', text.replace(
+            "echo 'changed=true' >> \"$GITHUB_OUTPUT\"",
+            "echo 'changed=true' > /dev/null", 1)),
+        ('askpass à chemin prévisible', text.replace(
+            'askpass="$(mktemp "$RUNNER_TEMP/nova-seo-askpass.XXXXXXXX")"',
+            'askpass="$RUNNER_TEMP/nova-seo-askpass"', 1)),
+        ('prompts Git interactifs', text.replace('GIT_TERMINAL_PROMPT=0 GIT_ASKPASS="$askpass"', 'GIT_ASKPASS="$askpass"', 1)),
+        ('credential helper non désactivé', text.replace('git -c credential.helper= push origin', 'git push origin', 1)),
+        ('secret askpass non détruit', text.replace("trap 'rm -f -- \"$askpass\"' EXIT", 'echo "no cleanup"', 1)),
+        ('secret askpass permission faible', text.replace('chmod 0700 "$askpass"', 'chmod 0777 "$askpass"', 1)),
+        ('token placé dans normalisation', text.replace('      - name: Normaliser les métadonnées Nova\n', '      - name: Normaliser les métadonnées Nova\n        env:\n          SEO_PUSH_TOKEN: ${{ github.token }}\n', 1)),
         ('code dépôt exécuté en write', text.replace('      - name: Appliquer le correctif borné sans exécuter de code du dépôt\n', '      - run: python3 scripts/normalize_nova_seo.py\n\n      - name: Appliquer le correctif borné sans exécuter de code du dépôt\n', 1)),
         ('git apply check retiré', text.replace('          git apply --check /tmp/nova-seo.patch\n', '', 1)),
         ('symlink commit non vérifié', text.replace('            test ! -L "$path"\n', '', 1).replace('            test ! -L "$path"\n', '', 1)),
-        ('push vers main', text.replace(f'git push origin HEAD:{TARGET_BRANCH}', 'git push origin HEAD:main', 1)),
+        ('push vers main', text.replace(f'git -c credential.helper= push origin HEAD:{TARGET_BRANCH}', 'git -c credential.helper= push origin HEAD:main', 1)),
         ('continue-on-error', text.replace('    timeout-minutes: 5\n', '    timeout-minutes: 5\n    continue-on-error: true\n', 1)),
     )
 
@@ -218,7 +270,7 @@ def main() -> int:
     validate_text(text)
     print(
         'OK Nova SEO: normalisation en lecture seule, patch HTML borné, '
-        'écriture Git isolée sans exécution de code du dépôt et branche cible fixe.'
+        'écriture Git isolée avec jeton uniquement en mémoire pour le push final, sans checkout persistant.'
     )
     return 0
 

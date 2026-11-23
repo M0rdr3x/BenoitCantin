@@ -2,14 +2,10 @@ name: Sécurité — intégrité des workflows GitHub Actions
 
 on:
   pull_request:
-    paths:
-      - '.github/workflows/**'
-      - 'scripts/validate_workflow_supply_chain.py'
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
-    paths:
-      - '.github/workflows/**'
-      - 'scripts/validate_workflow_supply_chain.py'
   workflow_dispatch:
 
 permissions:
@@ -33,3 +29,13 @@ jobs:
         run: python scripts/validate_workflow_supply_chain.py --self-test
       - name: Vérifier chaque workflow du dépôt
         run: python scripts/validate_workflow_supply_chain.py
+      - name: Tester les 32 régressions du writer historique NOVA
+        run: python scripts/validate_nova_seo_workflow_security.py --self-test
+      - name: Contrôler le writer historique NOVA sans token ni réseau
+        run: python scripts/validate_nova_seo_workflow_security.py
+      - name: Exécuter le vrai script de push avec un faux Git et un faux jeton
+        run: python scripts/test_nova_seo_ephemeral_git_auth.py
+      - name: Tester la non-réapparition de NOVA sur l'accueil
+        run: python scripts/validate_nova_home_boundary.py --self-test
+      - name: Vérifier l'accueil public SINJIRA sans accès NOVA retiré
+        run: python scripts/validate_nova_home_boundary.py
