@@ -21,5 +21,5 @@
   .sinjira-assistant-form{grid-template-columns:minmax(0,1fr) auto;padding:7px 12px}
   .sinjira-assistant-input{min-height:44px;max-height:54px}
   .sinjira-assistant-send{min-height:44px}
-  .sinjira-assistant-privacy{padding:0 12px 7px}
+  .sinjira-assistant-privacy{padding:0 12px 7px;line-height:1.25}
 }
