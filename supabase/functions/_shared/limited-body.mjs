@@ -12,6 +12,8 @@ import { readChunkWithDeadline } from './read-chunk-deadline.mjs';
 
 // Délai ABSOLU partagé par tous les fragments PDF d'une réponse distante.
 const BINARY_RESPONSE_DEADLINE_MS = 12000;
+// Budget absolu commun à tous les fragments UTF-8 d'une même requête.
+const UTF8_BODY_DEADLINE_MS = 8000;
 
 function cancelReaderWithoutWaiting(reader) {
   try {
@@ -35,15 +37,21 @@ export async function readLimitedUtf8Body(req, maxBytes) {
     }
   }
 
+  if (req.signal?.aborted) return { ok: false };
   if (!req.body) return { ok: true, raw: '' };
   const reader = req.body.getReader();
+  const deadlineAt = performance.now() + UTF8_BODY_DEADLINE_MS;
   const decoder = new TextDecoder('utf-8', { fatal: true });
   let byteCount = 0;
   let text = '';
   try {
     while (true) {
-      const { done, value } = await reader.read();
+      const { done, value } = await readChunkWithDeadline(reader, req.signal, deadlineAt);
       if (done) break;
+      if (!(value instanceof Uint8Array)) {
+        // Chemin unique de refus et d'annulation dans catch : pas de second cancel().
+        throw new TypeError('INVALID_STREAM_CHUNK');
+      }
       byteCount += value.byteLength;
       if (byteCount > maxBytes) {
         cancelReaderWithoutWaiting(reader);
