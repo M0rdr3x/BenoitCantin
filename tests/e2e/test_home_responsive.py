@@ -215,7 +215,7 @@ def test_install_offer(browser):
     try:
         page = context.new_page()
         page.goto(BASE, wait_until="domcontentloaded", timeout=30_000)
-        card = page.locator("[data-sinjira-pwa-install]")
+        card = page.locator(".sinjira-pwa-install[data-sinjira-pwa-install]")
         card.wait_for(state="visible", timeout=12_000)
         reveal = card.locator("[data-pwa-install-reveal]")
         details = card.locator("#sinjira-pwa-install-details")
@@ -254,11 +254,11 @@ def test_install_offer(browser):
         card.locator(".sinjira-pwa-install__close").click()
         verify(card.count() == 0, "la fermeture PWA n'a pas supprimé la proposition")
         page.reload(wait_until="domcontentloaded")
-        verify(page.locator("[data-sinjira-pwa-install]").count() == 0,
+        verify(page.locator(".sinjira-pwa-install[data-sinjira-pwa-install]").count() == 0,
                "une proposition refusée réapparaît dans la même session")
         page.goto(BASE.rstrip("/") + "/projets/sinjira/romans/",
                   wait_until="domcontentloaded", timeout=30_000)
-        verify(page.locator("[data-sinjira-pwa-install]").count() == 0,
+        verify(page.locator(".sinjira-pwa-install[data-sinjira-pwa-install]").count() == 0,
                "la proposition PWA s'affiche sur une route non éligible")
     finally:
         context.close()
@@ -276,7 +276,7 @@ def test_install_offer(browser):
           prompt.userChoice=Promise.resolve({outcome:'accepted'});
           window.dispatchEvent(prompt);
         }""")
-        card = page.locator("[data-sinjira-pwa-install]")
+        card = page.locator(".sinjira-pwa-install[data-sinjira-pwa-install]")
         card.wait_for(state="visible", timeout=5_000)
         verify(card.locator("#sinjira-pwa-install-details").is_hidden(),
                "l'invitation Android doit rester compacte par défaut")
