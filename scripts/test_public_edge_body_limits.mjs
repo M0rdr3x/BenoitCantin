@@ -52,7 +52,10 @@ async function run() {
   assert.match(readerSource, /UTF8_BODY_DEADLINE_MS = 8000/);
   assert.match(readerSource, /const deadlineAt = performance\.now\(\) \+ UTF8_BODY_DEADLINE_MS/);
   assert.match(readerSource, /await readChunkWithDeadline\(reader, req\.signal, deadlineAt\)/);
-  assert.doesNotMatch(readerSource, /await reader\.read\(\)/);
+  // Le lecteur PDF distinct conserve son propre traitement : seule la
+  // fonction UTF-8 doit bannir reader.read() sans échéance.
+  const utf8Source = readerSource.split('export async function readLimitedBinaryResponse')[0];
+  assert.doesNotMatch(utf8Source, /await reader\.read\(\)/);
 
   const alreadyAborted = new AbortController();
   alreadyAborted.abort();
