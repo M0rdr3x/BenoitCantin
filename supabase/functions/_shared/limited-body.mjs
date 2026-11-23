@@ -1,3 +1,9 @@
+import { readChunkWithDeadline } from './read-chunk-deadline.mjs';
+
+// Délai ABSOLU de l'ensemble de la lecture, pas 8 secondes par fragment.
+// Même un client qui envoie des octets très lentement doit finir ou être refusé.
+const UTF8_BODY_DEADLINE_MS = 8000;
+
 /**
  * Read a public Edge request incrementally. Never call Request.text()/json()
  * before enforcing a byte ceiling: Content-Length is optional and untrusted.
@@ -30,15 +36,21 @@ export async function readLimitedUtf8Body(req, maxBytes) {
     }
   }
 
+  if (req.signal?.aborted) return { ok: false };
   if (!req.body) return { ok: true, raw: '' };
   const reader = req.body.getReader();
+  const deadlineAt = performance.now() + UTF8_BODY_DEADLINE_MS;
   const decoder = new TextDecoder('utf-8', { fatal: true });
   let byteCount = 0;
   let text = '';
   try {
     while (true) {
-      const { done, value } = await reader.read();
+      const { done, value } = await readChunkWithDeadline(reader, req.signal, deadlineAt);
       if (done) break;
+      if (!(value instanceof Uint8Array)) {
+        cancelReaderWithoutWaiting(reader);
+        return { ok: false };
+      }
       byteCount += value.byteLength;
       if (byteCount > maxBytes) {
         cancelReaderWithoutWaiting(reader);
