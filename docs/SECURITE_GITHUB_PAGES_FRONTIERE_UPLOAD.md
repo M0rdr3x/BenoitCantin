@@ -32,7 +32,7 @@ fichiers `.github/workflows/*.yml` et `.yaml`, en lecture seule :
 - deux tests négatifs supplémentaires simulent le `path` sous une clé
   `nested:` et un `path` à indentation incorrecte;
 - un second workflow qui utiliserait les actions Pages est refusé;
-- 15 tests de mutations négatives examinent les erreurs courantes, y compris un faux `path` inséré dans `env:` et un doublon de section `with:`.
+- 22 scénarios adversariaux sont refusés : 15 mutations de publication, puis sept variantes YAML (`uses` entre guillemets, clé `uses` citée, espace avant `:`, scalaire replié/littéral), en plus des cas légitimes.
 
 Le workflow
 `.github/workflows/github-pages-artifact-scope-security.yml`
