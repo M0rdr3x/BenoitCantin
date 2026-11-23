@@ -1,0 +1,14 @@
+{
+  "_purpose": "Read-only, human-reviewable snapshots of seven intentionally retired Edge entrypoints. Do not deploy these fixtures.",
+  "_policy": "All seven currently return HTTP 410 and no-store; changes fail the monitoring audit until a reviewed update. Deletion requires an explicit contract update.",
+  "contract_version": 1,
+  "functions": {
+    "admin-reader": "import \"jsr:@supabase/functions-js/edge-runtime.d.ts\";\nDeno.serve(() => new Response(JSON.stringify({ok:false,error:\"FUNCTION_RETIRED\",message:\"Cette fonction SINJIRA™ a été retirée.\"}),{status:410,headers:{\"Content-Type\":\"application/json; charset=utf-8\",\"Cache-Control\":\"no-store\"}}));\n",
+    "generate-sinjira-character": "import \"jsr:@supabase/functions-js/edge-runtime.d.ts\";\nDeno.serve(() => new Response(JSON.stringify({ok:false,error:\"FUNCTION_RETIRED\",message:\"Cette fonction SINJIRA™ a été retirée.\"}),{status:410,headers:{\"Content-Type\":\"application/json; charset=utf-8\",\"Cache-Control\":\"no-store\"}}));\n",
+    "admin-literary": "import \"jsr:@supabase/functions-js/edge-runtime.d.ts\";\nDeno.serve(() => new Response(JSON.stringify({ok:false,error:\"FUNCTION_RETIRED\",message:\"Cette fonction SINJIRA™ a été retirée.\"}),{status:410,headers:{\"Content-Type\":\"application/json; charset=utf-8\",\"Cache-Control\":\"no-store\"}}));\n",
+    "validate-phone-v22": "import \"jsr:@supabase/functions-js/edge-runtime.d.ts\";\nDeno.serve(() => new Response(JSON.stringify({ok:false,error:\"FUNCTION_RETIRED\",message:\"Cette fonction SINJIRA™ a été retirée.\"}),{status:410,headers:{\"Content-Type\":\"application/json; charset=utf-8\",\"Cache-Control\":\"no-store\"}}));\n",
+    "guardian-create-youth-v22": "import \"jsr:@supabase/functions-js/edge-runtime.d.ts\";\nDeno.serve(() => new Response(JSON.stringify({ error: \"FUNCTION_RETIRED\", message: \"Cette fonction SINJIRA a été retirée.\" }), { status: 410, headers: { \"content-type\": \"application/json; charset=utf-8\", \"cache-control\": \"no-store\" } }));\n",
+    "create-youth-account": "import \"jsr:@supabase/functions-js/edge-runtime.d.ts\";\nDeno.serve(() => new Response(JSON.stringify({ error: \"FUNCTION_RETIRED\", message: \"Cette fonction SINJIRA a été retirée.\" }), { status: 410, headers: { \"content-type\": \"application/json; charset=utf-8\", \"cache-control\": \"no-store\" } }));\n",
+    "sinjira-maintenance-upload-20261007": "Deno.serve(()=>new Response(JSON.stringify({ok:false,error:\"Maintenance terminée.\"}),{status:410,headers:{\"Content-Type\":\"application/json; charset=utf-8\",\"Cache-Control\":\"no-store\"}}));"
+  }
+}
