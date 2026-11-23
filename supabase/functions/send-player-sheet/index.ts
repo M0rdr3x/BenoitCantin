@@ -6,6 +6,10 @@ import { requiredUser } from '../_shared/auth.ts';
 const FUNCTION_VERSION='24.5.54';
 const MAX_REQUEST_BYTES=220_000;
 const MAX_TEMPLATE_BYTES=15*1024*1024;
+// Durée absolue pour la connexion et le flux distant, sans redirection.
+const TEMPLATE_FETCH_TIMEOUT_MS=12000;
+// Garde obligatoire avant toute activation future du transport courriel payant.
+const EMAIL_DELIVERY_TIMEOUT_MS=8000;
 const MAX_TEXT=6000;
 const PAID_EXTERNAL_SERVICES_ENABLED=false;
 const TEMPLATE_ORIGIN='https://www.benoitcantin.com';
@@ -78,7 +82,7 @@ function templateUrl(mode:'solo'|'standard'){
 }
 
 async function fetchTemplateBytes(mode:'solo'|'standard'){
-  const response=await fetch(templateUrl(mode),{cache:'no-store',redirect:'error'});
+  const response=await fetch(templateUrl(mode),{cache:'no-store',redirect:'error',signal:AbortSignal.timeout(TEMPLATE_FETCH_TIMEOUT_MS)});
   if(!response.ok)throw new Error('PLAYER_SHEET_TEMPLATE_FETCH_FAILED');
 
   const declared=Number(response.headers.get('content-length')||'0');
@@ -146,6 +150,7 @@ Deno.serve(async(req)=>{
     const sent=await fetch('https://api.resend.com/emails',{
       method:'POST',
       redirect:'error',
+      signal:AbortSignal.timeout(EMAIL_DELIVERY_TIMEOUT_MS),
       headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json'},
       body:JSON.stringify({
         from,
