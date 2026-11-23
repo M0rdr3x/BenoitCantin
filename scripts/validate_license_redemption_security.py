@@ -18,6 +18,7 @@ REQUIRED = {
     'journaux d’erreurs expurgés': "code:'LICENSE_REDEEM_FAILED'",
     'secret serveur du code': "Deno.env.get('SINJIRA_LICENSE_PEPPER')",
     'client serveur': 'serviceClient()',
+    'diagnostic health non sensible': "return privateJson({ok:true,service:'redeem-license-code',version:VERSION});",
     'RPC canonique': "s.rpc('redeem_sinjira_activation'",
     'identité imposée par le serveur': 'p_user_id:user.id',
     'réponse privée': "'Cache-Control':'private, no-store, max-age=0'",
@@ -37,6 +38,8 @@ FORBIDDEN = {
     "journalisation d'erreur brute": "console.error('[redeem-license-code]',error)",
     "journalisation d'exception brute": "console.error('[redeem-license-code]',e)",
     'lecture JSON directe non bornée espacée': 'await req.json (',
+    'exposition interne du schéma': 'schema:health.data',
+    'exposition configuration du secret': 'pepper_configured:true',
 }
 
 
@@ -82,7 +85,7 @@ Deno.serve(async req=>{
  const parsed=await readLimitedJson(req);
  const pepper=Deno.env.get('SINJIRA_LICENSE_PEPPER');
  const s=serviceClient();
- if(parsed.body?.action==='health')return null;
+ if(parsed.body?.action==='health')return privateJson({ok:true,service:'redeem-license-code',version:VERSION});
  return s.rpc('redeem_sinjira_activation',{p_code_hash:'x',p_user_id:user.id});
 });
 console.error('[redeem-license-code]',{code:'LICENSE_REDEEM_FAILED'});
@@ -122,6 +125,16 @@ console.error('[redeem-license-code]',{code:'LICENSE_REDEEM_FAILED'});
         body_size = validate(path)
         if not any('4096 octets' in item for item in body_size):
             raise AssertionError('Une limite de corps affaiblie doit être bloquée.')
+
+        safe_health = "return privateJson({ok:true,service:'redeem-license-code',version:VERSION});"
+        for label, malicious in {
+            'exposition du schéma': "return privateJson({ok:true,service:'redeem-license-code',version:VERSION,schema:health.data});",
+            'divulgation état secret': "return privateJson({ok:true,service:'redeem-license-code',version:VERSION,pepper_configured:true});",
+        }.items():
+            path.write_text(safe.replace(safe_health, malicious), encoding='utf-8')
+            errors = validate(path)
+            if not errors:
+                raise AssertionError('Diagnostic interne exposé sans détection: ' + label)
 
 
 def main() -> int:
