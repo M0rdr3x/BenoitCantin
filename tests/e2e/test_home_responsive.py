@@ -138,6 +138,15 @@ def test_short_mobile_menu(page):
                f"focus perdu sur le bouton à {width}x{height}")
         for index, expected in enumerate(NAV_PATHS):
             page.keyboard.press("Tab")
+            if index == 0 and nav.evaluate(
+                "(el) => document.activeElement === el"
+            ):
+                # Firefox ajoute une étape Tab valide sur les régions de
+                # défilement au clavier : NAV est une région scrollable
+                # étiquetée. Les sept liens doivent rester visitables ensuite.
+                verify(nav.get_attribute("aria-label") == "Navigation principale",
+                       f"zone défilante sans nom accessible à {width}x{height}")
+                page.keyboard.press("Tab")
             focused = page.evaluate("""() => {
               const link = document.activeElement;
               if (!link || !link.matches('[data-main-nav] a')) return null;
