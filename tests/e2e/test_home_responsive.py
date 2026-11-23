@@ -130,8 +130,22 @@ def test_short_mobile_menu(page):
         toggle.press("Enter")
         verify(nav.is_visible() and toggle.get_attribute("aria-expanded") == "true",
                f"menu compact impossible à ouvrir à {width}x{height}")
-        for _ in NAV_PATHS:
+        # Firefox peut transférer le focus au moment de l'activation du
+        # bouton. Repartir de sa position explicite plutôt que supposer
+        # que le focus demeure inchangé après la touche Entrée.
+        toggle.focus()
+        verify(toggle.evaluate("(el) => document.activeElement === el"),
+               f"focus perdu sur le bouton à {width}x{height}")
+        for index, expected in enumerate(NAV_PATHS):
             page.keyboard.press("Tab")
+            focused = page.evaluate("""() => {
+              const link = document.activeElement;
+              if (!link || !link.matches('[data-main-nav] a')) return null;
+              return new URL(link.href).pathname;
+            }""")
+            verify(focused == expected,
+                   f"parcours clavier incomplet à {width}x{height}, lien "
+                   f"{index + 1}/7 : attendu {expected}, obtenu {focused}")
         last = nav.locator("a").last
         verify(last.evaluate("(a) => document.activeElement === a"),
                f"lien Compte non atteignable au clavier à {width}x{height}")
