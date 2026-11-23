@@ -117,6 +117,91 @@ def test_home(page):
            == "/projets/sinjira/", "destination officielle SINJIRA incorrecte")
 
 
+
+def test_short_mobile_menu(page):
+    """Le dernier lien reste atteignable au clavier sur petits écrans/paysage."""
+    nav = page.locator("[data-main-nav]")
+    toggle = page.locator("[data-menu-toggle]")
+    for width, height in ((240, 420), (320, 340), (390, 360)):
+        page.set_viewport_size({"width": width, "height": height})
+        verify(toggle.is_visible() and nav.is_hidden(),
+               f"menu compact non replié à {width}x{height}")
+        toggle.focus()
+        toggle.press("Enter")
+        verify(nav.is_visible() and toggle.get_attribute("aria-expanded") == "true",
+               f"menu compact impossible à ouvrir à {width}x{height}")
+        # Firefox peut transférer le focus au moment de l'activation du
+        # bouton. Repartir de sa position explicite plutôt que supposer
+        # que le focus demeure inchangé après la touche Entrée.
+        toggle.focus()
+        verify(toggle.evaluate("(el) => document.activeElement === el"),
+               f"focus perdu sur le bouton à {width}x{height}")
+        for index, expected in enumerate(NAV_PATHS):
+            page.keyboard.press("Tab")
+            if index == 0 and nav.evaluate(
+                "(el) => document.activeElement === el"
+            ):
+                # Firefox ajoute une étape Tab valide sur les régions de
+                # défilement au clavier : NAV est une région scrollable
+                # étiquetée. Les sept liens doivent rester visitables ensuite.
+                verify(nav.get_attribute("aria-label") == "Navigation principale",
+                       f"zone défilante sans nom accessible à {width}x{height}")
+                page.keyboard.press("Tab")
+            focused = page.evaluate("""() => {
+              const link = document.activeElement;
+              if (!link || !link.matches('[data-main-nav] a')) return null;
+              return new URL(link.href).pathname;
+            }""")
+            if focused != expected:
+                focus_state = page.evaluate("""() => {
+                  const active = document.activeElement;
+                  const nav = document.querySelector('[data-main-nav]');
+                  const toggle = document.querySelector('[data-menu-toggle]');
+                  return {
+                    tag: active?.tagName || null,
+                    id: active?.id || null,
+                    className: String(active?.className || '').slice(0, 140),
+                    href: active?.getAttribute('href') || null,
+                    toggleExpanded: toggle?.getAttribute('aria-expanded'),
+                    menuVisible: getComputedStyle(nav).display,
+                    menuLinks: [...nav.querySelectorAll('a')].map(a => ({
+                      href: a.getAttribute('href'),
+                      tabIndex: a.tabIndex,
+                      visible: a.getBoundingClientRect().height > 0
+                    }))
+                  };
+                }""")
+                raise AssertionError(
+                    f"{BROWSER}: parcours clavier incomplet à {width}x{height}, "
+                    f"lien {index + 1}/7 : attendu {expected}, obtenu {focused}. "
+                    f"État public du focus : {focus_state}"
+                )
+        last = nav.locator("a").last
+        verify(last.evaluate("(a) => document.activeElement === a"),
+               f"lien Compte non atteignable au clavier à {width}x{height}")
+        page.wait_for_function("""() => {
+          const nav = document.querySelector('[data-main-nav]');
+          const last = nav?.querySelector('a:last-of-type');
+          if (!nav || !last) return false;
+          const menu = nav.getBoundingClientRect();
+          const link = last.getBoundingClientRect();
+          return link.top >= menu.top - 2 && link.bottom <= menu.bottom + 2;
+        }""", timeout=5_000)
+        dimensions = nav.evaluate("""el => ({
+          scrollable: getComputedStyle(el).overflowY === 'auto' &&
+                      el.scrollHeight > el.clientHeight,
+          lastHeight: el.querySelector('a:last-of-type').getBoundingClientRect().height,
+          scrollTop: el.scrollTop
+        })""")
+        verify(dimensions["scrollable"] and dimensions["lastHeight"] >= 47.5
+               and dimensions["scrollTop"] > 0,
+               f"dernier lien inaccessible dans le menu défilant à {width}x{height}: {dimensions}")
+        page.keyboard.press("Escape")
+        verify(nav.is_hidden() and toggle.get_attribute("aria-expanded") == "false"
+               and toggle.evaluate("(el) => document.activeElement === el"),
+               f"menu compact non refermé au clavier à {width}x{height}")
+
+
 def test_without_javascript(browser):
     context = browser.new_context(
         java_script_enabled=False, service_workers="block", locale="fr-CA",
@@ -159,7 +244,9 @@ def run():
                 reduced_motion="reduce", service_workers="block",
             )
             try:
-                test_home(context.new_page())
+                page = context.new_page()
+                test_home(page)
+                test_short_mobile_menu(page)
             finally:
                 context.close()
             test_without_javascript(browser)
