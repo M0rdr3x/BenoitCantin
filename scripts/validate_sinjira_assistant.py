@@ -6,7 +6,7 @@ JS = ROOT / "assets/js/sinjira-assistant.js"
 CSS = ROOT / "assets/css/sinjira-assistant.css"
 SITE = ROOT / "assets/js/site.js"
 NOVA_RUNTIME = ROOT / "projets/projet-nova/script.js"
-ASSISTANT_VERSION = "24.4.48"
+ASSISTANT_VERSION = "24.4.49"
 
 errors = []
 
@@ -52,6 +52,11 @@ for marker in (
 require("prefers-reduced-motion" in css, "le style doit respecter prefers-reduced-motion")
 require(":focus-visible" in css, "les contrôles de l’assistant doivent avoir un focus visible")
 require("forced-colors" in css, "le style doit prévoir le mode forced-colors")
+for marker in ("100dvh", "max-height:560px", ".sinjira-assistant-close{min-width:44px",
+               ".sinjira-assistant-chip,.sinjira-assistant-link{min-height:44px"):
+    require(marker in css, f"accessibilité mobile assistant: garde-fou absent {marker}")
+for label in ("'Portail SINJIRA™': [", "'Jeux SINJIRA™': [", "'Communauté SINJIRA™': ["):
+    require(label in js, f"suggestions contextuelles SINJIRA absentes: {label}")
 
 # L’assistant ne doit jamais proposer de routes d’administration ou de secrets.
 require("'/admin/" not in js and '"/admin/' not in js, "l’assistant public ne doit pas proposer de route d’administration")
@@ -71,7 +76,7 @@ require(len(intent_blocks) >= 27, "la base d’aide doit couvrir au moins 27 int
 require("var PAGE_CONTEXTS = [" in js, "base de contexte par page absente")
 require("function currentPageContext()" in js, "résolution du contexte de page absente")
 require("function isPageHelpQuery(query)" in js, "intention d’aide sur la page absente")
-require("var CONTEXT_SUGGESTIONS = {" in js and "function currentSuggestions(context)" in js, "suggestions contextuelles V24.4.48 absentes")
+require("var CONTEXT_SUGGESTIONS = {" in js and "function currentSuggestions(context)" in js, "suggestions contextuelles V24.4.49 absentes")
 for marker in ("Enregistré mais non envoyé", "Voir mon identité", "Synchronisation", "Lire la démo"):
     require(marker in js, f"suggestion contextuelle absente: {marker}")
 require("contextLabel: pageContext.label" in js, "diagnostic du contexte public absent")
