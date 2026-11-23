@@ -57,7 +57,9 @@ Deno.serve(async req=>{
     if(!health.ok)return privateJson({ok:false,error:'Service de licence indisponible.',code:'LICENSE_SCHEMA_UNAVAILABLE'},503);
 
     if(body?.action==='health'){
-      return privateJson({ok:true,service:'redeem-license-code',version:VERSION,pepper_configured:true,schema:health.data});
+      // Le diagnostic public des comptes connectés confirme seulement la disponibilité.
+      // Les noms des tables, des RPC et les drapeaux de configuration restent côté serveur.
+      return privateJson({ok:true,service:'redeem-license-code',version:VERSION});
     }
 
     const value=String(body?.code||'').trim();
