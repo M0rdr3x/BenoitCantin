@@ -183,7 +183,7 @@ def self_test() -> None:
     for label, altered in mutants:
         assert inspect_workflows({APPROVED: altered}), "Dangerous Pages fixture accepted: " + label
     assert inspect_workflows({APPROVED: good, "extra.yml": good})
-    print("OK : 15 mutations Pages refusées; upload _site direct obligatoire.")
+    print("OK : 22 scénarios Pages hostiles refusés; upload _site direct obligatoire.")
 
 
 def main() -> int:
