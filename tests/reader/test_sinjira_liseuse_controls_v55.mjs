@@ -69,7 +69,6 @@ test('V56 : les cinq commandes typographiques préservent la position et rafraî
   for(const name of ['reader-size','reader-font','reader-line-height',
     'reader-text-width','reader-letter-spacing']){
     const marker=name==='reader-size'?'input':'change';
-    const rx=new RegExp("reader-"+name.replace(/^reader-/,'')+"['\\]"+".addEventListener\\('"+marker+"'");
     assert.ok(js.includes("'"+name+"').addEventListener('"+marker+"'"),name+' événement absent');
   }
   assert.equal((js.match(/updateReaderTypography\(\(\)=>/g)||[]).length,5);
