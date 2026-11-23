@@ -117,6 +117,47 @@ def test_home(page):
            == "/projets/sinjira/", "destination officielle SINJIRA incorrecte")
 
 
+
+def test_short_mobile_menu(page):
+    """Le dernier lien reste atteignable au clavier sur petits écrans/paysage."""
+    nav = page.locator("[data-main-nav]")
+    toggle = page.locator("[data-menu-toggle]")
+    for width, height in ((240, 420), (320, 340), (390, 360)):
+        page.set_viewport_size({"width": width, "height": height})
+        verify(toggle.is_visible() and nav.is_hidden(),
+               f"menu compact non replié à {width}x{height}")
+        toggle.focus()
+        toggle.press("Enter")
+        verify(nav.is_visible() and toggle.get_attribute("aria-expanded") == "true",
+               f"menu compact impossible à ouvrir à {width}x{height}")
+        for _ in NAV_PATHS:
+            page.keyboard.press("Tab")
+        last = nav.locator("a").last
+        verify(last.evaluate("(a) => document.activeElement === a"),
+               f"lien Compte non atteignable au clavier à {width}x{height}")
+        page.wait_for_function("""() => {
+          const nav = document.querySelector('[data-main-nav]');
+          const last = nav?.querySelector('a:last-of-type');
+          if (!nav || !last) return false;
+          const menu = nav.getBoundingClientRect();
+          const link = last.getBoundingClientRect();
+          return link.top >= menu.top - 2 && link.bottom <= menu.bottom + 2;
+        }""", timeout=5_000)
+        dimensions = nav.evaluate("""el => ({
+          scrollable: getComputedStyle(el).overflowY === 'auto' &&
+                      el.scrollHeight > el.clientHeight,
+          lastHeight: el.querySelector('a:last-of-type').getBoundingClientRect().height,
+          scrollTop: el.scrollTop
+        })""")
+        verify(dimensions["scrollable"] and dimensions["lastHeight"] >= 47.5
+               and dimensions["scrollTop"] > 0,
+               f"dernier lien inaccessible dans le menu défilant à {width}x{height}: {dimensions}")
+        page.keyboard.press("Escape")
+        verify(nav.is_hidden() and toggle.get_attribute("aria-expanded") == "false"
+               and toggle.evaluate("(el) => document.activeElement === el"),
+               f"menu compact non refermé au clavier à {width}x{height}")
+
+
 def test_without_javascript(browser):
     context = browser.new_context(
         java_script_enabled=False, service_workers="block", locale="fr-CA",
@@ -159,7 +200,9 @@ def run():
                 reduced_motion="reduce", service_workers="block",
             )
             try:
-                test_home(context.new_page())
+                page = context.new_page()
+                test_home(page)
+                test_short_mobile_menu(page)
             finally:
                 context.close()
             test_without_javascript(browser)
