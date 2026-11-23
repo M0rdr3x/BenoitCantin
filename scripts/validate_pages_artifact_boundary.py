@@ -15,7 +15,8 @@ WORKFLOWS = ROOT / ".github" / "workflows"
 APPROVED = "deploy-github-pages-isolated.yml"
 UPLOAD = "actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa"
 DEPLOY = "actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346"
-USES = re.compile(r"""^\s*(?:-\s*)?uses\s*:\s*(?:"([^"\n]+)"|'([^'\n]+)'|([^\s#]+))\s*(?:#.*)?$""", re.I)
+USES = re.compile(r"""^\s*(?:-\s*)?(?:uses|"uses"|'uses')\s*:\s*(?:"([^"\n]+)"|'([^'\n]+)'|([^\s#]+))\s*(?:#.*)?$""", re.I)
+MULTILINE_USES = re.compile(r"""(?m)^\s*(?:-\s*)?(?:uses|"uses"|'uses')\s*:\s*[>|]""", re.I)
 PAGES_ACTION = re.compile(r"(?:^|/)(?:upload-pages-artifact|deploy-pages)$", re.I)
 SHA40 = re.compile(r"^[a-f0-9]{40}$")
 GATES = (
@@ -85,6 +86,10 @@ def inspect_workflows(files: dict[str, str]) -> list[str]:
         return ["Workflow Pages isolé obligatoire absent"]
     actions: list[tuple[str, str]] = []
     for name, source in files.items():
+        # A folded YAML scalar can hide the action identifier on a following
+        # line. Refuse it rather than silently accepting unrecognized uses.
+        if MULTILINE_USES.search(source):
+            errors.append(f"{name}: valeur uses: multiligne interdite")
         for line, action in page_uses(source):
             actions.append((name, action))
             if name != APPROVED:
@@ -135,10 +140,17 @@ def self_test() -> None:
     assert inspect_workflows({APPROVED: quoted}) == []
     quoted_spaced = good.replace("uses: " + UPLOAD, "uses : " + UPLOAD)
     assert inspect_workflows({APPROVED: quoted_spaced}) == []
+    quoted_key = good.replace("uses: " + UPLOAD, "'uses': " + UPLOAD)
+    quoted_key = quoted_key.replace("uses: " + DEPLOY, '"uses": ' + DEPLOY)
+    assert inspect_workflows({APPROVED: quoted_key}) == []
     for label, rogue in (
         ("quoted rogue upload", '      - uses: "' + UPLOAD + '"\n'),
         ("quoted rogue deploy", "      - uses: '" + DEPLOY + "'\n"),
         ("spaced rogue upload", "      - uses : " + UPLOAD + "\n"),
+        ("quoted key rogue upload", "      - 'uses': " + UPLOAD + "\n"),
+        ("quoted key rogue deploy", '      - "uses": ' + DEPLOY + "\n"),
+        ("folded rogue upload", "      - uses: >-\n        " + UPLOAD + "\n"),
+        ("literal rogue deploy", "      - 'uses': |\n        " + DEPLOY + "\n"),
     ):
         assert inspect_workflows({APPROVED: good, label + ".yml": rogue}), label
     assert path_of_action(good, next(i for i, _ in page_uses(good))) == "_site"
