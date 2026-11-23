@@ -84,6 +84,48 @@ async function run() {
     readLimitedBinaryResponse(streamResponse([pdf]), -1),
     TypeError
   );
+  for (const invalidDeadline of [0, -1, 30001, NaN, 1.5]) {
+    await assert.rejects(
+      readLimitedBinaryResponse(streamResponse([pdf]), pdf.byteLength, invalidDeadline),
+      TypeError,
+      'Invalid deadline must be rejected'
+    );
+  }
+
+  // A remote source may send a PDF prefix and then stall indefinitely.
+  let stalledCancelled = false;
+  const stalledAfterPrefix = new Response(new ReadableStream({
+    start(controller) { controller.enqueue(pdf.subarray(0, 3)); },
+    cancel() {
+      stalledCancelled = true;
+      return new Promise(() => {}); // Malicious cancel() never resolves.
+    }
+  }, { highWaterMark: 0 }));
+  rejectResult(await Promise.race([
+    readLimitedBinaryResponse(stalledAfterPrefix, pdf.byteLength, 30),
+    new Promise((_, reject) => setTimeout(
+      () => reject(new Error('Stalled binary stream was not rejected')), 1200
+    ))
+  ]));
+  assert.equal(stalledCancelled, true, 'Stalled remote stream must receive cancellation');
+
+  // An upstream that never delivers its first byte must not block the reader.
+  const neverStarts = new Response(new ReadableStream({
+    pull() { return new Promise(() => {}); }
+  }, { highWaterMark: 0 }));
+  rejectResult(await Promise.race([
+    readLimitedBinaryResponse(neverStarts, pdf.byteLength, 30),
+    new Promise((_, reject) => setTimeout(
+      () => reject(new Error('Initial binary read deadline failed')), 1200
+    ))
+  ]));
+
+  const binaryReaderSource = readFileSync(
+    resolve(root, 'supabase/functions/_shared/limited-body.mjs'), 'utf8'
+  ).split('export async function readLimitedBinaryResponse')[1];
+  assert.match(binaryReaderSource, /readChunkWithDeadline\(reader, undefined, deadlineAt\)/);
+  assert.match(binaryReaderSource, /performance\.now\(\) \+ timeoutMs/);
+  assert.doesNotMatch(binaryReaderSource, /await reader\.read\(\)/);
 
   // Keep this test tied to the actual business code; a helper unused by the
   // report generator is not a mitigation.
@@ -94,6 +136,6 @@ async function run() {
   assert.ok(report.includes("url.origin!==TEMPLATE_ORIGIN"), 'Template origin must remain fixed');
   assert.ok(report.includes("!=='%PDF-'"), 'PDF signature must remain checked');
   assert.ok(!report.includes('await response.arrayBuffer()'), 'Unbounded PDF read is forbidden');
-  console.log('PASS binary Edge: PDF streams capped, fake sizes, invalid headers, cancel on excess, interrupted/empty payloads, actual integration.');
+  console.log('PASS binary Edge: PDF size bound, forged headers, cancel, interrupted streams, deadlines for stalled sources, actual integration.');
 }
 await run();
