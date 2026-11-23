@@ -9,7 +9,7 @@ from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_pla
 BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
 BROWSER_NAME = os.environ.get("BROWSER", "chromium").strip().lower()
 SUPPORTED_BROWSERS = {"chromium", "firefox", "webkit"}
-ASSISTANT_VERSION = "24.4.48"
+ASSISTANT_VERSION = "24.4.49"
 PUBLIC_ROUTES = [
     "",
     "a-propos.html",
@@ -1069,6 +1069,11 @@ def run() -> None:
             assert_true(assistant.get("privacy") == "ephemeral-memory-only", f"{BROWSER_NAME}: contrat de confidentialité assistant invalide")
             assert_true(assistant.get("contextLabel") == "Portail SINJIRA™", f"{BROWSER_NAME}: contexte SINJIRA assistant invalide")
             assert_true(int(assistant.get("intentCount") or 0) >= 20, f"{BROWSER_NAME}: base d’aide assistant trop limitée")
+            suggestions = page.locator(".sinjira-assistant-chip").all_text_contents()
+            assert_true(suggestions == ["Lire les romans", "Découvrir les jeux", "Créer mon personnage"],
+                        f"{BROWSER_NAME}: les suggestions du portail SINJIRA doivent aider à naviguer : {suggestions}")
+            assert_true("Projet Nova" not in page.locator(".sinjira-assistant-suggestions").inner_text(),
+                        f"{BROWSER_NAME}: une archive ne doit plus être promue sur le portail SINJIRA")
 
             assistant_toggle = page.locator(".sinjira-assistant-toggle")
             assert_true(assistant_toggle.count() == 1, f"{BROWSER_NAME}: bouton Aide IA absent")
@@ -1111,6 +1116,23 @@ def run() -> None:
             page.keyboard.press("Escape")
             assert_true(panel.is_hidden(), f"{BROWSER_NAME}: Escape ne ferme pas l’assistant")
 
+            # Les suggestions doivent suivre la rubrique courante, y compris
+            # la page du jeu Fracture. L'archive Nova reste accessible seulement
+            # par demande explicite ou par sa propre route.
+            page.goto(urljoin(BASE_URL, "projets/sinjira/jeux/"), wait_until="domcontentloaded", timeout=30_000)
+            wait_for_assistant(page)
+            assert_true(page.evaluate("window.__SINJIRA_ASSISTANT__.contextLabel") == "Jeux SINJIRA™",
+                        f"{BROWSER_NAME}: contexte assistant Jeux incorrect")
+            assert_true(page.locator(".sinjira-assistant-chip").all_text_contents() ==
+                        ["Voir les jeux", "Mes parties", "Fracture"],
+                        f"{BROWSER_NAME}: accès rapides jeux manquants")
+            page.goto(urljoin(BASE_URL, "projets/sinjira/jeux/fracture-du-reseau-mere/"),
+                      wait_until="domcontentloaded", timeout=30_000)
+            wait_for_assistant(page)
+            assert_true(page.evaluate("window.__SINJIRA_ASSISTANT__.contextLabel") == "Fracture du Réseau-Mère",
+                        f"{BROWSER_NAME}: aide contextuelle Fracture absente")
+            assert_true("Projet Nova" not in page.locator(".sinjira-assistant-suggestions").inner_text(),
+                        f"{BROWSER_NAME}: promotion Nova présente sur une page Jeux")
 
             # Le Registre SINJIRA est désormais progressif, sans persistance
             # locale des réponses. Les tests restent anonymes et ne soumettent
@@ -1445,6 +1467,34 @@ def run() -> None:
             assert_true(mobile_panel.is_visible(), f"{BROWSER_NAME}: assistant mobile SINJIRA ne s’ouvre pas")
             assistant_overflow = mobile_page.evaluate("document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2")
             assert_true(assistant_overflow, f"{BROWSER_NAME}: assistant crée un débordement horizontal en 390 px")
+            for width, height in ((390, 360), (320, 420), (240, 420)):
+                mobile_page.set_viewport_size({"width": width, "height": height})
+                visible = mobile_page.evaluate("""() => {
+                  const panel = document.querySelector('#sinjira-assistant-panel');
+                  const children = ['.sinjira-assistant-close', '.sinjira-assistant-input',
+                                    '.sinjira-assistant-send', '.sinjira-assistant-privacy'];
+                  const bounds = node => {
+                    const b = node.getBoundingClientRect();
+                    return {left:b.left,right:b.right,top:b.top,bottom:b.bottom,
+                            height:b.height,width:b.width};
+                  };
+                  return {panel:bounds(panel),
+                          children:children.map(sel => ({selector:sel, ...bounds(panel.querySelector(sel))})),
+                          overflow:document.documentElement.scrollWidth > innerWidth + 2};
+                }""")
+                assert_true(not visible["overflow"] and visible["panel"]["top"] >= -2
+                            and visible["panel"]["bottom"] <= height + 2,
+                            f"{BROWSER_NAME}: panneau assistant déborde à {width}x{height}: {visible}")
+                for child in visible["children"]:
+                    assert_true(child["top"] >= visible["panel"]["top"] - 2
+                                and child["bottom"] <= visible["panel"]["bottom"] + 2
+                                and child["left"] >= visible["panel"]["left"] - 2
+                                and child["right"] <= visible["panel"]["right"] + 2,
+                                f"{BROWSER_NAME}: commande ou confidentialité masquée à "
+                                f"{width}x{height}: {child}")
+                    if child["selector"] in (".sinjira-assistant-close", ".sinjira-assistant-send"):
+                        assert_true(child["height"] >= 43.5,
+                                    f"{BROWSER_NAME}: cible tactile assistant sous 44px à {width}x{height}")
             mobile_page.keyboard.press("Escape")
 
         # Le Centre Vie privée SINJIRA est volontairement exclu des essais
