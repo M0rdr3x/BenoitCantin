@@ -202,6 +202,91 @@ def test_short_mobile_menu(page):
                f"menu compact non refermé au clavier à {width}x{height}")
 
 
+
+def test_install_offer(browser):
+    """iPhone : invite discrète, instructions sur demande; Android : vrai bouton d'installation."""
+    iphone_ua = ("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
+                 "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 "
+                 "Mobile/15E148 Safari/604.1")
+    context = browser.new_context(
+        locale="fr-CA", user_agent=iphone_ua, service_workers="block",
+        reduced_motion="reduce", viewport={"width": 240, "height": 420},
+    )
+    try:
+        page = context.new_page()
+        page.goto(BASE, wait_until="domcontentloaded", timeout=30_000)
+        card = page.locator(".sinjira-pwa-install[data-sinjira-pwa-install]")
+        card.wait_for(state="visible", timeout=12_000)
+        reveal = card.locator("[data-pwa-install-reveal]")
+        details = card.locator("#sinjira-pwa-install-details")
+        for width, height in ((240, 420), (320, 340), (390, 360)):
+            page.set_viewport_size({"width": width, "height": height})
+            verify(details.is_hidden() and reveal.get_attribute("aria-expanded") == "false",
+                   f"l'invitation iOS occupe le site sans accord à {width}x{height}")
+            metrics = card.evaluate("""el => {
+              const b=el.getBoundingClientRect();
+              const button=el.querySelector('[data-pwa-install-reveal]').getBoundingClientRect();
+              return {top:b.top,bottom:b.bottom,height:b.height,buttonHeight:button.height,
+                      overflow:document.documentElement.scrollWidth>innerWidth+2};
+            }""")
+            verify(not metrics["overflow"] and metrics["height"] <= 110
+                   and metrics["buttonHeight"] >= 43.5 and metrics["top"] >= -2
+                   and metrics["bottom"] <= height + 2,
+                   f"invitation iOS compacte illisible à {width}x{height}: {metrics}")
+            reveal.click()
+            verify(details.is_visible() and reveal.get_attribute("aria-expanded") == "true",
+                   f"les instructions iOS ne s'ouvrent pas à {width}x{height}")
+            expanded = card.evaluate("""el => {
+              const b=el.getBoundingClientRect();
+              return {top:b.top,bottom:b.bottom,
+                      overflow:document.documentElement.scrollWidth>innerWidth+2,
+                      scrollable:el.scrollHeight>el.clientHeight};
+            }""")
+            verify(not expanded["overflow"] and expanded["top"] >= -2
+                   and expanded["bottom"] <= height + 2,
+                   f"les instructions iOS débordent à {width}x{height}: {expanded}")
+            verify("Sur iPhone/iPad" in details.inner_text(),
+                   "instructions manuelles Safari indisponibles")
+            page.keyboard.press("Escape")
+            verify(details.is_hidden() and reveal.get_attribute("aria-expanded") == "false"
+                   and reveal.evaluate("(el) => document.activeElement === el"),
+                   f"Échap ne replie pas les instructions iOS à {width}x{height}")
+        card.locator(".sinjira-pwa-install__close").click()
+        verify(card.count() == 0, "la fermeture PWA n'a pas supprimé la proposition")
+        page.reload(wait_until="domcontentloaded")
+        verify(page.locator(".sinjira-pwa-install[data-sinjira-pwa-install]").count() == 0,
+               "une proposition refusée réapparaît dans la même session")
+        page.goto(BASE.rstrip("/") + "/projets/sinjira/romans/",
+                  wait_until="domcontentloaded", timeout=30_000)
+        verify(page.locator(".sinjira-pwa-install[data-sinjira-pwa-install]").count() == 0,
+               "la proposition PWA s'affiche sur une route non éligible")
+    finally:
+        context.close()
+
+    android = browser.new_context(
+        locale="fr-CA", service_workers="block",
+        viewport={"width": 390, "height": 760},
+    )
+    try:
+        page = android.new_page()
+        page.goto(BASE, wait_until="domcontentloaded", timeout=30_000)
+        page.evaluate("""() => {
+          const prompt=new Event('beforeinstallprompt',{cancelable:true});
+          prompt.prompt=() => {window.__testNativeInstallInvoked=true; return Promise.resolve();};
+          prompt.userChoice=Promise.resolve({outcome:'accepted'});
+          window.dispatchEvent(prompt);
+        }""")
+        card = page.locator(".sinjira-pwa-install[data-sinjira-pwa-install]")
+        card.wait_for(state="visible", timeout=5_000)
+        verify(card.locator("#sinjira-pwa-install-details").is_hidden(),
+               "l'invitation Android doit rester compacte par défaut")
+        card.locator("[data-pwa-install-reveal]").click()
+        card.locator("[data-pwa-install-action]").click()
+        page.wait_for_function("() => window.__testNativeInstallInvoked === true", timeout=5_000)
+        verify(card.count() == 0, "la carte n'est pas retirée après installation acceptée")
+    finally:
+        android.close()
+
 def test_without_javascript(browser):
     context = browser.new_context(
         java_script_enabled=False, service_workers="block", locale="fr-CA",
@@ -249,6 +334,7 @@ def run():
                 test_short_mobile_menu(page)
             finally:
                 context.close()
+            test_install_offer(browser)
             test_without_javascript(browser)
         finally:
             browser.close()
