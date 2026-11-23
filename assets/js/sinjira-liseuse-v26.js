@@ -115,6 +115,44 @@ function setTheme(){
   updateScreenControls();
   savePreferences();
 }
+// Le changement de typographie recompose le texte. Conserver l'emplacement
+// numérique intrapage de V31 jusqu'au prochain rendu, sans lire, copier ni
+// conserver le texte privé. Cette approximation n'est pas une ancre EPUB.
+let pendingTextRelayout=null;
+function updateReaderTypography(applySetting){
+  const viewer=$('reader-viewer');
+  const preserve=Boolean(state.pdf&&state.mode==='texte'&&!state.restoringScroll);
+  const previous=pendingTextRelayout;
+  const ratio=preserve
+    ?previous&&previous.pdf===state.pdf&&previous.page===state.page&&
+       previous.version===state.renderVersion
+      ?previous.ratio
+      :ratioFromScroll(viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight)
+    :null;
+  if(preserve){
+    // La sauvegarde différée du précédent scroll ne doit pas écraser
+    // la nouvelle position lors d'un glissement rapide du curseur de taille.
+    clearTimeout(state.scrollTimer);state.scrollTimer=null;
+  }
+  applySetting();
+  setTheme();
+  if(!preserve)return;
+  const transaction={pdf:state.pdf,page:state.page,version:state.renderVersion,ratio};
+  pendingTextRelayout=transaction;
+  requestAnimationFrame(()=>{
+    if(pendingTextRelayout!==transaction)return;
+    pendingTextRelayout=null;
+    if(state.pdf!==transaction.pdf||state.page!==transaction.page||
+       state.renderVersion!==transaction.version||state.mode!=='texte'||
+       state.accessInvalidated)return;
+    viewer.scrollTop=scrollTopForRatio(transaction.ratio,
+      viewer.scrollHeight,viewer.clientHeight);
+    state.positionRatio=ratioFromScroll(viewer.scrollTop,
+      viewer.scrollHeight,viewer.clientHeight);
+    updateScreenControls();
+    persist();
+  });
+}
 function currentChapter(){
   const chapters=isFull?chaptersFull:chaptersDemo;
   return [...chapters].reverse().find(chapter=>chapter[0]<=state.page)||chapters[0];
@@ -560,19 +598,21 @@ function bindControls(){
     state.theme=event.target.value;setTheme();
   });
   $('reader-size').addEventListener('input',event=>{
-    state.size=clamp(event.target.value,16,34);setTheme();
+    updateReaderTypography(()=>{state.size=clamp(event.target.value,16,34)});
   });
   $('reader-font').addEventListener('change',event=>{
-    if(['serif','sans','accessible'].includes(event.target.value)){state.font=event.target.value;setTheme()}
+    if(['serif','sans','accessible'].includes(event.target.value)){
+      updateReaderTypography(()=>{state.font=event.target.value});
+    }
   });
   $('reader-line-height').addEventListener('change',event=>{
-    state.lineHeight=Number(event.target.value);setTheme();
+    updateReaderTypography(()=>{state.lineHeight=Number(event.target.value)});
   });
   $('reader-text-width').addEventListener('change',event=>{
-    state.textWidth=Number(event.target.value);setTheme();
+    updateReaderTypography(()=>{state.textWidth=Number(event.target.value)});
   });
   $('reader-letter-spacing').addEventListener('change',event=>{
-    state.letterSpacing=Number(event.target.value);setTheme();
+    updateReaderTypography(()=>{state.letterSpacing=Number(event.target.value)});
   });
   $('reader-speed').addEventListener('change',event=>{
     state.speed=Number(event.target.value);savePreferences();
