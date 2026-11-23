@@ -70,7 +70,7 @@ def main()->int:
         "relative&&value.startsWith('//')",
         "relative?new URL(value,DOCUMENT_URL_BASE):new URL(value)",
         "parsed.protocol!=='https:'||parsed.username||parsed.password",
-        "relative&&parsed.origin!==DOCUMENT_URL_BASE",
+        "if(parsed.origin!==DOCUMENT_URL_BASE)return false;",
         'createSignedUrl(doc.storage_path,600)',
         "'Cache-Control':'private, no-store, max-age=0'",
         "'Referrer-Policy':'no-referrer'",

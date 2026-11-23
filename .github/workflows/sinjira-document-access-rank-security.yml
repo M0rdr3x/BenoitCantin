@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - 'supabase/functions/get-document-url/index.ts'
+      - 'scripts/test_private_document_storage.mjs'
+      - 'scripts/test_document_external_urls.mjs'
+      - 'supabase/functions/_shared/private-document-storage.mjs'
       - 'scripts/test_document_access_rank_security.mjs'
       - 'scripts/validate_document_access_rank_security.py'
       - '.github/workflows/sinjira-document-access-rank-security.yml'
@@ -12,6 +15,9 @@ on:
     branches: [main]
     paths:
       - 'supabase/functions/get-document-url/index.ts'
+      - 'scripts/test_private_document_storage.mjs'
+      - 'scripts/test_document_external_urls.mjs'
+      - 'supabase/functions/_shared/private-document-storage.mjs'
       - 'scripts/test_document_access_rank_security.mjs'
       - 'scripts/validate_document_access_rank_security.py'
       - '.github/workflows/sinjira-document-access-rank-security.yml'
@@ -35,8 +41,10 @@ jobs:
         with:
           node-version: '22.23.2'
 
-      - name: Tester le véritable handler et les accès documentaires
-        run: node --test scripts/test_document_access_rank_security.mjs
+      - name: Tester le véritable handler, les ACL et les buckets privés
+        run: node --test scripts/test_document_access_rank_security.mjs scripts/test_private_document_storage.mjs
+      - name: Interdire les liens documentaires externes non approuvés
+        run: node scripts/test_document_external_urls.mjs
 
       - name: Rejeter les régressions d'autorisation
         run: |
