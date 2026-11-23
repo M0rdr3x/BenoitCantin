@@ -20,12 +20,17 @@ REQUIRED = {
     'TTL signé exact': 'const SIGNED_URL_SECONDS=300;',
     'entitlement compte': ".eq('user_id',user.id)",
     'entitlement produit': ".eq('product_id',product.id)",
+    'chemin du PDF privé': 'privateBookLocationValid(bucket,storagePath)',
+    'metadata Storage du bucket': 'service.storage.getBucket(storage.bucket)',
+    'preuve du statut privé': '!isVerifiedPrivateBucket(bucketMetadata,storage.bucket)',
+    'échec si bucket public': "return privateJson({ok:false,error:'Stockage privé indisponible.'},503);",
     'URL signée': '.createSignedUrl(storage.storagePath,SIGNED_URL_SECONDS',
     'cache privé': "'Cache-Control':'private, no-store, max-age=0'",
     'pragma no-cache': "'Pragma':'no-cache'",
     'nosniff': "'X-Content-Type-Options':'nosniff'",
     'no-referrer': "'Referrer-Policy':'no-referrer'",
     'log entitlement fixe': "console.error('[get-private-book-url]',{code:'BOOK_ENTITLEMENT_CHECK_FAILED'});",
+    'log bucket fixe': "console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_BUCKET_UNVERIFIED'});",
     'log URL fixe': "console.error('[get-private-book-url]',{code:'BOOK_SIGNED_URL_FAILED'});",
     'log config fixe': "console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_STORAGE_NOT_CONFIGURED'});",
     'log global fixe': "console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_DELIVERY_FAILED'});",
@@ -72,12 +77,15 @@ def validate_text(source: str, config: str) -> list[str]:
 
     entitlement_pos = source.find(".from('user_entitlements')")
     signed_pos = source.find('.createSignedUrl(storage.storagePath,SIGNED_URL_SECONDS')
-    require(errors, entitlement_pos > service_pos and signed_pos > entitlement_pos,
-            'L’URL signée doit être créée seulement après validation de l’entitlement du compte.')
+    bucket_pos = source.find("service.storage.getBucket(storage.bucket)")
+    verified_pos = source.find("!isVerifiedPrivateBucket(bucketMetadata,storage.bucket)")
+    require(errors, 0 <= service_pos < entitlement_pos < bucket_pos < verified_pos < signed_pos,
+            'JWT, entitlement et preuve Storage privé doivent précéder la signature.')
 
     console_lines = [line.strip() for line in source.splitlines() if 'console.' in line]
     expected_console_lines = [
         "console.error('[get-private-book-url]',{code:'BOOK_ENTITLEMENT_CHECK_FAILED'});",
+        "console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_BUCKET_UNVERIFIED'});",
         "console.error('[get-private-book-url]',{code:'BOOK_SIGNED_URL_FAILED'});",
         "console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_STORAGE_NOT_CONFIGURED'});",
         "console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_DELIVERY_FAILED'});",
@@ -129,6 +137,9 @@ def self_test() -> None:
         'activation privée retirée': source.replace("  const enabled=Deno.env.get('SINJIRA_LIVRE_I_PRIVATE_DELIVERY_ENABLED')==='true';\n", "  const enabled=true;\n", 1),
         'repli public ajouté': source.replace('    return privateJson({\n      ok:true,', "    service.storage.from(storage.bucket).getPublicUrl(storage.storagePath);\n    return privateJson({\n      ok:true,", 1),
         'log entitlement brut': source.replace("console.error('[get-private-book-url]',{code:'BOOK_ENTITLEMENT_CHECK_FAILED'});", "console.error(entitlementError);", 1),
+        'lecture metadata bucket retirée': source.replace("service.storage.getBucket(storage.bucket)", "Promise.resolve({data:{id:storage.bucket,public:false}})", 1),
+        'preuve statut bucket retirée': source.replace("!isVerifiedPrivateBucket(bucketMetadata,storage.bucket)", "false", 1),
+        'log bucket brut': source.replace("console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_BUCKET_UNVERIFIED'});", "console.error(bucketMetadataError);", 1),
         'log storage brut': source.replace("console.error('[get-private-book-url]',{code:'BOOK_SIGNED_URL_FAILED'});", "console.error(signedError);", 1),
         'log catch brut': source.replace("console.error('[get-private-book-url]',{code:'BOOK_PRIVATE_DELIVERY_FAILED'});", "console.error(error);", 1),
     }
