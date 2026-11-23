@@ -88,17 +88,27 @@ def self_test() -> None:
         "      - uses: ./.github/actions/local-safe\n"
     )
     assert inspect_workflow("safe.yml", good) == []
+    # A genuinely root-scoped quoted YAML key must remain acceptable.
+    quoted = good.replace("permissions:", "'permissions':", 1)
+    assert inspect_workflow("quoted-root.yml", quoted) == []
     mutants = {
         "étiquette mobile": good.replace("@d23441a48e516b6c34aea4fa41551a30e30af803", "@v6"),
         "branche mobile": good.replace("@d23441a48e516b6c34aea4fa41551a30e30af803", "@main"),
         "permission implicite": good.replace("permissions:\n  contents: read\n", ""),
         "permission au niveau job uniquement": good.replace(
             "permissions:\n  contents: read\n",
-            "jobs:\n  verify:\n    permissions:\n      contents: read\n",
+            "",
+        ).replace(
+            "  verify:\n    steps:",
+            "  verify:\n    permissions:\n      contents: read\n    steps:",
         ),
         "permission fictive en script": good.replace(
             "permissions:\n  contents: read\n",
-            "jobs:\n  verify:\n    steps:\n      - run: |\n          permissions:\n            contents: read\n",
+            "",
+        ).replace(
+            "      - uses: ./.github/actions/local-safe\n",
+            "      - run: |\n          permissions:\n            contents: read\n"
+            "      - uses: ./.github/actions/local-safe\n",
         ),
         "permission racine dupliquée": good.replace(
             "permissions:\n  contents: read\n",
