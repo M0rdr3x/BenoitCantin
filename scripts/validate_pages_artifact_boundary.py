@@ -15,7 +15,7 @@ WORKFLOWS = ROOT / ".github" / "workflows"
 APPROVED = "deploy-github-pages-isolated.yml"
 UPLOAD = "actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa"
 DEPLOY = "actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346"
-USES = re.compile(r"^\s*(?:-\s*)?uses:\s*([^\s#]+)", re.I)
+USES = re.compile(r"""^\s*(?:-\s*)?uses\s*:\s*(?:"([^"\n]+)"|'([^'\n]+)'|([^\s#]+))\s*(?:#.*)?$""", re.I)
 PAGES_ACTION = re.compile(r"(?:^|/)(?:upload-pages-artifact|deploy-pages)$", re.I)
 SHA40 = re.compile(r"^[a-f0-9]{40}$")
 GATES = (
@@ -31,12 +31,15 @@ GATES = (
 
 
 def page_uses(source: str) -> list[tuple[int, str]]:
-    return [
-        (i, match.group(1))
-        for i, line in enumerate(source.splitlines())
-        if (match := USES.match(line))
-        and PAGES_ACTION.search(match.group(1).split("@", 1)[0])
-    ]
+    actions: list[tuple[int, str]] = []
+    for index, line in enumerate(source.splitlines()):
+        match = USES.match(line)
+        if not match:
+            continue
+        action = next((value for value in match.groups() if value is not None), "")
+        if PAGES_ACTION.search(action.split("@", 1)[0]):
+            actions.append((index, action))
+    return actions
 
 
 def path_of_action(source: str, index: int) -> str | None:
@@ -125,6 +128,19 @@ def self_test() -> None:
         "      - uses: " + DEPLOY + "\n"
     )
     assert inspect_workflows({APPROVED: good}) == []
+    # GitHub Actions accepts quoted scalars and optional whitespace before ':'.
+    # All these variants must remain visible to the inventory.
+    quoted = good.replace("uses: " + UPLOAD, "uses: '" + UPLOAD + "'")
+    quoted = quoted.replace("uses: " + DEPLOY, 'uses: "' + DEPLOY + '"')
+    assert inspect_workflows({APPROVED: quoted}) == []
+    quoted_spaced = good.replace("uses: " + UPLOAD, "uses : " + UPLOAD)
+    assert inspect_workflows({APPROVED: quoted_spaced}) == []
+    for label, rogue in (
+        ("quoted rogue upload", '      - uses: "' + UPLOAD + '"\n'),
+        ("quoted rogue deploy", "      - uses: '" + DEPLOY + "'\n"),
+        ("spaced rogue upload", "      - uses : " + UPLOAD + "\n"),
+    ):
+        assert inspect_workflows({APPROVED: good, label + ".yml": rogue}), label
     assert path_of_action(good, next(i for i, _ in page_uses(good))) == "_site"
     mutants = (
         ("publish root", good.replace("path: _site", "path: .")),
