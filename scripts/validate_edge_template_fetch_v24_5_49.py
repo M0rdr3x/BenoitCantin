@@ -60,7 +60,9 @@ def main()->int:
     # Le plafond doit être imposé avant l'allocation, dans le lecteur partagé,
     # y compris si Content-Length manque ou si l'origine le falsifie.
     stream_markers=[
-        "export async function readLimitedBinaryResponse(response, maxBytes)",
+        "export async function readLimitedBinaryResponse(response, maxBytes, timeoutMs = BINARY_RESPONSE_DEADLINE_MS)",
+        "const deadlineAt = performance.now() + timeoutMs;",
+        "readChunkWithDeadline(reader, undefined, deadlineAt)",
         "response.headers.get('content-length')",
         "Number(declared) > maxBytes",
         "value.byteLength > maxBytes - byteCount",
@@ -72,6 +74,8 @@ def main()->int:
     for marker in stream_markers:
         if marker not in limited:
             errors.append(f'Lecteur PDF en flux: garde-fou absent: {marker}')
+    if not re.search(r'\bBINARY_RESPONSE_DEADLINE_MS\s*=\s*12_?000\s*;', limited):
+        errors.append('Lecteur PDF en flux: délai absolu de 12 secondes absent ou affaibli.')
     if re.search(r'\bawait\s+reader\.cancel\s*\(', limited):
         errors.append('Lecteur PDF en flux : attente bloquante de cancel() interdite.')
     if 'await response.arrayBuffer()' in report.replace(
