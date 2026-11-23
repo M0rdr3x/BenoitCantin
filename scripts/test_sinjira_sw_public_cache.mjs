@@ -65,11 +65,13 @@ test('installation publique et nettoyage limité aux caches de ce site', async (
   h.stores.set('benoitcantin-v24-4-95-public-4', new Map());
   h.stores.set('benoitcantin-v24-4-95-public-6', new Map());
   h.stores.set('benoitcantin-v24-4-95-public-7', new Map());
+  h.stores.set('benoitcantin-v24-4-95-public-8', new Map());
   await h.lifecycle('install');
   await h.lifecycle('activate');
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-4'), false);
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-6'), false);
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-7'), false);
+  assert.equal(h.stores.has('benoitcantin-v24-4-95-public-8'), false);
   assert.equal(await (await h.caches.match('/assets/icons/sinjira-officiel-20261120.png')).text(), 'precache:/assets/icons/sinjira-officiel-20261120.png');
   assert.equal(h.stores.has('another-app-cache'), true);
   assert.equal(await (await h.caches.match('/')).text(), 'precache:/');

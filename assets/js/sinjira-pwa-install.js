@@ -38,7 +38,7 @@
       var style=d.createElement('link');style.rel='stylesheet';style.href='/assets/css/sinjira-mobile-account-shell-v24-4-95.css?v=24.4.96';style.setAttribute('data-sinjira-mobile-account-shell','');d.head.appendChild(style);
     }
     if(!d.querySelector('script[data-sinjira-mobile-account-shell]')){
-      var script=d.createElement('script');script.src='/assets/js/sinjira-mobile-account-shell-v24-4-95.js?v=24.4.96';script.defer=true;script.setAttribute('data-sinjira-mobile-account-shell','');d.head.appendChild(script);
+      var script=d.createElement('script');script.src='/assets/js/sinjira-mobile-account-shell-v24-4-95.js?v=24.4.98';script.defer=true;script.setAttribute('data-sinjira-mobile-account-shell','');d.head.appendChild(script);
     }
   }
 

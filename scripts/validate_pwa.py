@@ -263,7 +263,7 @@ def validate_install_runtime(errors: list[str]) -> None:
         ('display-mode: standalone', 'Détection du mode installé absente.'),
         ('loadMobileAccountShell', 'Chargement de la continuité mobile du compte absent.'),
         ('sinjira-mobile-account-shell-v24-4-95.css?v=24.4.96', 'Style de continuité mobile V24.4.95 non chargé.'),
-        ('sinjira-mobile-account-shell-v24-4-95.js?v=24.4.96', 'Runtime de continuité mobile V24.4.95 non chargé.'),
+        ('sinjira-mobile-account-shell-v24-4-95.js?v=24.4.98', 'Runtime de continuité mobile V24.4.95 non chargé.'),
     ]:
         if marker not in text:
             errors.append(message)
@@ -286,6 +286,10 @@ def validate_install_runtime(errors: list[str]) -> None:
     for marker in ['data-sinjira-account-mobile-nav','/app/','/compte/monde-parallele.html','/compte/messages.html','/compte/notifications.html','/compte/profil.html']:
         if marker not in shell_text:
             errors.append(f'Navigation mobile du compte V24.4.95 incomplète: {marker}')
+    for marker in ['function revealActiveLink()', "a[aria-current=\"page\"],a[data-current-section]", '(max-width:270px)',
+                   'window.requestAnimationFrame(revealActiveLink)', "window.addEventListener('resize'"]:
+        if marker not in shell_text:
+            errors.append(f'Dock compte: révélation de la rubrique active absente: {marker}')
     for forbidden in ['/compte/connexion.html","label','/compte/inscription.html","label']:
         if forbidden in shell_text:
             errors.append('La navigation mobile pourrait être injectée dans un flux Auth.')

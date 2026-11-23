@@ -17,7 +17,7 @@ WIDTHS = (240, 320, 390, 768, 1024)
 SHELL_MARKUP = """<!doctype html><html lang="fr-CA"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="stylesheet" href="/assets/css/site.css">
-<script defer src="/assets/js/sinjira-pwa-install.js?v=24.4.96"></script>
+<script defer src="/assets/js/sinjira-pwa-install.js?v=24.4.97"></script>
 </head><body class="account-page" data-sinjira-ux="v1">
 <main id="contenu"><h1>Mon compte : contrôle de navigation</h1><a href="/app/">Fil communautaire</a></main>
 </body></html>"""
@@ -141,6 +141,46 @@ def check_routes(context):
                     verify(link["current"] is None, "plusieurs pages annoncées comme actives")
         finally:
             page.close()
+
+
+    # Écran très étroit, au premier affichage : l'onglet Profil est à
+    # l'extrémité du dock et doit devenir visible sans glissement préalable.
+    page = context.new_page()
+    try:
+        page.set_viewport_size({"width": 240, "height": 700})
+        response = page.goto(urljoin(BASE, "compte/securite.html"),
+                             wait_until="domcontentloaded", timeout=30_000)
+        verify(response is not None and response.status < 400,
+               "fixture Sécurité indisponible pour le dock 240 px")
+        dock = page.locator("[data-sinjira-account-mobile-nav]")
+        dock.wait_for(state="visible", timeout=12_000)
+        page.wait_for_function("""() => {
+          const nav=document.querySelector('[data-sinjira-account-mobile-nav]');
+          const selected=nav?.querySelector('a[data-current-section]');
+          if(!nav||!selected) return false;
+          const a=selected.getBoundingClientRect(), b=nav.getBoundingClientRect();
+          return nav.scrollLeft>15 && a.left>=b.left-2 && a.right<=b.right+2;
+        }""", timeout=6_000)
+        verify(dock.locator('a[href="/compte/profil.html"]').get_attribute(
+            "data-current-section") is not None,
+            "l'onglet Profil ne correspond plus à la section Sécurité")
+        # Le geste manuel est respecté tant que l'utilisateur ne redimensionne pas.
+        dock.evaluate("(el) => {el.scrollLeft=0;}")
+        page.wait_for_timeout(150)
+        verify(dock.evaluate("(el) => el.scrollLeft") <= 2,
+               "la navigation reprend le contrôle contre le glissement de l'utilisateur")
+        # Une rotation 240 -> 390 -> 240 révèle de nouveau l'onglet actif.
+        page.set_viewport_size({"width": 390, "height": 700})
+        page.set_viewport_size({"width": 240, "height": 700})
+        page.wait_for_function("""() => {
+          const nav=document.querySelector('[data-sinjira-account-mobile-nav]');
+          const selected=nav?.querySelector('a[data-current-section]');
+          if(!nav||!selected) return false;
+          const a=selected.getBoundingClientRect(), b=nav.getBoundingClientRect();
+          return nav.scrollLeft>15 && a.left>=b.left-2 && a.right<=b.right+2;
+        }""", timeout=6_000)
+    finally:
+        page.close()
 
     page=navigate_account(context, "compte/connexion.html")
     try:
