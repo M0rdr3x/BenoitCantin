@@ -295,7 +295,7 @@
   var submit = el('button', 'sinjira-assistant-send', 'Envoyer');
   submit.type = 'submit';
   form.appendChild(label); form.appendChild(input); form.appendChild(submit);
-  var privacy = el('p', 'sinjira-assistant-privacy', 'Mode V24.4.48 : conversation éphémère dans cet onglet, sans fournisseur d’IA externe. L’assistant utilise seulement une base d’aide locale et le chemin de la page. Ne saisissez jamais un mot de passe, un code de récupération ou une information très sensible.');
+  var privacy = el('p', 'sinjira-assistant-privacy', 'Aide locale et éphémère, sans IA externe. Ne partagez aucun mot de passe, code de récupération ou donnée sensible.');
   privacy.id = 'sinjira-assistant-privacy';
   panel.appendChild(header); panel.appendChild(intro); panel.appendChild(suggestions); panel.appendChild(log); panel.appendChild(form); panel.appendChild(privacy);
   root.appendChild(toggle); root.appendChild(panel); doc.body.appendChild(root);
