@@ -8,6 +8,11 @@
 // Ne pas attendre l'annulation : un producteur distant peut laisser la Promise
 // de cancel() indéfiniment en attente, même quand la limite est déjà dépassée.
 // La fermeture est consultative ; le refus HTTP doit toujours pouvoir terminer.
+import { readChunkWithDeadline } from './read-chunk-deadline.mjs';
+
+// Délai ABSOLU partagé par tous les fragments PDF d'une réponse distante.
+const BINARY_RESPONSE_DEADLINE_MS = 12000;
+
 function cancelReaderWithoutWaiting(reader) {
   try {
     void Promise.resolve(reader.cancel()).catch(() => {});
@@ -66,9 +71,12 @@ export async function readLimitedUtf8Body(req, maxBytes) {
  * Return no bytes on malformed, empty, interrupted or oversized responses.
  * Never reflect remote content into logs or HTTP error messages.
  */
-export async function readLimitedBinaryResponse(response, maxBytes) {
+export async function readLimitedBinaryResponse(response, maxBytes, timeoutMs = BINARY_RESPONSE_DEADLINE_MS) {
   if (!Number.isSafeInteger(maxBytes) || maxBytes < 1) {
     throw new TypeError('Invalid binary response limit');
+  }
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30000) {
+    throw new TypeError('Invalid binary response deadline');
   }
 
   const declared = response.headers.get('content-length');
@@ -82,11 +90,12 @@ export async function readLimitedBinaryResponse(response, maxBytes) {
 
   if (!response.body) return { ok: false };
   const reader = response.body.getReader();
+  const deadlineAt = performance.now() + timeoutMs;
   const chunks = [];
   let byteCount = 0;
   try {
     while (true) {
-      const { done, value } = await reader.read();
+      const { done, value } = await readChunkWithDeadline(reader, undefined, deadlineAt);
       if (done) break;
       if (!(value instanceof Uint8Array) ||
           value.byteLength > maxBytes - byteCount) {
@@ -109,6 +118,7 @@ export async function readLimitedBinaryResponse(response, maxBytes) {
     cancelReaderWithoutWaiting(reader);
     return { ok: false };
   } finally {
-    reader.releaseLock();
+    // Une source bloquée peut garder une lecture en cours après l'expiration.
+    try { reader.releaseLock(); } catch { /* Annulation best-effort. */ }
   }
 }
