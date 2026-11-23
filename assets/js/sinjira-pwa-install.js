@@ -63,7 +63,7 @@
 
   function ensureCard(mode){
     if(standalone()||!eligibleRoute()||dismissed())return null;
-    var old=d.querySelector('[data-sinjira-pwa-install]');if(old)return old;
+    var old=d.querySelector('.sinjira-pwa-install[data-sinjira-pwa-install]');if(old)return old;
     addStyle();
     var card=d.createElement('aside');card.className='sinjira-pwa-install is-collapsed';
     card.setAttribute('data-sinjira-pwa-install','');
@@ -101,7 +101,7 @@
   async function install(){
     if(deferredPrompt){
       var p=deferredPrompt;deferredPrompt=null;
-      try{await p.prompt();var choice=await p.userChoice;if(choice&&choice.outcome==='accepted'){var c=d.querySelector('[data-sinjira-pwa-install]');if(c)c.remove();}}catch(e){}
+      try{await p.prompt();var choice=await p.userChoice;if(choice&&choice.outcome==='accepted'){var c=d.querySelector('.sinjira-pwa-install[data-sinjira-pwa-install]');if(c)c.remove();}}catch(e){}
       return;
     }
     if(isIos()){
@@ -112,7 +112,7 @@
   w.addEventListener('beforeinstallprompt',function(event){
     event.preventDefault();deferredPrompt=event;ensureCard('prompt');
   });
-  w.addEventListener('appinstalled',function(){deferredPrompt=null;var c=d.querySelector('[data-sinjira-pwa-install]');if(c)c.remove();});
+  w.addEventListener('appinstalled',function(){deferredPrompt=null;var c=d.querySelector('.sinjira-pwa-install[data-sinjira-pwa-install]');if(c)c.remove();});
 
   ensureHeadLinks();
   registerWorker();
