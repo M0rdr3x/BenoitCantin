@@ -143,9 +143,30 @@ def test_short_mobile_menu(page):
               if (!link || !link.matches('[data-main-nav] a')) return null;
               return new URL(link.href).pathname;
             }""")
-            verify(focused == expected,
-                   f"parcours clavier incomplet à {width}x{height}, lien "
-                   f"{index + 1}/7 : attendu {expected}, obtenu {focused}")
+            if focused != expected:
+                focus_state = page.evaluate("""() => {
+                  const active = document.activeElement;
+                  const nav = document.querySelector('[data-main-nav]');
+                  const toggle = document.querySelector('[data-menu-toggle]');
+                  return {
+                    tag: active?.tagName || null,
+                    id: active?.id || null,
+                    className: String(active?.className || '').slice(0, 140),
+                    href: active?.getAttribute('href') || null,
+                    toggleExpanded: toggle?.getAttribute('aria-expanded'),
+                    menuVisible: getComputedStyle(nav).display,
+                    menuLinks: [...nav.querySelectorAll('a')].map(a => ({
+                      href: a.getAttribute('href'),
+                      tabIndex: a.tabIndex,
+                      visible: a.getBoundingClientRect().height > 0
+                    }))
+                  };
+                }""")
+                raise AssertionError(
+                    f"{BROWSER}: parcours clavier incomplet à {width}x{height}, "
+                    f"lien {index + 1}/7 : attendu {expected}, obtenu {focused}. "
+                    f"État public du focus : {focus_state}"
+                )
         last = nav.locator("a").last
         verify(last.evaluate("(a) => document.activeElement === a"),
                f"lien Compte non atteignable au clavier à {width}x{height}")
