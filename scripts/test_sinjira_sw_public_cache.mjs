@@ -47,7 +47,7 @@ function harness() {
     await pending;
   }
   async function request(path, options = {}) {
-    const req = new Request(new URL(path, ORIGIN), { headers: options.headers });
+    const req = new Request(new URL(path, ORIGIN), { headers: options.headers, credentials: options.credentials ?? 'same-origin' });
     Object.defineProperty(req, 'destination', { value: options.destination ?? 'document' });
     Object.defineProperty(req, 'mode', { value: options.destination === 'document' ? 'navigate' : 'cors' });
     let pending;
@@ -66,10 +66,10 @@ test('installation publique et nettoyage limité aux caches de ce site', async (
   h.stores.set('benoitcantin-v24-4-95-public-7', new Map());
   h.stores.set('benoitcantin-v24-4-95-public-8', new Map());
   h.stores.set('benoitcantin-v24-4-95-public-9', new Map());
-  h.stores.set('benoitcantin-v24-4-95-public-15', new Map());
+  h.stores.set('benoitcantin-v24-4-95-public-16', new Map());
   await h.lifecycle('install');
   await h.lifecycle('activate');
-  assert.equal(h.stores.has('benoitcantin-v24-4-95-public-15'), false);
+  assert.equal(h.stores.has('benoitcantin-v24-4-95-public-16'), false);
   assert.ok(h.requests.length > 0);
   for (const req of h.requests) {
     assert.equal(req.credentials, 'omit');
@@ -224,4 +224,54 @@ test('hors ligne, une entrée étrangère ne peut pas remplacer le cache public 
   const css = await h.request('/assets/css/site.css', { destination: 'style' });
   assert.equal(await css.text(), 'precache:/assets/css/site.css');
   assert.equal(await (await h.request('/not-in-cache.html')).text(), 'precache:/offline.html');
+});
+
+test('cache runtime : seules des requêtes anonymes alimentent les ressources publiques', async () => {
+  const h = harness(); await h.lifecycle('install'); h.writes.length = 0;
+  for (const [path, destination] of [
+    ['/', 'document'],
+    ['/assets/js/site.js', 'script'],
+    ['/assets/media/non-precachee.webp', 'image'],
+  ]) {
+    await h.request(path, { destination, credentials: 'include' });
+    assert.equal(h.requests.at(-1).credentials, 'omit');
+    assert.equal(h.requests.at(-1).cache, 'no-store');
+  }
+  assert.equal(h.writes.length, 3);
+});
+
+test('cache runtime : session, autorisation, cookie explicite et range restent hors cache', async () => {
+  const h = harness(); await h.lifecycle('install'); h.writes.length = 0;
+  for (const [path, destination, headers] of [
+    ['/compte/', 'document', {}],
+    ['/app/', 'document', {}],
+    ['/assets/js/site.js', 'script', { Authorization: 'Bearer fictif' }],
+    ['/assets/js/site.js', 'script', { Cookie: 'session=fictive' }],
+    ['/assets/media/sinjira-registre.webp', 'image', { Range: 'bytes=0-10' }],
+    ['/assets/js/site.js?token=fictif', 'script', {}],
+  ]) {
+    await h.request(path, { destination, headers, credentials: 'include' });
+    assert.equal(h.requests.at(-1).credentials, 'include');
+    assert.equal(h.requests.at(-1).cache, 'no-store');
+  }
+  assert.equal(h.writes.length, 0);
+});
+
+test('cache runtime : les variantes de session ne sont pas persistées', async () => {
+  const h = harness(); await h.lifecycle('install'); h.writes.length = 0;
+  for (const vary of ['Cookie', 'Authorization', 'Accept-Encoding, cookie', '*']) {
+    h.setReply(() => new Response('sensible', { headers: { Vary: vary } }));
+    await h.request('/assets/js/site.js', { destination: 'script', credentials: 'include' });
+  }
+  assert.equal(h.writes.length, 0);
+});
+
+test('hors ligne : les ressources absentes produisent une réponse réseau en erreur', async () => {
+  const h = harness(); await h.lifecycle('install'); h.setOnline(false);
+  for (const [path, destination] of [
+    ['/assets/js/non-precache.js', 'script'],
+    ['/assets/media/non-precachee.webp', 'image'],
+  ]) {
+    assert.equal((await h.request(path, { destination })).type, 'error');
+  }
 });
