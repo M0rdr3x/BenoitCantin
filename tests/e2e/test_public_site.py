@@ -1458,8 +1458,30 @@ def run() -> None:
         response = mobile_page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30_000)
         assert_true(response is not None and response.status < 400, f"{BROWSER_NAME}: accueil mobile inaccessible")
 
-        overflow = mobile_page.evaluate("document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2")
-        assert_true(overflow, f"{BROWSER_NAME}: débordement horizontal détecté en 390 px")
+        # Contrôler l'état initial ET l'état après les ressources tardives, sans
+        # relancer ou masquer une anomalie. Ne journaliser ni texte ni données personnelles.
+        def assert_mobile_reflow(stage):
+            geometry = mobile_page.evaluate("""() => {
+                const root = document.documentElement;
+                const width = innerWidth;
+                return {
+                  width, scrollWidth: root.scrollWidth,
+                  offenders: [...document.querySelectorAll('body *')].filter(el => {
+                    const r = el.getBoundingClientRect();
+                    return r.width > 0 && (r.right > width + 2 || r.left < -2)
+                      && getComputedStyle(el).position !== 'fixed';
+                  }).slice(0, 12).map(el => ({
+                    tag: el.tagName, id: el.id, className: typeof el.className === 'string' ? el.className : '',
+                    left: Math.round(el.getBoundingClientRect().left),
+                    right: Math.round(el.getBoundingClientRect().right)
+                  }))
+                };
+            }""")
+            assert_true(geometry["scrollWidth"] <= geometry["width"] + 2,
+                        f"{BROWSER_NAME}: débordement horizontal à 390 px ({stage}): {geometry}")
+        assert_mobile_reflow("DOMContentLoaded")
+        mobile_page.wait_for_load_state("load", timeout=30_000)
+        assert_mobile_reflow("load")
 
         toggle = mobile_page.locator("[data-menu-toggle]")
         assert_true(toggle.count() == 1, f"{BROWSER_NAME}: bouton de menu mobile absent")

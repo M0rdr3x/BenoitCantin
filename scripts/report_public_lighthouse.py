@@ -35,6 +35,29 @@ def main():
             if value > threshold:
                 deviations.append(name)
         print("BASELINE écarts aux objectifs accueil : " + (", ".join(deviations) or "aucun"))
+        # Rendre les principaux diagnostics actionnables sans journaliser les URL
+        # externes, les données de formulaire, les chaînes de requête ou le DOM.
+        for audit_id in ("lcp-breakdown-insight", "lcp-discovery-insight",
+                         "render-blocking-insight", "image-delivery-insight",
+                         "mainthread-work-breakdown", "bootup-time",
+                         "long-tasks", "layout-shift-elements"):
+            audit = audits.get(audit_id)
+            if not isinstance(audit, dict):
+                continue
+            score = audit.get("score")
+            numeric = audit.get("numericValue")
+            savings = audit.get("metricSavings")
+            safe = {}
+            if valid_number(score, 1):
+                safe["score"] = score
+            if valid_number(numeric, float("inf")):
+                safe["numericValue"] = round(numeric, 2)
+            if isinstance(savings, dict):
+                safe["metricSavings"] = {k: round(v, 2) for k, v in savings.items()
+                                         if k in ("LCP", "FCP", "TBT", "CLS", "INP")
+                                         and valid_number(v, float("inf"))}
+            if safe:
+                print(f"DETAIL {audit_id}: {json.dumps(safe, sort_keys=True)}")
         # Les écarts sont diagnostiques; une mesure manquante reste bloquante.
         return 0
     except (OSError, ValueError, KeyError, TypeError) as exc:
