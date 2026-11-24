@@ -3,6 +3,8 @@
 from html.parser import HTMLParser
 from pathlib import Path
 import struct
+import hashlib
+import json
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -50,7 +52,24 @@ def resolve(page, src):
     return path
 
 
+def validate_posters():
+    manifest = json.loads((ROOT / "scripts/category_posters_manifest.json").read_text("utf-8"))
+    expected = {f"sinjira-{name}-poster-{width}.webp"
+                for name in ("litterature", "jeux") for width in (480, 840)}
+    if set(manifest) != expected:
+        raise ValueError("Manifeste des quatre affiches incomplet")
+    for name, info in manifest.items():
+        path = ROOT / "assets/media" / name
+        data = path.read_bytes()
+        if (len(data) != info["bytes"] or len(data) >= 250_000
+                or hashlib.sha256(data).hexdigest() != info["sha256"]
+                or dimensions(path) != (info["width"], info["height"])):
+            raise ValueError(f"Affiche invalide : {name}")
+    print("OK intégrité des quatre affiches adaptatives.")
+
+
 def main():
+    validate_posters()
     count = 0
     for relative, expected in PAGES.items():
         page = ROOT / relative
@@ -65,6 +84,12 @@ def main():
             path = resolve(page, a["src"])
             if dimensions(path) != (int(a["width"]), int(a["height"])):
                 raise ValueError(f"{relative}: dimensions erronées de {path.name}")
+            if relative in ("projets/sinjira/romans/index.html", "projets/sinjira/jeux/index.html") and a.get("fetchpriority") == "high":
+                name = "litterature" if "/romans/" in relative else "jeux"
+                expected_set = (f"../../../assets/media/sinjira-{name}-poster-480.webp 480w, "
+                                f"../../../assets/media/sinjira-{name}-poster-840.webp 840w")
+                if a.get("srcset") != expected_set or path.name != f"sinjira-{name}-poster-840.webp" or not a.get("sizes"):
+                    raise ValueError(f"{relative}: affiche adaptative absente")
             if a.get("decoding") != "async":
                 raise ValueError(f"{relative}: décodage non asynchrone")
             for item in a.get("srcset", "").split(","):

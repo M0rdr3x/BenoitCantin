@@ -8,6 +8,11 @@ on:
       - '.github/workflows/category-posters.yml'
       - 'assets/media/sinjira-litterature.webp'
       - 'assets/media/sinjira-jeux.webp'
+      - 'assets/media/sinjira-*-poster-*.webp'
+      - 'scripts/category_posters_manifest.json'
+      - 'scripts/validate_public_image_geometry.py'
+      - 'projets/sinjira/romans/index.html'
+      - 'projets/sinjira/jeux/index.html'
 
 permissions:
   contents: read
@@ -26,4 +31,6 @@ jobs:
       - name: Installer le client Playwright épinglé
         run: python -m pip install --disable-pip-version-check "playwright==1.61.0"
       - name: Générer les quatre affiches publiques
-        run: python scripts/generate_category_posters.py --output /tmp/sinjira-category-posters --emit-base64
+        run: python scripts/generate_category_posters.py --output /tmp/sinjira-category-posters
+      - name: Vérifier les affiches intégrées
+        run: python scripts/validate_public_image_geometry.py
