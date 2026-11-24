@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'security/candidates/sinjira_revoked_auth_session_device_rpcs.sql'
+      - 'security/candidates/preflight_revoked_session_catalog_read_only.sql'
       - 'scripts/validate_revoked_session_rpc_candidate.py'
       - 'scripts/build_revoked_session_rpc_runtime_test.py'
       - 'scripts/smoke_revoked_session_http_local.py'
@@ -14,6 +15,7 @@ on:
     branches: [main]
     paths:
       - 'security/candidates/sinjira_revoked_auth_session_device_rpcs.sql'
+      - 'security/candidates/preflight_revoked_session_catalog_read_only.sql'
       - 'scripts/validate_revoked_session_rpc_candidate.py'
       - 'scripts/build_revoked_session_rpc_runtime_test.py'
       - 'scripts/smoke_revoked_session_http_local.py'
