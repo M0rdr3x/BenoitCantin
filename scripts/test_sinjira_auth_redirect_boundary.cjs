@@ -92,6 +92,39 @@ function main(){
   eq(valid.route.next(),'/app/','Destination saine réellement navigable');
   eq(valid.historyCalls.length,0,'Aucune écriture d’historique inutile');
 
+  for(const query of [
+    'next=%2Fapp%2F&next=%2Fcompte%2F',
+    'next=%2Fapp%2F&next=%2Fapp%2F',
+    'next=%2Fapp%2F&next=https%3A%2F%2Fevil.invalid',
+    'next=https%3A%2F%2Fevil.invalid&next=%2Fapp%2F',
+    'next=%2Fapp%2F&n%65xt=%2Fcompte%2F',
+    'next=&next=%2Fapp%2F'
+  ]){
+    const duplicate=auth('/compte/connexion.html?'+query+'&mode=login#main');
+    eq(duplicate.location.search,'?mode=login','Tous les next ambigus sont supprimés');
+    eq(duplicate.route.next(),HOME,'Repli sûr après doublon');
+    eq(duplicate.historyCalls.length,1,'Une seule correction d’historique');
+  }
+  // La lecture après initialisation doit aussi refuser les doublons.
+  valid.location.search='?next=%2Fapp%2F&next=%2Fcompte%2F';
+  eq(valid.route.next(),HOME,'Doublon introduit après initialisation refusé');
+
+  // Exécuter les lignes réelles de sélection de destination du module MFA.
+  const mfa=fs.readFileSync(path.join(ROOT,'assets/js/sinjira-mfa-v24-4-66.js'),'utf8');
+  const mfaLines=mfa.split('\n').filter(line=>/^(const params=|const nextValues=|const next=)/.test(line));
+  assert.equal(mfaLines.length,3,'Sélecteur MFA canonique absent');
+  for(const [search,expected] of [
+    ['?next=%2Fapp%2F','/app/'],
+    ['?next=%2Fapp%2F&next=%2Fcompte%2F',HOME],
+    ['?next=%2Fapp%2F&n%65xt=%2Fapp%2F',HOME],
+    ['?next=%2F%2Fevil.invalid',HOME],
+    ['',HOME]
+  ]){
+    const ctx={URLSearchParams,location:{search},safeInternalDestination:sharedDestination};
+    vm.runInNewContext(mfaLines.join('\n')+'\nglobalThis.result=next;',ctx,{timeout:1000});
+    eq(ctx.result,expected,'Sélection MFA sans ambiguïté');
+  }
+
   const blank=auth('/compte/connexion.html?next=');
   eq(blank.location.search,'','Destination next vide retirée');
 
