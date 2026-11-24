@@ -12,9 +12,14 @@ function setBusy(busy){
   form?.querySelectorAll('input,button').forEach(el=>{el.disabled=Boolean(busy)});
 }
 function randomDeviceKey(){
-  if(globalThis.crypto?.randomUUID)return globalThis.crypto.randomUUID();
-  const bytes=new Uint8Array(24);globalThis.crypto?.getRandomValues?.(bytes);
-  return `sinjira-${Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}-${Date.now().toString(36)}`;
+  const source=globalThis.crypto;
+  if(typeof source?.randomUUID==='function'){
+    try{return source.randomUUID()}catch{/* Utiliser uniquement un autre CSPRNG. */}
+  }
+  if(typeof source?.getRandomValues!=='function')throw new Error('SECURITY_CRYPTO_UNAVAILABLE');
+  const bytes=new Uint8Array(24);
+  source.getRandomValues(bytes);
+  return 'sinjira-'+Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
 }
 function deviceKey(){
   try{
