@@ -116,6 +116,40 @@ async function assuranceTests(){
     eq(await ctx.recover(),expected,'Politique AAL de récupération conservée');
   }
 }
+async function recoveryRevocationTests(){
+  const recovery=fs.readFileSync(path.join(ROOT,'assets/js/sinjira-recovery-v24-4-99.js'),'utf8');
+  const start=recovery.indexOf('async function revokeRecoverySessions(');
+  const end=recovery.indexOf('async function boot(',start);
+  assert.ok(start>=0&&end>start,'Fonction de révocation absente');
+  const rejected=Symbol('network failure');
+  const cases=[
+    [{error:null},undefined,'global',['global']],
+    [{error:{message:'denied'}},{error:null},'local',['global','local']],
+    [rejected,{error:null},'local',['global','local']],
+    [undefined,{error:null},'local',['global','local']],
+    [{},{error:null},'local',['global','local']],
+    [{error:{message:'denied'}},{error:{message:'denied'}},'unconfirmed',['global','local']],
+    [rejected,rejected,'unconfirmed',['global','local']],
+    [undefined,undefined,'unconfirmed',['global','local']],
+  ];
+  for(const [globalResult,localResult,expected,scopes] of cases){
+    const calls=[];
+    const ctx={s:{auth:{signOut:async({scope})=>{
+      calls.push(scope);
+      const result=scope==='global'?globalResult:localResult;
+      if(result===rejected)throw Error('offline');
+      return result;
+    }}}};
+    vm.runInNewContext(recovery.slice(start,end)+'\nglobalThis.revoke=revokeRecoverySessions;',ctx);
+    eq(await ctx.revoke(),expected,'Résultat de révocation exact');
+    assert.deepEqual(calls,scopes);checks++;
+  }
+  assert.ok(recovery.includes("if(revoked!=='global')"),'Pas de succès global sans confirmation');
+  assert.ok(recovery.includes('finally{submitting=false;setBusy(passwordUpdated)}'),'Pas de nouvelle soumission après changement');
+  assert.ok(recovery.includes('if(submitting||passwordUpdated)return;'),'Verrou de soumission');
+  checks+=3;
+}
+
 async function main(){
   const client=auth();
   safeTests(client.route.safeLocalDestination,'Login');
@@ -184,6 +218,7 @@ async function main(){
   eq(sharedDestination('//evil.invalid/','/compte/bibliotheque.html'),
     '/compte/bibliotheque.html','Fallback MFA prédéfini conservé');
   await assuranceTests();
+  await recoveryRevocationTests();
   console.log('PASS: '+checks+' contrôles de redirections Auth/MFA, URLs encodées et next assaini.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
