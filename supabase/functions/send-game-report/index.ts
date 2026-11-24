@@ -3,6 +3,7 @@ import { readLimitedUtf8BodyWithDeadline } from '../_shared/read-chunk-deadline.
 import { PDFDocument, StandardFonts } from 'npm:pdf-lib@1.17.1';
 import { corsHeaders } from '../_shared/cors.ts';
 import { createPdfAdmissionGate } from '../_shared/pdf-admission.mjs';
+import { consumeReportBudget } from '../_shared/report-pdf-budget.mjs';
 import { optionalUser, serviceClient } from '../_shared/auth.ts';
 
 const FUNCTION_VERSION='24.5.2';
@@ -207,6 +208,11 @@ Deno.serve(async (req) => {
       status:503, headers:{ ...PRIVATE_JSON_HEADERS, 'Retry-After':'3' }
     });
     try {
+    const budget = await consumeReportBudget(serviceClient(), Boolean(user));
+    if (budget !== 'allowed') return new Response(JSON.stringify({
+      ok:false, code:budget === 'limited' ? 'REPORT_QUOTA_EXCEEDED' : 'REPORT_QUOTA_UNAVAILABLE',
+      error:'Service temporairement occupé. Réessayez plus tard.', function_version:FUNCTION_VERSION
+    }), {status:budget === 'limited' ? 429 : 503, headers:{...PRIVATE_JSON_HEADERS, 'Retry-After':'60'}});
     const sheet = sanitizeSheet(body?.sheet_data || {});
     const pdfBytes = await buildPdf(sheet);
     const filename = `SINJIRA_Fracture_Rapport_${new Date().toISOString().slice(0, 10)}.pdf`;

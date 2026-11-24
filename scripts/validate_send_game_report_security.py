@@ -16,6 +16,8 @@ REQUIRED = {
     'refus saturation': 'if (!releasePdfSlot) return new Response(',
     'réessai temporaire': "'Retry-After':'3'",
     'libération inconditionnelle': 'releasePdfSlot();',
+    'quota partagé côté serveur': 'const budget = await consumeReportBudget(serviceClient(), Boolean(user));',
+    'quota strict avant PDF': "if (budget !== 'allowed') return new Response(",
     'JSON explicite exact': r"/^application\/json(?:\s*;|$)/.test(contentType)",
     'lecture corps avec délai absolu': 'return readLimitedUtf8BodyWithDeadline(req, maxBytes, MAX_REQUEST_READ_TIMEOUT_MS);',
     'appel du lecteur historique gardé': 'const limited = await readLimitedUtf8Body(req, MAX_REQUEST_BYTES);',
@@ -96,10 +98,12 @@ def validate(path: Path) -> list[str]:
 
     acquire_pos = source.find('const releasePdfSlot = acquirePdfSlot();')
     busy_pos = source.find('if (!releasePdfSlot) return new Response(')
+    quota_pos = source.find('const budget = await consumeReportBudget(serviceClient(), Boolean(user));')
+    quota_deny_pos = source.find("if (budget !== 'allowed') return new Response(")
     release_pos = source.find('releasePdfSlot();')
     finally_pos = source.rfind('finally {', 0, release_pos)
     if min(acquire_pos, busy_pos, release_pos, finally_pos) < 0 or not (
-        resend_key_pos < acquire_pos < busy_pos < build_pos < finally_pos < release_pos
+        resend_key_pos < acquire_pos < busy_pos < quota_pos < quota_deny_pos < build_pos < finally_pos < release_pos
     ):
         errors.append('Le plafond PDF doit refuser avant génération et libérer après traitement, même en erreur.')
 
@@ -169,6 +173,8 @@ Deno.serve(async(req)=>{
   const releasePdfSlot = acquirePdfSlot();
   if (!releasePdfSlot) return new Response('',{status:503,headers:{'Retry-After':'3'}});
   try {
+  const budget = await consumeReportBudget(serviceClient(), Boolean(user));
+  if (budget !== 'allowed') return new Response('',{status:503});
   const sheet={};
   const pdfBytes = await buildPdf(sheet);
   const resendResponse=await fetch('https://api.resend.com/emails',{method:'POST',body:JSON.stringify({to: [user.email]})});
@@ -192,6 +198,8 @@ Deno.serve(async(req)=>{
             raise AssertionError('Le cas sain doit passer: ' + ' | '.join(clean))
 
         mutations = {
+            'quota contourné': safe.replace("if (budget !== 'allowed')", 'if (false)'),
+            'quota choisi par client': safe.replace('Boolean(user)', 'Boolean(body.authenticated)'),
             'plafond PDF augmenté': safe.replace('createPdfAdmissionGate(2)', 'createPdfAdmissionGate(200)'),
             'refus saturation retiré': safe.replace('if (!releasePdfSlot) return new Response(', 'if (false) return new Response('),
             'libération retirée': safe.replace('releasePdfSlot();', 'void 0;'),

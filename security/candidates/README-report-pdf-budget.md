@@ -1,0 +1,7 @@
+# Candidat quota distribué des rapports PDF — NO-GO production
+
+Deux compteurs globaux indépendants, partagés par toutes les instances via PostgreSQL : visiteurs (12 admissions/minute) et comptes dont le JWT est vérifié (30/minute). Plafonds provisoires à calibrer, pas de quota individuel. Fenêtre fixe, donc un burst à cheval sur deux minutes reste possible. Pas d'IP, UUID, contenu PDF, cookie ou historique de visite conservé. Table privée à deux lignes, RLS active, aucun accès aux clients, RPC SECURITY INVOKER accordée exclusivement au service_role. Verrou de ligne NOWAIT : contention refusée sans file d'attente.
+
+L'Edge refuse les réponses non booléennes et l'indisponibilité RPC (503), refuse un quota épuisé (429), et conserve le plafond local de deux générations. Pas de remboursement après erreur : évite de réessayer sans limite. Délai RPC de 1,5 s. La classe provient de l'utilisateur vérifié, non du corps ou d'un en-tête. Les visiteurs partagent leur budget et peuvent se priver mutuellement d'accès ; les comptes aussi. Ne pas assimiler à un WAF, à une protection DDoS ni à un quota individuel.
+
+**Dépendance bloquante :** le RPC n'existe pas dans la base active. Ne pas fusionner/déployer l'Edge avant création et validation d'une migration canonique sur staging, revue des ACL/roles, tests HTTP et de concurrence entre transactions, plan de rollback et réglage sur trafic légitime. Le SQL de revue reste hors migrations et ROLLBACK-only. Le job de test ne contacte que le PostgreSQL local. Aucun service payant activé, aucune donnée personnelle ajoutée.
