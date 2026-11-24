@@ -62,6 +62,10 @@ def test_home(page):
     )) == NAV_PATHS, "menu principal incomplet ou mal ordonné")
     verify(page.locator(".home-project").count() == 4,
            "les quatre accès directs SINJIRA doivent rester présents")
+    verify(page.locator('.home-project img[loading="lazy"][decoding="async"][fetchpriority="low"][width][height]').count() == 4,
+           "images secondaires non différées ou dimensions absentes")
+    verify(page.locator('.sinjira-orbit img[fetchpriority="high"]').count() == 1,
+           "priorité du logo principal perdue")
 
     for width in WIDTHS:
         page.set_viewport_size({"width": width, "height": 760})
@@ -134,8 +138,14 @@ def check_direct_access(page):
     verify(page.locator(".home-project").count() == 4,
            "les quatre rubriques ne sont plus disponibles")
     verify(page.locator(".home-project").evaluate_all(
-        "(cards) => cards.every(card => getComputedStyle(card).getPropertyValue('--card-glow').trim())"),
-           "couleurs de cartes absentes du CSS externe")
+        """cards => cards.every(card => {
+          const color = getComputedStyle(card).getPropertyValue('--card-glow').trim();
+          const match = color.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+          if (!match) return false;
+          const [r,g,b] = match.slice(1).map(Number);
+          return r >= 150 && r > 1.45*g && r > 1.35*b;
+        })"""),
+           "palette rouge/noire des cartes non conforme")
 
 
 def test_short_mobile_menu(page):

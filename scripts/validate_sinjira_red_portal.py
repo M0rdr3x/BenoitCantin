@@ -39,13 +39,20 @@ def check():
                 "rgba(134,80,178", "rgba(120,61,82", "#c4bbd8"):
         if old in css:
             err.append("Ancien halo mauve encore présent : " + old)
-    if 'home-sinjira-only-v1.css?v=1.1.0' not in html:
+    if 'home-sinjira-only-v1.css?v=1.1.1' not in html:
         err.append("Cache CSS pas invalidé")
     if 'src="/assets/icons/sinjira-officiel-20261120.png"' not in html or "sinjira.svg" in html:
         err.append("Image officielle absente ou ancienne cible encore présente")
-    glows = re.findall(r'--card-glow:(rgba?\([^)]+\))', html)
-    if len(glows) != 4 or not all(is_red(glow) for glow in glows):
-        err.append("Les quatre rubriques ne partagent pas la palette rouge/noire")
+    # Le HTML ne porte plus de styles intégrés. Chaque destination conserve
+    # sa propre couleur rouge dans la feuille externe versionnée.
+    if "--card-glow:" in html:
+        err.append("Couleur de carte intégrée au HTML")
+    for route in ("romans", "registre", "jeux", "communaute"):
+        selector = prefix + f'.home-project[href="/projets/sinjira/{route}/"]'
+        rule = get_rule(css, selector)
+        glows = re.findall(r'--card-glow:(rgba?\([^)]+\))', rule)
+        if len(glows) != 1 or not is_red(glows[0]):
+            err.append(f"Palette rouge/noire non conforme : {route}")
     if ":focus-visible" not in css or "prefers-reduced-motion:reduce" not in css:
         err.append("Protection d'accessibilité supprimée")
     if "@media(max-width:700px)" not in css or "@media(max-width:420px)" not in css:
