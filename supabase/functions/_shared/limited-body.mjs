@@ -5,6 +5,17 @@
  * Fail closed for malformed length, malformed UTF-8, aborted streams and
  * streaming bodies that exceed the byte limit. Do not echo request data.
  */
+// Ne pas attendre l'annulation : un producteur distant peut laisser la Promise
+// de cancel() indéfiniment en attente, même quand la limite est déjà dépassée.
+// La fermeture est consultative ; le refus HTTP doit toujours pouvoir terminer.
+function cancelReaderWithoutWaiting(reader) {
+  try {
+    void Promise.resolve(reader.cancel()).catch(() => {});
+  } catch {
+    // Même une erreur synchrone du producteur ne doit pas empêcher le refus.
+  }
+}
+
 export async function readLimitedUtf8Body(req, maxBytes) {
   if (!Number.isSafeInteger(maxBytes) || maxBytes < 0) {
     throw new TypeError('Invalid request body limit');
@@ -30,7 +41,7 @@ export async function readLimitedUtf8Body(req, maxBytes) {
       if (done) break;
       byteCount += value.byteLength;
       if (byteCount > maxBytes) {
-        await reader.cancel().catch(() => {});
+        cancelReaderWithoutWaiting(reader);
         return { ok: false };
       }
       text += decoder.decode(value, { stream: true });
@@ -38,7 +49,7 @@ export async function readLimitedUtf8Body(req, maxBytes) {
     text += decoder.decode();
     return { ok: true, raw: text };
   } catch {
-    await reader.cancel().catch(() => {});
+    cancelReaderWithoutWaiting(reader);
     return { ok: false };
   } finally {
     reader.releaseLock();
@@ -79,7 +90,7 @@ export async function readLimitedBinaryResponse(response, maxBytes) {
       if (done) break;
       if (!(value instanceof Uint8Array) ||
           value.byteLength > maxBytes - byteCount) {
-        await reader.cancel().catch(() => {});
+        cancelReaderWithoutWaiting(reader);
         return { ok: false };
       }
       byteCount += value.byteLength;
@@ -95,7 +106,7 @@ export async function readLimitedBinaryResponse(response, maxBytes) {
     }
     return { ok: true, bytes };
   } catch {
-    await reader.cancel().catch(() => {});
+    cancelReaderWithoutWaiting(reader);
     return { ok: false };
   } finally {
     reader.releaseLock();

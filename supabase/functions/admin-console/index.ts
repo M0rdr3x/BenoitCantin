@@ -237,10 +237,10 @@ Deno.serve(async(req)=>{
     if(action==='analytics'){
       const {data:rows=[],error}=await service.from('internal_gameplay_contributions')
         .select('game_slug,metrics,feedback,created_at').order('created_at',{ascending:false}).limit(10000);
-      if(error)throw error;const byGame:any={};
+      if(error)throw error;const byGame:any=Object.create(null);
       for(const r of rows){
         const k=r.game_slug||'inconnu',m=r.metrics||{},f=r.feedback||{};
-        byGame[k]||={count:0,players:0,pc:0,duration:0,dc:0,ratings:0,rc:0,difficulty:{}};
+        byGame[k]||={count:0,players:0,pc:0,duration:0,dc:0,ratings:0,rc:0,difficulty:Object.create(null)};
         const g=byGame[k];g.count++;
         if(Number(m.player_count)>0){g.players+=Number(m.player_count);g.pc++}
         if(Number(m.duration_minutes)>0){g.duration+=Number(m.duration_minutes);g.dc++}

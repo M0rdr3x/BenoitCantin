@@ -1,0 +1,60 @@
+name: SINJIRA — Retrait de la démo et navigation mobile
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-reader.js'
+      - 'assets/js/sinjira-demo-navigation-v1.mjs'
+      - 'assets/js/sinjira-demo-bootstrap-v1.mjs'
+      - 'projets/sinjira/romans/lire-demo.html'
+      - 'scripts/test_sinjira_demo_navigation_v1.mjs'
+      - '.github/workflows/sinjira-demo-reader-ux.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-reader.js'
+      - 'assets/js/sinjira-demo-navigation-v1.mjs'
+      - 'assets/js/sinjira-demo-bootstrap-v1.mjs'
+      - 'projets/sinjira/romans/lire-demo.html'
+      - 'scripts/test_sinjira_demo_navigation_v1.mjs'
+      - '.github/workflows/sinjira-demo-reader-ux.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  demo-reader-ux:
+    name: Démo retirée, repli accessible et ancienne navigation isolée
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Vérifier syntaxe de la navigation et du lecteur
+        run: |
+          node --check assets/js/sinjira-demo-navigation-v1.mjs
+          node --check assets/js/sinjira-demo-bootstrap-v1.mjs
+          node --input-type=module --check < assets/js/sinjira-reader.js
+      - name: Tester les interactions, le stockage et le mode hors connexion
+        run: node --test scripts/test_sinjira_demo_navigation_v1.mjs
+      - name: Contrôler le lecteur HTML et l'absence de diffusion privée
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          html = Path('projets/sinjira/romans/lire-demo.html').read_text('utf-8')
+          js = Path('assets/js/sinjira-demo-bootstrap-v1.mjs').read_text('utf-8')
+          assert 'data-reader-page="demo-pending"' in html
+          assert '62 pages' in html
+          assert 'Retour aux romans' in html
+          assert 'sinjira-demo-bootstrap-v1.mjs' not in html
+          assert 'data-pdf-reader' not in html
+          assert 'SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf' not in html
+          assert 'SINJIRA_LIVRE_I_LA_CENDRE_DU_JUGEMENT.pdf' not in html
+          assert not Path('projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf').exists()
+          assert 'sinjira-demo-navigation-v1.mjs' in js
+          assert 'startDemoNavigation(' in js
+          print('OK : ancienne démo retirée; statut HTML public et ancien module de navigation isolé')
+          PY

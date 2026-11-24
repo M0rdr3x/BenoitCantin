@@ -16,7 +16,7 @@ CONFIG_PATH = ROOT / "supabase/config.toml"
 FULL_BASENAME = "SINJIRA_LIVRE_I_LA_CENDRE_DU_JUGEMENT.pdf"
 FULL_SHA256 = "537dbe86dad08c288d5f559707b888257c40ea6aadb89b5abfbbf9789e1825a6"
 DEMO_BASENAME = "SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"
-DEMO_SHA256 = "0851852f586ea619ee7435a1b70c38087a7997ab6809bb10fdad0ed4bd0c352b"
+DEMO_SHA256 = "d76be06aca5b1568752f88223f07f7804fc7a54384ccc5bd856b0ce6fdf42dcf"
 PRODUCT_SLUG = "sinjira-livre-01-la-cendre-du-jugement"
 STATIC_EXTENSIONS = {".html", ".js", ".mjs", ".css", ".json", ".xml", ".webmanifest", ".txt"}
 SKIP_PARTS = {"codex", ".git", "node_modules"}
@@ -79,7 +79,8 @@ def validate(
         ("schema",): "sinjira.livre-i.delivery.v1",
         ("publication_state",): "not_activated",
         ("human_gate_required",): True,
-        ("demo", "pages"): 82,
+        ("demo", "pages"): 62,
+        ("demo", "publication_state"): "not_published_pending_binary_upload",
         ("demo", "sha256"): DEMO_SHA256,
         ("full_edition", "pages"): 520,
         ("full_edition", "sha256"): FULL_SHA256,
@@ -107,9 +108,12 @@ def validate(
                 f"Contrat Livre I inattendu pour {'.'.join(keys)}: {current!r} != {expected_value!r}"
             )
 
-    demo_url = str(contract.get("demo", {}).get("public_url", ""))
-    if not demo_url.endswith("/projets/sinjira/documents/" + DEMO_BASENAME):
-        errors.append("L'URL publique stable de la démo n'est plus celle attendue.")
+    # Ne pas annoncer une URL publique avant le transfert et la validation du PDF.
+    if contract.get("demo", {}).get("public_url") is not None:
+        errors.append("Une URL publique est annoncée pour une démo non publiée.")
+    old_demo = root / "projets/sinjira/documents" / DEMO_BASENAME
+    if old_demo.is_file():
+        errors.append("L'ancien PDF de 82 pages doit rester retiré de la branche active.")
 
     full = contract.get("full_edition", {})
     signed_seconds = int(full.get("signed_url_seconds", 999999))
@@ -156,7 +160,7 @@ def validate(
         {
             "authentification/résolution utilisateur": "optionalUser(req)",
             "client serveur pour décision d'accès": "serviceClient()",
-            "contrôle du rang d'accès": "userRank<(ranks[doc.access_level]||999)",
+            "contrôle du rang d'accès": "!documentAccessAllowed(doc.access_level,userRank)",
             "URL signée de courte durée": "createSignedUrl(doc.storage_path,600)",
             "réponse privée non mise en cache": "'Cache-Control':'private, no-store, max-age=0'",
             "protection MIME": "'X-Content-Type-Options':'nosniff'",
@@ -219,9 +223,10 @@ def self_test() -> None:
             "publication_state": "not_activated",
             "human_gate_required": True,
             "demo": {
-                "pages": 82,
+                "pages": 62,
                 "sha256": DEMO_SHA256,
-                "public_url": "https://www.benoitcantin.com/projets/sinjira/documents/" + DEMO_BASENAME,
+                "public_url": None,
+                "publication_state": "not_published_pending_binary_upload",
             },
             "full_edition": {
                 "pages": 520,
@@ -242,7 +247,7 @@ def self_test() -> None:
         contract_path.write_text(json.dumps(contract), encoding="utf-8")
 
         edge = """optionalUser(req); serviceClient();
-if(userRank<(ranks[doc.access_level]||999)){}
+if(!documentAccessAllowed(doc.access_level,userRank)){}
 service.storage.from(doc.storage_bucket).createSignedUrl(doc.storage_path,600);
 const h={'Cache-Control':'private, no-store, max-age=0','X-Content-Type-Options':'nosniff'};
 """

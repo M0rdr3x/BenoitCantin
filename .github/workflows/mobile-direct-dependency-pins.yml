@@ -1,0 +1,38 @@
+name: Sécurité mobile — dépendances directes figées
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mobile-native/package.json'
+      - 'scripts/validate_mobile_direct_dependencies.py'
+      - '.github/workflows/mobile-direct-dependency-pins.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'mobile-native/package.json'
+      - 'scripts/validate_mobile_direct_dependencies.py'
+      - '.github/workflows/mobile-direct-dependency-pins.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mobile-direct-pins:
+    name: Refuser les versions npm flottantes et scripts implicites
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sans authentification persistante
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python 3.12 figé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Tester les scénarios de dérive malveillante
+        run: python3 scripts/validate_mobile_direct_dependencies.py --self-test
+      - name: Examiner le véritable manifeste mobile
+        run: python3 scripts/validate_mobile_direct_dependencies.py

@@ -10,9 +10,10 @@ ROOT = Path(__file__).resolve().parents[1]
 GLOBAL_NAV = (
     "/",
     "/projets/sinjira/",
-    "/projets/projet-nova/",
-    "/a-propos.html",
-    "/contact.html",
+    "/projets/sinjira/romans/",
+    "/projets/sinjira/registre/",
+    "/projets/sinjira/communaute/",
+    "/compte/",
 )
 
 ERROR_PAGES = {
@@ -22,7 +23,7 @@ ERROR_PAGES = {
             "Erreur 404",
             "Retour à l’accueil",
             "Ouvrir SINJIRA™",
-            "Projet Nova",
+            "Nous contacter",
         ),
     },
     "offline.html": {
@@ -114,6 +115,11 @@ def validate_page(rel: str, cfg: dict[str, object], errors: list[str]) -> None:
         target = local_target(raw, path.parent)
         if target is not None and not target.exists():
             errors.append(f"{rel}: ressource/lien local absent: {raw}")
+
+    # Une page d'erreur doit aussi offrir un contact public sans promotion
+    # d'un programme archivé; ce lien reste indépendant du menu principal.
+    if rel == "404.html" and 'href="/contact.html"' not in html:
+        errors.append("404: lien de contact absent.")
 
     if rel == "404.html":
         for legacy, target in (

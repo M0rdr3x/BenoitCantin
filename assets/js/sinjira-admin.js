@@ -12,6 +12,30 @@ function renderCard(selector, value) {
   if (node) node.textContent = String(value ?? '—');
 }
 
+// Les libellés proviennent de contributions persistées. Aucun champ ne doit
+// passer par innerHTML, même si la fonction Edge exige un administrateur AAL2.
+function renderSafeAnalyticsTable(node, entries) {
+  if (!node) return;
+  const rows = entries.length ? entries : [['Aucune donnée', null]];
+  const elements = rows.map(([label, count]) => {
+    const row = document.createElement('tr');
+    const name = document.createElement('td');
+    name.textContent = String(label ?? '');
+    if (count === null) {
+      name.colSpan = 2;
+    } else {
+      const value = document.createElement('td');
+      value.textContent = String(count ?? '');
+      row.appendChild(name);
+      row.appendChild(value);
+      return row;
+    }
+    row.appendChild(name);
+    return row;
+  });
+  node.replaceChildren(...elements);
+}
+
 async function init() {
   if (!isSinjiraBackendConfigured()) {
     setStatus(status, 'Configurez Supabase avant d’utiliser l’analyse SINJIRA.', 'error');
@@ -37,27 +61,18 @@ async function init() {
     renderCard('[data-average-rating]', a.average_rating ? `${a.average_rating}/5` : '—');
 
     const results = document.querySelector('[data-result-table]');
-    if (results) {
-      results.innerHTML = Object.entries(a.results || {})
-        .sort((x, y) => y[1] - x[1])
-        .map(([label, count]) => `<tr><td>${label || 'Non indiqué'}</td><td>${count}</td></tr>`)
-        .join('') || '<tr><td colspan="2">Aucune donnée</td></tr>';
-    }
+    renderSafeAnalyticsTable(results, Object.entries(a.results || {})
+      .sort((x, y) => Number(y[1]) - Number(x[1]))
+      .map(([label, count]) => [label || 'Non indiqué', count]));
 
     const difficulty = document.querySelector('[data-difficulty-table]');
-    if (difficulty) {
-      difficulty.innerHTML = Object.entries(a.difficulty || {})
-        .sort((x, y) => y[1] - x[1])
-        .map(([label, count]) => `<tr><td>${label || 'Non indiqué'}</td><td>${count}</td></tr>`)
-        .join('') || '<tr><td colspan="2">Aucune donnée</td></tr>';
-    }
+    renderSafeAnalyticsTable(difficulty, Object.entries(a.difficulty || {})
+      .sort((x, y) => Number(y[1]) - Number(x[1]))
+      .map(([label, count]) => [label || 'Non indiqué', count]));
 
     const cards = document.querySelector('[data-card-table]');
-    if (cards) {
-      cards.innerHTML = (a.top_cards || [])
-        .map((item) => `<tr><td>${item.card}</td><td>${item.count}</td></tr>`)
-        .join('') || '<tr><td colspan="2">Aucune donnée</td></tr>';
-    }
+    renderSafeAnalyticsTable(cards, (Array.isArray(a.top_cards) ? a.top_cards : [])
+      .map((item) => [item?.card ?? '', item?.count ?? '']));
 
     setStatus(status, 'Analyse chargée à partir des contributions volontaires.', 'success');
   } catch (error) {

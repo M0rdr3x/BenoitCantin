@@ -1,0 +1,86 @@
+name: SINJIRA — Mes commentaires PC et mobile
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-account-v18.js'
+      - 'assets/css/sinjira-comments-responsive-v2.css'
+      - 'compte/mes-commentaires.html'
+      - 'scripts/validate_sinjira_my_comments_ux.py'
+      - 'tests/e2e/test_my_comments_responsive.py'
+      - '.github/workflows/sinjira-my-comments-ux.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-account-v18.js'
+      - 'assets/css/sinjira-comments-responsive-v2.css'
+      - 'compte/mes-commentaires.html'
+      - 'scripts/validate_sinjira_my_comments_ux.py'
+      - 'tests/e2e/test_my_comments_responsive.py'
+      - '.github/workflows/sinjira-my-comments-ux.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sinjira-my-comments-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  comments-ux:
+    name: Compteur, édition, suppression et ergonomie mobile
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Contrôler la syntaxe JS et Python
+        run: |
+          node --input-type=module --check < assets/js/sinjira-account-v18.js
+          python3 -m py_compile scripts/validate_sinjira_my_comments_ux.py
+      - name: Valider la liste et le formulaire de commentaires
+        run: python3 scripts/validate_sinjira_my_comments_ux.py
+
+  comments-browser:
+    name: Interactions fictives ${{ matrix.browser }} PC/mobile
+    needs: comments-ux
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.61.0-noble@sha256:a9731514f24121d1dcd25d58d0a38146646d290a5998fd80d3e533e7b5e21c69
+      options: --user 1001
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - name: Récupérer le dépôt sans accès en écriture
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Vérifier Python épinglé
+        run: python3 -c 'import sys; assert sys.version_info[:2] == (3, 12)'
+      - name: Installer le client Playwright compatible
+        run: python -m pip install --disable-pip-version-check "playwright==1.61.0"
+      - name: Démarrer le site statique local
+        run: |
+          python -m http.server 4173 --bind 127.0.0.1 > /tmp/comments-http.log 2>&1 &
+          echo $! > /tmp/comments-http.pid
+          for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+            if python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:4173/',timeout=1).read(1)" > /dev/null 2>&1; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/comments-http.log
+          exit 1
+      - name: Tester la vraie interface sur six tailles avec données fictives
+        env:
+          BASE_URL: http://127.0.0.1:4173/
+          BROWSER: ${{ matrix.browser }}
+        run: python tests/e2e/test_my_comments_responsive.py
+      - name: Arrêter le serveur local
+        if: always()
+        run: |
+          if [ -f /tmp/comments-http.pid ]; then kill "$(cat /tmp/comments-http.pid)" || true; fi

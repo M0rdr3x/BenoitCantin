@@ -65,11 +65,15 @@ def main()->int:
         "Number(declared) > maxBytes",
         "value.byteLength > maxBytes - byteCount",
         "if (byteCount === 0) return { ok: false }",
-        "await reader.cancel().catch(() => {})",
+        'function cancelReaderWithoutWaiting(reader)',
+        'void Promise.resolve(reader.cancel()).catch(() => {})',
+        'cancelReaderWithoutWaiting(reader);',
     ]
     for marker in stream_markers:
         if marker not in limited:
             errors.append(f'Lecteur PDF en flux: garde-fou absent: {marker}')
+    if re.search(r'\bawait\s+reader\.cancel\s*\(', limited):
+        errors.append('Lecteur PDF en flux : attente bloquante de cancel() interdite.')
     if 'await response.arrayBuffer()' in report.replace(
         '// response.arrayBuffer() permettrait à une origine défaillante de dépasser', ''
     ):

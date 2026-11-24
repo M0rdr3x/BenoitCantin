@@ -5,9 +5,11 @@
   "principle": "L’HUMAIN AVANT TOUT. PROTÉGER SANS SURVEILLER.",
   "source_issue": 363,
   "demo": {
-    "pages": 82,
-    "sha256": "0851852f586ea619ee7435a1b70c38087a7997ab6809bb10fdad0ed4bd0c352b",
-    "public_url": "https://www.benoitcantin.com/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"
+    "pages": 62,
+    "sha256": "d76be06aca5b1568752f88223f07f7804fc7a54384ccc5bd856b0ce6fdf42dcf",
+    "public_url": null,
+    "publication_state": "not_published_pending_binary_upload",
+    "epub_fixed_layout_sha256": "d4b466725dd3fd1e1047068e0991c32f87d33e2289ebd17f0500384b2b2baaed"
   },
   "full_edition": {
     "pages": 520,
@@ -24,5 +26,6 @@
     "signed_url_seconds": 300,
     "signed_url_max_seconds": 600,
     "activation_requires_explicit_human_decision": true
-  }
+  },
+  "updated_on": "2026-11-21"
 }

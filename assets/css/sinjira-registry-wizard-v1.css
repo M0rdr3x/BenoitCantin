@@ -1,0 +1,39 @@
+/* Questionnaire SINJIRA — étapes progressives sans persistance locale. */
+.sinjira-registry-wizard .v24-fieldset[data-registry-wizard-step][hidden],
+.sinjira-registry-wizard > label.account-check[hidden],
+.sinjira-registry-wizard > button[type="submit"][hidden],
+.sinjira-registry-wizard > p.legal-note[hidden],
+.registry-wizard-controls > button[hidden],
+.registry-wizard-error[hidden]{display:none!important}
+.registry-wizard-header{
+  position:relative;display:grid;gap:8px;margin:0 0 22px;
+  border:1px solid rgba(160,185,239,.2);border-radius:18px;
+  background:rgba(11,17,32,.85);padding:clamp(14px,3.5vw,22px);
+  scroll-margin-top:96px
+}
+.registry-wizard-step{margin:0;color:#f7faff;font-size:clamp(1rem,2.5vw,1.2rem);font-weight:750;line-height:1.5}
+.registry-wizard-progress{display:block;max-width:100%;width:100%;height:12px;accent-color:#80e7cf}
+.registry-wizard-hint{margin:0;color:#d0d9ec;font-size:.89rem;line-height:1.55;max-width:70ch}
+.registry-wizard-controls{display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between;margin:22px 0 14px}
+.registry-wizard-controls .btn{min-width:min(100%,185px);min-height:50px;text-align:center;cursor:pointer}
+.registry-wizard-controls .btn:focus-visible,.sinjira-registry-wizard :where(input,select,textarea):focus-visible{
+  outline:3px solid #8bf7e2;outline-offset:3px
+}
+.registry-wizard-error{margin:0 0 18px;padding:12px 16px;border-radius:12px;
+  background:rgba(154,43,43,.25);border:1px solid rgba(250,137,137,.65);color:#fff;line-height:1.5}
+.sinjira-registry-wizard legend:focus{outline:none}
+.sinjira-registry-wizard .v24-fieldset{min-width:0}
+.sinjira-registry-wizard .field :where(input,select,textarea){max-width:100%;min-height:46px}
+.sinjira-registry-wizard .field input[type=file]{height:auto;max-width:100%;font-size:1rem}
+.sinjira-registry-wizard .field-row{min-width:0}
+.sinjira-registry-wizard .v24-choice-grid label{min-height:46px}
+@media(max-width:580px){
+  .registry-wizard-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .registry-wizard-controls .btn{width:100%;min-width:0;min-height:52px;padding:10px}
+  .registry-wizard-controls .btn:only-child{grid-column:1/-1}
+  .sinjira-registry-wizard .field-row{grid-template-columns:1fr}
+}
+@media(max-width:340px){.registry-wizard-controls{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){
+  .sinjira-registry-wizard *{scroll-behavior:auto!important}
+}

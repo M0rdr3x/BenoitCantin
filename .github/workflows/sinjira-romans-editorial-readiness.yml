@@ -13,6 +13,9 @@ on:
       - 'scripts/sinjira_audit_historical_book_pdf.py'
       - 'assets/js/sinjira-roman-production-core-v1.mjs'
       - 'tests/reader/test_sinjira_roman_production_v1.mjs'
+      - 'tests/reader/test_sinjira_roman_iv_listing_v1.mjs'
+      - 'assets/css/sinjira-roman-iv-v1.css'
+      - 'compte/bibliotheque-romans.html'
       - 'scripts/validate_sinjira_livre_i_delivery.py'
       - '.github/workflows/sinjira-romans-editorial-readiness.yml'
   push:
@@ -26,6 +29,9 @@ on:
       - 'scripts/sinjira_audit_historical_book_pdf.py'
       - 'assets/js/sinjira-roman-production-core-v1.mjs'
       - 'tests/reader/test_sinjira_roman_production_v1.mjs'
+      - 'tests/reader/test_sinjira_roman_iv_listing_v1.mjs'
+      - 'assets/css/sinjira-roman-iv-v1.css'
+      - 'compte/bibliotheque-romans.html'
       - 'scripts/validate_sinjira_livre_i_delivery.py'
       - '.github/workflows/sinjira-romans-editorial-readiness.yml'
   workflow_dispatch:
@@ -51,6 +57,7 @@ jobs:
         run: |
           node --check assets/js/sinjira-roman-production-core-v1.mjs
           node --test tests/reader/test_sinjira_roman_production_v1.mjs
+          node --test tests/reader/test_sinjira_roman_iv_listing_v1.mjs
           python3 -m py_compile scripts/sinjira_audit_historical_book_pdf.py
       - name: Contrôler la frontière de livraison privée du Livre I
         run: python3 scripts/validate_sinjira_livre_i_delivery.py
