@@ -1,4 +1,4 @@
-import {getSupabase,isSinjiraBackendConfigured,setStatus} from './sinjira-supabase.js';
+import {getSupabase,isSinjiraBackendConfigured,setStatus,assertKnownAssuranceLevels} from './sinjira-supabase.js';
 
 const s=getSupabase();
 const form=document.querySelector('[data-reset-form]');
@@ -32,6 +32,7 @@ function deviceKey(){
 async function requireRecoveryAal2WhenAvailable(){
   const {data,error}=await s.auth.mfa.getAuthenticatorAssuranceLevel();
   if(error)throw error;
+  assertKnownAssuranceLevels(data);
   if(data?.nextLevel==='aal2'&&data?.currentLevel!=='aal2'){
     setBusy(true);
     setStatus(status,'Votre compte possède un second facteur. Vérifiez-le avant de choisir un nouveau mot de passe.','info');

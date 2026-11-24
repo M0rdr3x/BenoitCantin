@@ -108,6 +108,7 @@ def main():
   recovery_requirements={
     's.auth.getUser()':'validation serveur du lien/session de récupération',
     'getAuthenticatorAssuranceLevel':'lecture AAL de récupération',
+    'assertKnownAssuranceLevels(data);':'refus des niveaux AAL absents ou inconnus',
     "data?.nextLevel==='aal2'":'détection d’un MFA vérifié disponible',
     "data?.currentLevel!=='aal2'":'exigence AAL2 avant changement',
     'mfa.html?recovery=1':'passage par la page TOTP',

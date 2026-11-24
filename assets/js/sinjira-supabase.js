@@ -9,6 +9,12 @@ export function getSupabase() {
 }
 export async function getCurrentUser() {if (!isSinjiraBackendConfigured()) return null;const {data,error}=await getSupabase().auth.getUser();return error ? null : (data.user || null)}
 
+// Un résultat MFA incomplet ne constitue jamais une preuve d’assurance.
+export function assertKnownAssuranceLevels(data){
+  if(!data||!['aal1','aal2'].includes(data.currentLevel)||!['aal1','aal2'].includes(data.nextLevel)){
+    throw new Error('MFA_STATE_UNAVAILABLE');
+  }
+}
 export function safeInternalDestination(value,fallback='/compte/index.html'){
   const raw=typeof value==='string'?value:'';
   if(!raw||raw!==raw.trim()||!raw.startsWith('/')||raw.startsWith('//')||
@@ -34,6 +40,7 @@ export async function requireUser(redirect='/compte/connexion.html') {
     try{
       const {data,error}=await getSupabase().auth.mfa.getAuthenticatorAssuranceLevel();
       if(error)throw error;
+      assertKnownAssuranceLevels(data);
       if(data?.nextLevel==='aal2'&&data?.currentLevel!=='aal2'){
         location.replace(`/compte/mfa.html?next=${encodeURIComponent(next)}`);
         await new Promise(()=>{});

@@ -70,6 +70,32 @@ def validate_posters():
 
 def main():
     validate_posters()
+    manifest = json.loads((ROOT / "scripts/public_image_variants_manifest.json").read_text("utf-8"))
+    expected_variants = {f"sinjira-brand-{w}.webp" for w in (64,128,192)}
+    expected_variants |= {f"sinjira-{n}-public-{w}.webp" for n in ("communaute","demo-promo","resistance") for w in (480,720)}
+    if set(manifest) != expected_variants:
+        raise ValueError("Manifeste des neuf variantes incomplet")
+    for name, info in manifest.items():
+        path = ROOT / "assets/media" / name
+        data = path.read_bytes()
+        if (len(data) != info["bytes"] or len(data) >= info["original"]
+                or hashlib.sha256(data).hexdigest() != info["sha256"]
+                or dimensions(path) != (info["width"], info["height"])):
+            raise ValueError(f"Variante invalide : {name}")
+    for relative in (*PAGES, "projets/sinjira/registre/index.html", "projets/sinjira/codex/index.html"):
+        page = ROOT / relative
+        parser = Images()
+        parser.feed(page.read_text("utf-8"))
+        logos = [a for a in parser.images if a.get("src") in (
+            "/assets/icons/sinjira-favicon.png", "/assets/icons/sinjira-officiel-20261120.png")]
+        if len(logos) < 2:
+            raise ValueError(f"{relative}: logos absents")
+        for a in logos:
+            if a.get("width") in ("47", "58", "80"):
+                expected_set = ", ".join(f"/assets/media/sinjira-brand-{w}.webp {w}w" for w in (64,128,192))
+                if a.get("srcset") != expected_set or a.get("sizes") != a["width"] + "px":
+                    raise ValueError(f"{relative}: logo adaptatif absent")
+    print("OK intégrité et usage des neuf variantes publiques.")
     count = 0
     for relative, expected in PAGES.items():
         page = ROOT / relative
