@@ -145,3 +145,9 @@ compatibilité réelle des RPC.**
 - Suivi prioritaire : #725, #702, #713.
 
 **Aucune migration ni fonction SQL de production n'a été modifiée.**
+
+## Prévol de dérive du catalogue — 24 novembre 2026
+
+Avant toute préparation de migration, exécuter uniquement `preflight_revoked_session_catalog_read_only.sql` sur la cible autorisée. Cette requête ouvre une transaction en lecture seule, consulte les définitions du catalogue PostgreSQL, puis termine par ROLLBACK. Elle ne lit aucune ligne de compte, session ou jeton. Les huit RPC doivent chacune renvoyer `MATCH_ORIGINAL`. Toute absence, surcharge inattendue, garde déjà présent ou différence d'empreinte est un NO-GO : réexaminer et réconcilier le candidat, sans remplacer aveuglément les fonctions.
+
+Exécution réelle en lecture seule sur le catalogue Supabase actif le 24 novembre : 8/8 MATCH_ORIGINAL. Aucun des huit gardes candidats n'est encore présent. Cette observation ponctuelle n'est ni un test d'exploitation ni une preuve de révocation en production. Le prévol est couvert par le validateur Python et huit mutations négatives, ainsi que par les déclencheurs CI. Il ne déclenche aucune promotion et ne remplace pas les essais de préproduction.
