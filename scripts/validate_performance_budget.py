@@ -6,6 +6,7 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 TEXT_LIMITS = {".js": 550_000, ".css": 550_000, ".html": 650_000}
 IMAGE_LIMIT = 1_500_000
+HOME_CARD_IMAGE_TOTAL_LIMIT = 1_250_000
 EXCLUDED_DIRS = {".git", "node_modules", ".venv", "dist", "build"}
 CRITICAL_PAGES = [
     ROOT / "index.html",
@@ -82,13 +83,14 @@ def main() -> int:
     stylesheet_count = len(re.findall(r"<link\b[^>]*rel=[\"']stylesheet[\"']", home, flags=re.I))
     if script_count > 6:
         errors.append(f"index.html: {script_count} scripts; budget maximal 6.")
-    if stylesheet_count > 8:
-        errors.append(f"index.html: {stylesheet_count} feuilles de style; budget maximal 8.")
+    if stylesheet_count > 7:
+        errors.append(f"index.html: {stylesheet_count} feuilles de style; budget maximal 7.")
 
     cards = re.findall(r'<a class="home-project".*?</a>', home, flags=re.I | re.S)
     if len(cards) != 4:
         errors.append(f"index.html: 4 cartes principales attendues, trouvé {len(cards)}.")
     else:
+        card_image_bytes = 0
         for idx, card in enumerate(cards, start=1):
             image = re.search(r"<img\b[^>]*>", card, flags=re.I)
             if not image:
@@ -99,6 +101,19 @@ def main() -> int:
                 errors.append(f"index.html: image de la carte {idx} sans loading=lazy.")
             if 'decoding="async"' not in tag:
                 errors.append(f"index.html: image de la carte {idx} sans decoding=async.")
+            if 'fetchpriority="low"' not in tag:
+                errors.append(f"index.html: image secondaire {idx} sans priorité basse.")
+            if not re.search(r'\bwidth="[1-9]\d*"', tag) or not re.search(r'\bheight="[1-9]\d*"', tag):
+                errors.append(f"index.html: dimensions de la carte {idx} manquantes.")
+            src = re.search(r'\bsrc="([^"]+)"', tag)
+            asset = resolve_asset(ROOT / "index.html", src.group(1)) if src else None
+            if asset is None or not asset.is_file():
+                errors.append(f"index.html: image locale de la carte {idx} absente.")
+            else:
+                card_image_bytes += asset.stat().st_size
+        print(f"Images des quatre cartes accueil : {card_image_bytes:,} octets.")
+        if card_image_bytes > HOME_CARD_IMAGE_TOTAL_LIMIT:
+            errors.append(f"index.html: poids cumulé des cartes {card_image_bytes:,} > {HOME_CARD_IMAGE_TOTAL_LIMIT:,} octets.")
 
     if errors:
         print(f"ECHEC budgets performance: {len(errors)} problème(s).")

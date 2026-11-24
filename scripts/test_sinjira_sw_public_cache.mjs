@@ -67,10 +67,10 @@ test('installation publique et nettoyage limité aux caches de ce site', async (
   h.stores.set('benoitcantin-v24-4-95-public-7', new Map());
   h.stores.set('benoitcantin-v24-4-95-public-8', new Map());
   h.stores.set('benoitcantin-v24-4-95-public-9', new Map());
-  h.stores.set('benoitcantin-v24-4-95-public-11', new Map());
+  h.stores.set('benoitcantin-v24-4-95-public-12', new Map());
   await h.lifecycle('install');
   await h.lifecycle('activate');
-  assert.equal(h.stores.has('benoitcantin-v24-4-95-public-11'), false);
+  assert.equal(h.stores.has('benoitcantin-v24-4-95-public-12'), false);
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-4'), false);
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-6'), false);
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-7'), false);

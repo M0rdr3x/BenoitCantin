@@ -62,6 +62,10 @@ def test_home(page):
     )) == NAV_PATHS, "menu principal incomplet ou mal ordonné")
     verify(page.locator(".home-project").count() == 4,
            "les quatre accès directs SINJIRA doivent rester présents")
+    verify(page.locator('.home-project img[loading="lazy"][decoding="async"][fetchpriority="low"][width][height]').count() == 4,
+           "images secondaires non différées ou dimensions absentes")
+    verify(page.locator('.sinjira-orbit img[fetchpriority="high"]').count() == 1,
+           "priorité du logo principal perdue")
 
     for width in WIDTHS:
         page.set_viewport_size({"width": width, "height": 760})
@@ -115,7 +119,33 @@ def test_home(page):
 
     verify(page.locator(".home-cosmos a.sinjira-orbit").get_attribute("href")
            == "/projets/sinjira/", "destination officielle SINJIRA incorrecte")
+    check_direct_access(page)
 
+
+
+def check_direct_access(page):
+    link = page.locator(".home-direct-access")
+    target = page.locator("#univers-titre")
+    verify(link.count() == 1 and link.get_attribute("href") == "#univers-titre",
+           "accès direct aux rubriques absent")
+    verify(link.bounding_box()["height"] >= 43.5,
+           "zone tactile de l’accès direct insuffisante")
+    verify(target.get_attribute("tabindex") == "-1", "titre cible non focalisable")
+    link.focus()
+    link.press("Enter")
+    verify(urlparse(page.url).fragment == "univers-titre",
+           "navigation directe vers les rubriques impossible au clavier")
+    verify(page.locator(".home-project").count() == 4,
+           "les quatre rubriques ne sont plus disponibles")
+    verify(page.locator(".home-project").evaluate_all(
+        """cards => cards.every(card => {
+          const color = getComputedStyle(card).getPropertyValue('--card-glow').trim();
+          const match = color.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+          if (!match) return false;
+          const [r,g,b] = match.slice(1).map(Number);
+          return r >= 150 && r > 1.45*g && r > 1.35*b;
+        })"""),
+           "palette rouge/noire des cartes non conforme")
 
 
 def test_short_mobile_menu(page):
@@ -306,6 +336,7 @@ def test_without_javascript(browser):
         verify(response is not None and response.status < 400,
                "accueil sans JavaScript inaccessible")
         nav = page.locator("[data-main-nav]")
+        check_direct_access(page)
         for width in (320, 768, 1024):
             page.set_viewport_size({"width": width, "height": 760})
             verify(nav.is_visible(), f"liens inaccessibles sans JS à {width}px")
