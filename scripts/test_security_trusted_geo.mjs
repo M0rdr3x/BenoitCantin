@@ -50,7 +50,7 @@ test('The original raw headers cannot change an attested country/region', async(
   const proof=await makeProof();
   assert.deepEqual(await verified(headersFor({proof,country:'FR'})),EMPTY);
   assert.deepEqual(await verified(headersFor({proof,region:'Ontario'})),EMPTY);
-  assert.deepEqual(await verified(headersFor({proof:proof.slice(0,-2)+'ff'})),EMPTY);
+  assert.deepEqual(await verified(headersFor({proof:proof.slice(0,-1)+(proof.endsWith('0')?'1':'0')})),EMPTY);
 });
 
 test('HMAC proof cannot be replayed under another user session', async()=>{

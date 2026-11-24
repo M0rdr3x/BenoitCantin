@@ -1,0 +1,110 @@
+/* À propos de Benoit Cantin — SINJIRA au premier plan, contact clair.
+ * Styles locaux; ne modifie ni le compte ni les autres projets. */
+body.about-ux-page .about-hero{
+  padding-block:clamp(24px,5vw,70px);
+}
+body.about-ux-page .about-hero h1{
+  font-size:clamp(2.15rem,8vw,5.25rem);
+  line-height:1.08;
+  overflow-wrap:anywhere;
+  text-wrap:balance;
+}
+body.about-ux-page .about-hero p{
+  max-width:66ch;
+  line-height:1.65;
+  overflow-wrap:anywhere;
+}
+body.about-ux-page .about-content-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:stretch;
+  gap:clamp(12px,2.5vw,26px);
+}
+body.about-ux-page .about-content-grid > *{
+  box-sizing:border-box;
+  min-width:0;
+  padding:clamp(18px,3vw,32px);
+  overflow-wrap:anywhere;
+}
+body.about-ux-page .about-content-grid h2{
+  font-size:clamp(1.3rem,2.3vw,1.75rem);
+  line-height:1.25;
+}
+body.about-ux-page .about-content-grid p,
+body.about-ux-page .about-content-grid li{
+  line-height:1.7;
+}
+body.about-ux-page .about-content-grid ul{
+  padding-inline-start:clamp(18px,3vw,24px);
+}
+body.about-ux-page .about-contact-panel{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:clamp(16px,3vw,30px);
+  box-sizing:border-box;
+  padding:clamp(18px,4vw,38px);
+  min-width:0;
+}
+body.about-ux-page .about-contact-panel > div{min-width:0}
+body.about-ux-page .about-contact-panel h2{
+  font-size:clamp(1.35rem,2.6vw,2rem);
+  line-height:1.25;
+  overflow-wrap:anywhere;
+}
+body.about-ux-page .about-contact-panel p{
+  max-width:64ch;
+  line-height:1.65;
+  overflow-wrap:anywhere;
+}
+body.about-ux-page .about-contact-actions{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:stretch;
+  justify-content:flex-end;
+  gap:12px;
+}
+body.about-ux-page .about-contact-actions > a{
+  box-sizing:border-box;
+  min-height:48px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  max-width:100%;
+  padding:12px 17px;
+  text-align:center;
+  line-height:1.4;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+body.about-ux-page .about-contact-actions > a:focus-visible{
+  outline:3px solid #a1f4ec;
+  outline-offset:4px;
+}
+@media(max-width:1050px){
+  body.about-ux-page .about-content-grid{
+    grid-template-columns:minmax(0,1fr);
+  }
+  body.about-ux-page .about-contact-panel{
+    grid-template-columns:minmax(0,1fr);
+  }
+  body.about-ux-page .about-contact-actions{
+    justify-content:flex-start;
+  }
+}
+@media(max-width:560px){
+  body.about-ux-page .about-hero{
+    padding-block:clamp(20px,6vw,42px);
+  }
+  body.about-ux-page .about-contact-actions{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:10px;
+  }
+  body.about-ux-page .about-contact-actions > a{
+    width:100%;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  body.about-ux-page .about-contact-actions > a{transition:none}
+}

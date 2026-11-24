@@ -1,105 +1,97 @@
 #!/usr/bin/env python3
+"""Contrat de l'accueil personnel : SINJIRA est l'unique projet mis en avant.
+
+Les pages Nova historiques demeurent disponibles dans le dépôt pour archivage;
+leur présence dans le projet ne doit plus être requise sur la page d'accueil.
+"""
+from html.parser import HTMLParser
 from pathlib import Path
-import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-HOME = ROOT / 'index.html'
-HOME_CSS = ROOT / 'assets' / 'css' / 'home-v24-4-12.css'
+HOME = ROOT / "index.html"
+STYLE = ROOT / "assets/css/home-sinjira-only-v1.css"
 
-REQUIRED = {
-    '/projets/sinjira/': 'SINJIRA™',
-    '/projets/sinjira/registre/': 'Registre des Consciences',
-    '/projets/projet-nova/': 'Projet Nova',
-    '/projets/projet-nova/boussole-electorale.html': 'Boussole électorale',
+FEATURE_LINKS = {
+    "/projets/sinjira/romans/",
+    "/projets/sinjira/registre/",
+    "/projets/sinjira/jeux/",
+    "/projets/sinjira/communaute/",
 }
-FORBIDDEN_MARKERS = [
-    'Lumina',
-    'Futurax',
-    'Chroniques des Mondes Fracturés',
-    'v20-six-portals',
-    'node-community',
-    'node-character-network',
-]
+
+
+class HomeStructure(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.project_circles = []
+        self.feature_cards = []
+        self.navigation = []
+        self.images = []
+        self.css = []
+        self._cosmos = 0
+        self._stack = []
+
+    def handle_starttag(self, tag, attrs):
+        data = dict(attrs)
+        classes = set(data.get("class", "").split())
+        if tag == "div" and "home-cosmos" in classes:
+            self._cosmos += 1
+        if tag == "a" and self._cosmos and "sinjira-orbit" in classes:
+            self.project_circles.append(data.get("href"))
+        if tag == "a" and "home-project" in classes:
+            self.feature_cards.append(data.get("href"))
+        if tag == "a":
+            self.navigation.append(data.get("href"))
+        if tag == "img":
+            self.images.append(data.get("src"))
+        if tag == "link" and data.get("rel") == "stylesheet":
+            self.css.append(data.get("href"))
+        # HTMLParser n'est pas un parseur de DOM complet; les sections de
+        # l'orbite sont contrôlées directement par une sous-chaîne plus bas.
 
 
 def main() -> int:
-    errors: list[str] = []
-    if not HOME.exists():
-        print('ECHEC: index.html absent.')
+    errors = []
+    if not HOME.is_file() or not STYLE.is_file():
+        print("ECHEC: accueil ou feuille de style SINJIRA manquants.")
         return 1
 
-    text = HOME.read_text('utf-8', errors='ignore')
+    home = HOME.read_text("utf-8")
+    css = STYLE.read_text("utf-8")
+    parser = HomeStructure()
+    parser.feed(home)
 
-    for href, label in REQUIRED.items():
-        if href not in text:
-            errors.append(f'Porte principale absente: {label} ({href})')
-
-    home_cosmos = re.search(r'<div class="home-cosmos".*?</div>\s*</div>\s*</section>', text, re.S)
-    if not home_cosmos:
-        errors.append('Constellation native home-cosmos introuvable sur la page d’accueil.')
-    else:
-        block = home_cosmos.group(0)
-        nodes = re.findall(r'class="orbit-node\s+([^\"]+)"', block)
-        if len(nodes) != 4:
-            errors.append(f'La constellation doit contenir exactement 4 portes; détecté: {len(nodes)}.')
-        expected_classes = {'node-sinjira-home', 'node-registre-home', 'node-nova-home', 'node-boussole-home'}
-        found = set()
-        for entry in nodes:
-            found.update(entry.split())
-        missing = sorted(expected_classes - found)
-        if missing:
-            errors.append('Classes de portes manquantes: ' + ', '.join(missing))
-
-    for marker in FORBIDDEN_MARKERS:
-        if marker in text:
-            errors.append(f'Ancien univers/composant encore présent sur l’accueil: {marker}')
-
-    if 'data-core-preview' not in text:
-        errors.append('Aperçu central interactif data-core-preview absent.')
-    if 'data-default-src="/assets/icons/benoit-sigil.svg"' not in text:
-        errors.append('Le sceau Benoit Cantin doit rester l’image centrale par défaut.')
-
-
-    if not HOME_CSS.is_file():
-        errors.append('Feuille de style accueil home-v24-4-12.css absente.')
-    else:
-        css = HOME_CSS.read_text('utf-8', errors='ignore')
-        for marker in (
-            '.home-cosmos .node-registre-home img{width:126px;height:136px',
-            '.home-cosmos .node-sinjira-home img{width:128px;height:128px',
-            '.home-cosmos .node-nova-home img{width:128px;height:128px',
-            '.home-cosmos .node-boussole-home img{width:132px;height:132px;object-fit:contain',
-        ):
-            if marker not in css:
-                errors.append(f'Proportions dédiées des portes absentes: {marker}')
-
-    if text.count('/assets/media/nova-logo.webp') < 3:
-        errors.append('Le logo Nova optimisé pour le portail doit alimenter la porte, l’aperçu central et la carte Projet Nova.')
-    if '/projets/projet-nova/assets/logo-nova.webp' in text:
-        errors.append('Le logo Nova interne, moins adapté au cadrage du portail, ne doit plus être utilisé sur l’accueil.')
-
-    if text.count('/projets/projet-nova/boussole-electorale.html') < 4:
-        errors.append('La Boussole électorale doit être accessible à au moins quatre endroits sur l’accueil principal.')
-
-    for marker in (
-        'node-boussole-home',
-        '/assets/media/nova-boussole-electorale.webp?v=20261013-fix',
-        'Quatre portes · une même signature',
-        '>Boussole</a>',
-    ):
-        if marker not in text:
-            errors.append(f'Boussole électorale: placement visuel principal absent: {marker}')
+    if 'class="home-page home-sinjira-only"' not in home:
+        errors.append("Classe d'isolation de la nouvelle page manquante.")
+    if parser.project_circles != ["/projets/sinjira/"]:
+        errors.append("Le cercle doit contenir un seul lien, vers SINJIRA.")
+    if len(parser.feature_cards) != 4 or set(parser.feature_cards) != FEATURE_LINKS:
+        errors.append("Les 4 services SINJIRA doivent figurer sous le cercle.")
+    if "nova" in home.casefold() or "boussole" in home.casefold():
+        errors.append("Aucune présentation Nova/boussole ne doit rester sur l'accueil.")
+    if any((url or "").startswith("/projets/projet-nova") for url in parser.navigation):
+        errors.append("Un lien Nova est encore affiché sur l'accueil.")
+    if not any("home-sinjira-only-v1.css" in href for href in parser.css):
+        errors.append("Styles SINJIRA de l'accueil absents.")
+    if "/assets/icons/sinjira-officiel-20261120.png" not in parser.images:
+        errors.append("Le cercle doit utiliser le logo SINJIRA et non une cible.")
+    if "/assets/icons/sinjira.svg" in parser.images:
+        errors.append("L’ancien pictogramme cible doit être absent de l’accueil.")
+    for key in (".home-sinjira-cosmos", ".sinjira-orbit", "@media(max-width:700px)",
+                ":focus-visible", "prefers-reduced-motion"):
+        if key not in css:
+            errors.append(f"Ergonomie/accessibilité CSS manquante: {key}")
+    if ".home-sinjira-only" not in css:
+        errors.append("CSS global non isolé sous home-sinjira-only.")
 
     if errors:
-        print(f'ECHEC accueil: {len(errors)} problème(s).')
+        print("ECHEC accueil SINJIRA: " + str(len(errors)) + " problème(s)")
         for error in errors:
-            print('- ' + error)
+            print("- " + error)
         return 1
-
-    print('OK: accueil à quatre portes — SINJIRA™, Registre, Projet Nova et Boussole électorale — avec sceau BC par défaut.')
+    print("OK: SINJIRA seul dans le cercle, 4 services associés, aucune porte Nova, styles mobile et clavier.")
     return 0
 
 
-if __name__ == '__main__':
-    raise SystemExit(main())
+if __name__ == "__main__":
+    sys.exit(main())

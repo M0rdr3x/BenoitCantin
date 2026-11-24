@@ -60,7 +60,6 @@ REQUIRED = (
     "projets/projet-nova/sondages-a-valider.html",
     "projets/sinjira/romans/index.html",
     "projets/sinjira/codex/index.html",
-    "projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf",
     "assets/js/site.js",
     "compte/index.html",
     "admin/index.html",

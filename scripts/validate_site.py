@@ -481,8 +481,16 @@ def main() -> int:
             src.split('?v=', 1)[1] if '?v=' in src else '(sans version)'
             for src in script_sources if src.split('?', 1)[0].endswith(script_path)
         ]
-        if versions != [version]:
-            errors.append(f'Navigation incohérente dans {rel}: version {version} attendue, trouvée {versions}')
+        # Les pages SINJIRA opt-in utilisent le nouveau menu tablette et
+        # invalident explicitement l'ancien cache du script commun.
+        # Les pages Nova/legacy non migrées conservent leur contrat historique.
+        expected_version = (
+            '24.4.101'
+            if script_path == 'assets/js/site.js' and 'data-sinjira-ux="v1"' in html
+            else version
+        )
+        if versions != [expected_version]:
+            errors.append(f'Navigation incohérente dans {rel}: version {expected_version} attendue, trouvée {versions}')
         if 'data-menu-toggle' not in html or 'data-main-nav' not in html:
             errors.append(f'Navigation mobile absente sur le parcours public: {rel}')
 

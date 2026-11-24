@@ -2,10 +2,12 @@ import { getSupabase, requireUser } from './sinjira-supabase.js';
 import { pdfTextToParagraphs, speechTextChunks } from './sinjira-liseuse-text-v27.mjs';
 import { createReaderCompanion } from './sinjira-liseuse-companion-v28.mjs';
 import { chooseReadingPosition, ratioFromScroll, scrollTopForRatio, readingRatio, shouldReplayReadingProgress } from './sinjira-liseuse-position-v31.mjs?v=34.11.07.1';
+import { planReaderScreenTurn, canTurnReaderScreen } from './sinjira-liseuse-screen-turn-v54.mjs';
 
 /* SINJIRA 2026 — liseuse : le PDF intégral n'entre jamais dans le dépôt public
    ni dans localStorage. Le serveur attribue le droit de lecture avant de signer l'accès. */
-const DEMO_URL='/projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf';
+// Le PDF précédent a été retiré. L'extrait de validation (62 pages) n'est pas hébergé.
+const DEMO_URL=null;
 const SIGNED_ORIGIN='https://gpvivleexywljowcqkru.supabase.co';
 const PDFJS='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.9.155/build/pdf.min.mjs';
 const PDF_WORKER='https://cdn.jsdelivr.net/npm/pdfjs-dist@4.9.155/build/pdf.worker.min.mjs';
@@ -34,7 +36,7 @@ const chaptersFull=[
 const chaptersDemo=[
   [1,'Couverture et mentions légales'],[3,'Prologue'],
   [25,'Chapitre 1 — Le matin qui hésite'],[41,'Chapitre 2 — Les choses normales'],
-  [61,'Chapitre 3 — Une erreur qui regarde']
+  [61,'Fin de l’extrait']
 ];
 const $=id=>document.getElementById(id);
 const state={pdf:null,page:1,mode:'texte',theme:'sepia',size:20,zoom:1,
@@ -110,11 +112,64 @@ function setTheme(){
   $('reader-voice-auto').checked=state.autoSpeech;
   $('reader-mode').textContent=state.mode==='texte'?'Afficher le PDF':'Texte adaptable';
   $('reader-mode').setAttribute('aria-pressed',String(state.mode==='page'));
+  updateScreenControls();
   savePreferences();
+}
+// Le changement de typographie recompose le texte. Conserver l'emplacement
+// numérique intrapage de V31 jusqu'au prochain rendu, sans lire, copier ni
+// conserver le texte privé. Cette approximation n'est pas une ancre EPUB.
+let pendingTextRelayout=null;
+function updateReaderTypography(applySetting){
+  const viewer=$('reader-viewer');
+  const preserve=Boolean(state.pdf&&state.mode==='texte'&&!state.restoringScroll);
+  const previous=pendingTextRelayout;
+  const ratio=preserve
+    ?previous&&previous.pdf===state.pdf&&previous.page===state.page&&
+       previous.version===state.renderVersion
+      ?previous.ratio
+      :ratioFromScroll(viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight)
+    :null;
+  if(preserve){
+    // La sauvegarde différée du précédent scroll ne doit pas écraser
+    // la nouvelle position lors d'un glissement rapide du curseur de taille.
+    clearTimeout(state.scrollTimer);state.scrollTimer=null;
+  }
+  applySetting();
+  setTheme();
+  if(!preserve)return;
+  const transaction={pdf:state.pdf,page:state.page,version:state.renderVersion,ratio};
+  pendingTextRelayout=transaction;
+  requestAnimationFrame(()=>{
+    if(pendingTextRelayout!==transaction)return;
+    pendingTextRelayout=null;
+    if(state.pdf!==transaction.pdf||state.page!==transaction.page||
+       state.renderVersion!==transaction.version||state.mode!=='texte'||
+       state.accessInvalidated)return;
+    viewer.scrollTop=scrollTopForRatio(transaction.ratio,
+      viewer.scrollHeight,viewer.clientHeight);
+    state.positionRatio=ratioFromScroll(viewer.scrollTop,
+      viewer.scrollHeight,viewer.clientHeight);
+    updateScreenControls();
+    persist();
+  });
 }
 function currentChapter(){
   const chapters=isFull?chaptersFull:chaptersDemo;
   return [...chapters].reverse().find(chapter=>chapter[0]<=state.page)||chapters[0];
+}
+function updateScreenControls(){
+  if(!state.pdf)return;
+  const viewer=$('reader-viewer'),isText=state.mode==='texte';
+  const previous=$('reader-previous'),next=$('reader-next');
+  previous.textContent=isText?'← Écran précédent':'← Page PDF précédente';
+  next.textContent=isText?'Écran suivant →':'Page PDF suivante →';
+  const common={
+    mode:state.mode,scrollTop:viewer.scrollTop,
+    scrollHeight:viewer.scrollHeight,clientHeight:viewer.clientHeight,
+    page:state.page,totalPages:state.pdf.numPages
+  };
+  previous.disabled=!canTurnReaderScreen({...common,direction:-1});
+  next.disabled=!canTurnReaderScreen({...common,direction:1});
 }
 function updateToolbar(){
   if(!state.pdf)return;
@@ -126,8 +181,7 @@ function updateToolbar(){
   $('reader-total').textContent=String(max);
   $('reader-percent').textContent=percentage+' %';
   $('reader-bar').style.width=percentage+'%';
-  $('reader-previous').disabled=state.page<=1;
-  $('reader-next').disabled=state.page>=max;
+  updateScreenControls();
   const chapter=currentChapter();
   $('reader-chapter-label').textContent=chapter[1];
   $('reader-chapters').value=String(chapter[0]);
@@ -261,7 +315,10 @@ function restoreScrollAfterRender(version){
     const viewer=$('reader-viewer');
     viewer.scrollTop=scrollTopForRatio(ratio,viewer.scrollHeight,viewer.clientHeight);
     requestAnimationFrame(()=>{
-      if(version===state.renderVersion)state.restoringScroll=false;
+      if(version===state.renderVersion){
+        state.restoringScroll=false;
+        updateScreenControls();
+      }
     });
   });
 }
@@ -447,25 +504,45 @@ function renderPage(){
     }
   }).catch(error=>message('Impossible d’afficher cette page. Réessayez ou utilisez le lecteur PDF de secours.','error'));
 }
-function changePage(value){
+function changePage(value,{end=false}={}){
   if(!state.pdf)return;
   const next=clamp(Math.round(value),1,state.pdf.numPages);
   if(next===state.page)return;
   flushScrollPosition();
   stopNarration(false);
   state.page=next;
-  state.positionRatio=0;
-  state.restorePending=0;
+  // En revenant par balayage depuis le début d'une page PDF, reprendre
+  // à la fin de la précédente plutôt que d'en sauter la dernière portion.
+  state.positionRatio=end?1:0;
+  state.restorePending=end?1:0;
   state.restoringScroll=true;
   $('reader-viewer').scrollTo({top:0,left:0,behavior:'auto'});
   updateToolbar();persist();renderPage();
   positionNotice('Page '+state.page+' mémorisée automatiquement. Vous pouvez aussi l’enregistrer maintenant.');
   companion?.onPageChange();
 }
+function turnVisibleReadingScreen(direction){
+  if(!state.pdf)return;
+  const viewer=$('reader-viewer');
+  const next=planReaderScreenTurn({
+    direction,mode:state.mode,scrollTop:viewer.scrollTop,
+    scrollHeight:viewer.scrollHeight,clientHeight:viewer.clientHeight
+  });
+  if(next.kind==='scroll'){
+    // La zone de lecture garde le texte sélectionnable. Le scroll existant
+    // synchronise le ratio de lecture sans sauvegarder de contenu du roman.
+    viewer.scrollTo({top:next.top,left:0,behavior:'auto'});
+    updateScreenControls();
+  }else if(next.kind==='page'){
+    changePage(state.page+next.delta,{end:next.end});
+  }
+}
 function bindControls(){
   $('reader-save-position').addEventListener('click',()=>{void saveCurrentPosition()});
   $('reader-viewer').addEventListener('scroll',()=>{
-    if(!state.pdf||state.restoringScroll)return;
+    if(!state.pdf)return;
+    if(!state.restoringScroll)updateScreenControls();
+    if(state.restoringScroll)return;
     clearTimeout(state.scrollTimer);
     state.scrollTimer=setTimeout(()=>{
       state.scrollTimer=null;
@@ -479,8 +556,35 @@ function bindControls(){
       }
     },650);
   },{passive:true});
-  $('reader-previous').addEventListener('click',()=>changePage(state.page-1));
-  $('reader-next').addEventListener('click',()=>changePage(state.page+1));
+  /* Geste mobile : tourner une page sans détourner le défilement vertical,
+     la sélection du texte ni le déplacement horizontal d'un PDF agrandi. */
+  let swipeStart=null;
+  const swipeViewer=$('reader-viewer');
+  swipeViewer.addEventListener('touchstart',event=>{
+    if(!state.pdf||event.touches.length!==1||
+       event.target.closest('a,button,input,select,textarea,[contenteditable]')){
+      swipeStart=null;return;
+    }
+    const touch=event.touches[0];
+    swipeStart={x:touch.clientX,y:touch.clientY,page:state.page};
+  },{passive:true});
+  swipeViewer.addEventListener('touchend',event=>{
+    const start=swipeStart;swipeStart=null;
+    if(!start||!state.pdf||event.touches.length||
+       event.changedTouches.length!==1||start.page!==state.page)return;
+    const touch=event.changedTouches[0];
+    const dx=touch.clientX-start.x,dy=touch.clientY-start.y;
+    if(Math.abs(dx)<Math.max(55,swipeViewer.clientWidth*.12)||
+       Math.abs(dx)<=Math.abs(dy)*1.5)return;
+    if(state.mode==='page'&&swipeViewer.scrollWidth>swipeViewer.clientWidth+8)return;
+    if(window.getSelection()?.toString())return;
+    turnVisibleReadingScreen(dx<0?1:-1);
+  },{passive:true});
+  swipeViewer.addEventListener('touchcancel',()=>{swipeStart=null},{passive:true});
+  // Le bouton, le clavier et le geste tactile accomplissent le même mouvement.
+  // Le numéro et la barre de progression gardent l'accès direct aux pages PDF.
+  $('reader-previous').addEventListener('click',()=>turnVisibleReadingScreen(-1));
+  $('reader-next').addEventListener('click',()=>turnVisibleReadingScreen(1));
   $('reader-page').addEventListener('change',event=>changePage(event.target.value));
   $('reader-range').addEventListener('change',event=>changePage(event.target.value));
   $('reader-chapters').addEventListener('change',event=>changePage(event.target.value));
@@ -494,19 +598,21 @@ function bindControls(){
     state.theme=event.target.value;setTheme();
   });
   $('reader-size').addEventListener('input',event=>{
-    state.size=clamp(event.target.value,16,34);setTheme();
+    updateReaderTypography(()=>{state.size=clamp(event.target.value,16,34)});
   });
   $('reader-font').addEventListener('change',event=>{
-    if(['serif','sans','accessible'].includes(event.target.value)){state.font=event.target.value;setTheme()}
+    if(['serif','sans','accessible'].includes(event.target.value)){
+      updateReaderTypography(()=>{state.font=event.target.value});
+    }
   });
   $('reader-line-height').addEventListener('change',event=>{
-    state.lineHeight=Number(event.target.value);setTheme();
+    updateReaderTypography(()=>{state.lineHeight=Number(event.target.value)});
   });
   $('reader-text-width').addEventListener('change',event=>{
-    state.textWidth=Number(event.target.value);setTheme();
+    updateReaderTypography(()=>{state.textWidth=Number(event.target.value)});
   });
   $('reader-letter-spacing').addEventListener('change',event=>{
-    state.letterSpacing=Number(event.target.value);setTheme();
+    updateReaderTypography(()=>{state.letterSpacing=Number(event.target.value)});
   });
   $('reader-speed').addEventListener('change',event=>{
     state.speed=Number(event.target.value);savePreferences();
@@ -537,11 +643,17 @@ function bindControls(){
     state.zoom=clamp(event.target.value,.8,1.5);setTheme();
     if(state.mode==='page')renderPage();
   });
-  document.addEventListener('keydown',event=>{
-    const tag=document.activeElement?.tagName||'';
-    if(['INPUT','SELECT','TEXTAREA','BUTTON'].includes(tag)||event.altKey||event.ctrlKey||event.metaKey)return;
-    if(event.key==='ArrowRight'||event.key==='PageDown'){event.preventDefault();changePage(state.page+1)}
-    if(event.key==='ArrowLeft'||event.key==='PageUp'){event.preventDefault();changePage(state.page-1)}
+  // Les flèches n'interceptent plus le défilement et la navigation du reste
+  // du site : le lecteur (tabindex=0) doit avoir le focus explicitement.
+  swipeViewer.addEventListener('keydown',event=>{
+    if(event.defaultPrevented||event.altKey||event.ctrlKey||event.metaKey||
+       event.shiftKey||event.target.closest('a,button,input,select,textarea,[contenteditable]'))return;
+    if(event.key==='ArrowRight'||event.key==='PageDown'){
+      event.preventDefault();turnVisibleReadingScreen(1);
+    }
+    if(event.key==='ArrowLeft'||event.key==='PageUp'){
+      event.preventDefault();turnVisibleReadingScreen(-1);
+    }
   });
   let resizeTimer;
   window.addEventListener('resize',()=>{
@@ -664,6 +776,19 @@ async function restorePage(){
   }
 }
 async function init(){
+  // Ne pas lancer un PDF retiré ni importer le lecteur PDF.js pour la démo.
+  // L'intégrale conserve son accès privé et son contrat d'authentification.
+  if(!isFull){
+    $('reader-edition').textContent='Démo de 62 pages · en validation';
+    $('reader-privacy').textContent='L’ancienne édition a été retirée. La nouvelle démo de 62 pages n’est pas encore publiée sur le site.';
+    $('reader-demo-link').hidden=true;
+    $('reader-download-demo').hidden=true;
+    $('reader-native-demo').hidden=true;
+    $('reader-loading').hidden=true;
+    $('reader-error').hidden=false;
+    message('Démo temporairement indisponible : la nouvelle édition de validation n’est pas encore distribuée.','info');
+    return;
+  }
   loadPreferences();setTheme();bindControls();configureSpeech();
   if(window.matchMedia?.('(max-width: 980px)').matches){
     document.querySelectorAll('.reader-sidebar details').forEach(detail=>{detail.open=false});
@@ -675,11 +800,11 @@ async function init(){
     option.value=String(page);option.textContent=label;
     picker.append(option);
   }
-  $('reader-edition').textContent=isFull?'Édition intégrale privée · 520 pages':'Démo gratuite · 82 pages';
+  $('reader-edition').textContent=isFull?'Édition intégrale privée · 520 pages' :'Démo de 62 pages · en validation';
   $('reader-demo-link').hidden=!isFull;
   $('reader-privacy').textContent=isFull
     ?'Lecture intégrale : une session authentifiée et un droit validé par le serveur sont nécessaires. Le fichier n’est pas enregistré dans le site public.'
-    :'Démo officielle : prologue et chapitres 1 à 3. Vous pouvez aussi télécharger le PDF gratuit.';
+     :'Démo de validation : prologue et chapitres 1 et 2. Publication en attente.';
   $('reader-download-demo').hidden=isFull;
   message(isFull?'Vérification de votre accès privé…':'Chargement de la démo officielle…');
   let loadedPdf=null;
@@ -702,7 +827,7 @@ async function init(){
     pdfjs.GlobalWorkerOptions.workerSrc=PDF_WORKER;
     loadedPdf=await pdfjs.getDocument({data,isEvalSupported:false,useSystemFonts:true}).promise;
     assertPrivateAccess(loadEpoch);
-    if(loadedPdf.numPages!==(isFull?520:82))throw new Error('Le nombre de pages de ce document ne correspond pas à l’édition attendue.');
+    if(loadedPdf.numPages!==(isFull?520:62))throw new Error('Le nombre de pages de ce document ne correspond pas à l’édition attendue.');
     state.pdf=loadedPdf;
     await restorePage();
     assertPrivateAccess(loadEpoch);
@@ -755,11 +880,7 @@ async function init(){
       message(error?.message||'Lecture actuellement indisponible.','error');
     }
     $('reader-error').hidden=false;
-    if(!isFull){
-      const link=$('reader-native-demo');
-      link.href=DEMO_URL;
-      link.hidden=false;
-    }
+    // Aucun lien public de repli vers l'ancien PDF retiré.
   }
 }
 init().catch(()=>message('La liseuse ne peut pas démarrer actuellement.','error'));

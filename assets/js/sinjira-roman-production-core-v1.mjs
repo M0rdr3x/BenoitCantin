@@ -62,9 +62,14 @@ export function inspectSinjiraNovelEditorialReadiness(report,manifest,contract){
     contract.full_edition?.public_static_url_allowed!==false||
     contract.full_edition?.activation_requires_explicit_human_decision!==true)
    fail("BOOK1_MANUSCRIPT_DECLARATION");
- if(manifest.demo?.pages!==82||contract.demo?.pages!==82||
+ // Les déclarations historiques du 8 novembre restent inchangées (82 pages).
+ // Le manifeste actif concerne une nouvelle démo de 62 pages, non publiée.
+ if(manifest.demo?.pages!==62||contract.demo?.pages!==62||
     manifest.demo?.sha256!==contract.demo?.sha256||
     manifest.demo?.free!==true||
+    manifest.demo?.publication_state!=="not_published_pending_binary_upload"||
+    contract.demo?.publication_state!=="not_published_pending_binary_upload"||
+    manifest.demo?.public_path!==null||contract.demo?.public_url!==null||
     one.public_excerpt.pages!==82||one.public_excerpt.free!==true||
     one.public_excerpt.prologue_and_chapters!=="Prologue et chapitres 1 à 3")
    fail("BOOK1_DEMO_SCOPE");
@@ -127,7 +132,7 @@ export function inspectSinjiraNovelEditorialReadiness(report,manifest,contract){
    book1:{
     declared_manuscript_pages:520,declared_chapters:30,declared_epilogue:true,
     declared_chapter_coverage_percent:100,
-    demo_pages:82,public_excerpt_page_share_percent:pct(82,520),
+    demo_pages:62,public_excerpt_page_share_percent:pct(62,520),
     verified_editorial_completion_percent:null,
     verified_release_completion_percent:null,full_edition_publicly_released:false
    },

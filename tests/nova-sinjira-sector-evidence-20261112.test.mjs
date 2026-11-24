@@ -56,6 +56,73 @@ test('validation du personnel sans jeu de données identifié est refusée',()=>
   assert.equal(x.validStructure,false);
   assert.match(x.errors.join(' '),/affectation personnelle/);
 });
+// Rendu vérifiable de coûts : un champ rempli avec {} ou un texte n'est
+// jamais une preuve; un montant zéro explicite reste possible après contrôle.
+const dossierAvecChiffrage=()=>{
+  const d=copy(),s=d.dossiers[0];
+  for(const f of ['source_de_jeu_de_donnees_precis','date_valeur',
+    'periode_observation','territoire','population','nombre_unites','annee_de_prix'])
+    s[f]='EXEMPLE-UNIT-TEST';
+  for(const mode of Object.keys(s.couts_par_mode))
+    s.couts_par_mode[mode]={unite:'CAD/an',valeur:1};
+  s.qualite_verifiee=true;s.chiffrage_valide=true;
+  s.affectation_personnel_validee=true;
+  return d;
+};
+test('coût {} sans valeur ni unité refuse le faux chiffrage G0',()=>{
+  const d=dossierAvecChiffrage();
+  d.dossiers[0].couts_par_mode.prive={};
+  const x=inspectSectorRegister(d);
+  assert.equal(x.validStructure,false);
+  assert.ok(x.sectors[0].missing_cost_modes.includes('prive'));
+  assert.equal(x.sectors[0].documentary_complete,false);
+  assert.equal(x.totals.with_complete_documentary_inputs,0);
+});
+test('coûts mal formés, négatifs, infinis ou unités vides sont refusés',()=>{
+  for(const bad of [
+    '1000',0,false,[],{valeur:50},{unite:'  ',valeur:50},
+    {unite:'CAD',valeur:'50'},{unite:'CAD',valeur:-1},
+    {unite:'CAD',valeur:Infinity},{unite:'CAD',valeur:NaN}
+  ]){
+    const d=dossierAvecChiffrage();
+    d.dossiers[0].couts_par_mode.public_actuel=bad;
+    const x=inspectSectorRegister(d);
+    assert.equal(x.validStructure,false,'Valeur refusée : '+String(bad));
+    assert.ok(x.sectors[0].missing_cost_modes.includes('public_actuel'));
+    assert.equal(x.global_completion_percent,null);
+  }
+});
+test('coûts et modes hérités du prototype ne créent pas de fausse preuve',()=>{
+  const d=dossierAvecChiffrage();
+  d.dossiers[0].couts_par_mode.prive=Object.create({unite:'CAD',valeur:50});
+  let x=inspectSectorRegister(d);
+  assert.equal(x.validStructure,false);
+  assert.ok(x.sectors[0].missing_cost_modes.includes('prive'));
+  const costModes=d.dossiers[0].couts_par_mode;
+  delete costModes.prive;
+  Object.setPrototypeOf(costModes,{prive:{unite:'CAD',valeur:50}});
+  x=inspectSectorRegister(d);
+  assert.equal(x.validStructure,false);
+  assert.match(x.errors.join(' '),/cinq modes/);
+});
+test('sources prétendument précises sous forme objet ne constituent pas une preuve',()=>{
+  const d=dossierAvecChiffrage();
+  d.dossiers[0].source_de_jeu_de_donnees_precis={};
+  const x=inspectSectorRegister(d);
+  assert.equal(x.validStructure,false);
+  assert.ok(x.sectors[0].missing_evidence.includes('source_de_jeu_de_donnees_precis'));
+  assert.equal(x.sectors[0].source_precise,false);
+});
+test('coût nul explicite et justifié structurellement reste autorisé',()=>{
+  const d=dossierAvecChiffrage();
+  d.dossiers[0].couts_par_mode.obnl={unite:'CAD/an',valeur:0};
+  const x=inspectSectorRegister(d);
+  assert.equal(x.validStructure,true,x.errors.join('\n'));
+  assert.equal(x.sectors[0].documentary_complete,true);
+  assert.equal(x.sectors[0].decision,'NON_HOMOLOGUE');
+  assert.equal(x.global_completion_percent,null);
+});
+
 test('un secteur avec tous champs fournis n’est jamais déclaré prêt à lancer',()=>{
   const d=copy(),s=d.dossiers[0];
   for(const f of ['source_de_jeu_de_donnees_precis','date_valeur',

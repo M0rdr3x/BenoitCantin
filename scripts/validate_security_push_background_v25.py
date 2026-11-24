@@ -4,6 +4,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SECURITY_CONTEXT = ROOT / 'supabase' / 'functions' / 'security-context' / 'index.ts'
 NETWORK = ROOT / 'supabase' / 'functions' / '_shared' / 'security-push-network.mjs'
+RESPONSE_READER = ROOT / 'supabase' / 'functions' / '_shared' / 'security-push-response.mjs'
+RESPONSE_TEST = ROOT / 'scripts' / 'test_security_push_response_v25.mjs'
 CONFIG = ROOT / 'supabase' / 'config.toml'
 TEST = ROOT / 'scripts' / 'test_security_push_network_v25.mjs'
 WORKFLOW = ROOT / '.github' / 'workflows' / 'sinjira-native-push-producer-boundary-v25.yml'
@@ -22,6 +24,8 @@ def require(text: str, needle: str, label: str) -> None:
 
 context = read(SECURITY_CONTEXT)
 network = read(NETWORK)
+response_reader = read(RESPONSE_READER)
+response_test = read(RESPONSE_TEST)
 config = read(CONFIG)
 test = read(TEST)
 workflow = read(WORKFLOW)
@@ -36,6 +40,8 @@ for needle in (
     'await sendSecurityPush(service, userId, security);',
     'EdgeRuntime.waitUntil(runSecurityPushBackground(service, user.id, data));',
     "console.warn('[security-context] tâche push de fond impossible');",
+    "from '../_shared/security-push-response.mjs'",
+    'const result = await readBoundedSecurityPushJson(response);',
 ):
     require(context, needle, 'security-context')
 
@@ -43,6 +49,7 @@ for forbidden in (
     "fetch('https://exp.host/--/api/v2/push/send'",
     "fetch('https://exp.host/--/api/v2/push/getReceipts'",
     'await processSecurityPushReceipts(service);\n    await sendSecurityPush(service, user.id, data);',
+    'response.json()',
 ):
     if forbidden in context:
         raise SystemExit(f'ERREUR push background V25: ancien chemin bloquant encore présent: {forbidden}')
@@ -57,9 +64,34 @@ for needle in (
     'return AbortSignal.timeout(timeoutMs);',
     "method: 'POST'",
     "'Content-Type': 'application/json'",
+    "redirect: 'error'",
+    "credentials: 'omit'",
+    "referrerPolicy: 'no-referrer'",
     'signal: createSecurityPushAbortSignal()',
 ):
     require(network, needle, 'réseau Expo borné')
+
+for needle in (
+    'export const MAX_SECURITY_PUSH_RESPONSE_BYTES = 1024 * 1024;',
+    'export const SECURITY_PUSH_RESPONSE_TIMEOUT_MS = 4000;',
+    'export async function readBoundedSecurityPushJson(',
+    'value.byteLength > maxBytes - byteCount',
+    'deadlineAt - performance.now()',
+    "new TextDecoder('utf-8', { fatal: true })",
+    'return null;',
+    'cancelWithoutWaiting(reader)',
+):
+    require(response_reader, needle, 'réponse JSON Expo bornée')
+
+for needle in (
+    'MAX_SECURITY_PUSH_RESPONSE_BYTES',
+    'readBoundedSecurityPushJson(',
+    'Content-Length',
+    'stream bytes',
+    'hanging source and never-ending cancel',
+    'a trickle stream cannot reset',
+):
+    require(response_test, needle, 'tests réels des réponses Expo')
 
 require(config, '[edge_runtime]', 'runtime Edge local')
 require(config, 'policy = "per_worker"', 'runtime Edge local')
@@ -74,6 +106,14 @@ for needle in (
     "postSecurityPushJson('https://example.com/push'",
     'INVALID_SECURITY_PUSH_URL',
     'INVALID_SECURITY_PUSH_FETCH',
+    "assert.equal(captured.init.redirect, 'error'",
+    "assert.equal(captured.init.credentials, 'omit'",
+    "assert.equal(captured.init.referrerPolicy, 'no-referrer'",
+    'for (const code of [307, 308])',
+    'for (const [endpoint, payload] of endpoints)',
+    'assert.equal(initialRequests, previous + 1,',
+    'assert.equal(initialRequests, 4,',
+    'assert.equal(forwardedRequests, 0,',
 ):
     require(test, needle, 'test réseau Expo')
 
@@ -82,7 +122,9 @@ for needle in (
     'scripts/validate_security_push_background_v25.py',
     'python3 scripts/validate_security_push_background_v25.py',
     'node scripts/test_security_push_network_v25.mjs',
+    'scripts/test_security_push_response_v25.mjs',
+    'node --test scripts/test_security_push_response_v25.mjs',
 ):
     require(workflow, needle, 'workflow push')
 
-print('OK push background V25: décision sécurité synchrone, Expo hors chemin de réponse, timeout 4s réellement testé, endpoints exacts et runtime local per_worker.')
+print('OK push background V25: Expo: redirections interdites, quatre tests locaux 307/308, délai 4s, JSON borné à 1 Mio, annulation non bloquante et runtime per_worker.')
