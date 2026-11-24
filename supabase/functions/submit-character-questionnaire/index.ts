@@ -102,7 +102,9 @@ Deno.serve(async(req)=>{
     const photo_path=body.photo_path??null,manual_only=body.manual_only!==false,update_existing=body.update_existing===true;
     // Rejet AVANT toute lecture ou écriture de dossier, notification, ou appel externe.
     if(photo_path!==null && !isCanonicalRegistryPhotoPath(photo_path,user.id))return privateJson({ok:false,error:'Chemin de photo de dossier invalide.',code:'INVALID_CHARACTER_PHOTO_PATH',version:VERSION},400);
-    const owner=String(user?.email||'').trim().toLowerCase()==='kingtyrano@gmail.com';
+    // L'identité propriétaire doit provenir du registre de rôles serveur,
+    // jamais d'une adresse courriel de session modifiable ou recyclée.
+    let owner=false;
     const [profileResult,submissionResult,characterResult]=await Promise.all([
       service.from('profiles').select('pseudo,display_name').eq('user_id',user.id).maybeSingle(),
       service.from('character_submissions').select('*').eq('user_id',user.id).order('created_at',{ascending:false}).limit(1).maybeSingle(),
@@ -110,6 +112,13 @@ Deno.serve(async(req)=>{
     ]);
     if(submissionResult.error||characterResult.error)throw new Error('CHARACTER_STATE_LOOKUP_FAILED');
     const p=profileResult.data||null,existingSubmission=submissionResult.data,existingCharacter=characterResult.data;
+    // Ne consulter le rôle privilégié que pour une demande de remplacement
+    // explicite d'un dossier déjà existant; tout échec est un refus fermé.
+    if(update_existing&&(existingSubmission||existingCharacter)){
+      const {data:ownerRole,error:ownerError}=await service.rpc('is_sinjira_owner',{p_user_id:user.id});
+      if(ownerError||typeof ownerRole!=='boolean')throw new Error('OWNER_ROLE_UNAVAILABLE');
+      owner=ownerRole===true;
+    }
     if((existingSubmission||existingCharacter)&&!(owner&&update_existing))return privateJson({ok:false,error:'Ce Compte SINJIRA possède déjà une demande ou son unique personnage. Modifiez votre dossier existant au lieu d’en créer un deuxième.',code:'ONE_CHARACTER_PER_ACCOUNT',version:VERSION},409);
 
     if(owner&&update_existing&&(existingSubmission||existingCharacter)){
@@ -166,6 +175,7 @@ Deno.serve(async(req)=>{
     if(e?.message==='JSON_REQUIRED')return privateJson({ok:false,error:'Corps JSON requis.',code:'JSON_REQUIRED',version:VERSION},415);
     if(e?.message==='INVALID_JSON')return privateJson({ok:false,error:'JSON invalide.',code:'INVALID_JSON',version:VERSION},400);
     if(e?.message==='CHARACTER_STATE_LOOKUP_FAILED')return privateJson({ok:false,error:'L’état de votre dossier ne peut pas être vérifié pour le moment.',code:'CHARACTER_STATE_LOOKUP_FAILED',version:VERSION},503);
+    if(e?.message==='OWNER_ROLE_UNAVAILABLE')return privateJson({ok:false,error:'La vérification du rôle propriétaire est temporairement indisponible.',code:'OWNER_ROLE_UNAVAILABLE',version:VERSION},503);
     if(e?.message==='CHARACTER_SUBMISSION_WRITE_FAILED')return privateJson({ok:false,error:'Impossible d’enregistrer le questionnaire pour le moment.',code:'CHARACTER_SUBMISSION_WRITE_FAILED',version:VERSION},500);
     return privateJson({ok:false,error:'Impossible de transmettre le questionnaire.',code:'CHARACTER_QUESTIONNAIRE_FAILED',version:VERSION},500);
   }

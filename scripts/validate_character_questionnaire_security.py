@@ -33,6 +33,11 @@ REQUIRED = {
     'conflit revérifié par compte': "service.from('character_submissions').select('id').eq('user_id',userId).maybeSingle()",
     'conflit 409 après relecture': "if(await hasConfirmedConcurrentSubmission(service,user.id,error))",
     'mise à jour existante explicitement demandée': 'owner&&update_existing&&(existingSubmission||existingCharacter)',
+    'rôle propriétaire vérifié par RPC serveur': "service.rpc('is_sinjira_owner',{p_user_id:user.id})",
+    'rôle uniquement en modification explicite': 'if(update_existing&&(existingSubmission||existingCharacter)){',
+    'rôle strictement booléen': "if(ownerError||typeof ownerRole!=='boolean')throw new Error('OWNER_ROLE_UNAVAILABLE');",
+    'propriétaire uniquement si RPC true': 'owner=ownerRole===true;',
+    'échec de rôle 503 explicite': "e?.message==='OWNER_ROLE_UNAVAILABLE'",
     'chemin photo limité au compte': "const prefix=`${userId}/`;",
     'format photo UUID v4 strict': "return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}",
     'chemin photo refusé avant accès': "!isCanonicalRegistryPhotoPath(photo_path,user.id)",
@@ -63,6 +68,7 @@ FORBIDDEN = {
     'erreur génération brute persistée': "error_text:String(e?.message||e)",
     'ancien contrôle photo permissif': 'String(photo_path).startsWith',
     'ancien contrôle traversée permissif': "String(photo_path).includes('..')",
+    'autorisation propriétaire basée sur courriel': 'const owner=String(user?.email',
 }
 
 
@@ -100,6 +106,15 @@ def validate(path: Path) -> list[str]:
     if state_check < 0 or uniqueness < 0 or state_check > uniqueness:
         errors.append('Les erreurs de lecture de l’état doivent bloquer avant la décision un-personnage-par-compte.')
 
+    role_pos = source.find("service.rpc('is_sinjira_owner',{p_user_id:user.id})")
+    state_pos = source.find("if(submissionResult.error||characterResult.error)throw new Error('CHARACTER_STATE_LOOKUP_FAILED');")
+    owner_gate_pos = source.find("if((existingSubmission||existingCharacter)&&!(owner&&update_existing))")
+    modify_pos = source.find("if(owner&&update_existing&&(existingSubmission||existingCharacter))")
+    if min(role_pos,state_pos,owner_gate_pos,modify_pos)<0 or not (state_pos<role_pos<owner_gate_pos<modify_pos):
+        errors.append('Le rôle propriétaire doit être vérifié après état, avant tout bypass de l’unicité ou toute modification.')
+    if source.count("service.rpc('is_sinjira_owner',{p_user_id:user.id})") != 1:
+        errors.append('Une seule vérification propriétaire serveur est autorisée pour le remplacement explicite.')
+
     private_success = source.count('return privateJson(successPayload(')
     if private_success < 3:
         errors.append('Toutes les réponses de succès contenant le dossier doivent rester privées/no-store.')
@@ -128,6 +143,13 @@ def self_test() -> None:
             1,
         ),
         'erreurs état ignorées': real.replace("    if(submissionResult.error||characterResult.error)throw new Error('CHARACTER_STATE_LOOKUP_FAILED');\n", '', 1),
+        'rôle propriétaire remplacé par courriel': real.replace("owner=ownerRole===true;", "owner=String(user?.email||'').toLowerCase()==='owner@example.test';", 1),
+        'RPC propriétaire supprimée': real.replace("service.rpc('is_sinjira_owner',{p_user_id:user.id})", "Promise.resolve({data:true,error:null})", 1),
+        'RPC résultat non booléen accepté': real.replace("ownerError||typeof ownerRole!=='boolean'", "ownerError", 1),
+        'rôle non strict accepté': real.replace("owner=ownerRole===true;", "owner=Boolean(ownerRole);", 1),
+        'owner sur erreur RPC': real.replace("if(ownerError||typeof ownerRole!=='boolean')throw new Error('OWNER_ROLE_UNAVAILABLE');", "if(false)throw new Error('OWNER_ROLE_UNAVAILABLE');", 1),
+        'vérification propriétaire désactivée': real.replace("if(update_existing&&(existingSubmission||existingCharacter)){", "if(false){", 1),
+        'échec rôle 503 retiré': real.replace("    if(e?.message==='OWNER_ROLE_UNAVAILABLE')return privateJson({ok:false,error:'La vérification du rôle propriétaire est temporairement indisponible.',code:'OWNER_ROLE_UNAVAILABLE',version:VERSION},503);\n", "", 1),
         'unicité retirée': real.replace("code:'ONE_CHARACTER_PER_ACCOUNT'", "code:'DUPLICATE_ALLOWED'", 1),
         'conflit reclassé sans preuve': real.replace(
             "if(await hasConfirmedConcurrentSubmission(service,user.id,error))",
