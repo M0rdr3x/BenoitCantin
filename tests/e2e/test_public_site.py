@@ -45,6 +45,76 @@ def assert_true(value, message):
         raise AssertionError(message)
 
 
+def check_notification_counts(browser):
+    # Real page and notification module; synthetic Supabase adapter only.
+    mock = r"""
+let unread=5;
+const mode=new URLSearchParams(location.search).get('fixture');
+export const requireUser=async()=>({id:'synthetic-user'});
+export const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export const formatDate=value=>String(value);
+export const setStatus=(node,message,type)=>{node.textContent=message;node.hidden=false;node.dataset.statusType=type};
+export const getSupabase=()=>({from(table){
+  if(table!=='user_notifications')throw Error('unexpected table');
+  let scoped=false,head=false,mutation=false,unreadOnly=false;
+  const query={
+    select(fields,options){head=options?.head===true;return this},
+    eq(key,value){if(key==='user_id'&&value==='synthetic-user')scoped=true;return this},
+    is(key,value){if(key==='read_at'&&value===null)unreadOnly=true;return this},
+    order(){return this},limit(){return this},
+    update(){mutation=true;return this},
+    then(resolve,reject){
+      return Promise.resolve().then(()=>{
+        if(!scoped||((head||mutation)&&!unreadOnly))throw Error('unscoped query');
+        if(mutation){
+          if(mode==='update-error')return {error:{message:'synthetic failure'}};
+          unread=0;return {error:null};
+        }
+        if(head)return mode==='count-error'?{error:{message:'synthetic failure'}}:{count:unread,error:null};
+        return {data:Array.from({length:100},(_,i)=>({id:'fake-'+i,title:'Avis fictif',body:'Contenu fictif',read_at:'2026-01-01',created_at:'2026-01-01'})),error:null};
+      }).then(resolve,reject);
+    }
+  };return query;
+}});
+"""
+    for mode in ("success", "count-error", "update-error"):
+        context = browser.new_context(viewport={"width": 390, "height": 844})
+        page = context.new_page()
+        def route_request(route):
+            request = route.request
+            parsed = urlparse(request.url)
+            if parsed.netloc != urlparse(BASE_URL).netloc:
+                return route.abort()
+            if parsed.path.endswith("/sinjira-supabase.js"):
+                return route.fulfill(status=200, content_type="text/javascript", body=mock)
+            if request.resource_type == "script" and not parsed.path.endswith("/sinjira-user-notifications-v24-4-63.js"):
+                return route.abort()
+            return route.continue_()
+        page.route("**/*", route_request)
+        try:
+            page.goto(urljoin(BASE_URL, "compte/notifications.html?fixture="+mode))
+            page.wait_for_function("document.querySelector('[data-notifications-list]').getAttribute('aria-busy') === 'false'")
+            count = page.locator("[data-notifications-unread-count]")
+            total = page.locator("[data-notifications-total-count]")
+            button = page.locator("[data-notifications-read-all]")
+            status = page.locator("[data-notifications-status]")
+            if mode == "count-error":
+                assert_true(count.inner_text() == "—" and button.is_disabled(), "Failed count must not be reported as zero")
+                assert_true("indisponibles" in page.locator("[data-notifications-list]").inner_text(), "Loading must end on failure")
+            else:
+                assert_true(count.inner_text() == "5" and total.inner_text() == "100", "Unread count must include older notifications")
+                assert_true(button.is_enabled(), "Older unread notifications must be actionable")
+                button.click()
+                page.wait_for_function("!document.querySelector('[data-notifications-status]').hidden")
+                if mode == "success":
+                    assert_true(count.inner_text() == "0" and button.is_disabled(), "Successful bulk action must refresh count")
+                else:
+                    assert_true(count.inner_text() == "5" and button.is_enabled(), "Failed action must preserve count and allow retry")
+                    assert_true(status.get_attribute("data-status-type") == "error", "Failed update must be announced")
+        finally:
+            context.close()
+
+
 def register_error_capture(page, target):
     page.on("pageerror", lambda error: target.append(f"pageerror: {error}"))
 
@@ -1948,6 +2018,7 @@ def run() -> None:
         assert_true(not all_errors, f"{BROWSER_NAME}: erreurs JavaScript navigateur: " + " | ".join(all_errors[:5]))
         context.close()
         if IS_LOCAL:
+            check_notification_counts(browser)
             check_legal_navigation(browser)
         browser.close()
         auth_note = f", {len(AUTH_ROUTES)} pages Auth locales + assistant V{ASSISTANT_VERSION} contextuel" if IS_LOCAL else ""
