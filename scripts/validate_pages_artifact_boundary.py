@@ -32,6 +32,10 @@ GATES = (
     'python3 scripts/pages_archive_integrity.py create _site "$RUNNER_TEMP/artifact.tar"',
     "needs: [build, verify]",
     "gh run download",
+    "name: github-pages",
+    "ARTIFACT_ID: ${{ needs.build.outputs.artifact_id }}",
+    "ARCHIVE_SHA256: ${{ needs.build.outputs.archive_sha256 }}",
+    '(.workflow_run.id|tostring)==$run and .workflow_run.head_sha==$sha',
     "sha256sum --check --status",
 )
 
@@ -136,11 +140,14 @@ def self_test() -> None:
         "      - run: 'test \"$EXPECTED_SHA\" != \"$GITHUB_SHA\"'\n"
         "      - run: python3 scripts/pages_archive_integrity.py create _site \"$RUNNER_TEMP/artifact.tar\"\n"
         "      - run: gh run download\n"
+        "          ARTIFACT_ID: ${{ needs.build.outputs.artifact_id }}\n"
+        "          ARCHIVE_SHA256: ${{ needs.build.outputs.archive_sha256 }}\n"
+        "          (.workflow_run.id|tostring)==$run and .workflow_run.head_sha==$sha\n"
         "      - run: sha256sum --check --status\n"
         "    needs: [build, verify]\n"
         "      - name: Publier _site\n"
         "        uses: " + UPLOAD + "\n"
-        "        with:\n          path: ${{ runner.temp }}/artifact.tar\n"
+        "        with:\n          name: github-pages\n          path: ${{ runner.temp }}/artifact.tar\n"
         "      - uses: " + DEPLOY + "\n"
     )
     assert inspect_workflows({APPROVED: good}) == []
@@ -169,25 +176,27 @@ def self_test() -> None:
         ("publish root", good.replace("path: ${{ runner.temp }}/artifact.tar", "path: .")),
         ("publish ancestor", good.replace("path: ${{ runner.temp }}/artifact.tar", "path: ${{ runner.temp }}/artifact.tar/..")),
         ("publish missing", good.replace("          path: ${{ runner.temp }}/artifact.tar\n", "")),
-        ("path fictif sous env", good.replace("        with:\n          path: ${{ runner.temp }}/artifact.tar", "        env:\n          path: ${{ runner.temp }}/artifact.tar")),
-        ("override après with", good.replace("        with:\n          path: ${{ runner.temp }}/artifact.tar", "        with:\n          path: ${{ runner.temp }}/artifact.tar\n        with:\n          path: .")),
+        ("path fictif sous env", good.replace("        with:\n          name: github-pages\n          path: ${{ runner.temp }}/artifact.tar", "        env:\n          path: ${{ runner.temp }}/artifact.tar")),
+        ("override après with", good.replace("        with:\n          name: github-pages\n          path: ${{ runner.temp }}/artifact.tar", "        with:\n          name: github-pages\n          path: ${{ runner.temp }}/artifact.tar\n        with:\n          path: .")),
         ("publish duplicate", good.replace("path: ${{ runner.temp }}/artifact.tar", "path: ${{ runner.temp }}/artifact.tar\n          path: .")),
         ("publish expression", good.replace("path: ${{ runner.temp }}/artifact.tar", "path: $WORKSPACE")),
         # Un path sous une clé intermédiaire ne serait pas transmis à
         # actions/upload-pages-artifact et peut laisser le défaut ".".
         ("nested fake path", good.replace(
-            "        with:\n          path: ${{ runner.temp }}/artifact.tar\n",
+            "        with:\n          name: github-pages\n          path: ${{ runner.temp }}/artifact.tar\n",
             "        with:\n          nested:\n            path: ${{ runner.temp }}/artifact.tar\n",
         )),
         # L'indentation directe doit être celle de la clé path: de l'action.
         ("overindented path", good.replace(
-            "        with:\n          path: ${{ runner.temp }}/artifact.tar\n",
+            "        with:\n          name: github-pages\n          path: ${{ runner.temp }}/artifact.tar\n",
             "        with:\n            path: ${{ runner.temp }}/artifact.tar\n",
         )),
         ("wrong SHA", good.replace(UPLOAD, UPLOAD.split("@")[0] + "@v3")),
         ("missing review", good.replace("confirm_containment:", "not_confirmed:")),
         ("missing main", good.replace("github.ref == 'refs/heads/main'", "true")),
         ("auto deploy", good.replace("  workflow_dispatch:", "  push:")),
+        ("wrong archive name", good.replace("name: github-pages", "name: other")),
+        ("missing artifact identity", good.replace("(.workflow_run.id|tostring)==$run and .workflow_run.head_sha==$sha", "true")),
         ("missing archive verification", good.replace("sha256sum --check --status", "true")),
         ("missing verification dependency", good.replace("needs: [build, verify]", "needs: build")),
         ("missing deploy", good.replace("      - uses: " + DEPLOY + "\n", "")),
@@ -228,7 +237,7 @@ def main() -> int:
         for problem in problems:
             print("ECHEC : " + problem)
         return 1
-    print(f"OK : {len(entries)} workflows analysés ; un seul upload _site autorisé, publication manuelle.")
+    print(f"OK : {len(entries)} workflows analysés ; une seule archive Pages autorisée, publication manuelle.")
     return 0
 
 
