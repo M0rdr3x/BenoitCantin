@@ -155,6 +155,20 @@ def run():
                     }""", timeout=5_000)
                     check(previous_button.is_enabled(),
                           f"la flèche précédente n'est pas réactivée : {path}")
+                    # Les barres du navigateur ou le clavier virtuel peuvent
+                    # changer la hauteur sans changer la largeur du viewport.
+                    # Le parcours manuel ne doit pas être recentré.
+                    manual_scroll = region.evaluate("(el) => el.scrollLeft")
+                    for height in (650, 800):
+                        page.set_viewport_size({"width":390,"height":height})
+                        page.evaluate("""() => new Promise(resolve =>
+                          requestAnimationFrame(() => requestAnimationFrame(resolve))
+                        )""")
+                        page.wait_for_timeout(100)
+                        after_height = region.evaluate("(el) => el.scrollLeft")
+                        check(abs(after_height - manual_scroll) <= 3,
+                              f"recentrage après changement de hauteur {path}: "
+                              f"{manual_scroll} -> {after_height} à {height}px")
                     # WebKit peut repositionner une rubrique active après
                     # redimensionnement. Un clic doit reculer, pas forcément
                     # atteindre le début du ruban si le navigateur l'a recentré.
