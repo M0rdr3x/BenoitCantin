@@ -252,6 +252,9 @@ def validate_install_runtime(errors: list[str]) -> None:
     shell_css = mobile_shell_css.read_text('utf-8', errors='ignore') if mobile_shell_css.exists() else ''
     for marker, message in [
         ('beforeinstallprompt', 'Invite Android/Chromium beforeinstallprompt absente.'),
+        ('data-sinjira-pwa-ready', 'Le runtime ne signale pas sa disponibilité.'),
+        ('if(card&&!deferredPrompt)card.remove()', 'Une invite consommée reste affichée.'),
+        ("card.querySelector('.sinjira-pwa-install__actions').remove()", 'Safari affiche une action native non disponible.'),
         ('data-pwa-install-reveal', 'La proposition d’installation ne peut plus être réduite à une commande compacte.'),
         ('aria-expanded="false"', 'L’état initial fermé de la proposition PWA n’est plus annoncé.'),
         ("card.className='sinjira-pwa-install is-collapsed'", 'L’invitation PWA masque le site au lieu de rester compacte.'),
@@ -272,7 +275,7 @@ def validate_install_runtime(errors: list[str]) -> None:
     exact_card_selector = "d.querySelector('.sinjira-pwa-install[data-sinjira-pwa-install]')"
     if text.count(exact_card_selector) < 3 or "d.querySelector('[data-sinjira-pwa-install]')" in text:
         errors.append("Le runtime PWA peut confondre sa balise script avec la carte interactive.")
-    if '/assets/js/sinjira-pwa-install.js?v=24.4.99' not in site_text:
+    if '/assets/js/sinjira-pwa-install.js?v=24.4.100' not in site_text:
         errors.append('site.js ne charge pas le runtime PWA historique compatible.')
     if 'serviceWorker.register' in session_text:
         errors.append('v19-session.js enregistre encore un deuxième Service Worker.')
