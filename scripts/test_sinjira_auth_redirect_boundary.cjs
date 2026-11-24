@@ -65,7 +65,58 @@ function safeTests(safe,label){
     '/app/test\\path',
   ])eq(safe(path),HOME,label+': destination ambiguë acceptée: '+String(path));
 }
-function main(){
+async function assuranceTests(){
+  const start=SHARED.indexOf('export function assertKnownAssuranceLevels(');
+  const end=SHARED.indexOf('export function safeInternalDestination(',start);
+  assert.ok(start>=0&&end>start);
+  const validator=SHARED.slice(start,end).replace('export function','function');
+  const gateStart=SHARED.indexOf('export async function requireUser(');
+  const gateEnd=SHARED.indexOf('export function isSinjiraOwner(',gateStart);
+  assert.ok(gateStart>=0&&gateEnd>gateStart);
+  const gate=SHARED.slice(gateStart,gateEnd).replace('export async function','async function');
+  const recovery=fs.readFileSync(path.join(ROOT,'assets/js/sinjira-recovery-v24-4-99.js'),'utf8');
+  const recoveryStart=recovery.indexOf('async function requireRecoveryAal2WhenAvailable(');
+  const recoveryEnd=recovery.indexOf('async function boot(',recoveryStart);
+  assert.ok(recoveryStart>=0&&recoveryEnd>recoveryStart);
+  const recoveryGate=recovery.slice(recoveryStart,recoveryEnd);
+
+  for(const data of [null,undefined,{}, {currentLevel:'aal1'}, {nextLevel:'aal2'},
+    {currentLevel:null,nextLevel:'aal1'},{currentLevel:'aal1',nextLevel:null},
+    {currentLevel:'aal3',nextLevel:'aal1'},{currentLevel:'aal1',nextLevel:'unknown'}]){
+    const redirects=[];
+    const client={auth:{mfa:{getAuthenticatorAssuranceLevel:async()=>({data,error:null})}}};
+    const ctx={getCurrentUser:async()=>({id:'test-user'}),getSupabase:()=>client,s:client,
+      safeInternalDestination:sharedDestination,location:{pathname:HOME,search:'',hash:'',replace:v=>redirects.push(v)},
+      console:{warn(){}},setBusy(){},setStatus(){},status:null,RESET_PATH:'/compte/reinitialiser-mot-de-passe.html'};
+    vm.runInNewContext(validator+gate+recoveryGate+'\nglobalThis.gate=requireUser;globalThis.recover=requireRecoveryAal2WhenAvailable;',ctx);
+    let settled=false;
+    ctx.gate().then(()=>{settled=true},()=>{settled=true});
+    await new Promise(resolve=>setImmediate(resolve));
+    eq(settled,false,'Le garde central ne doit pas autoriser un AAL indéterminé');
+    eq(redirects.length,1,'Un AAL indéterminé doit conduire au contrôle MFA');
+    eq(redirects[0].includes('state=aal-check'),true,'Contrôle MFA explicite');
+    await assert.rejects(ctx.recover(),/MFA_STATE_UNAVAILABLE/);
+    checks++;
+  }
+  for(const [currentLevel,nextLevel,expected] of [['aal1','aal1',true],['aal2','aal2',true],['aal2','aal1',true],['aal1','aal2',false]]){
+    const redirects=[];
+    const client={auth:{mfa:{getAuthenticatorAssuranceLevel:async()=>({data:{currentLevel,nextLevel},error:null})}}};
+    const ctx={getCurrentUser:async()=>({id:'test-user'}),getSupabase:()=>client,s:client,
+      safeInternalDestination:sharedDestination,location:{pathname:HOME,search:'',hash:'',replace:v=>redirects.push(v)},
+      console:{warn(){}},setBusy(){},setStatus(){},status:null,RESET_PATH:'/compte/reinitialiser-mot-de-passe.html'};
+    vm.runInNewContext(validator+gate+recoveryGate+'\nglobalThis.gate=requireUser;globalThis.recover=requireRecoveryAal2WhenAvailable;',ctx);
+    if(expected)eq((await ctx.gate()).id,'test-user','AAL connu et autorisé');
+    else {
+      let settled=false;
+      ctx.gate().then(()=>{settled=true},()=>{settled=true});
+      await new Promise(resolve=>setImmediate(resolve));
+      eq(settled,false,'Un facteur vérifié doit être demandé');
+      eq(redirects.length,1,'Redirection MFA requise');
+    }
+    eq(await ctx.recover(),expected,'Politique AAL de récupération conservée');
+  }
+}
+async function main(){
   const client=auth();
   safeTests(client.route.safeLocalDestination,'Login');
   safeTests(sharedDestination,'MFA/shared');
@@ -132,6 +183,7 @@ function main(){
     '/compte/index.html?tab=1','Navigation locale commune reste valide');
   eq(sharedDestination('//evil.invalid/','/compte/bibliotheque.html'),
     '/compte/bibliotheque.html','Fallback MFA prédéfini conservé');
+  await assuranceTests();
   console.log('PASS: '+checks+' contrôles de redirections Auth/MFA, URLs encodées et next assaini.');
 }
-main();
+main().catch(error=>{console.error(error);process.exitCode=1;});
