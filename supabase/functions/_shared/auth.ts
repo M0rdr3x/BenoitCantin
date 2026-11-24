@@ -62,14 +62,15 @@ async function authenticatedContext(req: Request) {
   if (!token) throw new Error('AUTH_REQUIRED');
   const service = serviceClient();
   const { data, error } = await service.auth.getUser(token);
-  if (error || !data.user) throw new Error('AUTH_REQUIRED');
+  if (error || !data?.user || typeof data.user.id !== 'string' || !data.user.id) throw new Error('AUTH_REQUIRED');
   return { user: data.user, service, token };
 }
 
 async function assuranceLevel(context: Awaited<ReturnType<typeof authenticatedContext>>) {
   const { service, token } = context;
   const { data: aal, error: aalError } = await service.auth.mfa.getAuthenticatorAssuranceLevel(token);
-  if (aalError || !aal) throw new Error('MFA_STATE_UNAVAILABLE');
+  if (aalError || !aal || !['aal1', 'aal2'].includes(aal.currentLevel ?? '') ||
+      !['aal1', 'aal2'].includes(aal.nextLevel ?? '')) throw new Error('MFA_STATE_UNAVAILABLE');
   return aal;
 }
 
@@ -78,7 +79,7 @@ async function assertAdminMfa(context: Awaited<ReturnType<typeof authenticatedCo
   const { data: isAdmin, error: adminError } = await service.rpc('is_sinjira_admin', {
     p_user_id: user.id
   });
-  if (adminError || !isAdmin) throw new Error('ADMIN_REQUIRED');
+  if (adminError || isAdmin !== true) throw new Error('ADMIN_REQUIRED');
 
   const aal = await assuranceLevel(context).catch((error) => {
     console.error('[SINJIRA admin auth]', { code: 'MFA_STATE_UNAVAILABLE' });
