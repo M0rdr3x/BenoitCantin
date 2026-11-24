@@ -42,13 +42,13 @@
     if (!doc.querySelector('link[data-sinjira-assistant-style]')) {
       var assistantStyle = doc.createElement('link');
       assistantStyle.rel = 'stylesheet';
-      assistantStyle.href = '/assets/css/sinjira-assistant.css?v=24.4.48';
+      assistantStyle.href = '/assets/css/sinjira-assistant.css?v=24.4.50';
       assistantStyle.setAttribute('data-sinjira-assistant-style', '');
       doc.head.appendChild(assistantStyle);
     }
     if (!doc.querySelector('script[data-sinjira-assistant-script]')) {
       var assistantScript = doc.createElement('script');
-      assistantScript.src = '/assets/js/sinjira-assistant.js?v=24.4.48';
+      assistantScript.src = '/assets/js/sinjira-assistant.js?v=24.4.50';
       assistantScript.defer = true;
       assistantScript.setAttribute('data-sinjira-assistant-script', '');
       doc.head.appendChild(assistantScript);
@@ -58,7 +58,7 @@
   function appendPwaAssets() {
     if (doc.querySelector('script[data-sinjira-pwa-install]')) return;
     var pwaScript = doc.createElement('script');
-    pwaScript.src = '/assets/js/sinjira-pwa-install.js?v=24.4.93';
+    pwaScript.src = '/assets/js/sinjira-pwa-install.js?v=24.4.99';
     pwaScript.defer = true;
     pwaScript.setAttribute('data-sinjira-pwa-install', '');
     doc.head.appendChild(pwaScript);
@@ -81,6 +81,12 @@
     }
 
     setNavOpen(false);
+    // Sans JavaScript le menu demeure visible. Avec JavaScript, la navigation
+    // compacte n'est masquée qu'après initialisation de sa commande accessible.
+    if (doc.body && doc.body.getAttribute('data-sinjira-ux') === 'v1') {
+      doc.documentElement.setAttribute('data-sinjira-nav-ready', 'true');
+      doc.documentElement.setAttribute('data-sinjira-nav-initialized', 'true');
+    }
     toggle.addEventListener('click', function () {
       setNavOpen(toggle.getAttribute('aria-expanded') !== 'true');
     });
@@ -103,11 +109,130 @@
       setNavOpen(false);
     });
 
-    // Ne pas conserver une ouverture mobile lors du retour au bureau.
+    // Une navigation mobile ne doit pas rester ouverte lorsque le focus
+    // clavier sort du menu : elle masquerait sinon la page suivante.
+    doc.addEventListener('focusin', function (event) {
+      if (toggle.getAttribute('aria-expanded') !== 'true') return;
+      if (toggle.contains(event.target) || nav.contains(event.target)) return;
+      setNavOpen(false);
+    });
+
+    // L'ergonomie SINJIRA V1 conserve le menu compact sur tablette.
+    // Les pages historiques qui n'adoptent pas cette version gardent 821px.
     window.addEventListener('resize', function () {
-      if (window.matchMedia('(min-width: 821px)').matches &&
+      var isUnified = doc.body &&
+        doc.body.getAttribute('data-sinjira-ux') === 'v1';
+      var desktopQuery = isUnified ? '(min-width: 1021px)' : '(min-width: 821px)';
+      if (window.matchMedia(desktopQuery).matches &&
           toggle.getAttribute('aria-expanded') === 'true') setNavOpen(false);
     });
+  }
+
+
+  // Navigation du compte : rendre visibles les rubriques hors écran.
+  // Le défilement natif fonctionne toujours sans JavaScript, par glissement
+  // tactile ou navigation clavier entre les liens.
+  var accountScroll = doc.querySelector(
+    'body.account-page[data-sinjira-ux="v1"] .account-nav-scroll'
+  );
+  if (accountScroll && accountScroll.querySelector('.account-nav') &&
+      !accountScroll.hasAttribute('data-sinjira-account-scroll-ready')) {
+    var accountNav = accountScroll.querySelector('.account-nav');
+    var frame = doc.createElement('div');
+    frame.className = 'sinjira-account-nav-frame';
+    frame.setAttribute('role', 'group');
+    frame.setAttribute('aria-label', 'Parcourir les rubriques du compte');
+    accountScroll.setAttribute('data-sinjira-account-scroll-ready', '');
+    if (!accountScroll.id) accountScroll.id = 'sinjira-account-nav-scroll';
+    var back = doc.createElement('button');
+    var forward = doc.createElement('button');
+    function makeScrollButton(button, left) {
+      button.type = 'button';
+      button.className = 'sinjira-account-nav-arrow';
+      button.textContent = left ? '‹' : '›';
+      button.setAttribute('aria-label', left ?
+        'Rubriques précédentes du compte' : 'Rubriques suivantes du compte');
+      button.setAttribute('aria-controls', accountScroll.id);
+      button.hidden = true;
+    }
+    makeScrollButton(back, true);
+    makeScrollButton(forward, false);
+    accountScroll.parentNode.insertBefore(frame, accountScroll);
+    frame.appendChild(back);
+    frame.appendChild(accountScroll);
+    frame.appendChild(forward);
+
+    function scrollLimits() {
+      var max = Math.max(0, accountScroll.scrollWidth - accountScroll.clientWidth);
+      var mobile = window.matchMedia('(max-width: 1020px)').matches;
+      var show = mobile && max > 2;
+      frame.classList.toggle('is-scrollable', show);
+      back.hidden = !show;
+      forward.hidden = !show;
+      back.disabled = !show || accountScroll.scrollLeft <= 2;
+      forward.disabled = !show || accountScroll.scrollLeft >= max - 2;
+    }
+    function slideAccount(direction) {
+      var distance = Math.max(160, Math.round(accountScroll.clientWidth * .7));
+      var max = Math.max(0, accountScroll.scrollWidth - accountScroll.clientWidth);
+      var target = Math.max(0, Math.min(max,
+        accountScroll.scrollLeft + direction * distance));
+      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      // "instant" n'est pas un ScrollBehavior interoperable sur tous les
+      // moteurs : "auto" respecte la preference sans bloquer WebKit.
+      // WebKit peut encore reporter un scrollTo({behavior:'auto'}) et
+      // désactiver la flèche opposée pendant le geste suivant.
+      // L'affectation directe garantit l'absence d'animation lorsque la
+      // préférence système demande explicitement moins de mouvement.
+      if (reduce) {
+        accountScroll.scrollLeft = target;
+      } else {
+        accountScroll.scrollTo({ left: target, behavior: 'smooth' });
+      }
+      scrollLimits();
+      window.requestAnimationFrame(scrollLimits);
+    }
+    back.addEventListener('click', function () { slideAccount(-1); });
+    forward.addEventListener('click', function () { slideAccount(1); });
+    // Le passage bureau -> mobile doit également replacer la rubrique
+    // active dans la zone visible (elle pouvait rester hors écran).
+    function revealCurrentTab() {
+      if (!window.matchMedia('(max-width: 1020px)').matches) return;
+      var currentTab = accountNav.querySelector('a[aria-current="page"]');
+      if (!currentTab) return;
+      var activeRect = currentTab.getBoundingClientRect();
+      var viewportRect = accountScroll.getBoundingClientRect();
+      if (activeRect.left >= viewportRect.left + 2 &&
+          activeRect.right <= viewportRect.right - 2) return;
+      accountScroll.scrollLeft += activeRect.left - viewportRect.left -
+        Math.max(0, Math.round((accountScroll.clientWidth - activeRect.width) / 2));
+    }
+    accountScroll.addEventListener('scroll', scrollLimits, { passive: true });
+    function alignCurrentAfterLayout() {
+      scrollLimits();
+      revealCurrentTab();
+      scrollLimits();
+    }
+    window.addEventListener('resize', function () {
+      alignCurrentAfterLayout();
+      // WebKit peut finaliser la largeur effective des onglets au frame
+      // suivant une modification de taille.
+      window.requestAnimationFrame(alignCurrentAfterLayout);
+    });
+    // L'affichage initial est calculé dès que le menu est monté.
+    // Ne pas le refaire à window.load : les images peuvent finir de charger
+    // après que l'utilisateur a déjà fait défiler les rubriques.
+    revealCurrentTab();
+    scrollLimits();
+    if (typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(scrollLimits).observe(accountNav);
+    }
+    var adminTab = accountNav.querySelector('[data-admin-nav]');
+    if (adminTab && typeof MutationObserver !== 'undefined') {
+      new MutationObserver(scrollLimits).observe(adminTab, {
+        attributes: true, attributeFilter: ['hidden']
+      });
+    }
   }
 
   var core = doc.querySelector('[data-core-preview]');

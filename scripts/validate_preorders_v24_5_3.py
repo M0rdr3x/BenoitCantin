@@ -126,4 +126,28 @@ for forbidden in (
     if forbidden.lower() in (client + public_page + account_page + migration).lower():
         raise SystemExit(f"Intégration payante interdite dans la V24.5.3: {forbidden}")
 
+# Les étapes publiques de réservation restent navigables sans JavaScript.
+# Ne jamais masquer une étape, ses conditions ou la navigation derrière une session.
+ux_css = read("assets/css/sinjira-preorder-steps-ux-v1.css")
+browser_tests = read("tests/e2e/test_literature_site.py")
+require(public_page, 'data-preorder-page="livre-1"', "périmètre précommande")
+require(public_page, '/assets/css/sinjira-preorder-steps-ux-v1.css?v=1.0.0', "CSS des étapes")
+require(public_page, 'aria-label="Étapes de la réservation du Livre I"', "nom du sommaire")
+for fragment in ("prix-livre-1", "reception-livre-1", "reservation-livre-1"):
+    if public_page.count(f'id="{fragment}"') != 1:
+        raise SystemExit(f"Étape {fragment} manquante ou dupliquée")
+    require(public_page, f'href="#{fragment}"', f"ancre publique {fragment}")
+    require(public_page, f'aria-labelledby="{fragment}-titre"', f"titre accessible {fragment}")
+for status in ("data-preorder-status", "data-pf-preference-status", "data-pf-estimate-result"):
+    require(public_page, status + ' role="status" aria-live="polite"', f"annonce {status}")
+for selector in (".sinjira-preorder-steps", "overflow-x:auto", "min-height:48px",
+                 ":focus-visible", "prefers-reduced-motion:reduce", "scroll-margin-top"):
+    require(ux_css, selector, "CSS ergonomique précommande")
+if "style=" in public_page:
+    raise SystemExit("Un style HTML intégré subsiste sur la précommande")
+require(browser_tests, "assert_preorder_public_steps_responsive(browser)",
+        "recette Playwright précommande")
+require(browser_tests, "(240, 320, 390, 768, 1024, 1440)",
+        "six résolutions Playwright précommande")
+
 print("OK — SINJIRA V24.5.3 précommandes sans paiement validées, y compris le texte de transparence renforcé V24.5.31.")

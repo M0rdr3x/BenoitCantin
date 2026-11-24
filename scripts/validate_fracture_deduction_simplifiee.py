@@ -63,8 +63,9 @@ def main():
         'data-main-nav',
         'href="/"',
         'href="/projets/sinjira/"',
-        'href="/projets/projet-nova/"',
-        'href="/a-propos.html"',
+        'href="/projets/sinjira/romans/"',
+        'href="/projets/sinjira/registre/"',
+        'href="/projets/sinjira/communaute/"',
         'href="/compte/"',
     ]
     for p in [WEB,PARTY,RESULT]:

@@ -1,0 +1,41 @@
+name: SINJIRA Registre — parcours progressif mobile V1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'projets/sinjira/registre/index.html'
+      - 'assets/js/sinjira-registry-wizard-v1.js'
+      - 'assets/css/sinjira-registry-wizard-v1.css'
+      - 'scripts/validate_registry_wizard_v1.py'
+      - 'tests/e2e/test_public_site.py'
+      - '.github/workflows/sinjira-registry-wizard-v1.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'projets/sinjira/registre/index.html'
+      - 'assets/js/sinjira-registry-wizard-v1.js'
+      - 'assets/css/sinjira-registry-wizard-v1.css'
+      - 'scripts/validate_registry_wizard_v1.py'
+      - 'tests/e2e/test_public_site.py'
+      - '.github/workflows/sinjira-registry-wizard-v1.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verifier-registre:
+    name: Contrôler les étapes et les protections du Registre
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Contrôler la structure, les libellés et la vie privée
+        run: python3 scripts/validate_registry_wizard_v1.py
+      - name: Vérifier la syntaxe du script
+        run: node --check assets/js/sinjira-registry-wizard-v1.js
+      - name: Valider les contrats métier du Registre
+        run: python3 scripts/validate_sinjira_signup_registry_delivery.py

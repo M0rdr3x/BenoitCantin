@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import base64
+import binascii
+import json
 from pathlib import Path
 import re
 import subprocess
@@ -67,6 +70,54 @@ SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
 )
 
 
+# A JWT can be pasted directly into a source file without an assignment such as
+# SUPABASE_SERVICE_ROLE_KEY=..., evading prefix/assignment-only detection.
+# Require recognizable JSON JWT headers/claims; never print a matched token.
+# The signature need not verify: the guard flags plausible leaked credentials,
+# not whether the credential is currently accepted by Supabase.
+JWT_CANDIDATE = re.compile(
+    r"(?<![A-Za-z0-9_-])"
+    r"(eyJ[A-Za-z0-9_-]{16,1024})\."
+    r"(eyJ[A-Za-z0-9_-]{16,8192})\."
+    r"([A-Za-z0-9_-]{16,2048})"
+    r"(?![A-Za-z0-9_-])"
+)
+PRIVILEGED_JWT_ROLES = frozenset({"service_role", "supabase_admin", "postgres"})
+
+
+def _jwt_json_segment(segment: str) -> dict[str, object] | None:
+    try:
+        raw = base64.b64decode(
+            segment + "=" * (-len(segment) % 4),
+            altchars=b"-_",
+            validate=True,
+        )
+        parsed = json.loads(raw)
+    except (binascii.Error, ValueError, UnicodeDecodeError, TypeError):
+        return None
+    return parsed if isinstance(parsed, dict) else None
+
+
+def leaked_privileged_jwt_positions(source: str) -> list[int]:
+    """Byte-safe positions for high-privilege JWTs; excludes public anon JWTs."""
+    found: list[int] = []
+    for match in JWT_CANDIDATE.finditer(source):
+        header = _jwt_json_segment(match.group(1))
+        claims = _jwt_json_segment(match.group(2))
+        if not header or not claims:
+            continue
+        alg = header.get("alg")
+        if not isinstance(alg, str) or alg not in {
+            "HS256", "HS384", "HS512", "RS256", "RS384", "RS512",
+            "ES256", "ES384", "ES512", "EdDSA",
+        }:
+            continue
+        role = claims.get("role")
+        if isinstance(role, str) and role in PRIVILEGED_JWT_ROLES:
+            found.append(match.start())
+    return found
+
+
 def tracked_files() -> list[Path]:
     result = subprocess.run(
         ['git', 'ls-files', '-z'],
@@ -125,6 +176,13 @@ def inspect_file(path: Path, rel: Path) -> list[str]:
         if match:
             line = content.count('\n', 0, match.start()) + 1
             findings.append(f'{rel}:{line}: {label}')
+    # Validate encoded JWT claims rather than relying on a key's variable name.
+    # Only privileged roles are flagged: public Supabase anon/publishable
+    # credentials can appear intentionally in client-side configuration.
+    for position in leaked_privileged_jwt_positions(content):
+        line = content.count('\n', 0, position) + 1
+        findings.append(f'{rel}:{line}: Supabase privileged JWT credential')
+
     return findings
 
 

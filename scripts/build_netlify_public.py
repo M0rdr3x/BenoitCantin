@@ -121,7 +121,6 @@ PUBLIC_DIRS = (
 SINJIRA_PUBLIC_DOCUMENTS = {
     Path("projets/sinjira/documents/Questionnaire_Registre_des_Consciences_Fans.pdf"),
     Path("projets/sinjira/documents/Questionnaire_SINJIRA_Registre_des_Consciences.pdf"),
-    Path("projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"),
 }
 # PDF publies : liste positive sur TOUT le site, pas uniquement les
 # documents de roman. Un nouveau manuscrit, reçu ou document interne ne doit
@@ -153,9 +152,8 @@ SINJIRA_PRIVATE_RELEASE_METADATA = {
 LIVRE1_DEMO_PUBLIC_PATH = Path(
     "projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf"
 )
-LIVRE1_DEMO_MASTER_SIZE_BYTES = 1_244_667
-LIVRE1_DEMO_MASTER_SHA256 = (
-    "0851852f586ea619ee7435a1b70c38087a7997ab6809bb10fdad0ed4bd0c352b"
+LIVRE1_DEMO_VALIDATION_SHA256 = (
+    "d76be06aca5b1568752f88223f07f7804fc7a54384ccc5bd856b0ce6fdf42dcf"
 )
 
 FORBIDDEN_DIRS = (
@@ -355,7 +353,6 @@ REQUIRED_PUBLIC_PATHS = (
     "projets/projet-nova/script.js",
     "projets/sinjira/romans/index.html",
     "projets/sinjira/romans/lire-demo.html",
-    "projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf",
     "compte/index.html",
     "admin/index.html",
     "app/index.html",
@@ -634,6 +631,19 @@ def render_standalone_redirects() -> str:
         lines.append(f"{source} {target} {status_token}")
     return "\n".join(lines).rstrip() + "\n"
 
+def public_csp_blocks_objects(policy: str) -> bool:
+    """Require exactly one object-src directive with only the none value.
+
+    A substring check misses duplicates or appended origins, and can leave
+    the intended security boundary ambiguous to the browser.
+    """
+    directives = [fragment.strip().split()
+                  for fragment in policy.split(";") if fragment.strip()]
+    objects = [tokens for tokens in directives
+               if tokens[0].lower() == "object-src"]
+    return objects == [["object-src", "'none'"]]
+
+
 def validate_vercel_config() -> list[str]:
     errors: list[str] = []
     if not VERCEL_CONFIG.is_file():
@@ -680,11 +690,12 @@ def validate_vercel_config() -> list[str]:
             "connect-src 'self'",
             "frame-src 'self' https://gpvivleexywljowcqkru.supabase.co",
             "frame-ancestors 'self'",
-            "object-src 'self'",
             "base-uri 'self'",
         ):
             if directive not in csp:
                 errors.append(f"Preview Vercel: directive CSP requise absente: {directive}.")
+        if not public_csp_blocks_objects(csp):
+            errors.append("Preview Vercel: object-src 'none' unique obligatoire.")
         if "https://www.bubblav.com" in csp:
             errors.append("Preview Vercel: BubblaV doit rester bloqué dans la CSP.")
 
@@ -862,11 +873,12 @@ def validate_netlify_config() -> list[str]:
         for directive in (
             "frame-src 'self' https://gpvivleexywljowcqkru.supabase.co",
             "frame-ancestors 'self'",
-            "object-src 'self'",
             "base-uri 'self'",
         ):
             if directive not in csp:
                 errors.append(f"CSP Netlify: directive requise absente: {directive}.")
+        if not public_csp_blocks_objects(csp):
+            errors.append("CSP Netlify: object-src 'none' unique obligatoire.")
         if global_values.get("X-Content-Type-Options") != "nosniff":
             errors.append("En-tête X-Content-Type-Options=nosniff requis.")
         if global_values.get("Cross-Origin-Opener-Policy") != "same-origin-allow-popups":
@@ -1107,7 +1119,6 @@ def self_test_public_filesystem_boundary() -> list[str]:
         "projets/projet-nova/data/actualites.json",
         "projets/projet-nova/data/sources.json",
         "projets/sinjira/romans/index.html",
-        "projets/sinjira/documents/SINJIRA_Livre_01_La_Cendre_du_Jugement_DEMO.pdf",
     )
     for rel in rejected:
         if relative_path_allowed(Path(rel)):
@@ -1226,40 +1237,26 @@ def validate_plan() -> list[str]:
                     f"Document SINJIRA non allowlisté publiable par erreur: {rel.as_posix()}"
                 )
 
-    # Le master valide de main (octobre 2026) est également déclaré dans
-    # le manifeste de release ; aucune constante obsolète ne peut autoriser
-    # par erreur une autre démonstration publique.
+    # L'ancienne démo 82 pages ne fait plus partie de l'allowlist publique.
+    # La nouvelle validation 62 pages n'est pas publiée : ne pas faire passer
+    # une absence d'octets ou une URL absente pour une erreur de publication.
     manifest_path = ROOT / "projets/sinjira/romans/livre-1-release.json"
     try:
         release = json.loads(manifest_path.read_text(encoding="utf-8", errors="strict"))
-        expected_manifest_hash = release.get("demo", {}).get("sha256")
-        if expected_manifest_hash != LIVRE1_DEMO_MASTER_SHA256:
-            errors.append("Démo Livre I: SHA-256 différent du manifeste de publication main.")
+        demo = release.get("demo", {})
+        if (demo.get("sha256") != LIVRE1_DEMO_VALIDATION_SHA256
+                or demo.get("pages") != 62
+                or demo.get("public_path") is not None
+                or demo.get("publication_state") != "not_published_pending_binary_upload"):
+            errors.append("Démo Livre I : contrat de non-publication ou empreinte SHA-256 incorrects.")
     except (OSError, UnicodeError, json.JSONDecodeError, AttributeError, TypeError):
         errors.append("Démo Livre I: manifeste de publication illisible.")
 
     demo_master = ROOT / LIVRE1_DEMO_PUBLIC_PATH
-    if demo_master.is_file():
-        try:
-            demo_size = demo_master.stat().st_size
-            demo_sha = hashlib.sha256(demo_master.read_bytes()).hexdigest()
-        except OSError as exc:
-            errors.append(f"Démo Livre I illisible: {exc}")
-        else:
-            if demo_size != LIVRE1_DEMO_MASTER_SIZE_BYTES:
-                errors.append(
-                    "Démo Livre I non conforme au master #363: "
-                    f"taille={demo_size}, attendu={LIVRE1_DEMO_MASTER_SIZE_BYTES}."
-                )
-            if demo_sha != LIVRE1_DEMO_MASTER_SHA256:
-                errors.append(
-                    "Démo Livre I non conforme au master #363: "
-                    f"sha256={demo_sha}, attendu={LIVRE1_DEMO_MASTER_SHA256}."
-                )
-    else:
-        errors.append(
-            f"Démo Livre I publique absente: {LIVRE1_DEMO_PUBLIC_PATH.as_posix()}"
-        )
+    if demo_master.exists():
+        errors.append("L'ancien PDF de démonstration 82 pages ne doit plus être publié.")
+    if relative_path_allowed(LIVRE1_DEMO_PUBLIC_PATH):
+        errors.append("L'ancienne démo ne doit plus figurer dans l'allowlist publique.")
 
     for private_probe in (
         Path("projets/sinjira/documents/SINJIRA_LIVRE_I_LA_CENDRE_DU_JUGEMENT.pdf"),
@@ -1647,7 +1644,7 @@ def main() -> int:
             )
         print(
             "OK confinement GitHub Pages: artefact public isolé vérifié; "
-            f"{file_count} fichiers; masters Livre I strictement validés."
+            f"{file_count} fichiers; frontière Livre I et démo non publiée vérifiées."
         )
         return 0
 

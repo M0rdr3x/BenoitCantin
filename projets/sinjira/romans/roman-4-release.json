@@ -1,0 +1,48 @@
+{
+  "schema": "sinjira-roman-iv-release/v1",
+  "updated_at": "2026-11-21",
+  "book": {
+    "franchise": "SINJIRA",
+    "volume": 4,
+    "title": "Les Cicatrices du Salut",
+    "author": "Benoit Cantin",
+    "language": "fr-CA",
+    "copyright_year": 2026
+  },
+  "submitted_versions": {
+    "demo": {
+      "format": "PDF",
+      "filename": "Demo_SINJIRA_ROMAN_04_LES_CICATRICES_DU_SALUT.pdf",
+      "pages": 55,
+      "sha256": "c34cc64ac43e707cb81a9e748f59ed8fb4bcad4369edd90948930ec39b4b3aee",
+      "includes": "Prologue et chapitres 01 à 05",
+      "publication_state": "non_publie_en_attente_validation"
+    },
+    "full_pdf": {
+      "format": "PDF",
+      "filename": "SINJIRA_ROMAN_04_LES_CICATRICES_DU_SALUT.pdf",
+      "pages": 494,
+      "publication_state": "prive_non_publie"
+    },
+    "full_epub": {
+      "format": "EPUB",
+      "filename": "SINJIRA_ROMAN_04_LES_CICATRICES_DU_SALUT (NUMERIQUE).epub",
+      "container_validation": "zip_integrity_ok",
+      "language": "fr-CA",
+      "publication_state": "prive_non_publie"
+    }
+  },
+  "editorial_gates": {
+    "demo_certification": "A1_en_attente",
+    "public_release_authorized": false,
+    "private_delivery_authorized": false,
+    "reader_entitlement_backend_verified": false
+  },
+  "policy": {
+    "full_text_in_public_git": false,
+    "public_static_full_download": false,
+    "activate_only_after_explicit_editorial_approval": true,
+    "validate_entitlement_server_side": true
+  },
+  "note": "Référence documentaire uniquement. Les fichiers binaires remis ne sont pas hébergés dans le dépôt public. Leurs noms et métriques ne constituent ni un droit de téléchargement ni une certification de publication."
+}

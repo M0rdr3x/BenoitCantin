@@ -1,0 +1,38 @@
+name: "Sécurité — en-têtes privés Edge partagés"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/functions/_shared/cors.ts'
+      - 'scripts/validate_edge_shared_headers.py'
+      - '.github/workflows/edge-shared-response-headers.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/_shared/cors.ts'
+      - 'scripts/validate_edge_shared_headers.py'
+      - '.github/workflows/edge-shared-response-headers.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  edge-response-headers:
+    name: Interdire le cache et le MIME sniffing Edge
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sans jeton persistant
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python figé
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Tester les régressions de sécurité
+        run: python scripts/validate_edge_shared_headers.py --self-test
+      - name: Vérifier les en-têtes HTTP de la source
+        run: python scripts/validate_edge_shared_headers.py

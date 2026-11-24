@@ -10,9 +10,10 @@ ROOT = Path(__file__).resolve().parents[1]
 GLOBAL_NAV = (
     "/",
     "/projets/sinjira/",
-    "/projets/projet-nova/",
-    "/a-propos.html",
-    "/contact.html",
+    "/projets/sinjira/romans/",
+    "/projets/sinjira/registre/",
+    "/projets/sinjira/communaute/",
+    "/compte/",
 )
 
 ERROR_PAGES = {
@@ -22,7 +23,7 @@ ERROR_PAGES = {
             "Erreur 404",
             "Retour à l’accueil",
             "Ouvrir SINJIRA™",
-            "Projet Nova",
+            "Nous contacter",
         ),
     },
     "offline.html": {
@@ -115,18 +116,29 @@ def validate_page(rel: str, cfg: dict[str, object], errors: list[str]) -> None:
         if target is not None and not target.exists():
             errors.append(f"{rel}: ressource/lien local absent: {raw}")
 
+    # Une page d'erreur doit aussi offrir un contact public sans promotion
+    # d'un programme archivé; ce lien reste indépendant du menu principal.
+    if rel == "404.html" and 'href="/contact.html"' not in html:
+        errors.append("404: lien de contact absent.")
+
+    runtime = (ROOT / "assets/js/error-pages-ux-v1.js").read_text("utf-8")
+    if "/assets/js/error-pages-ux-v1.js" not in html or "/assets/css/error-pages-ux-v1.css" not in html:
+        errors.append(f"{rel}: ressources externes de secours absentes.")
+    if re.search(r'\b(?:onclick|onload|onerror|style)\s*=', html, re.I) or re.search(r'<script\b(?![^>]*\bsrc=)', html, re.I):
+        errors.append(f"{rel}: script/style inline incompatible avec CSP stricte.")
+
     if rel == "404.html":
         for legacy, target in (
             ("'/sinjira'", "'/projets/sinjira/'"),
             ("'/admin'", "'/admin/sinjira/'"),
         ):
-            if legacy not in html or target not in html:
+            if legacy not in runtime or target not in runtime:
                 errors.append(f"{rel}: redirection de compatibilité perdue: {legacy} -> {target}")
 
     if rel == "offline.html":
         if 'role="status"' not in html or 'aria-live="polite"' not in html:
             errors.append(f"{rel}: annonce accessible de reprise réseau absente.")
-        if "location.reload()" not in html:
+        if "location.reload()" not in runtime or "data-error-retry hidden" not in html:
             errors.append(f"{rel}: action de nouvelle tentative absente.")
 
 

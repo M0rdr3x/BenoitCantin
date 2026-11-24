@@ -1,0 +1,57 @@
+name: SINJIRA — Cache du portail et identité
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'sw.js'
+      - 'app/index.html'
+      - 'assets/css/sinjira-mobile-app-v24-4-94.css'
+      - 'assets/css/sinjira-mobile-account-shell-v24-4-95.css'
+      - 'assets/js/sinjira-mobile-account-shell-v24-4-95.js'
+      - 'assets/js/sinjira-pwa-install.js'
+      - 'assets/js/site.js'
+      - 'scripts/validate_pwa.py'
+      - 'scripts/validate_sinjira_pwa_brand_cache.py'
+      - 'scripts/test_sinjira_sw_public_cache.mjs'
+      - '.github/workflows/sinjira-pwa-brand-cache.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'sw.js'
+      - 'app/index.html'
+      - 'assets/css/sinjira-mobile-app-v24-4-94.css'
+      - 'assets/css/sinjira-mobile-account-shell-v24-4-95.css'
+      - 'assets/js/sinjira-mobile-account-shell-v24-4-95.js'
+      - 'assets/js/sinjira-pwa-install.js'
+      - 'assets/js/site.js'
+      - 'scripts/validate_pwa.py'
+      - 'scripts/validate_sinjira_pwa_brand_cache.py'
+      - 'scripts/test_sinjira_sw_public_cache.mjs'
+      - '.github/workflows/sinjira-pwa-brand-cache.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validation-cache:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Identité visuelle et cache privé
+        run: python3 scripts/validate_sinjira_pwa_brand_cache.py
+      - name: Contrats PWA, cache et SEO
+        run: python3 scripts/validate_pwa.py
+      - name: Régression runtime cache public / accès privés
+        run: node --test scripts/test_sinjira_sw_public_cache.mjs
+      - name: Syntaxe du service worker
+        run: node --check sw.js
+      - name: Syntaxe de la navigation mobile et de l'installation
+        run: |
+          node --check assets/js/sinjira-mobile-account-shell-v24-4-95.js
+          node --check assets/js/sinjira-pwa-install.js
+          node --check assets/js/site.js

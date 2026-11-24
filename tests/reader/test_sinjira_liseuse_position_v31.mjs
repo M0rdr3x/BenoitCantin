@@ -96,3 +96,16 @@ test('V34 : ne pas rejouer une sauvegarde locale sans date valide ou contre une 
   assert.equal(shouldReplayReadingProgress('2026-11-07T22:00:03Z',null),true);
   assert.equal(shouldReplayReadingProgress('2026-11-07T22:00:03Z','invalide'),false);
 });
+
+test('V56 : agrandir la typographie garde le ratio de lecture sur une page fictive',()=>{
+  // Un agrandissement à 200 % augmente la hauteur de texte, pas la page PDF.
+  const start=ratioFromScroll(720,2400,600);
+  assert.equal(start,.4);
+  const after=scrollTopForRatio(start,4200,600);
+  assert.equal(after,1440);
+  assert.equal(ratioFromScroll(after,4200,600),start);
+  assert.equal(scrollTopForRatio(1,4200,600),3600);
+  assert.equal(scrollTopForRatio(0,4200,600),0);
+  // Une page devenue plus courte ne produit pas de défilement hors limites.
+  assert.equal(scrollTopForRatio(start,500,600),0);
+});
