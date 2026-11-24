@@ -82,8 +82,8 @@ def main() -> int:
     stylesheet_count = len(re.findall(r"<link\b[^>]*rel=[\"']stylesheet[\"']", home, flags=re.I))
     if script_count > 6:
         errors.append(f"index.html: {script_count} scripts; budget maximal 6.")
-    if stylesheet_count > 8:
-        errors.append(f"index.html: {stylesheet_count} feuilles de style; budget maximal 8.")
+    if stylesheet_count > 7:
+        errors.append(f"index.html: {stylesheet_count} feuilles de style; budget maximal 7.")
 
     cards = re.findall(r'<a class="home-project".*?</a>', home, flags=re.I | re.S)
     if len(cards) != 4:
