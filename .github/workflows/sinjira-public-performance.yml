@@ -1,0 +1,79 @@
+name: Diagnostic performance pages publiques SINJIRA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'projets/sinjira/**'
+      - 'assets/css/**'
+      - 'assets/js/**'
+      - 'assets/media/**'
+      - 'scripts/report_public_lighthouse.py'
+      - 'scripts/validate_public_image_geometry.py'
+      - 'scripts/check_lighthouse.py'
+      - '.github/workflows/sinjira-public-performance.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  image-geometry:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - run: python3 scripts/validate_public_image_geometry.py
+
+  baseline:
+    name: Diagnostic ${{ matrix.route }} — ${{ matrix.profile }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        route: [univers, romans, registre, jeux, communaute, codex]
+        profile: [mobile, desktop]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+      - name: Démarrer le serveur local
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/sinjira-perf-http.log 2>&1 &
+          echo $! > /tmp/sinjira-perf-http.pid
+          for i in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          exit 1
+      - name: Mesurer une page publique sans authentification
+        env:
+          ROUTE: ${{ matrix.route }}
+          PROFILE: ${{ matrix.profile }}
+        run: |
+          case "$ROUTE" in
+            univers) url=http://127.0.0.1:4173/projets/sinjira/ ;;
+            romans|registre|jeux|communaute|codex) url="http://127.0.0.1:4173/projets/sinjira/$ROUTE/" ;;
+            *) exit 2 ;;
+          esac
+          flags=()
+          case "$PROFILE" in
+            mobile) ;;
+            desktop) flags+=(--preset=desktop) ;;
+            *) exit 2 ;;
+          esac
+          npx --yes lighthouse@13.4.1 "$url" "${flags[@]}" --quiet --output=json \
+            --output-path=/tmp/sinjira-page-lighthouse.json \
+            --only-categories=performance,accessibility,best-practices,seo \
+            --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage"
+          python3 scripts/report_public_lighthouse.py /tmp/sinjira-page-lighthouse.json "$url"
+      - name: Arrêter le serveur
+        if: always()
+        run: |
+          if [ -f /tmp/sinjira-perf-http.pid ]; then kill "$(cat /tmp/sinjira-perf-http.pid)" || true; fi
