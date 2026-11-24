@@ -67,13 +67,21 @@ def check_legal_navigation(browser):
     for js in (False, True):
         ctx = browser.new_context(locale="fr-CA", java_script_enabled=js,
                                   reduced_motion="reduce", service_workers="block")
+        # Playwright désactive le cache HTTP avec le routage. Les réponses
+        # conditionnelles 304 ne doivent pas être confondues avec un échec
+        # de chargement et aucune ressource externe n’est nécessaire ici.
+        ctx.route("**/*", lambda route: route.continue_() if
+                  urlparse(route.request.url).netloc == urlparse(BASE_URL).netloc
+                  else route.abort())
         try:
             page = ctx.new_page()
             for width in (240, 320, 390, 768, 1440):
                 page.set_viewport_size({"width": width, "height": 820})
                 for path, count in legal_pages.items():
                     response = page.goto(urljoin(BASE_URL, path), wait_until="load", timeout=30_000)
-                    assert_true(response is not None and response.ok, f"{path}: page indisponible")
+                    assert_true(response is not None and response.ok,
+                                f"{BROWSER_NAME}: {path} indisponible, {width}px, JS={js}, "
+                                f"HTTP={response.status if response else None}")
                     nav = page.locator("main nav#sommaire")
                     links = nav.locator("a")
                     headings = page.locator("main article h2[id]")

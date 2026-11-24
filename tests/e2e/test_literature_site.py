@@ -606,9 +606,26 @@ def assert_preorder_public_steps_responsive(browser) -> None:
                         f"{BROWSER_NAME}: message de réservation non annoncé")
             assert_true(page.locator('[data-pf-preference-status][role="status"]').count() == 1,
                         f"{BROWSER_NAME}: message de livraison non annoncé")
-            assert_true(not page.evaluate(
-                "() => document.documentElement.scrollWidth > innerWidth + 2"),
-                f"{BROWSER_NAME}: débordement horizontal de précommande à {width}px")
+            # Les styles doivent tous avoir été chargés avant la mesure,
+            # particulièrement quand le navigateur est sans JavaScript.
+            page.wait_for_load_state("load", timeout=30_000)
+            overflow = page.evaluate("""() => ({
+                width: innerWidth, scroll: document.documentElement.scrollWidth,
+                elements: [...document.querySelectorAll("main *, footer *")]
+                    .map(el => ({tag: el.tagName, cls: String(el.className).slice(0,100),
+                        left: Math.round(el.getBoundingClientRect().left),
+                        right: Math.round(el.getBoundingClientRect().right)}))
+                    .filter(el => el.right > innerWidth + 2 || el.left < -2)
+                    .slice(0,12)
+            })""")
+            assert_true(overflow["scroll"] <= overflow["width"] + 2,
+                        f"{BROWSER_NAME}: débordement horizontal de précommande à {width}px : {overflow}")
+            if width <= 360:
+                for link in links.all():
+                    box = link.bounding_box()
+                    assert_true(box is not None and box["x"] >= -2 and
+                                box["x"] + box["width"] <= width + 2,
+                                f"{BROWSER_NAME}: étape hors écran à {width}px : {box}")
             nav.locator('a[href="#reception-livre-1"]').click()
             assert_true(page.evaluate("location.hash") == "#reception-livre-1",
                         f"{BROWSER_NAME}: ancre Livraison non fonctionnelle à {width}px")
