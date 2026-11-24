@@ -57,6 +57,9 @@ for needle in (
     'return AbortSignal.timeout(timeoutMs);',
     "method: 'POST'",
     "'Content-Type': 'application/json'",
+    "redirect: 'error'",
+    "credentials: 'omit'",
+    "referrerPolicy: 'no-referrer'",
     'signal: createSecurityPushAbortSignal()',
 ):
     require(network, needle, 'réseau Expo borné')
@@ -74,6 +77,14 @@ for needle in (
     "postSecurityPushJson('https://example.com/push'",
     'INVALID_SECURITY_PUSH_URL',
     'INVALID_SECURITY_PUSH_FETCH',
+    "assert.equal(captured.init.redirect, 'error'",
+    "assert.equal(captured.init.credentials, 'omit'",
+    "assert.equal(captured.init.referrerPolicy, 'no-referrer'",
+    'for (const code of [307, 308])',
+    'for (const [endpoint, payload] of endpoints)',
+    'assert.equal(initialRequests, previous + 1,',
+    'assert.equal(initialRequests, 4,',
+    'assert.equal(forwardedRequests, 0,',
 ):
     require(test, needle, 'test réseau Expo')
 
@@ -85,4 +96,4 @@ for needle in (
 ):
     require(workflow, needle, 'workflow push')
 
-print('OK push background V25: décision sécurité synchrone, Expo hors chemin de réponse, timeout 4s réellement testé, endpoints exacts et runtime local per_worker.')
+print('OK push background V25: notifications privées sans redirection ni cookies/référents, timeout 4s, endpoints exacts et runtime local per_worker.')
