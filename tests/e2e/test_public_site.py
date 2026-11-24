@@ -60,6 +60,78 @@ def wait_for_assistant(page):
     )
 
 
+def check_message_layout(browser):
+    # HTML/CSS réels, contenus synthétiques; tous les scripts de compte et
+    # services externes sont bloqués. Aucun message réel ni envoi.
+    ctx = browser.new_context(locale="fr-CA", service_workers="block",
+                              reduced_motion="reduce")
+    ctx.route("**/*", lambda route: route.continue_() if
+              urlparse(route.request.url).netloc == urlparse(BASE_URL).netloc
+              and route.request.resource_type != "script" else route.abort())
+    try:
+        page = ctx.new_page()
+        for path, search_label, message_label in (
+            ("compte/messages-reels.html", "Rechercher un membre", "Votre message"),
+            ("compte/messages-personnage.html", "Rechercher un personnage",
+             "Votre message en personnage"),
+        ):
+            response = page.goto(urljoin(BASE_URL, path), wait_until="load", timeout=30_000)
+            assert_true(response is not None and response.ok, f"{path}: page inaccessible")
+            search = page.get_by_role("textbox", name=search_label)
+            form = page.locator("[data-chat-form]")
+            assert_true(search.count() == 1 and form.is_hidden(),
+                        f"{path}: recherche inaccessible ou formulaire ouvert avant sélection")
+            page.evaluate("""() => {
+              const long = 'Fictif'.repeat(60);
+              const list = document.querySelector('[data-contact-list]');
+              const chat = document.querySelector('[data-chat-log]');
+              for (let i=0; i<20; i++) {
+                const contact=document.createElement('button');
+                contact.className='v20-contact';
+                const span=document.createElement('span');
+                span.textContent=long;
+                contact.append(span); list.append(contact);
+              }
+              const bubble=document.createElement('div');
+              bubble.className='v20-bubble';
+              bubble.textContent=long; chat.append(bubble);
+              document.querySelector('[data-chat-form]').hidden=false;
+            }""")
+            field = page.get_by_role("textbox", name=message_label)
+            assert_true(field.count() == 1, f"{path}: zone de message sans nom")
+            field.fill("Brouillon fictif")
+            for width in (240, 320, 390, 768, 1440):
+                page.set_viewport_size({"width":width,"height":720})
+                metrics = page.evaluate("""() => {
+                  const shell=document.querySelector('.v20-message-shell');
+                  const list=document.querySelector('.v20-contact-list');
+                  const log=document.querySelector('.v20-chat-log');
+                  const form=document.querySelector('.v20-chat-form');
+                  const field=form.querySelector('textarea');
+                  const button=form.querySelector('button');
+                  const sr=shell.getBoundingClientRect();
+                  const inside=e=>{const r=e.getBoundingClientRect();
+                    return r.left>=sr.left-2 && r.right<=sr.right+2;};
+                  return {inside:[list,log,field,button].every(inside),
+                    listOverflow:list.scrollWidth>list.clientWidth+2,
+                    logOverflow:log.scrollWidth>log.clientWidth+2,
+                    fieldFont:parseFloat(getComputedStyle(field).fontSize),
+                    buttonHeight:button.getBoundingClientRect().height,
+                    mobileListHeight:list.getBoundingClientRect().height};
+                }""")
+                assert_true(metrics["inside"] and not metrics["listOverflow"] and
+                            not metrics["logOverflow"] and metrics["fieldFont"]>=16 and
+                            metrics["buttonHeight"]>=47.5 and
+                            (width>900 or metrics["mobileListHeight"]<=241),
+                            f"{path} à {width}px: {metrics}")
+                assert_true(field.input_value()=="Brouillon fictif",
+                            f"{path}: brouillon perdu au redimensionnement")
+            form.evaluate("(el) => el.hidden=true")
+            assert_true(form.is_hidden(), f"{path}: attribut hidden ignoré")
+    finally:
+        ctx.close()
+
+
 def check_legal_navigation(browser):
     # Sommaire natif : aucun compte, aucun script requis, aucune écriture.
     legal_pages = {"avis-legal.html": 10, "confidentialite.html": 13,
@@ -1949,6 +2021,7 @@ def run() -> None:
         context.close()
         if IS_LOCAL:
             check_legal_navigation(browser)
+            check_message_layout(browser)
         browser.close()
         auth_note = f", {len(AUTH_ROUTES)} pages Auth locales + assistant V{ASSISTANT_VERSION} contextuel" if IS_LOCAL else ""
         print(
