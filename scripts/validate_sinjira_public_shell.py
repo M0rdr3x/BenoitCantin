@@ -170,7 +170,7 @@ def main() -> int:
         errors.append("Icône SVG YouTube inaccessible ou absente")
     if f'href="{official_mailto}"' not in home:
         errors.append("Courriel SINJIRA absent de l’accueil")
-    if 'sinjira.css?v=24.4.13' not in home:
+    if 'sinjira.css?v=24.4.14' not in home:
         errors.append("Feuille de style des canaux SINJIRA non actualisée")
 
     contact = (ROOT / "contact.html").read_text(encoding="utf-8")
