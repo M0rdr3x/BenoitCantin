@@ -8,20 +8,33 @@ function qsa(sel){return [...document.querySelectorAll(sel)]}
 function status(message,type='info'){setStatus(qs('[data-security-center-status]'),message,type)}
 
 function randomDeviceKey(){
-  if(globalThis.crypto?.randomUUID)return globalThis.crypto.randomUUID();
-  const bytes=new Uint8Array(24);globalThis.crypto?.getRandomValues?.(bytes);
+  // Un appareil ne devient jamais « fiable » grâce à un identifiant
+  // prévisible : pas de fallback Date.now ou de 24 octets nuls.
+  const cryptoApi=globalThis.crypto;
+  if(typeof cryptoApi?.randomUUID==='function')return cryptoApi.randomUUID();
+  if(typeof cryptoApi?.getRandomValues!=='function')throw new Error('SECURE_RANDOM_UNAVAILABLE');
+  const bytes=new Uint8Array(24);
+  cryptoApi.getRandomValues(bytes);
+  if(bytes.every(byte=>byte===0))throw new Error('SECURE_RANDOM_UNAVAILABLE');
   return `sinjira-${Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}-${Date.now().toString(36)}`;
+}
+
+function unusableDeviceKey(value){
+  const key=String(value||'');
+  // La rotation des anciennes clés faibles est ciblée; préserver
+  // les clés cryptographiques UUID et celles du pont natif existant.
+  return !key||key.length<16||key.length>128||/^sinjira-0{48}(?:-|$)/i.test(key);
 }
 
 function deviceKey(){
   try{
     let value=localStorage.getItem(DEVICE_KEY_STORAGE);
-    if(!value){value=randomDeviceKey();localStorage.setItem(DEVICE_KEY_STORAGE,value)}
+    if(unusableDeviceKey(value)){value=randomDeviceKey();localStorage.setItem(DEVICE_KEY_STORAGE,value)}
     return value;
   }catch{
     try{
       let value=sessionStorage.getItem(DEVICE_KEY_STORAGE);
-      if(!value){value=randomDeviceKey();sessionStorage.setItem(DEVICE_KEY_STORAGE,value)}
+      if(unusableDeviceKey(value)){value=randomDeviceKey();sessionStorage.setItem(DEVICE_KEY_STORAGE,value)}
       return value;
     }catch{return randomDeviceKey()}
   }
@@ -56,7 +69,7 @@ async function registerContext(meta){
     if(error)throw error;
     return {registered,context:data};
   }catch(error){
-    console.warn('[SINJIRA security-context]',error?.message||error);
+    console.warn('[SINJIRA security-context] Vérification de contexte indisponible.');
     return {registered,context:null};
   }
 }
@@ -83,7 +96,7 @@ function renderDevices(devices){
   node.innerHTML=devices.map(d=>{
     const current=d.is_current===true;
     const badges=[current&&pill('Cet appareil','good'),d.is_primary&&pill('Principal','good'),d.is_trusted&&pill('Fiable','good'),d.revoked_at&&pill('Révoqué','danger')].filter(Boolean).join(' ');
-    return `<article class="security-item" data-device-id="${d.id}"><div class="security-item-head"><div><h3>${escapeHtml(d.display_name||'Appareil SINJIRA')}</h3><div>${badges}</div></div><small>Dernière activité : ${escapeHtml(formatDate(d.last_seen_at))}</small></div><p><small>${escapeHtml(d.device_type||'appareil')} · ${escapeHtml(d.platform||'plateforme non précisée')}</small></p>${d.last_country_code?`<p><small>Dernière région de sécurité : ${escapeHtml(d.last_country_code)}${d.last_region_code?` · ${escapeHtml(d.last_region_code)}`:''}</small></p>`:''}<div class="security-actions">${!d.revoked_at&&!d.is_trusted&&current?`<button class="btn btn-secondary" type="button" data-device-trust="${d.id}">Marquer cet appareil fiable</button>`:''}${!d.revoked_at&&d.is_trusted&&!d.is_primary?`<button class="btn btn-secondary" type="button" data-device-primary="${d.id}">Définir principal</button>`:''}${!d.revoked_at&&d.is_trusted?`<button class="btn btn-secondary" type="button" data-device-untrust="${d.id}">Retirer la confiance</button>`:''}${!d.revoked_at&&!current?`<button class="btn btn-secondary" type="button" data-device-revoke="${d.id}">Révoquer</button>`:''}</div></article>`;
+    return `<article class="security-item" data-device-id="${escapeHtml(d.id)}"><div class="security-item-head"><div><h3>${escapeHtml(d.display_name||'Appareil SINJIRA')}</h3><div>${badges}</div></div><small>Dernière activité : ${escapeHtml(formatDate(d.last_seen_at))}</small></div><p><small>${escapeHtml(d.device_type||'appareil')} · ${escapeHtml(d.platform||'plateforme non précisée')}</small></p>${d.last_country_code?`<p><small>Dernière région de sécurité : ${escapeHtml(d.last_country_code)}${d.last_region_code?` · ${escapeHtml(d.last_region_code)}`:''}</small></p>`:''}<div class="security-actions">${!d.revoked_at&&!d.is_trusted&&current?`<button class="btn btn-secondary" type="button" data-device-trust="${escapeHtml(d.id)}">Marquer cet appareil fiable</button>`:''}${!d.revoked_at&&d.is_trusted&&!d.is_primary?`<button class="btn btn-secondary" type="button" data-device-primary="${escapeHtml(d.id)}">Définir principal</button>`:''}${!d.revoked_at&&d.is_trusted?`<button class="btn btn-secondary" type="button" data-device-untrust="${escapeHtml(d.id)}">Retirer la confiance</button>`:''}${!d.revoked_at&&!current?`<button class="btn btn-secondary" type="button" data-device-revoke="${escapeHtml(d.id)}">Révoquer</button>`:''}</div></article>`;
   }).join('');
 }
 
@@ -113,7 +126,7 @@ function renderSecurityEvents(rows){
 function renderTravel(rows){
   const node=qs('[data-security-travel-list]');if(!node)return;
   if(!rows.length){node.innerHTML=empty('Aucun voyage enregistré.');return}
-  node.innerHTML=rows.map(r=>`<article class="security-item"><div class="security-item-head"><div><h3>${escapeHtml((r.destinations||[]).join(' → '))}</h3>${pill(r.status,r.status==='active'?'good':'')}</div><small>${escapeHtml(formatDate(r.starts_at))} → ${escapeHtml(formatDate(r.ends_at))}</small></div><p><small>Suppression prévue : ${escapeHtml(formatDate(r.delete_after))}</small></p>${r.status==='active'?`<div class="security-actions"><button class="btn btn-secondary" type="button" data-travel-cancel="${r.id}">Annuler ce voyage</button></div>`:''}</article>`).join('');
+  node.innerHTML=rows.map(r=>`<article class="security-item"><div class="security-item-head"><div><h3>${escapeHtml((r.destinations||[]).join(' → '))}</h3>${pill(r.status,r.status==='active'?'good':'')}</div><small>${escapeHtml(formatDate(r.starts_at))} → ${escapeHtml(formatDate(r.ends_at))}</small></div><p><small>Suppression prévue : ${escapeHtml(formatDate(r.delete_after))}</small></p>${r.status==='active'?`<div class="security-actions"><button class="btn btn-secondary" type="button" data-travel-cancel="${escapeHtml(r.id)}">Annuler ce voyage</button></div>`:''}</article>`).join('');
 }
 
 function renderChallenges(rows,devices){
@@ -125,7 +138,7 @@ function renderChallenges(rows,devices){
     const sameRequestDevice=Boolean(currentDevice&&currentDevice.id===r.request_device_id);
     const canResolve=Boolean(currentDevice&&currentDevice.is_trusted&&!sameRequestDevice);
     const controls=canResolve
-      ? `<div class="security-actions"><button class="btn btn-primary" type="button" data-challenge-approve="${r.id}">Autoriser</button><button class="btn btn-secondary" type="button" data-challenge-deny="${r.id}">Refuser</button></div>`
+      ? `<div class="security-actions"><button class="btn btn-primary" type="button" data-challenge-approve="${escapeHtml(r.id)}">Autoriser</button><button class="btn btn-secondary" type="button" data-challenge-deny="${escapeHtml(r.id)}">Refuser</button></div>`
       : sameRequestDevice
         ? '<p><small>Cette tentative provient de cet appareil. Elle doit être confirmée depuis un autre appareil déjà fiable.</small></p>'
         : '<p><small>Pour autoriser ou refuser cette tentative, utilisez un autre appareil déjà marqué comme fiable.</small></p>';
@@ -167,11 +180,16 @@ async function createTravel(form){
 function confirmAction(message){return globalThis.confirm(message)}
 
 function friendlySecurityError(error){
-  const message=error?.message||String(error||'Erreur de sécurité.');
+  // Le message RPC/PostgREST peut contenir des valeurs privées ou une
+  // requête SQL : utiliser exclusivement des réponses locales maîtrisées.
+  const message=typeof error?.message==='string'?error.message:'';
   if(message.includes('TRUST_CONFIRMATION_REQUIRED'))return 'Cet appareil doit d’abord être autorisé depuis un autre appareil déjà fiable.';
   if(message.includes('CURRENT_DEVICE_REQUIRED'))return 'Seul l’appareil que vous utilisez actuellement peut être marqué comme fiable.';
   if(message.includes('AAL2_REQUIRED'))return 'Une vérification MFA récente est requise pour modifier la confiance des appareils.';
-  return message;
+  if(/AUTH_SESSION_INVALID|SESSION_REVOKED/.test(message))return 'Votre session de sécurité n’est plus valide. Reconnectez-vous.';
+  if(message.includes('SECURE_RANDOM_UNAVAILABLE'))return 'La protection cryptographique de ce navigateur est indisponible. Utilisez un navigateur à jour.';
+  if(message==='Indiquez une période et au moins une destination approximative.')return message;
+  return 'Le Centre de sécurité ne peut pas terminer cette opération. Réessayez ou reconnectez-vous.';
 }
 
 async function boot(){
@@ -185,9 +203,43 @@ async function boot(){
     qs('[data-security-settings-save]')?.addEventListener('click',async()=>{try{await saveSettings();state=await loadState(meta,contextResult.context)}catch(e){status(friendlySecurityError(e),'error')}});
     qs('[data-security-travel-form]')?.addEventListener('submit',async e=>{e.preventDefault();try{await createTravel(e.currentTarget);state=await loadState(meta,contextResult.context)}catch(err){status(friendlySecurityError(err),'error')}});
     qs('[data-security-refresh]')?.addEventListener('click',async()=>{try{state=await loadState(meta,contextResult.context);status('État de sécurité actualisé.','success')}catch(e){status(friendlySecurityError(e),'error')}});
-    qs('[data-security-compromised]')?.addEventListener('click',async()=>{
-      if(!confirmAction('Révoquer les autres appareils SINJIRA et fermer leurs sessions ?'))return;
-      try{await rpc('security_compromise_account',{p_current_device_key:meta.device_key});await getSupabase().auth.signOut({scope:'others'});state=await loadState(meta,contextResult.context);status('Mesures d’urgence appliquées : autres appareils révoqués et autres sessions fermées.','success')}catch(e){status(friendlySecurityError(e),'error')}
+    qs('[data-security-compromised]')?.addEventListener('click',async event=>{
+      const button=event.currentTarget;
+      if(button?.disabled)return;
+      if(!confirmAction('Révoquer les autres appareils SINJIRA et tenter de fermer leurs sessions ?'))return;
+      if(button)button.disabled=true;
+      let devicesRevoked=false;
+      try{
+        const confirmation=await rpc('security_compromise_account',{p_current_device_key:meta.device_key});
+        // L'absence d'erreur PostgREST ne confirme pas une révocation :
+        // la RPC retourne {ok:true,revoked_devices:<entier>}.
+        if(confirmation?.ok!==true || !Number.isInteger(confirmation.revoked_devices) || confirmation.revoked_devices<0){
+          throw new Error('COMPROMISE_RPC_UNCONFIRMED');
+        }
+        devicesRevoked=true;
+        const signOutResult=await getSupabase().auth.signOut({scope:'others'});
+        // Supabase Auth renvoie {error:null} en cas de succès. Rejeter
+        // null, undefined, {}, et toute erreur, même sans exception.
+        if(!signOutResult || signOutResult.error!==null){
+          throw new Error('OTHER_SESSIONS_NOT_REVOKED');
+        }
+        status('Autres appareils révoqués. Supabase Auth a confirmé la déconnexion des autres sessions; les jetons d’accès déjà émis peuvent rester valides jusqu’à leur expiration.','success');
+        try{
+          state=await loadState(meta,contextResult.context);
+        }catch{
+          // Un échec de rafraîchissement n'annule pas les confirmations
+          // précédentes : ne pas présenter cela comme un échec Auth.
+          status('Les mesures ont été confirmées, mais l’affichage n’a pas pu être actualisé. Rechargez la page pour vérifier vos appareils. Les jetons d’accès déjà émis peuvent rester valides jusqu’à leur expiration.','error');
+        }
+      }catch(error){
+        // Ne jamais afficher ni journaliser les messages privés de Supabase.
+        if(devicesRevoked){
+          status('Les appareils ont été révoqués, mais la fermeture des autres sessions n’a pas pu être confirmée. Vérifiez la sécurité de votre compte et réessayez la déconnexion.','error');
+        }else{
+          status(friendlySecurityError(error),'error');
+        }
+        if(button)button.disabled=false;
+      }
     });
 
     document.addEventListener('click',async e=>{
@@ -206,7 +258,7 @@ async function boot(){
     });
 
     status('Centre de sécurité prêt.','success');
-  }catch(error){console.error('[SINJIRA security center]',error);status(friendlySecurityError(error),'error')}
+  }catch(error){console.error('[SINJIRA security center] Initialisation indisponible.');status(friendlySecurityError(error),'error')}
 }
 
 boot();
