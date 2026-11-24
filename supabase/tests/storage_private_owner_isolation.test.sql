@@ -29,7 +29,7 @@ select throws_ok($$insert into storage.objects(bucket_id,name) values ('sinjira-
   '42501',null,'A ne peut écrire dans le dossier B');
 select lives_ok($$insert into storage.objects(bucket_id,name) values ('sinjira-character-sources','10000000-0000-4000-8000-000000000001/acl-contract-own.webp')$$,
   'A conserve son droit d écriture légitime');
-select is((with removed as (delete from storage.objects where bucket_id='sinjira-character-sources' and name='10000000-0000-4000-8000-000000000002/acl-contract-b.webp' returning 1) select count(*)::int from removed),
+with removed as (delete from storage.objects where bucket_id='sinjira-character-sources' and name='10000000-0000-4000-8000-000000000002/acl-contract-b.webp' returning 1) select is((select count(*)::int from removed),
   0,'A ne peut supprimer l objet B');
 
 set local request.jwt.claim.sub='10000000-0000-4000-8000-000000000002';
@@ -40,7 +40,7 @@ select is((select count(*)::int from storage.objects where bucket_id='sinjira-ch
   0,'B ne peut lire l objet A');
 select is((select count(*)::int from storage.objects where bucket_id='sinjira-character-sources' and name='10000000-0000-4000-8000-000000000002/acl-contract-b.webp'),
   1,'B peut encore lire son propre objet');
-select is((with removed as (delete from storage.objects where bucket_id='sinjira-character-sources' and name='10000000-0000-4000-8000-000000000002/acl-contract-b.webp' returning 1) select count(*)::int from removed),
+with removed as (delete from storage.objects where bucket_id='sinjira-character-sources' and name='10000000-0000-4000-8000-000000000002/acl-contract-b.webp' returning 1) select is((select count(*)::int from removed),
   1,'B peut supprimer son propre objet');
 
 reset role;
