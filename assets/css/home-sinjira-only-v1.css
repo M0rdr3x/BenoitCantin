@@ -82,3 +82,24 @@
     display:flex;width:fit-content;margin-top:4px
   }
 }
+
+/* Reflow WebKit : les éléments décoratifs ne doivent pas agrandir le viewport.
+ * Pas de masquage global du contenu ou des indicateurs de focus. */
+@media(max-width:700px){
+  .home-page.home-sinjira-only::after{
+    inset:auto 0 0 auto;width:min(55vw,100%);height:55vw;
+    background:radial-gradient(circle at 100% 100%,rgba(123,140,255,.13),transparent 66%);
+  }
+  .home-page.home-sinjira-only .hero-grid,
+  .home-page.home-sinjira-only .home-projects{
+    grid-template-columns:minmax(0,1fr)
+  }
+  .home-page.home-sinjira-only :where(.hero-copy,.home-project > div,.brand-text,.identity-name > div,.footer-col,.footer-brand > div){
+    min-width:0;overflow-wrap:anywhere
+  }
+  .home-page.home-sinjira-only .home-project :where(h3,p,.arrow){overflow-wrap:anywhere}
+  .home-page.home-sinjira-only .ai-transparency-inner{grid-template-columns:minmax(0,1fr)}
+  .home-page.home-sinjira-only .ai-transparency-inner :where(strong,a){max-width:100%;white-space:normal;overflow-wrap:anywhere}
+  .home-page.home-sinjira-only .sinjira-orbit{max-width:100%;min-width:min(188px,100%)}
+  .home-page.home-sinjira-only .home-direct-access{min-width:0;flex-wrap:wrap}
+}

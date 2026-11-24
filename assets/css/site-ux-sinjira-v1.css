@@ -214,3 +214,9 @@ body.account-page[data-sinjira-ux="v1"] .sinjira-account-nav-arrow[hidden]{
     transition:none!important
   }
 }
+
+/* Une commande de menu non initialisée ne doit pas être exposée, même si
+ * une règle de présentation mobile impose display:block ou display:flex. */
+body[data-sinjira-ux="v1"] [data-menu-toggle][hidden]{
+  display:none!important
+}
