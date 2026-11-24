@@ -131,7 +131,7 @@ for forbidden in (
 ux_css = read("assets/css/sinjira-preorder-steps-ux-v1.css")
 browser_tests = read("tests/e2e/test_literature_site.py")
 require(public_page, 'data-preorder-page="livre-1"', "périmètre précommande")
-require(public_page, '/assets/css/sinjira-preorder-steps-ux-v1.css?v=1.0.0', "CSS des étapes")
+require(public_page, '/assets/css/sinjira-preorder-steps-ux-v1.css?v=1.0.2', "CSS des étapes")
 require(public_page, 'aria-label="Étapes de la réservation du Livre I"', "nom du sommaire")
 for fragment in ("prix-livre-1", "reception-livre-1", "reservation-livre-1"):
     if public_page.count(f'id="{fragment}"') != 1:
@@ -147,7 +147,9 @@ if "style=" in public_page:
     raise SystemExit("Un style HTML intégré subsiste sur la précommande")
 require(browser_tests, "assert_preorder_public_steps_responsive(browser)",
         "recette Playwright précommande")
-require(browser_tests, "(240, 320, 390, 768, 1024, 1440)",
-        "six résolutions Playwright précommande")
+require(browser_tests, "(240, 320, 390, 480, 481, 768, 1024, 1440)",
+        "huit résolutions Playwright précommande")
+require(ux_css, "@media(max-width:480px)", "sommaire vertical mobile")
+require(browser_tests, "if width <= 480:", "contrôle des étapes visibles sur mobile")
 
 print("OK — SINJIRA V24.5.3 précommandes sans paiement validées, y compris le texte de transparence renforcé V24.5.31.")

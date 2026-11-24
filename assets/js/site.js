@@ -58,9 +58,23 @@
   function appendPwaAssets() {
     if (doc.querySelector('script[data-sinjira-pwa-install]')) return;
     var pwaScript = doc.createElement('script');
-    pwaScript.src = '/assets/js/sinjira-pwa-install.js?v=24.4.99';
+    pwaScript.src = '/assets/js/sinjira-pwa-install.js?v=24.4.100';
     pwaScript.defer = true;
     pwaScript.setAttribute('data-sinjira-pwa-install', '');
+    // Conserver l'invite éventuellement émise pendant le chargement du module.
+    // Pas de preventDefault avant que le module ait confirmé son éligibilité.
+    function captureInstallPrompt(event) {
+      pwaScript.sinjiraPendingInstallPrompt = event;
+    }
+    function releaseInstallPrompt() {
+      window.removeEventListener('beforeinstallprompt', captureInstallPrompt);
+      delete pwaScript.sinjiraPendingInstallPrompt;
+      delete pwaScript.sinjiraReleaseInstallPrompt;
+    }
+    pwaScript.sinjiraReleaseInstallPrompt = releaseInstallPrompt;
+    window.addEventListener('beforeinstallprompt', captureInstallPrompt);
+    pwaScript.addEventListener('load', releaseInstallPrompt, {once:true});
+    pwaScript.addEventListener('error', releaseInstallPrompt, {once:true});
     doc.head.appendChild(pwaScript);
   }
 

@@ -60,6 +60,57 @@ def wait_for_assistant(page):
     )
 
 
+def check_legal_navigation(browser):
+    # Sommaire natif : aucun compte, aucun script requis, aucune écriture.
+    legal_pages = {"avis-legal.html": 10, "confidentialite.html": 13,
+                   "gouvernance-vie-privee.html": 9}
+    for js in (False, True):
+        ctx = browser.new_context(locale="fr-CA", java_script_enabled=js,
+                                  reduced_motion="reduce", service_workers="block")
+        # Playwright désactive le cache HTTP avec le routage. Les réponses
+        # conditionnelles 304 ne doivent pas être confondues avec un échec
+        # de chargement et aucune ressource externe n’est nécessaire ici.
+        ctx.route("**/*", lambda route: route.continue_() if
+                  urlparse(route.request.url).netloc == urlparse(BASE_URL).netloc
+                  else route.abort())
+        try:
+            page = ctx.new_page()
+            for width in (240, 320, 390, 768, 1440):
+                page.set_viewport_size({"width": width, "height": 820})
+                for path, count in legal_pages.items():
+                    response = page.goto(urljoin(BASE_URL, path), wait_until="load", timeout=30_000)
+                    assert_true(response is not None and response.ok,
+                                f"{BROWSER_NAME}: {path} indisponible, {width}px, JS={js}, "
+                                f"HTTP={response.status if response else None}")
+                    nav = page.locator("main nav#sommaire")
+                    links = nav.locator("a")
+                    headings = page.locator("main article h2[id]")
+                    assert_true(links.count() == count == headings.count(), f"{path}: sommaire incomplet")
+                    for i in range(count):
+                        link = links.nth(i)
+                        target = link.get_attribute("href")
+                        assert_true(target == "#" + headings.nth(i).get_attribute("id"),
+                                    f"{path}: ancre incohérente")
+                        assert_true(link.inner_text() == headings.nth(i).inner_text(),
+                                    f"{path}: libellé incohérent")
+                        box = link.bounding_box()
+                        assert_true(box is not None and box["height"] >= 44 and
+                                    box["x"] >= -2 and box["x"] + box["width"] <= width + 2,
+                                    f"{path}: lien tactile hors écran {width}px")
+                    if width == 390:
+                        link = links.last
+                        target = link.get_attribute("href")
+                        link.focus()
+                        link.press("Enter")
+                        assert_true(urlparse(page.url).fragment == target[1:], f"{path}: ancre clavier")
+                        back = page.locator(".legal-toc-return a")
+                        back.focus()
+                        back.press("Enter")
+                        assert_true(urlparse(page.url).fragment == "sommaire", f"{path}: retour sommaire")
+        finally:
+            ctx.close()
+
+
 def run() -> None:
     assert_true(BROWSER_NAME in SUPPORTED_BROWSERS, f"Navigateur Playwright inconnu: {BROWSER_NAME}")
 
@@ -1849,6 +1900,8 @@ def run() -> None:
         all_errors = page_errors + mobile_errors
         assert_true(not all_errors, f"{BROWSER_NAME}: erreurs JavaScript navigateur: " + " | ".join(all_errors[:5]))
         context.close()
+        if IS_LOCAL:
+            check_legal_navigation(browser)
         browser.close()
         auth_note = f", {len(AUTH_ROUTES)} pages Auth locales + assistant V{ASSISTANT_VERSION} contextuel" if IS_LOCAL else ""
         print(

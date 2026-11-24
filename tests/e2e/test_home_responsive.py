@@ -247,6 +247,8 @@ def test_install_offer(browser):
                    f"les instructions iOS débordent à {width}x{height}: {expanded}")
             verify("Sur iPhone/iPad" in details.inner_text(),
                    "instructions manuelles Safari indisponibles")
+            verify(card.locator("[data-pwa-install-action]").count() == 0,
+                   "Safari affiche un bouton natif sans action disponible")
             page.keyboard.press("Escape")
             verify(details.is_hidden() and reveal.get_attribute("aria-expanded") == "false"
                    and reveal.evaluate("(el) => document.activeElement === el"),
@@ -254,6 +256,7 @@ def test_install_offer(browser):
         card.locator(".sinjira-pwa-install__close").click()
         verify(card.count() == 0, "la fermeture PWA n'a pas supprimé la proposition")
         page.reload(wait_until="domcontentloaded")
+        page.locator('html[data-sinjira-pwa-ready="true"]').wait_for(state="attached", timeout=12_000)
         verify(page.locator(".sinjira-pwa-install[data-sinjira-pwa-install]").count() == 0,
                "une proposition refusée réapparaît dans la même session")
         page.goto(BASE.rstrip("/") + "/projets/sinjira/romans/",
@@ -270,20 +273,25 @@ def test_install_offer(browser):
     try:
         page = android.new_page()
         page.goto(BASE, wait_until="domcontentloaded", timeout=30_000)
-        page.evaluate("""() => {
-          const prompt=new Event('beforeinstallprompt',{cancelable:true});
-          prompt.prompt=() => {window.__testNativeInstallInvoked=true; return Promise.resolve();};
-          prompt.userChoice=Promise.resolve({outcome:'accepted'});
-          window.dispatchEvent(prompt);
-        }""")
+        # Le module est injecté dynamiquement : DOMContentLoaded ne garantit
+        # pas l'enregistrement de son écouteur beforeinstallprompt.
+        page.locator('html[data-sinjira-pwa-ready="true"]').wait_for(state="attached", timeout=12_000)
         card = page.locator(".sinjira-pwa-install[data-sinjira-pwa-install]")
-        card.wait_for(state="visible", timeout=5_000)
-        verify(card.locator("#sinjira-pwa-install-details").is_hidden(),
-               "l'invitation Android doit rester compacte par défaut")
-        card.locator("[data-pwa-install-reveal]").click()
-        card.locator("[data-pwa-install-action]").click()
-        page.wait_for_function("() => window.__testNativeInstallInvoked === true", timeout=5_000)
-        verify(card.count() == 0, "la carte n'est pas retirée après installation acceptée")
+        for outcome in ("dismissed", "accepted"):
+            page.evaluate("""outcome => {
+              window.__testNativeInstallInvoked=false;
+              const prompt=new Event('beforeinstallprompt',{cancelable:true});
+              prompt.prompt=() => {window.__testNativeInstallInvoked=true; return Promise.resolve();};
+              prompt.userChoice=Promise.resolve({outcome});
+              window.dispatchEvent(prompt);
+            }""", outcome)
+            card.wait_for(state="visible", timeout=5_000)
+            verify(card.locator("#sinjira-pwa-install-details").is_hidden(),
+                   "l'invitation Android doit rester compacte par défaut")
+            card.locator("[data-pwa-install-reveal]").click()
+            card.locator("[data-pwa-install-action]").click()
+            page.wait_for_function("() => window.__testNativeInstallInvoked === true", timeout=5_000)
+            card.wait_for(state="detached", timeout=5_000)
     finally:
         android.close()
 
