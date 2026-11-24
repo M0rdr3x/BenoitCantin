@@ -78,18 +78,40 @@ def assert_password_script_is_safe(context):
             <label for="a">Nouveau mot de passe</label>
             <input id="a" type="password" autocomplete="new-password" value="EXEMPLE-UNIQUEMENT">
             <label for="b">Confirmation</label>
-            <input id="b" type="password" autocomplete="new-password" value="EXEMPLE-UNIQUEMENT">
+            <input id="b" name="password_confirm" type="password" autocomplete="new-password" value="EXEMPLE-UNIQUEMENT">
           </form></body></html>""")
         page.add_script_tag(url=urljoin(BASE, "assets/js/sinjira-password-visibility-v1.js"))
         buttons = page.locator("[data-password-visibility]")
         assert_ok(buttons.count() == 2, "boutons Afficher/Masquer manquants dans le formulaire reset")
         assert_ok(buttons.first.get_attribute("type") == "button",
                   "une révélation du mot de passe ne doit pas soumettre le formulaire")
+        assert_ok(buttons.first.get_attribute("aria-label") == "Afficher le nouveau mot de passe",
+                  "libellé du nouveau mot de passe ambigu")
+        assert_ok(buttons.nth(1).get_attribute("aria-label") == "Afficher la confirmation du mot de passe",
+                  "libellé de confirmation ambigu")
         buttons.first.click()
         assert_ok(page.locator("#a").get_attribute("type") == "text",
                   "affichage du nouveau mot de passe inopérant")
         assert_ok(buttons.first.get_attribute("aria-pressed") == "true",
                   "état accessible du bouton non synchronisé")
+        # Échap sur le champ ne doit ni effacer la saisie ni déplacer le focus.
+        page.locator("#a").focus()
+        page.keyboard.press("Escape")
+        assert_ok(page.locator("#a").get_attribute("type") == "password" and
+                  page.locator("#a").evaluate("(el) => el === document.activeElement"),
+                  "Échap ne masque pas le champ ou déplace le focus")
+        assert_ok(buttons.first.get_attribute("aria-pressed") == "false",
+                  "Échap ne réinitialise pas l’état accessible")
+        buttons.nth(1).click()
+        buttons.nth(1).focus()
+        page.keyboard.press("Escape")
+        assert_ok(page.locator("#b").get_attribute("type") == "password" and
+                  buttons.nth(1).evaluate("(el) => el === document.activeElement") and
+                  buttons.nth(1).get_attribute("aria-label") == "Afficher la confirmation du mot de passe",
+                  "Échap depuis la commande de confirmation ne rétablit pas le masquage")
+        assert_ok(page.locator("#b").input_value() == "EXEMPLE-UNIQUEMENT",
+                  "la confirmation a été effacée")
+        buttons.first.click()
         page.evaluate("() => window.dispatchEvent(new Event('pagehide'))")
         assert_ok(page.locator("#a").get_attribute("type") == "password",
                   "le mot de passe doit être masqué en quittant la page")

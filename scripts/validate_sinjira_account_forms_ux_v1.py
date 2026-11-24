@@ -101,7 +101,9 @@ def main():
         "document.addEventListener('visibilitychange'", "window.addEventListener('pagehide'",
         "form.addEventListener('submit', concealAll, true)",
         "document.addEventListener('DOMContentLoaded', initialize",
-        "form[data-reset-form]",
+        "form[data-reset-form]", "function setVisibility(item, visible)",
+        "la confirmation du mot de passe", "event.key !== 'Escape'",
+        "event.isComposing", "setVisibility(item, false)",
     ):
         if marker not in script:
             problems.append("Affichage des mots de passe : protection manquante " + marker)
