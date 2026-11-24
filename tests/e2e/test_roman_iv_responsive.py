@@ -112,7 +112,14 @@ def run():
                         "fiche indisponible sans JS")
                 nav = page.locator("[data-main-nav]")
                 require(nav.is_visible(), "liens du menu perdus si JavaScript est bloqué")
-                require(nav.locator("a").count() == 6, "destinations de secours incomplètes")
+                paths = tuple(nav.locator("a").evaluate_all(
+                    "(links) => links.map(a => new URL(a.href).pathname)"
+                ))
+                require(paths == (
+                    "/", "/projets/sinjira/", "/projets/sinjira/romans/",
+                    "/projets/sinjira/jeux/", "/projets/sinjira/registre/",
+                    "/projets/sinjira/communaute/", "/compte/",
+                ), f"destinations de secours incomplètes ou mal ordonnées : {paths}")
                 require(not page.evaluate(
                     "() => document.documentElement.scrollWidth > innerWidth + 2"),
                     "débordement lorsque JavaScript est désactivé")

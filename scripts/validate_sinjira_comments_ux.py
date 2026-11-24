@@ -63,7 +63,7 @@ for marker in ["from('sinjira_novel_comments')", "sinjira_novels(title)", "reade
     check(marker in account_js, "Compte commentaires incomplet : " + marker)
 for forbidden in ["from('novel_comments')", "contains_spoilers", "prompt('Modifier"]:
     check(forbidden not in account_js, "Ancienne API ou édition modale dans le compte : " + forbidden)
-for marker in ["data-v18-page=\"comments\"", "sinjira-comments-responsive-v2.css?v=2.0.2", 'aria-live="polite"']:
+for marker in ["data-v18-page=\"comments\"", "sinjira-comments-responsive-v2.css?v=2.0.3", 'aria-live="polite"']:
     check(marker in account_html, "Compte commentaires HTML incomplet : " + marker)
 check("novels(title)" in account_js and "c.novels?.title" in account_js,
       "Mes personnages : mauvaise relation pour le titre du roman")

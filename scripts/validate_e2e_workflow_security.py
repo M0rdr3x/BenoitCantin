@@ -21,8 +21,13 @@ VALIDATE_COMMAND = 'python3 scripts/validate_e2e_workflow_security.py'
 SELF_TEST_RUN_LINE = f'run: {SELF_TEST_COMMAND}'
 VALIDATE_RUN_LINE = f'run: {VALIDATE_COMMAND}'
 LITERATURE_TEST_COMMAND = 'python tests/e2e/test_literature_site.py'
+HOME_RESPONSIVE_TEST_COMMAND = 'python tests/e2e/test_home_responsive.py'
 DEMO_UX_TEST_COMMAND = 'python tests/e2e/test_demo_reader_responsive.py'
 ROMAN_IV_UX_TEST_COMMAND = 'python tests/e2e/test_roman_iv_responsive.py'
+ROMANS_HUB_TEST_COMMAND = 'python tests/e2e/test_romans_hub_navigation_responsive.py'
+AUTH_UX_TEST_COMMAND = 'python tests/e2e/test_auth_forms_responsive.py'
+READER_CONTROLS_TEST_COMMAND = 'python tests/e2e/test_reader_controls_responsive.py'
+MOBILE_DOCK_TEST_COMMAND = 'python tests/e2e/test_mobile_bottom_navigation.py'
 
 
 def require(errors: list[str], condition: bool, message: str) -> None:
@@ -84,8 +89,13 @@ def validate_text(text: str) -> list[str]:
     require(errors, count_exact_stripped(text, 'needs: workflow-contract') == 2, 'les deux jobs navigateur doivent dépendre exactement du contrat de sécurité')
     require(errors, text.count('python tests/e2e/test_public_site.py') == 2, 'le smoke test public doit couvrir le dépôt local et le site déployé')
     require(errors, count_exact_stripped(text, LITERATURE_TEST_COMMAND) == 2, 'le contrat Littérature doit couvrir le dépôt local et le site déployé')
+    require(errors, text.count(HOME_RESPONSIVE_TEST_COMMAND) == 1, 'l’accueil responsive doit être vérifié avec/sans JS dans les 3 navigateurs locaux')
     require(errors, text.count(DEMO_UX_TEST_COMMAND) == 1, 'la grille mobile du PDF doit être vérifiée dans les 3 navigateurs locaux')
     require(errors, text.count(ROMAN_IV_UX_TEST_COMMAND) == 1, 'le Roman IV doit être vérifié sur mobile/ordinateur dans les 3 navigateurs locaux')
+    require(errors, text.count(ROMANS_HUB_TEST_COMMAND) == 1, 'les ancres Romans doivent être vérifiées sur 6 largeurs dans les 3 navigateurs locaux')
+    require(errors, text.count(AUTH_UX_TEST_COMMAND) == 1, 'les formulaires Auth doivent être vérifiés sur 3 navigateurs et 5 largeurs')
+    require(errors, text.count(READER_CONTROLS_TEST_COMMAND) == 1, 'les commandes de liseuse doivent être testées sur 3 navigateurs et 6 largeurs')
+    require(errors, text.count(MOBILE_DOCK_TEST_COMMAND) == 1, 'le dock mobile et le bandeau PWA doivent rester testés dans les 3 navigateurs')
 
     for marker in ('browser-smoke:', 'lighthouse-mobile:'):
         require(errors, marker in text, f'job E2E attendu absent: {marker}')
@@ -115,8 +125,13 @@ def run_self_tests(text: str) -> None:
         'cache npm ajouté': text.replace(f"node-version: '{NODE_VERSION}'", f"node-version: '{NODE_VERSION}'\n          cache: npm", 1),
         'cache false ajouté': text.replace(f"node-version: '{NODE_VERSION}'", f"node-version: '{NODE_VERSION}'\n          package-manager-cache: false", 1),
         'test Littérature retiré': text.replace(f'            {LITERATURE_TEST_COMMAND}\n', '', 1),
+        'test accueil responsive retiré': text.replace(f'            {HOME_RESPONSIVE_TEST_COMMAND} &&\n', '', 1),
         'test ergonomie PDF retiré': text.replace(f'            {DEMO_UX_TEST_COMMAND} &&\n', '', 1),
         'test Roman IV retiré': text.replace(f'            {ROMAN_IV_UX_TEST_COMMAND} &&\n', '', 1),
+        'test navigation Romans retiré': text.replace(f'            {ROMANS_HUB_TEST_COMMAND} &&\n', '', 1),
+        'test formulaire Auth retiré': text.replace(f'            {AUTH_UX_TEST_COMMAND} &&\n', '', 1),
+        'test commandes liseuse retiré': text.replace(f'            {READER_CONTROLS_TEST_COMMAND} &&\n', '', 1),
+        'test dock mobile retiré': text.replace(f'            {MOBILE_DOCK_TEST_COMMAND} &&\n', '', 1),
         'validation contrat retirée': text.replace(f'run: {VALIDATE_COMMAND}\n', 'run: echo validation-retirée\n', 1),
         'continue-on-error ajouté': text.replace('timeout-minutes: 5', 'timeout-minutes: 5\n    continue-on-error: true', 1),
         'set -x ajouté': text.replace('          run_suite() {', '          set -x\n          run_suite() {', 1),

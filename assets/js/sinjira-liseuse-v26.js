@@ -2,6 +2,7 @@ import { getSupabase, requireUser } from './sinjira-supabase.js';
 import { pdfTextToParagraphs, speechTextChunks } from './sinjira-liseuse-text-v27.mjs';
 import { createReaderCompanion } from './sinjira-liseuse-companion-v28.mjs';
 import { chooseReadingPosition, ratioFromScroll, scrollTopForRatio, readingRatio, shouldReplayReadingProgress } from './sinjira-liseuse-position-v31.mjs?v=34.11.07.1';
+import { planReaderScreenTurn, canTurnReaderScreen } from './sinjira-liseuse-screen-turn-v54.mjs';
 
 /* SINJIRA 2026 — liseuse : le PDF intégral n'entre jamais dans le dépôt public
    ni dans localStorage. Le serveur attribue le droit de lecture avant de signer l'accès. */
@@ -111,11 +112,64 @@ function setTheme(){
   $('reader-voice-auto').checked=state.autoSpeech;
   $('reader-mode').textContent=state.mode==='texte'?'Afficher le PDF':'Texte adaptable';
   $('reader-mode').setAttribute('aria-pressed',String(state.mode==='page'));
+  updateScreenControls();
   savePreferences();
+}
+// Le changement de typographie recompose le texte. Conserver l'emplacement
+// numérique intrapage de V31 jusqu'au prochain rendu, sans lire, copier ni
+// conserver le texte privé. Cette approximation n'est pas une ancre EPUB.
+let pendingTextRelayout=null;
+function updateReaderTypography(applySetting){
+  const viewer=$('reader-viewer');
+  const preserve=Boolean(state.pdf&&state.mode==='texte'&&!state.restoringScroll);
+  const previous=pendingTextRelayout;
+  const ratio=preserve
+    ?previous&&previous.pdf===state.pdf&&previous.page===state.page&&
+       previous.version===state.renderVersion
+      ?previous.ratio
+      :ratioFromScroll(viewer.scrollTop,viewer.scrollHeight,viewer.clientHeight)
+    :null;
+  if(preserve){
+    // La sauvegarde différée du précédent scroll ne doit pas écraser
+    // la nouvelle position lors d'un glissement rapide du curseur de taille.
+    clearTimeout(state.scrollTimer);state.scrollTimer=null;
+  }
+  applySetting();
+  setTheme();
+  if(!preserve)return;
+  const transaction={pdf:state.pdf,page:state.page,version:state.renderVersion,ratio};
+  pendingTextRelayout=transaction;
+  requestAnimationFrame(()=>{
+    if(pendingTextRelayout!==transaction)return;
+    pendingTextRelayout=null;
+    if(state.pdf!==transaction.pdf||state.page!==transaction.page||
+       state.renderVersion!==transaction.version||state.mode!=='texte'||
+       state.accessInvalidated)return;
+    viewer.scrollTop=scrollTopForRatio(transaction.ratio,
+      viewer.scrollHeight,viewer.clientHeight);
+    state.positionRatio=ratioFromScroll(viewer.scrollTop,
+      viewer.scrollHeight,viewer.clientHeight);
+    updateScreenControls();
+    persist();
+  });
 }
 function currentChapter(){
   const chapters=isFull?chaptersFull:chaptersDemo;
   return [...chapters].reverse().find(chapter=>chapter[0]<=state.page)||chapters[0];
+}
+function updateScreenControls(){
+  if(!state.pdf)return;
+  const viewer=$('reader-viewer'),isText=state.mode==='texte';
+  const previous=$('reader-previous'),next=$('reader-next');
+  previous.textContent=isText?'← Écran précédent':'← Page PDF précédente';
+  next.textContent=isText?'Écran suivant →':'Page PDF suivante →';
+  const common={
+    mode:state.mode,scrollTop:viewer.scrollTop,
+    scrollHeight:viewer.scrollHeight,clientHeight:viewer.clientHeight,
+    page:state.page,totalPages:state.pdf.numPages
+  };
+  previous.disabled=!canTurnReaderScreen({...common,direction:-1});
+  next.disabled=!canTurnReaderScreen({...common,direction:1});
 }
 function updateToolbar(){
   if(!state.pdf)return;
@@ -127,8 +181,7 @@ function updateToolbar(){
   $('reader-total').textContent=String(max);
   $('reader-percent').textContent=percentage+' %';
   $('reader-bar').style.width=percentage+'%';
-  $('reader-previous').disabled=state.page<=1;
-  $('reader-next').disabled=state.page>=max;
+  updateScreenControls();
   const chapter=currentChapter();
   $('reader-chapter-label').textContent=chapter[1];
   $('reader-chapters').value=String(chapter[0]);
@@ -262,7 +315,10 @@ function restoreScrollAfterRender(version){
     const viewer=$('reader-viewer');
     viewer.scrollTop=scrollTopForRatio(ratio,viewer.scrollHeight,viewer.clientHeight);
     requestAnimationFrame(()=>{
-      if(version===state.renderVersion)state.restoringScroll=false;
+      if(version===state.renderVersion){
+        state.restoringScroll=false;
+        updateScreenControls();
+      }
     });
   });
 }
@@ -448,25 +504,45 @@ function renderPage(){
     }
   }).catch(error=>message('Impossible d’afficher cette page. Réessayez ou utilisez le lecteur PDF de secours.','error'));
 }
-function changePage(value){
+function changePage(value,{end=false}={}){
   if(!state.pdf)return;
   const next=clamp(Math.round(value),1,state.pdf.numPages);
   if(next===state.page)return;
   flushScrollPosition();
   stopNarration(false);
   state.page=next;
-  state.positionRatio=0;
-  state.restorePending=0;
+  // En revenant par balayage depuis le début d'une page PDF, reprendre
+  // à la fin de la précédente plutôt que d'en sauter la dernière portion.
+  state.positionRatio=end?1:0;
+  state.restorePending=end?1:0;
   state.restoringScroll=true;
   $('reader-viewer').scrollTo({top:0,left:0,behavior:'auto'});
   updateToolbar();persist();renderPage();
   positionNotice('Page '+state.page+' mémorisée automatiquement. Vous pouvez aussi l’enregistrer maintenant.');
   companion?.onPageChange();
 }
+function turnVisibleReadingScreen(direction){
+  if(!state.pdf)return;
+  const viewer=$('reader-viewer');
+  const next=planReaderScreenTurn({
+    direction,mode:state.mode,scrollTop:viewer.scrollTop,
+    scrollHeight:viewer.scrollHeight,clientHeight:viewer.clientHeight
+  });
+  if(next.kind==='scroll'){
+    // La zone de lecture garde le texte sélectionnable. Le scroll existant
+    // synchronise le ratio de lecture sans sauvegarder de contenu du roman.
+    viewer.scrollTo({top:next.top,left:0,behavior:'auto'});
+    updateScreenControls();
+  }else if(next.kind==='page'){
+    changePage(state.page+next.delta,{end:next.end});
+  }
+}
 function bindControls(){
   $('reader-save-position').addEventListener('click',()=>{void saveCurrentPosition()});
   $('reader-viewer').addEventListener('scroll',()=>{
-    if(!state.pdf||state.restoringScroll)return;
+    if(!state.pdf)return;
+    if(!state.restoringScroll)updateScreenControls();
+    if(state.restoringScroll)return;
     clearTimeout(state.scrollTimer);
     state.scrollTimer=setTimeout(()=>{
       state.scrollTimer=null;
@@ -502,11 +578,13 @@ function bindControls(){
        Math.abs(dx)<=Math.abs(dy)*1.5)return;
     if(state.mode==='page'&&swipeViewer.scrollWidth>swipeViewer.clientWidth+8)return;
     if(window.getSelection()?.toString())return;
-    changePage(state.page+(dx<0?1:-1));
+    turnVisibleReadingScreen(dx<0?1:-1);
   },{passive:true});
   swipeViewer.addEventListener('touchcancel',()=>{swipeStart=null},{passive:true});
-  $('reader-previous').addEventListener('click',()=>changePage(state.page-1));
-  $('reader-next').addEventListener('click',()=>changePage(state.page+1));
+  // Le bouton, le clavier et le geste tactile accomplissent le même mouvement.
+  // Le numéro et la barre de progression gardent l'accès direct aux pages PDF.
+  $('reader-previous').addEventListener('click',()=>turnVisibleReadingScreen(-1));
+  $('reader-next').addEventListener('click',()=>turnVisibleReadingScreen(1));
   $('reader-page').addEventListener('change',event=>changePage(event.target.value));
   $('reader-range').addEventListener('change',event=>changePage(event.target.value));
   $('reader-chapters').addEventListener('change',event=>changePage(event.target.value));
@@ -520,19 +598,21 @@ function bindControls(){
     state.theme=event.target.value;setTheme();
   });
   $('reader-size').addEventListener('input',event=>{
-    state.size=clamp(event.target.value,16,34);setTheme();
+    updateReaderTypography(()=>{state.size=clamp(event.target.value,16,34)});
   });
   $('reader-font').addEventListener('change',event=>{
-    if(['serif','sans','accessible'].includes(event.target.value)){state.font=event.target.value;setTheme()}
+    if(['serif','sans','accessible'].includes(event.target.value)){
+      updateReaderTypography(()=>{state.font=event.target.value});
+    }
   });
   $('reader-line-height').addEventListener('change',event=>{
-    state.lineHeight=Number(event.target.value);setTheme();
+    updateReaderTypography(()=>{state.lineHeight=Number(event.target.value)});
   });
   $('reader-text-width').addEventListener('change',event=>{
-    state.textWidth=Number(event.target.value);setTheme();
+    updateReaderTypography(()=>{state.textWidth=Number(event.target.value)});
   });
   $('reader-letter-spacing').addEventListener('change',event=>{
-    state.letterSpacing=Number(event.target.value);setTheme();
+    updateReaderTypography(()=>{state.letterSpacing=Number(event.target.value)});
   });
   $('reader-speed').addEventListener('change',event=>{
     state.speed=Number(event.target.value);savePreferences();
@@ -563,11 +643,17 @@ function bindControls(){
     state.zoom=clamp(event.target.value,.8,1.5);setTheme();
     if(state.mode==='page')renderPage();
   });
-  document.addEventListener('keydown',event=>{
-    const tag=document.activeElement?.tagName||'';
-    if(['INPUT','SELECT','TEXTAREA','BUTTON'].includes(tag)||event.altKey||event.ctrlKey||event.metaKey)return;
-    if(event.key==='ArrowRight'||event.key==='PageDown'){event.preventDefault();changePage(state.page+1)}
-    if(event.key==='ArrowLeft'||event.key==='PageUp'){event.preventDefault();changePage(state.page-1)}
+  // Les flèches n'interceptent plus le défilement et la navigation du reste
+  // du site : le lecteur (tabindex=0) doit avoir le focus explicitement.
+  swipeViewer.addEventListener('keydown',event=>{
+    if(event.defaultPrevented||event.altKey||event.ctrlKey||event.metaKey||
+       event.shiftKey||event.target.closest('a,button,input,select,textarea,[contenteditable]'))return;
+    if(event.key==='ArrowRight'||event.key==='PageDown'){
+      event.preventDefault();turnVisibleReadingScreen(1);
+    }
+    if(event.key==='ArrowLeft'||event.key==='PageUp'){
+      event.preventDefault();turnVisibleReadingScreen(-1);
+    }
   });
   let resizeTimer;
   window.addEventListener('resize',()=>{

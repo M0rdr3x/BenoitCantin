@@ -73,6 +73,15 @@ def main() -> int:
         errors.append("Un lien Nova est encore affiché sur l'accueil.")
     if not any("home-sinjira-only-v1.css" in href for href in parser.css):
         errors.append("Styles SINJIRA de l'accueil absents.")
+    if any("v20-community-portals.css" in href for href in parser.css):
+        errors.append("Ancienne feuille des six portails encore chargée sur l’accueil.")
+    if 'class="home-direct-access" href="#univers-titre"' not in home or 'id="univers-titre" tabindex="-1"' not in home:
+        errors.append("Accès direct aux quatre services absent ou non focalisable.")
+    if 'style="--card-glow:' in home:
+        errors.append("Les couleurs des cartes doivent rester dans le CSS externe.")
+    for href in FEATURE_LINKS:
+        if f'.home-project[href="{href}"]' not in css:
+            errors.append(f"Couleur de carte absente du CSS externe : {href}")
     if "/assets/icons/sinjira-officiel-20261120.png" not in parser.images:
         errors.append("Le cercle doit utiliser le logo SINJIRA et non une cible.")
     if "/assets/icons/sinjira.svg" in parser.images:
