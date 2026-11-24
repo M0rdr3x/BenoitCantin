@@ -1,0 +1,60 @@
+/* Pages publiques de secours : mêmes repères sur PC et mobile. */
+body.error-ux-page .error-card {
+  box-sizing: border-box;
+  width: min(calc(100% - 28px), 820px);
+  max-width: 100%;
+  min-width: 0;
+  margin-inline: auto;
+  padding: clamp(16px, 5vw, 40px);
+  text-align: center;
+}
+body.error-ux-page .error-title {
+  font-size: clamp(2rem, 7vw, 4.6rem);
+  line-height: 1.12;
+  margin-block: 14px 20px;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+body.error-ux-page .error-card p {
+  max-width: 66ch;
+  margin-inline: auto;
+  overflow-wrap: anywhere;
+  line-height: 1.65;
+}
+body.error-ux-page .error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: stretch;
+  gap: 12px;
+  margin-block: 24px;
+}
+body.error-ux-page .error-actions > :is(a, button) {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 48px;
+  padding: 12px 18px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.45;
+  text-align: center;
+}
+body.error-ux-page .error-actions > [hidden] { display: none !important; }
+body.error-ux-page .error-actions > :focus-visible {
+  outline: 3px solid #ffc37a;
+  outline-offset: 4px;
+}
+body.error-ux-page .error-note { margin-block: 18px 0; }
+@media (max-width: 640px) {
+  body.error-ux-page .page-hero { padding-block: clamp(20px, 6vw, 44px); }
+  body.error-ux-page .error-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  body.error-ux-page .error-actions > :is(a, button) { width: 100%; }
+}

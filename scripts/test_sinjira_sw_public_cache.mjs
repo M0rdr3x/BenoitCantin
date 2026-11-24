@@ -67,8 +67,10 @@ test('installation publique et nettoyage limité aux caches de ce site', async (
   h.stores.set('benoitcantin-v24-4-95-public-7', new Map());
   h.stores.set('benoitcantin-v24-4-95-public-8', new Map());
   h.stores.set('benoitcantin-v24-4-95-public-9', new Map());
+  h.stores.set('benoitcantin-v24-4-95-public-10', new Map());
   await h.lifecycle('install');
   await h.lifecycle('activate');
+  assert.equal(h.stores.has('benoitcantin-v24-4-95-public-10'), false);
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-4'), false);
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-6'), false);
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-7'), false);
@@ -129,4 +131,46 @@ test('hors ligne, le CSS versionné précaché reste disponible sans cacher la q
   assert.equal(await css.text(), 'precache:/assets/css/home-sinjira-only-v1.css');
   assert.equal(h.writes.length, 0);
   assert.equal(await (await h.request('/accueil-non-precachee.html')).text(), 'precache:/offline.html');
+});
+
+test('ressources de secours disponibles hors ligne sans stockage de paramètres', async () => {
+  const h = harness(); await h.lifecycle('install'); h.writes.length = 0;
+  h.setOnline(false);
+  for (const [path, destination] of [
+    ['/assets/css/error-pages-ux-v1.css', 'style'],
+    ['/assets/js/error-pages-ux-v1.js', 'script'],
+    ['/assets/js/sinjira-nav-boot-v2.js', 'script'],
+  ]) {
+    const response = await h.request(path + '?v=1.0.0', { destination });
+    assert.equal(await response.text(), 'precache:' + path);
+  }
+  assert.equal(h.writes.length, 0);
+});
+
+test('reprise hors ligne et anciens liens : destinations fixes, sans écriture', () => {
+  const runtime = readFileSync(new URL('../assets/js/error-pages-ux-v1.js', import.meta.url), 'utf8');
+  function run(kind, pathname, search = '', hash = '') {
+    const calls = [];
+    let click;
+    const button = { hidden: true, addEventListener(type, handler) {
+      assert.equal(type, 'click'); click = handler;
+    } };
+    runInNewContext(runtime, {
+      document: { body: { dataset: { errorPage: kind } }, querySelector: () => button },
+      location: { pathname, search, hash, reload: () => calls.push('reload'),
+        assign: path => calls.push(path), replace: path => calls.push(path) },
+    });
+    return { calls, button, click };
+  }
+  const fallback = run('offline', '/compte/');
+  assert.equal(fallback.button.hidden, false);
+  fallback.click();
+  assert.deepEqual(fallback.calls, ['reload']);
+  const direct = run('offline', '/offline.html');
+  direct.click();
+  assert.deepEqual(direct.calls, ['/']);
+  assert.deepEqual(run('404', '/sinjira/romans/', '?page=2', '#sommaire').calls,
+    ['/projets/sinjira/romans/?page=2#sommaire']);
+  assert.deepEqual(run('404', '/inconnue').calls, []);
+  assert.deepEqual(run('offline', '/sinjira/').calls, []);
 });
