@@ -19,6 +19,9 @@ REQUIRED = {
     'secret serveur du code': "Deno.env.get('SINJIRA_LICENSE_PEPPER')",
     'client serveur': 'serviceClient()',
     'diagnostic health non sensible': "return privateJson({ok:true,service:'redeem-license-code',version:VERSION});",
+    'quota individuel serveur': 'const attempt=await consumeLicenseAttempt(s,user.id);',
+    'refus avant activation': "if(attempt!=='allowed')return new Response(",
+    'code strictement textuel': "typeof body?.code==='string'?body.code.trim():''",
     'RPC canonique': "s.rpc('redeem_sinjira_activation'",
     'identité imposée par le serveur': 'p_user_id:user.id',
     'réponse privée': "'Cache-Control':'private, no-store, max-age=0'",
@@ -60,6 +63,13 @@ def validate(path: Path) -> list[str]:
         if marker in source:
             errors.append(f'Garde licence violé: {label}.')
 
+    auth_pos = source.find('requiredUser(req)')
+    quota_pos = source.find('const attempt=await consumeLicenseAttempt(s,user.id);')
+    deny_pos = source.find("if(attempt!=='allowed')return new Response(")
+    rpc_pos = source.find("s.rpc('redeem_sinjira_activation'")
+    if not (0 <= auth_pos < quota_pos < deny_pos < rpc_pos):
+        errors.append("Le quota doit précéder toute activation et suivre l'authentification.")
+
     if "body?.action==='health'" in source:
         auth_pos = source.find('requiredUser(req)')
         health_pos = source.find("body?.action==='health'")
@@ -86,6 +96,10 @@ Deno.serve(async req=>{
  const pepper=Deno.env.get('SINJIRA_LICENSE_PEPPER');
  const s=serviceClient();
  if(parsed.body?.action==='health')return privateJson({ok:true,service:'redeem-license-code',version:VERSION});
+ const body=parsed.body;
+ const value=typeof body?.code==='string'?body.code.trim():'';
+ const attempt=await consumeLicenseAttempt(s,user.id);
+ if(attempt!=='allowed')return new Response('');
  return s.rpc('redeem_sinjira_activation',{p_code_hash:'x',p_user_id:user.id});
 });
 console.error('[redeem-license-code]',{code:'LICENSE_REDEEM_FAILED'});
@@ -125,6 +139,17 @@ console.error('[redeem-license-code]',{code:'LICENSE_REDEEM_FAILED'});
         body_size = validate(path)
         if not any('4096 octets' in item for item in body_size):
             raise AssertionError('Une limite de corps affaiblie doit être bloquée.')
+
+        for label, before, after in (
+            ('quota contourné', "if(attempt!=='allowed')", "if(false)"),
+            ('identité fournie par client', 'consumeLicenseAttempt(s,user.id)', 'consumeLicenseAttempt(s,body.user_id)'),
+            ('type arbitraire', "typeof body?.code==='string'?body.code.trim():''", "String(body?.code)"),
+        ):
+            if before not in safe:
+                raise AssertionError('Mutation sans effet: ' + label)
+            path.write_text(safe.replace(before, after), encoding='utf-8')
+            if not validate(path):
+                raise AssertionError('Mutation non détectée: ' + label)
 
         safe_health = "return privateJson({ok:true,service:'redeem-license-code',version:VERSION});"
         for label, malicious in {

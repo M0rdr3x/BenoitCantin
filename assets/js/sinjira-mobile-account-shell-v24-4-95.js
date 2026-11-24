@@ -47,6 +47,48 @@
   }
   document.body.appendChild(nav);
 
+  // Le clavier virtuel réduit la zone visible sur téléphone. Éviter que
+  // la barre fixe couvre le champ édité; elle revient dès la fin de saisie.
+  // Ne masquer ni les boutons, ni les cases à cocher, ni les choix radio.
+  function editingControl(element){
+    if(!element||!element.matches)return false;
+    if(element.matches('textarea,select,[contenteditable="true"],[role="textbox"]')||
+       element.closest('[contenteditable="true"]'))return true;
+    if(!element.matches('input'))return false;
+    var type=(element.getAttribute('type')||'text').toLowerCase();
+    return ['checkbox','radio','button','submit','reset','range','color',
+      'file','hidden','image'].indexOf(type)===-1;
+  }
+  function updateTypingState(){
+    document.body.classList.toggle('sinjira-account-typing',
+      editingControl(document.activeElement));
+  }
+  document.addEventListener('focusin',updateTypingState);
+  document.addEventListener('focusout',function(){
+    window.requestAnimationFrame(updateTypingState);
+  });
+  updateTypingState();
+
+  // Sur 240 px et en zoom fort, le dock est défilant. Ne jamais laisser
+  // la rubrique en cours hors de vue au chargement ou après une rotation.
+  // On n'intervient pas lors d'un balayage manuel (aucun listener scroll).
+  var activeLink=nav.querySelector('a[aria-current="page"],a[data-current-section]');
+  function revealActiveLink(){
+    if(!activeLink||!window.matchMedia('(max-width:270px)').matches)return;
+    if(getComputedStyle(nav).display==='none'||nav.scrollWidth<=nav.clientWidth+2)return;
+    var area=nav.getBoundingClientRect();
+    var link=activeLink.getBoundingClientRect();
+    if(link.left>=area.left+2&&link.right<=area.right-2)return;
+    var max=Math.max(0,nav.scrollWidth-nav.clientWidth);
+    var target=nav.scrollLeft+link.left-area.left-
+      Math.max(0,Math.round((nav.clientWidth-link.width)/2));
+    nav.scrollLeft=Math.max(0,Math.min(max,target));
+  }
+  function syncAfterLayout(){
+    syncNavHeight();
+    revealActiveLink();
+  }
+
   // Le dock peut grandir lorsque la police est agrandie : réserver sa
   // hauteur réelle au contenu et au bandeau d'installation PWA.
   var lastHeight=0;
@@ -57,10 +99,12 @@
     document.body.style.setProperty('--sinjira-account-mobile-nav-height',height+'px');
   }
   syncNavHeight();
+  window.requestAnimationFrame(revealActiveLink);
+  window.addEventListener('resize',function(){
+    window.requestAnimationFrame(syncAfterLayout);
+  });
   if('ResizeObserver' in window){
-    var navObserver=new ResizeObserver(syncNavHeight);
+    var navObserver=new ResizeObserver(syncAfterLayout);
     navObserver.observe(nav);
-  }else{
-    window.addEventListener('resize',syncNavHeight);
   }
 }());

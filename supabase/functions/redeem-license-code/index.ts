@@ -1,6 +1,7 @@
 import {corsHeaders} from '../_shared/cors.ts';
 import {requiredUser,serviceClient} from '../_shared/auth.ts';
 import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
+import { consumeLicenseAttempt } from '../_shared/license-attempt-budget.mjs';
 
 const VERSION='24.4.49';
 const MAX_REQUEST_BYTES=4096;
@@ -62,10 +63,16 @@ Deno.serve(async req=>{
       return privateJson({ok:true,service:'redeem-license-code',version:VERSION});
     }
 
-    const value=String(body?.code||'').trim();
+    const value=typeof body?.code==='string'?body.code.trim():'';
     if(value.length<MIN_CODE_LENGTH||value.length>MAX_CODE_LENGTH){
       return privateJson({ok:false,error:'Code invalide.'},400);
     }
+    // A separate committed RPC counts attempts even if redemption later fails.
+    const attempt=await consumeLicenseAttempt(s,user.id);
+    if(attempt!=='allowed')return new Response(JSON.stringify({
+      ok:false,code:attempt==='limited'?'LICENSE_ATTEMPT_LIMIT':'LICENSE_ATTEMPT_UNAVAILABLE',
+      error:'Activation temporairement indisponible. Réessayez plus tard.'
+    }),{status:attempt==='limited'?429:503,headers:{...PRIVATE_HEADERS,'Retry-After':'600'}});
     const hash=await digest(value,pepper);
     const {data,error}=await s.rpc('redeem_sinjira_activation',{p_code_hash:hash,p_user_id:user.id});
     if(error){
