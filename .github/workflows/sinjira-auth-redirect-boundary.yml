@@ -19,6 +19,7 @@ on:
       - 'scripts/validate_auth.py'
       - 'scripts/validate_mfa_v24_4_66.py'
       - 'scripts/test_sinjira_auth_redirect_boundary.cjs'
+      - 'scripts/test_sinjira_login_context_outage.cjs'
       - '.github/workflows/sinjira-auth-redirect-boundary.yml'
   push:
     branches: [main]
@@ -38,6 +39,7 @@ on:
       - 'scripts/validate_auth.py'
       - 'scripts/validate_mfa_v24_4_66.py'
       - 'scripts/test_sinjira_auth_redirect_boundary.cjs'
+      - 'scripts/test_sinjira_login_context_outage.cjs'
       - '.github/workflows/sinjira-auth-redirect-boundary.yml'
   workflow_dispatch:
 
@@ -71,6 +73,8 @@ jobs:
           node --check scripts/test_sinjira_auth_redirect_boundary.cjs
       - name: Vérifier les destinations Auth et MFA
         run: node scripts/test_sinjira_auth_redirect_boundary.cjs
+      - name: Refuser les connexions sans décision contextuelle
+        run: node scripts/test_sinjira_login_context_outage.cjs
       - name: Empêcher les régressions du client historique
         run: node scripts/test_sinjira_account_local_redirect.cjs
       - name: Vérifier le contrat de sécurité Auth existant

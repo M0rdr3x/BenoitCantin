@@ -97,11 +97,18 @@ async function login(){
       try{
         evaluated=await evaluateLoginSecurity(meta);
       }catch(securityError){
-        console.warn('[SINJIRA login shield unavailable]',securityError);
-        // Le moteur contextuel est une couche supplémentaire. Une panne de cette
-        // couche ne doit pas verrouiller tout le compte; les zones extrêmement
-        // sensibles conservent leur propre contrôle MFA côté serveur.
-        location.replace(next);
+        console.warn('[SINJIRA login shield unavailable]');
+        // Une absence de décision n'est pas une autorisation de connexion.
+        // Vérifier aussi les erreurs retournées sans rejet par le SDK.
+        let closed=false;
+        try{
+          const result=await getSupabase().auth.signOut({scope:'local'});
+          closed=result?.error===null;
+        }catch{}
+        setStatus(status,closed
+          ? 'Le contrôle de sécurité est temporairement indisponible. La connexion a été interrompue. Réessayez plus tard.'
+          : 'Le contrôle de sécurité est indisponible et la fermeture de cette session n’a pas été confirmée. N’utilisez pas cette session; déconnectez-vous avant de réessayer.',
+          'error');
         return;
       }
 
