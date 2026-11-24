@@ -419,6 +419,42 @@ def test_public_navigation_fallback(browser):
             context.close()
 
 
+def test_universe_deferred_session(browser):
+    context = browser.new_context(
+        locale="fr-CA", viewport={"width": 390, "height": 760},
+        service_workers="block", reduced_motion="reduce",
+    )
+    try:
+        requests = []
+        def mock_session(route):
+            requests.append(route.request.url)
+            route.fulfill(status=200, content_type="application/javascript", body="export {};")
+        context.route("**/assets/js/v19-session.js?*", mock_session)
+        page = context.new_page()
+        page.goto(BASE + "projets/sinjira/", wait_until="load", timeout=30_000)
+        verify(not requests, "personnalisation du compte chargée avant intention")
+        verify(page.locator("[data-sinjira-session-nav]").get_attribute("href") == "/compte/",
+               "lien natif du compte absent")
+        toggle = page.locator("[data-menu-toggle]")
+        toggle.focus()
+        page.wait_for_function("() => document.documentElement.dataset.universeSessionLoading === 'true'",
+                               timeout=10_000)
+        page.wait_for_function("""() => performance.getEntriesByType('resource')
+                                    .some(e => e.name.includes('/v19-session.js?'))""", timeout=10_000)
+        toggle.click()
+        verify(len(requests) == 1, "module de session chargé plusieurs fois")
+        verify(page.locator("[data-main-nav]").is_visible(), "navigation indisponible")
+        page.evaluate("window.dispatchEvent(new Event('offline'))")
+        context.set_offline(True)
+        page.evaluate("window.dispatchEvent(new Event('offline'))")
+        verify(page.locator("html.offline").count() == 1, "état hors ligne non annoncé")
+        context.set_offline(False)
+        page.evaluate("window.dispatchEvent(new Event('online'))")
+        verify(page.locator("html.offline").count() == 0, "état en ligne non restauré")
+    finally:
+        context.close()
+
+
 def run():
     verify(BROWSER in {"chromium", "firefox", "webkit"}, "navigateur inconnu")
     verify((urlparse(BASE).hostname or "") in {"localhost", "127.0.0.1"},
@@ -440,6 +476,7 @@ def run():
             test_responsive_images(browser)
             test_without_javascript(browser)
             test_public_navigation_fallback(browser)
+            test_universe_deferred_session(browser)
         finally:
             browser.close()
     print(f"OK {BROWSER}: accueil SINJIRA, 8 largeurs, clavier, mobile et sans JS")

@@ -26,7 +26,7 @@ def local_resource_details(audit, expected_url):
                 parsed = urlsplit(url)
                 path = parsed.path
                 if ((parsed.scheme, parsed.netloc) == (origin.scheme, origin.netloc)
-                        and re.fullmatch(r"/(?:assets/(?:css|js|media|icons)/[a-zA-Z0-9._-]+|projets/sinjira/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9._-]+\\.css)", path)
+                        and re.fullmatch(r"/(?:assets/(?:css|js|media|icons)/[a-zA-Z0-9._-]+|projets/sinjira/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9._-]+\.css)", path)
                         and path not in seen):
                     seen.add(path)
                     row = {"path": path}
@@ -41,10 +41,59 @@ def local_resource_details(audit, expected_url):
     return rows
 
 
+def target_diagnostics(audit):
+    """Ne retourner que des sélecteurs CSS simples et les dimensions numériques.
+    Aucun texte, extrait HTML, URL, valeur d'attribut ni identifiant de compte."""
+    rows = []
+    seen = set()
+    details = audit.get("details")
+    if not isinstance(details, dict):
+        return rows
+    for item in details.get("items", [])[:30]:
+        if not isinstance(item, dict):
+            continue
+        for key in ("node", "overlappingNode"):
+            node = item.get(key)
+            if not isinstance(node, dict):
+                continue
+            selector = node.get("selector")
+            if (not isinstance(selector, str) or len(selector) > 240
+                    or not re.fullmatch(r"[a-zA-Z0-9_.#>+~ :()-]+", selector)
+                    or selector in seen):
+                continue
+            seen.add(selector)
+            row = {"role": key, "selector": selector}
+            rect = node.get("boundingRect", {})
+            if isinstance(rect, dict):
+                for dimension in ("width", "height"):
+                    value = rect.get(dimension)
+                    if valid_number(value, 100000):
+                        row[dimension] = round(value, 2)
+            rows.append(row)
+    return rows
+
+
+def self_test():
+    fixture = {"details": {"items": [
+        {"node": {"selector": "footer > div.footer-col > a:nth-child(2)",
+                  "boundingRect": {"width": 90, "height": 18},
+                  "snippet": "PRIVATE_TEST"}},
+        {"node": {"selector": "a[href='private-test']"}},
+    ]}}
+    rows = target_diagnostics(fixture)
+    assert len(rows) == 1 and rows[0]["height"] == 18
+    assert "PRIVATE_TEST" not in json.dumps(rows)
+    assert local_resource_details(
+        {"details": {"items": [{"url": "http://127.0.0.1:4173/projets/sinjira/sinjira.css?v=1"}]}},
+        "http://127.0.0.1:4173/projets/sinjira/"
+    ) == [{"path": "/projets/sinjira/sinjira.css"}]
+
+
 def main():
     if len(sys.argv) != 3:
         print("Usage: report_public_lighthouse.py <rapport.json> <URL locale attendue>")
         return 2
+    self_test()
     try:
         report = json.loads(Path(sys.argv[1]).read_text("utf-8"))
         if not isinstance(report, dict) or report.get("runtimeError"):
@@ -104,6 +153,9 @@ def main():
             weight = ref.get("weight", 0)
             if valid_number(score, 1) and score < 1 and valid_number(weight, float("inf")) and weight > 0:
                 print(f"ACCESSIBILITY {audit_id}: {score}")
+                if audit_id == "target-size":
+                    for row in target_diagnostics(audits[audit_id]):
+                        print(f"TARGET {json.dumps(row, sort_keys=True)}")
         # Les écarts sont diagnostiques; une mesure manquante reste bloquante.
         return 0
     except (OSError, ValueError, KeyError, TypeError) as exc:
