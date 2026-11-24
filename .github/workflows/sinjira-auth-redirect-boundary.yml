@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - 'assets/js/sinjira-auth-route.js'
+      - 'assets/js/sinjira-account.js'
+      - 'assets/js/sinjira-mfa-v24-4-66.js'
+      - 'scripts/test_sinjira_account_local_redirect.cjs'
       - 'assets/js/sinjira-supabase.js'
       - 'compte/connexion.html'
       - 'compte/inscription.html'
@@ -18,6 +21,9 @@ on:
     branches: [main]
     paths:
       - 'assets/js/sinjira-auth-route.js'
+      - 'assets/js/sinjira-account.js'
+      - 'assets/js/sinjira-mfa-v24-4-66.js'
+      - 'scripts/test_sinjira_account_local_redirect.cjs'
       - 'assets/js/sinjira-supabase.js'
       - 'compte/connexion.html'
       - 'compte/inscription.html'
@@ -51,6 +57,8 @@ jobs:
         run: |
           node --check assets/js/sinjira-auth-route.js
           node --check assets/js/sinjira-supabase.js
+          node --check assets/js/sinjira-account.js
+          node --check assets/js/sinjira-mfa-v24-4-66.js
           node --check scripts/test_sinjira_auth_redirect_boundary.cjs
       - name: Vérifier les destinations Auth et MFA
         run: node scripts/test_sinjira_auth_redirect_boundary.cjs
