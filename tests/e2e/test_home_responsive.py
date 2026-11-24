@@ -233,6 +233,26 @@ def test_short_mobile_menu(page):
 
 
 
+def verify_install_targets(card):
+    geometry = card.evaluate("""el => {
+      const reveal=el.querySelector('[data-pwa-install-reveal]');
+      const close=el.querySelector('.sinjira-pwa-install__close');
+      const a=reveal.getBoundingClientRect(), b=close.getBoundingClientRect();
+      const c=el.getBoundingClientRect();
+      const hit=(node,r)=>[.25,.5,.75].every(x=>[.25,.5,.75].every(y=>
+        node.contains(document.elementFromPoint(r.left+r.width*x,r.top+r.height*y))));
+      return {revealWidth:a.width,revealHeight:a.height,closeWidth:b.width,
+              closeHeight:b.height,gap:b.left-a.right,
+              inside:b.right<=c.right&&b.bottom<=c.bottom,
+              revealHit:hit(reveal,a),closeHit:hit(close,b)};
+    }""")
+    verify(min(geometry["revealWidth"], geometry["revealHeight"],
+               geometry["closeWidth"], geometry["closeHeight"]) >= 43.5
+           and geometry["gap"] >= 8 and geometry["inside"]
+           and geometry["revealHit"] and geometry["closeHit"],
+           f"commandes PWA superposées ou inaccessibles : {geometry}")
+
+
 def test_install_offer(browser):
     """iPhone : invite discrète, instructions sur demande; Android : vrai bouton d'installation."""
     iphone_ua = ("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
@@ -263,7 +283,9 @@ def test_install_offer(browser):
                    and metrics["buttonHeight"] >= 43.5 and metrics["top"] >= -2
                    and metrics["bottom"] <= height + 2,
                    f"invitation iOS compacte illisible à {width}x{height}: {metrics}")
+            verify_install_targets(card)
             reveal.click()
+            verify_install_targets(card)
             verify(details.is_visible() and reveal.get_attribute("aria-expanded") == "true",
                    f"les instructions iOS ne s'ouvrent pas à {width}x{height}")
             expanded = card.evaluate("""el => {
@@ -318,7 +340,9 @@ def test_install_offer(browser):
             card.wait_for(state="visible", timeout=5_000)
             verify(card.locator("#sinjira-pwa-install-details").is_hidden(),
                    "l'invitation Android doit rester compacte par défaut")
+            verify_install_targets(card)
             card.locator("[data-pwa-install-reveal]").click()
+            verify_install_targets(card)
             card.locator("[data-pwa-install-action]").click()
             page.wait_for_function("() => window.__testNativeInstallInvoked === true", timeout=5_000)
             card.wait_for(state="detached", timeout=5_000)
