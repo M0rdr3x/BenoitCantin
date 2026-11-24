@@ -7,12 +7,14 @@ on:
       - '.github/workflows/**'
       - 'scripts/validate_pages_artifact_boundary.py'
       - 'scripts/pages_archive_integrity.py'
+      - 'scripts/build_netlify_public.py'
   push:
     branches: [main]
     paths:
       - '.github/workflows/**'
       - 'scripts/validate_pages_artifact_boundary.py'
       - 'scripts/pages_archive_integrity.py'
+      - 'scripts/build_netlify_public.py'
   workflow_dispatch:
 
 permissions:

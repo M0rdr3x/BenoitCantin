@@ -485,6 +485,14 @@ def relative_path_allowed(rel: Path) -> bool:
     if not parts:
         return False
 
+    # Refuser les répertoires techniques à toute profondeur, même si
+    # leurs fichiers ont une extension runtime autorisée (.mjs, .html).
+    # Cette frontière précède toutes les exceptions PDF/JSON.
+    if any(part.casefold() in {".git", ".github", "supabase", "scripts", "docs",
+                               "tests", "mobile-native", "tools"}
+           for part in parts[:-1]):
+        return False
+
     # Un nouveau document dans data/ n'est jamais public par extension,
     # y compris PDF/HTML/JS/SVG : seuls les 12 JSON explicites le sont.
     if len(parts) >= 3 and parts[:3] == ("projets", "projet-nova", "data"):

@@ -34,7 +34,7 @@ def inventory(root: Path):
             raise ValueError("Public inventory too large")
         name = p.relative_to(root).as_posix()
         parts = name.split("/")
-        if any(part in FORBIDDEN or (part.startswith(".") and part not in ALLOWED_HIDDEN) for part in parts):
+        if any(part.casefold() in FORBIDDEN or (part.startswith(".") and part not in ALLOWED_HIDDEN) for part in parts):
             raise ValueError("Forbidden archive path")
         if any(ord(ch) < 32 or ord(ch) == 127 or ch == "\\" for ch in name):
             raise ValueError("Invalid archive path")
@@ -120,6 +120,19 @@ class Tests(unittest.TestCase):
             with self.assertRaises(ValueError): inventory(root)
             bad.unlink()
             with self.assertRaises(ValueError): create(root,root/"out.tar")
+
+    def test_nested_technical_paths_are_excluded_by_builder_and_archive(self):
+        from build_netlify_public import relative_path_allowed
+        for folder in ("scripts", "tests", "docs", "tools", "SUPABASE", ".git"):
+            rel=Path("projets")/"projet-nova"/folder/"fixture.mjs"
+            self.assertFalse(relative_path_allowed(rel), str(rel))
+            with tempfile.TemporaryDirectory() as tmp:
+                root=Path(tmp)/"_site"; root.mkdir()
+                (root/"index.html").touch()
+                bad=root/rel; bad.parent.mkdir(parents=True); bad.touch()
+                with self.assertRaises(ValueError): inventory(root)
+        self.assertTrue(relative_path_allowed(Path("projets/projet-nova/assets/nova-civic-integrity.js")))
+        self.assertTrue(relative_path_allowed(Path("projets/projet-nova/official/reference/corpus.md")))
 
     def test_reject_extra_missing_traversal_duplicate_members(self):
         with tempfile.TemporaryDirectory() as tmp:
