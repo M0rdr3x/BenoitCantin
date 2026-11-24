@@ -325,6 +325,36 @@ def test_install_offer(browser):
     finally:
         android.close()
 
+def test_responsive_images(browser):
+    """Chaque densité conserve une image locale décodable, sans dépendance externe."""
+    for width, density in ((390, 1), (1440, 3)):
+        context = browser.new_context(
+            viewport={"width": width, "height": 760}, device_scale_factor=density,
+            locale="fr-CA", reduced_motion="reduce", service_workers="block",
+        )
+        try:
+            page = context.new_page()
+            page.goto(BASE, wait_until="domcontentloaded", timeout=30_000)
+            for name in ("registre", "jeux", "communaute"):
+                image = page.locator(f'.home-project[href="/projets/sinjira/{name}/"] img')
+                image.scroll_into_view_if_needed()
+                page.wait_for_function(
+                    """selector => {
+                      const img = document.querySelector(selector);
+                      return img && img.complete && img.naturalWidth > 0;
+                    }""", arg=f'.home-project[href="/projets/sinjira/{name}/"] img',
+                    timeout=12_000)
+                current = image.evaluate("(img) => new URL(img.currentSrc).pathname")
+                verify(current in (
+                    f"/assets/media/sinjira-{name}-home-160.webp",
+                    f"/assets/media/sinjira-{name}-home-336.webp"),
+                    f"source adaptative incorrecte à {width}px DPR {density}: {current}")
+                verify(image.bounding_box()["width"] <= 113,
+                       f"image de carte hors format à {width}px")
+        finally:
+            context.close()
+
+
 def test_without_javascript(browser):
     context = browser.new_context(
         java_script_enabled=False, service_workers="block", locale="fr-CA",
@@ -374,6 +404,7 @@ def run():
             finally:
                 context.close()
             test_install_offer(browser)
+            test_responsive_images(browser)
             test_without_javascript(browser)
         finally:
             browser.close()
