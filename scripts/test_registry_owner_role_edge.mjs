@@ -19,7 +19,7 @@ assert.doesNotMatch(gateSource, /owner\s*=\s*String\(user\??\.email/);
 
 // Extraire le bloc JavaScript réel : il ne contient aucun TypeScript ni import.
 const check = vm.runInNewContext(
-  '(async function roleGate(user,service,update_existing,privateJson){\n'
+  '(async function roleGate(user,service,update_existing,privateJson){\nconst VERSION="24.5.3";\n'
   + gateSource
   + '\nreturn {kind:"allowed", privileged:owner, hasExisting:!!(existingSubmission||existingCharacter)};\n})',
   {}, {timeout:1500, filename:'questionnaire-owner-gate.js'}
