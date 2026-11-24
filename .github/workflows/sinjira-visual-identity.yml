@@ -1,0 +1,51 @@
+name: SINJIRA — Identité visuelle officielle
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'assets/icons/sinjira.svg'
+      - 'assets/icons/sinjira-favicon.png'
+      - 'assets/css/home-sinjira-only-v1.css'
+      - 'projets/sinjira/**'
+      - 'compte/**'
+      - 'scripts/validate_home_focus.py'
+      - 'scripts/validate_sinjira_visual_identity.py'
+      - 'scripts/validate_sinjira_red_portal.py'
+      - '.github/workflows/sinjira-visual-identity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'assets/icons/sinjira.svg'
+      - 'assets/icons/sinjira-favicon.png'
+      - 'assets/css/home-sinjira-only-v1.css'
+      - 'projets/sinjira/**'
+      - 'compte/**'
+      - 'scripts/validate_home_focus.py'
+      - 'scripts/validate_sinjira_visual_identity.py'
+      - 'scripts/validate_sinjira_red_portal.py'
+      - '.github/workflows/sinjira-visual-identity.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  branding-sinjira:
+    name: Vérifier le logo, les pages et l'absence de cible
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Vérifier les logos, le poids et l'identité
+        run: python3 scripts/validate_sinjira_visual_identity.py
+      - name: Vérifier le cercle principal et la navigation
+        run: python3 scripts/validate_home_focus.py
+      - name: Interdire le retour du halo mauve dans l'accueil
+        run: python3 scripts/validate_sinjira_red_portal.py
+      - name: Vérifier le budget de performance
+        run: python3 scripts/validate_performance_budget.py

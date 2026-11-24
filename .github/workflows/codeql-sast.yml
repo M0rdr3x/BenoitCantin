@@ -1,0 +1,81 @@
+name: "Sécurité — CodeQL (SAST, GitHub Actions, JS/TS et Python)"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - 'scripts/**'
+      - 'assets/js/**'
+      - 'supabase/**'
+      - 'mobile-native/**'
+      - 'projets/**'
+      - 'netlify.toml'
+      - 'vercel.json'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - 'scripts/**'
+      - 'assets/js/**'
+      - 'supabase/**'
+      - 'mobile-native/**'
+      - 'projets/**'
+      - 'netlify.toml'
+      - 'vercel.json'
+  schedule:
+    - cron: '23 5 * * 0'
+  workflow_dispatch:
+
+# No secrets or production credentials are used by this workflow.
+# The upload permission is confined to CodeQL's analysis job.
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-sast-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract:
+    name: Vérifier le contrat de sécurité du scanner
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sans identifiants persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Auto-tester le contrat du scanner
+        run: python3 scripts/validate_codeql_workflow_security.py --self-test
+      - name: Vérifier le contrat du scanner
+        run: python3 scripts/validate_codeql_workflow_security.py
+
+  analyze:
+    name: "CodeQL / ${{ matrix.language }}"
+    needs: contract
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['actions', 'javascript-typescript', 'python']
+    steps:
+      - name: Checkout sans identifiants persistés
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Initialiser CodeQL en analyse sans build
+        uses: github/codeql-action/init@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+          queries: +security-extended
+      - name: Analyser et envoyer les alertes à GitHub Code Scanning
+        uses: github/codeql-action/analyze@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea
+        with:
+          category: "/language:${{ matrix.language }}"

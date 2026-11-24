@@ -68,37 +68,49 @@ await assert.rejects(
   /INVALID_SECURITY_PUSH_FETCH/,
 );
 
-// Test d'intégration isolé : un fournisseur simulé renvoie 307 vers un
-// second serveur local. Un POST de jeton ne doit JAMAIS atteindre ce serveur.
+// Les deux endpoints Expo refusent les redirections qui préserveraient le POST.
+// Aucun jeton ni identifiant de reçu fictif ne doit arriver à la seconde origine.
 let forwardedRequests = 0;
+let initialRequests = 0;
 const destination = createServer((req, res) => {
   forwardedRequests += 1;
   req.resume();
   res.writeHead(200, { 'Content-Type': 'application/json' });
   res.end('{}');
 });
-const redirector = createServer((_req, res) => {
-  res.writeHead(307, { Location: `http://127.0.0.1:${destination.address().port}/capture` });
-  res.end();
+const redirector = createServer((req, res) => {
+  initialRequests += 1;
+  const code = req.url === '/redirect-308' ? 308 : 307;
+  req.resume();
+  req.on('end', () => {
+    res.writeHead(code, { Location: `http://127.0.0.1:${destination.address().port}/capture` });
+    res.end();
+  });
 });
 try {
   destination.listen(0, '127.0.0.1');
   await once(destination, 'listening');
   redirector.listen(0, '127.0.0.1');
   await once(redirector, 'listening');
-  const origin = `http://127.0.0.1:${redirector.address().port}/push`;
   const sensitiveToken = 'ExponentPushToken[synthetic-never-real]';
-  await assert.rejects(
-    () => postSecurityPushJson(
-      SECURITY_PUSH_SEND_URL,
-      [{ to: sensitiveToken }],
-      (_url, init) => fetch(origin, init),
-    ),
-    /fetch failed|redirect|network|TypeError/i,
-    'Une redirection HTTP 307 doit faire échouer un POST de notifications',
-  );
-  assert.equal(forwardedRequests, 0,
-    'Aucun jeton de notification ne doit être retransmis à la destination de la redirection');
+  const endpoints = [
+    [SECURITY_PUSH_SEND_URL, [{ to: sensitiveToken }]],
+    [SECURITY_PUSH_RECEIPT_URL, { ids: ['synthetic-receipt-never-real'] }],
+  ];
+  for (const code of [307, 308]) {
+    for (const [endpoint, payload] of endpoints) {
+      const origin = `http://127.0.0.1:${redirector.address().port}/redirect-${code}`;
+      const previous = initialRequests;
+      await assert.rejects(
+        () => postSecurityPushJson(endpoint, payload, (_url, init) => fetch(origin, init)),
+        /fetch failed|redirect|network|TypeError/i,
+        `Une redirection HTTP ${code} doit être refusée pour les deux endpoints`,
+      );
+      assert.equal(initialRequests, previous + 1, 'La requête initiale a bien atteint le serveur de test');
+      assert.equal(forwardedRequests, 0, 'Aucune donnée ne doit atteindre la seconde origine');
+    }
+  }
+  assert.equal(initialRequests, 4, 'Quatre scénarios HTTP indépendants doivent être exécutés');
 } finally {
   redirector.closeAllConnections();
   destination.closeAllConnections();
@@ -106,4 +118,4 @@ try {
   if (destination.listening) await new Promise(resolve => destination.close(resolve));
 }
 
-console.log('OK security push network V25: endpoints Expo exacts, POST JSON centralisé, pas de redirection/cookies/référents, tests HTTP 307 local et timeout 4s réellement observé.');
+console.log('OK security push network V25: endpoints Expo exacts, POST JSON centralisé, pas de redirection/cookies/référents, 4 scénarios locaux HTTP 307/308 et timeout 4s réellement observé.');

@@ -93,9 +93,49 @@ def validate() -> list[str]:
         "getPublicUrl(", ".from('user_entitlements').insert(",
         ".from('user_entitlements').upsert(",
     )
+    # V55 : le bouton visible doit suivre le texte comme le geste tactile;
+    # les sélecteurs de page explicites conservent la navigation PDF directe.
+    for marker in (
+        "canTurnReaderScreen", "function updateScreenControls(){",
+        "previous.disabled=!canTurnReaderScreen(", "next.disabled=!canTurnReaderScreen(",
+        "addEventListener('click',()=>turnVisibleReadingScreen(-1))",
+        "addEventListener('click',()=>turnVisibleReadingScreen(1))",
+    ):
+        if marker not in reader:
+            problems.append("Contrôles de liseuse V55 incohérents : " + marker)
+    reader_html=(ROOT / "compte/liseuse.html").read_text("utf-8")
+    if reader_html.count('aria-controls="reader-viewer"')<2:
+        problems.append("Commandes de navigation du lecteur sans aria-controls")
+    if "/assets/icons/sinjira-officiel-20261120.png" not in reader_html:
+        problems.append("Icône officielle SINJIRA absente de la liseuse")
     for part in forbidden:
         if part in reader:
             problems.append("Fichier intégral ou privilège exposé en JavaScript : " + part[:35])
+    screen_helper = ROOT / "assets/js/sinjira-liseuse-screen-turn-v54.mjs"
+    if not screen_helper.is_file():
+        problems.append("Navigation par écran V54 absente")
+    elif "export function planReaderScreenTurn(" not in screen_helper.read_text("utf-8"):
+        problems.append("Contrat de navigation V54 absent")
+    for marker in ("planReaderScreenTurn", "turnVisibleReadingScreen", "swipeViewer.addEventListener('keydown'", "state.restorePending=end?1:0"):
+        if marker not in reader:
+            problems.append("Navigation accessible V54 manquante : " + marker)
+    # V56 : la typographie change la hauteur du texte; préserver la position
+    # numérique existante (sans enregistrer le contenu) et recalculer les flèches.
+    for marker in ("function updateReaderTypography(applySetting)", "pendingTextRelayout",
+                   "viewer.scrollTop=scrollTopForRatio(transaction.ratio",
+                   "state.positionRatio=ratioFromScroll(viewer.scrollTop",
+                   "updateScreenControls();\n    persist();"):
+        if marker not in reader:
+            problems.append("Position de lecture perdue après changement de typographie V56 : " + marker)
+    if reader.count("updateReaderTypography(()=>") != 5:
+        problems.append("Tous les cinq réglages typographiques doivent préserver la position")
+    if "sinjira-liseuse-v26.js?v=34.11.22.1" not in reader_html:
+        problems.append("Liseuse V56 : URL de script non renouvelée")
+    page_html = (ROOT / "compte/liseuse.html").read_text("utf-8")
+    if 'aria-describedby="reader-turn-help"' not in page_html or 'id="reader-turn-help"' not in page_html:
+        problems.append("Instructions de navigation du lecteur non associées")
+    if "document.addEventListener('keydown'" in reader:
+        problems.append("La navigation du livre détourne encore le clavier sur tout le site")
     if not (ROOT / "assets/js/sinjira-liseuse-text-v27.mjs").is_file():
         problems.append("Moteur de texte reformatable absent")
     else:

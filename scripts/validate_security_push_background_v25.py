@@ -80,7 +80,10 @@ for needle in (
     "assert.equal(captured.init.redirect, 'error'",
     "assert.equal(captured.init.credentials, 'omit'",
     "assert.equal(captured.init.referrerPolicy, 'no-referrer'",
-    'res.writeHead(307,',
+    'for (const code of [307, 308])',
+    'for (const [endpoint, payload] of endpoints)',
+    'assert.equal(initialRequests, previous + 1,',
+    'assert.equal(initialRequests, 4,',
     'assert.equal(forwardedRequests, 0,',
 ):
     require(test, needle, 'test réseau Expo')

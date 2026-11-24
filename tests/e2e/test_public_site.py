@@ -9,7 +9,7 @@ from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_pla
 BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
 BROWSER_NAME = os.environ.get("BROWSER", "chromium").strip().lower()
 SUPPORTED_BROWSERS = {"chromium", "firefox", "webkit"}
-ASSISTANT_VERSION = "24.4.48"
+ASSISTANT_VERSION = "24.4.50"
 PUBLIC_ROUTES = [
     "",
     "a-propos.html",
@@ -31,11 +31,11 @@ AUTH_ROUTES = [
     "compte/mot-de-passe-oublie.html",
     "compte/reinitialiser-mot-de-passe.html",
 ]
-EXPECTED_DOORS = {
-    "/projets/sinjira/",
+EXPECTED_FEATURES = {
+    "/projets/sinjira/romans/",
     "/projets/sinjira/registre/",
-    "/projets/projet-nova/",
-    "/projets/projet-nova/boussole-electorale.html",
+    "/projets/sinjira/jeux/",
+    "/projets/sinjira/communaute/",
 }
 IS_LOCAL = (urlparse(BASE_URL).hostname or "").lower() in {"127.0.0.1", "localhost"}
 
@@ -168,50 +168,75 @@ def run() -> None:
         runtime_version = page.evaluate("window.__SINJIRA_RUNTIME__ && window.__SINJIRA_RUNTIME__.version")
         assert_true(runtime_version == "24.4.22", f"Runtime public inattendu: {runtime_version!r}")
 
-        cards = page.locator("a.home-project")
-        assert_true(cards.count() == 4, f"Accueil: 4 accès attendus, trouvé {cards.count()}")
-        hrefs = {cards.nth(i).get_attribute("href") for i in range(cards.count())}
-        assert_true(hrefs == EXPECTED_DOORS, f"Accueil: portes inattendues: {hrefs}")
-        orbit_nodes = page.locator(".home-cosmos a.orbit-node")
-        assert_true(orbit_nodes.count() == 4, f"Accueil: 4 portes orbitales attendues, trouvé {orbit_nodes.count()}")
-        compass_orbit = page.locator(".home-cosmos .node-boussole-home")
-        assert_true(compass_orbit.count() == 1, f"{BROWSER_NAME}: porte orbitale Boussole absente")
-        assert_true(
-            compass_orbit.get_attribute("href") == "/projets/projet-nova/boussole-electorale.html",
-            f"{BROWSER_NAME}: cible de la porte orbitale Boussole incorrecte",
-        )
-        compass_image = compass_orbit.locator('img[src^="/assets/media/nova-boussole-electorale.webp"]')
-        assert_true(
-            compass_image.count() == 1,
-            f"{BROWSER_NAME}: visuel officiel absent de la porte Boussole",
-        )
-        assert_true(
-            "?v=20261013-fix" in (compass_image.get_attribute("src") or ""),
-            f"{BROWSER_NAME}: ancienne image Boussole encore en cache",
-        )
-        compass_image.scroll_into_view_if_needed()
+        # Accueil recentré : un seul projet visuellement dans le cercle.
+        # Les quatre liens ci-dessous sont des rubriques du même univers,
+        # pas d'autres projets.
+        page.locator("body.home-sinjira-only").wait_for(state="attached")
+        orbit = page.locator(".home-cosmos a.sinjira-orbit")
+        assert_true(orbit.count() == 1 and orbit.is_visible(),
+                    f"{BROWSER_NAME}: SINJIRA doit être seul dans le cercle")
+        assert_true(orbit.get_attribute("href") == "/projets/sinjira/",
+                    f"{BROWSER_NAME}: porte unique SINJIRA incorrecte")
+        orbit_img = orbit.locator('img[src="/assets/icons/sinjira-officiel-20261120.png"]')
+        assert_true(orbit_img.count() == 1,
+                    f"{BROWSER_NAME}: visuel SINJIRA absent du cercle")
+        orbit_img.scroll_into_view_if_needed()
         page.wait_for_function(
             """() => {
-                const image = document.querySelector('.node-boussole-home img');
-                return image && image.complete &&
-                       image.naturalWidth >= 128 && image.naturalHeight >= 128;
+                const image = document.querySelector('.home-cosmos .sinjira-orbit img');
+                return !!image && image.complete && image.naturalWidth > 0;
             }""",
             timeout=15_000,
         )
+        assert_true(page.locator(".home-cosmos .orbit-node").count() == 0,
+                    f"{BROWSER_NAME}: anciennes portes encore présentes dans le cercle")
+        cards = page.locator("a.home-project")
+        assert_true(cards.count() == 4,
+                    f"{BROWSER_NAME}: 4 rubriques SINJIRA attendues, trouvé {cards.count()}")
+        hrefs = {cards.nth(i).get_attribute("href") for i in range(cards.count())}
+        assert_true(hrefs == EXPECTED_FEATURES,
+                    f"{BROWSER_NAME}: rubriques SINJIRA inattendues: {hrefs}")
+        assert_true(page.locator('body.home-sinjira-only a[href^="/projets/projet-nova"]').count() == 0,
+                    f"{BROWSER_NAME}: lien Nova encore affiché sur la page d'accueil")
+        assert_true("Projet Nova" not in page.locator("main").inner_text(),
+                    f"{BROWSER_NAME}: Nova encore présenté dans la section principale")
+        assert_true("Boussole électorale" not in page.locator("main").inner_text(),
+                    f"{BROWSER_NAME}: Boussole encore présentée dans l'accueil")
+        assert_true(page.locator('link[href*="home-sinjira-only-v1.css"]').count() == 1,
+                    f"{BROWSER_NAME}: styles ergonomiques de l'accueil absents")
+
+        # La nouvelle orbite SINJIRA doit être rouge/noire, et non mauve.
+        # Tester les couleurs calculées, pas seulement la présence du CSS.
+        portal = page.evaluate("""() => {
+            const cosmos = document.querySelector(".home-sinjira-cosmos");
+            const orbit = cosmos?.querySelector(".sinjira-orbit");
+            if (!cosmos || !orbit) return {ok:false, reason:"missing elements"};
+            const before = getComputedStyle(cosmos, "::before");
+            const after = getComputedStyle(cosmos, "::after");
+            const center = getComputedStyle(orbit);
+            const crimson = (value) => {
+                const match = value.match(/rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/);
+                if (!match) return false;
+                const [red, green, blue] = match.slice(1, 4).map(Number);
+                return red >= 150 && red > green * 1.45 && red > blue * 1.35;
+            };
+            return {
+                ok: crimson(before.borderTopColor) &&
+                    crimson(after.borderTopColor) &&
+                    crimson(center.borderTopColor) &&
+                    before.backgroundImage.includes("radial-gradient") &&
+                    after.backgroundImage.includes("radial-gradient") &&
+                    center.backgroundImage.includes("radial-gradient"),
+                outer: before.borderTopColor,
+                middle: after.borderTopColor,
+                center: center.borderTopColor
+            };
+        }""")
         assert_true(
-            page.locator('a[href="/projets/projet-nova/boussole-electorale.html"]').count() >= 4,
-            f"{BROWSER_NAME}: accès directs à la Boussole insuffisants sur l’accueil principal",
+            portal["ok"],
+            f"{BROWSER_NAME}: portail mauve ou sans éclairage rouge sur SINJIRA: {portal}",
         )
 
-        for selector, min_width in (
-            (".node-registre-home img", 120),
-            (".node-sinjira-home img", 120),
-            (".node-nova-home img", 120),
-            (".node-boussole-home img", 125),
-        ):
-            icon = page.locator(selector)
-            box = icon.bounding_box()
-            assert_true(box is not None and box["width"] >= min_width, f"{BROWSER_NAME}: icône principale trop petite: {selector}")
 
         page.goto(urljoin(BASE_URL, "projets/projet-nova/"), wait_until="domcontentloaded", timeout=30_000)
         assert_true(
@@ -891,6 +916,12 @@ def run() -> None:
         form = page.locator("#contact-general")
         route = page.locator("#contact-route")
         submit = page.locator("#contact-submit")
+        preview = page.locator("#contact-preview")
+        assert_true(preview.count() == 1 and preview.get_attribute("open") is None,
+                    f"{BROWSER_NAME}: l’aperçu désactivé encombre la page Contact")
+        preview.locator("summary").click()
+        assert_true(preview.get_attribute("open") is not None,
+                    f"{BROWSER_NAME}: l’aperçu contact ne s’ouvre pas au clic")
         assert_true(project.locator('option[value="Projet Nova"]').count() == 0, f"{BROWSER_NAME}: Projet Nova encore routé par le formulaire personnel")
         personal_fields = page.locator("#contact-personal-fields")
         assert_true(
@@ -924,9 +955,8 @@ def run() -> None:
         assert_true(form.get_attribute("method") is None, f"{BROWSER_NAME}: POST personnel actif avant configuration")
         assert_true(form.get_attribute("data-personal-formspree-state") == "pending-separate-endpoint", f"{BROWSER_NAME}: état fail-closed Formspree absent")
         assert_true(
-            any("form.getAttribute('data-personal-formspree-state')==='active-separate-endpoint'" in js
-                for js in page.locator("script:not([src])").all_text_contents()),
-            f"{BROWSER_NAME}: double verrou du formulaire personnel absent",
+            page.locator('script[src="/assets/js/sinjira-contact-route-v1.js?v=1.0.0"]').count() == 1,
+            f"{BROWSER_NAME}: runtime externe de verrouillage du contact personnel absent",
         )
         assert_true(submit.is_disabled(), f"{BROWSER_NAME}: bouton personnel actif avant endpoint distinct")
         assert_true("désactivé" in route.inner_text().lower(), f"{BROWSER_NAME}: message fail-closed absent")
@@ -966,6 +996,57 @@ def run() -> None:
 
             page.goto(urljoin(BASE_URL, "compte/inscription.html"), wait_until="domcontentloaded", timeout=30_000)
             assert_true(page.locator('input[type="password"][minlength="12"]').count() == 2, f"{BROWSER_NAME}: politique 12 caractères incohérente à l'inscription")
+
+            # Ergonomie du compte : la révélation reste volontaire, le type
+            # password revient après Masquer, et aucun envoi n'est effectué.
+            page.wait_for_function(
+                "() => document.querySelectorAll('[data-password-visibility]').length === 2",
+                timeout=10_000,
+            )
+            pwd_toggles = page.locator('[data-password-visibility]')
+            assert_true(pwd_toggles.count() == 2, f"{BROWSER_NAME}: boutons afficher/masquer absents à l'inscription")
+            pwd_toggles.first.click()
+            assert_true(
+                page.locator('#signup-password').get_attribute('type') == 'text'
+                and pwd_toggles.first.get_attribute('aria-pressed') == 'true',
+                f"{BROWSER_NAME}: affichage accessible du mot de passe inopérant",
+            )
+            pwd_toggles.first.click()
+            assert_true(
+                page.locator('#signup-password').get_attribute('type') == 'password'
+                and pwd_toggles.first.get_attribute('aria-pressed') == 'false',
+                f"{BROWSER_NAME}: masquage du mot de passe inopérant",
+            )
+            signup_optional = page.locator('[data-optional-personal-info]')
+            assert_true(
+                signup_optional.count() == 1 and signup_optional.get_attribute('open') is None,
+                f"{BROWSER_NAME}: section facultative de l'inscription initialement ouverte",
+            )
+            signup_optional.locator('summary').click()
+            assert_true(
+                signup_optional.get_attribute('open') is not None
+                and page.locator('#signup-extra-origin_city').is_visible(),
+                f"{BROWSER_NAME}: champs complémentaires non accessibles au toucher",
+            )
+            assert_true(
+                page.locator('#signup-birth-date').is_visible()
+                and page.locator('#signup-gender').is_visible(),
+                f"{BROWSER_NAME}: contrôles d'âge obligatoires masqués",
+            )
+            page.goto(urljoin(BASE_URL, "compte/connexion.html"), wait_until="domcontentloaded", timeout=30_000)
+            page.wait_for_function(
+                "() => document.querySelectorAll('[data-password-visibility]').length === 1",
+                timeout=10_000,
+            )
+            login_toggle = page.locator('[data-password-visibility]')
+            assert_true(login_toggle.count() == 1, f"{BROWSER_NAME}: visibilité du mot de passe de connexion absente")
+            login_toggle.click()
+            assert_true(page.locator('#login-password').get_attribute('type') == 'text',
+                        f"{BROWSER_NAME}: mot de passe de connexion non affiché après commande")
+            login_toggle.click()
+            assert_true(page.locator('#login-password').get_attribute('type') == 'password',
+                        f"{BROWSER_NAME}: mot de passe de connexion non masqué après commande")
+
             page.goto(urljoin(BASE_URL, "compte/reinitialiser-mot-de-passe.html"), wait_until="domcontentloaded", timeout=30_000)
             assert_true(page.locator('input[type="password"][minlength="12"]').count() == 2, f"{BROWSER_NAME}: politique 12 caractères incohérente à la réinitialisation")
 
@@ -988,6 +1069,11 @@ def run() -> None:
             assert_true(assistant.get("privacy") == "ephemeral-memory-only", f"{BROWSER_NAME}: contrat de confidentialité assistant invalide")
             assert_true(assistant.get("contextLabel") == "Portail SINJIRA™", f"{BROWSER_NAME}: contexte SINJIRA assistant invalide")
             assert_true(int(assistant.get("intentCount") or 0) >= 20, f"{BROWSER_NAME}: base d’aide assistant trop limitée")
+            suggestions = page.locator(".sinjira-assistant-chip").all_text_contents()
+            assert_true(suggestions == ["Lire les romans", "Découvrir les jeux", "Créer mon personnage"],
+                        f"{BROWSER_NAME}: les suggestions du portail SINJIRA doivent aider à naviguer : {suggestions}")
+            assert_true("Projet Nova" not in page.locator(".sinjira-assistant-suggestions").inner_text(),
+                        f"{BROWSER_NAME}: une archive ne doit plus être promue sur le portail SINJIRA")
 
             assistant_toggle = page.locator(".sinjira-assistant-toggle")
             assert_true(assistant_toggle.count() == 1, f"{BROWSER_NAME}: bouton Aide IA absent")
@@ -995,6 +1081,14 @@ def run() -> None:
             panel = page.locator("#sinjira-assistant-panel")
             assert_true(panel.is_visible(), f"{BROWSER_NAME}: panneau assistant ne s’ouvre pas")
             assert_true(assistant_toggle.get_attribute("aria-expanded") == "true", f"{BROWSER_NAME}: aria-expanded assistant invalide")
+            assert_true(
+                assistant_toggle.evaluate("(el) => getComputedStyle(el).visibility === 'hidden'"),
+                f"{BROWSER_NAME}: commande d'ouverture invisible encore focusable dans le panneau",
+            )
+            assert_true(
+                page.locator("#sinjira-assistant-input").evaluate("(el) => document.activeElement === el"),
+                f"{BROWSER_NAME}: le focus n'arrive pas directement dans le panneau d'aide",
+            )
 
             question = page.locator("#sinjira-assistant-input")
             question.fill("Comment créer mon personnage ?")
@@ -1029,8 +1123,113 @@ def run() -> None:
 
             page.keyboard.press("Escape")
             assert_true(panel.is_hidden(), f"{BROWSER_NAME}: Escape ne ferme pas l’assistant")
+            assert_true(
+                assistant_toggle.evaluate(
+                    "(el) => getComputedStyle(el).visibility === 'visible' && document.activeElement === el"
+                ),
+                f"{BROWSER_NAME}: le focus ne revient pas au bouton visible après Échap",
+            )
+            # Le déclencheur reste accessible au clavier après fermeture, et
+            # la commande Fermer doit rendre le focus au même endroit.
+            assistant_toggle.press("Enter")
+            assert_true(panel.is_visible(), f"{BROWSER_NAME}: réouverture clavier impossible")
+            assert_true(
+                assistant_toggle.evaluate("(el) => getComputedStyle(el).visibility === 'hidden'"),
+                f"{BROWSER_NAME}: bouton masqué toujours focusable après réouverture",
+            )
+            panel.locator(".sinjira-assistant-close").click()
+            assert_true(panel.is_hidden(), f"{BROWSER_NAME}: bouton Fermer inopérant")
+            assert_true(
+                assistant_toggle.evaluate("(el) => document.activeElement === el"),
+                f"{BROWSER_NAME}: Fermer ne restitue pas le focus au déclencheur",
+            )
 
+            # Les suggestions doivent suivre la rubrique courante, y compris
+            # la page du jeu Fracture. L'archive Nova reste accessible seulement
+            # par demande explicite ou par sa propre route.
+            page.goto(urljoin(BASE_URL, "projets/sinjira/jeux/"), wait_until="domcontentloaded", timeout=30_000)
+            wait_for_assistant(page)
+            assert_true(page.evaluate("window.__SINJIRA_ASSISTANT__.contextLabel") == "Jeux SINJIRA™",
+                        f"{BROWSER_NAME}: contexte assistant Jeux incorrect")
+            assert_true(page.locator(".sinjira-assistant-chip").all_text_contents() ==
+                        ["Voir les jeux", "Mes parties", "Fracture"],
+                        f"{BROWSER_NAME}: accès rapides jeux manquants")
+            page.goto(urljoin(BASE_URL, "projets/sinjira/jeux/fracture-du-reseau-mere/"),
+                      wait_until="domcontentloaded", timeout=30_000)
+            wait_for_assistant(page)
+            assert_true(page.evaluate("window.__SINJIRA_ASSISTANT__.contextLabel") == "Fracture du Réseau-Mère",
+                        f"{BROWSER_NAME}: aide contextuelle Fracture absente")
+            assert_true("Projet Nova" not in page.locator(".sinjira-assistant-suggestions").inner_text(),
+                        f"{BROWSER_NAME}: promotion Nova présente sur une page Jeux")
+
+            # Le Registre SINJIRA est désormais progressif, sans persistance
+            # locale des réponses. Les tests restent anonymes et ne soumettent
+            # jamais le questionnaire ni ne manipulent un compte privé.
             page.goto(urljoin(BASE_URL, "projets/sinjira/registre/"), wait_until="domcontentloaded", timeout=30_000)
+            wizard = page.locator("[data-registry-wizard]")
+            wizard.wait_for(state="visible", timeout=10_000)
+            assert_true(
+                page.locator('form[data-character-form] fieldset[data-registry-wizard-step]').count() == 9,
+                f"{BROWSER_NAME}: le Registre doit contenir neuf étapes",
+            )
+            assert_true(
+                "Étape 1 sur 9" in wizard.locator(".registry-wizard-step").inner_text(),
+                f"{BROWSER_NAME}: progression du Registre absente",
+            )
+            assert_true(
+                page.locator('fieldset[data-registry-wizard-step="2"]').is_hidden(),
+                f"{BROWSER_NAME}: les champs de l'étape suivante sont visibles prématurément",
+            )
+            assert_true(
+                page.locator('form[data-character-form] button[type="submit"]').is_hidden(),
+                f"{BROWSER_NAME}: envoi accessible avant l'écran de consentement",
+            )
+            page.locator('[data-registry-wizard-next]').click()
+            assert_true(
+                "Étape 2 sur 9" in wizard.locator(".registry-wizard-step").inner_text(),
+                f"{BROWSER_NAME}: passage à l'étape 2 impossible",
+            )
+            # L'apparence (étape 2) est facultative; la personnalité
+            # (étape 3) contient huit réponses obligatoires.
+            page.locator('[data-registry-wizard-next]').click()
+            assert_true(
+                "Étape 3 sur 9" in wizard.locator(".registry-wizard-step").inner_text(),
+                f"{BROWSER_NAME}: l'apparence facultative ne doit pas bloquer la progression",
+            )
+            page.locator('[data-registry-wizard-next]').click()
+            assert_true(
+                "Étape 3 sur 9" in wizard.locator(".registry-wizard-step").inner_text()
+                and page.locator('[data-registry-wizard-error]').is_visible(),
+                f"{BROWSER_NAME}: le Registre doit bloquer une étape requise incomplète",
+            )
+            page.locator('[data-registry-wizard-back]').click()
+            page.locator('[data-registry-wizard-back]').click()
+            assert_true(
+                "Étape 1 sur 9" in wizard.locator(".registry-wizard-step").inner_text(),
+                f"{BROWSER_NAME}: retour en arrière du Registre impossible",
+            )
+            assert_true(
+                page.locator('label[for="registry-pseudo"]').count() == 1
+                and page.locator('label[for="registry-email"]').count() == 1,
+                f"{BROWSER_NAME}: labels du compte Registre non associés",
+            )
+            # Un submit synthétique avant la dernière étape ne doit atteindre
+            # aucun listener métier; il ne réalise aucun envoi réseau.
+            blocked_early_submit = page.evaluate("""() => {
+                const form = document.querySelector('[data-character-form]');
+                let reachedBusiness = false;
+                const observer = () => { reachedBusiness = true; };
+                form.addEventListener('submit', observer);
+                const event = new Event('submit', {bubbles: true, cancelable: true});
+                form.dispatchEvent(event);
+                form.removeEventListener('submit', observer);
+                return event.defaultPrevented && !reachedBusiness;
+            }""")
+            assert_true(
+                blocked_early_submit,
+                f"{BROWSER_NAME}: soumission prématurée du Registre non interceptée",
+            )
+            page.locator('[data-registry-wizard-back]').click()
             wait_for_assistant(page)
             assert_true(page.evaluate("window.__SINJIRA_ASSISTANT__.contextLabel") == "Registre des Consciences", f"{BROWSER_NAME}: contexte Registre invalide")
             page.locator(".sinjira-assistant-toggle").click()
@@ -1243,7 +1442,15 @@ def run() -> None:
         # Fermer au toucher hors du panneau, sans attendre un nouveau clic
         # sur le bouton. Le bas de page est hors du menu en surimpression.
         toggle.tap()
-        mobile_page.locator("footer").tap()
+        # V1 accueil SINJIRA : toucher un lien du pied de page pourrait
+        # naviguer vers une autre section (et y charger l'assistant) au
+        # lieu de valider la fermeture du menu. La zone copyright n'a
+        # aucun lien : le test reste un VRAI tap en dehors du panneau.
+        mobile_page.locator("footer .footer-bottom > span").first.tap()
+        assert_true(
+            mobile_page.url.rstrip("/") == BASE_URL.rstrip("/"),
+            f"{BROWSER_NAME}: le tap hors menu a navigué au lieu de rester sur l'accueil: {mobile_page.url}",
+        )
         assert_true(
             toggle.get_attribute("aria-expanded") == "false",
             f"{BROWSER_NAME}: toucher hors du menu ne le ferme pas",
@@ -1251,7 +1458,14 @@ def run() -> None:
 
         # L'état du menu ne doit pas rester ouvert si on passe au bureau.
         toggle.tap()
+        # La tablette (1000 px) utilise maintenant le menu compact;
+        # seule la largeur bureau (>=1021 px) doit refermer ce panneau.
         mobile_page.set_viewport_size({"width": 1000, "height": 844})
+        assert_true(
+            toggle.get_attribute("aria-expanded") == "true",
+            f"{BROWSER_NAME}: le menu tablette s'est refermé avant 1021 px",
+        )
+        mobile_page.set_viewport_size({"width": 1080, "height": 844})
         mobile_page.wait_for_function(
             "document.querySelector('[data-menu-toggle]').getAttribute('aria-expanded') === 'false'",
             timeout=5_000,
@@ -1281,6 +1495,34 @@ def run() -> None:
             assert_true(mobile_panel.is_visible(), f"{BROWSER_NAME}: assistant mobile SINJIRA ne s’ouvre pas")
             assistant_overflow = mobile_page.evaluate("document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2")
             assert_true(assistant_overflow, f"{BROWSER_NAME}: assistant crée un débordement horizontal en 390 px")
+            for width, height in ((390, 360), (320, 420), (240, 420)):
+                mobile_page.set_viewport_size({"width": width, "height": height})
+                visible = mobile_page.evaluate("""() => {
+                  const panel = document.querySelector('#sinjira-assistant-panel');
+                  const children = ['.sinjira-assistant-close', '.sinjira-assistant-input',
+                                    '.sinjira-assistant-send', '.sinjira-assistant-privacy'];
+                  const bounds = node => {
+                    const b = node.getBoundingClientRect();
+                    return {left:b.left,right:b.right,top:b.top,bottom:b.bottom,
+                            height:b.height,width:b.width};
+                  };
+                  return {panel:bounds(panel),
+                          children:children.map(sel => ({selector:sel, ...bounds(panel.querySelector(sel))})),
+                          overflow:document.documentElement.scrollWidth > innerWidth + 2};
+                }""")
+                assert_true(not visible["overflow"] and visible["panel"]["top"] >= -2
+                            and visible["panel"]["bottom"] <= height + 2,
+                            f"{BROWSER_NAME}: panneau assistant déborde à {width}x{height}: {visible}")
+                for child in visible["children"]:
+                    assert_true(child["top"] >= visible["panel"]["top"] - 2
+                                and child["bottom"] <= visible["panel"]["bottom"] + 2
+                                and child["left"] >= visible["panel"]["left"] - 2
+                                and child["right"] <= visible["panel"]["right"] + 2,
+                                f"{BROWSER_NAME}: commande ou confidentialité masquée à "
+                                f"{width}x{height}: {child}")
+                    if child["selector"] in (".sinjira-assistant-close", ".sinjira-assistant-send"):
+                        assert_true(child["height"] >= 43.5,
+                                    f"{BROWSER_NAME}: cible tactile assistant sous 44px à {width}x{height}")
             mobile_page.keyboard.press("Escape")
 
         # Le Centre Vie privée SINJIRA est volontairement exclu des essais
@@ -1289,12 +1531,12 @@ def run() -> None:
         # Navigation de continuité : les pages secondaires et les pages 404
         # doivent utiliser les mêmes correctifs clavier que les accueils.
         for route, script_version in (
-            ("404.html", "site.js?v=24.4.100"),
-            ("univers.html", "site.js?v=24.4.100"),
-            ("transparence-ia.html", "site.js?v=24.4.100"),
-            ("confidentialite.html", "site.js?v=24.4.100"),
-            ("gouvernance-vie-privee.html", "site.js?v=24.4.100"),
-            ("avis-legal.html", "site.js?v=24.4.100"),
+            ("404.html", "site.js?v=24.4.101"),
+            ("univers.html", "site.js?v=24.4.101"),
+            ("transparence-ia.html", "site.js?v=24.4.101"),
+            ("confidentialite.html", "site.js?v=24.4.101"),
+            ("gouvernance-vie-privee.html", "site.js?v=24.4.101"),
+            ("avis-legal.html", "site.js?v=24.4.101"),
             ("projets/projet-nova/registre-rencontres.html", "script.js?v=26.1.0"),
             ("projets/projet-nova/visionneuse.html?doc=resume", "script.js?v=26.1.0"),
             ("projets/projet-nova/document.html?doc=corpus", "script.js?v=26.1.0"),
@@ -1558,6 +1800,43 @@ def run() -> None:
         )
 
         mobile.close()
+
+        # Même lorsque le JavaScript principal ne charge pas, les liens
+        # publics SINJIRA doivent rester accessibles au clavier et au toucher.
+        # Aucune session privée n'est utilisée pour ce test de repli.
+        fallback = browser.new_context(
+            locale="fr-CA",
+            viewport={"width": 320, "height": 720},
+            reduced_motion="reduce",
+        )
+        fallback.route("**/assets/js/site.js*", lambda route: route.abort())
+        fallback_page = fallback.new_page()
+        response = fallback_page.goto(
+            urljoin(BASE_URL, "projets/sinjira/romans/"),
+            wait_until="domcontentloaded", timeout=30_000,
+        )
+        assert_true(response is not None and response.status < 400,
+                    f"{BROWSER_NAME}: fiche Romans inaccessible sans site.js")
+        public_nav = fallback_page.locator('[data-main-nav]')
+        assert_true(public_nav.is_visible(),
+                    f"{BROWSER_NAME}: navigation masquée lorsque site.js est bloqué")
+        assert_true(public_nav.locator('a[href="/projets/sinjira/"]').is_visible(),
+                    f"{BROWSER_NAME}: lien portail SINJIRA masqué sans JavaScript")
+        assert_true(fallback_page.locator('[data-menu-toggle]').is_hidden(),
+                    f"{BROWSER_NAME}: bouton de menu inactif affiché sans JavaScript")
+        assert_true(
+            fallback_page.locator('.site-header').evaluate(
+                "(el) => getComputedStyle(el).position !== 'sticky'"
+            ),
+            f"{BROWSER_NAME}: en-tête de repli bloque le défilement mobile",
+        )
+        assert_true(
+            fallback_page.evaluate(
+                "document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2"
+            ),
+            f"{BROWSER_NAME}: débordement horizontal du menu de repli à 320px",
+        )
+        fallback.close()
 
         account_url = urljoin(BASE_URL, "compte/")
         account_response = context.request.get(account_url, timeout=30_000)

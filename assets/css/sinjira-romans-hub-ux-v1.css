@@ -1,0 +1,72 @@
+/* Bibliothèque SINJIRA : repères de lecture utilisables au clavier et au doigt.
+ * Couche locale à la page des romans, sans effet sur le compte ni Nova. */
+body[data-reader-page="novel"]{
+  --project-accent:#ff7059;
+  --project-accent-2:#d88cff;
+}
+body[data-reader-page="novel"] .site-header .brand img{border-radius:50%}
+body[data-reader-page="novel"] .page-hero .project-back{
+  display:inline-flex;
+  align-items:center;
+  min-height:44px;
+  margin-bottom:26px;
+}
+body[data-reader-page="novel"] .sinjira-romans-jump-nav{
+  border-bottom:1px solid rgba(255,255,255,.15);
+  background:#0b101e;
+}
+body[data-reader-page="novel"] .sinjira-romans-jump-nav .container{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:10px;
+  padding-block:13px;
+}
+body[data-reader-page="novel"] .sinjira-romans-jump-nav a{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:48px;
+  padding:10px 15px;
+  border:1px solid rgba(255,165,148,.35);
+  border-radius:12px;
+  background:rgba(255,111,89,.07);
+  color:#fff;
+  font-size:.92rem;
+  font-weight:700;
+  line-height:1.3;
+  text-align:center;
+  text-decoration:none;
+}
+body[data-reader-page="novel"] .sinjira-romans-jump-nav a:is(:hover,:focus-visible){
+  border-color:#ffb8a8;
+  background:rgba(255,111,89,.18);
+}
+body[data-reader-page="novel"] .sinjira-romans-jump-nav a:focus-visible{
+  outline:3px solid #ffb8a8;
+  outline-offset:2px;
+}
+body[data-reader-page="novel"] :is(#livre-1,#precommande,#livre-2,#roman-4,#commentaires){
+  scroll-margin-top:164px;
+}
+body[data-reader-page="novel"] .sinjira-romans-document-status{margin-top:18px}
+body[data-reader-page="novel"] .sinjira-romans-integral-status{margin-top:12px}
+@media(max-width:640px){
+  body[data-reader-page="novel"] .sinjira-romans-jump-nav .container{
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;
+    scroll-padding-inline:16px;
+    padding-block:12px;
+  }
+  body[data-reader-page="novel"] .sinjira-romans-jump-nav a{
+    flex:0 0 auto;
+    min-height:48px;
+    white-space:normal;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  body[data-reader-page="novel"] .sinjira-romans-jump-nav{scroll-behavior:auto}
+}
