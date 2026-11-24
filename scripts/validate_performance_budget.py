@@ -2,11 +2,14 @@
 from pathlib import Path
 from urllib.parse import urlparse
 import re
+import hashlib
+import json
 
 ROOT = Path(__file__).resolve().parents[1]
 TEXT_LIMITS = {".js": 550_000, ".css": 550_000, ".html": 650_000}
 IMAGE_LIMIT = 1_500_000
-HOME_CARD_IMAGE_TOTAL_LIMIT = 1_250_000
+HOME_CARD_IMAGE_TOTAL_LIMIT = 200_000
+HOME_THUMBNAIL_LIMIT = 100_000
 EXCLUDED_DIRS = {".git", "node_modules", ".venv", "dist", "build"}
 CRITICAL_PAGES = [
     ROOT / "index.html",
@@ -86,6 +89,23 @@ def main() -> int:
     if stylesheet_count > 7:
         errors.append(f"index.html: {stylesheet_count} feuilles de style; budget maximal 7.")
 
+    manifest = json.loads((ROOT / "scripts/home_thumbnails_manifest.json").read_text("utf-8"))
+    expected = {f"sinjira-{name}-home-{width}.webp"
+                for name in ("registre", "jeux", "communaute") for width in (160, 336)}
+    if set(manifest) != expected:
+        errors.append("Manifeste des six miniatures incomplet.")
+    for name in sorted(expected):
+        asset = ROOT / "assets/media" / name
+        if not asset.is_file():
+            errors.append(f"Miniature manquante : {name}")
+            continue
+        data = asset.read_bytes()
+        info = manifest.get(name, {})
+        if (len(data) != info.get("bytes") or len(data) >= HOME_THUMBNAIL_LIMIT
+                or hashlib.sha256(data).hexdigest() != info.get("sha256")
+                or data[:4] != b"RIFF" or data[8:12] != b"WEBP"):
+            errors.append(f"Miniature invalide ou modifiée : {name}")
+
     cards = re.findall(r'<a class="home-project".*?</a>', home, flags=re.I | re.S)
     if len(cards) != 4:
         errors.append(f"index.html: 4 cartes principales attendues, trouvé {len(cards)}.")
@@ -110,7 +130,22 @@ def main() -> int:
             if asset is None or not asset.is_file():
                 errors.append(f"index.html: image locale de la carte {idx} absente.")
             else:
-                card_image_bytes += asset.stat().st_size
+                candidates = [asset]
+                srcset = re.search(r'\bsrcset="([^"]+)"', tag)
+                if idx > 1:
+                    name = ("registre", "jeux", "communaute")[idx - 2]
+                    expected_set = (f"/assets/media/sinjira-{name}-home-160.webp 160w, "
+                                    f"/assets/media/sinjira-{name}-home-336.webp 336w")
+                    if not srcset or srcset.group(1) != expected_set or not re.search(r'\bsizes="[^"]+"', tag):
+                        errors.append(f"index.html: variantes adaptatives de la carte {idx} absentes.")
+                    if srcset:
+                        for item in srcset.group(1).split(","):
+                            candidate = resolve_asset(ROOT / "index.html", item.strip().split()[0])
+                            if candidate is None or not candidate.is_file():
+                                errors.append(f"index.html: variante de la carte {idx} manquante.")
+                            else:
+                                candidates.append(candidate)
+                card_image_bytes += max(candidate.stat().st_size for candidate in candidates)
         print(f"Images des quatre cartes accueil : {card_image_bytes:,} octets.")
         if card_image_bytes > HOME_CARD_IMAGE_TOTAL_LIMIT:
             errors.append(f"index.html: poids cumulé des cartes {card_image_bytes:,} > {HOME_CARD_IMAGE_TOTAL_LIMIT:,} octets.")

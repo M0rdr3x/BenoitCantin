@@ -67,10 +67,10 @@ test('installation publique et nettoyage limité aux caches de ce site', async (
   h.stores.set('benoitcantin-v24-4-95-public-7', new Map());
   h.stores.set('benoitcantin-v24-4-95-public-8', new Map());
   h.stores.set('benoitcantin-v24-4-95-public-9', new Map());
-  h.stores.set('benoitcantin-v24-4-95-public-12', new Map());
+  h.stores.set('benoitcantin-v24-4-95-public-13', new Map());
   await h.lifecycle('install');
   await h.lifecycle('activate');
-  assert.equal(h.stores.has('benoitcantin-v24-4-95-public-12'), false);
+  assert.equal(h.stores.has('benoitcantin-v24-4-95-public-13'), false);
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-4'), false);
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-6'), false);
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-7'), false);
@@ -173,4 +173,15 @@ test('reprise hors ligne et anciens liens : destinations fixes, sans écriture',
     ['/projets/sinjira/romans/?page=2#sommaire']);
   assert.deepEqual(run('404', '/inconnue').calls, []);
   assert.deepEqual(run('offline', '/sinjira/').calls, []);
+});
+
+test('miniatures publiques disponibles hors ligne aux deux densités', async () => {
+  const h = harness(); await h.lifecycle('install'); h.setOnline(false);
+  for (const name of ['registre','jeux','communaute']) {
+    for (const width of [160,336]) {
+      const path = `/assets/media/sinjira-${name}-home-${width}.webp`;
+      assert.equal(await (await h.request(path, {destination:'image'})).text(), 'precache:' + path);
+    }
+  }
+  assert.equal(h.writes.length, 0);
 });

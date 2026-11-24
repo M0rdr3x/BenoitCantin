@@ -9,6 +9,10 @@ on:
       - 'assets/media/sinjira-registre.webp'
       - 'assets/media/sinjira-jeux.webp'
       - 'assets/media/sinjira-communaute.webp'
+      - 'assets/media/sinjira-*-home-*.webp'
+      - 'scripts/home_thumbnails_manifest.json'
+      - 'index.html'
+      - 'scripts/validate_performance_budget.py'
 
 permissions:
   contents: read
@@ -27,4 +31,6 @@ jobs:
       - name: Installer le client Playwright épinglé
         run: python -m pip install --disable-pip-version-check "playwright==1.61.0"
       - name: Générer les six miniatures publiques
-        run: python scripts/generate_home_thumbnails.py --output /tmp/sinjira-home-thumbnails --emit-base64
+        run: python scripts/generate_home_thumbnails.py --output /tmp/sinjira-home-thumbnails
+      - name: Vérifier les miniatures intégrées et le budget
+        run: python scripts/validate_performance_budget.py
