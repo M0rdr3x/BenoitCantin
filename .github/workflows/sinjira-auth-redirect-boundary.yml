@@ -9,6 +9,7 @@ on:
       - 'assets/js/sinjira-mfa-v24-4-66.js'
       - 'scripts/test_sinjira_account_local_redirect.cjs'
       - 'assets/js/sinjira-supabase.js'
+      - 'assets/js/sinjira-recovery-v24-4-99.js'
       - 'compte/connexion.html'
       - 'compte/inscription.html'
       - 'compte/mot-de-passe-oublie.html'
@@ -25,6 +26,7 @@ on:
       - 'assets/js/sinjira-mfa-v24-4-66.js'
       - 'scripts/test_sinjira_account_local_redirect.cjs'
       - 'assets/js/sinjira-supabase.js'
+      - 'assets/js/sinjira-recovery-v24-4-99.js'
       - 'compte/connexion.html'
       - 'compte/inscription.html'
       - 'compte/mot-de-passe-oublie.html'
@@ -57,6 +59,7 @@ jobs:
         run: |
           node --check assets/js/sinjira-auth-route.js
           node --check assets/js/sinjira-supabase.js
+          node --check assets/js/sinjira-recovery-v24-4-99.js
           node --check assets/js/sinjira-account.js
           node --check assets/js/sinjira-mfa-v24-4-66.js
           node --check scripts/test_sinjira_auth_redirect_boundary.cjs
