@@ -67,6 +67,11 @@ assertions++;
 location.search = '?next=%2Fapp%2F';
 assert.equal(nextDestination(), '/app/');
 assertions++;
+for (const query of ['?next=%2Fapp%2F&next=%2Fcompte%2F','?next=%2Fapp%2F&n%65xt=%2Fapp%2F','?next=%2Fapp%2F&next=%2F%2Fevil.invalid']) {
+  location.search = query;
+  assert.equal(nextDestination(), HOME);
+  assertions++;
+}
 location.search = '';
 assert.equal(nextDestination('/compte/bibliotheque.html'), '/compte/bibliotheque.html');
 assertions++;
