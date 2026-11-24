@@ -12,13 +12,12 @@ function harness() {
   const writes = [];
   const requests = [];
   let online = true;
-  let reply = () => new Response('public', { status: 200 });
+  let reply = req => new Response(req.credentials === 'omit' ? 'precache:' + new URL(req.url).pathname : 'public', { status: 200 });
   const key = request => new URL(typeof request === 'string' ? request : request.url, ORIGIN).href;
   const open = async name => {
     if (!stores.has(name)) stores.set(name, new Map());
     const store = stores.get(name);
     return {
-      async addAll(paths) { for (const path of paths) store.set(key(path), new Response('precache:' + path)); },
       async put(req, response) { writes.push({ cache: name, url: key(req) }); store.set(key(req), response); },
       async match(req) { return store.get(key(req)); },
     };
@@ -71,6 +70,12 @@ test('installation publique et nettoyage limité aux caches de ce site', async (
   await h.lifecycle('install');
   await h.lifecycle('activate');
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-13'), false);
+  assert.ok(h.requests.length > 0);
+  for (const req of h.requests) {
+    assert.equal(req.credentials, 'omit');
+    assert.equal(req.cache, 'no-store');
+    assert.equal(req.redirect, 'error');
+  }
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-4'), false);
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-6'), false);
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-7'), false);
@@ -176,7 +181,7 @@ test('reprise hors ligne et anciens liens : destinations fixes, sans écriture',
 });
 
 test('miniatures publiques disponibles hors ligne aux deux densités', async () => {
-  const h = harness(); await h.lifecycle('install'); h.setOnline(false);
+  const h = harness(); await h.lifecycle('install'); h.writes.length = 0; h.setOnline(false);
   for (const name of ['registre','jeux','communaute']) {
     for (const width of [160,336]) {
       const path = `/assets/media/sinjira-${name}-home-${width}.webp`;
@@ -184,4 +189,39 @@ test('miniatures publiques disponibles hors ligne aux deux densités', async () 
     }
   }
   assert.equal(h.writes.length, 0);
+});
+
+test('précache refuse une réponse sensible et ne conserve aucun cache partiel', async () => {
+  const cases = [
+    () => new Response('private', { headers: { 'Cache-Control': 'private' } }),
+    () => new Response('no-store', { headers: { 'Cache-Control': 'no-store' } }),
+    () => new Response('cookie', { headers: { 'Vary': 'Accept-Encoding, Cookie' } }),
+    () => new Response('auth', { headers: { 'Vary': 'Authorization' } }),
+    () => new Response('session', { headers: { 'Set-Cookie': 'session=fictive' } }),
+    () => new Response('partial', { status: 206 }),
+    () => {
+      const resp = new Response('redirected');
+      Object.defineProperty(resp, 'redirected', { value: true });
+      return resp;
+    },
+  ];
+  for (const unsafe of cases) {
+    const h = harness();
+    h.setReply(req => new URL(req.url).pathname === '/offline.html' ? unsafe() : new Response('public'));
+    await assert.rejects(h.lifecycle('install'), /précache non admissible/);
+    assert.equal(h.writes.length, 0);
+    assert.deepEqual([...h.stores.keys()], ['another-app-cache']);
+  }
+});
+
+test('hors ligne, une entrée étrangère ne peut pas remplacer le cache public courant', async () => {
+  const h = harness();
+  const other = h.stores.get('another-app-cache');
+  other.set(ORIGIN + '/offline.html', new Response('foreign'));
+  other.set(ORIGIN + '/assets/css/site.css', new Response('foreign'));
+  await h.lifecycle('install');
+  h.setOnline(false);
+  const css = await h.request('/assets/css/site.css', { destination: 'style' });
+  assert.equal(await css.text(), 'precache:/assets/css/site.css');
+  assert.equal(await (await h.request('/not-in-cache.html')).text(), 'precache:/offline.html');
 });
