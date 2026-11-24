@@ -13,6 +13,7 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 SQL = ROOT / "security/candidates/sinjira_revoked_auth_session_device_rpcs.sql"
+PREFLIGHT = ROOT / "security/candidates/preflight_revoked_session_catalog_read_only.sql"
 
 FUNCTION_NAMES = (
     "security_after_password_recovery",
@@ -82,6 +83,57 @@ SOURCE_SHA256 = {
 
 def remove_comments(source: str) -> str:
     return "\n".join(line.split("--", 1)[0] for line in source.splitlines())
+
+
+def inspect_preflight(source: str) -> list[str]:
+    errors: list[str] = []
+    code = remove_comments(source).strip()
+    if not code.startswith("BEGIN TRANSACTION READ ONLY;") or not code.endswith("ROLLBACK;"):
+        errors.append("Prévol : transaction en lecture seule et ROLLBACK obligatoires")
+    if len(re.findall(r"(?im)^\s*(?:BEGIN|ROLLBACK)\b", code)) != 2:
+        errors.append("Prévol : transaction supplémentaire interdite")
+    if re.search(r"(?im)^\s*(?:INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|TRUNCATE|GRANT|REVOKE|COMMIT|CALL|DO|COPY)\b", code):
+        errors.append("Prévol : écriture ou changement de privilèges interdit")
+    if re.search(r"\bauth\s*\.\s*(?:sessions|users)\b", code, re.I):
+        errors.append("Prévol : accès aux lignes Auth interdit")
+    pairs = re.findall(r"\('([a-z_]+)',\s*'([0-9a-f]{64})'\)", code)
+    if len(pairs) != len(SOURCE_SHA256) or dict(pairs) != SOURCE_SHA256:
+        errors.append("Prévol : empreintes de référence différentes du candidat")
+    for marker in (
+        "FROM pg_catalog.pg_proc p",
+        "JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace",
+        "n.nspname = 'sinjira_security_internal'",
+        "pg_catalog.pg_get_functiondef(p.oid)",
+        "LEFT JOIN actual a ON a.name = e.name",
+        "WHEN count(a.name) = 0 THEN 'MISSING'",
+        "WHEN count(a.name) <> 1 THEN 'AMBIGUOUS_OVERLOAD'",
+        "WHEN bool_or(a.guard_present) THEN 'GUARD_ALREADY_PRESENT_REVIEW'",
+        "WHEN bool_and(a.definition_sha256 = e.definition_sha256) THEN 'MATCH_ORIGINAL'",
+        "ELSE 'DEFINITION_DRIFT'",
+    ):
+        if marker not in code:
+            errors.append("Prévol : contrôle obligatoire absent : " + marker)
+    return errors
+
+
+def self_test_preflight(source: str) -> None:
+    errors = inspect_preflight(source)
+    if errors:
+        raise AssertionError("; ".join(errors))
+    mutations = (
+        ("transaction non protégée", "BEGIN TRANSACTION READ ONLY;", "BEGIN;"),
+        ("validation écriture", "ROLLBACK;", "COMMIT;"),
+        ("empreinte falsifiée", SOURCE_SHA256[FUNCTION_NAMES[0]], "0" * 64),
+        ("fonction absente ignorée", "WHEN count(a.name) = 0 THEN 'MISSING'", ""),
+        ("surcharge ignorée", "WHEN count(a.name) <> 1 THEN 'AMBIGUOUS_OVERLOAD'", ""),
+        ("dérive acceptée", "ELSE 'DEFINITION_DRIFT'", "ELSE 'MATCH_ORIGINAL'"),
+        ("lecture données Auth", "FROM pg_catalog.pg_proc p", "FROM auth.sessions p"),
+        ("garde existant ignoré", "WHEN bool_or(a.guard_present) THEN 'GUARD_ALREADY_PRESENT_REVIEW'", ""),
+    )
+    for label, before, after in mutations:
+        if before not in source or not inspect_preflight(source.replace(before, after, 1)):
+            raise AssertionError("Prévol : mutation dangereuse non détectée : " + label)
+    print(f"OK : {len(mutations)} mutations du prévol catalogue rejetées.")
 
 
 def inspect(source: str) -> list[str]:
@@ -215,8 +267,23 @@ def main() -> int:
         print("ECHEC : SQL illisible")
         return 1
 
+    if not PREFLIGHT.is_file() or PREFLIGHT.is_symlink() or PREFLIGHT.stat().st_size > 20_000:
+        print("ECHEC : prévol catalogue absent ou invalide")
+        return 1
+    try:
+        preflight = PREFLIGHT.read_text(encoding="utf-8", errors="strict")
+    except (OSError, UnicodeError):
+        print("ECHEC : prévol catalogue illisible")
+        return 1
+    preflight_errors = inspect_preflight(preflight)
+    if preflight_errors:
+        for error in preflight_errors:
+            print("ECHEC : " + error)
+        return 1
+
     if args.self_test:
         try:
+            self_test_preflight(preflight)
             self_test(source)
             return 0
         except AssertionError as exc:
