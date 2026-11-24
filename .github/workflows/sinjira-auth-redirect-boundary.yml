@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'assets/js/sinjira-auth-route.js'
+      - 'assets/js/sinjira-auth-pages.js'
+      - 'assets/js/sinjira-security-center-v24-4-98.js'
       - 'assets/js/sinjira-account.js'
       - 'assets/js/sinjira-mfa-v24-4-66.js'
       - 'scripts/test_sinjira_account_local_redirect.cjs'
@@ -22,6 +24,8 @@ on:
     branches: [main]
     paths:
       - 'assets/js/sinjira-auth-route.js'
+      - 'assets/js/sinjira-auth-pages.js'
+      - 'assets/js/sinjira-security-center-v24-4-98.js'
       - 'assets/js/sinjira-account.js'
       - 'assets/js/sinjira-mfa-v24-4-66.js'
       - 'scripts/test_sinjira_account_local_redirect.cjs'
@@ -58,6 +62,8 @@ jobs:
       - name: Vérifier la syntaxe des modules et du banc d'essai
         run: |
           node --check assets/js/sinjira-auth-route.js
+          node --check assets/js/sinjira-auth-pages.js
+          node --check assets/js/sinjira-security-center-v24-4-98.js
           node --check assets/js/sinjira-supabase.js
           node --check assets/js/sinjira-recovery-v24-4-99.js
           node --check assets/js/sinjira-account.js
