@@ -1881,6 +1881,7 @@ def run() -> None:
             locale="fr-CA",
             viewport={"width": 320, "height": 720},
             reduced_motion="reduce",
+            service_workers="block",
         )
         fallback.route("**/assets/js/site.js*", lambda route: route.abort())
         fallback_page = fallback.new_page()
@@ -1895,6 +1896,8 @@ def run() -> None:
                     f"{BROWSER_NAME}: navigation masquée lorsque site.js est bloqué")
         assert_true(public_nav.locator('a[href="/projets/sinjira/"]').is_visible(),
                     f"{BROWSER_NAME}: lien portail SINJIRA masqué sans JavaScript")
+        assert_true(fallback_page.locator('[data-menu-toggle]').get_attribute("hidden") is not None,
+                    f"{BROWSER_NAME}: commande inactive non masquée par le HTML natif")
         assert_true(fallback_page.locator('[data-menu-toggle]').is_hidden(),
                     f"{BROWSER_NAME}: bouton de menu inactif affiché sans JavaScript")
         assert_true(

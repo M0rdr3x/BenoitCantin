@@ -370,6 +370,10 @@ def test_without_javascript(browser):
         for width in (320, 768, 1024):
             page.set_viewport_size({"width": width, "height": 760})
             verify(nav.is_visible(), f"liens inaccessibles sans JS à {width}px")
+            verify(page.locator("[data-menu-toggle]").is_hidden(),
+                   f"commande inactive visible sans JS à {width}px")
+            verify(page.locator("[data-menu-toggle]").get_attribute("hidden") is not None,
+                   "commande inactive non masquée nativement")
             verify(tuple(nav.locator("a").evaluate_all(
                 "(links) => links.map(a => new URL(a.href).pathname)"
             )) == NAV_PATHS,
