@@ -27,7 +27,9 @@ REQUIRED = {
     'taille texte bornée': 'const MAX_TEXT=6000;',
     'origine modèle fixe': "const TEMPLATE_ORIGIN='https://www.benoitcantin.com';",
     'préfixe modèle fixe': "const TEMPLATE_PATH_PREFIX='/projets/sinjira/jeux/fracture-du-reseau-mere/documents/';",
-    'redirections modèle refusées': "fetch(templateUrl(mode),{cache:'no-store',redirect:'error'})",
+    'redirections modèle refusées': "fetch(templateUrl(mode),{cache:'no-store',redirect:'error',signal:AbortSignal.timeout(TEMPLATE_FETCH_TIMEOUT_MS)})",
+    'signal modèle': 'signal:AbortSignal.timeout(TEMPLATE_FETCH_TIMEOUT_MS)',
+    'signal fournisseur': 'signal:AbortSignal.timeout(EMAIL_DELIVERY_TIMEOUT_MS)',
     'redirections fournisseur refusées': "const sent=await fetch('https://api.resend.com/emails',{\n      method:'POST',\n      redirect:'error',",
     'signature PDF vérifiée': "!=='%PDF-'",
     'destinataire compte': 'to:[user.email]',
@@ -51,6 +53,8 @@ FORBIDDEN = {
 
 REQUEST_LIMIT_RE = re.compile(r'\bMAX_REQUEST_BYTES\s*=\s*220_?000\s*;')
 TEMPLATE_LIMIT_RE = re.compile(r'\bMAX_TEMPLATE_BYTES\s*=\s*15\s*\*\s*1024\s*\*\s*1024\s*;')
+TEMPLATE_TIMEOUT_RE = re.compile(r'\bTEMPLATE_FETCH_TIMEOUT_MS\s*=\s*12_?000\s*;')
+EMAIL_TIMEOUT_RE = re.compile(r'\bEMAIL_DELIVERY_TIMEOUT_MS\s*=\s*8_?000\s*;')
 
 
 def require(errors: list[str], condition: bool, message: str) -> None:
@@ -77,6 +81,10 @@ def validate_text(source: str, config: str) -> list[str]:
             'MAX_REQUEST_BYTES doit rester exactement à 220000 octets.')
     require(errors, TEMPLATE_LIMIT_RE.search(source) is not None,
             'MAX_TEMPLATE_BYTES doit rester exactement à 15 Mio.')
+    require(errors, TEMPLATE_TIMEOUT_RE.search(source) is not None,
+            'Le délai absolu du modèle PDF doit rester de 12 secondes.')
+    require(errors, EMAIL_TIMEOUT_RE.search(source) is not None,
+            'Le délai du fournisseur courriel doit rester de 8 secondes.')
 
     auth_pos = source.find('const user=await requiredUser(req);')
     paid_pos = source.find('if(!PAID_EXTERNAL_SERVICES_ENABLED)')
@@ -88,6 +96,10 @@ def validate_text(source: str, config: str) -> list[str]:
             'Le corps ne doit pas être lu tant que le service payant est désactivé.')
     require(errors, provider_pos > parse_pos,
             'Le fournisseur externe doit rester derrière auth, garde payant et validation du corps.')
+    provider_signal_pos = source.find('signal:AbortSignal.timeout(EMAIL_DELIVERY_TIMEOUT_MS)', provider_pos)
+    provider_headers_pos = source.find('headers:{Authorization:`Bearer ${key}`', provider_pos)
+    require(errors, provider_pos < provider_signal_pos < provider_headers_pos,
+            'Le fournisseur doit recevoir le signal de délai avant les en-têtes du secret.')
 
     stream_pos = source.find('await readLimitedUtf8Body(req,MAX_REQUEST_BYTES)')
     reject_pos = source.find('if(!limited.ok)')
@@ -97,7 +109,7 @@ def validate_text(source: str, config: str) -> list[str]:
     require(errors, 0 <= stream_pos < reject_pos < raw_pos < utf8_pos < json_pos,
             'Le corps doit être limité en flux, rejeté en erreur puis parsé en JSON.')
 
-    fetch_template_pos = source.find("fetch(templateUrl(mode),{cache:'no-store',redirect:'error'})")
+    fetch_template_pos = source.find("fetch(templateUrl(mode),{cache:'no-store',redirect:'error',signal:AbortSignal.timeout(TEMPLATE_FETCH_TIMEOUT_MS)})")
     declared_template_pos = source.find("response.headers.get('content-length')")
     stream_template_pos = source.find('await readLimitedBinaryResponse(response,MAX_TEMPLATE_BYTES)')
     reject_template_pos = source.find('if(!limitedPdf.ok)')
@@ -184,7 +196,11 @@ def self_test() -> None:
         'limite requête augmentée': source.replace('MAX_REQUEST_BYTES=220_000;', 'MAX_REQUEST_BYTES=2_200_000;', 1),
         'mesure UTF-8 retirée': source.replace('new TextEncoder().encode(raw).byteLength', 'raw.length', 1),
         'no-store retiré': source.replace("  'Cache-Control':'private, no-store, max-age=0',\n", '', 1),
-        'redirections modèle autorisées': source.replace("fetch(templateUrl(mode),{cache:'no-store',redirect:'error'})", "fetch(templateUrl(mode),{cache:'no-store',redirect:'follow'})", 1),
+        'redirections modèle autorisées': source.replace("fetch(templateUrl(mode),{cache:'no-store',redirect:'error',signal:AbortSignal.timeout(TEMPLATE_FETCH_TIMEOUT_MS)})", "fetch(templateUrl(mode),{cache:'no-store',redirect:'follow',signal:AbortSignal.timeout(TEMPLATE_FETCH_TIMEOUT_MS)})", 1),
+        'signal modèle retiré': source.replace('signal:AbortSignal.timeout(TEMPLATE_FETCH_TIMEOUT_MS)', 'signal:null', 1),
+        'délai modèle affaibli': source.replace('TEMPLATE_FETCH_TIMEOUT_MS=12000;', 'TEMPLATE_FETCH_TIMEOUT_MS=120000;', 1),
+        'signal fournisseur retiré': source.replace('signal:AbortSignal.timeout(EMAIL_DELIVERY_TIMEOUT_MS)', 'signal:null', 1),
+        'délai fournisseur affaibli': source.replace('EMAIL_DELIVERY_TIMEOUT_MS=8000;', 'EMAIL_DELIVERY_TIMEOUT_MS=80000;', 1),
         'redirections fournisseur autorisées': source.replace("      redirect:'error',", "      redirect:'follow',", 1),
         'limite modèle augmentée': source.replace('MAX_TEMPLATE_BYTES=15*1024*1024;', 'MAX_TEMPLATE_BYTES=150*1024*1024;', 1),
         'signature PDF retirée': source.replace("  if(bytes.length<5||String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-')throw new Error('PLAYER_SHEET_TEMPLATE_NOT_PDF');\n", '', 1),
