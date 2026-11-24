@@ -198,6 +198,28 @@ def run() -> None:
             f"{BROWSER_NAME}: contact officiel absent du pied de page SINJIRA",
         )
 
+        # Cibles tactiles du hub Univers : contrôler la géométrie, pas seulement le CSS.
+        for width in (320, 390, 1440):
+            touch_context = browser.new_context(
+                viewport={"width": width, "height": 760},
+                locale="fr-CA", service_workers="block", java_script_enabled=False,
+            )
+            try:
+                touch_page = touch_context.new_page()
+                touch_page.goto(urljoin(BASE_URL, "projets/sinjira/"),
+                                wait_until="load", timeout=30_000)
+                targets = touch_page.locator(".site-footer .footer-col a")
+                assert_true(targets.count() >= 10, "liens du pied de page absents")
+                for link in targets.all():
+                    bounds = link.bounding_box()
+                    assert_true(bounds is not None and bounds["height"] >= 43.5
+                                and bounds["width"] >= 43.5,
+                                f"{BROWSER_NAME}: cible du pied de page trop petite à {width}px")
+                assert_true(touch_page.evaluate("document.documentElement.scrollWidth <= innerWidth + 2"),
+                            f"{BROWSER_NAME}: Univers hors écran à {width}px")
+            finally:
+                touch_context.close()
+
         page.goto(urljoin(BASE_URL, "contact.html"), wait_until="domcontentloaded", timeout=30_000)
         assert_true(
             page.locator('a[href="mailto:sinjiraofficiel@gmail.com"]').count() >= 2,
