@@ -262,8 +262,8 @@ def validate_install_runtime(errors: list[str]) -> None:
         ('Sur iPhone/iPad', 'Aide d’installation iPhone/iPad absente.'),
         ('display-mode: standalone', 'Détection du mode installé absente.'),
         ('loadMobileAccountShell', 'Chargement de la continuité mobile du compte absent.'),
-        ('sinjira-mobile-account-shell-v24-4-95.css?v=24.4.96', 'Style de continuité mobile V24.4.95 non chargé.'),
-        ('sinjira-mobile-account-shell-v24-4-95.js?v=24.4.98', 'Runtime de continuité mobile V24.4.95 non chargé.'),
+        ('sinjira-mobile-account-shell-v24-4-95.css?v=24.4.99', 'Style de continuité mobile V24.4.95 non chargé.'),
+        ('sinjira-mobile-account-shell-v24-4-95.js?v=24.4.99', 'Runtime de continuité mobile V24.4.95 non chargé.'),
     ]:
         if marker not in text:
             errors.append(message)
@@ -272,7 +272,7 @@ def validate_install_runtime(errors: list[str]) -> None:
     exact_card_selector = "d.querySelector('.sinjira-pwa-install[data-sinjira-pwa-install]')"
     if text.count(exact_card_selector) < 3 or "d.querySelector('[data-sinjira-pwa-install]')" in text:
         errors.append("Le runtime PWA peut confondre sa balise script avec la carte interactive.")
-    if '/assets/js/sinjira-pwa-install.js?v=24.4.97' not in site_text:
+    if '/assets/js/sinjira-pwa-install.js?v=24.4.99' not in site_text:
         errors.append('site.js ne charge pas le runtime PWA historique compatible.')
     if 'serviceWorker.register' in session_text:
         errors.append('v19-session.js enregistre encore un deuxième Service Worker.')
@@ -290,6 +290,15 @@ def validate_install_runtime(errors: list[str]) -> None:
                    'window.requestAnimationFrame(revealActiveLink)', "window.addEventListener('resize'"]:
         if marker not in shell_text:
             errors.append(f'Dock compte: révélation de la rubrique active absente: {marker}')
+    for marker in ['function editingControl(element)', "document.addEventListener('focusin',updateTypingState)",
+                   "document.addEventListener('focusout'", "'sinjira-account-typing'"]:
+        if marker not in shell_text:
+            errors.append('Le dock mobile ne libère plus les champs pendant la saisie: ' + marker)
+    for marker in ['sinjira-mobile-account-shell.sinjira-account-typing',
+                   '.sinjira-account-mobile-nav,', '.sinjira-pwa-install{',
+                   'display:none!important']:
+        if marker not in shell_css:
+            errors.append('Les styles du compte ne cachent plus le dock pendant la saisie: ' + marker)
     for forbidden in ['/compte/connexion.html","label','/compte/inscription.html","label']:
         if forbidden in shell_text:
             errors.append('La navigation mobile pourrait être injectée dans un flux Auth.')

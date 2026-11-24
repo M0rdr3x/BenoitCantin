@@ -47,6 +47,28 @@
   }
   document.body.appendChild(nav);
 
+  // Le clavier virtuel réduit la zone visible sur téléphone. Éviter que
+  // la barre fixe couvre le champ édité; elle revient dès la fin de saisie.
+  // Ne masquer ni les boutons, ni les cases à cocher, ni les choix radio.
+  function editingControl(element){
+    if(!element||!element.matches)return false;
+    if(element.matches('textarea,select,[contenteditable="true"],[role="textbox"]')||
+       element.closest('[contenteditable="true"]'))return true;
+    if(!element.matches('input'))return false;
+    var type=(element.getAttribute('type')||'text').toLowerCase();
+    return ['checkbox','radio','button','submit','reset','range','color',
+      'file','hidden','image'].indexOf(type)===-1;
+  }
+  function updateTypingState(){
+    document.body.classList.toggle('sinjira-account-typing',
+      editingControl(document.activeElement));
+  }
+  document.addEventListener('focusin',updateTypingState);
+  document.addEventListener('focusout',function(){
+    window.requestAnimationFrame(updateTypingState);
+  });
+  updateTypingState();
+
   // Sur 240 px et en zoom fort, le dock est défilant. Ne jamais laisser
   // la rubrique en cours hors de vue au chargement ou après une rotation.
   // On n'intervient pas lors d'un balayage manuel (aucun listener scroll).
