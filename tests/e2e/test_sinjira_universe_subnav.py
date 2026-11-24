@@ -37,10 +37,24 @@ def test_sources() -> None:
         source = ROOT / page.lstrip("/") / "index.html"
         html = source.read_text(encoding="utf-8")
         assert html.count("sinjira-universe-nav-v2.css?v=2.0.1") == 1, page
-        assert html.count("sinjira-universe-nav-v2.js?v=2.0.0") == 1, page
+        assert html.count("sinjira-universe-nav-v2.js?v=2.0.1") == 1, page
         assert 'class="universe-subnav"' in html, page
         assert 'aria-current="page"' in html, page
     assert "démo de validation de 62 pages" not in (ROOT / "projets/sinjira/index.html").read_text("utf-8")
+
+
+def assert_current_visible(page, path, width):
+    # Une rubrique plus large que le ruban doit au moins montrer son début.
+    page.wait_for_function("""() => {
+      const strip = document.querySelector('nav.universe-subnav .container');
+      const active = strip?.querySelector('a[aria-current="page"]');
+      if (!active) return false;
+      const link = active.getBoundingClientRect();
+      const left = strip.getBoundingClientRect().left + strip.clientLeft;
+      const right = left + strip.clientWidth;
+      return link.left >= left - 3 &&
+        (link.width > strip.clientWidth ? link.left <= left + 3 : link.right <= right + 3);
+    }""", timeout=5000)
 
 
 def main() -> None:
@@ -87,6 +101,7 @@ def main() -> None:
                         assert current.evaluate("(link) => new URL(link.href).pathname") == path, (
                             path, width, "rubrique active incorrecte"
                         )
+                        assert_current_visible(page, path, width)
                         previous = nav.locator("button.universe-scroll-button").nth(0)
                         following = nav.locator("button.universe-scroll-button").nth(1)
                         assert previous.get_attribute("aria-controls") == strip.get_attribute("id")
@@ -108,6 +123,11 @@ def main() -> None:
                             )
                         else:
                             assert not previous.is_visible() and not following.is_visible(), (path, width)
+                        if width == 1440:
+                            page.set_viewport_size({"width": 240, "height": 820})
+                            assert_current_visible(page, path, 240)
+                            page.set_viewport_size({"width": 390, "height": 820})
+                            assert_current_visible(page, path, 390)
                         print(f"OK {ENGINE}: {path} — {width}px")
                     finally:
                         context.close()
