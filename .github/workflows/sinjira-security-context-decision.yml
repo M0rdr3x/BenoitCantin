@@ -1,0 +1,42 @@
+name: Sécurité Edge — décisions de contexte
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/functions/security-context/**'
+      - 'scripts/test_sinjira_security_context_decision.cjs'
+      - 'scripts/validate_security_context_request_security.py'
+      - '.github/workflows/sinjira-security-context-decision.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/security-context/**'
+      - 'scripts/test_sinjira_security_context_decision.cjs'
+      - 'scripts/validate_security_context_request_security.py'
+      - '.github/workflows/sinjira-security-context-decision.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  context-boundary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sans jeton persistant
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Node épinglé
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '22.16.0'
+          package-manager-cache: false
+      - name: Vérifier la frontière des décisions
+        run: node scripts/test_sinjira_security_context_decision.cjs
+      - name: Vérifier les protections HTTP existantes
+        run: |
+          python3 scripts/validate_security_context_request_security.py --self-test
+          python3 scripts/validate_security_context_request_security.py
