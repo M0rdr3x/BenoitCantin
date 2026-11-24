@@ -150,6 +150,63 @@ async function recoveryRevocationTests(){
   checks+=3;
 }
 
+function deviceEntropyTests(){
+  for(const file of ['sinjira-auth-pages.js','sinjira-recovery-v24-4-99.js','sinjira-security-center-v24-4-98.js']){
+    const source=fs.readFileSync(path.join(ROOT,'assets/js',file),'utf8');
+    const start=source.indexOf('function randomDeviceKey(){');
+    const end=source.indexOf('\n}',start);
+    assert.ok(start>=0&&end>start,file+': générateur absent');
+    const body=source.slice(start,end+2);
+    function generate(crypto){
+      const ctx={crypto,Uint8Array,Array};
+      vm.runInNewContext(body+'\nglobalThis.generate=randomDeviceKey;',ctx,{timeout:1000});
+      return ctx.generate();
+    }
+    const uuid='12345678-1234-4234-8234-123456789abc';
+    eq(generate({randomUUID:()=>uuid}),uuid,file+': UUID CSPRNG');
+    let requested=0;
+    const secureBytes=bytes=>{requested=bytes.length;bytes.fill(0xab);return bytes;};
+    eq(generate({getRandomValues:secureBytes}),'sinjira-'+'ab'.repeat(24),file+': repli cryptographique');
+    eq(requested,24,file+': 192 bits demandés');
+    eq(generate({randomUUID(){throw Error('unavailable')},getRandomValues:secureBytes}),'sinjira-'+'ab'.repeat(24),file+': UUID indisponible');
+    for(const crypto of [undefined,{}, {randomUUID(){throw Error('unavailable')}}]){
+      assert.throws(()=>generate(crypto),/SECURITY_CRYPTO_UNAVAILABLE/);checks++;
+    }
+    assert.throws(()=>generate({getRandomValues(){throw Error('entropy failed')}}),/entropy failed/);checks++;
+    assert.ok(!/Date\.now|Math\.random|\.getRandomValues\?\./.test(body),file+': aucun repli prévisible');checks++;
+  }
+}
+async function loginDecisionTests(){
+  const source=fs.readFileSync(path.join(ROOT,'assets/js/sinjira-auth-pages.js'),'utf8');
+  const start=source.indexOf('async function login(){');
+  const end=source.indexOf('async function forgot(){',start);
+  assert.ok(start>=0&&end>start);
+  const login=source.slice(start,end);
+  for(const outcome of ['allow','approved','block',undefined,null,'','denied','unexpected',42]){
+    const redirects=[],signouts=[],messages=[];
+    let submit;
+    const form={addEventListener(_type,handler){submit=handler}};
+    const client={auth:{signInWithPassword:async()=>({error:null}),signOut:async(options)=>{signouts.push(options.scope);return {error:null}}}};
+    const ctx={document:{querySelector:()=>form},getCurrentUser:async()=>null,ready:()=>true,reportInvalid:()=>false,
+      FormData:class {get(){return ''}},destination:()=>HOME,setBusy(){},clearPendingChallenge(){},
+      securityDeviceMetadata:()=>({device_key:'synthetic-test-key'}),getSupabase:()=>client,
+      evaluateLoginSecurity:async()=>({security:{outcome}}),setStatus:(_node,message)=>messages.push(message),
+      status:null,location:{replace:value=>redirects.push(value)},console:{warn(){}}};
+    vm.runInNewContext(login+'\nglobalThis.init=login;',ctx);
+    await ctx.init();
+    await submit({preventDefault(){}});
+    if(outcome==='allow'||outcome==='approved'){
+      eq(redirects.length,1,'Décision autorisée explicite');
+      eq(signouts.length,0,'Session autorisée conservée');
+    }else{
+      eq(redirects.length,0,'Décision non autorisée: aucune redirection');
+      eq(signouts.length,1,'Décision non autorisée: déconnexion tentée');
+      eq(messages.length,1,'Décision non autorisée: avertissement visible');
+    }
+  }
+  assert.ok(login.indexOf('const meta=securityDeviceMetadata();')<login.indexOf('auth.signInWithPassword('),'Génération avant ouverture de session');checks++;
+}
+
 async function main(){
   const client=auth();
   safeTests(client.route.safeLocalDestination,'Login');
@@ -219,6 +276,8 @@ async function main(){
     '/compte/bibliotheque.html','Fallback MFA prédéfini conservé');
   await assuranceTests();
   await recoveryRevocationTests();
+  deviceEntropyTests();
+  await loginDecisionTests();
   console.log('PASS: '+checks+' contrôles de redirections Auth/MFA, URLs encodées et next assaini.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
