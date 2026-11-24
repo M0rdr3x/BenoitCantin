@@ -72,9 +72,8 @@ body[data-preorder-page="livre-1"] :where([data-preorder-state],[data-preorder-s
   body[data-preorder-page="livre-1"] .sinjira-preorder-steps{scroll-behavior:auto}
 }
 
-/* Reflow à 240–360 px : aucun élément de réservation ne doit imposer
- * sa largeur intrinsèque au document, y compris sans JavaScript. */
-@media(max-width:360px){
+/* Sommaire vertical sur les téléphones : aucune étape hors écran. */
+@media(max-width:480px){
   body[data-preorder-page="livre-1"] .sinjira-preorder-steps .container{
     display:grid;grid-template-columns:minmax(0,1fr);
     overflow:visible;gap:8px
@@ -83,6 +82,9 @@ body[data-preorder-page="livre-1"] :where([data-preorder-state],[data-preorder-s
   body[data-preorder-page="livre-1"] .sinjira-preorder-steps a{
     width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:anywhere
   }
+}
+/* Reflow à 240–360 px : les contenus restent lisibles sans JavaScript. */
+@media(max-width:360px){
   body[data-preorder-page="livre-1"] :is(
     .sinjira-preorder-hero,.sinjira-preorder-panel,.sinjira-preorder-grid,
     .sinjira-fulfillment-card,.sinjira-fulfillment-grid,

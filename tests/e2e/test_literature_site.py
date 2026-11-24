@@ -540,7 +540,7 @@ def assert_preorder_public_steps_responsive(browser) -> None:
     install_isolated_supabase_api(no_js)
     try:
         page = no_js.new_page()
-        for width in (240, 320, 390, 768, 1024, 1440):
+        for width in (240, 320, 390, 480, 481, 768, 1024, 1440):
             page.set_viewport_size({"width": width, "height": 800})
             response = page.goto(
                 urljoin(BASE_URL, "projets/sinjira/romans/precommande.html"),
@@ -620,7 +620,10 @@ def assert_preorder_public_steps_responsive(browser) -> None:
             })""")
             assert_true(overflow["scroll"] <= overflow["width"] + 2,
                         f"{BROWSER_NAME}: débordement horizontal de précommande à {width}px : {overflow}")
-            if width <= 360:
+            if width <= 480:
+                assert_true(nav.locator('.container').evaluate(
+                    "el => getComputedStyle(el).display === 'grid'"),
+                    f"{BROWSER_NAME}: sommaire mobile non vertical à {width}px")
                 for link in links.all():
                     box = link.bounding_box()
                     assert_true(box is not None and box["x"] >= -2 and
