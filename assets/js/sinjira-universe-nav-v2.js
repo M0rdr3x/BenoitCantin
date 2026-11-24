@@ -20,7 +20,11 @@
         button.addEventListener('click', function () {
           var distance = Math.max(120, Math.round(strip.clientWidth * .75));
           var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-          strip.scrollBy({ left: direction * distance, behavior: reduced ? 'auto' : 'smooth' });
+          if (reduced) {
+            strip.scrollLeft += direction * distance;
+          } else {
+            strip.scrollBy({ left: direction * distance, behavior: 'smooth' });
+          }
         });
         return button;
       }
@@ -45,15 +49,27 @@
       function revealActive() {
         var active = strip.querySelector('a[aria-current="page"]');
         if (!active) return;
-        var start = active.offsetLeft - strip.offsetLeft;
-        var end = start + active.offsetWidth;
-        if (start < strip.scrollLeft || end > strip.scrollLeft + strip.clientWidth) {
-          strip.scrollLeft = Math.max(0, start - 12);
+        // Mesurer dans le même repère, même lorsque la grille des flèches
+        // décale le ruban ou qu'un ancêtre devient son offsetParent.
+        var bounds = strip.getBoundingClientRect();
+        var link = active.getBoundingClientRect();
+        var left = bounds.left + strip.clientLeft;
+        var right = left + strip.clientWidth;
+        if (link.width > strip.clientWidth || link.left < left || link.right > right) {
+          // Si le libellé dépasse le ruban (très petit écran), montrer son début.
+          strip.scrollLeft += link.left - left;
         }
       }
 
       strip.addEventListener('scroll', update, { passive: true });
-      window.addEventListener('resize', update, { passive: true });
+      var lastViewportWidth = window.innerWidth;
+      window.addEventListener('resize', function () {
+        update();
+        if (window.innerWidth === lastViewportWidth) return;
+        lastViewportWidth = window.innerWidth;
+        revealActive();
+        update();
+      }, { passive: true });
       if (typeof ResizeObserver === 'function') {
         var observer = new ResizeObserver(update);
         observer.observe(strip);
