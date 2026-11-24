@@ -43,6 +43,9 @@ on:
       - 'scripts/test_nova_edge_snapshot.cjs'
       - 'scripts/test_nova_edge_canonical_questions.cjs'
       - 'scripts/test_nova_edge_explicit_consent.cjs'
+      - 'scripts/test_turnstile_verify.mjs'
+      - 'supabase/functions/_shared/turnstile-verify.mjs'
+      - 'supabase/functions/_shared/read-chunk-deadline.mjs'
       - 'scripts/smoke_nova_poll_edge.py'
       - 'scripts/smoke_nova_live_public.py'
       - 'scripts/smoke_nova_live_compass_browser.py'
@@ -60,6 +63,10 @@ on:
       - 'supabase/NOVA_POLL_SCHEMA_PREDEPLOY.sql'
       - 'supabase/functions/nova-civic-poll/**'
       - 'scripts/test_nova_civic_poll.py'
+      - 'scripts/test_turnstile_verify.mjs'
+      - 'supabase/functions/_shared/turnstile-verify.mjs'
+      - 'supabase/functions/_shared/read-chunk-deadline.mjs'
+      - '.github/workflows/validate-nova-civic-poll.yml'
 permissions:
   contents: read
 jobs:
@@ -110,6 +117,8 @@ jobs:
         run: node scripts/test_nova_edge_canonical_questions.cjs
       - name: Vérifier le consentement politique explicite avant toute écriture
         run: node scripts/test_nova_edge_explicit_consent.cjs
+      - name: Tester les réponses Turnstile bornées sans réseau
+        run: node --test scripts/test_turnstile_verify.mjs
       - name: Tester le rétablissement d'une lecture GET temporairement indisponible
         run: node scripts/test_nova_poll_recovery.cjs
       - name: Tester le verrou du formulaire client sans réseau

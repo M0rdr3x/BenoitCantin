@@ -1,5 +1,6 @@
 // Projet Nova — consultation publique agrégée (écritures interdites si secrets / contrôle anti-bot absents).
 // Aucun bulletin individuel, identité, IP ou choix politique n'est journalisé ou enregistré.
+import { verifyTurnstileChallenge } from "../_shared/turnstile-verify.mjs";
 const VERSION = "nova-consultation-v1";
 const ORIGINS = new Set(["https://www.benoitcantin.com","https://benoitcantin.com"]);
 const MAX_BODY_BYTES = 8192;
@@ -236,7 +237,7 @@ function validBallotEnvelope(payload: unknown): boolean {
      ballot.consentConfirmed!==true || typeof ballot.ballotToken!=="string" ||
      !/^[0-9a-f]{48}$/.test(ballot.ballotToken) ||
      typeof ballot.captchaToken!=="string" ||
-     ballot.captchaToken.length<10 || ballot.captchaToken.length>4096 ||
+     ballot.captchaToken.length<10 || ballot.captchaToken.length>2048 ||
      !ballot.answers || typeof ballot.answers!=="object" || Array.isArray(ballot.answers)) {
     return false;
   }
@@ -245,15 +246,8 @@ function validBallotEnvelope(payload: unknown): boolean {
     Object.values(answers).every(value=>typeof value==="number" && OPTIONS.has(value));
 }
 async function confirmCaptcha(token: string) {
-  const params=new URLSearchParams({secret:CAPTCHA_SECRET,response:token});
-  const response=await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify",{
-    method:"POST",body:params,signal:AbortSignal.timeout(7000)
-  });
-  if(!response.ok) return false;
-  const result=await response.json();
-  return result.success===true
-    && (result.hostname==="www.benoitcantin.com" || result.hostname==="benoitcantin.com")
-    && result.action==="nova_poll_vote";
+  return verifyTurnstileChallenge(token, CAPTCHA_SECRET, "nova_poll_vote",
+    ["www.benoitcantin.com", "benoitcantin.com"]);
 }
 async function hashToken(token: string) {
   const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(HMAC_KEY),
