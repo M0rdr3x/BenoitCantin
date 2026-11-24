@@ -13,7 +13,8 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
 APPROVED = "deploy-github-pages-isolated.yml"
-UPLOAD = "actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa"
+UPLOAD = "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
+ARCHIVE_PATH = "${{ runner.temp }}/artifact.tar"
 DEPLOY = "actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346"
 USES = re.compile(r"""^\s*(?:-\s*)?(?:uses|"uses"|'uses')\s*:\s*(?:"([^"\n]+)"|'([^'\n]+)'|([^\s#]+))\s*(?:#.*)?$""", re.I)
 MULTILINE_USES = re.compile(r"""(?m)^\s*(?:-\s*)?(?:uses|"uses"|'uses')\s*:\s*[>|]""", re.I)
@@ -28,17 +29,21 @@ GATES = (
     '"$EXPECTED_SHA" != "$GITHUB_SHA"',
     "python3 scripts/build_netlify_public.py --check --security-containment",
     "python3 scripts/build_netlify_public.py --output _site --security-containment",
+    'python3 scripts/pages_archive_integrity.py create _site "$RUNNER_TEMP/artifact.tar"',
+    "needs: [build, verify]",
+    "gh run download",
+    "sha256sum --check --status",
 )
 
 
-def page_uses(source: str) -> list[tuple[int, str]]:
+def page_uses(source: str, approved: bool = True) -> list[tuple[int, str]]:
     actions: list[tuple[int, str]] = []
     for index, line in enumerate(source.splitlines()):
         match = USES.match(line)
         if not match:
             continue
         action = next((value for value in match.groups() if value is not None), "")
-        if PAGES_ACTION.search(action.split("@", 1)[0]):
+        if PAGES_ACTION.search(action.split("@", 1)[0]) or (approved and action.split("@", 1)[0].lower() == "actions/upload-artifact"):
             actions.append((index, action))
     return actions
 
@@ -90,7 +95,9 @@ def inspect_workflows(files: dict[str, str]) -> list[str]:
         # line. Refuse it rather than silently accepting unrecognized uses.
         if MULTILINE_USES.search(source):
             errors.append(f"{name}: valeur uses: multiligne interdite")
-        for line, action in page_uses(source):
+        if name != APPROVED and re.search(r"(?m)^\s*name\s*:\s*['\"]?github-pages['\"]?\s*(?:#.*)?$", source):
+            errors.append(f"{name}: nom réservé github-pages hors workflow approuvé")
+        for line, action in page_uses(source, name == APPROVED):
             actions.append((name, action))
             if name != APPROVED:
                 errors.append(f"{name}:{line + 1}: action Pages hors workflow isolé")
@@ -98,8 +105,8 @@ def inspect_workflows(files: dict[str, str]) -> list[str]:
             if action not in (UPLOAD, DEPLOY):
                 errors.append(f"{name}:{line + 1}: action Pages non officielle ou SHA inattendu")
                 continue
-            if action == UPLOAD and path_of_action(source, line) != "_site":
-                errors.append(f"{name}:{line + 1}: seule la sortie _site peut être publiée")
+            if action == UPLOAD and path_of_action(source, line) != ARCHIVE_PATH:
+                errors.append(f"{name}:{line + 1}: seule l’archive TAR contrôlée peut être publiée")
     if sorted(actions) != sorted(((APPROVED, UPLOAD), (APPROVED, DEPLOY))):
         errors.append("Inventaire Pages invalide : un upload et un déploiement officiels requis")
 
@@ -127,9 +134,13 @@ def self_test() -> None:
         "      - run: python3 scripts/build_netlify_public.py --check --security-containment\n"
         "      - run: python3 scripts/build_netlify_public.py --output _site --security-containment\n"
         "      - run: 'test \"$EXPECTED_SHA\" != \"$GITHUB_SHA\"'\n"
+        "      - run: python3 scripts/pages_archive_integrity.py create _site \"$RUNNER_TEMP/artifact.tar\"\n"
+        "      - run: gh run download\n"
+        "      - run: sha256sum --check --status\n"
+        "    needs: [build, verify]\n"
         "      - name: Publier _site\n"
         "        uses: " + UPLOAD + "\n"
-        "        with:\n          path: _site\n"
+        "        with:\n          path: ${{ runner.temp }}/artifact.tar\n"
         "      - uses: " + DEPLOY + "\n"
     )
     assert inspect_workflows({APPROVED: good}) == []
@@ -152,38 +163,40 @@ def self_test() -> None:
         ("folded rogue upload", "      - uses: >-\n        " + UPLOAD + "\n"),
         ("literal rogue deploy", "      - 'uses': |\n        " + DEPLOY + "\n"),
     ):
-        assert inspect_workflows({APPROVED: good, label + ".yml": rogue}), label
-    assert path_of_action(good, next(i for i, _ in page_uses(good))) == "_site"
+        assert inspect_workflows({APPROVED: good, label + ".yml": rogue.replace(UPLOAD, "actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa")}), label
+    assert path_of_action(good, next(i for i, _ in page_uses(good))) == ARCHIVE_PATH
     mutants = (
-        ("publish root", good.replace("path: _site", "path: .")),
-        ("publish ancestor", good.replace("path: _site", "path: _site/..")),
-        ("publish missing", good.replace("          path: _site\n", "")),
-        ("path fictif sous env", good.replace("        with:\n          path: _site", "        env:\n          path: _site")),
-        ("override après with", good.replace("        with:\n          path: _site", "        with:\n          path: _site\n        with:\n          path: .")),
-        ("publish duplicate", good.replace("path: _site", "path: _site\n          path: .")),
-        ("publish expression", good.replace("path: _site", "path: $WORKSPACE")),
+        ("publish root", good.replace("path: ${{ runner.temp }}/artifact.tar", "path: .")),
+        ("publish ancestor", good.replace("path: ${{ runner.temp }}/artifact.tar", "path: ${{ runner.temp }}/artifact.tar/..")),
+        ("publish missing", good.replace("          path: ${{ runner.temp }}/artifact.tar\n", "")),
+        ("path fictif sous env", good.replace("        with:\n          path: ${{ runner.temp }}/artifact.tar", "        env:\n          path: ${{ runner.temp }}/artifact.tar")),
+        ("override après with", good.replace("        with:\n          path: ${{ runner.temp }}/artifact.tar", "        with:\n          path: ${{ runner.temp }}/artifact.tar\n        with:\n          path: .")),
+        ("publish duplicate", good.replace("path: ${{ runner.temp }}/artifact.tar", "path: ${{ runner.temp }}/artifact.tar\n          path: .")),
+        ("publish expression", good.replace("path: ${{ runner.temp }}/artifact.tar", "path: $WORKSPACE")),
         # Un path sous une clé intermédiaire ne serait pas transmis à
         # actions/upload-pages-artifact et peut laisser le défaut ".".
         ("nested fake path", good.replace(
-            "        with:\n          path: _site\n",
-            "        with:\n          nested:\n            path: _site\n",
+            "        with:\n          path: ${{ runner.temp }}/artifact.tar\n",
+            "        with:\n          nested:\n            path: ${{ runner.temp }}/artifact.tar\n",
         )),
         # L'indentation directe doit être celle de la clé path: de l'action.
         ("overindented path", good.replace(
-            "        with:\n          path: _site\n",
-            "        with:\n            path: _site\n",
+            "        with:\n          path: ${{ runner.temp }}/artifact.tar\n",
+            "        with:\n            path: ${{ runner.temp }}/artifact.tar\n",
         )),
         ("wrong SHA", good.replace(UPLOAD, UPLOAD.split("@")[0] + "@v3")),
         ("missing review", good.replace("confirm_containment:", "not_confirmed:")),
         ("missing main", good.replace("github.ref == 'refs/heads/main'", "true")),
         ("auto deploy", good.replace("  workflow_dispatch:", "  push:")),
+        ("missing archive verification", good.replace("sha256sum --check --status", "true")),
+        ("missing verification dependency", good.replace("needs: [build, verify]", "needs: build")),
         ("missing deploy", good.replace("      - uses: " + DEPLOY + "\n", "")),
         ("no SHA compare", good.replace('"$EXPECTED_SHA" != "$GITHUB_SHA"', "true")),
     )
     for label, altered in mutants:
         assert inspect_workflows({APPROVED: altered}), "Dangerous Pages fixture accepted: " + label
     assert inspect_workflows({APPROVED: good, "extra.yml": good})
-    print("OK : 22 scénarios Pages hostiles refusés; upload _site direct obligatoire.")
+    print("OK : scénarios Pages hostiles refusés; archive contrôlée obligatoire.")
 
 
 def main() -> int:

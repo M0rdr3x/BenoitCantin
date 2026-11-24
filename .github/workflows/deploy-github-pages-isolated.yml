@@ -37,10 +37,14 @@ jobs:
       contents: read
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    outputs:
+      archive_sha256: ${{ steps.archive.outputs.sha256 }}
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
     steps:
       - name: Récupérer le dépôt sans credentials persistés
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
         with:
+          ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Configurer Python
@@ -58,6 +62,7 @@ jobs:
             echo "ERREUR: expected_sha doit être un SHA Git complet de 40 caractères." >&2
             exit 1
           fi
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           if [ "$EXPECTED_SHA" != "$GITHUB_SHA" ]; then
             echo "ERREUR: le SHA approuvé ne correspond pas au SHA exécuté." >&2
             exit 1
@@ -92,10 +97,24 @@ jobs:
           test "$file_count" -gt 0
           echo "PAGES_PUBLIC_FILE_COUNT=$file_count" >> "$GITHUB_ENV"
 
+      - name: Construire et vérifier l'archive publique
+        id: archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/pages_archive_integrity.py create _site "$RUNNER_TEMP/artifact.tar"
+          sha="$(sha256sum "$RUNNER_TEMP/artifact.tar" | cut -d ' ' -f1)"
+          [[ "$sha" =~ ^[0-9a-f]{64}$ ]]
+          printf 'sha256=%s\n' "$sha" >> "$GITHUB_OUTPUT"
+
       - name: Téléverser uniquement l’artefact public Pages
-        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa
+        id: upload
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          path: _site
+          name: github-pages
+          path: ${{ runner.temp }}/artifact.tar
+          retention-days: 1
+          if-no-files-found: error
 
       - name: Résumer la frontière de publication
         shell: bash
@@ -112,9 +131,41 @@ jobs:
             echo "- Cible finale #450 : **Netlify avec _headers/_redirects**"
           } >> "$GITHUB_STEP_SUMMARY"
 
+  verify:
+    name: Vérifier l'archive téléversée avant publication
+    needs: build
+    permissions:
+      contents: read
+      actions: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Vérifier identité et empreinte de l'artefact du run
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ needs.build.outputs.artifact_id }}
+          ARCHIVE_SHA256: ${{ needs.build.outputs.archive_sha256 }}
+        run: |
+          set -euo pipefail
+          [[ "$ARTIFACT_ID" =~ ^[0-9]+$ ]]
+          [[ "$ARCHIVE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID" | jq -e --arg id "$ARTIFACT_ID" --arg run "$GITHUB_RUN_ID" --arg sha "$GITHUB_SHA" '
+            (.id|tostring)==$id and .name=="github-pages" and .expired==false and
+            (.workflow_run.id|tostring)==$run and .workflow_run.head_sha==$sha
+          ' >/dev/null
+          dest="$(mktemp -d)"
+          trap 'rm -rf "$dest"' EXIT
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" --name github-pages --dir "$dest"
+          test -f "$dest/artifact.tar"
+          test ! -L "$dest/artifact.tar"
+          test "$(find "$dest" -mindepth 1 | wc -l)" -eq 1
+          printf '%s  %s\n' "$ARCHIVE_SHA256" "$dest/artifact.tar" | sha256sum --check --status
+          echo "Archive Pages vérifiée : SHA-256 $ARCHIVE_SHA256" >> "$GITHUB_STEP_SUMMARY"
+
   deploy:
     name: Publier le confinement Pages
-    needs: build
+    needs: [build, verify]
     if: github.ref == 'refs/heads/main' && inputs.confirm_containment == 'CONTAIN' && inputs.acknowledge_header_gap == 'ACK_HEADER_GAP'
     permissions:
       pages: write

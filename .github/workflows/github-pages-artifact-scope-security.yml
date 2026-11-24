@@ -6,11 +6,13 @@ on:
     paths:
       - '.github/workflows/**'
       - 'scripts/validate_pages_artifact_boundary.py'
+      - 'scripts/pages_archive_integrity.py'
   push:
     branches: [main]
     paths:
       - '.github/workflows/**'
       - 'scripts/validate_pages_artifact_boundary.py'
+      - 'scripts/pages_archive_integrity.py'
   workflow_dispatch:
 
 permissions:
@@ -31,5 +33,7 @@ jobs:
           python-version: '3.12.14'
       - name: Refuser les mutations Pages dangereuses
         run: python3 scripts/validate_pages_artifact_boundary.py --self-test
+      - name: Tester les archives déterministes et les membres hostiles
+        run: python3 scripts/pages_archive_integrity.py self-test
       - name: Valider tous les workflows de publication
         run: python3 scripts/validate_pages_artifact_boundary.py
