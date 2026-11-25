@@ -1,5 +1,34 @@
 import {requireUser,getSupabase,escapeHtml,setStatus} from './sinjira-supabase.js';
 
+// La confirmation reste volontaire, y compris sur les anciens navigateurs.
+function requestMessage(button){
+  const dialog=document.querySelector('[data-library-request-dialog]');
+  if(!dialog||typeof dialog.showModal!=='function'){
+    return Promise.resolve(window.prompt('Votre message de candidature (facultatif). OK transmet la demande; Annuler ne transmet rien.'));
+  }
+  if(dialog.open)return Promise.resolve(null);
+  const message=dialog.querySelector('textarea');
+  const project=dialog.querySelector('[data-request-project-name]');
+  project.textContent=button.closest('article')?.querySelector('h3')?.textContent||'Projet SINJIRA™';
+  message.value='';
+  dialog.returnValue='';
+  return new Promise(resolve=>{
+    const onClose=()=>{
+      const result=dialog.returnValue==='send'?message.value:null;
+      message.value='';
+      dialog.returnValue='';
+      if(button.isConnected&&!button.disabled)button.focus({preventScroll:true});
+      resolve(result);
+    };
+    dialog.addEventListener('close',onClose,{once:true});
+    try{dialog.showModal();}
+    catch{
+      dialog.removeEventListener('close',onClose);
+      resolve(null);
+    }
+  });
+}
+
 /* L'affichage des catégories ne confère aucun droit d'accès :
    les autorisations restent contrôlées par Supabase et les Edge Functions. */
 async function init(){
@@ -57,8 +86,8 @@ async function init(){
   }
   container.querySelectorAll('[data-request-tester]').forEach(button=>button.addEventListener('click',async()=>{
     if(button.disabled)return;
-    const message=window.prompt('Votre message de candidature (facultatif). OK transmet la demande; Annuler ne transmet rien.');
-    if(message===null)return;
+    const message=await requestMessage(button);
+    if(message===null||button.disabled)return;
     button.disabled=true;
     button.setAttribute('aria-busy','true');
     button.textContent='Transmission en cours…';
