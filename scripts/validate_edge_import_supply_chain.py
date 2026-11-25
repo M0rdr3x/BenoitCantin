@@ -16,8 +16,8 @@ ROOT = Path(__file__).resolve().parents[1]
 FUNCTIONS = ROOT / "supabase" / "functions"
 SOURCE_SUFFIXES = frozenset({".ts", ".mts", ".js", ".mjs", ".tsx"})
 REMOTE_APPROVED = frozenset({
-    "npm:@supabase/supabase-js@2.119.0",
-    "https://esm.sh/@supabase/supabase-js@2.119.0",
+    "npm:@supabase/supabase-js@2.119.2",
+    "https://esm.sh/@supabase/supabase-js@2.119.2",
     "npm:pdf-lib@1.17.1",
     # Existing type-only Edge runtime declaration, reviewed as a legacy
     # exception. Do not allow other floating jsr: dependencies.
@@ -95,13 +95,15 @@ def run_self_tests() -> None:
         file = func / "index.ts"
         good = (
             "import { value } from './helper.ts';\n"
-            "import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.119.0';\n"
+            "import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.119.2';\n"
             "import {\n  something\n} from 'npm:pdf-lib@1.17.1';\n"
             "import 'jsr:@supabase/functions-js/edge-runtime.d.ts';\n"
         )
         if audit_source(good, file, root):
             raise AssertionError("Reviewed pinned import fixture must pass")
         mutations = {
+            "superseded npm SDK": good + "import 'npm:@supabase/supabase-js@2.119.0';\n",
+            "superseded CDN SDK": good + "import 'https://esm.sh/@supabase/supabase-js@2.119.0';\n",
             "floating npm dependency": good + "import 'npm:pdf-lib@latest';\n",
             "unknown remote": good + "import 'https://example.org/a.ts';\n",
             "unreviewed exact version": good + "import 'npm:pdf-lib@1.18.0';\n",
