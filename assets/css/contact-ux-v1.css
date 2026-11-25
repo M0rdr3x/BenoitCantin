@@ -99,3 +99,52 @@ body.contact-ux-page .highlight-card a{overflow-wrap:anywhere}
   body.contact-ux-page .contact-form-preview > summary{min-height:48px}
   body.contact-ux-page .contact-preview-actions .btn{width:100%}
 }
+
+/* Canaux : une seule action claire par motif, même dans une carte étroite.
+   La mise en page reste lisible sans JavaScript et avec zoom important. */
+body.contact-ux-page .contact-channel-list {
+  list-style: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  margin: 20px 0;
+  padding: 0;
+}
+body.contact-ux-page .contact-channel-list > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+  padding: clamp(12px, 2vw, 18px);
+  border: 1px solid rgba(175,191,232,.35);
+  border-radius: 14px;
+  background: rgba(20,26,50,.3);
+}
+body.contact-ux-page .contact-channel-list strong {
+  display: block;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+body.contact-ux-page .contact-channel-list p {
+  margin: 4px 0 0;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+body.contact-ux-page .contact-channel-list .btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 48px;
+  width: 100%;
+  max-width: 100%;
+  padding: 12px 14px;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+body.contact-ux-page .footer-col a[aria-current="page"] {
+  text-decoration: underline;
+  text-underline-offset: .2em;
+}
