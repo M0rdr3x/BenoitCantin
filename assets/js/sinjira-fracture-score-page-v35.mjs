@@ -47,6 +47,8 @@ function build(config){
   }
   $('fracture-correct').value='';
   $('fracture-incorrect').value='';
+  $('fracture-correct').max=String(config.ballots);
+  $('fracture-incorrect').max=String(config.ballots);
   finalPanel.hidden=true;
   $('fracture-score-rules').textContent=config.humans+' humain(s) · '+
     config.seats+' sièges · '+config.agents+' agent(s) Réseau-Mère · '+
@@ -75,7 +77,16 @@ function collect(){
 function update(){
   if(!active)return;
   try{
-    const rounds=collect();
+    // Ne rendre les accusations accessibles qu'après validation des rondes.
+    // Ne pas masquer puis réafficher le champ actif lors de chaque saisie.
+    let rounds;
+    try{
+      rounds=collect();
+      fractureScore({humans:active.humans,express:active.express,rounds});
+    }catch(error){
+      finalPanel.hidden=true;
+      throw error;
+    }
     const ready=rounds.every(x=>x!==null);
     finalPanel.hidden=!ready;
     const correct=$('fracture-correct').value;
@@ -113,8 +124,12 @@ function update(){
     say('Feuille calculée localement. Aucune donnée transmise ou sauvegardée.', 'success');
   }catch(error){
     $('fracture-conclusion').textContent='Corrigez les scores pour obtenir un résultat valide.';
-    $('fracture-final-r').textContent='—';
-    $('fracture-final-m').textContent='—';
+    // Ne jamais laisser des chiffres calculés sur une ancienne saisie.
+    for(const id of ['fracture-progress','fracture-total-r','fracture-total-m',
+      'fracture-wins-r','fracture-wins-m','fracture-bonus-r','fracture-bonus-m',
+      'fracture-final-r','fracture-final-m']){
+      $(id).textContent='—';
+    }
     say(error?.message||'Données invalides.', 'warning');
   }
 }
