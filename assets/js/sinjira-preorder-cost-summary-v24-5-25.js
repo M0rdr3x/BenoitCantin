@@ -238,7 +238,7 @@ async function init(root) {
       n.totalNote.textContent = 'Sous-total estimatif avant taxes applicables. Les taxes, le cas échéant, ne sont pas calculées ici; le montant final devra être présenté et accepté avant tout futur paiement.';
     } else {
       n.total.textContent = 'Total estimatif indisponible pour le moment';
-      n.totalNote.textContent = sameCurrency
+      n.totalNote.textContent = !(currency && shippingCurrency && shippingCurrency !== currency)
         ? 'Aucun total n’est inventé lorsqu’un prix, une estimation ou un mode de réception confirmé manque. Les taxes applicables ne sont pas calculées ici.'
         : 'Les monnaies du prix et de la livraison ne correspondent pas; aucun total n’est calculé et aucune taxe n’est estimée.';
     }
