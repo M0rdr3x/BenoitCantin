@@ -175,6 +175,80 @@ def check_fulfillment_feedback(browser):
         ctx.close()
 
 
+def check_cost_summary_feedback(browser):
+    # Aucun prix réel, aucune adresse, aucun fournisseur de paiement.
+    ctx=browser.new_context(service_workers="block",viewport={"width":390,"height":760})
+    try:
+        ctx.route("**/*",lambda route:route.continue_() if route.request.url.startswith(BASE_URL) else route.abort())
+        ctx.route("**/cost-summary-fixture.html*",lambda route:route.fulfill(content_type="text/html",body="""<!doctype html><html lang="fr-CA"><meta name="viewport" content="width=device-width,initial-scale=1"><main data-preorder-fulfillment></main>
+          <script type="module" src="/assets/js/sinjira-preorder-cost-summary-v24-5-25.js?v=24.5.46"></script>
+          <script type="module" src="/assets/js/sinjira-preorder-tax-estimate-v24-5-27.js?v=24.5.46"></script></html>"""))
+        ctx.route("**/assets/js/sinjira-supabase.js*",lambda route:route.fulfill(content_type="text/javascript",body="""window.ship=[];window.tax=[];
+          export const escapeHtml=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
+          export const isSinjiraBackendConfigured=()=>true;
+          const guards={estimate_nonbinding:true,billing_authoritative:false,external_tax_api_enabled:false,final_tax_confirmation_required:true};
+          export function getSupabase(){return {async rpc(name,args){
+            if(name==='product_preorder_commercial_info')return {data:{currency:'CAD',paper_price_cents:2000,digital_price_cents:1000,sales_enabled:false,checkout_enabled:false,payment_enabled:false,external_fulfillment_enabled:false,auto_conversion_allowed:false},error:null};
+            if(name==='product_preorder_fulfillment_options')return {data:{shipping_estimates_enabled:true,shipping_zones:[{zone_code:'fixture',label:'Zone fictive'}]},error:null};
+            if(name==='product_preorder_tax_options')return {data:{...guards,tax_profiles:[{tax_code:'fixture-tax',label:'Profil fictif'}]},error:null};
+            if(name==='product_preorder_shipping_estimate')return new Promise(resolve=>window.ship.push({args,resolve}));
+            if(name==='product_preorder_tax_estimate')return new Promise(resolve=>window.tax.push({args,resolve}));
+            throw Error('RPC inattendue');
+          }}}
+          window.shipResult=(i,min,max,currency='CAD')=>window.ship[i].resolve({data:{estimate_min_cents:min,estimate_max_cents:max,currency,shipping_customer_pays:true,estimate_nonbinding:true,zone_label:'Zone fictive'},error:null});
+          window.taxResult=(i,min,max,totalMin,totalMax,currency='CAD')=>window.tax[i].resolve({data:{...guards,estimate_complete:true,currency,estimated_tax_min_cents:min,estimated_tax_max_cents:max,estimated_total_min_cents:totalMin,estimated_total_max_cents:totalMax,source_reference:'Source fictive'},error:null});
+        """))
+        page=ctx.new_page()
+        page.goto(urljoin(BASE_URL,"cost-summary-fixture.html"),wait_until="domcontentloaded")
+        fmt=page.locator("[data-pcs-format]")
+        qty=page.locator("[data-pcs-quantity]")
+        method=page.locator("[data-pcs-method]")
+        zone=page.locator("[data-pcs-zone]")
+        total=page.locator("[data-pcs-total]")
+        tax=page.locator("[data-ptax-public]")
+        tax_total=page.locator("[data-ptax-total]")
+        fmt.select_option("paper")
+        method.select_option("shipping")
+        assert_true(zone.input_value()=="","zone de livraison choisie automatiquement")
+        zone.select_option("fixture")
+        page.wait_for_function("window.ship.length===1")
+        page.evaluate("window.shipResult(0,1000,1200)")
+        page.wait_for_function("document.querySelector('[data-pcs-total]').textContent.includes('30')")
+        qty.select_option("2")
+        page.wait_for_function("window.ship.length===2")
+        assert_true("Nouveau calcul" in total.inner_text(),"ancien sous-total conservé pendant le calcul")
+        qty.select_option("3")
+        page.wait_for_function("window.ship.length===3")
+        page.evaluate("window.shipResult(2,2000,1000)")
+        page.wait_for_function("document.querySelector('[data-pcs-total]').textContent.includes('indisponible')")
+        page.evaluate("window.shipResult(1,1000,1200)")
+        page.evaluate("() => new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))")
+        assert_true("indisponible" in total.inner_text(),"réponse périmée ou fourchette inversée affichée")
+        qty.select_option("4")
+        page.wait_for_function("window.ship.length===4")
+        page.evaluate("window.shipResult(3,1000,1200,null)")
+        page.wait_for_function("document.querySelector('[data-pcs-total]').textContent.includes('indisponible')")
+        fmt.select_option("digital")
+        assert_true(not zone.is_visible() and zone.is_disabled(),"zone inutile visible")
+        assert_true(tax.input_value()=="","zone fiscale présélectionnée")
+        tax.select_option("fixture-tax")
+        page.wait_for_function("window.tax.length===1")
+        page.evaluate("window.taxResult(0,100,200,4100,4200)")
+        page.wait_for_function("document.querySelector('[data-ptax-tax-note]').textContent.includes('Source fictive')")
+        qty.select_option("5")
+        page.wait_for_function("window.tax.length===2")
+        assert_true("Calcul" in tax_total.inner_text() and "Source fictive" not in page.locator("[data-ptax-tax-note]").inner_text(),"ancienne information fiscale conservée")
+        page.evaluate("window.taxResult(1,-100,200,4900,5200)")
+        page.wait_for_function("document.querySelector('[data-ptax-tax]').textContent.includes('incomplète')")
+        for width,zoom in ((240,"100%"),(320,"200%"),(390,"100%"),(1440,"100%")):
+            page.set_viewport_size({"width":width,"height":760})
+            page.evaluate("(z)=>document.documentElement.style.fontSize=z",zoom)
+            state=page.locator("[data-preorder-cost-summary]").evaluate("""el=>({overflow:el.scrollWidth>el.clientWidth+2,controls:[...el.querySelectorAll('select')].filter(n=>n.getClientRects().length).every(n=>{const r=n.getBoundingClientRect();return r.left>=-2&&r.right<=innerWidth+2&&r.height>=47.5})})""")
+            assert_true(not state["overflow"] and state["controls"],f"résumé coût hors écran {width}/{zoom}: {state}")
+    finally:
+        ctx.close()
+
+
 def run() -> None:
     assert_true(BROWSER_NAME in SUPPORTED_BROWSERS, f"Navigateur Playwright inconnu: {BROWSER_NAME}")
 
@@ -2014,6 +2088,7 @@ def run() -> None:
         if IS_LOCAL:
             check_legal_navigation(browser)
             check_fulfillment_feedback(browser)
+            check_cost_summary_feedback(browser)
         browser.close()
         auth_note = f", {len(AUTH_ROUTES)} pages Auth locales + assistant V{ASSISTANT_VERSION} contextuel" if IS_LOCAL else ""
         print(
