@@ -54,8 +54,8 @@ Deno.serve(async (req) => {
     const service = serviceClient();
 
     const {data:isAdmin,error:adminError}=await service.rpc('is_sinjira_admin',{p_user_id:user.id});
-    if(adminError)throw new Error('ADMIN_CHECK_FAILED');
-    if(isAdmin)return privateJson({ok:false,error:'Suppression self-service interdite pour un compte propriétaire ou administrateur.',code:'OWNER_OR_ADMIN_DELETE_BLOCKED'},403);
+    if(adminError||typeof isAdmin!=='boolean')throw new Error('ADMIN_CHECK_FAILED');
+    if(isAdmin===true)return privateJson({ok:false,error:'Suppression self-service interdite pour un compte propriétaire ou administrateur.',code:'OWNER_OR_ADMIN_DELETE_BLOCKED'},403);
 
     // Vérifier toute conservation légale AVANT de supprimer un fichier ou révoquer une contribution.
     // La RPC est service_role-only afin que le navigateur ne puisse pas sonder les holds d'autres comptes.
@@ -71,7 +71,8 @@ Deno.serve(async (req) => {
 
     const token=bearerToken(req);
     const {data:aal,error:aalError}=await service.auth.mfa.getAuthenticatorAssuranceLevel(token);
-    if(aalError||!aal)return privateJson({ok:false,error:'État MFA temporairement indisponible.',code:'MFA_STATE_UNAVAILABLE'},503);
+    if(aalError||!aal||!['aal1','aal2'].includes(aal.currentLevel)||!['aal1','aal2'].includes(aal.nextLevel)||
+       (aal.currentLevel==='aal2'&&aal.nextLevel!=='aal2'))return privateJson({ok:false,error:'État MFA temporairement indisponible.',code:'MFA_STATE_UNAVAILABLE'},503);
     if(aal.nextLevel==='aal2'&&aal.currentLevel!=='aal2')return privateJson({ok:false,error:'Authentification renforcée requise.',code:'MFA_REQUIRED'},403);
 
     const [profileRes,submissionRes,applicationRes]=await Promise.all([
