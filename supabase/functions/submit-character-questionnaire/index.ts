@@ -54,6 +54,54 @@ function isCanonicalRegistryPhotoPath(raw:unknown,userId:string):boolean{
   return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpg|png|webp|avif|gif)$/.test(raw.slice(prefix.length));
 }
 
+// Contrôle préliminaire de signature, pas un décodeur ni un antivirus.
+function registryPhotoSignature(header:Uint8Array,ext:string,total:number):boolean{
+  const bytes=(offset:number,expected:number[])=>expected.every((v,i)=>header[offset+i]===v);
+  const ascii=(offset:number,value:string)=>bytes(offset,Array.from(value,c=>c.charCodeAt(0)));
+  if(ext==='jpg')return total>=4&&bytes(0,[255,216,255]);
+  if(ext==='png')return total>=33&&bytes(0,[137,80,78,71,13,10,26,10])&&bytes(8,[0,0,0,13])&&ascii(12,'IHDR');
+  if(ext==='gif')return total>=14&&(ascii(0,'GIF87a')||ascii(0,'GIF89a'));
+  if(ext==='webp'){
+    if(total<20||!ascii(0,'RIFF')||!ascii(8,'WEBP'))return false;
+    const size=new DataView(header.buffer,header.byteOffset,header.byteLength).getUint32(4,true);
+    return size+8===total&&(ascii(12,'VP8 ')||ascii(12,'VP8L')||ascii(12,'VP8X'));
+  }
+  if(ext==='avif'){
+    if(header.length<16||!ascii(4,'ftyp'))return false;
+    const size=new DataView(header.buffer,header.byteOffset,header.byteLength).getUint32(0,false);
+    if(size<16||size>header.length||size>total||size%4!==0)return false;
+    if(ascii(8,'avif')||ascii(8,'avis'))return true;
+    for(let offset=16;offset+4<=size;offset+=4)if(ascii(offset,'avif')||ascii(offset,'avis'))return true;
+  }
+  return false;
+}
+
+// Lire un flux borné, sans décoder l'image ni conserver le fichier en mémoire.
+async function registryPhotoBinaryVerified(file:any,photoPath:string,expectedSize:number):Promise<boolean>{
+  const maxBytes=10*1024*1024;
+  if(!Number.isSafeInteger(expectedSize)||expectedSize<1||expectedSize>maxBytes)return false;
+  const header=new Uint8Array(Math.min(256,expectedSize));
+  let reader:ReadableStreamDefaultReader<Uint8Array>|undefined;
+  let complete=false,total=0;
+  try{
+    const {data,error}=await file.download(photoPath,{}, {cache:'no-store',signal:AbortSignal.timeout(8000)}).asStream();
+    if(error||!data)return false;
+    reader=data.getReader();
+    while(true){
+      const {done,value}=await reader.read();
+      if(done){complete=true;break;}
+      if(!(value instanceof Uint8Array))return false;
+      if(value.byteLength>expectedSize-total)return false;
+      if(total<header.length)header.set(value.subarray(0,header.length-total),total);
+      total+=value.byteLength;
+    }
+    return total===expectedSize&&registryPhotoSignature(header,photoPath.split('.').pop()||'',total);
+  }catch{return false}
+  finally{
+    if(reader){if(!complete){try{await reader.cancel()}catch{}}try{reader.releaseLock()}catch{}}
+  }
+}
+
 // Le chemin seul ne prouve ni l'existence ni le type de l'objet.
 async function registryPhotoStored(service:any,photoPath:string):Promise<boolean>{
   const bucketId='sinjira-character-sources';
@@ -64,9 +112,11 @@ async function registryPhotoStored(service:any,photoPath:string):Promise<boolean
   try{
     const {data:bucket,error:bucketError}=await service.storage.getBucket(bucketId);
     if(bucketError||bucket?.id!==bucketId||bucket.public!==false)return false;
-    const {data:info,error:infoError}=await service.storage.from(bucketId).info(photoPath);
-    return !infoError&&typeof info?.size==='number'&&Number.isSafeInteger(info.size)
-      &&info.size>0&&info.size<=maxBytes&&info.contentType===formats[ext];
+    const file=service.storage.from(bucketId);
+    const {data:info,error:infoError}=await file.info(photoPath);
+    if(infoError||typeof info?.size!=='number'||!Number.isSafeInteger(info.size)
+      ||info.size<=0||info.size>maxBytes||info.contentType!==formats[ext])return false;
+    return await registryPhotoBinaryVerified(file,photoPath,info.size);
   }catch{return false}
 }
 
