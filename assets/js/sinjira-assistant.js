@@ -6,7 +6,7 @@
   // chargement différé ou externe injecte ce fichier, respecter ce contrat.
   if (doc.documentElement &&
       doc.documentElement.getAttribute('data-disable-sinjira-assistant') === 'true') return;
-  var ASSISTANT_VERSION = '24.4.48';
+  var ASSISTANT_VERSION = '24.4.50';
   var PROVIDER_MODE = 'local';
   var EXTERNAL_PROVIDER_ENABLED = false;
   var MAX_MESSAGE_LENGTH = 500;
@@ -49,7 +49,7 @@
   }
 
   var PAGE_CONTEXTS = [
-    { match: /^\/$/, label: 'Accueil Benoit Cantin', answer: 'Vous êtes sur le portail principal. Les trois accès mis de l’avant sont SINJIRA™, le Registre des Consciences et Projet Nova.', links: [{ label: 'SINJIRA™', href: '/projets/sinjira/' }, { label: 'Registre', href: '/projets/sinjira/registre/' }, { label: 'Projet Nova', href: '/projets/projet-nova/' }] },
+    { match: /^\/$/, label: 'Accueil Benoit Cantin', answer: 'L’accueil met SINJIRA™ à l’honneur. Découvrez ses romans, ses jeux, le Registre des Consciences et les espaces communautaires.', links: [{ label: 'SINJIRA™', href: '/projets/sinjira/' }, { label: 'Romans', href: '/projets/sinjira/romans/' }, { label: 'Jeux', href: '/projets/sinjira/jeux/' }] },
     { match: /^\/projets\/sinjira\/registre\//, label: 'Registre des Consciences', answer: 'Vous êtes dans le Registre des Consciences. Le questionnaire fournit la base humaine de votre personnage SINJIRA™. Les données de compte restent distinctes de la fiche publique du personnage.', links: [{ label: 'Mon personnage', href: '/compte/mon-personnage.html' }, { label: 'Mon compte', href: '/compte/' }] },
     { match: /^\/projets\/sinjira\/romans\//, label: 'Romans SINJIRA™', answer: 'Vous êtes dans l’espace Romans de SINJIRA™. Vous pouvez y consulter les œuvres disponibles et poursuivre votre parcours de lecture.', links: [{ label: 'Voir les romans', href: '/projets/sinjira/romans/' }, { label: 'Ma bibliothèque', href: '/compte/bibliotheque.html' }] },
     { match: /^\/projets\/sinjira\/jeux\/fracture-du-reseau-mere\//, label: 'Fracture du Réseau-Mère', answer: 'Vous êtes dans Fracture du Réseau-Mère. Votre identité de faction est privée pendant la partie; les identités des autres joueurs restent cachées jusqu’au moment prévu par les règles.', links: [{ label: 'Accueil Fracture', href: '/projets/sinjira/jeux/fracture-du-reseau-mere/' }, { label: 'Mes parties', href: '/compte/mes-parties.html' }] },
@@ -76,14 +76,29 @@
     for (var i = 0; i < PAGE_CONTEXTS.length; i += 1) {
       if (PAGE_CONTEXTS[i].match.test(path)) return PAGE_CONTEXTS[i];
     }
-    return { label: 'Site Benoit Cantin', answer: 'Vous êtes sur le site officiel de Benoit Cantin. Je peux vous guider vers SINJIRA™, le Registre des Consciences, Projet Nova ou la page Contact.', links: [{ label: 'Accueil', href: '/' }, { label: 'Contact', href: '/contact.html' }] };
+    return { label: 'Site Benoit Cantin', answer: 'Vous êtes sur le site officiel de Benoit Cantin. Je peux vous guider vers SINJIRA™, les romans, les jeux, le Registre des Consciences ou la page Contact.', links: [{ label: 'Accueil', href: '/' }, { label: 'Contact', href: '/contact.html' }] };
   }
 
   var CONTEXT_SUGGESTIONS = {
     'Accueil Benoit Cantin': [
       { label: 'Découvrir SINJIRA™', question: 'C’est quoi SINJIRA™ ?' },
       { label: 'Créer mon personnage', question: 'Comment créer mon personnage ?' },
-      { label: 'Découvrir Projet Nova', question: 'C’est quoi Projet Nova ?' }
+      { label: 'Explorer les romans', question: 'Où lire les romans SINJIRA ?' }
+    ],
+    'Portail SINJIRA™': [
+      { label: 'Lire les romans', question: 'Où lire les romans SINJIRA ?' },
+      { label: 'Découvrir les jeux', question: 'Où trouver les jeux SINJIRA ?' },
+      { label: 'Créer mon personnage', question: 'Comment créer mon personnage ?' }
+    ],
+    'Jeux SINJIRA™': [
+      { label: 'Voir les jeux', question: 'Où trouver les jeux SINJIRA ?' },
+      { label: 'Mes parties', question: 'Où sont mes parties ?' },
+      { label: 'Fracture', question: 'Comment jouer à Fracture ?' }
+    ],
+    'Communauté SINJIRA™': [
+      { label: 'Participer', question: 'Comment utiliser la communauté SINJIRA ?' },
+      { label: 'Réseau personnage', question: 'Où trouver le réseau personnage ?' },
+      { label: 'Mon compte', question: 'J’ai besoin d’aide avec mon compte.' }
     ],
     'Registre des Consciences': [
       { label: 'Créer mon personnage', question: 'Comment créer mon personnage ?' },
@@ -206,7 +221,7 @@
       if (score > bestScore) { best = intent; bestScore = score; }
     }
     if (!best || bestScore < 3) {
-      return { id: 'fallback', answer: 'Je n’ai pas une réponse assez précise pour inventer. ' + context.answer + ' Vous pouvez aussi demander de l’aide sur SINJIRA™, le Registre, les romans, Fracture, votre compte, la communauté, Projet Nova, la confidentialité ou le contact humain.', links: context.links };
+      return { id: 'fallback', answer: 'Je n’ai pas une réponse assez précise pour inventer. ' + context.answer + ' Vous pouvez aussi demander de l’aide sur SINJIRA™, le Registre, les romans, les jeux, votre compte, la communauté, la confidentialité ou le contact humain.', links: context.links };
     }
     return best;
   }
@@ -280,7 +295,7 @@
   var submit = el('button', 'sinjira-assistant-send', 'Envoyer');
   submit.type = 'submit';
   form.appendChild(label); form.appendChild(input); form.appendChild(submit);
-  var privacy = el('p', 'sinjira-assistant-privacy', 'Mode V24.4.48 : conversation éphémère dans cet onglet, sans fournisseur d’IA externe. L’assistant utilise seulement une base d’aide locale et le chemin de la page. Ne saisissez jamais un mot de passe, un code de récupération ou une information très sensible.');
+  var privacy = el('p', 'sinjira-assistant-privacy', 'Aide locale et éphémère, sans IA externe. Ne partagez aucun mot de passe, code de récupération ou donnée sensible.');
   privacy.id = 'sinjira-assistant-privacy';
   panel.appendChild(header); panel.appendChild(intro); panel.appendChild(suggestions); panel.appendChild(log); panel.appendChild(form); panel.appendChild(privacy);
   root.appendChild(toggle); root.appendChild(panel); doc.body.appendChild(root);
@@ -322,7 +337,9 @@
     toggle.setAttribute('aria-expanded', 'true');
     root.className = 'sinjira-assistant is-open';
     if (!log.children.length) appendMessage('assistant', 'Bonjour. Je peux vous aider avec « ' + pageContext.label + ' » ou vous guider vers une autre section du site. Que cherchez-vous ?');
-    window.setTimeout(function () { input.focus(); }, 0);
+    // Transférer le focus dans le dialogue immédiatement : aucun timer ne doit
+    // le renvoyer dans un panneau déjà refermé après une ouverture rapide.
+    input.focus();
   }
 
   function closePanel() {

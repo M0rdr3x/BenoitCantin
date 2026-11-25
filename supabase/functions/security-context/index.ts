@@ -57,6 +57,21 @@ function safeText(value: unknown, max: number) {
   return typeof value === 'string' ? value.trim().slice(0, max) : '';
 }
 
+// Une clé opaque ne doit jamais être tronquée ni normalisée vers une autre clé.
+function validDeviceKey(value: unknown) {
+  return typeof value === 'string' && /^[!-~]{16,128}$/.test(value) ? value : null;
+}
+
+function validSecurityDecision(value: unknown) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const decision = value as Record<string, unknown>;
+  if (typeof decision.outcome !== 'string' || !['allow', 'approved', 'challenge', 'block'].includes(decision.outcome)) return false;
+  if (typeof decision.device_id !== 'string' || !UUID_RE.test(decision.device_id)) return false;
+  if (decision.outcome === 'challenge' &&
+      (typeof decision.challenge_id !== 'string' || !UUID_RE.test(decision.challenge_id))) return false;
+  return true;
+}
+
 function safeDeviceType(value: unknown) {
   const type = safeText(value, 20);
   return ['browser', 'ios', 'android', 'tablet', 'other'].includes(type) ? type : 'other';
@@ -239,8 +254,8 @@ Deno.serve(async (req) => {
     const parsed = await readLimitedJson(req);
     if (parsed.response) return parsed.response;
     const body = parsed.body || {};
-    const deviceKey = safeText(body?.device_key, 128);
-    if (deviceKey.length < 16) return privateJson({ ok: false, error: 'Identifiant d’appareil invalide.' }, 400);
+    const deviceKey = validDeviceKey(body?.device_key);
+    if (!deviceKey) return privateJson({ ok: false, error: 'Identifiant d’appareil invalide.' }, 400);
 
     const geo = trustedGeo(req);
     const service = serviceClient();
@@ -256,6 +271,9 @@ Deno.serve(async (req) => {
       p_session_id: sessionId
     });
     if (error) throw error;
+    if (!validSecurityDecision(data)) {
+      return privateJson({ ok: false, error: 'Décision de sécurité indisponible.' }, 503);
+    }
 
     EdgeRuntime.waitUntil(runSecurityPushBackground(service, user.id, data));
 
@@ -271,7 +289,7 @@ Deno.serve(async (req) => {
       }
     });
   } catch (error) {
-    console.error('[security-context]', error);
+    console.error('[security-context]', { code: 'SECURITY_CONTEXT_FAILED' });
     if (error?.message === 'AUTH_REQUIRED') return privateJson({ ok: false, error: 'Connexion requise.', code: 'AUTH_REQUIRED' }, 401);
     return privateJson({ ok: false, error: 'Le contexte de sécurité est temporairement indisponible.' }, 500);
   }

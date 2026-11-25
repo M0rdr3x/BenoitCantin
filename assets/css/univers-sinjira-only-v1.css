@@ -1,0 +1,188 @@
+/* Hub des univers 2026 : un seul projet principal SINJIRA, parcours distincts.
+ * Limité à univers.html; aucun changement des archives ni du portail privé. */
+body.univers-sinjira-page .univers-hero-grid{
+  display:grid;
+  grid-template-columns:minmax(0,1.3fr) minmax(210px,.7fr);
+  align-items:center;
+  column-gap:clamp(20px,6vw,80px);
+  row-gap:24px;
+}
+body.univers-sinjira-page .univers-hero-copy{min-width:0}
+body.univers-sinjira-page .univers-hero-copy h1{
+  font-size:clamp(2rem,6vw,4.6rem);
+  line-height:1.1;
+  overflow-wrap:anywhere;
+  text-wrap:balance;
+}
+body.univers-sinjira-page .univers-hero-copy p{
+  max-width:65ch;
+  line-height:1.65;
+}
+body.univers-sinjira-page .univers-orbit-wrap{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  min-width:0;
+  gap:12px;
+}
+body.univers-sinjira-page .univers-main-project{
+  display:flex;
+  box-sizing:border-box;
+  width:min(100%,285px);
+  aspect-ratio:1;
+  border-radius:50%;
+  border:2px solid rgba(242,131,119,.62);
+  background:radial-gradient(circle at 50% 42%,rgba(158,53,56,.22),#141424 75%);
+  box-shadow:0 0 0 8px rgba(197,92,88,.05),0 22px 55px rgba(0,0,0,.24);
+  padding:clamp(14px,3vw,28px);
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  color:#fff;
+  text-align:center;
+  text-decoration:none;
+  transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+}
+body.univers-sinjira-page .univers-main-project:hover{
+  border-color:#ffc0ab;
+  transform:translateY(-3px);
+  box-shadow:0 0 0 8px rgba(197,92,88,.08),0 25px 55px rgba(0,0,0,.28);
+}
+body.univers-sinjira-page .univers-main-project:focus-visible,
+body.univers-sinjira-page .univers-path-link:focus-visible{
+  outline:3px solid #a1f4ec;
+  outline-offset:5px;
+}
+body.univers-sinjira-page .univers-main-project img{
+  display:block;
+  width:clamp(78px,12vw,142px);
+  height:auto;
+  max-width:65%;
+  max-height:55%;
+  object-fit:contain;
+}
+body.univers-sinjira-page .univers-main-project strong{
+  font-size:clamp(1rem,2.4vw,1.4rem);
+  line-height:1.2;
+}
+body.univers-sinjira-page .univers-main-project span{
+  font-size:clamp(.76rem,1.5vw,.91rem);
+  line-height:1.35;
+  color:#ffdfd5;
+}
+body.univers-sinjira-page .univers-orbit-caption{
+  color:var(--muted);
+  text-align:center;
+  font-size:.9rem;
+  line-height:1.5;
+  margin:0;
+}
+body.univers-sinjira-page .univers-path-intro{
+  max-width:64ch;
+  line-height:1.6;
+  color:var(--muted);
+}
+body.univers-sinjira-page .univers-path-list{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+  padding:0;
+  margin:24px 0 0;
+  list-style:none;
+}
+body.univers-sinjira-page .univers-path-list > li{min-width:0}
+body.univers-sinjira-page .univers-path-link{
+  display:flex;
+  box-sizing:border-box;
+  height:100%;
+  min-height:164px;
+  min-width:0;
+  padding:clamp(16px,2.5vw,24px);
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:flex-start;
+  gap:9px;
+  border:1px solid rgba(173,196,233,.28);
+  border-radius:18px;
+  background:linear-gradient(150deg,rgba(27,34,58,.9),rgba(15,19,37,.92));
+  color:var(--text);
+  text-decoration:none;
+  overflow-wrap:anywhere;
+  transition:border-color .18s ease,transform .18s ease;
+}
+body.univers-sinjira-page .univers-path-link:hover{
+  border-color:rgba(161,244,236,.7);
+  transform:translateY(-2px);
+}
+body.univers-sinjira-page .univers-path-kicker{
+  font-size:.72rem;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:#b8e8e1;
+  font-weight:750;
+}
+body.univers-sinjira-page .univers-path-title{
+  font-size:clamp(1.1rem,2vw,1.35rem);
+  line-height:1.28;
+  color:#fff;
+}
+body.univers-sinjira-page .univers-path-description{
+  line-height:1.55;
+  color:#c7d2e4;
+  font-size:.95rem;
+}
+body.univers-sinjira-page .univers-cta{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:flex-start;
+  gap:12px;
+  margin-top:20px;
+}
+body.univers-sinjira-page .univers-cta > a{
+  box-sizing:border-box;
+  min-height:48px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding-inline:18px;
+  max-width:100%;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+@media(max-width:920px){
+  body.univers-sinjira-page .univers-path-list{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+@media(max-width:700px){
+  body.univers-sinjira-page .page-hero{padding-block:clamp(24px,6vw,46px)}
+  body.univers-sinjira-page .univers-hero-grid{
+    grid-template-columns:minmax(0,1fr);
+  }
+  body.univers-sinjira-page .univers-orbit-wrap{order:-1}
+  body.univers-sinjira-page .univers-main-project{
+    width:min(64vw,218px);
+    min-width:0;
+  }
+  body.univers-sinjira-page .univers-main-project img{width:clamp(75px,25vw,105px)}
+}
+@media(max-width:520px){
+  body.univers-sinjira-page .univers-path-list{
+    grid-template-columns:minmax(0,1fr);
+    gap:10px;
+  }
+  body.univers-sinjira-page .univers-path-link{min-height:108px}
+  body.univers-sinjira-page .univers-cta{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+  }
+  body.univers-sinjira-page .univers-cta > a{width:100%}
+}
+@media(prefers-reduced-motion:reduce){
+  body.univers-sinjira-page .univers-main-project,
+  body.univers-sinjira-page .univers-path-link{transition:none}
+}

@@ -17,7 +17,7 @@ PAGES = (
     "compte/mot-de-passe-oublie.html",
     "compte/reinitialiser-mot-de-passe.html",
 )
-WIDTHS = (320, 390, 540, 768, 1440)
+WIDTHS = (240, 280, 320, 390, 540, 768, 1440)
 LOGO = "/assets/icons/sinjira-officiel-20261120.png"
 
 
@@ -116,7 +116,7 @@ def run():
                     for width in WIDTHS:
                         inspect_route(page, path, width)
                 assert_password_script_is_safe(context)
-                print(f"OK {ENGINE}: quatre formulaires Auth à 320–1440px + révélation locale sûre")
+                print(f"OK {ENGINE}: quatre formulaires Auth à 240–1440px + révélation locale sûre")
             finally:
                 context.close()
         finally:

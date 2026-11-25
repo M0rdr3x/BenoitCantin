@@ -4,6 +4,7 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
 reader = (root / "assets/js/sinjira-reader.js").read_text(encoding="utf-8")
+loader = (root / "assets/js/sinjira-comments-lazy-v1.js").read_text(encoding="utf-8")
 html = (root / "projets/sinjira/romans/index.html").read_text(encoding="utf-8")
 css = (root / "assets/css/sinjira-comments-responsive-v2.css").read_text(encoding="utf-8")
 account_js = (root / "assets/js/sinjira-account-v18.js").read_text(encoding="utf-8")
@@ -36,7 +37,7 @@ for forbidden in ["from('novel_comments')", "contains_spoilers:", "display_name_
 for marker in [
     'data-reader-page="novel"',
     'sinjira-comments-responsive-v2.css?v=2.1.0',
-    'sinjira-reader.js?v=25.1.3',
+    'sinjira-comments-lazy-v1.js?v=1.0.0',
     'id="sinjira-commentaire-texte"',
     'for="sinjira-commentaire-texte"',
     'minlength="3"',
@@ -47,6 +48,9 @@ for marker in [
     'aria-live="polite"',
 ]:
     check(marker in html, "HTML commentaires manquant : " + marker)
+for marker in ["import('./sinjira-reader.js?v=25.1.3')", "IntersectionObserver", "hashchange", "focusin", "if(started)return"]:
+    check(marker in loader, "Chargement différé absent : " + marker)
+check('sinjira-reader.js?v=25.1.3' not in html, "Module de commentaires chargé directement")
 for marker in [
     '.reader-comment-form[hidden]', 'display:none!important',
     'grid-template-columns:minmax(0,1fr)',
@@ -63,7 +67,7 @@ for marker in ["from('sinjira_novel_comments')", "sinjira_novels(title)", "reade
     check(marker in account_js, "Compte commentaires incomplet : " + marker)
 for forbidden in ["from('novel_comments')", "contains_spoilers", "prompt('Modifier"]:
     check(forbidden not in account_js, "Ancienne API ou édition modale dans le compte : " + forbidden)
-for marker in ["data-v18-page=\"comments\"", "sinjira-comments-responsive-v2.css?v=2.0.2", 'aria-live="polite"']:
+for marker in ["data-v18-page=\"comments\"", "sinjira-comments-responsive-v2.css?v=2.0.3", 'aria-live="polite"']:
     check(marker in account_html, "Compte commentaires HTML incomplet : " + marker)
 check("novels(title)" in account_js and "c.novels?.title" in account_js,
       "Mes personnages : mauvaise relation pour le titre du roman")

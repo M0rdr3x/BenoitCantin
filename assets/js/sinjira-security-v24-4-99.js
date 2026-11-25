@@ -48,7 +48,7 @@ document.addEventListener('click',async event=>{
   let deviceRevoked=false;
   try{
     const {data,error}=await s.rpc('security_report_lost_device',{p_device_id:id});
-    if(error)throw error;
+    if(error!==null)throw error||new Error('DEVICE_REVOKE_UNCONFIRMED');
     // Un résultat sans erreur n'est pas une preuve de révocation. Le serveur
     // indique explicitement qu'une révocation Auth reste nécessaire.
     if(data?.ok!==true || data?.session_revocation_required!==true){

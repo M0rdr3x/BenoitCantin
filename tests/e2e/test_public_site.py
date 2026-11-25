@@ -9,7 +9,7 @@ from playwright.sync_api import TimeoutError as PlaywrightTimeoutError, sync_pla
 BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
 BROWSER_NAME = os.environ.get("BROWSER", "chromium").strip().lower()
 SUPPORTED_BROWSERS = {"chromium", "firefox", "webkit"}
-ASSISTANT_VERSION = "24.4.48"
+ASSISTANT_VERSION = "24.4.50"
 PUBLIC_ROUTES = [
     "",
     "a-propos.html",
@@ -58,6 +58,57 @@ def wait_for_assistant(page):
         arg=[ASSISTANT_VERSION],
         timeout=10_000,
     )
+
+
+def check_legal_navigation(browser):
+    # Sommaire natif : aucun compte, aucun script requis, aucune écriture.
+    legal_pages = {"avis-legal.html": 10, "confidentialite.html": 13,
+                   "gouvernance-vie-privee.html": 9}
+    for js in (False, True):
+        ctx = browser.new_context(locale="fr-CA", java_script_enabled=js,
+                                  reduced_motion="reduce", service_workers="block")
+        # Playwright désactive le cache HTTP avec le routage. Les réponses
+        # conditionnelles 304 ne doivent pas être confondues avec un échec
+        # de chargement et aucune ressource externe n’est nécessaire ici.
+        ctx.route("**/*", lambda route: route.continue_() if
+                  urlparse(route.request.url).netloc == urlparse(BASE_URL).netloc
+                  else route.abort())
+        try:
+            page = ctx.new_page()
+            for width in (240, 320, 390, 768, 1440):
+                page.set_viewport_size({"width": width, "height": 820})
+                for path, count in legal_pages.items():
+                    response = page.goto(urljoin(BASE_URL, path), wait_until="load", timeout=30_000)
+                    assert_true(response is not None and response.ok,
+                                f"{BROWSER_NAME}: {path} indisponible, {width}px, JS={js}, "
+                                f"HTTP={response.status if response else None}")
+                    nav = page.locator("main nav#sommaire")
+                    links = nav.locator("a")
+                    headings = page.locator("main article h2[id]")
+                    assert_true(links.count() == count == headings.count(), f"{path}: sommaire incomplet")
+                    for i in range(count):
+                        link = links.nth(i)
+                        target = link.get_attribute("href")
+                        assert_true(target == "#" + headings.nth(i).get_attribute("id"),
+                                    f"{path}: ancre incohérente")
+                        assert_true(link.inner_text() == headings.nth(i).inner_text(),
+                                    f"{path}: libellé incohérent")
+                        box = link.bounding_box()
+                        assert_true(box is not None and box["height"] >= 44 and
+                                    box["x"] >= -2 and box["x"] + box["width"] <= width + 2,
+                                    f"{path}: lien tactile hors écran {width}px")
+                    if width == 390:
+                        link = links.last
+                        target = link.get_attribute("href")
+                        link.focus()
+                        link.press("Enter")
+                        assert_true(urlparse(page.url).fragment == target[1:], f"{path}: ancre clavier")
+                        back = page.locator(".legal-toc-return a")
+                        back.focus()
+                        back.press("Enter")
+                        assert_true(urlparse(page.url).fragment == "sommaire", f"{path}: retour sommaire")
+        finally:
+            ctx.close()
 
 
 def run() -> None:
@@ -146,6 +197,28 @@ def run() -> None:
             page.locator('footer a[href="mailto:sinjiraofficiel@gmail.com"]').count() == 1,
             f"{BROWSER_NAME}: contact officiel absent du pied de page SINJIRA",
         )
+
+        # Cibles tactiles du hub Univers : contrôler la géométrie, pas seulement le CSS.
+        for width in (320, 390, 1440):
+            touch_context = browser.new_context(
+                viewport={"width": width, "height": 760},
+                locale="fr-CA", service_workers="block", java_script_enabled=False,
+            )
+            try:
+                touch_page = touch_context.new_page()
+                touch_page.goto(urljoin(BASE_URL, "projets/sinjira/"),
+                                wait_until="load", timeout=30_000)
+                targets = touch_page.locator(".site-footer .footer-col a")
+                assert_true(targets.count() >= 10, "liens du pied de page absents")
+                for link in targets.all():
+                    bounds = link.bounding_box()
+                    assert_true(bounds is not None and bounds["height"] >= 43.5
+                                and bounds["width"] >= 43.5,
+                                f"{BROWSER_NAME}: cible du pied de page trop petite à {width}px")
+                assert_true(touch_page.evaluate("document.documentElement.scrollWidth <= innerWidth + 2"),
+                            f"{BROWSER_NAME}: Univers hors écran à {width}px")
+            finally:
+                touch_context.close()
 
         page.goto(urljoin(BASE_URL, "contact.html"), wait_until="domcontentloaded", timeout=30_000)
         assert_true(
@@ -916,6 +989,12 @@ def run() -> None:
         form = page.locator("#contact-general")
         route = page.locator("#contact-route")
         submit = page.locator("#contact-submit")
+        preview = page.locator("#contact-preview")
+        assert_true(preview.count() == 1 and preview.get_attribute("open") is None,
+                    f"{BROWSER_NAME}: l’aperçu désactivé encombre la page Contact")
+        preview.locator("summary").click()
+        assert_true(preview.get_attribute("open") is not None,
+                    f"{BROWSER_NAME}: l’aperçu contact ne s’ouvre pas au clic")
         assert_true(project.locator('option[value="Projet Nova"]').count() == 0, f"{BROWSER_NAME}: Projet Nova encore routé par le formulaire personnel")
         personal_fields = page.locator("#contact-personal-fields")
         assert_true(
@@ -949,9 +1028,8 @@ def run() -> None:
         assert_true(form.get_attribute("method") is None, f"{BROWSER_NAME}: POST personnel actif avant configuration")
         assert_true(form.get_attribute("data-personal-formspree-state") == "pending-separate-endpoint", f"{BROWSER_NAME}: état fail-closed Formspree absent")
         assert_true(
-            any("form.getAttribute('data-personal-formspree-state')==='active-separate-endpoint'" in js
-                for js in page.locator("script:not([src])").all_text_contents()),
-            f"{BROWSER_NAME}: double verrou du formulaire personnel absent",
+            page.locator('script[src="/assets/js/sinjira-contact-route-v1.js?v=1.0.0"]').count() == 1,
+            f"{BROWSER_NAME}: runtime externe de verrouillage du contact personnel absent",
         )
         assert_true(submit.is_disabled(), f"{BROWSER_NAME}: bouton personnel actif avant endpoint distinct")
         assert_true("désactivé" in route.inner_text().lower(), f"{BROWSER_NAME}: message fail-closed absent")
@@ -1064,6 +1142,11 @@ def run() -> None:
             assert_true(assistant.get("privacy") == "ephemeral-memory-only", f"{BROWSER_NAME}: contrat de confidentialité assistant invalide")
             assert_true(assistant.get("contextLabel") == "Portail SINJIRA™", f"{BROWSER_NAME}: contexte SINJIRA assistant invalide")
             assert_true(int(assistant.get("intentCount") or 0) >= 20, f"{BROWSER_NAME}: base d’aide assistant trop limitée")
+            suggestions = page.locator(".sinjira-assistant-chip").all_text_contents()
+            assert_true(suggestions == ["Lire les romans", "Découvrir les jeux", "Créer mon personnage"],
+                        f"{BROWSER_NAME}: les suggestions du portail SINJIRA doivent aider à naviguer : {suggestions}")
+            assert_true("Projet Nova" not in page.locator(".sinjira-assistant-suggestions").inner_text(),
+                        f"{BROWSER_NAME}: une archive ne doit plus être promue sur le portail SINJIRA")
 
             assistant_toggle = page.locator(".sinjira-assistant-toggle")
             assert_true(assistant_toggle.count() == 1, f"{BROWSER_NAME}: bouton Aide IA absent")
@@ -1071,6 +1154,14 @@ def run() -> None:
             panel = page.locator("#sinjira-assistant-panel")
             assert_true(panel.is_visible(), f"{BROWSER_NAME}: panneau assistant ne s’ouvre pas")
             assert_true(assistant_toggle.get_attribute("aria-expanded") == "true", f"{BROWSER_NAME}: aria-expanded assistant invalide")
+            assert_true(
+                assistant_toggle.evaluate("(el) => getComputedStyle(el).visibility === 'hidden'"),
+                f"{BROWSER_NAME}: commande d'ouverture invisible encore focusable dans le panneau",
+            )
+            assert_true(
+                page.locator("#sinjira-assistant-input").evaluate("(el) => document.activeElement === el"),
+                f"{BROWSER_NAME}: le focus n'arrive pas directement dans le panneau d'aide",
+            )
 
             question = page.locator("#sinjira-assistant-input")
             question.fill("Comment créer mon personnage ?")
@@ -1105,7 +1196,44 @@ def run() -> None:
 
             page.keyboard.press("Escape")
             assert_true(panel.is_hidden(), f"{BROWSER_NAME}: Escape ne ferme pas l’assistant")
+            assert_true(
+                assistant_toggle.evaluate(
+                    "(el) => getComputedStyle(el).visibility === 'visible' && document.activeElement === el"
+                ),
+                f"{BROWSER_NAME}: le focus ne revient pas au bouton visible après Échap",
+            )
+            # Le déclencheur reste accessible au clavier après fermeture, et
+            # la commande Fermer doit rendre le focus au même endroit.
+            assistant_toggle.press("Enter")
+            assert_true(panel.is_visible(), f"{BROWSER_NAME}: réouverture clavier impossible")
+            assert_true(
+                assistant_toggle.evaluate("(el) => getComputedStyle(el).visibility === 'hidden'"),
+                f"{BROWSER_NAME}: bouton masqué toujours focusable après réouverture",
+            )
+            panel.locator(".sinjira-assistant-close").click()
+            assert_true(panel.is_hidden(), f"{BROWSER_NAME}: bouton Fermer inopérant")
+            assert_true(
+                assistant_toggle.evaluate("(el) => document.activeElement === el"),
+                f"{BROWSER_NAME}: Fermer ne restitue pas le focus au déclencheur",
+            )
 
+            # Les suggestions doivent suivre la rubrique courante, y compris
+            # la page du jeu Fracture. L'archive Nova reste accessible seulement
+            # par demande explicite ou par sa propre route.
+            page.goto(urljoin(BASE_URL, "projets/sinjira/jeux/"), wait_until="domcontentloaded", timeout=30_000)
+            wait_for_assistant(page)
+            assert_true(page.evaluate("window.__SINJIRA_ASSISTANT__.contextLabel") == "Jeux SINJIRA™",
+                        f"{BROWSER_NAME}: contexte assistant Jeux incorrect")
+            assert_true(page.locator(".sinjira-assistant-chip").all_text_contents() ==
+                        ["Voir les jeux", "Mes parties", "Fracture"],
+                        f"{BROWSER_NAME}: accès rapides jeux manquants")
+            page.goto(urljoin(BASE_URL, "projets/sinjira/jeux/fracture-du-reseau-mere/"),
+                      wait_until="domcontentloaded", timeout=30_000)
+            wait_for_assistant(page)
+            assert_true(page.evaluate("window.__SINJIRA_ASSISTANT__.contextLabel") == "Fracture du Réseau-Mère",
+                        f"{BROWSER_NAME}: aide contextuelle Fracture absente")
+            assert_true("Projet Nova" not in page.locator(".sinjira-assistant-suggestions").inner_text(),
+                        f"{BROWSER_NAME}: promotion Nova présente sur une page Jeux")
 
             # Le Registre SINJIRA est désormais progressif, sans persistance
             # locale des réponses. Les tests restent anonymes et ne soumettent
@@ -1352,8 +1480,30 @@ def run() -> None:
         response = mobile_page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30_000)
         assert_true(response is not None and response.status < 400, f"{BROWSER_NAME}: accueil mobile inaccessible")
 
-        overflow = mobile_page.evaluate("document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2")
-        assert_true(overflow, f"{BROWSER_NAME}: débordement horizontal détecté en 390 px")
+        # Contrôler l'état initial ET l'état après les ressources tardives, sans
+        # relancer ou masquer une anomalie. Ne journaliser ni texte ni données personnelles.
+        def assert_mobile_reflow(stage):
+            geometry = mobile_page.evaluate("""() => {
+                const root = document.documentElement;
+                const width = innerWidth;
+                return {
+                  width, scrollWidth: root.scrollWidth,
+                  offenders: [...document.querySelectorAll('body *')].filter(el => {
+                    const r = el.getBoundingClientRect();
+                    return r.width > 0 && (r.right > width + 2 || r.left < -2)
+                      && getComputedStyle(el).position !== 'fixed';
+                  }).slice(0, 12).map(el => ({
+                    tag: el.tagName, id: el.id, className: typeof el.className === 'string' ? el.className : '',
+                    left: Math.round(el.getBoundingClientRect().left),
+                    right: Math.round(el.getBoundingClientRect().right)
+                  }))
+                };
+            }""")
+            assert_true(geometry["scrollWidth"] <= geometry["width"] + 2,
+                        f"{BROWSER_NAME}: débordement horizontal à 390 px ({stage}): {geometry}")
+        assert_mobile_reflow("DOMContentLoaded")
+        mobile_page.wait_for_load_state("load", timeout=30_000)
+        assert_mobile_reflow("load")
 
         toggle = mobile_page.locator("[data-menu-toggle]")
         assert_true(toggle.count() == 1, f"{BROWSER_NAME}: bouton de menu mobile absent")
@@ -1440,6 +1590,34 @@ def run() -> None:
             assert_true(mobile_panel.is_visible(), f"{BROWSER_NAME}: assistant mobile SINJIRA ne s’ouvre pas")
             assistant_overflow = mobile_page.evaluate("document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2")
             assert_true(assistant_overflow, f"{BROWSER_NAME}: assistant crée un débordement horizontal en 390 px")
+            for width, height in ((390, 360), (320, 420), (240, 420)):
+                mobile_page.set_viewport_size({"width": width, "height": height})
+                visible = mobile_page.evaluate("""() => {
+                  const panel = document.querySelector('#sinjira-assistant-panel');
+                  const children = ['.sinjira-assistant-close', '.sinjira-assistant-input',
+                                    '.sinjira-assistant-send', '.sinjira-assistant-privacy'];
+                  const bounds = node => {
+                    const b = node.getBoundingClientRect();
+                    return {left:b.left,right:b.right,top:b.top,bottom:b.bottom,
+                            height:b.height,width:b.width};
+                  };
+                  return {panel:bounds(panel),
+                          children:children.map(sel => ({selector:sel, ...bounds(panel.querySelector(sel))})),
+                          overflow:document.documentElement.scrollWidth > innerWidth + 2};
+                }""")
+                assert_true(not visible["overflow"] and visible["panel"]["top"] >= -2
+                            and visible["panel"]["bottom"] <= height + 2,
+                            f"{BROWSER_NAME}: panneau assistant déborde à {width}x{height}: {visible}")
+                for child in visible["children"]:
+                    assert_true(child["top"] >= visible["panel"]["top"] - 2
+                                and child["bottom"] <= visible["panel"]["bottom"] + 2
+                                and child["left"] >= visible["panel"]["left"] - 2
+                                and child["right"] <= visible["panel"]["right"] + 2,
+                                f"{BROWSER_NAME}: commande ou confidentialité masquée à "
+                                f"{width}x{height}: {child}")
+                    if child["selector"] in (".sinjira-assistant-close", ".sinjira-assistant-send"):
+                        assert_true(child["height"] >= 43.5,
+                                    f"{BROWSER_NAME}: cible tactile assistant sous 44px à {width}x{height}")
             mobile_page.keyboard.press("Escape")
 
         # Le Centre Vie privée SINJIRA est volontairement exclu des essais
@@ -1725,6 +1903,7 @@ def run() -> None:
             locale="fr-CA",
             viewport={"width": 320, "height": 720},
             reduced_motion="reduce",
+            service_workers="block",
         )
         fallback.route("**/assets/js/site.js*", lambda route: route.abort())
         fallback_page = fallback.new_page()
@@ -1739,6 +1918,8 @@ def run() -> None:
                     f"{BROWSER_NAME}: navigation masquée lorsque site.js est bloqué")
         assert_true(public_nav.locator('a[href="/projets/sinjira/"]').is_visible(),
                     f"{BROWSER_NAME}: lien portail SINJIRA masqué sans JavaScript")
+        assert_true(fallback_page.locator('[data-menu-toggle]').get_attribute("hidden") is not None,
+                    f"{BROWSER_NAME}: commande inactive non masquée par le HTML natif")
         assert_true(fallback_page.locator('[data-menu-toggle]').is_hidden(),
                     f"{BROWSER_NAME}: bouton de menu inactif affiché sans JavaScript")
         assert_true(
@@ -1766,6 +1947,8 @@ def run() -> None:
         all_errors = page_errors + mobile_errors
         assert_true(not all_errors, f"{BROWSER_NAME}: erreurs JavaScript navigateur: " + " | ".join(all_errors[:5]))
         context.close()
+        if IS_LOCAL:
+            check_legal_navigation(browser)
         browser.close()
         auth_note = f", {len(AUTH_ROUTES)} pages Auth locales + assistant V{ASSISTANT_VERSION} contextuel" if IS_LOCAL else ""
         print(

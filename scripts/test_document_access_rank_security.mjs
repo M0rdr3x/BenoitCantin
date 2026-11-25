@@ -40,6 +40,12 @@ async function invoke({
   accessLevel,
   visibility = 'private',
   rank = 0,
+  admin = rank === 100,
+  adminError = null,
+  rankError = null,
+  bucketPublic = false,
+  bucketError = null,
+  bucketId = 'sinjira-private-documents',
   signed = false,
   user = null,
   approved = true,
@@ -68,15 +74,15 @@ async function invoke({
     },
     async rpc(name) {
       counters.rpcCalls.push(name);
-      if (name === 'is_sinjira_admin') return { data: rank === 100, error: null };
-      if (name === 'project_access_rank') return { data: rank, error: null };
+      if (name === 'is_sinjira_admin') return { data: admin, error: adminError };
+      if (name === 'project_access_rank') return { data: rank, error: rankError };
       throw new Error('Unexpected RPC');
     },
     storage: {
       async getBucket(bucket) {
         counters.bucketReads += 1;
         assert.equal(bucket, doc.storage_bucket);
-        return { data: { id: bucket, public: false }, error: null };
+        return { data: { id: bucketId, public: bucketPublic }, error: bucketError };
       },
       from(bucket) {
         assert.equal(bucket, doc.storage_bucket);
@@ -125,7 +131,7 @@ async function invoke({
 }
 
 function assertDenied(result, context) {
-  assert.equal(result.response.status, 403, context);
+  assert.ok([403,503].includes(result.response.status), context);
   assert.equal(result.payload.ok, false, context);
   assert.equal('url' in result.payload, false, context + ' ne doit produire aucune URL');
   assert.equal(result.counters.bucketReads, 0, context + ' ne doit consulter aucun bucket');
@@ -191,8 +197,7 @@ test('signature Storage privée conservée uniquement après autorisation', asyn
   assert.equal(allowed.response.status, 200);
   assert.equal(allowed.payload.protected, true);
   assert.equal(allowed.payload.expires_in, 600);
-  // Le contrôle du statut privé du bucket est une protection additionnelle en PR #1037.
-  // Cette PR cible uniquement le refus des liens AVANT tout accès au Storage.
+  assert.equal(allowed.counters.bucketReads, 1);
   assert.equal(allowed.counters.signedUrls, 1);
 });
 
@@ -201,4 +206,32 @@ test('un projet non approuvé ou inactif demeure inaccessible', async () => {
   assert.equal(pending.response.status, 404);
   const archived = await invoke({ accessLevel: 'public', visibility: 'public', active: false });
   assert.equal(archived.response.status, 404);
+});
+
+test('réponses RPC ambiguës ou en erreur ne délivrent aucun lien', async () => {
+  for (const admin of ['true', 'false', 1, null, {}, []]) {
+    const result = await invoke({accessLevel:'admin', admin, rank:0, user:{id:UUID}, signed:true});
+    assertDenied(result, 'administrateur non booléen');
+    assert.equal(result.response.status,503);
+  }
+  for (const rank of ['100', true, [100], 1000, 20.5, null, undefined, {}, '20']) {
+    const result = await invoke({accessLevel:'account', admin:false, rank, user:{id:UUID}, signed:true});
+    assertDenied(result, 'rang non canonique');
+  }
+  for (const options of [{admin:true,adminError:{code:'FAIL'}},{admin:false,rank:100,rankError:{code:'FAIL'}}]) {
+    const result=await invoke({accessLevel:'account',user:{id:UUID},signed:true,...options});
+    assertDenied(result,'erreur RPC');
+    assert.equal(result.response.status,503);
+  }
+});
+
+test('aucune signature si la confidentialité du compartiment est inconnue ou fausse', async () => {
+  for (const options of [{bucketPublic:true},{bucketPublic:null},{bucketPublic:'false'},{bucketId:'wrong-bucket'},{bucketError:{code:'FAIL'}}]) {
+    const result=await invoke({accessLevel:'account',rank:10,user:{id:UUID},signed:true,...options});
+    assert.equal(result.response.status,503);
+    assert.equal(result.payload.ok,false);
+    assert.equal('url' in result.payload,false);
+    assert.equal(result.counters.bucketReads,1);
+    assert.equal(result.counters.signedUrls,0);
+  }
 });

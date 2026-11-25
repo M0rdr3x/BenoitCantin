@@ -56,3 +56,21 @@ test('contrat UI: boutons, swipe et clavier partagent la même action',()=>{
   assert.match(html,/Les champs Page et Progression/);
   assert.doesNotMatch(js,/localStorage\.setItem\([^;]*reader-text/);
 });
+
+test('V56 : les cinq commandes typographiques préservent la position et rafraîchissent les flèches',()=>{
+  const js=readFileSync(new URL('../../assets/js/sinjira-liseuse-v26.js',import.meta.url),'utf8');
+  const html=readFileSync(new URL('../../compte/liseuse.html',import.meta.url),'utf8');
+  assert.match(js,/function updateReaderTypography\(applySetting\)/);
+  assert.match(js,/pendingTextRelayout!==transaction/);
+  assert.match(js,/state\.pdf!==transaction\.pdf\|\|state\.page!==transaction\.page/);
+  assert.match(js,/viewer\.scrollTop=scrollTopForRatio\(transaction\.ratio/);
+  assert.match(js,/state\.positionRatio=ratioFromScroll\(viewer\.scrollTop/);
+  assert.match(js,/updateScreenControls\(\);\s*persist\(\);/);
+  for(const name of ['reader-size','reader-font','reader-line-height',
+    'reader-text-width','reader-letter-spacing']){
+    const marker=name==='reader-size'?'input':'change';
+    assert.ok(js.includes("'"+name+"').addEventListener('"+marker+"'"),name+' événement absent');
+  }
+  assert.equal((js.match(/updateReaderTypography\(\(\)=>/g)||[]).length,5);
+  assert.match(html,/sinjira-liseuse-v26\.js\?v=34\.11\.22\.1/);
+});

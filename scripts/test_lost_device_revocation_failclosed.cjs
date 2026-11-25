@@ -94,6 +94,8 @@ async function main(){
 
   const cases=[
     ['RPC error', {data:null,error:{message:SECRET,code:'42501'}}],
+    ['RPC missing error field', {data:{ok:true,session_revocation_required:true}}],
+    ['RPC false error', {data:{ok:true,session_revocation_required:true},error:false}],
     ['RPC false', {data:{ok:false,session_revocation_required:true},error:null}],
     ['RPC missing confirmation', {data:{ok:true},error:null}],
     ['RPC missing response', {data:null,error:null}],

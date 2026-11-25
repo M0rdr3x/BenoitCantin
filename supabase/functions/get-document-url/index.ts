@@ -73,11 +73,13 @@ Deno.serve(async(req)=>{
 
     let userRank=0;
     if(user){
-      const {data:isAdmin}=await service.rpc('is_sinjira_admin',{p_user_id:user.id});
-      if(isAdmin)userRank=100;
+      const {data:isAdmin,error:adminError}=await service.rpc('is_sinjira_admin',{p_user_id:user.id});
+      if(adminError||typeof isAdmin!=='boolean')return privateJson({ok:false,error:'Impossible de vérifier les droits d’accès.'},503);
+      if(isAdmin===true)userRank=100;
       else{
-        const {data:accessRank}=await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user.id});
-        userRank=Number(accessRank||0);
+        const {data:accessRank,error:rankError}=await service.rpc('project_access_rank',{p_project_id:doc.project_id,p_user_id:user.id});
+        if(rankError||typeof accessRank!=='number'||![0,1,10,20,30,100].includes(accessRank))return privateJson({ok:false,error:'Impossible de vérifier les droits d’accès.'},503);
+        userRank=accessRank;
       }
     }else if(doc.projects?.visibility==='public')userRank=1;
 
@@ -92,6 +94,8 @@ Deno.serve(async(req)=>{
     }
     if(!doc.storage_bucket||!doc.storage_path)return privateJson({ok:false,error:'Fichier non configuré.'},500);
 
+    const {data:bucket,error:bucketError}=await service.storage.getBucket(doc.storage_bucket);
+    if(bucketError||bucket?.id!==doc.storage_bucket||bucket.public!==false)return privateJson({ok:false,error:'Stockage privé indisponible.'},503);
     const {data:signed,error:signedError}=await service.storage.from(doc.storage_bucket).createSignedUrl(doc.storage_path,600);
     if(signedError||!signed?.signedUrl)return privateJson({ok:false,error:'Impossible de créer le lien sécurisé.'},500);
     return privateJson({ok:true,url:signed.signedUrl,protected:true,expires_in:600});

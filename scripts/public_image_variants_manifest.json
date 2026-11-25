@@ -1,0 +1,65 @@
+{
+  "sinjira-brand-64.webp": {
+    "width": 64,
+    "height": 64,
+    "original": 77753,
+    "bytes": 4194,
+    "sha256": "4d9f23585a266010b7d766c50f30d5e3b7cc349495d23a1dba4fc7020044926c"
+  },
+  "sinjira-brand-128.webp": {
+    "width": 128,
+    "height": 128,
+    "original": 77753,
+    "bytes": 10308,
+    "sha256": "da7663e34856768705c4a178cc6729f5ad0d68b854aeae2308f12864a20baea4"
+  },
+  "sinjira-brand-192.webp": {
+    "width": 192,
+    "height": 192,
+    "original": 77753,
+    "bytes": 18732,
+    "sha256": "9f0f0ade076300b2591eec669158a36350d6b982f0a814181705041b8b46eb09"
+  },
+  "sinjira-communaute-public-480.webp": {
+    "width": 480,
+    "height": 600,
+    "original": 161214,
+    "bytes": 33758,
+    "sha256": "555c250ba563cc6494f7a9043b545f016afec0a40b7a6df6a262677e7b7f2e24"
+  },
+  "sinjira-communaute-public-720.webp": {
+    "width": 720,
+    "height": 900,
+    "original": 161214,
+    "bytes": 72028,
+    "sha256": "291ad29b35bdf134157fdef052035873b8e60e6bc6f47e96cf2e07102670cb38"
+  },
+  "sinjira-demo-promo-public-480.webp": {
+    "width": 480,
+    "height": 600,
+    "original": 300622,
+    "bytes": 35050,
+    "sha256": "477cf83c513651bc538b73f868c8ad96245df0f933cef2e4d6394adb168f3c6a"
+  },
+  "sinjira-demo-promo-public-720.webp": {
+    "width": 720,
+    "height": 900,
+    "original": 300622,
+    "bytes": 84066,
+    "sha256": "8dd3c67975c78605a33aa3b4080e79e673d7903deef38db92eb10a9516ee9788"
+  },
+  "sinjira-resistance-public-480.webp": {
+    "width": 480,
+    "height": 720,
+    "original": 242334,
+    "bytes": 39776,
+    "sha256": "22359bae972b013745392f37d01643758a3ca501da64fe9ae648ac6c3ff17908"
+  },
+  "sinjira-resistance-public-720.webp": {
+    "width": 720,
+    "height": 1080,
+    "original": 242334,
+    "bytes": 102008,
+    "sha256": "137092ddb7a88251f4cd9630d8ca49991a278eb9ace6d81ea5693500c7ce1dc1"
+  }
+}

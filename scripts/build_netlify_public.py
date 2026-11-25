@@ -631,6 +631,19 @@ def render_standalone_redirects() -> str:
         lines.append(f"{source} {target} {status_token}")
     return "\n".join(lines).rstrip() + "\n"
 
+def public_csp_blocks_objects(policy: str) -> bool:
+    """Require exactly one object-src directive with only the none value.
+
+    A substring check misses duplicates or appended origins, and can leave
+    the intended security boundary ambiguous to the browser.
+    """
+    directives = [fragment.strip().split()
+                  for fragment in policy.split(";") if fragment.strip()]
+    objects = [tokens for tokens in directives
+               if tokens[0].lower() == "object-src"]
+    return objects == [["object-src", "'none'"]]
+
+
 def validate_vercel_config() -> list[str]:
     errors: list[str] = []
     if not VERCEL_CONFIG.is_file():
@@ -677,11 +690,12 @@ def validate_vercel_config() -> list[str]:
             "connect-src 'self'",
             "frame-src 'self' https://gpvivleexywljowcqkru.supabase.co",
             "frame-ancestors 'self'",
-            "object-src 'self'",
             "base-uri 'self'",
         ):
             if directive not in csp:
                 errors.append(f"Preview Vercel: directive CSP requise absente: {directive}.")
+        if not public_csp_blocks_objects(csp):
+            errors.append("Preview Vercel: object-src 'none' unique obligatoire.")
         if "https://www.bubblav.com" in csp:
             errors.append("Preview Vercel: BubblaV doit rester bloqué dans la CSP.")
 
@@ -859,11 +873,12 @@ def validate_netlify_config() -> list[str]:
         for directive in (
             "frame-src 'self' https://gpvivleexywljowcqkru.supabase.co",
             "frame-ancestors 'self'",
-            "object-src 'self'",
             "base-uri 'self'",
         ):
             if directive not in csp:
                 errors.append(f"CSP Netlify: directive requise absente: {directive}.")
+        if not public_csp_blocks_objects(csp):
+            errors.append("CSP Netlify: object-src 'none' unique obligatoire.")
         if global_values.get("X-Content-Type-Options") != "nosniff":
             errors.append("En-tête X-Content-Type-Options=nosniff requis.")
         if global_values.get("Cross-Origin-Opener-Policy") != "same-origin-allow-popups":

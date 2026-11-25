@@ -55,8 +55,10 @@ def main():
     forbid(recovery,['auth.getSession()','randomDeviceKey','getRandomValues?.('],
            'récupération serveur-vérifiée sans nouvel appareil non prouvé')
     require(recovery,[
-        'globalSignoutOk=Boolean(result&&result.error===null);',
-        'cleanupOk=!cleanupError&&data?.ok===true;',
+        "if(result?.error===null)return 'global'",
+        'cleanupOk=result?.error===null&&result.data?.ok===true;',
+        'assertKnownAssuranceLevels(data);',
+        'if(submitting||passwordUpdated)return;',
         "signOut({scope:'local'})",
         'return null;',
     ],'révocation après récupération : confirmation et défaut strict')

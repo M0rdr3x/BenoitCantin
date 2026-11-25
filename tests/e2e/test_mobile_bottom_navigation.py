@@ -17,7 +17,7 @@ WIDTHS = (240, 320, 390, 768, 1024)
 SHELL_MARKUP = """<!doctype html><html lang="fr-CA"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="stylesheet" href="/assets/css/site.css">
-<script defer src="/assets/js/sinjira-pwa-install.js?v=24.4.96"></script>
+<script defer src="/assets/js/sinjira-pwa-install.js?v=24.4.99"></script>
 </head><body class="account-page" data-sinjira-ux="v1">
 <main id="contenu"><h1>Mon compte : contrôle de navigation</h1><a href="/app/">Fil communautaire</a></main>
 </body></html>"""
@@ -46,7 +46,7 @@ def account_geometry(page):
       const nav=document.querySelector('[data-sinjira-account-mobile-nav]');
       const links=[...(nav?.querySelectorAll('a')||[])];
       const box=nav?.getBoundingClientRect();
-      const card=document.querySelector('[data-sinjira-pwa-install]');
+      const card=document.querySelector('.sinjira-pwa-install[data-sinjira-pwa-install]');
       const cb=card?.getBoundingClientRect();
       const padding=parseFloat(getComputedStyle(document.body).paddingBottom);
       return {width:innerWidth,docOverflow:document.documentElement.scrollWidth>innerWidth+2,
@@ -113,6 +113,67 @@ def check_zoom(page):
            "cible tactile inaccessible au zoom 200 %")
 
 
+
+def check_keyboard_overlap(context):
+    # Un clavier virtuel réduit la hauteur utile; aucune donnée réelle ou
+    # contrôle d'authentification n'est chargé par cette fixture de compte.
+    page = navigate_account(context, "compte/index.html")
+    try:
+        page.evaluate("""() => {
+          const form=document.createElement('form');
+          form.innerHTML='<label for="ux-text">Texte fictif</label>'+
+            '<input type="text" id="ux-text" autocomplete="off">'+
+            '<label for="ux-area">Saisie longue</label>'+
+            '<textarea id="ux-area"></textarea>'+
+            '<label for="ux-select">Choix</label>'+
+            '<select id="ux-select"><option>Fictif</option></select>'+
+            '<label for="ux-check"><input type="checkbox" id="ux-check"> Option</label>'+
+            '<button type="button" id="ux-button">Terminé</button>';
+          document.getElementById('contenu').appendChild(form);
+        }""")
+        nav = page.locator('[data-sinjira-account-mobile-nav]')
+        for width in (240, 320, 390, 768):
+            page.set_viewport_size({"width":width, "height":360})
+            page.locator('#ux-text').focus()
+            page.wait_for_function(
+                "() => document.body.classList.contains('sinjira-account-typing')")
+            verify(not account_geometry(page)["visible"],
+                   f"le dock couvre la saisie à {width}px")
+            state = account_geometry(page)
+            verify(state["reserved"]<=16 and not state["docOverflow"],
+                   f"la marge du dock empêche la saisie à {width}px: {state}")
+            verify(not state["cardVisible"],
+                   f"l'invitation PWA couvre la saisie à {width}px")
+            page.locator('#ux-text').fill("Valeur fictive maintenue")
+            page.locator('#ux-area').focus()
+            verify(not account_geometry(page)["visible"],
+                   f"le dock revient entre deux champs à {width}px")
+            page.locator('#ux-select').focus()
+            verify(not account_geometry(page)["visible"],
+                   f"le sélecteur natif est recouvert à {width}px")
+            page.locator('#ux-check').focus()
+            page.wait_for_function(
+                "() => !document.body.classList.contains('sinjira-account-typing')")
+            verify(account_geometry(page)["visible"],
+                   f"le dock ne revient pas après la saisie à {width}px")
+            verify(page.locator('#ux-text').input_value()=="Valeur fictive maintenue",
+                   f"le contenu du champ a été perdu à {width}px")
+            page.locator('#ux-text').focus()
+            page.locator('#ux-button').focus()
+            page.wait_for_function(
+                "() => !document.body.classList.contains('sinjira-account-typing')")
+            verify(nav.is_visible(),
+                   f"la navigation ne revient pas après le bouton à {width}px")
+        # Sur ordinateur, le comportement natif des pages de compte reste inchangé.
+        page.set_viewport_size({"width":1024,"height":700})
+        page.locator('#ux-text').focus()
+        verify(account_geometry(page)["reserved"]<100,
+               "le clavier fictif ne doit pas créer une marge mobile sur PC")
+        page.locator('#ux-button').focus()
+    finally:
+        page.close()
+
+
 def check_routes(context):
     page = navigate_account(context, "compte/index.html")
     try:
@@ -141,6 +202,46 @@ def check_routes(context):
                     verify(link["current"] is None, "plusieurs pages annoncées comme actives")
         finally:
             page.close()
+
+
+    # Écran très étroit, au premier affichage : l'onglet Profil est à
+    # l'extrémité du dock et doit devenir visible sans glissement préalable.
+    page = context.new_page()
+    try:
+        page.set_viewport_size({"width": 240, "height": 700})
+        response = page.goto(urljoin(BASE, "compte/securite.html"),
+                             wait_until="domcontentloaded", timeout=30_000)
+        verify(response is not None and response.status < 400,
+               "fixture Sécurité indisponible pour le dock 240 px")
+        dock = page.locator("[data-sinjira-account-mobile-nav]")
+        dock.wait_for(state="visible", timeout=12_000)
+        page.wait_for_function("""() => {
+          const nav=document.querySelector('[data-sinjira-account-mobile-nav]');
+          const selected=nav?.querySelector('a[data-current-section]');
+          if(!nav||!selected) return false;
+          const a=selected.getBoundingClientRect(), b=nav.getBoundingClientRect();
+          return nav.scrollLeft>15 && a.left>=b.left-2 && a.right<=b.right+2;
+        }""", timeout=6_000)
+        verify(dock.locator('a[href="/compte/profil.html"]').get_attribute(
+            "data-current-section") is not None,
+            "l'onglet Profil ne correspond plus à la section Sécurité")
+        # Le geste manuel est respecté tant que l'utilisateur ne redimensionne pas.
+        dock.evaluate("(el) => {el.scrollLeft=0;}")
+        page.wait_for_timeout(150)
+        verify(dock.evaluate("(el) => el.scrollLeft") <= 2,
+               "la navigation reprend le contrôle contre le glissement de l'utilisateur")
+        # Une rotation 240 -> 390 -> 240 révèle de nouveau l'onglet actif.
+        page.set_viewport_size({"width": 390, "height": 700})
+        page.set_viewport_size({"width": 240, "height": 700})
+        page.wait_for_function("""() => {
+          const nav=document.querySelector('[data-sinjira-account-mobile-nav]');
+          const selected=nav?.querySelector('a[data-current-section]');
+          if(!nav||!selected) return false;
+          const a=selected.getBoundingClientRect(), b=nav.getBoundingClientRect();
+          return nav.scrollLeft>15 && a.left>=b.left-2 && a.right<=b.right+2;
+        }""", timeout=6_000)
+    finally:
+        page.close()
 
     page=navigate_account(context, "compte/connexion.html")
     try:
@@ -210,6 +311,7 @@ def run():
                     status=200,content_type="text/html; charset=utf-8",body=SHELL_MARKUP))
             try:
                 check_routes(context)
+                check_keyboard_overlap(context)
             finally:
                 context.close()
         finally:

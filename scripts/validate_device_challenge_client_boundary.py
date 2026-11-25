@@ -66,7 +66,7 @@ def main() -> int:
             'Expo SecureStore absent du client mobile')
     require("import * as Crypto from 'expo-crypto';" in mobile,
             'Expo Crypto absent de la génération de clé appareil')
-    require(mobile_package.get('dependencies', {}).get('expo-crypto') == '~57.0.2',
+    require(mobile_package.get('dependencies', {}).get('expo-crypto') == '57.0.2',
             'expo-crypto doit rester épinglé à la version compatible SDK 57 attendue')
     require("const DEVICE_KEY_STORAGE = 'sinjira_native_device_key_v1';" in mobile,
             'emplacement SecureStore de la clé native absent ou modifié sans revue')

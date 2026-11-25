@@ -65,7 +65,151 @@ function safeTests(safe,label){
     '/app/test\\path',
   ])eq(safe(path),HOME,label+': destination ambiguë acceptée: '+String(path));
 }
-function main(){
+async function assuranceTests(){
+  const start=SHARED.indexOf('export function assertKnownAssuranceLevels(');
+  const end=SHARED.indexOf('export function safeInternalDestination(',start);
+  assert.ok(start>=0&&end>start);
+  const validator=SHARED.slice(start,end).replace('export function','function');
+  const gateStart=SHARED.indexOf('export async function requireUser(');
+  const gateEnd=SHARED.indexOf('export function isSinjiraOwner(',gateStart);
+  assert.ok(gateStart>=0&&gateEnd>gateStart);
+  const gate=SHARED.slice(gateStart,gateEnd).replace('export async function','async function');
+  const recovery=fs.readFileSync(path.join(ROOT,'assets/js/sinjira-recovery-v24-4-99.js'),'utf8');
+  const recoveryStart=recovery.indexOf('async function requireRecoveryAal2WhenAvailable(');
+  const recoveryEnd=recovery.indexOf('async function boot(',recoveryStart);
+  assert.ok(recoveryStart>=0&&recoveryEnd>recoveryStart);
+  const recoveryGate=recovery.slice(recoveryStart,recoveryEnd);
+
+  for(const data of [null,undefined,{}, {currentLevel:'aal1'}, {nextLevel:'aal2'},
+    {currentLevel:null,nextLevel:'aal1'},{currentLevel:'aal1',nextLevel:null},
+    {currentLevel:'aal3',nextLevel:'aal1'},{currentLevel:'aal1',nextLevel:'unknown'}]){
+    const redirects=[];
+    const client={auth:{mfa:{getAuthenticatorAssuranceLevel:async()=>({data,error:null})}}};
+    const ctx={getCurrentUser:async()=>({id:'test-user'}),getSupabase:()=>client,s:client,
+      safeInternalDestination:sharedDestination,location:{pathname:HOME,search:'',hash:'',replace:v=>redirects.push(v)},
+      console:{warn(){}},setBusy(){},setStatus(){},status:null,RESET_PATH:'/compte/reinitialiser-mot-de-passe.html'};
+    vm.runInNewContext(validator+gate+recoveryGate+'\nglobalThis.gate=requireUser;globalThis.recover=requireRecoveryAal2WhenAvailable;',ctx);
+    let settled=false;
+    ctx.gate().then(()=>{settled=true},()=>{settled=true});
+    await new Promise(resolve=>setImmediate(resolve));
+    eq(settled,false,'Le garde central ne doit pas autoriser un AAL indéterminé');
+    eq(redirects.length,1,'Un AAL indéterminé doit conduire au contrôle MFA');
+    eq(redirects[0].includes('state=aal-check'),true,'Contrôle MFA explicite');
+    await assert.rejects(ctx.recover(),/MFA_STATE_UNAVAILABLE/);
+    checks++;
+  }
+  for(const [currentLevel,nextLevel,expected] of [['aal1','aal1',true],['aal2','aal2',true],['aal2','aal1',true],['aal1','aal2',false]]){
+    const redirects=[];
+    const client={auth:{mfa:{getAuthenticatorAssuranceLevel:async()=>({data:{currentLevel,nextLevel},error:null})}}};
+    const ctx={getCurrentUser:async()=>({id:'test-user'}),getSupabase:()=>client,s:client,
+      safeInternalDestination:sharedDestination,location:{pathname:HOME,search:'',hash:'',replace:v=>redirects.push(v)},
+      console:{warn(){}},setBusy(){},setStatus(){},status:null,RESET_PATH:'/compte/reinitialiser-mot-de-passe.html'};
+    vm.runInNewContext(validator+gate+recoveryGate+'\nglobalThis.gate=requireUser;globalThis.recover=requireRecoveryAal2WhenAvailable;',ctx);
+    if(expected)eq((await ctx.gate()).id,'test-user','AAL connu et autorisé');
+    else {
+      let settled=false;
+      ctx.gate().then(()=>{settled=true},()=>{settled=true});
+      await new Promise(resolve=>setImmediate(resolve));
+      eq(settled,false,'Un facteur vérifié doit être demandé');
+      eq(redirects.length,1,'Redirection MFA requise');
+    }
+    eq(await ctx.recover(),expected,'Politique AAL de récupération conservée');
+  }
+}
+async function recoveryRevocationTests(){
+  const recovery=fs.readFileSync(path.join(ROOT,'assets/js/sinjira-recovery-v24-4-99.js'),'utf8');
+  const start=recovery.indexOf('async function revokeRecoverySessions(');
+  const end=recovery.indexOf('async function boot(',start);
+  assert.ok(start>=0&&end>start,'Fonction de révocation absente');
+  const rejected=Symbol('network failure');
+  const cases=[
+    [{error:null},undefined,'global',['global']],
+    [{error:{message:'denied'}},{error:null},'local',['global','local']],
+    [rejected,{error:null},'local',['global','local']],
+    [undefined,{error:null},'local',['global','local']],
+    [{},{error:null},'local',['global','local']],
+    [{error:{message:'denied'}},{error:{message:'denied'}},'unconfirmed',['global','local']],
+    [rejected,rejected,'unconfirmed',['global','local']],
+    [undefined,undefined,'unconfirmed',['global','local']],
+  ];
+  for(const [globalResult,localResult,expected,scopes] of cases){
+    const calls=[];
+    const ctx={s:{auth:{signOut:async({scope})=>{
+      calls.push(scope);
+      const result=scope==='global'?globalResult:localResult;
+      if(result===rejected)throw Error('offline');
+      return result;
+    }}}};
+    vm.runInNewContext(recovery.slice(start,end)+'\nglobalThis.revoke=revokeRecoverySessions;',ctx);
+    eq(await ctx.revoke(),expected,'Résultat de révocation exact');
+    assert.deepEqual(calls,scopes);checks++;
+  }
+  assert.ok(recovery.includes("if(revoked!=='global')"),'Pas de succès global sans confirmation');
+  assert.ok(recovery.includes('finally{submitting=false;setBusy(passwordUpdated)}'),'Pas de nouvelle soumission après changement');
+  assert.ok(recovery.includes('if(submitting||passwordUpdated)return;'),'Verrou de soumission');
+  checks+=3;
+}
+
+function deviceEntropyTests(){
+  const recovery=fs.readFileSync(path.join(ROOT,'assets/js/sinjira-recovery-v24-4-99.js'),'utf8');
+  assert.ok(!/randomDeviceKey|randomUUID|getRandomValues/.test(recovery),'Récupération : aucune génération de clé');checks++;
+  for(const file of ['sinjira-auth-pages.js','sinjira-security-center-v24-4-98.js']){
+    const source=fs.readFileSync(path.join(ROOT,'assets/js',file),'utf8');
+    const start=source.indexOf('function randomDeviceKey(){');
+    const end=source.indexOf('\n}',start);
+    assert.ok(start>=0&&end>start,file+': générateur absent');
+    const body=source.slice(start,end+2);
+    function generate(crypto){
+      const ctx={crypto,Uint8Array,Array};
+      vm.runInNewContext(body+'\nglobalThis.generate=randomDeviceKey;',ctx,{timeout:1000});
+      return ctx.generate();
+    }
+    const uuid='12345678-1234-4234-8234-123456789abc';
+    eq(generate({randomUUID:()=>uuid}),uuid,file+': UUID CSPRNG');
+    let requested=0;
+    const secureBytes=bytes=>{requested=bytes.length;bytes.fill(0xab);return bytes;};
+    eq(generate({getRandomValues:secureBytes}),'sinjira-'+'ab'.repeat(24),file+': repli cryptographique');
+    eq(requested,24,file+': 192 bits demandés');
+    eq(generate({randomUUID(){throw Error('unavailable')},getRandomValues:secureBytes}),'sinjira-'+'ab'.repeat(24),file+': UUID indisponible');
+    for(const crypto of [undefined,{}, {randomUUID(){throw Error('unavailable')}}]){
+      assert.throws(()=>generate(crypto),/SECURITY_CRYPTO_UNAVAILABLE/);checks++;
+    }
+    assert.throws(()=>generate({getRandomValues(){throw Error('entropy failed')}}),/entropy failed/);checks++;
+    assert.ok(!/Date\.now|Math\.random|\.getRandomValues\?\./.test(body),file+': aucun repli prévisible');checks++;
+  }
+}
+async function loginDecisionTests(){
+  const source=fs.readFileSync(path.join(ROOT,'assets/js/sinjira-auth-pages.js'),'utf8');
+  const start=source.indexOf('async function login(){');
+  const end=source.indexOf('async function forgot(){',start);
+  assert.ok(start>=0&&end>start);
+  const login=source.slice(start,end);
+  for(const outcome of ['allow','approved','block',undefined,null,'','denied','unexpected',42]){
+    const redirects=[],signouts=[],messages=[];
+    let submit;
+    const form={addEventListener(_type,handler){submit=handler}};
+    const client={auth:{signInWithPassword:async()=>({error:null}),signOut:async(options)=>{signouts.push(options.scope);return {error:null}}}};
+    const ctx={document:{querySelector:()=>form},getCurrentUser:async()=>null,ready:()=>true,reportInvalid:()=>false,
+      FormData:class {get(){return ''}},destination:()=>HOME,setBusy(){},clearPendingChallenge(){},
+      securityDeviceMetadata:()=>({device_key:'synthetic-test-key'}),getSupabase:()=>client,
+      evaluateLoginSecurity:async()=>({security:{outcome}}),setStatus:(_node,message)=>messages.push(message),
+      status:null,location:{replace:value=>redirects.push(value)},console:{warn(){}}};
+    vm.runInNewContext(login+'\nglobalThis.init=login;',ctx);
+    await ctx.init();
+    await submit({preventDefault(){}});
+    if(outcome==='allow'||outcome==='approved'){
+      eq(redirects.length,1,'Décision autorisée explicite');
+      eq(signouts.length,0,'Session autorisée conservée');
+    }else{
+      eq(redirects.length,0,'Décision non autorisée: aucune redirection');
+      eq(signouts.length,1,'Décision non autorisée: déconnexion tentée');
+      eq(messages.length,1,'Décision non autorisée: avertissement visible');
+    }
+  }
+  assert.ok(login.indexOf('const meta=securityDeviceMetadata();')<login.indexOf('auth.signInWithPassword('),'Génération avant ouverture de session');checks++;
+}
+
+async function main(){
   const client=auth();
   safeTests(client.route.safeLocalDestination,'Login');
   safeTests(sharedDestination,'MFA/shared');
@@ -92,6 +236,39 @@ function main(){
   eq(valid.route.next(),'/app/','Destination saine réellement navigable');
   eq(valid.historyCalls.length,0,'Aucune écriture d’historique inutile');
 
+  for(const query of [
+    'next=%2Fapp%2F&next=%2Fcompte%2F',
+    'next=%2Fapp%2F&next=%2Fapp%2F',
+    'next=%2Fapp%2F&next=https%3A%2F%2Fevil.invalid',
+    'next=https%3A%2F%2Fevil.invalid&next=%2Fapp%2F',
+    'next=%2Fapp%2F&n%65xt=%2Fcompte%2F',
+    'next=&next=%2Fapp%2F'
+  ]){
+    const duplicate=auth('/compte/connexion.html?'+query+'&mode=login#main');
+    eq(duplicate.location.search,'?mode=login','Tous les next ambigus sont supprimés');
+    eq(duplicate.route.next(),HOME,'Repli sûr après doublon');
+    eq(duplicate.historyCalls.length,1,'Une seule correction d’historique');
+  }
+  // La lecture après initialisation doit aussi refuser les doublons.
+  valid.location.search='?next=%2Fapp%2F&next=%2Fcompte%2F';
+  eq(valid.route.next(),HOME,'Doublon introduit après initialisation refusé');
+
+  // Exécuter les lignes réelles de sélection de destination du module MFA.
+  const mfa=fs.readFileSync(path.join(ROOT,'assets/js/sinjira-mfa-v24-4-66.js'),'utf8');
+  const mfaLines=mfa.split('\n').filter(line=>/^(const params=|const nextValues=|const next=)/.test(line));
+  assert.equal(mfaLines.length,3,'Sélecteur MFA canonique absent');
+  for(const [search,expected] of [
+    ['?next=%2Fapp%2F','/app/'],
+    ['?next=%2Fapp%2F&next=%2Fcompte%2F',HOME],
+    ['?next=%2Fapp%2F&n%65xt=%2Fapp%2F',HOME],
+    ['?next=%2F%2Fevil.invalid',HOME],
+    ['',HOME]
+  ]){
+    const ctx={URLSearchParams,location:{search},safeInternalDestination:sharedDestination};
+    vm.runInNewContext(mfaLines.join('\n')+'\nglobalThis.result=next;',ctx,{timeout:1000});
+    eq(ctx.result,expected,'Sélection MFA sans ambiguïté');
+  }
+
   const blank=auth('/compte/connexion.html?next=');
   eq(blank.location.search,'','Destination next vide retirée');
 
@@ -99,6 +276,10 @@ function main(){
     '/compte/index.html?tab=1','Navigation locale commune reste valide');
   eq(sharedDestination('//evil.invalid/','/compte/bibliotheque.html'),
     '/compte/bibliotheque.html','Fallback MFA prédéfini conservé');
+  await assuranceTests();
+  await recoveryRevocationTests();
+  deviceEntropyTests();
+  await loginDecisionTests();
   console.log('PASS: '+checks+' contrôles de redirections Auth/MFA, URLs encodées et next assaini.');
 }
-main();
+main().catch(error=>{console.error(error);process.exitCode=1;});

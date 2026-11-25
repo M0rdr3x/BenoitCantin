@@ -1,4 +1,4 @@
-import { createClient } from 'npm:@supabase/supabase-js@2.119.0';
+import { createClient } from 'npm:@supabase/supabase-js@2.119.2';
 
 const ACTIVE_ADMIN_FUNCTIONS = new Set([
   'admin-analytics',
@@ -43,7 +43,13 @@ export function serviceClient() {
 
 export function bearerToken(req: Request) {
   const header = req.headers.get('Authorization') || '';
-  return header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+  // Un JWT utilisateur compact possède exactement trois segments base64url.
+  // Refuser les en-têtes combinés, les identifiants opaques et les entrées
+  // excessives avant tout appel Auth; la vérification cryptographique reste
+  // exclusivement confiée à auth.getUser(token).
+  if (header.length > 16384) return '';
+  const match = /^Bearer +([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/i.exec(header);
+  return match && match[0] === header ? match[1] : '';
 }
 
 function edgeFunctionName(req: Request) {
@@ -62,14 +68,15 @@ async function authenticatedContext(req: Request) {
   if (!token) throw new Error('AUTH_REQUIRED');
   const service = serviceClient();
   const { data, error } = await service.auth.getUser(token);
-  if (error || !data.user) throw new Error('AUTH_REQUIRED');
+  if (error || !data?.user || typeof data.user.id !== 'string' || !data.user.id) throw new Error('AUTH_REQUIRED');
   return { user: data.user, service, token };
 }
 
 async function assuranceLevel(context: Awaited<ReturnType<typeof authenticatedContext>>) {
   const { service, token } = context;
   const { data: aal, error: aalError } = await service.auth.mfa.getAuthenticatorAssuranceLevel(token);
-  if (aalError || !aal) throw new Error('MFA_STATE_UNAVAILABLE');
+  if (aalError || !aal || !['aal1', 'aal2'].includes(aal.currentLevel ?? '') ||
+      !['aal1', 'aal2'].includes(aal.nextLevel ?? '')) throw new Error('MFA_STATE_UNAVAILABLE');
   return aal;
 }
 
@@ -78,7 +85,7 @@ async function assertAdminMfa(context: Awaited<ReturnType<typeof authenticatedCo
   const { data: isAdmin, error: adminError } = await service.rpc('is_sinjira_admin', {
     p_user_id: user.id
   });
-  if (adminError || !isAdmin) throw new Error('ADMIN_REQUIRED');
+  if (adminError || isAdmin !== true) throw new Error('ADMIN_REQUIRED');
 
   const aal = await assuranceLevel(context).catch((error) => {
     console.error('[SINJIRA admin auth]', { code: 'MFA_STATE_UNAVAILABLE' });
@@ -95,14 +102,20 @@ async function sensitiveStepUpEnabled(context: Awaited<ReturnType<typeof authent
   const { user, service } = context;
   const { data, error } = await service
     .from('security_user_settings')
-    .select('sensitive_step_up')
+    .select('user_id,sensitive_step_up')
     .eq('user_id', user.id)
     .maybeSingle();
-  if (error) {
+  // Une absence de ligne conserve la protection par défaut. Seule une
+  // préférence booléenne explicite appartenant au compte authentifié
+  // peut désactiver le step-up sur les opérations où il est facultatif.
+  if (error || (data !== null && (
+    typeof data !== 'object' || Array.isArray(data) ||
+    data.user_id !== user.id || typeof data.sensitive_step_up !== 'boolean'
+  ))) {
     console.error('[SINJIRA sensitive auth]', { code: 'SECURITY_STATE_UNAVAILABLE' });
     throw new Error('SECURITY_STATE_UNAVAILABLE');
   }
-  return data?.sensitive_step_up !== false;
+  return data === null || data.sensitive_step_up;
 }
 
 async function assertSensitiveMfa(context: Awaited<ReturnType<typeof authenticatedContext>>) {

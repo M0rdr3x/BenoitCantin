@@ -61,13 +61,14 @@ async function scenario(opts={}){
       eq(name,'security_after_password_recovery','RPC sécurisé attendu');
       calls.push(['rpc',args.p_device_key]);
       if(opts.rpcThrows)throw Error('backend unavailable');
-      return {data:{ok:opts.rpcOk!==false},error:opts.rpcError?{code:'MOCK_FAIL'}:null};
+      return opts.rpcMissingError?{data:{ok:true}}:{data:{ok:opts.rpcOk!==false},error:opts.rpcError?{code:'MOCK_FAIL'}:null};
     }
   };
   const sandbox={
     console:{warn(){throw Error('La récupération ne doit pas journaliser une exception brute')},error(){throw Error('Journal brut interdit')}},
     getSupabase:()=>client,
     isSinjiraBackendConfigured:()=>true,
+    assertKnownAssuranceLevels(data){if(!data||!['aal1','aal2'].includes(data.currentLevel)||!['aal1','aal2'].includes(data.nextLevel))throw Error('MFA_STATE_UNAVAILABLE')},
     setStatus(_target,message,type){messages.push({message,type})},
     localStorage:opts.localStorage??storage(null),
     sessionStorage:opts.sessionStorage??storage(null),
@@ -138,6 +139,8 @@ async function main(){
   const thrownRpc=await scenario({rpcThrows:true});
   eq(count(thrownRpc.calls,'signOut'),1,'Exception RPC ne bloque pas la déconnexion globale');
 
+  const ambiguousRpc=await scenario({rpcMissingError:true});
+  eq(ambiguousRpc.messages.at(-1).type,'info','RPC sans champ error explicite refusée');
   const refusedRpc=await scenario({rpcOk:false});
   eq(refusedRpc.messages.at(-1).type,'info','Réponse ok=false ne doit pas annoncer révocation réussie');
 
@@ -145,7 +148,7 @@ async function main(){
   eq(logoutFail.calls.some(c=>c[0]==='signOut'&&c[1]==='local'),true,'Tentative de clôture locale');
   eq(logoutFail.messages.at(-1).type,'error','Échec global ne doit pas être présenté comme succès');
   eq(logoutFail.navigation.length,0,'Pas de redirection automatique sur échec global');
-  yes(logoutFail.messages.at(-1).message.includes('déconnexion globale n’a pas été confirmée'),
+  yes(logoutFail.messages.at(-1).message.includes('révocation des autres sessions n’a pas été confirmée'),
     'Avertir précisément sur la non-révocation des sessions');
 
   for(const invalid of [null,'empty','undefined']){

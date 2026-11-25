@@ -3,13 +3,17 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from urllib.parse import urljoin
 
 from playwright.sync_api import sync_playwright
+from isolated_supabase_api import install_isolated_supabase_api
 
 BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
 BROWSER_NAME = os.environ.get("BROWSER", "chromium").strip().lower()
 SUPPORTED_BROWSERS = {"chromium", "firefox", "webkit"}
+# Exact reviewed SDK URL; no wildcard origin or version in private reader mocks.
+SUPABASE_SDK_URL = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/+esm"
 LITERATURE_ROUTE = "projets/sinjira/romans/"
 READER_ROUTE = "projets/sinjira/romans/lire-demo.html"
 SITEMAP_ROUTE = "sitemap.xml"
@@ -55,7 +59,7 @@ def mock_web_reader(context) -> None:
         ),
     )
     context.route(
-        "**/npm/@supabase/supabase-js@2.119.0/+esm*",
+        SUPABASE_SDK_URL,
         lambda route: route.fulfill(
             status=200,
             content_type="text/javascript",
@@ -141,7 +145,7 @@ def mock_private_reader(context) -> None:
     def javascript(route,body):
         route.fulfill(status=200,content_type='text/javascript',
             headers={'access-control-allow-origin':'*'},body=body)
-    context.route('**/npm/@supabase/supabase-js@2.119.0/+esm*',
+    context.route(SUPABASE_SDK_URL,
         lambda route: javascript(route,fake_supabase))
     context.route('**/pdfjs-dist@4.9.155/build/pdf.min.mjs*',
         lambda route: javascript(route,fake_pdfjs))
@@ -154,7 +158,8 @@ def mock_private_reader(context) -> None:
 def assert_private_signout_during_load(browser):
     """Déconnexion durant l'analyse PDF : le roman ne doit jamais apparaître."""
     private_context=browser.new_context(locale='fr-CA',
-        viewport={'width':1440,'height':900})
+        viewport={'width':1440,'height':900}, service_workers='block')
+    install_isolated_supabase_api(private_context)
     mock_private_reader(private_context)
     private_page=private_context.new_page()
     errs=[]
@@ -291,9 +296,10 @@ export function getDocument(){
     contexts = []
 
     def open_device(actor):
-        ctx = browser.new_context(locale="fr-CA", viewport={"width": 1440, "height": 920})
+        ctx = browser.new_context(locale="fr-CA", viewport={"width": 1440, "height": 920}, service_workers="block")
+        install_isolated_supabase_api(ctx)
         contexts.append(ctx)
-        ctx.route("**/npm/@supabase/supabase-js@2.119.0/+esm*",
+        ctx.route(SUPABASE_SDK_URL,
                   lambda route: route.fulfill(
                       status=200, content_type="text/javascript",
                       headers={"access-control-allow-origin": "*"},
@@ -526,6 +532,122 @@ def assert_comment_editor_responsive(page, label: str) -> None:
     assert_true(sizing.get("ok"), f"{BROWSER_NAME}: formulaire mal dimensionné sur {label}: {sizing}")
 
 
+def assert_preorder_public_steps_responsive(browser) -> None:
+    """Parcours public à 240–1440 px, même sans JS, session ou backend."""
+    targets = ("prix-livre-1", "reception-livre-1", "reservation-livre-1")
+    no_js = browser.new_context(
+        locale="fr-CA", viewport={"width": 390, "height": 800},
+        java_script_enabled=False, reduced_motion="reduce", service_workers="block"
+    )
+    install_isolated_supabase_api(no_js)
+    try:
+        page = no_js.new_page()
+        for width in (240, 320, 390, 480, 481, 768, 1024, 1440):
+            page.set_viewport_size({"width": width, "height": 800})
+            response = page.goto(
+                urljoin(BASE_URL, "projets/sinjira/romans/precommande.html"),
+                wait_until="domcontentloaded", timeout=30_000
+            )
+            assert_true(response is not None and response.status < 400,
+                        f"{BROWSER_NAME}: précommande indisponible à {width}px")
+            assert_true(page.locator('body[data-preorder-page="livre-1"]').count() == 1,
+                        f"{BROWSER_NAME}: périmètre des styles non activé à {width}px")
+            nav = page.locator('nav.sinjira-preorder-steps')
+            assert_true(nav.count() == 1 and
+                        nav.get_attribute("aria-label") ==
+                        "Étapes de la réservation du Livre I",
+                        f"{BROWSER_NAME}: sommaire sans nom à {width}px")
+            links = nav.locator("a")
+            assert_true(links.count() == len(targets),
+                        f"{BROWSER_NAME}: nombre d'étapes incorrect à {width}px")
+            # Le contexte sans JS permet page.evaluate() via Playwright,
+            # mais wait_for_function() s'appuie sur une tâche dans la page
+            # qui peut ne jamais être exécutée sur Firefox/WebKit en production.
+            # La sonde Python attend le CSS ET une cible tactile >= 44 px,
+            # sans désactiver le mode sans JS ni masquer de vraie régression.
+            css_state = None
+            deadline = time.monotonic() + 20
+            while time.monotonic() < deadline:
+                css_state = page.evaluate("""() => ({
+                    readyState: document.readyState,
+                    links: [...document.querySelectorAll(
+                        'nav.sinjira-preorder-steps a'
+                    )].map(anchor => ({
+                        height: anchor.getBoundingClientRect().height,
+                        minHeight: getComputedStyle(anchor).minHeight,
+                        display: getComputedStyle(anchor).display
+                    })),
+                    stylesheet: [...document.querySelectorAll(
+                        'link[rel="stylesheet"]'
+                    )].filter(link => link.href.includes(
+                        'sinjira-preorder-steps-ux-v1.css'
+                    )).map(link => ({href: link.href, loaded: Boolean(link.sheet)}))
+                })""")
+                if (len(css_state["links"]) == len(targets)
+                    and len(css_state["stylesheet"]) == 1
+                    and css_state["stylesheet"][0]["loaded"]
+                    and all(link["height"] >= 44 for link in css_state["links"])):
+                    break
+                time.sleep(0.25)
+            else:
+                raise AssertionError(
+                    f"{BROWSER_NAME}: feuille CSS de précommande absente ou "
+                    f"zones tactiles sous 44px à {width}px : {css_state}"
+                )
+            for i, anchor in enumerate(targets):
+                link = links.nth(i)
+                assert_true(link.get_attribute("href") == f"#{anchor}",
+                            f"{BROWSER_NAME}: destination {anchor} invalide")
+                assert_true(page.locator(f'section#{anchor}[aria-labelledby]').count() == 1,
+                            f"{BROWSER_NAME}: section {anchor} non accessible")
+                assert_true(link.bounding_box()["height"] >= 44,
+                            f"{BROWSER_NAME}: zone tactile trop petite à {width}px")
+            assert_true(page.locator("a[href$='.pdf'],a[href$='.epub']").count() == 0,
+                        f"{BROWSER_NAME}: document privé exposé sur la précommande")
+            assert_true(page.locator('[data-preorder-status][role="status"]').count() == 1,
+                        f"{BROWSER_NAME}: message de réservation non annoncé")
+            assert_true(page.locator('[data-pf-preference-status][role="status"]').count() == 1,
+                        f"{BROWSER_NAME}: message de livraison non annoncé")
+            # Les styles doivent tous avoir été chargés avant la mesure,
+            # particulièrement quand le navigateur est sans JavaScript.
+            page.wait_for_load_state("load", timeout=30_000)
+            overflow = page.evaluate("""() => ({
+                width: innerWidth, scroll: document.documentElement.scrollWidth,
+                elements: [...document.querySelectorAll("main *, footer *")]
+                    .map(el => ({tag: el.tagName, cls: String(el.className).slice(0,100),
+                        left: Math.round(el.getBoundingClientRect().left),
+                        right: Math.round(el.getBoundingClientRect().right)}))
+                    .filter(el => el.right > innerWidth + 2 || el.left < -2)
+                    .slice(0,12)
+            })""")
+            assert_true(overflow["scroll"] <= overflow["width"] + 2,
+                        f"{BROWSER_NAME}: débordement horizontal de précommande à {width}px : {overflow}")
+            if width <= 480:
+                assert_true(nav.locator('.container').evaluate(
+                    "el => getComputedStyle(el).display === 'grid'"),
+                    f"{BROWSER_NAME}: sommaire mobile non vertical à {width}px")
+                for link in links.all():
+                    box = link.bounding_box()
+                    assert_true(box is not None and box["x"] >= -2 and
+                                box["x"] + box["width"] <= width + 2,
+                                f"{BROWSER_NAME}: étape hors écran à {width}px : {box}")
+            nav.locator('a[href="#reception-livre-1"]').click()
+            assert_true(page.evaluate("location.hash") == "#reception-livre-1",
+                        f"{BROWSER_NAME}: ancre Livraison non fonctionnelle à {width}px")
+        expected = (
+            "/", "/projets/sinjira/", "/projets/sinjira/romans/",
+            "/projets/sinjira/jeux/", "/projets/sinjira/registre/",
+            "/projets/sinjira/communaute/", "/compte/",
+        )
+        actual = tuple(page.locator("[data-main-nav] a").evaluate_all(
+            "(links) => links.map(a => new URL(a.href).pathname)"
+        ))
+        assert_true(actual == expected,
+                    f"{BROWSER_NAME}: navigation principale incomplète sans JavaScript : {actual}")
+    finally:
+        no_js.close()
+
+
 def run() -> None:
     assert_true(BROWSER_NAME in SUPPORTED_BROWSERS, f"Navigateur Playwright inconnu: {BROWSER_NAME}")
 
@@ -534,8 +656,9 @@ def run() -> None:
         context = browser.new_context(
             locale="fr-CA",
             viewport={"width": 1440, "height": 1000},
-            reduced_motion="reduce",
+            reduced_motion="reduce", service_workers="block",
         )
+        install_isolated_supabase_api(context)
         block_embedded_pdf(context)
         page = context.new_page()
         errors: list[str] = []
@@ -634,6 +757,9 @@ def run() -> None:
                     f"{BROWSER_NAME}: ancien lien PDF de secours encore visible")
         assert_no_full_edition_link(page,"liseuse mise en attente")
 
+        # Vérifier le parcours de précommande de façon isolée et sans réseau privé.
+        assert_preorder_public_steps_responsive(browser)
+
         # Protéger aussi l'édition intégrale pendant une déconnexion en vol.
         assert_private_signout_during_load(browser)
         assert_private_cross_device_resume_mock(browser)
@@ -642,8 +768,9 @@ def run() -> None:
             locale="fr-CA",
             viewport={"width": 390, "height": 844},
             has_touch=True,
-            reduced_motion="reduce",
+            reduced_motion="reduce", service_workers="block",
         )
+        install_isolated_supabase_api(mobile)
         block_embedded_pdf(mobile)
         mobile_page = mobile.new_page()
         mobile_errors: list[str] = []

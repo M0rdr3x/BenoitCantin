@@ -18,7 +18,7 @@
 .home-page.home-sinjira-only .sinjira-orbit img{display:block;width:min(68%,156px);height:auto;aspect-ratio:1;object-fit:contain;border-radius:50%;filter:drop-shadow(0 9px 22px rgba(0,0,0,.42)) drop-shadow(0 0 14px rgba(221,51,48,.2))}
 .home-page.home-sinjira-only .sinjira-orbit strong{font-size:clamp(1.18rem,2.4vw,1.6rem);line-height:1.1;letter-spacing:.035em;color:#fff}
 .home-page.home-sinjira-only .sinjira-orbit span{font-size:.76rem;color:#ffd0c0;line-height:1.2}
-.home-page.home-sinjira-only .home-sinjira-cosmos .cosmos-label{position:absolute;left:50%;bottom:4%;translate:-50% 0;transform:none;width:min(88%,330px);max-width:none;margin:0;line-height:1.4;text-align:center;color:#dbc2c0;font-size:.72rem;letter-spacing:.11em;pointer-events:none}
+.home-page.home-sinjira-only .home-sinjira-cosmos .cosmos-label{position:absolute;left:50%;bottom:4%;translate:none;transform:translateX(-50%);width:min(88%,330px);max-width:none;margin:0;line-height:1.4;text-align:center;color:#dbc2c0;font-size:.72rem;letter-spacing:.11em;pointer-events:none}
 .home-page.home-sinjira-only .home-projects{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
 .home-page.home-sinjira-only .home-project{min-width:0;min-height:218px;display:grid;grid-template-columns:112px minmax(0,1fr);grid-template-rows:1fr;gap:20px;align-items:center;padding:clamp(18px,2.8vw,28px);text-align:left;border:1px solid rgba(202,109,95,.2)}
 .home-page.home-sinjira-only .home-project:focus-visible{outline:3px solid #ffbba6;outline-offset:3px}
@@ -27,7 +27,7 @@
 .home-page.home-sinjira-only .home-project p{font-size:.92rem;line-height:1.55}
 .home-page.home-sinjira-only .home-project .arrow{color:#ffad9c}
 .home-page.home-sinjira-only .section-head h2{max-width:680px}
-.home-page.home-sinjira-only .home-sinjira-note{max-width:75ch;line-height:1.7;color:var(--muted);margin:18px 0 0}
+.home-page.home-sinjira-only .hero-copy > .home-sinjira-note{max-width:75ch;line-height:1.7;color:var(--muted);margin:18px 0 0}
 .home-page.home-sinjira-only .cta-panel .hero-actions{margin-top:0}
 .home-page.home-sinjira-only .site-footer a:focus-visible,.home-page.home-sinjira-only .main-nav a:focus-visible{outline:3px solid #ffbba6;outline-offset:3px}
 @media(max-width:1020px){
@@ -44,6 +44,7 @@
   .home-page.home-sinjira-only .home-project img{width:92px;height:105px;margin:0}
   .home-page.home-sinjira-only .home-sinjira-cosmos{width:min(100%,365px)}
   .home-page.home-sinjira-only .sinjira-orbit{width:54%;min-width:184px;padding:17px;gap:9px}
+  .home-page.home-sinjira-only .sinjira-orbit img{width:min(50%,108px)}
   .home-page.home-sinjira-only .home-sinjira-cosmos .cosmos-label{bottom:2%;font-size:.66rem}
 }
 @media(max-width:420px){
@@ -52,8 +53,53 @@
   .home-page.home-sinjira-only .home-project img{width:76px;height:91px}
   .home-page.home-sinjira-only .home-project p{font-size:.86rem}
   .home-page.home-sinjira-only .home-sinjira-cosmos{width:min(100%,330px)}
-  .home-page.home-sinjira-only .sinjira-orbit{min-width:172px}
+  .home-page.home-sinjira-only .sinjira-orbit{min-width:188px;padding:12px;gap:6px}
+  .home-page.home-sinjira-only .sinjira-orbit img{width:min(48%,90px)}
+  .home-page.home-sinjira-only .sinjira-orbit strong{font-size:clamp(1.05rem,5vw,1.22rem)}
+  .home-page.home-sinjira-only .sinjira-orbit span{font-size:.72rem}
 }
 @media(prefers-reduced-motion:reduce){
   .home-page.home-sinjira-only .sinjira-orbit{transition:none}
+}
+
+/* Styles de cartes dans une feuille externe : compatibles avec une CSP stricte. */
+.home-page.home-sinjira-only .home-project[href="/projets/sinjira/romans/"]{--card-glow:rgba(220,73,58,.25)}
+.home-page.home-sinjira-only .home-project[href="/projets/sinjira/registre/"]{--card-glow:rgba(181,42,51,.24)}
+.home-page.home-sinjira-only .home-project[href="/projets/sinjira/jeux/"]{--card-glow:rgba(221,83,69,.21)}
+.home-page.home-sinjira-only .home-project[href="/projets/sinjira/communaute/"]{--card-glow:rgba(190,47,60,.21)}
+.home-page.home-sinjira-only .home-direct-access{
+  display:inline-flex;align-items:center;gap:8px;min-height:44px;
+  max-width:100%;color:#ffb8aa;font-weight:750;text-decoration:underline;
+  text-underline-offset:3px;overflow-wrap:anywhere
+}
+.home-page.home-sinjira-only .home-direct-access:focus-visible,
+.home-page.home-sinjira-only #univers-titre:focus-visible{
+  outline:3px solid #ffbba6;outline-offset:3px;border-radius:4px
+}
+.home-page.home-sinjira-only #univers-titre{scroll-margin-top:110px}
+@media(max-width:420px){
+  .home-page.home-sinjira-only .home-direct-access{
+    display:flex;width:fit-content;margin-top:4px
+  }
+}
+
+/* Reflow WebKit : les éléments décoratifs ne doivent pas agrandir le viewport.
+ * Pas de masquage global du contenu ou des indicateurs de focus. */
+@media(max-width:700px){
+  .home-page.home-sinjira-only::after{
+    inset:auto 0 0 auto;width:min(55vw,100%);height:55vw;
+    background:radial-gradient(circle at 100% 100%,rgba(123,140,255,.13),transparent 66%);
+  }
+  .home-page.home-sinjira-only .hero-grid,
+  .home-page.home-sinjira-only .home-projects{
+    grid-template-columns:minmax(0,1fr)
+  }
+  .home-page.home-sinjira-only :where(.hero-copy,.home-project > div,.brand-text,.identity-name > div,.footer-col,.footer-brand > div){
+    min-width:0;overflow-wrap:anywhere
+  }
+  .home-page.home-sinjira-only .home-project :where(h3,p,.arrow){overflow-wrap:anywhere}
+  .home-page.home-sinjira-only .ai-transparency-inner{grid-template-columns:minmax(0,1fr)}
+  .home-page.home-sinjira-only .ai-transparency-inner :where(strong,a){max-width:100%;white-space:normal;overflow-wrap:anywhere}
+  .home-page.home-sinjira-only .sinjira-orbit{max-width:100%;min-width:min(188px,100%)}
+  .home-page.home-sinjira-only .home-direct-access{min-width:0;flex-wrap:wrap}
 }

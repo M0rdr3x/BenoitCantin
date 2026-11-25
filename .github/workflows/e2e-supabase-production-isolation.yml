@@ -1,0 +1,38 @@
+name: Sécurité E2E — interdire tout accès Supabase production depuis Littérature
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/e2e/isolated_supabase_api.py'
+      - 'tests/e2e/test_literature_site.py'
+      - 'scripts/test_e2e_supabase_egress_isolation.py'
+      - '.github/workflows/e2e-supabase-production-isolation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tests/e2e/isolated_supabase_api.py'
+      - 'tests/e2e/test_literature_site.py'
+      - 'scripts/test_e2e_supabase_egress_isolation.py'
+      - '.github/workflows/e2e-supabase-production-isolation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  production-api-boundary:
+    name: Réseau de production interdit dans les tests navigateur
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout sans credential persistant
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Vérifier Python 3.12
+        run: python3 -c 'import sys; assert sys.version_info[:2] == (3, 12)'
+      - name: Contrôler la syntaxe et les fixtures E2E
+        run: python3 -m py_compile tests/e2e/isolated_supabase_api.py tests/e2e/test_literature_site.py
+      - name: Vérifier refus des appels réseau et réponses synthétiques
+        run: python3 -m unittest scripts.test_e2e_supabase_egress_isolation -v

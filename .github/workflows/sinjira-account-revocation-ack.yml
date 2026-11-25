@@ -10,6 +10,8 @@ on:
       - 'scripts/test_lost_device_revocation_failclosed.cjs'
       - 'scripts/test_sinjira_recovery_revocation_fail_closed.cjs'
       - 'scripts/validate_security_v24_4_99.py'
+      - 'scripts/validate_auth.py'
+      - 'scripts/test_sinjira_auth_redirect_boundary.cjs'
       - '.github/workflows/sinjira-account-revocation-ack.yml'
   push:
     branches: [main]
@@ -21,6 +23,8 @@ on:
       - 'scripts/test_lost_device_revocation_failclosed.cjs'
       - 'scripts/test_sinjira_recovery_revocation_fail_closed.cjs'
       - 'scripts/validate_security_v24_4_99.py'
+      - 'scripts/validate_auth.py'
+      - 'scripts/test_sinjira_auth_redirect_boundary.cjs'
       - '.github/workflows/sinjira-account-revocation-ack.yml'
   workflow_dispatch:
 
@@ -53,6 +57,9 @@ jobs:
       - name: Simuler récupération, identifiants faibles et déconnexion globale
         run: node scripts/test_sinjira_recovery_revocation_fail_closed.cjs
       - name: Contrôler le contrat de sécurité des pages et modules
-        run: python3 scripts/validate_security_v24_4_99.py
+        run: |
+          python3 scripts/validate_security_v24_4_99.py
+          python3 scripts/validate_auth.py
+          node scripts/test_sinjira_auth_redirect_boundary.cjs
       - name: Vérifier les invariants de session MFA
         run: python3 scripts/validate_session_security_v24_4_68.py

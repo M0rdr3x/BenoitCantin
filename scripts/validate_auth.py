@@ -108,18 +108,25 @@ def main():
   recovery_requirements={
     's.auth.getUser()':'validation serveur du lien/session de récupération',
     'getAuthenticatorAssuranceLevel':'lecture AAL de récupération',
+    'assertKnownAssuranceLevels(data);':'refus des niveaux AAL absents ou inconnus',
     "data?.nextLevel==='aal2'":'détection d’un MFA vérifié disponible',
     "data?.currentLevel!=='aal2'":'exigence AAL2 avant changement',
     'mfa.html?recovery=1':'passage par la page TOTP',
     'updateUser({password})':'mise à jour du mot de passe',
     "security_after_password_recovery":'nettoyage serveur après récupération',
     "signOut({scope:'global'})":'révocation globale après récupération',
+    "signOut({scope:'local'})":'repli local explicite',
+    "if(result?.error===null)return 'global'":'confirmation explicite de la révocation globale',
+    "if(revoked!=='global')":'absence de succès global en cas de révocation non confirmée',
+    'if(submitting||passwordUpdated)return;':'verrou de soumission après changement de mot de passe',
     'password.length<12':'politique 12 caractères',
     'form.checkValidity()':'validation HTML avant changement',
     'setBusy(true)':'verrou anti-double soumission',
   }
   for marker,label in recovery_requirements.items():
     require(errors,recovery,marker,f'Récupération V24.4.99 incomplète: {label}.')
+  if 'randomDeviceKey' in recovery or 'cleanupOk=result?.error===null&&result.data?.ok===true;' not in recovery:
+    errors.append('Réinitialisation: identité appareil ou confirmation RPC non conforme.')
   if '.auth.getSession()' in recovery:
     errors.append('Réinitialisation: getSession() local ne doit pas remplacer la validation serveur getUser().')
 
@@ -128,14 +135,8 @@ def main():
     errors.append('Réinitialisation: les deux champs doivent imposer minlength=12.')
   if len(re.findall(r'autocomplete=["\']new-password["\']',reset))<2:
     errors.append('Réinitialisation: autocomplete=new-password absent sur les deux champs.')
-  if ('second facteur' not in reset or
-      'sinjira-recovery-v24-4-99.js?v=24.4.101-revocation' not in reset or
-      'sinjira-recovery-v24-4-99.js?v=24.4.99"' in reset):
-    errors.append('Réinitialisation: explication MFA ou version sécurisée du module absente.')
-  if 'globalSignoutOk=Boolean(result&&result.error===null);' not in recovery:
-    errors.append('Réinitialisation: accusé de déconnexion globale non strict.')
-  if 'randomDeviceKey' in recovery:
-    errors.append('Réinitialisation: création non autorisée d’une nouvelle clé appareil.')
+  if 'second facteur' not in reset or 'sinjira-recovery-v24-4-99.js?v=24.4.101-revocation' not in reset:
+    errors.append('Réinitialisation: explication MFA ou module V24.4.99 absent.')
 
   login=text('compte/connexion.html')
   if 'autocomplete="current-password"' not in login and "autocomplete='current-password'" not in login:

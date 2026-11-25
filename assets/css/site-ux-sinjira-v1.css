@@ -156,3 +156,67 @@ body[data-reader-page="novel"] #commentaires :where(textarea,button):focus-visib
  body[data-reader-page="novel"] #commentaires .reader-comment-form>button{width:100%}
  body[data-reader-page="novel"] #commentaires .sinjira-comments-panel{padding:18px}
 }
+
+/* Navigation du compte : boutons explicites et plus de rubriques cachées
+   sans affordance. Sans JS, la barre conserve son défilement natif. */
+body.account-page[data-sinjira-ux="v1"] .account-nav [hidden]{
+  display:none!important
+}
+body.account-page[data-sinjira-ux="v1"] .sinjira-account-nav-frame{
+  width:min(1120px,calc(100% - 32px));margin-inline:auto;min-width:0
+}
+body.account-page[data-sinjira-ux="v1"] .sinjira-account-nav-frame .account-nav-scroll{
+  width:100%;max-width:100%;min-width:0;margin-inline:0
+}
+body.account-page[data-sinjira-ux="v1"] .sinjira-account-nav-arrow[hidden]{
+  display:none!important
+}
+@media(max-width:1020px){
+  body.account-page[data-sinjira-ux="v1"] .sinjira-account-nav-frame.is-scrollable{
+    display:grid;grid-template-columns:48px minmax(0,1fr) 48px;
+    gap:8px;align-items:start
+  }
+  body.account-page[data-sinjira-ux="v1"] .sinjira-account-nav-frame .account-nav-scroll{
+    box-sizing:border-box;scroll-snap-type:none;
+    scroll-behavior:auto;overscroll-behavior-x:contain
+  }
+  body.account-page[data-sinjira-ux="v1"] .sinjira-account-nav-arrow{
+    box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;
+    width:48px;min-width:48px;min-height:48px;margin-top:14px;
+    background:#15223a;border:1px solid rgba(145,248,238,.38);
+    border-radius:12px;color:#fff;font:inherit;font-size:1.6rem;
+    line-height:1;cursor:pointer
+  }
+  body.account-page[data-sinjira-ux="v1"] .sinjira-account-nav-arrow:disabled{
+    opacity:.4;cursor:default
+  }
+}
+@media(min-width:1021px){
+  body.account-page[data-sinjira-ux="v1"] .sinjira-account-nav-arrow{
+    display:none!important
+  }
+}
+
+/* Accessibilite mobile : chaque lien d'information du pied de page doit
+   rester facile a toucher meme lorsque les liens passent sur deux lignes. */
+@media(max-width:600px){
+  body[data-sinjira-ux="v1"] .site-footer .footer-col a{
+    display:flex;align-items:center;min-height:44px;
+    padding:8px 0;margin:0
+  }
+}
+
+/* Le defilement global provient de site.css. Respecter la preference
+   systeme de reduction du mouvement, y compris pour les liens d'ancrage. */
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto!important}
+  body[data-sinjira-ux="v1"] :where(.btn,.main-nav a,.menu-toggle,.home-project,.sinjira-orbit){
+    transition:none!important
+  }
+}
+
+/* Une commande de menu non initialisée ne doit pas être exposée, même si
+ * une règle de présentation mobile impose display:block ou display:flex. */
+body[data-sinjira-ux="v1"] [data-menu-toggle][hidden]{
+  display:none!important
+}

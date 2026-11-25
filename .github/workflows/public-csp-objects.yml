@@ -1,0 +1,40 @@
+name: Sécurité CSP — interdire les objets actifs dans le site public
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'netlify.toml'
+      - 'vercel.json'
+      - 'scripts/build_netlify_public.py'
+      - 'scripts/test_public_csp_object_security.py'
+      - '.github/workflows/public-csp-objects.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'netlify.toml'
+      - 'vercel.json'
+      - 'scripts/build_netlify_public.py'
+      - 'scripts/test_public_csp_object_security.py'
+      - '.github/workflows/public-csp-objects.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-object-policy:
+    name: CSP Netlify/Vercel et artefact public alignés
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Récupérer le SHA de la PR sans persistance des identifiants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Exiger Python 3.12
+        run: python3 -c 'import sys; assert sys.version_info[:2] == (3, 12)'
+      - name: Vérifier les trois politiques CSP et les huit mutations hostiles
+        run: python3 -m unittest scripts.test_public_csp_object_security -v
+      - name: Vérifier le build public et les en-têtes
+        run: python3 scripts/build_netlify_public.py --check
