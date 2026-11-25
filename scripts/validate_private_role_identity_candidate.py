@@ -76,9 +76,67 @@ def inspect_sql(source: str) -> list[str]:
 
 
 PREFLIGHT = ROOT / "security/candidates/preflight_private_identity_catalog_read_only.sql"
-# Revue obligatoire avant de modifier cette requête de catalogue.
-# Comparaison du SQL complet, hors commentaires de ligne : pas de SELECT arbitraire.
-EXPECTED_PREFLIGHT = "BEGIN TRANSACTION READ ONLY;\nWITH expected(name, signature, definition_sha256) AS (\n  VALUES\n    ('is_sinjira_admin', 'p_user_id uuid', '5e3df1425976db0252e8c3b544929f60038d02581f4226d684819c7c4a347c06'),\n    ('project_access_rank', 'p_project_id uuid, p_user_id uuid', 'efc5da4d75817740e4e3ab12d84124fd4638c32d0d4df75b8496d07bfa08d4a3')\n), actual AS (\n  SELECT p.proname::text AS name,\n         pg_catalog.pg_get_function_identity_arguments(p.oid) AS signature,\n         pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(\n           pg_catalog.regexp_replace(pg_catalog.pg_get_functiondef(p.oid),\n             '^[[:space:]]+|[[:space:]]+
+# Exactitude du texte complet : aucun retrait de commentaires ni interprétation
+# des littéraux SQL. Toute modification exige une nouvelle revue.
+EXPECTED_PREFLIGHT = """-- Catalogue uniquement ; aucune lecture de données utilisateurs.
+-- Toute ligne autre que MATCH_ORIGINAL ou un nombre différent de deux lignes = NO-GO.
+-- Ne jamais utiliser comme migration. Les droits historiques sont comparés, pas approuvés.
+BEGIN TRANSACTION READ ONLY;
+WITH expected(name, signature, definition_sha256) AS (
+  VALUES
+    ('is_sinjira_admin', 'p_user_id uuid', '5e3df1425976db0252e8c3b544929f60038d02581f4226d684819c7c4a347c06'),
+    ('project_access_rank', 'p_project_id uuid, p_user_id uuid', 'efc5da4d75817740e4e3ab12d84124fd4638c32d0d4df75b8496d07bfa08d4a3')
+), actual AS (
+  SELECT p.proname::text AS name,
+         pg_catalog.pg_get_function_identity_arguments(p.oid) AS signature,
+         pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(
+           pg_catalog.regexp_replace(pg_catalog.pg_get_functiondef(p.oid),
+             '^[[:space:]]+|[[:space:]]+$','','g'), 'UTF8')), 'hex') AS definition_sha256,
+         p.prosecdef AND pg_catalog.pg_get_userbyid(p.proowner) = 'postgres'
+           AND pg_catalog.has_function_privilege('anon',p.oid,'EXECUTE')
+           AND pg_catalog.has_function_privilege('authenticated',p.oid,'EXECUTE')
+           AND pg_catalog.has_function_privilege('service_role',p.oid,'EXECUTE') AS expected_acl
+  FROM pg_catalog.pg_proc p
+  JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
+  WHERE n.nspname = 'private' AND p.proname::text IN (SELECT name FROM expected)
+)
+SELECT e.name,
+       CASE
+         WHEN count(a.name) = 0 THEN 'MISSING'
+         WHEN count(a.name) <> 1 THEN 'AMBIGUOUS_OVERLOAD'
+         WHEN NOT bool_and(a.signature = e.signature) THEN 'SIGNATURE_DRIFT'
+         WHEN NOT bool_and(a.expected_acl) THEN 'PRIVILEGE_DRIFT'
+         WHEN bool_and(a.definition_sha256 = e.definition_sha256) THEN 'MATCH_ORIGINAL'
+         ELSE 'DEFINITION_DRIFT'
+       END AS status
+FROM expected e LEFT JOIN actual a ON a.name = e.name
+GROUP BY e.name ORDER BY e.name;
+ROLLBACK;
+"""
+
+def inspect_preflight(source: str) -> list[str]:
+    if source != EXPECTED_PREFLIGHT:
+        return ["Prévol catalogue différent de la requête lecture seule approuvée"]
+    return []
+
+def self_test_preflight(source: str) -> None:
+    assert not inspect_preflight(source)
+    mutations = (
+        ("BEGIN TRANSACTION READ ONLY;", "BEGIN;"),
+        ("ROLLBACK;", "COMMIT;"),
+        ("count(a.name) <> 1", "count(a.name) < 1"),
+        ("NOT bool_and(a.expected_acl)", "false"),
+        ("a.definition_sha256 = e.definition_sha256", "true"),
+        ("n.nspname = 'private'", "n.nspname = 'public'"),
+        ("ROLLBACK;", "SELECT 1;\nROLLBACK;"),
+        ("-- Catalogue uniquement", "-- Catalogue modifié"),
+    )
+    for before, after in mutations:
+        assert before in source
+        assert inspect_preflight(source.replace(before, after, 1)), before
+    print("OK : 8 mutations du prévol catalogue refusées.")
+
+def self_test(source: str) -> None:
     assert not inspect_sql(source), inspect_sql(source)
     mutations = (
         ("retirer rollback", "ROLLBACK;", "COMMIT;"),
@@ -118,7 +176,7 @@ def main() -> int:
         print("ECHEC : prévol catalogue absent ou lien symbolique")
         return 1
     try:
-        preflight = PREFLIGHT.read_text("utf-8", errors="strict")
+        preflight = PREFLIGHT.read_bytes().decode("utf-8", errors="strict")
     except (OSError, UnicodeError):
         print("ECHEC : prévol catalogue illisible")
         return 1
@@ -127,79 +185,6 @@ def main() -> int:
         return 1
     if args.self_test:
         self_test_preflight(preflight)
-        self_test(source)
-        return 0
-    errors = inspect_sql(source)
-    if errors:
-        for error in errors:
-            print("ECHEC : " + error)
-        return 1
-    print("OK : deux fonctions privées liées à l'identité JWT, rollback final, aucun déploiement.")
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
-,'','g'), 'UTF8')), 'hex') AS definition_sha256,\n         p.prosecdef AND pg_catalog.pg_get_userbyid(p.proowner) = 'postgres'\n           AND pg_catalog.has_function_privilege('anon',p.oid,'EXECUTE')\n           AND pg_catalog.has_function_privilege('authenticated',p.oid,'EXECUTE')\n           AND pg_catalog.has_function_privilege('service_role',p.oid,'EXECUTE') AS expected_acl\n  FROM pg_catalog.pg_proc p\n  JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace\n  WHERE n.nspname = 'private' AND p.proname::text IN (SELECT name FROM expected)\n)\nSELECT e.name,\n       CASE\n         WHEN count(a.name) = 0 THEN 'MISSING'\n         WHEN count(a.name) <> 1 THEN 'AMBIGUOUS_OVERLOAD'\n         WHEN NOT bool_and(a.signature = e.signature) THEN 'SIGNATURE_DRIFT'\n         WHEN NOT bool_and(a.expected_acl) THEN 'PRIVILEGE_DRIFT'\n         WHEN bool_and(a.definition_sha256 = e.definition_sha256) THEN 'MATCH_ORIGINAL'\n         ELSE 'DEFINITION_DRIFT'\n       END AS status\nFROM expected e LEFT JOIN actual a ON a.name = e.name\nGROUP BY e.name ORDER BY e.name;\nROLLBACK;"
-
-def inspect_preflight(source: str) -> list[str]:
-    if without_line_comments(source).strip() != EXPECTED_PREFLIGHT:
-        return ["Prévol catalogue différent de la requête lecture seule approuvée"]
-    return []
-
-def self_test_preflight(source: str) -> None:
-    assert not inspect_preflight(source)
-    mutations = (
-        ("BEGIN TRANSACTION READ ONLY;", "BEGIN;"),
-        ("ROLLBACK;", "COMMIT;"),
-        ("count(a.name) <> 1", "count(a.name) < 1"),
-        ("NOT bool_and(a.expected_acl)", "false"),
-        ("a.definition_sha256 = e.definition_sha256", "true"),
-        ("n.nspname = 'private'", "n.nspname = 'public'"),
-        ("ROLLBACK;", "SELECT * FROM auth.users;\\nROLLBACK;"),
-    )
-    for before, after in mutations:
-        assert before in source
-        assert inspect_preflight(source.replace(before, after, 1)), before
-    print("OK : 7 mutations du prévol catalogue refusées.")
-
-def self_test(source: str) -> None:
-    assert not inspect_sql(source), inspect_sql(source)
-    mutations = (
-        ("retirer rollback", "ROLLBACK;", "COMMIT;"),
-        ("usurper admin", "OR p_user_id = auth.uid()", "OR TRUE"),
-        ("usurper projet", "OR p_user_id IS NOT DISTINCT FROM auth.uid()", "OR TRUE"),
-        ("retirer contrôle de recherche", "SET search_path = ''", "SET search_path = public"),
-        ("ajouter privilège", "ROLLBACK;", "GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA private TO anon;\nROLLBACK;"),
-        ("retirer JWT", JWT_SERVICE_GUARD, "TRUE"),
-        ("démarrer une deuxième transaction", "ROLLBACK;", "BEGIN;\nROLLBACK;"),
-        ("terminer une transaction trop tôt", "CREATE OR REPLACE FUNCTION private.project_access_rank",
-         "ROLLBACK;\nCREATE OR REPLACE FUNCTION private.project_access_rank"),
-        ("ajouter une écriture", "ROLLBACK;", "UPDATE public.projects SET status='active';\nROLLBACK;"),
-    )
-    for name, original, changed in mutations:
-        assert original in source, "Fixture absente : " + name
-        mutant = source.replace(original, changed, 1)
-        assert inspect_sql(mutant), "La mutation dangereuse est passée : " + name
-    print("OK : 9 mutations SQL refusées, aucune application de migration.")
-
-
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--self-test", action="store_true")
-    args = parser.parse_args()
-    if not CANDIDATE.is_file() or CANDIDATE.is_symlink():
-        print("ECHEC : candidat SQL absent ou lien symbolique")
-        return 1
-    try:
-        source = CANDIDATE.read_text("utf-8", errors="strict")
-    except (OSError, UnicodeError):
-        print("ECHEC : candidat SQL illisible")
-        return 1
-    if len(source) > 50_000:
-        print("ECHEC : candidat SQL anormalement volumineux")
-        return 1
-    if args.self_test:
         self_test(source)
         return 0
     errors = inspect_sql(source)
