@@ -23,6 +23,14 @@ def audit(source, path):
             errors.append(f"{path}: exactly one reviewed SDK import required")
     return errors
 
+def audit_reader_mocks(source):
+    expected = 'SUPABASE_SDK_URL = "' + APPROVED + '"'
+    if source.count(expected) != 1 or URL.findall(source) != [APPROVED]:
+        return ["Reader mocks must use the exact reviewed SDK URL"]
+    if len(re.findall(r"\.route\(\s*SUPABASE_SDK_URL\s*,", source)) != 3:
+        return ["All three reader SDK intercepts must use the reviewed URL"]
+    return []
+
 def self_test():
     clean = "import { createClient } from '" + APPROVED + "';"
     assert not audit(clean, SHARED)
@@ -35,7 +43,16 @@ def self_test():
     assert audit("", SHARED)
     assert audit(clean, "assets/js/another.js")
     assert not audit("import {getSupabase} from './sinjira-supabase.js';", "assets/js/another.js")
-    print("PASS: 13 negative browser SDK import cases")
+    mock = 'SUPABASE_SDK_URL = "' + APPROVED + '"\n' + 'context.route(SUPABASE_SDK_URL, handler)\n' * 3
+    assert not audit_reader_mocks(mock)
+    for mutant in (
+        mock.replace("2.119.2", "2.119.0"),
+        mock.replace("cdn.jsdelivr.net", "unpkg.com"),
+        mock.replace("SUPABASE_SDK_URL, handler", '"**/npm/@supabase/supabase-js@2/+esm*", handler', 1),
+        mock.replace("context.route(SUPABASE_SDK_URL, handler)", "", 1),
+    ):
+        assert audit_reader_mocks(mutant)
+    print("PASS: 13 negative browser SDK import cases and 4 reader mock mutations")
 
 def main():
     p = argparse.ArgumentParser()
@@ -48,6 +65,7 @@ def main():
     if len(files) < 100 or not (ROOT / SHARED).is_file():
         raise SystemExit("Browser source inventory incomplete")
     errors = [error for path in files for error in audit(path.read_text(encoding="utf-8"), path.relative_to(ROOT).as_posix())]
+    errors.extend(audit_reader_mocks((ROOT / "tests/e2e/test_literature_site.py").read_text(encoding="utf-8")))
     if errors:
         raise SystemExit("\n".join(errors))
     print(f"PASS: {len(files)} browser JS sources; exact shared SDK URL")
