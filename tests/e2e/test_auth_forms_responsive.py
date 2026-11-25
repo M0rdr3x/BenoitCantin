@@ -101,6 +101,56 @@ def assert_password_script_is_safe(context):
         page.close()
 
 
+def assert_preferences_save_feedback(browser):
+    # Le module officiel est exécuté avec un client synthétique, sans compte
+    # ni trafic externe, et des réponses volontairement différées.
+    context=browser.new_context(service_workers="block")
+    try:
+        page=context.new_page()
+        context.route("**/*",lambda route: route.continue_() if route.request.url.startswith(BASE) else route.abort())
+        context.route("**/preferences-test.html",lambda route: route.fulfill(
+            content_type="text/html",body="""<form data-privacy-settings-form inert aria-busy="true">
+              <input type="checkbox" name="public_profile"><input type="checkbox" name="allow_ai_personal_data" disabled>
+              <button type="submit" disabled>Enregistrer</button></form><p data-privacy-settings-status></p>
+              <script type="module" src="/assets/js/v24-preferences.js"></script>"""))
+        context.route("**/assets/js/sinjira-supabase.js",lambda route: route.fulfill(
+            content_type="text/javascript",body="""export async function requireUser(){return {id:'fixture-user'}}
+              window.writes=[];window.pending=[];
+              export function setStatus(node,msg,type){node.textContent=msg;node.dataset.type=type;}
+              export function getSupabase(){return {from(table){return {
+                select(){return {eq(){return {maybeSingle:async()=>({data:{public_profile:false,allow_ai_personal_data:false},error:null})}}}},
+                update(payload){return {eq(key,id){window.writes.push({table,payload,key,id});return new Promise((resolve,reject)=>window.pending.push({resolve,reject}));}}},
+                insert(){throw Error('insertion inattendue')}
+              }}}}"""))
+        page.goto(urljoin(BASE,"preferences-test.html"),wait_until="domcontentloaded")
+        form=page.locator("[data-privacy-settings-form]")
+        button=form.locator("button")
+        checkbox=form.locator('[name="public_profile"]')
+        status=page.locator("[data-privacy-settings-status]")
+        page.wait_for_function("() => !document.querySelector('form').inert")
+        checkbox.check()
+        button.click()
+        page.evaluate("document.querySelector('form').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))")
+        assert_ok(page.evaluate("window.writes.length")==1,"double soumission")
+        assert_ok(button.is_disabled() and form.get_attribute("aria-busy")=="true","état occupé absent")
+        checkbox.uncheck()
+        page.evaluate("window.pending.shift().resolve({error:null})")
+        page.wait_for_function("() => !document.querySelector('button').disabled")
+        assert_ok("plus récentes" in status.inner_text(),"modification récente annoncée comme enregistrée")
+        assert_ok(not checkbox.is_checked(),"saisie écrasée")
+        button.click()
+        page.evaluate("window.pending.shift().reject(new Error('fixture réseau'))")
+        page.wait_for_function("() => !document.querySelector('button').disabled")
+        assert_ok("saisie est conservée" in status.inner_text(),"erreur réseau non signalée")
+        button.click()
+        page.evaluate("window.pending.shift().resolve({error:null})")
+        page.wait_for_function("() => !document.querySelector('button').disabled")
+        assert_ok("enregistrées dans votre compte" in status.inner_text(),"relance non confirmée")
+        assert_ok(page.evaluate("window.writes.every(w=>w.key==='user_id'&&w.id==='fixture-user'&&!('allow_ai_personal_data' in w.payload))"),"périmètre d’écriture modifié")
+    finally:
+        context.close()
+
+
 def run():
     assert_ok(ENGINE in {"chromium", "firefox", "webkit"}, "moteur navigateur inconnu")
     with sync_playwright() as playwright:
@@ -116,6 +166,7 @@ def run():
                     for width in WIDTHS:
                         inspect_route(page, path, width)
                 assert_password_script_is_safe(context)
+                assert_preferences_save_feedback(browser)
                 print(f"OK {ENGINE}: quatre formulaires Auth à 240–1440px + révélation locale sûre")
             finally:
                 context.close()
