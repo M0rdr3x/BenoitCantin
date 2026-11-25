@@ -1,0 +1,36 @@
+name: SINJIRA — Autorisation stricte de suppression du compte
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/functions/delete-player-account/index.ts'
+      - 'scripts/test_sinjira_account_delete_authorization.cjs'
+      - '.github/workflows/sinjira-account-delete-authorization.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/delete-player-account/index.ts'
+      - 'scripts/test_sinjira_account_delete_authorization.cjs'
+      - '.github/workflows/sinjira-account-delete-authorization.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  account-delete:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '22.16.0'
+          package-manager-cache: false
+      - name: Vérifier les refus avant opérations destructives
+        run: node scripts/test_sinjira_account_delete_authorization.cjs
+      - name: Préserver les contrats existants
+        run: python3 scripts/validate_delete_account_v24_5_51.py
