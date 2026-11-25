@@ -5,6 +5,7 @@ La page est chargée sans JavaScript applicatif, authentification, PDF, requête
 Supabase ou données de compte. On expose le lecteur pour inspecter le CSS.
 """
 import os
+from pathlib import Path
 from urllib.parse import urljoin
 
 from playwright.sync_api import sync_playwright
@@ -68,10 +69,12 @@ def check_tester_request_confirmation(browser):
     context=browser.new_context(service_workers="block",viewport={"width":390,"height":760})
     try:
         context.route("**/*",lambda route: route.continue_() if route.request.url.startswith(BASE) else route.abort())
+        # Charger le HTML/CSS exact de la page, mais aucun autre module applicatif.
+        markup=(Path(__file__).resolve().parents[2]/"compte/bibliotheque-jeux.html").read_text("utf-8")
         context.route("**/tester-fixture.html*",lambda route:route.fulfill(
-            content_type="text/html",body="""<main><p data-library-status hidden></p>
-            <div data-library-account-games></div>
-            <script type="module" src="/assets/js/sinjira-library-hub-v26.js"></script></main>"""))
+            content_type="text/html",body=markup))
+        for script in ("site.js","sinjira-account.js","sinjira-nav-boot-v2.js"):
+            context.route("**/assets/js/"+script+"*",lambda route:route.abort())
         context.route("**/assets/js/sinjira-supabase.js",lambda route:route.fulfill(
             content_type="text/javascript",body="""window.writes=[];
             const mode=new URLSearchParams(location.search).get('mode');
@@ -92,19 +95,44 @@ def check_tester_request_confirmation(browser):
         page.goto(fixture,wait_until="domcontentloaded")
         button=page.locator("[data-request-tester]")
         button.wait_for()
-        page.once("dialog",lambda dialog:dialog.dismiss())
+        dialog=page.locator("[data-library-request-dialog]")
+        cancel=dialog.locator('[value="cancel"]')
+        send=dialog.locator('[value="send"]')
+        for width,height,zoom in ((240,420,"100%"),(320,760,"200%"),(390,360,"100%"),(1440,760,"100%")):
+            page.set_viewport_size({"width":width,"height":height})
+            page.evaluate("(z)=>document.documentElement.style.fontSize=z",zoom)
+            button.click()
+            check(dialog.is_visible(),"dialogue inaccessible")
+            check(cancel.evaluate("(el)=>document.activeElement===el"),"focus initial non sûr")
+            check(dialog.locator("[data-request-project-name]").inner_text()=="Projet fictif","projet non identifié")
+            state=dialog.evaluate("""el=>{
+              const r=el.getBoundingClientRect();
+              return {contained:r.left>=-2&&r.right<=innerWidth+2&&r.top>=-2&&r.bottom<=innerHeight+2,
+                overflow:el.scrollWidth>el.clientWidth+2,
+                buttons:[...el.querySelectorAll('button')].every(b=>{const x=b.getBoundingClientRect();return x.left>=r.left-2&&x.right<=r.right+2&&x.height>=47.5})};
+            }""")
+            check(state["contained"] and not state["overflow"] and state["buttons"],f"dialogue {width} / {zoom}: {state}")
+            dialog.locator("textarea").fill("Texte annulé")
+            if width==240:
+                page.keyboard.press("Escape")
+            else:
+                cancel.click()
+            dialog.wait_for(state="hidden")
+            page.wait_for_function("document.activeElement===document.querySelector('[data-request-tester]')")
+            check(page.evaluate("window.writes.length")==0,"annuler a transmis une candidature")
+            check(button.is_enabled(),"annuler a bloqué la commande")
+        page.evaluate("document.documentElement.style.fontSize=''")
         button.click()
-        check(page.evaluate("window.writes.length") == 0,"annuler a transmis une candidature")
-        check(button.is_enabled(),"annuler a bloqué la commande")
-        page.once("dialog",lambda dialog:dialog.accept(""))
-        button.click()
+        check(dialog.locator("textarea").input_value()=="","texte annulé conservé")
+        send.click()
         page.wait_for_function("document.querySelector('[data-request-tester]').textContent==='Demande testeur en attente'")
         check(page.evaluate("window.writes.length===1&&window.writes[0].message===''&&window.writes[0].user_id==='fixture-user'"),"confirmation vide volontaire non respectée")
         check(button.is_disabled(),"nouvelle demande possible après succès")
         page.goto(fixture+"?mode=send-error",wait_until="domcontentloaded")
         button.wait_for()
-        page.once("dialog",lambda dialog:dialog.accept("Exemple fictif"))
         button.click()
+        dialog.locator("textarea").fill("Exemple fictif")
+        send.click()
         page.wait_for_function("document.querySelector('[data-request-tester]').textContent==='Vérification requise'")
         check(button.is_disabled() and page.evaluate("window.writes.length")==1,"envoi incertain rejouable")
         page.goto(fixture+"?mode=load-error",wait_until="domcontentloaded")
