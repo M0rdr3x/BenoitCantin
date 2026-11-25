@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="/assets/css/sinjira-reader-character.css?v=24.4">
 <link rel="stylesheet" href="/assets/css/v19-pro.css?v=24.4">
 <link rel="stylesheet" href="/assets/css/v24-platform.css?v=24.4">
-<link rel="stylesheet" href="/assets/css/sinjira-liseuse-v26.css?v=26.11.07">
+<link rel="stylesheet" href="/assets/css/sinjira-liseuse-v26.css?v=26.11.24.1">
 <link rel="stylesheet" href="/assets/css/site-ux-sinjira-v1.css?v=1.0.0">
 </head><body class="account-page"  data-sinjira-ux="v1">
 <a class="skip-link" href="#contenu">Aller au contenu</a>
@@ -38,10 +38,19 @@
 <div class="account-reader-grid" data-library-account-games></div>
 <div class="hero-actions"><a class="btn btn-secondary" href="playtests.html">Mes playtests</a><a class="btn btn-secondary" href="/projets/sinjira/jeux/">Tous les jeux SINJIRA™</a></div>
 </div></section>
+<dialog class="library-request-dialog" data-library-request-dialog aria-labelledby="library-request-title" aria-describedby="library-request-help">
+<form method="dialog" class="account-form">
+<h2 id="library-request-title">Demander un accès testeur</h2>
+<p>Projet : <strong data-request-project-name></strong></p>
+<p id="library-request-help">Votre candidature sera transmise seulement si vous choisissez « Transmettre ma demande ». Elle ne donne pas automatiquement accès au jeu.</p>
+<div class="field"><label for="library-request-message">Message de candidature (facultatif)</label><textarea id="library-request-message" maxlength="1500" rows="4" aria-describedby="library-request-limit"></textarea><small id="library-request-limit">Maximum 1 500 caractères.</small></div>
+<div class="library-request-actions"><button class="btn btn-secondary" value="cancel" type="submit" autofocus>Annuler</button><button class="btn btn-primary" value="send" type="submit">Transmettre ma demande</button></div>
+</form>
+</dialog>
 </main>
 <footer class="site-footer"><div class="container"><div class="footer-bottom">© 2026 Benoit Cantin · SINJIRA™ · <a href="/compte/">Retour à mon compte</a></div></div></footer>
 <script defer src="/assets/js/site.js?v=24.4.101"></script>
 <script type="module" src="/assets/js/sinjira-account.js?v=24.4"></script>
 
-<script type="module" src="/assets/js/sinjira-library-hub-v26.js?v=26.11.07"></script>
+<script type="module" src="/assets/js/sinjira-library-hub-v26.js?v=26.11.24.1"></script>
 </body></html>
