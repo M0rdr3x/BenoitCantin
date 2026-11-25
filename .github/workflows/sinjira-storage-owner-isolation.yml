@@ -6,6 +6,7 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'supabase/tests/storage_private_owner_isolation.test.sql'
+      - 'scripts/smoke_private_storage_isolation_local.py'
       - 'supabase/config.toml'
       - '.github/workflows/sinjira-storage-owner-isolation.yml'
   push:
@@ -13,6 +14,7 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'supabase/tests/storage_private_owner_isolation.test.sql'
+      - 'scripts/smoke_private_storage_isolation_local.py'
       - 'supabase/config.toml'
       - '.github/workflows/sinjira-storage-owner-isolation.yml'
   workflow_dispatch:
@@ -33,10 +35,20 @@ jobs:
         uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
         with:
           version: 2.111.0
-      - name: Reconstruire PostgreSQL local
-        run: supabase db start
+      - name: Démarrer Supabase local complet
+        run: supabase start
       - name: Tester les politiques Storage avec deux identités synthétiques
         run: supabase test db supabase/tests/storage_private_owner_isolation.test.sql --local
+      - name: Vérifier les URL signées et les suppressions via Storage
+        shell: bash
+        run: |
+          set -euo pipefail
+          status_env="$(supabase status -o env)"
+          API_URL="$(sed -n 's/^API_URL="\(.*\)"$/\1/p' <<< "$status_env" | head -n1)"
+          ANON_KEY="$(sed -n 's/^ANON_KEY="\(.*\)"$/\1/p' <<< "$status_env" | head -n1)"
+          test -n "$API_URL"
+          test -n "$ANON_KEY"
+          SINJIRA_LOCAL_API_URL="$API_URL" SINJIRA_LOCAL_ANON_KEY="$ANON_KEY" python3 scripts/smoke_private_storage_isolation_local.py
       - name: Arrêter la base locale
         if: always()
         run: supabase stop --no-backup || true
