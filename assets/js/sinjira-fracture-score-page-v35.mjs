@@ -78,10 +78,16 @@ function update(){
   if(!active)return;
   try{
     // Ne rendre les accusations accessibles qu'après validation des rondes.
-    finalPanel.hidden=true;
-    const rounds=collect();
+    // Ne pas masquer puis réafficher le champ actif lors de chaque saisie.
+    let rounds;
+    try{
+      rounds=collect();
+      fractureScore({humans:active.humans,express:active.express,rounds});
+    }catch(error){
+      finalPanel.hidden=true;
+      throw error;
+    }
     const ready=rounds.every(x=>x!==null);
-    fractureScore({humans:active.humans,express:active.express,rounds});
     finalPanel.hidden=!ready;
     const correct=$('fracture-correct').value;
     const incorrect=$('fracture-incorrect').value;
