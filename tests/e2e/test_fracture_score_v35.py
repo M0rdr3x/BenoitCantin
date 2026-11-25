@@ -67,6 +67,8 @@ def run():
         check(page.locator("#fracture-final-r").inner_text()=="37", "résultat non recalculé")
         page.locator("#fracture-incorrect").fill("2")
         check(page.locator("#fracture-final-panel").is_visible(), "impossible de corriger les accusations")
+        check(page.locator("#fracture-incorrect").evaluate("(el)=>document.activeElement===el"),
+              "focus perdu pendant la correction des accusations")
         check(page.locator("#fracture-bonus-r").inner_text()=="—", "ancien bonus visible")
         page.locator("#fracture-incorrect").fill("1")
         check(page.locator("#fracture-final-r").inner_text()=="37", "bonus non recalculé")
@@ -112,9 +114,12 @@ def run():
               const controls=[...document.querySelectorAll('#fracture-rounds-body input,#fracture-humans,.fracture-score-actions button')];
               return {page:document.documentElement.scrollWidth<=innerWidth+2,
                 tables:wraps.every(e=>e.scrollWidth<=e.clientWidth+2),
-                controls:controls.every(e=>{const r=e.getBoundingClientRect();return r.left>=-2&&r.right<=innerWidth+2&&r.height>=47.5})};
+                labels:innerWidth>680||[...document.querySelectorAll('.fracture-score-totals tbody th')].every(e=>getComputedStyle(e).whiteSpace==='normal'),
+                controls:controls.every(e=>{const r=e.getBoundingClientRect();return r.left>=-2&&r.right<=innerWidth+2&&r.height>=47.5}),
+                dimensions:wraps.map(e=>({client:e.clientWidth,scroll:e.scrollWidth,table:e.querySelector('table').getBoundingClientRect().width}))};
             }""")
-            check(all(geometry.values()), f"saisie hors écran {width}px / {zoom}: {geometry}")
+            check(all(geometry[key] for key in ("page","tables","labels","controls")),
+                  f"saisie hors écran {width}px / {zoom}: {geometry}")
         check(not mobile_errors, f"erreurs JavaScript mobile : {mobile_errors[:3]}")
         mobile.close()
         browser.close()
