@@ -355,6 +355,43 @@ def test_responsive_images(browser):
             context.close()
 
 
+def test_initial_navigation_reflow(browser):
+    # Le défaut WebKit observé à DOMContentLoaded ne doit pas être masqué
+    # par une attente de l'initialisation, ni par overflow-x:hidden.
+    for mode in ("normal", "blocked", "no-js"):
+        context=browser.new_context(java_script_enabled=mode!="no-js",
+            service_workers="block",locale="fr-CA",reduced_motion="reduce",
+            viewport={"width":390,"height":844},has_touch=True)
+        try:
+            if mode=="blocked":
+                context.route("**/assets/js/site.js*",lambda route:route.abort())
+            page=context.new_page()
+            for width in (320,390,768):
+                page.set_viewport_size({"width":width,"height":844})
+                response=page.goto(BASE,wait_until="domcontentloaded",timeout=30_000)
+                verify(response is not None and response.ok,"accueil inaccessible")
+                for stage in ("DOMContentLoaded","load"):
+                    if stage=="load":
+                        page.wait_for_load_state("load",timeout=30_000)
+                    state=page.evaluate("""() => ({
+                      width:innerWidth, scrollWidth:document.documentElement.scrollWidth,
+                      links:[...document.querySelectorAll('[data-main-nav] a')].map(a=>{
+                        const r=a.getBoundingClientRect();return {left:r.left,right:r.right,width:r.width};
+                      })
+                    })""")
+                    verify(state["scrollWidth"]<=width+2 and
+                           all(r["width"]==0 or (r["left"]>=-2 and r["right"]<=width+2)
+                               for r in state["links"]),
+                           f"menu hors écran {mode} {width}px {stage}: {state}")
+                if mode!="normal":
+                    verify(page.locator('[data-main-nav]').is_visible(),
+                           f"navigation de secours absente {mode} {width}px")
+                    verify(page.locator('[data-menu-toggle]').is_hidden(),
+                           f"commande inactive visible {mode} {width}px")
+        finally:
+            context.close()
+
+
 def test_without_javascript(browser):
     context = browser.new_context(
         java_script_enabled=False, service_workers="block", locale="fr-CA",
@@ -438,6 +475,7 @@ def run():
                 context.close()
             test_install_offer(browser)
             test_responsive_images(browser)
+            test_initial_navigation_reflow(browser)
             test_without_javascript(browser)
             test_public_navigation_fallback(browser)
         finally:
