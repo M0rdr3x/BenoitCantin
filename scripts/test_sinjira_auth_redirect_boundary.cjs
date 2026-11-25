@@ -113,7 +113,30 @@ async function assuranceTests(){
       eq(settled,false,'Un facteur vérifié doit être demandé');
       eq(redirects.length,1,'Redirection MFA requise');
     }
-    eq(await ctx.recover(),expected,'Politique AAL de récupération conservée');
+    // Le garde général conserve sa politique historique. En récupération,
+    // AAL2 sans facteur vérifié encore disponible doit être refusé.
+    if(currentLevel==='aal2'&&nextLevel==='aal1'){
+      const before=redirects.length;
+      await assert.rejects(ctx.recover(),/MFA_STATE_UNAVAILABLE/);
+      eq(redirects.length,before,'État MFA incohérent : aucune navigation de récupération');
+      checks++;
+    }else{
+      eq(await ctx.recover(),expected,'Politique AAL de récupération conservée');
+    }
+  }
+  // Une réponse MFA partielle ou ambiguë ne vaut jamais succès en récupération.
+  for(const response of [null,{}, {data:{currentLevel:'aal2',nextLevel:'aal2'}},
+    {data:{currentLevel:'aal2',nextLevel:'aal2'},error:false},
+    {data:{currentLevel:'aal1',nextLevel:'aal1'},error:0},
+    {data:{currentLevel:'aal2',nextLevel:'aal2'},error:{code:'MOCK_FAILURE'}}]){
+    const redirects=[];
+    const ctx={s:{auth:{mfa:{getAuthenticatorAssuranceLevel:async()=>response}}},
+      setBusy(){},setStatus(){},status:null,RESET_PATH:'/compte/reinitialiser-mot-de-passe.html',
+      location:{replace:v=>redirects.push(v)}};
+    vm.runInNewContext(validator+recoveryGate+'\nglobalThis.recover=requireRecoveryAal2WhenAvailable;',ctx);
+    await assert.rejects(ctx.recover());
+    eq(redirects.length,0,'Réponse MFA invalide : aucune navigation');
+    checks++;
   }
 }
 async function recoveryRevocationTests(){
