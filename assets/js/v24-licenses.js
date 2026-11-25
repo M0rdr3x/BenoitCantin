@@ -33,6 +33,7 @@ if(form&&list){
   let ready=false,busy=false;
   // Bloquer la soumission native avant toute opération asynchrone.
   form.addEventListener('submit',event=>event.preventDefault());
+  try{
   const user=await requireUser();
   const s=getSupabase();
   const ownerResult=await s.rpc('is_sinjira_owner',{p_user_id:user.id});
@@ -47,13 +48,14 @@ if(form&&list){
     const {data,error}=await s.from('user_entitlements').select('source,granted_at,products(slug,name,product_type)').eq('user_id',user.id).order('granted_at',{ascending:false});
     if(error){
       list.innerHTML=freeCard+roleCard+(serverMissing(error)?'<div class="v2433-server-note"><strong>Licences en préparation</strong><br>Le serveur des droits d’accès doit encore être synchronisé. Aucun droit existant n’est supprimé pendant cette attente.</div>':'<div class="v24-empty">Impossible de lire les licences pour le moment.</div>');
-      return;
+      return false;
     }
     const rows=Array.isArray(data)?data:[];
     const empty=owner
       ?'<div class="v24-empty">Aucun droit numérique explicite n’est attribué à ce compte pour le moment. Le rôle propriétaire reste actif pour les fonctions qui lui sont réservées, sans inventer de possession produit.</div>'
       :'<div class="v24-empty">Aucune licence liée à ce compte.</div>';
     list.innerHTML=freeCard+roleCard+(rows.length?rows.map(entitlementCard).join(''):empty);
+    return true;
   }
 
   form.addEventListener('submit',async e=>{
@@ -78,7 +80,9 @@ if(form&&list){
       }
       form.reset();
       setStatus(status,'Produit activé sur votre Compte SINJIRA™.','success');
-      try{await render()}catch{
+      try{
+        if(!await render())throw Error('LIST_UNAVAILABLE');
+      }catch{
         setStatus(status,'Produit activé. Rechargez la page pour actualiser vos licences.','success');
       }
     }catch{
@@ -90,8 +94,12 @@ if(form&&list){
       form.setAttribute('aria-busy','false');
     }
   });
-  await render();
+  if(!await render())throw Error('LIST_UNAVAILABLE');
   ready=true;input.disabled=false;button.disabled=false;
   form.setAttribute('aria-busy','false');
   if(!ownerResult.error)setStatus(status,'Vous pouvez saisir votre code physique.','info');
+  }catch{
+    form.setAttribute('aria-busy','false');
+    setStatus(status,'Impossible de vérifier votre session ou vos licences. Rechargez la page avant de saisir un code.','error');
+  }
 }
