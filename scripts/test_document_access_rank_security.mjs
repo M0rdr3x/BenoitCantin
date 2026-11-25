@@ -180,13 +180,13 @@ test('valeurs inconnues, non typées et rangs non finis refusés', async () => {
 test('une RPC refusée ou mal typée ne peut jamais autoriser un document', async () => {
   const cases = [
     { adminData: 'false' }, { adminData: 'true' },
-    { adminData: 1 }, { adminData: null },
+    { adminData: 1 }, { adminData: null }, { adminData: [] },
     { adminData: { is_admin: true } },
     { adminData: true, adminError: true },
     { adminData: false, adminError: true },
     { rankData: '30' }, { rankData: 30.5 }, { rankData: NaN },
     { rankData: Infinity }, { rankData: -1 }, { rankData: 31 },
-    { rankData: 100 }, { rankData: null }, { rankData: true },
+    { rankData: 100 }, { rankData: 1000 }, { rankData: '100' }, { rankData: '20' }, { rankData: null }, { rankData: true }, { rankData: [100] },
     { rankData: { rank: 30 } }, { rankData: [30] },
     { rankData: 30, rankError: true },
   ];
@@ -323,7 +323,7 @@ test('signature Storage privée conservée uniquement après autorisation', asyn
 
 test('la signature exige un bucket réellement privé, identité exacte et aucune erreur fournisseur', async () => {
   for (const options of [
-    { bucketPublic: true },
+    { bucketPublic: true }, { bucketPublic: null }, { bucketPublic: 'false' },
     { bucketReadError: true },
     { bucketMismatch: true },
   ]) {

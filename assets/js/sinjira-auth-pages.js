@@ -26,9 +26,14 @@ function reportInvalid(form){
   return true;
 }
 function randomDeviceKey(){
-  if(globalThis.crypto?.randomUUID)return globalThis.crypto.randomUUID();
-  const bytes=new Uint8Array(24);globalThis.crypto?.getRandomValues?.(bytes);
-  return `sinjira-${Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('')}-${Date.now().toString(36)}`;
+  const source=globalThis.crypto;
+  if(typeof source?.randomUUID==='function'){
+    try{return source.randomUUID()}catch{/* Utiliser uniquement un autre CSPRNG. */}
+  }
+  if(typeof source?.getRandomValues!=='function')throw new Error('SECURITY_CRYPTO_UNAVAILABLE');
+  const bytes=new Uint8Array(24);
+  source.getRandomValues(bytes);
+  return 'sinjira-'+Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
 }
 function securityDeviceKey(){
   try{
@@ -53,8 +58,7 @@ function securityDeviceMetadata(){
   const browser=/Firefox/i.test(ua)?'Firefox':/Edg\//i.test(ua)?'Edge':/Chrome|CriOS/i.test(ua)?'Chrome':/Safari/i.test(ua)?'Safari':'Navigateur';
   return {device_key:securityDeviceKey(),display_name:`${browser}${platform?` — ${platform}`:''}`.slice(0,120),device_type,platform};
 }
-async function evaluateLoginSecurity(){
-  const meta=securityDeviceMetadata();
+async function evaluateLoginSecurity(meta){
   const {data,error}=await getSupabase().functions.invoke('security-context',{body:{...meta,action:'login'}});
   if(error||!data?.ok||!data?.security)throw new Error(data?.error||error?.message||'SECURITY_CONTEXT_UNAVAILABLE');
   return {meta,security:data.security};
@@ -85,22 +89,35 @@ async function login(){
     setBusy(form,true);
     clearPendingChallenge();
     try{
+      const meta=securityDeviceMetadata();
       const {error}=await getSupabase().auth.signInWithPassword({email:String(d.get('email')||'').trim(),password:String(d.get('password')||'')});
       if(error)return setStatus(status,'Connexion impossible. Vérifiez vos informations et la confirmation du courriel.','error');
 
       let evaluated=null;
       try{
-        evaluated=await evaluateLoginSecurity();
+        evaluated=await evaluateLoginSecurity(meta);
       }catch(securityError){
-        console.warn('[SINJIRA login shield unavailable]',securityError);
-        // Le moteur contextuel est une couche supplémentaire. Une panne de cette
-        // couche ne doit pas verrouiller tout le compte; les zones extrêmement
-        // sensibles conservent leur propre contrôle MFA côté serveur.
-        location.replace(next);
+        console.warn('[SINJIRA login shield unavailable]');
+        // Une absence de décision n'est pas une autorisation de connexion.
+        // Vérifier aussi les erreurs retournées sans rejet par le SDK.
+        let closed=false;
+        try{
+          const result=await getSupabase().auth.signOut({scope:'local'});
+          closed=result?.error===null;
+        }catch{}
+        setStatus(status,closed
+          ? 'Le contrôle de sécurité est temporairement indisponible. La connexion a été interrompue. Réessayez plus tard.'
+          : 'Le contrôle de sécurité est indisponible et la fermeture de cette session n’a pas été confirmée. N’utilisez pas cette session; déconnectez-vous avant de réessayer.',
+          'error');
         return;
       }
 
-      const outcome=String(evaluated.security?.outcome||'allow');
+      const outcome=evaluated.security?.outcome;
+      if(!['allow','approved','block','challenge'].includes(outcome)){
+        await getSupabase().auth.signOut({scope:'local'}).catch(()=>{});
+        setStatus(status,'La décision de sécurité de cette connexion est indéterminée. Réessayez lorsque le service est disponible.','error');
+        return;
+      }
       if(outcome==='block'){
         await getSupabase().auth.signOut({scope:'local'}).catch(()=>{});
         setStatus(status,'Connexion refusée : cet appareil a été révoqué dans Ma sécurité. Utilisez un appareil fiable pour vérifier votre compte.','error');

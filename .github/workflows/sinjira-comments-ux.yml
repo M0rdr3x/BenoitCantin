@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'assets/js/sinjira-reader.js'
+      - 'assets/js/sinjira-comments-lazy-v1.js'
       - 'assets/css/sinjira-comments-responsive-v2.css'
       - 'projets/sinjira/romans/index.html'
       - 'scripts/validate_sinjira_comments_ux.py'
@@ -13,6 +14,7 @@ on:
     branches: [main]
     paths:
       - 'assets/js/sinjira-reader.js'
+      - 'assets/js/sinjira-comments-lazy-v1.js'
       - 'assets/css/sinjira-comments-responsive-v2.css'
       - 'projets/sinjira/romans/index.html'
       - 'scripts/validate_sinjira_comments_ux.py'
@@ -33,7 +35,9 @@ jobs:
       - name: Vérifier structure, confidentialité et responsive
         run: python3 scripts/validate_sinjira_comments_ux.py
       - name: Vérifier syntaxe du module commentaires
-        run: node --check assets/js/sinjira-reader.js
+        run: |
+          node --check assets/js/sinjira-reader.js
+          node --check assets/js/sinjira-comments-lazy-v1.js
       - name: Tester la révélation volontaire et le compteur accessible
         run: node --test scripts/test_sinjira_comments_accessibility.mjs
       - name: Vérifier contrat de sécurité de lecture publique

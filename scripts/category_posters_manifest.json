@@ -1,0 +1,30 @@
+{
+  "sinjira-litterature-poster-480.webp": {
+    "width": 480,
+    "height": 720,
+    "original": 523502,
+    "bytes": 62226,
+    "sha256": "70b39f88b52fb950910433e2e46dde8ab6c342d009130e7dbdec68b51361709c"
+  },
+  "sinjira-litterature-poster-840.webp": {
+    "width": 840,
+    "height": 1260,
+    "original": 523502,
+    "bytes": 188492,
+    "sha256": "ed03e8cee166a7effa35f4ab24a2d6f5735e1cb241c4997ac53652f6a9744e96"
+  },
+  "sinjira-jeux-poster-480.webp": {
+    "width": 480,
+    "height": 720,
+    "original": 588522,
+    "bytes": 70998,
+    "sha256": "7cca98b625c0e38396d3cceb59288bd77806bf8ffa90124d86d4a9eff5851a02"
+  },
+  "sinjira-jeux-poster-840.webp": {
+    "width": 840,
+    "height": 1260,
+    "original": 588522,
+    "bytes": 219354,
+    "sha256": "55ff0a285364db39a49eb9c5ed5dcdbae50afdd477ce35d719b0e187817d3a47"
+  }
+}

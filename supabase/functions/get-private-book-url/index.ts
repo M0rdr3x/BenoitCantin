@@ -66,6 +66,9 @@ Deno.serve(async(req)=>{
       return privateJson({ok:false,error:'Votre compte ne possède pas ce livre.'},403);
     }
 
+    const {data:bucket,error:bucketError}=await service.storage.getBucket(storage.bucket);
+    if(bucketError||bucket?.id!==storage.bucket||bucket.public!==false)return privateJson({ok:false,error:'Stockage privé indisponible.'},503);
+
     const {data:signed,error:signedError}=await service.storage
       .from(storage.bucket)
       .createSignedUrl(storage.storagePath,SIGNED_URL_SECONDS,{download:'SINJIRA_Livre_01_La_Cendre_du_Jugement.pdf'});

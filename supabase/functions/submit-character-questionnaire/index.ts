@@ -54,6 +54,22 @@ function isCanonicalRegistryPhotoPath(raw:unknown,userId:string):boolean{
   return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpg|png|webp|avif|gif)$/.test(raw.slice(prefix.length));
 }
 
+// Le chemin seul ne prouve ni l'existence ni le type de l'objet.
+async function registryPhotoStored(service:any,photoPath:string):Promise<boolean>{
+  const bucketId='sinjira-character-sources';
+  const maxBytes=10*1024*1024;
+  const formats:Record<string,string>={jpg:'image/jpeg',png:'image/png',webp:'image/webp',avif:'image/avif',gif:'image/gif'};
+  const ext=photoPath.split('.').pop()||'';
+  if(!Object.prototype.hasOwnProperty.call(formats,ext))return false;
+  try{
+    const {data:bucket,error:bucketError}=await service.storage.getBucket(bucketId);
+    if(bucketError||bucket?.id!==bucketId||bucket.public!==false)return false;
+    const {data:info,error:infoError}=await service.storage.from(bucketId).info(photoPath);
+    return !infoError&&typeof info?.size==='number'&&Number.isSafeInteger(info.size)
+      &&info.size>0&&info.size<=maxBytes&&info.contentType===formats[ext];
+  }catch{return false}
+}
+
 // Une violation UNIQUE peut venir d'un autre onglet ayant inséré entre notre
 // lecture d'état et l'INSERT. Ne renvoyer 409 qu'après avoir RELU un dossier
 // effectivement persistant pour ce même utilisateur. Toute lecture incertaine
@@ -102,6 +118,7 @@ Deno.serve(async(req)=>{
     const photo_path=body.photo_path??null,manual_only=body.manual_only!==false,update_existing=body.update_existing===true;
     // Rejet AVANT toute lecture ou écriture de dossier, notification, ou appel externe.
     if(photo_path!==null && !isCanonicalRegistryPhotoPath(photo_path,user.id))return privateJson({ok:false,error:'Chemin de photo de dossier invalide.',code:'INVALID_CHARACTER_PHOTO_PATH',version:VERSION},400);
+    if(photo_path!==null && !(await registryPhotoStored(service,photo_path as string)))return privateJson({ok:false,error:'La photo privée ne peut pas être vérifiée. Veuillez la téléverser de nouveau.',code:'CHARACTER_PHOTO_UNVERIFIED',version:VERSION},422);
     const owner=String(user?.email||'').trim().toLowerCase()==='kingtyrano@gmail.com';
     const [profileResult,submissionResult,characterResult]=await Promise.all([
       service.from('profiles').select('pseudo,display_name').eq('user_id',user.id).maybeSingle(),

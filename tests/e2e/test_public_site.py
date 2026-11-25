@@ -198,6 +198,28 @@ def run() -> None:
             f"{BROWSER_NAME}: contact officiel absent du pied de page SINJIRA",
         )
 
+        # Cibles tactiles du hub Univers : contrôler la géométrie, pas seulement le CSS.
+        for width in (320, 390, 1440):
+            touch_context = browser.new_context(
+                viewport={"width": width, "height": 760},
+                locale="fr-CA", service_workers="block", java_script_enabled=False,
+            )
+            try:
+                touch_page = touch_context.new_page()
+                touch_page.goto(urljoin(BASE_URL, "projets/sinjira/"),
+                                wait_until="load", timeout=30_000)
+                targets = touch_page.locator(".site-footer .footer-col a")
+                assert_true(targets.count() >= 10, "liens du pied de page absents")
+                for link in targets.all():
+                    bounds = link.bounding_box()
+                    assert_true(bounds is not None and bounds["height"] >= 43.5
+                                and bounds["width"] >= 43.5,
+                                f"{BROWSER_NAME}: cible du pied de page trop petite à {width}px")
+                assert_true(touch_page.evaluate("document.documentElement.scrollWidth <= innerWidth + 2"),
+                            f"{BROWSER_NAME}: Univers hors écran à {width}px")
+            finally:
+                touch_context.close()
+
         page.goto(urljoin(BASE_URL, "contact.html"), wait_until="domcontentloaded", timeout=30_000)
         assert_true(
             page.locator('a[href="mailto:sinjiraofficiel@gmail.com"]').count() >= 2,
@@ -1458,8 +1480,30 @@ def run() -> None:
         response = mobile_page.goto(BASE_URL, wait_until="domcontentloaded", timeout=30_000)
         assert_true(response is not None and response.status < 400, f"{BROWSER_NAME}: accueil mobile inaccessible")
 
-        overflow = mobile_page.evaluate("document.documentElement.scrollWidth <= Math.ceil(window.innerWidth) + 2")
-        assert_true(overflow, f"{BROWSER_NAME}: débordement horizontal détecté en 390 px")
+        # Contrôler l'état initial ET l'état après les ressources tardives, sans
+        # relancer ou masquer une anomalie. Ne journaliser ni texte ni données personnelles.
+        def assert_mobile_reflow(stage):
+            geometry = mobile_page.evaluate("""() => {
+                const root = document.documentElement;
+                const width = innerWidth;
+                return {
+                  width, scrollWidth: root.scrollWidth,
+                  offenders: [...document.querySelectorAll('body *')].filter(el => {
+                    const r = el.getBoundingClientRect();
+                    return r.width > 0 && (r.right > width + 2 || r.left < -2)
+                      && getComputedStyle(el).position !== 'fixed';
+                  }).slice(0, 12).map(el => ({
+                    tag: el.tagName, id: el.id, className: typeof el.className === 'string' ? el.className : '',
+                    left: Math.round(el.getBoundingClientRect().left),
+                    right: Math.round(el.getBoundingClientRect().right)
+                  }))
+                };
+            }""")
+            assert_true(geometry["scrollWidth"] <= geometry["width"] + 2,
+                        f"{BROWSER_NAME}: débordement horizontal à 390 px ({stage}): {geometry}")
+        assert_mobile_reflow("DOMContentLoaded")
+        mobile_page.wait_for_load_state("load", timeout=30_000)
+        assert_mobile_reflow("load")
 
         toggle = mobile_page.locator("[data-menu-toggle]")
         assert_true(toggle.count() == 1, f"{BROWSER_NAME}: bouton de menu mobile absent")
@@ -1859,6 +1903,7 @@ def run() -> None:
             locale="fr-CA",
             viewport={"width": 320, "height": 720},
             reduced_motion="reduce",
+            service_workers="block",
         )
         fallback.route("**/assets/js/site.js*", lambda route: route.abort())
         fallback_page = fallback.new_page()
@@ -1873,6 +1918,8 @@ def run() -> None:
                     f"{BROWSER_NAME}: navigation masquée lorsque site.js est bloqué")
         assert_true(public_nav.locator('a[href="/projets/sinjira/"]').is_visible(),
                     f"{BROWSER_NAME}: lien portail SINJIRA masqué sans JavaScript")
+        assert_true(fallback_page.locator('[data-menu-toggle]').get_attribute("hidden") is not None,
+                    f"{BROWSER_NAME}: commande inactive non masquée par le HTML natif")
         assert_true(fallback_page.locator('[data-menu-toggle]').is_hidden(),
                     f"{BROWSER_NAME}: bouton de menu inactif affiché sans JavaScript")
         assert_true(

@@ -1,4 +1,4 @@
-import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.119.0';
+import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.119.2';
 
 export async function loadSinjiraCanonContext(service: SupabaseClient) {
   const {data,error}=await service

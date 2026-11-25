@@ -26,7 +26,8 @@ function safeLocalNavigation(value,fallback='/compte/index.html'){
 }
 
 function nextDestination(def='/compte/index.html'){
-  return safeLocalNavigation(new URLSearchParams(location.search).get('next'),def);
+  const values=new URLSearchParams(location.search).getAll('next');
+  return safeLocalNavigation(values.length===1?values[0]:null,def);
 }
 function backendNotice(){
   document.querySelectorAll('[data-backend-state]').forEach(n=>{

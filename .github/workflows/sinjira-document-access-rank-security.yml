@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - 'supabase/functions/get-document-url/index.ts'
+      - 'supabase/functions/get-novel-file-url/index.ts'
+      - 'supabase/functions/get-private-book-url/index.ts'
+      - 'scripts/test_private_download_bucket_boundary.mjs'
       - 'scripts/test_private_document_storage.mjs'
       - 'scripts/test_document_external_urls.mjs'
       - 'supabase/functions/_shared/private-document-storage.mjs'
@@ -15,6 +18,9 @@ on:
     branches: [main]
     paths:
       - 'supabase/functions/get-document-url/index.ts'
+      - 'supabase/functions/get-novel-file-url/index.ts'
+      - 'supabase/functions/get-private-book-url/index.ts'
+      - 'scripts/test_private_download_bucket_boundary.mjs'
       - 'scripts/test_private_document_storage.mjs'
       - 'scripts/test_document_external_urls.mjs'
       - 'supabase/functions/_shared/private-document-storage.mjs'
@@ -42,7 +48,7 @@ jobs:
           node-version: '22.23.2'
 
       - name: Tester le véritable handler, les ACL et les buckets privés
-        run: node --test scripts/test_document_access_rank_security.mjs scripts/test_private_document_storage.mjs
+        run: node --test scripts/test_document_access_rank_security.mjs scripts/test_private_document_storage.mjs scripts/test_private_download_bucket_boundary.mjs
       - name: Interdire les liens documentaires externes non approuvés
         run: node scripts/test_document_external_urls.mjs
 

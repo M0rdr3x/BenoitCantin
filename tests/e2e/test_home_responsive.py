@@ -370,6 +370,10 @@ def test_without_javascript(browser):
         for width in (320, 768, 1024):
             page.set_viewport_size({"width": width, "height": 760})
             verify(nav.is_visible(), f"liens inaccessibles sans JS à {width}px")
+            verify(page.locator("[data-menu-toggle]").is_hidden(),
+                   f"commande inactive visible sans JS à {width}px")
+            verify(page.locator("[data-menu-toggle]").get_attribute("hidden") is not None,
+                   "commande inactive non masquée nativement")
             verify(tuple(nav.locator("a").evaluate_all(
                 "(links) => links.map(a => new URL(a.href).pathname)"
             )) == NAV_PATHS,
@@ -384,6 +388,35 @@ def test_without_javascript(browser):
                    f"navigation sans JS hors écran à {width}px : {state}")
     finally:
         context.close()
+
+
+def test_public_navigation_fallback(browser):
+    routes = ("projets/sinjira/", "projets/sinjira/romans/",
+              "projets/sinjira/jeux/", "projets/sinjira/registre/",
+              "projets/sinjira/communaute/", "projets/sinjira/codex/")
+    for js_enabled in (False, True):
+        context = browser.new_context(
+            java_script_enabled=js_enabled, service_workers="block", locale="fr-CA",
+            reduced_motion="reduce", viewport={"width": 390, "height": 760},
+        )
+        try:
+            if js_enabled:
+                context.route("**/assets/js/site.js*", lambda route: route.abort())
+            page = context.new_page()
+            for route in routes:
+                response = page.goto(BASE.rstrip("/") + "/" + route,
+                                     wait_until="load", timeout=30_000)
+                verify(response is not None and response.ok, f"route indisponible : {route}")
+                nav = page.locator("[data-main-nav]")
+                toggle = page.locator("[data-menu-toggle]")
+                verify(nav.is_visible() and toggle.is_hidden(),
+                       f"navigation de secours invalide : {route}, JS={js_enabled}")
+                verify(toggle.get_attribute("hidden") is not None,
+                       f"commande inactive non masquée nativement : {route}")
+                verify(nav.locator('a[href="/compte/"]').is_visible(),
+                       f"accès au compte absent : {route}")
+        finally:
+            context.close()
 
 
 def run():
@@ -406,6 +439,7 @@ def run():
             test_install_offer(browser)
             test_responsive_images(browser)
             test_without_javascript(browser)
+            test_public_navigation_fallback(browser)
         finally:
             browser.close()
     print(f"OK {BROWSER}: accueil SINJIRA, 8 largeurs, clavier, mobile et sans JS")
