@@ -17,7 +17,7 @@ WIDTHS = (240, 320, 390, 768, 1024)
 SHELL_MARKUP = """<!doctype html><html lang="fr-CA"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="stylesheet" href="/assets/css/site.css">
-<script defer src="/assets/js/sinjira-pwa-install.js?v=24.4.99"></script>
+<script defer src="/assets/js/sinjira-pwa-install.js?v=24.4.101"></script>
 </head><body class="account-page" data-sinjira-ux="v1">
 <main id="contenu"><h1>Mon compte : contrôle de navigation</h1><a href="/app/">Fil communautaire</a></main>
 </body></html>"""
@@ -230,8 +230,17 @@ def check_routes(context):
         page.wait_for_timeout(150)
         verify(dock.evaluate("(el) => el.scrollLeft") <= 2,
                "la navigation reprend le contrôle contre le glissement de l'utilisateur")
+        # Une variation de hauteur seule (barre d'adresse/clavier) doit
+        # conserver le balayage manuel au lieu de recentrer sur Profil.
+        for height in (360, 840, 700):
+            page.set_viewport_size({"width":240,"height":height})
+            page.evaluate("() => new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))")
+            verify(dock.evaluate("(el)=>el.scrollLeft")<=2,
+                   f"dock recentré après changement de hauteur {height}px")
         # Une rotation 240 -> 390 -> 240 révèle de nouveau l'onglet actif.
         page.set_viewport_size({"width": 390, "height": 700})
+        page.wait_for_function("() => document.querySelector('[data-sinjira-account-mobile-nav]').clientWidth>=380") 
+        page.evaluate("() => new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))")
         page.set_viewport_size({"width": 240, "height": 700})
         page.wait_for_function("""() => {
           const nav=document.querySelector('[data-sinjira-account-mobile-nav]');
