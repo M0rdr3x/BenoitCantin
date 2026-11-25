@@ -121,8 +121,12 @@
 @media screen and (max-width:680px){
   .fracture-score-page .fracture-score-panel{padding:clamp(10px,3vw,20px)}
   .fracture-score-page .fracture-score-final{padding:12px}
-  .fracture-score-page .fracture-score-table{table-layout:fixed;min-width:0}
-  .fracture-score-page .fracture-score-table :is(th,td){min-width:0;white-space:normal;overflow-wrap:anywhere;padding:8px 4px}
+  .fracture-score-page .fracture-score-table{table-layout:fixed;width:100%;min-width:0;max-width:100%}
+  .fracture-score-page .fracture-score-table :is(th,td){box-sizing:border-box;min-width:0;white-space:normal;overflow-wrap:anywhere;padding:8px 4px}
+  /* Même spécificité que la règle bureau tbody th : les libellés du bilan
+     doivent réellement se replier, notamment à 200 % de taille de texte. */
+  .fracture-score-page .fracture-score-table tbody th{white-space:normal;overflow-wrap:anywhere}
+  .fracture-score-page .fracture-score-table caption{white-space:normal;overflow-wrap:anywhere}
   .fracture-score-page .fracture-score-table input{min-width:0;max-width:100%;padding:6px 4px}
   .fracture-score-page .fracture-score-table:not(.fracture-score-totals) thead th:first-child{width:20%}
   .fracture-score-page .fracture-score-totals thead th:first-child{width:40%}
