@@ -5,7 +5,7 @@ const start=src.indexOf('async function registryPhotoStored(');
 const end=src.indexOf('// Une violation UNIQUE',start);
 assert.ok(start>=0&&end>start);
 const code=src.slice(start,end).replace('(service:any,photoPath:string):Promise<boolean>','(service,photoPath)').replace('formats:Record<string,string>','formats');
-const ctx={};vm.runInNewContext(code+'\nthis.verify=registryPhotoStored;',ctx,{timeout:1000});
+const ctx={registryPhotoBinaryVerified:async()=>true};vm.runInNewContext(code+'\nthis.verify=registryPhotoStored;',ctx,{timeout:1000});
 const prefix='10000000-0000-4000-8000-000000000001/aabbccdd-1234-4abc-8abc-001122334455.';
 const bucketId='sinjira-character-sources';
 let count=0;
