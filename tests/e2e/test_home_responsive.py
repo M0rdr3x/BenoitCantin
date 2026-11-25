@@ -82,6 +82,15 @@ def test_home(page):
         # Le contexte navigateur demande explicitement la réduction du mouvement.
         verify(page.evaluate("() => getComputedStyle(document.documentElement).scrollBehavior")
                == "auto", f"défilement animé malgré la préférence de mouvement à {width}px")
+        if width <= 700:
+            filters = page.evaluate("""() => {
+              const header=getComputedStyle(document.querySelector('.site-header'));
+              const logo=getComputedStyle(document.querySelector('.sinjira-orbit img'));
+              return {header:header.backdropFilter || header.webkitBackdropFilter,
+                      logo:logo.filter};
+            }""")
+            verify(filters["header"] == "none" and filters["logo"] == "none",
+                   f"filtres graphiques coûteux sur mobile à {width}px : {filters}")
         if width <= 600:
             targets = page.locator(".site-footer .footer-col a")
             verify(targets.count() >= 5, "liens de pied de page manquants")
