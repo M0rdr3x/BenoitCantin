@@ -1,0 +1,65 @@
+name: Sécurité SINJIRA — révocation de session avec confirmation
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-security-v24-4-99.js'
+      - 'assets/js/sinjira-recovery-v24-4-99.js'
+      - 'compte/securite.html'
+      - 'compte/reinitialiser-mot-de-passe.html'
+      - 'scripts/test_lost_device_revocation_failclosed.cjs'
+      - 'scripts/test_sinjira_recovery_revocation_fail_closed.cjs'
+      - 'scripts/validate_security_v24_4_99.py'
+      - 'scripts/validate_auth.py'
+      - 'scripts/test_sinjira_auth_redirect_boundary.cjs'
+      - '.github/workflows/sinjira-account-revocation-ack.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/sinjira-security-v24-4-99.js'
+      - 'assets/js/sinjira-recovery-v24-4-99.js'
+      - 'compte/securite.html'
+      - 'compte/reinitialiser-mot-de-passe.html'
+      - 'scripts/test_lost_device_revocation_failclosed.cjs'
+      - 'scripts/test_sinjira_recovery_revocation_fail_closed.cjs'
+      - 'scripts/validate_security_v24_4_99.py'
+      - 'scripts/validate_auth.py'
+      - 'scripts/test_sinjira_auth_redirect_boundary.cjs'
+      - '.github/workflows/sinjira-account-revocation-ack.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check-revocation:
+    name: Vérifier la double confirmation RPC et Auth sans données de comptes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Node.js figé
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with:
+          node-version: '22.16.0'
+          check-latest: false
+      - name: Vérifier la syntaxe des vraies sources et tests
+        run: |
+          node --check assets/js/sinjira-security-v24-4-99.js
+          node --check assets/js/sinjira-recovery-v24-4-99.js
+          node --check scripts/test_lost_device_revocation_failclosed.cjs
+          node --check scripts/test_sinjira_recovery_revocation_fail_closed.cjs
+      - name: Simuler déclaration appareil perdu et erreur de révocation Auth
+        run: node scripts/test_lost_device_revocation_failclosed.cjs
+      - name: Simuler récupération, identifiants faibles et déconnexion globale
+        run: node scripts/test_sinjira_recovery_revocation_fail_closed.cjs
+      - name: Contrôler le contrat de sécurité des pages et modules
+        run: |
+          python3 scripts/validate_security_v24_4_99.py
+          python3 scripts/validate_auth.py
+          node scripts/test_sinjira_auth_redirect_boundary.cjs
+      - name: Vérifier les invariants de session MFA
+        run: python3 scripts/validate_session_security_v24_4_68.py

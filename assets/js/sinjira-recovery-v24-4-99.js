@@ -11,33 +11,31 @@ function setBusy(busy){
   form?.setAttribute('aria-busy',busy?'true':'false');
   form?.querySelectorAll('input,button').forEach(el=>{el.disabled=Boolean(busy)});
 }
-function randomDeviceKey(){
-  const source=globalThis.crypto;
-  if(typeof source?.randomUUID==='function'){
-    try{return source.randomUUID()}catch{/* Utiliser uniquement un autre CSPRNG. */}
-  }
-  if(typeof source?.getRandomValues!=='function')throw new Error('SECURITY_CRYPTO_UNAVAILABLE');
-  const bytes=new Uint8Array(24);
-  source.getRandomValues(bytes);
-  return 'sinjira-'+Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+function validDeviceKey(value){
+  // Conserver uniquement les identifiants forts préexistants (UUID ou 192 bits).
+  // Exclure les identifiants historiques composés d'octets nuls + horodatage.
+  if(typeof value!=='string'||value.length>128)return false;
+  if(/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(value))
+    return !/^0{8}-(?:0{4}-){3}0{12}$/i.test(value);
+  const match=/^sinjira-([0-9a-f]{48})(?:-[0-9a-z]+)?$/i.exec(value);
+  return Boolean(match&&!/^0{48}$/.test(match[1]));
 }
 function deviceKey(){
-  try{
-    let value=localStorage.getItem(DEVICE_KEY_STORAGE);
-    if(!value){value=randomDeviceKey();localStorage.setItem(DEVICE_KEY_STORAGE,value)}
-    return value;
-  }catch{
+  // La récupération ne doit JAMAIS inventer un appareil : le RPC accepte
+  // p_device_key=null et révoque alors tous les appareils, sans exception.
+  for(const storageName of ['localStorage','sessionStorage']){
     try{
-      let value=sessionStorage.getItem(DEVICE_KEY_STORAGE);
-      if(!value){value=randomDeviceKey();sessionStorage.setItem(DEVICE_KEY_STORAGE,value)}
-      return value;
-    }catch{return randomDeviceKey()}
+      const value=globalThis[storageName]?.getItem(DEVICE_KEY_STORAGE);
+      if(validDeviceKey(value))return value;
+    }catch{/* Stockage inaccessible : appliquer la révocation globale. */}
   }
+  return null;
 }
 async function requireRecoveryAal2WhenAvailable(){
   const {data,error}=await s.auth.mfa.getAuthenticatorAssuranceLevel();
-  if(error)throw error;
+  if(error!==null)throw new Error('MFA_STATE_UNAVAILABLE');
   assertKnownAssuranceLevels(data);
+  if(data.currentLevel==='aal2'&&data.nextLevel!=='aal2')throw new Error('MFA_STATE_UNAVAILABLE');
   if(data?.nextLevel==='aal2'&&data?.currentLevel!=='aal2'){
     setBusy(true);
     setStatus(status,'Votre compte possède un second facteur. Vérifiez-le avant de choisir un nouveau mot de passe.','info');
@@ -91,7 +89,7 @@ async function boot(){
     try{
       if(!await requireRecoveryAal2WhenAvailable())return;
       const {error:updateError}=await s.auth.updateUser({password});
-      if(updateError){
+      if(updateError!==null){
         setStatus(status,'Impossible de mettre à jour le mot de passe. Demandez un nouveau lien de récupération.','error');
         return;
       }
@@ -100,9 +98,8 @@ async function boot(){
       let cleanupOk=false;
       try{
         const result=await s.rpc('security_after_password_recovery',{p_device_key:deviceKey()});
-        cleanupOk=result?.error===null;
+        cleanupOk=result?.error===null&&result.data?.ok===true;
       }catch{}
-      if(!cleanupOk)console.warn('[SINJIRA recovery security cleanup] non confirmé');
 
       const revoked=await revokeRecoverySessions();
       if(revoked!=='global'){
@@ -114,18 +111,16 @@ async function boot(){
       }
       setStatus(status,cleanupOk
         ? 'Mot de passe mis à jour. La révocation globale a été acceptée; les jetons d’accès existants peuvent rester valides jusqu’à expiration. Les appareils devront être vérifiés de nouveau.'
-        : 'Mot de passe mis à jour. La révocation globale a été acceptée, mais la vérification des appareils n’est pas confirmée. Après reconnexion, vérifiez Ma sécurité.',
+        : 'Mot de passe mis à jour. La révocation globale a été acceptée; les anciens jetons peuvent rester valides jusqu’à expiration. La révocation des appareils n’a pas été confirmée. Après reconnexion, vérifiez Ma sécurité.',
         cleanupOk?'success':'info');
       setTimeout(()=>location.replace('/compte/connexion.html?reset=1'),1200);
-    }catch(error){
-      console.warn('[SINJIRA secure recovery]',error);
+    }catch{
       setStatus(status,'La récupération n’a pas pu être terminée. Réessayez avec un nouveau lien si nécessaire.','error');
     }finally{submitting=false;setBusy(passwordUpdated)}
   });
 }
 
-boot().catch(error=>{
-  console.warn('[SINJIRA secure recovery init]',error);
+boot().catch(()=>{
   setBusy(true);
   setStatus(status,'La récupération sécurisée ne peut pas être vérifiée pour le moment. Réessayez plus tard.','error');
 });

@@ -125,6 +125,8 @@ def main():
   }
   for marker,label in recovery_requirements.items():
     require(errors,recovery,marker,f'Récupération V24.4.99 incomplète: {label}.')
+  if 'randomDeviceKey' in recovery or 'cleanupOk=result?.error===null&&result.data?.ok===true;' not in recovery:
+    errors.append('Réinitialisation: identité appareil ou confirmation RPC non conforme.')
   if '.auth.getSession()' in recovery:
     errors.append('Réinitialisation: getSession() local ne doit pas remplacer la validation serveur getUser().')
 
@@ -133,7 +135,7 @@ def main():
     errors.append('Réinitialisation: les deux champs doivent imposer minlength=12.')
   if len(re.findall(r'autocomplete=["\']new-password["\']',reset))<2:
     errors.append('Réinitialisation: autocomplete=new-password absent sur les deux champs.')
-  if 'second facteur' not in reset or 'sinjira-recovery-v24-4-99.js?v=24.4.99' not in reset:
+  if 'second facteur' not in reset or 'sinjira-recovery-v24-4-99.js?v=24.4.101-revocation' not in reset:
     errors.append('Réinitialisation: explication MFA ou module V24.4.99 absent.')
 
   login=text('compte/connexion.html')
