@@ -5,12 +5,14 @@ on:
     branches: [main]
     paths:
       - 'assets/js/**'
+      - 'tests/e2e/test_literature_site.py'
       - 'scripts/validate_browser_supabase_dependency.py'
       - '.github/workflows/browser-supabase-dependency.yml'
   push:
     branches: [main]
     paths:
       - 'assets/js/**'
+      - 'tests/e2e/test_literature_site.py'
       - 'scripts/validate_browser_supabase_dependency.py'
       - '.github/workflows/browser-supabase-dependency.yml'
   workflow_dispatch:
