@@ -118,21 +118,23 @@ def check_conversation_isolation(browser):
         ctx=browser.new_context(service_workers="block",viewport={"width":390,"height":844})
         try:
             ctx.route("**/*",lambda route: route.continue_() if route.request.url.startswith(BASE_URL) else route.abort())
+            source=(Path(__file__).resolve().parents[2]/("compte/messages-reels.html" if kind=="real" else "compte/messages-personnage.html")).read_text("utf-8")
+            moderation=source[source.index('<dialog class="message-moderation-dialog"'):source.index("</dialog>")+len("</dialog>")]
             ctx.route("**/messages-race-fixture.html*",lambda route: route.fulfill(
-                content_type="text/html",body=f"""<input data-contact-search><div data-contact-list></div>
+                content_type="text/html",body=f"""<link rel="stylesheet" href="/assets/css/sinjira-message-moderation-v1.css"><input data-contact-search><div data-contact-list></div>
                 <header data-chat-title></header><div data-chat-log></div><p data-social-status></p>
                 <form data-chat-form hidden><textarea name="body"></textarea><button type="submit">Envoyer</button></form>
-                <script type="module" src="/assets/js/sinjira-messages-{kind}.js"></script>"""))
+                {moderation}<script type="module" src="/assets/js/sinjira-messages-{kind}.js"></script>"""))
             ctx.route("**/assets/js/sinjira-message-read-state.js*",lambda route: route.fulfill(
                 content_type="text/javascript",body="""export async function unreadCounts(){return new Map()}
                 export async function markConversationRead(table,user,filters){window.reads.push({table,user,filters})}"""))
             ctx.route("**/assets/js/sinjira-social-common.js*",lambda route: route.fulfill(
-                content_type="text/javascript",body="""window.requests=[];window.sends=[];window.reads=[];
+                content_type="text/javascript",body="""window.requests=[];window.sends=[];window.reads=[];window.reports=[];window.blocks=[];
                 const contacts=['a','b'].map(id=>({user_id:id,character_id:'char-'+id,pseudo:id,public_name:id}));
                 export async function requireCommunityUser(){return {id:'self',email:'fixture@example.invalid'}}
                 export const escapeHtml=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
                 export const formatDate=()=>'';export const avatarUrl=()=>'/assets/icons/sinjira-favicon.png';
-                export const reportContent=async()=>{};export const socialStatus=(node,msg)=>{node.textContent=msg};
+                export const reportContent=async(payload)=>{window.reports.push(payload);return {ok:true}};export const socialStatus=(node,msg)=>{node.textContent=msg};
                 export const socialErrorStatus=(node,error,msg)=>{node.textContent=msg};
                 export function getSupabase(){return {
                   from(table){return {
@@ -140,7 +142,8 @@ def check_conversation_isolation(browser):
                       maybeSingle:async()=>({data:{user_id:'self',character_id:'char-self'},error:null}),
                       or(value){filter=value;return this},
                       order(){return table.endsWith('_messages')?new Promise(resolve=>window.requests.push({filter,resolve})):Promise.resolve({data:contacts,error:null})}}},
-                    insert(payload){return new Promise(resolve=>window.sends.push({payload,resolve}))}
+                    insert(payload){return new Promise(resolve=>window.sends.push({payload,resolve}))},
+                    async upsert(payload){window.blocks.push(payload);return {error:{message:'fixture'}}}
                   }},
                   channel(){return {on(){return this},subscribe(){return this}}}
                 }}
@@ -169,16 +172,48 @@ def check_conversation_isolation(browser):
             assert_true("Message b" in log.inner_text() and "Message a" not in log.inner_text() and "Hors conversation" not in log.inner_text(),"réponse périmée affichée")
             assert_true(page.evaluate("window.reads.length")==1,"ancienne conversation marquée lue")
             assert_true(page.evaluate("Object.values(window.reads[0].filters)[0]")==prefix+"b","marquage du mauvais contact")
+            report=log.locator("[data-report-message]")
+            dialog=page.locator("[data-message-moderation]")
+            for width,height,zoom in ((240,420,"100%"),(320,760,"200%"),(390,360,"100%"),(1440,760,"100%")):
+                page.set_viewport_size({"width":width,"height":height})
+                page.evaluate("(z)=>document.documentElement.style.fontSize=z",zoom)
+                report.click()
+                dialog.wait_for(state="visible")
+                assert_true(dialog.locator('[value="cancel"]').evaluate("(el)=>document.activeElement===el"),"focus initial")
+                state=dialog.evaluate("""el=>{const r=el.getBoundingClientRect();return r.left>=-2&&r.right<=innerWidth+2&&r.top>=-2&&r.bottom<=innerHeight+2&&el.scrollWidth<=el.clientWidth+2&&[...el.querySelectorAll('button')].every(b=>b.getBoundingClientRect().height>=47.5)}""")
+                assert_true(state,f"dialogue hors écran {width}/{zoom}")
+                if width==240:
+                    page.keyboard.press("Escape")
+                else:
+                    dialog.locator('[value="cancel"]').click()
+                dialog.wait_for(state="hidden")
+                page.wait_for_function("window.reports.length===0&&document.activeElement===document.querySelector('[data-report-message]')")
+            page.evaluate("document.documentElement.style.fontSize=''")
+            report.click()
+            dialog.locator('[name="reason"]').select_option("harassment")
+            dialog.locator('[name="details"]').fill("Texte fictif")
+            dialog.locator('[value="confirm"]').click()
+            page.wait_for_function("window.reports.length===1")
+            assert_true(page.evaluate("window.reports[0].target_id==='msg-b'&&window.reports[0].reason==='harassment'&&window.reports[0].details==='Texte fictif'"),"signalement mal ciblé")
+            if kind=="real":
+                page.locator("[data-block-peer]").click()
+                dialog.locator('[value="cancel"]').click()
+                dialog.wait_for(state="hidden")
+                assert_true(page.evaluate("window.blocks.length===0"),"blocage annulé transmis")
+                page.locator("[data-block-peer]").click()
+                dialog.locator('[value="confirm"]').click()
+                page.wait_for_function("window.blocks.length===1")
+                assert_true(page.evaluate("window.blocks[0].blocked_user_id==='b'"),"mauvais compte bloqué")
             composer.fill("Brouillon B")
             a.click()
             assert_true(composer.input_value()=="Brouillon A","brouillon A perdu")
-            page.locator('button[type="submit"]').click()
-            page.evaluate("document.querySelector('form').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))")
+            page.locator('[data-chat-form] button[type="submit"]').click()
+            page.evaluate("document.querySelector('[data-chat-form]').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))")
             assert_true(page.evaluate("window.sends.length")==1,"double envoi")
             b.click()
             assert_true(composer.input_value()=="Brouillon B","brouillon B perdu")
             page.evaluate("window.sends[0].resolve({error:null})")
-            page.wait_for_function("!document.querySelector('form button').disabled")
+            page.wait_for_function("!document.querySelector('[data-chat-form] button').disabled")
             assert_true(composer.input_value()=="Brouillon B","envoi précédent efface le brouillon courant")
             assert_true(page.evaluate("window.sends[0].payload.recipient_user_id")=="a","mauvais destinataire")
             a.click()
