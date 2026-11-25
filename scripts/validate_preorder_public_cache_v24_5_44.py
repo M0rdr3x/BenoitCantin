@@ -30,7 +30,7 @@ def check_page(path, errors):
         return
 
     for asset in ASSETS:
-        version = '24.5.45' if asset.startswith('sinjira-preorder-fulfillment-') else '24.5.44'
+        version = {'sinjira-preorder-fulfillment-v24-5-6.js': '24.5.46', 'sinjira-preorder-fulfillment-v24-5-6.css': '24.5.45'}.get(asset, '24.5.44')
         expected = asset + '?v=' + version
         if expected not in text:
             errors.append(f'{path.relative_to(ROOT)} ne charge pas {expected}')
