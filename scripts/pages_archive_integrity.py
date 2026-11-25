@@ -14,7 +14,25 @@ import unittest
 MAX_BYTES = 1_000_000_000
 MAX_FILES = 20_000
 FORBIDDEN = {".git", ".github", "supabase", "scripts", "docs", "tests", "mobile-native", "tools"}
-ALLOWED_HIDDEN = {".well-known", ".nojekyll"}
+ALLOWED_HIDDEN_PATHS = {
+    ".well-known", ".well-known/security.txt",
+    ".well-known/release.json", ".nojekyll",
+}
+
+def check_public_path(name: str, is_directory: bool):
+    parts = name.split("/")
+    if any(part.casefold() in FORBIDDEN for part in parts):
+        raise ValueError("Forbidden archive path")
+    if any(part.startswith(".") for part in parts):
+        if name not in ALLOWED_HIDDEN_PATHS or is_directory != (name == ".well-known"):
+            raise ValueError("Forbidden hidden archive path")
+    if not is_directory:
+        # Reapply the reviewed publication policy to every file on disk,
+        # not just to files initially selected by the builder.
+        from build_netlify_public import relative_path_allowed, RELEASE_METADATA_PATH
+        rel = Path(name)
+        if rel != RELEASE_METADATA_PATH and not relative_path_allowed(rel):
+            raise ValueError("Unapproved public archive file")
 
 def digest(stream):
     result = hashlib.sha256()
@@ -33,12 +51,10 @@ def inventory(root: Path):
         if entries > MAX_FILES:
             raise ValueError("Public inventory too large")
         name = p.relative_to(root).as_posix()
-        parts = name.split("/")
-        if any(part.casefold() in FORBIDDEN or (part.startswith(".") and part not in ALLOWED_HIDDEN) for part in parts):
-            raise ValueError("Forbidden archive path")
         if any(ord(ch) < 32 or ord(ch) == 127 or ch == "\\" for ch in name):
             raise ValueError("Invalid archive path")
         st = p.lstat()
+        check_public_path(name, stat.S_ISDIR(st.st_mode))
         if stat.S_ISDIR(st.st_mode):
             continue
         if not stat.S_ISREG(st.st_mode) or st.st_nlink != 1:
@@ -133,6 +149,38 @@ class Tests(unittest.TestCase):
                 with self.assertRaises(ValueError): inventory(root)
         self.assertTrue(relative_path_allowed(Path("projets/projet-nova/assets/nova-civic-integrity.js")))
         self.assertTrue(relative_path_allowed(Path("projets/projet-nova/official/reference/corpus.md")))
+
+    def test_reject_unapproved_public_files_and_hidden_paths(self):
+        bad_paths = (
+            "assets/.well-known/security.txt",
+            "assets/.nojekyll",
+            ".well-known/extra.json",
+            ".well-known/security.txt/fixture.html",
+            "assets/private-export.csv",
+            "assets/source.js.map",
+            "assets/backup.zip",
+            "_headers",
+            "_redirects",
+            "projets/projet-nova/data/unreviewed.json",
+            "projets/sinjira/romans/unreviewed.pdf",
+        )
+        for name in bad_paths:
+            with self.subTest(path=name), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp) / "_site"; root.mkdir()
+                (root / "index.html").touch()
+                bad = root / name
+                bad.parent.mkdir(parents=True, exist_ok=True)
+                bad.touch()
+                with self.assertRaises(ValueError):
+                    inventory(root)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "_site"; root.mkdir()
+            for name in ("index.html", ".nojekyll", ".well-known/security.txt",
+                         ".well-known/release.json", "assets/js/site.js"):
+                file = root / name
+                file.parent.mkdir(parents=True, exist_ok=True)
+                file.touch()
+            self.assertEqual(len(inventory(root)), 5)
 
     def test_reject_extra_missing_traversal_duplicate_members(self):
         with tempfile.TemporaryDirectory() as tmp:
