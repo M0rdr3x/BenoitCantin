@@ -52,7 +52,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Node 22 épinglé
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version: '22.16.0'
           check-latest: false
@@ -84,7 +84,7 @@ jobs:
           ref: main
           persist-credentials: false
       - name: Node 22 épinglé
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version: '22.16.0'
           check-latest: false
