@@ -9,7 +9,7 @@ function ensureStyle() {
   if (styleLoaded || document.querySelector('link[data-preorder-cost-summary-style]')) return;
   const link = document.createElement('link');
   link.rel = 'stylesheet';
-  link.href = new URL('../css/sinjira-preorder-cost-summary-v24-5-25.css?v=24.5.46', import.meta.url).href;
+  link.href = new URL('../css/sinjira-preorder-cost-summary-v24-5-25.css?v=24.5.46.1', import.meta.url).href;
   link.dataset.preorderCostSummaryStyle = 'true';
   document.head.appendChild(link);
   styleLoaded = true;
