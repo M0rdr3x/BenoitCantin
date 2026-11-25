@@ -32,8 +32,24 @@ async function readBoundedJson(req:Request){
   return body as Record<string,unknown>;
 }
 
-async function removeStoragePaths(service:any,bucket:string,paths:(string|null|undefined)[]){
-  const unique=[...new Set(paths.map(x=>String(x||'').trim()).filter(Boolean))];
+// Les références issues de la base ne sont pas une preuve de propriété.
+// Valider tous les chemins des trois compartiments avant la première mutation.
+function ownedStoragePaths(paths:unknown[],userId:string):string[]{
+  const unique=new Set<string>();
+  for(const value of paths){
+    if(value===null||value===undefined||value==='')continue;
+    if(typeof value!=='string'||value!==value.trim()||value.length>1024||
+       !value.startsWith(userId+'/')||/[%\\\u0000-\u001f\u007f]/.test(value)||
+       value.split('/').some(part=>!part||part==='.'||part==='..')){
+      throw new Error('STORAGE_PATH_OWNERSHIP_INVALID');
+    }
+    unique.add(value);
+  }
+  return [...unique];
+}
+
+async function removeStoragePaths(service:any,bucket:string,paths:string[]){
+  const unique=paths;
   for(let i=0;i<unique.length;i+=100){
     const {error}=await service.storage.from(bucket).remove(unique.slice(i,i+100));
     if(error){
@@ -82,9 +98,13 @@ Deno.serve(async (req) => {
     ]);
     if(profileRes.error||submissionRes.error||applicationRes.error)throw new Error('STORAGE_PATH_LOOKUP_FAILED');
 
-    await removeStoragePaths(service,'sinjira-avatars',[profileRes.data?.avatar_path]);
-    await removeStoragePaths(service,'sinjira-character-sources',(submissionRes.data||[]).map((row:any)=>row.photo_path));
-    await removeStoragePaths(service,'sinjira-character-submissions',(applicationRes.data||[]).map((row:any)=>row.photo_path));
+    if(!Array.isArray(submissionRes.data)||!Array.isArray(applicationRes.data))throw new Error('STORAGE_PATH_LOOKUP_FAILED');
+    const avatarPaths=ownedStoragePaths([profileRes.data?.avatar_path],user.id);
+    const sourcePaths=ownedStoragePaths(submissionRes.data.map((row:any)=>row.photo_path),user.id);
+    const applicationPaths=ownedStoragePaths(applicationRes.data.map((row:any)=>row.photo_path),user.id);
+    await removeStoragePaths(service,'sinjira-avatars',avatarPaths);
+    await removeStoragePaths(service,'sinjira-character-sources',sourcePaths);
+    await removeStoragePaths(service,'sinjira-character-submissions',applicationPaths);
 
     const {error:revokeError}=await service.rpc('revoke_sinjira_contributions', {
       p_user_id: user.id,
@@ -106,7 +126,7 @@ Deno.serve(async (req) => {
     if(error?.message==='INVALID_JSON')return privateJson({ok:false,error:'JSON invalide.',code:'INVALID_JSON'},400);
     if(error?.message==='ADMIN_CHECK_FAILED')return privateJson({ok:false,error:'Vérification du rôle impossible.',code:'ADMIN_CHECK_FAILED'},503);
     if(error?.message==='LEGAL_HOLD_CHECK_FAILED')return privateJson({ok:false,error:'La vérification des obligations de conservation est temporairement indisponible. Aucune suppression n’a été effectuée.',code:'LEGAL_HOLD_CHECK_FAILED'},503);
-    if(error?.message==='STORAGE_DELETE_FAILED'||error?.message==='STORAGE_PATH_LOOKUP_FAILED')return privateJson({ok:false,error:'Les fichiers personnels n’ont pas pu être préparés pour suppression. Le compte n’a pas été supprimé.',code:error.message},503);
+    if(error?.message==='STORAGE_DELETE_FAILED'||error?.message==='STORAGE_PATH_LOOKUP_FAILED'||error?.message==='STORAGE_PATH_OWNERSHIP_INVALID')return privateJson({ok:false,error:'Les fichiers personnels n’ont pas pu être préparés pour suppression. Le compte n’a pas été supprimé.',code:error.message},503);
     if(error?.message==='CONTRIBUTION_REVOKE_FAILED')return privateJson({ok:false,error:'Les contributions liées au compte n’ont pas pu être révoquées. Le compte n’a pas été supprimé.',code:'CONTRIBUTION_REVOKE_FAILED'},503);
     return privateJson({ok:false,error:'Suppression impossible.',code:'DELETE_FAILED'},500);
   }
