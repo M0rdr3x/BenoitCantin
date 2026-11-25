@@ -450,6 +450,24 @@ def public_data_payload_violations(data: object) -> list[str]:
     return sorted(set(errors))
 
 
+def strict_public_json(raw: str) -> object:
+    """Refuser les ambiguïtés JSON avant le contrôle de confidentialité."""
+    def unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+        result: dict[str, object] = {}
+        for key, value in pairs:
+            if key in result:
+                # Ne pas inclure la clé ni sa valeur dans les journaux.
+                raise ValueError("duplicate JSON key")
+            result[key] = value
+        return result
+
+    def reject_constant(_value: str) -> object:
+        raise ValueError("non-standard JSON constant")
+
+    return json.loads(raw, object_pairs_hook=unique_object,
+                      parse_constant=reject_constant)
+
+
 def public_data_json_errors(root: Path = ROOT) -> list[str]:
     errors: list[str] = []
     for rel in sorted(PROJECT_NOVA_PUBLIC_DATA_JSON):
@@ -461,8 +479,8 @@ def public_data_json_errors(root: Path = ROOT) -> list[str]:
             if file.stat().st_size > NOVA_PUBLIC_JSON_MAX_BYTES:
                 errors.append(f"JSON public trop volumineux: {rel.as_posix()}")
                 continue
-            data = json.loads(file.read_text(encoding="utf-8", errors="strict"))
-        except (OSError, UnicodeError, json.JSONDecodeError) as error:
+            data = strict_public_json(file.read_text(encoding="utf-8", errors="strict"))
+        except (OSError, UnicodeError, ValueError, RecursionError) as error:
             errors.append(f"JSON public illisible: {rel.as_posix()} ({type(error).__name__})")
             continue
         for violation in public_data_payload_violations(data):
@@ -1093,6 +1111,47 @@ def self_test_public_filesystem_boundary() -> list[str]:
         if not public_data_payload_violations(fixture):
             errors.append(f"Auto-test JSON: divulgation synthétique non refusée #{index}")
 
+    # Le parseur standard conserve seulement la dernière valeur d'une clé.
+    # Refuser tout doublon, y compris les clés imbriquées et échappées, avant
+    # de copier le JSON brut vers le site public.
+    ambiguous_json = (
+        '{"label":"synthetic@example.org","label":"public"}',
+        '{"nested":{"label":"first","label":"second"}}',
+        r'{"label":"first","\u006cabel":"second"}',
+        '{"value":NaN}',
+        '{"value":Infinity}',
+        '{"value":-Infinity}',
+        '{"invalid":}',
+    )
+    for index, raw in enumerate(ambiguous_json, 1):
+        try:
+            strict_public_json(raw)
+        except ValueError:
+            pass
+        else:
+            errors.append(f"Auto-test JSON: document ambigu non refusé #{index}")
+    if strict_public_json('{"label":"public","nested":{"label":"other"}}') != {
+        "label": "public", "nested": {"label": "other"}
+    }:
+        errors.append("Auto-test JSON: objets distincts légitimes refusés")
+
+    # Recontrôler les fichiers produits, pas uniquement les objets en mémoire.
+    with tempfile.TemporaryDirectory(prefix="sinjira-public-json-") as tmp:
+        artifact = Path(tmp)
+        for rel in PROJECT_NOVA_PUBLIC_DATA_JSON:
+            file = artifact / rel
+            file.parent.mkdir(parents=True, exist_ok=True)
+            file.write_text('{"label":"public"}', encoding="utf-8")
+        if public_data_json_errors(artifact):
+            errors.append("Auto-test JSON: artefact public valide refusé")
+        target = artifact / sorted(PROJECT_NOVA_PUBLIC_DATA_JSON)[0]
+        target.write_text('{"label":"synthetic@example.org","label":"public"}', encoding="utf-8")
+        issues = public_data_json_errors(artifact)
+        if len(issues) != 1 or "JSON public illisible" not in issues[0]:
+            errors.append("Auto-test JSON: artefact ambigu non refusé")
+        if any("synthetic@example.org" in issue for issue in issues):
+            errors.append("Auto-test JSON: contenu confidentiel dans le diagnostic")
+
     rejected = (
         # Les extensions Web légitimes ne rendent jamais un dotfile public.
         # Cette règle s'applique aussi à la racine du dépôt, où l'ancienne
@@ -1530,11 +1589,11 @@ def validate_output(
         errors.append("Marqueur .well-known/release.json requis absent du publish.")
     else:
         try:
-            observed_release_metadata = json.loads(
+            observed_release_metadata = strict_public_json(
                 release_path.read_text(encoding="utf-8", errors="strict")
             )
-        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-            errors.append(f"Marqueur release.json illisible: {exc}")
+        except (OSError, UnicodeError, ValueError, RecursionError) as exc:
+            errors.append(f"Marqueur release.json illisible: {type(exc).__name__}")
         else:
             if observed_release_metadata != expected_release_metadata:
                 errors.append("Marqueur release.json incohérent avec le SHA/contexte de build.")
@@ -1563,6 +1622,7 @@ def validate_output(
         errors.append("Fichier _redirects inattendu hors artefact Netlify autonome.")
 
     errors.extend(public_symlink_errors(output))
+    errors.extend(public_data_json_errors(output))
 
     for forbidden in FORBIDDEN_DIRS:
         if (output / forbidden).exists():
