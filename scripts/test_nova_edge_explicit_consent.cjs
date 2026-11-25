@@ -45,7 +45,7 @@ const mutations=[
   {...make(),ballotToken:"a"},
   {...make(),ballotToken:"z".repeat(48)},
   {...make(),captchaToken:"court"},
-  {...make(),captchaToken:"x".repeat(4097)},
+  {...make(),captchaToken:"x".repeat(2049)},
   {...make(),answers:{}},
   {...make(),answers:null},
   {...make(),answers:[]},
