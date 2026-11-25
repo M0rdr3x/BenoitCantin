@@ -16,6 +16,15 @@ const composer=form.querySelector('textarea[name="body"]');
 const sendButton=form.querySelector('button[type="submit"]');
 let requestVersion=0,sending=false;
 const reporting=new Set();
+function releaseReport(id){
+  reporting.delete(id);
+  for(const bubble of log.querySelectorAll('[data-message]')){
+    if(bubble.dataset.message===String(id)){
+      const control=bubble.querySelector('[data-report-message]');
+      if(control)control.disabled=false;
+    }
+  }
+}
 const blocking=new Set();
 
 
@@ -114,13 +123,12 @@ async function messages(){
     reporting.add(message.id);
     try{
       const choice=await requestModeration(button,{mode:'report',contact:target.pseudo||target.display_name||'Membre'});
-      if(!choice){reporting.delete(message.id);return;}
+      if(!choice){releaseReport(message.id);return;}
       button.disabled=true;
       await reportContent({network:'real',target_type:'message',target_id:message.id,reason:choice.reason,details:choice.details??null,snapshot:{body:message.body,sender_user_id:message.sender_user_id,recipient_user_id:message.recipient_user_id}});
       socialStatus(status,'Message signalé à l’administration.','success');
     }catch(error){
-      reporting.delete(message.id);
-      button.disabled=false;
+      releaseReport(message.id);
       fail(error,'Signalement non confirmé. Vérifiez vos signalements avant de réessayer.');
     }
   }));
