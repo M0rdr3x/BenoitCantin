@@ -4,15 +4,15 @@ const PRODUCT_SLUG = 'sinjira-livre-01-la-cendre-du-jugement';
 const s = getSupabase();
 const initialized = new WeakSet();
 
-function money(cents, currency = 'CAD') {
-  if (cents === null || cents === undefined || !Number.isFinite(Number(cents))) return null;
+function money(cents, currency) {
+  if (cents === null || cents === undefined || cents === '' || (typeof cents !== 'number' && (typeof cents !== 'string' || !/^\d+$/.test(cents))) || !Number.isSafeInteger(Number(cents)) || Number(cents) < 0 || !/^[A-Z]{3}$/.test(currency || '')) return null;
   try { return new Intl.NumberFormat('fr-CA', { style: 'currency', currency }).format(Number(cents) / 100); }
-  catch { return `${(Number(cents) / 100).toFixed(2)} ${currency}`; }
+  catch { return null; }
 }
 
 function range(min, max, currency) {
   const a = money(min, currency); const b = money(max, currency);
-  if (!a || !b) return null;
+  if (!a || !b || Number(min) > Number(max)) return null;
   return Number(min) === Number(max) ? a : `${a} à ${b}`;
 }
 
@@ -58,7 +58,7 @@ function addUi(summary) {
 function currentControls(summary) {
   return {
     format: String(summary.querySelector('[data-pcs-format]')?.value || 'undecided'),
-    quantity: Math.max(1, Math.min(5, Number(summary.querySelector('[data-pcs-quantity]')?.value || 1))),
+    quantity: Number(summary.querySelector('[data-pcs-quantity]')?.value),
     method: String(summary.querySelector('[data-pcs-method]')?.value || 'undecided'),
     zone: String(summary.querySelector('[data-pcs-zone]')?.value || '')
   };
@@ -76,6 +76,7 @@ async function init(summary) {
   initialized.add(summary);
   const n = addUi(summary);
   if (!n) return;
+  n.select.disabled = true;
 
   if (!isSinjiraBackendConfigured()) {
     resetUi(n, 'Estimation fiscale temporairement indisponible');
@@ -111,11 +112,11 @@ async function init(summary) {
     const taxCode = String(n.select.value || '');
     const c = currentControls(summary);
     if (!taxCode) { resetUi(n, profiles.length ? 'Choisissez une zone fiscale' : 'Aucune estimation fiscale publiée'); return; }
-    if (c.format === 'undecided') { resetUi(n, 'Choisissez d’abord un format'); return; }
+    if (!['paper','digital','both'].includes(c.format) || !Number.isInteger(c.quantity) || c.quantity < 1 || c.quantity > 5 || !profiles.some(profile => profile.tax_code === taxCode)) { resetUi(n, 'Choisissez un format, une quantité et une zone fiscale valides'); return; }
     if ((c.format === 'paper' || c.format === 'both') && c.method === 'undecided') { resetUi(n, 'Choisissez livraison ou ramassage'); return; }
     if ((c.format === 'paper' || c.format === 'both') && c.method === 'shipping' && !c.zone) { resetUi(n, 'Choisissez une zone de livraison'); return; }
 
-    n.tax.textContent = 'Calcul de l’estimation…';
+    resetUi(n, 'Calcul de l’estimation…');
     n.total.textContent = 'Calcul…';
     try {
       const data = await rpc('product_preorder_tax_estimate', {
@@ -139,7 +140,7 @@ async function init(summary) {
       }
       const taxRange = range(row.estimated_tax_min_cents, row.estimated_tax_max_cents, row.currency);
       const totalRange = range(row.estimated_total_min_cents, row.estimated_total_max_cents, row.currency);
-      if (!taxRange || !totalRange) { resetUi(n, 'Estimation fiscale incomplète'); return; }
+      if (!taxRange || !totalRange || Number(row.estimated_total_min_cents) < Number(row.estimated_tax_min_cents) || Number(row.estimated_total_max_cents) < Number(row.estimated_tax_max_cents)) { resetUi(n, 'Estimation fiscale incomplète'); return; }
       n.tax.textContent = taxRange;
       n.taxNote.innerHTML = `Estimation non contractuelle — ${escapeHtml(row.tax_label || taxCode)}.${row.effective_on ? ` Effet : ${escapeHtml(row.effective_on)}.` : ''}${row.source_reference ? ` Source vérifiée : ${escapeHtml(row.source_reference)}.` : ''}`;
       n.total.textContent = totalRange;
@@ -152,6 +153,7 @@ async function init(summary) {
     }
   }
 
+  n.select.disabled = profiles.length === 0;
   n.select.addEventListener('change', calculate);
   summary.querySelectorAll('[data-pcs-format],[data-pcs-quantity],[data-pcs-method],[data-pcs-zone]').forEach(el => el.addEventListener('change', calculate));
   await calculate();
