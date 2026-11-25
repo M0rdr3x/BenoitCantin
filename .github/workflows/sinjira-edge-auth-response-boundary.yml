@@ -6,12 +6,14 @@ on:
     paths:
       - 'supabase/functions/_shared/auth.ts'
       - 'scripts/test_sinjira_edge_auth_response_boundary.cjs'
+      - 'scripts/test_sinjira_edge_bearer_boundary.cjs'
       - '.github/workflows/sinjira-edge-auth-response-boundary.yml'
   push:
     branches: [main]
     paths:
       - 'supabase/functions/_shared/auth.ts'
       - 'scripts/test_sinjira_edge_auth_response_boundary.cjs'
+      - 'scripts/test_sinjira_edge_bearer_boundary.cjs'
       - '.github/workflows/sinjira-edge-auth-response-boundary.yml'
   workflow_dispatch:
 
@@ -33,4 +35,6 @@ jobs:
           node-version: '22.16.0'
           package-manager-cache: false
       - name: Tester les réponses Auth et Admin sans accès distant
-        run: node scripts/test_sinjira_edge_auth_response_boundary.cjs
+        run: |
+          node scripts/test_sinjira_edge_auth_response_boundary.cjs
+          node scripts/test_sinjira_edge_bearer_boundary.cjs

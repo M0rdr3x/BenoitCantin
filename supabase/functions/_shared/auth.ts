@@ -43,7 +43,13 @@ export function serviceClient() {
 
 export function bearerToken(req: Request) {
   const header = req.headers.get('Authorization') || '';
-  return header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+  // Un JWT utilisateur compact possède exactement trois segments base64url.
+  // Refuser les en-têtes combinés, les identifiants opaques et les entrées
+  // excessives avant tout appel Auth; la vérification cryptographique reste
+  // exclusivement confiée à auth.getUser(token).
+  if (header.length > 16384) return '';
+  const match = /^Bearer +([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/i.exec(header);
+  return match && match[0] === header ? match[1] : '';
 }
 
 function edgeFunctionName(req: Request) {
