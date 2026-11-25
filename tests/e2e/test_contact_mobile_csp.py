@@ -28,13 +28,15 @@ def static_contracts() -> None:
     assert "Afficher l’aperçu du formulaire personnel" in html
     assert 'data-personal-formspree-state="pending-separate-endpoint"' in html
     assert 'src="/assets/js/sinjira-contact-route-v1.js?v=1.0.0"' in html
-    assert 'href="/assets/css/contact-ux-v1.css?v=1.0.0"' in html
+    assert 'href="/assets/css/contact-ux-v1.css?v=1.0.1"' in html
     assert "onsubmit=" not in html and "onclick=" not in html
     assert "<script>(" not in html and "style=" not in html
     assert "var PERSONAL_ENDPOINT=''" in js
     assert "fields.disabled=true" in js and "event.preventDefault()" in js
     assert "form.getAttribute('data-personal-formspree-state')==='active-separate-endpoint'" in js
     assert "@media(max-width:640px)" in css
+    assert 'class="contact-channel-list" role="list"' in html
+    assert ".contact-channel-list .btn" in css and "min-height: 48px;" in css
     assert "/projets/projet-nova/contact.html" in html
     assert "/compte/vie-privee.html" in html
     print("OK: contrat statique CSP, destinations et verrou de confidentialité")
@@ -47,19 +49,28 @@ def verify(context, width: int, js_enabled: bool) -> None:
         assert response and response.status == 200, (BROWSER, width, "contact inaccessible")
         assert page.locator("body.contact-ux-page").count() == 1
         assert page.get_by_role("heading", name="Choisir le bon contact").count() == 1
-        destinations = page.locator(".contact-route-actions a")
+        channels = page.get_by_role("list", name="Démarches de contact disponibles")
+        assert channels.count() == 1
+        assert channels.get_by_role("listitem").count() == 3
+        destinations = channels.locator(":scope > li > a")
         assert destinations.count() == 3, (BROWSER, width, "trois parcours attendus")
-        assert page.locator('.contact-route-actions a[href="mailto:sinjiraofficiel@gmail.com"]').count() == 1
-        assert page.locator('.contact-route-actions a[href="/compte/vie-privee.html"]').count() == 1
-        assert page.locator('.contact-route-actions a[href="/projets/projet-nova/contact.html"]').count() == 1
+        assert page.locator('.contact-channel-list > li > a[href="mailto:sinjiraofficiel@gmail.com"]').count() == 1
+        assert page.locator('.contact-channel-list > li > a[href="/compte/vie-privee.html"]').count() == 1
+        assert page.locator('.contact-channel-list > li > a[href="/projets/projet-nova/contact.html"]').count() == 1
 
+        assert destinations.nth(0).get_attribute("href") == "mailto:sinjiraofficiel@gmail.com"
+        assert destinations.nth(1).get_attribute("href") == "/compte/vie-privee.html"
+        assert destinations.nth(2).get_attribute("href") == "/projets/projet-nova/contact.html"
+        assert page.locator('main#contenu[tabindex="-1"]').count() == 1
+        assert page.locator('.footer-col a[href="/contact.html"][aria-current="page"]').count() == 1
+        assert page.get_by_text("Si votre application de messagerie ne s’ouvre pas", exact=False).is_visible()
         preview = page.locator("#contact-preview")
         assert preview.count() == 1 and preview.get_attribute("open") is None
         summary = preview.locator("summary")
-        for item in [summary] + destinations.all():
+        for item, minimum in [(summary, 44)] + [(link, 48) for link in destinations.all()]:
             b = item.bounding_box()
             assert b, (BROWSER, width, "élément non affiché")
-            assert b["height"] >= 44, (BROWSER, width, "cible trop petite", b)
+            assert b["height"] >= minimum, (BROWSER, width, "cible trop petite", b)
             assert b["x"] >= -2 and b["x"] + b["width"] <= width + 2, (
                 BROWSER, width, "débordement tactile", b
             )
