@@ -12,6 +12,8 @@ from isolated_supabase_api import install_isolated_supabase_api
 BASE_URL = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
 BROWSER_NAME = os.environ.get("BROWSER", "chromium").strip().lower()
 SUPPORTED_BROWSERS = {"chromium", "firefox", "webkit"}
+# Exact reviewed SDK URL; no wildcard origin or version in private reader mocks.
+SUPABASE_SDK_URL = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/+esm"
 LITERATURE_ROUTE = "projets/sinjira/romans/"
 READER_ROUTE = "projets/sinjira/romans/lire-demo.html"
 SITEMAP_ROUTE = "sitemap.xml"
@@ -57,7 +59,7 @@ def mock_web_reader(context) -> None:
         ),
     )
     context.route(
-        "**/npm/@supabase/supabase-js@2.119.0/+esm*",
+        SUPABASE_SDK_URL,
         lambda route: route.fulfill(
             status=200,
             content_type="text/javascript",
@@ -143,7 +145,7 @@ def mock_private_reader(context) -> None:
     def javascript(route,body):
         route.fulfill(status=200,content_type='text/javascript',
             headers={'access-control-allow-origin':'*'},body=body)
-    context.route('**/npm/@supabase/supabase-js@2.119.0/+esm*',
+    context.route(SUPABASE_SDK_URL,
         lambda route: javascript(route,fake_supabase))
     context.route('**/pdfjs-dist@4.9.155/build/pdf.min.mjs*',
         lambda route: javascript(route,fake_pdfjs))
@@ -297,7 +299,7 @@ export function getDocument(){
         ctx = browser.new_context(locale="fr-CA", viewport={"width": 1440, "height": 920}, service_workers="block")
         install_isolated_supabase_api(ctx)
         contexts.append(ctx)
-        ctx.route("**/npm/@supabase/supabase-js@2.119.0/+esm*",
+        ctx.route(SUPABASE_SDK_URL,
                   lambda route: route.fulfill(
                       status=200, content_type="text/javascript",
                       headers={"access-control-allow-origin": "*"},
