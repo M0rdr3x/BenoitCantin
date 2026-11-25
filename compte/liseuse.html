@@ -9,10 +9,10 @@
 <title>Liseuse SINJIRA — La Cendre du Jugement</title>
 <link rel="icon" type="image/png" href="/assets/icons/sinjira-officiel-20261120.png">
 <link rel="stylesheet" href="/assets/css/site.css?v=24.4">
-<link rel="stylesheet" href="/assets/css/sinjira-liseuse-v26.css?v=34.11.21.1">
+<link rel="stylesheet" href="/assets/css/sinjira-liseuse-v26.css?v=34.11.24.1">
 </head>
 <body class="sinjira-liseuse account-page" data-read-theme="sepia">
-<a class="skip-link" href="#reader-viewer">Aller au livre</a>
+<a class="skip-link" href="#reader-stage">Aller à la zone de lecture</a>
 <header class="reader-top"><div class="reader-top-inner">
   <a class="reader-brand" href="/projets/sinjira/"><img src="/assets/icons/sinjira-officiel-20261120.png" alt=""> SINJIRA™</a>
   <div class="reader-top-title"><strong>La Cendre du Jugement</strong><small id="reader-edition">Préparation de la lecture…</small></div>
@@ -20,7 +20,8 @@
 </div></header>
 <main class="reader-layout" id="contenu">
 <aside class="reader-sidebar" aria-label="Réglages de la lecture">
-  <details class="reader-settings" open>
+  <a class="reader-jump" href="#reader-stage">Aller à la zone de lecture ↓</a>
+  <details class="reader-settings">
     <summary>Personnaliser ma lecture</summary>
     <div class="reader-settings-grid">
       <div><label for="reader-chapters">Sommaire du roman</label><select id="reader-chapters" aria-label="Aller à un chapitre"></select></div>
@@ -40,7 +41,7 @@
         <select id="reader-zoom"><option value="0.8">80 %</option><option value="1">100 %</option><option value="1.2">120 %</option><option value="1.5">150 %</option></select></div>
     </div>
   </details>
-  <details class="reader-audio-settings" open>
+  <details class="reader-audio-settings">
     <summary>Lecture à voix haute</summary>
     <div class="reader-settings-grid">
       <div><label for="reader-voice">Voix</label>
@@ -81,7 +82,7 @@
   <a class="reader-demo-link" id="reader-demo-link" href="/compte/liseuse.html?edition=demo" hidden>Lire l’extrait gratuit</a>
   <a class="reader-demo-link" id="reader-download-demo" href="/projets/sinjira/romans/lire-demo.html" hidden>Statut de la démo de 62 pages</a>
 </aside>
-<section class="reader-stage" aria-label="Lecture du roman">
+<section class="reader-stage" id="reader-stage" tabindex="-1" aria-label="Lecture du roman">
   <p class="reader-status" id="reader-status" role="status" aria-live="polite">Chargement de la liseuse…</p>
   <div class="reader-loading" id="reader-loading" aria-live="polite">
     <p>Préparation du livre et de la mise en page…</p>
