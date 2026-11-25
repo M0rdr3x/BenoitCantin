@@ -63,6 +63,40 @@ def inspect(page, width):
           f"commandes du texte incorrectes à {width}px : {result}")
 
 
+def check_library(context):
+    pages = ("bibliotheque.html", "bibliotheque-romans.html",
+             "bibliotheque-jeux.html", "bibliotheque-ressources.html")
+    page = context.new_page()
+    try:
+        for name in pages:
+            response = page.goto(urljoin(BASE, "compte/"+name),
+                                 wait_until="load", timeout=30_000)
+            check(response is not None and response.ok, f"bibliothèque inaccessible : {name}")
+            tabs = page.locator(".sinjira-library-tabs a")
+            check(tabs.count()==4, f"quatre catégories attendues : {name}")
+            check(page.locator(".sinjira-library-tabs a[aria-current='page']").count()==1,
+                  f"rubrique active ambiguë : {name}")
+            check(page.locator(".sinjira-library-tabs a[aria-current='page']").get_attribute("href")==name,
+                  f"rubrique active incorrecte : {name}")
+            for width, zoom in ((240,"100%"),(320,"200%"),(390,"100%"),
+                                (768,"100%"),(1440,"100%")):
+                page.set_viewport_size({"width":width,"height":760})
+                page.evaluate("(zoom) => document.documentElement.style.fontSize=zoom",zoom)
+                geometry=page.evaluate("""() => {
+                  const main=document.querySelector('main');
+                  const elements=[...main.querySelectorAll('.sinjira-library-tabs a,.sinjira-library-category,.sinjira-library-feature,.sinjira-library-quicklinks a,.hero-actions .btn')];
+                  return {contained:elements.every(e=>{
+                    const r=e.getBoundingClientRect();return r.left>=-2&&r.right<=innerWidth+2;
+                  }),tap:[...main.querySelectorAll('.sinjira-library-tabs a,.hero-actions .btn')].every(e=>e.getBoundingClientRect().height>=47.5),
+                  scroll:document.documentElement.scrollWidth<=innerWidth+2};
+                }""")
+                check(geometry["contained"] and geometry["tap"] and geometry["scroll"],
+                      f"{name}, {width}px, zoom {zoom}: {geometry}")
+            page.evaluate("document.documentElement.style.fontSize=''")
+    finally:
+        page.close()
+
+
 def run():
     check(ENGINE in {"chromium","firefox","webkit"}, "navigateur non pris en charge")
     with sync_playwright() as pw:
@@ -87,6 +121,7 @@ def run():
                 }""")
                 for width in WIDTHS:
                     inspect(page,width)
+                check_library(context)
             finally:
                 context.close()
         finally:

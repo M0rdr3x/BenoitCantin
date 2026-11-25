@@ -248,3 +248,44 @@
 @media(max-width:600px){
   .sinjira-liseuse .reader-turn-help{text-align:left;padding:13px 16px}
 }
+
+/* Bibliothèque segmentée : navigation native, reflow et actions tactiles.
+   Ne pas modifier le rendu de la liseuse ni le contrôle des droits. */
+body[data-library-ux="v1"] .sinjira-library-tabs a{
+  display:flex;align-items:center;justify-content:center;box-sizing:border-box;
+  min-height:48px;min-width:0;max-width:100%;text-align:center;
+  white-space:normal;overflow-wrap:anywhere;line-height:1.35;
+}
+body[data-library-ux="v1"] :is(.sinjira-library-category,.sinjira-library-feature,.sinjira-library-quicklinks a){
+  box-sizing:border-box;min-width:0;max-width:100%;overflow-wrap:anywhere;
+  padding:clamp(14px,3vw,25px);
+}
+body[data-library-ux="v1"] .sinjira-library-feature > div{min-width:0}
+body[data-library-ux="v1"] .sinjira-library-feature .hero-actions .btn,
+body[data-library-ux="v1"] .hero-actions .btn{
+  box-sizing:border-box;min-height:48px;min-width:0;max-width:100%;
+  white-space:normal;overflow-wrap:anywhere;text-align:center;
+}
+body[data-library-ux="v1"] main :is(a,button):focus-visible{
+  outline:3px solid #a1f4ec;outline-offset:3px;
+}
+@media(max-width:980px){
+  body[data-library-ux="v1"] .sinjira-library-categories{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:650px){
+  body[data-library-ux="v1"] .sinjira-library-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  body[data-library-ux="v1"] .sinjira-library-categories,
+  body[data-library-ux="v1"] .sinjira-library-quicklinks,
+  body[data-library-ux="v1"] .sinjira-library-feature{grid-template-columns:minmax(0,1fr)}
+  body[data-library-ux="v1"] .sinjira-library-feature:not(.sinjira-novel-iv-card)>img{
+    justify-self:center;max-width:min(190px,100%);height:auto;object-fit:contain;
+  }
+  body[data-library-ux="v1"] .hero-actions{display:grid;grid-template-columns:minmax(0,1fr)}
+  body[data-library-ux="v1"] .hero-actions .btn{width:100%}
+}
+@media(max-width:320px){
+  body[data-library-ux="v1"] .sinjira-library-tabs{grid-template-columns:minmax(0,1fr)}
+}
+@media(prefers-reduced-motion:reduce){
+  body[data-library-ux="v1"] .sinjira-library-category:is(:hover,:focus-visible){transform:none}
+}

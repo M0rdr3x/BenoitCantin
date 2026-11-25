@@ -103,3 +103,56 @@
   .home-page.home-sinjira-only .sinjira-orbit{max-width:100%;min-width:min(188px,100%)}
   .home-page.home-sinjira-only .home-direct-access{min-width:0;flex-wrap:wrap}
 }
+
+/* WebKit : le menu ne doit jamais élargir l'en-tête à son premier calcul.
+   Une grille borne la largeur de la marque et de la navigation de secours,
+   même lorsque le script d'initialisation est bloqué. */
+@media(max-width:1020px){
+  .home-page.home-sinjira-only[data-sinjira-ux="v1"] .nav-shell{
+    display:grid;grid-template-columns:minmax(0,1fr) auto;
+    min-width:0;max-width:100%;box-sizing:border-box;
+  }
+  .home-page.home-sinjira-only[data-sinjira-ux="v1"] .nav-shell>.brand{
+    max-width:100%;min-width:0;justify-self:start;
+  }
+  .home-page.home-sinjira-only[data-sinjira-ux="v1"] .nav-shell>.main-nav{
+    box-sizing:border-box;min-width:0;max-width:100%;
+    flex-direction:column;align-items:stretch;
+  }
+  .home-page.home-sinjira-only[data-sinjira-ux="v1"] .main-nav>a{
+    box-sizing:border-box;min-width:0;max-width:100%;
+    white-space:normal;overflow-wrap:anywhere;
+  }
+  html:not([data-sinjira-nav-ready]) .home-page.home-sinjira-only[data-sinjira-ux="v1"] .nav-shell>.main-nav{
+    grid-column:1/-1;width:100%;position:static;
+  }
+  html[data-sinjira-nav-ready] .home-page.home-sinjira-only[data-sinjira-ux="v1"] .main-nav:not(.open){
+    display:none;
+  }
+}
+
+/* Mobile : limiter les surfaces filtrées et les ombres étendues qui
+   multiplient le coût de composition. Conserver le logo, les contours
+   rouges, les couleurs et les indicateurs de focus. */
+@media(max-width:700px){
+  .home-page.home-sinjira-only::before{mask-image:none;-webkit-mask-image:none;opacity:.16}
+  .home-page.home-sinjira-only .site-header{
+    backdrop-filter:none;-webkit-backdrop-filter:none;background:#0b1020;
+  }
+  .home-page.home-sinjira-only :is(.manifesto-panel,.feature-panel,.content-card){
+    backdrop-filter:none;-webkit-backdrop-filter:none;
+  }
+  .home-page.home-sinjira-only .home-sinjira-cosmos::before{
+    box-shadow:inset 0 0 20px rgba(183,24,32,.21),0 0 20px rgba(103,17,22,.2);
+  }
+  .home-page.home-sinjira-only .home-sinjira-cosmos::after{
+    box-shadow:inset 0 0 16px rgba(197,39,42,.12);
+  }
+  .home-page.home-sinjira-only .sinjira-orbit{
+    box-shadow:0 8px 18px rgba(0,0,0,.49),0 0 20px rgba(212,36,39,.2);
+  }
+  .home-page.home-sinjira-only .sinjira-orbit img{filter:none}
+  .home-page.home-sinjira-only .sinjira-orbit:is(:hover,:focus-visible){
+    box-shadow:0 8px 18px rgba(0,0,0,.52),0 0 24px rgba(239,51,50,.29);
+  }
+}
