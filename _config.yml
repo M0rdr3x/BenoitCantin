@@ -130,6 +130,11 @@ exclude:
   - "projets/sinjira/codex/livre-i-delivery-contract.json"
   - "projets/sinjira/romans/livre-1-release.json"
   - "projets/sinjira/romans/roman-4-release.json"
+  # P0: PDF du catalogue restreint; refus aussi sur Pages Jekyll legacy.
+  - "projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Feuille_de_fin_de_partie_Interactive.pdf"
+  - "projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Fiche_Joueur_Interactive.pdf"
+  - "projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Fracture_du_Reseau_Mere_Fiche_Joueur_Web.pdf"
+  - "projets/sinjira/jeux/fracture-du-reseau-mere/documents/SINJIRA_Mode_Solo_3_Joueurs_Interactive.pdf"
   - "assets/icons/README.md"
   - "**/README.md"
   - "**/*.csv"

@@ -137,6 +137,24 @@ def unexpected_against_approved(jekyll: Path, approved: Path) -> list[str]:
     return [f"Fichier hors allowlist isolée: {path}" for path in unexpected]
 
 
+def quarantine_jekyll_exclusion_errors(source: str, paths: set[str]) -> list[str]:
+    """The legacy Pages Jekyll build must exclude quarantined PDFs."""
+    parts = source.split("\nexclude:\n", 1)
+    if len(parts) != 2:
+        return ["Bloc exclude Jekyll absent pour les PDF restreints"]
+    include_blocks = parts[0].split("include:\n", 1)
+    include_text = include_blocks[1] if len(include_blocks) == 2 else ""
+    excluded = re.findall(r'(?m)^\s+-\s+"([^"]+)"\s*$', parts[1])
+    included = re.findall(r'(?m)^\s+-\s+"([^"]+)"\s*$', include_text)
+    errors: list[str] = []
+    for path in sorted(paths):
+        if excluded.count(path) != 1:
+            errors.append("PDF restreint sans exclusion Jekyll exacte")
+        if path in included:
+            errors.append("PDF restreint reintroduit dans include Jekyll")
+    return errors
+
+
 def validate_source() -> list[str]:
     errors = []
     if (ROOT / ".nojekyll").exists():
@@ -160,6 +178,10 @@ def validate_source() -> list[str]:
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
             expected = {p.as_posix() for p in module.PROJECT_NOVA_PUBLIC_DATA_JSON}
+            errors.extend(quarantine_jekyll_exclusion_errors(
+                source,
+                {p.as_posix() for p in module.PUBLIC_QUARANTINED_RESTRICTED_PDFS},
+            ))
             include_block = source.split("include:\n", 1)
             include_text = include_block[1].split("\nexclude:", 1)[0] if len(include_block) == 2 else ""
             included = set()
@@ -192,6 +214,16 @@ def validate_source() -> list[str]:
     return errors
 
 def self_test() -> None:
+    sentinel = "projets/sinjira/jeux/example-private.pdf"
+    fixture = 'include:\n  - "index.html"\nexclude:\n  - "' + sentinel + '"\n'
+    assert quarantine_jekyll_exclusion_errors(fixture, {sentinel}) == []
+    assert quarantine_jekyll_exclusion_errors(
+        fixture.replace('  - "' + sentinel + '"\n', ''), {sentinel}
+    )
+    assert quarantine_jekyll_exclusion_errors(
+        fixture.replace('include:\n', 'include:\n  - "' + sentinel + '"\n'),
+        {sentinel},
+    )
     with tempfile.TemporaryDirectory(prefix="sinjira-jekyll-boundary-") as folder:
         root = Path(folder)
         for item in BLOCKED:
