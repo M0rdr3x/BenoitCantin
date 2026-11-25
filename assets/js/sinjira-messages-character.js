@@ -1,7 +1,9 @@
 import {getSupabase,requireCommunityUser,escapeHtml,formatDate,reportContent,socialStatus,socialErrorStatus} from './sinjira-social-common.js?v=24.4.42';
 import {unreadCounts,markConversationRead} from './sinjira-message-read-state.js?v=24.4.71';
 
-const UI_VERSION='24.4.72';
+import {requestModeration} from './sinjira-message-moderation-dialog.mjs?v=1.0.0';
+
+const UI_VERSION='24.4.73';
 const contacts=document.querySelector('[data-contact-list]');
 const search=document.querySelector('[data-contact-search]');
 const log=document.querySelector('[data-chat-log]');
@@ -15,6 +17,8 @@ const drafts=new Map();
 const composer=form.querySelector('textarea[name="body"]');
 const sendButton=form.querySelector('button[type="submit"]');
 let requestVersion=0,sending=false;
+const reporting=new Set();
+
 
 function rememberDraft(){
   if(!peer)return;
@@ -124,19 +128,25 @@ async function messages(){
     throw error;
   }
   const rows=(Array.isArray(data)?data:[]).filter(message=>((message.sender_character_id===me.character_id&&message.recipient_character_id===target.character_id)||(message.sender_character_id===target.character_id&&message.recipient_character_id===me.character_id)));
-  log.innerHTML=rows.map(message=>`<div class="v20-bubble character ${message.sender_user_id===user.id?'mine':''}" data-message="${message.id}">${escapeHtml(message.body)}<time>${escapeHtml(formatDate(message.created_at))}</time>${message.sender_user_id!==user.id?'<button class="link-button" data-report-message>Signaler</button>':''}</div>`).join('')||'<p>Commencez le rôle-play. Les échanges ici ne modifient pas le canon officiel.</p>';
+  log.innerHTML=rows.map(message=>`<div class="v20-bubble character ${message.sender_user_id===user.id?'mine':''}" data-message="${escapeHtml(message.id)}">${escapeHtml(message.body)}<time>${escapeHtml(formatDate(message.created_at))}</time>${message.sender_user_id!==user.id?'<button type="button" class="link-button" data-report-message'+(reporting.has(message.id)?' disabled':'')+'>Signaler</button>':''}</div>`).join('')||'<p>Commencez le rôle-play. Les échanges ici ne modifient pas le canon officiel.</p>';
   log.scrollTop=atBottom?log.scrollHeight:previousTop;
 
   log.querySelectorAll('[data-report-message]').forEach(button=>button.addEventListener('click',async()=>{
     const element=button.closest('[data-message]');
     const message=rows.find(item=>item.id===element?.dataset.message);
-    if(!message)return;
-    const reason=prompt('Pourquoi signalez-vous ce message de rôle-play?');
-    if(!reason)return;
+    if(!message||reporting.has(message.id))return;
+    reporting.add(message.id);
     try{
-      await reportContent({network:'character',target_type:'message',target_id:message.id,reason,snapshot:{body:message.body,sender_character_id:message.sender_character_id,recipient_character_id:message.recipient_character_id}});
-      alert('Message signalé à l’administration.');
-    }catch(error){fail(error,'Signalement impossible pour le moment.');}
+      const choice=await requestModeration(button,{mode:'report',contact:target.public_name||'Personnage'});
+      if(!choice){reporting.delete(message.id);return;}
+      button.disabled=true;
+      await reportContent({network:'character',target_type:'message',target_id:message.id,reason:choice.reason,details:choice.details??null,snapshot:{body:message.body,sender_character_id:message.sender_character_id,recipient_character_id:message.recipient_character_id}});
+      socialStatus(status,'Message signalé à l’administration.','success');
+    }catch(error){
+      reporting.delete(message.id);
+      button.disabled=false;
+      fail(error,'Signalement non confirmé. Vérifiez vos signalements avant de réessayer.');
+    }
   }));
   if(current()&&rows.some(message=>message.recipient_user_id===user.id&&!message.read_at)){
     try{
