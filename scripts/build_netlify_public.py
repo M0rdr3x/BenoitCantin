@@ -443,6 +443,24 @@ def public_data_payload_violations(data: object) -> list[str]:
     return sorted(set(errors))
 
 
+def strict_public_json(raw: str) -> object:
+    """Refuser les ambiguïtés JSON avant le contrôle de confidentialité."""
+    def unique_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+        result: dict[str, object] = {}
+        for key, value in pairs:
+            if key in result:
+                # Ne pas inclure la clé ni sa valeur dans les journaux.
+                raise ValueError("duplicate JSON key")
+            result[key] = value
+        return result
+
+    def reject_constant(_value: str) -> object:
+        raise ValueError("non-standard JSON constant")
+
+    return json.loads(raw, object_pairs_hook=unique_object,
+                      parse_constant=reject_constant)
+
+
 def public_data_json_errors(root: Path = ROOT) -> list[str]:
     errors: list[str] = []
     for rel in sorted(PROJECT_NOVA_PUBLIC_DATA_JSON):
@@ -454,8 +472,8 @@ def public_data_json_errors(root: Path = ROOT) -> list[str]:
             if file.stat().st_size > NOVA_PUBLIC_JSON_MAX_BYTES:
                 errors.append(f"JSON public trop volumineux: {rel.as_posix()}")
                 continue
-            data = json.loads(file.read_text(encoding="utf-8", errors="strict"))
-        except (OSError, UnicodeError, json.JSONDecodeError) as error:
+            data = strict_public_json(file.read_text(encoding="utf-8", errors="strict"))
+        except (OSError, UnicodeError, ValueError, RecursionError) as error:
             errors.append(f"JSON public illisible: {rel.as_posix()} ({type(error).__name__})")
             continue
         for violation in public_data_payload_violations(data):
@@ -1054,6 +1072,30 @@ def self_test_public_filesystem_boundary() -> list[str]:
     for index, fixture in enumerate(forbidden_payloads, 1):
         if not public_data_payload_violations(fixture):
             errors.append(f"Auto-test JSON: divulgation synthétique non refusée #{index}")
+
+    # Le parseur standard conserve seulement la dernière valeur d'une clé.
+    # Refuser tout doublon, y compris les clés imbriquées et échappées, avant
+    # de copier le JSON brut vers le site public.
+    ambiguous_json = (
+        '{"label":"synthetic@example.org","label":"public"}',
+        '{"nested":{"label":"first","label":"second"}}',
+        r'{"label":"first","\u006cabel":"second"}',
+        '{"value":NaN}',
+        '{"value":Infinity}',
+        '{"value":-Infinity}',
+        '{"invalid":}',
+    )
+    for index, raw in enumerate(ambiguous_json, 1):
+        try:
+            strict_public_json(raw)
+        except ValueError:
+            pass
+        else:
+            errors.append(f"Auto-test JSON: document ambigu non refusé #{index}")
+    if strict_public_json('{"label":"public","nested":{"label":"other"}}') != {
+        "label": "public", "nested": {"label": "other"}
+    }:
+        errors.append("Auto-test JSON: objets distincts légitimes refusés")
 
     rejected = (
         # Les extensions Web légitimes ne rendent jamais un dotfile public.
