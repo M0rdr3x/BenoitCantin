@@ -248,3 +248,30 @@
 @media(max-width:600px){
   .sinjira-liseuse .reader-turn-help{text-align:left;padding:13px 16px}
 }
+
+/* Confirmation testeur : dialogue natif, navigation clavier et reflow. */
+.library-request-dialog{
+  box-sizing:border-box;position:fixed;inset:0;margin:auto;
+  width:min(36rem,calc(100% - 24px));max-width:calc(100% - 24px);
+  max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);
+  overflow:auto;overscroll-behavior:contain;padding:clamp(12px,4vw,24px);
+  border:1px solid #5fbfb4;border-radius:18px;
+  background:#101d2c;color:#f2f8ff;overflow-wrap:anywhere;
+}
+.library-request-dialog::backdrop{background:rgba(4,8,16,.78)}
+.library-request-dialog .account-form{min-width:0;gap:12px}
+.library-request-dialog :is(h2,p){margin:0}
+.library-request-dialog .field{min-width:0}
+.library-request-dialog textarea{
+  box-sizing:border-box;min-width:0;width:100%;max-width:100%;
+  min-height:96px;font-size:max(16px,1rem);resize:vertical;
+}
+.library-request-actions{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:10px}
+.library-request-actions .btn{
+  box-sizing:border-box;min-width:0;min-height:48px;
+  white-space:normal;overflow-wrap:anywhere;text-align:center;
+}
+.library-request-dialog :is(button,textarea):focus-visible{outline:3px solid #9cefe0;outline-offset:2px}
+@media(max-width:560px){
+  .library-request-actions{grid-template-columns:minmax(0,1fr)}
+}
