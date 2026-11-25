@@ -11,7 +11,7 @@ from playwright.sync_api import sync_playwright
 
 BASE = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
 ENGINE = os.environ.get("BROWSER", "chromium").strip().lower()
-WIDTHS = (320, 390, 540, 768, 1024, 1440)
+WIDTHS = (240, 320, 390, 540, 768, 1024, 1440)
 OFFICIAL_LOGO = "/assets/icons/sinjira-officiel-20261120.png"
 
 
@@ -63,6 +63,42 @@ def inspect(page, width):
           f"commandes du texte incorrectes à {width}px : {result}")
 
 
+def inspect_reader_settings(page):
+    # Contrôler les réglages natifs avant initialisation et sans compte.
+    details=page.locator(".reader-sidebar details")
+    check(details.count()==4, "panneaux de réglages incomplets")
+    check(page.locator(".reader-sidebar details[open]").count()==0,
+          "réglages encombrants avant chargement du lecteur")
+    jump=page.locator(".reader-jump")
+    check(jump.get_attribute("href")=="#reader-stage",
+          "raccourci de lecture absent")
+    check(page.locator("#reader-stage").get_attribute("tabindex")=="-1",
+          "destination de lecture non focalisable")
+    jump.click()
+    check(page.evaluate("location.hash")=="#reader-stage",
+          "raccourci natif inopérant")
+    for width, height, zoom in ((240,420,"100%"),(320,760,"200%"),
+                                (390,360,"100%"),(1440,760,"100%")):
+        page.set_viewport_size({"width":width,"height":height})
+        page.evaluate("(zoom)=>document.documentElement.style.fontSize=zoom",zoom)
+        for i in range(details.count()):
+            panel=details.nth(i)
+            panel.locator("summary").click()
+            state=panel.evaluate("""el=>{
+              const controls=[...el.querySelectorAll('summary,button,select,input:not([type=checkbox]),textarea')];
+              const visible=controls.filter(x=>x.getBoundingClientRect().width>0);
+              return {open:el.open,contained:visible.every(x=>{
+                const r=x.getBoundingClientRect();
+                return r.left>=-2&&r.right<=innerWidth+2&&r.height>=47.5;
+              }),overflow:document.documentElement.scrollWidth>innerWidth+2};
+            }""")
+            check(state["open"] and state["contained"] and not state["overflow"],
+                  f"réglages hors écran {width}x{height}, texte {zoom}: {state}")
+            panel.locator("summary").click()
+    page.evaluate("document.documentElement.style.fontSize=''")
+    page.set_viewport_size({"width":390,"height":760})
+
+
 def run():
     check(ENGINE in {"chromium","firefox","webkit"}, "navigateur non pris en charge")
     with sync_playwright() as pw:
@@ -77,6 +113,7 @@ def run():
                 response=page.goto(urljoin(BASE,"compte/liseuse.html"),
                     wait_until="domcontentloaded",timeout=30_000)
                 check(response is not None and response.status<400, "page liseuse inaccessible")
+                inspect_reader_settings(page)
                 page.evaluate("""() => {
                   document.getElementById('reader-content').hidden=false;
                   document.getElementById('reader-loading').hidden=true;
@@ -91,7 +128,7 @@ def run():
                 context.close()
         finally:
             browser.close()
-    print(f"OK {ENGINE}: liseuse V55, 6 largeurs, commandes accessibles, texte fictif seul")
+    print(f"OK {ENGINE}: liseuse, 7 largeurs et réglages natifs, commandes accessibles, texte fictif seul")
 
 
 if __name__ == "__main__":

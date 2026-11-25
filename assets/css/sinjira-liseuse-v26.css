@@ -248,3 +248,57 @@
 @media(max-width:600px){
   .sinjira-liseuse .reader-turn-help{text-align:left;padding:13px 16px}
 }
+
+/* Liseuse : commandes accessibles dès le HTML initial, sans exposer de livre. */
+.sinjira-liseuse .reader-top-inner,.sinjira-liseuse .reader-sidebar,
+.sinjira-liseuse .reader-sidebar details,.sinjira-liseuse .reader-stage{
+  box-sizing:border-box;min-width:0;max-width:100%;
+}
+.sinjira-liseuse .reader-top-title,.sinjira-liseuse .reader-top a{
+  min-width:0;overflow-wrap:anywhere;
+}
+.sinjira-liseuse .reader-top a.reader-return,.sinjira-liseuse .reader-jump{
+  display:flex;align-items:center;min-height:48px;max-width:100%;
+  box-sizing:border-box;overflow-wrap:anywhere;
+}
+.sinjira-liseuse .reader-jump{
+  justify-content:center;margin:0 0 12px;padding:10px 12px;
+  border:1px solid #5fbfb4;border-radius:12px;color:#d8fffa;
+  background:#173e46;font-weight:750;text-align:center;
+}
+.sinjira-liseuse #reader-stage{scroll-margin-top:120px}
+.sinjira-liseuse :is(.reader-jump,.reader-return,#reader-stage):focus-visible{
+  outline:3px solid #9cefe0;outline-offset:-3px;
+}
+.sinjira-liseuse .reader-sidebar summary{
+  box-sizing:border-box;min-height:48px;padding-block:10px;
+  overflow-wrap:anywhere;
+}
+.sinjira-liseuse .reader-sidebar :is(select,textarea,input:not([type="checkbox"])),
+.sinjira-liseuse .reader-tools input{
+  box-sizing:border-box;min-width:0;max-width:100%;min-height:48px;
+  font-size:max(16px,1rem);
+}
+.sinjira-liseuse :is(.reader-sidebar,.reader-tools) button{
+  box-sizing:border-box;min-height:48px;min-width:0;max-width:100%;
+  white-space:normal;overflow-wrap:anywhere;
+}
+.sinjira-liseuse .reader-checkbox{min-height:48px;align-items:center}
+.sinjira-liseuse :is(.reader-tools,.reader-position-help,.reader-turn-help,.reader-footer){
+  overflow-wrap:anywhere;
+}
+@media(max-width:560px){
+  .sinjira-liseuse .reader-top-inner{
+    display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px 12px;
+  }
+  .sinjira-liseuse .reader-top-title{grid-column:1/-1;grid-row:2}
+  .sinjira-liseuse .reader-top a.reader-return{justify-self:end;text-align:right}
+  .sinjira-liseuse .reader-tools{min-width:0;max-width:100%}
+  .sinjira-liseuse .reader-sidebar details{padding:10px}
+  .sinjira-liseuse .reader-text{padding:clamp(12px,5vw,22px)}
+}
+@media(max-width:320px),(max-height:480px){
+  .sinjira-liseuse .reader-top{position:static}
+  .sinjira-liseuse #reader-stage{scroll-margin-top:12px}
+  .sinjira-liseuse .reader-viewer{min-height:240px}
+}
