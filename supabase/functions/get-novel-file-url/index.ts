@@ -41,15 +41,19 @@ Deno.serve(async(req)=>{
     const service=serviceClient();
     const {data:novel,error:novelError}=await service.from('sinjira_novels').select('id,slug,title,status,product_id,private_storage_bucket,private_storage_path,page_count,file_version,file_sha256,file_size_bytes,file_ready').eq('slug',slug).maybeSingle();
     if(novelError||!novel||novel.status!=='published')return json({ok:false,error:'Roman introuvable.'},404);
-    const [{data:isOwner},{data:isAdmin}]=await Promise.all([service.rpc('is_sinjira_owner',{p_user_id:user.id}),service.rpc('is_sinjira_admin',{p_user_id:user.id})]);
-    let entitled=Boolean(isOwner||isAdmin);
+    const [{data:isOwner,error:ownerError},{data:isAdmin,error:adminError}]=await Promise.all([service.rpc('is_sinjira_owner',{p_user_id:user.id}),service.rpc('is_sinjira_admin',{p_user_id:user.id})]);
+    if(ownerError||adminError||typeof isOwner!=='boolean'||typeof isAdmin!=='boolean')return json({ok:false,error:'Impossible de vérifier les droits d’accès.'},503);
+    let entitled=isOwner===true||isAdmin===true;
     if(!entitled&&novel.product_id){
-      const {data:entitlement}=await service.from('user_entitlements').select('product_id').eq('user_id',user.id).eq('product_id',novel.product_id).maybeSingle();
-      if(entitlement){const {data:product}=await service.from('products').select('active').eq('id',novel.product_id).maybeSingle();entitled=product?.active===true;}
+      const {data:entitlement,error:entitlementError}=await service.from('user_entitlements').select('product_id').eq('user_id',user.id).eq('product_id',novel.product_id).maybeSingle();
+      if(entitlementError)return json({ok:false,error:'Impossible de vérifier les droits d’accès.'},503);
+      if(entitlement?.product_id===novel.product_id){const {data:product,error:productError}=await service.from('products').select('active').eq('id',novel.product_id).maybeSingle();if(productError)return json({ok:false,error:'Impossible de vérifier les droits d’accès.'},503);entitled=product?.active===true;}
     }
     if(!entitled)return json({ok:false,error:'Votre compte ne possède pas le droit de lecture intégrale de ce roman.'},403);
     if(!novel.file_ready)return json({ok:false,error:'Le fichier intégral de cette édition n’est pas encore activé dans le stockage privé.',code:'FILE_NOT_READY',metadata:{page_count:novel.page_count,file_version:novel.file_version}},409);
     if(!novel.private_storage_bucket||!novel.private_storage_path)return json({ok:false,error:'Fichier privé non configuré.'},500);
+    const {data:bucket,error:bucketError}=await service.storage.getBucket(novel.private_storage_bucket);
+    if(bucketError||bucket?.id!==novel.private_storage_bucket||bucket.public!==false)return json({ok:false,error:'Stockage privé indisponible.'},503);
     const {data:signed,error:signedError}=await service.storage.from(novel.private_storage_bucket).createSignedUrl(novel.private_storage_path,600,{download:novel.slug+'.pdf'});
     if(signedError||!signed?.signedUrl)return json({ok:false,error:'Impossible de créer le lien sécurisé.'},500);
     return json({ok:true,url:signed.signedUrl,protected:true,expires_in:600,novel:{slug:novel.slug,title:novel.title,page_count:novel.page_count,file_version:novel.file_version,file_sha256:novel.file_sha256,file_size_bytes:novel.file_size_bytes}});

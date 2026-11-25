@@ -30,6 +30,8 @@ def main():
 
     require(core,[
         'safeInternalDestination',
+        'assertKnownAssuranceLevels(data);',
+        "throw new Error('MFA_STATE_UNAVAILABLE')",
         "data?.nextLevel==='aal2'",
         "data?.currentLevel!=='aal2'",
         'state=aal-check',

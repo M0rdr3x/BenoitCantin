@@ -1,0 +1,44 @@
+{
+  "sinjira-registre-home-160.webp": {
+    "width": 160,
+    "height": 200,
+    "original": 411182,
+    "bytes": 9236,
+    "sha256": "c1004c393fd253c5f936b5f8404f8998f0754b63bae3d5e236dac0241009abc8"
+  },
+  "sinjira-registre-home-336.webp": {
+    "width": 336,
+    "height": 420,
+    "original": 411182,
+    "bytes": 33314,
+    "sha256": "3604bafa1b56015f0fc59ea005887f9e281e81ba994465d02add915cc03761bc"
+  },
+  "sinjira-jeux-home-160.webp": {
+    "width": 160,
+    "height": 240,
+    "original": 588522,
+    "bytes": 10738,
+    "sha256": "98ec82ca2ab52ad4b939b8812e44828972c32ee7b42a816ef4f02144ff7fc9fd"
+  },
+  "sinjira-jeux-home-336.webp": {
+    "width": 336,
+    "height": 504,
+    "original": 588522,
+    "bytes": 48484,
+    "sha256": "a26c0a104ade8d81dbad1d7a7ed155a21a79573d44bab1c6ce2a53493b983993"
+  },
+  "sinjira-communaute-home-160.webp": {
+    "width": 160,
+    "height": 200,
+    "original": 161214,
+    "bytes": 7882,
+    "sha256": "44b736f174afc7edc329fd0b2c710b543b9eeb51cb6d82e83d6db0a7ca374fd8"
+  },
+  "sinjira-communaute-home-336.webp": {
+    "width": 336,
+    "height": 420,
+    "original": 161214,
+    "bytes": 25698,
+    "sha256": "78ee58bbcf8fddc41f5d5383d7790c9a9c5bc5b1609a60799cd52288d586d796"
+  }
+}

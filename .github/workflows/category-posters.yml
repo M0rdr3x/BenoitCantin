@@ -1,0 +1,36 @@
+name: Affiches publiques adaptatives SINJIRA
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/generate_category_posters.py'
+      - '.github/workflows/category-posters.yml'
+      - 'assets/media/sinjira-litterature.webp'
+      - 'assets/media/sinjira-jeux.webp'
+      - 'assets/media/sinjira-*-poster-*.webp'
+      - 'scripts/category_posters_manifest.json'
+      - 'scripts/validate_public_image_geometry.py'
+      - 'projets/sinjira/romans/index.html'
+      - 'projets/sinjira/jeux/index.html'
+
+permissions:
+  contents: read
+
+jobs:
+  thumbnails:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.61.0-noble@sha256:a9731514f24121d1dcd25d58d0a38146646d290a5998fd80d3e533e7b5e21c69
+      options: --user 1001
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Installer le client Playwright épinglé
+        run: python -m pip install --disable-pip-version-check "playwright==1.61.0"
+      - name: Générer les quatre affiches publiques
+        run: python scripts/generate_category_posters.py --output /tmp/sinjira-category-posters
+      - name: Vérifier les affiches intégrées
+        run: python scripts/validate_public_image_geometry.py

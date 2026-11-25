@@ -87,7 +87,7 @@ insert into expected_server_only_rls(schema_name,table_name,presence_scope,acces
   -- Canal d'avis tiers journalisé et interdit aux rôles navigateur.
   ('public','sinjira_formspree_events','reconstruction_only','service_role_allowed');
 
-select plan(12);
+select plan(15);
 
 select is(
   (select count(*)::int from expected_server_only_rls),
@@ -238,6 +238,44 @@ select is(
   ),
   null::text,
   'tout CRUD direct service_role sur une table RLS sans policy doit appartenir à l’allowlist explicite'
+);
+
+-- Les ACL de colonne et les droits structurels sont distincts du CRUD de table.
+select is(
+  (select string_agg(format('%I.%I:%s:%s',e.schema_name,e.table_name,r.role_name,p.privilege_name), ', ' order by e.schema_name,e.table_name,r.role_name,p.privilege_name)
+   from expected_server_only_rls e
+   join pg_namespace n on n.nspname=e.schema_name
+   join pg_class c on c.relnamespace=n.oid and c.relname=e.table_name and c.relkind='r'
+   cross join (values ('anon'),('authenticated')) as r(role_name)
+   cross join (values ('SELECT'),('INSERT'),('UPDATE'),('REFERENCES')) as p(privilege_name)
+   where has_any_column_privilege(r.role_name,c.oid,p.privilege_name)),
+  null::text,
+  'aucun droit effectif de colonne navigateur sur les 54 tables server-only'
+);
+
+select is(
+  (select string_agg(format('%I.%I:%s',e.schema_name,e.table_name,p.privilege_name), ', ' order by e.schema_name,e.table_name,p.privilege_name)
+   from expected_server_only_rls e
+   join pg_namespace n on n.nspname=e.schema_name
+   join pg_class c on c.relnamespace=n.oid and c.relname=e.table_name and c.relkind='r'
+   cross join (values ('SELECT'),('INSERT'),('UPDATE')) as p(privilege_name)
+   where e.access_class='strict_no_direct'
+     and has_any_column_privilege('service_role',c.oid,p.privilege_name)),
+  null::text,
+  'aucun droit de colonne CRUD service_role sur les 16 tables strict_no_direct'
+);
+
+select is(
+  (select string_agg(format('%I.%I:%s:%s',n.nspname,c.relname,r.role_name,p.privilege_name), ', ' order by n.nspname,c.relname,r.role_name,p.privilege_name)
+   from pg_class c
+   join pg_namespace n on n.oid=c.relnamespace
+   cross join (values ('anon'),('authenticated')) as r(role_name)
+   cross join (values ('TRUNCATE'),('TRIGGER'),('REFERENCES')) as p(privilege_name)
+   where c.relkind in ('r','p')
+     and (n.nspname='public' or exists(select 1 from expected_server_only_rls e where e.schema_name=n.nspname and e.table_name=c.relname))
+     and has_table_privilege(r.role_name,c.oid,p.privilege_name)),
+  null::text,
+  'aucun droit structurel navigateur sur les tables publiques ou server-only'
 );
 
 select * from finish();

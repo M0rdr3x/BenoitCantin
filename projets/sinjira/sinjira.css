@@ -101,3 +101,19 @@
 .sinjira-official-channel small{font-size:.86rem;line-height:1.4;color:#dadbe3;overflow-wrap:anywhere}
 @media(max-width:900px){.sinjira-official-channels-inner{grid-template-columns:1fr}}
 @media(max-width:530px){.sinjira-official-channels-links{grid-template-columns:1fr}.sinjira-official-channel{min-height:68px}}
+
+/* Hub Univers : cibles confortables au doigt et au clavier, sans modifier
+ * les écrans des romans, jeux ou comptes. */
+.sinjira-page .site-footer .footer-col{min-width:0}
+.sinjira-page .site-footer .footer-col a{
+  display:flex;align-items:center;min-height:44px;margin:2px 0;
+  padding:8px 4px;line-height:1.35;overflow-wrap:anywhere;
+}
+.sinjira-page .site-footer .footer-col a:focus-visible{
+  outline:3px solid #ffb8a8;outline-offset:2px;border-radius:6px
+}
+.sinjira-page .site-header .brand{min-height:44px}
+.sinjira-page .v24-portal-card,.sinjira-page .v24-panel{min-width:0;overflow-wrap:anywhere}
+@media(max-width:560px){
+  .sinjira-page .site-footer .footer-grid{grid-template-columns:minmax(0,1fr)}
+}

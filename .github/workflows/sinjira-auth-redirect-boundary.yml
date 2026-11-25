@@ -5,7 +5,13 @@ on:
     branches: [main]
     paths:
       - 'assets/js/sinjira-auth-route.js'
+      - 'assets/js/sinjira-auth-pages.js'
+      - 'assets/js/sinjira-security-center-v24-4-98.js'
+      - 'assets/js/sinjira-account.js'
+      - 'assets/js/sinjira-mfa-v24-4-66.js'
+      - 'scripts/test_sinjira_account_local_redirect.cjs'
       - 'assets/js/sinjira-supabase.js'
+      - 'assets/js/sinjira-recovery-v24-4-99.js'
       - 'compte/connexion.html'
       - 'compte/inscription.html'
       - 'compte/mot-de-passe-oublie.html'
@@ -13,12 +19,19 @@ on:
       - 'scripts/validate_auth.py'
       - 'scripts/validate_mfa_v24_4_66.py'
       - 'scripts/test_sinjira_auth_redirect_boundary.cjs'
+      - 'scripts/test_sinjira_login_context_outage.cjs'
       - '.github/workflows/sinjira-auth-redirect-boundary.yml'
   push:
     branches: [main]
     paths:
       - 'assets/js/sinjira-auth-route.js'
+      - 'assets/js/sinjira-auth-pages.js'
+      - 'assets/js/sinjira-security-center-v24-4-98.js'
+      - 'assets/js/sinjira-account.js'
+      - 'assets/js/sinjira-mfa-v24-4-66.js'
+      - 'scripts/test_sinjira_account_local_redirect.cjs'
       - 'assets/js/sinjira-supabase.js'
+      - 'assets/js/sinjira-recovery-v24-4-99.js'
       - 'compte/connexion.html'
       - 'compte/inscription.html'
       - 'compte/mot-de-passe-oublie.html'
@@ -26,6 +39,7 @@ on:
       - 'scripts/validate_auth.py'
       - 'scripts/validate_mfa_v24_4_66.py'
       - 'scripts/test_sinjira_auth_redirect_boundary.cjs'
+      - 'scripts/test_sinjira_login_context_outage.cjs'
       - '.github/workflows/sinjira-auth-redirect-boundary.yml'
   workflow_dispatch:
 
@@ -50,10 +64,17 @@ jobs:
       - name: Vérifier la syntaxe des modules et du banc d'essai
         run: |
           node --check assets/js/sinjira-auth-route.js
+          node --check assets/js/sinjira-auth-pages.js
+          node --check assets/js/sinjira-security-center-v24-4-98.js
           node --check assets/js/sinjira-supabase.js
+          node --check assets/js/sinjira-recovery-v24-4-99.js
+          node --check assets/js/sinjira-account.js
+          node --check assets/js/sinjira-mfa-v24-4-66.js
           node --check scripts/test_sinjira_auth_redirect_boundary.cjs
       - name: Vérifier les destinations Auth et MFA
         run: node scripts/test_sinjira_auth_redirect_boundary.cjs
+      - name: Refuser les connexions sans décision contextuelle
+        run: node scripts/test_sinjira_login_context_outage.cjs
       - name: Empêcher les régressions du client historique
         run: node scripts/test_sinjira_account_local_redirect.cjs
       - name: Vérifier le contrat de sécurité Auth existant

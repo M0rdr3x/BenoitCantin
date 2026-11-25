@@ -82,6 +82,8 @@
       if(!open)card.scrollTop=0;
     }
     if(mode==='ios'){
+      // Safari fournit une installation manuelle, pas une action native.
+      card.querySelector('.sinjira-pwa-install__actions').remove();
       var note=d.createElement('p');note.className='sinjira-pwa-install__ios';
       note.setAttribute('data-pwa-ios-help','');
       note.textContent='Sur iPhone/iPad : touchez Partager, puis « Sur l’écran d’accueil ».';
@@ -94,14 +96,24 @@
       }
     });
     card.querySelector('.sinjira-pwa-install__close').addEventListener('click',function(){rememberDismiss();card.remove();});
-    card.querySelector('[data-pwa-install-action]').addEventListener('click',install);
+    var action=card.querySelector('[data-pwa-install-action]');
+    if(action)action.addEventListener('click',install);
     d.body.appendChild(card);return card;
   }
 
   async function install(){
     if(deferredPrompt){
       var p=deferredPrompt;deferredPrompt=null;
-      try{await p.prompt();var choice=await p.userChoice;if(choice&&choice.outcome==='accepted'){var c=d.querySelector('.sinjira-pwa-install[data-sinjira-pwa-install]');if(c)c.remove();}}catch(e){}
+      var card=d.querySelector('.sinjira-pwa-install[data-sinjira-pwa-install]');
+      var action=card&&card.querySelector('[data-pwa-install-action]');
+      if(action)action.disabled=true;
+      // L'événement natif est à usage unique, même en cas de refus ou d'erreur.
+      // Retirer uniquement la carte consommée; une nouvelle invite reste possible.
+      try{await p.prompt();await p.userChoice;}catch(e){}
+      finally{
+        if(card&&!deferredPrompt)card.remove();
+        else if(action)action.disabled=false;
+      }
       return;
     }
     if(isIos()){
@@ -109,9 +121,20 @@
     }
   }
 
-  w.addEventListener('beforeinstallprompt',function(event){
-    event.preventDefault();deferredPrompt=event;ensureCard('prompt');
-  });
+  function receiveInstallPrompt(event){
+    if(standalone()||!eligibleRoute()||dismissed())return;
+    event.preventDefault();deferredPrompt=event;
+    var card=ensureCard('prompt');
+    // Si un navigateur iOS fournit aussi une invite native, proposer celle-ci.
+    if(card&&!card.querySelector('[data-pwa-install-action]')){
+      card.remove();ensureCard('prompt');
+    }
+  }
+  var loader=d.querySelector('script[data-sinjira-pwa-install]');
+  var pending=loader&&loader.sinjiraPendingInstallPrompt;
+  if(loader&&loader.sinjiraReleaseInstallPrompt)loader.sinjiraReleaseInstallPrompt();
+  w.addEventListener('beforeinstallprompt',receiveInstallPrompt);
+  if(pending)receiveInstallPrompt(pending);
   w.addEventListener('appinstalled',function(){deferredPrompt=null;var c=d.querySelector('.sinjira-pwa-install[data-sinjira-pwa-install]');if(c)c.remove();});
 
   ensureHeadLinks();
@@ -121,4 +144,5 @@
     if(d.readyState==='loading')d.addEventListener('DOMContentLoaded',function(){ensureCard('ios');},{once:true});
     else ensureCard('ios');
   }
+  d.documentElement.setAttribute('data-sinjira-pwa-ready','true');
 }());

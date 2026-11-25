@@ -71,3 +71,45 @@ body[data-preorder-page="livre-1"] :where([data-preorder-state],[data-preorder-s
 @media(prefers-reduced-motion:reduce){
   body[data-preorder-page="livre-1"] .sinjira-preorder-steps{scroll-behavior:auto}
 }
+
+/* Sommaire vertical sur les téléphones : aucune étape hors écran. */
+@media(max-width:480px){
+  body[data-preorder-page="livre-1"] .sinjira-preorder-steps .container{
+    display:grid;grid-template-columns:minmax(0,1fr);
+    overflow:visible;gap:8px
+  }
+  body[data-preorder-page="livre-1"] .sinjira-preorder-steps-label{margin:0}
+  body[data-preorder-page="livre-1"] .sinjira-preorder-steps a{
+    width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:anywhere
+  }
+}
+/* Reflow à 240–360 px : les contenus restent lisibles sans JavaScript. */
+@media(max-width:360px){
+  body[data-preorder-page="livre-1"] :is(
+    .sinjira-preorder-hero,.sinjira-preorder-panel,.sinjira-preorder-grid,
+    .sinjira-fulfillment-card,.sinjira-fulfillment-grid,
+    .sinjira-estimator-controls,.sinjira-fulfillment-choice
+  ){grid-template-columns:minmax(0,1fr)}
+  body[data-preorder-page="livre-1"] :is(
+    .sinjira-preorder-cover,.sinjira-preorder-panel,.content-card,
+    .sinjira-fulfillment-panel,.sinjira-commercial-waiting,
+    .sinjira-fulfillment-empty,.footer-grid > *, .footer-brand > div
+  ){box-sizing:border-box;min-width:0;max-width:100%}
+  body[data-preorder-page="livre-1"] .sinjira-preorder-cover{width:100%}
+  body[data-preorder-page="livre-1"] .content-card{padding:clamp(12px,5vw,20px)}
+  body[data-preorder-page="livre-1"] .page-hero h1{
+    font-size:clamp(1.9rem,10vw,2.8rem);line-height:1.12
+  }
+  body[data-preorder-page="livre-1"] :is(main,.site-footer){
+    overflow-wrap:anywhere
+  }
+  body[data-preorder-page="livre-1"] :is(.hero-actions,.sinjira-preorder-actions) .btn,
+  body[data-preorder-page="livre-1"] :is(.sinjira-preorder-auth,.sinjira-fulfillment-choice) .btn{
+    box-sizing:border-box;min-width:0;max-width:100%;
+    white-space:normal;overflow-wrap:anywhere;text-align:center
+  }
+  body[data-preorder-page="livre-1"] .eyebrow::before{flex-shrink:1;min-width:0}
+  body[data-preorder-page="livre-1"] .sinjira-preorder-kicker{min-width:0;white-space:normal}
+  body[data-preorder-page="livre-1"] .footer-grid{grid-template-columns:minmax(0,1fr)}
+  body[data-preorder-page="livre-1"] .footer-brand img{flex:0 0 48px;width:48px;height:48px}
+}
