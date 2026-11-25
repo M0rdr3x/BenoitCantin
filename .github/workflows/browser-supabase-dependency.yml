@@ -1,0 +1,37 @@
+name: Sécurité — dépendance Supabase navigateur
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/js/**'
+      - 'tests/e2e/test_literature_site.py'
+      - 'scripts/validate_browser_supabase_dependency.py'
+      - '.github/workflows/browser-supabase-dependency.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'assets/js/**'
+      - 'tests/e2e/test_literature_site.py'
+      - 'scripts/validate_browser_supabase_dependency.py'
+      - '.github/workflows/browser-supabase-dependency.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-sdk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Refuser les mutations de la dépendance navigateur
+        run: python3 scripts/validate_browser_supabase_dependency.py --self-test
+      - name: Contrôler les sources JavaScript
+        run: python3 scripts/validate_browser_supabase_dependency.py

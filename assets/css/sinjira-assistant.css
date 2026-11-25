@@ -23,3 +23,6 @@
   .sinjira-assistant-send{min-height:44px}
   .sinjira-assistant-privacy{padding:0 12px 7px;line-height:1.25}
 }
+
+/* V24.4.50 — le déclencheur ne peut pas garder le focus lorsqu'il est masqué. */
+.sinjira-assistant.is-open .sinjira-assistant-toggle{visibility:hidden}

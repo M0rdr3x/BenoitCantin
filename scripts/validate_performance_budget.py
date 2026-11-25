@@ -2,10 +2,14 @@
 from pathlib import Path
 from urllib.parse import urlparse
 import re
+import hashlib
+import json
 
 ROOT = Path(__file__).resolve().parents[1]
 TEXT_LIMITS = {".js": 550_000, ".css": 550_000, ".html": 650_000}
 IMAGE_LIMIT = 1_500_000
+HOME_CARD_IMAGE_TOTAL_LIMIT = 200_000
+HOME_THUMBNAIL_LIMIT = 100_000
 EXCLUDED_DIRS = {".git", "node_modules", ".venv", "dist", "build"}
 CRITICAL_PAGES = [
     ROOT / "index.html",
@@ -82,13 +86,31 @@ def main() -> int:
     stylesheet_count = len(re.findall(r"<link\b[^>]*rel=[\"']stylesheet[\"']", home, flags=re.I))
     if script_count > 6:
         errors.append(f"index.html: {script_count} scripts; budget maximal 6.")
-    if stylesheet_count > 8:
-        errors.append(f"index.html: {stylesheet_count} feuilles de style; budget maximal 8.")
+    if stylesheet_count > 7:
+        errors.append(f"index.html: {stylesheet_count} feuilles de style; budget maximal 7.")
+
+    manifest = json.loads((ROOT / "scripts/home_thumbnails_manifest.json").read_text("utf-8"))
+    expected = {f"sinjira-{name}-home-{width}.webp"
+                for name in ("registre", "jeux", "communaute") for width in (160, 336)}
+    if set(manifest) != expected:
+        errors.append("Manifeste des six miniatures incomplet.")
+    for name in sorted(expected):
+        asset = ROOT / "assets/media" / name
+        if not asset.is_file():
+            errors.append(f"Miniature manquante : {name}")
+            continue
+        data = asset.read_bytes()
+        info = manifest.get(name, {})
+        if (len(data) != info.get("bytes") or len(data) >= HOME_THUMBNAIL_LIMIT
+                or hashlib.sha256(data).hexdigest() != info.get("sha256")
+                or data[:4] != b"RIFF" or data[8:12] != b"WEBP"):
+            errors.append(f"Miniature invalide ou modifiée : {name}")
 
     cards = re.findall(r'<a class="home-project".*?</a>', home, flags=re.I | re.S)
     if len(cards) != 4:
         errors.append(f"index.html: 4 cartes principales attendues, trouvé {len(cards)}.")
     else:
+        card_image_bytes = 0
         for idx, card in enumerate(cards, start=1):
             image = re.search(r"<img\b[^>]*>", card, flags=re.I)
             if not image:
@@ -99,6 +121,34 @@ def main() -> int:
                 errors.append(f"index.html: image de la carte {idx} sans loading=lazy.")
             if 'decoding="async"' not in tag:
                 errors.append(f"index.html: image de la carte {idx} sans decoding=async.")
+            if 'fetchpriority="low"' not in tag:
+                errors.append(f"index.html: image secondaire {idx} sans priorité basse.")
+            if not re.search(r'\bwidth="[1-9]\d*"', tag) or not re.search(r'\bheight="[1-9]\d*"', tag):
+                errors.append(f"index.html: dimensions de la carte {idx} manquantes.")
+            src = re.search(r'\bsrc="([^"]+)"', tag)
+            asset = resolve_asset(ROOT / "index.html", src.group(1)) if src else None
+            if asset is None or not asset.is_file():
+                errors.append(f"index.html: image locale de la carte {idx} absente.")
+            else:
+                candidates = [asset]
+                srcset = re.search(r'\bsrcset="([^"]+)"', tag)
+                if idx > 1:
+                    name = ("registre", "jeux", "communaute")[idx - 2]
+                    expected_set = (f"/assets/media/sinjira-{name}-home-160.webp 160w, "
+                                    f"/assets/media/sinjira-{name}-home-336.webp 336w")
+                    if not srcset or srcset.group(1) != expected_set or not re.search(r'\bsizes="[^"]+"', tag):
+                        errors.append(f"index.html: variantes adaptatives de la carte {idx} absentes.")
+                    if srcset:
+                        for item in srcset.group(1).split(","):
+                            candidate = resolve_asset(ROOT / "index.html", item.strip().split()[0])
+                            if candidate is None or not candidate.is_file():
+                                errors.append(f"index.html: variante de la carte {idx} manquante.")
+                            else:
+                                candidates.append(candidate)
+                card_image_bytes += max(candidate.stat().st_size for candidate in candidates)
+        print(f"Images des quatre cartes accueil : {card_image_bytes:,} octets.")
+        if card_image_bytes > HOME_CARD_IMAGE_TOTAL_LIMIT:
+            errors.append(f"index.html: poids cumulé des cartes {card_image_bytes:,} > {HOME_CARD_IMAGE_TOTAL_LIMIT:,} octets.")
 
     if errors:
         print(f"ECHEC budgets performance: {len(errors)} problème(s).")

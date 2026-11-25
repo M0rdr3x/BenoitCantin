@@ -53,6 +53,13 @@ async function comments(user){
       let saving=false;
       const cancelEdit=()=>{
         if(saving)return;
+        // Ne jamais effacer un brouillon modifié par Échap ou Annuler sans
+        // accord explicite. Une édition inchangée se ferme immédiatement.
+        if(textarea.value!==entry.body&&
+           !window.confirm('Abandonner les modifications non enregistrées de ce commentaire?')){
+          textarea.focus();
+          return;
+        }
         form.remove();
         button.disabled=false;
         if(deleteButton)deleteButton.disabled=false;

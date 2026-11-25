@@ -54,8 +54,43 @@ def root_permissions_are_explicit(source: str) -> bool:
     return len(root_keys) == 1
 
 
+
+def inspect_netlify_staging_secrets(source: str) -> list[str]:
+    """Require credentials only in the two canonical deployment step envs."""
+    errors: list[str] = []
+    expected = {"preview_deploy", "production_deploy"}
+    seen: set[str] = set()
+    blocks = re.split(r"(?m)^      - name:", source)
+    secret_pattern = r"(?i)\$\{\{[^}]*\bsecrets\b"
+    if re.search(secret_pattern, blocks[0]):
+        errors.append("Netlify staging: secret hors étape")
+    required = {
+        "          NETLIFY_AUTH_TOKEN: " + "$" + "{{ secrets.NETLIFY_AUTH_TOKEN }}",
+        "          NETLIFY_SITE_ID: " + "$" + "{{ secrets.NETLIFY_SITE_ID }}",
+    }
+    for block in blocks[1:]:
+        ids = re.findall(r"(?m)^        id: ([a-z_]+)\s*$", block)
+        refs = [line for line in block.splitlines() if re.search(secret_pattern, line)]
+        if len(ids) == 1 and ids[0] in expected:
+            step = ids[0]
+            if step in seen:
+                errors.append(f"Netlify staging: étape dupliquée {step}")
+            seen.add(step)
+            env = re.search(r"(?m)^        env:\n((?:          [^\n]+\n)+)", block)
+            if (len(refs) != 2 or set(refs) != required or env is None
+                    or not required.issubset(set(env.group(1).splitlines()))):
+                errors.append(f"Netlify staging: secrets non limités à env de {step}")
+        elif refs:
+            errors.append("Netlify staging: secret dans une étape non autorisée")
+    if seen != expected:
+        errors.append("Netlify staging: étapes de déploiement attendues absentes")
+    return errors
+
+
 def inspect_workflow(name: str, source: str) -> list[str]:
     errors: list[str] = []
+    if name == "deploy-netlify-staging.yml":
+        errors.extend(inspect_netlify_staging_secrets(source))
     if not root_permissions_are_explicit(source):
         errors.append(f"{name}: permissions racine explicites et uniques obligatoires")
     if has_privileged_pr_trigger(source):
@@ -133,6 +168,28 @@ def self_test() -> None:
     safe_comment = good.replace("  pull_request:", "  # pull_request_target interdit\n  pull_request:")
     if inspect_workflow("commentaire inoffensif", safe_comment):
         raise SystemExit("Auto-test défectueux : faux positif commentaire")
+    staging_env = (
+        "        env:\n"
+        "          NETLIFY_AUTH_TOKEN: " + "$" + "{{ secrets.NETLIFY_AUTH_TOKEN }}\n"
+        "          NETLIFY_SITE_ID: " + "$" + "{{ secrets.NETLIFY_SITE_ID }}\n"
+    )
+    staging = (
+        "jobs:\n  staging:\n    steps:\n"
+        "      - name: Preview\n        id: preview_deploy\n" + staging_env
+        + "        run: echo preview\n"
+        + "      - name: Production candidate\n        id: production_deploy\n" + staging_env
+        + "        run: echo candidate\n"
+    )
+    assert inspect_netlify_staging_secrets(staging) == []
+    for mutant in (
+        staging.replace("    steps:\n", "    env:\n      TOKEN: " + "$" + "{{ secrets.NETLIFY_AUTH_TOKEN }}\n    steps:\n"),
+        staging.replace(staging_env, "", 1),
+        staging + "      - name: Build\n" + staging_env + "        run: echo build\n",
+        staging.replace("        id: production_deploy", "        id: preview_deploy"),
+        staging.replace("        env:\n", "        other:\n", 1),
+    ):
+        if not inspect_netlify_staging_secrets(mutant):
+            raise SystemExit("Auto-test défectueux : isolation secrets Netlify")
     print("OK: les mutations de sécurité CI sont refusées.")
 
 

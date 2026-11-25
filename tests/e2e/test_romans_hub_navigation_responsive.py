@@ -18,6 +18,64 @@ def check(condition, message):
         raise AssertionError(f"{BROWSER_NAME}: {message}")
 
 
+def check_posters(browser):
+    for route, name in (("romans", "litterature"), ("jeux", "jeux")):
+        for width, density in ((390, 1), (1440, 2)):
+            context = browser.new_context(
+                locale="fr-CA", viewport={"width": width, "height": 760},
+                device_scale_factor=density, java_script_enabled=False,
+                service_workers="block", reduced_motion="reduce",
+            )
+            try:
+                page = context.new_page()
+                page.goto(urljoin(BASE_URL, f"projets/sinjira/{route}/"),
+                          wait_until="domcontentloaded", timeout=30_000)
+                poster = page.locator(".sinjira-category-poster img")
+                poster.scroll_into_view_if_needed()
+                page.wait_for_function(
+                    """() => {
+                      const img = document.querySelector('.sinjira-category-poster img');
+                      return img && img.complete && img.naturalWidth > 0;
+                    }""", timeout=12_000)
+                current = poster.evaluate("(img) => new URL(img.currentSrc).pathname")
+                check(current in (
+                    f"/assets/media/sinjira-{name}-poster-480.webp",
+                    f"/assets/media/sinjira-{name}-poster-840.webp"),
+                    f"{route}: source adaptative incorrecte : {current}")
+                bounds = poster.bounding_box()
+                check(bounds["x"] >= -2 and bounds["x"] + bounds["width"] <= width + 2,
+                      f"{route}: affiche hors écran à {width}px")
+            finally:
+                context.close()
+
+
+def check_lazy_comments(browser):
+    context = browser.new_context(
+        locale="fr-CA", viewport={"width": 390, "height": 760},
+        service_workers="block", reduced_motion="reduce",
+    )
+    try:
+        page = context.new_page()
+        requested = []
+        def mock_reader(route):
+            requested.append(route.request.url)
+            route.fulfill(status=200, content_type="application/javascript", body="export {};")
+        page.route("**/assets/js/sinjira-reader.js?*", mock_reader)
+        page.goto(urljoin(BASE_URL, "projets/sinjira/romans/"),
+                  wait_until="load", timeout=30_000)
+        check(not requested, "module commentaires chargé dès l’accueil des romans")
+        page.locator('.sinjira-romans-jump-nav a[href="#commentaires"]').click()
+        page.wait_for_function(
+            "() => document.querySelector('#commentaires').dataset.commentsLoading === 'true'",
+            timeout=10_000)
+        page.wait_for_function(
+            "() => performance.getEntriesByType('resource').some(e => e.name.includes('/sinjira-reader.js?'))",
+            timeout=10_000)
+        check(len(requested) == 1, "chargement différé absent ou doublé")
+    finally:
+        context.close()
+
+
 def main():
     check(BROWSER_NAME in ("chromium", "firefox", "webkit"), "navigateur non reconnu")
     with sync_playwright() as playwright:
@@ -74,6 +132,8 @@ def main():
                     check(top >= 60, f"titre Roman IV masqué après navigation : {top}px")
                 finally:
                     context.close()
+            check_posters(browser)
+            check_lazy_comments(browser)
         finally:
             browser.close()
     print(f"OK {BROWSER_NAME}: sommaire Romans, 6 largeurs, clavier/tactile et sans JS")

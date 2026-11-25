@@ -24,14 +24,16 @@
   }
 
   function next(fallback = DEFAULT_DESTINATION) {
-    return safeLocalDestination(new URLSearchParams(location.search).get('next'), fallback);
+    const values = new URLSearchParams(location.search).getAll('next');
+    return safeLocalDestination(values.length === 1 ? values[0] : null, fallback);
   }
 
   function sanitizeCurrentNext() {
     const url = new URL(location.href);
-    const raw = url.searchParams.get('next');
-    if (raw === null) return;
-    const safe = safeLocalDestination(raw, '');
+    const values = url.searchParams.getAll('next');
+    if (values.length === 0) return;
+    const raw = values[0];
+    const safe = values.length === 1 ? safeLocalDestination(raw, '') : '';
     if (safe) {
       if (safe !== raw) {
         url.searchParams.set('next', safe);

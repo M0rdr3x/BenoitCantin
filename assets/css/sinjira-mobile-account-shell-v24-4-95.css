@@ -59,3 +59,15 @@
 @media (prefers-reduced-motion:reduce){
   .sinjira-account-mobile-nav{scroll-behavior:auto}
 }
+
+/* V24.4.99 — le clavier virtuel doit laisser toute la place à la saisie.
+   Réafficher le dock et la proposition PWA au prochain champ non éditable. */
+@media (max-width:820px), (display-mode:standalone){
+  body.account-page.sinjira-mobile-account-shell.sinjira-account-typing{
+    padding-bottom:12px;
+  }
+  body.account-page.sinjira-mobile-account-shell.sinjira-account-typing .sinjira-account-mobile-nav,
+  body.account-page.sinjira-mobile-account-shell.sinjira-account-typing .sinjira-pwa-install{
+    display:none!important;
+  }
+}

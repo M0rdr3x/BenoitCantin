@@ -42,13 +42,13 @@
     if (!doc.querySelector('link[data-sinjira-assistant-style]')) {
       var assistantStyle = doc.createElement('link');
       assistantStyle.rel = 'stylesheet';
-      assistantStyle.href = '/assets/css/sinjira-assistant.css?v=24.4.49';
+      assistantStyle.href = '/assets/css/sinjira-assistant.css?v=24.4.50';
       assistantStyle.setAttribute('data-sinjira-assistant-style', '');
       doc.head.appendChild(assistantStyle);
     }
     if (!doc.querySelector('script[data-sinjira-assistant-script]')) {
       var assistantScript = doc.createElement('script');
-      assistantScript.src = '/assets/js/sinjira-assistant.js?v=24.4.49';
+      assistantScript.src = '/assets/js/sinjira-assistant.js?v=24.4.50';
       assistantScript.defer = true;
       assistantScript.setAttribute('data-sinjira-assistant-script', '');
       doc.head.appendChild(assistantScript);
@@ -58,9 +58,23 @@
   function appendPwaAssets() {
     if (doc.querySelector('script[data-sinjira-pwa-install]')) return;
     var pwaScript = doc.createElement('script');
-    pwaScript.src = '/assets/js/sinjira-pwa-install.js?v=24.4.96';
+    pwaScript.src = '/assets/js/sinjira-pwa-install.js?v=24.4.100';
     pwaScript.defer = true;
     pwaScript.setAttribute('data-sinjira-pwa-install', '');
+    // Conserver l'invite éventuellement émise pendant le chargement du module.
+    // Pas de preventDefault avant que le module ait confirmé son éligibilité.
+    function captureInstallPrompt(event) {
+      pwaScript.sinjiraPendingInstallPrompt = event;
+    }
+    function releaseInstallPrompt() {
+      window.removeEventListener('beforeinstallprompt', captureInstallPrompt);
+      delete pwaScript.sinjiraPendingInstallPrompt;
+      delete pwaScript.sinjiraReleaseInstallPrompt;
+    }
+    pwaScript.sinjiraReleaseInstallPrompt = releaseInstallPrompt;
+    window.addEventListener('beforeinstallprompt', captureInstallPrompt);
+    pwaScript.addEventListener('load', releaseInstallPrompt, {once:true});
+    pwaScript.addEventListener('error', releaseInstallPrompt, {once:true});
     doc.head.appendChild(pwaScript);
   }
 
@@ -83,10 +97,6 @@
     setNavOpen(false);
     // Sans JavaScript le menu demeure visible. Avec JavaScript, la navigation
     // compacte n'est masquée qu'après initialisation de sa commande accessible.
-    if (doc.body && doc.body.getAttribute('data-sinjira-ux') === 'v1') {
-      doc.documentElement.setAttribute('data-sinjira-nav-ready', 'true');
-      doc.documentElement.setAttribute('data-sinjira-nav-initialized', 'true');
-    }
     toggle.addEventListener('click', function () {
       setNavOpen(toggle.getAttribute('aria-expanded') !== 'true');
     });
@@ -126,6 +136,12 @@
       if (window.matchMedia(desktopQuery).matches &&
           toggle.getAttribute('aria-expanded') === 'true') setNavOpen(false);
     });
+    // N'exposer le bouton qu'une fois toutes ses commandes installées.
+    if (doc.body && doc.body.getAttribute('data-sinjira-ux') === 'v1') {
+      doc.documentElement.setAttribute('data-sinjira-nav-ready', 'true');
+      doc.documentElement.setAttribute('data-sinjira-nav-initialized', 'true');
+    }
+    toggle.removeAttribute('hidden');
   }
 
 

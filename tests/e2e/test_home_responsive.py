@@ -62,6 +62,10 @@ def test_home(page):
     )) == NAV_PATHS, "menu principal incomplet ou mal ordonné")
     verify(page.locator(".home-project").count() == 4,
            "les quatre accès directs SINJIRA doivent rester présents")
+    verify(page.locator('.home-project img[loading="lazy"][decoding="async"][fetchpriority="low"][width][height]').count() == 4,
+           "images secondaires non différées ou dimensions absentes")
+    verify(page.locator('.sinjira-orbit img[fetchpriority="high"]').count() == 1,
+           "priorité du logo principal perdue")
 
     for width in WIDTHS:
         page.set_viewport_size({"width": width, "height": 760})
@@ -115,7 +119,33 @@ def test_home(page):
 
     verify(page.locator(".home-cosmos a.sinjira-orbit").get_attribute("href")
            == "/projets/sinjira/", "destination officielle SINJIRA incorrecte")
+    check_direct_access(page)
 
+
+
+def check_direct_access(page):
+    link = page.locator(".home-direct-access")
+    target = page.locator("#univers-titre")
+    verify(link.count() == 1 and link.get_attribute("href") == "#univers-titre",
+           "accès direct aux rubriques absent")
+    verify(link.bounding_box()["height"] >= 43.5,
+           "zone tactile de l’accès direct insuffisante")
+    verify(target.get_attribute("tabindex") == "-1", "titre cible non focalisable")
+    link.focus()
+    link.press("Enter")
+    verify(urlparse(page.url).fragment == "univers-titre",
+           "navigation directe vers les rubriques impossible au clavier")
+    verify(page.locator(".home-project").count() == 4,
+           "les quatre rubriques ne sont plus disponibles")
+    verify(page.locator(".home-project").evaluate_all(
+        """cards => cards.every(card => {
+          const color = getComputedStyle(card).getPropertyValue('--card-glow').trim();
+          const match = color.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+          if (!match) return false;
+          const [r,g,b] = match.slice(1).map(Number);
+          return r >= 150 && r > 1.45*g && r > 1.35*b;
+        })"""),
+           "palette rouge/noire des cartes non conforme")
 
 
 def test_short_mobile_menu(page):
@@ -202,6 +232,129 @@ def test_short_mobile_menu(page):
                f"menu compact non refermé au clavier à {width}x{height}")
 
 
+
+def test_install_offer(browser):
+    """iPhone : invite discrète, instructions sur demande; Android : vrai bouton d'installation."""
+    iphone_ua = ("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
+                 "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 "
+                 "Mobile/15E148 Safari/604.1")
+    context = browser.new_context(
+        locale="fr-CA", user_agent=iphone_ua, service_workers="block",
+        reduced_motion="reduce", viewport={"width": 240, "height": 420},
+    )
+    try:
+        page = context.new_page()
+        page.goto(BASE, wait_until="domcontentloaded", timeout=30_000)
+        card = page.locator(".sinjira-pwa-install[data-sinjira-pwa-install]")
+        card.wait_for(state="visible", timeout=12_000)
+        reveal = card.locator("[data-pwa-install-reveal]")
+        details = card.locator("#sinjira-pwa-install-details")
+        for width, height in ((240, 420), (320, 340), (390, 360)):
+            page.set_viewport_size({"width": width, "height": height})
+            verify(details.is_hidden() and reveal.get_attribute("aria-expanded") == "false",
+                   f"l'invitation iOS occupe le site sans accord à {width}x{height}")
+            metrics = card.evaluate("""el => {
+              const b=el.getBoundingClientRect();
+              const button=el.querySelector('[data-pwa-install-reveal]').getBoundingClientRect();
+              return {top:b.top,bottom:b.bottom,height:b.height,buttonHeight:button.height,
+                      overflow:document.documentElement.scrollWidth>innerWidth+2};
+            }""")
+            verify(not metrics["overflow"] and metrics["height"] <= 110
+                   and metrics["buttonHeight"] >= 43.5 and metrics["top"] >= -2
+                   and metrics["bottom"] <= height + 2,
+                   f"invitation iOS compacte illisible à {width}x{height}: {metrics}")
+            reveal.click()
+            verify(details.is_visible() and reveal.get_attribute("aria-expanded") == "true",
+                   f"les instructions iOS ne s'ouvrent pas à {width}x{height}")
+            expanded = card.evaluate("""el => {
+              const b=el.getBoundingClientRect();
+              return {top:b.top,bottom:b.bottom,
+                      overflow:document.documentElement.scrollWidth>innerWidth+2,
+                      scrollable:el.scrollHeight>el.clientHeight};
+            }""")
+            verify(not expanded["overflow"] and expanded["top"] >= -2
+                   and expanded["bottom"] <= height + 2,
+                   f"les instructions iOS débordent à {width}x{height}: {expanded}")
+            verify("Sur iPhone/iPad" in details.inner_text(),
+                   "instructions manuelles Safari indisponibles")
+            verify(card.locator("[data-pwa-install-action]").count() == 0,
+                   "Safari affiche un bouton natif sans action disponible")
+            page.keyboard.press("Escape")
+            verify(details.is_hidden() and reveal.get_attribute("aria-expanded") == "false"
+                   and reveal.evaluate("(el) => document.activeElement === el"),
+                   f"Échap ne replie pas les instructions iOS à {width}x{height}")
+        card.locator(".sinjira-pwa-install__close").click()
+        verify(card.count() == 0, "la fermeture PWA n'a pas supprimé la proposition")
+        page.reload(wait_until="domcontentloaded")
+        page.locator('html[data-sinjira-pwa-ready="true"]').wait_for(state="attached", timeout=12_000)
+        verify(page.locator(".sinjira-pwa-install[data-sinjira-pwa-install]").count() == 0,
+               "une proposition refusée réapparaît dans la même session")
+        page.goto(BASE.rstrip("/") + "/projets/sinjira/romans/",
+                  wait_until="domcontentloaded", timeout=30_000)
+        verify(page.locator(".sinjira-pwa-install[data-sinjira-pwa-install]").count() == 0,
+               "la proposition PWA s'affiche sur une route non éligible")
+    finally:
+        context.close()
+
+    android = browser.new_context(
+        locale="fr-CA", service_workers="block",
+        viewport={"width": 390, "height": 760},
+    )
+    try:
+        page = android.new_page()
+        page.goto(BASE, wait_until="domcontentloaded", timeout=30_000)
+        # Le module est injecté dynamiquement : DOMContentLoaded ne garantit
+        # pas l'enregistrement de son écouteur beforeinstallprompt.
+        page.locator('html[data-sinjira-pwa-ready="true"]').wait_for(state="attached", timeout=12_000)
+        card = page.locator(".sinjira-pwa-install[data-sinjira-pwa-install]")
+        for outcome in ("dismissed", "accepted"):
+            page.evaluate("""outcome => {
+              window.__testNativeInstallInvoked=false;
+              const prompt=new Event('beforeinstallprompt',{cancelable:true});
+              prompt.prompt=() => {window.__testNativeInstallInvoked=true; return Promise.resolve();};
+              prompt.userChoice=Promise.resolve({outcome});
+              window.dispatchEvent(prompt);
+            }""", outcome)
+            card.wait_for(state="visible", timeout=5_000)
+            verify(card.locator("#sinjira-pwa-install-details").is_hidden(),
+                   "l'invitation Android doit rester compacte par défaut")
+            card.locator("[data-pwa-install-reveal]").click()
+            card.locator("[data-pwa-install-action]").click()
+            page.wait_for_function("() => window.__testNativeInstallInvoked === true", timeout=5_000)
+            card.wait_for(state="detached", timeout=5_000)
+    finally:
+        android.close()
+
+def test_responsive_images(browser):
+    """Chaque densité conserve une image locale décodable, sans dépendance externe."""
+    for width, density in ((390, 1), (1440, 3)):
+        context = browser.new_context(
+            viewport={"width": width, "height": 760}, device_scale_factor=density,
+            locale="fr-CA", reduced_motion="reduce", service_workers="block",
+        )
+        try:
+            page = context.new_page()
+            page.goto(BASE, wait_until="domcontentloaded", timeout=30_000)
+            for name in ("registre", "jeux", "communaute"):
+                image = page.locator(f'.home-project[href="/projets/sinjira/{name}/"] img')
+                image.scroll_into_view_if_needed()
+                page.wait_for_function(
+                    """selector => {
+                      const img = document.querySelector(selector);
+                      return img && img.complete && img.naturalWidth > 0;
+                    }""", arg=f'.home-project[href="/projets/sinjira/{name}/"] img',
+                    timeout=12_000)
+                current = image.evaluate("(img) => new URL(img.currentSrc).pathname")
+                verify(current in (
+                    f"/assets/media/sinjira-{name}-home-160.webp",
+                    f"/assets/media/sinjira-{name}-home-336.webp"),
+                    f"source adaptative incorrecte à {width}px DPR {density}: {current}")
+                verify(image.bounding_box()["width"] <= 113,
+                       f"image de carte hors format à {width}px")
+        finally:
+            context.close()
+
+
 def test_without_javascript(browser):
     context = browser.new_context(
         java_script_enabled=False, service_workers="block", locale="fr-CA",
@@ -213,9 +366,14 @@ def test_without_javascript(browser):
         verify(response is not None and response.status < 400,
                "accueil sans JavaScript inaccessible")
         nav = page.locator("[data-main-nav]")
+        check_direct_access(page)
         for width in (320, 768, 1024):
             page.set_viewport_size({"width": width, "height": 760})
             verify(nav.is_visible(), f"liens inaccessibles sans JS à {width}px")
+            verify(page.locator("[data-menu-toggle]").is_hidden(),
+                   f"commande inactive visible sans JS à {width}px")
+            verify(page.locator("[data-menu-toggle]").get_attribute("hidden") is not None,
+                   "commande inactive non masquée nativement")
             verify(tuple(nav.locator("a").evaluate_all(
                 "(links) => links.map(a => new URL(a.href).pathname)"
             )) == NAV_PATHS,
@@ -230,6 +388,35 @@ def test_without_javascript(browser):
                    f"navigation sans JS hors écran à {width}px : {state}")
     finally:
         context.close()
+
+
+def test_public_navigation_fallback(browser):
+    routes = ("projets/sinjira/", "projets/sinjira/romans/",
+              "projets/sinjira/jeux/", "projets/sinjira/registre/",
+              "projets/sinjira/communaute/", "projets/sinjira/codex/")
+    for js_enabled in (False, True):
+        context = browser.new_context(
+            java_script_enabled=js_enabled, service_workers="block", locale="fr-CA",
+            reduced_motion="reduce", viewport={"width": 390, "height": 760},
+        )
+        try:
+            if js_enabled:
+                context.route("**/assets/js/site.js*", lambda route: route.abort())
+            page = context.new_page()
+            for route in routes:
+                response = page.goto(BASE.rstrip("/") + "/" + route,
+                                     wait_until="load", timeout=30_000)
+                verify(response is not None and response.ok, f"route indisponible : {route}")
+                nav = page.locator("[data-main-nav]")
+                toggle = page.locator("[data-menu-toggle]")
+                verify(nav.is_visible() and toggle.is_hidden(),
+                       f"navigation de secours invalide : {route}, JS={js_enabled}")
+                verify(toggle.get_attribute("hidden") is not None,
+                       f"commande inactive non masquée nativement : {route}")
+                verify(nav.locator('a[href="/compte/"]').is_visible(),
+                       f"accès au compte absent : {route}")
+        finally:
+            context.close()
 
 
 def run():
@@ -249,7 +436,10 @@ def run():
                 test_short_mobile_menu(page)
             finally:
                 context.close()
+            test_install_offer(browser)
+            test_responsive_images(browser)
             test_without_javascript(browser)
+            test_public_navigation_fallback(browser)
         finally:
             browser.close()
     print(f"OK {BROWSER}: accueil SINJIRA, 8 largeurs, clavier, mobile et sans JS")

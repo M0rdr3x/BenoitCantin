@@ -10,7 +10,7 @@ from playwright.sync_api import sync_playwright
 
 BASE = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
 ENGINE = os.environ.get("BROWSER", "chromium").strip().lower()
-WIDTHS = (320, 390, 520, 768, 1024, 1440)
+WIDTHS = (240, 320, 390, 520, 768, 1024, 1440)
 
 FAKE_DATABASE = r"""
 const comments = [
@@ -121,6 +121,13 @@ def run():
                        "seul un commentaire en attente doit être modifiable")
                 edit=page.locator('[data-edit-comment]').first
                 delete=page.locator('[data-delete-comment]').first
+
+                # Une édition intacte se ferme immédiatement sans confirmation.
+                edit.click()
+                fresh=page.locator('[data-inline-edit] textarea')
+                fresh.press("Escape")
+                verify(page.locator('[data-inline-edit]').count()==0 and edit.is_enabled(),
+                       "Échap exige une confirmation inutile lorsque le commentaire est intact")
                 for width in WIDTHS:
                     check_geometry(page,width)
                     edit.click()
@@ -129,16 +136,48 @@ def run():
                            f"champ d'édition sans focus à {width}px")
                     verify(edit.is_disabled() and delete.is_disabled(),
                            f"actions concurrentes encore actives à {width}px")
-                    verify(textarea.evaluate("(el)=>el.getBoundingClientRect().width<=innerWidth+2"),
-                           f"zone d'édition hors écran à {width}px")
+                    bounds=textarea.evaluate("""el => {
+                      const a=el.getBoundingClientRect();
+                      const b=el.closest('[data-comment-id]').getBoundingClientRect();
+                      return {left:a.left,right:a.right,width:a.width,cardWidth:b.width,
+                              fits:a.left>=b.left-2 && a.right<=b.right+2};
+                    }""")
+                    verify(bounds["fits"] and bounds["width"]>=bounds["cardWidth"]-58,
+                           f"zone d'édition mal centrée ou trop petite à {width}px: {bounds}")
                     textarea.fill("Texte de validation fictif")
+
+                    # Premier refus : conserver le brouillon même avec Échap.
+                    page.once("dialog", lambda dialog: dialog.dismiss())
+                    textarea.press("Escape")
+                    verify(page.locator('[data-inline-edit]').count()==1 and
+                           textarea.input_value()=="Texte de validation fictif" and
+                           textarea.evaluate('(el)=>document.activeElement===el'),
+                           f"brouillon perdu après refus de l'annulation à {width}px")
+                    verify(edit.is_disabled() and delete.is_disabled(),
+                           f"actions concurrentes réactivées malgré le brouillon à {width}px")
+
+                    # Confirmation volontaire : supprimer l'éditeur et rendre le focus.
+                    page.once("dialog", lambda dialog: dialog.accept())
                     textarea.press("Escape")
                     verify(page.locator('[data-inline-edit]').count()==0,
-                           f"Échap ne ferme pas l'édition à {width}px")
+                           f"confirmation Échap n'a pas fermé l'édition à {width}px")
                     verify(edit.evaluate('(el) => document.activeElement === el') and not edit.is_disabled() and
                            not delete.is_disabled(),
                            f"le focus ou les actions ne sont pas restaurés à {width}px")
 
+                # Même protection depuis le bouton tactile « Annuler ».
+                edit.click()
+                page.locator('[data-inline-edit] textarea').fill("Brouillon non enregistré")
+                cancel=page.locator('[data-cancel-edit]')
+                page.once("dialog", lambda dialog: dialog.dismiss())
+                cancel.click()
+                verify(page.locator('[data-inline-edit]').count()==1 and
+                       page.locator('[data-inline-edit] textarea').input_value()=="Brouillon non enregistré",
+                       "le bouton Annuler efface un brouillon malgré le refus")
+                page.once("dialog", lambda dialog: dialog.accept())
+                cancel.click()
+                verify(page.locator('[data-inline-edit]').count()==0 and edit.is_enabled(),
+                       "bouton Annuler confirmé ne ferme pas l'édition")
                 edit.click()
                 page.locator('[data-inline-edit] textarea').fill("Commentaire fictif corrigé")
                 page.locator('[data-inline-edit] button[type=submit]').click()
@@ -159,7 +198,7 @@ def run():
                 context.close()
         finally:
             browser.close()
-    print(f"OK {ENGINE}: Mes commentaires, 6 largeurs, annulation Échap, édition et suppression simulées")
+    print(f"OK {ENGINE}: Mes commentaires, 7 largeurs, brouillon protégé, édition et suppression simulées")
 
 
 if __name__=="__main__":
