@@ -63,11 +63,13 @@ REQUIRED = {
     "identité et statut privé du bucket":
         "!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket)",
     "refus d'erreur API Storage":
-        "if(bucketMetadataError||!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket))",
+        "if(bucketMetadataError!==null||!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket))",
     "erreur de stockage sans URL":
         "return privateJson({ok:false,error:'Stockage privé indisponible.'},503);",
     "lien signé après accès":
         "createSignedUrl(doc.storage_path,600)",
+    "destination signée exacte":
+        "privateSignedDownloadUrlValid(signed.signedUrl,Deno.env.get('SUPABASE_URL'),doc.storage_bucket,doc.storage_path)",
     "cache privé":
         "'Cache-Control':'private, no-store, max-age=0'",
 }
@@ -142,9 +144,11 @@ def self_test(source: str, config: str) -> None:
         "bucket public admis":
             ("!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket)", "false"),
         "erreur de lecture bucket ignorée":
-            ("if(bucketMetadataError||!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket))", "if(false)"),
+            ("if(bucketMetadataError!==null||!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket))", "if(false)"),
         "lien signé trop long":
             ("createSignedUrl(doc.storage_path,600)", "createSignedUrl(doc.storage_path,3600)"),
+        "destination signée non contrôlée":
+            ("privateSignedDownloadUrlValid(signed.signedUrl,Deno.env.get('SUPABASE_URL'),doc.storage_bucket,doc.storage_path)", "true"),
         "cache privé retiré":
             ("'Cache-Control':'private, no-store, max-age=0'", "'Cache-Control':'public, max-age=3600'"),
         "erreur admin ignorée":

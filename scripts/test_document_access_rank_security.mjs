@@ -9,7 +9,7 @@ import { dirname, resolve } from 'node:path';
 import vm from 'node:vm';
 
 import { readLimitedUtf8Body } from '../supabase/functions/_shared/limited-body.mjs';
-import { privateDocumentLocationValid, isVerifiedPrivateDocumentBucket } from '../supabase/functions/_shared/private-document-storage.mjs';
+import { privateDocumentLocationValid, isVerifiedPrivateDocumentBucket, privateSignedDownloadUrlValid } from '../supabase/functions/_shared/private-document-storage.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const source = readFileSync(resolve(root, 'supabase/functions/get-document-url/index.ts'), 'utf8');
@@ -52,7 +52,7 @@ async function invoke({
   bucketPublic = false,
   bucketReadError = false,
   bucketErrorValue = null,
-  signedResponse = { data: { signedUrl: 'https://storage.example.invalid/private-token' }, error: null },
+  signedResponse = undefined,
   bucketMismatch = false,
   storagePath = 'projets/exemple.pdf',
   storageBucket = 'sinjira-private-documents',
@@ -105,7 +105,7 @@ async function invoke({
             counters.signedUrls += 1;
             assert.equal(path, doc.storage_path);
             assert.equal(seconds, 600);
-            return signedResponse;
+            return signedResponse ?? {data:{signedUrl:'https://storage.example.invalid/storage/v1/object/sign/'+doc.storage_bucket+'/'+doc.storage_path+'?token=abc.def.ghi'},error:null};
           },
         };
       },
@@ -124,8 +124,9 @@ async function invoke({
     optionalUser: async () => user,
     privateDocumentLocationValid,
     isVerifiedPrivateDocumentBucket,
+    privateSignedDownloadUrlValid,
   };
-  runtime.Deno = { serve(handler) { runtime.handler = handler; } };
+  runtime.Deno = { env:{get(name){assert.equal(name,'SUPABASE_URL');return 'https://storage.example.invalid';}}, serve(handler) { runtime.handler = handler; } };
   vm.runInNewContext(runtimeCode, runtime, { timeout: 1000 });
   assert.equal(typeof runtime.handler, 'function');
 
@@ -393,4 +394,16 @@ test('une réponse de signature ambiguë ne peut pas être livrée comme URL pri
     assert.equal(result.counters.bucketReads,1);
     assert.equal(result.counters.signedUrls,1);
   }
+});
+
+test('le handler ne livre jamais un lien Storage hors origine ou hors objet autorisé',async()=>{
+  const valid='https://storage.example.invalid/storage/v1/object/sign/sinjira-private-documents/projets/exemple.pdf?token=abc.def.ghi';
+  for(const url of [valid.replace('storage.example.invalid','evil.example.invalid'),valid.replace('/object/sign/','/object/public/'),valid.replace('exemple.pdf','other.pdf'),valid+'&token=abc.def.ghi',valid+'#secret']){
+    const result=await invoke({accessLevel:'account',visibility:'private',signed:true,rank:10,user:{id:UUID},signedResponse:{data:{signedUrl:url},error:null}});
+    assert.equal(result.response.status,500);
+    assert.equal('url' in result.payload,false);
+  }
+  const allowed=await invoke({accessLevel:'account',visibility:'private',signed:true,rank:10,user:{id:UUID},signedResponse:{data:{signedUrl:valid},error:null}});
+  assert.equal(allowed.response.status,200);
+  assert.equal(allowed.payload.url,valid);
 });

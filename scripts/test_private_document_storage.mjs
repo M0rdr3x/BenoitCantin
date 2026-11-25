@@ -4,7 +4,8 @@ import test from 'node:test';
 import {
   privateDocumentLocationValid,
   isVerifiedPrivateDocumentBucket,
-  privateAdminDocumentUploadPath
+  privateAdminDocumentUploadPath,
+  privateSignedDownloadUrlValid
 } from '../supabase/functions/_shared/private-document-storage.mjs';
 
 test('accepte un bucket privé exact et un chemin de document normal', () => {
@@ -78,4 +79,32 @@ test('ne crée jamais de chemin dans un bucket malformé',()=>{
   for(const bucket of ['',null,'PUBLIC/evil','private?x']){
     assert.equal(privateAdminDocumentUploadPath(bucket,'project','file','pdf',VALID_UPLOAD_ID),null,String(bucket));
   }
+});
+
+test('une URL signée doit correspondre exactement au stockage et au fichier autorisés',()=>{
+  const base='https://storage.example.invalid';
+  const bucket='private-documents', path='docs/rapport_été.pdf';
+  const token='abc.def.ghi';
+  const valid=base+'/storage/v1/object/sign/'+bucket+'/docs/rapport_%C3%A9t%C3%A9.pdf?token='+token;
+  assert.equal(privateSignedDownloadUrlValid(valid,base,bucket,path),true);
+  assert.equal(privateSignedDownloadUrlValid(valid,base+'/',bucket,path),true);
+  assert.equal(privateSignedDownloadUrlValid(valid+'&download=rapport.pdf',base,bucket,path,'rapport.pdf'),true);
+  for(const value of [
+    valid.replace('https:','http:'), valid.replace('storage.example.invalid','evil.example.invalid'),
+    valid.replace('storage.example.invalid','user@storage.example.invalid'),
+    valid.replace('storage.example.invalid','storage.example.invalid:8443'),
+    valid.replace('/object/sign/','/object/public/'),
+    valid.replace(bucket,'other-bucket'), valid.replace('rapport_','other_'),
+    valid.replace('/docs/','/docs%2F'), valid.replace('/docs/','/x/../docs/'),
+    valid.replace('/docs/','/%2e/docs/'), valid.replace('%C3%A9','%25C3%25A9'),
+    valid+'#fragment', valid+'&token=abc.def.ghi', valid+'&next=https://evil.example.invalid',
+    valid+'&download=other.pdf', valid.replace(token,''), valid.replace(token,'not-a-jwt'),
+    valid.replace(token,'abc.def.ghi%0A'), valid+' ', '', null, {}, 123,
+  ]) assert.equal(privateSignedDownloadUrlValid(value,base,bucket,path),false,String(value));
+  for(const origin of ['',null,'http://storage.example.invalid',base+'/extra',base+'?x=1','https://user@storage.example.invalid'])
+    assert.equal(privateSignedDownloadUrlValid(valid,origin,bucket,path),false);
+  assert.equal(privateSignedDownloadUrlValid(valid,base,bucket,path,'rapport.pdf'),false);
+  assert.equal(privateSignedDownloadUrlValid(valid+'&download=other.pdf',base,bucket,path,'rapport.pdf'),false);
+  assert.equal(privateSignedDownloadUrlValid(valid+'&download=rapport.pdf&download=rapport.pdf',base,bucket,path,'rapport.pdf'),false);
+  assert.equal(privateSignedDownloadUrlValid(valid,base,bucket+'\n',path),false);
 });

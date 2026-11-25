@@ -1,7 +1,7 @@
 import { readLimitedUtf8Body } from '../_shared/limited-body.mjs';
 import { corsHeaders } from '../_shared/cors.ts';
 import { optionalUser, serviceClient } from '../_shared/auth.ts';
-import { privateDocumentLocationValid, isVerifiedPrivateDocumentBucket } from '../_shared/private-document-storage.mjs';
+import { privateDocumentLocationValid, isVerifiedPrivateDocumentBucket, privateSignedDownloadUrlValid } from '../_shared/private-document-storage.mjs';
 
 const MAX_REQUEST_BYTES=512;
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -121,7 +121,7 @@ Deno.serve(async(req)=>{
     }
 
     const {data:signed,error:signedError}=await service.storage.from(doc.storage_bucket).createSignedUrl(doc.storage_path,600);
-    if(signedError!==null||typeof signed?.signedUrl!=='string'||!signed.signedUrl.trim())return privateJson({ok:false,error:'Impossible de créer le lien sécurisé.'},500);
+    if(signedError!==null||typeof signed?.signedUrl!=='string'||!privateSignedDownloadUrlValid(signed.signedUrl,Deno.env.get('SUPABASE_URL'),doc.storage_bucket,doc.storage_path))return privateJson({ok:false,error:'Impossible de créer le lien sécurisé.'},500);
     return privateJson({ok:true,url:signed.signedUrl,protected:true,expires_in:600});
   }catch{
     console.error('[get-document-url]',{code:'GET_DOCUMENT_URL_FAILED'});

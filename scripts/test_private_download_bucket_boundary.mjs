@@ -37,3 +37,18 @@ for(const [endpoint,location] of [['get-document-url','doc.storage_bucket'],['ge
     }
   });
 }
+
+for(const [endpoint,bucket,path,download] of [
+  ['get-document-url','doc.storage_bucket','doc.storage_path',''],
+  ['get-novel-file-url','novel.private_storage_bucket','novel.private_storage_path',",novel.slug+'.pdf'"],
+  ['get-private-book-url','storage.bucket','storage.storagePath',",'SINJIRA_Livre_01_La_Cendre_du_Jugement.pdf'"],
+]){
+  test(endpoint+' validates signed destination before returning it',()=>{
+    const source=readFileSync(new URL('../supabase/functions/'+endpoint+'/index.ts',import.meta.url),'utf8');
+    const check="privateSignedDownloadUrlValid(signed.signedUrl,Deno.env.get('SUPABASE_URL'),"+bucket+","+path+download+")";
+    const signed=source.indexOf('const {data:signed,error:signedError}');
+    const guard=source.indexOf(check,signed);
+    const response=source.indexOf('url:signed.signedUrl',signed);
+    assert.ok(signed>=0&&guard>signed&&response>guard);
+  });
+}
