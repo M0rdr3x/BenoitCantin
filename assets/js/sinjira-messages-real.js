@@ -1,7 +1,9 @@
 import {getSupabase,requireCommunityUser,escapeHtml,formatDate,avatarUrl,reportContent,socialStatus,socialErrorStatus} from './sinjira-social-common.js?v=24.4.42';
 import {unreadCounts,markConversationRead} from './sinjira-message-read-state.js?v=24.4.71';
 
-const UI_VERSION='24.4.72';
+import {requestModeration} from './sinjira-message-moderation-dialog.mjs?v=1.0.0';
+
+const UI_VERSION='24.4.73';
 const contacts=document.querySelector('[data-contact-list]');
 const search=document.querySelector('[data-contact-search]');
 const log=document.querySelector('[data-chat-log]');
@@ -13,6 +15,9 @@ const drafts=new Map();
 const composer=form.querySelector('textarea[name="body"]');
 const sendButton=form.querySelector('button[type="submit"]');
 let requestVersion=0,sending=false;
+const reporting=new Set();
+const blocking=new Set();
+
 
 function rememberDraft(){
   if(!peer)return;
@@ -66,7 +71,7 @@ async function openPeer(id){
   syncSendButton();
   history.replaceState({},'',`?user=${encodeURIComponent(id)}`);
   title.innerHTML=`<div class="v20-social-identity"><img class="v20-social-avatar" src="${escapeHtml(avatarUrl(peer.avatar_path))}" alt=""><div><strong>${escapeHtml(peer.pseudo||peer.display_name||'Membre')}</strong><span class="v20-social-time">Conversation compte réel</span></div></div><button class="btn btn-secondary btn-small" data-block-peer>Bloquer</button>`;
-  title.querySelector('[data-block-peer]')?.addEventListener('click',()=>blockPeer().catch(error=>fail(error,'Impossible de bloquer ce compte.')));
+  title.querySelector('[data-block-peer]')?.addEventListener('click',event=>blockPeer(event.currentTarget,selected).catch(error=>fail(error,'Impossible de bloquer ce compte.')));
   form.hidden=false;
   await messages();
 }
@@ -99,19 +104,25 @@ async function messages(){
     throw error;
   }
   const rows=(Array.isArray(data)?data:[]).filter(message=>((message.sender_user_id===user.id&&message.recipient_user_id===target.user_id)||(message.sender_user_id===target.user_id&&message.recipient_user_id===user.id)));
-  log.innerHTML=rows.map(message=>`<div class="v20-bubble ${message.sender_user_id===user.id?'mine':''}" data-message="${message.id}">${escapeHtml(message.body)}<time>${escapeHtml(formatDate(message.created_at))}</time>${message.sender_user_id!==user.id?'<button class="link-button" data-report-message>Signaler</button>':''}</div>`).join('')||'<p>Commencez la conversation.</p>';
+  log.innerHTML=rows.map(message=>`<div class="v20-bubble ${message.sender_user_id===user.id?'mine':''}" data-message="${escapeHtml(message.id)}">${escapeHtml(message.body)}<time>${escapeHtml(formatDate(message.created_at))}</time>${message.sender_user_id!==user.id?'<button type="button" class="link-button" data-report-message'+(reporting.has(message.id)?' disabled':'')+'>Signaler</button>':''}</div>`).join('')||'<p>Commencez la conversation.</p>';
   log.scrollTop=atBottom?log.scrollHeight:previousTop;
 
   log.querySelectorAll('[data-report-message]').forEach(button=>button.addEventListener('click',async()=>{
     const element=button.closest('[data-message]');
     const message=rows.find(item=>item.id===element?.dataset.message);
-    if(!message)return;
-    const reason=prompt('Pourquoi signalez-vous ce message?');
-    if(!reason)return;
+    if(!message||reporting.has(message.id))return;
+    reporting.add(message.id);
     try{
-      await reportContent({network:'real',target_type:'message',target_id:message.id,reason,snapshot:{body:message.body,sender_user_id:message.sender_user_id,recipient_user_id:message.recipient_user_id}});
-      alert('Message signalé à l’administration.');
-    }catch(error){fail(error,'Signalement impossible pour le moment.');}
+      const choice=await requestModeration(button,{mode:'report',contact:target.pseudo||target.display_name||'Membre'});
+      if(!choice){reporting.delete(message.id);return;}
+      button.disabled=true;
+      await reportContent({network:'real',target_type:'message',target_id:message.id,reason:choice.reason,details:choice.details??null,snapshot:{body:message.body,sender_user_id:message.sender_user_id,recipient_user_id:message.recipient_user_id}});
+      socialStatus(status,'Message signalé à l’administration.','success');
+    }catch(error){
+      reporting.delete(message.id);
+      button.disabled=false;
+      fail(error,'Signalement non confirmé. Vérifiez vos signalements avant de réessayer.');
+    }
   }));
   if(current()&&rows.some(message=>message.recipient_user_id===user.id&&!message.read_at)){
     try{
@@ -124,11 +135,17 @@ async function messages(){
   }
 }
 
-async function blockPeer(){
-  if(!peer||!confirm(`Bloquer ${peer.pseudo||peer.display_name||'ce membre'}? Les messages et interactions seront bloqués.`))return;
-  const {error}=await getSupabase().from('social_blocks').upsert({blocker_user_id:user.id,blocked_user_id:peer.user_id},{onConflict:'blocker_user_id,blocked_user_id'});
-  if(error)return fail(error,'Impossible de bloquer ce compte.');
-  location.href='blocages.html';
+async function blockPeer(button,target){
+  if(!target||blocking.has(target.user_id))return;
+  blocking.add(target.user_id);
+  try{
+    const choice=await requestModeration(button,{mode:'block',contact:target.pseudo||target.display_name||'ce membre'});
+    if(!choice?.confirmed)return;
+    button.disabled=true;
+    const {error}=await getSupabase().from('social_blocks').upsert({blocker_user_id:user.id,blocked_user_id:target.user_id},{onConflict:'blocker_user_id,blocked_user_id'});
+    if(error)throw error;
+    location.href='blocages.html';
+  }finally{blocking.delete(target.user_id);button.disabled=false;}
 }
 
 (async()=>{
