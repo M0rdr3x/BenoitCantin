@@ -63,8 +63,9 @@ def main():
     ],'convergence préférences')
 
     require(js,[
-        "await bind('privacy_settings'",
-        "await bind('notification_preferences'",
+        "bind('privacy_settings'",
+        "bind('notification_preferences'",
+        'if(busy)return', "form.setAttribute('aria-busy','true')", 'form.inert=!ready',
         '.insert({user_id:user.id,...payload})',
         ".update({...payload,updated_at:new Date().toISOString()}).eq('user_id',user.id)",
         'let exists=Boolean(data)'
@@ -81,7 +82,7 @@ def main():
 
     require(page,[
         'settings-v70',
-        'v24-preferences.js?v=24.4.70',
+        'v24-preferences.js?v=24.4.71',
         'Elles ne déclenchent aucun courriel, SMS, push ni service payant',
         'name="allow_ai_personal_data"',
         'disabled="" name="allow_ai_personal_data"'
