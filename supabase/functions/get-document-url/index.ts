@@ -115,13 +115,13 @@ Deno.serve(async(req)=>{
       return privateJson({ok:false,error:'Stockage privé indisponible.'},503);
     }
     const {data:bucketMetadata,error:bucketMetadataError}=await service.storage.getBucket(doc.storage_bucket);
-    if(bucketMetadataError||!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket)){
+    if(bucketMetadataError!==null||!isVerifiedPrivateDocumentBucket(bucketMetadata,doc.storage_bucket)){
       console.error('[get-document-url]',{code:'DOCUMENT_PRIVATE_BUCKET_UNVERIFIED'});
       return privateJson({ok:false,error:'Stockage privé indisponible.'},503);
     }
 
     const {data:signed,error:signedError}=await service.storage.from(doc.storage_bucket).createSignedUrl(doc.storage_path,600);
-    if(signedError||!signed?.signedUrl)return privateJson({ok:false,error:'Impossible de créer le lien sécurisé.'},500);
+    if(signedError!==null||typeof signed?.signedUrl!=='string'||!signed.signedUrl.trim())return privateJson({ok:false,error:'Impossible de créer le lien sécurisé.'},500);
     return privateJson({ok:true,url:signed.signedUrl,protected:true,expires_in:600});
   }catch{
     console.error('[get-document-url]',{code:'GET_DOCUMENT_URL_FAILED'});

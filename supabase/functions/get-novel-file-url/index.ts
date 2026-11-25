@@ -53,9 +53,9 @@ Deno.serve(async(req)=>{
     if(!novel.file_ready)return json({ok:false,error:'Le fichier intégral de cette édition n’est pas encore activé dans le stockage privé.',code:'FILE_NOT_READY',metadata:{page_count:novel.page_count,file_version:novel.file_version}},409);
     if(!novel.private_storage_bucket||!novel.private_storage_path)return json({ok:false,error:'Fichier privé non configuré.'},500);
     const {data:bucket,error:bucketError}=await service.storage.getBucket(novel.private_storage_bucket);
-    if(bucketError||bucket?.id!==novel.private_storage_bucket||bucket.public!==false)return json({ok:false,error:'Stockage privé indisponible.'},503);
+    if(bucketError!==null||bucket?.id!==novel.private_storage_bucket||bucket.public!==false)return json({ok:false,error:'Stockage privé indisponible.'},503);
     const {data:signed,error:signedError}=await service.storage.from(novel.private_storage_bucket).createSignedUrl(novel.private_storage_path,600,{download:novel.slug+'.pdf'});
-    if(signedError||!signed?.signedUrl)return json({ok:false,error:'Impossible de créer le lien sécurisé.'},500);
+    if(signedError!==null||typeof signed?.signedUrl!=='string'||!signed.signedUrl.trim())return json({ok:false,error:'Impossible de créer le lien sécurisé.'},500);
     return json({ok:true,url:signed.signedUrl,protected:true,expires_in:600,novel:{slug:novel.slug,title:novel.title,page_count:novel.page_count,file_version:novel.file_version,file_sha256:novel.file_sha256,file_size_bytes:novel.file_size_bytes}});
   }catch(error){
     const message=String(error?.message||'');

@@ -22,6 +22,10 @@ for(const [endpoint,location] of [['get-document-url','doc.storage_bucket'],['ge
       [{id:'other',public:false},null,503],
       [null,null,503],
       [{id:'private-test',public:false},{code:'FAILED'},503],
+      [{id:'private-test',public:false},undefined,503],
+      [{id:'private-test',public:false},false,503],
+      [{id:'private-test',public:false},0,503],
+      [{id:'private-test',public:false},'',503],
     ]){
       const context={doc:{storage_bucket:'private-test'},novel:{private_storage_bucket:'private-test'},storage:{bucket:'private-test'},
         service:{storage:{async getBucket(id){assert.equal(id,'private-test');return {data,error};}}},

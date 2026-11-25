@@ -51,6 +51,8 @@ async function invoke({
   active = true,
   bucketPublic = false,
   bucketReadError = false,
+  bucketErrorValue = null,
+  signedResponse = { data: { signedUrl: 'https://storage.example.invalid/private-token' }, error: null },
   bucketMismatch = false,
   storagePath = 'projets/exemple.pdf',
   storageBucket = 'sinjira-private-documents',
@@ -94,7 +96,7 @@ async function invoke({
         counters.bucketReads += 1;
         assert.equal(bucket, doc.storage_bucket);
         if (bucketReadError) return { data: null, error: new Error('simulated provider unavailable') };
-        return { data: { id: bucketMismatch ? 'other-bucket' : bucket, public: bucketPublic }, error: null };
+        return { data: { id: bucketMismatch ? 'other-bucket' : bucket, public: bucketPublic }, error: bucketErrorValue };
       },
       from(bucket) {
         assert.equal(bucket, doc.storage_bucket);
@@ -103,10 +105,7 @@ async function invoke({
             counters.signedUrls += 1;
             assert.equal(path, doc.storage_path);
             assert.equal(seconds, 600);
-            return {
-              data: { signedUrl: 'https://storage.example.invalid/private-token' },
-              error: null,
-            };
+            return signedResponse;
           },
         };
       },
@@ -325,7 +324,7 @@ test('la signature exige un bucket réellement privé, identité exacte et aucun
   for (const options of [
     { bucketPublic: true }, { bucketPublic: null }, { bucketPublic: 'false' },
     { bucketReadError: true },
-    { bucketMismatch: true },
+    { bucketMismatch: true }, { bucketErrorValue: false }, { bucketErrorValue: 0 }, { bucketErrorValue: '' },
   ]) {
     const result = await invoke({
       accessLevel: 'account', visibility: 'private', signed: true,
@@ -374,4 +373,24 @@ test('un projet non approuvé ou inactif demeure inaccessible', async () => {
   assert.equal(pending.response.status, 404);
   const archived = await invoke({ accessLevel: 'public', visibility: 'public', active: false });
   assert.equal(archived.response.status, 404);
+});
+
+test('une réponse de signature ambiguë ne peut pas être livrée comme URL privée', async () => {
+  const cases = [
+    {data:{signedUrl:'https://storage.example.invalid/private-token'}},
+    {data:{signedUrl:'https://storage.example.invalid/private-token'},error:false},
+    {data:{signedUrl:'https://storage.example.invalid/private-token'},error:0},
+    {data:{signedUrl:'https://storage.example.invalid/private-token'},error:''},
+    {data:{signedUrl:true},error:null}, {data:{signedUrl:123},error:null},
+    {data:{signedUrl:[]},error:null}, {data:{signedUrl:{}},error:null},
+    {data:{signedUrl:'   '},error:null}, {data:null,error:null},
+  ];
+  for(const signedResponse of cases){
+    const result=await invoke({accessLevel:'account',visibility:'private',signed:true,rank:10,user:{id:UUID},signedResponse});
+    assert.equal(result.response.status,500);
+    assert.equal(result.payload.ok,false);
+    assert.equal('url' in result.payload,false);
+    assert.equal(result.counters.bucketReads,1);
+    assert.equal(result.counters.signedUrls,1);
+  }
 });
