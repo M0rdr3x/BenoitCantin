@@ -56,6 +56,21 @@ def run():
             "() => !Object.keys(localStorage).some(k => k.startsWith('fracture-score'))"),
             "stockage de scores inattendu")
 
+        # Une correction invalide après un résultat complet ne doit laisser
+        # aucun ancien chiffre visible ni permettre de nouvelles accusations.
+        first.locator("input[data-camp=resistance]").fill("1")
+        for name in ("progress","total-r","total-m","wins-r","wins-m","bonus-r","bonus-m","final-r","final-m"):
+            check(page.locator("#fracture-"+name).inner_text()=="—", "ancien résultat visible : "+name)
+        check(page.locator("#fracture-final-panel").is_hidden(), "accusations visibles malgré une ronde invalide")
+        first.locator("input[data-camp=resistance]").fill("4")
+        check(page.locator("#fracture-final-panel").is_visible(), "accusations non restaurées")
+        check(page.locator("#fracture-final-r").inner_text()=="37", "résultat non recalculé")
+        page.locator("#fracture-incorrect").fill("2")
+        check(page.locator("#fracture-final-panel").is_visible(), "impossible de corriger les accusations")
+        check(page.locator("#fracture-bonus-r").inner_text()=="—", "ancien bonus visible")
+        page.locator("#fracture-incorrect").fill("1")
+        check(page.locator("#fracture-final-r").inner_text()=="37", "bonus non recalculé")
+
         # Le format Express ne peut être activé qu'à partir de 13 humains.
         page.locator("#fracture-humans").fill("13")
         check(page.locator("#fracture-express").is_enabled(), "Express inaccessible à 13")
@@ -89,6 +104,17 @@ def run():
             "débordement horizontal mobile")
         check(mobile_page.locator("#fracture-score-config").is_visible(),
               "contrôles mobile invisibles")
+        for width, zoom in ((240,"100%"),(320,"200%"),(390,"100%"),(768,"100%"),(1440,"100%")):
+            mobile_page.set_viewport_size({"width":width,"height":844})
+            mobile_page.evaluate("(zoom)=>document.documentElement.style.fontSize=zoom",zoom)
+            geometry=mobile_page.evaluate("""() => {
+              const wraps=[...document.querySelectorAll('.fracture-score-table-wrap')];
+              const controls=[...document.querySelectorAll('#fracture-rounds-body input,#fracture-humans,.fracture-score-actions button')];
+              return {page:document.documentElement.scrollWidth<=innerWidth+2,
+                tables:wraps.every(e=>e.scrollWidth<=e.clientWidth+2),
+                controls:controls.every(e=>{const r=e.getBoundingClientRect();return r.left>=-2&&r.right<=innerWidth+2&&r.height>=47.5})};
+            }""")
+            check(all(geometry.values()), f"saisie hors écran {width}px / {zoom}: {geometry}")
         check(not mobile_errors, f"erreurs JavaScript mobile : {mobile_errors[:3]}")
         mobile.close()
         browser.close()
