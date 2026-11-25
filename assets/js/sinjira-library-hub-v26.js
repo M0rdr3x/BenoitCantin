@@ -28,6 +28,7 @@ async function init(){
     s.rpc('is_sinjira_owner',{p_user_id:user.id}),
     s.rpc('is_sinjira_admin',{p_user_id:user.id}),
   ]);
+  const requestStateKnown=[accessResult,pendingResult,ownerResult,adminResult].every(result=>!result.error);
   const elevated=ownerResult.data===true||adminResult.data===true;
   const access=new Map((accessResult.data||[]).map(x=>[x.project_id,x]));
   const pending=new Set((pendingResult.data||[]).map(x=>x.project_id));
@@ -40,7 +41,7 @@ async function init(){
     const grant=access.get(project.id);
     const active=grant&&(!grant.expires_at||Date.parse(grant.expires_at)>Date.now());
     const isTester=elevated||(active&&grant.access_level==='tester');
-    const requestAllowed=project.allow_tester_requests&&!isTester;
+    const requestAllowed=requestStateKnown&&project.allow_tester_requests&&!isTester;
     const requested=pending.has(project.id);
     return '<article class="account-card">'+
       '<span class="eyebrow">Projet SINJIRA™</span><h3>'+escapeHtml(project.name)+'</h3>'+
@@ -51,16 +52,33 @@ async function init(){
       (requestAllowed?'<button class="btn btn-secondary" type="button" data-request-tester="'+escapeHtml(project.id)+'"'+(requested?' disabled':'')+'>'+(requested?'Demande testeur en attente':'Demander un accès testeur')+'</button>':'')+
       '</div></article>';
   }).join('');
+  if(!requestStateKnown){
+    setStatus(status,'Impossible de vérifier vos accès et demandes en attente. Les liens publics restent disponibles. Rechargez la page avant de déposer une candidature.','error');
+  }
   container.querySelectorAll('[data-request-tester]').forEach(button=>button.addEventListener('click',async()=>{
-    const message=prompt('Votre message de candidature (facultatif)')||'';
+    if(button.disabled)return;
+    const message=window.prompt('Votre message de candidature (facultatif). OK transmet la demande; Annuler ne transmet rien.');
+    if(message===null)return;
     button.disabled=true;
-    const {error:requestError}=await s.from('access_requests').insert({
-      user_id:user.id,project_id:button.dataset.requestTester,requested_level:'tester',
-      message:message.slice(0,1500),
-    });
-    if(requestError){button.disabled=false;setStatus(status,'Impossible de transmettre votre demande de testeur.','error');return;}
-    button.textContent='Demande testeur en attente';
-    setStatus(status,'Demande de testeur transmise.','success');
+    button.setAttribute('aria-busy','true');
+    button.textContent='Transmission en cours…';
+    setStatus(status,'Transmission de votre demande de testeur…','info');
+    try{
+      const {error:requestError}=await s.from('access_requests').insert({
+        user_id:user.id,project_id:button.dataset.requestTester,requested_level:'tester',
+        message:message.slice(0,1500),
+      });
+      if(requestError)throw requestError;
+      button.textContent='Demande testeur en attente';
+      setStatus(status,'Demande de testeur transmise.','success');
+    }catch{
+      // Une réponse perdue ne prouve pas que la demande n'a pas été créée.
+      // Ne pas autoriser un nouvel envoi sans relire les demandes en attente.
+      button.textContent='Vérification requise';
+      setStatus(status,'Transmission non confirmée. Rechargez la page pour vérifier vos demandes avant de réessayer.','error');
+    }finally{
+      button.setAttribute('aria-busy','false');
+    }
   }));
 }
 init().catch(error=>{
