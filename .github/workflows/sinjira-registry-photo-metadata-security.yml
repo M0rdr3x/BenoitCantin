@@ -6,12 +6,14 @@ on:
     paths:
       - 'supabase/functions/submit-character-questionnaire/index.ts'
       - 'scripts/test_sinjira_registry_photo_metadata.cjs'
+      - 'scripts/test_sinjira_registry_photo_binary.cjs'
       - '.github/workflows/sinjira-registry-photo-metadata-security.yml'
   push:
     branches: [main]
     paths:
       - 'supabase/functions/submit-character-questionnaire/index.ts'
       - 'scripts/test_sinjira_registry_photo_metadata.cjs'
+      - 'scripts/test_sinjira_registry_photo_binary.cjs'
       - '.github/workflows/sinjira-registry-photo-metadata-security.yml'
   workflow_dispatch:
 
@@ -33,5 +35,6 @@ jobs:
       - name: Contrôler les métadonnées Storage et les chemins
         run: |
           node scripts/test_sinjira_registry_photo_metadata.cjs
+          node scripts/test_sinjira_registry_photo_binary.cjs
           node scripts/test_sinjira_character_photo_path.cjs
           python3 scripts/validate_character_questionnaire_security.py
