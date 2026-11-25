@@ -67,25 +67,33 @@ async function authenticatedContext(req: Request) {
   const token = bearerToken(req);
   if (!token) throw new Error('AUTH_REQUIRED');
   const service = serviceClient();
-  const { data, error } = await service.auth.getUser(token);
-  if (error || !data?.user || typeof data.user.id !== 'string' || !data.user.id) throw new Error('AUTH_REQUIRED');
-  return { user: data.user, service, token };
+  const result = await service.auth.getUser(token);
+  // Une réponse partielle ou un statut d'erreur absent ne vaut pas succès.
+  if (!result || result.error !== null || !result.data ||
+      typeof result.data !== 'object' || Array.isArray(result.data)) throw new Error('AUTH_REQUIRED');
+  const user = result.data.user;
+  if (!user || typeof user !== 'object' || Array.isArray(user) ||
+      typeof user.id !== 'string' || !user.id.trim() || user.id !== user.id.trim()) throw new Error('AUTH_REQUIRED');
+  return { user, service, token };
 }
 
 async function assuranceLevel(context: Awaited<ReturnType<typeof authenticatedContext>>) {
   const { service, token } = context;
-  const { data: aal, error: aalError } = await service.auth.mfa.getAuthenticatorAssuranceLevel(token);
-  if (aalError || !aal || !['aal1', 'aal2'].includes(aal.currentLevel ?? '') ||
-      !['aal1', 'aal2'].includes(aal.nextLevel ?? '')) throw new Error('MFA_STATE_UNAVAILABLE');
+  const result = await service.auth.mfa.getAuthenticatorAssuranceLevel(token);
+  const aal = result?.data;
+  if (!result || result.error !== null || !aal || typeof aal !== 'object' || Array.isArray(aal) ||
+      !['aal1', 'aal2'].includes(aal.currentLevel ?? '') ||
+      !['aal1', 'aal2'].includes(aal.nextLevel ?? '') ||
+      (aal.currentLevel === 'aal2' && aal.nextLevel !== 'aal2')) throw new Error('MFA_STATE_UNAVAILABLE');
   return aal;
 }
 
 async function assertAdminMfa(context: Awaited<ReturnType<typeof authenticatedContext>>) {
   const { user, service } = context;
-  const { data: isAdmin, error: adminError } = await service.rpc('is_sinjira_admin', {
+  const result = await service.rpc('is_sinjira_admin', {
     p_user_id: user.id
   });
-  if (adminError || isAdmin !== true) throw new Error('ADMIN_REQUIRED');
+  if (!result || result.error !== null || result.data !== true) throw new Error('ADMIN_REQUIRED');
 
   const aal = await assuranceLevel(context).catch((error) => {
     console.error('[SINJIRA admin auth]', { code: 'MFA_STATE_UNAVAILABLE' });
@@ -108,7 +116,7 @@ async function sensitiveStepUpEnabled(context: Awaited<ReturnType<typeof authent
   // Une absence de ligne conserve la protection par défaut. Seule une
   // préférence booléenne explicite appartenant au compte authentifié
   // peut désactiver le step-up sur les opérations où il est facultatif.
-  if (error || (data !== null && (
+  if (error !== null || (data !== null && (
     typeof data !== 'object' || Array.isArray(data) ||
     data.user_id !== user.id || typeof data.sensitive_step_up !== 'boolean'
   ))) {

@@ -19,9 +19,10 @@ const code=extract('authenticatedContext','assuranceLevel')+
   extract('assertSensitiveMfa','assertVaultMfa')+
   '\nglobalThis.gates={authenticatedContext,assuranceLevel,assertAdminMfa,assertSensitiveMfa};';
 const validAal={currentLevel:'aal2',nextLevel:'aal2'};
-function harness({admin=true,aal=validAal,user={id:'test-user'},authError=null,adminError=null,aalError=null,settings={data:null,error:null}}={}){
+function harness({admin=true,aal=validAal,user={id:'test-user'},authError=null,adminError=null,aalError=null,settings={data:null,error:null},responses={}}={}){
   let assuranceCalls=0;
-  const service={rpc:async()=>({data:admin,error:adminError}),
+  const response=(name,fallback)=>Object.hasOwn(responses,name)?responses[name]:fallback;
+  const service={rpc:async()=>response('admin',{data:admin,error:adminError}),
     from(table){assert.equal(table,'security_user_settings');return {
       select(columns){assert.equal(columns,'user_id,sensitive_step_up');return {
         eq(column,value){assert.equal(column,'user_id');assert.equal(value,'test-user');return {
@@ -29,8 +30,8 @@ function harness({admin=true,aal=validAal,user={id:'test-user'},authError=null,a
         };}
       };}
     };},
-    auth:{getUser:async()=>({data:user===null?null:{user},error:authError}),
-      mfa:{getAuthenticatorAssuranceLevel:async()=>{assuranceCalls++;return {data:aal,error:aalError}}}}};
+    auth:{getUser:async()=>response('auth',{data:user===null?null:{user},error:authError}),
+      mfa:{getAuthenticatorAssuranceLevel:async()=>{assuranceCalls++;return response('aal',{data:aal,error:aalError})}}}};
   const sandbox={serviceClient:()=>service,bearerToken:()=> 'synthetic-token',console:{error(){}}};
   vm.runInNewContext(code,sandbox,{timeout:1000});
   return {gates:sandbox.gates,context:{user:{id:'test-user'},service,token:'synthetic-token'},calls:()=>assuranceCalls};
@@ -88,6 +89,37 @@ async function main(){
   const optedOut=harness({settings:{data:{...own,sensitive_step_up:false},error:null}});
   assert.equal(await optedOut.gates.assertSensitiveMfa(optedOut.context),null);
   assert.equal(optedOut.calls(),0);
-  console.log('PASS: 41 scénarios serveur Auth, Admin, AAL et préférence MFA.');
+  // Une réponse du SDK doit confirmer explicitement l'absence d'erreur.
+  const goodUser={id:'test-user'};
+  const invalidAuth=[null,undefined,{}, {data:{user:goodUser}},
+    {data:{user:goodUser},error:false},{data:{user:goodUser},error:0},
+    {data:{user:{id:' '}},error:null},{data:{user:{id:' test-user'}},error:null},
+    {data:{user:Object.assign([],{id:'test-user'})},error:null},
+    {data:Object.assign([],{user:goodUser}),error:null}];
+  for(const auth of invalidAuth){
+    const h=harness({responses:{auth}});
+    await assert.rejects(h.gates.authenticatedContext({}),/AUTH_REQUIRED/);
+  }
+  const invalidAdmin=[null,undefined,{}, {data:true},{data:true,error:false},{data:true,error:0}];
+  for(const admin of invalidAdmin){
+    const h=harness({responses:{admin}});
+    await assert.rejects(h.gates.assertAdminMfa(h.context),/ADMIN_REQUIRED/);
+    assert.equal(h.calls(),0);
+  }
+  const invalidAal=[null,undefined,{}, {data:validAal},{data:validAal,error:false},
+    {data:validAal,error:0},{data:{currentLevel:'aal2',nextLevel:'aal1'},error:null},
+    {data:Object.assign([] ,validAal),error:null}];
+  for(const aal of invalidAal){
+    const h=harness({responses:{aal}});
+    await assert.rejects(h.gates.assuranceLevel(h.context),/MFA_STATE_UNAVAILABLE/);
+  }
+  for(const settings of [{data:{...own,sensitive_step_up:false}},
+    {data:{...own,sensitive_step_up:false},error:false},
+    {data:{...own,sensitive_step_up:false},error:0}]){
+    const h=harness({settings});
+    await assert.rejects(h.gates.assertSensitiveMfa(h.context),/SECURITY_STATE_UNAVAILABLE/);
+    assert.equal(h.calls(),0);
+  }
+  console.log('PASS: 41 scénarios existants et 27 nouveaux refus Auth/Admin/AAL/préférences.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
