@@ -125,7 +125,7 @@ async function init(summary) {
         p_format: c.format,
         p_quantity: c.quantity,
         p_fulfillment_method: c.method,
-        p_shipping_zone_code: c.zone || null
+        p_shipping_zone_code: (c.format === 'paper' || c.format === 'both') && c.method === 'shipping' ? c.zone || null : null
       });
       if (id !== calculation) return;
       const row = Array.isArray(data) ? data[0] : data;
