@@ -34,7 +34,7 @@ def validate():
         'id="fracture-final-panel"', 'id="fracture-score-status"',
         'id="fracture-conclusion"', 'aria-live="polite"',
         'sinjira-fracture-score-page-v35.mjs?v=35.11.24',
-        'fracture-score-v35.css?v=35.11.24',
+        'fracture-score-v35.css?v=35.11.24.1',
         'ne réactive pas le moteur multijoueur Web',
         'aucune sauvegarde locale ou distante',
     ]:
