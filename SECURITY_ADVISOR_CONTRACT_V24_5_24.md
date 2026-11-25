@@ -60,3 +60,14 @@ Les précommandes du Livre I restent des réservations sans engagement financier
 ## GitHub
 
 La protection serveur de la branche `main` reste un prérequis d’infrastructure externe tant que l’action de branch protection/ruleset n’est pas exposée par les outils disponibles. Le workflow de gouvernance du dépôt reste un garde secondaire, mais ne doit pas être présenté comme équivalent à une branch protection GitHub active.
+
+## Extension des garde-fous — 22 novembre 2026
+
+Deux assertions pgTAP supplémentaires couvrent une régression absente du contrat historique :
+
+1. **Toutes les tables ordinaires/partitionnées du schéma `public` ont RLS activée**. Le test doit échouer si une nouvelle table exposable est créée sans RLS.
+2. **Toutes les vues du schéma `public` déclarent `security_invoker=true`**, pour ne pas contourner les politiques RLS sous les privilèges du propriétaire.
+
+État observé en lecture seule sur Supabase au 22 novembre 2026 : 136 tables `public`, 0 sans RLS; 0 vue `public`; 69 fonctions `SECURITY DEFINER` du schéma `public`, 0 exécutable par `anon` ou `authenticated`. Ce relevé ne prouve pas l'absence de failles dans les règles RLS elles-mêmes ni dans les API. Les 56 notices `RLS Enabled No Policy` (dont plusieurs tables scellées volontairement) restent à interpréter avec les privilèges directs, jamais en ouvrant les données pour faire disparaître une alerte.
+
+La PR fournit **des tests de non-régression, pas une modification de production**. Toute validation complète exige un passage pgTAP en environnement de test avec schéma fidèle à la production, puis un contrôle Supabase Security Advisor en lecture seule. Le durcissement des privilèges par défaut pour les futurs objets SQL est traité séparément dans la PR #1174. Le verrouillage natif de `main` reste indispensable (#135).

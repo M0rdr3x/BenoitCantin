@@ -2,7 +2,35 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,private,extensions;
 
-select plan(4);
+select plan(6);
+
+-- V26: barrières supplémentaires contre les régressions SQL futures.
+-- Ces tests sont en lecture seule hors de la transaction pgTAP existante.
+select is(
+  (
+    select count(*)::int
+    from pg_class c
+    join pg_namespace n on n.oid=c.relnamespace
+    where n.nspname='public'
+      and c.relkind in ('r','p')
+      and not c.relrowsecurity
+  ),
+  0,
+  'toutes les tables public exposables ont RLS activée'
+);
+
+select is(
+  (
+    select count(*)::int
+    from pg_class c
+    join pg_namespace n on n.oid=c.relnamespace
+    where n.nspname='public'
+      and c.relkind='v'
+      and not coalesce('security_invoker=true' = any(c.reloptions), false)
+  ),
+  0,
+  'toutes les vues public utilisent explicitement security_invoker'
+);
 
 select is(
   (

@@ -68,12 +68,16 @@ def main():
             errors.append(f'Document V24.5.24 incomplet: {marker}')
 
     test_markers = [
-        'select plan(4)',
+        'select plan(6)',
         "n.nspname in ('public','private')",
         "not exists(select 1 from pg_policy pol where pol.polrelid=c.oid)",
         "has_table_privilege('anon'",
         "has_table_privilege('authenticated'",
         "n.nspname='public'",
+        "c.relkind in ('r','p')",
+        'not c.relrowsecurity',
+        "c.relkind='v'",
+        'security_invoker=true',
         'p.prosecdef',
         'string_agg',
         "'public.private_profiles'::regclass",
