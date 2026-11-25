@@ -1,0 +1,75 @@
+name: Sécurité SINJIRA — privilèges SECURITY DEFINER et identité du demandeur
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'security/candidates/sinjira_private_definer_identity_staging.sql'
+      - 'security/candidates/sinjira_private_definer_identity_assertions.sql'
+      - 'scripts/validate_private_definer_identity_candidate.py'
+      - '.github/workflows/sinjira-private-definer-identity-security.yml'
+      - 'docs/SECURITE_PRIVATE_DEFINER_IDENTITE.md'
+  push:
+    branches: [main]
+    paths:
+      - 'security/candidates/sinjira_private_definer_identity_staging.sql'
+      - 'security/candidates/sinjira_private_definer_identity_assertions.sql'
+      - 'scripts/validate_private_definer_identity_candidate.py'
+      - '.github/workflows/sinjira-private-definer-identity-security.yml'
+      - 'docs/SECURITE_PRIVATE_DEFINER_IDENTITE.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static-candidate:
+    name: Empêcher la lecture des droits d'un tiers sans session légitime
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - name: Checkout sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python version figée
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Vérifier la syntaxe et la transaction annulée
+        run: |
+          python3 -m py_compile scripts/validate_private_definer_identity_candidate.py
+          python3 scripts/validate_private_definer_identity_candidate.py
+      - name: Refuser les 16 régressions d'identité et de privilèges
+        run: python3 scripts/validate_private_definer_identity_candidate.py --self-test
+
+  local-rls-runtime:
+    name: Tester avec rôles SQL et utilisateurs fictifs dans Supabase local (pgTAP)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout isolé sans identifiants persistants
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Python version figée
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Refuser tout SQL candidat qui ne se termine pas par ROLLBACK
+        run: python3 scripts/validate_private_definer_identity_candidate.py --self-test
+      - name: Installer la CLI Supabase figée
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf
+        with:
+          version: 2.111.0
+      - name: Démarrer Supabase local uniquement
+        run: supabase start
+      - name: Générer le test SQL transactionnel local
+        run: python3 scripts/validate_private_definer_identity_candidate.py --render-tests
+      - name: Vérifier 22 scénarios de privilèges pgTAP
+        run: supabase test db supabase/tests/__sinjira_private_definer_identity_generated.test.sql --local
+      - name: Détruire les comptes fictifs et le conteneur Supabase local
+        if: always()
+        run: |
+          rm -f supabase/tests/__sinjira_private_definer_identity_generated.test.sql
+          supabase stop --no-backup || true
