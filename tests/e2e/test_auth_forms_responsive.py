@@ -127,7 +127,7 @@ def check_license_activation(browser):
         for width,zoom in ((240,"100%"),(320,"200%"),(390,"100%"),(1440,"100%")):
             page.set_viewport_size({"width":width,"height":760})
             page.evaluate("(z)=>document.documentElement.style.fontSize=z",zoom)
-            state=form.evaluate("""el=>({overflow:document.documentElement.scrollWidth>innerWidth+2,controls:[...el.querySelectorAll('input,button')].every(n=>{const r=n.getBoundingClientRect();return r.left>=-2&&r.right<=innerWidth+2&&r.height>=47.5})})""")
+            state=form.evaluate("""el=>({overflow:document.documentElement.scrollWidth>innerWidth+2,scrollWidth:document.documentElement.scrollWidth,width:innerWidth,outside:[...document.querySelectorAll('body *')].filter(n=>!n.closest('.account-nav-scroll')&&n.getBoundingClientRect().right>innerWidth+2&&n.getBoundingClientRect().width>0).slice(0,12).map(n=>[n.tagName,String(n.className),Math.round(n.getBoundingClientRect().right)]),controls:[...el.querySelectorAll('input,button')].every(n=>{const r=n.getBoundingClientRect();return r.left>=-2&&r.right<=innerWidth+2&&r.height>=47.5})})""")
             assert_ok(not state["overflow"] and state["controls"],f"licences {width}/{zoom}: {state}")
         field.fill("SJR-FICTIF-0001")
         button.click()
