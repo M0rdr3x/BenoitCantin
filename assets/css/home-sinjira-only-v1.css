@@ -103,3 +103,30 @@
   .home-page.home-sinjira-only .sinjira-orbit{max-width:100%;min-width:min(188px,100%)}
   .home-page.home-sinjira-only .home-direct-access{min-width:0;flex-wrap:wrap}
 }
+
+/* WebKit : le menu ne doit jamais élargir l'en-tête à son premier calcul.
+   Une grille borne la largeur de la marque et de la navigation de secours,
+   même lorsque le script d'initialisation est bloqué. */
+@media(max-width:1020px){
+  .home-page.home-sinjira-only[data-sinjira-ux="v1"] .nav-shell{
+    display:grid;grid-template-columns:minmax(0,1fr) auto;
+    min-width:0;max-width:100%;box-sizing:border-box;
+  }
+  .home-page.home-sinjira-only[data-sinjira-ux="v1"] .nav-shell>.brand{
+    max-width:100%;min-width:0;justify-self:start;
+  }
+  .home-page.home-sinjira-only[data-sinjira-ux="v1"] .nav-shell>.main-nav{
+    box-sizing:border-box;min-width:0;max-width:100%;
+    flex-direction:column;align-items:stretch;
+  }
+  .home-page.home-sinjira-only[data-sinjira-ux="v1"] .main-nav>a{
+    box-sizing:border-box;min-width:0;max-width:100%;
+    white-space:normal;overflow-wrap:anywhere;
+  }
+  html:not([data-sinjira-nav-ready]) .home-page.home-sinjira-only[data-sinjira-ux="v1"] .nav-shell>.main-nav{
+    grid-column:1/-1;width:100%;position:static;
+  }
+  html[data-sinjira-nav-ready] .home-page.home-sinjira-only[data-sinjira-ux="v1"] .main-nav:not(.open){
+    display:none;
+  }
+}
