@@ -138,10 +138,7 @@ jobs:
             }
             core.info('Release protégée et SHA inchangé avant tout accès Netlify.');
 
-      - name: Verrouiller ref, SHA, site et secrets
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      - name: Verrouiller ref, SHA et site
         shell: bash
         run: |
           set -euo pipefail
@@ -159,10 +156,6 @@ jobs:
           fi
           if ! [[ "$EXPECTED_SITE_NAME" =~ ^[a-z0-9-]+$ ]]; then
             echo "ERREUR: expected_site_name Netlify invalide." >&2
-            exit 1
-          fi
-          if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then
-            echo "ERREUR: secrets NETLIFY_AUTH_TOKEN et NETLIFY_SITE_ID requis." >&2
             exit 1
           fi
 
@@ -186,6 +179,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then
+            echo "ERREUR: secrets NETLIFY_AUTH_TOKEN et NETLIFY_SITE_ID requis." >&2
+            exit 1
+          fi
           json="$(mktemp)"
           trap 'rm -f "$json"' EXIT
           "$RUNNER_TEMP/netlify-cli-27.19.0/node_modules/.bin/netlify" deploy             --dir _preview_site             --no-build             --json             --message "SINJIRA staging preview $GITHUB_SHA" > "$json"
@@ -238,6 +235,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then
+            echo "ERREUR: secrets NETLIFY_AUTH_TOKEN et NETLIFY_SITE_ID requis." >&2
+            exit 1
+          fi
           json="$(mktemp)"
           trap 'rm -f "$json"' EXIT
           "$RUNNER_TEMP/netlify-cli-27.19.0/node_modules/.bin/netlify" deploy             --dir _site             --no-build             --json             --message "SINJIRA staging production-candidate $GITHUB_SHA" > "$json"

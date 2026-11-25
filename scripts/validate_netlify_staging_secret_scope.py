@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail closed if Netlify staging secrets escape their three approved steps.
+"""Fail closed if Netlify staging secrets escape their two approved steps.
 
 Only inspects GitHub workflow source; no real credentials, deployment or network.
 """
@@ -30,7 +30,6 @@ LIVE_HEADER = "      - name: Revalider branche GitHub protégée et SHA live ava
 LIVE_ACTION = "uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd"
 SHA_CHECKOUT_HEADER = "      - name: Rejeter checkout différent du SHA déclencheur\n"
 APPROVED_STEPS = (
-    "Verrouiller ref, SHA, site et secrets",
     "Déployer le preview staging sans promotion",
     "Déployer le production-candidate sans promotion",
 )
@@ -140,7 +139,7 @@ def inspect(source: str) -> list[str]:
     # Le binaire local s'exécute ensuite sans lancer un gestionnaire de paquets.
     install_header = "      - name: " + INSTALL_STEP + "\n"
     audit_header = "      - name: Refuser les vulnérabilités graves Netlify avant tout secret\n"
-    preflight_header = "      - name: Verrouiller ref, SHA, site et secrets\n"
+    preflight_header = "      - name: Verrouiller ref, SHA et site\n"
     install_at = source.find(install_header)
     audit_at = source.find(audit_header)
     preflight_at = source.find(preflight_header)
@@ -221,11 +220,13 @@ def inspect(source: str) -> list[str]:
     if any(re.search(r"(?<![\w-])(?:npx|npm\s+install|npm\s+exec|pnpm|yarn|corepack)\b", line) for line in active_lines):
         errors.append("installation ou gestionnaire de paquets dynamique interdit")
 
-    for step_name in APPROVED_STEPS[1:]:
+    for step_name in APPROVED_STEPS:
         header = "      - name: " + step_name + "\n"
         start = source.find(header)
         end = source.find("\n      - name:", start + len(header)) if start >= 0 else -1
         block = source[start:end] if start >= 0 and end > start else ""
+        if block.count('if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then') != 1:
+            errors.append(step_name + ": vérification locale des secrets obligatoire")
         if block.count(OFFLINE_LINE) != 1 or block.count(CLI_BIN + " deploy") != 1:
             errors.append(step_name + ": binaire local et npm hors ligne obligatoires")
         if re.search(r"(?<![\w-])(?:npx|npm|pnpm|yarn|corepack)\s", block):
@@ -253,8 +254,8 @@ def inspect(source: str) -> list[str]:
         or re.search(r"\$(?:NETLIFY_SITE_ID|\{NETLIFY_SITE_ID\})", line)
     ]
     expected_check = 'if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then'
-    if shell_secret_lines != [expected_check]:
-        errors.append("référence shell aux credentials hors du seul prévol de non-vacuité")
+    if shell_secret_lines != [expected_check, expected_check]:
+        errors.append("référence shell aux credentials hors des deux contrôles locaux de non-vacuité")
     current_step: str | None = None
     in_step_env = False
     for number, line in enumerate(source.splitlines(), 1):
@@ -311,6 +312,8 @@ def self_test(source: str) -> None:
     token = "          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}\n"
     site = "          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}\n"
     mutants = {
+        "preflight exposure": source.replace(preflight := "      - name: Verrouiller ref, SHA et site\n", preflight + "        env:\n" + token + site, 1),
+        "missing deployment credential check": source.replace('if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then', "if false; then", 1),
         "job-level exposure": source.replace(
             "    env:\n", "    env:\n      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}\n", 1
         ),
@@ -485,7 +488,7 @@ def main() -> int:
         print("ERREUR:", error)
     if errors:
         return 1
-    print("OK: jeton et identifiant Netlify limités aux trois étapes autorisées.")
+    print("OK: jeton et identifiant Netlify limités aux deux étapes autorisées.")
     return 0
 
 
