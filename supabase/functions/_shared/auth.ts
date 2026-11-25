@@ -102,14 +102,20 @@ async function sensitiveStepUpEnabled(context: Awaited<ReturnType<typeof authent
   const { user, service } = context;
   const { data, error } = await service
     .from('security_user_settings')
-    .select('sensitive_step_up')
+    .select('user_id,sensitive_step_up')
     .eq('user_id', user.id)
     .maybeSingle();
-  if (error) {
+  // Une absence de ligne conserve la protection par défaut. Seule une
+  // préférence booléenne explicite appartenant au compte authentifié
+  // peut désactiver le step-up sur les opérations où il est facultatif.
+  if (error || (data !== null && (
+    typeof data !== 'object' || Array.isArray(data) ||
+    data.user_id !== user.id || typeof data.sensitive_step_up !== 'boolean'
+  ))) {
     console.error('[SINJIRA sensitive auth]', { code: 'SECURITY_STATE_UNAVAILABLE' });
     throw new Error('SECURITY_STATE_UNAVAILABLE');
   }
-  return data?.sensitive_step_up !== false;
+  return data === null || data.sensitive_step_up;
 }
 
 async function assertSensitiveMfa(context: Awaited<ReturnType<typeof authenticatedContext>>) {
