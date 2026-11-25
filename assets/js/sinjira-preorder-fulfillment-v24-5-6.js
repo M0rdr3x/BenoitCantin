@@ -157,6 +157,14 @@ async function loadPreference(root, user, options, { preserveDraft = false } = {
   const version = ++st.preferenceVersion;
   const currentRequest = () => version === st.preferenceVersion;
   st.loading = true;
+  const identity = user?.id || null;
+  if (st.identity !== identity) {
+    st.identity = identity;
+    st.dirty = false;
+    if (n.method) n.method.value = 'undecided';
+    if (n.pickupSelect) n.pickupSelect.value = '';
+    show(n.preferencePanel, false);
+  }
   preferenceControls(n, true);
   n.preferencePanel?.setAttribute('aria-busy', 'true');
   try {
