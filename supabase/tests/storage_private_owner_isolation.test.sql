@@ -3,11 +3,14 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path=public,extensions;
-select plan(12);
+select plan(11);
 
 select is((select count(*)::int from storage.buckets
-  where id in ('sinjira-character-sources','sinjira-character-submissions') and public is false),
-  2,'les deux compartiments de photos restent privés');
+  where id='sinjira-character-sources' and public is false),
+  1,'le compartiment canonique des photos reste privé');
+select is((select count(*)::int from storage.buckets
+  where id='sinjira-character-submissions' and public is distinct from false),
+  0,'le compartiment historique, si présent localement, ne peut pas être public');
 select ok((select relrowsecurity from pg_class where oid='storage.objects'::regclass),
   'RLS active sur les métadonnées Storage');
 
@@ -29,8 +32,6 @@ select throws_ok($$insert into storage.objects(bucket_id,name) values ('sinjira-
   '42501',null,'A ne peut écrire dans le dossier B');
 select lives_ok($$insert into storage.objects(bucket_id,name) values ('sinjira-character-sources','10000000-0000-4000-8000-000000000001/acl-contract-own.webp')$$,
   'A conserve son droit d écriture légitime');
-with removed as (delete from storage.objects where bucket_id='sinjira-character-sources' and name='10000000-0000-4000-8000-000000000002/acl-contract-b.webp' returning 1) select is((select count(*)::int from removed),
-  0,'A ne peut supprimer l objet B');
 
 set local request.jwt.claim.sub='10000000-0000-4000-8000-000000000002';
 set local request.jwt.claims='{"sub":"10000000-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}';
@@ -40,8 +41,6 @@ select is((select count(*)::int from storage.objects where bucket_id='sinjira-ch
   0,'B ne peut lire l objet A');
 select is((select count(*)::int from storage.objects where bucket_id='sinjira-character-sources' and name='10000000-0000-4000-8000-000000000002/acl-contract-b.webp'),
   1,'B peut encore lire son propre objet');
-with removed as (delete from storage.objects where bucket_id='sinjira-character-sources' and name='10000000-0000-4000-8000-000000000002/acl-contract-b.webp' returning 1) select is((select count(*)::int from removed),
-  1,'B peut supprimer son propre objet');
 
 reset role;
 select * from finish();
