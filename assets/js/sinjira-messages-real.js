@@ -1,7 +1,7 @@
 import {getSupabase,requireCommunityUser,escapeHtml,formatDate,avatarUrl,reportContent,socialStatus,socialErrorStatus} from './sinjira-social-common.js?v=24.4.42';
 import {unreadCounts,markConversationRead} from './sinjira-message-read-state.js?v=24.4.71';
 
-const UI_VERSION='24.4.71';
+const UI_VERSION='24.4.72';
 const contacts=document.querySelector('[data-contact-list]');
 const search=document.querySelector('[data-contact-search]');
 const log=document.querySelector('[data-chat-log]');
@@ -9,6 +9,20 @@ const form=document.querySelector('[data-chat-form]');
 const title=document.querySelector('[data-chat-title]');
 const status=document.querySelector('[data-social-status]');
 let user,all=[],peer=null,channel=null,unreadByUser=new Map();
+const drafts=new Map();
+const composer=form.querySelector('textarea[name="body"]');
+const sendButton=form.querySelector('button[type="submit"]');
+let requestVersion=0,sending=false;
+
+function rememberDraft(){
+  if(!peer)return;
+  if(composer.value)drafts.set(peer.user_id,composer.value);
+  else drafts.delete(peer.user_id);
+}
+function syncSendButton(){
+  if(sendButton)sendButton.disabled=sending;
+}
+
 
 function fail(error,fallback='Action impossible dans la messagerie.'){
   socialErrorStatus(status,error,fallback);
@@ -40,8 +54,16 @@ function renderContacts(){
 }
 
 async function openPeer(id){
-  peer=all.find(item=>item.user_id===id)||null;
-  if(!peer)return;
+  const selected=all.find(item=>item.user_id===id);
+  if(!selected)return;
+  if(peer?.user_id===id){await messages();return;}
+  rememberDraft();
+  peer=selected;
+  requestVersion++;
+  log.textContent='Chargement de la conversation…';
+  log.setAttribute('aria-busy','true');
+  composer.value=drafts.get(id)||'';
+  syncSendButton();
   history.replaceState({},'',`?user=${encodeURIComponent(id)}`);
   title.innerHTML=`<div class="v20-social-identity"><img class="v20-social-avatar" src="${escapeHtml(avatarUrl(peer.avatar_path))}" alt=""><div><strong>${escapeHtml(peer.pseudo||peer.display_name||'Membre')}</strong><span class="v20-social-time">Conversation compte réel</span></div></div><button class="btn btn-secondary btn-small" data-block-peer>Bloquer</button>`;
   title.querySelector('[data-block-peer]')?.addEventListener('click',()=>blockPeer().catch(error=>fail(error,'Impossible de bloquer ce compte.')));
@@ -51,20 +73,34 @@ async function openPeer(id){
 
 async function messages(){
   if(!peer)return;
-  const {data,error}=await getSupabase().from('social_real_messages')
-    .select('*')
-    .or(`and(sender_user_id.eq.${user.id},recipient_user_id.eq.${peer.user_id}),and(sender_user_id.eq.${peer.user_id},recipient_user_id.eq.${user.id})`)
-    .order('created_at');
-  if(error)throw error;
-  const rows=Array.isArray(data)?data:[];
-  log.innerHTML=rows.map(message=>`<div class="v20-bubble ${message.sender_user_id===user.id?'mine':''}" data-message="${message.id}">${escapeHtml(message.body)}<time>${escapeHtml(formatDate(message.created_at))}</time>${message.sender_user_id!==user.id?'<button class="link-button" data-report-message>Signaler</button>':''}</div>`).join('')||'<p>Commencez la conversation.</p>';
-  log.scrollTop=log.scrollHeight;
-
-  if(rows.some(message=>message.recipient_user_id===user.id&&!message.read_at)){
-    await markConversationRead('social_real_messages',user.id,{sender_user_id:peer.user_id});
-    unreadByUser.delete(peer.user_id);
-    renderContacts();
+  const target=peer,version=++requestVersion;
+  const current=()=>version===requestVersion&&peer?.user_id===target.user_id;
+  const wasLoading=log.getAttribute('aria-busy')==='true';
+  const atBottom=wasLoading||log.scrollHeight-log.clientHeight-log.scrollTop<=48;
+  const previousTop=log.scrollTop;
+  
+  let result;
+  try{
+    result=await getSupabase().from('social_real_messages')
+      .select('*')
+      .or(`and(sender_user_id.eq.${user.id},recipient_user_id.eq.${target.user_id}),and(sender_user_id.eq.${target.user_id},recipient_user_id.eq.${user.id})`)
+      .order('created_at');
+  }catch(error){
+    if(!current())return;
+    log.setAttribute('aria-busy','false');
+    if(wasLoading)log.textContent='Impossible de charger la conversation. Sélectionnez le contact pour réessayer.';
+    throw error;
   }
+  if(!current())return;
+  log.setAttribute('aria-busy','false');
+  const {data,error}=result;
+  if(error){
+    if(wasLoading)log.textContent='Impossible de charger la conversation. Sélectionnez le contact pour réessayer.';
+    throw error;
+  }
+  const rows=(Array.isArray(data)?data:[]).filter(message=>((message.sender_user_id===user.id&&message.recipient_user_id===target.user_id)||(message.sender_user_id===target.user_id&&message.recipient_user_id===user.id)));
+  log.innerHTML=rows.map(message=>`<div class="v20-bubble ${message.sender_user_id===user.id?'mine':''}" data-message="${message.id}">${escapeHtml(message.body)}<time>${escapeHtml(formatDate(message.created_at))}</time>${message.sender_user_id!==user.id?'<button class="link-button" data-report-message>Signaler</button>':''}</div>`).join('')||'<p>Commencez la conversation.</p>';
+  log.scrollTop=atBottom?log.scrollHeight:previousTop;
 
   log.querySelectorAll('[data-report-message]').forEach(button=>button.addEventListener('click',async()=>{
     const element=button.closest('[data-message]');
@@ -77,6 +113,15 @@ async function messages(){
       alert('Message signalé à l’administration.');
     }catch(error){fail(error,'Signalement impossible pour le moment.');}
   }));
+  if(current()&&rows.some(message=>message.recipient_user_id===user.id&&!message.read_at)){
+    try{
+      await markConversationRead('social_real_messages',user.id,{sender_user_id:target.user_id});
+      unreadByUser.delete(target.user_id);
+      renderContacts();
+    }catch(error){
+      if(current())throw error;
+    }
+  }
 }
 
 async function blockPeer(){
@@ -95,18 +140,28 @@ async function blockPeer(){
 
     form.addEventListener('submit',async event=>{
       event.preventDefault();
-      if(!peer)return;
-      const body=String(new FormData(form).get('body')||'').trim();
+      if(!peer||sending)return;
+      const target=peer,id=target.user_id,raw=composer.value;
+      const body=raw.trim();
       if(!body)return;
-      const button=form.querySelector('button[type="submit"]');
-      if(button)button.disabled=true;
+      sending=true;
+      syncSendButton();
+      form.setAttribute('aria-busy','true');
       try{
-        const {error}=await getSupabase().from('social_real_messages').insert({sender_user_id:user.id,recipient_user_id:peer.user_id,body});
-        if(error)return fail(error,'Impossible d’envoyer ce message.');
-        form.reset();
-        await messages();
+        const {error}=await getSupabase().from('social_real_messages').insert({sender_user_id:user.id,recipient_user_id:target.user_id,body});
+        if(error)throw error;
+        if(drafts.get(id)===raw)drafts.delete(id);
+        if(peer?.user_id===id&&composer.value===raw)composer.value='';
+        socialStatus(status,'Message envoyé.','success');
+        if(peer?.user_id===id){
+          try{await messages()}catch(error){fail(error,'Message envoyé, mais actualisation impossible.');}
+        }
+      }catch(error){
+        fail(error,'Envoi non confirmé. Vérifiez la conversation avant de réessayer. Votre brouillon est conservé.');
       }finally{
-        if(button)button.disabled=false;
+        sending=false;
+        syncSendButton();
+        form.setAttribute('aria-busy','false');
       }
     });
 
