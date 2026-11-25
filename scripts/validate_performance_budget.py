@@ -72,15 +72,28 @@ def main() -> int:
     if '/assets/js/home-assistant-lazy-v24-5-2.js' in home or '/assets/js/sinjira-assistant.js' in home:
         errors.append("index.html: aucun runtime assistant ne doit être chargé sur l’accueil désactivé.")
     session_loader = ROOT / "assets" / "js" / "home-session-lazy-v24-5-1.js"
-    if '/assets/js/home-session-lazy-v24-5-1.js?v=24.5.1' not in home:
-        errors.append("index.html: loader session différé absent.")
+    if '/assets/js/home-session-lazy-v24-5-1.js?v=24.5.2' not in home:
+        errors.append("index.html: loader session différé V24.5.2 absent.")
     if not session_loader.exists():
-        errors.append("Loader session accueil V24.5.1 absent.")
+        errors.append("Loader session accueil absent.")
     else:
         session_text = session_loader.read_text("utf-8", errors="ignore")
-        for marker in ("pointerdown", "touchstart", "keydown", "setTimeout(loadSession,60000)"):
+        # Le contrat d'intention remplace les anciens écouteurs globaux.
+        # La recette navigateur vérifie le comportement, pas seulement ces marqueurs.
+        for marker in (
+            "pointerdown", "focusin", "[data-sinjira-session-nav]",
+            "if(isAccountTarget(event.target))loadSession()",
+            "target.closest(selector)", "if(loaded)return",
+            "removeEventListener(type,onIntent,true)",
+            "setTimeout(loadSession,60000)", "syncOffline()",
+        ):
             if marker not in session_text:
-                errors.append(f"Loader session accueil insuffisamment différé: {marker}")
+                errors.append(f"Loader session accueil: contrat d'intention absent: {marker}")
+        for marker in ("'touchstart'", "'keydown'"):
+            if marker in session_text:
+                errors.append(f"Loader session accueil: écouteur global obsolète: {marker}")
+    if re.search(r'<script\b[^>]*\bsrc=["\'][^"\']*/v19-session\.js(?:\?[^"\']*)?["\']', home, flags=re.I):
+        errors.append("index.html: import direct du module session interdit.")
 
     script_count = len(re.findall(r"<script\b", home, flags=re.I))
     stylesheet_count = len(re.findall(r"<link\b[^>]*rel=[\"']stylesheet[\"']", home, flags=re.I))
