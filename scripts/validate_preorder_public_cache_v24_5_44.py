@@ -30,11 +30,12 @@ def check_page(path, errors):
         return
 
     for asset in ASSETS:
-        expected = asset + '?v=24.5.44'
+        version = '24.5.45' if asset.startswith('sinjira-preorder-fulfillment-') else '24.5.44'
+        expected = asset + '?v=' + version
         if expected not in text:
             errors.append(f'{path.relative_to(ROOT)} ne charge pas {expected}')
         matches = re.findall(re.escape(asset) + r'\?v=([^"\'<>\s]+)', text)
-        if matches != ['24.5.44']:
+        if matches != [version]:
             errors.append(f'{path.relative_to(ROOT)} cache-buster inattendu pour {asset}: {matches}')
 
     semantic_markers = [
