@@ -111,6 +111,70 @@ def check_legal_navigation(browser):
             ctx.close()
 
 
+def check_fulfillment_feedback(browser):
+    # Réponses entièrement fictives, aucun accès ou changement de compte réel.
+    ctx=browser.new_context(service_workers="block",viewport={"width":390,"height":760})
+    try:
+        ctx.route("**/*",lambda route:route.continue_() if route.request.url.startswith(BASE_URL) else route.abort())
+        for script in ("site.js","sinjira-account.js","sinjira-nav-boot-v2.js","sinjira-preorders-v24-5-3.js","sinjira-preorder-commercial-v24-5-5.js","sinjira-preorder-cost-summary-v24-5-25.js","sinjira-preorder-tax-estimate-v24-5-27.js"):
+            ctx.route("**/assets/js/"+script+"*",lambda route:route.fulfill(content_type="text/javascript",body=""))
+        ctx.route("**/assets/js/sinjira-supabase.js*",lambda route:route.fulfill(content_type="text/javascript",body="""window.estimates=[];window.saves=[];window.failStatus=false;
+          export const escapeHtml=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
+          export async function getCurrentUser(){return {id:'fixture-user'}}
+          export const isSinjiraBackendConfigured=()=>true;
+          export function getSupabase(){return {async rpc(name,args){
+            if(name==='product_preorder_fulfillment_options')return {data:{shipping_estimates_enabled:true,shipping_zones:[{zone_code:'fixture',label:'Zone fictive'}],pickup_points_enabled:false},error:null};
+            if(name==='product_preorder_fulfillment_status')return window.failStatus?{data:null,error:{message:'fixture'}}:{data:{fulfillment_preference:'undecided'},error:null};
+            if(name==='product_preorder_shipping_estimate')return new Promise(resolve=>window.estimates.push({args,resolve}));
+            if(name==='product_preorder_set_fulfillment_preference')return new Promise(resolve=>window.saves.push({args,resolve}));
+            throw Error('RPC inattendue');
+          }}}
+        """))
+        page=ctx.new_page()
+        page.goto(urljoin(BASE_URL,"compte/mes-achats.html"),wait_until="domcontentloaded")
+        zone=page.locator("[data-pf-zone]")
+        quantity=page.locator("[data-pf-quantity]")
+        estimate=page.locator("[data-pf-estimate]")
+        result=page.locator("[data-pf-estimate-result]")
+        method=page.locator("[data-pf-method]")
+        save=page.locator("[data-pf-save-preference]")
+        status=page.locator("[data-pf-preference-status]")
+        method.wait_for(state="visible")
+        for width,zoom in ((240,"100%"),(320,"200%"),(390,"100%"),(1440,"100%")):
+            page.set_viewport_size({"width":width,"height":760})
+            page.evaluate("(z)=>document.documentElement.style.fontSize=z",zoom)
+            geom=page.locator("[data-preorder-fulfillment]").evaluate("""el=>[...el.querySelectorAll('select,button')].filter(n=>n.getClientRects().length).every(n=>{const r=n.getBoundingClientRect();return r.left>=-2&&r.right<=innerWidth+2&&r.height>=47.5})""")
+            assert_true(geom,f"contrôles livraison hors écran {width}/{zoom}")
+        zone.select_option("fixture")
+        estimate.click()
+        page.wait_for_function("window.estimates.length===1")
+        quantity.select_option("2")
+        assert_true("Options modifiées" in result.inner_text(),"estimation périmée non invalidée")
+        estimate.click()
+        page.wait_for_function("window.estimates.length===2")
+        page.evaluate("window.estimates[1].resolve({data:{estimate_min_cents:2000,estimate_max_cents:3000,zone_label:'Zone fictive',currency:'CAD'},error:null})")
+        page.wait_for_function("document.querySelector('[data-pf-estimate-result]').textContent.includes('pour 2 exemplaire')")
+        page.evaluate("window.estimates[0].resolve({data:{estimate_min_cents:1000,estimate_max_cents:1500,zone_label:'Zone fictive',currency:'CAD'},error:null})")
+        page.evaluate("() => new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))")
+        assert_true("pour 2 exemplaire" in result.inner_text(),"ancienne estimation remplace la nouvelle")
+        method.select_option("pickup")
+        page.evaluate("window.dispatchEvent(new Event('sinjira:preorder-updated'))")
+        page.wait_for_function("document.querySelector('[data-pf-preference-status]').textContent.includes('conservé')")
+        assert_true(method.input_value()=="pickup","brouillon écrasé par actualisation")
+        save.click()
+        page.evaluate("document.querySelector('[data-pf-save-preference]').click()")
+        assert_true(page.evaluate("window.saves.length")==1 and method.is_disabled(),"soumission parallèle")
+        page.evaluate("window.saves[0].resolve({data:null,error:{message:'fixture'}})")
+        page.wait_for_function("document.querySelector('[data-pf-preference-status]').textContent.includes('non confirmé')")
+        assert_true(method.input_value()=="pickup" and save.is_disabled(),"choix incertain perdu ou rejouable")
+        page.evaluate("window.failStatus=true;window.dispatchEvent(new Event('sinjira:preorder-updated'))")
+        page.wait_for_function("document.querySelector('[data-pf-preference-status]').textContent.includes('Impossible de vérifier')")
+        assert_true(not page.locator("[data-pf-no-preorder]").is_visible(),"erreur présentée comme absence de réservation")
+        assert_true(save.is_disabled(),"mutation autorisée sans état serveur")
+    finally:
+        ctx.close()
+
+
 def run() -> None:
     assert_true(BROWSER_NAME in SUPPORTED_BROWSERS, f"Navigateur Playwright inconnu: {BROWSER_NAME}")
 
@@ -1949,6 +2013,7 @@ def run() -> None:
         context.close()
         if IS_LOCAL:
             check_legal_navigation(browser)
+            check_fulfillment_feedback(browser)
         browser.close()
         auth_note = f", {len(AUTH_ROUTES)} pages Auth locales + assistant V{ASSISTANT_VERSION} contextuel" if IS_LOCAL else ""
         print(
