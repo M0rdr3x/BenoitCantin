@@ -125,3 +125,9 @@ personnelles ou exécution SQL modificatrice n'a été effectué en
 production lors de cette préparation.
 
 Suivi : #722. Documentation : https://supabase.com/docs/guides/database/functions
+
+## Prévol des définitions privées — 25 novembre 2026
+
+Le fichier `preflight_private_identity_catalog_read_only.sql` compare les deux signatures, les empreintes SHA-256, le propriétaire et les droits effectifs historiques. Il refuse les surcharges et les dérives. Exécuté le 25 novembre en transaction READ ONLY sur le catalogue hébergé : **2/2 MATCH_ORIGINAL**. Ce constat ne valide pas les droits historiques, ni les politiques RLS, ni l'exploitabilité HTTP. Aucun compte ou contenu privé lu.
+
+Avant toute promotion, réexécuter le prévol sur la cible autorisée : exactement deux lignes MATCH_ORIGINAL sont nécessaires, sinon NO-GO. La CI compare la requête complète au contrat et refuse sept mutations ; elle ne se connecte pas à la base distante. Le candidat demeure rollback-only, sans migration active. Les préconditions de staging et de revue restent obligatoires.
