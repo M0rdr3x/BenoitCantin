@@ -243,7 +243,7 @@ def check_cost_summary_feedback(browser):
         for width,zoom in ((240,"100%"),(320,"200%"),(390,"100%"),(1440,"100%")):
             page.set_viewport_size({"width":width,"height":760})
             page.evaluate("(z)=>document.documentElement.style.fontSize=z",zoom)
-            state=page.locator("[data-preorder-cost-summary]").evaluate("""el=>({overflow:el.scrollWidth>el.clientWidth+2,controls:[...el.querySelectorAll('select')].filter(n=>n.getClientRects().length).every(n=>{const r=n.getBoundingClientRect();return r.left>=-2&&r.right<=innerWidth+2&&r.height>=47.5})})""")
+            state=page.locator("[data-preorder-cost-summary]").evaluate("""el=>({overflow:el.scrollWidth>el.clientWidth+2,width:el.clientWidth,scrollWidth:el.scrollWidth,outside:[...el.querySelectorAll('*')].filter(n=>n.getClientRects().length&&n.getBoundingClientRect().right>el.getBoundingClientRect().right+2).slice(0,8).map(n=>[n.tagName,String(n.className),Math.round(n.getBoundingClientRect().width)]),controls:[...el.querySelectorAll('select')].filter(n=>n.getClientRects().length).every(n=>{const r=n.getBoundingClientRect();return r.left>=-2&&r.right<=innerWidth+2&&r.height>=47.5})})""")
             assert_true(not state["overflow"] and state["controls"],f"résumé coût hors écran {width}/{zoom}: {state}")
     finally:
         ctx.close()
