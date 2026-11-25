@@ -55,16 +55,16 @@ def main():
     ],'helper état lu')
 
     require(real,[
-        "const UI_VERSION='24.4.71'",
+        "const UI_VERSION='24.4.72'",
         "unreadCounts('social_real_messages',user.id,'sender_user_id')",
-        "markConversationRead('social_real_messages',user.id,{sender_user_id:peer.user_id})",
+        "markConversationRead('social_real_messages',user.id,{sender_user_id:target.user_id})",
         'non lu',
         "message.recipient_user_id===user.id"
     ],'messagerie réelle')
     require(char,[
-        "const UI_VERSION='24.4.71'",
+        "const UI_VERSION='24.4.72'",
         "unreadCounts('social_character_messages',user.id,'sender_character_id')",
-        "markConversationRead('social_character_messages',user.id,{sender_character_id:peer.character_id})",
+        "markConversationRead('social_character_messages',user.id,{sender_character_id:target.character_id})",
         'non lu',
         "message.recipient_user_id===user.id"
     ],'messagerie personnage')
@@ -76,8 +76,8 @@ def main():
         "data-character-unread"
     ],'résumé non-lus')
     require(hub,['data-real-unread','data-character-unread','sinjira-messages-summary.js?v=24.4.71','data-social-runtime="24.4.71"'],'hub Messages')
-    require(real_page,['sinjira-messages-real.js?v=24.4.71','data-social-runtime="24.4.71"'],'page messages réels')
-    require(char_page,['sinjira-messages-character.js?v=24.4.71','data-social-runtime="24.4.71"'],'page messages personnage')
+    require(real_page,['sinjira-messages-real.js?v=24.4.72','data-social-runtime="24.4.72"'],'page messages réels')
+    require(char_page,['sinjira-messages-character.js?v=24.4.72','data-social-runtime="24.4.72"'],'page messages personnage')
     require(ledger,['20260819013259 sinjira_v24_4_71_message_read_state'],'ledger production')
 
     print('OK V24.4.71: non-lus privés, marquage destinataire-only, compteurs par conversation, résumé global et aucune modification du contenu des messages.')
