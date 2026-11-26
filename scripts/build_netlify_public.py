@@ -7,6 +7,7 @@ import hashlib
 import os
 import re
 import shutil
+import stat
 import tempfile
 import tomllib
 from pathlib import Path
@@ -168,8 +169,10 @@ FORBIDDEN_DIRS = (
     "docs",
     "mobile-native",
     "scripts",
+    "security",
     "supabase",
     "tests",
+    "tools",
 )
 
 RESTRICTED_RUNTIME_DIRS = {
@@ -514,7 +517,7 @@ def relative_path_allowed(rel: Path) -> bool:
     # leurs fichiers ont une extension runtime autorisée (.mjs, .html).
     # Cette frontière précède toutes les exceptions PDF/JSON.
     if any(part.casefold() in {".git", ".github", "supabase", "scripts", "docs",
-                               "tests", "mobile-native", "tools"}
+                               "tests", "mobile-native", "tools", "security"}
            for part in parts[:-1]):
         return False
 
@@ -1063,6 +1066,31 @@ def public_symlink_errors(root: Path = ROOT) -> list[str]:
     return sorted(set(errors))
 
 
+def public_output_entry_errors(root: Path) -> list[str]:
+    """Inspecter les types d'entrées avant toute lecture de contenu.
+    
+    Contrairement au contrôle des sources, aucun lien n'est admissible
+    dans l'artefact final, même hors des sous-arbres publics approuvés.
+    """
+    errors: list[str] = []
+    try:
+        if not stat.S_ISDIR(root.lstat().st_mode):
+            return ["Racine du publish non régulière ou symbolique."]
+        pending = [root]
+        while pending:
+            directory = pending.pop()
+            for entry in directory.iterdir():
+                info = entry.lstat()
+                rel = entry.relative_to(root).as_posix()
+                if stat.S_ISDIR(info.st_mode):
+                    pending.append(entry)
+                elif not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                    errors.append(f"Entrée non régulière ou liée dans le publish: {rel}")
+    except OSError as exc:
+        errors.append(f"Inspection du publish impossible: {type(exc).__name__}")
+    return sorted(set(errors))
+
+
 # Ces quatre dossiers sont explicitement réservés aux builds éphémères dans
 # les workflows CI, Netlify et Pages. Ne jamais assouplir ce garde-fou en
 # autorisant indistinctement les dossiers commençant par un underscore.
@@ -1191,6 +1219,10 @@ def self_test_public_filesystem_boundary() -> list[str]:
         "projets/sinjira/jeux/Makefile",
         "assets/sources/app.ts",
         "assets/private.json",
+        "security/candidates/private.mjs",
+        "assets/security/private.js",
+        "projets/sinjira/SECURITY/private.html",
+        "projets/sinjira/jeux/tools/private.js",
         "assets/fichier-archives.zip",
         "projets/autre-projet/notes-interne.md",
         "projets/autre-projet/sauvegarde.csv",
@@ -1285,10 +1317,13 @@ def validate_plan() -> list[str]:
     release_sha = configured_release_sha()
     if release_sha and not re_full_git_sha(release_sha):
         errors.append(f"{RELEASE_SHA_ENV} doit être un SHA Git complet de 40 caractères hexadécimaux.")
+    # Ne jamais poursuivre vers les lecteurs de contenu après un rejet de lien.
+    source_errors = public_symlink_errors()
+    if source_errors:
+        return errors + source_errors
     errors.extend(validate_netlify_config())
     errors.extend(validate_vercel_config())
     errors.extend(validate_netlify_staging_workflow())
-    errors.extend(public_symlink_errors())
     errors.extend(public_data_json_errors())
 
     robots_path = ROOT / "robots.txt"
@@ -1572,7 +1607,10 @@ def validate_output(
     deploy_context: str | None = None,
     standalone_netlify: bool = False,
 ) -> list[str]:
-    errors: list[str] = []
+    # Refuser la racine et chaque entrée AVANT resolve(), read_text() et parse().
+    errors = public_output_entry_errors(output)
+    if errors:
+        return errors
     output = output.resolve()
     context = (
         deploy_context if deploy_context is not None else os.environ.get("CONTEXT", "")
@@ -1621,7 +1659,6 @@ def validate_output(
     elif redirects_path.exists():
         errors.append("Fichier _redirects inattendu hors artefact Netlify autonome.")
 
-    errors.extend(public_symlink_errors(output))
     errors.extend(public_data_json_errors(output))
 
     for forbidden in FORBIDDEN_DIRS:

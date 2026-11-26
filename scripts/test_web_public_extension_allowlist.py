@@ -7,6 +7,9 @@ secrets or modification of production files. Run with Python 3.12.
 from __future__ import annotations
 
 import importlib.util
+import os
+import tempfile
+from unittest.mock import patch
 import re
 from pathlib import Path
 import unittest
@@ -20,6 +23,53 @@ spec.loader.exec_module(builder)
 
 
 class PublicArtifactExtensionAllowlist(unittest.TestCase):
+    def test_security_directory_is_never_public(self):
+        for folder in ("security", "SECURITY", "assets/security", "projets/sinjira/security",
+                       "compte/SECURITY", "projets/projet-nova/security", "admin/tools"):
+            for suffix in (".mjs", ".js", ".html", ".json", ".pdf", ".svg", ".txt"):
+                with self.subTest(folder=folder, suffix=suffix):
+                    self.assertFalse(builder.relative_path_allowed(Path(folder) / ("candidate" + suffix)))
+
+    def test_final_artifact_rejects_links_and_special_files_before_reading(self):
+        with tempfile.TemporaryDirectory(prefix="public-output-boundary-") as tmp:
+            base = Path(tmp)
+            root = base / "artifact"
+            root.mkdir()
+            private = base / "synthetic-private.txt"
+            private.write_text("synthetic only", encoding="utf-8")
+            (root / "index.html").write_text("public", encoding="utf-8")
+            self.assertEqual(builder.public_output_entry_errors(root), [])
+            for rel in ("_headers", "_redirects", ".well-known/release.json",
+                        "projets/projet-nova/data/actualites.json", "unknown/private.js"):
+                entry = root / rel
+                entry.parent.mkdir(parents=True, exist_ok=True)
+                entry.symlink_to(private)
+                with patch.object(Path, "read_text", side_effect=AssertionError("unexpected read")):
+                    errors = builder.validate_output(root)
+                self.assertTrue(any(rel in err for err in errors), rel)
+                entry.unlink()
+            for rel in ("linked-dir", "broken-dir"):
+                entry = root / rel
+                entry.symlink_to(base if rel == "linked-dir" else base / "missing", target_is_directory=True)
+                self.assertTrue(builder.public_output_entry_errors(root))
+                entry.unlink()
+            hardlink = root / "hardlink.html"
+            os.link(private, hardlink)
+            with patch.object(Path, "read_text", side_effect=AssertionError("unexpected read")):
+                self.assertTrue(builder.validate_output(root))
+            hardlink.unlink()
+            if hasattr(os, "mkfifo"):
+                fifo = root / "special.html"
+                os.mkfifo(fifo)
+                with patch.object(Path, "read_text", side_effect=AssertionError("unexpected read")):
+                    self.assertTrue(builder.validate_output(root))
+                fifo.unlink()
+            alias = base / "alias"
+            alias.symlink_to(root, target_is_directory=True)
+            with patch.object(Path, "read_text", side_effect=AssertionError("unexpected read")):
+                self.assertTrue(builder.validate_output(alias))
+            self.assertEqual(builder.public_output_entry_errors(root), [])
+
     def test_hidden_root_files_never_inherit_browser_extension_allowlist(self):
         # A dotfile is not public simply because it ends in .html/.js/.css.
         # Check the real policy used by both build and preflight.

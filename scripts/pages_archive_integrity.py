@@ -13,7 +13,7 @@ import unittest
 
 MAX_BYTES = 1_000_000_000
 MAX_FILES = 20_000
-FORBIDDEN = {".git", ".github", "supabase", "scripts", "docs", "tests", "mobile-native", "tools"}
+FORBIDDEN = {".git", ".github", "supabase", "scripts", "docs", "tests", "mobile-native", "tools", "security"}
 ALLOWED_HIDDEN_PATHS = {
     ".well-known", ".well-known/security.txt",
     ".well-known/release.json", ".nojekyll",
