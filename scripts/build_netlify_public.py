@@ -13,6 +13,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 import xml.etree.ElementTree as ET
 from private_route_csp import harden_private_html, is_private_html, private_csp_output_errors
+from validate_pdfjs_vendored_runtime import RUNTIME as PDFJS_RUNTIME, runtime_path_allowed, publication_errors as pdfjs_publication_errors
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUTPUT = ROOT / "_site"
@@ -483,6 +484,18 @@ def project_nova_structured_allowed(rel: Path) -> bool:
 def relative_path_allowed(rel: Path) -> bool:
     parts = rel.parts
     if not parts:
+        return False
+
+    # Special extensions are allowed only inside the exact PDF.js tree.
+    if tuple(part.casefold() for part in parts[:4]) == tuple(part.casefold() for part in PDFJS_RUNTIME.parts):
+        return runtime_path_allowed(rel)
+
+    # NOVA maintenance/test code is not part of the browser runtime.
+    folded = tuple(part.casefold() for part in parts)
+    if folded[:2] == ("projets", "projet-nova") and (
+        any(part in {"scripts", "tests"} for part in folded[2:-1])
+        or folded == ("projets", "projet-nova", "assets", "g08-rh-workbook-inspector.mjs")
+    ):
         return False
 
     # Un nouveau document dans data/ n'est jamais public par extension,
@@ -1067,6 +1080,11 @@ def self_test_public_filesystem_boundary() -> list[str]:
         ".SECRET.JS",
         ".hidden.webmanifest",
         "projets/projet-nova/.gitignore",
+        "projets/projet-nova/scripts/maintenance.mjs",
+        "projets/projet-nova/tests/fixture.js",
+        "projets/projet-nova/Tests/nested/fixture.html",
+        "projets/projet-nova/assets/scripts/fixture.js",
+        "projets/projet-nova/assets/g08-rh-workbook-inspector.mjs",
         "projets/projet-nova/data/sondage-reponses.json",
         "projets/projet-nova/official/reference/notes-privees.md",
         "projets/sinjira/romans/export-membres.json",
@@ -1187,6 +1205,7 @@ def validate_plan() -> list[str]:
     errors.extend(validate_netlify_staging_workflow())
     errors.extend(public_symlink_errors())
     errors.extend(public_data_json_errors())
+    errors.extend(pdfjs_publication_errors(ROOT))
 
     robots_path = ROOT / "robots.txt"
     if not robots_path.is_file():
@@ -1519,6 +1538,7 @@ def validate_output(
         errors.append("Fichier _redirects inattendu hors artefact Netlify autonome.")
 
     errors.extend(public_symlink_errors(output))
+    errors.extend(pdfjs_publication_errors(output))
 
     for forbidden in FORBIDDEN_DIRS:
         if (output / forbidden).exists():

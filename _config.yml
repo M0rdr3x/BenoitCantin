@@ -11,6 +11,9 @@ theme: null
 include:
   - ".well-known"
   - ".well-known/security.txt"
+  - "projets/projet-nova/assets/pdfjs-6.5.438/LICENSE"
+  - "projets/projet-nova/assets/pdfjs-6.5.438/web/cmaps/LICENSE"
+  - "projets/projet-nova/assets/pdfjs-6.5.438/web/iccs/LICENSE"
   # Chemins publics revus dans l'allowlist du builder; Jekyll a tendance à
   # ignorer Markdown sans frontmatter et les dossiers exclus.
   - "projets/projet-nova/PROPOSITIONS_PUBLIQUES.md"
@@ -93,6 +96,11 @@ exclude:
   - "Makefile"
   - "Dockerfile"
   - "script.js"
+  - "projets/projet-nova/scripts"
+  - "projets/projet-nova/tests"
+  - "projets/projet-nova/**/scripts/**"
+  - "projets/projet-nova/**/tests/**"
+  - "projets/projet-nova/assets/g08-rh-workbook-inspector.mjs"
   - "projets/projet-nova/official/versions"
   - "projets/projet-nova/official/CURRENT_VERSION.json"
   - "projets/projet-nova/data/*.csv"

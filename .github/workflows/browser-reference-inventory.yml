@@ -1,0 +1,95 @@
+name: Sécurité — inventaire des ressources navigateur
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '**/*.html'
+      - '**/*.htm'
+      - '**/*.js'
+      - '**/*.mjs'
+      - '**/*.cjs'
+      - '**/*.css'
+      - '**/*.svg'
+      - '**/*.xml'
+      - 'scripts/build_netlify_public.py'
+      - 'scripts/inventory_browser_references.py'
+      - 'scripts/validate_nova_pdf_eval_boundary.py'
+      - 'scripts/validate_pdfjs_vendored_runtime.py'
+      - 'scripts/stage_pdfjs_runtime.py'
+      - 'scripts/verify_pdfjs_release_candidate.py'
+      - 'projets/projet-nova/assets/pdfjs-6.5.438/**'
+      - 'scripts/validate_jekyll_emergency_pages.py'
+      - '_config.yml'
+      - 'netlify.toml'
+      - 'vercel.json'
+      - '.github/workflows/browser-reference-inventory.yml'
+  push:
+    branches: [main]
+    paths:
+      - '**/*.html'
+      - '**/*.htm'
+      - '**/*.js'
+      - '**/*.mjs'
+      - '**/*.cjs'
+      - '**/*.css'
+      - '**/*.svg'
+      - '**/*.xml'
+      - 'scripts/build_netlify_public.py'
+      - 'scripts/inventory_browser_references.py'
+      - 'scripts/validate_nova_pdf_eval_boundary.py'
+      - 'scripts/validate_pdfjs_vendored_runtime.py'
+      - 'scripts/stage_pdfjs_runtime.py'
+      - 'scripts/verify_pdfjs_release_candidate.py'
+      - 'projets/projet-nova/assets/pdfjs-6.5.438/**'
+      - 'scripts/validate_jekyll_emergency_pages.py'
+      - '_config.yml'
+      - 'netlify.toml'
+      - 'vercel.json'
+      - '.github/workflows/browser-reference-inventory.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+      - name: Tester les limites et la redaction de l'inventaire
+        run: |
+          python3 scripts/inventory_browser_references.py --self-test
+          python3 scripts/validate_nova_pdf_eval_boundary.py --self-test
+          python3 scripts/validate_pdfjs_vendored_runtime.py --self-test
+          python3 scripts/build_netlify_public.py --self-test-security
+      - name: Inventorier les références littérales dans le build isolé
+        shell: bash
+        run: |
+          set -euo pipefail
+          workspace="$(mktemp -d)"
+          trap 'rm -rf "$workspace"' EXIT
+          mkdir "$RUNNER_TEMP/browser-reference-inventory"
+          python3 scripts/build_netlify_public.py --security-containment --output "$workspace/_site"
+          python3 scripts/validate_nova_pdf_eval_boundary.py --root "$workspace/_site"
+          test ! -e "$workspace/_site/projets/projet-nova/scripts"
+          test ! -e "$workspace/_site/projets/projet-nova/tests"
+          test ! -e "$workspace/_site/projets/projet-nova/assets/g08-rh-workbook-inspector.mjs"
+          python3 scripts/inventory_browser_references.py --root "$workspace/_site" \
+            --output "$RUNNER_TEMP/browser-reference-inventory/browser-references.json" \
+            --source-sha "$GITHUB_SHA"
+          test ! -e "$workspace/_site/browser-references.json"
+      - name: Conserver uniquement le rapport redacté
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: browser-reference-inventory-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/browser-reference-inventory/browser-references.json
+          retention-days: 7
+          if-no-files-found: error
+          overwrite: false

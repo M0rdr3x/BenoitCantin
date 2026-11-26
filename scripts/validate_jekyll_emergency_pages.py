@@ -25,6 +25,9 @@ BLOCKED = (
     "vercel.json",
     "package.json",
     "_config.yml",
+    "projets/projet-nova/scripts",
+    "projets/projet-nova/tests",
+    "projets/projet-nova/assets/g08-rh-workbook-inspector.mjs",
     "projets/projet-nova/official/versions/V322/V322_CURRENT_STATE.json",
     "projets/projet-nova/official/versions/V316/README.md",
     "projets/projet-nova/data/modele_comptabilite.csv",
@@ -83,6 +86,9 @@ def validate(root: Path, require_all: bool = True) -> list[str]:
     errors: list[str] = []
     if not root.is_dir():
         return ["Artefact Jekyll de vérification absent"]
+    from validate_pdfjs_vendored_runtime import MODULE as pdfjs_module, RUNTIME as pdfjs_runtime, publication_errors
+    if require_all or (root/pdfjs_module).exists() or (root/pdfjs_runtime).exists() or (root/pdfjs_runtime).is_symlink():
+        errors.extend(publication_errors(root))
     for name in BLOCKED:
         if (root / name).exists():
             errors.append("Fichier privé ou technique publié : " + name)
@@ -101,6 +107,9 @@ def validate(root: Path, require_all: bool = True) -> list[str]:
             continue
         if candidate.suffix.lower() in BLOCKED_EXTS:
             errors.append("Extension technique publiée : " + rel)
+        folded = tuple(part.casefold() for part in candidate.relative_to(root).parts)
+        if folded[:2] == ("projets", "projet-nova") and any(part in {"scripts", "tests"} for part in folded[2:-1]):
+            errors.append("Répertoire technique publié : " + rel)
         if any(rel.startswith(prefix) for prefix in BLOCKED_DIRS) or (
             rel.startswith(CODEX_PREFIX) and rel != CODEX_PUBLIC_PAGE
         ):
@@ -125,6 +134,14 @@ def unexpected_against_approved(jekyll: Path, approved: Path) -> list[str]:
         path.relative_to(jekyll).as_posix()
         for path in jekyll.rglob("*") if path.is_file()
     }
+    from validate_pdfjs_vendored_runtime import MODULE as pdfjs_module, RUNTIME as pdfjs_runtime, verify_state
+    errors = []
+    if any((root/path).exists() or (root/path).is_symlink() for root in (jekyll,approved) for path in (pdfjs_module,pdfjs_runtime)):
+        try:
+            if verify_state(jekyll) != verify_state(approved):
+                errors.append('État ou inventaire PDF.js différent entre les artefacts.')
+        except (OSError,ValueError,TypeError,KeyError):
+            errors.append('État PDF.js absent ou non conforme dans un artefact.')
     unexpected = sorted(observed_files - approved_files)
     missing = sorted(approved_files - observed_files)
     if missing:
@@ -134,7 +151,7 @@ def unexpected_against_approved(jekyll: Path, approved: Path) -> list[str]:
         for path in missing:
             print("INFO: - " + path)
     # Filenames only. Never print file content or credentials.
-    return [f"Fichier hors allowlist isolée: {path}" for path in unexpected]
+    return errors + [f"Fichier hors allowlist isolée: {path}" for path in unexpected]
 
 
 def validate_source() -> list[str]:
@@ -249,6 +266,19 @@ def self_test() -> None:
         (approved / "index.html").write_text("synthetic", "utf-8")
         (observed / "index.html").write_text("synthetic", "utf-8")
         assert unexpected_against_approved(observed, approved) == []
+        from validate_pdfjs_vendored_runtime import MODULE as pdfjs_module
+        module=approved/pdfjs_module
+        module.parent.mkdir(parents=True)
+        module.write_text('const RUNTIME_ENABLED = false;\n',encoding='utf-8')
+        assert unexpected_against_approved(observed,approved), 'Module PDF.js absent non détecté'
+        mirror=observed/pdfjs_module
+        mirror.parent.mkdir(parents=True)
+        mirror.write_text('const RUNTIME_ENABLED = false;\n',encoding='utf-8')
+        assert unexpected_against_approved(observed,approved)==[]
+        mirror.write_text('const RUNTIME_ENABLED = true;\n',encoding='utf-8')
+        assert unexpected_against_approved(observed,approved), 'Activation PDF.js incohérente non détectée'
+        mirror.unlink()
+        module.unlink()
         for suffix in (".html", ".js", ".json"):
             candidate = observed / ("unreviewed" + suffix)
             candidate.write_text("synthetic", "utf-8")
