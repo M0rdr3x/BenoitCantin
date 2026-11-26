@@ -5,12 +5,18 @@ on:
     branches: [main]
     paths:
       - 'mobile-native/package.json'
+      - 'mobile-native/package-lock.json'
+      - 'scripts/validate_mobile_locked_dependencies.py'
+      - 'scripts/validate_mobile_lock_candidate.py'
       - 'scripts/validate_mobile_direct_dependencies.py'
       - '.github/workflows/mobile-direct-dependency-pins.yml'
   push:
     branches: [main]
     paths:
       - 'mobile-native/package.json'
+      - 'mobile-native/package-lock.json'
+      - 'scripts/validate_mobile_locked_dependencies.py'
+      - 'scripts/validate_mobile_lock_candidate.py'
       - 'scripts/validate_mobile_direct_dependencies.py'
       - '.github/workflows/mobile-direct-dependency-pins.yml'
   workflow_dispatch:

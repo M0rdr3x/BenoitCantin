@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 import sys
+from validate_mobile_safe_share_workflow_security import validate_text, validate_repo_state
 
 ROOT = Path(__file__).resolve().parents[1]
 APP = ROOT / 'mobile-native' / 'App.tsx'
@@ -153,8 +154,13 @@ def main() -> int:
             'garde client sécurité #195 non exécuté')
     require('python3 scripts/validate_no_committed_secrets.py' in workflow,
             'garde secrets non exécuté')
-    require('npm install --ignore-scripts --no-audit --no-fund' in workflow,
-            'installation mobile sans scripts absente')
+    # Reuse the complete workflow contract and the exact reviewed lock check.
+    # Do not accept a textual mention of an installation command as evidence.
+    try:
+        validate_text(workflow)
+        validate_repo_state()
+    except (ValueError, OSError, KeyError, TypeError):
+        fail('contrat CI du partage ou snapshot mobile non conforme')
     require('npm run validate:vault' in workflow,
             'garde mobile historique du Coffre non exécuté')
     require('npm run typecheck' in workflow,

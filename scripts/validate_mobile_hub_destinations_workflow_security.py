@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 import re
 import sys
+from validate_mobile_locked_dependencies import verified_bytes
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / '.github' / 'workflows' / 'sinjira-mobile-native-hub-destinations-v25.yml'
@@ -24,7 +25,7 @@ VALIDATORS = (
     'python3 scripts/validate_device_challenge_client_boundary.py',
     'python3 scripts/validate_no_committed_secrets.py',
 )
-INSTALL = 'npm install --ignore-scripts --no-audit --no-fund'
+INSTALL = 'python3 ../scripts/install_mobile_locked_dependencies.py'
 VAULT = 'npm run validate:vault'
 TYPECHECK = 'npm run typecheck'
 GUARD_PATH = "      - 'scripts/validate_mobile_hub_destinations_workflow_security.py'"
@@ -60,6 +61,8 @@ def exact_run_commands(text: str) -> list[str]:
 
 def validate_text(text: str) -> None:
     active = active_text(text)
+    for path in ["scripts/install_mobile_locked_dependencies.py","scripts/validate_mobile_locked_dependencies.py","scripts/validate_mobile_lock_candidate.py"]:
+        require(active.count("      - '" + path + "'") == 2, 'Couverture du contrôle commun obligatoire.')
     require('pull_request:\n    branches: [ main ]' in text, 'Les PR doivent rester ciblées vers main.')
     require('push:\n    branches: [ main ]' in text, 'Le push main doit rester couvert tant que #135 n’est pas prouvé.')
     require('workflow_dispatch:' in text, 'Le déclenchement manuel historique doit rester disponible.')
@@ -78,7 +81,7 @@ def validate_text(text: str) -> None:
     require('persist-credentials: false' in text, 'Les credentials Git ne doivent pas être persistés.')
     require("python-version: '3.12.14'" in text, 'Python doit rester figé à 3.12.14.')
     require("node-version: '22.23.2'" in text, 'Node doit rester figé à 22.23.2.')
-    require('cache:' not in active and 'cache-dependency-path:' not in active, 'Aucun cache package-manager sans lockfile revu.')
+    require(re.search(r'(?m)^\s+cache:', active) is None and 'package-manager-cache: false' in active and 'cache-dependency-path:' not in active, 'Aucun cache package-manager sans lockfile revu.')
 
     expected_runs = [SELF_TEST, SELF_CHECK, *VALIDATORS, INSTALL, VAULT, TYPECHECK]
     require(exact_run_commands(text) == expected_runs, 'Les commandes exécutables ou leur ordre ont changé hors contrat.')
@@ -96,12 +99,17 @@ def validate_text(text: str) -> None:
 
 
 def validate_repo_state() -> None:
-    require(not LOCKFILE.exists(), 'mobile-native/package-lock.json est apparu: migrer explicitement ce workflow vers npm ci et un cache fondé sur le lockfile dans une PR revue.')
+    manifest = LOCKFILE.with_name('package.json')
+    require(all(p.is_file() and not p.is_symlink() for p in (manifest, LOCKFILE)), 'Lockfile et manifeste réguliers obligatoires.')
+    verified_bytes(manifest.read_bytes(), LOCKFILE.read_bytes())
 
 
 def mutation_cases(text: str) -> tuple[tuple[str, str], ...]:
     node_line = "          node-version: '22.23.2'\n"
     cases = [
+        ('cache implicite activé', text.replace('package-manager-cache: false', 'package-manager-cache: true', 1)),
+        ('install flottant', text.replace('python3 ../scripts/install_mobile_locked_dependencies.py', 'npm install --ignore-scripts --no-audit --no-fund', 1)),
+        ('garde commun retiré', text.replace("      - 'scripts/install_mobile_locked_dependencies.py'\n", '', 1)),
         ('runner mutable', text.replace('runs-on: ubuntu-24.04', 'runs-on: ubuntu-latest', 1)),
         ('checkout mutable', text.replace(CHECKOUT, 'actions/checkout@v4', 1)),
         ('setup-python mutable', text.replace(SETUP_PYTHON, 'actions/setup-python@v6', 1)),
