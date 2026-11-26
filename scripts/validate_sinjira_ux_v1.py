@@ -173,22 +173,33 @@ def check():
         # Un contrat sur toutes les pages équipées évite la dérive de cache
         # à mesure que le compte SINJIRA évolue.
         account_nav_pages = 0
+        account_ux_pages = 0
         for account_page in sorted((ROOT / "compte").glob("*.html")):
             page = account_page.read_text("utf-8")
-            if "account-nav-scroll" not in page or 'data-sinjira-ux="v1"' not in page:
+            if 'data-sinjira-ux="v1"' not in page:
+                continue
+            account_ux_pages += 1
+            # Toutes les pages équipées utilisent le même runtime, y compris
+            # les formulaires et les pages sans ruban horizontal.
+            scripts = re.findall(
+                r"""<script\b[^>]*\bsrc=["'][^"']*/site\.js\?v=([^"']+)["'][^>]*>""",
+                page, re.I,
+            )
+            if scripts != ["24.4.105"]:
+                rel = account_page.relative_to(ROOT)
+                problems.append(f"{rel}: version site.js incorrecte ou dupliquée: {scripts}")
+            if "account-nav-scroll" not in page:
                 continue
             account_nav_pages += 1
-            # Cette page est déjà modifiée par la PR indépendante #1158.
-            # Éviter le conflit Git; son alignement est requis après fusion.
-            if account_page.name == "mes-commentaires.html":
-                continue
             for version in (
                 "site-ux-sinjira-v1.css?v=1.0.1",
-                "site.js?v=24.4.102",
+                "site.js?v=24.4.105",
             ):
                 if page.count(version) != 1:
                     rel = account_page.relative_to(ROOT)
                     problems.append(f"{rel}: ressource de navigation absente ou dupliquée: {version}")
+        if account_ux_pages < 44:
+            problems.append(f"Compte: couverture UX suspecte ({account_ux_pages}/44)")
         if account_nav_pages < 33:
             problems.append(f"Compte: couverture des menus suspecte ({account_nav_pages}/33)")
         if "data-sinjira-nav-ready" not in js:
