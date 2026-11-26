@@ -7,6 +7,7 @@ on:
       - 'mobile-native/package.json'
       - 'scripts/validate_mobile_lock_candidate.py'
       - 'scripts/verify_mobile_lock_artifact.py'
+      - 'scripts/validate_mobile_minimatch_candidate.py'
       - '.github/workflows/sinjira-mobile-lock-candidate.yml'
   workflow_dispatch:
 
@@ -162,4 +163,92 @@ jobs:
           clean_npm audit --json --package-lock-only > "$workspace/audit.json" || status=$?
           python3 "$GITHUB_WORKSPACE/scripts/verify_mobile_lock_artifact.py" --audit "$workspace/audit.json" --audit-exit "$status"
           echo "PASS: exact candidate installed and six mobile checks executed; no deployment."
-
+      - name: Tester la correction minimatch ciblée sans modifier le projet
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(npm --version)" = 10.9.8
+          python3 scripts/validate_mobile_minimatch_candidate.py --self-test
+          workspace="$(mktemp -d)"
+          trap 'rm -rf "$workspace"' EXIT
+          mkdir "$workspace/home" "$RUNNER_TEMP/mobile-minimatch-remediation"
+          cp -a mobile-native "$workspace/project"
+          test ! -e "$workspace/project/node_modules"
+          test ! -e "$workspace/project/package-lock.json"
+          test ! -e "$workspace/project/.npmrc"
+          baseline="$RUNNER_TEMP/mobile-reviewed/package-lock.json"
+          cp "$baseline" "$workspace/project/package-lock.json"
+          touch "$workspace/user.conf" "$workspace/global.conf"
+          cd "$workspace/project"
+          guard() {
+            python3 "$GITHUB_WORKSPACE/scripts/validate_mobile_minimatch_candidate.py" \
+              --original "$GITHUB_WORKSPACE/mobile-native/package.json" --baseline "$baseline" \
+              --manifest package.json --lock package-lock.json "$@"
+          }
+          clean_npm() {
+            env -i PATH="$PATH" HOME="$workspace/home" CI=true npm "$@" \
+              --userconfig="$workspace/user.conf" --globalconfig="$workspace/global.conf" \
+              --registry=https://registry.npmjs.org/ --ignore-scripts --no-fund --no-progress
+          }
+          guard --prepare
+          clean_npm install --package-lock-only --no-audit
+          test ! -e node_modules
+          guard
+          cp package-lock.json "$workspace/expected-lock.json"
+          cp package.json "$workspace/expected-manifest.json"
+          clean_npm ci --no-audit
+          cmp package-lock.json "$workspace/expected-lock.json"
+          cmp package.json "$workspace/expected-manifest.json"
+          clean_npm run validate:vault
+          clean_npm run test:navigation-guard
+          clean_npm run test:deep-link-normalizer
+          clean_npm run test:notification-navigation
+          clean_npm run test:push-installation-binding
+          clean_npm run typecheck
+          # Exercise the actual Expo consumer, not just an isolated minimatch import.
+          env -i PATH="$PATH" HOME="$workspace/home" CI=true timeout 90s node - <<'NODE'
+          const assert = require('node:assert/strict');
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const {createRequire} = require('node:module');
+          const fromFingerprint = createRequire(require.resolve('@expo/fingerprint'));
+          let dir = path.dirname(fromFingerprint.resolve('minimatch'));
+          for (;;) {
+            const pkg = path.join(dir, 'package.json');
+            if (fs.existsSync(pkg)) {
+              const meta = JSON.parse(fs.readFileSync(pkg, 'utf8'));
+              if (meta.name === 'minimatch') {
+                assert.equal(meta.version, '11.0.9');
+                break;
+              }
+            }
+            const parent = path.dirname(dir);
+            assert.notEqual(parent, dir);
+            dir = parent;
+          }
+          const {createFingerprintAsync} = require('@expo/fingerprint');
+          (async () => {
+            const result = await createFingerprintAsync(process.cwd());
+            assert.match(result.hash, /^[0-9a-f]{40,64}$/);
+            assert.ok(Array.isArray(result.sources) && result.sources.length > 0);
+            console.log('PASS: Expo Fingerprint generated using scoped minimatch 11.0.9');
+          })().catch(() => { console.error('Expo Fingerprint compatibility failed'); process.exitCode=1; });
+          NODE
+          cmp package-lock.json "$workspace/expected-lock.json"
+          cmp package.json "$workspace/expected-manifest.json"
+          status=0
+          clean_npm audit --json --package-lock-only > "$workspace/audit.json" || status=$?
+          guard --audit "$workspace/audit.json" --audit-exit "$status" \
+            --receipt "$RUNNER_TEMP/mobile-minimatch-remediation/receipt.json"
+          cp package.json package-lock.json "$RUNNER_TEMP/mobile-minimatch-remediation/"
+      - name: Conserver uniquement le candidat corrigé et le reçu
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: mobile-minimatch-remediation-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/mobile-minimatch-remediation/package.json
+            ${{ runner.temp }}/mobile-minimatch-remediation/package-lock.json
+            ${{ runner.temp }}/mobile-minimatch-remediation/receipt.json
+          retention-days: 7
+          if-no-files-found: error
+          overwrite: false
