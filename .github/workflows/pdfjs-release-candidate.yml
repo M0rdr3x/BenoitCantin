@@ -11,6 +11,8 @@ on:
       - 'scripts/validate_pdfjs_vendored_runtime.py'
       - 'scripts/build_netlify_public.py'
       - 'scripts/inventory_browser_references.py'
+      - 'scripts/validate_jekyll_emergency_pages.py'
+      - '_config.yml'
       - 'projets/projet-nova/assets/pdfjs-6.5.438/**'
       - 'projets/projet-nova/documents/01_Resume_Officiel_1_Page_Projet_Nova.pdf'
       - 'projets/projet-nova/documents/02_Depliant_Public_4_Pages_Projet_Nova.pdf'
@@ -127,3 +129,61 @@ jobs:
             --receipt "$work/receipt.json" --source-sha "$GITHUB_SHA"
           timeout 180s python3 scripts/test_pdfjs_candidate_browser.py --archive "$work/release.zip" --browser "$BROWSER"
           timeout 180s python3 scripts/test_nova_pdf_viewer_local.py --archive "$work/release.zip" --browser "$BROWSER"
+
+
+  jekyll-candidate:
+    name: Publication locale PDF.js — Jekyll historique
+    needs: inspect-release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: '3.12.14'
+          check-latest: false
+      - name: Préparer le candidat vérifié dans le checkout éphémère
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$(mktemp -d)"
+          trap 'rm -rf "$work"' EXIT
+          (
+            ulimit -f 7000
+            env -i PATH="$PATH" HOME="$work" curl --disable --fail --silent --show-error \
+              --location --max-redirs 3 --proto '=https' --proto-redir '=https' \
+              --connect-timeout 10 --max-time 60 --max-filesize 6911254 \
+              --output "$work/release.zip" \
+              https://github.com/mozilla/pdf.js/releases/download/v6.5.438/pdfjs-6.5.438-legacy-dist.zip
+          )
+          python3 scripts/stage_pdfjs_runtime.py --archive "$work/release.zip" \
+            --destination "$work/runtime" --receipt "$work/receipt.json"
+          test ! -e projets/projet-nova/assets/pdfjs-6.5.438
+          mv "$work/runtime" projets/projet-nova/assets/pdfjs-6.5.438
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("projets/projet-nova/assets/nova-pdf-viewer.mjs")
+          s = p.read_text("utf-8")
+          assert s.count("const RUNTIME_ENABLED = false;") == 1
+          p.write_text(s.replace("const RUNTIME_ENABLED = false;", "const RUNTIME_ENABLED = true;"), encoding="utf-8")
+          PY
+          python3 scripts/validate_pdfjs_vendored_runtime.py --root .
+          python3 scripts/validate_jekyll_emergency_pages.py --self-test
+      - name: Construire le rendu Jekyll officiel sans publication
+        uses: actions/jekyll-build-pages@44a6e6beabd48582f863aeeb6cb2151cc1716697
+        with:
+          source: ./
+          destination: ./_jekyll_emergency_site
+          verbose: false
+      - name: Vérifier les deux artefacts et tous les octets PDF.js
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/build_netlify_public.py --security-containment --output _site
+          python3 scripts/validate_jekyll_emergency_pages.py --output _jekyll_emergency_site --approved _site
+          python3 scripts/validate_nova_pdf_eval_boundary.py --root _jekyll_emergency_site
+          python3 scripts/validate_pdfjs_vendored_runtime.py --root _jekyll_emergency_site
+          python3 scripts/validate_pdfjs_vendored_runtime.py --root _site
+          echo "PASS: 198 verified runtime files preserved by both Jekyll and isolated builder."
