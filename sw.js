@@ -1,9 +1,10 @@
 /* Cache hors ligne réservé aux ressources publiques (pas de réponses privées/dynamiques). */
-const CACHE='benoitcantin-v24-4-95-public-17';
+const CACHE='benoitcantin-v24-4-95-public-18';
 const CORE=[
   '/','/offline.html','/manifest.webmanifest','/transparence-ia.html',
   '/assets/css/site.css','/assets/css/error-pages-ux-v1.css','/assets/css/browser-compat-v24-4-22.css','/assets/css/ai-transparency.css','/assets/css/home-v24-4-12.css','/assets/css/home-sinjira-only-v1.css','/assets/css/site-ux-sinjira-v1.css','/assets/css/v19-pro.css','/assets/css/v24-platform.css','/assets/css/v24-3-2-fixes.css','/assets/css/v24-3-3-fixes.css','/assets/css/fracture-engine.css','/assets/css/sinjira-assistant.css','/assets/css/sinjira-mobile-app-v24-4-94.css','/assets/css/sinjira-mobile-account-shell-v24-4-95.css',
-  '/assets/js/site.js','/assets/js/error-pages-ux-v1.js','/assets/js/sinjira-nav-boot-v2.js','/assets/js/sinjira-pwa-install.js','/assets/js/v24-3-1-runtime.js','/assets/js/v24-3-2-runtime.js','/assets/js/v24-3-3-runtime.js','/assets/js/v24-3-6-runtime.js','/assets/js/sinjira-fracture-lobby.js','/assets/js/sinjira-fracture-engine.js','/assets/js/sinjira-fracture-result.js','/assets/js/sinjira-assistant.js','/assets/js/sinjira-mobile-social-v24-4-94.js','/assets/js/sinjira-mobile-account-shell-v24-4-95.js',
+  '/assets/css/site-personality-v25.css','/assets/css/sinjira-universe-nav-v2.css','/projets/sinjira/sinjira.css',
+  '/assets/js/site.js','/assets/js/home-session-lazy-v24-5-1.js','/assets/js/sinjira-universe-session-lazy-v1.js','/assets/js/site-personality-v25.js','/assets/js/sinjira-universe-nav-v2.js','/assets/js/error-pages-ux-v1.js','/assets/js/sinjira-nav-boot-v2.js','/assets/js/sinjira-pwa-install.js','/assets/js/v24-3-1-runtime.js','/assets/js/v24-3-2-runtime.js','/assets/js/v24-3-3-runtime.js','/assets/js/v24-3-6-runtime.js','/assets/js/sinjira-fracture-lobby.js','/assets/js/sinjira-fracture-engine.js','/assets/js/sinjira-fracture-result.js','/assets/js/sinjira-assistant.js','/assets/js/sinjira-mobile-social-v24-4-94.js','/assets/js/sinjira-mobile-account-shell-v24-4-95.js',
   '/assets/icons/benoit-sigil.svg','/android-chrome-192x192.png','/android-chrome-512x512.png','/assets/icons/sinjira-favicon.png','/assets/icons/sinjira-officiel-20261120.png','/assets/media/sinjira-registre.webp','/assets/media/sinjira-livre-1-cover-480.webp','/assets/media/fracture-card-back.webp',
   '/assets/media/sinjira-registre-home-160.webp','/assets/media/sinjira-registre-home-336.webp','/assets/media/sinjira-jeux-home-160.webp','/assets/media/sinjira-jeux-home-336.webp','/assets/media/sinjira-communaute-home-160.webp','/assets/media/sinjira-communaute-home-336.webp',
   '/projets/sinjira/','/projets/sinjira/romans/','/projets/sinjira/romans/lire-demo.html','/projets/sinjira/registre/','/projets/sinjira/communaute/','/projets/sinjira/codex/','/projets/sinjira/monde-parallele/','/projets/sinjira/marche/','/projets/sinjira/jeux/fracture-du-reseau-mere/'
@@ -16,7 +17,8 @@ function cacheableResponse(resp){
   const vary=String(resp.headers.get('Vary')||'');
   return !/(?:^|[,\s])(?:private|no-store)(?:$|[,\s=])/.test(cc)&&!vary.split(',').some(value=>['*','cookie','authorization'].includes(value.trim().toLowerCase()))&&!resp.headers.has('Set-Cookie');
 }
-function publicAsset(path){return PUBLIC_ASSET.test(path)}
+// Exception exacte : feuille publique du hub, aucun autre sous-répertoire ajouté.
+function publicAsset(path){return path==='/projets/sinjira/sinjira.css'||PUBLIC_ASSET.test(path)}
 // Les réponses destinées au cache public ne doivent jamais dépendre d’une session.
 function anonymousPublicRequest(request){return new Request(request,{credentials:'omit',cache:'no-store'})}
 function matchPublicCache(request){return caches.open(CACHE).then(c=>c.match(request))}
