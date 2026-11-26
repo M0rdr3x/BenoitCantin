@@ -71,10 +71,37 @@
     card.innerHTML='<button class="sinjira-pwa-install__close" type="button" aria-label="Masquer cette proposition">×</button>' +
       '<button class="sinjira-pwa-install__reveal" type="button" data-pwa-install-reveal aria-expanded="false" aria-controls="sinjira-pwa-install-details">Installer SINJIRA™</button>' +
       '<div class="sinjira-pwa-install__details" id="sinjira-pwa-install-details" hidden>' +
-      '<div class="sinjira-pwa-install__top"><img src="/android-chrome-192x192.png" alt=""><div><h2>Installer SINJIRA™</h2><p>Ajoutez SINJIRA™ à votre téléphone comme une application. Aucun magasin d’applications ni service payant n’est nécessaire.</p></div></div>' +
+      '<div class="sinjira-pwa-install__top"><img src="/android-chrome-192x192.png" alt=""><div><h2>Installer SINJIRA™</h2><p>Ajoutez SINJIRA™ à votre appareil comme une application. Aucun magasin d’applications ni service payant n’est nécessaire.</p></div></div>' +
       '<div class="sinjira-pwa-install__actions"><button class="btn btn-primary btn-small" type="button" data-pwa-install-action>Installer</button></div></div>';
     var details=card.querySelector('.sinjira-pwa-install__details');
     var reveal=card.querySelector('[data-pwa-install-reveal]');
+    var returnFocus=null;
+    // Mémoriser le dernier élément de la page lorsqu'on entre dans la carte.
+    card.addEventListener('focusin',function(event){
+      var previous=event.relatedTarget;
+      if(previous&&!card.contains(previous)&&previous!==d.body&&previous!==d.documentElement){
+        returnFocus=previous;
+      }
+    });
+    function dismissCard(){
+      var restore=card.contains(d.activeElement);
+      rememberDismiss();
+      deferredPrompt=null;
+      card.remove();
+      if(!restore)return;
+      if(returnFocus&&returnFocus.isConnected&&returnFocus.getClientRects().length){
+        returnFocus.focus();
+        if(d.activeElement===returnFocus)return;
+      }
+      // En l'absence d'un contrôle précédent, la région principale est
+      // une destination stable, sans ajouter d'arrêt à la tabulation.
+      var main=d.querySelector('main');
+      if(!main)return;
+      var temporary=!main.hasAttribute('tabindex');
+      if(temporary)main.setAttribute('tabindex','-1');
+      main.focus();
+      if(temporary)main.removeAttribute('tabindex');
+    }
     function setExpanded(open){
       details.hidden=!open;
       reveal.setAttribute('aria-expanded',open?'true':'false');
@@ -95,7 +122,7 @@
         event.preventDefault();setExpanded(false);reveal.focus();
       }
     });
-    card.querySelector('.sinjira-pwa-install__close').addEventListener('click',function(){rememberDismiss();card.remove();});
+    card.querySelector('.sinjira-pwa-install__close').addEventListener('click',dismissCard);
     var action=card.querySelector('[data-pwa-install-action]');
     if(action)action.addEventListener('click',install);
     d.body.appendChild(card);return card;

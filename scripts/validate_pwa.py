@@ -260,6 +260,9 @@ def validate_install_runtime(errors: list[str]) -> None:
         ("card.className='sinjira-pwa-install is-collapsed'", 'L’invitation PWA masque le site au lieu de rester compacte.'),
         ('max-height:calc(100dvh - 24px)', 'La carte PWA ne respecte pas la hauteur dynamique du téléphone.'),
         ('appinstalled', 'Événement appinstalled absent.'),
+        ('function dismissCard()', 'Fermeture accessible de la proposition PWA absente.'),
+        ('returnFocus.focus()', 'Retour du focus après fermeture PWA absent.'),
+        ("main.setAttribute('tabindex','-1')", 'Destination de repli du focus PWA absente.'),
         ("navigator.serviceWorker.register('/sw.js'", 'Enregistrement global du Service Worker absent.'),
         ('apple-touch-icon', 'Icône d’écran d’accueil iOS absente.'),
         ('Sur iPhone/iPad', 'Aide d’installation iPhone/iPad absente.'),
@@ -275,7 +278,7 @@ def validate_install_runtime(errors: list[str]) -> None:
     exact_card_selector = "d.querySelector('.sinjira-pwa-install[data-sinjira-pwa-install]')"
     if text.count(exact_card_selector) < 3 or "d.querySelector('[data-sinjira-pwa-install]')" in text:
         errors.append("Le runtime PWA peut confondre sa balise script avec la carte interactive.")
-    if '/assets/js/sinjira-pwa-install.js?v=24.4.100' not in site_text:
+    if '/assets/js/sinjira-pwa-install.js?v=24.4.101' not in site_text:
         errors.append('site.js ne charge pas le runtime PWA historique compatible.')
     if 'serviceWorker.register' in session_text:
         errors.append('v19-session.js enregistre encore un deuxième Service Worker.')

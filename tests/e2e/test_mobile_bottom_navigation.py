@@ -17,7 +17,7 @@ WIDTHS = (240, 320, 390, 768, 1024)
 SHELL_MARKUP = """<!doctype html><html lang="fr-CA"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="stylesheet" href="/assets/css/site.css">
-<script defer src="/assets/js/sinjira-pwa-install.js?v=24.4.99"></script>
+<script defer src="/assets/js/sinjira-pwa-install.js?v=24.4.101"></script>
 </head><body class="account-page" data-sinjira-ux="v1">
 <main id="contenu"><h1>Mon compte : contrôle de navigation</h1><a href="/app/">Fil communautaire</a></main>
 </body></html>"""
@@ -174,6 +174,47 @@ def check_keyboard_overlap(context):
         page.close()
 
 
+def check_install_focus(browser):
+    # Un contexte isolé par résolution évite que la préférence de fermeture
+    # d'une session masque la proposition lors du scénario suivant.
+    for width, height in ((240, 360), (390, 700), (1280, 800)):
+        context = browser.new_context(
+            locale="fr-CA",
+            user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1",
+            viewport={"width": width, "height": height},
+            service_workers="block",
+        )
+        try:
+            context.route("**/compte/index.html", lambda route: route.fulfill(
+                status=200, content_type="text/html; charset=utf-8", body=SHELL_MARKUP))
+            page = navigate_account(context, "compte/index.html")
+            card = page.locator(".sinjira-pwa-install[data-sinjira-pwa-install]")
+            card.wait_for(state="visible", timeout=12_000)
+            link = page.locator('main a[href="/app/"]')
+            reveal = card.locator("[data-pwa-install-reveal]")
+            close = card.locator(".sinjira-pwa-install__close")
+            link.focus()
+            reveal.focus()
+            reveal.press("Enter")
+            verify(reveal.get_attribute("aria-expanded") == "true",
+                   f"proposition PWA non ouverte au clavier à {width}px")
+            reveal.press("Escape")
+            verify(reveal.get_attribute("aria-expanded") == "false",
+                   f"Échap ne replie pas la proposition à {width}px")
+            verify(reveal.evaluate("(el) => el === document.activeElement"),
+                   "focus perdu en repliant la proposition")
+            close.focus()
+            close.press("Enter")
+            verify(card.count() == 0, "proposition non retirée")
+            verify(link.evaluate("(el) => el === document.activeElement"),
+                   f"focus non restitué au contenu à {width}px")
+            page.reload(wait_until="domcontentloaded")
+            page.wait_for_function("() => document.documentElement.hasAttribute('data-sinjira-pwa-ready')")
+            verify(card.count() == 0, "préférence de fermeture non respectée")
+        finally:
+            context.close()
+
+
 def check_routes(context):
     page = navigate_account(context, "compte/index.html")
     try:
@@ -314,6 +355,7 @@ def run():
                 check_keyboard_overlap(context)
             finally:
                 context.close()
+            check_install_focus(browser)
         finally:
             browser.close()
         check_app(playwright)
