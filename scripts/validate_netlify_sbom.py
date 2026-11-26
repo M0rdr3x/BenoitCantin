@@ -60,6 +60,11 @@ def inspect(lock, bom):
     metadata = bom["metadata"]["component"]
     if metadata["name"] != root["name"] or metadata["version"] != root["version"]:
         raise ValueError("Root identity mismatch")
+    root_paths = [prop["value"] for prop in metadata["properties"] if prop["name"] == "cdx:npm:package:path"]
+    if root_paths != [""]:
+        raise ValueError("Root path mismatch")
+    if metadata.get("purl") != "pkg:npm/" + quote(root["name"], safe="/") + "@" + quote(root["version"], safe=""):
+        raise ValueError("Root package URL mismatch")
     root_raw_ref = root["name"] + "@" + root["version"]
     if metadata["bom-ref"] != root_raw_ref:
         raise ValueError("Root reference mismatch")
@@ -171,11 +176,26 @@ class Tests(unittest.TestCase):
                 "properties": [{"name": "cdx:npm:package:path", "value": "node_modules/sample"}],
                 "hashes": [{"alg": "SHA-512", "content": binary.hex()}]}
         bom = {"bomFormat": "CycloneDX", "specVersion": "1.5",
-               "metadata": {"component": {"name": "fixture", "version": "1.0.0", "bom-ref": "fixture@1.0.0"}},
+               "metadata": {"component": {"name": "fixture", "version": "1.0.0", "bom-ref": "fixture@1.0.0",
+                                          "purl": "pkg:npm/fixture@1.0.0",
+                                          "properties": [{"name": "cdx:npm:package:path", "value": ""}]}},
                "components": [comp], "dependencies": [{"ref": "fixture@1.0.0", "dependsOn": ["sample@1.0.0"]}, {"ref": "sample@1.0.0", "dependsOn": []}]}
         coverage, canonical = inspect(lock, bom)
         self.assertEqual(coverage["missing_optional_entries"], ["node_modules/optional"])
         self.assertEqual(canonical["components"][0]["bom-ref"], ref_for("node_modules/sample"))
+        for field, value in (
+            ("name", "tmp.random"),
+            ("version", "2.0.0"),
+            ("purl", "pkg:npm/other@1.0.0"),
+            ("bom-ref", "other@1.0.0"),
+            ("properties", []),
+            ("properties", [{"name": "cdx:npm:package:path", "value": "node_modules/fixture"}]),
+            ("properties", [{"name": "cdx:npm:package:path", "value": ""}] * 2),
+        ):
+            changed = copy.deepcopy(bom)
+            changed["metadata"]["component"][field] = value
+            with self.subTest(root_field=field, value=value), self.assertRaises(ValueError):
+                inspect(lock, changed)
         # npm emits identical raw refs for separate installations.
         repeated_lock = copy.deepcopy(lock)
         repeated_bom = copy.deepcopy(bom)
@@ -219,7 +239,7 @@ class Tests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 strict_json(invalid)
 
-SAFE_REASONS = frozenset(["Oversized inventory","Duplicate JSON key","Non-finite JSON value","Invalid dependency name","Unexpected inventory format","Root identity mismatch","Root reference mismatch","Empty inventory","Missing or ambiguous component path","Unknown or duplicate component path","Component identity mismatch","Unexpected lock integrity algorithm","Component integrity mismatch","Unexpected npm component reference","Required locked component missing","Direct dependency missing","Invalid npm dependency graph reference","Incomplete npm graph inventory","Required dependency edge unresolved"])
+SAFE_REASONS = frozenset(["Oversized inventory","Duplicate JSON key","Non-finite JSON value","Invalid dependency name","Unexpected inventory format","Root identity mismatch","Root path mismatch","Root package URL mismatch","Root reference mismatch","Empty inventory","Missing or ambiguous component path","Unknown or duplicate component path","Component identity mismatch","Unexpected lock integrity algorithm","Component integrity mismatch","Unexpected npm component reference","Required locked component missing","Direct dependency missing","Invalid npm dependency graph reference","Incomplete npm graph inventory","Required dependency edge unresolved","Unexpected npm generator identity"])
 
 def main():
     parser = argparse.ArgumentParser()
@@ -240,7 +260,12 @@ def main():
     try:
         lock_bytes = args.lock.read_bytes()
         bom_bytes = args.sbom.read_bytes()
-        coverage, canonical = inspect(strict_json(lock_bytes), strict_json(bom_bytes))
+        lock = strict_json(lock_bytes)
+        raw = strict_json(bom_bytes)
+        tools = raw["metadata"]["tools"]
+        if tools != [{"vendor": "npm", "name": "cli", "version": args.npm_version}]:
+            raise ValueError("Unexpected npm generator identity")
+        coverage, canonical = inspect(lock, raw)
         normalized_bytes = (json.dumps(canonical, indent=2, sort_keys=True) + "\n").encode("utf-8")
         with args.normalized.open("xb") as out:
             out.write(normalized_bytes)

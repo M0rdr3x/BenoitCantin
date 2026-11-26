@@ -42,17 +42,21 @@ jobs:
           set -euo pipefail
           workspace="$(mktemp -d)"
           trap 'rm -rf "$workspace"' EXIT
-          mkdir "$RUNNER_TEMP/netlify-sbom" "$workspace/home"
-          cp tools/netlify-cli/package.json tools/netlify-cli/package-lock.json "$workspace/"
+          # npm 10.9.8 exposes the directory basename as root component.name.
+          # Keep isolation while making the directory match the reviewed package name.
+          project="$workspace/sinjira-netlify-cli-toolchain"
+          mkdir "$RUNNER_TEMP/netlify-sbom" "$workspace/home" "$project"
+          cp tools/netlify-cli/package.json tools/netlify-cli/package-lock.json "$project/"
           touch "$workspace/user.conf" "$workspace/global.conf"
-          cd "$workspace"
+          cd "$project"
+          test "$(npm --version)" = 10.9.8
           env -i PATH="$PATH" HOME="$workspace/home" npm sbom \
             --package-lock-only --sbom-format=cyclonedx --offline --ignore-scripts \
             --include=dev --include=optional --include=peer \
             --userconfig="$workspace/user.conf" --globalconfig="$workspace/global.conf" \
             > "$workspace/npm-raw.cdx.json"
           python3 "$GITHUB_WORKSPACE/scripts/validate_netlify_sbom.py" \
-            --lock "$workspace/package-lock.json" --sbom "$workspace/npm-raw.cdx.json" \
+            --lock "$project/package-lock.json" --sbom "$workspace/npm-raw.cdx.json" \
             --normalized "$RUNNER_TEMP/netlify-sbom/netlify.cdx.json" \
             --receipt "$RUNNER_TEMP/netlify-sbom/receipt.json" \
             --source-sha "$GITHUB_SHA" --npm-version "$(npm --version)"
