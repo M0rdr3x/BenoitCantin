@@ -100,7 +100,7 @@ function registryPhotoSignature(header:Uint8Array,ext:string,total:number):boole
     const size=view.getUint32(4,true),chunkSize=view.getUint32(16,true);
     if(size+8!==total||20+chunkSize+(chunkSize%2)>total)return false;
     if(ascii(12,'VP8X')){
-      if(chunkSize!==10||header.length<30)return false;
+      if(chunkSize!==10||header.length<30||(header[20]&2)!==0)return false;
       const width=1+header[24]+256*header[25]+65536*header[26];
       const height=1+header[27]+256*header[28]+65536*header[29];
       return dimensions(width,height);
@@ -118,11 +118,54 @@ function registryPhotoSignature(header:Uint8Array,ext:string,total:number):boole
     return false;
   }
   if(ext==='avif'){
+    // Sous-ensemble conservateur : image fixe, boîtes 32 bits bornées.
+    // ispe décrit les dimensions du conteneur, pas celles du bitstream AV1.
     if(header.length<16||!ascii(4,'ftyp'))return false;
-    const size=new DataView(header.buffer,header.byteOffset,header.byteLength).getUint32(0,false);
+    const size=view.getUint32(0,false);
     if(size<16||size>header.length||size>total||size%4!==0)return false;
-    if(ascii(8,'avif')||ascii(8,'avis'))return true;
-    for(let offset=16;offset+4<=size;offset+=4)if(ascii(offset,'avif')||ascii(offset,'avis'))return true;
+    let avif=ascii(8,'avif');
+    if(ascii(8,'avis'))return false;
+    for(let offset=16;offset+4<=size;offset+=4){
+      if(ascii(offset,'avis'))return false;
+      if(ascii(offset,'avif'))avif=true;
+    }
+    if(!avif)return false;
+    let count=0,extents=0,metaCount=0,mediaCount=0;
+    // Parcourir uniquement les conteneurs attendus, sans recherche brute
+    // de chaînes dans mdat ni récursion contrôlée par le fichier.
+    const boxes=(from:number,to:number,level:number):boolean=>{
+      let properties=0;
+      for(let pos=from;pos<to;){
+        if(++count>4096||to-pos<8||pos+8>header.length)return false;
+        const length=view.getUint32(pos,false),next=pos+length;
+        if(length<8||next>to)return false;
+        if(level===0){
+          if(ascii(pos+4,'moov')||ascii(pos+4,'ftyp'))return false;
+          if(ascii(pos+4,'meta')){
+            if(++metaCount!==1||length<12||next>header.length||view.getUint32(pos+8,false)!==0||
+               !boxes(pos+12,next,1))return false;
+          }else if(ascii(pos+4,'mdat')){
+            if(++mediaCount!==1||length<=8)return false;
+          }else if(!ascii(pos+4,'free')&&!ascii(pos+4,'skip'))return false;
+          // Une boîte non inspectée ne peut cacher la suite du conteneur.
+          if(next>header.length&&next!==to)return false;
+        }else{
+          if(next>header.length)return false;
+          if(level===1&&ascii(pos+4,'iprp')){
+            if(++properties!==1||!boxes(pos+8,next,2))return false;
+          }else if(level===2&&ascii(pos+4,'ipco')){
+            if(++properties!==1||!boxes(pos+8,next,3))return false;
+          }else if(level===3&&ascii(pos+4,'ispe')){
+            if(length!==20||view.getUint32(pos+8,false)!==0||
+               !dimensions(view.getUint32(pos+12,false),view.getUint32(pos+16,false)))return false;
+            extents++;
+          }
+        }
+        pos=next;
+      }
+      return (level!==1&&level!==2)||properties===1;
+    };
+    return boxes(size,total,0)&&metaCount===1&&mediaCount===1&&extents>0;
   }
   return false;
 }

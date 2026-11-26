@@ -8,6 +8,7 @@ const code=src.slice(start,end)
  .replace('(offset:number,expected:number[])','(offset,expected)')
  .replace('(offset:number,value:string)','(offset,value)')
  .replace('(width:number,height:number)','(width,height)')
+ .replace('(from:number,to:number,level:number):boolean','(from,to,level)')
  .replace('(file:any,photoPath:string,expectedSize:number,deadlineMs=8000):Promise<boolean>','(file,photoPath,expectedSize,deadlineMs=8000)')
  .replace('timer:ReturnType<typeof setTimeout>|undefined','timer')
  .replace('new Promise<never>','new Promise')
@@ -19,7 +20,15 @@ const png=make(33);png.set([137,80,78,71,13,10,26,10,0,0,0,13]);ascii(png,12,'IH
 const jpg=Uint8Array.from([255,216,255,192,0,11,8,1,224,2,128,1,1,17,0,255,217]);
 const gif=make(14);ascii(gif,0,'GIF89a');new DataView(gif.buffer).setUint16(6,640,true);new DataView(gif.buffer).setUint16(8,480,true);
 const webp=make(30);ascii(webp,0,'RIFF');new DataView(webp.buffer).setUint32(4,22,true);ascii(webp,8,'WEBPVP8X');new DataView(webp.buffer).setUint32(16,10,true);webp.set([127,2,0,223,1,0],24);
-const avif=make(24);new DataView(avif.buffer).setUint32(0,24);ascii(avif,4,'ftypmif1');ascii(avif,16,'avifmif1');
+// Fixtures de conteneurs : elles ne représentent pas des images décodables.
+const box=(kind,payload)=>{const b=make(8+payload.length);new DataView(b.buffer).setUint32(0,b.length);ascii(b,4,kind);b.set(payload,8);return b;};
+const concat=(...parts)=>Uint8Array.from(Buffer.concat(parts.map(p=>Buffer.from(p))));
+const brand=make(16);ascii(brand,0,'mif1');ascii(brand,8,'avifmif1');
+const ftyp=box('ftyp',brand);
+const ispe=(width,height)=>{const p=make(12);new DataView(p.buffer).setUint32(4,width);new DataView(p.buffer).setUint32(8,height);return box('ispe',p);};
+const meta=(...properties)=>box('meta',concat(make(4),box('iprp',box('ipco',concat(...properties)))));
+const mdat=box('mdat',Uint8Array.of(1));
+const avif=concat(ftyp,meta(ispe(640,480)),mdat);
 let assertions=0;
 async function check(ext,buf,want,{size=buf.length,error=null,throwRead=false,split=3}={}){
  let cancelled=false,called=false;
@@ -58,6 +67,20 @@ async function check(ext,buf,want,{size=buf.length,error=null,throwRead=false,sp
  const app=make(jpg.length+304);app.set(jpg.slice(0,2));app.set([255,225,1,46],2);app.set(jpg.slice(2),306);await check('jpg',app,true);
  await check('jpg',png,false);await check('png',jpg,false);await check('svg',png,false);
  await check('avif',avif.map((v,i)=>i>=16&&i<20?0:v),false);
+ for(const [width,height] of [[0,480],[8193,1],[5001,5000]])await check('avif',concat(ftyp,meta(ispe(width,height)),mdat),false);
+ await check('avif',concat(ftyp,meta(ispe(5000,5000)),mdat),true);
+ await check('avif',concat(ftyp,meta(ispe(640,480),ispe(9000,1)),mdat),false);
+ await check('avif',concat(ftyp,meta(ispe(640,480),ispe(320,240)),mdat),true);
+ await check('avif',concat(ftyp,meta(),mdat),false);
+ await check('avif',concat(ftyp,mdat),false);
+ await check('avif',concat(ftyp,meta(ispe(640,480))),false);
+ await check('avif',concat(ftyp,meta(ispe(640,480)),meta(ispe(640,480)),mdat),false);
+ const animated=ftyp.slice();ascii(animated,16,'avis');await check('avif',concat(animated,meta(ispe(640,480)),mdat),false);
+ await check('avif',concat(ftyp,meta(ispe(640,480)),box('moov',make(0)),mdat),false);
+ const invalidBox=avif.slice();new DataView(invalidBox.buffer).setUint32(24,0);await check('avif',invalidBox,false);
+ const versioned=ispe(640,480);versioned[8]=1;await check('avif',concat(ftyp,meta(versioned),mdat),false);
+ await check('avif',concat(ftyp,meta(box('free',ispe(640,480))),mdat),false);
+ const animatedWebp=webp.slice();animatedWebp[20]=2;await check('webp',animatedWebp,false);
  await check('webp',webp.map((v,i)=>i===4?0:v),false);
  await check('png',png,false,{error:{code:'STORAGE_ERROR'}});
  for(const error of [false,0,''])await check('png',png,false,{error});
