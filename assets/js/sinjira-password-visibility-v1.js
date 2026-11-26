@@ -15,13 +15,21 @@
 
   var toggles = [];
 
+  function conceal(item) {
+    if (item.input.type !== 'password') item.input.type = 'password';
+    item.button.setAttribute('aria-pressed', 'false');
+    item.button.textContent = 'Afficher';
+    item.button.setAttribute('aria-label', 'Afficher ' + item.label);
+  }
   function concealAll() {
-    toggles.forEach(function (item) {
-      if (item.input.type !== 'password') item.input.type = 'password';
-      item.button.setAttribute('aria-pressed', 'false');
-      item.button.textContent = 'Afficher';
-      item.button.setAttribute('aria-label', 'Afficher ' + item.label);
-    });
+    toggles.forEach(conceal);
+  }
+
+  function syncDisabled(item) {
+    // :disabled couvre aussi un champ placé dans un fieldset désactivé.
+    var disabled = item.input.matches(':disabled');
+    if (item.button.disabled !== disabled) item.button.disabled = disabled;
+    if (disabled) conceal(item);
   }
 
   fields.forEach(function (input) {
@@ -40,7 +48,12 @@
 
     var item = {input: input, button: button, label: labelText};
     toggles.push(item);
+    syncDisabled(item);
     button.addEventListener('click', function () {
+      if (input.matches(':disabled')) {
+        syncDisabled(item);
+        return;
+      }
       var visible = input.type === 'password';
       input.type = visible ? 'text' : 'password';
       button.textContent = visible ? 'Masquer' : 'Afficher';
@@ -48,6 +61,14 @@
       button.setAttribute('aria-label', (visible ? 'Masquer ' : 'Afficher ') + labelText);
     });
   });
+
+  // Le module de récupération peut verrouiller les champs après son
+  // contrôle asynchrone. La commande de révélation suit le même état.
+  if (typeof MutationObserver !== 'undefined') {
+    new MutationObserver(function () {
+      toggles.forEach(syncDisabled);
+    }).observe(form, {subtree: true, attributes: true, attributeFilter: ['disabled']});
+  }
 
   // Un changement d'onglet, un verrouillage ou une soumission masque les
   // mots de passe sans toucher à leurs valeurs ni aux processus Auth.

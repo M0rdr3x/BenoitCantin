@@ -35,6 +35,10 @@ def check_page(path, expected):
         "compte/connexion.html", "compte/inscription.html",
         "compte/mot-de-passe-oublie.html", "compte/reinitialiser-mot-de-passe.html",
     }
+    if auth_nav and '<main id="main-content" tabindex="-1">' not in text:
+        errors.append(f"{path}: cible du lien d’évitement non focalisable")
+    if auth_nav and 'data-backend-state role="status" aria-atomic="true"' not in text:
+        errors.append(f"{path}: état du service non annoncé")
     css_version = "1.0.1" if auth_nav else "1.0.0"
     if f"/assets/css/sinjira-forms-ux-v1.css?v={css_version}" not in text:
         errors.append(f"{path}: style responsive manquant")
@@ -101,7 +105,8 @@ def main():
         "document.addEventListener('visibilitychange'", "window.addEventListener('pagehide'",
         "form.addEventListener('submit', concealAll, true)",
         "document.addEventListener('DOMContentLoaded', initialize",
-        "form[data-reset-form]",
+        "form[data-reset-form]", "function syncDisabled(item)",
+        "input.matches(':disabled')", "attributeFilter: ['disabled']",
     ):
         if marker not in script:
             problems.append("Affichage des mots de passe : protection manquante " + marker)
