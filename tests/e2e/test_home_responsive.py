@@ -233,6 +233,26 @@ def test_short_mobile_menu(page):
 
 
 
+def verify_install_targets(card):
+    geometry = card.evaluate("""el => {
+      const reveal=el.querySelector('[data-pwa-install-reveal]');
+      const close=el.querySelector('.sinjira-pwa-install__close');
+      const a=reveal.getBoundingClientRect(), b=close.getBoundingClientRect();
+      const c=el.getBoundingClientRect();
+      const hit=(node,r)=>[.25,.5,.75].every(x=>[.25,.5,.75].every(y=>
+        node.contains(document.elementFromPoint(r.left+r.width*x,r.top+r.height*y))));
+      return {revealWidth:a.width,revealHeight:a.height,closeWidth:b.width,
+              closeHeight:b.height,gap:b.left-a.right,
+              inside:b.right<=c.right&&b.bottom<=c.bottom,
+              revealHit:hit(reveal,a),closeHit:hit(close,b)};
+    }""")
+    verify(min(geometry["revealWidth"], geometry["revealHeight"],
+               geometry["closeWidth"], geometry["closeHeight"]) >= 43.5
+           and geometry["gap"] >= 8 and geometry["inside"]
+           and geometry["revealHit"] and geometry["closeHit"],
+           f"commandes PWA superposées ou inaccessibles : {geometry}")
+
+
 def test_install_offer(browser):
     """iPhone : invite discrète, instructions sur demande; Android : vrai bouton d'installation."""
     iphone_ua = ("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
@@ -263,7 +283,9 @@ def test_install_offer(browser):
                    and metrics["buttonHeight"] >= 43.5 and metrics["top"] >= -2
                    and metrics["bottom"] <= height + 2,
                    f"invitation iOS compacte illisible à {width}x{height}: {metrics}")
+            verify_install_targets(card)
             reveal.click()
+            verify_install_targets(card)
             verify(details.is_visible() and reveal.get_attribute("aria-expanded") == "true",
                    f"les instructions iOS ne s'ouvrent pas à {width}x{height}")
             expanded = card.evaluate("""el => {
@@ -318,7 +340,9 @@ def test_install_offer(browser):
             card.wait_for(state="visible", timeout=5_000)
             verify(card.locator("#sinjira-pwa-install-details").is_hidden(),
                    "l'invitation Android doit rester compacte par défaut")
+            verify_install_targets(card)
             card.locator("[data-pwa-install-reveal]").click()
+            verify_install_targets(card)
             card.locator("[data-pwa-install-action]").click()
             page.wait_for_function("() => window.__testNativeInstallInvoked === true", timeout=5_000)
             card.wait_for(state="detached", timeout=5_000)
@@ -467,6 +491,42 @@ def test_home_session_intent(browser):
         context.close()
 
 
+def test_universe_deferred_session(browser):
+    context = browser.new_context(
+        locale="fr-CA", viewport={"width": 390, "height": 760},
+        service_workers="block", reduced_motion="reduce",
+    )
+    try:
+        requests = []
+        def mock_session(route):
+            requests.append(route.request.url)
+            route.fulfill(status=200, content_type="application/javascript", body="export {};")
+        context.route("**/assets/js/v19-session.js?*", mock_session)
+        page = context.new_page()
+        page.goto(BASE + "projets/sinjira/", wait_until="load", timeout=30_000)
+        verify(not requests, "personnalisation du compte chargée avant intention")
+        verify(page.locator("[data-sinjira-session-nav]").get_attribute("href") == "/compte/",
+               "lien natif du compte absent")
+        toggle = page.locator("[data-menu-toggle]")
+        toggle.focus()
+        page.wait_for_function("() => document.documentElement.dataset.universeSessionLoading === 'true'",
+                               timeout=10_000)
+        page.wait_for_function("""() => performance.getEntriesByType('resource')
+                                    .some(e => e.name.includes('/v19-session.js?'))""", timeout=10_000)
+        toggle.click()
+        verify(len(requests) == 1, "module de session chargé plusieurs fois")
+        verify(page.locator("[data-main-nav]").is_visible(), "navigation indisponible")
+        page.evaluate("window.dispatchEvent(new Event('offline'))")
+        context.set_offline(True)
+        page.evaluate("window.dispatchEvent(new Event('offline'))")
+        verify(page.locator("html.offline").count() == 1, "état hors ligne non annoncé")
+        context.set_offline(False)
+        page.evaluate("window.dispatchEvent(new Event('online'))")
+        verify(page.locator("html.offline").count() == 0, "état en ligne non restauré")
+    finally:
+        context.close()
+
+
 def run():
     verify(BROWSER in {"chromium", "firefox", "webkit"}, "navigateur inconnu")
     verify((urlparse(BASE).hostname or "") in {"localhost", "127.0.0.1"},
@@ -489,6 +549,7 @@ def run():
             test_without_javascript(browser)
             test_public_navigation_fallback(browser)
             test_home_session_intent(browser)
+            test_universe_deferred_session(browser)
         finally:
             browser.close()
     print(f"OK {BROWSER}: accueil SINJIRA, 8 largeurs, clavier, mobile et sans JS")
