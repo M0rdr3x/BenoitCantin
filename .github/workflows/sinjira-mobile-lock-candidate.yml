@@ -6,6 +6,7 @@ on:
     paths:
       - 'mobile-native/package.json'
       - 'scripts/validate_mobile_lock_candidate.py'
+      - 'scripts/verify_mobile_lock_artifact.py'
       - '.github/workflows/sinjira-mobile-lock-candidate.yml'
   workflow_dispatch:
 
@@ -66,3 +67,76 @@ jobs:
       - name: Bloquer si vulnérabilité élevée ou critique
         run: |
           python3 -c 'import json,os,pathlib; r=json.loads((pathlib.Path(os.environ["RUNNER_TEMP"])/"mobile-lock-candidate/receipt.json").read_text()); assert r["high_critical_gate_pass"] is True, "Candidate requires vulnerability remediation"'
+
+  exact-lock-compatibility:
+    name: Installer et tester exactement le candidat du 26 novembre
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'security/mobile-lockfile-candidate-20261126'
+    permissions:
+      contents: read
+      actions: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: '22.23.2'
+          package-manager-cache: false
+      - name: Tester le vérificateur du candidat immuable
+        run: python3 scripts/verify_mobile_lock_artifact.py --self-test
+      - name: Télécharger le seul artefact examiné
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          dest="$RUNNER_TEMP/mobile-reviewed"
+          mkdir "$dest"
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/15136205966" | jq -e --arg repo "$GITHUB_REPOSITORY_ID" '
+            .id==15136205966 and .name=="mobile-lock-candidate-1" and .expired==false and
+            .size_in_bytes==56200 and .digest=="sha256:fb6f9573e57aa83b6493ae1ba4406d4e96a12f0cccda44dd" and
+            .workflow_run.id==45854934493 and (.workflow_run.repository_id|tostring)==$repo and
+            (.workflow_run.head_repository_id|tostring)==$repo and
+            .workflow_run.head_sha=="e74707087e291330d4c3df46b6fbf7a94ff7f815" and
+            .workflow_run.head_branch=="security/mobile-lockfile-candidate-20261126"
+          ' >/dev/null
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/15136205966/zip" > "$dest/candidate.zip"
+          test "$(stat -c %s "$dest/candidate.zip")" = 56200
+          python3 scripts/verify_mobile_lock_artifact.py --zip "$dest/candidate.zip" \
+            --manifest mobile-native/package.json --output "$dest/package-lock.json"
+      - name: Installer avec npm ci et tester dans une copie jetable
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(npm --version)" = 10.9.8
+          workspace="$(mktemp -d)"
+          trap 'rm -rf "$workspace"' EXIT
+          mkdir "$workspace/home"
+          cp -a mobile-native "$workspace/project"
+          test ! -e "$workspace/project/node_modules"
+          test ! -e "$workspace/project/package-lock.json"
+          test ! -e "$workspace/project/.npmrc"
+          cp "$RUNNER_TEMP/mobile-reviewed/package-lock.json" "$workspace/project/"
+          touch "$workspace/user.conf" "$workspace/global.conf"
+          cd "$workspace/project"
+          clean_npm() {
+            env -i PATH="$PATH" HOME="$workspace/home" CI=true npm "$@" \
+              --userconfig="$workspace/user.conf" --globalconfig="$workspace/global.conf" \
+              --registry=https://registry.npmjs.org/ --ignore-scripts --no-fund --no-progress
+          }
+          clean_npm ci --no-audit
+          cmp package-lock.json "$RUNNER_TEMP/mobile-reviewed/package-lock.json"
+          clean_npm run validate:vault
+          clean_npm run test:navigation-guard
+          clean_npm run test:deep-link-normalizer
+          clean_npm run test:notification-navigation
+          clean_npm run test:push-installation-binding
+          clean_npm run typecheck
+          cmp package-lock.json "$RUNNER_TEMP/mobile-reviewed/package-lock.json"
+          status=0
+          clean_npm audit --json --package-lock-only > "$workspace/audit.json" || status=$?
+          python3 "$GITHUB_WORKSPACE/scripts/verify_mobile_lock_artifact.py" --audit "$workspace/audit.json" --audit-exit "$status"
+          echo "PASS: exact candidate installed and six mobile checks executed; no deployment."
+
