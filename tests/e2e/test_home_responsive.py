@@ -48,6 +48,39 @@ def geometry(page):
     }""")
 
 
+def test_initial_navigation_geometry(browser):
+    """Contrôler le premier rendu, sans attendre l'initialisation du menu."""
+    for width in (320, 390):
+        for js_enabled in (True, False):
+            context = browser.new_context(
+                java_script_enabled=js_enabled, viewport={"width": width, "height": 844},
+                locale="fr-CA", reduced_motion="reduce", service_workers="block",
+            )
+            try:
+                page = context.new_page()
+                response = page.goto(BASE, wait_until="domcontentloaded", timeout=30_000)
+                verify(response is not None and response.ok, "accueil initial inaccessible")
+                for stage in ("DOMContentLoaded", "load"):
+                    if stage == "load":
+                        page.wait_for_load_state("load", timeout=30_000)
+                    bounds = page.evaluate("""() => {
+                      const viewport = innerWidth;
+                      const links = [...document.querySelectorAll('[data-main-nav] a')];
+                      const outside = links.filter(a => {
+                        const r = a.getBoundingClientRect();
+                        return r.width > 0 && (r.left < -2 || r.right > viewport + 2);
+                      }).map(a => a.className);
+                      return { viewport, scroll: document.documentElement.scrollWidth, outside };
+                    }""")
+                    verify(bounds["scroll"] <= bounds["viewport"] + 2 and not bounds["outside"],
+                           f"menu initial débordant {width}px, JS={js_enabled}, {stage}: {bounds}")
+                if not js_enabled:
+                    verify(page.locator('[data-main-nav] a[href="/compte/"]').is_visible(),
+                           "le compte doit rester accessible sans JavaScript")
+            finally:
+                context.close()
+
+
 def test_home(page):
     response = page.goto(BASE, wait_until="domcontentloaded", timeout=30_000)
     verify(response is not None and response.status < 400, "accueil local inaccessible")
@@ -544,6 +577,7 @@ def run():
                 test_short_mobile_menu(page)
             finally:
                 context.close()
+            test_initial_navigation_geometry(browser)
             test_install_offer(browser)
             test_responsive_images(browser)
             test_without_javascript(browser)
