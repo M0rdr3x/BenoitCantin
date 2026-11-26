@@ -660,6 +660,57 @@ def check_admin_responsive_layout(browser):
         context.close()
 
 
+def check_admin_panel_navigation(browser):
+    # Recette du module de présentation réel, sur le squelette local.
+    # Aucun module d'autorisation, de mutation ou de lecture privée exécuté.
+    ctx=browser.new_context(service_workers="block",viewport={"width":320,"height":760})
+    try:
+        ctx.route("**/*",lambda route: route.continue_() if
+            route.request.url.startswith(BASE_URL) and
+            (route.request.resource_type!="script" or
+             urlparse(route.request.url).path=="/assets/js/sinjira-admin-panel-nav.mjs")
+            else route.abort())
+        page=ctx.new_page()
+        page.goto(urljoin(BASE_URL,"admin/sinjira/index.html"),wait_until="load")
+        page.evaluate("""async () => {
+          const m=await import('/assets/js/sinjira-admin-panel-nav.mjs?v=1.0.0');
+          window.testAdminNav=m;
+          m.prepareAdminNavigation();
+          for(const b of document.querySelectorAll('[data-admin-tab]'))
+            b.addEventListener('click',()=>m.openAdminPanel(b.dataset.adminTab));
+        }""")
+        for name in ("documents","players","character-bible","social-moderation"):
+            tab=page.locator(f'[data-admin-tab="{name}"]')
+            tab.focus()
+            tab.press("Enter")
+            panel=page.locator(f'[data-admin-panel="{name}"]')
+            assert_true(panel.is_visible() and tab.get_attribute("aria-current")=="page",
+                        f"rubrique non activée : {name}")
+            assert_true(page.evaluate("""() => {
+              const p=[...document.querySelectorAll('[data-admin-panel]')].filter(p=>!p.hidden);
+              return p.length===1 && p[0].contains(document.activeElement) &&
+                document.activeElement.matches('h2,h3');
+            }"""),f"focus ou panneau incohérent : {name}")
+            panel.locator(".admin-panel-return").click()
+            assert_true(tab.evaluate("(b)=>document.activeElement===b"),"retour clavier absent")
+        assert_true(page.evaluate("""() => {
+          const nav=document.querySelector('.admin-console-tabs');
+          const b=document.createElement('button');b.dataset.adminTab='notifications';b.textContent='Notifications';nav.prepend(b);
+          const p=document.createElement('section');p.dataset.adminPanel='notifications';p.hidden=true;
+          const h=document.createElement('h2');h.textContent='Notifications fictives';p.append(h);
+          document.querySelector('main').append(p);
+          window.testAdminNav.prepareAdminNavigation();
+          window.testAdminNav.prepareAdminNavigation();
+          return b.getAttribute('aria-controls')===p.id && p.querySelectorAll('.admin-panel-return').length===1 &&
+            window.testAdminNav.openAdminPanel('notifications') && !p.hidden &&
+            document.activeElement===h && !window.testAdminNav.openAdminPanel('inconnue') && !p.hidden;
+        }"""),"panneau dynamique ou destination inconnue mal gérés")
+        page.locator('[data-admin-panel="notifications"] .admin-panel-return').click()
+        assert_true(page.locator('[data-admin-tab="notifications"]').evaluate("(b)=>document.activeElement===b"),"retour du panneau dynamique absent")
+    finally:
+        ctx.close()
+
+
 def run() -> None:
     assert_true(BROWSER_NAME in SUPPORTED_BROWSERS, f"Navigateur Playwright inconnu: {BROWSER_NAME}")
 
@@ -2505,6 +2556,7 @@ def run() -> None:
             check_cost_summary_feedback(browser)
             check_reservation_feedback(browser)
             check_admin_responsive_layout(browser)
+            check_admin_panel_navigation(browser)
         browser.close()
         auth_note = f", {len(AUTH_ROUTES)} pages Auth locales + assistant V{ASSISTANT_VERSION} contextuel" if IS_LOCAL else ""
         print(

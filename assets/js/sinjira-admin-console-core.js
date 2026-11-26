@@ -1,3 +1,4 @@
+import {prepareAdminNavigation,openAdminPanel} from './sinjira-admin-panel-nav.mjs?v=1.0.0';
 import {getSupabase,requireUser,escapeHtml,setStatus} from './sinjira-supabase.js';
 
 const status=document.querySelector('[data-admin-status]');
@@ -35,10 +36,10 @@ async function callReports(action,extra={}){
   return data;
 }
 function tabs(){
-  document.querySelectorAll('[data-admin-tab]').forEach(b=>b.addEventListener('click',()=>{
-    document.querySelectorAll('[data-admin-tab]').forEach(x=>x.removeAttribute('aria-current'));b.setAttribute('aria-current','page');
-    document.querySelectorAll('[data-admin-panel]').forEach(p=>p.hidden=p.dataset.adminPanel!==b.dataset.adminTab);
-  }));
+  prepareAdminNavigation();
+  document.querySelectorAll('[data-admin-tab]').forEach(b=>{
+    if(b.dataset.adminTab!=='notifications')b.addEventListener('click',()=>openAdminPanel(b.dataset.adminTab));
+  });
 }
 async function dashboard(){
   const [{dashboard:d},{dashboard:r}]=await Promise.all([call('dashboard'),callReports('dashboard')]);

@@ -1,3 +1,4 @@
+import {prepareAdminNavigation,openAdminPanel} from './sinjira-admin-panel-nav.mjs?v=1.0.0';
 import {getSupabase,escapeHtml} from './sinjira-supabase.js';
 import './v24-admin-health.js';
 
@@ -13,10 +14,7 @@ async function canonOverview(){
 
 async function auditLog(){const d=await call('audit_log'),box=document.querySelector('[data-admin-audit-list]');if(!box)return;box.innerHTML=(d.rows||[]).map(r=>`<div class="v19-audit-row"><strong>${escapeHtml(r.action)}</strong><p>${escapeHtml(r.summary||'')}</p><code>${escapeHtml(r.entity_type||'')} ${escapeHtml(r.entity_id||'')}</code><div class="v19-muted">${escapeHtml(new Date(r.created_at).toLocaleString('fr-CA'))}</div></div>`).join('')||'<p>Aucune action V19 enregistrée.</p>'}
 
-function openAdminTab(name){
- document.querySelectorAll('[data-admin-tab]').forEach(b=>{if(b.dataset.adminTab===name)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
- document.querySelectorAll('[data-admin-panel]').forEach(p=>{p.hidden=p.dataset.adminPanel!==name});
-}
+function openAdminTab(name){return openAdminPanel(name);}
 function notificationTarget(n){
  const type=String(n?.notification_type||'').toLowerCase(),entity=String(n?.related_entity_type||'').toLowerCase();
  if(type.includes('character')||entity.includes('character_submission'))return 'fan-characters';
@@ -40,6 +38,7 @@ function ensureNotificationsUi(){
    panel.querySelector('[data-admin-notification-read-all]').addEventListener('click',async()=>{try{await call('mark_all_notifications_read');await notifications()}catch(e){alert(e.message)}});
    panel.querySelector('[data-admin-notification-refresh]').addEventListener('click',()=>notifications().catch(e=>console.error(e)));
  }
+ prepareAdminNavigation();
 }
 async function notifications(){
  ensureNotificationsUi();
