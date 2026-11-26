@@ -55,6 +55,7 @@ exclude:
   - "scripts"
   # Les outils et lockfiles du pipeline Netlify ne doivent jamais sortir via Pages.
   - "tools"
+  - "security"
   - "mobile-native"
   - "docs"
   - "node_modules"
@@ -103,6 +104,7 @@ exclude:
   - "**/tests/**"
   - "**/docs/**"
   - "**/tools/**"
+  - "**/security/**"
   - "**/supabase/**"
   - "**/mobile-native/**"
   - "**/.git/**"
