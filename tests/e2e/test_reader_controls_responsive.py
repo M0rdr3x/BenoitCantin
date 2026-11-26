@@ -11,7 +11,7 @@ from playwright.sync_api import sync_playwright
 
 BASE = os.environ.get("BASE_URL", "http://127.0.0.1:4173/").rstrip("/") + "/"
 ENGINE = os.environ.get("BROWSER", "chromium").strip().lower()
-WIDTHS = (320, 390, 540, 768, 1024, 1440)
+WIDTHS = (240, 320, 390, 540, 768, 1024, 1440)
 OFFICIAL_LOGO = "/assets/icons/sinjira-officiel-20261120.png"
 
 
@@ -20,8 +20,8 @@ def check(value, message):
         raise AssertionError(f"{ENGINE}: {message}")
 
 
-def inspect(page, width):
-    page.set_viewport_size({"width": width, "height": 760})
+def inspect(page, width, height=760):
+    page.set_viewport_size({"width": width, "height": height})
     result = page.evaluate("""() => {
       const viewer=document.querySelector('#reader-viewer');
       const text=document.querySelector('#reader-text');
@@ -37,6 +37,9 @@ def inspect(page, width):
         scrollable:viewer.scrollHeight>viewer.clientHeight+10,
         scrollInside:viewer.scrollWidth<=viewer.clientWidth+2,
         buttons:[geom(previous),geom(next)],
+        targets:[...document.querySelectorAll('.reader-top a,.reader-sidebar summary,.reader-sidebar button,.reader-sidebar select,.reader-sidebar input:not([type="checkbox"]),.reader-tools button,.reader-tools input')]
+          .filter(el=>el.getBoundingClientRect().width>0).map(geom),
+        topPosition:getComputedStyle(document.querySelector('.reader-top')).position,
         labels:[previous.textContent.trim(),next.textContent.trim()],
         aria:[previous.getAttribute('aria-controls'),next.getAttribute('aria-controls')],
         logo:document.querySelector('.reader-brand img')?.getAttribute('src'),
@@ -59,6 +62,11 @@ def inspect(page, width):
         check(button["height"] >= 44, f"commande trop petite à {width}px : {result}")
         check(button["left"] >= -2 and button["right"] <= width + 2,
               f"bouton hors écran à {width}px : {result}")
+    for target in result["targets"]:
+        check(target["height"]>=47.5 and target["left"]>=-2 and target["right"]<=width+2,
+              f"commande hors écran ou sous 48px à {width}x{height}: {target}")
+    if height<=420 and width<=980:
+        check(result["topPosition"]=="relative","en-tête fixe en paysage court")
     check(result["labels"][0].startswith("← Écran") and "Écran suivant" in result["labels"][1],
           f"commandes du texte incorrectes à {width}px : {result}")
 
@@ -87,11 +95,12 @@ def run():
                 }""")
                 for width in WIDTHS:
                     inspect(page,width)
+                inspect(page,768,360)
             finally:
                 context.close()
         finally:
             browser.close()
-    print(f"OK {ENGINE}: liseuse V55, 6 largeurs, commandes accessibles, texte fictif seul")
+    print(f"OK {ENGINE}: liseuse V55, 7 largeurs et paysage court, commandes accessibles, texte fictif seul")
 
 
 if __name__ == "__main__":

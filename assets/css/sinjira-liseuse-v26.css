@@ -248,3 +248,31 @@
 @media(max-width:600px){
   .sinjira-liseuse .reader-turn-help{text-align:left;padding:13px 16px}
 }
+
+/* Confort tactile et reflow de la liseuse, sans modifier le zoom PDF. */
+.sinjira-liseuse :where(.reader-layout,.reader-top-inner,.reader-sidebar,.reader-stage,.reader-tools,.reader-settings-grid,.reader-sidebar details){
+  min-width:0;box-sizing:border-box
+}
+.sinjira-liseuse .reader-top :where(a,.reader-top-title){min-width:0;overflow-wrap:anywhere}
+.sinjira-liseuse .reader-top a{display:inline-flex;align-items:center;min-height:48px}
+.sinjira-liseuse .reader-brand img{flex:0 0 34px}
+.sinjira-liseuse .reader-sidebar summary{box-sizing:border-box;min-height:48px;padding-block:10px;overflow-wrap:anywhere}
+.sinjira-liseuse .reader-tools :is(button,select,input:not([type="checkbox"]),textarea),
+.sinjira-liseuse .reader-sidebar :is(button,select,input:not([type="checkbox"]),textarea){
+  box-sizing:border-box;max-width:100%;min-width:0;min-height:48px
+}
+.sinjira-liseuse .reader-tools button,.sinjira-liseuse .reader-sidebar button{white-space:normal;overflow-wrap:anywhere}
+.sinjira-liseuse .reader-audio-bar button,.sinjira-liseuse #reader-save-position{min-height:48px}
+.sinjira-liseuse .reader-sidebar :is(select,input:not([type="checkbox"]),textarea){font-size:max(16px,1rem)}
+.sinjira-liseuse .reader-checkbox{min-height:48px;align-items:center}
+.sinjira-liseuse .reader-text{box-sizing:border-box}
+@media(max-width:360px){
+  .sinjira-liseuse .reader-top-inner{gap:8px}
+  .sinjira-liseuse .reader-top-title{flex:1 0 100%;order:2}
+  .sinjira-liseuse .reader-tools button,.sinjira-liseuse .reader-mark-buttons button{flex:1 1 100%}
+  .sinjira-liseuse .reader-text{padding:16px}
+}
+@media(max-height:420px) and (max-width:980px){
+  .sinjira-liseuse .reader-top{position:relative}
+  .sinjira-liseuse .reader-sidebar details[open]{scroll-margin-top:12px}
+}

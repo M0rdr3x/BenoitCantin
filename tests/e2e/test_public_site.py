@@ -1630,12 +1630,12 @@ def run() -> None:
         # Navigation de continuité : les pages secondaires et les pages 404
         # doivent utiliser les mêmes correctifs clavier que les accueils.
         for route, script_version in (
-            ("404.html", "site.js?v=24.4.101"),
-            ("univers.html", "site.js?v=24.4.101"),
-            ("transparence-ia.html", "site.js?v=24.4.101"),
-            ("confidentialite.html", "site.js?v=24.4.101"),
-            ("gouvernance-vie-privee.html", "site.js?v=24.4.101"),
-            ("avis-legal.html", "site.js?v=24.4.101"),
+            ("404.html", "site.js?v=24.4.105"),
+            ("univers.html", "site.js?v=24.4.105"),
+            ("transparence-ia.html", "site.js?v=24.4.105"),
+            ("confidentialite.html", "site.js?v=24.4.105"),
+            ("gouvernance-vie-privee.html", "site.js?v=24.4.105"),
+            ("avis-legal.html", "site.js?v=24.4.105"),
             ("projets/projet-nova/registre-rencontres.html", "script.js?v=26.1.0"),
             ("projets/projet-nova/visionneuse.html?doc=resume", "script.js?v=26.1.0"),
             ("projets/projet-nova/document.html?doc=corpus", "script.js?v=26.1.0"),
