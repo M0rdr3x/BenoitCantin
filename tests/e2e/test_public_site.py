@@ -867,6 +867,76 @@ def check_admin_form_saves(browser):
         ctx.close()
 
 
+def check_admin_character_editor(browser):
+    # V18 réel, données entièrement fictives ; aucun compte, source ou RPC réel.
+    ctx=browser.new_context(service_workers="block",viewport={"width":320,"height":760})
+    try:
+        allowed={"/assets/js/"+name for name in ("sinjira-admin-v18.js","sinjira-admin-panel-nav.mjs","sinjira-admin-save-guard.mjs")}
+        ctx.route("**/*",lambda route:route.continue_() if route.request.url.startswith(BASE_URL)
+                  and (route.request.resource_type!="script" or urlparse(route.request.url).path in allowed)
+                  else route.abort())
+        ctx.route("**/assets/js/v24-admin-health.js*",lambda route:route.fulfill(content_type="text/javascript",body="export {};"))
+        ctx.route("**/assets/js/sinjira-supabase.js*",lambda route:route.fulfill(content_type="text/javascript",body="""window.characterWrites=[];window.failCharacterRead=false;
+          export const escapeHtml=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
+          const characters=[{id:'fixture-a',public_name:'Personnage A',status:'author_review',canon_status:'PROVISOIRE',novel_id:'novel-fixture',bible:{note:'A'}},
+            {id:'fixture-b',public_name:'Personnage B',status:'future',canon_status:'PROVISOIRE',bible:{note:'B'}}];
+          export function getSupabase(){return {functions:{async invoke(name,{body}){
+            if(body.action==='save_character')return new Promise(resolve=>window.characterWrites.push({name,body,resolve}));
+            if(body.action==='list_characters')return window.failCharacterRead?{error:{message:'fixture'},data:null}:{error:null,data:{ok:true,characters,novels:[{id:'novel-fixture',title:'Roman fictif'}]}};
+            return {error:null,data:{ok:true,dashboard:{},comments:[],submissions:[],contexts:[],rows:[],notifications:[],unread:0}};
+          }}}}
+          """))
+        page=ctx.new_page()
+        page.goto(urljoin(BASE_URL,"admin/sinjira/index.html"),wait_until="domcontentloaded")
+        page.wait_for_function("document.querySelectorAll('[data-edit-character]').length===2")
+        page.evaluate("""async()=>{const m=await import('/assets/js/sinjira-admin-panel-nav.mjs?v=1.0.0');m.openAdminPanel('character-bible')}""")
+        form=page.locator("[data-character-editor]")
+        button=form.locator('button[type="submit"]')
+        name=form.locator('[name="public_name"]')
+        bible=form.locator('[name="bible_json"]')
+        status=form.locator("[data-admin-save-status]")
+        assert_true(button.is_disabled() and name.is_disabled(),"éditeur ouvert sans sélection")
+        page.locator('[data-edit-character="fixture-a"]').click()
+        assert_true(name.input_value()=="Personnage A" and not button.is_disabled(),"sélection non chargée")
+        assert_true(form.locator('[name="novel_id"]').input_value()=="novel-fixture","roman non conservé")
+        name.fill("Personnage A modifié")
+        page.once("dialog",lambda d:d.dismiss())
+        page.locator('[data-edit-character="fixture-b"]').click()
+        assert_true(name.input_value()=="Personnage A modifié","brouillon écrasé")
+        bible.fill("[1,2]")
+        button.click()
+        assert_true(bible.get_attribute("aria-invalid")=="true" and page.evaluate("window.characterWrites.length===0"),"JSON invalide transmis")
+        bible.fill('{"note":"modifiée"}')
+        form.locator('[name="canon_status"]').select_option("CANON")
+        button.click()
+        assert_true(page.evaluate("window.characterWrites.length===0") and "manuscrit" in status.inner_text(),"CANON transmis sans confirmation")
+        form.locator('[name="author_confirmed_canon"]').check()
+        button.click()
+        page.wait_for_function("window.characterWrites.length===1")
+        assert_true(button.is_disabled() and name.is_disabled(),"sauvegarde non verrouillée")
+        form.evaluate("el=>el.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))")
+        assert_true(page.evaluate("""window.characterWrites.length===1 && window.characterWrites[0].name==='admin-sinjira-v18' &&
+          window.characterWrites[0].body.character.id==='fixture-a' &&
+          window.characterWrites[0].body.character.author_confirmed_canon===true &&
+          window.characterWrites[0].body.character.author_confirmed_retcon===false &&
+          window.characterWrites[0].body.character.novel_id==='novel-fixture'"""),"double sauvegarde ou contrat canon modifié")
+        page.evaluate("window.characterWrites[0].resolve({error:null,data:{ok:true,character:{id:'fixture-a'}}})")
+        page.wait_for_function("document.querySelector('[data-character-editor] [data-admin-save-status]').textContent.includes('Personnage enregistré')")
+        assert_true(button.is_disabled() and name.is_disabled(),"nouvelle sélection non requise après confirmation")
+        page.locator('[data-edit-character="fixture-b"]').click()
+        assert_true(not form.locator('[name="author_confirmed_canon"]').is_checked(),"confirmation héritée du personnage précédent")
+        name.fill("Personnage B modifié")
+        button.click()
+        page.wait_for_function("window.characterWrites.length===2")
+        page.evaluate("window.characterWrites[1].resolve({error:null,data:{ok:true,character:{id:'fixture-a'}}})")
+        page.wait_for_function("document.querySelector('[data-character-editor] [data-admin-save-status]').textContent.includes('non confirmé')")
+        assert_true(button.is_disabled() and name.input_value()=="Personnage B modifié","réponse d’une autre fiche acceptée")
+        page.locator('[data-edit-character="fixture-a"]').click()
+        assert_true(name.input_value()=="Personnage B modifié","saisie incertaine écrasée")
+    finally:
+        ctx.close()
+
+
 def run() -> None:
     assert_true(BROWSER_NAME in SUPPORTED_BROWSERS, f"Navigateur Playwright inconnu: {BROWSER_NAME}")
 
@@ -2715,6 +2785,7 @@ def run() -> None:
             check_admin_panel_navigation(browser)
             check_admin_license_generation(browser)
             check_admin_form_saves(browser)
+            check_admin_character_editor(browser)
         browser.close()
         auth_note = f", {len(AUTH_ROUTES)} pages Auth locales + assistant V{ASSISTANT_VERSION} contextuel" if IS_LOCAL else ""
         print(

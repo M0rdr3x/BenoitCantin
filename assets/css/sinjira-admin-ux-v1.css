@@ -59,3 +59,10 @@
 
 .admin-sinjira-page .admin-upload-help{font-size:.9em;color:var(--muted);overflow-wrap:anywhere;margin:8px 0}
 .admin-sinjira-page [data-document-upload-form] input[type=file]{white-space:normal;max-width:100%}
+
+/* Bible : texte long et commandes de sélection dans un panneau étroit. */
+.admin-sinjira-page .bible-editor{min-width:0;max-width:100%}
+.admin-sinjira-page .bible-editor textarea[name="bible_json"]{font-family:ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;min-height:200px;resize:vertical}
+.admin-sinjira-page .bible-editor [aria-invalid="true"]{border:2px solid currentColor}
+.admin-sinjira-page :is(.admin-v18-row,.admin-v18-actions){min-width:0;max-width:100%;overflow-wrap:anywhere}
+@media(max-width:560px){.admin-sinjira-page .admin-v18-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}.admin-sinjira-page .admin-v18-actions .btn{width:100%}}
