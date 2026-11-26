@@ -622,6 +622,44 @@ def check_reservation_feedback(browser):
         ctx.close()
 
 
+def check_admin_responsive_layout(browser):
+    # Uniquement le squelette HTML local : aucun script administratif ni backend.
+    context=browser.new_context(service_workers="block",viewport={"width":390,"height":760})
+    try:
+        context.route("**/*",lambda route: route.continue_() if
+            route.request.url.startswith(BASE_URL) and route.request.resource_type!="script"
+            else route.abort())
+        page=context.new_page()
+        for path in ("admin/sinjira/index.html","admin/sinjira/licences.html",
+                     "admin/sinjira/heritage.html","admin/sinjira/precommandes.html",
+                     "admin/sinjira/precommandes-readiness.html"):
+            page.goto(urljoin(BASE_URL,path),wait_until="load")
+            assert_true(page.locator('meta[name="robots"]').get_attribute("content")=="noindex,nofollow",
+                        f"indexation admin modifiée : {path}")
+            assert_true(page.locator("main").get_attribute("tabindex")=="-1",
+                        f"cible clavier absente : {path}")
+            assert_true(page.evaluate("""() => {
+              const links=[...document.querySelectorAll('.universe-subnav a')];
+              const labels=[...document.querySelectorAll('label[for^="admin-ux-"]')];
+              return links.length===5 && links.filter(a=>a.getAttribute('aria-current')==='page').length===1 &&
+                labels.every(l=>l.control && document.querySelectorAll('[id="'+l.htmlFor+'"]').length===1);
+            }"""),f"navigation ou labels incorrects : {path}")
+            for width,height,zoom in ((240,760,"100%"),(320,760,"200%"),(390,360,"100%"),(768,760,"100%"),(1440,900,"100%")):
+                page.set_viewport_size({"width":width,"height":height})
+                page.evaluate("(z)=>document.documentElement.style.fontSize=z",zoom)
+                page.evaluate("() => new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)))")
+                state=page.evaluate("""() => {
+                  const controls=[...document.querySelectorAll('main button,main .btn,main select,main input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]),main textarea,.universe-subnav a')].filter(n=>n.getClientRects().length&&getComputedStyle(n).visibility==='visible');
+                  const invalid=controls.filter(n=>{const r=n.getBoundingClientRect();return r.left<-2||r.right>innerWidth+2||r.height<47.5});
+                  return {count:controls.length,invalid:invalid.slice(0,8).map(n=>({tag:n.tagName,cls:String(n.className),width:n.getBoundingClientRect().width,height:n.getBoundingClientRect().height})),
+                    overflow:document.documentElement.scrollWidth>innerWidth+2};
+                }""")
+                assert_true(not state["invalid"] and not state["overflow"],
+                            f"admin {path} {width}x{height}/{zoom}: {state}")
+    finally:
+        context.close()
+
+
 def run() -> None:
     assert_true(BROWSER_NAME in SUPPORTED_BROWSERS, f"Navigateur Playwright inconnu: {BROWSER_NAME}")
 
@@ -2466,6 +2504,7 @@ def run() -> None:
             check_fulfillment_feedback(browser)
             check_cost_summary_feedback(browser)
             check_reservation_feedback(browser)
+            check_admin_responsive_layout(browser)
         browser.close()
         auth_note = f", {len(AUTH_ROUTES)} pages Auth locales + assistant V{ASSISTANT_VERSION} contextuel" if IS_LOCAL else ""
         print(
