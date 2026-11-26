@@ -75,6 +75,7 @@ def validate_text(text: str) -> list[str]:
         'python scripts/validate_send_game_report_security.py\n',
         'python scripts/validate_send_player_sheet_security.py --self-test',
         'python scripts/validate_send_player_sheet_security.py\n',
+        'node --test scripts/test_license_attempt_budget.mjs',
         'python scripts/validate_license_redemption_security.py --self-test',
         'python scripts/validate_license_redemption_security.py\n',
         'python scripts/validate_security_context_request_security.py --self-test',
@@ -106,6 +107,7 @@ def validate_text(text: str) -> list[str]:
     require(errors, text.count("      - 'scripts/test_document_external_urls.mjs'") == 2, 'les liens documentaires doivent être testés sur PR et push')
     require(errors, text.count(GET_DOCUMENT_TRIGGER) == 2, 'le validateur get-document-url doit déclencher le workflow sur pull_request et push')
     require(errors, text.count(GET_PRIVATE_BOOK_TRIGGER) == 2, 'le validateur Livre I privé doit déclencher le workflow sur pull_request et push')
+    require(errors, text.count("      - 'scripts/test_license_attempt_budget.mjs'") == 2, 'le test quota licence doit déclencher la CI sur PR et push')
     require(errors, text.count(SEND_GAME_REPORT_TRIGGER) == 2, 'le validateur send-game-report doit déclencher le workflow sur pull_request et push')
     require(errors, text.count(SEND_PLAYER_SHEET_TRIGGER) == 2, 'le validateur send-player-sheet doit déclencher le workflow sur pull_request et push')
     require(errors, text.count(ADMIN_REPORTS_TRIGGER) == 2, 'le validateur admin-reports doit déclencher le workflow sur pull_request et push')
@@ -123,6 +125,8 @@ def validate_text(text: str) -> list[str]:
 
 def run_self_tests(text: str) -> None:
     cases = {
+        'test quota licence retiré': text.replace('        run: node --test scripts/test_license_attempt_budget.mjs\n', '', 1),
+        'déclencheur quota licence retiré': text.replace("      - 'scripts/test_license_attempt_budget.mjs'\n", '', 1),
         'checkout mobile': text.replace(f'actions/checkout@{CHECKOUT_SHA}', 'actions/checkout@v6', 1),
         'setup-python mobile': text.replace(f'actions/setup-python@{SETUP_PYTHON_SHA}', 'actions/setup-python@v6', 1),
         'credentials persistés': text.replace('persist-credentials: false', 'persist-credentials: true', 1),

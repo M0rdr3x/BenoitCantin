@@ -18,6 +18,7 @@ on:
       - 'scripts/validate_send_game_report_security.py'
       - 'scripts/validate_send_player_sheet_security.py'
       - 'scripts/validate_license_redemption_security.py'
+      - 'scripts/test_license_attempt_budget.mjs'
       - 'scripts/validate_security_context_request_security.py'
       - 'scripts/validate_admin_reports_request_security.py'
       - 'scripts/validate_admin_license_codes_security.py'
@@ -46,6 +47,7 @@ on:
       - 'scripts/validate_send_game_report_security.py'
       - 'scripts/validate_send_player_sheet_security.py'
       - 'scripts/validate_license_redemption_security.py'
+      - 'scripts/test_license_attempt_budget.mjs'
       - 'scripts/validate_security_context_request_security.py'
       - 'scripts/validate_admin_reports_request_security.py'
       - 'scripts/validate_admin_license_codes_security.py'
@@ -107,6 +109,8 @@ jobs:
         run: python scripts/validate_license_redemption_security.py --self-test
       - name: Vérifier l’activation sécurisée des licences
         run: python scripts/validate_license_redemption_security.py
+      - name: Tester les quotas individuels et refus de licence
+        run: node --test scripts/test_license_attempt_budget.mjs
       - name: Auto-tester security-context
         run: python scripts/validate_security_context_request_security.py --self-test
       - name: Vérifier les bornes et la confidentialité de security-context
