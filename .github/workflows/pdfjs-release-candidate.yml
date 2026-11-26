@@ -12,6 +12,9 @@ on:
       - 'projets/projet-nova/documents/04_Livre_Nova_Complet.pdf'
       - '.github/workflows/pdfjs-release-candidate.yml'
       - 'projets/projet-nova/visionneuse.html'
+      - 'projets/projet-nova/assets/nova-pdf-viewer.mjs'
+      - 'projets/projet-nova/assets/documents.js'
+      - 'scripts/validate_nova_pdf_eval_boundary.py'
   workflow_dispatch:
 
 permissions:
