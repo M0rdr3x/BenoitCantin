@@ -555,6 +555,73 @@ def check_cost_summary_feedback(browser):
         ctx.close()
 
 
+def check_reservation_feedback(browser):
+    # Réservation fictive : aucun compte réel, aucun paiement.
+    ctx=browser.new_context(service_workers="block",viewport={"width":390,"height":760})
+    try:
+        ctx.route("**/*",lambda route:route.continue_() if route.request.url.startswith(BASE_URL) else route.abort())
+        for script in ("site.js","sinjira-account.js","sinjira-nav-boot-v2.js","sinjira-preorder-commercial-v24-5-5.js","sinjira-preorder-fulfillment-v24-5-6.js"):
+            ctx.route("**/assets/js/"+script+"*",lambda route:route.fulfill(content_type="text/javascript",body=""))
+        ctx.route("**/assets/js/sinjira-supabase.js*",lambda route:route.fulfill(content_type="text/javascript",body="""window.writes=[];window.failRead=false;
+          const reservation={status:'reserved',reservation_reference:'PR-0123456789ABCDEF',quantity:1,preferred_format:'paper',payment_status:'not_collected',financial_commitment:false};
+          export const escapeHtml=x=>String(x??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
+          export const formatDate=()=> 'Date fictive';
+          export async function getCurrentUser(){return {id:'fixture'}}
+          export const isSinjiraBackendConfigured=()=>true;
+          export function setStatus(node,msg,type){node.hidden=false;node.textContent=msg;node.dataset.type=type}
+          export function getSupabase(){return {async rpc(name,args){
+            if(name==='product_preorder_my_status')return window.failRead?{data:null,error:{message:'fixture'}}:{data:reservation,error:null};
+            if(name==='product_preorder_cancel'||name==='product_preorder_reserve_confirmed')return new Promise(resolve=>window.writes.push({name,args,resolve}));
+            throw Error('RPC inattendue');
+          }}}
+        """))
+        page=ctx.new_page()
+        page.goto(urljoin(BASE_URL,"compte/mes-achats.html"),wait_until="domcontentloaded")
+        cancel=page.locator("[data-preorder-cancel]")
+        form=page.locator("[data-preorder-form]")
+        submit=page.locator("[data-preorder-submit]")
+        dialog=page.locator("[data-preorder-cancel-dialog]")
+        status=page.locator("[data-preorder-status]")
+        cancel.wait_for(state="visible")
+        for width,height,zoom in ((240,420,"100%"),(320,760,"200%"),(390,360,"100%"),(1440,760,"100%")):
+            page.set_viewport_size({"width":width,"height":height})
+            page.evaluate("(z)=>document.documentElement.style.fontSize=z",zoom)
+            cancel.click()
+            dialog.wait_for(state="visible")
+            assert_true(dialog.locator('[value="keep"]').evaluate("(el)=>document.activeElement===el"),"focus initial non sûr")
+            geometry=dialog.evaluate("""el=>{const r=el.getBoundingClientRect();return r.left>=-2&&r.right<=innerWidth+2&&r.top>=-2&&r.bottom<=innerHeight+2&&el.scrollWidth<=el.clientWidth+2&&[...el.querySelectorAll('button')].every(b=>b.getBoundingClientRect().height>=47.5)}""")
+            assert_true(geometry,f"annulation hors écran {width}/{zoom}")
+            if width==240:
+                page.keyboard.press("Escape")
+            else:
+                dialog.locator('[value="keep"]').click()
+            dialog.wait_for(state="hidden")
+            page.wait_for_function("document.activeElement===document.querySelector('[data-preorder-cancel]')")
+            assert_true(page.evaluate("window.writes.length")==0,"annulation non confirmée transmise")
+        cancel.click()
+        dialog.locator('[value="cancel-reservation"]').click()
+        page.wait_for_function("window.writes.length===1")
+        assert_true(submit.is_disabled() and cancel.is_disabled(),"actions concurrentes autorisées")
+        form.evaluate("el=>el.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))")
+        assert_true(page.evaluate("window.writes.length===1"),"double mutation")
+        page.evaluate("window.failRead=true;window.writes[0].resolve({data:true,error:null})")
+        page.wait_for_function("document.querySelector('[data-preorder-status]').textContent.includes('Annulation traitée')")
+        assert_true(not page.locator("[data-preorder-state]").is_visible() and submit.is_disabled(),"confirmation périmée ou nouvelle mutation possible")
+        assert_true(page.evaluate("window.writes[0].name==='product_preorder_cancel'&&Object.keys(window.writes[0].args).join()==='p_product_slug'"),"contrat de mutation modifié")
+        page.reload(wait_until="domcontentloaded")
+        submit.wait_for(state="visible")
+        page.wait_for_function("!document.querySelector('[data-preorder-submit]').disabled")
+        page.locator("[data-preorder-disclosure]").check()
+        submit.click()
+        page.wait_for_function("window.writes.length===1")
+        page.evaluate("window.writes[0].resolve({data:null,error:null})")
+        page.wait_for_function("document.querySelector('[data-preorder-status]').textContent.includes('non confirmé')")
+        assert_true(submit.is_disabled() and not page.locator("[data-preorder-state]").is_visible(),
+                    "réservation sans référence valide annoncée comme confirmée")
+    finally:
+        ctx.close()
+
+
 def run() -> None:
     assert_true(BROWSER_NAME in SUPPORTED_BROWSERS, f"Navigateur Playwright inconnu: {BROWSER_NAME}")
 
@@ -2398,6 +2465,7 @@ def run() -> None:
             check_notification_counts(browser)
             check_fulfillment_feedback(browser)
             check_cost_summary_feedback(browser)
+            check_reservation_feedback(browser)
         browser.close()
         auth_note = f", {len(AUTH_ROUTES)} pages Auth locales + assistant V{ASSISTANT_VERSION} contextuel" if IS_LOCAL else ""
         print(

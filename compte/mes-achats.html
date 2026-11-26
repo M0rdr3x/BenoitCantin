@@ -14,7 +14,7 @@
 <link href="../assets/css/v19-pro.css?v=19.0" rel="stylesheet"/>
 <link href="../assets/css/v20-social.css?v=20.0" rel="stylesheet"/>
 <link href="../assets/css/v24-platform.css?v=24.1" rel="stylesheet"/>
-<link href="../assets/css/sinjira-preorders-v24-5-3.css?v=24.5.44" rel="stylesheet"/>
+<link href="../assets/css/sinjira-preorders-v24-5-3.css?v=24.5.48" rel="stylesheet"/>
 <link href="../assets/css/sinjira-preorder-commercial-v24-5-5.css?v=24.5.44" rel="stylesheet"/>
 <link href="../assets/css/sinjira-preorder-fulfillment-v24-5-6.css?v=24.5.45" rel="stylesheet"/>
 <link rel="stylesheet" href="/assets/css/site-ux-sinjira-v1.css?v=1.0.1">
@@ -32,17 +32,17 @@
 <p>Réservez votre intérêt pour le premier roman de SINJIRA™. Vous pourrez modifier ou annuler votre réservation. Votre compte affiche aussi une référence de réservation indépendante de vos identifiants techniques, ainsi que la date et la version des conditions réellement confirmées.</p>
 <div class="sinjira-preorder-auth" data-preorder-auth hidden><strong>Connexion requise.</strong><span>Connectez-vous pour gérer cette réservation.</span><a class="btn btn-primary" data-preorder-login href="connexion.html">Se connecter</a></div>
 <div class="sinjira-preorder-state" data-preorder-state hidden></div>
-<form class="sinjira-preorder-panel" data-preorder-form hidden>
+<form class="sinjira-preorder-panel" data-preorder-form method="post" hidden>
 <div class="sinjira-preorder-grid">
 <div class="sinjira-preorder-field"><label for="preorder-format-account">Format souhaité</label><select data-preorder-format id="preorder-format-account" name="preferred_format"><option value="undecided">Je déciderai plus tard</option><option value="paper">Papier</option><option value="digital">Numérique</option><option value="both">Papier + numérique</option></select></div>
 <div class="sinjira-preorder-field"><label for="preorder-quantity-account">Quantité souhaitée</label><select data-preorder-quantity id="preorder-quantity-account" name="quantity"><option value="1">1 exemplaire</option><option value="2">2 exemplaires</option><option value="3">3 exemplaires</option><option value="4">4 exemplaires</option><option value="5">5 exemplaires</option></select></div>
 </div>
 <label class="sinjira-preorder-check"><input checked data-preorder-contact name="contact_when_sales_open" type="checkbox"/><span>M’avertir dans SINJIRA™ lorsque les conditions de vente seront disponibles.</span></label>
 <label class="sinjira-preorder-check"><input data-preorder-disclosure name="preorder_disclosure" required type="checkbox"/><span><strong>Je comprends les conditions de cette réservation :</strong> aucun paiement n’est prélevé aujourd’hui; une réservation n’est pas une commande; pour une expédition physique, les frais de livraison seront à ma charge; le ramassage sur place, lorsqu’un point public sera disponible, ajoutera 0 $ de frais de livraison; les estimations de livraison et de taxes sont indicatives et non contractuelles; le prix, la livraison, les taxes applicables et le total final devront être présentés puis acceptés séparément avant tout futur paiement.</span></label>
-<div class="sinjira-preorder-actions"><button class="btn btn-primary" data-preorder-submit type="submit">Réserver ma précommande</button><button class="btn btn-secondary" data-preorder-cancel hidden type="button">Annuler ma réservation</button><a class="btn btn-secondary" href="../projets/sinjira/romans/precommande.html">Voir la page du Livre I</a></div>
-<div class="account-status" data-preorder-status hidden></div>
+<div class="sinjira-preorder-actions"><button class="btn btn-primary" data-preorder-submit type="submit" disabled>Réserver ma précommande</button><button class="btn btn-secondary" data-preorder-cancel hidden type="button" disabled>Annuler ma réservation</button><a class="btn btn-secondary" href="../projets/sinjira/romans/precommande.html">Voir la page du Livre I</a></div>
+
 <p class="sinjira-preorder-terms">Aucune donnée bancaire, adresse de facturation ou adresse de livraison n’est collectée dans cette phase de précommande. La confirmation ci-dessus n’est pas un consentement à payer.</p>
-</form>
+</form><div class="account-status" data-preorder-status role="status" aria-live="polite" aria-atomic="true" hidden></div><dialog class="preorder-cancel-dialog" data-preorder-cancel-dialog aria-labelledby="preorder-cancel-title" aria-describedby="preorder-cancel-help"><form method="dialog"><h2 id="preorder-cancel-title">Annuler la réservation du Livre I ?</h2><p id="preorder-cancel-help">Votre réservation sera annulée. Aucun paiement n’a été prélevé. Vous pourrez la réactiver si les réservations sont encore ouvertes.</p><div class="sinjira-preorder-actions"><button type="submit" value="keep" class="btn btn-secondary" autofocus>Conserver ma réservation</button><button type="submit" value="cancel-reservation" class="btn btn-primary">Confirmer l’annulation</button></div></form></dialog>
 <div class="sinjira-commercial-card" data-preorder-commercial>
 <span class="eyebrow">Informations commerciales</span><h3>Prix, éditions et date de sortie</h3>
 <div class="sinjira-commercial-waiting" data-pc-waiting><strong>Pas encore annoncés.</strong><span>Le prix, les éditions commerciales et la date de sortie n’ont pas encore été publiés dans SINJIRA™.</span></div>
@@ -71,7 +71,7 @@
 <footer class="site-footer"><div class="container"><div class="footer-bottom"><span>© <span data-year></span> Benoit Cantin.</span><span>Compte SINJIRA™ — paiements désactivés.</span></div></div></footer>
 <script defer src="../assets/js/site.js?v=24.4.105"></script>
 <script src="../assets/js/sinjira-account.js?v=19.0" type="module"></script>
-<script src="../assets/js/sinjira-preorders-v24-5-3.js?v=24.5.44" type="module"></script>
+<script src="../assets/js/sinjira-preorders-v24-5-3.js?v=24.5.48" type="module"></script>
 <script src="../assets/js/sinjira-preorder-commercial-v24-5-5.js?v=24.5.44" type="module"></script>
 <script src="../assets/js/sinjira-preorder-fulfillment-v24-5-6.js?v=24.5.46.3" type="module"></script>
 </body>
