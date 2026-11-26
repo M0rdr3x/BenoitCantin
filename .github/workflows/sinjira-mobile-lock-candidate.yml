@@ -96,7 +96,7 @@ jobs:
           mkdir "$dest"
           gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/15136205966" | jq -e --arg repo "$GITHUB_REPOSITORY_ID" '
             .id==15136205966 and .name=="mobile-lock-candidate-1" and .expired==false and
-            .size_in_bytes==56200 and .digest=="sha256:fb6f9573e57aa83b6493ae1ba4406d4e96a12f0cccda44dd" and
+            .size_in_bytes==56200 and .digest=="sha256:fb6f9573e57aa83b6493ae1ba4406d4ea2c3170feb3c0d4e96a12f0cccda44dd" and
             .workflow_run.id==45854934493 and (.workflow_run.repository_id|tostring)==$repo and
             (.workflow_run.head_repository_id|tostring)==$repo and
             .workflow_run.head_sha=="e74707087e291330d4c3df46b6fbf7a94ff7f815" and

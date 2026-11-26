@@ -14,7 +14,7 @@ import json
 from validate_mobile_lock_candidate import load, inspect, audit_counts, NAME, SEVERITIES
 
 ARTIFACT_ID = "15136205966"
-ZIP_SHA = "fb6f9573e57aa83b6493ae1ba4406d4e96a12f0cccda44dd"
+ZIP_SHA = "fb6f9573e57aa83b6493ae1ba4406d4ea2c3170feb3c0d4e96a12f0cccda44dd"
 LOCK_SHA = "52c59065d2f6105e983e6f785ff8ab75b7733b3b843faca920c31ae3b81c8f96"
 MANIFEST_SHA = "5bb58e2ff419de20b0b68f94d53c8412981e64efa69c6b89b6d9ef80bda5d54c"
 SOURCE_SHA = "7a83f4c6f9317056f466a85a9a3d1de77ad3bc23"
