@@ -8,6 +8,7 @@ on:
       - 'scripts/validate_mobile_lock_candidate.py'
       - 'scripts/verify_mobile_lock_artifact.py'
       - 'scripts/validate_mobile_minimatch_candidate.py'
+      - 'scripts/validate_mobile_locked_dependencies.py'
       - '.github/workflows/sinjira-mobile-lock-candidate.yml'
   workflow_dispatch:
 
@@ -240,6 +241,10 @@ jobs:
           clean_npm audit --json --package-lock-only > "$workspace/audit.json" || status=$?
           guard --audit "$workspace/audit.json" --audit-exit "$status" \
             --receipt "$RUNNER_TEMP/mobile-minimatch-remediation/receipt.json"
+          python3 "$GITHUB_WORKSPACE/scripts/validate_mobile_locked_dependencies.py" --self-test
+          python3 "$GITHUB_WORKSPACE/scripts/validate_mobile_locked_dependencies.py" \
+            --manifest package.json --lock package-lock.json \
+            --audit "$workspace/audit.json" --audit-exit "$status" --handoff-public-lock
           cp package.json package-lock.json "$RUNNER_TEMP/mobile-minimatch-remediation/"
       - name: Conserver uniquement le candidat corrigé et le reçu
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
