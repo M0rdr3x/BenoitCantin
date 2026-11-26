@@ -148,13 +148,23 @@ def main():
     p.add_argument("--output",type=Path)
     p.add_argument("--audit",type=Path)
     p.add_argument("--audit-exit",type=int)
+    p.add_argument("--summary-only",action="store_true")
+    p.add_argument("--lock",type=Path)
     args=p.parse_args()
     if args.self_test:
         return 0 if unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(Tests)).wasSuccessful() else 1
     if args.audit is not None:
         result=audit_summary(load(args.audit.read_bytes()),args.audit_exit)
+        if args.lock is not None:
+            lock_digest = sha(args.lock.read_bytes())
+            result["lock_sha256"] = lock_digest
+            result["matches_reviewed_lock"] = lock_digest == LOCK_SHA
+        if args.summary_only and args.lock is None:
+            p.error("summary-only requires lock identity")
         print(json.dumps(result,sort_keys=True))
-        return 1 if result["counts"]["high"] or result["counts"]["critical"] else 0
+        # The generation job still uploads the candidate for review before its
+        # existing high/critical gate. The installation job never bypasses it.
+        return 0 if args.summary_only else int(bool(result["counts"]["high"] or result["counts"]["critical"]))
     if not all((args.zip,args.manifest,args.output)):
         p.error("ZIP, manifest and output required")
     lock=verified_lock(args.zip,args.manifest.read_bytes())
