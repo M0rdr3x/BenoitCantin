@@ -14,7 +14,7 @@ MAX_ZIP = 1_100_000_000
 MAX_TAR = 1_000_000_000
 SHA256 = re.compile(r"[0-9a-f]{64}", re.ASCII)
 
-def hash_exact(stream, size):
+def hash_exact(stream, size, sink=None):
     h = hashlib.sha256()
     remaining = size
     while remaining:
@@ -22,12 +22,14 @@ def hash_exact(stream, size):
         if not chunk:
             raise ValueError("Truncated artifact")
         h.update(chunk)
+        if sink is not None:
+            sink.write(chunk)
         remaining -= len(chunk)
     if stream.read(1):
         raise ValueError("Artifact exceeds declared size")
     return h.hexdigest()
 
-def verify(path: Path, zip_sha: str, tar_sha: str):
+def verify(path: Path, zip_sha: str, tar_sha: str, tar_output: Path | None = None):
     if not SHA256.fullmatch(zip_sha) or not SHA256.fullmatch(tar_sha):
         raise ValueError("Invalid digest")
     info = path.lstat()
@@ -51,6 +53,20 @@ def verify(path: Path, zip_sha: str, tar_sha: str):
             with archive.open(entry, "r") as stream:
                 if hash_exact(stream, entry.file_size) != tar_sha:
                     raise ValueError("TAR digest mismatch")
+            if tar_output is not None:
+                # Fixed caller-selected path in a private temporary directory;
+                # never use archive member paths, never unpack the TAR.
+                created = False
+                try:
+                    with tar_output.open("xb") as output:
+                        created = True
+                        with archive.open(entry, "r") as stream:
+                            if hash_exact(stream, entry.file_size, output) != tar_sha:
+                                raise ValueError("TAR changed during verification")
+                except BaseException:
+                    if created:
+                        tar_output.unlink(missing_ok=True)
+                    raise
 
 class Tests(unittest.TestCase):
     def test_valid_and_hostile_archives(self):
@@ -95,9 +111,36 @@ class Tests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 verify(alias, sha, digest)
 
+    def test_verified_tar_output(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            archive = root / "fixture.zip"
+            target = root / "artifact.tar"
+            data = b"synthetic bytes"
+            with zipfile.ZipFile(archive, "w") as z:
+                z.writestr("artifact.tar", data)
+            zip_sha = hashlib.sha256(archive.read_bytes()).hexdigest()
+            tar_sha = hashlib.sha256(data).hexdigest()
+            with self.assertRaises(ValueError):
+                verify(archive, zip_sha, "0" * 64, target)
+            self.assertFalse(target.exists())
+            verify(archive, zip_sha, tar_sha, target)
+            self.assertEqual(target.read_bytes(), data)
+            with self.assertRaises(FileExistsError):
+                verify(archive, zip_sha, tar_sha, target)
+            self.assertEqual(target.read_bytes(), data)
+            target.unlink()
+            outside = root / "private"
+            outside.write_bytes(b"unchanged")
+            target.symlink_to(outside)
+            with self.assertRaises(FileExistsError):
+                verify(archive, zip_sha, tar_sha, target)
+            self.assertEqual(outside.read_bytes(), b"unchanged")
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--tar-output", type=Path)
     parser.add_argument("zip_path", nargs="?", type=Path)
     parser.add_argument("zip_sha", nargs="?")
     parser.add_argument("tar_sha", nargs="?")
@@ -107,7 +150,7 @@ def main():
             unittest.defaultTestLoader.loadTestsFromTestCase(Tests)).wasSuccessful() else 1
     if args.zip_path is None or args.zip_sha is None or args.tar_sha is None:
         parser.error("ZIP and both SHA-256 digests required")
-    verify(args.zip_path, args.zip_sha, args.tar_sha)
+    verify(args.zip_path, args.zip_sha, args.tar_sha, args.tar_output)
     print("PASS: exact Pages ZIP and TAR SHA-256 verified without extraction.")
     return 0
 

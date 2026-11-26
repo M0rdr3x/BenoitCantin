@@ -150,8 +150,8 @@ def inspect_authorization(body: str) -> list[str]:
     prefix, build, verify, deploy = chunks[0], chunks[2], chunks[4], chunks[6]
     expected_permissions = (
         (prefix, "permissions:\n  contents: read\n\nconcurrency:"),
-        (build, "    permissions:\n      contents: read\n    runs-on:"),
-        (verify, "    permissions:\n      contents: read\n      actions: read\n    runs-on:"),
+        (build, "    permissions:\n      contents: read\n      id-token: write\n      attestations: write\n    runs-on:"),
+        (verify, "    permissions:\n      contents: read\n      actions: read\n      attestations: read\n    runs-on:"),
         (deploy, "    permissions:\n      contents: read\n      actions: read\n      pages: write\n      id-token: write\n    environment:"),
     )
     for section, expected in expected_permissions:
@@ -182,6 +182,22 @@ def inspect_authorization(body: str) -> list[str]:
     for marker in final_markers:
         if marker not in deploy:
             errors.append("Contrôle final Pages absent : " + marker)
+    attest_step = 'uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6\n        with:\n          subject-path: ${{ runner.temp }}/artifact.tar\n          push-to-registry: false\n          create-storage-record: false'
+    if build.count(attest_step) != 1 or body.count("uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6") != 1:
+        errors.append("Signature Pages absente ou non canonique")
+    if not (0 <= build.find("pages_archive_integrity.py create") < build.find(attest_step) < build.find("uses: " + UPLOAD)):
+        errors.append("Ordre de signature Pages incorrect")
+    for marker in (
+        '--tar-output "$dest/artifact.tar"',
+        'gh attestation verify "$dest/artifact.tar" --repo "$GITHUB_REPOSITORY"',
+        '--signer-workflow "$GITHUB_REPOSITORY/.github/workflows/deploy-github-pages-isolated.yml"',
+        '--signer-digest "$GITHUB_SHA" --source-digest "$GITHUB_SHA" --source-ref refs/heads/main',
+        '--predicate-type https://slsa.dev/provenance/v1 --deny-self-hosted-runners',
+    ):
+        if marker not in verify:
+            errors.append("Vérification de provenance Pages absente : " + marker)
+    if not (0 <= verify.find('--tar-output "$dest/artifact.tar"') < verify.find("gh attestation verify")):
+        errors.append("Ordre de vérification de provenance incorrect")
     # No extra step or action in the privileged job.
     if len(re.findall(r"(?m)^      - ", deploy)) != 2:
         errors.append("Étapes privilégiées Pages inattendues")
@@ -289,10 +305,24 @@ def self_test() -> None:
     actual = (WORKFLOWS / APPROVED).read_text("utf-8", errors="strict")
     assert not inspect_authorization(actual), inspect_authorization(actual)
     for old, new in (
-        ("      contents: read\n    runs-on:", "      contents: write\n    runs-on:"),
-        ("      actions: read\n    runs-on:", "      actions: write\n    runs-on:"),
+        ("      contents: read\n      id-token: write\n", "      contents: write\n      id-token: write\n"),
+        ("      actions: read\n      attestations: read\n", "      actions: write\n      attestations: read\n"),
         ("      pages: write\n", "      pages: read\n"),
         ("      id-token: write\n", "      id-token: write\n      contents: write\n"),
+        ("      attestations: write\n", "      attestations: read\n"),
+        ("      attestations: read\n", "      attestations: write\n"),
+        ("actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6", "actions/attest@v4"),
+        ("subject-path: ${{ runner.temp }}/artifact.tar", "subject-path: ."),
+        ("push-to-registry: false", "push-to-registry: true"),
+        ("create-storage-record: false", "create-storage-record: true"),
+        ('--tar-output "$dest/artifact.tar"', "removed"),
+        ("gh attestation verify", "echo"),
+        ('--signer-workflow "$GITHUB_REPOSITORY/.github/workflows/deploy-github-pages-isolated.yml"', "removed"),
+        ('--signer-digest "$GITHUB_SHA"', "removed"),
+        ('--source-digest "$GITHUB_SHA"', "removed"),
+        ("--source-ref refs/heads/main", "--source-ref refs/heads/other"),
+        ("--deny-self-hosted-runners", "removed"),
+        ("--predicate-type https://slsa.dev/provenance/v1", "removed"),
         ("github.run_attempt == '1'", "github.run_attempt >= '1'"),
         ("inputs.expected_sha == github.sha", "true"),
         ("needs.verify.result == 'success'", "always()"),
