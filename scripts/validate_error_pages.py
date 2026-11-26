@@ -85,8 +85,8 @@ def validate_page(rel: str, cfg: dict[str, object], errors: list[str]) -> None:
 
     if 'class="skip-link"' not in html or 'href="#contenu"' not in html:
         errors.append(f"{rel}: lien d’évitement vers #contenu absent.")
-    if not re.search(r'<main\b[^>]*\bid=[\"\']contenu[\"\']', html, re.I):
-        errors.append(f"{rel}: main#contenu absent.")
+    if '<main id="contenu" tabindex="-1">' not in html:
+        errors.append(f"{rel}: cible de lien d’évitement non focalisable.")
 
     header = re.search(r"<header\b[\s\S]*?</header>", html, re.I)
     if not header:
