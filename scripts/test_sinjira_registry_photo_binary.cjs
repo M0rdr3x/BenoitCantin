@@ -7,9 +7,11 @@ const code=src.slice(start,end)
  .replace('(header:Uint8Array,ext:string,total:number):boolean','(header,ext,total)')
  .replace('(offset:number,expected:number[])','(offset,expected)')
  .replace('(offset:number,value:string)','(offset,value)')
- .replace('(file:any,photoPath:string,expectedSize:number):Promise<boolean>','(file,photoPath,expectedSize)')
+ .replace('(file:any,photoPath:string,expectedSize:number,deadlineMs=8000):Promise<boolean>','(file,photoPath,expectedSize,deadlineMs=8000)')
+ .replace('timer:ReturnType<typeof setTimeout>|undefined','timer')
+ .replace('new Promise<never>','new Promise')
  .replace('reader:ReadableStreamDefaultReader<Uint8Array>|undefined','reader');
-const ctx={Uint8Array,DataView,AbortSignal};vm.runInNewContext(code+'\nthis.verify=registryPhotoBinaryVerified;',ctx);
+const ctx={Uint8Array,DataView,AbortSignal,AbortController,setTimeout,clearTimeout};vm.runInNewContext(code+'\nthis.verify=registryPhotoBinaryVerified;',ctx);
 const make=(n)=>new Uint8Array(n);
 const ascii=(buf,offset,s)=>buf.set(Buffer.from(s,'ascii'),offset);
 const png=make(33);png.set([137,80,78,71,13,10,26,10,0,0,0,13]);ascii(png,12,'IHDR');
@@ -37,12 +39,27 @@ async function check(ext,buf,want,{size=buf.length,error=null,throwRead=false,sp
  await check('avif',avif.map((v,i)=>i>=16&&i<20?0:v),false);
  await check('webp',webp.map((v,i)=>i===4?0:v),false);
  await check('png',png,false,{error:{code:'STORAGE_ERROR'}});
+ for(const error of [false,0,''])await check('png',png,false,{error});
  await check('png',png,false,{throwRead:true});
  for(const size of [0,-1,NaN,Infinity,3.5,10*1024*1024+1])await check('png',png,false,{size});
  let cancelled=false,released=false;
  const reader={async read(){return {done:false,value:new Uint8Array(100)}},async cancel(){cancelled=true},releaseLock(){released=true}};
  const file={download(){return {asStream:async()=>({data:{getReader:()=>reader},error:null})}}};
  assert.equal(await ctx.verify(file,'u/file.png',33),false);assert.ok(cancelled&&released);assertions++;
+ // Fournisseur qui ignore AbortSignal : le délai doit rester effectif.
+ for(const phase of ['download','read','cancel','empty','ambiguous']){
+   let aborted=false;
+   const never=()=>new Promise(()=>{});
+   const fake={download(_p,_opt,{signal}){
+     signal.addEventListener('abort',()=>{aborted=true},{once:true});
+     return {asStream:()=>phase==='download'?never():Promise.resolve({error:null,data:{getReader:()=>({
+       read:()=>phase==='read'?never():Promise.resolve(phase==='empty'?{done:false,value:new Uint8Array(0)}:phase==='ambiguous'?{done:1}:{done:false,value:new Uint8Array(100)}),
+       cancel:()=>phase==='cancel'?never():Promise.resolve(),releaseLock(){}
+     })}})};
+   }};
+   assert.equal(await ctx.verify(fake,'u/file.png',33,20),false,phase);
+   assert.ok(aborted,phase+' aborted');assertions++;
+ }
  assert.ok(src.includes('return await registryPhotoBinaryVerified(file,photoPath,info.size)'));
  console.log('PASS registry binary validation: '+assertions+' cases.');
 })().catch(e=>{console.error(e);process.exitCode=1});

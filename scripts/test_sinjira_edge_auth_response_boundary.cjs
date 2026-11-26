@@ -15,11 +15,20 @@ function extract(name,next){
 const code=extract('authenticatedContext','assuranceLevel')+
   extract('assuranceLevel','assertAdminMfa')+
   extract('assertAdminMfa','sensitiveStepUpEnabled')+
-  '\nglobalThis.gates={authenticatedContext,assuranceLevel,assertAdminMfa};';
+  extract('sensitiveStepUpEnabled','assertSensitiveMfa')+
+  extract('assertSensitiveMfa','assertVaultMfa')+
+  '\nglobalThis.gates={authenticatedContext,assuranceLevel,assertAdminMfa,assertSensitiveMfa};';
 const validAal={currentLevel:'aal2',nextLevel:'aal2'};
-function harness({admin=true,aal=validAal,user={id:'test-user'},authError=null,adminError=null,aalError=null}={}){
+function harness({admin=true,aal=validAal,user={id:'test-user'},authError=null,adminError=null,aalError=null,settings={data:null,error:null}}={}){
   let assuranceCalls=0;
   const service={rpc:async()=>({data:admin,error:adminError}),
+    from(table){assert.equal(table,'security_user_settings');return {
+      select(columns){assert.equal(columns,'user_id,sensitive_step_up');return {
+        eq(column,value){assert.equal(column,'user_id');assert.equal(value,'test-user');return {
+          maybeSingle:async()=>settings
+        };}
+      };}
+    };},
     auth:{getUser:async()=>({data:user===null?null:{user},error:authError}),
       mfa:{getAuthenticatorAssuranceLevel:async()=>{assuranceCalls++;return {data:aal,error:aalError}}}}};
   const sandbox={serviceClient:()=>service,bearerToken:()=> 'synthetic-token',console:{error(){}}};
@@ -55,6 +64,30 @@ async function main(){
     await assert.rejects(h.gates.authenticatedContext({}),/AUTH_REQUIRED/);
   }
   assert.equal((await allowed.gates.authenticatedContext({})).user.id,'test-user');
-  console.log('PASS: 25 scénarios serveur Auth, Admin et AAL.');
+  // Aucun résultat ambigu ne peut désactiver le MFA facultatif.
+  const own={user_id:'test-user'};
+  for(const data of [undefined, false, [], {}, {sensitive_step_up:false},
+    {user_id:'other-user',sensitive_step_up:false},
+    {...own,sensitive_step_up:'false'}, {...own,sensitive_step_up:0},
+    {...own,sensitive_step_up:null}, {...own}]){
+    const h=harness({settings:{data,error:null}});
+    await assert.rejects(h.gates.assertSensitiveMfa(h.context),/SECURITY_STATE_UNAVAILABLE/);
+    assert.equal(h.calls(),0);
+  }
+  const outage=harness({settings:{data:{...own,sensitive_step_up:false},error:{message:'unavailable'}}});
+  await assert.rejects(outage.gates.assertSensitiveMfa(outage.context),/SECURITY_STATE_UNAVAILABLE/);
+  assert.equal(outage.calls(),0);
+  for(const data of [null,{...own,sensitive_step_up:true}]){
+    const h=harness({settings:{data,error:null},aal:{currentLevel:'aal1',nextLevel:'aal2'}});
+    await assert.rejects(h.gates.assertSensitiveMfa(h.context),/MFA_REQUIRED/);
+    assert.equal(h.calls(),1);
+    const allowed=harness({settings:{data,error:null}});
+    assert.equal((await allowed.gates.assertSensitiveMfa(allowed.context)).currentLevel,'aal2');
+    assert.equal(allowed.calls(),1);
+  }
+  const optedOut=harness({settings:{data:{...own,sensitive_step_up:false},error:null}});
+  assert.equal(await optedOut.gates.assertSensitiveMfa(optedOut.context),null);
+  assert.equal(optedOut.calls(),0);
+  console.log('PASS: 41 scénarios serveur Auth, Admin, AAL et préférence MFA.');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

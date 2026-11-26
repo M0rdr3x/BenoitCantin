@@ -77,20 +77,27 @@ function registryPhotoSignature(header:Uint8Array,ext:string,total:number):boole
 }
 
 // Lire un flux borné, sans décoder l'image ni conserver le fichier en mémoire.
-async function registryPhotoBinaryVerified(file:any,photoPath:string,expectedSize:number):Promise<boolean>{
+async function registryPhotoBinaryVerified(file:any,photoPath:string,expectedSize:number,deadlineMs=8000):Promise<boolean>{
   const maxBytes=10*1024*1024;
   if(!Number.isSafeInteger(expectedSize)||expectedSize<1||expectedSize>maxBytes)return false;
   const header=new Uint8Array(Math.min(256,expectedSize));
   let reader:ReadableStreamDefaultReader<Uint8Array>|undefined;
-  let complete=false,total=0;
+  let complete=false,total=0,chunks=0,emptyChunks=0;
+  const controller=new AbortController();
+  let timer:ReturnType<typeof setTimeout>|undefined;
+  const deadline=new Promise<never>((_,reject)=>{
+    timer=setTimeout(()=>{controller.abort();reject(new Error('PHOTO_READ_TIMEOUT'))},deadlineMs);
+  });
   try{
-    const {data,error}=await file.download(photoPath,{}, {cache:'no-store',signal:AbortSignal.timeout(8000)}).asStream();
-    if(error||!data)return false;
+    const {data,error}=await Promise.race([file.download(photoPath,{}, {cache:'no-store',signal:controller.signal}).asStream(),deadline]);
+    if(error!==null||!data||typeof data.getReader!=='function')return false;
     reader=data.getReader();
     while(true){
-      const {done,value}=await reader.read();
-      if(done){complete=true;break;}
-      if(!(value instanceof Uint8Array))return false;
+      const {done,value}=await Promise.race([reader.read(),deadline]);
+      if(done===true){complete=true;break;}
+      if(done!==false||!(value instanceof Uint8Array)||++chunks>65536)return false;
+      if(value.byteLength===0){if(++emptyChunks>32)return false;continue;}
+      emptyChunks=0;
       if(value.byteLength>expectedSize-total)return false;
       if(total<header.length)header.set(value.subarray(0,header.length-total),total);
       total+=value.byteLength;
@@ -98,7 +105,10 @@ async function registryPhotoBinaryVerified(file:any,photoPath:string,expectedSiz
     return total===expectedSize&&registryPhotoSignature(header,photoPath.split('.').pop()||'',total);
   }catch{return false}
   finally{
-    if(reader){if(!complete){try{await reader.cancel()}catch{}}try{reader.releaseLock()}catch{}}
+    if(timer!==undefined)clearTimeout(timer);
+    if(!complete)controller.abort();
+    // Un fournisseur défaillant ne doit pas prolonger indéfiniment le nettoyage.
+    if(reader){if(!complete){try{void Promise.resolve(reader.cancel()).catch(()=>{})}catch{}}try{reader.releaseLock()}catch{}}
   }
 }
 
@@ -111,10 +121,10 @@ async function registryPhotoStored(service:any,photoPath:string):Promise<boolean
   if(!Object.prototype.hasOwnProperty.call(formats,ext))return false;
   try{
     const {data:bucket,error:bucketError}=await service.storage.getBucket(bucketId);
-    if(bucketError||bucket?.id!==bucketId||bucket.public!==false)return false;
+    if(bucketError!==null||!bucket||typeof bucket!=='object'||Array.isArray(bucket)||bucket.id!==bucketId||bucket.public!==false)return false;
     const file=service.storage.from(bucketId);
     const {data:info,error:infoError}=await file.info(photoPath);
-    if(infoError||typeof info?.size!=='number'||!Number.isSafeInteger(info.size)
+    if(infoError!==null||!info||typeof info!=='object'||Array.isArray(info)||typeof info.size!=='number'||!Number.isSafeInteger(info.size)
       ||info.size<=0||info.size>maxBytes||info.contentType!==formats[ext])return false;
     return await registryPhotoBinaryVerified(file,photoPath,info.size);
   }catch{return false}

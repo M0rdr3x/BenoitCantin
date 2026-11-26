@@ -13,13 +13,14 @@ async function check({ext='png',bucket={id:bucketId,public:false},bucketError=nu
   let reads=0;
   const service={storage:{async getBucket(id){assert.equal(id,bucketId);if(throws)throw Error('offline');return {data:bucket,error:bucketError}},from(id){assert.equal(id,bucketId);return {async info(p){assert.equal(p,prefix+ext);reads++;return {data:info,error:infoError}}}}}};
   assert.equal(await ctx.verify(service,prefix+ext),want);count++;
-  if(bucketError||bucket?.id!==bucketId||bucket.public!==false||throws)assert.equal(reads,0);
+  if(bucketError!==null||bucket?.id!==bucketId||bucket.public!==false||throws)assert.equal(reads,0);
 }
 (async()=>{
   for(const [ext,contentType] of Object.entries({jpg:'image/jpeg',png:'image/png',webp:'image/webp',avif:'image/avif',gif:'image/gif'}))await check({ext,info:{size:10*1024*1024,contentType},want:true});
   for(const size of [0,-1,0.5,10*1024*1024+1,Infinity,NaN,'100',null,undefined])await check({info:{size,contentType:'image/png'}});
   for(const contentType of ['image/svg+xml','image/jpeg','text/html','application/octet-stream',null,undefined])await check({info:{size:100,contentType}});
   for(const bucket of [null,{}, {id:bucketId,public:true},{id:bucketId,public:'false'},{id:'other',public:false}])await check({bucket});
+  for(const error of [false,0,'']){await check({bucketError:error});await check({infoError:error});}
   await check({bucketError:{code:'FAIL'}});await check({infoError:{code:'FAIL'}});await check({info:null});await check({throws:true});await check({ext:'svg'});await check({ext:'constructor'});
   const route=src.slice(src.indexOf('Deno.serve(async(req)=>{'));
   const canonical=route.indexOf('isCanonicalRegistryPhotoPath(photo_path,user.id)');
