@@ -24,9 +24,9 @@ const crc32=(data)=>{let crc=0xffffffff;for(const b of data){crc^=b;for(let i=0;
 assert.equal(crc32(Buffer.from('123456789')),0xcbf43926);
 const sealChunk=(buf,pos)=>{const v=new DataView(buf.buffer,buf.byteOffset,buf.byteLength),n=v.getUint32(pos);v.setUint32(pos+8+n,crc32(buf.subarray(pos+4,pos+8+n)));return buf;};
 const png=make(58);png.set([137,80,78,71,13,10,26,10,0,0,0,13]);ascii(png,12,'IHDR');new DataView(png.buffer).setUint32(16,640);new DataView(png.buffer).setUint32(20,480);new DataView(png.buffer).setUint32(33,1);ascii(png,37,'IDAT');png[41]=1;ascii(png,50,'IEND');png[24]=8;png[25]=2;for(const pos of [8,33,46])sealChunk(png,pos);
-const jpg=Uint8Array.from([255,216,255,192,0,11,8,1,224,2,128,1,1,17,0,255,217]);
+const jpg=Uint8Array.from([255,216,255,192,0,11,8,1,224,2,128,1,1,17,0,255,218,0,8,1,1,0,0,63,0,1,255,217]);
 const gif=make(28);ascii(gif,0,'GIF89a');new DataView(gif.buffer).setUint16(6,640,true);new DataView(gif.buffer).setUint16(8,480,true);gif[13]=44;new DataView(gif.buffer).setUint16(18,640,true);new DataView(gif.buffer).setUint16(20,480,true);gif.set([2,1,1,0,59],23);
-const webp=make(30);ascii(webp,0,'RIFF');new DataView(webp.buffer).setUint32(4,22,true);ascii(webp,8,'WEBPVP8X');new DataView(webp.buffer).setUint32(16,10,true);webp.set([127,2,0,223,1,0],24);
+const webp=make(44);ascii(webp,0,'RIFF');new DataView(webp.buffer).setUint32(4,36,true);ascii(webp,8,'WEBPVP8X');new DataView(webp.buffer).setUint32(16,10,true);webp.set([127,2,0,223,1,0],24);ascii(webp,30,'VP8L');new DataView(webp.buffer).setUint32(34,5,true);webp[38]=47;new DataView(webp.buffer).setUint32(39,639|(479<<14),true);
 // Fixtures de conteneurs : elles ne représentent pas des images décodables.
 const box=(kind,payload)=>{const b=make(8+payload.length);new DataView(b.buffer).setUint32(0,b.length);ascii(b,4,kind);b.set(payload,8);return b;};
 const concat=(...parts)=>Uint8Array.from(Buffer.concat(parts.map(p=>Buffer.from(p))));
@@ -107,7 +107,25 @@ async function check(ext,buf,want,{size=buf.length,error=null,throwRead=false,sp
  const malformedWebp=webp.slice();new DataView(malformedWebp.buffer).setUint32(16,99,true);await check('webp',malformedWebp,false);
  // JPEG avec métadonnées avant SOF, au-delà de l'ancien préfixe 256 octets.
  const withApp=make(jpg.length+304);withApp.set(jpg.slice(0,2));withApp.set([255,225,1,46],2);withApp.set(jpg.slice(2),304);await check('jpg',withApp,false);
- const app=make(jpg.length+304);app.set(jpg.slice(0,2));app.set([255,225,1,46],2);app.set(jpg.slice(2),306);await check('jpg',app,true);
+ const app=make(jpg.length+304);app.set(jpg.slice(0,2));app.set([255,225,1,46],2);app.set(jpg.slice(2),306);await check('jpg',app,false);
+ const jfif=Uint8Array.of(255,224,0,16,74,70,73,70,0,1,1,0,0,1,0,1,0,0);
+ await check('jpg',concat(jpg.slice(0,2),jfif,jpg.slice(2)),true);
+ for(const marker of [225,226,237,254]){
+   const seg=Uint8Array.of(255,marker,0,4,65,66);
+   await check('jpg',concat(jpg.slice(0,2),seg,jpg.slice(2)),false);
+   await check('jpg',concat(jpg.slice(0,-2),seg,jpg.slice(-2)),false);
+ }
+ await check('jpg',concat(jpg,Uint8Array.of(0)),false);
+ await check('jpg',jpg.slice(0,-2),false);
+ await check('jpg',concat(jpg.slice(0,-2),Uint8Array.of(255,0,7),jpg.slice(-2)),true);
+ const webChunk=(kind,payload)=>{const b=make(8+payload.length+(payload.length%2));ascii(b,0,kind);new DataView(b.buffer).setUint32(4,payload.length,true);b.set(payload,8);return b;};
+ const riff=(...parts)=>{const b=concat(webp.slice(0,12),...parts);new DataView(b.buffer).setUint32(4,b.length-8,true);return b;};
+ for(const kind of ['EXIF','XMP ','ICCP','ANIM','ANMF','JUNK'])await check('webp',riff(webp.slice(12),webChunk(kind,make(2))),false);
+ await check('webp',riff(webp.slice(12,30)),false);
+ await check('webp',riff(webp.slice(30),webp.slice(30)),false);
+ const wrongCanvas=webp.slice();wrongCanvas[24]--;await check('webp',wrongCanvas,false);
+ const badPad=webp.slice();badPad[43]=1;await check('webp',badPad,false);
+ const metadataFlag=webp.slice();metadataFlag[20]=8;await check('webp',metadataFlag,false);
  await check('jpg',png,false);await check('png',jpg,false);await check('svg',png,false);
  await check('avif',avif.map((v,i)=>i>=16&&i<20?0:v),false);
  for(const [width,height] of [[0,480],[8193,1],[5001,5000]])await check('avif',concat(ftyp,meta(ispe(width,height)),mdat),false);

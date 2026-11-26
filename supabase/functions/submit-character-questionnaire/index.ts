@@ -63,26 +63,51 @@ function registryPhotoSignature(header:Uint8Array,ext:string,total:number):boole
     width<=8192&&height<=8192&&width*height<=25_000_000;
   const view=new DataView(header.buffer,header.byteOffset,header.byteLength);
   if(ext==='jpg'){
-    if(header.length<4||!bytes(0,[255,216]))return false;
-    // Parcours borné des segments avant les données compressées. Le SOF
-    // doit être présent dans le préfixe inspecté, jamais deviné.
-    let pos=2;
-    while(pos<header.length){
-      if(header[pos++]!==255)return false;
-      while(pos<header.length&&header[pos]===255)pos++;
-      if(pos>=header.length)return false;
-      const marker=header[pos++];
-      if(marker===0||marker===216||marker===217||marker===218||
-         marker===1||(marker>=208&&marker<=215)||pos+2>header.length)return false;
-      const length=view.getUint16(pos,false);
-      if(length<2||pos+length>header.length)return false;
-      if([192,193,194,195,197,198,199,201,202,203,205,206,207].includes(marker)){
-        if(length<11)return false;
-        const components=header[pos+7];
-        if(components<1||components>4||length!==8+3*components)return false;
-        return dimensions(view.getUint16(pos+5,false),view.getUint16(pos+3,false));
+    // Parcours de tous les marqueurs, y compris entre les scans progressifs.
+    // Les données entropiques ne sont pas décodées.
+    if(header.length!==total||total<4||!bytes(0,[255,216]))return false;
+    let pos=2,count=0,sof=false,scan=false,inScan=false,jfif=false,adobe=false,components=0;
+    while(pos<total){
+      if(inScan){
+        if(header[pos++]!==255)continue;
+        while(pos<total&&header[pos]===255)pos++;
+        if(pos>=total)return false;
+        const marker=header[pos];
+        if(marker===0||(marker>=208&&marker<=215)){pos++;continue;}
+        pos--;inScan=false;
       }
-      pos+=length;
+      if(++count>4096||header[pos++]!==255)return false;
+      while(pos<total&&header[pos]===255)pos++;
+      if(pos>=total)return false;
+      const marker=header[pos++];
+      if(marker===217)return sof&&scan&&pos===total;
+      if(marker===0||marker===216||marker===1||(marker>=208&&marker<=215)||pos+2>total)return false;
+      const length=view.getUint16(pos,false),next=pos+length;
+      if(length<2||next>total)return false;
+      if(marker===224){
+        // JFIF fixe, sans vignette ; aucun APP libre.
+        if(jfif||sof||length!==16||!bytes(pos+2,[74,70,73,70,0])||header[pos+14]!==0||header[pos+15]!==0)return false;
+        jfif=true;
+      }else if(marker===238){
+        if(adobe||sof||length!==14||!ascii(pos+2,'Adobe'))return false;
+        adobe=true;
+      }else if(marker===192||marker===194){
+        if(sof||scan||length<11||header[pos+2]!==8)return false;
+        components=header[pos+7];
+        if(![1,3,4].includes(components)||length!==8+3*components||
+           !dimensions(view.getUint16(pos+5,false),view.getUint16(pos+3,false)))return false;
+        sof=true;
+      }else if(marker===218){
+        if(!sof||length<8)return false;
+        const n=header[pos+2];
+        if(n<1||n>components||length!==6+2*n)return false;
+        scan=true;inScan=true;
+      }else if(marker===196||marker===219){
+        if(length<=2)return false;
+      }else if(marker===221){
+        if(length!==4)return false;
+      }else return false; // APP1 EXIF/XMP, APP2 ICC, COM et marqueurs inconnus.
+      pos=next;
     }
     return false;
   }
@@ -196,26 +221,40 @@ function registryPhotoSignature(header:Uint8Array,ext:string,total:number):boole
     return false;
   }
   if(ext==='webp'){
-    if(header.length<20||!ascii(0,'RIFF')||!ascii(8,'WEBP'))return false;
-    const size=view.getUint32(4,true),chunkSize=view.getUint32(16,true);
-    if(size+8!==total||20+chunkSize+(chunkSize%2)>total)return false;
-    if(ascii(12,'VP8X')){
-      if(chunkSize!==10||header.length<30||(header[20]&2)!==0)return false;
-      const width=1+header[24]+256*header[25]+65536*header[26];
-      const height=1+header[27]+256*header[28]+65536*header[29];
-      return dimensions(width,height);
+    if(header.length!==total||total<20||!ascii(0,'RIFF')||!ascii(8,'WEBP')||
+       view.getUint32(4,true)+8!==total)return false;
+    let extended=false,alpha=false,alphaChunk=false,image=false,canvasW=0,canvasH=0,count=0;
+    for(let pos=12;pos<total;){
+      if(++count>4096||total-pos<8||image)return false;
+      const length=view.getUint32(pos+4,true),data=pos+8,next=data+length+(length%2);
+      if(next>total||(length%2!==0&&header[next-1]!==0))return false;
+      if(ascii(pos,'VP8X')){
+        if(pos!==12||length!==10||(header[data]&~16)!==0||
+           header[data+1]!==0||header[data+2]!==0||header[data+3]!==0)return false;
+        extended=true;alpha=(header[data]&16)!==0;
+        canvasW=1+header[data+4]+256*header[data+5]+65536*header[data+6];
+        canvasH=1+header[data+7]+256*header[data+8]+65536*header[data+9];
+        if(!dimensions(canvasW,canvasH))return false;
+      }else if(ascii(pos,'ALPH')){
+        if(!extended||!alpha||alphaChunk||length<2)return false;
+        alphaChunk=true;
+      }else if(ascii(pos,'VP8L')||ascii(pos,'VP8 ')){
+        let width=0,height=0;
+        if(ascii(pos,'VP8L')){
+          if(alphaChunk||length<5||header[data]!==47)return false;
+          const packed=view.getUint32(data+1,true);
+          if((packed>>>29)!==0||(extended&&alpha!==((packed&0x10000000)!==0)))return false;
+          width=1+(packed&16383);height=1+((packed>>>14)&16383);
+        }else{
+          if(length<10||(header[data]&1)!==0||!bytes(data+3,[157,1,42])||alpha!==alphaChunk)return false;
+          width=view.getUint16(data+6,true)&16383;height=view.getUint16(data+8,true)&16383;
+        }
+        if(!dimensions(width,height)||(extended&&(width!==canvasW||height!==canvasH)))return false;
+        image=true;
+      }else return false; // EXIF, XMP, ICCP, ANIM, ANMF et chunks inconnus.
+      pos=next;
     }
-    if(ascii(12,'VP8L')){
-      if(chunkSize<5||header.length<25||header[20]!==47)return false;
-      const packed=view.getUint32(21,true);
-      if((packed>>>29)!==0)return false;
-      return dimensions(1+(packed&16383),1+((packed>>>14)&16383));
-    }
-    if(ascii(12,'VP8 ')){
-      if(chunkSize<10||header.length<30||(header[20]&1)!==0||!bytes(23,[157,1,42]))return false;
-      return dimensions(view.getUint16(26,true)&16383,view.getUint16(28,true)&16383);
-    }
-    return false;
+    return image;
   }
   if(ext==='avif'){
     // Sous-ensemble conservateur : image fixe, boîtes 32 bits bornées.
@@ -274,10 +313,10 @@ function registryPhotoSignature(header:Uint8Array,ext:string,total:number):boole
 async function registryPhotoBinaryVerified(file:any,photoPath:string,expectedSize:number,deadlineMs=8000):Promise<boolean>{
   const maxBytes=10*1024*1024;
   if(!Number.isSafeInteger(expectedSize)||expectedSize<1||expectedSize>maxBytes)return false;
-  // PNG/GIF : conteneur entier en mémoire bornée (10 Mio maximum).
-  // Autres formats : conserver uniquement le préfixe historique de 256 Kio.
+  // JPEG/PNG/GIF/WebP : conteneur entier, borné à 10 Mio.
+  // AVIF : préfixe historique de 256 Kio.
   const ext=photoPath.split('.').pop()||'';
-  const header=new Uint8Array(ext==='png'||ext==='gif'?expectedSize:Math.min(256*1024,expectedSize));
+  const header=new Uint8Array(ext==='avif'?Math.min(256*1024,expectedSize):expectedSize);
   let reader:ReadableStreamDefaultReader<Uint8Array>|undefined;
   let complete=false,total=0,chunks=0,emptyChunks=0;
   const controller=new AbortController();
