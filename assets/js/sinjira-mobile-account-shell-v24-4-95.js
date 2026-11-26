@@ -126,7 +126,16 @@
     window.requestAnimationFrame(syncAfterLayout);
   });
   if('ResizeObserver' in window){
-    var navObserver=new ResizeObserver(syncAfterLayout);
+    // Une modification du padding du body peut modifier la géométrie observée.
+    // Regrouper les notifications et sortir du cycle ResizeObserver.
+    var resizeFrame=null;
+    var navObserver=new ResizeObserver(function(){
+      if(resizeFrame!==null)return;
+      resizeFrame=window.requestAnimationFrame(function(){
+        resizeFrame=null;
+        syncAfterLayout();
+      });
+    });
     navObserver.observe(nav);
   }
 }());
