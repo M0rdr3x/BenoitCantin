@@ -8,6 +8,10 @@ on:
       - 'scripts/test_pdfjs_candidate_browser.py'
       - 'scripts/test_nova_pdf_viewer_local.py'
       - 'scripts/stage_pdfjs_runtime.py'
+      - 'scripts/validate_pdfjs_vendored_runtime.py'
+      - 'scripts/build_netlify_public.py'
+      - 'scripts/inventory_browser_references.py'
+      - 'projets/projet-nova/assets/pdfjs-6.5.438/**'
       - 'projets/projet-nova/documents/01_Resume_Officiel_1_Page_Projet_Nova.pdf'
       - 'projets/projet-nova/documents/02_Depliant_Public_4_Pages_Projet_Nova.pdf'
       - 'projets/projet-nova/documents/04_Livre_Nova_Complet.pdf'
@@ -37,6 +41,7 @@ jobs:
         run: |
           python3 scripts/verify_pdfjs_release_candidate.py --self-test
           python3 scripts/stage_pdfjs_runtime.py --self-test
+          python3 scripts/validate_pdfjs_vendored_runtime.py --self-test
       - name: Acquérir la version officielle sans exécuter son contenu
         shell: bash
         run: |
@@ -60,6 +65,18 @@ jobs:
           trap 'rm -rf "$work"' EXIT
           python3 scripts/stage_pdfjs_runtime.py --archive "$output/release.zip" \
             --destination "$work/runtime" --receipt "$output/runtime-receipt.json"
+          # Rehearse the exact isolated site build using a disposable checkout.
+          # No Git write, no deploy and no network fetch by the builder.
+          git archive HEAD | tar -x -C "$work" --one-top-level=source
+          cd "$work/source"
+          test ! -e projets/projet-nova/assets/pdfjs-6.5.438
+          mv "$work/runtime" projets/projet-nova/assets/pdfjs-6.5.438
+          python3 -c 'from pathlib import Path; p=Path("projets/projet-nova/assets/nova-pdf-viewer.mjs"); s=p.read_text("utf-8"); assert s.count("const RUNTIME_ENABLED = false;")==1; p.write_text(s.replace("const RUNTIME_ENABLED = false;","const RUNTIME_ENABLED = true;"),encoding="utf-8")'
+          python3 scripts/build_netlify_public.py --security-containment --output "$work/site"
+          python3 scripts/validate_nova_pdf_eval_boundary.py --root "$work/site"
+          python3 scripts/inventory_browser_references.py --root "$work/site" --output "$work/browser-inventory.json" --source-sha "$GITHUB_SHA"
+          python3 -c 'import json,sys; assert json.load(open(sys.argv[1]))["verified_vendor_files"]==198' "$work/browser-inventory.json"
+          echo "PASS: all 198 verified files survived the isolated publication builder."
       - name: Conserver seulement le candidat vérifié et son inventaire
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:

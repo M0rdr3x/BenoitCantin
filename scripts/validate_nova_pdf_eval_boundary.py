@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 import re
 import unittest
+from validate_pdfjs_vendored_runtime import verify_state
 
 VIEWER=Path("projets/projet-nova/visionneuse.html")
 MODULE=Path("projets/projet-nova/assets/nova-pdf-viewer.mjs")
@@ -26,14 +27,15 @@ class Scripts(HTMLParser):
                 self.inline=True
             self.scripts.append(a.get("src"))
 
-def validate(source,module,documents):
+def validate(source,module,documents,enabled=False):
     p=Scripts()
     p.feed(source)
     p.close()
     if p.inline or p.scripts!=EXPECTED_SCRIPTS or "cdnjs.cloudflare.com" in source:
         raise ValueError("Unexpected viewer script")
-    if module.count("const RUNTIME_ENABLED = false;")!=1:
-        raise ValueError("Runtime not approved for publication")
+    flag="true" if enabled else "false"
+    if module.count(f"const RUNTIME_ENABLED = {flag};")!=1:
+        raise ValueError("Runtime activation does not match verified publication")
     if re.search(r"https?://|//cdnjs|pdfjsLib|\.innerHTML\b|\.outerHTML\b|insertAdjacentHTML",module):
         raise ValueError("Unreviewed viewer execution or HTML sink")
     for token in ("Object.hasOwn(PUBLIC_FILES,d.id)", "d.path !== 'documents/' + d.file",
@@ -79,8 +81,9 @@ def main():
     if a.self_test:
         return 0 if unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(Tests)).wasSuccessful() else 1
     if a.root is None: p.error("Build root required")
-    validate(*((a.root/path).read_text("utf-8") for path in (VIEWER,MODULE,DOCUMENTS)))
-    print("PASS: no legacy CDN; exact local public PDF catalog; runtime disabled pending verified vendoring.")
+    records=verify_state(a.root)
+    validate(*((a.root/path).read_text("utf-8") for path in (VIEWER,MODULE,DOCUMENTS)),enabled=bool(records))
+    print("PASS: no legacy CDN; exact local public PDF catalog; runtime state verified.")
     return 0
 
 if __name__=="__main__":

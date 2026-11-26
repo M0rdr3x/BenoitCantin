@@ -86,6 +86,9 @@ def validate(root: Path, require_all: bool = True) -> list[str]:
     errors: list[str] = []
     if not root.is_dir():
         return ["Artefact Jekyll de vérification absent"]
+    from validate_pdfjs_vendored_runtime import MODULE as pdfjs_module, RUNTIME as pdfjs_runtime, publication_errors
+    if (root/pdfjs_module).exists() or (root/pdfjs_runtime).exists() or (root/pdfjs_runtime).is_symlink():
+        errors.extend(publication_errors(root))
     for name in BLOCKED:
         if (root / name).exists():
             errors.append("Fichier privé ou technique publié : " + name)

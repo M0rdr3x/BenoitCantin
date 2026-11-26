@@ -11,6 +11,9 @@ theme: null
 include:
   - ".well-known"
   - ".well-known/security.txt"
+  - "projets/projet-nova/assets/pdfjs-6.5.438/LICENSE"
+  - "projets/projet-nova/assets/pdfjs-6.5.438/web/cmaps/LICENSE"
+  - "projets/projet-nova/assets/pdfjs-6.5.438/web/iccs/LICENSE"
   # Chemins publics revus dans l'allowlist du builder; Jekyll a tendance à
   # ignorer Markdown sans frontmatter et les dossiers exclus.
   - "projets/projet-nova/PROPOSITIONS_PUBLIQUES.md"

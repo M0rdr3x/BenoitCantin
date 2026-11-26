@@ -15,6 +15,10 @@ on:
       - 'scripts/build_netlify_public.py'
       - 'scripts/inventory_browser_references.py'
       - 'scripts/validate_nova_pdf_eval_boundary.py'
+      - 'scripts/validate_pdfjs_vendored_runtime.py'
+      - 'scripts/stage_pdfjs_runtime.py'
+      - 'scripts/verify_pdfjs_release_candidate.py'
+      - 'projets/projet-nova/assets/pdfjs-6.5.438/**'
       - 'scripts/validate_jekyll_emergency_pages.py'
       - '_config.yml'
       - 'netlify.toml'
@@ -34,6 +38,10 @@ on:
       - 'scripts/build_netlify_public.py'
       - 'scripts/inventory_browser_references.py'
       - 'scripts/validate_nova_pdf_eval_boundary.py'
+      - 'scripts/validate_pdfjs_vendored_runtime.py'
+      - 'scripts/stage_pdfjs_runtime.py'
+      - 'scripts/verify_pdfjs_release_candidate.py'
+      - 'projets/projet-nova/assets/pdfjs-6.5.438/**'
       - 'scripts/validate_jekyll_emergency_pages.py'
       - '_config.yml'
       - 'netlify.toml'
@@ -59,6 +67,7 @@ jobs:
         run: |
           python3 scripts/inventory_browser_references.py --self-test
           python3 scripts/validate_nova_pdf_eval_boundary.py --self-test
+          python3 scripts/validate_pdfjs_vendored_runtime.py --self-test
           python3 scripts/build_netlify_public.py --self-test-security
       - name: Inventorier les références littérales dans le build isolé
         shell: bash

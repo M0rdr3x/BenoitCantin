@@ -180,11 +180,14 @@ def scan_text(path, source, records, counts):
     else:
         scan.js(source)
 
+from validate_pdfjs_vendored_runtime import RUNTIME as PDFJS_RUNTIME, verify_state
+
 def inventory(root):
     if root.is_symlink() or not root.is_dir():
         raise ValueError("Invalid isolated build")
     records, counts, source_index = [], Counter(), []
     total = 0
+    vendor = { (PDFJS_RUNTIME / item['path']).as_posix():item['sha256'] for item in verify_state(root) } if (root/PDFJS_RUNTIME).exists() or (root/PDFJS_RUNTIME).is_symlink() else {}
     for path in sorted(root.rglob("*")):
         st = path.lstat()
         if stat.S_ISDIR(st.st_mode):
@@ -203,10 +206,16 @@ def inventory(root):
         relative = path.relative_to(root).as_posix()
         source_index.append({"file":relative,"sha256":sha(data)})
         counts["scanned_"+path.suffix.lower()[1:]] += 1
+        if relative in vendor:
+            if sha(data)!=vendor[relative]:
+                raise ValueError('Verified vendor changed')
+            counts['verified_vendor_sources'] += 1
+            continue
         scan_text(relative,data.decode("utf-8-sig"),records,counts)
     if counts["scanned_html"] < 1 or counts["scanned_js"] < 1:
         raise ValueError("Browser source coverage incomplete")
     return {"format":"sinjira-browser-reference-inventory-v1","status":"candidate-observation-not-approval",
+            "verified_vendor_files":len(vendor),
             "source_files":len(source_index),"source_index_sha256":sha(json.dumps(source_index,sort_keys=True,separators=(",",":")).encode()),
             "counts":dict(sorted(counts.items())),
             "reference_counts":dict(sorted(Counter(r["kind"] for r in records).items())),
