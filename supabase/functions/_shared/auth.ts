@@ -66,10 +66,16 @@ function edgeFunctionName(req: Request) {
 async function authenticatedContext(req: Request) {
   const token = bearerToken(req);
   if (!token) throw new Error('AUTH_REQUIRED');
-  const service = serviceClient();
-  const { data, error } = await service.auth.getUser(token);
-  if (error || !data?.user || typeof data.user.id !== 'string' || !data.user.id) throw new Error('AUTH_REQUIRED');
-  return { user: data.user, service, token };
+  // Une erreur de configuration ou de transport ne doit pas divulguer
+  // les détails du fournisseur ni permettre de poursuivre sans identité.
+  try {
+    const service = serviceClient();
+    const { data, error } = await service.auth.getUser(token);
+    if (error || !data?.user || typeof data.user.id !== 'string' || !data.user.id) throw new Error('AUTH_REQUIRED');
+    return { user: data.user, service, token };
+  } catch {
+    throw new Error('AUTH_REQUIRED');
+  }
 }
 
 async function assuranceLevel(context: Awaited<ReturnType<typeof authenticatedContext>>) {
@@ -88,10 +94,14 @@ async function assuranceLevel(context: Awaited<ReturnType<typeof authenticatedCo
 
 async function assertAdminMfa(context: Awaited<ReturnType<typeof authenticatedContext>>) {
   const { user, service } = context;
-  const { data: isAdmin, error: adminError } = await service.rpc('is_sinjira_admin', {
-    p_user_id: user.id
-  });
-  if (adminError || isAdmin !== true) throw new Error('ADMIN_REQUIRED');
+  try {
+    const { data: isAdmin, error: adminError } = await service.rpc('is_sinjira_admin', {
+      p_user_id: user.id
+    });
+    if (adminError || isAdmin !== true) throw new Error('ADMIN_REQUIRED');
+  } catch {
+    throw new Error('ADMIN_REQUIRED');
+  }
 
   const aal = await assuranceLevel(context).catch((error) => {
     console.error('[SINJIRA admin auth]', { code: 'MFA_STATE_UNAVAILABLE' });
@@ -106,22 +116,26 @@ async function assertAdminMfa(context: Awaited<ReturnType<typeof authenticatedCo
 
 async function sensitiveStepUpEnabled(context: Awaited<ReturnType<typeof authenticatedContext>>) {
   const { user, service } = context;
-  const { data, error } = await service
-    .from('security_user_settings')
-    .select('user_id,sensitive_step_up')
-    .eq('user_id', user.id)
-    .maybeSingle();
-  // Une absence de ligne conserve la protection par défaut. Seule une
-  // préférence booléenne explicite appartenant au compte authentifié
-  // peut désactiver le step-up sur les opérations où il est facultatif.
-  if (error || (data !== null && (
-    typeof data !== 'object' || Array.isArray(data) ||
-    data.user_id !== user.id || typeof data.sensitive_step_up !== 'boolean'
-  ))) {
+  try {
+    const { data, error } = await service
+      .from('security_user_settings')
+      .select('user_id,sensitive_step_up')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    // Une absence de ligne conserve la protection par défaut. Seule une
+    // préférence booléenne explicite appartenant au compte authentifié
+    // peut désactiver le step-up sur les opérations où il est facultatif.
+    if (error || (data !== null && (
+      typeof data !== 'object' || Array.isArray(data) ||
+      data.user_id !== user.id || typeof data.sensitive_step_up !== 'boolean'
+    ))) {
+      throw new Error('SECURITY_STATE_UNAVAILABLE');
+    }
+    return data === null || data.sensitive_step_up;
+  } catch {
     console.error('[SINJIRA sensitive auth]', { code: 'SECURITY_STATE_UNAVAILABLE' });
     throw new Error('SECURITY_STATE_UNAVAILABLE');
   }
-  return data === null || data.sensitive_step_up;
 }
 
 async function assertSensitiveMfa(context: Awaited<ReturnType<typeof authenticatedContext>>) {
