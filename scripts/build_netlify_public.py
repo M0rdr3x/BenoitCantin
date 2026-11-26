@@ -485,6 +485,14 @@ def relative_path_allowed(rel: Path) -> bool:
     if not parts:
         return False
 
+    # NOVA maintenance/test code is not part of the browser runtime.
+    folded = tuple(part.casefold() for part in parts)
+    if folded[:2] == ("projets", "projet-nova") and (
+        any(part in {"scripts", "tests"} for part in folded[2:-1])
+        or folded == ("projets", "projet-nova", "assets", "g08-rh-workbook-inspector.mjs")
+    ):
+        return False
+
     # Un nouveau document dans data/ n'est jamais public par extension,
     # y compris PDF/HTML/JS/SVG : seuls les 12 JSON explicites le sont.
     if len(parts) >= 3 and parts[:3] == ("projets", "projet-nova", "data"):
@@ -1067,6 +1075,11 @@ def self_test_public_filesystem_boundary() -> list[str]:
         ".SECRET.JS",
         ".hidden.webmanifest",
         "projets/projet-nova/.gitignore",
+        "projets/projet-nova/scripts/maintenance.mjs",
+        "projets/projet-nova/tests/fixture.js",
+        "projets/projet-nova/Tests/nested/fixture.html",
+        "projets/projet-nova/assets/scripts/fixture.js",
+        "projets/projet-nova/assets/g08-rh-workbook-inspector.mjs",
         "projets/projet-nova/data/sondage-reponses.json",
         "projets/projet-nova/official/reference/notes-privees.md",
         "projets/sinjira/romans/export-membres.json",

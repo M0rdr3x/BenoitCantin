@@ -29,6 +29,7 @@ JS_PATTERNS = (
     ("module-import", re.compile(r"""\b(?:import|export)\s+(?:[^;\r\n'"]{0,400}\bfrom\s*)?(['"])([^'"\r\n]{1,4096})\1""")),
     ("dynamic-import", re.compile(r"""\bimport\s*\(\s*(['"])([^'"\r\n]{1,4096})\1""")),
     ("worker", re.compile(r"""\b(?:Worker|SharedWorker|importScripts|serviceWorker\.register)\s*\(\s*(['"])([^'"\r\n]{1,4096})\1""")),
+    ("worker-src-assignment", re.compile(r"""\bGlobalWorkerOptions\.workerSrc\s*=\s*(['"])([^'"\r\n]{1,4096})\1""")),
 )
 CSS_IMPORT = re.compile(r"""@import\s+(?:url\(\s*)?(['"]?)([^'"\s;)]+)\1""", re.I)
 DYNAMIC = re.compile(r"""\b(?:import|Worker|SharedWorker|importScripts|serviceWorker\.register)\s*\(\s*(?!['"\s])""")
@@ -64,7 +65,7 @@ def remote(value):
     try:
         u = urlsplit(value)
         scheme = u.scheme.lower() or "scheme-relative"
-        result["scheme"] = scheme if scheme in ("https","http","scheme-relative","data","blob","javascript","file") else "other"
+        result["scheme"] = scheme if scheme in ("https","http","scheme-relative","data","blob","javascript","file","node") else "other"
         result["query_or_fragment"] = "?" in value or "#" in value
         result["credentials"] = u.username is not None or u.password is not None
         host = u.hostname
@@ -242,6 +243,9 @@ class Tests(unittest.TestCase):
         self.assertEqual(counts["possible_nonliteral_js_load"],1)
         scan_text("worker.js","new Worker('https://example.test/w.js')",records,counts)
         self.assertEqual(records[-1]["kind"],"worker")
+        scan_text("worker.js","pdfjsLib.GlobalWorkerOptions.workerSrc='https://example.test/w.js';",records,counts)
+        self.assertEqual(records[-1]["kind"],"worker-src-assignment")
+        self.assertEqual(remote("node:fs")["scheme"],"node")
     def test_file_boundary(self):
         import tempfile
         with tempfile.TemporaryDirectory() as temp:

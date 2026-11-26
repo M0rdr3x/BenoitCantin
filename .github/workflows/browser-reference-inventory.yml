@@ -14,6 +14,8 @@ on:
       - '**/*.xml'
       - 'scripts/build_netlify_public.py'
       - 'scripts/inventory_browser_references.py'
+      - 'scripts/validate_nova_pdf_eval_boundary.py'
+      - 'scripts/validate_jekyll_emergency_pages.py'
       - '_config.yml'
       - 'netlify.toml'
       - 'vercel.json'
@@ -31,6 +33,8 @@ on:
       - '**/*.xml'
       - 'scripts/build_netlify_public.py'
       - 'scripts/inventory_browser_references.py'
+      - 'scripts/validate_nova_pdf_eval_boundary.py'
+      - 'scripts/validate_jekyll_emergency_pages.py'
       - '_config.yml'
       - 'netlify.toml'
       - 'vercel.json'
@@ -52,7 +56,10 @@ jobs:
         with:
           python-version: '3.12.14'
       - name: Tester les limites et la redaction de l'inventaire
-        run: python3 scripts/inventory_browser_references.py --self-test
+        run: |
+          python3 scripts/inventory_browser_references.py --self-test
+          python3 scripts/validate_nova_pdf_eval_boundary.py --self-test
+          python3 scripts/build_netlify_public.py --self-test-security
       - name: Inventorier les références littérales dans le build isolé
         shell: bash
         run: |
@@ -61,6 +68,10 @@ jobs:
           trap 'rm -rf "$workspace"' EXIT
           mkdir "$RUNNER_TEMP/browser-reference-inventory"
           python3 scripts/build_netlify_public.py --security-containment --output "$workspace/_site"
+          python3 scripts/validate_nova_pdf_eval_boundary.py --root "$workspace/_site"
+          test ! -e "$workspace/_site/projets/projet-nova/scripts"
+          test ! -e "$workspace/_site/projets/projet-nova/tests"
+          test ! -e "$workspace/_site/projets/projet-nova/assets/g08-rh-workbook-inspector.mjs"
           python3 scripts/inventory_browser_references.py --root "$workspace/_site" \
             --output "$RUNNER_TEMP/browser-reference-inventory/browser-references.json" \
             --source-sha "$GITHUB_SHA"

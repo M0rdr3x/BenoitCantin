@@ -25,6 +25,9 @@ BLOCKED = (
     "vercel.json",
     "package.json",
     "_config.yml",
+    "projets/projet-nova/scripts",
+    "projets/projet-nova/tests",
+    "projets/projet-nova/assets/g08-rh-workbook-inspector.mjs",
     "projets/projet-nova/official/versions/V322/V322_CURRENT_STATE.json",
     "projets/projet-nova/official/versions/V316/README.md",
     "projets/projet-nova/data/modele_comptabilite.csv",
@@ -101,6 +104,9 @@ def validate(root: Path, require_all: bool = True) -> list[str]:
             continue
         if candidate.suffix.lower() in BLOCKED_EXTS:
             errors.append("Extension technique publiée : " + rel)
+        folded = tuple(part.casefold() for part in candidate.relative_to(root).parts)
+        if folded[:2] == ("projets", "projet-nova") and any(part in {"scripts", "tests"} for part in folded[2:-1]):
+            errors.append("Répertoire technique publié : " + rel)
         if any(rel.startswith(prefix) for prefix in BLOCKED_DIRS) or (
             rel.startswith(CODEX_PREFIX) and rel != CODEX_PUBLIC_PAGE
         ):
