@@ -40,7 +40,7 @@ def check_page(path, expected):
     if auth_nav and 'data-backend-state role="status" aria-atomic="true"' not in text:
         errors.append(f"{path}: état du service non annoncé")
     css_version = "1.0.2" if auth_nav else "1.0.0"
-    if auth_nav and "/assets/js/sinjira-form-feedback-v1.js?v=1.0.0" not in text:
+    if auth_nav and "/assets/js/sinjira-form-feedback-v1.js?v=1.0.1" not in text:
         errors.append(f"{path}: aide de validation absente")
     if f"/assets/css/sinjira-forms-ux-v1.css?v={css_version}" not in text:
         errors.append(f"{path}: style responsive manquant")
@@ -120,7 +120,14 @@ def main():
     for marker in ("'invalid'", "'aria-invalid'", "'aria-describedby'", "'reset'", "validity.valid"):
         if marker not in feedback:
             problems.append("Aide de validation : contrat manquant " + marker)
-    if re.search(r'\\.value\\b|\\b(localStorage|sessionStorage|fetch\\s*\\(|sendBeacon|XMLHttpRequest)\\b', feedback):
+    forbidden_feedback = re.compile(r'\.value\b|\b(?:localStorage|sessionStorage|indexedDB|sendBeacon|XMLHttpRequest)\b|\bfetch\s*\(')
+    # Les exemples positifs et négatifs vérifient le garde lui-même.
+    for sample in ("field.value", "localStorage", "sessionStorage", "indexedDB", "fetch('/test')", "fetch ('/test')", "sendBeacon", "XMLHttpRequest"):
+        if not forbidden_feedback.search(sample):
+            problems.append("Aide de validation : auto-test du garde en échec")
+    if forbidden_feedback.search("field.validity.valueMissing"):
+        problems.append("Aide de validation : faux positif sur ValidityState")
+    if forbidden_feedback.search(feedback):
         problems.append("Aide de validation : aucune lecture de valeur ni transmission autorisée")
     css = CSS.read_text("utf-8")
     for marker in ('font-size:max(1rem,16px)', 'min-height:46px',

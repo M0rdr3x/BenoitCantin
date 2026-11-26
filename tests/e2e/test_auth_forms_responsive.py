@@ -146,6 +146,25 @@ def assert_inline_feedback(context):
         page.locator("form").evaluate("(el) => el.reset()")
         page.wait_for_function("() => !document.querySelector('.sinjira-field-error')")
         assert_ok(field.get_attribute("aria-describedby") == "help", "aide non restaurée après reset")
+        field.evaluate("(el) => { el.required = true; el.reportValidity(); el.required = false; }")
+        page.wait_for_function("() => !document.querySelector('.sinjira-field-error')")
+        assert_ok(field.get_attribute("aria-invalid") is None, "erreur résiduelle après retrait de required")
+        page.locator("form").evaluate("""(form) => {
+          const label = document.createElement('label');
+          label.innerHTML = '<input id="consent" type="checkbox" required> Consentement fictif';
+          form.appendChild(label);
+        }""")
+        checkbox = page.locator("#consent")
+        checkbox.evaluate("(el) => el.reportValidity()")
+        assert_ok(error.count() == 1, "erreur de consentement absente")
+        assert_ok(checkbox.evaluate("(el) => el.closest('label').nextElementSibling.classList.contains('sinjira-field-error')"),
+                  "erreur intégrée au nom accessible du consentement")
+        checkbox.check()
+        assert_ok(error.count() == 0, "erreur de consentement non retirée")
+        checkbox.uncheck()
+        checkbox.evaluate("(el) => { el.reportValidity(); el.disabled = true; }")
+        page.wait_for_function("() => !document.querySelector('.sinjira-field-error')")
+        assert_ok(checkbox.get_attribute("aria-invalid") is None, "erreur sur un champ désactivé")
     finally:
         page.close()
 

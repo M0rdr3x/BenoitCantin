@@ -40,7 +40,10 @@
         note.id=id;note.className='sinjira-field-error';
         entry={note:note,previousInvalid:field.getAttribute('aria-invalid')};
         active.set(field,entry);
-        field.insertAdjacentElement('afterend',note);
+        // Un message placé dans un label englobant modifierait le nom
+        // accessible d'une case à cocher et la disposition de son libellé.
+        var wrappingLabel=field.closest('label');
+        (wrappingLabel||field).insertAdjacentElement('afterend',note);
         var described=field.getAttribute('aria-describedby')||'';
         field.setAttribute('aria-describedby',(described+' '+id).trim());
       }
@@ -63,7 +66,7 @@
     });
     if(typeof MutationObserver!=='undefined'){
       new MutationObserver(function(){
-        active.forEach(function(_,field){if(!form.contains(field)||!eligible(field))clear(field);});
+        active.forEach(function(_,field){if(!form.contains(field)||!eligible(field)||field.validity.valid)clear(field);});
       }).observe(form,{subtree:true,childList:true,attributes:true,attributeFilter:['disabled','required','type']});
     }
   }
