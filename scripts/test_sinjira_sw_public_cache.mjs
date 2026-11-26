@@ -69,12 +69,14 @@ test('installation publique et nettoyage limité aux caches de ce site', async (
   h.stores.set('benoitcantin-v24-4-95-public-16', new Map());
   h.stores.set('benoitcantin-v24-4-95-public-17', new Map());
   h.stores.set('benoitcantin-v24-4-95-public-18', new Map());
+  h.stores.set('benoitcantin-v24-4-95-public-19', new Map());
   await h.lifecycle('install');
   await h.lifecycle('activate');
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-16'), false);
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-17'), false);
   assert.equal(h.stores.has('benoitcantin-v24-4-95-public-18'), false);
-  assert.equal(h.stores.has('benoitcantin-v24-4-95-public-19'), true);
+  assert.equal(h.stores.has('benoitcantin-v24-4-95-public-19'), false);
+  assert.equal(h.stores.has('benoitcantin-v24-4-95-public-20'), true);
   assert.ok(h.requests.length > 0);
   for (const req of h.requests) {
     assert.equal(req.credentials, 'omit');

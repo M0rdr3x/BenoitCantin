@@ -57,7 +57,7 @@ def validate() -> list[str]:
         "sinjira-account-v18.js?v=24.1.5",
         # Les flèches du compte sont apportées par la PR UX #1160.
         "site-ux-sinjira-v1.css?v=1.0.1",
-        "site.js?v=24.4.102",
+        "site.js?v=24.4.105",
         'data-v18-page="comments"',
         'data-my-comments',
         'aria-busy="true"',

@@ -485,7 +485,7 @@ def main() -> int:
         # invalident explicitement l'ancien cache du script commun.
         # Les pages Nova/legacy non migrées conservent leur contrat historique.
         expected_version = (
-            '24.4.101'
+            '24.4.105'
             if script_path == 'assets/js/site.js' and 'data-sinjira-ux="v1"' in html
             else version
         )

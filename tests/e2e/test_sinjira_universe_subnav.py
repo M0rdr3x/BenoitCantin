@@ -37,7 +37,7 @@ def test_sources() -> None:
         source = ROOT / page.lstrip("/") / "index.html"
         html = source.read_text(encoding="utf-8")
         assert html.count("sinjira-universe-nav-v2.css?v=2.0.1") == 1, page
-        assert html.count("sinjira-universe-nav-v2.js?v=2.0.1") == 1, page
+        assert html.count("sinjira-universe-nav-v2.js?v=2.0.2") == 1, page
         assert 'class="universe-subnav"' in html, page
         assert 'aria-current="page"' in html, page
     assert "démo de validation de 62 pages" not in (ROOT / "projets/sinjira/index.html").read_text("utf-8")
@@ -91,6 +91,18 @@ def main() -> None:
                         following = nav.locator("button.universe-scroll-button").nth(1)
                         assert previous.get_attribute("aria-controls") == strip.get_attribute("id")
                         assert following.get_attribute("aria-controls") == strip.get_attribute("id")
+                        # La mesure est asynchrone et peut suivre le chargement des
+                        # polices. Exiger la convergence réelle, pas un délai fixe.
+                        page.wait_for_function("""() => {
+                          const nav = document.querySelector('nav.universe-subnav');
+                          const strip = nav.querySelector('.container');
+                          const buttons = [...nav.querySelectorAll('.universe-scroll-button')];
+                          const overflow = strip.scrollWidth - strip.clientWidth > 3;
+                          return buttons.length === 2 &&
+                            nav.classList.contains('has-universe-scroll') === overflow &&
+                            buttons.every(b => b.hidden === !overflow &&
+                              (b.getBoundingClientRect().width > 0) === overflow);
+                        }""", timeout=5000)
                         metrics = strip.evaluate(
                             "(e) => ({overflow:e.scrollWidth-e.clientWidth>3,"
                             "left:e.scrollLeft,width:e.clientWidth,total:e.scrollWidth})"
